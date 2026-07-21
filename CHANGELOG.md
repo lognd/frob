@@ -17,6 +17,46 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.48.0] - unreleased (strata round 2, part 2)
+
+Public-API surface change since 0.44.0 (mechanical semver via REL001): an
+additive (minor) bump -- new `frob.strata.scan_text_for_fingerprints`/
+`FingerprintHit` and `frob.gates.cve_fingerprint_scan_gate`.
+
+- T-0439: added SEC-CVE-FINGERPRINT-001, a `frob check` gate scanning
+  first-party repo source for the `CVE_FINGERPRINTS` needle corpus
+  (`frob.strata._cve_fingerprint`) -- the missing first-party-source-lint
+  sibling of CVEFP001 (catalog-drift only, no source scan) and `frob vet`'s
+  `_scan_file_fingerprints` (third-party dependency source, no file:line).
+  New `frob.strata.scan_text_for_fingerprints`/`FingerprintHit` do the
+  line-level needle scan; `frob.gates.cve_fingerprint_scan_gate`
+  (`src/frob/gates/_cve_fingerprint_scan.py`) walks every git-tracked,
+  language-bucketed file and wires it into `frob check` as WARN-severity
+  `SEC-CVE-FINGERPRINT-001` (registered in `_KNOWN_GATE_RULES`). Litmus
+  pair: `tests/unit/strata/test_cve_fingerprint_scan.py` -- a "smelly" fixture
+  (`shell=True`) fires, a "clean" one (`shell=False`) and an out-of-language
+  file do not.
+
+## [0.48.0] - unreleased (strata round 2, part 1)
+
+Public-API surface change since 0.43.0 (mechanical semver via REL001): an
+additive (minor) bump -- new `frob.strata.COMPLIANCE_OUT_OF_SCOPE` catalog.
+
+- T-0503: COMPLIANCE004 (`caught_by` integrity for compliance out-of-scope
+  exclusions) was vacuous in production -- `_audit.py` never threaded an
+  `out_of_scope` catalog into `evaluate_compliance` (unlike the security/
+  quality families' `CWE_TOP_25_OUT_OF_SCOPE`/`QUALITY_OUT_OF_SCOPE`), so
+  it always defaulted to `()` and the check trivially passed regardless of
+  a fabricated `caught_by`. Added `COMPLIANCE_OUT_OF_SCOPE` (a real,
+  production `OutOfScopeRegulation` catalog, `frob.strata._compliance`) and
+  threaded it into `_compliance_pii_lint_fingerprint_gaps`'s
+  `evaluate_compliance` call. Non-vacuous proof: `tests/unit/strata/
+  test_audit.py::TestExhaustiveness.
+  test_compliance_out_of_scope_bad_caught_by_fails_real_audit_path` shows a
+  fabricated `caught_by` failing through the real production entrypoint
+  (`evaluate_exhaustiveness`, exactly what `frob sys audit` calls), not
+  just the unit-level `check_regulation_caught_by_integrity` evaluator.
+
 ## [0.47.0] - unreleased
 
 Reconciliation section: two parallel landing chains independently claimed

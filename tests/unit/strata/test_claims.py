@@ -80,6 +80,50 @@ class TestNoFlow:
         outcome = evaluate_claims(model)
         assert outcome.danger_err is StrataError.UnknownReference
 
+    # frob:tests src/frob/strata/_claims.py::evaluate_claims kind="unit"
+    def test_real_leak_through_a_utility_hub_still_refutes(self):
+        """T-0496 (docs/audits/strata.md G5) litmus, straight from the
+        ticket's own repro: `log_hub{utility}` from `secret_store` to
+        `logger`, then a REAL leak edge `logger -> foreign_sink` -- before
+        this fix, `noflow(secret_store, foreign_sink)` PROVED despite the
+        two-hop leak (the `utility` marker made `logger` unreachable-past
+        even though `logger` had its own transitive outgoing edge). Must
+        now REFUTE with the full two-hop witness."""
+        model = KernelModel(
+            nodes=(_node("secret_store"), _node("logger"), _node("foreign_sink")),
+            flows=(
+                _flow("log_hub", "secret_store", "logger", attrs=("utility",)),
+                _flow("leak", "logger", "foreign_sink"),
+            ),
+            claims=(
+                Claim(id="c1", body=NoFlow(src="secret_store", dst="foreign_sink")),
+            ),
+        )
+        result = _one(model)
+        assert result.verdict is Verdict.REFUTED
+        assert result.counterexample == (
+            "secret_store",
+            "log_hub",
+            "logger",
+            "leak",
+            "foreign_sink",
+        )
+
+    # frob:tests src/frob/strata/_claims.py::evaluate_claims kind="unit"
+    def test_utility_hub_with_no_further_edges_still_discharges(self):
+        """The T-0226 case `utility` originally existed for is unaffected:
+        an innocuous hub with NOTHING downstream still lets `noflow` prove
+        clean -- this fix only stops `utility` from HIDING a real further
+        edge, it does not reintroduce a spurious refutation for a hub that
+        genuinely goes nowhere else."""
+        model = KernelModel(
+            nodes=(_node("secret_store"), _node("logger"), _node("unrelated")),
+            flows=(_flow("log_hub", "secret_store", "logger", attrs=("utility",)),),
+            claims=(Claim(id="c1", body=NoFlow(src="secret_store", dst="unrelated")),),
+        )
+        result = _one(model)
+        assert result.verdict is Verdict.PROVED
+
 
 class TestReach:
     # frob:tests src/frob/strata/_claims.py::evaluate_claims kind="unit"

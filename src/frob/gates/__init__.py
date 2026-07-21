@@ -47,6 +47,7 @@ from frob.gates._baseline import (
     violation_fingerprint,
 )
 from frob.gates._coverage import load_coverage, load_stamp, stamp_coverage
+from frob.gates._cve_fingerprint_scan import cve_fingerprint_scan_gate
 from frob.gates._docblocks import doc004_gate
 from frob.gates._models import (
     CoverageData,
@@ -770,6 +771,9 @@ _KNOWN_GATE_RULES = frozenset(
         "DOC004",
         # T-0471: unpruned filesystem traversal (frob.gates._walk_lint).
         "WALK001",
+        # T-0439: CVE code-smell needle/fingerprint pattern-scan
+        # (frob.gates._cve_fingerprint_scan).
+        "SEC-CVE-FINGERPRINT-001",
     }
 )
 
@@ -4795,6 +4799,11 @@ def _build_jobs(
         # WALK001 result as an unscoped run since a raw traversal call
         # anywhere in src/frob/ is a repo-wide concern, not a subdir one.
         "walk_lint": _ProcessJob(walk_lint_gate, (st.repo_root,)),
+        # T-0439: whole-repo tracked-file scan, always against repo_root --
+        # same reasoning as secrets/walk_lint above: a CVE-fingerprint
+        # needle anywhere in the tree is a repo-wide concern, not a
+        # subdir-scoped one.
+        "cve_fingerprint_scan": _ProcessJob(cve_fingerprint_scan_gate, (st.repo_root,)),
     }
     selected_thread = {
         name: job for name, job in thread_jobs.items() if name in selected
@@ -5078,6 +5087,7 @@ __all__ = [
     "load_baseline",
     "load_coverage",
     "load_invariants",
+    "cve_fingerprint_scan_gate",
     "decisions_gate",
     "doclink_gate",
     "docanchor_gate",

@@ -50,17 +50,39 @@ _log = get_logger(__name__)
 #: Flow attr prefix for the demand-propagation multiplier (surface `fanout NUM`).
 _FANOUT_PREFIX = "fanout="
 
-#: Flow attrs that mark an edge as a non-transitive hop in `reachable`'s BFS:
-#: the edge's dst is still directly reachable, but the closure does not
-#: chain past it to extend the witness path any further. `krb_no_transit`
-#: is `_krb.py::krb_trust_flows`'s synthesis for a one-way domain trust
-#: with no `transitive` marker (T-0282); `utility` is the general-purpose
-#: surface marker (`flow ... { utility; }`, docs/strata/surface.md) for a
-#: utility/hub edge whose relaying is not itself a meaningful transitive
-#: link -- this is how a real `noflow` claim survives an unrelated hub
-#: edge (e.g. a logging import) without weakening the closure for any
-#: edge that is NOT explicitly marked (T-0226).
+#: Flow attrs that mark an edge as a non-transitive hop in `reachable`'s BFS
+#: when `through_barriers=True` (the existential `reach`/`independent`/
+#: `readers`/krb-movement closures): the edge's dst is still directly
+#: reachable, but the closure does not chain past it to extend the witness
+#: path any further. `krb_no_transit` is `_krb.py::krb_trust_flows`'s
+#: synthesis for a one-way domain trust with no `transitive` marker
+#: (T-0282); `utility` is the general-purpose surface marker (`flow ...
+#: { utility; }`, docs/strata/surface.md) for a utility/hub edge whose
+#: relaying is not itself a meaningful transitive link.
 _NON_TRANSITIVE_ATTRS = frozenset({"krb_no_transit", "utility"})
+
+#: T-0496 (docs/audits/strata.md G5): the non-transitive attrs honored when
+#: `through_barriers=False` -- the confidentiality `noflow` closure
+#: (`_claims.py::_first_noflow_witness`, the ONLY caller that omits
+#: `through_barriers`). Deliberately EXCLUDES `utility`: T-0226 added
+#: `utility`-as-terminal specifically so an unrelated hub edge (e.g. a
+#: logging import) would not falsely refute a legitimate `noflow` claim --
+#: but this made the SAME marker a real, author-controlled way to hide a
+#: genuine downstream leak from the confidentiality check (repro: `flow
+#: log_hub{src=secret_store, dst=logger, utility}` then `flow leak{src=
+#: logger, dst=foreign_sink}` -- `noflow(secret_store, foreign_sink)`
+#: PROVED despite the two-hop leak, since `logger` was reached only via the
+#: terminal `utility` edge and so was never enqueued to explore its own
+#: `leak` edge). Per charter law 2 (deny-by-default): a false REFUTED that
+#: forces a human to add a real `Boundary`/discharge is an acceptable cost;
+#: a false PROVED that hides a real exfiltration path is not. `krb_no_
+#: transit` is NOT similarly excluded here -- no caller currently reaches
+#: it through this path (`_krb.py`'s synthesized flows feed the `through_
+#: barriers=True` movement/reach closures, `_krb_movement.py:388`), and
+#: T-0282's own fix was never claimed for confidentiality noflow the way
+#: T-0226's `utility` fix was, so there is no known equivalent gap to close
+#: for it.
+_NOFLOW_NON_TRANSITIVE_ATTRS = frozenset({"krb_no_transit"})
 
 
 def _flow_fanout(flow: Flow) -> float:
@@ -130,34 +152,44 @@ class FactBase:
         semantics of docs/strata/kernel.md); with True the closure ignores
         boundaries, which is what positive `reach` claims want.
 
-        A flow carrying any of `_NON_TRANSITIVE_ATTRS` -- `krb_no_transit`
-        (synthesized by `_krb.py::krb_trust_flows` for a `trusts ... `
-        clause with no `transitive` marker, docs/strata/krb.md#domain-
-        trust-lattice) or `utility` (the general-purpose surface marker
-        `flow ... { utility; }`, T-0226) -- is a TERMINAL edge in the
-        kernel's BFS (`strata-core/src/lib.rs::reachable`): its `dst` is
-        reachable directly but the closure does not chain past it. This
-        fixes T-0282's disclosed gap where a chain of non-transitive
-        trusts wrongly reached as far as a transitive one, and T-0226's
-        gap where an unrelated utility/hub edge (e.g. a logging import)
-        falsely defeated a legitimate `noflow` claim by letting flow
-        transit through it. Every edge NOT explicitly marked stays fully
-        transitive -- a real transitive flow is still caught, deny-by-
-        default (charter law 2); this is an opt-in exclusion, never a
-        default weakening.
+        A flow carrying any of `_NON_TRANSITIVE_ATTRS` (`through_barriers=
+        True`) or `_NOFLOW_NON_TRANSITIVE_ATTRS` (`through_barriers=False`)
+        -- `krb_no_transit` (synthesized by `_krb.py::krb_trust_flows` for
+        a `trusts ...` clause with no `transitive` marker, docs/strata/
+        krb.md#domain-trust-lattice) always, plus `utility` (the general-
+        purpose surface marker `flow ... { utility; }`, T-0226) ONLY when
+        `through_barriers=True` -- is a TERMINAL edge in the kernel's BFS
+        (`strata-core/src/lib.rs::reachable`): its `dst` is reachable
+        directly but the closure does not chain past it. This fixes
+        T-0282's disclosed gap where a chain of non-transitive trusts
+        wrongly reached as far as a transitive one. `utility` is
+        deliberately NOT honored when `through_barriers=False` (T-0496,
+        docs/audits/strata.md G5, `_NOFLOW_NON_TRANSITIVE_ATTRS`'s own
+        comment): the ONLY `through_barriers=False` caller is the
+        confidentiality `noflow` closure (`_claims.py::
+        _first_noflow_witness`), and T-0226's original `utility`-as-
+        terminal fix there made the marker a real, author-controlled way
+        to hide a genuine downstream leak transiting an otherwise-innocuous
+        hub, not just an unrelated one. Every edge NOT explicitly marked
+        stays fully transitive -- a real transitive flow is still caught,
+        deny-by-default (charter law 2); this is an opt-in exclusion, never
+        a default weakening.
         """
         # frob:doc docs/strata/kernel.md#fact-base
         # A `FactBase` only ever exists via `build_facts`, which already
         # fails closed on `strata_core is None` (T-0134) -- so by
         # construction it is present here.
         assert strata_core is not None
+        non_transitive = (
+            _NON_TRANSITIVE_ATTRS if through_barriers else _NOFLOW_NON_TRANSITIVE_ATTRS
+        )
         edges = [
             (
                 f.id,
                 f.src,
                 f.dst,
                 bool(self.boundaries_on.get(f.id)),
-                not (_NON_TRANSITIVE_ATTRS & set(f.attrs)),
+                not (non_transitive & set(f.attrs)),
             )
             for f in self.flows.values()
         ]

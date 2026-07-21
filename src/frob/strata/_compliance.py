@@ -188,6 +188,39 @@ REGULATION_VIEWS: dict[str, frozenset[str]] = {
 
 
 # frob:doc docs/strata/threat.md#compliance-regulatory-obligations-stdcompliance
+# frob:ticket T-0503
+#: T-0503: the production `OutOfScopeRegulation` catalog -- mirrors
+#: `_threat.py::CWE_TOP_25_OUT_OF_SCOPE`/`QUALITY_OUT_OF_SCOPE` for the
+#: compliance family (module docstring's "same obligation/discharge/
+#: exhaustiveness structure as `_threat.py`"). Before this, no module-level
+#: `OutOfScopeRegulation` tuple existed anywhere, so `evaluate_compliance`'s
+#: production callsite (`_audit.py::_compliance_pii_lint_fingerprint_gaps`)
+#: always threaded an empty `out_of_scope=()`, making COMPLIANCE004 (`caught_
+#: by` integrity) vacuous in production regardless of `known_rule_ids`
+#: threading (T-0499's own Done report flagged this as a distinct,
+#: not-folded-in gap). Each entry names a regulation the baseline catalog
+#: does not model plus the real compensating control that catches it
+#: elsewhere -- a fabricated or typo'd `caught_by` here is exactly the case
+#: COMPLIANCE004 exists to refuse.
+COMPLIANCE_OUT_OF_SCOPE: tuple[OutOfScopeRegulation, ...] = (
+    OutOfScopeRegulation(
+        id="CCPA",
+        reason="the kernel carries GDPR's subject/jurisdiction/retention "
+        "vocabulary (subject:*, jurisdiction:*, retention=) but has no "
+        "separate California-specific consumer-request primitive "
+        "(right-to-know/right-to-delete request tracking) distinct from "
+        "GDPR-ERASURE/GDPR-RETENTION already in COMPLIANCE_CATALOG -- "
+        "adding one would duplicate rather than extend the existing model",
+        owner="logan",
+        review="2027-01-21",
+        caught_by="the structural PII field detector (PII010) flags any "
+        "PII-shaped field regardless of jurisdiction, compensating for the "
+        "missing CA-specific request-tracking model at the code level",
+    ),
+)
+
+
+# frob:doc docs/strata/threat.md#compliance-regulatory-obligations-stdcompliance
 class ComplianceViolation(BaseModel):
     """One COMPLIANCE001-003 finding: a rule id, the firing regulation id,
     the firing target (flow or node id), and a human detail. Mirrors
@@ -867,6 +900,7 @@ def evaluate_compliance(
 
 __all__ = [
     "COMPLIANCE_CATALOG",
+    "COMPLIANCE_OUT_OF_SCOPE",
     "REGULATION_VIEWS",
     "ComplianceReport",
     "ComplianceViolation",

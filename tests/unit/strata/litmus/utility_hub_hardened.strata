@@ -1,12 +1,20 @@
-// utility_hub_hardened.strata -- T-0226 litmus (marked half), the twin of
-// utility_hub_vuln.strata. SAME three nodes and SAME two edges, but
-// `f_tui_logs` is now marked `utility;`: `logs` is still directly
-// reachable from `tui` (one hop always succeeds), but the closure does
-// not chain past it to `server`, so `noflow tui -> server` PROVES --
-// the legitimate claim survives the unrelated logging hub without
-// weakening the closure for any edge that is NOT explicitly marked
-// (`f_logs_server` stays fully transitive, proving this is not a blanket
-// closure change).
+// utility_hub_hardened.strata -- the twin of utility_hub_vuln.strata.
+//
+// T-0496 correction (docs/audits/strata.md G5) of this fixture's own
+// PRE-T-0496 history: this file used to mark `f_tui_logs` `utility;` and
+// claim that alone made `noflow tui -> server` PROVE. That was WRONG --
+// `f_logs_server` is a REAL, fully-transitive edge landing exactly on the
+// claim's own target (`server`), so `tui -> logs -> server` is a genuine
+// leak path, not an unrelated hub detour; marking the FIRST hop `utility`
+// only hid the second, real hop from the confidentiality closure (`_facts.
+// py::FactBase.reachable`'s `through_barriers=False` case, the only one
+// `noflow` ever calls). `utility` is no longer honored there at all
+// (`_NOFLOW_NON_TRANSITIVE_ATTRS` excludes it, T-0496) -- so this fixture
+// now demonstrates the ONLY sound way to actually discharge a real
+// influence path: a genuine ENDORSE boundary interposed on it (the SAME
+// discharge shape `managed_hardened.strata` and `test_claims.py::TestNoFlow.
+// test_proved_forall_when_an_endorsement_boundary_cuts_the_path` already
+// use), not an author-controlled surface marker with no compensating check.
 //
 // tested end to end (parse -> elaborate -> evaluate_claims) by
 // tests/unit/strata/test_litmus_utility_hub.py.
@@ -21,6 +29,8 @@ node server : trusted { clearance Internal; }
 flow f_tui_logs : tui -> logs { label Internal; utility; }
 flow f_logs_server : logs -> server { label Internal; }
 
+boundary b_logs_server endorse f_logs_server : trusted -> trusted when "log_scrubbed"
+
 assert "utility-hub:tui-server" noflow tui -> server
 
-// frob:waive REF002 reason="litmus fixture read by exactly one dedicated test module by design (T-0145/T-0255/T-0256/T-0262/T-0172/T-0154/T-0155/T-0223/T-0226 litmus suites); a second consumer would not be genuine"
+// frob:waive REF002 reason="litmus fixture read by exactly one dedicated test module by design (T-0145/T-0255/T-0256/T-0262/T-0172/T-0154/T-0155/T-0223/T-0226/T-0496 litmus suites); a second consumer would not be genuine"

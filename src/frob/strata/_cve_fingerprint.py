@@ -362,10 +362,88 @@ def check_fingerprint_catalog_drift(
     return Ok(violations)
 
 
+# frob:doc docs/strata/threat.md#cve-fingerprints-code-level-pattern-catalog-t-0153
+class FingerprintHit(BaseModel):
+    """T-0439: one line-level match of a `CveFingerprint` needle in a
+    scanned source file -- the sibling of `frob.vet._capability::
+    _scan_file_fingerprints` (which reports only WHICH fingerprints matched
+    somewhere in a dependency directory, no location) for a first-party
+    repo-lint GATE, which needs a file:line to be actionable."""
+
+    model_config = ConfigDict(frozen=True)
+
+    fingerprint_id: str
+    cwe_id: str
+    line: int
+    needle: str
+    title: str
+    remediation: str
+
+
+def _line_of_offset(text: str, offset: int) -> int:
+    """1-indexed line number of `offset` within `text` -- shared helper so
+    `scan_text_for_fingerprints` reports the same line convention every
+    other gate/violation in this repo uses."""
+    return text.count("\n", 0, offset) + 1
+
+
+# frob:doc docs/strata/threat.md#cve-fingerprints-code-level-pattern-catalog-t-0153
+# frob:ticket T-0439
+# frob:tests tests/unit/strata/test_cve_fingerprint_scan.py::TestScanTextForFingerprints.test_smelly_text_fires  # noqa: E501
+# frob:tests tests/unit/strata/test_cve_fingerprint_scan.py::TestScanTextForFingerprints.test_clean_text_does_not_fire  # noqa: E501
+def scan_text_for_fingerprints(
+    text: str,
+    language: str,
+    fingerprints: tuple[CveFingerprint, ...] = CVE_FINGERPRINTS,
+) -> tuple[FingerprintHit, ...]:
+    """T-0439: every `CveFingerprint` (in `fingerprints`, default `CVE_
+    FINGERPRINTS`) whose `language` matches the caller-supplied `language`
+    and at least one `needle` appears as a literal substring of `text`,
+    one `FingerprintHit` per matched needle occurrence (module docstring's
+    recall-over-precision philosophy, same posture as `frob.vet.
+    _capability`'s dependency-source scanner). Deliberately simpler than
+    that scanner: no comment-span/whitespace-evasion filtering here (that
+    refinement stays in `frob.vet._capability`, which this module cannot
+    import without cycling back into `frob.strata` -- module docstring's
+    own `_JOINED_CWE_CATALOG` precedent already keeps catalog logic
+    self-contained) -- an occasional false positive on a needle appearing
+    only in a comment/docstring costs a human a dismissed gate line; a
+    false negative on a real first-party vulnerable-usage class is the
+    worse failure this scan exists to catch. Callers scanning REPO source
+    (not a vetted dependency) are exactly this function's audience;
+    `frob.gates._cve_fingerprint_scan.cve_fingerprint_scan_gate` is the one
+    real caller."""
+    hits: list[FingerprintHit] = []
+    for entry in fingerprints:
+        if entry.language != language:
+            continue
+        for needle in entry.needles:
+            start = 0
+            while True:
+                idx = text.find(needle, start)
+                if idx == -1:
+                    break
+                hits.append(
+                    FingerprintHit(
+                        fingerprint_id=entry.id,
+                        cwe_id=entry.cwe_id,
+                        line=_line_of_offset(text, idx),
+                        needle=needle,
+                        title=entry.title,
+                        remediation=entry.remediation,
+                    )
+                )
+                start = idx + len(needle)
+    hits.sort(key=lambda h: (h.line, h.fingerprint_id))
+    return tuple(hits)
+
+
 __all__ = [
     "CVE_FINGERPRINTS",
     "CVE_FINGERPRINT_VIEWS",
     "CveFingerprint",
+    "FingerprintHit",
     "FingerprintViolation",
     "check_fingerprint_catalog_drift",
+    "scan_text_for_fingerprints",
 ]
