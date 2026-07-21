@@ -153,9 +153,7 @@ def _language_unchanged(root: Path, base: str, project_type: str) -> bool:
     if result.is_err:
         return False
     suffixes = _LANGUAGE_SUFFIXES.get(project_type, ())
-    return not any(
-        hunk.file.endswith(suffixes) for hunk in result.danger_ok.hunks
-    )
+    return not any(hunk.file.endswith(suffixes) for hunk in result.danger_ok.hunks)
 
 
 # frob:ticket T-0421
@@ -289,9 +287,9 @@ def _dispatch_check(cfg: AppConfig, root: Path, project_type: str) -> CheckResul
 # frob:ticket T-0229
 # frob:ticket T-0419
 # frob:ticket T-0421
-# frob:tests tests/unit/test_app_runners_batch6.py::TestSkipUnchangedLanguage::test_unchanged_python_reports_skipped_not_silent  # noqa: E501
-# frob:tests tests/unit/test_app_runners_batch6.py::TestSkipUnchangedLanguage::test_changed_python_still_runs  # noqa: E501
-# frob:tests tests/unit/test_app_runners_batch6.py::TestSkipUnchangedLanguage::test_absent_language_never_shown  # noqa: E501
+# frob:tests tests/unit/test_app_runners_batch6.py::TestSkipUnchangedLanguage.test_unchanged_python_reports_skipped_not_silent  # noqa: E501
+# frob:tests tests/unit/test_app_runners_batch6.py::TestSkipUnchangedLanguage.test_changed_python_still_runs  # noqa: E501
+# frob:tests tests/unit/test_app_runners_batch6.py::TestSkipUnchangedLanguage.test_absent_language_never_shown  # noqa: E501
 def _run_all_detected(
     cfg: AppConfig,
     root: Path,
@@ -600,6 +598,7 @@ class _ColorizedLevelFormatter(logging.Formatter):
         self._base = base
         self._color = color
 
+    # frob:doc docs/modules/app.md#runners
     def format(self, record: logging.LogRecord) -> str:
         """Format via `base`, then paint ERROR+ red / WARNING yellow when
         `color` is on; DEBUG/INFO pass through unchanged."""
@@ -700,10 +699,10 @@ def _run_all_stages(
 
 
 # frob:ticket T-0419
-# frob:tests tests/system/test_cli_check.py::TestCheckPolyglot::test_unpinned_polyglot_runs_python_stage  # noqa: E501
-# frob:tests tests/system/test_cli_check.py::TestCheckPolyglot::test_pinned_check_type_reports_skipped_line  # noqa: E501
-# frob:tests tests/system/test_cli_check.py::TestCheckCleanProject::test_clean_code_exits_zero  # noqa: E501
-# frob:tests tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta::test_delta_reports_only_new_violation  # noqa: E501
+# frob:tests tests/system/test_cli_check.py::TestCheckPolyglot.test_unpinned_polyglot_runs_python_stage  # noqa: E501
+# frob:tests tests/system/test_cli_check.py::TestCheckPolyglot.test_pinned_check_type_reports_skipped_line  # noqa: E501
+# frob:tests tests/system/test_cli_check.py::TestCheckCleanProject.test_clean_code_exits_zero  # noqa: E501
+# frob:tests tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta.test_delta_reports_only_new_violation  # noqa: E501
 # frob:doc docs/modules/app.md#runners
 def run(cfg: AppConfig) -> None:
     """`frob check [--type T] [--json] [--stamp-coverage|--stamp-baseline]`:

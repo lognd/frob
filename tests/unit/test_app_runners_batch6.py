@@ -753,3 +753,92 @@ class TestCheckRunner:
             )
             check_run(cfg)
         capsys.readouterr()
+
+
+# frob:ticket T-0421
+class TestSkipUnchangedLanguage:
+    """T-0421: a language present but unchanged since `check_base` reports
+    SKIPPED (unchanged) instead of silently re-running, when
+    `check_skip_unchanged` (frob.toml `[check] skip_unchanged = true`) is
+    on; a language absent from the project never shows a line at all."""
+
+    def _git_repo(self, tmp_path: Path) -> None:
+        """A minimal git repo committed on `main`, for `working_diff` to
+        diff against."""
+        import subprocess
+
+        for args in (
+            ["git", "init", "-q", "-b", "main"],
+            ["git", "config", "user.email", "test@example.com"],
+            ["git", "config", "user.name", "Test"],
+        ):
+            subprocess.run(args, cwd=tmp_path, check=True)
+
+    def _commit_all(self, tmp_path: Path, msg: str) -> None:
+        """Stage and commit everything under `tmp_path`."""
+        import subprocess
+
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(["git", "commit", "-q", "-m", msg], cwd=tmp_path, check=True)
+
+    def test_unchanged_python_reports_skipped_not_silent(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+    ) -> None:
+        # frob:tests tests/unit/test_app_runners_batch6.py::TestSkipUnchangedLanguage.test_unchanged_python_reports_skipped_not_silent  # noqa: E501
+        import frob.app.check_runner as check_mod
+
+        (tmp_path / "pyproject.toml").write_text("[project]\nname='x'\n")
+        self._git_repo(tmp_path)
+        self._commit_all(tmp_path, "init")
+        # Nothing changed since main: no new commit, working tree clean.
+        monkeypatch.setattr(
+            check_mod, "run_check", lambda root, **kw: _make_check_result()
+        )
+        cfg = AppConfig(
+            check_path=tmp_path, check_base="main", check_skip_unchanged=True
+        )
+        check_run(cfg)
+        out = capsys.readouterr().out
+        assert "SKIPPED: python (unchanged since base)" in out
+
+    def test_changed_python_still_runs(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+    ) -> None:
+        # frob:tests tests/unit/test_app_runners_batch6.py::TestSkipUnchangedLanguage.test_changed_python_still_runs  # noqa: E501
+        import frob.app.check_runner as check_mod
+
+        (tmp_path / "pyproject.toml").write_text("[project]\nname='x'\n")
+        self._git_repo(tmp_path)
+        self._commit_all(tmp_path, "init")
+        (tmp_path / "src.py").write_text("x = 1\n")
+        self._commit_all(tmp_path, "add src.py")
+        monkeypatch.setattr(
+            check_mod, "run_check", lambda root, **kw: _make_check_result()
+        )
+        cfg = AppConfig(
+            check_path=tmp_path, check_base="main~1", check_skip_unchanged=True
+        )
+        check_run(cfg)
+        out = capsys.readouterr().out
+        assert "SKIPPED: python" not in out
+
+    def test_absent_language_never_shown(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+    ) -> None:
+        # frob:tests tests/unit/test_app_runners_batch6.py::TestSkipUnchangedLanguage.test_absent_language_never_shown  # noqa: E501
+        import frob.app.check_runner as check_mod
+
+        (tmp_path / "pyproject.toml").write_text("[project]\nname='x'\n")
+        self._git_repo(tmp_path)
+        self._commit_all(tmp_path, "init")
+        monkeypatch.setattr(
+            check_mod, "run_check", lambda root, **kw: _make_check_result()
+        )
+        cfg = AppConfig(
+            check_path=tmp_path, check_base="main", check_skip_unchanged=True
+        )
+        check_run(cfg)
+        out = capsys.readouterr().out
+        assert "typescript" not in out
+        assert "rust" not in out
+        assert "cpp" not in out
