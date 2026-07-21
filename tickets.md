@@ -7631,7 +7631,7 @@ title: 'recover/finish ''frob docs'' command: WIP preserved on branch worktree-a
   (commit 4961fbe) -- src/frob/docs/ + app/docs_runner.py + __main__/app/config wiring,
   abandoned uncommitted in an orphaned WSL-path worktree; evaluate and either land
   or drop'
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -7644,6 +7644,24 @@ attachments: []
 acceptance: []
 threat: null
 ```
+dropped 2026-07-21: commit 4961fbe does not exist anywhere in this repo's
+object store (not on the named branch, not dangling, not in any reflog --
+`git fsck --dangling --no-reflog` and a full reflog grep for the prefix
+both come up empty). The named branch worktree-agent-a08bb1e798ea69fa1's
+tip (7b88b77) is already a merged ancestor of main (`git merge-base main
+worktree-agent-a08bb1e798ea69fa1` == the branch tip, `git diff
+main...worktree-agent-a08bb1e798ea69fa1 --stat` is empty) and its content
+is unrelated CI-template work, not docs/. Separately, and dispositively:
+`frob docs` already exists on main today as a complete, tested, documented
+command (`src/frob/app/docs_runner.py`, `src/frob/docs/__init__.py`,
+`docs/modules/app.md` describing `docs_runner.run` and
+`find_docs_dir`/`overview`/`search`), landed no later than commit
+`3c71a1b` ("feat: add frob docs, frob bind, pybind11/pyo3 templates,
+sync-skills, test reorganization") and carried forward through
+`d8ca467`/`c4eeb5b`/`428c753`. There is nothing left to recover or land --
+the WIP this ticket describes is either lost or already superseded by
+what shipped. No evidence required for a dropped ticket per playbook
+precedent (T-0475).
 
 <!-- ticket:T-0478 -->
 ```yaml
@@ -7652,7 +7670,7 @@ title: 'recover/finish ''frob bind'' command + pybind11/pyo3 project-init scaffo
   WIP preserved on branch worktree-agent-a27be33c289e10301 (commit fca2851) -- src/frob/bind/
   + app/bind_runner.py + init/data/*.j2 templates + init/project.py wiring, abandoned
   uncommitted in an orphaned WSL-path worktree; evaluate and either land or drop'
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -7665,6 +7683,33 @@ attachments: []
 acceptance: []
 threat: null
 ```
+dropped 2026-07-21: commit fca2851 does not exist anywhere in this repo's
+object store, same as T-0477's sibling drop. The named branch
+worktree-agent-a27be33c289e10301 turns out to point to the EXACT SAME
+commit as T-0477's branch (`7b88b776738f5e76fd5423542ab6e175eb3a964d`,
+verified via `git rev-parse` on both refs) -- unrelated CI-template work,
+already a merged ancestor of main, with `git diff
+main...worktree-agent-a27be33c289e10301 --stat` empty. Neither preserved
+branch actually retains the described WIP; both orphaned worktrees lost
+their uncommitted state.
+
+Reconciled against current main per the ticket's own instruction: both
+halves this ticket describes already exist today, built during the
+rework era under different names than the WIP predates --
+(1) `frob bind` is a full subcommand (`src/frob/bind/__init__.py`,
+`src/frob/app/bind_runner.py`, listed in `frob --help`) that "verifies
+binding declarations match source signatures" (pybind11/PyO3 BIND
+comment verification), and (2) pybind11/pyo3 project-init scaffolding
+lives under `frob scaffold` (the successor to the WIP-era `init`
+subsystem): `src/frob/scaffold/data/types/pybind11-library/*.j2` and
+`src/frob/scaffold/data/types/pyo3-library/*.j2`, wired into the
+`_MANIFESTS` table in `src/frob/scaffold/project.py` (e.g. line ~227,
+`"pybind11-library": [...]`), covering pyproject.toml, Makefile,
+frob.toml, CMakeLists.txt, C++ src/include, bindings.cpp, Python
+package init, and tests. There is nothing to land -- both requested
+capabilities ship on main under `bind`/`scaffold`, and there is no
+reachable WIP diff to port over them. No evidence required for a
+dropped ticket per playbook precedent (T-0475, T-0477).
 
 <!-- ticket:T-0479 -->
 ```yaml
