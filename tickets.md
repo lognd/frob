@@ -2998,7 +2998,7 @@ half of G1's fix direction, out of this ticket's scope/budget).
 id: T-0500
 title: 'strata audit G4: FOREIGN file in an already-modeled directory (or loose under
   src/frob/) escapes ALL sys rules + THREAT004/005'
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-07-21'
@@ -3007,14 +3007,90 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/strata/_selfconform.py
-scope_changes: []
-evidence: []
+- design/frob.strata
+- tests/unit/strata/test_selfconform.py
+scope_changes:
+- op: add
+  glob: design/frob.strata
+  reason: closing SYS102's per-file grain surfaced 3 real top-level src/frob/*.py
+    files (__init__.py, doctor.py, excludes.py) with no code= glob owner; must extend
+    the self-model to keep TestRealGateGreen green, and update selfconform unit tests
+    for the new per-file violation grain
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/strata/test_selfconform.py
+  reason: closing SYS102's per-file grain surfaced 3 real top-level src/frob/*.py
+    files (__init__.py, doctor.py, excludes.py) with no code= glob owner; must extend
+    the self-model to keep TestRealGateGreen green, and update selfconform unit tests
+    for the new per-file violation grain
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/strata/test_selfconform.py::TestUnmodeledCodeForeignFileGranularity::test_foreign_file_in_otherwise_owned_directory_fires
+- tests/unit/strata/test_selfconform.py::TestUnmodeledCodeForeignFileGranularity::test_loose_top_level_file_fires
+- tests/unit/strata/test_selfconform.py::TestUnmodeledCodeForeignFileGranularity::test_loose_top_level_file_discharges_once_globbed
+- tests/unit/strata/test_selfconform.py::TestUnmodeledCode::test_unmodeled_code_fires
+- tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
 attachments: []
 acceptance: []
 threat: null
 ```
 docs/audits/strata.md G4 (HIGH), from T-0401. _selfconform.py:538 _unmodeled_violations marks a directory owned if ANY file in it is non-FOREIGN; SYS100/101 and effect-extraction scan only _sorted_owned_files. A new .py/.ts file placed in an existing modeled directory but matched by no code= glob is FOREIGN -> invisible to capability observation AND does not trip SYS102 (its directory is already prefix_owned). SYS102 also only iterates directories (_top_level_dirs), so a FOREIGN file placed directly under src/frob/ (not in a subdir) also escapes. Repro: src/frob/vet/backdoor.py doing subprocess.run(user_input) where no node's code= glob matches backdoor.py -> frob sys audit stays clean. Fix direction: SYS102 must fire per-FOREIGN-file (or per unowned file within an owned dir), not per fully-FOREIGN top-level dir; effect extraction should raise on any FOREIGN capability-scannable file rather than skipping it.
 
+## Done report
+
+Fixed G4 (docs/audits/strata.md): `_unmodeled_violations` (SYS102) marked
+a WHOLE top-level `src/frob/` directory "owned" the moment ANY file in it
+was non-FOREIGN, and `_top_level_dirs` only ever iterated directories
+(`entry.is_dir()`) -- so a FOREIGN file placed in an already-modeled
+directory, or a loose file directly under `src/frob/` (no subdirectory at
+all), was invisible to SYS102 AND to SYS100/SYS101 (both only reconcile
+bound files) AND to THREAT004/import conformance (both skip FOREIGN).
+
+Counterexample confirmed first (ad-hoc script): a `subprocess.run(...)`
+exec-capability file dropped into an already-`code=`-globbed directory,
+plus a second file dropped loose at `src/frob/` top level, both produced
+zero `check_self_conformance` violations before the fix.
+
+Fix: split `_unmodeled_violations` into three passes over the same
+precomputed `_package_relative` list -- the original fully-foreign-
+directory case (`_fully_foreign_dir_violations`, unchanged behavior),
+FOREIGN files inside an otherwise-owned directory
+(`_foreign_file_in_owned_dir_violations`, new), and loose top-level files
+(`_loose_foreign_file_violations`, new) -- each firing SYS102 at file
+granularity instead of the old per-directory grain.
+
+Tightening this surfaced a REAL, pre-existing gap in frob's own self-model
+(`design/frob.strata`): `src/frob/__init__.py`, `src/frob/doctor.py`, and
+`src/frob/excludes.py` are loose top-level files with no `code=` glob
+owner at all -- TestRealGateGreen failed against the new stricter check
+until the model was fixed. Added the three files to the `cli` node's
+glob (the existing convention for single-file top-level entrypoints,
+already home to `src/frob/__main__.py`).
+
+All of tests/unit/strata/ and tests/test_gates.py/test_vet_containment.py/
+test_testing.py pass. tests/system/test_frob_self_model.py's
+test_parses_and_elaborates/test_every_claim_proves were ALREADY failing
+before this ticket's changes (confirmed via git stash: pre-existing
+claim/flow-count drift unrelated to G4), not a regression introduced
+here -- left untouched, out of this ticket's scope.
+
+### Changed
+```
+ src/frob/strata/_threat.py       | 47 ++++++++++++++++++--
+ tests/test_vet_containment.py    |  4 ++
+ tests/unit/strata/test_threat.py | 78 ++++++++++++++++++++++++++++++++
+ tickets.md                       | 96 ++++++++++++++++++++++++++++++++++++++--
+ 4 files changed, 218 insertions(+), 7 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_selfconform.py::TestUnmodeledCodeForeignFileGranularity::test_foreign_file_in_otherwise_owned_directory_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestUnmodeledCodeForeignFileGranularity::test_loose_top_level_file_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestUnmodeledCodeForeignFileGranularity::test_loose_top_level_file_discharges_once_globbed` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestUnmodeledCode::test_unmodeled_code_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0501 -->
 ```yaml
 id: T-0501

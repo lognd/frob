@@ -537,29 +537,55 @@ def _top_level_dirs(root: Path) -> list[str]:
     )
 
 
-def _unmodeled_violations(
-    root: Path, binding: CodeBinding
-) -> list[SelfConformViolation]:
-    """SYS102: every top-level `src/frob/` directory whose files (if any)
-    are ALL `FOREIGN` to `code=`'s partition -- no node's `code=` glob
-    claims it at all (module docstring's SYS102 gap statement). `binding`
-    is the T-0169 `_capability_binding` superset here, not `bind_code`'s
-    raw `.py`-only output: a directory containing ONLY a `.ts`/`.rs`/etc.
-    file that a node's `code=` glob genuinely claims used to misreport
-    SYS102 ("unmodeled") because the Python-only binding never bound that
-    file at all -- a spurious finding on top of the missed SYS100/SYS101,
-    now fixed by using the same superset every other rule in this module
-    uses."""
-    prefix_owned: set[str] = set()
+def _package_relative(binding: CodeBinding) -> list[tuple[str, str, str]]:
+    """`(rel, tail, owner)` for every `binding.owner` entry under
+    `_PACKAGE_ROOT`, where `tail` is `rel` with the `src/frob/` prefix
+    stripped -- the common slice `_unmodeled_violations`'s three passes
+    (loose top-level files, fully-foreign directories, foreign files
+    inside a partially-owned directory) all need, hoisted so each pass is
+    a plain filter over the same precomputed list rather than
+    re-deriving `tail` three times (charter: no duplication)."""
+    out: list[tuple[str, str, str]] = []
     for rel, owner in binding.owner.items():
-        if owner == FOREIGN or not rel.startswith(f"{_PACKAGE_ROOT}/"):
+        if not rel.startswith(f"{_PACKAGE_ROOT}/"):
             continue
-        top = rel[len(_PACKAGE_ROOT) + 1 :].split("/", 1)[0]
-        prefix_owned.add(top)
+        out.append((rel, rel[len(_PACKAGE_ROOT) + 1 :], owner))
+    return out
 
+
+def _loose_foreign_file_violations(
+    relative: list[tuple[str, str, str]],
+) -> list[SelfConformViolation]:
+    """G4 (docs/audits/strata.md): a `.py`/`.ts`/etc. file placed DIRECTLY
+    under `src/frob/` (no subdirectory) that no node's `code=` glob
+    claims. `_top_level_dirs` (below) only ever iterates DIRECTORIES
+    (`entry.is_dir()`), so a loose top-level file was invisible to SYS102
+    no matter what it did -- and, being `FOREIGN`, invisible to SYS100/
+    SYS101 too (module docstring: those only reconcile bound files)."""
+    found: list[SelfConformViolation] = []
+    for rel, tail, owner in sorted(relative):
+        if "/" in tail or owner != FOREIGN:
+            continue
+        _log.warning("selfconform: SYS102 unmodeled loose file %s", rel)
+        found.append(
+            SelfConformViolation(
+                rule=SYS_UNMODELED_CODE,
+                node=rel,
+                detail=f"{rel} has no node's code= glob binding it",
+            )
+        )
+    return found
+
+
+def _fully_foreign_dir_violations(
+    root: Path, owned_dirs: frozenset[str]
+) -> list[SelfConformViolation]:
+    """SYS102 original case: a whole top-level `src/frob/` directory with
+    no file owned by any node's `code=` glob (module docstring's SYS102
+    gap statement)."""
     found: list[SelfConformViolation] = []
     for name in _top_level_dirs(root):
-        if name in prefix_owned:
+        if name in owned_dirs:
             continue
         _log.warning("selfconform: SYS102 unmodeled code src/frob/%s", name)
         found.append(
@@ -570,6 +596,77 @@ def _unmodeled_violations(
             )
         )
     return found
+
+
+def _foreign_file_in_owned_dir_violations(
+    relative: list[tuple[str, str, str]], owned_dirs: frozenset[str]
+) -> list[SelfConformViolation]:
+    """G4 (docs/audits/strata.md): a file inside an OTHERWISE-owned
+    top-level directory that no node's `code=` glob actually matches.
+    Before this, `_unmodeled_violations` marked a whole directory "owned"
+    the moment ANY file in it was non-`FOREIGN` (`prefix_owned`/
+    `owned_dirs` below) -- so a stray unglobbed file dropped into an
+    already-modeled directory was invisible to SYS102 (its directory is
+    not fully foreign) AND invisible to SYS100/SYS101 (it is `FOREIGN`,
+    so no node's capability set is ever joined against it). This fires
+    per such file, at file granularity, so "the directory has an owner"
+    can no longer hide "this ONE file does not"."""
+    found: list[SelfConformViolation] = []
+    for rel, tail, owner in sorted(relative):
+        if "/" not in tail or owner != FOREIGN:
+            continue
+        top = tail.split("/", 1)[0]
+        if top not in owned_dirs:
+            continue  # the fully-foreign-directory pass already covers this file
+        _log.warning(
+            "selfconform: SYS102 unmodeled file %s in otherwise-modeled directory "
+            "src/frob/%s",
+            rel,
+            top,
+        )
+        found.append(
+            SelfConformViolation(
+                rule=SYS_UNMODELED_CODE,
+                node=rel,
+                detail=(
+                    f"{rel} has no node's code= glob binding it (directory "
+                    f"src/frob/{top} is otherwise modeled)"
+                ),
+            )
+        )
+    return found
+
+
+def _unmodeled_violations(
+    root: Path, binding: CodeBinding
+) -> list[SelfConformViolation]:
+    """SYS102: every `src/frob/` file (loose top-level, or inside a
+    directory) that no node's `code=` glob binds -- module docstring's
+    SYS102 gap statement, tightened by G4 (docs/audits/strata.md) to fire
+    per-FOREIGN-file rather than only per fully-FOREIGN top-level
+    directory (`_fully_foreign_dir_violations`'s original grain missed
+    both a stray file in an otherwise-modeled directory and a file placed
+    directly under `src/frob/` with no subdirectory at all -- see
+    `_foreign_file_in_owned_dir_violations`/`_loose_foreign_file_
+    violations`'s docstrings for each gap). `binding` is the T-0169
+    `_capability_binding` superset here, not `bind_code`'s raw `.py`-only
+    output: a directory containing ONLY a `.ts`/`.rs`/etc. file that a
+    node's `code=` glob genuinely claims used to misreport SYS102
+    ("unmodeled") because the Python-only binding never bound that file
+    at all -- a spurious finding on top of the missed SYS100/SYS101, now
+    fixed by using the same superset every other rule in this module
+    uses."""
+    relative = _package_relative(binding)
+    owned_dirs = frozenset(
+        tail.split("/", 1)[0]
+        for _, tail, owner in relative
+        if "/" in tail and owner != FOREIGN
+    )
+    return [
+        *_fully_foreign_dir_violations(root, owned_dirs),
+        *_foreign_file_in_owned_dir_violations(relative, owned_dirs),
+        *_loose_foreign_file_violations(relative),
+    ]
 
 
 # frob:doc docs/strata/selfconform.md#the-three-rules

@@ -563,6 +563,78 @@ class TestUnmodeledCode:
         )
 
 
+class TestUnmodeledCodeForeignFileGranularity:
+    """G4 (docs/audits/strata.md): a FOREIGN file in an already-modeled
+    directory (or a loose file directly under `src/frob/`) used to escape
+    SYS102 entirely, since the OLD grain marked a whole directory 'owned'
+    the moment ANY file in it was non-FOREIGN, and `_top_level_dirs` never
+    even iterated files (only directories). Confirmed as a live gap before
+    this ticket's fix (a `frob.strata._selfconform.check_self_conformance`
+    call against such a fixture returned zero violations)."""
+
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    def test_foreign_file_in_otherwise_owned_directory_fires(self, tmp_path: Path):
+        """A directory with ONE globbed file and one un-globbed sibling
+        must fire SYS102 for the un-globbed file specifically -- the
+        directory being "otherwise modeled" must not hide it."""
+        _write(tmp_path, "src/frob/widget/_io.py", "x = 1\n")
+        _write(tmp_path, "src/frob/widget/backdoor.py", "x = 1\n")
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=("code=src/frob/widget/_io.py",),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        hit = [v for v in result.danger_ok.violations if v.rule == SYS_UNMODELED_CODE]
+        assert any(v.node == "src/frob/widget/backdoor.py" for v in hit)
+        # The directory as a whole must NOT also fire (it IS partially
+        # modeled) -- only the specific unbound file.
+        assert not any(v.node == "widget" for v in hit)
+
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    def test_loose_top_level_file_fires(self, tmp_path: Path):
+        """A `.py` file placed directly under `src/frob/` (no
+        subdirectory at all) with no node's `code=` glob binding it must
+        fire SYS102 -- `_top_level_dirs` only ever walked directories, so
+        this file was invisible to every SYS10x rule before the fix."""
+        _write(tmp_path, "src/frob/loose_module.py", "x = 1\n")
+        _write(tmp_path, "src/frob/widget/_io.py", "x = 1\n")
+        model = KernelModel(
+            nodes=(
+                Node(id="widget", trust="trusted", attrs=("code=src/frob/widget/**",)),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        hit = [v for v in result.danger_ok.violations if v.rule == SYS_UNMODELED_CODE]
+        assert any(v.node == "src/frob/loose_module.py" for v in hit)
+
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    def test_loose_top_level_file_discharges_once_globbed(self, tmp_path: Path):
+        """The same loose file, once a node's `code=` glob actually binds
+        it, produces no SYS102."""
+        _write(tmp_path, "src/frob/loose_module.py", "x = 1\n")
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="loose",
+                    trust="trusted",
+                    attrs=("code=src/frob/loose_module.py",),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        assert not any(
+            v.rule == SYS_UNMODELED_CODE for v in result.danger_ok.violations
+        )
+
+
 class TestUnmodeledCodeMissingPackageRoot:
     """T-0211: `_PACKAGE_ROOT` ("src/frob") is frob's own layout -- a repo
     with no `src/frob/` at all (i.e. every non-frob repo) must not have
