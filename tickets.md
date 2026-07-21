@@ -2800,7 +2800,7 @@ check/format and ty both clean.
 ```yaml
 id: T-0350
 title: 'structural PII/secrets: keyword-sweep suggestion severity (family 5)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
