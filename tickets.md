@@ -3139,7 +3139,7 @@ passed.
 id: T-0527
 title: SCOPE001 cross-ticket exemption breaks on a plain merge commit with no ticket
   reference
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-21'
