@@ -59,6 +59,7 @@ from pathlib import Path
 import pytest
 
 from frob.dup import DupConfig, find_clones
+from frob.dup import _cache as dup_cache
 from frob.dup import _core as dup_core
 from frob.graph import build_graph
 
@@ -68,6 +69,31 @@ pytestmark = pytest.mark.skipif(
 )
 
 FIXTURE_ROOT = Path(__file__).parent / "fixtures" / "dup_cross_lang"
+
+
+# frob:ticket T-0517
+@pytest.fixture(autouse=True)
+def _isolated_dup_cache(tmp_path, monkeypatch):
+    """Redirect `find_clones`'s dup.db to `tmp_path`, never the tracked fixture dir.
+
+    T-0517: `find_clones` keys its cache path on `snapshot.root`, which for
+    this module is `FIXTURE_ROOT` (a tracked fixture directory) -- an
+    unpatched run leaves an untracked `.frob/dup.db` sitting inside it,
+    which previously served stale cache hits to a later test run against a
+    changed algorithm (6 cache hits, 0 pairs verified) without ever
+    appearing as a diff. Monkeypatching `_db_path` keeps every fingerprint/
+    verdict this module writes confined to `tmp_path`, cleaned up by
+    pytest's own teardown.
+    """
+    real_db_path = dup_cache._db_path
+    monkeypatch.setattr(dup_cache, "_db_path", lambda root: tmp_path / "dup.db")
+    yield
+    dup_cache._close_all()
+    # Guard against any stray leak from before this fixture existed.
+    leaked = real_db_path(FIXTURE_ROOT)
+    leaked.unlink(missing_ok=True)
+    leaked.with_name(leaked.name + "-wal").unlink(missing_ok=True)
+    leaked.with_name(leaked.name + "-shm").unlink(missing_ok=True)
 
 
 @pytest.fixture()

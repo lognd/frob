@@ -24,6 +24,7 @@ from typani.result import Result
 from typani.unit import Unit
 
 from frob.dup._models import DupError
+from frob.graph.cache import _compute_fingerprint
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -42,6 +43,7 @@ _conn_cache: dict[Path, sqlite3.Connection] = {}
 _conn_lock = threading.Lock()
 
 _SCHEMA = """
+CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS fingerprints (
     digest TEXT NOT NULL,
     rung TEXT NOT NULL,
@@ -58,6 +60,41 @@ CREATE TABLE IF NOT EXISTS verdicts (
     PRIMARY KEY (d1, d2, method, corpus_epoch)
 );
 """
+
+
+# frob:ticket T-0517
+def _check_fingerprint(conn: sqlite3.Connection) -> None:
+    """Invalidate cached fingerprint/verdict rows if the stored version
+    fingerprint does not match the running process's fingerprint.
+
+    Reuses `frob.graph.cache`'s `_compute_fingerprint` (T-0243 pattern)
+    rather than a second implementation: `dup.db` rows are payloads
+    derived from the same frob + tree-sitter grammar versions the graph
+    cache keys on, so an algorithm change there (e.g. `_KEYWORDS`, r3
+    canonicalization) can silently change what a digest *should* map to
+    while the digest string itself stays the same -- content addressing
+    alone cannot catch that, only a version fingerprint can (T-0517: an
+    untracked, wrong-version `dup.db` served stale rows -- 6 cache hits,
+    0 pairs verified -- against a landed algorithm change).
+    """
+    current = _compute_fingerprint()
+    row = conn.execute("SELECT value FROM meta WHERE key = 'fingerprint'").fetchone()
+    stored = row[0] if row is not None else None
+    if stored == current:
+        return
+    _log.info(
+        "dup cache: fingerprint %r -> %r, invalidating cached rows",
+        stored,
+        current,
+    )
+    conn.execute("DELETE FROM fingerprints")
+    conn.execute("DELETE FROM verdicts")
+    conn.execute(
+        "INSERT INTO meta (key, value) VALUES ('fingerprint', ?) "
+        "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        (current,),
+    )
+    conn.commit()
 
 
 def _db_path(root: Path) -> Path:
@@ -81,6 +118,7 @@ def _connect(root: Path) -> Result[sqlite3.Connection, DupError]:
             path.parent.mkdir(parents=True, exist_ok=True)
             conn = sqlite3.connect(path, check_same_thread=False)
             conn.executescript(_SCHEMA)
+            _check_fingerprint(conn)
         except sqlite3.DatabaseError as exc:
             _log.error("dup cache at %s unreadable: %s", path, exc)
             return Err(DupError.CacheCorrupt)

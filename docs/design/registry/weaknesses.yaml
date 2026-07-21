@@ -6792,7 +6792,7 @@ other_weakness_framework_entries:
   framework: cve-fingerprint
   source_doc: docs/design/security-corpus.md
   checkability: advisory
-  disposition: deferred:T-draft-92ce976f
+  disposition: deferred:T-0510
   cross_refs: []
 - id: SEC-CVE-FINGERPRINT-CWE-611-XXE
   name: CWE-611-XXE
@@ -6807,28 +6807,28 @@ other_weakness_framework_entries:
   framework: cve-fingerprint
   source_doc: docs/design/security-corpus.md
   checkability: advisory
-  disposition: deferred:T-draft-92ce976f
+  disposition: deferred:T-0510
   cross_refs: []
 - id: SEC-CVE-FINGERPRINT-CWE-1333-REDOS
   name: CWE-1333-REDOS
   framework: cve-fingerprint
   source_doc: docs/design/security-corpus.md
   checkability: advisory
-  disposition: deferred:T-draft-92ce976f
+  disposition: deferred:T-0510
   cross_refs: []
 - id: SEC-CVE-FINGERPRINT-CWE-601-OPEN-REDIRECT
   name: CWE-601-OPEN-REDIRECT
   framework: cve-fingerprint
   source_doc: docs/design/security-corpus.md
   checkability: advisory
-  disposition: deferred:T-draft-92ce976f
+  disposition: deferred:T-0510
   cross_refs: []
 - id: SEC-CVE-FINGERPRINT-CWE-1336-SSTI
   name: CWE-1336-SSTI
   framework: cve-fingerprint
   source_doc: docs/design/security-corpus.md
   checkability: advisory
-  disposition: deferred:T-draft-92ce976f
+  disposition: deferred:T-0510
   cross_refs: []
 - id: SEC-THREAT-FRAMEWORK-STRIDE
   name: STRIDE

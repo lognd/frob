@@ -18,7 +18,6 @@ is decomposed into small private helpers alongside it.
 
 from __future__ import annotations
 
-import ast
 import difflib
 import fnmatch
 import functools
@@ -2820,50 +2819,6 @@ def _file_has_reasoned_doc_waiver(path: Path, rule: str) -> bool:
 
 
 # frob:doc docs/modules/gates.md#invariants
-# frob:ticket T-0509
-def _inv004_waived_headings(text: str) -> frozenset[str]:
-    """Heading text of every section in `text` that carries a reasoned
-    `<!-- frob:waive INV004 reason="..." -->` marker (see
-    `_file_has_reasoned_doc_waiver`'s docstring for why this filters at
-    the gate-function level rather than inside `_inv004_doc_violations`).
-    """
-    waived: set[str] = set()
-    for section in _markdown_sections(text):
-        if not any(
-            rule == "INV004" and reason
-            for rule, reason in _DOC_WAIVE_MARKER_RE.findall(section)
-        ):
-            continue
-        heading_match = re.match(r"^(#{1,6}\s.*)$", section, re.MULTILINE)
-        heading = heading_match.group(1).strip() if heading_match else "(no heading)"
-        waived.add(heading)
-    return frozenset(waived)
-
-
-# frob:doc docs/modules/gates.md#invariants
-# frob:ticket T-0509
-_INV004_MESSAGE_HEADING_RE = re.compile(r"section (.+?) describes behavior")
-
-
-# frob:doc docs/modules/gates.md#invariants
-# frob:ticket T-0509
-def _inv004_message_heading(message: str) -> str | None:
-    """Recover the exact heading string `_inv004_doc_violations` embedded
-    (via `heading!r`) in one INV004 `Violation.message`, or `None` if the
-    message does not match the expected shape. `ast.literal_eval` undoes
-    the `repr()` reliably regardless of whether Python chose single- or
-    double-quote style for a heading containing an apostrophe."""
-    match = _INV004_MESSAGE_HEADING_RE.search(message)
-    if match is None:
-        return None
-    try:
-        value = ast.literal_eval(match.group(1))
-    except (ValueError, SyntaxError):
-        return None
-    return value if isinstance(value, str) else None
-
-
-# frob:doc docs/modules/gates.md#invariants
 # frob:ticket T-0462
 def _inv003_doc_violations(
     root: Path, path: Path, known_ids: frozenset[str]
@@ -2969,83 +2924,90 @@ def _markdown_sections(text: str) -> tuple[str, ...]:
 
 
 # frob:doc docs/modules/gates.md#invariants
-# frob:ticket T-0452
+# frob:ticket T-0515
+# frob:waive COV005 reason="removing the three now-dead T-0509 section-waiver helpers above (_inv004_waived_headings, _INV004_MESSAGE_HEADING_RE, _inv004_message_heading) shifted this file's Nth same-target 'docs/modules/gates.md#invariants' directive; COV005's rebind check matches old/new bindings by (kind, target) alone and reads the shift as a rebind onto a new private symbol -- this directive has bound _inv004_doc_violations (private) all along, see _file_has_reasoned_doc_waiver's docstring for the same false-positive class"  # noqa: E501
 def _inv004_doc_violations(root: Path, path: Path) -> tuple[Violation, ...]:
-    """INV004 findings for one doc file: a section using normative
-    language (`frob.gates.invariants.find_normative_claims`) that anchors
-    ZERO `<!-- frob:invariant INV-### -->` markers at all -- the inverse
-    of INV003's per-claim check, a coarser "this region looks
-    under-specified" signal.
+    """INV004 findings for one doc file: at least one section uses
+    normative language (`frob.gates.invariants.find_normative_claims`)
+    while the FILE AS A WHOLE anchors ZERO `<!-- frob:invariant INV-###
+    -->` markers.
+
+    T-0515: file-granularity, not per-section -- the original T-0452
+    per-section scan produced 573 warnings (mostly many hits per file for
+    docs that are entirely unbound rather than 573 distinct under-
+    specified regions), overwhelming any real triage. This mirrors
+    `_inv003_doc_violations`'s already-established per-file rationale: a
+    doc large enough to need section-level tracking should already be
+    split into `invariants/INV-###.md` entries, so one advisory per file
+    carries the same signal (some claim in this doc is unbound) without
+    the noise of one line per section.
     """
     try:
         text = path.read_text(encoding="utf-8")
     except OSError as exc:
         _log.warning("INV004: could not read %s: %s", path, exc)
         return ()
+    if _DOC_INVARIANT_MARKER_RE.search(text) is not None:
+        return ()
     rel = path.relative_to(root).as_posix()
-    violations: list[Violation] = []
+    all_claims: set[str] = set()
+    first_heading: str | None = None
     for section in _markdown_sections(text):
         claims = find_normative_claims(section)
         if not claims:
             continue
-        if _DOC_INVARIANT_MARKER_RE.search(section) is not None:
-            continue
-        heading_match = re.match(r"^(#{1,6}\s.*)$", section, re.MULTILINE)
-        heading = heading_match.group(1).strip() if heading_match else "(no heading)"
-        violations.append(
-            Violation(
-                rule="INV004",
-                severity=Severity.WARN,
-                file=rel,
-                line=0,
-                message=(
-                    f"INV004: {rel} section {heading!r} describes behavior "
-                    f"({', '.join(sorted(claims))}) but anchors zero "
-                    f"invariants -- likely under-specified; add an "
-                    f"`invariants/INV-###.md` plus a "
-                    f"`<!-- frob:invariant INV-### -->` marker in this "
-                    f"section if the behavior is meant to be guaranteed"
-                ),
+        all_claims.update(claims)
+        if first_heading is None:
+            heading_match = re.match(r"^(#{1,6}\s.*)$", section, re.MULTILINE)
+            first_heading = (
+                heading_match.group(1).strip() if heading_match else "(no heading)"
             )
-        )
-    return tuple(violations)
+    if not all_claims:
+        return ()
+    return (
+        Violation(
+            rule="INV004",
+            severity=Severity.WARN,
+            file=rel,
+            line=0,
+            message=(
+                f"INV004: {rel} describes behavior "
+                f"({', '.join(sorted(all_claims))}), first at section "
+                f"{first_heading!r}, but anchors zero `<!-- "
+                f"frob:invariant INV-### -->` markers anywhere in the "
+                f"file -- likely under-specified; add an "
+                f"`invariants/INV-###.md` plus a marker if the behavior "
+                f"is meant to be guaranteed"
+            ),
+        ),
+    )
 
 
 # frob:doc docs/modules/gates.md#public-api
-# frob:ticket T-0452
+# frob:ticket T-0515
 def inv004_gate(root: Path) -> tuple[Violation, ...]:
-    """INV004 (advisory): a docs/**.md section that describes behavior
-    (normative language) but anchors zero invariants at all.
+    """INV004 (advisory): a doc file under `INV003_SPEC_DIRS` that
+    describes behavior (normative language) but anchors zero invariants
+    at all, file-granularity (T-0515).
 
-    Always WARN -- section-level under-specification is a suggestion to
-    formalize, not a broken obligation; never fails `frob check`.
+    T-0515: scoped to `INV003_SPEC_DIRS` (docs/modules, docs/strata), not
+    all of `docs/**.md` -- matching INV003's T-0509 rationale, a narrative
+    design/audit/guide doc using "must"/"always" in passing is a
+    different failure mode than an enforced-contract doc with no bound
+    invariants at all. Always WARN -- under-specification is a suggestion
+    to formalize, not a broken obligation; never fails `frob check`.
     """
-    docs_dir = root / "docs"
-    if not docs_dir.is_dir():
-        return ()
     violations: list[Violation] = []
-    for path in iter_files(docs_dir, suffix=".md"):
-        file_violations = _inv004_doc_violations(root, path)
-        if not file_violations:
+    for spec_dir in INV003_SPEC_DIRS:
+        docs_dir = root / spec_dir
+        if not docs_dir.is_dir():
             continue
-        try:
-            text = path.read_text(encoding="utf-8")
-        except OSError as exc:
-            _log.warning("INV004: could not re-read %s for waivers: %s", path, exc)
-            violations.extend(file_violations)
-            continue
-        waived_headings = _inv004_waived_headings(text)
-        if not waived_headings:
-            violations.extend(file_violations)
-            continue
-        for v in file_violations:
-            heading = _inv004_message_heading(v.message)
-            if heading is not None and heading in waived_headings:
-                _log.debug(
-                    "INV004: %s section %r waived by markdown marker", path, heading
-                )
+        for path in iter_files(docs_dir, suffix=".md"):
+            file_violations = _inv004_doc_violations(root, path)
+            if file_violations and _file_has_reasoned_doc_waiver(path, "INV004"):
+                _log.debug("INV004: %s waived by markdown frob:waive marker", path)
                 continue
-            violations.append(v)
+            violations.extend(file_violations)
     return tuple(violations)
 
 
