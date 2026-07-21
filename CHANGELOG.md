@@ -17,6 +17,16 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.39.0] - unreleased
+
+Public-API surface change since 0.38.0 (mechanical semver via REL001): an
+additive (minor) bump -- new `frob.testing.python_coverage_targets`
+(touched-set incremental coverage, T-0484) plus file-/directory-level
+COV003 evidence resolution and parametrized-node-id fixes (T-0298,
+T-0324). The 0.38.0 bump (cross-worktree lease registry
+`frob.tickets._leases`, T-0473) landed without its own section; both are
+reconciled here.
+
 ## [0.37.0] - unreleased
 
 Public-API surface change since 0.36.0 (mechanical semver via REL001): an

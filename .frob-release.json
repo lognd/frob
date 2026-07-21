@@ -869,6 +869,7 @@
     "src/frob/testing/_collect.py::collect_python_tests": "e1173036256e0cb104e4294d327d0b4d2427ce9df329b19e775cc048cd0172ac",
     "src/frob/testing/_collect.py::collect_rust_tests": "b909adb58a2b450858645929fba4f4a51849b41b594decb77fe6c3f3f39872c2",
     "src/frob/testing/_collect.py::drop_collection_cache": "22f01b16e6e3d0cca3528a9b7ee2bef5e7f4a4944edc8bb6d73e29b630a30cb5",
+    "src/frob/testing/_incremental_coverage.py::python_coverage_targets": "4ff9bbaa63e65dfe58fbf73cde272c9d0df5b54a5b30a4d84cd0cd4461afb106",
     "src/frob/testing/_models.py::CollectedTests": "47b7fa5e69be193dc3ff6b6afc49367dba9aa1e718125e2a787305bd9085b071",
     "src/frob/testing/_models.py::NativeSpec": "8fadcf70d85d58c237c87b94378c88b5fdac0bafd3429187b7a8f74dbbd953f8",
     "src/frob/testing/_models.py::RunnerOutcome": "f74fced52fd231a0313bb75034be0b2302f543393e71f8eb3c2248c336f4f730",
@@ -1039,5 +1040,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.38.0"
+  "version": "0.39.0"
 }
