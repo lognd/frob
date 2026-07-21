@@ -965,6 +965,66 @@ def ledger_lock(root: Path) -> Iterator[None]
     #   # in between -- the whole allocate+claim sequence is atomic.
 ```
 
+## Worktree-lease guard (T-0431)
+
+<!-- frob:describes src/frob/tickets/_worktree_guard.py::enforce_worktree_lease -->
+
+**Incident:** a dispatched worktree agent's shell ran `git merge main`,
+`make core`, and `frob ticket new` (minting T-0427) directly against the
+SHARED main checkout instead of its own worktree -- the harness's Edit
+tool scopes FILE edits to a worktree, but a stray bash command is not
+caught by anything. This is the "hard to be careless" guard for the
+dispatch layer: repo damage from a stray cwd should require deliberately
+clearing a lease, not just happen.
+
+```python
+# frob/tickets/_worktree_guard.py
+FROB_WORKTREE_ENV = "FROB_WORKTREE"
+
+def enforce_worktree_lease(root: Path) -> Result[None, TicketError]
+    # Err(WorktreeLeaseViolation) if FROB_WORKTREE is set AND root's actual
+    # git top-level (repo_root, worktree-correct) does not match it.
+    # FROB_WORKTREE unset (coordinator-run commands, or any environment
+    # that never opted in) is Ok(None): unrestricted.
+```
+
+`FROB_WORKTREE=<abs path>` is a dispatcher-set env var naming the ONE
+worktree an agent's shell is authorized to mutate frob's tracked ticket
+state in. Every mutating `frob.tickets` entry point calls
+`enforce_worktree_lease(root)` as its first statement and returns
+`Err(WorktreeLeaseViolation)` immediately if it fails, before touching
+the ledger at all: `new_ticket`, `transition` (covers start/close/
+requeue/block/fail -- every state change goes through one place),
+`add_evidence`, `add_cmd_evidence`, `set_done_report`, `record_failure`,
+`attach`, `archive`, `renumber`, `renumber_one`. `frob.gates`'
+`stamp_baseline`/`stamp_coverage` (`--stamp-baseline`/`--stamp-coverage`)
+carry the same guard, mapped to `GateError.WorktreeLeaseViolation` --
+these also write tracked repo state (`.frob/baseline`,
+`.frob/coverage-stamp`) an agent could otherwise stamp against the wrong
+checkout. Read-only commands (`check --ticket`, `show`, `list`, `doable`)
+never call this guard and remain unrestricted anywhere.
+
+**A coordinator process is unaffected by design**: landing worktree
+changes onto main, or any other coordinator-run mutation, runs with no
+`FROB_WORKTREE` set, so `enforce_worktree_lease` is `Ok(None)` -- a no-op.
+The guard's whole job is catching an AGENT shell that wandered outside
+its assigned worktree, not restricting the coordinator's own legitimate
+cross-checkout work.
+
+**Git hook (defense in depth).**
+`frob.scaffold.install_worktree_lease_hook(root, *, force=False)`
+(docs/commands/scaffold.md) installs `pre-commit` and `pre-merge-commit`
+hooks into `root`'s real hooks directory (`git rev-parse --git-path
+hooks`, worktree-correct) that abort loudly whenever `FROB_AGENT` is set
+non-empty in the shell running the commit -- catching a stray raw `git
+commit`/`git merge` an agent shell ran directly, independent of whether
+it went through `frob.tickets` at all. `FROB_AGENT` is a SEPARATE env var
+from `FROB_WORKTREE` (an agent-context marker, not a specific worktree
+path) since the hook only needs to know "is this shell an agent," not
+which worktree it should have been in -- the git hook fires from
+whichever checkout the raw git command happened to run in. Refuses to
+overwrite an existing hook file without `force=True`.
+
 ## Design decisions
 
 - **Markdown + frontmatter, one file per ticket.** Mergeable, reviewable,

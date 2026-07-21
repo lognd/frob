@@ -25,6 +25,7 @@ from frob.gates._filehash import _collect_file_hashes, _sha_of
 from frob.gates._models import CoverageData, CoverageError, GateError
 from frob.graph import GraphSnapshot
 from frob.logging import get_logger
+from frob.tickets._worktree_guard import enforce_worktree_lease
 
 _log = get_logger(__name__)
 
@@ -400,6 +401,9 @@ def _known_repo_paths(root: Path, snapshot: GraphSnapshot | None) -> frozenset[s
 # frob:waive TEST005 reason="stamp_coverage 68.8% branch cover, debt T-0160"
 def stamp_coverage(root: Path) -> Result[Unit, GateError]:
     """Record coverage.xml's sha plus current per-file content hashes as a stamp."""
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(GateError.WorktreeLeaseViolation)
     xml_path = root / _COVERAGE_XML
     source_sha = _sha_of(xml_path)
     if source_sha is None:

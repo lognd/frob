@@ -71,6 +71,7 @@ from frob.tickets._store import (
     write_archive,
     write_ticket,
 )
+from frob.tickets._worktree_guard import enforce_worktree_lease
 from frob.tickets.clipboard import ClipboardError, clipboard_has_image, clipboard_image
 
 _log = get_logger(__name__)
@@ -170,6 +171,9 @@ def archive(root: Path) -> Result[int, TicketError]:
     greppable); the active ledger keeps only open work. Idempotent -- a
     second call with nothing newly done/dropped moves nothing and returns
     Ok(0). Returns the number of tickets moved."""
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
     active_loaded = load_all(root)
     if active_loaded.is_err:
         return Err(active_loaded.danger_err)
@@ -306,6 +310,9 @@ def new_ticket(
     with no collector available, but now logs the same explicit UNRESOLVED
     warning `add_evidence` does, so the gap is never silent.
     """
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
     validated = _validate_evidence_list(spec.evidence)
     if validated.is_err:
         return Err(validated.danger_err)
@@ -398,6 +405,9 @@ def renumber(root: Path) -> Result[int, TicketError]:
     consistent. The remedy for sequential-id collisions after a worktree
     merge (T-0012). Returns the number of tickets renumbered.
     """
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
     loaded = load_all(root)
     if loaded.is_err:
         return Err(loaded.danger_err)
@@ -590,6 +600,9 @@ def renumber_one(
     stores) and every `frob:ticket`/`frob:waive`/`frob:todo`/`frob:tests`/
     `frob:invariant`/`frob:doc` directive line across the tracked tree that
     names it."""
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
     loaded = _load_and_validate_renumber_ids(root, old_id, new_id)
     if loaded.is_err:
         return Err(loaded.danger_err)
@@ -1206,6 +1219,9 @@ def mutate_scope(
     never interleave with a concurrent ledger mutation (T-0458 single-writer
     invariant) -- no hand-edit of `tickets.md` is ever involved.
     """
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
     add_globs = _normalize_scope_entries(tuple(add))
     remove_globs = _normalize_scope_entries(tuple(remove))
     request_check = _validate_scope_request(add_globs, remove_globs, reason)
@@ -1578,6 +1594,9 @@ def transition(
     scope symbol whenever the caller supplies `covers_scope=False` (see
     `_done_transition_guard`'s docstring for why this is injected rather
     than computed here)."""
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
     loaded = _load_ticket_and_queue(root, ticket_id)
     if loaded.is_err:
         return Err(loaded.danger_err)
@@ -1668,6 +1687,9 @@ def add_evidence(
     passing the observed-passing subset. cmd: evidence entries are exempt
     from `passed` (verified by their own exit-code/digest channel instead,
     see `add_cmd_evidence`/`reverify_cmd_evidence`)."""
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
     validated = _validate_evidence_list(tuple(node_ids))
     if validated.is_err:
         return Err(validated.danger_err)
@@ -1891,6 +1913,9 @@ def add_cmd_evidence(
     with Err(EvidenceKindNotAllowed) so a code change can never close on an
     unrelated shell command's exit status alone.
     """
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
     loaded = _load_one(root, ticket_id)
     if loaded.is_err:
         return Err(loaded.danger_err)
@@ -2111,6 +2136,9 @@ def set_done_report(
     concurrent `set_done_report`/`add_evidence`/`new_ticket` call on the
     same ledger can never interleave with this one (T-0458 single-writer
     invariant)."""
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
     with ledger_lock(root):
         loaded = _load_one(root, ticket_id)
         if loaded.is_err:
@@ -2138,6 +2166,9 @@ def record_failure(
     root: Path, ticket_id: str, entry: FailureEntry
 ) -> Result[Ticket, TicketError]:
     """Append entry to the '## Failure log' body section, creating it if absent."""
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
     loaded = _load_one(root, ticket_id)
     if loaded.is_err:
         return Err(loaded.danger_err)
@@ -2199,6 +2230,9 @@ def attach(
     root: Path, ticket_id: str, source: AttachmentSource, caption: str
 ) -> Result[Attachment, AttachError]:
     """Copy a file (or clipboard image) into tickets/attachments/<id>/ and record it."""
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
     loaded = _load_one(root, ticket_id)
     if loaded.is_err:
         return Err(loaded.danger_err)

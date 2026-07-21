@@ -85,12 +85,14 @@ Jinja2 variables available in all templates:
 <!-- frob:describes src/frob/scaffold/project.py::ScaffoldError -->
 <!-- frob:describes src/frob/scaffold/project.py::list_project_types -->
 <!-- frob:describes src/frob/scaffold/project.py::render_project -->
+<!-- frob:describes src/frob/scaffold/project.py::install_worktree_lease_hook -->
 
 ```python
 # frob/scaffold/project.py
 class ScaffoldError(ErrorSet)
     # Failure values: unknown type, missing template, existing output
-    # files without --force, or a Jinja2 render error.
+    # files without --force, a Jinja2 render error, or (T-0431) a hook
+    # install failure (not a git repo, or the write itself failed).
 
 def list_project_types() -> list[str]
     # The registered scaffold type names, read directly off _MANIFESTS.
@@ -98,6 +100,15 @@ def list_project_types() -> list[str]
 def render_project(project_type, name, output_dir, *, force=False) -> Result[list[Path], ScaffoldError]
     # Render one registered type's templates into output_dir; the single
     # entry point behind `frob scaffold new`.
+
+def install_worktree_lease_hook(root, *, force=False) -> Result[tuple[Path, ...], ScaffoldError]
+    # T-0431: installs pre-commit + pre-merge-commit git hooks into root's
+    # real hooks directory (git rev-parse --git-path hooks) that abort
+    # loudly whenever FROB_AGENT is set non-empty -- catches a stray raw
+    # `git commit`/`git merge` an agent shell ran directly against the
+    # wrong checkout, independent of frob.tickets' own worktree-lease
+    # guard (docs/modules/tickets.md#worktree-lease-guard-t-0431). Refuses
+    # to overwrite an existing hook file without force=True.
 ```
 
 ## Adding a project type

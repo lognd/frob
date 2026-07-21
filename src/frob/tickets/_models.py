@@ -582,6 +582,12 @@ class TicketError(ErrorSet):
     ScopeRemoveOrphansEvidence = (
         "cannot remove a scope glob that already covers recorded evidence"
     )
+    # T-0431: FROB_WORKTREE names a leased worktree that does not match the
+    # cwd's actual git top-level -- a dispatched agent's shell wandered
+    # (accidentally or otherwise) outside its assigned worktree.
+    WorktreeLeaseViolation = (
+        "FROB_WORKTREE is leased to a different worktree than this command's cwd"
+    )
 
 
 # frob:ticket T-0176
