@@ -17,6 +17,28 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.55.0] - unreleased
+
+T-0433: `frob.graph.cache._FINGERPRINT_PACKAGES` (G6, T-0402 residual) is
+now derived from `frob.lang.GRAMMAR_FINGERPRINT_PACKAGES` (a new public
+constant -- the tree-sitter grammar packages every non-`.strata` language
+in `frob.lang` loads through) instead of a hand-copied tuple, so a future
+grammar-loading package change updates the cache-invalidation fingerprint
+automatically. Also fixed G7 (T-0402 residual): `_parse_source_file_fresh`
+now stores `parsed.content_hash` -- the hash `frob.lang` computed from the
+exact bytes it read and parsed -- rather than a hash the caller read
+separately beforehand, closing the hash/parse TOCTOU window where a write
+between the two reads could store fresh symbols under a stale hash.
+
+## [0.54.0] - unreleased
+
+T-0358: `frob.app.config.stale_install_warning` -- a loud stderr warning,
+printed by `main()` before every subcommand dispatches, when the running
+`frob` is a globally installed binary whose version differs from the
+current checkout's `pyproject.toml`-declared version (the stale-global-
+binary phantom-numbers trap: an old installed gate implementation silently
+running against a newer working tree, producing wrong violation counts).
+
 ## [0.53.0] - unreleased
 
 T-0517: `frob.dup._cache`'s `dup.db` gained a version fingerprint (reusing

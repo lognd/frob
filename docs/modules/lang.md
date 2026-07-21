@@ -268,3 +268,16 @@ def parse_cache_stats() -> tuple[int, int]   # (hits, misses)
 
 `tree-sitter`, `tree-sitter-language-pack` (grammar loading), `pydantic`
 (frozen models), `typani` (`Result`/`ErrorSet`).
+
+```python
+GRAMMAR_FINGERPRINT_PACKAGES: frozenset[str]  # {"tree-sitter", "tree-sitter-language-pack"}
+```
+
+T-0433 (G6): the single source of truth for which installed distributions'
+VERSIONS can change parse output for every tree-sitter grammar this module
+supports -- `frob.graph.cache._compute_fingerprint` derives its cache-
+invalidation fingerprint from this set (plus its own non-language packages,
+`frob` and `strata-core`) instead of hand-copying a tuple. Extend this set
+if a future grammar is ever loaded through some OTHER package (bypassing
+`tree_sitter_language_pack`); every grammar loaded through the language
+pack needs no update here at all.

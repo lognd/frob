@@ -685,6 +685,54 @@ class TestBuildIncremental:
         assert after_upgrade.stats.parsed == 2
         assert after_upgrade.stats.cache_hits == 0
 
+    def test_fingerprint_packages_derived_from_lang_registry(self) -> None:
+        # frob:tests src/frob/graph/cache.py::_compute_fingerprint
+        """T-0433 (G6 full fix): `_FINGERPRINT_PACKAGES` must contain every
+        package `frob.lang.GRAMMAR_FINGERPRINT_PACKAGES` declares -- derived,
+        not a second hand-copied tuple that can silently drift from it (the
+        exact T-0243/G6 failure mode: a new/changed grammar package serving
+        a stale cache under an unchanged fingerprint)."""
+        from frob.lang import GRAMMAR_FINGERPRINT_PACKAGES
+
+        assert GRAMMAR_FINGERPRINT_PACKAGES <= set(graph_cache._FINGERPRINT_PACKAGES)
+        assert "frob" in graph_cache._FINGERPRINT_PACKAGES
+        assert "strata-core" in graph_cache._FINGERPRINT_PACKAGES
+
+    def test_stored_hash_matches_bytes_actually_parsed(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/graph/__init__.py::_parse_source_file_fresh
+        """T-0433 (G7 fix): the row `build_graph` stores for a reparsed file
+        carries `parsed.content_hash` -- the hash of the bytes `frob.lang`
+        itself read and parsed -- not a hash the caller read separately
+        beforehand. Simulate the old TOCTOU by making the early decision
+        hash (`frob.graph._content_hash`) return a value that does NOT
+        match what `parse_file` will actually hash; if the fix regressed
+        back to storing that stale value, the stored hash would equal the
+        deliberately-wrong decision hash instead of the real parsed hash."""
+        import frob.graph as graph_mod
+
+        root = self._tree(tmp_path)
+        cache = root / ".frob" / "cache.db"
+
+        real_content_hash = graph_mod._content_hash
+        monkeypatch.setattr(
+            graph_mod, "_content_hash", lambda path: "deliberately-wrong-hash"
+        )
+        build_graph(root, cache).danger_ok
+
+        conn = sqlite3.connect(cache)
+        try:
+            stored = dict(
+                conn.execute("SELECT path, content_hash FROM files").fetchall()
+            )
+        finally:
+            conn.close()
+
+        real_hash = real_content_hash(root / "src" / "a.py")
+        assert stored["src/a.py"] == real_hash
+        assert stored["src/a.py"] != "deliberately-wrong-hash"
+
     def test_cache_hit_build_reports_real_edge_count(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/__init__.py::build_graph
         """T-0218: an all-cache-hit rebuild must report the loaded graph's
