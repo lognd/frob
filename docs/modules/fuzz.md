@@ -74,6 +74,8 @@ Waivable per-site as always (`frob:waive FUZZ001 reason="..."`).
   digest at the last completed budgeted run -- FUZZ003 compares digests,
   never wall-clock age, so an untouched function never re-obligates.
 
+  <!-- frob:invariant INV-012 -->
+
 ## Public API
 
 <!-- frob:describes src/frob/fuzz/_arbitrary.py::register -->

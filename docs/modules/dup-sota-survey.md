@@ -54,6 +54,8 @@ corrects two things the ticket's "known debt" summary gets stale on:
   enforce is off (the default), `frob check`'s dup stage still runs only
   the legacy Type-1/2 scanner (`frob.dup._legacy` / `find_duplicates`);
   once enforce is on, DUP001/DUP002 also fire.
+
+  <!-- frob:invariant INV-011 -->
 - Caching is content-addressed (digest-keyed) with LRU eviction on
   pairwise verdicts (`.frob/dup.db`, `frob.dup._cache`); a real, working
   incrementality layer any new rung must plug into rather than duplicate.

@@ -280,6 +280,7 @@ def _is_path_level_evidence(evidence: str) -> bool:
 
 
 # frob:ticket T-0298
+# frob:invariant INV-013
 def _path_level_evidence_collected(evidence: str, tests: CollectedTests) -> bool:
     """COV003 file-/directory-level evidence resolution: `evidence` (a bare
     path with no `::`) resolves iff at least one collected node id lives
@@ -4835,6 +4836,7 @@ def _dup_config(root: Path) -> tuple[bool, float, bool]:
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0001
 # frob:waive TEST005 reason="dup_gate 52.2% branch cover, debt T-0160"
+# frob:invariant INV-011
 def dup_gate(root: Path, snapshot: GraphSnapshot, diff) -> tuple[Violation, ...]:  # noqa: ANN001
     """DUP001/DUP002: the diff introduces a clone of an existing symbol.
 

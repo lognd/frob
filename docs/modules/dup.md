@@ -107,6 +107,8 @@ above threshold is a DUP001/DUP002 violation whose message names both
 regions and the extraction target ("extract into a shared helper or waive
 with reason") -- never an advisory report.
 
+<!-- frob:invariant INV-011 -->
+
 ## Pipeline
 
 1. **Fingerprint** (incremental): per changed file, compute R1-R5
