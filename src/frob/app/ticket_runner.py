@@ -1,10 +1,11 @@
 """CLI wiring for `frob ticket new|list|show|doable|plan|start|requeue|
 sweep|reconcile|land|merge-driver|attach|block|close|fail|evidence|
-done-report|scope|archive` (docs/modules/tickets.md)."""
+done-report|scope|priority|archive` (docs/modules/tickets.md)."""
 
 # frob:waive TEST005 reason="module line coverage 22.7%, debt T-0160"
 # frob:waive SCOPE001 reason="T-0323 scope omitted this file, filed T-draft-bc39c17f"
 # frob:waive SCOPE001 reason="T-0453 needs doable --show-blocked/--ignore-lease wiring here, T-0176/T-0220 precedent"  # noqa: E501
+# frob:waive SCOPE001 reason="T-0411 needs new --priority/priority-subcommand wiring here; T-0453/T-0455 bootstrap precedent, T-0446 tracks the general gap"  # noqa: E501
 
 from __future__ import annotations
 
@@ -63,6 +64,7 @@ def _ticket_dispatch_table() -> dict:
         "evidence": _evidence,
         "done-report": _done_report,
         "scope": _scope,
+        "priority": _priority,
         "archive": lambda root, _cfg: _archive(root),
     }
 
@@ -78,7 +80,7 @@ def run(cfg: AppConfig) -> None:
         _log.error(
             "usage: frob ticket <new|list|show|doable|plan|start|requeue|"
             "sweep|reconcile|land|merge-driver|attach|block|close|fail|evidence|"
-            "done-report|scope|archive> ..."
+            "done-report|scope|priority|archive> ..."
         )
         sys.exit(1)
     handler(root, cfg)
@@ -91,12 +93,16 @@ def _ticket_spec_from_cfg(cfg: AppConfig, *, title: str, kind: str):  # noqa: AN
     `cfg.ticket_title`/`cfg.ticket_kind`) so the caller's None-check narrows
     them to `str` here too -- `cfg`'s fields stay `str | None` on their own.
     """
-    from frob.tickets import Origin, Stride, TicketKind, TicketSpec
+    from frob.tickets import Origin, Priority, Stride, TicketKind, TicketSpec
 
     return TicketSpec(
         title=title,
         kind=TicketKind(kind),
         origin=Origin(cfg.ticket_origin) if cfg.ticket_origin else Origin.HUMAN,
+        # frob:ticket T-0411
+        priority=(
+            Priority(cfg.ticket_priority) if cfg.ticket_priority else Priority.MEDIUM
+        ),
         scope=tuple(cfg.ticket_scope),
         blocked_by=tuple(cfg.ticket_blocked_by),
         parent=cfg.ticket_parent,
@@ -1503,6 +1509,25 @@ def _scope(root: Path, cfg: AppConfig) -> None:
         len(cfg.ticket_scope_add),
         len(cfg.ticket_scope_remove),
     )
+
+
+# frob:ticket T-0411
+def _priority(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket priority <id> <level>`: the ONLY thing this command does
+    is forward to `frob.tickets.set_priority` -- no validation is re-derived
+    here (T-0411, same pattern as `_scope`/T-0455)."""
+    from frob.tickets import Priority, set_priority
+
+    if cfg.ticket_id is None or cfg.ticket_priority_level is None:
+        _log.error("frob ticket priority requires <id> <level>")
+        sys.exit(1)
+
+    result = set_priority(root, cfg.ticket_id, Priority(cfg.ticket_priority_level))
+    if result.is_err:
+        _log.error("priority change failed: %s", result.danger_err)
+        sys.exit(1)
+    ticket = result.danger_ok
+    _log.info("%s: priority now %s", cfg.ticket_id, ticket.priority.value)
 
 
 # frob:ticket T-0398

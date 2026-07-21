@@ -17,6 +17,17 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.48.0] - unreleased
+
+T-0411: queue health + priority model. Tickets carry a `priority`
+(low/medium/high/critical, default medium) field; `frob ticket doable`
+orders by priority first, then age (previously age-only); a new TICK004
+gate warns (escalating to error) when a queued/planned ticket sits past
+its priority-specific rot-day threshold (default 3/7/30/90 days for
+critical/high/medium/low, configurable via `frob.toml`'s `[tickets]`
+table); `frob ticket priority <id> <level>` reprioritizes an existing
+ticket through the single-writer ledger path.
+
 ## [0.47.0] - unreleased
 
 Reconciliation section: two parallel landing chains independently claimed

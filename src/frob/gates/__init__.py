@@ -29,6 +29,7 @@ import tomllib
 from collections.abc import Callable, Mapping, Sequence
 from concurrent.futures import Future, ProcessPoolExecutor, ThreadPoolExecutor
 from dataclasses import dataclass, field
+from datetime import date
 from pathlib import Path, PurePosixPath
 from typing import TypeVar
 
@@ -92,6 +93,7 @@ from frob.testing import CollectedTests, collect_python_tests, collect_rust_test
 from frob.tickets import Ticket, TicketQueue, TicketState, closed_ticket_ids, load_queue
 from frob.tickets._models import (
     CMD_EVIDENCE_ALLOWED_KINDS,
+    Priority,
     is_cmd_evidence,
     matches_collected,
     scope_matches,
@@ -748,6 +750,10 @@ _KNOWN_GATE_RULES = frozenset(
         # _tick003_stale_archive) -- too many closed tickets sitting
         # un-archived in the active tickets.md ledger.
         "TICK003",
+        # T-0411: queue-health/priority-rot gate (frob.gates.tickets_gate's
+        # _tick004_queue_rot) -- a queued/planned ticket past its
+        # priority-specific rot-day threshold.
+        "TICK004",
         "PII010",
         "SEC110",
         # T-0289: long-function is the one frob-arch category channeled into
@@ -3422,14 +3428,88 @@ def _tick003_stale_archive(root: Path) -> tuple[Violation, ...]:
     return ()
 
 
+# frob:ticket T-0411
+_TICK004_DEFAULT_ROT_DAYS = {
+    Priority.CRITICAL: 3,
+    Priority.HIGH: 7,
+    Priority.MEDIUM: 30,
+    Priority.LOW: 90,
+}
+
+
+# frob:ticket T-0411
+def _tick004_rot_thresholds(root: Path) -> dict[Priority, int]:
+    """Per-priority rot-day thresholds (T-0411) from `frob.toml`'s
+    `[tickets]` table (`rot_days_critical`/`rot_days_high`/
+    `rot_days_medium`/`rot_days_low`), defaulting to
+    `_TICK004_DEFAULT_ROT_DAYS`. Same fail-open-to-defaults shape as
+    `_tick003_thresholds` -- a missing/malformed `frob.toml` degrades to
+    the defaults rather than blocking the gate."""
+    toml_path = root / "frob.toml"
+    if not toml_path.exists():
+        return dict(_TICK004_DEFAULT_ROT_DAYS)
+    try:
+        with toml_path.open("rb") as fh:
+            table = tomllib.load(fh).get("tickets", {})
+        return {
+            priority: int(table.get(f"rot_days_{priority.value}", default))
+            for priority, default in _TICK004_DEFAULT_ROT_DAYS.items()
+        }
+    except (OSError, tomllib.TOMLDecodeError, TypeError, ValueError) as exc:
+        _log.warning(
+            "tick004: frob.toml unreadable/malformed (%s), using defaults", exc
+        )
+        return dict(_TICK004_DEFAULT_ROT_DAYS)
+
+
+# frob:ticket T-0411
+def _tick004_queue_rot(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
+    """TICK004 (T-0411): WARN (escalating to ERROR at 2x threshold) per
+    queued/planned ticket whose priority-specific rot-day threshold has
+    been crossed since `created` -- the queue-health signal T-0411's
+    Description asks for: "we forgot we have a stack of things and only
+    end up popping off the top half" becomes a visible gate finding
+    instead of a silent, age-only queue. Only QUEUED/PLANNED tickets are
+    considered (an in-progress/blocked ticket is not rotting, it is being
+    worked or is explicitly waiting on a blocker)."""
+    thresholds = _tick004_rot_thresholds(root)
+    today = date.today()
+    violations: list[Violation] = []
+    for t in sorted(queue.tickets.values(), key=lambda t: t.id):
+        if t.state not in (TicketState.QUEUED, TicketState.PLANNED):
+            continue
+        age_days = (today - t.created).days
+        threshold = thresholds[t.priority]
+        if age_days <= threshold:
+            continue
+        severity = Severity.ERROR if age_days > threshold * 2 else Severity.WARN
+        violations.append(
+            Violation(
+                rule="TICK004",
+                severity=severity,
+                file="tickets.md",
+                line=0,
+                message=(
+                    f"TICK004: {t.id} ({t.priority.value} priority) has sat "
+                    f"{t.state.value} for {age_days}d (threshold {threshold}d) "
+                    f"-- it is rotting; work it, re-prioritize it "
+                    f"(`frob ticket priority {t.id} <level>`), or drop it"
+                ),
+            )
+        )
+    return tuple(violations)
+
+
 # frob:doc docs/modules/tickets.md#decision-record-t-0162
 def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
-    """TICK001/TICK002/TICK003: the T-0162 ticket-id collision invariant
-    gate, plus the T-0409 ledger-hygiene check."""
+    """TICK001/TICK002/TICK003/TICK004: the T-0162 ticket-id collision
+    invariant gate, plus the T-0409 ledger-hygiene check and the T-0411
+    priority-rot check."""
     return (
         _tick001_duplicate_ids(root)
         + _tick002_draft_on_default(root, queue)
         + _tick003_stale_archive(root)
+        + _tick004_queue_rot(root, queue)
     )
 
 
