@@ -1353,7 +1353,9 @@ def _apply_waivers(
     return tuple(kept), tuple(waived)
 
 
-# frob:doc docs/modules/gates.md#public-api
+# T-0524: frob:doc removed -- feeds run_gates (public, via
+# _apply_severity_overrides), which already carries the same
+# docs/modules/gates.md#public-api anchor (COV007).
 # frob:uses-contract src/frob/graph/__init__.py::build_graph
 # frob:uses-contract src/frob/graph/lock.py::drift
 # frob:uses-contract src/frob/tickets/__init__.py::load_queue
@@ -3042,6 +3044,10 @@ INV003_SPEC_DIRS: tuple[str, ...] = ("docs/modules", "docs/strata")
 
 
 # frob:doc docs/modules/gates.md#invariants
+# frob:waive COV007 reason="docs/modules/gates.md's Invariants section \
+# (INV003/INV004 subsections) is a deliberate architecture doc walking \
+# through this exact helper's design (T-0524), not a caller-side \
+# public-API summary"
 # frob:ticket T-0509
 def _file_has_reasoned_doc_waiver(path: Path, rule: str) -> bool:
     """True if `path` carries a `<!-- frob:waive <rule> reason="..." -->`
@@ -3078,6 +3084,10 @@ def _file_has_reasoned_doc_waiver(path: Path, rule: str) -> bool:
 
 
 # frob:doc docs/modules/gates.md#invariants
+# frob:waive COV007 reason="docs/modules/gates.md's Invariants section \
+# (INV003 subsection) is a deliberate architecture doc walking through \
+# this exact helper's design (T-0524), not a caller-side public-API \
+# summary"
 # frob:ticket T-0462
 def _inv003_doc_violations(
     root: Path, path: Path, known_ids: frozenset[str]
@@ -3165,6 +3175,10 @@ _MD_HEADING_RE = re.compile(r"^#{1,6}\s", re.MULTILINE)
 
 
 # frob:doc docs/modules/gates.md#invariants
+# frob:waive COV007 reason="docs/modules/gates.md's Invariants section \
+# (INV004 subsection) is a deliberate architecture doc walking through \
+# this exact helper's design (T-0524), not a caller-side public-API \
+# summary"
 # frob:ticket T-0452
 def _markdown_sections(text: str) -> tuple[str, ...]:
     """Split `text` into ATX-heading-delimited sections (each section runs
@@ -3185,6 +3199,10 @@ def _markdown_sections(text: str) -> tuple[str, ...]:
 # frob:doc docs/modules/gates.md#invariants
 # frob:ticket T-0515
 # frob:waive COV005 reason="removing the three now-dead T-0509 section-waiver helpers above (_inv004_waived_headings, _INV004_MESSAGE_HEADING_RE, _inv004_message_heading) shifted this file's Nth same-target 'docs/modules/gates.md#invariants' directive; COV005's rebind check matches old/new bindings by (kind, target) alone and reads the shift as a rebind onto a new private symbol -- this directive has bound _inv004_doc_violations (private) all along, see _file_has_reasoned_doc_waiver's docstring for the same false-positive class"  # noqa: E501
+# frob:waive COV007 reason="docs/modules/gates.md's Invariants section \
+# (INV004 subsection) is a deliberate architecture doc walking through \
+# this exact helper's design (T-0524), not a caller-side public-API \
+# summary"
 def _inv004_doc_violations(root: Path, path: Path) -> tuple[Violation, ...]:
     """INV004 findings for one doc file: at least one section uses
     normative language (`frob.gates.invariants.find_normative_claims`)
@@ -5202,7 +5220,9 @@ def _doc_anchor_slugs(path: Path) -> Option[set[str]]:
     return Some(slugs)
 
 
-# frob:doc docs/modules/gates.md#public-api
+# T-0524: frob:doc removed -- reached via docanchor_gate (public), which
+# already carries the same docs/modules/gates.md#public-api anchor
+# (COV007).
 def _anchor_mismatch_message(
     target: str, docfile: str, slug: str, slugs: set[str]
 ) -> str:
