@@ -1603,7 +1603,7 @@ Recurring: implementer agents put a 'frob:tests <self>' directive above their ow
 ```yaml
 id: T-0287
 title: 'dup: type-generalizing anti-unification (holes bind types, propose generics)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-19'
@@ -1617,6 +1617,7 @@ scope:
 - docs/modules/dup.md
 - tickets.md
 - tests/test_dup.py
+- tests/unit/test_dup_template.py
 scope_changes:
 - op: remove
   glob: tests/**
@@ -1628,6 +1629,13 @@ scope_changes:
   reason: T-0287 dup work maps to tests/test_dup.py
   actor: logan
   at: '2026-07-20'
+- op: add
+  glob: tests/unit/test_dup_template.py
+  reason: type-hole classification is a build_group_template extension; its existing
+    unit-test home is tests/unit/test_dup_template.py, named directly in this dispatch's
+    own test-run instructions
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance:
@@ -6237,3 +6245,24 @@ acceptance: []
 threat: null
 ```
 found while working T-0487: the _KEYWORDS python-centric-keyword fix (frob.dup._pipeline) makes R5 correctly recognize TypeScript's 'let'/'const' as declaration keywords instead of mis-labeling them as identifiers, so _real_dataflow_graph now builds a structurally-correct def-use graph for tests/fixtures/dup_cross_lang's mod_b.ts::computeTotal -- and it now genuinely WL-hash-collides with mod_a.py::compute_total at r5, similarity=0.88, verified directly against find_clones. This is a real accuracy improvement (R5 is documented as structural/language-agnostic, T-0196/T-0199), not a regression, but it makes tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_no_clone_group_at_any_threshold (asserting report.groups == () at every threshold) fail: 5 parametrized cases now see a real r5 group. The test's docstring/module-level claim ('cross-grammar structural bucketing... tracked as a follow-up') needs updating to reflect that R5 already closes this specific case; the test needs to assert r5 DOES fire (or drop the blanket 'zero groups' assertion and characterize per-rung instead), and frob.dup._exhaustiveness's r5/typescript language-gap excuse likely needs a DUP_CLAIMS entry the same way T-0487 added one for r5/rust. Out of T-0487's declared scope (tests/test_dup_cross_lang.py not in T-0487's scope).
+
+<!-- ticket:T-draft-f67069a7 -->
+```yaml
+id: T-draft-f67069a7
+title: 'frob.lang.TreeNode: carry tree-sitter field names so dup''s type-hole classification
+  (T-0287) can cover rust/c/cpp'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- src/frob/lang/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+found while working T-0287 (dup type-generalizing anti-unification): _template._is_type_position classifies a hole as a TYPE hole by checking whether its immediate parent node's label is a real type-annotation wrapper (python's 'type' node, typescript's 'type_annotation'). Rust/c/cpp place the type node as a direct, unwrapped sibling distinguished only by tree-sitter FIELD NAME (e.g. rust's 'parameter' node's 'type' field vs its 'pattern' field), which frob.lang.TreeNode does not carry today (label + children + span only, per docs/modules/lang.md). Extending TreeNode with an optional per-child field-name array (mirroring frob.lang._common.export_tree's existing recursive shape) would let _template._TYPE_WRAPPER_LABELS-style classification extend to a field-name-based rule for rust/c/cpp, closing the honest gap documented in docs/modules/dup.md's 'Type-hole classification (T-0287)' section and src/frob/dup/_template.py's _TYPE_WRAPPER_LABELS docstring. Out of T-0287's declared scope (frob-core/**, src/frob/dup/**, docs/modules/dup.md, tickets.md, tests/test_dup.py, tests/unit/test_dup_template.py -- does not include src/frob/lang/**).

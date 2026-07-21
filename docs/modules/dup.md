@@ -417,6 +417,45 @@ not installed, or the hole-ceiling sanity check tripping at any fold step
 plain `pairs` with no template in that case, per the survey's "Err back to
 a plain ClonePair report with no template rather than emitting noise" rule.
 
+### Type-hole classification (T-0287)
+
+<!-- frob:describes src/frob/dup/_template.py::_classify_type_vars -->
+
+Not every hole is a value the survey's base design assumes -- some divergences
+are TYPE ANNOTATIONS: the same algorithm written once over `int` and once
+over `str`. `_template._is_type_position` recognizes a hole's bound node as
+a type position when its immediate parent is a real type-annotation wrapper
+node (`_template._TYPE_WRAPPER_LABELS`: python's `type` node -- `def f(a:
+int)` parses `int` as `type -> identifier` -- and typescript's
+`type_annotation`). A hole qualifies as a TYPE hole only when EVERY group
+member's bound node sits in such a position (the ticket's "consistency
+guard": a hole that is type-shaped in some members and a plain value in
+others stays an ordinary value hole, never a half-right generic).
+
+Two type holes whose per-member bound-text sequence agrees exactly (the
+same concrete types recur at both positions, in the same member order --
+e.g. a parameter annotation and the return annotation it matches) are
+unified into ONE type variable rather than two independent ones, since they
+are provably the same abstracted type. Type variables are named `T0`, `T1`,
+... in first-appearance order (`CloneTemplate.type_params`).
+
+A classified hole renders as its type-variable name directly in
+`skeleton_text` (`def f(x: T0) -> T0: ...`) instead of a bare `$hole_N`
+placeholder, and `CloneBinding.type_var` names it per binding (`None` for an
+ordinary value hole). `suggested_signature` gains a `TN = TypeVar("TN")`
+preamble line per distinct type parameter; the extracted-function parameter
+list itself is synthesized only from the remaining VALUE holes (a type hole
+is not a call-site argument).
+
+**Cross-language honesty**: rust/c/cpp place a type node as a direct,
+unwrapped sibling distinguished only by tree-sitter FIELD NAME (e.g. rust's
+`parameter` node's `type` field), which `frob.lang.TreeNode` does not carry
+today (label + children + span only, no field names) -- extending it would
+be a `frob.lang` change, out of this feature's scope. A hole in a rust/c/cpp
+type position is still recognized as a hole (ordinary anti-unification,
+unaffected) but is never classified as a TYPE hole yet; the follow-up is
+filed, not silently dropped.
+
 ## Exhaustiveness matrix (T-0199)
 
 `frob.dup._exhaustiveness` extends the T-0158 capability-matrix mold to
