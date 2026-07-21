@@ -144,9 +144,24 @@ def _touched_files(diff: Diff) -> set[str]:
 
 
 def _symref_to_nodeid(symref: str) -> str:
-    """`path::a.b` -> `path::a::b`, the pytest node id spelling of a qualname."""
+    """`path::a.b` -> `path::a::b`, the pytest node id spelling of a qualname.
+
+    frob:ticket T-0324
+    A parametrized test's `frob:tests`/evidence symref carries its case
+    suffix verbatim (`path::a.b[015-python-3.11.4]`) -- pytest node ids for
+    a `@pytest.mark.parametrize`-expanded case routinely contain their own
+    literal dots (version strings, floats, dotted module paths passed as
+    case values). A blanket `qualname.replace('.', '::')` over the WHOLE
+    qualname corrupted those in-bracket dots too (`3.11.4` ->`3::11::4`),
+    so a bracketed case id could never resolve against its real collected
+    node id even though the bracket-less base did (only the base's dots,
+    if any, sit outside a `[...]` suffix). Only the qualname portion before
+    the first `[` is a dotted Class.method path; the `[...]` suffix (if
+    any) is opaque pytest-generated case text and must pass through
+    unchanged."""
     path, _, qualname = symref.partition("::")
-    return f"{path}::{qualname.replace('.', '::')}"
+    head, bracket, tail = qualname.partition("[")
+    return f"{path}::{head.replace('.', '::')}{bracket}{tail}"
 
 
 # frob:ticket T-0275
