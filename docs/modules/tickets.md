@@ -277,6 +277,40 @@ and update on every dispatch.
   (e.g. `src/frob/gates/`) still hard-blocks a real collision under it.
   Callers with no repo root (`root=None`) get the strict, undemoted check.
 
+## Cross-worktree lease side-channel (T-0473)
+
+The scope-lease model above is derived purely from the LOCAL `tickets.md`'s
+`IN_PROGRESS` rows -- fine for one checkout, but a real dispatch session
+runs each agent in its OWN isolated git worktree, each with its own copy of
+`tickets.md`. A lease taken by `frob ticket start` in worktree A never
+reaches worktree B's ledger until one lands/merges into the other, so
+`doable`'s collision filter was structurally inert across worktrees before
+T-0473 -- two agents in separate worktrees could be handed overlapping
+scope with neither's `doable` ever seeing the other's hold.
+
+`frob.tickets._leases` fixes this with a side channel under the git
+**common** directory (`git rev-parse --git-common-dir`), which every
+linked worktree of one repository resolves to the SAME absolute path
+(unlike `root / ".git"`, a per-worktree pointer file for a linked
+worktree). `<common-dir>/frob-leases/<ticket-id>.json` holds one
+`LeaseRecord` (scope, worktree path, branch, timestamp) per currently
+`IN_PROGRESS` ticket -- `frob.tickets.transition` writes it on entering
+`IN_PROGRESS` and removes it on leaving, and `mutate_scope` re-writes it
+when an in-progress ticket's scope changes, so it never drifts from the
+ledger's own `state:`/`scope:` fields, which remain the sole source of
+truth for anything the local `tickets.md` already knows about.
+
+`leased_by` (and therefore `doable`) now unions the local ledger's own
+`IN_PROGRESS` rows with every OTHER worktree's recorded lease
+(`read_all_leases`), local always winning on an id collision. A lease
+whose recorded worktree path no longer exists on disk (a crashed or
+abandoned agent checkout, never cleaned up) is treated as stale and
+skipped by `read_all_leases` -- a structural, cheap liveness check (path
+existence) that keeps a dead worktree's forgotten lease from wedging
+`doable` for everyone else forever; the fuller two-way reconciliation
+(dead in-progress ticket -> requeue, live worktree with no in-progress
+ticket -> flag/clean) is T-0476's job, not this one's.
+
 ## Scope/lease change protocol (T-0455)
 
 `frob ticket scope <id> --add GLOB... --remove GLOB... --reason TEXT`

@@ -5817,19 +5817,153 @@ docs/modules/tickets.md (state-machine section + CLI command list).
 id: T-0473
 title: 'scope-lease is worktree-local: frob ticket start in an isolated worktree never
   reaches main, so collision-aware doable (T-0453) is inert across parallel agents'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
 blocked_by: []
 parent: null
-scope: []
-scope_changes: []
-evidence: []
+scope:
+- src/frob/tickets/_leases.py
+- src/frob/tickets/__init__.py
+- tests/test_tickets_lease.py
+- tests/test_ticket_leases_cross_worktree.py
+- docs/modules/tickets.md
+- tickets.md
+- pyproject.toml
+- .frob-release.json
+- uv.lock
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_leases.py
+  reason: 'T-0473: shared cross-worktree lease side-channel + doable wiring'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/tickets/__init__.py
+  reason: 'T-0473: shared cross-worktree lease side-channel + doable wiring'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_tickets_lease.py
+  reason: 'T-0473: shared cross-worktree lease side-channel + doable wiring'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_ticket_leases_cross_worktree.py
+  reason: 'T-0473: shared cross-worktree lease side-channel + doable wiring'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: 'T-0473: shared cross-worktree lease side-channel + doable wiring'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tickets.md
+  reason: 'T-0473: shared cross-worktree lease side-channel + doable wiring'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: 'T-0473: REL001 minor version bump for the new public frob.tickets._leases
+    API'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: 'T-0473: REL001 minor version bump for the new public frob.tickets._leases
+    API'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: 'T-0473: uv.lock updates alongside the pyproject.toml version bump'
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_ticket_leases_cross_worktree.py::TestGitCommonDir::test_shared_across_linked_worktrees
+- tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_lease_written_in_one_worktree_seen_in_another
+- tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_doable_in_second_worktree_hides_colliding_ticket
+- tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_release_on_close_removes_the_lease
+- tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_stale_lease_for_a_removed_worktree_is_skipped
+- tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_scope_mutation_refreshes_the_lease
 attachments: []
 acceptance: []
 threat: null
 ```
+## Done report
+
+Added `src/frob/tickets/_leases.py`: a cross-worktree scope-lease side
+channel under the git COMMON directory (`git rev-parse --git-common-dir`),
+which every linked worktree of the same repository resolves to the same
+absolute path -- unlike `.git/` itself, which is a per-worktree pointer
+file for a linked worktree. `.git/frob-leases/<ticket-id>.json` records
+one `LeaseRecord` (scope, worktree path, branch, timestamp) per currently
+IN_PROGRESS ticket, written/removed alongside the ledger transition that
+creates/ends the hold, so it is a live overlay, not a separate source of
+truth: `tickets.md`'s `state:` field in each worktree stays exactly as-is.
+
+Wiring:
+- `frob.tickets.transition` calls a new `_sync_cross_worktree_lease` after
+  every successful state write: records a lease on entering IN_PROGRESS,
+  releases it on leaving. This covers `start`, `close`, `fail`, `requeue`,
+  and any other transition path uniformly, with no per-command call site
+  to remember.
+- `frob.tickets.mutate_scope` (`frob ticket scope --add/--remove`)
+  re-records the lease with the ticket's new scope when the ticket is
+  IN_PROGRESS, so widening/narrowing scope mid-flight can't leave the
+  cross-worktree side-channel showing a stale scope.
+- `leased_by` (T-0453's collision check, used by both `doable`'s default
+  filter and `--show-blocked`) now consults `_all_leases`, which unions the
+  LOCAL ledger's own IN_PROGRESS rows with every lease `read_all_leases`
+  finds from OTHER worktrees, local ledger winning on an id collision (it
+  is authoritative for anything it already knows about). `root=None`
+  keeps the exact old local-only behavior for callers with no repo root.
+
+Liveness guard (per the coordinator's design reminder, folded into this
+ticket rather than deferred whole to T-0476): `read_all_leases` skips any
+lease file whose recorded worktree path no longer exists on disk -- a
+crashed/abandoned worktree's unreleased lease cannot wedge `doable` for
+every other worktree forever. This is a structural, cheap check (path
+existence), not a full reconcile -- T-0476 is still the ticket for the
+fuller two-way liveness reconciliation (dead in-progress ticket ->
+requeue; live worktree with no in-progress ticket -> flag/clean).
+
+Real-worktree test coverage (no mocks -- `git worktree add` fixtures,
+matching `tests/test_ticket_land.py`'s existing style) in the new
+`tests/test_ticket_leases_cross_worktree.py`:
+- shared git-common-dir resolution across two linked worktrees
+- a lease written by `transition` in worktree A is visible via
+  `read_all_leases` from worktree B
+- `doable`/`leased_by` in worktree B correctly excludes/flags a ticket
+  colliding with a lease worktree A holds, that worktree B's own
+  `tickets.md` never recorded locally
+- releasing the lease on transitioning back out of IN_PROGRESS
+- lease scope refresh on `mutate_scope`
+- a lease referencing a now-removed worktree path is treated as stale and
+  skipped
+
+All 6 new tests plus the full pre-existing `tests/test_tickets_lease.py`
+(24) and `tests/test_ticket_land.py` (41) suites pass together (71 total)
+after this change -- `leased_by`'s new `root`-driven cross-worktree lookup
+does not perturb any existing local-only behavior.
+
+### Changed
+```
+ src/frob/tickets/_land.py | 219 ++++++++++++++++++++++++++++++++++++++++------
+ tests/test_ticket_land.py |  91 +++++++++++++++++++
+ tickets.md                |  98 +++++++++++++++++++--
+ 3 files changed, 375 insertions(+), 33 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_leases_cross_worktree.py::TestGitCommonDir::test_shared_across_linked_worktrees` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_lease_written_in_one_worktree_seen_in_another` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_doable_in_second_worktree_hides_colliding_ticket` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_release_on_close_removes_the_lease` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_stale_lease_for_a_removed_worktree_is_skipped` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_scope_mutation_refreshes_the_lease` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0474 -->
 ```yaml
@@ -5858,7 +5992,7 @@ title: 'ticket land / merge-driver splice resurrects stale ticket states from th
   worktree branch: landing T-0471 re-opened T-0160/T-0187 (queued on main) to in-progress
   because the pre-fork worktree ledger had them in-progress -- splice must not revert
   main''s newer transition for tickets other than the one being landed'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -5871,6 +6005,10 @@ attachments: []
 acceptance: []
 threat: null
 ```
+subsumed by T-0479: `_splice_only_ticket` (T-0479's Done report) implements
+exactly the fix this ticket asked for -- splicing only the landed ticket's
+own block onto main's current ledger instead of a whole-ledger merge that
+can resurrect a stale sibling state.
 
 <!-- ticket:T-0476 -->
 ```yaml
@@ -5951,19 +6089,103 @@ title: 'frob ticket land: auto-reconcile the ledger and non-owned code conflicts
   scope by taking main''s version (the worktree never legitimately changed them);
   only surface conflicts in IN-SCOPE files for manual resolution. Implements the coordinator''s
   hand-run restore recipe (playbook 10b) as land behavior. Subsumes T-0475.'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
 blocked_by: []
 parent: null
-scope: []
-scope_changes: []
-evidence: []
+scope:
+- src/frob/tickets/_land.py
+- tests/test_ticket_land.py
+- tickets.md
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: 'T-0479 implementation: ledger splice ticket-scoping + out-of-scope conflict
+    auto-resolve'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'T-0479 implementation: ledger splice ticket-scoping + out-of-scope conflict
+    auto-resolve'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tickets.md
+  reason: 'T-0479 implementation: ledger splice ticket-scoping + out-of-scope conflict
+    auto-resolve'
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_ticket_land.py::TestSpliceOnlyTicket::test_sibling_state_never_taken_from_worktree
+- tests/test_ticket_land.py::TestSpliceOnlyTicket::test_landed_tickets_own_divergence_still_resolved
+- tests/test_ticket_land.py::TestOutOfScopeConflictAutoResolved::test_conflict_outside_scope_takes_mains_side_and_lands
 attachments: []
 acceptance: []
 threat: null
 ```
+## Done report
+
+Implemented both halves of T-0479 in `src/frob/tickets/_land.py`:
+
+(a) Added `_splice_only_ticket(main_text, worktree_text, ticket_id, ...)`,
+a ledger splice that takes MAIN's ledger as the base and overlays ONLY the
+landing ticket's own block from the worktree; every sibling ticket id comes
+from main untouched. This is the structural fix for the T-0475 incident
+(landing one ticket resurrected a stale in-progress state for unrelated
+sibling tickets that had since been requeued back to queued on main): the
+old `splice_ledger` merged the WHOLE ledger by id, so a worktree's stale
+copy of a sibling ticket could out-rank main's newer (but lower-ranked,
+because requeue moves backward through the state machine) state.
+`_splice_and_stage` grew an optional `ticket_id` parameter that switches it
+to the scoped splice; both of `land()`'s ledger-writing sites --
+`_merge_main_into_worktree` (merging main into the worktree) and
+`_squash_and_splice_ledger` (the final squash-apply onto main) -- now pass
+the landing ticket's id, so both directions of the splice are scoped, not
+just the last one. `splice_ledger` itself is unchanged and still used
+verbatim elsewhere (e.g. the `frob ticket merge-driver`, and the two
+existing `TestSpliceLedger`/`test_ticket_merge_driver.py` suites), since
+the true multi-ticket merge is still the right operation there.
+
+(b) Added `_auto_resolve_out_of_scope_conflicts(cwd, ticket, keep=...)`:
+after a merge/squash step leaves some paths conflicted, every conflicted
+path OUTSIDE `ticket.scope` (via the existing `scope_matches`) is resolved
+by `git checkout --<keep>` (`ours`/`theirs`, whichever side is "main" for
+that merge direction) + `git add`, since the worktree never legitimately
+touched a file it wasn't scoped to change -- a conflict there is
+definitionally unrelated noise, not an editorial decision. Only conflicts
+that remain (in-scope files, or an out-of-scope checkout that itself
+failed) are still surfaced as `MergeConflict`/`SquashConflict` for manual
+resolution. `_check_only_tickets_conflicted` and `_check_squash_conflicted`
+(the latter's signature changed from `final_id: str` to `ticket: Ticket`,
+since scope-matching needs the ticket, not just its id) were rewritten on
+top of this shared helper. `tickets.md` is still excluded unconditionally
+from checkout-based resolution -- it is always resolved via the ledger
+splice, never `git checkout`.
+
+Also hand-edited T-0475's frontmatter `state: queued` -> `state: dropped`
+per this ticket's "Subsumes T-0475" clause (the precedented drop mechanism
+for a superseded ticket) -- T-0479's fix subsumes what T-0475 asked for.
+
+Ran `uv run ruff format`/`uv run ruff check` on only the two files this
+ticket touched (a pre-existing, out-of-scope E501 in
+`src/frob/strata/_scenarios.py` was left untouched).
+
+CAVEAT: `frob check --ticket T-0479` still reports the repo's pre-existing
+gate backlog (waived findings across `frob-dup`/`frob-arch`/etc. unrelated
+to this ticket's files) -- none of it newly introduced by this change; see
+the scoped `uv run ruff check`/`pytest` runs above for what this ticket's
+own files actually gate clean on.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_ticket_land.py::TestSpliceOnlyTicket::test_sibling_state_never_taken_from_worktree` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestSpliceOnlyTicket::test_landed_tickets_own_divergence_still_resolved` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestOutOfScopeConflictAutoResolved::test_conflict_outside_scope_takes_mains_side_and_lands` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0481 -->
 ```yaml
