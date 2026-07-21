@@ -62,6 +62,8 @@ def run_mutations(root, file, test_argv, timeout_s=300.0) -> Result[MutationResu
   boolean-operator swaps (`and`<->`or`), and boolean-constant negation.
 - One mutation per run; the file is restored after every mutant and on any
   error, so a crashed run never leaves mutated source behind.
+
+  <!-- frob:invariant INV-017 -->
 - A mutant that hangs the tests past the timeout counts as killed.
 - Other languages and a MUT gate (a mutation-score floor on
   invariant-anchored symbols) are recorded follow-on work.

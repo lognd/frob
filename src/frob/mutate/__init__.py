@@ -206,6 +206,7 @@ def generate_mutants(
 
 # frob:doc docs/modules/mutate.md#public-api
 # frob:waive TEST005 reason="run_mutations 85.2% branch cover, debt T-0160"
+# frob:invariant INV-017
 def run_mutations(
     root: Path, file: Path, test_argv: tuple[str, ...], timeout_s: float = 300.0
 ) -> Result[MutationResult, MutateError]:
