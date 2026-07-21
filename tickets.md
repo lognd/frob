@@ -4940,3 +4940,25 @@ Filed separately per T-0297's scope discipline -- do not fold into COV005
 without a fresh plan, since (b) depends on the call-graph substrate and
 (c) is a different, narrower check (anchor-vs-publicness, not diff-aware
 rebind).
+
+<!-- ticket:T-0484 -->
+```yaml
+id: T-0484
+title: 'coverage cycle is too slow to run per-change: incrementalize / background
+  it (daemon-side), so TEST005/TEST006 feedback is not a full-suite wait'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- src/frob/testing/
+- src/frob/gates/_coverage.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+make coverage runs the whole suite under coverage on every change, so the stale-stamp gate (TEST006) forces a full re-run for a one-line edit. Explore: (a) daemon-side background coverage refresh on file-change, (b) per-file/touched-set incremental coverage merged into the stamp, (c) caching unchanged modules' coverage. Goal: TEST005/TEST006 feedback in seconds, not a full suite.
