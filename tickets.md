@@ -2751,7 +2751,7 @@ id: T-0454
 title: 'EPIC: professional ticket organization -- sprints/milestones, epic->story->task
   rollup, components/labels, priority-ordered board (frob ticket board/sprint/epic),
   no ceremony'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -2764,6 +2764,15 @@ scope:
 - src/frob/__main__.py
 - docs/
 - tests/unit/test_ticket_store.py
+- tests/test_tickets_organization.py
+- src/frob/gates/__init__.py
+- src/frob/graph/dsl.py
+- tests/test_gates.py
+- tests/unit/graph/test_dsl.py
+- pyproject.toml
+- CHANGELOG.md
+- .frob-release.json
+- uv.lock
 scope_changes:
 - op: remove
   glob: tests/**
@@ -2775,10 +2784,84 @@ scope_changes:
   reason: T-0454 tickets work maps to tests/unit/test_ticket_store.py
   actor: logan
   at: '2026-07-20'
-evidence: []
+- op: add
+  glob: tests/test_tickets_organization.py
+  reason: T-0454 new component/labels/board/epic surface needs its own test file,
+    mirroring T-0411's test_tickets_priority.py precedent
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'sequential single-worktree dispatch: T-0527''s committed files still show
+    in the diff-vs-main SCOPE001 check for T-0454 (T-0108/T-0412/T-0527 precedent)
+    since those commit subjects did not carry a T-0527 reference'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/graph/dsl.py
+  reason: 'sequential single-worktree dispatch: T-0526/T-0527''s committed files still
+    show in the diff-vs-main SCOPE001 check for T-0454 (T-0108/T-0412/T-0527 precedent)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_gates.py
+  reason: 'sequential single-worktree dispatch: T-0527''s committed test file still
+    shows in the diff-vs-main SCOPE001 check for T-0454 (T-0108/T-0412/T-0527 precedent)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/graph/test_dsl.py
+  reason: 'sequential single-worktree dispatch: T-0526''s committed test file still
+    shows in the diff-vs-main SCOPE001 check for T-0454 (T-0108/T-0412/T-0527 precedent)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: T-0454's own REL001 minor version bump (new public component/labels/board_view/epic_rollup/set_component/mutate_labels
+    API)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: T-0454's own REL001 minor version bump (new public component/labels/board_view/epic_rollup/set_component/mutate_labels
+    API)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: T-0454's own REL001 minor version bump (new public component/labels/board_view/epic_rollup/set_component/mutate_labels
+    API)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: T-0454's own REL001 minor version bump (new public component/labels/board_view/epic_rollup/set_component/mutate_labels
+    API)
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_tickets_organization.py::TestFieldRoundTrip::test_serialize_parse_round_trip
+- tests/test_tickets_organization.py::TestFieldRoundTrip::test_write_ticket_ledger_round_trip
+- tests/test_tickets_organization.py::TestFieldRoundTrip::test_comma_joined_label_splits
+- tests/test_tickets_organization.py::TestFieldRoundTrip::test_new_ticket_carries_component_and_labels
+- tests/test_tickets_organization.py::TestSetComponent::test_updates_component_field
+- tests/test_tickets_organization.py::TestSetComponent::test_clears_to_none
+- tests/test_tickets_organization.py::TestMutateLabels::test_add_and_remove_labels
+- tests/test_tickets_organization.py::TestMutateLabels::test_empty_call_is_error
+- tests/test_tickets_organization.py::TestBoardView::test_columns_in_fixed_order
+- tests/test_tickets_organization.py::TestBoardView::test_priority_ordered_within_column
+- tests/test_tickets_organization.py::TestBoardView::test_component_filter
+- tests/test_tickets_organization.py::TestBoardView::test_label_filter
+- tests/test_tickets_organization.py::TestEpicRollup::test_not_found_is_err
+- tests/test_tickets_organization.py::TestEpicRollup::test_counts_done_and_total
+- tests/test_tickets_organization.py::TestEpicRollup::test_blocked_leaf_surfaced
+- tests/test_tickets_organization.py::TestEpicRollup::test_childless_epic_is_zero_percent_not_a_crash
+- tests/unit/test_ticket_store.py::TestLoadAllAndWriteTicket::test_component_and_labels_round_trip
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 User request 2026-07-20: the ticket queue is a flat list with occasional
 epics; the user wants a professional dev-team workflow (no ceremony/standups,
@@ -2808,7 +2891,6 @@ Design (organization on top of the flat ledger, additive fields + views):
 - Relates: T-0453 (collision-aware doable/lease) is the scheduling half,
   this is the organization half. File child tickets per capability under
   this epic (dogfood the hierarchy).
-
 <!-- ticket:T-0459 -->
 ```yaml
 id: T-0459
@@ -3176,6 +3258,8 @@ evidence:
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 Found while working T-0513 in a sequential-tickets-in-one-worktree flow: SCOPE001's T-0108 cross-ticket exemption (a file already committed entirely under another ticket's own scope is exempt) stopped recognizing CHANGELOG.md/pyproject.toml/uv.lock as exempt for T-0513's own frob check --ticket run, even though the LATEST commit touching them (chore(release): re-stamp 0.57.0 after main merge, T-0512 done report) references T-0512 and T-0512's scope was extended to cover exactly those files. Root cause suspected: a plain 'git merge main' merge commit in the history also touches these files (conflict resolution) and carries NO ticket reference at all in its message, defeating whatever per-commit ticket-reference check the exemption performs. Needs investigation into _scope_gate_check_file / the T-0108 exemption's commit-walking logic to see if a merge commit should be transparently skipped (its content is just main's own already-scoped history, not new unscoped work) rather than treated as an unattributed touch.
 
@@ -3500,3 +3584,56 @@ acceptance: []
 threat: null
 ```
 T-0412 DEBT-TODO coherence follow-up requirement 4: closing a ticket should surface BOTH the debt and the todo so neither is silently orphaned when the other resolves. T-0526 implemented requirements 1-3 (implicit todo registration for an unpaired debt, reused open-ticket check, same-ticket consistency check) entirely inside src/frob/graph/dsl.py per its declared scope. This requirement needs frob.tickets close-time reporting and/or frob.gates surfacing, both out of T-0526 scope, filed as its own unit of work.
+
+<!-- ticket:T-draft-2586e92f -->
+```yaml
+id: T-draft-2586e92f
+title: 'T-0454 follow-up: sprints/milestones (sprint field + frob ticket sprint new/list/show/assign)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/
+- src/frob/app/ticket_runner.py
+- src/frob/__main__.py
+- docs/modules/tickets.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0454 (professional ticket organization epic) deliberately did not build sprints/milestones -- the ticket body said if they fit, and a full sprint lifecycle (a sprint/milestone id+goal+date-window field, plus frob ticket sprint new/list/show/assign CRUD, plus a ticket-in-at-most-one-active-sprint constraint) is a second feature-sized surface on top of the component/label/board/epic core T-0454 delivered (component, labels, board_view, epic_rollup, frob ticket component/label/board/epic). Design per T-0454's body: a sprint/milestone (id + goal + optional date window); frob ticket sprint new/list/show/assign; frob ticket sprint show S-## renders the sprint backlog with per-ticket state; a ticket may be in at most one active sprint. Should follow the exact same additive-field + splice-safe round-trip discipline T-0454 established (see docs/modules/tickets.md#organization-components-labels-board-epics-t-0454).
+
+<!-- ticket:T-draft-b0a49b89 -->
+```yaml
+id: T-draft-b0a49b89
+title: 'T-0454 follow-up: component/label filter on frob ticket doable/list, bulk
+  reassignment'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/
+- src/frob/app/ticket_runner.py
+- src/frob/__main__.py
+- docs/modules/tickets.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0454 added component/label filtering only to frob ticket board (board_view's component=/label= kwargs). Two smaller deferred pieces from that pass: (1) frob ticket doable/list currently have no --component/--label filter, so a coordinator draining one area at a time still has to use board for that rather than the queue-focused doable view; (2) component/label mutation is one ticket at a time via set_component/mutate_labels, matching every other single-ticket mutation command's granularity today, but a coordinator relabeling/recomponentizing a batch of tickets found via frob ticket list --state X has no bulk path and must call the CLI once per id. Both are small, additive extensions of T-0454's existing filter/mutation primitives, not new subsystems.

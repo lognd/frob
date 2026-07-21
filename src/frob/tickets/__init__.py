@@ -25,6 +25,7 @@ from frob.logging import get_logger
 from frob.tickets._land import land, splice_ledger
 from frob.tickets._leases import read_all_leases
 from frob.tickets._models import (
+    BOARD_STATES,
     CMD_EVIDENCE_ALLOWED_KINDS,
     DONE_REPORT_HEADING,
     LEDGER_PATH,
@@ -32,6 +33,8 @@ from frob.tickets._models import (
     PRIORITY_RANK,
     Attachment,
     AttachmentSource,
+    BoardColumn,
+    EpicRollup,
     FailureEntry,
     LandError,
     LandReport,
@@ -283,6 +286,8 @@ def _ticket_from_spec(
         attachments=(),
         acceptance=spec.acceptance,
         threat=spec.threat,
+        component=spec.component,
+        labels=spec.labels,
         body=body,
     )
 
@@ -1358,6 +1363,79 @@ def set_priority(
     return Ok(updated)
 
 
+# frob:ticket T-0454
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_organization.py::TestSetComponent.test_updates_component_field  # noqa: E501
+def set_component(
+    root: Path, ticket_id: str, component: str | None
+) -> Result[Ticket, TicketError]:
+    """Set `ticket_id`'s `component` field (T-0454) -- which module/area this
+    ticket belongs to, the same single-writer, ledger-locked pattern
+    `set_priority` uses. `component=None` clears it back to uncategorized."""
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
+    with ledger_lock(root):
+        loaded = _load_ticket_and_queue(root, ticket_id)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        ticket, _queue = loaded.danger_ok
+        updated = ticket.model_copy(update={"component": component})
+        write_result = write_ticket(root, updated)
+        if write_result.is_err:
+            return Err(write_result.danger_err)
+    _log.info("tickets: %s component set to %s", ticket_id, component)
+    return Ok(updated)
+
+
+# frob:ticket T-0454
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_organization.py::TestMutateLabels.test_add_and_remove_labels  # noqa: E501
+def mutate_labels(
+    root: Path,
+    ticket_id: str,
+    *,
+    add: Sequence[str] = (),
+    remove: Sequence[str] = (),
+) -> Result[Ticket, TicketError]:
+    """Add/remove freeform `labels` on `ticket_id` (T-0454) -- orthogonal to
+    `scope`'s lease-aware `mutate_scope`: a label is a plain organizational
+    tag, never a filesystem glob, so it carries no lease-conflict check and
+    no audit trail the way a scope mutation does. `add`/`remove` may be
+    combined in one call; each is comma-split the same way `scope`/`labels`
+    entries always are (`_split_scope_entries`, T-0241's normalization
+    reused here). A no-op call (nothing to add or remove) is an error --
+    same "don't call this for nothing" discipline `mutate_scope` enforces."""
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
+    add_labels = _normalize_scope_entries(tuple(add))
+    remove_labels = _normalize_scope_entries(tuple(remove))
+    if not add_labels and not remove_labels:
+        return Err(TicketError.LabelChangeEmpty)
+    with ledger_lock(root):
+        loaded = _load_ticket_and_queue(root, ticket_id)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        ticket, _queue = loaded.danger_ok
+        new_labels = tuple(lbl for lbl in ticket.labels if lbl not in remove_labels)
+        for label in add_labels:
+            if label not in new_labels:
+                new_labels += (label,)
+        updated = ticket.model_copy(update={"labels": new_labels})
+        write_result = write_ticket(root, updated)
+        if write_result.is_err:
+            return Err(write_result.danger_err)
+    _log.info(
+        "tickets: %s labels changed (+%d/-%d), now %s",
+        ticket_id,
+        len(add_labels),
+        len(remove_labels),
+        list(updated.labels),
+    )
+    return Ok(updated)
+
+
 # frob:ticket T-0409
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/unit/test_ticket_store.py::TestClosedTicketIds.test_returns_done_and_dropped_only  # noqa: E501
@@ -1390,6 +1468,83 @@ def _doable_sort_key(t: Ticket) -> tuple[int, date, str]:
     age still breaking ties within the same priority (the prior behavior for
     tickets that were all effectively MEDIUM)."""
     return (-PRIORITY_RANK[t.priority], t.created, t.id)
+
+
+# frob:ticket T-0454
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_organization.py::TestBoardView.test_columns_in_fixed_order  # noqa: E501
+def board_view(
+    queue: TicketQueue,
+    *,
+    component: str | None = None,
+    label: str | None = None,
+) -> tuple[BoardColumn, ...]:
+    """`frob ticket board`: every ticket grouped into `BOARD_STATES` columns,
+    each priority-then-age ordered (`_doable_sort_key`, T-0411) -- a
+    priority-ordered, at-a-glance view of the whole queue instead of one
+    flat id-ordered list (T-0454). Optional `component`/`label` filters
+    narrow to one area/tag; a ticket must match BOTH when both are given.
+    Every column is always present, even empty, so the shape of the board
+    never depends on what happens to be in flight right now."""
+    tickets = list(queue.tickets.values())
+    if component is not None:
+        tickets = [t for t in tickets if t.component == component]
+    if label is not None:
+        tickets = [t for t in tickets if label in t.labels]
+    columns = []
+    # frob:waive PERF004 reason="one sorted() call per BOARD_STATES entry -- a fixed 6-iteration loop over the queue's own ticket count, not an unbounded hoisted-sort opportunity"  # noqa: E501
+    for state in BOARD_STATES:
+        in_state = sorted(
+            (t for t in tickets if t.state is state), key=_doable_sort_key
+        )
+        columns.append(BoardColumn(state=state, tickets=tuple(in_state)))
+    return tuple(columns)
+
+
+# frob:ticket T-0454
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_organization.py::TestEpicRollup.test_counts_done_and_total  # noqa: E501
+def epic_rollup(queue: TicketQueue, epic_id: str) -> Result[EpicRollup, TicketError]:
+    """`frob ticket epic <id>`: the full descendant subtree of `epic_id` via
+    the `parent` chain (any depth, not just direct children), plus a
+    done/total rollup and the ids of any LEAF descendant (no children of
+    its own) that is currently BLOCKED -- the two things a human scanning
+    an epic wants first, computed once instead of hand-counted (T-0454).
+    `NotFound` if `epic_id` itself does not resolve in `queue`."""
+    epic = queue.tickets.get(epic_id)
+    if epic is None:
+        return Err(TicketError.NotFound)
+    children_of: dict[str, list[Ticket]] = {}
+    for t in queue.tickets.values():
+        if t.parent is not None:
+            children_of.setdefault(t.parent, []).append(t)
+    descendants: list[Ticket] = []
+    frontier = [epic_id]
+    seen = {epic_id}
+    while frontier:
+        current = frontier.pop()
+        for child in children_of.get(current, ()):
+            if child.id in seen:
+                continue
+            seen.add(child.id)
+            descendants.append(child)
+            frontier.append(child.id)
+    done = sum(1 for t in descendants if t.state is TicketState.DONE)
+    blocked_leaves = tuple(
+        t.id
+        for t in descendants
+        if t.state is TicketState.BLOCKED and t.id not in children_of
+    )
+    # frob:waive PERF004 reason="single sorted() call over the finished descendants list, not inside the BFS while-loop above it -- the checker's whole-function loop scan flags it textually, not per-iteration"  # noqa: E501
+    return Ok(
+        EpicRollup(
+            epic=epic,
+            descendants=tuple(sorted(descendants, key=lambda t: t.id)),
+            done=done,
+            total=len(descendants),
+            blocked_leaves=blocked_leaves,
+        )
+    )
 
 
 # frob:ticket T-0453
@@ -2370,7 +2525,10 @@ __all__ = [
     "Attachment",
     "AttachError",
     "AttachmentSource",
+    "BOARD_STATES",
+    "BoardColumn",
     "ClipboardError",
+    "EpicRollup",
     "FailureEntry",
     "LandError",
     "LandReport",
@@ -2401,9 +2559,13 @@ __all__ = [
     "ledger_lock",
     "load_active",
     "load_queue",
+    "mutate_labels",
     "mutate_scope",
+    "set_component",
     "set_priority",
     "Stride",
+    "board_view",
+    "epic_rollup",
     "migrate",
     "new_ticket",
     "renumber",

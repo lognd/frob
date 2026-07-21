@@ -17,6 +17,24 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.58.0] - unreleased
+
+T-0454: professional ticket organization -- `Ticket`/`TicketSpec` gained
+`component: str | None` (freeform module/area) and `labels: tuple[str,
+...]` (freeform tags orthogonal to component), both additive/optional so
+every pre-existing ticket stays valid on load. New public
+`set_component`/`mutate_labels` mutation functions (same single-writer,
+ledger-locked pattern as `set_priority`/`mutate_scope`), `board_view`/
+`BoardColumn`/`BOARD_STATES` (a fixed-column, priority-ordered board over
+the whole active queue), and `epic_rollup`/`EpicRollup` (the `parent`
+chain's full descendant subtree, a done/total rollup, and any BLOCKED
+leaf). New CLI subcommands `frob ticket component <id> <name>`, `frob
+ticket label <id> --add/--remove TAG...`, `frob ticket board
+[--component/--label]`, `frob ticket epic <id>`; `frob ticket new` gained
+`--component`/`--label`. Sprints/milestones and a doable/list component-
+label filter were deliberately deferred as follow-ups (see
+docs/modules/tickets.md#organization-components-labels-board-epics-t-0454).
+
 ## [0.57.0] - unreleased
 
 T-0510: `frob.strata._threat` gained five `WeaknessEntry` rows in

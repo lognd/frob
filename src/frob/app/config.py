@@ -263,6 +263,18 @@ class AppConfig(BaseModel):
     ticket_merge_base: Path | None = None
     ticket_merge_ours: Path | None = None
     ticket_merge_theirs: Path | None = None
+    # frob:ticket T-0454
+    # `frob ticket new --component NAME --label TAG...` (also read on
+    # `frob ticket component <id> NAME` and `frob ticket label <id>
+    # --add/--remove TAG...`).
+    ticket_component: str | None = None
+    ticket_labels: list[str] = []
+    ticket_label_add: list[str] = []
+    ticket_label_remove: list[str] = []
+    # frob:ticket T-0454
+    # `frob ticket board [--component NAME] [--label TAG] [--json]`.
+    ticket_board_component: str | None = None
+    ticket_board_label: str | None = None
 
     # test
     test_all: bool = False
@@ -417,6 +429,9 @@ class AppConfig(BaseModel):
             "ticket_scope_reason",
             "ticket_priority",
             "ticket_priority_level",
+            "ticket_component",
+            "ticket_board_component",
+            "ticket_board_label",
             "test_base",
             "test_fallback",
             "vet_hook",
@@ -524,6 +539,9 @@ class AppConfig(BaseModel):
             "ticket_blocked_by",
             "ticket_acceptance",
             "ticket_evidence_ids",
+            "ticket_labels",
+            "ticket_label_add",
+            "ticket_label_remove",
             "test_lang",
             "perf_argv",
             "mutate_argv",

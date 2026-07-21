@@ -607,6 +607,21 @@ def _add_ticket_new_graph_args(ticket_new_p) -> None:
         "--blocked-by", dest="ticket_blocked_by", action="append", default=[]
     )
     ticket_new_p.add_argument("--parent", dest="ticket_parent")
+    # frob:ticket T-0454
+    ticket_new_p.add_argument(
+        "--component",
+        dest="ticket_component",
+        help="which module/area this ticket belongs to (freeform, T-0454)",
+    )
+    ticket_new_p.add_argument(
+        "--label",
+        dest="ticket_labels",
+        action="append",
+        default=[],
+        metavar="TAG",
+        help="freeform organizational tag, orthogonal to --component "
+        "(repeatable, T-0454)",
+    )
 
 
 # frob:ticket T-0030
@@ -659,7 +674,39 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
         help="skip the T-0453 scope-lease collision filter and return the "
         "raw blocker-only doable list",
     )
-    return [ticket_list_p, ticket_show_p, ticket_doable_p]
+
+    # frob:ticket T-0454
+    ticket_board_p = ticket_sub.add_parser(
+        "board",
+        help="priority-ordered board view, grouped into state columns (T-0454)",
+    )
+    ticket_board_p.add_argument("--json", dest="ticket_json", action="store_true")
+    ticket_board_p.add_argument(
+        "--component",
+        dest="ticket_board_component",
+        help="only show tickets in this component",
+    )
+    ticket_board_p.add_argument(
+        "--label",
+        dest="ticket_board_label",
+        help="only show tickets carrying this label",
+    )
+
+    # frob:ticket T-0454
+    ticket_epic_p = ticket_sub.add_parser(
+        "epic",
+        help="show an epic's full descendant subtree with a done/total rollup (T-0454)",
+    )
+    ticket_epic_p.add_argument("ticket_id", metavar="id")
+    ticket_epic_p.add_argument("--json", dest="ticket_json", action="store_true")
+
+    return [
+        ticket_list_p,
+        ticket_show_p,
+        ticket_doable_p,
+        ticket_board_p,
+        ticket_epic_p,
+    ]
 
 
 def _add_ticket_progress_parsers(ticket_sub) -> list:
@@ -966,9 +1013,52 @@ def _add_ticket_priority_parser(ticket_sub):
     return ticket_priority_p
 
 
+# frob:ticket T-0454
+def _add_ticket_component_parser(ticket_sub):
+    """Register `frob ticket component <id> <name>` -- set which module/area
+    an existing ticket belongs to (T-0454), same shape as `_add_ticket_
+    priority_parser`'s T-0411 precedent. `name` may be the literal string
+    "none" to clear it back to uncategorized."""
+    ticket_component_p = ticket_sub.add_parser(
+        "component", help="set a ticket's component/area (T-0454)"
+    )
+    ticket_component_p.add_argument("ticket_id", metavar="id")
+    ticket_component_p.add_argument("ticket_component", metavar="name")
+    return ticket_component_p
+
+
+# frob:ticket T-0454
+def _add_ticket_label_parser(ticket_sub):
+    """Register `frob ticket label <id> --add TAG... --remove TAG...` --
+    add/remove freeform labels on an existing ticket (T-0454), same shape
+    as `_add_ticket_scope_parser`'s T-0455 precedent but with no --reason
+    (a label carries no lease-conflict audit trail)."""
+    ticket_label_p = ticket_sub.add_parser(
+        "label", help="add/remove a ticket's freeform labels (T-0454)"
+    )
+    ticket_label_p.add_argument("ticket_id", metavar="id")
+    ticket_label_p.add_argument(
+        "--add",
+        dest="ticket_label_add",
+        action="append",
+        default=[],
+        metavar="TAG",
+        help="add TAG (repeatable)",
+    )
+    ticket_label_p.add_argument(
+        "--remove",
+        dest="ticket_label_remove",
+        action="append",
+        default=[],
+        metavar="TAG",
+        help="remove TAG (repeatable)",
+    )
+    return ticket_label_p
+
+
 def _add_ticket_closeout_parsers(ticket_sub) -> list:
     """Register the ticket closeout subcommands: attach/block/close/fail/
-    evidence/done-report/scope/priority."""
+    evidence/done-report/scope/priority/component/label."""
     return (
         _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub)
         + _add_ticket_fail_evidence_archive_parsers(ticket_sub)
@@ -976,6 +1066,8 @@ def _add_ticket_closeout_parsers(ticket_sub) -> list:
             _add_ticket_done_report_parser(ticket_sub),
             _add_ticket_scope_parser(ticket_sub),
             _add_ticket_priority_parser(ticket_sub),
+            _add_ticket_component_parser(ticket_sub),
+            _add_ticket_label_parser(ticket_sub),
         ]
     )
 
