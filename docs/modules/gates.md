@@ -258,13 +258,26 @@ structures and env-var access sites, drawn from
   -- "no hard fail on names alone" per the ticket body -- distinct from
   PII010's deny-by-default posture over an actual declared data-structure
   field.
+- **std.pii/std.secrets declaration join (T-0351)**: `_load_declared_
+  surface` loads every `.strata` design file under the repo's design
+  directory (the same loader `sys_gate` already uses, `load_design_ids`),
+  tier-2 code-binds each file to its owning `Node` (`bind_code`, also
+  reused from `sys_gate`'s SYS003), and joins that node's `carries` PII
+  tags (`frob.strata._pii.node_pii_tags`) and `clearance == "Secret"`
+  status (the same best-effort std.secrets proxy
+  `_design_load.DesignIds.secrets` already documents) into a
+  `_DeclaredSurface`. A PII010 finding whose file is already code-bound to
+  a node that `carries` the SAME category is discharged outright; a
+  SEC110 finding whose file is code-bound to a Secret-clearance node is
+  likewise discharged. A repo with no design directory (or no matching
+  binding) degrades to the empty surface -- every finding still fires
+  exactly as before this ticket, waiver-only. PII011 (bare string-literal
+  values have no "owning field" to carry a category against) and PII012
+  (already suggestion-severity, not deny-by-default) are NOT joined.
 - **Deliberately not built this pass** (see `_pii_structural.py`'s module
   docstring and this ticket's Done report): non-Python language
   equivalents and non-Python DDL sources (`.sql` migration files). Filed
-  as follow-on tickets, not silently dropped. A direct join from a
-  PII010/PII011/PII012/SEC110 finding to a T-0154 `carries` tag or a
-  T-0082 `std.secrets` node (rather than a bare waiver) is likewise a
-  follow-on -- today's only discharge mechanism is the waiver.
+  as follow-on tickets, not silently dropped.
 
 ### Anti-orphan file-reference gate T-0396
 

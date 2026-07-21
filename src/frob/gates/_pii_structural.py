@@ -21,16 +21,18 @@ signal -- NOT a duplicate of either existing module:
   `FIELD_SIGNATURES` (the single-source keyword/type registry below) fires
   -- deny-by-default, exactly like PII001's "unknown category" default:
   a PII-shaped field with no accompanying `frob:waive PII010 reason="..."`
-  is treated as an undeclared PII surface. Joining this to a T-0154
-  `carries` tag on a strata `Node` (rather than a bare waiver) is the
-  natural next step this module deliberately leaves to a follow-on ticket
-  (see the Done report this ticket's evidence is recorded against) --
-  today's discharge mechanism is the waiver alone, honestly documented as
-  the boundary of this pass, not a silent gap.
+  is treated as an undeclared PII surface, UNLESS the file is already
+  code-bound to a strata `Node` `carries`-ing that same category (T-0351,
+  `_load_declared_surface`/`_DeclaredSurface._has_pii`) -- a real
+  declaration now discharges the finding outright, not just a waiver.
 - SEC110: an `os.environ[...]`/`os.environ.get(...)`/`os.getenv(...)` call
   site is a secret-SOURCE observation (corpus Part A intro: "env/secret
   sources ... must map to a declared strata secret node (T-0082 std.secrets)
-  or be waived"). Same discharge boundary as PII010: waiver only, today.
+  or be waived"). Same T-0351 join as PII010: a file code-bound to a
+  Secret-clearance node (`DesignIds.secrets`'s existing "best-effort
+  standing proxy for std.secrets" convention, reused here rather than
+  re-derived) discharges every SEC110 finding in it
+  (`_DeclaredSurface._has_secret`).
 
 DISCIPLINE (ticket-mandated, non-negotiable):
 - Single-source registry (`FIELD_SIGNATURES`): every keyword/type entry
@@ -72,6 +74,21 @@ the same severity `frob check` already treats as non-failing by default --
 this family is explicitly advisory, never a deny-by-default surface the
 way PII010/PII011/SEC110 are.
 
+T-0351 joined every PII010/SEC110 finding to a loaded strata design's
+std.pii/std.secrets declarations (`_load_declared_surface`): the SAME
+tier-2 code-binding join `sys_gate`'s SYS003 already uses (`bind_code`,
+reused not re-derived) resolves each finding's file to an owning `Node`;
+`frob.strata._pii.node_pii_tags` supplies that node's declared PII
+categories (PII010's join key) and `Node.clearance == "Secret"` supplies
+the std.secrets proxy (SEC110's join key, the exact convention
+`_design_load.DesignIds.secrets` already documents). A repo with no
+strata design directory degrades to `_EMPTY_DECLARED_SURFACE` -- every
+finding still fires exactly as before this ticket, waiver-only. PII011/
+PII012 are NOT joined this pass (disclosed, not silently dropped): PII011
+fires on a bare string-literal VALUE with no natural "owning field" to
+carry a category tag against, and PII012 is already suggestion-severity
+advisory, not a deny-by-default surface a declaration needs to discharge.
+
 Deliberately NOT built this pass (disclosed, not silently dropped -- see
 this ticket's Done report for the filed follow-on ticket ids): non-Python
 languages (TS/Rust field-shape equivalents, and non-Python DDL sources
@@ -108,7 +125,9 @@ from pathlib import Path
 from frob.gates._models import Severity, Violation
 from frob.gitio import run_argv
 from frob.logging import get_logger
-from frob.strata._pii import PII_CATEGORIES
+from frob.strata._code_binding import bind_code
+from frob.strata._design_load import load_design_ids
+from frob.strata._pii import PII_CATEGORIES, node_pii_tags
 
 _log = get_logger(__name__)
 
@@ -116,6 +135,81 @@ _log = get_logger(__name__)
 #: outright (T-0201 self-match lesson, module docstring). Compared against
 #: the git-relative path `_tracked_python_files` yields.
 _SELF_EXCLUDED_FILES = frozenset({"src/frob/gates/_pii_structural.py"})
+
+
+@dataclass(frozen=True)
+class _DeclaredSurface:
+    """T-0351: the per-file std.pii/std.secrets JOIN target -- which PII
+    categories a code-bound strata `Node` already `carries` for a file, and
+    whether a code-bound node for a file is a Secret-clearance node
+    (`load_design_ids`'s existing "Secret-clearance node is the best-effort
+    standing proxy for std.secrets" convention, `_design_load.py`'s
+    `DesignIds.secrets` docstring -- reused here, not re-derived). A finding
+    whose file already resolves to a matching declaration is DISCHARGED
+    (no violation emitted) rather than merely waived -- the whole point of
+    this ticket: a real declaration, not a bare `frob:waive`, is now a
+    legitimate way to clear PII010/SEC110."""
+
+    pii_categories: dict[str, frozenset[str]]
+    secret_files: frozenset[str]
+
+    def _has_pii(self, rel_path: str, category: str) -> bool:
+        """Whether `rel_path`'s code-bound node already `carries` `category`."""
+        return category in self.pii_categories.get(rel_path, frozenset())
+
+    def _has_secret(self, rel_path: str) -> bool:
+        """Whether `rel_path` is code-bound to a Secret-clearance node."""
+        return rel_path in self.secret_files
+
+
+#: The empty join target -- every scan function defaults to this so a repo
+#: with no strata design directory (or no matching bindings) behaves
+#: exactly as before T-0351 (every PII010/SEC110 site still fires,
+#: waiver-only discharge).
+_EMPTY_DECLARED_SURFACE = _DeclaredSurface(pii_categories={}, secret_files=frozenset())
+
+
+# frob:tests tests/test_pii_structural_gate.py::TestDeclaredSurfaceJoin.test_pii010_discharged_by_matching_carries_tag  # noqa: E501
+def _load_declared_surface(root: Path) -> _DeclaredSurface:
+    """Load every `.strata` design file under `root` (`load_design_ids`,
+    the SAME loader `sys_gate` already uses -- no second design-loading
+    path) and join each file's tier-2 code-binding owner node
+    (`bind_code`) to that node's `carries` PII tags (`node_pii_tags`) and
+    Secret-clearance status (T-0351). A repo with no design directory, or
+    whose design fails to load/bind, degrades to `_EMPTY_DECLARED_SURFACE`
+    (never a crash -- gates degrade, they don't fail closed on a missing
+    optional feature)."""
+    design_ids = load_design_ids(root)
+    pii_categories: dict[str, set[str]] = {}
+    secret_files: set[str] = set()
+    for model in design_ids.models:
+        bound = bind_code(model, root)
+        if bound.is_err:
+            _log.warning(
+                "_load_declared_surface: code binding ambiguous, skipping a model: %s",
+                bound.danger_err,
+            )
+            continue
+        nodes_by_id = {node.id: node for node in model.nodes}
+        for rel_path, node_id in bound.danger_ok.owner.items():
+            node = nodes_by_id.get(node_id)
+            if node is None:
+                continue
+            for tag in node_pii_tags(node):
+                category = tag.split(".", 1)[0]
+                pii_categories.setdefault(rel_path, set()).add(category)
+            if node.clearance == "Secret":
+                secret_files.add(rel_path)
+    _log.info(
+        "_load_declared_surface: %d file(s) with declared PII categories, "
+        "%d file(s) code-bound to a Secret-clearance node",
+        len(pii_categories),
+        len(secret_files),
+    )
+    return _DeclaredSurface(
+        pii_categories={path: frozenset(cats) for path, cats in pii_categories.items()},
+        secret_files=frozenset(secret_files),
+    )
 
 
 @dataclass(frozen=True)
@@ -343,9 +437,14 @@ def _pii010_violation(
     )
 
 
-def _scan_class_fields(cls: ast.ClassDef, rel_path: str) -> list[Violation]:
+def _scan_class_fields(
+    cls: ast.ClassDef,
+    rel_path: str,
+    declared: _DeclaredSurface = _EMPTY_DECLARED_SURFACE,
+) -> list[Violation]:
     """Every PII010 hit among `cls`'s direct `AnnAssign` fields, for a class
-    `_is_data_structure` already accepted."""
+    `_is_data_structure` already accepted -- skipping any field whose
+    category `declared` (T-0351) already `carries` for this file."""
     violations: list[Violation] = []
     for stmt in cls.body:
         if not isinstance(stmt, ast.AnnAssign) or not isinstance(stmt.target, ast.Name):
@@ -354,19 +453,23 @@ def _scan_class_fields(cls: ast.ClassDef, rel_path: str) -> list[Violation]:
         name_sig = _field_name_hit(field_name)
         type_sig = _field_type_hit(stmt.annotation)
         sig = name_sig or type_sig
-        if sig is not None:
+        if sig is not None and not declared._has_pii(rel_path, sig.category):
             violations.append(_pii010_violation(rel_path, stmt.lineno, field_name, sig))
     return violations
 
 
-# frob:doc docs/modules/gates.md#structural-pii-secrets-detection-t-0207
-def _scan_python_fields(tree: ast.Module, rel_path: str) -> tuple[Violation, ...]:
+def _scan_python_fields(
+    tree: ast.Module,
+    rel_path: str,
+    declared: _DeclaredSurface = _EMPTY_DECLARED_SURFACE,
+) -> tuple[Violation, ...]:
     """PII010 over every data-structure `ClassDef` in `tree` (module
-    docstring: pydantic/dataclass/TypedDict/attrs field names+types)."""
+    docstring: pydantic/dataclass/TypedDict/attrs field names+types),
+    joined against `declared`'s std.pii carries tags (T-0351)."""
     violations: list[Violation] = []
     for node in ast.walk(tree):
         if isinstance(node, ast.ClassDef) and _is_data_structure(node):
-            violations.extend(_scan_class_fields(node, rel_path))
+            violations.extend(_scan_class_fields(node, rel_path, declared))
     return tuple(violations)
 
 
@@ -399,11 +502,15 @@ def _column_call_string_name(node: ast.Call) -> str | None:
     return _literal_str(node.args[0])
 
 
-def _scan_orm_columns(tree: ast.Module, rel_path: str) -> list[Violation]:
+def _scan_orm_columns(
+    tree: ast.Module,
+    rel_path: str,
+    declared: _DeclaredSurface = _EMPTY_DECLARED_SURFACE,
+) -> list[Violation]:
     """PII010 over `name = Column(...)` declarative-model assignments and
     `Column("name", ...)` alembic-style positional column declarations
     (T-0348 family 2), matched against `FIELD_SIGNATURES` the same way a
-    dataclass/pydantic field name is."""
+    dataclass/pydantic field name is; joined against `declared` (T-0351)."""
     violations: list[Violation] = []
     for node in ast.walk(tree):
         if not (isinstance(node, ast.Call) and _is_column_call(node)):
@@ -411,7 +518,7 @@ def _scan_orm_columns(tree: ast.Module, rel_path: str) -> list[Violation]:
         string_name = _column_call_string_name(node)
         if string_name is not None:
             sig = _field_name_hit(string_name)
-            if sig is not None:
+            if sig is not None and not declared._has_pii(rel_path, sig.category):
                 violations.append(
                     _pii010_violation(rel_path, node.lineno, string_name, sig)
                 )
@@ -423,7 +530,7 @@ def _scan_orm_columns(tree: ast.Module, rel_path: str) -> list[Violation]:
         for target in node.targets:
             if isinstance(target, ast.Name):
                 sig = _field_name_hit(target.id)
-                if sig is not None:
+                if sig is not None and not declared._has_pii(rel_path, sig.category):
                     violations.append(
                         _pii010_violation(rel_path, node.lineno, target.id, sig)
                     )
@@ -492,16 +599,21 @@ def _ddl_column_names(sql: str) -> list[str]:
     return names
 
 
-def _scan_ddl_strings(tree: ast.Module, rel_path: str) -> list[Violation]:
+def _scan_ddl_strings(
+    tree: ast.Module,
+    rel_path: str,
+    declared: _DeclaredSurface = _EMPTY_DECLARED_SURFACE,
+) -> list[Violation]:
     """PII010 over `CREATE TABLE` column names embedded in string-literal
-    constants anywhere in `tree` (T-0348 family 2: raw-SQL migrations)."""
+    constants anywhere in `tree` (T-0348 family 2: raw-SQL migrations),
+    joined against `declared` (T-0351)."""
     violations: list[Violation] = []
     for node in ast.walk(tree):
         if not (isinstance(node, ast.Constant) and isinstance(node.value, str)):
             continue
         for column_name in _ddl_column_names(node.value):
             sig = _field_name_hit(column_name)
-            if sig is not None:
+            if sig is not None and not declared._has_pii(rel_path, sig.category):
                 violations.append(
                     _pii010_violation(rel_path, node.lineno, column_name, sig)
                 )
@@ -509,12 +621,16 @@ def _scan_ddl_strings(tree: ast.Module, rel_path: str) -> list[Violation]:
 
 
 # frob:tests tests/test_pii_structural_gate.py::TestDdlSchema.test_orm_column_password_fires  # noqa: E501
-def _scan_python_ddl(tree: ast.Module, rel_path: str) -> tuple[Violation, ...]:
+def _scan_python_ddl(
+    tree: ast.Module,
+    rel_path: str,
+    declared: _DeclaredSurface = _EMPTY_DECLARED_SURFACE,
+) -> tuple[Violation, ...]:
     """PII010 over sqlalchemy ORM `Column(...)` declarations and raw-SQL
     `CREATE TABLE` string literals (T-0348 family 2: DB/DDL schema
     scanning, deferred from T-0207)."""
-    violations = _scan_orm_columns(tree, rel_path)
-    violations.extend(_scan_ddl_strings(tree, rel_path))
+    violations = _scan_orm_columns(tree, rel_path, declared)
+    violations.extend(_scan_ddl_strings(tree, rel_path, declared))
     return tuple(violations)
 
 
@@ -865,11 +981,18 @@ def _sec110_violation(rel_path: str, lineno: int, site: str) -> Violation:
     )
 
 
-# frob:doc docs/modules/gates.md#structural-pii-secrets-detection-t-0207
-def _scan_python_env_access(tree: ast.Module, rel_path: str) -> tuple[Violation, ...]:
+def _scan_python_env_access(
+    tree: ast.Module,
+    rel_path: str,
+    declared: _DeclaredSurface = _EMPTY_DECLARED_SURFACE,
+) -> tuple[Violation, ...]:
     """SEC110 over every `os.environ[...]`/`os.environ.get(...)`/
     `os.getenv(...)` call/subscript site in `tree` (module docstring:
-    family 3, env/secret sources)."""
+    family 3, env/secret sources), joined against `declared`'s
+    Secret-clearance code binding (T-0351) -- a file already code-bound to
+    a declared std.secrets node is discharged, not merely waivable."""
+    if declared._has_secret(rel_path):
+        return ()
     violations: list[Violation] = []
     for node in ast.walk(tree):
         if isinstance(node, ast.Subscript) and _is_environ_subscript(node):
@@ -913,8 +1036,12 @@ def pii_structural_gate(root: Path) -> tuple[Violation, ...]:
     """PII010/SEC110 (docs/modules/gates.md#structural-pii-secrets-
     detection-t-0207): every git-tracked `.py` file scanned for PII-shaped
     data-structure fields and env-var access sites. Self-excludes this
-    module's own path (`_SELF_EXCLUDED_FILES`, T-0201 lesson)."""
+    module's own path (`_SELF_EXCLUDED_FILES`, T-0201 lesson). Joins every
+    PII010/SEC110 finding against a loaded strata design's std.pii/
+    std.secrets declarations (`_load_declared_surface`, T-0351) -- a
+    real declaration discharges a finding outright, not merely a waiver."""
     root = Path(root)
+    declared = _load_declared_surface(root)
     violations: list[Violation] = []
     scanned = 0
     for rel_path in _tracked_python_files(root):
@@ -928,9 +1055,9 @@ def pii_structural_gate(root: Path) -> tuple[Violation, ...]:
             _log.debug("pii_structural_gate: skipping unparseable %s", rel_path)
             continue
         scanned += 1
-        violations.extend(_scan_python_fields(tree, rel_path))
-        violations.extend(_scan_python_env_access(tree, rel_path))
-        violations.extend(_scan_python_ddl(tree, rel_path))
+        violations.extend(_scan_python_fields(tree, rel_path, declared))
+        violations.extend(_scan_python_env_access(tree, rel_path, declared))
+        violations.extend(_scan_python_ddl(tree, rel_path, declared))
         violations.extend(_scan_python_email_values(tree, rel_path, text))
         violations.extend(_scan_python_keyword_sweep(tree, rel_path, text))
 
@@ -951,4 +1078,6 @@ __all__ = [
     "_scan_python_ddl",
     "_scan_python_email_values",
     "_scan_python_keyword_sweep",
+    "_load_declared_surface",
+    "_DeclaredSurface",
 ]

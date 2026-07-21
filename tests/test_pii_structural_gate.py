@@ -19,6 +19,7 @@ from frob.gates._pii_structural import (
     FIELD_SIGNATURES,
     _is_data_structure,
     _is_email_shaped,
+    _load_declared_surface,
     _scan_python_ddl,
     _scan_python_email_values,
     _scan_python_env_access,
@@ -349,6 +350,106 @@ class TestKeywordSweep:
         sweep_violations = _scan_python_keyword_sweep(tree, "example.py", src)
         assert any(v.rule == "PII010" for v in field_violations)
         assert not any(v.rule == "PII012" for v in sweep_violations)
+
+
+class TestDeclaredSurfaceJoin:
+    """T-0351: PII010/SEC110 findings joined against a loaded strata
+    design's std.pii `carries` tags / Secret-clearance code binding --
+    a real declaration discharges a finding outright, not just a waiver."""
+
+    def test_pii010_discharged_by_matching_carries_tag(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_pii_structural.py::_load_declared_surface  # noqa: E501
+        _init_repo(tmp_path)
+        (tmp_path / "design").mkdir()
+        (tmp_path / "design" / "join.strata").write_text(
+            "module join\n\n"
+            "node store_users : trusted {\n"
+            "    clearance Pii;\n"
+            '    carries "credentials.password";\n'
+            '    code "app.py";\n'
+            "}\n",
+            encoding="utf-8",
+        )
+        (tmp_path / "app.py").write_text(
+            "from dataclasses import dataclass\n\n"
+            "@dataclass\n"
+            "class User:\n"
+            "    password: str\n",
+            encoding="utf-8",
+        )
+        _commit(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        assert not any(v.rule == "PII010" for v in violations)
+
+    def test_pii010_still_fires_when_no_declaration_covers_it(
+        self, tmp_path: Path
+    ) -> None:
+        """A field whose category the code-bound node does NOT `carries`
+        still fires -- the join discharges only a matching declaration,
+        never every finding in a design-bound repo wholesale."""
+        _init_repo(tmp_path)
+        (tmp_path / "design").mkdir()
+        (tmp_path / "design" / "join.strata").write_text(
+            "module join\n\n"
+            "node store_users : trusted {\n"
+            "    clearance Pii;\n"
+            '    carries "contact.email";\n'
+            '    code "app.py";\n'
+            "}\n",
+            encoding="utf-8",
+        )
+        (tmp_path / "app.py").write_text(
+            "from dataclasses import dataclass\n\n"
+            "@dataclass\n"
+            "class User:\n"
+            "    password: str\n",
+            encoding="utf-8",
+        )
+        _commit(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        assert any(v.rule == "PII010" for v in violations)
+
+    def test_sec110_discharged_by_secret_clearance_binding(
+        self, tmp_path: Path
+    ) -> None:
+        _init_repo(tmp_path)
+        (tmp_path / "design").mkdir()
+        (tmp_path / "design" / "join.strata").write_text(
+            "module join\n\n"
+            "node vault_reader : trusted {\n"
+            "    clearance Secret;\n"
+            '    code "reader.py";\n'
+            "}\n",
+            encoding="utf-8",
+        )
+        (tmp_path / "reader.py").write_text(
+            "import os\nvalue = os.getenv('SOME_VAR')\n", encoding="utf-8"
+        )
+        _commit(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        assert not any(v.rule == "SEC110" for v in violations)
+
+    def test_sec110_still_fires_with_no_design_directory(self, tmp_path: Path) -> None:
+        """No `design/` directory at all -- `_load_declared_surface`
+        degrades to the empty surface, every finding fires exactly as
+        before T-0351 (waiver-only discharge)."""
+        _init_repo(tmp_path)
+        (tmp_path / "reader.py").write_text(
+            "import os\nvalue = os.getenv('SOME_VAR')\n", encoding="utf-8"
+        )
+        _commit(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        assert any(v.rule == "SEC110" for v in violations)
+
+    def test_load_declared_surface_empty_with_no_design_dir(
+        self, tmp_path: Path
+    ) -> None:
+        _init_repo(tmp_path)
+        (tmp_path / "placeholder.py").write_text("x = 1\n", encoding="utf-8")
+        _commit(tmp_path)
+        declared = _load_declared_surface(tmp_path)
+        assert not declared._has_pii("anything.py", "identifier")
+        assert not declared._has_secret("anything.py")
 
 
 class TestSelfMatchExclusion:
