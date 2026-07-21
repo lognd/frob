@@ -202,6 +202,16 @@ node stratamod : trusted {
 // switch today -- an honest gap, same posture as `checker` above; waived
 // (T-0174) pending T-0200's real kill-switch mechanism, same reason.
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+// T-0457/T-0448 (post-merge self-conformance): src/frob/clean/** (tiered
+// artifact-only workspace cleanup) and src/frob/render/** (the unified CLI
+// output layer) landed without a code= binding anywhere -- SYS102 caught
+// both as unmodeled. Folded onto `core` for the same density reason as the
+// rest of this node's list rather than as two new components: `clean`
+// measures as `fs`/`fs-read` only (`_core.py`'s `shutil.rmtree`/
+// `Path.unlink`, `git ls-files` read, `frob.toml` read -- all already
+// declared below); `render` measures as `env` only (`_color.py`'s
+// `os.environ`/`NO_COLOR`/`CLICOLOR_FORCE` reads, also already declared).
+// No new `may` needed for either.
 node core : trusted {
     clearance Internal;
     code "src/frob/dup/**" "src/frob/logging/**" "src/frob/process/**"
@@ -211,7 +221,8 @@ node core : trusted {
         "src/frob/release/**" "src/frob/scaffold/**" "src/frob/serve/**"
         "src/frob/stats/**" "src/frob/bind/**" "src/frob/docs/**"
         "src/frob/fuzz/**" "src/frob/cycle/**" "src/frob/testing/**"
-        "src/frob/cve/**" "src/frob/deploy/**";
+        "src/frob/cve/**" "src/frob/deploy/**" "src/frob/clean/**"
+        "src/frob/render/**";
     may "env";
     may "eval";
     may "exec";
@@ -287,6 +298,14 @@ store tickets_ledger : trusted {
     append_only;
     code "src/frob/tickets/**";
     may "env";
+    // `may "eval"`: `_store.py`'s posix-only `fcntl` import goes through
+    // `importlib.import_module("fcntl")` (T-0458 ledger_lock) rather than a
+    // plain `import fcntl`, so `try`/`except ImportError` can degrade to a
+    // documented no-op on a platform lacking the module -- vet's `eval`
+    // pattern table fires on `importlib.import_module(` regardless of
+    // whether the argument is a runtime string or (as here) a fixed
+    // literal; the module name is never attacker-influenceable.
+    may "eval";
     may "exec";
     may "fs";
     may "fs-read";
