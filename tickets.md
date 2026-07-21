@@ -3791,7 +3791,7 @@ Root cause of the arch double-run (T-0418): _arch_violations_from_suggestions wa
 id: T-0423
 title: 'compute-once contract: run-scoped memoization for the heavy pure analyses
   (parse/build_graph/analyze_project/find_duplicates)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -3853,7 +3853,17 @@ scope_changes:
     touched only as a mechanical side-effect of frob ack / native rebuild
   actor: logan
   at: '2026-07-21'
-evidence: []
+evidence:
+- tests/unit/test_memo.py::test_second_call_with_same_args_is_memo_hit
+- tests/unit/test_memo.py::test_different_args_are_distinct_cache_entries
+- tests/unit/test_memo.py::test_scope_exit_does_not_leak_across_scopes
+- tests/unit/test_memo.py::test_kwargs_are_part_of_the_cache_key
+- tests/unit/test_memo.py::test_build_graph_second_call_is_memo_hit
+- tests/unit/test_memo.py::test_build_graph_outside_scope_is_never_cached
+- tests/unit/test_memo.py::test_reset_run_memo_activates_an_unbounded_scope
+- tests/unit/test_memo.py::test_run_memo_scope_deactivates_on_exit
+- tests/unit/test_memo.py::test_run_memo_scope_nests_without_truncating_outer
+- tests/unit/test_memo.py::test_analyze_project_second_call_is_memo_hit
 attachments: []
 acceptance: []
 threat: null
