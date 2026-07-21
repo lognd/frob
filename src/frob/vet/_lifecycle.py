@@ -15,6 +15,9 @@ _LIFECYCLE_SCRIPTS = ("preinstall", "install", "postinstall", "prepare")
 
 
 # frob:doc docs/modules/vet.md#public-api
+# frob:waive COV007 reason="docs/modules/vet.md's Public API section \
+# individually frob:describes this private helper by name (T-0529) -- a \
+# deliberate architecture doc, not accidental drift onto a private helper"
 # frob:waive TEST005 reason="_scan_lifecycle_scripts 80.0% branch cover, debt T-0160"
 def _scan_lifecycle_scripts(root: Path) -> dict[str, tuple[str, ...]]:
     """`{package_name: (script_name, ...)}` for every node_modules package.json
