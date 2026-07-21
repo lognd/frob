@@ -233,7 +233,6 @@ def _parse_line(
     return Edge(src=src, kind=kind, target=target, origin=origin, attrs=attrs)
 
 
-# frob:doc docs/modules/graph.md#comment-dsl
 # frob:ticket T-0286
 # frob:tests tests/unit/graph/test_dsl.py::TestContinuation.\
 # test_long_reason_continues_across_lines

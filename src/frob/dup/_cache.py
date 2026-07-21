@@ -126,7 +126,6 @@ def _connect(root: Path) -> Result[sqlite3.Connection, DupError]:
         return Ok(conn)
 
 
-# frob:doc docs/modules/dup.md#caching
 def _close_all() -> None:
     """Close and forget every process-cached dup-cache connection.
 

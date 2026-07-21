@@ -434,7 +434,6 @@ def _run_stamp_coverage(root: Path) -> None:
     _log.info("coverage stamp written")
 
 
-# frob:doc docs/commands/check.md#public-api
 def _run_stamp_baseline(root: Path, cfg: AppConfig) -> None:
     """`frob check --stamp-baseline`: record current gate violations as `--delta`'s
     baseline.

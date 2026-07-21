@@ -26,18 +26,27 @@ def _hash_tokens(tokens: tuple[str, ...]) -> str:
 
 
 # frob:doc docs/modules/graph.md#digests
+# frob:waive COV007 reason="docs/modules/graph.md's Digests section \
+# individually frob:describes this private helper by name (T-0529) -- a \
+# deliberate architecture doc, not accidental drift onto a private helper"
 def _digest_sig(symbol: RawSymbol) -> str:
     """Sha256 hex digest of `symbol.sig_tokens`."""
     return _hash_tokens(symbol.sig_tokens)
 
 
 # frob:doc docs/modules/graph.md#digests
+# frob:waive COV007 reason="docs/modules/graph.md's Digests section \
+# individually frob:describes this private helper by name (T-0529) -- a \
+# deliberate architecture doc, not accidental drift onto a private helper"
 def _digest_body(symbol: RawSymbol) -> str:
     """Sha256 hex digest of `symbol.body_tokens` (empty for class/const/type)."""
     return _hash_tokens(symbol.body_tokens)
 
 
 # frob:doc docs/modules/graph.md#digests
+# frob:waive COV007 reason="docs/modules/graph.md's Digests section \
+# individually frob:describes this private helper by name (T-0529) -- a \
+# deliberate architecture doc, not accidental drift onto a private helper"
 def _digest_doc(symbol: RawSymbol) -> str:
     """Sha256 hex digest of `symbol.doc_text` (already whitespace-collapsed)."""
     return hashlib.sha256(symbol.doc_text.encode("utf-8")).hexdigest()
