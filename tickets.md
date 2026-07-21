@@ -4605,7 +4605,7 @@ T-0506 extended COV006 with a one-hop same-file public-wrapper rescue, reducing 
 id: T-0517
 title: dup.db fingerprint cache lacks version/algorithm invalidation key -- stale
   caches silently change find_clones results
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-21'
