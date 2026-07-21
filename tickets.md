@@ -2923,7 +2923,7 @@ _scan_file_fingerprints (CVE matching) is lexical needle-matching for EVERY lang
 ```yaml
 id: T-0382
 title: 'strata: verify caught_by controls actually exist and fire'
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-07-20'
