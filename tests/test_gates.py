@@ -1745,19 +1745,19 @@ class TestInv004Gate:
     ) -> None:
         _write(
             tmp_path,
-            "docs/x.md",
+            "docs/modules/x.md",
             "# X\n\nThe daemon must never write to this file directly.\n",
         )
         violations = inv004_gate(tmp_path)
         assert len(violations) == 1
         assert violations[0].rule == "INV004"
         assert violations[0].severity == Severity.WARN
-        assert violations[0].file == "docs/x.md"
+        assert violations[0].file == "docs/modules/x.md"
 
     def test_section_with_any_invariant_marker_is_silent(self, tmp_path: Path) -> None:
         _write(
             tmp_path,
-            "docs/x.md",
+            "docs/modules/x.md",
             "# X\n\n<!-- frob:invariant INV-999 -->\n"
             "The daemon must never write to this file directly.\n",
         )
@@ -1768,41 +1768,87 @@ class TestInv004Gate:
         assert violations == ()
 
     def test_section_with_no_normative_language_is_silent(self, tmp_path: Path) -> None:
-        _write(tmp_path, "docs/x.md", "# X\n\nThe daemon writes this file.\n")
+        _write(tmp_path, "docs/modules/x.md", "# X\n\nThe daemon writes this file.\n")
         assert inv004_gate(tmp_path) == ()
 
     def test_two_sections_only_flags_the_underspecified_one(
         self, tmp_path: Path
     ) -> None:
+        """T-0515: file-granularity -- two claim-bearing, unbound sections
+        in the same file produce ONE advisory, not one per section (the
+        T-0452 per-section scan was the source of most of the 573-warning
+        pool this ticket burned down)."""
         _write(
             tmp_path,
-            "docs/x.md",
+            "docs/modules/x.md",
             "# A\n\nThe daemon must never write to this file directly.\n"
-            "# B\n\n<!-- frob:invariant INV-001 -->\n"
-            "This section always holds too.\n",
+            "# B\n\nThis section always holds too.\n",
         )
         violations = inv004_gate(tmp_path)
         assert len(violations) == 1
         assert "'# A" in violations[0].message
 
+    def test_any_bound_invariant_anywhere_in_file_silences_every_section(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0515: file-granularity means a marker in section B silences
+        an unbound claim in section A too -- the file as a whole is no
+        longer "anchors zero invariants"."""
+        _write(
+            tmp_path,
+            "docs/modules/x.md",
+            "# A\n\nThe daemon must never write to this file directly.\n"
+            "# B\n\n<!-- frob:invariant INV-001 -->\n"
+            "This section always holds too.\n",
+        )
+        assert inv004_gate(tmp_path) == ()
+
     def test_missing_docs_dir_is_silent(self, tmp_path: Path) -> None:
         assert inv004_gate(tmp_path) == ()
 
-    def test_markdown_waive_marker_with_reason_is_silent(self, tmp_path: Path) -> None:
-        """T-0509: a `<!-- frob:waive INV004 reason="..." -->` marker in
-        the section dispositions it without a fake bound invariant."""
+    def test_outside_spec_dirs_is_silent(self, tmp_path: Path) -> None:
+        """T-0515: INV004 is now scoped to `INV003_SPEC_DIRS`, matching
+        INV003 -- a narrative doc outside docs/modules and docs/strata
+        making a passing normative remark is not the failure mode."""
         _write(
             tmp_path,
-            "docs/x.md",
+            "docs/design/notes.md",
+            "# X\n\nThe daemon must never write to this file directly.\n",
+        )
+        assert inv004_gate(tmp_path) == ()
+
+    def test_markdown_waive_marker_with_reason_is_silent(self, tmp_path: Path) -> None:
+        """T-0509/T-0515: a `<!-- frob:waive INV004 reason="..." -->`
+        marker anywhere in the file dispositions it without a fake bound
+        invariant."""
+        _write(
+            tmp_path,
+            "docs/modules/x.md",
             '# X\n\n<!-- frob:waive INV004 reason="design note, not a gate" -->\n'
             "The daemon must never write to this file directly.\n",
         )
         assert inv004_gate(tmp_path) == ()
 
+    def test_markdown_waive_marker_without_reason_still_warns(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0515: an empty `reason=""` does not count as a waiver, same
+        honesty requirement as code-side WAIVE001."""
+        _write(
+            tmp_path,
+            "docs/modules/x.md",
+            '# X\n\n<!-- frob:waive INV004 reason="" -->\n'
+            "The daemon must never write to this file directly.\n",
+        )
+        violations = inv004_gate(tmp_path)
+        assert len(violations) == 1
+
     def test_claim_without_verb_in_sentence_is_silent(self, tmp_path: Path) -> None:
         """T-0509: a heading using trigger vocabulary with no claim-verb
         in the same sentence is not a claim."""
-        _write(tmp_path, "docs/x.md", "# X\n\n## Always current\n\nSee below.\n")
+        _write(
+            tmp_path, "docs/modules/x.md", "# X\n\n## Always current\n\nSee below.\n"
+        )
         assert inv004_gate(tmp_path) == ()
 
 
