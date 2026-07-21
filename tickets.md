@@ -2908,7 +2908,7 @@ threat: null
 id: T-0498
 title: 'strata audit G1: bind ENDORSE Boundary predicates to observed code (THREAT003
   discharge is a declared string, not a proof)'
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-07-21'
@@ -2919,14 +2919,80 @@ scope:
 - src/frob/strata/_threat.py
 - src/frob/strata/_selfconform.py
 - src/frob/strata/_code_binding.py
-scope_changes: []
-evidence: []
+- tests/test_vet_containment.py
+- tests/unit/strata/test_threat.py
+scope_changes:
+- op: add
+  glob: tests/test_vet_containment.py
+  reason: test fixtures exercising the ENDORSE-boundary discharge semantics changed
+    by the G1 fix must be updated alongside it
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/strata/test_threat.py
+  reason: test fixtures exercising the ENDORSE-boundary discharge semantics changed
+    by the G1 fix must be updated alongside it
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/strata/test_threat.py::TestMitigationKindChokepoint::test_endorse_boundary_with_no_evidence_ref_does_not_discharge_g1
+- tests/unit/strata/test_threat.py::TestMitigationKindChokepoint::test_endorse_boundary_with_dangling_obligation_does_not_discharge_g1
+- tests/unit/strata/test_threat.py::TestMitigationKindChokepoint::test_endorse_boundary_with_matching_predicate_discharges
+- tests/test_vet_containment.py::TestBuildContainmentReport::test_contained_finding_when_obligation_discharged
 attachments: []
 acceptance: []
 threat: null
 ```
 docs/audits/strata.md G1 (HIGH), from T-0401. _mitigation_is_chokepoint (_threat.py:1190ish) accepts any ENDORSE Boundary whose predicate string matches entry.mitigation -- no module joins a Boundary against observed code (grep confirmed only _models/__init__/_threat import both Boundary and effect-scanning, and _threat uses boundaries purely declaratively). Repro: may=sql node, an endorse boundary with predicate=parameterization on the only foreign inflow, and a weakness:CWE-89:<node> NoFlow claim -> THREAT003 PROVED with zero real parameterization in code. Fix direction: a SYS-family rule binding each ENDORSE boundary predicate to an observed sanitizer site in code=-bound files (analogous to SYS100), or at minimum require chokepoint boundaries to carry an evidence ref (code=/claim) selfconform verifies. Non-vacuous acceptance: a litmus where the claimed predicate has NO matching code site is REFUSED, plus the positive case where it does.
 
+## Done report
+
+Fixed G1 (docs/audits/strata.md): `_mitigation_is_chokepoint`'s
+`_matching_boundary_ids` treated an ENDORSE boundary's bare `predicate`
+string (equal to the catalog's required mitigation name) as sufficient
+proof of a real mitigation, with zero binding to code or any other
+in-model fact -- an attacker (or careless author) could type any
+plausible predicate and THREAT003 would PROVE the discharge.
+
+Counterexample confirmed first (ad-hoc script, before any code change):
+an ENDORSE boundary with `predicate="output_encoding"` and NO
+`obligations` discharged CWE-79 cleanly (`check_discharge_completeness`
+returned zero violations).
+
+Fix: `_matching_boundary_ids` now also requires the boundary's
+`obligations` (evidence refs, `_models.py`: "evidence refs discharged in
+tier 3") to be non-empty AND resolve to a real `Claim.id` present in the
+model (`_obligations_resolve`, new). A matching-predicate boundary with
+no evidence ref, or a dangling one, no longer counts as the required
+mitigation kind -- `_check_one_discharge` rejects the claim instead of
+proving it. This does not yet bind the predicate to an OBSERVED sanitizer
+site in code (the full SYS-family fix direction the audit finding also
+names) -- that remains a real gap, noted below as a follow-up ticket,
+since it is a substantially larger static-analysis feature (locating and
+verifying a sanitizer call site per predicate name across languages) than
+this ticket's budget covers. What IS closed: an ENDORSE boundary can no
+longer discharge a weakness purely on the strength of a self-declared,
+unverified string -- it must point at a real, independently-checkable
+claim in the same model.
+
+Updated existing fixtures that relied on the old vacuous behavior
+(`tests/test_vet_containment.py::_model_with_discharged_sql`,
+`test_threat.py::test_endorse_boundary_with_matching_predicate_discharges`)
+to carry a resolving `obligations` ref, and added two new counterexample
+tests proving the closed gap (no evidence ref; dangling evidence ref).
+
+Filed T-draft-3cf0d655: full SYS-family rule binding an ENDORSE boundary predicate
+to an OBSERVED sanitizer call site in `code=`-bound files (the stronger
+half of G1's fix direction, out of this ticket's scope/budget).
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/strata/test_threat.py::TestMitigationKindChokepoint::test_endorse_boundary_with_no_evidence_ref_does_not_discharge_g1` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_threat.py::TestMitigationKindChokepoint::test_endorse_boundary_with_dangling_obligation_does_not_discharge_g1` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_threat.py::TestMitigationKindChokepoint::test_endorse_boundary_with_matching_predicate_discharges` (pytest node id, verified passing when recorded)
+- `tests/test_vet_containment.py::TestBuildContainmentReport::test_contained_finding_when_obligation_discharged` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0500 -->
 ```yaml
 id: T-0500
@@ -3321,3 +3387,27 @@ standalone drift-lock/decision-record anchor with no public wrapper), or
 demote/reword a stale reference. Batch by module, commit per batch, same
 as T-0524's pattern -- this ticket exists so the residual gets the same
 per-finding triage rather than being silently left unaccounted for.
+
+<!-- ticket:T-draft-3cf0d655 -->
+```yaml
+id: T-draft-3cf0d655
+title: 'strata: bind ENDORSE boundary predicate to an observed sanitizer site in code
+  (G1 stronger fix)'
+state: queued
+kind: security
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/_threat.py
+- src/frob/strata/_selfconform.py
+- src/frob/strata/_code_binding.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Follow-up to T-0498 (docs/audits/strata.md G1). T-0498 closed the vacuous half of G1 (an ENDORSE boundary's predicate string now needs a resolving obligations/claim ref, not a bare self-declared name) but does NOT yet verify the predicate corresponds to an OBSERVED sanitizer/mitigation call site in the boundary's node's code=-bound files -- the audit finding's stronger fix direction: 'a SYS-family rule binding each ENDORSE boundary predicate to an observed sanitizer site in code=-bound files (analogous to SYS100)'. This needs a per-predicate sanitizer-pattern registry (or a pluggable convention, since predicate names are free text today) and a scan over code=-bound files analogous to _selfconform.py's SYS100/SYS101 joins. Non-vacuous acceptance: a litmus where the claimed predicate has no matching code site is REFUSED, plus the positive case where it does.
