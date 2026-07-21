@@ -3130,13 +3130,73 @@ scope:
 - tests/unit/strata/
 - strata-core/src/
 scope_changes: []
-evidence: []
+evidence:
+- tests/unit/strata/test_kernel_properties.py::test_propagated_demand_matches_fixpoint_oracle
+- tests/unit/strata/test_kernel_properties.py::test_propagated_demand_is_deterministic
+- tests/unit/strata/test_kernel_properties.py::TestZeroDeclaredRateFedCycle::test_self_loop_fed_by_literal_zero_rate_reports_unbounded
 attachments: []
 acceptance: []
 threat: null
 ```
 Split from T-0497 (too large to rush inside that ticket's remaining budget -- needs a pure-Python reference implementation designed and cross-checked, not a rushed patch). docs/audits/strata.md finding G10: FactBase.reachable/worst_age/propagated_demand are native Rust kernels (strata-core), trusted from Python with no differential or property-based test suite proving the Rust and an independent reference implementation agree on the same inputs. A subtle divergence (an off-by-one in age propagation, a wrong SCC handling, a rounding difference in demand aggregation) could silently ship undetected since only end-to-end behavioral tests exercise the combined system, not the kernel in isolation against a trusted oracle. Fix direction: a pure-Python reference implementation of at least worst_age/reachable/propagated_demand (small, deliberately naive, no perf concerns) plus a property-based (hypothesis-style, or hand-authored adversarial corpus) differential test that generates random-ish FactBase graphs and asserts the Rust kernel and the Python reference agree on every one.
 
+## Done report
+
+G10 (docs/audits/strata.md): FactBase's native Rust kernels had no
+differential/property tests proving agreement with an independent
+reference implementation. Discovered that reachable/worst_age/demand
+(the plain rate-sum pyfunction) were ALREADY covered by
+tests/unit/strata/test_kernel_properties.py (pre-existing, not written
+by this ticket) -- so this ticket's actual gap was propagated_demand
+(the fanout-multiplied, cycle-aware kernel FactBase.propagated_demand
+actually calls; distinct from the simpler demand pyfunction), the
+single most safety-critical of the three since a silent undercount here
+can falsely PROVE a RATE/UTILIZATION bound claim.
+
+Added a genuinely independent oracle: a Gauss-Seidel numeric fixpoint
+iteration (materially different algorithm from the kernel's recursive-
+with-active-stack approach), differential-tested via hypothesis against
+strata_core.propagated_demand across random graphs with declared/
+undeclared rates, fanout multipliers, and cycles (fed and unfed).
+
+While designing the property, found and confirmed (before weakening the
+assertion) a genuine kernel over-approximation: propagated_demand's
+`rate_sources` fed-cycle detection is magnitude- and destination-blind
+(any node sourcing ANY declared-rate edge, even rate=0.0 or an edge
+unrelated to the cycle, is treated as "fed"), so a numerically-0 cycle
+can be reported +inf. Confirmed via two counterexamples (a literal
+rate=0.0 self-loop; a node sourcing an unrelated declared-rate edge)
+that this is the SAFE direction (charter law 2: never undercount, may
+over-report unbounded) rather than a soundness bug. The property test
+therefore asserts the sound direction only (kernel must never report
+finite when the oracle proves unbounded; may report +inf when the
+oracle is finite) rather than exact equality, and TestZeroDeclaredRate-
+FedCycle pins the current disclosed behavior as a permanent regression
+witness. Filed T-draft-7f21bb07 for a maintainer decision (tighten the
+kernel's magnitude check, or fix its "positive-rate" docstring wording)
+-- not resolved here, since choosing kernel semantics is a design
+decision outside a testing-harness ticket.
+
+All of tests/unit/strata/test_kernel_properties.py passes (14 tests,
+including the 3 new: the property, its determinism twin, and the pinned
+regression). ruff/frob check clean for this ticket's scope.
+
+### Changed
+```
+ design/frob.strata                    |  14 ++-
+ src/frob/strata/_selfconform.py       | 133 +++++++++++++++++++---
+ src/frob/strata/_threat.py            |  47 +++++++-
+ tests/test_vet_containment.py         |   4 +
+ tests/unit/strata/test_selfconform.py |  72 ++++++++++++
+ tests/unit/strata/test_threat.py      |  78 +++++++++++++
+ tickets.md                            | 208 ++++++++++++++++++++++++++++++++--
+ 7 files changed, 524 insertions(+), 32 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_kernel_properties.py::test_propagated_demand_matches_fixpoint_oracle` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_kernel_properties.py::test_propagated_demand_is_deterministic` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_kernel_properties.py::TestZeroDeclaredRateFedCycle::test_self_loop_fed_by_literal_zero_rate_reports_unbounded` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0520 -->
 ```yaml
 id: T-0520
@@ -3511,3 +3571,26 @@ acceptance: []
 threat: null
 ```
 Blocks T-0501 (docs/audits/strata.md G2+G7). G2/G7's own fix direction ('require at least one modeled path from a foreign source to the firing node, and at least one foreign-trust node in the model, before accepting the vacuous short-circuit as a discharge') is IN DIRECT CONFLICT with T-0223's already-shipped, deliberately tested 'library-mode discharge-by-absence' feature (docs/strata/threat.md#library-mode-discharge-by-absence, tests/unit/strata/test_threat.py::TestLibraryModeForeignlessDischarge): a foreign-less library model (literally zero foreign-trust nodes) is INTENDED to vacuously discharge CWE-78/etc via NoFlow(src=foreign,...) proving true by absence. Applying G2/G7's fix direction verbatim (require >=1 foreign-trust node before accepting vacuous discharge) would REFUTE every T-0223 library-mode model outright, a real regression of a real feature. The two cases (intentional library mode with no adversary vs. a production model that simply forgot to model its adversary) are INDISTINGUISHABLE in the kernel today -- both produce a KernelModel with zero foreign-trust nodes. A resolution needs an explicit signal: e.g. a  declaration ( module kind, or similar) that marks a model as deliberately adversary-free so THAT case (and only that case) is exempt from G2/G7's tightened requirement, while an undeclared model with zero foreign nodes gets the new distinct diagnostic instead of silent PROVED. This is a product/security design call, not something T-0501 should decide unilaterally mid-patch -- filed per the BLOCKER protocol rather than force either a broken fix or a silently-narrowed one. docs/strata/threat.md#phasing and #library-mode-discharge-by-absence need to document whichever resolution is chosen.
+
+<!-- ticket:T-draft-7f21bb07 -->
+```yaml
+id: T-draft-7f21bb07
+title: 'strata-core: propagated_demand fed-cycle reach set is magnitude/destination-blind
+  (over-conservative +inf)'
+state: queued
+kind: security
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- strata-core/src/lib.rs
+- docs/strata/kernel.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Found by T-0514's new differential property test (docs/audits/strata.md G10). propagated_demand's rate_sources set is populated by ANY node that is the SOURCE of a declared-rate edge (Some(r) => rate_sources.insert(src)), with no check on the rate's magnitude (a literal rate=0.0 counts) and no check that the declared edge has anything to do with the cycle being classified (a node can be marked fed purely because it separately sources an unrelated declared-rate edge elsewhere). This makes the fed-cycle unbounded classification an over-approximation: a self-loop whose true numeric demand converges to exactly 0.0 can be reported as +inf. This is the SAFE failure direction per charter law 2 (fails toward overcounting, never undercounting) and is NOT a soundness bug -- confirmed via an independent Gauss-Seidel fixpoint oracle (tests/unit/strata/test_kernel_properties.py::test_propagated_demand_matches_fixpoint_oracle, which asserts the sound direction only: kernel must never undercount, may over-report unbounded) -- but it is a real precision/completeness gap: a RATE/UTILIZATION bound claim on such a node will spuriously REFUTE with no way to discharge it short of restructuring the model, even though the true load is provably bounded. docs/strata/kernel.md#capacity-semantics's own propagated_demand docstring says 'POSITIVE-rate cycles' but the code's actual test is 'declared-rate, any value, any destination' -- fix direction: either (a) tighten rate_sources to only include truly-positive rates AND restrict the reach check to whether the SPECIFIC cycle is actually fed (not merely 'this node happens to source some unrelated declared rate'), or (b) if the current broad behavior is intentional conservatism, fix the docstring to say so explicitly rather than 'positive-rate', and document the tradeoff in kernel.md. TestZeroDeclaredRateFedCycle in test_kernel_properties.py pins the current behavior as a permanent regression witness pending this decision.
