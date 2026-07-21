@@ -4702,7 +4702,13 @@ calibration + a follow-up with the exact count and per-file breakdown
 rather than forced or faked.
 
 ### Changed
-(no changed files detected)
+```
+ docs/modules/gates.md      |  71 ++++++++++-----
+ src/frob/gates/__init__.py | 164 +++++++++++++---------------------
+ tests/test_gates.py        |  68 +++++++++++---
+ tickets.md                 | 215 +++++++++++++++++++++++++++++++++++++++++++--
+ 4 files changed, 378 insertions(+), 140 deletions(-)
+```
 
 ### Evidence
 - `tests/test_gates.py::TestInv004Gate::test_section_with_normative_language_and_no_invariant_is_advisory` (pytest node id, verified passing when recorded)
