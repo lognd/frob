@@ -52,15 +52,22 @@ TABLE` string literals embedded in tracked `.py` files (`_scan_ddl_
 strings`), reusing the same `FIELD_SIGNATURES` table -- schema headers are
 the highest-value PII surface per the umbrella ticket body.
 
+T-0349 (family 4, email-shape values) added PII011: a git-tracked `.py`
+file's string-literal constants scanned via `email.utils.parseaddr` (an
+RFC 822 header parser) plus a plain character-set validation of the parsed
+local/domain parts (`_is_email_shaped`) -- explicitly NOT a regex, per the
+ticket body's "regex is bad for email matching" mandate. Escaped the same
+way T-0157's secrets scanner escapes a fixture: a `frob:secret-fake`
+comment on the literal's own line or the line directly above it
+(`_line_marks_fake_email`).
+
 Deliberately NOT built this pass (disclosed, not silently dropped -- see
-this ticket's Done report for the filed follow-on ticket ids):
-family (4) email-shape value detection (structural `email.utils.
-parseaddr`-based, explicitly NOT regex per the ticket body), family (5)
+this ticket's Done report for the filed follow-on ticket ids): family (5)
 keyword-only suggestion-severity sweep of identifiers/comments, and non-
 Python languages (TS/Rust field-shape equivalents, and non-Python DDL
-sources such as `.sql` migration files). `PII010`/`SEC110` cover exactly
-families (1), (2), and (3), scoped to Python via `frob.lang`'s existing
-parse surface.
+sources such as `.sql` migration files). `PII010`/`PII011`/`SEC110` cover
+exactly families (1), (2), (3), and (4), scoped to Python via `frob.lang`'s
+existing parse surface.
 
 T-0430 (`docs/design/registry/pii.yaml`'s six deferred sections) extended
 `FIELD_SIGNATURES` toward GDPR Art.9(1) special-category / CCPA / HIPAA
@@ -85,6 +92,7 @@ from __future__ import annotations
 import ast
 import re
 from dataclasses import dataclass
+from email.utils import parseaddr
 from pathlib import Path
 
 from frob.gates._models import Severity, Violation
@@ -500,6 +508,106 @@ def _scan_python_ddl(tree: ast.Module, rel_path: str) -> tuple[Violation, ...]:
     return tuple(violations)
 
 
+#: T-0349 (family 4) shared fake-marker convention: the SAME literal
+#: substring `frob.gates._secrets._FAKE_MARKER` uses (T-0157) -- not
+#: imported directly (that module's fake-detection is line/entropy-aware
+#: and secret-specific; PII011's escape hatch only needs the bare marker
+#: string), but kept textually identical so one comment discharges both
+#: gates' fixture literals at once.
+_EMAIL_FAKE_MARKER = "frob:secret-fake"
+
+
+def _line_marks_fake_email(lines: list[str], lineno: int) -> bool:
+    """True if the 1-indexed `lineno` line or the line directly above it
+    carries `_EMAIL_FAKE_MARKER` -- mirrors `_secrets.py::_line_marks_fake`'s
+    same-line-or-line-above convention (T-0157)."""
+    index = lineno - 1
+    if index < 0 or index >= len(lines):
+        return False
+    if _EMAIL_FAKE_MARKER in lines[index]:
+        return True
+    if index > 0 and _EMAIL_FAKE_MARKER in lines[index - 1]:
+        return True
+    return False
+
+
+#: Structural (non-regex) local-part/domain-label character allowances for
+#: `_is_email_shaped` -- RFC 5322 dot-atom-text's common subset, kept as a
+#: plain character set (`str.isalnum()` plus these) rather than a pattern.
+_EMAIL_LOCAL_EXTRA_CHARS = frozenset("._%+-")
+_EMAIL_LABEL_EXTRA_CHARS = frozenset("-")
+
+
+def _is_email_shaped(value: str) -> bool:
+    """T-0349 (family 4): whether `value` is structurally an email address,
+    via `email.utils.parseaddr` (an RFC 822 header parser, NOT a regex --
+    the ticket body's explicit "regex is bad for email matching" mandate)
+    plus a plain character-set validation of the parsed local/domain parts.
+    Whitespace anywhere rules a literal out outright (an email address
+    never contains a space); `parseaddr` returning a DIFFERENT address than
+    `value` itself means `value` was some other RFC 822 header shape
+    (`"Name <addr>"`, a bare display name, ...), not a bare email literal."""
+    if not value or any(ch.isspace() for ch in value):
+        return False
+    _, addr = parseaddr(value)
+    if addr != value:
+        return False
+    local, sep, domain = addr.partition("@")
+    if not sep or not local or not domain or "@" in domain:
+        return False
+    labels = domain.split(".")
+    if len(labels) < 2 or any(not label for label in labels):
+        return False
+    if not all(ch.isalnum() or ch in _EMAIL_LOCAL_EXTRA_CHARS for ch in local):
+        return False
+    for label in labels:
+        if label.startswith("-") or label.endswith("-"):
+            return False
+        if not all(ch.isalnum() or ch in _EMAIL_LABEL_EXTRA_CHARS for ch in label):
+            return False
+    return True
+
+
+def _pii011_violation(rel_path: str, lineno: int, value: str) -> Violation:
+    """The PII011 `Violation` for one email-shaped string literal (T-0349)."""
+    _log.warning("PII011: %s:%d email-shaped literal %r", rel_path, lineno, value)
+    return Violation(
+        rule="PII011",
+        severity=Severity.WARN,
+        file=rel_path,
+        line=lineno,
+        message=(
+            f"PII011: {rel_path}:{lineno} string literal {value!r} is "
+            f"email-shaped (structural parseaddr match) with no PII "
+            f"declaration or waiver -- declare it via a std.pii `carries` "
+            f"tag on the owning strata node, mark it a fixture with a "
+            f"`{_EMAIL_FAKE_MARKER}` comment on this line or the line "
+            f'above, or `frob:waive PII011 reason="..."` if this is not '
+            f"actually personal data"
+        ),
+    )
+
+
+# frob:tests tests/test_pii_structural_gate.py::TestEmailShapeValues.test_email_literal_fires  # noqa: E501
+def _scan_python_email_values(
+    tree: ast.Module, rel_path: str, text: str
+) -> tuple[Violation, ...]:
+    """PII011 over every email-shaped string-literal `ast.Constant` in
+    `tree` (T-0349 family 4), skipping any literal marked fake via
+    `_EMAIL_FAKE_MARKER` on its own line or the line directly above."""
+    lines = text.splitlines()
+    violations: list[Violation] = []
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Constant) and isinstance(node.value, str)):
+            continue
+        if not _is_email_shaped(node.value):
+            continue
+        if _line_marks_fake_email(lines, node.lineno):
+            continue
+        violations.append(_pii011_violation(rel_path, node.lineno, node.value))
+    return tuple(violations)
+
+
 #: Attribute/function names an env-access call site's dotted path may end
 #: in, for `_is_env_access` (corpus family 3: "os.environ[...]/os.getenv/
 #: load_dotenv() ... process.env, std::env::var" -- Python subset here).
@@ -681,6 +789,7 @@ def pii_structural_gate(root: Path) -> tuple[Violation, ...]:
         violations.extend(_scan_python_fields(tree, rel_path))
         violations.extend(_scan_python_env_access(tree, rel_path))
         violations.extend(_scan_python_ddl(tree, rel_path))
+        violations.extend(_scan_python_email_values(tree, rel_path, text))
 
     _log.info(
         "pii_structural_gate: scanned %d tracked .py file(s), %d violation(s)",
@@ -697,4 +806,5 @@ __all__ = [
     "_scan_python_env_access",
     "_scan_python_fields",
     "_scan_python_ddl",
+    "_scan_python_email_values",
 ]

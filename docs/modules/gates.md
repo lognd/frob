@@ -51,6 +51,7 @@ declaration).
 | WAIVE002 | (always on) | a `frob:waive` targets a rule id that can never be matched -- see "Waive boundary" below |
 | ARCH001 | arch | `frob.arch`'s complexity-aware long-function check (docs/modules/arch.md) still flags a function after its flat-body filter -- the one `frob.arch` category channeled into a real gate `Violation`, waivable with a reasoned `frob:waive ARCH001 reason="..." [ceiling=N]` (T-0289) |
 | PII010 | pii_structural | a pydantic/dataclass/TypedDict/attrs field's name or type annotation matches a PII-shaped signature (`FIELD_SIGNATURES`) with no `frob:waive PII010 reason="..."` -- see "PII010/SEC110" below |
+| PII011 | pii_structural | a tracked `.py` file's string-literal constant is structurally email-shaped (`_is_email_shaped`, `email.utils.parseaddr`-based) with no `frob:secret-fake` marker or `frob:waive PII011 reason="..."` -- see "PII010/SEC110" below |
 | SEC110 | pii_structural | an `os.environ[...]`/`os.environ.get(...)`/`os.getenv(...)` call site with no `frob:waive SEC110 reason="..."` -- see "PII010/SEC110" below |
 | REF001 | refs | a git-tracked file has zero inbound references (auto-detected or verified `frob:used-by`) from any other tracked file -- see "Anti-orphan file-reference gate" below |
 | REF002 | refs | a git-tracked file has exactly one inbound reference (fragile single anchor) -- see "Anti-orphan file-reference gate" below |
@@ -239,15 +240,23 @@ structures and env-var access sites, drawn from
   string literals (`_scan_ddl_strings`) -- both matched against the same
   `FIELD_SIGNATURES` table, no second registry. Schema headers are the
   highest-value PII surface per the umbrella ticket body.
+- **PII011 (T-0349, family 4): structural email-shape value detection**:
+  every string-literal constant in a tracked `.py` file, checked via
+  `email.utils.parseaddr` (an RFC 822 header parser) plus a plain
+  character-set validation of the parsed local/domain parts
+  (`_is_email_shaped`) -- explicitly NOT a regex, per the ticket body's
+  mandate. Escaped by a `frob:secret-fake` comment on the literal's own
+  line or the line directly above it, the same T-0157 marker convention
+  the secrets scanner uses (a fixture literal discharges both gates with
+  one comment).
 - **Deliberately not built this pass** (see `_pii_structural.py`'s module
-  docstring and this ticket's Done report): structural (non-regex)
-  email-shape value detection, identifier/comment keyword-sweep at
-  suggestion severity, non-Python language equivalents, and non-Python DDL
-  sources (`.sql` migration files). Filed as follow-on tickets, not
-  silently dropped. A direct join from a PII010/SEC110 finding to a T-0154
-  `carries` tag or a T-0082 `std.secrets` node (rather than a bare waiver)
-  is likewise a follow-on -- today's only discharge mechanism is the
-  waiver.
+  docstring and this ticket's Done report): identifier/comment
+  keyword-sweep at suggestion severity, non-Python language equivalents,
+  and non-Python DDL sources (`.sql` migration files). Filed as follow-on
+  tickets, not silently dropped. A direct join from a PII010/PII011/SEC110
+  finding to a T-0154 `carries` tag or a T-0082 `std.secrets` node (rather
+  than a bare waiver) is likewise a follow-on -- today's only discharge
+  mechanism is the waiver.
 
 ### Anti-orphan file-reference gate T-0396
 

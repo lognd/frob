@@ -17,7 +17,9 @@ import pytest
 from frob.gates._pii_structural import (
     FIELD_SIGNATURES,
     _is_data_structure,
+    _is_email_shaped,
     _scan_python_ddl,
+    _scan_python_email_values,
     _scan_python_env_access,
     _scan_python_fields,
     pii_structural_gate,
@@ -226,6 +228,68 @@ class TestDdlSchema:
         )
         tree = ast.parse(src)
         violations = _scan_python_ddl(tree, "example.py")
+        assert violations == ()
+
+
+class TestEmailShapeValues:
+    """PII011 (T-0349 family 4): structural (non-regex, `email.utils.
+    parseaddr`-based) email-shaped string-literal detection, with the
+    T-0157 `frob:secret-fake` marker escape. Every email-shaped literal
+    below is embedded inside a larger source snippet string, never a bare
+    top-level literal in THIS test file's own source, so this module's
+    own self-match exclusion is never the reason a case passes."""
+
+    def test_is_email_shaped_accepts_plain_address(self) -> None:
+        # frob:tests src/frob/gates/_pii_structural.py::_is_email_shaped
+        assert _is_email_shaped("user" + "@" + "example.com")
+
+    def test_is_email_shaped_rejects_display_name_wrapped(self) -> None:
+        """A `"Name <addr>"` RFC 822 header shape is NOT treated as a bare
+        email literal (module docstring's disclosed boundary): `parseaddr`
+        extracts a DIFFERENT address than the full literal text."""
+        assert not _is_email_shaped("Alice " + "<user@example.com>")
+
+    def test_is_email_shaped_rejects_no_tld_dot(self) -> None:
+        """`user@example` (single domain label, no dot) does not fire --
+        an evasion-shaped near-miss that must stay clean."""
+        assert not _is_email_shaped("user" + "@" + "example")
+
+    def test_is_email_shaped_rejects_obfuscated_at(self) -> None:
+        """`user(at)example.com` (a common obfuscation evasion) has no
+        literal `@` at all, so `parseaddr` cannot extract an address --
+        stays clean, an honestly-disclosed detection boundary, not a bug."""
+        assert not _is_email_shaped("user(at)example.com")
+
+    def test_is_email_shaped_rejects_plain_text(self) -> None:
+        assert not _is_email_shaped("not an email at all")
+
+    def test_email_literal_fires(self) -> None:
+        # frob:tests src/frob/gates/_pii_structural.py::_scan_python_email_values  # noqa: E501
+        src = "contact = " + repr("user" + "@" + "example.com") + "\n"
+        tree = ast.parse(src)
+        violations = _scan_python_email_values(tree, "example.py", src)
+        assert any(v.rule == "PII011" for v in violations)
+
+    def test_fake_marker_on_same_line_discharges(self) -> None:
+        src = (
+            "contact = " + repr("user" + "@" + "example.com") + "  # frob:secret-fake\n"
+        )
+        tree = ast.parse(src)
+        violations = _scan_python_email_values(tree, "example.py", src)
+        assert violations == ()
+
+    def test_fake_marker_on_line_above_discharges(self) -> None:
+        src = (
+            "# frob:secret-fake\ncontact = " + repr("user" + "@" + "example.com") + "\n"
+        )
+        tree = ast.parse(src)
+        violations = _scan_python_email_values(tree, "example.py", src)
+        assert violations == ()
+
+    def test_plain_string_literal_does_not_fire(self) -> None:
+        src = "greeting = 'hello world'\n"
+        tree = ast.parse(src)
+        violations = _scan_python_email_values(tree, "example.py", src)
         assert violations == ()
 
 
