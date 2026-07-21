@@ -3330,7 +3330,7 @@ PLACE001 was prototyped in T-0470 and deliberately dropped: distance-from-class-
 id: T-0505
 title: off-default-branch ticket write silently reverts an unrelated already-finalized
   ticket id to draft form
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -3341,13 +3341,52 @@ scope:
 - src/frob/tickets/**
 - tests/test_tickets.py
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_tickets.py::TestSingleFileLedger::test_write_ticket_never_touches_a_sibling_ticket_bytes
 attachments: []
 acceptance: []
 threat: null
 ```
 Found while landing T-0483 in a worktree (branch worktree-agent-ae00df0ca54dd3df2, off main). Running frob ticket start/evidence/done-report/sweep (any command that rewrites the whole tickets.md ledger) on this branch silently reverted an already-finalized, unrelated ticket (T-0503, real id on main) back to its draft form (T-draft-94774bc5) in the rewritten tickets.md -- confirmed by diffing against main: the T-0503 marker+id both became T-draft-94774bc5 with no ticket CLI command targeting T-0503 at all. A stale Done report elsewhere in the ledger mentions 'Filed T-draft-94774bc5' in prose (harmless, just text), and something in the ledger-write path appears to match that provisional id string against a currently-finalized ticket sharing the same title and reassign its id backward when the write happens off the default branch. This corrupts a finalized ticket's identity as a side effect of an unrelated ticket's write -- worked around by hand-restoring the T-0503 marker/id in tickets.md before landing T-0483 (not a real fix). Needs root-causing in src/frob/tickets (is_draft_id/on_default_branch/finalize_draft or wherever ledger writes reconcile ids) and a regression test that writing an unrelated ticket off-default-branch never touches another already-finalized ticket's id.
 
+## Done report
+
+Root cause: `write_ticket`'s single-file-ledger path (src/frob/tickets/_store.py)
+read the whole ledger into an id->Ticket dict, upserted one id, and re-rendered
+EVERY section from scratch via `_render_ledger`. Every ticket-write command
+(`start`/`evidence`/`done-report`/`sweep`, all via `transition`/`add_evidence`
+calling `write_ticket`) therefore rewrote the ENTIRE file even though it only
+ever touched one ticket's state. On a branch whose on-disk tickets.md predates
+a sibling ticket's later state on main (a finalize, close, or requeue), that
+whole-file rewrite silently reproduced the WORKTREE's stale copy of every
+other ticket, and the moment it landed/merged, a sibling ticket's already-
+finalized state (e.g. T-0503) reverted even though no command ever targeted
+it.
+
+Fix: added `_splice_ticket_section` (single-block text splice, the write-time
+analogue of `_land._splice_only_ticket`'s T-0479 own-block-only merge) and
+rewired `write_ticket`'s single mode to use it: only the target ticket's own
+marker-delimited span in the raw ledger TEXT is replaced (or appended, if
+new); every other ticket's bytes pass through completely untouched, never
+round-tripped through parse-then-render. `write_ticket` still calls
+`_parse_ledger` first to Err-propagate on a malformed ledger (unchanged
+safety net), but only for validation -- the actual write uses the raw text
+splice, not the re-rendered dict.
+
+Regression test: TestSingleFileLedger.test_write_ticket_never_touches_a_
+sibling_ticket_bytes creates two tickets, transitions one, and asserts the
+other ticket's on-disk section is byte-identical before and after (not just
+value-equal after a fresh parse).
+
+### Changed
+```
+ src/frob/tickets/_store.py | 98 +++++++++++++++++++++++++++++++++++++---------
+ tests/test_tickets.py      | 32 +++++++++++++++
+ 2 files changed, 111 insertions(+), 19 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets.py::TestSingleFileLedger::test_write_ticket_never_touches_a_sibling_ticket_bytes` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0506 -->
 ```yaml
 id: T-0506
