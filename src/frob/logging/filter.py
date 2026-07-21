@@ -2,6 +2,10 @@ import logging
 
 
 # frob:doc docs/modules/logging.md#public-api
+# frob:waive COV007 reason="docs/modules/logging.md's Public API section \
+# individually frob:describes this private filter and its .filter method by \
+# name (T-0529) -- a deliberate architecture doc, not accidental drift onto \
+# a private helper"
 class _BelowLevelFilter(logging.Filter):
     """Pass records strictly below `below` level (used to keep stdout clean)."""
 
