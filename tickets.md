@@ -3196,7 +3196,7 @@ threat: null
 id: T-0485
 title: ticket scope --add refuses narrowing inside a ticket's own pre-existing broad
   overlap (ScopeLeaseConflict)
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-21'
