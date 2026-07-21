@@ -636,6 +636,63 @@ def _dangling_declarations(
     return violations
 
 
+def _build_ref_gate_indexes(
+    root: Path, tracked: tuple[str, ...]
+) -> tuple[dict[str, str], dict[str, frozenset[str]], frozenset[str]]:
+    """Read every tracked file once and build its candidate-token set once,
+    so `ref_gate`'s O(n) file loop never re-derives either (extracted from
+    `ref_gate` for ARCH001; T-0449's native-stub pairing still resolves
+    from the returned `tracked_set`)."""
+    texts: dict[str, str] = {}
+    for rel_path in tracked:
+        text = _read_text(root, rel_path)
+        if text is not None:
+            texts[rel_path] = text
+    tracked_set = frozenset(tracked)
+    tokens_by_file: dict[str, frozenset[str]] = {
+        rel_path: frozenset(_candidate_tokens(text)) for rel_path, text in texts.items()
+    }
+    return texts, tokens_by_file, tracked_set
+
+
+def _ref_gate_file_violations(
+    rel_path: str,
+    text: str | None,
+    tracked_set: frozenset[str],
+    tokens_by_file: dict[str, frozenset[str]],
+    allowlist: frozenset[str],
+    native_stub_pairs: dict[str, str],
+) -> list[Violation]:
+    """REF001/002/003 violations for a single tracked file -- the per-file
+    body of `ref_gate`'s main loop, extracted for ARCH001 (line-count)."""
+    violations: list[Violation] = []
+    if text is not None:
+        violations.extend(_dangling_declarations(rel_path, text, tracked_set, tokens_by_file))
+
+    if rel_path in allowlist or _is_collectible_test_filename(rel_path):
+        return violations
+
+    auto = _auto_inbound(rel_path, tokens_by_file)
+    declared = set()
+    if text is not None:
+        for target in _declared_consumers(rel_path, text):
+            consumer_tokens = tokens_by_file.get(target)
+            if (
+                target in tracked_set
+                and consumer_tokens is not None
+                and _tokens_reach(consumer_tokens, rel_path)
+            ):
+                declared.add(target)
+    inbound = auto | declared
+    native_manifest = native_stub_pairs.get(rel_path)
+    if native_manifest is not None:
+        inbound = inbound | {native_manifest}
+    tier_violation = _ref001_or_002(rel_path, inbound)
+    if tier_violation is not None and tier_violation.rule not in _md_waived_rules(rel_path, text):
+        violations.append(tier_violation)
+    return violations
+
+
 # frob:doc docs/modules/gates.md#anti-orphan-file-reference-gate-t-0396
 # frob:ticket T-0396
 # frob:tests tests/test_refs_gate.py::TestTiers.test_zero_refs_warns_ref001
@@ -670,57 +727,26 @@ def ref_gate(root: Path) -> tuple[Violation, ...]:
     exclude_globs = load_exclude_globs(root)
     allowlist = _load_allowlist(root)
 
-    texts: dict[str, str] = {}
-    for rel_path in tracked:
-        text = _read_text(root, rel_path)
-        if text is not None:
-            texts[rel_path] = text
-    tracked_set = frozenset(tracked)
     # T-0449: native-extension `.pyi` stub -> build-manifest edges,
     # resolved once up front from `pyproject.toml`/`[tool.maturin]`
     # rather than re-derived per candidate.
+    texts, tokens_by_file, tracked_set = _build_ref_gate_indexes(root, tracked)
     native_stub_pairs = _native_stub_pairs(tracked_set, root)
-    # Every file's token set computed exactly once -- `_auto_inbound` and
-    # `_dangling_declarations` both need "does file Y's text reach file
-    # X", which would otherwise re-run `_candidate_tokens`'s regex sweep
-    # once per (X, Y) pair (O(n^2) regex work over the whole repo).
-    tokens_by_file: dict[str, frozenset[str]] = {
-        rel_path: frozenset(_candidate_tokens(text)) for rel_path, text in texts.items()
-    }
 
     violations: list[Violation] = []
     for rel_path in tracked:
         if is_excluded(rel_path, exclude_globs):
             continue
-        text = texts.get(rel_path)
-        if text is not None:
-            violations.extend(
-                _dangling_declarations(rel_path, text, tracked_set, tokens_by_file)
+        violations.extend(
+            _ref_gate_file_violations(
+                rel_path,
+                texts.get(rel_path),
+                tracked_set,
+                tokens_by_file,
+                allowlist,
+                native_stub_pairs,
             )
-
-        if rel_path in allowlist or _is_collectible_test_filename(rel_path):
-            continue
-
-        auto = _auto_inbound(rel_path, tokens_by_file)
-        declared = set()
-        if text is not None:
-            for target in _declared_consumers(rel_path, text):
-                consumer_tokens = tokens_by_file.get(target)
-                if (
-                    target in tracked_set
-                    and consumer_tokens is not None
-                    and _tokens_reach(consumer_tokens, rel_path)
-                ):
-                    declared.add(target)
-        inbound = auto | declared
-        native_manifest = native_stub_pairs.get(rel_path)
-        if native_manifest is not None:
-            inbound = inbound | {native_manifest}
-        tier_violation = _ref001_or_002(rel_path, inbound)
-        if tier_violation is not None and tier_violation.rule not in _md_waived_rules(
-            rel_path, text
-        ):
-            violations.append(tier_violation)
+        )
 
     _log.info(
         "ref_gate: %d tracked file(s) checked, %d violation(s)",

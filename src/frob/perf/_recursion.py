@@ -301,6 +301,16 @@ def _recursive_pairs(
     both the same file AND the same enclosing scope (`_enclosing_scope`) --
     two unrelated classes that happen to share a method name must never be
     paired (reviewer-caught bug, T-0290 round 2)."""
+    # Index each name's entries by (path, scope) once up front so the
+    # mutual-recursion match below is a dict lookup, not a linear scan with
+    # an equality comparison per candidate (PERF003).
+    by_name_and_key: dict[str, dict[tuple[str, str], list[tuple[str, RawSymbol]]]] = {}
+    for short_name, entries in symbols_by_name.items():
+        keyed: dict[tuple[str, str], list[tuple[str, RawSymbol]]] = {}
+        for symref, path, symbol, scope in entries:
+            keyed.setdefault((path, scope), []).append((symref, symbol))
+        by_name_and_key[short_name] = keyed
+
     hits: list[tuple[str, RawSymbol, str]] = []
     for short_name, entries in symbols_by_name.items():
         for symref, path, symbol, scope in entries:
@@ -308,19 +318,12 @@ def _recursive_pairs(
             if short_name in called:
                 hits.append((symref, symbol, short_name))
                 continue
-            for other_short, other_entries in symbols_by_name.items():
-                if other_short == short_name:
+            other_candidates = called - {short_name}
+            for other_short in other_candidates:
+                if other_short not in by_name_and_key:
                     continue
-                if other_short not in called:
-                    continue
-                for (
-                    other_symref,
-                    other_path,
-                    other_symbol,
-                    other_scope,
-                ) in other_entries:
-                    if other_path != path or other_scope != scope:
-                        continue
+                candidates = by_name_and_key[other_short].get((path, scope), ())
+                for _other_symref, other_symbol in candidates:
                     if short_name in _called_names(other_symbol.body_tokens):
                         hits.append((symref, symbol, other_short))
                         break

@@ -164,6 +164,69 @@ def _entry_disposition(entry: dict[str, Any]) -> str | None:
     return value if isinstance(value, str) else None
 
 
+def _classify_handled_by(
+    entry_id: str, rule: str, known_rules: frozenset[str]
+) -> tuple[str, str] | None:
+    """REG002 when `handled_by:<rule>` names a rule id absent from the live
+    gate/policy registry -- split out of `_classify` for ARCH001."""
+    if rule not in known_rules:
+        return (
+            "REG002",
+            f"REG002: {entry_id} disposition handled_by:{rule} names a "
+            f"rule that does not exist in the live gate/policy rule "
+            f"registry -- dangling enforcement reference",
+        )
+    return None
+
+
+def _classify_deferred(
+    entry_id: str, ticket_id: str, queue: TicketQueue
+) -> tuple[str, str] | None:
+    """REG003 when `deferred:<ticket>` names a missing or already-closed
+    ticket -- split out of `_classify` for ARCH001."""
+    ticket = queue.tickets.get(ticket_id)
+    if ticket is None:
+        return (
+            "REG003",
+            f"REG003: {entry_id} disposition deferred:{ticket_id} names "
+            f"a ticket that does not exist",
+        )
+    if ticket.state in (TicketState.DONE, TicketState.DROPPED):
+        return (
+            "REG003",
+            f"REG003: {entry_id} disposition deferred:{ticket_id} names "
+            f"a {ticket.state.value} ticket -- deferral to a closed "
+            f"ticket is not a real deferral",
+        )
+    return None
+
+
+def _classify_duplicate(
+    entry_id: str, target: str, all_entry_ids: frozenset[str]
+) -> tuple[str, str] | None:
+    """REG004 when `duplicate_of:<target>` names an id absent from the
+    whole registry -- split out of `_classify` for ARCH001."""
+    if target not in all_entry_ids:
+        return (
+            "REG004",
+            f"REG004: {entry_id} disposition duplicate_of:{target} "
+            f"names an id that does not exist anywhere in the "
+            f"registry -- dangling duplicate reference",
+        )
+    return None
+
+
+def _classify_out_of_scope(entry_id: str, reason: str) -> tuple[str, str] | None:
+    """REG001 when `out_of_scope` carries no reason text -- split out of
+    `_classify` for ARCH001."""
+    if not reason.strip():
+        return (
+            "REG001",
+            f"REG001: {entry_id} disposition out_of_scope has no reason",
+        )
+    return None
+
+
 def _classify(
     entry_id: str,
     disposition: str | None,
@@ -195,53 +258,16 @@ def _classify(
         )
     handled = _HANDLED_BY_RE.match(disposition)
     if handled is not None:
-        rule = handled.group("rule")
-        if rule not in known_rules:
-            return (
-                "REG002",
-                f"REG002: {entry_id} disposition handled_by:{rule} names a "
-                f"rule that does not exist in the live gate/policy rule "
-                f"registry -- dangling enforcement reference",
-            )
-        return None
+        return _classify_handled_by(entry_id, handled.group("rule"), known_rules)
     deferred = _DEFERRED_RE.match(disposition)
     if deferred is not None:
-        ticket_id = deferred.group("ticket")
-        ticket = queue.tickets.get(ticket_id)
-        if ticket is None:
-            return (
-                "REG003",
-                f"REG003: {entry_id} disposition deferred:{ticket_id} names "
-                f"a ticket that does not exist",
-            )
-        if ticket.state in (TicketState.DONE, TicketState.DROPPED):
-            return (
-                "REG003",
-                f"REG003: {entry_id} disposition deferred:{ticket_id} names "
-                f"a {ticket.state.value} ticket -- deferral to a closed "
-                f"ticket is not a real deferral",
-            )
-        return None
+        return _classify_deferred(entry_id, deferred.group("ticket"), queue)
     duplicate = _DUPLICATE_RE.match(disposition)
     if duplicate is not None:
-        target = duplicate.group("target")
-        if target not in all_entry_ids:
-            return (
-                "REG004",
-                f"REG004: {entry_id} disposition duplicate_of:{target} "
-                f"names an id that does not exist anywhere in the "
-                f"registry -- dangling duplicate reference",
-            )
-        return None
+        return _classify_duplicate(entry_id, duplicate.group("target"), all_entry_ids)
     out_of_scope = _OUT_OF_SCOPE_RE.match(disposition)
     if out_of_scope is not None:
-        reason = out_of_scope.group("reason").strip()
-        if not reason:
-            return (
-                "REG001",
-                f"REG001: {entry_id} disposition out_of_scope has no reason",
-            )
-        return None
+        return _classify_out_of_scope(entry_id, out_of_scope.group("reason"))
     return (
         "REG001",
         f"REG001: {entry_id} disposition {disposition!r} does not parse "
@@ -337,6 +363,115 @@ def _reg004_unresolved_splits(
     return violations
 
 
+def _load_registry_files(
+    base: Path, repo_root: Path
+) -> tuple[dict[str, dict[str, Any]], list[Violation]]:
+    """Parse every `REGISTRY_FILES` entry under `base` into `{rel_path:
+    data}`, plus a REG005 violation for each missing/invalid-YAML file --
+    split out of `registry_gate` for ARCH001."""
+    parsed: dict[str, dict[str, Any]] = {}
+    violations: list[Violation] = []
+    for filename in REGISTRY_FILES:
+        path = base / filename
+        if not path.exists():
+            continue
+        rel_path = (
+            str(path.relative_to(repo_root)) if _is_relative(path, repo_root) else str(path)
+        )
+        data = _load_yaml_file(path)
+        if data is None:
+            violations.append(
+                Violation(
+                    rule="REG005",
+                    severity=Severity.ERROR,
+                    file=rel_path,
+                    line=0,
+                    message=f"REG005: {rel_path} is missing or not valid YAML",
+                )
+            )
+            continue
+        parsed[rel_path] = data
+    return parsed, violations
+
+
+def _index_entries_by_id(
+    parsed: dict[str, dict[str, Any]],
+) -> tuple[dict[str, tuple[str, dict[str, Any]]], frozenset[str]]:
+    """`{entry_id: (rel_path, entry)}` and the frozen id set over every
+    entry in `parsed` -- the shared cross-reference index REG004's
+    duplicate-target and split-resolution checks both need; split out of
+    `registry_gate` for ARCH001."""
+    entries_by_id: dict[str, tuple[str, dict[str, Any]]] = {}
+    all_ids: set[str] = set()
+    for rel_path, data in parsed.items():
+        for _key, entries in _entry_lists(data):
+            for entry in entries:
+                if isinstance(entry, dict) and isinstance(entry.get("id"), str):
+                    entries_by_id[entry["id"]] = (rel_path, entry)
+                    all_ids.add(entry["id"])
+    return entries_by_id, frozenset(all_ids)
+
+
+def _classify_all_entries(
+    parsed: dict[str, dict[str, Any]],
+    known_rules: frozenset[str],
+    all_ids_frozen: frozenset[str],
+    queue: TicketQueue,
+) -> list[Violation]:
+    """REG001-REG005 (disposition + total-drift) violations over every
+    entry in `parsed` -- split out of `registry_gate` for ARCH001."""
+    violations: list[Violation] = []
+    for rel_path, data in parsed.items():
+        for entries_key, entries in _entry_lists(data):
+            mismatch = _reg005_total_mismatch(rel_path, data, entries_key, entries)
+            if mismatch is not None:
+                violations.append(mismatch)
+            for entry in entries:
+                if not isinstance(entry, dict) or not isinstance(entry.get("id"), str):
+                    continue
+                entry_id = entry["id"]
+                disposition = _entry_disposition(entry)
+                outcome = _classify(entry_id, disposition, known_rules, all_ids_frozen, queue)
+                if outcome is None:
+                    continue
+                rule, message = outcome
+                violations.append(
+                    Violation(
+                        rule=rule,
+                        severity=Severity.ERROR,
+                        file=rel_path,
+                        line=0,
+                        message=message,
+                    )
+                )
+    return violations
+
+
+def _reconciliation_violations(
+    base: Path,
+    repo_root: Path,
+    entries_by_id: dict[str, tuple[str, dict[str, Any]]],
+) -> list[Violation]:
+    """REG004 for every RECONCILIATION.md-documented split id still
+    unresolved in its owning registry file, or `[]` if the file is absent
+    or unreadable -- split out of `registry_gate` for ARCH001."""
+    reconciliation_path = base / _RECONCILIATION_FILE
+    if not reconciliation_path.exists():
+        return []
+    rel_reconciliation = (
+        str(reconciliation_path.relative_to(repo_root))
+        if _is_relative(reconciliation_path, repo_root)
+        else str(reconciliation_path)
+    )
+    try:
+        text = reconciliation_path.read_text(encoding="utf-8")
+    except OSError as exc:
+        _log.warning("registry_gate: %s unreadable: %s", reconciliation_path, exc)
+        return []
+    split_ids = _split_ids_from_reconciliation(text)
+    return _reg004_unresolved_splits(rel_reconciliation, split_ids, entries_by_id)
+
+
 # frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#registry-exhaustiveness-drift-lock-t-0343  # noqa: E501
 # frob:ticket T-0343
 # REG001-005 fire at Severity.ERROR: every registry entry must carry an
@@ -376,85 +511,11 @@ def registry_gate(
         _log.info("registry_gate: %s does not exist, skipping", base)
         return ()
 
-    parsed: dict[str, dict[str, Any]] = {}
-    violations: list[Violation] = []
-    for filename in REGISTRY_FILES:
-        path = base / filename
-        if not path.exists():
-            continue
-        rel_path = (
-            str(path.relative_to(repo_root))
-            if _is_relative(path, repo_root)
-            else str(path)
-        )
-        data = _load_yaml_file(path)
-        if data is None:
-            violations.append(
-                Violation(
-                    rule="REG005",
-                    severity=Severity.ERROR,
-                    file=rel_path,
-                    line=0,
-                    message=f"REG005: {rel_path} is missing or not valid YAML",
-                )
-            )
-            continue
-        parsed[rel_path] = data
-
-    entries_by_id: dict[str, tuple[str, dict[str, Any]]] = {}
-    all_ids: set[str] = set()
-    for rel_path, data in parsed.items():
-        for _key, entries in _entry_lists(data):
-            for entry in entries:
-                if isinstance(entry, dict) and isinstance(entry.get("id"), str):
-                    entries_by_id[entry["id"]] = (rel_path, entry)
-                    all_ids.add(entry["id"])
-    all_ids_frozen = frozenset(all_ids)
-
-    for rel_path, data in parsed.items():
-        for entries_key, entries in _entry_lists(data):
-            violations.extend(
-                v
-                for v in (_reg005_total_mismatch(rel_path, data, entries_key, entries),)
-                if v
-            )
-            for entry in entries:
-                if not isinstance(entry, dict) or not isinstance(entry.get("id"), str):
-                    continue
-                entry_id = entry["id"]
-                disposition = _entry_disposition(entry)
-                outcome = _classify(
-                    entry_id, disposition, known_rules, all_ids_frozen, queue
-                )
-                if outcome is None:
-                    continue
-                rule, message = outcome
-                violations.append(
-                    Violation(
-                        rule=rule,
-                        severity=Severity.ERROR,
-                        file=rel_path,
-                        line=0,
-                        message=message,
-                    )
-                )
-
-    reconciliation_path = base / _RECONCILIATION_FILE
-    if reconciliation_path.exists():
-        rel_reconciliation = (
-            str(reconciliation_path.relative_to(repo_root))
-            if _is_relative(reconciliation_path, repo_root)
-            else str(reconciliation_path)
-        )
-        try:
-            text = reconciliation_path.read_text(encoding="utf-8")
-        except OSError as exc:
-            _log.warning("registry_gate: %s unreadable: %s", reconciliation_path, exc)
-        else:
-            split_ids = _split_ids_from_reconciliation(text)
-            violations.extend(
-                _reg004_unresolved_splits(rel_reconciliation, split_ids, entries_by_id)
-            )
+    parsed, violations = _load_registry_files(base, repo_root)
+    entries_by_id, all_ids_frozen = _index_entries_by_id(parsed)
+    violations.extend(_classify_all_entries(parsed, known_rules, all_ids_frozen, queue))
+    violations.extend(_reconciliation_violations(base, repo_root, entries_by_id))
+    all_ids = set(all_ids_frozen)
 
     _log.info(
         "registry_gate: %d registry file(s), %d entries, %d violation(s)",

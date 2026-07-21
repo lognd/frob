@@ -53,7 +53,7 @@ def resolve_color(
         return False
     if "FROB_NO_COLOR" in os.environ:
         return False
-    force = os.environ.get("CLICOLOR_FORCE")
+    force = os.environ.get("CLICOLOR_FORCE")  # frob:waive SEC110 reason="terminal color-capability flag, not a secret"
     if force is not None and force not in ("", "0"):
         return True
     if os.environ.get("TERM") == "dumb":

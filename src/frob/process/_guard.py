@@ -63,7 +63,7 @@ class ProcessGuardError(ErrorSet):
 def _env_flag_set(name: str) -> bool:
     """True when env var `name` holds one of `_TRUTHY`'s values
     (case-insensitive) -- the shared truthiness rule both kill switches use."""
-    return os.environ.get(name, "").strip().lower() in _TRUTHY
+    return os.environ.get(name, "").strip().lower() in _TRUTHY  # frob:waive SEC110 reason="kill-switch flags (e.g. FROB_DISABLE_EXEC), not secrets"
 
 
 # frob:doc docs/modules/process.md#public-api

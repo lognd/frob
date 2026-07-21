@@ -23,7 +23,7 @@ is filed separately (see the ticket's Done report)."""
 
 def _agentic_requested(cfg: AppConfig) -> bool:
     """Whether the agentic report was requested for this `frob stats` run."""
-    value = os.environ.get(_AGENTIC_ENV, "")
+    value = os.environ.get(_AGENTIC_ENV, "")  # frob:waive SEC110 reason="behavior flag, not a secret"
     return value.strip().lower() not in ("", "0", "false")
 
 
