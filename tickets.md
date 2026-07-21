@@ -3713,7 +3713,7 @@ Root-cause analysis (user, 2026-07-20: "why do I have to keep making these reque
 id: T-0425
 title: Split TODO001 into per-failure-mode rule ids (bare-untracked vs dangling-frob:todo-ticket);
   align with frob's own one-id-per-mode convention
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -3723,7 +3723,14 @@ scope:
 - src/frob/gates/
 - frob.toml
 - docs/modules/gates.md
-scope_changes: []
+- tests/test_gates.py
+scope_changes:
+- op: add
+  glob: tests/test_gates.py
+  reason: existing TODO001 edges test must be updated to TODO002 after the rule split,
+    or it silently breaks
+  actor: logan
+  at: '2026-07-21'
 evidence:
 - tests/test_gates.py::TestCoverageGate::test_todo002_unbound_directive
 - tests/test_gates.py::TestCoverageGate::test_todo001_bare_comment_in_touched_file
@@ -3758,17 +3765,36 @@ Swept the repo for other TODO001-only references (frob.toml has no
 TODO001-specific entries to migrate; existing docs/tests already updated
 in the same change).
 
+Test results: `uv run pytest tests/test_gates.py -q` -- 186 passed.
+`uv run pytest --collect-only -q` -- collects cleanly repo-wide, no errors.
+
+Gates: `uv run frob check --ticket T-0425` -- 0 errors, 1 warning (TEST006,
+no coverage stamp; coordinator-side), 91 waived, scope/prework/coverage all
+clean for this ticket's scope. One unrelated pre-existing error remains in
+the full check output: COV003 on already-closed T-0416, whose recorded
+evidence node id no longer collects
+(`tests/unit/strata/test_code_binding.py::TestBindCode::
+test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs`) --
+confirmed out of T-0425's scope (src/frob/gates/, frob.toml,
+docs/modules/gates.md, tests/test_gates.py) and pre-dates this change;
+filed as T-draft-5443bd5e rather than fixed here.
+
+Filed: T-draft-5443bd5e (T-0416 evidence no longer collects, COV003) --
+out-of-scope discovery, not fixed in this ticket.
+
 ### Changed
 ```
- docs/modules/gates.md      |  5 +++--
- src/frob/gates/__init__.py | 44 +++++++++++++++++++++++++++++-------------
- tests/test_gates.py        | 21 ++++++++++++++++++--
- tickets.md                 | 48 ++++++++++++++++++++++++++++++++++++++++++++--
- 4 files changed, 99 insertions(+), 19 deletions(-)
+ docs/modules/gates.md      |  5 +--
+ src/frob/gates/__init__.py | 44 ++++++++++++++++-------
+ tests/test_gates.py        | 21 +++++++++--
+ tickets.md                 | 87 ++++++++++++++++++++++++++++++++++++++++++++--
+ 4 files changed, 137 insertions(+), 20 deletions(-)
 ```
 
 ### Evidence
-(no evidence recorded)
+- `tests/test_gates.py::TestCoverageGate::test_todo002_unbound_directive` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageGate::test_todo001_bare_comment_in_touched_file` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageGate::test_todo002_edge_to_closed_ticket` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0428 -->
 ```yaml
@@ -5023,3 +5049,23 @@ acceptance: []
 threat: null
 ```
 make coverage runs the whole suite under coverage on every change, so the stale-stamp gate (TEST006) forces a full re-run for a one-line edit. Explore: (a) daemon-side background coverage refresh on file-change, (b) per-file/touched-set incremental coverage merged into the stamp, (c) caching unchanged modules' coverage. Goal: TEST005/TEST006 feedback in seconds, not a full suite.
+
+<!-- ticket:T-draft-5443bd5e -->
+```yaml
+id: T-draft-5443bd5e
+title: T-0416 evidence no longer collects (COV003)
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- tests/unit/strata/test_code_binding.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+found while working T-0425: frob check reports COV003 for T-0416 (done) -- its recorded evidence tests/unit/strata/test_code_binding.py::TestBindCode::test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs no longer collects (pytest --collect-only: 'not found', no match in TestBindCode). Either the test was renamed/removed since T-0416 closed, or something broke collection for it. Out of scope for T-0425 (src/frob/gates/, frob.toml, docs/modules/gates.md, tests/test_gates.py only).
