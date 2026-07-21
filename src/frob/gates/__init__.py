@@ -51,6 +51,7 @@ from frob.gates._coverage import load_coverage, load_stamp, stamp_coverage
 from frob.gates._cve_fingerprint_scan import cve_fingerprint_scan_gate
 from frob.gates._docblocks import doc004_gate
 from frob.gates._exclude_hazard import exclude_hazard_gate
+from frob.gates._filehash import _SOURCE_EXTS
 from frob.gates._models import (
     CoverageData,
     CoverageError,
@@ -4513,13 +4514,40 @@ def _test006_missing() -> tuple[Violation, ...]:
     )
 
 
+# frob:ticket T-0403
+# frob:tests tests/test_gates.py::TestTestGate.test_test006_stale_on_new_file_not_in_stamp  # noqa: E501
 def _test006_stale(
     stamped_hashes: dict, snapshot: GraphSnapshot
 ) -> tuple[Violation, ...]:
-    """The TEST006 violation if any stamped file hash moved, else empty."""
+    """TEST006 violation if a stamped file changed OR a source file was added
+    since stamping (T-0403 B15: a brand-new file has no entry in
+    `stamped_hashes` at all, so it must be treated as stale too, not
+    silently skipped -- its coverage is unmeasured by the existing stamp).
+    """
     for path, current_hash in snapshot.file_hashes.items():
+        if not path.endswith(_SOURCE_EXTS):
+            # Coverage stamping only ever hashes _SOURCE_EXTS files
+            # (_collect_file_hashes); a doc/.strata/other file the graph
+            # also tracks was never in scope for `stamped_hashes` and is
+            # not a "new source file" in the coverage sense -- skip it so
+            # it is not misreported as staleness.
+            continue
         stamped = stamped_hashes.get(path)
-        if stamped is not None and stamped != current_hash:
+        if stamped is None:
+            _log.debug("TEST006: coverage stamp missing new file %s", path)
+            return (
+                Violation(
+                    rule="TEST006",
+                    severity=Severity.ERROR,
+                    file=".frob/coverage-stamp",
+                    line=0,
+                    message=(
+                        f"TEST006: coverage stamp is stale ({path} was added "
+                        f"since stamping); run: make coverage"
+                    ),
+                ),
+            )
+        if stamped != current_hash:
             _log.debug("TEST006: coverage stamp stale for %s", path)
             return (
                 Violation(
@@ -5439,15 +5467,33 @@ def _current_version(root: Path) -> str | None:
     return version if isinstance(version, str) else None
 
 
+# frob:ticket T-0403
+# frob:tests tests/test_gates.py::TestTestGate.test_changelog_mentions_rejects_substring_in_prose  # noqa: E501
+# frob:tests tests/test_gates.py::TestTestGate.test_changelog_mentions_accepts_real_heading_entry  # noqa: E501
 def _changelog_mentions(root: Path, version: str) -> bool:
-    """Whether CHANGELOG.md (if present) names `version`; absent file passes."""
+    """Whether CHANGELOG.md (if present) has a HEADING entry for `version`;
+    absent file passes.
+
+    T-0403 B14: a naive substring search matched `version` ANYWHERE in the
+    file -- inside an unrelated older entry's prose, a link, or as a prefix
+    of a longer number (e.g. "1.2.3" inside "1.2.34") -- so a changelog with
+    no real entry for the release could still satisfy REL001. This requires
+    the version to appear, bounded by non-digit/non-dot characters, on a
+    markdown heading line (`#...`), matching the Keep-a-Changelog
+    `## [x.y.z] - ...` convention this repo's own CHANGELOG.md uses.
+    """
+    pattern = re.compile(r"(?<![0-9.])" + re.escape(version) + r"(?![0-9.])")
     for name in ("CHANGELOG.md", "CHANGES.md", "HISTORY.md"):
         path = root / name
         if path.exists():
             try:
-                return version in path.read_text(encoding="utf-8", errors="replace")
+                text = path.read_text(encoding="utf-8", errors="replace")
             except OSError:
                 return True
+            return any(
+                line.lstrip().startswith("#") and pattern.search(line)
+                for line in text.splitlines()
+            )
     return True
 
 

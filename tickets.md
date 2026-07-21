@@ -2371,7 +2371,7 @@ See docs/audits/strata.md. HIGH: boundaries never bound to code (discharge = typ
 ```yaml
 id: T-0403
 title: 'AUDIT: accounting gates verify truth not existence (docs/audits/gates-accounting.md)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -2381,7 +2381,13 @@ parent: T-0397
 scope:
 - src/frob/gates/
 - src/frob/graph/
-scope_changes: []
+- tests/test_gates.py
+scope_changes:
+- op: add
+  glob: tests/test_gates.py
+  reason: unit tests for TEST006/REL001 fixes made by this audit ticket
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -2390,7 +2396,6 @@ component: null
 labels: []
 ```
 See docs/audits/gates-accounting.md. HIGH: the one blocking per-symbol test gate clears on a vacuous name-matching test while TEST002/005 are non-blocking WARN; DRIFT001 default sig facet is blind to body/behavior rewrites so a documented lie passes; TS/C/C++ frob:tests edges require NO execution evidence. Plus: coverage/stamp/baseline/prework chain is gitignored-local so CI cannot trust it. RIGHT-WAY fix: strengthen test-presence to reject vacuous tests + make it blocking; DRIFT over body/doc facets not just sig; execution evidence for non-Python; make CI-critical signals trackable. Then re-audit until empty. MED/LOW in the doc.
-
 <!-- ticket:T-0404 -->
 ```yaml
 id: T-0404

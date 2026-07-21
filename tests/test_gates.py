@@ -3180,6 +3180,59 @@ class TestTestGate:
         violations = _test006(snap)
         assert any(v.rule == "TEST006" for v in violations)
 
+    def test_changelog_mentions_rejects_substring_in_prose(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0403 B14: `version` appearing anywhere in the file (unrelated
+        prose, a longer version number's prefix) must NOT satisfy the
+        changelog check -- only a real heading entry for that exact
+        version does.
+        """
+        from frob.gates import _changelog_mentions  # noqa: PLC0415
+
+        (tmp_path / "CHANGELOG.md").write_text(
+            "# Changelog\n\n## [1.2.34] - 2026-01-01\nbumped past 1.2.3 to fix a bug\n",
+            encoding="utf-8",
+        )
+        # "1.2.3" is a substring of both the heading "1.2.34" and the prose
+        # line, but there is no real heading entry for "1.2.3" itself.
+        assert _changelog_mentions(tmp_path, "1.2.3") is False
+
+    def test_changelog_mentions_accepts_real_heading_entry(
+        self, tmp_path: Path
+    ) -> None:
+        """A genuine `## [version]` heading entry does satisfy the check."""
+        from frob.gates import _changelog_mentions  # noqa: PLC0415
+
+        (tmp_path / "CHANGELOG.md").write_text(
+            "# Changelog\n\n## [1.2.3] - 2026-01-01\nfixed things\n",
+            encoding="utf-8",
+        )
+        assert _changelog_mentions(tmp_path, "1.2.3") is True
+
+    def test_test006_stale_on_new_file_not_in_stamp(self, tmp_path: Path) -> None:
+        """T-0403 B15: a file added after the last stamp has no entry in
+        `file_hashes` at all -- it must be reported stale, not silently
+        skipped (a prior version only compared hashes for paths already
+        present in the stamp, so brand-new files' coverage went unmeasured
+        while TEST006 stayed green).
+        """
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        _write(tmp_path, "src/frob/pkg/b.py", "def other(x):\n    return x\n")
+        snap = _snapshot(tmp_path)
+        # Stamp only knows about a.py -- b.py was added afterward.
+        a_hash = snap.file_hashes["src/frob/pkg/a.py"]
+        stamp = {
+            "source_sha": "x",
+            "file_hashes": {"src/frob/pkg/a.py": a_hash},
+        }
+        (tmp_path / ".frob").mkdir(exist_ok=True)
+        (tmp_path / ".frob" / "coverage-stamp").write_text(json.dumps(stamp))
+        from frob.gates import _test006  # noqa: PLC0415
+
+        violations = _test006(snap)
+        assert any(v.rule == "TEST006" for v in violations)
+
     def test_edge_with_uncollected_node_id_does_not_satisfy(
         self, tmp_path: Path
     ) -> None:
