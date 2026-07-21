@@ -177,6 +177,8 @@ sets, each decidable:
 1. **Catalog completeness** (THREAT001): every CWE in the selected
    baseline view has a `weakness` entry, or an explicit `out-of-scope
    CWE-### reason="..."` -- an unaddressed baseline CWE is an error.
+
+   <!-- frob:invariant INV-035 -->
 2. **Precondition/capability completeness** (THREAT002): every capability
    and every extracted code sink is classified against the catalog; an
    unclassified sink is an error (it might hide an unmatched weakness).

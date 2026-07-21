@@ -88,7 +88,9 @@ detection THREAT004 already runs.
   node and file count, so the skip is not silently invisible. A node
   with even one NON-excluded observable file is unaffected: SYS101
   still fires normally for any genuinely-unobserved declared capability
-  on that node -- only the fully-excluded case is skipped. This does not
+  on that node -- only the fully-excluded case is skipped.
+  <!-- frob:invariant INV-026 -->
+  This does not
   change SYS100 (observed-but-undeclared): the inverse graphite finding
   (`bind_code`/capability binding over-attributing bundled-JS effects to
   a server node by walking raw FS) was ALREADY reconciled by T-0274 --

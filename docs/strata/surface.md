@@ -17,6 +17,8 @@ to kernel facts.
 - **One meaning per name.** Every reference resolves uniquely; shadowing is
   an error; there is no inheritance/override maze -- refinement (below) is
   the only hierarchy.
+
+  <!-- frob:invariant INV-034 -->
 - **Everything addressable.** Every declaration has a qualname
   (`payments::Ingress`) usable by claims, docs anchors, directives, and
   tickets. In phase 4 these become frob graph symbols with digests, acks,

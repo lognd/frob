@@ -703,6 +703,7 @@ def finalize_draft(root: Path, draft_id: str) -> Result[str, TicketError]:
     return Ok(final_id)
 
 
+# frob:invariant INV-032
 def _doable_candidates(queue: TicketQueue) -> list[Ticket]:
     """Queued/planned tickets that currently have no open blockers, unordered."""
     return [
