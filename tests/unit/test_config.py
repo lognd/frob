@@ -11,7 +11,12 @@ when frob.toml is missing, unreadable, or has no [arch] table.
 
 from __future__ import annotations
 
+import importlib.metadata
+import importlib.util
 from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
 
 from frob.app.config import (
     ARCH_DEFAULT_MAX_CLASS_METHODS,
@@ -20,6 +25,7 @@ from frob.app.config import (
     ARCH_DEFAULT_MAX_LOCAL_IMPORTS,
     ARCH_DEFAULT_MAX_NESTING_DEPTH,
     load_arch_config,
+    stale_install_warning,
 )
 
 
@@ -80,3 +86,73 @@ def test_malformed_toml_defaults(tmp_path: Path) -> None:
     cfg = load_arch_config(tmp_path)
     assert cfg["max_function_lines"] == 60
     assert cfg["max_file_lines"] == 800
+
+
+def _write_frob_pyproject(root: Path, version: str) -> None:
+    (root / "pyproject.toml").write_text(
+        f'[project]\nname = "frob"\nversion = "{version}"\n'
+    )
+
+
+def test_stale_install_warning_flags_version_mismatch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """T-0358: an installed frob (metadata version 0.9.0) running against a
+    checkout whose pyproject.toml declares 0.27.0, from a package location
+    OUTSIDE that checkout's own src/frob/, gets a loud warning naming both
+    versions -- the stale-global-binary phantom-numbers trap."""
+    _write_frob_pyproject(tmp_path, "0.27.0")
+    installed_init = tmp_path / "elsewhere" / "site-packages" / "frob" / "__init__.py"
+    installed_init.parent.mkdir(parents=True)
+    installed_init.write_text("")
+    monkeypatch.setattr(
+        importlib.util,
+        "find_spec",
+        lambda name: SimpleNamespace(origin=str(installed_init)),
+    )
+    monkeypatch.setattr(importlib.metadata, "version", lambda name: "0.9.0")
+
+    warning = stale_install_warning(tmp_path)
+
+    assert warning is not None
+    assert "0.9.0" in warning
+    assert "0.27.0" in warning
+
+
+def test_stale_install_warning_none_for_editable_checkout(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """No warning when the running package IS this checkout's own
+    src/frob/__init__.py (an editable install / `uv run frob`), even if
+    metadata reports a different version string than pyproject.toml."""
+    _write_frob_pyproject(tmp_path, "0.27.0")
+    local_init = tmp_path / "src" / "frob" / "__init__.py"
+    local_init.parent.mkdir(parents=True)
+    local_init.write_text("")
+    monkeypatch.setattr(
+        importlib.util,
+        "find_spec",
+        lambda name: SimpleNamespace(origin=str(local_init)),
+    )
+    monkeypatch.setattr(importlib.metadata, "version", lambda name: "0.9.0")
+
+    assert stale_install_warning(tmp_path) is None
+
+
+def test_stale_install_warning_none_when_versions_match(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """No warning when the installed version already matches the
+    checkout's declared version, even from an outside package location."""
+    _write_frob_pyproject(tmp_path, "0.27.0")
+    installed_init = tmp_path / "elsewhere" / "site-packages" / "frob" / "__init__.py"
+    installed_init.parent.mkdir(parents=True)
+    installed_init.write_text("")
+    monkeypatch.setattr(
+        importlib.util,
+        "find_spec",
+        lambda name: SimpleNamespace(origin=str(installed_init)),
+    )
+    monkeypatch.setattr(importlib.metadata, "version", lambda name: "0.27.0")
+
+    assert stale_install_warning(tmp_path) is None

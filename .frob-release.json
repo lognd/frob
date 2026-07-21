@@ -75,6 +75,7 @@
     "src/frob/app/config.py::AppConfig.from_external": "3f60f549404bc9cc626a016e900fd840634f969cd5245bdb4aed656dd63d58a0",
     "src/frob/app/config.py::Subcommand": "162bb6fd6a27a620db8c2da39d8f446f8017e654b662475aa60a68543d9ec1a3",
     "src/frob/app/config.py::load_arch_config": "7ddeaf02d1413da34a1e4f0aeb8d7c01bb0610102f707caaa939a081a7bf46eb",
+    "src/frob/app/config.py::stale_install_warning": "311b01c5972636f462f70e6727c05e90b3a48c4b259adb0f74c95160fc2e8ad4",
     "src/frob/app/cycle_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/deploy_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/docs_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
@@ -1068,5 +1069,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.53.0"
+  "version": "0.54.0"
 }

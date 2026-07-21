@@ -7,6 +7,7 @@ import argparse
 from pathlib import Path
 
 from frob.app import App, AppConfig
+from frob.app.config import stale_install_warning
 
 
 # frob:ticket T-0030
@@ -1519,7 +1520,12 @@ def main() -> None:
     else:
         parser = _build_parser()
         args = parser.parse_args()
-        cfg = AppConfig.from_external(args, Path("pyproject.toml"))
+        pyproject = Path("pyproject.toml")
+        # frob:ticket T-0358
+        warning = stale_install_warning(pyproject.parent.resolve())
+        if warning is not None:
+            print(warning, file=_sys.stderr)
+        cfg = AppConfig.from_external(args, pyproject)
         App(cfg)()
 
 
