@@ -2139,8 +2139,419 @@ def _py_import_aliases(source: str) -> dict[str, str]:
     return aliases
 
 
+_PROTOCOL_DUNDER_NAMES = frozenset(
+    {
+        "__enter__",
+        "__exit__",
+        "__getattr__",
+        "__setattr__",
+        "__getitem__",
+        "__setitem__",
+        "__delitem__",
+        "__iter__",
+        "__next__",
+        "__call__",
+        "__len__",
+        "__contains__",
+    }
+)
+_COV006_VALIDATOR_DECORATORS = frozenset({"field_validator", "model_validator"})
+_DECORATOR_LINE_RE = re.compile(r"^\s*@(\w+)")
+_PY_FROM_IMPORT_PAREN_MODULE_RE = re.compile(
+    r"from\s+([\w.]+)\s+import\s*\(([^)]*)\)", re.DOTALL
+)
+_PY_FROM_IMPORT_LINE_MODULE_RE = re.compile(
+    r"^[ \t]*from\s+([\w.]+)\s+import\s+([^(\n]+)$", re.MULTILINE
+)
+
+
+# frob:ticket T-0528
+def _cov006_decorator_names(source_lines: list[str], start_line: int) -> list[str]:
+    """Decorator names spanning 1-indexed `start_line` downward (a symbol's
+    span start is the FIRST decorator line, not the `def` line -- `frob.lang`
+    includes leading decorators in a symbol's span), stopping at the first
+    non-decorator line (the `def`/`class` line itself). Used by
+    `_cov006_implicit_dispatch_reachable` (T-0528, Class 1) to recognize a
+    pydantic `@field_validator`/`@model_validator` method: that method is
+    invoked by the FRAMEWORK during model construction, never by a literal
+    `name(...)` call anywhere in source, so the call-graph token scanner
+    can never see it by construction.
+    """
+    names: list[str] = []
+    i = start_line - 1
+    while i < len(source_lines):
+        line = source_lines[i]
+        match = _DECORATOR_LINE_RE.match(line)
+        if match is None:
+            break
+        names.append(match.group(1))
+        i += 1
+    return names
+
+
+# frob:ticket T-0528
+def _cov006_implicit_dispatch_reachable(root: Path, edge: Edge) -> bool:
+    """COV006 rescue for Class 1's dunder/validator shapes (T-0528): a
+    private target invoked IMPLICITLY by the Python runtime (a protocol
+    dunder like `__exit__`/`__getattr__`, triggered by `with`/attribute-
+    access syntax) or by a decorator-driven framework (a pydantic
+    `@field_validator`/`@model_validator` method, triggered by model
+    construction) -- neither shape is ever a literal `name(` call token
+    anywhere in source, which is the only thing `_called_names` can see by
+    construction. Accepts reachability when the target is one of these
+    implicit-dispatch shapes AND its owning receiver (the dunder's class,
+    the validator's model class, or -- for a bare module-level dunder like
+    `__getattr__` -- the module itself) is referenced anywhere in the
+    test's own source text. Looser than a call-graph proof (it cannot
+    confirm the specific method fired, only that its receiver is in play)
+    -- acceptable for a WARN-tier, best-effort rescue, matching this gate's
+    existing calibration tier.
+
+    Also covers one further indirection: the bound target may not be the
+    validator method itself but a plain helper the validator calls
+    directly (e.g. `Ticket`'s `_normalize_scope` field_validator calling
+    `_split_scope_entries`) -- the FRAMEWORK invokes the validator
+    implicitly, but the validator then calls the helper with an ordinary,
+    call-graph-visible `name(` token. Accepted when some same-file
+    validator method's private-call closure reaches the target.
+    """
+    from frob.lang import parse_file
+
+    target_file = edge.target.split("::", 1)[0]
+    if not target_file.endswith(".py"):
+        return False
+    target_qualname = edge.target.split("::", 1)[1]
+    short = target_qualname.rsplit(".", 1)[-1]
+
+    target_parsed = parse_file(root / target_file)
+    if target_parsed.is_err:
+        return False
+    target_sym = next(
+        (
+            sym
+            for sym in target_parsed.danger_ok.symbols
+            if sym.qualname == target_qualname
+        ),
+        None,
+    )
+    if target_sym is None:
+        return False
+
+    is_dunder = short in _PROTOCOL_DUNDER_NAMES
+    is_validator = False
+    source_lines = (root / target_file).read_text(encoding="utf-8").splitlines()
+    if not is_dunder:
+        decorators = _cov006_decorator_names(source_lines, target_sym.span[0])
+        is_validator = any(d in _COV006_VALIDATOR_DECORATORS for d in decorators)
+
+    if "." in target_qualname:
+        receiver = target_qualname.split(".", 1)[0]
+    else:
+        # A bare module-level dunder (e.g. a lazy `__getattr__`): the
+        # receiver is the module itself, referenced by its filename stem.
+        receiver = target_file.rsplit("/", 1)[-1].removesuffix(".py")
+
+    if not is_dunder and not is_validator:
+        # T-0528: the bound target may not be the validator ITSELF, but a
+        # plain helper the validator calls directly (e.g. `Ticket`'s
+        # `_normalize_scope` field_validator calling `_split_scope_entries`)
+        # -- the framework invokes the validator implicitly, the validator
+        # then calls the helper by a literal name the call graph CAN see.
+        # Accept when some same-file validator method reaches the target
+        # (directly, or through any depth of private-helper indirection)
+        # and that validator's own class is referenced in the test.
+        from frob.graph.callgraph import build_call_graph, closure
+
+        target_symref = f"{target_file}::{target_qualname}"
+        target_graph = build_call_graph(root, (target_file,))
+        validator_found = False
+        for sym in target_parsed.danger_ok.symbols:
+            sym_decorators = _cov006_decorator_names(source_lines, sym.span[0])
+            if not any(d in _COV006_VALIDATOR_DECORATORS for d in sym_decorators):
+                continue
+            wrapper_symref = f"{target_file}::{sym.qualname}"
+            if wrapper_symref == target_symref:
+                continue
+            if target_symref in closure(
+                target_graph, wrapper_symref, max_depth=8, max_nodes=200
+            ):
+                validator_found = True
+                receiver = sym.qualname.split(".", 1)[0]
+                break
+        if not validator_found:
+            return False
+
+    test_file = edge.src.split("::", 1)[0]
+    if not (root / test_file).is_file():
+        return False
+    test_source = (root / test_file).read_text(encoding="utf-8")
+    return receiver in test_source
+
+
+def _cov006_module_path_to_file(root: Path, module_path: str) -> str | None:
+    """Best-effort dotted python module path -> repo-root-relative source
+    file, trying both a direct module file and a package `__init__.py`
+    (T-0528). Returns `None` when neither exists under this repo's `src/`
+    layout (pyproject's `packages = { find = { where = ["src"] } }`).
+    """
+    rel = module_path.replace(".", "/")
+    for candidate in (f"src/{rel}.py", f"src/{rel}/__init__.py"):
+        if (root / candidate).is_file():
+            return candidate
+    return None
+
+
+def _cov006_imported_names(source: str) -> list[tuple[str, list[str]]]:
+    """`(dotted module path, [imported names])` pairs for every python
+    `from ... import ...` statement in `source`, both single-line and
+    parenthesized multi-line -- feeds `_cov006_resolve_import_files`
+    (T-0528, Class 2). Best-effort regex scan, python only, same spirit as
+    `_py_import_aliases`.
+    """
+    results: list[tuple[str, list[str]]] = []
+    for module_path, blob in _PY_FROM_IMPORT_PAREN_MODULE_RE.findall(source):
+        names = [n.split(" as ")[0].strip() for n in blob.split(",")]
+        results.append((module_path, [n for n in names if n.isidentifier()]))
+    for module_path, blob in _PY_FROM_IMPORT_LINE_MODULE_RE.findall(source):
+        names = [n.split(" as ")[0].strip() for n in blob.split(",")]
+        results.append((module_path, [n for n in names if n.isidentifier()]))
+    return results
+
+
+def _cov006_resolve_import_files(
+    root: Path, source: str, names_of_interest: frozenset[str]
+) -> set[str]:
+    """Repo-root-relative source files that `source`'s own `from ... import
+    ...` statements plausibly resolve to, for whichever imported names are
+    in `names_of_interest` (T-0528, Class 2): each `from a.b.c import name`
+    resolves the dotted module path to a candidate file; if that file does
+    not itself DEFINE the imported name (only re-exports it via its own
+    `from a.b.c.d import name` line -- the common package `__init__.py`
+    re-export shape), the same resolution repeats once more against THAT
+    file to reach the real defining module. Two hops deep, matching every
+    shape measured in T-0528's Class 2 audit (a public entrypoint
+    re-exported exactly once through a package `__init__.py`); best-effort
+    and python-only, feeds `_cov006_third_file_reachable`.
+    """
+    from frob.lang import parse_file
+
+    files: set[str] = set()
+    for module_path, names in _cov006_imported_names(source):
+        for name in names:
+            if name not in names_of_interest:
+                continue
+            candidate = _cov006_module_path_to_file(root, module_path)
+            if candidate is None:
+                continue
+            # Each imported NAME is chased independently (not the whole
+            # `from ... import a, b` group at once): a package `__init__.py`
+            # routinely re-exports several names from DIFFERENT submodules
+            # in separate lines, so grouping would let one name's resolved
+            # hop silently steal the search for another (T-0528 fix during
+            # calibration -- the first version of this helper had exactly
+            # that bug).
+            for _hop in range(2):
+                parsed = parse_file(root / candidate)
+                if parsed.is_err:
+                    break
+                defined = {sym.qualname for sym in parsed.danger_ok.symbols}
+                if name in defined:
+                    files.add(candidate)
+                    break
+                reexport_source = (root / candidate).read_text(encoding="utf-8")
+                next_candidate = None
+                for mod2, names2 in _cov006_imported_names(reexport_source):
+                    if name in names2:
+                        next_candidate = _cov006_module_path_to_file(root, mod2)
+                        break
+                if next_candidate is None:
+                    files.add(candidate)
+                    break
+                candidate = next_candidate
+    return files
+
+
+def _cov006_expand_project_imports(
+    root: Path, start_files: frozenset[str], max_depth: int = 2
+) -> set[str]:
+    """BFS closure of `start_files`' OWN project-internal (`frob.*`)
+    imports, regardless of which names are used (T-0528, Class 2): the
+    entrypoint a test calls often lives in a package `__init__.py` that
+    re-exports it from a THIRD file, which in turn imports from a FOURTH
+    file that actually reaches the bound private target (e.g.
+    `frob.lang.__init__.parse_file` -> `frob.lang._extract.extract` ->
+    `frob.lang._common._find_following_symbol`) -- one more hop than
+    `_cov006_resolve_import_files`'s name-targeted two-hop re-export chase
+    can see, since that helper only follows a SPECIFIC name's re-export,
+    not a file's whole import list. Bounded to `max_depth` hops and to
+    `frob.`-rooted modules (this repo's own package) to keep the widened
+    file set small and stdlib/third-party imports out of scope.
+    """
+    seen = set(start_files)
+    frontier = set(start_files)
+    for _depth in range(max_depth):
+        next_frontier: set[str] = set()
+        for file_path in frontier:
+            if not (root / file_path).is_file():
+                continue
+            source = (root / file_path).read_text(encoding="utf-8")
+            for module_path, _names in _cov006_imported_names(source):
+                if not module_path.startswith("frob."):
+                    continue
+                candidate = _cov006_module_path_to_file(root, module_path)
+                if candidate is not None and candidate not in seen:
+                    next_frontier.add(candidate)
+        seen |= next_frontier
+        frontier = next_frontier
+        if not frontier:
+            break
+    return seen
+
+
+def _cov006_full_call_graph(root: Path, paths: tuple[str, ...]):
+    """Caller -> callee symref graph over `paths` recording EVERY resolved
+    call, public OR private (T-0528, `_cov006_third_file_reachable` only)
+    -- unlike the shared `frob.graph.callgraph.build_call_graph`, which
+    deliberately drops edges into public callees so `frob.dup`/arch's
+    closures stop at the public-API boundary for free (T-0483). That
+    exclusion is exactly what makes a multi-file public-wrapper chain
+    (test -> public entrypoint in file A -> public entrypoint in file B ->
+    private target in file B) invisible even once every file involved is
+    in scope: the FIRST public-to-public hop never gets an edge. This local
+    variant exists only to bridge that specific gap for COV006's Class 2
+    rescue; the shared substrate and its other two consumers
+    (T-0288/T-0290) are untouched.
+    """
+    from frob.graph.callgraph import CallGraph, _called_names, _short_name
+    from frob.lang import parse_file
+
+    parsed_by_path: dict[str, list] = {}
+    for path in paths:
+        result = parse_file(root / path)
+        if result.is_err:
+            continue
+        parsed_by_path[path] = list(result.danger_ok.symbols)
+
+    by_name: dict[str, list[str]] = {}
+    for path, symbols in parsed_by_path.items():
+        for sym in symbols:
+            by_name.setdefault(_short_name(sym.qualname), []).append(
+                f"{path}::{sym.qualname}"
+            )
+
+    calls: dict[str, tuple[str, ...]] = {}
+    for path, symbols in parsed_by_path.items():
+        for sym in symbols:
+            caller_symref = f"{path}::{sym.qualname}"
+            called_names = _called_names(sym.body_tokens)
+            callees = [
+                symref
+                for name in called_names
+                for symref in by_name.get(name, ())
+                if symref != caller_symref
+            ]
+            if callees:
+                calls[caller_symref] = tuple(callees)
+    return CallGraph(calls=calls)
+
+
+# frob:ticket T-0528
+def _cov006_third_file_reachable(root: Path, edge: Edge) -> bool:
+    """COV006 rescue for Class 2 (T-0528): the test reaches the bound
+    private target through a real call chain passing through a THIRD file
+    -- neither the test's own file nor the target's file -- e.g. the test
+    calls a public entrypoint re-exported from a package `__init__.py`
+    (really defined in module A), which calls a private helper in the SAME
+    file A, which itself calls the private target in file B. Every hop in
+    that chain is a genuine private-callee call edge `build_call_graph`
+    already records; `_cov006`'s direct closure check misses it only
+    because it scopes `build_call_graph` to `(test_file, target_file)`, so
+    file A is never parsed at all. This widens the scope to also include
+    every file the test's own `called_names` plausibly resolve to via
+    import (`_cov006_resolve_import_files`), then seeds `closure` at EACH
+    called name that resolves to a PUBLIC entrypoint in one of those widened
+    files (not at the test's own symref) -- `build_call_graph` never
+    records an edge INTO a public callee (T-0483's public-boundary-stop
+    behavior, load-bearing for `frob.dup`/arch and left untouched), so a
+    closure seeded at the test itself could never cross that first
+    test -> public-entrypoint hop either, the same reason `_cov006`'s own
+    direct check misses this shape in the first place. Seeding at the
+    entrypoint instead sidesteps that one hop exactly the way
+    `_cov006_public_wrapper_reachable` already does for the same-file case.
+
+    The test's own "called names" are gathered not just from the bound
+    test method's own body, but transitively through any SAME-FILE PRIVATE
+    helper it calls too (e.g. a shared `_load_model(...)` fixture helper
+    that itself calls the real entrypoint) -- `build_call_graph` over the
+    test file alone already records that private-callee edge, so its
+    `closure` gives the full same-file helper set for free.
+
+    Python test files only (import resolution is python-specific).
+    """
+    from frob.graph.callgraph import _called_names, build_call_graph, closure
+    from frob.lang import parse_file
+
+    test_file = edge.src.split("::", 1)[0]
+    target_file = edge.target.split("::", 1)[0]
+    if not test_file.endswith(".py"):
+        return False
+    test_parsed = parse_file(root / test_file)
+    if test_parsed.is_err:
+        return False
+    test_qualname = edge.src.split("::", 1)[1]
+    test_symbols = test_parsed.danger_ok.symbols
+    test_sym = next(
+        (sym for sym in test_symbols if sym.qualname == test_qualname), None
+    )
+    if test_sym is None:
+        return False
+    called = set(_called_names(test_sym.body_tokens))
+    test_only_graph = build_call_graph(root, (test_file,))
+    reached_helpers = closure(test_only_graph, edge.src, max_depth=6, max_nodes=100)
+    symbols_by_qualname = {sym.qualname: sym for sym in test_symbols}
+    for helper_symref in reached_helpers:
+        helper_qualname = helper_symref.split("::", 1)[1]
+        helper_sym = symbols_by_qualname.get(helper_qualname)
+        if helper_sym is not None:
+            called |= _called_names(helper_sym.body_tokens)
+    if not called:
+        return False
+
+    test_source = (root / test_file).read_text(encoding="utf-8")
+    aliases = _py_import_aliases(test_source)
+    resolved_called = frozenset({aliases.get(name, name) for name in called})
+    import_files = _cov006_resolve_import_files(root, test_source, resolved_called)
+    if not import_files:
+        return False
+    expanded_files = _cov006_expand_project_imports(
+        root, frozenset(import_files) | {target_file}
+    )
+    candidate_files = {test_file, target_file, *import_files, *expanded_files}
+    if len(candidate_files) <= 2:
+        return False
+    ordered_files = tuple(sorted(candidate_files))
+    graph = _cov006_full_call_graph(root, ordered_files)
+
+    entrypoints: set[str] = set()
+    for third_file in import_files:
+        parsed = parse_file(root / third_file)
+        if parsed.is_err:
+            continue
+        for sym in parsed.danger_ok.symbols:
+            short = sym.qualname.rsplit(".", 1)[-1]
+            if sym.public and short in resolved_called:
+                entrypoints.add(f"{third_file}::{sym.qualname}")
+    if not entrypoints:
+        return False
+    return any(
+        edge.target in closure(graph, entrypoint, max_depth=8, max_nodes=200)
+        for entrypoint in entrypoints
+    )
+
+
 # frob:ticket T-0506
 # frob:ticket T-0516
+# frob:ticket T-0528
 def _cov006_public_wrapper_reachable(root: Path, edge: Edge) -> bool:
     """COV006 rescue: True if a PUBLIC symbol in the bound private target's
     own file is itself called, by name (or by a Python `X as Y` import
@@ -2160,6 +2571,17 @@ def _cov006_public_wrapper_reachable(root: Path, edge: Edge) -> bool:
     Scoped to this gate only; the shared `CallGraph` substrate is
     untouched so `frob.dup`/arch consumers keep their public-boundary-stop
     behavior.
+
+    T-0528 (Class 1's dispatch-table shape): if no wrapper reaches the
+    target via real calls, also accept a private function that lists the
+    target's short name as a BARE, non-call token (never `name(`) anywhere
+    in its own body -- a dispatch-table literal like
+    `(_validate_krb, ...)`, later invoked through a loop variable -- as
+    long as that dispatch-holding function is itself call-reachable from a
+    public wrapper. `_called_names` can only ever see `name(` tokens, so
+    this reference shape is invisible to the closure built above; this is
+    a last-resort widening, still scoped to the one already-parsed target
+    file.
     """
     from frob.graph.callgraph import (
         _called_names,
@@ -2201,6 +2623,30 @@ def _cov006_public_wrapper_reachable(root: Path, edge: Edge) -> bool:
             max_nodes=200,
         )
     }
+    if not wrapper_short_names:
+        target_short_name = _short_name(target_qualname)
+        for sym in target_symbols:
+            if not sym.public:
+                continue
+            wrapper_symref = f"{target_file}::{sym.qualname}"
+            reached = closure(target_graph, wrapper_symref, max_depth=8, max_nodes=200)
+            reached_symrefs = set(reached) | {wrapper_symref}
+            for dispatcher in target_symbols:
+                dispatcher_symref = f"{target_file}::{dispatcher.qualname}"
+                if dispatcher_symref not in reached_symrefs:
+                    continue
+                tokens = dispatcher.body_tokens
+                for i, tok in enumerate(tokens):
+                    if tok != target_short_name:
+                        continue
+                    if i + 1 < len(tokens) and tokens[i + 1] == "(":
+                        continue
+                    wrapper_short_names = {_short_name(sym.qualname)}
+                    break
+                if wrapper_short_names:
+                    break
+            if wrapper_short_names:
+                break
     if not wrapper_short_names:
         return False
 
@@ -2275,6 +2721,29 @@ def _cov006(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     edge would reparse both files once per binding. `graph_cache` memoizes
     by the exact `paths` tuple passed to `build_call_graph`, so a pair seen
     twice only builds once.
+
+    T-0528's calibration pass added three more blindness-class rescues,
+    tried in this order after the direct closure and public-wrapper checks
+    above still miss:
+
+    - `attrs.get("kind")` in `{"integration", "e2e"}` (Class 3): the
+      `frob:tests` directive's own `kind=` attr (already part of the DSL,
+      `frob.graph.dsl._TESTS_KINDS`) says the test drives a CLI/subprocess
+      boundary a static call-graph structurally cannot represent (argparse
+      dispatch-table or subprocess invocation, never a literal call);
+      trusted at face value rather than re-derived here.
+    - a non-python target file (Class 4): `build_call_graph`'s privacy
+      resolution (`_short_name(qualname).startswith("_")`) is a PYTHON
+      naming convention; Rust's `fn` (private-by-default unless `pub`) has
+      no such convention, so every non-python callee looks "public" to it
+      and is silently never recorded as a private edge, regardless of the
+      test/target's actual reachability. Checking non-python targets here
+      would be unsound noise, not signal, until `build_call_graph` gains
+      real per-language privacy resolution (filed as a follow-up; see this
+      ticket's Done report).
+    - `_cov006_implicit_dispatch_reachable` (Class 1) and
+      `_cov006_third_file_reachable` (Class 2), each documented at their
+      own definition.
     """
     from frob.graph.callgraph import CallGraph, build_call_graph, closure
 
@@ -2286,8 +2755,12 @@ def _cov006(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
         target_record = snapshot.symbols.get(edge.target)
         if target_record is None or target_record.public:
             continue
-        test_file = edge.src.split("::", 1)[0]
         target_file = edge.target.split("::", 1)[0]
+        if edge.attrs.get("kind") in ("integration", "e2e"):
+            continue
+        if not target_file.endswith(".py"):
+            continue
+        test_file = edge.src.split("::", 1)[0]
         paths = (test_file,) if test_file == target_file else (test_file, target_file)
         graph = graph_cache.get(paths)
         if graph is None:
@@ -2296,6 +2769,10 @@ def _cov006(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
         if edge.target in closure(graph, edge.src):
             continue
         if _cov006_public_wrapper_reachable(root, edge):
+            continue
+        if _cov006_implicit_dispatch_reachable(root, edge):
+            continue
+        if _cov006_third_file_reachable(root, edge):
             continue
         _log.debug(
             "COV006: %s -> %s has no call-graph reachability", edge.src, edge.target
