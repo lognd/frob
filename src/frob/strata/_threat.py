@@ -161,13 +161,27 @@ class BenignCapability(BaseModel):
     named here or THREAT002 fails closed on it. `caught_by` (T-0381) is
     mandatory: an excuse without a named compensating control (the gate/
     rule/mechanism that catches the excused capability elsewhere) is an
-    unaccounted-for gap, not an honest exclusion."""
+    unaccounted-for gap, not an honest exclusion. `family` (T-0511, strata
+    audit G12) is `None` for the built-in `DEFAULT_BENIGN_CAPABILITIES`
+    tuple (each entry's own comment already documents, by hand, which
+    family it is a no-op for -- audited once at authoring time) but
+    MANDATORY ("security" | "quality") for every repo-declared excuse
+    `load_repo_benign_capabilities` loads -- a repo excuse names WHICH
+    catalog family it claims the kind is unclassified in, and that claim
+    is verified at load time (`_family_catalog_for`), not merely trusted:
+    an excuse for a kind ALREADY classified in the family it targets is
+    rejected outright, distinguishing a genuinely cross-family excuse
+    (e.g. `client_storage` excused for `family="quality"`, legitimately
+    unmapped there despite being CWE_CATALOG-classified security-side --
+    the T-0017 case) from an illegitimate same-family excuse that would
+    silently mask a real, already-known sink."""
 
     model_config = ConfigDict(frozen=True)
 
     kind: str
     reason: str = Field(min_length=1)
     caught_by: str = Field(min_length=1)
+    family: str | None = None
 
 
 #: T-0150: `may` capability kinds `_selfconform.py`'s SYS100/SYS101 measure
@@ -319,9 +333,36 @@ DEFAULT_BENIGN_CAPABILITIES: tuple[BenignCapability, ...] = (
 )
 
 
+#: T-0511 (strata audit G12): the two catalog families a repo-declared
+#: excuse's `family` must name, each mapped to the catalog tuple(s)
+#: `_family_catalog_for` checks a repo excuse's `kind` against --
+#: "security" spans BOTH `CWE_CATALOG` and `CWE_TOP_25_CATALOG` (a kind
+#: classified in either is already known security-side), "quality" is
+#: `QUALITY_CATALOG` alone, mirroring `_threat_and_quality_gaps`
+#: (`_audit.py`)'s own security/quality split -- kept local rather than
+#: importing `ALL_CATALOG` (which would erase exactly the per-family
+#: distinction this ticket exists to restore).
+_BENIGN_EXCUSE_FAMILIES: frozenset[str] = frozenset({"security", "quality"})
+
+
+def _family_catalog_for(family: str) -> tuple[WeaknessEntry, ...]:
+    """T-0511: the catalog tuple a repo-declared excuse's `family` claim is
+    checked against -- "security" is `CWE_CATALOG + CWE_TOP_25_CATALOG`,
+    "quality" is `QUALITY_CATALOG` alone; callers must first confirm
+    `family in _BENIGN_EXCUSE_FAMILIES` (this raises `KeyError` on any
+    other value, deliberately -- an unchecked call is a bug, not a
+    user-facing malformed-config path, which `load_repo_benign_
+    capabilities` validates BEFORE calling this)."""
+    return {
+        "security": CWE_CATALOG + CWE_TOP_25_CATALOG,
+        "quality": QUALITY_CATALOG,
+    }[family]
+
+
 # frob:doc docs/strata/threat.md#per-repo-benign-capability-declarations
 # frob:doc docs/guides/extending/benign-capabilities.md#per-repo-declarations
 # frob:ticket T-0017
+# frob:ticket T-0511
 def load_repo_benign_capabilities(
     root: Path,
 ) -> Result[tuple[BenignCapability, ...], StrataError]:
@@ -334,20 +375,32 @@ def load_repo_benign_capabilities(
     `frob.toml`'s `[[strata.benign_capabilities]]` array of tables (the same
     array-of-tables shape `frob.policy`'s `[[policy.*]]` already uses for
     repo-declared rules) -- each entry needs `kind`, a non-blank `reason`,
-    and a non-blank `caught_by` (T-0381: the compensating gate/rule/
-    mechanism that catches the excused capability elsewhere, or an honest
-    "none" disclosure) (deny-by-default, charter law 2: an excuse without a
-    written reason is not honest). Returns `Ok(())` for a missing
-    `frob.toml` or a missing `[strata]`/`benign_capabilities` table (no
-    repo-declared excuses is a valid, common case, not an error) and
+    a non-blank `caught_by` (T-0381: the compensating gate/rule/mechanism
+    that catches the excused capability elsewhere, or an honest "none"
+    disclosure), AND (T-0511, strata audit G12) a mandatory `family`
+    naming WHICH catalog family ("security" | "quality") the excuse
+    applies against (deny-by-default, charter law 2: an excuse without a
+    written reason is not honest -- and, as of T-0511, without a checked
+    family claim is not verifiable). A repo excuse whose `kind` is
+    ALREADY classified (has a `capability_kind` entry) in the family it
+    names is REJECTED at load time -- that is not a genuine gap, it is
+    either a no-op or, worse, an attempt to mask an already-known sink
+    under the label of an "excuse"; a kind legitimately unclassified in
+    one family but classified in the OTHER (e.g. `client_storage`,
+    CWE_CATALOG-classified security-side but unmapped in
+    `QUALITY_CATALOG`, the T-0017 case) is exactly what `family="quality"`
+    is for and stays accepted. Returns `Ok(())` for a missing `frob.toml`
+    or a missing `[strata]`/`benign_capabilities` table (no repo-declared
+    excuses is a valid, common case, not an error) and
     `Err(StrataError.MalformedBenignConfig)` for a present-but-invalid
-    table (unparseable TOML, or an entry missing `kind`/`reason`/
-    `caught_by`) -- fails closed rather than silently dropping a malformed
-    entry, the same posture `_load_policy`'s sibling loaders take. Callers
-    combine the result with
-    `DEFAULT_BENIGN_CAPABILITIES` (repo entries are ADDITIONAL excuses, never
-    a replacement for the built-in tier-2 vocabulary excuses) before passing
-    `benign=` to `evaluate_exhaustiveness`."""
+    table (unparseable TOML; an entry missing `kind`/`reason`/`caught_by`/
+    `family`; an unrecognized `family` value; or a `family` claim the
+    catalog itself contradicts) -- fails closed rather than silently
+    dropping or silently trusting a malformed/illegitimate entry, the same
+    posture `_load_policy`'s sibling loaders take. Callers combine the
+    result with `DEFAULT_BENIGN_CAPABILITIES` (repo entries are ADDITIONAL
+    excuses, never a replacement for the built-in tier-2 vocabulary
+    excuses) before passing `benign=` to `evaluate_exhaustiveness`."""
     toml_path = root / "frob.toml"
     if not toml_path.exists():
         _log.info("load_repo_benign_capabilities: no frob.toml at %s", toml_path)
@@ -373,14 +426,51 @@ def load_repo_benign_capabilities(
     excuses: list[BenignCapability] = []
     for entry in entries:
         try:
+            kind = entry["kind"]
+            reason = entry["reason"]
+            caught_by = entry["caught_by"]
+            family = entry["family"]
+        except (KeyError, TypeError) as exc:
+            _log.error(
+                "load_repo_benign_capabilities: malformed entry in %s: %s",
+                toml_path,
+                exc,
+            )
+            return Err(StrataError.MalformedBenignConfig)
+        if family not in _BENIGN_EXCUSE_FAMILIES:
+            _log.error(
+                "load_repo_benign_capabilities: entry for kind=%r in %s names "
+                "family=%r, not one of %s",
+                kind,
+                toml_path,
+                family,
+                sorted(_BENIGN_EXCUSE_FAMILIES),
+            )
+            return Err(StrataError.MalformedBenignConfig)
+        family_known = frozenset(
+            _entries_by_capability_kind(_family_catalog_for(family))
+        )
+        if kind in family_known:
+            _log.error(
+                "load_repo_benign_capabilities: entry for kind=%r in %s claims "
+                "family=%r, but %r is ALREADY classified in that family's "
+                "catalog -- not a genuine gap, refusing the excuse",
+                kind,
+                toml_path,
+                family,
+                kind,
+            )
+            return Err(StrataError.MalformedBenignConfig)
+        try:
             excuses.append(
                 BenignCapability(
-                    kind=entry["kind"],
-                    reason=entry["reason"],
-                    caught_by=entry["caught_by"],
+                    kind=kind,
+                    reason=reason,
+                    caught_by=caught_by,
+                    family=family,
                 )
             )
-        except (KeyError, TypeError, ValidationError) as exc:
+        except (TypeError, ValidationError) as exc:
             _log.error(
                 "load_repo_benign_capabilities: malformed entry in %s: %s",
                 toml_path,

@@ -4,8 +4,10 @@
 
 ## What it is and where it lives
 
-`src/frob/strata/_threat.py`: `BenignCapability` (frozen, `kind` + `reason`)
-and `DEFAULT_BENIGN_CAPABILITIES: tuple[BenignCapability, ...]`. Mirrors
+`src/frob/strata/_threat.py`: `BenignCapability` (frozen, `kind` +
+`reason` + `caught_by` + an optional `family`, mandatory for repo-declared
+excuses -- T-0511) and `DEFAULT_BENIGN_CAPABILITIES: tuple[BenignCapability,
+...]`. Mirrors
 `OutOfScopeEntry` for THREAT001, but at the capability-kind level rather
 than the CWE-id level -- it excuses a `may` capability kind that maps to
 no sink in a given catalog family's taxonomy. See
@@ -93,20 +95,34 @@ for the full design rationale.
 [[strata.benign_capabilities]]
 kind = "html_render"
 reason = "browser node renders trusted static assets only, no template injection surface"
+caught_by = "content-security-policy review, out of frob scope"
+family = "quality"
 
 [[strata.benign_capabilities]]
 kind = "client_storage"
 reason = "no QUALITY_CATALOG sink for this repo's usage (already CWE-922/312-classified under the security family)"
+caught_by = "already CWE-922/312 classified in the security family"
+family = "quality"
 ```
 
-Each entry needs BOTH `kind` and a non-blank `reason` -- deny-by-default,
-same discipline `BenignCapability`'s own `Field(min_length=1)` enforces
-for the built-in tuple. A missing `frob.toml`, or a `[strata]` table with
-no `benign_capabilities` key, is `Ok(())` (no repo-declared excuses is
-the common, valid case); a malformed entry (missing `kind`/`reason`,
-blank `reason`, unparseable TOML) is `Err(StrataError.
-MalformedBenignConfig)` -- `frob sys audit` exits 1 rather than silently
-dropping it. `frob sys audit`'s wiring (`src/frob/app/sys_runner.py::
+Each entry needs `kind`, a non-blank `reason`, a non-blank `caught_by`,
+and (T-0511, strata audit G12) a mandatory `family` naming WHICH catalog
+family ("security" | "quality") the excuse applies against -- deny-by-
+default, same discipline `BenignCapability`'s own `Field(min_length=1)`
+enforces for the built-in tuple. `family` is CHECKED, not merely
+recorded: `load_repo_benign_capabilities` rejects an entry whose `kind`
+is already classified (has a `capability_kind` entry) in the family it
+names -- both `html_render`/`client_storage` above are legitimate
+`family = "quality"` excuses (unmapped in `QUALITY_CATALOG`) but would be
+REJECTED as `family = "security"` (both already classified there, under
+CWE-79 and CWE-922/312 respectively). A missing `frob.toml`, or a
+`[strata]` table with no `benign_capabilities` key, is `Ok(())` (no
+repo-declared excuses is the common, valid case); a malformed entry
+(missing `kind`/`reason`/`caught_by`/`family`, blank `reason`, an
+unrecognized `family` value, a `family` claim the catalog contradicts, or
+unparseable TOML) is `Err(StrataError.MalformedBenignConfig)` -- `frob
+sys audit` exits 1 rather than silently dropping or silently trusting
+it. `frob sys audit`'s wiring (`src/frob/app/sys_runner.py::
 _evaluate_audit`) merges `DEFAULT_BENIGN_CAPABILITIES + repo_declared`
 before calling `evaluate_exhaustiveness` -- repo entries are ADDITIONAL
 excuses, never a replacement for the built-in tier-2 vocabulary bridge.

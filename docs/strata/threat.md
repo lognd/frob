@@ -698,6 +698,40 @@ replace it with a first-class `[[strata.benign_capabilities]]` entry
 naming the SAME reason -- the excuse becomes a declared, checkable fact
 rather than a suppression of an unaddressed gap.
 
+**T-0511 (strata audit G12): `family` is mandatory and load-time
+verified, not merely recorded.** Before this fix, `load_repo_benign_
+capabilities` accepted ANY `kind` string with just a `reason`/`caught_by`
+-- no allowlist, and the "does this excuse actually matter" property
+lived entirely in the CALLERS (`check_capability_completeness`/
+`check_effect_completeness` only consult `excused` for a kind not already
+`known` against whatever catalog/taxonomy THAT call happened to pass),
+never verified at the point the excuse was declared. A naive first fix
+attempt (reject any `kind` already catalogued in EITHER family's union)
+was tried and reverted inside T-0497: it broke the legitimate T-0017
+`client_storage` case above, since `client_storage` IS catalogued
+(security-side, CWE_CATALOG) even though the excuse is only meant to
+apply to the QUALITY_CATALOG loop. The real fix needed to be precise
+about WHICH family an excuse targets, not the union.
+
+`BenignCapability` gained an optional `family: str | None` field --
+`None` for the hardcoded `DEFAULT_BENIGN_CAPABILITIES` tuple (each entry
+already documents by hand, in its own comment, which family it is a
+no-op for) but MANDATORY (`"security"` | `"quality"`) for every
+`[[strata.benign_capabilities]]` entry `load_repo_benign_capabilities`
+loads. At load time, the loader resolves the family to its catalog
+(`_family_catalog_for`: `"security"` -> `CWE_CATALOG + CWE_TOP_25_
+CATALOG`, `"quality"` -> `QUALITY_CATALOG`) and REJECTS
+(`Err(StrataError.MalformedBenignConfig)`) any entry whose `kind` is
+already classified (has a `capability_kind`) in the family it names --
+that is not a genuine gap, it is either a harmless no-op or an attempt to
+mask an already-known sink under an "excuse" label. `client_storage`
+excused for `family = "quality"` still passes (QUALITY_CATALOG has no
+entry for it -- the regression this fix must not break); the SAME
+`client_storage` excused for `family = "security"` is now rejected (it IS
+classified there, CWE-922/312) -- proving the fix distinguishes a
+genuinely cross-family excuse from an illegitimate same-family one,
+exactly the counterexample pair T-0511 demanded.
+
 ## What is honestly not covered
 
 Stated and enforced as assumptions: zero-day weakness classes not yet in

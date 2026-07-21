@@ -955,13 +955,17 @@ class TestLoadRepoBenignCapabilities:
 
     # frob:tests src/frob/strata/_threat.py::load_repo_benign_capabilities kind="unit"
     def test_declared_entry_is_loaded(self, tmp_path: Path):
+        # html_render has no QUALITY_CATALOG sink entry (only CWE_CATALOG's
+        # CWE-79) -- a legitimate quality-family excuse, same shape as the
+        # T-0017 client_storage case below.
         _write(
             tmp_path,
             "frob.toml",
             "[[strata.benign_capabilities]]\n"
             'kind = "html_render"\n'
             'reason = "browser node renders trusted static assets only"\n'
-            'caught_by = "content-security-policy review, out of frob scope"\n',
+            'caught_by = "content-security-policy review, out of frob scope"\n'
+            'family = "quality"\n',
         )
         result = load_repo_benign_capabilities(tmp_path)
         assert result.is_ok
@@ -971,6 +975,7 @@ class TestLoadRepoBenignCapabilities:
             kind="html_render",
             reason="browser node renders trusted static assets only",
             caught_by="content-security-policy review, out of frob scope",
+            family="quality",
         )
 
     # frob:tests src/frob/strata/_threat.py::load_repo_benign_capabilities kind="unit"
@@ -982,7 +987,7 @@ class TestLoadRepoBenignCapabilities:
             tmp_path,
             "frob.toml",
             '[[strata.benign_capabilities]]\nkind = "html_render"\n'
-            'caught_by = "test fixture"\n',
+            'caught_by = "test fixture"\nfamily = "quality"\n',
         )
         result = load_repo_benign_capabilities(tmp_path)
         assert result.is_err
@@ -997,7 +1002,7 @@ class TestLoadRepoBenignCapabilities:
             tmp_path,
             "frob.toml",
             '[[strata.benign_capabilities]]\nkind = "html_render"\nreason = ""\n'
-            'caught_by = "test fixture"\n',
+            'caught_by = "test fixture"\nfamily = "quality"\n',
         )
         result = load_repo_benign_capabilities(tmp_path)
         assert result.is_err
@@ -1012,7 +1017,8 @@ class TestLoadRepoBenignCapabilities:
             tmp_path,
             "frob.toml",
             '[[strata.benign_capabilities]]\nkind = "html_render"\n'
-            'reason = "browser node renders trusted static assets only"\n',
+            'reason = "browser node renders trusted static assets only"\n'
+            'family = "quality"\n',
         )
         result = load_repo_benign_capabilities(tmp_path)
         assert result.is_err
@@ -1021,6 +1027,122 @@ class TestLoadRepoBenignCapabilities:
     # frob:tests src/frob/strata/_threat.py::load_repo_benign_capabilities kind="unit"
     def test_unparseable_toml_is_malformed(self, tmp_path: Path):
         _write(tmp_path, "frob.toml", "not valid toml [[[")
+        result = load_repo_benign_capabilities(tmp_path)
+        assert result.is_err
+        assert result.danger_err == StrataError.MalformedBenignConfig
+
+    # frob:ticket T-0511
+    # frob:tests src/frob/strata/_threat.py::load_repo_benign_capabilities kind="unit"
+    def test_missing_family_is_malformed(self, tmp_path: Path):
+        # T-0511 (strata audit G12): family is now mandatory -- an excuse
+        # with no declared family cannot be verified against a specific
+        # catalog and is refused, not silently treated as "applies
+        # everywhere" (the exact unscoped-blanket-excuse shape G12 flags).
+        _write(
+            tmp_path,
+            "frob.toml",
+            '[[strata.benign_capabilities]]\nkind = "html_render"\n'
+            'reason = "browser node renders trusted static assets only"\n'
+            'caught_by = "test fixture"\n',
+        )
+        result = load_repo_benign_capabilities(tmp_path)
+        assert result.is_err
+        assert result.danger_err == StrataError.MalformedBenignConfig
+
+    # frob:ticket T-0511
+    # frob:tests src/frob/strata/_threat.py::load_repo_benign_capabilities kind="unit"
+    def test_unrecognized_family_value_is_malformed(self, tmp_path: Path):
+        _write(
+            tmp_path,
+            "frob.toml",
+            '[[strata.benign_capabilities]]\nkind = "html_render"\n'
+            'reason = "browser node renders trusted static assets only"\n'
+            'caught_by = "test fixture"\nfamily = "reliability"\n',
+        )
+        result = load_repo_benign_capabilities(tmp_path)
+        assert result.is_err
+        assert result.danger_err == StrataError.MalformedBenignConfig
+
+    # frob:ticket T-0511
+    # frob:tests src/frob/strata/_threat.py::load_repo_benign_capabilities kind="unit"
+    def test_excuse_already_classified_in_named_security_family_is_rejected(
+        self, tmp_path: Path
+    ):
+        # Counterexample #2 (T-0511): "sql" IS classified in CWE_CATALOG
+        # (CWE-89) -- an excuse claiming family="security" for it is not a
+        # genuine gap; it must be rejected, not silently accepted as a
+        # harmless no-op.
+        _write(
+            tmp_path,
+            "frob.toml",
+            '[[strata.benign_capabilities]]\nkind = "sql"\n'
+            'reason = "bogus -- sql IS already classified security-side"\n'
+            'caught_by = "test fixture"\nfamily = "security"\n',
+        )
+        result = load_repo_benign_capabilities(tmp_path)
+        assert result.is_err
+        assert result.danger_err == StrataError.MalformedBenignConfig
+
+    # frob:ticket T-0511
+    # frob:tests src/frob/strata/_threat.py::load_repo_benign_capabilities kind="unit"
+    def test_excuse_already_classified_in_named_quality_family_is_rejected(
+        self, tmp_path: Path
+    ):
+        # Counterexample #2, quality-family variant: "sql" is ALSO
+        # classified in QUALITY_CATALOG itself (CWE-639 reuses the same
+        # sql join) -- family="quality" must be rejected too, not just
+        # family="security".
+        _write(
+            tmp_path,
+            "frob.toml",
+            '[[strata.benign_capabilities]]\nkind = "sql"\n'
+            'reason = "bogus -- sql IS already classified quality-side too"\n'
+            'caught_by = "test fixture"\nfamily = "quality"\n',
+        )
+        result = load_repo_benign_capabilities(tmp_path)
+        assert result.is_err
+        assert result.danger_err == StrataError.MalformedBenignConfig
+
+    # frob:ticket T-0511
+    # frob:tests src/frob/strata/_threat.py::load_repo_benign_capabilities kind="unit"
+    def test_client_storage_excused_for_quality_only_stays_accepted(
+        self, tmp_path: Path
+    ):
+        # Regression guard (T-0511): the exact T-0017 legitimate case must
+        # still work after the family-scoping fix -- client_storage IS
+        # classified under CWE_CATALOG (CWE-922/312, security) but has NO
+        # QUALITY_CATALOG entry, so family="quality" is a real, accepted
+        # excuse.
+        _write(
+            tmp_path,
+            "frob.toml",
+            '[[strata.benign_capabilities]]\nkind = "client_storage"\n'
+            'reason = "no QUALITY_CATALOG sink for this repo\'s usage"\n'
+            'caught_by = "already CWE-922/312 classified in the security '
+            'family"\nfamily = "quality"\n',
+        )
+        result = load_repo_benign_capabilities(tmp_path)
+        assert result.is_ok
+        excuses = result.danger_ok
+        assert len(excuses) == 1
+        assert excuses[0].family == "quality"
+
+    # frob:ticket T-0511
+    # frob:tests src/frob/strata/_threat.py::load_repo_benign_capabilities kind="unit"
+    def test_client_storage_excused_for_security_family_is_rejected(
+        self, tmp_path: Path
+    ):
+        # The other half of counterexample #2: the SAME kind
+        # (client_storage) that is legitimately excusable for "quality" is
+        # illegitimate for "security" -- it IS classified there
+        # (CWE-922/312), so claiming family="security" must be rejected.
+        _write(
+            tmp_path,
+            "frob.toml",
+            '[[strata.benign_capabilities]]\nkind = "client_storage"\n'
+            'reason = "bogus -- client_storage IS classified security-side"\n'
+            'caught_by = "test fixture"\nfamily = "security"\n',
+        )
         result = load_repo_benign_capabilities(tmp_path)
         assert result.is_err
         assert result.danger_err == StrataError.MalformedBenignConfig
@@ -1041,7 +1163,8 @@ class TestLoadRepoBenignCapabilities:
             "[[strata.benign_capabilities]]\n"
             'kind = "client_storage"\n'
             'reason = "no QUALITY_CATALOG sink for this repo\'s usage"\n'
-            'caught_by = "already CWE-922/312 classified in the security family"\n',
+            'caught_by = "already CWE-922/312 classified in the security family"\n'
+            'family = "quality"\n',
         )
         loaded = load_repo_benign_capabilities(tmp_path)
         assert loaded.is_ok
