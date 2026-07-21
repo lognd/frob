@@ -6290,21 +6290,20 @@ output -- exactly 59 - 3 fixed = 56.
 
 ### Changed
 ```
- src/frob/gates/__init__.py     |  20 +++-
+ src/frob/gates/__init__.py     |  20 ++-
  src/frob/strata/_waive.py      |   6 +-
- src/frob/tickets/_models.py    |  25 ++++-
+ src/frob/tickets/_models.py    |  25 +++-
  tests/system/test_cli_check.py |   7 +-
- tests/test_gates.py            |  19 ++++
+ tests/test_gates.py            |  19 +++
  tests/test_tickets.py          |   9 ++
  tests/unit/test_check.py       |   5 +-
- tickets.md                     | 212 +++++++++++++++++++++++++++++++++++++++--
- 8 files changed, 288 insertions(+), 15 deletions(-)
+ tickets.md                     | 287 +++++++++++++++++++++++++++++++++++++++--
+ 8 files changed, 363 insertions(+), 15 deletions(-)
 ```
 
 ### Evidence
 - `tests/unit/test_check.py::TestSummarySeverityHonesty::test_cycle_summary_splits_by_severity` (pytest node id, verified passing when recorded)
 - `tests/unit/strata/test_waive.py::TestStaleDetail::test_names_rule_node_and_reason` (pytest node id, verified passing when recorded)
-
 <!-- ticket:T-0524 -->
 ```yaml
 id: T-0524
