@@ -28,6 +28,7 @@ from typani.unit import Unit
 from frob.gates._filehash import _collect_file_hashes, _sha_of
 from frob.gates._models import GateError, Violation
 from frob.logging import get_logger
+from frob.tickets._worktree_guard import enforce_worktree_lease
 
 _log = get_logger(__name__)
 
@@ -61,6 +62,9 @@ def stamp_baseline(
     already do, so a stale stamp is a detectable condition, not silent
     drift.
     """
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(GateError.WorktreeLeaseViolation)
     file_hashes = _collect_file_hashes(root)
     fingerprints = sorted({violation_fingerprint(v) for v in violations})
     stamp = {"file_hashes": file_hashes, "fingerprints": fingerprints}

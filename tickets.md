@@ -2434,7 +2434,7 @@ T-0239 fixed graph/outline walking but a full frob check still shows archgate/se
 id: T-0338
 title: 'frob ticket land: own the full worktree->main flow (merge, REL001 bump+stamp,
   native rebuild, sweep refresh, evidence/done-report validation)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -2447,6 +2447,12 @@ scope:
 - tickets.md
 - tests/unit/test_ticket_store.py
 - docs/modules/tickets.md
+- tests/test_ticket_land.py
+- tests/unit/test_ticket_runner_land_release.py
+- pyproject.toml
+- CHANGELOG.md
+- uv.lock
+- .frob-release.json
 scope_changes:
 - op: remove
   glob: tests/**
@@ -2468,7 +2474,58 @@ scope_changes:
   reason: T-0338 tickets work maps to docs/modules/tickets.md
   actor: logan
   at: '2026-07-20'
-evidence: []
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: test coverage lives outside src/frob/app|tickets scope globs; REL001 version-bump
+    files needed for the new public land() parameters
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_ticket_runner_land_release.py
+  reason: test coverage lives outside src/frob/app|tickets scope globs; REL001 version-bump
+    files needed for the new public land() parameters
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: test coverage lives outside src/frob/app|tickets scope globs; REL001 version-bump
+    files needed for the new public land() parameters
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: test coverage lives outside src/frob/app|tickets scope globs; REL001 version-bump
+    files needed for the new public land() parameters
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: test coverage lives outside src/frob/app|tickets scope globs; REL001 version-bump
+    files needed for the new public land() parameters
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: test coverage lives outside src/frob/app|tickets scope globs; REL001 version-bump
+    files needed for the new public land() parameters
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_ticket_land.py::TestReleaseBump::test_bump_applied_and_reported
+- tests/test_ticket_land.py::TestReleaseBump::test_no_bump_needed_reports_none
+- tests/test_ticket_land.py::TestReleaseBump::test_bump_failure_unwinds_squash
+- tests/test_ticket_land.py::TestReleaseBump::test_no_callback_is_noop
+- tests/test_ticket_land.py::TestRebuildNatives::test_invoked_when_native_source_touched
+- tests/test_ticket_land.py::TestRebuildNatives::test_skipped_when_no_native_source_touched
+- tests/test_ticket_land.py::TestRebuildNatives::test_rebuild_failure_does_not_block_land
+- tests/unit/test_ticket_runner_land_release.py::TestWriteReleaseBump::test_rewrites_version_and_prepends_changelog_entry
+- tests/unit/test_ticket_runner_land_release.py::TestWriteReleaseBump::test_missing_version_line_fails
+- tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_no_manifest_is_noop
+- tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_bump_class_none_is_noop
+- tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_bump_applies_writes_and_stamps
+- tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_unreadable_graph_fails
+- tests/unit/test_ticket_runner_land_release.py::TestLandRebuildNativesFn::test_success_returns_true
+- tests/unit/test_ticket_runner_land_release.py::TestLandRebuildNativesFn::test_failure_returns_false_and_logs
 attachments: []
 acceptance:
 - given an implementer's worktree branch with a single commit (code + new files +
@@ -2488,6 +2545,63 @@ acceptance:
 threat: null
 ```
 Coordinating implementer worktrees onto main is currently ~15 manual coordinator steps, each a recurring papercut (2026-07 campaign): implementers leave work UNCOMMITTED so landing is git diff|git apply, which (a) silently omits new untracked files, (b) is ATOMIC so one conflicting tickets.md hunk rolls back ALL files with a false 'applied cleanly', (c) forces the coordinator to hand-do every REL001 bump+CHANGELOG+stamp because pyproject is out of every ticket's scope, and (d) frob release stamp's build uninstalls the maturin-develop natives (see [[worktree-natives-artifact]]). WORKFLOW FIX already adopted (free): implementers now commit their work as a single worktree-branch commit incl. new files. This ticket builds the tool that consumes that: extend  (T-0236 already added post-merge sweep refresh) into the ONE command that owns merge (real per-file 3-way, splice_ledger for tickets.md) + REL001 bump/stamp (frob.release already computes required version) + native rebuild + evidence/Done-report validation + gate check, refusing on any failure. This removes the entire class of coordinator plumbing friction and makes the review-gated loop a two-command cycle (dispatch, land). See memory [[coordinator-landing-workflow]] for the exhaustive friction list this replaces.
+
+## Done report
+
+Extended frob.tickets.land with two optional callables (bump_version,
+rebuild_natives), folding the two remaining coordinator-plumbing steps
+T-0479 did not cover into the same one-command land: a REL001
+version-bump/stamp step (frob.release.diff_class/required_version
+against the tracked manifest; rewrites pyproject.toml + CHANGELOG.md +
+.frob-release.json, staged into the same landing commit) and a
+native-rebuild trigger (runs `make core` when the landed changeset
+touches frob-core/ or strata-core/). Both run after the squash-apply is
+staged and before the T-0463 completeness assertion, so a bump-callback
+failure unwinds the squash exactly like any other land failure; a
+rebuild-callback failure is best-effort (logged, non-blocking, alongside
+the existing T-0248 stale-native warning). frob.tickets stays free of
+frob.release/frob.graph/subprocess access (docs/rework.md
+cycle-avoidance): the actual CLI implementations
+(_apply_release_bump_for_land, _write_release_bump,
+_land_rebuild_natives_fn) live in frob.app.ticket_runner and are wired
+into `frob ticket land`'s default call, matching the existing
+collected/passed/covers_scope pattern from T-0398/D-05. LandReport grew
+release_bumped_to and natives_rebuilt fields, both reported by the CLI.
+
+### Changed
+```
+ .frob-release.json                            |   5 +-
+ CHANGELOG.md                                  |  43 ++++++
+ docs/modules/tickets.md                       |  53 ++++++-
+ pyproject.toml                                |   2 +-
+ src/frob/app/ticket_runner.py                 | 209 +++++++++++++++++++++++++-
+ src/frob/tickets/__init__.py                  | 102 +++++++++++++
+ src/frob/tickets/_land.py                     | 132 +++++++++++++++-
+ src/frob/tickets/_models.py                   |   9 ++
+ tests/test_ticket_land.py                     | 167 ++++++++++++++++++++
+ tests/unit/test_ticket_runner_land_release.py | 182 ++++++++++++++++++++++
+ tests/unit/test_ticket_store.py               |  68 +++++++++
+ tickets.md                                    |  88 ++++++++++-
+ uv.lock                                       |   2 +-
+ 13 files changed, 1047 insertions(+), 15 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestReleaseBump::test_bump_applied_and_reported` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestReleaseBump::test_no_bump_needed_reports_none` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestReleaseBump::test_bump_failure_unwinds_squash` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestReleaseBump::test_no_callback_is_noop` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestRebuildNatives::test_invoked_when_native_source_touched` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestRebuildNatives::test_skipped_when_no_native_source_touched` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestRebuildNatives::test_rebuild_failure_does_not_block_land` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_release.py::TestWriteReleaseBump::test_rewrites_version_and_prepends_changelog_entry` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_release.py::TestWriteReleaseBump::test_missing_version_line_fails` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_no_manifest_is_noop` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_bump_class_none_is_noop` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_bump_applies_writes_and_stamps` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_unreadable_graph_fails` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_release.py::TestLandRebuildNativesFn::test_success_returns_true` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_land_release.py::TestLandRebuildNativesFn::test_failure_returns_false_and_logs` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0339 -->
 ```yaml
@@ -3345,7 +3459,7 @@ found while working T-0240 (same origin ticket text, deliberately split out): T-
 ```yaml
 id: T-0357
 title: 'coordinator land: replay worktree evidence into main .frob db on merge'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -3353,13 +3467,95 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/tickets/
-scope_changes: []
-evidence: []
+- docs/modules/tickets.md
+- tests/unit/test_ticket_store.py
+- .frob-release.json
+- CHANGELOG.md
+- pyproject.toml
+- uv.lock
+scope_changes:
+- op: add
+  glob: docs/modules/tickets.md
+  reason: Done report, doc entry, and test coverage for the new public replay_evidence_from_done_report
+    symbol land alongside the src/frob/tickets/ change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_ticket_store.py
+  reason: Done report, doc entry, and test coverage for the new public replay_evidence_from_done_report
+    symbol land alongside the src/frob/tickets/ change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 version bump (0.42.0 -> 0.43.0) for the new public replay_evidence_from_done_report
+    symbol
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: REL001 version bump (0.42.0 -> 0.43.0) for the new public replay_evidence_from_done_report
+    symbol
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: REL001 version bump (0.42.0 -> 0.43.0) for the new public replay_evidence_from_done_report
+    symbol
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: REL001 version bump (0.42.0 -> 0.43.0) for the new public replay_evidence_from_done_report
+    symbol
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_recovers_ids_when_structured_evidence_empty
+- tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_noop_when_evidence_already_present
+- tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_missing_evidence_when_nothing_recoverable
+- tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_transition_to_done_auto_replays_lost_evidence
 attachments: []
 acceptance: []
 threat: null
 ```
 Evidence recorded via 'frob ticket evidence' in an implementer worktree lands in that worktree's gitignored .frob/ db, NOT tickets.md's committed ledger in a form the main-repo db recognizes. After 'git merge --no-ff' of the worktree branch, 'frob ticket close' on main fails MissingEvidence and the coordinator must re-run 'frob ticket evidence' by hand (bitten on T-0248-era lands and again T-0266). Systematize: either (a) 'frob ticket land'/merge helper replays evidence ids from the merged tickets.md Done report into the local db, or (b) evidence is persisted to the committed ledger in a db-authoritative form so a fresh clone/db reconstructs it. Wire into the coordinator-landing path so no manual re-record is ever needed.
+
+## Done report
+
+Added frob.tickets.replay_evidence_from_done_report, the inverse of
+render_evidence_block: it parses the rendered "### Evidence" section of a
+ticket's Done report and, when the ticket's structured evidence: field is
+empty, writes the recovered ids back into it (idempotent, ledger-locked).
+Wired automatically into transition(root, ticket_id, DONE): a ticket
+arriving with empty evidence now gets a best-effort recovery attempt from
+its own committed Done report text before the ordinary MissingEvidence
+rejection fires. This closes the coordinator-land gap where a hand
+`git merge --no-ff` of a worktree branch (bypassing `frob ticket land`'s
+ledger splice) could leave the Done report prose intact while the
+structured evidence field was lost, forcing a manual `frob ticket
+evidence` re-record on main (T-0248/T-0266 incidents). Recovered ids are
+not re-validated against a fresh collection/pass run; frob check's
+COV003/TEST001 gates still catch a stale or fabricated id independently.
+
+### Changed
+```
+ .frob-release.json              |   3 +-
+ CHANGELOG.md                    |  18 +++++++
+ docs/modules/tickets.md         |  13 +++++
+ pyproject.toml                  |   2 +-
+ src/frob/tickets/__init__.py    | 102 ++++++++++++++++++++++++++++++++++++++++
+ tests/unit/test_ticket_store.py |  68 +++++++++++++++++++++++++++
+ tickets.md                      |  34 +++++++++++++-
+ uv.lock                         |   2 +-
+ 8 files changed, 237 insertions(+), 5 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_recovers_ids_when_structured_evidence_empty` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_noop_when_evidence_already_present` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_missing_evidence_when_nothing_recoverable` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_transition_to_done_auto_replays_lost_evidence` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0358 -->
 ```yaml
@@ -4266,7 +4462,7 @@ META-PRINCIPLE (encode): every time we discover we "got away with" something, th
 id: T-0409
 title: 'Ledger-hygiene gate: enforce regular archiving (warn/fail when too many closed
   tickets sit un-archived)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -4276,13 +4472,175 @@ scope:
 - src/frob/gates/
 - src/frob/tickets/
 - frob.toml
-scope_changes: []
-evidence: []
+- tests/test_gates_tickets_hygiene.py
+- .frob-release.json
+- CHANGELOG.md
+- docs/modules/tickets.md
+- pyproject.toml
+- tests/test_ticket_land.py
+- tests/unit/test_ticket_runner_land_release.py
+- tests/unit/test_ticket_store.py
+- uv.lock
+- tests/test_tickets_collision.py
+scope_changes:
+- op: add
+  glob: tests/test_gates_tickets_hygiene.py
+  reason: TICK003 gate needs test coverage outside src/frob/gates|tickets scope globs
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: 'sequential single-worktree dispatch (T-0357/T-0338 done earlier, not yet
+    landed to main): their committed files still show in the diff-vs-main SCOPE001
+    checks against; cross-ticket exemption did not fire since those commit subjects
+    did not literally name their ticket ids'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: 'sequential single-worktree dispatch (T-0357/T-0338 done earlier, not yet
+    landed to main): their committed files still show in the diff-vs-main SCOPE001
+    checks against; cross-ticket exemption did not fire since those commit subjects
+    did not literally name their ticket ids'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: 'sequential single-worktree dispatch (T-0357/T-0338 done earlier, not yet
+    landed to main): their committed files still show in the diff-vs-main SCOPE001
+    checks against; cross-ticket exemption did not fire since those commit subjects
+    did not literally name their ticket ids'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: 'sequential single-worktree dispatch (T-0357/T-0338 done earlier, not yet
+    landed to main): their committed files still show in the diff-vs-main SCOPE001
+    checks against; cross-ticket exemption did not fire since those commit subjects
+    did not literally name their ticket ids'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'sequential single-worktree dispatch (T-0357/T-0338 done earlier, not yet
+    landed to main): their committed files still show in the diff-vs-main SCOPE001
+    checks against; cross-ticket exemption did not fire since those commit subjects
+    did not literally name their ticket ids'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_ticket_runner_land_release.py
+  reason: 'sequential single-worktree dispatch (T-0357/T-0338 done earlier, not yet
+    landed to main): their committed files still show in the diff-vs-main SCOPE001
+    checks against; cross-ticket exemption did not fire since those commit subjects
+    did not literally name their ticket ids'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_ticket_store.py
+  reason: 'sequential single-worktree dispatch (T-0357/T-0338 done earlier, not yet
+    landed to main): their committed files still show in the diff-vs-main SCOPE001
+    checks against; cross-ticket exemption did not fire since those commit subjects
+    did not literally name their ticket ids'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: 'sequential single-worktree dispatch (T-0357/T-0338 done earlier, not yet
+    landed to main): their committed files still show in the diff-vs-main SCOPE001
+    checks against; cross-ticket exemption did not fire since those commit subjects
+    did not literally name their ticket ids'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_tickets_collision.py
+  reason: TICK003 fires against this repo's real un-archived-closed count when the
+    test calls tickets_gate(Path("."), ...); isolate with tmp_path
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_below_warn_threshold_is_clean
+- tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_above_default_warn_threshold_warns
+- tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_above_default_error_threshold_errors
+- tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_open_tickets_never_count_toward_threshold
+- tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_configurable_thresholds_from_frob_toml
+- tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_malformed_frob_toml_degrades_to_defaults
+- tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_never_writes_or_archives_anything
+- tests/unit/test_ticket_store.py::TestClosedTicketIds::test_returns_done_and_dropped_only
+- tests/unit/test_ticket_store.py::TestClosedTicketIds::test_orders_oldest_first
+- tests/unit/test_ticket_store.py::TestClosedTicketIds::test_empty_queue_is_empty
+- tests/test_tickets_collision.py::TestTick002GateUnwaivable::test_no_violation_off_default_branch
 attachments: []
 acceptance: []
 threat: null
 ```
 User directive (2026-07-20): we need a THING to ensure tickets get archived regularly -- not a habit to remember. Current state: tickets.md active ledger is 10,521 lines holding 61 closed (done/dropped) tickets un-archived (vs 99 genuinely open); frob ticket archive exists but NOTHING enforces running it, so it drifts (archiving has been DEFERRED repeatedly). Same class as the whole audit: an operation that should be enforced is left to discipline. FIX (per the meta-principle: a repeated "we got away with not doing X" is a frob enforcement gap): add a ledger-hygiene gate (TICK003-style) that makes stale un-archived closed tickets a build signal -- WARN when the active ledger holds more than a configurable threshold of closed tickets (default e.g. 20), escalating toward ERROR past a hard cap, with the fix being run frob ticket archive. Consider also: (a) frob ticket close/land optionally auto-archiving, or a frob ticket archive --stale that CI runs on a schedule; (b) an age dimension (a closed ticket older than N days un-archived). MUST be resurrection-safe: the known hazard is that archiving while worktrees are in flight lets a stale-base merge resurrect archived sections -- the gate should encourage archiving in QUIET windows (no active worktrees) and the land/splice path already has _drop_resurrected_ids + splice_ledger archive-resurrection guards which must stay sound. Ships per-project (T-0406) so every frob repo keeps its ledger honest. Acceptance: an active ledger with >threshold closed tickets reds/warns frob check naming the count + the archive command; after archive it clears; the gate is resurrection-aware (documented). Note: this is an instance of enforcing a maintenance obligation, sibling to the exhaustiveness registry T-0407.
+
+## Done report
+
+Added TICK003: a ledger-hygiene gate that WARNs (escalating to ERROR
+past a hard cap) when the active tickets.md ledger holds more than a
+configurable threshold of closed (done/dropped) tickets un-archived --
+systematizing the repeated "we got away with not archiving" gap named in
+the ticket (61 closed vs 99 open at filing time). Thresholds
+(stale_archive_warn=20, stale_archive_error=60 by default) come from
+frob.toml's [tickets] table, degrading to defaults on a missing/
+malformed frob.toml. New public frob.tickets.closed_ticket_ids(queue) is
+the shared "which tickets are closed" predicate the gate counts over --
+kept in frob.tickets (not computed inline in frob.gates) per the
+dispatch's steer to keep the gates/__init__.py touch additive; the only
+edits there are the new _tick003_* functions plus one added line each in
+tickets_gate's return expression and _KNOWN_GATE_RULES.
+
+Resurrection-safety: the gate only COUNTS and recommends `frob ticket
+archive`; it never writes tickets-archive.md itself, so it structurally
+cannot interact with the land/splice path's archive-resurrection guards
+(_drop_resurrected_ids, splice_ledger) -- those guard a write this gate
+never performs. Verified with a dedicated
+test_never_writes_or_archives_anything test.
+
+Fixed two regressions surfaced while wiring this in: (1) a docblock-
+ordering bug where closed_ticket_ids's insertion point stole doable's
+frob:doc/frob:tests/frob:waive directive block, leaving doable with
+COV001; (2) TestTick002GateUnwaivable.test_no_violation_off_default_branch
+called tickets_gate(Path("."), ...) against this repo's own real
+tickets.md, which now legitimately has a TICK003 WARN (44 un-archived
+closed tickets) -- isolated with tmp_path since the test is only about
+TICK002's branch guard.
+
+### Changed
+```
+ .frob-release.json                            |   6 +-
+ CHANGELOG.md                                  |  61 ++++++++
+ docs/modules/tickets.md                       |  53 ++++++-
+ pyproject.toml                                |   2 +-
+ src/frob/app/ticket_runner.py                 | 209 +++++++++++++++++++++++++-
+ src/frob/gates/__init__.py                    |  89 ++++++++++-
+ src/frob/tickets/__init__.py                  | 125 +++++++++++++++
+ src/frob/tickets/_land.py                     | 132 +++++++++++++++-
+ src/frob/tickets/_models.py                   |   9 ++
+ tests/test_gates_tickets_hygiene.py           | 105 +++++++++++++
+ tests/test_ticket_land.py                     | 167 ++++++++++++++++++++
+ tests/test_tickets_collision.py               |   8 +-
+ tests/unit/test_ticket_runner_land_release.py | 182 ++++++++++++++++++++++
+ tests/unit/test_ticket_store.py               | 117 ++++++++++++++
+ tickets.md                                    | 206 ++++++++++++++++++++++++-
+ uv.lock                                       |   2 +-
+ 16 files changed, 1451 insertions(+), 22 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_below_warn_threshold_is_clean` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_above_default_warn_threshold_warns` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_above_default_error_threshold_errors` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_open_tickets_never_count_toward_threshold` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_configurable_thresholds_from_frob_toml` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_malformed_frob_toml_degrades_to_defaults` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive::test_never_writes_or_archives_anything` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestClosedTicketIds::test_returns_done_and_dropped_only` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestClosedTicketIds::test_orders_oldest_first` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_store.py::TestClosedTicketIds::test_empty_queue_is_empty` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_collision.py::TestTick002GateUnwaivable::test_no_violation_off_default_branch` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0410 -->
 ```yaml
@@ -5275,7 +5633,7 @@ User (2026-07-20): ensure the exhaustive researcher has the mechanisms to MAKE t
 id: T-0431
 title: 'Worktree-lease guard: frob mutating commands + git hooks fail LOUDLY when
   a dispatched agent operates outside its worktree'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-20'
@@ -5286,13 +5644,207 @@ scope:
 - src/frob/gates/
 - src/frob/scaffold/
 - frob.toml
-scope_changes: []
-evidence: []
+- tests/test_worktree_guard.py
+- tests/test_gates_worktree_lease.py
+- tests/test_scaffold_worktree_lease_hook.py
+- docs/modules/tickets.md
+- docs/commands/scaffold.md
+- .frob-release.json
+- CHANGELOG.md
+- pyproject.toml
+- uv.lock
+- tests/test_gates_tickets_hygiene.py
+- tests/test_ticket_land.py
+- tests/test_tickets_collision.py
+- tests/unit/test_ticket_runner_land_release.py
+- tests/unit/test_ticket_store.py
+scope_changes:
+- op: add
+  glob: tests/test_worktree_guard.py
+  reason: test coverage + doc sections live outside src/frob/{tickets,gates,scaffold}/
+    scope globs
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_gates_worktree_lease.py
+  reason: test coverage + doc sections live outside src/frob/{tickets,gates,scaffold}/
+    scope globs
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_scaffold_worktree_lease_hook.py
+  reason: test coverage + doc sections live outside src/frob/{tickets,gates,scaffold}/
+    scope globs
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: test coverage + doc sections live outside src/frob/{tickets,gates,scaffold}/
+    scope globs
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/commands/scaffold.md
+  reason: test coverage + doc sections live outside src/frob/{tickets,gates,scaffold}/
+    scope globs
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 bump for new public enforce_worktree_lease/install_worktree_lease_hook
+    symbols
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: REL001 bump for new public enforce_worktree_lease/install_worktree_lease_hook
+    symbols
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: REL001 bump for new public enforce_worktree_lease/install_worktree_lease_hook
+    symbols
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: uv lock update accompanies the version bump
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_gates_tickets_hygiene.py
+  reason: 'sequential single-worktree dispatch: prior tickets'' (T-0357/T-0338/T-0409)
+    committed test files still show in the diff-vs-main SCOPE001 check'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'sequential single-worktree dispatch: prior tickets'' (T-0357/T-0338/T-0409)
+    committed test files still show in the diff-vs-main SCOPE001 check'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_tickets_collision.py
+  reason: 'sequential single-worktree dispatch: prior tickets'' (T-0357/T-0338/T-0409)
+    committed test files still show in the diff-vs-main SCOPE001 check'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_ticket_runner_land_release.py
+  reason: 'sequential single-worktree dispatch: prior tickets'' (T-0357/T-0338/T-0409)
+    committed test files still show in the diff-vs-main SCOPE001 check'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_ticket_store.py
+  reason: 'sequential single-worktree dispatch: prior tickets'' (T-0357/T-0338/T-0409)
+    committed test files still show in the diff-vs-main SCOPE001 check'
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_worktree_guard.py::TestEnforceWorktreeLease::test_no_env_var_is_unrestricted
+- tests/test_worktree_guard.py::TestEnforceWorktreeLease::test_matching_worktree_passes
+- tests/test_worktree_guard.py::TestEnforceWorktreeLease::test_mismatched_worktree_refuses
+- tests/test_worktree_guard.py::TestEnforceWorktreeLease::test_non_repo_root_passes_through
+- tests/test_worktree_guard.py::TestWorktreeGuardWiredIntoMutations::test_new_ticket_from_main_while_leased_elsewhere_fails
+- tests/test_worktree_guard.py::TestWorktreeGuardWiredIntoMutations::test_new_ticket_from_leased_worktree_succeeds
+- tests/test_worktree_guard.py::TestWorktreeGuardWiredIntoMutations::test_coordinator_with_no_lease_mutates_main_fine
+- tests/test_gates_worktree_lease.py::TestStampBaselineWorktreeLease::test_mismatched_lease_refuses
+- tests/test_gates_worktree_lease.py::TestStampBaselineWorktreeLease::test_no_lease_succeeds
+- tests/test_gates_worktree_lease.py::TestStampCoverageWorktreeLease::test_mismatched_lease_refuses
+- tests/test_gates_worktree_lease.py::TestStampCoverageWorktreeLease::test_no_lease_reaches_normal_missing_coverage_error
+- tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_installs_pre_commit_and_pre_merge_commit
+- tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_refuses_existing_hook_without_force
+- tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_not_a_git_repo_fails
+- tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_installed_hook_aborts_commit_under_frob_agent
+- tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_installed_hook_allows_commit_without_frob_agent
 attachments: []
 acceptance: []
 threat: null
 ```
 User (2026-07-20), after an incident: a dispatched worktree agent accidentally ran bash commands (git merge main, make core, frob ticket new -> created T-0427) against the SHARED main checkout instead of its worktree; the Edit tool caught FILE edits but bash commands went through, mutating live main. Make it HARD for a dispatched agent to damage the repo via frob, failing loudly (subagent scoping). MECHANISM: (1) LEASE -- when an agent is dispatched to a worktree, record a lease (a .frob/agent-lease file naming the worktree path + agent id, OR the dispatcher sets env FROB_WORKTREE=<abs path>). (2) frob MUTATING-COMMAND GUARD -- every frob command that WRITES (ticket new/close/renumber/land/start/sweep/attach/block/fail/evidence, release stamp/check --stamp, ack, check --stamp-coverage/--stamp-baseline) checks: if a lease/FROB_WORKTREE is active AND the cwd git top-level (`git rev-parse --show-toplevel`) is NOT the leased worktree (e.g. it is main), REFUSE with a loud error naming both paths ("agent leased to <W>; refusing to mutate <main>"). Read-only frob commands (check --ticket, show, list, doable) stay allowed anywhere. (3) GIT HOOK -- frob worktree/scaffold setup installs a pre-commit + pre-merge hook in the MAIN checkout that aborts when an agent-context marker (FROB_WORKTREE / FROB_AGENT) is set, catching a stray raw `git merge main`/`git commit` from an agent shell. (4) The COORDINATOR (no lease / a coordinator marker) mutates main normally. Careful about FALSE POSITIVES: the coordinator landing worktree changes onto main must NOT be blocked (it runs without an agent lease); a legitimately-cd-into-worktree frob command must work. Acceptance: a frob ticket new run from main WHILE FROB_WORKTREE points elsewhere FAILS loudly; the same command from inside the leased worktree SUCCEEDS; the coordinator (no lease) mutates main fine; a raw git commit on main with FROB_AGENT set is aborted by the hook. This is the "hard to be careless" guard for the dispatch layer -- make repo damage require deliberately clearing the lease, not a stray cwd.
+
+## Done report
+
+Added a worktree-lease guard for the incident named in the ticket: a
+dispatched agent's shell ran git merge/make core/frob ticket new
+directly against the shared main checkout instead of its own worktree.
+
+Mechanism: FROB_WORKTREE=<abs path> is a dispatcher-set env var naming
+the one worktree an agent's shell is authorized to mutate frob's tracked
+ticket state in. New frob.tickets.enforce_worktree_lease(root) resolves
+root's actual git top-level (repo_root, worktree-correct) and refuses
+(Err(WorktreeLeaseViolation)) if FROB_WORKTREE is set and does not match
+it. Wired as the first statement of every mutating frob.tickets entry
+point: new_ticket, transition (covers start/close/requeue/block/fail),
+add_evidence, add_cmd_evidence, set_done_report, record_failure, attach,
+archive, renumber, renumber_one. The same guard (mapped to
+GateError.WorktreeLeaseViolation) covers frob.gates' stamp_baseline/
+stamp_coverage (--stamp-baseline/--stamp-coverage), which also write
+tracked repo state. FROB_WORKTREE unset is Ok(None) -- unrestricted --
+so the coordinator's own commands (landing worktree changes onto main,
+etc.) are unaffected; read-only commands never call this guard.
+
+Defense in depth: frob.scaffold.install_worktree_lease_hook installs
+pre-commit + pre-merge-commit git hooks that abort loudly whenever
+FROB_AGENT is set non-empty, catching a raw git commit/merge an agent
+shell ran directly, independent of whether it went through
+frob.tickets at all. Verified end to end with a real git commit under
+FROB_AGENT.
+
+Out of scope (noted, not built): `frob release stamp` and `frob ack`
+live outside src/frob/{tickets,gates,scaffold}/ (this ticket's declared
+scope) and are not yet guarded -- filed as T-draft-0afb5f70.
+
+### Changed
+```
+ .frob-release.json                            |   9 +-
+ CHANGELOG.md                                  |  82 ++++++
+ docs/commands/scaffold.md                     |  13 +-
+ docs/modules/tickets.md                       | 113 +++++++-
+ pyproject.toml                                |   2 +-
+ src/frob/app/ticket_runner.py                 | 209 +++++++++++++-
+ src/frob/gates/__init__.py                    |  89 +++++-
+ src/frob/gates/_baseline.py                   |   4 +
+ src/frob/gates/_coverage.py                   |   4 +
+ src/frob/gates/_models.py                     |   5 +
+ src/frob/scaffold/__init__.py                 |  17 +-
+ src/frob/scaffold/project.py                  | 108 ++++++++
+ src/frob/tickets/__init__.py                  | 159 +++++++++++
+ src/frob/tickets/_land.py                     | 132 ++++++++-
+ src/frob/tickets/_models.py                   |  15 ++
+ src/frob/tickets/_worktree_guard.py           |  83 ++++++
+ tests/test_gates_tickets_hygiene.py           | 105 ++++++++
+ tests/test_gates_worktree_lease.py            |  73 +++++
+ tests/test_scaffold_worktree_lease_hook.py    | 107 ++++++++
+ tests/test_ticket_land.py                     | 167 ++++++++++++
+ tests/test_tickets_collision.py               |   8 +-
+ tests/test_worktree_guard.py                  | 118 ++++++++
+ tests/unit/test_ticket_runner_land_release.py | 182 +++++++++++++
+ tests/unit/test_ticket_store.py               | 117 ++++++++
+ tickets.md                                    | 374 +++++++++++++++++++++++++-
+ uv.lock                                       |   2 +-
+ 26 files changed, 2268 insertions(+), 29 deletions(-)
+```
+
+### Evidence
+- `tests/test_worktree_guard.py::TestEnforceWorktreeLease::test_no_env_var_is_unrestricted` (pytest node id, verified passing when recorded)
+- `tests/test_worktree_guard.py::TestEnforceWorktreeLease::test_matching_worktree_passes` (pytest node id, verified passing when recorded)
+- `tests/test_worktree_guard.py::TestEnforceWorktreeLease::test_mismatched_worktree_refuses` (pytest node id, verified passing when recorded)
+- `tests/test_worktree_guard.py::TestEnforceWorktreeLease::test_non_repo_root_passes_through` (pytest node id, verified passing when recorded)
+- `tests/test_worktree_guard.py::TestWorktreeGuardWiredIntoMutations::test_new_ticket_from_main_while_leased_elsewhere_fails` (pytest node id, verified passing when recorded)
+- `tests/test_worktree_guard.py::TestWorktreeGuardWiredIntoMutations::test_new_ticket_from_leased_worktree_succeeds` (pytest node id, verified passing when recorded)
+- `tests/test_worktree_guard.py::TestWorktreeGuardWiredIntoMutations::test_coordinator_with_no_lease_mutates_main_fine` (pytest node id, verified passing when recorded)
+- `tests/test_gates_worktree_lease.py::TestStampBaselineWorktreeLease::test_mismatched_lease_refuses` (pytest node id, verified passing when recorded)
+- `tests/test_gates_worktree_lease.py::TestStampBaselineWorktreeLease::test_no_lease_succeeds` (pytest node id, verified passing when recorded)
+- `tests/test_gates_worktree_lease.py::TestStampCoverageWorktreeLease::test_mismatched_lease_refuses` (pytest node id, verified passing when recorded)
+- `tests/test_gates_worktree_lease.py::TestStampCoverageWorktreeLease::test_no_lease_reaches_normal_missing_coverage_error` (pytest node id, verified passing when recorded)
+- `tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_installs_pre_commit_and_pre_merge_commit` (pytest node id, verified passing when recorded)
+- `tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_refuses_existing_hook_without_force` (pytest node id, verified passing when recorded)
+- `tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_not_a_git_repo_fails` (pytest node id, verified passing when recorded)
+- `tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_installed_hook_aborts_commit_under_frob_agent` (pytest node id, verified passing when recorded)
+- `tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_installed_hook_allows_commit_without_frob_agent` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0432 -->
 ```yaml
@@ -8482,3 +9034,23 @@ acceptance: []
 threat: null
 ```
 T-0483's COV006 (frob:tests edge to a private symbol with no call-graph reachability from the test) has a disclosed common FP shape: the call graph never records edges INTO public callees, so a test calling a same-file public wrapper that itself calls the bound private helper reads as unreachable. Before hand-burning down the ~97 COV006 / ~61 COV007 warn findings, extend the reachability check one hop through same-file public wrappers (or record public-callee edges for this check's purposes). Scope: src/frob/gates/__init__.py (COV006 helpers), tests/test_gates.py.
+
+<!-- ticket:T-draft-0afb5f70 -->
+```yaml
+id: T-draft-0afb5f70
+title: Extend worktree-lease guard to frob release stamp and frob ack
+state: queued
+kind: security
+origin: human
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- src/frob/release/
+- src/frob/app/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```

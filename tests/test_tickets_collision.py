@@ -289,9 +289,13 @@ class TestTick002GateUnwaivable:
         assert "TICK002" in _UNWAIVABLE_RULES
         assert "TICK001" in _UNWAIVABLE_RULES
 
-    def test_no_violation_off_default_branch(self, monkeypatch) -> None:
+    def test_no_violation_off_default_branch(self, monkeypatch, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/__init__.py::tickets_gate kind="unit"
         # frob:tests src/frob/tickets/_provisional.py::mint_draft_id kind="unit"
+        # T-0409: `tmp_path`, not `Path(".")` -- an empty checkout, so the new
+        # TICK003 ledger-hygiene check (which counts THIS repo's own
+        # un-archived closed tickets when given the real cwd) never fires
+        # here; this test is only about TICK002's draft-id branch guard.
         monkeypatch.setattr("frob.gates.on_default_branch", lambda root: False)
         draft = Ticket(
             id=mint_draft_id(),
@@ -302,7 +306,7 @@ class TestTick002GateUnwaivable:
             created=__import__("datetime").date(2026, 1, 1),
         )
         queue = TicketQueue(tickets={draft.id: draft})
-        violations = tickets_gate(Path("."), queue)
+        violations = tickets_gate(tmp_path, queue)
         assert violations == ()
 
 

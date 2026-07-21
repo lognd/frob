@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import stat
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -7,7 +9,10 @@ from jinja2 import Environment, FileSystemLoader, TemplateNotFound, TemplateSynt
 from typani import Err, ErrorSet, Ok
 from typani.result import Result
 
+from frob.logging import get_logger
+
 _DATA_DIR = Path(__file__).parent / "data"
+_log = get_logger(__name__)
 
 
 # frob:doc docs/commands/scaffold.md#public-api
@@ -18,6 +23,9 @@ class ScaffoldError(ErrorSet):
         "One or more output files already exist (use force=True to overwrite)"
     )
     RenderFailed = "Jinja2 raised an error while rendering a template"
+    # T-0431: worktree-lease git hook install failure modes.
+    NotAGitRepo = "root is not inside a git work tree"
+    HookWriteFailed = "could not write the hook script to the resolved hooks path"
 
 
 @dataclass(frozen=True)
@@ -371,3 +379,103 @@ def render_project(
                 return Err(ScaffoldError.OutputExists)
 
     return _write_manifest_entries(resolved, env, ctx)
+
+
+# frob:ticket T-0431
+_WORKTREE_LEASE_HOOK_SCRIPT = """#!/bin/sh
+# Installed by `frob scaffold install-worktree-lease-hook` (T-0431).
+#
+# Aborts a raw git commit/merge-commit run under an agent-context marker
+# (FROB_AGENT set, non-empty) -- the incident this guards against: a
+# dispatched worktree agent's shell accidentally ran `git merge main` /
+# `git commit` straight against the MAIN checkout instead of its own
+# worktree. A coordinator process (FROB_AGENT unset) is never affected.
+if [ -n "$FROB_AGENT" ]; then
+    echo "frob: refusing commit -- FROB_AGENT=$FROB_AGENT is set in this shell" >&2
+    echo "frob: an agent-context shell must not commit directly in $(pwd)" >&2
+    echo "frob: unset FROB_AGENT if deliberate, or run from the leased worktree" >&2
+    exit 1
+fi
+exit 0
+"""
+
+_WORKTREE_LEASE_HOOK_NAMES = ("pre-commit", "pre-merge-commit")
+
+
+def _hooks_dir(root: Path) -> Result[Path, ScaffoldError]:
+    """The real hooks directory for `root`'s repository (`git rev-parse
+    --git-path hooks`, worktree-correct: a linked worktree normally shares
+    the common dir's hooks/ unless `core.hooksPath` says otherwise, and
+    `--git-path` resolves that for us rather than assuming `.git/hooks`
+    literally)."""
+    try:
+        completed = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "--git-path", "hooks"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+    except OSError as exc:
+        _log.error("scaffold: git rev-parse --git-path hooks failed: %s", exc)
+        return Err(ScaffoldError.NotAGitRepo)
+    if completed.returncode != 0:
+        _log.error(
+            "scaffold: %s is not inside a git work tree (git rev-parse --git-path "
+            "hooks exited %d)",
+            root,
+            completed.returncode,
+        )
+        return Err(ScaffoldError.NotAGitRepo)
+    raw = completed.stdout.strip()
+    if not raw:
+        return Err(ScaffoldError.NotAGitRepo)
+    path = Path(raw)
+    if not path.is_absolute():
+        path = (root / path).resolve()
+    return Ok(path)
+
+
+# frob:doc docs/commands/scaffold.md#public-api
+# frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_installs_pre_commit_and_pre_merge_commit  # noqa: E501
+# frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_refuses_existing_hook_without_force  # noqa: E501
+def install_worktree_lease_hook(
+    root: Path, *, force: bool = False
+) -> Result[tuple[Path, ...], ScaffoldError]:
+    """Install the T-0431 worktree-lease `pre-commit`/`pre-merge-commit`
+    git hooks into `root`'s real hooks directory (`_hooks_dir`): each
+    hook aborts loudly if `FROB_AGENT` is set in the environment it runs
+    in, catching a stray raw `git commit`/`git merge` from an
+    agent-context shell that wandered into the wrong checkout.
+
+    `Err(OutputExists)` if either hook file already exists and `force` is
+    not set -- never silently overwrites a repo's own custom hook.
+    Returns the paths written, executable-bit set (`chmod +x`, POSIX)."""
+    hooks_dir_result = _hooks_dir(root)
+    if hooks_dir_result.is_err:
+        return Err(hooks_dir_result.danger_err)
+    hooks_dir = hooks_dir_result.danger_ok
+
+    targets = tuple(hooks_dir / name for name in _WORKTREE_LEASE_HOOK_NAMES)
+    if not force:
+        existing = [p for p in targets if p.exists()]
+        if existing:
+            _log.error(
+                "scaffold: refusing to overwrite existing hook(s) %s without force",
+                existing,
+            )
+            return Err(ScaffoldError.OutputExists)
+
+    written: list[Path] = []
+    try:
+        hooks_dir.mkdir(parents=True, exist_ok=True)
+        for path in targets:
+            path.write_text(_WORKTREE_LEASE_HOOK_SCRIPT)
+            path.chmod(path.stat().st_mode | stat.S_IEXEC | stat.S_IXGRP | stat.S_IXOTH)
+            written.append(path)
+    except OSError as exc:
+        _log.error("scaffold: could not write worktree-lease hook: %s", exc)
+        return Err(ScaffoldError.HookWriteFailed)
+
+    _log.info("scaffold: installed worktree-lease hook(s) at %s", written)
+    return Ok(tuple(written))

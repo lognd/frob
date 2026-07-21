@@ -639,10 +639,35 @@ def land(
     collected: Callable[[], frozenset[str]] | None = None,
     passed: Callable[[Sequence[str]], frozenset[str]] | None = None,
     covers_scope: Callable[[Ticket], bool | None] | None = None,
+    bump_version: Callable[[Path, Ticket, str], Result[str | None, LandError]]
+    | None = None,
+    rebuild_natives: Callable[[Path], bool] | None = None,
 ) -> Result[LandReport, LandError]:
     """Land `ticket_id` from `worktree` onto `root`'s current branch:
     precheck, wip-commit + merge + deletion-check, finalize + close, then
     squash-apply onto main with a conventional-commit message.
+
+    T-0338: `bump_version` and `rebuild_natives` let a caller fold the two
+    remaining coordinator-plumbing steps (REL001 version bump/stamp, and
+    a native-extension rebuild trigger) into the same one-command land
+    instead of leaving them as manual follow-ups. Both are invoked AFTER
+    the squash-apply is staged onto `root` (so their writes land in the
+    SAME commit) but BEFORE the T-0463 completeness assertion and the
+    final commit -- a failure from either unwinds the squash exactly like
+    any other land failure. `bump_version(root, ticket, final_id)`
+    computes and applies whatever `frob.release` says the just-squashed
+    public API demands (pyproject.toml + CHANGELOG.md + `.frob-release.
+    json`, all staged), returning `Ok(new_version)` if a bump was applied,
+    `Ok(None)` if none was needed. `rebuild_natives(root)` is invoked only
+    when the landed changeset touches a native source tree (frob-core/,
+    strata-core/) and returns whether the rebuild succeeded (best-effort:
+    a `False` is logged but does not fail the land, matching the T-0248
+    stale-native warning's existing non-blocking severity). Both default
+    to `None` (skip), matching every caller before T-0338 -- computing
+    either needs `frob.release`/`frob.graph`/subprocess access
+    `frob.tickets` deliberately does not have (docs/rework.md cycle-
+    avoidance); the `frob ticket land` CLI supplies both by default (see
+    `ticket_runner.py`'s `_land`).
 
     D-05: `collected`/`passed`/`covers_scope` let a caller with a fresh
     test-collection/run/graph-binding oracle re-verify the ticket's
@@ -715,6 +740,8 @@ def land(
         wip_committed,
         did_merge,
         main_branch_name,
+        bump_version=bump_version,
+        rebuild_natives=rebuild_natives,
     )
 
 
@@ -1354,15 +1381,93 @@ def _warn_if_native_stale(root: Path, final_id: str) -> None:
     now outpaces its own built native extension(s) (T-0248): the incident
     class from T-0166's review, where a landed `strata-core/**` grammar
     change left main's built `strata_core` behind and `frob check` silently
-    ran the OLD grammar until a human noticed a confusing SYS004. This never
-    blocks the landing commit -- `make core` is cheap to run manually right
-    after seeing the warning, and a native rebuild is not this ticket's
-    scope to automate into `land` itself."""
+    ran the OLD grammar until a human noticed a confusing SYS004. Fires
+    regardless of whether a `rebuild_natives` callback is also supplied --
+    a rebuild that runs but is not this warning's business to suppress, and
+    a `rebuild_natives=None` caller still gets the loud heads-up either way."""
     from frob.strata._native_staleness import stale_native_warning
 
     warning = stale_native_warning(root)
     if warning is not None:
         _log.warning("land: %s -- %s", final_id, warning)
+
+
+# frob:ticket T-0338
+_NATIVE_SOURCE_PREFIXES = ("frob-core/", "strata-core/")
+
+
+def _touches_native_source(changeset: frozenset[str]) -> bool:
+    """Whether any path in `changeset` falls under a native-extension source
+    tree (T-0338) -- the trigger condition for `rebuild_natives`: a landed
+    change that never touched frob-core/strata-core has nothing stale to
+    rebuild, so the (potentially slow, minutes-long cargo) rebuild is only
+    ever invoked when it can actually matter."""
+    return any(path.startswith(_NATIVE_SOURCE_PREFIXES) for path in changeset)
+
+
+# frob:ticket T-0338
+def _apply_release_bump(
+    root: Path,
+    ticket: Ticket,
+    final_id: str,
+    bump_version: Callable[[Path, Ticket, str], Result[str | None, LandError]] | None,
+) -> Result[str | None, LandError]:
+    """Invoke `bump_version(root, ticket, final_id)` if supplied, unwinding
+    the staged squash (`reset --hard`, `clean -fd`) on failure (T-0338).
+    `bump_version=None` (the library default) is a no-op returning
+    `Ok(None)` -- see `land`'s docstring for why this is a caller-supplied
+    callback rather than computed here."""
+    if bump_version is None:
+        return Ok(None)
+    bumped = bump_version(root, ticket, final_id)
+    if bumped.is_err:
+        _log.error(
+            "land: %s REL001 version-bump callback failed (%s) -- unwinding "
+            "the staged squash; bump pyproject.toml/CHANGELOG.md by hand "
+            "(`frob release stamp` once fixed) and retry",
+            final_id,
+            bumped.danger_err,
+        )
+        run_argv(["git", "-C", str(root), "reset", "--hard"])
+        run_argv(["git", "-C", str(root), "clean", "-fd"])
+        return Err(bumped.danger_err)
+    if bumped.danger_ok is not None:
+        _log.info(
+            "land: %s REL001 version bump applied and staged: -> %s",
+            final_id,
+            bumped.danger_ok,
+        )
+    return bumped
+
+
+# frob:ticket T-0338
+def _maybe_rebuild_natives(
+    root: Path,
+    final_id: str,
+    changeset: frozenset[str],
+    rebuild_natives: Callable[[Path], bool] | None,
+) -> bool:
+    """Invoke `rebuild_natives(root)` when `changeset` touches a native
+    source tree (T-0338); best-effort -- a `False`/exception-free failure
+    is logged but never unwinds or blocks the land (the T-0248 stale-native
+    warning already covers the "you must rebuild before trusting checks"
+    heads-up; this is the "land tried to do it for you" upgrade, not a new
+    hard gate). `rebuild_natives=None` (the library default) or a changeset
+    that never touches frob-core/strata-core is a no-op returning `False`."""
+    if rebuild_natives is None or not _touches_native_source(changeset):
+        return False
+    rebuilt = rebuild_natives(root)
+    if rebuilt:
+        _log.info("land: %s native extension(s) rebuilt after landing", final_id)
+    else:
+        _log.warning(
+            "land: %s native source changed but the rebuild callback "
+            "reported failure -- run `make core` manually before trusting "
+            "`frob check`/`frob test` against %s",
+            final_id,
+            root,
+        )
+    return rebuilt
 
 
 def _land_squash_apply(
@@ -1374,10 +1479,15 @@ def _land_squash_apply(
     wip_committed: bool,
     did_merge: bool,
     main_branch_name: str,
+    *,
+    bump_version: Callable[[Path, Ticket, str], Result[str | None, LandError]]
+    | None = None,
+    rebuild_natives: Callable[[Path], bool] | None = None,
 ) -> Result[LandReport, LandError]:
     """Squash-apply the worktree's finalized branch onto `root`, splice
-    tickets.md, assert completeness (T-0463) BEFORE committing, commit, and
-    build the final `LandReport`."""
+    tickets.md, apply an optional REL001 version bump (T-0338), assert
+    completeness (T-0463) BEFORE committing, commit, trigger an optional
+    native rebuild, and build the final `LandReport`."""
     branch = current_branch(worktree)
     if branch.is_err:
         return Err(LandError.GitFailed)
@@ -1387,12 +1497,20 @@ def _land_squash_apply(
     if squashed.is_err:
         return Err(squashed.danger_err)
 
+    bumped = _apply_release_bump(root, ticket, final_id, bump_version)
+    if bumped.is_err:
+        return Err(bumped.danger_err)
+    release_bumped_to = bumped.danger_ok
+
     completeness = _assert_land_complete(root, worktree, ticket_id, main_branch_name)
     if completeness.is_err:
         return Err(completeness.danger_err)
     worktree_changeset = completeness.danger_ok
 
     _warn_if_native_stale(root, final_id)
+    natives_rebuilt = _maybe_rebuild_natives(
+        root, final_id, worktree_changeset, rebuild_natives
+    )
 
     committed = _commit_squash_apply(root, ticket, final_id)
     if committed.is_err:
@@ -1412,5 +1530,7 @@ def _land_squash_apply(
             commit_sha=sha_str,
             files_changed=files,
             worktree_changeset=tuple(sorted(worktree_changeset)),
+            release_bumped_to=release_bumped_to,
+            natives_rebuilt=natives_rebuilt,
         )
     )

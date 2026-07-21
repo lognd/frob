@@ -1331,3 +1331,170 @@ class TestLandCompleteness:
             _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == before_main_sha
         )
         assert _run(["git", "status", "--porcelain"], repo).stdout.strip() == ""
+
+
+# frob:ticket T-0338
+class TestReleaseBump:
+    """T-0338: `land`'s optional `bump_version` callback -- the REL001
+    version-bump/stamp coordinator step folded into `land` itself."""
+
+    def test_bump_applied_and_reported(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestReleaseBump.test_bump_applied_and_reported  # noqa: E501
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-bump", str(wt)], repo)
+        created = new_ticket(wt, _spec("Bump me", scope=("src/bumped.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "bumped.py").write_text("# bumped\n")
+        _commit_all(wt, "add bumped.py")
+
+        def bump_version(root: Path, ticket: Any, final_id: str) -> Any:
+            (root / "VERSION_BUMPED").write_text(final_id)
+            _run(["git", "add", "VERSION_BUMPED"], root)
+            return Ok("1.2.3")
+
+        result = land(repo, tid, wt, dry_run=False, bump_version=bump_version)
+        assert result.is_ok, result.err
+        report = result.danger_ok
+        assert report.release_bumped_to == "1.2.3"
+        assert (repo / "VERSION_BUMPED").exists()
+        # The bump's own write must have landed in the SAME commit as the
+        # squash-apply, not a separate uncommitted change.
+        assert _run(["git", "status", "--porcelain"], repo).stdout.strip() == ""
+
+    def test_no_bump_needed_reports_none(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestReleaseBump.test_no_bump_needed_reports_none  # noqa: E501
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-nobump", str(wt)], repo)
+        created = new_ticket(wt, _spec("No bump needed", scope=("src/quiet.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "quiet.py").write_text("# quiet\n")
+        _commit_all(wt, "add quiet.py")
+
+        result = land(
+            repo,
+            tid,
+            wt,
+            dry_run=False,
+            bump_version=lambda root, ticket, fid: Ok(None),
+        )
+        assert result.is_ok, result.err
+        assert result.danger_ok.release_bumped_to is None
+
+    def test_bump_failure_unwinds_squash(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestReleaseBump.test_bump_failure_unwinds_squash  # noqa: E501
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-badbump", str(wt)], repo)
+        created = new_ticket(wt, _spec("Bad bump", scope=("src/badbump.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "badbump.py").write_text("# bad bump\n")
+        _commit_all(wt, "add badbump.py")
+
+        before_main_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+
+        result = land(
+            repo,
+            tid,
+            wt,
+            dry_run=False,
+            bump_version=lambda root, ticket, fid: Err(LandError.ReleaseBumpFailed),
+        )
+        assert result.is_err
+        assert result.danger_err == LandError.ReleaseBumpFailed
+        assert (
+            _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == before_main_sha
+        )
+        assert _run(["git", "status", "--porcelain"], repo).stdout.strip() == ""
+
+    def test_no_callback_is_noop(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestReleaseBump.test_no_callback_is_noop  # noqa: E501
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-nocallback", str(wt)], repo)
+        created = new_ticket(wt, _spec("No callback", scope=("src/nc.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "nc.py").write_text("# no callback\n")
+        _commit_all(wt, "add nc.py")
+
+        result = land(repo, tid, wt, dry_run=False)
+        assert result.is_ok, result.err
+        assert result.danger_ok.release_bumped_to is None
+
+
+# frob:ticket T-0338
+class TestRebuildNatives:
+    """T-0338: `land`'s optional `rebuild_natives` callback -- invoked only
+    when the landed changeset touches a native source tree."""
+
+    def test_invoked_when_native_source_touched(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestRebuildNatives.test_invoked_when_native_source_touched  # noqa: E501
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-native-src", str(wt)], repo)
+        created = new_ticket(
+            wt, _spec("Native change", scope=("frob-core/src/lib.rs",))
+        )
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "frob-core").mkdir()
+        (wt / "frob-core" / "src").mkdir()
+        (wt / "frob-core" / "src" / "lib.rs").write_text("// native change\n")
+        _commit_all(wt, "touch frob-core")
+
+        calls: list[Path] = []
+
+        def rebuild_natives(root: Path) -> bool:
+            calls.append(root)
+            return True
+
+        result = land(repo, tid, wt, dry_run=False, rebuild_natives=rebuild_natives)
+        assert result.is_ok, result.err
+        assert result.danger_ok.natives_rebuilt is True
+        assert calls == [repo]
+
+    def test_skipped_when_no_native_source_touched(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestRebuildNatives.test_skipped_when_no_native_source_touched  # noqa: E501
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-not-native", str(wt)], repo)
+        created = new_ticket(wt, _spec("Regular change", scope=("src/regular.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "regular.py").write_text("# regular\n")
+        _commit_all(wt, "add regular.py")
+
+        calls: list[Path] = []
+
+        def rebuild_natives(root: Path) -> bool:
+            calls.append(root)
+            return True
+
+        result = land(repo, tid, wt, dry_run=False, rebuild_natives=rebuild_natives)
+        assert result.is_ok, result.err
+        assert result.danger_ok.natives_rebuilt is False
+        assert calls == []
+
+    def test_rebuild_failure_does_not_block_land(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestRebuildNatives.test_rebuild_failure_does_not_block_land  # noqa: E501
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-native-fail", str(wt)], repo)
+        created = new_ticket(
+            wt, _spec("Native change fails rebuild", scope=("strata-core/src/lib.rs",))
+        )
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "strata-core").mkdir()
+        (wt / "strata-core" / "src").mkdir()
+        (wt / "strata-core" / "src" / "lib.rs").write_text("// native change\n")
+        _commit_all(wt, "touch strata-core")
+
+        result = land(repo, tid, wt, dry_run=False, rebuild_natives=lambda root: False)
+        assert result.is_ok, result.err
+        assert result.danger_ok.natives_rebuilt is False

@@ -45,6 +45,7 @@ from frob.tickets._models import (
     TicketQueue,
     TicketSpec,
     TicketState,
+    _done_report_section_lines,
     has_substantive_done_report,
     is_cmd_evidence,
     matches_collected,
@@ -70,6 +71,7 @@ from frob.tickets._store import (
     write_archive,
     write_ticket,
 )
+from frob.tickets._worktree_guard import enforce_worktree_lease
 from frob.tickets.clipboard import ClipboardError, clipboard_has_image, clipboard_image
 
 _log = get_logger(__name__)
@@ -169,6 +171,9 @@ def archive(root: Path) -> Result[int, TicketError]:
     greppable); the active ledger keeps only open work. Idempotent -- a
     second call with nothing newly done/dropped moves nothing and returns
     Ok(0). Returns the number of tickets moved."""
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
     active_loaded = load_all(root)
     if active_loaded.is_err:
         return Err(active_loaded.danger_err)
@@ -305,6 +310,9 @@ def new_ticket(
     with no collector available, but now logs the same explicit UNRESOLVED
     warning `add_evidence` does, so the gap is never silent.
     """
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
     validated = _validate_evidence_list(spec.evidence)
     if validated.is_err:
         return Err(validated.danger_err)
@@ -397,6 +405,9 @@ def renumber(root: Path) -> Result[int, TicketError]:
     consistent. The remedy for sequential-id collisions after a worktree
     merge (T-0012). Returns the number of tickets renumbered.
     """
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
     loaded = load_all(root)
     if loaded.is_err:
         return Err(loaded.danger_err)
@@ -589,6 +600,9 @@ def renumber_one(
     stores) and every `frob:ticket`/`frob:waive`/`frob:todo`/`frob:tests`/
     `frob:invariant`/`frob:doc` directive line across the tracked tree that
     names it."""
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
     loaded = _load_and_validate_renumber_ids(root, old_id, new_id)
     if loaded.is_err:
         return Err(loaded.danger_err)
@@ -1205,6 +1219,9 @@ def mutate_scope(
     never interleave with a concurrent ledger mutation (T-0458 single-writer
     invariant) -- no hand-edit of `tickets.md` is ever involved.
     """
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
     add_globs = _normalize_scope_entries(tuple(add))
     remove_globs = _normalize_scope_entries(tuple(remove))
     request_check = _validate_scope_request(add_globs, remove_globs, reason)
@@ -1273,6 +1290,29 @@ def _write_scope_mutation(
     if write_result.is_err:
         return Err(write_result.danger_err)
     return Ok(updated)
+
+
+# frob:ticket T-0409
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/unit/test_ticket_store.py::TestClosedTicketIds.test_returns_done_and_dropped_only  # noqa: E501
+def closed_ticket_ids(queue: TicketQueue) -> tuple[str, ...]:
+    """Ids in `queue` (whatever store it was loaded from -- active-only or
+    merged) whose state is DONE or DROPPED, oldest-first (T-0409): the
+    ledger-hygiene gate's (TICK003, `frob.gates.tickets_gate`) building
+    block for "how many closed tickets are sitting un-archived" -- called
+    with `load_active`'s active-only queue there, since an ARCHIVED closed
+    ticket is by definition no longer a hygiene problem. Kept here (not
+    computed inline in `frob.gates`) so the "closed" predicate has exactly
+    one definition, reused by anything that needs to answer the same
+    question (`frob ticket archive`'s own move-eligibility check already
+    uses the equivalent inline predicate; this is the reusable, testable
+    form of it)."""
+    closed = [
+        t
+        for t in queue.tickets.values()
+        if t.state in (TicketState.DONE, TicketState.DROPPED)
+    ]
+    return tuple(t.id for t in sorted(closed, key=lambda t: (t.created, t.id)))
 
 
 # frob:ticket T-0453
@@ -1554,10 +1594,28 @@ def transition(
     scope symbol whenever the caller supplies `covers_scope=False` (see
     `_done_transition_guard`'s docstring for why this is injected rather
     than computed here)."""
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
     loaded = _load_ticket_and_queue(root, ticket_id)
     if loaded.is_err:
         return Err(loaded.danger_err)
     ticket, queue = loaded.danger_ok
+
+    # T-0357: a ticket closed straight from a hand-merged worktree (a
+    # `git merge --no-ff` that bypassed the `frob ticket land`/T-0479
+    # ledger splice) can arrive here with an empty structured `evidence:`
+    # field even though its Done report prose already carries the
+    # rendered ids -- attempt best-effort recovery before the DONE guard
+    # would otherwise reject it as MissingEvidence. A no-op (`Ok`, no
+    # write) when evidence is already present; a failed recovery falls
+    # through to the ordinary MissingEvidence rejection below, unchanged.
+    if to == TicketState.DONE and not ticket.evidence:
+        replayed = replay_evidence_from_done_report(root, ticket_id)
+        if replayed.is_ok:
+            ticket = replayed.danger_ok
+            queue = dict(queue)
+            queue[ticket_id] = ticket
 
     allowed = _TRANSITIONS.get(ticket.state, frozenset())
     if to not in allowed:
@@ -1629,6 +1687,9 @@ def add_evidence(
     passing the observed-passing subset. cmd: evidence entries are exempt
     from `passed` (verified by their own exit-code/digest channel instead,
     see `add_cmd_evidence`/`reverify_cmd_evidence`)."""
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
     validated = _validate_evidence_list(tuple(node_ids))
     if validated.is_err:
         return Err(validated.danger_err)
@@ -1852,6 +1913,9 @@ def add_cmd_evidence(
     with Err(EvidenceKindNotAllowed) so a code change can never close on an
     unrelated shell command's exit status alone.
     """
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
     loaded = _load_one(root, ticket_id)
     if loaded.is_err:
         return Err(loaded.danger_err)
@@ -1899,6 +1963,92 @@ def render_evidence_block(evidence: Sequence[str]) -> str:
         else:
             lines.append(f"- `{eid}` (pytest node id, verified passing when recorded)")
     return "\n".join(lines)
+
+
+# frob:ticket T-0357
+_EVIDENCE_LINE_RE = re.compile(r"^- `([^`]+)` \((?:pytest node id|cmd evidence)")
+
+
+def _parse_evidence_ids_from_done_report(body: str) -> tuple[str, ...]:
+    """Recover evidence ids from a ticket's rendered '## Done report' ->
+    '### Evidence' section text, the inverse of `render_evidence_block`
+    (T-0357). A worktree's structured `evidence:` field is the source of
+    truth in the ordinary case; this exists only for the recovery path
+    where that field is empty (or was lost by a hand-merge that bypassed
+    the ledger splice) but the committed Done report prose still carries
+    the rendered ids -- so a coordinator merging a worktree branch by hand
+    (`git merge --no-ff` + `frob ticket close` on main, T-0248/T-0266) is
+    never stuck re-typing node ids by hand. Returns ids in the order they
+    appear, deduplicated; `()` if no '### Evidence' section or no
+    recognizable rendered lines are found."""
+    section = _done_report_section_lines(body)
+    if section is None:
+        return ()
+    ids: list[str] = []
+    in_evidence = False
+    for line in section:
+        stripped = line.strip()
+        if stripped.startswith("### "):
+            in_evidence = stripped == "### Evidence"
+            continue
+        if not in_evidence:
+            continue
+        match = _EVIDENCE_LINE_RE.match(stripped)
+        if match and match.group(1) not in ids:
+            ids.append(match.group(1))
+    return tuple(ids)
+
+
+# frob:ticket T-0357
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport.test_recovers_ids_when_structured_evidence_empty  # noqa: E501
+# frob:tests tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport.test_noop_when_evidence_already_present  # noqa: E501
+def replay_evidence_from_done_report(
+    root: Path, ticket_id: str
+) -> Result[Ticket, TicketError]:
+    """Recover `ticket_id`'s structured `evidence:` field from its own
+    committed Done report prose when the field is empty (T-0357): the
+    coordinator-land bug where evidence recorded via `frob ticket evidence`
+    in a worktree never made it into main's ledger in a form `frob ticket
+    close` recognizes (a hand `git merge --no-ff` that bypassed the T-0176/
+    T-0479 ledger splice, or a splice that otherwise dropped the field
+    while the Done report text survived). Best-effort and idempotent: a
+    ticket that already carries structured evidence is returned unchanged
+    (`Ok`, no write); a ticket with no evidence and no recognizable
+    rendered ids in its Done report returns `Err(MissingEvidence)`
+    unchanged -- there is nothing to replay. Recovered ids are NOT
+    re-validated against a fresh pytest collection or pass/fail run (no
+    such oracle is available here, and re-validating would defeat the
+    point of a same-repo-state recovery); callers that need that guarantee
+    should follow up with `frob check`'s COV003/TEST001 gates, which
+    re-verify independently."""
+    with ledger_lock(root):
+        loaded = _load_one(root, ticket_id)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        ticket = loaded.danger_ok
+        if ticket.evidence:
+            return Ok(ticket)
+        recovered = _parse_evidence_ids_from_done_report(ticket.body)
+        if not recovered:
+            _log.warning(
+                "tickets: %s has no structured evidence and no recoverable "
+                "ids in its Done report -- nothing to replay",
+                ticket_id,
+            )
+            return Err(TicketError.MissingEvidence)
+        updated = ticket.model_copy(update={"evidence": recovered})
+        write_result = write_ticket(root, updated)
+        if write_result.is_err:
+            return Err(write_result.danger_err)
+    _log.warning(
+        "tickets: %s replayed %d evidence id(s) from its Done report text "
+        "(structured evidence: field was empty) -- %s",
+        ticket_id,
+        len(recovered),
+        list(recovered),
+    )
+    return Ok(updated)
 
 
 # frob:ticket T-0458
@@ -1986,6 +2136,9 @@ def set_done_report(
     concurrent `set_done_report`/`add_evidence`/`new_ticket` call on the
     same ledger can never interleave with this one (T-0458 single-writer
     invariant)."""
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
     with ledger_lock(root):
         loaded = _load_one(root, ticket_id)
         if loaded.is_err:
@@ -2013,6 +2166,9 @@ def record_failure(
     root: Path, ticket_id: str, entry: FailureEntry
 ) -> Result[Ticket, TicketError]:
     """Append entry to the '## Failure log' body section, creating it if absent."""
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
     loaded = _load_one(root, ticket_id)
     if loaded.is_err:
         return Err(loaded.danger_err)
@@ -2074,6 +2230,9 @@ def attach(
     root: Path, ticket_id: str, source: AttachmentSource, caption: str
 ) -> Result[Attachment, AttachError]:
     """Copy a file (or clipboard image) into tickets/attachments/<id>/ and record it."""
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
     loaded = _load_one(root, ticket_id)
     if loaded.is_err:
         return Err(loaded.danger_err)
