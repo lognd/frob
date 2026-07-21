@@ -8648,7 +8648,7 @@ found while working T-0287 (dup type-generalizing anti-unification): _template._
 id: T-0496
 title: 'strata audit G5: utility/krb_no_transit flow marker silently defeats confidentiality
   NoFlow'
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-07-21'
