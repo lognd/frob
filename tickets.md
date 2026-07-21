@@ -3353,7 +3353,49 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/tickets/
-scope_changes: []
+- docs/modules/tickets.md
+- tests/unit/test_ticket_store.py
+- .frob-release.json
+- CHANGELOG.md
+- pyproject.toml
+- uv.lock
+scope_changes:
+- op: add
+  glob: docs/modules/tickets.md
+  reason: Done report, doc entry, and test coverage for the new public replay_evidence_from_done_report
+    symbol land alongside the src/frob/tickets/ change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_ticket_store.py
+  reason: Done report, doc entry, and test coverage for the new public replay_evidence_from_done_report
+    symbol land alongside the src/frob/tickets/ change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 version bump (0.42.0 -> 0.43.0) for the new public replay_evidence_from_done_report
+    symbol
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: REL001 version bump (0.42.0 -> 0.43.0) for the new public replay_evidence_from_done_report
+    symbol
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: REL001 version bump (0.42.0 -> 0.43.0) for the new public replay_evidence_from_done_report
+    symbol
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: REL001 version bump (0.42.0 -> 0.43.0) for the new public replay_evidence_from_done_report
+    symbol
+  actor: logan
+  at: '2026-07-21'
 evidence:
 - tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_recovers_ids_when_structured_evidence_empty
 - tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_noop_when_evidence_already_present
@@ -3383,7 +3425,17 @@ not re-validated against a fresh collection/pass run; frob check's
 COV003/TEST001 gates still catch a stale or fabricated id independently.
 
 ### Changed
-(no changed files detected)
+```
+ .frob-release.json              |   3 +-
+ CHANGELOG.md                    |  18 +++++++
+ docs/modules/tickets.md         |  13 +++++
+ pyproject.toml                  |   2 +-
+ src/frob/tickets/__init__.py    | 102 ++++++++++++++++++++++++++++++++++++++++
+ tests/unit/test_ticket_store.py |  68 +++++++++++++++++++++++++++
+ tickets.md                      |  34 +++++++++++++-
+ uv.lock                         |   2 +-
+ 8 files changed, 237 insertions(+), 5 deletions(-)
+```
 
 ### Evidence
 - `tests/unit/test_ticket_store.py::TestReplayEvidenceFromDoneReport::test_recovers_ids_when_structured_evidence_empty` (pytest node id, verified passing when recorded)
