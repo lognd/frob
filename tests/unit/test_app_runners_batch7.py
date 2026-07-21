@@ -512,6 +512,64 @@ class TestTicketStart:
         assert "already in-progress" in caplog.text
 
 
+class TestTicketRequeue:
+    def test_missing_id_exits_1(self, tmp_path: Path) -> None:
+        cfg = AppConfig(ticket_command="requeue", ticket_path=tmp_path)
+        with pytest.raises(SystemExit):
+            ticket_run(cfg)
+
+    def test_unknown_id_exits_1(self, tmp_path: Path, caplog) -> None:
+        cfg = AppConfig(
+            ticket_command="requeue", ticket_path=tmp_path, ticket_id="T-9999"
+        )
+        with caplog.at_level("ERROR"), pytest.raises(SystemExit):
+            ticket_run(cfg)
+        assert "no ticket" in caplog.text
+
+    def test_requeue_success(self, tmp_path: Path, caplog) -> None:
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_path=tmp_path,
+            ticket_title="requeue me",
+            ticket_kind="bug",
+        )
+        ticket_run(cfg)
+        cfg = AppConfig(
+            ticket_command="start", ticket_path=tmp_path, ticket_id="T-0001"
+        )
+        ticket_run(cfg)
+        cfg = AppConfig(
+            ticket_command="requeue",
+            ticket_path=tmp_path,
+            ticket_id="T-0001",
+            ticket_reason="parked, wrong assumption",
+        )
+        with caplog.at_level("INFO"):
+            ticket_run(cfg)
+        assert "T-0001 requeued (in-progress -> queued): parked, wrong assumption" in (
+            caplog.text
+        )
+        assert (
+            load_queue(tmp_path).danger_ok.tickets["T-0001"].state
+            == TicketState.QUEUED
+        )
+
+    def test_requeue_not_in_progress_exits_1(self, tmp_path: Path, caplog) -> None:
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_path=tmp_path,
+            ticket_title="requeue me",
+            ticket_kind="bug",
+        )
+        ticket_run(cfg)
+        cfg = AppConfig(
+            ticket_command="requeue", ticket_path=tmp_path, ticket_id="T-0001"
+        )
+        with caplog.at_level("ERROR"), pytest.raises(SystemExit):
+            ticket_run(cfg)
+        assert "not in-progress" in caplog.text
+
+
 class TestTicketStartTransitionFailure:
     def test_transition_to_in_progress_failure_exits_1(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog

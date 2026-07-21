@@ -4624,7 +4624,7 @@ title: 'frob ticket requeue/unstart: no CLI command exists for the state-machine
   in-progress->queued transition (plan/block/close/fail only) -- a parked/mis-started
   ticket cannot be honestly requeued without hand-editing; add the command (releases
   the T-0453 lease)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -4635,6 +4635,9 @@ scope:
 - src/frob/__main__.py
 - docs/modules/tickets.md
 - tests/test_app.py
+- src/frob/app/config.py
+- tests/unit/test_app.py
+- tests/unit/test_app_runners_batch7.py
 scope_changes:
 - op: remove
   glob: tests/**
@@ -4646,6 +4649,23 @@ scope_changes:
   reason: T-0472 app work maps to tests/test_app.py
   actor: logan
   at: '2026-07-20'
+- op: add
+  glob: src/frob/app/config.py
+  reason: requeue needs AppConfig.ticket_reason field for --reason CLI wiring
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_app.py
+  reason: declared scope tests/test_app.py does not exist; real ticket_runner tests
+    live at tests/unit/test_app.py
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_app_runners_batch7.py
+  reason: plan/start CLI dispatch tests live here, matching pattern for new requeue
+    command
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
