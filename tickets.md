@@ -3157,6 +3157,7 @@ unrelated date-drift TICK004 rot fixture, not touched by this ticket).
 - `tests/test_tickets_organization.py::TestEpicRollup::test_blocked_leaf_surfaced` (pytest node id, verified passing when recorded)
 - `tests/test_tickets_organization.py::TestEpicRollup::test_childless_epic_is_zero_percent_not_a_crash` (pytest node id, verified passing when recorded)
 - `tests/unit/test_ticket_store.py::TestLoadAllAndWriteTicket::test_component_and_labels_round_trip` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0459 -->
 ```yaml
 id: T-0459
@@ -4559,9 +4560,9 @@ labels: []
 ```
 Blocks T-0501 (docs/audits/strata.md G2+G7). G2/G7's own fix direction ('require at least one modeled path from a foreign source to the firing node, and at least one foreign-trust node in the model, before accepting the vacuous short-circuit as a discharge') is IN DIRECT CONFLICT with T-0223's already-shipped, deliberately tested 'library-mode discharge-by-absence' feature (docs/strata/threat.md#library-mode-discharge-by-absence, tests/unit/strata/test_threat.py::TestLibraryModeForeignlessDischarge): a foreign-less library model (literally zero foreign-trust nodes) is INTENDED to vacuously discharge CWE-78/etc via NoFlow(src=foreign,...) proving true by absence. Applying G2/G7's fix direction verbatim (require >=1 foreign-trust node before accepting vacuous discharge) would REFUTE every T-0223 library-mode model outright, a real regression of a real feature. The two cases (intentional library mode with no adversary vs. a production model that simply forgot to model its adversary) are INDISTINGUISHABLE in the kernel today -- both produce a KernelModel with zero foreign-trust nodes. A resolution needs an explicit signal: e.g. a  declaration ( module kind, or similar) that marks a model as deliberately adversary-free so THAT case (and only that case) is exempt from G2/G7's tightened requirement, while an undeclared model with zero foreign nodes gets the new distinct diagnostic instead of silent PROVED. This is a product/security design call, not something T-0501 should decide unilaterally mid-patch -- filed per the BLOCKER protocol rather than force either a broken fix or a silently-narrowed one. docs/strata/threat.md#phasing and #library-mode-discharge-by-absence need to document whichever resolution is chosen.
 
-<!-- ticket:T-draft-2586e92f -->
+<!-- ticket:T-0533 -->
 ```yaml
-id: T-draft-2586e92f
+id: T-0533
 title: 'T-0454 follow-up: sprints/milestones (sprint field + frob ticket sprint new/list/show/assign)'
 state: queued
 kind: feature
@@ -4585,34 +4586,9 @@ labels: []
 ```
 T-0454 (professional ticket organization epic) deliberately did not build sprints/milestones -- the ticket body said if they fit, and a full sprint lifecycle (a sprint/milestone id+goal+date-window field, plus frob ticket sprint new/list/show/assign CRUD, plus a ticket-in-at-most-one-active-sprint constraint) is a second feature-sized surface on top of the component/label/board/epic core T-0454 delivered (component, labels, board_view, epic_rollup, frob ticket component/label/board/epic). Design per T-0454's body: a sprint/milestone (id + goal + optional date window); frob ticket sprint new/list/show/assign; frob ticket sprint show S-## renders the sprint backlog with per-ticket state; a ticket may be in at most one active sprint. Should follow the exact same additive-field + splice-safe round-trip discipline T-0454 established (see docs/modules/tickets.md#organization-components-labels-board-epics-t-0454).
 
-<!-- ticket:T-draft-64ba9cf3 -->
+<!-- ticket:T-0534 -->
 ```yaml
-id: T-draft-64ba9cf3
-title: frob:debt/frob:todo symmetric resolution surfacing at ticket close (T-0412
-  req 4)
-state: queued
-kind: feature
-origin: human
-created: '2026-07-21'
-priority: medium
-blocked_by: []
-parent: null
-scope:
-- src/frob/tickets/
-- src/frob/gates/__init__.py
-scope_changes: []
-evidence: []
-attachments: []
-acceptance: []
-threat: null
-component: null
-labels: []
-```
-T-0412 DEBT-TODO coherence follow-up requirement 4: closing a ticket should surface BOTH the debt and the todo so neither is silently orphaned when the other resolves. T-0526 implemented requirements 1-3 (implicit todo registration for an unpaired debt, reused open-ticket check, same-ticket consistency check) entirely inside src/frob/graph/dsl.py per its declared scope. This requirement needs frob.tickets close-time reporting and/or frob.gates surfacing, both out of T-0526 scope, filed as its own unit of work.
-
-<!-- ticket:T-draft-b0a49b89 -->
-```yaml
-id: T-draft-b0a49b89
+id: T-0534
 title: 'T-0454 follow-up: component/label filter on frob ticket doable/list, bulk
   reassignment'
 state: queued
@@ -4636,3 +4612,28 @@ component: null
 labels: []
 ```
 T-0454 added component/label filtering only to frob ticket board (board_view's component=/label= kwargs). Two smaller deferred pieces from that pass: (1) frob ticket doable/list currently have no --component/--label filter, so a coordinator draining one area at a time still has to use board for that rather than the queue-focused doable view; (2) component/label mutation is one ticket at a time via set_component/mutate_labels, matching every other single-ticket mutation command's granularity today, but a coordinator relabeling/recomponentizing a batch of tickets found via frob ticket list --state X has no bulk path and must call the CLI once per id. Both are small, additive extensions of T-0454's existing filter/mutation primitives, not new subsystems.
+
+<!-- ticket:T-0535 -->
+```yaml
+id: T-0535
+title: frob:debt/frob:todo symmetric resolution surfacing at ticket close (T-0412
+  req 4)
+state: queued
+kind: feature
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/
+- src/frob/gates/__init__.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0412 DEBT-TODO coherence follow-up requirement 4: closing a ticket should surface BOTH the debt and the todo so neither is silently orphaned when the other resolves. T-0526 implemented requirements 1-3 (implicit todo registration for an unpaired debt, reused open-ticket check, same-ticket consistency check) entirely inside src/frob/graph/dsl.py per its declared scope. This requirement needs frob.tickets close-time reporting and/or frob.gates surfacing, both out of T-0526 scope, filed as its own unit of work.
