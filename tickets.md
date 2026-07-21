@@ -4966,53 +4966,9 @@ threat: null
 ```
 found while working T-0494: T-0494 legitimately removed tests/test_dup_cross_lang.py::TestCrossLanguageCloneNotYetDetected::test_no_clone_group_at_any_threshold (its assertion, report.groups == (), is now FALSE at every threshold since T-0487's _KEYWORDS fix made R5 correctly fire cross-language for this fixture -- see T-0494's Done report and the new TestCrossLanguageR5NowFires class replacing it). This leaves T-0187 (1 evidence id) and T-0198 (5 evidence ids, one per threshold parametrization) in tickets-archive.md pointing at a test id that no longer exists, firing COV003 for both archived tickets on every frob check. Same shape as the T-0416/T-0472 precedent (evidence pointing at a removed/renamed test). Remedy: update T-0187's and T-0198's archived evidence lists to point at still-valid replacement ids (e.g. TestCrossLanguageR5NowFires::test_r5_group_fires_at_every_threshold[*] for the threshold-parametrized ones, or drop the stale id with a note that the original claim inverted) via the tickets CLI against tickets-archive.md. Out of T-0494's declared scope (scope=tests/test_dup_cross_lang.py, docs/modules/dup.md -- does not include editing OTHER tickets' archived evidence).
 
-<!-- ticket:T-draft-2553c603 -->
+<!-- ticket:T-0520 -->
 ```yaml
-id: T-draft-2553c603
-title: 'SCOPE001: bare directory scope entries (no trailing slash) never expand and
-  silently drop from a ticket''s real scope'
-state: queued
-kind: bug
-origin: agent
-created: '2026-07-21'
-priority: medium
-blocked_by: []
-parent: null
-scope:
-- src/frob/tickets/_models.py
-scope_changes: []
-evidence: []
-attachments: []
-acceptance: []
-threat: null
-```
-Found while working T-0515: _scope_globs (frob.tickets._models) only expands a bare directory entry to dir/** when the entry ENDS WITH a trailing slash and has no glob metacharacters -- an entry written as 'docs/modules' (no trailing slash, as several existing tickets.md scope blocks use) is instead treated as a literal fnmatch pattern equal to that exact string, which can never match a real file path (docs/modules/gates.md, etc). This means any ticket whose author typed a bare directory name without the trailing slash silently has that entry as dead weight in scope -- SCOPE001 fires on every file under it, and PRE001's sweep sees it as empty. T-0515 hit this directly (docs/modules / docs/strata entries had to be corrected to docs/modules/ / docs/strata/ mid-ticket). Fix direction: either warn/normalize at TicketSpec construction time (strip trailing slash requirement, treat any scope entry with no glob metacharacters and no dot-extension as an implied directory prefix), or add a lint that flags scope entries shaped like a bare directory name lacking a trailing slash. Grep tickets.md for scope entries matching a bare path segment (no /, no ., no *) to gauge how many existing tickets are silently affected.
-
-<!-- ticket:T-draft-34e55eb3 -->
-```yaml
-id: T-draft-34e55eb3
-title: INV003/INV004 doc-side frob:waive detection can self-match illustrative example
-  text in gates.md's own prose
-state: queued
-kind: bug
-origin: agent
-created: '2026-07-21'
-priority: low
-blocked_by: []
-parent: null
-scope:
-- src/frob/gates/__init__.py
-scope_changes: []
-evidence: []
-attachments: []
-acceptance: []
-threat: null
-```
-Found while working T-0515: _DOC_WAIVE_MARKER_RE (frob.gates.__init__) matches any '<!-- frob:waive INV003|INV004 reason="..." -->' text found anywhere in a file's raw text, with no distinction between a REAL waiver marker and an ILLUSTRATIVE example demonstrating the syntax in prose. docs/modules/gates.md's own INV003/INV004 documentation necessarily spells out the marker syntax as a literal example, e.g. reason="..." (literal three dots) -- which is non-empty and satisfies the regex, so gates.md has silently self-waived its own INV003 and INV004 findings since T-0509/T-0515, never appearing in the residual list despite having plenty of exclusivity/normative prose. Fix direction: either scan for the marker only outside fenced/inline code (the same _strip_markdown_noise pass find_exclusivity_claims/find_normative_claims already apply, which would not help here since these examples are NOT inside code fences), or require the reason text to not be a placeholder ellipsis/generic string, or accept this as a known limitation and document it explicitly in docs/modules/gates.md's INV003/INV004 sections. Low priority since it only affects gates.md's own meta-documentation of the gate today, but the same trap would silently hit ANY doc that ever explains the waiver syntax by literal example.
-
-<!-- ticket:T-draft-ef01c26a -->
-```yaml
-id: T-draft-ef01c26a
+id: T-0520
 title: triage residual 63 INV003/INV004 findings across 33 docs/modules+docs/strata
   files after T-0515 calibration
 state: queued
@@ -5033,3 +4989,47 @@ acceptance: []
 threat: null
 ```
 T-0515 calibrated INV003/INV004: INV004 changed from per-section to per-file granularity and scoped to INV003_SPEC_DIRS (docs/modules, docs/strata), matching INV003's own T-0509 rationale. Combined INV003+INV004 dropped from 604 to 63 (INV003 unchanged at 30, INV004 573 -> 33), measured via frob check --only invariant on this worktree before/after -- see docs/modules/gates.md's INV004 section for the full before/after story. The residual 63 findings span exactly 33 files (each file usually carries both an INV003 and an INV004 hit): docs/modules/{vet,fuzz,serve,dup,clean,render,lang,testing,dup-sota-survey,process,arch,logging,decisions,graph,cve,stats,tickets,perf,bind,app,mutate}.md and docs/strata/{kernel,evidence,policy,boundary,selfconform,roadmap,krb,waive,charter,host,surface,threat}.md. None of docs/modules or docs/strata currently binds a single real invariants/INV-###.md entry -- this is genuine, not a calibration artifact. Triage each file: bind a real invariants/INV-###.md entry where the claim is mechanically checkable (a test or policy rule already proves it), reword where the doc overclaims beyond what is enforced, or markdown-waive with a specific per-file reason (<!-- frob:waive INV003|INV004 reason="..." -->) where the claim is true design intent but not provable. Batch by file, do not blanket-waive. Get the exact remaining count from frob check --only invariant --json.
+
+<!-- ticket:T-0521 -->
+```yaml
+id: T-0521
+title: 'SCOPE001: bare directory scope entries (no trailing slash) never expand and
+  silently drop from a ticket''s real scope'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/_models.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Found while working T-0515: _scope_globs (frob.tickets._models) only expands a bare directory entry to dir/** when the entry ENDS WITH a trailing slash and has no glob metacharacters -- an entry written as 'docs/modules' (no trailing slash, as several existing tickets.md scope blocks use) is instead treated as a literal fnmatch pattern equal to that exact string, which can never match a real file path (docs/modules/gates.md, etc). This means any ticket whose author typed a bare directory name without the trailing slash silently has that entry as dead weight in scope -- SCOPE001 fires on every file under it, and PRE001's sweep sees it as empty. T-0515 hit this directly (docs/modules / docs/strata entries had to be corrected to docs/modules/ / docs/strata/ mid-ticket). Fix direction: either warn/normalize at TicketSpec construction time (strip trailing slash requirement, treat any scope entry with no glob metacharacters and no dot-extension as an implied directory prefix), or add a lint that flags scope entries shaped like a bare directory name lacking a trailing slash. Grep tickets.md for scope entries matching a bare path segment (no /, no ., no *) to gauge how many existing tickets are silently affected.
+
+<!-- ticket:T-0522 -->
+```yaml
+id: T-0522
+title: INV003/INV004 doc-side frob:waive detection can self-match illustrative example
+  text in gates.md's own prose
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-21'
+priority: low
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/__init__.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Found while working T-0515: _DOC_WAIVE_MARKER_RE (frob.gates.__init__) matches any '<!-- frob:waive INV003|INV004 reason="..." -->' text found anywhere in a file's raw text, with no distinction between a REAL waiver marker and an ILLUSTRATIVE example demonstrating the syntax in prose. docs/modules/gates.md's own INV003/INV004 documentation necessarily spells out the marker syntax as a literal example, e.g. reason="..." (literal three dots) -- which is non-empty and satisfies the regex, so gates.md has silently self-waived its own INV003 and INV004 findings since T-0509/T-0515, never appearing in the residual list despite having plenty of exclusivity/normative prose. Fix direction: either scan for the marker only outside fenced/inline code (the same _strip_markdown_noise pass find_exclusivity_claims/find_normative_claims already apply, which would not help here since these examples are NOT inside code fences), or require the reason text to not be a placeholder ellipsis/generic string, or accept this as a known limitation and document it explicitly in docs/modules/gates.md's INV003/INV004 sections. Low priority since it only affects gates.md's own meta-documentation of the gate today, but the same trap would silently hit ANY doc that ever explains the waiver syntax by literal example.
