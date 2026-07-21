@@ -2014,13 +2014,26 @@ def _cov005_file(
     new_by_key: dict[tuple[EdgeKind, str], list[Edge]] = {}
     for edge in new_edges:
         new_by_key.setdefault((edge.kind, edge.target), []).append(edge)
+    # T-0529: qualnames already privately bound to a given (kind, target) at
+    # `base` -- a new private edge for one of THESE qualnames is the same
+    # binding continuing, never a rebind, even when some OTHER symbol also
+    # shares the anchor and was public (see `_old_directive_bindings`).
+    already_private: dict[tuple[EdgeKind, str], set[str]] = {}
+    for kind, target, qualname, was_public in old_bindings:
+        if not was_public:
+            already_private.setdefault((kind, target), set()).add(qualname)
     violations: list[Violation] = []
-    for kind, target, was_public in old_bindings:
+    for kind, target, _qualname, was_public in old_bindings:
         if not was_public:
             continue
         for new_edge in new_by_key.get((kind, target), ()):
             record = snapshot.symbols.get(new_edge.src)
             if record is None or record.public:
+                continue
+            new_qualname = (
+                new_edge.src.split("::", 1)[1] if "::" in new_edge.src else new_edge.src
+            )
+            if new_qualname in already_private.get((kind, target), ()):
                 continue
             if not any(_overlaps(span, record.span) for span in file_hunks):
                 continue
@@ -2054,14 +2067,26 @@ def _cov005_file(
 
 def _old_directive_bindings(
     root: Path, base: str, file: str
-) -> tuple[tuple[EdgeKind, str, bool], ...]:
-    """`(kind, target, was_public)` for every `frob:` directive `file` carried
-    at revision `base`, parsed from `git show <base>:<file>` -- empty (not an
-    error) if the blob does not exist there (new file) or fails to parse.
+) -> tuple[tuple[EdgeKind, str, str, bool], ...]:
+    """`(kind, target, qualname, was_public)` for every `frob:` directive
+    `file` carried at revision `base`, parsed from `git show <base>:<file>`
+    -- empty (not an error) if the blob does not exist there (new file) or
+    fails to parse. `qualname` is kept (T-0529 fix) so `_cov005_file` can
+    tell "this exact symbol was already privately bound to this anchor
+    before" apart from "some OTHER symbol shares this anchor and happens
+    to be public" -- a shared doc anchor legitimately covering BOTH a
+    public entrypoint and one of its private helpers (this repo's own
+    convention, e.g. kernel.md#capacity-semantics naming
+    `FactBase.propagated_demand` alongside `_flow_fanout`) is not a
+    "silent rebind," and conflating them by dropping symbol identity was a
+    real false positive (any edit inside the private helper's own
+    unrelated span used to trip COV005 purely because the SAME anchor
+    string was, elsewhere, also historically public).
 
     A throwaway same-suffix temp file is used so `frob.lang.parse_file`'s
     extension dispatch sees the right grammar; the temp path itself never
-    leaks into the returned bindings (only `kind`/`target`/publicness do),
+    leaks into the returned bindings (only `kind`/`target`/`qualname`/
+    publicness do),
     so it need not match `file`'s real repo-relative path.
     """
     import tempfile
@@ -2095,11 +2120,11 @@ def _old_directive_bindings(
     parsed = parsed_result.danger_ok
     edges, _malformed = parse_directives(parsed)
     public_by_qualname = {s.qualname: s.public for s in parsed.symbols}
-    bindings: list[tuple[EdgeKind, str, bool]] = []
+    bindings: list[tuple[EdgeKind, str, str, bool]] = []
     for edge in edges:
         qualname = edge.src.split("::", 1)[1] if "::" in edge.src else edge.src
         was_public = public_by_qualname.get(qualname, False)
-        bindings.append((edge.kind, edge.target, was_public))
+        bindings.append((edge.kind, edge.target, qualname, was_public))
     return tuple(bindings)
 
 

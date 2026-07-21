@@ -53,6 +53,10 @@ _GROWTH_HORIZON_MONTHS = 24
 def _node_skew(node) -> float | None:
     """A node's zipf skew exponent: its `skew=<alpha>` attr, or None."""
     # frob:doc docs/strata/kernel.md#capacity-semantics
+    # frob:waive COV007 reason="docs/strata/kernel.md's Capacity semantics \
+    # section individually frob:describes this private helper by name \
+    # (T-0529) -- a deliberate architecture doc, not accidental drift \
+    # onto a private helper"
     for attr in node.attrs:
         if attr.startswith(_SKEW_PREFIX):
             try:
@@ -70,6 +74,10 @@ def _zipf_hottest_share(alpha: float, shards: int) -> float:
     docs/strata/kernel.md#capacity-semantics.
     """
     # frob:doc docs/strata/kernel.md#capacity-semantics
+    # frob:waive COV007 reason="docs/strata/kernel.md's Capacity semantics \
+    # section individually frob:describes this private helper by name \
+    # (T-0529) -- a deliberate architecture doc, not accidental drift \
+    # onto a private helper"
     weights = [1.0 / (k**alpha) for k in range(1, max(shards, 1) + 1)]
     return weights[0] / sum(weights)
 
@@ -77,6 +85,10 @@ def _zipf_hottest_share(alpha: float, shards: int) -> float:
 def _flow_growth(flow) -> float | None:
     """A flow's declared monthly growth percent: its `growth=<pct>` attr, or None."""
     # frob:doc docs/strata/kernel.md#capacity-semantics
+    # frob:waive COV007 reason="docs/strata/kernel.md's Capacity semantics \
+    # section individually frob:describes this private helper by name \
+    # (T-0529) -- a deliberate architecture doc, not accidental drift \
+    # onto a private helper"
     for attr in flow.attrs:
         if attr.startswith(_GROWTH_PREFIX):
             try:
@@ -90,6 +102,10 @@ def _flow_growth(flow) -> float | None:
 def _add_months(d: _dt.date, months: int) -> _dt.date:
     """`d` advanced by `months` whole months, clamping the day to the target month."""
     # frob:doc docs/strata/kernel.md#capacity-semantics
+    # frob:waive COV007 reason="docs/strata/kernel.md's Capacity semantics \
+    # section individually frob:describes this private helper by name \
+    # (T-0529) -- a deliberate architecture doc, not accidental drift \
+    # onto a private helper"
     month_index = d.month - 1 + months
     year = d.year + month_index // 12
     month = month_index % 12 + 1
@@ -106,6 +122,10 @@ def _months_to_saturation(
     or non-positive growth).
     """
     # frob:doc docs/strata/kernel.md#capacity-semantics
+    # frob:waive COV007 reason="docs/strata/kernel.md's Capacity semantics \
+    # section individually frob:describes this private helper by name \
+    # (T-0529) -- a deliberate architecture doc, not accidental drift \
+    # onto a private helper"
     if utilization0 <= 0.0 or utilization0 >= limit or growth_pct <= 0.0:
         return None
     g = growth_pct / 100.0

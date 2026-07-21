@@ -88,6 +88,7 @@ _NOFLOW_NON_TRANSITIVE_ATTRS = frozenset({"krb_no_transit"})
 def _flow_fanout(flow: Flow) -> float:
     """A flow's demand-propagation multiplier: its `fanout=<float>` attr, or 1.0."""
     # frob:doc docs/strata/kernel.md#capacity-semantics
+    # frob:waive COV007 reason="docs/strata/kernel.md's Capacity semantics section names this helper individually (T-0529)"  # noqa: E501
     for attr in flow.attrs:
         if attr.startswith(_FANOUT_PREFIX):
             try:
