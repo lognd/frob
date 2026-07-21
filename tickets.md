@@ -3621,54 +3621,9 @@ threat: null
 ```
 T-0462/T-0452 landed WARN-severity as disclosed, but the exclusivity/normative corpora fire 765 times across docs/ -- far too noisy to burn down by hand and mostly bare-'only' prose, not genuine invariant claims. Calibrate first: require stronger claim shapes (subject+exclusivity+verb patterns, skip code fences/links/tables), add markdown-side frob:waive support so genuine-but-unprovable claims can be dispositioned, and consider scoping INV003 to spec-normative docs (docs/modules, docs/strata) rather than all docs/**.md. Then burn the residual down to zero. Scope: src/frob/gates/invariants.py, src/frob/gates/__init__.py, tests/test_gates.py, docs/modules/gates.md.
 
-<!-- ticket:T-draft-0088bcd5 -->
+<!-- ticket:T-0510 -->
 ```yaml
-id: T-draft-0088bcd5
-title: 'strata audit G12: restrict load_repo_benign_capabilities to genuinely excusable
-  kinds'
-state: queued
-kind: security
-origin: human
-created: '2026-07-21'
-priority: medium
-blocked_by: []
-parent: null
-scope:
-- src/frob/strata/_threat.py
-- tests/unit/strata/test_threat.py
-scope_changes: []
-evidence: []
-attachments: []
-acceptance: []
-threat: null
-```
-Split from T-0497 (attempted and REVERTED inside that ticket -- a naive 'reject any kind already in CWE_CATALOG union QUALITY_CATALOG' fix breaks the legitimate T-0017 cross-family excuse pattern: e.g. client_storage IS catalogued under CWE_CATALOG (CWE-922/312) but has NO QUALITY_CATALOG entry, so excusing it for the QUALITY loop specifically is a real, load-bearing use case test_repo_declared_excuse_resolves_threat002 already covers -- rejecting ANY catalogued-in-either-family kind would break that). docs/audits/strata.md finding G12: load_repo_benign_capabilities lets a consuming repo excuse ANY capability kind string via frob.toml with just a reason, no allowlist -- currently functionally inert against a truly dangerous excuse ONLY because every consuming call site (check_capability_completeness, check_effect_completeness) independently guards 'if kind not in known and kind not in excused', so an excuse for an already-catalogued-in-THAT-family kind is already a structural no-op -- but that safety property lives in the CALLERS, not in load_repo_benign_capabilities itself, and is not verified/enforced at load time. Needs a fix that is precise about WHICH catalog (CWE_CATALOG vs QUALITY_CATALOG, not their union) an excuse would apply against, since the same kind can be legitimately excusable in one family and illegitimately excusable in the other -- likely needs a per-family scoping mechanism on repo-declared excuses (mirroring DEFAULT_BENIGN_CAPABILITIES' own per-family commentary), not a single flat kind allowlist. Counterexample-first: prove client_storage-for-quality-only stays excusable after the fix (regression guard) AND prove a genuinely both-families-catalogued kind (or a kind catalogued in the SAME family the excuse targets) is rejected.
-
-<!-- ticket:T-draft-035b0ea9 -->
-```yaml
-id: T-draft-035b0ea9
-title: 'strata audit G9: native-staleness detection is mtime-only, defeated by a touch'
-state: queued
-kind: security
-origin: human
-created: '2026-07-21'
-priority: medium
-blocked_by: []
-parent: null
-scope:
-- src/frob/strata/_native_staleness.py
-- tests/unit/strata/test_native_staleness.py
-scope_changes: []
-evidence: []
-attachments: []
-acceptance: []
-threat: null
-```
-Split from T-0497 (too large to rush inside that ticket's remaining budget -- needs a real content-hashing scheme designed, not a rushed patch). docs/audits/strata.md finding G9: _native_staleness.py:89,160 detects a stale-built native extension purely via mtime comparison (source newer than built artifact). A bare 'touch' on the built artifact (no rebuild) defeats this -- the staleness check would report clean against genuinely stale compiled code. Fix direction: a content digest (source tree hash, e.g. over the crate's .rs files + Cargo.toml/lock, compared against a digest recorded at build time) instead of or in addition to mtime, so a touch cannot silently fake freshness. Needs a litmus counterexample: touch the built artifact after editing source, prove the CURRENT mtime-only check reports clean (the vulnerability), then prove the content-digest fix catches it.
-
-<!-- ticket:T-draft-92ce976f -->
-```yaml
-id: T-draft-92ce976f
+id: T-0510
 title: add missing CWE-916/1321/1333/601/1336 WeaknessEntry rows and cve-fingerprint
   needles
 state: queued
@@ -3690,11 +3645,11 @@ threat: null
 ```
 Found while working T-0508. weaknesses.yaml carries 5 SEC-CVE-FINGERPRINT-CWE-* entries (CWE-916-WEAK-HASH, CWE-1321-PROTO-POLLUTION, CWE-1333-REDOS, CWE-601-OPEN-REDIRECT, CWE-1336-SSTI) with checkability=advisory but NO shipped CveFingerprint needle exists for any of them in _cve_fingerprint.py's CVE_FINGERPRINTS catalog, and no WeaknessEntry row exists in any of CWE_CATALOG/CWE_TOP_25_CATALOG/QUALITY_CATALOG (_threat.py) for these CWE ids either (confirmed: the only CWE-916/601/1321/1333/1336 rows in weaknesses.yaml are CWE-1000-registry rows, source_doc=docs/design/cwe-1000-registry.md, disposition=out-of-scope, a different framework than cve-fingerprint) -- so check_fingerprint_catalog_drift (CVEFP001) would correctly reject a fingerprint naming any of these cwe_id today. _cve_fingerprint.py's own module docstring already discloses the CWE-916 half of this gap and names it as needing a follow-up ticket adding the missing WeaknessEntry row before a fingerprint can honestly join it. This ticket: add the missing WeaknessEntry rows (or route through an existing one if a real match is found on closer research) plus a real, independently-verified CVE-cited needle per CWE, in a scanned language (python/typescript/rust/c-cpp), following the same pattern FP-TLS-VERIFY-*/FP-XXE-PARSE-* used for the CWE-295/CWE-611 disclosed-gap precedent.
 
-<!-- ticket:T-draft-9adddf64 -->
+<!-- ticket:T-0511 -->
 ```yaml
-id: T-draft-9adddf64
-title: 'strata audit G10: differential/property tests for FactBase''s native Rust
-  kernels'
+id: T-0511
+title: 'strata audit G12: restrict load_repo_benign_capabilities to genuinely excusable
+  kinds'
 state: queued
 kind: security
 origin: human
@@ -3703,19 +3658,19 @@ priority: medium
 blocked_by: []
 parent: null
 scope:
-- tests/unit/strata/
-- strata-core/src/
+- src/frob/strata/_threat.py
+- tests/unit/strata/test_threat.py
 scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
 threat: null
 ```
-Split from T-0497 (too large to rush inside that ticket's remaining budget -- needs a pure-Python reference implementation designed and cross-checked, not a rushed patch). docs/audits/strata.md finding G10: FactBase.reachable/worst_age/propagated_demand are native Rust kernels (strata-core), trusted from Python with no differential or property-based test suite proving the Rust and an independent reference implementation agree on the same inputs. A subtle divergence (an off-by-one in age propagation, a wrong SCC handling, a rounding difference in demand aggregation) could silently ship undetected since only end-to-end behavioral tests exercise the combined system, not the kernel in isolation against a trusted oracle. Fix direction: a pure-Python reference implementation of at least worst_age/reachable/propagated_demand (small, deliberately naive, no perf concerns) plus a property-based (hypothesis-style, or hand-authored adversarial corpus) differential test that generates random-ish FactBase graphs and asserts the Rust kernel and the Python reference agree on every one.
+Split from T-0497 (attempted and REVERTED inside that ticket -- a naive 'reject any kind already in CWE_CATALOG union QUALITY_CATALOG' fix breaks the legitimate T-0017 cross-family excuse pattern: e.g. client_storage IS catalogued under CWE_CATALOG (CWE-922/312) but has NO QUALITY_CATALOG entry, so excusing it for the QUALITY loop specifically is a real, load-bearing use case test_repo_declared_excuse_resolves_threat002 already covers -- rejecting ANY catalogued-in-either-family kind would break that). docs/audits/strata.md finding G12: load_repo_benign_capabilities lets a consuming repo excuse ANY capability kind string via frob.toml with just a reason, no allowlist -- currently functionally inert against a truly dangerous excuse ONLY because every consuming call site (check_capability_completeness, check_effect_completeness) independently guards 'if kind not in known and kind not in excused', so an excuse for an already-catalogued-in-THAT-family kind is already a structural no-op -- but that safety property lives in the CALLERS, not in load_repo_benign_capabilities itself, and is not verified/enforced at load time. Needs a fix that is precise about WHICH catalog (CWE_CATALOG vs QUALITY_CATALOG, not their union) an excuse would apply against, since the same kind can be legitimately excusable in one family and illegitimately excusable in the other -- likely needs a per-family scoping mechanism on repo-declared excuses (mirroring DEFAULT_BENIGN_CAPABILITIES' own per-family commentary), not a single flat kind allowlist. Counterexample-first: prove client_storage-for-quality-only stays excusable after the fix (regression guard) AND prove a genuinely both-families-catalogued kind (or a kind catalogued in the SAME family the excuse targets) is rejected.
 
-<!-- ticket:T-draft-f75e805c -->
+<!-- ticket:T-0512 -->
 ```yaml
-id: T-draft-f75e805c
+id: T-0512
 title: 'strata audit G6: make cwe-top-25 a default security view alongside owasp-top-10'
 state: queued
 kind: security
@@ -3736,3 +3691,48 @@ acceptance: []
 threat: null
 ```
 Split from T-0497 (too large/architecturally entangled to rush inside that ticket's remaining budget). docs/audits/strata.md finding G6: DEFAULT_SECURITY_VIEWS = tuple(VIEWS) only ever contains 'owasp-top-10' (8 CWEs, CWE_CATALOG) -- cwe-top-25 (CWE_TOP_25_VIEWS, needs the COMBINED CWE_CATALOG+CWE_TOP_25_CATALOG per _threat.py's own module docstring rationale) is never included in a default frob sys audit run. A default audit therefore proves exhaustiveness and reports PROVED against only 8 weaknesses, not the full baseline the repo's catalogs define, without disclosing the narrower scope anywhere visible to the caller. Fix direction: either fold cwe-top-25 into a genuinely default multi-view audit run (wiring the combined catalog through _audit.py's default-view plumbing and sys_runner's caller), or make the narrower-than-full-baseline scope an explicit, loud disclosure in the audit's own PROVED report text instead of a silent omission. Counterexample-first: a default audit run today reports PROVED with zero mention that cwe-top-25 was never checked; the fix must make that either not true (genuinely checked) or not silent (disclosed).
+
+<!-- ticket:T-0513 -->
+```yaml
+id: T-0513
+title: 'strata audit G9: native-staleness detection is mtime-only, defeated by a touch'
+state: queued
+kind: security
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/_native_staleness.py
+- tests/unit/strata/test_native_staleness.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Split from T-0497 (too large to rush inside that ticket's remaining budget -- needs a real content-hashing scheme designed, not a rushed patch). docs/audits/strata.md finding G9: _native_staleness.py:89,160 detects a stale-built native extension purely via mtime comparison (source newer than built artifact). A bare 'touch' on the built artifact (no rebuild) defeats this -- the staleness check would report clean against genuinely stale compiled code. Fix direction: a content digest (source tree hash, e.g. over the crate's .rs files + Cargo.toml/lock, compared against a digest recorded at build time) instead of or in addition to mtime, so a touch cannot silently fake freshness. Needs a litmus counterexample: touch the built artifact after editing source, prove the CURRENT mtime-only check reports clean (the vulnerability), then prove the content-digest fix catches it.
+
+<!-- ticket:T-0514 -->
+```yaml
+id: T-0514
+title: 'strata audit G10: differential/property tests for FactBase''s native Rust
+  kernels'
+state: queued
+kind: security
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- tests/unit/strata/
+- strata-core/src/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Split from T-0497 (too large to rush inside that ticket's remaining budget -- needs a pure-Python reference implementation designed and cross-checked, not a rushed patch). docs/audits/strata.md finding G10: FactBase.reachable/worst_age/propagated_demand are native Rust kernels (strata-core), trusted from Python with no differential or property-based test suite proving the Rust and an independent reference implementation agree on the same inputs. A subtle divergence (an off-by-one in age propagation, a wrong SCC handling, a rounding difference in demand aggregation) could silently ship undetected since only end-to-end behavioral tests exercise the combined system, not the kernel in isolation against a trusted oracle. Fix direction: a pure-Python reference implementation of at least worst_age/reachable/propagated_demand (small, deliberately naive, no perf concerns) plus a property-based (hypothesis-style, or hand-authored adversarial corpus) differential test that generates random-ish FactBase graphs and asserts the Rust kernel and the Python reference agree on every one.
