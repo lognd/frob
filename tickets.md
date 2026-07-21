@@ -3064,7 +3064,7 @@ User (2026-07-20): ensure the exhaustive researcher has the mechanisms to MAKE t
 id: T-0433
 title: G6 fingerprint derivation from frob.lang grammar registry; G7 hash/parse TOCTOU
   (T-0402 residual)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
