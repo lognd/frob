@@ -5,6 +5,8 @@ glue code have a matching function declaration on the native side, so a
 Python-facing binding never silently drifts from the C++/Rust signature it
 claims to wrap.
 
+<!-- frob:invariant INV-007 -->
+
 ## Usage
 
 ```

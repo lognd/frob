@@ -1275,6 +1275,7 @@ def _place001(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 _PACKAGE_SCOPED_RULES = frozenset({"TEST003", "TEST004", "TEST007"})
 
 
+# frob:invariant INV-006
 def _ceiling_ok(waiver: Edge, violation: Violation) -> bool:
     """Whether `waiver` still covers `violation` given its optional
     `ceiling=` attribute: always true when no ceiling is set (or the

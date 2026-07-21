@@ -88,6 +88,7 @@ def _match_candidates(root: Path, patterns: tuple[str, ...]) -> dict[Path, str]:
 # frob:doc docs/modules/clean.md#public-api
 # frob:tests tests/test_clean.py::test_scan_tier1_matches_expected
 # frob:tests tests/test_clean.py::test_scan_skips_tracked_files
+# frob:invariant INV-008
 def scan(
     root: Path, tier: CleanTier, *, extra_patterns: tuple[str, ...] = ()
 ) -> Result[CleanReport, CleanError]:

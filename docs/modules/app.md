@@ -246,3 +246,14 @@ primitives every traversal in `src/frob/` must route through --
 `frob.gates._walk_lint`'s WALK001 statically flags any NEW raw
 `Path.rglob`/`os.walk`/`glob.glob("**"...)` call that bypasses them (see
 docs/modules/gates.md#walk001-unpruned-traversal-t-0471).
+
+<!-- frob:invariant INV-005 -->
+
+The "always computes `color` from the correct stream" claim above (Shared
+styling helper) is a caller-side calling convention documented for
+consistency, not something a gate statically enforces today -- no lint
+walks every call site to confirm the stream argument matches the log
+level. True as stated (`_style` itself is a pure function either way,
+so a caller passing the wrong stream produces a rendering bug, not an
+`_style` bug), but not mechanically provable at this granularity; INV-005
+above covers the one claim in this file that a gate does check.

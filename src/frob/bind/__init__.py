@@ -85,6 +85,7 @@ def _normalize(sig: str) -> str:
 
 
 # frob:doc docs/modules/bind.md#public-api
+# frob:invariant INV-007
 def check(root: Path) -> list[Mismatch]:
     """Return mismatches: bindings that have no matching source declaration."""
     bindings = scan_bindings(root)
