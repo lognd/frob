@@ -1603,7 +1603,7 @@ Recurring: implementer agents put a 'frob:tests <self>' directive above their ow
 ```yaml
 id: T-0287
 title: 'dup: type-generalizing anti-unification (holes bind types, propose generics)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-19'
