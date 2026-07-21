@@ -249,22 +249,6 @@ DEFAULT_BENIGN_CAPABILITIES: tuple[BenignCapability, ...] = (
         ),
     ),
     BenignCapability(
-        kind="eval",
-        reason=(
-            "vet dependency-vetting signal (compile/eval/__import__ literal "
-            "match, frob.vet._capability._PATTERNS); no CWE_CATALOG entry "
-            "targets dynamic code evaluation as a sink -- vet's own scanner "
-            "self-matches its own pattern-table string literals in "
-            "_capability.py (filed as a separate scanner-precision ticket, "
-            "T-0150 Done report), a distinct, already-flagged gap"
-        ),
-        caught_by=(
-            "frob vet's own scanner (frob.vet._capability._PATTERNS, "
-            "compile/eval/__import__ literal match) -- the mechanism that "
-            "already flags dynamic code evaluation"
-        ),
-    ),
-    BenignCapability(
         kind="env",
         reason=(
             "vet dependency-vetting signal (environment-variable read "
@@ -444,6 +428,28 @@ CWE_CATALOG: tuple[WeaknessEntry, ...] = (
         mitigation="argument_confinement",
         rung=Rung.L4,
     ),
+    # T-0401 (docs/audits/strata.md G3): `eval` was globally
+    # `BenignCapability`-excused with the (false) reason "no CWE_CATALOG
+    # entry targets dynamic code evaluation" -- `CWE_TOP_25_CATALOG`'s
+    # CWE-94 IS that entry (joined to `eval` there too, same section), but
+    # `owasp-top-10` (this catalog, `VIEWS`) does not include CWE-94 at all
+    # (G6: the default security view is narrower than cwe-top-25, a
+    # SEPARATE disclosed gap, not fixed here). So `eval` also needs a join
+    # WITHIN this catalog's own vocabulary for THREAT002 to classify it
+    # under the default view -- CWE-78 is the closest existing id (a code-
+    # execution sink, same "kernel model does not distinguish an OS-command
+    # sink from a code-eval sink" reasoning CWE-94's own `exec` join already
+    # uses), so a second row shares its id with a different
+    # `capability_kind`, the SAME multi-kind-per-weakness convention
+    # CWE-89/CWE-639 already establish for `sql`.
+    WeaknessEntry(
+        id="CWE-78",
+        title="Improper Neutralization of Special Elements used in an OS Command",
+        cite="https://cwe.mitre.org/data/definitions/78.html",
+        capability_kind="eval",
+        mitigation="argument_confinement",
+        rung=Rung.L4,
+    ),
     WeaknessEntry(
         id="CWE-22",
         title="Improper Limitation of a Pathname to a Restricted Directory",
@@ -564,6 +570,10 @@ CWE_CATALOG: tuple[WeaknessEntry, ...] = (
 # frob:doc docs/strata/threat.md#the-catalog-stdcwe
 # frob:ticket T-0143
 # frob:ticket T-0345
+# frob:ticket T-0401
+# frob:tests tests/unit/strata/test_threat.py::TestEvalFiresCwe94.test_eval_capability_is_classified_not_benign_excused  # noqa: E501
+# frob:tests tests/unit/strata/test_threat.py::TestEvalFiresCwe94.test_eval_capability_fires_a_real_cwe94_obligation  # noqa: E501
+# frob:tests tests/unit/strata/test_threat.py::TestEvalFiresCwe94.test_eval_capability_discharges_with_a_real_mitigation_claim  # noqa: E501
 CWE_TOP_25_CATALOG: tuple[WeaknessEntry, ...] = (
     WeaknessEntry(
         id="CWE-94",
@@ -573,6 +583,28 @@ CWE_TOP_25_CATALOG: tuple[WeaknessEntry, ...] = (
         # the kernel model does not distinguish an OS-command sink from a
         # code-eval sink, so both weaknesses fire on the same precondition,
         # exactly the CWE-639/CWE-89 "sql" precedent below.
+        mitigation="code_execution_sandboxing",
+        rung=Rung.L4,
+    ),
+    # T-0401 (docs/audits/strata.md G3): `eval` was globally
+    # `BenignCapability`-excused with the reason "no CWE_CATALOG entry
+    # targets dynamic code evaluation as a sink" -- false; CWE-94 IS
+    # exactly that entry, it was simply never joined to the `eval`
+    # capability kind (only to `exec`). A SECOND `WeaknessEntry` row
+    # sharing CWE-94's id but a different `capability_kind` is the SAME
+    # multi-kind-per-weakness convention `capability_kind="sql"` already
+    # uses twice (`CWE-89` above, `CWE-639`/`QUALITY_CATALOG`'s own `sql`
+    # entry) -- `_entries_by_capability_kind` keys by kind, not id, so both
+    # rows correctly fire the identical `weakness:CWE-94:<node>` discharge
+    # obligation (one Claim satisfies both firings). Dropping the benign
+    # excuse means a node/file with dynamic `eval`/`compile`/`__import__`
+    # now fires a REAL, dischargeable THREAT002/THREAT003 obligation
+    # instead of passing silently.
+    WeaknessEntry(
+        id="CWE-94",
+        title="Improper Control of Generation of Code ('Code Injection')",
+        cite="https://cwe.mitre.org/data/definitions/94.html",
+        capability_kind="eval",
         mitigation="code_execution_sandboxing",
         rung=Rung.L4,
     ),
@@ -1228,6 +1260,29 @@ def _caught_by_referenced_tokens(
     )
 
 
+# frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
+# frob:tests tests/unit/strata/test_threat.py::TestCaughtByUnresolvedTokens.test_unknown_rule_id_is_unresolved  # noqa: E501
+def caught_by_unresolved_tokens(
+    caught_by: str,
+    known_rule_ids: frozenset[str] = frozenset(),
+    cataloged_ids: frozenset[str] = frozenset(),
+) -> frozenset[str]:
+    """Public (T-0382) sibling of `check_caught_by_integrity`'s per-entry
+    resolution step: every rule-id-/CWE-id-shaped token `caught_by`
+    references that resolves to NEITHER `known_rule_ids` (the live
+    gate-rule-id set) NOR `cataloged_ids` (a catalog's own id set) --
+    empty means every referenced token resolved (or none was referenced
+    at all). Exists so `_compliance.py`'s own caught_by family
+    (`OutOfScopeRegulation.caught_by`, COMPLIANCE004) can verify its
+    excuses identically to `check_caught_by_integrity`'s THREAT006
+    without duplicating the token-extraction regexes or the deny-by-
+    default resolution rule (charter: no duplication) -- callers still
+    own the `CAUGHT_BY_NONE_MARKER` honest-disclosure short-circuit
+    themselves, this function does not special-case it."""
+    rule_ids, cwe_ids = _caught_by_referenced_tokens(caught_by)
+    return (rule_ids - known_rule_ids) | (cwe_ids - cataloged_ids)
+
+
 def _caught_by_violation(
     entry_id: str, caught_by: str, unresolved: frozenset[str]
 ) -> ThreatViolation:
@@ -1274,7 +1329,7 @@ def check_caught_by_integrity(
     would cycle otherwise). Passing the default empty set means no
     rule-id-shaped token can ever resolve, so a caller wanting real rule-id
     verification must supply it explicitly."""
-    cataloged_cwes = {entry.id for entry in catalog}
+    cataloged_cwes = frozenset(entry.id for entry in catalog)
     violations: list[ThreatViolation] = []
     for entry_id, caught_by in (
         *((e.id, e.caught_by) for e in out_of_scope),
@@ -1282,8 +1337,9 @@ def check_caught_by_integrity(
     ):
         if caught_by.strip().lower().startswith(CAUGHT_BY_NONE_MARKER):
             continue
-        rule_ids, cwe_ids = _caught_by_referenced_tokens(caught_by)
-        unresolved = (rule_ids - known_rule_ids) | (cwe_ids - cataloged_cwes)
+        unresolved = caught_by_unresolved_tokens(
+            caught_by, known_rule_ids, cataloged_cwes
+        )
         if unresolved:
             violations.append(_caught_by_violation(entry_id, caught_by, unresolved))
     return Ok(tuple(violations))
@@ -1873,8 +1929,11 @@ __all__ = [
     "ThreatReport",
     "ThreatViolation",
     "WeaknessEntry",
+    "CAUGHT_BY_NONE_MARKER",
+    "caught_by_unresolved_tokens",
     "check_capability_completeness",
     "check_catalog_completeness",
+    "check_caught_by_integrity",
     "check_discharge_completeness",
     "check_effect_completeness",
     "evaluate_threats",

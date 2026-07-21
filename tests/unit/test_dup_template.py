@@ -126,6 +126,93 @@ class TestBuildGroupTemplate:
         assert build_group_template(tmp_path, (pair,)) is None
 
 
+class TestTypeHoleClassification:
+    """T-0287: holes whose divergence sits in a type-annotation position
+    (python's `type` wrapper node) in EVERY group member propose a shared
+    type variable instead of a bare value hole."""
+
+    def _write_typed(self, root: Path, name: str, type_name: str) -> CloneRegion:
+        """A one-function file annotating both its parameter and return
+        type as `type_name` (kept equal on purpose: this isolates the
+        TYPE-position divergence from any value-position divergence)."""
+        (root / name).write_text(
+            f"def f(x: {type_name}) -> {type_name}:\n    return x\n"
+        )
+        return CloneRegion(ref=f"{name}::f", span=(1, 2))
+
+    # frob:tests src/frob/dup/_template.py::build_group_template kind="unit"
+    def test_matching_type_annotations_propose_one_shared_type_var(self, tmp_path):
+        left = self._write_typed(tmp_path, "a.py", "int")
+        right = self._write_typed(tmp_path, "b.py", "str")
+        pair = ClonePair(left=left, right=right, similarity=1.0, rung="test")
+
+        template = build_group_template(tmp_path, (pair,))
+
+        assert template is not None
+        # two divergences (param annotation, return annotation), both
+        # type-shaped and co-varying identically (int/str on both) -- one
+        # shared type var, not two independent ones.
+        assert template.type_params == ("T0",)
+        assert template.skeleton_text.count("T0") == 2
+        assert "$hole_" not in template.skeleton_text
+        for group in template.bindings:
+            assert len(group) == 2
+            assert all(b.type_var == "T0" for b in group)
+        assert 'T0 = TypeVar("T0")' in template.suggested_signature
+        # a pure type-hole template extracts no value parameters.
+        assert "def _extracted(): ..." in template.suggested_signature
+
+    # frob:tests src/frob/dup/_template.py::build_group_template kind="unit"
+    def test_value_divergence_alongside_type_divergence_stays_separate(self, tmp_path):
+        (tmp_path / "a.py").write_text("def f(x: int) -> int:\n    return x + 1\n")
+        (tmp_path / "b.py").write_text("def f(x: str) -> str:\n    return x + 2\n")
+        left = CloneRegion(ref="a.py::f", span=(1, 2))
+        right = CloneRegion(ref="b.py::f", span=(1, 2))
+        pair = ClonePair(left=left, right=right, similarity=1.0, rung="test")
+
+        template = build_group_template(tmp_path, (pair,))
+
+        assert template is not None
+        assert template.type_params == ("T0",)
+        # the `1`/`2` literal divergence is a plain value hole, untouched
+        # by the type classification -- it still renders as $hole_N and
+        # still contributes a suggested-signature parameter.
+        assert "$hole_" in template.skeleton_text
+        assert "hole_" in template.suggested_signature.split("\n")[-1]
+        type_bindings = [
+            b for group in template.bindings for b in group if b.type_var is not None
+        ]
+        value_bindings = [
+            b for group in template.bindings for b in group if b.type_var is None
+        ]
+        assert len(type_bindings) == 4  # 2 members x 2 type positions
+        assert len(value_bindings) == 2  # 2 members x 1 value hole
+
+    # frob:tests src/frob/dup/_template.py::build_group_template kind="unit"
+    def test_type_position_in_one_member_only_stays_a_value_hole(self, tmp_path):
+        # Consistency guard: the divergence sits in a type-annotation
+        # position for ONE member but the SAME hole id's other member
+        # binds a plain value position (a synthetic shape no real
+        # anti-unify fold produces from typed/untyped python -- built
+        # directly to exercise the guard) -- never emit a bogus generic
+        # when the sides do not agree on being type-shaped.
+        from frob.dup._template import _classify_type_vars
+
+        # hole 0 bound at a type-position node in member 0 (index 1, whose
+        # parent index 0 is a "type" node) but a bare identifier at the
+        # top level (index 0, no parent) in member 1.
+        trees: list[
+            tuple[tuple[str, ...], tuple[int, ...], tuple[tuple[int, int], ...]]
+        ] = [
+            (("type", "int"), (-1, 0), ((0, 10), (1, 4))),
+            (("x",), (-1,), ((0, 1),)),
+        ]
+        hole_node_idx = {0: [1, 0]}
+        hole_source_texts = {0: ["int", "x"]}
+
+        assert _classify_type_vars(hole_node_idx, hole_source_texts, trees) == {}
+
+
 class TestHoleParamName:
     """`_hole_param_name` is pure Python (no `frob_core` dependency) -- covered
     directly rather than only indirectly through a full `anti_unify` fold.

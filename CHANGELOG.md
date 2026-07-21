@@ -17,9 +17,9 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
-## [0.39.0] - unreleased
+## [0.41.0] - unreleased
 
-Public-API surface change since 0.38.0 (mechanical semver via REL001): an
+Public-API surface change since 0.40.0 (mechanical semver via REL001): an
 additive (minor) bump -- new `frob.tickets._reconcile` module and `frob
 ticket reconcile` CLI command.
 
@@ -34,23 +34,23 @@ ticket reconcile` CLI command.
   from `--apply`). New `frob ticket reconcile [--apply] [--remove-orphans]`
   CLI command.
 
-## [0.38.0] - unreleased
+## [0.40.0] - unreleased
 
-Public-API surface change since 0.37.0 (mechanical semver via REL001): an
-additive (minor) bump -- new `frob.tickets._leases` cross-worktree
-scope-lease side channel.
+Public-API surface change since 0.39.0 (mechanical semver via REL001):
+strata caught_by integrity -- new COMPLIANCE004 check, shared public
+`caught_by_unresolved_tokens` helper in frob.strata._threat (T-0382),
+and the eval/CWE-94 threat join with self-conformance updates (T-0401
+G3).
 
-- T-0473: `frob ticket start`'s in-progress scope-lease (T-0453) lived only
-  in the per-worktree `tickets.md` ledger, making collision-aware `doable`
-  inert across isolated worktrees. New `frob.tickets._leases` module
-  (`LeaseRecord`, `LeaseError`, `git_common_dir`, `leases_dir`,
-  `record_lease`, `release_lease`, `read_all_leases`) stores one lease file
-  per in-progress ticket under `<git-common-dir>/frob-leases/`, shared by
-  every linked worktree of the repository; `transition`/`mutate_scope` keep
-  it in sync, and `leased_by` (and therefore `doable`) now consults it in
-  addition to the local ledger's own `IN_PROGRESS` rows. A lease naming a
-  worktree path that no longer exists on disk is treated as stale and
-  skipped.
+## [0.39.0] - unreleased
+
+Public-API surface change since 0.38.0 (mechanical semver via REL001): an
+additive (minor) bump -- new `frob.testing.python_coverage_targets`
+(touched-set incremental coverage, T-0484) plus file-/directory-level
+COV003 evidence resolution and parametrized-node-id fixes (T-0298,
+T-0324). The 0.38.0 bump (cross-worktree lease registry
+`frob.tickets._leases`, T-0473) landed without its own section; both are
+reconciled here.
 
 ## [0.37.0] - unreleased
 
