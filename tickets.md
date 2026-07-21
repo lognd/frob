@@ -7838,7 +7838,7 @@ docs/audits/strata.md G1 (HIGH), from T-0401. _mitigation_is_chokepoint (_threat
 id: T-0499
 title: 'strata: wire real known_rule_ids into evaluate_exhaustiveness/evaluate_compliance
   production callsites'
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-07-21'
