@@ -28,6 +28,7 @@ declaration).
 | INV001 | invariant | invariant has no evidence (test or policy rule) |
 | INV002 | invariant | invariant has no code anchor (`frob:invariant`) |
 | INV003 | invariant | (warn) a `docs/**.md` file makes an exclusivity/normative claim (`only`, `sole`/`solely`, `exclusively`, `nothing else`, `never...except`, `at most/exactly one`) with no `<!-- frob:invariant INV-### -->` marker in the file naming a real (loaded) invariant -- see "INV003 (T-0462)" below |
+| INV004 | invariant | (warn, advisory) a `docs/**.md` section uses normative language (`must`, `must not`, `never`, `always`, `shall`, `guarantees`, `ensures`, `requires`, plus INV003's exclusivity vocabulary) but anchors ZERO `frob:invariant` markers at all -- see "INV004 (T-0452)" below |
 | DEC001 | decisions | a `frob:decision AD-###` edge points at a record that does not exist (opt-in: a `decisions/` dir must exist) |
 | DEC002 | decisions | an `accepted` decision record has no `frob:decision` code anchor |
 | TEST001 | test | public function/method has no `frob:tests` unit edge |
@@ -731,6 +732,28 @@ side `frob:waive` support that does not exist yet (`_match_waiver` keys
 off graph edges; doc prose carries none today). Hardening specific docs
 to ERROR, or building markdown waiver support, is tracked as follow-up
 work rather than forced through in one pass.
+
+### INV004 (T-0452)
+
+<!-- frob:describes src/frob/gates/invariants.py::find_normative_claims -->
+<!-- frob:describes src/frob/gates/invariants.py::NORMATIVE_CLAIM_PATTERNS -->
+<!-- frob:describes src/frob/gates/__init__.py::inv004_gate -->
+
+INV003 is a per-CLAIM lint: one specific exclusivity assertion needs one
+specific bound invariant. INV004 is the INVERSE, section-level signal:
+split each `docs/**.md` file into ATX-heading-delimited sections
+(`_markdown_sections`); a section using ANY normative language at all --
+`must`, `must not`, `never`, `always`, `shall`, `guarantees`, `ensures`,
+`requires`, plus INV003's exclusivity vocabulary
+(`NORMATIVE_CLAIM_PATTERNS`, `find_normative_claims`) -- but anchoring
+ZERO `<!-- frob:invariant INV-### -->` markers at all (unlike INV003, a
+marker naming an unknown id still counts here -- INV004 only asks "is
+*anything* tracked here") is flagged as a likely under-specified region:
+the "silence" a per-claim lint can't see, because there is no single
+explicit claim to anchor on.
+
+Always `Severity.WARN` -- advisory by design, a suggestion to formalize
+rather than a broken obligation; INV004 must never fail `frob check`.
 
 ## Policy rules (`frob.toml`, `[policy]`)
 

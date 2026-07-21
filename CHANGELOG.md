@@ -17,6 +17,21 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.45.0] - unreleased
+
+Public-API surface change since 0.44.0 (mechanical semver via REL001): an
+additive (minor) bump -- new advisory invariant density lint.
+
+- T-0452: INV004, a new advisory (warn-severity, never fails `frob
+  check`) invariant gate rule complementing INV003's per-claim check
+  with the section-level inverse: a `docs/**.md` section using ANY
+  normative language ("must", "must not", "never", "always", "shall",
+  "guarantees", "ensures", "requires", plus INV003's exclusivity
+  vocabulary) but anchoring ZERO `frob:invariant` markers at all is
+  flagged as likely under-specified -- the "silence" a per-claim lint
+  can't see. New public `frob.gates.invariants.find_normative_claims` /
+  `NORMATIVE_CLAIM_PATTERNS` and `frob.gates.inv004_gate`.
+
 ## [0.44.0] - unreleased
 
 Public-API surface change since 0.43.0 (mechanical semver via REL001): an

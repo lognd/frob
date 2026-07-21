@@ -23,6 +23,7 @@ from frob.gates import (
     delta_violations,
     drift_gate,
     inv003_gate,
+    inv004_gate,
     invariant_gate,
     is_baseline_stale,
     known_gate_rule_ids,
@@ -1589,6 +1590,57 @@ class TestInv003Gate:
 
     def test_missing_docs_dir_is_silent(self, tmp_path: Path) -> None:
         assert inv003_gate(tmp_path, ()) == ()
+
+
+class TestInv004Gate:
+    # frob:tests src/frob/gates/__init__.py::inv004_gate
+    def test_section_with_normative_language_and_no_invariant_is_advisory(
+        self, tmp_path: Path
+    ) -> None:
+        _write(
+            tmp_path,
+            "docs/x.md",
+            "# X\n\nThe daemon must never write to this file directly.\n",
+        )
+        violations = inv004_gate(tmp_path)
+        assert len(violations) == 1
+        assert violations[0].rule == "INV004"
+        assert violations[0].severity == Severity.WARN
+        assert violations[0].file == "docs/x.md"
+
+    def test_section_with_any_invariant_marker_is_silent(self, tmp_path: Path) -> None:
+        _write(
+            tmp_path,
+            "docs/x.md",
+            "# X\n\n<!-- frob:invariant INV-999 -->\n"
+            "The daemon must never write to this file directly.\n",
+        )
+        # A marker naming an UNKNOWN invariant still counts here (T-0452's
+        # signal is "anchors zero invariants at all", the coarser inverse
+        # of INV003's "anchors a REAL one").
+        violations = inv004_gate(tmp_path)
+        assert violations == ()
+
+    def test_section_with_no_normative_language_is_silent(self, tmp_path: Path) -> None:
+        _write(tmp_path, "docs/x.md", "# X\n\nThe daemon writes this file.\n")
+        assert inv004_gate(tmp_path) == ()
+
+    def test_two_sections_only_flags_the_underspecified_one(
+        self, tmp_path: Path
+    ) -> None:
+        _write(
+            tmp_path,
+            "docs/x.md",
+            "# A\n\nThe daemon must never write to this file directly.\n"
+            "# B\n\n<!-- frob:invariant INV-001 -->\n"
+            "This section always holds too.\n",
+        )
+        violations = inv004_gate(tmp_path)
+        assert len(violations) == 1
+        assert "'# A" in violations[0].message
+
+    def test_missing_docs_dir_is_silent(self, tmp_path: Path) -> None:
+        assert inv004_gate(tmp_path) == ()
 
 
 class TestInvariantLoad:

@@ -61,6 +61,42 @@ def find_exclusivity_claims(text: str) -> tuple[str, ...]:
 
 
 # frob:doc docs/modules/gates.md#invariants
+# frob:ticket T-0452
+# The base normative-claim vocabulary INV004 (frob.gates.__init__) uses to
+# decide whether a doc section "describes behavior" at all: must/must
+# not/never/always/shall/guarantees/ensures/requires. Distinct from
+# EXCLUSIVITY_CLAIM_PATTERNS above (which flags a specific closed-set
+# claim needing ITS OWN bound invariant, INV003) -- this is the broader,
+# coarser signal INV004 uses for the inverse check: a section using ANY
+# of this normative language but binding NO invariant at all is a likely
+# under-specified region, not a specific unproven claim.
+NORMATIVE_CLAIM_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"\bmust\b"),
+    re.compile(r"\bmust not\b"),
+    re.compile(r"\bnever\b"),
+    re.compile(r"\balways\b"),
+    re.compile(r"\bshall\b"),
+    re.compile(r"\bguarantees?\b"),
+    re.compile(r"\bensures?\b"),
+    re.compile(r"\brequires?\b"),
+    *EXCLUSIVITY_CLAIM_PATTERNS,
+)
+
+
+# frob:doc docs/modules/gates.md#invariants
+# frob:ticket T-0452
+# frob:tests tests/test_gates.py::TestInv004Gate.test_section_with_normative_language_and_no_invariant_is_advisory kind="unit"  # noqa: E501
+def find_normative_claims(text: str) -> tuple[str, ...]:
+    """Every distinct normative phrase (`NORMATIVE_CLAIM_PATTERNS`) matched
+    anywhere in `text`, for INV004's section-density scan."""
+    return tuple(
+        pattern.pattern
+        for pattern in NORMATIVE_CLAIM_PATTERNS
+        if pattern.search(text) is not None
+    )
+
+
+# frob:doc docs/modules/gates.md#invariants
 class _Criticality(StrEnum):
     """How severe a broken invariant would be."""
 
@@ -206,9 +242,11 @@ def load_invariants(root: Path) -> Result[tuple[Invariant, ...], InvariantError]
 
 __all__ = [
     "EXCLUSIVITY_CLAIM_PATTERNS",
+    "NORMATIVE_CLAIM_PATTERNS",
     "Invariant",
     "InvariantError",
     "_Criticality",
     "find_exclusivity_claims",
+    "find_normative_claims",
     "load_invariants",
 ]

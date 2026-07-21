@@ -73,6 +73,7 @@ from frob.gates.invariants import (
     Invariant,
     InvariantError,
     find_exclusivity_claims,
+    find_normative_claims,
     load_invariants,
 )
 from frob.gitio import Diff, Hunk, current_branch, run_argv, working_diff
@@ -706,6 +707,7 @@ _KNOWN_GATE_RULES = frozenset(
         "INV001",
         "INV002",
         "INV003",
+        "INV004",
         "TEST001",
         "TEST002",
         "TEST003",
@@ -2492,6 +2494,90 @@ def inv003_gate(root: Path, invariants: tuple[Invariant, ...]) -> tuple[Violatio
     violations: list[Violation] = []
     for path in iter_files(docs_dir, suffix=".md"):
         violations.extend(_inv003_doc_violations(root, path, known_ids))
+    return tuple(violations)
+
+
+# frob:doc docs/modules/gates.md#invariants
+# frob:ticket T-0452
+_MD_HEADING_RE = re.compile(r"^#{1,6}\s", re.MULTILINE)
+
+
+# frob:doc docs/modules/gates.md#invariants
+# frob:ticket T-0452
+def _markdown_sections(text: str) -> tuple[str, ...]:
+    """Split `text` into ATX-heading-delimited sections (each section runs
+    from one `#`-line up to, but not including, the next); a file with no
+    heading at all is one whole-file section.
+
+    Coarser than a full outline (T-0452's density signal doesn't need
+    heading level/nesting, just "a chunk of prose"), so this is a plain
+    split on heading boundaries rather than a hierarchical tree.
+    """
+    starts = [m.start() for m in _MD_HEADING_RE.finditer(text)]
+    if not starts:
+        return (text,) if text.strip() else ()
+    bounds = [*starts, len(text)]
+    return tuple(text[bounds[i] : bounds[i + 1]] for i in range(len(starts)))
+
+
+# frob:doc docs/modules/gates.md#invariants
+# frob:ticket T-0452
+def _inv004_doc_violations(root: Path, path: Path) -> tuple[Violation, ...]:
+    """INV004 findings for one doc file: a section using normative
+    language (`frob.gates.invariants.find_normative_claims`) that anchors
+    ZERO `<!-- frob:invariant INV-### -->` markers at all -- the inverse
+    of INV003's per-claim check, a coarser "this region looks
+    under-specified" signal.
+    """
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        _log.warning("INV004: could not read %s: %s", path, exc)
+        return ()
+    rel = path.relative_to(root).as_posix()
+    violations: list[Violation] = []
+    for section in _markdown_sections(text):
+        claims = find_normative_claims(section)
+        if not claims:
+            continue
+        if _DOC_INVARIANT_MARKER_RE.search(section) is not None:
+            continue
+        heading_match = re.match(r"^(#{1,6}\s.*)$", section, re.MULTILINE)
+        heading = heading_match.group(1).strip() if heading_match else "(no heading)"
+        violations.append(
+            Violation(
+                rule="INV004",
+                severity=Severity.WARN,
+                file=rel,
+                line=0,
+                message=(
+                    f"INV004: {rel} section {heading!r} describes behavior "
+                    f"({', '.join(sorted(claims))}) but anchors zero "
+                    f"invariants -- likely under-specified; add an "
+                    f"`invariants/INV-###.md` plus a "
+                    f"`<!-- frob:invariant INV-### -->` marker in this "
+                    f"section if the behavior is meant to be guaranteed"
+                ),
+            )
+        )
+    return tuple(violations)
+
+
+# frob:doc docs/modules/gates.md#public-api
+# frob:ticket T-0452
+def inv004_gate(root: Path) -> tuple[Violation, ...]:
+    """INV004 (advisory): a docs/**.md section that describes behavior
+    (normative language) but anchors zero invariants at all.
+
+    Always WARN -- section-level under-specification is a suggestion to
+    formalize, not a broken obligation; never fails `frob check`.
+    """
+    docs_dir = root / "docs"
+    if not docs_dir.is_dir():
+        return ()
+    violations: list[Violation] = []
+    for path in iter_files(docs_dir, suffix=".md"):
+        violations.extend(_inv004_doc_violations(root, path))
     return tuple(violations)
 
 
@@ -4753,6 +4839,7 @@ def _build_jobs(
         "invariant": lambda: (
             *invariant_gate(st.invariants, st.snapshot, st.tests, st.rule_ids),
             *inv003_gate(st.repo_root, st.invariants),
+            *inv004_gate(st.repo_root),
         ),
         "test": lambda: test_gate(
             st.snapshot, st.systems, st.coverage, st.tests, st.test_policy
@@ -5078,6 +5165,7 @@ __all__ = [
     "delta_violations",
     "drift_gate",
     "inv003_gate",
+    "inv004_gate",
     "invariant_gate",
     "is_baseline_stale",
     "load_baseline",

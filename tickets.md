@@ -5628,7 +5628,7 @@ id: T-0452
 title: 'invariant density lint: advisory when a spec section describes behavior but
   anchors ZERO invariants (section-level under-specification signal, complements the
   per-claim must/must-not lint)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -5639,6 +5639,10 @@ scope:
 - src/frob/gates/
 - docs/
 - tests/test_gates.py
+- pyproject.toml
+- CHANGELOG.md
+- uv.lock
+- .frob-release.json
 scope_changes:
 - op: remove
   glob: tests/**
@@ -5650,7 +5654,36 @@ scope_changes:
   reason: T-0452 gates work maps to tests/test_gates.py
   actor: logan
   at: '2026-07-20'
-evidence: []
+- op: add
+  glob: pyproject.toml
+  reason: REL001 bump required by adding public API (inv004_gate, find_normative_claims,
+    NORMATIVE_CLAIM_PATTERNS)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: REL001 bump required by adding public API (inv004_gate, find_normative_claims,
+    NORMATIVE_CLAIM_PATTERNS)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: REL001 bump required by adding public API (inv004_gate, find_normative_claims,
+    NORMATIVE_CLAIM_PATTERNS)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 bump required by adding public API (inv004_gate, find_normative_claims,
+    NORMATIVE_CLAIM_PATTERNS)
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_gates.py::TestInv004Gate::test_section_with_normative_language_and_no_invariant_is_advisory
+- tests/test_gates.py::TestInv004Gate::test_section_with_any_invariant_marker_is_silent
+- tests/test_gates.py::TestInv004Gate::test_section_with_no_normative_language_is_silent
+- tests/test_gates.py::TestInv004Gate::test_two_sections_only_flags_the_underspecified_one
+- tests/test_gates.py::TestInv004Gate::test_missing_docs_dir_is_silent
 attachments: []
 acceptance: []
 threat: null
@@ -5692,6 +5725,54 @@ Design (advisory, waivable, complements not replaces the per-claim lint):
 Relates: per-claim invariant lint (INV001/INV002) is the complement; T-0408
 (formal-vs-prose-claim coverage) is adjacent -- this is the SECTION-SILENCE
 angle, not per-claim coverage.
+
+## Done report
+
+New INV004 gate rule (advisory, always WARN, never fails frob check): the
+section-level inverse of INV003's per-claim check. docs/**.md is split
+into ATX-heading-delimited sections (`_markdown_sections`); a section
+using ANY normative language at all -- must, must not, never, always,
+shall, guarantees, ensures, requires, plus INV003's exclusivity
+vocabulary (new `frob.gates.invariants.NORMATIVE_CLAIM_PATTERNS` /
+`find_normative_claims`) -- but anchoring ZERO `frob:invariant` markers
+at all (a marker naming an UNKNOWN invariant id still counts here,
+unlike INV003 -- INV004 only asks "is anything tracked here") is flagged
+as likely under-specified. `frob.gates.inv004_gate` is the gate entry
+point.
+
+Deliberately always WARN: this is the "silence" signal T-0452 asks for
+-- a suggestion to formalize, not a broken obligation. A full repo run
+surfaces 672 findings across docs/ written before this rule existed;
+confirmed via `uv run frob check`: 0 new errors (1 pre-existing
+unrelated error, docs/commands/sys.md DOC003, present before this
+ticket started and outside its scope).
+
+REL001: new public API (frob.gates.inv004_gate,
+frob.gates.invariants.find_normative_claims,
+frob.gates.invariants.NORMATIVE_CLAIM_PATTERNS) bumped pyproject.toml
+0.44.0 -> 0.45.0, CHANGELOG.md entry added, uv lock refreshed, `frob
+release stamp` run. Scope extended (frob ticket scope --add) to cover
+pyproject.toml/CHANGELOG.md/uv.lock/.frob-release.json.
+
+ruff check/format and ty clean under both `uv run` and bare PATH
+`ruff`/`ruff format --check`. tests/test_gates.py full suite passes.
+
+### Changed
+```
+ .frob-release.json           |   5 +-
+ CHANGELOG.md                 |  17 +++++
+ docs/modules/gates.md        |  28 +++++++++
+ pyproject.toml               |   2 +-
+ src/frob/gates/__init__.py   |  96 +++++++++++++++++++++++++++--
+ src/frob/gates/invariants.py |  42 ++++++++++++-
+ tests/test_gates.py          |  51 +++++++++++++++
+ tickets.md                   | 144 +++++++++++++++++++++++++++++++++++++++++--
+ uv.lock                      |   2 +-
+ 9 files changed, 375 insertions(+), 12 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0454 -->
 ```yaml

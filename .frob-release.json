@@ -298,6 +298,7 @@
     "src/frob/gates/__init__.py::evidence_covers_scope": "0b51203d0ff4e37830ddea56708947cf909cde9d9d8b64cba872defa996266f0",
     "src/frob/gates/__init__.py::fuzz_gate": "ffa8533c057bcee13876df5c547fab8eda00ee601fc2a8d12d1464a107abf0b8",
     "src/frob/gates/__init__.py::inv003_gate": "14e00b0157ebcb219f147e711a416d35ba3b0254063a0ffc701485776ae30b71",
+    "src/frob/gates/__init__.py::inv004_gate": "3fcdb93435385b377a7e1f26befa99635c613f179c8dd8698f9c41269dc96902",
     "src/frob/gates/__init__.py::invariant_gate": "db80869313057d3f514f93b4764e8349d29a1e2ab5e5dced51ade8e5cdedba61",
     "src/frob/gates/__init__.py::known_gate_rule_ids": "42f8d0e0fce2c36e6d63ac8a4ef7d47b03825d5fe90f41cb75474f71fac17491",
     "src/frob/gates/__init__.py::perf_gate": "3174d8cf254b718239831717f877642fe1d95f121d51e41f93091e102b8f4930",
@@ -351,7 +352,9 @@
     "src/frob/gates/invariants.py::EXCLUSIVITY_CLAIM_PATTERNS": "c979bdb016b1815709ac5cbcd47fce6ac2d7bf6e829e0a204fed538b44df6bf6",
     "src/frob/gates/invariants.py::Invariant": "5d1e82ef09a80c49ce9248893beadbb328d0006b50b8a5dd498913ff8c10ecc2",
     "src/frob/gates/invariants.py::InvariantError": "73188f0e935fa34fcb42ae278451406340b987823ff6da274e78e88f38185073",
+    "src/frob/gates/invariants.py::NORMATIVE_CLAIM_PATTERNS": "280f6723744f238ff1d2470f36c62ee301f96e4db91b17d526b11f005362ff55",
     "src/frob/gates/invariants.py::find_exclusivity_claims": "cb8f07b0a9464fb49fe488cfa3cffa540ae747c3645def0d4a3700aebd66982a",
+    "src/frob/gates/invariants.py::find_normative_claims": "c98c486cd2d9c9b08a89c0ad0f10036e7326d57cb9b0247b562aa3841a741b22",
     "src/frob/gates/invariants.py::load_invariants": "665ae6d12c7b7b89371895196db67b373e31ff71306f5af194f4bc8d7e80bc6f",
     "src/frob/gitio.py::Diff": "77475db46a40590347e9110d2a61e173808f1e03158e095fa335c5728ddecc09",
     "src/frob/gitio.py::GitError": "8a2ef78ea38d26f2c46f73614152247891642acedbbb31f0cb780c0924407e19",
@@ -1049,5 +1052,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.44.0"
+  "version": "0.45.0"
 }
