@@ -1125,7 +1125,37 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "the path/argv is untrusted",
         "validate the program path and argv come from a trusted, fixed set",
         "high",
-        ("execl(", "execv(", "execve(", "execvp("),
+        (
+            "execl(",
+            "execv(",
+            "execve(",
+            "execvp(",
+            "execle(",
+            "execvpe(",
+            "posix_spawn(",
+            "posix_spawnp(",
+            "fexecve(",
+        ),
+        ("CWE-78",),
+    ),
+    # T-0400 audit finding #4: the exec table above was POSIX-only; a
+    # Windows-targeted C/C++ dependency can launch a process through the
+    # Win32 API entirely, evading every needle above.
+    _op(
+        "c-cpp",
+        "windows.h",
+        "CreateProcess()/ShellExecute()/WinExec()",
+        "exec",
+        "launches a process (optionally through the shell) via the Win32 API",
+        "use CreateProcess with a fixed argv array and no shell interpretation",
+        "critical",
+        (
+            "CreateProcessA(",
+            "CreateProcessW(",
+            "ShellExecuteA(",
+            "ShellExecuteW(",
+            "WinExec(",
+        ),
         ("CWE-78",),
     ),
     # -- c/c++: fs-read (T-0018, graphite adoption) ----------------------------
@@ -1138,6 +1168,20 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "validate the source path is inside an expected root before reading",
         "low",
         ("fread(", "fgets("),
+        (),
+    ),
+    # T-0400 audit finding #4: `open()`/`read()`/`mmap()` are the actual
+    # POSIX read syscalls; only the buffered stdio wrappers above were
+    # patterned, so a dependency reading via raw fds was invisible.
+    _op(
+        "c-cpp",
+        "libc",
+        "open()/read()/mmap()",
+        "fs-read",
+        "reads local filesystem state via a raw file descriptor",
+        "validate the source path is inside an expected root before reading",
+        "low",
+        ("open(", "read(", "mmap("),
         (),
     ),
     # -- c/c++: ffi (dynamic loading) ------------------------------------------
@@ -1172,6 +1216,22 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         ("strcpy(", "sprintf(", "gets("),
         ("CWE-120",),
     ),
+    # T-0400 audit finding #4: `fopen`/`fwrite`/`write`/`rename`/`unlink`/
+    # `mkdir` are the ACTUAL fs-write surface (the strcpy-family entry above
+    # is a memory-safety bucket, not a real file write) -- the audit's
+    # repro was a dependency that opens+writes an arbitrary file via
+    # fopen/fwrite and scanned as zero capabilities.
+    _op(
+        "c-cpp",
+        "libc",
+        "fopen()/fwrite()/write()/rename()/unlink()/mkdir()",
+        "fs-write",
+        "creates, overwrites, renames, deletes, or writes local filesystem state",
+        "validate the destination path is inside an expected, writable root",
+        "high",
+        ("fopen(", "fwrite(", "write(", "rename(", "unlink(", "mkdir("),
+        (),
+    ),
     # -- c/c++: net -----------------------------------------------------------
     _op(
         "c-cpp",
@@ -1182,6 +1242,20 @@ DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "prefer a higher-level client with TLS verification",
         "medium",
         ("socket(", "connect(", "bind("),
+        (),
+    ),
+    # T-0400 audit finding #4: send/recv/sendto/recvfrom/getaddrinfo were
+    # entirely absent -- a dependency that connects via a helper but does
+    # its actual I/O through these calls scanned as net-capability-free.
+    _op(
+        "c-cpp",
+        "sys/socket.h",
+        "send()/recv()/sendto()/recvfrom()/getaddrinfo()",
+        "net",
+        "sends/receives data or resolves a hostname over a network socket",
+        "prefer a higher-level client with TLS verification",
+        "medium",
+        ("send(", "recv(", "sendto(", "recvfrom(", "getaddrinfo("),
         (),
     ),
     # -- python: third-party priority survey (T-0181, T-0158 addendum 2 -----

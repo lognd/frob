@@ -212,6 +212,47 @@ def _fully_in_any_span(start: int, end: int, spans: tuple[ByteSpan, ...]) -> boo
     )
 
 
+#: operator bytes a needle-to-regex conversion treats as "whitespace may
+#: surround this" (T-0400 audit finding #3: `shell=True` evaded by
+#: `shell = True`, `yaml.load(` evaded by `yaml.load (x)`).
+_NEEDLE_WS_OPERATORS = frozenset(b"=(),")
+
+
+@lru_cache(maxsize=None)
+def _needle_to_ws_pattern(needle: bytes) -> re.Pattern[bytes]:
+    """Compile `needle` into a regex tolerant of whitespace runs anywhere in
+    the needle, plus whitespace surrounding `=`/`(`/`)`/`,` (T-0400: closes
+    the whitespace-formatting evasion class for CVE fingerprint needles --
+    `subprocess.run(cmd, shell = True)` still matches the `shell=True`
+    needle). Cached: called once per (needle, file) pair across a scan."""
+    parts: list[bytes] = []
+    for byte in needle:
+        ch = bytes([byte])
+        if ch.isspace():
+            parts.append(rb"\s*")
+        elif byte in _NEEDLE_WS_OPERATORS:
+            parts.append(rb"\s*" + re.escape(ch) + rb"\s*")
+        else:
+            parts.append(re.escape(ch))
+    return re.compile(b"".join(parts))
+
+
+def _needle_hits_outside_comments_ws(
+    haystack: bytes, needle: bytes, comment_spans: tuple[ByteSpan, ...]
+) -> bool:
+    """Whitespace-tolerant sibling of `_needle_hits_outside_comments`
+    (T-0400): matches `needle` via `_needle_to_ws_pattern` instead of a
+    literal substring search, so cosmetic re-formatting (added/removed
+    spaces around `=`/`(`) cannot silently evade a needle. Same
+    comment-span exclusion semantics -- every match is checked, not just
+    the first."""
+    pattern = _needle_to_ws_pattern(needle)
+    for match in pattern.finditer(haystack):
+        if not _fully_in_any_span(match.start(), match.end(), comment_spans):
+            return True
+    return False
+
+
 def _needle_hits_outside_comments(
     haystack: bytes, needle: bytes, comment_spans: tuple[ByteSpan, ...]
 ) -> bool:
@@ -2838,7 +2879,7 @@ def _scan_file_fingerprints(path: Path) -> tuple[CveFingerprint, ...]:
         for entry in CVE_FINGERPRINTS
         if entry.language == language
         and any(
-            _needle_hits_outside_comments(raw, needle.encode("utf-8"), comment_spans)
+            _needle_hits_outside_comments_ws(raw, needle.encode("utf-8"), comment_spans)
             for needle in entry.needles
         )
     )

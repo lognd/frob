@@ -158,6 +158,42 @@ class TestLockfileParsers:
         result = _parse_lockfile(path)
         assert result.is_err
 
+    def test_find_all_lockfiles_polyglot_repo(self, tmp_path: Path) -> None:
+        # T-0400 audit finding #2: a repo with BOTH a uv.lock and a
+        # package-lock.json must have both discovered -- the old
+        # `_find_lockfile` returning only the first left every npm
+        # dependency completely unscanned.
+        # frob:tests src/frob/vet/_lockfile.py::_find_all_lockfiles kind="unit"
+        from frob.vet._lockfile import _find_all_lockfiles
+
+        (tmp_path / "uv.lock").write_text(UV_LOCK)
+        (tmp_path / "package-lock.json").write_text(PACKAGE_LOCK_JSON_V3)
+        found = _find_all_lockfiles(tmp_path)
+        assert found == (tmp_path / "uv.lock", tmp_path / "package-lock.json")
+
+    def test_find_all_lockfiles_single(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_lockfile.py::_find_all_lockfiles kind="unit"
+        from frob.vet._lockfile import _find_all_lockfiles
+
+        (tmp_path / "uv.lock").write_text(UV_LOCK)
+        assert _find_all_lockfiles(tmp_path) == (tmp_path / "uv.lock",)
+
+    def test_find_all_lockfiles_none(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_lockfile.py::_find_all_lockfiles kind="unit"
+        from frob.vet._lockfile import _find_all_lockfiles
+
+        assert _find_all_lockfiles(tmp_path) == ()
+
+    def test_find_all_lockfiles_direct_path(self, tmp_path: Path) -> None:
+        # T-0221 parity: a direct lockfile path resolves to a 1-tuple of
+        # itself, not a directory search.
+        # frob:tests src/frob/vet/_lockfile.py::_find_all_lockfiles kind="unit"
+        from frob.vet._lockfile import _find_all_lockfiles
+
+        lockfile = tmp_path / "uv.lock"
+        lockfile.write_text(UV_LOCK)
+        assert _find_all_lockfiles(lockfile) == (lockfile,)
+
 
 # ---------------------------------------------------------------------------
 # allow conformance / config loading
@@ -495,6 +531,65 @@ class TestCapabilityScan:
         c_file = tmp_path / "foo.c"
         c_file.write_text('int main() { system("ls"); return 0; }\n')
         assert "exec" in scan_file_capabilities(c_file)
+
+    def test_c_source_fs_write_detected(self, tmp_path: Path) -> None:
+        # T-0400 audit finding #4: fopen/fwrite is the actual fs-write
+        # surface -- the pre-existing strcpy-family entry is a memory-safety
+        # bucket, not a real file write, so this used to scan as zero
+        # capabilities.
+        from frob.vet._capability import scan_file_capabilities
+
+        c_file = tmp_path / "foo.c"
+        c_file.write_text(
+            "void f(const char *path) {\n"
+            '    FILE *fp = fopen(path, "w");\n'
+            '    fwrite("x", 1, 1, fp);\n'
+            "}\n"
+        )
+        assert "fs-write" in scan_file_capabilities(c_file)
+
+    def test_c_source_raw_fd_read_detected(self, tmp_path: Path) -> None:
+        # T-0400 audit finding #4: open()/read() are the actual POSIX read
+        # syscalls; only the buffered fread/fgets wrappers were patterned.
+        from frob.vet._capability import scan_file_capabilities
+
+        c_file = tmp_path / "foo.c"
+        c_file.write_text(
+            "void f(const char *path) {\n"
+            "    int fd = open(path, 0);\n"
+            "    char buf[16];\n"
+            "    read(fd, buf, sizeof(buf));\n"
+            "}\n"
+        )
+        assert "fs-read" in scan_file_capabilities(c_file)
+
+    def test_c_source_windows_exec_detected(self, tmp_path: Path) -> None:
+        # T-0400 audit finding #4: the exec table was POSIX-only; a
+        # Windows-targeted dependency can launch a process via the Win32
+        # API entirely, evading every prior needle.
+        from frob.vet._capability import scan_file_capabilities
+
+        c_file = tmp_path / "foo.c"
+        c_file.write_text(
+            "void f(const char *cmd) {\n"
+            '    ShellExecuteA(NULL, "open", cmd, NULL, NULL, 1);\n'
+            "}\n"
+        )
+        assert "exec" in scan_file_capabilities(c_file)
+
+    def test_c_source_net_recv_detected(self, tmp_path: Path) -> None:
+        # T-0400 audit finding #4: send/recv/getaddrinfo were entirely
+        # absent from the net table.
+        from frob.vet._capability import scan_file_capabilities
+
+        c_file = tmp_path / "foo.c"
+        c_file.write_text(
+            "void f(int fd) {\n"
+            "    char buf[16];\n"
+            "    recv(fd, buf, sizeof(buf), 0);\n"
+            "}\n"
+        )
+        assert "net" in scan_file_capabilities(c_file)
 
     def test_decode_to_exec_same_function(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::_decode_to_exec_signal kind="unit"
@@ -1560,6 +1655,31 @@ class TestFingerprintScan:
         pkg.write_text("def add(a, b):\n    return a + b\n")
         assert _scan_file_fingerprints(pkg) == ()
 
+    def test_whitespace_reformatted_needle_still_matches(self, tmp_path: Path) -> None:
+        # T-0400 audit finding #3: `shell=True` reformatted with spaces
+        # around the `=` used to evade FP-EXEC-SHELL-001 (raw substring
+        # search only); the fingerprint scan is now whitespace-tolerant.
+        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
+        from frob.vet._capability import _scan_file_fingerprints
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("subprocess.run(cmd, shell = True)\n")
+        matches = _scan_file_fingerprints(pkg)
+        assert any(m.id == "FP-EXEC-SHELL-001" for m in matches)
+
+    def test_whitespace_tolerant_match_still_respects_comment_spans(
+        self, tmp_path: Path
+    ) -> None:
+        # The whitespace-tolerant matcher must still exclude comment-only
+        # occurrences (T-0209), same as the exact-match path.
+        # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
+        from frob.vet._capability import _scan_file_fingerprints
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("# example: subprocess.run(cmd, shell = True)\n")
+        matches = _scan_file_fingerprints(pkg)
+        assert not any(m.id == "FP-EXEC-SHELL-001" for m in matches)
+
     # frob:waive DUP001 reason="parallel vet-rule case table: independent \
     # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
     # coverage; extracting would obscure per-case intent"
@@ -1979,6 +2099,55 @@ class TestObfuscationEnsemble:
         signals = _scan_directory_obfuscation(tmp_path)
         assert "high-entropy-string" in signals
 
+    def test_bidi_override_detected_in_c_file(self, tmp_path: Path) -> None:
+        # T-0400 audit finding #5: C/C++/Kotlin were entirely excluded from
+        # `_SCANNABLE_SUFFIXES`, so the deterministic Trojan-Source bidi
+        # scan (CVE-2021-42574, demonstrated in C/C++) never ran on a
+        # dependency's .c files at all.
+        # frob:tests src/frob/vet/_obfuscation.py::_scan_directory_obfuscation kind="unit"
+        from frob.vet._obfuscation import _scan_directory_obfuscation
+
+        rlo = chr(0x202E)
+        (tmp_path / "evil.c").write_text(f"// {rlo}nommoc si sti\nint main() {{}}\n")
+        signals = _scan_directory_obfuscation(tmp_path)
+        assert "invisible-text" in signals
+
+    def test_bidi_override_detected_in_kotlin_file(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_obfuscation.py::_scan_directory_obfuscation kind="unit"
+        from frob.vet._obfuscation import _scan_directory_obfuscation
+
+        rlo = chr(0x202E)
+        (tmp_path / "Evil.kt").write_text(f"// {rlo}nommoc si sti\nfun main() {{}}\n")
+        signals = _scan_directory_obfuscation(tmp_path)
+        assert "invisible-text" in signals
+
+    def test_split_string_payload_still_not_detected(self, tmp_path: Path) -> None:
+        # Honest documented limitation (T-0400 audit finding #5, NOT
+        # closed by this ticket): `_MIN_STRING_LEN` (24) is a PER-LITERAL
+        # floor, so a base64 payload split into concatenated pieces each
+        # shorter than 24 chars (`"aGVsb" + "G8gd" + ...`) never fires --
+        # no single literal is ever long enough to be scored. Closing this
+        # needs a real string-concatenation-aware rewrite, out of scope
+        # for this pass.
+        # frob:tests src/frob/vet/_obfuscation.py::_scan_directory_obfuscation kind="unit"
+        from frob.vet._obfuscation import _scan_directory_obfuscation
+
+        pieces = [
+            "aGVsb",
+            "G8gd2",
+            "9ybGQ",
+            "sIHRo",
+            "aXMgaX",
+            "MgYSB0",
+            "ZXN0IH",
+            "BheWxv",
+            "YWQ",
+        ]
+        joined = " + ".join(f'"{p}"' for p in pieces)
+        (tmp_path / "evil.py").write_text(f"x = {joined}\n")
+        signals = _scan_directory_obfuscation(tmp_path)
+        assert "high-entropy-string" not in signals
+
 
 class TestVerdictCache:
     def test_store_and_retrieve_latest(self, tmp_path: Path) -> None:
@@ -2273,6 +2442,86 @@ class TestScanTreeWithLocalSource:
         assert "FP-DESERIALIZE-YAML-001" in fp_violations[0].message
         verdict = next(v for v in report.verdicts if v.name == "sketchy-pkg")
         assert "cve-fingerprint" in verdict.signals
+
+
+class TestScanTreeSourceUnavailableFailClosed:
+    """T-0400 audit finding #1: a dependency whose source is not present
+    locally used to be silently APPROVED (empty capability set, zero
+    violations) -- indistinguishable from "checked and clean". This is now
+    a fail-closed VET-SOURCE-UNAVAILABLE ERROR finding."""
+
+    def test_missing_source_surfaces_error_violation(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_scan.py::_scan_located_source kind="unit"
+        from frob.gates._models import Severity
+        from frob.vet._scan import scan_tree
+
+        (tmp_path / "uv.lock").write_text(
+            '[[package]]\nname = "unfetched-pkg"\nversion = "1.0.0"\n'
+        )
+        # No .venv/site-packages entry for unfetched-pkg -- source is
+        # genuinely not present locally.
+        (tmp_path / "frob.toml").write_text(
+            "[vet]\nenforce = true\n\n[vet.allow]\nunfetched-pkg = true\n"
+        )
+
+        result = scan_tree(tmp_path, fetch=False)
+        assert result.is_ok
+        report = result.danger_ok
+        source_violations = [
+            v for v in report.violations if v.rule == "VET-SOURCE-UNAVAILABLE"
+        ]
+        assert len(source_violations) == 1
+        assert source_violations[0].severity is Severity.ERROR
+        assert "unfetched-pkg" in source_violations[0].message
+        verdict = next(v for v in report.verdicts if v.name == "unfetched-pkg")
+        assert "source-unavailable" in verdict.signals
+        assert verdict.capabilities == frozenset()
+
+    def test_enforced_missing_source_fails_the_gate(self, tmp_path: Path) -> None:
+        # The whole point of fail-closed: `enforce = true` + an
+        # ERROR-severity VET-SOURCE-UNAVAILABLE must make the report
+        # non-passing via the same enforce/ERROR contract every other
+        # vet rule uses.
+        from frob.gates._models import Severity
+        from frob.vet._scan import scan_tree
+
+        (tmp_path / "uv.lock").write_text(
+            '[[package]]\nname = "unfetched-pkg"\nversion = "1.0.0"\n'
+        )
+        (tmp_path / "frob.toml").write_text(
+            "[vet]\nenforce = true\n\n[vet.allow]\nunfetched-pkg = true\n"
+        )
+
+        result = scan_tree(tmp_path, fetch=False)
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.enforce is True
+        assert any(v.severity is Severity.ERROR for v in report.violations)
+
+
+class TestScanTreeMultipleLockfiles:
+    """T-0400 audit finding #2: a repo with more than one supported
+    lockfile used to have every lockfile after the first silently
+    unscanned."""
+
+    def test_scan_tree_scans_every_lockfile(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_scan.py::scan_tree kind="unit"
+        from frob.vet._scan import scan_tree
+
+        (tmp_path / "uv.lock").write_text(UV_LOCK)
+        (tmp_path / "package-lock.json").write_text(PACKAGE_LOCK_JSON_V3)
+
+        result = scan_tree(tmp_path, fetch=False)
+        assert result.is_ok
+        report = result.danger_ok
+        names = {v.name for v in report.verdicts}
+        # uv.lock's pypi deps (requests + one other) AND package-lock.json's
+        # npm deps (lodash, chalk) must all be represented -- the old
+        # first-lockfile-only search would have dropped lodash/chalk
+        # entirely.
+        assert "requests" in names
+        assert "lodash" in names
+        assert "chalk" in names
 
 
 class TestScanTreeTimeout:
