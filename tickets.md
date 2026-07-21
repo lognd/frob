@@ -4805,9 +4805,9 @@ acceptance: []
 threat: null
 ```
 
-<!-- ticket:T-draft-aa52c66f -->
+<!-- ticket:T-0481 -->
 ```yaml
-id: T-draft-aa52c66f
+id: T-0481
 title: 'frob.dup._template: consume TreeNode.span for literal source-text rendering'
 state: queued
 kind: feature
@@ -4839,9 +4839,9 @@ threat: null
 ```
 T-0327 added TreeNode.span (byte offsets) threaded through frob.lang._common.export_tree, but frob.dup._template.build_group_template still renders CloneBinding.source_text and CloneTemplate.skeleton_text as a structural label(child,...) skeleton, not the literal source characters the span now makes available. Use span to slice the original source text per docs/modules/dup-sota-survey.md sec 4, and (per that survey) reuse a real identifier name across instances that agree on it in CloneTemplate.suggested_signature instead of always naming holes hole_N. Update docs/modules/dup.md's paragraph noting TreeNode 'does not carry source spans/text today' -- it now does; only the consumption in _template is outstanding.
 
-<!-- ticket:T-draft-b4a0b4be -->
+<!-- ticket:T-0482 -->
 ```yaml
-id: T-draft-b4a0b4be
+id: T-0482
 title: 'WALK-lint migration: check/_python.py rglob sites'
 state: queued
 kind: bug
@@ -4870,9 +4870,9 @@ threat: null
 ```
 found while working T-0471: WALK001's gate flags 3 raw traversal sites in src/frob/check/_python.py (_build_import_graph:131 scan_root.rglob('*.py') with a hand-maintained skip set duplicating frob.excludes.BUILTIN_SKIP_DIRS; _has_bind_markers:691 scan.rglob('*.py'); _run_exports:783 scan.rglob('__init__.py')) that T-0471's own declared scope (src/frob/excludes.py, src/frob/gates/, src/frob/arch/, src/frob/xref/, src/frob/vet/, docs/, tests/**) did not cover, even though the ticket body named check/_python.py as a migration target. Migrate all three to frob.excludes.iter_files (suffix='.py' / suffix=None + name filter), same shape as the arch/xref/vet migrations T-0471 landed. A prototype migration was drafted and reverted in T-0471's worktree for SCOPE001; the diff shape is straightforward (see T-0471 Done report).
 
-<!-- ticket:T-draft-e6aafc2f -->
+<!-- ticket:T-0483 -->
 ```yaml
-id: T-draft-e6aafc2f
+id: T-0483
 title: 'COV: frob:tests evidence with no call-graph reachability to bound symbol,
   and frob:doc anchors on private helpers'
 state: queued

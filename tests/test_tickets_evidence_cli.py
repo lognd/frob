@@ -394,7 +394,6 @@ class TestLogEvidenceResultRemedy:
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
         # frob:ticket T-0445
-        # frob:tests tests/test_tickets_evidence_cli.py::TestLogEvidenceResultRemedy::test_error_remedy_names_no_nonexistent_flag
         import logging
 
         from typani import Err

@@ -8,37 +8,37 @@ entries:
     total_items: 8
     sourcing: "verified"
     source_doc: "docs/design/secrets-pii-corpus.md"
-    disposition: "deferred:T-0430"
+    disposition: "handled_by:PII010"
     cross_refs: []
   - id: "SEC-PII-PII-CCPA_CATEGORIES"
     total_items: 11
     sourcing: "verified"
     source_doc: "docs/design/secrets-pii-corpus.md"
-    disposition: "deferred:T-0430"
+    disposition: "handled_by:PII010"
     cross_refs: []
   - id: "SEC-PII-PII-HIPAA_SAFE_HARBOR_IDENTIFIERS"
     total_items: 18
     sourcing: "verified_against_regulation_text"
     source_doc: "docs/design/secrets-pii-corpus.md"
-    disposition: "deferred:T-0430"
+    disposition: "handled_by:PII010"
     cross_refs: []
   - id: "SEC-PII-PII-PCI_DSS_GLOSSARY_TERMS"
     total_items: 5
     sourcing: "verified"
     source_doc: "docs/design/secrets-pii-corpus.md"
-    disposition: "deferred:T-0430"
+    disposition: "handled_by:PII010"
     cross_refs: []
   - id: "SEC-PII-PII-NIST_800_122_DEFINITION"
     total_items: 1
     sourcing: "verified"
     source_doc: "docs/design/secrets-pii-corpus.md"
-    disposition: "deferred:T-0430"
+    disposition: "handled_by:PII010"
     cross_refs: []
   - id: "SEC-PII-PII-DETECTABLE_SHAPES_CROSSMAP"
     total_items: 17
     sourcing: "verified"
     source_doc: "docs/design/secrets-pii-corpus.md"
-    disposition: "deferred:T-0430"
+    disposition: "handled_by:PII010"
     cross_refs: []
   - id: "SEC-PII-PII-STD_PII_CATEGORY_RECONCILIATION"
     total_items: 7
