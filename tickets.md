@@ -3108,7 +3108,7 @@ Found during the 2026-07-21 doable-warning scope-narrowing sweep. frob ticket sc
 ```yaml
 id: T-0491
 title: extend T-0423 run-scoped memoization to frob.dup.find_duplicates
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-21'
