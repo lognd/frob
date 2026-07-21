@@ -4559,7 +4559,7 @@ Split from T-0497 (too large to rush inside that ticket's remaining budget -- ne
 ```yaml
 id: T-0515
 title: burn down residual 604 INV003/INV004 findings after T-0509 calibration
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-21'
