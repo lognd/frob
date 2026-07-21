@@ -2865,7 +2865,7 @@ id: T-0454
 title: 'EPIC: professional ticket organization -- sprints/milestones, epic->story->task
   rollup, components/labels, priority-ordered board (frob ticket board/sprint/epic),
   no ceremony'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
