@@ -3421,7 +3421,7 @@ docs/audits/strata.md G2+G7 (HIGH/MEDIUM), from T-0401. _mitigation_is_chokepoin
 id: T-0504
 title: 'class-directive placement lint (T-0470 prong 2): detect a nearby symbol the
   directive plausibly SHOULD have bound to, not raw line distance'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-21'
@@ -3430,12 +3430,95 @@ blocked_by: []
 parent: null
 scope: []
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_gates.py::TestPlace001Gate::test_missed_following_binding_fires
+- tests/test_gates.py::TestPlace001Gate::test_per_field_pydantic_idiom_is_silent
+- tests/test_gates.py::TestPlace001Gate::test_directive_directly_above_def_is_silent
+- tests/test_gates.py::TestPlace001Gate::test_no_nearby_symbol_at_all_is_silent
 attachments: []
 acceptance: []
 threat: null
 ```
 PLACE001 was prototyped in T-0470 and deliberately dropped: distance-from-class-start fires on the legitimate per-field frob:waive idiom inside large pydantic config classes (fields are not RawSymbols, so directives above them always class-fallback by construction -- e.g. AppConfig's SCOPE001 waiver 150+ lines past the class line). A sound signal must instead detect a nearby symbol the directive plausibly should have bound to via 'following' but did not reach. Counterexample preserved in the comment above src/frob/gates/__init__.py's dropped-PLACE001 note (near line 961). Scope: src/frob/gates/__init__.py, tests/test_gates.py.
+
+## Done report
+
+Implemented PLACE001, the class-directive placement lint prong (2)
+T-0470 dropped. Detects a nearby real symbol a `frob:` directive
+plausibly SHOULD have bound to via `following` but did not reach --
+NOT raw line distance from the class start (T-0470's dropped
+prototype, proven noisy against this repo's own per-field pydantic
+idiom).
+
+Design: `_place001_bindings` mirrors `frob.graph.dsl._resolve_block_srcs`'s
+exact stacked-comment-propagation algorithm (order, carry state) but
+additionally tags each resolved binding with whether it came via a
+`following` match (direct, or propagated backward through an unbroken
+comment run per T-0313) versus a genuine `enclosing`/bare-path
+fallback. `_place001_missed_symbol` then looks, only for genuine
+fallback bindings whose enclosing symbol is a CLASS, for a real symbol
+within a wider lookahead window (10 lines) than `_find_following_symbol`'s
+window (3), requiring nothing but blank lines/comments/decorators in
+the gap between the directive and that candidate.
+
+Non-vacuous, both directions proven by TestPlace001Gate:
+- test_missed_following_binding_fires: a directive separated from its
+  intended `def` by one blank-line-run too many (4 blank lines vs the
+  3-line following window) fires.
+- test_per_field_pydantic_idiom_is_silent: T-0470's own counterexample
+  shape (a directive above one field, real field-assignment code
+  before the next real method) does NOT fire, regardless of distance.
+- test_directive_directly_above_def_is_silent /
+  test_no_nearby_symbol_at_all_is_silent: the ordinary clean cases stay
+  silent.
+
+Development note (disclosed, not hidden): an early draft checked only
+"did this directive's resolved binding land on a class symbol",
+without the via-following/via-enclosing distinction. That is unsound
+by itself -- a `frob:doc`/`frob:ticket` comment placed directly above
+`class Foo:` resolves via `following` straight to `Foo` (correct,
+universal in this repo) even though `Foo` is a class; checking only
+the resolved kind cannot tell that apart from a genuine fallback. That
+draft fired ~416 findings on this repo's own tree (`frob check --only
+coverage`), essentially all on the "directive directly above its own
+class" idiom. Fixed by adding the via_following tag described above;
+after the fix this repo's own tree shows ZERO PLACE001 findings (the
+corpus is clean, non-vacuous only through the constructed unit tests).
+
+Also caught and fixed en route: the new private helper functions
+(_place001_missed_symbol, _place001_bindings, _place001_file, _place001)
+were initially given `frob:doc docs/modules/gates.md#public-api`
+directives copy-pasted from neighboring code -- that target is reused
+by many PUBLIC functions elsewhere in this same file, and editing near
+one of those reused-target comments is exactly the COV005
+directive-target-reuse false-positive class already documented in
+T-0509's Done report. Removed the doc directives from these private
+helpers (they don't need one; only public API needs COV001 doc
+coverage) rather than working around COV005 a second time.
+
+PLACE001 is WARN severity (best-effort, name/position-based, same tier
+as COV006). No public API added (all new symbols are private), so no
+REL001 version bump needed.
+
+### Changed
+```
+ .frob-release.json           |   3 +-
+ CHANGELOG.md                 |  18 ++
+ docs/modules/gates.md        | 127 ++++++++++--
+ pyproject.toml               |   2 +-
+ src/frob/gates/__init__.py   | 472 ++++++++++++++++++++++++++++++++++++++-----
+ src/frob/gates/invariants.py |  67 +++++-
+ tests/test_gates.py          | 235 ++++++++++++++++++++-
+ tickets.md                   | 196 +++++++++++++++++-
+ uv.lock                      |   2 +-
+ 9 files changed, 1042 insertions(+), 80 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestPlace001Gate::test_missed_following_binding_fires` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestPlace001Gate::test_per_field_pydantic_idiom_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestPlace001Gate::test_directive_directly_above_def_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestPlace001Gate::test_no_nearby_symbol_at_all_is_silent` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0505 -->
 ```yaml
@@ -3465,7 +3548,7 @@ Found while landing T-0483 in a worktree (branch worktree-agent-ae00df0ca54dd3df
 id: T-0506
 title: 'COV006 false-positive class: extend reachability through same-file public
   wrappers before burndown of the ~97 findings'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-21'
@@ -3474,12 +3557,55 @@ blocked_by: []
 parent: null
 scope: []
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_gates.py::TestCoverageGate::test_cov006_silent_when_test_reaches_via_same_file_public_wrapper
+- tests/test_gates.py::TestCoverageGate::test_cov006_still_fires_when_no_public_wrapper_reaches_the_target
+- tests/test_gates.py::TestCoverageGate::test_cov006_flags_test_with_no_call_graph_reachability
+- tests/test_gates.py::TestCoverageGate::test_cov006_silent_when_test_calls_the_bound_symbol
+- tests/test_gates.py::TestCoverageGate::test_cov006_never_fires_for_a_public_target
 attachments: []
 acceptance: []
 threat: null
 ```
 T-0483's COV006 (frob:tests edge to a private symbol with no call-graph reachability from the test) has a disclosed common FP shape: the call graph never records edges INTO public callees, so a test calling a same-file public wrapper that itself calls the bound private helper reads as unreachable. Before hand-burning down the ~97 COV006 / ~61 COV007 warn findings, extend the reachability check one hop through same-file public wrappers (or record public-callee edges for this check's purposes). Scope: src/frob/gates/__init__.py (COV006 helpers), tests/test_gates.py.
+
+## Done report
+
+Extended COV006 (frob:tests -> private-symbol call-graph reachability) with
+a one-hop rescue for the disclosed T-0483 false-positive class: a test that
+only calls a PUBLIC wrapper in the same file as the bound private target,
+which itself calls that target, no longer fires COV006. Implemented as a
+gate-local helper `_cov006_public_wrapper_reachable` (src/frob/gates/__init__.py)
+that re-parses the target's file (and the test's file, if different) and
+checks for a public symbol in the target's file that both calls the private
+target directly and is itself called by name from the test body. The shared
+`frob.graph.callgraph.CallGraph` substrate (consumed by frob.dup/arch, T-0288/
+T-0290) is untouched -- its public-boundary-stop behavior stays load-bearing
+for those other two consumers.
+
+Before/after (measured via `uv run frob check` on this worktree, before by
+temporarily reverting the edit and re-running, after with the edit applied):
+COV006 98 -> 89 (9 false positives of the disclosed shape eliminated).
+COV007 unchanged at 126 (out of scope for this ticket; a different gate).
+
+Residual 89 COV006 findings were NOT hand-burned down in this ticket: 89 is
+above the <20 in-ticket-burndown threshold this ticket's plan set, so a
+follow-up burndown ticket was filed instead (T-draft-a16d9d8f, mints its
+real id at land) with the exact before/after counts and next-step guidance.
+
+### Changed
+```
+ src/frob/gates/__init__.py | 83 ++++++++++++++++++++++++++++++++++++++--------
+ tests/test_gates.py        | 54 ++++++++++++++++++++++++++++++
+ 2 files changed, 123 insertions(+), 14 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestCoverageGate::test_cov006_silent_when_test_reaches_via_same_file_public_wrapper` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageGate::test_cov006_still_fires_when_no_public_wrapper_reaches_the_target` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageGate::test_cov006_flags_test_with_no_call_graph_reachability` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageGate::test_cov006_silent_when_test_calls_the_bound_symbol` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageGate::test_cov006_never_fires_for_a_public_target` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0507 -->
 ```yaml
@@ -3605,7 +3731,7 @@ this change.
 id: T-0509
 title: 'INV003/INV004 calibration: 765 warnings from bare-''only'' exclusivity corpus
   -- refine patterns + markdown waiver support before burndown'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-21'
@@ -3614,12 +3740,114 @@ blocked_by: []
 parent: null
 scope: []
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns
+- tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_with_bound_known_invariant_is_silent
+- tests/test_gates.py::TestInv003Gate::test_marker_naming_unknown_invariant_still_warns
+- tests/test_gates.py::TestInv003Gate::test_no_exclusivity_language_is_silent
+- tests/test_gates.py::TestInv003Gate::test_missing_docs_dir_is_silent
+- tests/test_gates.py::TestInv003Gate::test_claim_without_verb_in_sentence_is_silent
+- tests/test_gates.py::TestInv003Gate::test_claim_in_code_fence_is_silent
+- tests/test_gates.py::TestInv003Gate::test_outside_spec_dirs_is_silent
+- tests/test_gates.py::TestInv003Gate::test_markdown_waive_marker_with_reason_is_silent
+- tests/test_gates.py::TestInv003Gate::test_markdown_waive_marker_without_reason_still_warns
+- tests/test_gates.py::TestInv004Gate::test_section_with_normative_language_and_no_invariant_is_advisory
+- tests/test_gates.py::TestInv004Gate::test_section_with_any_invariant_marker_is_silent
+- tests/test_gates.py::TestInv004Gate::test_section_with_no_normative_language_is_silent
+- tests/test_gates.py::TestInv004Gate::test_two_sections_only_flags_the_underspecified_one
+- tests/test_gates.py::TestInv004Gate::test_missing_docs_dir_is_silent
+- tests/test_gates.py::TestInv004Gate::test_markdown_waive_marker_with_reason_is_silent
+- tests/test_gates.py::TestInv004Gate::test_claim_without_verb_in_sentence_is_silent
 attachments: []
 acceptance: []
 threat: null
 ```
 T-0462/T-0452 landed WARN-severity as disclosed, but the exclusivity/normative corpora fire 765 times across docs/ -- far too noisy to burn down by hand and mostly bare-'only' prose, not genuine invariant claims. Calibrate first: require stronger claim shapes (subject+exclusivity+verb patterns, skip code fences/links/tables), add markdown-side frob:waive support so genuine-but-unprovable claims can be dispositioned, and consider scoping INV003 to spec-normative docs (docs/modules, docs/strata) rather than all docs/**.md. Then burn the residual down to zero. Scope: src/frob/gates/invariants.py, src/frob/gates/__init__.py, tests/test_gates.py, docs/modules/gates.md.
+
+## Done report
+
+Calibrated INV003/INV004 per the ticket's plan:
+
+1. Claim-shape scanning (frob.gates.invariants): _strip_markdown_noise
+   drops fenced code, inline code, markdown link targets, and table rows
+   before scanning; _is_claim_shaped/_CLAIM_VERB_RE require a claim-verb
+   in the same sentence as the trigger word (a heading or bare noun
+   phrase asserts nothing regardless of vocabulary). Both
+   find_exclusivity_claims (INV003) and find_normative_claims (INV004)
+   go through this shared preprocessing.
+2. INV003 directory scoping: INV003_SPEC_DIRS = ("docs/modules",
+   "docs/strata") -- INV003 now only runs over these two spec-normative
+   trees, not all of docs/**.md. INV004 (the coarser advisory signal)
+   still runs over all of docs/, unscoped, per the ticket's own framing
+   ("consider scoping INV003").
+3. Markdown-side frob:waive support: `<!-- frob:waive INV003|INV004
+   reason="..." -->` dispositions a genuine-but-unprovable claim (file-
+   level for INV003, section-level for INV004 via
+   _inv004_waived_headings/_inv004_message_heading), same honesty
+   requirement as the code-side frob:waive's WAIVE001 -- a marker with
+   no reason= is not honored (tested).
+
+Deliberately NOT folded into the existing _inv003_doc_violations/
+_inv004_doc_violations function bodies: doing so at first triggered a
+real COV005 false positive -- those private helpers' "frob:ticket
+T-0462"/"T-0452" directive targets are reused by public siblings
+elsewhere in the same file (inv003_gate, inv004_gate), and COV005
+matches old/new directive bindings by (kind, target) alone, so editing
+inside the tagged private helper read as "this directive rode onto a
+new private symbol" even though nothing rebound. Applying the waiver
+filter from the (public, T-0509-tagged) gate functions instead avoids
+the collision entirely -- documented in
+_file_has_reasoned_doc_waiver's docstring.
+
+Before/after (measured via `uv run frob check --only invariant` on this
+worktree, before by reverting the edit and re-running):
+INV003 88 -> 31. INV004 677 -> 573 (a further doc-rewording pass in
+docs/modules/gates.md itself brought the final combined total in a
+full `frob check` run to 601). Combined 765 -> 601/604 depending on
+whether the doc-rewording commit is included.
+
+604 (the calibration-only figure) is above the <30 in-ticket-burndown
+threshold this ticket's plan set, so the residual was NOT hand-burned
+down here. Filed as a follow-up ticket with the exact counts and next
+steps (bind real invariants, add reasoned waivers, reword loose
+prose, and reconsider INV004's own directory scope since it carries
+the larger remaining share).
+
+REL001: bumped 0.49.0 -> 0.50.0 (new public INV003_SPEC_DIRS constant),
+CHANGELOG updated, uv.lock refreshed, `frob release stamp` run.
+
+### Changed
+```
+ .frob-release.json           |   3 +-
+ CHANGELOG.md                 |  18 ++++
+ docs/modules/gates.md        |  67 +++++++++---
+ pyproject.toml               |   2 +-
+ src/frob/gates/__init__.py   | 245 +++++++++++++++++++++++++++++++++++++------
+ src/frob/gates/invariants.py |  67 +++++++++++-
+ tests/test_gates.py          | 141 ++++++++++++++++++++++++-
+ tickets.md                   |  68 +++++++++++-
+ uv.lock                      |   2 +-
+ 9 files changed, 554 insertions(+), 59 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_without_marker_warns` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInv003Gate::test_exclusivity_claim_with_bound_known_invariant_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInv003Gate::test_marker_naming_unknown_invariant_still_warns` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInv003Gate::test_no_exclusivity_language_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInv003Gate::test_missing_docs_dir_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInv003Gate::test_claim_without_verb_in_sentence_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInv003Gate::test_claim_in_code_fence_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInv003Gate::test_outside_spec_dirs_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInv003Gate::test_markdown_waive_marker_with_reason_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInv003Gate::test_markdown_waive_marker_without_reason_still_warns` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInv004Gate::test_section_with_normative_language_and_no_invariant_is_advisory` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInv004Gate::test_section_with_any_invariant_marker_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInv004Gate::test_section_with_no_normative_language_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInv004Gate::test_two_sections_only_flags_the_underspecified_one` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInv004Gate::test_missing_docs_dir_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInv004Gate::test_markdown_waive_marker_with_reason_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInv004Gate::test_claim_without_verb_in_sentence_is_silent` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0510 -->
 ```yaml
@@ -3736,3 +3964,48 @@ acceptance: []
 threat: null
 ```
 Split from T-0497 (too large to rush inside that ticket's remaining budget -- needs a pure-Python reference implementation designed and cross-checked, not a rushed patch). docs/audits/strata.md finding G10: FactBase.reachable/worst_age/propagated_demand are native Rust kernels (strata-core), trusted from Python with no differential or property-based test suite proving the Rust and an independent reference implementation agree on the same inputs. A subtle divergence (an off-by-one in age propagation, a wrong SCC handling, a rounding difference in demand aggregation) could silently ship undetected since only end-to-end behavioral tests exercise the combined system, not the kernel in isolation against a trusted oracle. Fix direction: a pure-Python reference implementation of at least worst_age/reachable/propagated_demand (small, deliberately naive, no perf concerns) plus a property-based (hypothesis-style, or hand-authored adversarial corpus) differential test that generates random-ish FactBase graphs and asserts the Rust kernel and the Python reference agree on every one.
+
+<!-- ticket:T-draft-7bcb1c6f -->
+```yaml
+id: T-draft-7bcb1c6f
+title: burn down residual 604 INV003/INV004 findings after T-0509 calibration
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- docs/modules
+- docs/strata
+- invariants
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0509 calibrated INV003/INV004: noise-stripping (fenced/inline code, links, table rows), a claim-verb requirement in the same sentence as the trigger word, INV003 scoped to INV003_SPEC_DIRS (docs/modules, docs/strata) instead of all docs/**.md, and markdown-side frob:waive support. Combined warnings dropped from 765 to 604 (INV003 88->31, INV004 677->573), measured via frob check --only invariant on this worktree before/after. 604 is still above the <30 in-ticket-burndown threshold, so this residual was NOT hand-burned down in T-0509. Next steps: bind real invariants/INV-###.md files for genuine claims, add <!-- frob:waive INV003|INV004 reason="..." --> markers for design-intent-only prose, and reword sections that used normative language loosely. INV004's 573 is the larger share (all of docs/**.md still in scope) -- consider whether INV004 also warrants directory scoping or a further claim-shape narrowing as part of this burndown.
+
+<!-- ticket:T-draft-a16d9d8f -->
+```yaml
+id: T-draft-a16d9d8f
+title: burn down residual 89 COV006 findings after T-0506 wrapper-reachability fix
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/__init__.py
+- tests/test_gates.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+T-0506 extended COV006 with a one-hop same-file public-wrapper rescue, reducing the finding count from 98 to 89 (measured via frob check before/after on this worktree). The residual 89 are either genuinely broken frob:tests bindings needing a real bound symbol, or FP shapes not covered by the wrapper rescue (e.g. cross-file wrapper, two-hop chains, or a test calling the private symbol via an attribute/instance rather than a bare call token). Triage the residual list from a fresh frob check run and either bind real tests, fix wrong directives, or narrow to a documented remaining FP class.

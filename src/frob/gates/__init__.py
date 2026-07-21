@@ -18,6 +18,7 @@ is decomposed into small private helpers alongside it.
 
 from __future__ import annotations
 
+import ast
 import difflib
 import fnmatch
 import functools
@@ -94,7 +95,7 @@ from frob.graph._models import LockFile
 from frob.graph.lock import drift as _graph_drift
 from frob.graph.lock import load_lock
 from frob.lang import SymbolKind
-from frob.lang._models import ParsedFile
+from frob.lang._models import ParsedFile, RawComment, RawSymbol
 from frob.lang._walk_rust import _MACRO_SYMBOL_SUFFIX
 from frob.logging import get_logger
 from frob.testing import CollectedTests, collect_python_tests, collect_rust_tests
@@ -704,6 +705,9 @@ _KNOWN_GATE_RULES = frozenset(
         # a `frob:doc` anchor bound to a private helper (COV007).
         "COV006",
         "COV007",
+        # T-0504: class-directive placement lint (a `frob:` directive that
+        # class-falls-back but plausibly missed a nearby real symbol).
+        "PLACE001",
         "DRIFT001",
         "DRIFT002",
         "SCOPE001",
@@ -988,23 +992,208 @@ def _waive003_violations(
     return tuple(out)
 
 
-# frob:ticket T-0470
-# PLACE001 (class-fallback directive placement) was prototyped here and
-# DELIBERATELY DROPPED before landing: a "distance from the class's own
-# span start" heuristic fires on this repo's own widespread, legitimate
-# idiom of per-field `frob:waive`/`frob:ticket` comments documenting one
-# field deep inside a large pydantic config class (e.g. `src/frob/app/
-# config.py`'s `AppConfig`, `frob:waive SCOPE001` at line 212, 150+ lines
-# past the class's `class AppConfig:` line) -- fields are not `RawSymbol`s
-# (only FUNCTION/METHOD/CLASS/CONST/TYPE are), so a directive above one
-# always falls back to the enclosing class by construction, and doing so
-# far from the class top is completely intentional there, not mis-scoped.
-# A real fix needs a materially different signal (e.g. detecting a nearby
-# symbol the directive plausibly SHOULD have bound to via `following` but
-# didn't reach, rather than raw line distance from the class start) --
-# out of this ticket's remaining scope/effort budget; a follow-up ticket
-# for prong (2) is filed with this exact counterexample instead of
-# shipping a lint proven noisy against the repo's own real pattern.
+# frob:ticket T-0504
+# PLACE001 was first prototyped as "distance from the class's own span
+# start" and DELIBERATELY DROPPED (T-0470) before landing: that heuristic
+# fired on this repo's own widespread, legitimate idiom of per-field
+# `frob:waive`/`frob:ticket` comments documenting one field deep inside a
+# large pydantic config class (e.g. `src/frob/app/config.py`'s
+# `AppConfig`, `frob:waive SCOPE001` at line 212, 150+ lines past the
+# class's `class AppConfig:` line) -- fields are not `RawSymbol`s (only
+# FUNCTION/METHOD/CLASS/CONST/TYPE are), so a directive above one always
+# falls back to the enclosing class by construction, and doing so far
+# from the class top is completely intentional there, not mis-scoped.
+#
+# T-0504 replaces that raw-distance signal with the materially different
+# one this comment's own predecessor named as the real fix: does a
+# nearby REAL symbol exist that the directive plausibly SHOULD have
+# bound to via `following` but didn't reach, with nothing but blank
+# lines/comments/decorators between the directive and that symbol? The
+# per-field idiom always has genuine field-assignment CODE in that gap
+# (the very thing that makes it a field and not a stray comment), so it
+# is excluded by construction rather than by distance -- see
+# `_place001_missed_symbol`'s docstring for the full argument and
+# `TestPlace001Gate` for both the non-vacuous positive (a directive
+# separated from its intended `def` by one blank line too many) and the
+# AppConfig-shaped negative (a directive above a field, real code before
+# the next real method).
+_PLACE001_LOOKAHEAD = 10
+
+
+# frob:ticket T-0504
+def _place001_missed_symbol(
+    comment: RawComment,
+    symbols: tuple[RawSymbol, ...],
+    lines: list[str],
+) -> RawSymbol | None:
+    """The nearby REAL symbol (within `_PLACE001_LOOKAHEAD` lines) that a
+    class-fallback-bound `frob:` directive plausibly intended but missed
+    via `_find_following_symbol`'s narrower window -- `None` if no such
+    symbol exists, or if genuine code (anything other than a blank line,
+    a `#`/`//` comment, or a decorator line) sits between the directive
+    and the candidate.
+
+    That "genuine code in between" check is the whole soundness argument
+    (T-0504): the only way `following` can miss a REAL symbol that is
+    still close by is a run of blank lines, stacked comments, or
+    decorators wider than `_FOLLOWING_SYMBOL_WINDOW` -- none of which is
+    itself an intervening obligation the directive could instead belong
+    to. The per-field pydantic idiom this ticket must NOT fire on always
+    has actual field-assignment code in that gap (that is what makes it
+    a field), so it can never produce a candidate here regardless of how
+    close or far the class's next real method sits.
+    """
+    end = comment.span[1]
+    candidates = [
+        sym for sym in symbols if end < sym.span[0] <= end + _PLACE001_LOOKAHEAD
+    ]
+    if not candidates:
+        return None
+    candidate = min(candidates, key=lambda sym: sym.span[0])
+    for lineno in range(end + 1, candidate.span[0]):
+        if lineno - 1 >= len(lines):
+            break
+        stripped = lines[lineno - 1].strip()
+        if stripped == "" or stripped.startswith(("#", "//", "@")):
+            continue
+        return None
+    return candidate
+
+
+# frob:ticket T-0504
+def _place001_bindings(
+    comments: tuple[RawComment, ...], path: str
+) -> dict[int, tuple[str, bool]]:
+    """`comment_id -> (resolved_src, via_following)` for every comment in
+    `comments`, mirroring `frob.graph.dsl._resolve_block_srcs`'s exact
+    stacked-comment-propagation algorithm (order, carry state) but ALSO
+    tagging whether the binding was reached via a `following` match
+    (direct, or propagated backward from a later comment's own resolved
+    `following` in the same contiguous block, T-0313) versus a genuine
+    `enclosing`/bare-path fallback.
+
+    This distinction is the entire soundness argument for PLACE001: a
+    `frob:doc`/`frob:ticket` comment placed directly above `class Foo:`
+    resolves via `following` straight to `Foo` (correct and intentional,
+    `via_following=True`) even though `Foo` is a CLASS -- checking only
+    "did this resolve to a class" (as `_resolve_block_srcs`'s plain
+    output would tempt) cannot tell that apart from a directive genuinely
+    stuck at the class-fallback because it sits somewhere INSIDE the
+    class body with no reachable `following` target at all
+    (`via_following=False`). Only the latter is what T-0504's placement
+    check should ever consider.
+    """
+    from frob.graph.dsl import _enclosing_src
+
+    order = sorted(range(len(comments)), key=lambda i: comments[i].span[0])
+    resolved: dict[int, tuple[str, bool]] = {}
+    carry_start: int | None = None
+    carry_src: str | None = None
+    for idx in reversed(order):
+        comment = comments[idx]
+        if comment.following is not None:
+            src = f"{path}::{comment.following}"
+        elif carry_src is not None and comment.span[1] + 1 == carry_start:
+            src = carry_src
+        else:
+            resolved[idx] = (_enclosing_src(comment, path), False)
+            carry_start = None
+            carry_src = None
+            continue
+        resolved[idx] = (src, True)
+        carry_start = comment.span[0]
+        carry_src = src
+    return resolved
+
+
+# frob:ticket T-0504
+def _place001_file(root: Path, file: str) -> tuple[Violation, ...]:
+    """PLACE001 findings for one file: a `frob:` directive whose fully
+    resolved binding (`_place001_bindings`, the same stacked-comment-aware
+    resolution `parse_directives` itself uses) is a genuine class
+    FALLBACK (`via_following=False`, not a directive that correctly
+    resolved via `following` straight to a class it precedes), where
+    `_place001_missed_symbol` finds a real symbol the directive plausibly
+    should have reached instead.
+
+    Re-parses `file` directly (root-relative, like `_cov006`/`_cov005`)
+    rather than reusing `GraphSnapshot` -- the snapshot only carries
+    already-resolved `Edge`s, not the per-comment `following`/`enclosing`
+    detail this check needs.
+    """
+    from frob.lang import parse_file
+
+    result = parse_file(root / file)
+    if result.is_err:
+        return ()
+    parsed = result.danger_ok
+    try:
+        lines = (root / file).read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        _log.warning("PLACE001: could not read %s: %s", file, exc)
+        return ()
+    symbol_by_qualname = {sym.qualname: sym for sym in parsed.symbols}
+    resolved = _place001_bindings(parsed.comments, file)
+    violations: list[Violation] = []
+    for comment_id, comment in enumerate(parsed.comments):
+        if not comment.text.startswith("frob:"):
+            continue
+        src, via_following = resolved[comment_id]
+        if via_following:
+            continue
+        _prefix, sep, qualname = src.partition("::")
+        if not sep:
+            continue
+        enclosing_sym = symbol_by_qualname.get(qualname)
+        if enclosing_sym is None or enclosing_sym.kind != SymbolKind.CLASS:
+            continue
+        missed = _place001_missed_symbol(comment, parsed.symbols, lines)
+        if missed is None:
+            continue
+        _log.debug(
+            "PLACE001: %s:%s directive class-falls-back to %s, missed %s",
+            file,
+            comment.span[0],
+            qualname,
+            missed.qualname,
+        )
+        violations.append(
+            Violation(
+                rule="PLACE001",
+                severity=Severity.WARN,
+                file=file,
+                line=comment.span[0],
+                message=(
+                    f"PLACE001: {file}:{comment.span[0]} frob: directive "
+                    f"falls back to enclosing class {qualname!r}, but "
+                    f"{missed.qualname!r} starts at line {missed.span[0]} "
+                    f"with nothing but blank lines/comments/decorators in "
+                    f"between -- likely intended for that symbol; move "
+                    f"the directive within the following-window, or "
+                    f"confirm the class binding is intentional"
+                ),
+            )
+        )
+    return tuple(violations)
+
+
+# frob:ticket T-0504
+def _place001(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """PLACE001 (advisory): a `frob:` directive that class-falls-back
+    (`_place001_file`) instead of reaching a real, nearby symbol via
+    `following` -- a likely mis-scoped directive, not raw distance from
+    the class's own span start (T-0470's dropped prototype; see the
+    comment above `_PLACE001_LOOKAHEAD` for the full history).
+
+    WARN severity: best-effort, name/position-based (same tier as
+    COV006) -- a finding is a prompt to double check, not proof the
+    directive is wrong.
+    """
+    files = sorted({symref.split("::", 1)[0] for symref in snapshot.symbols})
+    violations: list[Violation] = []
+    for file in files:
+        violations.extend(_place001_file(root, file))
+    return tuple(violations)
 
 
 # _match_waiver has three matching modes, chosen by `violation.symref`/
@@ -1306,7 +1495,7 @@ def coverage_gate(
     diff: Diff,
     tests: CollectedTests,
 ) -> tuple[Violation, ...]:
-    """COV001..COV004 and TODO001/TODO002.
+    """COV001..COV007, PLACE001, and TODO001/TODO002.
 
     `root` (repo root, T-0233) lets COV001 tell a *resolving* `frob:doc`
     edge apart from a broken one -- see `_resolved_documented_srcs`.
@@ -1319,6 +1508,7 @@ def coverage_gate(
     violations.extend(_cov005(root, snapshot, diff))
     violations.extend(_cov006(root, snapshot))
     violations.extend(_cov007(snapshot))
+    violations.extend(_place001(root, snapshot))
     violations.extend(_todo001(snapshot, queue, diff))
     return tuple(violations)
 
@@ -1905,6 +2095,55 @@ def _old_directive_bindings(
     return tuple(bindings)
 
 
+# frob:ticket T-0506
+def _cov006_public_wrapper_reachable(root: Path, edge: Edge) -> bool:
+    """One-hop COV006 rescue: True if a PUBLIC symbol in the bound private
+    target's own file both calls that target directly and is itself
+    called, by name, from the test's own body -- the same-file
+    test -> public-wrapper -> private-target shape `build_call_graph`
+    cannot represent (it never records edges into public callees, T-0483).
+    Scoped to this gate only; the shared `CallGraph` substrate is
+    untouched so `frob.dup`/arch consumers keep their public-boundary-stop
+    behavior.
+    """
+    from frob.graph.callgraph import _called_names, _short_name
+    from frob.lang import parse_file
+
+    target_file = edge.target.split("::", 1)[0]
+    test_file = edge.src.split("::", 1)[0]
+    target_qualname = edge.target.split("::", 1)[1]
+    target_short = _short_name(target_qualname)
+
+    target_parsed = parse_file(root / target_file)
+    if target_parsed.is_err:
+        return False
+    target_symbols = target_parsed.danger_ok.symbols
+
+    wrapper_short_names = {
+        _short_name(sym.qualname)
+        for sym in target_symbols
+        if sym.public and target_short in _called_names(sym.body_tokens)
+    }
+    if not wrapper_short_names:
+        return False
+
+    if test_file == target_file:
+        test_symbols = target_symbols
+    else:
+        test_parsed = parse_file(root / test_file)
+        if test_parsed.is_err:
+            return False
+        test_symbols = test_parsed.danger_ok.symbols
+
+    test_qualname = edge.src.split("::", 1)[1]
+    test_sym = next(
+        (sym for sym in test_symbols if sym.qualname == test_qualname), None
+    )
+    if test_sym is None:
+        return False
+    return bool(wrapper_short_names & _called_names(test_sym.body_tokens))
+
+
 # frob:ticket T-0483
 def _cov006(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """COV006: a `frob:tests` edge bound to a PRIVATE symbol whose named
@@ -1927,20 +2166,24 @@ def _cov006(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     different files can alias), so a miss is a prompt to double check, not
     proof the binding is wrong.
 
-    KNOWN adoption-noise shape (T-0483, disclosed rather than silently
-    tuned away): a test that reaches its bound private helper only
-    INDIRECTLY, by calling a PUBLIC entry point in the same file that
-    itself calls the helper, is reported unreachable -- `build_call_graph`
-    never records an edge INTO a public callee, so the graph has no edge
-    for that first hop at all, and `closure` can never walk through it.
-    This is the single most common shape of "false" COV006 finding on this
-    repo's own test suite today (a `frob:tests` binding a private helper
-    while the test body only calls the public function wrapping it), not
-    a bug in the traversal -- `frob.graph.callgraph`'s public-boundary-stop
-    behavior is load-bearing for its other two consumers (T-0288/T-0290)
-    and is reused here as-is per this ticket's own instruction, not
-    special-cased. A COV006 finding is a prompt to double check, same as
-    any other WARN-tier gate here on first adoption.
+    T-0506: the single most common shape of "false" COV006 finding
+    (T-0483, disclosed at landing) was a test that reaches its bound
+    private helper only INDIRECTLY, by calling a PUBLIC entry point in
+    the SAME FILE as the helper that itself calls it -- `build_call_graph`
+    never records an edge INTO a public callee (that behavior is
+    load-bearing for its other two consumers, T-0288/T-0290, and is left
+    untouched here), so the shared graph has no edge for that first hop
+    and `closure` can never walk through it. Rather than special-case the
+    shared substrate, this check does its own one-hop lookahead, scoped to
+    THIS gate only: `_cov006_public_wrapper_reachable` re-parses just the
+    target's file (and the test's file, if different) and asks whether
+    any PUBLIC symbol in the target's file both (a) calls the private
+    target directly and (b) is itself called, by name, from the test's
+    own body. If so, the binding is accepted as reachable one hop out
+    without ever recording a public-callee edge in the shared `CallGraph`.
+    A COV006 finding that survives both the direct closure check and this
+    one-hop public-wrapper check is a prompt to double check, same as any
+    other WARN-tier gate here on first adoption.
 
     `build_call_graph` re-`frob.lang.parse_file`s every path it's given, and
     a repo's own test suite routinely binds many private helpers from the
@@ -1967,6 +2210,8 @@ def _cov006(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
             graph = build_call_graph(root, paths)
             graph_cache[paths] = graph
         if edge.target in closure(graph, edge.src):
+            continue
+        if _cov006_public_wrapper_reachable(root, edge):
             continue
         _log.debug(
             "COV006: %s -> %s has no call-graph reachability", edge.src, edge.target
@@ -2444,6 +2689,102 @@ def invariant_gate(
 # frob:ticket T-0462
 _DOC_INVARIANT_MARKER_RE = re.compile(r"<!--\s*frob:invariant\s+(INV-\d{3})\s*-->")
 
+# frob:doc docs/modules/gates.md#invariants
+# frob:ticket T-0509
+# Markdown-side waiver marker: `<!-- frob:waive INV003 reason="..." -->`.
+# `_match_waiver` (the code-side waiver path) keys off graph edges, which
+# doc prose carries none of -- this is a separate, file/section-scoped
+# marker so a genuine-but-unprovable claim (prose describing a design
+# intent rather than an enforced behavior) can be dispositioned honestly
+# instead of either being hand-bound to a fake invariant or silently
+# ignored. A missing/empty reason does not count as a waiver (same
+# honesty requirement as `frob:waive`'s code-side WAIVE001).
+_DOC_WAIVE_MARKER_RE = re.compile(
+    r'<!--\s*frob:waive\s+(INV00[34])\s+reason="([^"]+)"\s*-->'
+)
+
+# frob:doc docs/modules/gates.md#invariants
+# frob:ticket T-0509
+# INV003 is scoped to these repo-relative directories (spec-normative
+# design/module docs), not all of docs/**.md -- exclusivity claims worth
+# gating live in the docs that describe enforced contracts; a narrative
+# design doc or changelog making a passing "only" remark is not the same
+# failure mode T-0462 named. INV004 (the coarser advisory signal) keeps
+# scanning all of docs/ -- see `inv004_gate`.
+INV003_SPEC_DIRS: tuple[str, ...] = ("docs/modules", "docs/strata")
+
+
+# frob:doc docs/modules/gates.md#invariants
+# frob:ticket T-0509
+def _file_has_reasoned_doc_waiver(path: Path, rule: str) -> bool:
+    """True if `path` carries a `<!-- frob:waive <rule> reason="..." -->`
+    marker anywhere in the file, with a non-empty reason.
+
+    Deliberately NOT folded into `_inv003_doc_violations`'s own body: that
+    function's `frob:ticket T-0462` directive is one of several bindings
+    sharing that same ticket-id target across this file (T-0462 also
+    covers `inv003_gate`, still public) -- COV005's rebind check matches
+    old/new directive bindings by `(kind, target)` alone, so editing
+    inside an already-ticket-tagged private helper whose target is shared
+    with a public sibling elsewhere in the file spuriously reads as "this
+    directive rode onto a new private symbol" even though nothing rebound.
+    Applying the waiver filter from the (public, freshly-tagged) gate
+    function instead avoids that false positive entirely.
+    """
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        _log.warning("%s: could not read %s for waiver check: %s", rule, path, exc)
+        return False
+    return any(
+        matched_rule == rule and reason
+        for matched_rule, reason in _DOC_WAIVE_MARKER_RE.findall(text)
+    )
+
+
+# frob:doc docs/modules/gates.md#invariants
+# frob:ticket T-0509
+def _inv004_waived_headings(text: str) -> frozenset[str]:
+    """Heading text of every section in `text` that carries a reasoned
+    `<!-- frob:waive INV004 reason="..." -->` marker (see
+    `_file_has_reasoned_doc_waiver`'s docstring for why this filters at
+    the gate-function level rather than inside `_inv004_doc_violations`).
+    """
+    waived: set[str] = set()
+    for section in _markdown_sections(text):
+        if not any(
+            rule == "INV004" and reason
+            for rule, reason in _DOC_WAIVE_MARKER_RE.findall(section)
+        ):
+            continue
+        heading_match = re.match(r"^(#{1,6}\s.*)$", section, re.MULTILINE)
+        heading = heading_match.group(1).strip() if heading_match else "(no heading)"
+        waived.add(heading)
+    return frozenset(waived)
+
+
+# frob:doc docs/modules/gates.md#invariants
+# frob:ticket T-0509
+_INV004_MESSAGE_HEADING_RE = re.compile(r"section (.+?) describes behavior")
+
+
+# frob:doc docs/modules/gates.md#invariants
+# frob:ticket T-0509
+def _inv004_message_heading(message: str) -> str | None:
+    """Recover the exact heading string `_inv004_doc_violations` embedded
+    (via `heading!r`) in one INV004 `Violation.message`, or `None` if the
+    message does not match the expected shape. `ast.literal_eval` undoes
+    the `repr()` reliably regardless of whether Python chose single- or
+    double-quote style for a heading containing an apostrophe."""
+    match = _INV004_MESSAGE_HEADING_RE.search(message)
+    if match is None:
+        return None
+    try:
+        value = ast.literal_eval(match.group(1))
+    except (ValueError, SyntaxError):
+        return None
+    return value if isinstance(value, str) else None
+
 
 # frob:doc docs/modules/gates.md#invariants
 # frob:ticket T-0462
@@ -2494,29 +2835,36 @@ def _inv003_doc_violations(
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0462
 def inv003_gate(root: Path, invariants: tuple[Invariant, ...]) -> tuple[Violation, ...]:
-    """INV003: every docs/**.md exclusivity claim needs a bound invariant.
+    """INV003: every exclusivity claim in a spec-normative doc
+    (`INV003_SPEC_DIRS`) needs a bound invariant.
 
-    Runs over `docs/` only (not the whole repo) -- normative claims worth
-    gating live in prose documentation, not generated/vendored trees.
+    T-0509: scoped to `INV003_SPEC_DIRS` (docs/modules, docs/strata), not
+    all of docs/**.md -- exclusivity claims worth gating describe enforced
+    contracts, which is what those two trees are for; a narrative design
+    doc or changelog making a passing "only" remark is a different failure
+    mode than T-0462 named. Combined with the stronger claim-shape scan
+    (`find_exclusivity_claims`: noise-stripped, verb-bearing sentences
+    only) and markdown-side `frob:waive` support (`_DOC_WAIVE_MARKER_RE`),
+    this narrows the original ~765-warning INV003+INV004 pool to a
+    genuinely reviewable set (T-0509's Done report has the exact counts).
 
     WARN severity (does not fail `frob check`), not ERROR like INV001/
-    INV002: the exclusivity vocabulary (T-0462) includes bare "only",
-    common enough in ordinary prose that a repo-wide first run surfaces
-    ~90 findings across docs/ written before this rule existed --
-    promoting straight to ERROR would either force a mass reword/binding
-    pass unrelated to any single change, or require markdown-side
-    `frob:waive` support (not yet wired: `_match_waiver` keys off graph
-    edges, and doc prose carries no such edges today). WARN surfaces the
-    signal now; hardening specific docs to ERROR (or building markdown
-    waiver support) is follow-up work, not silently dropped.
+    INV002: even after calibration, a claim can still be genuine design
+    intent rather than an enforced behavior -- WARN surfaces the signal
+    for human triage rather than forcing a bind-or-waive on every hit.
     """
-    docs_dir = root / "docs"
-    if not docs_dir.is_dir():
-        return ()
     known_ids = frozenset(inv.id for inv in invariants)
     violations: list[Violation] = []
-    for path in iter_files(docs_dir, suffix=".md"):
-        violations.extend(_inv003_doc_violations(root, path, known_ids))
+    for spec_dir in INV003_SPEC_DIRS:
+        docs_dir = root / spec_dir
+        if not docs_dir.is_dir():
+            continue
+        for path in iter_files(docs_dir, suffix=".md"):
+            file_violations = _inv003_doc_violations(root, path, known_ids)
+            if file_violations and _file_has_reasoned_doc_waiver(path, "INV003"):
+                _log.debug("INV003: %s waived by markdown frob:waive marker", path)
+                continue
+            violations.extend(file_violations)
     return tuple(violations)
 
 
@@ -2600,7 +2948,27 @@ def inv004_gate(root: Path) -> tuple[Violation, ...]:
         return ()
     violations: list[Violation] = []
     for path in iter_files(docs_dir, suffix=".md"):
-        violations.extend(_inv004_doc_violations(root, path))
+        file_violations = _inv004_doc_violations(root, path)
+        if not file_violations:
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError as exc:
+            _log.warning("INV004: could not re-read %s for waivers: %s", path, exc)
+            violations.extend(file_violations)
+            continue
+        waived_headings = _inv004_waived_headings(text)
+        if not waived_headings:
+            violations.extend(file_violations)
+            continue
+        for v in file_violations:
+            heading = _inv004_message_heading(v.message)
+            if heading is not None and heading in waived_headings:
+                _log.debug(
+                    "INV004: %s section %r waived by markdown marker", path, heading
+                )
+                continue
+            violations.append(v)
     return tuple(violations)
 
 

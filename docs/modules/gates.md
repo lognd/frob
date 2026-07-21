@@ -21,14 +21,15 @@ declaration).
 | COV005 | coverage | a diff-touched file's `frob:` directive now binds a PRIVATE symbol whose span overlaps this diff's hunks, where the same `(kind, target)` directive bound a PUBLIC symbol in that file at the diff's base revision -- a displaced obligation (T-0297), see design decisions below |
 | COV006 | coverage | (warn) a `frob:tests` edge bound to a PRIVATE symbol whose test has no `frob.graph.callgraph` reachability to it -- see "COV006/COV007 (T-0483)" below, including a disclosed known false-positive shape |
 | COV007 | coverage | (warn) a `frob:doc` edge whose src symbol is PRIVATE -- see "COV006/COV007 (T-0483)" below |
+| PLACE001 | coverage | (warn) a `frob:` directive that genuinely class-falls-back (not a directive that correctly resolved via `following` straight to a class it precedes) where a nearby real symbol looks plausibly missed -- see "PLACE001 (T-0504)" below |
 | TODO001 | coverage | bare TODO/FIXME comment (not `frob:`-prefixed) in a diff-touched file -- work marked but not accounted for at all |
 | TODO002 | coverage | `frob:todo` edge bound to a non-open (closed or missing) ticket -- work accounted for, but the reference is dangling |
 | SCOPE001 | scope | diff touches paths/symbols outside the active ticket's `scope` |
 | PRE001 | pre-work | ticket moved to in-progress without a recorded pre-work sweep |
 | INV001 | invariant | invariant has no evidence (test or policy rule) |
 | INV002 | invariant | invariant has no code anchor (`frob:invariant`) |
-| INV003 | invariant | (warn) a `docs/**.md` file makes an exclusivity/normative claim (`only`, `sole`/`solely`, `exclusively`, `nothing else`, `never...except`, `at most/exactly one`) with no `<!-- frob:invariant INV-### -->` marker in the file naming a real (loaded) invariant -- see "INV003 (T-0462)" below |
-| INV004 | invariant | (warn, advisory) a `docs/**.md` section uses normative language (`must`, `must not`, `never`, `always`, `shall`, `guarantees`, `ensures`, `requires`, plus INV003's exclusivity vocabulary) but anchors ZERO `frob:invariant` markers at all -- see "INV004 (T-0452)" below |
+| INV003 | invariant | (warn) a doc file under `INV003_SPEC_DIRS` (`docs/modules`, `docs/strata`) makes a claim-shaped exclusivity/normative assertion (`only`, `sole`/`solely`, `exclusively`, `nothing else`, `never...except`, `at most/exactly one`, verb required in the same sentence) with no `<!-- frob:invariant INV-### -->` marker naming a real (loaded) invariant, and no reasoned `<!-- frob:waive INV003 reason="..." -->` marker -- see "INV003 (T-0462)" below |
+| INV004 | invariant | (warn, advisory) a `docs/**.md` section uses claim-shaped normative language (`must`, `must not`, `never`, `always`, `shall`, `guarantees`, `ensures`, `requires`, plus INV003's exclusivity vocabulary) but anchors ZERO `frob:invariant` markers and carries no reasoned `<!-- frob:waive INV004 reason="..." -->` marker -- see "INV004 (T-0452)" below |
 | DEC001 | decisions | a `frob:decision AD-###` edge points at a record that does not exist (opt-in: a `decisions/` dir must exist) |
 | DEC002 | decisions | an `accepted` decision record has no `frob:decision` code anchor |
 | TEST001 | test | public function/method has no `frob:tests` unit edge |
@@ -168,6 +169,18 @@ Candidates (b) and (c) landed here as COV006/COV007:
   these on first landing in any repo with this test-via-public-wrapper
   idiom, same as any other warn-tier gate here.
 
+  **T-0506 update**: the most common shape above is now rescued rather
+  than merely disclosed. `_cov006_public_wrapper_reachable` does a
+  gate-local, one-hop lookahead: if a PUBLIC symbol in the bound
+  target's own file both calls that target directly and is itself
+  called, by name, from the test's own body, the binding is accepted
+  without ever recording a public-callee edge in the shared `CallGraph`
+  (`frob.dup`/arch's public-boundary-stop guarantee stays untouched).
+  Reduced this repo's own COV006 count from 98 to 89 on landing; the
+  residual is a genuinely reviewable pool, tracked as a follow-up
+  burndown ticket rather than the original disclosed "expect noise"
+  posture.
+
 - **COV007** (warn): a `frob:doc` edge whose src symbol is PRIVATE. Doc
   anchors normally cover the public API surface (COV001 only ever asks
   for one on a PUBLIC symbol), so one on a private helper is usually
@@ -179,6 +192,53 @@ Candidates (b) and (c) landed here as COV006/COV007:
   code has real examples of that (`frob.logging._FrobFormatter`,
   `frob.gates._pii_structural._FieldSignature`) -- COV007 flags the
   pattern for a human decision, it does not forbid it.
+
+### PLACE001 (T-0504)
+
+<!-- frob:describes src/frob/gates/__init__.py::_place001_missed_symbol -->
+<!-- frob:describes src/frob/gates/__init__.py::_place001_bindings -->
+
+T-0470 first prototyped a class-directive placement lint as "distance
+from the class's own span start" and DELIBERATELY DROPPED it before
+landing: that heuristic fires on this repo's own widespread, legitimate
+idiom of a per-field `frob:waive`/`frob:ticket` comment documenting one
+field deep inside a large pydantic config class (`AppConfig`'s
+`frob:waive SCOPE001`, 150+ lines past the class's own `class AppConfig:`
+line) -- fields are not `RawSymbol`s, so a directive above one always
+falls back to the enclosing class by construction, and doing so far from
+the class top is completely intentional there, not mis-scoped.
+
+PLACE001 replaces raw distance with a materially different signal: does
+a nearby REAL symbol exist that the directive plausibly should have
+bound to via `following` but didn't reach, with nothing but blank
+lines/comments/decorators in the gap? `_place001_missed_symbol` answers
+this directly -- the per-field idiom always has genuine field-assignment
+CODE in that gap (that is what makes it a field, not a stray comment),
+so it can never produce a "missed" candidate regardless of how close or
+far the class's next real method sits; a directive separated from its
+intended `def` by one blank line too many (or an extra decorator, or a
+too-long stacked-comment run) always does.
+
+**The subtle trap this check had to avoid**: a `frob:doc`/`frob:ticket`
+comment placed directly above `class Foo:` resolves via `following`
+straight to `Foo` -- correct and universal across this repo -- even
+though `Foo` IS a class. Naively checking "did this resolve to a class
+symbol" cannot tell that apart from a directive genuinely stuck at the
+class-fallback (sitting somewhere inside the class body with no
+reachable `following` target at all). `_place001_bindings` mirrors
+`frob.graph.dsl._resolve_block_srcs`'s exact stacked-comment-propagation
+algorithm but additionally tags whether each binding was reached via a
+`following` match (direct, or propagated backward through an unbroken
+comment run, T-0313) versus a genuine `enclosing` fallback -- PLACE001
+only ever considers the latter. An earlier draft of this gate skipped
+that distinction and fired ~400 findings across this repo, almost all on
+the ordinary "directive directly above its class" idiom; with it in
+place the finding count on this repo's own tree is zero (the corpus is
+clean), proven non-vacuous instead by `TestPlace001Gate`'s constructed
+positive case.
+
+WARN severity: best-effort, name/position-based (same tier as COV006) --
+a finding is a prompt to double check, not proof the directive is wrong.
 
 ### Waiver over-breadth (T-0470)
 
@@ -759,15 +819,48 @@ holds. A doc file making such a claim needs a
 naming a real, loaded invariant; a marker naming an unknown id does not
 count (`inv003_gate`).
 
-INV003 is `Severity.WARN`, not `ERROR` like INV001/INV002: the
-vocabulary includes bare "only", common enough in ordinary prose that a
-first run across this repo's own `docs/` surfaced roughly 90 findings --
-promoting straight to ERROR would force either a mass reword/binding
-pass unrelated to whatever change triggered `frob check`, or markdown-
-side `frob:waive` support that does not exist yet (`_match_waiver` keys
-off graph edges; doc prose carries none today). Hardening specific docs
-to ERROR, or building markdown waiver support, is tracked as follow-up
-work rather than forced through in one pass.
+INV003 is `Severity.WARN`, not `ERROR` like INV001/INV002: even after
+calibration (below) a claim can be genuine design intent rather than an
+enforced behavior, so WARN surfaces the signal for human triage rather
+than forcing a bind-or-waive on every hit.
+
+**T-0509 calibration.** The original bare-vocabulary scan surfaced ~90
+INV003 findings (and ~677 INV004 findings, see below) across `docs/` --
+mostly headings, table cells, code samples, and link text carrying the
+trigger word with no actual claim attached (a `## Schema` heading, a
+`| only |` table cell). Three changes narrow this to a genuinely
+reviewable pool without dropping real claims:
+
+- **Noise stripping** (`frob.gates.invariants._strip_markdown_noise`):
+  fenced code blocks, inline code spans, markdown link targets, and table
+  rows are removed before scanning -- code samples and URLs are not prose
+  assertions.
+- **Claim-shape requirement** (`_is_claim_shaped`, `_CLAIM_VERB_RE`): a
+  trigger word only counts if a claim-verb (`is`/`must`/`supports`/`writes`/
+  etc.) appears in the SAME sentence -- a bare heading or dangling noun
+  phrase asserts nothing regardless of vocabulary.
+- **Directory scoping** (`INV003_SPEC_DIRS = ("docs/modules", "docs/strata")`):
+  INV003 only runs over these two spec-normative trees, not all of
+  `docs/**.md` -- exclusivity claims worth gating describe enforced
+  contracts, which is what those trees are for; a narrative design doc or
+  changelog making a passing "only" remark is a different failure mode
+  than T-0462 named. INV004 (below) still runs over all of `docs/`.
+
+Markdown-side `frob:waive` support now also exists (`_match_waiver` keys
+off graph edges, which doc prose still carries none of -- this is a
+separate marker): `<!-- frob:waive INV003 reason="..." -->` anywhere in a
+file dispositions that file's INV003 findings, same honesty requirement
+as the code-side `frob:waive`'s WAIVE001 (a marker with no `reason=` is
+not honored). Applied from `inv003_gate` via
+`_file_has_reasoned_doc_waiver` rather than inside `_inv003_doc_violations`
+itself -- see that helper's docstring for why (a COV005 false-positive
+this repo hit once already, from directive-target reuse across public
+and private symbols in the same file).
+
+Net effect measured on this repo (`frob check --only invariant`):
+INV003+INV004 combined, 765 -> 604 warnings (INV003 88 -> 31, INV004
+677 -> 573). The residual is tracked as a follow-up burndown ticket
+rather than hand-closed in one pass.
 
 ### INV004 (T-0452)
 
@@ -789,7 +882,17 @@ the "silence" a per-claim lint can't see, because there is no single
 explicit claim to anchor on.
 
 Always `Severity.WARN` -- advisory by design, a suggestion to formalize
-rather than a broken obligation; INV004 must never fail `frob check`.
+rather than a broken obligation; INV004 does not fail `frob check`.
+
+INV004 shares INV003's T-0509 noise-stripping and claim-shape scan
+(`find_normative_claims` calls the same `_claim_shaped_sentences`
+preprocessing as `find_exclusivity_claims`), but is NOT scoped to
+`INV003_SPEC_DIRS` -- it still runs over all of `docs/**.md`, since its
+job is the coarser "is anything tracked in this doc region at all"
+signal rather than INV003's per-claim check. A section-scoped markdown
+`frob:waive` marker (`<!-- frob:waive INV004 reason="..." -->`, applied
+via `_inv004_waived_headings`/`_inv004_message_heading` from `inv004_gate`)
+dispositions one under-specified section without a fake bound invariant.
 
 ## Policy rules (`frob.toml`, `[policy]`)
 

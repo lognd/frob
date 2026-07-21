@@ -981,6 +981,60 @@ class TestCoverageGate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV006" for v in violations)
 
+    def test_cov006_silent_when_test_reaches_via_same_file_public_wrapper(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0506: a test that only calls a PUBLIC wrapper in the same file
+        as the bound private target -- which itself calls that target --
+        must NOT fire COV006, even though `build_call_graph`'s shared
+        substrate has no direct edge for the wrapper's first hop."""
+        # frob:tests src/frob/gates/__init__.py::_cov006_public_wrapper_reachable
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def wrapper(x):\n    return _helper(x)\n\n\ndef _helper(x):\n    return x\n",
+        )
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "# frob:tests src/a.py::_helper\n"
+            "def test_wrapper_ok():\n"
+            "    assert wrapper(1) == 1\n",
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV006" for v in violations)
+
+    def test_cov006_still_fires_when_no_public_wrapper_reaches_the_target(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0506: the one-hop public-wrapper rescue is non-vacuous -- a
+        test that calls an UNRELATED public symbol in the same file (one
+        that never calls the bound private target) must still fire
+        COV006."""
+        # frob:tests src/frob/gates/__init__.py::_cov006_public_wrapper_reachable
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def unrelated(x):\n    return x\n\n\ndef _helper(x):\n    return x\n",
+        )
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "# frob:tests src/a.py::_helper\n"
+            "def test_unrelated_only():\n"
+            "    assert unrelated(1) == 1\n",
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert _first_rule(violations, "COV006") is not None
+
     def test_cov006_never_fires_for_a_public_target(self, tmp_path: Path) -> None:
         """`build_call_graph` never records an edge to a PUBLIC callee, so
         checking a public target would ALWAYS look "unreachable" -- COV006
@@ -1546,16 +1600,18 @@ class TestInvariantGate:
 class TestInv003Gate:
     # frob:tests src/frob/gates/__init__.py::inv003_gate
     def test_exclusivity_claim_without_marker_warns(self, tmp_path: Path) -> None:
+        # T-0509: INV003 is scoped to INV003_SPEC_DIRS (docs/modules,
+        # docs/strata), not all of docs/**.md -- fixture must live there.
         _write(
             tmp_path,
-            "docs/x.md",
+            "docs/modules/x.md",
             "# X\n\nThe only writer of this file is the daemon.\n",
         )
         violations = inv003_gate(tmp_path, ())
         assert len(violations) == 1
         assert violations[0].rule == "INV003"
         assert violations[0].severity == Severity.WARN
-        assert violations[0].file == "docs/x.md"
+        assert violations[0].file == "docs/modules/x.md"
 
     def test_exclusivity_claim_with_bound_known_invariant_is_silent(
         self, tmp_path: Path
@@ -1564,7 +1620,7 @@ class TestInv003Gate:
 
         _write(
             tmp_path,
-            "docs/x.md",
+            "docs/modules/x.md",
             "# X\n\n<!-- frob:invariant INV-001 -->\n"
             "The only writer of this file is the daemon.\n",
         )
@@ -1577,7 +1633,7 @@ class TestInv003Gate:
     def test_marker_naming_unknown_invariant_still_warns(self, tmp_path: Path) -> None:
         _write(
             tmp_path,
-            "docs/x.md",
+            "docs/modules/x.md",
             "# X\n\n<!-- frob:invariant INV-999 -->\n"
             "The only writer of this file is the daemon.\n",
         )
@@ -1585,12 +1641,70 @@ class TestInv003Gate:
         assert len(violations) == 1
 
     def test_no_exclusivity_language_is_silent(self, tmp_path: Path) -> None:
-        _write(tmp_path, "docs/x.md", "# X\n\nThe daemon writes this file.\n")
+        _write(tmp_path, "docs/modules/x.md", "# X\n\nThe daemon writes this file.\n")
         violations = inv003_gate(tmp_path, ())
         assert violations == ()
 
     def test_missing_docs_dir_is_silent(self, tmp_path: Path) -> None:
         assert inv003_gate(tmp_path, ()) == ()
+
+    def test_claim_without_verb_in_sentence_is_silent(self, tmp_path: Path) -> None:
+        """T-0509: a bare heading/fragment containing the trigger word but
+        no claim-verb in the same sentence is not a claim (e.g. a
+        '## Schema' style heading, or a dangling noun phrase)."""
+        _write(
+            tmp_path,
+            "docs/modules/x.md",
+            "# X\n\n## Only child nodes\n\nSee below.\n",
+        )
+        assert inv003_gate(tmp_path, ()) == ()
+
+    def test_claim_in_code_fence_is_silent(self, tmp_path: Path) -> None:
+        """T-0509: `_strip_markdown_noise` drops fenced code before
+        scanning -- a code sample using "only" in a comment is not prose."""
+        _write(
+            tmp_path,
+            "docs/modules/x.md",
+            "# X\n\n```python\n# only the daemon is allowed to write here\n```\n",
+        )
+        assert inv003_gate(tmp_path, ()) == ()
+
+    def test_outside_spec_dirs_is_silent(self, tmp_path: Path) -> None:
+        """T-0509: INV003 is scoped to `INV003_SPEC_DIRS`
+        (docs/modules, docs/strata) -- a claim in another docs/ subtree
+        (e.g. docs/design) is out of scope for this gate."""
+        _write(
+            tmp_path,
+            "docs/design/x.md",
+            "# X\n\nThe only writer of this file is the daemon.\n",
+        )
+        assert inv003_gate(tmp_path, ()) == ()
+
+    def test_markdown_waive_marker_with_reason_is_silent(self, tmp_path: Path) -> None:
+        """T-0509: a `<!-- frob:waive INV003 reason="..." -->` marker
+        dispositions a genuine-but-unprovable exclusivity claim without
+        requiring a fake bound invariant."""
+        _write(
+            tmp_path,
+            "docs/modules/x.md",
+            '# X\n\n<!-- frob:waive INV003 reason="design intent, not enforced" -->\n'
+            "The only writer of this file is the daemon.\n",
+        )
+        assert inv003_gate(tmp_path, ()) == ()
+
+    def test_markdown_waive_marker_without_reason_still_warns(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0509: a waiver marker with no `reason=` is not honored --
+        same honesty requirement as the code-side `frob:waive` WAIVE001."""
+        _write(
+            tmp_path,
+            "docs/modules/x.md",
+            "# X\n\n<!-- frob:waive INV003 -->\n"
+            "The only writer of this file is the daemon.\n",
+        )
+        violations = inv003_gate(tmp_path, ())
+        assert len(violations) == 1
 
 
 class TestInv004Gate:
@@ -1642,6 +1756,117 @@ class TestInv004Gate:
 
     def test_missing_docs_dir_is_silent(self, tmp_path: Path) -> None:
         assert inv004_gate(tmp_path) == ()
+
+    def test_markdown_waive_marker_with_reason_is_silent(self, tmp_path: Path) -> None:
+        """T-0509: a `<!-- frob:waive INV004 reason="..." -->` marker in
+        the section dispositions it without a fake bound invariant."""
+        _write(
+            tmp_path,
+            "docs/x.md",
+            '# X\n\n<!-- frob:waive INV004 reason="design note, not a gate" -->\n'
+            "The daemon must never write to this file directly.\n",
+        )
+        assert inv004_gate(tmp_path) == ()
+
+    def test_claim_without_verb_in_sentence_is_silent(self, tmp_path: Path) -> None:
+        """T-0509: a heading using trigger vocabulary with no claim-verb
+        in the same sentence is not a claim."""
+        _write(tmp_path, "docs/x.md", "# X\n\n## Always current\n\nSee below.\n")
+        assert inv004_gate(tmp_path) == ()
+
+
+class TestPlace001Gate:
+    """T-0504: PLACE001 replaces the dropped T-0470 "distance from the
+    class's own span start" prototype (proven noisy against this repo's
+    own per-field pydantic idiom) with a materially different signal --
+    a nearby real symbol the directive plausibly missed via `following`,
+    not raw distance. See `_place001_missed_symbol`'s docstring."""
+
+    # frob:tests src/frob/gates/__init__.py::coverage_gate
+    def test_missed_following_binding_fires(self, tmp_path: Path) -> None:
+        """A directive separated from its intended `def` by more blank
+        lines than `_find_following_symbol`'s window (3), with NOTHING
+        but blank lines in between, is a genuine placement miss."""
+        _write(
+            tmp_path,
+            "src/a.py",
+            "class Foo:\n"
+            "    # frob:ticket T-0001\n"
+            "\n"
+            "\n"
+            "\n"
+            "\n"
+            "    def bar(self):\n"
+            "        return 1\n",
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        v = _first_rule(violations, "PLACE001")
+        assert v is not None
+        assert v.severity == Severity.WARN
+        assert "Foo" in v.message
+        assert "bar" in v.message
+
+    def test_per_field_pydantic_idiom_is_silent(self, tmp_path: Path) -> None:
+        """T-0470's counterexample: a directive above one field deep in a
+        class, with more real field-assignment code (not blank lines)
+        before the next real method, must NOT fire -- this is exactly
+        the shape the dropped raw-distance prototype false-positived on
+        (`AppConfig`'s `frob:waive SCOPE001` 150+ lines past the class
+        line)."""
+        _write(
+            tmp_path,
+            "src/a.py",
+            "class AppConfig:\n"
+            "    name: str\n"
+            '    # frob:waive SCOPE001 reason="test"\n'
+            "    value: int = 0\n"
+            "    another: str = ''\n"
+            "    more: int = 1\n"
+            "    yet_more: bool = False\n"
+            "    def other(self):\n"
+            "        return self.value\n",
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert _first_rule(violations, "PLACE001") is None
+
+    def test_directive_directly_above_def_is_silent(self, tmp_path: Path) -> None:
+        """A directive that resolves via `following` in the ordinary way
+        (immediately above its `def`) never class-falls-back at all, so
+        PLACE001 has nothing to say about it."""
+        _write(
+            tmp_path,
+            "src/a.py",
+            "class Foo:\n    # frob:ticket T-0001\n    def bar(self):\n        return 1\n",
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert _first_rule(violations, "PLACE001") is None
+
+    def test_no_nearby_symbol_at_all_is_silent(self, tmp_path: Path) -> None:
+        """A class-fallback directive with no real symbol within the
+        lookahead window at all has nothing to flag as "missed"."""
+        _write(
+            tmp_path,
+            "src/a.py",
+            "class Foo:\n    # frob:ticket T-0001\n    x = 1\n",
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert _first_rule(violations, "PLACE001") is None
 
 
 class TestExcludeHazardGate:

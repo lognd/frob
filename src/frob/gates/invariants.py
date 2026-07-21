@@ -48,15 +48,72 @@ EXCLUSIVITY_CLAIM_PATTERNS: tuple[re.Pattern[str], ...] = (
 
 
 # frob:doc docs/modules/gates.md#invariants
+# frob:ticket T-0509
+# T-0509 calibration: the bare-vocabulary scan (T-0462) fired on ~765
+# warnings across docs/ -- mostly headings, table cells, code samples, and
+# link text carrying the trigger word with no actual claim attached (e.g.
+# a `## Schema` heading, or a `| only |` table cell). Two changes narrow
+# this to a genuinely reviewable pool without dropping real claims:
+# (1) `_strip_markdown_noise` removes fenced/inline code, link targets,
+# and table rows before scanning -- code and tabular data are not prose
+# assertions; (2) `_is_claim_shaped` requires a claim-verb
+# (`_CLAIM_VERB_RE`) in the SAME sentence as the trigger word -- a
+# subject-less fragment (a bare heading, a dangling noun phrase) cannot
+# assert anything, so it is not a claim regardless of vocabulary.
+_FENCED_CODE_RE = re.compile(r"```.*?```", re.DOTALL)
+_INLINE_CODE_RE = re.compile(r"`[^`\n]+`")
+_MD_LINK_RE = re.compile(r"\[([^\]]*)\]\([^)]*\)")
+_SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+|\n\s*\n")
+_CLAIM_VERB_RE = re.compile(
+    r"\b(?:is|are|was|were|must|never|always|can|could|cannot|can't|does|"
+    r"do|did|has|have|had|will|would|should|shall|supports?|returns?|"
+    r"produces?|writes?|reads?|calls?|creates?|deletes?|emits?|enforces?|"
+    r"guarantees?|requires?|allows?|permits?|checks?|raises?|throws?|"
+    r"fires?|holds?|stays?|remains?|runs?|treats?|resolves?|binds?)\b",
+    re.IGNORECASE,
+)
+
+
+def _strip_markdown_noise(text: str) -> str:
+    """Drop fenced/inline code, link targets, and table rows from `text`
+    before claim-shape scanning (T-0509) -- these carry trigger vocabulary
+    that is never a prose assertion (a code sample, a URL, a table cell)."""
+    text = _FENCED_CODE_RE.sub("", text)
+    text = _INLINE_CODE_RE.sub("", text)
+    text = _MD_LINK_RE.sub(r"\1", text)
+    lines = [ln for ln in text.splitlines() if not ln.lstrip().startswith("|")]
+    return "\n".join(lines)
+
+
+def _is_claim_shaped(sentence: str) -> bool:
+    """T-0509: a genuine normative/exclusivity claim needs a claim-verb
+    (`_CLAIM_VERB_RE`) in the SAME sentence as the trigger word -- a
+    heading, a bare noun phrase, or a table fragment has no verb and
+    asserts nothing, regardless of which trigger word it contains."""
+    return _CLAIM_VERB_RE.search(sentence) is not None
+
+
+def _claim_shaped_sentences(text: str) -> tuple[str, ...]:
+    """`text`, noise-stripped (`_strip_markdown_noise`) and split into
+    sentences, filtered to only the claim-shaped ones (`_is_claim_shaped`)
+    -- the shared preprocessing both `find_exclusivity_claims` and
+    `find_normative_claims` scan over."""
+    clean = _strip_markdown_noise(text)
+    return tuple(s for s in _SENTENCE_SPLIT_RE.split(clean) if _is_claim_shaped(s))
+
+
+# frob:doc docs/modules/gates.md#invariants
 # frob:ticket T-0462
 # frob:tests tests/test_gates.py::TestInv003Gate.test_exclusivity_claim_without_marker_warns kind="unit"  # noqa: E501
 def find_exclusivity_claims(text: str) -> tuple[str, ...]:
     """Every distinct exclusivity phrase (`EXCLUSIVITY_CLAIM_PATTERNS`)
-    matched anywhere in `text`, for INV003's normative-claim scan."""
+    matched in a claim-shaped sentence of `text` (T-0509: noise-stripped,
+    verb-bearing), for INV003's normative-claim scan."""
+    sentences = _claim_shaped_sentences(text)
     return tuple(
         pattern.pattern
         for pattern in EXCLUSIVITY_CLAIM_PATTERNS
-        if pattern.search(text) is not None
+        if any(pattern.search(s) is not None for s in sentences)
     )
 
 
@@ -88,11 +145,13 @@ NORMATIVE_CLAIM_PATTERNS: tuple[re.Pattern[str], ...] = (
 # frob:tests tests/test_gates.py::TestInv004Gate.test_section_with_normative_language_and_no_invariant_is_advisory kind="unit"  # noqa: E501
 def find_normative_claims(text: str) -> tuple[str, ...]:
     """Every distinct normative phrase (`NORMATIVE_CLAIM_PATTERNS`) matched
-    anywhere in `text`, for INV004's section-density scan."""
+    in a claim-shaped sentence of `text` (T-0509: noise-stripped,
+    verb-bearing), for INV004's section-density scan."""
+    sentences = _claim_shaped_sentences(text)
     return tuple(
         pattern.pattern
         for pattern in NORMATIVE_CLAIM_PATTERNS
-        if pattern.search(text) is not None
+        if any(pattern.search(s) is not None for s in sentences)
     )
 
 
