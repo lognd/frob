@@ -60,7 +60,6 @@ class ReconcileReport(BaseModel):
     removed_orphans: bool
 
 
-# frob:doc docs/modules/tickets.md#frob-ticket-reconcile-t-0476
 def _live_worktrees(root: Path) -> tuple[Path, ...]:
     """Every linked `git worktree` path for `root`'s repository, EXCLUDING
     the main checkout itself (`git worktree list --porcelain`'s first

@@ -106,7 +106,6 @@ CLI_WIRING_FILES = frozenset(
 )
 
 
-# frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets.py::TestScopeMatching.test_comma_joined_entry_splits
 def _split_scope_entries(raw: Sequence[str]) -> tuple[str, ...]:
     """Split each entry of `raw` on commas and strip whitespace.
@@ -127,7 +126,6 @@ def _split_scope_entries(raw: Sequence[str]) -> tuple[str, ...]:
     return tuple(entries)
 
 
-# frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets.py::TestScopeMatching.test_dir_prefix_globs_recursively
 # frob:tests tests/test_tickets.py::TestScopeMatching.test_bare_dir_entry_no_trailing_slash_globs_recursively  # noqa: E501
 def _scope_globs(scope: Sequence[str]) -> tuple[str, ...]:
@@ -198,7 +196,6 @@ def scope_matches(
 
 
 # frob:ticket T-0453
-# frob:doc docs/modules/tickets.md#public-api
 def _tokenize_glob(pattern: str) -> tuple[str, ...]:
     """Tokenize an fnmatch pattern into single-char literal tokens plus a
     `'*'` (any-length wildcard) token and a `'?'` (any-single-char) token
@@ -224,7 +221,6 @@ def _tokenize_glob(pattern: str) -> tuple[str, ...]:
 
 
 # frob:ticket T-0453
-# frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_lease.py::TestGlobsIntersect.test_wildcard_prefix_overlaps_literal  # noqa: E501
 # frob:tests tests/test_tickets_lease.py::TestGlobsIntersect.test_disjoint_literal_siblings  # noqa: E501
 def _globs_intersect(glob_a: str, glob_b: str) -> bool:

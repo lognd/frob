@@ -216,6 +216,10 @@ def _dir_glob(root: Path) -> list[Path]:
 
 
 # frob:doc docs/modules/tickets.md#storage-internals
+# frob:waive COV007 reason="docs/modules/tickets.md's Storage internals \
+# section individually frob:describes this private helper by name \
+# (T-0529) -- a deliberate architecture doc, not accidental drift onto \
+# a private helper"
 def _store_mode(root: Path) -> str:
     """Which backend a repo uses: 'single' if tickets.md exists, 'dir' if only
     the legacy tickets/*.md files exist, else 'single' (the default for a
@@ -239,6 +243,10 @@ def _frontmatter_yaml(ticket: Ticket) -> str:
 
 
 # frob:doc docs/modules/tickets.md#storage-internals
+# frob:waive COV007 reason="docs/modules/tickets.md's Storage internals \
+# section individually frob:describes this private helper by name \
+# (T-0529) -- a deliberate architecture doc, not accidental drift onto \
+# a private helper"
 def _serialize_ticket(ticket: Ticket) -> str:
     """Render a Ticket to legacy `---`-frontmatter + body (dir-mode file text)."""
     return f"---\n{_frontmatter_yaml(ticket)}---\n{ticket.body}"
@@ -263,6 +271,10 @@ def _validate(data: dict, body: str, where: str) -> Result[Ticket, TicketError]:
 
 
 # frob:doc docs/modules/tickets.md#storage-internals
+# frob:waive COV007 reason="docs/modules/tickets.md's Storage internals \
+# section individually frob:describes this private helper by name \
+# (T-0529) -- a deliberate architecture doc, not accidental drift onto \
+# a private helper"
 def _parse_ticket_file(path: Path) -> Result[Ticket, TicketError]:
     """Split a legacy ticket file into frontmatter + body and validate it."""
     text = path.read_text(encoding="utf-8")
@@ -328,7 +340,6 @@ def _parse_ledger(text: str) -> Result[dict[str, Ticket], TicketError]:
     return Ok(tickets)
 
 
-# frob:doc docs/modules/tickets.md#storage-internals
 def _render_section(ticket_id: str, ticket: Ticket) -> str:
     """One ledger section's text, LEADING blank-line included (`\\n<!--
     ticket:... -->...`) -- the single home for the marker+yaml+body layout,
@@ -356,7 +367,6 @@ def _render_ledger(tickets: dict[str, Ticket], header: str = _LEDGER_HEADER) -> 
 
 
 # frob:ticket T-0505
-# frob:doc docs/modules/tickets.md#storage-internals
 def _splice_ticket_section(text: str, ticket: Ticket) -> str:
     """Rewrite ONLY `ticket.id`'s own marker block within `text`, leaving
     every other byte of `text` untouched.

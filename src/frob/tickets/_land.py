@@ -61,7 +61,6 @@ def _has_done_report(body: str) -> bool:
     return has_substantive_done_report(body)
 
 
-# frob:doc docs/modules/tickets.md#frob-ticket-land
 def _newer(a: Ticket, b: Ticket) -> Ticket:
     """Which of two same-id ticket versions is "newer": further along the
     state machine wins; a state-rank tie prefers whichever carries a
