@@ -3277,7 +3277,13 @@ REL001: not required -- no public symbol's signature/behavior changed
 unchanged.
 
 ### Changed
-(no changed files detected)
+```
+ src/frob/tickets/__init__.py         | 21 +++++++++--
+ src/frob/tickets/_models.py          | 17 +++++++++
+ tests/test_tickets_scope_mutation.py | 58 ++++++++++++++++++++++++++++-
+ tickets.md                           | 72 ++++++++++++++++++++++++++++++++++--
+ 4 files changed, 161 insertions(+), 7 deletions(-)
+```
 
 ### Evidence
 - `tests/test_tickets_scope_mutation.py::TestMutateScope::test_add_subset_of_own_leased_overlap_is_accepted` (pytest node id, verified passing when recorded)
