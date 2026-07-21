@@ -3388,7 +3388,7 @@ this change: green except for this file's own intentional rewrite.
 id: T-0495
 title: 'frob.lang.TreeNode: carry tree-sitter field names so dup''s type-hole classification
   (T-0287) can cover rust/c/cpp'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-21'
