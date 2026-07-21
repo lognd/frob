@@ -74,7 +74,6 @@ def is_managed(node) -> bool:
 
 def _node_code_globs(node) -> tuple[str, ...]:
     """A node's declared `code=<glob>` attrs, in declaration order."""
-    # frob:doc docs/strata/surface.md#code-binding-tier-2-v0-implementation
     return tuple(
         attr[len(_CODE_PREFIX) :]
         for attr in node.attrs

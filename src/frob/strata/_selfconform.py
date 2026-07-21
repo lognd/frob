@@ -340,7 +340,6 @@ def _observed_all_kinds_by_node(
     }
 
 
-# frob:doc docs/strata/selfconform.md#fs-read-fs-write
 def _alias_legacy_fs_observations(observed: frozenset[str]) -> frozenset[str]:
     """T-0018 (graphite adoption) backward compatibility: a pre-existing
     `may "fs"` declaration predates the `fs-read`/`fs-write` split and meant
@@ -430,7 +429,6 @@ def _repo_files_excluding_skip_dirs(root: Path) -> list[str]:
     return sorted(all_files)
 
 
-# frob:doc docs/strata/selfconform.md#sys101-fully-excluded-nodes
 # frob:ticket T-0310
 def _fully_excluded_node_ids(model: KernelModel, root: Path) -> frozenset[str]:
     """Node ids whose ENTIRE `code=` glob set resolves to `[graph].exclude`'d

@@ -98,7 +98,6 @@ MULTI_INSTANCE_WAIVER_FAMILIES: frozenset[str] = frozenset(
 )
 
 
-# frob:doc docs/strata/waive.md#sub-targets
 def _split_waiver_rule(rule: str) -> tuple[str, str | None]:
     """Split a declared `waive` rule string into `(family, sub_target)` on
     the first `:` -- `"SYS100:fs-write"` -> `("SYS100", "fs-write")`,
@@ -111,7 +110,6 @@ def _split_waiver_rule(rule: str) -> tuple[str, str | None]:
     return family.strip(), (sub_target or None)
 
 
-# frob:doc docs/strata/waive.md#sub-targets
 def _validate_waiver_fields(rule: str, reason: str) -> Result[None, StrataError]:
     """Reject a `waive` clause's `(rule, reason)` pair at elaborate time,
     fails closed: `reason` empty/whitespace-only (a blank reason is a
@@ -187,7 +185,6 @@ class WaiverApplication(BaseModel, Generic[_F]):
     stale: tuple[WaiverMatch, ...] = ()
 
 
-# frob:doc docs/strata/waive.md#drift-lock-stale-waivers-fail
 # T-0523: the self-referential `frob:tests ...::_stale_detail` directive
 # once here (this symbol naming ITSELF as its own tested target, which
 # COV006 correctly flagged as an unreachable/nonsensical binding) is

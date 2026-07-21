@@ -1549,7 +1549,6 @@ def _discharge_violation(
 _FOREIGN_TRUST = "foreign"
 
 
-# frob:doc docs/strata/threat.md#phasing
 def _discharges_as_chokepoint(
     nodes_by_id: dict[str, Node], node_id: str, claim: Claim
 ) -> bool:
@@ -1616,7 +1615,6 @@ def _restricted_to_boundaries(
     return model.model_copy(update={"boundaries": kept, "claims": (claim,)})
 
 
-# frob:doc docs/strata/threat.md#phasing
 def _claim_holds(model: KernelModel, claim: Claim) -> bool:
     """Whether `claim` evaluates PROVED/EVIDENCED (`evaluate_claims`) over
     `model` -- the one place `_mitigation_is_chokepoint` calls into the

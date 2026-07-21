@@ -39,7 +39,6 @@ class ObserveDecl(BaseModel):
     to: str
 
 
-# frob:doc docs/strata/surface.md#stddeploy
 class _CanaryStageDecl(BaseModel):
     """A parsed `LEVEL for QUANTITY` canary stage (T-0136), one entry in
     `_DeployDecl.stages`.
@@ -56,7 +55,6 @@ class _CanaryStageDecl(BaseModel):
     bake: Quantity
 
 
-# frob:doc docs/strata/surface.md#stddeploy
 class _DeployDecl(BaseModel):
     """A parsed `on deploy { canary { ... }; endorsed_by ...; rollback within t }`
     node property (T-0136), mirroring `_models.py::DeployContract` field for field.
@@ -642,7 +640,6 @@ class PolicyDecl(BaseModel):
         }
 
 
-# frob:doc docs/strata/surface.md#std-secrets
 class _SecretDecl(BaseModel):
     """A parsed `secret ID { issued_by ...; audience { ... }; lifetime ...;
     revoke ... }` statement (T-0136), one entry in a `Module`.

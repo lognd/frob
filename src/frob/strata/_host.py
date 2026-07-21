@@ -188,7 +188,6 @@ class HostManifest(BaseModel):
         return value
 
 
-# frob:doc docs/strata/host.md#surface-grammar
 # frob:tests tests/unit/strata/test_host.py::TestHostAttrs.test_desugars kind="unit"
 def _host_attrs(
     *,

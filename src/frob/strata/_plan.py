@@ -99,7 +99,6 @@ def _scope_for_ids(model: KernelModel, ids: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(sorted(globs))
 
 
-# frob:doc docs/strata/surface.md#refinement-hierarchical-models
 def _frontier_unrefined(model: KernelModel) -> list[PlannedTicket]:
     """One parent+child ticket pair per `abstract` node with no `refine` block
     left in the flattened kernel model (surface.md's "Unrefined frontier")."""
@@ -167,7 +166,6 @@ def _unrefined_child_ticket(
     )
 
 
-# frob:doc docs/strata/surface.md#refinement-hierarchical-models
 def _frontier_refuted(model: KernelModel) -> Result[list[PlannedTicket], StrataError]:
     """One ticket per `Verdict.REFUTED` claim, scoped to the counterexample path."""
     evaluated = evaluate_claims(model)
@@ -196,7 +194,6 @@ def _frontier_refuted(model: KernelModel) -> Result[list[PlannedTicket], StrataE
     return Ok(out)
 
 
-# frob:doc docs/strata/surface.md#refinement-hierarchical-models
 def _frontier_threats(
     model: KernelModel, view: str
 ) -> Result[list[PlannedTicket], StrataError]:
@@ -227,7 +224,6 @@ def _frontier_threats(
     return Ok(out)
 
 
-# frob:doc docs/strata/surface.md#refinement-hierarchical-models
 def _frontier_unbound(
     design_ids: DesignIds, snapshot: GraphSnapshot
 ) -> list[PlannedTicket]:

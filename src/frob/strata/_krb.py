@@ -130,7 +130,6 @@ class KrbManifest(BaseModel):
     trusts: tuple[KrbTrust, ...] = ()
 
 
-# frob:doc docs/strata/krb.md#surface-grammar
 # frob:tests tests/unit/strata/test_krb.py::TestKrbAttrs.test_desugars kind="unit"
 def _krb_attrs(
     *,
