@@ -2544,7 +2544,7 @@ check/format and ty both clean.
 ```yaml
 id: T-0349
 title: 'structural PII/secrets: email-shape value detection, non-regex (family 4)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -2598,8 +2598,6 @@ acceptance: []
 threat: null
 ```
 T-0207 follow-on: detect email-shaped string literals via a structural parse (email.utils.parseaddr / WHATWG algorithm semantics), explicitly not regex per the ticket body, with the T-0157 fake-marker escape. Deferred from T-0207's scope.
-
-## Done report
 
 ## Done report
 
@@ -5097,3 +5095,24 @@ acceptance: []
 threat: null
 ```
 make coverage runs the whole suite under coverage on every change, so the stale-stamp gate (TEST006) forces a full re-run for a one-line edit. Explore: (a) daemon-side background coverage refresh on file-change, (b) per-file/touched-set incremental coverage merged into the stamp, (c) caching unchanged modules' coverage. Goal: TEST005/TEST006 feedback in seconds, not a full suite.
+
+<!-- ticket:T-draft-f63cc9eb -->
+```yaml
+id: T-draft-f63cc9eb
+title: frob ticket done-report leaves a stray empty '## Done report' heading before
+  the rendered one
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+```
+Observed twice while working T-0348/T-0349 in this worktree: each ticket's pre-existing empty '## Done report' placeholder heading (present in the queued-ticket template) is not reused/filled by 'frob ticket done-report' -- it appends a SECOND '## Done report' heading right after the empty one, and 'frob ticket close' then fails with MissingEvidence (reads the first, empty, heading) until the stray empty heading is manually deleted. Reproduce: frob ticket start T-XXXX; frob ticket evidence T-XXXX <node-id>; frob ticket done-report T-XXXX --why-file <file>; frob ticket close T-XXXX -- fails first time, succeeds after manually removing the leading blank '## Done report' line.
