@@ -3686,6 +3686,8 @@ labels: []
 ```
 T-0552 added TEST013 (WARN) to surface every frob:tests edge whose TEST001-004 credit rests solely on the ts/c/cpp structural name/path fallback (frob.gates._edge_is_native_unverified) instead of real execution -- but it deliberately does NOT withdraw that credit, since no real TS/C/C++ collector exists yet (src/frob/testing/ only has collect_python_tests and collect_rust_tests, T-0092) and withdrawing credit outright would turn every native-language public symbol's TEST001 ERROR-red in every sibling repo overnight, for a structural change alone. This ticket is the real fix: wire vitest (TS) and ctest (C/C++) runners (frob.testing._runners already has a RunnerSpec/RunnerOutcome shape collect_rust_tests followed for T-0092 -- mirror it), producing real node ids frob.gates._valid_edges can match the same way it already matches pytest/cargo. Once real collectors exist, retire the structural-fallback branch of frob.gates._edge_is_native_unverified (or gate it behind 'no collector configured for this language') and consider promoting TEST013 findings on a collector-covered language to ERROR.
 
+TEST-pool triage (T-draft-edbf1e26, 2026-07-22): re-measured `frob check --only test` -- TEST013 currently reports 0 findings in this repo (this project has no ts/c/cpp public symbols under structural-fallback credit today); the real collector work this ticket tracks remains outstanding for whichever sibling repo actually exercises that fallback, unaffected by this pass.
+
 <!-- ticket:T-0588 -->
 ```yaml
 id: T-0588
@@ -3709,6 +3711,8 @@ labels: []
 ```
 T-0547 added TEST014 (WARN) to surface every case where _inferred_unit_cases's naming-convention fallback ambiguously credits two DIFFERENT files' same-leaf-name public symbols off the same collected test id(s) (docs/audits/gates-accounting.md B6). It deliberately does NOT withdraw TEST001 credit: a compat survey against this repo (T-0547's Done report) found a blanket path/module-correlation requirement breaks ~100% of convention-fallback matches here (96/81 depending on heuristic), since tests/ does not mirror src/frob/<pkg>/ layout. But the survey ALSO found 5 real leaf-name collision groups in this repo TODAY sharing convention-matched tests (main, format, as_text, as_json, run) -- TEST014 will fire WARN for each until resolved. This ticket is to actually resolve those 5 (add explicit frob:tests edges to disambiguate, or accept the WARN permanently via frob:waive with a reason), and to decide/design a general per-symbol tightening path now that real examples exist to test any proposed rule against (e.g. requiring the matched test's own module path to appear as a substring of the target's qualname, or promoting TEST014 to ERROR once explicit edges are added to eliminate ambiguity repo-wide).
 
+TEST-pool triage (T-draft-edbf1e26, 2026-07-22) re-measured `frob check --only test` against current main+T-0583: 244 TEST014 warnings remain, all pairwise fan-out from only 4 (not 5 -- `main` no longer collides) distinct leaf-name groups: `run` (171 pairs, 20 app/*_runner.py `run(cfg)` entrypoints all convention-matched by the same frob-core test), `as_json`/`as_text` (36 pairs each), `format` (1 pair). None resolved this pass -- disambiguating 20 runner modules' TEST001 credit is exactly this ticket's own scope and outsized for a triage pass; left queued with this refreshed count so the next attempt does not need to re-derive it.
+
 <!-- ticket:T-0589 -->
 ```yaml
 id: T-0589
@@ -3731,6 +3735,8 @@ component: null
 labels: []
 ```
 T-0548 added TEST015 (WARN) reusing T-0549's existing _has_assertion_evidence heuristic to surface a public symbol whose ONLY TEST001 credit comes from a test with no assertion-shaped construct at all (docs/audits/gates-accounting.md B1's def-myfunc-pass repro). It deliberately does NOT change what TEST001 itself blocks on. This ticket is the actual cross-cutting fix the audit asked for: tie TEST001 credit to nonzero per-symbol branch coverage (frob.gates._coverage.CoverageData.symbol_branch, already computed for TEST005) or promote TEST005 to ERROR -- either requires touching TEST002/003/004/005/009's severities and interactions together, plus reconciling with the legacy-adoption WARN campaign frob.toml already documents (see its own comments), which is why it was split out rather than attempted inside T-0548. Concretely: decide whether TEST001 should require symbol_branch[record.symref] > 0 in addition to a name/edge match (requires wiring CoverageData into _test001_002, which today only sees tests: CollectedTests, not coverage), survey how many currently-green symbols would flip red (mirroring T-0547/T-0556's compat-survey precedent in this same audit pass), and land the sound subset.
+
+TEST-pool triage (T-draft-edbf1e26, 2026-07-22): re-measured `frob check --only test` -- TEST005 and TEST015 both currently report 0 findings against this tree (fixture-pinned to `main`+T-0583, no coverage stamp present so a stale/absent stamp masking a real regression cannot be ruled out; re-verify once T-0586's committed-lock wiring lands). No genuine findings to disposition in this pass for either bucket.
 
 <!-- ticket:T-0590 -->
 ```yaml
@@ -3760,7 +3766,7 @@ Discovered incidentally while closing T-0556 (unrelated ticket) in a worktree th
 ```yaml
 id: T-draft-edbf1e26
 title: 'TEST-family pool triage: bucket + calibrate + disposition the 335 warn findings'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-22'
@@ -3770,8 +3776,30 @@ parent: null
 scope:
 - src/frob/gates/**
 - tests/**
-scope_changes: []
-evidence: []
+- src/frob/registry/**
+- src/frob/graph/**
+- src/frob/lang/**
+scope_changes:
+- op: add
+  glob: src/frob/registry/**
+  reason: TEST014/TEST003 disposition touches per-symbol frob:tests/waivers in producing
+    modules, not only gates/tests
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: src/frob/graph/**
+  reason: TEST014/TEST003 disposition touches per-symbol frob:tests/waivers in producing
+    modules, not only gates/tests
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: src/frob/lang/**
+  reason: TEST014/TEST003 disposition touches per-symbol frob:tests/waivers in producing
+    modules, not only gates/tests
+  actor: logan
+  at: '2026-07-22'
+evidence:
+- tests/test_registry_models.py::TestParseDisposition::test_handled_by
 attachments: []
 acceptance: []
 threat: null
@@ -3779,3 +3807,52 @@ component: null
 labels: []
 ```
 Triage the TEST-family warning pool per mission: bucket by rule (TEST005/012/013/014/015), calibrate detectors where a noise class dominates, disposition genuine findings. Companion to T-0583 (memoize_per_run wrapper opacity fix).
+
+## Done report
+
+Bucketed `frob check --only test` (post T-0583 merge) by rule against this
+tree:
+
+- TEST005/TEST012/TEST013/TEST015: 0 findings today. Not calibration debt --
+  genuinely clean in this repo right now (TEST013's native-collector gap and
+  TEST015's assertion-evidence gap simply have no matching symbols here).
+  Extended T-0587's and T-0589's bodies with these counts so the next pass
+  doesn't have to re-derive them; left both queued since their actual
+  cross-cutting work (real vitest/ctest collectors, TEST001<->coverage
+  wiring) is unaffected by there being 0 current findings.
+- TEST014: 244 warnings, all pairwise fan-out from 4 distinct leaf-name
+  collision groups (`run` x171 across 20 app/*_runner.py entrypoints,
+  `as_json`/`as_text` x36 each, `format` x1) -- down from the 5 groups
+  T-0588's own body describes (`main` no longer collides). None fixed this
+  pass: disambiguating 20 runner modules' TEST001 credit is precisely
+  T-0588's own declared scope (src/frob/gates/__init__.py) and outsized for
+  a triage pass. Extended T-0588's body with the refreshed count/breakdown
+  instead of duplicating the ticket.
+- TEST003: 2 findings, both package-scoped interfaces with 0 integration
+  tests. src/frob/doctor.py already carried an honest waiver (pre-existing
+  T-0319 debt). src/frob/registry (genuinely no CLI/subprocess integration
+  entrypoint, only unit-tested via its consuming gates) now carries the
+  same honest waiver, disposed to 0 unwaived.
+- TEST006: 1 finding ("no coverage stamp found; run: make coverage") --
+  environmental noise in a fresh worktree per the agent playbook (6b: a
+  dispatched sub-agent must not run `make coverage`; the coordinator stamps
+  it at land). Not disposed here; expected to clear once the coordinator
+  stamps coverage against the merged tree.
+
+Net: gate:TEST is 0 errors both before and after this pass (244->245
+warnings reflects only the TEST003 waiver's bookkeeping, not a new
+finding). No detector calibration was needed -- no bucket showed dominant
+noise requiring a rule-shape fix; T-0583 (COV006, a companion gate) is
+where the actual detector fix in this mission landed.
+
+### Changed
+```
+ src/frob/graph/callgraph.py | 27 +++++++++++++++++-
+ tests/test_graph.py         | 25 ++++++++++++++++
+ tests/test_lang.py          |  2 --
+ tickets.md                  | 69 +++++++++++++++++++++++++++++++++++++++++++--
+ 4 files changed, 118 insertions(+), 5 deletions(-)
+```
+
+### Evidence
+- `tests/test_registry_models.py::TestParseDisposition::test_handled_by` (pytest node id, verified passing when recorded)
