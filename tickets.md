@@ -2973,7 +2973,7 @@ Root cause of the arch double-run (T-0418): _arch_violations_from_suggestions wa
 id: T-0424
 title: 'REFLEXIVE completeness: frob''s own check-coverage is an exhaustible registry
   + continuous self-audit (so the AUDITOR is not the user)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'

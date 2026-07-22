@@ -496,6 +496,9 @@ def _rel_registry_path(path: Path, repo_root: Path) -> str:
 # frob:tests tests/test_registry_exhaustiveness.py::TestDisposition.test_fully_dispositioned_fixture_passes  # noqa: E501
 # frob:tests tests/test_registry_exhaustiveness.py::TestMalformedEntry.test_malformed_entry_fails  # noqa: E501
 # frob:tests tests/test_registry_exhaustiveness.py::TestDuplicateId.test_duplicate_id_across_files_fails  # noqa: E501
+# T-0424: check-coverage.yaml added to REGISTRY_FILES below.
+# frob:tests tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile.test_is_in_registry_files  # noqa: E501
+# frob:tests tests/test_check_coverage_registry.py::TestExhaustivenessGateOverRealCheckCoverage.test_no_check_coverage_violations  # noqa: E501
 def registry_gate(
     repo_root: Path,
     queue: TicketQueue,
