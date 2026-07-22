@@ -2004,6 +2004,21 @@ _SELF_PATTERN_SUFFIXES: tuple[tuple[str, ...], ...] = (
     ("frob", "vet", "_capability.py"),
     ("frob", "vet", "_capability_registry.py"),
     ("frob", "strata", "_cve_fingerprint.py"),
+    # T-0729: `frob.arch._srp`'s ARCH103 mixed-concern check stores its
+    # I/O-classifier signals (`_IO_MODULE_PREFIXES`: `socket.`,
+    # `subprocess.`, `requests.`, `urllib.`, ...) as literal string data too
+    # -- the exact same self-match class as the two `_capability_registry`/
+    # `_cve_fingerprint` entries above: the scanner (by design, for evasion
+    # detection) keys on string-literal CONTENT, so a classifier table that
+    # merely *names* `socket.`/`subprocess.`/etc. as data reads as live
+    # net/exec/fetch_url capability USAGE on the `graphlang` node, which is
+    # dishonest -- `_srp.py` does no such I/O itself (module docstring: it
+    # only imports `frob.arch._models`/`frob.arch._normalized`). Declaring
+    # `may net`/`may exec` on `graphlang` to silence this would be an
+    # equally dishonest fix in the other direction, so this file is excluded
+    # from self-conformance's capability scan the same way, not given a
+    # capability it does not have.
+    ("frob", "arch", "_srp.py"),
 )
 
 #: `[project]`-table `name = "frob"` line, tomllib-free (matches this
