@@ -3706,6 +3706,8 @@ labels: []
 ```
 docs/audits/lang-check-docs.md finding 1. run_check_cpp/run_check_rust/run_check_ts never call _run_gates -- only _python_tasks does. A pure Rust/C++/TS repo runs its native toolchain only; COV001/DOC001/DOC002/DOC003/DRIFT001/DRIFT002/INV/DEC/TODO001 never execute despite the polyglot doc-binding promise (lang/__init__.py module docstring). Repro: a repo with only package.json, add a public exported symbol and a lying/broken frob:doc -> frob check green. RIGHT-WAY fix: run the gates stage in every pipeline (build the graph once, run run_gates regardless of detected language), or at minimum emit a loud gates-NOT-run-for-<lang> stage line. Large, cross-cutting dispatch change -- too large for the T-0404 sweep budget.
 
+## Failure log
+- 2026-07-21 attempt 1: blocked: fix requires changing run_check_cpp/rust/ts's skip_gates default to False (else the gap stays real), which breaks 3 pre-existing tests/unit/test_check.py assertions (TestRunCheckCpp/Rust/Ts::test_all_stages_skipped_returns_empty_result) that this ticket cannot edit -- tests/** is under an in-progress scope-lease held by T-0160 (see also T-draft-0ea414ea)
 <!-- ticket:T-0555 -->
 ```yaml
 id: T-0555
