@@ -4046,3 +4046,31 @@ component: null
 labels: []
 ```
 frob-exports currently reports (measured 2026-07-22): src/frob/strata 5 public symbols missing from __init__.py, src/frob/tickets 17 (22 total, tickets is the largest single-package residue in this family). For each symbol, decide per-symbol: export it from the package's __init__.py, or demote it to private (leading underscore) if it should not be public API. No blanket waiver -- each symbol gets an explicit decision. Acceptance: frob-exports(src/frob/strata), frob-exports(src/frob/tickets) summary lines report 0 unresolved findings (exported, demoted, or waived-with-reason), no threshold loosened without a disclosed decision.
+
+<!-- ticket:T-0602 -->
+```yaml
+id: T-0602
+title: 'serve: per-obligation dependency-tracked partial re-evaluation inside gate
+  dispatch'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0177
+scope:
+- src/frob/gates/**
+- src/frob/serve/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a warm daemon and a one-file edit WHEN frob_check_delta runs THEN only obligations
+  whose inputs include that file are re-evaluated AND verify mode shows zero fingerprint
+  mismatch vs a cold run
+threat: null
+component: null
+labels: []
+```
+Deferred remainder of T-0177 deliverable 2. The warm daemon caches graph snapshot, baseline, and collected test ids, and frob_check_delta filters full-run results against the stamped baseline -- but run_gates itself still evaluates EVERY gate in full on each call. Build per-obligation input tracking inside gate dispatch so a delta call evaluates only obligations whose inputs changed, with the verify=True cold-diff mode as the correctness oracle (incremental results must provably match a cold frob check). NOTE: T-0177's Done report references this as T-draft-7e43ec96; the draft block did not survive  (same draft-loss failure as T-0401's draft -- T-0577 tracks the land-time fix), so this ticket is its real replacement.
