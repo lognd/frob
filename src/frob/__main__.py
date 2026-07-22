@@ -645,6 +645,47 @@ def _add_debt_parser(sub) -> None:
     debt_p.add_argument("--json", dest="debt_json", action="store_true")
 
 
+# frob:ticket T-0569
+def _add_pool_parser(sub) -> None:
+    """Register the `frob pool snapshot|clear` subcommand: ratchet-pool
+    baseline management over `frob.gates._ratchet` (T-0569)."""
+    pool_p = sub.add_parser(
+        "pool",
+        help="ratchet-pool baseline management (T-0569): warn-rule "
+        "findings frozen as a tracked baseline, new findings error",
+    )
+    pool_sub = pool_p.add_subparsers(dest="pool_command")
+
+    pool_snapshot_p = pool_sub.add_parser(
+        "snapshot",
+        help="baseline every given --key as warn for RULE; anything else "
+        "of that rule reports at error severity",
+    )
+    pool_snapshot_p.add_argument("pool_rule", metavar="RULE")
+    pool_snapshot_p.add_argument(
+        "--key",
+        dest="pool_keys",
+        action="append",
+        default=[],
+        metavar="KEY",
+        help="a finding's stable location key (e.g. path:line), repeatable",
+    )
+    pool_snapshot_p.add_argument("--path", dest="pool_path", metavar="DIR", default=".")
+
+    pool_clear_p = pool_sub.add_parser(
+        "clear",
+        help="remove one baselined --key from RULE's pool -- always "
+        "requires --reason (the disposition every ratcheted finding "
+        "eventually needs)",
+    )
+    pool_clear_p.add_argument("pool_rule", metavar="RULE")
+    pool_clear_p.add_argument("--key", dest="pool_key", required=True, metavar="KEY")
+    pool_clear_p.add_argument(
+        "--reason", dest="pool_reason", required=True, metavar="TEXT"
+    )
+    pool_clear_p.add_argument("--path", dest="pool_path", metavar="DIR", default=".")
+
+
 # frob:ticket T-0407
 # frob:ticket T-0429
 def _add_registry_parser(sub) -> None:
@@ -1799,6 +1840,7 @@ def _add_workflow_subparsers(sub) -> None:
     _add_graph_parser(sub)
     _add_ack_parser(sub)
     _add_debt_parser(sub)
+    _add_pool_parser(sub)
     _add_registry_parser(sub)
     _add_ticket_parser(sub)
     _add_test_parser(sub)
