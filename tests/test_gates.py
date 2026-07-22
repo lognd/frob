@@ -3446,6 +3446,68 @@ class TestTestGate:
             v.rule == "TEST005" and v.file == record.id.path for v in violations
         )
 
+    # frob:ticket T-0557
+    def test_test005_unmeasured_symbol_in_measured_file_flags_as_zero(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0557 (B4): a symbol with NO entry in `symbol_branch` -- never
+        executed at all -- must still be flagged at 0% branch coverage when
+        its FILE genuinely was measured (has a `module_line` entry).
+        Previously `_test005_symbols` skipped any symbol absent from
+        `symbol_branch`, silently clearing dead code that a test suite never
+        calls into even once."""
+        from typani.option import Some
+
+        from frob.gates import CoverageData
+
+        _write(tmp_path, "src/frob/pkg/a.py", "def dead(x):\n    return x\n")
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/frob/pkg/a.py::dead"]
+        coverage = CoverageData(
+            source_sha="x",
+            symbol_branch={},
+            module_line={"src/frob/pkg/a.py": 90.0},
+        )
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(
+            snap, (), Some(coverage), tests, TestPolicy(unit_branch_cov=90)
+        )
+        v = next(
+            (
+                v
+                for v in violations
+                if v.rule == "TEST005" and v.symref == record.symref
+            ),
+            None,
+        )
+        assert v is not None
+        assert "0.0%" in v.message
+
+    # frob:ticket T-0557
+    def test_test005_symbol_in_unmeasured_file_still_skipped(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0557 (B4) counterpart: a symbol whose FILE never appears in
+        coverage.xml at all (no `module_line` entry -- excluded from
+        measurement, e.g. never imported by the suite) must still be
+        skipped, not flagged at 0% -- that is a measurement gap, not proof
+        the symbol itself fails the floor."""
+        from typani.option import Some
+
+        from frob.gates import CoverageData
+
+        _write(tmp_path, "src/frob/pkg/a.py", "def unmeasured(x):\n    return x\n")
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/frob/pkg/a.py::unmeasured"]
+        coverage = CoverageData(source_sha="x", symbol_branch={}, module_line={})
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(
+            snap, (), Some(coverage), tests, TestPolicy(unit_branch_cov=90)
+        )
+        assert not any(
+            v.rule == "TEST005" and v.symref == record.symref for v in violations
+        )
+
     def test_test005_module_line_floor(self, tmp_path: Path) -> None:
         from typani.option import Some
 

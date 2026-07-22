@@ -3655,7 +3655,7 @@ docs/audits/gates-accounting.md B2/E2. lock.py _DEFAULT_FACET='sig'; a frob:doc/
 ```yaml
 id: T-0557
 title: 'gates: TEST005 silently skips symbols absent from coverage.xml (B4)'
-state: queued
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-21'
@@ -3665,7 +3665,9 @@ parent: T-0403
 scope:
 - src/frob/gates/
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_gates.py::TestTestGate::test_test005_unmeasured_symbol_in_measured_file_flags_as_zero
+- tests/test_gates.py::TestTestGate::test_test005_symbol_in_unmeasured_file_still_skipped
 attachments: []
 acceptance: []
 threat: null
@@ -3674,6 +3676,44 @@ labels: []
 ```
 docs/audits/gates-accounting.md B4. _test005_symbols: pct = data.symbol_branch.get(record.symref); skipped (not flagged) when pct is None, i.e. when the symbol was never executed at all -- coverage.xml has no row for it. Combined with B1, completely dead public code clears both TEST001 (name match) and TEST005 (no data). RIGHT-WAY fix: a public symbol with NO coverage record at all should be treated as 0% (flag), not skipped -- distinguish 'never executed' from 'excluded from measurement'.
 
+## Done report
+
+## Done report
+
+Changed:
+- src/frob/gates/__init__.py::_test005_symbols
+
+Distinguishes "symbol never executed" (its file DOES appear in
+`data.module_line`, i.e. coverage.xml measured it, but the symbol itself
+has no `symbol_branch` entry) from "symbol's file excluded from
+measurement entirely" (no `module_line` entry at all -- not imported by
+the suite, a generated file, or otherwise out of scope). The former is now
+treated as 0% branch coverage and flagged; the latter is still skipped
+(a measurement gap belongs to TEST006/module_join_fraction, not a per-
+symbol floor claim). Before this fix, both cases silently skipped, which
+combined with B1 (TEST001 name-match) let completely dead public code
+clear coverage gates entirely.
+
+Evidence:
+- tests/test_gates.py::TestTestGate::test_test005_unmeasured_symbol_in_measured_file_flags_as_zero
+- tests/test_gates.py::TestTestGate::test_test005_symbol_in_unmeasured_file_still_skipped
+
+Filed: none
+
+Gates: uv run frob check --ticket T-0557 clean (0 errors, 136 warnings, 177
+waived); uv run pytest tests/test_gates.py -q: full file passed (all tests)
+
+### Changed
+```
+ src/frob/gates/__init__.py | 64 +++++++++++++++++++++++-------
+ tests/test_gates.py        | 97 ++++++++++++++++++++++++++++++++++++++++++++++
+ tickets.md                 | 80 ++++++++++++++++++++++++++++++++++++--
+ 3 files changed, 224 insertions(+), 17 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestTestGate::test_test005_unmeasured_symbol_in_measured_file_flags_as_zero` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTestGate::test_test005_symbol_in_unmeasured_file_still_skipped` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0560 -->
 ```yaml
 id: T-0560

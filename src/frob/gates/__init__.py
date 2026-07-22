@@ -4640,6 +4640,9 @@ def _test004(
     return tuple(violations)
 
 
+# frob:ticket T-0557
+# frob:tests tests/test_gates.py::TestTestGate.test_test005_unmeasured_symbol_in_measured_file_flags_as_zero  # noqa: E501
+# frob:tests tests/test_gates.py::TestTestGate.test_test005_symbol_in_unmeasured_file_still_skipped  # noqa: E501
 def _test005_symbols(
     snapshot: GraphSnapshot, data: CoverageData, cfg: TestPolicy
 ) -> list[Violation]:
@@ -4648,7 +4651,22 @@ def _test005_symbols(
     Skips test-file symbols exactly like TEST001/TEST002 do (T-0301): a
     test-file helper/fixture is not a public interface TEST005's floor is
     meant to police, and measuring it forced env-gated test fixtures into
-    noise waivers just to stay green (lithos FROBLEMS 2026-07-19)."""
+    noise waivers just to stay green (lithos FROBLEMS 2026-07-19).
+
+    T-0557 (B4): `data.symbol_branch` has no entry at all for a symbol that
+    was NEVER EXECUTED (no line of it ever ran, so coverage.py recorded
+    nothing to average) -- previously treated the same as a symbol whose
+    whole FILE was never measured (excluded from `--cov`, a generated
+    source, or simply not imported by the suite) and silently skipped both.
+    Those are different failure modes: a symbol in a file coverage.xml DOES
+    have data for (`record.id.path in data.module_line`) but with no entry
+    of its own is real, unexecuted dead code and must be treated as 0%
+    branch coverage, not waved through. A symbol whose file has no coverage
+    data at all is still skipped here -- that is a measurement gap
+    (TEST006/module_join_fraction's territory), not proof the symbol itself
+    is uncovered, and flagging it would conflate "never measured" with
+    "measured and failing."
+    """
     violations: list[Violation] = []
     for record in snapshot.symbols.values():
         if (
@@ -4658,6 +4676,8 @@ def _test005_symbols(
         ):
             continue
         pct = data.symbol_branch.get(record.symref)
+        if pct is None and record.id.path in data.module_line:
+            pct = 0.0
         if pct is not None and pct < cfg.unit_branch_cov:
             violations.append(_test005_symbol_violation(record, pct, cfg))
     return violations
