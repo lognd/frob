@@ -77,6 +77,89 @@ docs/strata/surface.md#key-construct-semantics) -- `strata-core/src/
 parse.rs`'s `parse_node`/`parse_store` implement them with matching
 shapes and matching doc comments.
 
+## Windows surface grammar
+
+<!-- frob:ticket T-0261 -->
+
+T-0261 gives `std.host` a second platform, without growing `KernelModel`/
+`Node` or splitting into two parallel models -- the same "ONE HostManifest,
+platform-tagged" contract #surface-grammar above already reserved:
+
+```
+node api : trusted {
+    clearance Internal;
+    platform "windows";
+    service_account "svc-api" gmsa;
+    service;
+    acl "C:\ProgramData\api" "BUILTIN\Administrators:FullControl";
+    acl "C:\ProgramData\api\secrets" "svc-api:Modify:deny:no_inherit";
+    pipe "\\.\pipe\api-control";
+    listens 8443;
+}
+```
+
+- `platform "windows"` -- the std.host platform discriminator. STRING, at
+  most one per node; a repeated clause overwrites, mirroring `clearance`.
+  Omitted means `HostPlatform.LINUX_SYSTEMD` (the pre-T-0261 default,
+  backward compatible with every existing manifest); any value other than
+  `"windows"` fails closed at `host_manifest_for` time with a plain
+  `ValueError` (T-0261, the same defer-to-elaborator well-formedness
+  discipline `owns` MODE/`listens` PORT already use).
+- `service_account "NAME" [gmsa]` -- the Windows analog of `runs_as`:
+  names a dedicated low-privilege local service account, or -- with the
+  trailing bare `gmsa` marker -- a group Managed Service Account for
+  domain-joined hosts. STRING, same "opaque atom" reasoning as `runs_as`.
+  At most one per node; a repeated clause overwrites. The deploy
+  generator (T-0257's windows follow-up, not built here) is expected to
+  derive the hardening posture T-0254's spec calls for from this and the
+  rest of the model -- no interactive-logon right, deny-network-logon
+  where possible, `SeDenyBatchLogonRight` -- the same way `unit`'s
+  hardening directives are derived, not declared.
+- `service` -- a bare marker (mirrors `unit`'s shape): this node's
+  process is modeled as a Windows Service Control Manager (SCM) service.
+  Hardening equivalents (service SID type restricted, a required-
+  privileges allowlist derived from `may` capabilities, protected-process
+  where applicable) are DERIVED by the generator from the rest of the
+  model, not declared here -- this marker only records that the binding
+  applies, the same scope cut `unit` made for systemd.
+- `acl "PATH" "RULE"` -- the Windows analog of `owns`: an NTFS path this
+  node's service account has an explicit DACL entry for. Richer than a
+  3-octal POSIX mode by design -- RULE is a `PRINCIPAL:RIGHTS[:deny]
+  [:no_inherit]` atom (#hostacl-rule-validation below) expressing a
+  specific principal's rights grant, an optional deny ACE (vs. the
+  default allow), and an optional deny-inheritance marker. Both STRING
+  (PATH commonly carries `:` for a drive letter and `\` path separators;
+  RULE is an opaque atom validated by the elaborator, not the grammar).
+  Repeatable: a node may declare more than one ACL entry.
+- `pipe "NAME"` -- a named pipe this node's service listens on. STRING,
+  since a pipe name commonly carries `\` (e.g. `\\.\pipe\api-control`).
+  Repeatable. Additive to, not a replacement for, the already-platform-
+  agnostic `listens` PORT surface above -- a Windows firewall port rule is
+  the same "a bound socket, and the firewall opening for it" concept a
+  linux `listens` clause already covers, so T-0261 reuses `listens`
+  unchanged rather than adding a second, duplicate port grammar (charter
+  law 5: no duplication).
+
+`store` accepts the identical five Windows clauses, same "a store is a
+node too" precedent #surface-grammar above already established.
+
+### HostAcl RULE validation
+
+`HostAcl.rule` is validated (a pydantic `field_validator`, mirroring
+`HostOwns._validate_mode`'s fail-closed discipline) to be a well-formed
+`PRINCIPAL:RIGHTS[:deny][:no_inherit]` atom: PRINCIPAL and RIGHTS may not
+be empty, and any trailing flag after RIGHTS must be exactly `deny` or
+`no_inherit` -- `"Everyone:FullControl"`, `"svc-api:Modify:deny"`, and
+`"svc-api:Modify:deny:no_inherit"` all pass; `"Everyone:"` (empty RIGHTS),
+`"FullControl"` (no `:` at all), and `"Everyone:FullControl:bogus"` (an
+unrecognized flag) are all rejected. The attr encoding itself uses `|`,
+not `:`, to separate PATH from RULE (`acl=<path>|<rule>`) -- unlike a
+POSIX `owns` path, a Windows PATH routinely contains `:` itself (a drive
+letter), and RULE contains `:` internally too, so a naive first-colon
+partition would silently split the drive letter off PATH instead of PATH
+from RULE; `|` is not a legal Windows path character, so it cannot
+collide with PATH.
+
 ## Elaboration: attr desugar, not a new kernel primitive
 
 Charter law 1 (a vocabulary is a pure function surface -> kernel facts)
@@ -96,6 +179,11 @@ two callers:
 | `listens N` | `listens=N` (one per entry) |
 | `group "G"` | `group=G` (one per entry, T-0272) |
 | `sudoers "R"` | `sudoers=R` (one per entry, T-0272) |
+| `platform "P"` | `platform=P` (T-0261) |
+| `service_account "N" [gmsa]` | `service_account=N` (+ `service_account_gmsa` bare marker, T-0261) |
+| `service` | `service` (T-0261) |
+| `acl "P" "R"` | `acl=P\|R` (one per entry, T-0261 -- `\|`, not `:`, separates PATH from RULE; #hostacl-rule-validation above) |
+| `pipe "N"` | `pipe=N` (one per entry, T-0261) |
 
 ## HostManifest
 
@@ -105,14 +193,26 @@ attrs (of either origin, node- or store-derived) back into one typed
 
 ```python
 class HostManifest(BaseModel):
-    platform: HostPlatform     # discriminator; only LINUX_SYSTEMD today
+    platform: HostPlatform     # discriminator; LINUX_SYSTEMD or WINDOWS (T-0261)
     runs_as: str | None
     is_unit: bool
     owns: tuple[HostOwns, ...]  # HostOwns(path, mode)
     listens: tuple[int, ...]
     group: tuple[str, ...]      # T-0272
     sudoers: tuple[str, ...]    # T-0272
+    service_account: str | None       # T-0261, windows analog of runs_as
+    service_account_gmsa: bool        # T-0261
+    is_service: bool                  # T-0261, windows analog of is_unit
+    acl: tuple[HostAcl, ...]          # T-0261, HostAcl(path, rule); windows analog of owns
+    pipes: tuple[str, ...]            # T-0261
 ```
+
+Every field is read back regardless of which platform the node declared
+-- `platform` is informational for a downstream consumer to branch on,
+not a parser-level exclusivity fence (a windows node with `owns`/
+`listens` populated, or a linux node with `acl`/`pipe` populated, both
+still produce a manifest). This mirrors how `group`/`sudoers` were
+already read regardless of any platform gating before T-0261 existed.
 
 ### MODE/PORT validation (T-0270, deferred from T-0255)
 
@@ -145,14 +245,23 @@ Returns `None` when the node declares no std.host construct at all --
 distinguishing "no OS-layer facts" from "an OS-layer declared with
 nothing set" (an empty-but-present manifest would be a different claim).
 
-`platform` is a discriminator reserved for T-0261 (windows): only
-`HostPlatform.LINUX_SYSTEMD` is produced by this ticket's grammar and
-elaborator, but T-0256 (isolation proofs), T-0257 (generator), T-0258
-(conformance checker), and T-0259 (VM auditor) must all already branch
-on it -- adding a second platform value later is additive, not a
-rewrite of every consumer. This is the "one manifest, no duplication"
-requirement from T-0254's spec: four downstream tickets read one parse
-of the attr convention, not four independent re-parsings.
+`platform` is the discriminator T-0261 fills in: `HostPlatform.WINDOWS` is
+produced when a node/store declares an explicit `platform "windows"`
+clause, `HostPlatform.LINUX_SYSTEMD` remains the default when no
+`platform` clause is present at all (backward compatible with every
+pre-T-0261 manifest). An explicit `platform` value other than `"windows"`
+fails closed with a `ValueError` at `host_manifest_for` time. T-0256
+(isolation proofs), T-0257 (generator), T-0258 (conformance checker), and
+T-0259 (VM auditor) each still branch on `platform` per their own scope --
+T-0261 ships the manifest + model only (same manifest-only scope T-0255
+shipped for linux), NOT a windows-side movement-impossibility proof, deploy
+generator, conformance checker, or VM auditor; wiring `HOST001`/`HOST002`
+(and their `_scenarios.py` compromised-user builder) to also branch over
+`HostAcl`/`service_account`/pipes is deliberately deferred to a follow-up
+ticket, the same staged sequencing T-0256/T-0257/T-0258/T-0259 already
+followed for linux. This is the "one manifest, no duplication" requirement
+from T-0254's spec: every downstream ticket reads one parse of the attr
+convention, not an independent re-parsing per platform.
 
 ## OS users and the trust lattice
 
@@ -345,12 +454,27 @@ as DEPLOY001.
 - No live-host conformance checker (declared manifest vs. what a
   RUNNING host actually has, as opposed to the committed scripts) -- 
   T-0259's VM auditor.
-- No second `HostPlatform` member (windows) -- T-0261; the discriminator
-  is designed for it, but only linux/systemd is implemented here
-  (T-0257's generator is the same linux/systemd-only scope).
 - No OS-group / sudoers grammar gap remains -- T-0272 closed
   T-draft-7b5b5541 (filed by T-0256); see #shared-group-and-sudoers-sub-
   targets-t-0272 above.
+- T-0261 ships `HostPlatform.WINDOWS` + the five Windows clauses
+  (#windows-surface-grammar above): manifest + model only, mirroring
+  T-0255's own manifest-only scope for linux. NOT built here (deliberately
+  deferred to follow-up tickets, same staged sequencing T-0256/T-0257/
+  T-0258/T-0259 followed for linux): a windows-side deploy generator (no
+  `frob deploy generate` output for SCM services/gMSA provisioning/ACL
+  application), a windows-side conformance checker, a windows VM auditor,
+  and -- most notably -- `HOST001`/`HOST002`/`_scenarios.py::
+  build_compromised_user_scenario` do not yet branch on `service_account`/
+  `acl`/`pipes` at all; today's movement-impossibility proofs only ever
+  intersect `runs_as`/`owns`/`listens`/`group`/`sudoers`, so a windows-only
+  node declaring solely `service_account`/`acl`/`pipe` (no `runs_as`/
+  `owns`/`listens`/`group`/`sudoers`) currently produces NO HOST001/HOST002
+  findings at all, not because it is proven isolated but because nothing
+  reads its windows-shaped facts yet. The manifest is shaped so that
+  follow-up is additive (T-0261's whole point, mirroring `platform`'s
+  already-established "every consumer already branches on it" contract) --
+  see the newly-filed follow-up ticket in the Done report.
 
 ## See also
 
@@ -361,14 +485,15 @@ as DEPLOY001.
 - `docs/strata/surface.md#key-construct-semantics` -- "a store is a node
   too", the precedent every store-side clause here follows.
 - `src/frob/strata/_host.py` -- `host_attrs`, `host_manifest_for`,
-  `HostManifest`, `HostOwns`, `HostPlatform`.
+  `HostManifest`, `HostOwns`, `HostAcl` (T-0261), `HostPlatform`.
 - `src/frob/strata/_host_isolation.py` -- HOST001/HOST002,
   `HostIsolationViolation`, `evaluate_host_isolation_waived`,
-  `COMPROMISED_OWNER_CATALOG`.
+  `COMPROMISED_OWNER_CATALOG`. NOT YET windows-aware (#scope-boundary-
+  what-is-not-built-here above).
 - `src/frob/strata/_scenarios.py::build_compromised_user_scenario` --
   the compromised-owner red-team scenario builder.
 - `tests/unit/strata/test_litmus_host.py` -- parse -> elaborate ->
   `host_manifest_for` round trip over the declared/undeclared litmus
-  pair.
+  pair (linux/systemd) and the windows-declared litmus fixture (T-0261).
 - `tests/unit/strata/test_litmus_host_isolation.py` -- the shared-user
   VULN / isolated HARDENED litmus pair for HOST001/HOST002.

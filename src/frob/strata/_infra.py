@@ -215,7 +215,8 @@ def _store_carries_code_attrs(decl: StoreDecl) -> list[str]:
 def _store_host_attrs(decl: StoreDecl) -> tuple[str, ...]:
     """T-0255 std.host attrs for a `store` -- same shared `_host.py::
     _host_attrs` encoding `_elaborate.py::_elaborate_node` uses for `node`.
-    `group`/`sudoers` (T-0272) pass through the same way."""
+    `group`/`sudoers` (T-0272) and `platform`/`service_account`/`service`/
+    `acl`/`pipes` (T-0261) pass through the same way."""
     host = _host_attrs(
         runs_as=decl.runs_as,
         is_unit=decl.is_unit,
@@ -223,6 +224,12 @@ def _store_host_attrs(decl: StoreDecl) -> tuple[str, ...]:
         listens=decl.listens,
         group=decl.group,
         sudoers=decl.sudoers,
+        platform=decl.platform,
+        service_account=decl.service_account,
+        service_account_gmsa=decl.service_account_gmsa,
+        is_service=decl.is_service,
+        acl=tuple((a.path, a.rule) for a in decl.acl),
+        pipes=decl.pipes,
     )
     if host:
         _log.debug("store %s declares %d std.host attr(s)", decl.id, len(host))

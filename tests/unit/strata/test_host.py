@@ -11,6 +11,7 @@ import pytest
 from pydantic import ValidationError
 
 from frob.strata._host import (
+    HostAcl,
     HostManifest,
     HostOwns,
     HostPlatform,
@@ -42,6 +43,33 @@ class TestHostAttrs:
     def test_no_clauses_desugars_to_empty(self):
         attrs = _host_attrs(runs_as=None, is_unit=False, owns=(), listens=())
         assert attrs == ()
+
+    # frob:tests src/frob/strata/_host.py::_host_attrs kind="unit"
+    def test_desugars_windows_fields(self):
+        """T-0261: platform/service_account/service/acl/pipe desugar to
+        their own attrs, in declaration order after owns/listens/group/
+        sudoers (same convention `_host_attrs` uses throughout)."""
+        attrs = _host_attrs(
+            runs_as=None,
+            is_unit=False,
+            owns=(),
+            listens=(8443,),
+            platform="windows",
+            service_account="svc-api",
+            service_account_gmsa=True,
+            is_service=True,
+            acl=(("C:\\ProgramData\\api", "BUILTIN\\Administrators:FullControl"),),
+            pipes=("\\\\.\\pipe\\api-control",),
+        )
+        assert attrs == (
+            "listens=8443",
+            "platform=windows",
+            "service_account=svc-api",
+            "service_account_gmsa",
+            "service",
+            "acl=C:\\ProgramData\\api|BUILTIN\\Administrators:FullControl",
+            "pipe=\\\\.\\pipe\\api-control",
+        )
 
     # frob:tests src/frob/strata/_host.py::_host_attrs kind="unit"
     def test_desugars_group_and_sudoers(self):
@@ -120,6 +148,86 @@ class TestHostManifest:
         manifest = host_manifest_for(node)
         assert manifest is not None
         assert manifest.group == ("deploy",)
+
+
+class TestHostManifestWindows:
+    """T-0261: Windows-platform read-back coverage."""
+
+    # frob:tests src/frob/strata/_host.py::host_manifest_for kind="unit"
+    def test_reads_windows_fields(self):
+        node = Node(
+            id="api",
+            trust="trusted",
+            attrs=(
+                "listens=8443",
+                "platform=windows",
+                "service_account=svc-api",
+                "service_account_gmsa",
+                "service",
+                "acl=C:\\ProgramData\\api|BUILTIN\\Administrators:FullControl",
+                "pipe=\\\\.\\pipe\\api-control",
+            ),
+        )
+        manifest = host_manifest_for(node)
+        assert manifest is not None
+        assert manifest.platform is HostPlatform.WINDOWS
+        assert manifest.service_account == "svc-api"
+        assert manifest.service_account_gmsa is True
+        assert manifest.is_service is True
+        assert manifest.acl == (
+            HostAcl(
+                path="C:\\ProgramData\\api",
+                rule="BUILTIN\\Administrators:FullControl",
+            ),
+        )
+        assert manifest.pipes == ("\\\\.\\pipe\\api-control",)
+        assert manifest.listens == (8443,)
+
+    # frob:tests src/frob/strata/_host.py::host_manifest_for kind="unit"
+    def test_no_platform_attr_defaults_to_linux_systemd(self):
+        node = Node(id="api", trust="trusted", attrs=("runs_as=api-svc",))
+        manifest = host_manifest_for(node)
+        assert manifest is not None
+        assert manifest.platform is HostPlatform.LINUX_SYSTEMD
+
+    # frob:tests src/frob/strata/_host.py::host_manifest_for kind="unit"
+    def test_unknown_platform_value_raises(self):
+        node = Node(id="api", trust="trusted", attrs=("platform=macos",))
+        with pytest.raises(ValueError, match="not a recognized HostPlatform"):
+            host_manifest_for(node)
+
+
+class TestHostAclRuleValidation:
+    """T-0261: `acl` RULE well-formedness (mirrors `TestHostOwnsModeValidation`)."""
+
+    # frob:tests src/frob/strata/_host.py::HostAcl._validate_rule kind="unit"
+    def test_valid_rule_accepted(self):
+        assert (
+            HostAcl(path="C:\\api", rule="Everyone:FullControl").rule
+            == "Everyone:FullControl"
+        )
+
+    # frob:tests src/frob/strata/_host.py::HostAcl._validate_rule kind="unit"
+    def test_deny_and_no_inherit_flags_accepted(self):
+        assert (
+            HostAcl(path="C:\\api", rule="svc-api:Modify:deny:no_inherit").rule
+            == "svc-api:Modify:deny:no_inherit"
+        )
+
+    # frob:tests src/frob/strata/_host.py::HostAcl._validate_rule kind="unit"
+    def test_missing_rights_rejected(self):
+        with pytest.raises(ValidationError):
+            HostAcl(path="C:\\api", rule="Everyone:")
+
+    # frob:tests src/frob/strata/_host.py::HostAcl._validate_rule kind="unit"
+    def test_unknown_flag_rejected(self):
+        with pytest.raises(ValidationError):
+            HostAcl(path="C:\\api", rule="Everyone:FullControl:bogus")
+
+    # frob:tests src/frob/strata/_host.py::HostAcl._validate_rule kind="unit"
+    def test_no_colon_rejected(self):
+        with pytest.raises(ValidationError):
+            HostAcl(path="C:\\api", rule="FullControl")
 
 
 class TestHostOwnsModeValidation:

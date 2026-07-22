@@ -1,6 +1,31 @@
 """`std.host`: OS-layer modeling for the strata kernel (T-0255,
 docs/strata/host.md).
 
+T-0261 (Windows pillar): `HostPlatform.WINDOWS` and its five surface
+clauses -- `platform "windows"` (the discriminator), `service_account
+"NAME" [gmsa]` (Windows analog of `runs_as`: a dedicated low-priv local
+account, or a group Managed Service Account for domain-joined hosts),
+`service` (Windows analog of `unit`: an SCM service binding), `acl "PATH"
+"RULE"` (Windows analog of `owns`: an NTFS DACL entry, richer than a
+3-octal mode -- expresses per-principal rights, deny ACEs, and
+deny-inheritance via the `RULE` atom's `PRINCIPAL:RIGHTS[:deny]
+[:no_inherit]` shape), and `pipe "NAME"` (a named pipe, additive to the
+already-platform-agnostic `listens` PORT surface Windows firewall ports
+reuse unchanged). Same "ONE HostManifest, no duplication" discipline
+`platform`'s module docstring promised: no new `KernelModel`/`Node`
+field, every clause desugars through the SAME `_host_attrs` encoding, and
+`host_manifest_for` reads every field back regardless of which platform
+declared it (a linux node with `acl`/`pipe` populated, or a windows node
+with `owns`/`listens` populated, are both accepted -- `platform` is
+informational for downstream consumers to branch on, not a parser-level
+exclusivity fence; T-0256/T-0257/T-0258/T-0259's windows wiring is each
+platform-specific proof/generator/conformance/audit ticket's own job, not
+this manifest's). `platform` defaults to `HostPlatform.LINUX_SYSTEMD`
+when the `platform` clause is absent (backward-compatible with every
+pre-T-0261 manifest); an explicit `platform "..."` value other than
+`"windows"` fails closed with a `ValueError` at `host_manifest_for` time,
+the same defer-to-elaborator discipline `owns` MODE/`listens` PORT use.
+
 Foundation of the deploy epic (T-0254). A node/store may declare `runs_as
 "svc-name"` (a dedicated OS service user), `unit` (bare marker: this
 node's process is modeled as a systemd unit), `owns "PATH" "MODE"`
@@ -81,6 +106,48 @@ _GROUP_PREFIX = "group="
 #: `sudoers=<rule>` attr prefix, one per declared `sudoers` entry (T-0272).
 _SUDOERS_PREFIX = "sudoers="
 
+#: `platform=<name>` attr prefix (T-0261) -- the std.host platform
+#: discriminator; absent means `HostPlatform.LINUX_SYSTEMD`.
+_PLATFORM_PREFIX = "platform="
+
+#: `service_account=<name>` attr prefix (T-0261) -- the Windows analog of
+#: `_RUNS_AS_PREFIX`.
+_SERVICE_ACCOUNT_PREFIX = "service_account="
+
+#: `service_account_gmsa` bare-marker attr (T-0261) -- mirrors `_UNIT_ATTR`'s
+#: shape; present when `service_account`'s trailing `gmsa` marker was given.
+_SERVICE_ACCOUNT_GMSA_ATTR = "service_account_gmsa"
+
+#: `service` bare-marker attr (T-0261) -- the Windows SCM-service analog of
+#: `_UNIT_ATTR`.
+_SERVICE_ATTR = "service"
+
+#: `acl=<path>|<rule>` attr prefix (T-0261) -- the Windows NTFS-ACL analog
+#: of `_OWNS_PREFIX`, one per declared `acl` entry. `|`, not `:`, separates
+#: PATH from RULE: unlike a POSIX `owns` path, a Windows PATH commonly
+#: contains `:` itself (a drive letter, e.g. `C:\ProgramData\api`), and
+#: RULE also contains `:` internally (`PRINCIPAL:RIGHTS[:deny]
+#: [:no_inherit]`) -- a naive first-colon partition would silently split
+#: the drive letter off PATH instead of PATH from RULE. `|` is not a
+#: legal character in a Windows path, so it cannot collide with PATH.
+_ACL_PREFIX = "acl="
+_ACL_SEP = "|"
+
+#: `pipe=<name>` attr prefix (T-0261) -- one per declared `pipe` entry.
+_PIPE_PREFIX = "pipe="
+
+#: Well-formed windows `acl` RULE: `PRINCIPAL:RIGHTS` with optional
+#: trailing `:deny` and/or `:no_inherit` markers (any order) -- e.g.
+#: `"BUILTIN\\Administrators:FullControl"`,
+#: `"Everyone:Write:deny"`, `"svc-api:Modify:deny:no_inherit"`. Neither
+#: PRINCIPAL nor RIGHTS may be empty. T-0261: a RULE that does not match
+#: this is rejected at `HostAcl` construction time, not silently stored
+#: (same fail-closed discipline `_MODE_RE` established for `owns`).
+_ACL_RULE_RE = re.compile(
+    r"(?P<principal>[^:]+):(?P<rights>[^:]+)(?P<flags>(?::(?:deny|no_inherit))*)"
+)
+_ACL_KNOWN_FLAGS = {"deny", "no_inherit"}
+
 #: Well-formed LINUX_SYSTEMD `owns` MODE: 3-4 octal digits (0-7), matching
 #: `chmod`'s own permission-string shape -- a 4th digit carries setuid/
 #: setgid/sticky (docs/strata/host.md#the-honest-gap: a 4-digit
@@ -101,11 +168,14 @@ _MAX_PORT = 65535
 class HostPlatform(StrEnum):
     """The OS/init-system target a `HostManifest`'s directives are shaped for.
 
-    Reserved discriminator (T-0261 adds `WINDOWS`); only `LINUX_SYSTEMD` is
-    produced by this ticket's grammar and elaborator.
+    T-0261 adds `WINDOWS`, produced when a node/store declares an explicit
+    `platform "windows"` clause; `LINUX_SYSTEMD` remains the default when
+    no `platform` clause is present at all (backward compatible with
+    every pre-T-0261 manifest).
     """
 
     LINUX_SYSTEMD = "linux-systemd"
+    WINDOWS = "windows"
 
 
 # frob:doc docs/strata/host.md#hostmanifest
@@ -147,6 +217,47 @@ class HostOwns(BaseModel):
         return value
 
 
+# frob:doc docs/strata/host.md#windows-surface-grammar
+class HostAcl(BaseModel):
+    """One `acl=<path>|<rule>` desugared attr, read back as a typed
+    path/rule pair (T-0261) -- the Windows NTFS-ACL analog of `HostOwns`:
+    an owner-and-explicit-DACL model richer than a 3-octal POSIX mode,
+    expressing a per-principal RIGHTS grant, an optional `deny` ACE (vs.
+    the default allow), and an optional `no_inherit` (deny-inheritance)
+    marker.
+
+    `rule` stays a bare string (like `HostOwns.mode`): the grammar itself
+    is platform-agnostic-shaped (PATH, RULE both STRING), so validation
+    happens here, at construction time, not in `strata-core/src/parse.rs`.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    path: str
+    rule: str
+
+    # frob:tests tests/unit/strata/test_host.py::TestHostAclRuleValidation.test_valid_rule_accepted  # noqa: E501
+    @field_validator("rule")
+    @classmethod
+    def _validate_rule(cls, value: str) -> str:
+        """Reject an `acl` RULE that is not a well-formed
+        `PRINCIPAL:RIGHTS[:deny][:no_inherit]` atom -- an empty PRINCIPAL/
+        RIGHTS or an unrecognized trailing flag is a malformed manifest,
+        not a silently-accepted one (T-0261, mirroring `HostOwns.
+        _validate_mode`'s fail-closed discipline)."""
+        match = _ACL_RULE_RE.fullmatch(value)
+        if match is None:
+            raise ValueError(
+                f"acl RULE {value!r} is not well-formed "
+                "'PRINCIPAL:RIGHTS[:deny][:no_inherit]'"
+            )
+        flags = [flag for flag in match.group("flags").split(":") if flag]
+        unknown = [flag for flag in flags if flag not in _ACL_KNOWN_FLAGS]
+        if unknown:
+            raise ValueError(f"acl RULE {value!r} has unknown flag(s) {unknown!r}")
+        return value
+
+
 # frob:doc docs/strata/host.md#hostmanifest
 class HostManifest(BaseModel):
     """The OS-layer facts `std.host` desugars a node/store's attrs into (T-0255).
@@ -180,6 +291,16 @@ class HostManifest(BaseModel):
     # structured data this manifest needs to interpret further.
     group: tuple[str, ...] = ()
     sudoers: tuple[str, ...] = ()
+    # T-0261: Windows analogs -- service_account/service replace runs_as/
+    # unit's role, acl replaces owns's role, pipes is additive to listens
+    # (docs/strata/host.md#windows-surface-grammar). All default empty/
+    # False/() so every pre-T-0261 `HostManifest(...)` call site keeps
+    # working unchanged.
+    service_account: str | None = None
+    service_account_gmsa: bool = False
+    is_service: bool = False
+    acl: tuple[HostAcl, ...] = ()
+    pipes: tuple[str, ...] = ()
 
     # frob:ticket T-0565
     # frob:tests tests/unit/strata/test_host.py::TestHostManifestListensValidation.test_valid_port_accepted  # noqa: E501
@@ -207,6 +328,12 @@ def _host_attrs(
     listens: tuple[int, ...],
     group: tuple[str, ...] = (),
     sudoers: tuple[str, ...] = (),
+    platform: str | None = None,
+    service_account: str | None = None,
+    service_account_gmsa: bool = False,
+    is_service: bool = False,
+    acl: tuple[tuple[str, str], ...] = (),
+    pipes: tuple[str, ...] = (),
 ) -> tuple[str, ...]:
     """Desugar parsed std.host clauses into `Node.attrs` strings.
 
@@ -214,7 +341,9 @@ def _host_attrs(
     `_infra.py::_elaborate_store` (store) call, so the attr convention
     cannot desync between the two callers (charter law 5: no duplication).
     `group`/`sudoers` (T-0272) default to empty so existing callers built
-    against the pre-T-0272 four-argument shape keep working unchanged.
+    against the pre-T-0272 four-argument shape keep working unchanged;
+    `platform`/`service_account`/`service_account_gmsa`/`is_service`/
+    `acl`/`pipes` (T-0261) default the same way for the pre-T-0261 shape.
     """
     attrs: list[str] = []
     if runs_as is not None:
@@ -225,6 +354,16 @@ def _host_attrs(
     attrs.extend(f"{_LISTENS_PREFIX}{port}" for port in listens)
     attrs.extend(f"{_GROUP_PREFIX}{name}" for name in group)
     attrs.extend(f"{_SUDOERS_PREFIX}{rule}" for rule in sudoers)
+    if platform is not None:
+        attrs.append(f"{_PLATFORM_PREFIX}{platform}")
+    if service_account is not None:
+        attrs.append(f"{_SERVICE_ACCOUNT_PREFIX}{service_account}")
+    if service_account_gmsa:
+        attrs.append(_SERVICE_ACCOUNT_GMSA_ATTR)
+    if is_service:
+        attrs.append(_SERVICE_ATTR)
+    attrs.extend(f"{_ACL_PREFIX}{path}{_ACL_SEP}{rule}" for path, rule in acl)
+    attrs.extend(f"{_PIPE_PREFIX}{name}" for name in pipes)
     return tuple(attrs)
 
 
@@ -239,6 +378,12 @@ class _ParsedHostAttrs:
         self.listens: list[int] = []
         self.group: list[str] = []
         self.sudoers: list[str] = []
+        self.platform: str | None = None
+        self.service_account: str | None = None
+        self.service_account_gmsa = False
+        self.is_service = False
+        self.acl: list[HostAcl] = []
+        self.pipes: list[str] = []
         self.declared = False
 
 
@@ -276,6 +421,25 @@ def _parse_host_attrs(node: Node) -> _ParsedHostAttrs:
         elif attr.startswith(_SUDOERS_PREFIX):
             parsed.sudoers.append(attr[len(_SUDOERS_PREFIX) :])
             parsed.declared = True
+        elif attr.startswith(_PLATFORM_PREFIX):
+            parsed.platform = attr[len(_PLATFORM_PREFIX) :]
+            parsed.declared = True
+        elif attr.startswith(_SERVICE_ACCOUNT_PREFIX):
+            parsed.service_account = attr[len(_SERVICE_ACCOUNT_PREFIX) :]
+            parsed.declared = True
+        elif attr == _SERVICE_ACCOUNT_GMSA_ATTR:
+            parsed.service_account_gmsa = True
+            parsed.declared = True
+        elif attr == _SERVICE_ATTR:
+            parsed.is_service = True
+            parsed.declared = True
+        elif attr.startswith(_ACL_PREFIX):
+            path, _, rule = attr[len(_ACL_PREFIX) :].partition(_ACL_SEP)
+            parsed.acl.append(HostAcl(path=path, rule=rule))
+            parsed.declared = True
+        elif attr.startswith(_PIPE_PREFIX):
+            parsed.pipes.append(attr[len(_PIPE_PREFIX) :])
+            parsed.declared = True
     return parsed
 
 
@@ -303,23 +467,49 @@ def host_manifest_for(node: Node) -> HostManifest | None:
     parsed = _parse_host_attrs(node)
     if not parsed.declared:
         return None
+    if parsed.platform is None:
+        platform = HostPlatform.LINUX_SYSTEMD
+    else:
+        try:
+            platform = HostPlatform(parsed.platform)
+        except ValueError as exc:
+            # T-0261: an unrecognized `platform` value fails closed here,
+            # at elaborate/read-back time (the grammar itself is opaque-
+            # string, per `_MODE_RE`/`_MIN_PORT`'s precedent) rather than
+            # being silently stored and trusted by a downstream consumer.
+            raise ValueError(
+                f"platform {parsed.platform!r} is not a recognized "
+                f"HostPlatform value ({[p.value for p in HostPlatform]!r})"
+            ) from exc
     _log.debug(
-        "node %s: host manifest runs_as=%r unit=%s owns=%d listens=%d "
-        "group=%d sudoers=%d",
+        "node %s: host manifest platform=%s runs_as=%r unit=%s owns=%d "
+        "listens=%d group=%d sudoers=%d service_account=%r gmsa=%s "
+        "service=%s acl=%d pipes=%d",
         node.id,
+        platform,
         parsed.runs_as,
         parsed.is_unit,
         len(parsed.owns),
         len(parsed.listens),
         len(parsed.group),
         len(parsed.sudoers),
+        parsed.service_account,
+        parsed.service_account_gmsa,
+        parsed.is_service,
+        len(parsed.acl),
+        len(parsed.pipes),
     )
     return HostManifest(
-        platform=HostPlatform.LINUX_SYSTEMD,
+        platform=platform,
         runs_as=parsed.runs_as,
         is_unit=parsed.is_unit,
         owns=tuple(parsed.owns),
         listens=tuple(parsed.listens),
         group=tuple(parsed.group),
         sudoers=tuple(parsed.sudoers),
+        service_account=parsed.service_account,
+        service_account_gmsa=parsed.service_account_gmsa,
+        is_service=parsed.is_service,
+        acl=tuple(parsed.acl),
+        pipes=tuple(parsed.pipes),
     )

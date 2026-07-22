@@ -1,0 +1,26 @@
+// host_windows_declared.strata -- T-0261 litmus: a node declares the full
+// std.host Windows vocabulary (platform/service_account/service/acl/pipe,
+// plus the platform-agnostic listens surface Windows firewall ports reuse
+// unchanged), the Windows twin of host_declared.strata's linux/systemd
+// coverage. No proofs exist yet for the Windows platform (T-0261 is
+// manifest-only, matching T-0255's own manifest-only scope for linux) --
+// this fixture round-trips parse -> elaborate -> host_manifest_for,
+// proving the Windows attr-desugar convention survives the real
+// strata_core parser, not just a hand-built KernelModel.
+//
+// tested end to end by tests/unit/strata/test_litmus_host.py.
+
+module host_windows_declared
+
+node api : trusted {
+    clearance Internal;
+    platform "windows";
+    service_account "svc-api" gmsa;
+    service;
+    acl "C:\ProgramData\api" "BUILTIN\Administrators:FullControl";
+    acl "C:\ProgramData\api\secrets" "svc-api:Modify:deny:no_inherit";
+    pipe "\\.\pipe\api-control";
+    listens 8443;
+}
+
+// frob:waive REF002 reason="litmus fixture read by exactly one dedicated test module by design (T-0145/T-0255/T-0256/T-0262/T-0172/T-0154/T-0155/T-0223/T-0226/T-0261 litmus suites); a second consumer would not be genuine"

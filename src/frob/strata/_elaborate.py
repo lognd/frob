@@ -150,12 +150,19 @@ def _node_host_krb_attrs(decl: NodeDecl, attrs: tuple[str, ...]) -> tuple[str, .
         listens=decl.listens,
         group=decl.group,
         sudoers=decl.sudoers,
+        platform=decl.platform,
+        service_account=decl.service_account,
+        service_account_gmsa=decl.service_account_gmsa,
+        is_service=decl.is_service,
+        acl=tuple((a.path, a.rule) for a in decl.acl),
+        pipes=decl.pipes,
     )
     if host:
         # T-0255: std.host -- runs_as/unit/owns/listens/group/sudoers
         # (group/sudoers added T-0272) desugar to attrs the SAME way as
         # `_infra.py::_elaborate_store` (`_host.py::_host_attrs`, the one
-        # shared encoding for both callers).
+        # shared encoding for both callers). T-0261 adds the Windows
+        # analogs (platform/service_account/service/acl/pipes) the same way.
         _log.debug("node %s declares %d std.host attr(s)", decl.id, len(host))
         attrs = (*attrs, *host)
     krb = _krb_attrs(

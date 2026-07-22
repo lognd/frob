@@ -112,6 +112,21 @@ class OwnsDecl(BaseModel):
     mode: str
 
 
+# frob:doc docs/strata/host.md#windows-surface-grammar
+class AclDecl(BaseModel):
+    """A parsed `acl "PATH" "RULE"` clause inside a `node`/`store` block
+    (T-0261, docs/strata/host.md#windows-surface-grammar): a Windows NTFS
+    path and an opaque `PRINCIPAL:RIGHTS[:deny][:no_inherit]` DACL-entry
+    rule, mirroring `OwnsDecl`'s "PATH is a real path, RULE is an opaque
+    atom validated by the elaborator, not the AST" shape exactly -- `acl`
+    is `owns`'s Windows-ACL analog (richer than a 3-octal mode)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    path: str
+    rule: str
+
+
 # frob:doc docs/strata/krb.md#surface-grammar
 class KrbTrustDecl(BaseModel):
     """A parsed `trusts IDENT [direction "..."] [transitive]` clause (T-0262,
@@ -178,6 +193,36 @@ class NodeDecl(BaseModel):
     # `sudoers "RULE"`+, T-0272 (std.host); elaborated to `sudoers=<rule>`
     # attrs, one per entry.
     sudoers: tuple[str, ...] = ()
+    # `platform "windows"`, T-0261 (std.host); elaborated to a
+    # `platform=<name>` attr. Omitted means `HostPlatform.LINUX_SYSTEMD`
+    # (backward-compatible default, docs/strata/host.md#hostmanifest) --
+    # the ONLY value this clause currently accepts is `"windows"`, any
+    # other string fails closed at `_host.py::host_manifest_for` time,
+    # the same defer-to-elaborator discipline `owns` MODE/`listens` PORT
+    # already use.
+    platform: str | None = None
+    # `service_account "NAME" [gmsa]`, T-0261 (std.host); the Windows
+    # analog of `runs_as` (docs/strata/host.md#windows-surface-grammar):
+    # a dedicated low-priv local account, or -- when the trailing bare
+    # `gmsa` marker is present -- a group Managed Service Account for
+    # domain-joined hosts. Elaborated to `service_account=<name>` (+
+    # `service_account_gmsa` bare marker) attrs.
+    service_account: str | None = None
+    service_account_gmsa: bool = False
+    # `service` bare marker, T-0261; the Windows SCM-service analog of
+    # `unit` (docs/strata/host.md#windows-surface-grammar). Elaborated to
+    # a `"service"` attr, same bare-marker convention `unit`/`managed` use.
+    is_service: bool = False
+    # `acl "PATH" "RULE"`+, T-0261 (std.host); elaborated to
+    # `acl=<path>|<rule>` attrs, one per entry -- the Windows NTFS-ACL
+    # analog of `owns` (docs/strata/host.md#windows-surface-grammar).
+    acl: tuple[AclDecl, ...] = ()
+    # `pipe "NAME"`+, T-0261 (std.host); elaborated to `pipe=<name>` attrs,
+    # one per entry -- a named pipe this node's service listens on,
+    # additive to (not a replacement for) the platform-agnostic `listens`
+    # PORT surface Windows firewall ports already reuse
+    # (docs/strata/host.md#windows-surface-grammar).
+    pipes: tuple[str, ...] = ()
     # `realm "NAME"`, T-0262 (std.krb); elaborated to a `krb_realm=<name>`
     # attr. Not store-scoped in this pass -- see `_krb.py` module docstring
     # for the deferred store-symmetry cut.
@@ -445,6 +490,15 @@ class StoreDecl(BaseModel):
     # and same attr-desugar convention as `node`'s.
     group: tuple[str, ...] = ()
     sudoers: tuple[str, ...] = ()
+    # `platform`/`service_account`/`service`/`acl`/`pipe`, T-0261
+    # (std.host); same shape and same attr-desugar convention as `node`'s
+    # Windows analogs -- a store is a node too.
+    platform: str | None = None
+    service_account: str | None = None
+    service_account_gmsa: bool = False
+    is_service: bool = False
+    acl: tuple[AclDecl, ...] = ()
+    pipes: tuple[str, ...] = ()
     # `errors_total`/`panics_contained_by`/`observe`/`on deploy { ... }`,
     # T-0247; the observability/deploy-contract subset of `node_prop`
     # (T-0070/T-0136) a store needed -- SAME shapes as `NodeDecl`'s

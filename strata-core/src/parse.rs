@@ -465,6 +465,14 @@ impl Parser {
         let mut listens: Vec<i64> = Vec::new();
         let mut group: Vec<String> = Vec::new();
         let mut sudoers: Vec<String> = Vec::new();
+        // T-0261: std.host windows fields -- Windows analogs of
+        // runs_as/unit/owns (docs/strata/host.md#windows-surface-grammar).
+        let mut platform: Option<String> = None;
+        let mut service_account: Option<String> = None;
+        let mut service_account_gmsa = false;
+        let mut is_service = false;
+        let mut acl: Vec<serde_json::Value> = Vec::new();
+        let mut pipes: Vec<String> = Vec::new();
         let mut krb_realm: Option<String> = None;
         let mut krb_is_kdc = false;
         let mut krb_spns: Vec<String> = Vec::new();
@@ -619,6 +627,74 @@ impl Parser {
                     sudoers.push(self.expect_string("sudoers rule")?);
                     while matches!(self.cur().kind, TokKind::Str(_)) {
                         sudoers.push(self.expect_string("sudoers rule")?);
+                    }
+                } else if self.at_keyword("platform") {
+                    // T-0261: `platform "windows"` -- the std.host platform
+                    // discriminator (docs/strata/host.md#hostmanifest).
+                    // STRING, matching `realm`'s "opaque atom" shape. At
+                    // most one per node; a repeated clause overwrites,
+                    // mirroring `clearance`. Only `"windows"` is a known
+                    // value -- an unrecognized platform name fails closed
+                    // at `_host.py::host_manifest_for` time, not here
+                    // (mirrors `owns` MODE/`listens` PORT deferring
+                    // well-formedness checks to the elaborator).
+                    self.advance();
+                    platform = Some(self.expect_string("platform name")?);
+                } else if self.at_keyword("service_account") {
+                    // T-0261: `service_account "NAME" [gmsa]` -- names the
+                    // dedicated Windows service account (or, with the
+                    // trailing bare `gmsa` marker, a group Managed Service
+                    // Account for domain-joined hosts) the deploy generator
+                    // creates for this node (docs/strata/host.md#windows-
+                    // surface-grammar). STRING, the Windows analog of
+                    // `runs_as`. At most one per node; a repeated clause
+                    // overwrites, mirroring `clearance`.
+                    self.advance();
+                    service_account = Some(self.expect_string("service account name")?);
+                    if self.at_keyword("gmsa") {
+                        self.advance();
+                        service_account_gmsa = true;
+                    }
+                } else if self.at_keyword("service") {
+                    // T-0261: bare marker -- this node's process is modeled
+                    // as a Windows Service Control Manager (SCM) service
+                    // (docs/strata/host.md#windows-surface-grammar), the
+                    // Windows analog of `unit`. Hardening directives
+                    // (service SID type restricted, required-privileges
+                    // allowlist, protected-process) are DERIVED by the
+                    // generator from the rest of the model, exactly like
+                    // `unit`'s hardening derivation -- this marker only
+                    // records that the binding applies.
+                    self.advance();
+                    is_service = true;
+                } else if self.at_keyword("acl") {
+                    // T-0261: `acl "PATH" "RULE"` -- a Windows NTFS path
+                    // this node's service account has an explicit DACL
+                    // entry for, RULE an opaque `PRINCIPAL:RIGHTS[:deny]
+                    // [:no_inherit]` atom (docs/strata/host.md#windows-
+                    // surface-grammar), the Windows analog of `owns` (richer
+                    // than a 3-octal mode: expresses per-principal rights,
+                    // deny ACEs, and deny-inheritance). Both STRING, same
+                    // "opaque atom" reasoning `owns`'s MODE uses --
+                    // well-formedness is validated at `_host.py` elaborate
+                    // time, not here. Repeatable: a node may declare more
+                    // than one ACL entry.
+                    self.advance();
+                    let path = self.expect_string("acl path")?;
+                    let rule = self.expect_string("acl rule")?;
+                    acl.push(json!({"path": path, "rule": rule}));
+                } else if self.at_keyword("pipe") {
+                    // T-0261: `pipe "NAME"`+ -- one or more named pipes this
+                    // node's service listens on (docs/strata/host.md
+                    // #windows-surface-grammar), additive to the platform-
+                    // agnostic `listens` PORT surface (Windows firewall
+                    // ports reuse `listens` unchanged -- a bound port is
+                    // the same concept on every platform). STRING, since a
+                    // pipe name commonly carries `\`. Repeatable.
+                    self.advance();
+                    pipes.push(self.expect_string("pipe name")?);
+                    while matches!(self.cur().kind, TokKind::Str(_)) {
+                        pipes.push(self.expect_string("pipe name")?);
                     }
                 } else if self.at_keyword("residence") {
                     self.advance();
@@ -806,6 +882,12 @@ impl Parser {
             "listens": listens,
             "group": group,
             "sudoers": sudoers,
+            "platform": platform,
+            "service_account": service_account,
+            "service_account_gmsa": service_account_gmsa,
+            "is_service": is_service,
+            "acl": acl,
+            "pipes": pipes,
             "krb_realm": krb_realm,
             "krb_is_kdc": krb_is_kdc,
             "krb_spns": krb_spns,
@@ -1510,6 +1592,14 @@ impl Parser {
         let mut listens: Vec<i64> = Vec::new();
         let mut group: Vec<String> = Vec::new();
         let mut sudoers: Vec<String> = Vec::new();
+        // T-0261: same std.host windows fields as `node` (parse_node) --
+        // a store is a node too.
+        let mut platform: Option<String> = None;
+        let mut service_account: Option<String> = None;
+        let mut service_account_gmsa = false;
+        let mut is_service = false;
+        let mut acl: Vec<serde_json::Value> = Vec::new();
+        let mut pipes: Vec<String> = Vec::new();
         let mut errors_total = false;
         let mut panics_contained_by: Option<String> = None;
         let mut observe: Option<serde_json::Value> = None;
@@ -1562,6 +1652,39 @@ impl Parser {
                     sudoers.push(self.expect_string("sudoers rule")?);
                     while matches!(self.cur().kind, TokKind::Str(_)) {
                         sudoers.push(self.expect_string("sudoers rule")?);
+                    }
+                } else if self.at_keyword("platform") {
+                    // T-0261: same `platform "windows"` shape as `node`'s
+                    // clause -- a store is a node too.
+                    self.advance();
+                    platform = Some(self.expect_string("platform name")?);
+                } else if self.at_keyword("service_account") {
+                    // T-0261: same `service_account "NAME" [gmsa]` shape as
+                    // `node`'s clause -- a store is a node too.
+                    self.advance();
+                    service_account = Some(self.expect_string("service account name")?);
+                    if self.at_keyword("gmsa") {
+                        self.advance();
+                        service_account_gmsa = true;
+                    }
+                } else if self.at_keyword("service") {
+                    // T-0261: same bare marker as `node`'s `service`.
+                    self.advance();
+                    is_service = true;
+                } else if self.at_keyword("acl") {
+                    // T-0261: same `acl "PATH" "RULE"` shape as `node`'s
+                    // clause -- a store is a node too.
+                    self.advance();
+                    let path = self.expect_string("acl path")?;
+                    let rule = self.expect_string("acl rule")?;
+                    acl.push(json!({"path": path, "rule": rule}));
+                } else if self.at_keyword("pipe") {
+                    // T-0261: same `pipe "NAME"`+ shape as `node`'s clause
+                    // -- a store is a node too.
+                    self.advance();
+                    pipes.push(self.expect_string("pipe name")?);
+                    while matches!(self.cur().kind, TokKind::Str(_)) {
+                        pipes.push(self.expect_string("pipe name")?);
                     }
                 } else if self.at_keyword("code") {
                     // T-0166: `code GLOB+` -- same STRING+ shape T-0132 gave
@@ -1740,6 +1863,12 @@ impl Parser {
             "listens": listens,
             "group": group,
             "sudoers": sudoers,
+            "platform": platform,
+            "service_account": service_account,
+            "service_account_gmsa": service_account_gmsa,
+            "is_service": is_service,
+            "acl": acl,
+            "pipes": pipes,
             "errors_total": errors_total,
             "panics_contained_by": panics_contained_by,
             "observe": observe,
@@ -2876,6 +3005,71 @@ mod tests {
             n["sudoers"][0],
             "ALL=(root) NOPASSWD: /bin/systemctl restart api"
         );
+    }
+
+    #[test]
+    fn parses_node_windows_host_manifest_clauses() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0261: std.host Windows vocabulary -- platform/service_account/
+        // service/acl/pipe on a node (docs/strata/host.md#windows-surface-
+        // grammar).
+        let v = ok(r#"module m
+            node api : trusted {
+                platform "windows";
+                service_account "svc-api" gmsa;
+                service;
+                acl "C:\ProgramData\api" "BUILTIN\Administrators:FullControl";
+                pipe "\\.\pipe\api-control";
+                listens 8443;
+            }"#);
+        let n = &v["nodes"][0];
+        assert_eq!(n["platform"], "windows");
+        assert_eq!(n["service_account"], "svc-api");
+        assert_eq!(n["service_account_gmsa"], true);
+        assert_eq!(n["is_service"], true);
+        assert_eq!(n["acl"][0]["path"], "C:\\ProgramData\\api");
+        assert_eq!(n["acl"][0]["rule"], "BUILTIN\\Administrators:FullControl");
+        assert_eq!(n["pipes"][0], "\\\\.\\pipe\\api-control");
+        assert_eq!(n["listens"][0], 8443);
+    }
+
+    #[test]
+    fn parses_node_without_windows_host_manifest_defaults_empty() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0261: pre-existing sources with no Windows std.host clause
+        // must still elaborate -- platform/service_account null,
+        // service_account_gmsa/is_service false, acl/pipes empty.
+        let v = ok("module m\nnode api : trusted");
+        let n = &v["nodes"][0];
+        assert!(n["platform"].is_null());
+        assert!(n["service_account"].is_null());
+        assert_eq!(n["service_account_gmsa"], false);
+        assert_eq!(n["is_service"], false);
+        assert_eq!(n["acl"].as_array().unwrap().len(), 0);
+        assert_eq!(n["pipes"].as_array().unwrap().len(), 0);
+    }
+
+    #[test]
+    fn parses_store_windows_host_manifest_clauses() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0261: same Windows std.host vocabulary on `store` -- a store
+        // is a node too (docs/strata/surface.md#key-construct-semantics).
+        let v = ok(r#"module m
+            store cache_db : trusted {
+                platform "windows";
+                service_account "svc-cache";
+                service;
+                acl "D:\data\cache" "svc-cache:Modify";
+                pipe "\\.\pipe\cache-control";
+            }"#);
+        let s = &v["stores"][0];
+        assert_eq!(s["platform"], "windows");
+        assert_eq!(s["service_account"], "svc-cache");
+        assert_eq!(s["service_account_gmsa"], false);
+        assert_eq!(s["is_service"], true);
+        assert_eq!(s["acl"][0]["path"], "D:\\data\\cache");
+        assert_eq!(s["acl"][0]["rule"], "svc-cache:Modify");
+        assert_eq!(s["pipes"][0], "\\\\.\\pipe\\cache-control");
     }
 
     #[test]

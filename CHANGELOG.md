@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.76.0] - unreleased
+
+- T-0261: std.host windows backend: services, gMSA/service accounts, ACLs, named pipes, firewall ports
+
 ## [0.75.0] - unreleased
 
 - T-0570: derived-state integrity manifest: doctor-first fingerprint check for every derived artifact

@@ -51,3 +51,27 @@ class TestHostUndeclaredLitmus:
         model = _load_model("host_undeclared.strata")
         node = next(n for n in model.nodes if n.id == "api")
         assert host_manifest_for(node) is None
+
+
+class TestHostWindowsDeclaredLitmus:
+    """T-0261: the Windows twin of `TestHostDeclaredLitmus` -- proves
+    platform/service_account/service/acl/pipe survive the real
+    `strata_core` parser end to end, the same round-trip discipline the
+    linux/systemd fixture pair established."""
+
+    # frob:tests src/frob/strata/_host.py::host_manifest_for kind="unit"
+    def test_declared_manifest_round_trips_every_windows_field(self):
+        model = _load_model("host_windows_declared.strata")
+        node = next(n for n in model.nodes if n.id == "api")
+        manifest = host_manifest_for(node)
+        assert manifest is not None
+        assert manifest.platform is HostPlatform.WINDOWS
+        assert manifest.service_account == "svc-api"
+        assert manifest.service_account_gmsa is True
+        assert manifest.is_service is True
+        assert [(a.path, a.rule) for a in manifest.acl] == [
+            ("C:\\ProgramData\\api", "BUILTIN\\Administrators:FullControl"),
+            ("C:\\ProgramData\\api\\secrets", "svc-api:Modify:deny:no_inherit"),
+        ]
+        assert manifest.pipes == ("\\\\.\\pipe\\api-control",)
+        assert manifest.listens == (8443,)
