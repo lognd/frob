@@ -3992,7 +3992,7 @@ Reconcile docs/design/registry/arch-checks.yaml against actual enforcement: ever
 ```yaml
 id: T-0392
 title: 'registry reconciliation: system-design (119 entries)'
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-07-20'
