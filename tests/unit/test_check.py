@@ -8,6 +8,9 @@ import time
 from pathlib import Path
 from typing import Callable
 
+import pytest
+
+import frob.check as check_mod
 from frob.check import (
     CheckResult,
     _collect_results,
@@ -86,7 +89,9 @@ class TestRunCheck:
         assert result.total_errors == 0
 
 
+# frob:ticket T-0554
 class TestRunCheckCpp:
+    # frob:ticket T-0554
     def test_all_stages_skipped_returns_empty_result(self, tmp_path: Path) -> None:
         # frob:tests src/frob/check/__init__.py::run_check_cpp kind="unit"
         result = run_check_cpp(
@@ -95,13 +100,43 @@ class TestRunCheckCpp:
             skip_clang_tidy=True,
             skip_clang_format=True,
             skip_tests=True,
+            skip_gates=True,
         )
         assert isinstance(result, CheckResult)
         assert result.path == str(tmp_path)
         assert result.results == []
 
+    # frob:ticket T-0554
+    def test_gates_stage_runs_by_default(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # T-0554: docs/audits/lang-check-docs.md finding 1 -- run_check_cpp
+        # used to never call _run_gates, so a pure C/C++ repo's
+        # COV/DOC/DRIFT/INV/DEC/TODO gates silently never executed. The real
+        # `_run_gates` spawns a `ProcessPoolExecutor` internally (T-0415) --
+        # too heavy/slow for a unit test -- so this stubs it to prove only
+        # that `run_check_cpp` WIRES the call in by default.
+        # frob:tests src/frob/check/__init__.py::run_check_cpp kind="unit"
+        calls: list[Path] = []
+        monkeypatch.setattr(
+            check_mod,
+            "_run_gates",
+            lambda root, **kw: (calls.append(root), ToolResult(tool="gates"))[1],
+        )
+        result = run_check_cpp(
+            tmp_path,
+            skip_build=True,
+            skip_clang_tidy=True,
+            skip_clang_format=True,
+            skip_tests=True,
+        )
+        assert calls == [tmp_path]
+        assert any(r.tool == "gates" for r in result.results)
 
+
+# frob:ticket T-0554
 class TestRunCheckRust:
+    # frob:ticket T-0554
     def test_all_stages_skipped_returns_empty_result(self, tmp_path: Path) -> None:
         # frob:tests src/frob/check/__init__.py::run_check_rust kind="unit"
         result = run_check_rust(
@@ -110,13 +145,39 @@ class TestRunCheckRust:
             skip_clippy=True,
             skip_fmt=True,
             skip_tests=True,
+            skip_gates=True,
         )
         assert isinstance(result, CheckResult)
         assert result.path == str(tmp_path)
         assert result.results == []
 
+    # frob:ticket T-0554
+    def test_gates_stage_runs_by_default(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # T-0554: run_check_rust used to never call _run_gates. Stubbed for
+        # the same reason as run_check_cpp's equivalent test above.
+        # frob:tests src/frob/check/__init__.py::run_check_rust kind="unit"
+        calls: list[Path] = []
+        monkeypatch.setattr(
+            check_mod,
+            "_run_gates",
+            lambda root, **kw: (calls.append(root), ToolResult(tool="gates"))[1],
+        )
+        result = run_check_rust(
+            tmp_path,
+            skip_check=True,
+            skip_clippy=True,
+            skip_fmt=True,
+            skip_tests=True,
+        )
+        assert calls == [tmp_path]
+        assert any(r.tool == "gates" for r in result.results)
 
+
+# frob:ticket T-0554
 class TestRunCheckTs:
+    # frob:ticket T-0554
     def test_all_stages_skipped_returns_empty_result(self, tmp_path: Path) -> None:
         # frob:tests src/frob/check/__init__.py::run_check_ts kind="unit"
         result = run_check_ts(
@@ -125,10 +186,34 @@ class TestRunCheckTs:
             skip_eslint=True,
             skip_prettier=True,
             skip_tests=True,
+            skip_gates=True,
         )
         assert isinstance(result, CheckResult)
         assert result.path == str(tmp_path)
         assert result.results == []
+
+    # frob:ticket T-0554
+    def test_gates_stage_runs_by_default(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # T-0554: run_check_ts used to never call _run_gates. Stubbed for
+        # the same reason as run_check_cpp's equivalent test above.
+        # frob:tests src/frob/check/__init__.py::run_check_ts kind="unit"
+        calls: list[Path] = []
+        monkeypatch.setattr(
+            check_mod,
+            "_run_gates",
+            lambda root, **kw: (calls.append(root), ToolResult(tool="gates"))[1],
+        )
+        result = run_check_ts(
+            tmp_path,
+            skip_tsc=True,
+            skip_eslint=True,
+            skip_prettier=True,
+            skip_tests=True,
+        )
+        assert calls == [tmp_path]
+        assert any(r.tool == "gates" for r in result.results)
 
 
 class TestDetectProjectType:

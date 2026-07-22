@@ -438,6 +438,7 @@ def _run_check_with_skips(
 
 
 # frob:doc docs/commands/check.md#public-api
+# frob:ticket T-0554
 # frob:waive TEST005 reason="run_check_cpp 50.0% branch cover, debt T-0160"
 def run_check_cpp(
     root: Path,
@@ -447,9 +448,20 @@ def run_check_cpp(
     skip_clang_tidy: bool = False,
     skip_clang_format: bool = False,
     skip_tests: bool = False,
+    skip_gates: bool = False,
     valgrind: bool = False,
+    ticket: str | None = None,
+    base: str | None = None,
+    delta: bool = False,
 ) -> CheckResult:
-    """Quality gate for CMake C/C++ projects."""
+    """Quality gate for CMake C/C++ projects.
+
+    T-0554: the doc/coverage/drift/invariant gates stage now runs here too
+    (`_run_gates`, same call `_python_tasks` makes) -- previously only the
+    Python pipeline ever called `_run_gates`, so a pure C/C++ repo's
+    COV001/DOC001-3/DRIFT001-2/INV/DEC/TODO001 gates silently never
+    executed (docs/audits/lang-check-docs.md finding 1).
+    """
     results: list[ToolResult] = []
     bdir = build_dir or (root / "build")
 
@@ -465,7 +477,11 @@ def run_check_cpp(
         skip_clang_tidy=skip_clang_tidy,
         skip_clang_format=skip_clang_format,
         skip_tests=skip_tests,
+        skip_gates=skip_gates,
         valgrind=valgrind,
+        ticket=ticket,
+        base=base,
+        delta=delta,
     )
     results.extend(_run_tasks_concurrently(post_build))
     return CheckResult(path=str(root), results=results)
@@ -478,7 +494,11 @@ def _cpp_post_build_tasks(
     skip_clang_tidy: bool,
     skip_clang_format: bool,
     skip_tests: bool,
+    skip_gates: bool,
     valgrind: bool,
+    ticket: str | None = None,
+    base: str | None = None,
+    delta: bool = False,
 ) -> list[Callable[[], ToolResult | list[ToolResult] | None]]:
     """The enabled post-build job callables for a CMake C/C++ check run."""
     post_build: list[Callable[[], ToolResult | list[ToolResult] | None]] = []
@@ -489,6 +509,10 @@ def _cpp_post_build_tasks(
     if not skip_tests:
         _valgrind = valgrind
         post_build.append(lambda: _run_ctest(bdir, valgrind=_valgrind))
+    if not skip_gates:
+        post_build.append(
+            lambda: _run_gates(root, ticket=ticket, base=base, delta=delta)
+        )
     return post_build
 
 
@@ -498,6 +522,7 @@ def _cpp_post_build_tasks(
 
 
 # frob:doc docs/commands/check.md#public-api
+# frob:ticket T-0554
 # frob:waive TEST005 reason="run_check_rust 33.3% branch cover, debt T-0160"
 def run_check_rust(
     root: Path,
@@ -506,9 +531,19 @@ def run_check_rust(
     skip_clippy: bool = False,
     skip_fmt: bool = False,
     skip_tests: bool = False,
+    skip_gates: bool = False,
     valgrind: bool = False,
+    ticket: str | None = None,
+    base: str | None = None,
+    delta: bool = False,
 ) -> CheckResult:
-    """Quality gate for Rust/Cargo projects."""
+    """Quality gate for Rust/Cargo projects.
+
+    T-0554: also runs the doc/coverage/drift/invariant gates stage
+    (`_run_gates`) -- previously only the Python pipeline ran it, so a pure
+    Rust repo's COV001/DOC001-3/DRIFT001-2/INV/DEC/TODO001 gates silently
+    never executed (docs/audits/lang-check-docs.md finding 1).
+    """
     results: list[ToolResult] = []
 
     if not skip_check:
@@ -527,6 +562,12 @@ def run_check_rust(
         r = _run_cargo_test(root, valgrind=valgrind)
         if r is not None:
             results.append(r)
+    if not skip_gates:
+        gate_result = _run_gates(root, ticket=ticket, base=base, delta=delta)
+        if isinstance(gate_result, list):
+            results.extend(gate_result)
+        else:
+            results.append(gate_result)
 
     return CheckResult(path=str(root), results=results)
 
@@ -537,6 +578,7 @@ def run_check_rust(
 
 
 # frob:doc docs/commands/check.md#public-api
+# frob:ticket T-0554
 # frob:waive TEST005 reason="run_check_ts 58.8% branch cover, debt T-0160"
 def run_check_ts(
     root: Path,
@@ -545,9 +587,19 @@ def run_check_ts(
     skip_eslint: bool = False,
     skip_prettier: bool = False,
     skip_tests: bool = False,
+    skip_gates: bool = False,
+    ticket: str | None = None,
+    base: str | None = None,
+    delta: bool = False,
 ) -> CheckResult:
-    """Quality gate for npm/TypeScript projects (tsc/eslint/prettier/vitest)."""
-    tasks: list[Callable[[], ToolResult | None]] = []
+    """Quality gate for npm/TypeScript projects (tsc/eslint/prettier/vitest).
+
+    T-0554: also runs the doc/coverage/drift/invariant gates stage
+    (`_run_gates`) -- previously only the Python pipeline ran it, so a pure
+    TypeScript repo's COV001/DOC001-3/DRIFT001-2/INV/DEC/TODO001 gates
+    silently never executed (docs/audits/lang-check-docs.md finding 1).
+    """
+    tasks: list[Callable[[], ToolResult | list[ToolResult] | None]] = []
     if not skip_tsc:
         tasks.append(lambda: _run_tsc(root))
     if not skip_eslint:
@@ -556,14 +608,20 @@ def run_check_ts(
         tasks.append(lambda: _run_prettier(root))
     if not skip_tests:
         tasks.append(lambda: _run_vitest(root))
+    if not skip_gates:
+        tasks.append(lambda: _run_gates(root, ticket=ticket, base=base, delta=delta))
 
     results: list[ToolResult] = []
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = [executor.submit(fn) for fn in tasks]
         for future in futures:
-            r = future.result()
-            if r is not None:
-                results.append(r)
+            val = future.result()
+            if val is None:
+                continue
+            if isinstance(val, list):
+                results.extend(val)
+            else:
+                results.append(val)
 
     return CheckResult(path=str(root), results=results)
 
