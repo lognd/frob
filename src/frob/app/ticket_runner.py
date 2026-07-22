@@ -194,11 +194,12 @@ def _filter_by_state(tickets, state):
     return [t for t in tickets if t.state == state]
 
 
+# frob:ticket T-0716
 def _list(root: Path, cfg: AppConfig) -> None:
     # Active store only (T-0096) -- archived done/dropped tickets would
     # otherwise pile back up in every `list` the archive command exists to
     # keep them out of.
-    from frob.tickets import TicketState, load_active
+    from frob.tickets import TicketState, display_state, load_active
 
     result = load_active(root)
     if result.is_err:
@@ -223,14 +224,15 @@ def _list(root: Path, cfg: AppConfig) -> None:
         _log.info(
             "%s  [%s]  %s  (%s)",
             style_ticket_id(t.id, color),
-            style_state(t.state.value, color),
+            style_state(display_state(t, root), color),
             t.title,
             t.kind.value,
         )
 
 
+# frob:ticket T-0716
 def _show(root: Path, cfg: AppConfig) -> None:
-    from frob.tickets import load_queue
+    from frob.tickets import display_state, load_queue
 
     if cfg.ticket_id is None:
         _log.error("frob ticket show requires <id>")
@@ -252,7 +254,7 @@ def _show(root: Path, cfg: AppConfig) -> None:
     _log.info(
         "%s  [%s]  %s  (%s)\nblocked_by=%s scope=%s%s\n\n%s",
         style_ticket_id(ticket.id, color),
-        style_state(ticket.state.value, color),
+        style_state(display_state(ticket, root), color),
         ticket.title,
         ticket.kind.value,
         list(ticket.blocked_by),

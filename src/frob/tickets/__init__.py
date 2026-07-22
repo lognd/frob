@@ -1161,6 +1161,37 @@ def leased_by(
     return tuple(hits)
 
 
+# frob:ticket T-0716
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_lease_overlay.py::TestDisplayState.test_queued_with_live_lease_decorated  # noqa: E501
+# frob:tests tests/test_tickets_lease_overlay.py::TestDisplayState.test_queued_with_stale_lease_undecorated  # noqa: E501
+# frob:tests tests/test_tickets_lease_overlay.py::TestDisplayState.test_ledger_in_progress_undecorated  # noqa: E501
+# frob:tests tests/test_tickets_lease_overlay.py::TestDisplayState.test_no_root_never_decorates  # noqa: E501
+def display_state(ticket: Ticket, root: Path | None) -> str:
+    """`ticket`'s display state for `frob ticket list`/`show` (T-0716): the
+    ledger `state.value`, OVERLAID (never written back to the ledger --
+    writing a worktree's view into main's ledger is exactly the
+    corruption class T-0633/T-0682 fixed) with `@<worktree-basename>` when
+    the ledger still shows `ticket` QUEUED/PLANNED but a live cross-worktree
+    lease for it exists (`read_all_leases`, which already drops leases
+    whose worktree path no longer exists -- T-0473/T-0476 stale-lease
+    handling reused here verbatim, not re-implemented).
+
+    A ledger-recorded `IN_PROGRESS` ticket is returned undecorated (plain
+    `"in-progress"`) -- that state is already visible without a lease, and
+    the `@worktree` marker exists specifically to surface the OTHER case:
+    a ticket a worktree has started that main's own ledger hasn't learned
+    about yet. `root=None` (no repo to consult the shared lease directory
+    from) always returns the plain ledger state, matching `leased_by`'s
+    own `root=None` degrade-quietly convention."""
+    if root is not None and ticket.state in (TicketState.QUEUED, TicketState.PLANNED):
+        for lease in read_all_leases(root):
+            if lease.ticket_id == ticket.id:
+                worktree_name = Path(lease.worktree).name
+                return f"in-progress@{worktree_name}"
+    return ticket.state.value
+
+
 # frob:ticket T-0455
 def _current_actor() -> str:
     """Best-effort identity for a `scope_changes` audit entry's `actor` field
@@ -2839,6 +2870,7 @@ __all__ = [
     "clipboard_has_image",
     "compose_done_report",
     "compute_changed_lines",
+    "display_state",
     "doable",
     "doable_blocked",
     "drop_ticket",
