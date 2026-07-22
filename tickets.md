@@ -5389,3 +5389,32 @@ component: null
 labels: []
 ```
 Per T-0330's EXHAUSTIVENESS DRIFT-LOCK paragraph: every tier-1 statically-checkable entry in architecture-check-catalog.md and every trap hallmark in design-pattern-traps-corpus.md that this epic's ARCH1xx family (T-0616..T-0625) was meant to cover must get a disposition in docs/design/registry/ (addressed-by-check <ARCHxxx id> | reasoned-deferral | duplicate-of | out-of-scope), per the T-0343 REG001 gate contract. Acceptance: frob check's registry gate (REG001-family) shows zero unaccounted entries whose owning corpus row maps to T-0330's scope; any entry NOT built in T-0616..T-0625 gets an explicit reasoned-deferral or out-of-scope disposition, never silently dropped. This ticket is the epic's actual close condition -- T-0330 cannot close until this is green.
+
+<!-- ticket:T-0627 -->
+```yaml
+id: T-0627
+title: 'frob check: chunked/stage-wise invocation that stays under agent foreground
+  caps'
+state: queued
+kind: ux
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/check/**
+- src/frob/app/check_runner.py
+- docs/guides/agent-playbook.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a dispatched sub-agent in a fresh worktree WHEN it verifies a ticket using
+  the documented invocation sequence THEN no single command exceeds 120s wall-clock
+  on this repo AND full-gate coverage (or an explicit not-run list) is reported
+threat: null
+component: null
+labels: []
+```
+Recurring dispatch friction, 4 occurrences in one session (T-0554, T-0261, T-0435, T-0609 agents): a full frob check / --stamp-baseline run exceeds the 120s agent foreground cap, the harness auto-backgrounds it, the sub-agent ends its turn waiting for a notification that can never reach it (playbook 3b), and the mission stalls until a coordinator manually pokes it. The playbook documents the anti-pattern but agents keep tripping because there is no sanctioned fast path. Provide one: either (a)  chunked invocation where each stage reliably completes under ~90s so agents can loop stages in-foreground, or (b) a  mode that runs as many gates as fit and reports the remainder as explicitly-not-run, or (c) make --stamp-baseline itself incremental. Update the agent playbook section 3b/6 with the sanctioned invocation once it exists. Related but distinct: T-0581 (process-pool parallelism), T-0582 (perf re-measurement), T-0584 (PRE001 sweep timeout).
