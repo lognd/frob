@@ -4321,7 +4321,7 @@ docs/audits/gates-accounting.md B4. _test005_symbols: pct = data.symbol_branch.g
 id: T-0558
 title: 'graph: parse/IO failure silently erases a file''s entire obligation set (T-0404
   finding 2)'
-state: in-progress
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-21'
