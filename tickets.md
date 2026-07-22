@@ -4278,6 +4278,7 @@ than silently working around it.
 
 ### Evidence
 - `tests/test_gates.py::TestGatesDegradeWithoutDiff::test_diff_dependent_gates_block_loudly_on_failed_diff` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0551 -->
 ```yaml
 id: T-0551
@@ -4802,9 +4803,9 @@ labels: []
 ```
 T-0459 landed RENDER001 warn-first with 14 bare print/stdout call sites remaining in check_runner, clean_runner, debt_runner, doctor_runner, gitlog_runner, registry_runner, test_runner (exact list in T-0459's Done report). Migrate them to frob.render, then flip RENDER001 to error severity so the output layer cannot rot. Scope: those 7 files + src/frob/gates/_render_lint.py + tests.
 
-<!-- ticket:T-draft-f5d48e02 -->
+<!-- ticket:T-0564 -->
 ```yaml
-id: T-draft-f5d48e02
+id: T-0564
 title: 'gates: COV002 closed-ticket grace window misses marker-in-hunk when unified=0
   diff omits the marker line'
 state: queued
