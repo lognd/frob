@@ -266,10 +266,18 @@ class AppConfig(BaseModel):
     ticket_evidence_ids: list[str] = []
     ticket_evidence_cmd: str | None = None
     # frob:ticket T-0572
+    # frob:ticket T-0749
     # `frob ticket evidence <id> <node-id>... --accepts N [N ...]` /
     # `frob ticket close <id> --evidence <node-id>... --accepts N [N ...]`
     # -- 0-based ticket.acceptance indices the given evidence ids also bind
     # to, in the same write as the evidence append (see add_evidence).
+    # T-0749: `from_external` never copied this field from the parsed CLI
+    # namespace into the AppConfig kwargs dict at all (missing from every
+    # field-copy loop below) -- `--accepts N` was parsed by argparse into
+    # `args.ticket_accepts` but silently dropped before `AppConfig(**d)`,
+    # so the CLI always bound `accepts=[]` regardless of what was typed.
+    # T-0572's own tests called `add_evidence`/`_apply_evidence` directly
+    # and never exercised this CLI layer, so they never caught it.
     ticket_accepts: list[int] = []
     ticket_old_id: str | None = None
     ticket_new_id: str | None = None
@@ -617,6 +625,8 @@ class AppConfig(BaseModel):
             "ticket_blocked_by",
             "ticket_acceptance",
             "ticket_evidence_ids",
+            # frob:ticket T-0749
+            "ticket_accepts",
             "ticket_labels",
             "ticket_label_add",
             "ticket_label_remove",

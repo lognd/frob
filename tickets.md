@@ -13892,7 +13892,7 @@ User mandate 2026-07-22: the hot-graph must cover ALL supported languages, not j
 id: T-0749
 title: 'evidence --accepts binding not persisted (at least via --path): acceptance
   stays unbound after CLI reports success'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-22'
@@ -13903,18 +13903,89 @@ scope:
 - src/frob/app/ticket_runner.py
 - src/frob/tickets/**
 - tests/test_tickets_acceptance.py
-scope_changes: []
-evidence: []
+- src/frob/app/config.py
+scope_changes:
+- op: add
+  glob: src/frob/app/config.py
+  reason: root cause of the --accepts persistence bug is a missing field-copy line
+    in AppConfig.from_external, not in ticket_runner.py/tickets/** as suspected
+  actor: logan
+  at: '2026-07-22'
+evidence:
+- tests/test_tickets_acceptance.py::TestAcceptsCliWiring::test_from_external_carries_accepts_from_parsed_argv
+- tests/test_tickets_acceptance.py::TestAcceptsCliWiring::test_evidence_cli_binds_acceptance_via_path_flag
+- tests/test_tickets_acceptance.py::TestAcceptsCliWiring::test_evidence_cli_binds_acceptance_in_repo_no_path_flag
+- tests/test_tickets_acceptance.py::TestAcceptsCliWiring::test_close_time_verification_consumes_the_accepts_binding
 attachments: []
 acceptance:
 - text: GIVEN frob ticket evidence X node --accepts 0 --path DIR WHEN the ledger is
     re-read THEN acceptance[0].evidence contains the node id
-  evidence: []
+  evidence:
+  - tests/test_tickets_acceptance.py::TestAcceptsCliWiring::test_from_external_carries_accepts_from_parsed_argv
+  - tests/test_tickets_acceptance.py::TestAcceptsCliWiring::test_evidence_cli_binds_acceptance_via_path_flag
+  - tests/test_tickets_acceptance.py::TestAcceptsCliWiring::test_evidence_cli_binds_acceptance_in_repo_no_path_flag
+  - tests/test_tickets_acceptance.py::TestAcceptsCliWiring::test_close_time_verification_consumes_the_accepts_binding
 threat: null
 component: null
 labels: []
 ```
 Field bug found landing T-0736 (the first close under T-0572s acceptance gate): frob ticket evidence <id> <node> --accepts N --path <dir> reports the evidence append but the criterion binding does NOT persist -- acceptance[N].evidence stays [] on read-back (reproduced 3x; the plain evidence list grows, the binding is dropped). Unblocked via a direct store-API write. Root-cause candidates: the accepts write path ignores --path, or the binding is applied to a copy the ledger write does not carry. Add a regression test binding via --path and reading back; audit the in-repo (no --path) path too -- T-0572s own tests bound in-repo and passed, so the --path leg is at least the broken one.
+
+## Done report
+
+Root cause: `AppConfig.from_external` (src/frob/app/config.py) never copied
+`ticket_accepts` from the parsed argv namespace into the AppConfig kwargs
+dict at all -- it was missing from every field-copy loop (int/list/bool)
+in that classmethod. `--accepts N` was parsed correctly by argparse into
+`args.ticket_accepts`, but `from_external` silently dropped it before
+`AppConfig(**d)`, so every CLI invocation of `frob ticket evidence`/`close`
+always bound `accepts=[]` regardless of what was typed on the command
+line -- in-repo AND via `--path` alike. This was a config-layer drop, not
+the root/store-resolution divergence between the two legs the ticket
+suspected; both legs were equally broken, `add_evidence`'s own binding
+logic (`_append_evidence_and_write`) and the ledger serialization
+(`_splice_ticket_section`/`_render_section`) were always correct. T-0572's
+own tests never caught this because they construct `AppConfig(...)`
+directly (bypassing argparse/from_external entirely), so the CLI-layer
+gap between "argparse parsed it" and "AppConfig received it" was never
+exercised.
+
+Fix: added `"ticket_accepts"` to the list-field copy loop in
+`AppConfig.from_external` (one line), plus an explanatory comment on the
+`ticket_accepts` field docstring recording the gap and why T-0572's tests
+missed it.
+
+Regression tests added to tests/test_tickets_acceptance.py
+(TestAcceptsCliWiring), all driven through the REAL argparse parser
+(`frob.__main__._build_parser`) rather than constructing AppConfig by
+hand, so this exact class of gap cannot regress silently again:
+  - test_from_external_carries_accepts_from_parsed_argv: from_external
+    alone, proving the copy now happens.
+  - test_evidence_cli_binds_acceptance_via_path_flag: full field repro,
+    `frob ticket evidence <id> <node> --accepts 0 --path DIR`.
+  - test_evidence_cli_binds_acceptance_in_repo_no_path_flag: same, no
+    --path (audited per the ticket's instruction to check both legs).
+  - test_close_time_verification_consumes_the_accepts_binding: T-0736/
+    T-0627 field shape -- evidence bound via CLI, then a later `close`
+    with no further --accepts, fresh ledger reload, sees the binding
+    already persisted and succeeds.
+
+Manually reproduced the bug pre-fix in an isolated scratch git repo via
+the real CLI (`frob ticket evidence T-X node --accepts 0 --path DIR`
+followed by `frob ticket show`), confirmed `acceptance[0]` read back
+UNBOUND, then confirmed bound(['...']) post-fix with the identical
+commands.
+
+Scope: fix required extending T-0749's declared scope by one file
+(src/frob/app/config.py) via `frob ticket scope --add`, since the actual
+root cause was not in ticket_runner.py or tickets/** as the ticket's
+own root-cause candidates suspected.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0750 -->
 ```yaml
@@ -13940,6 +14011,7 @@ component: null
 labels: []
 ```
 found while working T-0627: a wide swath of tests/system/test_cli_check.py (TestCheckCleanProject, TestCheckSkipFlags, TestCheckGatesStage, TestCheckDocAnchorScopedVsUnscoped, TestFrobTomlCheckDefaults, TestCheckTypescript, TestCheckStampBaselineAndDelta, TestCheckTicketScopedAlwaysReportsOnFailure) fail on this worktree's post-merge main: _make_project's tmp_path fixture never git-inits, and newly-merged gates (COV002, SCOPE001, TODO001) now error loudly on a missing git repo instead of the older gates that degraded quietly -- 'working diff against base=main failed to load ... this is a load failure, not a clean/empty diff, so it is not silently passing'. Pre-existing as of the T-0627 warm-up merge, not caused by T-0627's changes (verified: T-0627's own new tests pass; this same failure set reproduces independent of T-0627's diff). Fix is either: git-init tmp_path in the shared fixture, or add gate exemptions those specific tests already relied on for the older gate set.
+
 <!-- ticket:T-0751 -->
 ```yaml
 id: T-0751
