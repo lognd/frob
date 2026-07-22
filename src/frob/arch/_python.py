@@ -19,6 +19,21 @@ from typing import cast
 from tree_sitter import Node, Tree
 
 from frob.arch._models import ArchSuggestion
+from frob.arch._normalized import (
+    NormalizedBranch,
+    NormalizedCall,
+    NormalizedCatch,
+    NormalizedClass,
+    NormalizedField,
+    NormalizedFieldAccess,
+    NormalizedFunction,
+    NormalizedImport,
+    NormalizedLoop,
+    NormalizedModule,
+    NormalizedParam,
+    NormalizedRaise,
+    NormalizedReturn,
+)
 from frob.dup._legacy_py import _collect_locals_py, _serialize_py_body
 from frob.lang import child_by_field as _child
 from frob.lang import node_text as _node_text
@@ -121,17 +136,6 @@ def _py_cyclomatic(node: Node) -> int:
     return count
 
 
-def _py_is_complex(body: Node) -> bool:
-    """Whether a function body is structurally complex enough for the
-    long-function rule to fire (T-0289): deep nesting OR a high cyclomatic
-    proxy. A long-but-FLAT function (linear setup+asserts, a big match/case,
-    a literal dispatch table) fails both and must not be flagged."""
-    return (
-        _py_max_nesting(body) >= _LONG_FUNCTION_NESTING_THRESHOLD
-        or _py_cyclomatic(body) >= _LONG_FUNCTION_CYCLOMATIC_THRESHOLD
-    )
-
-
 def _check_long_functions(
     tree: object,
     rel: str,
@@ -139,29 +143,29 @@ def _check_long_functions(
     out: list[ArchSuggestion],
 ) -> None:
     """Flag python functions that are BOTH longer than `max_function_lines`
-    AND structurally complex (`_py_is_complex`, T-0289) -- a long-but-flat
-    function no longer fires. Each finding carries a `symref`/`metric` so
-    `frob.gates`' ARCH001 job can match a `frob:waive ARCH001` directive to
-    the exact function and honor an optional `ceiling=` re-fire threshold."""
-    t: Tree = cast("Tree", tree)
-    for func, prefix, fname in _iter_py_functions(t.root_node):
-        n_lines = _py_function_line_count(func)
+    AND structurally complex (`_normalized_is_complex`, T-0289; re-expressed
+    on `NormalizedModule` at T-0610) -- a long-but-flat function no longer
+    fires. Each finding carries a `symref`/`metric` so `frob.gates`' ARCH001
+    job can match a `frob:waive ARCH001` directive to the exact function and
+    honor an optional `ceiling=` re-fire threshold."""
+    module = _py_build_module(tree, rel)
+    for func, prefix in _iter_normalized_functions(module):
+        n_lines = func.body_line_count
         if n_lines <= max_function_lines:
             continue
-        body = _child(func, "body")
-        if body is not None and not _py_is_complex(body):
+        if not _normalized_is_complex(func):
             continue
         out.append(
             ArchSuggestion(
                 file=rel,
-                line=func.start_point[0] + 1,
+                line=func.line,
                 category="long-function",
                 severity="warning",
                 message=(
-                    f"function `{prefix}{fname}` has"
+                    f"function `{prefix}{func.name}` has"
                     f" {n_lines} lines (threshold: {max_function_lines})"
                 ),
-                symref=f"{rel}::{prefix}{fname}",
+                symref=f"{rel}::{prefix}{func.name}",
                 metric=n_lines,
             )
         )
@@ -178,26 +182,21 @@ def _check_god_classes(
     max_class_methods: int,
     out: list[ArchSuggestion],
 ) -> None:
-    """Flag every top-level python class with more than `max_class_methods`."""
-    t: Tree = cast("Tree", tree)
-    for c in t.root_node.children:
-        if c.type != "class_definition":
-            continue
-        body = _child(c, "body")
-        if body is None:
-            continue
-        n_methods = len(_py_methods(body))
+    """Flag every top-level python class with more than `max_class_methods`
+    -- reads `NormalizedModule.classes` (T-0610) instead of walking `tree`
+    directly."""
+    module = _py_build_module(tree, rel)
+    for c in module.classes:
+        n_methods = len(c.methods)
         if n_methods <= max_class_methods:
             continue
-        name_node = _child(c, "name")
-        cname = _node_text(name_node) if name_node else "?"
         out.append(
             ArchSuggestion(
                 file=rel,
-                line=c.start_point[0] + 1,
+                line=c.line,
                 category="god-class",
                 severity="warning",
-                message=f"class `{cname}` has {n_methods} methods"
+                message=f"class `{c.name}` has {n_methods} methods"
                 f" (threshold: {max_class_methods})",
             )
         )
@@ -247,29 +246,415 @@ def _py_max_nesting(func_body_node: Node) -> int:
     return depth(func_body_node, 0)
 
 
+# ---------------------------------------------------------------------------
+# T-0610: python `LanguageAdapter` -- maps this module's tree-sitter walks
+# onto the T-0609 `NormalizedModule` shape, and the checks migrated to
+# consume it (long-function, god-class, deep-nesting). `_extract_signatures`/
+# `_collect_file_dispatch_refs` (abstraction-opportunity's cross-file corpus)
+# are NOT migrated here: `NormalizedCall` carries only a callee name and
+# line (no argument-position/dict-value detail), and body-fingerprinting
+# needs the full raw AST for alpha-renaming (`frob.dup._legacy_py`) -- both
+# need more expression detail than the current `NormalizedModule` schema
+# captures. See this ticket's Done report for the filed follow-up.
+# ---------------------------------------------------------------------------
+
+_LOOP_KINDS = {"for_statement": "for", "while_statement": "while"}
+_BRANCH_EVENT_TYPES = frozenset(
+    {"if_statement", "boolean_operator", "conditional_expression"}
+)
+
+
+def _py_branch_condition_text(node: Node) -> str:
+    """Source text of a branch node's own test condition: an `if_statement`
+    reads its `condition` field; a `boolean_operator`/`conditional_expression`
+    has no separate condition field, so its own text stands for it."""
+    if node.type == "if_statement":
+        cond = _child(node, "condition")
+        return _node_text(cond) if cond is not None else _node_text(node)
+    return _node_text(node)
+
+
+def _py_call_callee_text(node: Node) -> str:
+    """The callee text of a `call` node: a bare identifier (`f(...)`) or the
+    dotted `obj.method` form (`obj.method(...)`)."""
+    func = _child(node, "function")
+    return _node_text(func) if func is not None else _node_text(node)
+
+
+def _py_is_field_write(node: Node) -> bool:
+    """Whether an `attribute` node (`self.x`) is the assignment-target of an
+    `assignment` (a write) rather than being read."""
+    parent = node.parent
+    if parent is None or parent.type != "assignment":
+        return False
+    target = _child(parent, "left")
+    return target is not None and target.id == node.id
+
+
+def _py_raise_exception_type(node: Node) -> str | None:
+    """The exception type name of a `raise` statement where staticaly
+    determinable (`raise ValueError(...)` -> `"ValueError"`), else `None`
+    (a bare `raise` re-raise, or a raised expression too dynamic to name)."""
+    for c in node.named_children:
+        if c.type == "call":
+            func = _child(c, "function")
+            if func is not None and func.type == "identifier":
+                return _node_text(func)
+        elif c.type == "identifier":
+            return _node_text(c)
+    return None
+
+
+def _py_except_exception_type(node: Node) -> str | None:
+    """The caught exception type name of an `except_clause`, or `None` for a
+    bare `except:` catch-all or a multi-type `except (A, B):` tuple's first
+    member being taken as the representative type."""
+    for c in node.named_children:
+        if c.type in ("identifier", "attribute"):
+            return _node_text(c)
+        if c.type == "tuple":
+            first = next(iter(c.named_children), None)
+            if first is not None:
+                return _node_text(first)
+    return None
+
+
+def _py_collect_body_events(
+    node: Node,
+    branches: list[NormalizedBranch],
+    loops: list[NormalizedLoop],
+    calls: list[NormalizedCall],
+    field_accesses: list[NormalizedFieldAccess],
+    returns: list[NormalizedReturn],
+    raises: list[NormalizedRaise],
+    catches: list[NormalizedCatch],
+) -> None:
+    """Flatten every structural event (T-0609 shape) inside `node`'s
+    subtree, stopping at a nested `function_definition`/`class_definition`
+    boundary -- those become their own `NormalizedFunction`/`NormalizedClass`
+    (`_py_build_function`/`_py_build_class`), not events folded into the
+    parent."""
+    for c in node.children:
+        if c.type in ("function_definition", "class_definition"):
+            continue
+        if c.type in _BRANCH_EVENT_TYPES:
+            branches.append(
+                NormalizedBranch(
+                    line=c.start_point[0] + 1,
+                    condition_text=_py_branch_condition_text(c),
+                )
+            )
+        if c.type in _LOOP_KINDS:
+            loops.append(
+                NormalizedLoop(line=c.start_point[0] + 1, kind=_LOOP_KINDS[c.type])
+            )
+        if c.type == "call":
+            calls.append(
+                NormalizedCall(
+                    callee=_py_call_callee_text(c), line=c.start_point[0] + 1
+                )
+            )
+        if c.type == "attribute":
+            field_name_node = _child(c, "attribute")
+            if field_name_node is not None:
+                field_accesses.append(
+                    NormalizedFieldAccess(
+                        name=_node_text(field_name_node),
+                        line=c.start_point[0] + 1,
+                        is_write=_py_is_field_write(c),
+                    )
+                )
+        if c.type == "return_statement":
+            value = next(iter(c.named_children), None)
+            returns.append(
+                NormalizedReturn(
+                    line=c.start_point[0] + 1,
+                    value_text=_node_text(value) if value is not None else None,
+                )
+            )
+        if c.type == "raise_statement":
+            raises.append(
+                NormalizedRaise(
+                    line=c.start_point[0] + 1,
+                    exception_type=_py_raise_exception_type(c),
+                )
+            )
+        if c.type == "except_clause":
+            catches.append(
+                NormalizedCatch(
+                    line=c.start_point[0] + 1,
+                    exception_type=_py_except_exception_type(c),
+                )
+            )
+        _py_collect_body_events(
+            c, branches, loops, calls, field_accesses, returns, raises, catches
+        )
+
+
+def _py_normalize_params(func_node: Node) -> list[NormalizedParam]:
+    """`NormalizedParam`s for `func_node`'s parameter list, in source order."""
+    params_node = _child(func_node, "parameters")
+    if params_node is None:
+        return []
+    out: list[NormalizedParam] = []
+    for p in params_node.named_children:
+        if p.type == "identifier":
+            out.append(NormalizedParam(name=_node_text(p)))
+        elif p.type in ("typed_parameter", "typed_default_parameter"):
+            name_node = next(
+                (n for n in p.named_children if n.type == "identifier"), None
+            )
+            ann = _child(p, "type")
+            out.append(
+                NormalizedParam(
+                    name=_node_text(name_node) if name_node is not None else "?",
+                    type=_annotation_text(ann) if ann is not None else None,
+                    has_default=p.type == "typed_default_parameter",
+                )
+            )
+        elif p.type == "default_parameter":
+            name_node = _child(p, "name")
+            out.append(
+                NormalizedParam(
+                    name=_node_text(name_node) if name_node is not None else "?",
+                    has_default=True,
+                )
+            )
+    return out
+
+
+def _py_build_function(func_node: Node, is_method: bool) -> NormalizedFunction:
+    """One `function_definition` (top-level, method, or nested) as a
+    `NormalizedFunction` -- events flattened via `_py_collect_body_events`,
+    nested `function_definition`s recursed into `nested_functions`, and
+    `max_nesting_depth`/`cyclomatic` computed via the pre-existing
+    `_py_max_nesting`/`_py_cyclomatic` walks (kept as SEPARATE fields, not
+    derived from the flattened event lists -- see
+    `NormalizedFunction.max_nesting_depth`'s docstring) so these two metrics
+    match the original per-language walk exactly, byte-for-byte."""
+    name_node = _child(func_node, "name")
+    name = _node_text(name_node) if name_node else "?"
+    body = _child(func_node, "body")
+    ret_node = _child(func_node, "return_type")
+    branches: list[NormalizedBranch] = []
+    loops: list[NormalizedLoop] = []
+    calls: list[NormalizedCall] = []
+    field_accesses: list[NormalizedFieldAccess] = []
+    returns: list[NormalizedReturn] = []
+    raises: list[NormalizedRaise] = []
+    catches: list[NormalizedCatch] = []
+    nested: list[NormalizedFunction] = []
+    if body is not None:
+        _py_collect_body_events(
+            body, branches, loops, calls, field_accesses, returns, raises, catches
+        )
+        for c in body.named_children:
+            if c.type == "function_definition":
+                nested.append(_py_build_function(c, is_method=False))
+    return NormalizedFunction(
+        name=name,
+        line=func_node.start_point[0] + 1,
+        body_line_count=_py_function_line_count(func_node),
+        params=_py_normalize_params(func_node),
+        return_type=_annotation_text(ret_node) if ret_node is not None else None,
+        is_method=is_method,
+        max_nesting_depth=_py_max_nesting(body) if body is not None else 0,
+        cyclomatic=_py_cyclomatic(body) if body is not None else 0,
+        branches=branches,
+        loops=loops,
+        calls=calls,
+        field_accesses=field_accesses,
+        returns=returns,
+        raises=raises,
+        catches=catches,
+        nested_functions=nested,
+    )
+
+
+def _py_class_fields(body: Node) -> list[NormalizedField]:
+    """Class-level annotated assignments (`x: int`, `x: int = 0`) directly
+    inside a class body -- `self.x = ...` instance fields set only inside
+    `__init__` are intentionally not walked here (T-0610's first pass keeps
+    this cheap; no existing check needs instance-field discovery yet)."""
+    out: list[NormalizedField] = []
+    for c in body.named_children:
+        if c.type != "expression_statement":
+            continue
+        inner = next(iter(c.named_children), None)
+        if inner is None or inner.type != "assignment":
+            continue
+        left = _child(inner, "left")
+        type_node = _child(inner, "type")
+        if left is not None and left.type == "identifier":
+            out.append(
+                NormalizedField(
+                    name=_node_text(left),
+                    line=c.start_point[0] + 1,
+                    type=_annotation_text(type_node) if type_node is not None else None,
+                )
+            )
+    return out
+
+
+def _py_build_class(class_node: Node) -> NormalizedClass:
+    """One `class_definition` as a `NormalizedClass`: its base-class names
+    (as written), class-level fields (`_py_class_fields`), and direct
+    methods (`_py_methods`, unchanged -- only `function_definition`
+    children directly inside the class body, matching `_check_god_classes`'
+    prior method count exactly)."""
+    name_node = _child(class_node, "name")
+    name = _node_text(name_node) if name_node else "?"
+    bases: list[str] = []
+    superclasses = _child(class_node, "superclasses")
+    if superclasses is not None:
+        bases = [_node_text(a) for a in superclasses.named_children]
+    body = _child(class_node, "body")
+    fields: list[NormalizedField] = []
+    methods: list[NormalizedFunction] = []
+    if body is not None:
+        fields = _py_class_fields(body)
+        methods = [_py_build_function(m, is_method=True) for m in _py_methods(body)]
+    return NormalizedClass(
+        name=name,
+        line=class_node.start_point[0] + 1,
+        bases=bases,
+        fields=fields,
+        methods=methods,
+    )
+
+
+def _py_build_module(tree: object, rel: str) -> NormalizedModule:
+    """The whole-file `NormalizedModule` for a parsed python file: top-level
+    imports, classes, and free functions (`PythonAdapter.adapt`)."""
+    t: Tree = cast("Tree", tree)
+    classes: list[NormalizedClass] = []
+    functions: list[NormalizedFunction] = []
+    imports: list[NormalizedImport] = []
+    for c in t.root_node.children:
+        if c.type == "class_definition":
+            classes.append(_py_build_class(c))
+        elif c.type == "function_definition":
+            functions.append(_py_build_function(c, is_method=False))
+        elif c.type == "import_statement":
+            for name_node in c.named_children:
+                if name_node.type in ("dotted_name", "identifier"):
+                    imports.append(
+                        NormalizedImport(
+                            module=_node_text(name_node), line=c.start_point[0] + 1
+                        )
+                    )
+                elif name_node.type == "aliased_import":
+                    mod_node = _child(name_node, "name")
+                    if mod_node is not None:
+                        imports.append(
+                            NormalizedImport(
+                                module=_node_text(mod_node),
+                                line=c.start_point[0] + 1,
+                            )
+                        )
+        elif c.type == "import_from_statement":
+            mod_node = _child(c, "module_name")
+            names = [
+                _node_text(n)
+                for n in c.named_children
+                if n.type == "dotted_name" and n is not mod_node
+            ]
+            imports.append(
+                NormalizedImport(
+                    module=_node_text(mod_node) if mod_node is not None else "",
+                    line=c.start_point[0] + 1,
+                    names=names,
+                )
+            )
+    return NormalizedModule(
+        path=rel,
+        language="python",
+        imports=imports,
+        classes=classes,
+        functions=functions,
+    )
+
+
+# frob:doc docs/modules/arch.md#normalized-code-model
+# frob:tests tests/unit/test_arch.py::TestPythonAdapter.test_adapt_arch_python_fixture_shape  # noqa: E501
+class PythonAdapter:
+    """`LanguageAdapter` (T-0609) for python: maps a `raw_tree`-parsed
+    python file's tree-sitter `Tree` onto a `NormalizedModule` by reusing
+    this module's existing node-level walkers (`_py_build_module` and
+    friends) -- the same tree-sitter grammar shapes `_check_*` already
+    understood, just projected onto the shared shape instead of consumed
+    directly, so the checks migrated onto `NormalizedModule`
+    (`_check_long_functions`, `_check_god_classes`, `_check_deep_nesting`)
+    read identical data through one extra layer of indirection."""
+
+    language = "python"
+
+    # frob:doc docs/modules/arch.md#normalized-code-model
+    # frob:tests tests/unit/test_arch.py::TestPythonAdapter.test_adapt_arch_python_fixture_shape  # noqa: E501
+    def adapt(self, tree: object, source: bytes, rel: str) -> NormalizedModule:
+        """Build the `NormalizedModule` for one parsed python file (`tree`,
+        `rel`) -- `source` is unused since tree-sitter `Node.text` already
+        carries its own byte slice from the buffer it was parsed with."""
+        del source
+        return _py_build_module(tree, rel)
+
+
+def _iter_normalized_functions(
+    module: NormalizedModule,
+) -> Iterator[tuple[NormalizedFunction, str]]:
+    """Yield `(function, qualname_prefix)` for every function in `module`
+    (top-level free functions, class methods, and nested functions) -- the
+    `NormalizedModule` analogue of `_iter_py_functions`, used by the checks
+    migrated onto it (T-0610)."""
+
+    def _rec(
+        func: NormalizedFunction, prefix: str
+    ) -> Iterator[tuple[NormalizedFunction, str]]:
+        yield func, prefix
+        for nested in func.nested_functions:
+            yield from _rec(nested, prefix)
+
+    for f in module.functions:
+        yield from _rec(f, "")
+    for c in module.classes:
+        for m in c.methods:
+            yield from _rec(m, f"{c.name}.")
+
+
+def _normalized_is_complex(func: NormalizedFunction) -> bool:
+    """Whether a `NormalizedFunction` is structurally complex enough for the
+    long-function rule to fire (T-0289, re-expressed on the normalized
+    model at T-0610): deep nesting OR a high cyclomatic proxy, reading the
+    adapter-computed `max_nesting_depth`/`cyclomatic` fields -- identical
+    thresholds and semantics to the pre-migration `_py_is_complex`."""
+    return (
+        func.max_nesting_depth >= _LONG_FUNCTION_NESTING_THRESHOLD
+        or func.cyclomatic >= _LONG_FUNCTION_CYCLOMATIC_THRESHOLD
+    )
+
+
 def _check_deep_nesting(
     tree: object,
     rel: str,
     max_nesting_depth: int,
     out: list[ArchSuggestion],
 ) -> None:
-    """Flag python functions whose control-flow nesting exceeds the threshold."""
-    t: Tree = cast("Tree", tree)
-    for func, prefix, fname in _iter_py_functions(t.root_node):
-        body = _child(func, "body")
-        if body is None:
-            continue
-        depth = _py_max_nesting(body)
+    """Flag python functions whose control-flow nesting exceeds the
+    threshold -- reads `NormalizedModule`/`NormalizedFunction.
+    max_nesting_depth` (T-0610) instead of walking `tree` directly."""
+    module = _py_build_module(tree, rel)
+    for func, prefix in _iter_normalized_functions(module):
+        depth = func.max_nesting_depth
         if depth <= max_nesting_depth:
             continue
         out.append(
             ArchSuggestion(
                 file=rel,
-                line=func.start_point[0] + 1,
+                line=func.line,
                 category="deep-nesting",
                 severity="suggestion",
                 message=(
-                    f"function `{prefix}{fname}` has"
+                    f"function `{prefix}{func.name}` has"
                     f" nesting depth {depth}"
                     f" (threshold: {max_nesting_depth})"
                 ),

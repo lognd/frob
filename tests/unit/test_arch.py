@@ -1209,3 +1209,78 @@ class TestNormalizedModel:
         assert isinstance(stub, LanguageAdapter)
         result = stub.adapt(tree=object(), source=b"", rel="a.py")
         assert result.path == "a.py"
+
+
+# ---------------------------------------------------------------------------
+# T-0610: PythonAdapter -- maps a real parsed python file onto NormalizedModule
+# ---------------------------------------------------------------------------
+
+
+class TestPythonAdapter:
+    """T-0610: `frob.arch._python.PythonAdapter` is the first `LanguageAdapter`
+    implementation, built off this module's existing tree-sitter walkers.
+    These tests exercise it directly against real fixture files, separately
+    from the (unchanged) `analyze_project`-level suggestion assertions
+    above."""
+
+    def test_is_a_language_adapter(self) -> None:
+        from frob.arch._normalized import LanguageAdapter
+        from frob.arch._python import PythonAdapter
+
+        adapter = PythonAdapter()
+        assert isinstance(adapter, LanguageAdapter)
+        assert adapter.language == "python"
+
+    def test_adapt_arch_python_fixture_shape(self) -> None:
+        from frob.arch._python import PythonAdapter
+        from frob.lang import raw_tree
+
+        path = FIXTURES / "arch_python" / "src" / "big_class.py"
+        parsed = raw_tree(path)
+        assert parsed.is_ok
+        tree, source, language = parsed.danger_ok
+        assert language == "python"
+
+        module = PythonAdapter().adapt(tree, source, "big_class.py")
+        assert module.path == "big_class.py"
+        assert module.language == "python"
+        assert len(module.classes) == 1
+        cls = module.classes[0]
+        assert cls.name == "BigService"
+        assert len(cls.methods) == 16
+        assert all(m.is_method for m in cls.methods)
+        assert {m.name for m in cls.methods} == {
+            f"method_{i:02d}" for i in range(1, 17)
+        }
+
+    def test_adapt_long_func_fixture_structural_events(self) -> None:
+        from frob.arch._python import PythonAdapter
+        from frob.lang import raw_tree
+
+        path = FIXTURES / "arch_python" / "src" / "long_func.py"
+        parsed = raw_tree(path)
+        assert parsed.is_ok
+        tree, source, _language = parsed.danger_ok
+
+        module = PythonAdapter().adapt(tree, source, "long_func.py")
+        funcs = {f.name: f for f in module.functions}
+        assert "configure_pipeline" in funcs
+        target = funcs["configure_pipeline"]
+        # The long-function fixture is complex enough to trigger the rule --
+        # its normalized nesting/cyclomatic metrics must reflect that, since
+        # `_check_long_functions` (T-0610) reads these fields directly.
+        assert target.max_nesting_depth >= 3 or target.cyclomatic >= 8
+
+    def test_adapt_deep_nest_fixture_nesting_depth(self) -> None:
+        from frob.arch._python import PythonAdapter
+        from frob.lang import raw_tree
+
+        path = FIXTURES / "arch_python" / "src" / "deep_nest.py"
+        parsed = raw_tree(path)
+        assert parsed.is_ok
+        tree, source, _language = parsed.danger_ok
+
+        module = PythonAdapter().adapt(tree, source, "deep_nest.py")
+        funcs = {f.name: f for f in module.functions}
+        assert "process_matrix" in funcs
+        assert funcs["process_matrix"].max_nesting_depth >= 4

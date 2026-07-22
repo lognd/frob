@@ -154,7 +154,18 @@ class NormalizedFunction(BaseModel):
     when an adapter can determine it -- e.g. an explicit base-class method
     of the same name, or a language's own override keyword/annotation)
     covers the "override" entity the ticket calls out without a separate
-    top-level type, since an override is always scoped to a method."""
+    top-level type, since an override is always scoped to a method.
+
+    `max_nesting_depth`/`cyclomatic` (T-0610) are adapter-computed
+    structural metrics from the language's OWN full subtree (including
+    through nested function/class boundaries, matching each existing
+    per-language nesting/cyclomatic-proxy walk exactly) -- deliberately NOT
+    derivable from the flattened `branches`/`loops`/`catches` lists below,
+    which stop at a nested function/class boundary (those become their own
+    `NormalizedFunction`/`NormalizedClass`) and would under-count relative
+    to the original per-language walk. A check that needs the true metric
+    reads these fields instead of re-deriving it from a language-specific
+    tree."""
 
     model_config = {}
 
@@ -165,6 +176,8 @@ class NormalizedFunction(BaseModel):
     return_type: str | None = None
     is_method: bool = False
     overrides: str | None = None
+    max_nesting_depth: int = 0
+    cyclomatic: int = 0
     branches: list[NormalizedBranch] = []
     loops: list[NormalizedLoop] = []
     calls: list[NormalizedCall] = []
