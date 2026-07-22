@@ -3417,7 +3417,7 @@ All ~30 landings this session were manual: renumbering ~40 drafts (renumber does
 id: T-0578
 title: 'CLI vocabulary normalization + did-you-mean: --state vs --status, --why vs
   --body, consistent flags'
-state: queued
+state: in-progress
 kind: ux
 origin: agent
 created: '2026-07-21'
@@ -3426,7 +3426,13 @@ blocked_by: []
 parent: null
 scope: []
 scope_changes: []
-evidence: []
+evidence:
+- tests/unit/test_main_entry.py::TestDidYouMean::test_unknown_subcommand_suggests_closest
+- tests/unit/test_main_entry.py::TestDidYouMean::test_unknown_ticket_subcommand_suggests_closest
+- tests/unit/test_main_entry.py::TestDidYouMean::test_unrecognized_flag_suggests_closest_known_flag
+- tests/unit/test_main_entry.py::TestDidYouMean::test_far_off_flag_gets_no_suggestion
+- tests/unit/test_main_entry.py::TestVocabularyAliases::test_ticket_list_status_alias_sets_state_dest
+- tests/unit/test_main_entry.py::TestVocabularyAliases::test_ticket_done_report_body_alias_sets_why_dest
 attachments: []
 acceptance: []
 threat: null
@@ -3434,7 +3440,6 @@ component: null
 labels: []
 ```
 Observed misuse: frob ticket list --status (correct: --state), done-report --body (correct: --why). Normalize flag vocabulary across subcommands (one name per concept), add argparse suggestions on unknown flags/subcommands. Scope: src/frob/__main__.py, app/config.py, docs/commands/.
-
 <!-- ticket:T-0579 -->
 ```yaml
 id: T-0579
