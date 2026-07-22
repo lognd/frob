@@ -5245,32 +5245,9 @@ labels: []
 ```
 T-0408 landed INV006 warn-first over src/, strata-core/src/, frob-core/src/ with ~167 undispositioned findings (disclosed prose cut, no ticket -- filed here). Same calibrate-then-burndown discipline as the INV003/T-0520 campaign: bucket by file/pattern first, calibrate further if a noise class dominates, then bind real invariants, reword overclaims, or waive genuine-design-intent with reasons. Candidate for the T-0569 ratchet-pool mechanism once it lands. Scope: src/frob/gates/invariants.py, invariants/, the flagged source files.
 
-<!-- ticket:T-draft-2411b5b6 -->
+<!-- ticket:T-0586 -->
 ```yaml
-id: T-draft-2411b5b6
-title: Wire real TS/C/C++ test collectors (vitest/ctest) into gate evidence
-state: queued
-kind: feature
-origin: human
-created: '2026-07-21'
-priority: medium
-blocked_by: []
-parent: null
-scope:
-- src/frob/testing/
-scope_changes: []
-evidence: []
-attachments: []
-acceptance: []
-threat: null
-component: null
-labels: []
-```
-T-0552 added TEST013 (WARN) to surface every frob:tests edge whose TEST001-004 credit rests solely on the ts/c/cpp structural name/path fallback (frob.gates._edge_is_native_unverified) instead of real execution -- but it deliberately does NOT withdraw that credit, since no real TS/C/C++ collector exists yet (src/frob/testing/ only has collect_python_tests and collect_rust_tests, T-0092) and withdrawing credit outright would turn every native-language public symbol's TEST001 ERROR-red in every sibling repo overnight, for a structural change alone. This ticket is the real fix: wire vitest (TS) and ctest (C/C++) runners (frob.testing._runners already has a RunnerSpec/RunnerOutcome shape collect_rust_tests followed for T-0092 -- mirror it), producing real node ids frob.gates._valid_edges can match the same way it already matches pytest/cargo. Once real collectors exist, retire the structural-fallback branch of frob.gates._edge_is_native_unverified (or gate it behind 'no collector configured for this language') and consider promoting TEST013 findings on a collector-covered language to ERROR.
-
-<!-- ticket:T-draft-3c4a7039 -->
-```yaml
-id: T-draft-3c4a7039
+id: T-0586
 title: Wire frob check --stamp-coverage to refresh committed coverage lock
 state: queued
 kind: feature
@@ -5291,9 +5268,55 @@ labels: []
 ```
 T-0545 added frob.gates._coverage.write_coverage_lock (a committed frob-coverage.lock.json summary) and made stamp_coverage(root, snapshot=None) refresh it when passed a GraphSnapshot -- but src/frob/app/check_runner.py::_run_stamp_coverage (the frob check --stamp-coverage CLI entry point) is out of T-0545's scope (src/frob/gates/ only) and still calls stamp_coverage(root) with no snapshot, so the lock is never refreshed by the existing CLI path today. Wire a GraphSnapshot through (the same one run_gates/other stamping paths already build) so --stamp-coverage keeps the lock current with zero extra flags. Once adopted, also consider promoting TEST012 (frob.gates.__init__::_test012_lock, currently WARN) to ERROR -- see T-0545's Done report for the promotion rationale.
 
-<!-- ticket:T-draft-934c675a -->
+<!-- ticket:T-0587 -->
 ```yaml
-id: T-draft-934c675a
+id: T-0587
+title: Wire real TS/C/C++ test collectors (vitest/ctest) into gate evidence
+state: queued
+kind: feature
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/testing/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0552 added TEST013 (WARN) to surface every frob:tests edge whose TEST001-004 credit rests solely on the ts/c/cpp structural name/path fallback (frob.gates._edge_is_native_unverified) instead of real execution -- but it deliberately does NOT withdraw that credit, since no real TS/C/C++ collector exists yet (src/frob/testing/ only has collect_python_tests and collect_rust_tests, T-0092) and withdrawing credit outright would turn every native-language public symbol's TEST001 ERROR-red in every sibling repo overnight, for a structural change alone. This ticket is the real fix: wire vitest (TS) and ctest (C/C++) runners (frob.testing._runners already has a RunnerSpec/RunnerOutcome shape collect_rust_tests followed for T-0092 -- mirror it), producing real node ids frob.gates._valid_edges can match the same way it already matches pytest/cargo. Once real collectors exist, retire the structural-fallback branch of frob.gates._edge_is_native_unverified (or gate it behind 'no collector configured for this language') and consider promoting TEST013 findings on a collector-covered language to ERROR.
+
+<!-- ticket:T-0588 -->
+```yaml
+id: T-0588
+title: 'Resolve TEST014 name-collision cases: disambiguate or tighten TEST001 credit'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/__init__.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0547 added TEST014 (WARN) to surface every case where _inferred_unit_cases's naming-convention fallback ambiguously credits two DIFFERENT files' same-leaf-name public symbols off the same collected test id(s) (docs/audits/gates-accounting.md B6). It deliberately does NOT withdraw TEST001 credit: a compat survey against this repo (T-0547's Done report) found a blanket path/module-correlation requirement breaks ~100% of convention-fallback matches here (96/81 depending on heuristic), since tests/ does not mirror src/frob/<pkg>/ layout. But the survey ALSO found 5 real leaf-name collision groups in this repo TODAY sharing convention-matched tests (main, format, as_text, as_json, run) -- TEST014 will fire WARN for each until resolved. This ticket is to actually resolve those 5 (add explicit frob:tests edges to disambiguate, or accept the WARN permanently via frob:waive with a reason), and to decide/design a general per-symbol tightening path now that real examples exist to test any proposed rule against (e.g. requiring the matched test's own module path to appear as a substring of the target's qualname, or promoting TEST014 to ERROR once explicit edges are added to eliminate ambiguity repo-wide).
+
+<!-- ticket:T-0589 -->
+```yaml
+id: T-0589
 title: Tie TEST001 credit to real per-symbol coverage (promote TEST005/TEST015, cross-cutting)
 state: queued
 kind: feature
@@ -5314,9 +5337,9 @@ labels: []
 ```
 T-0548 added TEST015 (WARN) reusing T-0549's existing _has_assertion_evidence heuristic to surface a public symbol whose ONLY TEST001 credit comes from a test with no assertion-shaped construct at all (docs/audits/gates-accounting.md B1's def-myfunc-pass repro). It deliberately does NOT change what TEST001 itself blocks on. This ticket is the actual cross-cutting fix the audit asked for: tie TEST001 credit to nonzero per-symbol branch coverage (frob.gates._coverage.CoverageData.symbol_branch, already computed for TEST005) or promote TEST005 to ERROR -- either requires touching TEST002/003/004/005/009's severities and interactions together, plus reconciling with the legacy-adoption WARN campaign frob.toml already documents (see its own comments), which is why it was split out rather than attempted inside T-0548. Concretely: decide whether TEST001 should require symbol_branch[record.symref] > 0 in addition to a name/edge match (requires wiring CoverageData into _test001_002, which today only sees tests: CollectedTests, not coverage), survey how many currently-green symbols would flip red (mirroring T-0547/T-0556's compat-survey precedent in this same audit pass), and land the sound subset.
 
-<!-- ticket:T-draft-9557a879 -->
+<!-- ticket:T-0590 -->
 ```yaml
-id: T-draft-9557a879
+id: T-0590
 title: 'COV002 grace-window regression: closed-ticket edges lose coverage across sequential
   same-worktree ticket closes'
 state: queued
@@ -5337,26 +5360,3 @@ component: null
 labels: []
 ```
 Discovered incidentally while closing T-0556 (unrelated ticket) in a worktree that had already closed T-0567/T-0545/T-0552/T-0547 earlier in the same branch: symbols touched by T-0545/T-0552 (e.g. src/frob/gates/_coverage.py::stamp_coverage, src/frob/gates/__init__.py::_test005/test_gate/_edge_has_execution_evidence/_KNOWN_GATE_RULES/_COVERAGE_LOCK_REL) started failing COV002 again -- 'changed with no frob:ticket edge to an open ticket' -- even though each carries a valid frob:ticket T-0545/T-0552 directive and both tickets' closures are still part of the same uncommitted diff against main (git diff main --stat still shows all the intervening commits). This reproduces with a bare frob check (no --ticket override), so it is not scoped to T-0556's own diff content -- it appeared sometime between T-0552's own clean check (frob check --ticket T-0552 showed 0 COV errors right after closing it) and starting T-0556's ticket workflow (multiple frob ticket scope/sweep operations on tickets.md in between). Hypothesis: _bound_to_open_ticket's grace-window hunk-matching (docs/audits or __init__.py:1917 _bound_to_open_ticket docstring, T-0214/T-0320) depends on a ticket's DONE-transition marker line falling within a single git diff hunk against main; repeated tickets.md rewrites by later ticket operations (scope changes, sweeps, done-report writes for OTHER tickets) can split/relocate that hunk so an EARLIER ticket's own close marker no longer registers as 'in this diff's tickets.md hunk' even though the closure commit is still, in aggregate, part of the diff vs main. Needs investigation: reproduce minimally (two sequential ticket closes in one branch, then a third ticket's ledger operations), confirm the hunk-boundary hypothesis, and either make the grace window robust to intervening unrelated tickets.md hunks or make COV002's message clearer that this is a hunk-shape artifact, not a real missing edge. Related: docs/guides/agent-playbook.md section 10b's existing multi-ticket-worktree warnings (about ledger finalization) -- this is a parallel failure mode in the SAME class of hazard, but for COV002 rather than the Done-report/close ledger writes.
-
-<!-- ticket:T-draft-b7c57519 -->
-```yaml
-id: T-draft-b7c57519
-title: 'Resolve TEST014 name-collision cases: disambiguate or tighten TEST001 credit'
-state: queued
-kind: bug
-origin: human
-created: '2026-07-21'
-priority: medium
-blocked_by: []
-parent: null
-scope:
-- src/frob/gates/__init__.py
-scope_changes: []
-evidence: []
-attachments: []
-acceptance: []
-threat: null
-component: null
-labels: []
-```
-T-0547 added TEST014 (WARN) to surface every case where _inferred_unit_cases's naming-convention fallback ambiguously credits two DIFFERENT files' same-leaf-name public symbols off the same collected test id(s) (docs/audits/gates-accounting.md B6). It deliberately does NOT withdraw TEST001 credit: a compat survey against this repo (T-0547's Done report) found a blanket path/module-correlation requirement breaks ~100% of convention-fallback matches here (96/81 depending on heuristic), since tests/ does not mirror src/frob/<pkg>/ layout. But the survey ALSO found 5 real leaf-name collision groups in this repo TODAY sharing convention-matched tests (main, format, as_text, as_json, run) -- TEST014 will fire WARN for each until resolved. This ticket is to actually resolve those 5 (add explicit frob:tests edges to disambiguate, or accept the WARN permanently via frob:waive with a reason), and to decide/design a general per-symbol tightening path now that real examples exist to test any proposed rule against (e.g. requiring the matched test's own module path to appear as a substring of the target's qualname, or promoting TEST014 to ERROR once explicit edges are added to eliminate ambiguity repo-wide).
