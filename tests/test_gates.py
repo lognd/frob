@@ -4160,8 +4160,6 @@ class TestRunJobsTimingAttribution:
     number smeared across every job sharing the thread pool."""
 
     def test_cpu_bound_neighbor_does_not_inflate_a_cheap_jobs_timing(self) -> None:
-        # frob:tests src/frob/gates/__init__.py::_run_jobs
-        # frob:tests src/frob/gates/__init__.py::_timed_job
         """Pin the regression this ticket was filed against: run one
         deliberately CPU-heavy job (busy-loops, holds the GIL) alongside
         several genuinely cheap jobs on the same `ThreadPoolExecutor`, as

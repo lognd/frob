@@ -1729,11 +1729,6 @@ def coverage_gate(
     return tuple(violations)
 
 
-def _documented_srcs(snapshot: GraphSnapshot) -> set[str]:
-    """Symrefs carrying an explicit `frob:doc` edge (resolving or not)."""
-    return {e.src for e in snapshot.edges if e.kind == EdgeKind.DOC}
-
-
 def _resolved_documented_srcs(root: Path, snapshot: GraphSnapshot) -> set[str]:
     """Symrefs carrying a `frob:doc` edge whose anchor actually resolves.
 
@@ -7040,6 +7035,7 @@ def _build_ticket_scoped_jobs(
 
 
 # frob:ticket T-0232
+# frob:tests tests/test_gates.py::TestRunJobsTimingAttribution.test_cpu_bound_neighbor_does_not_inflate_a_cheap_jobs_timing  # noqa: E501
 def _timed_job(
     job: Callable[[], tuple[Violation, ...]],
 ) -> Callable[[], tuple[tuple[Violation, ...], float]]:
@@ -7071,6 +7067,7 @@ def _timed_job(
     return run
 
 
+# frob:tests tests/test_gates.py::TestRunJobsTimingAttribution.test_cpu_bound_neighbor_does_not_inflate_a_cheap_jobs_timing  # noqa: E501
 def _run_jobs(
     jobs: dict[str, Callable[[], tuple[Violation, ...]]],
 ) -> tuple[list[Violation], dict[str, int], dict[str, float]]:
