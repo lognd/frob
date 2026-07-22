@@ -236,6 +236,33 @@ this addition -- it is not a follow-up.
   taxonomy across 9 different source vocabularies -- flagged as future
   work, not done here.
 
+## REG008/REG009 (T-0428)
+
+The disposition grammar's `handled_by:<rule-id>` (above) is a hand-typed
+CLAIM about which rule enforces an entry -- exactly the "catalogued, not
+enforced" drift this registry exists to close, moved up one level. T-0428
+adds the code-side half: a rule/detector's own code declares what it
+enforces via `frob:enforces <concept-id>` (a comment-DSL directive,
+`frob.graph._models.EdgeKind.ENFORCES`), and `registry_gate`'s optional
+`snapshot` argument cross-checks the two SSOTs bidirectionally:
+
+- **REG008** (WARN, advisory) -- an entry dispositioned
+  `handled_by:<rule-id>` with no `frob:enforces <entry-id>` edge anywhere
+  in code: the yaml claims enforcement the code does not itself declare.
+- **REG009** (WARN, advisory) -- a `frob:enforces <concept-id>` edge in
+  code naming a concept id absent from every loaded registry file: a
+  typo, or a rule enforcing something the universe corpus never
+  enumerated.
+
+Both WARN, not ERROR: this repo's ~1950 entries were built before
+`frob:enforces` existed, so nearly every existing `handled_by` entry is
+presently undeclared in code by this new measure -- an honest first-
+turn-on debt (the same shape INV003/INV004 started in), not something
+retroactively backfillable in one pass. `registry_gate`'s `snapshot`
+parameter defaults to `None`, under which REG008/REG009 do not run at
+all (no claim, rather than a false-positive flood for every caller that
+has not wired a `GraphSnapshot` through yet).
+
 ## Registry file list
 
 `docs/design/registry/README.md`, `docs/design/registry/arch-checks.yaml`,

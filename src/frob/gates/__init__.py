@@ -940,6 +940,12 @@ _KNOWN_GATE_RULES = frozenset(
         # cross-file id collision (REG007) early-exit closures.
         "REG006",
         "REG007",
+        # T-0428: derived-coverage two-SSOT conformance -- REG008
+        # (handled_by claim with no frob:enforces edge in code) / REG009
+        # (a frob:enforces edge naming a concept id the registry doesn't
+        # know).
+        "REG008",
+        "REG009",
         # T-0436: unbound/stale fenced-code-block doc-drift heuristic
         # (frob.gates._docblocks).
         "DOC004",
@@ -4330,6 +4336,7 @@ def _inv006_src_violations(
 
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0408
+# frob:enforces CHK-GATE-INV006
 def inv006_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """INV006 (advisory): every exclusivity claim in a source file under
     `INV006_SRC_DIRS` needs a `frob:invariant` edge bound somewhere in
@@ -7031,7 +7038,10 @@ def _build_jobs(
         # handled_by:<rule-id> is verified against what this build
         # actually enforces.
         "registry": lambda: registry_gate(
-            st.repo_root, st.queue, _KNOWN_GATE_RULES | st.rule_ids
+            st.repo_root,
+            st.queue,
+            _KNOWN_GATE_RULES | st.rule_ids,
+            snapshot=st.snapshot,
         ),
         # T-0405: takes no repo-scanned state -- reads the live in-process
         # `frob.lang` language-support registry directly.
