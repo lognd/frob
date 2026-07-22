@@ -56,13 +56,38 @@ def _short_name(qualname: str) -> str:
     return qualname.rsplit(".", 1)[-1]
 
 
+# T-0583: `memoize_per_run`/`functools.wraps`-style decorator wrappers take
+# the REAL callee as a bare argument (`memoize_per_run(_parse_file_uncached)`)
+# rather than ever naming it in a `name(` call token of its own -- the wrap
+# happens at the wrapper's call site, not the wrapped function's. Any of
+# these markers, called with a single bare-identifier argument, means that
+# argument's own edges belong to the caller just as if it had been called
+# directly.
+# frob:ticket T-0583
+_WRAPPER_MARKER_NAMES = frozenset({"memoize_per_run", "wraps", "lru_cache", "cache"})
+
+
+# frob:ticket T-0583
 def _called_names(body_tokens: tuple[str, ...]) -> frozenset[str]:
-    """Identifier tokens immediately followed by `(` -- a best-effort call scan."""
+    """Identifier tokens immediately followed by `(` -- a best-effort call
+    scan -- PLUS (T-0583) the bare-identifier argument to a known decorator/
+    memoization wrapper marker (`_WRAPPER_MARKER_NAMES`), which is never
+    itself followed by `(` (it is passed BY REFERENCE to the wrapper, not
+    called) but is functionally reached the same way a direct call would be:
+    `memoize_per_run(_target)` makes every subsequent invocation of the
+    wrapper's result behave exactly like calling `_target`."""
     names: set[str] = set()
     for i in range(len(body_tokens) - 1):
         tok = body_tokens[i]
         if body_tokens[i + 1] == "(" and tok.isidentifier():
             names.add(tok)
+            if (
+                tok in _WRAPPER_MARKER_NAMES
+                and i + 2 < len(body_tokens)
+                and body_tokens[i + 2].isidentifier()
+                and (i + 3 >= len(body_tokens) or body_tokens[i + 3] in (")", ","))
+            ):
+                names.add(body_tokens[i + 2])
     return frozenset(names)
 
 
