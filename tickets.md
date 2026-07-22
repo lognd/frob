@@ -4294,6 +4294,7 @@ this ticket's merge.
 - `tests/test_lang.py::TestParsePython::test_private_module_level_const_extracted` (pytest node id, verified passing when recorded)
 - `tests/unit/test_dup_cache.py::TestConnectionReuse::test_close_all_drops_cached_connections` (pytest node id, verified passing when recorded)
 - `tests/test_vet.py::TestCapabilityScan::test_scan_file_operations_names_registry_entry` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0566 -->
 ```yaml
 id: T-0566
@@ -4317,9 +4318,9 @@ labels: []
 ```
 found while working T-0405 (language extension contract survey): DOC004's fenced-code-block doc-drift check (frob.gates._docblocks) has _PYTHON_LANGS/_RUST_LANGS/_TS_LANGS buckets but no C/C++ bucket -- a fenced c or cpp code block in docs gets no drift checking at all, unlike python/rust/typescript. Add a _C_LANGS/_CPP_LANGS bucket (or a combined c-cpp one, matching frob.vet's capability-matrix convention) with the matching source-extraction branch in doc004_gate.
 
-<!-- ticket:T-draft-9305d3de -->
+<!-- ticket:T-0567 -->
 ```yaml
-id: T-draft-9305d3de
+id: T-0567
 title: 'DEAD001 residual: _documented_srcs/_run_jobs in gates/__init__.py'
 state: queued
 kind: bug
