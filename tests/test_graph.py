@@ -816,7 +816,10 @@ class TestMalformedFileVisibility:
 
 
 class TestExclude:
-    """`[graph] exclude` in frob.toml is additive to the built-in dir excludes."""
+    """`[graph] exclude` in frob.toml is additive to the built-in dir excludes.
+
+    frob:ticket T-0544
+    """
 
     def test_glob_excludes_matching_files(self, tmp_path: Path) -> None:
         _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
@@ -892,6 +895,24 @@ class TestExclude:
         # if pruning happened only via post-walk file filtering, "tests/fixtures"
         # and its "deep"/"deep/deeper" children would all appear here too.
         assert not any(v.startswith("tests/fixtures") for v in visited_rel if v)
+
+    def test_walk_repo_files_classifies_top_level_readme_as_doc(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0544: a `frob:describes` anchor in README.md (or any other
+        top-level *.md note) must be discoverable -- before this fix,
+        `_walk_repo_files` only ever classified files under `docs/` as doc
+        files, so a repo-root README.md was silently invisible to the
+        design graph and its DESCRIBES edge never existed."""
+        from frob.graph import _walk_repo_files
+
+        _write(tmp_path, "README.md", "# Title\n")
+        _write(tmp_path, "docs/modules/foo.md", "# Foo\n")
+        _write(tmp_path, "notes/deep.md", "# Not top-level\n")
+
+        _source, docs = _walk_repo_files(tmp_path)
+        docs_rel = {p.relative_to(tmp_path).as_posix() for p in docs}
+        assert docs_rel == {"README.md", "docs/modules/foo.md"}
 
 
 class TestResolve:

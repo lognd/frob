@@ -114,8 +114,10 @@ _should_prune_dir = _excludes._should_prune_dir  # noqa: SLF001
 
 # frob:ticket T-0239
 # frob:ticket T-0245
+# frob:ticket T-0544
 # frob:tests tests/test_graph.py::TestExclude.test_nested_git_worktree_pruned_without_config  # noqa: E501
 # frob:tests tests/test_graph.py::TestExclude.test_walk_source_files_prunes_before_descent  # noqa: E501
+# frob:tests tests/test_graph.py::TestExclude.test_walk_repo_files_classifies_top_level_readme_as_doc  # noqa: E501
 def _walk_repo_files(
     root: Path, exclude_globs: tuple[str, ...] = ()
 ) -> tuple[list[Path], list[Path]]:
@@ -144,11 +146,22 @@ def _walk_repo_files(
             if not _should_prune_dir(dir_path / d, root, exclude_globs)
         ]
         under_docs = dir_path == docs_dir or docs_dir in dir_path.parents
+        # T-0544: a `frob:describes` anchor placed in README.md (or any other
+        # top-level *.md note) used to be invisible to the design graph --
+        # this walker only ever classified files under docs/ as doc files,
+        # so its DESCRIBES edge (and the facet it selects for DRIFT001)
+        # never existed even though gates.doclink's own root set
+        # (docs/index.md, README.md) already treats README.md as a doc
+        # entry point. Top-level *.md files are cheap to fold in here (one
+        # directory, no recursive cost) rather than duplicating gates'
+        # frob.toml-driven include/exclude glob resolution into this leaf
+        # walker.
+        at_repo_root = dir_path == root
         for name in filenames:
             path = dir_path / name
             suffix = Path(name).suffix.lower()
             is_source = suffix in exts
-            is_doc = under_docs and suffix == ".md"
+            is_doc = (under_docs or at_repo_root) and suffix == ".md"
             if not is_source and not is_doc:
                 continue
             if exclude_globs and _is_excluded(_display_path(path, root), exclude_globs):
