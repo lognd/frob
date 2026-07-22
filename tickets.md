@@ -4022,7 +4022,7 @@ No public API signature outside `_case_count`/`coverage_gate` changed;
 ```yaml
 id: T-0550
 title: 'gates: COV002/SCOPE001/bare-TODO fail open on empty/failed diff (B8)'
-state: queued
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-21'
@@ -4031,8 +4031,37 @@ blocked_by: []
 parent: T-0403
 scope:
 - src/frob/gates/
-scope_changes: []
-evidence: []
+- pyproject.toml
+- .frob-release.json
+- frob.lock
+- uv.lock
+scope_changes:
+- op: add
+  glob: pyproject.toml
+  reason: REL001 version bump for coverage_gate's new diff_load_failed param (public
+    API change)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 version bump for coverage_gate's new diff_load_failed param (public
+    API change)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: frob.lock
+  reason: REL001 version bump for coverage_gate's new diff_load_failed param (public
+    API change)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: REL001 version bump for coverage_gate's new diff_load_failed param (public
+    API change)
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_gates.py::TestGatesDegradeWithoutDiff::test_diff_dependent_gates_block_loudly_on_failed_diff
 attachments: []
 acceptance: []
 threat: null
@@ -4041,6 +4070,55 @@ labels: []
 ```
 docs/audits/gates-accounting.md B8. _load_diff degrades to an EMPTY diff (warning only) when working_diff fails; COV002/SCOPE001/bare-TODO are all diff-driven so an empty diff makes them all silently pass. Default base is main, so committing directly on main or with a bad --base zeros the touched set. Fix direction: a failed working_diff should be a loud blocking condition for these gates, not a silent empty-diff degrade.
 
+## Done report
+
+B8 fix: `_load_diff` (src/frob/gates/__init__.py) now returns
+`tuple[Diff, bool]` -- the second element is `True` only when
+`working_diff` genuinely failed (bad --base, no merge-base, git error),
+never for an honestly clean/empty diff. `_GateInputs` carries this as
+`diff_load_failed`. `coverage_gate` gained an optional
+`diff_load_failed: bool = False` param: when set, COV002 and TODO001 (both
+diff-driven) are each replaced with one loud `_diff_load_failed_violation`
+instead of being evaluated against a diff known to be a failure
+placeholder. `_build_ticket_scoped_jobs`'s "scope" job does the same for
+SCOPE001, following the same loud-blocking-condition pattern T-0541 (B9)
+already established for "no active ticket" via `_no_active_ticket_violation`.
+
+Counterexample: a repo with no git history at all (working_diff has no
+merge-base, fails outright) used to silently degrade to an empty Diff, so
+`frob check --gates coverage` against a fresh public/undocumented/untested
+symbol reported ZERO COV002 violations -- the exact failure-looks-like-
+clean-tree bug B8 describes. Post-fix, COV002 fires with a message
+containing "failed to load" instead of silently passing
+(`test_diff_dependent_gates_block_loudly_on_failed_diff`).
+
+`coverage_gate` is a public symbol; its new optional trailing param is a
+non-breaking but signature-changing addition, so `frob ack
+src/frob/gates/__init__.py::coverage_gate` was run and `pyproject.toml`
+bumped 0.63.0 -> 0.64.0 (`frob release stamp`), scope-added
+(pyproject.toml/.frob-release.json/frob.lock/uv.lock) with a recorded
+`scope_changes` reason.
+
+Filed T-draft-f5d48e02 (out-of-scope discovery): the T-0214/T-0320
+closed-ticket COV002 grace window checks only the ticket's exact
+`<!-- ticket:ID -->` marker LINE against the diff's unified=0 hunks, which
+does not always fall inside a hunk even when the ticket's own state
+transition plainly is in the diff (hit this directly when checking T-0550
+right after committing/closing T-0549 on this same stacked, unmerged
+branch) -- waived the resulting 4 spurious COV002 findings on T-0549's own
+already-covered test methods with a reference to that new ticket, rather
+than silently working around it.
+
+### Changed
+```
+ src/frob/gates/__init__.py |  98 ++++++++++++++++++++++++++++++++++--
+ tests/test_gates.py        | 122 +++++++++++++++++++++++++++++++++++++++++++++
+ tickets.md                 |  40 ++++++++++++++-
+ 3 files changed, 254 insertions(+), 6 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestGatesDegradeWithoutDiff::test_diff_dependent_gates_block_loudly_on_failed_diff` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0551 -->
 ```yaml
 id: T-0551
@@ -4469,3 +4547,27 @@ component: null
 labels: []
 ```
 found while working T-0546: frob ticket scope --add tests/unit/test_app_runners_batch6.py was rejected with ScopeLeaseConflict because T-0160 holds an in-progress lease over tests/** (a repo-wide coverage-backlog epic). Any other in-flight ticket that needs to add ONE new regression test anywhere under tests/ while such a broad epic is open is structurally blocked from landing a dedicated test for its own fix, and must fall back to binding frob:tests to a pre-existing test instead (weaker evidence). Fix direction: scope-lease conflict check should allow a narrower --add glob (a single new file, or a file the broader ticket has not itself touched) to coexist with a broader in-progress lease, or provide an explicit narrow-carve-out mechanism, rather than a blanket reject on any overlap.
+
+<!-- ticket:T-draft-f5d48e02 -->
+```yaml
+id: T-draft-f5d48e02
+title: 'gates: COV002 closed-ticket grace window misses marker-in-hunk when unified=0
+  diff omits the marker line'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Discovered while working T-0550: _bound_to_open_ticket's T-0214/T-0320 grace window (closed ticket still covers its own closing diff) requires the ticket's <!-- ticket:ID --> marker LINE to fall inside one of working_diff's unified=0 hunks. A YAML ticket block's marker/id/title lines often sit just above the first line that actually differs (e.g. state: queued -> done, or an evidence: [] -> evidence: [...] insertion later in the block), so the marker line itself is never in any hunk even though the ticket's own state transition clearly is in the diff. Result: once a ticket closes and a LATER ticket becomes active on the same stacked, unmerged branch, a full/ticket-scoped frob check re-flags the closed ticket's already-covered symbols as COV002 violations again, purely due to this narrow hunk-membership check, not a real coverage gap. Fix direction: extend _ticket_marker_in_diff_hunk to also count a hunk anywhere within the ticket's whole YAML block span (marker to closing triple-backtick), not just the exact marker line.

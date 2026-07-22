@@ -2544,6 +2544,11 @@ class TestInvariantLoad:
 
 
 # frob:ticket T-0549
+# frob:waive COV002 reason="T-0549 is closed and committed on this stacked, \
+# unmerged branch; T-draft-f5d48e02 files the underlying gap (the T-0214/ \
+# T-0320 closed-ticket grace window only checks the exact marker LINE, \
+# which does not fall inside this diff's narrow unified=0 hunks even \
+# though T-0549's own state transition plainly is in the diff)"
 class TestTestGate:
     # frob:waive DUP001 reason="parallel test methods within test_gates.py \
     # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
@@ -4515,6 +4520,7 @@ class TestCov002StrataModuleCoverage:
         assert any(v.rule == "COV002" for v in report.violations)
 
 
+# frob:ticket T-0550
 class TestGatesDegradeWithoutDiff:
     def test_diff_independent_gates_run_without_git(self, tmp_path):
         """A repo with no valid base (fresh, no commits) must still run the
@@ -4534,6 +4540,30 @@ class TestGatesDegradeWithoutDiff:
         )
         assert report.is_ok, report.err
         assert any(v.rule == "FUZZ001" for v in report.danger_ok.violations)
+
+    # frob:ticket T-0550
+    # frob:tests src/frob/gates/__init__.py::coverage_gate kind="unit"
+    def test_diff_dependent_gates_block_loudly_on_failed_diff(self, tmp_path):
+        """T-0550/B8 counterexample: a repo with no git history at all makes
+        `working_diff` fail outright (no merge-base). Before the fix,
+        `_load_diff` degraded that failure to a silent empty `Diff`,
+        indistinguishable from a genuinely clean tree -- so COV002 (a
+        diff-driven gate) saw zero touched symbols and simply never fired,
+        even though a public, undocumented, untested symbol sits right
+        there. Post-fix, COV002 fires as a loud, diff-load-failure
+        violation instead of silently passing."""
+        from frob.gates import GateConfig, run_gates
+
+        (tmp_path / "src").mkdir()
+        (tmp_path / "src" / "m.py").write_text("def undocumented(x):\n    return x\n")
+
+        report = run_gates(
+            GateConfig(root=str(tmp_path), base="main", gates=frozenset({"coverage"}))
+        )
+        assert report.is_ok, report.err
+        cov002 = [v for v in report.danger_ok.violations if v.rule == "COV002"]
+        assert cov002, "COV002 must not silently pass on a failed diff load"
+        assert "failed to load" in cov002[0].message
 
 
 class TestConventionUnitBinding:

@@ -1637,7 +1637,37 @@ def drift_gate(snapshot: GraphSnapshot, lock: LockFile) -> tuple[Violation, ...]
 # ---------------------------------------------------------------------------
 
 
+# frob:ticket T-0550
+def _diff_load_failed_violation(rule: str, base: str) -> Violation:
+    """T-0550/B8: `rule`'s blocking violation for a diff that FAILED to
+    load (bad `--base`, no merge-base, detached HEAD, git failure) --
+    distinct from a genuinely empty/clean diff, which correctly clears
+    `rule` with no violation at all. `_load_diff` degrades a failed
+    `working_diff` to an empty `Diff` so the rest of the gates run does
+    not hard-crash, but COV002/SCOPE001/TODO001 are diff-driven gates that
+    treat "no touched symbols" as "nothing to enforce" -- so that same
+    degrade, unflagged, silently passed all three on a real failure
+    (committing on `main` with the default base, or any bad `--base`,
+    zeroed the touched set and cleared every diff-driven gate). This is
+    fired instead, loud and blocking, whenever the diff genuinely failed to
+    load rather than genuinely being empty.
+    """
+    return Violation(
+        rule=rule,
+        severity=Severity.ERROR,
+        file="",
+        line=0,
+        message=(
+            f"{rule}: working diff against base={base!r} failed to load "
+            f"(bad --base, detached HEAD, or a git failure); {rule} cannot "
+            "be evaluated -- this is a load failure, not a clean/empty "
+            "diff, so it is not silently passing"
+        ),
+    )
+
+
 # frob:doc docs/modules/gates.md#public-api
+# frob:ticket T-0550
 def coverage_gate(
     root: Path,
     snapshot: GraphSnapshot,
@@ -1645,6 +1675,7 @@ def coverage_gate(
     diff: Diff,
     tests: CollectedTests,
     active_ticket: str | None = None,
+    diff_load_failed: bool = False,
 ) -> tuple[Violation, ...]:
     """COV001..COV007, PLACE001, and TODO001/TODO002.
 
@@ -1652,18 +1683,29 @@ def coverage_gate(
     edge apart from a broken one -- see `_resolved_documented_srcs`.
     `active_ticket` (T-0542/B10) lets COV002 prefer the ticket actually
     being worked over any other open ticket whose scope happens to also
-    cover the same file.
+    cover the same file. `diff_load_failed` (T-0550/B8) is `True` only when
+    `diff` is `_load_diff`'s empty placeholder for a genuine `working_diff`
+    failure, never for an honestly clean tree; when set, COV002 and
+    TODO001 (both diff-driven, both otherwise silently satisfied by an
+    empty diff) are replaced with one loud `_diff_load_failed_violation`
+    each instead of being evaluated against a diff known to be bogus.
     """
     violations: list[Violation] = []
     violations.extend(_cov001(root, snapshot))
-    violations.extend(_cov002(snapshot, queue, diff, active_ticket))
+    if diff_load_failed:
+        violations.append(_diff_load_failed_violation("COV002", diff.base))
+    else:
+        violations.extend(_cov002(snapshot, queue, diff, active_ticket))
     violations.extend(_cov003(queue, tests))
     violations.extend(_cov004(queue))
     violations.extend(_cov005(root, snapshot, diff))
     violations.extend(_cov006(root, snapshot))
     violations.extend(_cov007(snapshot))
     violations.extend(_place001(root, snapshot))
-    violations.extend(_todo001(snapshot, queue, diff))
+    if diff_load_failed:
+        violations.append(_diff_load_failed_violation("TODO001", diff.base))
+    else:
+        violations.extend(_todo001(snapshot, queue, diff))
     return tuple(violations)
 
 
@@ -6444,14 +6486,27 @@ class _GateInputs:
     systems: tuple[SystemSpec, ...]
     ticket: Ticket | None = None
     sweep: Option[PreworkSweep] = field(default_factory=Nothing)
+    # frob:ticket T-0550
+    diff_load_failed: bool = False
 
 
-def _load_diff(root: Path, base: str) -> Diff:
-    """The working diff against `base`, degrading to an empty diff on failure.
+# frob:ticket T-0550
+def _load_diff(root: Path, base: str) -> tuple[Diff, bool]:
+    """The working diff against `base`, degrading to an empty diff on failure,
+    plus whether that degrade actually happened.
 
     A missing diff (fresh repo, unknown base, detached HEAD) must not skip the
-    whole gates stage -- only coverage/scope read it, so the diff-dependent
-    gates simply see no touched symbols.
+    whole gates stage -- only coverage/scope/TODO001 read it, so the
+    diff-dependent gates simply see no touched symbols. But "no touched
+    symbols" is ALSO exactly what a genuinely clean diff (nothing changed)
+    looks like, so a caller that only sees the empty `Diff` cannot tell a
+    real failure (bad `--base`, no merge-base, git error) apart from a
+    legitimately quiet tree -- and COV002/SCOPE001/TODO001 all treat "no
+    touched symbols" as "nothing to enforce", silently passing on a failure
+    that should instead be a loud blocking condition (T-0550/B8). The second
+    element of the returned tuple is that distinguishing signal: `True`
+    means `working_diff` itself errored and the `Diff` returned is a
+    placeholder, never a real one.
     """
     diff_result = working_diff(root, base)
     if diff_result.is_err:
@@ -6460,8 +6515,8 @@ def _load_diff(root: Path, base: str) -> Diff:
             "touched set",
             diff_result.danger_err,
         )
-        return Diff(base=base, hunks=())
-    return diff_result.danger_ok
+        return Diff(base=base, hunks=()), True
+    return diff_result.danger_ok, False
 
 
 def _load_tests(root: Path) -> CollectedTests:
@@ -6598,6 +6653,7 @@ def _assemble_gate_inputs(root: Path, cfg: GateConfig, required: tuple) -> _Gate
     )
     test_policy, systems = _load_test_config(root)
     ticket, sweep = _resolve_ticket(root, cfg, queue)
+    diff, diff_load_failed = _load_diff(root, cfg.base)
     return _GateInputs(
         root=root,
         repo_root=_repo_root_for(root),
@@ -6605,7 +6661,7 @@ def _assemble_gate_inputs(root: Path, cfg: GateConfig, required: tuple) -> _Gate
         snapshot=snapshot,
         queue=queue,
         lock=lock,
-        diff=_load_diff(root, cfg.base),
+        diff=diff,
         tests=_load_tests(root),
         invariants=invariants,
         rules=tuple(rules),
@@ -6615,6 +6671,7 @@ def _assemble_gate_inputs(root: Path, cfg: GateConfig, required: tuple) -> _Gate
         systems=systems,
         ticket=ticket,
         sweep=sweep,
+        diff_load_failed=diff_load_failed,
     )
 
 
@@ -6711,6 +6768,7 @@ def _build_jobs(
             st.diff,
             st.tests,
             st.ticket.id if st.ticket is not None else None,
+            st.diff_load_failed,
         ),
         "invariant": lambda: (
             *invariant_gate(st.invariants, st.snapshot, st.tests, st.rule_ids),
@@ -6845,7 +6903,13 @@ def _build_ticket_scoped_jobs(
     no_ticket_blocks = st.ticket is None and _no_active_ticket_touches_source(st.diff)
     if "scope" in selected:
         scope_ticket = st.ticket
-        if scope_ticket is not None:
+        if st.diff_load_failed:
+            # T-0550/B8: a failed diff load must not silently clear SCOPE001
+            # just because its degraded-empty placeholder touches nothing.
+            jobs["scope"] = lambda: (
+                _diff_load_failed_violation("SCOPE001", st.diff.base),
+            )
+        elif scope_ticket is not None:
             jobs["scope"] = lambda: scope_gate(
                 st.diff, scope_ticket, st.snapshot, root=st.root, queue=st.queue
             )
