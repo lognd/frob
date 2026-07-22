@@ -3769,7 +3769,7 @@ Split out of T-0424: the registry MODEL + honest seed is built (check-coverage.y
 ```yaml
 id: T-0566
 title: docblocks DOC004 gate has no C/C++ fenced-code-block bucket
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-21'
