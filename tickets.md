@@ -3234,7 +3234,7 @@ Discovered while working T-0516: COV006 Violation objects carry no symref (file=
 id: T-0540
 title: 'PII012 keyword-sweep residual burndown: 102 findings, token/secret homonyms
   in app code'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-21'
