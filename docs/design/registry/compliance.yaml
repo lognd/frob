@@ -4,6 +4,14 @@
 # NOTE: source manifest is UNIT-granular (27 named units, e.g. GDPR-ARTICLES count=99),
 # not leaf-control-granular -- individual controls/articles within a unit have no
 # separate canonical id in the source doc. See RECONCILIATION.md.
+# T-0388: the 17 "mixed"/"config"/"static" entries below were previously
+# deferred:T-0388 -- factually wrong, since T-0388 is the review-gated
+# reconciliation ticket itself and is expected to close, which would
+# break REG003 (deferred-to-closed-ticket) the moment it does. Re-pointed
+# to T-0607 (filed while working T-0388), the real standing
+# home for future CMPL-*-registry-id-level enforcement work; the 10
+# "process"/"advisory" entries stay out_of_scope per their own
+# checkability tag.
 schema_version: 1
 total: 27
 entries:
@@ -12,21 +20,21 @@ entries:
     leaf_count: 5
     checkability: "mixed"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "deferred:T-0388"
+    disposition: "deferred:T-0607"
     cross_refs: []
   - id: "CMPL-SOC2-CC-FAMILIES"
     framework: "SOC2"
     leaf_count: 9
     checkability: "mixed"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "deferred:T-0388"
+    disposition: "deferred:T-0607"
     cross_refs: []
   - id: "CMPL-PCIDSS-REQUIREMENTS"
     framework: "PCI-DSS-v4.0.1"
     leaf_count: 12
     checkability: "mixed"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "deferred:T-0388"
+    disposition: "deferred:T-0607"
     cross_refs: []
   - id: "CMPL-HIPAA-ADMIN-STANDARDS"
     framework: "HIPAA-Security-Rule"
@@ -47,7 +55,7 @@ entries:
     leaf_count: 5
     checkability: "config"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "deferred:T-0388"
+    disposition: "deferred:T-0607"
     cross_refs: []
   - id: "CMPL-GDPR-CHAPTERS"
     framework: "GDPR"
@@ -61,7 +69,7 @@ entries:
     leaf_count: 99
     checkability: "mixed"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "deferred:T-0388"
+    disposition: "deferred:T-0607"
     cross_refs: []
   - id: "CMPL-CCPA-CORE-RIGHTS"
     framework: "CCPA"
@@ -82,7 +90,7 @@ entries:
     leaf_count: 20
     checkability: "mixed"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "deferred:T-0388"
+    disposition: "deferred:T-0607"
     cross_refs: []
   - id: "CMPL-NISTCSF-FUNCTIONS"
     framework: "NIST-CSF-2.0"
@@ -96,42 +104,42 @@ entries:
     leaf_count: 3
     checkability: "mixed"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "deferred:T-0388"
+    disposition: "deferred:T-0607"
     cross_refs: []
   - id: "CMPL-SSDF-PRACTICE-GROUPS"
     framework: "NIST-SP-800-218"
     leaf_count: 4
     checkability: "static"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "deferred:T-0388"
+    disposition: "deferred:T-0607"
     cross_refs: []
   - id: "CMPL-ISO27002-THEMES"
     framework: "ISO-IEC-27001-27002-2022"
     leaf_count: 4
     checkability: "mixed"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "deferred:T-0388"
+    disposition: "deferred:T-0607"
     cross_refs: []
   - id: "CMPL-ISO27002-CONTROLS"
     framework: "ISO-IEC-27001-27002-2022"
     leaf_count: 93
     checkability: "mixed"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "deferred:T-0388"
+    disposition: "deferred:T-0607"
     cross_refs: []
   - id: "CMPL-CIS-CONTROLS"
     framework: "CIS-Controls-v8"
     leaf_count: 18
     checkability: "mixed"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "deferred:T-0388"
+    disposition: "deferred:T-0607"
     cross_refs: []
   - id: "CMPL-CIS-SAFEGUARDS"
     framework: "CIS-Controls-v8"
     leaf_count: 153
     checkability: "config"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "deferred:T-0388"
+    disposition: "deferred:T-0607"
     cross_refs: []
   - id: "CMPL-CIS-IMPLEMENTATION-GROUPS"
     framework: "CIS-Controls-v8"
@@ -145,14 +153,14 @@ entries:
     leaf_count: 14
     checkability: "static"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "deferred:T-0388"
+    disposition: "deferred:T-0607"
     cross_refs: []
   - id: "CMPL-ASVS-REQUIREMENTS"
     framework: "OWASP-ASVS-4.0.3"
     leaf_count: 286
     checkability: "static"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "deferred:T-0388"
+    disposition: "deferred:T-0607"
     cross_refs: []
   - id: "CMPL-ASVS-LEVELS"
     framework: "OWASP-ASVS-4.0.3"
@@ -180,21 +188,21 @@ entries:
     leaf_count: 3
     checkability: "mixed"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "deferred:T-0388"
+    disposition: "deferred:T-0607"
     cross_refs: []
   - id: "CMPL-SLSA-BUILD-LEVELS"
     framework: "SLSA-v1.0"
     leaf_count: 4
     checkability: "static"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "deferred:T-0388"
+    disposition: "deferred:T-0607"
     cross_refs: []
   - id: "CMPL-FROB-CATALOG-ENTRIES"
     framework: "frob-std.compliance"
     leaf_count: 6
     checkability: "mixed"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "deferred:T-0388"
+    disposition: "deferred:T-0607"
     cross_refs: []
 total_units: 27
 total_leaf_controls_enumerated: 599
