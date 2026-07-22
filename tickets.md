@@ -3533,7 +3533,7 @@ T-0410 landed one concrete fix: memoize parse_file's extract() walk (coverage_ga
 id: T-0583
 title: COV006 reachability opaque through memoize_per_run wrappers -- decorator indirection
   loses static callee edges
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-21'
@@ -3542,7 +3542,10 @@ blocked_by: []
 parent: null
 scope: []
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_lang.py::TestParsePython::test_directive_binds_across_two_blank_lines
+- tests/test_lang.py::TestErrors::test_syntax_error_logs_partial_tree_warning
+- tests/test_graph.py::TestCallGraph::test_build_call_graph_sees_through_memoize_per_run_wrapper
 attachments: []
 acceptance: []
 threat: null
@@ -3551,6 +3554,44 @@ labels: []
 ```
 T-0410 wrapped frob.lang.parse_file in memoize_per_run (first-call-deferred wrapper); the static call graph then lost parse_file's edges to its private helpers (_warn_if_partial_tree, _find_following_symbol), erroring two previously-sound frob:tests bindings the moment COV006 was promoted to error. Teach reachability to see through memoize_per_run/functools.wraps-style decorators (resolve the wrapped underlying function's edges), then remove the two waivers in tests/test_lang.py. Scope: src/frob/graph/callgraph.py, src/frob/gates/__init__.py COV006 helpers, tests/test_lang.py, tests/test_gates.py.
 
+## Done report
+
+Root cause: `frob.lang.parse_file` wraps its real body (`_parse_file_uncached`)
+in `memoize_per_run(_parse_file_uncached)` lazily on first call (T-0410).
+The wrapped target is passed BY REFERENCE, never as its own `name(` call
+token, so `frob.graph.callgraph._called_names`'s plain `name(` scan could
+never see the edge from `parse_file` to `_parse_file_uncached` -- COV006's
+reachability rescues (public-wrapper, third-file) all reason over that same
+call-graph substrate and inherited the same blind spot.
+
+Fix: `_called_names` (src/frob/graph/callgraph.py) now also resolves the
+bare-identifier argument to a known decorator/memoization wrapper marker
+(`_WRAPPER_MARKER_NAMES = {memoize_per_run, wraps, lru_cache, cache}`) as
+reached, exactly as if it had been called directly. This is the single
+shared extractor both `build_call_graph` (via `_called_names_from_sym`) and
+COV006's own `_cov006_full_call_graph` consume, so the fix applies to every
+consumer uniformly with no gate-local special-casing.
+
+With the fix, `parse_file`'s call-graph reachability now covers
+`_parse_file_uncached -> _parse -> _warn_if_partial_tree` and the
+`extract()` chain into `_find_following_symbol`, so both previously-waived
+COV006 findings in tests/test_lang.py resolve cleanly with no waiver
+needed. Confirmed via `frob check --ticket T-0583`: 0 COV errors (was 4
+before the frob:ticket directives were added; COV006 itself never
+re-appeared for these two edges at any point).
+
+Removed the two `frob:waive COV006` comments in tests/test_lang.py
+(test_directive_binds_across_two_blank_lines,
+test_syntax_error_logs_partial_tree_warning) since the underlying
+reachability gap is now closed.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_lang.py::TestParsePython::test_directive_binds_across_two_blank_lines` (pytest node id, verified passing when recorded)
+- `tests/test_lang.py::TestErrors::test_syntax_error_logs_partial_tree_warning` (pytest node id, verified passing when recorded)
+- `tests/test_graph.py::TestCallGraph::test_build_call_graph_sees_through_memoize_per_run_wrapper` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0584 -->
 ```yaml
 id: T-0584
@@ -3714,3 +3755,27 @@ component: null
 labels: []
 ```
 Discovered incidentally while closing T-0556 (unrelated ticket) in a worktree that had already closed T-0567/T-0545/T-0552/T-0547 earlier in the same branch: symbols touched by T-0545/T-0552 (e.g. src/frob/gates/_coverage.py::stamp_coverage, src/frob/gates/__init__.py::_test005/test_gate/_edge_has_execution_evidence/_KNOWN_GATE_RULES/_COVERAGE_LOCK_REL) started failing COV002 again -- 'changed with no frob:ticket edge to an open ticket' -- even though each carries a valid frob:ticket T-0545/T-0552 directive and both tickets' closures are still part of the same uncommitted diff against main (git diff main --stat still shows all the intervening commits). This reproduces with a bare frob check (no --ticket override), so it is not scoped to T-0556's own diff content -- it appeared sometime between T-0552's own clean check (frob check --ticket T-0552 showed 0 COV errors right after closing it) and starting T-0556's ticket workflow (multiple frob ticket scope/sweep operations on tickets.md in between). Hypothesis: _bound_to_open_ticket's grace-window hunk-matching (docs/audits or __init__.py:1917 _bound_to_open_ticket docstring, T-0214/T-0320) depends on a ticket's DONE-transition marker line falling within a single git diff hunk against main; repeated tickets.md rewrites by later ticket operations (scope changes, sweeps, done-report writes for OTHER tickets) can split/relocate that hunk so an EARLIER ticket's own close marker no longer registers as 'in this diff's tickets.md hunk' even though the closure commit is still, in aggregate, part of the diff vs main. Needs investigation: reproduce minimally (two sequential ticket closes in one branch, then a third ticket's ledger operations), confirm the hunk-boundary hypothesis, and either make the grace window robust to intervening unrelated tickets.md hunks or make COV002's message clearer that this is a hunk-shape artifact, not a real missing edge. Related: docs/guides/agent-playbook.md section 10b's existing multi-ticket-worktree warnings (about ledger finalization) -- this is a parallel failure mode in the SAME class of hazard, but for COV002 rather than the Done-report/close ledger writes.
+
+<!-- ticket:T-draft-edbf1e26 -->
+```yaml
+id: T-draft-edbf1e26
+title: 'TEST-family pool triage: bucket + calibrate + disposition the 335 warn findings'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- tests/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Triage the TEST-family warning pool per mission: bucket by rule (TEST005/012/013/014/015), calibrate detectors where a noise class dominates, disposition genuine findings. Companion to T-0583 (memoize_per_run wrapper opacity fix).

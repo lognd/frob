@@ -1797,6 +1797,7 @@ class TestCallGraph:
     symbol referenced anywhere" rather than strictly "is it called".
 
     frob:ticket T-0422
+    frob:ticket T-0583
     """
 
     def test_build_reference_graph_catches_dispatch_table_entry(
@@ -1824,6 +1825,30 @@ class TestCallGraph:
         # of call form.
         ref_graph = build_reference_graph(tmp_path, ("src/a.py",))
         assert ref_graph.calls == {"src/a.py::register": ("src/a.py::_handler",)}
+
+    # frob:ticket T-0583
+    def test_build_call_graph_sees_through_memoize_per_run_wrapper(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/callgraph.py::build_call_graph
+        # T-0583: a public function that lazily wraps a private helper in
+        # `memoize_per_run(_helper)` (the `frob.lang.parse_file` shape)
+        # passes `_helper` as a bare argument -- never its own `name(` call
+        # token -- so the plain call scan alone would miss the edge
+        # entirely. `_called_names`'s wrapper-marker rescue must resolve it.
+        from frob.graph.callgraph import build_call_graph
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def _helper() -> None:\n"
+            "    pass\n"
+            "\n\n"
+            "def public_entry() -> None:\n"
+            "    memoize_per_run(_helper)\n",
+        )
+        call_graph = build_call_graph(tmp_path, ("src/a.py",))
+        assert call_graph.calls == {"src/a.py::public_entry": ("src/a.py::_helper",)}
 
 
 class TestLedgerNotDoc:
