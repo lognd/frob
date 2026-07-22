@@ -3485,7 +3485,19 @@ updated. Public API grew (new function + new error variant) so REL001
 required a version bump to 0.73.0 plus a CHANGELOG.md entry, both done.
 
 ### Changed
-(no changed files detected)
+```
+ CHANGELOG.md                  | 12 ++++++
+ docs/modules/tickets.md       | 27 +++++++++++-
+ pyproject.toml                |  2 +-
+ src/frob/__main__.py          | 23 +++++++++-
+ src/frob/app/config.py        |  4 ++
+ src/frob/app/ticket_runner.py | 31 ++++++++++++--
+ src/frob/tickets/__init__.py  | 53 +++++++++++++++++++++++
+ src/frob/tickets/_models.py   |  4 ++
+ tests/test_tickets.py         | 98 +++++++++++++++++++++++++++++++++++++++++++
+ tickets.md                    | 44 ++++++++++++++++++-
+ 10 files changed, 288 insertions(+), 10 deletions(-)
+```
 
 ### Evidence
 - `tests/test_tickets.py::TestDropTicket::test_drops_queued_ticket_with_reason` (pytest node id, verified passing when recorded)
