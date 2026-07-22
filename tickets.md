@@ -11181,3 +11181,32 @@ component: null
 labels: []
 ```
 T-0614's KotlinAdapter works standalone but .kt/.kts files are invisible to parse_file/frob check: _EXTENSION_TABLE lacks the extensions and _extract.py's _WALKERS dict-subscript (line ~91, no fallback) would KeyError if the table alone were wired. Deliver the RawSymbol walker for kotlin (mirroring the TS/Rust walkers in _extract.py), COMMENT_TYPES entry, and the extension-table wiring together, with tests proving a real .kt file flows through parse_file into the graph. Was T-draft-a78fa200 (prose-only) in T-0614's Done report.
+
+<!-- ticket:T-0724 -->
+```yaml
+id: T-0724
+title: wire check_resource_contention into the production sys audit path (SYS200-203
+  currently invoked by nothing)
+state: queued
+kind: security
+origin: agent
+created: '2026-07-22'
+priority: high
+blocked_by:
+- T-0699
+parent: T-0331
+scope:
+- src/frob/app/sys_runner.py
+- src/frob/strata/**
+- tests/system/test_cli_sys_plan.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a model with a duplicate-port conflict WHEN frob sys audit runs via the CLI
+  THEN SYS200 appears in the command output
+threat: null
+component: null
+labels: []
+```
+T-0699 landed SYS200-203 (duplicate port, overlapping owns/acl, shared pipe, shared store write) as a real, tested check_resource_contention -- but no CLI command invokes it (src/frob/app/** was out of its scope): the catalogued-is-not-enforced trap, disclosed honestly in its Done report. Wire it into frob sys audit (and whatever sys check surface selfconform uses) including the Module.stores id threading SYS203 needs, with a system test proving a contention fixture surfaces through the real CLI. Same class as T-0630 (G1 binding wiring) -- production invocation is the ticket, not the check.
