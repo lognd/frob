@@ -9410,7 +9410,7 @@ attachments: []
 acceptance:
 - GIVEN a module-level dict written from a thread-submitted function with no enclosing
   lock WHEN the check runs THEN an advisory names the write site and the spawn path;
-  GIVEN the same write under  THEN silence
+  GIVEN the same write under a "with lock:" block THEN silence
 threat: null
 component: null
 labels: []
