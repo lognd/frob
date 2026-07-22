@@ -3713,7 +3713,7 @@ docs/audits/lang-check-docs.md finding 1. run_check_cpp/run_check_rust/run_check
 id: T-0555
 title: 'lang: usable-tree parse threshold lets partially-broken files drop symbols
   silently (T-0404 finding 9)'
-state: in-progress
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-21'
