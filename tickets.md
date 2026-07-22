@@ -8636,3 +8636,31 @@ component: null
 labels: []
 ```
 The one remaining caught_by gap after T-0382/T-0383: registry-YAML out_of_scope:<reason> disposition strings are a separate surface from the strata model objects and never pass through T-0382's caught_by verification -- a registry entry can be excused with a reason that names no catching control and nothing checks it. Route those disposition reasons through the same verification (or an equivalent registry-side rule) so an out_of_scope registry entry either names a real catching control or carries a substantive reasoned-none, mechanically checked. Was T-draft-6912e7d1 in T-0383's worktree; drafts do not survive land (T-0637).
+
+<!-- ticket:T-0681 -->
+```yaml
+id: T-0681
+title: 'arch TS adapter phase 2: interface/type-alias/enum declarations + TSX'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0611
+parent: T-0329
+scope:
+- src/frob/arch/_normalized.py
+- src/frob/arch/_typescript.py
+- tests/unit/test_arch.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN TS fixtures with interface, type alias, enum, and a TSX component WHEN TypeScriptAdapter.adapt
+  runs THEN each is represented in the NormalizedModule and asserted by a test
+threat: null
+component: null
+labels: []
+```
+T-0611's TypeScriptAdapter cannot map interface_declaration, type_alias_declaration, enum_declaration, or TSX/JSX -- no NormalizedModule entity exists for them yet. Extend the model (likely a NormalizedTypeDecl entity or fields on NormalizedClass) keeping _normalized.py tree_sitter-free, then map the four constructs in _typescript.py with fires/near-miss tests. Was T-draft-92681f8e in T-0611's worktree; drafts do not survive land until T-0637's fix lands.
