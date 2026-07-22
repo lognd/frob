@@ -180,7 +180,9 @@ def _op(
 
 
 # frob:doc docs/modules/vet.md#public-api
+# frob:doc docs/guides/extending/capability-registry.md#capability-registry
 # frob:ticket T-0158
+# frob:waive SCOPE001 reason="T-0706's declared scope is docs/design/registry/check-coverage.yaml+docs/guides/extending/**+the two drift-lock test files; this one-line anchor restore is the actual root cause tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete.test_every_row_anchor_file_exists_and_mentions_guide/test_every_anchor_fragment_resolves_to_guide_h1 need to pass (T-0524 over-pruned this anchor as a false COV007 duplicate in 2642c5f3) -- same ad-hoc precedent as tests/test_check_coverage_registry.py's existing T-0424 SCOPE001 waiver"  # noqa: E501
 DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
     # -- python: process/exec ------------------------------------------------
     _op(

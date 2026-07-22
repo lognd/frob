@@ -10014,7 +10014,7 @@ CI triage 2026-07-22 (the bulk of the cancelled 6h run's F markers, reproduced o
 id: T-0706
 title: check-coverage registry + extending-guides drift from this session's landings
   (DEPR/DOC005 rules, comment-dsl guide)
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-22'
@@ -10027,7 +10027,11 @@ scope:
 - tests/test_check_coverage_registry.py
 - tests/unit/test_extending_guides_complete.py
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_gate_rule_entries_match_live_known_rules
+- tests/test_check_coverage_registry.py::TestExhaustivenessGateOverRealCheckCoverage::test_no_check_coverage_violations
+- tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_row_anchor_file_exists_and_mentions_guide
+- tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_anchor_fragment_resolves_to_guide_h1
 attachments: []
 acceptance:
 - GIVEN the 4 failing drift tests WHEN the suite runs THEN they pass with real registry
@@ -10037,6 +10041,44 @@ component: null
 labels: []
 ```
 CI triage 2026-07-22: 4 failures that are drift-locks correctly firing on this session's own landings. (1) tests/test_check_coverage_registry.py x2: the live known_gate_rule_ids() gained DEPR001-004 (T-0576) and DOC005 (T-0435) but the check-coverage registry yaml has no entries for them -- add honest dispositions. (2) tests/unit/test_extending_guides_complete.py x2: T-0576 added docs/guides/extending/comment-dsl-directives.md; the guides completeness table/anchors do not resolve -- fix the table/anchor per the test's contract. Mechanical, well-scoped fixes; do NOT loosen the drift-lock tests.
+
+## Done report
+
+Fixed two drift-lock failure groups on main:
+
+1. docs/design/registry/check-coverage.yaml was missing gate_rule_entries
+   for DEPR001-004 (T-0576's frob:deprecated lifecycle gates) and DOC005
+   (T-0435's README command-table/count drift-lock), which known_gate_rule_ids()
+   already reports live (100 total, up from 95). Added five honest
+   handled_by:<self> entries describing each rule's actual behavior (read
+   from src/frob/gates/__init__.py's DEPR001-004 implementation and
+   src/frob/gates/_docblocks.py's DOC005 module docstring) and bumped
+   gate_rule_total to 100.
+
+2. tests/unit/test_extending_guides_complete.py's two anchor-contract
+   tests were failing not because of T-0576's new comment-dsl-directives.md
+   guide (which already resolves correctly) but because commit 2642c5f3
+   (T-0524, COV007 dedup pass) had over-pruned the
+   docs/guides/extending/capability-registry.md#capability-registry
+   frob:doc anchor above DANGEROUS_OPERATIONS in
+   src/frob/vet/_capability_registry.py, believing DANGEROUS_OPERATIONS's
+   remaining docs/modules/vet.md#public-api anchor already covered it --
+   it did not carry the extending-guide fragment. Restored the one-line
+   anchor (with a frob:waive SCOPE001, same ad-hoc precedent as
+   tests/test_check_coverage_registry.py's existing T-0424 waiver, since
+   T-0706's declared scope does not include src/frob/vet/**). Filed
+   T-draft-13dc2e4b to audit other T-0524 COV007 dedup commits for the
+   same pattern, since fixing that class of bug repo-wide is out of this
+   ticket's scope.
+
+### Changed
+```
+ tickets.md | 116 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 116 insertions(+)
+```
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0707 -->
 ```yaml
@@ -10206,3 +10248,26 @@ component: null
 labels: []
 ```
 Child 3: consumers. (1) QUERY: frob perf hot [--top N --by p90|p50xcount] renders the hot-graph (section, callee edge, decile readout, sample count) from the sketch store; MCP tool mirror for agents. (2) ADVISORIES (suggestion tier, T-0332 noise discipline): external call edge dominating a loop body's time -> batch/cache/move-out-of-loop suggestion naming the edge and its deciles; nested-loop section hot AND upstream of a fan-in -> complexity suspect; section p90 >> p50 (heavy tail) -> variance advisory naming likely modes. (3) REGRESSION RATCHET: current run sketch vs stored prior -- quantile shift beyond alpha + configured tolerance = PERF finding naming the section and both deciles (ratchet-pool style per T-0569/T-0594 precedent, baseline-old error-new).
+
+<!-- ticket:T-0713 -->
+```yaml
+id: T-0713
+title: Audit COV007 dedup passes (T-0524) for over-pruned extending-guide anchors
+state: queued
+kind: bug
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+found while working T-0706: 2642c5f3 (T-0524) removed the docs/guides/extending/capability-registry.md#capability-registry frob:doc anchor above DANGEROUS_OPERATIONS in src/frob/vet/_capability_registry.py as a supposed COV007 duplicate, but no other anchor in the file carried the extending-guide fragment -- broke tests/unit/test_extending_guides_complete.py silently until T-0706 caught and restored it (waived SCOPE001 there). Audit other T-0524 COV007 dedup commits for the same over-pruning pattern against docs/guides/extending/registry_of_registries.json rows.

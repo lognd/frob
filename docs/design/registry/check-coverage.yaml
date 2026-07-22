@@ -19,7 +19,7 @@
 #     fabricated ticket. As T-0397's children close a concern down to
 #     a real gate rule, re-disposition that entry to handled_by:<rule>.
 schema_version: 1
-gate_rule_total: 95
+gate_rule_total: 100
 gate_rule_entries:
   - id: "CHK-GATE-COV001"
     name: "COV001 is a live, enforced gate rule"
@@ -401,6 +401,26 @@ gate_rule_entries:
   - id: "CHK-GATE-TEST015"
     name: "TEST015 is a live, enforced gate rule"
     disposition: "handled_by:TEST015"
+    cross_refs: []
+  - id: "CHK-GATE-DEPR001"
+    name: "DEPR001 is a live, enforced gate rule (malformed frob:deprecated directive: missing/invalid sunset= or ticket=, T-0576)"
+    disposition: "handled_by:DEPR001"
+    cross_refs: []
+  - id: "CHK-GATE-DEPR002"
+    name: "DEPR002 is a live, enforced gate rule (frob:deprecated ticket= names a ticket that is not open, T-0576)"
+    disposition: "handled_by:DEPR002"
+    cross_refs: []
+  - id: "CHK-GATE-DEPR003"
+    name: "DEPR003 is a live, enforced gate rule (frob:deprecated still inside its warning window ahead of sunset, WARN, T-0576)"
+    disposition: "handled_by:DEPR003"
+    cross_refs: []
+  - id: "CHK-GATE-DEPR004"
+    name: "DEPR004 is a live, enforced gate rule (frob:deprecated whose sunset date has passed, escalates to ERROR, T-0576)"
+    disposition: "handled_by:DEPR004"
+    cross_refs: []
+  - id: "CHK-GATE-DOC005"
+    name: "DOC005 is a live, enforced gate rule (README.md command-table + checkable-count drift-lock against the live subparser tree, T-0435)"
+    disposition: "handled_by:DOC005"
     cross_refs: []
 concern_family_total: 13
 concern_family_entries:
