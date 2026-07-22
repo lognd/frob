@@ -1824,3 +1824,22 @@ class TestCallGraph:
         # of call form.
         ref_graph = build_reference_graph(tmp_path, ("src/a.py",))
         assert ref_graph.calls == {"src/a.py::register": ("src/a.py::_handler",)}
+
+
+class TestLedgerNotDoc:
+    """The top-level ticket ledgers are history, not docs -- classifying
+    them as docs resurrects archived Done reports' quoted frob:describes
+    lines as live DRIFT obligations (T-0544 fallout incident)."""
+
+    def test_walk_repo_files_excludes_ticket_ledgers_from_docs(self, tmp_path):
+        # frob:tests src/frob/graph/__init__.py::_walk_repo_files kind="unit"
+        from frob.graph import _walk_repo_files
+
+        (tmp_path / "README.md").write_text("# readme\n")
+        (tmp_path / "tickets.md").write_text("# Tickets\n")
+        (tmp_path / "tickets-archive.md").write_text("# Archive\n")
+        _, docs = _walk_repo_files(tmp_path, ())
+        names = {p.name for p in docs}
+        assert "README.md" in names
+        assert "tickets.md" not in names
+        assert "tickets-archive.md" not in names
