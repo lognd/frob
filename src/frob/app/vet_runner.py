@@ -16,6 +16,7 @@ from frob.app._style import style_fail, style_ok, style_rule
 from frob.app.config import AppConfig
 from frob.gates._models import Severity
 from frob.logging import get_logger
+from frob.render import Renderer
 from frob.vet import (
     CveMatch,
     Dependency,
@@ -40,6 +41,7 @@ def run(cfg: AppConfig) -> None:
         _run_scan(root, cfg)
 
 
+# frob:ticket T-0562
 def _run_hook(root: Path, command: str) -> None:
     """Parse `command`; non-install commands exit 0 silently and fast (no network)."""
     parsed = parse_hook_command(command)
@@ -48,10 +50,11 @@ def _run_hook(root: Path, command: str) -> None:
         sys.exit(0)
 
     ecosystem, packages = parsed
+    renderer = Renderer.for_stream(sys.stdout)
     blocked = False
     for name, version in packages:
         verdict = check_package(ecosystem, name, version, root=root)
-        print(f"{verdict.ecosystem}/{verdict.package}: {verdict.message}")
+        renderer.line(f"{verdict.ecosystem}/{verdict.package}: {verdict.message}")
         if verdict.blocked:
             blocked = True
             print(f"BLOCKED: {verdict.message}", file=sys.stderr)
@@ -80,6 +83,7 @@ def _cve_matches_for(report, cfg: AppConfig) -> tuple[CveMatch, ...]:
     return result.danger_ok
 
 
+# frob:ticket T-0562
 def _run_scan(root: Path, cfg: AppConfig) -> None:
     """Full lockfile pass: table (or `--json`) output; exit 1 on ERROR when enforced.
 
@@ -97,7 +101,7 @@ def _run_scan(root: Path, cfg: AppConfig) -> None:
     if cfg.vet_json:
         payload = json.loads(report.model_dump_json())
         payload["cve_matches"] = [m.model_dump(mode="json") for m in cve_matches]
-        print(json.dumps(payload, indent=2))
+        Renderer.for_stream(sys.stdout).line(json.dumps(payload, indent=2))
     else:
         _print_table(report)
         if cve_matches:
@@ -124,28 +128,32 @@ def _exit_code_for_report(report) -> int:  # noqa: ANN001
     return 0
 
 
+# frob:ticket T-0562
 def _print_table(report) -> None:
     """Compact (package, ecosystem, verdict, notes) table for terminal output."""
     from frob.logging.color import should_color
 
     color = should_color(sys.stdout)
+    renderer = Renderer.for_stream(sys.stdout)
 
     if not report.verdicts:
-        print("vet: no dependencies found")
+        renderer.line("vet: no dependencies found")
         return
 
     by_name = _notes_by_verdict_name(report)
     header = f"{'package':<30} {'ecosystem':<10} {'verdict':<10} notes"
-    print(header)
-    print("-" * len(header))
+    renderer.line(header)
+    renderer.line("-" * len(header))
     for verdict in report.verdicts:
-        _print_verdict_row(verdict, by_name.get(verdict.name, []), color)
+        _print_verdict_row(renderer, verdict, by_name.get(verdict.name, []), color)
 
     if report.violations:
-        print()
-        print("violations:")
+        renderer.blank()
+        renderer.line("violations:")
         for v in report.violations:
-            print(f"  [{v.severity}] {style_rule(v.rule, color)} {v.file}: {v.message}")
+            renderer.line(
+                f"  [{v.severity}] {style_rule(v.rule, color)} {v.file}: {v.message}"
+            )
 
 
 # frob:ticket T-0361
@@ -162,40 +170,47 @@ def _notes_by_verdict_name(report) -> dict[str, list[str]]:  # noqa: ANN001
 
 
 # frob:ticket T-0361
-def _print_verdict_row(verdict, notes: list[str], color: bool) -> None:  # noqa: ANN001
+# frob:ticket T-0562
+def _print_verdict_row(
+    renderer: Renderer, verdict, notes: list[str], color: bool
+) -> None:  # noqa: ANN001
     """Print one `_print_table` row for `verdict`, with a plain-text-width-padded
     ok/FAIL status so ANSI styling never shifts column alignment (T-0179);
     split out of `_print_table`'s row loop (T-0361)."""
     status = "FAIL" if notes else "ok"
     painted = style_fail(status, color) if notes else style_ok(status, color)
     pad = " " * max(0, 10 - len(status))
-    print(
+    renderer.line(
         f"{verdict.name:<30} {verdict.ecosystem:<10} {painted}{pad} {', '.join(notes)}"
     )
 
 
+# frob:ticket T-0562
 def _print_cve_table(matches: tuple[CveMatch, ...]) -> None:
     """T-0147: per-match CVE id, CVSS, status, and CWE catalog linkage."""
-    print()
-    print("cve matches:")
+    renderer = Renderer.for_stream(sys.stdout)
+    renderer.blank()
+    renderer.line("cve matches:")
     for m in matches:
         cvss = (
             f"{m.cvss_score}/{m.cvss_severity}"
             if m.cvss_score is not None
             else "unscored"
         )
-        print(f"  {m.cve_id} [{m.status}] {m.dependency}@{m.version} cvss={cvss}")
+        renderer.line(
+            f"  {m.cve_id} [{m.status}] {m.dependency}@{m.version} cvss={cvss}"
+        )
         if m.summary:
-            print(f"    {m.summary}")
+            renderer.line(f"    {m.summary}")
         for link in m.cwe_links:
             if link.disposition == "catalog":
-                print(
+                renderer.line(
                     f"    {link.cwe_id}: {link.title} (mitigation: {link.mitigation})"
                 )
             elif link.disposition == "out_of_scope":
-                print(f"    {link.cwe_id}: out of scope ({link.reason})")
+                renderer.line(f"    {link.cwe_id}: out of scope ({link.reason})")
             else:
-                print(f"    {link.cwe_id}: unmapped")
+                renderer.line(f"    {link.cwe_id}: unmapped")
 
 
 __all__ = ["run"]

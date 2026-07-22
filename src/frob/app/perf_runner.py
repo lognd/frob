@@ -11,6 +11,7 @@ from pathlib import Path
 from frob.app.config import AppConfig
 from frob.logging import get_logger
 from frob.logging.color import BOLD, CYAN, DIM, paint, should_color
+from frob.render import Renderer
 
 _log = get_logger(__name__)
 
@@ -32,6 +33,7 @@ def run(cfg: AppConfig) -> None:
 
 
 # frob:ticket T-0021
+# frob:ticket T-0562
 def _profile(cfg: AppConfig) -> None:
     """`frob perf profile -- <argv>` / `frob perf profile --tests`."""
     from frob.perf import profile_command
@@ -54,7 +56,7 @@ def _profile(cfg: AppConfig) -> None:
         sys.exit(1)
     artifact = result.danger_ok
     status = "ok" if artifact.exit_code == 0 else f"exit={artifact.exit_code}"
-    print(
+    Renderer.for_stream(sys.stdout).line(
         f"profiled {' '.join(argv)!r} -> "
         f"sha={artifact.sha} total_s={artifact.total_s:.3f} workload={status}"
     )
@@ -116,24 +118,26 @@ def _smell_rules_by_ref(violations, snapshot) -> dict[str, tuple[str, ...]]:
 
 
 # frob:ticket T-0021
+# frob:ticket T-0562
 def _print_heat_table(entries, unattributed_s: float) -> None:
     """Print the heat table (one row per symbol) plus the unattributed total."""
     from frob.perf import render_bar
 
     color = should_color(sys.stdout)
+    renderer = Renderer.for_stream(sys.stdout)
     max_s = max((e.cum_s for e in entries), default=0.0)
     header = paint(
         f"{'symbol':<50} {'cum_s':>8} {'self_s':>8} {'ncalls':>8}  ", BOLD, color
     )
-    print(header + "heat")
+    renderer.line(header + "heat")
     for e in entries:
         bar = render_bar(e.cum_s, max_s, color=color)
         smell_tag = f" [{','.join(e.smells)}]" if e.smells else ""
-        print(
+        renderer.line(
             f"{e.ref:<50} {e.cum_s:>8.3f} {e.self_s:>8.3f} {e.ncalls:>8}  "
             f"{bar}{smell_tag}"
         )
-    print(paint(f"unattributed: {unattributed_s:.3f}s", DIM, color))
+    renderer.line(paint(f"unattributed: {unattributed_s:.3f}s", DIM, color))
 
 
 def _ranked_heat_entries(cfg: AppConfig, root: Path, report, snapshot):  # noqa: ANN001, ANN201
@@ -155,6 +159,7 @@ def _ranked_heat_entries(cfg: AppConfig, root: Path, report, snapshot):  # noqa:
     return report, entries
 
 
+# frob:ticket T-0562
 def _print_heat_result(cfg: AppConfig, entries, report) -> None:  # noqa: ANN001
     """Render `entries`/`report` as `--json` or the default table, per `cfg`."""
     if cfg.perf_json:
@@ -164,7 +169,7 @@ def _print_heat_result(cfg: AppConfig, entries, report) -> None:  # noqa: ANN001
             "entries": [e.model_dump() for e in entries],
             "unattributed_s": report.unattributed_s,
         }
-        print(json.dumps(payload, indent=2))
+        Renderer.for_stream(sys.stdout).line(json.dumps(payload, indent=2))
         return
     _print_heat_table(entries, report.unattributed_s)
 
@@ -209,6 +214,7 @@ def _annotate_gutters(rel: str, report, snapshot) -> dict[int, str]:  # noqa: AN
 
 
 # frob:ticket T-0021
+# frob:ticket T-0562
 def _annotate(root: Path, file: Path, report, snapshot) -> None:  # noqa: ANN001
     """`--annotate <file>`: print `file` with a per-line hit/time gutter.
 
@@ -231,7 +237,8 @@ def _annotate(root: Path, file: Path, report, snapshot) -> None:  # noqa: ANN001
         _log.error("annotate: could not read %s: %s", file, exc)
         sys.exit(1)
 
+    renderer = Renderer.for_stream(sys.stdout)
     for lineno, source_line in enumerate(text.splitlines(), start=1):
         tag = by_line.get(lineno, "")
         gutter = paint(f"{lineno:>5} {tag:>14} |", CYAN, color)
-        print(f"{gutter} {source_line}")
+        renderer.line(f"{gutter} {source_line}")

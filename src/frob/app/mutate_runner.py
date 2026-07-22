@@ -7,11 +7,13 @@ from pathlib import Path
 
 from frob.app.config import AppConfig
 from frob.logging import get_logger
+from frob.render import Renderer
 
 _log = get_logger(__name__)
 
 
 # frob:ticket T-0011
+# frob:ticket T-0562
 # frob:doc docs/modules/app.md#runners
 def run(cfg: AppConfig) -> None:
     """Mutate a file and report which mutants survived the test command."""
@@ -31,14 +33,15 @@ def run(cfg: AppConfig) -> None:
         sys.exit(1)
     report = result.danger_ok
 
+    renderer = Renderer.for_stream(sys.stdout)
     if cfg.mutate_json:
-        print(report.model_dump_json(indent=2))
+        renderer.line(report.model_dump_json(indent=2))
     else:
-        print(
+        renderer.line(
             f"mutation score {report.score:.0%}  "
             f"({report.killed}/{report.total} killed)"
         )
         for m in report.survivors:
-            print(f"  SURVIVOR {m.file}:{m.line}  {m.description}")
+            renderer.line(f"  SURVIVOR {m.file}:{m.line}  {m.description}")
     if report.survivors:
         sys.exit(1)

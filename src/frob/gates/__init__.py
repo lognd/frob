@@ -72,6 +72,7 @@ from frob.gates._pii_structural import pii_structural_gate
 from frob.gates._prework import load_prework, record_prework, sweep_ticket
 from frob.gates._refs import ref_gate
 from frob.gates._registry_exhaustiveness import registry_gate
+from frob.gates._render_lint import render_lint_gate
 from frob.gates._secrets import secrets_gate
 from frob.gates._walk_lint import walk_lint_gate
 from frob.gates.decisions import DecisionError
@@ -943,6 +944,8 @@ _KNOWN_GATE_RULES = frozenset(
         # T-0439: CVE code-smell needle/fingerprint pattern-scan
         # (frob.gates._cve_fingerprint_scan).
         "SEC-CVE-FINGERPRINT-001",
+        # T-0459: bare stdout write outside frob.render (frob.gates._render_lint).
+        "RENDER001",
     }
 )
 
@@ -6454,6 +6457,8 @@ _ALL_GATES = frozenset(
         "excludehazard",
         # T-0412: frob:debt malformed/non-open-ticket/expired-until checks.
         "debt",
+        # T-0459: bare stdout write outside frob.render.
+        "render_lint",
     }
 )
 
@@ -6728,6 +6733,7 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "walk_lint",
     "excludehazard",
     "debt",
+    "render_lint",
     "scope",
     "prework",
 )
@@ -6840,6 +6846,10 @@ def _build_jobs(
         # needle anywhere in the tree is a repo-wide concern, not a
         # subdir-scoped one.
         "cve_fingerprint_scan": _ProcessJob(cve_fingerprint_scan_gate, (st.repo_root,)),
+        # T-0459: whole-repo tracked-file scan, always against repo_root --
+        # same reasoning as walk_lint above: a bare stdout write anywhere in
+        # src/frob/ is a repo-wide concern, not a subdir-scoped one.
+        "render_lint": _ProcessJob(render_lint_gate, (st.repo_root,)),
     }
     selected_thread = {
         name: job for name, job in thread_jobs.items() if name in selected
@@ -7195,6 +7205,7 @@ __all__ = [
     "prework_gate",
     "record_prework",
     "registry_gate",
+    "render_lint_gate",
     "run_gates",
     "scope_digest",
     "scope_gate",

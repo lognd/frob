@@ -5689,3 +5689,78 @@ class TestKnownGateRuleIds:
         """Return type is an immutable frozenset, not a mutable copy a
         caller could accidentally mutate shared state through."""
         assert isinstance(known_gate_rule_ids(), frozenset)
+
+
+# frob:ticket T-0459
+class TestRenderLintGate:
+    """RENDER001: bare stdout write outside frob.render
+    (docs/modules/render.md#renderer)."""
+
+    def _init_repo(self, tmp_path: Path) -> None:
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(["git", "config", "user.email", "t@t"], cwd=tmp_path, check=True)
+        subprocess.run(["git", "config", "user.name", "t"], cwd=tmp_path, check=True)
+
+    def _commit(self, tmp_path: Path) -> None:
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(["git", "commit", "-qm", "c"], cwd=tmp_path, check=True)
+
+    # frob:tests tests/test_gates.py::TestRenderLintGate.test_bare_print_fires
+    def test_bare_print_fires(self, tmp_path: Path) -> None:
+        """A bare `print(...)` in a runner-shaped file fires RENDER001."""
+        from frob.gates._render_lint import render_lint_gate
+
+        self._init_repo(tmp_path)
+        pkg = tmp_path / "src" / "frob" / "app"
+        pkg.mkdir(parents=True)
+        (tmp_path / "src" / "frob" / "__init__.py").write_text("")
+        (pkg / "__init__.py").write_text("")
+        (pkg / "offender_runner.py").write_text("def run():\n    print('hello')\n")
+        self._commit(tmp_path)
+
+        violations = render_lint_gate(tmp_path)
+
+        hits = _by_rule(violations, "RENDER001")
+        offender_hits = [v for v in hits if v.file == "src/frob/app/offender_runner.py"]
+        assert len(offender_hits) == 1
+        assert offender_hits[0].line == 2
+
+    # frob:tests tests/test_gates.py::TestRenderLintGate.test_render_package_exempt
+    def test_render_package_exempt(self, tmp_path: Path) -> None:
+        """`src/frob/render/` itself is the one sanctioned home for these
+        calls (`Renderer._emit`'s own `print`) and is never scanned."""
+        from frob.gates._render_lint import render_lint_gate
+
+        self._init_repo(tmp_path)
+        pkg = tmp_path / "src" / "frob" / "render"
+        pkg.mkdir(parents=True)
+        (tmp_path / "src" / "frob" / "__init__.py").write_text("")
+        (pkg / "__init__.py").write_text("")
+        (pkg / "_renderer.py").write_text(
+            "def _emit(line, stream):\n    print(line, file=stream)\n"
+        )
+        self._commit(tmp_path)
+
+        violations = render_lint_gate(tmp_path)
+
+        assert _by_rule(violations, "RENDER001") == []
+
+    # frob:tests tests/test_gates.py::TestRenderLintGate.test_stderr_directed_print_is_silent  # noqa: E501
+    def test_stderr_directed_print_is_silent(self, tmp_path: Path) -> None:
+        """A `print(..., file=sys.stderr)` call is never flagged --
+        INV-RENDER-SOLE-STDOUT governs stdout only."""
+        from frob.gates._render_lint import render_lint_gate
+
+        self._init_repo(tmp_path)
+        pkg = tmp_path / "src" / "frob" / "app"
+        pkg.mkdir(parents=True)
+        (tmp_path / "src" / "frob" / "__init__.py").write_text("")
+        (pkg / "__init__.py").write_text("")
+        (pkg / "offender_runner.py").write_text(
+            "import sys\n\n\ndef run():\n    print('oops', file=sys.stderr)\n"
+        )
+        self._commit(tmp_path)
+
+        violations = render_lint_gate(tmp_path)
+
+        assert _by_rule(violations, "RENDER001") == []

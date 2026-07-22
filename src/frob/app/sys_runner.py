@@ -43,6 +43,7 @@ from frob.gates import known_gate_rule_ids
 from frob.graph import GraphSnapshot, build_graph, load_graph
 from frob.logging import get_logger
 from frob.logging.quiet import quiet_stdout_logs
+from frob.render import Renderer
 from frob.strata import (
     DEFAULT_BENIGN_CAPABILITIES,
     DEFAULT_DESIGN_DIR,
@@ -356,6 +357,7 @@ def _require_export_design_path(design_path: Path) -> None:
         sys.exit(1)
 
 
+# frob:ticket T-0562
 def _run_export(cfg: AppConfig) -> None:
     """`frob sys export --format k8s|seccomp|iam <design.strata>`: load one
     `.strata` design file, run the matching exporter, print its
@@ -372,12 +374,12 @@ def _run_export(cfg: AppConfig) -> None:
 
     from frob.strata._export import export_iam, export_k8s_netpol, export_seccomp
 
-    renderer = {
+    exporter = {
         "k8s": export_k8s_netpol,
         "seccomp": export_seccomp,
         "iam": export_iam,
     }[fmt]
-    print(renderer(model))
+    Renderer.for_stream(sys.stdout).line(exporter(model))
 
 
 # ---------------------------------------------------------------------------
@@ -386,6 +388,7 @@ def _run_export(cfg: AppConfig) -> None:
 
 
 # frob:ticket T-0085
+# frob:ticket T-0562
 def _run_doc(cfg: AppConfig) -> None:
     """`frob sys doc`: render the per-family threat-catalog audit matrix
     (docs/strata/threat.md#the-exhaustiveness-proof-the-point) for
@@ -407,7 +410,12 @@ def _run_doc(cfg: AppConfig) -> None:
     if rendered.is_err:
         _log.error("sys doc: %s", rendered.danger_err)
         sys.exit(1)
-    print(rendered.danger_ok, end="")
+    # frob:ticket T-0461
+    # Deliberate output change: the prior `print(..., end="")` suppressed a
+    # trailing newline; `Renderer.line` always terminates its line, so `frob
+    # sys doc` output now ends with exactly one trailing newline it did not
+    # have before (see the T-0461 Done report).
+    Renderer.for_stream(sys.stdout).line(rendered.danger_ok.rstrip("\n"))
 
 
 def _log_waived_gaps(report: AuditReport) -> None:

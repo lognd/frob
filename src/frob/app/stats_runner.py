@@ -9,6 +9,7 @@ from pathlib import Path
 from frob.app._style import style_header, style_warn
 from frob.app.config import AppConfig
 from frob.logging import get_logger
+from frob.render import Renderer
 
 _log = get_logger(__name__)
 
@@ -75,6 +76,7 @@ def _agentic_ticket_and_token_lines(report) -> list[str]:  # noqa: ANN001
     return lines
 
 
+# frob:ticket T-0562
 def _run_agentic(cfg: AppConfig) -> None:
     """Render `frob stats`'s non-gated agentic time/token breakdown."""
     from frob.stats import agentic_report
@@ -83,7 +85,7 @@ def _run_agentic(cfg: AppConfig) -> None:
     report = agentic_report(root)
 
     if cfg.stats_json:
-        print(report.model_dump_json(indent=2))
+        Renderer.for_stream(sys.stdout).line(report.model_dump_json(indent=2))
         return
 
     from frob.logging.color import should_color
@@ -98,10 +100,11 @@ def _run_agentic(cfg: AppConfig) -> None:
     lines += _agentic_time_lines(report)
     lines += _agentic_retread_lines(report)
     lines += _agentic_ticket_and_token_lines(report)
-    print("\n".join(lines))
+    Renderer.for_stream(sys.stdout).line("\n".join(lines))
 
 
 # frob:ticket T-0009
+# frob:ticket T-0562
 # frob:doc docs/modules/app.md#runners
 def run(cfg: AppConfig) -> None:
     """Render the delivery snapshot (queue health + commit cadence), or
@@ -122,7 +125,7 @@ def run(cfg: AppConfig) -> None:
     report = result.danger_ok
 
     if cfg.stats_json:
-        print(report.model_dump_json(indent=2))
+        Renderer.for_stream(sys.stdout).line(report.model_dump_json(indent=2))
         return
 
     from frob.logging.color import should_color
@@ -142,7 +145,7 @@ def run(cfg: AppConfig) -> None:
         f"commits (last {c.window_days}d): {c.total} total  ~{c.per_week}/week",
         f"  by type: {_fmt(c.by_type)}",
     ]
-    print("\n".join(lines))
+    Renderer.for_stream(sys.stdout).line("\n".join(lines))
 
 
 def _fmt(counts: dict[str, int]) -> str:
