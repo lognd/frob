@@ -2320,6 +2320,7 @@ scope:
 - docs/modules/arch.md
 - tickets.md
 - tests/unit/test_arch.py
+- docs/design/registry/patterns.yaml
 scope_changes:
 - op: remove
   glob: tests/**
@@ -2331,6 +2332,12 @@ scope_changes:
   reason: T-0332 arch work maps to tests/unit/test_arch.py
   actor: logan
   at: '2026-07-20'
+- op: add
+  glob: docs/design/registry/patterns.yaml
+  reason: 'reviewer-required: closing T-0332 orphans 41 deferred:T-0332 dispositions;
+    re-dispositioning them is part of this ticket per its own EXHAUSTIVENESS DRIFT-LOCK'
+  actor: logan
+  at: '2026-07-22'
 evidence: []
 attachments: []
 acceptance: []
@@ -2341,7 +2348,6 @@ labels: []
 Positive complement to the SOLID smell catalog (T-0330). An exhaustive PATTERN REGISTRY (structured like the capability registry -- pattern x hallmark x language matrix, covered-or-excused): each entry = a HALLMARK detector (the before-shape), the recommended PATTERN (GoF + modern), the FORCE/tension it resolves, a refactoring sketch, languages. Two directions: HALLMARK->PATTERN (N-arm isinstance/type-switch -> Strategy/polymorphism; growing if-chain on a state field -> State machine; scattered ConcreteX() construction -> Factory/DI; telescoping optional ctor params -> Builder; manual callback lists -> Observer; repeated wrap+delegate -> Decorator; incompatible-interface bridging -> Adapter; expensive-object reuse -> Flyweight/pool) and ANTI-PATTERN->ESCAPE (god object -> SRP decompose; anemic domain model -> move behavior to data; stringly-typed -> newtype; poltergeist/lava-flow -> delete; sequential coupling -> explicit state). CRITICAL DESIGN (do it right, avoid cargo-culting): (1) RECOMMENDATIONS not errors -- advisory/suggestion severity only, forcing a pattern is itself over-engineering; the user said 'recommended'. (2) STRONG-HALLMARK-ONLY / high precision -- recommend only on an unambiguous structural signal; a noisy recommender trains users to ignore it; the library itself must NOT recommend when the code is already simple. (3) PAIRS WITH the SOLID smells -- reuse the same hallmark detectors: the smell is the diagnosis, the pattern is the prescription (one detector, two outputs: 'violates OCP' + 'consider Strategy'). (4) WAIVABLE with a reason so a repo records deliberate exceptions. (5) each recommendation names the FORCE + a concrete sketch, never a bare 'use Strategy'.
 
 EXHAUSTIVENESS DRIFT-LOCK (T-0343, 2026-07-20 mandate 'implementation MUST address EVERYTHING the exhaustive researcher found'): this epic's implementation binds to the corpus DENOMINATOR MANIFEST via T-0343's N:M coverage meta-test. Denominator source: design-pattern-catalog.md (341 patterns) + design-pattern-traps-corpus.md (anti-pattern->escape hallmarks). Every relevant manifest entry must map to >=1 registered check/obligation/recommender-rule OR carry an explicit reasoned deferral (advisory/not-checkable/ticketed); (addressed union deferred) == TOTAL. The epic CANNOT close while any researched entry is un-addressed and un-deferred -- the corpora (docs/design/*) are the enforceable denominator, not just reading.
-
 <!-- ticket:T-0339 -->
 ```yaml
 id: T-0339
@@ -4276,3 +4282,33 @@ component: null
 labels: []
 ```
 T-0570 computes sha256 fingerprints per run and validates format (SQLite magic, JSON parse) but never persists them -- so content DRIFT between runs (an artifact silently rewritten by a stale tool or a foreign process) is undetectable; only malformed bytes are caught. Store the fingerprints in a manifest file and compare on the next doctor run, reporting any artifact whose hash changed without a corresponding legitimate producer run. Flagged by T-0570's reviewer as the gap between the ticket title's 'manifest' promise and the delivered check-on-read.
+
+<!-- ticket:T-0605 -->
+```yaml
+id: T-0605
+title: 'design-pattern recommender phase 2: Adapter, Flyweight/pool, Observer, anemic-domain-model,
+  poltergeist/lava-flow, sequential-coupling detectors'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0332
+scope:
+- src/frob/arch/**
+- docs/modules/arch.md
+- tests/unit/test_arch.py
+- docs/design/registry/patterns.yaml
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN each of the 6 rows WHEN this ticket closes THEN the row is either detected
+  by a tested high-precision detector or carries a reasoned not-checkable/out-of-scope
+  disposition AND the patterns reconciliation pin test passes
+threat: null
+component: null
+labels: []
+```
+The 6 registry rows T-0332 deferred for precision reasons: each needs a fuzzier structural signal than the >=3-occurrence floors phase 1 shipped, and shipping them imprecise would train users to ignore the advisory channel (the ticket's own noise mandate). Design a high-precision signal per row or record a reasoned not-checkable disposition. Any patterns.yaml entries re-deferred at T-0332 close point HERE -- keep the reconciliation pin test (tests/test_registry_reconciliation_patterns.py) green when this ticket changes dispositions. NOTE: T-0332's Done report references this as T-draft-4fb8deee; drafts do not survive land (T-0577), so this is the real ticket.
