@@ -813,6 +813,7 @@ def _evaluate_audit(model: KernelModel, root: Path):  # noqa: ANN201
 # SYS100-102 self-conformance check (T-0150: vet's own capability scanner
 # pointed at OUR src/ tree, reconciled against `[strata.code_map]`/
 # `[strata.capability_map]` in frob.toml).
+# frob:ticket T-0640
 def _run_audit(cfg: AppConfig) -> None:
     """`frob sys audit`: run the full exhaustiveness + self-conformance +
     SYS2xx resource-contention + REL2xx reliability check (see the comment

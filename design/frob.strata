@@ -133,6 +133,14 @@ node graphlang : trusted {
     may "fs";
     may "fs-read";
     may "sql";
+    // T-0640: graph_cache's fill/invalidation flows are `_infra.py::
+    // _cache_node_and_fill_flow`/`_invalidation_flow`-synthesized edges
+    // with no surface `attr` clause of their own to mark `local` (an
+    // in-process in-memory cache, not a real cross-boundary call) --
+    // a CacheDecl attr-forwarding surface is a follow-up ticket, not
+    // this one's scope.
+    waive "REL200:graph_cache__fill" reason "elaborator-synthesized cache fill flow, in-process in-memory cache with no attr-forwarding surface yet -- T-0640 follow-up to add one" ticket "T-0640";
+    waive "REL200:graph_cache__inval_f_parse" reason "elaborator-synthesized cache invalidation flow, in-process in-memory cache with no attr-forwarding surface yet -- T-0640 follow-up to add one" ticket "T-0640";
 }
 
 // gates: src/frob/gates/**. The obligation-graph rule engine (SYS/DRIFT/
@@ -456,93 +464,93 @@ cache graph_cache of graphlang {
 // not a hot path), so 1 req/s is an honest, conservative declared bound,
 // not an aspirational one.
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_registry_fetch : registry -> vet { label Public; rate 1 req/s; }
+flow f_registry_fetch : registry -> vet { label Public; rate 1 req/s; attr timeout; }
 
 // cli dispatches into every other component (src/frob/app/app.py::
 // _dispatch_table + the runner modules under src/frob/app/).
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_parse : cli -> graphlang { label Internal; }
+flow f_parse : cli -> graphlang { label Internal; attr local; }
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_cli_core : cli -> core { label Internal; }
+flow f_cli_core : cli -> core { label Internal; attr local; }
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_cli_checker : cli -> checker { label Internal; }
+flow f_cli_checker : cli -> checker { label Internal; attr local; }
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_cli_gates : cli -> gates { label Internal; }
+flow f_cli_gates : cli -> gates { label Internal; attr local; }
 // The ledger write path a ticket-mutating subcommand takes
 // (src/frob/app/ticket_runner.py -> src/frob/tickets/_store.py::
 // write_ticket). See the `frob:channel f_cli_tickets` anchor there.
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_cli_tickets : cli -> tickets_ledger { label Internal; }
+flow f_cli_tickets : cli -> tickets_ledger { label Internal; attr local; }
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_cli_vet : cli -> vet { label Internal; }
+flow f_cli_vet : cli -> vet { label Internal; attr local; }
 // T-0707: `src/frob/app/registry_runner.py` imports `frob.registry`
 // directly (the `frob registry` subcommand's CLI entrypoint).
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_cli_registry_model : cli -> registry_model { label Internal; }
+flow f_cli_registry_model : cli -> registry_model { label Internal; attr local; }
 // T-0707: `src/frob/app/fleet_runner.py` imports `frob.fleet` directly
 // (the `frob fleet` subcommand's CLI entrypoint).
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_cli_fleet : cli -> fleet { label Internal; }
+flow f_cli_fleet : cli -> fleet { label Internal; attr local; }
 
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_graphlang_core : graphlang -> core { label Internal; }
+flow f_graphlang_core : graphlang -> core { label Internal; attr local; }
 
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_checker_graphlang : checker -> graphlang { label Internal; }
+flow f_checker_graphlang : checker -> graphlang { label Internal; attr local; }
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_checker_core : checker -> core { label Internal; }
+flow f_checker_core : checker -> core { label Internal; attr local; }
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_checker_gates : checker -> gates { label Internal; }
+flow f_checker_gates : checker -> gates { label Internal; attr local; }
 
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_core_graphlang : core -> graphlang { label Internal; }
+flow f_core_graphlang : core -> graphlang { label Internal; attr local; }
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_core_gates : core -> gates { label Internal; }
+flow f_core_gates : core -> gates { label Internal; attr local; }
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_core_tickets : core -> tickets_ledger { label Internal; }
+flow f_core_tickets : core -> tickets_ledger { label Internal; attr local; }
 
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_gates_graphlang : gates -> graphlang { label Internal; }
+flow f_gates_graphlang : gates -> graphlang { label Internal; attr local; }
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_gates_core : gates -> core { label Internal; }
+flow f_gates_core : gates -> core { label Internal; attr local; }
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_gates_strata : gates -> stratamod { label Internal; }
+flow f_gates_strata : gates -> stratamod { label Internal; attr local; }
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_gates_tickets : gates -> tickets_ledger { label Internal; }
+flow f_gates_tickets : gates -> tickets_ledger { label Internal; attr local; }
 // T-0707: `src/frob/gates/_registry_exhaustiveness.py::registry_gate`
 // imports `frob.registry._models`/`frob.registry._staleness` directly --
 // the one consumer of the unified registry model.
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_gates_registry_model : gates -> registry_model { label Internal; }
+flow f_gates_registry_model : gates -> registry_model { label Internal; attr local; }
 
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_strata_graphlang : stratamod -> graphlang { label Internal; }
+flow f_strata_graphlang : stratamod -> graphlang { label Internal; attr local; }
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_strata_core : stratamod -> core { label Internal; }
+flow f_strata_core : stratamod -> core { label Internal; attr local; }
 // strata's `_effects.py` reuses `frob.vet._capability`'s pattern tables
 // (docstring, T-0079) -- the one strata -> vet edge.
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_strata_vet : stratamod -> vet { label Internal; }
+flow f_strata_vet : stratamod -> vet { label Internal; attr local; }
 
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_vet_gates : vet -> gates { label Internal; }
+flow f_vet_gates : vet -> gates { label Internal; attr local; }
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_vet_graphlang : vet -> graphlang { label Internal; }
+flow f_vet_graphlang : vet -> graphlang { label Internal; attr local; }
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_vet_core : vet -> core { label Internal; }
+flow f_vet_core : vet -> core { label Internal; attr local; }
 
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_tickets_core : tickets_ledger -> core { label Internal; }
+flow f_tickets_core : tickets_ledger -> core { label Internal; attr local; }
 
 // T-0707: `frob.fleet.route_ticket` imports `frob.tickets` directly
 // (`TicketSpec`/`doable`/`load_queue`/`new_ticket`) to file a finding into
 // a sibling repo's own ledger.
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_fleet_tickets : fleet -> tickets_ledger { label Internal; }
+flow f_fleet_tickets : fleet -> tickets_ledger { label Internal; attr local; }
 // T-0707: `frob.fleet` imports `frob.logging.get_logger` (module logger
 // setup, owned by `core`'s `src/frob/logging/**` glob).
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
-flow f_fleet_core : fleet -> core { label Internal; }
+flow f_fleet_core : fleet -> core { label Internal; attr local; }
 
 // -- boundary --------------------------------------------------------
 

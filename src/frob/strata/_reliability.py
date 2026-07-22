@@ -48,6 +48,13 @@ check into a crash contract) is a SEPARATE, narrower mechanism this
 module does not duplicate or replace; a future grammar ticket adding a
 real `timeout <quantity>` flow clause could unify the two, not this one.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: this file's \
+# 'only' hits are source-level design-rationale/scope-cut prose (docstrings \
+# describing already-implemented internal behavior, verifiable by reading \
+# the code they annotate) rather than a separate cross-module contract \
+# needing its own tracked invariant, the same disposition _contention.py's \
+# own INV006 waiver already uses; disposed as a calibration batch, not \
+# claim-by-claim"
 
 from __future__ import annotations
 

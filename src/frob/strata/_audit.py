@@ -53,6 +53,7 @@ from ._compliance import (
     evaluate_compliance,
 )
 from ._contention import RESOURCE_CONTENTION_RULES
+from ._reliability import RELIABILITY_RULES
 from ._cve_fingerprint import (
     CVE_FINGERPRINTS,
     FingerprintViolation,
@@ -967,22 +968,24 @@ def _apply_gap_waivers(
 
 def _gap_rule_in_scope(rule: str) -> bool:
     """Excludes rule ids that own their own waiver channel
-    (SYS100-102, HOST001/HOST002, SYS200-203)."""
+    (SYS100-102, HOST001/HOST002, SYS200-203, REL200/REL201)."""
     # T-0174: this predicate sees every THREAT/LINT/PII/compliance/
     # CVE-fingerprint finding -- everything EXCEPT SYS100-102 (owned by
     # `check_self_conformance`), HOST001/HOST002 (owned by
-    # `evaluate_host_isolation_waived`, T-0280), and SYS200-203 (T-0724:
+    # `evaluate_host_isolation_waived`, T-0280), SYS200-203 (T-0724:
     # owned by `check_resource_contention`'s own `apply_waivers` call,
-    # `_contention.py::_apply_contention_waivers`) -- each of those owns
-    # its own waiver channel (apply_waivers' `in_scope` docstring).
-    # Without this exclusion, a legitimate `waive "SYS20X:..."` clause
-    # was reported STALE here (this gap set never contains a SYS20X
-    # finding to match against) even while `check_resource_contention`
-    # correctly matched and applied the SAME waiver in its own pass --
-    # a real cross-family collision, not a hypothetical one (T-0724
-    # review round: `frob sys audit` on frob's own design/frob.strata,
-    # which needed exactly this waiver for the tickets_ledger store's
-    # mode-blind SYS203 finding, surfaced it). Excluding those rule ids
+    # `_contention.py::_apply_contention_waivers`), and REL200/REL201
+    # (T-0640: owned by `check_reliability_timeouts`'s own `apply_waivers`
+    # call, `_reliability.py::_apply_reliability_waivers`) -- each of
+    # those owns its own waiver channel (apply_waivers' `in_scope`
+    # docstring). Without this exclusion, a legitimate `waive "SYS20X:..."`
+    # (or, per T-0640, `waive "REL20X:..."`) clause was reported STALE
+    # here (this gap set never contains a matching finding) even while
+    # the owning check correctly matched and applied the SAME waiver in
+    # its own pass -- a real cross-family collision, not a hypothetical
+    # one (T-0724 review round surfaced it for SYS20X on frob's own
+    # design/frob.strata; T-0640 hit the identical collision for REL200
+    # on the SAME file's cache-fill waivers). Excluding those rule ids
     # here (rather than enumerating every rule this call DOES own) keeps
     # this predicate correct as new gap-producing rule families are
     # added -- a new rule id is in scope here by default, exactly like
@@ -993,6 +996,7 @@ def _gap_rule_in_scope(rule: str) -> bool:
         SYS_UNMODELED_CODE,
         *_HOST_RULE_IDS,
         *RESOURCE_CONTENTION_RULES,
+        *RELIABILITY_RULES,
     )
 
 
