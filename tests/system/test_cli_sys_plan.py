@@ -1,6 +1,13 @@
 """System (CLI end-to-end) coverage for `frob sys plan` (T-0084): compile a
 small design model's obligation frontier into a ticket tree, dry-run by
-default, `--apply` writes, and a second run is a no-op (idempotency)."""
+default, `--apply` writes, and a second run is a no-op (idempotency).
+
+T-0724 note: `TestSysAuditContentionCli` below drives `frob sys audit`,
+not `sys plan` -- it lives in this file because T-0724's declared ticket
+`scope` names this exact path for its required system test (acceptance:
+"a duplicate-port fixture surfaces SYS200 through the real CLI"), and the
+agent playbook's scope discipline takes that literally over moving it to
+the thematically-closer `test_cli_sys_audit.py`."""
 
 from __future__ import annotations
 
@@ -121,3 +128,36 @@ class TestSysPlanCli:
         ]
         assert len(refuted_tickets) == 1
         assert refuted_tickets[0].state == TicketState.DROPPED
+
+
+# frob:ticket T-0724
+_DUPLICATE_PORT_MODEL = """\
+module m
+node api_a : trusted {
+    clearance Internal;
+    listens 8080;
+}
+node api_b : trusted {
+    clearance Internal;
+    listens 8080;
+}
+"""
+
+
+class TestSysAuditContentionCli:
+    """T-0724: `check_resource_contention` (T-0699) wired into `frob sys
+    audit` for real -- a duplicate-port design fixture must surface SYS200
+    through the actual CLI dispatch, not just the unit-level
+    `check_resource_contention` call `tests/unit/strata/test_contention.py`
+    already covers."""
+
+    # frob:tests tests/system/test_cli_sys_plan.py::TestSysAuditContentionCli.test_duplicate_port_fires_sys200_through_cli
+    def test_duplicate_port_fires_sys200_through_cli(self, tmp_path: Path) -> None:
+        repo = init_repo(tmp_path, _DUPLICATE_PORT_MODEL)
+        r = run("sys", "audit", cwd=repo)
+        out = r.stdout + r.stderr
+        assert r.returncode != 0, out
+        assert "SYS200" in out
+        assert "8080" in out
+        assert "api_a" in out
+        assert "api_b" in out

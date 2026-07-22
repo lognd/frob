@@ -104,6 +104,16 @@ node cli : trusted {
     // this is a switchable capability, not an aspirational claim.
     may "exec";
     attr flag=frob_check_exec_kill_switch;
+    // T-0724: SYS203 (shared store write) fires because cli/core/fleet/
+    // gates all have a Flow into tickets_ledger -- correctly, per the
+    // grammar's mode-blind "any inbound flow counts as a write" framing
+    // (docs/strata/host.md#resource-contention-sys2xx-t-0699). The ledger
+    // genuinely HAS an arbiter: every writer serializes through the
+    // `.frob/tickets.lock` flock (T-0458 single-writer CLI, hardened by
+    // T-0633's locked wholesale ops) -- SYS203 just cannot express that
+    // arbitration until T-0700's access-modes+arbitrated_by grammar
+    // lands. Re-evaluate at T-0700.
+    waive "SYS203:tickets_ledger" reason "all ledger writers serialize through .frob/tickets.lock (T-0458/T-0633); mode-blind until T-0700 arbitrated_by can express this -- re-evaluate at T-0700" ticket "T-0700";
 }
 
 // graph+lang: src/frob/graph/**, src/frob/lang/**, src/frob/arch/**. Owns
@@ -157,6 +167,10 @@ node gates : trusted {
     // target comes from tracked frob.toml, not user input, and failures
     // fail open to the unbound warning path.
     may "eval";
+    // T-0724: same SYS203/tickets_ledger disposition as `cli` above --
+    // the `.frob/tickets.lock` flock (T-0458/T-0633) is the real,
+    // untracked-by-the-grammar arbiter; re-evaluate at T-0700.
+    waive "SYS203:tickets_ledger" reason "all ledger writers serialize through .frob/tickets.lock (T-0458/T-0633); mode-blind until T-0700 arbitrated_by can express this -- re-evaluate at T-0700" ticket "T-0700";
 }
 
 // check orchestration: src/frob/check/**. Runs the gate suite plus the
@@ -272,6 +286,10 @@ node fleet : trusted {
     // spawning yet, same posture as core/tickets_ledger/vet/stratamod
     // above; waived pending T-0200's real kill-switch mechanism.
     waive "LINT004" reason "no real kill switch around subprocess spawning yet -- T-0200 is the follow-on ticket to build one" ticket "T-0200";
+    // T-0724: same SYS203/tickets_ledger disposition as `cli` above --
+    // the `.frob/tickets.lock` flock (T-0458/T-0633) is the real,
+    // untracked-by-the-grammar arbiter; re-evaluate at T-0700.
+    waive "SYS203:tickets_ledger" reason "all ledger writers serialize through .frob/tickets.lock (T-0458/T-0633); mode-blind until T-0700 arbitrated_by can express this -- re-evaluate at T-0700" ticket "T-0700";
 }
 
 // dup+frob-core: everything that is real infrastructure but not one of
@@ -323,6 +341,10 @@ node core : trusted {
     may "fs";
     may "fs-read";
     waive "LINT004" reason "no real kill switch around subprocess spawning yet -- T-0200 is the follow-on ticket to build one" ticket "T-0200";
+    // T-0724: same SYS203/tickets_ledger disposition as `cli` above --
+    // the `.frob/tickets.lock` flock (T-0458/T-0633) is the real,
+    // untracked-by-the-grammar arbiter; re-evaluate at T-0700.
+    waive "SYS203:tickets_ledger" reason "all ledger writers serialize through .frob/tickets.lock (T-0458/T-0633); mode-blind until T-0700 arbitrated_by can express this -- re-evaluate at T-0700" ticket "T-0700";
 }
 
 // vet: src/frob/vet/**. Dependency-vetting -- the ONE component that

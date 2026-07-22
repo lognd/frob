@@ -92,6 +92,15 @@ class DesignIds:
     #: check) can run `bind_code`/`check_import_conformance` per model
     #: without re-parsing (T-0080).
     models: tuple[KernelModel, ...] = ()
+    #: T-0724: every `store` id declared by any loaded `.strata` file's
+    #: parsed `Module.stores` (pre-elaboration -- a store desugars into a
+    #: plain `Node` at elaborate time with no reconstructible marker,
+    #: `_contention.py` module docstring), merged across every file. This
+    #: is the `store_ids` `frob.strata.check_resource_contention` needs to
+    #: evaluate SYS203 (shared store write) -- `models` alone cannot
+    #: answer which of its nodes were stores.
+    # frob:doc docs/strata/host.md#resource-contention-sys2xx-t-0699
+    store_ids: frozenset[str] = frozenset()
 
 
 def _strata_files(
@@ -118,16 +127,19 @@ def _strata_files(
 
 def _load_all_design_files(
     root: Path, paths: list[Path]
-) -> tuple[set[str], set[str], set[str], list[DesignLoadError], list[KernelModel]]:
+) -> tuple[
+    set[str], set[str], set[str], set[str], list[DesignLoadError], list[KernelModel]
+]:
     """Load+merge every `.strata` file in `paths`; per-file failures collect
     into the returned errors list rather than aborting the whole load."""
     channels: set[str] = set()
     boundaries: set[str] = set()
     secrets: set[str] = set()
+    store_ids: set[str] = set()
     errors: list[DesignLoadError] = []
     models: list[KernelModel] = []
     for path in paths:
-        model, error = _load_one_design_file(root, path)
+        model, file_store_ids, error = _load_one_design_file(root, path)
         if error is not None:
             errors.append(error)
             continue
@@ -136,24 +148,37 @@ def _load_all_design_files(
         channels.update(flow.id for flow in model.flows)
         boundaries.update(boundary.id for boundary in model.boundaries)
         secrets.update(node.id for node in model.nodes if node.clearance == "Secret")
-    return channels, boundaries, secrets, errors, models
+        store_ids.update(file_store_ids)
+    return channels, boundaries, secrets, store_ids, errors, models
 
 
 def _load_one_design_file(
     root: Path, path: Path
-) -> tuple[KernelModel, None] | tuple[None, DesignLoadError]:
-    """Read+parse+elaborate one `.strata` file; returns `(model, None)` on
-    success or `(None, error)` on any failure, never raising."""
+) -> (
+    tuple[KernelModel, frozenset[str], None]
+    | tuple[None, frozenset[str], DesignLoadError]
+):
+    """Read+parse+elaborate one `.strata` file; returns `(model, store_ids,
+    None)` on success or `(None, frozenset(), error)` on any failure, never
+    raising. `store_ids` (T-0724) is read off the PARSED `Module.stores`
+    before `elaborate` folds each store into a plain `Node` -- the only
+    point at which "this node id came from a `store` construct" is still a
+    reconstructible fact (`_contention.py` module docstring)."""
     rel = path.relative_to(root).as_posix()
     try:
         text = path.read_text(encoding="utf-8")
     except OSError as exc:
         _log.warning("load_design_ids: could not read %s: %s", rel, exc)
-        return None, DesignLoadError(path=rel, error=StrataError.ParseFailed)
+        return (
+            None,
+            frozenset(),
+            DesignLoadError(path=rel, error=StrataError.ParseFailed),
+        )
     parsed = parse_module(text)
     if parsed.is_err:
         _log.warning("load_design_ids: %s failed to parse: %s", rel, parsed.danger_err)
-        return None, DesignLoadError(path=rel, error=parsed.danger_err)
+        return None, frozenset(), DesignLoadError(path=rel, error=parsed.danger_err)
+    store_ids = frozenset(store.id for store in parsed.danger_ok.stores)
     elaborated = elaborate(parsed.danger_ok)
     if elaborated.is_err:
         _log.warning(
@@ -161,8 +186,8 @@ def _load_one_design_file(
             rel,
             elaborated.danger_err,
         )
-        return None, DesignLoadError(path=rel, error=elaborated.danger_err)
-    return elaborated.danger_ok, None
+        return None, store_ids, DesignLoadError(path=rel, error=elaborated.danger_err)
+    return elaborated.danger_ok, store_ids, None
 
 
 # frob:doc docs/strata/surface.md#directives-t-0080
@@ -183,13 +208,17 @@ def load_design_ids(root: Path, design_dir: str = DEFAULT_DESIGN_DIR) -> DesignI
     root = Path(root)
     exclude_globs = load_exclude_globs(root)
     paths = _strata_files(root, root / design_dir, exclude_globs)
-    channels, boundaries, secrets, errors, models = _load_all_design_files(root, paths)
+    channels, boundaries, secrets, store_ids, errors, models = _load_all_design_files(
+        root, paths
+    )
 
     _log.info(
-        "load_design_ids: %d channel(s), %d boundary(ies), %d secret(s), %d error(s)",
+        "load_design_ids: %d channel(s), %d boundary(ies), %d secret(s), "
+        "%d store(s), %d error(s)",
         len(channels),
         len(boundaries),
         len(secrets),
+        len(store_ids),
         len(errors),
     )
     return DesignIds(
@@ -198,6 +227,7 @@ def load_design_ids(root: Path, design_dir: str = DEFAULT_DESIGN_DIR) -> DesignI
         secrets=frozenset(secrets),
         errors=tuple(errors),
         models=tuple(models),
+        store_ids=frozenset(store_ids),
     )
 
 

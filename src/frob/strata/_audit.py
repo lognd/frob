@@ -52,6 +52,7 @@ from ._compliance import (
     ComplianceViolation,
     evaluate_compliance,
 )
+from ._contention import RESOURCE_CONTENTION_RULES
 from ._cve_fingerprint import (
     CVE_FINGERPRINTS,
     FingerprintViolation,
@@ -966,21 +967,32 @@ def _apply_gap_waivers(
 
 def _gap_rule_in_scope(rule: str) -> bool:
     """Excludes rule ids that own their own waiver channel
-    (SYS100-102, HOST001/HOST002)."""
+    (SYS100-102, HOST001/HOST002, SYS200-203)."""
     # T-0174: this predicate sees every THREAT/LINT/PII/compliance/
     # CVE-fingerprint finding -- everything EXCEPT SYS100-102 (owned by
-    # `check_self_conformance`) and HOST001/HOST002 (owned by
-    # `evaluate_host_isolation_waived`, T-0280) -- each of those owns
+    # `check_self_conformance`), HOST001/HOST002 (owned by
+    # `evaluate_host_isolation_waived`, T-0280), and SYS200-203 (T-0724:
+    # owned by `check_resource_contention`'s own `apply_waivers` call,
+    # `_contention.py::_apply_contention_waivers`) -- each of those owns
     # its own waiver channel (apply_waivers' `in_scope` docstring).
-    # Excluding those rule ids here (rather than enumerating every rule
-    # this call DOES own) keeps this predicate correct as new
-    # gap-producing rule families are added -- a new rule id is in
-    # scope here by default, exactly like `gaps` itself already is.
+    # Without this exclusion, a legitimate `waive "SYS20X:..."` clause
+    # was reported STALE here (this gap set never contains a SYS20X
+    # finding to match against) even while `check_resource_contention`
+    # correctly matched and applied the SAME waiver in its own pass --
+    # a real cross-family collision, not a hypothetical one (T-0724
+    # review round: `frob sys audit` on frob's own design/frob.strata,
+    # which needed exactly this waiver for the tickets_ledger store's
+    # mode-blind SYS203 finding, surfaced it). Excluding those rule ids
+    # here (rather than enumerating every rule this call DOES own) keeps
+    # this predicate correct as new gap-producing rule families are
+    # added -- a new rule id is in scope here by default, exactly like
+    # `gaps` itself already is.
     return rule not in (
         SYS_UNDECLARED_INTERFACE,
         SYS_STALE_DESIGN,
         SYS_UNMODELED_CODE,
         *_HOST_RULE_IDS,
+        *RESOURCE_CONTENTION_RULES,
     )
 
 

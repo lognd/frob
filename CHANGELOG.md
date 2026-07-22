@@ -19,6 +19,8 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
 ## [0.91.0] - unreleased
 
+- T-0724: strata: wire `check_resource_contention` (SYS200-203) into the production `frob sys audit` path, threading `Module.stores` id set (`DesignIds.store_ids`) so SYS203 (shared store write) can fire; waived the 4 SYS203 findings frob's own `design/frob.strata` surfaces on `tickets_ledger` (arbitrated by `.frob/tickets.lock`, T-0458/T-0633, until T-0700's grammar can express it)
+- T-0724: strata: `_gap_rule_in_scope` (`_audit.py`) now excludes SYS200-203 from `evaluate_exhaustiveness`'s own waiver-staleness sweep, matching the existing SYS100-102/HOST001-002 exclusion -- fixes a cross-family collision where a legitimate SYS203 waiver was reported stale
 - T-0587: testing: real vitest/ctest test collectors (`frob.testing.collect_ts_tests`, `frob.testing.collect_cpp_tests`)
 - T-0616: arch: SRP/cohesion checks (ARCH1xx) -- LCOM4, god-module, mixed-concern function (`frob.arch._srp`)
 - T-0617: arch: OCP checks (`frob.arch._ocp`) -- `type-dispatch-smell` and `non-exhaustive-enum-match`, reusing T-0332's isinstance-chain detector via the new shared `frob.arch._patterns.iter_type_switch_chains`

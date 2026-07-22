@@ -57,7 +57,9 @@ from frob.strata import (
     AuditReport,
     KernelModel,
     PlannedTicket,
+    ResourceContentionReport,
     SelfConformReport,
+    check_resource_contention,
     check_self_conformance,
     evaluate_exhaustiveness,
     group_gaps_by_view,
@@ -577,6 +579,72 @@ def _print_selfconform_report(report: SelfConformReport) -> None:
     _log_selfconform_violations(report)
 
 
+# frob:ticket T-0724
+def _log_waived_contention(report: ResourceContentionReport) -> None:
+    """Log every waived SYS2xx resource-contention finding (T-0174: ALWAYS
+    printed, matching `_print_audit_report`/`_log_waived_selfconform`'s
+    "loud in output" WAIVED line)."""
+    color = _stderr_color()
+    for waived in report.waived:
+        _log.warning(
+            "sys audit: %s family=sys rule=%s node=%s detail=%s",
+            style_warn("WAIVED", color),
+            style_rule(waived.rule, color),
+            waived.node,
+            waived.detail,
+        )
+
+
+# frob:ticket T-0724
+def _log_contention_proved(report: ResourceContentionReport) -> None:
+    """Log the SYS2xx resource-contention PROVED summary line, carrying the
+    waived count inline (same honesty convention as `_log_selfconform_
+    proved`)."""
+    color = _stdout_color()
+    if report.waived:
+        _log.info(
+            "sys audit: resource-contention %s (%d waived) -- zero UNWAIVED "
+            "SYS2xx gaps",
+            style_ok("PROVED", color),
+            len(report.waived),
+        )
+    else:
+        _log.info(
+            "sys audit: resource-contention %s -- zero SYS2xx gaps",
+            style_ok("PROVED", color),
+        )
+
+
+# frob:ticket T-0724
+def _log_contention_violations(report: ResourceContentionReport) -> None:
+    """Log every SYS2xx resource-contention violation, one per line."""
+    color = _stderr_color()
+    _log.error("sys audit: %d resource-contention gap(s) found", len(report.violations))
+    for violation in report.violations:
+        _log.error(
+            "sys audit: %s family=sys rule=%s node=%s detail=%s",
+            style_fail("GAP", color),
+            style_rule(violation.rule, color),
+            violation.node,
+            violation.detail,
+        )
+
+
+# frob:doc docs/strata/host.md#resource-contention-sys2xx-t-0699
+# frob:ticket T-0724
+def _print_contention_report(report: ResourceContentionReport) -> None:
+    """Print `frob sys audit`'s SYS2xx resource-contention summary (T-0724
+    wiring the T-0699 `check_resource_contention` check into production):
+    every SYS200 (duplicate port)/SYS201 (overlapping owns/acl)/SYS202
+    (shared pipe)/SYS203 (shared store write) violation, one per line,
+    matching `_print_selfconform_report`'s CI-parseable style."""
+    _log_waived_contention(report)
+    if not report.violations:
+        _log_contention_proved(report)
+        return
+    _log_contention_violations(report)
+
+
 # frob:ticket T-0158
 def _print_capability_matrix_report() -> bool:
     """Print the T-0158 capability-coverage proof line beside self-
@@ -613,10 +681,15 @@ def _print_capability_matrix_report() -> bool:
 
 # frob:ticket T-0115
 # frob:ticket T-0150
-def _load_audit_model(root: Path) -> KernelModel | None:
+# frob:ticket T-0724
+def _load_audit_model(root: Path) -> tuple[KernelModel, frozenset[str]] | None:
     """Load+merge every `.strata` design file under `root`'s design dir for
     `frob sys audit`, or `None` (already logged) when there are none. Exits
-    1 on any load error -- `sys audit` cannot proceed on a partial model."""
+    1 on any load error -- `sys audit` cannot proceed on a partial model.
+    Returns `(model, store_ids)` -- `store_ids` (T-0724) is `DesignIds.
+    store_ids`, the pre-elaboration `Module.stores` id set every loaded
+    file declared, threaded through so `check_resource_contention`'s SYS203
+    (shared store write) can actually fire."""
     design_dir = _design_dir(root)
     ids = load_design_ids(root, design_dir)
     if ids.errors:
@@ -626,7 +699,7 @@ def _load_audit_model(root: Path) -> KernelModel | None:
     if not ids.models:
         _log.info("sys audit: no design models under %s/%s", root, design_dir)
         return None
-    return merge_models(ids.models)
+    return merge_models(ids.models), ids.store_ids
 
 
 def _evaluate_audit(model: KernelModel, root: Path):  # noqa: ANN201
@@ -674,19 +747,28 @@ def _evaluate_audit(model: KernelModel, root: Path):  # noqa: ANN201
 # pointed at OUR src/ tree, reconciled against `[strata.code_map]`/
 # `[strata.capability_map]` in frob.toml).
 def _run_audit(cfg: AppConfig) -> None:
-    """`frob sys audit`: run the full exhaustiveness + self-conformance
-    check (see the comment above) and exit nonzero with a named-gap
-    summary when any part fails."""
+    """`frob sys audit`: run the full exhaustiveness + self-conformance +
+    SYS2xx resource-contention check (see the comment above; T-0724 added
+    the resource-contention leg) and exit nonzero with a named-gap summary
+    when any part fails."""
     root = _resolve_design_root(cfg, "audit")
-    model = _load_audit_model(root)
-    if model is None:
+    loaded = _load_audit_model(root)
+    if loaded is None:
         return
+    model, store_ids = loaded
 
     report, selfconform = _evaluate_audit(model, root)
+    contention = check_resource_contention(model, store_ids=store_ids)
     _print_audit_report(report)
     _print_selfconform_report(selfconform)
+    _print_contention_report(contention)
     matrix_proved = _print_capability_matrix_report()
-    if not report.proved or selfconform.violations or not matrix_proved:
+    if (
+        not report.proved
+        or selfconform.violations
+        or contention.violations
+        or not matrix_proved
+    ):
         sys.exit(1)
 
 
