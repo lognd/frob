@@ -84,6 +84,32 @@ statically flags any existing entry that shadows tracked source; treat a
 finding there as a hard stop, not something to waive around (it cannot
 be waived at all).
 
+## 1d. Route multi-sentence ticket prose through a `--*-file` flag, never inline shell text
+
+Long ticket prose passed inline through bash as a quoted `--body`/
+`--reason`/`--why` argument is exposed to the shell's own command
+substitution: a backtick or `$(...)` sequence anywhere in that prose gets
+executed by bash BEFORE frob ever sees the string, silently corrupting the
+ticket body/reason with whatever that substitution produced (this bit
+ticket bodies repeatedly in one session -- T-0627, T-0697, T-0735, T-0736
+all lost backticked fragments this way). Every ticket-mutating subcommand
+that accepts free-text prose has a file-input twin that reads the text
+verbatim from a path instead, structurally avoiding the shell entirely:
+
+- `frob ticket new --body-file PATH` (instead of inline `--body TEXT`)
+- `frob ticket new --acceptance-file PATH` (instead of repeated
+  `--acceptance TEXT`; blank-line-separated blocks, one criterion each --
+  see docs/modules/tickets.md#--body-file--acceptance-file-t-0737)
+- `frob ticket scope <id> --reason-file PATH` (instead of inline `--reason
+  TEXT`)
+- `frob ticket done-report <id> --why-file PATH` (T-0458, the original
+  precedent this pattern mirrors)
+
+Write the prose to a temp file first (in your scratch area, not inside the
+repo tree), then pass `--*-file <path>`. Reach for inline `--body`/
+`--reason`/`--why` only for genuinely short, single-clause text with no
+backticks, `$`, or quotes worth worrying about.
+
 ## 2. Gate-affecting source only takes effect via
 
 - `uv run frob ...` (editable install picks up local source changes on

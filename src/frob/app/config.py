@@ -239,6 +239,17 @@ class AppConfig(BaseModel):
     ticket_blocked_by: list[str] = []
     ticket_parent: str | None = None
     ticket_body: str = ""
+    # frob:ticket T-0737
+    # `frob ticket new --body-file PATH` -- read the ticket body verbatim
+    # from PATH instead of the shell (T-0737: long/backticked prose passed
+    # inline through bash gets command-substituted before frob ever sees
+    # it). Mutually exclusive with `--body`.
+    ticket_body_file: Path | None = None
+    # frob:ticket T-0737
+    # `frob ticket new --acceptance-file PATH` -- read acceptance criteria
+    # from PATH, blank-line-separated blocks (T-0737), instead of repeated
+    # `--acceptance TEXT` flags. Mutually exclusive with `--acceptance`.
+    ticket_acceptance_file: Path | None = None
     ticket_state: str | None = None
     ticket_by: str | None = None
     ticket_summary: str | None = None
@@ -259,6 +270,11 @@ class AppConfig(BaseModel):
     ticket_scope_add: list[str] = []
     ticket_scope_remove: list[str] = []
     ticket_scope_reason: str | None = None
+    # frob:ticket T-0737
+    # `frob ticket scope <id> --reason-file PATH` -- read the scope-change
+    # reason verbatim from PATH instead of the shell (T-0737). Mutually
+    # exclusive with `--reason`.
+    ticket_scope_reason_file: Path | None = None
     # frob:ticket T-0411
     # frob:waive SCOPE001 reason="T-0411 needs new/priority AppConfig fields; T-0453/T-0455 bootstrap precedent, T-0446 tracks the general gap"  # noqa: E501
     ticket_priority: str | None = None
@@ -559,6 +575,10 @@ class AppConfig(BaseModel):
             "ticket_merge_ours",
             "ticket_merge_theirs",
             "ticket_why_file",
+            # frob:ticket T-0737
+            "ticket_body_file",
+            "ticket_acceptance_file",
+            "ticket_scope_reason_file",
             "test_path",
             "vet_path",
             "vet_cve_mirror",

@@ -488,8 +488,9 @@ FULLY-written NEW content, never a partial one.
 
 ## Scope/lease change protocol (T-0455)
 
-`frob ticket scope <id> --add GLOB... --remove GLOB... --reason TEXT`
-formally expands or reduces a ticket's declared `scope` -- and, since the
+`frob ticket scope <id> --add GLOB... --remove GLOB... (--reason TEXT |
+--reason-file PATH)` formally expands or reduces a ticket's declared
+`scope` -- and, since the
 T-0453 tree-lease is derived LIVE from an in-progress ticket's `scope`
 (`_in_progress_leases`), its active tree-lease too, in one atomic write.
 This is the accountable replacement for the ad-hoc `frob:waive SCOPE001`
@@ -515,6 +516,13 @@ of waiving the gate, and the mutation is recorded, not hidden.
   colliding glob (`cannot lease '<glob>': held by in-progress T-0xxx (scope
   '<holder-glob>')`) -- an agent can never silently grab a path another
   agent is actively writing.
+- **`--reason-file PATH` (T-0737)**: reads the reason verbatim from PATH
+  instead of the shell -- long or backticked/quoted/`$`-laden reason prose
+  passed inline through bash risks command substitution before frob ever
+  sees it (the T-0627/T-0697/T-0735/T-0736 incidents this fixes for
+  `scope`, mirroring `done-report --why-file`, T-0458's precedent).
+  Mutually exclusive with `--reason` -- giving both exits 1; giving
+  neither also exits 1 (one of the two is always required).
 - **Guardrails**:
   - `--add`/`--remove` both empty is `ScopeChangeEmpty`; a blank `--reason`
     is `ScopeChangeReasonMissing` -- neither op is ever a silent no-op.
@@ -1198,6 +1206,35 @@ class TicketSpec(BaseModel):    # input to new_ticket; id/created assigned
 
 class TicketQueue(BaseModel):
     tickets: Mapping[str, Ticket]
+```
+
+### `--body-file`/`--acceptance-file` (T-0737)
+
+`frob ticket new --body-file PATH` and `frob ticket new --acceptance-file
+PATH` read the ticket body / acceptance criteria verbatim from a file
+instead of the shell -- same rationale and precedent as `done-report
+--why-file` (T-0458) and `scope --reason-file` above: long, multi-sentence,
+or backticked/quoted/`$`-laden prose passed inline through bash risks
+partial command substitution before frob ever sees it.
+
+- `--body-file PATH` is mutually exclusive with `--body TEXT` (giving both
+  exits 1); the file's contents become the ticket body verbatim (the
+  ledger writer still strips a single leading/trailing run of blank lines
+  from any body, file-sourced or not -- that normalization is unrelated to
+  this flag and applies identically either way).
+- `--acceptance-file PATH` is mutually exclusive with repeated
+  `--acceptance TEXT` flags (giving both exits 1). PATH's contents are
+  split into criteria as follows: if the file contains at least one blank
+  line, each blank-line-separated block becomes one criterion (so a
+  multi-sentence GIVEN/WHEN/THEN criterion may still wrap across several
+  lines within its own block); otherwise (no blank line anywhere in the
+  file) it degrades to one criterion per non-empty line. Each criterion is
+  stripped of leading/trailing whitespace.
+- Both are implemented in `frob.app.ticket_runner._resolve_new_body` /
+  `_resolve_new_acceptance` / `_parse_acceptance_file` -- pure CLI-layer
+  resolution, no change to `TicketSpec` or `new_ticket` itself.
+
+```python
 
 class AttachmentSource(BaseModel):
     path: Path | None           # None means clipboard

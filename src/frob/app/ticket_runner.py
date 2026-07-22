@@ -100,6 +100,68 @@ def run(cfg: AppConfig) -> None:
     handler(root, cfg)
 
 
+# frob:ticket T-0737
+def _resolve_new_body(cfg: AppConfig) -> str:
+    """Resolve `frob ticket new`'s body: `--body-file` wins if given (read
+    verbatim, byte-for-byte -- T-0737, so backticked/quoted/`$`-laden prose
+    never rides the shell), else the inline `--body` string. Exits 1 if
+    both are given (ambiguous which the caller meant) or the file cannot be
+    read."""
+    if cfg.ticket_body_file is not None and cfg.ticket_body:
+        _log.error("frob ticket new: --body and --body-file are mutually exclusive")
+        sys.exit(1)
+    if cfg.ticket_body_file is not None:
+        try:
+            return cfg.ticket_body_file.read_text(encoding="utf-8")
+        except OSError as exc:
+            _log.error(
+                "ticket new: could not read --body-file %s: %s",
+                cfg.ticket_body_file,
+                exc,
+            )
+            sys.exit(1)
+    return cfg.ticket_body
+
+
+# frob:ticket T-0737
+def _parse_acceptance_file(text: str) -> list[str]:
+    """Split `--acceptance-file` contents into criteria: one criterion per
+    blank-line-separated block (T-0737) -- chosen over strict one-per-line
+    so a multi-sentence GIVEN/WHEN/THEN criterion may still wrap across
+    lines within its own block. A file with no blank lines degrades
+    gracefully to one criterion per non-empty line. Blocks are stripped of
+    leading/trailing whitespace; empty blocks are dropped."""
+    if re.search(r"\n\s*\n", text):
+        blocks = [b.strip() for b in re.split(r"\n\s*\n+", text)]
+        return [b for b in blocks if b]
+    return [line.strip() for line in text.splitlines() if line.strip()]
+
+
+# frob:ticket T-0737
+def _resolve_new_acceptance(cfg: AppConfig) -> list[str]:
+    """Resolve `frob ticket new`'s acceptance criteria: `--acceptance-file`
+    wins if given (parsed via `_parse_acceptance_file`, T-0737), else the
+    repeated `--acceptance TEXT` flags. Exits 1 if both are given (ambiguous
+    which the caller meant) or the file cannot be read."""
+    if cfg.ticket_acceptance_file is not None and cfg.ticket_acceptance:
+        _log.error(
+            "frob ticket new: --acceptance and --acceptance-file are mutually exclusive"
+        )
+        sys.exit(1)
+    if cfg.ticket_acceptance_file is not None:
+        try:
+            text = cfg.ticket_acceptance_file.read_text(encoding="utf-8")
+        except OSError as exc:
+            _log.error(
+                "ticket new: could not read --acceptance-file %s: %s",
+                cfg.ticket_acceptance_file,
+                exc,
+            )
+            sys.exit(1)
+        return _parse_acceptance_file(text)
+    return list(cfg.ticket_acceptance)
+
+
 def _ticket_spec_from_cfg(cfg: AppConfig, *, title: str, kind: str):  # noqa: ANN201
     """Build the `TicketSpec` `frob ticket new`'s flags describe.
 
@@ -125,14 +187,18 @@ def _ticket_spec_from_cfg(cfg: AppConfig, *, title: str, kind: str):  # noqa: AN
         # a fresh, unbound {text, evidence: ()} AcceptanceCriterion --
         # `type: ignore` names the mismatch this validator exists to close
         # (the annotated field type is the POST-validation shape).
+        # frob:ticket T-0737
+        # `_resolve_new_acceptance` picks --acceptance or --acceptance-file.
         acceptance=tuple(  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
-            cfg.ticket_acceptance
+            _resolve_new_acceptance(cfg)
         ),
         threat=Stride(cfg.ticket_threat) if cfg.ticket_threat else None,
         # frob:ticket T-0454
         component=cfg.ticket_component,
         labels=tuple(cfg.ticket_labels),
-        body=cfg.ticket_body,
+        # frob:ticket T-0737
+        # `_resolve_new_body` picks --body or --body-file.
+        body=_resolve_new_body(cfg),
     )
 
 
@@ -1535,12 +1601,39 @@ def _done_report(root: Path, cfg: AppConfig) -> None:
     )
 
 
+# frob:ticket T-0737
+def _resolve_scope_reason(cfg: AppConfig) -> str | None:
+    """Resolve `frob ticket scope`'s `--reason`: `--reason-file` wins if
+    given (read verbatim -- T-0737, same rationale as `_resolve_new_body`),
+    else the inline `--reason` string. Exits 1 if both are given; returns
+    `None` if neither is given (the caller reports the "one is required"
+    error, matching `_resolve_done_report_why`'s shape)."""
+    if cfg.ticket_scope_reason_file is not None and cfg.ticket_scope_reason:
+        _log.error(
+            "frob ticket scope: --reason and --reason-file are mutually exclusive"
+        )
+        sys.exit(1)
+    if cfg.ticket_scope_reason_file is not None:
+        try:
+            return cfg.ticket_scope_reason_file.read_text(encoding="utf-8")
+        except OSError as exc:
+            _log.error(
+                "ticket scope: could not read --reason-file %s: %s",
+                cfg.ticket_scope_reason_file,
+                exc,
+            )
+            sys.exit(1)
+    return cfg.ticket_scope_reason
+
+
 # frob:ticket T-0455
+# frob:ticket T-0737
 # frob:tests tests/test_tickets_scope_mutation.py::TestScopeCli.test_cli_add_free_path
 # frob:tests tests/test_tickets_scope_mutation.py::TestScopeCli.test_cli_add_leased_path_exits_nonzero  # noqa: E501
 def _scope(root: Path, cfg: AppConfig) -> None:
-    """`frob ticket scope <id> --add GLOB... --remove GLOB... --reason TEXT`:
-    the ONLY thing this command does is forward to
+    """`frob ticket scope <id> --add GLOB... --remove GLOB... (--reason
+    TEXT | --reason-file PATH)`: the ONLY thing this command does is
+    resolve the reason (`_resolve_scope_reason`, T-0737) and forward to
     `frob.tickets.mutate_scope` -- all lease-conflict/evidence-orphan
     validation lives there (T-0455), never re-derived here."""
     from frob.tickets import mutate_scope
@@ -1551,8 +1644,10 @@ def _scope(root: Path, cfg: AppConfig) -> None:
     if not cfg.ticket_scope_add and not cfg.ticket_scope_remove:
         _log.error("frob ticket scope requires --add and/or --remove GLOB")
         sys.exit(1)
-    if not cfg.ticket_scope_reason:
-        _log.error("frob ticket scope requires --reason TEXT")
+
+    reason = _resolve_scope_reason(cfg)
+    if not reason:
+        _log.error("frob ticket scope requires --reason TEXT or --reason-file PATH")
         sys.exit(1)
 
     result = mutate_scope(
@@ -1560,7 +1655,7 @@ def _scope(root: Path, cfg: AppConfig) -> None:
         cfg.ticket_id,
         add=cfg.ticket_scope_add,
         remove=cfg.ticket_scope_remove,
-        reason=cfg.ticket_scope_reason,
+        reason=reason,
     )
     if result.is_err:
         _log.error("scope change failed: %s", result.danger_err)

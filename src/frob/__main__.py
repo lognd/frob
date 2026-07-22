@@ -864,6 +864,22 @@ def _add_ticket_new_parser(ticket_sub) -> None:
     _add_ticket_new_identity_args(ticket_new_p)
     _add_ticket_new_graph_args(ticket_new_p)
     ticket_new_p.add_argument("--body", dest="ticket_body", default="")
+    # frob:ticket T-0737
+    ticket_new_p.add_argument(
+        "--body-file",
+        dest="ticket_body_file",
+        metavar="PATH",
+        help="read the ticket body verbatim from PATH instead of the shell "
+        "(T-0737); mutually exclusive with --body",
+    )
+    # frob:ticket T-0737
+    ticket_new_p.add_argument(
+        "--acceptance-file",
+        dest="ticket_acceptance_file",
+        metavar="PATH",
+        help="read acceptance criteria from PATH, blank-line-separated "
+        "blocks (T-0737); mutually exclusive with --acceptance",
+    )
     ticket_new_p.add_argument("--json", dest="ticket_json", action="store_true")
     ticket_new_p.add_argument("--path", dest="ticket_path", metavar="DIR", default=".")
     ticket_new_p.add_argument(
@@ -1291,10 +1307,17 @@ def _add_ticket_scope_parser(ticket_sub):
     ticket_scope_p.add_argument(
         "--reason",
         dest="ticket_scope_reason",
-        required=True,
         metavar="TEXT",
         help="why this scope change (recorded in the ticket's scope_changes "
-        "audit trail)",
+        "audit trail); required unless --reason-file is given",
+    )
+    # frob:ticket T-0737
+    ticket_scope_p.add_argument(
+        "--reason-file",
+        dest="ticket_scope_reason_file",
+        metavar="PATH",
+        help="read the scope-change reason verbatim from PATH instead of "
+        "the shell (T-0737); mutually exclusive with --reason",
     )
     return ticket_scope_p
 
