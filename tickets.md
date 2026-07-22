@@ -14509,3 +14509,34 @@ component: null
 labels: []
 ```
 Root-cause analysis 2026-07-22: two rejects (T-0611 tree_sitter imported into the deliberately-pure _normalized.py; T-0682 the newer state must win the splice) were violations of a DESIGN INVARIANT that existed only in the implementers/reviewers head, not as a checkable property. frob already has frob:invariant anchors + INV gates. The thread: module-level design properties (this module must not import X; this comparator must be monotonic in Y; this data model must round-trip) are not being written as invariants at the point they are established, so their violation needs a human skeptic to reconstruct. Deliver: (1) a frob:invariant flavor for IMPORT/DEPENDENCY properties (module M must never import package P) checkable statically -- T-0611s exact case becomes an INV gate error, not a review catch; (2) guidance + lint (docs + a check) that a ticket ESTABLISHING a design property (a new pure module, a new ordering/comparator, a new serialization round-trip) record it as a frob:invariant in the same change; (3) seed the two known ones now: _normalized.py-no-tree_sitter and splice_ledger-newer-wins.
+
+<!-- ticket:T-0758 -->
+```yaml
+id: T-0758
+title: 'REL201 proof anchoring: check the endpoint with bound code (dst/both), not
+  only flow.src -- the one real network flow is silent today'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: high
+blocked_by: []
+parent: T-0640
+scope:
+- src/frob/strata/_reliability.py
+- tests/unit/strata/
+- design/frob.strata
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN f_registry_fetch (foreign src, real timeout=code in the vet caller)
+    WHEN REL201 runs THEN it proves against the endpoint with bound code and reports
+    PROVED, not uncheckable-silent; a src-codeless dst-coded litmus fixture asserts
+    it
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Found by T-0640s reviewer: REL201 (timeout proof-against-code) anchors its bind_code proof on flow.src. For the repos ONLY real network flow, f_registry_fetch : registry -> vet, src is the FOREIGN registry node (no bound code), so REL201 is uncheckable-silent there -- while the actual CALLER, vet, has genuinely provable code (src/frob/vet/_registry.py:191, urlopen(url, timeout=timeout_s)). So the one flow this whole family was built to protect is never proof-checked. Fix: REL201 should anchor proof on the endpoint(s) that have bound code -- check the DESTINATION (or both endpoints), not only src -- turning f_registry_fetch from uncheckable-silent into a real PROVED. Add a litmus fixture where src has no code but dst does, asserting the proof runs against dst.
