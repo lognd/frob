@@ -161,6 +161,42 @@ A stage-group name is just a preset `--only` value (see
   Anything else you find that needs fixing gets filed as a new ticket
   (`frob ticket new`), not silently folded in.
 
+## 4b. Land-owned files are untouchable in a worktree (T-0731)
+
+`pyproject.toml`'s `version = "..."` line, `CHANGELOG.md`, and `uv.lock`
+belong to `frob ticket land` EXCLUSIVELY -- never bump the version, never
+hand-append a changelog entry, and never touch the lockfile yourself in a
+worktree, no matter what a ticket's plan or an older Done report from
+before T-0731 implies. This used to be the single largest measured
+coordinator time sink: every concurrent public-API ticket collided on
+these same three files, because REL001 used to force an in-worktree
+bump-and-chase (bump, watch a sibling worktree bump past you, re-bump,
+resolve the resulting merge conflict by hand -- repeat). That dance is
+gone, not just discouraged:
+
+- REL001's version-bump/changelog half is suppressed automatically
+  whenever `FROB_AGENT` is set (true for every dispatched worktree agent,
+  T-0574) -- `frob check`/`frob check --ticket T-XXXX` will not ask you to
+  bump anything. The open-debt and expired-deprecation halves of REL001
+  still run and still gate you; only the bump/changelog half is affected.
+- `frob ticket land` computes the version bump AND auto-generates the
+  CHANGELOG.md entry from the ticket id/title/kind at land time
+  (`_apply_release_bump_for_land`, T-0338/T-0731) -- the changelog is
+  derived state now, never something a worktree commits by hand.
+- A scaffolded `pre-commit` hook mechanically refuses a worktree commit
+  that touches CHANGELOG.md, uv.lock, or `pyproject.toml`'s version line
+  at all, unless `FROB_LAND_INTERNAL=1` is set (land's own escape hatch,
+  never set by a worktree agent). `tickets.md` gets a warning, not a
+  refusal, on the same commit -- reliably telling a CLI-written ledger
+  change from a hand-edit from inside a shell hook is not solved yet
+  (v1 heuristic); treat the warning as a prompt to double check you used
+  the `frob ticket` CLI, not permission to ignore it.
+
+If you find yourself editing any of these three files for a reason other
+than the guard hook itself (this ticket's own scope), stop -- that is a
+sign the plan assumed the old bump-and-chase workflow. File a ticket or
+say so in your Done report; do not work around the guard.
+
 ## 5. Evidence recording
 
 - Evidence ids must use real class/function names and must resolve against

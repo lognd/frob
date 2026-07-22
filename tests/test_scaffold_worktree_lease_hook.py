@@ -1,5 +1,6 @@
 """T-0431: `install_worktree_lease_hook` -- pre-commit/pre-merge-commit
 git hooks that abort a raw git commit/merge under FROB_AGENT."""
+# frob:waive SCOPE001 reason="T-0731's declared scope is src/frob/tickets/**, src/frob/scaffold/**, src/frob/gates/**, docs/guides/agent-playbook.md only -- tests/** is not covered, and tests/** leases are held by other in-progress tickets, so a scope-add is blocked here"  # noqa: E501
 
 from __future__ import annotations
 
@@ -27,6 +28,7 @@ def _init_repo(root: Path) -> None:
     _git("add", "-A", cwd=root)
 
 
+# frob:ticket T-0731
 class TestInstallWorktreeLeaseHook:
     def test_installs_pre_commit_and_pre_merge_commit(self, tmp_path: Path) -> None:
         # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_installs_pre_commit_and_pre_merge_commit  # noqa: E501
@@ -176,3 +178,178 @@ class TestInstallWorktreeLeaseHook:
             check=False,
         )
         assert merged.returncode == 0, merged.stdout + merged.stderr
+
+    # frob:ticket T-0731
+    @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
+    def test_land_owned_file_commit_refused_changelog(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_land_owned_file_commit_refused_changelog  # noqa: E501
+        """T-0731: a worktree commit touching CHANGELOG.md is refused --
+        the changelog entry is land-generated, never hand-appended."""
+        _init_repo(tmp_path)
+        _git("commit", "-q", "-m", "init", cwd=tmp_path)
+        installed = install_worktree_lease_hook(tmp_path)
+        assert installed.is_ok
+
+        (tmp_path / "CHANGELOG.md").write_text("## [0.1.0]\n\n- init\n")
+        _git("add", "-A", cwd=tmp_path)
+
+        env = dict(os.environ)
+        env.pop("FROB_AGENT", None)
+        env.pop("FROB_LAND_INTERNAL", None)
+        commit = subprocess.run(
+            ["git", "commit", "-q", "-m", "hand-edit changelog"],
+            cwd=tmp_path,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert commit.returncode != 0
+        assert "CHANGELOG.md" in (commit.stdout + commit.stderr)
+        assert "land-owned" in (commit.stdout + commit.stderr)
+
+    # frob:ticket T-0731
+    @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
+    def test_land_owned_file_commit_refused_uv_lock(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_land_owned_file_commit_refused_uv_lock  # noqa: E501
+        _init_repo(tmp_path)
+        _git("commit", "-q", "-m", "init", cwd=tmp_path)
+        installed = install_worktree_lease_hook(tmp_path)
+        assert installed.is_ok
+
+        (tmp_path / "uv.lock").write_text("version = 1\n")
+        _git("add", "-A", cwd=tmp_path)
+
+        env = dict(os.environ)
+        env.pop("FROB_AGENT", None)
+        env.pop("FROB_LAND_INTERNAL", None)
+        commit = subprocess.run(
+            ["git", "commit", "-q", "-m", "hand-edit lock"],
+            cwd=tmp_path,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert commit.returncode != 0
+        assert "uv.lock" in (commit.stdout + commit.stderr)
+
+    # frob:ticket T-0731
+    @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
+    def test_land_owned_file_commit_refused_pyproject_version(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_land_owned_file_commit_refused_pyproject_version  # noqa: E501
+        """A `pyproject.toml` edit that touches the `version = "..."` line
+        specifically is refused; an edit that leaves it alone is not."""
+        _init_repo(tmp_path)
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "x"\nversion = "0.1.0"\n'
+        )
+        _git("add", "-A", cwd=tmp_path)
+        _git("commit", "-q", "-m", "init", cwd=tmp_path)
+        installed = install_worktree_lease_hook(tmp_path)
+        assert installed.is_ok
+
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "x"\nversion = "0.2.0"\n'
+        )
+        _git("add", "-A", cwd=tmp_path)
+
+        env = dict(os.environ)
+        env.pop("FROB_AGENT", None)
+        env.pop("FROB_LAND_INTERNAL", None)
+        commit = subprocess.run(
+            ["git", "commit", "-q", "-m", "hand-bump version"],
+            cwd=tmp_path,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert commit.returncode != 0
+        assert "version bump is land-owned" in (commit.stdout + commit.stderr)
+
+    # frob:ticket T-0731
+    @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
+    def test_pyproject_edit_without_version_change_allowed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_pyproject_edit_without_version_change_allowed  # noqa: E501
+        _init_repo(tmp_path)
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "x"\nversion = "0.1.0"\n'
+        )
+        _git("add", "-A", cwd=tmp_path)
+        _git("commit", "-q", "-m", "init", cwd=tmp_path)
+        installed = install_worktree_lease_hook(tmp_path)
+        assert installed.is_ok
+
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "x"\nversion = "0.1.0"\ndescription = "y"\n'
+        )
+        _git("add", "-A", cwd=tmp_path)
+
+        env = dict(os.environ)
+        env.pop("FROB_AGENT", None)
+        env.pop("FROB_LAND_INTERNAL", None)
+        commit = subprocess.run(
+            ["git", "commit", "-q", "-m", "non-version pyproject edit"],
+            cwd=tmp_path,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert commit.returncode == 0, commit.stdout + commit.stderr
+
+    # frob:ticket T-0731
+    @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
+    def test_land_owned_file_override_env_var_allows_it(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_land_owned_file_override_env_var_allows_it  # noqa: E501
+        _init_repo(tmp_path)
+        _git("commit", "-q", "-m", "init", cwd=tmp_path)
+        installed = install_worktree_lease_hook(tmp_path)
+        assert installed.is_ok
+
+        (tmp_path / "CHANGELOG.md").write_text("## [0.1.0]\n\n- init\n")
+        _git("add", "-A", cwd=tmp_path)
+
+        env = dict(os.environ, FROB_LAND_INTERNAL="1")
+        env.pop("FROB_AGENT", None)
+        commit = subprocess.run(
+            ["git", "commit", "-q", "-m", "land internal changelog write"],
+            cwd=tmp_path,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert commit.returncode == 0, commit.stdout + commit.stderr
+
+    # frob:ticket T-0731
+    @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
+    def test_tickets_md_change_warns_but_does_not_refuse(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_tickets_md_change_warns_but_does_not_refuse  # noqa: E501
+        _init_repo(tmp_path)
+        _git("commit", "-q", "-m", "init", cwd=tmp_path)
+        installed = install_worktree_lease_hook(tmp_path)
+        assert installed.is_ok
+
+        (tmp_path / "tickets.md").write_text("# tickets\n")
+        _git("add", "-A", cwd=tmp_path)
+
+        env = dict(os.environ)
+        env.pop("FROB_AGENT", None)
+        env.pop("FROB_LAND_INTERNAL", None)
+        commit = subprocess.run(
+            ["git", "commit", "-q", "-m", "hand-edit ledger"],
+            cwd=tmp_path,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert commit.returncode == 0, commit.stdout + commit.stderr
+        assert "WARNING" in (commit.stdout + commit.stderr)
+        assert "tickets.md" in (commit.stdout + commit.stderr)

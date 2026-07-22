@@ -1667,6 +1667,7 @@ class TestDeadSymbolGate:
         assert not any("_never_called" in v.message for v in violations)
 
 
+# frob:ticket T-0731
 class TestDebtGate:
     """T-0412: frob:debt vs frob:waive -- malformed directive (DEBT001),
     non-open ticket (DEBT002), expired until boundary (DEBT003)."""
@@ -1824,6 +1825,69 @@ class TestDebtGate:
         assert stamp(tmp_path, snap, "0.1.0").is_ok
         violations = release_gate(tmp_path, snap)
         assert any(v.rule == "REL001" and "frob:debt" in v.message for v in violations)
+
+    # frob:ticket T-0731
+    def test_release_gate_bump_fires_without_frob_agent(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-0731: with `FROB_AGENT` unset (a coordinator shell), REL001
+        still demands the version bump exactly as before."""
+        # frob:tests tests/test_gates.py::TestDebtGate.test_release_gate_bump_fires_without_frob_agent  # noqa: E501
+        from frob.gates import release_gate
+        from frob.release import stamp
+
+        monkeypatch.delenv("FROB_AGENT", raising=False)
+        _write(tmp_path, "src/a.py", "def a(x: int) -> int:\n    return x\n")
+        _write(tmp_path, "pyproject.toml", '[project]\nname = "x"\nversion = "1.0.0"\n')
+        snap = _snapshot(tmp_path)
+        assert stamp(tmp_path, snap, "1.0.0").is_ok
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def a(x: int) -> int:\n    return x\ndef b() -> int:\n    return 0\n",
+        )
+        (tmp_path / ".frob" / "cache.db").unlink()
+        snap2 = _snapshot(tmp_path)
+        violations = release_gate(tmp_path, snap2)
+        assert any(
+            v.rule == "REL001" and "public API changed" in v.message for v in violations
+        )
+
+    # frob:ticket T-0731
+    def test_release_gate_bump_suppressed_under_frob_agent(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-0731: with `FROB_AGENT` set (every dispatched worktree agent),
+        the version-bump/changelog half of REL001 is suppressed -- the
+        bump is a land-time step `frob ticket land` computes, never
+        something an agent must do itself."""
+        # frob:tests tests/test_gates.py::TestDebtGate.test_release_gate_bump_suppressed_under_frob_agent  # noqa: E501
+        from frob.gates import release_gate
+        from frob.release import stamp
+
+        _write(tmp_path, "src/a.py", "def a(x: int) -> int:\n    return x\n")
+        _write(tmp_path, "pyproject.toml", '[project]\nname = "x"\nversion = "1.0.0"\n')
+        snap = _snapshot(tmp_path)
+        assert stamp(tmp_path, snap, "1.0.0").is_ok
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def a(x: int) -> int:\n    return x\ndef b() -> int:\n    return 0\n",
+        )
+        (tmp_path / ".frob" / "cache.db").unlink()
+        snap2 = _snapshot(tmp_path)
+
+        monkeypatch.setenv("FROB_AGENT", "test-agent-1")
+        violations = release_gate(tmp_path, snap2)
+        assert not any(
+            v.rule == "REL001" and "public API changed" in v.message for v in violations
+        )
+        assert not any(
+            v.rule == "REL001" and "no CHANGELOG.md entry" in v.message
+            for v in violations
+        )
 
 
 class TestDeprecatedGate:

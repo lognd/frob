@@ -7036,6 +7036,25 @@ def _rel001_version(manifest, snapshot, current_version):  # noqa: ANN001
 
 
 # frob:doc docs/modules/gates.md#public-api
+# frob:ticket T-0731
+# frob:tests tests/test_gates.py::TestDebtGate.test_release_gate_bump_suppressed_under_frob_agent  # noqa: E501
+# frob:tests tests/test_gates.py::TestDebtGate.test_release_gate_bump_fires_without_frob_agent  # noqa: E501
+def _rel001_bump_suppressed_under_agent() -> bool:
+    """T-0731: whether the bump/changelog half of REL001 must be skipped
+    because we are running inside a dispatched agent worktree.
+
+    Version bump and changelog authorship are land-time steps owned
+    exclusively by `frob ticket land` (T-0731) -- agents must never
+    touch `pyproject.toml`'s version, `uv.lock`, or `CHANGELOG.md`
+    themselves, so the gate that used to demand they do so is disabled
+    whenever `FROB_AGENT` (T-0574) is set. The open-debt and expired-
+    deprecation halves of `release_gate` still run unconditionally: those
+    are real release blockers, not bump-and-chase busywork.
+    """
+    return bool(os.environ.get("FROB_AGENT"))
+
+
+# frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0003
 # frob:waive TEST005 reason="release_gate 82.4% branch cover, debt T-0160"
 def release_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
@@ -7043,7 +7062,10 @@ def release_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     demands a version bump the declared version does not cover, or the
     changelog does not mention the version.
 
-    Opt-in: runs only when a `.frob-release.json` manifest exists.
+    Opt-in: runs only when a `.frob-release.json` manifest exists. The
+    version-bump/changelog half is suppressed under `FROB_AGENT` (T-0731)
+    -- version bump is a land-time step owned by `frob ticket land`, not
+    something a worktree agent does.
     """
     from frob.release import load_manifest
 
@@ -7058,11 +7080,20 @@ def release_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
         _log.debug("release_gate: no detectable project version, skipping")
         return ()
 
-    bump, violations = _rel001_version(
-        manifest_result.danger_ok, snapshot, current_version
-    )
-    if bump != 0 and not _changelog_mentions(root, current_version):
-        violations.append(_rel001_missing_changelog(current_version))
+    if _rel001_bump_suppressed_under_agent():
+        from frob.release import diff_class
+
+        _log.info(
+            "release_gate: REL001 bump/changelog suppressed under FROB_AGENT "
+            "(T-0731) -- version bump is a land-time step"
+        )
+        bump, violations = diff_class(manifest_result.danger_ok, snapshot), []
+    else:
+        bump, violations = _rel001_version(
+            manifest_result.danger_ok, snapshot, current_version
+        )
+        if bump != 0 and not _changelog_mentions(root, current_version):
+            violations.append(_rel001_missing_changelog(current_version))
     # T-0412: a release must never ship with ANY open frob:debt, expired or
     # not -- debt is collected and re-raised before shipping, never
     # silently carried forward as a de facto permanent waiver.

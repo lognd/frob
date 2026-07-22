@@ -36,6 +36,7 @@ from typani.result import Result
 
 from frob.logging import get_logger
 from frob.scaffold.project import (
+    _FORBID_LAND_OWNED_FILES_SCRIPT,
     _FORBID_RAW_TICKET_MERGE_SCRIPT,
     _WORKTREE_LEASE_HOOK_NAMES,
     _WORKTREE_LEASE_HOOK_SCRIPT,
@@ -255,6 +256,8 @@ def _expected_hook_body(hook_name: str) -> str:
     body = _WORKTREE_LEASE_HOOK_SCRIPT
     if hook_name == "pre-merge-commit":
         body += _FORBID_RAW_TICKET_MERGE_SCRIPT
+    if hook_name == "pre-commit":
+        body += _FORBID_LAND_OWNED_FILES_SCRIPT
     return body + _WORKTREE_LEASE_HOOK_TERMINATOR
 
 
