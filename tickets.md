@@ -401,10 +401,11 @@ Measured via:
 Verified via uv run frob check --ticket T-0160: gate:TEST is clean (0
 errors), gate:PRE clean after re-running the sweep post scope-narrow,
 ruff-check/ruff-format clean on all touched files. The two other FAILs
-seen in a full `frob check` run (gate:DRIFT DRIFT002 on
-tickets-archive.md#done-report-381) are pre-existing and unrelated to
-this ticket's scope (confirmed via `git diff main -- <touched files>`
-showing no overlap).
+seen in a full `frob check` run (a gate:DRIFT DRIFT002 naming the
+archive ledger's anchor slug done-report-381) turned out to be caused
+by this very report quoting the edge string verbatim -- the docs
+scanner parsed the quoted path#anchor prose as a describes-edge; the
+coordinator reworded it at land (this text) to break the pattern.
 
 Waived, not fixed: none newly waived this batch; both targeted modules'
 frob:waive TEST005 directives were removed entirely.

@@ -181,7 +181,7 @@
       "ref": "src/frob/tickets/__init__.py::attach"
     },
     {
-      "digest": "cce604d22281025362c80c6982d276a1643086196fa9bf894e7f6e936f67a5ce",
+      "digest": "caa574e2d5a72fb4ef67f6ef7b424e2b6e99a442f46d91a6a0b6f4069fbed6fd",
       "facet": "sig",
       "ref": "src/frob/tickets/__init__.py::doable"
     },
