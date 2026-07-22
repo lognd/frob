@@ -2826,22 +2826,25 @@ scope_changes:
 evidence: []
 attachments: []
 acceptance:
-- given a per-language-spec denominator of every name-binding/aliasing/re-export construct
-  that can route a call to a dangerous target (Python, TypeScript/JS, Rust, C, C++,
-  Kotlin), when the capability resolver runs, then EVERY such STATIC construct resolves
-  the call to its dangerous target -- verified by one litmus per construct, with a
-  coverage table proving the denominator is fully covered
-- given any RUNTIME-resolved indirection the spec defines as opaque to static analysis
-  (reflection, eval/exec, dynamic import, computed member access with non-constant
-  key, callable retrieved from a container, function pointer from a non-constant expression),
-  when it could reach a call position, then the analyzer FAILS CLOSED -- emits an
-  'opaque capability indirection' obligation that must be discharged by a reasoned
-  waiver, never a silent pass
-- 'given the two guarantees above, evasion is impossible-in-the-silent-sense: a reviewer
-  can point to the per-spec denominator table (static fragment complete) and the fail-closed
-  obligation (dynamic fragment gated), so no code path routes a dangerous call to
-  an unaccounted sink without either resolving to it or tripping the opaque-indirection
-  finding'
+- text: given a per-language-spec denominator of every name-binding/aliasing/re-export
+    construct that can route a call to a dangerous target (Python, TypeScript/JS,
+    Rust, C, C++, Kotlin), when the capability resolver runs, then EVERY such STATIC
+    construct resolves the call to its dangerous target -- verified by one litmus
+    per construct, with a coverage table proving the denominator is fully covered
+  evidence: []
+- text: given any RUNTIME-resolved indirection the spec defines as opaque to static
+    analysis (reflection, eval/exec, dynamic import, computed member access with non-constant
+    key, callable retrieved from a container, function pointer from a non-constant
+    expression), when it could reach a call position, then the analyzer FAILS CLOSED
+    -- emits an 'opaque capability indirection' obligation that must be discharged
+    by a reasoned waiver, never a silent pass
+  evidence: []
+- text: 'given the two guarantees above, evasion is impossible-in-the-silent-sense:
+    a reviewer can point to the per-spec denominator table (static fragment complete)
+    and the fail-closed obligation (dynamic fragment gated), so no code path routes
+    a dangerous call to an unaccounted sink without either resolving to it or tripping
+    the opaque-indirection finding'
+  evidence: []
 threat: elevation-of-privilege
 component: null
 labels: []
@@ -2887,15 +2890,17 @@ evidence:
 - tests/system/test_cli_doctor.py::TestDoctorCli::test_doctor_reports_healthy_when_natives_present
 attachments: []
 acceptance:
-- given the editable maturin-develop natives (strata_core, frob_core) are built, when
-  any uv operation that re-syncs the environment runs (uv lock, uv sync, uv build
-  via frob release stamp, or a uv run that triggers a sync after a pyproject change),
-  then the natives remain importable -- either uv is configured not to evict them,
-  or they are transparently rebuilt, so pytest collection / frob check never silently
-  degrade to NativeExtensionUnavailable mid-run
-- given a fresh clone or a stamp that did evict them, when the developer/agent runs
-  the standard build/test entrypoint, then natives are ensured present with no manual
-  'make core' needed as a separate remembered step
+- text: given the editable maturin-develop natives (strata_core, frob_core) are built,
+    when any uv operation that re-syncs the environment runs (uv lock, uv sync, uv
+    build via frob release stamp, or a uv run that triggers a sync after a pyproject
+    change), then the natives remain importable -- either uv is configured not to
+    evict them, or they are transparently rebuilt, so pytest collection / frob check
+    never silently degrade to NativeExtensionUnavailable mid-run
+  evidence: []
+- text: given a fresh clone or a stamp that did evict them, when the developer/agent
+    runs the standard build/test entrypoint, then natives are ensured present with
+    no manual 'make core' needed as a separate remembered step
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -3048,25 +3053,30 @@ scope_changes:
 evidence: []
 attachments: []
 acceptance:
-- 'COVERAGE TOTALITY (SYS-COV): every deployable/public module -- and every module
-  the binding-aware scanner finds ANY capability in -- must bind to exactly one strata
-  node; unbound-but-capable code is a hard failure (the model cannot omit dangerous
-  code)'
-- 'INTERFACE CONFORMANCE (exact): a node''s declared interface must EQUAL the code''s
-  actual public surface -- an undeclared public export fails, and a declared-but-absent
-  symbol fails; every module is forced to declare its interface and keep it in lockstep
-  with the code'
-- 'PURPOSE CONTRACT: every node declares a PURPOSE carrying an allowed-effect profile;
-  an effect outside the purpose''s profile (e.g. a network effect in a declared logging/pure
-  purpose) fires and needs a reasoned discharge -- purpose is a typed constraint,
-  not a comment'
-- 'BINDING TOTALITY + EFFECT CONFORMANCE: code<->node binding is a TOTAL function
-  over capable code (no laundering logic into an unbound file); the exhaustive binding-aware
-  scanner''s extracted effect set must be a subset of what the node declares, declared
-  >= actual, with opaque/unresolvable effects failing closed (T-0339)'
-- 'BOUNDED ESCAPE HATCHES + GATED CONFIG: waivers/assumes are counted, reason-required,
-  staleness-dated, and budget-limited (waive-everything is itself a smell); baseline-view
-  and threshold loosening is an audited event, never silent'
+- text: 'COVERAGE TOTALITY (SYS-COV): every deployable/public module -- and every
+    module the binding-aware scanner finds ANY capability in -- must bind to exactly
+    one strata node; unbound-but-capable code is a hard failure (the model cannot
+    omit dangerous code)'
+  evidence: []
+- text: 'INTERFACE CONFORMANCE (exact): a node''s declared interface must EQUAL the
+    code''s actual public surface -- an undeclared public export fails, and a declared-but-absent
+    symbol fails; every module is forced to declare its interface and keep it in lockstep
+    with the code'
+  evidence: []
+- text: 'PURPOSE CONTRACT: every node declares a PURPOSE carrying an allowed-effect
+    profile; an effect outside the purpose''s profile (e.g. a network effect in a
+    declared logging/pure purpose) fires and needs a reasoned discharge -- purpose
+    is a typed constraint, not a comment'
+  evidence: []
+- text: 'BINDING TOTALITY + EFFECT CONFORMANCE: code<->node binding is a TOTAL function
+    over capable code (no laundering logic into an unbound file); the exhaustive binding-aware
+    scanner''s extracted effect set must be a subset of what the node declares, declared
+    >= actual, with opaque/unresolvable effects failing closed (T-0339)'
+  evidence: []
+- text: 'BOUNDED ESCAPE HATCHES + GATED CONFIG: waivers/assumes are counted, reason-required,
+    staleness-dated, and budget-limited (waive-everything is itself a smell); baseline-view
+    and threshold loosening is an audited event, never silent'
+  evidence: []
 threat: elevation-of-privilege
 component: null
 labels: []
@@ -3107,26 +3117,29 @@ scope_changes:
 evidence: []
 attachments: []
 acceptance:
-- every item across ALL corpora (design patterns, arch checks, traps, system-design,
-  capability-evasion, security/CWE, compliance, secrets, PII, supply-chain) has a
-  stable canonical id in ONE machine-readable registry (docs/design/registry/*.yaml
-  or equivalent); the prose corpus docs become human elaboration that REFERENCES registry
-  ids, never the sole home of an entry -- a reconciliation test fails if any prose
-  entry (a table row / named item in a corpus doc) has no registry id (a prose-only
-  miss) or if two docs describe the same item under different unlinked ids (a split-across-files
-  miss)
-- 'TRUE exhaustiveness: enumerations that were bulk-skipped or census-only get COMPLETED
-  to per-entry granularity with an individual disposition each -- CWE-1000 full (~900+,
-  each: has-design-precondition->checkable / no-kernel-concept->out-of-scope-naming-the-missing-concept
-  / duplicate-of-cataloged-id), AWS pattern catalog, the detector rule sets counted
-  only as census (gitleaks/trufflehog/GitHub-partner-patterns). ''seems like spam/redundant''
-  is NOT a valid skip; redundant-with-X is a disposition (duplicate-of X), not an
-  omission'
-- 'every registry entry carries a DISPOSITION: addressed-by-check(s) <ids> | reasoned-deferral(advisory/not-checkable,
-  reason) | duplicate-of <id> | out-of-scope(named-missing-concept). T-0343''s exhaustiveness
-  drift-lock binds to this registry and fails if ANY entry lacks a disposition or
-  an addressed entry''s check vanishes -- so an implementing ticket provably addresses
-  EVERYTHING'
+- text: every item across ALL corpora (design patterns, arch checks, traps, system-design,
+    capability-evasion, security/CWE, compliance, secrets, PII, supply-chain) has
+    a stable canonical id in ONE machine-readable registry (docs/design/registry/*.yaml
+    or equivalent); the prose corpus docs become human elaboration that REFERENCES
+    registry ids, never the sole home of an entry -- a reconciliation test fails if
+    any prose entry (a table row / named item in a corpus doc) has no registry id
+    (a prose-only miss) or if two docs describe the same item under different unlinked
+    ids (a split-across-files miss)
+  evidence: []
+- text: 'TRUE exhaustiveness: enumerations that were bulk-skipped or census-only get
+    COMPLETED to per-entry granularity with an individual disposition each -- CWE-1000
+    full (~900+, each: has-design-precondition->checkable / no-kernel-concept->out-of-scope-naming-the-missing-concept
+    / duplicate-of-cataloged-id), AWS pattern catalog, the detector rule sets counted
+    only as census (gitleaks/trufflehog/GitHub-partner-patterns). ''seems like spam/redundant''
+    is NOT a valid skip; redundant-with-X is a disposition (duplicate-of X), not an
+    omission'
+  evidence: []
+- text: 'every registry entry carries a DISPOSITION: addressed-by-check(s) <ids> |
+    reasoned-deferral(advisory/not-checkable, reason) | duplicate-of <id> | out-of-scope(named-missing-concept).
+    T-0343''s exhaustiveness drift-lock binds to this registry and fails if ANY entry
+    lacks a disposition or an addressed entry''s check vanishes -- so an implementing
+    ticket provably addresses EVERYTHING'
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -5215,6 +5228,7 @@ outside this ticket's scope.
 
 ### Evidence
 (no evidence recorded)
+
 <!-- ticket:T-0573 -->
 ```yaml
 id: T-0573
@@ -6404,10 +6418,11 @@ evidence:
 - tests/unit/strata/test_code_binding.py::TestObservedCallNames::test_unparseable_file_contributes_no_call_names
 attachments: []
 acceptance:
-- GIVEN a .strata model with an ENDORSE boundary whose sanitizer does not appear at
-  any observed call site in the guarded code path WHEN strata selfconform/threat discharge
-  runs THEN the NoFlow/ENDORSE discharge fails closed with a finding naming the unbound
-  boundary
+- text: GIVEN a .strata model with an ENDORSE boundary whose sanitizer does not appear
+    at any observed call site in the guarded code path WHEN strata selfconform/threat
+    discharge runs THEN the NoFlow/ENDORSE discharge fails closed with a finding naming
+    the unbound boundary
+  evidence: []
 threat: tampering
 component: null
 labels: []
@@ -6637,9 +6652,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a warm daemon and a one-file edit WHEN frob_check_delta runs THEN only obligations
-  whose inputs include that file are re-evaluated AND verify mode shows zero fingerprint
-  mismatch vs a cold run
+- text: GIVEN a warm daemon and a one-file edit WHEN frob_check_delta runs THEN only
+    obligations whose inputs include that file are re-evaluated AND verify mode shows
+    zero fingerprint mismatch vs a cold run
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -6664,8 +6680,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a truncated .frob/cache.db WHEN frob check runs THEN the run fails closed
-  naming the corrupt artifact before any gate consumes it
+- text: GIVEN a truncated .frob/cache.db WHEN frob check runs THEN the run fails closed
+    naming the corrupt artifact before any gate consumes it
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -6690,8 +6707,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a derived artifact rewritten out-of-band between two doctor runs WHEN run_diagnosis
-  executes THEN the drift is reported naming the artifact and both fingerprints
+- text: GIVEN a derived artifact rewritten out-of-band between two doctor runs WHEN
+    run_diagnosis executes THEN the drift is reported naming the artifact and both
+    fingerprints
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -6719,9 +6738,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN each of the 6 rows WHEN this ticket closes THEN the row is either detected
-  by a tested high-precision detector or carries a reasoned not-checkable/out-of-scope
-  disposition AND the patterns reconciliation pin test passes
+- text: GIVEN each of the 6 rows WHEN this ticket closes THEN the row is either detected
+    by a tested high-precision detector or carries a reasoned not-checkable/out-of-scope
+    disposition AND the patterns reconciliation pin test passes
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -6750,9 +6770,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a windows node whose service_account lacks an acl to a sibling service's data
-  dir WHEN HOST001/HOST002 evaluate THEN a movement-impossibility finding (or proof)
-  is produced equivalent in strength to the linux path
+- text: GIVEN a windows node whose service_account lacks an acl to a sibling service's
+    data dir WHEN HOST001/HOST002 evaluate THEN a movement-impossibility finding (or
+    proof) is produced equivalent in strength to the linux path
+  evidence: []
 threat: elevation-of-privilege
 component: null
 labels: []
@@ -6777,9 +6798,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN the 17 re-pointed CMPL-* entries WHEN this ticket closes THEN each is handled_by
-  a real check or carries a reasoned terminal disposition AND the compliance reconciliation
-  pin test passes
+- text: GIVEN the 17 re-pointed CMPL-* entries WHEN this ticket closes THEN each is
+    handled_by a real check or carries a reasoned terminal disposition AND the compliance
+    reconciliation pin test passes
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -6805,9 +6827,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a TS-only repo WHEN frob check --ticket T-X runs THEN _run_gates receives
-  ticket=T-X (asserted via test) and same for --base/--delta/--skip-gates across cpp/rust/ts
-  dispatchers
+- text: GIVEN a TS-only repo WHEN frob check --ticket T-X runs THEN _run_gates receives
+    ticket=T-X (asserted via test) and same for --base/--delta/--skip-gates across
+    cpp/rust/ts dispatchers
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -8527,9 +8550,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a dispatched sub-agent in a fresh worktree WHEN it verifies a ticket using
-  the documented invocation sequence THEN no single command exceeds 120s wall-clock
-  on this repo AND full-gate coverage (or an explicit not-run list) is reported
+- text: GIVEN a dispatched sub-agent in a fresh worktree WHEN it verifies a ticket
+    using the documented invocation sequence THEN no single command exceeds 120s wall-clock
+    on this repo AND full-gate coverage (or an explicit not-run list) is reported
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -8555,10 +8579,11 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a symbol with dependents WHEN frob graph affects SYMREF runs THEN the affected
-  code/docs/tests print with truncation flagged; GIVEN a diff changing a symbol whose
-  affects-closure docs were untouched WHEN the drift gate runs THEN it reports the
-  stale dependents
+- text: GIVEN a symbol with dependents WHEN frob graph affects SYMREF runs THEN the
+    affected code/docs/tests print with truncation flagged; GIVEN a diff changing
+    a symbol whose affects-closure docs were untouched WHEN the drift gate runs THEN
+    it reports the stale dependents
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -8588,9 +8613,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a windows node declaring service with a binPath WHEN install.ps1 is generated
-  THEN it idempotently creates the SCM service with that image path before hardening
-  AND uninstall.ps1 deletes it
+- text: GIVEN a windows node declaring service with a binPath WHEN install.ps1 is
+    generated THEN it idempotently creates the SCM service with that image path before
+    hardening AND uninstall.ps1 deletes it
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -8660,9 +8686,10 @@ evidence:
 - tests/test_vet_containment.py::TestBuildContainmentReport::test_contained_finding_when_obligation_discharged
 attachments: []
 acceptance:
-- GIVEN a fixture repo whose ENDORSE boundary predicate has no observed call site
-  WHEN the production strata audit gate runs (not a unit test) THEN the THREAT003
-  unbound-boundary violation appears in frob check/sys audit output
+- text: GIVEN a fixture repo whose ENDORSE boundary predicate has no observed call
+    site WHEN the production strata audit gate runs (not a unit test) THEN the THREAT003
+    unbound-boundary violation appears in frob check/sys audit output
+  evidence: []
 threat: tampering
 component: null
 labels: []
@@ -8766,9 +8793,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a land with --push WHEN the land completes THEN the push happens only after
-  every land verification passed; GIVEN the TICK005 rule defined WHEN land runs THEN
-  the regression sweep executes and blocks on failure
+- text: GIVEN a land with --push WHEN the land completes THEN the push happens only
+    after every land verification passed; GIVEN the TICK005 rule defined WHEN land
+    runs THEN the regression sweep executes and blocks on failure
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -8796,9 +8824,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN the existing T-0360/T-0370 regression tests unmodified WHEN both check families
-  run through the normalized model THEN all pass and no raw-tree walk remains in _collect_dispatch_refs
-  (or a reasoned decision records what stays raw and why)
+- text: GIVEN the existing T-0360/T-0370 regression tests unmodified WHEN both check
+    families run through the normalized model THEN all pass and no raw-tree walk remains
+    in _collect_dispatch_refs (or a reasoned decision records what stays raw and why)
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -8827,9 +8856,10 @@ evidence:
 - tests/test_tickets_ledger_concurrency.py::TestLedgerLockSpansWholesaleOperations::test_concurrent_ledger_lock_acquisition_serializes
 attachments: []
 acceptance:
-- GIVEN a ticket start whose background sweep completes after a concurrent frob ticket
-  new WHEN both finish THEN both tickets' ledger blocks are fully intact (state, body,
-  evidence)
+- text: GIVEN a ticket start whose background sweep completes after a concurrent frob
+    ticket new WHEN both finish THEN both tickets' ledger blocks are fully intact
+    (state, body, evidence)
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -8920,8 +8950,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a fresh python process WHEN import frob.testing runs as the first frob import
-  THEN it succeeds and the test-file workaround import is removed
+- text: GIVEN a fresh python process WHEN import frob.testing runs as the first frob
+    import THEN it succeeds and the test-file workaround import is removed
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -8946,9 +8977,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a flaky test with an open quarantine ticket WHEN frob test runs via the CLI
-  THEN the run records history, the quarantined failure does not fail the build, and
-  alarms surface for closed-ticket quarantines
+- text: GIVEN a flaky test with an open quarantine ticket WHEN frob test runs via
+    the CLI THEN the run records history, the quarantined failure does not fail the
+    build, and alarms surface for closed-ticket quarantines
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -8987,9 +9019,10 @@ evidence:
 - tests/unit/testing/test_stability.py::TestGate::test_hard_regress_fails
 attachments: []
 acceptance:
-- GIVEN a quarantined test whose last N runs are all failures WHEN quarantine_alarms
-  or evaluate_gate runs THEN the condition is surfaced as a hard-regression alarm
-  and does not silently stay green
+- text: GIVEN a quarantined test whose last N runs are all failures WHEN quarantine_alarms
+    or evaluate_gate runs THEN the condition is surfaced as a hard-regression alarm
+    and does not silently stay green
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9078,9 +9111,10 @@ evidence:
 - tests/test_ticket_land.py::TestStandaloneSiblingDraftSurvivesLand::test_sibling_draft_ticket_finalized_and_lands_alongside
 attachments: []
 acceptance:
-- GIVEN a worktree ledger with a standalone T-draft block WHEN frob ticket land runs
-  for any ticket in that worktree THEN the draft block lands finalized with a real
-  T-#### id and all references rewritten
+- text: GIVEN a worktree ledger with a standalone T-draft block WHEN frob ticket land
+    runs for any ticket in that worktree THEN the draft block lands finalized with
+    a real T-#### id and all references rewritten
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9176,9 +9210,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a repo with frob:deprecated directives WHEN frob deprecated runs THEN each
-  deprecation prints with its DEPR status and the README command table includes the
-  new command
+- text: GIVEN a repo with frob:deprecated directives WHEN frob deprecated runs THEN
+    each deprecation prints with its DEPR status and the README command table includes
+    the new command
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9204,8 +9239,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a design decision recorded WHEN implemented THEN a change adding a call to
-  a deprecated public symbol produces a DEPR finding naming the new call site
+- text: GIVEN a design decision recorded WHEN implemented THEN a change adding a call
+    to a deprecated public symbol produces a DEPR finding naming the new call site
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9231,10 +9267,12 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given a .strata flow crossing a service/process boundary with no timeout attr, when
-  frob check runs, then REL2xx fires unless waived with a reason
-- Given a declared timeout, when the bound code path lacks a matching real timeout
-  arg, then the check fails (proof-against-code), not merely passes on declaration
+- text: Given a .strata flow crossing a service/process boundary with no timeout attr,
+    when frob check runs, then REL2xx fires unless waived with a reason
+  evidence: []
+- text: Given a declared timeout, when the bound code path lacks a matching real timeout
+    arg, then the check fails (proof-against-code), not merely passes on declaration
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9260,10 +9298,12 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given a flow with retry=true and no backoff/jitter declared, when checked, then
-  it fails
-- Given a retryable flow targeting a non-idempotent mutating op with no idempotency
-  key, when checked, then it fails
+- text: Given a flow with retry=true and no backoff/jitter declared, when checked,
+    then it fails
+  evidence: []
+- text: Given a retryable flow targeting a non-idempotent mutating op with no idempotency
+    key, when checked, then it fails
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9289,8 +9329,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given an external-dependency node with no circuit-breaker/bulkhead declared, when
-  checked, then the obligation fires
+- text: Given an external-dependency node with no circuit-breaker/bulkhead declared,
+    when checked, then the obligation fires
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9318,8 +9359,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given a CRITICAL dependency with no fallback declared, when checked, then the obligation
-  fires
+- text: Given a CRITICAL dependency with no fallback declared, when checked, then
+    the obligation fires
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9345,8 +9387,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given a service node with no liveness/readiness declared, when checked, then the
-  obligation fires
+- text: Given a service node with no liveness/readiness declared, when checked, then
+    the obligation fires
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9373,8 +9416,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given a node with inbound critical flows and replicas_max=1, when checked, then
-  SPOF obligation fires unless waived
+- text: Given a node with inbound critical flows and replicas_max=1, when checked,
+    then SPOF obligation fires unless waived
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9400,8 +9444,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given a queue/consumer node with no bounded-intake policy declared, when checked,
-  then the obligation fires
+- text: Given a queue/consumer node with no bounded-intake policy declared, when checked,
+    then the obligation fires
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9428,10 +9473,12 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given a boundary flow with no metrics/traces/logs declared, when checked, then the
-  obligation fires
-- Given a multi-hop flow chain with no trace-id propagation declared, when checked,
-  then the obligation fires
+- text: Given a boundary flow with no metrics/traces/logs declared, when checked,
+    then the obligation fires
+  evidence: []
+- text: Given a multi-hop flow chain with no trace-id propagation declared, when checked,
+    then the obligation fires
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9458,8 +9505,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given a service node with no golden-signal SLOs + error budget declared, when checked,
-  then the obligation fires
+- text: Given a service node with no golden-signal SLOs + error budget declared, when
+    checked, then the obligation fires
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9486,8 +9534,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given a store with >=2 distinct writer nodes and no declared single-owner/reconciliation,
-  when checked, then the obligation fires
+- text: Given a store with >=2 distinct writer nodes and no declared single-owner/reconciliation,
+    when checked, then the obligation fires
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9514,8 +9563,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given a multi-write op with no transactional-boundary declared, when checked, then
-  the obligation fires
+- text: Given a multi-write op with no transactional-boundary declared, when checked,
+    then the obligation fires
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9541,8 +9591,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given an event/queue node with no schema version declared, when checked, then the
-  obligation fires
+- text: Given an event/queue node with no schema version declared, when checked, then
+    the obligation fires
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9569,8 +9620,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given a queue node with no delivery-semantics declared, when checked, then the obligation
-  fires
+- text: Given a queue node with no delivery-semantics declared, when checked, then
+    the obligation fires
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9596,8 +9648,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given a PII-tagged store with no retention/TTL declared, when checked, then the
-  obligation fires
+- text: Given a PII-tagged store with no retention/TTL declared, when checked, then
+    the obligation fires
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9623,8 +9676,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given a sync call chain exceeding the declared/default depth bound, when checked,
-  then the obligation fires
+- text: Given a sync call chain exceeding the declared/default depth bound, when checked,
+    then the obligation fires
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9651,8 +9705,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given a cross-service transaction with no saga/compensation declared, when checked,
-  then the obligation fires
+- text: Given a cross-service transaction with no saga/compensation declared, when
+    checked, then the obligation fires
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9678,8 +9733,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given two services sharing a mutable store/memory region across their boundary with
-  no declared exception, when checked, then the obligation fires
+- text: Given two services sharing a mutable store/memory region across their boundary
+    with no declared exception, when checked, then the obligation fires
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9705,8 +9761,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given a cross-node flow with an implicit clock/ordering assumption and no declared
-  strategy, when checked, then the obligation fires
+- text: Given a cross-node flow with an implicit clock/ordering assumption and no
+    declared strategy, when checked, then the obligation fires
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9751,11 +9808,13 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given the full system-design-corpus.md denominator, when the meta-test runs, then
-  every entry has a disposition (addressed-by-check | reasoned-deferral) and the coverage
-  total matches TOTAL
-- Given a future new system-design-corpus.md entry with no disposition, when the meta-test
-  runs, then it fails the build
+- text: Given the full system-design-corpus.md denominator, when the meta-test runs,
+    then every entry has a disposition (addressed-by-check | reasoned-deferral) and
+    the coverage total matches TOTAL
+  evidence: []
+- text: Given a future new system-design-corpus.md entry with no disposition, when
+    the meta-test runs, then it fails the build
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9782,11 +9841,13 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given every Python static-resolvable construct in the taxonomy's Python table, when
-  the resolver runs on a litmus fixture for that construct, then the aliased dangerous
-  call is detected
-- Given a benign parameter/local binding shadowing a dangerous name, when the resolver
-  runs, then it stays silent (no regression)
+- text: Given every Python static-resolvable construct in the taxonomy's Python table,
+    when the resolver runs on a litmus fixture for that construct, then the aliased
+    dangerous call is detected
+  evidence: []
+- text: Given a benign parameter/local binding shadowing a dangerous name, when the
+    resolver runs, then it stays silent (no regression)
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9812,8 +9873,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given every TS/JS static-resolvable construct in the taxonomy table, when the resolver
-  runs on its litmus fixture, then the aliased dangerous call is detected
+- text: Given every TS/JS static-resolvable construct in the taxonomy table, when
+    the resolver runs on its litmus fixture, then the aliased dangerous call is detected
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9839,8 +9901,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given every Rust static-resolvable construct in the taxonomy table, when the resolver
-  runs on its litmus fixture, then the aliased dangerous call is detected
+- text: Given every Rust static-resolvable construct in the taxonomy table, when the
+    resolver runs on its litmus fixture, then the aliased dangerous call is detected
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9867,8 +9930,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given every C static-resolvable construct in the taxonomy table, when the resolver
-  runs on its litmus fixture, then the aliased dangerous call is detected
+- text: Given every C static-resolvable construct in the taxonomy table, when the
+    resolver runs on its litmus fixture, then the aliased dangerous call is detected
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9896,8 +9960,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given every C++ static-resolvable construct in the taxonomy table, when the resolver
-  runs on its litmus fixture, then the aliased dangerous call is detected
+- text: Given every C++ static-resolvable construct in the taxonomy table, when the
+    resolver runs on its litmus fixture, then the aliased dangerous call is detected
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9923,8 +9988,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given every Kotlin static-resolvable construct in the taxonomy table, when the resolver
-  runs on its litmus fixture, then the aliased dangerous call is detected
+- text: Given every Kotlin static-resolvable construct in the taxonomy table, when
+    the resolver runs on its litmus fixture, then the aliased dangerous call is detected
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9951,10 +10017,12 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given code containing a spec-defined runtime-resolved indirection construct with
-  no waiver, when checked, then the obligation fires
-- Given the same construct with a reasoned waiver, when checked, then it passes and
-  the waiver reason is recorded
+- text: Given code containing a spec-defined runtime-resolved indirection construct
+    with no waiver, when checked, then the obligation fires
+  evidence: []
+- text: Given the same construct with a reasoned waiver, when checked, then it passes
+    and the waiver reason is recorded
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -9989,10 +10057,12 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given the full evasion taxonomy denominator, when the meta-test runs, then every
-  entry maps to >=1 registered litmus fixture
-- Given a new taxonomy entry added with no fixture, when the meta-test runs, then
-  it fails the build
+- text: Given the full evasion taxonomy denominator, when the meta-test runs, then
+    every entry maps to >=1 registered litmus fixture
+  evidence: []
+- text: Given a new taxonomy entry added with no fixture, when the meta-test runs,
+    then it fails the build
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -10022,9 +10092,11 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given a module with an observed capability effect and no strata node binding, when
-  checked, then SYS-COV fires
-- Given every module bound to a node, when checked, then SYS-COV is silent
+- text: Given a module with an observed capability effect and no strata node binding,
+    when checked, then SYS-COV fires
+  evidence: []
+- text: Given every module bound to a node, when checked, then SYS-COV is silent
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -10053,10 +10125,12 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given a node declaring fewer public symbols than the bound module exports, when
-  checked, then the obligation fires
-- Given a node declaring a symbol the bound module does not export, when checked,
-  then the obligation fires
+- text: Given a node declaring fewer public symbols than the bound module exports,
+    when checked, then the obligation fires
+  evidence: []
+- text: Given a node declaring a symbol the bound module does not export, when checked,
+    then the obligation fires
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -10085,8 +10159,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given a node whose purpose declares a read-only effect profile but whose bound code
-  performs a write, when checked, then the obligation fires
+- text: Given a node whose purpose declares a read-only effect profile but whose bound
+    code performs a write, when checked, then the obligation fires
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -10115,9 +10190,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given dangerous logic moved into a helper module not directly bound to any node
-  but reachable from a bound node, when checked, then the effect is still attributed
-  and conformance-checked, not silently dropped
+- text: Given dangerous logic moved into a helper module not directly bound to any
+    node but reachable from a bound node, when checked, then the effect is still attributed
+    and conformance-checked, not silently dropped
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -10147,10 +10223,12 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given a waiver older than its staleness bound, when checked, then it is treated
-  as expired and the underlying obligation re-fires
-- Given any active waiver, when frob check runs, then it appears in the floor view
-  and cannot be hidden from default output
+- text: Given a waiver older than its staleness bound, when checked, then it is treated
+    as expired and the underlying obligation re-fires
+  evidence: []
+- text: Given any active waiver, when frob check runs, then it appears in the floor
+    view and cannot be hidden from default output
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -10183,10 +10261,13 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given the structural-linter-adversarial-hardening.md denominator, when the meta-test
-  runs, then every SLH-* entry has a disposition (addressed-by-check | reasoned-deferral)
-- Given a new hardening-doc entry with no disposition, when the meta-test runs, then
-  it fails the build
+- text: Given the structural-linter-adversarial-hardening.md denominator, when the
+    meta-test runs, then every SLH-* entry has a disposition (addressed-by-check |
+    reasoned-deferral)
+  evidence: []
+- text: Given a new hardening-doc entry with no disposition, when the meta-test runs,
+    then it fails the build
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -10212,11 +10293,14 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given the 10 named concepts, when the registry is queried, then each has a reviewed
-  cross_refs linkage (either merged to one canonical id or explicitly justified as
-  distinct)
-- Given a full pairwise scan over all 1950 entries, when it completes, then any newly
-  found split is either linked or recorded as a residual finding, not silently dropped
+- text: Given the 10 named concepts, when the registry is queried, then each has a
+    reviewed cross_refs linkage (either merged to one canonical id or explicitly justified
+    as distinct)
+  evidence: []
+- text: Given a full pairwise scan over all 1950 entries, when it completes, then
+    any newly found split is either linked or recorded as a residual finding, not
+    silently dropped
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -10244,8 +10328,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given the 6 tension CWEs, when reviewed, then each has one final ruling recorded
-  in weaknesses.yaml with a cross_ref to security-corpus.md's Top-25 entry
+- text: Given the 6 tension CWEs, when reviewed, then each has one final ruling recorded
+    in weaknesses.yaml with a cross_ref to security-corpus.md's Top-25 entry
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -10275,9 +10360,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given the decision made, when RECONCILIATION.md is reread, then finding (f) is marked
-  resolved with either the leaf-level registry built or a written granularity-freeze
-  rationale
+- text: Given the decision made, when RECONCILIATION.md is reread, then finding (f)
+    is marked resolved with either the leaf-level registry built or a written granularity-freeze
+    rationale
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -10304,8 +10390,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given supply-chain-corpus.md after the fix, when its own TOTAL field is compared
-  to registry entry count, then they match
+- text: Given supply-chain-corpus.md after the fix, when its own TOTAL field is compared
+    to registry entry count, then they match
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -10332,9 +10419,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given system-design-corpus.md after the fix, when its manifest is parsed, then TOTAL
-  reflects only genuine entries or artifact rows are machine-distinguishable without
-  a hardcoded exclusion list
+- text: Given system-design-corpus.md after the fix, when its manifest is parsed,
+    then TOTAL reflects only genuine entries or artifact rows are machine-distinguishable
+    without a hardcoded exclusion list
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -10367,10 +10455,12 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- Given the full registry, when the meta-test runs, then every cross_refs-eligible
-  concept has exactly one canonical id or a recorded justification for staying split
-- Given a future corpus doc edit that adds a table row with no matching registry id,
-  when the meta-test runs, then it fails the build
+- text: Given the full registry, when the meta-test runs, then every cross_refs-eligible
+    concept has exactly one canonical id or a recorded justification for staying split
+  evidence: []
+- text: Given a future corpus doc edit that adds a table row with no matching registry
+    id, when the meta-test runs, then it fails the build
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -10397,8 +10487,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN history [P] followed by K consecutive fails under live quarantine WHEN evaluate_gate
-  and hard_regression_alarms run THEN the gate stays red and the alarm fires
+- text: GIVEN history [P] followed by K consecutive fails under live quarantine WHEN
+    evaluate_gate and hard_regression_alarms run THEN the gate stays red and the alarm
+    fires
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -10424,9 +10516,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a registry entry with out_of_scope disposition whose reason names no catching
-  control and is not a substantive reasoned-none WHEN the registry gate runs THEN
-  a finding fires naming the entry
+- text: GIVEN a registry entry with out_of_scope disposition whose reason names no
+    catching control and is not a substantive reasoned-none WHEN the registry gate
+    runs THEN a finding fires naming the entry
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -10453,8 +10546,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN TS fixtures with interface, type alias, enum, and a TSX component WHEN TypeScriptAdapter.adapt
-  runs THEN each is represented in the NormalizedModule and asserted by a test
+- text: GIVEN TS fixtures with interface, type alias, enum, and a TSX component WHEN
+    TypeScriptAdapter.adapt runs THEN each is represented in the NormalizedModule
+    and asserted by a test
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -10485,9 +10580,10 @@ evidence:
 - tests/test_ticket_land.py::TestMergeMainIntoWorktreeRicherState::test_landing_tickets_in_progress_report_survives_the_merge_stage
 attachments: []
 acceptance:
-- GIVEN a worktree ledger with the landing ticket in-progress plus Done report and
-  main's copy queued WHEN the merge driver splices during land THEN the in-progress
-  state and report both survive without manual repair
+- text: GIVEN a worktree ledger with the landing ticket in-progress plus Done report
+    and main's copy queued WHEN the merge driver splices during land THEN the in-progress
+    state and report both survive without manual repair
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -10597,8 +10693,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN docs/modules/gates.md WHEN a reader checks --only semantics THEN the always-evaluated
-  drift behavior is documented with the T-0265 rationale
+- text: GIVEN docs/modules/gates.md WHEN a reader checks --only semantics THEN the
+    always-evaluated drift behavior is documented with the T-0265 rationale
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -10651,9 +10748,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN the children closed WHEN frob check runs on a fixture with a known exception
-  surface THEN the may-raise sets are queryable and every child gate/advisory fires
-  per its own acceptance
+- text: GIVEN the children closed WHEN frob check runs on a fixture with a known exception
+    surface THEN the may-raise sets are queryable and every child gate/advisory fires
+    per its own acceptance
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -10680,9 +10778,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a fixture chain f->g->h where h raises ValueError and g catches it and f calls
-  dict subscript WHEN the resolver runs THEN f's may-raise is exactly {KeyError} plus
-  the ubiquitous tier and a fixture with an unresolvable call yields Unknown
+- text: GIVEN a fixture chain f->g->h where h raises ValueError and g catches it and
+    f calls dict subscript WHEN the resolver runs THEN f's may-raise is exactly {KeyError}
+    plus the ubiquitous tier and a fixture with an unresolvable call yields Unknown
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -10710,8 +10809,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a noexcept function calling a may-throw callee WHEN the analysis runs THEN
-  an error finding names the call site AND a try/catch(...) boundary discharges Unknown
+- text: GIVEN a noexcept function calling a may-throw callee WHEN the analysis runs
+    THEN an error finding names the call site AND a try/catch(...) boundary discharges
+    Unknown
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -10744,10 +10845,11 @@ scope_changes:
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a boundary catching a strict subset of its guarded may-raise set WHEN the
-  gate runs THEN the missing exception types are named; GIVEN a public raiser with
-  unhandling callers WHEN arch advisories run THEN a Result recommendation fires with
-  the raise sites
+- text: GIVEN a boundary catching a strict subset of its guarded may-raise set WHEN
+    the gate runs THEN the missing exception types are named; GIVEN a public raiser
+    with unhandling callers WHEN arch advisories run THEN a Result recommendation
+    fires with the raise sites
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -10774,9 +10876,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a call into an undeclared ctypes function WHEN the resolver runs THEN Unknown
-  appears in the caller's may-raise set; GIVEN the same call with a frob:raises declaration
-  THEN the declared set substitutes
+- text: GIVEN a call into an undeclared ctypes function WHEN the resolver runs THEN
+    Unknown appears in the caller's may-raise set; GIVEN the same call with a frob:raises
+    declaration THEN the declared set substitutes
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -10806,9 +10909,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a pyo3 function whose Rust side constructs PyValueError but whose frob:raises
-  omits it WHEN the gate runs THEN a drift error names both sides; GIVEN a ctypes
-  boundary with no frob:raises THEN a finding demands the declaration
+- text: GIVEN a pyo3 function whose Rust side constructs PyValueError but whose frob:raises
+    omits it WHEN the gate runs THEN a drift error names both sides; GIVEN a ctypes
+    boundary with no frob:raises THEN a finding demands the declaration
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -10833,9 +10937,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN the estate language survey WHEN this ticket closes THEN docs/design records
-  the chosen next adapter tier with rationale and per-language tickets exist for chosen
-  languages only
+- text: GIVEN the estate language survey WHEN this ticket closes THEN docs/design
+    records the chosen next adapter tier with rationale and per-language tickets exist
+    for chosen languages only
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -10877,9 +10982,10 @@ evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 attachments: []
 acceptance:
-- GIVEN a test that deadlocks WHEN the suite runs in CI THEN that test fails with
-  a timeout naming it within minutes and the run completes; GIVEN the known-slow system
-  tests THEN they pass under their explicit overrides
+- text: GIVEN a test that deadlocks WHEN the suite runs in CI THEN that test fails
+    with a timeout naming it within minutes and the run completes; GIVEN the known-slow
+    system tests THEN they pass under their explicit overrides
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -10981,8 +11087,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN the children closed WHEN frob check runs on fixtures reproducing each hazard
-  class THEN each fires per its own acceptance
+- text: GIVEN the children closed WHEN frob check runs on fixtures reproducing each
+    hazard class THEN each fires per its own acceptance
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -11008,8 +11115,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN two functions acquiring locks A-then-B and B-then-A WHEN the check runs THEN
-  a finding names both call paths; GIVEN consistent global ordering THEN silence
+- text: GIVEN two functions acquiring locks A-then-B and B-then-A WHEN the check runs
+    THEN a finding names both call paths; GIVEN consistent global ordering THEN silence
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -11035,9 +11143,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a fixture spawning a process pool inside a thread-pool task WHEN the check
-  runs THEN an error-tier finding fires AND the check fires on src/frob/gates/_run_combined_jobs
-  as it exists today
+- text: GIVEN a fixture spawning a process pool inside a thread-pool task WHEN the
+    check runs THEN an error-tier finding fires AND the check fires on src/frob/gates/_run_combined_jobs
+    as it exists today
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -11063,8 +11172,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN time.sleep inside async def WHEN the check runs THEN a finding suggests asyncio.sleep/to_thread;
-  GIVEN an un-awaited coroutine call THEN a finding names the site
+- text: GIVEN time.sleep inside async def WHEN the check runs THEN a finding suggests
+    asyncio.sleep/to_thread; GIVEN an un-awaited coroutine call THEN a finding names
+    the site
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -11090,9 +11201,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a module-level dict written from a thread-submitted function with no enclosing
-  lock WHEN the check runs THEN an advisory names the write site and the spawn path;
-  GIVEN the same write under a "with lock:" block THEN silence
+- text: GIVEN a module-level dict written from a thread-submitted function with no
+    enclosing lock WHEN the check runs THEN an advisory names the write site and the
+    spawn path; GIVEN the same write under a "with lock:" block THEN silence
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -11119,9 +11231,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a pure-arithmetic loop function submitted to ThreadPoolExecutor WHEN advisories
-  run THEN a GIL-bound suggestion fires naming the loop; GIVEN a socket-read function
-  under threads THEN silence
+- text: GIVEN a pure-arithmetic loop function submitted to ThreadPoolExecutor WHEN
+    advisories run THEN a GIL-bound suggestion fires naming the loop; GIVEN a socket-read
+    function under threads THEN silence
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -11166,9 +11279,10 @@ evidence:
 - tests/unit/strata/test_contention.py::TestSharedStoreWrite::test_empty_store_ids_is_silent
 attachments: []
 acceptance:
-- GIVEN two nodes listening on the same port WHEN sys checks run THEN a contention
-  error names both nodes; GIVEN overlapping owns paths THEN a finding fires; GIVEN
-  disjoint resources THEN silence
+- text: GIVEN two nodes listening on the same port WHEN sys checks run THEN a contention
+    error names both nodes; GIVEN overlapping owns paths THEN a finding fires; GIVEN
+    disjoint resources THEN silence
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -11288,9 +11402,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN two nodes with write-mode access to one resource and no arbiter WHEN sys checks
-  run THEN a fail-closed error; GIVEN the same with a declared arbiter or read-only
-  modes THEN the obligation discharges
+- text: GIVEN two nodes with write-mode access to one resource and no arbiter WHEN
+    sys checks run THEN a fail-closed error; GIVEN the same with a declared arbiter
+    or read-only modes THEN the obligation discharges
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -11319,10 +11434,11 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a node declaring mode=read whose bound code opens the resource for writing
-  WHEN sys checks run THEN a fail-closed error names the write site; GIVEN mode=exclusive
-  with an access outside the arbiter context THEN an error names the unguarded path;
-  GIVEN conforming code per mode THEN each discharges
+- text: GIVEN a node declaring mode=read whose bound code opens the resource for writing
+    WHEN sys checks run THEN a fail-closed error names the write site; GIVEN mode=exclusive
+    with an access outside the arbiter context THEN an error names the unguarded path;
+    GIVEN conforming code per mode THEN each discharges
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -11351,9 +11467,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN two entry nodes declaring users 300k and 200k both flowing into one db resource
-  WHEN elaboration runs THEN the db's aggregate demand is 500k and queryable; GIVEN
-  no demand declared THEN the resource reports demand-undeclared, not zero
+- text: GIVEN two entry nodes declaring users 300k and 200k both flowing into one
+    db resource WHEN elaboration runs THEN the db's aggregate demand is 500k and queryable;
+    GIVEN no demand declared THEN the resource reports demand-undeclared, not zero
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -11381,11 +11498,12 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN 500k declared users flowing to a db with mode=exclusive and default holding
-  time WHEN sys checks run THEN a utilization error fires showing the arithmetic;
-  GIVEN the same db with demand undeclared THEN a fail-closed demand-undeclared finding;
-  GIVEN a read-preferring lock with no alpha/fairness on a read-heavy resource THEN
-  a writer-starvation advisory
+- text: GIVEN 500k declared users flowing to a db with mode=exclusive and default
+    holding time WHEN sys checks run THEN a utilization error fires showing the arithmetic;
+    GIVEN the same db with demand undeclared THEN a fail-closed demand-undeclared
+    finding; GIVEN a read-preferring lock with no alpha/fairness on a read-heavy resource
+    THEN a writer-starvation advisory
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -11445,8 +11563,10 @@ evidence:
 - tests/system/test_cli_check.py::TestGitlessTargetGateSeverity::test_render_lint_gate_warns_not_errors_on_gitless_root
 attachments: []
 acceptance:
-- GIVEN the ~12 currently-failing system tests WHEN the suite runs THEN they pass
-  AND a git-less target produces a consistent, documented behavior across all gates
+- text: GIVEN the ~12 currently-failing system tests WHEN the suite runs THEN they
+    pass AND a git-less target produces a consistent, documented behavior across all
+    gates
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -11549,8 +11669,9 @@ evidence:
 - tests/unit/test_extending_guides_complete.py::TestExtendingGuidesComplete::test_every_anchor_fragment_resolves_to_guide_h1
 attachments: []
 acceptance:
-- GIVEN the 4 failing drift tests WHEN the suite runs THEN they pass with real registry
-  entries and resolving anchors, tests unmodified
+- text: GIVEN the 4 failing drift tests WHEN the suite runs THEN they pass with real
+    registry entries and resolving anchors, tests unmodified
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -11615,8 +11736,9 @@ evidence:
 - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
 attachments: []
 acceptance:
-- GIVEN the strata selfconform gate WHEN it runs on this repo THEN TestRealGateGreen
-  passes with src/frob/registry bound to a node
+- text: GIVEN the strata selfconform gate WHEN it runs on this repo THEN TestRealGateGreen
+    passes with src/frob/registry bound to a node
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -11722,8 +11844,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a repo with .strata files and no built native WHEN frob check runs THEN SYS004
-  fails loud AND both tests pass
+- text: GIVEN a repo with .strata files and no built native WHEN frob check runs THEN
+    SYS004 fails loud AND both tests pass
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -11749,8 +11872,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN the children closed WHEN the perf harness runs THEN a queryable hot-graph
-  exists under .frob at sub-100KB with per-section decile readouts
+- text: GIVEN the children closed WHEN the perf harness runs THEN a queryable hot-graph
+    exists under .frob at sub-100KB with per-section decile readouts
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -11776,9 +11900,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a fixture with a hot inner loop calling an external function WHEN the collector
-  runs THEN samples attribute to the loop section and the call edge with <5 percent
-  measured overhead
+- text: GIVEN a fixture with a hot inner loop calling an external function WHEN the
+    collector runs THEN samples attribute to the loop section and the call edge with
+    <5 percent measured overhead
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -11805,9 +11930,11 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN bimodal latencies (1ms and 100ms modes) WHEN sketched at alpha=2 percent THEN
-  p10/p50/p90 read back within relative error and the serialized sketch is <1KB; GIVEN
-  repeated runs THEN decayed merge converges and the store stays under its cap
+- text: GIVEN bimodal latencies (1ms and 100ms modes) WHEN sketched at alpha=2 percent
+    THEN p10/p50/p90 read back within relative error and the serialized sketch is
+    <1KB; GIVEN repeated runs THEN decayed merge converges and the store stays under
+    its cap
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -11836,10 +11963,11 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a section whose p90 regresses beyond tolerance vs the stored prior WHEN frob
-  check runs with the ratchet enabled THEN a PERF finding names the section and both
-  decile sets; GIVEN a loop dominated by an external call THEN an advisory fires with
-  the edge's deciles
+- text: GIVEN a section whose p90 regresses beyond tolerance vs the stored prior WHEN
+    frob check runs with the ratchet enabled THEN a PERF finding names the section
+    and both decile sets; GIVEN a loop dominated by an external call THEN an advisory
+    fires with the edge's deciles
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -11890,9 +12018,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN 5 stale lease files WHEN frob ticket doable runs THEN the queue prints with
-  at most one summary line about leases AND frob check (or doctor) reports each stale
-  lease once with its path and remedy
+- text: GIVEN 5 stale lease files WHEN frob ticket doable runs THEN the queue prints
+    with at most one summary line about leases AND frob check (or doctor) reports
+    each stale lease once with its path and remedy
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -11919,10 +12048,11 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN an epic with two stories each with open leaf tickets WHEN frob ticket doable
-  runs THEN only leaves surface and closing the epic is refused while descendants
-  are open; GIVEN tickets assigned to sprint-1 WHEN frob ticket sprint show sprint-1
-  runs THEN the commitment lists with state rollup and closed-count velocity
+- text: GIVEN an epic with two stories each with open leaf tickets WHEN frob ticket
+    doable runs THEN only leaves surface and closing the epic is refused while descendants
+    are open; GIVEN tickets assigned to sprint-1 WHEN frob ticket sprint show sprint-1
+    runs THEN the commitment lists with state rollup and closed-count velocity
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -11948,9 +12078,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a queued ticket with a live lease from an existing worktree WHEN frob ticket
-  list runs on main THEN it renders in-progress@worktree; GIVEN the lease is stale
-  THEN it renders plain queued
+- text: GIVEN a queued ticket with a live lease from an existing worktree WHEN frob
+    ticket list runs on main THEN it renders in-progress@worktree; GIVEN the lease
+    is stale THEN it renders plain queued
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -11978,10 +12109,12 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a node whose code only reads files WHEN it declares may fs.read THEN SYS101
-  discharges narrowly and a write observation fails conformance; GIVEN a legacy may
-  fs declaration THEN it works with a deprecation warning naming the sunset and migration
-  target; GIVEN the alias sunset passes THEN legacy spellings are gate errors
+- text: GIVEN a node whose code only reads files WHEN it declares may fs.read THEN
+    SYS101 discharges narrowly and a write observation fails conformance; GIVEN a
+    legacy may fs declaration THEN it works with a deprecation warning naming the
+    sunset and migration target; GIVEN the alias sunset passes THEN legacy spellings
+    are gate errors
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -12131,8 +12264,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a repo with a .kt file WHEN frob check runs THEN the file parses into the
-  symbol graph (no KeyError) and its symbols appear in frob map output
+- text: GIVEN a repo with a .kt file WHEN frob check runs THEN the file parses into
+    the symbol graph (no KeyError) and its symbols appear in frob map output
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -12207,8 +12341,9 @@ evidence:
 - tests/unit/strata/test_contention.py::TestDuplicatePort::test_two_nodes_same_port_fires
 attachments: []
 acceptance:
-- GIVEN a model with a duplicate-port conflict WHEN frob sys audit runs via the CLI
-  THEN SYS200 appears in the command output
+- text: GIVEN a model with a duplicate-port conflict WHEN frob sys audit runs via
+    the CLI THEN SYS200 appears in the command output
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -12409,9 +12544,10 @@ evidence:
 - tests/test_gates.py::TestTick006PhantomFiling::test_filed_bare_draft_without_colon_fires
 attachments: []
 acceptance:
-- 'GIVEN a Done report claiming Filed: T-draft-abc123 with no such block WHEN close
-  or land runs THEN an error names the phantom reference; GIVEN the block exists or
-  the report says no ticket was filed THEN silence'
+- text: 'GIVEN a Done report claiming Filed: T-draft-abc123 with no such block WHEN
+    close or land runs THEN an error names the phantom reference; GIVEN the block
+    exists or the report says no ticket was filed THEN silence'
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -12608,9 +12744,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN class Foo with an annotated field WHEN PythonAdapter.adapt runs THEN the field
-  appears in NormalizedClass.fields AND the T-0615 waiver test is updated to assert
-  parity
+- text: GIVEN class Foo with an annotated field WHEN PythonAdapter.adapt runs THEN
+    the field appears in NormalizedClass.fields AND the T-0615 waiver test is updated
+    to assert parity
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -12640,8 +12777,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a fixture repo with a two-cluster class WHEN frob check runs THEN ARCH101
-  appears in arch output with frob.toml-tunable thresholds AND the rule ids are waivable/registered
+- text: GIVEN a fixture repo with a two-cluster class WHEN frob check runs THEN ARCH101
+    appears in arch output with frob.toml-tunable thresholds AND the rule ids are
+    waivable/registered
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -12679,8 +12818,9 @@ evidence:
 - tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_survives_a_foreign_install_copy
 attachments: []
 acceptance:
-- GIVEN main after the fix WHEN frob sys audit runs THEN zero SYS100 gaps and no dishonest
-  may declarations were added
+- text: GIVEN main after the fix WHEN frob sys audit runs THEN zero SYS100 gaps and
+    no dishonest may declarations were added
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -12748,9 +12888,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a vitest project with a frob:tests directive naming a real vitest test WHEN
-  gates run THEN the edge resolves against the collected id and the structural fallback
-  no longer credits unverified ts edges
+- text: GIVEN a vitest project with a frob:tests directive naming a real vitest test
+    WHEN gates run THEN the edge resolves against the collected id and the structural
+    fallback no longer credits unverified ts edges
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -12778,9 +12919,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN two concurrent public-API worktrees WHEN both land THEN neither ever edited
-  version/changelog files, the land bumps once each, and zero merge conflicts occur
-  on those files
+- text: GIVEN two concurrent public-API worktrees WHEN both land THEN neither ever
+    edited version/changelog files, the land bumps once each, and zero merge conflicts
+    occur on those files
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -12822,8 +12964,10 @@ evidence:
 - tests/system/test_cli_doctor.py::TestDoctorCli::test_doctor_reports_healthy_when_natives_present
 attachments: []
 acceptance:
-- GIVEN a fresh worktree after the change WHEN make core runs THEN it completes in
-  under 10s with warm shared cache (measured), and a cold clone still builds correctly
+- text: GIVEN a fresh worktree after the change WHEN make core runs THEN it completes
+    in under 10s with warm shared cache (measured), and a cold clone still builds
+    correctly
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -12888,10 +13032,11 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a land on main WHEN the daemon is running THEN a fresh delta verdict is available
-  via MCP within a minute without any agent invoking frob check; GIVEN an in-flight
-  worktree whose eventual land would conflict THEN a warning is published before the
-  agents Done report
+- text: GIVEN a land on main WHEN the daemon is running THEN a fresh delta verdict
+    is available via MCP within a minute without any agent invoking frob check; GIVEN
+    an in-flight worktree whose eventual land would conflict THEN a warning is published
+    before the agents Done report
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -12944,9 +13089,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN any frob-enabled repo with [natives] WHEN uv run frob natives build runs THEN
-  natives compile with the shared per-clone cache and the repo Makefile contains no
-  cache logic
+- text: GIVEN any frob-enabled repo with [natives] WHEN uv run frob natives build
+    runs THEN natives compile with the shared per-clone cache and the repo Makefile
+    contains no cache logic
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -12973,10 +13119,11 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a repo missing the current guard hooks or Makefile shim WHEN frob doctor runs
-  THEN a finding names each missing/stale managed block with frob scaffold apply as
-  remedy; GIVEN apply runs THEN the repo conforms idempotently AND this repo itself
-  passes the check
+- text: GIVEN a repo missing the current guard hooks or Makefile shim WHEN frob doctor
+    runs THEN a finding names each missing/stale managed block with frob scaffold
+    apply as remedy; GIVEN apply runs THEN the repo conforms idempotently AND this
+    repo itself passes the check
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -13004,8 +13151,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a body file containing backticks, quotes, and dollar signs WHEN frob ticket
-  new --body-file runs THEN the ledger body matches the file byte-for-byte
+- text: GIVEN a body file containing backticks, quotes, and dollar signs WHEN frob
+    ticket new --body-file runs THEN the ledger body matches the file byte-for-byte
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -13032,8 +13180,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a warm pool of N WHEN an agent leases a worktree THEN it starts with natives
-  built and main current, and the pool refills in the background
+- text: GIVEN a warm pool of N WHEN an agent leases a worktree THEN it starts with
+    natives built and main current, and the pool refills in the background
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -13060,8 +13209,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN the children closed WHEN frob check runs on fixtures for each fragment THEN
-  each child gate/advisory fires per its own acceptance
+- text: GIVEN the children closed WHEN frob check runs on fixtures for each fragment
+    THEN each child gate/advisory fires per its own acceptance
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -13138,8 +13288,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN the slow scaffold test WHEN the suite runs under the global 120s ceiling THEN
-  the test carries its own measured override and passes cold-cache
+- text: GIVEN the slow scaffold test WHEN the suite runs under the global 120s ceiling
+    THEN the test carries its own measured override and passes cold-cache
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -13167,8 +13318,9 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a Rust enum with tuple and struct variants WHEN RustAdapter.adapt runs THEN
-  variant payload shapes are represented and asserted by a test
+- text: GIVEN a Rust enum with tuple and struct variants WHEN RustAdapter.adapt runs
+    THEN variant payload shapes are represented and asserted by a test
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -13196,9 +13348,10 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a frob:protocol with transitions and requires bindings WHEN parsed THEN the
-  machine round-trips; GIVEN a malformed declaration or an unbound protocol THEN a
-  loud ERROR, never a skip
+- text: GIVEN a frob:protocol with transitions and requires bindings WHEN parsed THEN
+    the machine round-trips; GIVEN a malformed declaration or an unbound protocol
+    THEN a loud ERROR, never a skip
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -13226,14 +13379,16 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a recursive call cluster with transitions WHEN the fixpoint runs THEN summaries
-  converge and match hand-computed values; GIVEN an unresolvable callee THEN the summary
-  is poisoned and surfaces as an ERROR downstream, never silence
+- text: GIVEN a recursive call cluster with transitions WHEN the fixpoint runs THEN
+    summaries converge and match hand-computed values; GIVEN an unresolvable callee
+    THEN the summary is poisoned and surfaces as an ERROR downstream, never silence
+  evidence: []
 threat: null
 component: null
 labels: []
 ```
 Child 2 of T-0739. The shared per-function summary fixpoint engine over the call graph: each function summarizes to (required protocol states, may-perform transitions, acquired/released/escaped resources) computed bottom-up to fixpoint, recursion via lattice join, using the T-0339-family resolvers for callee binding. DESIGN CONSTRAINT: ONE engine shared with T-0686 may-raise (whichever builds first hosts the engine; the other consumes -- coordinate explicitly, no second fixpoint). NO-FAIL-SILENT (user mandate): an unresolvable callee contributes Unknown which POISONS the summary (poisoned summaries are ERRORS at verification unless waived with reason); a function outside the call graph (unreachable from any entrypoint) is reported as not-analyzed, never silently passed; engine timeouts/aborts are ERRORS naming the SCC that failed to converge.
+
 <!-- ticket:T-0746 -->
 ```yaml
 id: T-0746
@@ -13256,15 +13411,18 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a C fixture where net_requires-annotated functions are reachable without net_init
-  WHEN the gate runs THEN an ERROR names the unestablished state and the call path;
-  GIVEN the same shape in Rust with a Drop impl THEN a recorded Drop discharge, and
-  with mem::forget observed THEN the excuse is revoked and the ERROR returns
+- text: GIVEN a C fixture where net_requires-annotated functions are reachable without
+    net_init WHEN the gate runs THEN an ERROR names the unestablished state and the
+    call path; GIVEN the same shape in Rust with a Drop impl THEN a recorded Drop
+    discharge, and with mem::forget observed THEN the excuse is revoked and the ERROR
+    returns
+  evidence: []
 threat: null
 component: null
 labels: []
 ```
 Child 3 of T-0739. Verification: for every call site of a requires-state function, the caller-context established states (from summaries + entrypoint initial states) must include the required state -- violation is a GATE-TIER ERROR (not advisory; user mandate: enforceable, never fail-silent). A transition function reachable in a state where the transition is undefined = ERROR. The *_init-never-called and *_deinit-orphaned cases fall out: an inferred init protocol whose init is never reachable from any entrypoint while state-requiring functions are = ERROR naming both. LANGUAGE EXCUSES as recorded discharges (T-0383 caught_by doctrine): Rust pairing discharges to Drop UNLESS mem::forget/ManuallyDrop observed on the type (revokes); C++ discharges to RAII only when the init result is observed held by a destructor-bearing class; Python discharges lexically to with-blocks; TS to using/try-finally; GC finalizers NEVER discharge. Every excuse names its mechanism in the finding output; an excuse whose mechanism cannot be observed in code is an ERROR, not a discharge. Unknown/poisoned summaries at a checked call site = ERROR (waivable with reason).
+
 <!-- ticket:T-0747 -->
 ```yaml
 id: T-0747
@@ -13287,10 +13445,12 @@ scope_changes: []
 evidence: []
 attachments: []
 acceptance:
-- GIVEN a C fixture acquiring a resource with an early-error return skipping cleanup
-  WHEN the gate runs THEN an ERROR names the leaking path; GIVEN the Python equivalent
-  inside a with-block THEN a recorded context-manager discharge; GIVEN cleanup=process-exit-ok
-  THEN termination paths discharge silently by declared policy only
+- text: GIVEN a C fixture acquiring a resource with an early-error return skipping
+    cleanup WHEN the gate runs THEN an ERROR names the leaking path; GIVEN the Python
+    equivalent inside a with-block THEN a recorded context-manager discharge; GIVEN
+    cleanup=process-exit-ok THEN termination paths discharge silently by declared
+    policy only
+  evidence: []
 threat: null
 component: null
 labels: []

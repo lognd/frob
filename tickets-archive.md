@@ -1922,8 +1922,9 @@ evidence:
 - tests/test_gates.py::TestDoclinkGate::test_orphan_doc_is_error_and_linked_docs_pass
 attachments: []
 acceptance:
-- GIVEN the doc tree WHEN frob check runs THEN DOC001 passes and every strata page
-  is reachable from docs/index.md
+- text: GIVEN the doc tree WHEN frob check runs THEN DOC001 passes and every strata
+    page is reachable from docs/index.md
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -1971,8 +1972,10 @@ evidence:
 - tests/unit/strata/test_litmus_payments.py::TestGoldenFindings::test_golden_2_refund_decision_reads_a_stale_replica
 attachments: []
 acceptance:
-- GIVEN hand-written kernel facts for the payments litmus WHEN the prover runs THEN
-  all golden findings fire with path counterexamples and quantifier-tagged verdicts
+- text: GIVEN hand-written kernel facts for the payments litmus WHEN the prover runs
+    THEN all golden findings fire with path counterexamples and quantifier-tagged
+    verdicts
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -2011,8 +2014,9 @@ evidence:
 - tests/unit/strata/test_litmus_surface.py::TestHardenedSurfaceGoldens::test_every_assert_holds_after_the_remedies
 attachments: []
 acceptance:
-- GIVEN design/litmus/payments.strata WHEN frob sys check runs THEN it parses, elaborates,
-  and reproduces the phase-0 golden findings via CI
+- text: GIVEN design/litmus/payments.strata WHEN frob sys check runs THEN it parses,
+    elaborates, and reproduces the phase-0 golden findings via CI
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -2056,8 +2060,9 @@ evidence:
 - tests/unit/strata/test_litmus_chirp.py::TestChirpGoldens::test_hottest_shard_utilization_refutes_under_zipf_skew
 attachments: []
 acceptance:
-- GIVEN tube.strata and chirp.strata WHEN frob sys check runs THEN stampede, fanout-ceiling,
-  staleness, and CDN-declassification findings fire per goldens
+- text: GIVEN tube.strata and chirp.strata WHEN frob sys check runs THEN stampede,
+    fanout-ceiling, staleness, and CDN-declassification findings fire per goldens
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -2098,8 +2103,10 @@ evidence:
 - tests/unit/strata/test_atomic.py::TestEvaluateSagaContractsJoin::test_flow_into_coordinator_marked_at_least_once_and_joined
 attachments: []
 acceptance:
-- GIVEN scenario Breach(Gateway) in the payments litmus WHEN frob sys check runs THEN
-  blast radius, revocation SLA, and recovery-path-independence verdicts are produced
+- text: GIVEN scenario Breach(Gateway) in the payments litmus WHEN frob sys check
+    runs THEN blast radius, revocation SLA, and recovery-path-independence verdicts
+    are produced
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -2150,8 +2157,9 @@ evidence:
 - tests/unit/strata/test_code_binding.py::TestCheckImportConformance::test_cross_component_import_without_declared_flow_is_a_violation
 attachments: []
 acceptance:
-- GIVEN design/frob.strata WHEN frob check runs on this repo THEN SYS gates enforce
-  frob's own declared architecture (self-hosting)
+- text: GIVEN design/frob.strata WHEN frob check runs on this repo THEN SYS gates
+    enforce frob's own declared architecture (self-hosting)
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -2192,9 +2200,10 @@ evidence:
 - tests/unit/strata/test_secrets.py::TestReadersExactSetClosure::test_readers_claim_proved_on_exact_match
 attachments: []
 acceptance:
-- GIVEN a refuted or undischarged claim WHEN frob sys plan runs THEN scoped tickets
-  are filed idempotently and a sys ticket cannot close until its claim discharges
-  at the required rung
+- text: GIVEN a refuted or undischarged claim WHEN frob sys plan runs THEN scoped
+    tickets are filed idempotently and a sys ticket cannot close until its claim discharges
+    at the required rung
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -5448,8 +5457,9 @@ evidence:
 - tests/test_gates.py::TestDoclinkGate::test_orphan_doc_is_error_and_linked_docs_pass
 attachments: []
 acceptance:
-- GIVEN the moved docs WHEN frob check runs THEN doclink/drift/coverage gates pass
-  with zero dangling frob:doc or describes edges
+- text: GIVEN the moved docs WHEN frob check runs THEN doclink/drift/coverage gates
+    pass with zero dangling frob:doc or describes edges
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -6681,9 +6691,10 @@ evidence:
 - tests/test_vet_containment.py::TestRenderContainmentReport::test_unverified_sorts_between_live_and_contained
 attachments: []
 acceptance:
-- GIVEN a dependency CVE mapping to CWE-89 WHEN the design's CWE-89 obligation is
-  discharged THEN vet reports 'contained in depth'; WHEN missing THEN 'live exposure'
-  high-severity
+- text: GIVEN a dependency CVE mapping to CWE-89 WHEN the design's CWE-89 obligation
+    is discharged THEN vet reports 'contained in depth'; WHEN missing THEN 'live exposure'
+    high-severity
+  evidence: []
 threat: info-disclosure
 component: null
 labels: []
@@ -6918,8 +6929,9 @@ evidence:
 - tests/unit/strata/test_threat.py::TestDischargeCompleteness::test_discharge_claim_that_evaluates_refuted_is_a_violation
 attachments: []
 acceptance:
-- GIVEN an owasp-top-10 baseline WHEN a model omits a required weakness entry THEN
-  THREAT001 fails; WHEN a fired weakness has no mitigation THEN THREAT003 fails
+- text: GIVEN an owasp-top-10 baseline WHEN a model omits a required weakness entry
+    THEN THREAT001 fails; WHEN a fired weakness has no mitigation THEN THREAT003 fails
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -6975,8 +6987,9 @@ evidence:
 - tests/unit/strata/test_threat.py::TestEvaluateThreats::test_benign_capability_param_excuses_threat002
 attachments: []
 acceptance:
-- GIVEN capability client_storage WHEN CWE-922 undischarged THEN it fires; GIVEN an
-  unclassified sink THEN THREAT002 errors
+- text: GIVEN capability client_storage WHEN CWE-922 undischarged THEN it fires; GIVEN
+    an unclassified sink THEN THREAT002 errors
+  evidence: []
 threat: elevation-of-privilege
 component: null
 labels: []
@@ -7071,8 +7084,9 @@ evidence:
 - tests/unit/strata/test_threat.py::TestMitigationKindChokepoint::test_assumed_claim_bypasses_the_mitigation_kind_check
 attachments: []
 acceptance:
-- GIVEN localStorage.setItem without a declared capability THEN it errors; GIVEN sql
-  not through the parameterized chokepoint THEN CWE-89 refutes
+- text: GIVEN localStorage.setItem without a declared capability THEN it errors; GIVEN
+    sql not through the parameterized chokepoint THEN CWE-89 refutes
+  evidence: []
 threat: tampering
 component: null
 labels: []
@@ -7293,9 +7307,10 @@ evidence:
 - tests/unit/strata/test_threat.py::TestQualityFamilies::test_no_kind_field_asserted_out_of_scope_entries_have_reasons
 attachments: []
 acceptance:
-- GIVEN Public immutable content served from origin not cdn THEN refutes; GIVEN a
-  large uncompressed structured flow THEN fires; GIVEN a synchronous over-budget single
-  dependency THEN refutes
+- text: GIVEN Public immutable content served from origin not cdn THEN refutes; GIVEN
+    a large uncompressed structured flow THEN fires; GIVEN a synchronous over-budget
+    single dependency THEN refutes
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -7375,9 +7390,10 @@ evidence:
 - tests/system/test_cli_sys_audit.py::TestSysAuditCli::test_no_design_dir_is_a_noop
 attachments: []
 acceptance:
-- GIVEN a deliberately vulnerable+unoptimized litmus WHEN frob sys audit runs THEN
-  every planted anti-pattern is flagged per family; hardened twin discharges all;
-  overclaiming README fails DOC002
+- text: GIVEN a deliberately vulnerable+unoptimized litmus WHEN frob sys audit runs
+    THEN every planted anti-pattern is flagged per family; hardened twin discharges
+    all; overclaiming README fails DOC002
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -7466,9 +7482,10 @@ evidence:
 - tests/unit/strata/test_compliance.py::TestCoppa::test_declassify_only_boundary_does_not_discharge_coppa
 attachments: []
 acceptance:
-- GIVEN a child-tagged collection flow with no consent boundary THEN COPPA refutes;
-  GIVEN eu-resident Pii with no deletion path THEN erasure refutes; GIVEN a flow collecting
-  a field the privacy policy omits THEN it refutes
+- text: GIVEN a child-tagged collection flow with no consent boundary THEN COPPA refutes;
+    GIVEN eu-resident Pii with no deletion path THEN erasure refutes; GIVEN a flow
+    collecting a field the privacy policy omits THEN it refutes
+  evidence: []
 threat: info-disclosure
 component: null
 labels: []
@@ -24632,15 +24649,19 @@ evidence:
 - tests/unit/graph/test_dsl.py::TestContinuation::test_verb_agnostic_multiline_tests_directive
 attachments: []
 acceptance:
-- given a frob:waive whose reason would exceed ruff line-length when written on one
-  line, when the directive line ends with a backslash and continues on the next comment
-  line, then the parser joins them into one logical directive with the full reason
-  and no E501
-- given a joined multi-line directive, when it is malformed, then the MalformedDirective
-  line number points at the FIRST physical line of the directive (start_line), not
-  the continuation
-- 'given a normal single-line directive (no trailing backslash), when parsed, then
-  behavior is byte-for-byte unchanged (regression: existing dsl tests stay green)'
+- text: given a frob:waive whose reason would exceed ruff line-length when written
+    on one line, when the directive line ends with a backslash and continues on the
+    next comment line, then the parser joins them into one logical directive with
+    the full reason and no E501
+  evidence: []
+- text: given a joined multi-line directive, when it is malformed, then the MalformedDirective
+    line number points at the FIRST physical line of the directive (start_line), not
+    the continuation
+  evidence: []
+- text: 'given a normal single-line directive (no trailing backslash), when parsed,
+    then behavior is byte-for-byte unchanged (regression: existing dsl tests stay
+    green)'
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -24829,15 +24850,21 @@ evidence:
 - tests/unit/test_dup_template.py::TestTypeHoleClassification::test_type_position_in_one_member_only_stays_a_value_hole
 attachments: []
 acceptance:
-- given two functions identical modulo a type (e.g. sort(list[int]) vs sort(list[str]),
-  or a C++ overload set differing only in element type), when dup triage runs anti-unification,
-  then the divergence is bound as a TYPE hole (not an opaque value hole) and the group
-  is reported as "generalizable over type T" with the concrete instantiations listed
-- 'given a type-generalizable group, when the template report renders, then it proposes
-  the language-correct generic abstraction: Python def f[T](...), C++ template<typename
-  T>, Rust fn f<T>, TS function f<T> -- one suggested signature, not raw $holes'
-- given a hole that binds inconsistent types across the two sides (not a single consistent
-  T), then it is NOT reported as type-generalizable (no false generic proposal)
+- text: given two functions identical modulo a type (e.g. sort(list[int]) vs sort(list[str]),
+    or a C++ overload set differing only in element type), when dup triage runs anti-unification,
+    then the divergence is bound as a TYPE hole (not an opaque value hole) and the
+    group is reported as "generalizable over type T" with the concrete instantiations
+    listed
+  evidence: []
+- text: 'given a type-generalizable group, when the template report renders, then
+    it proposes the language-correct generic abstraction: Python def f[T](...), C++
+    template<typename T>, Rust fn f<T>, TS function f<T> -- one suggested signature,
+    not raw $holes'
+  evidence: []
+- text: given a hole that binds inconsistent types across the two sides (not a single
+    consistent T), then it is NOT reported as type-generalizable (no false generic
+    proposal)
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -24945,16 +24972,19 @@ evidence:
 - tests/test_dup_inline.py::TestSharedHelperNotDuplication::test_shared_helper_not_flagged_at_threshold_0_7
 attachments: []
 acceptance:
-- given two functions whose shared logic was each extracted into differently-named
-  PRIVATE helpers (per frob arch small-helper pressure), when dup triage compares
-  them, then it resolves the private/module-local helper calls and compares over the
-  inlined (or call-graph-closure) body, and still reports the pair as duplicate
-- given a private helper called from exactly one site, when triage inlines for comparison,
-  then the inlining is bounded (depth + total-node ceiling) and NEVER follows public
-  API calls or recurses infinitely (recursion/cycle guard)
-- given a cluster of near-identical tiny helpers created by over-splitting, when dup
-  runs, then those helpers themselves are reported as a dup group (the inverse failure
-  mode -- arch-forced fragmentation producing duplicate helpers)
+- text: given two functions whose shared logic was each extracted into differently-named
+    PRIVATE helpers (per frob arch small-helper pressure), when dup triage compares
+    them, then it resolves the private/module-local helper calls and compares over
+    the inlined (or call-graph-closure) body, and still reports the pair as duplicate
+  evidence: []
+- text: given a private helper called from exactly one site, when triage inlines for
+    comparison, then the inlining is bounded (depth + total-node ceiling) and NEVER
+    follows public API calls or recurses infinitely (recursion/cycle guard)
+  evidence: []
+- text: given a cluster of near-identical tiny helpers created by over-splitting,
+    when dup runs, then those helpers themselves are reported as a dup group (the
+    inverse failure mode -- arch-forced fragmentation producing duplicate helpers)
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -25187,20 +25217,24 @@ evidence:
 - tests/test_arch_gate.py::TestArchGateWaivers::test_unreasoned_waive_rejected
 attachments: []
 acceptance:
-- 'given a genuinely atomic long function (big match/case, dispatch table, literal
-  data, flat sequential pipeline) with low nesting/cyclomatic complexity, when frob
-  arch runs, then it is NOT flagged (complexity-aware: long AND complex fires; long-but-flat
-  does not)'
-- given a long function the author must keep long, when it carries a reasoned in-code
-  directive (frob:waive ARCH001 reason="...", or frob:arch allow-long reason="..."
-  ceiling=N), then the finding is WAIVED (counted in the waived tally, auditable),
-  and an override without a reason is rejected exactly like a reasoned-less frob:waive
-- given a per-function override with a justified ceiling N, when the function later
-  grows beyond N, then the waiver stops covering it and it re-fires (bounded, not
-  a blank check)
-- given the escape hatch, then it lives at the code (in-comment directive travelling
-  with the function), NOT as a qualname-keyed table in frob.toml, and raising the
-  GLOBAL max_function_lines is not introduced as the sanctioned way to silence findings
+- text: 'given a genuinely atomic long function (big match/case, dispatch table, literal
+    data, flat sequential pipeline) with low nesting/cyclomatic complexity, when frob
+    arch runs, then it is NOT flagged (complexity-aware: long AND complex fires; long-but-flat
+    does not)'
+  evidence: []
+- text: given a long function the author must keep long, when it carries a reasoned
+    in-code directive (frob:waive ARCH001 reason="...", or frob:arch allow-long reason="..."
+    ceiling=N), then the finding is WAIVED (counted in the waived tally, auditable),
+    and an override without a reason is rejected exactly like a reasoned-less frob:waive
+  evidence: []
+- text: given a per-function override with a justified ceiling N, when the function
+    later grows beyond N, then the waiver stops covering it and it re-fires (bounded,
+    not a blank check)
+  evidence: []
+- text: given the escape hatch, then it lives at the code (in-comment directive travelling
+    with the function), NOT as a qualname-keyed table in frob.toml, and raising the
+    GLOBAL max_function_lines is not introduced as the sanctioned way to silence findings
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -25249,24 +25283,31 @@ evidence:
 - tests/test_perf.py::test_perf005_does_not_pair_same_named_methods_across_classes
 attachments: []
 acceptance:
-- given any function, when analysis runs, then a static call graph is built and every
-  recursive SCC (direct AND mutual recursion) is identified -- purely static, no execution
-- 'given a structurally-recursive function (each recursive call is on a provably-smaller
-  argument along a well-founded order: list tail, tree child, n-1 on a non-negative
-  int, or a strictly-decreasing bounded integer measure toward a guarded base case),
-  when the termination checker runs, then it is PROVEN-TERMINATING and passes silently'
-- given a recursion the checker CANNOT prove terminating, then it is an ERROR (not
-  a warning) -- the author must either refactor into a provable form, or attach a
-  reasoned directive (frob:invariant terminates reason="..." with an optional measure),
-  which is counted/auditable exactly like every other frob waiver; an UNREASONED unprovable
-  recursion can never pass
-- given a tail-recursive function in a language without guaranteed TCO (Python especially),
-  when detected, then it is flagged with a rewrite-as-loop suggestion AND requires
-  a provable depth bound -- unbounded recursion depth that scales with runtime input
-  size (stack-overflow / DoS surface) is an error unless a bound is proven or reasoned-waived
-- given the arch<->dup<->recursion consistency requirement, then the call graph is
-  a SHARED interprocedural substrate reused by T-0288 (dup helper-inlining) and T-0289
-  (arch complexity-awareness) -- built once, not three times
+- text: given any function, when analysis runs, then a static call graph is built
+    and every recursive SCC (direct AND mutual recursion) is identified -- purely
+    static, no execution
+  evidence: []
+- text: 'given a structurally-recursive function (each recursive call is on a provably-smaller
+    argument along a well-founded order: list tail, tree child, n-1 on a non-negative
+    int, or a strictly-decreasing bounded integer measure toward a guarded base case),
+    when the termination checker runs, then it is PROVEN-TERMINATING and passes silently'
+  evidence: []
+- text: given a recursion the checker CANNOT prove terminating, then it is an ERROR
+    (not a warning) -- the author must either refactor into a provable form, or attach
+    a reasoned directive (frob:invariant terminates reason="..." with an optional
+    measure), which is counted/auditable exactly like every other frob waiver; an
+    UNREASONED unprovable recursion can never pass
+  evidence: []
+- text: given a tail-recursive function in a language without guaranteed TCO (Python
+    especially), when detected, then it is flagged with a rewrite-as-loop suggestion
+    AND requires a provable depth bound -- unbounded recursion depth that scales with
+    runtime input size (stack-overflow / DoS surface) is an error unless a bound is
+    proven or reasoned-waived
+  evidence: []
+- text: given the arch<->dup<->recursion consistency requirement, then the call graph
+    is a SHARED interprocedural substrate reused by T-0288 (dup helper-inlining) and
+    T-0289 (arch complexity-awareness) -- built once, not three times
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -25419,9 +25460,11 @@ evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov003_remediation_hint_names_no_nonexistent_flag
 attachments: []
 acceptance:
-- given a COV003 evidence-resolution failure, when the error message prints its remediation
-  hint, then the suggested command is one that actually exists (frob test has no --collect
-  flag today); either add the flag or change the hint to the real refresh path
+- text: given a COV003 evidence-resolution failure, when the error message prints
+    its remediation hint, then the suggested command is one that actually exists (frob
+    test has no --collect flag today); either add the flag or change the hint to the
+    real refresh path
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -25473,12 +25516,14 @@ evidence:
 - tests/test_tickets.py::TestEvidenceValidation::test_add_evidence_normalizes_dot_form_before_resolving_and_storing
 attachments: []
 acceptance:
-- given evidence recorded as file::Class.method (dot before method), when it is stored,
-  then it is either normalized to the canonical pytest file::Class::method form or
-  rejected at record time with a clear message -- never silently stored to fail COV003
-  downstream
-- 'given the canonical :: form, when resolved against collected node ids, then it
-  matches (regression: the T-0282/T-0217 dot-form evidence that slipped past)'
+- text: given evidence recorded as file::Class.method (dot before method), when it
+    is stored, then it is either normalized to the canonical pytest file::Class::method
+    form or rejected at record time with a clear message -- never silently stored
+    to fail COV003 downstream
+  evidence: []
+- text: 'given the canonical :: form, when resolved against collected node ids, then
+    it matches (regression: the T-0282/T-0217 dot-form evidence that slipped past)'
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -25538,22 +25583,26 @@ evidence:
 - tests/test_gates.py::TestCoverageLoad::test_parses_line_to_symbol_span
 attachments: []
 acceptance:
-- given the intentional frob:secret-fake fixture marker (_secrets.py _FAKE_MARKER,
-  a deliberately-unregistered literal the secrets gate scans for), when parse_directives
-  sees it, then it is recognized as a RESERVED marker and skipped silently -- no "unknown
-  verb secret-fake" malformed-directive warning (3 occurrences in test_secrets_gate.py
-  cleared)
-- given a frob:tests directive with kind=drift or kind=system, when parsed, then either
-  the kind is corrected to a valid unit/integration/e2e value in the 3 real directives
-  (test_selfconform.py x2 drift-lock=unit, test_cli_check.py system=e2e), so no invalid-kind
-  warning fires
-- 'given the 7 directives with same-line trailing prose (frob:ticket/frob:todo/frob:tests
-  followed by -- prose or bare prose: perf_runner.py, fuzz/_arbitrary.py, fuzz/_run.py,
-  test_dup_rungs.py x3, test_gates.py), when parsed under the T-0286 continuation/prose-tolerance
-  rule, then the prose is accepted (or the directives are split) with no bad-attribute-syntax
-  warning'
-- given a full frob check, when the graph is built, then the malformed-directive warning
-  count from these 13 sources is ZERO
+- text: given the intentional frob:secret-fake fixture marker (_secrets.py _FAKE_MARKER,
+    a deliberately-unregistered literal the secrets gate scans for), when parse_directives
+    sees it, then it is recognized as a RESERVED marker and skipped silently -- no
+    "unknown verb secret-fake" malformed-directive warning (3 occurrences in test_secrets_gate.py
+    cleared)
+  evidence: []
+- text: given a frob:tests directive with kind=drift or kind=system, when parsed,
+    then either the kind is corrected to a valid unit/integration/e2e value in the
+    3 real directives (test_selfconform.py x2 drift-lock=unit, test_cli_check.py system=e2e),
+    so no invalid-kind warning fires
+  evidence: []
+- text: 'given the 7 directives with same-line trailing prose (frob:ticket/frob:todo/frob:tests
+    followed by -- prose or bare prose: perf_runner.py, fuzz/_arbitrary.py, fuzz/_run.py,
+    test_dup_rungs.py x3, test_gates.py), when parsed under the T-0286 continuation/prose-tolerance
+    rule, then the prose is accepted (or the directives are split) with no bad-attribute-syntax
+    warning'
+  evidence: []
+- text: given a full frob check, when the graph is built, then the malformed-directive
+    warning count from these 13 sources is ZERO
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -25703,14 +25752,17 @@ evidence:
 - tests/unit/strata/test_facts.py::TestClosure::test_krb_no_transit_attr_stops_chaining_past_that_hop
 attachments: []
 acceptance:
-- given `frob arch .`, when scoped to src/frob/strata/_export.py, _facts.py, _host.py,
-  _host_isolation.py, _infra.py, then zero long-function warnings remain (measured;
-  see Done report for before/after counts)
-- given `frob check --only coverage`, when run after the change, then 0 COV001/errors
-  (one displacement caught and fixed -- `elaborate_infra`'s frob:doc directive had
-  landed on a newly-inserted helper above it)
-- given `uv run pytest tests/unit/strata -k "export or facts or host or infra"`, then
-  all pass with no behavior change
+- text: given `frob arch .`, when scoped to src/frob/strata/_export.py, _facts.py,
+    _host.py, _host_isolation.py, _infra.py, then zero long-function warnings remain
+    (measured; see Done report for before/after counts)
+  evidence: []
+- text: given `frob check --only coverage`, when run after the change, then 0 COV001/errors
+    (one displacement caught and fixed -- `elaborate_infra`'s frob:doc directive had
+    landed on a newly-inserted helper above it)
+  evidence: []
+- text: given `uv run pytest tests/unit/strata -k "export or facts or host or infra"`,
+    then all pass with no behavior change
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -25987,13 +26039,15 @@ evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov005_no_old_blob_is_clean
 attachments: []
 acceptance:
-- given a frob:tests/doc/waive/ticket directive that a refactor displaced from its
-  intended public function onto a newly-extracted private helper (the exact hazard
-  that hit two arch slices), when COV001 runs, then it FLAGS the mis-binding -- today
-  it passes because it only verifies a directive resolves to SOME symbol, not the
-  correct one
-- given a legitimately-moved symbol whose directive correctly moves with it, then
-  no false positive fires
+- text: given a frob:tests/doc/waive/ticket directive that a refactor displaced from
+    its intended public function onto a newly-extracted private helper (the exact
+    hazard that hit two arch slices), when COV001 runs, then it FLAGS the mis-binding
+    -- today it passes because it only verifies a directive resolves to SOME symbol,
+    not the correct one
+  evidence: []
+- text: given a legitimately-moved symbol whose directive correctly moves with it,
+    then no false positive fires
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -26104,11 +26158,13 @@ evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov003_prefers_node_level_over_path_level
 attachments: []
 acceptance:
-- given ticket evidence naming a whole test FILE (tests/test_vet.py) or a DIRECTORY
-  (tests/unit/deploy), when COV003 resolves it, then it resolves iff the collected
-  manifest contains at least one node under that path -- not an error
-- given evidence that resolves to no collected test at any granularity (typo, deleted
-  file), then COV003 still errors (the real failure is preserved)
+- text: given ticket evidence naming a whole test FILE (tests/test_vet.py) or a DIRECTORY
+    (tests/unit/deploy), when COV003 resolves it, then it resolves iff the collected
+    manifest contains at least one node under that path -- not an error
+  evidence: []
+- text: given evidence that resolves to no collected test at any granularity (typo,
+    deleted file), then COV003 still errors (the real failure is preserved)
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -26449,18 +26505,23 @@ evidence:
 - frob-core/src/lib.rs::tests::wl_hash_empty_graph_is_zero
 attachments: []
 acceptance:
-- Given a repo with a rust [[test.runner]] entry, when --evidence names a collected
-  cargo test id, then it resolves instead of rejecting the batch
-- Given a // frob:doc placed above a multi-line /// rustdoc block, when the graph
-  is built, then the directive binds to the item below
-- Given a directive at a different indentation than the item/rustdoc it binds to,
-  when the graph is built, then binding still succeeds (indentation is never part
-  of the binding decision)
-- Given a public test-file symbol below the branch-coverage floor, when TEST005 runs,
-  then it is skipped like TEST001/TEST002 already skip it
-- Given a lib-less crate (no [lib]/src/lib.rs) anywhere in the workspace, when rust
-  test collection runs, then that crate is skipped with an INFO log and collection
-  still succeeds for the rest of the workspace
+- text: Given a repo with a rust [[test.runner]] entry, when --evidence names a collected
+    cargo test id, then it resolves instead of rejecting the batch
+  evidence: []
+- text: Given a // frob:doc placed above a multi-line /// rustdoc block, when the
+    graph is built, then the directive binds to the item below
+  evidence: []
+- text: Given a directive at a different indentation than the item/rustdoc it binds
+    to, when the graph is built, then binding still succeeds (indentation is never
+    part of the binding decision)
+  evidence: []
+- text: Given a public test-file symbol below the branch-coverage floor, when TEST005
+    runs, then it is skipped like TEST001/TEST002 already skip it
+  evidence: []
+- text: Given a lib-less crate (no [lib]/src/lib.rs) anywhere in the workspace, when
+    rust test collection runs, then that crate is skipped with an INFO log and collection
+    still succeeds for the rest of the workspace
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -26687,10 +26748,12 @@ evidence:
 - tests/unit/strata/test_threat.py::TestLoadRepoBenignCapabilities::test_repo_declared_excuse_resolves_threat002
 attachments: []
 acceptance:
-- A repo can declare [[strata.benign_capabilities]] entries in frob.toml with kind+reason,
-  merged with DEFAULT_BENIGN_CAPABILITIES by frob sys audit
-- A missing frob.toml or missing table is Ok(()); a malformed entry (missing kind/reason,
-  blank reason, unparseable TOML) is Err(StrataError.MalformedBenignConfig)
+- text: A repo can declare [[strata.benign_capabilities]] entries in frob.toml with
+    kind+reason, merged with DEFAULT_BENIGN_CAPABILITIES by frob sys audit
+  evidence: []
+- text: A missing frob.toml or missing table is Ok(()); a malformed entry (missing
+    kind/reason, blank reason, unparseable TOML) is Err(StrataError.MalformedBenignConfig)
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -26762,11 +26825,13 @@ evidence:
 - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
 attachments: []
 acceptance:
-- A new fs-read capability kind is patterned in python/typescript/rust/c-cpp, added
-  to _EXTENDED_KINDS, and given a DEFAULT_BENIGN_CAPABILITIES excuse
-- A pre-existing bare may 'fs' declaration is not marked SYS101-stale when only fs-read
-  (read-only) observations exist; a node declaring may 'fs-read' specifically stays
-  stale if only writes are observed
+- text: A new fs-read capability kind is patterned in python/typescript/rust/c-cpp,
+    added to _EXTENDED_KINDS, and given a DEFAULT_BENIGN_CAPABILITIES excuse
+  evidence: []
+- text: A pre-existing bare may 'fs' declaration is not marked SYS101-stale when only
+    fs-read (read-only) observations exist; a node declaring may 'fs-read' specifically
+    stays stale if only writes are observed
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -26844,9 +26909,12 @@ evidence:
 - tests/test_capability_registry.py::TestNoSilentNeedleRegression::test_every_reclassified_needle_actually_still_fires_under_its_new_kind
 attachments: []
 acceptance:
-- scan_file_capabilities does not report ffi for source containing only the word openapi/OpenAPI
-  (no real node-ffi/ffi-napi usage)
-- scan_file_capabilities still reports ffi for a real napi-based native addon import
+- text: scan_file_capabilities does not report ffi for source containing only the
+    word openapi/OpenAPI (no real node-ffi/ffi-napi usage)
+  evidence: []
+- text: scan_file_capabilities still reports ffi for a real napi-based native addon
+    import
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -26909,9 +26977,12 @@ evidence:
 - tests/unit/strata/test_selfconform.py::TestUndeclaredInterfaceFsReadAlias::test_fs_read_only_declaration_still_fires_on_fs_write_observation
 attachments: []
 acceptance:
-- declared may fs covers observed fs-read with no SYS100 finding
-- declared fs-read does not cover observed fs-write for SYS100 (asymmetry preserved)
-- regression tests added for all three cases
+- text: declared may fs covers observed fs-read with no SYS100 finding
+  evidence: []
+- text: declared fs-read does not cover observed fs-write for SYS100 (asymmetry preserved)
+  evidence: []
+- text: regression tests added for all three cases
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -27288,10 +27359,11 @@ evidence:
 - tests/test_gates.py::TestCoverageLoad::test_multi_root_resolves_each_class_to_its_real_root
 attachments: []
 acceptance:
-- Given a coverage.xml with two declared source roots and a class filename that exists
-  as a real repo path under only one of them, when load_coverage resolves it, then
-  the class is labeled under the root it actually exists under, not the other declared
-  root
+- text: Given a coverage.xml with two declared source roots and a class filename that
+    exists as a real repo path under only one of them, when load_coverage resolves
+    it, then the class is labeled under the root it actually exists under, not the
+    other declared root
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -28070,12 +28142,14 @@ evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov002_stale_done_ticket_unrelated_tickets_md_touch_still_fires
 attachments: []
 acceptance:
-- given a symbol bound to an ALREADY-DONE (stale) ticket and a diff that edits that
-  same ticket entry for a non-close reason (typo fix / evidence append touching its
-  marker line), when COV002 runs, then grace is NOT granted (it still fires) -- grace
-  requires the ticket to transition open->done in THIS diff
-- given a ticket genuinely closing in this diff (open before, done after), then grace
-  is granted (catch-22 stays fixed)
+- text: given a symbol bound to an ALREADY-DONE (stale) ticket and a diff that edits
+    that same ticket entry for a non-close reason (typo fix / evidence append touching
+    its marker line), when COV002 runs, then grace is NOT granted (it still fires)
+    -- grace requires the ticket to transition open->done in THIS diff
+  evidence: []
+- text: given a ticket genuinely closing in this diff (open before, done after), then
+    grace is granted (catch-22 stays fixed)
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -28400,11 +28474,13 @@ evidence:
 - tests/test_release.py::test_breaking_change_in_0x_bumps_minor_not_to_1_0_0
 attachments: []
 acceptance:
-- given a repo at 0.y.z, when a breaking public-API change is made, then REL001 requires
-  0.(y+1).0 (minor bump), NOT >= 1.0.0 -- staying in 0.x per semver section 4 (initial
-  development)
-- given a repo at >=1.0.0, when a breaking change is made, then REL001 still requires
-  a major bump
+- text: given a repo at 0.y.z, when a breaking public-API change is made, then REL001
+    requires 0.(y+1).0 (minor bump), NOT >= 1.0.0 -- staying in 0.x per semver section
+    4 (initial development)
+  evidence: []
+- text: given a repo at >=1.0.0, when a breaking change is made, then REL001 still
+    requires a major bump
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -28503,17 +28579,22 @@ evidence:
 - tests/test_vet.py::TestCapabilityScanBindingResolution::test_attribute_only_env_access_via_alias_detected
 attachments: []
 acceptance:
-- given 'import subprocess as sp' then 'sp.run(x)', when scanned, then exec is observed
-  (alias resolved to subprocess.run) -- currently MISSED
-- given 'from subprocess import run' then 'run(x)', when scanned, then exec is observed
-  (from-import resolved) -- currently MISSED
-- given 'from os import system as e' then 'e(x)', when scanned, then exec is observed
-  (NOT eval) -- currently WRONG kind
-- given a LOCAL binding shadowing an import (a class method or var named 'run', a
-  param 'system'), when scanned, then the dangerous kind is NOT observed -- scope-aware,
-  no false positive
-- given re-export chains and attribute access on a shadowed name (x.subprocess.run
-  where subprocess is an unrelated attribute), then it does not falsely fire
+- text: given 'import subprocess as sp' then 'sp.run(x)', when scanned, then exec
+    is observed (alias resolved to subprocess.run) -- currently MISSED
+  evidence: []
+- text: given 'from subprocess import run' then 'run(x)', when scanned, then exec
+    is observed (from-import resolved) -- currently MISSED
+  evidence: []
+- text: given 'from os import system as e' then 'e(x)', when scanned, then exec is
+    observed (NOT eval) -- currently WRONG kind
+  evidence: []
+- text: given a LOCAL binding shadowing an import (a class method or var named 'run',
+    a param 'system'), when scanned, then the dangerous kind is NOT observed -- scope-aware,
+    no false positive
+  evidence: []
+- text: given re-export chains and attribute access on a shadowed name (x.subprocess.run
+    where subprocess is an unrelated attribute), then it does not falsely fire
+  evidence: []
 threat: elevation-of-privilege
 component: null
 labels: []
@@ -28575,19 +28656,23 @@ evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov003_honest_remedy_when_no_native_missing
 attachments: []
 acceptance:
-- given a repo whose test suite importorskip-gates on a native extension, when the
-  extension is built (or rebuilt) after a prior collection ran with it absent, then
-  collect_python_tests re-collects automatically (cache key reflects the native artifact
-  hash) and the newly-collected tests resolve COV003 without any manual cache deletion
-- 'given a declared native module that is genuinely not built, when frob check runs
-  the coverage gate, then the finding names the missing native module and its build
-  command (e.g. ''native extension strata_core not built; run make core'') rather
-  than the current false ''run: frob test --collect to refresh'' pointing at a nonexistent
-  flag'
-- given the fingerprint mechanism, when the same design is used on a Python/C or Python/C++
-  project (setuptools/pybind11/scikit-build compiled .so/.pyd), then build-state changes
-  invalidate the collection cache identically to the Rust/pyo3/maturin case (the fingerprint
-  hashes the compiled artifact, not the toolchain)
+- text: given a repo whose test suite importorskip-gates on a native extension, when
+    the extension is built (or rebuilt) after a prior collection ran with it absent,
+    then collect_python_tests re-collects automatically (cache key reflects the native
+    artifact hash) and the newly-collected tests resolve COV003 without any manual
+    cache deletion
+  evidence: []
+- text: 'given a declared native module that is genuinely not built, when frob check
+    runs the coverage gate, then the finding names the missing native module and its
+    build command (e.g. ''native extension strata_core not built; run make core'')
+    rather than the current false ''run: frob test --collect to refresh'' pointing
+    at a nonexistent flag'
+  evidence: []
+- text: given the fingerprint mechanism, when the same design is used on a Python/C
+    or Python/C++ project (setuptools/pybind11/scikit-build compiled .so/.pyd), then
+    build-state changes invalidate the collection cache identically to the Rust/pyo3/maturin
+    case (the fingerprint hashes the compiled artifact, not the toolchain)
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -28731,12 +28816,15 @@ evidence:
 - tests/test_walk_lint_gate.py::TestSelfMatchExclusion::test_own_files_not_scanned
 attachments: []
 acceptance:
-- given 100+ gitignored nested worktrees under .claude/worktrees/, when frob check
-  runs secrets/sys/tickets/archgate/prework, then each prunes excluded/nested-worktree
-  dirs before descending (frob.excludes helpers) so wall time drops like T-0239 did
-  for graph walking, instead of ~350s each
-- given the shared frob.excludes prune helpers (T-0239), when a new os.walk site is
-  added in gates/tickets, then it reuses them rather than re-deriving the rule
+- text: given 100+ gitignored nested worktrees under .claude/worktrees/, when frob
+    check runs secrets/sys/tickets/archgate/prework, then each prunes excluded/nested-worktree
+    dirs before descending (frob.excludes helpers) so wall time drops like T-0239
+    did for graph walking, instead of ~350s each
+  evidence: []
+- text: given the shared frob.excludes prune helpers (T-0239), when a new os.walk
+    site is added in gates/tickets, then it reuses them rather than re-deriving the
+    rule
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -28932,15 +29020,18 @@ evidence:
 - tests/test_vet.py::TestCapabilityScanLocalRebindResolution::test_dangerous_then_benign_rebind_stays_detected
 attachments: []
 acceptance:
-- given 'from subprocess import run\nxyz = run\nxyz(["pwned"])', when scan_file_capabilities
-  runs, then it reports the exec capability (the local alias xyz resolves to subprocess.run)
-- given a chain 'from subprocess import run\na = run\nb = a\nb(["pwned"])', then exec
-  is still reported (transitive copy-propagation within the scope)
-- 'given a safe rebinding ''run = lambda x: x\nrun(["ok"])'' (name bound to a non-dangerous
-  value, no import), then NO capability is reported (a local def/assignment to a benign
-  value must not false-positive), and a call through a name that is only EVER a parameter/local
-  (never bound to a dangerous import) stays silent -- the T-0328 shadowing guarantees
-  must not regress'
+- text: given 'from subprocess import run\nxyz = run\nxyz(["pwned"])', when scan_file_capabilities
+    runs, then it reports the exec capability (the local alias xyz resolves to subprocess.run)
+  evidence: []
+- text: given a chain 'from subprocess import run\na = run\nb = a\nb(["pwned"])',
+    then exec is still reported (transitive copy-propagation within the scope)
+  evidence: []
+- text: 'given a safe rebinding ''run = lambda x: x\nrun(["ok"])'' (name bound to
+    a non-dangerous value, no import), then NO capability is reported (a local def/assignment
+    to a benign value must not false-positive), and a call through a name that is
+    only EVER a parameter/local (never bound to a dangerous import) stays silent --
+    the T-0328 shadowing guarantees must not regress'
+  evidence: []
 threat: elevation-of-privilege
 component: null
 labels: []
@@ -29113,20 +29204,23 @@ evidence:
 - tests/unit/test_ticket_runner_land_release.py::TestLandRebuildNativesFn::test_failure_returns_false_and_logs
 attachments: []
 acceptance:
-- given an implementer's worktree branch with a single commit (code + new files +
-  evidence + Done report), when the coordinator runs frob ticket land <id> --from
-  <branch>, then frob git-merges the branch into main (splicing tickets.md conflicts),
-  refreshes the pre-work sweep (T-0236), validates the Done-report heading + evidence
-  resolve, and reports one clear success/failure -- no manual patch-apply, no missed
-  untracked files
-- given the merged change alters public API, when land runs, then frob computes the
-  required version via frob.release, bumps pyproject.toml + writes/updates the CHANGELOG
-  entry + runs frob release stamp automatically (REL001 is coordinator-mechanical,
-  never hand-work), and if the stamp's build step uninstalls the editable natives
-  it rebuilds them (make core) before the final gate check
-- given a REJECT-worthy branch (failing gates, missing evidence, weakened strictness
-  check flagged), when land runs, then it refuses to merge and reports why -- land
-  is gated, not a rubber stamp
+- text: given an implementer's worktree branch with a single commit (code + new files
+    + evidence + Done report), when the coordinator runs frob ticket land <id> --from
+    <branch>, then frob git-merges the branch into main (splicing tickets.md conflicts),
+    refreshes the pre-work sweep (T-0236), validates the Done-report heading + evidence
+    resolve, and reports one clear success/failure -- no manual patch-apply, no missed
+    untracked files
+  evidence: []
+- text: given the merged change alters public API, when land runs, then frob computes
+    the required version via frob.release, bumps pyproject.toml + writes/updates the
+    CHANGELOG entry + runs frob release stamp automatically (REL001 is coordinator-mechanical,
+    never hand-work), and if the stamp's build step uninstalls the editable natives
+    it rebuilds them (make core) before the final gate check
+  evidence: []
+- text: given a REJECT-worthy branch (failing gates, missing evidence, weakened strictness
+    check flagged), when land runs, then it refuses to merge and reports why -- land
+    is gated, not a rubber stamp
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -29211,9 +29305,10 @@ evidence:
 - tests/test_graph.py::TestDsl::test_module_docstring_directive_binds_to_bare_file
 attachments: []
 acceptance:
-- 'given a frob: directive (e.g. frob:tests, frob:ticket) inside a module-level or
-  function docstring, when frob.lang parses the file, then the directive is extracted
-  and produces an edge (or a MalformedDirective), same as a comment directive'
+- text: 'given a frob: directive (e.g. frob:tests, frob:ticket) inside a module-level
+    or function docstring, when frob.lang parses the file, then the directive is extracted
+    and produces an edge (or a MalformedDirective), same as a comment directive'
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -29288,21 +29383,25 @@ evidence:
 - tests/test_registry_exhaustiveness.py::TestMissingDir::test_missing_registry_dir_returns_empty
 attachments: []
 acceptance:
-- given each design corpus (architecture-check-catalog, design-pattern-catalog, design-pattern-traps-corpus,
-  system-design-corpus, capability-evasion-taxonomy) exposes a machine-readable DENOMINATOR
-  MANIFEST (stable id + checkability tag per entry + TOTAL line), when the exhaustiveness
-  meta-test runs, then EVERY manifest entry must map to >=1 registered check/recommender-rule/obligation
-  OR carry an explicit reasoned deferral (advisory / not-checkable / ticketed) --
-  the test FAILS if any entry is both un-addressed and un-deferred
-- the mapping is N:M -- many semantic checks may register to one design pattern, and
-  one detector (e.g. the single-implementer-interface fingerprint) may cover many
-  denominator entries; the test must reconcile counts as (addressed union deferred)
-  == TOTAL accounting for N:M, so nothing is silently dropped and nothing is double-counted
-  into false completeness
-- 'the meta-test is a DRIFT-LOCK like the CVE-catalog / capability-matrix / dup-exhaustiveness
-  (T-0199) locks: adding a new corpus entry with no mapping fails immediately, and
-  a check whose denominator entry vanishes fails immediately -- corpus and registry
-  can never silently desync'
+- text: given each design corpus (architecture-check-catalog, design-pattern-catalog,
+    design-pattern-traps-corpus, system-design-corpus, capability-evasion-taxonomy)
+    exposes a machine-readable DENOMINATOR MANIFEST (stable id + checkability tag
+    per entry + TOTAL line), when the exhaustiveness meta-test runs, then EVERY manifest
+    entry must map to >=1 registered check/recommender-rule/obligation OR carry an
+    explicit reasoned deferral (advisory / not-checkable / ticketed) -- the test FAILS
+    if any entry is both un-addressed and un-deferred
+  evidence: []
+- text: the mapping is N:M -- many semantic checks may register to one design pattern,
+    and one detector (e.g. the single-implementer-interface fingerprint) may cover
+    many denominator entries; the test must reconcile counts as (addressed union deferred)
+    == TOTAL accounting for N:M, so nothing is silently dropped and nothing is double-counted
+    into false completeness
+  evidence: []
+- text: 'the meta-test is a DRIFT-LOCK like the CVE-catalog / capability-matrix /
+    dup-exhaustiveness (T-0199) locks: adding a new corpus entry with no mapping fails
+    immediately, and a check whose denominator entry vanishes fails immediately --
+    corpus and registry can never silently desync'
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -29543,16 +29642,18 @@ evidence:
 - tests/unit/strata/test_threat.py::TestCweTop25::test_cwe_639_reuses_the_sql_capability_join
 attachments: []
 acceptance:
-- given MITRE's current (2025) CWE Top 25 Most Dangerous Software Weaknesses, when
-  CWE_TOP_25_CATALOG/_CWE_TOP_25_IDS and its staleness pin are updated, then all 25
-  current ids are represented (as a reused WeaknessEntry, a new one, or an honest
-  OutOfScopeEntry naming the missing kernel concept) and the pin references the 2025
-  list
-- the ~6 ids never transcribed at all (CWE-120 buffer copy w/o size check, CWE-121
-  stack overflow, CWE-122 heap overflow, CWE-284 improper access control, CWE-770
-  unbounded resource allocation, CWE-200 information exposure) are each classified
-  (memory-safety group -> OutOfScope with the named missing model per the existing
-  CWE-787 precedent; CWE-284/770/200 -> WeaknessEntry or OutOfScope with rationale)
+- text: given MITRE's current (2025) CWE Top 25 Most Dangerous Software Weaknesses,
+    when CWE_TOP_25_CATALOG/_CWE_TOP_25_IDS and its staleness pin are updated, then
+    all 25 current ids are represented (as a reused WeaknessEntry, a new one, or an
+    honest OutOfScopeEntry naming the missing kernel concept) and the pin references
+    the 2025 list
+  evidence: []
+- text: the ~6 ids never transcribed at all (CWE-120 buffer copy w/o size check, CWE-121
+    stack overflow, CWE-122 heap overflow, CWE-284 improper access control, CWE-770
+    unbounded resource allocation, CWE-200 information exposure) are each classified
+    (memory-safety group -> OutOfScope with the named missing model per the existing
+    CWE-787 precedent; CWE-284/770/200 -> WeaknessEntry or OutOfScope with rationale)
+  evidence: []
 threat: elevation-of-privilege
 component: null
 labels: []
@@ -30192,25 +30293,28 @@ evidence:
 - tests/test_testing.py::TestCargoEnv::test_env_overlay_restores_prior_values
 attachments: []
 acceptance:
-- PII010's bare 'fingerprint' biometric signature (matches fingerprint_id/cache-fingerprint/git-fingerprint
-  far more than biometric data) is narrowed to genuine biometric field names (fingerprint_template/fingerprint_image)
-  or dropped, so it no longer false-positives on frob's CVE fingerprint fields; the
-  per-signature drift-lock test is updated to match
-- SEC110 gains a curated KNOWN-NON-SECRET env-var-name allowlist (DISPLAY, WAYLAND_DISPLAY,
-  TERM, NO_COLOR, PATH, HOME, LANG, TZ, CI, XDG_*, PYTEST_CURRENT_TEST, VIRTUAL_ENV,
-  PYO3_PYTHON, and frob's own non-secret tooling vars) that does NOT fire -- a precision
-  improvement (those names definitionally carry no secret), not a weakening; an env
-  read of a NON-allowlisted var still fires
-- "after the two precision fixes, every remaining PII010/SEC110 finding on frob's\
-  \ OWN codebase is dispositioned with an honest per-site frob:waive reason (e.g.\
-  \ deploy/_audit.py 'passwd_added/removed' = /etc/passwd-audit COUNTS not stored\
-  \ creds), so frob check .  [FAIL]  1 error  0 warnings\n\n## Errors\n  [config]\
-  \ unknown --only stage(s) ['pii_structural']; tools: ['arch', 'bind', 'cycle', 'dup',\
-  \ 'exports', 'gates', 'ruff', 'ty']; gates: ['clones', 'coverage', 'decisions',\
-  \ 'docanchor', 'doclink', 'drift', 'fuzz', 'invariant', 'perf', 'policy', 'prework',\
-  \ 'release', 'scope', 'secrets', 'sys', 'test', 'tickets']\n\n## Tool summary\n\
-  \  FAIL  config                  unknown --only stage(s): ['pii_structural'] on\
-  \ main is 0 warnings"
+- text: PII010's bare 'fingerprint' biometric signature (matches fingerprint_id/cache-fingerprint/git-fingerprint
+    far more than biometric data) is narrowed to genuine biometric field names (fingerprint_template/fingerprint_image)
+    or dropped, so it no longer false-positives on frob's CVE fingerprint fields;
+    the per-signature drift-lock test is updated to match
+  evidence: []
+- text: SEC110 gains a curated KNOWN-NON-SECRET env-var-name allowlist (DISPLAY, WAYLAND_DISPLAY,
+    TERM, NO_COLOR, PATH, HOME, LANG, TZ, CI, XDG_*, PYTEST_CURRENT_TEST, VIRTUAL_ENV,
+    PYO3_PYTHON, and frob's own non-secret tooling vars) that does NOT fire -- a precision
+    improvement (those names definitionally carry no secret), not a weakening; an
+    env read of a NON-allowlisted var still fires
+  evidence: []
+- text: "after the two precision fixes, every remaining PII010/SEC110 finding on frob's\
+    \ OWN codebase is dispositioned with an honest per-site frob:waive reason (e.g.\
+    \ deploy/_audit.py 'passwd_added/removed' = /etc/passwd-audit COUNTS not stored\
+    \ creds), so frob check .  [FAIL]  1 error  0 warnings\n\n## Errors\n  [config]\
+    \ unknown --only stage(s) ['pii_structural']; tools: ['arch', 'bind', 'cycle',\
+    \ 'dup', 'exports', 'gates', 'ruff', 'ty']; gates: ['clones', 'coverage', 'decisions',\
+    \ 'docanchor', 'doclink', 'drift', 'fuzz', 'invariant', 'perf', 'policy', 'prework',\
+    \ 'release', 'scope', 'secrets', 'sys', 'test', 'tickets']\n\n## Tool summary\n\
+    \  FAIL  config                  unknown --only stage(s): ['pii_structural'] on\
+    \ main is 0 warnings"
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -31867,14 +31971,18 @@ state: queued
 kind: bug
 origin: human
 created: '2026-07-20'
+priority: medium
 blocked_by: []
 parent: null
 scope:
 - src/frob/perf/
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
 threat: null
+component: null
+labels: []
 ```
 T-0363 had to reason-waive 3 genuine sorted()/.sort() sites (dup/_template.py:159, graph/__init__.py:153, vet/_capability.py:344) because the PERF004 heuristic is token/bracket-depth based and cannot see Python indentation, so it false-positives on any sort textually AFTER a for-loop at the same/outer indent (runs once, not per-iteration). Systematic fix: make the PERF004 detector indentation/AST-aware (tree-sitter: is the sort call a descendant of the loop BODY, not merely lexically after the loop header) so genuine once-after-loop sorts are not flagged and true in-loop sorts still are. Would let the 3 (soon 4, incl T-0366) waivers be removed. Do NOT loosen the true-positive case.
 
@@ -43439,10 +43547,11 @@ evidence:
 - tests/test_tickets_scope_mutation.py::TestGlobIsSubset::test_concrete_path_outside_broad_glob_is_not_subset
 attachments: []
 acceptance:
-- given a queued ticket whose existing scope glob already overlaps an in-progress
-  ticket's lease, when frob ticket scope --add adds a strict subset of that overlap
-  (net overlap shrinks or stays equal), then the change is accepted instead of failing
-  ScopeLeaseConflict
+- text: given a queued ticket whose existing scope glob already overlaps an in-progress
+    ticket's lease, when frob ticket scope --add adds a strict subset of that overlap
+    (net overlap shrinks or stays equal), then the change is accepted instead of failing
+    ScopeLeaseConflict
+  evidence: []
 threat: null
 component: null
 labels: []
@@ -46168,24 +46277,27 @@ scope_changes:
   glob: CHANGELOG.md
   reason: SCOPE001's cross-ticket exemption is not recognizing these as already covered
     by T-0512's own scope, apparently defeated by an intervening merge commit with
-    no ticket reference (filed T-draft-f7c534ab (never refiled)); widening scope here to unblock rather
-    than fight the gate for a file this ticket did not actually change
+    no ticket reference (filed T-draft-f7c534ab (never refiled)); widening scope here
+    to unblock rather than fight the gate for a file this ticket did not actually
+    change
   actor: logan
   at: '2026-07-21'
 - op: add
   glob: pyproject.toml
   reason: SCOPE001's cross-ticket exemption is not recognizing these as already covered
     by T-0512's own scope, apparently defeated by an intervening merge commit with
-    no ticket reference (filed T-draft-f7c534ab (never refiled)); widening scope here to unblock rather
-    than fight the gate for a file this ticket did not actually change
+    no ticket reference (filed T-draft-f7c534ab (never refiled)); widening scope here
+    to unblock rather than fight the gate for a file this ticket did not actually
+    change
   actor: logan
   at: '2026-07-21'
 - op: add
   glob: uv.lock
   reason: SCOPE001's cross-ticket exemption is not recognizing these as already covered
     by T-0512's own scope, apparently defeated by an intervening merge commit with
-    no ticket reference (filed T-draft-f7c534ab (never refiled)); widening scope here to unblock rather
-    than fight the gate for a file this ticket did not actually change
+    no ticket reference (filed T-draft-f7c534ab (never refiled)); widening scope here
+    to unblock rather than fight the gate for a file this ticket did not actually
+    change
   actor: logan
   at: '2026-07-21'
 evidence:
