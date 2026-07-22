@@ -4063,7 +4063,7 @@ where the actual detector fix in this mission landed.
 id: T-draft-f8aabdf0
 title: 'REG008/REG009 conformance pool: anchor frob:enforces in gate code for the
   115 registry claims'
-state: in-progress
+state: done
 kind: docs
 origin: agent
 created: '2026-07-22'
@@ -4079,6 +4079,7 @@ scope:
 scope_changes: []
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+- tests/test_secrets_gate.py::TestTrackedEnvFile::test_env_file_sec002
 attachments: []
 acceptance: []
 threat: null
