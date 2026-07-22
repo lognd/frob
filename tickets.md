@@ -2948,7 +2948,7 @@ User spotted from frob check output: frob-arch appears as its own stage AND arch
 id: T-0422
 title: 'dead-symbol gate: an unreferenced private symbol is dead code (symbol-level
   analog of REF001; catches written-but-never-wired)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
