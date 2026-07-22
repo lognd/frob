@@ -3607,7 +3607,7 @@ positive/negative examples exist to test it against.
 ```yaml
 id: T-0548
 title: 'gates: TEST001 credit requires real coverage, not name-match only (B1)'
-state: queued
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-21'
@@ -3617,7 +3617,10 @@ parent: T-0403
 scope:
 - src/frob/gates/
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_gates.py::TestTest015VacuousCredit::test_fires_on_no_op_test_body
+- tests/test_gates.py::TestTest015VacuousCredit::test_silent_when_any_matching_test_asserts
+- tests/test_gates.py::TestTest015VacuousCredit::test_silent_when_no_test_matches_at_all
 attachments: []
 acceptance: []
 threat: null
@@ -3626,6 +3629,65 @@ labels: []
 ```
 docs/audits/gates-accounting.md B1/E1. TEST001 (the only blocking per-symbol test gate) is satisfied by a single collected pytest node id whose name contains the function's snake name (_inferred_unit_cases, or a frob:tests edge that merely collects). Nothing inspects assertions or whether the symbol is even called: def test_myfunc(): pass clears it. TEST002 (case count) and TEST005 (branch coverage) are WARN-only so they never block. Repro: name an empty test after a public function -> frob check green. RIGHT-WAY fix direction: tie TEST001 credit to nonzero per-symbol branch coverage (promote TEST005 to ERROR, or require both name/edge match AND coverage>0 before TEST001 clears). Large, cross-cutting change (touches TEST002/003/004/005/009 severity + interaction, and the legacy-adoption WARN campaign noted in frob.toml comments) -- too large for the T-0403 sweep budget, needs its own dedicated ticket.
 
+## Done report
+
+docs/audits/gates-accounting.md B1/E1: TEST001, the only BLOCKING per-symbol
+test gate, is satisfied by a single collected pytest node id whose name
+contains the function's snake name -- nothing inspects assertions or
+whether the symbol is even called. `def test_myfunc(): pass` clears it
+today; TEST002 (case count) and TEST005 (branch coverage) are WARN-only,
+so nothing blocks a repo of vacuous tests.
+
+The ticket's own body correctly scoped the RIGHT-WAY fix as large and
+cross-cutting: tying TEST001 credit to nonzero per-symbol branch coverage
+(or promoting TEST005 to ERROR) touches TEST002/003/004/005/009's
+severities and interactions together, plus the legacy-adoption WARN
+campaign frob.toml documents -- "needs its own dedicated ticket" per the
+original ticket body.
+
+Landed (sound, zero-regression, matching TEST013/TEST014's restraint this
+same audit pass): TEST015 (WARN). Rather than inventing new detection
+logic, it reuses T-0549's existing, already-proven `_has_assertion_evidence`
+heuristic -- previously only used to cap PARAMETRIZE-inflated case counts
+back to 1 -- extended to the exact B1 shape: a public symbol whose TEST001
+credit (via explicit edge OR the naming-convention fallback) comes ONLY
+from test(s) with no assertion-shaped construct at all. Fires WARN naming
+the symbol and an example vacuous test id; does not change what TEST001
+itself blocks on.
+
+Split off (the real fix + judgment call): T-draft-934c675a ("Tie TEST001
+credit to real per-symbol coverage (promote TEST005/TEST015,
+cross-cutting)") -- wiring `CoverageData` into `_test001_002` (which today
+only sees `CollectedTests`, no coverage), deciding whether to require
+`symbol_branch[record.symref] > 0` for TEST001 credit, and running the
+same compat-survey discipline this audit pass used for T-0547/T-0556
+before promoting anything.
+
+Also noted (not touched): the T-draft-9557a879 COV002 grace-window
+anomaly (found during T-0556) is still present against the base commit
+`frob check` was run from here -- reproduces on symbols from prior closed
+tickets, unrelated to T-0548's own new code (verified: all TEST015-related
+new symbols in gates/__init__.py and test_gates.py are clean of COV002).
+
+### Changed
+```
+ CHANGELOG.md                |  19 ++
+ frob.lock                   |   2 +-
+ pyproject.toml              |   2 +-
+ src/frob/gates/__init__.py  | 253 ++++++++++++++++++++++++-
+ src/frob/gates/_coverage.py | 125 +++++++++++-
+ src/frob/graph/lock.py      |  27 ++-
+ tests/test_gates.py         | 249 +++++++++++++++++++++++-
+ tests/test_graph_lock.py    |  41 +++-
+ tickets.md                  | 449 ++++++++++++++++++++++++++++++++++++++++++--
+ uv.lock                     |   2 +-
+ 10 files changed, 1136 insertions(+), 33 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestTest015VacuousCredit::test_fires_on_no_op_test_body` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTest015VacuousCredit::test_silent_when_any_matching_test_asserts` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTest015VacuousCredit::test_silent_when_no_test_matches_at_all` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0552 -->
 ```yaml
 id: T-0552
@@ -4023,3 +4085,26 @@ component: null
 labels: []
 ```
 Discovered incidentally while closing T-0556 (unrelated ticket) in a worktree that had already closed T-0567/T-0545/T-0552/T-0547 earlier in the same branch: symbols touched by T-0545/T-0552 (e.g. src/frob/gates/_coverage.py::stamp_coverage, src/frob/gates/__init__.py::_test005/test_gate/_edge_has_execution_evidence/_KNOWN_GATE_RULES/_COVERAGE_LOCK_REL) started failing COV002 again -- 'changed with no frob:ticket edge to an open ticket' -- even though each carries a valid frob:ticket T-0545/T-0552 directive and both tickets' closures are still part of the same uncommitted diff against main (git diff main --stat still shows all the intervening commits). This reproduces with a bare frob check (no --ticket override), so it is not scoped to T-0556's own diff content -- it appeared sometime between T-0552's own clean check (frob check --ticket T-0552 showed 0 COV errors right after closing it) and starting T-0556's ticket workflow (multiple frob ticket scope/sweep operations on tickets.md in between). Hypothesis: _bound_to_open_ticket's grace-window hunk-matching (docs/audits or __init__.py:1917 _bound_to_open_ticket docstring, T-0214/T-0320) depends on a ticket's DONE-transition marker line falling within a single git diff hunk against main; repeated tickets.md rewrites by later ticket operations (scope changes, sweeps, done-report writes for OTHER tickets) can split/relocate that hunk so an EARLIER ticket's own close marker no longer registers as 'in this diff's tickets.md hunk' even though the closure commit is still, in aggregate, part of the diff vs main. Needs investigation: reproduce minimally (two sequential ticket closes in one branch, then a third ticket's ledger operations), confirm the hunk-boundary hypothesis, and either make the grace window robust to intervening unrelated tickets.md hunks or make COV002's message clearer that this is a hunk-shape artifact, not a real missing edge. Related: docs/guides/agent-playbook.md section 10b's existing multi-ticket-worktree warnings (about ledger finalization) -- this is a parallel failure mode in the SAME class of hazard, but for COV002 rather than the Done-report/close ledger writes.
+
+<!-- ticket:T-draft-934c675a -->
+```yaml
+id: T-draft-934c675a
+title: Tie TEST001 credit to real per-symbol coverage (promote TEST005/TEST015, cross-cutting)
+state: queued
+kind: feature
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/__init__.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0548 added TEST015 (WARN) reusing T-0549's existing _has_assertion_evidence heuristic to surface a public symbol whose ONLY TEST001 credit comes from a test with no assertion-shaped construct at all (docs/audits/gates-accounting.md B1's def-myfunc-pass repro). It deliberately does NOT change what TEST001 itself blocks on. This ticket is the actual cross-cutting fix the audit asked for: tie TEST001 credit to nonzero per-symbol branch coverage (frob.gates._coverage.CoverageData.symbol_branch, already computed for TEST005) or promote TEST005 to ERROR -- either requires touching TEST002/003/004/005/009's severities and interactions together, plus reconciling with the legacy-adoption WARN campaign frob.toml already documents (see its own comments), which is why it was split out rather than attempted inside T-0548. Concretely: decide whether TEST001 should require symbol_branch[record.symref] > 0 in addition to a name/edge match (requires wiring CoverageData into _test001_002, which today only sees tests: CollectedTests, not coverage), survey how many currently-green symbols would flip red (mirroring T-0547/T-0556's compat-survey precedent in this same audit pass), and land the sound subset.

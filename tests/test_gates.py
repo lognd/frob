@@ -5305,6 +5305,69 @@ class TestTest014AmbiguousConventionMatch:
         assert "TEST014" not in _rules(violations)
 
 
+# frob:ticket T-0548
+class TestTest015VacuousCredit:
+    """T-0548 (docs/audits/gates-accounting.md B1/E1): TEST001, the only
+    blocking per-symbol test gate, is satisfied by a single collected test
+    node id whose name matches -- nothing inspects whether it asserts
+    anything. `def test_myfunc(): pass` clears TEST001 today; TEST015
+    reuses T-0549's existing assertion heuristic to make that loud."""
+
+    # frob:ticket T-0548
+    def test_fires_on_no_op_test_body(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates.py::TestTest015VacuousCredit.test_fires_on_no_op_test_body  # noqa: E501
+        # The audit's own repro: a public function whose only covering
+        # test, matched by naming convention, has an empty (no-op) body.
+        from typani.option import Nothing
+
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        _write(tmp_path, "tests/test_helper.py", "def test_helper():\n    pass\n")
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(
+            node_ids=frozenset({"tests/test_helper.py::test_helper"})
+        )
+        violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
+        test015 = [v for v in violations if v.rule == "TEST015"]
+        assert len(test015) == 1
+        assert test015[0].severity == Severity.WARN
+        assert "src/frob/pkg/a.py::helper" in test015[0].message
+        assert "test_helper" in test015[0].message
+
+    # frob:ticket T-0548
+    def test_silent_when_any_matching_test_asserts(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates.py::TestTest015VacuousCredit.test_silent_when_any_matching_test_asserts  # noqa: E501
+        from typani.option import Nothing
+
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "tests/test_helper.py",
+            "def test_helper():\n    assert helper_result() == 1\n"
+            "def helper_result():\n    return 1\n",
+        )
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(
+            node_ids=frozenset({"tests/test_helper.py::test_helper"})
+        )
+        violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
+        assert "TEST015" not in _rules(violations)
+
+    # frob:ticket T-0548
+    def test_silent_when_no_test_matches_at_all(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates.py::TestTest015VacuousCredit.test_silent_when_no_test_matches_at_all  # noqa: E501
+        # No matching test at all is TEST001's own job (already ERROR) --
+        # TEST015 only concerns credit that WAS granted, so it must stay
+        # silent here rather than double-report the same gap.
+        from typani.option import Nothing
+
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
+        assert "TEST015" not in _rules(violations)
+        assert "TEST001" in _rules(violations)
+
+
 class TestPairLevelIntegration:
     def _snap_with_dep(self, tmp_path):
         # consumer pkg src/app uses-contract on provider pkg src/core
