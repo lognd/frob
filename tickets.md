@@ -6570,3 +6570,112 @@ component: null
 labels: []
 ```
 Two independent occurrences in one session (2026-07-22): (1) the coordinator's T-0630 block was silently wiped from main's tickets.md by a concurrent stale-ledger write; (2) T-0576's implementer observed frob ticket new, run immediately after frob ticket start's BACKGROUND pre-work sweep, overwrite ticket T-0632's ledger block entirely -- the sweep loads the ledger, the new writes it, the sweep's completion writes back its stale copy (lost update). The ledger lock (.frob/tickets.lock) is held per-operation, not across the background sweep's load-modify-write. Fix: the background sweep must re-acquire the lock AND re-load the ledger before writing (or write only its own ticket's sweep fields via a targeted read-modify-write), never write back a whole stale ledger. Add a regression test: start (with slow sweep stubbed) + concurrent new -> both tickets' blocks intact.
+
+<!-- ticket:T-0634 -->
+```yaml
+id: T-0634
+title: 'fix circular import: frob.testing standalone import fails through frob.gates'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/testing/**
+- src/frob/gates/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a fresh python process WHEN import frob.testing runs as the first frob import
+  THEN it succeeds and the test-file workaround import is removed
+threat: null
+component: null
+labels: []
+```
+import frob.testing as the first frob-touching import raises ImportError (cannot import name CollectedTests) through the frob.gates cycle; masked in the full suite by import order, breaks standalone runs. tests/unit/testing/test_stability.py carries a documented workaround (import frob.gates first). Was T-draft-3d5f6965 in T-0575's worktree; the draft was dropped at land (see the auto-finalize field-failure ticket).
+
+<!-- ticket:T-0635 -->
+```yaml
+id: T-0635
+title: wire flake-quarantine stability tracking into frob test CLI run path
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0575
+scope:
+- src/frob/app/test_runner.py
+- src/frob/testing/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a flaky test with an open quarantine ticket WHEN frob test runs via the CLI
+  THEN the run records history, the quarantined failure does not fail the build, and
+  alarms surface for closed-ticket quarantines
+threat: null
+component: null
+labels: []
+```
+T-0575 landed frob.testing._stability (record_outcomes, evaluate_gate, quarantine, alarms) but nothing in the frob test CLI path calls it -- tracking only happens if invoked programmatically. Wire capture/track + evaluate_gate + alarm surfacing into src/frob/app/test_runner.py so every frob test run updates history and applies quarantine semantics automatically. Disclosed cut in T-0575's Done report.
+
+<!-- ticket:T-0636 -->
+```yaml
+id: T-0636
+title: 'flake quarantine: hard regression under live quarantine is invisible to both
+  gate and alarm'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: high
+blocked_by: []
+parent: T-0575
+scope:
+- src/frob/testing/_stability.py
+- tests/unit/testing/test_stability.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a quarantined test whose last N runs are all failures WHEN quarantine_alarms
+  or evaluate_gate runs THEN the condition is surfaced as a hard-regression alarm
+  and does not silently stay green
+threat: null
+component: null
+labels: []
+```
+T-0575 reviewer MAJOR finding: evaluate_gate promotes on quarantine status alone (never re-checks is_flaky), and quarantine_alarms skips entries where is_flaky is false. A quarantined test that regresses to permanently-failing (all-F history) is by definition no longer flaky, so the gate keeps promoting it green forever AND the alarm never fires -- a silent skip-list, exactly what the ticket's mandate forbids. Fix: alarm (or gate-fail) when a quarantined test's recent history is all-fail beyond a threshold, distinct from the flaky case.
+
+<!-- ticket:T-0637 -->
+```yaml
+id: T-0637
+title: 'land draft auto-finalize failed in the field: T-0575''s draft block dropped
+  despite T-0577 landed'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: high
+blocked_by: []
+parent: T-0577
+scope:
+- src/frob/tickets/**
+- tests/test_ticket_land.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a worktree ledger with a standalone T-draft block WHEN frob ticket land runs
+  for any ticket in that worktree THEN the draft block lands finalized with a real
+  T-#### id and all references rewritten
+threat: null
+component: null
+labels: []
+```
+First field test of T-0577's auto-finalize: T-0575's worktree ledger contained a real T-draft-3d5f6965 block (verified by the reviewer at line ~6546 pre-land), main ran post-T-0577 code (0.82.x), yet the land dropped the draft block instead of minting a real id -- grep for the draft id on main after land returns 0 and no new ticket exists. Reproduce with a worktree ledger containing a draft block belonging to a DIFFERENT ticket than the one being landed (the T-0575 case: the draft was filed by the landing ticket but is its own separate block) and fix finalize_draft invocation coverage in the land path. The unit test T-0577 added apparently covers renumber/finalize on the landing ticket's own references, not a standalone sibling draft block.
