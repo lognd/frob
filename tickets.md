@@ -7529,3 +7529,127 @@ component: null
 labels: []
 ```
 Implement static name-binding resolution for C per capability-evasion-taxonomy.md's C table (7 static + 5 opaque entries): #define macro aliasing, function-pointer variable initialized from a named function, typedef'd function-pointer types.
+
+<!-- ticket:T-0663 -->
+```yaml
+id: T-0663
+title: 'vet: exhaustive C++ static-binding resolver (using-decl, namespace alias,
+  fn-ptr/typedef, on top of C fragment)'
+state: queued
+kind: security
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0662
+parent: T-0339
+scope:
+- src/frob/vet/**
+- src/frob/lang/**
+- tests/test_vet.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given every C++ static-resolvable construct in the taxonomy table, when the resolver
+  runs on its litmus fixture, then the aliased dangerous call is detected
+threat: null
+component: null
+labels: []
+```
+Implement static name-binding resolution for C++ per capability-evasion-taxonomy.md's C++ table (12 static + 5 opaque entries): using-declaration, namespace alias, function-pointer/typedef'd fn-ptr, building on the C resolver's fn-ptr/typedef groundwork.
+
+<!-- ticket:T-0664 -->
+```yaml
+id: T-0664
+title: 'vet: exhaustive Kotlin static-binding resolver (import-as, ::ref, typealias)'
+state: queued
+kind: security
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0339
+scope:
+- src/frob/vet/**
+- src/frob/lang/**
+- tests/test_vet.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given every Kotlin static-resolvable construct in the taxonomy table, when the resolver
+  runs on its litmus fixture, then the aliased dangerous call is detected
+threat: null
+component: null
+labels: []
+```
+Implement static name-binding resolution for Kotlin per capability-evasion-taxonomy.md's Kotlin table (11 static + 5 opaque entries): import-as, function-reference (::ref), typealias.
+
+<!-- ticket:T-0665 -->
+```yaml
+id: T-0665
+title: 'vet/strata: fail-closed opaque-capability-indirection obligation for runtime-resolved
+  dispatch'
+state: queued
+kind: security
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0339
+scope:
+- src/frob/vet/**
+- src/frob/strata/**
+- tests/test_vet.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given code containing a spec-defined runtime-resolved indirection construct with
+  no waiver, when checked, then the obligation fires
+- Given the same construct with a reasoned waiver, when checked, then it passes and
+  the waiver reason is recorded
+threat: null
+component: null
+labels: []
+```
+Per-language, every spec-defined runtime-resolved indirection construct (Python getattr/eval/importlib; TS dynamic import()/eval; Rust reflection-via-trait-object-from-data; C/C++ dlopen/dlsym/fn-ptr-from-data; Kotlin reflection API) becomes an 'opaque capability indirection' obligation: fires by default, requires a reasoned waiver (T-0174), never a silent pass. Consistent with strata's prove-or-reject philosophy (T-0290).
+
+<!-- ticket:T-0666 -->
+```yaml
+id: T-0666
+title: 'vet: cross-language exhaustiveness meta-test binding capability-evasion-taxonomy.md
+  denominator (112 entries) to per-construct litmus fixtures (T-0339 close condition)'
+state: queued
+kind: security
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0659
+- T-0660
+- T-0661
+- T-0662
+- T-0663
+- T-0664
+- T-0665
+- T-0390
+parent: T-0339
+scope:
+- src/frob/vet/**
+- docs/design/registry/evasion.yaml
+- tests/test_vet.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given the full evasion taxonomy denominator, when the meta-test runs, then every
+  entry maps to >=1 registered litmus fixture
+- Given a new taxonomy entry added with no fixture, when the meta-test runs, then
+  it fails the build
+threat: null
+component: null
+labels: []
+```
+Epic close condition. Binds every capability-evasion-taxonomy.md entry (112: 13+9 Python, 17+9 TS/JS, 13+6 Rust, 7+5 C, 12+5 C++, 11+5 Kotlin) to >=1 litmus fixture that exercises it, mirroring the CVE-fingerprint catalog drift-lock. Fails the build if any construct has no fixture. Depends on all per-language resolver tickets and the opaque-indirection obligation landing, plus T-0390 (evasion registry-domain reconciliation) for disposition accuracy.
