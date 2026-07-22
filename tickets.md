@@ -2537,7 +2537,11 @@ sweep_ticket(root, ticket) directly, so the two call sites can no longer
 desync.
 
 ### Changed
-(no changed files detected)
+```
+ src/frob/app/ticket_runner.py | 73 +++++++++++++------------------------------
+ tickets.md                    | 30 ++++++++++++++++--
+ 2 files changed, 49 insertions(+), 54 deletions(-)
+```
 
 ### Evidence
 - `tests/unit/test_app_runners_batch7.py::TestTicketStart::test_start_foreground_runs_sweep_synchronously` (pytest node id, verified passing when recorded)
