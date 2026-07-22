@@ -3045,16 +3045,65 @@ Also noted during T-0528: frob.graph.callgraph's build_call_graph resolves priva
 id: T-0537
 title: 'ledger merge: terminal->non-terminal state regression guard (splice + post-merge
   lint) -- manual conflict resolution resurrected 7 closed tickets'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-21'
 priority: medium
 blocked_by: []
 parent: null
-scope: []
-scope_changes: []
-evidence: []
+scope:
+- src/frob/tickets/_land.py
+- src/frob/tickets/__init__.py
+- src/frob/gates/__init__.py
+- tests/**
+- Makefile
+- docs/modules/testing.md
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: 'declare scope from ticket prose (Scope: _land.py, tickets/__init__.py,
+    gates/__init__.py, tests)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/tickets/__init__.py
+  reason: 'declare scope from ticket prose (Scope: _land.py, tickets/__init__.py,
+    gates/__init__.py, tests)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'declare scope from ticket prose (Scope: _land.py, tickets/__init__.py,
+    gates/__init__.py, tests)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/**
+  reason: 'declare scope from ticket prose (Scope: _land.py, tickets/__init__.py,
+    gates/__init__.py, tests)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: Makefile
+  reason: 'SCOPE001 collision: T-0538''s own already-closed changes are still in this
+    worktree''s uncommitted-vs-main diff (sequential tickets, one worktree); not new
+    edits by T-0537 itself'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/testing.md
+  reason: 'SCOPE001 collision: T-0538''s own already-closed changes are still in this
+    worktree''s uncommitted-vs-main diff (sequential tickets, one worktree); not new
+    edits by T-0537 itself'
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_hand_resolved_conflict_resurrecting_done_ticket_is_flagged
+- tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_forward_progress_across_a_merge_is_clean
+- tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_non_merge_commit_never_checked
+- tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_archived_ticket_is_not_flagged
+- tests/test_ticket_land.py::TestSpliceOnlyTicket::test_whole_ledger_splice_never_regresses_a_sibling_from_done
 attachments: []
 acceptance: []
 threat: null
@@ -3063,6 +3112,62 @@ labels: []
 ```
 Incident (2026-07-22): the COV-finish branch hit a tickets.md conflict mid-flight, resolved it manually, and its land carried stale queued states for 7 tickets main had already closed (T-0454/T-0498/T-0500/T-0514/T-0520/T-0526/T-0527); coordinator restored from the pre-merge ledger. T-0479's own-block splice protects frob ticket land, and T-0505 protects CLI writes, but a raw git merge with hand-resolved conflicts bypasses both. Fix: (1) splice_ledger/merge-driver must never move a ticket from done/dropped to an earlier state unless the landing ticket IS that ticket; (2) a cheap post-merge lint (tickets gate) that diffs states vs the merge's first parent and errors on terminal->non-terminal transitions outside the landed ticket. Scope: src/frob/tickets/_land.py, src/frob/tickets/__init__.py, src/frob/gates/__init__.py, tests.
 
+## Done report
+
+Incident: a `tickets.md` conflict resolved by hand (the merge driver not
+invoked, or its own hunk shape declined) can keep stale non-terminal
+states for tickets main had already closed -- the real T-0537 7-ticket
+resurrection.
+
+(a) Investigated `splice_ledger`/`_splice_only_ticket`'s existing
+`_newer` state-rank tiebreak (terminal states rank highest) and confirmed
+it already makes a terminal->non-terminal regression structurally
+impossible for anything that goes THROUGH the splice, whether the
+whole-ledger merge (`frob ticket merge-driver`) or the ticket-scoped
+splice `frob ticket land` uses. Added a new regression-lock test
+(`TestSpliceOnlyTicket::test_whole_ledger_splice_never_regresses_a_sibling_from_done`)
+proving this holds today, rather than introducing a second, redundant
+guard. Did NOT add a "landing ticket" exception to
+`_splice_only_ticket` after prototyping one and finding it broke an
+existing regression test (`TestCloseFailAfterMerge`) that depends on the
+SAME landing-ticket id race being caught, not bypassed -- disclosed here
+rather than silently dropped from the ticket's stated plan.
+
+(b) New TICK005 gate (`src/frob/gates/__init__.py`): after a genuine
+two-parent merge commit, diffs the current ledger against the merge's
+FIRST parent's tickets.md and ERRORs on any ticket that was DONE/DROPPED
+there but is neither DONE nor DROPPED (nor archived) now -- this is the
+part that actually catches the incident, since it inspects git history
+directly and does not depend on which mechanism (or lack of one)
+resolved the conflict. Non-vacuous fixture
+(tests/test_gates_tick005.py) reproduces the exact incident shape: a
+real two-parent merge commit (built via `commit-tree` for a
+deterministic "which side won" outcome) whose tree keeps the stale
+queued state for a ticket done on the other parent.
+
+Verified: `uv run pytest tests/test_gates_tick005.py tests/test_ticket_land.py`
+(53 passed), `uv run ruff check`/`ruff format --check`/`uv run ty check`
+on the touched files (all clean), `uv run frob check --ticket T-0537`
+(0 errors, all gates pass).
+
+### Changed
+```
+ Makefile                    |  29 ++++++
+ docs/modules/testing.md     |  11 +++
+ src/frob/gates/__init__.py  | 110 +++++++++++++++++++++-
+ tests/test_coverage.py      |  65 ++++++++++++-
+ tests/test_gates_tick005.py | 218 ++++++++++++++++++++++++++++++++++++++++++++
+ tests/test_ticket_land.py   |  35 +++++++
+ tickets.md                  |  58 +++++++++++-
+ 7 files changed, 518 insertions(+), 8 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_hand_resolved_conflict_resurrecting_done_ticket_is_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_forward_progress_across_a_merge_is_clean` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_non_merge_commit_never_checked` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_archived_ticket_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestSpliceOnlyTicket::test_whole_ledger_splice_never_regresses_a_sibling_from_done` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0538 -->
 ```yaml
 id: T-0538
