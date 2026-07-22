@@ -49,6 +49,8 @@ class Subcommand(str, enum.Enum):
     clean = "clean"
     # T-0412: list outstanding frob:debt entries.
     debt = "debt"
+    # T-0407: unified registry capability -- per-registry disposition audit.
+    registry = "registry"
 
 
 # frob:doc docs/modules/app.md#config
@@ -198,6 +200,11 @@ class AppConfig(BaseModel):
 
     # debt (T-0412)
     debt_path: Path | None = None
+
+    # registry (T-0407)
+    registry_command: str | None = None  # audit
+    registry_path: Path | None = None
+    registry_json: bool = False
     debt_json: bool = False
 
     # ticket
@@ -409,6 +416,7 @@ class AppConfig(BaseModel):
             "graph_command",
             "graph_ref",
             "ack_facet",
+            "registry_command",
             "ticket_command",
             "ticket_id",
             "ticket_title",
@@ -468,6 +476,7 @@ class AppConfig(BaseModel):
             "graph_path",
             "ack_path",
             "debt_path",
+            "registry_path",
             "ticket_path",
             "ticket_attach_path",
             "ticket_worktree",
@@ -602,6 +611,7 @@ class AppConfig(BaseModel):
             "check_delta",
             "graph_json",
             "debt_json",
+            "registry_json",
             "ticket_json",
             "ticket_show_blocked",
             "ticket_ignore_lease",

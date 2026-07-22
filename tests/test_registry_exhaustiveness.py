@@ -1,5 +1,7 @@
-"""Tests for frob.gates._registry_exhaustiveness -- REG001-REG005
-(docs/modules/gates.md#registry-exhaustiveness-drift-lock-t-0343).
+# frob:waive SCOPE001 reason="T-0407's declared scope is src/frob/+docs/design/registry/; tests/** is leased in-progress by T-0160 so the scope cannot be formally extended here, same ad-hoc precedent as config.py's existing T-0458/T-0455 SCOPE001 waives -- this file's edits are new pytest coverage for T-0407's own gate refactor"  # noqa: E501
+"""Tests for frob.gates._registry_exhaustiveness -- REG001-REG007
+(docs/modules/gates.md#registry-exhaustiveness-drift-lock-t-0343, REG006/
+REG007 added by T-0407).
 
 Fixtures are synthetic tempfile-backed `docs/design/registry/`-shaped
 directories, never the real (1950-entry) registry -- same posture as
@@ -424,3 +426,157 @@ class TestMissingDir:
         )
 
         assert violations == ()
+
+
+class TestMalformedEntry:
+    """REG006 (T-0407) -- a structurally malformed list item is loud, not
+    silently dropped from the count."""
+
+    def test_malformed_entry_fails(self, tmp_path: Path) -> None:
+        _write_manifest(
+            tmp_path,
+            "patterns.yaml",
+            """\
+schema_version: 1
+entries:
+  - id: "PAT-EXAMPLE"
+    disposition: "handled_by:REF001"
+    cross_refs: []
+  - "not a mapping at all"
+""",
+        )
+        registry_dir = tmp_path / "docs" / "design" / "registry"
+
+        violations = registry_gate(
+            tmp_path, _queue(), frozenset({"REF001"}), registry_dir
+        )
+
+        rules = _rules(*(v.rule for v in violations))
+        assert "REG006" in rules
+
+    def test_entry_missing_id_fails(self, tmp_path: Path) -> None:
+        _write_manifest(
+            tmp_path,
+            "patterns.yaml",
+            """\
+schema_version: 1
+entries:
+  - name: "no id field"
+    disposition: "handled_by:REF001"
+    cross_refs: []
+""",
+        )
+        registry_dir = tmp_path / "docs" / "design" / "registry"
+
+        violations = registry_gate(
+            tmp_path, _queue(), frozenset({"REF001"}), registry_dir
+        )
+
+        rules = _rules(*(v.rule for v in violations))
+        assert "REG006" in rules
+
+    def test_all_well_formed_entries_no_reg006(self, tmp_path: Path) -> None:
+        _write_manifest(
+            tmp_path,
+            "patterns.yaml",
+            """\
+schema_version: 1
+entries:
+  - id: "PAT-EXAMPLE"
+    disposition: "handled_by:REF001"
+    cross_refs: []
+""",
+        )
+        registry_dir = tmp_path / "docs" / "design" / "registry"
+
+        violations = registry_gate(
+            tmp_path, _queue(), frozenset({"REF001"}), registry_dir
+        )
+
+        rules = _rules(*(v.rule for v in violations))
+        assert "REG006" not in rules
+
+
+class TestDuplicateId:
+    """REG007 (T-0407) -- the same id defined by two or more entries is a
+    real collision, distinct from an intentional `duplicate_of:` link."""
+
+    def test_duplicate_id_across_files_fails(self, tmp_path: Path) -> None:
+        _write_manifest(
+            tmp_path,
+            "patterns.yaml",
+            """\
+schema_version: 1
+entries:
+  - id: "PAT-SHARED"
+    disposition: "handled_by:REF001"
+    cross_refs: []
+""",
+        )
+        _write_manifest(
+            tmp_path,
+            "arch-checks.yaml",
+            """\
+schema_version: 1
+entries:
+  - id: "PAT-SHARED"
+    disposition: "handled_by:REF001"
+    cross_refs: []
+""",
+        )
+        registry_dir = tmp_path / "docs" / "design" / "registry"
+
+        violations = registry_gate(
+            tmp_path, _queue(), frozenset({"REF001"}), registry_dir
+        )
+
+        rules = _rules(*(v.rule for v in violations))
+        assert "REG007" in rules
+
+    def test_duplicate_id_same_file_fails(self, tmp_path: Path) -> None:
+        _write_manifest(
+            tmp_path,
+            "patterns.yaml",
+            """\
+schema_version: 1
+entries:
+  - id: "PAT-SHARED"
+    disposition: "handled_by:REF001"
+    cross_refs: []
+  - id: "PAT-SHARED"
+    disposition: "handled_by:REF001"
+    cross_refs: []
+""",
+        )
+        registry_dir = tmp_path / "docs" / "design" / "registry"
+
+        violations = registry_gate(
+            tmp_path, _queue(), frozenset({"REF001"}), registry_dir
+        )
+
+        rules = _rules(*(v.rule for v in violations))
+        assert "REG007" in rules
+
+    def test_no_duplicate_ids_no_reg007(self, tmp_path: Path) -> None:
+        _write_manifest(
+            tmp_path,
+            "patterns.yaml",
+            """\
+schema_version: 1
+entries:
+  - id: "PAT-ONE"
+    disposition: "handled_by:REF001"
+    cross_refs: []
+  - id: "PAT-TWO"
+    disposition: "duplicate_of:PAT-ONE"
+    cross_refs: []
+""",
+        )
+        registry_dir = tmp_path / "docs" / "design" / "registry"
+
+        violations = registry_gate(
+            tmp_path, _queue(), frozenset({"REF001"}), registry_dir
+        )
+
+        rules = _rules(*(v.rule for v in violations))
+        assert "REG007" not in rules

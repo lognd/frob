@@ -17,6 +17,26 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.60.0] - unreleased
+
+T-0407: unified registry capability -- new `frob.registry` module
+(`RegistryEntry`/`Disposition`/`DispositionKind`/`RegistryFile`/
+`RegistryAudit`, `load_registry_dir`, `audit_registry_file`,
+`parse_disposition`) is now the single source of truth for the
+`docs/design/registry/*.yaml` entry shape and disposition grammar;
+`frob.gates._registry_exhaustiveness.registry_gate` (T-0343) was
+refactored onto it rather than carrying a second, duplicated inline
+parser. Two early-exit/partial-coverage holes the pre-unification gate
+silently allowed are now closed: **REG006** (a malformed list item --
+not a mapping, or missing a string `id` -- previously vanished from every
+count with no trace) and **REG007** (the same `id` defined by two or
+more entries anywhere in the registry, a real collision distinct from an
+intentional `duplicate_of:` reference). New CLI subcommand `frob
+registry audit` reports the per-file `handled`/`deferred`/`duplicate`/
+`out_of_scope`/`unaccounted`/`malformed` accounting against `total`, so
+"is this registry exhausted" is a one-line honest read (see
+docs/design/registry/EXHAUSTIVENESS-GATE.md#unified-model-t-0407).
+
 ## [0.58.0] - unreleased
 
 T-0454: professional ticket organization -- `Ticket`/`TicketSpec` gained

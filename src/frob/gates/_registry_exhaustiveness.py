@@ -1,5 +1,6 @@
-"""REG001-REG005: the exhaustiveness drift-lock over docs/design/registry/
-*.yaml (docs/design/registry/EXHAUSTIVENESS-GATE.md, T-0343).
+"""REG001-REG007: the exhaustiveness drift-lock over docs/design/registry/
+*.yaml (docs/design/registry/EXHAUSTIVENESS-GATE.md, T-0343, unified onto
+`frob.registry`'s typed model by T-0407).
 
 LINCHPIN / ANTI-LIE MANDATE. Root cause this module closes: the unified
 design-knowledge registry (`docs/design/registry/*.yaml`, ~1950 entries
@@ -9,6 +10,13 @@ enforced. No gate was watching that gap. This module is the watcher: a
 FAIL-CLOSED gate, wired into `frob check` at ERROR severity as a real
 `Violation` family, not a skippable pytest and not advisory-only. A
 catalogued-but-undispositioned entry can never pass silently again.
+
+T-0407 unification: parsing (disposition grammar, YAML loading, entry
+shape) now lives ONCE in `frob.registry._models` -- `RegistryEntry`,
+`Disposition`, `load_registry_dir` -- instead of duplicated inline here.
+This module is purely the POLICY layer over that typed model: which
+`DispositionKind` earns which `Violation`, verified against live state
+(`known_rules`, the ticket `TicketQueue`, the cross-file id set).
 
 Every registry entry's `disposition` field is parsed against a strict
 grammar and VERIFIED, never trusted at face value:
@@ -58,6 +66,22 @@ table names is required to carry at least one `cross_refs` entry; an id
 still showing `cross_refs: []` despite being documented as split is a
 live, unresolved split and fails REG004.
 
+T-0407 closes two early-exit/partial-coverage holes the pre-unification
+gate had:
+
+- REG006 -- a list item under an `entries:`/`*_entries:` key that is not a
+  mapping, or has no string `id`, was previously SILENTLY skipped (`if not
+  isinstance(entry, dict)... continue`, no violation ever raised). That is
+  exactly the "enumerate a universe, then silently drop part of it" shape
+  T-0407 exists to close: a malformed entry now surfaces as a loud REG006
+  instead of vanishing from the count with no trace.
+- REG007 -- the same `id` string defined by TWO OR MORE entries anywhere
+  in the loaded registry (as opposed to a `duplicate_of:` reference, which
+  REG004 already covers) means the cross-file id index silently keeps only
+  the last-seen entry and drops every earlier one from `frob registry
+  audit`'s accounting -- REG007 makes that collision loud instead of a
+  silent last-write-wins.
+
 On first turn-on this gate is RED for the ~1950 entries the registry
 currently carries (~1006 explicitly `pending`, ~27 bare `addressed`, plus
 every CWE entry's inherited `duplicate-of`/`out-of-scope` disposition
@@ -71,12 +95,16 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Any
-
-import yaml
 
 from frob.gates._models import Severity, Violation
 from frob.logging import get_logger
+from frob.registry._models import (
+    Disposition,
+    DispositionKind,
+    RegistryEntry,
+    RegistryFile,
+    load_registry_dir,
+)
 from frob.tickets._models import TicketQueue, TicketState
 
 _log = get_logger(__name__)
@@ -109,59 +137,12 @@ REGISTRY_FILES: tuple[str, ...] = (
 # file the same way REGISTRY_FILES does for the manifests themselves.
 _RECONCILIATION_FILE = "RECONCILIATION.md"
 
-_HANDLED_BY_RE = re.compile(r"^handled_by:(?P<rule>\S+)$")
-_DEFERRED_RE = re.compile(r"^deferred:(?P<ticket>\S+)$")
-_DUPLICATE_RE = re.compile(r"^duplicate[_-]of:(?P<target>\S+)$")
-_OUT_OF_SCOPE_RE = re.compile(r"^out[_-]of[_-]scope[:(](?P<reason>.+?)[)]?$")
-
 # T-0343 named gap: `out_of_scope` dispositions are meant to route through
 # Area-2's VERIFIED `caught_by` mechanism (T-0382); that mechanism does not
 # exist in this build yet, so `caught_by` is accepted as a bare string for
 # now rather than blocking every out-of-scope disposition on unbuilt
 # infrastructure. Tracked here, not silently assumed solved.
 _OUT_OF_SCOPE_CAUGHT_BY_GAP = "T-0382 Area-2 caught_by verification not yet built"
-
-
-def _load_yaml_file(path: Path) -> dict[str, Any] | None:
-    """Best-effort parsed YAML mapping, or `None` (malformed/unreadable --
-    the caller emits a REG005 violation for the file itself in that case,
-    never a silent skip)."""
-    try:
-        text = path.read_text(encoding="utf-8")
-    except OSError as exc:
-        _log.warning("registry_gate: %s unreadable: %s", path, exc)
-        return None
-    try:
-        data = yaml.safe_load(text)
-    except yaml.YAMLError as exc:
-        _log.warning("registry_gate: %s malformed YAML: %s", path, exc)
-        return None
-    if not isinstance(data, dict):
-        return None
-    return data
-
-
-def _entry_lists(data: dict[str, Any]) -> list[tuple[str, list[Any]]]:
-    """Every `(key, entries)` pair `data` carries under `entries` or any
-    key ending in `_entries` -- most registry files use a single
-    `entries:` list, but `weaknesses.yaml` splits its CWE-sourced and
-    other-framework-sourced entries into `cwe_entries`/
-    `other_weakness_framework_entries` (two disjoint denominators, one
-    per source doc, each with its own `_total` field) rather than one
-    combined list. Generic key matching means a future registry file
-    choosing either shape works without a code change here."""
-    return [
-        (key, value)
-        for key, value in data.items()
-        if isinstance(value, list) and (key == "entries" or key.endswith("_entries"))
-    ]
-
-
-def _entry_disposition(entry: dict[str, Any]) -> str | None:
-    """The raw `disposition` string on `entry`, or `None` if missing/not a
-    string at all (both collapse to REG001 undispositioned)."""
-    value = entry.get("disposition")
-    return value if isinstance(value, str) else None
 
 
 def _classify_handled_by(
@@ -229,74 +210,61 @@ def _classify_out_of_scope(entry_id: str, reason: str) -> tuple[str, str] | None
 
 def _classify(
     entry_id: str,
-    disposition: str | None,
+    disposition: Disposition,
     known_rules: frozenset[str],
     all_entry_ids: frozenset[str],
     queue: TicketQueue,
 ) -> tuple[str, str] | None:
-    """`(rule, message)` for the violation `entry_id`'s disposition earns,
-    or `None` if it is a fully verified, honest disposition.
+    """`(rule, message)` for the violation `entry_id`'s typed `disposition`
+    earns, or `None` if it is a fully verified, honest disposition.
 
     Every branch VERIFIES its claim against real state (`known_rules`,
     `queue`, `all_entry_ids`) rather than trusting the string -- this is
-    the anti-lie half of the gate."""
-    if disposition is None or disposition.strip() == "" or disposition == "pending":
+    the anti-lie half of the gate. `disposition` is already the parsed
+    `frob.registry.Disposition` (T-0407) -- this function is pure policy
+    over that typed shape, no string matching left here."""
+    if disposition.kind is DispositionKind.UNDISPOSITIONED:
         return (
             "REG001",
-            f"REG001: {entry_id} has no disposition (missing or 'pending') -- "
-            f"every registry entry must carry handled_by:<rule-id>, "
-            f"deferred:<ticket-id>, duplicate_of:<id>, or "
-            f"out_of_scope:<reason>",
+            f"REG001: {entry_id} has no disposition (missing, 'pending', "
+            f"or an unverifiable bare 'addressed') -- every registry entry "
+            f"must carry handled_by:<rule-id>, deferred:<ticket-id>, "
+            f"duplicate_of:<id>, or out_of_scope:<reason>",
         )
-    if disposition == "addressed":
-        return (
-            "REG001",
-            f"REG001: {entry_id} has disposition 'addressed' with no "
-            f"handled_by:<rule-id> attached -- an unverifiable claim; name "
-            f"the real rule/gate that handles it (handled_by:<rule-id>) or "
-            f"re-disposition it",
-        )
-    handled = _HANDLED_BY_RE.match(disposition)
-    if handled is not None:
-        return _classify_handled_by(entry_id, handled.group("rule"), known_rules)
-    deferred = _DEFERRED_RE.match(disposition)
-    if deferred is not None:
-        return _classify_deferred(entry_id, deferred.group("ticket"), queue)
-    duplicate = _DUPLICATE_RE.match(disposition)
-    if duplicate is not None:
-        return _classify_duplicate(entry_id, duplicate.group("target"), all_entry_ids)
-    out_of_scope = _OUT_OF_SCOPE_RE.match(disposition)
-    if out_of_scope is not None:
-        return _classify_out_of_scope(entry_id, out_of_scope.group("reason"))
-    return (
-        "REG001",
-        f"REG001: {entry_id} disposition {disposition!r} does not parse "
-        f"under the handled_by/deferred/duplicate_of/out_of_scope grammar",
-    )
-
-
-def _reg005_total_field_name(entries_key: str) -> str:
-    """The `total:`-shaped field name paired with `entries_key`: bare
-    `entries` pairs with `total`; a split key like `cwe_entries` pairs
-    with `cwe_total` (matching `weaknesses.yaml`'s own
-    `cwe_total`/`other_total` convention)."""
-    if entries_key == "entries":
-        return "total"
-    return entries_key.removesuffix("_entries") + "_total"
+    if disposition.kind is DispositionKind.HANDLED_BY:
+        assert disposition.target is not None
+        return _classify_handled_by(entry_id, disposition.target, known_rules)
+    if disposition.kind is DispositionKind.DEFERRED:
+        assert disposition.target is not None
+        return _classify_deferred(entry_id, disposition.target, queue)
+    if disposition.kind is DispositionKind.DUPLICATE_OF:
+        assert disposition.target is not None
+        return _classify_duplicate(entry_id, disposition.target, all_entry_ids)
+    assert disposition.kind is DispositionKind.OUT_OF_SCOPE
+    assert disposition.target is not None
+    return _classify_out_of_scope(entry_id, disposition.target)
 
 
 def _reg005_total_mismatch(
-    rel_path: str, data: dict[str, Any], entries_key: str, entries: list[Any]
+    rel_path: str, registry_file: RegistryFile, entries_key: str
 ) -> Violation | None:
     """REG005: a declared `<prefix>total:` that does not match the
     matching entry list's actual length -- the denominator drift check.
     A file/list with no matching total field declared is not checked
-    (nothing declared to drift from)."""
-    total_field = _reg005_total_field_name(entries_key)
-    total = data.get(total_field)
-    if not isinstance(total, int):
+    (nothing declared to drift from). Uses `RegistryFile.malformed_count`
+    too: a malformed (REG006) item was still a real line in the source
+    YAML list, so it counts toward the actual length the declared total
+    is compared against, same as `len(data[entries_key])` did pre-T-0407."""
+    total_field = (
+        "total"
+        if entries_key == "entries"
+        else (entries_key.removesuffix("_entries") + "_total")
+    )
+    total = registry_file.declared_totals.get(total_field)
+    if total is None:
         return None
-    if total == len(entries):
+    actual = len(registry_file.entry_lists.get(entries_key, ()))
+    if total == actual:
         return None
     return Violation(
         rule="REG005",
@@ -305,9 +273,31 @@ def _reg005_total_mismatch(
         line=0,
         message=(
             f"REG005: {rel_path} declares {total_field}: {total} but "
-            f"{entries_key} has {len(entries)} actual entries -- an entry "
+            f"{entries_key} has {actual} actual entries -- an entry "
             f"was silently added or dropped without updating the declared "
             f"denominator"
+        ),
+    )
+
+
+def _reg006_malformed(rel_path: str, registry_file: RegistryFile) -> Violation | None:
+    """REG006 (T-0407): one or more list items under `rel_path` were not a
+    mapping, or had no string `id` -- these were silently dropped pre-
+    T-0407 instead of raising, exactly the early-exit hole the ticket
+    names ("an entry present in prose but not the registry")."""
+    if registry_file.malformed_count == 0:
+        return None
+    return Violation(
+        rule="REG006",
+        severity=Severity.ERROR,
+        file=rel_path,
+        line=0,
+        message=(
+            f"REG006: {rel_path} has {registry_file.malformed_count} "
+            f"structurally malformed entry/entries (not a mapping, or "
+            f"missing a string `id`) silently unaccounted for -- every "
+            f"list item under entries:/*_entries: must be a real, "
+            f"id-bearing entry"
         ),
     )
 
@@ -332,7 +322,7 @@ def _split_ids_from_reconciliation(text: str) -> frozenset[str]:
 def _reg004_unresolved_splits(
     rel_reconciliation: str,
     split_ids: frozenset[str],
-    entries_by_id: dict[str, tuple[str, dict[str, Any]]],
+    entries_by_id: dict[str, tuple[str, RegistryEntry]],
 ) -> list[Violation]:
     """REG004 for every RECONCILIATION.md-documented split id that still
     shows an empty `cross_refs` in its owning registry file -- a live,
@@ -343,8 +333,7 @@ def _reg004_unresolved_splits(
         if located is None:
             continue
         rel_path, entry = located
-        cross_refs = entry.get("cross_refs")
-        if cross_refs:
+        if entry.cross_refs:
             continue
         violations.append(
             Violation(
@@ -363,78 +352,81 @@ def _reg004_unresolved_splits(
     return violations
 
 
-def _load_registry_files(
-    base: Path, repo_root: Path
-) -> tuple[dict[str, dict[str, Any]], list[Violation]]:
-    """Parse every `REGISTRY_FILES` entry under `base` into `{rel_path:
-    data}`, plus a REG005 violation for each missing/invalid-YAML file --
-    split out of `registry_gate` for ARCH001."""
-    parsed: dict[str, dict[str, Any]] = {}
-    violations: list[Violation] = []
-    for filename in REGISTRY_FILES:
-        path = base / filename
-        if not path.exists():
+def _reg007_duplicate_ids(
+    parsed: dict[str, RegistryFile],
+) -> list[Violation]:
+    """REG007 (T-0407): the same `id` string defined by two or more
+    entries anywhere across the loaded registry -- a real id collision
+    (as opposed to `duplicate_of:`, an intentional cross-reference, which
+    REG004 already governs). Pre-T-0407 the cross-file id index silently
+    kept only the last-seen entry for a collided id; this makes the
+    collision itself a loud violation instead of a silent drop."""
+    seen: dict[str, list[str]] = {}
+    for rel_path, registry_file in parsed.items():
+        for entries in registry_file.entry_lists.values():
+            for entry in entries:
+                seen.setdefault(entry.id, []).append(rel_path)
+    violations = []
+    for entry_id, locations in sorted(seen.items()):
+        if len(locations) < 2:
             continue
-        rel_path = (
-            str(path.relative_to(repo_root))
-            if _is_relative(path, repo_root)
-            else str(path)
-        )
-        data = _load_yaml_file(path)
-        if data is None:
-            violations.append(
-                Violation(
-                    rule="REG005",
-                    severity=Severity.ERROR,
-                    file=rel_path,
-                    line=0,
-                    message=f"REG005: {rel_path} is missing or not valid YAML",
-                )
+        violations.append(
+            Violation(
+                rule="REG007",
+                severity=Severity.ERROR,
+                file=locations[0],
+                line=0,
+                message=(
+                    f"REG007: id {entry_id} is defined by {len(locations)} "
+                    f"entries across {sorted(set(locations))} -- a real id "
+                    f"collision (use duplicate_of: on the redundant entry "
+                    f"if it is intentional) silently drops all but one "
+                    f"entry from any id-keyed accounting"
+                ),
             )
-            continue
-        parsed[rel_path] = data
-    return parsed, violations
+        )
+    return violations
 
 
 def _index_entries_by_id(
-    parsed: dict[str, dict[str, Any]],
-) -> tuple[dict[str, tuple[str, dict[str, Any]]], frozenset[str]]:
+    parsed: dict[str, RegistryFile],
+) -> tuple[dict[str, tuple[str, RegistryEntry]], frozenset[str]]:
     """`{entry_id: (rel_path, entry)}` and the frozen id set over every
     entry in `parsed` -- the shared cross-reference index REG004's
-    duplicate-target and split-resolution checks both need; split out of
-    `registry_gate` for ARCH001."""
-    entries_by_id: dict[str, tuple[str, dict[str, Any]]] = {}
+    duplicate-target and split-resolution checks both need. On a REG007
+    id collision, the LAST entry for that id wins the index (matching the
+    documented last-write-wins semantics REG007 now makes loud rather
+    than leaving it a silent, undetectable behavior)."""
+    entries_by_id: dict[str, tuple[str, RegistryEntry]] = {}
     all_ids: set[str] = set()
-    for rel_path, data in parsed.items():
-        for _key, entries in _entry_lists(data):
+    for rel_path, registry_file in parsed.items():
+        for entries in registry_file.entry_lists.values():
             for entry in entries:
-                if isinstance(entry, dict) and isinstance(entry.get("id"), str):
-                    entries_by_id[entry["id"]] = (rel_path, entry)
-                    all_ids.add(entry["id"])
+                entries_by_id[entry.id] = (rel_path, entry)
+                all_ids.add(entry.id)
     return entries_by_id, frozenset(all_ids)
 
 
 def _classify_all_entries(
-    parsed: dict[str, dict[str, Any]],
+    parsed: dict[str, RegistryFile],
     known_rules: frozenset[str],
     all_ids_frozen: frozenset[str],
     queue: TicketQueue,
 ) -> list[Violation]:
-    """REG001-REG005 (disposition + total-drift) violations over every
-    entry in `parsed` -- split out of `registry_gate` for ARCH001."""
+    """REG001-REG002-REG003-REG004 (disposition) plus REG005/REG006
+    (denominator/structural) violations over every entry in `parsed`."""
     violations: list[Violation] = []
-    for rel_path, data in parsed.items():
-        for entries_key, entries in _entry_lists(data):
-            mismatch = _reg005_total_mismatch(rel_path, data, entries_key, entries)
+    for rel_path, registry_file in parsed.items():
+        malformed = _reg006_malformed(rel_path, registry_file)
+        if malformed is not None:
+            violations.append(malformed)
+        for entries_key, entries in registry_file.entry_lists.items():
+            mismatch = _reg005_total_mismatch(rel_path, registry_file, entries_key)
             if mismatch is not None:
                 violations.append(mismatch)
             for entry in entries:
-                if not isinstance(entry, dict) or not isinstance(entry.get("id"), str):
-                    continue
-                entry_id = entry["id"]
-                disposition = _entry_disposition(entry)
                 outcome = _classify(
-                    entry_id, disposition, known_rules, all_ids_frozen, queue
+                    entry.id, entry.disposition, known_rules, all_ids_frozen, queue
                 )
                 if outcome is None:
                     continue
@@ -454,7 +446,7 @@ def _classify_all_entries(
 def _reconciliation_violations(
     base: Path,
     repo_root: Path,
-    entries_by_id: dict[str, tuple[str, dict[str, Any]]],
+    entries_by_id: dict[str, tuple[str, RegistryEntry]],
 ) -> list[Violation]:
     """REG004 for every RECONCILIATION.md-documented split id still
     unresolved in its owning registry file, or `[]` if the file is absent
@@ -476,17 +468,30 @@ def _reconciliation_violations(
     return _reg004_unresolved_splits(rel_reconciliation, split_ids, entries_by_id)
 
 
+def _rel_registry_path(path: Path, repo_root: Path) -> str:
+    """`path` shortened relative to `repo_root` for report-friendly output,
+    or its absolute form if it does not actually sit under `repo_root`."""
+    if _is_relative(path, repo_root):
+        return str(path.relative_to(repo_root))
+    return str(path)
+
+
 # frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#registry-exhaustiveness-drift-lock-t-0343  # noqa: E501
 # frob:ticket T-0343
-# REG001-005 fire at Severity.ERROR: every registry entry must carry an
+# frob:ticket T-0407
+# REG001-007 fire at Severity.ERROR: every registry entry must carry an
 # honest disposition (handled_by/deferred/duplicate_of/out_of_scope), and
 # the active-falsehood rules (REG002 dangling handled_by, REG003 deferred-to-
 # closed ticket) are hard errors. Promoted from the interim WARN state once
-# the backlog was fully drained to zero (T-0426, 2026-07-20).
+# the backlog was fully drained to zero (T-0426, 2026-07-20). REG006/REG007
+# added by T-0407 to close the malformed-entry and duplicate-id early-exit
+# holes the pre-unification gate silently allowed.
 # frob:tests tests/test_registry_exhaustiveness.py::TestDisposition.test_undispositioned_entry_fails  # noqa: E501
 # frob:tests tests/test_registry_exhaustiveness.py::TestDisposition.test_dangling_handled_by_fails  # noqa: E501
 # frob:tests tests/test_registry_exhaustiveness.py::TestDisposition.test_deferred_to_closed_ticket_fails  # noqa: E501
 # frob:tests tests/test_registry_exhaustiveness.py::TestDisposition.test_fully_dispositioned_fixture_passes  # noqa: E501
+# frob:tests tests/test_registry_exhaustiveness.py::TestMalformedEntry.test_malformed_entry_fails  # noqa: E501
+# frob:tests tests/test_registry_exhaustiveness.py::TestDuplicateId.test_duplicate_id_across_files_fails  # noqa: E501
 def registry_gate(
     repo_root: Path,
     queue: TicketQueue,
@@ -496,16 +501,22 @@ def registry_gate(
     """REG001 (undispositioned) / REG002 (dangling handled_by) / REG003
     (deferred to closed/missing ticket) / REG004 (dangling duplicate_of,
     or a RECONCILIATION.md-documented split still unlinked) / REG005
-    (declared total drift) over every `docs/design/registry/*.yaml`
-    manifest under `registry_dir` (defaults to `repo_root /
-    "docs/design/registry"`).
+    (declared total drift) / REG006 (structurally malformed entry
+    silently unaccounted for) / REG007 (the same id defined twice, a real
+    collision) over every `docs/design/registry/*.yaml` manifest under
+    `registry_dir` (defaults to `repo_root / "docs/design/registry"`).
 
     All ERROR severity -- this is the fail-closed anti-lie gate: a
     catalogued-but-undispositioned entry, or a dispositioned entry whose
     claim does not actually verify, fails `frob check`'s exit code, it
     does not merely warn. `known_rules` is the caller's live
     gate-rule-id + policy-rule-id union, so `handled_by` is checked
-    against what this BUILD actually enforces, never a hardcoded list."""
+    against what this BUILD actually enforces, never a hardcoded list.
+
+    T-0407: loading and entry/disposition parsing now go through the
+    single `frob.registry.load_registry_dir` loader instead of a
+    duplicated inline YAML+regex parser -- this module is purely the
+    policy layer over that typed model."""
     base = (
         registry_dir
         if registry_dir is not None
@@ -515,9 +526,28 @@ def registry_gate(
         _log.info("registry_gate: %s does not exist, skipping", base)
         return ()
 
-    parsed, violations = _load_registry_files(base, repo_root)
+    loaded = load_registry_dir(base, REGISTRY_FILES)
+    parsed: dict[str, RegistryFile] = {}
+    violations: list[Violation] = []
+    for filename, result in loaded.items():
+        rel_path = _rel_registry_path(base / filename, repo_root)
+        if result.is_err:
+            violations.append(
+                Violation(
+                    rule="REG005",
+                    severity=Severity.ERROR,
+                    file=rel_path,
+                    line=0,
+                    message=f"REG005: {rel_path} is missing or not valid YAML "
+                    f"({result.danger_err.value})",
+                )
+            )
+            continue
+        parsed[rel_path] = result.danger_ok
+
     entries_by_id, all_ids_frozen = _index_entries_by_id(parsed)
     violations.extend(_classify_all_entries(parsed, known_rules, all_ids_frozen, queue))
+    violations.extend(_reg007_duplicate_ids(parsed))
     violations.extend(_reconciliation_violations(base, repo_root, entries_by_id))
     all_ids = set(all_ids_frozen)
 
