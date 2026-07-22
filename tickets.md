@@ -18,6 +18,10 @@ scope:
 - frob.toml
 - src/frob/app/ack_runner.py
 - src/frob/app/parse_runner.py
+- src/frob/app/sys_runner.py
+- src/frob/app/test_runner.py
+- src/frob/app/ticket_runner.py
+- src/frob/perf/_harness.py
 scope_changes:
 - op: remove
   glob: src/frob/**
@@ -34,6 +38,34 @@ scope_changes:
   reason: 'batch 10: narrow to ack_runner/parse_runner TEST005 for this pass'
   actor: logan
   at: '2026-07-21'
+- op: add
+  glob: src/frob/app/sys_runner.py
+  reason: 'batch 12: reviewer-confirmed remainder of the TEST005 backlog (0.0%-covered
+    runners + perf harness) was outside the declared scope; extending so the acceptance
+    criterion (0 unwaived TEST005) is reachable'
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: src/frob/app/test_runner.py
+  reason: 'batch 12: reviewer-confirmed remainder of the TEST005 backlog (0.0%-covered
+    runners + perf harness) was outside the declared scope; extending so the acceptance
+    criterion (0 unwaived TEST005) is reachable'
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: src/frob/app/ticket_runner.py
+  reason: 'batch 12: reviewer-confirmed remainder of the TEST005 backlog (0.0%-covered
+    runners + perf harness) was outside the declared scope; extending so the acceptance
+    criterion (0 unwaived TEST005) is reachable'
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: src/frob/perf/_harness.py
+  reason: 'batch 12: reviewer-confirmed remainder of the TEST005 backlog (0.0%-covered
+    runners + perf harness) was outside the declared scope; extending so the acceptance
+    criterion (0 unwaived TEST005) is reachable'
+  actor: logan
+  at: '2026-07-22'
 evidence:
 - tests/test_gates.py::TestInvariantLoad::test_unreadable_file_is_malformed
 - tests/test_gates.py::TestInvariantLoad::test_no_frontmatter_block_is_malformed
@@ -1523,7 +1555,6 @@ coordinator's earlier direction -- only native/TS modules are believed to
 remain (`src/frob/check/_native.py`, `src/frob/check/_ts.py`,
 `src/frob/dup/_legacy_cpp.py`), pending coordinator confirmation via a fresh
 full-suite `frob check --only test` scan.
-
 <!-- ticket:T-0177 -->
 ```yaml
 id: T-0177
