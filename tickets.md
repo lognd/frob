@@ -3306,7 +3306,7 @@ else entirely in most of these sites:
 id: T-0541
 title: 'gates: SCOPE001/PRE001 fully disabled with no active ticket / off-convention
   branch (B9)'
-state: queued
+state: in-progress
 kind: bug
 origin: auditor
 created: '2026-07-21'
@@ -3316,7 +3316,9 @@ parent: T-0403
 scope:
 - src/frob/gates/
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_gates.py::TestRunGates::test_run_gates_blocks_scope_and_prework_when_no_ticket_touches_source
+- tests/test_gates.py::TestRunGates::test_run_gates_still_skips_scope_and_prework_for_ledger_only_diff
 attachments: []
 acceptance: []
 threat: null
@@ -3325,6 +3327,53 @@ labels: []
 ```
 docs/audits/gates-accounting.md B9. _build_ticket_scoped_jobs only registers scope+prework jobs when st.ticket is not None; active_ticket derives the ticket purely from the branch name's T-#### prefix. A branch not named after a ticket (or work on main) skips scope and pre-work enforcement entirely rather than failing. Fix direction: a diff that touches source with no derivable active ticket should be a loud blocking condition, not a skip.
 
+## Done report
+
+Repro: on an off-convention branch (or `main`) with no `--ticket`,
+`_build_ticket_scoped_jobs` skipped both the `scope` and `prework` jobs
+whenever `st.ticket` was `Nothing` -- SCOPE001/PRE001 never ran at all for
+that check, silently, regardless of how much source the diff touched.
+
+Fix: `_build_ticket_scoped_jobs` now distinguishes "nothing to enforce" from
+"enforcement is being bypassed". A new `_no_active_ticket_touches_source`
+predicate (via `_b9_exempt_file`, which exempts only `tickets.md` and
+`.frob/` local state) checks whether the diff touches anything else. When
+it does and no ticket is derivable, `scope`/`prework` now register a job
+that emits a blocking `SCOPE001`/`PRE001` violation via the new
+`_no_active_ticket_violation` helper instead of silently appending to
+`skipped`. A diff touching only the ledger (or nothing) still skips
+cleanly, matching the pre-existing `test_run_gates_skips_scope_without_ticket`
+behavior.
+
+Changed:
+- src/frob/gates/__init__.py::_b9_exempt_file (new)
+- src/frob/gates/__init__.py::_no_active_ticket_touches_source (new)
+- src/frob/gates/__init__.py::_no_active_ticket_violation (new)
+- src/frob/gates/__init__.py::_build_ticket_scoped_jobs (updated)
+
+Evidence:
+- tests/test_gates.py::TestRunGates::test_run_gates_blocks_scope_and_prework_when_no_ticket_touches_source
+- tests/test_gates.py::TestRunGates::test_run_gates_still_skips_scope_and_prework_for_ledger_only_diff
+- Full `uv run pytest tests/test_gates.py -p no:cacheprovider -q -n0`: 220 passed, 0 failed (verified before recording evidence).
+
+Filed: none (no out-of-scope work discovered this pass).
+
+Gates: `uv run frob check --ticket T-0541` clean (0 errors). One waiver
+added: `frob:waive SCOPE001` at tests/test_gates.py:2 -- this ticket's
+scope is `src/frob/gates/` only; `tests/**` is under an active scope lease
+held by in-progress T-0160's multi-pass test-coverage backlog, so
+`frob ticket scope --add tests/test_gates.py` was rejected
+(`ScopeLeaseConflict`). The fix's own regression test necessarily lives in
+tests/test_gates.py, so the SCOPE001 hit on that one file is waived with
+this reason rather than forcing a lease conflict with T-0160.
+No public API (CLI surface) change; no REL001 bump needed.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_gates.py::TestRunGates::test_run_gates_blocks_scope_and_prework_when_no_ticket_touches_source` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestRunGates::test_run_gates_still_skips_scope_and_prework_for_ledger_only_diff` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0542 -->
 ```yaml
 id: T-0542

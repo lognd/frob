@@ -6520,25 +6520,71 @@ def _build_jobs(
     return selected_thread, selected_process, skipped
 
 
+def _b9_exempt_file(file: str) -> bool:
+    """Files a no-active-ticket diff may touch without tripping B9: the
+    `tickets.md` ledger (archiving closed tickets is a legitimate no-ticket,
+    direct-to-main operation) and frob's own local `.frob/` state (never
+    real source, regardless of gitignore status)."""
+    return file == "tickets.md" or file.startswith(".frob/")
+
+
+def _no_active_ticket_touches_source(diff: Diff) -> bool:
+    """True if `diff` touches any file besides the B9-exempt set (ticket
+    ledger, `.frob/` local state): any other touched file with no derivable
+    active ticket is exactly the SCOPE001/PRE001 escape B9 closes."""
+    return any(not _b9_exempt_file(f) for f in _touched_files(diff))
+
+
+# frob:ticket T-0541
+def _no_active_ticket_violation(rule: str, diff: Diff) -> tuple[Violation, ...]:
+    """SCOPE001/PRE001 (B9): the diff touches source but no active ticket is
+    derivable (no `--ticket` and no `T-####-` branch prefix). Previously
+    this silently skipped both scope and pre-work enforcement entirely; now
+    it is a loud blocking violation instead, since skipping is exactly the
+    escape an off-convention branch (or committing on `main`) could exploit."""
+    touched = sorted(f for f in _touched_files(diff) if not _b9_exempt_file(f))
+    return (
+        Violation(
+            rule=rule,
+            severity=Severity.ERROR,
+            file=touched[0] if touched else "",
+            line=0,
+            message=(
+                f"{rule}: diff touches {len(touched)} file(s) but no active "
+                "ticket is derivable (pass --ticket or use a T-####-name "
+                "branch); scope/pre-work enforcement cannot be skipped"
+            ),
+        ),
+    )
+
+
+# frob:ticket T-0541
 def _build_ticket_scoped_jobs(
     selected: frozenset[str], st: _GateInputs
 ) -> tuple[dict[str, Callable[[], tuple[Violation, ...]]], list[str]]:
-    """`scope`/`prework` jobs: both need `st.ticket`, so both are skipped
-    (not run, not failed) rather than registered when no ticket is active."""
+    """`scope`/`prework` jobs both need `st.ticket`. When no ticket is
+    derivable AND the diff touches non-ledger source (B9), that is now a
+    loud blocking violation instead of a silent skip; jobs are only truly
+    skipped (not run, not failed) when there is nothing to enforce against."""
     jobs: dict[str, Callable[[], tuple[Violation, ...]]] = {}
     skipped: list[str] = []
+    no_ticket_blocks = st.ticket is None and _no_active_ticket_touches_source(st.diff)
     if "scope" in selected:
         scope_ticket = st.ticket
         if scope_ticket is not None:
             jobs["scope"] = lambda: scope_gate(
                 st.diff, scope_ticket, st.snapshot, root=st.root, queue=st.queue
             )
+        elif no_ticket_blocks:
+            jobs["scope"] = lambda: _no_active_ticket_violation("SCOPE001", st.diff)
         else:
             skipped.append("scope")
     if "prework" in selected:
         pre_ticket = st.ticket
         if pre_ticket is not None:
             jobs["prework"] = lambda: prework_gate(pre_ticket, st.snapshot, st.sweep)
+        elif no_ticket_blocks:
+            jobs["prework"] = lambda: _no_active_ticket_violation("PRE001", st.diff)
         else:
             skipped.append("prework")
     return jobs, skipped

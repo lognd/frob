@@ -1,4 +1,5 @@
 """Tests for frob.gates: drift, coverage, scope, pre-work, invariant, test gates."""
+# frob:waive SCOPE001 reason="T-0541 scope is src/frob/gates/ only; tests/** lease is held by in-progress T-0160's multi-pass backlog, so scope-add is blocked here"
 
 from __future__ import annotations
 
@@ -3620,6 +3621,46 @@ class TestRunGates:
 
     def test_run_gates_skips_scope_without_ticket(self, tmp_path: Path) -> None:
         _git_init(tmp_path)
+        cfg = GateConfig(
+            root=str(tmp_path), base="main", gates=frozenset({"scope", "prework"})
+        )
+        result = run_gates(cfg)
+        assert result.is_ok
+        report = result.danger_ok
+        assert "scope" in report.stats.skipped
+        assert "prework" in report.stats.skipped
+
+    def test_run_gates_blocks_scope_and_prework_when_no_ticket_touches_source(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::_build_ticket_scoped_jobs
+        # frob:ticket T-0541
+        """B9: an off-convention branch (or `main`) with no `--ticket` and a
+        diff that touches real source must not silently skip SCOPE001/
+        PRE001 -- it must block instead."""
+        _git_init(tmp_path)
+        _write(tmp_path, "src/pkg/a.py", "def helper(x):\n    return x\n")
+        cfg = GateConfig(
+            root=str(tmp_path), base="main", gates=frozenset({"scope", "prework"})
+        )
+        result = run_gates(cfg)
+        assert result.is_ok
+        report = result.danger_ok
+        assert "scope" not in report.stats.skipped
+        assert "prework" not in report.stats.skipped
+        assert any(v.rule == "SCOPE001" for v in report.violations)
+        assert any(v.rule == "PRE001" for v in report.violations)
+
+    def test_run_gates_still_skips_scope_and_prework_for_ledger_only_diff(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::_build_ticket_scoped_jobs
+        # frob:ticket T-0541
+        """B9's fix must not fire on a `tickets.md`-only diff (ledger
+        maintenance, e.g. archiving closed tickets, is a legitimate
+        no-ticket main-branch operation)."""
+        _git_init(tmp_path)
+        _write(tmp_path, "tickets.md", "# tickets\n")
         cfg = GateConfig(
             root=str(tmp_path), base="main", gates=frozenset({"scope", "prework"})
         )
