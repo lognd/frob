@@ -110,12 +110,66 @@ natives were deliberately left depending on the bare `$(STAMP)` sync stamp
 -- they do not need the fix and there is no benefit to paying even the
 ~0.5s warm-cache cost there.
 
-Sharing a prebuilt cargo artifact ACROSS worktrees (a shared
-`CARGO_TARGET_DIR`, or a wheel cache reused by `make core`) so the
-from-scratch cold-cache case is also fast is a separate, not-yet-built
-mechanism -- see T-0175's Done report (`tickets-archive.md`) for what was
-investigated there and why it was left as a documented future step rather
-than implemented.
+## Shared cargo target cache across worktrees (T-0732)
+
+`core`'s `CARGO_TARGET_DIR` is pinned to `$(git rev-parse
+--git-common-dir)/frob-cargo-target-cache` -- the ONE `.git` directory every
+worktree of a clone shares, so every worktree of the same clone computes
+the identical cache path with no per-clone hash or registration step, and
+a different clone (a different `.git`) naturally gets a different cache
+with no collision. The cache lives inside `.git` deliberately: it is
+git-invisible build output that no working-tree `git status`/`git add -A`
+in any worktree ever sees, unlike a cache path under a worktree's own tree
+(which would pollute exactly that one worktree's status and need an
+out-of-scope `.gitignore` entry). This is a different hazard class from
+the `.git/info/exclude` warning in `docs/guides/agent-playbook.md` section
+1c: that hazard is a shared EXCLUDE RULE silently shadowing tracked
+source for every worktree forever; this is a shared CACHE DIRECTORY of
+untracked build artifacts that only cargo itself ever reads or writes --
+nothing tracked is affected, and deleting the directory is always safe
+(cargo repopulates it from scratch, same as any target dir).
+
+Concurrency: no frob-side locking was added. Cargo already serializes
+concurrent builds against the same target directory via its own
+fingerprint-directory file lock (observed directly: a second `make core`
+started in a sibling worktree while the first was still compiling printed
+`Blocking waiting for file lock on artifact directory` / `... on package
+cache` and simply waited its turn -- both builds finished cleanly, neither
+build's output was corrupted). This is documented cargo behavior, not a
+new mechanism this ticket had to build or now has to maintain.
+
+Measured (this repo, aarch64 dev host, both native crates via `make
+core`, timed with `time`):
+
+| scenario | wall time |
+|---|---|
+| fresh worktree, empty shared cache (from-scratch cargo build of every dependency crate plus both path crates) | 30.4s |
+| fresh worktree, shared cache already warm from a sibling worktree (only `frob-core`/`strata-core` themselves recompile against their own worktree-local absolute path; every dependency crate is reused unchanged from the cache) | 11.4s |
+| same worktree, second `make core` invocation with nothing changed (steady-state re-run, T-0340's existing no-op case) | 1.1s |
+
+The from-scratch case drops from ~30s to ~11s for every worktree after the
+first (a ~2.7x cut, matching the reduction in what actually has to
+compile: only the two path crates themselves, not their dependency trees).
+It does not reach the sub-10s target for a genuinely fresh worktree,
+because `frob-core`/`strata-core` are built at each worktree's own
+absolute path (e.g. `/path/to/worktree/frob-core`) -- cargo keys build
+artifacts by absolute source path, so the two path crates themselves
+cannot be shared across worktrees the way their dependency trees are; only
+symlinking worktree source into one shared location would close that
+remaining gap, and that is a much larger, riskier change (worktrees are
+supposed to be independent checkouts) not attempted here. Reusing the
+dependency tree is still the overwhelming majority of the original
+cold-build cost and is captured by this change with no such risk.
+
+Not built (disclosed, filed as a follow-up rather than attempted here):
+part (2) of T-0732 -- a `frob scaffold pool N` pre-warmed worktree pool
+(pool of worktrees with natives already built and `main` already merged,
+leased out to agents, refreshed in the background after lands). This
+mechanism reduces make-core cost to near zero by never running it live at
+lease time at all, which is a materially different and larger piece of
+work (a leasing/refresh daemon, not a Makefile variable) than the shared-
+cache mechanism above; see the ticket filed in T-0732's Done report
+(`tickets.md`) for the tracked scope.
 
 ## Why not `pip install "frob[strata]"`?
 

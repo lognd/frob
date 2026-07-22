@@ -12395,7 +12395,7 @@ User directive 2026-07-22: eliminate ALL coordinator conflict resolution on vers
 ```yaml
 id: T-0732
 title: 'worktree warm pool: shared cargo target/native wheel cache + pre-warmed worktrees'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-22'
@@ -12406,8 +12406,24 @@ scope:
 - Makefile
 - src/frob/scaffold/**
 - docs/guides/**
-scope_changes: []
-evidence: []
+- tests/integration/test_interfaces.py
+- tests/system/test_cli_doctor.py
+scope_changes:
+- op: add
+  glob: tests/integration/test_interfaces.py
+  reason: 'Makefile/docs-only ticket: evidence is the sanctioned pre-existing CLI-dispatch
+    + doctor-natives tests (playbook section 5); close requires them in scope'
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: tests/system/test_cli_doctor.py
+  reason: 'Makefile/docs-only ticket: evidence is the sanctioned pre-existing CLI-dispatch
+    + doctor-natives tests (playbook section 5); close requires them in scope'
+  actor: logan
+  at: '2026-07-22'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+- tests/system/test_cli_doctor.py::TestDoctorCli::test_doctor_reports_healthy_when_natives_present
 attachments: []
 acceptance:
 - GIVEN a fresh worktree after the change WHEN make core runs THEN it completes in
@@ -12417,6 +12433,44 @@ component: null
 labels: []
 ```
 User directive 2026-07-22: kill the make core cold-build boilerplate (minutes per fresh worktree, ~30 worktrees today; T-0340 fixed re-eviction at 0.6s steady-state but not cold starts; T-0175s Done report has the investigation). Deliver: (1) shared CARGO_TARGET_DIR (or maturin wheel cache) keyed per clone so a fresh worktree's make core reuses compiled artifacts -- target seconds, measure before/after; (2) optionally a warm pool: frob scaffold pool N pre-creates worktrees with natives built + main merged, agents lease from the pool, a background refresh re-warms after lands. (1) alone captures most of the win; (2) is the stretch.
+
+## Done report
+
+Delivered part (1) only: a shared CARGO_TARGET_DIR keyed per clone via
+`git rev-parse --git-common-dir` (the one .git dir every worktree of a
+clone shares), stored inside .git itself so no worktree's git status ever
+sees it. Concurrency is cargo's own target-dir file lock, observed
+directly serializing two real concurrent `make core` runs against the
+same shared cache with no corruption. Measured with `time` across four
+scratch worktrees (git worktree add /tmp/..., removed after measuring):
+cold/empty-cache fresh worktree 30.4s, fresh worktree with a warm shared
+cache 11.4s (only frob-core/strata-core themselves recompile against
+their own worktree-local absolute path; every dependency crate is
+reused), same-worktree steady-state re-run 1.1s (T-0340's existing
+no-op case, unaffected). This is a ~2.7x cut for every worktree after the
+first, but does not reach the <10s stretch target because the two path
+crates recompile per worktree (cargo keys build output by absolute
+source path) -- disclosed honestly in docs/guides/install.md rather than
+rounded up. Part (2) (frob scaffold pool N, pre-warmed leased worktrees)
+was not attempted -- filed as T-draft-77412664 per the ticket's own
+"stretch, file a follow-up" instruction (grep-verified present in
+tickets.md as `<!-- ticket:T-draft-77412664 -->` after this restore, per
+the corrected 10b recipe -- an earlier round's T-draft-aaf3b076 mention
+was prose-only, wiped by the `git checkout main -- tickets.md` restore
+before it was ever committed; caught by reviewer, refiled and committed
+immediately here instead of just noted in prose).
+
+### Changed
+```
+ Makefile               | 32 ++++++++++++++++++--
+ docs/guides/install.md | 66 +++++++++++++++++++++++++++++++++++++----
+ tickets.md             | 80 ++++++++++++++++++++++++++++++++++++++++++++++++--
+ 3 files changed, 167 insertions(+), 11 deletions(-)
+```
+
+### Evidence
+- `tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorCli::test_doctor_reports_healthy_when_natives_present` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0733 -->
 ```yaml
@@ -12561,3 +12615,59 @@ component: null
 labels: []
 ```
 Shell-substitution hazard, 4 field occurrences 2026-07-22 (T-0627, T-0697, T-0735/T-0736 bodies all lost backticked fragments to command substitution when passed inline through bash): long prose should never ride the shell. Add file-input variants mirroring done-report --why-file: frob ticket new --body-file PATH (and --acceptance-file PATH, one criterion per block/line), frob ticket scope --reason-file, frob ticket review already takes --findings-file (precedent). Inline --body stays for short text. Update the agent playbook to route all multi-sentence ticket prose through the file variants. The coordinator additionally runs a PreToolUse hook blocking backtick-in-double-quoted-flag commands; the file variants make the hazard structurally unreachable for agents too.
+
+<!-- ticket:T-0738 -->
+```yaml
+id: T-0738
+title: 'worktree warm pool: frob scaffold pool N pre-warmed worktrees with background
+  refresh'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0732
+scope:
+- src/frob/scaffold/**
+- Makefile
+- docs/guides/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a warm pool of N WHEN an agent leases a worktree THEN it starts with natives
+  built and main current, and the pool refills in the background
+threat: null
+component: null
+labels: []
+```
+Part 2 of T-0732 (part 1, the shared cargo cache, landed 30.4s->11.4s): pre-create N worktrees with natives built + main merged; agents lease from the pool; a background refresh re-warms after lands. Closes the residual per-worktree crate recompile cost (cargo keys by absolute path) by amortizing it ahead of dispatch. Coordinate with T-0736's scaffold-managed blocks and T-0735's frob natives build.
+
+<!-- ticket:T-0739 -->
+```yaml
+id: T-0739
+title: 'typestate protocol enforcement: init/deinit, declared state machines, cleanup-on-all-paths
+  (parent)'
+state: queued
+kind: security
+origin: human
+created: '2026-07-22'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/arch/**
+- src/frob/graph/**
+- docs/design/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN the children closed WHEN frob check runs on fixtures for each fragment THEN
+  each child gate/advisory fires per its own acceptance
+threat: null
+component: null
+labels: []
+```
+User mandate 2026-07-22: statically enforce system state protocols -- the *_init-never-called / *_deinit-never-called class, and generally functions valid only in particular states (TCP-handshake-style machines), plus cleanup-on-all-paths. Frame: TYPESTATE over the call graph, restricted to two decidable fragments: (a) module/subsystem protocols (the object is a singleton subsystem -- reachability + summaries suffice, no alias analysis); (b) declared object protocols checked at summary granularity. DELIBERATE DECISIONS: declared protocols with name-pattern-inferred init/deinit convenience (inference ONLY for the common pair, never for general machines); per-function summary fixpoint engine shared with the T-0686 may-raise engine (one engine, three clients: exceptions, capabilities, protocols -- no-duplication); language excuses are recorded DISCHARGES naming their mechanism (Rust Drop unless mem::forget observed; C++ RAII only when init result held by destructor-bearing object; Python with-blocks, GC finalizers NEVER count; TS using/try-finally), per T-0383 caught_by doctrine. LIMITS declared: no aliased per-object heap typestate (Rust owns that); concurrent establishment races belong to T-0693 family; dynamic dispatch = Unknown fail-closed (T-0339). Children: declaration surface, summary engine, state-requirement verification + excuses, cleanup obligations. Umbrella closes when children close.

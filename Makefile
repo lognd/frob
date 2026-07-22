@@ -188,6 +188,34 @@ install: $(STAMP) core
 
 # ---------- native extension (frob-core, Rust/PyO3) ----------
 
+# T-0732: shared CARGO_TARGET_DIR keyed per CLONE (not per worktree), so a
+# fresh `git worktree add` reuses every dependency crate another worktree
+# of the SAME clone already compiled, instead of a from-scratch cargo
+# build every time (T-0175's Done report measured ~34s/worktree cold;
+# ~30 worktrees/day makes that a real tax). `git rev-parse --git-common-dir`
+# resolves to the ONE `.git` directory every worktree of a clone shares --
+# a fresh worktree and its siblings all compute the identical path, so
+# this needs no per-clone hash or registration step, and two different
+# clones on the same machine (different `.git` dirs) naturally get
+# different cache directories with no collision. The cache lives INSIDE
+# `.git` deliberately: it is git-invisible build output, never a working-
+# tree path any worktree's `git status`/`git add -A` could see or a
+# worktree-local `.gitignore` would need to name (unlike a path under a
+# worktree's own tree, which would pollute exactly one worktree's status
+# and require an out-of-scope `.gitignore` edit here) -- this is NOT the
+# `.git/info/exclude` hazard from the playbook (section 1c): that hazard
+# is a shared EXCLUDE RULE silently shadowing tracked source for every
+# worktree; this is a shared CACHE DIRECTORY holding untracked build
+# artifacts only cargo ever reads or writes, nothing tracked touches it.
+# Concurrency safety: cargo itself serializes concurrent builds against
+# the same target dir via its own fingerprint-directory file lock (a
+# `.cargo-lock` inside the target dir) -- a second `make core` in a
+# sibling worktree while one is already building blocks on that lock and
+# proceeds safely once free, it does not corrupt or race the shared
+# artifacts. No frob-side locking is added on top; this is cargo's own
+# documented target-dir locking, not a new mechanism to maintain here.
+CARGO_TARGET_DIR := $(shell git rev-parse --git-common-dir 2>/dev/null)/frob-cargo-target-cache
+
 # Build and install the frob-core native extension into the venv. The
 # smart-dup R3+ rungs need it; R1/R2 and every other feature work without
 # it, so this is a best-effort step that warns rather than fails when the
@@ -196,8 +224,8 @@ core: $(STAMP)
 	@command -v cargo >/dev/null 2>&1 || { \
 		echo "cargo not found; skipping frob-core (smart-dup R3+ disabled)"; \
 		exit 0; }
-	VIRTUAL_ENV=$(CURDIR)/.venv uvx maturin develop --uv --release -m frob-core/Cargo.toml
-	VIRTUAL_ENV=$(CURDIR)/.venv uvx maturin develop --uv --release -m strata-core/Cargo.toml
+	VIRTUAL_ENV=$(CURDIR)/.venv CARGO_TARGET_DIR=$(CARGO_TARGET_DIR) uvx maturin develop --uv --release -m frob-core/Cargo.toml
+	VIRTUAL_ENV=$(CURDIR)/.venv CARGO_TARGET_DIR=$(CARGO_TARGET_DIR) uvx maturin develop --uv --release -m strata-core/Cargo.toml
 
 # ---------- standalone tool install (T-0133) ----------
 
