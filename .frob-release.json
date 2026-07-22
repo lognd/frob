@@ -1007,11 +1007,14 @@
     "src/frob/strata/_policy.py::CompiledPolicies.enabling": "7eee91db96234c0e7d76e0452bff1cbebe0d1ebb3af91805f14fe47df719647f",
     "src/frob/strata/_policy.py::CompiledPolicy": "92c429f7833c897c736c47aad61a70aeda0eb9594e2a46415cd980f6bd80f4a7",
     "src/frob/strata/_policy.py::compile_policies": "136c3f4c1638a64b8630edd1775a4435619f9beafa57f5b5e12da9b7f81d454a",
-    "src/frob/strata/_reliability.py::RELIABILITY_RULES": "72e46ffa455745f1e3d3f2f714d80d91d41f7babda99c306540d7a80a51c1b2a",
+    "src/frob/strata/_reliability.py::RELIABILITY_RULES": "da4ef0225f8f5d588436cd4b18593c1d3315cb272bed8e9a0ba4f81a6756636c",
+    "src/frob/strata/_reliability.py::REL_MISSING_HEALTH": "fa4769be80539554ccc9dd9642add63c0bddfd946e7f9a3e03fa60ba511d5464",
     "src/frob/strata/_reliability.py::REL_MISSING_TIMEOUT": "dc42b79399908aebccc2c6a9d8e91104386672d9a651b37e014f0d9792d45d94",
+    "src/frob/strata/_reliability.py::REL_UNPROVEN_HEALTH": "91fea9cb2b6478655754de0437b044e375d3b6571f6f40233b3e63315149a8bc",
     "src/frob/strata/_reliability.py::REL_UNPROVEN_TIMEOUT": "e2b9a4ba0dccbf4f3ce510d348c81abfe6d8152a4a1016f301f1259e0054d993",
     "src/frob/strata/_reliability.py::ReliabilityReport": "8afb603e4cd13d2481ba6eb01bfedade1c8303d594189ce1cff2fe53a708fb97",
     "src/frob/strata/_reliability.py::ReliabilityViolation": "7c48e2083a16aec8764faafe14db74d59595f65ccef67ba8d6f9bd4d4bed4c28",
+    "src/frob/strata/_reliability.py::check_reliability_health": "207bc86c8b1882101e416bc9abe8d64b1bdbd5ab12111bad211580fd9e9267c3",
     "src/frob/strata/_reliability.py::check_reliability_timeouts": "b26d57a237579109b19f207cd3df1656e2940dbb023754921e84a88e4d1d16d6",
     "src/frob/strata/_report.py::render_report": "d322844685033530fec5d29b63965ed4f6151455375ed52a75d7b748064f06c8",
     "src/frob/strata/_report.py::summarize": "0c0ec861027414e9d1831f4bd16fc65b593cfa0936a991d414f270909daed80d",
@@ -1296,5 +1299,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.95.0"
+  "version": "0.96.0"
 }

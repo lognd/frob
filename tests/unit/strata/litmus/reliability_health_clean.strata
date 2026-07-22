@@ -1,0 +1,28 @@
+// reliability_health_clean.strata -- T-0644 REL210 litmus: the clean
+// twin of reliability_health_missing_vuln.strata -- every long-lived
+// service/daemon node (unit/service marker) discharges the HEALTH
+// obligation by declaring `attr health;`. A non-daemon node with no
+// health obligation at all is untouched (REL210 only applies to
+// unit/service nodes). REL210 must not fire.
+//
+// tested end to end by tests/unit/strata/test_reliability.py.
+
+module reliability_health_clean
+
+node api : trusted {
+    clearance Internal;
+    unit;
+    attr health;
+}
+
+node worker_svc : trusted {
+    clearance Internal;
+    service;
+    attr health;
+}
+
+node plain_store : trusted {
+    clearance Internal;
+}
+
+// frob:waive REF002 reason="litmus fixture read by exactly one dedicated test module by design (T-0145/T-0255/T-0699/T-0640/T-0644 litmus suites); a second consumer would not be genuine"

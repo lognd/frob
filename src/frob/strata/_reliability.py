@@ -56,6 +56,43 @@ evidence, not a specific bound duration -- `_crash.py`'s existing
 check into a crash contract) is a SEPARATE, narrower mechanism this
 module does not duplicate or replace; a future grammar ticket adding a
 real `timeout <quantity>` flow clause could unify the two, not this one.
+
+T-0644 (child of the same T-0331 epic) adds a THIRD, NODE-level pair to
+this same family rather than a separate module (dispatch precedent:
+"add your REL2xx rule alongside REL200/REL201" -- one home, no
+duplicate rule-module shape per obligation):
+
+  - REL210 missing health surface: a long-lived service/daemon node
+    (`node.attrs` carries `unit` -- a systemd unit, T-0261's std.host
+    surface -- or `service` -- the Windows SCM analog, same module) with
+    no `health` attr declared and no exemption. Deny-by-default, same
+    shape as REL200.
+  - REL211 unproven health surface: a node DOES declare `health`, but its
+    bound code (`_code_binding.py::bind_code`) carries no real
+    health/liveness/readiness-probe-shaped token -- the same PROVABILITY
+    CONSTRAINT discipline REL201 already established, reusing the exact
+    same "no bound code -> uncheckable, not unproven" ceiling.
+
+REL210/REL211 are deliberately NOT added to `_waive.py::
+MULTI_INSTANCE_WAIVER_FAMILIES`, unlike REL200/REL201: a node has at
+most ONE `unit`/`service` marker and at most one possible REL210/REL211
+finding each (there is no per-flow multiplicity here -- a node either
+lacks a health declaration or its one declared surface is unproven), so
+a bare `waive "REL210" reason="...";` names exactly one thing, the same
+"single-instance-per-node families keep the bare-rule form" carve-out
+`_waive.py`'s own module docstring already documents for LINT/PII/
+COMPLIANCE. Registering a single-fire rule there would force a
+meaningless `RULE:SUBTARGET` split for no real sub-target.
+
+GRAMMAR-DATA CEILING, HONESTLY (health): unlike `timeout`'s digit-led-
+literal ceiling, `health` needs no magnitude -- it is a bare presence
+marker exactly like `async`/`local`, so no strata-core grammar change is
+needed here at all. REL211's code-side proof is a syntactic token scan
+(`_HEALTH_TOKEN_RE`) over the node's bound source for common health/
+liveness/readiness endpoint or probe shapes (e.g. a `/health`-style
+route, a `livenessProbe`/`readinessProbe` k8s-manifest-style key, or a
+`health_check`/`healthz` identifier) -- the same "presence of evidence,
+not a specific endpoint value" honesty line REL201 draws for `timeout=`.
 """
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: this file's \
 # 'only' hits are source-level design-rationale/scope-cut prose (docstrings \
@@ -93,14 +130,46 @@ REL_MISSING_TIMEOUT = "REL200"
 # frob:doc docs/strata/reliability.md#rel2xx-timeout-obligation-t-0640
 REL_UNPROVEN_TIMEOUT = "REL201"
 
-#: Every REL2xx rule id this module can emit -- the `in_scope` set
-#: `_apply_reliability_waivers` hands to `apply_waivers` (module
-#: docstring: waiver staleness must be judged only against the rule ids
-#: this caller actually owns, `_waive.py`'s `in_scope` discipline).
+#: `frob sys audit` rule id for REL210 missing health surface: a long-
+#: lived service/daemon node with no `health` attr and no exemption.
+# frob:doc docs/strata/reliability.md#rel21x-health-obligation-t-0644
+REL_MISSING_HEALTH = "REL210"
+
+#: `frob sys audit` rule id for REL211 unproven health surface: a node
+#: declares `health`, but its bound code has no real health/liveness/
+#: readiness-probe-shaped token evidencing it (PROVABILITY CONSTRAINT,
+#: T-0331).
+# frob:doc docs/strata/reliability.md#rel21x-health-obligation-t-0644
+REL_UNPROVEN_HEALTH = "REL211"
+
+#: Every REL2xx rule id EITHER entrypoint in this module can emit --
+#: used by `_audit.py::_gap_rule_in_scope`'s cross-family exclusion
+#: (that predicate legitimately needs the whole family, since it only
+#: needs to know "does some OTHER caller already own this rule id",
+#: never "is this specific waiver stale against MY findings"). NOT used
+#: for `_apply_reliability_waivers`' own `in_scope` -- each entrypoint
+#: passes its OWN narrower family there (`_TIMEOUT_RULES`/
+#: `_HEALTH_RULES` below); see `_apply_reliability_waivers`'s docstring
+#: for the real regression sharing this superset there caused.
 # frob:doc docs/strata/reliability.md#rel2xx-timeout-obligation-t-0640
 RELIABILITY_RULES: frozenset[str] = frozenset(
-    {REL_MISSING_TIMEOUT, REL_UNPROVEN_TIMEOUT}
+    {
+        REL_MISSING_TIMEOUT,
+        REL_UNPROVEN_TIMEOUT,
+        REL_MISSING_HEALTH,
+        REL_UNPROVEN_HEALTH,
+    }
 )
+
+#: `check_reliability_timeouts`' OWN rule family -- the `in_scope` set it
+#: hands `_apply_reliability_waivers`, never the full `RELIABILITY_RULES`
+#: (module docstring on `_apply_reliability_waivers`: a shared superset
+#: made the health entrypoint misjudge timeout waivers stale, and vice
+#: versa in principle).
+_TIMEOUT_RULES: frozenset[str] = frozenset({REL_MISSING_TIMEOUT, REL_UNPROVEN_TIMEOUT})
+
+#: `check_reliability_health`'s OWN rule family -- see `_TIMEOUT_RULES`.
+_HEALTH_RULES: frozenset[str] = frozenset({REL_MISSING_HEALTH, REL_UNPROVEN_HEALTH})
 
 #: Flow attr declaring a caller-side timeout obligation discharged
 #: (module docstring: presence-only, no magnitude -- the grammar-data
@@ -133,22 +202,53 @@ _LOCAL_ATTR = "local"
 #: `_contention.py`'s MODE-BLIND framing already established for SYS203.
 _TIMEOUT_TOKEN_RE = re.compile(r"\btimeout\s*=")
 
+#: Node attrs marking a long-lived service/daemon node (T-0261 std.host
+#: surface: `_host.py::_UNIT_ATTR` for a systemd unit, `_host.py::
+#: _SERVICE_ATTR` for a Windows SCM service) -- the population REL210/
+#: REL211 apply to. Local literal copies, not an import from `_host.py`,
+#: for the same import-cycle-avoidance reason `_code_binding.py` keeps
+#: its own `_MANAGED_ATTR` copy (module docstring precedent).
+_UNIT_ATTR = "unit"
+_SERVICE_ATTR = "service"
+_DAEMON_ATTRS: frozenset[str] = frozenset({_UNIT_ATTR, _SERVICE_ATTR})
+
+#: Node attr declaring a health/liveness/readiness obligation discharged
+#: (presence-only bare marker, same shape as `_ASYNC_ATTR`/`_LOCAL_ATTR`
+#: -- module docstring's "no grammar ceiling here at all" note).
+_HEALTH_ATTR = "health"
+
+#: Regex proving a real health/liveness/readiness-probe-shaped token in
+#: bound source text (REL211) -- deliberately narrow (a syntactic token
+#: scan, same honesty line `_TIMEOUT_TOKEN_RE` draws): matches a
+#: `/health`-style HTTP route, a k8s-manifest-style `livenessProbe`/
+#: `readinessProbe` key, or a `health_check`/`healthz` identifier.
+_HEALTH_TOKEN_RE = re.compile(
+    r"(/health\w*|/live(?:z|ness)?|/ready(?:z|iness)?"
+    r"|livenessProbe|readinessProbe|health_check|healthz)",
+    re.IGNORECASE,
+)
+
 
 # frob:doc docs/strata/reliability.md#rel2xx-timeout-obligation-t-0640
 class ReliabilityViolation(BaseModel):
-    """One REL200/REL201 finding: rule id, the REPORTING node (the flow's
-    `src`, the caller who owes the timeout obligation), a human-readable
-    detail, and `sub_target` (the flow id -- `_waive.py::
-    MULTI_INSTANCE_WAIVER_FAMILIES`'s required `RULE:SUBTARGET` waiver
-    discipline, since one node can originate several flows). Mirrors
-    `_contention.py::ResourceContentionViolation`'s shape deliberately."""
+    """One REL2xx finding: rule id, the REPORTING node (for REL200/REL201
+    the flow's `src`, the caller who owes the timeout obligation; for
+    REL210/REL211 the daemon node itself), a human-readable detail, and
+    `sub_target`. REL200/REL201 always set `sub_target` to the flow id
+    (`_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES`'s required
+    `RULE:SUBTARGET` waiver discipline, since one node can originate
+    several flows). REL210/REL211 leave it `None` -- single-instance-per-
+    node (module docstring: at most one health finding per node per
+    rule), the same bare-rule waiver carve-out LINT/PII/COMPLIANCE use.
+    Mirrors `_contention.py::ResourceContentionViolation`'s shape
+    deliberately."""
 
     model_config = ConfigDict(frozen=True)
 
     rule: str
     node: str
     detail: str
-    sub_target: str
+    sub_target: str | None = None
 
 
 # frob:doc docs/strata/reliability.md#rel2xx-timeout-obligation-t-0640
@@ -296,21 +396,134 @@ def _unproven_timeout_violations(
     return violations
 
 
+def _is_daemon_node(attrs: tuple[str, ...]) -> bool:
+    """Whether a node's `attrs` carries `unit` or `service` (T-0261
+    std.host long-lived daemon markers) -- the population REL210/REL211
+    apply to."""
+    return any(marker in attrs for marker in _DAEMON_ATTRS)
+
+
+def _has_health_attr(attrs: tuple[str, ...]) -> bool:
+    """Whether a node's `attrs` carries the bare `health` marker (module
+    docstring: presence-only, no grammar ceiling for this one)."""
+    return _HEALTH_ATTR in attrs
+
+
+def _missing_health_violations(model: KernelModel) -> list[ReliabilityViolation]:
+    """REL210: every long-lived service/daemon node (`_is_daemon_node`)
+    with no `health` attr declared -- deny-by-default, same shape as
+    REL200 but node-scoped rather than flow-scoped."""
+    violations: list[ReliabilityViolation] = []
+    for node in model.nodes:
+        if not _is_daemon_node(node.attrs) or _has_health_attr(node.attrs):
+            continue
+        _log.warning(
+            "reliability: REL210 node %s declares no health/liveness obligation",
+            node.id,
+        )
+        violations.append(
+            ReliabilityViolation(
+                rule=REL_MISSING_HEALTH,
+                node=node.id,
+                detail=(
+                    f"node {node.id} is a long-lived service/daemon (unit/service) "
+                    "with no health/liveness/readiness obligation (no `health` attr)"
+                ),
+            )
+        )
+    return violations
+
+
+def _files_evidence_health(paths: list[str], root: Path) -> bool:
+    """Whether any of `paths` (root-relative) contains a real health/
+    liveness/readiness-probe-shaped token (`_HEALTH_TOKEN_RE`) -- REL211's
+    proof-against-code body, mirroring `_files_evidence_timeout` exactly
+    (unreadable files skipped, never treated as proof)."""
+    for rel in paths:
+        try:
+            text = (root / rel).read_text(encoding="utf-8")
+        except OSError:
+            _log.warning("reliability: REL211 could not read bound file %s", rel)
+            continue
+        if _HEALTH_TOKEN_RE.search(text):
+            return True
+    return False
+
+
+def _unproven_health_violations(
+    model: KernelModel, owner_by_node: dict[str, list[str]], root: Path
+) -> list[ReliabilityViolation]:
+    """REL211: every daemon node declaring `health` whose bound code HAS
+    at least one file (`_node_has_bound_code`) but that code carries no
+    real health/liveness/readiness-probe-shaped token (PROVABILITY
+    CONSTRAINT: bare declaration is never sufficient). A node with NO
+    bound code at all is skipped -- uncheckable, not unproven (module
+    docstring, same ceiling REL201 draws)."""
+    violations: list[ReliabilityViolation] = []
+    for node in model.nodes:
+        if not _has_health_attr(node.attrs):
+            continue
+        if not _node_has_bound_code(node.id, owner_by_node):
+            continue
+        if _files_evidence_health(owner_by_node[node.id], root):
+            continue
+        _log.warning(
+            "reliability: REL211 node %s declares health but its bound code "
+            "has no real health/liveness/readiness token",
+            node.id,
+        )
+        violations.append(
+            ReliabilityViolation(
+                rule=REL_UNPROVEN_HEALTH,
+                node=node.id,
+                detail=(
+                    f"node {node.id} declares health, but its bound code has no "
+                    "real health/liveness/readiness-probe-shaped token "
+                    "(proof-against-code, T-0331 PROVABILITY CONSTRAINT)"
+                ),
+            )
+        )
+    return violations
+
+
 def _apply_reliability_waivers(
-    model: KernelModel, violations: list[ReliabilityViolation]
+    model: KernelModel,
+    violations: list[ReliabilityViolation],
+    *,
+    family: frozenset[str],
 ):  # noqa: ANN201, E501
     """Apply every node's `waive` clause to `violations` (T-0174), exactly
     `_contention.py::_apply_contention_waivers`'s pattern reused for the
     REL2xx family: `sub_target_of` returns `ReliabilityViolation.
-    sub_target` (the flow id) since both rules are registered in
-    `MULTI_INSTANCE_WAIVER_FAMILIES` and always carry one."""
+    sub_target` -- the flow id for REL200/REL201 (registered in
+    `MULTI_INSTANCE_WAIVER_FAMILIES`, always carry one), or `None` for
+    REL210/REL211 (single-instance-per-node, module docstring).
+
+    `in_scope` is scoped to the CALLER's own `family` (e.g.
+    `{REL_MISSING_TIMEOUT, REL_UNPROVEN_TIMEOUT}` for
+    `check_reliability_timeouts`, `{REL_MISSING_HEALTH,
+    REL_UNPROVEN_HEALTH}` for `check_reliability_health`), NOT the shared
+    `RELIABILITY_RULES` superset -- a real reviewer-caught regression:
+    `check_reliability_health` only ever produces REL210/REL211
+    violations, so a shared `in_scope=RELIABILITY_RULES` made it treat
+    every declared REL200/REL201 waiver (which it can never match, since
+    it never sees a REL200/REL201 finding) as STALE, reddening `frob sys
+    audit`'s reliability leg on a repo with pre-existing, genuinely-
+    effective REL200 waivers (e.g. this repo's own `graph_cache__fill`/
+    `graph_cache__inval_f_parse`) even though `check_reliability_timeouts`
+    correctly matched and applied those SAME waivers in its own pass. The
+    `apply_waivers` docstring's own warning about this exact hazard
+    (`_waive.py`, "a caller passes an `in_scope` predicate naming exactly
+    the rule ids it owns") -- this function previously violated it by
+    passing the whole family to both callers instead of each caller's own
+    slice."""
     return apply_waivers(
         model,
         violations,
         rule_of=lambda v: v.rule,
         target_of=lambda v: v.node,
         sub_target_of=lambda v: v.sub_target,
-        in_scope=lambda rule: rule in RELIABILITY_RULES,
+        in_scope=lambda rule: rule in family,
     )
 
 
@@ -334,7 +547,7 @@ def check_reliability_timeouts(
     violations: list[ReliabilityViolation] = []
     violations.extend(_missing_timeout_violations(model))
     violations.extend(_unproven_timeout_violations(model, owner_by_node, root))
-    applied = _apply_reliability_waivers(model, violations)
+    applied = _apply_reliability_waivers(model, violations, family=_TIMEOUT_RULES)
     waived = tuple(wf.finding for wf in applied.waived)
     stale = tuple(
         ReliabilityViolation(
@@ -358,11 +571,65 @@ def check_reliability_timeouts(
     return Ok(ReliabilityReport(violations=tuple(applied.kept) + stale, waived=waived))
 
 
+# frob:doc docs/strata/reliability.md#rel21x-health-obligation-t-0644
+# frob:ticket T-0644
+# frob:tests tests/unit/strata/test_reliability.py::TestMissingHealth.test_daemon_without_health_fires  # noqa: E501
+def check_reliability_health(
+    model: KernelModel, root: Path
+) -> Result[ReliabilityReport, StrataError]:
+    """The REL21x HEALTH-obligation entrypoint (T-0644, sibling of
+    `check_reliability_timeouts`): REL210 (missing health surface) plus
+    REL211 (declared-but-unproven health surface, proof-against-code)
+    across every long-lived service/daemon node in `model`, waivers
+    already applied. `root` is the repo root `_code_binding.py::
+    bind_code` binds against -- `Err` propagates `bind_code`'s
+    `AmbiguousCodeBinding` unchanged (deny by default, the same
+    discipline `check_reliability_timeouts` uses). A separate entrypoint
+    from `check_reliability_timeouts` (rather than folded into it) keeps
+    each function's name honest about what it actually checks; both share
+    this module's `RELIABILITY_RULES`/waiver-application/`_owner_index`
+    machinery (charter: no duplication) and both are wired into `frob sys
+    audit` by `frob.app.sys_runner`."""
+    bound = bind_code(model, root)
+    if bound.is_err:
+        return Err(bound.danger_err)
+    owner_by_node = _owner_index(bound.danger_ok.owner)
+
+    violations: list[ReliabilityViolation] = []
+    violations.extend(_missing_health_violations(model))
+    violations.extend(_unproven_health_violations(model, owner_by_node, root))
+    applied = _apply_reliability_waivers(model, violations, family=_HEALTH_RULES)
+    waived = tuple(wf.finding for wf in applied.waived)
+    stale = tuple(
+        ReliabilityViolation(
+            rule="RELWAIVE002",
+            node=stale_waiver.node,
+            sub_target=stale_waiver.rule,
+            detail=(
+                f"waive {stale_waiver.rule!r} on node {stale_waiver.node} "
+                f"reason={stale_waiver.reason!r} is stale -- no matching "
+                f"finding fired this run"
+            ),
+        )
+        for stale_waiver in applied.stale
+    )
+    _log.info(
+        "reliability: %d health violation(s), %d waived, %d stale waiver(s)",
+        len(applied.kept) + len(stale),
+        len(waived),
+        len(applied.stale),
+    )
+    return Ok(ReliabilityReport(violations=tuple(applied.kept) + stale, waived=waived))
+
+
 __all__ = [
     "RELIABILITY_RULES",
+    "REL_MISSING_HEALTH",
     "REL_MISSING_TIMEOUT",
+    "REL_UNPROVEN_HEALTH",
     "REL_UNPROVEN_TIMEOUT",
     "ReliabilityReport",
     "ReliabilityViolation",
+    "check_reliability_health",
     "check_reliability_timeouts",
 ]

@@ -1,0 +1,27 @@
+// reliability_health_waived.strata -- T-0644 REL210 litmus: the same
+// missing-health shape as reliability_health_missing_vuln.strata, but
+// api_missing declares `waive "REL210" reason ...` (bare rule, no
+// sub-target -- REL210/REL211 are single-instance-per-node, NOT
+// registered in `_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES`, unlike
+// REL200/REL201). api_missing's finding must move to
+// `ReliabilityReport.waived`. api_other (a second, unwaived
+// missing-health daemon node) must remain a kept violation, proving a
+// waiver on one node does not silently discharge a sibling node's
+// finding too.
+//
+// tested end to end by tests/unit/strata/test_reliability.py.
+
+module reliability_health_waived
+
+node api_missing : trusted {
+    clearance Internal;
+    unit;
+    waive "REL210" reason "known dev-only daemon, tracked in T-0644" ticket "T-0644";
+}
+
+node api_other : trusted {
+    clearance Internal;
+    unit;
+}
+
+// frob:waive REF002 reason="litmus fixture read by exactly one dedicated test module by design (T-0145/T-0255/T-0699/T-0640/T-0644 litmus suites); a second consumer would not be genuine"

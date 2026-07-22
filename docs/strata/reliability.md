@@ -1,4 +1,4 @@
-# strata reliability family: REL2xx (T-0640)
+# strata reliability family: REL2xx (T-0640, T-0644)
 
 Home for the T-0331 systems-checks epic's reliability catalog line "TIMEOUT
 on every remote/cross-boundary flow" -- the first REL2xx family to land.
@@ -87,6 +87,67 @@ node caller : trusted {
 }
 ```
 
+## REL21x: HEALTH obligation (T-0644)
+
+`_reliability.py::check_reliability_health` reads `KernelModel.nodes`
+(no new kernel field, charter law 1) to find every long-lived service/
+daemon node -- one that carries the T-0261 std.host `unit` (systemd) or
+`service` (Windows SCM) attr -- with an undischarged (or unproven)
+health/liveness/readiness obligation:
+
+- **REL210 missing health surface** -- a `unit`/`service` node with no
+  `health` attr and no exemption. Deny-by-default, node-scoped analog of
+  REL200.
+- **REL211 unproven health surface** -- a node DOES declare `health`, but
+  the T-0331 PROVABILITY CONSTRAINT forbids discharging it by bare
+  declaration alone: the node must have at least one file bound to it
+  (`_code_binding.py::bind_code`) containing a real health/liveness/
+  readiness-probe-shaped token. A node with no bound code at all is
+  UNCHECKABLE, not unproven -- the same ceiling REL201 draws.
+
+### Surface vocabulary
+
+One Node `attr` marker, bare (no `=value`):
+
+```
+node api : trusted {
+    unit;           // T-0261 std.host: long-lived systemd daemon
+    health;         // discharges REL210; REL211 then checks api's bound code
+}
+
+node batch_job : trusted {
+    unit;           // long-lived daemon, but declares no health surface
+    // REL210 fires here
+}
+```
+
+### GRAMMAR-DATA CEILING, HONESTLY
+
+Unlike `timeout`, `health` needs no magnitude -- it is a bare presence
+marker exactly like `async`/`local`, so (unlike T-0640) NO strata-core
+grammar change is even relevant here: there is no digit-led-literal
+ceiling to disclose for this family. REL211's proof-against-code is a
+syntactic token scan (a `/health`-style route, a k8s-manifest-style
+`livenessProbe`/`readinessProbe` key, or a `health_check`/`healthz`
+identifier) over the node's bound source, not a semantic route-binding --
+the same "ship what current tooling supports" honesty line REL201 draws
+for `timeout=`.
+
+### Waiver channel
+
+REL210/REL211 do NOT join `_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES`,
+unlike REL200/REL201: a node carries at most one `unit`/`service` marker
+and can fire at most one REL210 and one REL211 finding, so a bare-rule
+`waive` clause names exactly one thing (the same carve-out LINT/PII/
+COMPLIANCE already use):
+
+```
+node legacy_daemon : trusted {
+    unit;
+    waive "REL210" reason "legacy service, health endpoint tracked in T-0644-followup" ticket "T-0644";
+}
+```
+
 ## See also
 
 - `docs/strata/host.md#resource-contention-sys2xx-t-0699` -- the SYS2xx
@@ -94,6 +155,7 @@ node caller : trusted {
 - `docs/strata/boundary.md#crash-contracts-and-error-totality-adjacent-claims`
   -- T-0074's narrower, magnitude-aware no-hang check.
 - `src/frob/strata/_reliability.py` -- `check_reliability_timeouts`,
-  `ReliabilityViolation`, `ReliabilityReport`, REL200/REL201.
-- `tests/unit/strata/test_reliability.py` -- the REL200/REL201
-  firing/clean/waived/uncheckable litmus and unit coverage.
+  `check_reliability_health`, `ReliabilityViolation`, `ReliabilityReport`,
+  REL200/REL201/REL210/REL211.
+- `tests/unit/strata/test_reliability.py` -- the REL200/REL201/REL210/
+  REL211 firing/clean/waived/uncheckable litmus and unit coverage.

@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.96.0] - unreleased
+
+- T-0644: strata: HEALTH liveness+readiness obligation on every service node
+
 ## [0.95.0] - unreleased
 
 - T-0716: ticket list: overlay live lease state so worktree-started tickets show in-progress on main

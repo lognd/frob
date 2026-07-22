@@ -60,6 +60,7 @@ from frob.strata import (
     ReliabilityReport,
     ResourceContentionReport,
     SelfConformReport,
+    check_reliability_health,
     check_reliability_timeouts,
     check_resource_contention,
     check_self_conformance,
@@ -698,12 +699,15 @@ def _log_reliability_violations(report: ReliabilityReport) -> None:
 
 # frob:doc docs/strata/reliability.md#rel2xx-timeout-obligation-t-0640
 # frob:ticket T-0640
+# frob:ticket T-0644
 def _print_reliability_report(report: ReliabilityReport) -> None:
-    """Print `frob sys audit`'s REL2xx TIMEOUT-obligation summary (T-0640
-    wiring `check_reliability_timeouts` into production, mirroring T-0724's
-    contention wiring): every REL200 (missing timeout)/REL201 (unproven
-    timeout) violation, one per line, matching `_print_contention_report`'s
-    CI-parseable style."""
+    """Print `frob sys audit`'s REL2xx reliability summary (T-0640 wiring
+    `check_reliability_timeouts` into production, mirroring T-0724's
+    contention wiring; T-0644 adds `check_reliability_health`'s findings
+    into the SAME combined report `_run_audit` builds): every REL200
+    (missing timeout)/REL201 (unproven timeout)/REL210 (missing health)/
+    REL211 (unproven health) violation, one per line, matching
+    `_print_contention_report`'s CI-parseable style."""
     _log_waived_reliability(report)
     if not report.violations:
         _log_reliability_proved(report)
@@ -813,12 +817,13 @@ def _evaluate_audit(model: KernelModel, root: Path):  # noqa: ANN201
 # pointed at OUR src/ tree, reconciled against `[strata.code_map]`/
 # `[strata.capability_map]` in frob.toml).
 # frob:ticket T-0640
+# frob:ticket T-0644
 def _run_audit(cfg: AppConfig) -> None:
     """`frob sys audit`: run the full exhaustiveness + self-conformance +
     SYS2xx resource-contention + REL2xx reliability check (see the comment
     above; T-0724 added the resource-contention leg, T-0640 added the
-    reliability leg) and exit nonzero with a named-gap summary when any
-    part fails."""
+    REL200/REL201 timeout leg, T-0644 added the REL210/REL211 health leg)
+    and exit nonzero with a named-gap summary when any part fails."""
     root = _resolve_design_root(cfg, "audit")
     loaded = _load_audit_model(root)
     if loaded is None:
@@ -831,16 +836,24 @@ def _run_audit(cfg: AppConfig) -> None:
     if reliability.is_err:
         _log.error("sys audit: reliability: %s", reliability.danger_err)
         sys.exit(1)
+    health = check_reliability_health(model, root)
+    if health.is_err:
+        _log.error("sys audit: reliability health: %s", health.danger_err)
+        sys.exit(1)
+    combined_reliability = ReliabilityReport(
+        violations=reliability.danger_ok.violations + health.danger_ok.violations,
+        waived=reliability.danger_ok.waived + health.danger_ok.waived,
+    )
     _print_audit_report(report)
     _print_selfconform_report(selfconform)
     _print_contention_report(contention)
-    _print_reliability_report(reliability.danger_ok)
+    _print_reliability_report(combined_reliability)
     matrix_proved = _print_capability_matrix_report()
     if (
         not report.proved
         or selfconform.violations
         or contention.violations
-        or reliability.danger_ok.violations
+        or combined_reliability.violations
         or not matrix_proved
     ):
         sys.exit(1)

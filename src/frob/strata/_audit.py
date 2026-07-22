@@ -968,15 +968,17 @@ def _apply_gap_waivers(
 
 def _gap_rule_in_scope(rule: str) -> bool:
     """Excludes rule ids that own their own waiver channel
-    (SYS100-102, HOST001/HOST002, SYS200-203, REL200/REL201)."""
+    (SYS100-102, HOST001/HOST002, SYS200-203, REL200/REL201/REL210/
+    REL211)."""
     # T-0174: this predicate sees every THREAT/LINT/PII/compliance/
     # CVE-fingerprint finding -- everything EXCEPT SYS100-102 (owned by
     # `check_self_conformance`), HOST001/HOST002 (owned by
     # `evaluate_host_isolation_waived`, T-0280), SYS200-203 (T-0724:
     # owned by `check_resource_contention`'s own `apply_waivers` call,
-    # `_contention.py::_apply_contention_waivers`), and REL200/REL201
-    # (T-0640: owned by `check_reliability_timeouts`'s own `apply_waivers`
-    # call, `_reliability.py::_apply_reliability_waivers`) -- each of
+    # `_contention.py::_apply_contention_waivers`), and REL200/REL201/
+    # REL210/REL211 (T-0640/T-0644: owned by `check_reliability_timeouts`/
+    # `check_reliability_health`'s shared `apply_waivers` call,
+    # `_reliability.py::_apply_reliability_waivers`) -- each of
     # those owns its own waiver channel (apply_waivers' `in_scope`
     # docstring). Without this exclusion, a legitimate `waive "SYS20X:..."`
     # (or, per T-0640, `waive "REL20X:..."`) clause was reported STALE

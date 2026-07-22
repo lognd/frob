@@ -244,11 +244,14 @@ from frob.strata._pii import (
 from frob.strata._plan import MARKER_PREFIX, PlannedTicket, PlanResult, plan_obligations
 from frob.strata._policy import CompiledPolicies, CompiledPolicy, compile_policies
 from frob.strata._reliability import (
+    REL_MISSING_HEALTH,
     REL_MISSING_TIMEOUT,
+    REL_UNPROVEN_HEALTH,
     REL_UNPROVEN_TIMEOUT,
     RELIABILITY_RULES,
     ReliabilityReport,
     ReliabilityViolation,
+    check_reliability_health,
     check_reliability_timeouts,
 )
 from frob.strata._report import render_report, summarize
@@ -438,7 +441,9 @@ __all__ = [
     "ScenarioResult",
     "ScopeSpec",
     "RELIABILITY_RULES",
+    "REL_MISSING_HEALTH",
     "REL_MISSING_TIMEOUT",
+    "REL_UNPROVEN_HEALTH",
     "REL_UNPROVEN_TIMEOUT",
     "ReliabilityReport",
     "ReliabilityViolation",
@@ -485,6 +490,7 @@ __all__ = [
     "check_privacy_policy",
     "check_regulation_catalog_completeness",
     "check_regulation_discharge",
+    "check_reliability_health",
     "check_reliability_timeouts",
     "check_resource_contention",
     "check_self_conformance",

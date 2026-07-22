@@ -1,0 +1,27 @@
+// reliability_health_missing_vuln.strata -- T-0644 REL210 litmus: a
+// long-lived daemon node (unit marker) with no `health` attr and no
+// exemption -- must fire. api_ok (declares `attr health;`) must NOT
+// fire. plain_store (no unit/service marker at all) is not a daemon
+// node and must NOT fire either, proving REL210 is scoped to
+// unit/service nodes only, not every node in the model.
+//
+// tested end to end by tests/unit/strata/test_reliability.py.
+
+module reliability_health_missing_vuln
+
+node api_missing : trusted {
+    clearance Internal;
+    unit;
+}
+
+node api_ok : trusted {
+    clearance Internal;
+    unit;
+    attr health;
+}
+
+node plain_store : trusted {
+    clearance Internal;
+}
+
+// frob:waive REF002 reason="litmus fixture read by exactly one dedicated test module by design (T-0145/T-0255/T-0699/T-0640/T-0644 litmus suites); a second consumer would not be genuine"
