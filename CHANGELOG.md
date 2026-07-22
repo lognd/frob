@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.93.0] - unreleased
+
+- T-0627: frob check: chunked/stage-wise invocation that stays under agent foreground caps
+
 ## [0.92.0] - unreleased
 
 - T-0736: scaffold conformance: managed boilerplate blocks (Makefile shim, guard hooks, gitignore) drift-checked by doctor across all repos

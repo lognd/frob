@@ -27,6 +27,7 @@ frob check src/ --json                 # machine-readable output
 <!-- frob:describes src/frob/check/__init__.py::run_check_rust -->
 <!-- frob:describes src/frob/check/__init__.py::run_check_ts -->
 <!-- frob:describes src/frob/check/__init__.py::detect_project_type -->
+<!-- frob:describes src/frob/check/__init__.py::available_stages -->
 
 ```python
 # frob/check/__init__.py
@@ -62,6 +63,10 @@ def run_check_ts(root: Path, *, skip_tsc=False, skip_eslint=False, ...,
 def detect_project_type(root: Path) -> str
     # Sentinel-file auto-detection: 'rust'|'cpp'|'python'|'typescript'|
     # 'unknown', per the Auto-detection table below.
+def available_stages() -> list[str]
+    # Sorted `--only` stage-group alias names (T-0627): 'gates-fast',
+    # 'gates-native', 'gates-security', 'lint', 'static'. What
+    # `frob check --only list` prints.
 ```
 
 ## Python mode
@@ -109,13 +114,79 @@ frob check --only ruff --only gates    # run ruff and gates only
 frob check --stamp-coverage            # record coverage.xml as the current stamp, then exit
 frob check --stamp-baseline            # record current gate violations as the delta baseline, then exit
 frob check --only gates --delta        # gates stage reports only violations new since that baseline
+frob check --only list                 # print every stage-group name, one per line
+frob check --only lint                 # ruff + ty only (~1s on this repo)
+frob check --only static               # cycle/dup/arch/bind/exports (~18s)
+frob check --only gates-fast           # every thread-pool gate (~37s)
+frob check --only gates-native         # archgate/clones/perf (~15s)
+frob check --only gates-security       # sys/pii_structural/secrets/dead_symbols (~13s)
 ```
 
 `--only` accepts any stage name (`ruff`, `ty`, `cycle`, `dup`, `arch`, `bind`,
-`exports`, `gates`); when omitted, every non-skipped stage runs
-(gates included). `--stamp-coverage` is how `make coverage` records
-`.frob/coverage-stamp` after `pytest --cov` runs; TEST006 compares the stamp
-against the live graph snapshot on later `frob check` runs.
+`exports`, `gates`), any individual gate name (`frob.gates._ALL_GATES`,
+e.g. `doclink`, `archgate`), or a stage-group alias; when omitted, every
+non-skipped stage runs (gates included). `--stamp-coverage` is how `make
+coverage` records `.frob/coverage-stamp` after `pytest --cov` runs; TEST006
+compares the stamp against the live graph snapshot on later `frob check`
+runs.
+
+### Stage groups (`--only <group>`, T-0627)
+
+A full `frob check` (or `--only gates`) on a repo of this size can exceed
+the ~120s foreground cap a dispatched agent runs under, auto-backgrounding
+the command and stalling the agent on a notification that never arrives.
+`--only` accepts five stage-group aliases (`frob.check.available_stages()`,
+`frob.check._STAGE_GROUPS`) as budget-sized presets over the same
+tool/gate vocabulary, each measured comfortably under a ~90s per-stage
+target on this repo:
+
+| group            | members                                                    |
+|------------------|-------------------------------------------------------------|
+| `lint`           | `ruff`, `ty`                                                 |
+| `static`         | `cycle`, `dup`, `arch`, `bind`, `exports`                     |
+| `gates-fast`     | every thread-pool gate (drift, coverage, invariant, test, policy, doclink, docanchor, fuzz, release, decisions, tickets, refs, registry, docblocks, walk_lint, excludehazard, debt, render_lint, parse_failures, lang_conformance, lang_project_conformance, scope, prework) |
+| `gates-native`   | `archgate`, `clones`, `perf` (process-pool CPU-bound gates)   |
+| `gates-security` | `sys`, `pii_structural`, `secrets`, `dead_symbols` (the remaining process-pool gates) |
+
+`frob check --only list` discovers the current group names (print one per
+line; `--json` wraps them as `{"stages": [...]}`) rather than hardcoding
+them, since new groups may be added later. The sanctioned agent loop:
+
+```bash
+for s in $(uv run frob check --only list); do
+  uv run frob check --only "$s"
+done
+```
+
+A group name is pure sugar -- `--only lint` expands to exactly `--only
+ruff --only ty` before dispatch, so every other flag (`--ticket`, `--json`,
+`--delta`, `--base`) composes with a group unchanged, and mixing a group
+with individual stage/gate names in one `--only` list is additive.
+
+### `FROB_AGENT` full-check refusal (T-0627)
+
+When the `FROB_AGENT` environment variable (T-0574) is set -- true for
+every dispatched worktree agent -- a bare `frob check` with no `--only`
+selection (and not `--stamp-coverage`/`--stamp-baseline`, which already
+exit early) REFUSES immediately (exit 1) instead of running the full,
+cap-exceeding pass and stalling:
+
+```
+$ FROB_AGENT=1 frob check
+ERROR: frob check: refusing a full/unchunked run under FROB_AGENT (T-0627) --
+a full pass on this repo exceeds the ~120s agent foreground cap and
+auto-backgrounds, stalling a dispatched sub-agent forever waiting on a
+notification that can never arrive. Run the chunked loop instead: ...
+```
+
+Any `--only` selection (a stage group or a hand-picked name) bypasses the
+refusal -- it already is the chunked, budget-sized invocation the message
+steers toward. `FROB_ALLOW_FULL_CHECK=1` opts a specific invocation back
+into the full run, for the rare case a human/coordinator genuinely wants
+it from a `FROB_AGENT`-flagged shell. `--stamp-baseline` is deliberately
+NOT refused (a legitimate one-shot warm-up step, not a repeatable
+verification loop) but still runs the full undelta'd gates pass and can
+still exceed the cap -- see `docs/guides/agent-playbook.md` section 6.
 
 ## Run-scoped memoization
 

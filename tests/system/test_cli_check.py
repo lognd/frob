@@ -456,6 +456,146 @@ class TestCheckStampBaselineAndDelta:
         assert "TEST001" in out
 
 
+# frob:ticket T-0627
+class TestCheckStageGroups:
+    """`frob check --only <stage-group>`/`--only list` (T-0627): budget-sized
+    `--only` presets so an agent can loop stages under the ~120s foreground
+    cap instead of running the full check/gates pass in one invocation."""
+
+    # frob:ticket T-0627
+    def test_only_list_prints_stage_names(self, tmp_path):
+        # frob:tests tests/system/test_cli_check.py::TestCheckStageGroups.test_only_list_prints_stage_names
+        _make_project(tmp_path, "def add(x: int, y: int) -> int:\n    return x + y\n")
+        r = run("check", str(tmp_path), "--only", "list")
+        assert r.returncode == 0, r.stdout + r.stderr
+        names = [line for line in r.stdout.splitlines() if line.strip()]
+        assert names == sorted(names)
+        assert "lint" in names
+        assert "static" in names
+        assert "gates-fast" in names
+        assert "gates-native" in names
+        assert "gates-security" in names
+
+    # frob:ticket T-0627
+    def test_only_list_json_wraps_stages(self, tmp_path):
+        # frob:tests tests/system/test_cli_check.py::TestCheckStageGroups.test_only_list_json_wraps_stages
+        import json
+
+        _make_project(tmp_path, "def add(x: int, y: int) -> int:\n    return x + y\n")
+        r = run("check", str(tmp_path), "--only", "list", "--json")
+        assert r.returncode == 0, r.stdout + r.stderr
+        payload = json.loads(r.stdout)
+        assert "lint" in payload["stages"]
+
+    # frob:ticket T-0627
+    def test_available_stages_cover_every_gate_and_tool(self):
+        # frob:tests tests/system/test_cli_check.py::TestCheckStageGroups.test_available_stages_cover_every_gate_and_tool
+        from frob.check import _STAGE_GROUPS, available_stages
+        from frob.check import _TOOL_STAGES as tool_stages
+        from frob.gates import _ALL_GATES
+
+        assert available_stages() == sorted(_STAGE_GROUPS)
+        covered = frozenset().union(*_STAGE_GROUPS.values())
+        # Every tool/gate name lands in at least one group -- an agent
+        # looping every listed group must reach full coverage, not a
+        # silently-shrinking subset of `--only`'s real vocabulary. "gates"
+        # itself is `_TOOL_STAGES`'s meta-name for "run the gates stage at
+        # all" (never a real gate name in `_ALL_GATES`), so it is excluded
+        # here rather than required to appear inside some group.
+        assert (tool_stages - {"gates"}) | _ALL_GATES <= covered
+
+    # frob:ticket T-0627
+    def test_stage_group_expands_like_hand_listed_only(self, tmp_path):
+        # frob:tests tests/system/test_cli_check.py::TestCheckStageGroups.test_stage_group_expands_like_hand_listed_only
+        _make_project(tmp_path, "import os\n\ndef foo() -> None:\n    pass\n")
+        grouped = run(
+            "check", str(tmp_path), "--skip-tests", "--only", "lint", "--json"
+        )
+        hand_listed = run(
+            "check",
+            str(tmp_path),
+            "--skip-tests",
+            "--only",
+            "ruff",
+            "--only",
+            "ty",
+            "--json",
+        )
+        assert grouped.returncode == hand_listed.returncode
+        assert grouped.stdout == hand_listed.stdout
+
+
+# frob:ticket T-0627
+class TestCheckAgentRefusal:
+    """`frob check` refuses a bare/unchunked run when `FROB_AGENT` is set
+    (T-0627) -- fail-closed against the agent-foreground-cap stall instead
+    of walking into it; `FROB_ALLOW_FULL_CHECK=1` opts back in deliberately."""
+
+    # frob:ticket T-0627
+    def test_bare_check_refuses_under_frob_agent(self, tmp_path):
+        # frob:tests tests/system/test_cli_check.py::TestCheckAgentRefusal.test_bare_check_refuses_under_frob_agent
+        _make_project(tmp_path, "def add(x: int, y: int) -> int:\n    return x + y\n")
+        r = run(
+            "check",
+            str(tmp_path),
+            "--skip-tests",
+            env={"FROB_AGENT": "1"},
+        )
+        out = r.stdout + r.stderr
+        assert r.returncode == 1, out
+        assert "FROB_AGENT" in out
+        assert "--only" in out
+
+    # frob:ticket T-0627
+    def test_stage_selected_check_runs_under_frob_agent(self, tmp_path):
+        # frob:tests tests/system/test_cli_check.py::TestCheckAgentRefusal.test_stage_selected_check_runs_under_frob_agent
+        _make_project(tmp_path, "def add(x: int, y: int) -> int:\n    return x + y\n")
+        r = run(
+            "check",
+            str(tmp_path),
+            "--skip-tests",
+            "--only",
+            "lint",
+            env={"FROB_AGENT": "1"},
+        )
+        out = r.stdout + r.stderr
+        assert r.returncode == 0, out
+
+    # frob:ticket T-0627
+    def test_allow_full_check_override_bypasses_refusal(self, tmp_path):
+        # frob:tests tests/system/test_cli_check.py::TestCheckAgentRefusal.test_allow_full_check_override_bypasses_refusal
+        _make_project(tmp_path, "def add(x: int, y: int) -> int:\n    return x + y\n")
+        r = run(
+            "check",
+            str(tmp_path),
+            "--skip-tests",
+            "--only",
+            "lint",
+            env={"FROB_AGENT": "1", "FROB_ALLOW_FULL_CHECK": "1"},
+        )
+        out = r.stdout + r.stderr
+        assert r.returncode == 0, out
+
+    # frob:ticket T-0627
+    def test_bare_check_unaffected_without_frob_agent(self, tmp_path):
+        # frob:tests tests/system/test_cli_check.py::TestCheckAgentRefusal.test_bare_check_unaffected_without_frob_agent
+        # Scoped to the fast "lint" stage group -- this only needs to prove
+        # the refusal never fires without FROB_AGENT set, not re-run the
+        # full check/gates pass another system test already covers.
+        _make_project(tmp_path, "def add(x: int, y: int) -> int:\n    return x + y\n")
+        r = run(
+            "check",
+            str(tmp_path),
+            "--skip-tests",
+            "--only",
+            "lint",
+            env={"FROB_AGENT": ""},
+        )
+        out = r.stdout + r.stderr
+        assert r.returncode == 0, out
+        assert "T-0627" not in out
+
+
 class TestFrobTomlCheckDefaults:
     def test_check_skip_from_frob_toml(self, tmp_path):
         """[check] skip in frob.toml disables stages without CLI flags."""

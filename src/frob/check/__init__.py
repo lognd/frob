@@ -189,6 +189,83 @@ def _unknown_only_result(root: Path, unknown: frozenset[str]) -> CheckResult:
     )
 
 
+# frob:ticket T-0627
+#: Named `--only` presets grouping related stages so an agent can budget one
+#: chunk of `frob check` per invocation instead of the full run (T-0627: a
+#: full `--only gates` pass on this repo measured ~113s wall time, over the
+#: ~120s agent foreground cap documented in `docs/guides/agent-playbook.md`
+#: section 3b -- past that cap the harness auto-backgrounds the command and
+#: a dispatched sub-agent stalls forever waiting on a notification that can
+#: never reach it). Membership names are tool names (this module's own
+#: `_TOOL_STAGES`) or gate names (`frob.gates._ALL_GATES`); `_resolve_only`
+#: expands a group alias into its members before doing its existing
+#: gate/tool split, so a group behaves exactly like hand-listing its
+#: members on `--only`. The gate-name split mirrors
+#: `frob.gates._PROCESS_POOL_GATES` (the CPU-bound gates dispatched to a
+#: process pool) vs. the thread-pool remainder: `gates-native`/
+#: `gates-security` each take a few of the CPU-bound giants (measured
+#: comfortably under the 90s per-stage target), `gates-fast` takes every
+#: cheap/I/O-bound gate (also well under budget on its own).
+_STAGE_GROUPS: dict[str, frozenset[str]] = {
+    "lint": frozenset({"ruff", "ty"}),
+    "static": frozenset({"cycle", "dup", "arch", "bind", "exports"}),
+    "gates-fast": frozenset(
+        {
+            "drift",
+            "coverage",
+            "invariant",
+            "test",
+            "policy",
+            "doclink",
+            "docanchor",
+            "fuzz",
+            "release",
+            "decisions",
+            "tickets",
+            "refs",
+            "registry",
+            "docblocks",
+            "walk_lint",
+            "excludehazard",
+            "debt",
+            "render_lint",
+            "parse_failures",
+            "lang_conformance",
+            "lang_project_conformance",
+            "scope",
+            "prework",
+        }
+    ),
+    "gates-native": frozenset({"archgate", "clones", "perf"}),
+    "gates-security": frozenset({"sys", "pii_structural", "secrets", "dead_symbols"}),
+}
+
+
+# frob:ticket T-0627
+# frob:doc docs/commands/check.md#public-api
+# frob:tests tests/system/test_cli_check.py::TestCheckStageGroups.test_available_stages_cover_every_gate_and_tool  # noqa: E501
+def available_stages() -> list[str]:
+    """Sorted `_STAGE_GROUPS` alias names `frob check --only list` prints (T-0627)."""
+    return sorted(_STAGE_GROUPS)
+
+
+# frob:ticket T-0627
+def _expand_stage_groups(only: frozenset[str]) -> frozenset[str]:
+    """Expand any `_STAGE_GROUPS` alias in `only` into its member stage names.
+
+    A name that is not a recognized group (a bare tool/gate name, or truly
+    unknown) passes through unchanged, so mixing a group alias with
+    individual `--only` names in one invocation is additive, never
+    contradictory -- `_resolve_only`'s existing unknown-name rejection
+    still fires for anything left over that is neither a group, a tool, nor
+    a gate name.
+    """
+    expanded: set[str] = set()
+    for name in only:
+        expanded |= _STAGE_GROUPS.get(name, {name})
+    return frozenset(expanded)
+
+
 def _resolve_only(
     only: frozenset[str] | None,
 ) -> tuple[frozenset[str], frozenset[str] | None, frozenset[str]]:
@@ -196,12 +273,16 @@ def _resolve_only(
 
     An unknown name must be a loud config error, never a silently-empty
     selection that passes vacuously (observed: `--only doclink` returned
-    PASS having run nothing at all).
+    PASS having run nothing at all). T-0627: `only` is first expanded
+    through `_expand_stage_groups`, so a stage-group alias (`lint`,
+    `static`, `gates-fast`, `gates-native`, `gates-security`) resolves to
+    exactly the same `(gate_only, adjusted, unknown)` its expansion would.
     """
     if only is None:
         return frozenset(), None, frozenset()
     from frob.gates import _ALL_GATES
 
+    only = _expand_stage_groups(frozenset(only))
     gate_only = frozenset(only) & _ALL_GATES
     unknown = frozenset(only) - _TOOL_STAGES - _ALL_GATES
     if unknown:
@@ -702,6 +783,7 @@ def _detect_nested_native_project_type(root: Path) -> str:
 
 __all__ = [
     "CheckResult",
+    "available_stages",
     "detect_project_type",
     "run_check",
     "run_check_cpp",

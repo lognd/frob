@@ -8535,7 +8535,7 @@ Per T-0330's EXHAUSTIVENESS DRIFT-LOCK paragraph: every tier-1 statically-checka
 id: T-0627
 title: 'frob check: chunked/stage-wise invocation that stays under agent foreground
   caps'
-state: queued
+state: done
 kind: ux
 origin: agent
 created: '2026-07-22'
@@ -8546,19 +8546,183 @@ scope:
 - src/frob/check/**
 - src/frob/app/check_runner.py
 - docs/guides/agent-playbook.md
-scope_changes: []
-evidence: []
+- tests/system/test_cli_check.py
+- tests/system/conftest.py
+- tests/unit/test_app_runners_batch6.py
+- docs/commands/check.md
+scope_changes:
+- op: add
+  glob: tests/system/test_cli_check.py
+  reason: T-0627 needs CLI-level system tests for --only stage groups/list and FROB_AGENT
+    refusal, unit tests for check_runner's refusal helper, conftest.py's env kwarg
+    to exercise FROB_AGENT, and docs/commands/check.md (canonical command reference
+    + available_stages' frob:doc anchor) documenting the --only stage-group vocabulary
+    and refusal alongside the agent playbook
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: tests/system/conftest.py
+  reason: T-0627 needs CLI-level system tests for --only stage groups/list and FROB_AGENT
+    refusal, unit tests for check_runner's refusal helper, conftest.py's env kwarg
+    to exercise FROB_AGENT, and docs/commands/check.md (canonical command reference
+    + available_stages' frob:doc anchor) documenting the --only stage-group vocabulary
+    and refusal alongside the agent playbook
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: tests/unit/test_app_runners_batch6.py
+  reason: T-0627 needs CLI-level system tests for --only stage groups/list and FROB_AGENT
+    refusal, unit tests for check_runner's refusal helper, conftest.py's env kwarg
+    to exercise FROB_AGENT, and docs/commands/check.md (canonical command reference
+    + available_stages' frob:doc anchor) documenting the --only stage-group vocabulary
+    and refusal alongside the agent playbook
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: docs/commands/check.md
+  reason: T-0627 needs CLI-level system tests for --only stage groups/list and FROB_AGENT
+    refusal, unit tests for check_runner's refusal helper, conftest.py's env kwarg
+    to exercise FROB_AGENT, and docs/commands/check.md (canonical command reference
+    + available_stages' frob:doc anchor) documenting the --only stage-group vocabulary
+    and refusal alongside the agent playbook
+  actor: logan
+  at: '2026-07-22'
+evidence:
+- tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_only_list_prints_stages_and_returns
+- tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_bare_check_refuses_under_frob_agent
+- tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stage_selected_check_runs_under_frob_agent
+- tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_allow_full_check_override_bypasses_refusal
+- tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_bare_check_unaffected_without_frob_agent
+- tests/system/test_cli_check.py::TestCheckStageGroups::test_only_list_prints_stage_names
+- tests/system/test_cli_check.py::TestCheckStageGroups::test_only_list_json_wraps_stages
+- tests/system/test_cli_check.py::TestCheckStageGroups::test_available_stages_cover_every_gate_and_tool
+- tests/system/test_cli_check.py::TestCheckStageGroups::test_stage_group_expands_like_hand_listed_only
+- tests/system/test_cli_check.py::TestCheckAgentRefusal::test_bare_check_refuses_under_frob_agent
+- tests/system/test_cli_check.py::TestCheckAgentRefusal::test_stage_selected_check_runs_under_frob_agent
+- tests/system/test_cli_check.py::TestCheckAgentRefusal::test_allow_full_check_override_bypasses_refusal
+- tests/system/test_cli_check.py::TestCheckAgentRefusal::test_bare_check_unaffected_without_frob_agent
 attachments: []
 acceptance:
 - text: GIVEN a dispatched sub-agent in a fresh worktree WHEN it verifies a ticket
     using the documented invocation sequence THEN no single command exceeds 120s wall-clock
     on this repo AND full-gate coverage (or an explicit not-run list) is reported
-  evidence: []
+  evidence:
+  - tests/system/test_cli_check.py::TestCheckStageGroups::test_available_stages_cover_every_gate_and_tool
+  - tests/system/test_cli_check.py::TestCheckAgentRefusal::test_bare_check_refused_under_frob_agent
 threat: null
 component: null
 labels: []
 ```
 Recurring dispatch friction, 4 occurrences in one session (T-0554, T-0261, T-0435, T-0609 agents): a full frob check / --stamp-baseline run exceeds the 120s agent foreground cap, the harness auto-backgrounds it, the sub-agent ends its turn waiting for a notification that can never reach it (playbook 3b), and the mission stalls until a coordinator manually pokes it. The playbook documents the anti-pattern but agents keep tripping because there is no sanctioned fast path. Provide one: either (a) a "frob check --stage NAME" chunked invocation where each stage reliably completes under ~90s so agents can loop stages in-foreground, or (b) a "--budget SECONDS" mode that runs as many gates as fit and reports the remainder as explicitly-not-run, or (c) make --stamp-baseline itself incremental. Update the agent playbook section 3b/6 with the sanctioned invocation once it exists. Related but distinct: T-0581 (process-pool parallelism), T-0582 (perf re-measurement), T-0584 (PRE001 sweep timeout).
+
+## Done report
+
+Adds `--only <stage-group>` presets (`lint`, `static`, `gates-fast`,
+`gates-native`, `gates-security`) plus `--only list` to `frob check`, so an
+agent can loop budget-sized chunks instead of one full check/gates pass.
+Each group's wall time was measured directly on this repo:
+
+- `lint` (ruff, ty): ~1.2s
+- `static` (cycle, dup, arch, bind, exports): ~18s
+- `gates-fast` (22 thread-pool gates: drift/coverage/invariant/test/policy/
+  doclink/docanchor/fuzz/release/decisions/tickets/refs/registry/docblocks/
+  walk_lint/excludehazard/debt/render_lint/parse_failures/lang_conformance/
+  lang_project_conformance/scope/prework): ~36.5s
+- `gates-native` (archgate, clones, perf -- 3 of the 7 CPU-bound
+  process-pool gates): ~15s
+- `gates-security` (sys, pii_structural, secrets, dead_symbols -- the
+  remaining 4 process-pool gates): ~12.7s
+
+versus the original unchunked `--only gates` at ~113s (over the ~120s
+foreground cap) plus the individual tool stages on top -- every new group
+is comfortably under a ~90s per-stage budget. `--only list` prints exactly
+the stage names, one per line, nothing else (machine-splittable by a shell
+`for` loop); `--json` wraps the same list as `{"stages": [...]}`. A group
+name is pure sugar over `--only`'s existing tool/gate vocabulary
+(`frob.check._STAGE_GROUPS`, expanded in `_resolve_only` before its
+existing gate/tool split) -- hand-listing individual names still works
+unchanged, and mixing a group with individual names is additive.
+
+Second guarantee: when `FROB_AGENT` is set (T-0574), a bare `frob check`
+with no `--only` selection (and not a `--stamp-coverage`/`--stamp-baseline`
+exit-early mode) now refuses immediately (exit 1) instead of running and
+stalling -- `_refuse_full_check_for_agent`/`_refuse_full_check_message` in
+`check_runner.py`. The message names the sanctioned chunked loop.
+`FROB_ALLOW_FULL_CHECK=1` opts a specific invocation back into the full
+run. Verified both directions directly: `FROB_AGENT=1 frob check` exits 1
+naming T-0627 and the loop; `FROB_AGENT=1 frob check --only lint` and
+`FROB_AGENT=1 FROB_ALLOW_FULL_CHECK=1 frob check` both exit 0; `frob check`
+without `FROB_AGENT` is unaffected.
+
+`--stamp-baseline` is intentionally NOT refused (it is a legitimate
+one-shot warm-up step, not a repeatable verification loop) but it still
+runs the full undelta'd gates pass and can still exceed the cap -- this is
+called out explicitly in the playbook update rather than silently glossed
+over, and filed as a separate follow-up ticket (below) rather than solved
+here.
+
+Updated `docs/guides/agent-playbook.md` sections 3b (names the refusal and
+the chunked loop as the sanctioned path, explains why a bare `frob check`
+is the single most common way to trip the "never background a
+verification" anti-pattern by accident) and 6 (flags `--stamp-baseline`'s
+residual risk and points at the chunked `--only` loop for every
+verification pass after the initial stamp). Also updated
+`docs/commands/check.md`'s `--only`/gates-integration section with the
+same stage-group table, `--only list`, and the `FROB_AGENT` refusal
+(reviewer round 1 finding -- see below).
+
+Filed (both out of this ticket's scope):
+- T-draft-12c032f4 -- pre-existing (not caused by this ticket): a wide
+  swath of `tests/system/test_cli_check.py` fails on this worktree's
+  post-warm-up-merge main because `_make_project`'s tmp_path fixture never
+  git-inits and newly-merged gates (COV002/SCOPE001/TODO001) now error
+  loudly instead of degrading quietly on a missing repo. Verified this
+  ticket's own new tests are not among the failures.
+- T-draft-98fd6966 -- follow-up: `--stamp-baseline` itself still runs the
+  full undelta'd gates pass and is not refused under FROB_AGENT; T-0627's
+  own ticket body named "make --stamp-baseline incremental" as an
+  alternative option and left it unbuilt.
+
+Reviewer round 1 rejected on two cheap items, both now fixed and
+re-verified:
+- `_refuse_full_check_message`'s loop-instruction string used a
+  single-quoted literal that failed `ruff format --check` under both the
+  project-pinned (`uv run ruff`) and PATH `ruff` binaries (playbook 12).
+  Reformatted; `frob check --ticket T-0627 --only lint` is now clean:
+  `ruff-check: no issues`, `ruff-format: all files formatted`, `ty: no
+  issues`, exit 0 under both binaries.
+- `docs/commands/check.md` (the canonical command reference, and the
+  anchor `available_stages`' `frob:doc` edge points at) now documents the
+  `--only` stage-group vocabulary, `--only list`, and the `FROB_AGENT`
+  refusal alongside the existing `agent-playbook.md` coverage --
+  document-as-you-go, same change as the code, not a follow-up.
+
+Gates: `frob check --ticket T-0627 --only <group>` clean (exit 0) for
+`lint`, `static`, `gates-native`, `gates-security`. `gates-fast` shows
+REL001 (public API version bump -- this dispatch's explicit instructions
+say pyproject.toml/CHANGELOG/uv.lock are the coordinator's land-time job,
+not an implementer agent's) plus COV003 findings against T-0724/T-0726's
+OWN recorded evidence ids (`tests/system/test_cli_sys_plan.py::
+TestSysAuditContentionCli::test_duplicate_port_fires_sys200_through_cli`,
+`tests/test_gates.py::TestTick006PhantomFiling::*`) -- neither file nor
+test belongs to this ticket's scope or diff; these are worktree-skew
+against tickets this branch has not landed/synced, not violations T-0627
+introduced, and are expected to resolve at land against the merged tip.
+
+### Changed
+```
+ docs/commands/check.md                |  79 ++++++++++++++++++-
+ docs/guides/agent-playbook.md         |  48 ++++++++++++
+ src/frob/app/check_runner.py          | 105 +++++++++++++++++++++++++
+ src/frob/check/__init__.py            |  84 +++++++++++++++++++-
+ tests/system/conftest.py              |  17 ++++-
+ tests/system/test_cli_check.py        | 140 ++++++++++++++++++++++++++++++++++
+ tests/unit/test_app_runners_batch6.py |  94 +++++++++++++++++++++++
+ 7 files changed, 560 insertions(+), 7 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0628 -->
 ```yaml
@@ -13751,3 +13915,54 @@ component: null
 labels: []
 ```
 Field bug found landing T-0736 (the first close under T-0572s acceptance gate): frob ticket evidence <id> <node> --accepts N --path <dir> reports the evidence append but the criterion binding does NOT persist -- acceptance[N].evidence stays [] on read-back (reproduced 3x; the plain evidence list grows, the binding is dropped). Unblocked via a direct store-API write. Root-cause candidates: the accepts write path ignores --path, or the binding is applied to a copy the ledger write does not carry. Add a regression test binding via --path and reading back; audit the in-repo (no --path) path too -- T-0572s own tests bound in-repo and passed, so the --path leg is at least the broken one.
+
+<!-- ticket:T-0750 -->
+```yaml
+id: T-0750
+title: 'system tests: gitless tmp_path fixture trips COV002/SCOPE001/TODO001 across
+  test_cli_check.py'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- tests/system/test_cli_check.py
+- tests/system/conftest.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+found while working T-0627: a wide swath of tests/system/test_cli_check.py (TestCheckCleanProject, TestCheckSkipFlags, TestCheckGatesStage, TestCheckDocAnchorScopedVsUnscoped, TestFrobTomlCheckDefaults, TestCheckTypescript, TestCheckStampBaselineAndDelta, TestCheckTicketScopedAlwaysReportsOnFailure) fail on this worktree's post-merge main: _make_project's tmp_path fixture never git-inits, and newly-merged gates (COV002, SCOPE001, TODO001) now error loudly on a missing git repo instead of the older gates that degraded quietly -- 'working diff against base=main failed to load ... this is a load failure, not a clean/empty diff, so it is not silently passing'. Pre-existing as of the T-0627 warm-up merge, not caused by T-0627's changes (verified: T-0627's own new tests pass; this same failure set reproduces independent of T-0627's diff). Fix is either: git-init tmp_path in the shared fixture, or add gate exemptions those specific tests already relied on for the older gate set.
+
+<!-- ticket:T-0751 -->
+```yaml
+id: T-0751
+title: 'frob check --stamp-baseline: chunk or make incremental so it stays under agent
+  foreground caps'
+state: queued
+kind: ux
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/app/check_runner.py
+- src/frob/gates/__init__.py
+- docs/guides/agent-playbook.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+follow-up from T-0627: --stamp-baseline runs the full undelta'd gates pass (same ~110s+ wall time as a bare frob check) and is deliberately NOT refused under FROB_AGENT since it is a legitimate one-shot warm-up step, not a repeatable verification loop -- so it can still stall a dispatched sub-agent the same way T-0627 fixed for plain frob check. T-0627's ticket body named this as option (c) (make --stamp-baseline itself incremental) and left it unbuilt. Needs either: stamp per stage-group chunk and merge, or a documented coordinator-only path (stamp-baseline runs from the coordinator's shell before dispatch, never from an agent's).

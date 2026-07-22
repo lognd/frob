@@ -529,6 +529,7 @@ def _make_check_result(errors: int = 0, warnings: int = 0) -> CheckResult:
 
 
 # frob:ticket T-0563
+# frob:ticket T-0627
 class TestCheckRunner:
     """`frob check`: path validation, stamp modes, dispatch, and reporting."""
 
@@ -595,6 +596,99 @@ class TestCheckRunner:
         with pytest.raises(SystemExit) as exc:
             check_run(cfg)
         assert exc.value.code == 1
+
+    # frob:ticket T-0627
+    def test_only_list_prints_stages_and_returns(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+    ) -> None:
+        """`--only list` prints every stage-group name and never dispatches
+        a real stage (T-0627: the chunked loop's discovery step)."""
+        monkeypatch.delenv("FROB_AGENT", raising=False)
+        cfg = AppConfig(check_path=tmp_path, check_only=["list"])
+        check_run(cfg)
+        out = capsys.readouterr().out
+        assert "lint" in out
+        assert "static" in out
+        assert "gates-fast" in out
+
+    # frob:ticket T-0627
+    def test_bare_check_refuses_under_frob_agent(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
+    ) -> None:
+        """A bare `frob check` (no `--only`) refuses under `FROB_AGENT`
+        (T-0627) instead of running the full, cap-exceeding pass."""
+        import frob.app.check_runner as check_mod
+
+        (tmp_path / "pyproject.toml").write_text("[project]\nname='x'\n")
+        monkeypatch.setenv("FROB_AGENT", "1")
+        monkeypatch.delenv("FROB_ALLOW_FULL_CHECK", raising=False)
+        monkeypatch.setattr(
+            check_mod, "run_check", lambda root, **kw: _make_check_result()
+        )
+        cfg = AppConfig(check_path=tmp_path)
+        with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
+            check_run(cfg)
+        assert exc.value.code == 1
+        assert "FROB_AGENT" in caplog.text
+        assert "T-0627" in caplog.text
+
+    # frob:ticket T-0627
+    def test_stage_selected_check_runs_under_frob_agent(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+    ) -> None:
+        """`--only <stage>` bypasses the `FROB_AGENT` refusal -- it is
+        exactly the chunked, budget-sized invocation the refusal steers an
+        agent toward (T-0627)."""
+        import frob.app.check_runner as check_mod
+
+        (tmp_path / "pyproject.toml").write_text("[project]\nname='x'\n")
+        monkeypatch.setenv("FROB_AGENT", "1")
+        monkeypatch.delenv("FROB_ALLOW_FULL_CHECK", raising=False)
+        monkeypatch.setattr(
+            check_mod, "run_check", lambda root, **kw: _make_check_result()
+        )
+        cfg = AppConfig(check_path=tmp_path, check_only=["lint"])
+        check_run(cfg)
+        out = capsys.readouterr().out
+        assert out
+
+    # frob:ticket T-0627
+    def test_allow_full_check_override_bypasses_refusal(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+    ) -> None:
+        """`FROB_ALLOW_FULL_CHECK=1` opts a bare `frob check` back into the
+        full run from a `FROB_AGENT`-flagged shell (T-0627)."""
+        import frob.app.check_runner as check_mod
+
+        (tmp_path / "pyproject.toml").write_text("[project]\nname='x'\n")
+        monkeypatch.setenv("FROB_AGENT", "1")
+        monkeypatch.setenv("FROB_ALLOW_FULL_CHECK", "1")
+        monkeypatch.setattr(
+            check_mod, "run_check", lambda root, **kw: _make_check_result()
+        )
+        cfg = AppConfig(check_path=tmp_path)
+        check_run(cfg)
+        out = capsys.readouterr().out
+        assert out
+
+    # frob:ticket T-0627
+    def test_bare_check_unaffected_without_frob_agent(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+    ) -> None:
+        """Without `FROB_AGENT` set, a bare `frob check` runs exactly as
+        before (T-0627: the refusal is opt-in via the env var, never a
+        default-on behavior change for humans/CI)."""
+        import frob.app.check_runner as check_mod
+
+        (tmp_path / "pyproject.toml").write_text("[project]\nname='x'\n")
+        monkeypatch.delenv("FROB_AGENT", raising=False)
+        monkeypatch.setattr(
+            check_mod, "run_check", lambda root, **kw: _make_check_result()
+        )
+        cfg = AppConfig(check_path=tmp_path)
+        check_run(cfg)
+        out = capsys.readouterr().out
+        assert out
 
     def test_auto_detected_python_stage_dispatches_and_passes(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys

@@ -10,15 +10,28 @@ FROB = [sys.executable, "-m", "frob"]
 FIXTURES = Path(__file__).parent.parent / "fixtures"
 
 
-def run(*args, input=None, cwd=None):
+# frob:ticket T-0627
+# frob:tests tests/system/test_cli_check.py::TestCheckAgentRefusal.test_bare_check_refuses_under_frob_agent  # noqa: E501
+def run(*args, input=None, cwd=None, env=None):
     """Run the `frob` CLI as a subprocess and capture its result (T-0364:
-    the one shared entry point every system test dispatches through)."""
+    the one shared entry point every system test dispatches through).
+
+    T-0627: `env`, when given, is merged ON TOP OF (never replacing) the
+    current process's environment via `os.environ | env` -- the same
+    inherit-plus-override shape every other subprocess call in this suite
+    relies on implicitly (PATH, the venv, etc.), needed so a test can flip
+    one variable (e.g. `FROB_AGENT`) without losing the rest.
+    """
+    import os
+
+    merged_env = os.environ | env if env else None
     return subprocess.run(
         FROB + list(args),
         capture_output=True,
         text=True,
         input=input,
         cwd=cwd,
+        env=merged_env,
     )
 
 

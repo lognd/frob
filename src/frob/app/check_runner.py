@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import contextlib
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -605,6 +606,100 @@ def _append_deploy_stages(
     return result
 
 
+# frob:ticket T-0627
+#: The environment variable (T-0574) marking a shell as a dispatched
+#: agent's, not a human/coordinator's -- `_refuse_full_check_for_agent`
+#: reads it to decide whether a bare `frob check` must refuse.
+_FROB_AGENT_ENV = "FROB_AGENT"
+
+#: Override env var: set to `"1"` to run a full/unchunked `frob check`
+#: from a `FROB_AGENT`-flagged shell anyway (T-0627), for the rare case a
+#: coordinator deliberately wants the full run from such a shell.
+_FROB_ALLOW_FULL_CHECK_ENV = "FROB_ALLOW_FULL_CHECK"
+
+
+# frob:ticket T-0627
+# frob:tests tests/system/test_cli_check.py::TestCheckAgentRefusal.test_bare_check_refuses_under_frob_agent  # noqa: E501
+# frob:tests tests/system/test_cli_check.py::TestCheckAgentRefusal.test_stage_selected_check_runs_under_frob_agent  # noqa: E501
+# frob:tests tests/system/test_cli_check.py::TestCheckAgentRefusal.test_allow_full_check_override_bypasses_refusal  # noqa: E501
+def _refuse_full_check_for_agent(cfg: AppConfig) -> bool:
+    """True when a full, unchunked `frob check` must refuse under `FROB_AGENT` (T-0627).
+
+    A full check/gates pass on this repo measures well past the ~120s
+    agent foreground cap (playbook 3b) -- a dispatched sub-agent running a
+    bare `frob check` walks straight into the harness auto-backgrounding
+    the command and then stalls forever waiting on a notification that can
+    never reach it (4+ occurrences in one session per T-0627's field
+    evidence). When `_FROB_AGENT_ENV` is set in the environment, a bare
+    invocation (no `--only` stage selection, and not one of the fast
+    `--stamp-coverage`/`--stamp-baseline` exit-early modes `run` already
+    short-circuits on) now refuses instead of walking into the stall --
+    fail closed, not rarely-stall. `_FROB_ALLOW_FULL_CHECK_ENV=1` opts a
+    specific invocation back into the full run, for the rare case a
+    human/coordinator genuinely wants it from a `FROB_AGENT`-flagged shell.
+    """
+    if not os.environ.get(_FROB_AGENT_ENV):
+        return False
+    if os.environ.get(_FROB_ALLOW_FULL_CHECK_ENV) == "1":
+        return False
+    if cfg.check_only:
+        return False
+    if cfg.check_stamp_coverage or cfg.check_stamp_baseline:
+        return False
+    return True
+
+
+# frob:ticket T-0627
+def _refuse_full_check_message() -> str:
+    """The refusal text `run` logs for `_refuse_full_check_for_agent` (T-0627):
+    names the chunked `--only <stage>` loop as the sanctioned replacement,
+    per `docs/guides/agent-playbook.md` section 3b/6."""
+    stages = ", ".join(_stage_group_names())
+    return (
+        "frob check: refusing a full/unchunked run under FROB_AGENT (T-0627) -- "
+        "a full pass on this repo exceeds the ~120s agent foreground cap and "
+        "auto-backgrounds, stalling a dispatched sub-agent forever waiting on "
+        "a notification that can never arrive. Run the chunked loop instead: "
+        "for s in $(uv run frob check --only list); do uv run frob check "
+        f'--only "$s"; done -- stage groups: {stages}. '
+        "Set FROB_ALLOW_FULL_CHECK=1 to override deliberately."
+    )
+
+
+# frob:ticket T-0627
+def _stage_group_names() -> list[str]:
+    """`frob.check.available_stages()`, imported lazily like this module's
+    other `frob.check`/`frob.gates` call-sites (T-0627)."""
+    from frob.check import available_stages
+
+    return available_stages()
+
+
+# frob:ticket T-0627
+# frob:tests tests/system/test_cli_check.py::TestCheckStageGroups.test_only_list_prints_stage_names  # noqa: E501
+def _print_stage_list(cfg: AppConfig) -> None:
+    """`frob check --only list`: print every `--only` stage-group alias and
+    exit without running any stage (T-0627) -- the discovery step the
+    sanctioned chunked agent loop
+    (`for s in $(frob check --only list); do frob check --only "$s"; done`)
+    drives off of.
+
+    Text mode prints exactly one stage name per line and nothing else
+    (no header/prose) so the output is directly `$(...)`-splittable by a
+    shell `for` loop without picking up stray words; `--json` wraps the
+    same names in `{"stages": [...]}` for a machine caller that wants
+    structure instead.
+    """
+    stages = _stage_group_names()
+    if cfg.check_json:
+        import json
+
+        _log.info(json.dumps({"stages": stages}, indent=2))
+    else:
+        renderer = Renderer.for_stream(sys.stdout)
+        renderer.line("\n".join(stages))
+
+
 def _handle_stamp_modes(root: Path, cfg: AppConfig) -> bool:
     """Run `--stamp-coverage`/`--stamp-baseline` and return True when one
     fired, so `run` can return immediately instead of running any stage."""
@@ -767,6 +862,16 @@ def run(cfg: AppConfig) -> None:
 
     if not root.exists():
         _log.error("path does not exist: %s", root)
+        sys.exit(1)
+
+    # frob:ticket T-0627
+    if cfg.check_only == ["list"]:
+        _print_stage_list(cfg)
+        return
+
+    # frob:ticket T-0627
+    if _refuse_full_check_for_agent(cfg):
+        _log.error(_refuse_full_check_message())
         sys.exit(1)
 
     if _handle_stamp_modes(root, cfg):

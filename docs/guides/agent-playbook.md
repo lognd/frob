@@ -118,6 +118,41 @@ FOREGROUND and wait for it in-turn, even when it takes minutes. The only
 sanctioned exception is `make coverage`, which you must not run at all
 (section 6b) -- everything else is foreground.
 
+**A bare `frob check` is the single most common way to trip this anti-
+pattern by accident** (T-0627: 4+ occurrences in one session before this
+was fixed). A full check/gates pass on this repo measures well past the
+~120s foreground cap on its own -- an agent who runs plain `frob check`
+(or `frob check --stamp-baseline`, which runs the same undelta'd gates
+pass) is not choosing to background it, but the harness does it anyway
+the moment the timeout hits, and the stall described above follows
+automatically. As of T-0627, this is now a hard stop rather than a trap:
+when `FROB_AGENT` is set in your shell (T-0574 -- true for every
+dispatched worktree agent), a bare `frob check` with no `--only` stage
+selection REFUSES immediately (exit 1) instead of running and stalling.
+Use the chunked loop below every time; do not reach for
+`FROB_ALLOW_FULL_CHECK=1` (the escape hatch, meant for a coordinator's own
+shell, not a sub-agent's) just to silence the refusal.
+
+**The sanctioned chunked loop** -- run one `--only` stage-group per
+invocation, each measured comfortably under the ~90s per-stage budget on
+this repo:
+
+```
+for s in $(uv run frob check --only list); do
+  uv run frob check --only "$s"
+done
+```
+
+`uv run frob check --only list` prints the current stage-group names, one
+per line (`lint`, `static`, `gates-fast`, `gates-native`,
+`gates-security`) -- discover them this way rather than hardcoding the
+list, since new groups may be added later. Add `--ticket T-XXXX` /
+`--json` / `--delta` to each iteration exactly as you would to a single
+`frob check` call; every existing flag composes with `--only` unchanged.
+A stage-group name is just a preset `--only` value (see
+`frob.check._STAGE_GROUPS`) -- naming an individual tool (`ruff`) or gate
+(`doclink`) directly still works exactly as before, unaffected.
+
 ## 4. Scope conventions
 
 - `tickets.md` is always in scope, implicitly, for any ticket -- the Done
@@ -169,6 +204,19 @@ New public symbols need both a `frob:doc` edge and a `frob:tests` edge --
 `COV001` (missing doc) and `TEST001` (missing test) are ERROR-level gates,
 not warnings. Add both at the point you add or change the symbol, not as a
 follow-up.
+
+**`--stamp-baseline` itself still runs the full, undelta'd gates pass**
+(T-0627: it is one of the two known-slow full-check shapes, alongside a
+bare `frob check`) -- it is deliberately NOT refused under `FROB_AGENT`
+(section 3b's refusal only fires for a bare, stage-less invocation), so
+the command above can still exceed the ~120s foreground cap and stall the
+same way. Chunking `--stamp-baseline` itself is tracked separately (T-0627
+considered it and left it as future work, not silently dropped) -- until
+that lands, treat `--stamp-baseline` as a one-time, accept-the-risk step:
+run it once at the very start of a ticket before the tree has much
+uncommitted state to lose, and prefer the section 3b chunked `--only`
+loop (which every stage group is measured safe under) for every
+verification pass after that.
 
 ## 6b. Do NOT run `make coverage` as a dispatched sub-agent -- you cannot wait on it
 
