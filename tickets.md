@@ -2131,7 +2131,7 @@ EXHAUSTIVENESS DRIFT-LOCK (T-0343, 2026-07-20 mandate 'implementation MUST addre
 id: T-0332
 title: 'design-pattern recommender: hallmark->pattern + anti-pattern->escape registry
   (advisory)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-19'
@@ -2164,7 +2164,6 @@ labels: []
 Positive complement to the SOLID smell catalog (T-0330). An exhaustive PATTERN REGISTRY (structured like the capability registry -- pattern x hallmark x language matrix, covered-or-excused): each entry = a HALLMARK detector (the before-shape), the recommended PATTERN (GoF + modern), the FORCE/tension it resolves, a refactoring sketch, languages. Two directions: HALLMARK->PATTERN (N-arm isinstance/type-switch -> Strategy/polymorphism; growing if-chain on a state field -> State machine; scattered ConcreteX() construction -> Factory/DI; telescoping optional ctor params -> Builder; manual callback lists -> Observer; repeated wrap+delegate -> Decorator; incompatible-interface bridging -> Adapter; expensive-object reuse -> Flyweight/pool) and ANTI-PATTERN->ESCAPE (god object -> SRP decompose; anemic domain model -> move behavior to data; stringly-typed -> newtype; poltergeist/lava-flow -> delete; sequential coupling -> explicit state). CRITICAL DESIGN (do it right, avoid cargo-culting): (1) RECOMMENDATIONS not errors -- advisory/suggestion severity only, forcing a pattern is itself over-engineering; the user said 'recommended'. (2) STRONG-HALLMARK-ONLY / high precision -- recommend only on an unambiguous structural signal; a noisy recommender trains users to ignore it; the library itself must NOT recommend when the code is already simple. (3) PAIRS WITH the SOLID smells -- reuse the same hallmark detectors: the smell is the diagnosis, the pattern is the prescription (one detector, two outputs: 'violates OCP' + 'consider Strategy'). (4) WAIVABLE with a reason so a repo records deliberate exceptions. (5) each recommendation names the FORCE + a concrete sketch, never a bare 'use Strategy'.
 
 EXHAUSTIVENESS DRIFT-LOCK (T-0343, 2026-07-20 mandate 'implementation MUST address EVERYTHING the exhaustive researcher found'): this epic's implementation binds to the corpus DENOMINATOR MANIFEST via T-0343's N:M coverage meta-test. Denominator source: design-pattern-catalog.md (341 patterns) + design-pattern-traps-corpus.md (anti-pattern->escape hallmarks). Every relevant manifest entry must map to >=1 registered check/obligation/recommender-rule OR carry an explicit reasoned deferral (advisory/not-checkable/ticketed); (addressed union deferred) == TOTAL. The epic CANNOT close while any researched entry is un-addressed and un-deferred -- the corpora (docs/design/*) are the enforceable denominator, not just reading.
-
 <!-- ticket:T-0339 -->
 ```yaml
 id: T-0339
@@ -3712,3 +3711,82 @@ component: null
 labels: []
 ```
 Remaining stronger half of docs/audits/strata.md G1, deferred from T-0401 (its weaker half landed in T-0498: boundary obligations must resolve to a real in-model Claim.id). The gap: an ENDORSE boundary's predicate still discharges by model-side matching alone -- it is never joined against an OBSERVED sanitizer/validator call site in the code. Fix: bind the boundary predicate to a real call-site observation (via the code-binding layer), so a boundary with no observed sanitizer in the guarded path fails closed. NOTE: T-0401's Done report references this as T-draft-9ca06606; that draft never materialized as a ledger block, so this ticket is its real replacement.
+
+<!-- ticket:T-0596 -->
+```yaml
+id: T-0596
+title: 'gate:PERF: resolve 11 unwaived findings (9x PERF004 sort-in-loop, 2x PERF005
+  unprovable recursion)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0204
+scope:
+- src/frob/gates/__init__.py
+- src/frob/gates/_coverage.py
+- src/frob/gates/_registry_exhaustiveness.py
+- src/frob/strata/_cve_fingerprint.py
+- src/frob/tickets/_brief.py
+- src/frob/__main__.py
+- src/frob/gates/_docblocks.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+gate:PERF currently reports 0 errors, 11 warnings, 39 waived (measured 2026-07-22). The 11 unwaived are: 9x PERF004 sorted()/.sort() in a loop (src/frob/gates/__init__.py:1183,2914,4279,4610,4695; src/frob/gates/_coverage.py:545; src/frob/gates/_registry_exhaustiveness.py:405; src/frob/strata/_cve_fingerprint.py:518; src/frob/tickets/_brief.py:118) and 2x PERF005 no-provable-termination recursion (src/frob/__main__.py:92 _collect_option_strings; src/frob/gates/_docblocks.py:386 _subparser_tree). For each PERF004: hoist the sort out of the loop, switch to a sorted container, or waive with a genuine per-site reason (the existing 39 waived findings on this same gate show the expected reason shape -- 'runs once after the loop', 'own iterable not repeated', etc; do not copy a reason that does not actually hold for the new site). For each PERF005: add a frob:invariant terminates reason=... measure=... annotation with a real termination measure, or restructure. Acceptance: gate:PERF summary line reports 0 unwaived findings (fixed or waived-with-reason), no threshold loosened without a disclosed decision.
+
+<!-- ticket:T-0597 -->
+```yaml
+id: T-0597
+title: 'frob-dup: triage duplicate-block report (75 groups, 112 waived) into extraction
+  vs accepted-false-pair'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0204
+scope:
+- src/frob/**
+- tests/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+frob-dup currently reports 75 duplicate groups (112 waived), measured 2026-07-22 (was 64 groups at T-0204 filing, has grown). This is distinct from the frob-arch abstraction-opportunity advisories already covered by T-0393 -- frob-dup is the raw clone-detector report over both src/frob/** and tests/**, not the arch gate's near-dup-family suggestions. For each of the 75 groups: if it is a genuine extraction candidate (shared logic that should live in one home), extract it; if it is a false pair (coincidental structural similarity, e.g. parallel test scaffolding), waive it with an honest per-group reason. Acceptance: frob-dup summary line reports 0 unwaived groups (fixed or waived-with-reason), no threshold loosened without a disclosed decision.
+
+<!-- ticket:T-0598 -->
+```yaml
+id: T-0598
+title: 'gate:ARCH: resolve 17 unwaived warnings (distinct from T-0393/T-0394/T-0395
+  suggestion triage)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0204
+scope:
+- src/frob/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+gate:ARCH currently reports 0 errors, 17 warnings, 0 waived (frob-arch tool summary: 18 warnings, 79 suggestions; measured 2026-07-22). T-0393 (abstraction-opportunity advisories), T-0394 (deep-nesting advisories), T-0395 (large-file advisories) already cover the SUGGESTIONS tier -- this ticket is the WARNINGS tier, which none of those three touch. Run frob check --only arch (or grep '[gate:ARCH]' from frob check output) to enumerate the current 17 warning sites, classify each by its ARCH rule id, and for each either fix the underlying design issue or add a frob:waive with an honest reason. Acceptance: gate:ARCH summary line reports 0 unwaived warnings (fixed or waived-with-reason), no threshold loosened without a disclosed decision.
