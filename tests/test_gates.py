@@ -50,6 +50,7 @@ from frob.gates import (
     test_gate as run_test_gate,
 )
 from frob.gates._docblocks import doc004_gate
+from frob.gates._pii_structural import pii_structural_gate
 from frob.gates.invariants import InvariantError, _Criticality, load_invariants
 from frob.gitio import Diff, Hunk, working_diff
 from frob.graph import build_graph
@@ -7084,3 +7085,256 @@ class TestTick006PhantomFiling:
         tick006 = [v for v in violations if v.rule == "TICK006"]
         assert len(tick006) == 1
         assert "T-draft-deadbeef" in tick006[0].message
+
+
+class TestPiiStructuralCrossLanguage:
+    """T-0352: PII010/SEC110 field-shape and env-access equivalents over
+    TypeScript/Rust source (`frob.gates._pii_structural`'s Python-only
+    T-0207 scan extended to the other two `frob.lang`-supported grammars
+    named in the ticket body). Every fixture is a real git-tracked file
+    parsed via `frob.lang.raw_tree` (the ticket's "reuse the existing
+    tree-sitter parses" mandate) -- not a hand-rolled second parser."""
+
+    def _write(self, root: Path, rel: str, text: str) -> None:
+        """Write `text` to `root/rel`, creating parent dirs as needed."""
+        path = root / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text)
+
+    # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_interface_email_field_fires  # noqa: E501
+    def test_ts_interface_email_field_fires(self, tmp_path: Path) -> None:
+        """A TS `interface` field named `email` is the field-shape
+        equivalent of a pydantic `BaseModel` field -- fires PII010."""
+        self._write(
+            tmp_path,
+            "user.ts",
+            "interface User {\n  email: string;\n}\n",
+        )
+        _git_init(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        pii010 = _by_rule(violations, "PII010")
+        assert any("email" in v.message and "user.ts" in v.file for v in pii010)
+
+    # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_type_alias_password_field_fires  # noqa: E501
+    def test_ts_type_alias_password_field_fires(self, tmp_path: Path) -> None:
+        """A TS `type` alias object-type field named `password` fires
+        PII010 -- the `type_alias_declaration`/`object_type` equivalent of
+        an interface field."""
+        self._write(
+            tmp_path,
+            "profile.ts",
+            "type Profile = {\n  password: string;\n};\n",
+        )
+        _git_init(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        pii010 = _by_rule(violations, "PII010")
+        assert any("password" in v.message and "profile.ts" in v.file for v in pii010)
+
+    # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_class_field_token_fires  # noqa: E501
+    def test_ts_class_field_token_fires(self, tmp_path: Path) -> None:
+        """A TS `class` field named `token` fires PII010 -- the class-body
+        `public_field_definition` equivalent."""
+        self._write(
+            tmp_path,
+            "account.ts",
+            "class Account {\n  token: string;\n}\n",
+        )
+        _git_init(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        pii010 = _by_rule(violations, "PII010")
+        assert any("token" in v.message and "account.ts" in v.file for v in pii010)
+
+    # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_clean_interface_is_silent  # noqa: E501
+    def test_ts_clean_interface_is_silent(self, tmp_path: Path) -> None:
+        """A TS interface with no PII-shaped field names fires nothing."""
+        self._write(
+            tmp_path,
+            "widget.ts",
+            "interface Widget {\n  width: number;\n  height: number;\n}\n",
+        )
+        _git_init(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        assert not _by_rule(violations, "PII010")
+
+    # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_index_signature_reported_not_skipped  # noqa: E501
+    def test_ts_index_signature_reported_not_skipped(self, tmp_path: Path) -> None:
+        """T-0352 NO-FAIL-SILENT: a TS index signature (`[key: string]: T`)
+        has no statically-readable field name -- it must be REPORTED as an
+        unresolvable field shape, never silently dropped from the scan."""
+        self._write(
+            tmp_path,
+            "dynamic.ts",
+            "interface Weird {\n  [key: string]: string;\n}\n",
+        )
+        _git_init(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        pii010 = _by_rule(violations, "PII010")
+        assert any("unresolvable" in v.message for v in pii010)
+
+    # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_process_env_fires  # noqa: E501
+    def test_ts_process_env_fires(self, tmp_path: Path) -> None:
+        """`process.env.SECRET_KEY` fires SEC110 -- the TS equivalent of
+        `os.environ[...]`/`os.getenv(...)`."""
+        self._write(
+            tmp_path,
+            "config.ts",
+            "const key = process.env.SECRET_KEY;\n",
+        )
+        _git_init(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        sec110 = _by_rule(violations, "SEC110")
+        assert any("process.env" in v.message and "config.ts" in v.file for v in sec110)
+
+    # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_process_env_subscript_fires  # noqa: E501
+    def test_ts_process_env_subscript_fires(self, tmp_path: Path) -> None:
+        """`process.env["API_TOKEN"]` (subscript form) fires SEC110."""
+        self._write(
+            tmp_path,
+            "config2.ts",
+            'const key = process.env["API_TOKEN"];\n',
+        )
+        _git_init(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        sec110 = _by_rule(violations, "SEC110")
+        assert any("API_TOKEN" in v.message and "config2.ts" in v.file for v in sec110)
+
+    # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_import_meta_env_fires  # noqa: E501
+    def test_ts_import_meta_env_fires(self, tmp_path: Path) -> None:
+        """`import.meta.env.VITE_SECRET` (Vite-style bundler env access)
+        fires SEC110 -- the ticket-named `import.meta.env` equivalent."""
+        self._write(
+            tmp_path,
+            "vite.ts",
+            "const key = import.meta.env.VITE_SECRET;\n",
+        )
+        _git_init(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        sec110 = _by_rule(violations, "SEC110")
+        assert any(
+            "import.meta.env" in v.message and "vite.ts" in v.file for v in sec110
+        )
+
+    # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_dynamic_env_key_still_fires  # noqa: E501
+    def test_ts_dynamic_env_key_still_fires(self, tmp_path: Path) -> None:
+        """T-0352 NO-FAIL-SILENT: `process.env[someDynamicKey]` (a
+        non-literal subscript key) cannot be statically named -- it must
+        still fire SEC110 rather than be silently skipped for lack of a
+        resolvable name, mirroring `_scan_python_env_access`'s existing
+        posture for a dynamic `os.environ[key]`."""
+        self._write(
+            tmp_path,
+            "dynamic_env.ts",
+            "const someDynamicKey = 'X';\nconst key = process.env[someDynamicKey];\n",
+        )
+        _git_init(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        sec110 = _by_rule(violations, "SEC110")
+        assert any("dynamic_env.ts" in v.file for v in sec110)
+
+    # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_allowlisted_env_var_is_silent  # noqa: E501
+    def test_ts_allowlisted_env_var_is_silent(self, tmp_path: Path) -> None:
+        """`process.env.PATH` is an allowlisted, definitionally-non-secret
+        var (`_ENV_VAR_ALLOWLIST`, shared table) -- silent."""
+        self._write(tmp_path, "clean_env.ts", "const p = process.env.PATH;\n")
+        _git_init(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        assert not any("clean_env.ts" in v.file for v in _by_rule(violations, "SEC110"))
+
+    # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_rust_struct_ssn_field_fires  # noqa: E501
+    def test_rust_struct_ssn_field_fires(self, tmp_path: Path) -> None:
+        """A Rust `struct` named field `ssn` fires PII010 -- the
+        `field_declaration_list` equivalent of a Python dataclass field."""
+        self._write(
+            tmp_path,
+            "user.rs",
+            "struct User {\n    ssn: String,\n}\n",
+        )
+        _git_init(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        pii010 = _by_rule(violations, "PII010")
+        assert any("ssn" in v.message and "user.rs" in v.file for v in pii010)
+
+    # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_rust_clean_struct_is_silent  # noqa: E501
+    def test_rust_clean_struct_is_silent(self, tmp_path: Path) -> None:
+        """A Rust struct with no PII-shaped field names fires nothing."""
+        self._write(
+            tmp_path,
+            "widget.rs",
+            "struct Widget {\n    width: i32,\n    height: i32,\n}\n",
+        )
+        _git_init(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        assert not _by_rule(violations, "PII010")
+
+    # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_rust_env_var_fires  # noqa: E501
+    def test_rust_env_var_fires(self, tmp_path: Path) -> None:
+        """`std::env::var("API_KEY")` fires SEC110 -- the Rust equivalent
+        of `os.getenv(...)`."""
+        self._write(
+            tmp_path,
+            "config.rs",
+            'fn main() {\n    let k = std::env::var("API_KEY").unwrap();\n}\n',
+        )
+        _git_init(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        sec110 = _by_rule(violations, "SEC110")
+        assert any(
+            "std::env::var" in v.message and "config.rs" in v.file for v in sec110
+        )
+
+    # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_rust_unqualified_env_var_fires  # noqa: E501
+    def test_rust_unqualified_env_var_fires(self, tmp_path: Path) -> None:
+        """`env::var("SECRET")` (direct-import form, no `std::` prefix)
+        fires SEC110 too -- mirrors `_scan_python_env_access`'s
+        direct-import `getenv(...)` handling."""
+        self._write(
+            tmp_path,
+            "config2.rs",
+            'fn main() {\n    let k = env::var("SECRET").unwrap();\n}\n',
+        )
+        _git_init(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        sec110 = _by_rule(violations, "SEC110")
+        assert any("config2.rs" in v.file for v in sec110)
+
+    # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_rust_allowlisted_env_var_is_silent  # noqa: E501
+    def test_rust_allowlisted_env_var_is_silent(self, tmp_path: Path) -> None:
+        """`std::env::var("PATH")` is allowlisted -- silent."""
+        self._write(
+            tmp_path,
+            "clean_env.rs",
+            'fn main() {\n    let p = std::env::var("PATH").unwrap();\n}\n',
+        )
+        _git_init(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        assert not any("clean_env.rs" in v.file for v in _by_rule(violations, "SEC110"))
+
+    # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_rust_tuple_struct_field_not_matched  # noqa: E501
+    def test_rust_tuple_struct_field_not_matched(self, tmp_path: Path) -> None:
+        """Adversarial: a Rust TUPLE struct (`Point(i32, i32)`) has no
+        source field names at all -- `_rust_struct_field_names` only reads
+        `field_declaration_list` (named) bodies, so a tuple struct is
+        silent regardless of its type names (no name to match against
+        `FIELD_SIGNATURES` in the first place, not a false negative on a
+        real PII field)."""
+        self._write(tmp_path, "point.rs", "struct Point(i32, i32);\n")
+        _git_init(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        assert not any("point.rs" in v.file for v in _by_rule(violations, "PII010"))
+
+    # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_and_rust_findings_joined_against_declared_surface  # noqa: E501
+    def test_ts_and_rust_findings_joined_against_declared_surface(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0351's std.pii/std.secrets join applies identically to a
+        TS/Rust finding -- `_load_declared_surface` is keyed on rel_path
+        alone, language-agnostic, so a design directory with no models at
+        all still leaves both languages' findings firing exactly as if
+        T-0351 never ran (empty-surface degrade, shared code path)."""
+        self._write(tmp_path, "user.ts", "interface User {\n  email: string;\n}\n")
+        self._write(tmp_path, "user.rs", "struct User {\n    email: String,\n}\n")
+        _git_init(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        pii010_files = {v.file for v in _by_rule(violations, "PII010")}
+        assert "user.ts" in pii010_files
+        assert "user.rs" in pii010_files

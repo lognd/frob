@@ -62,10 +62,10 @@ declaration).
 | WAIVE004 | warn (T-0753) | a `frob:waive` on a RECOGNIZED rule id matches zero findings this run at its own site -- see "Unnecessary-waiver detection (T-0753)" below |
 | WAIVE005 | error (T-0753) | a `frob:waive`'s optional `until="YYYY-MM-DD"` boundary has passed -- see "Waiver expiry (T-0753)" below |
 | ARCH001 | arch | `frob.arch`'s complexity-aware long-function check (docs/modules/arch.md) still flags a function after its flat-body filter -- the one `frob.arch` category channeled into a real gate `Violation`, waivable with a reasoned `frob:waive ARCH001 reason="..." [ceiling=N]` (T-0289) |
-| PII010 | pii_structural | a pydantic/dataclass/TypedDict/attrs field's name or type annotation matches a PII-shaped signature (`FIELD_SIGNATURES`) with no `frob:waive PII010 reason="..."` -- see "PII010/SEC110" below |
+| PII010 | pii_structural | a pydantic/dataclass/TypedDict/attrs field's name or type annotation matches a PII-shaped signature (`FIELD_SIGNATURES`), a TS `interface`/`type`/`class` field, or a Rust `struct` field (T-0352), with no `frob:waive PII010 reason="..."` -- see "PII010/SEC110" below |
 | PII011 | pii_structural | a tracked `.py` file's string-literal constant is structurally email-shaped (`_is_email_shaped`, `email.utils.parseaddr`-based) with no `frob:secret-fake` marker or `frob:waive PII011 reason="..."` -- see "PII010/SEC110" below |
 | PII012 | pii_structural | a plain identifier or `#`-comment word token resembles a `FIELD_SIGNATURES` keyword (suggestion severity, not deny-by-default) -- see "PII010/SEC110" below |
-| SEC110 | pii_structural | an `os.environ[...]`/`os.environ.get(...)`/`os.getenv(...)` call site with no `frob:waive SEC110 reason="..."` -- see "PII010/SEC110" below |
+| SEC110 | pii_structural | an `os.environ[...]`/`os.environ.get(...)`/`os.getenv(...)` call site, a TS `process.env`/`import.meta.env` access, or a Rust `std::env::var(...)`/`env::var(...)` call (T-0352), with no `frob:waive SEC110 reason="..."` -- see "PII010/SEC110" below |
 | REF001 | refs | a git-tracked file has zero inbound references (auto-detected or verified `frob:used-by`) from any other tracked file -- see "Anti-orphan file-reference gate" below |
 | REF002 | refs | a git-tracked file has exactly one inbound reference (fragile single anchor) -- see "Anti-orphan file-reference gate" below |
 | REF003 | refs | a `frob:used-by <consumer>` declaration is dangling: the named consumer does not exist as a tracked file, or does not itself reference the declaring file back -- see "Anti-orphan file-reference gate" below |
@@ -669,6 +669,37 @@ structures and env-var access sites, drawn from
   docstring and this ticket's Done report): non-Python language
   equivalents and non-Python DDL sources (`.sql` migration files). Filed
   as follow-on tickets, not silently dropped.
+- **TypeScript/Rust field-shape and env-access equivalents (T-0352)**:
+  extends the SAME PII010/SEC110 rule ids (not new rule ids) to the other
+  two `frob.lang`-supported grammars, via `frob.lang.raw_tree` (the same
+  single tree-sitter grammar-load dispatch `frob.arch`/`frob.dup._legacy`
+  already share -- no second parser stood up):
+  - PII010 over TS `interface_declaration` bodies, `type_alias_
+    declaration`s whose value is an `object_type`, and `class_declaration`
+    bodies (`_scan_ts_fields`), and Rust `struct_item` named fields
+    (`_scan_rust_fields`) -- reusing `_field_name_hit`/`FIELD_SIGNATURES`
+    unchanged (name-kind entries only; the `EmailStr`/`SecretStr`
+    type-kind entries stay Python-only, an honest gap for a follow-on
+    ticket, not guessed at).
+  - SEC110 over TS `process.env.NAME`/`process.env["NAME"]` and
+    `import.meta.env.NAME`/`import.meta.env["NAME"]` (`_scan_ts_env_
+    access`), and Rust `std::env::var(...)`/`env::var(...)`/`std::env::
+    var_os(...)` (`_scan_rust_env_access`) -- reusing `_ENV_VAR_ALLOWLIST`
+    unchanged.
+  - NO-FAIL-SILENT: a field shape that cannot be statically named -- a TS
+    index signature (`[key: string]: T`) or computed property name
+    (`[expr]: T`) -- fires PII010 as an "unresolvable field shape" finding
+    demanding manual review, rather than being silently skipped. A
+    dynamic (non-literal) env-access subscript key (`process.env
+    [someDynamicKey]`) likewise still fires SEC110, mirroring
+    `_scan_python_env_access`'s existing posture for `os.environ
+    [dynamic_key]`.
+  - A Rust TUPLE struct (`Point(i32, i32)`) has no source field names at
+    all and is out of scope for name-based matching (no name to check
+    against `FIELD_SIGNATURES` in the first place -- not a false negative
+    on a real PII field, just nothing nameable to test).
+  - The T-0351 declared-surface join (`_load_declared_surface`) applies
+    identically -- it is keyed on rel_path alone, language-agnostic.
 
 ### Anti-orphan file-reference gate T-0396
 
