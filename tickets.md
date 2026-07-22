@@ -3336,7 +3336,11 @@ PII011 waivers). PII010/SEC110 counts unaffected (verified same warnings
 before/after).
 
 ### Changed
-(no changed files detected)
+```
+ src/frob/gates/_pii_structural.py | 167 ++++++++++++++++++++++++++++++++++++--
+ tickets.md                        |  50 +++++++++++-
+ 2 files changed, 208 insertions(+), 9 deletions(-)
+```
 
 ### Evidence
 - `tests/test_pii_structural_gate.py::TestKeywordSweep::test_identifier_keyword_fires_at_suggestion_severity` (pytest node id, verified passing when recorded)
