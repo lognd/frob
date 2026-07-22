@@ -784,6 +784,7 @@ def _waivers_by_rule(snapshot: GraphSnapshot) -> dict[str, list[Edge]]:
     return index
 
 
+# frob:enforces CHK-GATE-WAIVE001
 def _waive001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """WAIVE001: a `frob:waive` directive missing `reason=...` -- surfaced from
     frob.graph's MalformedDirective list, since frob.graph.dsl already refuses
@@ -811,6 +812,7 @@ def _waive001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # frob:ticket T-0404
 # frob:tests tests/test_gates.py::TestDsl001.test_malformed_frob_doc_directive_flagged
 # frob:tests tests/test_gates.py::TestDsl001.test_waive_reason_and_tests_kind_not_double_flagged  # noqa: E501
+# frob:enforces CHK-GATE-DSL001
 def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DSL001: a malformed `frob:` directive not already claimed by a
     per-flavor check (WAIVE001/TEST010/DEBT001).
@@ -1114,6 +1116,7 @@ def _waive002_violations(
     )
 
 
+# frob:enforces CHK-GATE-WAIVE002
 def _waive002_violation_for(edge: Edge, arch_categories: frozenset[str]) -> Violation:
     """The single WAIVE002 `Violation` (already logged) for one ineffective
     `frob:waive` edge -- distinguishing the frob-arch-category case (whose
@@ -1145,6 +1148,7 @@ def _waive002_violation_for(edge: Edge, arch_categories: frozenset[str]) -> Viol
 
 
 # frob:ticket T-0470
+# frob:enforces CHK-GATE-WAIVE003
 def _waive003_violations(
     violations: tuple[Violation, ...], snapshot: GraphSnapshot
 ) -> tuple[Violation, ...]:
@@ -1316,6 +1320,7 @@ def _place001_bindings(
 
 
 # frob:ticket T-0504
+# frob:enforces CHK-GATE-PLACE001
 def _place001_file(root: Path, file: str) -> tuple[Violation, ...]:
     """PLACE001 findings for one file: a `frob:` directive whose fully
     resolved binding (`_place001_bindings`, the same stacked-comment-aware
@@ -1639,6 +1644,7 @@ def active_ticket(root: Path, explicit: str | None) -> Option[str]:
 # ---------------------------------------------------------------------------
 
 
+# frob:enforces CHK-GATE-DRIFT001
 def _drift001(report, snapshot: GraphSnapshot) -> list[Violation]:  # noqa: ANN001
     """DRIFT001: an acked doc facet's digest moved since the ack."""
     violations: list[Violation] = []
@@ -1663,6 +1669,7 @@ def _drift001(report, snapshot: GraphSnapshot) -> list[Violation]:  # noqa: ANN0
     return violations
 
 
+# frob:enforces CHK-GATE-DRIFT002
 def _drift002(report) -> list[Violation]:  # noqa: ANN001
     """DRIFT002: an edge endpoint no longer resolves to a live symbol."""
     violations: list[Violation] = []
@@ -1797,6 +1804,7 @@ def _resolved_documented_srcs(root: Path, snapshot: GraphSnapshot) -> set[str]:
 
 # frob:ticket T-0553
 # frob:tests tests/test_gates.py::TestCoverageGate.test_cov001_waiver_does_not_blanket_suppress_sibling_symbol  # noqa: E501
+# frob:enforces CHK-GATE-COV001
 def _cov001(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """COV001: a public symbol has no explicit, *resolving* `frob:doc` edge.
 
@@ -2134,6 +2142,7 @@ def _cov002(
 
 # frob:ticket T-0553
 # frob:tests tests/test_gates.py::TestCoverageGate.test_cov001_waiver_does_not_blanket_suppress_sibling_symbol  # noqa: E501
+# frob:enforces CHK-GATE-COV002
 def _cov002_check_symref(
     snapshot: GraphSnapshot,
     queue: TicketQueue,
@@ -2211,6 +2220,7 @@ def _missing_native_remedy(tests: CollectedTests) -> str:
     )
 
 
+# frob:enforces CHK-GATE-COV003
 def _cov003_evidence_violation(
     ticket, evidence: str, allowed_kinds: list[str], tests: CollectedTests
 ) -> Violation:  # noqa: ANN001
@@ -2265,6 +2275,7 @@ def _cov004(queue: TicketQueue) -> tuple[Violation, ...]:
     return tuple(violations)
 
 
+# frob:enforces CHK-GATE-COV004
 def _cov004_one(
     ticket: Ticket,
     attachment,  # noqa: ANN001
@@ -2343,6 +2354,7 @@ def _cov005(root: Path, snapshot: GraphSnapshot, diff: Diff) -> tuple[Violation,
     return tuple(violations)
 
 
+# frob:enforces CHK-GATE-COV005
 def _cov005_file(
     root: Path,
     base: str,
@@ -3045,6 +3057,7 @@ def _cov006_public_wrapper_reachable(root: Path, edge: Edge) -> bool:
 
 
 # frob:ticket T-0483
+# frob:enforces CHK-GATE-COV006
 def _cov006(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """COV006: a `frob:tests` edge bound to a PRIVATE symbol whose named
     test has no call-graph reachability to that symbol.
@@ -3165,6 +3178,7 @@ def _cov006(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 
 
 # frob:ticket T-0483
+# frob:enforces CHK-GATE-COV007
 def _cov007(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """COV007: a `frob:doc` edge whose src symbol is PRIVATE.
 
@@ -3202,6 +3216,7 @@ def _cov007(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     return tuple(violations)
 
 
+# frob:enforces CHK-GATE-TODO002
 def _todo002_edges(snapshot: GraphSnapshot, queue: TicketQueue) -> list[Violation]:
     """TODO002: `frob:todo` edges bound to a non-open (or missing) ticket.
 
@@ -3259,6 +3274,7 @@ def _todo001_bare(snapshot: GraphSnapshot, diff: Diff) -> list[Violation]:
     return violations
 
 
+# frob:enforces CHK-GATE-TODO001
 def _todo001_bare_comment(file: str, comment) -> list[Violation]:  # noqa: ANN001
     """Every bare (not `frob:`-prefixed) todo/fixme line inside one comment,
     as TODO001 `Violation`s."""
@@ -3322,6 +3338,7 @@ def _debt_edges(snapshot: GraphSnapshot) -> tuple[Edge, ...]:
     return tuple(e for e in snapshot.edges if e.kind == EdgeKind.DEBT)
 
 
+# frob:enforces CHK-GATE-DEBT001
 def _debt001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DEBT001: a `frob:debt` directive missing `reason="..."` and/or
     `ticket="T-####"` -- surfaced from `frob.graph`'s MalformedDirective
@@ -3343,6 +3360,7 @@ def _debt001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     return tuple(violations)
 
 
+# frob:enforces CHK-GATE-DEBT002
 def _debt002_violations(
     snapshot: GraphSnapshot, queue: TicketQueue
 ) -> tuple[Violation, ...]:
@@ -3410,6 +3428,7 @@ def _debt_parse_version(version: str) -> tuple[int, int, int] | None:
     return (int(match.group(1)), int(match.group(2)), int(match.group(3)))
 
 
+# frob:enforces CHK-GATE-DEBT003
 def _debt003_violations(
     snapshot: GraphSnapshot, *, current_date: str, current_version: str
 ) -> tuple[Violation, ...]:
@@ -3503,6 +3522,7 @@ def list_debt(
     return tuple(entries)
 
 
+# frob:enforces CHK-GATE-REL001
 def _release_open_debt_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """REL001: a release must never ship with ANY open `frob:debt` --
     expired or not (T-0412's central requirement: debt is collected and
@@ -3740,6 +3760,7 @@ def scope_gate(
     return tuple(violations)
 
 
+# frob:enforces CHK-GATE-SCOPE001
 def _scope_gate_check_file(
     file: str,
     ticket: Ticket,
@@ -3777,6 +3798,7 @@ def _scope_gate_check_file(
     )
 
 
+# frob:enforces CHK-GATE-PRE001
 def _pre001(ticket: Ticket, message: str) -> tuple[Violation, ...]:
     """A single PRE001 violation for `ticket` carrying `message`."""
     return (
@@ -3869,6 +3891,7 @@ def _evidence_binds_to_symrefs(
 
 # frob:ticket T-0543
 # frob:ticket T-0543
+# frob:enforces CHK-GATE-INV005
 def _inv005(inv: Invariant) -> Violation:
     """INV005: an invariant's collected evidence never shown (via a
     `frob:tests` edge or same-file trust) to reach its own `frob:invariant`
@@ -3913,6 +3936,7 @@ def _invariant_evidence_proves_anchor(
 # frob:waive DUP001 reason="Violation-builder boilerplate shared shape \
 # with _inv002 below; distinct rule ids and distinct remediation messages \
 # (missing evidence vs missing anchor) -- structural coincidence"
+# frob:enforces CHK-GATE-INV001
 def _inv001(inv: Invariant) -> Violation:
     """INV001: an invariant with no standing evidence."""
     return Violation(
@@ -3931,6 +3955,7 @@ def _inv001(inv: Invariant) -> Violation:
 # frob:waive DUP001 reason="Violation-builder boilerplate shared shape \
 # with _inv001 above; distinct rule id and message -- structural \
 # coincidence"
+# frob:enforces CHK-GATE-INV002
 def _inv002(inv: Invariant) -> Violation:
     """INV002: an invariant with no code anchor."""
     return Violation(
@@ -4089,6 +4114,7 @@ def _file_has_reasoned_doc_waiver(path: Path, rule: str) -> bool:
 # this exact helper's design (T-0524), not a caller-side public-API \
 # summary"
 # frob:ticket T-0462
+# frob:enforces CHK-GATE-INV003
 def _inv003_doc_violations(
     root: Path, path: Path, known_ids: frozenset[str]
 ) -> tuple[Violation, ...]:
@@ -4203,6 +4229,7 @@ def _markdown_sections(text: str) -> tuple[str, ...]:
 # (INV004 subsection) is a deliberate architecture doc walking through \
 # this exact helper's design (T-0524), not a caller-side public-API \
 # summary"
+# frob:enforces CHK-GATE-INV004
 def _inv004_doc_violations(root: Path, path: Path) -> tuple[Violation, ...]:
     """INV004 findings for one doc file: at least one section uses
     normative language (`frob.gates.invariants.find_normative_claims`)
@@ -4443,6 +4470,7 @@ def _test001_002_one(
     return None
 
 
+# frob:enforces CHK-GATE-TEST001
 def _test001_no_unit_test(record) -> Violation:  # noqa: ANN001
     """TEST001: `record` is public with no unit edge or convention match."""
     _log.debug("TEST001: %s has no unit edge or convention match", record.symref)
@@ -4460,6 +4488,7 @@ def _test001_no_unit_test(record) -> Violation:  # noqa: ANN001
     )
 
 
+# frob:enforces CHK-GATE-TEST002
 def _test002_below_min(record, effective: int, cfg: TestPolicy) -> Violation:  # noqa: ANN001
     """TEST002: `record` has fewer collected unit cases than `cfg.min_unit_cases`."""
     _log.debug(
@@ -4521,6 +4550,7 @@ def _test001_002(
 # frob:tests tests/test_gates.py::TestTest014AmbiguousConventionMatch.test_fires_on_cross_file_same_test_collision  # noqa: E501
 # frob:tests tests/test_gates.py::TestTest014AmbiguousConventionMatch.test_silent_when_symbol_has_explicit_edge  # noqa: E501
 # frob:tests tests/test_gates.py::TestTest014AmbiguousConventionMatch.test_silent_when_no_leaf_name_collision  # noqa: E501
+# frob:enforces CHK-GATE-TEST014
 def _test014_ambiguous_convention(
     snapshot: GraphSnapshot, tests: CollectedTests
 ) -> tuple[Violation, ...]:
@@ -4608,6 +4638,7 @@ def _test014_ambiguous_convention(
 # frob:tests tests/test_gates.py::TestTest015VacuousCredit.test_fires_on_no_op_test_body  # noqa: E501
 # frob:tests tests/test_gates.py::TestTest015VacuousCredit.test_silent_when_any_matching_test_asserts  # noqa: E501
 # frob:tests tests/test_gates.py::TestTest015VacuousCredit.test_silent_when_no_test_matches_at_all  # noqa: E501
+# frob:enforces CHK-GATE-TEST015
 def _test015_vacuous_credit(
     snapshot: GraphSnapshot, tests: CollectedTests
 ) -> tuple[Violation, ...]:
@@ -4740,6 +4771,7 @@ def _test003(
     return tuple(violations)
 
 
+# frob:enforces CHK-GATE-TEST003
 def _test003_check_package(
     package: str,
     all_pairs: list[tuple[str, Edge]],
@@ -4813,6 +4845,7 @@ def _edges_for_design_file(
     ]
 
 
+# frob:enforces CHK-GATE-TEST009
 def _test009(
     snapshot: GraphSnapshot, tests: CollectedTests, cfg: TestPolicy
 ) -> tuple[Violation, ...]:
@@ -4931,6 +4964,7 @@ def _test007_pairs(
     return tuple(violations)
 
 
+# frob:enforces CHK-GATE-TEST007
 def _test007_check_pair(
     consumer: str,
     provider: str,
@@ -4961,6 +4995,7 @@ def _test007_check_pair(
 # ---------------------------------------------------------------------------
 
 
+# frob:enforces CHK-GATE-TEST004
 def _test004(
     systems: tuple[SystemSpec, ...], snapshot: GraphSnapshot, tests: CollectedTests
 ) -> tuple[Violation, ...]:
@@ -5032,6 +5067,7 @@ def _test005_symbols(
     return violations
 
 
+# frob:enforces CHK-GATE-TEST005
 def _test005_symbol_violation(record, pct: float, cfg: TestPolicy) -> Violation:  # noqa: ANN001
     """A single TEST005 per-symbol branch-coverage-floor violation."""
     _log.debug(
@@ -5131,6 +5167,7 @@ def _test005_system_violation(
 # "nothing to report" state -- so it is always an ERROR: this gate ships in
 # many sibling repos with different package layouts, and a hardcoded or
 # wrong root here must fail loudly, never degrade to a quiet zero.
+# frob:enforces CHK-GATE-TEST008
 def _test008_unjoined_root(data: CoverageData) -> tuple[Violation, ...]:
     """TEST008: coverage.xml carried real data but NONE of it joined to a
     known repo path (see the comment above)."""
@@ -5180,6 +5217,7 @@ def _test005(
 _TEST011_JOIN_FLOOR = 0.5
 
 
+# frob:enforces CHK-GATE-TEST011
 def _test011_freshness(data: CoverageData) -> tuple[Violation, ...]:
     """TEST011 (warn): coverage.xml looks stale or deflated relative to the
     working tree it is supposed to measure.
@@ -5239,6 +5277,7 @@ _COVERAGE_LOCK_REL = "frob-coverage.lock.json"
 # frob:tests tests/test_gates.py::TestTestGate.test_test012_missing_lock_warns  # noqa: E501
 # frob:tests tests/test_gates.py::TestTestGate.test_test012_drifted_module_warns  # noqa: E501
 # frob:tests tests/test_gates.py::TestTestGate.test_test012_matching_lock_is_clean  # noqa: E501
+# frob:enforces CHK-GATE-TEST012
 def _test012_lock(snapshot: GraphSnapshot, data: CoverageData) -> tuple[Violation, ...]:
     """TEST012 (warn): the committed `frob-coverage.lock.json` (docs/audits/
     gates-accounting.md B5) is missing, or its claimed per-module line
@@ -5326,6 +5365,7 @@ def _exclude_filtered_coverage(
     )
 
 
+# frob:enforces CHK-GATE-TEST006
 def _test006_missing() -> tuple[Violation, ...]:
     """The TEST006 violation for a missing coverage stamp."""
     return (
@@ -5405,6 +5445,7 @@ def _test006(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # ---------------------------------------------------------------------------
 
 
+# frob:enforces CHK-GATE-TEST010
 def _test010_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """TEST010: a `frob:tests` directive's `kind=` attribute is not one of
     unit/integration/e2e (T-0237).
@@ -5445,6 +5486,7 @@ def _test010_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # frob:ticket T-0552
 # frob:tests tests/test_gates.py::TestTest013NativeUnverified.test_fires_on_structural_only_edge  # noqa: E501
 # frob:tests tests/test_gates.py::TestTest013NativeUnverified.test_silent_on_executed_edge  # noqa: E501
+# frob:enforces CHK-GATE-TEST013
 def _test013_native_unverified(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """TEST013 (warn): a `frob:tests` edge's TEST001-004 credit rests solely
     on the ts/c/cpp structural fallback (docs/audits/gates-accounting.md
@@ -5618,6 +5660,7 @@ def decisions_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]
 
 
 # frob:ticket T-0162
+# frob:enforces CHK-GATE-TICK001
 def _tick001_duplicate_ids(root: Path) -> tuple[Violation, ...]:
     """TICK001: an id present in BOTH the active and archive ledgers.
 
@@ -5651,6 +5694,7 @@ def _tick001_duplicate_ids(root: Path) -> tuple[Violation, ...]:
 
 
 # frob:ticket T-0162
+# frob:enforces CHK-GATE-TICK002
 def _tick002_draft_on_default(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     """TICK002: a T-draft-* provisional id still present while `root` is on
     the default branch -- the finalize step (T-0162's provisional-id
@@ -5709,6 +5753,7 @@ def _tick003_thresholds(root: Path) -> tuple[int, int]:
         return _TICK003_DEFAULT_WARN, _TICK003_DEFAULT_ERROR
 
 
+# frob:enforces CHK-GATE-TICK003
 def _tick003_violation(count: int, severity: Severity, threshold: int) -> Violation:
     """One TICK003 `Violation` at `severity`, naming `count` and the
     `threshold` it crossed, always pointing at `frob ticket archive` as the
@@ -5788,6 +5833,7 @@ def _tick004_rot_thresholds(root: Path) -> dict[Priority, int]:
 
 
 # frob:ticket T-0411
+# frob:enforces CHK-GATE-TICK004
 def _tick004_queue_rot(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     """TICK004 (T-0411): WARN (escalating to ERROR at 2x threshold) per
     queued/planned ticket whose priority-specific rot-day threshold has
@@ -6005,6 +6051,7 @@ def _sys004_native_hint(root: Path) -> str:
 # frob:tests tests/test_gates.py::TestSysGate.test_sys004_load_failure
 # frob:tests tests/test_gates.py::TestSysGate.test_sys004_suppresses_sys001
 # frob:tests tests/test_gates.py::TestSysGate.test_sys004_names_stale_native_as_likely_remedy  # noqa: E501
+# frob:enforces CHK-GATE-SYS004
 def _sys004(design_ids, root: Path) -> list[Violation]:
     """SYS004: a `.strata` design file itself failed to parse/elaborate.
 
@@ -6067,6 +6114,7 @@ def _sys001(snapshot: GraphSnapshot, design_ids) -> list[Violation]:  # noqa: AN
     ]
 
 
+# frob:enforces CHK-GATE-SYS001
 def _sys001_check_edge(
     edge: Edge, valid: dict[EdgeKind, frozenset[str]]
 ) -> Violation | None:
@@ -6090,6 +6138,7 @@ def _sys001_check_edge(
     )
 
 
+# frob:enforces CHK-GATE-SYS003
 def _sys003_one_model(model, root: Path) -> list[Violation]:  # noqa: ANN001
     """SYS003 violations from one design model's tier-2 code-binding
     conformance check (`bind_code` + `check_import_conformance`); an
@@ -6132,6 +6181,7 @@ def _sys003(design_ids, root: Path) -> list[Violation]:
     return violations
 
 
+# frob:enforces CHK-GATE-SYS002
 def _sys002(snapshot: GraphSnapshot, design_ids) -> list[Violation]:  # noqa: ANN001
     """SYS002: a boundary or secret construct in the design model has no
     `frob:boundary`/`frob:secret` code binding anywhere -- the construct
@@ -6229,6 +6279,7 @@ def _claims_markers_in_file(root: Path, rel: str) -> list[tuple[str, int, str]]:
 
 
 # frob:ticket T-0085
+# frob:enforces CHK-GATE-DOC003
 def _doc003_violation(rel: str, lineno: int, message: str) -> Violation:
     """Build one DOC003 error `Violation` -- every failure mode is the same shape."""
     return Violation(
@@ -6761,6 +6812,7 @@ def doclink_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # frob:waive DUP001 reason="dup grouped this with frob.vet._scan's \
 # _vet004_violation purely on generic Violation(...)-builder shape; \
 # different gate family (doc-graph vs dependency-vet), unrelated rules"
+# frob:enforces CHK-GATE-DOC001
 def _doc001_orphan(orphan: str, link_hint: str) -> Violation:
     """DOC001: `orphan` is a doc file linked from nowhere."""
     return Violation(
@@ -6819,6 +6871,7 @@ def _anchor_mismatch_message(
     )
 
 
+# frob:enforces CHK-GATE-DOC002
 def _docanchor_violation(rule_file: str, line: int, message: str) -> Violation:
     """Build one DOC002 error `Violation` -- every failure mode is the same shape."""
     return Violation(
