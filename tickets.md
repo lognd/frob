@@ -6065,3 +6065,31 @@ component: null
 labels: []
 ```
 T-0595 added the ENDORSE-boundary code-binding join (observed_call_names + _predicate_is_code_bound threaded through check_discharge_completeness) but every production caller (_audit.py / frob sys audit, _sysdoc.py, _plan.py, vet/_containment.py, _pii.py, _compliance.py) omits the optional binding/root arguments, so the fail-closed path never engages outside the new unit tests -- enforcement exists but nothing invokes it (the catalogued-is-not-enforced trap). Wire the real code tree into each production entrypoint so an unbound sanitizer predicate fails the actual gate, with an integration test proving frob sys audit (or equivalent) reports the THREAT003 on a fixture repo. Disclosed-but-unticketed cut from T-0595's Done report; this is the real ticket.
+
+<!-- ticket:T-0631 -->
+```yaml
+id: T-0631
+title: 'frob ticket land: TICK005-backed regression sweep + --push option'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0577
+scope:
+- src/frob/tickets/**
+- src/frob/app/ticket_runner.py
+- docs/modules/tickets.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a land with --push WHEN the land completes THEN the push happens only after
+  every land verification passed; GIVEN the TICK005 rule defined WHEN land runs THEN
+  the regression sweep executes and blocks on failure
+threat: null
+component: null
+labels: []
+```
+The two T-0577 dispatch items that had no existing design to build against, deferred honestly rather than half-built: (1) a TICK005-backed regression sweep at land time (define the TICK005 rule first, then have land run it); (2) a --push option for frob ticket land so the coordinator can land+push in one verified step. NOTE: T-0577's Done report references this as T-draft-f6f10c67; that draft was filed pre-fix and will not survive T-0577's own land, so this is the real ticket.
