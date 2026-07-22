@@ -2499,7 +2499,7 @@ T-0207 follow-on: frob.gates._pii_structural.FIELD_SIGNATURES is Python-only (as
 id: T-0354
 title: app/ticket_runner.py _run_sweep has same full-root xref bug as sweep_ticket
   (T-0240 sibling)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
