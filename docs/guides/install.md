@@ -186,3 +186,50 @@ python3 -c "import strata_core, frob_core" \
 ```
 
 check as the first-class CLI surface for the same diagnosis (T-0317).
+
+## Derived-state integrity manifest (T-0570)
+
+<!-- frob:describes src/frob/doctor.py::verify_derived_state -->
+
+`frob doctor` also fingerprints every derived artifact `frob` writes and
+reports which ones are present but corrupt, BEFORE any gate consumes them.
+Three real incidents motivated this: a stale fixture `dup.db` silently
+flipping detector results (T-0517), `make coverage` clobbering the native
+build mid-run and producing 44 phantom `frob check` errors, and a coverage
+stamp lagging the source it claims to describe. Each used to surface only
+as a pile of confusing downstream `frob check`/`frob dup` findings, with no
+single line saying "the derived state itself is stale" -- `frob doctor` is
+the first thing an agent runs, so this is the doctor-first choke point that
+catches it before the confusing findings follow.
+
+`DERIVED_ARTIFACTS` (`src/frob/doctor.py`) names every artifact checked:
+
+| name | path | format |
+|---|---|---|
+| `graph-cache` | `.frob/cache.db` | sqlite |
+| `dup-cache` | `.frob/dup.db` | sqlite |
+| `vet-cache` | `.frob/vet.db` | sqlite |
+| `coverage-stamp` | `.frob/coverage-stamp` | json |
+| `baseline` | `.frob/baseline` | json |
+| `coverage-lock` | `frob-coverage.lock.json` | json |
+
+An artifact absent from disk (nothing written yet) reports healthy -- this
+manifest only flags corruption, not staleness-by-absence. A `sqlite`-kind
+artifact is validated by its file-format magic header; a `json`-kind
+artifact by `json.loads`. Each present artifact also gets a sha256
+`fingerprint` of its raw bytes in the report, for a caller that wants to
+diff two runs' derived state directly rather than just the healthy/
+unhealthy verdict.
+
+`frob doctor --json`'s `derived_state` array carries one entry per
+artifact (`name`, `path`, `present`, `healthy`, `fingerprint`, `detail`);
+the text report's overall `healthy`/`remediation` fields fold in any
+corrupt entry alongside the native-extension check above, naming the exact
+`rm -f <path>` for each offender.
+
+T-0570 deliberately scoped this to `src/frob/doctor.py` reporting only:
+wiring an actual BLOCK into `frob check`/`frob gates` (so a corrupt cache
+cannot even be consulted, not just flagged) needs `src/frob/check/**` and
+`src/frob/gates/**`, both under other agents' live leases at the time of
+this ticket -- see the Done report for the follow-up ticket filed for that
+enforcement step.

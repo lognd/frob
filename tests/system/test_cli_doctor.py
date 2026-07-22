@@ -88,3 +88,113 @@ class TestDoctorCli:
         assert report["remediation"]
         by_name = {ext["name"]: ext for ext in report["extensions"]}
         assert by_name["strata_core"]["available"] is False
+
+
+class TestDoctorDerivedStateManifest:
+    """T-0570: `frob doctor` fingerprints every derived artifact it knows
+    about (`.frob/cache.db`, `.frob/dup.db`, `.frob/vet.db`,
+    `.frob/coverage-stamp`, `.frob/baseline`, `frob-coverage.lock.json`) and
+    reports corruption before any gate consumes the stale/corrupt state."""
+
+    # frob:tests src/frob/doctor.py
+    def test_verify_derived_state_reports_absent_as_healthy(
+        self, tmp_path: Path
+    ) -> None:
+        """No `.frob/` at all (a fresh checkout) reports every artifact as
+        absent-and-healthy, never as a false corruption finding."""
+        from frob.doctor import verify_derived_state
+
+        statuses = verify_derived_state(tmp_path)
+        assert statuses
+        assert all(not s.present and s.healthy for s in statuses)
+
+    # frob:tests src/frob/doctor.py
+    def test_verify_derived_state_flags_corrupt_sqlite_cache(
+        self, tmp_path: Path
+    ) -> None:
+        """A `.frob/dup.db` that is not actually SQLite bytes (the T-0517
+        stale/corrupt-fixture-cache incident shape) is reported unhealthy
+        with a fingerprint and an explanatory detail, not silently passed
+        through to whatever reads it next."""
+        from frob.doctor import verify_derived_state
+
+        frob_dir = tmp_path / ".frob"
+        frob_dir.mkdir()
+        (frob_dir / "dup.db").write_bytes(b"not a real sqlite file")
+
+        statuses = verify_derived_state(tmp_path)
+        by_name = {s.name: s for s in statuses}
+        dup_cache = by_name["dup-cache"]
+        assert dup_cache.present is True
+        assert dup_cache.healthy is False
+        assert dup_cache.fingerprint is not None
+        assert dup_cache.detail is not None
+
+    # frob:tests src/frob/doctor.py
+    def test_verify_derived_state_flags_malformed_json_stamp(
+        self, tmp_path: Path
+    ) -> None:
+        """A `.frob/coverage-stamp` that is not valid JSON is reported
+        unhealthy with a detail explaining why."""
+        from frob.doctor import verify_derived_state
+
+        frob_dir = tmp_path / ".frob"
+        frob_dir.mkdir()
+        (frob_dir / "coverage-stamp").write_text("{not json")
+
+        statuses = verify_derived_state(tmp_path)
+        by_name = {s.name: s for s in statuses}
+        stamp = by_name["coverage-stamp"]
+        assert stamp.present is True
+        assert stamp.healthy is False
+        assert stamp.detail is not None
+
+    # frob:tests src/frob/doctor.py
+    def test_verify_derived_state_accepts_valid_json_stamp(
+        self, tmp_path: Path
+    ) -> None:
+        """A well-formed `.frob/baseline` is reported present and healthy,
+        with a stable content fingerprint."""
+        from frob.doctor import verify_derived_state
+
+        frob_dir = tmp_path / ".frob"
+        frob_dir.mkdir()
+        (frob_dir / "baseline").write_text('{"violations": []}')
+
+        statuses = verify_derived_state(tmp_path)
+        by_name = {s.name: s for s in statuses}
+        baseline = by_name["baseline"]
+        assert baseline.present is True
+        assert baseline.healthy is True
+        assert baseline.fingerprint is not None
+
+    # frob:tests src/frob/doctor.py
+    def test_run_diagnosis_unhealthy_when_derived_state_corrupt(
+        self, tmp_path: Path
+    ) -> None:
+        """`run_diagnosis(root)` folds a corrupt derived artifact into the
+        overall `healthy` verdict and names it in `remediation`, even when
+        every native extension is available."""
+        from frob.doctor import run_diagnosis
+
+        frob_dir = tmp_path / ".frob"
+        frob_dir.mkdir()
+        (frob_dir / "cache.db").write_bytes(b"garbage")
+
+        report = run_diagnosis(tmp_path)
+        assert report.healthy is False
+        assert report.remediation is not None
+        assert "graph-cache" in report.remediation
+        corrupt_names = {d.name for d in report.derived_state if not d.healthy}
+        assert "graph-cache" in corrupt_names
+
+    # frob:tests src/frob/doctor.py
+    def test_run_diagnosis_healthy_with_no_derived_state(self, tmp_path: Path) -> None:
+        """`run_diagnosis(root)` against a directory with no `.frob/` at all
+        stays healthy (matching the natives-only historical behavior) --
+        an empty derived-state manifest is not itself a failure."""
+        from frob.doctor import run_diagnosis
+
+        report = run_diagnosis(tmp_path)
+        assert report.healthy is True
+        assert all(not d.present for d in report.derived_state)

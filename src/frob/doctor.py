@@ -17,12 +17,31 @@ Follow-up from T-0316: a plain `uv tool upgrade frob` (or `uv tool install
 `DupError.CoreUnavailable` failure path. This module makes that same check a
 first-class, explicit CLI surface instead of a paragraph in
 docs/guides/install.md.
+
+T-0570: `run_diagnosis` also fingerprints every derived artifact `frob`
+writes under `.frob/` (plus the committed `frob-coverage.lock.json`) and
+reports which ones are present-but-corrupt, BEFORE any gate consumes them.
+Three real incidents motivate this: a stale fixture `dup.db` silently
+flipping detector results (T-0517), `make coverage` clobbering the native
+build mid-run and producing 44 phantom `frob check` errors, and a coverage
+stamp lagging the source it claims to describe. Each of those used to
+surface as a pile of confusing downstream `frob check`/`frob dup` findings
+with no single "the derived state itself is stale" signal; `frob doctor`
+is the first thing an agent runs, so this is the doctor-first choke point
+that catches it before dozens of misleading findings follow. Wiring an
+actual BLOCK into `frob check`/`frob gates` (rather than just reporting
+here) is out of this ticket's scope -- `src/frob/check/**` and
+`src/frob/gates/**` carry other agents' live leases at the time of this
+ticket -- see T-0570's Done report for the follow-up ticket filed for that.
 """
 
 from __future__ import annotations
 
+import hashlib
 import importlib
+import json
 from importlib.metadata import PackageNotFoundError, version
+from pathlib import Path
 
 from pydantic import BaseModel
 
@@ -54,15 +73,146 @@ class NativeExtensionStatus(BaseModel):
     version: str | None = None
 
 
+# frob:doc docs/guides/install.md#derived-state-integrity-manifest-t-0570
+#: `(manifest name, path relative to root, byte-format kind)` for every
+#: derived artifact `frob` writes that `run_diagnosis` fingerprints.
+#: `"sqlite"` entries are validated by header magic bytes (see
+#: `_SQLITE_MAGIC`); `"json"` entries by `json.loads`. Deliberately excludes
+#: `.frob/telemetry.jsonl` (append-only event log, not a cache another gate
+#: trusts for correctness) and native build output (already covered by
+#: `NATIVE_EXTENSIONS` above via direct import, a stronger check than a
+#: fingerprint could give).
+DERIVED_ARTIFACTS: tuple[tuple[str, str, str], ...] = (
+    ("graph-cache", ".frob/cache.db", "sqlite"),
+    ("dup-cache", ".frob/dup.db", "sqlite"),
+    ("vet-cache", ".frob/vet.db", "sqlite"),
+    ("coverage-stamp", ".frob/coverage-stamp", "json"),
+    ("baseline", ".frob/baseline", "json"),
+    ("coverage-lock", "frob-coverage.lock.json", "json"),
+)
+
+#: The first 16 bytes of any valid SQLite database file (the format's own
+#: fixed magic header) -- a `"sqlite"`-kind artifact whose bytes don't start
+#: with this is corrupt/truncated/not-actually-sqlite, not merely "old".
+_SQLITE_MAGIC = b"SQLite format 3\x00"
+
+
+# frob:doc docs/guides/install.md#derived-state-integrity-manifest-t-0570
+class DerivedArtifactStatus(BaseModel):
+    """One derived artifact's presence, content fingerprint, and validity,
+    as observed by `frob doctor` (T-0570)."""
+
+    model_config = {}
+
+    name: str
+    path: str
+    present: bool
+    healthy: bool
+    fingerprint: str | None = None
+    detail: str | None = None
+
+
+def _sqlite_validity(data: bytes) -> str | None:
+    """`None` if `data` starts with the SQLite magic header, else a short
+    corruption detail string -- never raises on garbage bytes."""
+    if data.startswith(_SQLITE_MAGIC):
+        return None
+    return "not a valid SQLite file (bad or missing header)"
+
+
+def _json_validity(data: bytes) -> str | None:
+    """`None` if `data` parses as JSON, else a short corruption detail
+    string -- never raises on malformed bytes."""
+    try:
+        json.loads(data.decode("utf-8"))
+    except (UnicodeDecodeError, ValueError) as exc:
+        return f"malformed JSON ({exc})"
+    return None
+
+
+_VALIDATORS = {"sqlite": _sqlite_validity, "json": _json_validity}
+
+
+# frob:doc docs/guides/install.md#derived-state-integrity-manifest-t-0570
+def _artifact_status(
+    root: Path, name: str, rel_path: str, kind: str
+) -> DerivedArtifactStatus:
+    """One `DerivedArtifactStatus` for `root/rel_path` -- absent is reported
+    as healthy (nothing written yet is not corruption); present-but-unreadable
+    or present-but-invalid-for-`kind` is reported unhealthy with `detail`
+    explaining why. Never raises: an artifact this function cannot even
+    read is itself a diagnosis, not an exception to propagate."""
+    path = root / rel_path
+    if not path.exists():
+        return DerivedArtifactStatus(
+            name=name, path=rel_path, present=False, healthy=True
+        )
+    try:
+        data = path.read_bytes()
+    except OSError as exc:
+        _log.warning("doctor: derived artifact %s (%s) unreadable: %s", name, path, exc)
+        return DerivedArtifactStatus(
+            name=name,
+            path=rel_path,
+            present=True,
+            healthy=False,
+            detail=f"unreadable: {exc}",
+        )
+    fingerprint = hashlib.sha256(data).hexdigest()
+    detail = _VALIDATORS[kind](data)
+    healthy = detail is None
+    if not healthy:
+        _log.warning(
+            "doctor: derived artifact %s (%s) failed integrity check: %s",
+            name,
+            path,
+            detail,
+        )
+    return DerivedArtifactStatus(
+        name=name,
+        path=rel_path,
+        present=True,
+        healthy=healthy,
+        fingerprint=fingerprint,
+        detail=detail,
+    )
+
+
+# frob:doc docs/guides/install.md#derived-state-integrity-manifest-t-0570
+# frob:tests tests/system/test_cli_doctor.py kind="integration"
+def verify_derived_state(root: Path) -> tuple[DerivedArtifactStatus, ...]:
+    """Fingerprint every entry in `DERIVED_ARTIFACTS` under `root` and report
+    its presence/validity -- the one doctor-first pass `run_diagnosis` folds
+    into `DoctorReport.derived_state`, so stale/corrupt cache state is a
+    named finding instead of a pile of confusing downstream `frob check`/
+    `frob dup` errors (T-0570)."""
+    return tuple(
+        _artifact_status(root, name, rel_path, kind)
+        for name, rel_path, kind in DERIVED_ARTIFACTS
+    )
+
+
+# frob:doc docs/guides/install.md#derived-state-integrity-manifest-t-0570
+def _derived_state_remediation(corrupt: tuple[DerivedArtifactStatus, ...]) -> str:
+    """One clear remediation line naming every corrupt derived artifact and
+    the exact command to clear each, instead of dozens of misleading
+    findings downstream that never say the cache itself is the problem."""
+    names = ", ".join(f"{d.name} ({d.path})" for d in corrupt)
+    commands = " ; ".join(f"rm -f {d.path}" for d in corrupt)
+    return f"corrupt derived state: {names} -- {commands}"
+
+
 # frob:doc docs/guides/install.md#frob-doctor-native-extension-diagnosis-t-0319
 class DoctorReport(BaseModel):
-    """Full `frob doctor` diagnosis: per-extension status plus the overall
-    verdict and remediation hint (empty when everything is healthy)."""
+    """Full `frob doctor` diagnosis: per-extension status, derived-artifact
+    integrity manifest (T-0570), the overall verdict, and remediation hint
+    (empty when everything is healthy)."""
 
     model_config = {}
 
     frob_version: str
     extensions: list[NativeExtensionStatus]
+    derived_state: list[DerivedArtifactStatus] = []
     healthy: bool
     remediation: str | None = None
 
@@ -90,20 +240,48 @@ def _frob_version() -> str:
         return "unknown"
 
 
+def _combined_remediation(
+    natives_healthy: bool, corrupt: tuple[DerivedArtifactStatus, ...]
+) -> str | None:
+    """The full remediation text for a `DoctorReport`: natives hint, derived-
+    state hint, or both joined -- `None` only when both are clean."""
+    parts = []
+    if not natives_healthy:
+        parts.append(REMEDIATION_HINT)
+    if corrupt:
+        parts.append(_derived_state_remediation(corrupt))
+    return " | ".join(parts) if parts else None
+
+
 # frob:doc docs/guides/install.md#frob-doctor-native-extension-diagnosis-t-0319
 # frob:tests tests/system/test_cli_doctor.py kind="integration"
-def run_diagnosis() -> DoctorReport:
-    """Check every entry in `NATIVE_EXTENSIONS` for importability and build
-    the full `DoctorReport` -- `healthy` is True only when all of them
-    import cleanly, and `remediation` carries `REMEDIATION_HINT` whenever
-    it is not."""
+def run_diagnosis(root: Path | None = None) -> DoctorReport:
+    """Check every entry in `NATIVE_EXTENSIONS` for importability and
+    fingerprint every entry in `DERIVED_ARTIFACTS` under `root` (T-0570),
+    building the full `DoctorReport`. `healthy` is True only when every
+    native extension imports cleanly AND no present derived artifact fails
+    its integrity check; `remediation` names whichever failed. `root`
+    defaults to the current working directory, matching every other
+    `frob` command's implicit-root convention -- passing it explicitly is
+    for tests and non-CLI callers."""
     extensions = [_extension_status(name) for name in NATIVE_EXTENSIONS]
-    healthy = all(ext.available for ext in extensions)
+    natives_healthy = all(ext.available for ext in extensions)
+
+    derived_state = verify_derived_state(root or Path.cwd())
+    corrupt = tuple(d for d in derived_state if d.present and not d.healthy)
+
+    healthy = natives_healthy and not corrupt
     report = DoctorReport(
         frob_version=_frob_version(),
         extensions=extensions,
+        derived_state=list(derived_state),
         healthy=healthy,
-        remediation=None if healthy else REMEDIATION_HINT,
+        remediation=_combined_remediation(natives_healthy, corrupt),
     )
-    _log.info("doctor: healthy=%s extensions=%s", healthy, extensions)
+    _log.info(
+        "doctor: healthy=%s extensions=%s derived_state_corrupt=%s",
+        healthy,
+        extensions,
+        [d.name for d in corrupt],
+    )
     return report
