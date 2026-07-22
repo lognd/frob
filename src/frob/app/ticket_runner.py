@@ -1128,6 +1128,10 @@ def _reconcile_cmd(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-0354
+# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_foreground_runs_sweep_synchronously  # noqa: E501
+# frob:tests tests/unit/test_app_runners_batch7.py::TestSpawnBackgroundSweep.test_spawns_detached_sweep_subprocess  # noqa: E501
+# frob:tests tests/unit/test_app_runners_batch7.py::TestSpawnBackgroundSweep.test_popen_failure_falls_back_to_synchronous_sweep  # noqa: E501
+# frob:tests tests/unit/test_app_runners_batch7.py::TestSpawnBackgroundSweep.test_exec_kill_switch_forces_synchronous_sweep  # noqa: E501
 def _run_sweep(root: Path, ticket) -> None:  # noqa: ANN001
     """Record the pre-work sweep (dup + xref + scope digest) for `ticket`.
 
