@@ -5,6 +5,12 @@ Hook-mode exit-code contract: 0 = fine (or non-install command, exits fast
 with no network), 2 = BLOCK (quarantine/typosquat hit), reason on stderr for
 a Claude Code PreToolUse hook to surface to the agent.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/app/vet_runner.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 

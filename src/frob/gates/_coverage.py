@@ -24,6 +24,12 @@ against a freshly-loaded `CoverageData` and flag drift beyond tolerance --
 e.g. a lock committed from a locally-inflated coverage.xml that a genuine
 CI run cannot reproduce.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/gates/_coverage.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 

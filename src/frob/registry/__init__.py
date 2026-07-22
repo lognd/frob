@@ -1,3 +1,5 @@
+# frob:ticket T-0591
+# frob:waive TEST003 reason="unit-tested exhaustively via its consuming gates (test_registry_models.py, test_registry_exhaustiveness.py, ...); no CLI/subprocess integration entrypoint exists for this internal model package"  # noqa: E501
 """Unified registry capability (T-0407): one typed model every
 `docs/design/registry/*.yaml` manifest instantiates, so a registry entry's
 shape and disposition grammar live in exactly one place instead of being
@@ -10,6 +12,12 @@ future registry instance (a new domain corpus, a new exhaustible taxonomy
 such as T-0424's reflexive check-coverage registry) loads through
 `load_registry_dir` rather than hand-rolling its own YAML parse.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/registry/__init__.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 

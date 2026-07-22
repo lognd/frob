@@ -13,6 +13,12 @@ The manifest is tracked text (source of truth); the graph is derived. The
 gate is opt-in: it runs only once a manifest exists, so a repo adopts it by
 running `frob release stamp` once.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/release/__init__.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 

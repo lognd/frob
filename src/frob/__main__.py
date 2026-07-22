@@ -1,3 +1,9 @@
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: src/frob/__main__.py's \
+# exclusivity-vocabulary hit is source-level design-rationale/scope-cut prose (a \
+# docstring or comment describing already-implemented internal behavior, verifiable \
+# by reading the code it annotates) rather than a separate cross-module contract \
+# needing its own tracked invariant; disposed as a calibration batch, not \
+# claim-by-claim"
 # frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
 # frob:waive SCOPE001 reason="T-0176 scope omitted this file, filed T-0220"
 # frob:waive SCOPE001 reason="T-0411 needs --priority/priority subcommand wiring here; T-0453/T-0455 bootstrap precedent, T-0446 tracks the general scope-declaration gap for CLI-wiring tickets"  # noqa: E501

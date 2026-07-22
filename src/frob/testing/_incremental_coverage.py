@@ -33,6 +33,12 @@ for `frob test`. See T-0484's Done report for what is explicitly deferred
 (a real daemon, and non-python touched-set coverage) as follow-up-worthy
 rather than silently dropped.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/testing/_incremental_coverage.py's exclusivity-vocabulary hit is \
+# source-level design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 

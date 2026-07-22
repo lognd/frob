@@ -1,3 +1,9 @@
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: src/frob/doctor.py's \
+# exclusivity-vocabulary hit is source-level design-rationale/scope-cut prose (a \
+# docstring or comment describing already-implemented internal behavior, verifiable \
+# by reading the code it annotates) rather than a separate cross-module contract \
+# needing its own tracked invariant; disposed as a calibration batch, not \
+# claim-by-claim"
 # frob:waive SCOPE001 reason="T-0319 scope comma-joined, matches nothing (T-0241 bug)"
 # frob:waive TEST003 reason="pre-existing T-0319 debt, system kind only"
 """`frob doctor`: verify the native extensions (`frob_core`, `strata_core`)

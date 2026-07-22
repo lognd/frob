@@ -13,6 +13,7 @@ convention; the rest are total functions over `str`/`Mapping` and cannot
 fail.
 """
 
+# frob:invariant INV-040
 from __future__ import annotations
 
 import re

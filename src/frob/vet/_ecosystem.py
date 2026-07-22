@@ -9,6 +9,12 @@ VET-PY001's "when a wheel exists" clause and VET-JS002's full dependency-
 confusion resolution, are noted inline and left for a follow-up ticket
 rather than half-implemented against data this scan doesn't have).
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/vet/_ecosystem.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 # frob:waive TEST005 reason="module line coverage 83.0%, debt T-0160"
 

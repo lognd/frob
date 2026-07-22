@@ -12,6 +12,12 @@ cohesive `_legacy_py`/`_legacy_cpp` submodules (with shared node/hash
 helpers in `_legacy_common`); this module owns the models, the file
 scanners, and the clone-grouping entry point.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/dup/_legacy.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 

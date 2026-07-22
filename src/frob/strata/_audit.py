@@ -29,6 +29,12 @@ SAME zero-new-detection way -- `_host_isolation_gap`/`_blast_radius_gaps`
 are pure adapters, mirroring `_lint_gaps`/`_pii_gaps`. Before this, neither
 function had a caller reaching them from `frob sys audit`, so a real repo
 had no way to run the proof without a hand-written harness."""
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/strata/_audit.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 

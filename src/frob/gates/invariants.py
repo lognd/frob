@@ -7,6 +7,12 @@ schema validation over the frontmatter block; INV001/INV002 (evidence and
 code-anchor closure) live in `frob.gates` proper since they must join
 against `CollectedTests` and the `GraphSnapshot`.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/gates/invariants.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 

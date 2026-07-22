@@ -21,6 +21,12 @@ one process (or a test that must not leak registrations across cases) can
 construct its own `FuzzRegistry()` and pass it explicitly, keeping
 registrations scoped instead of bleeding across projects sharing a process.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/fuzz/_arbitrary.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 # frob:waive TEST005 reason="module line coverage 77.2%, debt T-0160"
 

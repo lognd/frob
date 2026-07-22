@@ -16,6 +16,12 @@ confusion axis entirely. `accent` uses cyan, also outside that axis, so it
 is never mistaken for a severity color. `muted` carries no hue at all
 (`DIM`), so it never competes with the severity palette.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/render/_palette.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 

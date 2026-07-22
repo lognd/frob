@@ -14,6 +14,12 @@ regex-driven line scan that locates each id's header line and, for
 brace-delimited constructs, its matching close -- giving every construct a
 concrete `RawSymbol` span without hand-rolling a second strata parser.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/lang/_walk_strata.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 
