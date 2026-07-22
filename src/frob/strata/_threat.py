@@ -1665,6 +1665,61 @@ def _claim_holds(model: KernelModel, claim: Claim) -> bool:
     return False
 
 
+# frob:ticket T-0501
+def _flow_completeness_gap(model: KernelModel, claim: Claim) -> str | None:
+    """Names the G2 flow-completeness incompleteness (docs/audits/
+    strata.md) that makes accepting `claim`'s vacuous NoFlow proof as a
+    mitigation-chokepoint discharge unsound, or `None` when there is
+    nothing to flag.
+
+    G2's shape: the model declares AT LEAST ONE `trust == "foreign"` node
+    (a real adversary IS modeled somewhere in this system) yet `claim`
+    still holds with EVERY boundary removed
+    (`_restricted_to_boundaries(model, frozenset(), claim)`) -- no path
+    from any foreign-trust node to the sink exists in the closure at all,
+    boundary or no boundary. The `NoFlow` is proved by absence of a flow,
+    not by any boundary: the sink's real inbound data path from untrusted
+    input was simply never modeled for THIS obligation, even though the
+    model is not itself foreign-less. That is a model-completeness bug
+    (an omitted `flow`), not an honest "no adversary here" declaration,
+    so it must fail closed with a finding naming the gap rather than
+    silently discharge.
+
+    Deliberately does NOT flag a model with ZERO foreign-trust nodes at
+    all -- that is T-0223's documented, intended "library-mode discharge
+    by absence" (docs/strata/threat.md#library-mode-discharge-by-absence,
+    `TestLibraryModeForeignlessDischarge`): a library repo with no
+    ingress node anywhere in the model has, honestly, no modeled
+    adversary, and the SAME claim shape re-evaluates and REFUTES the
+    moment a real foreign node with an unendorsed flow into the sink is
+    added -- there is nothing to remember to revisit, so treating that
+    case as a gap here would regress a sound, already-shipped mechanism.
+    G7 (docs/audits/strata.md) as literally worded ("no foreign-trust
+    node exists" is always a gap) is this ticket's one disclosed
+    non-fix: T-0223 makes that shape sound by design for a genuinely
+    foreign-less model, so this function narrows G7 to the mixed-model
+    case -- a foreign node DOES exist in the model, but this particular
+    obligation's flow to it was never wired up.
+
+    Only called for a `NoFlow`-bodied claim (`_discharges_as_chokepoint`
+    already gates on that shape upstream); returns `None` for any other
+    claim body so a caller can call this unconditionally.
+    """
+    if not isinstance(claim.body, NoFlow):
+        return None
+    if not any(node.trust == _FOREIGN_TRUST for node in model.nodes):
+        return None
+    if _claim_holds(_restricted_to_boundaries(model, frozenset(), claim), claim):
+        return (
+            "proves NoFlow vacuously: a foreign-trust node exists in this "
+            "model but no modeled path reaches the sink from it even with "
+            "every boundary removed -- the foreign->sink flow for this "
+            "obligation is un-modeled, not mitigated (docs/audits/"
+            "strata.md G2)"
+        )
+    return None
+
+
 # Whether the boundaries carrying `entry`'s EXACT required mitigation
 # (`_matching_boundary_ids`) are, by themselves, sufficient to make
 # `claim`'s `NoFlow` hold -- i.e. the catalog-correct mitigation is a
@@ -1679,11 +1734,16 @@ def _claim_holds(model: KernelModel, claim: Claim) -> bool:
 # boundary removed (`_restricted_to_boundaries(model, frozenset(),
 # claim)`), no path from the claim's source to its sink exists in the
 # closure AT ALL -- the `NoFlow` is proved by absence of a flow, not by
-# any boundary, so there is nothing for a mitigation to be a chokepoint
-# ON. Requiring a matching boundary in this case would reject models
-# that were already correctly PROVED before phase C's tightening
-# (`_check_one_discharge`'s pre-T-0113 fixtures declare no flows/
-# boundaries at all) -- a real regression, not the reviewer-flagged gap.
+# any boundary. T-0501: the caller (`_check_discharge_mitigation_kind`)
+# now runs `_flow_completeness_gap` BEFORE this function and rejects the
+# G2 mixed-model case (a foreign node exists elsewhere but this
+# obligation's own flow was never modeled) with a distinct violation, so
+# by the time this branch is reached the vacuous case is EITHER the
+# sound T-0223 library-mode discharge (no foreign-trust node anywhere in
+# the model) OR a model with genuinely no flows/boundaries declared at
+# all (the pre-T-0113 fixtures this branch was written to keep passing) --
+# both legitimately proved by absence, so accepting them here is correct,
+# not the reviewer-flagged gap.
 #
 # Otherwise, re-evaluates the SAME claim (`_claim_holds`, so the SAME
 # `_eval_noflow`/`reachable` closure walk `_discharges_as_chokepoint`'s
@@ -1804,6 +1864,7 @@ def _check_discharge_assumed_and_refuted(
 # still has to exist, prove a chokepoint shape (`_discharges_as_chokepoint`
 # above), and clear the catalog rung -- only the boundary-KIND proof is
 # exempted, same as an assume gets.
+# frob:ticket T-0501
 def _check_discharge_mitigation_kind(
     entry: WeaknessEntry,
     node_id: str,
@@ -1815,14 +1876,23 @@ def _check_discharge_mitigation_kind(
     """Last `_check_one_discharge` gate: for a non-assumed claim on a
     non-managed node, the proven chokepoint must be of the catalog's
     required mitigation KIND (`_mitigation_is_chokepoint`) -- see the
-    comment above this def for why assumed/managed claims skip it."""
+    comment above this def for why assumed/managed claims skip it.
+
+    T-0501: BEFORE asking whether a genuine chokepoint exists, checks
+    whether the claim's own NoFlow proof is vacuous in the first place
+    (`_flow_completeness_gap`, docs/audits/strata.md G2/G7) -- an
+    un-modeled foreign->sink flow or a model with no foreign-trust node
+    at all must fail closed with a finding naming the incompleteness, not
+    silently PROVED just because assumed/managed claims are otherwise
+    exempt from the mitigation-kind check below."""
     node = nodes_by_id.get(node_id)
     node_is_managed = node is not None and is_managed(node)
-    if (
-        not claim.assumed
-        and not node_is_managed
-        and not _mitigation_is_chokepoint(model, entry, claim)
-    ):
+    if claim.assumed or node_is_managed:
+        return None
+    gap = _flow_completeness_gap(model, claim)
+    if gap is not None:
+        return _discharge_violation(entry, node_id, f"claim {claim_id!r} {gap}")
+    if not _mitigation_is_chokepoint(model, entry, claim):
         return _discharge_violation(
             entry,
             node_id,

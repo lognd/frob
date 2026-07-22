@@ -596,6 +596,7 @@ class TestDischargeCompleteness:
         assert {v.cwe for v in result.danger_ok} == {"CWE-89"}
 
 
+# frob:ticket T-0501
 class TestDischargeChokepointShape:
     """Phase C (T-0113, docs/strata/threat.md#phasing item C): a discharging
     claim must PROVE a mitigation chokepoint (a NoFlow(src=foreign, dst=node)
@@ -648,12 +649,35 @@ class TestDischargeChokepointShape:
         assert "does not prove a mitigation chokepoint" in violations[0].detail
 
     # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:ticket T-0501
     def test_noflow_from_a_specific_foreign_trust_node_discharges(self):
+        """`_discharges_as_chokepoint` accepts a `NoFlow` naming a
+        specific foreign-trust node directly (not just the `"foreign"`
+        trust level) as the correct SHAPE. T-0501: the flow from `Evil`
+        to `Web` and its matching mitigation boundary must both be
+        modeled for the OVERALL discharge to pass now -- before this
+        ticket, this test passed with NEITHER a flow NOR a boundary
+        declared at all, i.e. it was itself an undetected G2 vacuous
+        discharge (confirmed: dropping the `flows`/`boundaries` below
+        reproduces the pre-fix `THREAT003 ... proves NoFlow vacuously`
+        finding this ticket now raises)."""
         node = Node(id="Web", trust="trusted", may=("html_render",))
         evil = Node(id="Evil", trust="foreign")
         claim_id = _discharge_claim_id("CWE-79", "Web")
         model = KernelModel(
             nodes=(node, evil),
+            flows=(Flow(id="f1", src="Evil", dst="Web"),),
+            boundaries=(
+                Boundary(
+                    id="b1",
+                    flow_id="f1",
+                    direction=BoundaryDirection.ENDORSE,
+                    from_level="foreign",
+                    to_level="trusted",
+                    predicate="output_encoding",
+                    obligations=(claim_id,),
+                ),
+            ),
             claims=(
                 Claim(
                     id=claim_id,
@@ -942,6 +966,109 @@ class TestMitigationKindChokepoint:
                     assumed=True,
                     owner="security-team",
                     review="2099-01-01",
+                ),
+            ),
+        )
+        result = check_discharge_completeness(model)
+        assert result.is_ok
+        assert result.danger_ok == ()
+
+
+# frob:ticket T-0501
+class TestFlowCompletenessGap:
+    """T-0501 (docs/audits/strata.md G2): a `NoFlow(src="foreign", ...)`
+    claim used to discharge THREAT003 vacuously the moment the closure
+    found no path to the sink -- regardless of WHY there was no path.
+    This left an incomplete/attacker-authored `.strata` that declares a
+    real adversary elsewhere in the model, but simply never wires a flow
+    into the node firing the obligation, "PROVED" with zero mitigation
+    modeled. These fixtures confirm that shape now fails closed with a
+    distinct finding naming the incompleteness, while the genuinely
+    foreign-less T-0223 library-mode discharge (no `trust foreign` node
+    ANYWHERE in the model, `TestLibraryModeForeignlessDischarge` above)
+    and a model with no flows/boundaries declared at all keep discharging
+    exactly as before -- neither of those is the flagged gap."""
+
+    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:ticket T-0501
+    def test_foreign_node_present_but_no_flow_to_sink_fails_closed(self):
+        """Confirmed vacuous discharge BEFORE this ticket's fix: `Evil` is
+        a real foreign-trust node in the model (an adversary IS modeled),
+        `Web` fires CWE-79 via `html_render`, but no `Flow` connects them
+        at all -- `Web`'s inbound path from untrusted input was simply
+        never modeled. The un-restricted closure already has no path
+        (nothing links Evil to Web), so `NoFlow` proved vacuously and
+        THREAT003 discharged with NO mitigation modeled -- the exact G2
+        repro from docs/audits/strata.md."""
+        evil = Node(id="Evil", trust="foreign")
+        web = Node(id="Web", trust="trusted", may=("html_render",))
+        claim_id = _discharge_claim_id("CWE-79", "Web")
+        model = KernelModel(
+            nodes=(evil, web),
+            # No `flows` at all -- Web's real inbound data path is
+            # un-modeled, not merely un-mitigated.
+            claims=(
+                Claim(
+                    id=claim_id,
+                    body=NoFlow(src="foreign", dst="Web"),
+                    required_rung=Rung.L4,
+                ),
+            ),
+        )
+        result = check_discharge_completeness(model)
+        assert result.is_ok
+        violations = result.danger_ok
+        assert len(violations) == 1
+        assert violations[0].rule == "THREAT003"
+        assert "vacuously" in violations[0].detail
+        assert "un-modeled" in violations[0].detail
+
+    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:ticket T-0501
+    def test_foreign_node_present_and_connected_elsewhere_still_fails_closed(self):
+        """The foreign node need not be totally disconnected from the
+        model -- it only has to be disconnected from THIS sink. `Evil`
+        reaches an unrelated node `Other`, never `Web`; `Web` still fires
+        CWE-79 with no adversary wired to it at all."""
+        evil = Node(id="Evil", trust="foreign")
+        other = Node(id="Other", trust="trusted")
+        web = Node(id="Web", trust="trusted", may=("html_render",))
+        claim_id = _discharge_claim_id("CWE-79", "Web")
+        model = KernelModel(
+            nodes=(evil, other, web),
+            flows=(Flow(id="f1", src="Evil", dst="Other"),),
+            claims=(
+                Claim(
+                    id=claim_id,
+                    body=NoFlow(src="foreign", dst="Web"),
+                    required_rung=Rung.L4,
+                ),
+            ),
+        )
+        result = check_discharge_completeness(model)
+        assert result.is_ok
+        violations = result.danger_ok
+        assert len(violations) == 1
+        assert "vacuously" in violations[0].detail
+        assert "un-modeled" in violations[0].detail
+
+    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:ticket T-0501
+    def test_no_foreign_node_anywhere_still_discharges_by_absence(self):
+        """Regression guard for T-0223: a model with ZERO `trust foreign`
+        nodes anywhere is the documented library-mode case, not the G2
+        gap -- it must keep discharging by absence exactly as before this
+        ticket (see also `TestLibraryModeForeignlessDischarge`, which
+        proves the same thing through the real parser)."""
+        web = Node(id="Web", trust="trusted", may=("html_render",))
+        claim_id = _discharge_claim_id("CWE-79", "Web")
+        model = KernelModel(
+            nodes=(web,),
+            claims=(
+                Claim(
+                    id=claim_id,
+                    body=NoFlow(src="foreign", dst="Web"),
+                    required_rung=Rung.L4,
                 ),
             ),
         )
