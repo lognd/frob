@@ -1543,6 +1543,7 @@ coordinator's earlier direction -- only native/TS modules are believed to
 remain (`src/frob/check/_native.py`, `src/frob/check/_ts.py`,
 `src/frob/dup/_legacy_cpp.py`), pending coordinator confirmation via a fresh
 full-suite `frob check --only test` scan.
+
 <!-- ticket:T-0177 -->
 ```yaml
 id: T-0177
@@ -3125,6 +3126,7 @@ actual state lives entirely in this worktree's tickets.md, verified via
 - `tests/test_lang_support.py::TestConformanceViolations::test_unreasoned_known_gap_fails` (pytest node id, verified passing when recorded)
 - `tests/test_lang_conformance_gate.py::TestLangConformanceGate::test_real_registry_is_clean` (pytest node id, verified passing when recorded)
 - `tests/test_lang_conformance_gate.py::TestLangConformanceGate::test_missing_facet_becomes_error_violation` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0406 -->
 ```yaml
 id: T-0406
@@ -3193,6 +3195,7 @@ component: null
 labels: []
 ```
 User directive (2026-07-20): use frob ITSELF to ENFORCE the structural fixes across ALL projects, not just frobs own repo. Frobs enforcement vector is its gate system -- gates run in every frob-enabled repo (the 8 siblings + any future project). So the audit remediations must ship as first-class GATE FAMILIES wired into frob check and ON BY DEFAULT (opt-in = the fail-open trap again), so the guarantees propagate to every consumer automatically. TWO concrete requirements: (1) The language/capability CONFORMANCE (T-0405) must be a SHIPPED, per-project gate, not a frob-internal test. In a DOWNSTREAM project, it must FAIL LOUDLY when the project actually contains a language that frob does NOT fully+conformantly support -- e.g. a repo with Kotlin/Swift/Go where frobs resolver/dangerous-table/runner for that language is missing or partial must get a hard "coverage for <lang> is UNSOUND (lexical-only / missing resolver)" failure, never a silent lexical fallback that fakes coverage. This turns "we half-support a language" from an invisible product gap into a build failure in every affected project, and makes adding full support the way to clear it. (2) The other structural remediations (evidence-must-be-covering-and-passed T-0398, fail-closed parsing T-0402/0404, blocking quality T-0399, orphan gate T-0396, registry drift-lock T-0343) likewise ship as gate families with sane defaults so every project inherits them; a per-project frob.toml can tune severity but not silently disable the fail-closed core. Acceptance: a fixture downstream repo containing a not-fully-supported language reds frob check with a named unsound-coverage finding; a repo whose languages are all fully-conformant passes; the guarantee is verified to run in a sibling repo, not just frob. This is what makes the North-Star hold everywhere frob runs, not just here.
+
 <!-- ticket:T-0408 -->
 ```yaml
 id: T-0408
@@ -3698,7 +3701,7 @@ docs/audits/gates-accounting.md B3/E3. _edge_has_execution_evidence: for TS/C/C+
 id: T-0553
 title: 'gates: file-level waiver blanket-suppresses every same-rule violation in the
   file (B11)'
-state: queued
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-21'
@@ -3708,7 +3711,9 @@ parent: T-0403
 scope:
 - src/frob/gates/
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_gates.py::TestCoverageGate::test_cov001_waiver_does_not_blanket_suppress_sibling_symbol
+- tests/test_gates.py::TestCoverageGate::test_waiver_suppresses_and_reports
 attachments: []
 acceptance: []
 threat: null
@@ -3716,6 +3721,50 @@ component: null
 labels: []
 ```
 docs/audits/gates-accounting.md B11. _match_waiver: when violation.symref is None (COV001/COV002/DRIFT/most rules) a waiver matches on file alone, so one frob:waive COV002 anywhere in a file waives ALL changed-symbol accounting violations for every symbol in that file; a package-prefix waiver can waive a whole package's TEST003/004 requirement. Only TEST005 sets symref for symbol-exact matching. Fix direction: set symref on more violation kinds (COV001/002, INV001, etc, wherever a specific symbol is the actual subject) so waivers narrow to symbol-exact by default, reserving file/package blast radius for genuinely file-level rules.
+
+## Done report
+
+## Done report
+
+Changed:
+- src/frob/gates/__init__.py::_cov001
+- src/frob/gates/__init__.py::_cov002_check_symref
+
+Set `symref` on COV001 and COV002 violations (both are precisely about ONE
+symbol) so `_match_waiver` uses its symbol-exact matching mode instead of
+falling back to file-scoped matching. Before this fix, one `frob:waive
+COV001`/`COV002 reason="..."` placed anywhere in a file blanket-suppressed
+the same rule for every OTHER symbol in that file, not just the one it was
+written above.
+
+Out of scope, intentionally not touched: INV001/INV005 and DRIFT/other
+symref-less rules named in docs/audits/gates-accounting.md's B11 finding as
+candidates ("etc") -- those checks operate over an invariant id or a whole
+module/interface, not a single code symref the way COV001/COV002 do
+(INV001's own existence-vs-proof gap is a separate finding, B12). Scoping
+this fix to COV001/COV002 keeps the change reviewable and matches what B11
+actually demonstrates broken.
+
+Evidence:
+- tests/test_gates.py::TestCoverageGate::test_cov001_waiver_does_not_blanket_suppress_sibling_symbol
+- tests/test_gates.py::TestCoverageGate::test_waiver_suppresses_and_reports (regression, unchanged)
+
+Filed: none
+
+Gates: uv run frob check --delta --ticket T-0553 clean (0/136 new violations);
+uv run pytest tests/test_gates.py -q: 250 passed (full file)
+
+### Changed
+```
+ src/frob/gates/__init__.py | 47 ++++++++++++++++++++++++++----------
+ tests/test_gates.py        | 59 ++++++++++++++++++++++++++++++++++++++++++++++
+ tickets.md                 | 28 ++++++++++++++++++++--
+ 3 files changed, 119 insertions(+), 15 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestCoverageGate::test_cov001_waiver_does_not_blanket_suppress_sibling_symbol` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageGate::test_waiver_suppresses_and_reports` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0554 -->
 ```yaml
@@ -3768,7 +3817,7 @@ docs/audits/gates-accounting.md B2/E2. lock.py _DEFAULT_FACET='sig'; a frob:doc/
 ```yaml
 id: T-0557
 title: 'gates: TEST005 silently skips symbols absent from coverage.xml (B4)'
-state: queued
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-21'
@@ -3778,7 +3827,9 @@ parent: T-0403
 scope:
 - src/frob/gates/
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_gates.py::TestTestGate::test_test005_unmeasured_symbol_in_measured_file_flags_as_zero
+- tests/test_gates.py::TestTestGate::test_test005_symbol_in_unmeasured_file_still_skipped
 attachments: []
 acceptance: []
 threat: null
@@ -3786,6 +3837,45 @@ component: null
 labels: []
 ```
 docs/audits/gates-accounting.md B4. _test005_symbols: pct = data.symbol_branch.get(record.symref); skipped (not flagged) when pct is None, i.e. when the symbol was never executed at all -- coverage.xml has no row for it. Combined with B1, completely dead public code clears both TEST001 (name match) and TEST005 (no data). RIGHT-WAY fix: a public symbol with NO coverage record at all should be treated as 0% (flag), not skipped -- distinguish 'never executed' from 'excluded from measurement'.
+
+## Done report
+
+## Done report
+
+Changed:
+- src/frob/gates/__init__.py::_test005_symbols
+
+Distinguishes "symbol never executed" (its file DOES appear in
+`data.module_line`, i.e. coverage.xml measured it, but the symbol itself
+has no `symbol_branch` entry) from "symbol's file excluded from
+measurement entirely" (no `module_line` entry at all -- not imported by
+the suite, a generated file, or otherwise out of scope). The former is now
+treated as 0% branch coverage and flagged; the latter is still skipped
+(a measurement gap belongs to TEST006/module_join_fraction, not a per-
+symbol floor claim). Before this fix, both cases silently skipped, which
+combined with B1 (TEST001 name-match) let completely dead public code
+clear coverage gates entirely.
+
+Evidence:
+- tests/test_gates.py::TestTestGate::test_test005_unmeasured_symbol_in_measured_file_flags_as_zero
+- tests/test_gates.py::TestTestGate::test_test005_symbol_in_unmeasured_file_still_skipped
+
+Filed: none
+
+Gates: uv run frob check --ticket T-0557 clean (0 errors, 136 warnings, 177
+waived); uv run pytest tests/test_gates.py -q: full file passed (all tests)
+
+### Changed
+```
+ src/frob/gates/__init__.py | 64 +++++++++++++++++++++++-------
+ tests/test_gates.py        | 97 ++++++++++++++++++++++++++++++++++++++++++++++
+ tickets.md                 | 80 ++++++++++++++++++++++++++++++++++++--
+ 3 files changed, 224 insertions(+), 17 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestTestGate::test_test005_unmeasured_symbol_in_measured_file_flags_as_zero` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTestGate::test_test005_symbol_in_unmeasured_file_still_skipped` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0560 -->
 ```yaml
@@ -3840,7 +3930,7 @@ T-0459 landed RENDER001 warn-first with 14 bare print/stdout call sites remainin
 id: T-0564
 title: 'gates: COV002 closed-ticket grace window misses marker-in-hunk when unified=0
   diff omits the marker line'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -3850,7 +3940,8 @@ parent: null
 scope:
 - src/frob/gates/
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_gates.py::TestCoverageGate::test_cov002_grace_matches_hunk_anywhere_in_ticket_block
 attachments: []
 acceptance: []
 threat: null
@@ -3858,6 +3949,30 @@ component: null
 labels: []
 ```
 Discovered while working T-0550: _bound_to_open_ticket's T-0214/T-0320 grace window (closed ticket still covers its own closing diff) requires the ticket's <!-- ticket:ID --> marker LINE to fall inside one of working_diff's unified=0 hunks. A YAML ticket block's marker/id/title lines often sit just above the first line that actually differs (e.g. state: queued -> done, or an evidence: [] -> evidence: [...] insertion later in the block), so the marker line itself is never in any hunk even though the ticket's own state transition clearly is in the diff. Result: once a ticket closes and a LATER ticket becomes active on the same stacked, unmerged branch, a full/ticket-scoped frob check re-flags the closed ticket's already-covered symbols as COV002 violations again, purely due to this narrow hunk-membership check, not a real coverage gap. Fix direction: extend _ticket_marker_in_diff_hunk to also count a hunk anywhere within the ticket's whole YAML block span (marker to closing triple-backtick), not just the exact marker line.
+
+## Done report
+
+## Done report
+
+Changed:
+- src/frob/gates/__init__.py::_ticket_marker_in_diff_hunk
+
+Evidence:
+- tests/test_gates.py::TestCoverageGate::test_cov002_grace_matches_hunk_anywhere_in_ticket_block
+- (regression, unchanged) tests/test_gates.py::TestCoverageGate::test_cov002_done_ticket_covers_own_closing_diff
+- (regression, unchanged) tests/test_gates.py::TestCoverageGate::test_cov002_done_ticket_without_grace_still_fires
+- (regression, unchanged) tests/test_gates.py::TestCoverageGate::test_cov002_stale_done_ticket_unrelated_tickets_md_touch_still_fires
+- (regression, unchanged) tests/test_gates.py::TestCoverageGate::test_cov002_marker_touch_without_state_transition_still_fires
+
+Filed: none
+
+Gates: uv run frob check --delta --ticket T-0564 clean (0/136 new violations); uv run pytest tests/test_gates.py -k cov002 -q: 13 passed
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_gates.py::TestCoverageGate::test_cov002_grace_matches_hunk_anywhere_in_ticket_block` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0565 -->
 ```yaml
