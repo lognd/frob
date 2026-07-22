@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.88.0] - unreleased
+
+- T-0612: arch: Rust adapter for the normalized code model (`frob.arch._rust.RustAdapter`)
+
 ## [0.86.0] - unreleased
 
 - T-0636: flake quarantine: hard regression under live quarantine is invisible to both gate and alarm

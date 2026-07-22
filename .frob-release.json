@@ -138,6 +138,8 @@
     "src/frob/arch/_patterns.py::new_construction_accumulator": "1bfb532deb6e2cc7913688f782d7691e7b3a2124da47155ebc7a97ce9d302c52",
     "src/frob/arch/_python.py::PythonAdapter": "8ad952fe6dc949f63cbfd330f2090da7bcc8be02a6b6c8f21b0e8d3a3c12b42f",
     "src/frob/arch/_python.py::PythonAdapter.adapt": "0c57832dc79ce96209c1a1ae671bbb1808b6b61baffc12c19d893376a6afe64e",
+    "src/frob/arch/_rust.py::RustAdapter": "9360bb051d5ec98205256cdb4f8da557e386f6dd46493d75c742787e0cb372bc",
+    "src/frob/arch/_rust.py::RustAdapter.adapt": "0c57832dc79ce96209c1a1ae671bbb1808b6b61baffc12c19d893376a6afe64e",
     "src/frob/arch/_typescript.py::TypeScriptAdapter": "8f3f72ee37ac933b1c7a1a1ac77869c92eba3a1061c1faaa9e57fd3f59cae779",
     "src/frob/arch/_typescript.py::TypeScriptAdapter.adapt": "0c57832dc79ce96209c1a1ae671bbb1808b6b61baffc12c19d893376a6afe64e",
     "src/frob/bind/__init__.py::BindingDecl": "3b5e35c94b2b01286b132d77890cd1fd9ff79d0b3d76db3fe67233d6383a0d08",
@@ -1234,5 +1236,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.87.0"
+  "version": "0.88.0"
 }

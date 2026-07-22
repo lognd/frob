@@ -1636,3 +1636,435 @@ class TestSharedCheckOnPythonAndTypeScript:
         # language's NormalizedFunction -- both must fire.
         assert _normalized_is_complex(py_target)
         assert _normalized_is_complex(ts_target)
+
+
+# ---------------------------------------------------------------------------
+# T-0612: RustAdapter -- maps a real parsed rust file onto NormalizedModule,
+# mirroring TestTypeScriptAdapter's structure. Hand-built inline .rs
+# fixtures (written to tmp_path), same as TypeScript's approach.
+# ---------------------------------------------------------------------------
+
+
+class TestRustAdapter:
+    """T-0612: `frob.arch._rust.RustAdapter` is the third `LanguageAdapter`
+    implementation (after T-0610's `PythonAdapter`/T-0611's
+    `TypeScriptAdapter`), built off `tree-sitter-rust`. These tests
+    hand-build small `.rs` fixtures covering every `NormalizedModule`
+    entity kind, plus one stays-sane test on a more realistic
+    multi-construct snippet."""
+
+    def test_is_a_language_adapter(self) -> None:
+        from frob.arch._normalized import LanguageAdapter
+        from frob.arch._rust import RustAdapter
+
+        adapter = RustAdapter()
+        assert isinstance(adapter, LanguageAdapter)
+        assert adapter.language == "rust"
+
+    def _adapt(self, tmp_path: Path, source: str, filename: str = "mod.rs"):
+        from frob.arch._rust import RustAdapter
+        from frob.lang import raw_tree
+
+        path = tmp_path / filename
+        path.write_text(source)
+        parsed = raw_tree(path)
+        assert parsed.is_ok
+        tree, src, language = parsed.danger_ok
+        assert language == "rust"
+        return RustAdapter().adapt(tree, src, filename)
+
+    def test_adapt_imports(self, tmp_path: Path) -> None:
+        module = self._adapt(
+            tmp_path,
+            "use std::fmt;\n"
+            "use std::collections::HashMap as Map;\n"
+            "use std::io::{self, Read};\n"
+            "use std::io::*;\n",
+        )
+        assert len(module.imports) == 4
+        fmt_import = next(i for i in module.imports if i.module == "std::fmt")
+        assert fmt_import.names == []
+        map_import = next(
+            i for i in module.imports if i.module == "std::collections::HashMap"
+        )
+        assert map_import.names == ["Map"]
+        # Both `std::io` imports (the grouped list and the bare wildcard)
+        # share the same module text but are distinct entries at different
+        # lines -- one binds "Read", the other binds no individual name.
+        io_imports = [i for i in module.imports if i.module == "std::io"]
+        assert len(io_imports) == 2
+        assert {tuple(i.names) for i in io_imports} == {("Read",), ()}
+
+    def test_adapt_struct_named_and_tuple_fields(self, tmp_path: Path) -> None:
+        module = self._adapt(
+            tmp_path,
+            "struct Point(i32, i32);\n"
+            "struct Animal {\n"
+            "    name: String,\n"
+            "    age: u32,\n"
+            "}\n",
+        )
+        classes = {c.name: c for c in module.classes}
+        assert set(classes) == {"Point", "Animal"}
+        point_fields = {f.name: f.type for f in classes["Point"].fields}
+        assert point_fields == {"0": "i32", "1": "i32"}
+        animal_fields = {f.name: f.type for f in classes["Animal"].fields}
+        assert animal_fields == {"name": "String", "age": "u32"}
+
+    def test_adapt_enum_variants_as_fields(self, tmp_path: Path) -> None:
+        module = self._adapt(
+            tmp_path,
+            "enum Shape {\n"
+            "    Circle(f64),\n"
+            "    Square { side: f64 },\n"
+            "    Empty,\n"
+            "}\n",
+        )
+        shape = next(c for c in module.classes if c.name == "Shape")
+        assert {f.name for f in shape.fields} == {"Circle", "Square", "Empty"}
+
+    def test_adapt_function_params_and_return_type(self, tmp_path: Path) -> None:
+        from frob.arch._normalized import NormalizedParam
+
+        module = self._adapt(
+            tmp_path, "fn add(x: i32, y: i32) -> i32 {\n    x + y\n}\n"
+        )
+        assert len(module.functions) == 1
+        fn = module.functions[0]
+        assert fn.name == "add"
+        assert fn.return_type == "i32"
+        assert fn.params == [
+            NormalizedParam(name="x", type="i32"),
+            NormalizedParam(name="y", type="i32"),
+        ]
+        # Rust has no default-parameter syntax at all -- always False.
+        assert all(p.has_default is False for p in fn.params)
+
+    def test_adapt_trait_methods_and_impl_attach(self, tmp_path: Path) -> None:
+        module = self._adapt(
+            tmp_path,
+            "trait Greet {\n"
+            "    fn greet(&self) -> String;\n"
+            "    fn default_greet(&self) -> String {\n"
+            '        String::from("hi")\n'
+            "    }\n"
+            "}\n"
+            "struct Animal { name: String }\n"
+            "impl Animal {\n"
+            "    fn new(name: String) -> Self {\n"
+            "        Animal { name }\n"
+            "    }\n"
+            "}\n",
+        )
+        classes = {c.name: c for c in module.classes}
+        greet = classes["Greet"]
+        greet_methods = {m.name: m for m in greet.methods}
+        assert set(greet_methods) == {"greet", "default_greet"}
+        # `greet` (`function_signature_item`, no body) has no events/body.
+        assert greet_methods["greet"].body_line_count == 0
+        assert greet_methods["default_greet"].body_line_count > 0
+
+        animal = classes["Animal"]
+        new_method = next(m for m in animal.methods if m.name == "new")
+        assert new_method.is_method is True
+        assert new_method.overrides is None
+        assert new_method.params[0].name == "name"
+
+    def test_adapt_trait_impl_notes_trait_as_base_and_sets_overrides(
+        self, tmp_path: Path
+    ) -> None:
+        module = self._adapt(
+            tmp_path,
+            "use std::fmt;\n"
+            "struct Animal { name: String }\n"
+            "impl fmt::Debug for Animal {\n"
+            "    fn fmt(&self) -> String {\n"
+            "        self.name.clone()\n"
+            "    }\n"
+            "}\n",
+        )
+        animal = next(c for c in module.classes if c.name == "Animal")
+        assert animal.bases == ["fmt::Debug"]
+        fmt_method = next(m for m in animal.methods if m.name == "fmt")
+        assert fmt_method.overrides == "fmt"
+
+    def test_adapt_branches_loops_calls_field_accesses(self, tmp_path: Path) -> None:
+        module = self._adapt(
+            tmp_path,
+            "struct Widget { count: i32 }\n"
+            "impl Widget {\n"
+            "    fn bump(&mut self, flag: bool) {\n"
+            "        if self.count > 0 && flag {\n"
+            "            self.count.checked_add(1);\n"
+            "        }\n"
+            "        for i in 0..3 {\n"
+            "            self.count = self.count + i;\n"
+            "        }\n"
+            "    }\n"
+            "}\n",
+        )
+        method = module.classes[0].methods[0]
+        assert any(
+            b.condition_text == "self.count > 0 && flag" for b in method.branches
+        )
+        assert any(loop.kind == "for" for loop in method.loops)
+        assert any(c.callee == "self.count.checked_add" for c in method.calls)
+        writes = [
+            fa for fa in method.field_accesses if fa.name == "count" and fa.is_write
+        ]
+        assert writes
+
+    def test_adapt_method_chain_does_not_confuse_calls_with_field_accesses(
+        self, tmp_path: Path
+    ) -> None:
+        # `self.name.clone().unwrap()` -- only `name` is a genuine field
+        # read; `clone`/`unwrap` are method-dispatch targets of their own
+        # call sites, not field accesses (T-0612 review fix).
+        module = self._adapt(
+            tmp_path,
+            "struct Widget { name: String }\n"
+            "impl Widget {\n"
+            "    fn shout(&self) -> String {\n"
+            "        self.name.clone().unwrap()\n"
+            "    }\n"
+            "}\n",
+        )
+        method = module.classes[0].methods[0]
+        assert [fa.name for fa in method.field_accesses] == ["name"]
+        assert "self.name.clone" in [c.callee for c in method.calls]
+        assert "self.name.clone().unwrap" in [c.callee for c in method.calls]
+
+    def test_adapt_match_arms_are_branches_and_loop_kinds(self, tmp_path: Path) -> None:
+        module = self._adapt(
+            tmp_path,
+            "fn classify(n: i32) -> i32 {\n"
+            "    match n {\n"
+            "        0 => 0,\n"
+            "        m if m > 10 => 1,\n"
+            "        _ => 2,\n"
+            "    }\n"
+            "}\n"
+            "fn loops() {\n"
+            "    let mut i = 0;\n"
+            "    while i < 3 {\n"
+            "        i += 1;\n"
+            "    }\n"
+            "    loop {\n"
+            "        break;\n"
+            "    }\n"
+            "}\n",
+        )
+        classify = next(f for f in module.functions if f.name == "classify")
+        # Each match arm counts as its own branch (T-0612's explicit
+        # divergence from `_python.py`'s deliberate match/case exclusion).
+        assert len(classify.branches) == 3
+        assert any(b.condition_text == "m if m > 10" for b in classify.branches)
+
+        loopy = next(f for f in module.functions if f.name == "loops")
+        assert {loop.kind for loop in loopy.loops} == {"while", "loop"}
+
+    def test_adapt_panic_macro_and_unwrap_expect_are_raises(
+        self, tmp_path: Path
+    ) -> None:
+        module = self._adapt(
+            tmp_path,
+            "fn risky(v: i32) -> i32 {\n"
+            "    if v == 0 {\n"
+            '        panic!("zero");\n'
+            "    }\n"
+            "    let a = maybe().unwrap();\n"
+            '    let b = maybe().expect("missing");\n'
+            "    a + b\n"
+            "}\n",
+        )
+        fn = module.functions[0]
+        assert {r.exception_type for r in fn.raises} == {"panic!", "unwrap", "expect"}
+
+    def test_adapt_err_return_and_try_operator_are_raises(self, tmp_path: Path) -> None:
+        module = self._adapt(
+            tmp_path,
+            "fn risky() -> Result<i32, String> {\n"
+            "    let v = maybe()?;\n"
+            '    if v == 0 {\n        return Err("zero".to_string());\n    }\n'
+            "    Ok(v)\n"
+            "}\n",
+        )
+        fn = module.functions[0]
+        assert {r.exception_type for r in fn.raises} == {"?", "Err"}
+        # `return Err(...)` is STILL its own `NormalizedReturn` too (T-0612's
+        # "in addition to, never instead of" mapping decision).
+        assert any(
+            r.value_text is not None and r.value_text.startswith("Err(")
+            for r in fn.returns
+        )
+
+    def test_adapt_result_match_err_arm_is_a_catch(self, tmp_path: Path) -> None:
+        module = self._adapt(
+            tmp_path,
+            "fn handle(r: Result<i32, String>) -> i32 {\n"
+            "    match r {\n"
+            "        Ok(v) => v,\n"
+            "        Err(e) => 0,\n"
+            "    }\n"
+            "}\n",
+        )
+        fn = module.functions[0]
+        assert len(fn.catches) == 1
+        assert fn.catches[0].exception_type == "Err"
+
+    def test_adapt_stays_sane_on_realistic_snippet(self, tmp_path: Path) -> None:
+        # A denser, more realistic rust module exercising every entity
+        # kind at once (use imports, a trait, a struct with a trait impl
+        # and an inherent impl, branches/loops/calls/field-accesses/panic/
+        # Result-handling, a free function) -- proves the adapter does not
+        # choke or silently drop entities when they co-occur.
+        module = self._adapt(
+            tmp_path,
+            "use std::fmt;\n"
+            "\n"
+            "trait Greet {\n"
+            "    fn greet(&self) -> String;\n"
+            "}\n"
+            "\n"
+            "struct Animal {\n"
+            "    name: String,\n"
+            "    age: u32,\n"
+            "}\n"
+            "\n"
+            "impl fmt::Debug for Animal {\n"
+            "    fn fmt(&self) -> String {\n"
+            "        self.name.clone()\n"
+            "    }\n"
+            "}\n"
+            "\n"
+            "impl Animal {\n"
+            "    fn new(name: String, age: u32) -> Self {\n"
+            "        Animal { name, age }\n"
+            "    }\n"
+            "\n"
+            "    fn speak(&mut self, loud: bool) -> Result<String, String> {\n"
+            "        if self.age > 5 && loud {\n"
+            '            println!("{}", self.name);\n'
+            "        } else {\n"
+            "            for i in 0..3 {\n"
+            '                self.name = format!("{}{}", self.name, i);\n'
+            "            }\n"
+            "        }\n"
+            "        match self.age {\n"
+            '            0 => println!("baby"),\n'
+            '            n if n > 10 => panic!("too old"),\n'
+            "            _ => {}\n"
+            "        }\n"
+            "        if self.age == 0 {\n"
+            '            return Err("zero".to_string());\n'
+            "        }\n"
+            "        let v = self.risky()?;\n"
+            "        Ok(self.name.clone())\n"
+            "    }\n"
+            "\n"
+            "    fn risky(&self) -> Result<String, String> {\n"
+            "        Ok(self.name.clone())\n"
+            "    }\n"
+            "}\n"
+            "\n"
+            "fn standalone(x: i32, y: i32) -> i32 {\n"
+            "    x + y\n"
+            "}\n",
+        )
+        assert module.language == "rust"
+        assert module.imports[0].module == "std::fmt"
+        classes = {c.name: c for c in module.classes}
+        assert set(classes) == {"Greet", "Animal"}
+        animal = classes["Animal"]
+        assert animal.bases == ["fmt::Debug"]
+        methods = {m.name: m for m in animal.methods}
+        assert set(methods) == {"fmt", "new", "speak", "risky"}
+        assert methods["fmt"].overrides == "fmt"
+        assert methods["new"].overrides is None
+        speak = methods["speak"]
+        assert speak.branches
+        assert speak.loops
+        assert speak.calls
+        assert speak.field_accesses
+        assert "panic!" in {r.exception_type for r in speak.raises}
+        assert "Err" in {r.exception_type for r in speak.raises}
+        assert "?" in {r.exception_type for r in speak.raises}
+        funcs = {f.name: f for f in module.functions}
+        assert set(funcs) == {"standalone"}
+
+        # Round-trips through pydantic (de)serialization, same as the
+        # hand-built python/TypeScript `NormalizedModule` shape tests.
+        from frob.arch._normalized import NormalizedModule
+
+        restored = NormalizedModule.model_validate(module.model_dump())
+        assert restored == module
+
+
+class TestSharedCheckOnPythonAndRust:
+    """T-0612's acceptance criterion: a shared arch check written once
+    against `NormalizedModule` fires identically on an equivalent python
+    fixture (via `PythonAdapter`) and rust fixture (via `RustAdapter`) --
+    no per-language branch in the check itself. Reuses the same
+    `_iter_normalized_functions`/`_normalized_is_complex` helpers
+    `TestSharedCheckOnPythonAndTypeScript` already proves this against."""
+
+    _PY_LONG_FUNC = TestSharedCheckOnPythonAndTypeScript._PY_LONG_FUNC
+    _RUST_LONG_FUNC = (
+        "fn configure_pipeline(a: bool, b: bool, c: bool, d: i32) -> bool {\n"
+        "    if a {\n"
+        "        if b {\n"
+        "            if c {\n"
+        "                for i in 0..d {\n"
+        "                    if i > 0 {\n"
+        "                        while i > 0 {\n"
+        "                            if a && b {\n"
+        "                            }\n"
+        "                            i -= 1;\n"
+        "                        }\n"
+        "                    }\n"
+        "                }\n"
+        "            }\n"
+        "        }\n"
+        "    }\n"
+        "    a\n"
+        "}\n"
+    )
+
+    def test_long_complex_function_flags_identically_across_languages(
+        self, tmp_path: Path
+    ) -> None:
+        from frob.arch._python import (
+            PythonAdapter,
+            _iter_normalized_functions,
+            _normalized_is_complex,
+        )
+        from frob.arch._rust import RustAdapter
+        from frob.lang import raw_tree
+
+        py_path = tmp_path / "long_func.py"
+        py_path.write_text(self._PY_LONG_FUNC)
+        py_tree, py_src, py_lang = raw_tree(py_path).danger_ok
+        assert py_lang == "python"
+        py_module = PythonAdapter().adapt(py_tree, py_src, "long_func.py")
+
+        rust_path = tmp_path / "long_func.rs"
+        rust_path.write_text(self._RUST_LONG_FUNC)
+        rust_tree, rust_src, rust_lang = raw_tree(rust_path).danger_ok
+        assert rust_lang == "rust"
+        rust_module = RustAdapter().adapt(rust_tree, rust_src, "long_func.rs")
+
+        py_target = next(
+            f
+            for f, _prefix in _iter_normalized_functions(py_module)
+            if f.name == "configure_pipeline"
+        )
+        rust_target = next(
+            f
+            for f, _prefix in _iter_normalized_functions(rust_module)
+            if f.name == "configure_pipeline"
+        )
+
+        # The SAME shared check function, unmodified, called on each
+        # language's NormalizedFunction -- both must fire.
+        assert _normalized_is_complex(py_target)
+        assert _normalized_is_complex(rust_target)
