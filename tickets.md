@@ -7966,3 +7966,68 @@ component: null
 labels: []
 ```
 RECONCILIATION.md finding (g): the source doc's own denominator_manifest.entries lists 41 unique ids but its TOTAL field says 39, and the totals_by_class explanation does not account for the raw-list discrepancy. Correct the source doc's TOTAL field to 41 (or explain precisely which 2 entries are non-canonical and should be excluded, if that is the real intent) so the registry and the source doc agree. Depends on T-0389 (supply-chain domain reconciliation) landing so the fix is made against the settled registry entries.
+
+<!-- ticket:T-0677 -->
+```yaml
+id: T-0677
+title: 'registry: system-design-corpus.md manifest-extraction-artifact cleanup (119
+  stated vs 105 genuine)'
+state: queued
+kind: docs
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0392
+parent: T-0346
+scope:
+- docs/design/system-design-corpus.md
+- docs/design/registry/system-design.yaml
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given system-design-corpus.md after the fix, when its manifest is parsed, then TOTAL
+  reflects only genuine entries or artifact rows are machine-distinguishable without
+  a hardcoded exclusion list
+threat: null
+component: null
+labels: []
+```
+RECONCILIATION.md finding (d): 14 of the doc's 119 manifest ids are mechanical-extraction artifacts (repeated table-header cells / repeated cell values counted as distinct rows), inflating the doc's own stated TOTAL. Correct the source doc's manifest generation/TOTAL (105 genuine) or add a machine-checkable annotation distinguishing artifact rows from real ones, so future manifest parses do not need an exclusion-list special case. Depends on T-0392 (system-design domain reconciliation) landing first.
+
+<!-- ticket:T-0678 -->
+```yaml
+id: T-0678
+title: 'registry: cross-corpus totality meta-test - zero unlinked duplicate concepts,
+  zero prose-only entries (T-0346 close condition)'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0673
+- T-0384
+- T-0389
+- T-0390
+- T-0391
+- T-0392
+parent: T-0346
+scope:
+- docs/design/registry/**
+- src/frob/strata/**
+- tests/unit/strata/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given the full registry, when the meta-test runs, then every cross_refs-eligible
+  concept has exactly one canonical id or a recorded justification for staying split
+- Given a future corpus doc edit that adds a table row with no matching registry id,
+  when the meta-test runs, then it fails the build
+threat: null
+component: null
+labels: []
+```
+Epic close condition. Extends T-0343's per-domain drift-lock with a cross-corpus check over all 11 source docs / 1950+ registry entries: (1) no named concept may exist under >=2 unlinked file-local ids (uses cross_refs, closes finding (b) permanently going forward); (2) no corpus table row may exist with no registry id (closes finding (a) permanently -- the 3 prose-only docs already retrofitted must never regress). Depends on the dedup pass and all five domain-reconciliation tickets (weaknesses/supply-chain/evasion/arch-checks/system-design) landing so the meta-test has a fully-dispositioned base to run against.
