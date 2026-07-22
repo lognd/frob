@@ -760,14 +760,6 @@ def _shadowing_scope(name: str, site, scope_cache: dict[int, dict[str, int]]):  
     return None
 
 
-def _is_shadowed(name: str, site, scope_cache: dict[int, dict[str, int]]) -> bool:  # noqa: ANN001
-    """True if `name` is bound by a local scope enclosing `site` AT OR
-    BEFORE `site`'s position (T-0468 position-aware shadow check) -- thin
-    bool wrapper over `_shadowing_scope` kept for call sites that only need
-    the yes/no answer."""
-    return _shadowing_scope(name, site, scope_cache) is not None
-
-
 def _resolve_py_expr(
     node,
     import_table: dict[str, str],
@@ -2157,7 +2149,9 @@ def _matched_capabilities(
 
 
 # frob:ticket T-0158
+# frob:ticket T-0565
 # frob:waive ARCH001 reason="a linear read/match/extend orchestration pipeline over already-extracted helpers (raw-text match, T-0328 binding match, T-0244 embedded match); each step is a single named call, splitting further would multiply indirection without shrinking real complexity" ceiling="50"  # noqa: E501
+# frob:tests tests/test_vet.py::TestCapabilityScan.test_scan_file_operations_names_registry_entry  # noqa: E501
 def _scan_file_operations(path: Path) -> tuple[_DangerousOperation, ...]:
     """The specific `DANGEROUS_OPERATIONS` registry entries whose needle(s)
     matched in `path`'s raw text outside a comment span (T-0209) -- the

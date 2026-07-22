@@ -58,7 +58,6 @@ _SLUG_RE = re.compile(r"[^a-z0-9]+")
 # accept both forms, or a draft ticket silently disappears the moment it
 # round-trips through storage.
 _TICKET_ID_RE = r"T-(?:\d{4}|draft-[0-9a-f]{8})"
-_TICKET_FILENAME_RE = re.compile(rf"^({_TICKET_ID_RE})-[a-z0-9-]+\.md$")
 
 # Single-file ledger: sections start at a `<!-- ticket:T-#### -->` marker
 # (or `<!-- ticket:T-draft-<hex> -->` for a not-yet-finalized draft, T-0162).
@@ -293,15 +292,6 @@ def _parse_ticket_file(path: Path) -> Result[Ticket, TicketError]:
 def _dir_path_for(root: Path, ticket: Ticket) -> Path:
     """The tickets/T-####-slug.md path a ticket serializes to."""
     return tickets_dir(root) / f"{ticket.id}-{slugify(ticket.title)}.md"
-
-
-def _find_dir_path(root: Path, ticket_id: str) -> Path | None:
-    """Locate the legacy file for a ticket id by scanning tickets/."""
-    for p in _dir_glob(root):
-        m = _TICKET_FILENAME_RE.match(p.name)
-        if m and m.group(1) == ticket_id:
-            return p
-    return None
 
 
 # ---------------------------------------------------------------------------

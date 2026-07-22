@@ -112,11 +112,6 @@ def _matches_enclosing(
     return any(enclosing_by_symref.get(symref) == target for symref in all_touched)
 
 
-def _edge_symref_path(symref: str) -> str:
-    """The file-path half of a `path::qualname` (or bare-path) symref."""
-    return symref.split("::", 1)[0]
-
-
 def _looks_like_test_symbol(symref: str) -> bool:
     """Whether `symref` is itself a test: a conventional test *file*
     (`is_test_file`), or a Rust inline `mod tests { ... }` symbol whose

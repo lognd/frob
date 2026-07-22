@@ -66,13 +66,43 @@ def _called_names(body_tokens: tuple[str, ...]) -> frozenset[str]:
     return frozenset(names)
 
 
+# frob:ticket T-0565
+def _called_names_from_sym(sym) -> frozenset[str]:  # noqa: ANN001
+    """`_called_names` over `sym.body_tokens` -- the `build_call_graph`
+    extractor, unchanged from before T-0565 (a call happens in a body, not
+    a signature)."""
+    return _called_names(sym.body_tokens)
+
+
 # frob:ticket T-0422
-def _referenced_names(body_tokens: tuple[str, ...]) -> frozenset[str]:
-    """Every bare identifier token, called or not -- broader recall than
-    `_called_names`: also catches a dispatch-table/registry reference
-    (`{"cmd": _foo}`, a decorator target, an attribute assigned to a
-    class body) that never appears as a `name(...)` call token at all."""
-    return frozenset(tok for tok in body_tokens if tok.isidentifier())
+# frob:ticket T-0565
+def _referenced_names(sym) -> frozenset[str]:  # noqa: ANN001
+    """Every bare identifier token in `sym`'s signature AND body, called or
+    not -- broader recall than `_called_names`: also catches a dispatch-
+    table/registry reference (`{"cmd": _foo}`), a decorator target, or a
+    parameter default that never appears as a `name(...)` call token at
+    all.
+
+    T-0565: `sig_tokens` joins `body_tokens` here (previously body-only),
+    closing two systematic DEAD001 false-positive classes the T-0422 Done
+    report catalogued: (1) a module-level `CONST`/`TYPE` symbol (e.g. a
+    dispatch dict `_DISPATCH_BY_TYPE = {"cpp": _dispatch_check_cpp, ...}`)
+    has NO body at all (`RawSymbol.body_tokens` is always `()` for these
+    kinds -- see `_walk_python._const_symbol`) but its right-hand-side
+    tokens, including any referenced private helper, live in `sig_tokens`
+    (the walker tokenizes the WHOLE assignment statement into `sig_tokens`
+    for a const); (2) a pytest fixture referenced only by PARAMETER NAME
+    from a sibling test function (`def test_x(_repo_root): ...`) is a bare
+    identifier in that test function's own SIGNATURE, not its body --
+    `sig_tokens` is exactly where a parameter list lives. Kept as a
+    separate function from `_called_names_from_sym` (rather than one
+    shared body+sig extractor) because `build_call_graph`'s callers
+    (`frob.dup`'s helper-inline triage) reason about "called", not
+    "mentioned anywhere", and widening its recall would change unrelated
+    behavior no ticket asked for."""
+    return frozenset(
+        tok for tok in (*sym.sig_tokens, *sym.body_tokens) if tok.isidentifier()
+    )
 
 
 def _parse_package(root: Path, paths: Sequence[str]) -> dict[str, list]:
@@ -108,7 +138,7 @@ def build_call_graph(root: Path, paths: Sequence[str]) -> CallGraph:
     """
     parsed_by_path = _parse_package(root, paths)
     by_name = _short_name_index(parsed_by_path)
-    calls = _resolve_edges(parsed_by_path, by_name, _called_names)
+    calls = _resolve_edges(parsed_by_path, by_name, _called_names_from_sym)
     return CallGraph(calls=calls)
 
 
@@ -159,15 +189,18 @@ def _resolve_edges(
     """Caller symref -> resolved private-callee symrefs, per `build_call_graph`'s
     resolution rule (never a public symbol, never self); split out of
     `build_call_graph`'s edge-resolution phase (T-0361). `name_extractor`
-    (T-0422: `_called_names` for `build_call_graph`, `_referenced_names`
-    for `build_reference_graph`) is the only thing that differs between
-    the two graphs -- everything else (the by-name index, the
-    private/self filtering) is shared."""
+    (T-0422: `_called_names_from_sym` for `build_call_graph`,
+    `_referenced_names` for `build_reference_graph`) is the only thing
+    that differs between the two graphs -- everything else (the by-name
+    index, the private/self filtering) is shared. `name_extractor` takes
+    the whole `sym` (T-0565, not just `sym.body_tokens`) so it can choose
+    which token field(s) to scan -- `_referenced_names` needs both
+    `sig_tokens` and `body_tokens`."""
     calls: dict[str, tuple[str, ...]] = {}
     for path, symbols in parsed_by_path.items():
         for sym in symbols:
             caller_symref = f"{path}::{sym.qualname}"
-            names = name_extractor(sym.body_tokens)
+            names = name_extractor(sym)
             callees: list[str] = []
             for name in names:
                 for symref, _cand_path, is_private in by_name.get(name, ()):

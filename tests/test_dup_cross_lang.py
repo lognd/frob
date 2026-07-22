@@ -72,6 +72,7 @@ FIXTURE_ROOT = Path(__file__).parent / "fixtures" / "dup_cross_lang"
 
 
 # frob:ticket T-0517
+# frob:waive DEAD001 reason="pytest autouse fixture (T-0565): invoked by the test runner for every test in this module without ever appearing as a name/call token anywhere, the one DEAD001 false-positive class build_reference_graph's sig_tokens+body_tokens broadening cannot see (autouse has no referencing site at all, unlike a fixture consumed by parameter name)"  # noqa: E501
 @pytest.fixture(autouse=True)
 def _isolated_dup_cache(tmp_path, monkeypatch):
     """Redirect `find_clones`'s dup.db to `tmp_path`, never the tracked fixture dir.

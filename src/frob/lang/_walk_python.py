@@ -133,9 +133,24 @@ def _const_symbol(node: Node) -> RawSymbol | None:
     )
 
 
+# frob:ticket T-0565
 def _const_assignment_name(node: Node) -> str | None:
     """The SCREAMING_CASE target name of a module-level constant assignment
-    `node`, or None if it doesn't match that shape."""
+    `node`, or None if it doesn't match that shape.
+
+    T-0565: a leading underscore (`_DISPATCH_BY_TYPE`, a PRIVATE module
+    dispatch-table constant) is now accepted -- the previous
+    `name[0].isalpha()` check rejected any name starting with `_`, which
+    meant a private constant assignment was never turned into a `RawSymbol`
+    at all (not merely under-recalled: invisible to `_visit`, so its own
+    right-hand-side tokens -- e.g. `{"cpp": _dispatch_check_cpp, ...}` --
+    were silently dropped from the whole file's symbol list). That, not a
+    `build_reference_graph` recall gap, was the actual root cause behind
+    most of DEAD001's T-0422/T-0565 dispatch-table false-positive class:
+    the referencing statement was never parsed into anything a reference
+    graph could scan in the first place. `name.lstrip("_")` restores the
+    "starts with a letter, once underscores are stripped" shape check
+    without excluding a private name outright."""
     assign = (
         node
         if node.type == "assignment"
@@ -147,7 +162,8 @@ def _const_assignment_name(node: Node) -> str | None:
     if left is None or left.type != "identifier":
         return None
     name = child_text(left)
-    if not (name and (name.isupper() or "_" in name) and name[0].isalpha()):
+    bare = name.lstrip("_") if name else ""
+    if not (name and bare and (name.isupper() or "_" in name) and bare[0].isalpha()):
         return None
     if not name.replace("_", "").isupper():
         return None

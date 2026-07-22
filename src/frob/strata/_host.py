@@ -123,6 +123,8 @@ class HostOwns(BaseModel):
     path: str
     mode: str
 
+    # frob:ticket T-0565
+    # frob:tests tests/unit/strata/test_host.py::TestHostOwnsModeValidation.test_valid_octal_mode_accepted  # noqa: E501
     @field_validator("mode")
     @classmethod
     def _validate_mode(cls, value: str) -> str:
@@ -173,6 +175,8 @@ class HostManifest(BaseModel):
     group: tuple[str, ...] = ()
     sudoers: tuple[str, ...] = ()
 
+    # frob:ticket T-0565
+    # frob:tests tests/unit/strata/test_host.py::TestHostManifestListensValidation.test_valid_port_accepted  # noqa: E501
     @field_validator("listens")
     @classmethod
     def _validate_listens(cls, value: tuple[int, ...]) -> tuple[int, ...]:

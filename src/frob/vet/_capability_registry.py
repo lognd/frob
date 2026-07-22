@@ -1849,6 +1849,8 @@ def capability_matrix() -> tuple[_MatrixCell, ...]:
 # T-0524: frob:doc removed -- calls capability_matrix (public), which
 # already carries the same docs/modules/vet.md#public-api anchor (COV007).
 # frob:ticket T-0158
+# frob:ticket T-0565
+# frob:tests tests/test_capability_registry.py::TestMatrixExhaustiveness.test_no_unexcused_empty_cells  # noqa: E501
 def _unexcused_empty_cells() -> tuple[_MatrixCell, ...]:
     """Every matrix cell with zero patterns and zero excuse -- the T-0158
     gate failure condition. Empty tuple = the exhaustiveness claim holds."""
@@ -1861,6 +1863,8 @@ def _unexcused_empty_cells() -> tuple[_MatrixCell, ...]:
 # other public entrypoint in this module, so the private symbol genuinely \
 # is the documented contract here"
 # frob:ticket T-0158
+# frob:ticket T-0565
+# frob:tests tests/test_capability_registry.py::TestValidateRegistryKinds.test_known_kinds_pass  # noqa: E501
 def _validate_registry_kinds(external_kinds: frozenset[str]) -> tuple[str, ...]:
     """Drift-lock (extends T-0150): every kind `external_kinds` names (e.g.
     every `WeaknessEntry.capability_kind`, every `may` atom kind observed

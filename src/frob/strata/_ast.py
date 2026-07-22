@@ -601,6 +601,8 @@ class PolicyDecl(BaseModel):
     enables: tuple[str, ...] = ()
     rationale: tuple[str, ...] = ()
 
+    # frob:ticket T-0565
+    # frob:tests tests/unit/strata/test_policy.py::TestGrammarRoundTrip.test_enables_and_rationale_split_out_of_rules  # noqa: E501
     @model_validator(mode="before")
     @classmethod
     def _split_meta_rules(cls, data: object) -> object:

@@ -81,16 +81,6 @@ def _edge_endpoints(snapshot: GraphSnapshot) -> set[str]:
     return endpoints
 
 
-def _facet_for_ref(ref: str, snapshot: GraphSnapshot) -> str:
-    """The facet the FIRST DESCRIBES edge targeting `ref` requests, else the
-    default (kept for external callers that only ever wanted one facet;
-    `acknowledge` itself now uses `_facets_for_ref`, T-0402 G11)."""
-    for edge in snapshot.edges:
-        if edge.kind.value == "describes" and edge.target == ref:
-            return edge.attrs.get("facet", _DEFAULT_FACET)
-    return _DEFAULT_FACET
-
-
 # frob:ticket T-0402
 def _facets_for_ref(ref: str, snapshot: GraphSnapshot) -> set[str]:
     """Every distinct facet a DESCRIBES edge targeting `ref` requests, or

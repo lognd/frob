@@ -3761,7 +3761,7 @@ Discovered while working T-0550: _bound_to_open_ticket's T-0214/T-0320 grace win
 id: T-0565
 title: 'DEAD001 burndown: triage 51 findings, most likely false-positive classes (module-level
   dict refs, pytest fixtures, pydantic validators)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -3772,7 +3772,11 @@ scope:
 - src/frob/
 - tests/
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_graph.py::TestCallGraph::test_build_reference_graph_catches_dispatch_table_entry
+- tests/test_lang.py::TestParsePython::test_private_module_level_const_extracted
+- tests/unit/test_dup_cache.py::TestConnectionReuse::test_close_all_drops_cached_connections
+- tests/test_vet.py::TestCapabilityScan::test_scan_file_operations_names_registry_entry
 attachments: []
 acceptance: []
 threat: null
@@ -3815,3 +3819,25 @@ dead, per the manual cross-file/package grep in T-0422's Done report) --
 triage each individually once the substrate gap above is closed, or waive
 one at a time with a symbol-specific verified reason as they are touched by
 other work.
+<!-- ticket:T-draft-9305d3de -->
+```yaml
+id: T-draft-9305d3de
+title: 'DEAD001 residual: _documented_srcs/_run_jobs in gates/__init__.py'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/__init__.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0565 fixed the callgraph/const-extraction substrate bugs behind most DEAD001 false positives and triaged the remainder, but src/frob/gates/__init__.py::_documented_srcs (line ~1717) and ::_run_jobs (line ~6986) are out of scope this wave (a sibling agent owns gates/__init__.py). Triage needed: _documented_srcs looks like a genuinely-orphaned helper superseded by _resolved_documented_srcs (verify with grep, likely delete); _run_jobs' docstring references a caller ('_run_jobs used to time each job...') suggesting a similar superseded-helper pattern. Either delete (with a zero-reference grep) or add a correctly-placed frob:tests/frob:invariant directive above the symbol itself (not above a test function -- the DSL binds Edge.src to whatever the comment sits directly above, several of T-0565's residual findings turned out to be frob:tests directives misplaced above the TEST function instead of the SOURCE symbol).

@@ -430,8 +430,8 @@ def _candidate_tokens(text: str) -> tuple[str, ...]:
     (markdown link target, quoted string literal, an import statement's
     module/name(s), a require/include/use target, or a `frob:doc`/
     `frob:describes`/`frob:used-by` directive target) -- the universe
-    `_reaches` matches against, deliberately excluding plain prose/table/
-    backtick mentions."""
+    `_tokens_reach` matches against, deliberately excluding plain prose/
+    table/backtick mentions."""
     tokens: list[str] = []
     for match in _QUOTED_RE.finditer(text):
         tokens.append(match.group("tok").rstrip("`,.)\"'>"))
@@ -494,14 +494,6 @@ def _tokens_reach(tokens: frozenset[str], target_path: str) -> bool:
     if stem in tokens:
         return True
     return any(token.endswith("." + stem) for token in tokens)
-
-
-def _reaches(text: str, target_path: str) -> bool:
-    """`_tokens_reach` over a freshly extracted token set -- convenience
-    for the single-text (declaration-verification) call sites; `ref_gate`
-    itself uses precomputed per-file token sets instead to avoid
-    re-extracting the same file's tokens once per candidate (O(n^2))."""
-    return _tokens_reach(frozenset(_candidate_tokens(text)), target_path)
 
 
 def _auto_inbound(

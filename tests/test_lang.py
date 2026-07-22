@@ -65,6 +65,29 @@ class TestParsePython:
         assert const.kind == SymbolKind.CONST
         assert const.public is True
 
+    # frob:ticket T-0565
+    def test_private_module_level_const_extracted(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_lang.py::TestParsePython.test_private_module_level_const_extracted  # noqa: E501
+        """A leading-underscore SCREAMING_CASE constant (a private dispatch
+        table, e.g. `_DISPATCH_BY_TYPE = {...}`) must still be extracted as
+        a CONST symbol -- T-0565: the previous `name[0].isalpha()` check
+        rejected any name starting with `_`, silently dropping the whole
+        assignment (and every identifier its right-hand side references)
+        from the file's symbol list, which was the root cause behind most
+        of DEAD001's dispatch-table false-positive class."""
+        source = (
+            '"""mod docstring."""\n'
+            "def _a():\n    pass\n\n\n"
+            "def _b():\n    pass\n\n\n"
+            '_DISPATCH_BY_TYPE = {"a": _a, "b": _b}\n'
+        )
+        pf = parse_file(_write(tmp_path, "consts.py", source)).danger_ok
+        const = _symbol(pf, "_DISPATCH_BY_TYPE")
+        assert const.kind == SymbolKind.CONST
+        assert const.public is False
+        assert "_a" in const.sig_tokens
+        assert "_b" in const.sig_tokens
+
     def test_module_level_call_expression_const_extracted(self, tmp_path: Path) -> None:
         # frob:tests src/frob/lang/__init__.py::parse_file
         # X = Foo(...) (a constructor call, not a literal) must also be

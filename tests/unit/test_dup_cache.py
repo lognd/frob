@@ -9,6 +9,7 @@ import pytest
 from frob.dup import _cache
 
 
+# frob:waive DEAD001 reason="pytest autouse fixture (T-0565): invoked by the test runner for every test in this module without ever appearing as a name/call token anywhere -- the one DEAD001 false-positive class build_reference_graph's sig_tokens+body_tokens broadening cannot see"  # noqa: E501
 @pytest.fixture(autouse=True)
 def _close_cached_connections():
     """Every dup-cache connection is process-cached by resolved path
@@ -180,8 +181,16 @@ class TestConnectionReuse:
         conn2 = _cache._connect(tmp_path).danger_ok
         assert conn1 is conn2
 
+    # frob:ticket T-0565
     def test_close_all_drops_cached_connections(self, tmp_path: Path):
-        # frob:tests src/frob/dup/_cache.py::_close_all kind="unit"
+        # T-0565: the `frob:tests` directive binding this test to
+        # `_cache._close_all` moved to sit above `_close_all` itself
+        # (src/frob/dup/_cache.py) -- the DSL convention binds `Edge.src`
+        # to the symbol the comment sits ABOVE, so a directive placed here
+        # (above the TEST method) bound backwards, from the test to the
+        # source symbol, which `frob.gates._dead_symbols` never treats as
+        # "the source symbol is wired" (it only reads `edge.src` for a
+        # TESTS/INVARIANT edge).
         _cache.put_fingerprint(tmp_path, "d3", "r3", ("z",))
         before = _cache._connect(tmp_path).danger_ok
         _cache._close_all()
