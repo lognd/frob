@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from frob.serve._tools import (
     ServeError,
+    frob_affects,
     frob_check_delta,
     frob_check_scope,
     frob_doable_tickets,
@@ -46,6 +47,7 @@ __all__ = [
     "McpUnavailable",
     "ServeError",
     "build_server",
+    "frob_affects",
     "frob_check_delta",
     "frob_check_scope",
     "frob_doable_tickets",

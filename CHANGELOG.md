@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.78.0] - unreleased
+
+- T-0325: doc-drift digest graph: warm 'what code/docs must update when X changes' query (the north-star)
+
 ## [0.77.0] - unreleased
 
 - T-0332: design-pattern recommender: hallmark->pattern + anti-pattern->escape registry (advisory)

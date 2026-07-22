@@ -66,6 +66,17 @@ def _register_query_tools(server, root: Path) -> None:  # noqa: ANN001
         """The doc anchor and describes-edges resolved `symref` is documented by."""
         return _unwrap(_tools.frob_doc_for(root, symref))
 
+    @server.tool()
+    def frob_affects(
+        symref: str, max_depth: int | None = None, max_nodes: int | None = None
+    ) -> dict:
+        """The north-star query (T-0325): docs, tests, and transitively
+        dependent symbols that must be reviewed/updated because `symref`
+        changed."""
+        return _unwrap(
+            _tools.frob_affects(root, symref, max_depth=max_depth, max_nodes=max_nodes)
+        )
+
 
 def _register_scope_tool(server, root: Path) -> None:  # noqa: ANN001
     """Register the `frob_check_scope` tool."""
@@ -109,7 +120,7 @@ def build_server(root: Path):  # noqa: ANN201
     _register_scope_tool(server, root)
     _register_incremental_tools(server, root)
 
-    _log.info("serve: built FastMCP server bound to %s with 7 tools", root)
+    _log.info("serve: built FastMCP server bound to %s with 8 tools", root)
     return server
 
 

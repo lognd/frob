@@ -22,7 +22,7 @@ from typani import Err, ErrorSet, Ok
 from typani.result import Result
 
 import frob.serve._warm as _warm
-from frob.graph import build_graph, edges_from, edges_to, load_graph, resolve
+from frob.graph import affects, build_graph, edges_from, edges_to, load_graph, resolve
 from frob.graph.lock import drift, load_lock
 from frob.logging import get_logger
 from frob.tickets import doable, load_queue
@@ -240,6 +240,61 @@ def frob_doc_for(root: Path, symref: str) -> Result[dict, ServeError]:
     )
 
 
+# frob:doc docs/modules/graph.md#affects
+# frob:doc docs/modules/serve.md#tools
+# frob:tests tests/test_serve.py::TestAffects.test_direct_symbol_no_dependents kind="unit"  # noqa: E501
+# frob:tests tests/test_serve.py::TestAffects.test_transitive_dependent_docs_included kind="unit"  # noqa: E501
+# frob:tests tests/test_serve.py::TestAffects.test_unknown_symbol_is_err kind="unit"
+def frob_affects(
+    root: Path,
+    symref: str,
+    *,
+    max_depth: int | None = None,
+    max_nodes: int | None = None,
+) -> Result[dict, ServeError]:
+    """The T-0325 north-star query: resolve `symref`, then warm-walk the
+    obligation graph (`frob.graph.affects`) for every doc anchor, test, and
+    transitively-dependent symbol (`frob:uses-contract` chain) that must be
+    reviewed/updated because `symref` changed -- reuses the warm snapshot
+    `frob.serve._warm.warm_state` already built, no cold graph reload and no
+    test run."""
+    state_result = _warm.warm_state(root)
+    if state_result.is_err:
+        _log.error("serve: frob_affects: graph: %s", state_result.danger_err)
+        return Err(ServeError.GraphUnavailable)
+    snapshot = state_result.danger_ok.snapshot
+
+    resolved = _resolve_symref(snapshot, symref, caller="frob_affects")
+    if resolved.is_err:
+        return Err(resolved.danger_err)
+    record = resolved.danger_ok
+
+    kwargs: dict = {}
+    if max_depth is not None:
+        kwargs["max_depth"] = max_depth
+    if max_nodes is not None:
+        kwargs["max_nodes"] = max_nodes
+    result = affects(snapshot, record.symref, **kwargs)
+
+    _log.info(
+        "serve: frob_affects: %s: %d dependent(s), %d doc(s), %d test(s), truncated=%s",
+        symref,
+        len(result.dependents),
+        len(result.docs),
+        len(result.tests),
+        result.truncated,
+    )
+    return Ok(
+        {
+            "ref": result.root,
+            "dependents": list(result.dependents),
+            "docs": list(result.docs),
+            "tests": list(result.tests),
+            "truncated": result.truncated,
+        }
+    )
+
+
 def _violations_as_dicts(violations) -> list[dict]:
     """`Violation`s (T-0177's `frob_check_delta`) as JSON-able dicts."""
     return [
@@ -404,6 +459,7 @@ def frob_run_touched_tests(root: Path, base: str = "main") -> Result[dict, Serve
 
 __all__ = [
     "ServeError",
+    "frob_affects",
     "frob_check_delta",
     "frob_check_scope",
     "frob_doable_tickets",

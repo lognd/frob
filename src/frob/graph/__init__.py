@@ -55,6 +55,7 @@ from frob.graph._models import (
     SymbolId,
     SymbolRecord,
 )
+from frob.graph.affects import AffectedSet, affects
 from frob.graph.callgraph import CallGraph, build_call_graph, closure
 from frob.graph.digest import compute_digests
 from frob.graph.dsl import dedupe_slug, markdown_anchors, parse_directives, slugify
@@ -741,6 +742,7 @@ def edges_to(snapshot: GraphSnapshot, target: str) -> tuple[Edge, ...]:
 from frob.graph.lock import LockError, acknowledge, load_lock, write_lock  # noqa: E402
 
 __all__ = [
+    "AffectedSet",
     "BuildError",
     "BuildStats",
     "CallGraph",
@@ -760,6 +762,7 @@ __all__ = [
     "SymbolId",
     "SymbolRecord",
     "acknowledge",
+    "affects",
     "build_call_graph",
     "build_graph",
     "closure",

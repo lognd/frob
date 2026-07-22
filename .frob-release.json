@@ -433,6 +433,8 @@
     "src/frob/graph/_models.py::SymbolId": "dfd6580a30eca20b213dd7b1e95d05629681637a32897edd25ce183e3f6b3ded",
     "src/frob/graph/_models.py::SymbolRecord": "09d8fb53939ebb1a21a2eb413d9171aea7ebc52f7a8cd8e7d770b21685dcddd4",
     "src/frob/graph/_models.py::SymbolRecord.symref": "c5c42376a49fb98600dd0b469b304c2db4bec5e6c140402c345dd19de0b14178",
+    "src/frob/graph/affects.py::AffectedSet": "8b26a1d5001e8eae53c27d6a3f472844964e97e6e994b2374d7a84e3de10ea74",
+    "src/frob/graph/affects.py::affects": "9a8e5fffc6787bfa0ab637478b3e44918b0038c5a1e4e591c755f3e31dfee326",
     "src/frob/graph/cache.py::connect": "59e579fc55a12a0f8391ef959116a33ebde56a33bc942192c42cca1f36ee31ba",
     "src/frob/graph/cache.py::connect_readonly": "fece190548a94313e639e38b6d8ab6e5531b2c5f62125616029ab52443004ce5",
     "src/frob/graph/cache.py::get_file_hash": "2562d5eea3cae3549bfaa5639e7d6b33573cb0183584a49d3f416505d8dfdc5c",
@@ -664,6 +666,7 @@
     "src/frob/scaffold/project.py::list_project_types": "8e6f4f0e9123b0e68786d2d13af57a8d2505e0287ef2962d4a05284b91fb538a",
     "src/frob/scaffold/project.py::render_project": "52b97a1c65f54a849c5c1be221fc46bfae1955c3d7335797c26e17c0596b2cfe",
     "src/frob/serve/_tools.py::ServeError": "184d51765fabf2ad9f75e99b16015414e45d25ebc312789bc2864f5f204b0df0",
+    "src/frob/serve/_tools.py::frob_affects": "38c2960fc8c08d8c6a01bd41deff2778f46e836b41b5da63c10c4933c89e1fa9",
     "src/frob/serve/_tools.py::frob_check_delta": "7c5e6b894d74b3d11ed150ce0bda9d2ca87e5137810547e9f7a4eaa2872dc93a",
     "src/frob/serve/_tools.py::frob_check_scope": "a6cc7e8b2102813a0f5300e5bbfce3e5e49f211f9edbc6b31a2f723e34f5b5ed",
     "src/frob/serve/_tools.py::frob_doable_tickets": "0384a31cc7b9a67a38d9e474a748792765d8602f456405ea4d78fb00ba8aa4c6",
@@ -1172,5 +1175,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.77.0"
+  "version": "0.78.0"
 }

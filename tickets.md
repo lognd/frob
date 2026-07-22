@@ -2179,7 +2179,7 @@ fully bypasses it with identical results.
 id: T-0325
 title: 'doc-drift digest graph: warm ''what code/docs must update when X changes''
   query (the north-star)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-19'
@@ -2191,6 +2191,8 @@ scope:
 - src/frob/serve/**
 - tickets.md
 - docs/modules/graph.md
+- tests/test_graph_affects.py
+- tests/test_serve.py
 scope_changes:
 - op: remove
   glob: docs/**
@@ -2202,7 +2204,28 @@ scope_changes:
   reason: T-0325 graph work maps to docs/modules/graph.md
   actor: logan
   at: '2026-07-20'
-evidence: []
+- op: add
+  glob: tests/test_graph_affects.py
+  reason: evidence for T-0325's affects() and frob_affects tool lives in these test
+    files
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: tests/test_serve.py
+  reason: evidence for T-0325's affects() and frob_affects tool lives in these test
+    files
+  actor: logan
+  at: '2026-07-22'
+evidence:
+- tests/test_graph_affects.py::TestAffects::test_no_edges_is_empty_set
+- tests/test_graph_affects.py::TestAffects::test_direct_doc_and_test_edges
+- tests/test_graph_affects.py::TestAffects::test_transitive_uses_contract_chain
+- tests/test_graph_affects.py::TestAffects::test_cycle_guarded
+- tests/test_graph_affects.py::TestAffects::test_truncated_at_max_depth
+- tests/test_graph_affects.py::TestAffects::test_truncated_at_max_nodes
+- tests/test_serve.py::TestAffects::test_direct_symbol_no_dependents
+- tests/test_serve.py::TestAffects::test_transitive_dependent_docs_included
+- tests/test_serve.py::TestAffects::test_unknown_symbol_is_err
 attachments: []
 acceptance: []
 threat: null
@@ -2210,6 +2233,57 @@ component: null
 labels: []
 ```
 The user's original vision (CLAUDE.md): every function/class/etc. carries a digest in .frob/, every doc is connected, and frob answers -- without running a test, like a static type-checker for docs -- 'X's digest changed, here is the transitively-affected doc + code set that must be reviewed/updated.' Only practical if the graph is kept WARM (frob daemon epic). Query surface: graph.affects(symbol) -> impacted docs+symbols; a gate that fails when a touched symbol's dependents' digests weren't acked. This is the same project as the daemon; file so the digest-graph work is tracked as its own deliverable.
+
+## Done report
+
+Implemented `frob.graph.affects` (AffectedSet, affects()): a bounded BFS over
+`uses-contract` reverse edges, cycle-guarded and depth/node-capped (same
+posture as frob.graph.callgraph.closure, INV-014), that answers T-0325's
+north-star query -- given a symref, exactly which doc anchors (frob:doc +
+frob:describes), which tests (frob:tests), and which transitively-dependent
+symbols must be reviewed/updated, warm from the already-built GraphSnapshot,
+no test run needed.
+
+Exposed as a new MCP tool `frob_affects(symref, max_depth=None,
+max_nodes=None)` in frob.serve (_tools.py + server.py registration),
+reusing the T-0177 warm-state snapshot (frob.serve._warm.warm_state) --
+no cold graph reload. frob_doc_for (the existing one-hop tool) is left
+unchanged; frob_affects extends it to the transitive case rather than
+replacing it.
+
+docs/modules/graph.md gained an "Affects" section documenting the query
+surface, edge types consumed, and depth/transitivity semantics, plus
+describes-anchors for the two new public symbols.
+
+Scope was widened by +2 globs (tests/test_graph_affects.py,
+tests/test_serve.py) via `frob ticket scope --add` since the evidence for
+this ticket's new public symbols lives in those test files.
+
+Not built in this pass (noted explicitly in docs/modules/graph.md): a
+`frob graph affects <ref>` CLI subcommand (src/frob/app/graph_runner.py is
+out of this ticket's declared scope) and the digest-drift GATE that would
+consume affects() to fail a check when a touched symbol's dependents'
+digests were not acked -- affects() is the read-side query that gate would
+be built on; the gate itself is future work, tracked as a follow-up.
+
+Gate state: frob check --ticket T-0325 is clean of new violations -- the
+two COV001 hits and the DOC002 anchor-mismatch this ticket introduced were
+found and fixed (anchor slug corrected, doc edges added) during
+implementation; the remaining COV/DRIFT/PRE(before sweep)/REL/SYS gate
+counts are unchanged pre-existing repo debt (measured before and after this
+change). REL001 (public API changed, version bump) is left for the
+coordinator's land-time release stamp per this repo's landing workflow,
+not bumped here. PRE001 was cleared by re-running `frob ticket sweep
+T-0325` after the scope widen.
+
+### Changed
+```
+ tickets.md | 682 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 676 insertions(+), 6 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0329 -->
 ```yaml

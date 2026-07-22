@@ -24,6 +24,7 @@ from frob.graph.lock import write_lock
 from frob.serve import (
     ServeError,
     _warm,
+    frob_affects,
     frob_check_delta,
     frob_check_scope,
     frob_doable_tickets,
@@ -100,10 +101,11 @@ class TestServeGetattr:
 
 class TestBuildServer:
     def test_registers_all_five_tools(self, tmp_path: Path) -> None:
-        # Name kept as-is despite now covering 7 tools (T-0177 added 2 more):
-        # T-0010/T-0046/T-0520 already cite this node id as `frob:tests`
-        # evidence, and COV003 resolves evidence by exact node id -- a
-        # rename here would silently break their recorded evidence.
+        # Name kept as-is despite now covering 8 tools (T-0177 added 2 more,
+        # T-0325 added frob_affects): T-0010/T-0046/T-0520 already cite this
+        # node id as `frob:tests` evidence, and COV003 resolves evidence by
+        # exact node id -- a rename here would silently break their
+        # recorded evidence.
         # frob:tests src/frob/serve/server.py::build_server kind="unit"
         from frob.serve.server import build_server
 
@@ -115,6 +117,7 @@ class TestBuildServer:
             "frob_check_scope",
             "frob_graph_query",
             "frob_doc_for",
+            "frob_affects",
             "frob_check_delta",
             "frob_run_touched_tests",
         }
@@ -278,6 +281,53 @@ class TestDocFor:
         _git_init(tmp_path)
 
         result = frob_doc_for(tmp_path, "does_not_exist")
+        assert result.is_err
+        assert result.danger_err == ServeError.UnknownSymbol
+
+
+_SAMPLE_CALLER_PY = (
+    '"""Caller module."""\n\n\n'
+    "def caller(x):\n"
+    "    # frob:uses-contract src/pkg/a.py::helper\n"
+    "    return x\n"
+)
+
+
+class TestAffects:
+    """`frob_affects` -- T-0325's north-star doc-drift digest-graph query."""
+
+    def test_direct_symbol_no_dependents(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/serve/_tools.py::frob_affects kind="unit"
+        _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY)
+        _git_init(tmp_path)
+
+        result = frob_affects(tmp_path, "helper")
+        assert result.is_ok
+        payload = result.danger_ok
+        assert payload["ref"].endswith("::helper")
+        assert payload["dependents"] == []
+        assert payload["docs"] == ["docs/x.md#helper"]
+        assert payload["tests"] == []
+        assert payload["truncated"] is False
+
+    def test_transitive_dependent_docs_included(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/serve/_tools.py::frob_affects kind="unit"
+        _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY)
+        _write(tmp_path, "src/pkg/b.py", _SAMPLE_CALLER_PY)
+        _git_init(tmp_path)
+
+        result = frob_affects(tmp_path, "helper")
+        assert result.is_ok
+        payload = result.danger_ok
+        assert payload["dependents"] == ["src/pkg/b.py::caller"]
+        assert "docs/x.md#helper" in payload["docs"]
+
+    def test_unknown_symbol_is_err(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/serve/_tools.py::frob_affects kind="unit"
+        _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY)
+        _git_init(tmp_path)
+
+        result = frob_affects(tmp_path, "does_not_exist")
         assert result.is_err
         assert result.danger_err == ServeError.UnknownSymbol
 

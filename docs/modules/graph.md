@@ -68,6 +68,55 @@ def write_lock(lock: LockFile, path: Path) -> Result[Unit, LockError]
     # facet), indent=2, trailing newline.
 ```
 
+## Affects
+
+T-0325, the north-star query.
+
+<!-- frob:describes src/frob/graph/affects.py::AffectedSet -->
+<!-- frob:describes src/frob/graph/affects.py::affects -->
+
+"If X's digest changed, exactly WHICH documentation and WHICH other code
+must be reviewed/updated" -- answered warm, from an already-built
+`GraphSnapshot`, without running a single test (CLAUDE.md's north-star
+vision: a static type-checker for docs). `frob_doc_for` (`frob.serve`)
+already answers the direct, one-hop question for a single symbol; `affects`
+extends it to the transitive case a real contract change has.
+
+```python
+# frob/graph/affects.py
+class AffectedSet(BaseModel):
+    root: str
+    dependents: tuple[str, ...]   # transitively uses-contract-dependent symrefs
+    docs: tuple[str, ...]         # doc anchors covering root or any dependent
+    tests: tuple[str, ...]        # frob:tests symrefs covering root or any dependent
+    truncated: bool               # max_depth/max_nodes cut the walk short
+
+def affects(snapshot: GraphSnapshot, ref: str, *,
+            max_depth: int = 8, max_nodes: int = 500) -> AffectedSet
+```
+
+- **Edge types that feed the digest**: `uses-contract` (reverse-walked --
+  a dependent's `frob:uses-contract ref` directive means `ref`'s signature
+  change propagates to the dependent) drives the transitive symbol closure;
+  `doc` and `describes` (both directions, same pair `frob_doc_for` reads)
+  and `tests` are collected at every node the closure visits, not just at
+  `ref` itself.
+- **Depth/transitivity semantics**: bounded BFS, depth-limited and
+  node-count-capped, cycle-guarded via a visited set -- the same posture as
+  `frob.graph.callgraph.closure` (INV-014). `truncated=True` means the
+  bound cut the dependent walk short; the doc/test sets are still exact for
+  every node actually visited.
+- **Query surface**: the MCP tool `frob_affects(symref, max_depth=None,
+  max_nodes=None)` (`frob.serve`), backed by the warm graph snapshot
+  `frob.serve._warm.warm_state` already builds -- no cold reload, no test
+  run. A `frob graph affects <ref>` CLI counterpart is deliberately NOT
+  built in this pass (`src/frob/app/graph_runner.py` is out of this
+  ticket's scope) -- tracked as follow-up.
+- **Not yet built**: a gate that fails when a touched symbol's `affects()`
+  dependents' digests were not acked (the CLAUDE.md vision's other half) --
+  `affects` is the read-side query this gate would consume; the gate itself
+  is future work.
+
 ## Call graph
 
 <!-- frob:describes src/frob/graph/callgraph.py::CallGraph -->
