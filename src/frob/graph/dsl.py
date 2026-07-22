@@ -195,10 +195,22 @@ def _parse_attrs_verb_error(
     """The per-verb attribute requirement `verb` fails to meet, or `None` if
     it meets every requirement its verb declares (`_parse_attrs`'s per-verb
     dispatch, split out for ARCH001 -- T-0598)."""
-    if verb == "waive" and "reason" not in attrs:
-        return MalformedDirective(
-            file=path, line=lineno, reason='frob:waive requires reason="..."'
-        )
+    if verb == "waive":
+        if "reason" not in attrs:
+            return MalformedDirective(
+                file=path, line=lineno, reason='frob:waive requires reason="..."'
+            )
+        # T-0753: optional `until="YYYY-MM-DD"` expiry, reusing the same
+        # date-only grammar `frob:deprecated`'s `sunset=` established
+        # (T-0576) rather than a third bespoke date format -- coordinate
+        # with T-0671 (strata's SYSWAIVE002) on this one convention.
+        until = attrs.get("until")
+        if until is not None and not _DATE_RE.match(until.strip()):
+            return MalformedDirective(
+                file=path,
+                line=lineno,
+                reason=(f"frob:waive until={until!r} is not a YYYY-MM-DD date"),
+            )
     if verb == "debt":
         missing = [key for key in ("reason", "ticket") if key not in attrs]
         if missing:

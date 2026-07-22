@@ -57,8 +57,10 @@ declaration).
 | SEC002 | secrets | a git-tracked `.env`/`.env.*` file exists (`.env.example`/`.env.sample`/`.env.template` excepted) |
 | SEC003 | secrets | a git-tracked file contains a live Stripe secret key (`sk_live_...`) or a private-key PEM header -- unwaivable, see `_UNWAIVABLE_RULES` |
 | WAIVE001 | (always on) | a `frob:waive` directive is missing `reason="..."` |
-| WAIVE002 | (always on) | a `frob:waive` targets a rule id that can never be matched -- see "Waive boundary" below |
+| WAIVE002 | error (T-0753; was warn) | a `frob:waive` targets a rule id that can never be matched -- see "Waive boundary" below |
 | WAIVE003 | (always on) | a `frob:waive` on a package-scoped rule (TEST003/TEST004/TEST007) reaches more than one distinct violated package/system id via directory-prefix matching -- see "Waiver over-breadth (T-0470)" below |
+| WAIVE004 | warn (T-0753) | a `frob:waive` on a RECOGNIZED rule id matches zero findings this run at its own site -- see "Unnecessary-waiver detection (T-0753)" below |
+| WAIVE005 | error (T-0753) | a `frob:waive`'s optional `until="YYYY-MM-DD"` boundary has passed -- see "Waiver expiry (T-0753)" below |
 | ARCH001 | arch | `frob.arch`'s complexity-aware long-function check (docs/modules/arch.md) still flags a function after its flat-body filter -- the one `frob.arch` category channeled into a real gate `Violation`, waivable with a reasoned `frob:waive ARCH001 reason="..." [ceiling=N]` (T-0289) |
 | PII010 | pii_structural | a pydantic/dataclass/TypedDict/attrs field's name or type annotation matches a PII-shaped signature (`FIELD_SIGNATURES`) with no `frob:waive PII010 reason="..."` -- see "PII010/SEC110" below |
 | PII011 | pii_structural | a tracked `.py` file's string-literal constant is structurally email-shaped (`_is_email_shaped`, `email.utils.parseaddr`-based) with no `frob:secret-fake` marker or `frob:waive PII011 reason="..."` -- see "PII010/SEC110" below |
@@ -205,7 +207,10 @@ wraps its `ArchSuggestion`s straight into `Diagnostic`s, bypassing
 `frob.gates` entirely -- `god-class`, `high-coupling`, `deep-nesting`,
 `abstraction-opportunity`, and `large-file` are still only reachable that
 way, so a `frob:waive` naming one of those categories is flagged as
-**WAIVE002** (ineffective).
+**WAIVE002** (ineffective, ERROR since T-0753 -- was WARN; a waiver that
+can never match anything is not a hygiene nit, it silently does nothing
+while reading as coverage, the same "looks handled, isn't" failure mode
+WAIVE001 already treats as an ERROR for a missing `reason=`).
 
 `long-function` is the ONE exception (T-0289): `frob.gates._arch.arch_gate`
 now runs `analyze_project` a second time inside the `archgate` GATE (a
@@ -369,6 +374,63 @@ line, none of them mis-scoped). A real version of this check needs a
 different signal than raw line-distance from the class top; tracked as a
 follow-up rather than shipped as a lint proven noisy against the repo's
 own pattern.
+
+### Unnecessary-waiver detection (T-0753)
+
+WAIVE002 only catches a waiver whose RULE ID can never match anything at
+all. It cannot see the other, more dangerous stale-waiver shape: a waiver
+naming a perfectly real, live rule, but whose SITE currently produces zero
+findings under that rule -- the underlying issue was already fixed (or
+never actually applied there), and the waiver just keeps standing guard
+over nothing while silently pre-forgiving the NEXT regression at that site
+with no new review ever happening. **WAIVE004** is that detector:
+`frob.gates._waive004_violations` re-runs `_match_waiver` for every
+recognized-rule `frob:waive` edge against this run's full, pre-waiver
+violation set (the same set `_waive003_violations` already consumes) and
+fires when nothing matches.
+
+WARN tier, not error: some rules are legitimately context-dependent, so a
+zero-match result does not always mean the waiver is stale --
+
+- **`--only`/gate-selection scoping**: `frob check --only gates-fast`
+  excludes `dead_symbols` entirely, so every genuinely-needed
+  `frob:waive DEAD001 reason="..."` in the tree reports 0 findings under
+  `gates-fast` and would falsely WAIVE004 there. This is not a detector bug
+  -- it is read against the wrong (partial) violation set. Trust WAIVE004
+  findings only from a full, unscoped `frob check` run; treat a scoped
+  run's WAIVE004 output as advisory only, never as a signal to remove the
+  waiver.
+- **Diff/base-scoped rules** (e.g. `SCOPE001`, `POLICY`-family checks bound
+  to a diff base) can vary run to run for reasons unrelated to the waiver's
+  own site.
+
+A ratchet-to-error path via the T-0569/T-0594 waivable-warning pool is a
+natural follow-up once the known-flaky set above is characterized
+empirically across full runs -- not built in this pass; T-0753's mandate
+was WARNING tier first.
+
+### Waiver expiry (T-0753)
+
+`frob:waive` gains an optional `until="YYYY-MM-DD"` boundary, parsed by
+`frob.graph.dsl` with the exact same date-only grammar `frob:deprecated`'s
+`sunset=` already established (T-0576) -- a non-`YYYY-MM-DD` `until=`
+value is rejected at parse time as a WAIVE001-shaped `MalformedDirective`,
+the same posture `frob:deprecated`'s malformed `sunset=` gets under
+DEPR001. Coordinate with T-0671 (strata's bounded waivers): both sides
+share this one date convention rather than inventing a second grammar --
+strata's `SYSWAIVE002` is the analogous error-tier precedent on that side
+(`src/frob/strata/_waive.py`'s `STALE_WAIVER_RULE`).
+
+**WAIVE005** fires when a `frob:waive`'s `until` boundary has passed,
+judged against the run's current date -- mirroring DEBT003/DEPR004's plain
+expiry escalation (ERROR, not merely a warning: an unenforced expiry date
+is not actually an expiry). Unlike `frob:debt`, a `frob:waive` carries no
+`ticket=`, so there is no ticket-lifecycle check here (no WAIVE005
+counterpart to DEBT002/DEPR002) -- WAIVE005 only makes the boundary itself
+loud. An expired waiver still SUPPRESSES its matched violation (the point
+is forcing a human re-review, not silently un-waiving something a prior
+author deliberately excepted); resolve it by extending `until` with a
+written reason, or removing the directive once it's no longer warranted.
 
 ### `frob check`'s dup/arch stage summaries are also waiver-aware (T-0375)
 

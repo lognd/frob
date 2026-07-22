@@ -930,6 +930,11 @@ _KNOWN_GATE_RULES = frozenset(
         "WAIVE002",
         # T-0470: over-broad package-prefix waiver reach.
         "WAIVE003",
+        # T-0753: a valid-rule waiver matching 0 findings this run (stale/
+        # unnecessary waiver hygiene) and a `frob:waive`'s `until=` boundary
+        # having passed (expiry, mirroring DEBT003/DEPR004).
+        "WAIVE004",
+        "WAIVE005",
         "DEC001",
         "DEC002",
         "REL001",
@@ -1026,6 +1031,14 @@ _KNOWN_GATE_RULES = frozenset(
         # verify (LANG003).
         "LANG002",
         "LANG003",
+        # T-0753: dead_symbol_gate's DEAD001 was wired as a real, always-run
+        # process job (see _ALL_GATES's "dead_symbols" entry) since before
+        # this frozenset existed, but was never added here -- so every
+        # `frob:waive DEAD001 reason="..."` in the tree (3 live instances at
+        # T-0753's filing) was silently flagged WAIVE002-ineffective despite
+        # targeting a perfectly real, matchable rule id. This was a listing
+        # omission, not evidence DEAD001 was ever renamed or removed.
+        "DEAD001",
     }
 )
 
@@ -1148,7 +1161,14 @@ def _waive002_violation_for(edge: Edge, arch_categories: frozenset[str]) -> Viol
         )
     else:
         detail = f"'{edge.target}' is not a recognized gate or policy rule id"
-    _log.warning(
+    # T-0753: promoted WARN -> ERROR. A waiver that can never match anything
+    # is not a hygiene nit -- it is silently doing nothing while reading as
+    # coverage, exactly the same "looks handled, isn't" failure mode WAIVE001
+    # already treats as an ERROR for a missing reason=. See the DEAD001
+    # listing-omission incident this promotion surfaced (T-0753's Done
+    # report) for why this sat at WARN long enough to accumulate 3 live
+    # instances unnoticed.
+    _log.error(
         "WAIVE002: %s waives %s, which is ineffective: %s",
         edge.src,
         edge.target,
@@ -1156,7 +1176,7 @@ def _waive002_violation_for(edge: Edge, arch_categories: frozenset[str]) -> Viol
     )
     return Violation(
         rule="WAIVE002",
-        severity=Severity.WARN,
+        severity=Severity.ERROR,
         file=file,
         line=0,
         message=(
@@ -1222,6 +1242,128 @@ def _waive003_violations(
             )
         )
     return tuple(out)
+
+
+# T-0753: WAIVE004 is the genuinely dangerous stale-waiver class WAIVE002
+# cannot see -- WAIVE002 only catches a waiver whose RULE ID can never
+# match anything at all; a waiver naming a perfectly valid, live rule but
+# whose SITE has zero findings under that rule (the underlying issue was
+# fixed, or never actually applied there) reads as "still ineffective" in
+# exactly the same silently-pre-forgiving way, but WAIVE002's known-rules
+# check cannot detect it -- the rule is known, only the site is stale.
+# Left alone, that waiver keeps standing guard over nothing while
+# pre-forgiving the NEXT regression at that site with no new review.
+#
+# WARNING tier, not ERROR: some rules are legitimately context-dependent
+# (a diff-scoped rule like SCOPE001/POLICY's diff-bound checks, or any
+# rule this run's `--only`/gate selection excluded) can show zero matches
+# for reasons that have nothing to do with the waiver being stale -- a
+# false WAIVE004 there is a known-flaky case, not a bug in the detector.
+# Trust WAIVE004 findings from a full, unscoped `frob check` run; a
+# scoped/`--only` run's WAIVE004 output should be read as advisory only.
+# A ratchet-to-error path via the T-0569/T-0594 waivable-warning pool is a
+# natural follow-up once the known-flaky set is characterized empirically,
+# not built in this pass (T-0753's mandate: WARNING-tier first).
+# frob:enforces CHK-GATE-WAIVE004
+def _waive004_violations(
+    all_violations: tuple[Violation, ...],
+    snapshot: GraphSnapshot,
+    rule_ids: frozenset[str],
+) -> tuple[Violation, ...]:
+    """WAIVE004: a `frob:waive` on a recognized rule id that matches ZERO
+    findings in this run's full (pre-waiver) violation set -- the rule is
+    real and reachable, but nothing at the waived site currently trips it.
+
+    Evaluated against `all_violations` BEFORE `_apply_waivers` runs (the
+    same "waivers ignored" set `_waive003_violations` already consumes), so
+    this is genuinely "does the rule fire here at all right now", not an
+    artifact of the waiver itself suppressing its own evidence. Skips edges
+    WAIVE002 already flagged (an unrecognized rule id has no findings to
+    compare against by construction, and WAIVE002 is the more actionable
+    finding for that edge) and the `_UNWAIVABLE_RULES`/arch-category cases
+    `_match_waiver`/`_waive002_violation_for` already special-case.
+    """
+    known = _KNOWN_GATE_RULES | rule_ids
+    arch_categories = _unwaivable_channel_rules()
+    violations_by_rule: dict[str, list[Violation]] = {}
+    for violation in all_violations:
+        violations_by_rule.setdefault(violation.rule, []).append(violation)
+    out: list[Violation] = []
+    for edge in _waive_edges(snapshot):
+        rule = edge.target
+        if rule not in known or rule in arch_categories:
+            continue  # WAIVE002's territory, not WAIVE004's
+        candidates = violations_by_rule.get(rule, [])
+        matched = any(_match_waiver(v, {rule: [edge]}) is edge for v in candidates)
+        if matched:
+            continue
+        file, line = _site_from_edge_origin(edge.origin)
+        _log.warning(
+            "WAIVE004: %s frob:waive %s matches 0 findings this run",
+            edge.origin,
+            rule,
+        )
+        out.append(
+            Violation(
+                rule="WAIVE004",
+                severity=Severity.WARN,
+                file=file,
+                line=line,
+                message=(
+                    f"WAIVE004: {edge.src} frob:waive {rule} matches 0 findings "
+                    f"in this run -- the waiver may be pre-forgiving a future "
+                    f"regression with no live issue behind it; confirm the site "
+                    f"still needs it, or remove the directive (known-flaky for "
+                    f"diff-scoped rules and any `--only`-excluded gate; trust "
+                    f"this only from a full, unscoped run)"
+                ),
+            )
+        )
+    return tuple(out)
+
+
+# T-0753: `frob:waive` gains an optional `until="YYYY-MM-DD"` boundary,
+# reusing the same date-only grammar `frob:deprecated`'s `sunset=`/
+# `frob:debt`'s date-shaped `until=` already established (T-0412/T-0576
+# precedent) -- one convention for "a directive with a real-world expiry
+# date", not a third bespoke format. Coordinate with T-0671 (strata's
+# SYSWAIVE002, already at error tier) on this same grammar rather than
+# diverging. Unlike `frob:debt`, a `frob:waive` carries no ticket=, so
+# there is no ticket-open check here (WAIVE005 mirrors DEBT003's plain
+# expiry escalation, not DEBT002's ticket-lifecycle check) -- an expired
+# waiver still SUPPRESSES its matched violation (unlike an expired debt,
+# which never suppressed anything to begin with); WAIVE005 only makes the
+# expiry itself loud, on the same "forces re-review, does not auto-revoke"
+# posture DEBT003/DEPR004 already established.
+# frob:enforces CHK-GATE-WAIVE005
+def _waive005_violations(
+    snapshot: GraphSnapshot, *, current_date: str
+) -> tuple[Violation, ...]:
+    """WAIVE005: a `frob:waive`'s `until="YYYY-MM-DD"` boundary has passed --
+    a permanent-by-default waiver that was explicitly time-boxed and outlived
+    its own boundary must force a human re-review, not sit forgotten."""
+    violations: list[Violation] = []
+    for edge in _waive_edges(snapshot):
+        until = edge.attrs.get("until", "")
+        if not until or until.strip() > current_date:
+            continue
+        file, line = _site_from_edge_origin(edge.origin)
+        _log.error("WAIVE005: %s expired (until=%s)", edge.src, until)
+        violations.append(
+            Violation(
+                rule="WAIVE005",
+                severity=Severity.ERROR,
+                file=file,
+                line=line,
+                message=(
+                    f"WAIVE005: frob:waive {edge.target} at {edge.src} expired "
+                    f"(until={until!r}); re-review the waiver -- extend `until` "
+                    f"with a written reason, or remove the directive if the "
+                    f"waiver is no longer warranted"
+                ),
+            )
+        )
+    return tuple(violations)
 
 
 # frob:ticket T-0504
@@ -3215,9 +3357,7 @@ def _cov006_edge_violation(
         return None
     if _cov006_third_file_reachable(root, edge):
         return None
-    _log.debug(
-        "COV006: %s -> %s has no call-graph reachability", edge.src, edge.target
-    )
+    _log.debug("COV006: %s -> %s has no call-graph reachability", edge.src, edge.target)
     return Violation(
         rule="COV006",
         severity=Severity.WARN,
@@ -8325,6 +8465,10 @@ def _assemble_gate_report(
     all_violations: list[Violation] = [
         *_waive001_violations(st.snapshot),
         *_waive002_violations(st.snapshot, st.rule_ids),
+        # T-0753: `until=` expiry needs no assembled violation set (it only
+        # reads the waive edges' own attrs), so it runs alongside the other
+        # up-front WAIVE00*/DSL001 self-checks.
+        *_waive005_violations(st.snapshot, current_date=date.today().isoformat()),
         *_dsl001_violations(st.snapshot),
     ]
     job_violations, counts, timing = _run_combined_jobs(thread_jobs, process_jobs)
@@ -8335,6 +8479,13 @@ def _assemble_gate_report(
     # packages one waiver reaches), so it runs after `job_violations` is
     # folded in, not alongside the other WAIVE00* self-checks above.
     all_violations.extend(_waive003_violations(tuple(all_violations), st.snapshot))
+    # T-0753: WAIVE004 (zero-findings stale-waiver detection) needs the same
+    # full pre-waiver violation set WAIVE003 does, for the same reason --
+    # "how many findings does this waiver's rule produce right now" can only
+    # be answered once job_violations are folded in.
+    all_violations.extend(
+        _waive004_violations(tuple(all_violations), st.snapshot, st.rule_ids)
+    )
 
     kept, waived = _apply_waivers(tuple(all_violations), st.snapshot)
     kept = _apply_severity_overrides(kept, cfg.root)

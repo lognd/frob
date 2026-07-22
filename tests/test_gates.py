@@ -1434,7 +1434,8 @@ class TestCoverageGate:
         violations = _waive002_violations(snap, frozenset())
         v = _first_rule(violations, "WAIVE002")
         assert v is not None
-        assert v.severity == Severity.WARN
+        # T-0753: promoted WARN -> ERROR.
+        assert v.severity == Severity.ERROR
         assert "frob-arch" in v.message
 
     def test_waive002_does_not_flag_arch001_as_ineffective(
@@ -3787,6 +3788,128 @@ class TestTestGate:
         # A waiver that reaches only ONE package is not over-broad.
         single = _waive003_violations(violations[:1], snap)
         assert single == ()
+
+    def test_waive004_fires_on_valid_rule_zero_findings(self) -> None:
+        """T-0753: a waiver targeting a real, matchable rule id but whose
+        site produces ZERO findings under that rule this run is the stale
+        class WAIVE002 cannot see (the rule id is known; only the site is
+        stale) -- WAIVE004 must flag it."""
+        # frob:tests src/frob/gates/__init__.py::_waive004_violations
+        from frob.gates import _waive004_violations
+        from frob.graph import Edge, EdgeKind, GraphSnapshot
+
+        waiver = Edge(
+            kind=EdgeKind.WAIVE,
+            src="src/a.py::helper",
+            target="COV001",
+            origin="src/a.py:2",
+            attrs={"reason": "x"},
+        )
+        snap = GraphSnapshot(root=".", symbols={}, edges=(waiver,))
+        # No COV001 violation at all this run -- the waiver matches nothing.
+        found = _waive004_violations((), snap, frozenset())
+        assert len(found) == 1
+        assert found[0].rule == "WAIVE004"
+        assert found[0].severity == Severity.WARN
+        assert "COV001" in found[0].message
+
+    def test_waive004_stays_silent_on_a_genuinely_needed_waiver(self) -> None:
+        """T-0753: a waiver whose site DOES still produce a matching finding
+        must never fire WAIVE004 -- only a truly stale/unnecessary waiver is
+        in scope."""
+        from frob.gates import _waive004_violations
+        from frob.graph import Edge, EdgeKind, GraphSnapshot
+
+        waiver = Edge(
+            kind=EdgeKind.WAIVE,
+            src="src/a.py::helper",
+            target="COV001",
+            origin="src/a.py:2",
+            attrs={"reason": "x"},
+        )
+        snap = GraphSnapshot(root=".", symbols={}, edges=(waiver,))
+        live_violation = Violation(
+            rule="COV001",
+            severity=Severity.ERROR,
+            file="src/a.py",
+            line=2,
+            symref="src/a.py::helper",
+            message="still missing a doc anchor",
+        )
+        found = _waive004_violations((live_violation,), snap, frozenset())
+        assert found == ()
+
+    def test_waive004_skips_a_waive002_unrecognized_rule(self) -> None:
+        """T-0753: an edge WAIVE002 already flags as targeting an
+        unrecognized rule id has no findings to compare against by
+        construction -- WAIVE004 must not pile a second, redundant finding
+        onto the same directive."""
+        from frob.gates import _waive004_violations
+        from frob.graph import Edge, EdgeKind, GraphSnapshot
+
+        waiver = Edge(
+            kind=EdgeKind.WAIVE,
+            src="src/a.py::helper",
+            target="NOTAREALRULE",
+            origin="src/a.py:2",
+            attrs={"reason": "typo"},
+        )
+        snap = GraphSnapshot(root=".", symbols={}, edges=(waiver,))
+        found = _waive004_violations((), snap, frozenset())
+        assert found == ()
+
+    def test_waive005_expired_until_is_error(self) -> None:
+        """T-0753: `frob:waive`'s optional `until="YYYY-MM-DD"` boundary
+        having passed forces a hard ERROR demanding re-review, mirroring
+        DEBT003/DEPR004's expiry escalation."""
+        # frob:tests src/frob/gates/__init__.py::_waive005_violations
+        from frob.gates import _waive005_violations
+        from frob.graph import Edge, EdgeKind, GraphSnapshot
+
+        waiver = Edge(
+            kind=EdgeKind.WAIVE,
+            src="src/a.py::helper",
+            target="COV001",
+            origin="src/a.py:2",
+            attrs={"reason": "x", "until": "2020-01-01"},
+        )
+        snap = GraphSnapshot(root=".", symbols={}, edges=(waiver,))
+        found = _waive005_violations(snap, current_date="2026-07-22")
+        assert len(found) == 1
+        assert found[0].rule == "WAIVE005"
+        assert found[0].severity == Severity.ERROR
+        assert "2020-01-01" in found[0].message
+
+    def test_waive005_future_until_passes(self) -> None:
+        """A `frob:waive ... until=` boundary still in the future must not
+        fire WAIVE005."""
+        from frob.gates import _waive005_violations
+        from frob.graph import Edge, EdgeKind, GraphSnapshot
+
+        waiver = Edge(
+            kind=EdgeKind.WAIVE,
+            src="src/a.py::helper",
+            target="COV001",
+            origin="src/a.py:2",
+            attrs={"reason": "x", "until": "2099-01-01"},
+        )
+        snap = GraphSnapshot(root=".", symbols={}, edges=(waiver,))
+        assert _waive005_violations(snap, current_date="2026-07-22") == ()
+
+    def test_waive_until_bad_date_is_malformed(self, tmp_path: Path) -> None:
+        """T-0753: a `frob:waive ... until="..."` that is not a
+        `YYYY-MM-DD` date is rejected at parse time, mirroring
+        `frob:deprecated`'s `sunset=` validation (T-0576)."""
+        source = (
+            "def helper(x):\n"
+            '    # frob:waive COV001 reason="x" until="not-a-date"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        assert any(
+            "frob:waive" in md.reason and "until" in md.reason for md in snap.malformed
+        )
 
     def test_test004_system_below_min_e2e(self, tmp_path: Path) -> None:
         from typani.option import Nothing
