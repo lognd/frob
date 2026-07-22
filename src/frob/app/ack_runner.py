@@ -1,7 +1,5 @@
 """CLI wiring for `frob ack <ref...> [--facet]` (docs/modules/graph.md)."""
 
-# frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
-
 from __future__ import annotations
 
 import sys
@@ -73,9 +71,14 @@ def _acknowledge_and_write(cfg: AppConfig, lock, snapshot, lock_path: Path) -> N
 
 
 # frob:doc docs/modules/app.md#runners
-# frob:waive TEST005 reason="run 0.0% branch cover, debt T-0160"
 # frob:tests tests/test_ack_worktree_lease.py::TestAckWorktreeLease.test_mismatched_lease_refuses  # noqa: E501
 # frob:tests tests/test_ack_worktree_lease.py::TestAckWorktreeLease.test_no_lease_reaches_normal_ack_failure  # noqa: E501
+# frob:tests tests/unit/test_ack_runner.py::TestAckRunnerRun.test_no_refs_exits_with_error  # noqa: E501
+# frob:tests tests/unit/test_ack_runner.py::TestAckRunnerRun.test_success_path_builds_cache_and_writes_lock  # noqa: E501
+# frob:tests tests/unit/test_ack_runner.py::TestAckRunnerRun.test_unresolvable_ref_exits_with_error  # noqa: E501
+# frob:tests tests/unit/test_ack_runner.py::TestAckRunnerRun.test_graph_unavailable_after_failed_build_exits_with_error  # noqa: E501
+# frob:tests tests/unit/test_ack_runner.py::TestAckRunnerRun.test_malformed_lock_file_exits_with_error  # noqa: E501
+# frob:tests tests/unit/test_ack_runner.py::TestAckRunnerRun.test_write_lock_failure_exits_with_error  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """Load (building if the cache is stale), acknowledge refs, and write the lock.
 
