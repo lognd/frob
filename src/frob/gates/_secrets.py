@@ -726,14 +726,19 @@ def _tracked_files(root: Path) -> tuple[str, ...]:
     """`git ls-files` under `root`, root-relative POSIX paths, `()` on any
     git failure (no repo, git missing) -- mirrors `frob.gitio`'s
     degrade-don't-crash posture for git subprocess calls (same `run_argv`
-    seam `frob.gates` already uses elsewhere, e.g. `_changelog_mentions`)."""
+    seam `frob.gates` already uses elsewhere, e.g. `_changelog_mentions`).
+
+    Logs at WARNING (T-0705), not ERROR: a git-less target (no `.git`,
+    or `git` itself unavailable) is a supported, silently-empty scan --
+    the same posture `ref_gate`/`doc004` already use for the identical
+    condition (docs/modules/gates.md#git-less-target-contract-t-0705)."""
     spawned = run_argv(("git", "-C", str(root), "ls-files"))
     if spawned.is_err:
-        _log.error("secrets_gate: git ls-files failed: %s", spawned.danger_err)
+        _log.warning("secrets_gate: git ls-files failed: %s", spawned.danger_err)
         return ()
     result = spawned.danger_ok
     if result.returncode != 0:
-        _log.error("secrets_gate: git ls-files exited %d", result.returncode)
+        _log.warning("secrets_gate: git ls-files exited %d", result.returncode)
         return ()
     files = tuple(line for line in result.stdout.splitlines() if line.strip())
     _log.debug("secrets_gate: %d tracked file(s)", len(files))

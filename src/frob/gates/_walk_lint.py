@@ -249,14 +249,19 @@ def _tracked_python_files(root: Path) -> tuple[str, ...]:
     frob's own package source (module docstring), mirroring
     `_pii_structural`'s degrade-don't-crash posture. A directory pathspec
     (not a `**` glob -- plain `git ls-files` pathspecs don't expand `**`
-    without glob magic) already matches every file at any depth under it."""
+    without glob magic) already matches every file at any depth under it.
+
+    Logs at WARNING (T-0705), not ERROR: a git-less target (no `.git`,
+    or `git` itself unavailable) is a supported, silently-empty scan --
+    the same posture `ref_gate`/`doc004` already use for the identical
+    condition (docs/modules/gates.md#git-less-target-contract-t-0705)."""
     spawned = run_argv(("git", "-C", str(root), "ls-files", "--", "src/frob"))
     if spawned.is_err:
-        _log.error("walk_lint_gate: git ls-files failed: %s", spawned.danger_err)
+        _log.warning("walk_lint_gate: git ls-files failed: %s", spawned.danger_err)
         return ()
     result = spawned.danger_ok
     if result.returncode != 0:
-        _log.error("walk_lint_gate: git ls-files exited %d", result.returncode)
+        _log.warning("walk_lint_gate: git ls-files exited %d", result.returncode)
         return ()
     return tuple(
         line

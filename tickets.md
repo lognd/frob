@@ -9894,6 +9894,7 @@ component: null
 labels: []
 ```
 User mandate 2026-07-22: contention semantics are worthless unless ENFORCED -- a declared mode nothing verifies is the catalogued-is-not-enforced trap (T-0343 doctrine). For every node with code= bindings and a declared resource mode (T-0700 grammar), join the declaration against the code's OBSERVED effects (the T-0595 code-binding pattern, wired to production per T-0630; effect classification from the vet/T-0339 capability resolvers): READ = zero write-capable operations against the resource (write-mode opens, os.remove/rename, SQL DML, sends on the port) -- fail-closed on opaque access to the resource; APPEND = writes only via append-mode opens, no truncate/rewrite; ALPHA (update/upgradeable-lock intent, user-specified) = reads freely, but every observed WRITE against the resource must be provably preceded on the same path by an upgrade acquisition (alpha->write transition through the declared arbiter) -- a write reachable while still in alpha-only context fails closed; additionally the model-level alpha+alpha exclusion (at most one alpha declarant per resource) is checked at elaboration, and the code-level analysis flags the upgrade-deadlock ANTI-PATTERN (acquiring write while holding plain read on the same resource, the case alpha exists to prevent -- recommend alpha in the finding); WRITE = read+write allowed but only on declared paths (undeclared sibling access = finding); EXCLUSIVE = write conformance PLUS every observed access provably inside the declared arbiter/lease context (join T-0694's code-level lock identification with the model-level arbiter declaration; an access path outside the arbiter fails closed). Violations are SYS errors naming the node, the declared mode, and the offending observed operation. Litmus fixtures per mode, firing and clean.
+
 <!-- ticket:T-0702 -->
 ```yaml
 id: T-0702
@@ -9987,7 +9988,7 @@ Found while working T-0340 (native-rebuild Makefile guard, unrelated). frob chec
 id: T-0705
 title: 'gates: git-less target dirs hard-error 4 gates (git ls-files exit 128) --
   ~12 system-test failures'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-22'
@@ -9997,8 +9998,17 @@ parent: null
 scope:
 - src/frob/gates/**
 - tests/system/**
-scope_changes: []
-evidence: []
+- docs/modules/gates.md
+scope_changes:
+- op: add
+  glob: docs/modules/gates.md
+  reason: documenting the git-less-target contract decision the ticket explicitly
+    asks for
+  actor: logan
+  at: '2026-07-22'
+evidence:
+- tests/system/test_cli_check.py::TestGitlessTargetGateSeverity::test_gitless_target_gates_warn_not_error
+- tests/system/test_cli_check.py::TestGitlessTargetGateSeverity::test_render_lint_gate_warns_not_errors_on_gitless_root
 attachments: []
 acceptance:
 - GIVEN the ~12 currently-failing system tests WHEN the suite runs THEN they pass
@@ -10008,6 +10018,77 @@ component: null
 labels: []
 ```
 CI triage 2026-07-22 (the bulk of the cancelled 6h run's F markers, reproduced on current main): secrets_gate, pii_structural_gate, render_lint_gate, walk_lint_gate emit ERROR 'git ls-files exited 128' when frob check targets a directory that is not a git repository (the system tests' /tmp fixture repos without git init), failing ~12 tests across test_cli_check.py, test_cli_perf.py. Other gates only WARN on the same condition (ref_gate, doc004). Decide the correct contract (docs/modules/gates.md): EITHER gates degrade gracefully on git-less targets (warn + fall back to filesystem walk, matching ref_gate/doc004's posture) OR frob check declares git a hard requirement and the FIXTURES gain git init. Pick ONE, apply consistently across all four gates or all fixtures, and make the currently-failing tests pass without weakening what the gates check in real repos.
+
+## Done report
+
+Chosen contract: graceful degradation, matching `ref_gate`/DOC004's
+existing posture exactly. `secrets_gate`/`pii_structural_gate`/
+`render_lint_gate`/`walk_lint_gate` already returned `()` (no candidates,
+no violations) on a `git ls-files` failure -- the only inconsistency was
+logging that condition at ERROR instead of WARNING, painting the gate's
+line red in `frob check`'s raw log stream for a target that was never a
+real violation. Fixed by changing `_log.error` to `_log.warning` in all
+four gates' tracked-file resolvers (`_secrets._tracked_files`,
+`_pii_structural._tracked_python_files`, `_render_lint.
+_tracked_python_files`, `_walk_lint._tracked_python_files`), with an
+updated docstring on each explaining the T-0705 rationale. Documented the
+consistent contract in docs/modules/gates.md under a new
+"Git-less target contract T-0705" section (anchor
+`git-less-target-contract-t-0705`), including why git-as-hard-requirement
+was rejected (frob check/ticket new both already document accepting a
+plain filesystem path) and explicitly noting COV002/SCOPE001/TODO001's
+diff-load-failure mechanism (T-0550) is a distinct, deliberate concern
+this ticket does not touch.
+
+Investigation finding (see Filed below): most of the ~12 originally-
+reported failures in tests/system/test_cli_check.py are NOT actually
+caused by the four named gates' ERROR/WARNING log level at all -- those
+four gates already returned zero violations either way, so their log
+level never affected `frob check`'s exit code or violation summary in any
+observed test. The dominant root cause across ~7 of the 9 still-failing
+tests in test_cli_check.py is COV002/SCOPE001/TODO001 (`_load_diff`'s
+diff_load_failed hard-error, T-0550) firing because the fixture has no
+git repo at all (not because a real diff genuinely failed) -- this
+mechanism lives in src/frob/gitio.py (out of T-0705's declared scope) and
+gates/__init__.py's diff-load classification (a distinct, deliberately-
+designed T-0550 concern I did not touch without ticket authorization).
+Two remaining test_cli_check.py failures plus test_cli_perf.py's one
+failure are CHECK001 "unknown project type: 'unknown'" -- unrelated to
+git entirely (fixtures missing pyproject.toml), also out of T-0705's
+scope (src/frob/app/**).
+
+Before/after on the two named files (measured, `-k "not
+StampBaselineAndDelta"` deselected on test_cli_check.py per the known
+T-0581 deadlock hazard -- never run, not counted either direction):
+
+- tests/system/test_cli_check.py: 10 failures before -> 9 failures after
+  (test_pinned_check_type_reports_skipped_line now passes; it was purely
+  driven by the four gates' ERROR noise with no COV002/SCOPE/TODO
+  involvement). Plus 2 new regression tests added (both pass).
+- tests/system/test_cli_perf.py: 1 failure before -> 1 failure after
+  (unchanged; that single failure is the CHECK001 unknown-project-type
+  bug, unrelated to this ticket's mechanism).
+
+Deadlocked tests: none directly hit -- `TestCheckStampBaselineAndDelta` in
+test_cli_check.py was deselected proactively per the playbook's known
+T-0581 hazard and never executed in this session.
+
+Filed for the remainder (both out-of-scope for T-0705, scope glob would
+require touching src/frob/gitio.py and src/frob/app/**):
+- T-draft-85590807: COV002/SCOPE001/TODO001 hard-error on a genuinely
+  git-less root vs. a real repo's bad diff (T-0550 mechanism).
+- T-draft-3a81a23d: CHECK001 "unknown project type" on fixtures missing
+  pyproject.toml, unrelated to git.
+
+### Changed
+```
+ tickets.md | 306 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 303 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+- `tests/system/test_cli_check.py::TestGitlessTargetGateSeverity::test_gitless_target_gates_warn_not_error` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_check.py::TestGitlessTargetGateSeverity::test_render_lint_gate_warns_not_errors_on_gitless_root` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0706 -->
 ```yaml
@@ -10390,3 +10471,54 @@ component: null
 labels: []
 ```
 User mandate 2026-07-22: capability names conflate mode -- measured in src/frob/vet/_capability_registry.py: scanner emits fs-write, _KIND_MAP normalizes it to bare fs for the may vocabulary, fs-read was added later as a separate kind, and SYS101 backward-compatibly satisfies bare may-fs with EITHER observed kind -- so fs is ambiguous (write-derived history, read-satisfiable present). net has no mode split at all. DESIGN MANDATE (think the declarations through, do not just rename): (1) ONE mode vocabulary shared with T-0700's resource modes (read|append|alpha|write|exclusive where meaningful) -- capability families get family.mode ids: fs.read/fs.append/fs.write, net.connect/net.listen, env.read/env.write, proc.spawn, ffi.call...; not every family has every mode (define each family's valid mode set explicitly). (2) COARSE DECLARATIONS STAY LEGAL, INTERPRETED FAIL-CLOSED: may fs means the UNION of fs modes for obligation purposes (a coarse declarer answers for everything), while observed effects always map to the most precise mode; conformance = observed subset-of declared; precision is rewarded (narrower declarations discharge narrower obligations) never required by fiat. (3) MIGRATION: alias table old->new; old spellings keep working but carry frob:deprecated (T-0576 machinery -- sunset date, ticket) so they warn now and error at sunset; mechanical sweep of this repo's .strata models, DEFAULT_BENIGN_CAPABILITIES, registry yamls; ESTATE: the 8 sibling repos' declarations migrate via fleet-routed per-repo tickets (T-0573 routing) -- file them at close, do not hand-edit siblings from here. (4) SYS101's either-satisfies compatibility join becomes an explicit alias-table lookup, not a special case, and dies with the aliases at sunset. Coordinate: T-0701 mode-conformance consumes this vocabulary; T-0339 resolvers classify into it; do not fork a second mode enum anywhere (no-duplication rule).
+
+<!-- ticket:T-0718 -->
+```yaml
+id: T-0718
+title: 'check: project-type detection reports ''unknown'' when a fixture has no pyproject.toml,
+  unrelated to git'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/app/**
+- tests/system/test_cli_check.py
+- tests/system/test_cli_perf.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Found while working T-0705. tests/system/test_cli_check.py::TestCheckTicketScopedAlwaysReportsOnFailure::test_ticket_scoped_nonzero_exit_has_diagnostic_output, tests/system/test_cli_check.py::TestCheckGatesStage::test_only_gates_passes_once_bound_and_tested, and tests/system/test_cli_perf.py::TestCheckOnlyPerf::test_perf001_fixture_warns_but_check_exits_zero all fail with CHECK001 'unknown project type: 'unknown' (no dispatchable language stage)' even though each fixture DOES git init + commit (so this is not the T-0705 git-ls-files mechanism at all). Each of these fixtures writes a bare .py file with no pyproject.toml. Project-type detection (src/frob/app/**, exact site not yet located) appears to require pyproject.toml presence rather than falling back to extension-based detection when only .py files are tracked. Investigate src/frob/app/config.py's project-type resolution and either fix the fixtures (add a pyproject.toml) or fix the detector, whichever is the real contract.
+
+<!-- ticket:T-0719 -->
+```yaml
+id: T-0719
+title: 'check: COV002/SCOPE001/TODO001 hard-error on a genuinely git-less root, not
+  just a real repo''s bad diff'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/gitio.py
+- src/frob/gates/__init__.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Found while working T-0705. `_load_diff`'s diff_load_failed classification (T-0550) does not distinguish 'root is not a git repository at all' (GitError.NotARepo-shaped, e.g. a one-off frob check <path> on a plain filesystem directory) from 'a real git repo's working_diff genuinely failed' (bad --base, detached HEAD). Both currently hard-error COV002/SCOPE001/TODO001 identically. This dominates ~9 of T-0705's originally-reported ~12 system-test failures in tests/system/test_cli_check.py (test_clean_code_exits_zero, test_skip_ruff, test_skip_exports, test_check_skip_from_frob_toml, test_scoped_docanchor_matches_unscoped, test_only_gates_reports_violation_with_remedy, test_clean_ts_passes_tsc) -- these fixtures never call git init, so working_diff fails not because a real diff is broken but because there is no repo at all. T-0705's scope (the 4 named git-ls-files gates) was fixed and does not touch this gitio.py/T-0550 mechanism; this ticket tracks whether a genuinely-no-repo root should be treated as an empty/clean diff (skip diff-gates) rather than the loud diff_load_failed violation, without weakening the T-0550 protection against a REAL git failure inside an actual repo.

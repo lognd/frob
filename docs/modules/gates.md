@@ -753,6 +753,53 @@ configured `[[docblocks.commands]]` entry (`frob.__main__:_build_parser`)
 `frob check` immediately; removing a command leaves its stale row failing
 until the row is deleted.
 
+### Git-less target contract T-0705
+
+Every gate that scans "every tracked file" (`secrets_gate`, `pii_structural_
+gate`, `render_lint_gate`, `walk_lint_gate`, `ref_gate`, DOC004's `src/`/
+`*.md` namespace sources) resolves its file list via `git ls-files` under
+`root`. When `root` is not a git work tree at all (no `.git`, or `git`
+itself missing/unavailable) that subprocess exits 128 -- not a violation,
+just an environment with nothing tracked to scan.
+
+The chosen, consistent contract for ALL of these call sites: **degrade
+gracefully, never hard-error**. `git ls-files` failing on a git-less
+`root` logs at WARNING and the gate returns `()` (no candidates, no
+violations) -- the same posture `ref_gate`/DOC004 always had. Before
+T-0705, `secrets_gate`/`pii_structural_gate`/`render_lint_gate`/
+`walk_lint_gate` logged the identical condition at ERROR, painting their
+line red in `frob check`'s raw log stream for a target that was never a
+violation. This was an inconsistency between six call sites doing the
+exact same "resolve tracked files, degrade on failure" dance, not a
+deliberate severity choice -- nothing about a git-less target makes THESE
+four gates more alarming than `ref_gate`/DOC004's identical fallback.
+
+This does not weaken what any gate checks in a real git repo: the
+`returncode != 0`/`is_err` branch only fires when `git ls-files` itself
+fails, which never happens against an actual tracked worktree. A genuinely
+untracked/dirty file in a real repo is unaffected -- `git ls-files` still
+enumerates every OTHER tracked file normally, and per-file scanning logic
+is untouched.
+
+Why not the alternative (git as a hard requirement, erroring loudly with
+ONE message before any gate runs)? `frob check <path>` and `frob ticket
+new --path <path>` are both documented to accept a bare filesystem path
+with no git precondition (`docs/modules/tickets.md`'s "ambiguous: no git
+repo, detached HEAD, git unavailable" ticket-id-minting fallback is the
+same call already made for a sibling concern) -- a git-less target is a
+supported, if degraded, scan surface, not a usage error. Gates that
+inherently need a diff against a base branch (`COV002`/`SCOPE001`/
+`TODO001`) are a distinct, ALREADY-deliberate mechanism (T-0550, in
+`frob.gates.coverage_gate`/`scope_gate`/`_load_diff`) with its own loud
+fail-on-load-failure contract for a different reason (masking a real diff
+failure as a silently-clean diff on an actual project); T-0705 does not
+touch that mechanism -- see T-0705's Done report for the follow-up ticket
+that tracks whether a git-less `root` should also be exempted there.
+
+Regression coverage: `tests/system/test_cli_check.py`'s
+`TestGitlessTargetGateSeverity` plants a git-less fixture directory and
+asserts each of the four gates' fallback line is WARNING, never ERROR.
+
 ### WALK001 unpruned traversal T-0471
 
 `frob.gates._walk_lint` -- `walk_lint_gate` (gate name `walk_lint`,

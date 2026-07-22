@@ -174,14 +174,22 @@ def _tracked_python_files(root: Path) -> tuple[str, ...]:
     """`git ls-files -- src/frob` under `root`, filtered to `.py`,
     root-relative POSIX paths, `()` on any git failure -- RENDER001 only
     scans frob's own package source (module docstring), mirroring
-    `_walk_lint`'s degrade-don't-crash posture."""
+    `_walk_lint`'s degrade-don't-crash posture.
+
+    Logs at WARNING (T-0705), not ERROR: a git-less target (no `.git`,
+    or `git` itself unavailable) is a supported, silently-empty scan --
+    the same posture `ref_gate`/`doc004` already use for the identical
+    condition (docs/modules/gates.md#git-less-target-contract-t-0705).
+    An ERROR here previously painted this gate's line red for a target
+    that was never a violation, just an environment with nothing
+    tracked to scan."""
     spawned = run_argv(("git", "-C", str(root), "ls-files", "--", "src/frob"))
     if spawned.is_err:
-        _log.error("render_lint_gate: git ls-files failed: %s", spawned.danger_err)
+        _log.warning("render_lint_gate: git ls-files failed: %s", spawned.danger_err)
         return ()
     result = spawned.danger_ok
     if result.returncode != 0:
-        _log.error("render_lint_gate: git ls-files exited %d", result.returncode)
+        _log.warning("render_lint_gate: git ls-files exited %d", result.returncode)
         return ()
     return tuple(
         line

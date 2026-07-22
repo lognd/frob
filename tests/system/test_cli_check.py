@@ -616,3 +616,47 @@ class TestCheckTypescript:
         out = r.stdout + r.stderr
         assert r.returncode == 1, out
         assert "TS2322" in out or "not assignable" in out
+
+
+class TestGitlessTargetGateSeverity:
+    """T-0705: `secrets_gate`/`pii_structural_gate`/`render_lint_gate`/
+    `walk_lint_gate` degrade a git-less target (no `.git`) to WARNING, not
+    ERROR -- matching `ref_gate`/DOC004's pre-existing posture for the
+    identical `git ls-files` failure (docs/modules/gates.md#git-less-
+    target-contract-t-0705). Regression guard for the T-0705 CI-triage
+    incident: these four gates previously logged the same condition at
+    ERROR, painting their line red for a target that was never a real
+    violation."""
+
+    def test_gitless_target_gates_warn_not_error(self, tmp_path):
+        """A git-less fixture (no `.git` anywhere under `tmp_path`) must
+        never surface `ERROR: <gate>_gate: git ls-files` for any of the
+        four gates that resolve their scan set via `git ls-files`."""
+        _make_project(tmp_path, "def add(x: int, y: int) -> int:\n    return x + y\n")
+        r = run(
+            "check",
+            str(tmp_path),
+            "--only",
+            "gates",
+            "-v",
+            cwd=tmp_path,
+        )
+        out = r.stdout + r.stderr
+        for gate in ("secrets_gate", "pii_structural_gate", "walk_lint_gate"):
+            assert f"ERROR: {gate}: git ls-files" not in out, out
+
+    def test_render_lint_gate_warns_not_errors_on_gitless_root(self, capsys, tmp_path):
+        """`render_lint_gate` only scans `src/frob` (frob's OWN package
+        source, T-0459), so its ls-files call never fires on a plain
+        project fixture -- exercise `_tracked_python_files` directly
+        against a git-less root and assert the emitted log line's level
+        (via `frob.logging`'s stderr stream handler, not `caplog`: this
+        package configures its own root handlers at import time, which
+        `caplog`'s propagation capture does not observe)."""
+        from frob.gates._render_lint import _tracked_python_files
+
+        result = _tracked_python_files(tmp_path)
+        assert result == ()
+        err = capsys.readouterr().err
+        assert "WARNING: render_lint_gate: git ls-files exited" in err, err
+        assert "ERROR: render_lint_gate" not in err, err
