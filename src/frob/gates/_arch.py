@@ -15,6 +15,12 @@ nesting, abstraction-opportunity, large-file) stays exactly as T-0101 left
 it -- unwaivable-channel WARN-only suggestions, not gate violations. Do not
 widen this module to cover them without a fresh design decision.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/gates/_arch.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 

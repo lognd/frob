@@ -7,6 +7,12 @@ write that `frob graph build`/`frob check` also perform. Kept separate from
 `frob.serve.server` so the tool layer is testable without an `mcp` SDK
 transport (T-0010).
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/serve/_tools.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 

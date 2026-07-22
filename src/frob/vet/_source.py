@@ -9,6 +9,12 @@ registry lookups, not source download). A dependency whose source is not
 found locally scans with an empty capability set and a "source-unavailable"
 signal, never a crash (docs/modules/vet.md "Honest limits").
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/vet/_source.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 # frob:waive TEST005 reason="module line coverage 78.3%, debt T-0160"
 

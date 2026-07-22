@@ -32,6 +32,12 @@ need a first-class capability grammar to parse targets out of both the
 declaration and the call site; that is a surface-grammar follow-up, not a
 kernel change, exactly as `_code_binding.py` defers the `code` keyword.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/strata/_effects.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 

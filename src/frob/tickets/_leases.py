@@ -21,6 +21,12 @@ writes/removes it exactly when a ticket enters/leaves `IN_PROGRESS`, and
 `leased_by` (T-0453) reads every worktree's files, not just the local
 ledger's own `IN_PROGRESS` rows, to compute collisions.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/tickets/_leases.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 

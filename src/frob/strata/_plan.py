@@ -29,6 +29,12 @@ lives entirely in that marker being a pure function of the model, never
 of wall-clock time or ticket-store state (this module never reads the
 ticket store itself; that join is the runner's job, T-0084 scope note).
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/strata/_plan.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 

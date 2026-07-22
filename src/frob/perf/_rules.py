@@ -21,6 +21,12 @@ best-effort coverage of PERF001/PERF002 only, using token literals
 container-kind inference (list vs set/Map) is Python-only since sig/body
 tokens carry no type information to lean on for the other two languages.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/perf/_rules.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 

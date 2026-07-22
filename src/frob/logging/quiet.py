@@ -27,7 +27,6 @@ fix keeps the existing process-wide-mute semantics that every caller (and
 defense in depth) already assumes.
 """
 
-# frob:invariant INV-038
 from __future__ import annotations
 
 import contextlib
@@ -79,6 +78,8 @@ def stdout_log_level(level: int) -> Iterator[None]:
 
 @contextlib.contextmanager
 # frob:doc docs/modules/logging.md#public-api
+# frob:invariant INV-038
+# frob:ticket T-0585
 def quiet_stdout_logs() -> Iterator[None]:
     """Raise stdout log handlers to WARNING for the duration of the block.
 

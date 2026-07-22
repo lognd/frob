@@ -68,7 +68,6 @@ silent omission.
 """
 
 # frob:ticket T-0157
-# frob:invariant INV-039
 from __future__ import annotations
 
 import math
@@ -530,6 +529,7 @@ ALL_PROVIDERS: frozenset[str] = frozenset(p.provider for p in _PATTERNS)
 # individually frob:describes this private helper by name (T-0529) -- a \
 # deliberate architecture doc, not accidental drift onto a private helper"
 # frob:tests tests/test_secrets_gate.py::TestRedact.test_never_returns_the_token
+# frob:invariant INV-039
 def _redact(token: str, display_prefix: str) -> str:
     """`<prefix>... (<N> chars)` -- the ONLY representation of a matched
     token this module (or any caller) may print, log, or persist."""

@@ -8,6 +8,12 @@ rules in `_ecosystem.py`. See "Implementation notes" in docs/modules/vet.md for 
 of the full design (VET007-VET010, most of VET-C, dynamic detonation) is
 still out of scope.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/vet/_models.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 

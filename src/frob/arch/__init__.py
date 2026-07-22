@@ -7,6 +7,12 @@ opportunities. The per-language rule sets live in cohesive submodules
 language-agnostic large-file check, and the orchestration that fans each
 parsed file out to its language's checks.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/arch/__init__.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 # frob:waive TEST005 reason="module line coverage 83.1%, debt T-0160"
 

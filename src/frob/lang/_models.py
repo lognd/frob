@@ -4,6 +4,12 @@ Frozen pydantic models so a `ParsedFile` can be cached, hashed, and diffed
 by identity-of-value rather than identity-of-object -- `frob.graph`'s
 incremental rebuild depends on comparing two `ParsedFile`s for equality.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/lang/_models.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 

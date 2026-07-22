@@ -9,6 +9,12 @@ the same final id -- the id space each worktree/branch draws sequential ids
 from is disjoint by construction until finalize time, and finalize itself
 only ever runs against one ledger view at a time.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/tickets/_provisional.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 

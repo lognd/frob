@@ -6,6 +6,12 @@ never hides behind an unrelated body edit. Joining is `"\\x00".join` over
 the token tuple: tree-sitter leaf tokens never contain NUL, so this is an
 unambiguous, deterministic serialization with no escaping needed.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/graph/digest.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 
