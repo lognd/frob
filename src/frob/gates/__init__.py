@@ -3502,12 +3502,25 @@ def _release_open_debt_violations(snapshot: GraphSnapshot) -> tuple[Violation, .
 
 
 # frob:doc docs/modules/gates.md#public-api
+# frob:ticket T-0355
+# frob:tests tests/test_prework_parity.py::TestScopeDigestParity.test_digest_is_content_only_portable_across_checkouts  # noqa: E501
 def scope_digest(scope: Sequence[str], snapshot: GraphSnapshot) -> str:
     """Sha256 over the sorted `(file, hash)` pairs of files matching `scope`.
 
     THE one implementation: `frob ticket start/sweep` records it and
     `prework_gate` compares against it -- a second copy of this hash is how
     PRE001 becomes permanently stale (it happened; see tests/test_prework_parity.py).
+
+    T-0355 (item 3): the per-file `hash` half of the pair comes from
+    `frob.graph._content_hash` -- a plain sha256 of the file's bytes, never
+    folded with `_stat_key`'s mtime/size (that pair is only a cheap
+    invalidation check, not part of the recorded hash). Combined with the
+    repo-relative path this is keyed on, a recorded sweep's digest is
+    already checkout-portable: two checkouts with byte-identical scope
+    files at the same relative paths produce the same digest regardless of
+    absolute root, mtime, or timestamps. See
+    test_digest_is_content_only_portable_across_checkouts for the pinned
+    contract.
     """
 
     matched = sorted(

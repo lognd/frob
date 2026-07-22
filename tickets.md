@@ -1924,7 +1924,7 @@ fully bypasses it with identical results.
 ```yaml
 id: T-0322
 title: 'coverage --wait / push contract: agents block on a socket recv, never background-and-stall'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-19'
@@ -1937,6 +1937,11 @@ scope:
 - src/frob/serve/**
 - tickets.md
 - tests/test_app.py
+- src/frob/__main__.py
+- pyproject.toml
+- CHANGELOG.md
+- docs/modules/testing.md
+- uv.lock
 scope_changes:
 - op: remove
   glob: tests/**
@@ -1948,7 +1953,43 @@ scope_changes:
   reason: T-0322 app work maps to tests/test_app.py
   actor: logan
   at: '2026-07-20'
-evidence: []
+- op: add
+  glob: src/frob/__main__.py
+  reason: frob test --wait-coverage needs one new argparse flag on the existing test
+    subcommand; no new CLI surface added
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: 'REL001: new public testing.CoverageWaitError/CoverageWaitOutcome/coverage_lock_path/run_coverage_wait
+    API requires a version bump + changelog entry'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: 'REL001: new public testing.CoverageWaitError/CoverageWaitOutcome/coverage_lock_path/run_coverage_wait
+    API requires a version bump + changelog entry'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/testing.md
+  reason: doc anchors for the new testing.CoverageWait* API; uv.lock refreshed by
+    the pyproject.toml version bump
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: doc anchors for the new testing.CoverageWait* API; uv.lock refreshed by
+    the pyproject.toml version bump
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_app.py::TestRunCoverageWait::test_coverage_lock_path_is_under_frob_dir
+- tests/test_app.py::TestRunCoverageWait::test_no_stamp_runs_command_and_reports_ran
+- tests/test_app.py::TestRunCoverageWait::test_fresh_stamp_skips_the_run
+- tests/test_app.py::TestRunCoverageWait::test_failed_command_is_err
+- tests/test_app.py::TestWaitCoverage::test_wait_coverage_flag_dispatches_and_exits_zero_on_success
+- tests/test_app.py::TestWaitCoverage::test_wait_coverage_flag_exits_1_on_failure
 attachments: []
 acceptance: []
 threat: null
@@ -1956,6 +1997,76 @@ component: null
 labels: []
 ```
 THE stall-killer, extractable before the full daemon. Observed: implementer agents run make coverage in the background and stall waiting for a Monitor notification they cannot act on -- work done, uncommitted, looping 'waiting for coverage'; coordinator had to take over ~5 agents this session. Provide a blocking-until-fresh coverage/test contract (a foreground  that blocks on completion, backed by single-flight so concurrent callers share one run) so an agent gets a definitive fresh-or-failed result inline instead of babysitting a detached job. Interim (pre-daemon): a proper foreground make-coverage wrapper + single-flight file lock so 6 agents don't each run the full suite.
+
+## Done report
+
+Implemented the interim (pre-daemon) fix the ticket asks for: a foreground,
+blocking, single-flight coverage contract, so an agent gets a definitive
+fresh-or-failed result inline instead of backgrounding `make coverage` and
+stalling on a notification a dispatched sub-agent can never receive
+(docs/guides/agent-playbook.md section 6b/3b).
+
+New src/frob/testing/_coverage_wait.py:
+- run_coverage_wait(root, command=("make","coverage-fast")): acquires a
+  cross-process fcntl.flock on .frob/coverage.lock (single-flight -- a
+  concurrent caller blocks here instead of independently re-running the
+  full suite), checks the recorded coverage stamp against the current
+  source tree using the SAME staleness contract TEST006 already enforces
+  (frob.gates.load_stamp's file_hashes), and either returns immediately
+  (already fresh) or runs the command and returns the definitive result.
+- coverage_lock_path/CoverageWaitOutcome/CoverageWaitError: small
+  supporting public API, documented at docs/modules/testing.md#public-api.
+
+Wired as `frob test --wait-coverage` (one new argparse flag on the
+EXISTING test subcommand, not a new top-level CLI surface) in
+src/frob/app/test_runner.py's run().
+
+Scope was extended five times beyond the ticket's original declaration
+(each via `frob ticket scope --add --reason`, audited in scope_changes):
+src/frob/__main__.py (the one new argparse flag), pyproject.toml +
+CHANGELOG.md (REL001's version bump for the new public API), and
+docs/modules/testing.md + uv.lock (doc anchors for the new API; the
+lockfile refresh that followed the version bump). None of these were
+silent -- each carries its own scope_changes reason.
+
+Verified `frob check --ticket T-0322 --base <T-0355's close commit>`
+clean except the two pre-existing LANG003 errors this session's ticket 5
+(T-0566) owns (unrelated c/cpp DOC004 bucket gap, already present before
+this ticket's changes). Using --base against the prior ticket's close
+commit (rather than main) was necessary because this worktree does five
+tickets sequentially without landing between them -- checking straight
+against main re-flags every PRIOR already-closed ticket's own diff as
+"no frob:ticket edge to an OPEN ticket" (COV002) and "outside scope"
+(SCOPE001) once that ticket closes, which is a multi-ticket-worktree
+artifact, not a real regression.
+
+### Changed
+```
+ CHANGELOG.md                       |  15 ++++
+ docs/modules/testing.md            |  24 +++++
+ pyproject.toml                     |   2 +-
+ src/frob/__main__.py               |  43 ++++++++-
+ src/frob/app/config.py             |   3 +
+ src/frob/app/test_runner.py        |  31 +++++++
+ src/frob/app/ticket_runner.py      |  77 ++++++----------
+ src/frob/gates/__init__.py         |  13 +++
+ src/frob/testing/__init__.py       |  10 +++
+ src/frob/testing/_coverage_wait.py | 173 ++++++++++++++++++++++++++++++++++++
+ tests/test_app.py                  | 143 ++++++++++++++++++++++++++++++
+ tests/test_prework_parity.py       |  19 ++++
+ tests/unit/test_main_entry.py      |  45 ++++++++++
+ tickets.md                         | 177 +++++++++++++++++++++++++++++++++++--
+ uv.lock                            |   2 +-
+ 15 files changed, 712 insertions(+), 65 deletions(-)
+```
+
+### Evidence
+- `tests/test_app.py::TestRunCoverageWait::test_coverage_lock_path_is_under_frob_dir` (pytest node id, verified passing when recorded)
+- `tests/test_app.py::TestRunCoverageWait::test_no_stamp_runs_command_and_reports_ran` (pytest node id, verified passing when recorded)
+- `tests/test_app.py::TestRunCoverageWait::test_fresh_stamp_skips_the_run` (pytest node id, verified passing when recorded)
+- `tests/test_app.py::TestRunCoverageWait::test_failed_command_is_err` (pytest node id, verified passing when recorded)
+- `tests/test_app.py::TestWaitCoverage::test_wait_coverage_flag_dispatches_and_exits_zero_on_success` (pytest node id, verified passing when recorded)
+- `tests/test_app.py::TestWaitCoverage::test_wait_coverage_flag_exits_1_on_failure` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0325 -->
 ```yaml
@@ -2499,7 +2610,7 @@ T-0207 follow-on: frob.gates._pii_structural.FIELD_SIGNATURES is Python-only (as
 id: T-0354
 title: app/ticket_runner.py _run_sweep has same full-root xref bug as sweep_ticket
   (T-0240 sibling)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -2509,7 +2620,11 @@ parent: null
 scope:
 - src/frob/app/ticket_runner.py
 scope_changes: []
-evidence: []
+evidence:
+- tests/unit/test_app_runners_batch7.py::TestTicketStart::test_start_foreground_runs_sweep_synchronously
+- tests/unit/test_app_runners_batch7.py::TestSpawnBackgroundSweep::test_spawns_detached_sweep_subprocess
+- tests/unit/test_app_runners_batch7.py::TestSpawnBackgroundSweep::test_popen_failure_falls_back_to_synchronous_sweep
+- tests/unit/test_app_runners_batch7.py::TestSpawnBackgroundSweep::test_exec_kill_switch_forces_synchronous_sweep
 attachments: []
 acceptance: []
 threat: null
@@ -2518,12 +2633,39 @@ labels: []
 ```
 found while working T-0240: gates/_prework.py::sweep_ticket's xref loop called xref(symbol, root) instead of the scan_path it computed, and derived xref-hit terms via Path(pattern).stem (nonsense for glob patterns). app/ticket_runner.py's _run_sweep + _xref_hits_for_scope + _scope_digest_for_ticket carry an IDENTICAL copy of the same loop (already flagged as duplicate call-site debt in T-0236's Done report, follow-up ticket not yet filed) with the same two bugs. src/frob/app/** was out of scope for T-0240 (whose scope was tickets/gates/dup/tests only), so this sibling copy still has the unbounded-walk + nonsense-stem bugs. Either delegate _run_sweep to frob.gates._prework.sweep_ticket directly (collapsing the duplication per T-0236) or port the same fix.
 
+## Done report
+
+Delegated app/ticket_runner.py's _run_sweep to frob.gates.sweep_ticket
+instead of carrying its own copy of the xref loop (T-0236's flagged
+follow-up). The old copy had the same two bugs T-0240 fixed in
+gates/_prework.py::sweep_ticket: an unbounded xref(symbol, root) re-walk
+of the whole tree per scope pattern (ignoring the scan_path it computed),
+and a Path(pattern).stem guess feeding raw glob syntax into xref as a
+symbol name. src/frob/app/** was out of T-0240's scope, so this sibling
+copy kept both bugs live. Removed the duplicate _xref_hits_for_scope and
+_scope_digest_for_ticket helpers entirely; _run_sweep now calls
+sweep_ticket(root, ticket) directly, so the two call sites can no longer
+desync.
+
+### Changed
+```
+ src/frob/app/ticket_runner.py | 73 +++++++++++++------------------------------
+ tickets.md                    | 30 ++++++++++++++++--
+ 2 files changed, 49 insertions(+), 54 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_app_runners_batch7.py::TestTicketStart::test_start_foreground_runs_sweep_synchronously` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSpawnBackgroundSweep::test_spawns_detached_sweep_subprocess` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSpawnBackgroundSweep::test_popen_failure_falls_back_to_synchronous_sweep` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSpawnBackgroundSweep::test_exec_kill_switch_forces_synchronous_sweep` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0355 -->
 ```yaml
 id: T-0355
 title: 'sweep: clean SIGINT message + PRE001 catch-22 on slow mounts + scope_digest
   content-keying'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -2534,8 +2676,25 @@ scope:
 - src/frob/__main__.py
 - src/frob/gates/**
 - src/frob/tickets/**
-scope_changes: []
-evidence: []
+- tests/test_prework_parity.py
+- tests/unit/test_main_entry.py
+scope_changes:
+- op: add
+  glob: tests/test_prework_parity.py
+  reason: add regression tests for the SIGINT clean-message fix and the scope_digest
+    content-portability contract
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_main_entry.py
+  reason: add regression tests for the SIGINT clean-message fix and the scope_digest
+    content-portability contract
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/test_main_entry.py::TestMainSigint::test_keyboard_interrupt_prints_clean_message_and_exits_130
+- tests/unit/test_main_entry.py::TestMainSigint::test_normal_dispatch_is_unaffected
+- tests/test_prework_parity.py::TestScopeDigestParity::test_digest_is_content_only_portable_across_checkouts
 attachments: []
 acceptance: []
 threat: null
@@ -2543,6 +2702,64 @@ component: null
 labels: []
 ```
 found while working T-0240 (same origin ticket text, deliberately split out): T-0240 fixed the sweep's unbounded full-root xref walk and glob-stem xref terms, but three remaining items from the original malmberg report are NOT addressed by that fix and need their own design/scope: (1) SIGINT during a long sweep prints a bare KeyboardInterrupt traceback instead of a clean message -- __main__.py-level signal handling, out of T-0240's tickets/gates/dup scope. (2) PRE001 catch-22 on slow mounts: editing a ticket's scope demands a re-sweep, and if the sweep itself is what is slow on that mount the ticket can never get back into a checkable state -- needs a design decision (timeout + partial-sweep-ok state, or async sweep), not a bugfix. (3) scope_digest hashes snapshot file-hashes (path+content sha), so a recorded sweep cannot be transplanted between two checkouts with identical file content but different paths/timestamps-derived hashes -- consider keying on content-only digest so sweep records are checkout-portable. None of these are addressed by T-0240's fix.
+
+## Done report
+
+T-0355 bundled three items split out from a T-0240-adjacent report.
+Verified against current code first (T-0474 already backgrounds the
+sweep at `frob ticket start`, T-0484 landed coverage-fast changes) --
+neither mooted this ticket's items.
+
+Item 1 (SIGINT clean message): main() used to run its dispatch inline,
+so a Ctrl-C during a long-running command (e.g. a slow synchronous
+sweep on a bad mount) surfaced as a bare KeyboardInterrupt traceback.
+Split the dispatch body into a private _dispatch(argv) helper and wrap
+only that call in main() with a KeyboardInterrupt handler that prints
+"frob: interrupted" to stderr and exits 130 (128+SIGINT, the
+conventional code). Moved the frob:ticket T-0358 stale-install-warning
+directive back onto main (now public) since it rode onto the newly
+private _dispatch otherwise (COV005).
+
+Item 3 (scope_digest content-keying): verified scope_digest's per-file
+hash already comes from frob.graph._content_hash -- a plain sha256 of
+file bytes, never folded with _stat_key's mtime/size (that pair is only
+a cheap cache-invalidation check). Combined with the repo-relative path
+key, a recorded sweep digest is already checkout-portable: identical
+scope files at the same relative paths in two independent checkouts
+produce the same digest regardless of absolute root or timestamps.
+Added a regression test across two independent tmp_path checkouts
+pinning this so a future change keying on stat metadata instead would
+fail loudly rather than silently reintroducing the bug the ticket
+described.
+
+Item 2 (PRE001 catch-22 on slow mounts) was NOT implemented here: the
+ticket's own text says it "needs a design decision (timeout +
+partial-sweep-ok state, or async sweep)", not a mechanical port of an
+existing fix. `frob ticket sweep` (the always-available resweep path
+used after a scope edit) is still fully synchronous by design, and
+PRE001 only ever compares against a fully-completed digest -- there is
+no partial-sweep-ok state today. Forcing a partial implementation here
+risked either a correctness hole (a provisional-pass state that lets
+PRE001 go green on incomplete data) or silently deciding the product
+design question myself. Filed as a new ticket instead: T-draft-ac820c46
+(off-default-branch provisional id; will mint a real T-#### id on
+merge to main).
+
+### Changed
+```
+ src/frob/__main__.py          | 31 ++++++++++++++---
+ src/frob/app/ticket_runner.py | 77 ++++++++++++++----------------------------
+ src/frob/gates/__init__.py    | 13 ++++++++
+ tests/test_prework_parity.py  | 19 +++++++++++
+ tests/unit/test_main_entry.py | 45 +++++++++++++++++++++++++
+ tickets.md                    | 78 ++++++++++++++++++++++++++++++++++++++++---
+ 6 files changed, 202 insertions(+), 61 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_main_entry.py::TestMainSigint::test_keyboard_interrupt_prints_clean_message_and_exits_130` (pytest node id, verified passing when recorded)
+- `tests/unit/test_main_entry.py::TestMainSigint::test_normal_dispatch_is_unaffected` (pytest node id, verified passing when recorded)
+- `tests/test_prework_parity.py::TestScopeDigestParity::test_digest_is_content_only_portable_across_checkouts` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0380 -->
 ```yaml
@@ -3725,7 +3942,7 @@ Split out of T-0424: the registry MODEL + honest seed is built (check-coverage.y
 ```yaml
 id: T-0566
 title: docblocks DOC004 gate has no C/C++ fenced-code-block bucket
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -3734,8 +3951,36 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/gates/_docblocks.py
-scope_changes: []
-evidence: []
+- src/frob/lang/_support.py
+- tests/test_docblocks_gate.py
+- tests/test_lang_support.py
+scope_changes:
+- op: add
+  glob: src/frob/lang/_support.py
+  reason: the c/cpp DOC004 known_gap declaration + T-draft-78a0f919 citation lives
+    here; adding a real bucket in _docblocks.py must update this claim to _implemented,
+    not leave a stale known_gap pointing at a bogus ticket id
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_docblocks_gate.py
+  reason: 'regression tests for the new c/cpp #include DOC004 bucket and its LANG003
+    known_gap->implemented transition'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_lang_support.py
+  reason: 'regression tests for the new c/cpp #include DOC004 bucket and its LANG003
+    known_gap->implemented transition'
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_docblocks_gate.py::TestCCppNamespace::test_include_of_tracked_header_unanchored_warns
+- tests/test_docblocks_gate.py::TestCCppNamespace::test_include_of_tracked_header_anchored_passes
+- tests/test_docblocks_gate.py::TestCCppNamespace::test_include_resolving_to_no_tracked_file_not_flagged
+- tests/test_docblocks_gate.py::TestCCppNamespace::test_angle_bracket_system_include_never_flagged
+- tests/test_docblocks_gate.py::TestCCppNamespace::test_waive_suppresses_unbound_c_include
+- tests/test_lang_support.py::TestDeriveLanguageRegistry::test_c_and_cpp_docblock_facet_is_implemented
 attachments: []
 acceptance: []
 threat: null
@@ -3743,6 +3988,61 @@ component: null
 labels: []
 ```
 found while working T-0405 (language extension contract survey): DOC004's fenced-code-block doc-drift check (frob.gates._docblocks) has _PYTHON_LANGS/_RUST_LANGS/_TS_LANGS buckets but no C/C++ bucket -- a fenced c or cpp code block in docs gets no drift checking at all, unlike python/rust/typescript. Add a _C_LANGS/_CPP_LANGS bucket (or a combined c-cpp one, matching frob.vet's capability-matrix convention) with the matching source-extraction branch in doc004_gate.
+
+## Done report
+
+Added the DOC004 fenced-code bucket the ticket asked for. C/C++ has no
+manifest namespace to key off (python has its package name, rust its
+crate, ts its package.json name) so the new bucket resolves a quoted
+`#include "..."` directly against this repo's own git-tracked files
+instead: resolving to a real tracked file means it is this project's own
+surface (UNBOUND if unanchored); resolving to nothing is treated as an
+external/illustrative example and skipped, same posture the other three
+buckets already take. Angle-bracket system includes are never touched.
+
+Also fixed the LANG003 error this session had been carrying since before
+this ticket started: frob.lang._support's c/cpp docblock facet was a
+known_gap citing a bogus, non-existent ticket id (T-draft-78a0f919) --
+`derive_language_registry` now reports c/cpp as IMPLEMENTED for the
+docblock facet (merged into the same "c-cpp" bucket _capability_status
+already uses), which is the real fix T-0566 was tracking (the LANG003
+citation was the audit trail's own paper trail for this exact gap).
+
+`frob check --ticket T-0566 --base <T-0322's close commit>` is fully
+clean (0 errors across every gate, including gate:LANG at 0 errors for
+the first time this session).
+
+### Changed
+```
+ CHANGELOG.md                       |  15 ++
+ docs/modules/testing.md            |  24 ++++
+ pyproject.toml                     |   2 +-
+ src/frob/__main__.py               |  43 +++++-
+ src/frob/app/config.py             |   3 +
+ src/frob/app/test_runner.py        |  31 ++++
+ src/frob/app/ticket_runner.py      |  77 ++++------
+ src/frob/gates/__init__.py         |  13 ++
+ src/frob/gates/_docblocks.py       |  81 ++++++++++-
+ src/frob/lang/_support.py          |  31 ++--
+ src/frob/testing/__init__.py       |  10 ++
+ src/frob/testing/_coverage_wait.py | 173 +++++++++++++++++++++++
+ tests/test_app.py                  | 143 +++++++++++++++++++
+ tests/test_docblocks_gate.py       |  88 ++++++++++++
+ tests/test_lang_support.py         |  10 ++
+ tests/test_prework_parity.py       |  19 +++
+ tests/unit/test_main_entry.py      |  45 ++++++
+ tickets.md                         | 280 +++++++++++++++++++++++++++++++++++--
+ uv.lock                            |   2 +-
+ 19 files changed, 1010 insertions(+), 80 deletions(-)
+```
+
+### Evidence
+- `tests/test_docblocks_gate.py::TestCCppNamespace::test_include_of_tracked_header_unanchored_warns` (pytest node id, verified passing when recorded)
+- `tests/test_docblocks_gate.py::TestCCppNamespace::test_include_of_tracked_header_anchored_passes` (pytest node id, verified passing when recorded)
+- `tests/test_docblocks_gate.py::TestCCppNamespace::test_include_resolving_to_no_tracked_file_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_docblocks_gate.py::TestCCppNamespace::test_angle_bracket_system_include_never_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_docblocks_gate.py::TestCCppNamespace::test_waive_suppresses_unbound_c_include` (pytest node id, verified passing when recorded)
+- `tests/test_lang_support.py::TestDeriveLanguageRegistry::test_c_and_cpp_docblock_facet_is_implemented` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0567 -->
 ```yaml
@@ -4131,3 +4431,28 @@ component: null
 labels: []
 ```
 T-0410 wrapped frob.lang.parse_file in memoize_per_run (first-call-deferred wrapper); the static call graph then lost parse_file's edges to its private helpers (_warn_if_partial_tree, _find_following_symbol), erroring two previously-sound frob:tests bindings the moment COV006 was promoted to error. Teach reachability to see through memoize_per_run/functools.wraps-style decorators (resolve the wrapped underlying function's edges), then remove the two waivers in tests/test_lang.py. Scope: src/frob/graph/callgraph.py, src/frob/gates/__init__.py COV006 helpers, tests/test_lang.py, tests/test_gates.py.
+
+<!-- ticket:T-draft-ac820c46 -->
+```yaml
+id: T-draft-ac820c46
+title: 'PRE001 catch-22 on slow mounts: sweep needs a timeout/partial-state or async
+  design (T-0355 item 2)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- src/frob/tickets/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+found while working T-0355 (deliberately split out, item 2 of that ticket's original 3-item report): editing a ticket's scope after start demands a re-sweep before PRE001 is satisfiable, and frob ticket sweep's dup+xref pass is a synchronous full-scope scan -- on a slow mount (WSL /mnt/c, network share) that scan itself can be slow enough that the ticket can never get back into a checkable state within a reasonable session. T-0474 already backgrounds the sweep at frob ticket start time, but frob ticket sweep (the always-available resweep path used after a scope edit) is still fully synchronous by design (see its docstring: 'the always-available, always-synchronous way to record it'), and PRE001 itself only ever compares against a fully-completed digest -- there is no partial-sweep-ok state. This needs an actual design decision before implementation (a timeout + partial-sweep-ok ticket state that prework_gate treats as provisionally clean, vs. making frob ticket sweep itself background-and-poll like start), not a mechanical port of an existing fix, so it was NOT implemented as part of T-0355 (items 1 and 3 of that ticket were: clean SIGINT message in __main__.py, and confirming scope_digest is already content-only/checkout-portable).

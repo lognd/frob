@@ -227,6 +227,10 @@ required for this one.
 <!-- frob:describes src/frob/strata/_native_test.py::run_native_sys_audit -->
 <!-- frob:describes src/frob/strata/_native_test.py::NativeAuditOutcome -->
 <!-- frob:describes src/frob/testing/_incremental_coverage.py::python_coverage_targets -->
+<!-- frob:describes src/frob/testing/_coverage_wait.py::run_coverage_wait -->
+<!-- frob:describes src/frob/testing/_coverage_wait.py::coverage_lock_path -->
+<!-- frob:describes src/frob/testing/_coverage_wait.py::CoverageWaitOutcome -->
+<!-- frob:describes src/frob/testing/_coverage_wait.py::CoverageWaitError -->
 
 ```python
 # frob/gitio.py -- the ONE git subprocess seam (shared with frob.gates)
@@ -287,6 +291,26 @@ def python_coverage_targets(root: Path, snapshot: GraphSnapshot,
     # select_tests -- feeds `make coverage-fast`'s touched-set-only,
     # --cov-append coverage run instead of a full-suite re-run per change.
     # () on a diff/selection failure or an empty selection; never raises.
+
+# frob/testing/_coverage_wait.py (T-0322)
+def run_coverage_wait(root: Path, *, command: tuple[str, ...] = ("make", "coverage-fast")
+                      ) -> Result[CoverageWaitOutcome, CoverageWaitError]
+    # Blocks in the foreground under a single-flight file lock
+    # (.frob/coverage.lock) until the coverage stamp is fresh, running
+    # `command` if it is not already -- the definitive-result alternative
+    # to backgrounding `make coverage` and stalling on a notification a
+    # dispatched sub-agent can never receive.
+def coverage_lock_path(root: Path) -> Path
+    # The single-flight lock path (.frob/coverage.lock) run_coverage_wait
+    # guards concurrent callers with.
+
+class CoverageWaitOutcome(BaseModel):    # frozen fields, not a frozen model
+    ran: bool           # False: an already-fresh stamp was found, nothing ran.
+    duration_s: float   # 0.0 when ran is False.
+
+class CoverageWaitError(ErrorSet):
+    RunFailed = "the coverage subprocess exited non-zero"
+    SnapshotUnavailable = "the obligation graph snapshot could not be built"
 ```
 
 **Deviation**: `frob.testing`'s `suite` fallback mode is threaded through the

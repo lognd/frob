@@ -287,6 +287,8 @@ class AppConfig(BaseModel):
     test_all: bool = False
     test_fuzz: bool = False
     test_collect: bool = False
+    # frob:ticket T-0322
+    test_wait_coverage: bool = False
     test_base: str | None = None
     test_lang: list[str] = []
     test_fallback: str | None = None
@@ -618,6 +620,7 @@ class AppConfig(BaseModel):
             "test_all",
             "test_fuzz",
             "test_collect",
+            "test_wait_coverage",
             "test_json",
             "vet_json",
             "stats_json",

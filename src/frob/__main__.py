@@ -1129,6 +1129,18 @@ def _add_test_parser(sub) -> None:
         action="store_true",
         help="drop and rebuild the pytest collection cache, then exit (T-0333)",
     )
+    # frob:ticket T-0322
+    test_p.add_argument(
+        "--wait-coverage",
+        dest="test_wait_coverage",
+        action="store_true",
+        help=(
+            "block in the foreground until the coverage stamp is fresh "
+            "(single-flight across concurrent callers), then exit -- the "
+            "definitive-result alternative to backgrounding `make coverage` "
+            "and stalling on a notification that never arrives (T-0322)"
+        ),
+    )
     test_p.add_argument("--base", dest="test_base", metavar="REF")
     test_p.add_argument(
         "--lang", dest="test_lang", action="append", default=[], metavar="L"
@@ -1630,18 +1642,41 @@ def _add_workflow_subparsers(sub) -> None:
 
 # frob:doc docs/modules/app.md#entry-point
 # frob:waive TEST005 reason="main 0.0% branch cover, debt T-0160"
+# frob:ticket T-0355
+# frob:ticket T-0358
+# frob:tests tests/unit/test_main_entry.py::TestMainSigint.test_keyboard_interrupt_prints_clean_message_and_exits_130  # noqa: E501
+# frob:tests tests/unit/test_main_entry.py::TestMainSigint.test_normal_dispatch_is_unaffected  # noqa: E501
 def main() -> None:
+    """CLI entry point: parses argv and dispatches to `App`, or straight to
+    `frob bind` (T-0355: SIGINT during a long-running command -- e.g. a
+    synchronous pre-work sweep on a slow mount -- used to fall through to a
+    bare `KeyboardInterrupt` traceback; that's noise for a deliberate Ctrl-C,
+    not a crash, so it is caught here and reported as a clean one-line
+    message with the conventional 128+SIGINT exit code instead)."""
     import sys as _sys
 
-    if len(_sys.argv) > 1 and _sys.argv[1] == "bind":
+    try:
+        _dispatch(_sys.argv[1:])
+    except KeyboardInterrupt:
+        print("frob: interrupted", file=_sys.stderr)
+        _sys.exit(130)
+
+
+# frob:ticket T-0355
+def _dispatch(argv: list[str]) -> None:
+    """`main`'s actual argv-to-`App` dispatch, split out so `main` can wrap
+    only this in the `KeyboardInterrupt` handler (T-0355) without also
+    catching interrupts raised by argument parsing itself."""
+    import sys as _sys
+
+    if argv and argv[0] == "bind":
         from frob.app.bind_runner import run as _bind_run
 
-        _bind_run(_sys.argv[2:])
+        _bind_run(argv[1:])
     else:
         parser = _build_parser()
-        args = parser.parse_args()
+        args = parser.parse_args(argv)
         pyproject = Path("pyproject.toml")
-        # frob:ticket T-0358
         warning = stale_install_warning(pyproject.parent.resolve())
         if warning is not None:
             print(warning, file=_sys.stderr)

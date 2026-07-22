@@ -17,6 +17,7 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+<<<<<<< HEAD
 ## [0.69.0] - unreleased (T-0410 perf: parse_file run-scoped memo)
 
 T-0410: `frob.lang.parse_file` gained a run-scoped `@memoize_per_run` memo
@@ -33,6 +34,22 @@ timing 36-45s -> 3.5-4.7s. `frob.excludes.BUILTIN_SKIP_DIRS` also gained
 `.hypothesis`/`.serena` (perf audit finding M6, `docs/audits/perf.md`) --
 neither has a tree-sitter grammar but every rglob-based stage was still
 walking/stat'ing/opening every entry inside them.
+=======
+## [0.69.0] - unreleased
+
+T-0322: `frob test --wait-coverage` -- a foreground, single-flight,
+blocking-until-fresh coverage contract. Replaces backgrounding `make
+coverage` and stalling on a notification a dispatched sub-agent can never
+receive (docs/guides/agent-playbook.md section 6b): the new command
+blocks under a `.frob/coverage.lock` file lock (so concurrent callers
+serialize onto one real run instead of each re-running the full suite),
+checks the recorded coverage stamp against the current source tree
+(the same staleness contract TEST006 already enforces), and either
+returns immediately if already fresh or runs `make coverage-fast` and
+returns a definitive fresh-or-failed result. New public API:
+`frob.testing.run_coverage_wait`, `coverage_lock_path`,
+`CoverageWaitOutcome`, `CoverageWaitError`.
+>>>>>>> worktree-agent-aae23538cac8feccd
 
 ## [0.66.0] - unreleased (graph leaves + DEAD001/PARSE001, part 2)
 
