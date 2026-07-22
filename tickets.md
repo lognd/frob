@@ -3521,7 +3521,7 @@ digest).
 id: T-0547
 title: 'gates: name-only test-convention match credits unrelated same-named symbols
   (B6)'
-state: queued
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-21'
@@ -3531,7 +3531,10 @@ parent: T-0403
 scope:
 - src/frob/gates/
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_gates.py::TestTest014AmbiguousConventionMatch::test_fires_on_cross_file_same_test_collision
+- tests/test_gates.py::TestTest014AmbiguousConventionMatch::test_silent_when_symbol_has_explicit_edge
+- tests/test_gates.py::TestTest014AmbiguousConventionMatch::test_silent_when_no_leaf_name_collision
 attachments: []
 acceptance: []
 threat: null
@@ -3540,6 +3543,66 @@ labels: []
 ```
 docs/audits/gates-accounting.md B6. _inferred_unit_cases matches by snake-cased leaf name only, no module/path binding. Two different public functions both named parse (different modules) are both covered by one test_parse that exercises only one. Repro: two def parse() in different files, one test_parse -> both clear TEST001. RIGHT-WAY fix direction: require some path/module correlation between the test file and the symbol's file before the naming-convention fallback applies. Risk: repo does not strictly mirror tests-to-src layout everywhere -- needs a compat survey before tightening, too large for the T-0403 sweep budget.
 
+## Done report
+
+docs/audits/gates-accounting.md B6/E6: `_inferred_unit_cases` matches a
+public symbol to a collected test by snake-cased leaf name alone, no
+module/path binding. Repro: two `def parse()` in different files, one
+`test_parse` -> both clear TEST001 even though it only exercises one.
+
+Compat survey done FIRST (required per the ticket, "too large for the
+T-0403 sweep budget" note), measured against this repo's own graph:
+- 81 public, non-test symbols currently rely purely on the naming-
+  convention fallback (no explicit `frob:tests` edge).
+- A blanket "test file must share a top-level directory with the
+  symbol's file" tightening breaks ALL 81 of them (0 survive) -- this
+  repo's `tests/` tree (flat + `unit/`/`system/`/`integration/`
+  subdirs) does not mirror `src/frob/<pkg>/` layout closely enough for
+  that correlation to be sound as a default tightening. Confirms the
+  ticket's own risk note.
+- Narrowing the search to the ACTUAL B6 shape -- two or more DIFFERENT
+  files' same-leaf-name public symbols, both relying only on the
+  convention fallback, credited by at least one of the SAME collected
+  test node ids -- found 5 real collision groups in this repo today:
+  `main`, `format`, `as_text`, `as_json`, `run` (e.g.
+  `src/frob/__main__.py::main` and `src/frob/perf/_harness.py::main`
+  both credited by `tests/integration/test_interfaces.py::...
+  test_main_cli_dispatches`).
+
+Landed (sound, zero-regression): TEST014 (WARN), a new gate that makes
+this exact ambiguity loud and auditable without changing what TEST001
+credits -- mirroring TEST013's restraint (T-0552) for the identical
+reason: withdrawing credit from all 5 collision groups outright, with no
+verified per-case remedy, would ERROR-red real symbols across the repo
+for a structural change alone, and the survey shows a blanket
+module-correlation rule is unsound here. `_test014_ambiguous_convention`
+groups convention-only-matched symbols by snake-cased leaf name, and for
+every pair spanning 2+ distinct files that share a matched test node id,
+emits one WARN naming both symbols and the shared test.
+
+Split off (real fix + judgment call): T-draft-b7c57519 ("Resolve TEST014
+name-collision cases: disambiguate or tighten TEST001 credit") -- to
+actually resolve the 5 found collisions (explicit `frob:tests` edges or
+renames) and design/validate a general tightening rule now that real
+positive/negative examples exist to test it against.
+
+### Changed
+```
+ CHANGELOG.md                |  19 ++++
+ frob.lock                   |   2 +-
+ pyproject.toml              |   2 +-
+ src/frob/gates/__init__.py  | 159 ++++++++++++++++++++++++++--
+ src/frob/gates/_coverage.py | 125 +++++++++++++++++++++-
+ tests/test_gates.py         | 177 +++++++++++++++++++++++++++++++-
+ tickets.md                  | 245 ++++++++++++++++++++++++++++++++++++++++++--
+ uv.lock                     |   2 +-
+ 8 files changed, 708 insertions(+), 23 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestTest014AmbiguousConventionMatch::test_fires_on_cross_file_same_test_collision` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTest014AmbiguousConventionMatch::test_silent_when_symbol_has_explicit_edge` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTest014AmbiguousConventionMatch::test_silent_when_no_leaf_name_collision` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0548 -->
 ```yaml
 id: T-0548
@@ -3827,3 +3890,26 @@ component: null
 labels: []
 ```
 T-0552 added TEST013 (WARN) to surface every frob:tests edge whose TEST001-004 credit rests solely on the ts/c/cpp structural name/path fallback (frob.gates._edge_is_native_unverified) instead of real execution -- but it deliberately does NOT withdraw that credit, since no real TS/C/C++ collector exists yet (src/frob/testing/ only has collect_python_tests and collect_rust_tests, T-0092) and withdrawing credit outright would turn every native-language public symbol's TEST001 ERROR-red in every sibling repo overnight, for a structural change alone. This ticket is the real fix: wire vitest (TS) and ctest (C/C++) runners (frob.testing._runners already has a RunnerSpec/RunnerOutcome shape collect_rust_tests followed for T-0092 -- mirror it), producing real node ids frob.gates._valid_edges can match the same way it already matches pytest/cargo. Once real collectors exist, retire the structural-fallback branch of frob.gates._edge_is_native_unverified (or gate it behind 'no collector configured for this language') and consider promoting TEST013 findings on a collector-covered language to ERROR.
+
+<!-- ticket:T-draft-b7c57519 -->
+```yaml
+id: T-draft-b7c57519
+title: 'Resolve TEST014 name-collision cases: disambiguate or tighten TEST001 credit'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/__init__.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0547 added TEST014 (WARN) to surface every case where _inferred_unit_cases's naming-convention fallback ambiguously credits two DIFFERENT files' same-leaf-name public symbols off the same collected test id(s) (docs/audits/gates-accounting.md B6). It deliberately does NOT withdraw TEST001 credit: a compat survey against this repo (T-0547's Done report) found a blanket path/module-correlation requirement breaks ~100% of convention-fallback matches here (96/81 depending on heuristic), since tests/ does not mirror src/frob/<pkg>/ layout. But the survey ALSO found 5 real leaf-name collision groups in this repo TODAY sharing convention-matched tests (main, format, as_text, as_json, run) -- TEST014 will fire WARN for each until resolved. This ticket is to actually resolve those 5 (add explicit frob:tests edges to disambiguate, or accept the WARN permanently via frob:waive with a reason), and to decide/design a general per-symbol tightening path now that real examples exist to test any proposed rule against (e.g. requiring the matched test's own module path to appear as a substring of the target's qualname, or promoting TEST014 to ERROR once explicit edges are added to eliminate ambiguity repo-wide).

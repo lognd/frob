@@ -893,6 +893,10 @@ _KNOWN_GATE_RULES = frozenset(
         # T-0552: a `frob:tests` edge credited toward TEST001-004 only via
         # the ts/c/cpp structural (name/path) fallback, never executed.
         "TEST013",
+        # T-0547: two different files' same-leaf-name public symbols, both
+        # relying only on the naming-convention fallback, credited by the
+        # same collected test node id(s) (B6's def-parse-twice repro).
+        "TEST014",
         "TODO001",
         "TODO002",
         # T-0412: frob:debt (temporary, ticket-bound, collected-before-
@@ -4367,6 +4371,93 @@ def _test001_002(
 
 
 # ---------------------------------------------------------------------------
+# TEST014
+# ---------------------------------------------------------------------------
+
+
+# frob:ticket T-0547
+# frob:tests tests/test_gates.py::TestTest014AmbiguousConventionMatch.test_fires_on_cross_file_same_test_collision  # noqa: E501
+# frob:tests tests/test_gates.py::TestTest014AmbiguousConventionMatch.test_silent_when_symbol_has_explicit_edge  # noqa: E501
+# frob:tests tests/test_gates.py::TestTest014AmbiguousConventionMatch.test_silent_when_no_leaf_name_collision  # noqa: E501
+def _test014_ambiguous_convention(
+    snapshot: GraphSnapshot, tests: CollectedTests
+) -> tuple[Violation, ...]:
+    """TEST014 (warn): `_inferred_unit_cases`'s naming-convention fallback
+    matches by snake-cased leaf name alone, no module/path binding (docs/
+    audits/gates-accounting.md B6/E6, T-0547) -- two different public
+    functions named the same thing in different files can both clear
+    TEST001 off ONE test that only actually exercises one of them.
+
+    A compat survey against this repo itself (T-0547's Done report has the
+    numbers) found that a blanket "test file must share a top-level
+    directory with the symbol's file" tightening breaks ~100% of the
+    convention-fallback matches here -- this repo's `tests/` tree does not
+    mirror `src/frob/<pkg>/` layout closely enough for that correlation to
+    be sound as a default. So this gate does NOT withdraw or gate TEST001
+    credit (unlike TEST013's analogous restraint for the same reason);
+    it only makes the ambiguity itself loud and auditable: two or more
+    DIFFERENT files' public symbols sharing a leaf name, relying only on
+    the convention fallback (no explicit `frob:tests` edge on either), and
+    credited by at least one of the SAME collected test node ids -- the
+    exact structural shape of the audit's `def parse()` repro. Fixing a
+    specific finding here is either adding an explicit `frob:tests` edge
+    to disambiguate, or renaming one of the colliding symbols.
+    """
+    unit_edges = _unit_test_edges(snapshot, "unit")
+    by_leaf: dict[str, list[tuple[str, str, frozenset[str]]]] = {}
+    for record in snapshot.symbols.values():
+        if (
+            not record.public
+            or record.kind not in (SymbolKind.FUNCTION, SymbolKind.METHOD)
+            or is_test_file(record.id.path)
+            or record.id.path.endswith(".strata")
+            or unit_edges.get(record.symref)
+        ):
+            continue
+        _, _, qualname = record.symref.partition("::")
+        leaf = _snake(qualname.rsplit(".", 1)[-1])
+        if len(leaf) < 3:
+            continue
+        token = re.compile(rf"(^|[^a-z0-9]){re.escape(leaf)}([^a-z0-9]|$)")
+        matched = frozenset(
+            node
+            for node in tests.node_ids
+            if token.search(_snake(node.rsplit("::", 1)[-1]))
+        )
+        if matched:
+            by_leaf.setdefault(leaf, []).append(
+                (record.symref, record.id.path, matched)
+            )
+
+    violations: list[Violation] = []
+    for leaf, entries in sorted(by_leaf.items()):
+        if len({path for _, path, _ in entries}) < 2:
+            continue  # same leaf, but all in one file -- not the B6 shape
+        for i, (symref_a, _, matched_a) in enumerate(entries):
+            for symref_b, _, matched_b in entries[i + 1 :]:
+                shared = sorted(matched_a & matched_b)
+                if not shared:
+                    continue
+                violations.append(
+                    Violation(
+                        rule="TEST014",
+                        severity=Severity.WARN,
+                        file=symref_a.split("::", 1)[0],
+                        line=0,
+                        message=(
+                            f"TEST014: {symref_a} and {symref_b} share leaf name "
+                            f"'{leaf}' and are both credited toward TEST001 by "
+                            f"the same convention-matched test(s) ({shared[0]}"
+                            f"{', ...' if len(shared) > 1 else ''}) -- at most "
+                            "one is likely actually exercised; add an explicit "
+                            'frob:tests edge kind="unit" to disambiguate'
+                        ),
+                    )
+                )
+    return tuple(violations)
+
+
+# ---------------------------------------------------------------------------
 # TEST003
 # ---------------------------------------------------------------------------
 
@@ -5181,7 +5272,7 @@ def test_gate(
     tests: CollectedTests,
     cfg: TestPolicy,
 ) -> tuple[Violation, ...]:
-    """TEST001..TEST013. Interfaces derived from packages with public symbols
+    """TEST001..TEST014. Interfaces derived from packages with public symbols
     (see `_test003`'s docstring for the exact alpha semantics). Coverage is
     consumed as recorded evidence, never produced here. TEST009 (T-0225) is
     `.strata` design files' e2e-binding counterpart to TEST003, which
@@ -5200,7 +5291,9 @@ def test_gate(
     is missing, or its claimed per-module numbers have drifted from this
     run's `coverage.xml` -- see `_test012_lock`. TEST013 (T-0552) makes the
     ts/c/cpp structural-fallback credit `_valid_edges` already grants
-    LOUD instead of silent: see `_test013_native_unverified`."""
+    LOUD instead of silent: see `_test013_native_unverified`. TEST014
+    (T-0547) is `_inferred_unit_cases`' name-only ambiguity made loud in
+    the same spirit: see `_test014_ambiguous_convention`."""
     violations: list[Violation] = []
     violations.extend(_test001_002(snapshot, tests, cfg))
     violations.extend(_test003(snapshot, tests, cfg))
@@ -5211,6 +5304,7 @@ def test_gate(
     violations.extend(_test009(snapshot, tests, cfg))
     violations.extend(_test010_violations(snapshot))
     violations.extend(_test013_native_unverified(snapshot))
+    violations.extend(_test014_ambiguous_convention(snapshot, tests))
     return tuple(violations)
 
 

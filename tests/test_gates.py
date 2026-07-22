@@ -5233,6 +5233,78 @@ class TestTest013NativeUnverified:
         assert "TEST013" not in _rules(violations)
 
 
+# frob:ticket T-0547
+class TestTest014AmbiguousConventionMatch:
+    """T-0547 (docs/audits/gates-accounting.md B6/E6): `_inferred_unit_cases`
+    matches by snake-cased leaf name alone, no module/path binding -- two
+    different public functions named the same thing in different files can
+    both clear TEST001 off one test that only actually exercises one."""
+
+    # frob:ticket T-0547
+    def test_fires_on_cross_file_same_test_collision(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates.py::TestTest014AmbiguousConventionMatch.test_fires_on_cross_file_same_test_collision  # noqa: E501
+        # The audit's own repro: two `def parse()` in different modules,
+        # neither carrying an explicit frob:tests edge, one `test_parse`
+        # covering (by convention) both.
+        from typani.option import Nothing
+
+        _write(tmp_path, "src/frob/pkg_a/mod.py", "def parse(x):\n    return x\n")
+        _write(tmp_path, "src/frob/pkg_b/mod.py", "def parse(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "tests/test_parse.py",
+            "def test_parse():\n    assert True\n",
+        )
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(node_ids=frozenset({"tests/test_parse.py::test_parse"}))
+        violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
+        test014 = [v for v in violations if v.rule == "TEST014"]
+        assert len(test014) == 1
+        assert test014[0].severity == Severity.WARN
+        assert "pkg_a/mod.py::parse" in test014[0].message
+        assert "pkg_b/mod.py::parse" in test014[0].message
+
+    # frob:ticket T-0547
+    def test_silent_when_symbol_has_explicit_edge(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates.py::TestTest014AmbiguousConventionMatch.test_silent_when_symbol_has_explicit_edge  # noqa: E501
+        # An explicit frob:tests edge on either colliding symbol removes it
+        # from the ambiguous naming-convention pool entirely.
+        from typani.option import Nothing
+
+        _write(
+            tmp_path,
+            "src/frob/pkg_a/mod.py",
+            '# frob:tests tests/test_parse.py::test_parse kind="unit"\n'
+            "def parse(x):\n    return x\n",
+        )
+        _write(tmp_path, "src/frob/pkg_b/mod.py", "def parse(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "tests/test_parse.py",
+            "def test_parse():\n    assert True\n",
+        )
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(node_ids=frozenset({"tests/test_parse.py::test_parse"}))
+        violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
+        assert "TEST014" not in _rules(violations)
+
+    # frob:ticket T-0547
+    def test_silent_when_no_leaf_name_collision(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates.py::TestTest014AmbiguousConventionMatch.test_silent_when_no_leaf_name_collision  # noqa: E501
+        from typani.option import Nothing
+
+        _write(tmp_path, "src/frob/pkg_a/mod.py", "def parse(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "tests/test_parse.py",
+            "def test_parse():\n    assert True\n",
+        )
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(node_ids=frozenset({"tests/test_parse.py::test_parse"}))
+        violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
+        assert "TEST014" not in _rules(violations)
+
+
 class TestPairLevelIntegration:
     def _snap_with_dep(self, tmp_path):
         # consumer pkg src/app uses-contract on provider pkg src/core
