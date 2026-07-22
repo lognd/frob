@@ -44,6 +44,7 @@ from frob.graph._models import (
     LockEntry,
     LockFile,
     MalformedDirective,
+    ParseFailure,
     StaleItem,
     SymbolId,
     SymbolRecord,
@@ -114,8 +115,10 @@ _should_prune_dir = _excludes._should_prune_dir  # noqa: SLF001
 
 # frob:ticket T-0239
 # frob:ticket T-0245
+# frob:ticket T-0544
 # frob:tests tests/test_graph.py::TestExclude.test_nested_git_worktree_pruned_without_config  # noqa: E501
 # frob:tests tests/test_graph.py::TestExclude.test_walk_source_files_prunes_before_descent  # noqa: E501
+# frob:tests tests/test_graph.py::TestExclude.test_walk_repo_files_classifies_top_level_readme_as_doc  # noqa: E501
 def _walk_repo_files(
     root: Path, exclude_globs: tuple[str, ...] = ()
 ) -> tuple[list[Path], list[Path]]:
@@ -144,11 +147,22 @@ def _walk_repo_files(
             if not _should_prune_dir(dir_path / d, root, exclude_globs)
         ]
         under_docs = dir_path == docs_dir or docs_dir in dir_path.parents
+        # T-0544: a `frob:describes` anchor placed in README.md (or any other
+        # top-level *.md note) used to be invisible to the design graph --
+        # this walker only ever classified files under docs/ as doc files,
+        # so its DESCRIBES edge (and the facet it selects for DRIFT001)
+        # never existed even though gates.doclink's own root set
+        # (docs/index.md, README.md) already treats README.md as a doc
+        # entry point. Top-level *.md files are cheap to fold in here (one
+        # directory, no recursive cost) rather than duplicating gates'
+        # frob.toml-driven include/exclude glob resolution into this leaf
+        # walker.
+        at_repo_root = dir_path == root
         for name in filenames:
             path = dir_path / name
             suffix = Path(name).suffix.lower()
             is_source = suffix in exts
-            is_doc = under_docs and suffix == ".md"
+            is_doc = (under_docs or at_repo_root) and suffix == ".md"
             if not is_source and not is_doc:
                 continue
             if exclude_globs and _is_excluded(_display_path(path, root), exclude_globs):
@@ -192,14 +206,21 @@ def _dedupe_symbols(rel_path: str, parsed: ParsedFile) -> tuple[SymbolRecord, ..
 
 
 # frob:ticket T-0433
+# frob:ticket T-0558
+# frob:ticket T-0561
 # frob:tests tests/test_graph.py::TestBuildIncremental.test_stored_hash_matches_bytes_actually_parsed  # noqa: E501
+# frob:tests tests/test_graph.py::TestParseFailures.test_parse_error_is_recorded_as_parse_failure  # noqa: E501
 def _parse_source_file_fresh(
     conn, rel_path: str, path: Path, stat_key: tuple[int, int]
 ) -> tuple[
-    bool, tuple[SymbolRecord, ...], tuple[Edge, ...], tuple[MalformedDirective, ...]
+    bool,
+    tuple[SymbolRecord, ...],
+    tuple[Edge, ...],
+    tuple[MalformedDirective, ...],
+    ParseFailure | None,
 ]:
     """Parse one uncached source file and store the result:
-    `(True, symbols, edges, malformed)`.
+    `(True, symbols, edges, malformed, parse_failure)`.
 
     T-0433 (G7 fix): the stored `content_hash` is `parsed.content_hash` --
     the hash `frob.lang` computed from the EXACT bytes it read and parsed
@@ -210,6 +231,16 @@ def _parse_source_file_fresh(
     hash no longer described its own symbols. Hashing only the bytes that
     were actually parsed closes that window -- there is exactly one read
     per store, not two.
+
+    T-0558: a parse/IO failure (any `LangError` other than the expected
+    `NativeParserUnavailable` degrade) used to come back as
+    `(True, (), (), ())` indistinguishable from a genuinely empty file --
+    every public symbol and every `frob:doc`/`frob:invariant`/`frob:tests`
+    edge in the file silently vanished, and COV001/DRIFT/INV all passed
+    vacuously for it. Now that case also returns a non-`None`
+    `ParseFailure`, which `gates._parse_failures.parse_failure_gate`
+    (PARSE001) surfaces as an ERROR-severity violation instead of a
+    swallowed warning.
     """
     parsed_result = parse_file(path)
     if parsed_result.is_err:
@@ -219,10 +250,12 @@ def _parse_source_file_fresh(
             # no strata-core native extension, so every .strata file skips
             # here every build -- debug, not warning, or a repo with any
             # .strata files would spam a warning line per file per run.
+            # Not a ParseFailure: this is a known, environment-level
+            # degrade, not a file frob.lang genuinely could not parse.
             _log.debug("skipping %s: %s", rel_path, err)
-        else:
-            _log.warning("skipping %s: %s", rel_path, err)
-        return True, (), (), ()
+            return True, (), (), (), None
+        _log.warning("skipping %s: %s", rel_path, err)
+        return True, (), (), (), ParseFailure(file=rel_path, reason=str(err))
     parsed: ParsedFile = parsed_result.danger_ok
     if parsed.path != rel_path:
         # frob.lang renders paths cwd-relative (or absolute outside cwd); graph's
@@ -240,17 +273,24 @@ def _parse_source_file_fresh(
         edges=edges,
         malformed=malformed,
     )
-    return True, symbols, edges, malformed
+    return True, symbols, edges, malformed, None
 
 
 # frob:ticket T-0133
 # frob:ticket T-0245
+# frob:ticket T-0558
+# frob:ticket T-0561
 def _process_source_file(
     conn, root: Path, path: Path, stat_key: tuple[int, int]
 ) -> tuple[
-    bool, tuple[SymbolRecord, ...], tuple[Edge, ...], tuple[MalformedDirective, ...]
+    bool,
+    tuple[SymbolRecord, ...],
+    tuple[Edge, ...],
+    tuple[MalformedDirective, ...],
+    ParseFailure | None,
 ]:
-    """Parse (or load) one source file: `(was_parsed, symbols, edges, malformed)`.
+    """Parse (or load) one source file:
+    `(was_parsed, symbols, edges, malformed, parse_failure)`.
 
     Stat-first (T-0245): if `stat_key` (mtime_ns, size) matches what was
     stored last build, trust it and load straight from cache -- no file read
@@ -264,6 +304,11 @@ def _process_source_file(
     `frob.lang` computed from the bytes it itself read and parsed, closing
     the old TOCTOU window where a write between this decision-read and
     `parse_file`'s own read could store fresh symbols under a stale hash.
+
+    T-0558: an unreadable file (`_content_hash` returns `None`) is also a
+    parse/IO failure whose entire obligation set silently vanished before
+    this fix -- it now returns a `ParseFailure` too, same as a genuine
+    `frob.lang.parse_file` error.
     """
     rel_path = _display_path(path, root)
     meta = _cache.get_file_meta(conn, rel_path)
@@ -272,12 +317,18 @@ def _process_source_file(
         if (cached_mtime_ns, cached_size) == stat_key:
             _log.debug("stat cache hit: %s", rel_path)
             symbols, edges, malformed = _cache.load_file_data(conn, rel_path)
-            return False, symbols, edges, malformed
+            return False, symbols, edges, malformed, None
     else:
         cached_hash = None
     on_disk_hash = _content_hash(path)
     if on_disk_hash is None:
-        return True, (), (), ()
+        return (
+            True,
+            (),
+            (),
+            (),
+            ParseFailure(file=rel_path, reason="could not read file for hashing"),
+        )
     if on_disk_hash == cached_hash:
         # mtime moved but content did not (e.g. a checkout/touch): refresh
         # the stat so the next build takes the fast path again, but skip
@@ -285,7 +336,7 @@ def _process_source_file(
         _log.debug("content unchanged despite stat move: %s", rel_path)
         _cache.touch_file_stat(conn, rel_path, mtime_ns=stat_key[0], size=stat_key[1])
         symbols, edges, malformed = _cache.load_file_data(conn, rel_path)
-        return False, symbols, edges, malformed
+        return False, symbols, edges, malformed, None
     return _parse_source_file_fresh(conn, rel_path, path, stat_key)
 
 
@@ -336,24 +387,37 @@ def _process_doc_file(conn, root: Path, path: Path, stat_key: tuple[int, int]) -
     return True
 
 
+# frob:ticket T-0558
+# frob:ticket T-0561
 def _ingest_source_files(
     conn, root: Path, source_files: Sequence[Path]
-) -> tuple[set[str], int, int]:
-    """Process every source file; return `(seen_paths, parsed_count, cache_hits)`."""
+) -> tuple[set[str], int, int, tuple[ParseFailure, ...]]:
+    """Process every source file; return
+    `(seen_paths, parsed_count, cache_hits, parse_failures)`.
+
+    T-0558: `parse_failures` collects every file this build could not
+    parse/read at all (never cached -- see `_parse_source_file_fresh` and
+    `_process_source_file` -- so a fixed file drops out on its next
+    successful build)."""
     seen_paths: set[str] = set()
     parsed_count = 0
     cache_hits = 0
+    parse_failures: list[ParseFailure] = []
     for path in source_files:
         stat_key = _stat_key(path)
         if stat_key is None:
             continue
         seen_paths.add(_display_path(path, root))
-        was_parsed, *_ = _process_source_file(conn, root, path, stat_key)
+        was_parsed, _symbols, _edges, _malformed, failure = _process_source_file(
+            conn, root, path, stat_key
+        )
         if was_parsed:
             parsed_count += 1
         else:
             cache_hits += 1
-    return seen_paths, parsed_count, cache_hits
+        if failure is not None:
+            parse_failures.append(failure)
+    return seen_paths, parsed_count, cache_hits, tuple(parse_failures)
 
 
 def _ingest_doc_files(
@@ -407,14 +471,16 @@ def build_graph(root: Path, cache: Path) -> Result[GraphSnapshot, BuildError]:
         exclude_globs = _load_exclude_globs(root)
         source_files, doc_files = _walk_repo_files(root, exclude_globs)
 
-        src_seen, src_parsed, src_hits = _ingest_source_files(conn, root, source_files)
+        src_seen, src_parsed, src_hits, parse_failures = _ingest_source_files(
+            conn, root, source_files
+        )
         doc_seen, doc_parsed, doc_hits = _ingest_doc_files(conn, root, doc_files)
         seen_paths = src_seen | doc_seen
         parsed_count = src_parsed + doc_parsed
         cache_hits = src_hits + doc_hits
 
         _prune_stale_cache(conn, seen_paths)
-        snapshot = _finalize_build(conn, root, parsed_count, cache_hits)
+        snapshot = _finalize_build(conn, root, parsed_count, cache_hits, parse_failures)
         return Ok(snapshot)
     finally:
         conn.close()
@@ -433,22 +499,47 @@ def _log_malformed_files(malformed: tuple[MalformedDirective, ...]) -> None:
         )
 
 
+# frob:ticket T-0558
+# frob:ticket T-0561
+def _log_parse_failures(parse_failures: tuple[ParseFailure, ...]) -> None:
+    """WARN-log every parse/IO failure's file + reason, same shape as
+    `_log_malformed_files` (T-0216) -- the aggregate count alone gives no
+    way to find which file to fix."""
+    for item in parse_failures:
+        _log.warning("parse failure: %s: %s", item.file, item.reason)
+
+
 def _finalize_build(
-    conn, root: Path, parsed_count: int, cache_hits: int
+    conn,
+    root: Path,
+    parsed_count: int,
+    cache_hits: int,
+    parse_failures: tuple[ParseFailure, ...] = (),
 ) -> GraphSnapshot:
-    """Persist the root, commit, and load the final snapshot with build stats."""
+    """Persist the root, commit, and load the final snapshot with build stats.
+
+    T-0558: `parse_failures` is never persisted to the cache (a failed
+    file is never `store_file_data`-d, so the next build simply retries
+    it) -- it is folded into the returned snapshot here, live, for this
+    build only.
+    """
     _cache.set_root(conn, root.as_posix())
     conn.commit()
     stats = BuildStats(parsed=parsed_count, cache_hits=cache_hits)
     snapshot = _cache.load_all(conn, stats=stats)
+    if parse_failures:
+        snapshot = snapshot.model_copy(update={"parse_failures": parse_failures})
     _log_malformed_files(snapshot.malformed)
+    _log_parse_failures(snapshot.parse_failures)
     _log.info(
-        "build_graph: done, parsed=%d hits=%d symbols=%d edges=%d malformed=%d",
+        "build_graph: done, parsed=%d hits=%d symbols=%d edges=%d malformed=%d "
+        "parse_failures=%d",
         parsed_count,
         cache_hits,
         len(snapshot.symbols),
         len(snapshot.edges),
         len(snapshot.malformed),
+        len(snapshot.parse_failures),
     )
     return snapshot
 
@@ -648,6 +739,7 @@ __all__ = [
     "LockError",
     "LockFile",
     "MalformedDirective",
+    "ParseFailure",
     "StaleItem",
     "SymbolId",
     "SymbolRecord",

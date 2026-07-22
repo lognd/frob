@@ -1357,6 +1357,133 @@ class TestDsl001:
         assert _dsl001_violations(snap) == ()
 
 
+class TestParseFailureGate:
+    """T-0558: a swallowed frob.lang parse/IO failure must be an ERROR
+    violation (PARSE001), not just a log line.
+
+    frob:ticket T-0558
+    frob:ticket T-0561
+    """
+
+    # frob:ticket T-0561
+    def test_parse_failure_is_an_error_violation(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_parse_failures.py::parse_failure_gate kind="unit"
+        from frob.gates._parse_failures import parse_failure_gate
+        from frob.graph._models import ParseFailure
+
+        _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
+        snap = _snapshot(tmp_path)
+        snap = snap.model_copy(
+            update={
+                "parse_failures": (
+                    ParseFailure(file="src/broken.py", reason="ParseFailed"),
+                )
+            }
+        )
+        violations = parse_failure_gate(snap)
+        assert len(violations) == 1
+        v = violations[0]
+        assert v.rule == "PARSE001"
+        assert v.severity == Severity.ERROR
+        assert v.file == "src/broken.py"
+
+    # frob:ticket T-0561
+    def test_no_parse_failures_is_clean(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_parse_failures.py::parse_failure_gate kind="unit"
+        from frob.gates._parse_failures import parse_failure_gate
+
+        _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
+        snap = _snapshot(tmp_path)
+        assert parse_failure_gate(snap) == ()
+
+
+class TestDeadSymbolGate:
+    """T-0422: an unreferenced private symbol (written but never wired) is
+    the symbol-level analog of REF001's anti-orphan file gate.
+
+    frob:ticket T-0422
+    """
+
+    # frob:ticket T-0422
+    def test_unwired_private_function_is_flagged(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_dead_symbols.py::dead_symbol_gate kind="unit"
+        from frob.gates._dead_symbols import dead_symbol_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def _never_called() -> None:\n    pass\n\n\ndef foo() -> None:\n    pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = dead_symbol_gate(tmp_path, snap)
+        assert any(
+            v.rule == "DEAD001" and "_never_called" in v.message for v in violations
+        )
+        assert all(v.severity == Severity.WARN for v in violations)
+
+    # frob:ticket T-0422
+    def test_called_private_helper_is_not_flagged(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_dead_symbols.py::dead_symbol_gate kind="unit"
+        from frob.gates._dead_symbols import dead_symbol_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def _helper() -> int:\n"
+            "    return 1\n"
+            "\n\n"
+            "def foo() -> int:\n"
+            "    return _helper()\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = dead_symbol_gate(tmp_path, snap)
+        assert not any("_helper" in v.message for v in violations)
+
+    # frob:ticket T-0422
+    def test_dunder_method_is_not_flagged(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_dead_symbols.py::dead_symbol_gate kind="unit"
+        from frob.gates._dead_symbols import dead_symbol_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "class Foo:\n    def __init__(self) -> None:\n        pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = dead_symbol_gate(tmp_path, snap)
+        assert not any("__init__" in v.message for v in violations)
+
+    # frob:ticket T-0422
+    def test_test_function_is_not_flagged(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_dead_symbols.py::dead_symbol_gate kind="unit"
+        from frob.gates._dead_symbols import dead_symbol_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "class Foo:\n    def _test_never_called_directly(self) -> None:\n        pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = dead_symbol_gate(tmp_path, snap)
+        assert not any("_test_never_called_directly" in v.message for v in violations)
+
+    # frob:ticket T-0422
+    def test_tests_edge_target_is_not_flagged(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_dead_symbols.py::dead_symbol_gate kind="unit"
+        from frob.gates._dead_symbols import dead_symbol_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def _never_called() -> None:\n"
+            '    # frob:tests tests/test_a.py::test_never_called kind="unit"\n'
+            "    pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = dead_symbol_gate(tmp_path, snap)
+        assert not any("_never_called" in v.message for v in violations)
+
+
 class TestDebtGate:
     """T-0412: frob:debt vs frob:waive -- malformed directive (DEBT001),
     non-open ticket (DEBT002), expired until boundary (DEBT003)."""

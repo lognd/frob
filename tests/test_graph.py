@@ -611,6 +611,80 @@ class TestSlugify:
         assert slugs == ["usage", "usage-1", "usage-2"]
 
 
+class TestParseFailures:
+    """T-0558: a parse/IO failure must be surfaced, not silently erased.
+
+    frob:ticket T-0558
+    frob:ticket T-0561
+    """
+
+    # frob:ticket T-0558
+    # frob:ticket T-0561
+    def test_parse_error_is_recorded_as_parse_failure(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A `frob.lang.parse_file` error (other than the expected
+        `NativeParserUnavailable` degrade) used to come back as
+        `(True, (), (), ())`, indistinguishable from an empty file, and the
+        whole file's symbols/edges vanished with no trace. It must now show
+        up in `GraphSnapshot.parse_failures`."""
+        from typani import Err
+
+        import frob.graph as graph_mod
+        from frob.lang import LangError
+
+        _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
+        broken = _write(tmp_path, "src/broken.py", "def bar() -> None:\n    pass\n")
+
+        real_parse_file = graph_mod.parse_file
+
+        def _fake_parse_file(path: Path):  # noqa: ANN202
+            if path == broken:
+                return Err(LangError.ParseFailed)
+            return real_parse_file(path)
+
+        monkeypatch.setattr(graph_mod, "parse_file", _fake_parse_file)
+        cache = tmp_path / ".frob" / "cache.db"
+        snap = build_graph(tmp_path, cache).danger_ok
+
+        assert len(snap.parse_failures) == 1
+        failure = snap.parse_failures[0]
+        assert failure.file == "src/broken.py"
+        assert "ParseFailed" in failure.reason or failure.reason
+
+        # The healthy file's symbols are unaffected.
+        paths = {rec.id.path for rec in snap.symbols.values()}
+        assert "src/a.py" in paths
+        assert "src/broken.py" not in paths
+
+    # frob:ticket T-0558
+    # frob:ticket T-0561
+    def test_native_parser_unavailable_is_not_a_parse_failure(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The expected T-0133 degrade path (no strata-core native install)
+        must NOT be reported as a `ParseFailure` -- it is a known,
+        environment-level skip, not a file frob.lang genuinely could not
+        parse."""
+        from typani import Err
+
+        import frob.graph as graph_mod
+        from frob.lang import LangError
+
+        strata_file = _write(tmp_path, "src/a.strata", "flow Foo {}\n")
+
+        def _fake_parse_file(path: Path):  # noqa: ANN202
+            if path == strata_file:
+                return Err(LangError.NativeParserUnavailable)
+            raise AssertionError("unexpected parse_file call")
+
+        monkeypatch.setattr(graph_mod, "parse_file", _fake_parse_file)
+        cache = tmp_path / ".frob" / "cache.db"
+        snap = build_graph(tmp_path, cache).danger_ok
+
+        assert snap.parse_failures == ()
+
+
 class TestBuildIncremental:
     def _tree(self, tmp_path: Path) -> Path:
         _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
@@ -816,7 +890,12 @@ class TestMalformedFileVisibility:
 
 
 class TestExclude:
-    """`[graph] exclude` in frob.toml is additive to the built-in dir excludes."""
+    """`[graph] exclude` in frob.toml is additive to the built-in dir excludes.
+
+    frob:ticket T-0544
+    frob:ticket T-0558
+    frob:ticket T-0561
+    """
 
     def test_glob_excludes_matching_files(self, tmp_path: Path) -> None:
         _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
@@ -892,6 +971,26 @@ class TestExclude:
         # if pruning happened only via post-walk file filtering, "tests/fixtures"
         # and its "deep"/"deep/deeper" children would all appear here too.
         assert not any(v.startswith("tests/fixtures") for v in visited_rel if v)
+
+    # frob:ticket T-0544
+    # frob:ticket T-0561
+    def test_walk_repo_files_classifies_top_level_readme_as_doc(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0544: a `frob:describes` anchor in README.md (or any other
+        top-level *.md note) must be discoverable -- before this fix,
+        `_walk_repo_files` only ever classified files under `docs/` as doc
+        files, so a repo-root README.md was silently invisible to the
+        design graph and its DESCRIBES edge never existed."""
+        from frob.graph import _walk_repo_files
+
+        _write(tmp_path, "README.md", "# Title\n")
+        _write(tmp_path, "docs/modules/foo.md", "# Foo\n")
+        _write(tmp_path, "notes/deep.md", "# Not top-level\n")
+
+        _source, docs = _walk_repo_files(tmp_path)
+        docs_rel = {p.relative_to(tmp_path).as_posix() for p in docs}
+        assert docs_rel == {"README.md", "docs/modules/foo.md"}
 
 
 class TestResolve:
@@ -1689,3 +1788,39 @@ class TestGeneratedSource:
         from frob.graph._generated import is_generated_source
 
         assert is_generated_source(tmp_path, "src/does_not_exist.py") is False
+
+
+class TestCallGraph:
+    """T-0422: `build_reference_graph` broadens `build_call_graph`'s
+    call-token-only recall to also catch a bare identifier reference
+    (a dispatch-table/registry entry), for consumers that need "is this
+    symbol referenced anywhere" rather than strictly "is it called".
+
+    frob:ticket T-0422
+    """
+
+    def test_build_reference_graph_catches_dispatch_table_entry(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/callgraph.py::build_reference_graph
+        from frob.graph.callgraph import build_call_graph, build_reference_graph
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def _handler() -> None:\n"
+            "    pass\n"
+            "\n\n"
+            'def register() -> dict:\n    return {"cmd": _handler}\n',
+        )
+        # build_call_graph only ever sees a `name(...)` call token --
+        # `_handler` here is a bare dict VALUE, never called, so the
+        # narrower call graph records no edge at all.
+        call_graph = build_call_graph(tmp_path, ("src/a.py",))
+        assert call_graph.calls == {}
+
+        # build_reference_graph's broader recall catches it: `_handler`'s
+        # bare identifier token appears in `register`'s body regardless
+        # of call form.
+        ref_graph = build_reference_graph(tmp_path, ("src/a.py",))
+        assert ref_graph.calls == {"src/a.py::register": ("src/a.py::_handler",)}

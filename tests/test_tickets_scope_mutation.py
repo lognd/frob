@@ -214,6 +214,107 @@ class TestMutateScope:
         assert second.danger_ok.scope_changes[1].op is ScopeChangeOp.REMOVE
 
 
+class TestNewFileCarveOut:
+    """T-0561: a broad in-progress umbrella lease (e.g. a repo-wide
+    `tests/**` coverage epic) must not block another ticket's ADDITIVE,
+    brand-new test file from being added to scope -- only a genuine
+    same-file race or a non-test-file expansion still refuses.
+
+    frob:ticket T-0561
+    frob:ticket T-0422
+    """
+
+    # frob:ticket T-0422
+    def test_new_file_under_broad_lease_is_exempt(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_scope_mutation.py::TestNewFileCarveOut.test_new_file_under_broad_lease_is_exempt  # noqa: E501
+        # The exact T-0561 repro shape: a broad tests/** epic in progress,
+        # another ticket needs to add ONE brand-new test file.
+        holder = _make_ticket(
+            tmp_path, scope=("tests/**",), state=TicketState.IN_PROGRESS
+        )
+        agent = _make_ticket(tmp_path, scope=("src/frob/other/**",))
+        result = mutate_scope(
+            tmp_path,
+            agent.id,
+            add=("tests/unit/test_app_runners_batch6.py",),
+            reason="new regression test for this ticket's fix",
+        )
+        assert result.is_ok, result
+        assert "tests/unit/test_app_runners_batch6.py" in result.danger_ok.scope
+        assert holder.state is TicketState.IN_PROGRESS
+
+    # frob:ticket T-0422
+    def test_existing_file_under_broad_lease_still_conflicts(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_scope_mutation.py::TestNewFileCarveOut.test_existing_file_under_broad_lease_still_conflicts  # noqa: E501
+        # The carve-out is new-file-only: a test file that already EXISTS
+        # on disk (the holder could plausibly be mid-edit on it) is not
+        # exempted, even though it is a "test file" by naming convention.
+        holder = _make_ticket(
+            tmp_path, scope=("tests/**",), state=TicketState.IN_PROGRESS
+        )
+        agent = _make_ticket(tmp_path, scope=("src/frob/other/**",))
+        existing = tmp_path / "tests" / "test_already_here.py"
+        existing.parent.mkdir(parents=True, exist_ok=True)
+        existing.write_text("def test_x() -> None:\n    pass\n")
+        result = mutate_scope(
+            tmp_path,
+            agent.id,
+            add=("tests/test_already_here.py",),
+            reason="need it",
+        )
+        assert result.is_err and result.danger_err == TicketError.ScopeLeaseConflict
+        assert holder.state is TicketState.IN_PROGRESS
+
+    # frob:ticket T-0422
+    def test_non_test_file_under_broad_lease_still_conflicts(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_scope_mutation.py::TestNewFileCarveOut.test_non_test_file_under_broad_lease_still_conflicts  # noqa: E501
+        # The carve-out is test-file-only: a brand-new, non-existent
+        # PRODUCTION source path is still refused against a broader
+        # in-progress lease (test_add_leased_path_rejected_names_holder's
+        # exact shape) -- non-existence alone is never a sufficient
+        # signal, since a real expansion attempt into a not-yet-created
+        # module would otherwise slip through.
+        holder = _make_ticket(
+            tmp_path, scope=("src/frob/gates/**",), state=TicketState.IN_PROGRESS
+        )
+        agent = _make_ticket(tmp_path, scope=("src/frob/other/**",))
+        result = mutate_scope(
+            tmp_path,
+            agent.id,
+            add=("src/frob/gates/_brand_new_module.py",),
+            reason="need it",
+        )
+        assert result.is_err and result.danger_err == TicketError.ScopeLeaseConflict
+        assert holder.state is TicketState.IN_PROGRESS
+
+    # frob:ticket T-0422
+    def test_new_file_exact_match_of_holder_scope_still_conflicts(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_scope_mutation.py::TestNewFileCarveOut.test_new_file_exact_match_of_holder_scope_still_conflicts  # noqa: E501
+        # A genuine same-file race: the holder ALREADY declares this exact
+        # not-yet-existing test file as its own scope entry -- still
+        # refused, never silently exempted just because it's a test file.
+        holder = _make_ticket(
+            tmp_path,
+            scope=("tests/unit/test_same_file.py",),
+            state=TicketState.IN_PROGRESS,
+        )
+        agent = _make_ticket(tmp_path, scope=("src/frob/other/**",))
+        result = mutate_scope(
+            tmp_path,
+            agent.id,
+            add=("tests/unit/test_same_file.py",),
+            reason="need it too",
+        )
+        assert result.is_err and result.danger_err == TicketError.ScopeLeaseConflict
+        assert holder.state is TicketState.IN_PROGRESS
+
+
 class TestGlobIsSubset:
     def test_concrete_path_under_double_star_is_subset(self) -> None:
         # frob:tests tests/test_tickets_scope_mutation.py::TestGlobIsSubset.test_concrete_path_under_double_star_is_subset  # noqa: E501

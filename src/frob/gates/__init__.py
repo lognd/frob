@@ -50,6 +50,7 @@ from frob.gates._baseline import (
 )
 from frob.gates._coverage import load_coverage, load_stamp, stamp_coverage
 from frob.gates._cve_fingerprint_scan import cve_fingerprint_scan_gate
+from frob.gates._dead_symbols import dead_symbol_gate
 from frob.gates._docblocks import doc004_gate
 from frob.gates._exclude_hazard import exclude_hazard_gate
 from frob.gates._filehash import _SOURCE_EXTS
@@ -68,6 +69,7 @@ from frob.gates._models import (
     Violation,
     WaiverRef,
 )
+from frob.gates._parse_failures import parse_failure_gate
 from frob.gates._pii_structural import pii_structural_gate
 from frob.gates._prework import load_prework, record_prework, sweep_ticket
 from frob.gates._refs import ref_gate
@@ -6459,6 +6461,10 @@ _ALL_GATES = frozenset(
         "debt",
         # T-0459: bare stdout write outside frob.render.
         "render_lint",
+        # T-0558: PARSE001, a swallowed frob.lang parse/IO failure.
+        "parse_failures",
+        # T-0422: DEAD001, an unreferenced private symbol.
+        "dead_symbols",
     }
 )
 
@@ -6699,7 +6705,7 @@ def _load_inputs(cfg: GateConfig) -> Result[_GateInputs, GateError]:
 # other gate is I/O-bound or cheap enough that process-spawn/pickle
 # overhead would not pay for itself, so it stays on the thread pool.
 _PROCESS_POOL_GATES: frozenset[str] = frozenset(
-    {"archgate", "sys", "clones", "perf", "pii_structural", "secrets"}
+    {"archgate", "sys", "clones", "perf", "pii_structural", "secrets", "dead_symbols"}
 )
 
 # frob:ticket T-0415
@@ -6734,6 +6740,8 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "excludehazard",
     "debt",
     "render_lint",
+    "parse_failures",
+    "dead_symbols",
     "scope",
     "prework",
 )
@@ -6819,6 +6827,8 @@ def _build_jobs(
         # the same inbound-reference graph as an unscoped run, same
         # reasoning as docanchor above.
         "refs": lambda: ref_gate(st.repo_root),
+        # T-0558: PARSE001, one violation per snapshot.parse_failures entry.
+        "parse_failures": lambda: parse_failure_gate(st.snapshot),
         # T-0343: fail-closed exhaustiveness drift-lock over
         # docs/design/registry/*.yaml -- known_rules is this run's live
         # gate-rule-id + policy-rule-id union, never a hardcoded list, so
@@ -6850,6 +6860,9 @@ def _build_jobs(
         # same reasoning as walk_lint above: a bare stdout write anywhere in
         # src/frob/ is a repo-wide concern, not a subdir-scoped one.
         "render_lint": _ProcessJob(render_lint_gate, (st.repo_root,)),
+        # T-0422: per-package build_call_graph calls are CPU-bound like the
+        # rest of this pool (archgate/perf/sys), not I/O-bound.
+        "dead_symbols": _ProcessJob(dead_symbol_gate, (st.root, st.snapshot)),
     }
     selected_thread = {
         name: job for name, job in thread_jobs.items() if name in selected
