@@ -270,6 +270,44 @@ constraint above without a larger detector investment -- deferred, not
 silently dropped; see `tickets.md`'s T-0332 Done report and T-draft-4fb8deee
 (the filed follow-up ticket) for the remaining rows.
 
+### OCP checks: `type-dispatch-smell` / `non-exhaustive-enum-match` (T-0617)
+
+<a id="ocp-checks"></a>
+<!-- frob:describes src/frob/arch/_ocp.py::_check_type_dispatch_smell -->
+<!-- frob:describes src/frob/arch/_ocp.py::_check_non_exhaustive_enum_match -->
+
+`frob.arch._ocp` is the OCP (Open/Closed Principle) slice of T-0330's
+SOLID catalog (the ARCH1xx family). Both checks stay on the same
+unwaivable advisory channel every other `frob.arch` category is on
+(`frob.gates._unwaivable_channel_rules`) until a future ticket wires a
+real ARCH1xx gate the way `ARCH001` already exists for `long-function`;
+every finding already carries `symref`/`metric` so that wiring is a
+gate-side addition, not a re-instrumentation of these checks.
+
+- **`type-dispatch-smell`.** An `elif` chain of 3+ `isinstance(x, T)`
+  checks on the same `x` is read as an OCP violation: adding a new type
+  means editing this function instead of adding a new type. This is the
+  EXACT structural signal T-0332's design-pattern recommender
+  (`frob.arch._patterns`) already detects as the `type-switch` hallmark
+  (recommending Strategy) -- per the ticket's "one detector, two outputs"
+  mandate, `_ocp` does not re-walk the tree or re-derive the isinstance-
+  chain match; it calls the shared generator `frob.arch._patterns.
+  iter_type_switch_chains` (factored out of `_check_type_switch` for this
+  reuse) and reads the identical chain as an OCP smell. The same source
+  chain fires both `pattern-recommendation` and `type-dispatch-smell`.
+- **`non-exhaustive-enum-match`.** A `match`/`case` over a variable
+  statically tied to a locally-defined `Enum`-family class (`Enum`,
+  `IntEnum`, `StrEnum`, `Flag`, `IntFlag`), with no wildcard/capture
+  default arm (`case _:` or a bare-name capture), that omits at least one
+  of that enum's members. PRECISION DISCIPLINE (fail toward silence):
+  this only fires when the enum class is defined in the SAME file and
+  EVERY case pattern is a plain `EnumClass.MEMBER` value pattern (or a
+  `|`-union of same) naming that exact class -- a sequence/mapping/class
+  pattern with arguments, a qualifier naming some other class, or an
+  enum not locally resolvable makes the match's exhaustiveness
+  unverifiable from this file alone, and the check silently skips it
+  rather than risk a false positive.
+
 ### SRP/cohesion checks: `low-cohesion-class` / `god-module` / `mixed-concern-function` (T-0616)
 
 <a id="srp-cohesion-checks"></a>

@@ -29,6 +29,14 @@ ArchCategory = Literal[
     "low-cohesion-class",
     "god-module",
     "mixed-concern-function",
+    # T-0617: OCP checks (ARCH1xx family, T-0330's SOLID catalog). Both stay
+    # on the unwaivable advisory channel like every other category here
+    # (`frob.gates._unwaivable_channel_rules`) until a future ticket wires a
+    # real ARCH1xx gate (the T-0289 pattern ARCH001 already established);
+    # `symref`/`metric` are populated on every finding so that wiring is a
+    # gate-side addition, not a re-instrumentation of these checks.
+    "type-dispatch-smell",
+    "non-exhaustive-enum-match",
 ]
 
 ArchSeverity = Literal["warning", "suggestion", "info"]

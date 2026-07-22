@@ -2,11 +2,12 @@
 
 `analyze_project` walks a repo and flags long functions, god classes, deep
 nesting, high coupling, large files, shared-signature abstraction
-opportunities, and (T-0332) advisory design-pattern recommendations /
-anti-pattern escapes. The per-language rule sets live in cohesive
-submodules (`_python`, `_cpp`, `_patterns`); this package module owns file
-collection, the language-agnostic large-file check, and the orchestration
-that fans each parsed file out to its language's checks.
+opportunities, (T-0332) advisory design-pattern recommendations /
+anti-pattern escapes, and (T-0617) OCP smells (type-dispatch, non-
+exhaustive enum match). The per-language rule sets live in cohesive
+submodules (`_python`, `_cpp`, `_patterns`, `_ocp`); this package module
+owns file collection, the language-agnostic large-file check, and the
+orchestration that fans each parsed file out to its language's checks.
 """
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
 # src/frob/arch/__init__.py's exclusivity-vocabulary hit is source-level \
@@ -22,7 +23,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from frob.arch import _cpp, _patterns, _python
+from frob.arch import _cpp, _ocp, _patterns, _python
 from frob.arch._models import (
     ArchCategory,
     ArchResult,
@@ -234,6 +235,7 @@ def _analyze_one_file(
             _cpp._check_god_classes(tree, rel, limits.max_class_methods, suggestions)
 
 
+# frob:ticket T-0617
 def _run_python_checks(
     tree: object,
     path: Path,
@@ -270,7 +272,13 @@ def _run_python_checks(
     `wrap-delegate`, `stringly-typed`) skip test files for the same reason
     as the other advisory categories above; `all_constructions` (the
     `scattered-construction` cross-file corpus) is likewise only
-    accumulated from non-test files."""
+    accumulated from non-test files.
+
+    T-0617: `type-dispatch-smell` and `non-exhaustive-enum-match` (the OCP
+    half of the T-0330 SOLID catalog, `frob.arch._ocp`) skip test files for
+    the same reason. `type-dispatch-smell` reuses `_patterns`'
+    `iter_type_switch_chains` isinstance-chain detector rather than
+    re-walking the tree."""
     if not is_test:
         _python._check_long_functions(tree, rel, limits.max_function_lines, suggestions)
         _python._check_god_classes(tree, rel, limits.max_class_methods, suggestions)
@@ -283,6 +291,8 @@ def _run_python_checks(
         _patterns._check_wrap_delegate(tree, rel, suggestions)
         _patterns._check_stringly_typed(tree, rel, suggestions)
         _patterns._collect_file_constructions(tree, rel, all_constructions)
+        _ocp._check_type_dispatch_smell(tree, rel, suggestions)
+        _ocp._check_non_exhaustive_enum_match(tree, rel, suggestions)
     _python._check_high_coupling(path, rel, root, limits.max_local_imports, suggestions)
     if not is_test:
         _python._check_deep_nesting(tree, rel, limits.max_nesting_depth, suggestions)

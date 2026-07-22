@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.91.0] - unreleased
+
+- T-0617: arch: OCP checks (`frob.arch._ocp`) -- `type-dispatch-smell` and `non-exhaustive-enum-match`, reusing T-0332's isinstance-chain detector via the new shared `frob.arch._patterns.iter_type_switch_chains`
+
 ## [0.90.0] - unreleased
 
 - T-0630: strata/vet: wire real code binding into production discharge entrypoints (`evaluate_exhaustiveness`, `render_audit_matrix`, `plan_obligations`, `build_containment_report`) so THREAT003's G1 code-bound-predicate join actually fires outside unit tests

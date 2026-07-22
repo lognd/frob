@@ -22,6 +22,12 @@ Design constraints from the ticket, in force for every rule below:
   `god-class` detector (`_check_god_classes`) rather than re-walking the
   tree -- one detector, two outputs, per the ticket's "pairs with the
   SOLID smells" design note.
+- T-0617: `iter_type_switch_chains` (module-public by convention, no
+  leading underscore) is the same one-detector-two-outputs move in the
+  other direction -- `frob.arch._ocp`'s OCP type-dispatch-smell check
+  reuses this module's isinstance-chain walk instead of re-implementing
+  it; `_check_type_switch` and the OCP check are just two different
+  readings of the identical structural signal.
 
 Registry coverage (T-0332's plan enumerates 8 hallmark->pattern rows and 5
 anti-pattern->escape rows; this module implements 7 of the 13 below with a
@@ -310,11 +316,20 @@ def _find_if_statements(node: Node) -> list[Node]:
     return found
 
 
+# frob:doc docs/modules/arch.md#ocp-checks
 # frob:tests tests/unit/test_arch.py::TestPatternRecommender.test_isinstance_chain_recommends_strategy  # noqa: E501
-def _check_type_switch(tree: object, rel: str, out: list[ArchSuggestion]) -> None:
-    """HALLMARK->PATTERN: an elif chain of >=3 `isinstance(x, T)` arms on
-    the SAME `x` recommends Strategy/polymorphic dispatch (T-0332)."""
+# frob:tests tests/unit/test_arch_ocp.py::TestTypeDispatchSmell.test_isinstance_chain_flags_ocp_violation  # noqa: E501
+def iter_type_switch_chains(tree: object) -> list[tuple[Node, str, int]]:
+    """ONE detector, TWO outputs (T-0332's own design note, reused for
+    T-0617's OCP check): every `(if_stmt, variable, arm_count)` triple for
+    an elif chain of >=`_MIN_CHAIN_ARMS` bare `isinstance(x, T)` arms all
+    on the SAME `x`, in source order. `_check_type_switch` below reads this
+    as "consider Strategy" (`pattern-recommendation`); `frob.arch._ocp`'s
+    `_check_type_dispatch_smell` reads the identical structural signal as
+    an OCP violation (`type-dispatch-smell`) -- neither re-walks the tree
+    or re-derives the isinstance-chain shape, both just call this."""
     t: Tree = cast("Tree", tree)
+    found: list[tuple[Node, str, int]] = []
     for if_stmt in _find_if_statements(t.root_node):
         conditions = _elif_chain_conditions(if_stmt)
         if len(conditions) < _MIN_CHAIN_ARMS:
@@ -326,12 +341,20 @@ def _check_type_switch(tree: object, rel: str, out: list[ArchSuggestion]) -> Non
         if len(distinct) != 1:
             continue
         (variable,) = distinct
+        found.append((if_stmt, variable, len(conditions)))
+    return found
+
+
+def _check_type_switch(tree: object, rel: str, out: list[ArchSuggestion]) -> None:
+    """HALLMARK->PATTERN: an elif chain of >=3 `isinstance(x, T)` arms on
+    the SAME `x` recommends Strategy/polymorphic dispatch (T-0332)."""
+    for if_stmt, variable, n_arms in iter_type_switch_chains(tree):
         _emit(
             "type-switch",
             "pattern-recommendation",
             rel,
             if_stmt.start_point[0] + 1,
-            f"`{len(conditions)}`-arm isinstance chain on `{variable}`",
+            f"`{n_arms}`-arm isinstance chain on `{variable}`",
             out,
         )
 
