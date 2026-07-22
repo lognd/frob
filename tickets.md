@@ -3796,6 +3796,8 @@ evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - tests/test_refs_gate.py::TestTiers::test_one_ref_weak_warns_ref002
 - tests/test_refs_gate.py::TestReferenceDetection::test_markdown_link_counts_as_a_reference
+- tests/test_refs_gate.py::TestTiers::test_zero_refs_warns_ref001
+- tests/test_refs_gate.py::TestTiers::test_two_refs_passes
 attachments: []
 acceptance: []
 threat: null
