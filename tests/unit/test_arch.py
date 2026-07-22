@@ -2068,3 +2068,366 @@ class TestSharedCheckOnPythonAndRust:
         # language's NormalizedFunction -- both must fire.
         assert _normalized_is_complex(py_target)
         assert _normalized_is_complex(rust_target)
+
+
+# ---------------------------------------------------------------------------
+# T-0614: KotlinAdapter -- maps a real parsed kotlin file onto
+# NormalizedModule, mirroring TestRustAdapter's structure. `tree-sitter-
+# kotlin` (via `tree-sitter-language-pack`) exposes almost no named fields
+# (see `frob.arch._kotlin`'s module docstring), so fixtures are built and
+# parsed directly through `frob.lang._walk_kotlin.parse_kotlin` (source
+# bytes -> Tree) rather than `frob.lang.raw_tree` -- `.kt`/`.kts` are not
+# wired into `frob.lang`'s `_EXTENSION_TABLE`/`_extract.py` central
+# dispatch (that is a separate follow-up ticket, T-draft-a78fa200: wiring
+# them there needs a real `_walk_kotlin` RawSymbol walker too, or
+# `parse_file`/`frob check` would KeyError on any real `.kt` file).
+# ---------------------------------------------------------------------------
+
+
+class TestKotlinAdapter:
+    """T-0614: `frob.arch._kotlin.KotlinAdapter` is the fourth
+    `LanguageAdapter` implementation (after T-0610's `PythonAdapter`/
+    T-0611's `TypeScriptAdapter`/T-0612's `RustAdapter`), built off
+    `tree-sitter-kotlin`. These tests hand-build small kotlin snippets
+    covering every `NormalizedModule` entity kind, plus one stays-sane
+    test on a more realistic multi-construct snippet."""
+
+    def test_is_a_language_adapter(self) -> None:
+        from frob.arch._kotlin import KotlinAdapter
+        from frob.arch._normalized import LanguageAdapter
+
+        adapter = KotlinAdapter()
+        assert isinstance(adapter, LanguageAdapter)
+        assert adapter.language == "kotlin"
+
+    def _adapt(self, source: str, filename: str = "mod.kt"):
+        from frob.arch._kotlin import KotlinAdapter
+        from frob.lang._walk_kotlin import parse_kotlin
+
+        src = source.encode()
+        tree = parse_kotlin(src)
+        assert not tree.root_node.has_error
+        return KotlinAdapter().adapt(tree, src, filename)
+
+    def test_adapt_imports(self) -> None:
+        module = self._adapt(
+            "import java.util.List\n"
+            "import kotlin.io.println as printLn\n"
+            "import kotlin.collections.*\n"
+        )
+        assert len(module.imports) == 3
+        plain = next(i for i in module.imports if i.module == "java.util.List")
+        assert plain.names == []
+        aliased = next(i for i in module.imports if i.module == "kotlin.io.println")
+        assert aliased.names == ["printLn"]
+        wildcard = next(i for i in module.imports if i.module == "kotlin.collections")
+        assert wildcard.names == []
+
+    def test_adapt_class_bases_fields_and_methods(self) -> None:
+        module = self._adapt(
+            "interface Speaker {\n"
+            "    fun speak(): String\n"
+            "}\n"
+            "open class Animal(val name: String, age: Int) : Speaker {\n"
+            '    var mood: String = "neutral"\n'
+            "    fun greet(other: Animal) {}\n"
+            "}\n"
+        )
+        classes = {c.name: c for c in module.classes}
+        assert set(classes) == {"Speaker", "Animal"}
+        # `interface` and `class` share one grammar node type, so an
+        # interface's own bodyless method comes back as a NormalizedClass
+        # method too.
+        assert {m.name for m in classes["Speaker"].methods} == {"speak"}
+        assert classes["Speaker"].methods[0].body_line_count == 0
+
+        animal = classes["Animal"]
+        assert animal.bases == ["Speaker"]
+        # `name` (a `val` constructor parameter) is a field; `age` (a
+        # plain constructor parameter, no `val`/`var`) is NOT -- kotlin's
+        # own property-vs-parameter distinction.
+        field_names = {f.name for f in animal.fields}
+        assert field_names == {"name", "mood"}
+        assert {m.name for m in animal.methods} == {"greet"}
+
+    def test_adapt_data_class_constructor_properties(self) -> None:
+        module = self._adapt("data class Point(val x: Int, val y: Int)\n")
+        point = module.classes[0]
+        assert point.name == "Point"
+        assert {f.name: f.type for f in point.fields} == {"x": "Int", "y": "Int"}
+
+    def test_adapt_sealed_class_with_no_body(self) -> None:
+        module = self._adapt("sealed class Shape\n")
+        shape = module.classes[0]
+        assert shape.name == "Shape"
+        assert shape.fields == []
+        assert shape.methods == []
+
+    def test_adapt_override_modifier(self) -> None:
+        module = self._adapt(
+            "open class Animal {\n"
+            '    open fun speak(): String { return "..." }\n'
+            "}\n"
+            "class Dog : Animal() {\n"
+            '    override fun speak(): String { return "Woof" }\n'
+            "}\n"
+        )
+        classes = {c.name: c for c in module.classes}
+        animal_speak = classes["Animal"].methods[0]
+        dog_speak = classes["Dog"].methods[0]
+        assert animal_speak.overrides is None
+        assert dog_speak.overrides == "speak"
+
+    def test_adapt_function_params_and_return_type(self) -> None:
+        from frob.arch._normalized import NormalizedParam
+
+        module = self._adapt(
+            "fun add(x: Int, y: Int = 5): Int {\n    return x + y\n}\n"
+        )
+        assert len(module.functions) == 1
+        fn = module.functions[0]
+        assert fn.name == "add"
+        assert fn.return_type == "Int"
+        assert fn.params == [
+            NormalizedParam(name="x", type="Int", has_default=False),
+            NormalizedParam(name="y", type="Int", has_default=True),
+        ]
+
+    def test_adapt_branches_loops_calls_field_accesses(self) -> None:
+        module = self._adapt(
+            "class Widget(var count: Int) {\n"
+            "    fun bump(flag: Boolean) {\n"
+            "        if (this.count > 0 && flag) {\n"
+            "            this.count = this.count + 1\n"
+            "        }\n"
+            "        for (i in 1..3) {\n"
+            "            print(i)\n"
+            "        }\n"
+            "    }\n"
+            "}\n"
+        )
+        method = module.classes[0].methods[0]
+        assert any(
+            b.condition_text == "this.count > 0 && flag" for b in method.branches
+        )
+        assert any(loop.kind == "for" for loop in method.loops)
+        assert any(c.callee == "print" for c in method.calls)
+        writes = [
+            fa for fa in method.field_accesses if fa.name == "count" and fa.is_write
+        ]
+        reads = [
+            fa for fa in method.field_accesses if fa.name == "count" and not fa.is_write
+        ]
+        assert writes
+        assert reads
+
+    def test_adapt_method_chain_does_not_confuse_calls_with_field_accesses(
+        self,
+    ) -> None:
+        module = self._adapt(
+            "class Widget(val name: String) {\n"
+            "    fun shout(): String {\n"
+            "        return this.name.uppercase()\n"
+            "    }\n"
+            "}\n"
+        )
+        method = module.classes[0].methods[0]
+        assert [fa.name for fa in method.field_accesses] == ["name"]
+        assert "this.name.uppercase" in [c.callee for c in method.calls]
+
+    def test_adapt_when_entries_are_branches_and_loop_kinds(self) -> None:
+        module = self._adapt(
+            "fun classify(mood: String) {\n"
+            "    when (mood) {\n"
+            '        "happy" -> print("yay")\n'
+            '        "sad" -> print("aw")\n'
+            '        else -> print("meh")\n'
+            "    }\n"
+            "}\n"
+            "fun loops() {\n"
+            "    var i = 0\n"
+            "    while (i < 3) {\n"
+            "        i = i + 1\n"
+            "    }\n"
+            "    do {\n"
+            "        i = i - 1\n"
+            "    } while (i > 0)\n"
+            "}\n"
+        )
+        classify = next(f for f in module.functions if f.name == "classify")
+        # Each `when_entry` counts as its own branch (T-0614's explicit
+        # divergence from `_python.py`'s deliberate match/case exclusion,
+        # the same shape as `_rust.py`'s documented `match_arm` counting).
+        assert len(classify.branches) == 3
+        assert any(b.condition_text == "else" for b in classify.branches)
+
+        loopy = next(f for f in module.functions if f.name == "loops")
+        assert {loop.kind for loop in loopy.loops} == {"while", "do-while"}
+
+    def test_adapt_throw_and_catch(self) -> None:
+        module = self._adapt(
+            "fun risky() {\n"
+            "    try {\n"
+            "        doIt()\n"
+            "    } catch (e: RuntimeException) {\n"
+            "        print(e)\n"
+            "    }\n"
+            '    throw RuntimeException("bad")\n'
+            "}\n"
+        )
+        fn = module.functions[0]
+        assert len(fn.catches) == 1
+        assert fn.catches[0].exception_type == "RuntimeException"
+        assert any(r.exception_type == "RuntimeException" for r in fn.raises)
+
+    def test_adapt_stays_sane_on_realistic_snippet(self) -> None:
+        # A denser, more realistic kotlin module exercising every entity
+        # kind at once (imports, an interface, a class implementing it
+        # with a property/override/branches/loops/calls/field-accesses/
+        # when/try-catch/throw, a data class, a sealed class, a free
+        # function) -- proves the adapter does not choke or silently drop
+        # entities when they co-occur.
+        module = self._adapt(
+            "package com.example\n"
+            "\n"
+            "import java.util.List\n"
+            "\n"
+            "interface Speaker {\n"
+            "    fun speak(): String\n"
+            "}\n"
+            "\n"
+            "open class Animal(val name: String, age: Int) : Speaker {\n"
+            '    var mood: String = "neutral"\n'
+            "\n"
+            "    override fun speak(): String {\n"
+            '        if (this.name.length > 3 && this.mood == "happy") {\n'
+            '            return "Woof"\n'
+            "        } else {\n"
+            '            return "meh"\n'
+            "        }\n"
+            "    }\n"
+            "\n"
+            "    fun greet(other: Animal) {\n"
+            '        this.mood = "excited"\n'
+            "        other.speak()\n"
+            "        for (i in 1..3) {\n"
+            "            print(i)\n"
+            "        }\n"
+            "        when (mood) {\n"
+            '            "happy" -> print("yay")\n'
+            '            else -> print("meh")\n'
+            "        }\n"
+            "        try {\n"
+            "            risky()\n"
+            "        } catch (e: RuntimeException) {\n"
+            "            print(e)\n"
+            "        }\n"
+            '        throw RuntimeException("bad")\n'
+            "    }\n"
+            "}\n"
+            "\n"
+            "data class Point(val x: Int, val y: Int)\n"
+            "\n"
+            "sealed class Shape\n"
+            "\n"
+            "fun topLevel(a: Int, b: Int = 5): Int {\n"
+            "    return a + b\n"
+            "}\n"
+        )
+        assert module.language == "kotlin"
+        assert module.imports[0].module == "java.util.List"
+        classes = {c.name: c for c in module.classes}
+        assert set(classes) == {"Speaker", "Animal", "Point", "Shape"}
+        animal = classes["Animal"]
+        assert animal.bases == ["Speaker"]
+        methods = {m.name: m for m in animal.methods}
+        assert set(methods) == {"speak", "greet"}
+        assert methods["speak"].overrides == "speak"
+        assert methods["greet"].overrides is None
+        greet = methods["greet"]
+        assert greet.loops
+        assert greet.calls
+        assert greet.field_accesses
+        assert greet.branches
+        assert greet.raises
+        assert greet.catches
+        funcs = {f.name: f for f in module.functions}
+        assert set(funcs) == {"topLevel"}
+
+        # Round-trips through pydantic (de)serialization, same as the
+        # hand-built python/TypeScript/rust `NormalizedModule` shape tests.
+        from frob.arch._normalized import NormalizedModule
+
+        restored = NormalizedModule.model_validate(module.model_dump())
+        assert restored == module
+
+
+class TestSharedCheckOnPythonAndKotlin:
+    """T-0614's acceptance criterion: a shared arch check written once
+    against `NormalizedModule` fires identically on an equivalent python
+    fixture (via `PythonAdapter`) and kotlin fixture (via
+    `KotlinAdapter`) -- no per-language branch in the check itself. Reuses
+    the same `_iter_normalized_functions`/`_normalized_is_complex` helpers
+    every other `TestSharedCheckOnPythonAnd*` class already proves this
+    against."""
+
+    _PY_LONG_FUNC = TestSharedCheckOnPythonAndTypeScript._PY_LONG_FUNC
+    _KOTLIN_LONG_FUNC = (
+        "fun configurePipeline(a: Boolean, b: Boolean, c: Boolean, d: Int): Boolean {\n"
+        "    if (a) {\n"
+        "        if (b) {\n"
+        "            if (c) {\n"
+        "                for (i in 0..d) {\n"
+        "                    if (i > 0) {\n"
+        "                        while (i > 0) {\n"
+        "                            if (a && b) {\n"
+        "                            }\n"
+        "                        }\n"
+        "                    }\n"
+        "                }\n"
+        "            }\n"
+        "        }\n"
+        "    }\n"
+        "    return a\n"
+        "}\n"
+    )
+
+    def test_long_complex_function_flags_identically_across_languages(self) -> None:
+        import tempfile
+
+        from frob.arch._kotlin import KotlinAdapter
+        from frob.arch._python import (
+            PythonAdapter,
+            _iter_normalized_functions,
+            _normalized_is_complex,
+        )
+        from frob.lang import raw_tree
+        from frob.lang._walk_kotlin import parse_kotlin
+
+        with tempfile.TemporaryDirectory() as tmp:
+            py_path = Path(tmp) / "long_func.py"
+            py_path.write_text(self._PY_LONG_FUNC)
+            py_tree, py_src, py_lang = raw_tree(py_path).danger_ok
+            assert py_lang == "python"
+            py_module = PythonAdapter().adapt(py_tree, py_src, "long_func.py")
+
+        kt_src = self._KOTLIN_LONG_FUNC.encode()
+        kt_tree = parse_kotlin(kt_src)
+        assert not kt_tree.root_node.has_error
+        kt_module = KotlinAdapter().adapt(kt_tree, kt_src, "long_func.kt")
+
+        py_target = next(
+            f
+            for f, _prefix in _iter_normalized_functions(py_module)
+            if f.name == "configure_pipeline"
+        )
+        kt_target = next(
+            f
+            for f, _prefix in _iter_normalized_functions(kt_module)
+            if f.name == "configurePipeline"
+        )
+
+        # The SAME shared check function, unmodified, called on each
+        # language's NormalizedFunction -- both must fire.
+        assert _normalized_is_complex(py_target)
+        assert _normalized_is_complex(kt_target)

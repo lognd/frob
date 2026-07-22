@@ -19,6 +19,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
 ## [0.89.0] - unreleased
 
+- T-0614: arch: Kotlin adapter for the normalized code model (`frob.arch._kotlin.KotlinAdapter`)
 - T-0707: selfconform: SYS102 unmodeled code src/frob/registry -- model the registry package
 
 ## [0.88.0] - unreleased

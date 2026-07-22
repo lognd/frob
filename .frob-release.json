@@ -121,6 +121,8 @@
     "src/frob/app/vet_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/xref_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/arch/__init__.py::analyze_project": "852f784a8a314e41c9ff1654a2e28d8d93c4710e603606dd3a498e3608082bc7",
+    "src/frob/arch/_kotlin.py::KotlinAdapter": "01f16c6917a994b14ee14cec4aad49f19dac7a1902f1b863246cd0f4ecc060f6",
+    "src/frob/arch/_kotlin.py::KotlinAdapter.adapt": "0c57832dc79ce96209c1a1ae671bbb1808b6b61baffc12c19d893376a6afe64e",
     "src/frob/arch/_models.py::ArchResult": "bb142d78c52b04dc8ce918d87d3be9ff04153b944668c3836d9f0c241930a74d",
     "src/frob/arch/_models.py::ArchResult.as_json": "48b9248523b087dc9e7b32cb2edf9190690bf1624ca640ac8c00b6a7182c4266",
     "src/frob/arch/_models.py::ArchResult.as_text": "172dd4d365ee80aaeb22db8a426cfe5fe2ad5b39de7e8b75834a087a19975f51",
