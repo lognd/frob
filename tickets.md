@@ -4432,9 +4432,9 @@ labels: []
 ```
 T-0410 wrapped frob.lang.parse_file in memoize_per_run (first-call-deferred wrapper); the static call graph then lost parse_file's edges to its private helpers (_warn_if_partial_tree, _find_following_symbol), erroring two previously-sound frob:tests bindings the moment COV006 was promoted to error. Teach reachability to see through memoize_per_run/functools.wraps-style decorators (resolve the wrapped underlying function's edges), then remove the two waivers in tests/test_lang.py. Scope: src/frob/graph/callgraph.py, src/frob/gates/__init__.py COV006 helpers, tests/test_lang.py, tests/test_gates.py.
 
-<!-- ticket:T-draft-ac820c46 -->
+<!-- ticket:T-0584 -->
 ```yaml
-id: T-draft-ac820c46
+id: T-0584
 title: 'PRE001 catch-22 on slow mounts: sweep needs a timeout/partial-state or async
   design (T-0355 item 2)'
 state: queued
