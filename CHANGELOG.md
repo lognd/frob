@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.81.0] - unreleased
+
+- T-0595: strata audit G1 (full closure): bind ENDORSE boundary predicate to an OBSERVED sanitizer call site in code
+
 ## [0.80.0] - unreleased
 
 - T-0613: wire tree-sitter-kotlin grammar into frob.lang (raw walk only, via `frob.lang._walk_kotlin`; no normalized-model mapping yet)

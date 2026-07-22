@@ -309,6 +309,60 @@ def _python_imports_with_lines(path: Path, root: Path) -> list[tuple[str, int]]:
     return results
 
 
+def _call_target_name(func: ast.expr) -> str | None:
+    """The bare identifier one `ast.Call.func` resolves to: `Name.id` for a
+    plain call (`sanitize(x)`) or `Attribute.attr` for a method/module call
+    (`html.sanitize(x)` -> `"sanitize"`), or `None` for any other callable
+    expression (a subscript, a call result) -- deliberately conservative,
+    the same no-dynamic-dispatch-resolution posture `_effects.py`'s own
+    substring observation already takes (docs/audits/strata.md G1)."""
+    if isinstance(func, ast.Name):
+        return func.id
+    if isinstance(func, ast.Attribute):
+        return func.attr
+    return None
+
+
+def _call_names(tree: ast.Module) -> frozenset[str]:
+    """Every distinct call-target name (`_call_target_name`) found anywhere
+    in `tree`."""
+    names: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            name = _call_target_name(node.func)
+            if name is not None:
+                names.add(name)
+    return frozenset(names)
+
+
+# frob:doc docs/strata/surface.md#code-binding-tier-2-v0-implementation
+def observed_call_names(
+    binding: CodeBinding, root: Path, node_id: str
+) -> frozenset[str]:
+    """Every distinct call-target name observed anywhere in `node_id`'s
+    `code=`-bound files (docs/audits/strata.md G1 stronger half) -- the
+    code-side half of the ENDORSE-boundary predicate join
+    `_threat.py::_predicate_is_code_bound` needs: a boundary's `predicate`
+    (an opaque string like `"jwt_verified"`) is trusted as real evidence
+    of a mitigation only when it ALSO names an observed call site in the
+    guarded node's own bound code, not merely a plausible-sounding string
+    declared in the model with nothing joined against it.
+
+    A file that fails to parse contributes no call names rather than
+    aborting the whole join (mirrors `_python_imports_with_lines`'s own
+    `_parse_ast`-failure handling -- deny-by-default at the boundary
+    level, not a hard crash at the file level)."""
+    names: set[str] = set()
+    for rel in sorted(binding.owner):
+        if binding.owner[rel] != node_id:
+            continue
+        tree = _parse_ast(root / rel)
+        if tree is None:
+            continue
+        names |= _call_names(tree)
+    return frozenset(names)
+
+
 def _bound_dst(
     binding: CodeBinding, spec: str, file_dir: Path, root: Path
 ) -> str | None:
@@ -404,4 +458,5 @@ __all__ = [
     "bind_code",
     "check_import_conformance",
     "is_managed",
+    "observed_call_names",
 ]

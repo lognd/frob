@@ -974,6 +974,175 @@ class TestMitigationKindChokepoint:
         assert result.danger_ok == ()
 
 
+# frob:ticket T-0595
+class TestCodeBoundMitigationPredicate:
+    """docs/audits/strata.md G1 stronger half (T-0595): an ENDORSE boundary
+    whose predicate resolves to a real claim (T-0498's weaker half) is
+    STILL, on its own, an unverified model-side string -- it must also
+    name an OBSERVED sanitizer/validator call site in the guarded flow's
+    destination node's own `code=`-bound files. Every case here passes a
+    real `binding`/`root` (a `tmp_path` file tree via `bind_code`); the
+    no-binding cases already covered by `TestMitigationKindChokepoint`
+    (binding=None) must keep discharging exactly as before -- this class
+    only exercises the NEW code-tree-supplied path."""
+
+    # frob:ticket T-0595
+    def _model(self, claim_id: str) -> KernelModel:
+        """The shared Evil->Web/ENDORSE-boundary/CWE-79 fixture every case
+        in this class reuses, varying only the code tree written under
+        `tmp_path` (arrange-act scaffold shared with
+        `TestMitigationKindChokepoint`, same claim shape)."""
+        evil = Node(id="Evil", trust="foreign")
+        web = Node(
+            id="Web", trust="trusted", may=("html_render",), attrs=("code=api/**",)
+        )
+        return KernelModel(
+            nodes=(evil, web),
+            flows=(Flow(id="f1", src="Evil", dst="Web"),),
+            boundaries=(
+                Boundary(
+                    id="b1",
+                    flow_id="f1",
+                    direction=BoundaryDirection.ENDORSE,
+                    from_level="foreign",
+                    to_level="trusted",
+                    predicate="output_encoding",
+                    obligations=(claim_id,),
+                ),
+            ),
+            claims=(
+                Claim(
+                    id=claim_id,
+                    body=NoFlow(src="foreign", dst="Web"),
+                    required_rung=Rung.L4,
+                ),
+            ),
+        )
+
+    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:ticket T-0595
+    def test_no_observed_call_site_fails_closed_naming_the_boundary(
+        self, tmp_path: Path
+    ):
+        """The ticket's acceptance repro: `output_encoding` is never
+        CALLED anywhere in Web's bound code (only mentioned as a
+        docstring word, so a naive substring scan would be fooled but a
+        real AST call-site join is not) -- discharge must fail closed and
+        the violation must name the unbound boundary id."""
+        claim_id = _discharge_claim_id("CWE-79", "Web")
+        model = self._model(claim_id)
+        _write(
+            tmp_path,
+            "api/handler.py",
+            '"""Uses output_encoding somewhere in a comment, never calls it."""\n'
+            "def render(x):\n"
+            "    return x\n",
+        )
+        binding = bind_code(model, tmp_path).danger_ok
+        result = check_discharge_completeness(model, binding=binding, root=tmp_path)
+        assert result.is_ok
+        violations = result.danger_ok
+        assert len(violations) == 1
+        assert violations[0].rule == "THREAT003"
+        assert "b1" in violations[0].detail
+        assert "no OBSERVED sanitizer" in violations[0].detail
+
+    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:ticket T-0595
+    def test_observed_call_site_discharges(self, tmp_path: Path):
+        """The positive case: `output_encoding(...)` really is CALLED in
+        Web's own bound code -- discharge succeeds."""
+        claim_id = _discharge_claim_id("CWE-79", "Web")
+        model = self._model(claim_id)
+        _write(
+            tmp_path,
+            "api/handler.py",
+            "def render(x):\n    return output_encoding(x)\n",
+        )
+        binding = bind_code(model, tmp_path).danger_ok
+        result = check_discharge_completeness(model, binding=binding, root=tmp_path)
+        assert result.is_ok
+        assert result.danger_ok == ()
+
+    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:ticket T-0595
+    def test_call_site_via_attribute_access_also_discharges(self, tmp_path: Path):
+        """A method/module-qualified call (`html.output_encoding(x)`) is
+        also an observed call site -- `_call_target_name` resolves
+        `Attribute.attr`, not just a bare `Name`."""
+        claim_id = _discharge_claim_id("CWE-79", "Web")
+        model = self._model(claim_id)
+        _write(
+            tmp_path,
+            "api/handler.py",
+            "import html\ndef render(x):\n    return html.output_encoding(x)\n",
+        )
+        binding = bind_code(model, tmp_path).danger_ok
+        result = check_discharge_completeness(model, binding=binding, root=tmp_path)
+        assert result.is_ok
+        assert result.danger_ok == ()
+
+    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:ticket T-0595
+    def test_call_site_in_a_different_nodes_code_does_not_count(self, tmp_path: Path):
+        """`output_encoding` called only in a file owned by a DIFFERENT
+        node (not Web, the flow's destination) must not count -- the
+        join is scoped to the guarded destination node's own bound code,
+        not the whole repo."""
+        evil = Node(id="Evil", trust="foreign", attrs=("code=other/**",))
+        web = Node(
+            id="Web", trust="trusted", may=("html_render",), attrs=("code=api/**",)
+        )
+        claim_id = _discharge_claim_id("CWE-79", "Web")
+        model = KernelModel(
+            nodes=(evil, web),
+            flows=(Flow(id="f1", src="Evil", dst="Web"),),
+            boundaries=(
+                Boundary(
+                    id="b1",
+                    flow_id="f1",
+                    direction=BoundaryDirection.ENDORSE,
+                    from_level="foreign",
+                    to_level="trusted",
+                    predicate="output_encoding",
+                    obligations=(claim_id,),
+                ),
+            ),
+            claims=(
+                Claim(
+                    id=claim_id,
+                    body=NoFlow(src="foreign", dst="Web"),
+                    required_rung=Rung.L4,
+                ),
+            ),
+        )
+        _write(
+            tmp_path, "other/attacker.py", "def f(x):\n    return output_encoding(x)\n"
+        )
+        _write(tmp_path, "api/handler.py", "def render(x):\n    return x\n")
+        binding = bind_code(model, tmp_path).danger_ok
+        result = check_discharge_completeness(model, binding=binding, root=tmp_path)
+        assert result.is_ok
+        violations = result.danger_ok
+        assert len(violations) == 1
+        assert "b1" in violations[0].detail
+
+    # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
+    # frob:ticket T-0595
+    def test_absent_binding_keeps_the_old_weaker_half_behavior(self, tmp_path: Path):
+        """Backward compatibility: a caller with no code tree at all
+        (`binding`/`root` both None/omitted, e.g. every pre-T-0595 caller)
+        must keep discharging on T-0498's weaker half alone -- this is
+        `TestMitigationKindChokepoint.
+        test_endorse_boundary_with_matching_predicate_discharges`'s exact
+        model, confirmed unaffected by this ticket's change."""
+        claim_id = _discharge_claim_id("CWE-79", "Web")
+        model = self._model(claim_id)
+        result = check_discharge_completeness(model)
+        assert result.is_ok
+        assert result.danger_ok == ()
+
+
 # frob:ticket T-0501
 class TestFlowCompletenessGap:
     """T-0501 (docs/audits/strata.md G2): a `NoFlow(src="foreign", ...)`

@@ -85,7 +85,7 @@ from typani.result import Err, Ok, Result
 from frob.logging import get_logger
 
 from ._claims import evaluate_claims
-from ._code_binding import FOREIGN, CodeBinding, is_managed
+from ._code_binding import FOREIGN, CodeBinding, is_managed, observed_call_names
 from ._effects import (
     CapabilityViolation,
     ObservedEffect,
@@ -1602,15 +1602,73 @@ def _obligations_resolve(model: KernelModel, boundary: Boundary) -> bool:
     return all(ref in claim_ids for ref in boundary.obligations)
 
 
-def _matching_boundary_ids(model: KernelModel, entry: WeaknessEntry) -> frozenset[str]:
+def _boundary_flow_dst(model: KernelModel, boundary: Boundary) -> str | None:
+    """The node id at the receiving end of `boundary`'s own flow -- the
+    guarded code path an ENDORSE boundary's predicate must be OBSERVED in
+    (docs/audits/strata.md G1 stronger half): the flow's `dst` is where
+    the endorsed data lands, so a real sanitizer/validator call site is
+    expected in that node's own `code=`-bound files, not the source's.
+    `None` if `boundary.flow_id` names no flow in `model` -- should not
+    happen for a well-formed model, but this join never raises on it."""
+    for flow in model.flows:
+        if flow.id == boundary.flow_id:
+            return flow.dst
+    return None
+
+
+def _predicate_is_code_bound(
+    model: KernelModel,
+    binding: CodeBinding | None,
+    root: Path | None,
+    boundary: Boundary,
+) -> bool:
+    """Whether `boundary`'s `predicate` names an OBSERVED call site in the
+    guarded flow's destination node's own `code=`-bound files (docs/audits/
+    strata.md G1 stronger half, T-0595) -- an ENDORSE boundary whose
+    `obligations` resolve to a real `Claim.id` (T-0498's weaker half) is
+    still, by itself, only a model-side cross-reference: nothing yet joins
+    the boundary's `predicate` against any real sanitizer/validator in the
+    guarded code. `observed_call_names` (`_code_binding.py`) is the code-
+    side half of that join: `predicate` is trusted as a genuine mitigation
+    only when it also names a call target actually invoked somewhere in
+    the destination node's bound files.
+
+    When no `binding`/`root` is supplied (a design-level-only caller with
+    no code tree -- the SAME optional-join posture `check_effect_
+    completeness`'s THREAT004/005 pair already takes for binding/root),
+    this returns True: there is nothing to check a call site against in
+    that mode, and T-0498's obligations-resolve gate is the only code-
+    adjacent proof available. Every real `frob check`/`frob sys audit`-
+    style caller that has a code tree passes both, so this is not a
+    silent pass in the mode this ticket closes -- see
+    `_code_unbound_boundary_ids` for how a caller WITH a code tree turns a
+    negative result here into a named violation rather than a bare
+    exclusion."""
+    if binding is None or root is None:
+        return True
+    dst = _boundary_flow_dst(model, boundary)
+    if dst is None:
+        return False
+    return boundary.predicate in observed_call_names(binding, root, dst)
+
+
+def _matching_boundary_ids(
+    model: KernelModel,
+    entry: WeaknessEntry,
+    binding: CodeBinding | None = None,
+    root: Path | None = None,
+) -> frozenset[str]:
     """Boundary ids that carry the EXACT mitigation `entry` requires: an
     `ENDORSE`-direction boundary (a chokepoint raises integrity, it never
     lowers confidentiality -- `declassify` is the opposite operation and
     can never be a weakness mitigation, docs/strata/kernel.md#data-models)
     whose `predicate` equals `entry.mitigation` (the catalog's `needs
-    mitigation <name>` clause, docs/strata/threat.md#the-catalog-stdcwe)
-    AND whose `obligations` resolve to a real in-model claim
-    (`_obligations_resolve`, docs/audits/strata.md G1).
+    mitigation <name>` clause, docs/strata/threat.md#the-catalog-stdcwe),
+    whose `obligations` resolve to a real in-model claim
+    (`_obligations_resolve`, docs/audits/strata.md G1 weaker half, T-0498),
+    AND whose `predicate` is bound to an OBSERVED sanitizer/validator call
+    site in the guarded code (`_predicate_is_code_bound`, docs/audits/
+    strata.md G1 stronger half, T-0595).
 
     A boundary of the wrong direction, or an `endorse` boundary with an
     unrelated predicate (e.g. `"legal_review_signed_off"` sitting in for a
@@ -1619,10 +1677,12 @@ def _matching_boundary_ids(model: KernelModel, entry: WeaknessEntry) -> frozense
     regardless of kind, so without this filter a claim could be "proved"
     by a boundary that mitigates nothing relevant to this weakness. G1
     (docs/audits/strata.md): a matching-predicate boundary with no
-    resolving `obligations` is ALSO excluded -- before this, `predicate`
-    was an opaque, self-declared string joined against nothing else in
-    the model or the code (THREAT003 "PROVED" required zero evidence that
-    the claimed mitigation was real).
+    resolving `obligations`, or (when a code tree is available) no
+    observed call site for its `predicate` in the guarded destination
+    node's own code, is ALSO excluded -- before this, `predicate` was an
+    opaque, self-declared string joined against nothing else in the model
+    or the code (THREAT003 "PROVED" required zero evidence that the
+    claimed mitigation was real).
     """
     return frozenset(
         boundary.id
@@ -1630,6 +1690,35 @@ def _matching_boundary_ids(model: KernelModel, entry: WeaknessEntry) -> frozense
         if boundary.direction is BoundaryDirection.ENDORSE
         and boundary.predicate == entry.mitigation
         and _obligations_resolve(model, boundary)
+        and _predicate_is_code_bound(model, binding, root, boundary)
+    )
+
+
+def _code_unbound_boundary_ids(
+    model: KernelModel,
+    entry: WeaknessEntry,
+    binding: CodeBinding | None,
+    root: Path | None,
+) -> frozenset[str]:
+    """Boundary ids that satisfy every OTHER `_matching_boundary_ids`
+    criterion (ENDORSE direction, matching predicate, resolving
+    obligations) but fail SPECIFICALLY `_predicate_is_code_bound` --
+    named individually (docs/audits/strata.md G1, T-0595) so
+    `_check_discharge_mitigation_kind`'s violation can call out the exact
+    unbound boundary rather than folding it into the generic
+    mitigation-kind mismatch message. Always empty when `binding`/`root`
+    is None (nothing to check, see `_predicate_is_code_bound`) -- a
+    design-level-only caller gets zero findings from this join, same as
+    it always has."""
+    if binding is None or root is None:
+        return frozenset()
+    return frozenset(
+        boundary.id
+        for boundary in model.boundaries
+        if boundary.direction is BoundaryDirection.ENDORSE
+        and boundary.predicate == entry.mitigation
+        and _obligations_resolve(model, boundary)
+        and not _predicate_is_code_bound(model, binding, root, boundary)
     )
 
 
@@ -1777,14 +1866,22 @@ def _flow_completeness_gap(model: KernelModel, claim: Claim) -> str | None:
 # mitigation-kind proof is out of v0's scope, noted here and in
 # threat.md rather than silently assumed away.
 def _mitigation_is_chokepoint(
-    model: KernelModel, entry: WeaknessEntry, claim: Claim
+    model: KernelModel,
+    entry: WeaknessEntry,
+    claim: Claim,
+    binding: CodeBinding | None = None,
+    root: Path | None = None,
 ) -> bool:
     """Whether the catalog-correct mitigation for `entry` is a genuine
     chokepoint for `claim`, not merely one boundary among several that
-    happens to also block a path -- see the comment above this def."""
+    happens to also block a path -- see the comment above this def.
+    `binding`/`root` (T-0595, docs/audits/strata.md G1 stronger half) are
+    threaded through to `_matching_boundary_ids` so a boundary whose
+    predicate names no observed call site in the guarded code is not
+    counted as a genuine chokepoint candidate."""
     if _claim_holds(_restricted_to_boundaries(model, frozenset(), claim), claim):
         return True
-    matching = _matching_boundary_ids(model, entry)
+    matching = _matching_boundary_ids(model, entry, binding, root)
     if not matching:
         return False
     return _claim_holds(_restricted_to_boundaries(model, matching, claim), claim)
@@ -1865,6 +1962,21 @@ def _check_discharge_assumed_and_refuted(
 # above), and clear the catalog rung -- only the boundary-KIND proof is
 # exempted, same as an assume gets.
 # frob:ticket T-0501
+def _unbound_boundary_detail(entry: WeaknessEntry, unbound: frozenset[str]) -> str:
+    """The G1-stronger-half violation detail naming every ENDORSE boundary
+    that matches `entry`'s mitigation and resolves its obligations, but
+    whose `predicate` names no observed sanitizer/validator call site in
+    the guarded code (docs/audits/strata.md G1, T-0595) -- sorted for a
+    deterministic message."""
+    ids = ", ".join(sorted(unbound))
+    return (
+        f"ENDORSE boundary(ies) {ids} match mitigation {entry.mitigation!r} and "
+        f"resolve to a real claim but have no OBSERVED sanitizer/validator "
+        f"call site named {entry.mitigation!r} in the guarded destination "
+        f"node's bound code (docs/audits/strata.md G1)"
+    )
+
+
 def _check_discharge_mitigation_kind(
     entry: WeaknessEntry,
     node_id: str,
@@ -1872,6 +1984,8 @@ def _check_discharge_mitigation_kind(
     claim_id: str,
     nodes_by_id: dict[str, Node],
     model: KernelModel,
+    binding: CodeBinding | None = None,
+    root: Path | None = None,
 ) -> ThreatViolation | None:
     """Last `_check_one_discharge` gate: for a non-assumed claim on a
     non-managed node, the proven chokepoint must be of the catalog's
@@ -1884,7 +1998,16 @@ def _check_discharge_mitigation_kind(
     un-modeled foreign->sink flow or a model with no foreign-trust node
     at all must fail closed with a finding naming the incompleteness, not
     silently PROVED just because assumed/managed claims are otherwise
-    exempt from the mitigation-kind check below."""
+    exempt from the mitigation-kind check below.
+
+    T-0595: when `_mitigation_is_chokepoint` fails AND `binding`/`root`
+    are supplied, checks whether the failure is SPECIFICALLY because a
+    matching boundary's predicate has no observed call site
+    (`_code_unbound_boundary_ids`, docs/audits/strata.md G1 stronger
+    half) and, if so, names the unbound boundary(ies) explicitly rather
+    than falling through to the generic mismatch message -- the
+    acceptance-tested "fails closed with a finding naming the unbound
+    boundary" shape."""
     node = nodes_by_id.get(node_id)
     node_is_managed = node is not None and is_managed(node)
     if claim.assumed or node_is_managed:
@@ -1892,7 +2015,14 @@ def _check_discharge_mitigation_kind(
     gap = _flow_completeness_gap(model, claim)
     if gap is not None:
         return _discharge_violation(entry, node_id, f"claim {claim_id!r} {gap}")
-    if not _mitigation_is_chokepoint(model, entry, claim):
+    if not _mitigation_is_chokepoint(model, entry, claim, binding, root):
+        unbound = _code_unbound_boundary_ids(model, entry, binding, root)
+        if unbound:
+            return _discharge_violation(
+                entry,
+                node_id,
+                f"claim {claim_id!r} {_unbound_boundary_detail(entry, unbound)}",
+            )
         return _discharge_violation(
             entry,
             node_id,
@@ -1912,6 +2042,8 @@ def _check_one_discharge(
     results_by_id: dict[str, ClaimResult],
     nodes_by_id: dict[str, Node],
     model: KernelModel,
+    binding: CodeBinding | None = None,
+    root: Path | None = None,
 ) -> ThreatViolation | None:
     """One fired obligation's discharge check: present, shaped as a proven
     mitigation chokepoint of the CORRECT kind, not REFUTED, at or above the
@@ -1921,7 +2053,9 @@ def _check_one_discharge(
     threat.md#phasing item C). The four gates run in this exact order via
     `_check_discharge_shape_and_rung`, `_check_discharge_assumed_and_refuted`,
     and `_check_discharge_mitigation_kind` -- see each helper's docstring/
-    comment for what it checks and why.
+    comment for what it checks and why. `binding`/`root` (T-0595) are
+    threaded through to the last gate only -- the earlier three never
+    consult the code tree.
     """
     claim_id = _discharge_claim_id(entry.id, node_id)
     claim = claims_by_id.get(claim_id)
@@ -1940,14 +2074,17 @@ def _check_one_discharge(
     if violation is not None:
         return violation
     return _check_discharge_mitigation_kind(
-        entry, node_id, claim, claim_id, nodes_by_id, model
+        entry, node_id, claim, claim_id, nodes_by_id, model, binding, root
     )
 
 
 # frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
+# frob:ticket T-0595
 def check_discharge_completeness(
     model: KernelModel,
     catalog: tuple[WeaknessEntry, ...] = CWE_CATALOG,
+    binding: CodeBinding | None = None,
+    root: Path | None = None,
 ) -> Result[tuple[ThreatViolation, ...], StrataError]:
     """THREAT003: every FIRED weakness obligation (a node declares the `may`
     capability kind that drags it in) is discharged by a `Claim` named
@@ -1955,6 +2092,15 @@ def check_discharge_completeness(
     evaluated at or above the catalog's required rung and never REFUTED; a
     dangling or under-evidenced obligation is a violation (docs/strata/
     threat.md#the-exhaustiveness-proof-the-point, item 3).
+
+    `binding`/`root` (T-0595, docs/audits/strata.md G1 stronger half) are
+    optional, mirroring `check_effect_completeness`'s own optional
+    code-tree join: when both are given, an ENDORSE boundary's mitigation
+    predicate must ALSO name an observed sanitizer/validator call site in
+    the guarded destination node's own bound code, not merely resolve to
+    a real in-model claim -- omitted by default since a design-level-only
+    caller has no code tree to bind (same posture THREAT004/005 already
+    take).
 
     Runs `evaluate_claims` to resolve verdicts for claims that are present;
     a missing claim never reaches evaluation -- that is itself the
@@ -1973,7 +2119,14 @@ def check_discharge_completeness(
     violations: list[ThreatViolation] = []
     for node_id, entry in sorted(fired, key=lambda pair: (pair[1].id, pair[0])):
         violation = _check_one_discharge(
-            entry, node_id, claims_by_id, results_by_id, nodes_by_id, model
+            entry,
+            node_id,
+            claims_by_id,
+            results_by_id,
+            nodes_by_id,
+            model,
+            binding,
+            root,
         )
         if violation is not None:
             violations.append(violation)
@@ -2105,14 +2258,17 @@ def _run_all_completeness_checks(
     when both `binding` and `root` are given -- THREAT004+005 (effect), in
     that exact order, short-circuiting on the first `Err` -- split out of
     `evaluate_threats` so its own line count reflects the entrypoint seam,
-    not the four-check sequence (frob-arch long-function)."""
+    not the four-check sequence (frob-arch long-function). T-0595: THREAT003
+    now also receives `binding`/`root` so its G1-stronger-half code-binding
+    join runs whenever a caller supplies a code tree, exactly like
+    THREAT004+005 already do."""
     catalog_violations = check_catalog_completeness(view, catalog, out_of_scope)
     if catalog_violations.is_err:
         return Err(catalog_violations.danger_err)
     capability_violations = check_capability_completeness(model, catalog, benign)
     if capability_violations.is_err:
         return Err(capability_violations.danger_err)
-    discharge_violations = check_discharge_completeness(model, catalog)
+    discharge_violations = check_discharge_completeness(model, catalog, binding, root)
     if discharge_violations.is_err:
         return Err(discharge_violations.danger_err)
     effect_violations: tuple[ThreatViolation, ...] = ()
