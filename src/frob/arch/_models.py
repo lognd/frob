@@ -22,6 +22,13 @@ ArchCategory = Literal[
     # "design-pattern recommender" section for the registry.
     "pattern-recommendation",
     "anti-pattern-escape",
+    # T-0616: SRP/cohesion family (ARCH1xx), written once against the T-0609
+    # normalized model (`frob.arch._srp`) so each fires identically across
+    # every `LanguageAdapter` -- see docs/modules/arch.md's "SRP/cohesion
+    # checks" section for the per-category proxy definition.
+    "low-cohesion-class",
+    "god-module",
+    "mixed-concern-function",
 ]
 
 ArchSeverity = Literal["warning", "suggestion", "info"]

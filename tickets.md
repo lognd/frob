@@ -7585,7 +7585,7 @@ Deletion-filter (`git diff main --diff-filter=D --stat`) empty.
 ```yaml
 id: T-0616
 title: 'arch: SRP/cohesion checks (ARCH1xx) -- LCOM4, god-module, mixed-concern function'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -7594,12 +7594,40 @@ blocked_by:
 - T-0609
 parent: T-0330
 scope:
-- src/frob/arch/_solid.py
 - src/frob/arch/_models.py
 - docs/modules/arch.md
 - tests/unit/test_arch.py
-scope_changes: []
-evidence: []
+- src/frob/arch/_srp.py
+- tests/unit/test_arch_srp.py
+scope_changes:
+- op: remove
+  glob: src/frob/arch/_solid.py
+  reason: 'coordination: T-0615/T-0617 concurrently touch test_arch.py, own new file
+    _srp.py + test_arch_srp.py to avoid collision'
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: src/frob/arch/_srp.py
+  reason: 'coordination: T-0615/T-0617 concurrently touch test_arch.py, own new file
+    _srp.py + test_arch_srp.py to avoid collision'
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: tests/unit/test_arch_srp.py
+  reason: 'coordination: T-0615/T-0617 concurrently touch test_arch.py, own new file
+    _srp.py + test_arch_srp.py to avoid collision'
+  actor: logan
+  at: '2026-07-22'
+evidence:
+- tests/unit/test_arch_srp.py::TestLcom4::test_disjoint_field_groups_trigger_lcom4
+- tests/unit/test_arch_srp.py::TestLcom4::test_shared_fields_do_not_trigger_lcom4
+- tests/unit/test_arch_srp.py::TestGodModule::test_unrelated_export_clusters_trigger_god_module
+- tests/unit/test_arch_srp.py::TestGodModule::test_related_exports_do_not_trigger_god_module
+- tests/unit/test_arch_srp.py::TestMixedConcernFunction::test_io_compute_and_formatting_together_trigger
+- tests/unit/test_arch_srp.py::TestMixedConcernFunction::test_single_concern_does_not_trigger
+- tests/unit/test_arch_srp.py::TestRunSrpChecks::test_combines_all_three_checks
+- tests/unit/test_arch_srp.py::TestCrossLanguage::test_lcom4_fires_on_typescript_adapter_output
+- tests/unit/test_arch_srp.py::TestCrossLanguage::test_lcom4_does_not_fire_on_cohesive_typescript_class
 attachments: []
 acceptance: []
 threat: null
@@ -7607,6 +7635,109 @@ component: null
 labels: []
 ```
 New ARCH1xx family for SRP: (1) LCOM4 low-cohesion class -- methods partition into disjoint field-usage components via a connectivity graph over self-field reads/writes; (2) god-module -- unrelated exports clustered by naming/usage disjointness; (3) mixed-concern function -- one body containing I/O capability calls + pure compute + string-formatting. Each check ships its static proxy definition, severity, ARCHxxx id, and is waivable via the existing T-0289 reasoned-override mechanism. Runs on the normalized model (T-0609) so it works across languages already adapted. Acceptance: one fixture per check triggers it; one negative fixture per check does not; docs/modules/arch.md documents each id + proxy.
+
+## Done report
+
+New `src/frob/arch/_srp.py` (EPIC T-0329's ARCH1xx SRP/cohesion family)
+implements all three checks from the plan, each written ONCE against
+`frob.arch._normalized.NormalizedModule` (T-0609) so it fires identically
+across every `LanguageAdapter` that exists (python/TypeScript/Rust/Kotlin)
+with no per-language branch in the check itself:
+
+- **ARCH101 `low-cohesion-class` (`check_lcom4`)**: builds a connectivity
+  graph over each class's field-using methods (an edge when two methods
+  share a `self.<field>` name), computed via a plain union-find, and flags
+  classes whose methods partition into 2+ disjoint components. Thresholds
+  (`LCOM4_MIN_METHODS=6`, `LCOM4_MIN_FIELD_USING_METHODS=4`) are keyword
+  args with calibrated defaults.
+- **ARCH102 `god-module` (`check_god_module`)**: clusters a module's
+  top-level exports (free functions + classes) by BOTH a naming-prefix
+  union (first `_`-token / leading capitalized run) AND a usage union
+  (an edge when one export calls another by name), so two exports that
+  call each other are never split into different clusters regardless of
+  naming, and vice versa. Flags modules with `GOD_MODULE_MIN_EXPORTS=10`+
+  exports splitting into `GOD_MODULE_MIN_CLUSTERS=3`+ clusters.
+- **ARCH103 `mixed-concern-function` (`check_mixed_concern_function`)**:
+  requires ALL THREE of an I/O-capability call (by callee-name proxy: I/O
+  builtins, well-known I/O-surface module prefixes, or stream-verb method
+  suffixes), a string-formatting call (`str`/`repr`, `.format`/`.join`),
+  and >=2 of the function's own decision points (branches/loops) --
+  STRONG-HALLMARK-ONLY, matching `frob.arch._patterns`'s existing posture.
+  `severity="suggestion"` (softer than the other two's `"warning"`, since
+  it is a heuristic name-based proxy).
+
+`run_srp_checks(module) -> list[ArchSuggestion]` runs all three and is the
+single entry point a future orchestration-wiring ticket will call per
+parsed file.
+
+**Scope discipline / out of scope, disclosed:** wiring these checks into
+`analyze_project`'s per-file dispatch (`src/frob/arch/__init__.py`) and
+threading the thresholds through `frob.toml`'s `[arch]` table
+(`src/frob/app/config.py`) is NOT done here -- neither file is in this
+ticket's declared scope (nor was `_python.py`'s existing `PythonAdapter`/
+`TypeScriptAdapter`/etc. wired into anything beyond their own module
+either, going by T-0610-0614's precedent). Every threshold is a plain
+keyword argument with a calibrated module-level default, ready for that
+follow-up wiring. New ARCH ids also required adding three categories to
+`ArchCategory` (`src/frob/arch/_models.py`) -- in scope, done.
+
+**Coordination (T-0615/T-0617 concurrently touch `tests/unit/test_arch.py`):**
+per dispatch instructions, scope-added `src/frob/arch/_srp.py` (replacing
+the originally-declared `_solid.py`, since the coordination directed the
+final module name) and `tests/unit/test_arch_srp.py`, and did NOT touch
+`tests/unit/test_arch.py` at all -- verified unchanged-green
+(`uv run pytest tests/unit/test_arch.py`, 101 passed) alongside the new
+suite.
+
+**Cross-language proof** (T-0616's coordination requirement): `TestCross
+Language` in `tests/unit/test_arch_srp.py` builds a real `NormalizedModule`
+via `TypeScriptAdapter().adapt(...)` (from a hand-written `.ts` source
+string parsed through `raw_tree`, mirroring `TestTypeScriptAdapter`'s
+existing pattern in `test_arch.py`) and proves `check_lcom4` fires/does-
+not-fire on it identically to the hand-built-`NormalizedModule` python
+unit tests, with zero language-specific code in `_srp.py` itself.
+
+**Test/gate numbers actually observed:**
+- `uv run pytest tests/unit/test_arch_srp.py -p no:cacheprovider -q`:
+  12 passed.
+- `uv run pytest tests/unit/test_arch.py -p no:cacheprovider -q`:
+  101 passed (unchanged, confirms no collision with T-0615/T-0617).
+- `uv run ruff check` / `ruff check` (both PATH and project-pinned) on
+  the three touched files: clean.
+- `uv run ruff format` (initially reformatted `tests/unit/test_arch_srp.py`
+  for line-length; applied, then clean).
+- `uv run ty check src/frob/arch/_srp.py`: clean.
+- `uv run frob check --ticket T-0616`: every gate `pass` except `gate:REL`
+  (REL001, public-API version bump) -- per docs/guides/agent-playbook.md
+  and prior land-workflow precedent (T-0699's Done report in this same
+  ledger), `pyproject.toml`/`.frob-release.json`/`CHANGELOG.md` are
+  outside this ticket's declared scope, so the version bump is the
+  coordinator's job at land time, not addressed here.
+- `git diff main --diff-filter=D --stat`: empty (no unintended deletions).
+
+Filed: none -- no out-of-scope work discovered beyond the deferred
+`analyze_project`/`frob.toml` wiring already disclosed above (which
+mirrors the existing pattern for T-0609-0615's adapters, not a new gap).
+
+### Changed
+```
+ docs/modules/arch.md        |  78 ++++++++
+ src/frob/arch/_models.py    |   7 +
+ src/frob/arch/_srp.py       | 431 ++++++++++++++++++++++++++++++++++++++++++++
+ tests/unit/test_arch_srp.py | 329 +++++++++++++++++++++++++++++++++
+ 4 files changed, 845 insertions(+)
+```
+
+### Evidence
+- `tests/unit/test_arch_srp.py::TestLcom4::test_disjoint_field_groups_trigger_lcom4` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch_srp.py::TestLcom4::test_shared_fields_do_not_trigger_lcom4` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch_srp.py::TestGodModule::test_unrelated_export_clusters_trigger_god_module` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch_srp.py::TestGodModule::test_related_exports_do_not_trigger_god_module` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch_srp.py::TestMixedConcernFunction::test_io_compute_and_formatting_together_trigger` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch_srp.py::TestMixedConcernFunction::test_single_concern_does_not_trigger` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch_srp.py::TestRunSrpChecks::test_combines_all_three_checks` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch_srp.py::TestCrossLanguage::test_lcom4_fires_on_typescript_adapter_output` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch_srp.py::TestCrossLanguage::test_lcom4_does_not_fire_on_cohesive_typescript_class` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0617 -->
 ```yaml
@@ -11512,3 +11643,34 @@ component: null
 labels: []
 ```
 Found while working T-0615 (four-way equivalence meta-test). PythonAdapter._py_class_fields (src/frob/arch/_python.py) gates on 'if c.type != "expression_statement": continue' over a class body's named_children, expecting a class-level annotated assignment to be wrapped in an expression_statement node. In practice tree-sitter-python's grammar yields the assignment node directly as a named child of the class block, with NO expression_statement wrapper. Concrete repro: PythonAdapter().adapt(...) on 'class Foo:\n    x: int = 0\n' returns classes[0].fields == [] every time -- confirmed directly against the adapter, not just inferred. No existing test caught this because TestPythonAdapter's real-fixture tests never assert on .fields via the adapter itself (only a hand-built NormalizedField construction test exists, bypassing the adapter). T-0615's tests/unit/test_arch.py::TestFourWayCrossLanguageEquivalence::test_python_field_detection_is_a_documented_waiver currently PINS this broken behavior as a documented waiver (asserting derived.fields == []) -- fixing this ticket must also update/remove that waiver test to assert real parity with TS/rust/kotlin (which all capture this shape via their own adapters).
+
+<!-- ticket:T-0728 -->
+```yaml
+id: T-0728
+title: 'arch: wire ARCH1xx SOLID checks into analyze_project, frob.toml thresholds,
+  gate registry'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: high
+blocked_by:
+- T-0616
+parent: T-0330
+scope:
+- src/frob/arch/__init__.py
+- src/frob/app/config.py
+- src/frob/gates/**
+- docs/modules/arch.md
+- tests/unit/test_arch_srp.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a fixture repo with a two-cluster class WHEN frob check runs THEN ARCH101
+  appears in arch output with frob.toml-tunable thresholds AND the rule ids are waivable/registered
+threat: null
+component: null
+labels: []
+```
+T-0616 (and successive T-0330 children) deliver check families over the normalized model with module-default thresholds, but nothing invokes them in production -- the invoked-by-nothing pattern, called out by T-0616's reviewer with the exact wiring list: (a) register run_srp_checks (and each subsequent family runner) in analyze_project's dispatch so they fire during real frob check; (b) thread the thresholds (LCOM4_MIN_METHODS, LCOM4_MIN_FIELD_USING_METHODS, GOD_MODULE_MIN_EXPORTS, GOD_MODULE_MIN_CLUSTERS, MIXED_CONCERN_MIN_DECISION_POINTS, plus later families') into frob.app.config's [arch] table; (c) add ARCH101-103 (and successors) to _KNOWN_GATE_RULES for waiver/registry visibility; (d) coordinate with T-0626's registry rows. Extend as each T-0617..T-0625 sibling lands -- this is the standing wiring home for the family.

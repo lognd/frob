@@ -26,6 +26,9 @@ has no `elif language == "..."` branch for them yet.
 | `abstraction-opportunity` | 3+ Python functions across the project sharing the same annotated parameter/return-type signature, EXCLUDING intentional dispatch/validator families (see below) | suggestion |
 | `pattern-recommendation` | a strong structural HALLMARK (isinstance chain, state-field chain, telescoping constructor, scattered construction, wrap-and-delegate class) matches a registered `frob.arch._patterns` rule | suggestion |
 | `anti-pattern-escape` | a strong structural ANTI-PATTERN (god object, stringly-typed comparison chain) matches a registered `frob.arch._patterns` rule | suggestion |
+| `low-cohesion-class` (ARCH101, T-0616) | a class's field-using methods split into 2+ disjoint field-usage components (LCOM4) -- written once against the normalized model, fires across languages | warning |
+| `god-module` (ARCH102, T-0616) | a module's 10+ top-level exports partition into 3+ disjoint naming/usage clusters -- written once against the normalized model | warning |
+| `mixed-concern-function` (ARCH103, T-0616) | one function body mixes an I/O call, a string-formatting call, and 2+ of its own decision points -- written once against the normalized model | suggestion |
 
 All thresholds are `analyze_project` keyword arguments with the defaults
 shown in the Public API section below; there is no `frob.toml` table for
@@ -266,6 +269,81 @@ explicit state`) need fuzzier signals that risk the STRONG-HALLMARK-ONLY
 constraint above without a larger detector investment -- deferred, not
 silently dropped; see `tickets.md`'s T-0332 Done report and T-draft-4fb8deee
 (the filed follow-up ticket) for the remaining rows.
+
+### SRP/cohesion checks: `low-cohesion-class` / `god-module` / `mixed-concern-function` (T-0616)
+
+<a id="srp-cohesion-checks"></a>
+<!-- frob:describes src/frob/arch/_srp.py::check_lcom4 -->
+<!-- frob:describes src/frob/arch/_srp.py::check_god_module -->
+<!-- frob:describes src/frob/arch/_srp.py::check_mixed_concern_function -->
+<!-- frob:describes src/frob/arch/_srp.py::run_srp_checks -->
+
+`frob.arch._srp` (EPIC T-0329's ARCH1xx SRP family, T-0616) is the first
+check module written ONCE against the T-0609 normalized model
+(`frob.arch._normalized.NormalizedModule`) instead of a per-language
+tree-sitter walk -- every check below fires identically for `PythonAdapter`,
+`TypeScriptAdapter`, `RustAdapter`, and `KotlinAdapter` output with no
+per-language branch in the check itself (`tests/unit/test_arch_srp.py`'s
+`TestCrossLanguage` proves this against `TypeScriptAdapter` output
+directly, alongside hand-built `NormalizedModule` fixtures for the
+language-agnostic unit tests).
+
+Like `pattern-recommendation`/`anti-pattern-escape`, all three categories
+are advisory only and waivable via the existing T-0289 reasoned-override
+mechanism (`frob:waive ARCHxxx reason="..." [ceiling=N]`); nothing here is
+build-blocking on its own.
+
+| Category | ARCH id | Signal | Severity |
+|---|---|---|---|
+| `low-cohesion-class` | ARCH101 | a class's field-using methods partition into 2+ disjoint field-usage components (LCOM4, a connectivity graph over `self.<field>` reads/writes) | warning |
+| `god-module` | ARCH102 | a module's top-level exports (free functions + classes) number 10+ AND partition into 3+ disjoint naming/usage clusters | warning |
+| `mixed-concern-function` | ARCH103 | one function/method body containing an I/O-capability call, a string-formatting call, AND 2+ of its own decision points (branches/loops) | suggestion |
+
+**`low-cohesion-class` (ARCH101, `check_lcom4`).** Skips classes below
+`LCOM4_MIN_METHODS` (6) methods or with fewer than
+`LCOM4_MIN_FIELD_USING_METHODS` (4) field-touching methods -- a small
+class, or one where most methods touch no field at all, is not a real
+SRP question. The graph itself: one node per field-using method, an edge
+between two methods that share at least one field name, connected
+components via union-find. 2+ components means the class bundles
+independent responsibilities under one name; `metric` carries the
+component count, `symref` the class name (so a `ceiling=N` waiver can
+re-fire once the class's cluster count grows further).
+
+**`god-module` (ARCH102, `check_god_module`).** Skips modules with fewer
+than `GOD_MODULE_MIN_EXPORTS` (10) top-level exports. Clustering combines
+two signals per the ticket's "naming/usage disjointness" phrasing: a
+naming-prefix union (the first `_`-delimited token of a `snake_case`
+name, or the leading capitalized run of a `CamelCase` name) AND a usage
+union (an edge between two exports where one calls the other, by callee
+name) -- two exports that call each other are never split into different
+clusters regardless of naming, and two exports sharing a naming family
+are never split regardless of whether they call each other. `GOD_MODULE_
+MIN_CLUSTERS` (3) disjoint clusters after both unions is the "does
+everything" shape this check targets; `metric` carries the cluster count.
+
+**`mixed-concern-function` (ARCH103, `check_mixed_concern_function`).**
+Requires ALL THREE of: an I/O-capability call (`_is_io_call` -- the
+`open`/`input`/`print` builtins, a call into a well-known I/O-surface
+module prefix like `os.`/`socket.`/`requests.`/`logging.`, or a call
+ending in a stream-verb method like `.write`/`.read`/`.send`), a
+string-formatting call (`_is_format_call` -- `str`/`repr`, or a
+`.format`/`.join` method call), and at least `MIXED_CONCERN_MIN_
+DECISION_POINTS` (2) of the function's OWN branches/loops (not counting
+nested functions, which become their own `NormalizedFunction`). Any one
+or two of the three alone is ordinary code (a function that prints a
+formatted string is not a smell); only all three together is the
+"one body, three unrelated concerns" shape this check targets -- the
+same STRONG-HALLMARK-ONLY posture `frob.arch._patterns` already uses.
+
+**`run_srp_checks(module) -> list[ArchSuggestion]`** runs all three above
+against one `NormalizedModule` and returns the combined findings -- the
+single entry point a future orchestration-wiring ticket will call per
+parsed file (`analyze_project`'s per-language dispatch and `frob.app.
+config`'s `[arch]` table are both out of T-0616's scope; every threshold
+above is a plain keyword argument with a calibrated module-level default,
+ready for that follow-up wiring to thread through `frob.toml` the same
+way the existing five knobs are).
 
 ### ARCH001: a reasoned per-function override (T-0289)
 
