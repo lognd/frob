@@ -76,6 +76,7 @@ def _agentic_ticket_and_token_lines(report) -> list[str]:  # noqa: ANN001
     return lines
 
 
+# frob:ticket T-0562
 def _run_agentic(cfg: AppConfig) -> None:
     """Render `frob stats`'s non-gated agentic time/token breakdown."""
     from frob.stats import agentic_report
@@ -103,6 +104,7 @@ def _run_agentic(cfg: AppConfig) -> None:
 
 
 # frob:ticket T-0009
+# frob:ticket T-0562
 # frob:doc docs/modules/app.md#runners
 def run(cfg: AppConfig) -> None:
     """Render the delivery snapshot (queue health + commit cadence), or

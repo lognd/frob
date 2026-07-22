@@ -28,6 +28,7 @@ def _build_bind_parser() -> argparse.ArgumentParser:
     return p
 
 
+# frob:ticket T-0562
 def _print_items(items, as_json: bool) -> None:
     """Print scanned binding/source items as JSON or one line each."""
     renderer = Renderer.for_stream(sys.stdout)
@@ -38,6 +39,7 @@ def _print_items(items, as_json: bool) -> None:
         renderer.line(f"{i.file}:{i.line}  {i.signature}  [{i.kind}]")
 
 
+# frob:ticket T-0562
 def _report_mismatches(mismatches, as_json: bool, root: Path) -> None:
     """Print binding/source mismatches; exit non-zero on any text-mode mismatch."""
     renderer = Renderer.for_stream(sys.stdout)

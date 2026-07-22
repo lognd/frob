@@ -59,6 +59,7 @@ def _version(root: Path) -> str:
     return version
 
 
+# frob:ticket T-0562
 def _stamp(root: Path) -> None:
     from frob.release import stamp
 
@@ -72,6 +73,7 @@ def _stamp(root: Path) -> None:
     )
 
 
+# frob:ticket T-0562
 def _check(root: Path) -> None:
     from frob.release import diff_class, load_manifest, required_version, satisfies
 

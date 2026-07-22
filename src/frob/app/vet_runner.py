@@ -41,6 +41,7 @@ def run(cfg: AppConfig) -> None:
         _run_scan(root, cfg)
 
 
+# frob:ticket T-0562
 def _run_hook(root: Path, command: str) -> None:
     """Parse `command`; non-install commands exit 0 silently and fast (no network)."""
     parsed = parse_hook_command(command)
@@ -82,6 +83,7 @@ def _cve_matches_for(report, cfg: AppConfig) -> tuple[CveMatch, ...]:
     return result.danger_ok
 
 
+# frob:ticket T-0562
 def _run_scan(root: Path, cfg: AppConfig) -> None:
     """Full lockfile pass: table (or `--json`) output; exit 1 on ERROR when enforced.
 
@@ -126,6 +128,7 @@ def _exit_code_for_report(report) -> int:  # noqa: ANN001
     return 0
 
 
+# frob:ticket T-0562
 def _print_table(report) -> None:
     """Compact (package, ecosystem, verdict, notes) table for terminal output."""
     from frob.logging.color import should_color
@@ -167,6 +170,7 @@ def _notes_by_verdict_name(report) -> dict[str, list[str]]:  # noqa: ANN001
 
 
 # frob:ticket T-0361
+# frob:ticket T-0562
 def _print_verdict_row(
     renderer: Renderer, verdict, notes: list[str], color: bool
 ) -> None:  # noqa: ANN001
@@ -181,6 +185,7 @@ def _print_verdict_row(
     )
 
 
+# frob:ticket T-0562
 def _print_cve_table(matches: tuple[CveMatch, ...]) -> None:
     """T-0147: per-match CVE id, CVSS, status, and CWE catalog linkage."""
     renderer = Renderer.for_stream(sys.stdout)

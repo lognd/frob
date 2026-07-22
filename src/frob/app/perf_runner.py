@@ -33,6 +33,7 @@ def run(cfg: AppConfig) -> None:
 
 
 # frob:ticket T-0021
+# frob:ticket T-0562
 def _profile(cfg: AppConfig) -> None:
     """`frob perf profile -- <argv>` / `frob perf profile --tests`."""
     from frob.perf import profile_command
@@ -117,6 +118,7 @@ def _smell_rules_by_ref(violations, snapshot) -> dict[str, tuple[str, ...]]:
 
 
 # frob:ticket T-0021
+# frob:ticket T-0562
 def _print_heat_table(entries, unattributed_s: float) -> None:
     """Print the heat table (one row per symbol) plus the unattributed total."""
     from frob.perf import render_bar
@@ -157,6 +159,7 @@ def _ranked_heat_entries(cfg: AppConfig, root: Path, report, snapshot):  # noqa:
     return report, entries
 
 
+# frob:ticket T-0562
 def _print_heat_result(cfg: AppConfig, entries, report) -> None:  # noqa: ANN001
     """Render `entries`/`report` as `--json` or the default table, per `cfg`."""
     if cfg.perf_json:
@@ -211,6 +214,7 @@ def _annotate_gutters(rel: str, report, snapshot) -> dict[int, str]:  # noqa: AN
 
 
 # frob:ticket T-0021
+# frob:ticket T-0562
 def _annotate(root: Path, file: Path, report, snapshot) -> None:  # noqa: ANN001
     """`--annotate <file>`: print `file` with a per-line hit/time gutter.
 

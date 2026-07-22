@@ -20,6 +20,7 @@ _CACHE_REL = Path(".frob") / "cache.db"
 
 # frob:ticket T-0041
 # frob:ticket T-0192
+# frob:ticket T-0562
 def _probe(cfg: AppConfig, dup_path: Path) -> None:
     """`frob dup --probe A B`: R6 observational-equivalence of two symbols.
 

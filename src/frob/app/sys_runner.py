@@ -357,6 +357,7 @@ def _require_export_design_path(design_path: Path) -> None:
         sys.exit(1)
 
 
+# frob:ticket T-0562
 def _run_export(cfg: AppConfig) -> None:
     """`frob sys export --format k8s|seccomp|iam <design.strata>`: load one
     `.strata` design file, run the matching exporter, print its
@@ -387,6 +388,7 @@ def _run_export(cfg: AppConfig) -> None:
 
 
 # frob:ticket T-0085
+# frob:ticket T-0562
 def _run_doc(cfg: AppConfig) -> None:
     """`frob sys doc`: render the per-family threat-catalog audit matrix
     (docs/strata/threat.md#the-exhaustiveness-proof-the-point) for
