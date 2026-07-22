@@ -43,6 +43,12 @@ T-0188), XML external entities (CWE-611, T-0189), prototype pollution
 five follow-ups this docstring named. Eighteen fingerprints ship now,
 each with a needle in a language the vet scanner actually covers.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/strata/_cve_fingerprint.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 

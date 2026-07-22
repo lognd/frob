@@ -4058,6 +4058,30 @@ where the actual detector fix in this mission landed.
 ### Evidence
 - `tests/test_registry_models.py::TestParseDisposition::test_handled_by` (pytest node id, verified passing when recorded)
 
+<!-- ticket:T-draft-959e1bcd -->
+```yaml
+id: T-draft-959e1bcd
+title: 'COV003: T-0583/T-0585 evidence references pytest node ids that do not exist
+  in the repo'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- tickets.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Found while working T-draft-f8aabdf0 (REG008 conformance sweep). frob check --ticket flags 6 COV003 errors: T-0583 evidence tests/test_graph.py::TestCallGraph::test_build_call_graph_sees_through_memoize_per_run_wrapper and T-0585 evidence (3 tests in test_logging_module.py/test_render.py) do not resolve to any collected test even after deleting .frob/pytest-collect.json and re-collecting fresh (0 items collected for each). Both tickets are marked done on main. Needs investigation: either the tests were removed/renamed after the ticket closed, or the evidence was recorded without ever actually being collected.
+
 <!-- ticket:T-draft-f8aabdf0 -->
 ```yaml
 id: T-draft-f8aabdf0
@@ -4171,26 +4195,3 @@ SEC001), entry-added 4 (TEST012-015 via --sync-gate-rules).
 
 ### Evidence
 (no evidence recorded)
-<!-- ticket:T-draft-959e1bcd -->
-```yaml
-id: T-draft-959e1bcd
-title: 'COV003: T-0583/T-0585 evidence references pytest node ids that do not exist
-  in the repo'
-state: queued
-kind: bug
-origin: agent
-created: '2026-07-22'
-priority: medium
-blocked_by: []
-parent: null
-scope:
-- tickets.md
-scope_changes: []
-evidence: []
-attachments: []
-acceptance: []
-threat: null
-component: null
-labels: []
-```
-Found while working T-draft-f8aabdf0 (REG008 conformance sweep). frob check --ticket flags 6 COV003 errors: T-0583 evidence tests/test_graph.py::TestCallGraph::test_build_call_graph_sees_through_memoize_per_run_wrapper and T-0585 evidence (3 tests in test_logging_module.py/test_render.py) do not resolve to any collected test even after deleting .frob/pytest-collect.json and re-collecting fresh (0 items collected for each). Both tickets are marked done on main. Needs investigation: either the tests were removed/renamed after the ticket closed, or the evidence was recorded without ever actually being collected.

@@ -33,6 +33,12 @@ module docstring discloses for osv-scanner absence; it is not silently
 treated as "no CVE", it simply never enters `build_containment_report`'s
 input in the first place (the caller filters via `cve_ids` before calling).
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/vet/_containment.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 

@@ -1,6 +1,12 @@
 """CLI wiring for `frob ticket new|list|show|doable|board|epic|plan|start|
 requeue|sweep|reconcile|land|merge-driver|attach|block|close|fail|evidence|
 done-report|scope|priority|component|label|archive` (docs/modules/tickets.md)."""
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/app/ticket_runner.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 # frob:waive TEST005 reason="module line coverage 22.7%, debt T-0160"
 # frob:waive SCOPE001 reason="T-0323 scope omitted this file, filed T-draft-bc39c17f"

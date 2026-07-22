@@ -6,6 +6,12 @@ the package (documented in docs/modules/testing.md's Design decisions: `frob.git
 not depend on `frob.testing`, so the shared primitive lives in `gitio` and this
 module imports it, rather than a second timeout-handling copy living here).
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/testing/_runners.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 

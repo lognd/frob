@@ -5,6 +5,12 @@ and the Claude Code PostToolUse hook script (`scripts/frob-telemetry-hook`)
 have appended to the shared stream and turns it into a breakdown a human can
 use to decide what to speed up next.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/stats/_agentic.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 

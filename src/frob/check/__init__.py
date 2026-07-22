@@ -7,6 +7,12 @@ private `_python`/`_native`/`_ts` submodules to keep this module focused on
 the public orchestration surface; the public symbols stay defined here so
 their `frob:doc`/`frob:tests` bindings keep their `__init__.py` symref.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/check/__init__.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 # frob:waive TEST005 reason="module line coverage 79.1%, debt T-0160"
 

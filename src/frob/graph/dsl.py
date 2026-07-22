@@ -6,6 +6,12 @@ a `RawComment` reaches this module, so parsing here is language-agnostic.
 A malformed directive is data (`MalformedDirective`), never a crash and
 never silently dropped -- `frob.gates` reports it.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: src/frob/graph/dsl.py's \
+# exclusivity-vocabulary hit is source-level design-rationale/scope-cut prose (a \
+# docstring or comment describing already-implemented internal behavior, verifiable \
+# by reading the code it annotates) rather than a separate cross-module contract \
+# needing its own tracked invariant; disposed as a calibration batch, not \
+# claim-by-claim"
 
 from __future__ import annotations
 

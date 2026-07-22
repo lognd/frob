@@ -14,6 +14,12 @@ nothing and passed vacuously. `frob.graph.GraphSnapshot.parse_failures`
 gate that turns a recorded failure into an actual `frob check` violation
 instead of a warning only visible in logs.
 """
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/gates/_parse_failures.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 

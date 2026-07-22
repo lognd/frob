@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import logging
 import sys
 
@@ -36,6 +37,32 @@ def test_should_color_respects_force_color(monkeypatch):
     monkeypatch.delenv("NO_COLOR", raising=False)
     monkeypatch.setenv("FORCE_COLOR", "1")
     assert should_color() is True
+
+
+def test_should_color_no_color_wins_over_force_color(monkeypatch):
+    # frob:tests src/frob/logging/color.py::should_color kind="unit"
+    # frob:invariant INV-037
+    # frob:ticket T-0585
+    monkeypatch.setenv("NO_COLOR", "1")
+    monkeypatch.setenv("FORCE_COLOR", "1")
+    assert should_color() is False
+
+
+def test_should_color_term_dumb_disables_color_on_a_tty(monkeypatch):
+    # frob:tests src/frob/logging/color.py::should_color kind="unit"
+    # frob:invariant INV-037
+    # frob:ticket T-0585
+    monkeypatch.delenv("NO_COLOR", raising=False)
+    monkeypatch.delenv("FORCE_COLOR", raising=False)
+    monkeypatch.setenv("TERM", "dumb")
+
+    class _TtyStream(io.StringIO):
+        """A StringIO whose `isatty()` reports True, unlike the real one."""
+
+        def isatty(self) -> bool:
+            return True
+
+    assert should_color(_TtyStream()) is False
 
 
 def test_paint_wraps_when_enabled():
