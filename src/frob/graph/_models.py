@@ -97,6 +97,12 @@ class EdgeKind(StrEnum):
     CHANNEL = "channel"  # T-0080: binds code to a strata Flow id
     BOUNDARY = "boundary"  # T-0080: binds code to a strata Boundary id
     SECRET = "secret"  # T-0080: binds code to a strata Secret-clearance Node id
+    # T-0428: binds a rule/detector's own code to a registry concept id it
+    # claims to enforce (`docs/design/registry/*.yaml` entry ids) -- the
+    # derived-coverage edge `frob.gates._registry_exhaustiveness` cross-
+    # checks bidirectionally against hand-typed `handled_by:<rule-id>`
+    # registry dispositions.
+    ENFORCES = "enforces"
 
 
 # frob:doc docs/modules/graph.md#data-models

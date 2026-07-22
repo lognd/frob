@@ -27,6 +27,7 @@ from frob.gates import (
     exclude_hazard_gate,
     inv003_gate,
     inv004_gate,
+    inv006_gate,
     invariant_gate,
     is_baseline_stale,
     known_gate_rule_ids,
@@ -2489,6 +2490,94 @@ class TestInv004Gate:
             tmp_path, "docs/modules/x.md", "# X\n\n## Always current\n\nSee below.\n"
         )
         assert inv004_gate(tmp_path) == ()
+
+
+# frob:ticket T-0408
+class TestInv006Gate:
+    """T-0408: INV006 extends the same claim-vocabulary scan INV003 runs
+    over docs (`INV003_SPEC_DIRS`) to SOURCE trees (`INV006_SRC_DIRS`) --
+    the coverage-completeness gap the ticket named (a huge system's own
+    docstring/comment guarantee claims were entirely outside either
+    doc-only gate's reach)."""
+
+    # frob:tests src/frob/gates/__init__.py::inv006_gate
+    # frob:ticket T-0408
+    def test_exclusivity_claim_in_source_without_anchor_warns(
+        self, tmp_path: Path
+    ) -> None:
+        _write(
+            tmp_path,
+            "src/pkg.py",
+            '"""Module docstring."""\n\n'
+            "def only_writer() -> None:\n"
+            '    """The only writer of this file is the daemon."""\n',
+        )
+        snapshot = _snapshot(tmp_path)
+        violations = inv006_gate(tmp_path, snapshot)
+        assert len(violations) == 1
+        assert violations[0].rule == "INV006"
+        assert violations[0].severity == Severity.WARN
+        assert violations[0].file == "src/pkg.py"
+
+    # frob:ticket T-0408
+    def test_exclusivity_claim_with_bound_invariant_anchor_is_silent(
+        self, tmp_path: Path
+    ) -> None:
+        _write(
+            tmp_path,
+            "src/pkg.py",
+            '"""Module docstring."""\n\n'
+            "# frob:invariant INV-001\n"
+            "def only_writer() -> None:\n"
+            '    """The only writer of this file is the daemon."""\n',
+        )
+        snapshot = _snapshot(tmp_path)
+        violations = inv006_gate(tmp_path, snapshot)
+        assert violations == ()
+
+    # frob:ticket T-0408
+    def test_waived_with_reason_is_silent(self, tmp_path: Path) -> None:
+        _write(
+            tmp_path,
+            "src/pkg.py",
+            '"""Module docstring."""\n\n'
+            '# frob:waive INV006 reason="genuine design intent, not enforced"\n'
+            "def only_writer() -> None:\n"
+            '    """The only writer of this file is the daemon."""\n',
+        )
+        snapshot = _snapshot(tmp_path)
+        violations = inv006_gate(tmp_path, snapshot)
+        assert violations == ()
+
+    # frob:ticket T-0408
+    def test_no_exclusivity_language_is_silent(self, tmp_path: Path) -> None:
+        _write(
+            tmp_path,
+            "src/pkg.py",
+            '"""Module docstring."""\n\ndef writer() -> None:\n'
+            '    """The daemon writes this file."""\n',
+        )
+        snapshot = _snapshot(tmp_path)
+        assert inv006_gate(tmp_path, snapshot) == ()
+
+    # frob:ticket T-0408
+    def test_outside_src_dirs_is_silent(self, tmp_path: Path) -> None:
+        """T-0408: INV006 is scoped to `INV006_SRC_DIRS`
+        (src, strata-core/src, frob-core/src) -- a claim in tests/ or
+        docs/ is out of scope for this source-side gate."""
+        _write(
+            tmp_path,
+            "tests/test_x.py",
+            '"""Module docstring."""\n\ndef only_writer() -> None:\n'
+            '    """The only writer of this file is the daemon."""\n',
+        )
+        snapshot = _snapshot(tmp_path)
+        assert inv006_gate(tmp_path, snapshot) == ()
+
+    # frob:ticket T-0408
+    def test_missing_src_dir_is_silent(self, tmp_path: Path) -> None:
+        snapshot = _snapshot(tmp_path)
+        assert inv006_gate(tmp_path, snapshot) == ()
 
 
 class TestPlace001Gate:

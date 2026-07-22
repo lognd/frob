@@ -97,6 +97,7 @@ import re
 from pathlib import Path
 
 from frob.gates._models import Severity, Violation
+from frob.graph._models import EdgeKind, GraphSnapshot
 from frob.logging import get_logger
 from frob.registry._models import (
     Disposition,
@@ -105,6 +106,7 @@ from frob.registry._models import (
     RegistryFile,
     load_registry_dir,
 )
+from frob.registry._staleness import missing_gate_rule_ids
 from frob.tickets._models import TicketQueue, TicketState
 
 _log = get_logger(__name__)
@@ -140,6 +142,11 @@ REGISTRY_FILES: tuple[str, ...] = (
 # (finding (b)); a quoted literal here also closes REF001/REF002 for that
 # file the same way REGISTRY_FILES does for the manifests themselves.
 _RECONCILIATION_FILE = "RECONCILIATION.md"
+
+# T-0560: check-coverage.yaml's gate_rule_entries is the ONE file REG010's
+# staleness check runs against -- a quoted literal here also closes
+# REF001/REF002 for it the same way REGISTRY_FILES does.
+_CHECK_COVERAGE_FILE = "check-coverage.yaml"
 
 # T-0343 named gap: `out_of_scope` dispositions are meant to route through
 # Area-2's VERIFIED `caught_by` mechanism (T-0382); that mechanism does not
@@ -472,6 +479,145 @@ def _reconciliation_violations(
     return _reg004_unresolved_splits(rel_reconciliation, split_ids, entries_by_id)
 
 
+# frob:doc docs/design/registry/RECONCILIATION.md#reg008reg009-t-0428
+# frob:ticket T-0428
+def _enforced_concept_ids(snapshot: GraphSnapshot) -> frozenset[str]:
+    """Every concept id named by a `frob:enforces <concept-id>` edge
+    anywhere in `snapshot` -- the CODE side of T-0428's two-SSOT
+    conformance check (code declares what it enforces; this is the
+    derived truth a hand-typed `handled_by:<rule-id>` disposition is
+    cross-checked against, never the other way around)."""
+    return frozenset(
+        edge.target for edge in snapshot.edges if edge.kind == EdgeKind.ENFORCES
+    )
+
+
+# frob:doc docs/design/registry/RECONCILIATION.md#reg008reg009-t-0428
+# frob:ticket T-0428
+# frob:enforces CHK-GATE-REG008
+def _reg008_undeclared_enforcement(
+    parsed: dict[str, RegistryFile], enforced_ids: frozenset[str]
+) -> list[Violation]:
+    """REG008 (WARN, advisory): an entry dispositioned
+    `handled_by:<rule-id>` (a claim that SOME rule enforces it) with no
+    `frob:enforces` edge anywhere in code naming that entry's id -- the
+    yaml claims enforcement that the code does not itself declare, a
+    code<->corpus conformance drift T-0428 calls out as the two-SSOT
+    split's required bidirectional check.
+
+    WARN, not ERROR: this repo's registry carries ~1950 entries built
+    before `frob:enforces` existed, essentially all of them undeclared in
+    code by this measure -- an honest first-turn-on debt, the same shape
+    as INV003/INV004's own initial red state, not something this pass
+    can retroactively backfill in one ticket."""
+    violations: list[Violation] = []
+    for rel_path, registry_file in parsed.items():
+        for entries in registry_file.entry_lists.values():
+            for entry in entries:
+                disposition = entry.disposition
+                if disposition.kind is not DispositionKind.HANDLED_BY:
+                    continue
+                if entry.id in enforced_ids:
+                    continue
+                violations.append(
+                    Violation(
+                        rule="REG008",
+                        severity=Severity.WARN,
+                        file=rel_path,
+                        line=0,
+                        message=(
+                            f"REG008: {rel_path} entry {entry.id!r} is "
+                            f"dispositioned handled_by:{disposition.target} "
+                            f"but no `frob:enforces {entry.id}` edge exists "
+                            f"anywhere in code -- add the directive to the "
+                            f"enforcing rule, or re-disposition the entry"
+                        ),
+                    )
+                )
+    return violations
+
+
+# frob:doc docs/design/registry/RECONCILIATION.md#reg008reg009-t-0428
+# frob:ticket T-0428
+# frob:enforces CHK-GATE-REG009
+def _reg009_phantom_enforcement(
+    snapshot: GraphSnapshot, all_ids: frozenset[str]
+) -> list[Violation]:
+    """REG009 (WARN, advisory): a `frob:enforces <concept-id>` edge in
+    code naming a concept id that does not resolve to any loaded
+    registry entry -- a typo'd id, or a rule enforcing something the
+    universe corpus never enumerated. The other direction of T-0428's
+    bidirectional conformance check (REG008 is corpus-claims-but-code-
+    silent; REG009 is code-claims-but-corpus-does-not-know-it)."""
+    violations: list[Violation] = []
+    for edge in snapshot.edges:
+        if edge.kind != EdgeKind.ENFORCES:
+            continue
+        if edge.target in all_ids:
+            continue
+        origin_file, _, _ = edge.origin.rpartition(":")
+        violations.append(
+            Violation(
+                rule="REG009",
+                severity=Severity.WARN,
+                file=origin_file or edge.origin,
+                line=0,
+                message=(
+                    f"REG009: {edge.src} declares `frob:enforces "
+                    f"{edge.target}` but {edge.target!r} does not resolve "
+                    f"to any loaded docs/design/registry/*.yaml entry -- "
+                    f"fix the id, or append the concept to the universe "
+                    f"corpus if it genuinely exists and was never "
+                    f"enumerated"
+                ),
+            )
+        )
+    return violations
+
+
+# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560  # noqa: E501
+# frob:ticket T-0560
+# frob:enforces CHK-GATE-REG010
+def _reg010_gate_rule_staleness(
+    base: Path, repo_root: Path, known_rules: frozenset[str]
+) -> list[Violation]:
+    """REG010 (WARN, advisory): a LIVE rule in `known_rules` with no
+    `CHK-GATE-<rule>` entry anywhere in `check-coverage.yaml` -- the
+    scheduled-audit half of T-0424/T-0560: a newly added gate rule that
+    nobody remembered to register in the reflexive registry is caught by
+    the very next `frob check`, not left to a human noticing (or a
+    scheduler that might not run) at some later point.
+
+    WARN, not ERROR: this repo's own `check-coverage.yaml` already has a
+    handful of pre-existing gaps of exactly this shape (confirmed via
+    `tests/test_check_coverage_registry.py`'s own reflexive count check,
+    which predates this gate and was already red on `main`) -- promoting
+    straight to ERROR would immediately fail the build on old debt this
+    ticket's job is to catch FUTURE drift on, not retroactively clear."""
+    check_coverage = base / _CHECK_COVERAGE_FILE
+    if not check_coverage.is_file():
+        return []
+    missing = missing_gate_rule_ids(check_coverage, known_rules)
+    if not missing:
+        return []
+    rel_path = _rel_registry_path(check_coverage, repo_root)
+    return [
+        Violation(
+            rule="REG010",
+            severity=Severity.WARN,
+            file=rel_path,
+            line=0,
+            message=(
+                f"REG010: {len(missing)} live gate rule(s) have no "
+                f"CHK-GATE-<rule> entry in {rel_path} "
+                f"({', '.join(sorted(missing)[:8])}"
+                f"{'...' if len(missing) > 8 else ''}) -- run "
+                f"`frob registry audit --sync-gate-rules` to file them"
+            ),
+        )
+    ]
+
+
 def _rel_registry_path(path: Path, repo_root: Path) -> str:
     """`path` shortened relative to `repo_root` for report-friendly output,
     or its absolute form if it does not actually sit under `repo_root`."""
@@ -499,19 +645,29 @@ def _rel_registry_path(path: Path, repo_root: Path) -> str:
 # T-0424: check-coverage.yaml added to REGISTRY_FILES below.
 # frob:tests tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile.test_is_in_registry_files  # noqa: E501
 # frob:tests tests/test_check_coverage_registry.py::TestExhaustivenessGateOverRealCheckCoverage.test_no_check_coverage_violations  # noqa: E501
+# T-0428: REG008/REG009 derived-coverage two-SSOT conformance.
+# frob:tests tests/test_registry_exhaustiveness.py::TestEnforcesConformance.test_handled_by_with_no_frob_enforces_edge_warns  # noqa: E501
+# frob:tests tests/test_registry_exhaustiveness.py::TestEnforcesConformance.test_handled_by_with_frob_enforces_edge_is_silent  # noqa: E501
+# frob:tests tests/test_registry_exhaustiveness.py::TestEnforcesConformance.test_no_snapshot_skips_reg008_reg009  # noqa: E501
+# frob:tests tests/test_registry_exhaustiveness.py::TestEnforcesConformance.test_phantom_enforces_edge_warns  # noqa: E501
+# frob:tests tests/test_registry_exhaustiveness.py::TestEnforcesConformance.test_matching_enforces_edge_no_reg009  # noqa: E501
 def registry_gate(
     repo_root: Path,
     queue: TicketQueue,
     known_rules: frozenset[str],
     registry_dir: Path | None = None,
+    snapshot: GraphSnapshot | None = None,
 ) -> tuple[Violation, ...]:
     """REG001 (undispositioned) / REG002 (dangling handled_by) / REG003
     (deferred to closed/missing ticket) / REG004 (dangling duplicate_of,
     or a RECONCILIATION.md-documented split still unlinked) / REG005
     (declared total drift) / REG006 (structurally malformed entry
     silently unaccounted for) / REG007 (the same id defined twice, a real
-    collision) over every `docs/design/registry/*.yaml` manifest under
-    `registry_dir` (defaults to `repo_root / "docs/design/registry"`).
+    collision) / REG008 (handled_by claim with no `frob:enforces` edge
+    anywhere in code, T-0428) / REG009 (a `frob:enforces` edge naming a
+    concept id absent from the registry, T-0428) over every
+    `docs/design/registry/*.yaml` manifest under `registry_dir` (defaults
+    to `repo_root / "docs/design/registry"`).
 
     All ERROR severity -- this is the fail-closed anti-lie gate: a
     catalogued-but-undispositioned entry, or a dispositioned entry whose
@@ -523,7 +679,15 @@ def registry_gate(
     T-0407: loading and entry/disposition parsing now go through the
     single `frob.registry.load_registry_dir` loader instead of a
     duplicated inline YAML+regex parser -- this module is purely the
-    policy layer over that typed model."""
+    policy layer over that typed model.
+
+    T-0428: `snapshot` is OPTIONAL and keyword-only, defaulting to `None`
+    -- REG008/REG009 (the two-SSOT code<->corpus conformance check) only
+    run when a `GraphSnapshot` is supplied; without one, this function
+    makes no claim about code-side enforcement declarations rather than
+    failing every `handled_by` entry closed by assumption (a caller that
+    has not wired the graph yet gets REG001-007 unchanged, not a new
+    false-positive family)."""
     base = (
         registry_dir
         if registry_dir is not None
@@ -556,6 +720,11 @@ def registry_gate(
     violations.extend(_classify_all_entries(parsed, known_rules, all_ids_frozen, queue))
     violations.extend(_reg007_duplicate_ids(parsed))
     violations.extend(_reconciliation_violations(base, repo_root, entries_by_id))
+    violations.extend(_reg010_gate_rule_staleness(base, repo_root, known_rules))
+    if snapshot is not None:
+        enforced_ids = _enforced_concept_ids(snapshot)
+        violations.extend(_reg008_undeclared_enforcement(parsed, enforced_ids))
+        violations.extend(_reg009_phantom_enforcement(snapshot, all_ids_frozen))
     all_ids = set(all_ids_frozen)
 
     _log.info(

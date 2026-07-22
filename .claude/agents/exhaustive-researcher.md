@@ -48,6 +48,25 @@ manual. The essentials:
   dropped.
 - Fresh narrow context per node; never carry the whole tree in one head.
 
+## Emitting into the registry (T-0429)
+
+When the corpus you are mapping IS (or feeds) `docs/design/registry/
+*.yaml` -- the universe the exhaustiveness gate reads -- your findings
+must land there directly, not only in the frontier store above. Use
+`frob registry add --file <name.yaml> --key <entries-key> --id <ID>
+--name "<name>" [--source-doc <doc>]` to append each node once you have
+enumerated it (`frob.registry.append_entry`, docs/guides/exhaustive-
+research.md#corpus-emit-mechanism-t-0429). Two rules:
+
+- You enumerate; you do NOT disposition. Every entry you emit stays
+  `disposition: "pending"` -- deciding it is `handled_by`/`deferred`/
+  `out_of_scope` is a later, code-aware or reviewer act (T-0428's derived
+  model), never something you assign at emit time.
+- Your Phase-2 denominator (nodes done) must equal the entries you
+  appended -- if the target file declares a `total:`, `append_entry`
+  keeps it in lockstep automatically, so REG005 verifies your own count,
+  not just your say-so.
+
 ## Report
 
 Lead with honesty: universe size (denominator), nodes done, nodes blocked
