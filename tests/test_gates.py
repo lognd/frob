@@ -233,6 +233,88 @@ class TestDriftGate:
         assert violations == ()
 
 
+# T-0265: a `frob:tests` directive whose target is written with pytest's
+# `Class::method` collect-only separator, on a test that ALSO names itself
+# (self-referential) -- the mismatched separator means the string differs
+# from the graph's own dotted `Class.method` qualname, so the edge is
+# genuinely dangling (T-0237/`TestTest010KindValidation.test_dangling_
+# tests_endpoint_still_caught_by_drift002` already documents that a
+# `frob:tests` edge's CODE-side endpoint not resolving is DRIFT002's job,
+# no TESTS-specific resolver needed -- a self-referential target is not
+# special-cased at all: this repo's own widespread convention of a test
+# naming itself via a CORRECTLY-formed dotted target is exactly as valid
+# as any other `frob:tests` edge, see every `TestDebtGate`/
+# `TestDeprecatedGate` method above). What WAS missing is that a caller
+# who narrows `gates` to a small subset (the shape a ticket-scoped
+# pre-flight check uses) never evaluated `drift` at all, so this same
+# dangling edge could be invisible on that path while a wider selection
+# caught it -- fixed in `frob.gates._build_jobs` (drift now always runs
+# regardless of the caller's `gates` selection).
+class TestSelfReferentialTestsDirectiveScopeAgreement:
+    """T-0265 regression: a dangling self-referential `frob:tests` target
+    must be caught the same way regardless of which gate subset a caller
+    selects -- a narrowly-scoped run must never disagree with a wider one."""
+
+    #: A test naming itself with pytest's `Class::method` collect-only
+    #: separator instead of the graph's own dotted `Class.method` qualname
+    #: -- the two strings differ, so this is a genuinely dangling edge.
+    _MISMATCHED_SEPARATOR_SOURCE = (
+        "class TestFoo:\n"
+        "    # frob:tests tests/test_x.py::TestFoo::test_self\n"
+        "    def test_self(self) -> None:\n"
+        "        assert True\n"
+    )
+
+    def test_narrow_gate_selection_still_surfaces_drift_for_the_same_diff(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_gates.py::TestSelfReferentialTestsDirectiveScopeAgreement.test_narrow_gate_selection_still_surfaces_drift_for_the_same_diff  # noqa: E501
+        # Same fixture, evaluated through BOTH paths: a caller that narrows
+        # `gates` to a small subset (the shape a ticket-scoped pre-flight
+        # check uses) and a wider selection. Proves the SHARED mechanism --
+        # `run_gates` always folding `drift` into the job set -- is what
+        # closes the gap.
+        _git_init(tmp_path)
+        _write(tmp_path, "tests/test_x.py", self._MISMATCHED_SEPARATOR_SOURCE)
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "add self-tests"], cwd=tmp_path, check=True
+        )
+
+        narrow_cfg = GateConfig(
+            root=str(tmp_path), base="main", gates=frozenset({"scope"})
+        )
+        narrow_result = run_gates(narrow_cfg)
+        assert narrow_result.is_ok
+
+        # "Full" here is deliberately still a thread-only gate selection
+        # (drift + scope), not a bare `GateConfig()` default -- the
+        # unrestricted default additionally selects `_PROCESS_POOL_GATES`
+        # (archgate/sys/clones/perf/pii_structural/secrets/dead_symbols),
+        # and `_run_combined_jobs` forks that `ProcessPoolExecutor` from
+        # inside an still-active `ThreadPoolExecutor` block -- a real,
+        # pre-existing fork/thread-safety hazard (a fork while another
+        # thread holds e.g. the logging lock can deadlock the child) that
+        # is unrelated to this ticket's scope and reproduced independently
+        # under heavy parallel test load. Restricting to thread-only gates
+        # here keeps this regression deterministic while still proving the
+        # exact claim T-0265 cares about: a caller that narrows `gates` no
+        # longer disagrees with a wider selection on whether DRIFT002 fires.
+        full_cfg = GateConfig(
+            root=str(tmp_path), base="main", gates=frozenset({"scope", "drift"})
+        )
+        full_result = run_gates(full_cfg)
+        assert full_result.is_ok
+
+        # Both paths now agree: DRIFT002 fires either way -- the
+        # narrow, ticket-scoped-shaped selection is no longer green while
+        # the wider run is red for the identical tree.
+        narrow_rules = _rules(narrow_result.danger_ok.violations)
+        full_rules = _rules(full_result.danger_ok.violations)
+        assert "DRIFT002" in narrow_rules
+        assert "DRIFT002" in full_rules
+
+
 def _violation(rule="R1", file="a.py", message="m", severity=Severity.WARN, line=1):
     from frob.gates import Violation
 

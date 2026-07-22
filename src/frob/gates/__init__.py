@@ -7768,6 +7768,21 @@ def _build_jobs(
     selected_process = {
         name: job for name, job in process_jobs.items() if name in selected
     }
+    # T-0265: `drift` (DRIFT001/DRIFT002) always runs, even when a caller
+    # narrows `selected` to a small subset (e.g. a ticket-scoped
+    # `gates={"scope"}` pre-flight check) -- `st.snapshot`/`st.lock` are
+    # already unconditionally loaded by `_load_required_state` for every
+    # gate run regardless of `selected`, so this costs nothing extra to
+    # evaluate. Before this, a narrowly-scoped check could report clean
+    # while a full `frob check` on the identical tree reported DRIFT002 for
+    # the same dangling edge (a self-referential `frob:tests` directive was
+    # the reproducing case) -- two evaluation paths giving two different
+    # answers to the same question. DRIFT002 is the documented, authoritative
+    # answer for "does this edge endpoint resolve" (docs/modules/gates.md,
+    # `test_gate`'s own docstring: "DRIFT002 already covers TESTS edges"),
+    # so every gate run now gets that same answer, never a filtered-out one.
+    if "drift" not in selected_thread:
+        selected_thread["drift"] = thread_jobs["drift"]
     ticket_jobs, skipped = _build_ticket_scoped_jobs(selected, st)
     selected_thread.update(ticket_jobs)
     return selected_thread, selected_process, skipped

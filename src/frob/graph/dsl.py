@@ -270,6 +270,23 @@ def _parse_line(
     if isinstance(attrs, MalformedDirective):
         return attrs
 
+    # T-0265: a literal self-referential `frob:tests` directive (target ==
+    # src) is NOT rejected here -- it is this repo's own widespread,
+    # deliberate convention for a test function to name itself as its own
+    # evidence anchor (see e.g. every `TestDebtGate`/`TestDeprecatedGate`
+    # method in tests/test_gates.py, and `TestTest010KindValidation.
+    # test_dangling_tests_endpoint_still_caught_by_drift002`'s own
+    # docstring: a `frob:tests` edge whose CODE-side endpoint no longer
+    # resolves is already caught by the existing, edge-kind-agnostic
+    # DRIFT002 mechanism, no TESTS-specific parse-time rejection needed).
+    # T-0265's actual bug is a MISMATCHED-convention self-reference (the
+    # directive's target string uses pytest's `Class::method` collect-only
+    # separator while the graph's own qualname is `Class.method`, so the
+    # two strings differ and the edge is genuinely dangling) slipping past
+    # a ticket-scoped check that never evaluates `drift` at all -- fixed in
+    # `frob.gates._build_jobs` (drift now always runs), not by rejecting
+    # directives here.
+
     return Edge(src=src, kind=kind, target=target, origin=origin, attrs=attrs)
 
 
