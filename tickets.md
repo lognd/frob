@@ -2553,7 +2553,7 @@ desync.
 id: T-0355
 title: 'sweep: clean SIGINT message + PRE001 catch-22 on slow mounts + scope_digest
   content-keying'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
