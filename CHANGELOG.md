@@ -17,7 +17,23 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
-<<<<<<< HEAD
+## [0.71.0] - unreleased (registry pipeline: INV006 source-side coverage, frob:enforces, corpus add, REG010)
+
+T-0408: new `INV006` gate (`frob.gates.inv006_gate`, WARN severity)
+extends INV003's exclusivity-claim scan from doc-only (`docs/modules`,
+`docs/strata`) to SOURCE trees (`INV006_SRC_DIRS`: `src`,
+`strata-core/src`, `frob-core/src`) -- the coverage-COMPLETENESS half of
+T-0408's gap: INV001/INV002 only ever validated invariants that already
+existed, and INV003/INV004 never looked past `docs/`, leaving well over a
+hundred source docstrings/comments asserting "only"/"never...except"/
+"exactly one" guarantees entirely outside any gate's reach. INV006 reuses
+INV003's exact noise-filtered claim vocabulary
+(`frob.gates.invariants.find_exclusivity_claims`) and treats a file as
+covered by any real `frob:invariant` edge anchored anywhere in it
+(joined against the same `GraphSnapshot` every other code-anchor gate
+already loads), with `frob:waive INV006 reason="..."` as the disposition
+path for a claim that is genuine design intent rather than an enforced
+behavior.
 ## [0.70.0] - unreleased (misc chain: coverage --wait, DOC004 c/cpp)
 
 T-0322: `frob test --wait-coverage` -- a foreground, single-flight,
@@ -48,25 +64,6 @@ timing 36-45s -> 3.5-4.7s. `frob.excludes.BUILTIN_SKIP_DIRS` also gained
 `.hypothesis`/`.serena` (perf audit finding M6, `docs/audits/perf.md`) --
 neither has a tree-sitter grammar but every rglob-based stage was still
 walking/stat'ing/opening every entry inside them.
-=======
-## [0.69.0] - unreleased (INV006 source-side invariant coverage)
-
-T-0408: new `INV006` gate (`frob.gates.inv006_gate`, WARN severity)
-extends INV003's exclusivity-claim scan from doc-only (`docs/modules`,
-`docs/strata`) to SOURCE trees (`INV006_SRC_DIRS`: `src`,
-`strata-core/src`, `frob-core/src`) -- the coverage-COMPLETENESS half of
-T-0408's gap: INV001/INV002 only ever validated invariants that already
-existed, and INV003/INV004 never looked past `docs/`, leaving well over a
-hundred source docstrings/comments asserting "only"/"never...except"/
-"exactly one" guarantees entirely outside any gate's reach. INV006 reuses
-INV003's exact noise-filtered claim vocabulary
-(`frob.gates.invariants.find_exclusivity_claims`) and treats a file as
-covered by any real `frob:invariant` edge anchored anywhere in it
-(joined against the same `GraphSnapshot` every other code-anchor gate
-already loads), with `frob:waive INV006 reason="..."` as the disposition
-path for a claim that is genuine design intent rather than an enforced
-behavior.
->>>>>>> worktree-agent-aedb71bdccd52b0fb
 
 ## [0.66.0] - unreleased (graph leaves + DEAD001/PARSE001, part 2)
 
