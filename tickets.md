@@ -3287,6 +3287,7 @@ ledger already reflects reality accurately without it.
 - `tests/test_lang_conformance_gate.py::TestProjectLangConformanceGate::test_all_conformant_project_passes` (pytest node id, verified passing when recorded)
 - `tests/test_lang_conformance_gate.py::TestProjectLangConformanceGate::test_present_known_gap_with_open_ticket_warns` (pytest node id, verified passing when recorded)
 - `tests/test_lang_conformance_gate.py::TestProjectLangConformanceGate::test_present_known_gap_with_bad_ticket_ref_errors` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0408 -->
 ```yaml
 id: T-0408
@@ -4125,9 +4126,9 @@ triage each individually once the substrate gap above is closed, or waive
 one at a time with a symbol-specific verified reason as they are touched by
 other work.
 
-<!-- ticket:T-draft-78a0f919 -->
+<!-- ticket:T-0566 -->
 ```yaml
-id: T-draft-78a0f919
+id: T-0566
 title: docblocks DOC004 gate has no C/C++ fenced-code-block bucket
 state: queued
 kind: bug
