@@ -135,6 +135,23 @@ def _hit_violation(rel_path: str, hit: "FingerprintHit") -> Violation:
 # frob:tests tests/unit/strata/test_cve_fingerprint_scan.py::TestGate.test_smelly_file_fires  # noqa: E501
 # frob:tests tests/unit/strata/test_cve_fingerprint_scan.py::TestGate.test_clean_file_does_not_fire  # noqa: E501
 # frob:tests tests/unit/strata/test_cve_fingerprint_scan.py::TestGate.test_self_excluded_files_not_scanned  # noqa: E501
+# frob:enforces CHK-GATE-SEC-CVE-FINGERPRINT-001
+# frob:enforces SEC-CVE-FINGERPRINT-FP-EXEC-SHELL-001
+# frob:enforces SEC-CVE-FINGERPRINT-FP-XSS-JQUERY-001
+# frob:enforces SEC-CVE-FINGERPRINT-FP-PATH-TAR-001
+# frob:enforces SEC-CVE-FINGERPRINT-FP-DESERIALIZE-YAML-001
+# frob:enforces SEC-CVE-FINGERPRINT-FP-DESERIALIZE-PICKLE-001
+# frob:enforces SEC-CVE-FINGERPRINT-FP-SQLI-STRFMT-001
+# frob:enforces SEC-CVE-FINGERPRINT-FP-SSRF-FETCH-001
+# frob:enforces SEC-CVE-FINGERPRINT-FP-CODEEVAL-TEMPLATE-001
+# frob:enforces SEC-CVE-FINGERPRINT-FP-HARDCODED-CRED-001
+# frob:enforces SEC-CVE-FINGERPRINT-CWE-295-TLS-VERIFY
+# frob:enforces SEC-CVE-FINGERPRINT-CWE-916-WEAK-HASH
+# frob:enforces SEC-CVE-FINGERPRINT-CWE-611-XXE
+# frob:enforces SEC-CVE-FINGERPRINT-CWE-1321-PROTO-POLLUTION
+# frob:enforces SEC-CVE-FINGERPRINT-CWE-1333-REDOS
+# frob:enforces SEC-CVE-FINGERPRINT-CWE-601-OPEN-REDIRECT
+# frob:enforces SEC-CVE-FINGERPRINT-CWE-1336-SSTI
 def cve_fingerprint_scan_gate(root: Path) -> tuple[Violation, ...]:
     """SEC-CVE-FINGERPRINT-001 (module docstring): every git-tracked,
     language-bucketed source file under `root` scanned for a `CVE_
