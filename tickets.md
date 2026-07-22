@@ -13996,3 +13996,38 @@ component: null
 labels: []
 ```
 User mandate 2026-07-22, after T-0731 (CRITICAL) sat filed-but-undispatched for hours while its conflict class kept firing: the doable listing must make dispatch state and priority impossible to miss. (1) PRIORITY COLUMN: doable renders the priority (critical/high/medium/low) per row -- ordering exists (T-0411) but is invisible today, so a critical at rank 4 reads like any other line. (2) DISPATCH-STATE SPLIT: rows with a live, non-stale lease (T-0716 overlay machinery) render in a separate IN-FLIGHT section (or an @worktree marker) below the truly-dispatchable rows, so line 1 of the top section is always the next thing to dispatch -- no mental subtraction of in-flight work. (3) STALENESS ALARM: a critical or high ticket that has been dispatchable (unleased, unblocked) longer than a configurable threshold (frob.toml, default 4h for critical / 24h for high, measured from the last state change or filing) gets a loud UNDISPATCHED marker on its row AND a TICK-family check warning, so the condition surfaces in frob check too, not only when someone happens to run doable. Coordinate with T-0714 (doable noise relocation) and T-0716 (lease overlay) -- one display surface, no duplicate lease-reading logic.
+
+<!-- ticket:T-0753 -->
+```yaml
+id: T-0753
+title: 'waiver hygiene: WAIVE002 to error, WAIVE003 unnecessary-waiver detection,
+  until= expiry on frob:waive'
+state: queued
+kind: security
+origin: human
+created: '2026-07-22'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- src/frob/graph/dsl.py
+- docs/modules/gates.md
+- tests/test_gates.py
+- tests/test_dup_cross_lang.py
+- tests/test_docblocks_gate.py
+- tests/unit/test_dup_cache.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a waiver naming an unrecognized rule THEN error; GIVEN a valid-rule
+    waiver whose site produces zero findings with waivers ignored THEN WAIVE003 fires;
+    GIVEN an until-dated waiver past its date THEN error demanding re-review; AND
+    the 3 live DEAD001 waivers are gone
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+User question 2026-07-22 exposed the gap; measured state: WAIVE002 (waiver targets unrecognized rule id) fires WARNING-tier and 3 instances sit live right now (frob:waive DEAD001 in tests/test_dup_cross_lang.py::_isolated_dup_cache, tests/test_docblocks_gate.py::_fake_parser_factory, tests/unit/test_dup_cache.py::_close_cached_connections -- DEAD001 is not a recognized rule id). Deliver: (1) PROMOTE WAIVE002 to ERROR and fix the 3 current instances in the same change (identify what rule they meant -- likely a renamed dead-symbol rule -- and either retarget or delete); (2) NEW WAIVE003, the genuinely dangerous stale class: the waived rule is VALID but produces NO violation at that site anymore -- the fix landed, the waiver stays, silently pre-forgiving the next regression there. Detection: evaluate the rule at the site with waivers ignored; zero findings = WAIVE003. Warning-tier first with a ratchet-pool path to error (T-0569/T-0594 machinery) since some rules are context-dependent; document the known-flaky cases. (3) EXPIRY: frob:waive gains optional until="YYYY-MM-DD" reusing the frob:deprecated/debt date machinery (T-0576 precedent) -- past-date waiver = ERROR demanding re-review (re-date with reason or remove). Coordinate with T-0671 (strata bounded waivers -- one date convention, no second grammar) and note SYSWAIVE002 as the strata-side precedent already at error tier.
