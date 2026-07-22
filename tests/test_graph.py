@@ -687,6 +687,17 @@ class TestBuildIncremental:
 
     def test_fingerprint_packages_derived_from_lang_registry(self) -> None:
         # frob:tests src/frob/graph/cache.py::_compute_fingerprint
+        # frob:waive COV006 reason="T-0536: _FINGERPRINT_PACKAGES is a \
+        # module-level tuple computed once at import time (cache.py's top- \
+        # level *_NON_LANGUAGE_FINGERPRINT_PACKAGES, \
+        # *sorted(GRAMMAR_FINGERPRINT_PACKAGES) expression), not a \
+        # function call this test's body could ever name -- the same \
+        # module-constant-drift-lock shape as T-0516's tests/test_gates.py \
+        # waiver. Retargeting frob:tests directly at the constant instead \
+        # was tried and rejected: DRIFT002 then reports it as an \
+        # unresolvable edge (module-level assignments are not graph \
+        # nodes), trading one false positive for another -- this waiver on \
+        # the pre-existing _compute_fingerprint binding is the honest fix."
         """T-0433 (G6 full fix): `_FINGERPRINT_PACKAGES` must contain every
         package `frob.lang.GRAMMAR_FINGERPRINT_PACKAGES` declares -- derived,
         not a second hand-copied tuple that can silently drift from it (the

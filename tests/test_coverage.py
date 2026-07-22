@@ -1,5 +1,6 @@
 """Tests for T-0484's touched-set coverage helper
-(frob.testing._incremental_coverage.python_coverage_targets)."""
+(frob.testing._incremental_coverage.python_coverage_targets) and T-0538's
+natives-clobber guard on the `make coverage`/`make coverage-fast` targets."""
 
 from __future__ import annotations
 
@@ -9,6 +10,11 @@ from pathlib import Path
 
 from frob.graph import build_graph
 from frob.testing import python_coverage_targets
+
+#: T-0538: repo root, resolved the same way every other Makefile-adjacent
+#: test in this repo would -- two levels up from this test file
+#: (tests/test_coverage.py -> repo root).
+_REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
 def _write(root: Path, rel: str, text: str) -> Path:
@@ -120,3 +126,60 @@ class TestPythonCoverageTargets:
         snapshot = build_graph(tmp_path, tmp_path.parent / "cache.db").danger_ok
         targets = python_coverage_targets(tmp_path, snapshot, "no-such-ref")
         assert targets == ()
+
+
+class TestCoverageTargetNativesGuard:
+    """T-0538: `make coverage`/`make coverage-fast` both depend on
+    `$(STAMP)` (`uv sync`), which silently removes the editable
+    `strata_core`/`frob_core` natives `make core` installed -- neither is a
+    declared dependency `uv sync` knows to preserve. This dry-runs the real
+    Makefile (`make -n`, which never executes a single recipe line) and
+    asserts the restore-then-verify guard (`make core` then `frob doctor`)
+    appears BEFORE the pytest invocation in both targets' expanded recipe,
+    so a regression that reorders or drops the guard fails this test
+    without ever running the (slow, `make coverage`-forbidden per the
+    playbook's 6b) real recipe."""
+
+    def _dry_run(self, target: str) -> str:
+        """`make -n <target>` output: the exact shell commands `make` WOULD
+        run, in order, with none of them actually executed -- safe to call
+        from a test."""
+        result = subprocess.run(
+            ["make", "-n", target],
+            cwd=_REPO_ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return result.stdout
+
+    def _assert_guard_precedes_pytest(self, output: str) -> None:
+        """`make core` and `frob doctor` must both appear, in that relative
+        order, strictly before the first `pytest --cov` invocation -- the
+        exact ordering that fails loudly on a missing native instead of
+        letting pytest collection blow up mid-suite (the T-0538 incident)."""
+        core_idx = output.index("make core")
+        doctor_idx = output.index("frob doctor")
+        pytest_idx = output.index("pytest --cov")
+        assert core_idx < doctor_idx < pytest_idx, (
+            f"expected 'make core' < 'frob doctor' < 'pytest --cov', "
+            f"got indices {core_idx}, {doctor_idx}, {pytest_idx} in:\n{output}"
+        )
+
+    def test_coverage_target_restores_and_verifies_natives_before_pytest(
+        self,
+    ) -> None:
+        """`make coverage`'s dry-run recipe restores natives (`make core`)
+        and verifies them (`frob doctor`) before the coverage pytest run."""
+        self._assert_guard_precedes_pytest(self._dry_run("coverage"))
+
+    def test_coverage_fast_incremental_branch_restores_and_verifies_natives(
+        self,
+    ) -> None:
+        """`make coverage-fast`'s incremental branch (the one that does NOT
+        fall back to `make coverage`) is subject to the exact same
+        `$(STAMP)`/`uv sync` clobber hazard, since it also depends on
+        `$(STAMP)` -- this asserts its own `make core && frob doctor`
+        guard is present in the dry-run output before its own pytest
+        invocation."""
+        self._assert_guard_precedes_pytest(self._dry_run("coverage-fast"))

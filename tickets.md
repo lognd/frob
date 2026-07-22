@@ -3444,7 +3444,7 @@ Discovered while working T-0516: COV006 Violation objects carry no symref (file=
 id: T-0536
 title: Retag/rebind 3 residual COV006 findings after T-0528 calibration (genuinely
   wrong bindings, not blindness)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -3455,8 +3455,59 @@ scope:
 - tests/test_graph.py
 - tests/unit/strata/test_selfconform.py
 - tests/system/test_cli_ticket_land.py
-scope_changes: []
-evidence: []
+- Makefile
+- docs/modules/testing.md
+- src/frob/gates/__init__.py
+- tests/test_coverage.py
+- tests/test_gates_tick005.py
+- tests/test_ticket_land.py
+scope_changes:
+- op: add
+  glob: Makefile
+  reason: 'SCOPE001 collision: T-0538/T-0537''s own already-closed changes are still
+    in this worktree''s uncommitted-vs-main diff (sequential tickets, one worktree);
+    not new edits by T-0536 itself'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/testing.md
+  reason: 'SCOPE001 collision: T-0538/T-0537''s own already-closed changes are still
+    in this worktree''s uncommitted-vs-main diff (sequential tickets, one worktree);
+    not new edits by T-0536 itself'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'SCOPE001 collision: T-0538/T-0537''s own already-closed changes are still
+    in this worktree''s uncommitted-vs-main diff (sequential tickets, one worktree);
+    not new edits by T-0536 itself'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_coverage.py
+  reason: 'SCOPE001 collision: T-0538/T-0537''s own already-closed changes are still
+    in this worktree''s uncommitted-vs-main diff (sequential tickets, one worktree);
+    not new edits by T-0536 itself'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_gates_tick005.py
+  reason: 'SCOPE001 collision: T-0538/T-0537''s own already-closed changes are still
+    in this worktree''s uncommitted-vs-main diff (sequential tickets, one worktree);
+    not new edits by T-0536 itself'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'SCOPE001 collision: T-0538/T-0537''s own already-closed changes are still
+    in this worktree''s uncommitted-vs-main diff (sequential tickets, one worktree);
+    not new edits by T-0536 itself'
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_graph.py::TestBuildIncremental::test_fingerprint_packages_derived_from_lang_registry
+- tests/unit/strata/test_selfconform.py::TestLanguageCoverageDriftLock::test_scanned_languages_equals_registry_languages
+- tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map
 attachments: []
 acceptance: []
 threat: null
@@ -3473,21 +3524,110 @@ T-0528's COV006 calibration pass fixed 54/57 dogfooded findings via checker-side
 
 Also noted during T-0528: frob.graph.callgraph's build_call_graph resolves privacy via _short_name(qualname).startswith('_') -- a PYTHON-only naming convention. Rust's fn/pub fn convention has no such marker, so every rust callee looks 'public' to it and is silently never recorded as a private edge (this is what made all 7 frob-core/src/lib.rs COV006 findings structurally invisible before T-0528 added a non-python-target exemption to COV006 itself as a stopgap). A real fix belongs in frob.graph.callgraph (out of COV006's scope): add real per-language privacy resolution (e.g. consult RawSymbol.public directly instead of re-deriving it from the qualname's leading underscore) so Rust/other non-python languages get real call-graph edges instead of being permanently exempted from this class of check.
 
+## Done report
+
+All 3 residual COV006 findings from T-0528's calibration pass were
+genuinely wrong bindings in the sense the ticket described (asserts a
+module-level constant's set membership/equality, never calls the bound
+private symbol) -- but retargeting the `frob:tests` directive straight at
+the constant (the ticket's first suggested fix) does not work in
+practice: tried it for all three, and `frob check`'s DRIFT002 then
+reports the ref as unresolvable, because a bare module-level assignment
+(`_FINGERPRINT_PACKAGES`, `SCANNED_LANGUAGES`, `_EXTENDED_KINDS`) is not a
+graph node `frob ack` can bind against -- trading COV006 for DRIFT002.
+Used the ticket's second suggested fix instead: `frob:waive COV006` with
+the same module-constant-drift-lock reasoning T-0516's precedent
+(tests/test_gates.py) already established, on each of the 3 tests, kept
+the original (pre-existing, if slightly imprecise) `frob:tests` bindings
+unchanged.
+
+Verified `uv run frob check` (repo-wide, not just `--ticket`): `gate:COV
+0 errors, 0 warnings, 75 waived` -- COV006 unwaived = 0 repo-wide, the
+ticket's stated target.
+
+### Changed
+```
+ Makefile                              |  29 +++++
+ docs/modules/testing.md               |  11 ++
+ src/frob/gates/__init__.py            | 110 ++++++++++++++++-
+ tests/test_coverage.py                |  65 +++++++++-
+ tests/test_gates_tick005.py           | 218 ++++++++++++++++++++++++++++++++++
+ tests/test_graph.py                   |  11 ++
+ tests/test_ticket_land.py             |  35 ++++++
+ tests/unit/strata/test_selfconform.py |  18 +++
+ tickets.md                            | 171 ++++++++++++++++++++++++--
+ 9 files changed, 656 insertions(+), 12 deletions(-)
+```
+
+### Evidence
+- `tests/test_graph.py::TestBuildIncremental::test_fingerprint_packages_derived_from_lang_registry` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestLanguageCoverageDriftLock::test_scanned_languages_equals_registry_languages` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0537 -->
 ```yaml
 id: T-0537
 title: 'ledger merge: terminal->non-terminal state regression guard (splice + post-merge
   lint) -- manual conflict resolution resurrected 7 closed tickets'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-21'
 priority: medium
 blocked_by: []
 parent: null
-scope: []
-scope_changes: []
-evidence: []
+scope:
+- src/frob/tickets/_land.py
+- src/frob/tickets/__init__.py
+- src/frob/gates/__init__.py
+- tests/**
+- Makefile
+- docs/modules/testing.md
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: 'declare scope from ticket prose (Scope: _land.py, tickets/__init__.py,
+    gates/__init__.py, tests)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/tickets/__init__.py
+  reason: 'declare scope from ticket prose (Scope: _land.py, tickets/__init__.py,
+    gates/__init__.py, tests)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'declare scope from ticket prose (Scope: _land.py, tickets/__init__.py,
+    gates/__init__.py, tests)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/**
+  reason: 'declare scope from ticket prose (Scope: _land.py, tickets/__init__.py,
+    gates/__init__.py, tests)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: Makefile
+  reason: 'SCOPE001 collision: T-0538''s own already-closed changes are still in this
+    worktree''s uncommitted-vs-main diff (sequential tickets, one worktree); not new
+    edits by T-0537 itself'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/testing.md
+  reason: 'SCOPE001 collision: T-0538''s own already-closed changes are still in this
+    worktree''s uncommitted-vs-main diff (sequential tickets, one worktree); not new
+    edits by T-0537 itself'
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_hand_resolved_conflict_resurrecting_done_ticket_is_flagged
+- tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_forward_progress_across_a_merge_is_clean
+- tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_non_merge_commit_never_checked
+- tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_archived_ticket_is_not_flagged
+- tests/test_ticket_land.py::TestSpliceOnlyTicket::test_whole_ledger_splice_never_regresses_a_sibling_from_done
 attachments: []
 acceptance: []
 threat: null
@@ -3496,21 +3636,98 @@ labels: []
 ```
 Incident (2026-07-22): the COV-finish branch hit a tickets.md conflict mid-flight, resolved it manually, and its land carried stale queued states for 7 tickets main had already closed (T-0454/T-0498/T-0500/T-0514/T-0520/T-0526/T-0527); coordinator restored from the pre-merge ledger. T-0479's own-block splice protects frob ticket land, and T-0505 protects CLI writes, but a raw git merge with hand-resolved conflicts bypasses both. Fix: (1) splice_ledger/merge-driver must never move a ticket from done/dropped to an earlier state unless the landing ticket IS that ticket; (2) a cheap post-merge lint (tickets gate) that diffs states vs the merge's first parent and errors on terminal->non-terminal transitions outside the landed ticket. Scope: src/frob/tickets/_land.py, src/frob/tickets/__init__.py, src/frob/gates/__init__.py, tests.
 
+## Done report
+
+Incident: a `tickets.md` conflict resolved by hand (the merge driver not
+invoked, or its own hunk shape declined) can keep stale non-terminal
+states for tickets main had already closed -- the real T-0537 7-ticket
+resurrection.
+
+(a) Investigated `splice_ledger`/`_splice_only_ticket`'s existing
+`_newer` state-rank tiebreak (terminal states rank highest) and confirmed
+it already makes a terminal->non-terminal regression structurally
+impossible for anything that goes THROUGH the splice, whether the
+whole-ledger merge (`frob ticket merge-driver`) or the ticket-scoped
+splice `frob ticket land` uses. Added a new regression-lock test
+(`TestSpliceOnlyTicket::test_whole_ledger_splice_never_regresses_a_sibling_from_done`)
+proving this holds today, rather than introducing a second, redundant
+guard. Did NOT add a "landing ticket" exception to
+`_splice_only_ticket` after prototyping one and finding it broke an
+existing regression test (`TestCloseFailAfterMerge`) that depends on the
+SAME landing-ticket id race being caught, not bypassed -- disclosed here
+rather than silently dropped from the ticket's stated plan.
+
+(b) New TICK005 gate (`src/frob/gates/__init__.py`): after a genuine
+two-parent merge commit, diffs the current ledger against the merge's
+FIRST parent's tickets.md and ERRORs on any ticket that was DONE/DROPPED
+there but is neither DONE nor DROPPED (nor archived) now -- this is the
+part that actually catches the incident, since it inspects git history
+directly and does not depend on which mechanism (or lack of one)
+resolved the conflict. Non-vacuous fixture
+(tests/test_gates_tick005.py) reproduces the exact incident shape: a
+real two-parent merge commit (built via `commit-tree` for a
+deterministic "which side won" outcome) whose tree keeps the stale
+queued state for a ticket done on the other parent.
+
+Verified: `uv run pytest tests/test_gates_tick005.py tests/test_ticket_land.py`
+(53 passed), `uv run ruff check`/`ruff format --check`/`uv run ty check`
+on the touched files (all clean), `uv run frob check --ticket T-0537`
+(0 errors, all gates pass).
+
+### Changed
+```
+ Makefile                    |  29 ++++++
+ docs/modules/testing.md     |  11 +++
+ src/frob/gates/__init__.py  | 110 +++++++++++++++++++++-
+ tests/test_coverage.py      |  65 ++++++++++++-
+ tests/test_gates_tick005.py | 218 ++++++++++++++++++++++++++++++++++++++++++++
+ tests/test_ticket_land.py   |  35 +++++++
+ tickets.md                  |  58 +++++++++++-
+ 7 files changed, 518 insertions(+), 8 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_hand_resolved_conflict_resurrecting_done_ticket_is_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_forward_progress_across_a_merge_is_clean` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_non_merge_commit_never_checked` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_archived_ticket_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestSpliceOnlyTicket::test_whole_ledger_splice_never_regresses_a_sibling_from_done` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0538 -->
 ```yaml
 id: T-0538
 title: make coverage clobbers maturin natives (uv sync) then fails on strata_core
   imports -- guard the target
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-21'
 priority: medium
 blocked_by: []
 parent: null
-scope: []
-scope_changes: []
-evidence: []
+scope:
+- Makefile
+- docs/modules/testing.md
+- tests/test_coverage.py
+scope_changes:
+- op: add
+  glob: Makefile
+  reason: declare scope from ticket prose, needed to add Makefile-target dry-run test
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/testing.md
+  reason: declare scope from ticket prose, needed to add Makefile-target dry-run test
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_coverage.py
+  reason: declare scope from ticket prose, needed to add Makefile-target dry-run test
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_coverage.py::TestCoverageTargetNativesGuard::test_coverage_target_restores_and_verifies_natives_before_pytest
+- tests/test_coverage.py::TestCoverageTargetNativesGuard::test_coverage_fast_incremental_branch_restores_and_verifies_natives
 attachments: []
 acceptance: []
 threat: null
@@ -3518,6 +3735,36 @@ component: null
 labels: []
 ```
 Incident (2026-07-22): make coverage removed the editable strata_core/frob_core natives mid-run (the known uv-sync clobber, same family as the uv build --wheel gotcha), then died collecting tests/system/test_frob_self_model.py and left 44 phantom errors in frob check (SYS004 native-missing, 16 COV003 unresolvable kernel-property evidence, DRIFT fallout) until make core was re-run. Fix: the coverage target must either pin/exclude the natives from sync or run make core (cheap no-op when fresh) before pytest, and frob doctor's native check should run first so the failure is one clear line. Scope: Makefile, docs/modules/testing.md.
+
+## Done report
+
+`make coverage`/`make coverage-fast` both depend on `$(STAMP)` (`uv sync`),
+which reconciles the venv against only the declared dependency set and
+silently removes the editable `strata_core`/`frob_core` natives `make
+core` installed. Both targets now run `make core` (restore) then
+`uv run frob doctor` (verify, exit 1 with one clear line if a native is
+still missing, e.g. no Rust toolchain) before pytest ever collects.
+`coverage-fast`'s incremental (non-fallback) branch got the same guard
+since it shares the `$(STAMP)` dependency and does not always route
+through `coverage:`'s own guard.
+
+Verified via `make -n coverage` / `make -n coverage-fast` dry-runs (no
+recipe line executed) confirming `make core` then `frob doctor` precede
+the pytest invocation in both targets, plus a real `uv run frob doctor`
+run against the now-built natives. Did NOT run the full `make coverage`
+cycle per playbook 6b.
+
+### Changed
+```
+ Makefile                | 29 ++++++++++++++++++++++
+ docs/modules/testing.md | 11 +++++++++
+ tests/test_coverage.py  | 65 ++++++++++++++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 104 insertions(+), 1 deletion(-)
+```
+
+### Evidence
+- `tests/test_coverage.py::TestCoverageTargetNativesGuard::test_coverage_target_restores_and_verifies_natives_before_pytest` (pytest node id, verified passing when recorded)
+- `tests/test_coverage.py::TestCoverageTargetNativesGuard::test_coverage_fast_incremental_branch_restores_and_verifies_natives` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0539 -->
 ```yaml

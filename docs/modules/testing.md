@@ -432,3 +432,14 @@ first-class target, not an afterthought:
 - Agents: implementer runs `frob test` before writing a done-report;
   `skills/next` treats a red `frob test` as a blocker on close.
 - CI: `frob test --all` plus `make coverage` for the stamp.
+- T-0538: `make coverage`/`make coverage-fast` both depend on `$(STAMP)`
+  (`uv sync`), which reconciles the venv against only the declared
+  dependency set and silently REMOVES the editable `strata_core`/
+  `frob_core` natives `make core` installed (they are local maturin path
+  packages, not a declared dependency `uv sync` knows to keep). Both
+  Makefile targets now run `make core` (restore the natives) followed by
+  `frob doctor` (fail on one clear line if a native is still missing --
+  e.g. no Rust toolchain) BEFORE pytest ever collects, instead of letting
+  the clobber surface as an oblique mid-suite
+  `ModuleNotFoundError: strata_core` and a pile of downstream `frob check`
+  fallout (SYS004/COV003/DRIFT).

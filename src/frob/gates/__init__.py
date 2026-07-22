@@ -4977,16 +4977,120 @@ def _tick004_queue_rot(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     return tuple(violations)
 
 
+#: Terminal `TicketState`s -- once a ticket reaches one of these, moving it
+#: back to any other state is a regression, never a legitimate forward
+#: transition (T-0537).
+_TERMINAL_STATES = (TicketState.DONE, TicketState.DROPPED)
+
+
+def _tick005_head_second_parent(root: Path) -> str | None:
+    """`HEAD^2`'s resolved sha if `root`'s current commit is a real two-
+    parent merge commit, else `None` -- TICK005 only runs in a genuine
+    post-merge context (a fast-forward or an ordinary single-parent commit
+    has no "first parent before this merge" to diff against, and would
+    otherwise false-positive on any ordinary ticket-state edit)."""
+    from frob.gitio import run_argv
+
+    spawned = run_argv(["git", "-C", str(root), "rev-parse", "HEAD^2"])
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        return None
+    return spawned.danger_ok.stdout.strip()
+
+
+def _tick005_ledger_at_ref(root: Path, ref: str) -> dict[str, Ticket] | None:
+    """`tickets.md`'s parsed ticket-id -> `Ticket` map as of git ref `ref`,
+    or `None` if the ref/path does not resolve or the content fails to
+    parse -- either degrades TICK005 to a no-op rather than a false
+    positive or a crash."""
+    from frob.gitio import run_argv
+
+    spawned = run_argv(["git", "-C", str(root), "show", f"{ref}:tickets.md"])
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        return None
+    parsed = _tickets_parse_ledger(spawned.danger_ok.stdout)
+    if parsed.is_err:
+        return None
+    return parsed.danger_ok
+
+
+# frob:ticket T-0537
+def _tick005_merge_state_regression(
+    root: Path, queue: TicketQueue
+) -> tuple[Violation, ...]:
+    """TICK005 (T-0537): after a genuine two-parent merge commit, ERROR on
+    any ticket that was DONE/DROPPED (terminal) in the merge's FIRST
+    parent's `tickets.md` but is neither DONE nor DROPPED in the current
+    (post-merge) ledger, nor archived. `_land`'s own ticket-scoped splice
+    (`_splice_only_ticket`, T-0479) and `splice_ledger`'s state-rank
+    tiebreak (`_newer`, terminal ranks highest) already make this
+    structurally impossible for anything that goes THROUGH those code
+    paths -- this gate exists for the incident class that bypasses both: a
+    `tickets.md` merge conflict resolved BY HAND (the merge driver not
+    registered, or a conflict shape it declined), which can silently keep
+    stale non-terminal states for tickets main had already closed (the
+    real incident: 7 tickets -- T-0454/T-0498/T-0500/T-0514/T-0520/T-0526/
+    T-0527 -- resurrected this way). Runs regardless of mechanism, since it
+    inspects only the git history/ledger content, never how the merge
+    commit was produced."""
+    second_parent = _tick005_head_second_parent(root)
+    if second_parent is None:
+        return ()
+    parent_ledger = _tick005_ledger_at_ref(root, "HEAD^1")
+    if parent_ledger is None:
+        return ()
+
+    archived_ids = frozenset()
+    try:
+        from frob.tickets._land import _archived_ids
+
+        archived_ids = _archived_ids(root)
+    except ImportError:  # pragma: no cover -- frob.tickets._land always ships
+        _log.warning("tick005: could not import _archived_ids, treating as empty")
+
+    violations: list[Violation] = []
+    for ticket_id, parent_ticket in sorted(parent_ledger.items()):
+        if parent_ticket.state not in _TERMINAL_STATES:
+            continue
+        if ticket_id in archived_ids:
+            continue
+        current = queue.tickets.get(ticket_id)
+        if current is None:
+            continue
+        if current.state in _TERMINAL_STATES:
+            continue
+        violations.append(
+            Violation(
+                rule="TICK005",
+                severity=Severity.ERROR,
+                file="tickets.md",
+                line=0,
+                message=(
+                    f"TICK005: {ticket_id} was {parent_ticket.state.value} "
+                    f"in this merge's first parent but is "
+                    f"{current.state.value} now -- a terminal ticket "
+                    f"regressed to a non-terminal state, the T-0537 hand-"
+                    f"resolved-conflict resurrection incident; restore it "
+                    f"to {parent_ticket.state.value} (`git show "
+                    f"HEAD^1:tickets.md`) unless this state change is a "
+                    f"deliberate, reasoned reopen"
+                ),
+            )
+        )
+    return tuple(violations)
+
+
 # frob:doc docs/modules/tickets.md#decision-record-t-0162
 def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
-    """TICK001/TICK002/TICK003/TICK004: the T-0162 ticket-id collision
-    invariant gate, plus the T-0409 ledger-hygiene check and the T-0411
-    priority-rot check."""
+    """TICK001/TICK002/TICK003/TICK004/TICK005: the T-0162 ticket-id
+    collision invariant gate, plus the T-0409 ledger-hygiene check, the
+    T-0411 priority-rot check, and the T-0537 post-merge terminal-state-
+    regression lint."""
     return (
         _tick001_duplicate_ids(root)
         + _tick002_draft_on_default(root, queue)
         + _tick003_stale_archive(root)
         + _tick004_queue_rot(root, queue)
+        + _tick005_merge_state_regression(root, queue)
     )
 
 
