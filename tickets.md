@@ -10090,3 +10090,119 @@ component: null
 labels: []
 ```
 CI triage 2026-07-22: tests/system/test_cli_native_missing.py x2 fail on current main (test_check_fails_loud_with_sys004_when_strata_present, test_check_unaffected_when_no_strata_files). Investigate whether the native-staleness/fingerprint work (T-0570 doctor, _native_staleness) changed the SYS004 fail-loud contract or the tests' fixtures rotted; fix whichever is wrong -- the contract (a missing native with strata files present must fail LOUD, not silently skip) must hold.
+
+<!-- ticket:T-0709 -->
+```yaml
+id: T-0709
+title: 'runtime hot-graph: section-level timing sketches across the repo (parent)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/perf/**
+- src/frob/stats/**
+- docs/design/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN the children closed WHEN the perf harness runs THEN a queryable hot-graph
+  exists under .frob at sub-100KB with per-section decile readouts
+threat: null
+component: null
+labels: []
+```
+User mandate 2026-07-22: auditing/advisories for slow operations. Build a repo-wide hot-graph: per-section timing (major loop/branch bodies, external call edges, internal functions) collected at harness/test time, stored compactly, queryable, with advisories and regression ratcheting. STORAGE DECISION (user-driven): NOT normal distributions (heavy-tailed/multi-modal latency destroys mean/sigma) and NOT raw traces (megabytes) -- mergeable log-bucket quantile sketches (DDSketch-style, tunable relative-error alpha, ~hundreds of bytes/section), decayed merge = prior->update semantics, deciles read off at query time. Attribution WITHOUT sys.settrace: sampling collector + the normalized model's known line spans (T-0609..) map each stack sample to its enclosing section statically. Children: collector+attribution, sketch store, query surface, advisories+ratchet. Builds on src/frob/perf (existing harness/profile artifact, T-0582) and src/frob/stats -- extend, do not fork.
+
+<!-- ticket:T-0710 -->
+```yaml
+id: T-0710
+title: 'hot-graph collector: sampling profiler + normalized-model section attribution'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0709
+scope:
+- src/frob/perf/**
+- src/frob/arch/**
+- tests/unit/perf/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a fixture with a hot inner loop calling an external function WHEN the collector
+  runs THEN samples attribute to the loop section and the call edge with <5 percent
+  measured overhead
+threat: null
+component: null
+labels: []
+```
+Child 1: a sampling collector (py-spy-style stack sampling or sys.monitoring on 3.12+, config-tunable rate) running during the perf harness and optionally frob test; each sample's frame lines map to enclosing sections via the normalized model's line spans (loop bodies, branch arms, function bodies) and call edges (external vs internal callee classification from the import graph). Output: per-section and per-edge hit streams handed to the sketch store. Overhead budget: <5 percent at default rate, measured and documented.
+
+<!-- ticket:T-0711 -->
+```yaml
+id: T-0711
+title: 'hot-graph sketch store: log-bucket quantile sketches with decayed merge in
+  .frob sqlite'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0709
+scope:
+- src/frob/stats/**
+- src/frob/perf/**
+- tests/unit/perf/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN bimodal latencies (1ms and 100ms modes) WHEN sketched at alpha=2 percent THEN
+  p10/p50/p90 read back within relative error and the serialized sketch is <1KB; GIVEN
+  repeated runs THEN decayed merge converges and the store stays under its cap
+threat: null
+component: null
+labels: []
+```
+Child 2: the user-specified compact encoding. DDSketch-style log-scale bucket sketch per section/edge: tunable relative-error alpha (frob.toml, default ~2 percent), mergeable, serialized to .frob sqlite keyed by stable section id (symbol digest + section kind + span -- survives line drift via the existing symbol digest machinery). prior->update = merge(current_run_sketch, decay(stored_prior, half_life_runs)); deciles/any-quantile computed at read time, never stored. Size budget enforced: a repo-wide store cap (~100KB default) with eviction of coldest sections, so it structurally cannot grow to megabytes. Property tests: merge associativity, quantile relative-error bound holds under adversarial bimodal inputs (the anti-normal-distribution case).
+
+<!-- ticket:T-0712 -->
+```yaml
+id: T-0712
+title: hot-graph query surface + slow-operation advisories + perf regression ratchet
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0710
+- T-0711
+parent: T-0709
+scope:
+- src/frob/perf/**
+- src/frob/app/**
+- src/frob/gates/**
+- docs/modules/perf.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a section whose p90 regresses beyond tolerance vs the stored prior WHEN frob
+  check runs with the ratchet enabled THEN a PERF finding names the section and both
+  decile sets; GIVEN a loop dominated by an external call THEN an advisory fires with
+  the edge's deciles
+threat: null
+component: null
+labels: []
+```
+Child 3: consumers. (1) QUERY: frob perf hot [--top N --by p90|p50xcount] renders the hot-graph (section, callee edge, decile readout, sample count) from the sketch store; MCP tool mirror for agents. (2) ADVISORIES (suggestion tier, T-0332 noise discipline): external call edge dominating a loop body's time -> batch/cache/move-out-of-loop suggestion naming the edge and its deciles; nested-loop section hot AND upstream of a fan-in -> complexity suspect; section p90 >> p50 (heavy tail) -> variance advisory naming likely modes. (3) REGRESSION RATCHET: current run sketch vs stored prior -- quantile shift beyond alpha + configured tolerance = PERF finding naming the section and both deciles (ratchet-pool style per T-0569/T-0594 precedent, baseline-old error-new).
