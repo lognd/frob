@@ -24,6 +24,7 @@ __all__ = [
     "CoverageData",
     "CoverageError",
     "DebtEntry",
+    "DeprecatedEntry",
     "GateConfig",
     "GateError",
     "GateReport",
@@ -67,6 +68,21 @@ class DebtEntry(BaseModel):
     site: str
     ticket: str
     until: str
+    expired: bool
+
+
+# frob:doc docs/modules/gates.md#deprecated-gate-t-0576
+class DeprecatedEntry(BaseModel):
+    """One outstanding `frob:deprecated` entry, as `frob.gates.list_deprecated`
+    reports it (T-0576): the symbol carrying the sunset, its owning ticket,
+    the sunset date, and whether that date has already passed."""
+
+    model_config = ConfigDict(frozen=True)
+
+    symref: str
+    since: str
+    sunset: str
+    ticket: str
     expired: bool
 
 

@@ -7,8 +7,9 @@
 `frob:<verb> <target> [key="value" ...]` is the in-source obligation
 language (`docs/modules/graph.md#comment-dsl`). Verbs map to `EdgeKind`
 values via `_VERB_TABLE` in `src/frob/graph/dsl.py`. Current verbs: `doc`,
-`uses-contract`, `invariant`, `ticket`, `todo`, `waive`, `debt`, `tests`,
-`decision`, `channel`, `boundary`, `secret`. Parsing is language-agnostic:
+`uses-contract`, `invariant`, `ticket`, `todo`, `waive`, `debt`,
+`deprecated`, `tests`, `decision`, `channel`, `boundary`, `secret`.
+Parsing is language-agnostic:
 `frob.lang`'s five walkers strip comment delimiters first, so `dsl.py`
 only ever sees the bare `frob:...` text regardless of `#`, `//`, or
 `/* */` origin.
@@ -58,6 +59,37 @@ directives at once, sight-unseen, risks silently mis-binding several to
 the wrong ticket or an already-closed one, which is exactly the failure
 mode DEBT002 exists to catch. Convert them incrementally, verifying each
 one's ticket is real and open as you go.
+
+### `frob:deprecated` (T-0576): `frob:debt` generalized to the API surface
+
+```
+frob:deprecated <since> sunset="YYYY-MM-DD" ticket="T-####" [reason="..."]
+```
+
+Where `frob:debt` suppresses a GATE FINDING (the symptom), `frob:deprecated`
+is about a public symbol's continued EXISTENCE (a dated exit for something
+still callable today). `<since>` is free text (typically the version the
+symbol was deprecated in); `sunset=` is REQUIRED and must be a plain
+`YYYY-MM-DD` calendar date -- never a semver, since a real-world sunset is a
+date regardless of how the release train moves. `ticket=` is REQUIRED, same
+posture as `frob:debt`, and must name a currently OPEN ticket -- DEPR002
+fails a deprecation bound to a missing or closed ticket for the same
+reason DEBT002 does. Missing either attribute, or a non-date `sunset=`, is
+DEPR001, the malformed-directive counterpart to DEBT001/WAIVE001.
+
+Unlike `frob:debt` (silent while valid), `frob.gates.deprecated_gate` warns
+the moment the directive exists and is still inside its window (DEPR003),
+so a live-but-scheduled deprecation stays visible in ordinary `frob check`
+output rather than only surfacing once the date arrives; DEPR003
+escalates to a hard ERROR (DEPR004) once `sunset` has passed. `frob
+release`'s REL001 check refuses to bless a release while ANY
+`frob:deprecated` is past its sunset -- but, unlike debt, one still inside
+its warning window does NOT block a release; the point is only that an
+unenforced sunset never quietly survives past its own date.
+`frob.gates.list_deprecated` reports every currently-recorded entry
+(symref, since, sunset, ticket, expired); there is no CLI subcommand or
+`--apply` wired to it yet (T-0576 scoped only the graph/gates/docs/tests
+layer -- a CLI surface, if wanted, is its own follow-up).
 
 ## Multi-line directives (backslash continuation)
 

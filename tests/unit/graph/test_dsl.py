@@ -420,3 +420,67 @@ class TestDebtTodoCoherence:
         assert "frob:debt" in malformed[0].reason
         assert "T-0001" in malformed[0].reason
         assert "T-0002" in malformed[0].reason
+
+
+class TestDeprecatedDirective:
+    """`frob:deprecated <since> sunset="YYYY-MM-DD" ticket="T-####"` (T-0576):
+    the required-attrs parse (mirroring `frob:debt`'s own required-attrs
+    check) and its `sunset=` date-shape validation."""
+
+    def test_well_formed_directive_parses_to_deprecated_edge(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/dsl.py::_parse_attrs
+        src = (
+            "def foo() -> None:\n"
+            '    # frob:deprecated 0.70.0 sunset="2099-01-01" ticket="T-0001" '
+            'reason="use bar instead"\n'
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        edge = next(e for e in edges if e.kind == "deprecated")
+        assert edge.target == "0.70.0"
+        assert edge.attrs["sunset"] == "2099-01-01"
+        assert edge.attrs["ticket"] == "T-0001"
+        assert edge.attrs["reason"] == "use bar instead"
+
+    def test_missing_sunset_is_malformed(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/dsl.py::_parse_attrs
+        src = (
+            "def foo() -> None:\n"
+            '    # frob:deprecated 0.70.0 ticket="T-0001"\n'
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not edges
+        assert len(malformed) == 1
+        assert "sunset" in malformed[0].reason
+
+    def test_missing_ticket_is_malformed(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/dsl.py::_parse_attrs
+        src = (
+            "def foo() -> None:\n"
+            '    # frob:deprecated 0.70.0 sunset="2099-01-01"\n'
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not edges
+        assert len(malformed) == 1
+        assert "ticket" in malformed[0].reason
+
+    def test_non_date_sunset_is_malformed(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/dsl.py::_parse_attrs
+        src = (
+            "def foo() -> None:\n"
+            '    # frob:deprecated 0.70.0 sunset="Q1-2099" ticket="T-0001"\n'
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not edges
+        assert len(malformed) == 1
+        assert "sunset" in malformed[0].reason

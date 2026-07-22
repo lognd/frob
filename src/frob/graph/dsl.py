@@ -35,6 +35,11 @@ _VERB_TABLE: dict[str, EdgeKind] = {
     # a TEMPORARY, ticket-bound, tracked exception (see _parse_attrs' verb
     # == "debt" branch for its required-attrs check).
     "debt": EdgeKind.DEBT,
+    # T-0576: frob:deprecated <since> sunset="YYYY-MM-DD" ticket="T-####"
+    # [reason="..."] -- a ticket-bound sunset date on a still-callable public
+    # symbol (see _parse_attrs' verb == "deprecated" branch for its
+    # required-attrs check).
+    "deprecated": EdgeKind.DEPRECATED,
     "tests": EdgeKind.TESTS,
     "decision": EdgeKind.DECISION,
     # T-0080: strata directives -- bind a code symbol to a design construct
@@ -52,6 +57,11 @@ _VERB_TABLE: dict[str, EdgeKind] = {
 _LINE_RE = re.compile(r"^frob:(?P<verb>\S+)(?:\s+(?P<rest>.*))?$")
 _ATTR_RE = re.compile(r'(\w+)\s*=\s*"([^"]*)"')
 _TESTS_KINDS = frozenset({"unit", "integration", "e2e"})
+#: `frob:deprecated`'s `sunset="..."` attribute shape (T-0576) -- a plain
+#: calendar date, never a semver: DEBT's `until` already supports a version
+#: boundary for a lint exception, but a public symbol's sunset is a
+#: real-world date regardless of how the release train moves.
+_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 #: Verbs that are intentional `frob:<verb>` literal markers owned by a
 #: DIFFERENT subsystem (never routed through `_VERB_TABLE`, never turned
@@ -185,6 +195,26 @@ def _parse_attrs(
                 reason=(
                     'frob:debt requires reason="..." and ticket="T-####" '
                     f"(missing: {', '.join(missing)})"
+                ),
+            )
+    if verb == "deprecated":
+        missing = [key for key in ("sunset", "ticket") if key not in attrs]
+        if missing:
+            return MalformedDirective(
+                file=path,
+                line=lineno,
+                reason=(
+                    'frob:deprecated requires sunset="YYYY-MM-DD" and '
+                    f'ticket="T-####" (missing: {", ".join(missing)})'
+                ),
+            )
+        if not _DATE_RE.match(attrs["sunset"].strip()):
+            return MalformedDirective(
+                file=path,
+                line=lineno,
+                reason=(
+                    f"frob:deprecated sunset={attrs['sunset']!r} is not a "
+                    "YYYY-MM-DD date"
                 ),
             )
     if verb == "tests":

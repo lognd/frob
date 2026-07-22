@@ -69,6 +69,7 @@ from frob.gates._models import (
     CoverageData,
     CoverageError,
     DebtEntry,
+    DeprecatedEntry,
     GateConfig,
     GateError,
     GateReport,
@@ -911,6 +912,13 @@ _KNOWN_GATE_RULES = frozenset(
         "DEBT001",
         "DEBT002",
         "DEBT003",
+        # T-0576: frob:deprecated -- a ticket-bound sunset date on a public
+        # symbol's continued existence. Malformed directive, non-open
+        # ticket, still-in-window (warn), and past-sunset (error).
+        "DEPR001",
+        "DEPR002",
+        "DEPR003",
+        "DEPR004",
         # T-0404 finding 5: catch-all for a malformed `frob:` directive not
         # already claimed by a per-flavor check (WAIVE001/TEST010/DEBT001).
         "DSL001",
@@ -3550,6 +3558,269 @@ def _release_open_debt_violations(snapshot: GraphSnapshot) -> tuple[Violation, .
                     f"(ticket={edge.attrs.get('ticket', '')!r}) is still open; "
                     f"all debt must be resolved (or its owning ticket closed, "
                     f"clearing the directive) before a release, run: frob debt"
+                ),
+            )
+        )
+    return tuple(violations)
+
+
+# ---------------------------------------------------------------------------
+# Deprecated-symbol gate (T-0576): `frob:debt` generalized to the API
+# surface itself. A `frob:deprecated <since> sunset="YYYY-MM-DD"
+# ticket="T-####" [reason="..."]` directive on a public symbol declares a
+# ticket-bound, dated exit -- distinct from `frob:debt` in that its subject
+# is the symbol's continued EXISTENCE, not a suppressed lint finding.
+#
+# DEPR001: malformed directive (missing/invalid `sunset=`/`ticket=`), same
+# shape as DEBT001. DEPR002: the bound ticket is not open (missing, or
+# closed with the directive -- and presumably the symbol -- still in
+# place), same shape and severity as DEBT002. DEPR003: the sunset date has
+# not yet passed -- a WARNING, not an error, so a live-but-scheduled
+# deprecation stays visible in ordinary `frob check` output rather than
+# being wholly silent until the date arrives (`frob:debt` has no equivalent
+# "still valid" signal; a deprecated PUBLIC symbol needs one, per T-0576's
+# body). DEPR004: the sunset date has passed -- escalates to ERROR, mirroring
+# DEBT003's expiry escalation. DEPR003/DEPR004 are mutually exclusive per
+# edge (a given `frob:deprecated` is either still in its warning window or
+# past sunset, never both), and DEPR002 suppresses both when the ticket
+# itself is not open (a mistracked deprecation is the more actionable
+# finding). `release_gate` additionally refuses to stamp a release while
+# ANY *expired* deprecation is still open (`_release_expired_deprecated_
+# violations`) -- unlike DEBT's release check, a still-live deprecation
+# (within its warning window) does not block a release; the point is that
+# an unenforced sunset never quietly survives past its own date.
+# ---------------------------------------------------------------------------
+
+
+def _deprecated_edges(snapshot: GraphSnapshot) -> tuple[Edge, ...]:
+    """Every `frob:deprecated` edge in the snapshot (dsl.py already rejects
+    one missing `sunset=`/`ticket=`, or with a non-`YYYY-MM-DD` `sunset=`,
+    as a MalformedDirective, T-0576)."""
+    return tuple(e for e in snapshot.edges if e.kind == EdgeKind.DEPRECATED)
+
+
+# frob:enforces CHK-GATE-DEPR001
+def _depr001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """DEPR001: a `frob:deprecated` directive missing/invalid `sunset=` or
+    missing `ticket=` -- surfaced from `frob.graph`'s MalformedDirective
+    list, mirroring DEBT001's own shape for `frob:debt`."""
+    violations: list[Violation] = []
+    for md in snapshot.malformed:
+        if "frob:deprecated" not in md.reason:
+            continue
+        _log.debug("DEPR001: %s:%d %s", md.file, md.line, md.reason)
+        violations.append(
+            Violation(
+                rule="DEPR001",
+                severity=Severity.ERROR,
+                file=md.file,
+                line=md.line,
+                message=f"DEPR001: {md.file}:{md.line} {md.reason}",
+            )
+        )
+    return tuple(violations)
+
+
+# frob:enforces CHK-GATE-DEPR002
+def _depr002_violations(
+    snapshot: GraphSnapshot, queue: TicketQueue
+) -> tuple[Violation, ...]:
+    """DEPR002: a `frob:deprecated`'s `ticket="..."` names a ticket that is
+    missing or not open -- the "ticket closes without removal" failure mode
+    from T-0576's body: once the owning ticket closes, the directive (and
+    presumably the symbol it sunsets) must be gone; if it is still there,
+    that is a structural lie about what is actually tracked, same posture
+    as DEBT002 for `frob:debt`."""
+    violations: list[Violation] = []
+    for edge in _deprecated_edges(snapshot):
+        ticket_id = edge.attrs.get("ticket", "")
+        target = queue.tickets.get(ticket_id)
+        if target is not None and target.state in _OPEN_STATES:
+            continue
+        file, line = _site_from_edge_origin(edge.origin)
+        _log.debug("DEPR002: %s -> ticket=%s not open", edge.src, ticket_id)
+        violations.append(
+            Violation(
+                rule="DEPR002",
+                severity=Severity.ERROR,
+                file=file,
+                line=line,
+                message=(
+                    f"DEPR002: frob:deprecated {edge.target} at {edge.src} is "
+                    f"bound to ticket={ticket_id!r}, which is not open (missing "
+                    f"or closed); a deprecation must point at real, open "
+                    f"removal work -- rebind to an open ticket, or finish the "
+                    f"removal and delete the directive along with the symbol"
+                ),
+            )
+        )
+    return tuple(violations)
+
+
+def _deprecated_is_expired(sunset: str, *, current_date: str) -> bool:
+    """Whether `sunset` (a `YYYY-MM-DD` date) has passed, judged against
+    `current_date` (T-0576). `sunset` is always well-formed here -- dsl.py
+    rejects a non-`YYYY-MM-DD` `sunset=` as DEPR001-malformed before it ever
+    becomes a `DEPRECATED` edge."""
+    return sunset.strip() <= current_date
+
+
+# frob:enforces CHK-GATE-DEPR003
+def _depr003_violations(
+    snapshot: GraphSnapshot, queue: TicketQueue, *, current_date: str
+) -> tuple[Violation, ...]:
+    """DEPR003: a `frob:deprecated` still inside its warning window (bound
+    to an open ticket, `sunset` not yet passed) -- a WARNING, kept visible
+    in ordinary `frob check` output rather than silent until the sunset
+    date arrives (T-0576's "warns while in window" requirement). Suppressed
+    when DEPR002 already fired for the same edge (a mistracked ticket is
+    the more actionable finding) or when DEPR004 fires instead (past
+    sunset -- an ERROR, not also a WARNING)."""
+    violations: list[Violation] = []
+    for edge in _deprecated_edges(snapshot):
+        ticket_id = edge.attrs.get("ticket", "")
+        target = queue.tickets.get(ticket_id)
+        if target is None or target.state not in _OPEN_STATES:
+            continue
+        sunset = edge.attrs.get("sunset", "")
+        if _deprecated_is_expired(sunset, current_date=current_date):
+            continue
+        file, line = _site_from_edge_origin(edge.origin)
+        _log.debug("DEPR003: %s in window (sunset=%s)", edge.src, sunset)
+        violations.append(
+            Violation(
+                rule="DEPR003",
+                severity=Severity.WARN,
+                file=file,
+                line=line,
+                message=(
+                    f"DEPR003: {edge.src} is deprecated since {edge.target!r} "
+                    f"(ticket={ticket_id!r}), sunsets {sunset}; migrate off it "
+                    f"before then"
+                ),
+            )
+        )
+    return tuple(violations)
+
+
+# frob:enforces CHK-GATE-DEPR004
+def _depr004_violations(
+    snapshot: GraphSnapshot, queue: TicketQueue, *, current_date: str
+) -> tuple[Violation, ...]:
+    """DEPR004: a `frob:deprecated` whose `sunset` boundary has passed --
+    escalates from a warning to a hard ERROR (T-0576's "errors past sunset"
+    requirement), mirroring DEBT003's expiry escalation. Suppressed when
+    DEPR002 already fired for the same edge (a mistracked ticket is the
+    more actionable finding)."""
+    violations: list[Violation] = []
+    for edge in _deprecated_edges(snapshot):
+        ticket_id = edge.attrs.get("ticket", "")
+        target = queue.tickets.get(ticket_id)
+        if target is None or target.state not in _OPEN_STATES:
+            continue
+        sunset = edge.attrs.get("sunset", "")
+        if not _deprecated_is_expired(sunset, current_date=current_date):
+            continue
+        file, line = _site_from_edge_origin(edge.origin)
+        _log.debug("DEPR004: %s expired (sunset=%s)", edge.src, sunset)
+        violations.append(
+            Violation(
+                rule="DEPR004",
+                severity=Severity.ERROR,
+                file=file,
+                line=line,
+                message=(
+                    f"DEPR004: {edge.src} is deprecated since {edge.target!r} "
+                    f"(ticket={ticket_id!r}) and past its sunset ({sunset}); "
+                    f"remove the symbol and its directive, or file a follow-up "
+                    f"and extend `sunset` with a written reason"
+                ),
+            )
+        )
+    return tuple(violations)
+
+
+# frob:doc docs/modules/gates.md#deprecated-gate-t-0576
+# frob:tests tests/test_gates.py::TestDeprecatedGate.test_depr001_malformed_directive_is_reported  # noqa: E501
+# frob:tests tests/test_gates.py::TestDeprecatedGate.test_depr002_closed_ticket_is_reported  # noqa: E501
+# frob:tests tests/test_gates.py::TestDeprecatedGate.test_depr003_in_window_warns  # noqa: E501
+# frob:tests tests/test_gates.py::TestDeprecatedGate.test_depr004_past_sunset_errors  # noqa: E501
+# frob:tests tests/test_gates.py::TestDeprecatedGate.test_clean_deprecated_produces_no_violations  # noqa: E501
+def deprecated_gate(
+    snapshot: GraphSnapshot,
+    queue: TicketQueue,
+    *,
+    current_date: str,
+) -> tuple[Violation, ...]:
+    """DEPR001-004 (T-0576): `frob:deprecated`'s four states -- a malformed
+    directive, a directive bound to a non-open ticket, a directive still in
+    its warning window, and a directive past its sunset date.
+    `current_date` (`YYYY-MM-DD`) is injected rather than computed here so
+    this stays a pure function of its inputs, matching `debt_gate`."""
+    return (
+        *_depr001_violations(snapshot),
+        *_depr002_violations(snapshot, queue),
+        *_depr003_violations(snapshot, queue, current_date=current_date),
+        *_depr004_violations(snapshot, queue, current_date=current_date),
+    )
+
+
+# frob:doc docs/modules/gates.md#deprecated-gate-t-0576
+# frob:tests tests/test_gates.py::TestDeprecatedGate.test_lists_every_deprecated_entry  # noqa: E501
+def list_deprecated(
+    snapshot: GraphSnapshot, *, current_date: str
+) -> tuple[DeprecatedEntry, ...]:
+    """Every currently-recorded `frob:deprecated` entry (T-0576), for a
+    human/agent to see the whole outstanding sunset set at a glance --
+    independent of whether each entry is itself well-formed/open/expired
+    (DEPR001/002/004 are what fail the BUILD over it, this is what reports
+    honestly regardless)."""
+    entries: list[DeprecatedEntry] = []
+    for edge in _deprecated_edges(snapshot):
+        sunset = edge.attrs.get("sunset", "")
+        expired = bool(sunset) and _deprecated_is_expired(
+            sunset, current_date=current_date
+        )
+        entries.append(
+            DeprecatedEntry(
+                symref=edge.src,
+                since=edge.target,
+                sunset=sunset,
+                ticket=edge.attrs.get("ticket", ""),
+                expired=expired,
+            )
+        )
+    return tuple(entries)
+
+
+# frob:enforces CHK-GATE-REL001
+def _release_expired_deprecated_violations(
+    snapshot: GraphSnapshot, *, current_date: str
+) -> tuple[Violation, ...]:
+    """REL001: a release must never ship while ANY `frob:deprecated` is
+    past its sunset (T-0576) -- unlike `frob:debt` (where ALL open debt
+    blocks a release), a deprecation still inside its warning window is
+    fine to ship; only an unenforced, past-sunset one is a release blocker.
+    Reported under REL001, the same rule id `release_gate`'s other findings
+    use, since this is a release-blocking condition, not a new independent
+    failure mode of its own."""
+    violations: list[Violation] = []
+    for edge in _deprecated_edges(snapshot):
+        sunset = edge.attrs.get("sunset", "")
+        if not sunset or not _deprecated_is_expired(sunset, current_date=current_date):
+            continue
+        file, line = _site_from_edge_origin(edge.origin)
+        violations.append(
+            Violation(
+                rule="REL001",
+                severity=Severity.ERROR,
+                file=file,
+                line=line,
+                message=(
+                    f"REL001: frob:deprecated {edge.target} at {edge.src} "
+                    f"(ticket={edge.attrs.get('ticket', '')!r}) is past its "
+                    f"sunset ({sunset}); remove it (or extend `sunset` with a "
+                    f"written reason) before a release, run: frob check"
                 ),
             )
         )
@@ -6601,6 +6872,13 @@ def release_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     # not -- debt is collected and re-raised before shipping, never
     # silently carried forward as a de facto permanent waiver.
     violations.extend(_release_open_debt_violations(snapshot))
+    # T-0576: unlike debt, a release only refuses to ship over an EXPIRED
+    # deprecation -- one still inside its warning window is fine.
+    violations.extend(
+        _release_expired_deprecated_violations(
+            snapshot, current_date=date.today().isoformat()
+        )
+    )
     _log.info("release_gate: bump=%s, %d violation(s)", bump.name, len(violations))
     return tuple(violations)
 
@@ -7418,6 +7696,13 @@ def _build_jobs(
             current_date=date.today().isoformat(),
             current_version=_current_version(st.repo_root) or "0.0.0",
         ),
+        # T-0576: same injected-current_date posture as "debt" above --
+        # deprecated_gate stays a pure function of its args.
+        "deprecated": lambda: deprecated_gate(
+            st.snapshot,
+            st.queue,
+            current_date=date.today().isoformat(),
+        ),
         # T-0465: `.git/info/exclude` is the SHARED common-dir file across
         # every worktree of this clone, always against repo_root (never
         # the possibly-scoped st.root) for the same reason secrets/refs
@@ -7824,10 +8109,12 @@ __all__ = [
     "cve_fingerprint_scan_gate",
     "debt_gate",
     "decisions_gate",
+    "deprecated_gate",
     "doclink_gate",
     "docanchor_gate",
     "dup_gate",
     "list_debt",
+    "list_deprecated",
     "evidence_covers_scope",
     "fuzz_gate",
     "lang_conformance_gate",

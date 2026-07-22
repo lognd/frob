@@ -23,6 +23,7 @@ from frob.gates import (
     coverage_gate,
     debt_gate,
     delta_violations,
+    deprecated_gate,
     drift_gate,
     exclude_hazard_gate,
     inv003_gate,
@@ -32,6 +33,7 @@ from frob.gates import (
     is_baseline_stale,
     known_gate_rule_ids,
     list_debt,
+    list_deprecated,
     load_baseline,
     load_coverage,
     prework_gate,
@@ -1739,6 +1741,177 @@ class TestDebtGate:
         assert stamp(tmp_path, snap, "0.1.0").is_ok
         violations = release_gate(tmp_path, snap)
         assert any(v.rule == "REL001" and "frob:debt" in v.message for v in violations)
+
+
+class TestDeprecatedGate:
+    """T-0576: frob:deprecated -- frob:debt generalized to a public API's
+    own sunset. Malformed directive (DEPR001), non-open ticket (DEPR002),
+    still-in-window warning (DEPR003), past-sunset error (DEPR004)."""
+
+    def test_depr001_malformed_directive_is_reported(self, tmp_path: Path) -> None:
+        """T-0576: frob:deprecated requires BOTH sunset= and ticket= --
+        missing either is DEPR001, mirroring DEBT001's shape."""
+        # frob:tests tests/test_gates.py::TestDeprecatedGate.test_depr001_malformed_directive_is_reported  # noqa: E501
+        source = 'def helper(x):\n    # frob:deprecated 0.1.0 ticket="T-0001"\n    return x\n'
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        violations = deprecated_gate(snap, queue, current_date="2026-01-01")
+        v = _first_rule(violations, "DEPR001")
+        assert v is not None
+        assert v.severity == Severity.ERROR
+        assert "sunset" in v.message
+
+    def test_depr001_malformed_sunset_is_reported(self, tmp_path: Path) -> None:
+        """T-0576: a `sunset=` that is not a YYYY-MM-DD date is also DEPR001."""
+        # frob:tests tests/test_gates.py::TestDeprecatedGate.test_depr001_malformed_sunset_is_reported  # noqa: E501
+        source = (
+            "def helper(x):\n"
+            '    # frob:deprecated 0.1.0 sunset="soon" ticket="T-0001"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        violations = deprecated_gate(snap, queue, current_date="2026-01-01")
+        v = _first_rule(violations, "DEPR001")
+        assert v is not None
+        assert v.severity == Severity.ERROR
+
+    def test_depr002_closed_ticket_is_reported(self, tmp_path: Path) -> None:
+        """T-0576: a frob:deprecated bound to a closed ticket is DEPR002 --
+        the ticket closed but the directive (presumably the symbol) is
+        still here."""
+        # frob:tests tests/test_gates.py::TestDeprecatedGate.test_depr002_closed_ticket_is_reported  # noqa: E501
+        source = (
+            "def helper(x):\n"
+            '    # frob:deprecated 0.1.0 sunset="2099-01-01" ticket="T-0001"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.DONE)})
+        violations = deprecated_gate(snap, queue, current_date="2026-01-01")
+        v = _first_rule(violations, "DEPR002")
+        assert v is not None
+        assert v.severity == Severity.ERROR
+        assert not any(v.rule in ("DEPR003", "DEPR004") for v in violations)
+
+    def test_depr003_in_window_warns(self, tmp_path: Path) -> None:
+        """T-0576: an open, not-yet-sunset frob:deprecated is a WARNING --
+        visible, but does not fail `frob check`."""
+        # frob:tests tests/test_gates.py::TestDeprecatedGate.test_depr003_in_window_warns
+        source = (
+            "def helper(x):\n"
+            '    # frob:deprecated 0.1.0 sunset="2099-01-01" ticket="T-0001"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.QUEUED)})
+        violations = deprecated_gate(snap, queue, current_date="2026-01-01")
+        v = _first_rule(violations, "DEPR003")
+        assert v is not None
+        assert v.severity == Severity.WARN
+        assert not any(v.rule == "DEPR004" for v in violations)
+
+    def test_depr004_past_sunset_errors(self, tmp_path: Path) -> None:
+        """T-0576: an open frob:deprecated past its sunset date escalates
+        from a warning to DEPR004, an ERROR."""
+        # frob:tests tests/test_gates.py::TestDeprecatedGate.test_depr004_past_sunset_errors  # noqa: E501
+        source = (
+            "def helper(x):\n"
+            '    # frob:deprecated 0.1.0 sunset="2026-01-01" ticket="T-0001"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.QUEUED)})
+        violations = deprecated_gate(snap, queue, current_date="2026-06-01")
+        v = _first_rule(violations, "DEPR004")
+        assert v is not None
+        assert v.severity == Severity.ERROR
+        assert not any(v.rule == "DEPR003" for v in violations)
+
+    def test_clean_deprecated_produces_no_violations(self, tmp_path: Path) -> None:
+        """T-0576: a well-formed, open, still-in-window deprecation whose
+        ticket is open produces only the DEPR003 warning, nothing else."""
+        # frob:tests tests/test_gates.py::TestDeprecatedGate.test_clean_deprecated_produces_no_violations  # noqa: E501
+        source = (
+            "def helper(x):\n"
+            '    # frob:deprecated 0.1.0 sunset="2099-01-01" ticket="T-0001"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.QUEUED)})
+        violations = deprecated_gate(snap, queue, current_date="2026-01-01")
+        assert _rules(violations) == ["DEPR003"]
+
+    def test_lists_every_deprecated_entry(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates.py::TestDeprecatedGate.test_lists_every_deprecated_entry  # noqa: E501
+        source = (
+            "def helper(x):\n"
+            '    # frob:deprecated 0.1.0 sunset="2099-01-01" ticket="T-0001"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        entries = list_deprecated(snap, current_date="2026-01-01")
+        assert len(entries) == 1
+        entry = entries[0]
+        assert entry.since == "0.1.0"
+        assert entry.ticket == "T-0001"
+        assert entry.sunset == "2099-01-01"
+        assert entry.expired is False
+
+    def test_release_gate_fails_while_deprecated_is_past_sunset(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0576: a release must never ship while a frob:deprecated is past
+        its sunset -- unlike frob:debt, a still-in-window one does not
+        block a release."""
+        # frob:tests tests/test_gates.py::TestDeprecatedGate.test_release_gate_fails_while_deprecated_is_past_sunset  # noqa: E501
+        from frob.gates import release_gate
+        from frob.release import stamp
+
+        source = (
+            "def helper(x):\n"
+            '    # frob:deprecated 0.1.0 sunset="2020-01-01" ticket="T-0001"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        _write(tmp_path, "pyproject.toml", '[project]\nname = "x"\nversion = "0.1.0"\n')
+        snap = _snapshot(tmp_path)
+        assert stamp(tmp_path, snap, "0.1.0").is_ok
+        violations = release_gate(tmp_path, snap)
+        assert any(
+            v.rule == "REL001" and "frob:deprecated" in v.message for v in violations
+        )
+
+    def test_release_gate_silent_while_deprecated_in_window(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0576: unlike frob:debt (blocks release for ANY open debt), a
+        deprecation still inside its warning window does not block a
+        release."""
+        # frob:tests tests/test_gates.py::TestDeprecatedGate.test_release_gate_silent_while_deprecated_in_window  # noqa: E501
+        from frob.gates import release_gate
+        from frob.release import stamp
+
+        source = (
+            "def helper(x):\n"
+            '    # frob:deprecated 0.1.0 sunset="2099-01-01" ticket="T-0001"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        _write(tmp_path, "pyproject.toml", '[project]\nname = "x"\nversion = "0.1.0"\n')
+        snap = _snapshot(tmp_path)
+        assert stamp(tmp_path, snap, "0.1.0").is_ok
+        violations = release_gate(tmp_path, snap)
+        assert not any(
+            v.rule == "REL001" and "frob:deprecated" in v.message for v in violations
+        )
 
 
 class TestScopePrework:

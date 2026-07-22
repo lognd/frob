@@ -146,6 +146,54 @@ forward as a de facto permanent waiver the way an un-audited
 well-formed/open/unexpired -- a listing tool, not a gate; DEBT001-003 are
 what actually fail the build.
 
+### DEPRECATED gate (T-0576)
+
+`frob:deprecated <since> sunset="YYYY-MM-DD" ticket="T-####" [reason="..."]`
+generalizes `frob:debt` to the API surface itself: a ticket-bound, dated
+exit for a public symbol that is still callable today. Distinct from
+`frob:debt` in what it is about -- a debt suppresses a GATE FINDING (the
+symptom); a deprecation is about the symbol's continued EXISTENCE.
+`frob.gates.deprecated_gate` (rule family `DEPR`) raises four distinct
+states:
+
+- **DEPR001**: a `frob:deprecated` missing `sunset="YYYY-MM-DD"` and/or
+  `ticket="T-####"`, or with a `sunset=` that is not a `YYYY-MM-DD` date --
+  surfaced from `frob.graph`'s `MalformedDirective` list, mirroring
+  DEBT001's shape. ERROR.
+- **DEPR002**: `ticket="..."` names a ticket that is missing or not open --
+  T-0576's "ticket closes without removal" failure mode: once the owning
+  ticket closes, the directive (and presumably the symbol it sunsets) must
+  be gone. Same open-ticket check DEBT002 applies to `frob:debt`. ERROR.
+- **DEPR003**: the bound ticket is open and `sunset` has NOT yet passed --
+  the symbol is still inside its warning window. WARN, not ERROR, so a
+  live-but-scheduled deprecation stays visible in ordinary `frob check`
+  output rather than being silent until the date arrives (`frob:debt` has
+  no equivalent "still valid, but visible" signal -- a deprecated PUBLIC
+  symbol needs one).
+- **DEPR004**: the bound ticket is open and `sunset` HAS passed --
+  escalates from DEPR003's warning to a hard ERROR, mirroring DEBT003's
+  expiry escalation.
+
+DEPR002 suppresses DEPR003/DEPR004 for the same edge (a mistracked ticket
+is the more actionable finding); DEPR003 and DEPR004 are otherwise mutually
+exclusive per edge (a given deprecation is either still in its window or
+past sunset, never both).
+
+`frob.gates.release_gate` (REL001) additionally refuses to bless a release
+while ANY `frob:deprecated` is past its sunset (`_release_expired_deprecated_
+violations`) -- unlike `frob:debt` (where ANY open debt blocks a release,
+expired or not), a deprecation still inside its warning window is fine to
+ship; only an unenforced, past-sunset one is a release blocker. This is
+T-0576's central requirement: a sunset date with nothing enforcing it is
+not actually a sunset.
+
+`frob.gates.list_deprecated` reports every currently-recorded entry
+(symref, since, sunset, ticket, expired) regardless of whether it is
+itself well-formed/open/unexpired -- a listing tool, not a gate; DEPR001/
+002/004 are what actually fail the build. No CLI subcommand wires it yet
+(T-0576 scoped only `frob.graph`/`frob.gates`/docs/tests) -- filed as its
+own follow-up, see this section's ticket history.
+
 ### Waive boundary (T-0101, revised T-0289)
 
 `frob:waive` only ever suppresses entries in a `GateReport`'s `violations`

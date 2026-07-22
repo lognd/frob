@@ -328,6 +328,7 @@
     "src/frob/gates/__init__.py::coverage_gate": "d32935ae6ae2df478143c8613e1a0892a185bdfff4fd57c469ddfebd5bef8fc0",
     "src/frob/gates/__init__.py::debt_gate": "a376c0cb523fc3a01d0fee3db265624393127590531d12a8f63e851f3f5f82ee",
     "src/frob/gates/__init__.py::decisions_gate": "f6587969f349ac0a2128eb1568924bfa8d4cd498e9f366b56255a5266c75408a",
+    "src/frob/gates/__init__.py::deprecated_gate": "c55eed141fdaed564ced1737f4c530e2f0ea144f2341e042330960165078e531",
     "src/frob/gates/__init__.py::docanchor_gate": "c42559cd1fae6c91936f804bc558ed2d3f5fd49bbd3955b96675bb566fdaef20",
     "src/frob/gates/__init__.py::doclink_gate": "bebbc03bdfb637a3724784dfda8eb4fbb98e52d9b6709f7a4b8616a2cdf773f2",
     "src/frob/gates/__init__.py::drift_gate": "5c212d52c12a13920ee34ad607ff4d2367a47d7d7f940927aae71563b733a8e4",
@@ -340,6 +341,7 @@
     "src/frob/gates/__init__.py::invariant_gate": "db80869313057d3f514f93b4764e8349d29a1e2ab5e5dced51ade8e5cdedba61",
     "src/frob/gates/__init__.py::known_gate_rule_ids": "42f8d0e0fce2c36e6d63ac8a4ef7d47b03825d5fe90f41cb75474f71fac17491",
     "src/frob/gates/__init__.py::list_debt": "e6dd2bcc2ebfd8f6cc8f8b7f80e68be6f217ca46ea509bf4c4382e47762fefc1",
+    "src/frob/gates/__init__.py::list_deprecated": "5235ed9e79eb0f7201ab2ca9574ffc1430fe0195baa56005bcbff7a32c938f7b",
     "src/frob/gates/__init__.py::perf_gate": "3174d8cf254b718239831717f877642fe1d95f121d51e41f93091e102b8f4930",
     "src/frob/gates/__init__.py::prework_gate": "0910de3b28246fcbca2fc1a84697bd960cbdabffaeaba7b9aafc2c1cfbb6ab2d",
     "src/frob/gates/__init__.py::release_gate": "a8480b4df4c62ce1a84032d8ae268a130210b415c24a4a76f5ce03fd744a331b",
@@ -371,6 +373,7 @@
     "src/frob/gates/_models.py::CoverageData": "001138b91932cc4d61786cd5c81887b9816e4afa8e020c55b42a31532c511915",
     "src/frob/gates/_models.py::CoverageError": "fc2537c0a4f1aa14112c26bf6107b886f2c2a6d3076f4b687a8cf2a4e734f601",
     "src/frob/gates/_models.py::DebtEntry": "9f6feb58835b32cbbdc4dba3ee85374b8d51e14e1b895216c42a8f5fffb10979",
+    "src/frob/gates/_models.py::DeprecatedEntry": "55efefaa20791139810cdc07b04d0468631e75a1122ce8186960a8a12bf3a162",
     "src/frob/gates/_models.py::GateConfig": "e680e302dd916a7e554ef0de16775762618913911ac3c2ee5acf77b078ba6cac",
     "src/frob/gates/_models.py::GateError": "8b62a226ab8def869f82bdde716913198ede6e2bbded557e9db62c3eac8ccd1d",
     "src/frob/gates/_models.py::GateReport": "247e2543410bf71068993034c8d287be1362ab1c836318917ba9b28fd04bdfba",
@@ -1215,5 +1218,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.83.0"
+  "version": "0.84.0"
 }

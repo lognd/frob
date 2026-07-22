@@ -103,6 +103,13 @@ class EdgeKind(StrEnum):
     # checks bidirectionally against hand-typed `handled_by:<rule-id>`
     # registry dispositions.
     ENFORCES = "enforces"
+    # T-0576: `frob:debt` generalized to a public API's own sunset -- a
+    # ticket-bound, dated exit for a symbol still callable today. Distinct
+    # from DEBT (which suppresses a GATE FINDING) in that its subject is the
+    # symbol's continued EXISTENCE: `frob.gates.deprecated_gate` warns while
+    # `sunset` is still in the future and errors once it has passed or once
+    # the owning ticket closes with the directive still in place.
+    DEPRECATED = "deprecated"
 
 
 # frob:doc docs/modules/graph.md#data-models
