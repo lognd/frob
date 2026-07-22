@@ -145,6 +145,78 @@ malmberg fix generator -- the static rule says "this scan has a better
 data structure", the profile says "and it is actually where the time
 goes". Ranked output, remedy per row.
 
+## Hot-graph collector (T-0710, EPIC T-0709)
+
+`frob.perf._hotgraph`/`frob.perf._sampler` add a SAMPLING profiler
+alongside the existing deterministic cProfile pipeline above -- lower
+overhead, and (the point of this ticket) a hit-stream contract that is
+LANGUAGE-NEUTRAL BY CONSTRUCTION, so a non-python collector can feed the
+same downstream sketch store/advisories (T-0711/T-0712) without touching
+this module.
+
+- **The stream contract.** A `SampledStack` is nothing but a tuple of
+  `SampledFrame(file, line, weight)`, innermost frame first. Nothing
+  python-specific leaks into it -- a native/perf, V8, or JVM collector
+  adapter (T-0748) produces the identical shape from its own profile
+  format, mirroring `frob.arch._normalized.LanguageAdapter`'s per-grammar
+  pattern.
+- **The resolver.** `build_section_index(modules: list[NormalizedModule])
+  -> SectionIndex` derives one `Section` per function/method body and per
+  loop/branch body nested inside one, purely from `NormalizedFunction`/
+  `NormalizedLoop`/`NormalizedBranch` line fields -- no `frob.lang`/
+  tree-sitter access, so it works identically on a python, TypeScript,
+  rust, kotlin, or cpp module's normalized tree. `NormalizedFunction`
+  already carries a real `(line, body_line_count)` span; `NormalizedLoop`/
+  `NormalizedBranch` carry only an anchor line in a FLATTENED sibling list
+  with no nesting info (T-0609 never needed more). DEGRADE-TO-CORRECT
+  (round-2 review fix, replacing a round-1 next-sibling-boundary guess
+  that silently mis-attributed a loop-body sample AFTER a nested branch
+  to that branch): a block gets an EXTENDED span (to the function's end)
+  only when it is PROVABLY the function's only loop/branch -- nothing else
+  competing for the remaining lines. The instant a function has 2+
+  loops/branches, every block in it degrades to a single-line span (its
+  own anchor line only), and any other line in that function resolves to
+  the enclosing FUNCTION section instead of a guessed sibling -- coarser,
+  never wrong. See `frob.perf._hotgraph._block_sections`'s docstring for
+  the full mechanism. `resolve_stream(index, stacks) -> HitStream`
+  matches each stack's leaf frame against the innermost (smallest-span)
+  matching `Section`; a leaf matching nothing resolves to
+  `UNATTRIBUTED_SECTION_ID` -- NEVER dropped, always a visible
+  `SectionHit` (`HitStream.unattributed_weight` sums exactly these), so a
+  caller can always account for 100 percent of sampled weight. Call edges
+  come from the leaf's caller frame (`frames[1]`): `is_external=True` when
+  the caller resolves to a section but the leaf callee does not (a stdlib/
+  third-party callee this repo's normalized model never modeled).
+- **The python sampler.** `StackSampler` (in `frob.perf._sampler`) runs a
+  background daemon thread that snapshots the calling thread's frame via
+  `sys._current_frames()` every `SamplerConfig.interval_s` (10ms default),
+  converting each snapshot straight into a `SampledStack` -- the py-spy-
+  style fallback backend. On python 3.12+, `sys.monitoring` (PEP 669)
+  is the lower-overhead backend of choice (checked via `hasattr(sys,
+  "monitoring")`, `_HAS_SYS_MONITORING` in `_sampler.py`); this repo's
+  pinned minimum interpreter is 3.11 (`requires-python = ">=3.11"`), so
+  the background-thread backend is what actually runs today -- the
+  version check is there so a future interpreter bump upgrades backends
+  automatically, no call-site change needed.
+  Measured overhead (`tests/unit/perf/test_hotgraph.py::TestStackSampler.
+  test_overhead_under_five_percent`, a fixture hot-loop workload run
+  unsampled vs sampled at the 10ms default): **well under the 5 percent
+  budget** -- see that test's assertion and its recorded ratio in the
+  T-0710 Done report; a background thread waking every 10ms to read one
+  frame snapshot is orders of magnitude cheaper than the workload's own
+  hot loop.
+- **Harness composability.** `run_sampled(fn, config) -> (list[SampledStack],
+  elapsed_s)` brackets a workload exactly the way `frob.perf._profile`
+  brackets `cProfile.Profile.enable`/`disable` -- `StackSampler.start`/
+  `stop()` around the call -- so it drops into the same run-a-callable
+  shape the existing harness (`frob.perf._harness.main`) and `frob test`'s
+  python runner both already use, without a second execution model. No CLI
+  subcommand (`frob perf profile --sampled`) or `frob test` flag exists
+  yet -- that surface, and feeding `resolve_stream`'s `HitStream` into a
+  persisted store, are T-0711/T-0712's job; this ticket ships the
+  language-neutral contract, resolver, and a harness-composable python
+  producer for them to build on.
+
 ## Public API
 
 <!-- frob:describes src/frob/perf/_models.py::PerfError -->
@@ -157,6 +229,20 @@ goes". Ranked output, remedy per row.
 <!-- frob:describes src/frob/perf/_heat.py::render_bar -->
 <!-- frob:describes src/frob/perf/_recursion.py::recursion_rules -->
 <!-- frob:describes src/frob/perf/_redundancy.py::redundant_computation_violations -->
+<!-- frob:describes src/frob/perf/_hotgraph.py::SampledFrame -->
+<!-- frob:describes src/frob/perf/_hotgraph.py::SampledStack -->
+<!-- frob:describes src/frob/perf/_hotgraph.py::SectionHit -->
+<!-- frob:describes src/frob/perf/_hotgraph.py::EdgeHit -->
+<!-- frob:describes src/frob/perf/_hotgraph.py::HitStream -->
+<!-- frob:describes src/frob/perf/_hotgraph.py::HitStream.unattributed_weight -->
+<!-- frob:describes src/frob/perf/_hotgraph.py::Section -->
+<!-- frob:describes src/frob/perf/_hotgraph.py::build_section_index -->
+<!-- frob:describes src/frob/perf/_hotgraph.py::resolve_stream -->
+<!-- frob:describes src/frob/perf/_sampler.py::SamplerConfig -->
+<!-- frob:describes src/frob/perf/_sampler.py::StackSampler -->
+<!-- frob:describes src/frob/perf/_sampler.py::StackSampler.start -->
+<!-- frob:describes src/frob/perf/_sampler.py::StackSampler.stop -->
+<!-- frob:describes src/frob/perf/_sampler.py::run_sampled -->
 
 ```python
 # frob/perf/__init__.py
@@ -209,6 +295,60 @@ class PerfError(ErrorSet):
     SpawnFailed   = "Profiled command could not be started"
     NoArtifact    = "No profile artifact found; run frob perf profile first"
     BadArtifact   = "pstats artifact unreadable"
+
+# frob/perf/_hotgraph.py -- language-neutral hit-stream contract + resolver
+UNATTRIBUTED_SECTION_ID: str            # sentinel section id, never dropped
+
+class SampledFrame(BaseModel):
+    file: str
+    line: int
+    weight: float = 1.0
+
+class SampledStack(BaseModel):          # innermost frame first
+    frames: tuple[SampledFrame, ...]
+    weight: float = 1.0
+
+class Section(BaseModel):
+    id: str                             # stable sha256-derived id
+    kind: str                           # "function" | "loop" | "branch"
+    qualname: str
+    file: str
+    start_line: int
+    end_line: int
+
+SectionIndex = dict[str, list[Section]]  # file -> sorted Sections
+
+def build_section_index(modules: list[NormalizedModule]) -> SectionIndex
+    # Function/loop/branch Sections, purely from NormalizedModule line fields.
+
+class SectionHit(BaseModel):
+    section_id: str
+    weight: float
+
+class EdgeHit(BaseModel):
+    caller_section_id: str
+    callee: str
+    is_external: bool
+    weight: float
+
+class HitStream(BaseModel):
+    section_hits: tuple[SectionHit, ...] = ()
+    edge_hits: tuple[EdgeHit, ...] = ()
+    def unattributed_weight(self) -> float
+        # Sum of weight attributed to UNATTRIBUTED_SECTION_ID.
+
+def resolve_stream(index: SectionIndex, stacks: list[SampledStack]) -> HitStream
+
+# frob/perf/_sampler.py -- python StackSampler, the first stream producer
+class SamplerConfig(BaseModel):
+    interval_s: float = 0.01
+    max_depth: int = 64
+
+class StackSampler:
+    def start(self) -> None
+    def stop(self) -> list[SampledStack]
+
+def run_sampled(fn: Callable[[], None], config: SamplerConfig | None = None) -> tuple[list[SampledStack], float]
 ```
 
 ## Design decisions

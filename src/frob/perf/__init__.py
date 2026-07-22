@@ -17,16 +17,36 @@ check (`frob.perf._redundancy.redundant_computation_violations`) -- a
 symbols with no shared cache. `frob perf heat
 --smells` intersects the smell/hot-path signals: hot AND quadratic, the
 malmberg-incident fix generator the doc names as the point of this package.
+
+`frob.perf._hotgraph`/`frob.perf._sampler` (T-0710, EPIC T-0709) add a
+sampling-profiler alternative: a language-neutral `SampledStack` hit-stream
+contract, a resolver mapping `(file, line)` samples onto normalized-model
+sections (function/loop/branch bodies), and a python `StackSampler` --
+the first of what T-0748 makes a multi-language family of producers into
+the same contract. See docs/modules/perf.md#hot-graph-collector.
 """
 
 from __future__ import annotations
 
 from frob.perf._heat import heat, join_smells, render_bar
+from frob.perf._hotgraph import (
+    UNATTRIBUTED_SECTION_ID,
+    EdgeHit,
+    HitStream,
+    SampledFrame,
+    SampledStack,
+    Section,
+    SectionHit,
+    SectionIndex,
+    build_section_index,
+    resolve_stream,
+)
 from frob.perf._models import HeatEntry, HeatReport, PerfError, ProfileArtifact
 from frob.perf._profile import load_artifact, profile_command
 from frob.perf._recursion import recursion_rules
 from frob.perf._redundancy import redundant_computation_violations
 from frob.perf._rules import perf_rules
+from frob.perf._sampler import SamplerConfig, StackSampler, run_sampled
 
 # `frob.perf._harness.main` (T-0362) is deliberately NOT re-exported here: it
 # is a standalone subprocess entrypoint invoked as `python _harness.py
@@ -36,10 +56,21 @@ from frob.perf._rules import perf_rules
 # fix.
 
 __all__ = [
+    "UNATTRIBUTED_SECTION_ID",
+    "EdgeHit",
     "HeatEntry",
     "HeatReport",
+    "HitStream",
     "PerfError",
     "ProfileArtifact",
+    "SampledFrame",
+    "SampledStack",
+    "SamplerConfig",
+    "Section",
+    "SectionHit",
+    "SectionIndex",
+    "StackSampler",
+    "build_section_index",
     "heat",
     "join_smells",
     "load_artifact",
@@ -48,4 +79,6 @@ __all__ = [
     "recursion_rules",
     "redundant_computation_violations",
     "render_bar",
+    "resolve_stream",
+    "run_sampled",
 ]

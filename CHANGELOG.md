@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.94.0] - unreleased
+
+- T-0710: hot-graph collector: sampling profiler + normalized-model section attribution
+
 ## [0.93.0] - unreleased
 
 - T-0627: frob check: chunked/stage-wise invocation that stays under agent foreground caps
