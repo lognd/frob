@@ -2699,7 +2699,7 @@ User directive (2026-07-20): use frob ITSELF to ENFORCE the structural fixes acr
 id: T-0407
 title: 'First-class REGISTRY capability: unified model, single source of truth, exhaustiveness
   gate (no early-exit)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
