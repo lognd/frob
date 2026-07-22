@@ -5246,9 +5246,9 @@ labels: []
 ```
 Discovered while working T-0550: _bound_to_open_ticket's T-0214/T-0320 grace window (closed ticket still covers its own closing diff) requires the ticket's <!-- ticket:ID --> marker LINE to fall inside one of working_diff's unified=0 hunks. A YAML ticket block's marker/id/title lines often sit just above the first line that actually differs (e.g. state: queued -> done, or an evidence: [] -> evidence: [...] insertion later in the block), so the marker line itself is never in any hunk even though the ticket's own state transition clearly is in the diff. Result: once a ticket closes and a LATER ticket becomes active on the same stacked, unmerged branch, a full/ticket-scoped frob check re-flags the closed ticket's already-covered symbols as COV002 violations again, purely due to this narrow hunk-membership check, not a real coverage gap. Fix direction: extend _ticket_marker_in_diff_hunk to also count a hunk anywhere within the ticket's whole YAML block span (marker to closing triple-backtick), not just the exact marker line.
 
-<!-- ticket:T-draft-09c8e260 -->
+<!-- ticket:T-0565 -->
 ```yaml
-id: T-draft-09c8e260
+id: T-0565
 title: 'DEAD001 burndown: triage 51 findings, most likely false-positive classes (module-level
   dict refs, pytest fixtures, pydantic validators)'
 state: queued
