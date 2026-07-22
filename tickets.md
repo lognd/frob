@@ -9161,3 +9161,120 @@ component: null
 labels: []
 ```
 Child 3 of T-0685 (blocked by the python resolver landing; extend to C++ when its child lands). Two consumers of the may-raise sets: (1) EXHAUSTIVE-HANDLING gate: a try block or declared boundary function is exhaustive iff every member of the guarded may-raise set is caught, explicitly declared-propagated (a frob: directive), or waived with reason; Unknown in the set forces a catch-all or fixing the unresolvable call -- silent non-exhaustiveness impossible. (2) ERRORS-AS-VALUES advisory (suggestion severity, T-0332 noise discipline): a public function with non-empty recoverable may-raise whose callers do not handle it recommends typani Result[T,E], with the raise-site list as the sketch; exceptions remain sanctioned for programmer bugs (assert/invariant class exempt). Wire into T-0623's fallibility family; register rule ids in _KNOWN_GATE_RULES; docs in the same change.
+
+<!-- ticket:T-0689 -->
+```yaml
+id: T-0689
+title: 'python may-raise: ctypes/cffi/C-extension call boundaries are opaque -- Unknown
+  fail-closed unless declared'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0686
+parent: T-0685
+scope:
+- src/frob/arch/**
+- tests/unit/test_arch.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a call into an undeclared ctypes function WHEN the resolver runs THEN Unknown
+  appears in the caller's may-raise set; GIVEN the same call with a frob:raises declaration
+  THEN the declared set substitutes
+threat: null
+component: null
+labels: []
+```
+User mandate: account for the builtins AND the ctypes-ish surface we know. Calls crossing into ctypes, cffi, or compiled C-extension modules (module has no Python source in the graph, or known binary-ext loader) contribute Unknown to the caller's may-raise set fail-closed. EXCEPTION: a boundary covered by a frob:raises declaration (sibling ticket) substitutes its declared set. Curate the stdlib C-extension raiser table for modules we know (json.loads -> JSONDecodeError, sqlite3 -> sqlite3.Error family, struct -> struct.error, ...) so common cases resolve precisely instead of Unknown.
+
+<!-- ticket:T-0690 -->
+```yaml
+id: T-0690
+title: 'frob:raises directive: declared exception surfaces at FFI boundaries, cross-checked
+  where statically visible'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0686
+parent: T-0685
+scope:
+- src/frob/graph/dsl.py
+- src/frob/gates/**
+- src/frob/arch/**
+- strata-core/**
+- docs/modules/gates.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a pyo3 function whose Rust side constructs PyValueError but whose frob:raises
+  omits it WHEN the gate runs THEN a drift error names both sides; GIVEN a ctypes
+  boundary with no frob:raises THEN a finding demands the declaration
+threat: null
+component: null
+labels: []
+```
+User mandate: propagate exception info across the FFI boundary and enforce declaration wherever possible. Three tiers by static visibility: (1) OUR pyo3 crates (strata_core/frob_core): the Rust side IS visible -- PyResult error constructions, explicit PyErr types, panic! -> pyo3 PanicException; parse the Rust side (Rust adapter already parses these crates) and CROSS-CHECK the Python-side frob:raises declaration against the observed Rust-side set; drift = gate error. (2) ctypes/extern-C: no exception propagation exists (errno/return codes; a C++ exception crossing extern C is terminate/UB -- flag that pattern in our C++ as an ERROR); declaration is the only truth -- enforce every ctypes boundary in our repos carries frob:raises (declaring the empty set + errno convention is valid). (3) third-party compiled modules: declaration optional; Unknown otherwise. Grammar mirrors frob:deprecated (T-0576 precedent); register rule ids; docs same change.
+
+<!-- ticket:T-0691 -->
+```yaml
+id: T-0691
+title: 'decision: next language-adapter tier (Go, Java, C#) -- demand-driven per estate
+  + TIOBE/Innovation Graph'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: low
+blocked_by: []
+parent: T-0329
+scope:
+- docs/design/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN the estate language survey WHEN this ticket closes THEN docs/design records
+  the chosen next adapter tier with rationale and per-language tickets exist for chosen
+  languages only
+threat: null
+component: null
+labels: []
+```
+User question 2026-07-22: should we expand supported languages per github.com Innovation Graph global metrics and the TIOBE index? Current coverage: Python, TypeScript/JS, Rust, C, C++ (+ Kotlin grammar wired, adapter pending T-0614). By both indexes the largest uncovered languages are Java, Go, C#, then PHP/Ruby/Swift. RECOMMENDATION recorded here: expand DEMAND-DRIVEN, not index-driven -- the adapter protocol (T-0609) makes each language a bounded ~1-session ticket, so speculative adapters are cheap to add when a real repo in the estate (or a user project) needs one, and unexercised adapters are exactly the catalogued-but-unenforced dead weight this repo's doctrine forbids. This DECISION ticket closes by recording the chosen next tier (or explicitly none-for-now) in docs/design/ after checking the 9-repo estate's actual language mix; implementation tickets get filed per language only when chosen.
+
+<!-- ticket:T-0692 -->
+```yaml
+id: T-0692
+title: 'CI hardening: per-test timeout so a deadlocked test fails in minutes, not
+  the 6h job cap'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-22'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- pyproject.toml
+- Makefile
+- docs/guides/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a test that deadlocks WHEN the suite runs in CI THEN that test fails with
+  a timeout naming it within minutes and the run completes; GIVEN the known-slow system
+  tests THEN they pass under their explicit overrides
+threat: null
+component: null
+labels: []
+```
+Field evidence 2026-07-22: the CI Test job ran 5h59m30s before cancellation at the 6h cap -- a deadlock, not slow tests. Same hang reproduced locally three ways: TestRunGatesDelta exit-143 timeouts on unmodified main, and TWO zombie pytest trees from dead worktree sessions (12h53m and 10h09m old) wedged inside frob check subprocess tests, swept this session. Root cause class: _run_combined_jobs forks a ProcessPoolExecutor inside an active ThreadPoolExecutor (disclosed in T-0265's Done report; T-0581's process-pool redesign is the structural fix and should be treated as HIGH priority). This ticket is the harness guard: add pytest-timeout (per-test ceiling ~120s, thread method) to the test dependency group and addopts, so any future deadlock fails the one test in minutes and CI reports a named culprit instead of burning the job cap; document the interplay in the testing guide. Keep the ceiling generous enough for the known-slow system tests or mark those with explicit timeout overrides.
