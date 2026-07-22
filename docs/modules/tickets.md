@@ -287,6 +287,12 @@ def epic_rollup(queue: TicketQueue, epic_id: str) -> Result[EpicRollup, TicketEr
     # epic_id via the parent chain (any depth), a done/total count, and the
     # ids of any LEAF descendant (no children of its own) currently
     # BLOCKED. Err(NotFound) if epic_id itself does not resolve.
+def brief_ticket(root: Path, ticket_id: str) -> Result[str, TicketError]
+    # T-0568: `frob ticket brief <id>` -- the complete mission briefing text
+    # (frob.tickets._brief.compose_brief): body+acceptance, scope+leases,
+    # the agent-playbook's own hard-rule sections (parsed from its
+    # headings), inferred verify commands, gate-baseline status, and the
+    # REL/land rules. Err(NotFound) if ticket_id does not resolve.
 
 # frob/tickets/clipboard.py
 def clipboard_image() -> Result[bytes, ClipboardError]
@@ -596,6 +602,49 @@ one area still uses `board` for that, not `doable`); and bulk
 component/label reassignment (each mutation is one ticket at a time via
 `set_component`/`mutate_labels`, matching every other single-ticket
 mutation command's granularity).
+
+## `frob ticket brief` (T-0568)
+
+A coordinator dispatching a ticket to an agent hand-typed the same
+~400-word briefing (body/plan, scope, playbook hard-rule references,
+exact verify commands for the area, gate-baseline status, REL/land rules)
+roughly 30 times a session (T-0568's origin note). `frob ticket brief
+<id>` composes the whole thing from data already available, so a dispatch
+prompt collapses to `frob ticket brief T-XXXX` plus whatever the
+coordinator wants to add.
+
+`frob.tickets.brief_ticket(root, ticket_id) -> Result[str, TicketError]`
+delegates to `frob.tickets._brief.compose_brief`, which assembles:
+
+- **Body + acceptance** -- the ticket's own Description/Plan body verbatim,
+  plus its `acceptance` list if non-empty.
+- **Scope + leases** -- the declared scope globs, plus any active lease
+  collision (`leased_by`) so the agent sees immediately if another
+  in-progress ticket already holds an overlapping path.
+- **Playbook hard rules** -- `frob.tickets._brief.parse_playbook_sections`
+  parses every numbered `## N[letter]. Title` heading out of `docs/guides/
+  agent-playbook.md` (a real markdown parse, not a hand-copied section
+  list that drifts the moment the playbook is renumbered or a section is
+  added/removed) and renders each verbatim. A repo with no playbook at
+  that path (a sibling repo the pattern has not spread to yet) gets an
+  empty section here, not a hard failure -- every other part of the brief
+  still renders.
+- **Verify** -- `infer_verify_commands` always includes the scoped gate
+  check (`frob check --ticket <id>`), plus a targeted `pytest` invocation:
+  scope entries already naming a `tests/` path are used directly; failing
+  that, `root/tests` is searched (a real filesystem `rglob`, not a naming
+  guess) for a test file whose stem contains a scope entry's own stem.
+- **Gate baseline** -- whether `.frob/baseline` exists, so the agent knows
+  up front whether `--delta` will report only new violations or degrade
+  to the full set (docs/guides/agent-playbook.md#6).
+- **REL/land rules** -- a fixed reminder of the REL001/CHANGELOG
+  obligation and the "commit per ticket, never push/merge main from a
+  worktree" rule, with the CURRENT `pyproject.toml` version filled in
+  (`current_version`) so the reminder names a real number, not a stale
+  placeholder.
+
+`Err(NotFound)` if `ticket_id` does not resolve, same as every other
+single-ticket command.
 
 ## State machine
 
@@ -1291,8 +1340,10 @@ overwrite an existing hook file without `force=True`.
   and joins `frob:ticket`/`frob:todo` edge targets against the queue.
   `tickets_gate` (TICK001/TICK002, T-0162) checks the id-collision invariant
   -- see "Decision record: T-0162" above.
-- CLI: `frob ticket new|list|show|doable|plan|start|requeue|sweep|migrate|
-  renumber|attach|block|close|fail|drop|evidence|done-report|archive`. `start`
+- CLI: `frob ticket new|list|show|doable|brief|plan|start|requeue|sweep|
+  migrate|renumber|attach|block|close|fail|drop|evidence|done-report|
+  archive`. `brief <id>` (T-0568) prints the full mission briefing (see
+  "`frob ticket brief` (T-0568)" above). `start`
   auto-plans a queued ticket (both legal steps); `requeue` is the reverse
   in-progress -> queued yield (T-0472); `sweep` re-records the pre-work
   sweep after a scope change; `migrate` collapses a legacy dir into the ledger;

@@ -1,6 +1,6 @@
-"""CLI wiring for `frob ticket new|list|show|doable|board|epic|plan|start|
-requeue|sweep|reconcile|land|merge-driver|attach|block|close|fail|drop|
-evidence|done-report|scope|priority|component|label|archive`
+"""CLI wiring for `frob ticket new|list|show|doable|board|epic|brief|plan|
+start|requeue|sweep|reconcile|land|merge-driver|attach|block|close|fail|
+drop|evidence|done-report|scope|priority|component|label|archive`
 (docs/modules/tickets.md)."""
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
 # src/frob/app/ticket_runner.py's exclusivity-vocabulary hit is source-level \
@@ -77,6 +77,7 @@ def _ticket_dispatch_table() -> dict:
         "label": _label,
         "board": _board,
         "epic": _epic,
+        "brief": _brief,
         "archive": lambda root, _cfg: _archive(root),
     }
 
@@ -90,10 +91,10 @@ def run(cfg: AppConfig) -> None:
     handler = _ticket_dispatch_table().get(cfg.ticket_command)
     if handler is None:
         _log.error(
-            "usage: frob ticket <new|list|show|doable|board|epic|plan|start|"
-            "requeue|sweep|reconcile|land|merge-driver|attach|block|close|"
-            "fail|drop|evidence|done-report|scope|priority|component|label|"
-            "archive> ..."
+            "usage: frob ticket <new|list|show|doable|board|epic|brief|plan|"
+            "start|requeue|sweep|reconcile|land|merge-driver|attach|block|"
+            "close|fail|drop|evidence|done-report|scope|priority|component|"
+            "label|archive> ..."
         )
         sys.exit(1)
     handler(root, cfg)
@@ -1703,6 +1704,24 @@ def _epic(root: Path, cfg: AppConfig) -> None:
         )
     if rollup.blocked_leaves:
         _log.info("blocked leaves: %s", list(rollup.blocked_leaves))
+
+
+# frob:ticket T-0568
+def _brief(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket brief <id>` (T-0568): print `frob.tickets.brief_ticket`'s
+    full mission briefing text -- the entire point is a single command a
+    coordinator can paste into a dispatch prompt instead of hand-typing
+    the same ~400 words of playbook/scope/verify boilerplate every time."""
+    from frob.tickets import brief_ticket
+
+    if cfg.ticket_id is None:
+        _log.error("frob ticket brief requires <id>")
+        sys.exit(1)
+    result = brief_ticket(root, cfg.ticket_id)
+    if result.is_err:
+        _log.error("ticket brief failed: %s", result.danger_err)
+        sys.exit(1)
+    _log.info("%s", result.danger_ok)
 
 
 # frob:ticket T-0398

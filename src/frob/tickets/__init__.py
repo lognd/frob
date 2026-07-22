@@ -1625,6 +1625,30 @@ def epic_rollup(queue: TicketQueue, epic_id: str) -> Result[EpicRollup, TicketEr
     )
 
 
+# frob:ticket T-0568
+# frob:doc docs/modules/tickets.md#frob-ticket-brief-t-0568
+# frob:tests tests/test_tickets_brief.py::TestBriefTicket.test_composes_full_briefing
+def brief_ticket(root: Path, ticket_id: str) -> Result[str, TicketError]:
+    """`frob ticket brief <id>` (T-0568): compose the complete agent
+    mission briefing text (`frob.tickets._brief.compose_brief`) for
+    `ticket_id` -- replacing the ~400 words of hand-typed dispatch
+    boilerplate a coordinator otherwise repeats per ticket. `Err(NotFound)`
+    if `ticket_id` does not resolve."""
+    from frob.tickets._brief import compose_brief
+
+    loaded = _load_one(root, ticket_id)
+    if loaded.is_err:
+        return Err(loaded.danger_err)
+    ticket = loaded.danger_ok
+
+    queue_result = load_queue(root)
+    holders: tuple[tuple[str, str], ...] = ()
+    if queue_result.is_ok:
+        holders = leased_by(queue_result.danger_ok, ticket, root)
+
+    return Ok(compose_brief(root, ticket, holders))
+
+
 # frob:ticket T-0453
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_lease.py::TestDoable.test_ignore_lease_returns_raw_list
@@ -2693,6 +2717,7 @@ __all__ = [
     "set_priority",
     "Stride",
     "board_view",
+    "brief_ticket",
     "epic_rollup",
     "migrate",
     "new_ticket",

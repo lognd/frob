@@ -847,12 +847,22 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
     ticket_epic_p.add_argument("ticket_id", metavar="id")
     ticket_epic_p.add_argument("--json", dest="ticket_json", action="store_true")
 
+    # frob:ticket T-0568
+    ticket_brief_p = ticket_sub.add_parser(
+        "brief",
+        help="emit the complete agent mission briefing for a ticket (T-0568): "
+        "body+acceptance, scope+leases, playbook hard rules, targeted "
+        "verify commands, gate baseline, REL/land rules",
+    )
+    ticket_brief_p.add_argument("ticket_id", metavar="id")
+
     return [
         ticket_list_p,
         ticket_show_p,
         ticket_doable_p,
         ticket_board_p,
         ticket_epic_p,
+        ticket_brief_p,
     ]
 
 
