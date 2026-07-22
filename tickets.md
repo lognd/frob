@@ -7258,3 +7258,161 @@ component: null
 labels: []
 ```
 Every store holding PII must declare a retention/TTL policy (ties T-0207).
+
+<!-- ticket:T-0654 -->
+```yaml
+id: T-0654
+title: 'strata: SYNC CALL-CHAIN DEPTH bound obligation'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0331
+scope:
+- src/frob/strata/**
+- docs/strata/**
+- tests/unit/strata/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given a sync call chain exceeding the declared/default depth bound, when checked,
+  then the obligation fires
+threat: null
+component: null
+labels: []
+```
+Bound the depth of synchronous call chains (cascading latency/failure risk), using reachability including non-transitive edges (T-0282).
+
+<!-- ticket:T-0655 -->
+```yaml
+id: T-0655
+title: 'strata: distributed-transaction-across-services requires saga/compensation'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0650
+parent: T-0331
+scope:
+- src/frob/strata/**
+- docs/strata/**
+- tests/unit/strata/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given a cross-service transaction with no saga/compensation declared, when checked,
+  then the obligation fires
+threat: null
+component: null
+labels: []
+```
+A transaction spanning multiple services must declare a saga/compensation strategy; builds on the transactional-boundary obligation's multi-write detection extended across service boundaries.
+
+<!-- ticket:T-0656 -->
+```yaml
+id: T-0656
+title: 'strata: no-shared-mutable-state-across-service-boundaries obligation'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0331
+scope:
+- src/frob/strata/**
+- docs/strata/**
+- tests/unit/strata/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given two services sharing a mutable store/memory region across their boundary with
+  no declared exception, when checked, then the obligation fires
+threat: null
+component: null
+labels: []
+```
+Detect and flag shared mutable state reachable across a declared service boundary.
+
+<!-- ticket:T-0657 -->
+```yaml
+id: T-0657
+title: 'strata: clock/ordering-assumptions obligation across distributed flows'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0331
+scope:
+- src/frob/strata/**
+- docs/strata/**
+- tests/unit/strata/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given a cross-node flow with an implicit clock/ordering assumption and no declared
+  strategy, when checked, then the obligation fires
+threat: null
+component: null
+labels: []
+```
+Flag flows relying on wall-clock ordering/synchronization assumptions across distributed nodes without a declared clock/ordering strategy (T-0282 reachability).
+
+<!-- ticket:T-0658 -->
+```yaml
+id: T-0658
+title: 'strata systems-checks: N:M coverage meta-test vs system-design-corpus.md denominator
+  (epic T-0331 close condition)'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0640
+- T-0641
+- T-0642
+- T-0643
+- T-0644
+- T-0645
+- T-0646
+- T-0647
+- T-0648
+- T-0649
+- T-0650
+- T-0651
+- T-0652
+- T-0653
+- T-0654
+- T-0655
+- T-0656
+- T-0392
+parent: T-0331
+scope:
+- src/frob/strata/**
+- docs/design/registry/system-design.yaml
+- tests/unit/strata/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given the full system-design-corpus.md denominator, when the meta-test runs, then
+  every entry has a disposition (addressed-by-check | reasoned-deferral) and the coverage
+  total matches TOTAL
+- Given a future new system-design-corpus.md entry with no disposition, when the meta-test
+  runs, then it fails the build
+threat: null
+component: null
+labels: []
+```
+Epic close condition. Bind every genuine system-design-corpus.md manifest entry (105 genuine, per RECONCILIATION.md finding (d), plus 14 manifest-extraction artifacts explicitly excluded) to >=1 registered SYS2xx/REL2xx check or a reasoned deferral, following the T-0343 drift-lock framework. (addressed union deferred) == TOTAL. Cannot close while any relevant entry is unaddressed and un-deferred. Depends on all 16 obligation children plus T-0392 (system-design registry-domain reconciliation) landing so 'registered check' is a real, checkable claim.
