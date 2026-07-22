@@ -3190,7 +3190,7 @@ docs/audits/lang-check-docs.md finding 1. run_check_cpp/run_check_rust/run_check
 ```yaml
 id: T-0568
 title: 'frob ticket brief: generate the complete agent mission prompt for a ticket'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-07-21'
