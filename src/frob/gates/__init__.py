@@ -58,7 +58,7 @@ from frob.gates._coverage import (
 )
 from frob.gates._cve_fingerprint_scan import cve_fingerprint_scan_gate
 from frob.gates._dead_symbols import dead_symbol_gate
-from frob.gates._docblocks import doc004_gate
+from frob.gates._docblocks import doc004_gate, doc005_gate
 from frob.gates._exclude_hazard import exclude_hazard_gate
 from frob.gates._filehash import _SOURCE_EXTS
 from frob.gates._lang_conformance import (
@@ -986,6 +986,9 @@ _KNOWN_GATE_RULES = frozenset(
         # T-0436: unbound/stale fenced-code-block doc-drift heuristic
         # (frob.gates._docblocks).
         "DOC004",
+        # T-0435: README command-table + checkable-count drift-lock
+        # (frob.gates._docblocks.doc005_gate).
+        "DOC005",
         # T-0471: unpruned filesystem traversal (frob.gates._walk_lint).
         "WALK001",
         # T-0465: .git/info/exclude entry shadowing tracked source
@@ -7394,7 +7397,13 @@ def _build_jobs(
         # T-0436: fenced-code-block doc-drift heuristic, repo_root-scoped for
         # the same reason docanchor/refs are -- doc paths are repo-relative
         # text either way, and `git ls-files *.md` must see the whole repo.
-        "docblocks": lambda: doc004_gate(st.repo_root, st.snapshot),
+        # T-0435: DOC005 (README command-table drift-lock) fires alongside
+        # DOC004 under the same "docblocks" gate name -- one config
+        # ([[docblocks.commands]]), one live-registry walk, two checks.
+        "docblocks": lambda: (
+            *doc004_gate(st.repo_root, st.snapshot),
+            *doc005_gate(st.repo_root),
+        ),
         "fuzz": lambda: fuzz_gate(st.root, st.snapshot),
         "release": lambda: release_gate(st.root, st.snapshot),
         "decisions": lambda: decisions_gate(st.root, st.snapshot),

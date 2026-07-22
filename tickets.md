@@ -3797,7 +3797,7 @@ Convergence re-audit of the tickets/testing subsystem AFTER T-0398 landed (docs/
 id: T-0435
 title: 'README/prose-claim drift-lock: bind README''s command table (+ checkable counts)
   to the real subcommand registry -- frob was blind to README drift'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -3808,8 +3808,44 @@ scope:
 - src/frob/gates/
 - README.md
 - docs/
-scope_changes: []
-evidence: []
+- tests/test_docblocks_gate.py
+- pyproject.toml
+- CHANGELOG.md
+- .frob-release.json
+- uv.lock
+scope_changes:
+- op: add
+  glob: tests/test_docblocks_gate.py
+  reason: DOC005 unit tests live here
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: pyproject.toml
+  reason: REL001 version bump for new public gate symbols (doc005_gate)
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: CHANGELOG.md
+  reason: REL001 version bump for new public gate symbols (doc005_gate)
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 release-stamp artifacts updated for version bump
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: uv.lock
+  reason: REL001 release-stamp artifacts updated for version bump
+  actor: logan
+  at: '2026-07-22'
+evidence:
+- tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift::test_missing_row_for_real_command_fails
+- tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift::test_stale_row_for_removed_command_fails
+- tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift::test_fully_covered_table_passes
+- tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift::test_count_claim_mismatch_fails
+- tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift::test_count_claim_matching_passes
+- tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift::test_no_config_means_no_readme_checking
 attachments: []
 acceptance: []
 threat: null
@@ -3817,6 +3853,60 @@ component: null
 labels: []
 ```
 User (2026-07-20): noticed doc drift in the base README.md -- why was it allowed? frob should have flagged it. ROOT CAUSE (the meta-principle: a gap in our compliance is a gap in frobs enforcement): README carries ~0 frob:describes anchors (grep finds 1 in the whole file), so it is UNANCHORED prose. DRIFT001/002 detect code<->doc drift THROUGH anchors; the README command table is not bound to the actual argparse subcommand registry, so adding frob vet/sys/deploy/serve/perf/mutate/stats/release during the rework never flagged the README table as stale -- it was missing 8 of 25 real commands (a third, incl. major subsystems). Same existence-not-verified class: README claims a command set unbound to the truth (the real commands), so it drifts silently. FIXED the immediate drift (added the 8 rows). ENFORCEMENT (this ticket): a drift-lock that binds README (and other top-level prose making CHECKABLE factual claims) to reality -- (1) the README command table is DERIVED-from / checked-against the live subcommand registry (frob --help / the argparse commands): a table row for a command that does not exist FAILS, a real command absent from the table FAILS. (2) Extend to other checkable claims where cheap: a claimed COUNT ("N commands", "N gates", "N tickets") bound to the real count; install/quickstart command snippets that name a subcommand verified to exist. This is an instance of reflexive completeness (T-0424) + the derived-check model (T-0428): dont hand-maintain a prose list that drifts -- check it against the code registry. Acceptance: adding a new subcommand with no README row FAILS the drift-lock; removing a command leaves its README row FAILING; a claimed count that no longer matches FAILS. frobs own README can never again silently omit a third of its commands.
+
+## Done report
+
+DOC005 binds README.md's command table to the LIVE argparse subcommand
+registry, reusing DOC004's existing `[[docblocks.commands]]`-configured
+parser-walk machinery (`_console_command_sources` / `_load_parser_factory`
+/ `_subparser_tree`, now shared via a new `_console_trees` helper) instead
+of a second, parallel registry-reading mechanism.
+
+Two checks, both new rule DOC005, ERROR severity, wired into the existing
+"docblocks" gate name alongside DOC004:
+
+1. A README.md table row `| \`<prog> <name>\` | ... |` naming a
+   subcommand that no longer exists in the live tree -- STALE.
+2. A real top-level subcommand with no table row anywhere in README.md --
+   MISSING.
+3. A "N commands"/"N total commands" prose count claim whose N does not
+   equal the live top-level command count -- COUNT MISMATCH.
+
+Real drift caught and fixed in this repo's own README.md: the live
+top-level subcommand registry (frob.__main__._build_parser) has 30
+subcommands; README's table was missing 5 of them (`clean`, `debt`,
+`doctor`, `pool`, `registry`) before this change. Added the 5 missing
+rows and a "30 total commands" checkable count claim under the Commands
+heading, cross-linked to the new gate's docs section.
+
+Mechanism documented in docs/modules/gates.md (rule table row + a new
+"### DOC005 README command-table drift-lock T-0435" section mirroring
+the DOC004 section's format).
+
+REL001 required a version bump (0.76.0 -> 0.77.0) for the new public
+`doc005_gate` symbol; pyproject.toml/CHANGELOG.md/.frob-release.json/
+uv.lock added to ticket scope for that mechanical follow-through.
+
+### Changed
+```
+ .frob-release.json           |   1 +
+ CHANGELOG.md                 |   1 +
+ README.md                    |  10 +++
+ docs/modules/gates.md        |  41 +++++++++
+ src/frob/gates/__init__.py   |  13 ++-
+ src/frob/gates/_docblocks.py | 199 ++++++++++++++++++++++++++++++++++++++++---
+ tests/test_docblocks_gate.py | 149 +++++++++++++++++++++++++++++++-
+ tickets.md                   | 112 +++++++++++++++++++++++-
+ 8 files changed, 509 insertions(+), 17 deletions(-)
+```
+
+### Evidence
+- `tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift::test_missing_row_for_real_command_fails` (pytest node id, verified passing when recorded)
+- `tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift::test_stale_row_for_removed_command_fails` (pytest node id, verified passing when recorded)
+- `tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift::test_fully_covered_table_passes` (pytest node id, verified passing when recorded)
+- `tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift::test_count_claim_mismatch_fails` (pytest node id, verified passing when recorded)
+- `tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift::test_count_claim_matching_passes` (pytest node id, verified passing when recorded)
+- `tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift::test_no_config_means_no_readme_checking` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0437 -->
 ```yaml
@@ -5223,6 +5313,7 @@ component: null
 labels: []
 ```
 Add a python-adapter (and cpp-adapter) mapping the existing tree-sitter walks onto the T-0609 normalized model, then re-point the existing arch checks (long-function, god-class, high-coupling, deep-nesting, abstraction-opportunity, large-file, T-0332 pattern recommender) to read from the normalized tree instead of raw tree-sitter nodes. Acceptance: existing test_arch.py suite passes unchanged (same suggestions on the same fixtures) proving zero regression; checks now take a normalized tree, not a language-specific one.
+
 <!-- ticket:T-0611 -->
 ```yaml
 id: T-0611

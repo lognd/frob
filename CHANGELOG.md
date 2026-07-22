@@ -31,6 +31,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
 ## [0.77.0] - unreleased
 
+- T-0435: DOC005, README command-table + checkable-count drift-lock -- binds README.md's command table to the live top-level subcommand registry (`frob.gates._docblocks.doc005_gate`)
 - T-0332: design-pattern recommender: hallmark->pattern + anti-pattern->escape registry (advisory)
 
 ## [0.76.0] - unreleased

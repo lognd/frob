@@ -13,7 +13,7 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from frob.gates._docblocks import doc004_gate
+from frob.gates._docblocks import doc004_gate, doc005_gate
 from frob.gates._models import Severity
 from frob.graph import build_graph
 
@@ -349,3 +349,150 @@ class TestCCppNamespace:
         violations = doc004_gate(tmp_path, snapshot)
 
         assert _rule_ids(violations, "docs/guide.md") == []
+
+
+# frob:waive DEAD001 reason="loaded dynamically via importlib.import_module by doc005_gate's _load_parser_factory (dotted-path config value), never a direct call-graph caller"  # noqa: E501
+def _fake_parser_factory():
+    """A tiny synthetic `argparse.ArgumentParser` with two top-level
+    subcommands (`widget`, `gadget`) -- importable via
+    `tests.test_docblocks_gate:_fake_parser_factory` (`tests/` is a real
+    package), the same "own real CLI as configured source" posture
+    `TestDoc004ConsoleCommandDrift` uses for frob's own `_build_parser`,
+    kept independent here so DOC005's tests never depend on frob's own
+    live command count drifting underneath them."""
+    import argparse
+
+    parser = argparse.ArgumentParser(prog="acme")
+    sub = parser.add_subparsers(dest="subcommand")
+    sub.add_parser("widget", help="widget things")
+    sub.add_parser("gadget", help="gadget things")
+    return parser
+
+
+_FAKE_CONFIG = (
+    '[[docblocks.commands]]\nprog = "acme"\n'
+    'parser = "tests.test_docblocks_gate:_fake_parser_factory"\n'
+)
+
+
+class TestDoc005ReadmeTableDrift:
+    """T-0435: DOC005 binds README.md's command table (and any "N
+    commands" count claim) to the live top-level subcommand registry --
+    the same `[[docblocks.commands]]` config DOC004's console tier reads,
+    walked via a synthetic two-command CLI so these tests never depend on
+    frob's own live command count."""
+
+    def test_missing_row_for_real_command_fails(self, tmp_path: Path) -> None:
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", _FAKE_CONFIG)
+        _write(
+            tmp_path,
+            "README.md",
+            "## Commands\n\n| Command | Description |\n"
+            "|---|---|\n| `acme widget` | does widget things |\n",
+        )
+        _git(tmp_path, "add", "-A")
+
+        violations = doc005_gate(tmp_path)
+
+        assert any(
+            v.rule == "DOC005"
+            and v.severity == Severity.ERROR
+            and "gadget" in v.message
+            for v in violations
+        )
+
+    def test_stale_row_for_removed_command_fails(self, tmp_path: Path) -> None:
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", _FAKE_CONFIG)
+        _write(
+            tmp_path,
+            "README.md",
+            "## Commands\n\n| Command | Description |\n"
+            "|---|---|\n"
+            "| `acme widget` | does widget things |\n"
+            "| `acme gadget` | does gadget things |\n"
+            "| `acme thingamajig` | no longer exists |\n",
+        )
+        _git(tmp_path, "add", "-A")
+
+        violations = doc005_gate(tmp_path)
+
+        assert any(
+            v.rule == "DOC005"
+            and v.severity == Severity.ERROR
+            and "thingamajig" in v.message
+            for v in violations
+        )
+
+    def test_fully_covered_table_passes(self, tmp_path: Path) -> None:
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", _FAKE_CONFIG)
+        _write(
+            tmp_path,
+            "README.md",
+            "## Commands\n\n| Command | Description |\n"
+            "|---|---|\n"
+            "| `acme widget` | does widget things |\n"
+            "| `acme gadget` | does gadget things |\n",
+        )
+        _git(tmp_path, "add", "-A")
+
+        violations = doc005_gate(tmp_path)
+
+        assert violations == ()
+
+    def test_count_claim_mismatch_fails(self, tmp_path: Path) -> None:
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", _FAKE_CONFIG)
+        _write(
+            tmp_path,
+            "README.md",
+            "## Commands\n\n3 total commands.\n\n"
+            "| Command | Description |\n"
+            "|---|---|\n"
+            "| `acme widget` | does widget things |\n"
+            "| `acme gadget` | does gadget things |\n",
+        )
+        _git(tmp_path, "add", "-A")
+
+        violations = doc005_gate(tmp_path)
+
+        assert any(
+            v.rule == "DOC005"
+            and v.severity == Severity.ERROR
+            and "claims 3" in v.message
+            for v in violations
+        )
+
+    def test_count_claim_matching_passes(self, tmp_path: Path) -> None:
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", _FAKE_CONFIG)
+        _write(
+            tmp_path,
+            "README.md",
+            "## Commands\n\n2 total commands.\n\n"
+            "| Command | Description |\n"
+            "|---|---|\n"
+            "| `acme widget` | does widget things |\n"
+            "| `acme gadget` | does gadget things |\n",
+        )
+        _git(tmp_path, "add", "-A")
+
+        violations = doc005_gate(tmp_path)
+
+        assert violations == ()
+
+    def test_no_config_means_no_readme_checking(self, tmp_path: Path) -> None:
+        _init_repo(tmp_path)
+        _write(
+            tmp_path,
+            "README.md",
+            "## Commands\n\n| Command | Description |\n"
+            "|---|---|\n| `acme thingamajig` | stale but unconfigured |\n",
+        )
+        _git(tmp_path, "add", "-A")
+
+        violations = doc005_gate(tmp_path)
+
+        assert violations == ()

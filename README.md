@@ -51,6 +51,11 @@ Every violation message embeds its own remedy command, so an agent acting on
 
 ## Commands
 
+30 total commands, statically bound to the live subcommand registry
+(DOC005, docs/modules/gates.md#doc005-readme-command-table-drift-lock-t-0435)
+-- a subcommand added or removed here with no matching edit below fails
+`frob check`.
+
 ### Enforcement
 
 | Command | Description |
@@ -64,6 +69,9 @@ Every violation message embeds its own remedy command, so an agent acting on
 | `frob sys` | strata system-design audit: model-vs-code conformance, threat/CWE/compliance/PII, deploy proofs (`plan`/`doc`/`audit`/`export`) |
 | `frob deploy` | Auditable OS-layer deployment: compile a host manifest into idempotent install/status/uninstall + VM audit |
 | `frob release` | Mechanical semver from the public-API graph and the REL001 release gate (`stamp`/`check`) |
+| `frob registry` | Unified design-knowledge registry: the REG001-010 exhaustiveness drift-lock over `docs/design/registry/*.yaml` (`audit`/`add`) |
+| `frob pool` | Ratchet-pool baseline management: freeze warn-rule findings as a tracked baseline so new findings error (`snapshot`/`clear`) |
+| `frob debt` | List outstanding `frob:debt` entries (rule, site, ticket, until) |
 
 ### Analysis
 
@@ -90,6 +98,8 @@ Every violation message embeds its own remedy command, so an agent acting on
 | Command | Description |
 |---------|-------------|
 | `frob scaffold` | Scaffold a new project from a registered template |
+| `frob doctor` | Verify native extensions (`frob_core`, `strata_core`) are installed |
+| `frob clean` | Remove build/test/cache artifacts (tiered, dry-run by default) |
 
 ---
 

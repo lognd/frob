@@ -88,6 +88,17 @@ explicit user refinements folded in):
    all (a project that has not opted in) means no console/bash checking
    happens -- fail-open, same posture as every other namespace source in
    this module.
+
+DOC005 (T-0435): the same live-registry walk, applied to `README.md`'s
+command TABLE rather than fenced code blocks -- a markdown table row
+"| `<prog> <name>` | ... |" is checked against the live top-level
+subcommand tree the SAME `[[docblocks.commands]]` config already supplies:
+a real subcommand with no row is MISSING (error), a row naming a
+subcommand that no longer exists is STALE (error). A "N commands" prose
+count claim is checked the same way, against the live top-level command
+count. See `doc005_gate` for the full mechanism -- it reuses
+`_console_command_sources`/`_console_trees` rather than a second
+registry-reading mechanism.
 """
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
 # src/frob/gates/_docblocks.py's exclusivity-vocabulary hit is source-level \
@@ -110,7 +121,7 @@ from frob.logging import get_logger
 
 _log = get_logger(__name__)
 
-__all__ = ["doc004_gate"]
+__all__ = ["doc004_gate", "doc005_gate"]
 
 
 # ---------------------------------------------------------------------------
@@ -419,6 +430,27 @@ def _resolve_command_chain(tree: dict, words: list[str]) -> bool:
         if not node:
             return True
     return True
+
+
+def _console_trees(
+    root: Path, console_sources: tuple[_ConsoleCommandSource, ...]
+) -> dict[str, dict]:
+    """`{source.parser: live subparser tree}` for every configured
+    `[[docblocks.commands]]` entry -- the SAME live-registry walk DOC004's
+    console tier and DOC005's README-table tier both consume, so neither
+    duplicates the argparse-import-and-walk logic (T-0435)."""
+    console_trees: dict[str, dict] = {}
+    for source in console_sources:
+        factory = _load_parser_factory(source.parser)
+        if factory is None:
+            continue
+        try:
+            parser = factory()
+        except Exception as exc:  # noqa: BLE001 -- a broken factory never fails the gate
+            _log.warning("doc004: parser factory %r raised: %s", source.parser, exc)
+            continue
+        console_trees[source.parser] = _subparser_tree(parser)
+    return console_trees
 
 
 _CONSOLE_LINE_RE = re.compile(r"^\s*(?:\$\s*)?([\w.-]+)\b(.*)$")
@@ -1006,17 +1038,7 @@ def doc004_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     module_map = _python_module_map(root)
     symbol_names_by_path = _python_symbol_names_by_path(snapshot)
     console_sources = _console_command_sources(root)
-    console_trees: dict[str, dict] = {}
-    for source in console_sources:
-        factory = _load_parser_factory(source.parser)
-        if factory is None:
-            continue
-        try:
-            parser = factory()
-        except Exception as exc:  # noqa: BLE001 -- a broken factory never fails the gate
-            _log.warning("doc004: parser factory %r raised: %s", source.parser, exc)
-            continue
-        console_trees[source.parser] = _subparser_tree(parser)
+    console_trees = _console_trees(root, console_sources)
 
     violations: list[Violation] = []
     for doc_path in _tracked_md_files(root):
@@ -1056,6 +1078,159 @@ def doc004_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
                     )
                 )
     _log.info("doc004: %d violation(s) across tracked .md docs", len(violations))
+    return tuple(violations)
+
+
+# ---------------------------------------------------------------------------
+# DOC005: README command-table + checkable-count drift-lock (T-0435)
+# ---------------------------------------------------------------------------
+
+# A markdown table row naming a console invocation: `| `frob foo` | ... |`.
+# Deliberately narrow (one prog word + one subcommand word, backtick-quoted,
+# leading table-pipe) -- prose mentions of `frob` elsewhere in the doc are
+# not table rows and are never flagged.
+_README_TABLE_ROW_RE = re.compile(r"^\s*\|\s*`([\w.-]+)\s+([\w-]+)`")
+
+# A checkable-count claim in prose: "25 commands", "30 total commands",
+# case-insensitive. Narrow to the word "commands" -- this is the one
+# checkable count T-0435 names explicitly; other claimed counts (gates,
+# tickets) are a documented follow-up, not silently assumed handled here.
+_README_COUNT_CLAIM_RE = re.compile(r"\b(\d+)\s+(?:total\s+)?commands\b", re.IGNORECASE)
+
+
+def _readme_table_rows(text: str) -> list[tuple[int, str, str]]:
+    """`(line_no, prog, subcommand)` for every command-table row found in
+    `text` -- `line_no` is 1-based, matching every other violation site in
+    this module."""
+    rows: list[tuple[int, str, str]] = []
+    for line_no, line in enumerate(text.splitlines(), start=1):
+        match = _README_TABLE_ROW_RE.match(line)
+        if match is None:
+            continue
+        rows.append((line_no, match.group(1), match.group(2)))
+    return rows
+
+
+def _readme_count_claims(text: str) -> list[tuple[int, int]]:
+    """`(line_no, claimed_count)` for every "N commands" claim found in
+    `text` -- see `_README_COUNT_CLAIM_RE`."""
+    claims: list[tuple[int, int]] = []
+    for line_no, line in enumerate(text.splitlines(), start=1):
+        for match in _README_COUNT_CLAIM_RE.finditer(line):
+            claims.append((line_no, int(match.group(1))))
+    return claims
+
+
+def _doc005_violation(doc_path: str, line: int, message: str) -> Violation:
+    """Build one DOC005 `Violation` -- always ERROR: a claimed command row
+    or count that does not match the live subcommand registry is concrete,
+    present drift, never advisory."""
+    return Violation(
+        rule="DOC005",
+        severity=Severity.ERROR,
+        file=doc_path,
+        line=line,
+        message=f"DOC005: {message}",
+    )
+
+
+# frob:doc docs/modules/gates.md#doc005-readme-command-table-drift-lock-t-0435
+# frob:tests tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.\
+# test_missing_row_for_real_command_fails
+# frob:tests tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.\
+# test_stale_row_for_removed_command_fails
+# frob:tests tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.\
+# test_fully_covered_table_passes
+# frob:tests tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.\
+# test_count_claim_mismatch_fails
+# frob:tests tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.\
+# test_count_claim_matching_passes
+# frob:tests tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.\
+# test_no_config_means_no_readme_checking
+def doc005_gate(root: Path) -> tuple[Violation, ...]:
+    """DOC005 (T-0435): bind `README.md`'s command table (and any "N
+    commands" count claim) to the LIVE top-level subcommand registry --
+    the same `[[docblocks.commands]]`-configured `argparse.ArgumentParser`
+    factory DOC004's console tier already walks (`_console_trees`), never
+    a second hand-maintained copy of the CLI surface.
+
+    Two checks, both ERROR (concrete, present drift, not advisory):
+
+    - a real top-level subcommand with no "| `<prog> <name>` |" row
+      anywhere in README.md ("MISSING" -- README silently omits a command);
+    - a README.md table row naming a `<prog> <name>` pair where `<name>`
+      is not a real top-level subcommand of the live tree ("STALE" -- the
+      command was renamed/removed and the row was never updated);
+    - a "N commands" prose claim whose N does not equal the live top-level
+      command count, summed across every configured source.
+
+    No `[[docblocks.commands]]` entries configured, or no `README.md` at
+    `root`, means no checking happens -- fail-open, same posture as every
+    other DOC004 namespace source."""
+    root = Path(root)
+    console_sources = _console_command_sources(root)
+    if not console_sources:
+        return ()
+    console_trees = _console_trees(root, console_sources)
+    if not console_trees:
+        return ()
+
+    readme_path = root / "README.md"
+    if not readme_path.is_file():
+        return ()
+    text = readme_path.read_text(encoding="utf-8", errors="replace")
+    doc_path = "README.md"
+
+    rows = _readme_table_rows(text)
+    violations: list[Violation] = []
+
+    for source in console_sources:
+        tree = console_trees.get(source.parser)
+        if tree is None:
+            continue
+        live_commands = frozenset(tree.keys())
+        documented_commands = frozenset(
+            name for _, prog, name in rows if prog == source.prog
+        )
+        missing = live_commands - documented_commands
+        for name in sorted(missing):
+            violations.append(
+                _doc005_violation(
+                    doc_path,
+                    0,
+                    f"real subcommand `{source.prog} {name}` has no command-"
+                    f"table row in README.md -- add one, or the README "
+                    f"silently omits a real command",
+                )
+            )
+        for line_no, prog, name in rows:
+            if prog != source.prog or name in live_commands:
+                continue
+            violations.append(
+                _doc005_violation(
+                    doc_path,
+                    line_no,
+                    f"README.md table row `{prog} {name}` names a "
+                    f"subcommand that no longer exists in the live "
+                    f"`{source.parser}` registry -- update or remove the "
+                    f"row",
+                )
+            )
+
+    total_live = sum(len(tree) for tree in console_trees.values())
+    for line_no, claimed in _readme_count_claims(text):
+        if claimed == total_live:
+            continue
+        violations.append(
+            _doc005_violation(
+                doc_path,
+                line_no,
+                f"README.md claims {claimed} commands but the live "
+                f"registry has {total_live} -- update the claimed count",
+            )
+        )
+
+    _log.info("doc005: %d violation(s) over README.md", len(violations))
     return tuple(violations)
 
 

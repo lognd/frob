@@ -67,6 +67,7 @@ declaration).
 | REF002 | refs | a git-tracked file has exactly one inbound reference (fragile single anchor) -- see "Anti-orphan file-reference gate" below |
 | REF003 | refs | a `frob:used-by <consumer>` declaration is dangling: the named consumer does not exist as a tracked file, or does not itself reference the declaring file back -- see "Anti-orphan file-reference gate" below |
 | DOC004 | docblocks | a fenced code block in a tracked `.md` doc references the project's OWN code surface (manifest-derived python/rust/ts namespaces) and either does not resolve (error, "stale") or resolves but carries no nearby `frob:doc`/`frob:describes`/`frob:tests` anchor (warn, "unbound") -- see "Unbound/stale doc code blocks" below |
+| DOC005 | docblocks | `README.md`'s command table is out of sync with the live top-level subcommand registry: a real subcommand has no table row (error, "missing"), a table row names a subcommand that no longer exists (error, "stale"), or a "N commands" prose count claim does not equal the live count (error) -- see "DOC005 README command-table drift-lock" below |
 | EXCL001 | excludehazard | a `.git/info/exclude` entry shadows a git-tracked file or a directory containing tracked files -- see "EXCL001 (T-0465)" below |
 
 **T-0398 (evidence integrity) note on COV003**: COV003 only ever answers
@@ -663,6 +664,46 @@ before landing (see `_module_reexports`); 1 real UNBOUND advisory
 doc's "Public API" section rather than immediately above/inside the
 block) was waived with a reason explaining why. Zero blanket waivers --
 every waiver names its own specific reason.
+
+### DOC005 README command-table drift-lock T-0435
+
+`frob.gates._docblocks` -- `doc005_gate` (gate name `docblocks`, same as
+DOC004, default-on, ERROR severity). Motivating case: `README.md` carries
+~0 `frob:describes` anchors, so it is UNANCHORED prose -- DOC001/DOC002
+detect drift THROUGH anchors, and DOC004 detects drift in fenced code
+blocks, but neither reasons about a markdown TABLE naming commands.
+README's command table drifted silently: it was missing 8 of 25 real
+subcommands (a third, including whole subsystems added during the
+`edit`/`dispatch`/`mission`/`todo` rework) before this ticket, and nothing
+ever flagged it.
+
+`doc005_gate` reuses DOC004's console-tier machinery WHOLESALE -- the same
+`[[docblocks.commands]]`-configured `argparse.ArgumentParser` factory,
+walked into the same live subparser tree (`frob.gates._docblocks.
+_console_trees`) -- rather than a second, parallel registry-reading
+mechanism. Two checks over `README.md`, both ERROR (concrete, present
+drift, not advisory):
+
+1. A markdown table row `| \`<prog> <name>\` | ... |` naming a `<name>`
+   that is NOT a real top-level subcommand of the live tree -- STALE, the
+   command was renamed/removed and the row never updated.
+2. A real top-level subcommand with NO table row anywhere in `README.md`
+   -- MISSING, the README silently omits a real command (this repo's
+   original T-0435 finding: `clean`/`debt`/`doctor`/`pool`/`registry` had
+   no row).
+3. A "N commands" (or "N total commands") prose count claim whose `N`
+   does not equal the live top-level command count, summed across every
+   configured `[[docblocks.commands]]` source -- the "checkable counts"
+   half of the ticket's mandate. No such claim in a project's README means
+   nothing to check (never a false positive from an absent claim).
+
+No `[[docblocks.commands]]` entries configured, or no `README.md` at the
+scanned root, means no checking happens -- fail-open, the same posture as
+every other DOC004 namespace source. This repo uses its own already-
+configured `[[docblocks.commands]]` entry (`frob.__main__:_build_parser`)
+-- adding a new subcommand there and never touching `README.md` now fails
+`frob check` immediately; removing a command leaves its stale row failing
+until the row is deleted.
 
 ### WALK001 unpruned traversal T-0471
 
