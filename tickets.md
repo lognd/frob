@@ -8672,13 +8672,13 @@ same stage-group table, `--only list`, and the `FROB_AGENT` refusal
 (reviewer round 1 finding -- see below).
 
 Filed (both out of this ticket's scope):
-- T-draft-12c032f4 -- pre-existing (not caused by this ticket): a wide
+- T-0750 (ex-draft, id lost at land) -- pre-existing (not caused by this ticket): a wide
   swath of `tests/system/test_cli_check.py` fails on this worktree's
   post-warm-up-merge main because `_make_project`'s tmp_path fixture never
   git-inits and newly-merged gates (COV002/SCOPE001/TODO001) now error
   loudly instead of degrading quietly on a missing repo. Verified this
   ticket's own new tests are not among the failures.
-- T-draft-98fd6966 -- follow-up: `--stamp-baseline` itself still runs the
+- T-0751 (ex-draft, id lost at land) -- follow-up: `--stamp-baseline` itself still runs the
   full undelta'd gates pass and is not refused under FROB_AGENT; T-0627's
   own ticket body named "make --stamp-baseline incremental" as an
   alternative option and left it unbuilt.
