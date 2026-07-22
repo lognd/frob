@@ -9504,3 +9504,34 @@ component: null
 labels: []
 ```
 Second half of the resource-contention mandate -- the grammar extension. Add: (1) access MODE on resource edges (owns/acl/stores gain mode=read|write|exclusive, default write for backward compat with current semantics -- decide and document); (2) a shared-resource declaration with an ARBITER (resource NAME mode... arbitrated_by NODE|lock NAME) so two writers are provable-safe only through a declared arbiter/lease; (3) contention proof obligation: for every resource with >1 writer-mode accessor and no arbiter, a SYS error (fail-closed). parse.rs node/store symmetry per T-0261 precedent, tmLanguage update, docs/strata section, litmus fixtures. Field motivation: frob's own ledger-lock/refs-stash/info-exclude incidents -- repo-global resources with multiple writers and only convention as the arbiter. The mode-blind rules ship first in the sibling ticket; this upgrades them to mode-aware without renaming.
+
+<!-- ticket:T-0701 -->
+```yaml
+id: T-0701
+title: 'strata mode-conformance enforcement: prove each node''s code OBEYS its declared
+  access mode (read/append/write/exclusive)'
+state: queued
+kind: security
+origin: human
+created: '2026-07-22'
+priority: high
+blocked_by:
+- T-0700
+parent: T-0331
+scope:
+- src/frob/strata/**
+- src/frob/vet/**
+- tests/unit/strata/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a node declaring mode=read whose bound code opens the resource for writing
+  WHEN sys checks run THEN a fail-closed error names the write site; GIVEN mode=exclusive
+  with an access outside the arbiter context THEN an error names the unguarded path;
+  GIVEN conforming code per mode THEN each discharges
+threat: null
+component: null
+labels: []
+```
+User mandate 2026-07-22: contention semantics are worthless unless ENFORCED -- a declared mode nothing verifies is the catalogued-is-not-enforced trap (T-0343 doctrine). For every node with code= bindings and a declared resource mode (T-0700 grammar), join the declaration against the code's OBSERVED effects (the T-0595 code-binding pattern, wired to production per T-0630; effect classification from the vet/T-0339 capability resolvers): READ = zero write-capable operations against the resource (write-mode opens, os.remove/rename, SQL DML, sends on the port) -- fail-closed on opaque access to the resource; APPEND = writes only via append-mode opens, no truncate/rewrite; WRITE = read+write allowed but only on declared paths (undeclared sibling access = finding); EXCLUSIVE = write conformance PLUS every observed access provably inside the declared arbiter/lease context (join T-0694's code-level lock identification with the model-level arbiter declaration; an access path outside the arbiter fails closed). Violations are SYS errors naming the node, the declared mode, and the offending observed operation. Litmus fixtures per mode, firing and clean.
