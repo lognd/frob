@@ -1,0 +1,21 @@
+// contention_port_vuln.strata -- T-0699 SYS200 litmus: two distinct nodes
+// declare the SAME `listens` PORT (8080) -- a hard conflict, two
+// processes cannot bind the same port on one host. api_a also declares a
+// distinct port (9000) that must NOT fire.
+//
+// tested end to end by tests/unit/strata/test_contention.py.
+
+module contention_port_vuln
+
+node api_a : trusted {
+    clearance Internal;
+    listens 8080;
+    listens 9000;
+}
+
+node api_b : trusted {
+    clearance Internal;
+    listens 8080;
+}
+
+// frob:waive REF002 reason="litmus fixture read by exactly one dedicated test module by design (T-0145/T-0255/T-0699 litmus suites); a second consumer would not be genuine"

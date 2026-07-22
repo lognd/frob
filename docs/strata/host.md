@@ -476,10 +476,49 @@ as DEPLOY001.
   already-established "every consumer already branches on it" contract) --
   see the newly-filed follow-up ticket in the Done report.
 
+## Resource contention (SYS2xx, T-0699)
+
+`_contention.py::check_resource_contention` reads the SAME `HostManifest`
+(plus `KernelModel.flows`) this page documents to find four kinds of
+cross-node resource contention, no grammar change:
+
+- **SYS200 duplicate port** -- two distinct nodes both declare the same
+  `listens` PORT. Always a hard conflict.
+- **SYS201 overlapping path claim** -- two distinct nodes' `owns`
+  (linux) or `acl` (windows) PATH atoms overlap by directory-segment
+  prefix. `write_capable` is set when either side's claim grants
+  write-capable rights (a POSIX `owns` MODE with a write bit set, or a
+  non-`:deny`'d `acl` RULE whose RIGHTS is `Write`/`Modify`/
+  `FullControl`).
+- **SYS202 shared pipe** -- two distinct nodes bind the same `pipe`
+  NAME.
+- **SYS203 shared store write** -- two or more distinct nodes have a
+  `Flow` edge landing on the same store node.
+
+MODE-BLIND, HONESTLY: `Flow` carries no read/write direction today, so
+SYS203 counts ANY inbound flow to a store as a "write" -- deliberately
+coarser than a real read/write distinction. This is the grammar-data
+ceiling this ticket ships against; a flow-level read/write mode (and a
+MODE-aware SYS201 severity) is T-0700/T-0701's sibling grammar-extension
+ticket, not duplicated here. `store_ids` (which node ids are STORES) is
+not reconstructible from `KernelModel` alone -- a store desugars into a
+plain `Node` at elaborate time with no surviving marker -- so a caller
+must pass in `Module.stores`' ids explicitly; an empty `store_ids` (the
+default) makes SYS203 silent rather than guessing.
+
+All four rules join the SAME T-0174 waiver channel SYS100-102 use
+(`_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES`, `RULE:SUBTARGET` required
+-- the sub-target is the port number, the overlapping path, the pipe
+name, or the store id).
+
 ## See also
 
 - `docs/commands/deploy.md` -- `frob deploy generate`, DEPLOY001, and the
   T-0257 scope/honesty notes.
+- `src/frob/strata/_contention.py` -- `check_resource_contention`,
+  `ResourceContentionViolation`, `ResourceContentionReport`, SYS200-203.
+- `tests/unit/strata/test_contention.py` -- the SYS200-203 firing/clean
+  litmus pairs (T-0699).
 - `docs/strata/surface.md#node-grammar` -- the node/store grammar this
   vocabulary extends.
 - `docs/strata/surface.md#key-construct-semantics` -- "a store is a node

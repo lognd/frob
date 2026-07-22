@@ -1,0 +1,19 @@
+// contention_store_clean.strata -- T-0699 SYS203 litmus: the clean twin
+// of contention_store_vuln.strata -- each store has exactly ONE writer.
+// SYS203 must not fire.
+//
+// tested end to end by tests/unit/strata/test_contention.py.
+
+module contention_store_clean
+
+store shared_store : trusted {
+    clearance Internal;
+}
+
+node writer_a : trusted {
+    clearance Internal;
+}
+
+flow f_a_shared : writer_a -> shared_store { label Internal; }
+
+// frob:waive REF002 reason="litmus fixture read by exactly one dedicated test module by design (T-0145/T-0255/T-0699 litmus suites); a second consumer would not be genuine"

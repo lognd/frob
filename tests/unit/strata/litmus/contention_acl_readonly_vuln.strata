@@ -1,0 +1,24 @@
+// contention_acl_readonly_vuln.strata -- T-0699 SYS201 litmus: two
+// distinct Windows nodes' `acl` paths overlap, but BOTH rules are
+// read-only grants (`Read`, not in `_ACL_WRITE_RIGHTS`) -- SYS201 must
+// still fire (the paths DO overlap), but `write_capable=False`, proving
+// the write-capable severity flag is not just "always true when SYS201
+// fires".
+//
+// tested end to end by tests/unit/strata/test_contention.py.
+
+module contention_acl_readonly_vuln
+
+node svc_a : trusted {
+    clearance Internal;
+    platform "windows";
+    acl "C:\ProgramData\shared" "BUILTIN\Users:Read";
+}
+
+node svc_b : trusted {
+    clearance Internal;
+    platform "windows";
+    acl "C:\ProgramData\shared\logs" "BUILTIN\Users:Read";
+}
+
+// frob:waive REF002 reason="litmus fixture read by exactly one dedicated test module by design (T-0145/T-0255/T-0261/T-0699 litmus suites); a second consumer would not be genuine"

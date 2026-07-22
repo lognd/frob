@@ -93,8 +93,21 @@ _log = get_logger(__name__)
 #: _stale_design_violations`) so it is included even though it was not one
 #: of the two families a reviewing pass named explicitly -- the same bug
 #: would otherwise reopen on SYS101 alone.
+#: T-0699: SYS200-203 (`_contention.py`'s resource-contention family) join
+#: this set too -- a node can declare several ports/paths/pipes, or write
+#: several stores, so each fires per-resource and needs the same
+#: `RULE:SUBTARGET` discipline SYS100/SYS101 established.
 MULTI_INSTANCE_WAIVER_FAMILIES: frozenset[str] = frozenset(
-    {"SYS100", "SYS101", "THREAT002", "THREAT003"}
+    {
+        "SYS100",
+        "SYS101",
+        "THREAT002",
+        "THREAT003",
+        "SYS200",
+        "SYS201",
+        "SYS202",
+        "SYS203",
+    }
 )
 
 

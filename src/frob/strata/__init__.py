@@ -93,6 +93,16 @@ from frob.strata._compliance import (
     check_regulation_discharge,
     evaluate_compliance,
 )
+from frob.strata._contention import (
+    RESOURCE_CONTENTION_RULES,
+    SYS_DUPLICATE_PORT,
+    SYS_OVERLAPPING_PATH,
+    SYS_SHARED_PIPE,
+    SYS_SHARED_STORE_WRITE,
+    ResourceContentionReport,
+    ResourceContentionViolation,
+    check_resource_contention,
+)
 from frob.strata._crash import CrashContractReport, evaluate_crash_contracts
 from frob.strata._cve_fingerprint import (
     CVE_FINGERPRINT_VIEWS,
@@ -419,6 +429,13 @@ __all__ = [
     "ScenarioDecl",
     "ScenarioResult",
     "ScopeSpec",
+    "RESOURCE_CONTENTION_RULES",
+    "ResourceContentionReport",
+    "ResourceContentionViolation",
+    "SYS_DUPLICATE_PORT",
+    "SYS_OVERLAPPING_PATH",
+    "SYS_SHARED_PIPE",
+    "SYS_SHARED_STORE_WRITE",
     "SecretExpansion",
     "SecretSpec",
     "SelfConformReport",
@@ -455,6 +472,7 @@ __all__ = [
     "check_privacy_policy",
     "check_regulation_catalog_completeness",
     "check_regulation_discharge",
+    "check_resource_contention",
     "check_self_conformance",
     "compile_policies",
     "elaborate",

@@ -1,0 +1,40 @@
+// contention_store_vuln.strata -- T-0699 SYS203 litmus: two distinct
+// nodes each have a `Flow` edge landing on the SAME store -- SYS203 is
+// mode-blind (module docstring of `_contention.py`: `Flow` carries no
+// read/write direction yet), so both inbound flows count as "writes" and
+// SYS203 must fire once per writer. writer_c's flow lands on a
+// DIFFERENT store and must not fire.
+//
+// tested end to end by tests/unit/strata/test_contention.py (this
+// fixture is loaded via `parse_module`+`elaborate` for the `KernelModel`,
+// and `module.stores` is read directly for the `store_ids` argument
+// `check_resource_contention` needs -- module docstring's "store_ids is
+// not a KernelModel-level fact" limitation).
+
+module contention_store_vuln
+
+store shared_store : trusted {
+    clearance Internal;
+}
+
+store other_store : trusted {
+    clearance Internal;
+}
+
+node writer_a : trusted {
+    clearance Internal;
+}
+
+node writer_b : trusted {
+    clearance Internal;
+}
+
+node writer_c : trusted {
+    clearance Internal;
+}
+
+flow f_a_shared : writer_a -> shared_store { label Internal; }
+flow f_b_shared : writer_b -> shared_store { label Internal; }
+flow f_c_other : writer_c -> other_store { label Internal; }
+
+// frob:waive REF002 reason="litmus fixture read by exactly one dedicated test module by design (T-0145/T-0255/T-0699 litmus suites); a second consumer would not be genuine"

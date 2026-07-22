@@ -1,0 +1,21 @@
+// contention_pipe_vuln.strata -- T-0699 SYS202 litmus: two distinct
+// Windows nodes bind the SAME named pipe -- a hard conflict, only one
+// process can own a given named pipe.
+//
+// tested end to end by tests/unit/strata/test_contention.py.
+
+module contention_pipe_vuln
+
+node svc_a : trusted {
+    clearance Internal;
+    platform "windows";
+    pipe "\\.\pipe\control";
+}
+
+node svc_b : trusted {
+    clearance Internal;
+    platform "windows";
+    pipe "\\.\pipe\control";
+}
+
+// frob:waive REF002 reason="litmus fixture read by exactly one dedicated test module by design (T-0145/T-0255/T-0261/T-0699 litmus suites); a second consumer would not be genuine"

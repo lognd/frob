@@ -1,0 +1,21 @@
+// contention_path_clean.strata -- T-0699 SYS201 litmus: the clean twin of
+// contention_path_vuln.strata -- two distinct nodes each own disjoint
+// subtrees (neither is a prefix of the other, and `/var/lib/api` is NOT
+// a prefix of `/var/lib/api2` -- a real path-segment boundary, not a
+// bare string prefix). SYS201 must not fire.
+//
+// tested end to end by tests/unit/strata/test_contention.py.
+
+module contention_path_clean
+
+node api_a : trusted {
+    clearance Internal;
+    owns "/var/lib/api" "0750";
+}
+
+node api_b : trusted {
+    clearance Internal;
+    owns "/var/lib/api2" "0644";
+}
+
+// frob:waive REF002 reason="litmus fixture read by exactly one dedicated test module by design (T-0145/T-0255/T-0699 litmus suites); a second consumer would not be genuine"

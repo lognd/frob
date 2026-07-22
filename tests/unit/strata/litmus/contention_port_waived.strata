@@ -1,0 +1,24 @@
+// contention_port_waived.strata -- T-0699 SYS200 litmus: the same
+// duplicate-port shape as contention_port_vuln.strata, but api_a
+// declares `waive "SYS200:8080" reason ...` -- api_a's copy of the
+// finding must move to `ResourceContentionReport.waived`; api_b's copy
+// (no waiver declared there) must remain a kept violation, proving a
+// waiver on one side does not silently discharge the other node's
+// finding too.
+//
+// tested end to end by tests/unit/strata/test_contention.py.
+
+module contention_port_waived
+
+node api_a : trusted {
+    clearance Internal;
+    listens 8080;
+    waive "SYS200:8080" reason "known dev-only port share, tracked in T-0699" ticket "T-0699";
+}
+
+node api_b : trusted {
+    clearance Internal;
+    listens 8080;
+}
+
+// frob:waive REF002 reason="litmus fixture read by exactly one dedicated test module by design (T-0145/T-0255/T-0699 litmus suites); a second consumer would not be genuine"

@@ -1,0 +1,24 @@
+// contention_path_vuln.strata -- T-0699 SYS201 litmus: two distinct
+// nodes' `owns` paths overlap by directory prefix -- api_a owns
+// `/var/lib/api` (write-capable mode 0750) and api_b owns
+// `/var/lib/api/data` (a subtree of api_a's claim), so SYS201 must fire
+// on both, `write_capable=True` (api_a's mode has the owner write bit
+// set). api_b also declares `/etc/other-service` which does NOT overlap
+// anything and must not fire.
+//
+// tested end to end by tests/unit/strata/test_contention.py.
+
+module contention_path_vuln
+
+node api_a : trusted {
+    clearance Internal;
+    owns "/var/lib/api" "0750";
+}
+
+node api_b : trusted {
+    clearance Internal;
+    owns "/var/lib/api/data" "0644";
+    owns "/etc/other-service" "0644";
+}
+
+// frob:waive REF002 reason="litmus fixture read by exactly one dedicated test module by design (T-0145/T-0255/T-0699 litmus suites); a second consumer would not be genuine"
