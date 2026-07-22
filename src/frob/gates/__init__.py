@@ -18,6 +18,7 @@ is decomposed into small private helpers alongside it.
 
 from __future__ import annotations
 
+import ast
 import difflib
 import fnmatch
 import functools
@@ -585,8 +586,79 @@ def _edge_has_execution_evidence(
     )
 
 
+# frob:ticket T-0549
+def _call_repr(node: ast.expr) -> str:
+    """Best-effort source text of a `Call.func` node, for substring matching
+    against assertion-style call names (`pytest.raises`, `self.assertEqual`,
+    ...); returns "" rather than raising when a node shape `ast.unparse`
+    cannot render (should not happen for real call targets, but this is a
+    heuristic, not a parser, so it must never crash the gate over it)."""
+    try:
+        return ast.unparse(node)
+    except Exception:  # noqa: BLE001 - heuristic must never crash the gate
+        return ""
+
+
+# frob:ticket T-0549
+def _function_asserts(node: ast.AST) -> bool:
+    """True if `node` (a function/method body) contains an `assert`
+    statement, a `raise`, or a call that looks like an assertion helper
+    (`pytest.raises(...)`, `self.assertEqual(...)`, `np.testing.assert_*`,
+    ...). A purely heuristic, static, name-based check -- it cannot know
+    whether the call actually asserts anything meaningful, only whether the
+    test function contains ANY assertion-shaped construct at all, which is
+    exactly what a no-op body (`pass`, or a body that only computes and
+    discards a value) lacks."""
+    for sub in ast.walk(node):
+        if isinstance(sub, ast.Assert):
+            return True
+        if isinstance(sub, ast.Raise):
+            return True
+        if isinstance(sub, ast.Call):
+            call_repr = _call_repr(sub.func).lower()
+            if "raises" in call_repr or "assert" in call_repr:
+                return True
+    return False
+
+
+# frob:ticket T-0549
+def _has_assertion_evidence(root: Path, base_node_id: str) -> bool:
+    """True if the python test function named by `base_node_id` (a
+    `path::[Class::]function` pytest node id, no `[case-id]` suffix)
+    contains an assertion-shaped construct (`_function_asserts`).
+
+    Fails OPEN (returns True) whenever the check cannot be performed at all:
+    `base_node_id` does not name a `.py` file, the file cannot be read, the
+    source does not parse, or no function by that name is found in it. This
+    keeps the heuristic strictly additive -- it can only ever REMOVE bogus
+    case-count credit from a python test whose body was actually inspected
+    and found empty of assertions, never penalize a case this check could
+    not evaluate (native/non-python tests, synthetic test fixtures in unit
+    tests that reference files never written to disk, and so on)."""
+    parts = base_node_id.split("::")
+    if len(parts) < 2 or not parts[0].endswith(".py"):
+        return True
+    file_path, func_name = parts[0], parts[-1]
+    try:
+        source = (root / file_path).read_text(encoding="utf-8")
+        tree = ast.parse(source)
+    except (OSError, SyntaxError, ValueError, UnicodeDecodeError):
+        return True
+    found = False
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            if node.name != func_name:
+                continue
+            found = True
+            if _function_asserts(node):
+                return True
+    return not found
+
+
 # frob:ticket T-0307
-def _case_count(valid_edges: list[Edge], tests: CollectedTests) -> int:
+def _case_count(
+    valid_edges: list[Edge], tests: CollectedTests, root: Path | None = None
+) -> int:
     """Total collected case count for edges already validated by `_valid_edges`.
 
     `_valid_edges` answers "does this directive have any execution
@@ -605,6 +677,22 @@ def _case_count(valid_edges: list[Edge], tests: CollectedTests) -> int:
     at all (the ts/c/cpp structural fallback in `_valid_edges`, which has
     no pytest/cargo evidence to expand) still counts as exactly one case,
     matching its previous `len(valid_edges)` contribution.
+
+    T-0549: that per-case counting is exactly what makes
+    `@pytest.mark.parametrize(range(10))` over a test body with NO
+    assertions at all inflate to 10 "cases", clearing a `min_unit_cases`/
+    `min_integration`/`min_design_e2e` floor a genuinely tested symbol
+    would need real coverage to reach. When `root` is given, a python
+    edge with more than one collected variant is capped back to exactly 1
+    case UNLESS `_has_assertion_evidence` finds an actual assertion-shaped
+    construct in the test body -- a real parametrized test (T-0307's own
+    fixture) still counts every variant; a no-op one is capped like the
+    structural fallback, not zeroed (fitting neither this function's
+    other cases). `root=None` (the direct-unit-test default) skips the
+    check entirely and preserves the pre-T-0549 count, so callers that
+    have no filesystem root to check against (or tests exercising this
+    function directly against node ids with no file on disk) are
+    unaffected.
     """
     total = 0
     for edge in valid_edges:
@@ -626,6 +714,8 @@ def _case_count(valid_edges: list[Edge], tests: CollectedTests) -> int:
             for node_id in tests.node_ids
             if node_id == base or node_id.startswith(prefix)
         )
+        if root is not None and matches > 1 and not _has_assertion_evidence(root, base):
+            matches = 1
         total += matches if matches else 1
     return total
 
@@ -4076,7 +4166,7 @@ def _test001_002_one(
     # T-0307: count actual collected cases (parametrize expansions), not
     # edges -- len(valid) undercounts a parametrized test to 1.
     effective = (
-        _case_count(valid, tests)
+        _case_count(valid, tests, Path(snapshot.root))
         if edges
         else _inferred_unit_cases(record.symref, tests)
     )
@@ -4228,7 +4318,7 @@ def _test003_check_package(
     valid = _valid_edges(_edges_for_package(all_pairs, package), tests, snapshot)
     # T-0307: count actual collected cases (parametrize expansions), not
     # edges -- a parametrized integration test must count each case.
-    count = _case_count(valid, tests)
+    count = _case_count(valid, tests, Path(snapshot.root))
     if count >= cfg.min_integration:
         return None
     _log.debug(
@@ -4314,7 +4404,7 @@ def _test009(
         valid = _valid_edges(
             _edges_for_design_file(all_pairs, design_file), tests, snapshot
         )
-        count = _case_count(valid, tests)
+        count = _case_count(valid, tests, Path(snapshot.root))
         if count >= cfg.min_design_e2e:
             continue
         _log.debug(

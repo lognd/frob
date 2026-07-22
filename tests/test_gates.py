@@ -2543,6 +2543,7 @@ class TestInvariantLoad:
         assert result.danger_err == InvariantError.Malformed
 
 
+# frob:ticket T-0549
 class TestTestGate:
     # frob:waive DUP001 reason="parallel test methods within test_gates.py \
     # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
@@ -2854,6 +2855,46 @@ class TestTestGate:
         assert "TEST002" not in rule_ids
         assert "TEST001" not in rule_ids
 
+    # frob:ticket T-0549
+    # frob:tests src/frob/gates/__init__.py::_case_count kind="unit"
+    def test_test002_noop_parametrize_does_not_inflate_case_count(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0549 counterexample: a `frob:tests` directive bound to a
+        `@pytest.mark.parametrize`-decorated test whose body asserts
+        NOTHING must not clear `min_unit_cases` just because it collected
+        many `[case-id]` variants. Before the fix, `_case_count` credited
+        one case per collected variant unconditionally -- a 10-variant
+        no-op test cleared `min_unit_cases=3` the same as a genuinely
+        assertion-bearing one (B7 in docs/audits/gates-accounting.md).
+        Post-fix, a no-op parametrized test is capped to 1 case (like the
+        structural fallback), so TEST002 still fires."""
+        from typani.option import Nothing
+
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        test_source = (
+            "@pytest.mark.parametrize('x', [1, 2, 3])\n"
+            "def test_helper(x):\n"
+            '    # frob:tests src/frob/pkg/a.py::helper kind="unit"\n'
+            "    helper(x)\n"  # calls helper, asserts nothing
+        )
+        _write(tmp_path, "tests/test_a.py", test_source)
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(
+            node_ids=frozenset(
+                {
+                    "tests/test_a.py::test_helper[1]",
+                    "tests/test_a.py::test_helper[2]",
+                    "tests/test_a.py::test_helper[3]",
+                }
+            )
+        )
+        cfg = TestPolicy(min_unit_cases=3)
+        violations = run_test_gate(snap, (), Nothing(), tests, cfg)
+        rule_ids = _rules(violations)
+        assert "TEST002" in rule_ids
+        assert "TEST001" not in rule_ids  # an edge does exist, just thin
+
     def test_case_count_direct(self) -> None:
         """Direct unit coverage of `_case_count` (T-0307): a valid edge's
         collected cases are counted individually (parametrize expansions),
@@ -2882,6 +2923,87 @@ class TestTestGate:
         # fallback territory) still contributes exactly one case.
         empty_tests = CollectedTests(node_ids=frozenset())
         assert _case_count([edge], empty_tests) == 1
+
+    # frob:ticket T-0549
+    # frob:tests src/frob/gates/__init__.py::_case_count kind="unit"
+    def test_case_count_root_none_skips_assertion_check(self) -> None:
+        """T-0549: `root=None` (the default) is the pre-T-0549 behavior
+        exactly -- `_case_count` never touches the filesystem and cannot
+        discount a no-op test, matching every caller that has no root to
+        check against (and this file's own node ids, which name no file
+        that exists on disk)."""
+        from frob.gates import _case_count
+        from frob.graph import Edge, EdgeKind
+
+        ids = frozenset(
+            {
+                "tests/test_x.py::test_density[1]",
+                "tests/test_x.py::test_density[2]",
+                "tests/test_x.py::test_density[3]",
+            }
+        )
+        tests = CollectedTests(node_ids=ids)
+        edge = Edge(
+            kind=EdgeKind.TESTS,
+            src="tests/test_x.py::test_density",
+            target="src/frob/pkg/a.py::helper",
+            origin="tests/test_x.py:1",
+        )
+        assert _case_count([edge], tests) == 3
+        assert _case_count([edge], tests, root=None) == 3
+
+    # frob:ticket T-0549
+    # frob:tests src/frob/gates/__init__.py::_case_count kind="unit"
+    def test_case_count_root_aware_caps_noop_parametrize(self, tmp_path: Path) -> None:
+        """T-0549: with a real `root`, a parametrized test function with no
+        assertion-shaped construct in its body is capped to 1 case no
+        matter how many `[case-id]` variants collected; a real assertion
+        in the same shape of function still counts every variant."""
+        from frob.gates import _case_count
+        from frob.graph import Edge, EdgeKind
+
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "def test_noop(x):\n    helper(x)\n",
+        )
+        ids = frozenset(
+            {
+                "tests/test_a.py::test_noop[1]",
+                "tests/test_a.py::test_noop[2]",
+                "tests/test_a.py::test_noop[3]",
+            }
+        )
+        tests = CollectedTests(node_ids=ids)
+        edge = Edge(
+            kind=EdgeKind.TESTS,
+            src="tests/test_a.py::test_noop",
+            target="src/frob/pkg/a.py::helper",
+            origin="tests/test_a.py:1",
+        )
+        assert _case_count([edge], tests, root=tmp_path) == 1
+
+        _write(
+            tmp_path,
+            "tests/test_b.py",
+            "def test_real(x):\n    assert helper(x) == x\n",
+        )
+        ids_real = frozenset(
+            {
+                "tests/test_b.py::test_real[1]",
+                "tests/test_b.py::test_real[2]",
+                "tests/test_b.py::test_real[3]",
+            }
+        )
+        tests_real = CollectedTests(node_ids=ids_real)
+        edge_real = Edge(
+            kind=EdgeKind.TESTS,
+            src="tests/test_b.py::test_real",
+            target="src/frob/pkg/a.py::helper",
+            origin="tests/test_b.py:1",
+        )
+        assert _case_count([edge_real], tests_real, root=tmp_path) == 3
 
     def test_node_id_collected_direct(self) -> None:
         """Direct unit coverage of `_node_id_collected` itself, independent
