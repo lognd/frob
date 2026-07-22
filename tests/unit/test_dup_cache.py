@@ -68,6 +68,19 @@ class TestFingerprintRoundTrip:
         # No connection was ever opened/cached for this root.
         assert _cache._db_path(tmp_path).resolve() not in _cache._conn_cache
 
+    def test_get_fingerprint_connect_error_returns_none(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/dup/_cache.py::get_fingerprint kind="unit"
+        # A failed `_connect` (corrupt cache DB) is a miss, not a raised
+        # exception -- `get_fingerprint`'s conn_r.is_err branch.
+        from typani import Err
+
+        from frob.dup._models import DupError
+
+        monkeypatch.setattr(_cache, "_connect", lambda root: Err(DupError.CacheCorrupt))
+        assert _cache.get_fingerprint(tmp_path, "digestE", "r3") is None
+
 
 class TestVerdictRoundTrip:
     def test_put_then_get_returns_same_payload(self, tmp_path: Path):
@@ -90,6 +103,33 @@ class TestVerdictRoundTrip:
 
     def test_get_miss_returns_none(self, tmp_path: Path):
         assert _cache.get_verdict(tmp_path, "x", "y", "r4", 0) is None
+
+    def test_put_verdict_evicts_lru_rows_beyond_cache_entries(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/dup/_cache.py::put_verdict kind="unit"
+        # Drives the count > cache_entries eviction branch: with a cap of
+        # 2, a 3rd insert must evict the least-recently-used row.
+        _cache.put_verdict(tmp_path, "a1", "a2", "r4", 0, (0.1, ()), 2)
+        _cache.put_verdict(tmp_path, "b1", "b2", "r4", 0, (0.2, ()), 2)
+        result = _cache.put_verdict(tmp_path, "c1", "c2", "r4", 0, (0.3, ()), 2)
+        assert result.is_ok, result.err
+        assert _cache.get_verdict(tmp_path, "a1", "a2", "r4", 0) is None
+        assert _cache.get_verdict(tmp_path, "b1", "b2", "r4", 0) is not None
+        assert _cache.get_verdict(tmp_path, "c1", "c2", "r4", 0) is not None
+
+    def test_put_verdict_connect_error_is_propagated(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/dup/_cache.py::put_verdict kind="unit"
+        from typani import Err
+
+        from frob.dup._models import DupError
+
+        monkeypatch.setattr(_cache, "_connect", lambda root: Err(DupError.CacheCorrupt))
+        result = _cache.put_verdict(tmp_path, "x1", "x2", "r4", 0, (0.1, ()), 200_000)
+        assert result.is_err
+        assert result.err == DupError.CacheCorrupt
 
 
 class TestFingerprintInvalidation:
