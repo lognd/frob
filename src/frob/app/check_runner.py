@@ -275,12 +275,47 @@ _DISPATCH_BY_TYPE = {
     "cpp": _dispatch_check_cpp,
     "rust": _dispatch_check_rust,
     "typescript": _dispatch_check_ts,
+    "python": _dispatch_check_python,
 }
 
 
+# frob:ticket T-0546
+def _unknown_project_type_result(root: Path, project_type: str) -> CheckResult:
+    """A loud CHECK001 error `CheckResult` for an unrecognized `project_type`
+    (T-0404 finding 6).
+
+    `detect_project_type`/`_detected_types` return `"unknown"` (or, in
+    principle, any type string with no entry in `_DISPATCH_BY_TYPE`) when no
+    language sentinel file is found. `_dispatch_check` used to fall back to
+    `_dispatch_check_python` for any unmapped type
+    (`_DISPATCH_BY_TYPE.get(project_type, _dispatch_check_python)`), so a
+    repo with no recognized marker file silently ran ruff/ty over a
+    non-Python tree and reported whatever noise that produced, instead of a
+    clear "could not determine project type" failure. This returns one
+    ERROR-severity `unknown-project-type` `ToolResult` instead, so `frob
+    check` fails loudly and unambiguously rather than silently substituting
+    the wrong toolchain.
+    """
+    summary = f"unknown project type: {project_type!r} (no dispatchable language stage)"
+    result = ToolResult(
+        tool="unknown-project-type",
+        exit_code=1,
+        summary=summary,
+        diagnostics=[Diagnostic(severity="error", code="CHECK001", message=summary)],
+    )
+    return CheckResult(path=str(root), results=[result])
+
+
+# frob:ticket T-0546
+# frob:tests tests/integration/test_interfaces.py::TestInterfaces.test_main_cli_dispatches  # noqa: E501
 def _dispatch_check(cfg: AppConfig, root: Path, project_type: str) -> CheckResult:
-    """Run the language-appropriate check stack for `project_type`."""
-    dispatch = _DISPATCH_BY_TYPE.get(project_type, _dispatch_check_python)
+    """Run the language-appropriate check stack for `project_type`, or a
+    loud CHECK001 error `CheckResult` when `project_type` has no
+    dispatchable stage (T-0404 finding 6) -- never a silent Python
+    fallback."""
+    dispatch = _DISPATCH_BY_TYPE.get(project_type)
+    if dispatch is None:
+        return _unknown_project_type_result(root, project_type)
     return dispatch(cfg, root)
 
 

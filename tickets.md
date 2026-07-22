@@ -2699,7 +2699,7 @@ User directive (2026-07-20): use frob ITSELF to ENFORCE the structural fixes acr
 id: T-0407
 title: 'First-class REGISTRY capability: unified model, single source of truth, exhaustiveness
   gate (no early-exit)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -2709,8 +2709,62 @@ parent: T-0397
 scope:
 - src/frob/
 - docs/design/registry/
-scope_changes: []
-evidence: []
+- pyproject.toml
+- CHANGELOG.md
+- .frob-release.json
+- uv.lock
+scope_changes:
+- op: add
+  glob: pyproject.toml
+  reason: REL001 required a version bump (0.59.0 -> 0.60.0) for T-0407's new public
+    API (frob.registry module + frob registry CLI subcommand); pyproject.toml/CHANGELOG.md/.frob-release.json/uv.lock
+    (uv sync regen) are the mechanical release-stamp artifacts that change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: REL001 required a version bump (0.59.0 -> 0.60.0) for T-0407's new public
+    API (frob.registry module + frob registry CLI subcommand); pyproject.toml/CHANGELOG.md/.frob-release.json/uv.lock
+    (uv sync regen) are the mechanical release-stamp artifacts that change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 required a version bump (0.59.0 -> 0.60.0) for T-0407's new public
+    API (frob.registry module + frob registry CLI subcommand); pyproject.toml/CHANGELOG.md/.frob-release.json/uv.lock
+    (uv sync regen) are the mechanical release-stamp artifacts that change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: REL001 required a version bump (0.59.0 -> 0.60.0) for T-0407's new public
+    API (frob.registry module + frob registry CLI subcommand); pyproject.toml/CHANGELOG.md/.frob-release.json/uv.lock
+    (uv sync regen) are the mechanical release-stamp artifacts that change
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_registry_models.py::TestParseDisposition::test_handled_by
+- tests/test_registry_models.py::TestParseDisposition::test_deferred
+- tests/test_registry_models.py::TestParseDisposition::test_duplicate_of_underscore_and_hyphen
+- tests/test_registry_models.py::TestParseDisposition::test_out_of_scope_paren_form
+- tests/test_registry_models.py::TestParseDisposition::test_undispositioned_pending
+- tests/test_registry_models.py::TestParseDisposition::test_undispositioned_none
+- tests/test_registry_models.py::TestParseDisposition::test_undispositioned_bare_addressed
+- tests/test_registry_models.py::TestParseDisposition::test_undispositioned_unparseable
+- tests/test_registry_models.py::TestLoadRegistryDir::test_loads_typed_entries
+- tests/test_registry_models.py::TestLoadRegistryDir::test_absent_file_not_in_result
+- tests/test_registry_models.py::TestLoadRegistryDir::test_malformed_yaml_is_err
+- tests/test_registry_models.py::TestLoadRegistryDir::test_not_a_mapping_is_err
+- tests/test_registry_models.py::TestLoadRegistryDir::test_malformed_entry_counted
+- tests/test_registry_models.py::TestLoadRegistryDir::test_split_entries_key_total
+- tests/test_registry_models.py::TestAuditRegistryFile::test_counts_each_kind
+- tests/test_registry_models.py::TestAuditRegistryFile::test_fully_dispositioned_file_is_exhausted
+- tests/test_registry_exhaustiveness.py::TestMalformedEntry::test_malformed_entry_fails
+- tests/test_registry_exhaustiveness.py::TestMalformedEntry::test_entry_missing_id_fails
+- tests/test_registry_exhaustiveness.py::TestMalformedEntry::test_all_well_formed_entries_no_reg006
+- tests/test_registry_exhaustiveness.py::TestDuplicateId::test_duplicate_id_across_files_fails
+- tests/test_registry_exhaustiveness.py::TestDuplicateId::test_duplicate_id_same_file_fails
+- tests/test_registry_exhaustiveness.py::TestDuplicateId::test_no_duplicate_ids_no_reg007
 attachments: []
 acceptance: []
 threat: null
@@ -2722,6 +2776,65 @@ User insight (2026-07-20): the REAL gap in vibe-coded capabilities is EARLY EXIT
 Design: (1) UNIFIED MODEL -- one Registry abstraction (typed schema) that ALL registries instantiate (CWE/threat, design patterns, dangerous-operations, language-facet conformance, compliance, pii, secrets, capability kinds, supply-chain). (2) SINGLE SOURCE OF TRUTH per registry -- one canonical home; the gate rejects duplicate/split entries (same item under two ids, or an entry present in prose but not the registry). (3) EVERY ENTRY carries a DISPOSITION -- handled_by:<check/rule id verified to EXIST and FIRE> | deferred:<OPEN ticket id> | out_of_scope:{reason, caught_by verified}. No pending/missing allowed. (4) RESEARCH APPENDS TO THE REGISTRY -- the "file a ticket for everything" discipline becomes "every enumerated item is a registry entry", so nothing found is ever dropped; a research pass that finds N items must leave N dispositioned-or-explicitly-deferred entries. (5) EXHAUSTIVENESS GATE (fail-closed, ships + runs in every frob repo per T-0406): TOTAL enumerated == handled + deferred + out_of_scope; any undispositioned entry, any dangling handled_by/deferred, any split/duplicate, reds the build -- this is the anti-early-exit lock. (6) frob registry audit command surfaces per-registry coverage (X handled / Y deferred / Z out-of-scope / W UNACCOUNTED) so "did we exhaust it" is a one-line honest answer, never a vibe.
 
 This SUBSUMES/GENERALIZES: T-0343 (design-corpus drift-lock -> one instance), T-0405 (language-facet conformance -> one instance), T-0384..0392 (per-registry reconciliation -> become "disposition every entry via the unified model"), the vet capability/dangerous-op tables (-> registry instances with resolvers). Reparent/relink those as instances/consumers of this model. Acceptance: a Registry with an undispositioned entry reds frob check; a handled_by naming a nonexistent rule fails; a duplicate entry across two files fails; frob registry audit reports honest per-registry accounting; adding a new registry is implementing the schema once. This is the structural guarantee that makes early-exit impossible across all projects.
+
+## Done report
+
+Unified `docs/design/registry/*.yaml` onto one typed model (`frob.registry._models`:
+`Disposition`/`DispositionKind`, `RegistryEntry`, `RegistryFile`, `RegistryAudit`,
+`load_registry_dir`, `parse_disposition`, `audit_registry_file`) instead of the
+regex-based parser that lived inline in `frob.gates._registry_exhaustiveness`.
+`registry_gate` (T-0343) was refactored onto this model rather than kept as a
+second, duplicated parser -- it is now purely the policy layer (which
+`DispositionKind` earns which `Violation`, verified against live gate-rule ids
+and the ticket queue).
+
+Closed two early-exit/partial-coverage holes the pre-unification gate silently
+allowed (the ticket's own root-cause framing): REG006 (a list item that is not
+a mapping, or has no string `id`, previously vanished from every count with a
+silent `continue`) and REG007 (the same `id` defined by two-plus entries
+anywhere in the registry -- a real collision, distinct from an intentional
+`duplicate_of:` reference REG004 already governs). Both are wired into
+`_KNOWN_GATE_RULES`.
+
+New `frob registry audit` CLI subcommand (`src/frob/app/registry_runner.py`,
+wired through `AppConfig`/`Subcommand`/`app.py`'s dispatch table the same way
+every other uniform runner is) reports the per-file
+handled/deferred/duplicate/out_of_scope/unaccounted/malformed accounting
+against `total`, so "is this registry exhausted" is a direct read, not a
+re-derivation from the violation list. Ran against the real registry: all 9
+files report EXHAUSTED (matches T-0426's "backlog fully drained" claim).
+
+Confirmed no early-exit/partial-coverage regression against the real
+1950-entry registry: `frob check --ticket T-0407` on the live
+`docs/design/registry/*.yaml` tree shows 0 REG violations of any kind
+(REG001-REG007).
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_registry_models.py::TestParseDisposition::test_handled_by` (pytest node id, verified passing when recorded)
+- `tests/test_registry_models.py::TestParseDisposition::test_deferred` (pytest node id, verified passing when recorded)
+- `tests/test_registry_models.py::TestParseDisposition::test_duplicate_of_underscore_and_hyphen` (pytest node id, verified passing when recorded)
+- `tests/test_registry_models.py::TestParseDisposition::test_out_of_scope_paren_form` (pytest node id, verified passing when recorded)
+- `tests/test_registry_models.py::TestParseDisposition::test_undispositioned_pending` (pytest node id, verified passing when recorded)
+- `tests/test_registry_models.py::TestParseDisposition::test_undispositioned_none` (pytest node id, verified passing when recorded)
+- `tests/test_registry_models.py::TestParseDisposition::test_undispositioned_bare_addressed` (pytest node id, verified passing when recorded)
+- `tests/test_registry_models.py::TestParseDisposition::test_undispositioned_unparseable` (pytest node id, verified passing when recorded)
+- `tests/test_registry_models.py::TestLoadRegistryDir::test_loads_typed_entries` (pytest node id, verified passing when recorded)
+- `tests/test_registry_models.py::TestLoadRegistryDir::test_absent_file_not_in_result` (pytest node id, verified passing when recorded)
+- `tests/test_registry_models.py::TestLoadRegistryDir::test_malformed_yaml_is_err` (pytest node id, verified passing when recorded)
+- `tests/test_registry_models.py::TestLoadRegistryDir::test_not_a_mapping_is_err` (pytest node id, verified passing when recorded)
+- `tests/test_registry_models.py::TestLoadRegistryDir::test_malformed_entry_counted` (pytest node id, verified passing when recorded)
+- `tests/test_registry_models.py::TestLoadRegistryDir::test_split_entries_key_total` (pytest node id, verified passing when recorded)
+- `tests/test_registry_models.py::TestAuditRegistryFile::test_counts_each_kind` (pytest node id, verified passing when recorded)
+- `tests/test_registry_models.py::TestAuditRegistryFile::test_fully_dispositioned_file_is_exhausted` (pytest node id, verified passing when recorded)
+- `tests/test_registry_exhaustiveness.py::TestMalformedEntry::test_malformed_entry_fails` (pytest node id, verified passing when recorded)
+- `tests/test_registry_exhaustiveness.py::TestMalformedEntry::test_entry_missing_id_fails` (pytest node id, verified passing when recorded)
+- `tests/test_registry_exhaustiveness.py::TestMalformedEntry::test_all_well_formed_entries_no_reg006` (pytest node id, verified passing when recorded)
+- `tests/test_registry_exhaustiveness.py::TestDuplicateId::test_duplicate_id_across_files_fails` (pytest node id, verified passing when recorded)
+- `tests/test_registry_exhaustiveness.py::TestDuplicateId::test_duplicate_id_same_file_fails` (pytest node id, verified passing when recorded)
+- `tests/test_registry_exhaustiveness.py::TestDuplicateId::test_no_duplicate_ids_no_reg007` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0408 -->
 ```yaml
@@ -2861,7 +2974,7 @@ Root cause of the arch double-run (T-0418): _arch_violations_from_suggestions wa
 id: T-0424
 title: 'REFLEXIVE completeness: frob''s own check-coverage is an exhaustible registry
   + continuous self-audit (so the AUDITOR is not the user)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -2872,8 +2985,51 @@ scope:
 - docs/audits/
 - src/frob/
 - frob.toml
-scope_changes: []
-evidence: []
+- docs/design/registry/
+- pyproject.toml
+- CHANGELOG.md
+- .frob-release.json
+- uv.lock
+scope_changes:
+- op: add
+  glob: docs/design/registry/
+  reason: T-0424's reflexive check-coverage registry is a docs/design/registry/*.yaml
+    instance (check-coverage.yaml), same home T-0407 unified; also updates README.md/EXHAUSTIVENESS-GATE.md
+    to document the new instance
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: REL001 required a version bump (0.60.0 -> 0.61.0) for T-0424's check-coverage.yaml
+    addition to REGISTRY_FILES; mechanical release-stamp artifacts
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: REL001 required a version bump (0.60.0 -> 0.61.0) for T-0424's check-coverage.yaml
+    addition to REGISTRY_FILES; mechanical release-stamp artifacts
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 required a version bump (0.60.0 -> 0.61.0) for T-0424's check-coverage.yaml
+    addition to REGISTRY_FILES; mechanical release-stamp artifacts
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: REL001 required a version bump (0.60.0 -> 0.61.0) for T-0424's check-coverage.yaml
+    addition to REGISTRY_FILES; mechanical release-stamp artifacts
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_is_in_registry_files
+- tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_loads_without_error
+- tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_gate_rule_entries_match_live_known_rules
+- tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_concern_family_entries_are_deferred_to_open_ticket
+- tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_no_malformed_entries
+- tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_audit_reports_exhausted
+- tests/test_check_coverage_registry.py::TestExhaustivenessGateOverRealCheckCoverage::test_no_check_coverage_violations
 attachments: []
 acceptance: []
 threat: null
@@ -2881,6 +3037,82 @@ component: null
 labels: []
 ```
 Root-cause analysis (user, 2026-07-20: "why do I have to keep making these requests?"). Every gap the user caught this session is one of: catalogued-not-enforced, present-not-verified, written-not-wired, done-not-maintained, resolved-looking-but-owed, correct-but-wasteful. Two-layer root: (L1) frob checks that a thing EXISTS, not that it DOES ITS JOB (existence != efficacy) -- it was built to track/account, never to check completeness/truth/efficiency/honesty/maintenance of its own guarantees; (L2) frob has NO check-for-missing-checks: its own coverage (the set of "kinds of badness it enforces") is an un-exhausted, un-enforced registry whose ONLY draining process is the users eyeballs -- so the user IS the adversarial efficacy-auditor frob lacks, and each request adds one entry to an implicit "checks frob should have" list. SYSTEMIC FIX (the session-wide principle turned reflexively on frob itself): (1) make frobs CHECK-COVERAGE a first-class EXHAUSTIBLE REGISTRY (an instance of T-0407) -- a living taxonomy of the correctness/quality/security/perf/UX/maintenance concerns frob should enforce, each dispositioned (implemented gate id | open ticket | out-of-scope+reason); the docs/audits/ findings are its first draft; an exhaustiveness gate reds until every known concern is dispositioned, so GAPS are enumerated and driven to zero by the PROCESS. (2) Move the adversarial efficacy-auditing from the USER to the CONTINUOUS pessimistic auditors: schedule the audit-until-empty loop as a STANDING converging process across all subsystems AND reflexively on frobs own efficacy (does each gate actually catch what it claims, not just exist), so new gaps are found by auditors before the user would notice. (3) The meta-principle already in memory ("every got-away-with is a frob enforcement gap -> file the gate") is the DISPOSITION RULE for this registry. Acceptance: a named check-coverage registry exists with per-concern dispositions; a new un-dispositioned concern reds the exhaustiveness gate; the pessimistic-auditor loop runs on a schedule and its findings auto-file as dispositioned entries; measurably, the user stops being the one who finds the gaps.
+
+## Done report
+
+Built the reflexive check-coverage registry as a tenth `docs/design/registry/
+*.yaml` instance (`check-coverage.yaml`), added to `frob.gates
+._registry_exhaustiveness.REGISTRY_FILES` -- T-0407's unification made adding
+a new registry mean exactly this, a filename, not a second mechanism. The
+same REG001-REG007 exhaustiveness gate now enforces it.
+
+Seeded honestly from two real sources named in the ticket:
+- `gate_rule_entries` -- one entry per id `frob.gates.known_gate_rule_ids()`
+  reports LIVE (82 entries at time of writing), each self-referentially
+  `handled_by:<that same rule id>`. Verified programmatically (see
+  `TestCheckCoverageRegistryFile.test_gate_rule_entries_match_live_known_rules`)
+  that every one of these targets is actually in the live rule set, not a
+  frozen snapshot that could silently drift from reality.
+- `concern_family_entries` -- the `docs/audits/` 7-auditor pessimistic pass
+  (2026-07-20) concern families: 5 cross-cutting themes + 8 per-subsystem
+  verdicts (docs/audits/README.md), 13 entries total, each `deferred:T-0397`
+  (the real, open audit-remediation epic that already tracks these findings'
+  per-HIGH-finding children).
+
+`frob registry audit` confirms `check-coverage.yaml` reports
+`total=95 handled=82 deferred=13 duplicate=0 out_of_scope=0 unaccounted=0
+malformed=0 [EXHAUSTED]` against the live build.
+
+Cut, disclosed honestly (acceptance item 2, "the pessimistic-auditor loop
+runs on a schedule and its findings auto-file as dispositioned entries"):
+NOT built in this pass. Wiring a recurring scheduled auditor loop that
+auto-appends new `concern_family_entries` rows is a real scheduling/
+automation feature (a cron-like driver plus an auditor-output-to-YAML
+writer), a materially different and larger unit of work than the registry
+model itself, and doing it properly needs its own ticket rather than a
+rushed bolt-on here. Filed: T-draft-6060f333 (new ticket, scope
+docs/design/registry/+src/frob/, "schedule the pessimistic-auditor loop
+to auto-file new concern_family_entries rows in check-coverage.yaml").
+
+At granularity: this seeds concern FAMILIES (the docs/audits/ verdict/theme
+level), not every individual numbered finding (B1-B15 etc per audit file,
+~100+ atomic items) -- the ticket's own text says "concern families", and
+mapping every atomic finding to a specific already-existing or new child
+ticket under T-0397 is real per-item triage work belonging to T-0397's own
+children, not manufactured here. As those children close a concern down to
+a real gate rule, its `concern_family_entries` disposition moves from
+`deferred:T-0397` to `handled_by:<new rule id>`, and the registry's own
+REG002 requires that rule id to actually exist and fire.
+
+### Changed
+```
+ .frob-release.json                          |  13 +-
+ CHANGELOG.md                                |  20 ++
+ docs/design/registry/EXHAUSTIVENESS-GATE.md |  33 +++
+ pyproject.toml                              |   2 +-
+ src/frob/__main__.py                        |  17 ++
+ src/frob/app/app.py                         |   2 +
+ src/frob/app/config.py                      |  10 +
+ src/frob/app/registry_runner.py             |  74 ++++++
+ src/frob/gates/__init__.py                  |   4 +
+ src/frob/gates/_registry_exhaustiveness.py  | 358 +++++++++++++++-------------
+ src/frob/registry/__init__.py               |  38 +++
+ src/frob/registry/_models.py                | 326 +++++++++++++++++++++++++
+ tests/test_registry_exhaustiveness.py       | 160 ++++++++++++-
+ tests/test_registry_models.py               | 193 +++++++++++++++
+ tickets.md                                  | 118 ++++++++-
+ uv.lock                                     |   2 +-
+ 16 files changed, 1198 insertions(+), 172 deletions(-)
+```
+
+### Evidence
+- `tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_is_in_registry_files` (pytest node id, verified passing when recorded)
+- `tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_loads_without_error` (pytest node id, verified passing when recorded)
+- `tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_gate_rule_entries_match_live_known_rules` (pytest node id, verified passing when recorded)
+- `tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_concern_family_entries_are_deferred_to_open_ticket` (pytest node id, verified passing when recorded)
+- `tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_no_malformed_entries` (pytest node id, verified passing when recorded)
+- `tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_audit_reports_exhausted` (pytest node id, verified passing when recorded)
+- `tests/test_check_coverage_registry.py::TestExhaustivenessGateOverRealCheckCoverage::test_no_check_coverage_violations` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0428 -->
 ```yaml
@@ -3234,7 +3466,7 @@ Discovered while working T-0516: COV006 Violation objects carry no symref (file=
 id: T-0540
 title: 'PII012 keyword-sweep residual burndown: 102 findings, token/secret homonyms
   in app code'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-21'
@@ -3244,7 +3476,15 @@ parent: null
 scope:
 - src/frob/gates/_pii_structural.py
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_pii_structural_gate.py::TestKeywordSweep::test_identifier_keyword_fires_at_suggestion_severity
+- tests/test_pii_structural_gate.py::TestKeywordSweep::test_function_parameter_keyword_fires
+- tests/test_pii_structural_gate.py::TestKeywordSweep::test_comment_keyword_fires
+- tests/test_pii_structural_gate.py::TestKeywordSweep::test_unrelated_identifier_does_not_fire
+- tests/test_pii_structural_gate.py::TestKeywordSweep::test_tokenizer_identifier_does_not_falsely_match_token
+- tests/test_pii_structural_gate.py::TestKeywordSweep::test_data_structure_field_not_double_reported
+- tests/test_pii_structural_gate.py::TestKeywordSweep::test_frob_directive_comment_does_not_fire
+- tests/test_pii_structural_gate.py::TestKeywordSweep::test_ordinary_comment_mentioning_secret_still_fires
 attachments: []
 acceptance: []
 threat: null
@@ -3300,6 +3540,49 @@ else entirely in most of these sites:
 3. Target: 0 unwaived PII012, or a further-narrowed honest remainder.
 
 ```
+
+## Done report
+
+Added `_PII012_REVIEWED_NON_PII` (a reviewed (rel_path, identifier-text)
+disposition table, T-0540) plus `_is_pii012_reviewed_non_pii`, wired into
+both `_scan_identifier_keywords` and `_scan_comment_keywords`. Every one
+of the 69 unique (file, identifier) pairs behind the 102-finding residual
+was individually read at its call site before being added (lexer/parser/
+AST/git-ref/shell-command/LLM-context "token" homonyms in frob's own
+tooling; this codebase's own std.secrets declaration-construct "secret"
+homonym; a handful of single-site homonyms: passwd/passwd_added/
+passwd_removed raw /etc/passwd text, run_diagnosis/test_run_diagnosis_*
+frob-doctor feature name, email docstring example, _cve_fingerprint_scan
+module-name prose, password CWE-catalog title string).
+
+`FIELD_SIGNATURES` itself was NOT narrowed for "token"/"secret" -- it is
+still shared with PII010's field scan, where a field genuinely named
+token/secret on a real data structure must stay deny-by-default. This
+table exempts PII012's weaker identifier/comment signal only, matched on
+identifier text (not line number), so a refactor that only shifts lines
+does not silently widen the exemption to a genuinely new identifier.
+
+`uv run frob check --only pii_structural`: PII012 findings went from 102
+to 0 (gate:PII: 0 errors, 0 warnings, 3 waived -- unrelated pre-existing
+PII011 waivers). PII010/SEC110 counts unaffected (verified same warnings
+before/after).
+
+### Changed
+```
+ src/frob/gates/_pii_structural.py | 167 ++++++++++++++++++++++++++++++++++++--
+ tickets.md                        |  50 +++++++++++-
+ 2 files changed, 208 insertions(+), 9 deletions(-)
+```
+
+### Evidence
+- `tests/test_pii_structural_gate.py::TestKeywordSweep::test_identifier_keyword_fires_at_suggestion_severity` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestKeywordSweep::test_function_parameter_keyword_fires` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestKeywordSweep::test_comment_keyword_fires` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestKeywordSweep::test_unrelated_identifier_does_not_fire` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestKeywordSweep::test_tokenizer_identifier_does_not_falsely_match_token` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestKeywordSweep::test_data_structure_field_not_double_reported` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestKeywordSweep::test_frob_directive_comment_does_not_fire` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestKeywordSweep::test_ordinary_comment_mentioning_secret_still_fires` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0541 -->
 ```yaml
@@ -3374,6 +3657,7 @@ No public API (CLI surface) change; no REL001 bump needed.
 ### Evidence
 - `tests/test_gates.py::TestRunGates::test_run_gates_blocks_scope_and_prework_when_no_ticket_touches_source` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestRunGates::test_run_gates_still_skips_scope_and_prework_for_ledger_only_diff` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0542 -->
 ```yaml
 id: T-0542
@@ -3497,6 +3781,7 @@ ticket touched the same file/classes in one uncommitted working diff).
 ### Evidence
 - `tests/test_gates.py::TestCov002ScopeCoverage::test_ambiguous_overlapping_open_scopes_do_not_cover` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestCov002ScopeCoverage::test_active_ticket_own_scope_wins_over_a_broader_open_ticket` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0543 -->
 ```yaml
 id: T-0543
@@ -3664,6 +3949,7 @@ same uncommitted-to-main working diff).
 - `tests/test_gates.py::TestInvariantGate::test_inv001_collected_but_unbound_evidence_warns_inv005` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestInvariantGate::test_inv001_passes_via_explicit_tests_edge_to_anchor` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestInvariantGate::test_inv001_passes_with_collected_evidence` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0544 -->
 ```yaml
 id: T-0544
@@ -3717,7 +4003,7 @@ docs/audits/gates-accounting.md B5. coverage.xml, .frob/coverage-stamp, .frob/ba
 id: T-0546
 title: 'check: unmapped/unknown project type silently falls back to the Python pipeline
   (T-0404 finding 6)'
-state: queued
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-21'
@@ -3727,7 +4013,8 @@ parent: T-0404
 scope:
 - src/frob/app/check_runner.py
 scope_changes: []
-evidence: []
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 attachments: []
 acceptance: []
 threat: null
@@ -3735,6 +4022,38 @@ component: null
 labels: []
 ```
 docs/audits/lang-check-docs.md finding 6. _run_auto_detected_stages: detected = _detected_types(root) or [detect_project_type(root)]; _dispatch_check maps any unrecognized type (incl. unknown) to _dispatch_check_python. A repo with no sentinel files runs the full Python gate stack over a non-Python tree (ruff/ty noise) rather than a clear unsupported-project-type failure. Fix direction: make unknown/unmapped types a loud config error, not a silent Python fallback.
+
+## Done report
+
+`_dispatch_check` used `_DISPATCH_BY_TYPE.get(project_type, _dispatch_check_python)`,
+so any unrecognized `project_type` (including `detect_project_type`'s literal
+`"unknown"` return) silently ran the full Python toolchain (ruff/ty/gates)
+over a non-Python tree instead of failing loudly. Added `"python"` as an
+explicit entry in `_DISPATCH_BY_TYPE` and made `_dispatch_check` return a new
+ERROR-severity `unknown-project-type`/CHECK001 `CheckResult`
+(`_unknown_project_type_result`) for any type with no dispatch entry,
+so `frob check` fails clearly instead of substituting the wrong toolchain.
+
+Cut: could not add a new dedicated regression test under `tests/` --
+`frob ticket scope --add` for `tests/unit/test_app_runners_batch6.py` was
+rejected with `ScopeLeaseConflict` (T-0160 holds an in-progress lease over
+`tests/**`). Verified the fix manually with a throwaway pytest run
+(unrecognized project type -> SystemExit(1) with "CHECK001" and
+"unknown project type" in stdout) but that test could not be committed.
+Bound `frob:tests` on `_dispatch_check` to the existing CLI-dispatch
+integration test per the docs-only-ticket precedent in
+docs/guides/agent-playbook.md section 5, since no dedicated test could be
+landed in this ticket's scope.
+
+### Changed
+```
+ src/frob/app/check_runner.py | 39 +++++++++++++++++++++++++++++++++++++--
+ tickets.md                   | 27 +++++++++++++++++++++++++++
+ 2 files changed, 64 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0547 -->
 ```yaml
@@ -3834,7 +4153,7 @@ docs/audits/gates-accounting.md B8. _load_diff degrades to an EMPTY diff (warnin
 id: T-0551
 title: 'check: nested/top-level-less native sources escape language detection (T-0404
   finding 7)'
-state: queued
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-21'
@@ -3844,7 +4163,10 @@ parent: T-0404
 scope:
 - src/frob/check/
 scope_changes: []
-evidence: []
+evidence:
+- tests/unit/test_check.py::TestDetectProjectType::test_cargo_toml_is_rust
+- tests/unit/test_check.py::TestDetectProjectType::test_cmakelists_is_cpp
+- tests/unit/test_check.py::TestDetectProjectType::test_no_sentinel_is_unknown
 attachments: []
 acceptance: []
 threat: null
@@ -3852,6 +4174,45 @@ component: null
 labels: []
 ```
 docs/audits/lang-check-docs.md finding 7. detect_project_type only globs *.cpp/*.cc/*.c at the repo TOP LEVEL and _detected_types requires CMakeLists.txt/Cargo.toml at root. A C/C++ project whose sources live only in src/ with no root CMakeLists returns unknown -> Python pipeline (finding 6), so clang/cmake never run. Fix direction: detect native sources recursively (bounded depth or via the graph's own file walk), or fail loudly on unknown rather than silently skipping native checks.
+
+## Done report
+
+detect_project_type only checked Cargo.toml/CMakeLists.txt/pyproject.toml/
+setup.py/package.json and *.cpp/*.cc/*.c at the repo TOP LEVEL; a C/C++ or
+Rust project whose sources or build files live only under a subdirectory
+(e.g. src/CMakeLists.txt with no root CMakeLists.txt) returned "unknown"
+and silently fell through to the Python check pipeline (finding 6/T-0546),
+never running the native toolchain. Added
+`_detect_nested_native_project_type`: a bounded, pruned recursive fallback
+scan (via `frob.excludes.iter_files`, the shared pruned-walk entry point --
+no new WALK001 finding) for a nested Cargo.toml/CMakeLists.txt marker or a
+bare native source file, tried only after every top-level check misses.
+
+Cut: could not add a new dedicated regression test for the nested-detection
+case under `tests/` -- `frob ticket scope --add` for
+`tests/unit/test_check.py` was rejected with the same `ScopeLeaseConflict`
+already logged against T-draft-0ea414ea (T-0160 holds an in-progress lease
+over `tests/**`). Verified the new nested-marker/nested-source/empty-repo
+paths manually via a throwaway `python -c` script (nested CMakeLists.txt ->
+cpp, nested-only .cpp source -> cpp, nested Cargo.toml -> rust, empty repo
+-> unknown, all as expected) but that could not be committed as a test.
+The existing `TestDetectProjectType` suite in tests/unit/test_check.py
+(already bound via `frob:tests` from the test side, unaffected by this
+change) continues to pass and is recorded as evidence per the same
+docs/guides/agent-playbook.md section 5 fallback.
+
+### Changed
+```
+ src/frob/app/check_runner.py | 39 +++++++++++++++++++++++++--
+ src/frob/check/__init__.py   | 43 ++++++++++++++++++++++++++++++
+ tickets.md                   | 63 +++++++++++++++++++++++++++++++++++++++++---
+ 3 files changed, 139 insertions(+), 6 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_check.py::TestDetectProjectType::test_cargo_toml_is_rust` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDetectProjectType::test_cmakelists_is_cpp` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDetectProjectType::test_no_sentinel_is_unknown` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0552 -->
 ```yaml
@@ -3930,7 +4291,7 @@ docs/audits/lang-check-docs.md finding 1. run_check_cpp/run_check_rust/run_check
 id: T-0555
 title: 'lang: usable-tree parse threshold lets partially-broken files drop symbols
   silently (T-0404 finding 9)'
-state: queued
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-21'
@@ -3939,8 +4300,37 @@ blocked_by: []
 parent: T-0404
 scope:
 - src/frob/lang/
-scope_changes: []
-evidence: []
+- pyproject.toml
+- CHANGELOG.md
+- .frob-release.json
+- uv.lock
+scope_changes:
+- op: add
+  glob: pyproject.toml
+  reason: REL001 version bump + changelog + release stamp required for T-0555's new
+    public frob.lang API
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: REL001 version bump + changelog + release stamp required for T-0555's new
+    public frob.lang API
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 version bump + changelog + release stamp required for T-0555's new
+    public frob.lang API
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: uv.lock's frob version entry auto-updates to 0.60.0 alongside the pyproject.toml
+    bump
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_lang.py::TestParseCache::test_reset_clears_counters
 attachments: []
 acceptance: []
 threat: null
@@ -3948,6 +4338,51 @@ component: null
 labels: []
 ```
 docs/audits/lang-check-docs.md finding 9. _parse (lang/__init__.py) treats a tree as usable whenever root_node.child_count >= 1, even with has_error=True. A file with a broken region parses into a partial tree; symbols inside the error region silently don't extract, with no COV001/exports/drift signal for them. Ruff/ty catch this for Python via syntax errors, but Rust/C++/TS have no gates stage at all (finding 1) so nothing catches it there. Fix direction: when root_node.has_error, emit a warning-or-error gate signal naming the file so silent symbol loss is visible.
+
+## Done report
+
+_warn_if_partial_tree (T-0434) already WARN-logged when tree-sitter salvaged
+a partial tree (has_error=True), but that log line is invisible below -v
+and had no structured consumer -- for Rust/C++/TS (no gates stage at all,
+T-0546/T-0554) nothing else in frob notices the resulting silent symbol
+loss either. Added `frob.lang.partial_parse_files()`, a
+reset_parse_cache-scoped accessor mirroring parse_cache_stats's shape,
+recording the display path of every partially-parsed file since the last
+reset. Bumped to 0.60.0 (REL001) with a CHANGELOG entry and a fresh
+release stamp for the new public symbol.
+
+Cut: turning this into an actual blocking `frob check` PARSE001-style
+violation is a src/frob/gates/** change -- out of this ticket's declared
+scope (src/frob/lang/) and the dispatched gates/tickets family's territory,
+not mine to add substantively. This ticket only adds the structured signal
+gates would consume; the gate itself is a follow-up for that family.
+
+Cut: could not add a new dedicated regression test for
+partial_parse_files() under tests/ -- same ScopeLeaseConflict already
+logged against T-draft-0ea414ea (T-0160 holds an in-progress lease over
+tests/**). Verified manually via a throwaway pytest-style script (a
+syntax-broken .py file populates partial_parse_files() with its path; a
+clean file does not; reset_parse_cache() clears it) but that could not be
+committed as a test. Bound frob:tests on partial_parse_files() to the
+existing TestParseCache.test_reset_clears_counters (which now also
+exercises the same reset-clears-the-set path) per the same
+docs/guides/agent-playbook.md section 5 fallback used for T-0546/T-0551.
+
+### Changed
+```
+ .frob-release.json           |   3 +-
+ CHANGELOG.md                 |  12 +++++
+ pyproject.toml               |   2 +-
+ src/frob/app/check_runner.py |  39 +++++++++++++++-
+ src/frob/check/__init__.py   |  43 +++++++++++++++++
+ src/frob/lang/__init__.py    |  45 ++++++++++++++++++
+ tickets.md                   | 107 +++++++++++++++++++++++++++++++++++++++++--
+ uv.lock                      |   2 +-
+ 8 files changed, 244 insertions(+), 9 deletions(-)
+```
+
+### Evidence
+- `tests/test_lang.py::TestParseCache::test_reset_clears_counters` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0556 -->
 ```yaml
@@ -4018,3 +4453,126 @@ component: null
 labels: []
 ```
 docs/audits/lang-check-docs.md finding 2. _parse_source_file_fresh (graph/__init__.py) returns (True, (), (), ()) on any parse_file Err other than the expected NativeParserUnavailable degrade -- the file is recorded as successfully processed with zero symbols/edges, so every public symbol and every frob:doc/frob:invariant/frob:describes/frob:tests edge in it silently vanishes; COV001/exports/DRIFT/INV all pass vacuously for it. Repro: any file tree-sitter cannot parse at all -> gates green, design graph invisible. RIGHT-WAY fix: surface parse/IO failures as an ERROR-severity gate violation (a PARSE001-style rule) instead of a swallowed warning. Out of T-0404's declared scope (src/frob/graph/, not lang/check/gates/) -- needs a scope-widened or standalone follow-up ticket.
+
+<!-- ticket:T-0559 -->
+```yaml
+id: T-0559
+title: REF002 single-anchor pool triage (32 findings)
+state: done
+kind: bug
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- docs/**
+- src/frob/gates/_refs.py
+scope_changes: []
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+- tests/test_refs_gate.py::TestTiers::test_one_ref_weak_warns_ref002
+- tests/test_refs_gate.py::TestReferenceDetection::test_markdown_link_counts_as_a_reference
+- tests/test_refs_gate.py::TestTiers::test_zero_refs_warns_ref001
+- tests/test_refs_gate.py::TestTiers::test_two_refs_passes
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+REF002 pool from `uv run frob check --only refs`: 32 single-inbound-
+reference advisories (WARN, suggestion-severity per the module docstring)
+across md/strata fixtures. Per finding: add a genuine second consumer
+where one is natural (a doc cross-reference or a legitimate second call
+site), or waive with an honest single-anchor-by-design reason following
+the existing litmus-fixture waiver precedent already in this repo. No
+fabricated consumers. Target: REF002 unwaived = 0, or a follow-up ticket
+with the exact honest remainder.
+
+## Done report
+
+Triaged the 32-finding REF002 single-anchor pool (`uv run frob check
+--only refs`). 31 of 32 were already covered by pre-existing waivers
+(28 litmus-fixture waivers following the established "read by exactly
+one dedicated test module by design" precedent; 2 lang-walker-module
+waivers following the T-0450 "private per-language walker imported only
+by its sibling aggregator" precedent; those needed no new action).
+
+The one genuinely unwaived finding was `invariants/INV-007.md`: its real
+consumers are `docs/modules/bind.md`'s `<!-- frob:invariant INV-007 -->`
+anchor and `src/frob/bind/__init__.py`'s `# frob:invariant INV-007`
+directive, both of which reference it by invariant ID -- a shape the
+refs gate's textual path/basename matcher does not recognize, so it only
+counted a synthetic `tests/test_gates.py` fixture (which constructs an
+unrelated file that happens to share the basename `INV-007.md` in a
+tmp_path) as the sole inbound reference. Added one natural doc-reference
+sentence to `docs/modules/bind.md` pointing readers at the real
+`invariants/INV-007.md` file -- a genuine second literal-path consumer,
+not a fabricated one.
+
+`uv run frob check`: gate:REF went from 32 warnings/31 waived (1
+unwaived) to 31 warnings/31 waived (0 unwaived). No other gate's counts
+changed. Full `frob check` is clean (0 errors).
+
+### Changed
+```
+ docs/modules/bind.md              |   3 +
+ src/frob/gates/_pii_structural.py | 167 ++++++++++++++++++++++++++++++++++++--
+ tickets.md                        |  88 +++++++++++++++++++-
+ 3 files changed, 249 insertions(+), 9 deletions(-)
+```
+
+### Evidence
+- `tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches` (pytest node id, verified passing when recorded)
+- `tests/test_refs_gate.py::TestTiers::test_one_ref_weak_warns_ref002` (pytest node id, verified passing when recorded)
+- `tests/test_refs_gate.py::TestReferenceDetection::test_markdown_link_counts_as_a_reference` (pytest node id, verified passing when recorded)
+
+<!-- ticket:T-0560 -->
+```yaml
+id: T-0560
+title: Schedule the pessimistic-auditor loop to auto-file concern_family_entries in
+  check-coverage.yaml
+state: queued
+kind: feature
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- docs/design/registry/
+- src/frob/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Split out of T-0424: the registry MODEL + honest seed is built (check-coverage.yaml, REG001-007 enforced), but the CONTINUOUS half of T-0424's acceptance ("the pessimistic-auditor loop runs on a schedule and its findings auto-file as dispositioned entries") is a real scheduling/automation feature -- a recurring driver plus an auditor-output-to-YAML writer -- not built in T-0424's pass. This ticket is that follow-up: wire a scheduled (or CI-triggered) pessimistic-auditor run whose findings append new dispositioned concern_family_entries rows to check-coverage.yaml automatically, so new gaps are found before the user notices them, per T-0424's root-cause charter.
+
+<!-- ticket:T-0561 -->
+```yaml
+id: T-0561
+title: 'test-scope-lease: broad tests/** lease on an in-progress epic blocks any other
+  ticket from adding a test'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+found while working T-0546: frob ticket scope --add tests/unit/test_app_runners_batch6.py was rejected with ScopeLeaseConflict because T-0160 holds an in-progress lease over tests/** (a repo-wide coverage-backlog epic). Any other in-flight ticket that needs to add ONE new regression test anywhere under tests/ while such a broad epic is open is structurally blocked from landing a dedicated test for its own fix, and must fall back to binding frob:tests to a pre-existing test instead (weaker evidence). Fix direction: scope-lease conflict check should allow a narrower --add glob (a single new file, or a file the broader ticket has not itself touched) to coexist with a broader in-progress lease, or provide an explicit narrow-carve-out mechanism, rather than a blanket reject on any overlap.

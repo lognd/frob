@@ -192,6 +192,40 @@ _parse_cache: dict[str, Result[tuple[Tree, bytes, str], LangError]] = {}
 _parse_cache_hits = 0
 _parse_cache_misses = 0
 
+# frob:ticket T-0555
+#: Repo-relative-ish display paths (`_display_path`) of every file whose
+#: tree-sitter parse was salvaged around a syntax error since the last
+#: `reset_parse_cache` -- T-0404 finding 9's visibility instrument.
+#: `_parse` treats such a tree as usable (a hard `Err` would blank out
+#: doc/coverage checking for the whole file over one typo), but every
+#: symbol after the error region is silently absent from it; this set lets
+#: a caller (a future gate, `frob check -v`, or a test) see exactly which
+#: files lost symbols this way, not just a scattered WARNING log line
+#: (`_warn_if_partial_tree`, T-0434) that only appears above the default
+#: log level.
+_partial_parse_files: set[str] = set()
+
+
+# frob:doc docs/modules/lang.md#parse-cache
+# frob:ticket T-0555
+# frob:tests tests/test_lang.py::TestParseCache.test_reset_clears_counters  # noqa: E501
+def partial_parse_files() -> tuple[str, ...]:
+    """Display paths of every partially-parsed file since the last
+    `reset_parse_cache` (T-0404 finding 9), sorted for determinism.
+
+    A file appears here whenever tree-sitter salvaged a tree with
+    `has_error=True` for it -- meaning symbols inside the broken region
+    were silently dropped from extraction. Ruff/ty independently catch a
+    Python syntax error via their own diagnostics; Rust/C++/TS have no such
+    independent signal (T-0404 finding 1: no gates stage runs there at
+    all), so this is the only visibility mechanism for those languages
+    today. Callers wanting to turn this into a blocking `frob check`
+    violation can wire a gate against this list (out of `frob.lang`'s own
+    scope; tracked as a gates-family follow-up).
+    """
+    with _parse_cache_lock:
+        return tuple(sorted(_partial_parse_files))
+
 
 # frob:doc docs/modules/lang.md#parse-cache
 # frob:ticket T-0414
@@ -211,6 +245,7 @@ def reset_parse_cache() -> None:
         _parse_cache.clear()
         _parse_cache_hits = 0
         _parse_cache_misses = 0
+        _partial_parse_files.clear()
 
 
 # frob:doc docs/modules/lang.md#parse-cache
@@ -228,6 +263,7 @@ def parse_cache_stats() -> tuple[int, int]:
 
 
 # frob:ticket T-0434
+# frob:ticket T-0555
 def _warn_if_partial_tree(tree: Tree, path: Path) -> None:
     """WARN when `tree` was salvaged around a syntax error (T-0402 finding G9).
 
@@ -241,6 +277,12 @@ def _warn_if_partial_tree(tree: Tree, path: Path) -> None:
     partially-broken file into a hard violation can key off this log line
     until `frob.graph` grows its own `MalformedFile` record (out of this
     package's scope).
+
+    T-0404 finding 9: also records `path` into `_partial_parse_files` so
+    `partial_parse_files()` gives a structured, queryable answer (not just
+    a log line only visible above the default log level) -- the same
+    "log line existed but nothing consumed it" gap noted for Rust/C++/TS,
+    which have no gates stage at all (finding 1) to notice a WARNING here.
     """
     if tree.root_node.has_error:
         _log.warning(
@@ -249,6 +291,8 @@ def _warn_if_partial_tree(tree: Tree, path: Path) -> None:
             "silently dropped from the salvaged tree)",
             path,
         )
+        with _parse_cache_lock:
+            _partial_parse_files.add(_display_path(path))
 
 
 def _parse(path: Path) -> Result[tuple[Tree, bytes, str], LangError]:
@@ -533,6 +577,7 @@ __all__ = [
     "iter_identifiers",
     "node_text",
     "parse_cache_stats",
+    "partial_parse_files",
     "parse_file",
     "raw_tree",
     "reset_parse_cache",

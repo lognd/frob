@@ -7,6 +7,9 @@ claims to wrap.
 
 <!-- frob:invariant INV-007 -->
 
+See `invariants/INV-007.md` for the formal invariant statement and its
+evidence test ids.
+
 ## Usage
 
 ```

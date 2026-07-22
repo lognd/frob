@@ -1,0 +1,419 @@
+# frob:used-by src/frob/gates/_registry_exhaustiveness.py
+# frob:tests tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile.test_loads_without_error  # noqa: E501
+# frob:tests tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile.test_gate_rule_entries_match_live_known_rules  # noqa: E501
+# frob:tests tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile.test_concern_family_entries_are_deferred_to_open_ticket  # noqa: E501
+# frob:tests tests/test_check_coverage_registry.py::TestExhaustivenessGateOverRealCheckCoverage.test_no_check_coverage_violations  # noqa: E501
+# T-0424: frob's own check-coverage as an exhaustible registry.
+# Loaded by the SAME unified model/gate T-0407 built (frob.registry +
+# frob.gates._registry_exhaustiveness) -- this file is just another
+# REGISTRY_FILES entry, not a second mechanism. Two entry families:
+#   gate_rule_entries -- one entry per live known_gate_rule_ids() id
+#     (frob.gates.known_gate_rule_ids(), verified at gate-run time),
+#     each self-referentially handled_by its own rule id (the rule's
+#     existence+firing is what known_gate_rule_ids() itself verifies).
+#   concern_family_entries -- the docs/audits/ (2026-07-20, 7-auditor
+#     pessimistic pass) concern families: 5 cross-cutting themes plus
+#     8 per-subsystem verdicts (docs/audits/README.md). These are gaps
+#     frob does NOT yet enforce -- each is deferred:T-0397, the real,
+#     open (queued) audit-remediation epic tracking them, not a
+#     fabricated ticket. As T-0397's children close a concern down to
+#     a real gate rule, re-disposition that entry to handled_by:<rule>.
+schema_version: 1
+gate_rule_total: 82
+gate_rule_entries:
+  - id: "CHK-GATE-COV001"
+    name: "COV001 is a live, enforced gate rule"
+    disposition: "handled_by:COV001"
+    cross_refs: []
+  - id: "CHK-GATE-COV002"
+    name: "COV002 is a live, enforced gate rule"
+    disposition: "handled_by:COV002"
+    cross_refs: []
+  - id: "CHK-GATE-COV003"
+    name: "COV003 is a live, enforced gate rule"
+    disposition: "handled_by:COV003"
+    cross_refs: []
+  - id: "CHK-GATE-COV004"
+    name: "COV004 is a live, enforced gate rule"
+    disposition: "handled_by:COV004"
+    cross_refs: []
+  - id: "CHK-GATE-COV005"
+    name: "COV005 is a live, enforced gate rule"
+    disposition: "handled_by:COV005"
+    cross_refs: []
+  - id: "CHK-GATE-COV006"
+    name: "COV006 is a live, enforced gate rule"
+    disposition: "handled_by:COV006"
+    cross_refs: []
+  - id: "CHK-GATE-COV007"
+    name: "COV007 is a live, enforced gate rule"
+    disposition: "handled_by:COV007"
+    cross_refs: []
+  - id: "CHK-GATE-PLACE001"
+    name: "PLACE001 is a live, enforced gate rule"
+    disposition: "handled_by:PLACE001"
+    cross_refs: []
+  - id: "CHK-GATE-DRIFT001"
+    name: "DRIFT001 is a live, enforced gate rule"
+    disposition: "handled_by:DRIFT001"
+    cross_refs: []
+  - id: "CHK-GATE-DRIFT002"
+    name: "DRIFT002 is a live, enforced gate rule"
+    disposition: "handled_by:DRIFT002"
+    cross_refs: []
+  - id: "CHK-GATE-SCOPE001"
+    name: "SCOPE001 is a live, enforced gate rule"
+    disposition: "handled_by:SCOPE001"
+    cross_refs: []
+  - id: "CHK-GATE-PRE001"
+    name: "PRE001 is a live, enforced gate rule"
+    disposition: "handled_by:PRE001"
+    cross_refs: []
+  - id: "CHK-GATE-INV001"
+    name: "INV001 is a live, enforced gate rule"
+    disposition: "handled_by:INV001"
+    cross_refs: []
+  - id: "CHK-GATE-INV002"
+    name: "INV002 is a live, enforced gate rule"
+    disposition: "handled_by:INV002"
+    cross_refs: []
+  - id: "CHK-GATE-INV003"
+    name: "INV003 is a live, enforced gate rule"
+    disposition: "handled_by:INV003"
+    cross_refs: []
+  - id: "CHK-GATE-INV004"
+    name: "INV004 is a live, enforced gate rule"
+    disposition: "handled_by:INV004"
+    cross_refs: []
+  - id: "CHK-GATE-TEST001"
+    name: "TEST001 is a live, enforced gate rule"
+    disposition: "handled_by:TEST001"
+    cross_refs: []
+  - id: "CHK-GATE-TEST002"
+    name: "TEST002 is a live, enforced gate rule"
+    disposition: "handled_by:TEST002"
+    cross_refs: []
+  - id: "CHK-GATE-TEST003"
+    name: "TEST003 is a live, enforced gate rule"
+    disposition: "handled_by:TEST003"
+    cross_refs: []
+  - id: "CHK-GATE-TEST004"
+    name: "TEST004 is a live, enforced gate rule"
+    disposition: "handled_by:TEST004"
+    cross_refs: []
+  - id: "CHK-GATE-TEST005"
+    name: "TEST005 is a live, enforced gate rule"
+    disposition: "handled_by:TEST005"
+    cross_refs: []
+  - id: "CHK-GATE-TEST006"
+    name: "TEST006 is a live, enforced gate rule"
+    disposition: "handled_by:TEST006"
+    cross_refs: []
+  - id: "CHK-GATE-TEST007"
+    name: "TEST007 is a live, enforced gate rule"
+    disposition: "handled_by:TEST007"
+    cross_refs: []
+  - id: "CHK-GATE-TEST008"
+    name: "TEST008 is a live, enforced gate rule"
+    disposition: "handled_by:TEST008"
+    cross_refs: []
+  - id: "CHK-GATE-TEST009"
+    name: "TEST009 is a live, enforced gate rule"
+    disposition: "handled_by:TEST009"
+    cross_refs: []
+  - id: "CHK-GATE-TEST010"
+    name: "TEST010 is a live, enforced gate rule"
+    disposition: "handled_by:TEST010"
+    cross_refs: []
+  - id: "CHK-GATE-TEST011"
+    name: "TEST011 is a live, enforced gate rule"
+    disposition: "handled_by:TEST011"
+    cross_refs: []
+  - id: "CHK-GATE-TODO001"
+    name: "TODO001 is a live, enforced gate rule"
+    disposition: "handled_by:TODO001"
+    cross_refs: []
+  - id: "CHK-GATE-TODO002"
+    name: "TODO002 is a live, enforced gate rule"
+    disposition: "handled_by:TODO002"
+    cross_refs: []
+  - id: "CHK-GATE-DEBT001"
+    name: "DEBT001 is a live, enforced gate rule"
+    disposition: "handled_by:DEBT001"
+    cross_refs: []
+  - id: "CHK-GATE-DEBT002"
+    name: "DEBT002 is a live, enforced gate rule"
+    disposition: "handled_by:DEBT002"
+    cross_refs: []
+  - id: "CHK-GATE-DEBT003"
+    name: "DEBT003 is a live, enforced gate rule"
+    disposition: "handled_by:DEBT003"
+    cross_refs: []
+  - id: "CHK-GATE-DSL001"
+    name: "DSL001 is a live, enforced gate rule"
+    disposition: "handled_by:DSL001"
+    cross_refs: []
+  - id: "CHK-GATE-WAIVE001"
+    name: "WAIVE001 is a live, enforced gate rule"
+    disposition: "handled_by:WAIVE001"
+    cross_refs: []
+  - id: "CHK-GATE-WAIVE002"
+    name: "WAIVE002 is a live, enforced gate rule"
+    disposition: "handled_by:WAIVE002"
+    cross_refs: []
+  - id: "CHK-GATE-WAIVE003"
+    name: "WAIVE003 is a live, enforced gate rule"
+    disposition: "handled_by:WAIVE003"
+    cross_refs: []
+  - id: "CHK-GATE-DEC001"
+    name: "DEC001 is a live, enforced gate rule"
+    disposition: "handled_by:DEC001"
+    cross_refs: []
+  - id: "CHK-GATE-DEC002"
+    name: "DEC002 is a live, enforced gate rule"
+    disposition: "handled_by:DEC002"
+    cross_refs: []
+  - id: "CHK-GATE-REL001"
+    name: "REL001 is a live, enforced gate rule"
+    disposition: "handled_by:REL001"
+    cross_refs: []
+  - id: "CHK-GATE-DOC001"
+    name: "DOC001 is a live, enforced gate rule"
+    disposition: "handled_by:DOC001"
+    cross_refs: []
+  - id: "CHK-GATE-DOC002"
+    name: "DOC002 is a live, enforced gate rule"
+    disposition: "handled_by:DOC002"
+    cross_refs: []
+  - id: "CHK-GATE-DOC003"
+    name: "DOC003 is a live, enforced gate rule"
+    disposition: "handled_by:DOC003"
+    cross_refs: []
+  - id: "CHK-GATE-DUP001"
+    name: "DUP001 is a live, enforced gate rule"
+    disposition: "handled_by:DUP001"
+    cross_refs: []
+  - id: "CHK-GATE-DUP002"
+    name: "DUP002 is a live, enforced gate rule"
+    disposition: "handled_by:DUP002"
+    cross_refs: []
+  - id: "CHK-GATE-FUZZ001"
+    name: "FUZZ001 is a live, enforced gate rule"
+    disposition: "handled_by:FUZZ001"
+    cross_refs: []
+  - id: "CHK-GATE-FUZZ002"
+    name: "FUZZ002 is a live, enforced gate rule"
+    disposition: "handled_by:FUZZ002"
+    cross_refs: []
+  - id: "CHK-GATE-FUZZ003"
+    name: "FUZZ003 is a live, enforced gate rule"
+    disposition: "handled_by:FUZZ003"
+    cross_refs: []
+  - id: "CHK-GATE-PERF001"
+    name: "PERF001 is a live, enforced gate rule"
+    disposition: "handled_by:PERF001"
+    cross_refs: []
+  - id: "CHK-GATE-PERF002"
+    name: "PERF002 is a live, enforced gate rule"
+    disposition: "handled_by:PERF002"
+    cross_refs: []
+  - id: "CHK-GATE-PERF003"
+    name: "PERF003 is a live, enforced gate rule"
+    disposition: "handled_by:PERF003"
+    cross_refs: []
+  - id: "CHK-GATE-PERF004"
+    name: "PERF004 is a live, enforced gate rule"
+    disposition: "handled_by:PERF004"
+    cross_refs: []
+  - id: "CHK-GATE-PERF005"
+    name: "PERF005 is a live, enforced gate rule"
+    disposition: "handled_by:PERF005"
+    cross_refs: []
+  - id: "CHK-GATE-PERF006"
+    name: "PERF006 is a live, enforced gate rule"
+    disposition: "handled_by:PERF006"
+    cross_refs: []
+  - id: "CHK-GATE-PERF007"
+    name: "PERF007 is a live, enforced gate rule"
+    disposition: "handled_by:PERF007"
+    cross_refs: []
+  - id: "CHK-GATE-SYS001"
+    name: "SYS001 is a live, enforced gate rule"
+    disposition: "handled_by:SYS001"
+    cross_refs: []
+  - id: "CHK-GATE-SYS002"
+    name: "SYS002 is a live, enforced gate rule"
+    disposition: "handled_by:SYS002"
+    cross_refs: []
+  - id: "CHK-GATE-SYS003"
+    name: "SYS003 is a live, enforced gate rule"
+    disposition: "handled_by:SYS003"
+    cross_refs: []
+  - id: "CHK-GATE-SYS004"
+    name: "SYS004 is a live, enforced gate rule"
+    disposition: "handled_by:SYS004"
+    cross_refs: []
+  - id: "CHK-GATE-SEC001"
+    name: "SEC001 is a live, enforced gate rule"
+    disposition: "handled_by:SEC001"
+    cross_refs: []
+  - id: "CHK-GATE-SEC002"
+    name: "SEC002 is a live, enforced gate rule"
+    disposition: "handled_by:SEC002"
+    cross_refs: []
+  - id: "CHK-GATE-SEC003"
+    name: "SEC003 is a live, enforced gate rule"
+    disposition: "handled_by:SEC003"
+    cross_refs: []
+  - id: "CHK-GATE-TICK001"
+    name: "TICK001 is a live, enforced gate rule"
+    disposition: "handled_by:TICK001"
+    cross_refs: []
+  - id: "CHK-GATE-TICK002"
+    name: "TICK002 is a live, enforced gate rule"
+    disposition: "handled_by:TICK002"
+    cross_refs: []
+  - id: "CHK-GATE-TICK003"
+    name: "TICK003 is a live, enforced gate rule"
+    disposition: "handled_by:TICK003"
+    cross_refs: []
+  - id: "CHK-GATE-TICK004"
+    name: "TICK004 is a live, enforced gate rule"
+    disposition: "handled_by:TICK004"
+    cross_refs: []
+  - id: "CHK-GATE-PII010"
+    name: "PII010 is a live, enforced gate rule"
+    disposition: "handled_by:PII010"
+    cross_refs: []
+  - id: "CHK-GATE-SEC110"
+    name: "SEC110 is a live, enforced gate rule"
+    disposition: "handled_by:SEC110"
+    cross_refs: []
+  - id: "CHK-GATE-ARCH001"
+    name: "ARCH001 is a live, enforced gate rule"
+    disposition: "handled_by:ARCH001"
+    cross_refs: []
+  - id: "CHK-GATE-REF001"
+    name: "REF001 is a live, enforced gate rule"
+    disposition: "handled_by:REF001"
+    cross_refs: []
+  - id: "CHK-GATE-REF002"
+    name: "REF002 is a live, enforced gate rule"
+    disposition: "handled_by:REF002"
+    cross_refs: []
+  - id: "CHK-GATE-REF003"
+    name: "REF003 is a live, enforced gate rule"
+    disposition: "handled_by:REF003"
+    cross_refs: []
+  - id: "CHK-GATE-REG001"
+    name: "REG001 is a live, enforced gate rule"
+    disposition: "handled_by:REG001"
+    cross_refs: []
+  - id: "CHK-GATE-REG002"
+    name: "REG002 is a live, enforced gate rule"
+    disposition: "handled_by:REG002"
+    cross_refs: []
+  - id: "CHK-GATE-REG003"
+    name: "REG003 is a live, enforced gate rule"
+    disposition: "handled_by:REG003"
+    cross_refs: []
+  - id: "CHK-GATE-REG004"
+    name: "REG004 is a live, enforced gate rule"
+    disposition: "handled_by:REG004"
+    cross_refs: []
+  - id: "CHK-GATE-REG005"
+    name: "REG005 is a live, enforced gate rule"
+    disposition: "handled_by:REG005"
+    cross_refs: []
+  - id: "CHK-GATE-REG006"
+    name: "REG006 is a live, enforced gate rule"
+    disposition: "handled_by:REG006"
+    cross_refs: []
+  - id: "CHK-GATE-REG007"
+    name: "REG007 is a live, enforced gate rule"
+    disposition: "handled_by:REG007"
+    cross_refs: []
+  - id: "CHK-GATE-DOC004"
+    name: "DOC004 is a live, enforced gate rule"
+    disposition: "handled_by:DOC004"
+    cross_refs: []
+  - id: "CHK-GATE-WALK001"
+    name: "WALK001 is a live, enforced gate rule"
+    disposition: "handled_by:WALK001"
+    cross_refs: []
+  - id: "CHK-GATE-EXCL001"
+    name: "EXCL001 is a live, enforced gate rule"
+    disposition: "handled_by:EXCL001"
+    cross_refs: []
+  - id: "CHK-GATE-SEC-CVE-FINGERPRINT-001"
+    name: "SEC-CVE-FINGERPRINT-001 is a live, enforced gate rule"
+    disposition: "handled_by:SEC-CVE-FINGERPRINT-001"
+    cross_refs: []
+
+concern_family_total: 13
+concern_family_entries:
+  - id: "CHK-THEME-EXISTENCE-NOT-PROOF"
+    name: "Existence != proof: evidence/doc edges/frob:tests/registry entries are checked for EXISTENCE, not truth (passed? covers? matches? enforced?)"
+    source_doc: "docs/audits/README.md"
+    disposition: "deferred:T-0397"
+    cross_refs: []
+  - id: "CHK-THEME-QUALITY-NONBLOCKING"
+    name: "Green makes no claim about code quality: the entire quality/security surface (PERF, PII010, SEC110, ARCH001, DUP, lower secrets) is WARN-only, exits 0"
+    source_doc: "docs/audits/README.md"
+    disposition: "deferred:T-0397"
+    cross_refs: []
+  - id: "CHK-THEME-PYTHON-ONLY"
+    name: "Python-only enforcement: COV/DOC/DRIFT/INV and the binding-aware capability resolver silently no-op for TS/Rust/C/C++"
+    source_doc: "docs/audits/README.md"
+    disposition: "deferred:T-0397"
+    cross_refs: []
+  - id: "CHK-THEME-FAIL-OPEN"
+    name: "Fail-open on the unknown: unparseable file, source-unavailable dependency, unknown-language change, missing tool, second lockfile, non-UTF-8 doc all silently skip/pass rather than fail-closed"
+    source_doc: "docs/audits/README.md"
+    disposition: "deferred:T-0397"
+    cross_refs: []
+  - id: "CHK-THEME-GITIGNORED-TRUST"
+    name: "Gitignored-local trust: coverage/stamp/baseline/prework signals live in .frob/ (gitignored), so CI cannot verify the one behavioral gate that exists"
+    source_doc: "docs/audits/README.md"
+    disposition: "deferred:T-0397"
+    cross_refs: []
+  - id: "CHK-SUBSYS-TICKETS-TESTING"
+    name: "tickets + testing: evidence means a test EXISTS, never passed/covers; a red or unrelated test closes any ticket; land re-runs nothing"
+    source_doc: "docs/audits/README.md"
+    disposition: "deferred:T-0397"
+    cross_refs: []
+  - id: "CHK-SUBSYS-STRATA"
+    name: "strata (proof engine): boundaries never bound to code; proofs pass vacuously when the dangerous flow is un-modeled; eval globally excused"
+    source_doc: "docs/audits/README.md"
+    disposition: "deferred:T-0397"
+    cross_refs: []
+  - id: "CHK-SUBSYS-VET"
+    name: "vet: approves code it never read (source-unavailable = empty caps); only the first lockfile scanned; CVE fingerprints + non-Python needles rename/whitespace-evadable"
+    source_doc: "docs/audits/README.md"
+    disposition: "deferred:T-0397"
+    cross_refs: []
+  - id: "CHK-SUBSYS-GATES-ACCOUNTING"
+    name: "gates: accounting -- verifies procedural existence, not code quality; DRIFT001 sig facet blind to body rewrites; TS/C/C++ frob:tests need no execution"
+    source_doc: "docs/audits/README.md"
+    disposition: "deferred:T-0397"
+    cross_refs: []
+  - id: "CHK-SUBSYS-LANG-CHECK-DOCS"
+    name: "lang + check + docs: doc/coverage/drift gates run ONLY in the Python pipeline; parse/IO failure silently erases a file's whole obligation set; COV001 is WARN-only"
+    source_doc: "docs/audits/README.md"
+    disposition: "deferred:T-0397"
+    cross_refs: []
+  - id: "CHK-SUBSYS-GRAPH-EDGES"
+    name: "graph + edges: load_graph only re-hashes already-cached files (incomplete snapshot on a new file); a non-UTF-8 .md hard-crashes frob check"
+    source_doc: "docs/audits/README.md"
+    disposition: "deferred:T-0397"
+    cross_refs: []
+  - id: "CHK-SUBSYS-PERF"
+    name: "performance + caching: ~168s CPU is redundant parsing (frob.lang._parse uncached, tree re-walked ~7x/run, 17 gates GIL-serialized)"
+    source_doc: "docs/audits/README.md"
+    disposition: "deferred:T-0397"
+    cross_refs: []
+  - id: "CHK-SUBSYS-GATES-QUALITY"
+    name: "gates: quality/security -- the entire quality surface is non-blocking (WARN); DUP fails open; frob:secret-fake suppresses real secrets with no accountability"
+    source_doc: "docs/audits/README.md"
+    disposition: "deferred:T-0397"
+    cross_refs: []

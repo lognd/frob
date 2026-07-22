@@ -838,6 +838,10 @@ _KNOWN_GATE_RULES = frozenset(
         "REG003",
         "REG004",
         "REG005",
+        # T-0407: unified registry model -- malformed entry (REG006) and
+        # cross-file id collision (REG007) early-exit closures.
+        "REG006",
+        "REG007",
         # T-0436: unbound/stale fenced-code-block doc-drift heuristic
         # (frob.gates._docblocks).
         "DOC004",
