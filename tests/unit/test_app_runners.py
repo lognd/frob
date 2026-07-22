@@ -74,7 +74,10 @@ class TestGitlogRunner:
         monkeypatch.chdir(tmp_path)
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(
-            ["git", "config", "user.email", "a@b.c"], cwd=tmp_path, check=True
+            # frob:secret-fake fabricated git identity for a test fixture repo
+            ["git", "config", "user.email", "a@b.c"],
+            cwd=tmp_path,
+            check=True,
         )
         subprocess.run(["git", "config", "user.name", "a"], cwd=tmp_path, check=True)
         (tmp_path / "f.txt").write_text("x")
@@ -94,7 +97,10 @@ class TestGitlogRunner:
         monkeypatch.chdir(tmp_path)
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(
-            ["git", "config", "user.email", "a@b.c"], cwd=tmp_path, check=True
+            # frob:secret-fake fabricated git identity for a test fixture repo
+            ["git", "config", "user.email", "a@b.c"],
+            cwd=tmp_path,
+            check=True,
         )
         subprocess.run(["git", "config", "user.name", "a"], cwd=tmp_path, check=True)
         (tmp_path / "f.txt").write_text("x")

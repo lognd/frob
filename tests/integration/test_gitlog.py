@@ -43,6 +43,7 @@ def _setup_repo(tmp_path: Path) -> Path:
     repo = tmp_path / "repo"
     repo.mkdir()
     _git(["init", "-b", "main"], repo)
+    # frob:secret-fake fabricated git identity for a test fixture repo
     _git(["config", "user.email", "ci@test.com"], repo)
     _git(["config", "user.name", "CI Test"], repo)
 
@@ -196,6 +197,7 @@ class TestGitlogAllFlag:
         repo = tmp_path / "repo"
         repo.mkdir()
         _git(["init", "-b", "main"], repo)
+        # frob:secret-fake fabricated git identity for a test fixture repo
         _git(["config", "user.email", "t@t.com"], repo)
         _git(["config", "user.name", "T"], repo)
         (repo / "f.txt").write_text("x")
@@ -209,6 +211,7 @@ class TestGitlogAllFlag:
         repo = tmp_path / "repo"
         repo.mkdir()
         _git(["init", "-b", "main"], repo)
+        # frob:secret-fake fabricated git identity for a test fixture repo
         _git(["config", "user.email", "t@t.com"], repo)
         _git(["config", "user.name", "T"], repo)
         (repo / "f.txt").write_text("x")
