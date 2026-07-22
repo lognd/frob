@@ -4084,9 +4084,9 @@ changed. Full `frob check` is clean (0 errors).
 - `tests/test_refs_gate.py::TestTiers::test_one_ref_weak_warns_ref002` (pytest node id, verified passing when recorded)
 - `tests/test_refs_gate.py::TestReferenceDetection::test_markdown_link_counts_as_a_reference` (pytest node id, verified passing when recorded)
 
-<!-- ticket:T-draft-6060f333 -->
+<!-- ticket:T-0560 -->
 ```yaml
-id: T-draft-6060f333
+id: T-0560
 title: Schedule the pessimistic-auditor loop to auto-file concern_family_entries in
   check-coverage.yaml
 state: queued
