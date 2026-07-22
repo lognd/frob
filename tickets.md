@@ -3417,7 +3417,7 @@ All ~30 landings this session were manual: renumbering ~40 drafts (renumber does
 id: T-0578
 title: 'CLI vocabulary normalization + did-you-mean: --state vs --status, --why vs
   --body, consistent flags'
-state: in-progress
+state: done
 kind: ux
 origin: agent
 created: '2026-07-21'
