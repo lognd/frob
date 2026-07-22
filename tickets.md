@@ -7416,3 +7416,116 @@ component: null
 labels: []
 ```
 Epic close condition. Bind every genuine system-design-corpus.md manifest entry (105 genuine, per RECONCILIATION.md finding (d), plus 14 manifest-extraction artifacts explicitly excluded) to >=1 registered SYS2xx/REL2xx check or a reasoned deferral, following the T-0343 drift-lock framework. (addressed union deferred) == TOTAL. Cannot close while any relevant entry is unaddressed and un-deferred. Depends on all 16 obligation children plus T-0392 (system-design registry-domain reconciliation) landing so 'registered check' is a real, checkable claim.
+
+<!-- ticket:T-0659 -->
+```yaml
+id: T-0659
+title: 'vet: exhaustive Python static-binding resolver closure vs capability-evasion-taxonomy.md
+  denominator'
+state: queued
+kind: security
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0339
+scope:
+- src/frob/vet/**
+- src/frob/lang/**
+- tests/test_vet.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given every Python static-resolvable construct in the taxonomy's Python table, when
+  the resolver runs on a litmus fixture for that construct, then the aliased dangerous
+  call is detected
+- Given a benign parameter/local binding shadowing a dangerous name, when the resolver
+  runs, then it stays silent (no regression)
+threat: null
+component: null
+labels: []
+```
+T-0328 (import/binding-aware resolution) and T-0337 (local rebinding) are done, but not yet checked against the full capability-evasion-taxonomy.md Python denominator (13 static + 9 opaque entries). Enumerate every remaining Python static construct (chained attribute rebinding, destructuring/unpack aliasing, star-import re-export chains, conditional/try-except import fallback aliasing) and close any gap with a resolver fix + litmus fixture, without regressing shadowing soundness (a benign/param binding must stay silent).
+
+<!-- ticket:T-0660 -->
+```yaml
+id: T-0660
+title: 'vet: exhaustive TypeScript/JS static-binding resolver (import/import-as/from-import/star-import/re-export/destructuring)'
+state: queued
+kind: security
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0339
+scope:
+- src/frob/vet/**
+- src/frob/lang/**
+- tests/test_vet.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given every TS/JS static-resolvable construct in the taxonomy table, when the resolver
+  runs on its litmus fixture, then the aliased dangerous call is detected
+threat: null
+component: null
+labels: []
+```
+Implement per-scope, transitive, cycle-guarded static name-binding resolution for TS/JS per capability-evasion-taxonomy.md's TS/JS table (17 static + 9 opaque entries): import/import-as, named/default/namespace import, re-export (export ... from), destructuring assignment, CommonJS require aliasing where statically resolvable.
+
+<!-- ticket:T-0661 -->
+```yaml
+id: T-0661
+title: 'vet: exhaustive Rust static-binding resolver (use/use-as/pub use/glob use)'
+state: queued
+kind: security
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0339
+scope:
+- src/frob/vet/**
+- src/frob/lang/**
+- tests/test_vet.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given every Rust static-resolvable construct in the taxonomy table, when the resolver
+  runs on its litmus fixture, then the aliased dangerous call is detected
+threat: null
+component: null
+labels: []
+```
+Implement per-scope, transitive, cycle-guarded static name-binding resolution for Rust per capability-evasion-taxonomy.md's Rust table (13 static + 6 opaque entries): use, use ... as, pub use re-export, glob use, module-path aliasing.
+
+<!-- ticket:T-0662 -->
+```yaml
+id: T-0662
+title: 'vet: exhaustive C static-binding resolver (#define, fn-ptr init from named
+  fn, typedef''d fn-ptr)'
+state: queued
+kind: security
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0339
+scope:
+- src/frob/vet/**
+- src/frob/lang/**
+- tests/test_vet.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given every C static-resolvable construct in the taxonomy table, when the resolver
+  runs on its litmus fixture, then the aliased dangerous call is detected
+threat: null
+component: null
+labels: []
+```
+Implement static name-binding resolution for C per capability-evasion-taxonomy.md's C table (7 static + 5 opaque entries): #define macro aliasing, function-pointer variable initialized from a named function, typedef'd function-pointer types.
