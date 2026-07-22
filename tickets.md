@@ -4720,3 +4720,31 @@ component: null
 labels: []
 ```
 Standing home for the 17 compliance.yaml entries whose controls are machine-checkable but not yet enforced by any gate/check. They previously carried deferred:T-0388 (the reconciliation ticket itself) -- a self-reference that would orphan them the moment T-0388 closed; T-0388's pass re-pointed them here. Each entry needs either a real enforcing check in src/frob/strata/_compliance.py (then flip to handled_by) or a reasoned out_of_scope/not-checkable disposition. NOTE: T-0388's Done report references this as T-draft-63982a01; drafts do not survive land (T-0577), so this ticket is the real target.
+
+<!-- ticket:T-0608 -->
+```yaml
+id: T-0608
+title: 'check CLI: thread --ticket/--base/--delta/--skip-gates through non-Python
+  pipeline dispatchers'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0554
+scope:
+- src/frob/app/check_runner.py
+- tests/unit/test_check.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a TS-only repo WHEN frob check --ticket T-X runs THEN _run_gates receives
+  ticket=T-X (asserted via test) and same for --base/--delta/--skip-gates across cpp/rust/ts
+  dispatchers
+threat: null
+component: null
+labels: []
+```
+T-0554 wired _run_gates into run_check_cpp/rust/ts with skip_gates/ticket/base/delta kwargs, but src/frob/app/check_runner.py's _dispatch_check_cpp/_dispatch_check_rust/_dispatch_check_ts do not pass cfg.check_skip_gates/check_ticket/check_base/check_delta down -- only _dispatch_check_python does. Gates run unconditionally for non-Python repos (correct default), but CLI-level --ticket/--base/--delta scoping is silently ignored there. Thread the four kwargs through and test each dispatcher. Found by T-0554's reviewer.
