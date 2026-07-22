@@ -10940,3 +10940,31 @@ component: null
 labels: []
 ```
 Standing home for the 49 system-design.yaml entries whose controls previously carried deferred:T-0392 (the reconciliation ticket itself) -- a self-reference that would orphan them the moment T-0392 closed; T-0392's pass re-pointed them here. Each entry needs either a real enforcing SYS2xx/REL2xx check in src/frob/strata/ (then flip to handled_by) or a reasoned out_of_scope/duplicate_of disposition. Related to the T-0331 systems-checks epic and its T-0658 N:M coverage close condition (which is itself blocked by T-0392) -- once this ticket's entries get real checks, T-0658's coverage math should account for them the same way it accounts for the T-0331-deferred 56.
+
+<!-- ticket:T-0723 -->
+```yaml
+id: T-0723
+title: 'lang: wire kotlin into central dispatch (_EXTENSION_TABLE + RawSymbol walker
+  + COMMENT_TYPES)'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0614
+parent: T-0329
+scope:
+- src/frob/lang/**
+- tests/unit/test_lang_kotlin.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a repo with a .kt file WHEN frob check runs THEN the file parses into the
+  symbol graph (no KeyError) and its symbols appear in frob map output
+threat: null
+component: null
+labels: []
+```
+T-0614's KotlinAdapter works standalone but .kt/.kts files are invisible to parse_file/frob check: _EXTENSION_TABLE lacks the extensions and _extract.py's _WALKERS dict-subscript (line ~91, no fallback) would KeyError if the table alone were wired. Deliver the RawSymbol walker for kotlin (mirroring the TS/Rust walkers in _extract.py), COMMENT_TYPES entry, and the extension-table wiring together, with tests proving a real .kt file flows through parse_file into the graph. Was T-draft-a78fa200 (prose-only) in T-0614's Done report.
