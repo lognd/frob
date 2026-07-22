@@ -205,6 +205,7 @@ class AppConfig(BaseModel):
     registry_command: str | None = None  # audit|add
     registry_path: Path | None = None
     registry_json: bool = False
+    registry_sync_gate_rules: bool = False  # T-0560
     debt_json: bool = False
 
     # registry add (T-0429)
@@ -622,6 +623,7 @@ class AppConfig(BaseModel):
             "check_stamp_baseline",
             "check_delta",
             "graph_json",
+            "registry_sync_gate_rules",
             "debt_json",
             "registry_json",
             "ticket_json",

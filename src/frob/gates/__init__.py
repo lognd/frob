@@ -946,6 +946,9 @@ _KNOWN_GATE_RULES = frozenset(
         # know).
         "REG008",
         "REG009",
+        # T-0560: check-coverage.yaml gate-rule staleness (scheduled-audit
+        # half of T-0424).
+        "REG010",
         # T-0436: unbound/stale fenced-code-block doc-drift heuristic
         # (frob.gates._docblocks).
         "DOC004",

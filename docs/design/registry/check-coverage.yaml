@@ -19,7 +19,7 @@
 #     fabricated ticket. As T-0397's children close a concern down to
 #     a real gate rule, re-disposition that entry to handled_by:<rule>.
 schema_version: 1
-gate_rule_total: 85
+gate_rule_total: 91
 gate_rule_entries:
   - id: "CHK-GATE-COV001"
     name: "COV001 is a live, enforced gate rule"
@@ -341,6 +341,10 @@ gate_rule_entries:
     name: "REG009 is a live, enforced gate rule"
     disposition: "handled_by:REG009"
     cross_refs: []
+  - id: "CHK-GATE-REG010"
+    name: "REG010 is a live, enforced gate rule"
+    disposition: "handled_by:REG010"
+    cross_refs: []
   - id: "CHK-GATE-INV006"
     name: "INV006 is a live, enforced gate rule"
     disposition: "handled_by:INV006"
@@ -362,6 +366,26 @@ gate_rule_entries:
     disposition: "handled_by:SEC-CVE-FINGERPRINT-001"
     cross_refs: []
 
+  - id: "CHK-GATE-INV005"
+    name: "INV005 is a live, enforced gate rule"
+    disposition: "handled_by:INV005"
+    cross_refs: []
+  - id: "CHK-GATE-LANG001"
+    name: "LANG001 is a live, enforced gate rule"
+    disposition: "handled_by:LANG001"
+    cross_refs: []
+  - id: "CHK-GATE-LANG002"
+    name: "LANG002 is a live, enforced gate rule"
+    disposition: "handled_by:LANG002"
+    cross_refs: []
+  - id: "CHK-GATE-LANG003"
+    name: "LANG003 is a live, enforced gate rule"
+    disposition: "handled_by:LANG003"
+    cross_refs: []
+  - id: "CHK-GATE-RENDER001"
+    name: "RENDER001 is a live, enforced gate rule"
+    disposition: "handled_by:RENDER001"
+    cross_refs: []
 concern_family_total: 13
 concern_family_entries:
   - id: "CHK-THEME-EXISTENCE-NOT-PROOF"

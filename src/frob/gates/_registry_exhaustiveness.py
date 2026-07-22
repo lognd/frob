@@ -106,6 +106,7 @@ from frob.registry._models import (
     RegistryFile,
     load_registry_dir,
 )
+from frob.registry._staleness import missing_gate_rule_ids
 from frob.tickets._models import TicketQueue, TicketState
 
 _log = get_logger(__name__)
@@ -141,6 +142,11 @@ REGISTRY_FILES: tuple[str, ...] = (
 # (finding (b)); a quoted literal here also closes REF001/REF002 for that
 # file the same way REGISTRY_FILES does for the manifests themselves.
 _RECONCILIATION_FILE = "RECONCILIATION.md"
+
+# T-0560: check-coverage.yaml's gate_rule_entries is the ONE file REG010's
+# staleness check runs against -- a quoted literal here also closes
+# REF001/REF002 for it the same way REGISTRY_FILES does.
+_CHECK_COVERAGE_FILE = "check-coverage.yaml"
 
 # T-0343 named gap: `out_of_scope` dispositions are meant to route through
 # Area-2's VERIFIED `caught_by` mechanism (T-0382); that mechanism does not
@@ -569,6 +575,49 @@ def _reg009_phantom_enforcement(
     return violations
 
 
+# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560  # noqa: E501
+# frob:ticket T-0560
+# frob:enforces CHK-GATE-REG010
+def _reg010_gate_rule_staleness(
+    base: Path, repo_root: Path, known_rules: frozenset[str]
+) -> list[Violation]:
+    """REG010 (WARN, advisory): a LIVE rule in `known_rules` with no
+    `CHK-GATE-<rule>` entry anywhere in `check-coverage.yaml` -- the
+    scheduled-audit half of T-0424/T-0560: a newly added gate rule that
+    nobody remembered to register in the reflexive registry is caught by
+    the very next `frob check`, not left to a human noticing (or a
+    scheduler that might not run) at some later point.
+
+    WARN, not ERROR: this repo's own `check-coverage.yaml` already has a
+    handful of pre-existing gaps of exactly this shape (confirmed via
+    `tests/test_check_coverage_registry.py`'s own reflexive count check,
+    which predates this gate and was already red on `main`) -- promoting
+    straight to ERROR would immediately fail the build on old debt this
+    ticket's job is to catch FUTURE drift on, not retroactively clear."""
+    check_coverage = base / _CHECK_COVERAGE_FILE
+    if not check_coverage.is_file():
+        return []
+    missing = missing_gate_rule_ids(check_coverage, known_rules)
+    if not missing:
+        return []
+    rel_path = _rel_registry_path(check_coverage, repo_root)
+    return [
+        Violation(
+            rule="REG010",
+            severity=Severity.WARN,
+            file=rel_path,
+            line=0,
+            message=(
+                f"REG010: {len(missing)} live gate rule(s) have no "
+                f"CHK-GATE-<rule> entry in {rel_path} "
+                f"({', '.join(sorted(missing)[:8])}"
+                f"{'...' if len(missing) > 8 else ''}) -- run "
+                f"`frob registry audit --sync-gate-rules` to file them"
+            ),
+        )
+    ]
+
+
 def _rel_registry_path(path: Path, repo_root: Path) -> str:
     """`path` shortened relative to `repo_root` for report-friendly output,
     or its absolute form if it does not actually sit under `repo_root`."""
@@ -671,6 +720,7 @@ def registry_gate(
     violations.extend(_classify_all_entries(parsed, known_rules, all_ids_frozen, queue))
     violations.extend(_reg007_duplicate_ids(parsed))
     violations.extend(_reconciliation_violations(base, repo_root, entries_by_id))
+    violations.extend(_reg010_gate_rule_staleness(base, repo_root, known_rules))
     if snapshot is not None:
         enforced_ids = _enforced_concept_ids(snapshot)
         violations.extend(_reg008_undeclared_enforcement(parsed, enforced_ids))

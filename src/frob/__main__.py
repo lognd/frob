@@ -566,6 +566,14 @@ def _add_registry_parser(sub) -> None:
     )
     registry_audit_p.add_argument("--path", dest="registry_path", metavar="DIR")
     registry_audit_p.add_argument("--json", dest="registry_json", action="store_true")
+    # T-0560: auto-file check-coverage.yaml's gate-rule staleness (REG010).
+    registry_audit_p.add_argument(
+        "--sync-gate-rules",
+        dest="registry_sync_gate_rules",
+        action="store_true",
+        help="append a CHK-GATE-<rule> entry for every live gate rule "
+        "check-coverage.yaml is missing one for (T-0560)",
+    )
 
     # T-0429: the exhaustive-researcher's corpus-emit mechanism -- appends
     # one new disposition:pending entry directly into the universe SSOT,
