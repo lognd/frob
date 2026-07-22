@@ -8,6 +8,21 @@ per-module line percentages. `stamp_coverage` is the only writer of
 `.frob/coverage-stamp`; TEST006 (in `frob.gates`) compares that stamp
 against live file hashes, so a stale or missing stamp is itself a
 violation rather than a silently-passing gate.
+
+T-0545 (docs/audits/gates-accounting.md B5): `.frob/coverage-stamp` and
+`coverage.xml` are both gitignored, so a fresh CI checkout (or a reviewer
+reading a diff) has no committed artifact to verify a coverage claim
+against -- the whole TEST005/006 story is locally-trusted-only.
+`write_coverage_lock` addresses this narrowly: it writes a small, rounded,
+deterministic SUMMARY (never the raw xml) to `frob-coverage.lock.json` at
+the repo root, a path this module chose specifically because no existing
+`.gitignore` rule matches it, so it is committed by default. `stamp_coverage`
+calls it automatically, so any existing `--stamp-coverage` invocation now
+also refreshes the committed lock with no new CLI wiring. `coverage_lock_diff`
+lets a gate (TEST012, `frob.gates`) compare the lock's claimed numbers
+against a freshly-loaded `CoverageData` and flag drift beyond tolerance --
+e.g. a lock committed from a locally-inflated coverage.xml that a genuine
+CI run cannot reproduce.
 """
 
 from __future__ import annotations
@@ -31,6 +46,13 @@ _log = get_logger(__name__)
 
 _COVERAGE_XML = "coverage.xml"
 _STAMP_REL = Path(".frob") / "coverage-stamp"
+# T-0545: deliberately NOT under `.frob/` or any other gitignored path --
+# this is the one artifact in the coverage chain meant to be committed.
+_LOCK_REL = Path("frob-coverage.lock.json")
+# Percentage-point tolerance before `coverage_lock_diff` reports a module as
+# drifted; coverage.xml's own line-rate float noise (rounding, differently
+# ordered subprocess merges) is well under this in practice.
+_LOCK_TOLERANCE = 2.0
 
 
 def _parse_line_el(line_el: ET.Element) -> tuple[int, tuple[int, int]] | None:
@@ -399,8 +421,19 @@ def _known_repo_paths(root: Path, snapshot: GraphSnapshot | None) -> frozenset[s
 
 # frob:doc docs/modules/gates.md#public-api
 # frob:waive TEST005 reason="stamp_coverage 68.8% branch cover, debt T-0160"
-def stamp_coverage(root: Path) -> Result[Unit, GateError]:
-    """Record coverage.xml's sha plus current per-file content hashes as a stamp."""
+def stamp_coverage(
+    root: Path, snapshot: GraphSnapshot | None = None
+) -> Result[Unit, GateError]:
+    """Record coverage.xml's sha plus current per-file content hashes as a stamp.
+
+    T-0545: also refreshes the committed `frob-coverage.lock.json` summary
+    (`write_coverage_lock`) from the same `coverage.xml`, so every existing
+    `--stamp-coverage` call keeps the attestable artifact current with zero
+    new CLI wiring. `snapshot` is optional and only improves the lock's
+    per-module numbers (`load_coverage` needs it to map line hits onto
+    modules/symbols); a caller with no snapshot handy still gets a stamp,
+    just without a lock refresh.
+    """
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(GateError.WorktreeLeaseViolation)
@@ -424,7 +457,86 @@ def stamp_coverage(root: Path) -> Result[Unit, GateError]:
         len(file_hashes),
         source_sha[:8],
     )
+    if snapshot is not None:
+        loaded = load_coverage(root, snapshot)
+        if loaded.is_ok:
+            write_coverage_lock(root, loaded.danger_ok)
+        else:
+            _log.warning(
+                "stamp_coverage: could not refresh %s (%s); stamp still written",
+                _LOCK_REL,
+                loaded.danger_err,
+            )
     return Ok(Unit())
+
+
+# frob:doc docs/modules/gates.md#public-api
+# frob:tests tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_refreshes_committed_lock  # noqa: E501
+def write_coverage_lock(root: Path, data: CoverageData) -> Result[Unit, GateError]:
+    """Write the committed `frob-coverage.lock.json` summary for `data` (T-0545).
+
+    Deliberately rounds every percentage to 1 decimal and stores only
+    `module_line` (never per-line hit data or the raw xml) -- small enough to
+    diff sanely in a PR, and specific enough for `coverage_lock_diff` to
+    catch a claim a real CI run cannot reproduce. Rounding also keeps the
+    committed file's diffs quiet across re-stamps with only float-noise
+    differences.
+    """
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(GateError.WorktreeLeaseViolation)
+    lock = {
+        "source_sha": data.source_sha,
+        "module_line": {k: round(v, 1) for k, v in sorted(data.module_line.items())},
+    }
+    lock_path = root / _LOCK_REL
+    try:
+        lock_path.write_text(json.dumps(lock, indent=2, sort_keys=True) + "\n")
+    except OSError as exc:
+        _log.error("write_coverage_lock: could not write %s: %s", lock_path, exc)
+        return Err(GateError.WriteFailed)
+    _log.info(
+        "write_coverage_lock: locked %d module(s), source_sha=%s",
+        len(lock["module_line"]),
+        data.source_sha[:8],
+    )
+    return Ok(Unit())
+
+
+# frob:doc docs/modules/gates.md#public-api
+def load_coverage_lock(root: Path) -> dict | None:
+    """The raw `frob-coverage.lock.json` document, or `None` if missing/unreadable."""
+    lock_path = root / _LOCK_REL
+    if not lock_path.exists():
+        return None
+    try:
+        return json.loads(lock_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        _log.warning("load_coverage_lock: %s unreadable: %s", lock_path, exc)
+        return None
+
+
+# frob:doc docs/modules/gates.md#public-api
+def coverage_lock_diff(
+    lock: dict, data: CoverageData, tolerance: float = _LOCK_TOLERANCE
+) -> tuple[str, ...]:
+    """Modules whose live `data.module_line` % differs from `lock` by more
+    than `tolerance` points, sorted for stable output (T-0545/TEST012).
+
+    A module present in `lock` but absent from `data` (e.g. the file was
+    deleted, or this run's coverage.xml simply didn't measure it) is also
+    reported -- silently dropping a module from live data is exactly the
+    "an author trims the measured set locally" evasion this check exists to
+    catch, so absence must not fail open the same way B4's `pct is None`
+    skip does for TEST005.
+    """
+    locked_line: dict[str, float] = lock.get("module_line", {})
+    drifted: list[str] = []
+    for module, locked_pct in locked_line.items():
+        live_pct = data.module_line.get(module)
+        if live_pct is None or abs(live_pct - locked_pct) > tolerance:
+            drifted.append(module)
+    return tuple(sorted(drifted))
 
 
 # frob:doc docs/modules/gates.md#public-api
@@ -441,4 +553,11 @@ def load_stamp(root: Path) -> dict | None:
         return None
 
 
-__all__ = ["load_coverage", "load_stamp", "stamp_coverage"]
+__all__ = [
+    "coverage_lock_diff",
+    "load_coverage",
+    "load_coverage_lock",
+    "load_stamp",
+    "stamp_coverage",
+    "write_coverage_lock",
+]

@@ -17,6 +17,25 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.69.0] - unreleased (attestable coverage lock, B5)
+
+T-0545 (docs/audits/gates-accounting.md B5): `.frob/coverage-stamp` and
+`coverage.xml` are both gitignored, so no committed artifact let a
+reviewer or CI verify a TEST005/006 coverage claim. `frob.gates._coverage`
+gained a new committed summary artifact, `frob-coverage.lock.json`
+(deliberately outside `.gitignore`'s reach, and rounded/summarized rather
+than the raw xml): `write_coverage_lock`/`load_coverage_lock` write/read
+it, `coverage_lock_diff` reports which modules' claimed line coverage
+drifted beyond tolerance from a fresh `coverage.xml`. `stamp_coverage`
+now optionally refreshes the lock itself when passed a `GraphSnapshot`,
+so an existing `--stamp-coverage` call can adopt it with no new CLI flag.
+New advisory gate TEST012 (WARN) flags a missing or drifted lock. Left
+deliberately split for follow-up (see T-0545's Done report): wiring
+`frob check --stamp-coverage`'s CLI entry point
+(`frob.app.check_runner._run_stamp_coverage`) to pass its snapshot
+through, and promoting TEST012 to ERROR once the lock is adopted
+repo-wide.
+
 ## [0.66.0] - unreleased (graph leaves + DEAD001/PARSE001, part 2)
 
 T-0422: new `DEAD001` gate (`frob.gates._dead_symbols.dead_symbol_gate`,

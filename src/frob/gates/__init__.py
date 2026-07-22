@@ -48,7 +48,14 @@ from frob.gates._baseline import (
     stamp_baseline,
     violation_fingerprint,
 )
-from frob.gates._coverage import load_coverage, load_stamp, stamp_coverage
+from frob.gates._coverage import (
+    coverage_lock_diff,
+    load_coverage,
+    load_coverage_lock,
+    load_stamp,
+    stamp_coverage,
+    write_coverage_lock,
+)
 from frob.gates._cve_fingerprint_scan import cve_fingerprint_scan_gate
 from frob.gates._dead_symbols import dead_symbol_gate
 from frob.gates._docblocks import doc004_gate
@@ -868,6 +875,9 @@ _KNOWN_GATE_RULES = frozenset(
         "TEST009",
         "TEST010",
         "TEST011",
+        # T-0545: committed `frob-coverage.lock.json` missing/stale/drifted
+        # relative to the live coverage.xml-derived data.
+        "TEST012",
         "TODO001",
         "TODO002",
         # T-0412: frob:debt (temporary, ticket-bound, collected-before-
@@ -4830,6 +4840,7 @@ def _test005(
     return (
         *_test008_unjoined_root(data),
         *_test011_freshness(data),
+        *_test012_lock(snapshot, data),
         *_test005_symbols(snapshot, data, cfg),
         *_test005_modules(data, cfg),
         *_test005_systems(systems, data, cfg),
@@ -4888,6 +4899,65 @@ def _test011_freshness(data: CoverageData) -> tuple[Violation, ...]:
             )
         )
     return tuple(violations)
+
+
+# T-0545: the committed coverage-lock path, for TEST012 messages only --
+# `frob.gates._coverage` owns the actual path constant and all IO on it.
+_COVERAGE_LOCK_REL = "frob-coverage.lock.json"
+
+
+# frob:ticket T-0545
+# frob:tests tests/test_gates.py::TestTestGate.test_test012_missing_lock_warns  # noqa: E501
+# frob:tests tests/test_gates.py::TestTestGate.test_test012_drifted_module_warns  # noqa: E501
+# frob:tests tests/test_gates.py::TestTestGate.test_test012_matching_lock_is_clean  # noqa: E501
+def _test012_lock(snapshot: GraphSnapshot, data: CoverageData) -> tuple[Violation, ...]:
+    """TEST012 (warn): the committed `frob-coverage.lock.json` (docs/audits/
+    gates-accounting.md B5) is missing, or its claimed per-module line
+    coverage has drifted from what this run's `coverage.xml` actually shows.
+
+    WARN, not ERROR, for the same reason TEST011 is WARN: this is a new,
+    opt-in-by-adoption mechanism (`stamp_coverage` only just started writing
+    it, T-0545) and promoting a repo with no lock yet committed straight to
+    a hard failure would break every existing checkout on this change
+    alone. The severity is intentionally revisited once the lock is
+    established as standard practice -- see T-0545's Done report for the
+    promotion-to-ERROR follow-up filed for that.
+    """
+    root = Path(snapshot.root)
+    lock = load_coverage_lock(root)
+    if lock is None:
+        return (
+            Violation(
+                rule="TEST012",
+                severity=Severity.WARN,
+                file=str(_COVERAGE_LOCK_REL),
+                line=0,
+                message=(
+                    "TEST012: no committed coverage lock at "
+                    f"{_COVERAGE_LOCK_REL} -- TEST005/006's coverage claim "
+                    "cannot be verified by a reviewer or CI without trusting "
+                    "local .frob/ state; run: frob check --stamp-coverage"
+                ),
+            ),
+        )
+    drifted = coverage_lock_diff(lock, data)
+    if not drifted:
+        return ()
+    modules = ", ".join(drifted)
+    return (
+        Violation(
+            rule="TEST012",
+            severity=Severity.WARN,
+            file=str(_COVERAGE_LOCK_REL),
+            line=0,
+            message=(
+                "TEST012: committed coverage lock diverges from this run's "
+                f"coverage.xml for: {modules} -- the committed coverage claim "
+                "may not be reproducible from a clean run; re-stamp "
+                "(frob check --stamp-coverage) if this run is the accurate one"
+            ),
+        ),
+    )
 
 
 def _exclude_filtered_coverage(
@@ -5046,7 +5116,7 @@ def test_gate(
     tests: CollectedTests,
     cfg: TestPolicy,
 ) -> tuple[Violation, ...]:
-    """TEST001..TEST011. Interfaces derived from packages with public symbols
+    """TEST001..TEST012. Interfaces derived from packages with public symbols
     (see `_test003`'s docstring for the exact alpha semantics). Coverage is
     consumed as recorded evidence, never produced here. TEST009 (T-0225) is
     `.strata` design files' e2e-binding counterpart to TEST003, which
@@ -5058,7 +5128,12 @@ def test_gate(
     `_test005`'s return since it shares the same `coverage.is_nothing`
     guard) is an advisory WARN that coverage.xml itself looks stale or
     deflated, so a spike in TEST005 findings can be triaged as a coverage
-    problem rather than a real regression (see `_test011_freshness`)."""
+    problem rather than a real regression (see `_test011_freshness`).
+    TEST012 (T-0545, also folded into `_test005`'s return) is the coverage
+    accounting chain's attestability check: the committed
+    `frob-coverage.lock.json` summary (`frob.gates._coverage.write_coverage_lock`)
+    is missing, or its claimed per-module numbers have drifted from this
+    run's `coverage.xml` -- see `_test012_lock`."""
     violations: list[Violation] = []
     violations.extend(_test001_002(snapshot, tests, cfg))
     violations.extend(_test003(snapshot, tests, cfg))
@@ -7284,9 +7359,11 @@ __all__ = [
     "inv003_gate",
     "inv004_gate",
     "invariant_gate",
+    "coverage_lock_diff",
     "is_baseline_stale",
     "load_baseline",
     "load_coverage",
+    "load_coverage_lock",
     "load_invariants",
     "cve_fingerprint_scan_gate",
     "debt_gate",
@@ -7317,4 +7394,5 @@ __all__ = [
     "test_gate",
     "violation_fingerprint",
     "walk_lint_gate",
+    "write_coverage_lock",
 ]

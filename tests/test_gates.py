@@ -3675,6 +3675,77 @@ class TestTestGate:
         violations = run_test_gate(snap, (), Some(coverage), tests, TestPolicy())
         assert not any(v.rule == "TEST011" for v in violations)
 
+    # frob:ticket T-0545
+    def test_test012_missing_lock_warns(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::_test012_lock
+        from typani.option import Some
+
+        from frob.gates import CoverageData
+
+        snap = _snapshot(tmp_path)
+        coverage = CoverageData(
+            source_sha="x",
+            symbol_branch={},
+            module_line={"src/frob/pkg/a.py": 90.0},
+            stale_by_mtime=False,
+            module_join_fraction=1.0,
+        )
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(snap, (), Some(coverage), tests, TestPolicy())
+        test012 = [v for v in violations if v.rule == "TEST012"]
+        assert len(test012) == 1
+        assert test012[0].severity == Severity.WARN
+        assert "no committed coverage lock" in test012[0].message
+
+    # frob:ticket T-0545
+    def test_test012_drifted_module_warns(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::_test012_lock
+        from typani.option import Some
+
+        from frob.gates import CoverageData, write_coverage_lock
+
+        snap = _snapshot(tmp_path)
+        locked = CoverageData(
+            source_sha="x",
+            symbol_branch={},
+            module_line={"src/frob/pkg/a.py": 90.0},
+            stale_by_mtime=False,
+            module_join_fraction=1.0,
+        )
+        write_coverage_lock(tmp_path, locked)
+        live = CoverageData(
+            source_sha="y",
+            symbol_branch={},
+            module_line={"src/frob/pkg/a.py": 10.0},
+            stale_by_mtime=False,
+            module_join_fraction=1.0,
+        )
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(snap, (), Some(live), tests, TestPolicy())
+        test012 = [v for v in violations if v.rule == "TEST012"]
+        assert len(test012) == 1
+        assert "src/frob/pkg/a.py" in test012[0].message
+
+    # frob:ticket T-0545
+    def test_test012_matching_lock_is_clean(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::_test012_lock
+        from typani.option import Some
+
+        from frob.gates import CoverageData, write_coverage_lock
+
+        snap = _snapshot(tmp_path)
+        coverage = CoverageData(
+            source_sha="x",
+            symbol_branch={},
+            module_line={"src/frob/pkg/a.py": 90.0},
+            stale_by_mtime=False,
+            module_join_fraction=1.0,
+        )
+        write_coverage_lock(tmp_path, coverage)
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(snap, (), Some(coverage), tests, TestPolicy())
+        assert not any(v.rule == "TEST012" for v in violations)
+
     def test_test006_missing_stamp(self, tmp_path: Path) -> None:
         snap = _snapshot(tmp_path)
         from frob.gates import _test006  # noqa: PLC0415
@@ -3770,6 +3841,7 @@ class TestTestGate:
         assert any(v.rule == "TEST002" for v in violations)
 
 
+# frob:ticket T-0545
 class TestCoverageLoad:
     def test_missing_coverage_xml(self, tmp_path: Path) -> None:
         result = load_coverage(tmp_path)
@@ -4078,6 +4150,57 @@ class TestCoverageLoad:
         stamp = load_stamp(tmp_path)
         assert stamp is not None
         assert "src/frob/pkg/a.py" in stamp["file_hashes"]
+
+    # frob:ticket T-0545
+    def test_stamp_coverage_refreshes_committed_lock(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_coverage.py::stamp_coverage
+        # frob:tests src/frob/gates/_coverage.py::load_coverage_lock
+        # T-0545: passing a snapshot makes stamp_coverage also write the
+        # committed frob-coverage.lock.json, with no separate CLI call.
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        xml = """<?xml version="1.0"?>
+<coverage>
+  <packages>
+    <package>
+      <classes>
+        <class filename="src/frob/pkg/a.py" line-rate="0.9">
+          <lines><line number="2" hits="1" branch="false"/></lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>
+"""
+        (tmp_path / "coverage.xml").write_text(xml)
+        snap = _snapshot(tmp_path)
+        result = stamp_coverage(tmp_path, snap)
+        assert result.is_ok
+
+        from frob.gates._coverage import load_coverage_lock
+
+        lock = load_coverage_lock(tmp_path)
+        assert lock is not None
+        assert lock["module_line"]["src/frob/pkg/a.py"] == 90.0
+        assert not (tmp_path / "frob-coverage.lock.json").is_relative_to(
+            tmp_path / ".frob"
+        )
+
+    # frob:ticket T-0545
+    def test_coverage_lock_diff_flags_drift_and_missing_module(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_coverage.py::coverage_lock_diff
+        from frob.gates import CoverageData
+        from frob.gates._coverage import coverage_lock_diff
+
+        lock = {"module_line": {"a.py": 90.0, "b.py": 50.0}}
+        live = CoverageData(source_sha="y", module_line={"a.py": 91.0})
+        assert coverage_lock_diff(lock, live) == ("b.py",)
+
+        live_drifted = CoverageData(
+            source_sha="y", module_line={"a.py": 10.0, "b.py": 50.0}
+        )
+        assert coverage_lock_diff(lock, live_drifted) == ("a.py",)
 
 
 # frob:ticket T-0541

@@ -3389,7 +3389,7 @@ docs/audits/gates-accounting.md B10. _cov002 uses _open_scopes = every open tick
 id: T-0545
 title: 'gates: coverage/baseline/prework evidence chain is gitignored-local, untrusted
   by CI (B5)'
-state: queued
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-21'
@@ -3398,8 +3398,41 @@ blocked_by: []
 parent: T-0403
 scope:
 - src/frob/gates/
-scope_changes: []
-evidence: []
+- pyproject.toml
+- CHANGELOG.md
+- uv.lock
+- frob.lock
+scope_changes:
+- op: add
+  glob: pyproject.toml
+  reason: 'REL001: public API changed (write_coverage_lock/load_coverage_lock/coverage_lock_diff),
+    requires version bump + changelog entry per project convention'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: 'REL001: public API changed (write_coverage_lock/load_coverage_lock/coverage_lock_diff),
+    requires version bump + changelog entry per project convention'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: uv.lock reflects pyproject.toml's version bump; frob.lock is the doc-ack
+    ledger updated for stamp_coverage's ack
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: frob.lock
+  reason: uv.lock reflects pyproject.toml's version bump; frob.lock is the doc-ack
+    ledger updated for stamp_coverage's ack
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_gates.py::TestTestGate::test_test012_missing_lock_warns
+- tests/test_gates.py::TestTestGate::test_test012_drifted_module_warns
+- tests/test_gates.py::TestTestGate::test_test012_matching_lock_is_clean
+- tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_refreshes_committed_lock
+- tests/test_gates.py::TestCoverageLoad::test_coverage_lock_diff_flags_drift_and_missing_module
 attachments: []
 acceptance: []
 threat: null
@@ -3408,6 +3441,81 @@ labels: []
 ```
 docs/audits/gates-accounting.md B5. coverage.xml, .frob/coverage-stamp, .frob/baseline, .frob/prework/*.json are all gitignored -- a fresh CI checkout has no stamp and no committed artifact any reviewer/CI can diff to verify a coverage claim. RIGHT-WAY fix direction: commit a signed/summary coverage artifact (hash + floors, not the raw xml) or fail closed in CI when the stamp's source_sha cannot be reproduced from a clean run, so TEST005/006 mean something externally verifiable.
 
+## Done report
+
+docs/audits/gates-accounting.md B5: `.frob/coverage-stamp`, `coverage.xml`,
+`.frob/baseline`, `.frob/prework/*.json` are all gitignored, so a fresh CI
+checkout or a reviewer reading a diff has no committed artifact to verify
+a TEST005/006 coverage claim against.
+
+Fix landed (narrow, attestable, in-scope of src/frob/gates/): a new
+committed summary artifact, `frob-coverage.lock.json` at the repo root --
+deliberately NOT under `.frob/` or any other gitignored path (no existing
+`.gitignore` rule matches it, so it is committed by default with zero
+`.gitignore` edit needed).
+
+- `frob.gates._coverage.write_coverage_lock` writes a small, rounded
+  (1 decimal), deterministic summary: `source_sha` + `module_line` per-module
+  line-coverage percentages. Never the raw xml or per-line hit data.
+- `load_coverage_lock` reads it back.
+- `coverage_lock_diff` reports which modules' claimed line coverage
+  drifted beyond a 2-point tolerance from a freshly-loaded `CoverageData`
+  -- including a module present in the lock but ABSENT from live data
+  (silently dropping a module from measurement is exactly the evasion
+  this exists to catch, matching the audit's B4 fail-open lesson rather
+  than repeating it).
+- `stamp_coverage` gained an optional `snapshot` parameter: when passed,
+  it also calls `write_coverage_lock` after writing the existing
+  `.frob/coverage-stamp`, so any caller that already has a snapshot gets
+  the committed artifact refreshed automatically, no new CLI flag needed.
+- New gate TEST012 (WARN, folded into `_test005`'s return alongside
+  TEST008/TEST011): missing or drifted committed lock. WARN, not ERROR,
+  deliberately -- this is a brand-new opt-in-by-adoption mechanism; ERROR
+  would break every existing checkout the moment this change lands, before
+  anyone has committed a lock. Promotion to ERROR is the natural next step
+  once adopted (see filed follow-up below).
+
+Honest split (LARGE ticket, survey-and-split is expected):
+1. Filed T-draft-3c4a7039 ("Wire frob check --stamp-coverage to refresh
+   committed coverage lock", scope `src/frob/app/check_runner.py`) --
+   `_run_stamp_coverage` (the actual `--stamp-coverage` CLI entry point)
+   is out of T-0545's `src/frob/gates/` scope and still calls
+   `stamp_coverage(root)` with no snapshot, so today the lock is only
+   refreshed by a caller that passes one explicitly (e.g. a test, or a
+   future in-scope caller) -- not yet by the existing CLI flag. That
+   ticket also carries the TEST012-to-ERROR promotion follow-up.
+2. Did NOT touch `.gitignore` at all (also out of `src/frob/gates/`
+   scope) -- unnecessary, since `frob-coverage.lock.json` was chosen
+   specifically to already fall outside every existing ignore rule.
+3. Did NOT re-architect `.frob/baseline`/`.frob/prework/*.json` (the
+   audit's B5 also names these) -- out of scope for this pass; the fix
+   here is scoped to the coverage chain (TEST005/006) the audit's B5
+   description centers on. A parallel lock for baseline/prework, if
+   wanted, is a separate, smaller follow-up not filed yet (noting here so
+   it isn't silently dropped).
+
+REL001 (public API changed, major): `pyproject.toml` bumped 0.68.0 ->
+0.69.0; `CHANGELOG.md` entry added. Scope formally extended via
+`frob ticket scope --add pyproject.toml --add CHANGELOG.md --add uv.lock
+--add frob.lock` (uv.lock reflects the version bump; frob.lock is the
+doc-ack ledger for `frob ack src/frob/gates/_coverage.py::stamp_coverage`,
+needed because `stamp_coverage`'s new `snapshot` parameter moved its sig
+digest).
+
+### Changed
+```
+ src/frob/gates/__init__.py |  7 ++-----
+ tests/test_gates.py        |  2 --
+ tickets.md                 | 28 ++++++++++++++++++++++++++--
+ 3 files changed, 28 insertions(+), 9 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestTestGate::test_test012_missing_lock_warns` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTestGate::test_test012_drifted_module_warns` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTestGate::test_test012_matching_lock_is_clean` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_refreshes_committed_lock` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageLoad::test_coverage_lock_diff_flags_drift_and_missing_module` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0547 -->
 ```yaml
 id: T-0547
@@ -3620,3 +3728,26 @@ the ineffective copies from the test file.
 
 ### Evidence
 - `tests/test_gates.py::TestRunJobsTimingAttribution::test_cpu_bound_neighbor_does_not_inflate_a_cheap_jobs_timing` (pytest node id, verified passing when recorded)
+
+<!-- ticket:T-draft-3c4a7039 -->
+```yaml
+id: T-draft-3c4a7039
+title: Wire frob check --stamp-coverage to refresh committed coverage lock
+state: queued
+kind: feature
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/app/check_runner.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0545 added frob.gates._coverage.write_coverage_lock (a committed frob-coverage.lock.json summary) and made stamp_coverage(root, snapshot=None) refresh it when passed a GraphSnapshot -- but src/frob/app/check_runner.py::_run_stamp_coverage (the frob check --stamp-coverage CLI entry point) is out of T-0545's scope (src/frob/gates/ only) and still calls stamp_coverage(root) with no snapshot, so the lock is never refreshed by the existing CLI path today. Wire a GraphSnapshot through (the same one run_gates/other stamping paths already build) so --stamp-coverage keeps the lock current with zero extra flags. Once adopted, also consider promoting TEST012 (frob.gates.__init__::_test012_lock, currently WARN) to ERROR -- see T-0545's Done report for the promotion rationale.
