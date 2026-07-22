@@ -23,6 +23,7 @@ import difflib
 import fnmatch
 import functools
 import hashlib
+import multiprocessing
 import os
 import re
 import time
@@ -8092,23 +8093,19 @@ def _drain_futures(
         )
 
 
-# frob:ticket T-0415
+# frob:ticket T-0581
 def _submit_process_pool(
-    ppool: ProcessPoolExecutor,
-    process_jobs: dict[str, _ProcessJob],
-    raw: dict[str, tuple[Violation, ...]],
-    counts: dict[str, int],
-    timing: dict[str, float],
-) -> None:
-    """Submit every `process_jobs` entry to `ppool` and drain the results
-    into `raw`/`counts`/`timing` (T-0415) -- the process-pool half of
-    `_run_combined_jobs`, split out to keep that function under ARCH001's
-    line threshold."""
-    process_futures = {
+    ppool: ProcessPoolExecutor, process_jobs: dict[str, _ProcessJob]
+) -> dict[str, Future[tuple[tuple[Violation, ...], float]]]:
+    """Submit every `process_jobs` entry to `ppool` and return the futures
+    without draining them (T-0581) -- submission must happen (and the pool's
+    worker processes must be forked/spawned) before `_run_combined_jobs`
+    opens its `ThreadPoolExecutor`, so callers drain these futures
+    separately, after the thread pool's own work is queued."""
+    return {
         name: ppool.submit(_run_process_gate, job.func, job.args)
         for name, job in process_jobs.items()
     }
-    _drain_futures(process_futures, raw, counts, timing, pool_label=" (process pool)")
 
 
 def _merge_canonical_order(raw: dict[str, tuple[Violation, ...]]) -> list[Violation]:
@@ -8123,6 +8120,7 @@ def _merge_canonical_order(raw: dict[str, tuple[Violation, ...]]) -> list[Violat
     return violations
 
 
+# frob:ticket T-0581
 def _run_combined_jobs(
     thread_jobs: dict[str, Callable[[], tuple[Violation, ...]]],
     process_jobs: dict[str, _ProcessJob],
@@ -8131,25 +8129,63 @@ def _run_combined_jobs(
     (the CPU-bound giants, T-0415/docs/audits/perf.md H3) on a
     `ProcessPoolExecutor` at the same time, so e.g. archgate and sys
     actually overlap instead of GIL-serializing on one shared pool. Merges
-    results back via `_merge_canonical_order` so output stays
-    deterministic regardless of which pool finishes a job first."""
+    results back via `_merge_canonical_order` so output stays deterministic
+    regardless of which pool finishes a job first.
+
+    T-0581: the process pool is created and its jobs SUBMITTED before the
+    `ThreadPoolExecutor` opens, not nested inside it. The old ordering --
+    `with ThreadPoolExecutor(...): ... with ProcessPoolExecutor(...): ...`
+    -- forks worker processes while up to `len(thread_jobs)` gate threads
+    were already running inside this same interpreter. A fork while a
+    sibling thread holds an interpreter-internal lock (import lock,
+    allocator arena lock, logging lock, etc.) copies that lock into the
+    child in whatever state it was at fork time, but not the thread that
+    would eventually release it -- any child code path that touches the
+    same lock hangs forever. That exact interleaving produced a 6-hour CI
+    hang and repeated local zombie process trees (T-0265 disclosure,
+    T-0581's ticket body). `mp_context=spawn` is the LOAD-BEARING fix:
+    this function IS called from worker threads (frob.check's
+    _run_tasks_concurrently thread pool, the serve daemon's anyio worker
+    threads), so at fork time sibling threads exist on the primary path
+    and submit-order alone cannot prevent lock inheritance -- spawn starts
+    each worker from a clean interpreter and is immune regardless of
+    caller threading. Do NOT remove mp_context believing the
+    submit-before-threads ordering suffices. Submitting to the process
+    pool FIRST remains good hygiene (fewer of our own threads alive)
+    rather than forking this one, so it carries no inherited lock state at
+    all even if a future refactor reintroduces nested pools by accident.
+    """
     counts: dict[str, int] = {}
     timing: dict[str, float] = {}
     raw: dict[str, tuple[Violation, ...]] = {}
     if not thread_jobs and not process_jobs:
         return [], counts, timing
 
-    with ThreadPoolExecutor(max_workers=max(1, len(thread_jobs))) as tpool:
-        thread_futures = {
-            name: tpool.submit(_timed_job(job)) for name, job in thread_jobs.items()
-        }
-        if process_jobs:
-            # Bounded worker count (constraint 4): never more workers than
-            # jobs, never more than the machine's CPU count.
-            proc_workers = max(1, min(len(process_jobs), os.cpu_count() or 4))
-            with ProcessPoolExecutor(max_workers=proc_workers) as ppool:
-                _submit_process_pool(ppool, process_jobs, raw, counts, timing)
-        _drain_futures(thread_futures, raw, counts, timing, pool_label="")
+    ppool: ProcessPoolExecutor | None = None
+    process_futures: dict[str, Future[tuple[tuple[Violation, ...], float]]] = {}
+    if process_jobs:
+        # Bounded worker count (constraint 4): never more workers than
+        # jobs, never more than the machine's CPU count.
+        proc_workers = max(1, min(len(process_jobs), os.cpu_count() or 4))
+        ppool = ProcessPoolExecutor(
+            max_workers=proc_workers,
+            mp_context=multiprocessing.get_context("spawn"),
+        )
+        process_futures = _submit_process_pool(ppool, process_jobs)
+
+    try:
+        with ThreadPoolExecutor(max_workers=max(1, len(thread_jobs))) as tpool:
+            thread_futures = {
+                name: tpool.submit(_timed_job(job)) for name, job in thread_jobs.items()
+            }
+            _drain_futures(thread_futures, raw, counts, timing, pool_label="")
+        if ppool is not None:
+            _drain_futures(
+                process_futures, raw, counts, timing, pool_label=" (process pool)"
+            )
+    finally:
+        if ppool is not None:
+            ppool.shutdown(wait=True)
 
     return _merge_canonical_order(raw), counts, timing
 
