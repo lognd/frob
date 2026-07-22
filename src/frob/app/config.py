@@ -57,6 +57,8 @@ class Subcommand(str, enum.Enum):
     debt = "debt"
     # T-0407: unified registry capability -- per-registry disposition audit.
     registry = "registry"
+    # T-0569: ratchet-pool baseline snapshot/clear.
+    pool = "pool"
 
 
 # frob:doc docs/modules/app.md#config
@@ -241,6 +243,9 @@ class AppConfig(BaseModel):
     # frob:ticket T-0472
     # `frob ticket requeue <id> [--reason TEXT]` -- optional, logged only.
     ticket_reason: str | None = None
+    # frob:ticket T-0579
+    # `frob ticket drop <id> --reason TEXT [--absorbed-by T-####]`.
+    ticket_absorbed_by: str | None = None
     ticket_caption: str = ""
     ticket_attach_path: Path | None = None
     ticket_json: bool = False
@@ -322,6 +327,14 @@ class AppConfig(BaseModel):
     # pre-existing untimed, single-worker behavior.
     vet_timeout: float | None = None
     vet_jobs: int | None = None
+
+    # pool (T-0569): ratchet-pool baseline snapshot/clear.
+    pool_command: str | None = None  # snapshot|clear
+    pool_path: Path | None = None
+    pool_rule: str | None = None
+    pool_keys: list[str] = []
+    pool_key: str | None = None
+    pool_reason: str | None = None
 
     # release
     release_command: str | None = None  # stamp|check
@@ -438,6 +451,10 @@ class AppConfig(BaseModel):
             "registry_add_id",
             "registry_add_name",
             "registry_add_source_doc",
+            "pool_command",
+            "pool_rule",
+            "pool_key",
+            "pool_reason",
             "ticket_command",
             "ticket_id",
             "ticket_title",
@@ -449,6 +466,7 @@ class AppConfig(BaseModel):
             "ticket_by",
             "ticket_summary",
             "ticket_reason",
+            "ticket_absorbed_by",
             "ticket_caption",
             "ticket_old_id",
             "ticket_new_id",
@@ -497,6 +515,7 @@ class AppConfig(BaseModel):
             "graph_path",
             "ack_path",
             "debt_path",
+            "pool_path",
             "registry_path",
             "ticket_path",
             "ticket_attach_path",
@@ -562,6 +581,7 @@ class AppConfig(BaseModel):
         for list_field in (
             "check_only",
             "ack_refs",
+            "pool_keys",
             "ticket_ids",
             "ticket_scope",
             "ticket_scope_add",

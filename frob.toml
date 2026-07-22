@@ -254,3 +254,12 @@ language = "rust"
 name = "frob_core"
 build_cmd = "make core"
 language = "rust"
+
+# T-0569: ratchet pools (docs/modules/gates.md#ratchet-pools) -- rule ids
+# opted into "existing findings stay warn (frob-ratchet.lock.json), new
+# findings error" instead of a plain warn-first campaign. Empty/absent
+# means no rule is ratcheted. Not currently used by any live gate's
+# severity resolution (see docs/modules/gates.md#ratchet-pools) -- this
+# table is schema/config-ready for the integration follow-up.
+[gates.ratchet]
+rules = []

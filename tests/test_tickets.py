@@ -9,6 +9,8 @@ from pathlib import Path
 
 import pytest
 
+from frob.app.config import AppConfig
+from frob.app.ticket_runner import _drop
 from frob.tickets import (
     AttachmentSource,
     FailureEntry,
@@ -21,6 +23,7 @@ from frob.tickets import (
     archive,
     attach,
     doable,
+    drop_ticket,
     load_active,
     load_queue,
     new_ticket,
@@ -526,6 +529,101 @@ class TestFailureLog:
         result = record_failure(tmp_path, "T-9999", entry)
         assert result.is_err
         assert result.danger_err is TicketError.NotFound
+
+
+# frob:ticket T-0579
+class TestDropTicket:
+    # frob:ticket T-0579
+    def test_drops_queued_ticket_with_reason(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/__init__.py::drop_ticket
+        _write(tmp_path, _ticket(state=TicketState.QUEUED))
+        result = drop_ticket(tmp_path, "T-0001", "absorbed elsewhere")
+        assert result.is_ok, result.err
+        ticket = result.danger_ok
+        assert ticket.state == TicketState.DROPPED
+        assert "## Drop reason" in ticket.body
+        assert "absorbed elsewhere" in ticket.body
+
+    # frob:ticket T-0579
+    def test_records_absorbed_by_reference(self, tmp_path: Path) -> None:
+        _write(tmp_path, _ticket(state=TicketState.PLANNED))
+        result = drop_ticket(tmp_path, "T-0001", "subsumed", absorbed_by="T-0042")
+        assert result.is_ok, result.err
+        assert "(absorbed by T-0042)" in result.danger_ok.body
+
+    # frob:ticket T-0579
+    def test_blank_reason_is_err(self, tmp_path: Path) -> None:
+        _write(tmp_path, _ticket(state=TicketState.QUEUED))
+        result = drop_ticket(tmp_path, "T-0001", "   ")
+        assert result.is_err
+        assert result.danger_err is TicketError.DropReasonMissing
+
+    # frob:ticket T-0579
+    def test_in_progress_ticket_drops_and_releases_lease(self, tmp_path: Path) -> None:
+        _write(tmp_path, _ticket(state=TicketState.IN_PROGRESS))
+        result = drop_ticket(
+            tmp_path, "T-0001", "obsolete, superseded by design change"
+        )
+        assert result.is_ok, result.err
+        assert result.danger_ok.state == TicketState.DROPPED
+
+    # frob:ticket T-0579
+    def test_unknown_ticket_not_found(self, tmp_path: Path) -> None:
+        (tmp_path / "tickets").mkdir()
+        result = drop_ticket(tmp_path, "T-9999", "does not exist")
+        assert result.is_err
+        assert result.danger_err is TicketError.NotFound
+
+    # frob:ticket T-0579
+    def test_appends_preserving_existing_drop_reason_section(
+        self, tmp_path: Path
+    ) -> None:
+        body = "## Description\nx\n\n## Drop reason\n- 2026-01-01: first cut\n"
+        _write(tmp_path, _ticket(state=TicketState.QUEUED, body=body))
+        result = drop_ticket(tmp_path, "T-0001", "second cut, confirmed obsolete")
+        assert result.is_ok, result.err
+        new_body = result.danger_ok.body
+        assert "- 2026-01-01: first cut" in new_body
+        assert "second cut, confirmed obsolete" in new_body
+
+
+# frob:ticket T-0579
+class TestDropCli:
+    # frob:ticket T-0579
+    def test_cli_drops_with_reason(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets.py::TestDropCli.test_cli_drops_with_reason
+        _write(tmp_path, _ticket(state=TicketState.QUEUED))
+        cfg = AppConfig(
+            ticket_command="drop",
+            ticket_id="T-0001",
+            ticket_path=tmp_path,
+            ticket_reason="absorbed by T-0042",
+            ticket_absorbed_by="T-0042",
+        )
+        _drop(tmp_path, cfg)
+        queue = load_queue(tmp_path).danger_ok
+        ticket = queue.tickets["T-0001"]
+        assert ticket.state == TicketState.DROPPED
+        assert "(absorbed by T-0042)" in ticket.body
+
+    # frob:ticket T-0579
+    def test_cli_requires_reason(self, tmp_path: Path) -> None:
+        _write(tmp_path, _ticket(state=TicketState.QUEUED))
+        cfg = AppConfig(ticket_command="drop", ticket_id="T-0001", ticket_path=tmp_path)
+        with pytest.raises(SystemExit) as exc_info:
+            _drop(tmp_path, cfg)
+        assert exc_info.value.code == 1
+
+    # frob:ticket T-0579
+    def test_cli_requires_id(self, tmp_path: Path) -> None:
+        cfg = AppConfig(
+            ticket_command="drop",
+            ticket_path=tmp_path,
+            ticket_reason="no id given",
+        )
+        with pytest.raises(SystemExit) as exc_info:
+            _drop(tmp_path, cfg)
+        assert exc_info.value.code == 1
 
 
 class TestAttach:

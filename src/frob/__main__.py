@@ -10,10 +10,98 @@
 from __future__ import annotations
 
 import argparse
+import difflib
+import re
 from pathlib import Path
+from typing import NoReturn
 
 from frob.app import App, AppConfig
 from frob.app.config import stale_install_warning
+
+# frob:ticket T-0578
+_INVALID_CHOICE_RE = re.compile(
+    r"^argument [^:]+: invalid choice: '([^']+)' \(choose from ((?:'[^']*'(?:, )?)+)\)$"
+)
+# frob:ticket T-0578
+_UNRECOGNIZED_RE = re.compile(r"^unrecognized arguments: (.+)$")
+# frob:ticket T-0578
+# Populated once by `_build_parser` after the whole subcommand tree exists:
+# every `--flag` string registered anywhere in the CLI, the candidate pool
+# an unrecognized-flag suggestion draws from. Deliberately global rather
+# than per-subcommand -- T-0578's own point is one flag name per concept
+# across subcommands, so a cross-subcommand suggestion is not a false
+# positive, it is the intended behavior.
+_ALL_OPTION_STRINGS: frozenset[str] = frozenset()
+
+
+# frob:ticket T-0578
+class _SuggestingArgumentParser(argparse.ArgumentParser):
+    """`ArgumentParser` subclass that appends a "did you mean" suggestion to
+    argparse's own error message for an unknown subcommand/choice or an
+    unrecognized flag (T-0578), instead of leaving the operator to grep
+    `--help`. The root parser is built as this class and `add_subparsers`
+    defaults `parser_class` to `type(self)`, so every nested subparser
+    (`frob ticket <cmd>`, `frob perf <cmd>`, ...) inherits the behavior with
+    no per-parser wiring."""
+
+    # frob:doc docs/commands/cli-vocabulary.md#did-you-mean
+    # frob:ticket T-0578
+    def error(self, message: str) -> NoReturn:
+        """Append `(did you mean: X?)` to `message` when a suggestion is
+        found, then defer to the base class (which prints and exits
+        nonzero) -- never swallows or downgrades the original error."""
+        suggestion = _did_you_mean(message)
+        if suggestion is not None:
+            message = f"{message} (did you mean: {suggestion}?)"
+        super().error(message)
+
+
+# frob:ticket T-0578
+def _did_you_mean(message: str) -> str | None:
+    """Best-effort suggestion for two argparse error shapes (T-0578): an
+    invalid subcommand/choice (candidates come straight out of argparse's
+    own message text) and an unrecognized optional flag (candidates are
+    `_ALL_OPTION_STRINGS`). `None` if neither shape matches or no candidate
+    is close enough (`difflib.get_close_matches`' default-ish 0.6 cutoff)."""
+    choice_match = _INVALID_CHOICE_RE.match(message)
+    if choice_match is not None:
+        bad, choices_blob = choice_match.groups()
+        choices = re.findall(r"'([^']*)'", choices_blob)
+        return _closest(bad, choices)
+
+    unrecognized_match = _UNRECOGNIZED_RE.match(message)
+    if unrecognized_match is not None:
+        bad_tokens = [
+            tok for tok in unrecognized_match.group(1).split() if tok.startswith("-")
+        ]
+        if not bad_tokens:
+            return None
+        return _closest(bad_tokens[0], sorted(_ALL_OPTION_STRINGS))
+    return None
+
+
+# frob:ticket T-0578
+def _closest(bad: str, candidates: list[str]) -> str | None:
+    """The single closest candidate to `bad` (`difflib`, cutoff 0.6), or
+    `None` if nothing is close enough to be worth suggesting."""
+    matches = difflib.get_close_matches(bad, candidates, n=1, cutoff=0.6)
+    return matches[0] if matches else None
+
+
+# frob:ticket T-0578
+def _collect_option_strings(parser: argparse.ArgumentParser) -> set[str]:
+    """Recursively collect every `--flag` string registered anywhere under
+    `parser` (root + every subparser, T-0578) -- argparse exposes no public
+    walk API for this, so `_actions`/`_SubParsersAction.choices` (stable
+    private attributes used the same way argparse's own `format_help` does)
+    are read directly."""
+    strings: set[str] = set()
+    for action in parser._actions:  # noqa: SLF001
+        strings.update(s for s in action.option_strings if s.startswith("--"))
+        if isinstance(action, argparse._SubParsersAction):  # noqa: SLF001
+            for sub in action.choices.values():
+                strings.update(_collect_option_strings(sub))
+    return strings
 
 
 # frob:ticket T-0030
@@ -557,6 +645,47 @@ def _add_debt_parser(sub) -> None:
     debt_p.add_argument("--json", dest="debt_json", action="store_true")
 
 
+# frob:ticket T-0569
+def _add_pool_parser(sub) -> None:
+    """Register the `frob pool snapshot|clear` subcommand: ratchet-pool
+    baseline management over `frob.gates._ratchet` (T-0569)."""
+    pool_p = sub.add_parser(
+        "pool",
+        help="ratchet-pool baseline management (T-0569): warn-rule "
+        "findings frozen as a tracked baseline, new findings error",
+    )
+    pool_sub = pool_p.add_subparsers(dest="pool_command")
+
+    pool_snapshot_p = pool_sub.add_parser(
+        "snapshot",
+        help="baseline every given --key as warn for RULE; anything else "
+        "of that rule reports at error severity",
+    )
+    pool_snapshot_p.add_argument("pool_rule", metavar="RULE")
+    pool_snapshot_p.add_argument(
+        "--key",
+        dest="pool_keys",
+        action="append",
+        default=[],
+        metavar="KEY",
+        help="a finding's stable location key (e.g. path:line), repeatable",
+    )
+    pool_snapshot_p.add_argument("--path", dest="pool_path", metavar="DIR", default=".")
+
+    pool_clear_p = pool_sub.add_parser(
+        "clear",
+        help="remove one baselined --key from RULE's pool -- always "
+        "requires --reason (the disposition every ratcheted finding "
+        "eventually needs)",
+    )
+    pool_clear_p.add_argument("pool_rule", metavar="RULE")
+    pool_clear_p.add_argument("--key", dest="pool_key", required=True, metavar="KEY")
+    pool_clear_p.add_argument(
+        "--reason", dest="pool_reason", required=True, metavar="TEXT"
+    )
+    pool_clear_p.add_argument("--path", dest="pool_path", metavar="DIR", default=".")
+
+
 # frob:ticket T-0407
 # frob:ticket T-0429
 def _add_registry_parser(sub) -> None:
@@ -695,7 +824,18 @@ def _add_ticket_new_parser(ticket_sub) -> None:
 def _add_ticket_query_parsers(ticket_sub) -> list:
     """Register the read-only `list`/`show`/`doable` ticket subcommands."""
     ticket_list_p = ticket_sub.add_parser("list", help="list tickets")
-    ticket_list_p.add_argument("--state", dest="ticket_state")
+    # frob:ticket T-0578
+    # `--status` is a deprecated back-compat alias for `--state` (the
+    # canonical name -- it matches the `ticket_state` field/`state:` ledger
+    # key everywhere else): observed misuse (docs/guides/agent-playbook.md)
+    # guessed `--status` and got an unrecognized-argument error instead of a
+    # result.
+    ticket_list_p.add_argument(
+        "--state",
+        "--status",
+        dest="ticket_state",
+        help="filter by state (--status accepted as a deprecated alias)",
+    )
     ticket_list_p.add_argument("--json", dest="ticket_json", action="store_true")
 
     ticket_show_p = ticket_sub.add_parser("show", help="show one ticket")
@@ -748,12 +888,22 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
     ticket_epic_p.add_argument("ticket_id", metavar="id")
     ticket_epic_p.add_argument("--json", dest="ticket_json", action="store_true")
 
+    # frob:ticket T-0568
+    ticket_brief_p = ticket_sub.add_parser(
+        "brief",
+        help="emit the complete agent mission briefing for a ticket (T-0568): "
+        "body+acceptance, scope+leases, playbook hard rules, targeted "
+        "verify commands, gate baseline, REL/land rules",
+    )
+    ticket_brief_p.add_argument("ticket_id", metavar="id")
+
     return [
         ticket_list_p,
         ticket_show_p,
         ticket_doable_p,
         ticket_board_p,
         ticket_epic_p,
+        ticket_brief_p,
     ]
 
 
@@ -933,8 +1083,10 @@ def _add_ticket_close_parser(ticket_sub):
     return ticket_close_p
 
 
+# frob:ticket T-0579
 def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
-    """Register `fail`/`evidence`/`archive`: the remaining closeout subcommands."""
+    """Register `fail`/`drop`/`evidence`/`archive`: the remaining closeout
+    subcommands."""
     ticket_fail_p = ticket_sub.add_parser(
         "fail", help="record a failed attempt in the failure log"
     )
@@ -958,10 +1110,27 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         "only, code kinds still require pytest node ids",
     )
 
+    ticket_drop_p = ticket_sub.add_parser(
+        "drop",
+        help="transition to dropped with a dated --reason (T-0579): "
+        "absorbed elsewhere, obsolete, or subsumed work",
+    )
+    ticket_drop_p.add_argument("ticket_id", metavar="id")
+    ticket_drop_p.add_argument(
+        "--reason", dest="ticket_reason", required=True, metavar="TEXT"
+    )
+    ticket_drop_p.add_argument(
+        "--absorbed-by",
+        dest="ticket_absorbed_by",
+        default=None,
+        metavar="T-####",
+        help="cross-reference the ticket this work was folded into",
+    )
+
     ticket_archive_p = ticket_sub.add_parser(
         "archive", help="move done/dropped tickets into tickets-archive.md"
     )
-    return [ticket_fail_p, ticket_evidence_p, ticket_archive_p]
+    return [ticket_fail_p, ticket_evidence_p, ticket_drop_p, ticket_archive_p]
 
 
 # frob:ticket T-0458
@@ -977,12 +1146,20 @@ def _add_ticket_done_report_parser(ticket_sub):
         "Evidence auto-composed -- never hand-edit tickets.md)",
     )
     ticket_done_report_p.add_argument("ticket_id", metavar="id")
+    # frob:ticket T-0578
+    # `--body` is a deprecated back-compat alias for `--why` (the canonical
+    # name here -- `new`'s own `--body` means something different, the
+    # ticket's initial description, which is exactly the cross-subcommand
+    # naming drift T-0578 exists to close): observed misuse guessed
+    # `--body` for the Done-report narrative and got an unrecognized-
+    # argument error instead of a result.
     ticket_done_report_p.add_argument(
         "--why",
+        "--body",
         dest="ticket_why",
         metavar="TEXT",
         help="the narrative why (pass '-' or omit both --why/--why-file to "
-        "read from stdin)",
+        "read from stdin; --body accepted as a deprecated alias)",
     )
     ticket_done_report_p.add_argument(
         "--why-file",
@@ -1601,10 +1778,12 @@ def _frob_version() -> str:
         return "unknown"
 
 
+# frob:ticket T-0578
 def _build_parser() -> argparse.ArgumentParser:
     # frob:ticket T-0021
     # frob:ticket T-0231
-    p = argparse.ArgumentParser(
+    global _ALL_OPTION_STRINGS
+    p = _SuggestingArgumentParser(
         prog="frob",
         description="Developer workflow tools -- optimized for agentic use",
     )
@@ -1632,6 +1811,10 @@ def _build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="subcommand")
     _add_analysis_subparsers(sub)
     _add_workflow_subparsers(sub)
+    # T-0578: populate the did-you-mean candidate pool now that the whole
+    # subcommand tree exists -- must run after every `add_parser`/
+    # `add_argument` call above, not before.
+    _ALL_OPTION_STRINGS = frozenset(_collect_option_strings(p))
     return p
 
 
@@ -1657,6 +1840,7 @@ def _add_workflow_subparsers(sub) -> None:
     _add_graph_parser(sub)
     _add_ack_parser(sub)
     _add_debt_parser(sub)
+    _add_pool_parser(sub)
     _add_registry_parser(sub)
     _add_ticket_parser(sub)
     _add_test_parser(sub)

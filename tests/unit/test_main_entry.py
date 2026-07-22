@@ -1,4 +1,5 @@
-"""Unit tests for `frob.__main__`'s top-level entry point (T-0355)."""
+"""Unit tests for `frob.__main__`'s top-level entry point (T-0355) and CLI
+vocabulary normalization (T-0578)."""
 
 from __future__ import annotations
 
@@ -43,3 +44,62 @@ class TestMainSigint:
         main_module.main()
 
         assert calls == [["outline", "x.py"]]
+
+
+# frob:ticket T-0578
+class TestDidYouMean:
+    """`_build_parser`'s `_SuggestingArgumentParser` appends a "did you
+    mean" suggestion to argparse's own error for an unknown subcommand or
+    an unrecognized flag (T-0578)."""
+
+    # frob:ticket T-0578
+    def test_unknown_subcommand_suggests_closest(self, capsys) -> None:
+        # frob:tests tests/unit/test_main_entry.py::TestDidYouMean.test_unknown_subcommand_suggests_closest  # noqa: E501
+        parser = main_module._build_parser()
+        with pytest.raises(SystemExit):
+            parser.parse_args(["tikcet"])
+        assert "did you mean: ticket?" in capsys.readouterr().err
+
+    # frob:ticket T-0578
+    def test_unknown_ticket_subcommand_suggests_closest(self, capsys) -> None:
+        parser = main_module._build_parser()
+        with pytest.raises(SystemExit):
+            parser.parse_args(["ticket", "lst"])
+        assert "did you mean: list?" in capsys.readouterr().err
+
+    # frob:ticket T-0578
+    def test_unrecognized_flag_suggests_closest_known_flag(self, capsys) -> None:
+        # frob:tests tests/unit/test_main_entry.py::TestDidYouMean.test_unrecognized_flag_suggests_closest_known_flag  # noqa: E501
+        parser = main_module._build_parser()
+        with pytest.raises(SystemExit):
+            parser.parse_args(["ticket", "list", "--statuz", "queued"])
+        assert "did you mean: --status?" in capsys.readouterr().err
+
+    # frob:ticket T-0578
+    def test_far_off_flag_gets_no_suggestion(self, capsys) -> None:
+        parser = main_module._build_parser()
+        with pytest.raises(SystemExit):
+            parser.parse_args(["ticket", "list", "--zzzzzzzzzzz"])
+        assert "did you mean" not in capsys.readouterr().err
+
+
+# frob:ticket T-0578
+class TestVocabularyAliases:
+    """Back-compat aliases for the pre-T-0578 misuses named in the ticket
+    body: `list --status` (canonical: `--state`) and `done-report --body`
+    (canonical: `--why`)."""
+
+    # frob:ticket T-0578
+    def test_ticket_list_status_alias_sets_state_dest(self) -> None:
+        # frob:tests tests/unit/test_main_entry.py::TestVocabularyAliases.test_ticket_list_status_alias_sets_state_dest  # noqa: E501
+        parser = main_module._build_parser()
+        args = parser.parse_args(["ticket", "list", "--status", "queued"])
+        assert args.ticket_state == "queued"
+
+    # frob:ticket T-0578
+    def test_ticket_done_report_body_alias_sets_why_dest(self) -> None:
+        parser = main_module._build_parser()
+        args = parser.parse_args(
+            ["ticket", "done-report", "T-0001", "--body", "narrative"]
+        )
+        assert args.ticket_why == "narrative"

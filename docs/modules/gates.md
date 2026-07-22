@@ -1086,6 +1086,59 @@ docs/commands/check.md). A missing or stale baseline degrades `--delta` to
 the full, unfiltered set with a warning -- this is an agent-facing filter
 only, opt-in, never a silent narrowing of the human-facing report.
 
+## Ratchet pools (T-0569)
+
+A warn-first detector this repo has turned on more than once (INV 765,
+COV ~160, PII 336, DEAD 51 findings at once) needed a hand-managed
+calibrate-then-burndown campaign every time: eyeball every finding, waive
+the genuine ones, fix or ticket the rest, and hope no NEW finding of the
+same shape sneaks in unnoticed among the pile. Ratchet pools (T-0569)
+replace that with a self-draining mechanism: freeze the CURRENT findings
+of a rule as a tracked baseline, and any finding NOT in that baseline
+(i.e. anything new) reports at error severity immediately instead of
+quietly joining the warn pile.
+
+`frob.gates._ratchet` (`src/frob/gates/_ratchet.py`) implements the
+mechanism as a self-contained, additive module:
+
+- **Storage**: `frob-ratchet.lock.json` at the repo root -- committed to
+  git, same "outside `.gitignore`'s reach" posture as
+  `frob-coverage.lock.json` (T-0545) -- holds one `RatchetPool` (a
+  `rule_id` plus a tuple of `RatchetEntry(key, baselined)`) per rule that
+  has ever been snapshotted. `key` is a stable per-finding location
+  string (e.g. `path:line`); `baselined` is the date the entry first
+  entered the pool.
+- **`frob pool snapshot RULE --key KEY [--key KEY ...]`**
+  (`snapshot_ratchet`) merges the given keys into `RULE`'s pool: a
+  genuinely new key gets stamped with today's date, an already-baselined
+  key keeps its ORIGINAL date (re-running snapshot is idempotent, not a
+  bulk re-date every time).
+- **`frob pool clear RULE --key KEY --reason TEXT`**
+  (`clear_ratchet_entry`) is the only way to remove a baselined entry --
+  `Err(ClearReasonMissing)` if `--reason` is blank, mirroring the
+  `frob:waive` discipline this repo already holds itself to (a suppression
+  with no stated reason is a silent discard). This is the TICK004-style
+  "eventual disposition" every baselined finding still owes: fix it, then
+  clear it, don't leave it frozen forever with no accounting.
+- **`resolve_ratchet_severity(rule_id, finding_key, lock)`** is the
+  integration point: `"warn"` if `finding_key` is already baselined for
+  `rule_id`, `"error"` if it is new. It does not decide WHICH rules are
+  ratcheted -- `ratchet_enabled_rules(root)` reads that from `[gates.ratchet]
+  rules = [...]` in `frob.toml` (opt-in per rule, empty/absent means no
+  rule is ratcheted, matching every other per-section `frob.toml` reader's
+  missing-is-default posture, e.g. `load_arch_config`).
+
+**Deliberately not wired into a live gate's severity resolution this
+pass**: `src/frob/gates/__init__.py`'s per-rule severity dispatch is large
+shared surface actively owned by a concurrent wave; rewiring a real gate
+through `resolve_ratchet_severity` is a follow-up (filed as a new ticket,
+see this ticket's Done report) once that ownership constraint lifts. The
+storage format, CLI, and severity-resolution contract are complete and
+tested (`tests/test_gates_ratchet.py`, `tests/test_pool_runner.py`) against
+synthetic rule ids in the interim -- a future integration only needs to
+call `resolve_ratchet_severity` at the one call site a chosen gate already
+computes severity, not design anything new.
+
 ## Data models
 
 <!-- frob:describes src/frob/gates/_models.py::Severity -->

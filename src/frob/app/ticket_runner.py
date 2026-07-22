@@ -1,6 +1,7 @@
-"""CLI wiring for `frob ticket new|list|show|doable|board|epic|plan|start|
-requeue|sweep|reconcile|land|merge-driver|attach|block|close|fail|evidence|
-done-report|scope|priority|component|label|archive` (docs/modules/tickets.md)."""
+"""CLI wiring for `frob ticket new|list|show|doable|board|epic|brief|plan|
+start|requeue|sweep|reconcile|land|merge-driver|attach|block|close|fail|
+drop|evidence|done-report|scope|priority|component|label|archive`
+(docs/modules/tickets.md)."""
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
 # src/frob/app/ticket_runner.py's exclusivity-vocabulary hit is source-level \
 # design-rationale/scope-cut prose (a docstring or comment describing \
@@ -67,6 +68,7 @@ def _ticket_dispatch_table() -> dict:
         "block": _block,
         "close": _close,
         "fail": _fail,
+        "drop": _drop,
         "evidence": _evidence,
         "done-report": _done_report,
         "scope": _scope,
@@ -75,6 +77,7 @@ def _ticket_dispatch_table() -> dict:
         "label": _label,
         "board": _board,
         "epic": _epic,
+        "brief": _brief,
         "archive": lambda root, _cfg: _archive(root),
     }
 
@@ -88,10 +91,10 @@ def run(cfg: AppConfig) -> None:
     handler = _ticket_dispatch_table().get(cfg.ticket_command)
     if handler is None:
         _log.error(
-            "usage: frob ticket <new|list|show|doable|board|epic|plan|start|"
-            "requeue|sweep|reconcile|land|merge-driver|attach|block|close|"
-            "fail|evidence|done-report|scope|priority|component|label|"
-            "archive> ..."
+            "usage: frob ticket <new|list|show|doable|board|epic|brief|plan|"
+            "start|requeue|sweep|reconcile|land|merge-driver|attach|block|"
+            "close|fail|drop|evidence|done-report|scope|priority|component|"
+            "label|archive> ..."
         )
         sys.exit(1)
     handler(root, cfg)
@@ -1382,6 +1385,29 @@ def _fail(root: Path, cfg: AppConfig) -> None:
     _log.info("%s: recorded failure attempt %d", cfg.ticket_id, attempt)
 
 
+# frob:ticket T-0579
+def _drop(root: Path, cfg: AppConfig) -> None:
+    """CLI wiring for `frob ticket drop <id> --reason TEXT [--absorbed-by
+    T-####]` (T-0579): the first-class replacement for hand-editing
+    `state: dropped` directly. Delegates entirely to `frob.tickets.
+    drop_ticket` for the reason-line + transition + lease-release
+    mechanics; this layer only validates required args and reports the
+    Result."""
+    from frob.tickets import drop_ticket
+
+    if cfg.ticket_id is None or not cfg.ticket_reason:
+        _log.error("frob ticket drop requires <id> and --reason")
+        sys.exit(1)
+
+    result = drop_ticket(
+        root, cfg.ticket_id, cfg.ticket_reason, absorbed_by=cfg.ticket_absorbed_by
+    )
+    if result.is_err:
+        _log.error("drop failed: %s", result.danger_err)
+        sys.exit(1)
+    _log.info("%s dropped", cfg.ticket_id)
+
+
 # frob:ticket T-0094
 # frob:ticket T-0106
 # frob:ticket T-0215
@@ -1678,6 +1704,24 @@ def _epic(root: Path, cfg: AppConfig) -> None:
         )
     if rollup.blocked_leaves:
         _log.info("blocked leaves: %s", list(rollup.blocked_leaves))
+
+
+# frob:ticket T-0568
+def _brief(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket brief <id>` (T-0568): print `frob.tickets.brief_ticket`'s
+    full mission briefing text -- the entire point is a single command a
+    coordinator can paste into a dispatch prompt instead of hand-typing
+    the same ~400 words of playbook/scope/verify boilerplate every time."""
+    from frob.tickets import brief_ticket
+
+    if cfg.ticket_id is None:
+        _log.error("frob ticket brief requires <id>")
+        sys.exit(1)
+    result = brief_ticket(root, cfg.ticket_id)
+    if result.is_err:
+        _log.error("ticket brief failed: %s", result.danger_err)
+        sys.exit(1)
+    _log.info("%s", result.danger_ok)
 
 
 # frob:ticket T-0398
