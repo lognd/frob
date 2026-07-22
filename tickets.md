@@ -3795,9 +3795,9 @@ else entirely in most of these sites:
 
 ```
 
-<!-- ticket:T-draft-1374d550 -->
+<!-- ticket:T-0541 -->
 ```yaml
-id: T-draft-1374d550
+id: T-0541
 title: 'gates: SCOPE001/PRE001 fully disabled with no active ticket / off-convention
   branch (B9)'
 state: queued
@@ -3819,9 +3819,9 @@ labels: []
 ```
 docs/audits/gates-accounting.md B9. _build_ticket_scoped_jobs only registers scope+prework jobs when st.ticket is not None; active_ticket derives the ticket purely from the branch name's T-#### prefix. A branch not named after a ticket (or work on main) skips scope and pre-work enforcement entirely rather than failing. Fix direction: a diff that touches source with no derivable active ticket should be a loud blocking condition, not a skip.
 
-<!-- ticket:T-draft-15c96f2d -->
+<!-- ticket:T-0542 -->
 ```yaml
-id: T-draft-15c96f2d
+id: T-0542
 title: 'gates: COV002 satisfied by ANY open ticket whose scope glob covers the file
   (B10)'
 state: queued
@@ -3843,9 +3843,9 @@ labels: []
 ```
 docs/audits/gates-accounting.md B10. _cov002 uses _open_scopes = every open ticket's scope glob, matched via _scope_covers against ANY of them. One broad-scope open ticket (e.g. src/frob/**) makes every changed symbol under it accounted for regardless of relation to that ticket. Fix direction: prefer the ACTIVE ticket's own scope first, and require a narrower/more-specific glob match (or an explicit frob:ticket edge) when multiple open tickets' scopes could cover the same file, rather than accepting the first match found.
 
-<!-- ticket:T-draft-1bbab126 -->
+<!-- ticket:T-0543 -->
 ```yaml
-id: T-draft-1bbab126
+id: T-0543
 title: 'gates: INV001 evidence is test EXISTENCE, not proof the invariant holds (B12)'
 state: queued
 kind: bug
@@ -3866,9 +3866,9 @@ labels: []
 ```
 docs/audits/gates-accounting.md B12. invariant_gate accepts any evidence-list item that resolves to a collected test node id or a loaded policy rule id -- nothing checks the named test actually asserts the invariant. Same existence-not-proof pattern as TEST001/COV003. Fix direction: same remedy family as B1 -- require the evidence test to reach/assert against the invariant's anchored symbol (reuse whatever covers_scope-style binding T-0398/T-0415 built for ticket evidence), not just collect.
 
-<!-- ticket:T-draft-2d709aeb -->
+<!-- ticket:T-0544 -->
 ```yaml
-id: T-draft-2d709aeb
+id: T-0544
 title: 'graph: frob:describes anchor discovery only scans docs/, missing README/top-level
   notes (T-0404 finding 8)'
 state: queued
@@ -3890,9 +3890,9 @@ labels: []
 ```
 docs/audits/lang-check-docs.md finding 8. _walk_doc_files (graph/__init__.py) only walks docs/**/*.md; a frob:describes anchor placed in README.md or a top-level design note is never parsed, so its DESCRIBES edge (and the facet it selects for DRIFT001) never exists -- even though DOC001's orphan-doc root set does include README.md. Fix direction: scan the same include/exclude glob set doclink uses, not a hardcoded docs/ dir. Out of T-0404's declared scope (graph/, not lang/check/gates/) -- needs a scope-widened or standalone follow-up ticket.
 
-<!-- ticket:T-draft-30bed097 -->
+<!-- ticket:T-0545 -->
 ```yaml
-id: T-draft-30bed097
+id: T-0545
 title: 'gates: coverage/baseline/prework evidence chain is gitignored-local, untrusted
   by CI (B5)'
 state: queued
@@ -3914,9 +3914,9 @@ labels: []
 ```
 docs/audits/gates-accounting.md B5. coverage.xml, .frob/coverage-stamp, .frob/baseline, .frob/prework/*.json are all gitignored -- a fresh CI checkout has no stamp and no committed artifact any reviewer/CI can diff to verify a coverage claim. RIGHT-WAY fix direction: commit a signed/summary coverage artifact (hash + floors, not the raw xml) or fail closed in CI when the stamp's source_sha cannot be reproduced from a clean run, so TEST005/006 mean something externally verifiable.
 
-<!-- ticket:T-draft-3177db00 -->
+<!-- ticket:T-0546 -->
 ```yaml
-id: T-draft-3177db00
+id: T-0546
 title: 'check: unmapped/unknown project type silently falls back to the Python pipeline
   (T-0404 finding 6)'
 state: queued
@@ -3938,9 +3938,9 @@ labels: []
 ```
 docs/audits/lang-check-docs.md finding 6. _run_auto_detected_stages: detected = _detected_types(root) or [detect_project_type(root)]; _dispatch_check maps any unrecognized type (incl. unknown) to _dispatch_check_python. A repo with no sentinel files runs the full Python gate stack over a non-Python tree (ruff/ty noise) rather than a clear unsupported-project-type failure. Fix direction: make unknown/unmapped types a loud config error, not a silent Python fallback.
 
-<!-- ticket:T-draft-35fbff4e -->
+<!-- ticket:T-0547 -->
 ```yaml
-id: T-draft-35fbff4e
+id: T-0547
 title: 'gates: name-only test-convention match credits unrelated same-named symbols
   (B6)'
 state: queued
@@ -3962,9 +3962,9 @@ labels: []
 ```
 docs/audits/gates-accounting.md B6. _inferred_unit_cases matches by snake-cased leaf name only, no module/path binding. Two different public functions both named parse (different modules) are both covered by one test_parse that exercises only one. Repro: two def parse() in different files, one test_parse -> both clear TEST001. RIGHT-WAY fix direction: require some path/module correlation between the test file and the symbol's file before the naming-convention fallback applies. Risk: repo does not strictly mirror tests-to-src layout everywhere -- needs a compat survey before tightening, too large for the T-0403 sweep budget.
 
-<!-- ticket:T-draft-45d2f71f -->
+<!-- ticket:T-0548 -->
 ```yaml
-id: T-draft-45d2f71f
+id: T-0548
 title: 'gates: TEST001 credit requires real coverage, not name-match only (B1)'
 state: queued
 kind: bug
@@ -3985,9 +3985,9 @@ labels: []
 ```
 docs/audits/gates-accounting.md B1/E1. TEST001 (the only blocking per-symbol test gate) is satisfied by a single collected pytest node id whose name contains the function's snake name (_inferred_unit_cases, or a frob:tests edge that merely collects). Nothing inspects assertions or whether the symbol is even called: def test_myfunc(): pass clears it. TEST002 (case count) and TEST005 (branch coverage) are WARN-only so they never block. Repro: name an empty test after a public function -> frob check green. RIGHT-WAY fix direction: tie TEST001 credit to nonzero per-symbol branch coverage (promote TEST005 to ERROR, or require both name/edge match AND coverage>0 before TEST001 clears). Large, cross-cutting change (touches TEST002/003/004/005/009 severity + interaction, and the legacy-adoption WARN campaign noted in frob.toml comments) -- too large for the T-0403 sweep budget, needs its own dedicated ticket.
 
-<!-- ticket:T-draft-612af618 -->
+<!-- ticket:T-0549 -->
 ```yaml
-id: T-draft-612af618
+id: T-0549
 title: 'gates: parametrized no-op tests inflate case counts for edge floors (B7)'
 state: queued
 kind: bug
@@ -4008,9 +4008,9 @@ labels: []
 ```
 docs/audits/gates-accounting.md B7. _case_count counts each parametrize expansion as its own case; a parametrize(range(10)) test asserting nothing reports 10 cases, clearing min_unit_cases and inflating TEST003/004/009 blocking-edge floors. Fix direction: only count a parametrize expansion once per (test, symbol) pair for floor purposes, or require an assertion-presence heuristic before crediting a case.
 
-<!-- ticket:T-draft-64eacee1 -->
+<!-- ticket:T-0550 -->
 ```yaml
-id: T-draft-64eacee1
+id: T-0550
 title: 'gates: COV002/SCOPE001/bare-TODO fail open on empty/failed diff (B8)'
 state: queued
 kind: bug
@@ -4031,9 +4031,9 @@ labels: []
 ```
 docs/audits/gates-accounting.md B8. _load_diff degrades to an EMPTY diff (warning only) when working_diff fails; COV002/SCOPE001/bare-TODO are all diff-driven so an empty diff makes them all silently pass. Default base is main, so committing directly on main or with a bad --base zeros the touched set. Fix direction: a failed working_diff should be a loud blocking condition for these gates, not a silent empty-diff degrade.
 
-<!-- ticket:T-draft-68268ec3 -->
+<!-- ticket:T-0551 -->
 ```yaml
-id: T-draft-68268ec3
+id: T-0551
 title: 'check: nested/top-level-less native sources escape language detection (T-0404
   finding 7)'
 state: queued
@@ -4055,9 +4055,9 @@ labels: []
 ```
 docs/audits/lang-check-docs.md finding 7. detect_project_type only globs *.cpp/*.cc/*.c at the repo TOP LEVEL and _detected_types requires CMakeLists.txt/Cargo.toml at root. A C/C++ project whose sources live only in src/ with no root CMakeLists returns unknown -> Python pipeline (finding 6), so clang/cmake never run. Fix direction: detect native sources recursively (bounded depth or via the graph's own file walk), or fail loudly on unknown rather than silently skipping native checks.
 
-<!-- ticket:T-draft-772cc4a3 -->
+<!-- ticket:T-0552 -->
 ```yaml
-id: T-draft-772cc4a3
+id: T-0552
 title: 'gates: native-language frob:tests edges get TEST001-004 credit with zero execution
   (B3)'
 state: queued
@@ -4079,9 +4079,9 @@ labels: []
 ```
 docs/audits/gates-accounting.md B3/E3. _edge_has_execution_evidence: for TS/C/C++ (_NATIVE_TEST_EXTENSIONS) an edge counts as valid execution evidence if it merely looks like test code by name/path and resolves in the snapshot -- frob runs no TS/C/C++ test collector, so it is never actually executed. An empty void test_foo(){} satisfies TEST001-004. RIGHT-WAY fix direction: either wire real TS/C/C++ test collectors (vitest/ctest already exist per-pipeline per T-0404 finding 1 -- join their results into gate evidence) or mark native frob:tests edges as an explicit degraded 'unverified' state that does not silently satisfy TEST001. Overlaps T-0404 finding 1 (gates not run in native pipelines at all) -- coordinate the two fixes.
 
-<!-- ticket:T-draft-7ee4ed63 -->
+<!-- ticket:T-0553 -->
 ```yaml
-id: T-draft-7ee4ed63
+id: T-0553
 title: 'gates: file-level waiver blanket-suppresses every same-rule violation in the
   file (B11)'
 state: queued
@@ -4103,9 +4103,9 @@ labels: []
 ```
 docs/audits/gates-accounting.md B11. _match_waiver: when violation.symref is None (COV001/COV002/DRIFT/most rules) a waiver matches on file alone, so one frob:waive COV002 anywhere in a file waives ALL changed-symbol accounting violations for every symbol in that file; a package-prefix waiver can waive a whole package's TEST003/004 requirement. Only TEST005 sets symref for symbol-exact matching. Fix direction: set symref on more violation kinds (COV001/002, INV001, etc, wherever a specific symbol is the actual subject) so waivers narrow to symbol-exact by default, reserving file/package blast radius for genuinely file-level rules.
 
-<!-- ticket:T-draft-8a073c15 -->
+<!-- ticket:T-0554 -->
 ```yaml
-id: T-draft-8a073c15
+id: T-0554
 title: 'check: doc/coverage/drift/inv gates run ONLY in the Python pipeline (T-0404
   finding 1)'
 state: queued
@@ -4127,9 +4127,9 @@ labels: []
 ```
 docs/audits/lang-check-docs.md finding 1. run_check_cpp/run_check_rust/run_check_ts never call _run_gates -- only _python_tasks does. A pure Rust/C++/TS repo runs its native toolchain only; COV001/DOC001/DOC002/DOC003/DRIFT001/DRIFT002/INV/DEC/TODO001 never execute despite the polyglot doc-binding promise (lang/__init__.py module docstring). Repro: a repo with only package.json, add a public exported symbol and a lying/broken frob:doc -> frob check green. RIGHT-WAY fix: run the gates stage in every pipeline (build the graph once, run run_gates regardless of detected language), or at minimum emit a loud gates-NOT-run-for-<lang> stage line. Large, cross-cutting dispatch change -- too large for the T-0404 sweep budget.
 
-<!-- ticket:T-draft-934fdd62 -->
+<!-- ticket:T-0555 -->
 ```yaml
-id: T-draft-934fdd62
+id: T-0555
 title: 'lang: usable-tree parse threshold lets partially-broken files drop symbols
   silently (T-0404 finding 9)'
 state: queued
@@ -4151,9 +4151,9 @@ labels: []
 ```
 docs/audits/lang-check-docs.md finding 9. _parse (lang/__init__.py) treats a tree as usable whenever root_node.child_count >= 1, even with has_error=True. A file with a broken region parses into a partial tree; symbols inside the error region silently don't extract, with no COV001/exports/drift signal for them. Ruff/ty catch this for Python via syntax errors, but Rust/C++/TS have no gates stage at all (finding 1) so nothing catches it there. Fix direction: when root_node.has_error, emit a warning-or-error gate signal naming the file so silent symbol loss is visible.
 
-<!-- ticket:T-draft-b3811054 -->
+<!-- ticket:T-0556 -->
 ```yaml
-id: T-draft-b3811054
+id: T-0556
 title: 'gates: DRIFT001 default sig facet is blind to behavior/body rewrites (B2)'
 state: queued
 kind: bug
@@ -4174,9 +4174,9 @@ labels: []
 ```
 docs/audits/gates-accounting.md B2/E2. lock.py _DEFAULT_FACET='sig'; a frob:doc/DESCRIBES ack at the default facet only tracks the signature digest. Rewriting a documented function's body (behavior) after ack never trips DRIFT001 -- the doc can lie about behavior forever. Repro: ack a frob:doc at default facet, rewrite only the body, run frob check -> green. RIGHT-WAY fix direction: default ack facet to sig+body (or require an explicit facet and drift-check body+sig together) so a doc can't silently desync from behavior. Cross-cutting: touches every existing ack in the repo's lock file and the ack CLI UX -- too large for the T-0403 sweep budget.
 
-<!-- ticket:T-draft-da68edb5 -->
+<!-- ticket:T-0557 -->
 ```yaml
-id: T-draft-da68edb5
+id: T-0557
 title: 'gates: TEST005 silently skips symbols absent from coverage.xml (B4)'
 state: queued
 kind: bug
@@ -4197,9 +4197,9 @@ labels: []
 ```
 docs/audits/gates-accounting.md B4. _test005_symbols: pct = data.symbol_branch.get(record.symref); skipped (not flagged) when pct is None, i.e. when the symbol was never executed at all -- coverage.xml has no row for it. Combined with B1, completely dead public code clears both TEST001 (name match) and TEST005 (no data). RIGHT-WAY fix: a public symbol with NO coverage record at all should be treated as 0% (flag), not skipped -- distinguish 'never executed' from 'excluded from measurement'.
 
-<!-- ticket:T-draft-ed8f5ca3 -->
+<!-- ticket:T-0558 -->
 ```yaml
-id: T-draft-ed8f5ca3
+id: T-0558
 title: 'graph: parse/IO failure silently erases a file''s entire obligation set (T-0404
   finding 2)'
 state: queued
