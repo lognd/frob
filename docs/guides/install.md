@@ -73,6 +73,50 @@ make core                # builds+installs frob-core and strata-core in-place
 `cargo` is not on `PATH`, since most `frob.dup`/`frob.lang` functionality
 does not need it.
 
+## `uv sync` evicts the natives -- why every entrypoint self-heals (T-0340)
+
+`strata_core`/`frob_core` are maturin-develop editable installs, not
+`uv.lock`-tracked dependencies of this project (see "Why not `pip install
+'frob[strata]'`?" below for why they cannot be declared that way). `uv
+sync` reconciles the venv against ONLY the declared dependency set, so it
+silently REMOVES both natives whenever it runs, even though `make core`
+just installed them -- `uv lock`, `uv sync`, a `uv build` triggered by a
+version-bump stamp, and some `uv run` invocations after a `pyproject.toml`
+edit all trigger this. Before this ticket, only a remembered manual `make
+core` restored them, and forgetting it surfaced as an oblique
+`ModuleNotFoundError: strata_core`/`frob_core` or `NativeExtensionUnavailable`
+mid test-collection or mid `frob check` -- looking like a real regression
+(SYS004, phantom COV003 findings) rather than an environment artifact.
+
+The fix lives in the `Makefile`, not in application code: `core` is a
+`.PHONY` target (`core: $(STAMP)`), so listing it as a prerequisite of any
+other target makes `make` re-run `core`'s `maturin develop` step every
+single invocation of that target -- unconditionally, before the target's
+own recipe body runs. Every target whose recipe actually needs the
+natives at runtime (`check`, `all`, `test`, `test-fast`, `test-unit`,
+`test-integration`, `test-system`, `install`, `coverage`, `coverage-fast`)
+now depends on `core` instead of the bare `$(STAMP)` sync-stamp target, so
+a prior `uv sync` eviction is always repaired first. This is cheap: a
+`maturin develop` re-run is a true no-op rebuild (~0.5s once cargo's
+target directory is warm; measured 14.6s only on a genuinely fresh
+worktree with no prior cargo build cache at all) -- so the natives-always-
+present invariant costs a fraction of a second per invocation in the
+common case, not a repeated full compile. `frob doctor` (see below) still
+exists as the fast standalone diagnostic when you want to check natives
+without running a full target.
+
+Formats/lint-only targets (`format`, `lint-fix`) that never import the
+natives were deliberately left depending on the bare `$(STAMP)` sync stamp
+-- they do not need the fix and there is no benefit to paying even the
+~0.5s warm-cache cost there.
+
+Sharing a prebuilt cargo artifact ACROSS worktrees (a shared
+`CARGO_TARGET_DIR`, or a wheel cache reused by `make core`) so the
+from-scratch cold-cache case is also fast is a separate, not-yet-built
+mechanism -- see T-0175's Done report (`tickets-archive.md`) for what was
+investigated there and why it was left as a documented future step rather
+than implemented.
+
 ## Why not `pip install "frob[strata]"`?
 
 `[project.optional-dependencies]` extras resolve through the same index

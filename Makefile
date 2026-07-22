@@ -12,7 +12,9 @@ TESTS     := tests
 # ---------- default ----------
 
 # Runs each tool exactly once: format, lint, typecheck, test.
-all: $(STAMP)
+# T-0340: `core` prerequisite (see `check` above) so a prior `uv sync` that
+# clobbered the editable natives is repaired before pytest collects.
+all: core
 	uv run ruff check $(SRC)/ $(TESTS)/ --fix --select I
 	uv run ruff format $(SRC)/ $(TESTS)/
 	uv run ty check $(SRC)/
@@ -23,7 +25,15 @@ all: $(STAMP)
 # source outpaces the built native extension -- otherwise frob check/frob
 # test silently run against the stale native and give wrong results (the
 # T-0166 review incident).
-check: $(STAMP)
+# T-0340: depends on `core` (not bare $(STAMP)) so `uv sync` clobbering the
+# editable natives (see the `$(STAMP)` rule's own T-0340 note below) is
+# self-healing on every invocation, not just `make coverage`'s. `core` is
+# in .PHONY, so it always re-runs its recipe when listed as a prerequisite
+# -- but `maturin develop` is a no-op rebuild in ~0.5s when nothing changed
+# (measured: 14.6s cold from a fresh worktree with no cargo cache, 0.6s
+# once cargo's target dir is warm), so this is cheap insurance, not a
+# repeated full compile.
+check: core
 	uv run python -c "from pathlib import Path; from frob.strata._native_staleness import check_native_staleness_or_exit; check_native_staleness_or_exit(Path('.'))"
 	uv run frob check
 
@@ -154,6 +164,22 @@ deploy-audit: $(STAMP)
 # honestly without it. Sync only the routinely-buildable extras so a missing
 # z3 wheel never bricks the dev environment. Install SMT support explicitly
 # with `uv pip install "frob[smt]"` on platforms where z3 is available.
+#
+# T-0340: `uv sync` reconciles the venv against ONLY this stamp rule's
+# declared dependency set -- the maturin-develop editable installs of
+# strata_core/frob_core are not in it (they are not uv.lock-tracked
+# dependencies, they are path-built native extensions installed out of
+# band by `make core`), so every `uv sync` here silently EVICTS both
+# natives if they were already installed. This rule cannot rebuild them
+# itself (it has no `cargo`/`maturin` step and must stay usable on
+# machines with no Rust toolchain -- see `core`'s own comment below), so
+# the fix lives one level up: every target that actually needs the
+# natives (`check`, `all`, `test*`, `install`, `coverage*`) now depends on
+# `core` rather than bare `$(STAMP)`, and `core` is `.PHONY` so it always
+# re-runs its (cheap, ~0.5s once cargo's target dir is warm) install step
+# right after this rule's `uv sync` -- natives are restored before any
+# consumer target's recipe body runs, instead of surfacing later as an
+# oblique `ModuleNotFoundError`/`NativeExtensionUnavailable` mid-collection.
 $(STAMP): pyproject.toml
 	uv sync --extra serve
 	@touch $(STAMP)
@@ -213,19 +239,23 @@ typecheck: $(STAMP)
 
 # ---------- tests ----------
 
-test: $(STAMP)
+# T-0340: all five test targets depend on `core` (not bare $(STAMP)) --
+# see `check`'s T-0340 note above for why. Every one of these collects and
+# runs pytest, which hard-fails with ModuleNotFoundError on strata_core/
+# frob_core if a `uv sync` clobbered them since the last `make core`.
+test: core
 	uv run pytest $(TESTS)/ -q -n auto
 
-test-fast: $(STAMP)
+test-fast: core
 	uv run pytest $(TESTS)/ -q --testmon
 
-test-unit: $(STAMP)
+test-unit: core
 	uv run pytest $(TESTS)/unit/ -q -n auto
 
-test-integration: $(STAMP)
+test-integration: core
 	uv run pytest $(TESTS)/integration/ -q
 
-test-system: $(STAMP)
+test-system: core
 	uv run pytest $(TESTS)/system/ -q -n auto
 
 # ---------- skills / agents sync ----------

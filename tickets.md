@@ -2855,7 +2855,7 @@ EXHAUSTIVENESS DRIFT-LOCK (T-0343, 2026-07-20 mandate 'implementation MUST addre
 id: T-0340
 title: native extensions get uninstalled by uv sync/build -- make strata_core/frob_core
   survive (or auto-rebuild)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -2867,8 +2867,24 @@ scope:
 - pyproject.toml
 - docs/**
 - tickets.md
-scope_changes: []
-evidence: []
+- tests/integration/test_interfaces.py
+- tests/system/test_cli_doctor.py
+scope_changes:
+- op: add
+  glob: tests/integration/test_interfaces.py
+  reason: 'Makefile/docs-only ticket: evidence is the sanctioned pre-existing CLI-dispatch
+    + doctor natives tests (playbook section 5); close requires them in scope'
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: tests/system/test_cli_doctor.py
+  reason: 'Makefile/docs-only ticket: evidence is the sanctioned pre-existing CLI-dispatch
+    + doctor natives tests (playbook section 5); close requires them in scope'
+  actor: logan
+  at: '2026-07-22'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+- tests/system/test_cli_doctor.py::TestDoctorCli::test_doctor_reports_healthy_when_natives_present
 attachments: []
 acceptance:
 - given the editable maturin-develop natives (strata_core, frob_core) are built, when
@@ -2912,6 +2928,82 @@ The following commands are available in the environment:
 - uvicorn
 
 See `uv run --help` for more information. after a pyproject edit. This bit the campaign live multiple times (a black-dep edit and every version-bump stamp nuked them mid-flow, causing SYS004/collection failures that look like regressions). Options to evaluate: (a) a  setting /  sync mode that stops uv evicting them; (b) a Makefile/entrypoint wrapper (e.g. a  target or a post-sync hook) that rebuilds natives whenever they're missing before test/check; (c) building+installing them as real (non-editable) wheels pinned in the lock. Pick the one that makes 'natives are always present' an invariant, not a remembered manual step. This is the deepest papercut behind the whole worktree-natives artifact class.
+
+## Done report
+
+Mechanism chosen: (c) a Makefile guard, not a uv/pyproject declaration
+change. `uv sync` (the `$(STAMP)` rule) reconciles the venv against ONLY
+its own declared dependency set; the maturin-develop editable installs of
+`strata_core`/`frob_core` cannot be declared there as a real
+`[project.optional-dependencies]` extra (T-0133's Done report already
+established why -- no published wheel, and a local relative-path extra
+breaks for anyone installing outside this exact checkout), so option (a)
+(a uv/pyproject setting that stops uv evicting them) is not available
+without re-litigating that prior decision, which is out of this ticket's
+scope. Option (b) (a shared CARGO_TARGET_DIR/wheel cache across worktrees)
+remains investigated-not-built, same disposition T-0175 already recorded
+-- restated in docs/guides/install.md's new section rather than
+re-attempted here.
+
+Implemented: `core` is `.PHONY`, so any target listing it as a
+prerequisite re-runs `maturin develop` (a true no-op when nothing changed)
+before that target's own recipe body executes. Every target whose recipe
+actually needs the natives at runtime now depends on `core` instead of
+the bare `$(STAMP)` sync-stamp target: `check`, `all`, `test`,
+`test-fast`, `test-unit`, `test-integration`, `test-system`. (`install`
+already depended on `core`; `coverage`/`coverage-fast` already called
+`$(MAKE) core` explicitly inside their recipe bodies per T-0538 and were
+left as-is, not touched, since they already self-heal and have their own
+fail-loud `frob doctor` step baked in.) `format`/`lint-fix` (pure ruff, no
+native import) were deliberately left on the bare `$(STAMP)` since they
+never need the natives.
+
+Measured rebuild cost: 14.582s real (cold, no cargo target-dir cache --
+first `make core` in this fresh worktree) vs 0.613s real (warm cache,
+identical `make core` re-run with nothing changed) -- i.e. the
+always-run-`core` guard costs ~0.6s per invocation in the steady state,
+not a repeated full compile.
+
+Verification (simulated the actual failure mode): ran `touch
+pyproject.toml && uv sync --extra serve` directly, confirmed via `uv run
+python -c "import strata_core"` that this evicts the native (raises
+`ModuleNotFoundError: No module named 'strata_core'`), then ran `make
+test-unit` (one of the newly-`core`-gated targets) and confirmed (a) the
+natives were silently rebuilt/reinstalled before pytest collected/ran (no
+ModuleNotFoundError anywhere in output, ~12s wall including the ~0.6s
+`core` re-run) and (b) a follow-up `uv run python -c "import strata_core,
+frob_core"` succeeded, resolving to the venv's site-packages, proving the
+Makefile guard restored what `uv sync` had just evicted, with zero manual
+`make core` step required. The 3 test failures observed in that run
+(`test_extending_guides_complete.py` x2,
+`test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant`)
+are pre-existing, unrelated to natives (SYS102 "unmodeled code"
+src/frob/fleet, src/frob/registry -- a documented pre-existing gap class
+per tickets-archive.md precedent, e.g. the T-0257 Done report describing
+the identical failure shape for a different untracked directory), not a
+regression introduced here.
+
+Documented in docs/guides/install.md, a new section "`uv sync` evicts the
+natives -- why every entrypoint self-heals (T-0340)" right after the
+existing "Editable dev install" section: explains the eviction mechanism,
+why (a)/uv.lock declaration is not available (cross-referencing the
+existing "Why not pip install frob[strata]" section), the `.PHONY`
+re-run-on-every-prerequisite mechanism and which targets were changed
+vs deliberately left alone, the measured cost, and that cross-worktree
+cargo-cache sharing (b) remains a separate not-yet-built follow-up per
+T-0175's Done report.
+
+### Changed
+```
+ Makefile               |  44 +++++++++++++++++----
+ docs/guides/install.md |  44 +++++++++++++++++++++
+ tickets.md             | 102 ++++++++++++++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 181 insertions(+), 9 deletions(-)
+```
+
+### Evidence
+- `tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorCli::test_doctor_reports_healthy_when_natives_present` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0341 -->
 ```yaml
@@ -9864,3 +9956,28 @@ component: null
 labels: []
 ```
 User mandate 2026-07-22: the 500k-users-vs-exclusive-write-lock case. Three obligation families over the T-0700 modes + demand grammar: (1) SERIALIZATION-POINT UTILIZATION: every effective-concurrency-1 point (exclusive mode, single arbiter, alpha-gated writer path) compares aggregate inbound demand x holding-time hint against capacity; over threshold = SYS error SHOWING THE ARITHMETIC in the finding (demand, holding time, resulting utilization/wait), not a vibe; an exclusive/arbitered resource with UNDECLARED upstream demand fails closed with demand-undeclared (the check cannot be silently skipped). Coordinate with T-0645 (SPOF -- a saturated single arbiter is quantitative SPOF) and T-0646 (backpressure -- what bounds the queue at the serialization point). (2) WRITER STARVATION policy: read-heavy resource whose declared lock discipline lets readers perpetually preempt the writer (plain RW preference, no alpha or fair-queuing declaration) = advisory recommending alpha (T-0700) or fair queuing, even at low utilization. (3) UNBOUNDED WAIT: lock/arbiter acquisition on a contended resource with no declared timeout joins the T-0640 timeout obligation family. Litmus fixtures per family, firing and clean.
+
+<!-- ticket:T-0704 -->
+```yaml
+id: T-0704
+title: T-0265 evidence no longer resolves -- test class removed from tests/test_gates.py,
+  COV003 fires on every full check
+state: queued
+kind: bug
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- tickets.md
+- tests/test_gates.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Found while working T-0340 (native-rebuild Makefile guard, unrelated). frob check (full, not --ticket-scoped) fires COV003 for tickets/T-0265:0 -- the recorded evidence id tests/test_gates.py::TestSelfReferentialTestsDirectiveScopeAgreement::test_narrow_gate_selection_still_surfaces_drift_for_the_same_diff no longer exists anywhere in tests/test_gates.py (grep confirms zero hits), even though T-0265's ledger state is done. Either the test was renamed/removed without updating the evidence id, or T-0265's Done report evidence was never accurate post-some-later-refactor. Fix: locate the current equivalent test (if the behavior is still tested under a new name) and update T-0265's evidence id, or re-open T-0265 if the behavior regressed.
