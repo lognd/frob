@@ -9981,3 +9981,112 @@ component: null
 labels: []
 ```
 Found while working T-0340 (native-rebuild Makefile guard, unrelated). frob check (full, not --ticket-scoped) fires COV003 for tickets/T-0265:0 -- the recorded evidence id tests/test_gates.py::TestSelfReferentialTestsDirectiveScopeAgreement::test_narrow_gate_selection_still_surfaces_drift_for_the_same_diff no longer exists anywhere in tests/test_gates.py (grep confirms zero hits), even though T-0265's ledger state is done. Either the test was renamed/removed without updating the evidence id, or T-0265's Done report evidence was never accurate post-some-later-refactor. Fix: locate the current equivalent test (if the behavior is still tested under a new name) and update T-0265's evidence id, or re-open T-0265 if the behavior regressed.
+
+<!-- ticket:T-0705 -->
+```yaml
+id: T-0705
+title: 'gates: git-less target dirs hard-error 4 gates (git ls-files exit 128) --
+  ~12 system-test failures'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- tests/system/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN the ~12 currently-failing system tests WHEN the suite runs THEN they pass
+  AND a git-less target produces a consistent, documented behavior across all gates
+threat: null
+component: null
+labels: []
+```
+CI triage 2026-07-22 (the bulk of the cancelled 6h run's F markers, reproduced on current main): secrets_gate, pii_structural_gate, render_lint_gate, walk_lint_gate emit ERROR 'git ls-files exited 128' when frob check targets a directory that is not a git repository (the system tests' /tmp fixture repos without git init), failing ~12 tests across test_cli_check.py, test_cli_perf.py. Other gates only WARN on the same condition (ref_gate, doc004). Decide the correct contract (docs/modules/gates.md): EITHER gates degrade gracefully on git-less targets (warn + fall back to filesystem walk, matching ref_gate/doc004's posture) OR frob check declares git a hard requirement and the FIXTURES gain git init. Pick ONE, apply consistently across all four gates or all fixtures, and make the currently-failing tests pass without weakening what the gates check in real repos.
+
+<!-- ticket:T-0706 -->
+```yaml
+id: T-0706
+title: check-coverage registry + extending-guides drift from this session's landings
+  (DEPR/DOC005 rules, comment-dsl guide)
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- docs/design/registry/check-coverage.yaml
+- docs/guides/extending/**
+- tests/test_check_coverage_registry.py
+- tests/unit/test_extending_guides_complete.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN the 4 failing drift tests WHEN the suite runs THEN they pass with real registry
+  entries and resolving anchors, tests unmodified
+threat: null
+component: null
+labels: []
+```
+CI triage 2026-07-22: 4 failures that are drift-locks correctly firing on this session's own landings. (1) tests/test_check_coverage_registry.py x2: the live known_gate_rule_ids() gained DEPR001-004 (T-0576) and DOC005 (T-0435) but the check-coverage registry yaml has no entries for them -- add honest dispositions. (2) tests/unit/test_extending_guides_complete.py x2: T-0576 added docs/guides/extending/comment-dsl-directives.md; the guides completeness table/anchors do not resolve -- fix the table/anchor per the test's contract. Mechanical, well-scoped fixes; do NOT loosen the drift-lock tests.
+
+<!-- ticket:T-0707 -->
+```yaml
+id: T-0707
+title: 'selfconform: SYS102 unmodeled code src/frob/registry -- model the registry
+  package'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/**
+- design/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN the strata selfconform gate WHEN it runs on this repo THEN TestRealGateGreen
+  passes with src/frob/registry bound to a node
+threat: null
+component: null
+labels: []
+```
+The long-standing known failure tests/unit/strata/test_selfconform.py::TestRealGateGreen: src/frob/registry (the T-0407 unified registry package) has no strata node binding -- SYS102 unmodeled-code fires on frob's own model. Every agent this session re-confirmed it as pre-existing; no ticket tracked it until now. Bind the registry package into the .strata model with its real interface/purpose/effects.
+
+<!-- ticket:T-0708 -->
+```yaml
+id: T-0708
+title: 'native-missing fail-loud tests broken: SYS004 behavior drifted'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/**
+- tests/system/test_cli_native_missing.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a repo with .strata files and no built native WHEN frob check runs THEN SYS004
+  fails loud AND both tests pass
+threat: null
+component: null
+labels: []
+```
+CI triage 2026-07-22: tests/system/test_cli_native_missing.py x2 fail on current main (test_check_fails_loud_with_sys004_when_strata_present, test_check_unaffected_when_no_strata_files). Investigate whether the native-staleness/fingerprint work (T-0570 doctor, _native_staleness) changed the SYS004 fail-loud contract or the tests' fixtures rotted; fix whichever is wrong -- the contract (a missing native with strata files present must fail LOUD, not silently skip) must hold.
