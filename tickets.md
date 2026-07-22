@@ -8468,3 +8468,31 @@ component: null
 labels: []
 ```
 T-0636's is_hard_regression checks all-fail over the ENTIRE bounded 20-run window, so a single stale pass anywhere in the window defeats detection for up to 19 subsequent all-fail runs -- a real hard regression stays promoted and un-alarmed that whole time. Add a recent-tail rule (last K runs all-fail, K configurable, default ~5) alongside or replacing the whole-window rule, with tests covering the one-old-pass-then-long-fail-tail case T-0636's reviewer identified. Update docs/modules/testing.md semantics. NOTE: the hard-regression CLI/alarm wiring is T-0635's scope; T-0636's T-draft-d529c75a duplicated it and needs no refile.
+
+<!-- ticket:T-0680 -->
+```yaml
+id: T-0680
+title: 'registry: route out_of_scope disposition reason through T-0382 caught_by verification'
+state: queued
+kind: security
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0383
+scope:
+- src/frob/gates/_registry_exhaustiveness.py
+- docs/design/registry/**
+- tests/test_registry_exhaustiveness.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a registry entry with out_of_scope disposition whose reason names no catching
+  control and is not a substantive reasoned-none WHEN the registry gate runs THEN
+  a finding fires naming the entry
+threat: null
+component: null
+labels: []
+```
+The one remaining caught_by gap after T-0382/T-0383: registry-YAML out_of_scope:<reason> disposition strings are a separate surface from the strata model objects and never pass through T-0382's caught_by verification -- a registry entry can be excused with a reason that names no catching control and nothing checks it. Route those disposition reasons through the same verification (or an equivalent registry-side rule) so an out_of_scope registry entry either names a real catching control or carries a substantive reasoned-none, mechanically checked. Was T-draft-6912e7d1 in T-0383's worktree; drafts do not survive land (T-0637).
