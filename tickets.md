@@ -5507,3 +5507,32 @@ component: null
 labels: []
 ```
 Recurring dispatch friction, 4 occurrences in one session (T-0554, T-0261, T-0435, T-0609 agents): a full frob check / --stamp-baseline run exceeds the 120s agent foreground cap, the harness auto-backgrounds it, the sub-agent ends its turn waiting for a notification that can never reach it (playbook 3b), and the mission stalls until a coordinator manually pokes it. The playbook documents the anti-pattern but agents keep tripping because there is no sanctioned fast path. Provide one: either (a) a "frob check --stage NAME" chunked invocation where each stage reliably completes under ~90s so agents can loop stages in-foreground, or (b) a "--budget SECONDS" mode that runs as many gates as fit and reports the remainder as explicitly-not-run, or (c) make --stamp-baseline itself incremental. Update the agent playbook section 3b/6 with the sanctioned invocation once it exists. Related but distinct: T-0581 (process-pool parallelism), T-0582 (perf re-measurement), T-0584 (PRE001 sweep timeout).
+
+<!-- ticket:T-0628 -->
+```yaml
+id: T-0628
+title: frob graph affects CLI subcommand + digest-drift gate (T-0325 follow-on)
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0325
+scope:
+- src/frob/app/graph_runner.py
+- src/frob/gates/**
+- docs/modules/graph.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a symbol with dependents WHEN frob graph affects SYMREF runs THEN the affected
+  code/docs/tests print with truncation flagged; GIVEN a diff changing a symbol whose
+  affects-closure docs were untouched WHEN the drift gate runs THEN it reports the
+  stale dependents
+threat: null
+component: null
+labels: []
+```
+T-0325 landed the warm affects() library query and frob_affects MCP tool but cut two surfaces as out of scope, noting them only in docs/modules/graph.md prose: (a) a frob graph affects REF CLI subcommand in src/frob/app/graph_runner.py so the north-star query is usable outside MCP; (b) a digest-drift gate that consumes the affects closure to FAIL when a changed symbol's dependent docs/code were not updated in the same change -- the enforcement half of the north-star (CLAUDE.md: 'a graph of WHAT DOCUMENTATION and WHAT OTHER CODE needs to be updated whenever something is touched'). Cut work must live in tickets, not prose -- this is that ticket.
