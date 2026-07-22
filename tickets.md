@@ -14384,3 +14384,65 @@ component: null
 labels: []
 ```
 User question 2026-07-22 exposed the gap; measured state: WAIVE002 (waiver targets unrecognized rule id) fires WARNING-tier and 3 instances sit live right now (frob:waive DEAD001 in tests/test_dup_cross_lang.py::_isolated_dup_cache, tests/test_docblocks_gate.py::_fake_parser_factory, tests/unit/test_dup_cache.py::_close_cached_connections -- DEAD001 is not a recognized rule id). Deliver: (1) PROMOTE WAIVE002 to ERROR and fix the 3 current instances in the same change (identify what rule they meant -- likely a renamed dead-symbol rule -- and either retarget or delete); (2) NEW WAIVE003, the genuinely dangerous stale class: the waived rule is VALID but produces NO violation at that site anymore -- the fix landed, the waiver stays, silently pre-forgiving the next regression there. Detection: evaluate the rule at the site with waivers ignored; zero findings = WAIVE003. Warning-tier first with a ratchet-pool path to error (T-0569/T-0594 machinery) since some rules are context-dependent; document the known-flaky cases. (3) EXPIRY: frob:waive gains optional until="YYYY-MM-DD" reusing the frob:deprecated/debt date machinery (T-0576 precedent) -- past-date waiver = ERROR demanding re-review (re-date with reason or remove). Coordinate with T-0671 (strata bounded waivers -- one date convention, no second grammar) and note SYSWAIVE002 as the strata-side precedent already at error tier.
+
+<!-- ticket:T-0754 -->
+```yaml
+id: T-0754
+title: 'captured Done-report claims: test-count and gate-state fields populated from
+  real command output, re-verified at land'
+state: queued
+kind: security
+origin: human
+created: '2026-07-22'
+priority: high
+blocked_by: []
+parent: T-0417
+scope:
+- src/frob/tickets/**
+- src/frob/app/ticket_runner.py
+- docs/modules/tickets.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a done-report whose typed test count differs from the actual evidence
+    run WHEN done-report captures THEN it records the real count and flags the divergence;
+    GIVEN a captured gate-state that no longer holds at land THEN land errors
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Root-cause analysis 2026-07-22: across ~15 review rejects this session, the single largest class was the Done report claiming numbers/state that did not reproduce (T-0572 142-reported-as-145 and 0-errors-that-was-27; T-0710/T-0724 undisclosed gate state; the phantom-filing family already closed by TICK006). The Done report is the ONLY pipeline artifact that is unverified free prose -- evidence ids resolve, scope binds, the diff is real, but the prose claims are typed from memory/stale runs. Fix: CAPTURE, do not type. Extend frob ticket done-report so structured claim fields are populated from REAL command output, not narrative: (1) a test-result field captured by actually running the recorded evidence node ids (pass count + a digest of the run), refusing to record a count the run did not produce; (2) a gate-state field auto-filled from a fresh frob check --ticket capture (the "clean except X" line becomes generated, never typed); (3) at land, re-verify the captured claims still hold against the merged tree and ERROR on divergence. The narrative prose stays for WHY; the CHECKABLE claims become captured artifacts. This is the general form of TICK006 (which made filing-claims checkable) applied to test-count and gate-state claims.
+
+<!-- ticket:T-0755 -->
+```yaml
+id: T-0755
+title: 'adversarial evidence obligation: ticket tests must fail on a diff-scoped mutant
+  (confirmatory-only tests flagged)'
+state: queued
+kind: security
+origin: human
+created: '2026-07-22'
+priority: high
+blocked_by: []
+parent: T-0417
+scope:
+- src/frob/mutate/**
+- src/frob/tickets/**
+- src/frob/gates/**
+- docs/modules/tickets.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a ticket whose recorded evidence tests all pass against a mutant of
+    the changed logic WHEN close/land verifies THEN a confirmatory-only-test finding
+    fires naming the tests; GIVEN at least one evidence test fails on the mutant THEN
+    it passes
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Root-cause analysis 2026-07-22: several rejects were correctness bugs whose own tests PASSED because they were confirmatory, not adversarial -- written to pass for the reason the implementer built the thing (T-0611, T-0571, T-0682, T-0574, T-0710). A confirmatory test that would pass on BOTH the pre-change and post-change code proves nothing. frob already has `frob mutate`. Add a diff-scoped obligation: for a ticket touching code with new/changed tests, run those tests against the PRE-change version of the changed symbols (or a targeted mutant of the new logic) and require at least ONE recorded evidence test to FAIL on the mutant -- proving the test actually distinguishes the change. A test that passes on the mutant is a confirmatory-only test = a TEST-family warning (ratchet to error via T-0569 pool for security/bug-kind tickets). This is mutation testing scoped to the ticket diff, wired into close/land as evidence-quality verification, reusing frob.mutate.
