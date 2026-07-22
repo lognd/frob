@@ -8114,7 +8114,7 @@ T-0264's windows generator hardens an existing SCM service (SID type, privileges
 id: T-0630
 title: 'strata: wire real code binding into production discharge entrypoints so G1
   fail-closed actually fires'
-state: queued
+state: done
 kind: security
 origin: agent
 created: '2026-07-22'
@@ -8128,8 +8128,48 @@ scope:
 - src/frob/strata/_plan.py
 - src/frob/vet/_containment.py
 - tests/unit/strata/
-scope_changes: []
-evidence: []
+- tests/test_vet_containment.py
+- pyproject.toml
+- uv.lock
+- CHANGELOG.md
+scope_changes:
+- op: add
+  glob: tests/test_vet_containment.py
+  reason: T-0630's own binding/root wiring in vet/_containment.py makes the CONTAINED-finding
+    fixture's discharge check real (G1 code-bound join); the fixture needed a genuine
+    parameterization() call site to keep discharging honestly -- fixing it is a direct,
+    narrow consequence of the ticket's own change, not new work
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: pyproject.toml
+  reason: REL001 requires a version bump + changelog entry for this ticket's public
+    API change (evaluate_exhaustiveness/render_audit_matrix/plan_obligations/build_containment_report
+    gained binding/root params); uv.lock is regenerated mechanically alongside pyproject.toml's
+    version bump
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: uv.lock
+  reason: REL001 requires a version bump + changelog entry for this ticket's public
+    API change (evaluate_exhaustiveness/render_audit_matrix/plan_obligations/build_containment_report
+    gained binding/root params); uv.lock is regenerated mechanically alongside pyproject.toml's
+    version bump
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: CHANGELOG.md
+  reason: REL001 requires a version bump + changelog entry for this ticket's public
+    API change (evaluate_exhaustiveness/render_audit_matrix/plan_obligations/build_containment_report
+    gained binding/root params); uv.lock is regenerated mechanically alongside pyproject.toml's
+    version bump
+  actor: logan
+  at: '2026-07-22'
+evidence:
+- tests/unit/strata/test_audit.py::TestCodeBoundWiring::test_root_wires_real_code_binding_and_surfaces_threat003
+- tests/unit/strata/test_audit.py::TestCodeBoundWiring::test_root_with_real_call_site_still_proves_clean
+- tests/unit/strata/test_audit.py::TestCodeBoundWiring::test_no_root_preserves_pre_t0630_model_only_posture
+- tests/test_vet_containment.py::TestBuildContainmentReport::test_contained_finding_when_obligation_discharged
 attachments: []
 acceptance:
 - GIVEN a fixture repo whose ENDORSE boundary predicate has no observed call site
@@ -8140,6 +8180,84 @@ component: null
 labels: []
 ```
 T-0595 added the ENDORSE-boundary code-binding join (observed_call_names + _predicate_is_code_bound threaded through check_discharge_completeness) but every production caller (_audit.py / frob sys audit, _sysdoc.py, _plan.py, vet/_containment.py, _pii.py, _compliance.py) omits the optional binding/root arguments, so the fail-closed path never engages outside the new unit tests -- enforcement exists but nothing invokes it (the catalogued-is-not-enforced trap). Wire the real code tree into each production entrypoint so an unbound sanitizer predicate fails the actual gate, with an integration test proving frob sys audit (or equivalent) reports the THREAT003 on a fixture repo. Disclosed-but-unticketed cut from T-0595's Done report; this is the real ticket.
+
+## Done report
+
+Wired T-0595's optional binding/root join all the way through every production discharge entrypoint in scope:
+
+- `_audit.py::evaluate_exhaustiveness` gained a `root: Path | None = None`
+  param; when given, it calls `bind_code(model, root)` once and threads the
+  resulting `CodeBinding` (plus `root`) through `_collect_all_family_gaps`
+  -> `_threat_and_quality_gaps` -> `_evaluate_family` -> `check_discharge_
+  completeness`, for every security AND quality view. `bind_code`'s
+  `Err(StrataError.AmbiguousCodeBinding)` propagates fail-closed.
+- `_sysdoc.py::render_audit_matrix` gained the same `root:` param, computes
+  its own binding, threads it through `_check_matrix_completeness` into
+  `check_discharge_completeness` -- the human-facing matrix's FAILING rows
+  now reflect the G1 stronger half too.
+- `_plan.py::plan_obligations` gained `root:`, computes binding, passes it
+  into `_frontier_threats` -> `evaluate_threats(..., binding=, root=)` so a
+  code-unbound THREAT003 gets planned as a real ticket.
+- `vet/_containment.py::build_containment_report` already had `binding`/
+  `root` in hand (used by `find_importing_nodes`) but its own
+  `_undischarged_pairs` call to `check_discharge_completeness` silently
+  omitted both -- now threads them through directly (this was the
+  cheapest, most direct instance of the catalogued-is-not-enforced gap).
+
+Real finding surfaced: wiring `_containment.py` made
+`tests/test_vet_containment.py::TestBuildContainmentReport::
+test_contained_finding_when_obligation_discharged`'s fixture fail --
+its `api.py` fixture never actually CALLED `parameterization`, only
+resolved the claim (T-0498's weaker half). Fixed the fixture honestly by
+adding a real `parameterization(...)` call site, per the dispatch's own
+guidance ("fix the model honestly ... with scope-add + disclosure").
+Scope-added via `frob ticket scope --add` with reason recorded in the
+ticket's `scope_changes` audit trail (not a silent edit).
+
+Coordination note: `frob.app.sys_runner.py` (`_evaluate_audit`/`_run_doc`/
+`_run_plan`) is where `root` is ALREADY resolved for every real CLI
+invocation (`_resolve_design_root`) but that file is explicitly out of
+this ticket's scope (T-0724 concurrently wiring
+`check_resource_contention` into it). Per the dispatch's own coordination
+instruction, I did NOT edit it -- reporting instead: `evaluate_exhaustiveness`,
+`render_audit_matrix`, and `plan_obligations` all now accept `root=`, but
+`sys_runner.py`'s three call sites (`_evaluate_audit`, `_run_doc`,
+`_run_plan`) still call them WITHOUT `root=`, so `frob sys audit`/`sys doc`/
+`sys plan` invoked from the real CLI today still do not pass a code tree --
+the entrypoints are wired and ready, but the last one-line-per-callsite
+connection from `sys_runner.py` is the remaining gap. This needs either a
+follow-up ticket once T-0724 lands, or a small addition folded into
+T-0724's own landing since it already touches that exact file.
+
+New unit test class `tests/unit/strata/test_audit.py::TestCodeBoundWiring`
+(3 tests) proves the wiring at the `evaluate_exhaustiveness` level: an
+unbound `output_encoding` predicate on a real `tmp_path` fixture repo
+surfaces as a named THREAT003 gap through the real gate function (not a
+hand-constructed `check_discharge_completeness` call), a real call site
+still proves clean, and omitting `root` preserves the pre-T-0630 model-only
+posture.
+
+Gates: `frob check --ticket T-0630` clean (0 errors, 405 warnings, 200
+waived -- all pre-existing repo-wide, none newly introduced by this
+ticket's diff). Version bumped 0.89.0 -> 0.90.0 (REL001, public API
+change: 4 functions gained new optional params) with a CHANGELOG.md entry;
+scope extended (with recorded reasons) to cover
+`tests/test_vet_containment.py`, `pyproject.toml`, `uv.lock`,
+`CHANGELOG.md` as direct, narrow consequences of this ticket's own change.
+
+Pre-existing, unrelated failures observed and left untouched (not part of
+this ticket's scope): `tests/unit/strata/test_export_golden.py` (k8s/
+seccomp/iam golden-file drift, unrelated to threat/discharge wiring, no
+import of anything this ticket touches).
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/strata/test_audit.py::TestCodeBoundWiring::test_root_wires_real_code_binding_and_surfaces_threat003` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_audit.py::TestCodeBoundWiring::test_root_with_real_call_site_still_proves_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_audit.py::TestCodeBoundWiring::test_no_root_preserves_pre_t0630_model_only_posture` (pytest node id, verified passing when recorded)
+- `tests/test_vet_containment.py::TestBuildContainmentReport::test_contained_finding_when_obligation_discharged` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0631 -->
 ```yaml
@@ -11674,3 +11792,31 @@ component: null
 labels: []
 ```
 T-0616 (and successive T-0330 children) deliver check families over the normalized model with module-default thresholds, but nothing invokes them in production -- the invoked-by-nothing pattern, called out by T-0616's reviewer with the exact wiring list: (a) register run_srp_checks (and each subsequent family runner) in analyze_project's dispatch so they fire during real frob check; (b) thread the thresholds (LCOM4_MIN_METHODS, LCOM4_MIN_FIELD_USING_METHODS, GOD_MODULE_MIN_EXPORTS, GOD_MODULE_MIN_CLUSTERS, MIXED_CONCERN_MIN_DECISION_POINTS, plus later families') into frob.app.config's [arch] table; (c) add ARCH101-103 (and successors) to _KNOWN_GATE_RULES for waiver/registry visibility; (d) coordinate with T-0626's registry rows. Extend as each T-0617..T-0625 sibling lands -- this is the standing wiring home for the family.
+
+<!-- ticket:T-0729 -->
+```yaml
+id: T-0729
+title: 'sys audit red on main: _srp.py classifier string tables read as graphlang
+  capability observations (4x SYS100)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: critical
+blocked_by: []
+parent: T-0330
+scope:
+- src/frob/arch/_srp.py
+- design/frob.strata
+- src/frob/strata/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN main after the fix WHEN frob sys audit runs THEN zero SYS100 gaps and no dishonest
+  may declarations were added
+threat: null
+component: null
+labels: []
+```
+T-0616's landed _srp.py carries curated classifier tables (_IO_MODULE_PREFIXES: socket., subprocess., requests., urllib. ...) that the capability scanner -- which keys on string-literal content by design, for evasion detection -- reads as live net/exec/fetch_url observations on the graphlang node: frob sys audit on main now reports 4 SYS100 gaps (zero-errors violation). These strings are classifier DATA, not capability usage. Disposition honestly at the correct layer: per-observation waiver with reason (classifier corpus, not usage -- cite the file/lines) via the established SYS waive channel, OR if the scanner has a data-table exemption convention, use it; declaring may net/exec on graphlang would be DISHONEST (the node does no such thing). Found by T-0724's rework (its T-draft-890e0667 duplicates this -- reconcile at land).

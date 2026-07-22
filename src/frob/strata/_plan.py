@@ -39,6 +39,7 @@ ticket store itself; that join is the runner's job, T-0084 scope note).
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from typani.result import Err, Ok, Result
 
@@ -47,6 +48,7 @@ from frob.logging import get_logger
 from frob.tickets._models import Stride, TicketKind
 
 from ._claims import evaluate_claims
+from ._code_binding import CodeBinding, bind_code
 from ._design_load import DesignIds, unbound_constructs
 from ._errors import StrataError
 from ._models import KernelModel, Verdict
@@ -201,13 +203,22 @@ def _frontier_refuted(model: KernelModel) -> Result[list[PlannedTicket], StrataE
 
 
 def _frontier_threats(
-    model: KernelModel, view: str
+    model: KernelModel,
+    view: str,
+    binding: CodeBinding | None = None,
+    root: Path | None = None,
 ) -> Result[list[PlannedTicket], StrataError]:
     """One ticket per `THREAT003` violation: a fired-but-undischarged capability
-    obligation (`evaluate_threats`, reused read-only per T-0084 scope)."""
+    obligation (`evaluate_threats`, reused read-only per T-0084 scope).
+    `binding`/`root` (T-0630) pass straight through so a THREAT003 raised
+    ONLY by the G1 code-unbound-predicate join (an ENDORSE boundary whose
+    obligations resolve but whose predicate names no observed call site)
+    still gets planned as a real ticket, not silently absent from the
+    frontier just because `frob sys plan` has a code tree to check and
+    `frob sys audit` was the only caller previously wired to use it."""
     from ._threat import evaluate_threats
 
-    report = evaluate_threats(model, view)
+    report = evaluate_threats(model, view, binding=binding, root=root)
     if report.is_err:
         _log.warning("plan: evaluate_threats failed: %s", report.danger_err)
         return Err(report.danger_err)
@@ -272,6 +283,7 @@ def plan_obligations(
     design_ids: DesignIds | None = None,
     snapshot: GraphSnapshot | None = None,
     view: str = "owasp-top-10",
+    root: Path | None = None,
 ) -> Result[PlanResult, StrataError]:
     """Compile `model`'s obligation frontier into a flat, marker-keyed
     `PlanResult`: unrefined abstract nodes, REFUTED claims, fired-but-
@@ -280,7 +292,24 @@ def plan_obligations(
     the optional design/graph views) -- calling it twice on an unchanged
     model yields the identical marker set, which is the whole idempotency
     contract the caller (`frob.app.sys_runner`) relies on.
+
+    `root` (T-0630) is the repo root `frob sys plan` always has in hand
+    (`frob.app.sys_runner._resolve_design_root`) -- when given, binds
+    `model` against `root`'s real tree (`_code_binding.py::bind_code`) once
+    and threads the resulting `CodeBinding` into `_frontier_threats`'s
+    THREAT003 join, so the G1 code-bound-predicate gap gets planned as a
+    ticket the same way `frob sys audit` reports it as a gap. Omitted
+    preserves the pre-T-0630 model-only frontier. A `bind_code` failure
+    propagates fail-closed (`Err`), matching every other frontier call
+    here.
     """
+    binding: CodeBinding | None = None
+    if root is not None:
+        bound = bind_code(model, root)
+        if bound.is_err:
+            return Err(bound.danger_err)
+        binding = bound.danger_ok
+
     tickets: list[PlannedTicket] = list(_frontier_unrefined(model))
 
     refuted = _frontier_refuted(model)
@@ -288,7 +317,7 @@ def plan_obligations(
         return Err(refuted.danger_err)
     tickets.extend(refuted.danger_ok)
 
-    threats = _frontier_threats(model, view)
+    threats = _frontier_threats(model, view, binding, root)
     if threats.is_err:
         return Err(threats.danger_err)
     tickets.extend(threats.danger_ok)

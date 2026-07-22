@@ -179,13 +179,21 @@ def _catalog_by_id(
 
 
 def _undischarged_pairs(
-    model: KernelModel, catalog: tuple[WeaknessEntry, ...]
+    model: KernelModel,
+    catalog: tuple[WeaknessEntry, ...],
+    binding: CodeBinding,
+    root: Path,
 ) -> frozenset[tuple[str, str]]:
     """`(node_id, cwe_id)` pairs THREAT003 reports as undischarged --
     `check_discharge_completeness` is the ONE home for firing + discharge
     logic (charter: no duplication); this just re-shapes its result for a
-    fast membership test."""
-    result = _strata().check_discharge_completeness(model, catalog)
+    fast membership test. T-0630: `binding`/`root` are threaded through so
+    the G1 code-bound-predicate join actually runs here -- `build_
+    containment_report` (this module's one caller) already has both in
+    hand for `find_importing_nodes`, so omitting them from this join was
+    the catalogued-is-not-enforced gap this ticket closes, not a genuine
+    design-level-only caller."""
+    result = _strata().check_discharge_completeness(model, catalog, binding, root)
     if result.is_err:
         _log.warning("containment: THREAT003 evaluation failed: %s", result.danger_err)
         return frozenset()
@@ -360,7 +368,7 @@ def build_containment_report(
     if catalog is None:
         catalog = _strata().CWE_CATALOG
     catalog_by_id = _catalog_by_id(catalog)
-    undischarged = _undischarged_pairs(model, catalog)
+    undischarged = _undischarged_pairs(model, catalog, binding, root)
     findings: list[ContainmentFinding] = []
 
     for advisory in advisories:

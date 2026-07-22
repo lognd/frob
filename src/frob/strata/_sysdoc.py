@@ -32,11 +32,14 @@ kind-extraction helper anywhere in `frob.strata` today.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from pydantic import BaseModel, ConfigDict
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
 
+from ._code_binding import CodeBinding, bind_code
 from ._effects import _may_kind
 from ._errors import StrataError
 from ._models import KernelModel
@@ -158,20 +161,40 @@ def render_audit_matrix(
     out_of_scope: tuple[OutOfScopeEntry, ...] = (),
     benign: tuple[BenignCapability, ...] = (),
     views: dict[str, frozenset[str]] | None = None,
+    root: Path | None = None,
 ) -> Result[str, StrataError]:
     """Render the deterministic per-family audit matrix for `view` against
     `model`: applicable weakness -> precondition present? -> mitigation ->
     evidence rung/status -> citation (docs/strata/threat.md#the-
     exhaustiveness-proof-the-point). `Err(StrataError.UnknownReference)`
     on an unrecognized `view`, matching `check_catalog_completeness`'s
-    fail-closed posture on a typo'd view name."""
+    fail-closed posture on a typo'd view name.
+
+    `root` (T-0630) is the repo root `frob sys doc` always has in hand
+    (`frob.app.sys_runner._resolve_design_root`) -- when given, binds
+    `model` against `root`'s real tree (`_code_binding.py::bind_code`) and
+    threads the resulting `CodeBinding` into the matrix's THREAT003
+    discharge column, so a `FAILING` row backed only by an unbound
+    predicate is reported here too, not only through `frob sys audit`.
+    Omitted preserves the pre-T-0630 model-only rendering. A `bind_code`
+    failure (`Err(StrataError.AmbiguousCodeBinding)`) propagates fail-
+    closed rather than rendering a matrix silently missing the join."""
     view_table = views if views is not None else VIEWS
     members = view_table.get(view)
     if members is None:
         _log.error("sysdoc: unknown baseline view %r", view)
         return Err(StrataError.UnknownReference)
 
-    checked = _check_matrix_completeness(model, view, catalog, out_of_scope, views)
+    binding: CodeBinding | None = None
+    if root is not None:
+        bound = bind_code(model, root)
+        if bound.is_err:
+            return Err(bound.danger_err)
+        binding = bound.danger_ok
+
+    checked = _check_matrix_completeness(
+        model, view, catalog, out_of_scope, views, binding, root
+    )
     if checked.is_err:
         return Err(checked.danger_err)
     catalog_gaps, discharge = checked.danger_ok
@@ -212,16 +235,19 @@ def _check_matrix_completeness(
     catalog: tuple[WeaknessEntry, ...],
     out_of_scope: tuple[OutOfScopeEntry, ...],
     views: dict[str, frozenset[str]] | None,
+    binding: CodeBinding | None = None,
+    root: Path | None = None,
 ) -> Result[
     tuple[tuple[ThreatViolation, ...], tuple[ThreatViolation, ...]], StrataError
 ]:
     """The `(catalog_gaps, discharge_violations)` pair `render_audit_matrix`
     needs before it can render a single row, split out purely to keep that
-    function's body short."""
+    function's body short. `binding`/`root` (T-0630) pass straight through
+    to THREAT003's discharge check."""
     catalog_gaps = check_catalog_completeness(view, catalog, out_of_scope, views)
     if catalog_gaps.is_err:
         return Err(catalog_gaps.danger_err)
-    discharge = check_discharge_completeness(model, catalog)
+    discharge = check_discharge_completeness(model, catalog, binding, root)
     if discharge.is_err:
         return Err(discharge.danger_err)
     return Ok((catalog_gaps.danger_ok, discharge.danger_ok))

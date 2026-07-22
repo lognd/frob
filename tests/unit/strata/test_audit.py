@@ -23,6 +23,7 @@ scope. Filed as T-0137 rather than fixed silently."""
 
 from __future__ import annotations
 
+from pathlib import Path
 from unittest.mock import patch
 
 from frob.gates import known_gate_rule_ids
@@ -45,6 +46,15 @@ from frob.strata._audit import (
 )
 from frob.strata._compliance import OutOfScopeRegulation
 from frob.strata._threat import _discharge_claim_id
+
+
+def _write(root: Path, rel: str, source: str) -> None:
+    """Test helper: write `source` to `root/rel`, creating parent dirs
+    (matches `test_threat.py::_write`'s convention)."""
+    path = root / rel
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(source, encoding="utf-8")
+
 
 #: T-0503: the live gate-rule-id set (mirrors what `sys_runner.py`'s
 #: production callsite passes) -- required so `COMPLIANCE_OUT_OF_SCOPE`'s
@@ -568,3 +578,125 @@ class TestHostWiring:
         assert report.proved
         assert "host:model" in report.views_checked
         assert not any(v.startswith("host:blast-radius:") for v in report.views_checked)
+
+
+# frob:ticket T-0630
+class TestCodeBoundWiring:
+    """T-0630's acceptance repro: `evaluate_exhaustiveness` -- the exact
+    function `frob.app.sys_runner._evaluate_audit` calls for `frob sys
+    audit` -- must actually FIRE THREAT003's G1 code-bound-predicate join
+    (docs/audits/strata.md, T-0595) when a real `root` is supplied, not
+    only when a unit test constructs a `CodeBinding` by hand and calls
+    `check_discharge_completeness` directly (`test_threat.py::
+    TestCodeBoundMitigationPredicate`, which this class deliberately does
+    NOT duplicate -- it proves the join exists; this proves the join is
+    actually WIRED to the production entrypoint, closing the catalogued-
+    is-not-enforced gap T-0595's Done report disclosed)."""
+
+    def _model(self, claim_id: str) -> KernelModel:
+        """The same Evil->Web/ENDORSE-boundary/CWE-79 fixture shape
+        `test_threat.py::TestCodeBoundMitigationPredicate._model` uses."""
+        evil = Node(id="Evil", trust="foreign")
+        web = Node(
+            id="Web", trust="trusted", may=("html_render",), attrs=("code=api/**",)
+        )
+        return KernelModel(
+            nodes=(evil, web),
+            flows=(
+                Flow(
+                    id="f1",
+                    src="Evil",
+                    dst="Web",
+                    # T-0155 LINT001: a foreign-sourced flow needs a
+                    # declared rate to stay clean under the lint family
+                    # (matches `_hardened_model`'s own scope note above).
+                    rate=Quantity(value=5, unit="req/s"),
+                ),
+            ),
+            boundaries=(
+                Boundary(
+                    id="b1",
+                    flow_id="f1",
+                    direction=BoundaryDirection.ENDORSE,
+                    from_level="foreign",
+                    to_level="trusted",
+                    predicate="output_encoding",
+                    obligations=(claim_id,),
+                ),
+            ),
+            claims=(
+                Claim(
+                    id=claim_id,
+                    body=NoFlow(src="foreign", dst="Web"),
+                    required_rung=Rung.L4,
+                ),
+            ),
+        )
+
+    # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
+    def test_root_wires_real_code_binding_and_surfaces_threat003(self, tmp_path: Path):
+        """`output_encoding` resolves to a real claim (T-0498 weaker half)
+        but is never CALLED anywhere in Web's bound code on this fixture
+        repo -- passing `root=tmp_path` to `evaluate_exhaustiveness` (the
+        real `frob sys audit` gate path) must fail closed with a named
+        THREAT003 gap citing the unbound boundary, exactly like the
+        `binding=`/`root=`-supplied unit call to `check_discharge_
+        completeness` already does. Before T-0630, `evaluate_exhaustiveness`
+        took no `root` at all and this repo would report PROVED."""
+        claim_id = _discharge_claim_id("CWE-79", "Web")
+        model = self._model(claim_id)
+        _write(
+            tmp_path,
+            "api/handler.py",
+            '"""Uses output_encoding somewhere in a comment, never calls it."""\n'
+            "def render(x):\n"
+            "    return x\n",
+        )
+        result = evaluate_exhaustiveness(
+            model, known_rule_ids=_KNOWN_RULE_IDS, root=tmp_path
+        )
+        assert result.is_ok
+        report = result.danger_ok
+        assert not report.proved
+        gap_details = [g.detail for g in report.gaps]
+        assert any(
+            "b1" in detail and "no OBSERVED sanitizer" in detail
+            for detail in gap_details
+        ), gap_details
+
+    # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
+    def test_root_with_real_call_site_still_proves_clean(self, tmp_path: Path):
+        """The positive twin: `output_encoding(...)` really is CALLED in
+        Web's own bound code on the same fixture repo shape -- `frob sys
+        audit`'s real gate path must still report PROVED, confirming the
+        new `root=` wiring is not a blanket new failure, only a real join."""
+        claim_id = _discharge_claim_id("CWE-79", "Web")
+        model = self._model(claim_id)
+        _write(
+            tmp_path,
+            "api/handler.py",
+            "def render(x):\n    return output_encoding(x)\n",
+        )
+        result = evaluate_exhaustiveness(
+            model, known_rule_ids=_KNOWN_RULE_IDS, root=tmp_path
+        )
+        assert result.is_ok
+        assert result.danger_ok.proved
+
+    # frob:tests src/frob/strata/_audit.py::evaluate_exhaustiveness kind="unit"
+    def test_no_root_preserves_pre_t0630_model_only_posture(self, tmp_path: Path):
+        """Omitting `root` (the pre-T-0630 default) must keep discharging
+        via T-0498's weaker half alone -- a design-level-only caller with
+        no code tree is not newly broken by this wiring."""
+        claim_id = _discharge_claim_id("CWE-79", "Web")
+        model = self._model(claim_id)
+        _write(
+            tmp_path,
+            "api/handler.py",
+            '"""Uses output_encoding somewhere in a comment, never calls it."""\n'
+            "def render(x):\n"
+            "    return x\n",
+        )
+        result = evaluate_exhaustiveness(model, known_rule_ids=_KNOWN_RULE_IDS)
+        assert result.is_ok
+        assert result.danger_ok.proved

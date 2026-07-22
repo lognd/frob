@@ -38,11 +38,14 @@ had no way to run the proof without a hand-written harness."""
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from pydantic import BaseModel, ConfigDict
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
 
+from ._code_binding import CodeBinding, bind_code
 from ._compliance import (
     COMPLIANCE_OUT_OF_SCOPE,
     REGULATION_VIEWS,
@@ -441,6 +444,8 @@ def _evaluate_family(
     out_of_scope: tuple[OutOfScopeEntry, ...],
     benign: tuple[BenignCapability, ...],
     views: dict[str, frozenset[str]],
+    binding: CodeBinding | None = None,
+    root: Path | None = None,
 ) -> Result[tuple[ThreatViolation, ...], StrataError]:
     """THREAT001 + THREAT002 + THREAT003 over `model` against `view`,
     resolved against the FAMILY-SPECIFIC `views` table -- the same three
@@ -458,7 +463,17 @@ def _evaluate_family(
     auditing a quality view (`_threat.py::ALL_CATALOG`'s comment). THREAT001
     (`catalog`/`out_of_scope`/`views`) and THREAT003 (`catalog`) stay
     family-scoped -- only which family's obligations a capability FIRES is
-    per-family; whether the capability is classified AT ALL is not."""
+    per-family; whether the capability is classified AT ALL is not.
+
+    `binding`/`root` (T-0630) are threaded into THREAT003's `check_
+    discharge_completeness` call exactly like `_run_all_completeness_
+    checks` (`_threat.py`) already threads them for `evaluate_threats` --
+    optional, defaulting to `None` (design-level-only caller, no code-bound
+    join), but `evaluate_exhaustiveness` (this module's own entrypoint)
+    passes a real code tree whenever its own caller supplies one, so the
+    fail-closed G1 stronger half actually engages on a real `frob sys
+    audit` run instead of only in unit tests that construct a `CodeBinding`
+    by hand."""
     catalog_violations = check_catalog_completeness(view, catalog, out_of_scope, views)
     if catalog_violations.is_err:
         return Err(catalog_violations.danger_err)
@@ -467,7 +482,7 @@ def _evaluate_family(
     )
     if capability_violations.is_err:
         return Err(capability_violations.danger_err)
-    discharge_violations = check_discharge_completeness(model, catalog)
+    discharge_violations = check_discharge_completeness(model, catalog, binding, root)
     if discharge_violations.is_err:
         return Err(discharge_violations.danger_err)
     return Ok(
@@ -484,6 +499,8 @@ def _threat_and_quality_gaps(
     security_views: tuple[str, ...],
     quality_views: tuple[str, ...],
     benign: tuple[BenignCapability, ...],
+    binding: CodeBinding | None = None,
+    root: Path | None = None,
 ) -> Result[tuple[list[FamilyGap], list[str]], StrataError]:
     """THREAT001-003 gaps for every security then quality view, in order.
 
@@ -496,7 +513,12 @@ def _threat_and_quality_gaps(
     explicitly widens `security_views` to include `cwe-top-25` (clearing
     `AuditReport.narrower_than_baseline`, `_narrower_than_baseline` below)
     resolves correctly rather than failing closed against `VIEWS`, which
-    has no such key."""
+    has no such key.
+
+    `binding`/`root` (T-0630) pass straight through to every `_evaluate_
+    family` call, security and quality alike -- the G1 code-bound join is
+    not security-specific, a quality-family ENDORSE boundary's predicate
+    needs the exact same call-site proof."""
     gaps: list[FamilyGap] = []
     checked: list[str] = []
 
@@ -509,9 +531,13 @@ def _threat_and_quality_gaps(
                 CWE_TOP_25_OUT_OF_SCOPE,
                 benign,
                 CWE_TOP_25_VIEWS,
+                binding,
+                root,
             )
         else:
-            report = _evaluate_family(model, view, CWE_CATALOG, (), benign, VIEWS)
+            report = _evaluate_family(
+                model, view, CWE_CATALOG, (), benign, VIEWS, binding, root
+            )
         if report.is_err:
             return Err(report.danger_err)
         gaps.extend(_threat_gaps("security", view, report.danger_ok))
@@ -519,7 +545,14 @@ def _threat_and_quality_gaps(
 
     for view in quality_views:
         report = _evaluate_family(
-            model, view, QUALITY_CATALOG, QUALITY_OUT_OF_SCOPE, benign, QUALITY_VIEWS
+            model,
+            view,
+            QUALITY_CATALOG,
+            QUALITY_OUT_OF_SCOPE,
+            benign,
+            QUALITY_VIEWS,
+            binding,
+            root,
         )
         if report.is_err:
             return Err(report.danger_err)
@@ -685,6 +718,7 @@ def evaluate_exhaustiveness(
     compliance_views: tuple[str, ...] = DEFAULT_COMPLIANCE_VIEWS,
     benign: tuple[BenignCapability, ...] = DEFAULT_BENIGN_CAPABILITIES,
     known_rule_ids: frozenset[str] = frozenset(),
+    root: Path | None = None,
 ) -> Result[AuditReport, StrataError]:
     """`frob sys audit`'s model-side entrypoint: the full three-part
     exhaustiveness conjunction (THREAT001-003 for security AND quality,
@@ -701,9 +735,37 @@ def evaluate_exhaustiveness(
     itself (`_threat.py::check_caught_by_integrity`'s docstring). Fails
     closed: an unknown view name in any family propagates as
     `Err(StrataError.UnknownReference)` rather than being silently
-    skipped, matching every other exhaustiveness check in this package."""
+    skipped, matching every other exhaustiveness check in this package.
+
+    `root` (T-0630, docs/audits/strata.md G1 stronger half) is the repo
+    root a real `frob sys audit` run always has in hand
+    (`frob.app.sys_runner._resolve_design_root`) -- when given, this binds
+    `model`'s `code=` globs against `root`'s actual tree
+    (`_code_binding.py::bind_code`, the SAME join `check_self_conformance`
+    already performs against this exact `root`) and threads the resulting
+    `CodeBinding` into every THREAT003 discharge check below, so an ENDORSE
+    boundary's `predicate` must name a call site OBSERVED in the guarded
+    code, not merely resolve to an in-model claim. Omitted (`None`)
+    preserves the pre-T-0630 model-only posture (a design review with no
+    code tree in hand) -- `bind_code`'s own `Err(StrataError.
+    AmbiguousCodeBinding)` propagates fail-closed rather than degrading to
+    an unbound audit silently."""
+    binding: CodeBinding | None = None
+    if root is not None:
+        bound = bind_code(model, root)
+        if bound.is_err:
+            return Err(bound.danger_err)
+        binding = bound.danger_ok
+
     all_result = _collect_all_family_gaps(
-        model, security_views, quality_views, compliance_views, benign, known_rule_ids
+        model,
+        security_views,
+        quality_views,
+        compliance_views,
+        benign,
+        known_rule_ids,
+        binding,
+        root,
     )
     if all_result.is_err:
         return Err(all_result.danger_err)
@@ -726,6 +788,8 @@ def _collect_all_family_gaps(
     compliance_views: tuple[str, ...],
     benign: tuple[BenignCapability, ...],
     known_rule_ids: frozenset[str] = frozenset(),
+    binding: CodeBinding | None = None,
+    root: Path | None = None,
 ) -> Result[
     tuple[
         list[FamilyGap],
@@ -736,12 +800,15 @@ def _collect_all_family_gaps(
     StrataError,
 ]:
     """Every family's gaps (threat/quality, compliance/pii/lint/
-    fingerprint, caught_by, host), in order."""
+    fingerprint, caught_by, host), in order. `binding`/`root` (T-0630) pass
+    through to `_threat_and_quality_gaps` only -- THREAT003 is the sole G1
+    code-bound join in this assembly; compliance/pii/lint/host/caught_by
+    have no code-binding half to wire."""
     gaps: list[FamilyGap] = []
     checked: list[str] = []
 
     family_result = _threat_and_quality_gaps(
-        model, security_views, quality_views, benign
+        model, security_views, quality_views, benign, binding, root
     )
     if family_result.is_err:
         return Err(family_result.danger_err)

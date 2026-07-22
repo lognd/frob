@@ -300,7 +300,17 @@ class TestBuildContainmentReport:
         assert finding.cwe_ids == ("CWE-89",)
 
     def test_contained_finding_when_obligation_discharged(self, tmp_path: Path) -> None:
-        (tmp_path / "api.py").write_text("import psycopg2\n")
+        # T-0630: G1's code-bound-predicate join is now wired all the way
+        # through `build_containment_report`, so a genuine CONTAINED
+        # finding needs `parameterization` actually CALLED in Api's own
+        # bound code, not merely resolved to an in-model claim (T-0498's
+        # weaker half alone is no longer sufficient once a real `binding`/
+        # `root` is supplied, matching `test_threat.py::
+        # TestCodeBoundMitigationPredicate`'s positive case).
+        (tmp_path / "api.py").write_text(
+            "import psycopg2\n\n\ndef query(cur, q, args):\n"
+            "    return parameterization(cur, q, args)\n"
+        )
         model = self._model_with_discharged_sql()
         binding = bind_code(model, tmp_path).danger_ok
 
