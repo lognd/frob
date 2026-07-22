@@ -9875,6 +9875,7 @@ created: '2026-07-22'
 priority: high
 blocked_by:
 - T-0700
+- T-0717
 parent: T-0331
 scope:
 - src/frob/strata/**
@@ -9893,7 +9894,6 @@ component: null
 labels: []
 ```
 User mandate 2026-07-22: contention semantics are worthless unless ENFORCED -- a declared mode nothing verifies is the catalogued-is-not-enforced trap (T-0343 doctrine). For every node with code= bindings and a declared resource mode (T-0700 grammar), join the declaration against the code's OBSERVED effects (the T-0595 code-binding pattern, wired to production per T-0630; effect classification from the vet/T-0339 capability resolvers): READ = zero write-capable operations against the resource (write-mode opens, os.remove/rename, SQL DML, sends on the port) -- fail-closed on opaque access to the resource; APPEND = writes only via append-mode opens, no truncate/rewrite; ALPHA (update/upgradeable-lock intent, user-specified) = reads freely, but every observed WRITE against the resource must be provably preceded on the same path by an upgrade acquisition (alpha->write transition through the declared arbiter) -- a write reachable while still in alpha-only context fails closed; additionally the model-level alpha+alpha exclusion (at most one alpha declarant per resource) is checked at elaboration, and the code-level analysis flags the upgrade-deadlock ANTI-PATTERN (acquiring write while holding plain read on the same resource, the case alpha exists to prevent -- recommend alpha in the finding); WRITE = read+write allowed but only on declared paths (undeclared sibling access = finding); EXCLUSIVE = write conformance PLUS every observed access provably inside the declared arbiter/lease context (join T-0694's code-level lock identification with the model-level arbiter declaration; an access path outside the arbiter fails closed). Violations are SYS errors naming the node, the declared mode, and the offending observed operation. Litmus fixtures per mode, firing and clean.
-
 <!-- ticket:T-0702 -->
 ```yaml
 id: T-0702
@@ -10359,3 +10359,34 @@ component: null
 labels: []
 ```
 User observation 2026-07-22: with six tickets actively being worked in agent worktrees, frob ticket list on main showed them all as queued -- start writes the WORKTREE ledger, main only learns state at land. The shared truth for actively-worked is the lease (.git/frob-leases, already consulted by doable to skip claimed tickets) but list ignores it entirely (observed: 1 in-progress in the ledger vs 10 live lease files). Fix by OVERLAY, not write-through (writing main's ledger from worktrees is exactly the corruption class T-0633/T-0682 just fixed): frob ticket list derives display state as ledger-state + live-lease decoration -- a queued ticket with a live, non-stale lease renders as in-progress@<worktree-basename> (distinct marker from ledger-recorded in-progress); stale leases render nothing here (T-0714 moves their diagnostics to check/doctor -- coordinate, do not duplicate). Same overlay for frob ticket show. Tests: fixture with a lease pointing at an existing worktree dir -> decorated; missing dir (stale) -> undecorated.
+
+<!-- ticket:T-0717 -->
+```yaml
+id: T-0717
+title: 'capability taxonomy: mode-qualified names (fs.read/fs.write, net.connect/net.listen),
+  one vocabulary with T-0700 modes, deprecated-alias migration'
+state: queued
+kind: security
+origin: human
+created: '2026-07-22'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/vet/**
+- src/frob/strata/**
+- docs/design/registry/**
+- docs/strata/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a node whose code only reads files WHEN it declares may fs.read THEN SYS101
+  discharges narrowly and a write observation fails conformance; GIVEN a legacy may
+  fs declaration THEN it works with a deprecation warning naming the sunset and migration
+  target; GIVEN the alias sunset passes THEN legacy spellings are gate errors
+threat: null
+component: null
+labels: []
+```
+User mandate 2026-07-22: capability names conflate mode -- measured in src/frob/vet/_capability_registry.py: scanner emits fs-write, _KIND_MAP normalizes it to bare fs for the may vocabulary, fs-read was added later as a separate kind, and SYS101 backward-compatibly satisfies bare may-fs with EITHER observed kind -- so fs is ambiguous (write-derived history, read-satisfiable present). net has no mode split at all. DESIGN MANDATE (think the declarations through, do not just rename): (1) ONE mode vocabulary shared with T-0700's resource modes (read|append|alpha|write|exclusive where meaningful) -- capability families get family.mode ids: fs.read/fs.append/fs.write, net.connect/net.listen, env.read/env.write, proc.spawn, ffi.call...; not every family has every mode (define each family's valid mode set explicitly). (2) COARSE DECLARATIONS STAY LEGAL, INTERPRETED FAIL-CLOSED: may fs means the UNION of fs modes for obligation purposes (a coarse declarer answers for everything), while observed effects always map to the most precise mode; conformance = observed subset-of declared; precision is rewarded (narrower declarations discharge narrower obligations) never required by fiat. (3) MIGRATION: alias table old->new; old spellings keep working but carry frob:deprecated (T-0576 machinery -- sunset date, ticket) so they warn now and error at sunset; mechanical sweep of this repo's .strata models, DEFAULT_BENIGN_CAPABILITIES, registry yamls; ESTATE: the 8 sibling repos' declarations migrate via fleet-routed per-repo tickets (T-0573 routing) -- file them at close, do not hand-edit siblings from here. (4) SYS101's either-satisfies compatibility join becomes an explicit alias-table lookup, not a special case, and dies with the aliases at sunset. Coordinate: T-0701 mode-conformance consumes this vocabulary; T-0339 resolvers classify into it; do not fork a second mode enum anywhere (no-duplication rule).
