@@ -43557,7 +43557,7 @@ threat: null
 component: null
 labels: []
 ```
-Recovered filing: T-draft-7bae70b7 was filed in T-0160 batch work but its ledger block was lost in a merge (only the Done-report prose survived). _harvest_with looks up child_by_field_name('alias') on with_item nodes, but the tree-sitter-python grammar nests with_item under with_clause and represents the bound name via an as_pattern/as_pattern_target child, not an 'alias' field -- so 'with X as name:' binding names are never collected into the alpha-rename local set for Python dup-fingerprinting. Scope: src/frob/dup/_legacy_py.py plus its unit tests.
+Recovered filing: T-0486 (ex-draft, id lost at land) was filed in T-0160 batch work but its ledger block was lost in a merge (only the Done-report prose survived). _harvest_with looks up child_by_field_name('alias') on with_item nodes, but the tree-sitter-python grammar nests with_item under with_clause and represents the bound name via an as_pattern/as_pattern_target child, not an 'alias' field -- so 'with X as name:' binding names are never collected into the alpha-rename local set for Python dup-fingerprinting. Scope: src/frob/dup/_legacy_py.py plus its unit tests.
 
 ## Done report
 
@@ -44796,7 +44796,7 @@ Updated existing fixtures that relied on the old vacuous behavior
 to carry a resolving `obligations` ref, and added two new counterexample
 tests proving the closed gap (no evidence ref; dangling evidence ref).
 
-Not Filed T-draft-3cf0d655 (never refiled): full SYS-family rule binding an ENDORSE boundary predicate
+Not Filed a never-materialized draft (T-0595 is the real replacement) (never refiled): full SYS-family rule binding an ENDORSE boundary predicate
 to an OBSERVED sanitizer call site in `code=`-bound files (the stronger
 half of G1's fix direction, out of this ticket's scope/budget).
 

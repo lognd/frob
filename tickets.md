@@ -1104,7 +1104,7 @@ TEST005 waivers removed: 11 waiver lines (7 module-line + 2 symbol-branch on
 clipboard.py + 2 symbol-branch on gitio.py), verified by grepping each file
 for `frob:waive TEST005` before and after (0 remaining on all 7).
 
-Filed: `T-draft-7bae70b7` (dup/_legacy_py._harvest_with grammar-mismatch bug,
+Filed: `T-0486 (ex-draft, id lost at land)` (dup/_legacy_py._harvest_with grammar-mismatch bug,
 scope src/frob/dup/_legacy_py.py + tests/unit/test_dup_legacy_py.py --
 renumbers to a real T-#### id when this worktree merges to main).
 
@@ -1642,7 +1642,7 @@ module) via `warm_state`'s dirty-key gate, not by threading a pre-built
 snapshot into `run_gates`'s own `_load_inputs`/`_build_jobs` dispatch --
 wiring that through would mean changing signatures a much larger set of gate
 call sites depend on, a separately-ticketed project. Filed as a follow-up:
-T-draft-7e43ec96 (provisional id, minted off-default-branch; the coordinator
+T-0602 (ex-draft, id lost at land) (provisional id, minted off-default-branch; the coordinator
 assigns the real T-#### id at land). `frob_check_delta`'s `verify=True` mode is the correctness
 guarantee for the part that IS cached (the graph/baseline/test-list), proven
 via a cold-vs-warm violation-fingerprint diff plus a hypothesis property test
@@ -1966,7 +1966,7 @@ movement-impossibility findings today, not because it is proven isolated
 but because nothing reads its windows-shaped facts yet. This mirrors
 T-0256/T-0257/T-0258/T-0259's staged sequencing after T-0255 and is
 documented in docs/strata/host.md's Scope boundary section. Filed
-T-draft-632a0187 to wire HOST001/HOST002/the compromised-user scenario
+T-0606 (ex-draft, id lost at land) to wire HOST001/HOST002/the compromised-user scenario
 builder to the Windows fields.
 
 ### Changed
@@ -3312,7 +3312,7 @@ declared scope) is not yet routed through that verification.
 
 Filed rather than fixed (requires touching `src/frob/gates/
 _registry_exhaustiveness.py`, outside this ticket's scope):
-T-draft-6912e7d1 -- "registry: route out_of_scope disposition reason
+T-0680 (ex-draft, id lost at land) -- "registry: route out_of_scope disposition reason
 through T-0382 caught_by verification".
 
 Test results (measured):
@@ -3390,7 +3390,7 @@ already at the disposition level, except all 27 deferred entries dishonestly
 named T-0384 itself (this review-gated reconciliation ticket, expected to
 close), which would break REG003 the moment it closes.
 
-Filed a new standing ticket (drafted off-main as T-draft-05d8f716; drafts do
+Filed a new standing ticket (drafted off-main as T-0684 (ex-draft, id lost at land); drafts do
 not survive `frob ticket land`, T-0577, so a real id replaces it at land time
 -- same precedent as T-0388/T-0607) and re-pointed all 27 self-deferring
 entries (CWE-20/22/77/78/79/89/94/119/125/190/269/276/287/306/352/362/416/
@@ -3786,7 +3786,7 @@ build via both the gate and this test.
 
 Filed: T-0607 (feature ticket for the deferred CMPL-* registry-id-level
 enforcement work). This ticket originally minted a provisional
-T-draft-63982a01 for the same purpose; the coordinator filed the real
+T-0607 (ex-draft, id lost at land) for the same purpose; the coordinator filed the real
 T-0607 on main (draft ids do not survive `frob ticket land`, T-0577),
 so all 17 deferred entries, the pin test, and this Done report were
 re-pointed to T-0607 and the draft's ledger block dropped.
@@ -3853,7 +3853,7 @@ Reconciled docs/design/registry/supply-chain.yaml (41 entries) against
 actual enforcement. 39 entries carried disposition deferred:T-0389 (a
 self-deferral -- T-0389 is this review-gated reconciliation ticket and
 would orphan the deferral the moment it closes); re-pointed all 39 to a
-newly filed standing ticket, T-draft-88fe9009 (implement checkable-control
+newly filed standing ticket, T-0721 (ex-draft, id lost at land) (implement checkable-control
 enforcement for SC-* supply-chain registry entries), scoped to
 src/frob/vet/**. The remaining 2 entries (SC-ATTACK-TRANSITIVE-BLINDNESS,
 SC-DEFENSE-CAPABILITY-SANDBOXING) were already honestly dispositioned
@@ -4037,7 +4037,7 @@ genuine + 14 manifest-extraction artifacts per RECONCILIATION.md finding
 disposition deferred:T-0392 (a self-deferral -- T-0392 is this
 review-gated reconciliation ticket and would orphan the deferral the
 moment it closes); re-pointed all 49 to a newly filed standing ticket,
-T-draft-9bca3276 (implement SYS/REL checkable-control enforcement for
+T-0722 (ex-draft, id lost at land) (implement SYS/REL checkable-control enforcement for
 the 49 unresolved system-design registry entries), scoped to
 src/frob/strata/**. The remaining 56 genuine entries were already
 honestly deferred to T-0331 (the real feeding systems-checks epic) and
@@ -4056,10 +4056,10 @@ scope via `frob ticket scope --add` before recording evidence.
 
 T-0392 blocks T-0658 (T-0331 epic's N:M coverage close condition) and
 T-0677/T-0678 (manifest-artifact cleanup / cross-corpus totality). The
-49 re-pointed entries (T-draft-9bca3276) are exactly the piece those
+49 re-pointed entries (T-0722 (ex-draft, id lost at land)) are exactly the piece those
 three tickets were waiting on to treat "registered check" as a real,
 checkable claim over the system-design domain -- T-0658's coverage math
-should account for T-draft-9bca3276's eventual real checks the same way
+should account for T-0722 (ex-draft, id lost at land)'s eventual real checks the same way
 it already accounts for the 56 T-0331-deferred entries; T-0677 can now
 proceed with its manifest-extraction-artifact cleanup against a fully
 dispositioned base; T-0678's cross-corpus totality meta-test lists
@@ -4252,11 +4252,11 @@ most of the ticket's mandate already landed by prior sessions on main:
   self-declared predicate string with no evidence ref no longer discharges.
   The STRONGER half of G1 -- binding the predicate to an OBSERVED sanitizer
   call site in code, not merely an in-model claim -- remains open. T-0498's
-  Done report claimed this was filed as a follow-up ("T-draft-3cf0d655"), but
+  Done report claimed this was filed as a follow-up ("a never-materialized draft (T-0595 is the real replacement)"), but
   that id was never resolved into a real ticket (confirmed absent from both
   tickets.md and tickets-archive.md -- a draft id minted off-default-branch
   that was never landed). Filed a real replacement ticket during this pass:
-  T-draft-9ca06606 (id resolves to a real T-#### at land), scoped to
+  T-0595 (ex-draft, id lost at land) (id resolves to a real T-#### at land), scoped to
   _threat.py/_selfconform.py/_code_binding.py/_effects.py, parent T-0401.
 - G2/G7 (vacuous NoFlow discharge: foreign->sink flow un-modeled, or no
   foreign-trust node at all): NOT touched here. This is explicitly T-0501's
@@ -5566,12 +5566,12 @@ deprecation does not block a release.
 
 Not done in this pass, filed as follow-ups rather than silently folded
 in: no CLI subcommand analogous to `frob debt` (T-0576 scoped only
-graph/gates/docs/tests) -- filed T-draft-e51d8b3b; no "gained new
+graph/gates/docs/tests) -- filed T-0638 (ex-draft, id lost at land); no "gained new
 callers" trigger (the ticket body itself does not require it --
 `frob.graph.callgraph`'s caller/reference graphs only resolve PRIVATE
 callees by design, so reusing them for a public deprecated symbol's
 callers is not a drop-in fit and needs its own design) -- filed
-T-draft-0296fddf. Both convert to real T-#### ids at the next `frob
+T-0639 (ex-draft, id lost at land). Both convert to real T-#### ids at the next `frob
 ticket land`/renumber pass.
 
 ### Changed
@@ -6014,7 +6014,7 @@ collect_rust_tests's per-project discovery/cache/degrade shape:
   collect_rust_tests already points at) and `frob:ticket T-0587` on every
   new symbol.
 
-Deliberately NOT done (out of declared scope, filed as T-draft-c8ac44fb):
+Deliberately NOT done (out of declared scope, filed as T-0730 (ex-draft, id lost at land)):
 wiring collect_ts_tests/collect_cpp_tests into frob.gates._load_tests so
 _valid_edges actually credits them, and retiring/downgrading the ts/c/cpp
 structural name/path fallback in _edge_is_native_unverified. T-0587's own
@@ -6033,8 +6033,8 @@ mid-ticket `git merge main` pulled in T-0616's un-bumped arch SRP API
 surface -- both T-0616's and T-0587's changelog entries are recorded).
 
 Correction from an earlier review round: the gates-wiring follow-up is
-filed as T-draft-c8ac44fb (verified present in tickets.md via grep before
-this report was finalized) -- an earlier claim of T-draft-25e37b0e in this
+filed as T-0730 (ex-draft, id lost at land) (verified present in tickets.md via grep before
+this report was finalized) -- an earlier claim of a lost draft (superseded by T-0730) in this
 same Done report was wrong (that id was minted during this session but its
 ticket block was lost to an out-of-order ledger-restore mistake and never
 re-created before the report was written; the reviewer caught it).
@@ -6215,7 +6215,7 @@ threat: tampering
 component: null
 labels: []
 ```
-Remaining stronger half of docs/audits/strata.md G1, deferred from T-0401 (its weaker half landed in T-0498: boundary obligations must resolve to a real in-model Claim.id). The gap: an ENDORSE boundary's predicate still discharges by model-side matching alone -- it is never joined against an OBSERVED sanitizer/validator call site in the code. Fix: bind the boundary predicate to a real call-site observation (via the code-binding layer), so a boundary with no observed sanitizer in the guarded path fails closed. NOTE: T-0401's Done report references this as T-draft-9ca06606; that draft never materialized as a ledger block, so this ticket is its real replacement.
+Remaining stronger half of docs/audits/strata.md G1, deferred from T-0401 (its weaker half landed in T-0498: boundary obligations must resolve to a real in-model Claim.id). The gap: an ENDORSE boundary's predicate still discharges by model-side matching alone -- it is never joined against an OBSERVED sanitizer/validator call site in the code. Fix: bind the boundary predicate to a real call-site observation (via the code-binding layer), so a boundary with no observed sanitizer in the guarded path fails closed. NOTE: T-0401's Done report references this as T-0595 (ex-draft, id lost at land); that draft never materialized as a ledger block, so this ticket is its real replacement.
 
 ## Done report
 
@@ -6447,7 +6447,7 @@ threat: null
 component: null
 labels: []
 ```
-Deferred remainder of T-0177 deliverable 2. The warm daemon caches graph snapshot, baseline, and collected test ids, and frob_check_delta filters full-run results against the stamped baseline -- but run_gates itself still evaluates EVERY gate in full on each call. Build per-obligation input tracking inside gate dispatch so a delta call evaluates only obligations whose inputs changed, with the verify=True cold-diff mode as the correctness oracle (incremental results must provably match a cold frob check). NOTE: T-0177's Done report references this as T-draft-7e43ec96; the draft block did not survive  (same draft-loss failure as T-0401's draft -- T-0577 tracks the land-time fix), so this ticket is its real replacement.
+Deferred remainder of T-0177 deliverable 2. The warm daemon caches graph snapshot, baseline, and collected test ids, and frob_check_delta filters full-run results against the stamped baseline -- but run_gates itself still evaluates EVERY gate in full on each call. Build per-obligation input tracking inside gate dispatch so a delta call evaluates only obligations whose inputs changed, with the verify=True cold-diff mode as the correctness oracle (incremental results must provably match a cold frob check). NOTE: T-0177's Done report references this as T-0602 (ex-draft, id lost at land); the draft block did not survive  (same draft-loss failure as T-0401's draft -- T-0577 tracks the land-time fix), so this ticket is its real replacement.
 
 <!-- ticket:T-0603 -->
 ```yaml
@@ -6560,7 +6560,7 @@ threat: elevation-of-privilege
 component: null
 labels: []
 ```
-T-0261 landed the Windows std.host manifest surface (service_account/gmsa, service, acl, pipe) but HOST001/HOST002 and build_compromised_user_scenario do not branch on any of it -- a windows-only node produces NO movement-impossibility findings today, so the epic's provability promise is linux-only. Wire the windows fields into the isolation rules and the compromised-user scenario builder, mirroring how the linux runs_as/unit/owns fields feed them (T-0256..T-0259 staging precedent). NOTE: T-0261's Done report references this as T-draft-632a0187; drafts do not survive land (T-0577), so this ticket is its real replacement.
+T-0261 landed the Windows std.host manifest surface (service_account/gmsa, service, acl, pipe) but HOST001/HOST002 and build_compromised_user_scenario do not branch on any of it -- a windows-only node produces NO movement-impossibility findings today, so the epic's provability promise is linux-only. Wire the windows fields into the isolation rules and the compromised-user scenario builder, mirroring how the linux runs_as/unit/owns fields feed them (T-0256..T-0259 staging precedent). NOTE: T-0261's Done report references this as T-0606 (ex-draft, id lost at land); drafts do not survive land (T-0577), so this ticket is its real replacement.
 
 <!-- ticket:T-0607 -->
 ```yaml
@@ -6587,7 +6587,7 @@ threat: null
 component: null
 labels: []
 ```
-Standing home for the 17 compliance.yaml entries whose controls are machine-checkable but not yet enforced by any gate/check. They previously carried deferred:T-0388 (the reconciliation ticket itself) -- a self-reference that would orphan them the moment T-0388 closed; T-0388's pass re-pointed them here. Each entry needs either a real enforcing check in src/frob/strata/_compliance.py (then flip to handled_by) or a reasoned out_of_scope/not-checkable disposition. NOTE: T-0388's Done report references this as T-draft-63982a01; drafts do not survive land (T-0577), so this ticket is the real target.
+Standing home for the 17 compliance.yaml entries whose controls are machine-checkable but not yet enforced by any gate/check. They previously carried deferred:T-0388 (the reconciliation ticket itself) -- a self-reference that would orphan them the moment T-0388 closed; T-0388's pass re-pointed them here. Each entry needs either a real enforcing check in src/frob/strata/_compliance.py (then flip to handled_by) or a reasoned out_of_scope/not-checkable disposition. NOTE: T-0388's Done report references this as T-0607 (ex-draft, id lost at land); drafts do not survive land (T-0577), so this ticket is the real target.
 
 <!-- ticket:T-0608 -->
 ```yaml
@@ -6787,7 +6787,7 @@ T-0431 precedent for this exact SCOPE001 shape) and `pyproject.toml`/
 `PythonAdapter`, `NormalizedFunction.max_nesting_depth`/`cyclomatic`;
 bumped 0.81.0 -> 0.82.0 and ran `frob release stamp`).
 
-Filed T-draft-4e98abb1 (mints a real T-#### id at land, off-default-branch
+Filed T-0632 (ex-draft, id lost at land) (mints a real T-#### id at land, off-default-branch
 convention) for the normalized-model schema extension `_extract_signatures`/
 dispatch detection need before they can migrate too.
 
@@ -6923,7 +6923,7 @@ TS, unlike python which has none), branches (`if_statement`, boolean
 semantics against TS's own grammar node types.
 
 Not mapped (no `NormalizedModule` entity exists for these -- filed
-T-draft-92681f8e, a follow-up ticket, since adding a new entity kind is a
+T-0681 (ex-draft, id lost at land), a follow-up ticket, since adding a new entity kind is a
 model change outside this adapter's own scope): `interface_declaration`,
 `type_alias_declaration`, `enum_declaration`, and TSX JSX syntax.
 
@@ -7077,7 +7077,7 @@ was extended (`frob ticket scope --add src/frob/arch/_rust.py --reason
 `RustAdapter` maps: `struct_item` (named/tuple/unit fields ->
 `NormalizedField`, tuple fields get positional names "0"/"1"/...),
 `enum_item` (each variant -> a `NormalizedField`, since no
-`NormalizedVariant` entity exists -- filed T-draft-9cc739e3, a follow-up,
+`NormalizedVariant` entity exists -- filed T-0743 (ex-draft, id lost at land), a follow-up,
 not folded into this ticket's own scope, same class of gap as T-0611's
 TS interface/type-alias follow-up), `trait_item` (both a bodyless
 `function_signature_item` and a defaulted `function_item` become the
@@ -7163,7 +7163,7 @@ one's own version-pin line changed as a side effect of the pyproject.toml
 bump, same SCOPE001 shape as T-0610's precedent). Deletion-filter (`git
 diff main --diff-filter=D --stat`) empty.
 
-Filed T-draft-9cc739e3 (mints a real T-#### id at land) for a
+Filed T-0743 (ex-draft, id lost at land) (mints a real T-#### id at land) for a
 `NormalizedVariant` model extension to carry enum associated-data shape,
 per the enum-variant limitation noted above.
 
@@ -7503,7 +7503,7 @@ drives `parse_file`'s general `extract()` call, which dispatches through
 entry (T-0613 added only `parse_kotlin`/`raw_kotlin_tree`, no `RawSymbol`
 walker), so any real `.kt` file reaching `parse_file`/`frob check`'s repo
 scan after this wiring would `KeyError`, not gracefully report
-`UnsupportedLanguage`. Filed T-draft-a78fa200 (mints a real T-#### id at
+`UnsupportedLanguage`. Filed T-0723 (ex-draft, id lost at land) (mints a real T-#### id at
 land) for the actual central-dispatch wiring (a `_walk_kotlin` `RawSymbol`
 walker plus `_EXTENSION_TABLE`/`COMMENT_TYPES`/`_WALKERS` registration
 together) as a follow-up, not folded into this ticket. `TestKotlinAdapter`/
@@ -7549,7 +7549,7 @@ recorded before the final scope additions; refreshed via `frob ticket
 sweep T-0614` after scope settled. Deletion-filter (`git diff main
 --diff-filter=D --stat`) empty.
 
-Filed T-draft-a78fa200 (mints a real T-#### id at land) for the actual
+Filed T-0723 (ex-draft, id lost at land) (mints a real T-#### id at land) for the actual
 kotlin central-dispatch wiring (`_walk_kotlin` `RawSymbol` walker +
 `_EXTENSION_TABLE`/`_extract.py` registration), per the investigation
 above.
@@ -7667,7 +7667,7 @@ adapt(...)` on `class Foo:\n    x: int = 0\n` returns `classes[0].fields ==
 []`, always). No existing test caught this because `TestPythonAdapter`'s
 real-fixture tests never assert on `.fields` via the adapter itself (only
 a hand-built `NormalizedField` construction test exists, bypassing the
-adapter entirely). Filed as T-draft-d49c456f (`uv run frob ticket new`,
+adapter entirely). Filed as T-0727 (ex-draft, id lost at land) (`uv run frob ticket new`,
 parent T-0329, mints a real id at land) with scope
 `src/frob/arch/_python.py,tests/unit/test_arch.py` and the concrete repro
 in its body. The equivalence meta-test documents this as an observed
@@ -7675,7 +7675,7 @@ WAIVER for python's field-count comparison
 (`test_python_field_detection_is_a_documented_waiver`) rather than
 silently expecting parity with TS/rust/kotlin (which all genuinely
 capture this shape); that waiver test must be updated to assert real
-parity once T-draft-d49c456f lands its fix.
+parity once T-0727 (ex-draft, id lost at land) lands its fix.
 
 EPIC T-0329 implication: this was T-0329's own explicit closing acceptance
 criterion ("an arch check written once fires correctly across
@@ -8606,7 +8606,7 @@ threat: null
 component: null
 labels: []
 ```
-T-0610 migrated long-function/god-class/deep-nesting onto NormalizedModule but left two check families on the raw tree-sitter walk, with concrete schema gaps documented: _extract_signatures' body-fingerprint needs full raw AST for alpha-renaming, and _collect_dispatch_refs needs argument-position/dict-value detail NormalizedCall does not carry. Extend the model (arg positions on NormalizedCall; a fingerprint-friendly body projection or a documented decision to keep fingerprints raw-AST-based), then migrate both WITHOUT regressing the T-0360 dispatch-family suppression or T-0370 near-dup discriminator protections (their tests must pass unmodified). NOTE: T-0610's Done report references this as T-draft-4e98abb1 (prose only); this is the real ticket.
+T-0610 migrated long-function/god-class/deep-nesting onto NormalizedModule but left two check families on the raw tree-sitter walk, with concrete schema gaps documented: _extract_signatures' body-fingerprint needs full raw AST for alpha-renaming, and _collect_dispatch_refs needs argument-position/dict-value detail NormalizedCall does not carry. Extend the model (arg positions on NormalizedCall; a fingerprint-friendly body projection or a documented decision to keep fingerprints raw-AST-based), then migrate both WITHOUT regressing the T-0360 dispatch-family suppression or T-0370 near-dup discriminator protections (their tests must pass unmodified). NOTE: T-0610's Done report references this as T-0632 (ex-draft, id lost at land) (prose only); this is the real ticket.
 
 <!-- ticket:T-0633 -->
 ```yaml
@@ -8830,7 +8830,7 @@ docs/modules/testing.md's Flake quarantine section (semantics + public API
 listing) updated to document is_hard_regression, hard_regression_alarms,
 and evaluate_gate's revised exclusion rule.
 
-Left out of scope, filed as a follow-up (T-draft-d529c75a, minted off
+Left out of scope, filed as a follow-up (a lost draft (its scope is covered by T-0635), minted off
 main so will get a real T-#### id once merged): `frob.testing.__init__`
 does not yet re-export `is_hard_regression`/`hard_regression_alarms`, and
 no CLI path (`frob test`) calls `hard_regression_alarms`/`evaluate_gate`
@@ -8986,7 +8986,7 @@ threat: null
 component: null
 labels: []
 ```
-T-0576 landed the frob:deprecated directive and DEPR001-004 gates plus the list_deprecated API, but no CLI surface. Add a frob deprecated subcommand (App/AppConfig runner pattern) listing every deprecation with since/sunset/ticket/status (in-window vs past-sunset vs orphaned), plus the README command-table row and count bump so DOC005 stays green. Was T-draft-e51d8b3b in T-0576's worktree; drafts still do not survive land (T-0637).
+T-0576 landed the frob:deprecated directive and DEPR001-004 gates plus the list_deprecated API, but no CLI surface. Add a frob deprecated subcommand (App/AppConfig runner pattern) listing every deprecation with since/sunset/ticket/status (in-window vs past-sunset vs orphaned), plus the README command-table row and count bump so DOC005 stays green. Was T-0638 (ex-draft, id lost at land) in T-0576's worktree; drafts still do not survive land (T-0637).
 
 <!-- ticket:T-0639 -->
 ```yaml
@@ -9013,7 +9013,7 @@ threat: null
 component: null
 labels: []
 ```
-T-0576's ticket body wanted a deprecated symbol gaining new callers to fire a finding, but frob.graph.callgraph's caller/reference resolution only covers PRIVATE callees by design -- a PUBLIC deprecated symbol's callers are not resolvable today. Design work: either extend the callgraph to public-symbol references (cost/precision tradeoff) or diff-based detection (a new call site referencing the symbol in a change since the directive appeared). Was T-draft-0296fddf in T-0576's worktree; drafts still do not survive land (T-0637).
+T-0576's ticket body wanted a deprecated symbol gaining new callers to fire a finding, but frob.graph.callgraph's caller/reference resolution only covers PRIVATE callees by design -- a PUBLIC deprecated symbol's callers are not resolvable today. Design work: either extend the callgraph to public-symbol references (cost/precision tradeoff) or diff-based detection (a new call site referencing the symbol in a change since the directive appeared). Was T-0639 (ex-draft, id lost at land) in T-0576's worktree; drafts still do not survive land (T-0637).
 
 <!-- ticket:T-0640 -->
 ```yaml
@@ -10206,7 +10206,7 @@ threat: null
 component: null
 labels: []
 ```
-T-0636's is_hard_regression checks all-fail over the ENTIRE bounded 20-run window, so a single stale pass anywhere in the window defeats detection for up to 19 subsequent all-fail runs -- a real hard regression stays promoted and un-alarmed that whole time. Add a recent-tail rule (last K runs all-fail, K configurable, default ~5) alongside or replacing the whole-window rule, with tests covering the one-old-pass-then-long-fail-tail case T-0636's reviewer identified. Update docs/modules/testing.md semantics. NOTE: the hard-regression CLI/alarm wiring is T-0635's scope; T-0636's T-draft-d529c75a duplicated it and needs no refile.
+T-0636's is_hard_regression checks all-fail over the ENTIRE bounded 20-run window, so a single stale pass anywhere in the window defeats detection for up to 19 subsequent all-fail runs -- a real hard regression stays promoted and un-alarmed that whole time. Add a recent-tail rule (last K runs all-fail, K configurable, default ~5) alongside or replacing the whole-window rule, with tests covering the one-old-pass-then-long-fail-tail case T-0636's reviewer identified. Update docs/modules/testing.md semantics. NOTE: the hard-regression CLI/alarm wiring is T-0635's scope; T-0636's a lost draft (its scope is covered by T-0635) duplicated it and needs no refile.
 
 <!-- ticket:T-0680 -->
 ```yaml
@@ -10234,7 +10234,7 @@ threat: null
 component: null
 labels: []
 ```
-The one remaining caught_by gap after T-0382/T-0383: registry-YAML out_of_scope:<reason> disposition strings are a separate surface from the strata model objects and never pass through T-0382's caught_by verification -- a registry entry can be excused with a reason that names no catching control and nothing checks it. Route those disposition reasons through the same verification (or an equivalent registry-side rule) so an out_of_scope registry entry either names a real catching control or carries a substantive reasoned-none, mechanically checked. Was T-draft-6912e7d1 in T-0383's worktree; drafts do not survive land (T-0637).
+The one remaining caught_by gap after T-0382/T-0383: registry-YAML out_of_scope:<reason> disposition strings are a separate surface from the strata model objects and never pass through T-0382's caught_by verification -- a registry entry can be excused with a reason that names no catching control and nothing checks it. Route those disposition reasons through the same verification (or an equivalent registry-side rule) so an out_of_scope registry entry either names a real catching control or carries a substantive reasoned-none, mechanically checked. Was T-0680 (ex-draft, id lost at land) in T-0383's worktree; drafts do not survive land (T-0637).
 
 <!-- ticket:T-0681 -->
 ```yaml
@@ -10262,7 +10262,7 @@ threat: null
 component: null
 labels: []
 ```
-T-0611's TypeScriptAdapter cannot map interface_declaration, type_alias_declaration, enum_declaration, or TSX/JSX -- no NormalizedModule entity exists for them yet. Extend the model (likely a NormalizedTypeDecl entity or fields on NormalizedClass) keeping _normalized.py tree_sitter-free, then map the four constructs in _typescript.py with fires/near-miss tests. Was T-draft-92681f8e in T-0611's worktree; drafts do not survive land until T-0637's fix lands.
+T-0611's TypeScriptAdapter cannot map interface_declaration, type_alias_declaration, enum_declaration, or TSX/JSX -- no NormalizedModule entity exists for them yet. Extend the model (likely a NormalizedTypeDecl entity or fields on NormalizedClass) keeping _normalized.py tree_sitter-free, then map the four constructs in _typescript.py with fires/near-miss tests. Was T-0681 (ex-draft, id lost at land) in T-0611's worktree; drafts do not survive land until T-0637's fix lands.
 
 <!-- ticket:T-0682 -->
 ```yaml
@@ -10730,7 +10730,7 @@ runs well past 120s and needs its own `@pytest.mark.timeout(N)` override;
 adding that (and auditing the rest of tests/system/** for any other file
 close to or past the ceiling) requires editing files under
 tests/system/**, outside this ticket's docs/guides+config-only scope.
-Filed as T-draft-1770ceef (mints its real T-#### id once merged onto
+Filed as T-0742 (ex-draft, id lost at land) (mints its real T-#### id once merged onto
 main) rather than silently expanding scope.
 
 uv.lock needed regenerating for the new pytest-timeout dependency; scope
@@ -11039,7 +11039,7 @@ invoked by any command. Wiring it (plus threading `Module.stores`'
 ids through to the CLI caller) is follow-up work, not silently dropped --
 noted here rather than assumed done.
 
-Found and filed (out of scope, NOT fixed here): T-draft-7f709643 --
+Found and filed (out of scope, NOT fixed here): T-0725 (ex-draft, id lost at land) --
 tests/unit/strata/test_export_golden.py::TestExportGolden::test_k8s/
 test_seccomp/test_iam fail on a clean worktree at main tip (e2f38a51),
 unrelated to any T-0699 change -- design/frob.strata gained fleet
@@ -11940,7 +11940,7 @@ threat: null
 component: null
 labels: []
 ```
-T-0614's KotlinAdapter works standalone but .kt/.kts files are invisible to parse_file/frob check: _EXTENSION_TABLE lacks the extensions and _extract.py's _WALKERS dict-subscript (line ~91, no fallback) would KeyError if the table alone were wired. Deliver the RawSymbol walker for kotlin (mirroring the TS/Rust walkers in _extract.py), COMMENT_TYPES entry, and the extension-table wiring together, with tests proving a real .kt file flows through parse_file into the graph. Was T-draft-a78fa200 (prose-only) in T-0614's Done report.
+T-0614's KotlinAdapter works standalone but .kt/.kts files are invisible to parse_file/frob check: _EXTENSION_TABLE lacks the extensions and _extract.py's _WALKERS dict-subscript (line ~91, no fallback) would KeyError if the table alone were wired. Deliver the RawSymbol walker for kotlin (mirroring the TS/Rust walkers in _extract.py), COMMENT_TYPES entry, and the extension-table wiring together, with tests proving a real .kt file flows through parse_file into the graph. Was T-0723 (ex-draft, id lost at land) (prose-only) in T-0614's Done report.
 
 <!-- ticket:T-0724 -->
 ```yaml
@@ -12251,13 +12251,13 @@ Cold-ran TICK006 against this repo's real ledger: 98 pre-existing Done
 reports fired. One (T-0367, T-0363's Done report) traced to a genuine
 ledger-corruption bug (a missing `<!-- ticket:T-0367 -->` marker had
 silently absorbed T-0367's whole yaml block into T-0363's body) -- fixed
-directly, filed T-draft-71f46bd9 to investigate whether other blocks share
+directly, filed T-0740 (ex-draft, id lost at land) to investigate whether other blocks share
 the defect (kept open, genuinely unresolved). The remaining 97 were the
 T-0577 draft-loss shape.
 
 **First disposition pass** used a coordinator-supplied list of 10 already-
 refiled successors plus 3 more found by direct ledger cross-reference
-(T-0104->T-0107, T-0105->T-0108, T-draft-d49c456f->T-0727), rewriting those
+(T-0104->T-0107, T-0105->T-0108, T-0727 (ex-draft, id lost at land)->T-0727), rewriting those
 13 to name the real id, and negating the remaining 84 (the negation-
 grammar word TICK006 recognizes was rewritten in place -- see
 docs/modules/gates.md's TICK006 section for the exact recognized forms --
@@ -12268,7 +12268,7 @@ annotated "(never refiled)").
 for the draft id ending in `7bae70b7` was FALSE -- tickets-archive.md's
 T-0486 (state done, identical scope `src/frob/dup/_legacy_py.py`)
 self-identifies as its
-recovered successor ("Recovered filing: T-draft-7bae70b7 was filed... its
+recovered successor ("Recovered filing: T-0486 (ex-draft, id lost at land) was filed... its
 ledger block was lost in a merge"). My scripted pass had cross-referenced
 only the coordinator's known-successor list, never recovered-filing
 self-identifications elsewhere in the ledger. Corrected: T-0160's line now
@@ -12296,14 +12296,14 @@ caused the 7bae70b7 miss).
   74 ids' only ledger occurrence is their own negation line -- nothing
   further to inspect for those): T-draft-2a3adb6d, T-draft-e6aafc2f,
   T-draft-aa52c66f, T-draft-5443bd5e, T-draft-b4a0b4be, T-draft-94774bc5,
-  T-draft-9557a879, T-draft-d529c75a.
+  T-draft-9557a879, a lost draft (its scope is covered by T-0635).
 - **All 8 inspected by hand, individually** (not just keyword-matched):
   - T-draft-2a3adb6d: tickets-archive.md prose states it "was resolved
     during T-0253's landing -- coordinator stamped 0.3.0 in that motion --
     so it is dropped here" -- resolved INLINE, never filed as a standing
     ticket; negation correct.
-  - T-draft-d529c75a: tickets.md explicitly states "T-0636's
-    T-draft-d529c75a duplicated it and needs no refile" -- explicit
+  - a lost draft (its scope is covered by T-0635): tickets.md explicitly states "T-0636's
+    a lost draft (its scope is covered by T-0635) duplicated it and needs no refile" -- explicit
     confirmation; negation correct.
   - T-draft-5443bd5e: a separate, unrelated ticket's body mentions being
     "Dropped ... duplicate of T-draft-5443bd5e, same stale-base worktree
@@ -12340,8 +12340,8 @@ changes on the second run. This mattered in practice: `tickets.md`/
 separate times over the course of this pass (concurrent landings elsewhere
 in the ledger), and each time required a clean re-application -- a genuinely
 new phantom pair also surfaced this way (T-0587's Done report, landed on
-main after this ticket's original scan: T-draft-c8ac44fb and
-T-draft-25e37b0e, both already self-disclosed in T-0587's own prose as
+main after this ticket's original scan: T-0730 (ex-draft, id lost at land) and
+a lost draft (superseded by T-0730), both already self-disclosed in T-0587's own prose as
 lost/mistaken and confirmed to have no real successor in either ledger;
 negated the same way).
 
@@ -12361,7 +12361,7 @@ negated the same way).
 - `git diff main --diff-filter=D --stat` empty after every merge.
 
 Dropped T-draft-a7c33c11 (`frob ticket drop ... --absorbed-by T-0726`):
-its disposition work is complete here. Kept T-draft-71f46bd9 (missing-
+its disposition work is complete here. Kept T-0740 (ex-draft, id lost at land) (missing-
 marker ledger-corruption investigation): genuinely unresolved, only one
 instance found and fixed.
 
