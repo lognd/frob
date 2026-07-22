@@ -9535,3 +9535,66 @@ component: null
 labels: []
 ```
 User mandate 2026-07-22: contention semantics are worthless unless ENFORCED -- a declared mode nothing verifies is the catalogued-is-not-enforced trap (T-0343 doctrine). For every node with code= bindings and a declared resource mode (T-0700 grammar), join the declaration against the code's OBSERVED effects (the T-0595 code-binding pattern, wired to production per T-0630; effect classification from the vet/T-0339 capability resolvers): READ = zero write-capable operations against the resource (write-mode opens, os.remove/rename, SQL DML, sends on the port) -- fail-closed on opaque access to the resource; APPEND = writes only via append-mode opens, no truncate/rewrite; ALPHA (update/upgradeable-lock intent, user-specified) = reads freely, but every observed WRITE against the resource must be provably preceded on the same path by an upgrade acquisition (alpha->write transition through the declared arbiter) -- a write reachable while still in alpha-only context fails closed; additionally the model-level alpha+alpha exclusion (at most one alpha declarant per resource) is checked at elaboration, and the code-level analysis flags the upgrade-deadlock ANTI-PATTERN (acquiring write while holding plain read on the same resource, the case alpha exists to prevent -- recommend alpha in the finding); WRITE = read+write allowed but only on declared paths (undeclared sibling access = finding); EXCLUSIVE = write conformance PLUS every observed access provably inside the declared arbiter/lease context (join T-0694's code-level lock identification with the model-level arbiter declaration; an access path outside the arbiter fails closed). Violations are SYS errors naming the node, the declared mode, and the offending observed operation. Litmus fixtures per mode, firing and clean.
+
+<!-- ticket:T-0702 -->
+```yaml
+id: T-0702
+title: 'strata grammar: demand declarations (users/rate) with flow propagation and
+  fan-in summation'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0331
+scope:
+- strata-core/src/parse.rs
+- src/frob/strata/**
+- editors/**
+- docs/strata/**
+- tests/unit/strata/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN two entry nodes declaring users 300k and 200k both flowing into one db resource
+  WHEN elaboration runs THEN the db's aggregate demand is 500k and queryable; GIVEN
+  no demand declared THEN the resource reports demand-undeclared, not zero
+threat: null
+component: null
+labels: []
+```
+User mandate 2026-07-22 (starvation semantics prerequisite): the model has no notion of LOAD, so an exclusive lock and an exclusive lock behind 500k users look identical. Add: (1) demand declarations on entry nodes -- users N (steady population) and/or rate N per_s (arrival rate), parse.rs node/store symmetry per T-0261; (2) propagation: demand flows along existing Flow edges, SUMMING at fan-in, so any node/resource can be asked 'what aggregate demand reaches you' (elaboration-time computation, queryable like effects); (3) optional capacity/holding-time hints on resources and arbiters (capacity N, holds MS) with documented defaults; (4) tmLanguage + docs/strata section + litmus fixtures (propagation sums correctly across fan-in/fan-out, missing demand is distinguishable from zero demand). Consumers (utilization/starvation obligations) are the sibling ticket.
+
+<!-- ticket:T-0703 -->
+```yaml
+id: T-0703
+title: 'strata starvation/throughput obligations: serialization-point utilization,
+  writer starvation, unbounded waits'
+state: queued
+kind: security
+origin: human
+created: '2026-07-22'
+priority: high
+blocked_by:
+- T-0700
+- T-0702
+parent: T-0331
+scope:
+- src/frob/strata/**
+- tests/unit/strata/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN 500k declared users flowing to a db with mode=exclusive and default holding
+  time WHEN sys checks run THEN a utilization error fires showing the arithmetic;
+  GIVEN the same db with demand undeclared THEN a fail-closed demand-undeclared finding;
+  GIVEN a read-preferring lock with no alpha/fairness on a read-heavy resource THEN
+  a writer-starvation advisory
+threat: null
+component: null
+labels: []
+```
+User mandate 2026-07-22: the 500k-users-vs-exclusive-write-lock case. Three obligation families over the T-0700 modes + demand grammar: (1) SERIALIZATION-POINT UTILIZATION: every effective-concurrency-1 point (exclusive mode, single arbiter, alpha-gated writer path) compares aggregate inbound demand x holding-time hint against capacity; over threshold = SYS error SHOWING THE ARITHMETIC in the finding (demand, holding time, resulting utilization/wait), not a vibe; an exclusive/arbitered resource with UNDECLARED upstream demand fails closed with demand-undeclared (the check cannot be silently skipped). Coordinate with T-0645 (SPOF -- a saturated single arbiter is quantitative SPOF) and T-0646 (backpressure -- what bounds the queue at the serialization point). (2) WRITER STARVATION policy: read-heavy resource whose declared lock discipline lets readers perpetually preempt the writer (plain RW preference, no alpha or fair-queuing declaration) = advisory recommending alpha (T-0700) or fair queuing, even at low utilization. (3) UNBOUNDED WAIT: lock/arbiter acquisition on a contended resource with no declared timeout joins the T-0640 timeout obligation family. Litmus fixtures per family, firing and clean.
