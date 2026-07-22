@@ -6866,3 +6866,117 @@ component: null
 labels: []
 ```
 T-0576's ticket body wanted a deprecated symbol gaining new callers to fire a finding, but frob.graph.callgraph's caller/reference resolution only covers PRIVATE callees by design -- a PUBLIC deprecated symbol's callers are not resolvable today. Design work: either extend the callgraph to public-symbol references (cost/precision tradeoff) or diff-based detection (a new call site referencing the symbol in a change since the directive appeared). Was T-draft-0296fddf in T-0576's worktree; drafts still do not survive land (T-0637).
+
+<!-- ticket:T-0640 -->
+```yaml
+id: T-0640
+title: 'strata: TIMEOUT obligation on every remote/cross-boundary flow (REL2xx)'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0331
+scope:
+- src/frob/strata/**
+- docs/strata/**
+- tests/unit/strata/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given a .strata flow crossing a service/process boundary with no timeout attr, when
+  frob check runs, then REL2xx fires unless waived with a reason
+- Given a declared timeout, when the bound code path lacks a matching real timeout
+  arg, then the check fails (proof-against-code), not merely passes on declaration
+threat: null
+component: null
+labels: []
+```
+Add a flow-level TIMEOUT attribute + REL2xx checker + litmus + docs: every remote/cross-boundary flow must declare a bounded timeout (unbounded hang otherwise). Deny-by-default with reasoned-waive channel (T-0174). Discharge must be proof-against-code (real timeout arg at the call site) per T-0331's PROVABILITY CONSTRAINT, not bare declaration.
+
+<!-- ticket:T-0641 -->
+```yaml
+id: T-0641
+title: 'strata: RETRY backoff+jitter + non-idempotent-op guard + IDEMPOTENCY key obligation'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0331
+scope:
+- src/frob/strata/**
+- docs/strata/**
+- tests/unit/strata/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given a flow with retry=true and no backoff/jitter declared, when checked, then
+  it fails
+- Given a retryable flow targeting a non-idempotent mutating op with no idempotency
+  key, when checked, then it fails
+threat: null
+component: null
+labels: []
+```
+RETRY flow attr must declare exponential backoff+jitter; a retry on a non-idempotent op is a hard obligation failure unless the target op declares an idempotency key. Proof-against-code: retry loop and backoff params must match declared values; bare declaration insufficient (T-0331 PROVABILITY CONSTRAINT).
+
+<!-- ticket:T-0642 -->
+```yaml
+id: T-0642
+title: 'strata: CIRCUIT BREAKER / bulkhead obligation per external dependency'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0331
+scope:
+- src/frob/strata/**
+- docs/strata/**
+- tests/unit/strata/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given an external-dependency node with no circuit-breaker/bulkhead declared, when
+  checked, then the obligation fires
+threat: null
+component: null
+labels: []
+```
+Every external dependency node must declare a circuit-breaker/bulkhead policy, extending LINT004 kill-switch. Proof-against-code required per epic PROVABILITY CONSTRAINT.
+
+<!-- ticket:T-0643 -->
+```yaml
+id: T-0643
+title: 'strata: FALLBACK/graceful-degradation obligation for CRITICAL dependencies'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0640
+- T-0642
+parent: T-0331
+scope:
+- src/frob/strata/**
+- docs/strata/**
+- tests/unit/strata/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given a CRITICAL dependency with no fallback declared, when checked, then the obligation
+  fires
+threat: null
+component: null
+labels: []
+```
+A dependency marked CRITICAL must declare a fallback/graceful-degradation path, and the fallback code path must be shown present (proof-against-code) or explicitly waived. Reuses the circuit-breaker ticket's dependency-criticality classification, hence blocked on that groundwork existing.
