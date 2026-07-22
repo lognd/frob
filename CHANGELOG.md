@@ -17,6 +17,69 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.72.0] - unreleased (merge-resolution bump)
+
+Version bump to resolve a merge conflict between this branch's own
+0.69.0 (T-0545/T-0552/T-0547/T-0556/T-0548, below) and `main`'s
+concurrently-landed 0.71.0 (T-0322/T-0410/T-0408) -- no additional public
+API change of its own, just the coordinating bump above both parents.
+
+## [0.69.0] - unreleased (attestable coverage lock, B5)
+
+T-0545 (docs/audits/gates-accounting.md B5): `.frob/coverage-stamp` and
+`coverage.xml` are both gitignored, so no committed artifact let a
+reviewer or CI verify a TEST005/006 coverage claim. `frob.gates._coverage`
+gained a new committed summary artifact, `frob-coverage.lock.json`
+(deliberately outside `.gitignore`'s reach, and rounded/summarized rather
+than the raw xml): `write_coverage_lock`/`load_coverage_lock` write/read
+it, `coverage_lock_diff` reports which modules' claimed line coverage
+drifted beyond tolerance from a fresh `coverage.xml`. `stamp_coverage`
+now optionally refreshes the lock itself when passed a `GraphSnapshot`,
+so an existing `--stamp-coverage` call can adopt it with no new CLI flag.
+New advisory gate TEST012 (WARN) flags a missing or drifted lock. Left
+deliberately split for follow-up (see T-0545's Done report): wiring
+`frob check --stamp-coverage`'s CLI entry point
+(`frob.app.check_runner._run_stamp_coverage`) to pass its snapshot
+through, and promoting TEST012 to ERROR once the lock is adopted
+repo-wide.
+
+T-0552 (docs/audits/gates-accounting.md B3): a ts/c/cpp `frob:tests` edge
+credited toward TEST001-004 purely by name/path convention, with zero
+execution evidence, stayed silently indistinguishable from a genuinely
+executed test. `frob.gates._edge_is_native_unverified` splits that
+structural-fallback check out; new advisory gate TEST013 (WARN) names
+every edge relying on it, without withdrawing the underlying credit
+(promoting to ERROR needs a real vitest/ctest collector, split to
+T-draft-2411b5b6).
+
+T-0547 (docs/audits/gates-accounting.md B6): `_inferred_unit_cases`
+matches a public symbol to a collected test by snake-cased leaf name
+alone, no module/path binding -- two different files' same-named public
+functions can both clear TEST001 off one test exercising only one. New
+advisory gate TEST014 (WARN) flags the ambiguity (verified: a blanket
+path-correlation tightening breaks 81/81 convention matches in this
+repo's own layout, so credit is left unchanged; 5 real collisions found
+and split to T-draft-b7c57519).
+
+T-0556 (docs/audits/gates-accounting.md B2): `frob.graph.lock`'s default
+ack facet (`sig`) meant rewriting a documented function's BODY after ack
+never tripped DRIFT001. `_facets_for_ref` now always also locks `body`
+(a compat survey found only 43 lock entries repo-wide, all sig-only,
+safe to change as the new default outright).
+
+T-0548 (docs/audits/gates-accounting.md B1): TEST001, the only blocking
+per-symbol test gate, is satisfied by a name-matched test with no
+assertion at all (`def test_myfunc(): pass` clears it). New advisory
+gate TEST015 (WARN) reuses T-0549's existing assertion heuristic to
+flag it, without changing what TEST001 blocks on (the actual
+coverage-tied credit tightening is cross-cutting, split to
+T-draft-934c675a).
+
+T-0567: two DEAD001 residuals in `frob.gates.__init__` resolved --
+`_documented_srcs` was genuinely orphaned (deleted); `_run_jobs`/
+`_timed_job` had `frob:tests` directives misplaced above the TEST
+function instead of the source symbols (moved).
+
 ## [0.71.0] - unreleased (registry pipeline: INV006 source-side coverage, frob:enforces, corpus add, REG010)
 
 T-0408: new `INV006` gate (`frob.gates.inv006_gate`, WARN severity)
@@ -64,6 +127,24 @@ timing 36-45s -> 3.5-4.7s. `frob.excludes.BUILTIN_SKIP_DIRS` also gained
 `.hypothesis`/`.serena` (perf audit finding M6, `docs/audits/perf.md`) --
 neither has a tree-sitter grammar but every rglob-based stage was still
 walking/stat'ing/opening every entry inside them.
+
+## [0.69.0] - unreleased (INV006 source-side invariant coverage)
+
+T-0408: new `INV006` gate (`frob.gates.inv006_gate`, WARN severity)
+extends INV003's exclusivity-claim scan from doc-only (`docs/modules`,
+`docs/strata`) to SOURCE trees (`INV006_SRC_DIRS`: `src`,
+`strata-core/src`, `frob-core/src`) -- the coverage-COMPLETENESS half of
+T-0408's gap: INV001/INV002 only ever validated invariants that already
+existed, and INV003/INV004 never looked past `docs/`, leaving well over a
+hundred source docstrings/comments asserting "only"/"never...except"/
+"exactly one" guarantees entirely outside any gate's reach. INV006 reuses
+INV003's exact noise-filtered claim vocabulary
+(`frob.gates.invariants.find_exclusivity_claims`) and treats a file as
+covered by any real `frob:invariant` edge anchored anywhere in it
+(joined against the same `GraphSnapshot` every other code-anchor gate
+already loads), with `frob:waive INV006 reason="..."` as the disposition
+path for a claim that is genuine design intent rather than an enforced
+behavior.
 
 ## [0.66.0] - unreleased (graph leaves + DEAD001/PARSE001, part 2)
 

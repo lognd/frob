@@ -48,7 +48,14 @@ from frob.gates._baseline import (
     stamp_baseline,
     violation_fingerprint,
 )
-from frob.gates._coverage import load_coverage, load_stamp, stamp_coverage
+from frob.gates._coverage import (
+    coverage_lock_diff,
+    load_coverage,
+    load_coverage_lock,
+    load_stamp,
+    stamp_coverage,
+    write_coverage_lock,
+)
 from frob.gates._cve_fingerprint_scan import cve_fingerprint_scan_gate
 from frob.gates._dead_symbols import dead_symbol_gate
 from frob.gates._docblocks import doc004_gate
@@ -585,6 +592,18 @@ def _edge_has_execution_evidence(
         return True
     if _node_id_collected(_symref_to_nodeid(e.target), tests.node_ids):
         return True
+    return _edge_is_native_unverified(e, snapshot)
+
+
+# frob:ticket T-0552
+def _edge_is_native_unverified(e: Edge, snapshot: GraphSnapshot | None) -> bool:
+    """True if `e`'s TEST001-004 credit rests solely on the ts/c/cpp
+    structural fallback (T-0090/T-0552, docs/audits/gates-accounting.md B3):
+    frob runs no collector that ever actually executes it -- `e.src` merely
+    *looks like* test code by name/path and resolves in the graph. Split out
+    of `_edge_has_execution_evidence` so `_test013_native_unverified` can
+    identify exactly the edges receiving this weakest tier of credit,
+    without duplicating the check."""
     return (
         snapshot is not None
         and _is_native_test_src(e.src)
@@ -869,6 +888,19 @@ _KNOWN_GATE_RULES = frozenset(
         "TEST009",
         "TEST010",
         "TEST011",
+        # T-0545: committed `frob-coverage.lock.json` missing/stale/drifted
+        # relative to the live coverage.xml-derived data.
+        "TEST012",
+        # T-0552: a `frob:tests` edge credited toward TEST001-004 only via
+        # the ts/c/cpp structural (name/path) fallback, never executed.
+        "TEST013",
+        # T-0547: two different files' same-leaf-name public symbols, both
+        # relying only on the naming-convention fallback, credited by the
+        # same collected test node id(s) (B6's def-parse-twice repro).
+        "TEST014",
+        # T-0548: a public symbol clears TEST001 only via test(s) with no
+        # assertion-shaped construct at all (B1's vacuous-test repro).
+        "TEST015",
         "TODO001",
         "TODO002",
         # T-0412: frob:debt (temporary, ticket-bound, collected-before-
@@ -1737,11 +1769,6 @@ def coverage_gate(
     else:
         violations.extend(_todo001(snapshot, queue, diff))
     return tuple(violations)
-
-
-def _documented_srcs(snapshot: GraphSnapshot) -> set[str]:
-    """Symrefs carrying an explicit `frob:doc` edge (resolving or not)."""
-    return {e.src for e in snapshot.edges if e.kind == EdgeKind.DOC}
 
 
 def _resolved_documented_srcs(root: Path, snapshot: GraphSnapshot) -> set[str]:
@@ -4486,6 +4513,174 @@ def _test001_002(
 
 
 # ---------------------------------------------------------------------------
+# TEST014
+# ---------------------------------------------------------------------------
+
+
+# frob:ticket T-0547
+# frob:tests tests/test_gates.py::TestTest014AmbiguousConventionMatch.test_fires_on_cross_file_same_test_collision  # noqa: E501
+# frob:tests tests/test_gates.py::TestTest014AmbiguousConventionMatch.test_silent_when_symbol_has_explicit_edge  # noqa: E501
+# frob:tests tests/test_gates.py::TestTest014AmbiguousConventionMatch.test_silent_when_no_leaf_name_collision  # noqa: E501
+def _test014_ambiguous_convention(
+    snapshot: GraphSnapshot, tests: CollectedTests
+) -> tuple[Violation, ...]:
+    """TEST014 (warn): `_inferred_unit_cases`'s naming-convention fallback
+    matches by snake-cased leaf name alone, no module/path binding (docs/
+    audits/gates-accounting.md B6/E6, T-0547) -- two different public
+    functions named the same thing in different files can both clear
+    TEST001 off ONE test that only actually exercises one of them.
+
+    A compat survey against this repo itself (T-0547's Done report has the
+    numbers) found that a blanket "test file must share a top-level
+    directory with the symbol's file" tightening breaks ~100% of the
+    convention-fallback matches here -- this repo's `tests/` tree does not
+    mirror `src/frob/<pkg>/` layout closely enough for that correlation to
+    be sound as a default. So this gate does NOT withdraw or gate TEST001
+    credit (unlike TEST013's analogous restraint for the same reason);
+    it only makes the ambiguity itself loud and auditable: two or more
+    DIFFERENT files' public symbols sharing a leaf name, relying only on
+    the convention fallback (no explicit `frob:tests` edge on either), and
+    credited by at least one of the SAME collected test node ids -- the
+    exact structural shape of the audit's `def parse()` repro. Fixing a
+    specific finding here is either adding an explicit `frob:tests` edge
+    to disambiguate, or renaming one of the colliding symbols.
+    """
+    unit_edges = _unit_test_edges(snapshot, "unit")
+    by_leaf: dict[str, list[tuple[str, str, frozenset[str]]]] = {}
+    for record in snapshot.symbols.values():
+        if (
+            not record.public
+            or record.kind not in (SymbolKind.FUNCTION, SymbolKind.METHOD)
+            or is_test_file(record.id.path)
+            or record.id.path.endswith(".strata")
+            or unit_edges.get(record.symref)
+        ):
+            continue
+        _, _, qualname = record.symref.partition("::")
+        leaf = _snake(qualname.rsplit(".", 1)[-1])
+        if len(leaf) < 3:
+            continue
+        token = re.compile(rf"(^|[^a-z0-9]){re.escape(leaf)}([^a-z0-9]|$)")
+        matched = frozenset(
+            node
+            for node in tests.node_ids
+            if token.search(_snake(node.rsplit("::", 1)[-1]))
+        )
+        if matched:
+            by_leaf.setdefault(leaf, []).append(
+                (record.symref, record.id.path, matched)
+            )
+
+    violations: list[Violation] = []
+    for leaf, entries in sorted(by_leaf.items()):
+        if len({path for _, path, _ in entries}) < 2:
+            continue  # same leaf, but all in one file -- not the B6 shape
+        for i, (symref_a, _, matched_a) in enumerate(entries):
+            for symref_b, _, matched_b in entries[i + 1 :]:
+                shared = sorted(matched_a & matched_b)
+                if not shared:
+                    continue
+                violations.append(
+                    Violation(
+                        rule="TEST014",
+                        severity=Severity.WARN,
+                        file=symref_a.split("::", 1)[0],
+                        line=0,
+                        message=(
+                            f"TEST014: {symref_a} and {symref_b} share leaf name "
+                            f"'{leaf}' and are both credited toward TEST001 by "
+                            f"the same convention-matched test(s) ({shared[0]}"
+                            f"{', ...' if len(shared) > 1 else ''}) -- at most "
+                            "one is likely actually exercised; add an explicit "
+                            'frob:tests edge kind="unit" to disambiguate'
+                        ),
+                    )
+                )
+    return tuple(violations)
+
+
+# ---------------------------------------------------------------------------
+# TEST015
+# ---------------------------------------------------------------------------
+
+
+# frob:ticket T-0548
+# frob:tests tests/test_gates.py::TestTest015VacuousCredit.test_fires_on_no_op_test_body  # noqa: E501
+# frob:tests tests/test_gates.py::TestTest015VacuousCredit.test_silent_when_any_matching_test_asserts  # noqa: E501
+# frob:tests tests/test_gates.py::TestTest015VacuousCredit.test_silent_when_no_test_matches_at_all  # noqa: E501
+def _test015_vacuous_credit(
+    snapshot: GraphSnapshot, tests: CollectedTests
+) -> tuple[Violation, ...]:
+    """TEST015 (warn): a public symbol clears TEST001 (docs/audits/
+    gates-accounting.md B1/E1, T-0548) using ONLY test(s) with no
+    assertion-shaped construct at all (`_has_assertion_evidence`, T-0549's
+    existing heuristic) -- `def test_myfunc(): pass` is real, blocking
+    TEST001 credit today, and nothing inspects whether it asserts anything.
+
+    A dedicated ticket (T-0548) already scoped the RIGHT-WAY fix as
+    large and cross-cutting: tying TEST001 credit to nonzero per-symbol
+    branch coverage, or promoting TEST005 to ERROR, touches TEST002/003/
+    004/005/009's severities and interactions together, plus the
+    legacy-adoption WARN campaign `frob.toml` already documents -- not a
+    change to make blind. This gate reuses T-0549's existing, already-
+    proven `_has_assertion_evidence` heuristic (extended here from
+    "disambiguate a parametrize inflation" to "the single test IS the only
+    credit source") to make the exact B1 repro loud and auditable
+    WITHOUT changing what TEST001 itself blocks on -- the same restrained
+    pattern as TEST013/TEST014's WARN-only landings this same audit pass.
+    """
+    root = Path(snapshot.root)
+    unit_edges = _unit_test_edges(snapshot, "unit")
+    violations: list[Violation] = []
+    for record in snapshot.symbols.values():
+        if (
+            not record.public
+            or record.kind not in (SymbolKind.FUNCTION, SymbolKind.METHOD)
+            or is_test_file(record.id.path)
+            or record.id.path.endswith(".strata")
+        ):
+            continue
+        edges = unit_edges.get(record.symref, [])
+        node_ids: set[str] = set()
+        if edges:
+            for edge in _valid_edges(edges, tests, snapshot):
+                base = _symref_to_nodeid(edge.src)
+                node_ids.update(
+                    n for n in tests.node_ids if n == base or n.startswith(f"{base}[")
+                )
+        else:
+            _, _, qualname = record.symref.partition("::")
+            leaf = _snake(qualname.rsplit(".", 1)[-1])
+            if len(leaf) < 3:
+                continue
+            token = re.compile(rf"(^|[^a-z0-9]){re.escape(leaf)}([^a-z0-9]|$)")
+            node_ids = {
+                n for n in tests.node_ids if token.search(_snake(n.rsplit("::", 1)[-1]))
+            }
+        if not node_ids:
+            continue
+        if any(_has_assertion_evidence(root, n.split("[", 1)[0]) for n in node_ids):
+            continue
+        example = sorted(node_ids)[0]
+        violations.append(
+            Violation(
+                rule="TEST015",
+                severity=Severity.WARN,
+                file=record.id.path,
+                line=record.span[0],
+                message=(
+                    f"TEST015: {record.symref} clears TEST001 only via "
+                    f"test(s) with no assertion-shaped construct ({example}"
+                    f"{', ...' if len(node_ids) > 1 else ''}) -- likely a "
+                    "vacuous/no-op test; add a real assertion or bind an "
+                    'explicit frob:tests edge kind="unit" to one'
+                ),
+            )
+        )
+    return tuple(violations)
+
+
+# ---------------------------------------------------------------------------
 # TEST003
 # ---------------------------------------------------------------------------
 
@@ -4974,6 +5169,7 @@ def _test005(
     return (
         *_test008_unjoined_root(data),
         *_test011_freshness(data),
+        *_test012_lock(snapshot, data),
         *_test005_symbols(snapshot, data, cfg),
         *_test005_modules(data, cfg),
         *_test005_systems(systems, data, cfg),
@@ -5032,6 +5228,65 @@ def _test011_freshness(data: CoverageData) -> tuple[Violation, ...]:
             )
         )
     return tuple(violations)
+
+
+# T-0545: the committed coverage-lock path, for TEST012 messages only --
+# `frob.gates._coverage` owns the actual path constant and all IO on it.
+_COVERAGE_LOCK_REL = "frob-coverage.lock.json"
+
+
+# frob:ticket T-0545
+# frob:tests tests/test_gates.py::TestTestGate.test_test012_missing_lock_warns  # noqa: E501
+# frob:tests tests/test_gates.py::TestTestGate.test_test012_drifted_module_warns  # noqa: E501
+# frob:tests tests/test_gates.py::TestTestGate.test_test012_matching_lock_is_clean  # noqa: E501
+def _test012_lock(snapshot: GraphSnapshot, data: CoverageData) -> tuple[Violation, ...]:
+    """TEST012 (warn): the committed `frob-coverage.lock.json` (docs/audits/
+    gates-accounting.md B5) is missing, or its claimed per-module line
+    coverage has drifted from what this run's `coverage.xml` actually shows.
+
+    WARN, not ERROR, for the same reason TEST011 is WARN: this is a new,
+    opt-in-by-adoption mechanism (`stamp_coverage` only just started writing
+    it, T-0545) and promoting a repo with no lock yet committed straight to
+    a hard failure would break every existing checkout on this change
+    alone. The severity is intentionally revisited once the lock is
+    established as standard practice -- see T-0545's Done report for the
+    promotion-to-ERROR follow-up filed for that.
+    """
+    root = Path(snapshot.root)
+    lock = load_coverage_lock(root)
+    if lock is None:
+        return (
+            Violation(
+                rule="TEST012",
+                severity=Severity.WARN,
+                file=str(_COVERAGE_LOCK_REL),
+                line=0,
+                message=(
+                    "TEST012: no committed coverage lock at "
+                    f"{_COVERAGE_LOCK_REL} -- TEST005/006's coverage claim "
+                    "cannot be verified by a reviewer or CI without trusting "
+                    "local .frob/ state; run: frob check --stamp-coverage"
+                ),
+            ),
+        )
+    drifted = coverage_lock_diff(lock, data)
+    if not drifted:
+        return ()
+    modules = ", ".join(drifted)
+    return (
+        Violation(
+            rule="TEST012",
+            severity=Severity.WARN,
+            file=str(_COVERAGE_LOCK_REL),
+            line=0,
+            message=(
+                "TEST012: committed coverage lock diverges from this run's "
+                f"coverage.xml for: {modules} -- the committed coverage claim "
+                "may not be reproducible from a clean run; re-stamp "
+                "(frob check --stamp-coverage) if this run is the accurate one"
+            ),
+        ),
+    )
 
 
 def _exclude_filtered_coverage(
@@ -5182,6 +5437,56 @@ def _test010_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     return tuple(violations)
 
 
+# ---------------------------------------------------------------------------
+# TEST013
+# ---------------------------------------------------------------------------
+
+
+# frob:ticket T-0552
+# frob:tests tests/test_gates.py::TestTest013NativeUnverified.test_fires_on_structural_only_edge  # noqa: E501
+# frob:tests tests/test_gates.py::TestTest013NativeUnverified.test_silent_on_executed_edge  # noqa: E501
+def _test013_native_unverified(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """TEST013 (warn): a `frob:tests` edge's TEST001-004 credit rests solely
+    on the ts/c/cpp structural fallback (docs/audits/gates-accounting.md
+    B3/E3, T-0552) -- frob runs no vitest/ctest/etc collector, so the edge
+    was never actually executed, only pattern-matched by name/path and
+    confirmed to resolve in the graph.
+
+    WARN, not ERROR, and does NOT withdraw the underlying TEST001-004
+    credit (see `_edge_is_native_unverified`'s docstring and T-0552's Done
+    report for why: withdrawing credit outright, with no real TS/C/C++
+    execution collector wired yet, would turn every native-language public
+    symbol in every sibling repo's TEST001 ERROR-red overnight for a
+    structural change alone, not a real regression). The point of this
+    gate is exactly the audit's alternative fix direction: make the
+    degraded-trust state a LOUD, filterable, per-edge finding instead of a
+    silent full pass, so a reviewer or `--delta` triage can see precisely
+    which "tested" native symbols have zero real execution evidence behind
+    them.
+    """
+    violations: list[Violation] = []
+    for edge in snapshot.edges:
+        if edge.kind != EdgeKind.TESTS:
+            continue
+        if not _edge_is_native_unverified(edge, snapshot):
+            continue
+        violations.append(
+            Violation(
+                rule="TEST013",
+                severity=Severity.WARN,
+                file=edge.src.split("::", 1)[0],
+                line=0,
+                message=(
+                    f"TEST013: frob:tests edge {edge.src} -> {edge.target} is "
+                    "credited toward TEST001-004 by name/path convention only "
+                    "-- frob has no collector that executes it, so this is "
+                    "unverified, not proven test coverage"
+                ),
+            )
+        )
+    return tuple(violations)
+
+
 # frob:doc docs/modules/gates.md#public-api
 def test_gate(
     snapshot: GraphSnapshot,
@@ -5190,7 +5495,7 @@ def test_gate(
     tests: CollectedTests,
     cfg: TestPolicy,
 ) -> tuple[Violation, ...]:
-    """TEST001..TEST011. Interfaces derived from packages with public symbols
+    """TEST001..TEST015. Interfaces derived from packages with public symbols
     (see `_test003`'s docstring for the exact alpha semantics). Coverage is
     consumed as recorded evidence, never produced here. TEST009 (T-0225) is
     `.strata` design files' e2e-binding counterpart to TEST003, which
@@ -5202,7 +5507,19 @@ def test_gate(
     `_test005`'s return since it shares the same `coverage.is_nothing`
     guard) is an advisory WARN that coverage.xml itself looks stale or
     deflated, so a spike in TEST005 findings can be triaged as a coverage
-    problem rather than a real regression (see `_test011_freshness`)."""
+    problem rather than a real regression (see `_test011_freshness`).
+    TEST012 (T-0545, also folded into `_test005`'s return) is the coverage
+    accounting chain's attestability check: the committed
+    `frob-coverage.lock.json` summary (`frob.gates._coverage.write_coverage_lock`)
+    is missing, or its claimed per-module numbers have drifted from this
+    run's `coverage.xml` -- see `_test012_lock`. TEST013 (T-0552) makes the
+    ts/c/cpp structural-fallback credit `_valid_edges` already grants
+    LOUD instead of silent: see `_test013_native_unverified`. TEST014
+    (T-0547) is `_inferred_unit_cases`' name-only ambiguity made loud in
+    the same spirit: see `_test014_ambiguous_convention`. TEST015 (T-0548)
+    is the audit's own B1 repro (`def test_myfunc(): pass` clearing
+    TEST001) made loud via T-0549's existing assertion heuristic: see
+    `_test015_vacuous_credit`."""
     violations: list[Violation] = []
     violations.extend(_test001_002(snapshot, tests, cfg))
     violations.extend(_test003(snapshot, tests, cfg))
@@ -5212,6 +5529,9 @@ def test_gate(
     violations.extend(_test006(snapshot))
     violations.extend(_test009(snapshot, tests, cfg))
     violations.extend(_test010_violations(snapshot))
+    violations.extend(_test013_native_unverified(snapshot))
+    violations.extend(_test014_ambiguous_convention(snapshot, tests))
+    violations.extend(_test015_vacuous_credit(snapshot, tests))
     return tuple(violations)
 
 
@@ -7183,6 +7503,7 @@ def _build_ticket_scoped_jobs(
 
 
 # frob:ticket T-0232
+# frob:tests tests/test_gates.py::TestRunJobsTimingAttribution.test_cpu_bound_neighbor_does_not_inflate_a_cheap_jobs_timing  # noqa: E501
 def _timed_job(
     job: Callable[[], tuple[Violation, ...]],
 ) -> Callable[[], tuple[tuple[Violation, ...], float]]:
@@ -7214,6 +7535,7 @@ def _timed_job(
     return run
 
 
+# frob:tests tests/test_gates.py::TestRunJobsTimingAttribution.test_cpu_bound_neighbor_does_not_inflate_a_cheap_jobs_timing  # noqa: E501
 def _run_jobs(
     jobs: dict[str, Callable[[], tuple[Violation, ...]]],
 ) -> tuple[list[Violation], dict[str, int], dict[str, float]]:
@@ -7431,9 +7753,11 @@ __all__ = [
     "inv004_gate",
     "inv006_gate",
     "invariant_gate",
+    "coverage_lock_diff",
     "is_baseline_stale",
     "load_baseline",
     "load_coverage",
+    "load_coverage_lock",
     "load_invariants",
     "cve_fingerprint_scan_gate",
     "debt_gate",
@@ -7464,4 +7788,5 @@ __all__ = [
     "test_gate",
     "violation_fingerprint",
     "walk_lint_gate",
+    "write_coverage_lock",
 ]

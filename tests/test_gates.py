@@ -3764,6 +3764,77 @@ class TestTestGate:
         violations = run_test_gate(snap, (), Some(coverage), tests, TestPolicy())
         assert not any(v.rule == "TEST011" for v in violations)
 
+    # frob:ticket T-0545
+    def test_test012_missing_lock_warns(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::_test012_lock
+        from typani.option import Some
+
+        from frob.gates import CoverageData
+
+        snap = _snapshot(tmp_path)
+        coverage = CoverageData(
+            source_sha="x",
+            symbol_branch={},
+            module_line={"src/frob/pkg/a.py": 90.0},
+            stale_by_mtime=False,
+            module_join_fraction=1.0,
+        )
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(snap, (), Some(coverage), tests, TestPolicy())
+        test012 = [v for v in violations if v.rule == "TEST012"]
+        assert len(test012) == 1
+        assert test012[0].severity == Severity.WARN
+        assert "no committed coverage lock" in test012[0].message
+
+    # frob:ticket T-0545
+    def test_test012_drifted_module_warns(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::_test012_lock
+        from typani.option import Some
+
+        from frob.gates import CoverageData, write_coverage_lock
+
+        snap = _snapshot(tmp_path)
+        locked = CoverageData(
+            source_sha="x",
+            symbol_branch={},
+            module_line={"src/frob/pkg/a.py": 90.0},
+            stale_by_mtime=False,
+            module_join_fraction=1.0,
+        )
+        write_coverage_lock(tmp_path, locked)
+        live = CoverageData(
+            source_sha="y",
+            symbol_branch={},
+            module_line={"src/frob/pkg/a.py": 10.0},
+            stale_by_mtime=False,
+            module_join_fraction=1.0,
+        )
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(snap, (), Some(live), tests, TestPolicy())
+        test012 = [v for v in violations if v.rule == "TEST012"]
+        assert len(test012) == 1
+        assert "src/frob/pkg/a.py" in test012[0].message
+
+    # frob:ticket T-0545
+    def test_test012_matching_lock_is_clean(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::_test012_lock
+        from typani.option import Some
+
+        from frob.gates import CoverageData, write_coverage_lock
+
+        snap = _snapshot(tmp_path)
+        coverage = CoverageData(
+            source_sha="x",
+            symbol_branch={},
+            module_line={"src/frob/pkg/a.py": 90.0},
+            stale_by_mtime=False,
+            module_join_fraction=1.0,
+        )
+        write_coverage_lock(tmp_path, coverage)
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(snap, (), Some(coverage), tests, TestPolicy())
+        assert not any(v.rule == "TEST012" for v in violations)
+
     def test_test006_missing_stamp(self, tmp_path: Path) -> None:
         snap = _snapshot(tmp_path)
         from frob.gates import _test006  # noqa: PLC0415
@@ -3859,6 +3930,7 @@ class TestTestGate:
         assert any(v.rule == "TEST002" for v in violations)
 
 
+# frob:ticket T-0545
 class TestCoverageLoad:
     def test_missing_coverage_xml(self, tmp_path: Path) -> None:
         result = load_coverage(tmp_path)
@@ -4168,6 +4240,57 @@ class TestCoverageLoad:
         assert stamp is not None
         assert "src/frob/pkg/a.py" in stamp["file_hashes"]
 
+    # frob:ticket T-0545
+    def test_stamp_coverage_refreshes_committed_lock(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_coverage.py::stamp_coverage
+        # frob:tests src/frob/gates/_coverage.py::load_coverage_lock
+        # T-0545: passing a snapshot makes stamp_coverage also write the
+        # committed frob-coverage.lock.json, with no separate CLI call.
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        xml = """<?xml version="1.0"?>
+<coverage>
+  <packages>
+    <package>
+      <classes>
+        <class filename="src/frob/pkg/a.py" line-rate="0.9">
+          <lines><line number="2" hits="1" branch="false"/></lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>
+"""
+        (tmp_path / "coverage.xml").write_text(xml)
+        snap = _snapshot(tmp_path)
+        result = stamp_coverage(tmp_path, snap)
+        assert result.is_ok
+
+        from frob.gates._coverage import load_coverage_lock
+
+        lock = load_coverage_lock(tmp_path)
+        assert lock is not None
+        assert lock["module_line"]["src/frob/pkg/a.py"] == 90.0
+        assert not (tmp_path / "frob-coverage.lock.json").is_relative_to(
+            tmp_path / ".frob"
+        )
+
+    # frob:ticket T-0545
+    def test_coverage_lock_diff_flags_drift_and_missing_module(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_coverage.py::coverage_lock_diff
+        from frob.gates import CoverageData
+        from frob.gates._coverage import coverage_lock_diff
+
+        lock = {"module_line": {"a.py": 90.0, "b.py": 50.0}}
+        live = CoverageData(source_sha="y", module_line={"a.py": 91.0})
+        assert coverage_lock_diff(lock, live) == ("b.py",)
+
+        live_drifted = CoverageData(
+            source_sha="y", module_line={"a.py": 10.0, "b.py": 50.0}
+        )
+        assert coverage_lock_diff(lock, live_drifted) == ("a.py",)
+
 
 # frob:ticket T-0541
 # frob:ticket T-0542
@@ -4249,8 +4372,6 @@ class TestRunJobsTimingAttribution:
     number smeared across every job sharing the thread pool."""
 
     def test_cpu_bound_neighbor_does_not_inflate_a_cheap_jobs_timing(self) -> None:
-        # frob:tests src/frob/gates/__init__.py::_run_jobs
-        # frob:tests src/frob/gates/__init__.py::_timed_job
         """Pin the regression this ticket was filed against: run one
         deliberately CPU-heavy job (busy-loops, holds the GIL) alongside
         several genuinely cheap jobs on the same `ThreadPoolExecutor`, as
@@ -5147,6 +5268,193 @@ class TestTest010KindValidation:
         v = _first_rule(violations, "DRIFT002")
         assert v is not None
         assert "src/frob/pkg/a.py::gone" in v.message
+
+
+# frob:ticket T-0552
+class TestTest013NativeUnverified:
+    """T-0552 (docs/audits/gates-accounting.md B3/E3): a `frob:tests` edge
+    whose ONLY credit toward TEST001-004 is the ts/c/cpp structural (name/
+    path) fallback -- frob runs no collector that actually executes it --
+    must be surfaced as a loud, filterable TEST013 finding, not stay
+    silently indistinguishable from a real, executed test."""
+
+    # frob:ticket T-0552
+    def test_fires_on_structural_only_edge(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates.py::TestTest013NativeUnverified.test_fires_on_structural_only_edge  # noqa: E501
+        from typani.option import Nothing
+
+        _write(
+            tmp_path,
+            "src/pkg/thing.c",
+            "void some_public_func(void) {}\n\n"
+            '// frob:tests src/pkg/thing.c::some_public_func kind="unit"\n'
+            "void test_something(void) {}\n",
+        )
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(node_ids=frozenset())  # frob never ran this
+        violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
+        test013 = [v for v in violations if v.rule == "TEST013"]
+        assert len(test013) == 1
+        assert test013[0].severity == Severity.WARN
+        assert "test_something" in test013[0].message
+        assert "unverified" in test013[0].message
+
+    # frob:ticket T-0552
+    def test_silent_on_executed_edge(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates.py::TestTest013NativeUnverified.test_silent_on_executed_edge  # noqa: E501
+        # A python edge with real collected execution evidence (pytest node
+        # id) must never be mistaken for the native-unverified case -- the
+        # extension check in `_edge_is_native_unverified` is what keeps
+        # TEST013 scoped to languages frob genuinely cannot execute.
+        from typani.option import Nothing
+
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "def test_helper():\n"
+            '    # frob:tests src/frob/pkg/a.py::helper kind="unit"\n'
+            "    assert True\n",
+        )
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(node_ids=frozenset({"tests/test_a.py::test_helper"}))
+        violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
+        assert "TEST013" not in _rules(violations)
+
+
+# frob:ticket T-0547
+class TestTest014AmbiguousConventionMatch:
+    """T-0547 (docs/audits/gates-accounting.md B6/E6): `_inferred_unit_cases`
+    matches by snake-cased leaf name alone, no module/path binding -- two
+    different public functions named the same thing in different files can
+    both clear TEST001 off one test that only actually exercises one."""
+
+    # frob:ticket T-0547
+    def test_fires_on_cross_file_same_test_collision(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates.py::TestTest014AmbiguousConventionMatch.test_fires_on_cross_file_same_test_collision  # noqa: E501
+        # The audit's own repro: two `def parse()` in different modules,
+        # neither carrying an explicit frob:tests edge, one `test_parse`
+        # covering (by convention) both.
+        from typani.option import Nothing
+
+        _write(tmp_path, "src/frob/pkg_a/mod.py", "def parse(x):\n    return x\n")
+        _write(tmp_path, "src/frob/pkg_b/mod.py", "def parse(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "tests/test_parse.py",
+            "def test_parse():\n    assert True\n",
+        )
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(node_ids=frozenset({"tests/test_parse.py::test_parse"}))
+        violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
+        test014 = [v for v in violations if v.rule == "TEST014"]
+        assert len(test014) == 1
+        assert test014[0].severity == Severity.WARN
+        assert "pkg_a/mod.py::parse" in test014[0].message
+        assert "pkg_b/mod.py::parse" in test014[0].message
+
+    # frob:ticket T-0547
+    def test_silent_when_symbol_has_explicit_edge(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates.py::TestTest014AmbiguousConventionMatch.test_silent_when_symbol_has_explicit_edge  # noqa: E501
+        # An explicit frob:tests edge on either colliding symbol removes it
+        # from the ambiguous naming-convention pool entirely.
+        from typani.option import Nothing
+
+        _write(
+            tmp_path,
+            "src/frob/pkg_a/mod.py",
+            '# frob:tests tests/test_parse.py::test_parse kind="unit"\n'
+            "def parse(x):\n    return x\n",
+        )
+        _write(tmp_path, "src/frob/pkg_b/mod.py", "def parse(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "tests/test_parse.py",
+            "def test_parse():\n    assert True\n",
+        )
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(node_ids=frozenset({"tests/test_parse.py::test_parse"}))
+        violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
+        assert "TEST014" not in _rules(violations)
+
+    # frob:ticket T-0547
+    def test_silent_when_no_leaf_name_collision(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates.py::TestTest014AmbiguousConventionMatch.test_silent_when_no_leaf_name_collision  # noqa: E501
+        from typani.option import Nothing
+
+        _write(tmp_path, "src/frob/pkg_a/mod.py", "def parse(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "tests/test_parse.py",
+            "def test_parse():\n    assert True\n",
+        )
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(node_ids=frozenset({"tests/test_parse.py::test_parse"}))
+        violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
+        assert "TEST014" not in _rules(violations)
+
+
+# frob:ticket T-0548
+class TestTest015VacuousCredit:
+    """T-0548 (docs/audits/gates-accounting.md B1/E1): TEST001, the only
+    blocking per-symbol test gate, is satisfied by a single collected test
+    node id whose name matches -- nothing inspects whether it asserts
+    anything. `def test_myfunc(): pass` clears TEST001 today; TEST015
+    reuses T-0549's existing assertion heuristic to make that loud."""
+
+    # frob:ticket T-0548
+    def test_fires_on_no_op_test_body(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates.py::TestTest015VacuousCredit.test_fires_on_no_op_test_body  # noqa: E501
+        # The audit's own repro: a public function whose only covering
+        # test, matched by naming convention, has an empty (no-op) body.
+        from typani.option import Nothing
+
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        _write(tmp_path, "tests/test_helper.py", "def test_helper():\n    pass\n")
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(
+            node_ids=frozenset({"tests/test_helper.py::test_helper"})
+        )
+        violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
+        test015 = [v for v in violations if v.rule == "TEST015"]
+        assert len(test015) == 1
+        assert test015[0].severity == Severity.WARN
+        assert "src/frob/pkg/a.py::helper" in test015[0].message
+        assert "test_helper" in test015[0].message
+
+    # frob:ticket T-0548
+    def test_silent_when_any_matching_test_asserts(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates.py::TestTest015VacuousCredit.test_silent_when_any_matching_test_asserts  # noqa: E501
+        from typani.option import Nothing
+
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "tests/test_helper.py",
+            "def test_helper():\n    assert helper_result() == 1\n"
+            "def helper_result():\n    return 1\n",
+        )
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(
+            node_ids=frozenset({"tests/test_helper.py::test_helper"})
+        )
+        violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
+        assert "TEST015" not in _rules(violations)
+
+    # frob:ticket T-0548
+    def test_silent_when_no_test_matches_at_all(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates.py::TestTest015VacuousCredit.test_silent_when_no_test_matches_at_all  # noqa: E501
+        # No matching test at all is TEST001's own job (already ERROR) --
+        # TEST015 only concerns credit that WAS granted, so it must stay
+        # silent here rather than double-report the same gap.
+        from typani.option import Nothing
+
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
+        assert "TEST015" not in _rules(violations)
+        assert "TEST001" in _rules(violations)
 
 
 class TestPairLevelIntegration:

@@ -4042,7 +4042,7 @@ docs/audits/gates-accounting.md B10. _cov002 uses _open_scopes = every open tick
 id: T-0545
 title: 'gates: coverage/baseline/prework evidence chain is gitignored-local, untrusted
   by CI (B5)'
-state: queued
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-21'
@@ -4051,8 +4051,41 @@ blocked_by: []
 parent: T-0403
 scope:
 - src/frob/gates/
-scope_changes: []
-evidence: []
+- pyproject.toml
+- CHANGELOG.md
+- uv.lock
+- frob.lock
+scope_changes:
+- op: add
+  glob: pyproject.toml
+  reason: 'REL001: public API changed (write_coverage_lock/load_coverage_lock/coverage_lock_diff),
+    requires version bump + changelog entry per project convention'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: 'REL001: public API changed (write_coverage_lock/load_coverage_lock/coverage_lock_diff),
+    requires version bump + changelog entry per project convention'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: uv.lock reflects pyproject.toml's version bump; frob.lock is the doc-ack
+    ledger updated for stamp_coverage's ack
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: frob.lock
+  reason: uv.lock reflects pyproject.toml's version bump; frob.lock is the doc-ack
+    ledger updated for stamp_coverage's ack
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_gates.py::TestTestGate::test_test012_missing_lock_warns
+- tests/test_gates.py::TestTestGate::test_test012_drifted_module_warns
+- tests/test_gates.py::TestTestGate::test_test012_matching_lock_is_clean
+- tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_refreshes_committed_lock
+- tests/test_gates.py::TestCoverageLoad::test_coverage_lock_diff_flags_drift_and_missing_module
 attachments: []
 acceptance: []
 threat: null
@@ -4061,12 +4094,88 @@ labels: []
 ```
 docs/audits/gates-accounting.md B5. coverage.xml, .frob/coverage-stamp, .frob/baseline, .frob/prework/*.json are all gitignored -- a fresh CI checkout has no stamp and no committed artifact any reviewer/CI can diff to verify a coverage claim. RIGHT-WAY fix direction: commit a signed/summary coverage artifact (hash + floors, not the raw xml) or fail closed in CI when the stamp's source_sha cannot be reproduced from a clean run, so TEST005/006 mean something externally verifiable.
 
+## Done report
+
+docs/audits/gates-accounting.md B5: `.frob/coverage-stamp`, `coverage.xml`,
+`.frob/baseline`, `.frob/prework/*.json` are all gitignored, so a fresh CI
+checkout or a reviewer reading a diff has no committed artifact to verify
+a TEST005/006 coverage claim against.
+
+Fix landed (narrow, attestable, in-scope of src/frob/gates/): a new
+committed summary artifact, `frob-coverage.lock.json` at the repo root --
+deliberately NOT under `.frob/` or any other gitignored path (no existing
+`.gitignore` rule matches it, so it is committed by default with zero
+`.gitignore` edit needed).
+
+- `frob.gates._coverage.write_coverage_lock` writes a small, rounded
+  (1 decimal), deterministic summary: `source_sha` + `module_line` per-module
+  line-coverage percentages. Never the raw xml or per-line hit data.
+- `load_coverage_lock` reads it back.
+- `coverage_lock_diff` reports which modules' claimed line coverage
+  drifted beyond a 2-point tolerance from a freshly-loaded `CoverageData`
+  -- including a module present in the lock but ABSENT from live data
+  (silently dropping a module from measurement is exactly the evasion
+  this exists to catch, matching the audit's B4 fail-open lesson rather
+  than repeating it).
+- `stamp_coverage` gained an optional `snapshot` parameter: when passed,
+  it also calls `write_coverage_lock` after writing the existing
+  `.frob/coverage-stamp`, so any caller that already has a snapshot gets
+  the committed artifact refreshed automatically, no new CLI flag needed.
+- New gate TEST012 (WARN, folded into `_test005`'s return alongside
+  TEST008/TEST011): missing or drifted committed lock. WARN, not ERROR,
+  deliberately -- this is a brand-new opt-in-by-adoption mechanism; ERROR
+  would break every existing checkout the moment this change lands, before
+  anyone has committed a lock. Promotion to ERROR is the natural next step
+  once adopted (see filed follow-up below).
+
+Honest split (LARGE ticket, survey-and-split is expected):
+1. Filed T-draft-3c4a7039 ("Wire frob check --stamp-coverage to refresh
+   committed coverage lock", scope `src/frob/app/check_runner.py`) --
+   `_run_stamp_coverage` (the actual `--stamp-coverage` CLI entry point)
+   is out of T-0545's `src/frob/gates/` scope and still calls
+   `stamp_coverage(root)` with no snapshot, so today the lock is only
+   refreshed by a caller that passes one explicitly (e.g. a test, or a
+   future in-scope caller) -- not yet by the existing CLI flag. That
+   ticket also carries the TEST012-to-ERROR promotion follow-up.
+2. Did NOT touch `.gitignore` at all (also out of `src/frob/gates/`
+   scope) -- unnecessary, since `frob-coverage.lock.json` was chosen
+   specifically to already fall outside every existing ignore rule.
+3. Did NOT re-architect `.frob/baseline`/`.frob/prework/*.json` (the
+   audit's B5 also names these) -- out of scope for this pass; the fix
+   here is scoped to the coverage chain (TEST005/006) the audit's B5
+   description centers on. A parallel lock for baseline/prework, if
+   wanted, is a separate, smaller follow-up not filed yet (noting here so
+   it isn't silently dropped).
+
+REL001 (public API changed, major): `pyproject.toml` bumped 0.68.0 ->
+0.69.0; `CHANGELOG.md` entry added. Scope formally extended via
+`frob ticket scope --add pyproject.toml --add CHANGELOG.md --add uv.lock
+--add frob.lock` (uv.lock reflects the version bump; frob.lock is the
+doc-ack ledger for `frob ack src/frob/gates/_coverage.py::stamp_coverage`,
+needed because `stamp_coverage`'s new `snapshot` parameter moved its sig
+digest).
+
+### Changed
+```
+ src/frob/gates/__init__.py |  7 ++-----
+ tests/test_gates.py        |  2 --
+ tickets.md                 | 28 ++++++++++++++++++++++++++--
+ 3 files changed, 28 insertions(+), 9 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestTestGate::test_test012_missing_lock_warns` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTestGate::test_test012_drifted_module_warns` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTestGate::test_test012_matching_lock_is_clean` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageLoad::test_stamp_coverage_refreshes_committed_lock` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageLoad::test_coverage_lock_diff_flags_drift_and_missing_module` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0547 -->
 ```yaml
 id: T-0547
 title: 'gates: name-only test-convention match credits unrelated same-named symbols
   (B6)'
-state: queued
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-21'
@@ -4076,7 +4185,10 @@ parent: T-0403
 scope:
 - src/frob/gates/
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_gates.py::TestTest014AmbiguousConventionMatch::test_fires_on_cross_file_same_test_collision
+- tests/test_gates.py::TestTest014AmbiguousConventionMatch::test_silent_when_symbol_has_explicit_edge
+- tests/test_gates.py::TestTest014AmbiguousConventionMatch::test_silent_when_no_leaf_name_collision
 attachments: []
 acceptance: []
 threat: null
@@ -4085,11 +4197,72 @@ labels: []
 ```
 docs/audits/gates-accounting.md B6. _inferred_unit_cases matches by snake-cased leaf name only, no module/path binding. Two different public functions both named parse (different modules) are both covered by one test_parse that exercises only one. Repro: two def parse() in different files, one test_parse -> both clear TEST001. RIGHT-WAY fix direction: require some path/module correlation between the test file and the symbol's file before the naming-convention fallback applies. Risk: repo does not strictly mirror tests-to-src layout everywhere -- needs a compat survey before tightening, too large for the T-0403 sweep budget.
 
+## Done report
+
+docs/audits/gates-accounting.md B6/E6: `_inferred_unit_cases` matches a
+public symbol to a collected test by snake-cased leaf name alone, no
+module/path binding. Repro: two `def parse()` in different files, one
+`test_parse` -> both clear TEST001 even though it only exercises one.
+
+Compat survey done FIRST (required per the ticket, "too large for the
+T-0403 sweep budget" note), measured against this repo's own graph:
+- 81 public, non-test symbols currently rely purely on the naming-
+  convention fallback (no explicit `frob:tests` edge).
+- A blanket "test file must share a top-level directory with the
+  symbol's file" tightening breaks ALL 81 of them (0 survive) -- this
+  repo's `tests/` tree (flat + `unit/`/`system/`/`integration/`
+  subdirs) does not mirror `src/frob/<pkg>/` layout closely enough for
+  that correlation to be sound as a default tightening. Confirms the
+  ticket's own risk note.
+- Narrowing the search to the ACTUAL B6 shape -- two or more DIFFERENT
+  files' same-leaf-name public symbols, both relying only on the
+  convention fallback, credited by at least one of the SAME collected
+  test node ids -- found 5 real collision groups in this repo today:
+  `main`, `format`, `as_text`, `as_json`, `run` (e.g.
+  `src/frob/__main__.py::main` and `src/frob/perf/_harness.py::main`
+  both credited by `tests/integration/test_interfaces.py::...
+  test_main_cli_dispatches`).
+
+Landed (sound, zero-regression): TEST014 (WARN), a new gate that makes
+this exact ambiguity loud and auditable without changing what TEST001
+credits -- mirroring TEST013's restraint (T-0552) for the identical
+reason: withdrawing credit from all 5 collision groups outright, with no
+verified per-case remedy, would ERROR-red real symbols across the repo
+for a structural change alone, and the survey shows a blanket
+module-correlation rule is unsound here. `_test014_ambiguous_convention`
+groups convention-only-matched symbols by snake-cased leaf name, and for
+every pair spanning 2+ distinct files that share a matched test node id,
+emits one WARN naming both symbols and the shared test.
+
+Split off (real fix + judgment call): T-draft-b7c57519 ("Resolve TEST014
+name-collision cases: disambiguate or tighten TEST001 credit") -- to
+actually resolve the 5 found collisions (explicit `frob:tests` edges or
+renames) and design/validate a general tightening rule now that real
+positive/negative examples exist to test it against.
+
+### Changed
+```
+ CHANGELOG.md                |  19 ++++
+ frob.lock                   |   2 +-
+ pyproject.toml              |   2 +-
+ src/frob/gates/__init__.py  | 159 ++++++++++++++++++++++++++--
+ src/frob/gates/_coverage.py | 125 +++++++++++++++++++++-
+ tests/test_gates.py         | 177 +++++++++++++++++++++++++++++++-
+ tickets.md                  | 245 ++++++++++++++++++++++++++++++++++++++++++--
+ uv.lock                     |   2 +-
+ 8 files changed, 708 insertions(+), 23 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestTest014AmbiguousConventionMatch::test_fires_on_cross_file_same_test_collision` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTest014AmbiguousConventionMatch::test_silent_when_symbol_has_explicit_edge` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTest014AmbiguousConventionMatch::test_silent_when_no_leaf_name_collision` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0548 -->
 ```yaml
 id: T-0548
 title: 'gates: TEST001 credit requires real coverage, not name-match only (B1)'
-state: queued
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-21'
@@ -4099,7 +4272,10 @@ parent: T-0403
 scope:
 - src/frob/gates/
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_gates.py::TestTest015VacuousCredit::test_fires_on_no_op_test_body
+- tests/test_gates.py::TestTest015VacuousCredit::test_silent_when_any_matching_test_asserts
+- tests/test_gates.py::TestTest015VacuousCredit::test_silent_when_no_test_matches_at_all
 attachments: []
 acceptance: []
 threat: null
@@ -4108,12 +4284,72 @@ labels: []
 ```
 docs/audits/gates-accounting.md B1/E1. TEST001 (the only blocking per-symbol test gate) is satisfied by a single collected pytest node id whose name contains the function's snake name (_inferred_unit_cases, or a frob:tests edge that merely collects). Nothing inspects assertions or whether the symbol is even called: def test_myfunc(): pass clears it. TEST002 (case count) and TEST005 (branch coverage) are WARN-only so they never block. Repro: name an empty test after a public function -> frob check green. RIGHT-WAY fix direction: tie TEST001 credit to nonzero per-symbol branch coverage (promote TEST005 to ERROR, or require both name/edge match AND coverage>0 before TEST001 clears). Large, cross-cutting change (touches TEST002/003/004/005/009 severity + interaction, and the legacy-adoption WARN campaign noted in frob.toml comments) -- too large for the T-0403 sweep budget, needs its own dedicated ticket.
 
+## Done report
+
+docs/audits/gates-accounting.md B1/E1: TEST001, the only BLOCKING per-symbol
+test gate, is satisfied by a single collected pytest node id whose name
+contains the function's snake name -- nothing inspects assertions or
+whether the symbol is even called. `def test_myfunc(): pass` clears it
+today; TEST002 (case count) and TEST005 (branch coverage) are WARN-only,
+so nothing blocks a repo of vacuous tests.
+
+The ticket's own body correctly scoped the RIGHT-WAY fix as large and
+cross-cutting: tying TEST001 credit to nonzero per-symbol branch coverage
+(or promoting TEST005 to ERROR) touches TEST002/003/004/005/009's
+severities and interactions together, plus the legacy-adoption WARN
+campaign frob.toml documents -- "needs its own dedicated ticket" per the
+original ticket body.
+
+Landed (sound, zero-regression, matching TEST013/TEST014's restraint this
+same audit pass): TEST015 (WARN). Rather than inventing new detection
+logic, it reuses T-0549's existing, already-proven `_has_assertion_evidence`
+heuristic -- previously only used to cap PARAMETRIZE-inflated case counts
+back to 1 -- extended to the exact B1 shape: a public symbol whose TEST001
+credit (via explicit edge OR the naming-convention fallback) comes ONLY
+from test(s) with no assertion-shaped construct at all. Fires WARN naming
+the symbol and an example vacuous test id; does not change what TEST001
+itself blocks on.
+
+Split off (the real fix + judgment call): T-draft-934c675a ("Tie TEST001
+credit to real per-symbol coverage (promote TEST005/TEST015,
+cross-cutting)") -- wiring `CoverageData` into `_test001_002` (which today
+only sees `CollectedTests`, no coverage), deciding whether to require
+`symbol_branch[record.symref] > 0` for TEST001 credit, and running the
+same compat-survey discipline this audit pass used for T-0547/T-0556
+before promoting anything.
+
+Also noted (not touched): the T-draft-9557a879 COV002 grace-window
+anomaly (found during T-0556) is still present against the base commit
+`frob check` was run from here -- reproduces on symbols from prior closed
+tickets, unrelated to T-0548's own new code (verified: all TEST015-related
+new symbols in gates/__init__.py and test_gates.py are clean of COV002).
+
+### Changed
+```
+ CHANGELOG.md                |  19 ++
+ frob.lock                   |   2 +-
+ pyproject.toml              |   2 +-
+ src/frob/gates/__init__.py  | 253 ++++++++++++++++++++++++-
+ src/frob/gates/_coverage.py | 125 +++++++++++-
+ src/frob/graph/lock.py      |  27 ++-
+ tests/test_gates.py         | 249 +++++++++++++++++++++++-
+ tests/test_graph_lock.py    |  41 +++-
+ tickets.md                  | 449 ++++++++++++++++++++++++++++++++++++++++++--
+ uv.lock                     |   2 +-
+ 10 files changed, 1136 insertions(+), 33 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestTest015VacuousCredit::test_fires_on_no_op_test_body` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTest015VacuousCredit::test_silent_when_any_matching_test_asserts` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTest015VacuousCredit::test_silent_when_no_test_matches_at_all` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0552 -->
 ```yaml
 id: T-0552
 title: 'gates: native-language frob:tests edges get TEST001-004 credit with zero execution
   (B3)'
-state: queued
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-21'
@@ -4123,7 +4359,9 @@ parent: T-0403
 scope:
 - src/frob/gates/
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_gates.py::TestTest013NativeUnverified::test_fires_on_structural_only_edge
+- tests/test_gates.py::TestTest013NativeUnverified::test_silent_on_executed_edge
 attachments: []
 acceptance: []
 threat: null
@@ -4131,6 +4369,58 @@ component: null
 labels: []
 ```
 docs/audits/gates-accounting.md B3/E3. _edge_has_execution_evidence: for TS/C/C++ (_NATIVE_TEST_EXTENSIONS) an edge counts as valid execution evidence if it merely looks like test code by name/path and resolves in the snapshot -- frob runs no TS/C/C++ test collector, so it is never actually executed. An empty void test_foo(){} satisfies TEST001-004. RIGHT-WAY fix direction: either wire real TS/C/C++ test collectors (vitest/ctest already exist per-pipeline per T-0404 finding 1 -- join their results into gate evidence) or mark native frob:tests edges as an explicit degraded 'unverified' state that does not silently satisfy TEST001. Overlaps T-0404 finding 1 (gates not run in native pipelines at all) -- coordinate the two fixes.
+
+## Done report
+
+docs/audits/gates-accounting.md B3/E3: `_edge_has_execution_evidence` grants
+full TEST001-004 execution credit to a ts/c/cpp `frob:tests` edge purely by
+name/path convention (`_is_native_test_symref` + snapshot resolution) --
+frob runs no vitest/ctest/etc collector, so an empty `void test_foo(){}`
+was silently indistinguishable from a genuinely executed test.
+
+Right-way fix direction per the audit was either (a) wire real TS/C/C++
+collectors, or (b) mark the credit as an explicit degraded "unverified"
+state instead of a silent pass. (a) requires new runner infrastructure in
+`src/frob/testing/` -- out of this ticket's `src/frob/gates/` scope, and
+building it well needs its own design pass, so filed as a follow-up
+(T-draft-2411b5b6, "Wire real TS/C/C++ test collectors (vitest/ctest) into
+gate evidence", scope `src/frob/testing/`).
+
+Implemented (b) within scope:
+- Split the native-fallback check out of `_edge_has_execution_evidence`
+  into `_edge_is_native_unverified` (same logic, just named and reusable).
+- New gate TEST013 (WARN): fires once per TESTS edge whose ONLY credit is
+  that structural fallback, naming the edge and stating plainly that it is
+  "unverified, not proven test coverage."
+- Deliberately did NOT withdraw the underlying TEST001-004 credit --
+  `_valid_edges`/`_edge_has_execution_evidence` are unchanged in what they
+  grant. Withdrawing credit outright, with no real collector to replace it,
+  would flip every native-language public symbol across every sibling repo
+  using this fallback to a TEST001 ERROR overnight for a structural change
+  alone, not a real regression -- the same reasoning T-0545's TEST012 used
+  for why that gate is WARN, not ERROR, on first landing.
+
+Honest split (LARGE ticket): the actual collector wiring (the durable fix)
+and the follow-up question of whether TEST013 should later promote to
+ERROR once collectors exist are both left to T-draft-2411b5b6, noted in
+that ticket's body.
+
+### Changed
+```
+ CHANGELOG.md                |  19 +++++
+ frob.lock                   |   2 +-
+ pyproject.toml              |   2 +-
+ src/frob/gates/__init__.py  |  91 +++++++++++++++++++++---
+ src/frob/gates/_coverage.py | 125 ++++++++++++++++++++++++++++++++-
+ tests/test_gates.py         | 125 ++++++++++++++++++++++++++++++++-
+ tickets.md                  | 165 ++++++++++++++++++++++++++++++++++++++++++--
+ uv.lock                     |   2 +-
+ 8 files changed, 510 insertions(+), 21 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestTest013NativeUnverified::test_fires_on_structural_only_edge` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTest013NativeUnverified::test_silent_on_executed_edge` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0554 -->
 ```yaml
@@ -4160,7 +4450,7 @@ docs/audits/lang-check-docs.md finding 1. run_check_cpp/run_check_rust/run_check
 ```yaml
 id: T-0556
 title: 'gates: DRIFT001 default sig facet is blind to behavior/body rewrites (B2)'
-state: queued
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-21'
@@ -4169,8 +4459,27 @@ blocked_by: []
 parent: T-0403
 scope:
 - src/frob/gates/ src/frob/graph/
-scope_changes: []
-evidence: []
+- src/frob/graph/
+- tests/test_graph_lock.py
+scope_changes:
+- op: add
+  glob: src/frob/graph/
+  reason: ticket's original scope field was a single malformed glob string 'src/frob/gates/
+    src/frob/graph/' instead of two entries; splitting it out, plus tests/test_graph_lock.py
+    for the behavior-change regression updates
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_graph_lock.py
+  reason: ticket's original scope field was a single malformed glob string 'src/frob/gates/
+    src/frob/graph/' instead of two entries; splitting it out, plus tests/test_graph_lock.py
+    for the behavior-change regression updates
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_graph_lock.py::TestAckDrift::test_ack_then_sig_edit_yields_stale
+- tests/test_graph_lock.py::TestAckDrift::test_ack_then_body_only_rewrite_yields_stale
+- tests/test_graph_lock.py::TestAckDrift::test_acknowledge_records_every_describes_facet
 attachments: []
 acceptance: []
 threat: null
@@ -4178,6 +4487,74 @@ component: null
 labels: []
 ```
 docs/audits/gates-accounting.md B2/E2. lock.py _DEFAULT_FACET='sig'; a frob:doc/DESCRIBES ack at the default facet only tracks the signature digest. Rewriting a documented function's body (behavior) after ack never trips DRIFT001 -- the doc can lie about behavior forever. Repro: ack a frob:doc at default facet, rewrite only the body, run frob check -> green. RIGHT-WAY fix direction: default ack facet to sig+body (or require an explicit facet and drift-check body+sig together) so a doc can't silently desync from behavior. Cross-cutting: touches every existing ack in the repo's lock file and the ack CLI UX -- too large for the T-0403 sweep budget.
+
+## Done report
+
+docs/audits/gates-accounting.md B2/E2: `frob.graph.lock._DEFAULT_FACET =
+"sig"`; an ack (`frob:doc`/`frob:describes` with no explicit facet, the
+common case) locked only the signature digest. Rewriting a documented
+function's BODY (the actual behavior a doc claims) after ack never tripped
+DRIFT001 -- the doc could lie about behavior forever. Repro: ack a
+`frob:doc` at default facet, rewrite only the body, `frob check` -> green.
+
+Survey done first (required -- "cross-cutting... too large for the T-0403
+sweep budget"): counted this repo's own `frob.lock` at the time of this
+change -- 43 entries total, ALL `facet=sig`, ZERO existing `facet=body`
+entries. Small, uniform footprint; no existing entry already relies on a
+narrower assumption that a wider default would conflict with.
+
+Landed: `frob.graph.lock._facets_for_ref` now always unions in `"body"`
+alongside whatever facet(s) an ack would otherwise record (explicit
+DESCRIBES facets, or the sig-only fallback) -- never narrows an explicit
+request, only widens coverage. `acknowledge` already skips `body` for
+kinds where it is meaningless (`_BODY_FACET_MEANINGLESS_KINDS`: class/
+const/type have a constant body digest, T-0402/G5), so this cannot create
+a body lock entry that could never observe drift.
+
+Given the small, uniform survey result, landed this as the new DEFAULT
+directly rather than behind an opt-in flag: gating it behind a flag
+nobody would proactively flip would leave B2 open indefinitely for no
+real safety gained, when the measured churn is 43 entries in a lock file
+this size. Existing lock entries are unaffected until their next
+`frob ack` (ordinary lock-format evolution, not a retroactive rewrite).
+
+Updated `tests/test_graph_lock.py` (2 existing tests) for the new
+entry-count expectations, and added a new regression test pinning the
+exact B2 repro: ack at default facet, rewrite ONLY the body, confirm
+DRIFT001-equivalent (`report.stale`) now fires on the `body` facet.
+
+Anomaly found and NOT fixed here (filed instead, out of this ticket's
+actual change): after closing this ticket's own work, a full `frob check`
+(with or without `--ticket` override) shows COV002 firing again on several
+symbols from the ALREADY-CLOSED T-0545/T-0552 (e.g. `stamp_coverage`,
+`test_gate`, `_KNOWN_GATE_RULES`) despite each carrying a valid
+`frob:ticket` directive and both tickets' closures still being part of the
+diff vs `main`. This reproduced identically before any T-0556 code change
+and is unrelated to `lock.py`/`test_graph_lock.py` -- it looks like a
+COV002 grace-window hunk-matching artifact from running many tickets
+sequentially in one worktree/branch (git diff hunk shape shifting as later
+tickets' `tickets.md` operations land). Filed as T-draft-9557a879 rather
+than debugged/fixed here, since it is outside T-0556's declared scope and
+is a pre-existing accounting-gate defect in its own right, not a
+consequence of the DRIFT001 facet fix.
+
+### Changed
+```
+ CHANGELOG.md                |  19 +++
+ frob.lock                   |   2 +-
+ pyproject.toml              |   2 +-
+ src/frob/gates/__init__.py  | 253 +++++++++++++++++++++++++++++++--
+ src/frob/gates/_coverage.py | 125 ++++++++++++++++-
+ tests/test_gates.py         | 249 ++++++++++++++++++++++++++++++++-
+ tickets.md                  | 333 ++++++++++++++++++++++++++++++++++++++++++--
+ uv.lock                     |   2 +-
+ 8 files changed, 961 insertions(+), 24 deletions(-)
+```
+
+### Evidence
+- `tests/test_graph_lock.py::TestAckDrift::test_ack_then_sig_edit_yields_stale` (pytest node id, verified passing when recorded)
+- `tests/test_graph_lock.py::TestAckDrift::test_ack_then_body_only_rewrite_yields_stale` (pytest node id, verified passing when recorded)
+- `tests/test_graph_lock.py::TestAckDrift::test_acknowledge_records_every_describes_facet` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0560 -->
 ```yaml
@@ -4412,7 +4789,7 @@ the first time this session).
 ```yaml
 id: T-0567
 title: 'DEAD001 residual: _documented_srcs/_run_jobs in gates/__init__.py'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -4422,7 +4799,8 @@ parent: null
 scope:
 - src/frob/gates/__init__.py
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_gates.py::TestRunJobsTimingAttribution::test_cpu_bound_neighbor_does_not_inflate_a_cheap_jobs_timing
 attachments: []
 acceptance: []
 threat: null
@@ -4430,6 +4808,29 @@ component: null
 labels: []
 ```
 T-0565 fixed the callgraph/const-extraction substrate bugs behind most DEAD001 false positives and triaged the remainder, but src/frob/gates/__init__.py::_documented_srcs (line ~1717) and ::_run_jobs (line ~6986) are out of scope this wave (a sibling agent owns gates/__init__.py). Triage needed: _documented_srcs looks like a genuinely-orphaned helper superseded by _resolved_documented_srcs (verify with grep, likely delete); _run_jobs' docstring references a caller ('_run_jobs used to time each job...') suggesting a similar superseded-helper pattern. Either delete (with a zero-reference grep) or add a correctly-placed frob:tests/frob:invariant directive above the symbol itself (not above a test function -- the DSL binds Edge.src to whatever the comment sits directly above, several of T-0565's residual findings turned out to be frob:tests directives misplaced above the TEST function instead of the SOURCE symbol).
+
+## Done report
+
+`_documented_srcs` in src/frob/gates/__init__.py was genuinely orphaned:
+grep across src/ and tests/ showed zero call sites, only docstring/comment
+mentions referring to its superseding replacement `_resolved_documented_srcs`
+(T-0233). Deleted it outright.
+
+`_run_jobs` (and its helper `_timed_job`) were NOT dead -- they are imported
+and exercised directly by
+tests/test_gates.py::TestRunJobsTimingAttribution::test_cpu_bound_neighbor_does_not_inflate_a_cheap_jobs_timing.
+The DEAD001 false positive was exactly the misplacement pattern the ticket
+called out: the `frob:tests` directives sat above the TEST function in the
+test file instead of above the SOURCE symbols in gates/__init__.py, so the
+comment DSL never bound the edge. Moved both `frob:tests` directives to sit
+directly above `_timed_job` and `_run_jobs` in gates/__init__.py and removed
+the ineffective copies from the test file.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_gates.py::TestRunJobsTimingAttribution::test_cpu_bound_neighbor_does_not_inflate_a_cheap_jobs_timing` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0568 -->
 ```yaml
@@ -4843,3 +5244,119 @@ component: null
 labels: []
 ```
 T-0408 landed INV006 warn-first over src/, strata-core/src/, frob-core/src/ with ~167 undispositioned findings (disclosed prose cut, no ticket -- filed here). Same calibrate-then-burndown discipline as the INV003/T-0520 campaign: bucket by file/pattern first, calibrate further if a noise class dominates, then bind real invariants, reword overclaims, or waive genuine-design-intent with reasons. Candidate for the T-0569 ratchet-pool mechanism once it lands. Scope: src/frob/gates/invariants.py, invariants/, the flagged source files.
+
+<!-- ticket:T-draft-2411b5b6 -->
+```yaml
+id: T-draft-2411b5b6
+title: Wire real TS/C/C++ test collectors (vitest/ctest) into gate evidence
+state: queued
+kind: feature
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/testing/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0552 added TEST013 (WARN) to surface every frob:tests edge whose TEST001-004 credit rests solely on the ts/c/cpp structural name/path fallback (frob.gates._edge_is_native_unverified) instead of real execution -- but it deliberately does NOT withdraw that credit, since no real TS/C/C++ collector exists yet (src/frob/testing/ only has collect_python_tests and collect_rust_tests, T-0092) and withdrawing credit outright would turn every native-language public symbol's TEST001 ERROR-red in every sibling repo overnight, for a structural change alone. This ticket is the real fix: wire vitest (TS) and ctest (C/C++) runners (frob.testing._runners already has a RunnerSpec/RunnerOutcome shape collect_rust_tests followed for T-0092 -- mirror it), producing real node ids frob.gates._valid_edges can match the same way it already matches pytest/cargo. Once real collectors exist, retire the structural-fallback branch of frob.gates._edge_is_native_unverified (or gate it behind 'no collector configured for this language') and consider promoting TEST013 findings on a collector-covered language to ERROR.
+
+<!-- ticket:T-draft-3c4a7039 -->
+```yaml
+id: T-draft-3c4a7039
+title: Wire frob check --stamp-coverage to refresh committed coverage lock
+state: queued
+kind: feature
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/app/check_runner.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0545 added frob.gates._coverage.write_coverage_lock (a committed frob-coverage.lock.json summary) and made stamp_coverage(root, snapshot=None) refresh it when passed a GraphSnapshot -- but src/frob/app/check_runner.py::_run_stamp_coverage (the frob check --stamp-coverage CLI entry point) is out of T-0545's scope (src/frob/gates/ only) and still calls stamp_coverage(root) with no snapshot, so the lock is never refreshed by the existing CLI path today. Wire a GraphSnapshot through (the same one run_gates/other stamping paths already build) so --stamp-coverage keeps the lock current with zero extra flags. Once adopted, also consider promoting TEST012 (frob.gates.__init__::_test012_lock, currently WARN) to ERROR -- see T-0545's Done report for the promotion rationale.
+
+<!-- ticket:T-draft-934c675a -->
+```yaml
+id: T-draft-934c675a
+title: Tie TEST001 credit to real per-symbol coverage (promote TEST005/TEST015, cross-cutting)
+state: queued
+kind: feature
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/__init__.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0548 added TEST015 (WARN) reusing T-0549's existing _has_assertion_evidence heuristic to surface a public symbol whose ONLY TEST001 credit comes from a test with no assertion-shaped construct at all (docs/audits/gates-accounting.md B1's def-myfunc-pass repro). It deliberately does NOT change what TEST001 itself blocks on. This ticket is the actual cross-cutting fix the audit asked for: tie TEST001 credit to nonzero per-symbol branch coverage (frob.gates._coverage.CoverageData.symbol_branch, already computed for TEST005) or promote TEST005 to ERROR -- either requires touching TEST002/003/004/005/009's severities and interactions together, plus reconciling with the legacy-adoption WARN campaign frob.toml already documents (see its own comments), which is why it was split out rather than attempted inside T-0548. Concretely: decide whether TEST001 should require symbol_branch[record.symref] > 0 in addition to a name/edge match (requires wiring CoverageData into _test001_002, which today only sees tests: CollectedTests, not coverage), survey how many currently-green symbols would flip red (mirroring T-0547/T-0556's compat-survey precedent in this same audit pass), and land the sound subset.
+
+<!-- ticket:T-draft-9557a879 -->
+```yaml
+id: T-draft-9557a879
+title: 'COV002 grace-window regression: closed-ticket edges lose coverage across sequential
+  same-worktree ticket closes'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/__init__.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Discovered incidentally while closing T-0556 (unrelated ticket) in a worktree that had already closed T-0567/T-0545/T-0552/T-0547 earlier in the same branch: symbols touched by T-0545/T-0552 (e.g. src/frob/gates/_coverage.py::stamp_coverage, src/frob/gates/__init__.py::_test005/test_gate/_edge_has_execution_evidence/_KNOWN_GATE_RULES/_COVERAGE_LOCK_REL) started failing COV002 again -- 'changed with no frob:ticket edge to an open ticket' -- even though each carries a valid frob:ticket T-0545/T-0552 directive and both tickets' closures are still part of the same uncommitted diff against main (git diff main --stat still shows all the intervening commits). This reproduces with a bare frob check (no --ticket override), so it is not scoped to T-0556's own diff content -- it appeared sometime between T-0552's own clean check (frob check --ticket T-0552 showed 0 COV errors right after closing it) and starting T-0556's ticket workflow (multiple frob ticket scope/sweep operations on tickets.md in between). Hypothesis: _bound_to_open_ticket's grace-window hunk-matching (docs/audits or __init__.py:1917 _bound_to_open_ticket docstring, T-0214/T-0320) depends on a ticket's DONE-transition marker line falling within a single git diff hunk against main; repeated tickets.md rewrites by later ticket operations (scope changes, sweeps, done-report writes for OTHER tickets) can split/relocate that hunk so an EARLIER ticket's own close marker no longer registers as 'in this diff's tickets.md hunk' even though the closure commit is still, in aggregate, part of the diff vs main. Needs investigation: reproduce minimally (two sequential ticket closes in one branch, then a third ticket's ledger operations), confirm the hunk-boundary hypothesis, and either make the grace window robust to intervening unrelated tickets.md hunks or make COV002's message clearer that this is a hunk-shape artifact, not a real missing edge. Related: docs/guides/agent-playbook.md section 10b's existing multi-ticket-worktree warnings (about ledger finalization) -- this is a parallel failure mode in the SAME class of hazard, but for COV002 rather than the Done-report/close ledger writes.
+
+<!-- ticket:T-draft-b7c57519 -->
+```yaml
+id: T-draft-b7c57519
+title: 'Resolve TEST014 name-collision cases: disambiguate or tighten TEST001 credit'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/__init__.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0547 added TEST014 (WARN) to surface every case where _inferred_unit_cases's naming-convention fallback ambiguously credits two DIFFERENT files' same-leaf-name public symbols off the same collected test id(s) (docs/audits/gates-accounting.md B6). It deliberately does NOT withdraw TEST001 credit: a compat survey against this repo (T-0547's Done report) found a blanket path/module-correlation requirement breaks ~100% of convention-fallback matches here (96/81 depending on heuristic), since tests/ does not mirror src/frob/<pkg>/ layout. But the survey ALSO found 5 real leaf-name collision groups in this repo TODAY sharing convention-matched tests (main, format, as_text, as_json, run) -- TEST014 will fire WARN for each until resolved. This ticket is to actually resolve those 5 (add explicit frob:tests edges to disambiguate, or accept the WARN permanently via frob:waive with a reason), and to decide/design a general per-symbol tightening path now that real examples exist to test any proposed rule against (e.g. requiring the matched test's own module path to appear as a substring of the target's qualname, or promoting TEST014 to ERROR once explicit edges are added to eliminate ambiguity repo-wide).

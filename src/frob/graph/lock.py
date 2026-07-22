@@ -82,9 +82,10 @@ def _edge_endpoints(snapshot: GraphSnapshot) -> set[str]:
 
 
 # frob:ticket T-0402
+# frob:ticket T-0556
 def _facets_for_ref(ref: str, snapshot: GraphSnapshot) -> set[str]:
     """Every distinct facet a DESCRIBES edge targeting `ref` requests, or
-    `{_DEFAULT_FACET}` if none does.
+    `{_DEFAULT_FACET}` if none does -- always unioned with `"body"`.
 
     G11 (T-0402): `acknowledge` used to call `_facet_for_ref` (singular),
     which returns only the FIRST describes-facet found; a symbol described
@@ -92,13 +93,35 @@ def _facets_for_ref(ref: str, snapshot: GraphSnapshot) -> set[str]:
     got the first facet's digest locked -- the second facet's contract
     could drift forever with no `DRIFT001` signal, because it was never
     acked in the first place.
+
+    T-0556 (docs/audits/gates-accounting.md B2): before this, an ack with
+    no explicit facet (the common case -- most `frob:doc`/`frob:describes`
+    anchors never name one) locked ONLY the `sig` digest, so rewriting a
+    documented function's BODY (the actual behavior the doc claims to
+    describe) after ack never tripped `DRIFT001` -- the doc could lie
+    about behavior forever. Always including `"body"` here, regardless of
+    what facet(s) were explicitly requested, closes that gap for every ack
+    path without touching `frob.graph.dsl`'s per-directive facet parsing
+    or any existing EXPLICIT facet request (an explicit `sig`-only ack
+    still also gets a body entry, not a NARROWER one -- this only ever
+    adds coverage, never removes it). `acknowledge` already skips the body
+    facet for kinds where it is meaningless (`_BODY_FACET_MEANINGLESS_KINDS`
+    -- class/const/type have a constant body digest), so this cannot
+    produce a body entry that could never observe drift. A compat survey
+    against this repo's own `frob.lock` at the time of this change (T-0556's
+    Done report has the numbers) found only 43 entries total, all `sig`-only
+    with no existing `body` entries -- small enough that landing this as
+    the default outright, rather than behind an opt-in flag nobody would
+    flip, is the sound choice; the old lock entries are simply left as-is
+    until their next `frob ack`, exactly like any other lock format
+    evolution.
     """
     facets = {
         edge.attrs.get("facet", _DEFAULT_FACET)
         for edge in snapshot.edges
         if edge.kind == EdgeKind.DESCRIBES and edge.target == ref
     }
-    return facets or {_DEFAULT_FACET}
+    return (facets or {_DEFAULT_FACET}) | {"body"}
 
 
 def _sorted_entries(entries: Sequence[LockEntry]) -> tuple[LockEntry, ...]:
