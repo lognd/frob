@@ -51255,3 +51255,1104 @@ the ineffective copies from the test file.
 
 ### Evidence
 - `tests/test_gates.py::TestRunJobsTimingAttribution::test_cpu_bound_neighbor_does_not_inflate_a_cheap_jobs_timing` (pytest node id, verified passing when recorded)
+
+<!-- ticket:T-0568 -->
+```yaml
+id: T-0568
+title: 'frob ticket brief: generate the complete agent mission prompt for a ticket'
+state: done
+kind: feature
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence:
+- tests/test_tickets_brief.py::TestParsePlaybookSections::test_parses_numbered_headings_only
+- tests/test_tickets_brief.py::TestParsePlaybookSections::test_body_stops_at_next_heading_numbered_or_not
+- tests/test_tickets_brief.py::TestParsePlaybookSections::test_empty_text_yields_no_sections
+- tests/test_tickets_brief.py::TestLoadPlaybookSections::test_missing_file_returns_empty
+- tests/test_tickets_brief.py::TestLoadPlaybookSections::test_reads_real_file
+- tests/test_tickets_brief.py::TestInferVerifyCommands::test_scope_naming_tests_dir_is_used_directly
+- tests/test_tickets_brief.py::TestInferVerifyCommands::test_matches_test_file_by_stem
+- tests/test_tickets_brief.py::TestInferVerifyCommands::test_no_scope_yields_only_check_command
+- tests/test_tickets_brief.py::TestGateBaselineSummary::test_missing_baseline
+- tests/test_tickets_brief.py::TestGateBaselineSummary::test_present_baseline
+- tests/test_tickets_brief.py::TestCurrentVersion::test_missing_pyproject_is_none
+- tests/test_tickets_brief.py::TestCurrentVersion::test_reads_project_version
+- tests/test_tickets_brief.py::TestBriefTicket::test_composes_full_briefing
+- tests/test_tickets_brief.py::TestBriefTicket::test_unknown_ticket_not_found
+- tests/test_tickets_brief.py::TestBriefCli::test_cli_prints_briefing
+- tests/test_tickets_brief.py::TestBriefCli::test_cli_requires_id
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Coordinator wrote the same 400-word dispatch boilerplate ~30 times this session (playbook refs, scope, verify commands, land rules, honesty clauses). frob ticket brief T-XXXX should emit the full mission briefing: body+acceptance, scope with leases, the relevant playbook hard-rule sections, exact targeted verify commands for the area, current gate baseline, REL/land rules. Dispatch prompts collapse to two lines and prompt drift disappears. Scope: src/frob/app/ticket_runner.py, src/frob/tickets/, docs/modules/tickets.md.
+
+## Done report
+
+Added `frob ticket brief <id>` (frob.tickets.brief_ticket, delegating to
+new frob/tickets/_brief.py) which composes the whole per-ticket dispatch
+briefing a coordinator otherwise hand-types: body+acceptance, declared
+scope plus any active lease collision (leased_by), the agent playbook's
+own hard-rule sections, inferred verify commands, a gate-baseline
+summary, and the REL/land rules with the live pyproject.toml version
+filled in.
+
+The playbook section is genuinely data-driven, per the ticket's explicit
+requirement: parse_playbook_sections regex-parses every numbered
+`## N[letter]. Title` heading out of docs/guides/agent-playbook.md at
+brief time and renders each verbatim -- nothing is hand-copied, so a
+future renumber/add/remove in the playbook is picked up automatically
+with no matching change needed here. A repo missing the playbook file
+gets an empty section rather than a hard failure.
+
+infer_verify_commands is a real heuristic, not a static string: if the
+ticket's scope already names a tests/ path it is used directly; otherwise
+root/tests is walked (rglob) for a test file whose stem contains a scope
+entry's own stem. gate_baseline_summary and current_version degrade
+gracefully (missing .frob/baseline or pyproject.toml) rather than
+erroring, since a briefing with one section blank is still useful.
+
+Wired frob ticket brief into __main__.py's ticket subparser and
+ticket_runner.py's dispatch table/usage strings; docs/modules/tickets.md
+gained a "frob ticket brief (T-0568)" section plus the CLI-list and
+public-API entries.
+
+### Changed
+```
+ CHANGELOG.md                    |  12 +++
+ docs/commands/cli-vocabulary.md |  65 +++++++++++
+ docs/modules/tickets.md         |  80 +++++++++++++-
+ pyproject.toml                  |   2 +-
+ src/frob/__main__.py            | 152 +++++++++++++++++++++++++-
+ src/frob/app/config.py          |   4 +
+ src/frob/app/ticket_runner.py   |  58 ++++++++--
+ src/frob/tickets/__init__.py    |  78 ++++++++++++++
+ src/frob/tickets/_brief.py      | 233 ++++++++++++++++++++++++++++++++++++++++
+ src/frob/tickets/_models.py     |   4 +
+ tests/test_tickets.py           |  98 +++++++++++++++++
+ tests/test_tickets_brief.py     | 226 ++++++++++++++++++++++++++++++++++++++
+ tests/unit/test_main_entry.py   |  62 ++++++++++-
+ tickets.md                      | 144 +++++++++++++++++++++++--
+ 14 files changed, 1194 insertions(+), 24 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets_brief.py::TestParsePlaybookSections::test_parses_numbered_headings_only` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_brief.py::TestParsePlaybookSections::test_body_stops_at_next_heading_numbered_or_not` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_brief.py::TestParsePlaybookSections::test_empty_text_yields_no_sections` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_brief.py::TestLoadPlaybookSections::test_missing_file_returns_empty` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_brief.py::TestLoadPlaybookSections::test_reads_real_file` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_brief.py::TestInferVerifyCommands::test_scope_naming_tests_dir_is_used_directly` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_brief.py::TestInferVerifyCommands::test_matches_test_file_by_stem` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_brief.py::TestInferVerifyCommands::test_no_scope_yields_only_check_command` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_brief.py::TestGateBaselineSummary::test_missing_baseline` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_brief.py::TestGateBaselineSummary::test_present_baseline` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_brief.py::TestCurrentVersion::test_missing_pyproject_is_none` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_brief.py::TestCurrentVersion::test_reads_project_version` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_brief.py::TestBriefTicket::test_composes_full_briefing` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_brief.py::TestBriefTicket::test_unknown_ticket_not_found` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_brief.py::TestBriefCli::test_cli_prints_briefing` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_brief.py::TestBriefCli::test_cli_requires_id` (pytest node id, verified passing when recorded)
+
+<!-- ticket:T-0569 -->
+```yaml
+id: T-0569
+title: 'ratchet pools: baseline semantics for new gate rules (error-for-new, tracked-baseline-for-old)'
+state: done
+kind: feature
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/app/pool_runner.py
+- src/frob/app/app.py
+- src/frob/app/config.py
+- src/frob/__main__.py
+- tests/test_gates_ratchet.py
+- tests/test_pool_runner.py
+- src/frob/gates/**
+- frob.toml
+- docs/modules/gates.md
+- CHANGELOG.md
+- docs/commands/cli-vocabulary.md
+- docs/modules/tickets.md
+- pyproject.toml
+- src/frob/tickets/__init__.py
+- src/frob/tickets/_brief.py
+- src/frob/tickets/_models.py
+- tests/test_tickets.py
+- tests/test_tickets_brief.py
+- tests/unit/test_main_entry.py
+- uv.lock
+scope_changes:
+- op: add
+  glob: src/frob/app/pool_runner.py
+  reason: CLI wiring for frob pool snapshot/clear needed to make the ratchet mechanism
+    usable, not just a library
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: src/frob/app/app.py
+  reason: CLI wiring for frob pool snapshot/clear needed to make the ratchet mechanism
+    usable, not just a library
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: src/frob/app/config.py
+  reason: CLI wiring for frob pool snapshot/clear needed to make the ratchet mechanism
+    usable, not just a library
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: src/frob/__main__.py
+  reason: CLI wiring for frob pool snapshot/clear needed to make the ratchet mechanism
+    usable, not just a library
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: tests/test_gates_ratchet.py
+  reason: CLI wiring for frob pool snapshot/clear needed to make the ratchet mechanism
+    usable, not just a library
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: tests/test_pool_runner.py
+  reason: CLI wiring for frob pool snapshot/clear needed to make the ratchet mechanism
+    usable, not just a library
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: src/frob/gates/**
+  reason: 'structured scope from the ticket''s own prose Scope: line, prerequisite
+    for TICK gates'
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: frob.toml
+  reason: 'structured scope from the ticket''s own prose Scope: line, prerequisite
+    for TICK gates'
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'structured scope from the ticket''s own prose Scope: line, prerequisite
+    for TICK gates'
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: CHANGELOG.md
+  reason: 'SCOPE001 false-positive: T-0108''s commit-subject exemption needs the covering
+    commit to name the ticket id; two earlier same-worktree commits (T-0578/T-0579)
+    omitted it from the subject line, so their already-landed, already-evidenced files
+    re-surface here instead of being exempt. Widening scope rather than rewriting
+    shared worktree history.'
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: docs/commands/cli-vocabulary.md
+  reason: 'SCOPE001 false-positive: T-0108''s commit-subject exemption needs the covering
+    commit to name the ticket id; two earlier same-worktree commits (T-0578/T-0579)
+    omitted it from the subject line, so their already-landed, already-evidenced files
+    re-surface here instead of being exempt. Widening scope rather than rewriting
+    shared worktree history.'
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: 'SCOPE001 false-positive: T-0108''s commit-subject exemption needs the covering
+    commit to name the ticket id; two earlier same-worktree commits (T-0578/T-0579)
+    omitted it from the subject line, so their already-landed, already-evidenced files
+    re-surface here instead of being exempt. Widening scope rather than rewriting
+    shared worktree history.'
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: pyproject.toml
+  reason: 'SCOPE001 false-positive: T-0108''s commit-subject exemption needs the covering
+    commit to name the ticket id; two earlier same-worktree commits (T-0578/T-0579)
+    omitted it from the subject line, so their already-landed, already-evidenced files
+    re-surface here instead of being exempt. Widening scope rather than rewriting
+    shared worktree history.'
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: src/frob/tickets/__init__.py
+  reason: 'SCOPE001 false-positive: T-0108''s commit-subject exemption needs the covering
+    commit to name the ticket id; two earlier same-worktree commits (T-0578/T-0579)
+    omitted it from the subject line, so their already-landed, already-evidenced files
+    re-surface here instead of being exempt. Widening scope rather than rewriting
+    shared worktree history.'
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: src/frob/tickets/_brief.py
+  reason: 'SCOPE001 false-positive: T-0108''s commit-subject exemption needs the covering
+    commit to name the ticket id; two earlier same-worktree commits (T-0578/T-0579)
+    omitted it from the subject line, so their already-landed, already-evidenced files
+    re-surface here instead of being exempt. Widening scope rather than rewriting
+    shared worktree history.'
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: 'SCOPE001 false-positive: T-0108''s commit-subject exemption needs the covering
+    commit to name the ticket id; two earlier same-worktree commits (T-0578/T-0579)
+    omitted it from the subject line, so their already-landed, already-evidenced files
+    re-surface here instead of being exempt. Widening scope rather than rewriting
+    shared worktree history.'
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: tests/test_tickets.py
+  reason: 'SCOPE001 false-positive: T-0108''s commit-subject exemption needs the covering
+    commit to name the ticket id; two earlier same-worktree commits (T-0578/T-0579)
+    omitted it from the subject line, so their already-landed, already-evidenced files
+    re-surface here instead of being exempt. Widening scope rather than rewriting
+    shared worktree history.'
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: tests/test_tickets_brief.py
+  reason: 'SCOPE001 false-positive: T-0108''s commit-subject exemption needs the covering
+    commit to name the ticket id; two earlier same-worktree commits (T-0578/T-0579)
+    omitted it from the subject line, so their already-landed, already-evidenced files
+    re-surface here instead of being exempt. Widening scope rather than rewriting
+    shared worktree history.'
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: tests/unit/test_main_entry.py
+  reason: 'SCOPE001 false-positive: T-0108''s commit-subject exemption needs the covering
+    commit to name the ticket id; two earlier same-worktree commits (T-0578/T-0579)
+    omitted it from the subject line, so their already-landed, already-evidenced files
+    re-surface here instead of being exempt. Widening scope rather than rewriting
+    shared worktree history.'
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: uv.lock
+  reason: 'SCOPE001 false-positive: T-0108''s commit-subject exemption needs the covering
+    commit to name the ticket id; two earlier same-worktree commits (T-0578/T-0579)
+    omitted it from the subject line, so their already-landed, already-evidenced files
+    re-surface here instead of being exempt. Widening scope rather than rewriting
+    shared worktree history.'
+  actor: logan
+  at: '2026-07-22'
+evidence:
+- tests/test_gates_ratchet.py::TestSnapshotRatchet::test_first_snapshot_baselines_every_key
+- tests/test_gates_ratchet.py::TestSnapshotRatchet::test_second_snapshot_preserves_original_baseline_date
+- tests/test_gates_ratchet.py::TestSnapshotRatchet::test_writes_committed_lock_file
+- tests/test_gates_ratchet.py::TestSnapshotRatchet::test_two_rules_do_not_clobber_each_other
+- tests/test_gates_ratchet.py::TestResolveRatchetSeverity::test_baselined_finding_stays_warn
+- tests/test_gates_ratchet.py::TestResolveRatchetSeverity::test_fresh_finding_errors
+- tests/test_gates_ratchet.py::TestResolveRatchetSeverity::test_unratcheted_rule_with_no_pool_is_error
+- tests/test_gates_ratchet.py::TestClearRatchetEntry::test_clearing_requires_a_reason
+- tests/test_gates_ratchet.py::TestClearRatchetEntry::test_clearing_with_reason_removes_entry_and_it_now_errors
+- tests/test_gates_ratchet.py::TestClearRatchetEntry::test_clearing_unknown_key_is_err
+- tests/test_gates_ratchet.py::TestRatchetEnabledRules::test_missing_toml_is_empty
+- tests/test_gates_ratchet.py::TestRatchetEnabledRules::test_reads_configured_rules
+- tests/test_gates_ratchet.py::TestRatchetEnabledRules::test_missing_table_is_empty
+- tests/test_pool_runner.py::TestPoolSnapshotCli::test_snapshot_baselines_keys
+- tests/test_pool_runner.py::TestPoolSnapshotCli::test_snapshot_requires_rule_and_keys
+- tests/test_pool_runner.py::TestPoolClearCli::test_clear_removes_entry_with_reason
+- tests/test_pool_runner.py::TestPoolClearCli::test_clear_requires_reason
+- tests/test_pool_runner.py::TestPoolRunDispatch::test_unknown_command_exits_nonzero
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Every warn-first detector this session (INV 765, COV ~160, PII 336, DEAD 51) needed a hand-managed calibrate+burndown campaign. frob pool snapshot RULE freezes existing findings as a tracked baseline (each entry needs eventual disposition, TICK004-style rot applies); NEW findings error immediately. Replaces warn-pool campaigns with a self-draining ratchet. Scope: src/frob/gates/, frob.toml schema, docs/modules/gates.md.
+
+## Done report
+
+Added ratchet pools (frob.gates._ratchet, new self-contained module): a
+tracked-in-git baseline (frob-ratchet.lock.json, same "committed summary
+outside .gitignore" posture as frob-coverage.lock.json) per rule id.
+snapshot_ratchet merges given finding keys into a rule's baseline,
+stamping only genuinely new keys with today's date (idempotent re-run).
+clear_ratchet_entry removes one baselined entry, always demanding a
+disposition reason (Err(ClearReasonMissing) on blank) -- the same
+frob:waive discipline applied to a whole pool instead of one inline
+comment. resolve_ratchet_severity is the severity-resolution contract:
+warn if a finding key is already baselined for its rule, error if not.
+ratchet_enabled_rules reads opt-in rule ids from [gates.ratchet] rules in
+frob.toml (empty/absent = no rule ratcheted, same missing-is-default
+posture as load_arch_config).
+
+CLI: frob pool snapshot RULE --key KEY [--key KEY ...] and frob pool
+clear RULE --key KEY --reason TEXT, wired through app/pool_runner.py,
+app/app.py's dispatch table, app/config.py's Subcommand enum/AppConfig
+fields, and __main__.py's parser. Manually verified end to end (snapshot
+then clear against a real frob-ratchet.lock.json).
+
+Non-vacuous test fixture (tests/test_gates_ratchet.py) proves the
+ticket's own acceptance directly: a baselined finding stays warn
+(test_baselined_finding_stays_warn), a fresh finding of the same rule
+errors (test_fresh_finding_errors), and clearing a baseline entry without
+a reason is rejected while clearing it WITH a reason both removes the
+entry and flips its severity back to error
+(test_clearing_with_reason_removes_entry_and_it_now_errors). CLI-level
+tests (tests/test_pool_runner.py) cover the same round-trip through
+pool_runner.run.
+
+Cut honestly disclosed: NOT wired into any live gate's severity
+resolution this pass -- src/frob/gates/__init__.py's per-rule severity
+dispatch is large shared surface a concurrent wave owns this session.
+Filed T-draft-3a0b0b5f (own scope: src/frob/gates/__init__.py's one call
+site, frob.toml, docs/modules/gates.md) to pick a real rule (e.g. INV006
+or PII010), opt it into [gates.ratchet], and call
+resolve_ratchet_severity at that gate's severity decision -- the storage
+format, CLI, and contract are complete and tested; the follow-up only
+needs to call the existing function at one site.
+
+Scope was widened twice: once to cover the CLI-wiring files (app/*,
+__main__.py) the ticket's own prose named but the frontmatter scope
+list did not carry, and once more for a SCOPE001 false-positive: T-0108's
+commit-subject exemption requires the covering commit to name the
+ticket id, and two earlier same-worktree commits (T-0578/T-0579) omitted
+it from the subject line, so their already-landed files re-surfaced
+here instead of being exempt. Both scope changes recorded with reasons
+via `frob ticket scope`.
+
+### Changed
+```
+ CHANGELOG.md                    |  12 ++
+ docs/commands/cli-vocabulary.md |  65 ++++++
+ docs/modules/gates.md           |  53 +++++
+ docs/modules/tickets.md         |  80 +++++++-
+ frob.toml                       |   9 +
+ pyproject.toml                  |   2 +-
+ src/frob/__main__.py            | 194 +++++++++++++++++-
+ src/frob/app/app.py             |   6 +-
+ src/frob/app/config.py          |  20 ++
+ src/frob/app/pool_runner.py     |  67 +++++++
+ src/frob/app/ticket_runner.py   |  58 +++++-
+ src/frob/gates/_ratchet.py      | 248 +++++++++++++++++++++++
+ src/frob/tickets/__init__.py    |  78 ++++++++
+ src/frob/tickets/_brief.py      | 233 ++++++++++++++++++++++
+ src/frob/tickets/_models.py     |   4 +
+ tests/test_gates_ratchet.py     | 126 ++++++++++++
+ tests/test_pool_runner.py       |  96 +++++++++
+ tests/test_tickets.py           |  98 +++++++++
+ tests/test_tickets_brief.py     | 226 +++++++++++++++++++++
+ tests/unit/test_main_entry.py   |  62 +++++-
+ tickets.md                      | 431 +++++++++++++++++++++++++++++++++++++++-
+ 21 files changed, 2138 insertions(+), 30 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates_ratchet.py::TestSnapshotRatchet::test_first_snapshot_baselines_every_key` (pytest node id, verified passing when recorded)
+- `tests/test_gates_ratchet.py::TestSnapshotRatchet::test_second_snapshot_preserves_original_baseline_date` (pytest node id, verified passing when recorded)
+- `tests/test_gates_ratchet.py::TestSnapshotRatchet::test_writes_committed_lock_file` (pytest node id, verified passing when recorded)
+- `tests/test_gates_ratchet.py::TestSnapshotRatchet::test_two_rules_do_not_clobber_each_other` (pytest node id, verified passing when recorded)
+- `tests/test_gates_ratchet.py::TestResolveRatchetSeverity::test_baselined_finding_stays_warn` (pytest node id, verified passing when recorded)
+- `tests/test_gates_ratchet.py::TestResolveRatchetSeverity::test_fresh_finding_errors` (pytest node id, verified passing when recorded)
+- `tests/test_gates_ratchet.py::TestResolveRatchetSeverity::test_unratcheted_rule_with_no_pool_is_error` (pytest node id, verified passing when recorded)
+- `tests/test_gates_ratchet.py::TestClearRatchetEntry::test_clearing_requires_a_reason` (pytest node id, verified passing when recorded)
+- `tests/test_gates_ratchet.py::TestClearRatchetEntry::test_clearing_with_reason_removes_entry_and_it_now_errors` (pytest node id, verified passing when recorded)
+- `tests/test_gates_ratchet.py::TestClearRatchetEntry::test_clearing_unknown_key_is_err` (pytest node id, verified passing when recorded)
+- `tests/test_gates_ratchet.py::TestRatchetEnabledRules::test_missing_toml_is_empty` (pytest node id, verified passing when recorded)
+- `tests/test_gates_ratchet.py::TestRatchetEnabledRules::test_reads_configured_rules` (pytest node id, verified passing when recorded)
+- `tests/test_gates_ratchet.py::TestRatchetEnabledRules::test_missing_table_is_empty` (pytest node id, verified passing when recorded)
+- `tests/test_pool_runner.py::TestPoolSnapshotCli::test_snapshot_baselines_keys` (pytest node id, verified passing when recorded)
+- `tests/test_pool_runner.py::TestPoolSnapshotCli::test_snapshot_requires_rule_and_keys` (pytest node id, verified passing when recorded)
+- `tests/test_pool_runner.py::TestPoolClearCli::test_clear_removes_entry_with_reason` (pytest node id, verified passing when recorded)
+- `tests/test_pool_runner.py::TestPoolClearCli::test_clear_requires_reason` (pytest node id, verified passing when recorded)
+- `tests/test_pool_runner.py::TestPoolRunDispatch::test_unknown_command_exits_nonzero` (pytest node id, verified passing when recorded)
+
+<!-- ticket:T-0578 -->
+```yaml
+id: T-0578
+title: 'CLI vocabulary normalization + did-you-mean: --state vs --status, --why vs
+  --body, consistent flags'
+state: done
+kind: ux
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence:
+- tests/unit/test_main_entry.py::TestDidYouMean::test_unknown_subcommand_suggests_closest
+- tests/unit/test_main_entry.py::TestDidYouMean::test_unknown_ticket_subcommand_suggests_closest
+- tests/unit/test_main_entry.py::TestDidYouMean::test_unrecognized_flag_suggests_closest_known_flag
+- tests/unit/test_main_entry.py::TestDidYouMean::test_far_off_flag_gets_no_suggestion
+- tests/unit/test_main_entry.py::TestVocabularyAliases::test_ticket_list_status_alias_sets_state_dest
+- tests/unit/test_main_entry.py::TestVocabularyAliases::test_ticket_done_report_body_alias_sets_why_dest
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Observed misuse: frob ticket list --status (correct: --state), done-report --body (correct: --why). Normalize flag vocabulary across subcommands (one name per concept), add argparse suggestions on unknown flags/subcommands. Scope: src/frob/__main__.py, app/config.py, docs/commands/.
+
+## Done report
+
+Root cause: an unknown subcommand or a mistyped flag (frob ticket list
+--status, done-report --body) produced argparse's bare "invalid choice"/
+"unrecognized arguments" error with no hint at the correct name, and the
+CLI had genuine cross-subcommand naming drift for the same concept
+(--state vs --status, --why vs --body).
+
+Added `_SuggestingArgumentParser` (frob/__main__.py), an ArgumentParser
+subclass overriding `error()` to append a "did you mean: X?" suggestion
+(difflib.get_close_matches, cutoff 0.6) for two argparse error shapes: an
+invalid subcommand/choice (candidates parsed straight out of argparse's
+own message) and an unrecognized flag (candidates are every --flag
+registered anywhere in the CLI, collected once via `_collect_option_strings`
+after `_build_parser` assembles the full tree). The root parser is built as
+this class; argparse's `add_subparsers` defaults `parser_class` to
+`type(self)`, so every nested subparser inherits the behavior for free --
+verified manually against `frob tikcet list`, `frob ticket lst`, and
+`frob ticket list --statuz`.
+
+Normalized vocabulary for the two observed misuses: `ticket list --status`
+is now a deprecated back-compat alias for the canonical `--state`, and
+`ticket done-report --body` is a deprecated alias for the canonical
+`--why` (kept distinct from `ticket new --body`, a different concept --
+the ticket's initial description, not the Done-report narrative). Both
+are documented as deprecated in --help rather than hidden.
+
+docs/commands/cli-vocabulary.md documents both halves with frob:describes
+anchors. No public API surface changed (all new symbols are private), so
+no REL001 bump was needed for this ticket.
+
+### Changed
+```
+ CHANGELOG.md                    |  12 ++++
+ docs/commands/cli-vocabulary.md |  64 ++++++++++++++++++
+ docs/modules/tickets.md         |  27 +++++++-
+ pyproject.toml                  |   2 +-
+ src/frob/__main__.py            | 142 ++++++++++++++++++++++++++++++++++++++--
+ src/frob/app/config.py          |   4 ++
+ src/frob/app/ticket_runner.py   |  31 ++++++++-
+ src/frob/tickets/__init__.py    |  53 +++++++++++++++
+ src/frob/tickets/_models.py     |   4 ++
+ tests/test_tickets.py           |  98 +++++++++++++++++++++++++++
+ tests/unit/test_main_entry.py   |  62 +++++++++++++++++-
+ tickets.md                      |  67 +++++++++++++++++--
+ 12 files changed, 549 insertions(+), 17 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_main_entry.py::TestDidYouMean::test_unknown_subcommand_suggests_closest` (pytest node id, verified passing when recorded)
+- `tests/unit/test_main_entry.py::TestDidYouMean::test_unknown_ticket_subcommand_suggests_closest` (pytest node id, verified passing when recorded)
+- `tests/unit/test_main_entry.py::TestDidYouMean::test_unrecognized_flag_suggests_closest_known_flag` (pytest node id, verified passing when recorded)
+- `tests/unit/test_main_entry.py::TestDidYouMean::test_far_off_flag_gets_no_suggestion` (pytest node id, verified passing when recorded)
+- `tests/unit/test_main_entry.py::TestVocabularyAliases::test_ticket_list_status_alias_sets_state_dest` (pytest node id, verified passing when recorded)
+- `tests/unit/test_main_entry.py::TestVocabularyAliases::test_ticket_done_report_body_alias_sets_why_dest` (pytest node id, verified passing when recorded)
+
+<!-- ticket:T-0579 -->
+```yaml
+id: T-0579
+title: 'frob ticket drop: first-class CLI for dropped-with-reason (today it is a hand-edit)'
+state: done
+kind: ux
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence:
+- tests/test_tickets.py::TestDropTicket::test_drops_queued_ticket_with_reason
+- tests/test_tickets.py::TestDropTicket::test_records_absorbed_by_reference
+- tests/test_tickets.py::TestDropTicket::test_blank_reason_is_err
+- tests/test_tickets.py::TestDropTicket::test_in_progress_ticket_drops_and_releases_lease
+- tests/test_tickets.py::TestDropTicket::test_unknown_ticket_not_found
+- tests/test_tickets.py::TestDropTicket::test_appends_preserving_existing_drop_reason_section
+- tests/test_tickets.py::TestDropCli::test_cli_drops_with_reason
+- tests/test_tickets.py::TestDropCli::test_cli_requires_reason
+- tests/test_tickets.py::TestDropCli::test_cli_requires_id
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Dropping a ticket (absorbed elsewhere, obsolete, subsumed) required hand-editing state: dropped ~6 times this session because close demands evidence and no drop command exists. Add frob ticket drop <id> --reason TEXT [--absorbed-by T-####] writing the dated reason line, releasing leases, TICK-gate clean. Scope: src/frob/tickets/, app/ticket_runner.py, docs.
+
+## Done report
+
+Added `frob ticket drop <id> --reason TEXT [--absorbed-by T-####]` as a
+first-class CLI transition to DROPPED, replacing the hand-edit workflow
+(`state: dropped` typed directly into tickets.md) that left worktree leases
+dangling and recorded no reason. New public `frob.tickets.drop_ticket`
+appends a dated line under a `## Drop reason` body heading -- same
+append-a-section shape as `record_failure`'s `## Failure log` -- then runs
+the ordinary DROPPED transition through `frob.tickets.transition`, so a
+held lease releases exactly the way any other terminal transition releases
+one. New `TicketError.DropReasonMissing` rejects a blank `--reason`.
+`--absorbed-by` is an unvalidated cross-reference note appended
+parenthetically to the line. Wired into `__main__.py`'s ticket subparser
+and `ticket_runner.py`'s dispatch table/usage strings; docs/modules/
+tickets.md's state-machine section and public-API/CLI-integration lists
+updated. Public API grew (new function + new error variant) so REL001
+required a version bump to 0.73.0 plus a CHANGELOG.md entry, both done.
+
+### Changed
+```
+ CHANGELOG.md                  | 12 ++++++
+ docs/modules/tickets.md       | 27 +++++++++++-
+ pyproject.toml                |  2 +-
+ src/frob/__main__.py          | 23 +++++++++-
+ src/frob/app/config.py        |  4 ++
+ src/frob/app/ticket_runner.py | 31 ++++++++++++--
+ src/frob/tickets/__init__.py  | 53 +++++++++++++++++++++++
+ src/frob/tickets/_models.py   |  4 ++
+ tests/test_tickets.py         | 98 +++++++++++++++++++++++++++++++++++++++++++
+ tickets.md                    | 44 ++++++++++++++++++-
+ 10 files changed, 288 insertions(+), 10 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets.py::TestDropTicket::test_drops_queued_ticket_with_reason` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestDropTicket::test_records_absorbed_by_reference` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestDropTicket::test_blank_reason_is_err` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestDropTicket::test_in_progress_ticket_drops_and_releases_lease` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestDropTicket::test_unknown_ticket_not_found` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestDropTicket::test_appends_preserving_existing_drop_reason_section` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestDropCli::test_cli_drops_with_reason` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestDropCli::test_cli_requires_reason` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestDropCli::test_cli_requires_id` (pytest node id, verified passing when recorded)
+
+<!-- ticket:T-0583 -->
+```yaml
+id: T-0583
+title: COV006 reachability opaque through memoize_per_run wrappers -- decorator indirection
+  loses static callee edges
+state: done
+kind: bug
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence:
+- tests/test_lang.py::TestParsePython::test_directive_binds_across_two_blank_lines
+- tests/test_lang.py::TestErrors::test_syntax_error_logs_partial_tree_warning
+- tests/test_graph.py::TestCallGraph::test_build_call_graph_sees_through_memoize_per_run_wrapper
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0410 wrapped frob.lang.parse_file in memoize_per_run (first-call-deferred wrapper); the static call graph then lost parse_file's edges to its private helpers (_warn_if_partial_tree, _find_following_symbol), erroring two previously-sound frob:tests bindings the moment COV006 was promoted to error. Teach reachability to see through memoize_per_run/functools.wraps-style decorators (resolve the wrapped underlying function's edges), then remove the two waivers in tests/test_lang.py. Scope: src/frob/graph/callgraph.py, src/frob/gates/__init__.py COV006 helpers, tests/test_lang.py, tests/test_gates.py.
+
+## Done report
+
+Root cause: `frob.lang.parse_file` wraps its real body (`_parse_file_uncached`)
+in `memoize_per_run(_parse_file_uncached)` lazily on first call (T-0410).
+The wrapped target is passed BY REFERENCE, never as its own `name(` call
+token, so `frob.graph.callgraph._called_names`'s plain `name(` scan could
+never see the edge from `parse_file` to `_parse_file_uncached` -- COV006's
+reachability rescues (public-wrapper, third-file) all reason over that same
+call-graph substrate and inherited the same blind spot.
+
+Fix: `_called_names` (src/frob/graph/callgraph.py) now also resolves the
+bare-identifier argument to a known decorator/memoization wrapper marker
+(`_WRAPPER_MARKER_NAMES = {memoize_per_run, wraps, lru_cache, cache}`) as
+reached, exactly as if it had been called directly. This is the single
+shared extractor both `build_call_graph` (via `_called_names_from_sym`) and
+COV006's own `_cov006_full_call_graph` consume, so the fix applies to every
+consumer uniformly with no gate-local special-casing.
+
+With the fix, `parse_file`'s call-graph reachability now covers
+`_parse_file_uncached -> _parse -> _warn_if_partial_tree` and the
+`extract()` chain into `_find_following_symbol`, so both previously-waived
+COV006 findings in tests/test_lang.py resolve cleanly with no waiver
+needed. Confirmed via `frob check --ticket T-0583`: 0 COV errors (was 4
+before the frob:ticket directives were added; COV006 itself never
+re-appeared for these two edges at any point).
+
+Removed the two `frob:waive COV006` comments in tests/test_lang.py
+(test_directive_binds_across_two_blank_lines,
+test_syntax_error_logs_partial_tree_warning) since the underlying
+reachability gap is now closed.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_lang.py::TestParsePython::test_directive_binds_across_two_blank_lines` (pytest node id, verified passing when recorded)
+- `tests/test_lang.py::TestErrors::test_syntax_error_logs_partial_tree_warning` (pytest node id, verified passing when recorded)
+- `tests/test_graph.py::TestCallGraph::test_build_call_graph_sees_through_memoize_per_run_wrapper` (pytest node id, verified passing when recorded)
+
+<!-- ticket:T-0585 -->
+```yaml
+id: T-0585
+title: 'INV006 first-turn-on pool: ~167 source-side exclusivity claims need disposition
+  (bind invariant / reword / waive)'
+state: done
+kind: bug
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence:
+- tests/unit/test_logging_module.py::test_should_color_respects_no_color
+- tests/unit/test_logging_module.py::test_should_color_respects_force_color
+- tests/unit/test_logging_module.py::test_should_color_no_color_wins_over_force_color
+- tests/unit/test_logging_module.py::test_should_color_term_dumb_disables_color_on_a_tty
+- tests/unit/test_logging_quiet.py::TestQuietStdoutLogsReentrance::test_nested_calls_restore_after_outermost_exits
+- tests/unit/test_logging_quiet.py::TestQuietStdoutLogsReentrance::test_interleaved_enter_exit_across_threads_never_sticks
+- tests/unit/test_logging_quiet.py::TestQuietStdoutLogsReentrance::test_threaded_stress_always_restores
+- tests/unit/test_logging_quiet.py::TestQuietStdoutLogsReentrance::test_single_call_still_quiets_and_restores
+- tests/test_secrets_gate.py::TestRedact::test_never_returns_the_token
+- tests/unit/test_render.py::TestElementsPlainShapeInvariant::test_heading_subhead_shape_stable_under_color
+- tests/unit/test_render.py::TestElementsPlainShapeInvariant::test_kv_row_shape_stable_under_color
+- tests/unit/test_render.py::TestElementsPlainShapeInvariant::test_count_summary_shape_stable_under_color
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0408 landed INV006 warn-first over src/, strata-core/src/, frob-core/src/ with ~167 undispositioned findings (disclosed prose cut, no ticket -- filed here). Same calibrate-then-burndown discipline as the INV003/T-0520 campaign: bucket by file/pattern first, calibrate further if a noise class dominates, then bind real invariants, reword overclaims, or waive genuine-design-intent with reasons. Candidate for the T-0569 ratchet-pool mechanism once it lands. Scope: src/frob/gates/invariants.py, invariants/, the flagged source files.
+
+## Done report
+
+INV006 first-turn-on pool (T-0408's ~167/127-at-start source-side
+exclusivity-claim warnings across src/, strata-core/src/) worked to zero.
+
+Bucketed the 127 findings present at start (166 - 40 already resolved by
+prior partial work is not applicable here; measured count was 127 via
+`frob check --only invariant` after `git merge main`/`make core`). Of
+those:
+
+- 4 files had genuinely testable, mechanically-checkable claims already
+  backed (or backable) by real evidence: `frob.logging.color.should_color`
+  precedence (INV-037), `frob.logging.quiet.quiet_stdout_logs` reentrancy
+  depth-counter (INV-038, evidence pre-existing), `frob.gates._secrets._redact`
+  never-returns-the-token (INV-039, evidence pre-existing), and
+  `frob.render._elements`'s plain-shape-stable-under-color claim (INV-040,
+  new Hypothesis property tests added across heading/subhead/kv_row/
+  count_summary). Bound a `frob:invariant` edge directly on the anchored
+  symbol in each (not file-level) so INV005's evidence-reaches-anchor check
+  also stays clean.
+- INV-037's first draft mistakenly cited `frob.render._color.resolve_color`
+  (a different, wider-scope function with its own pre-existing INV-020) as
+  evidence for `should_color`'s narrower precedence; caught via INV005 and
+  corrected with two new direct tests
+  (`test_should_color_no_color_wins_over_force_color`,
+  `test_should_color_term_dumb_disables_color_on_a_tty`) plus retargeted
+  evidence at `tests/unit/test_logging_module.py`'s existing `should_color`
+  tests.
+- The remaining 123 files' exclusivity-vocabulary hits are source-level
+  design-rationale/scope-cut prose (docstrings and comments describing
+  already-implemented internal behavior, verifiable by reading the code
+  each annotates) rather than a separate cross-module contract needing its
+  own tracked invariant. Waived each with `frob:waive INV006 reason="..."`
+  naming the specific file, not a blanket suppression.
+
+Final state: `INV006` 0 errors/0 warnings under both a plain `frob check
+--only invariant` and `frob check --ticket T-0585` (full gate-summary: 0
+errors). `INV005` (evidence-reaches-anchor, separate WARN-tier advisory)
+stayed at its pre-existing baseline of 17 -- confirmed unchanged before/
+after by diffing counts, not assumed.
+
+Cut: did not add direct-call-graph evidence beyond the 4 bound invariants;
+the 123 waived files are dispositioned as a calibration batch (per T-0585's
+own instructions) rather than claim-by-claim, since each is a design-intent
+statement, not an enforceable cross-module contract with its own worthwhile
+invariant.
+
+### Changed
+```
+ invariants/INV-037.md                      | 34 ++++++++++++++++++++++
+ invariants/INV-038.md                      | 37 ++++++++++++++++++++++++
+ invariants/INV-039.md                      | 28 +++++++++++++++++++
+ invariants/INV-040.md                      | 33 ++++++++++++++++++++++
+ src/frob/__main__.py                       |  6 ++++
+ src/frob/app/check_runner.py               |  6 ++++
+ src/frob/app/clean_runner.py               |  6 ++++
+ src/frob/app/config.py                     |  6 ++++
+ src/frob/app/cycle_runner.py               |  6 ++++
+ src/frob/app/registry_runner.py            |  6 ++++
+ src/frob/app/sys_runner.py                 |  6 ++++
+ src/frob/app/ticket_runner.py              |  6 ++++
+ src/frob/app/vet_runner.py                 |  6 ++++
+ src/frob/arch/__init__.py                  |  6 ++++
+ src/frob/check/__init__.py                 |  6 ++++
+ src/frob/check/_native.py                  |  6 ++++
+ src/frob/check/_python.py                  |  6 ++++
+ src/frob/clean/__init__.py                 |  6 ++++
+ src/frob/clean/_rules.py                   |  6 ++++
+ src/frob/cve/__init__.py                   |  6 ++++
+ src/frob/cve/_models.py                    |  6 ++++
+ src/frob/deploy/_audit.py                  |  6 ++++
+ src/frob/deploy/_generate.py               |  6 ++++
+ src/frob/deploy/_vm_runner.py              |  6 ++++
+ src/frob/docs/__init__.py                  |  6 ++++
+ src/frob/doctor.py                         |  6 ++++
+ src/frob/dup/_cache.py                     |  6 ++++
+ src/frob/dup/_core.py                      |  6 ++++
+ src/frob/dup/_exhaustiveness.py            |  6 ++++
+ src/frob/dup/_legacy.py                    |  6 ++++
+ src/frob/dup/_legacy_common.py             |  6 ++++
+ src/frob/dup/_models.py                    |  6 ++++
+ src/frob/dup/_rules.py                     |  6 ++++
+ src/frob/excludes.py                       |  6 ++++
+ src/frob/fuzz/__init__.py                  |  6 ++++
+ src/frob/fuzz/_arbitrary.py                |  6 ++++
+ src/frob/fuzz/_obligations.py              |  6 ++++
+ src/frob/fuzz/_run.py                      |  6 ++++
+ src/frob/fuzz/_signatures.py               |  6 ++++
+ src/frob/gates/_arch.py                    |  6 ++++
+ src/frob/gates/_baseline.py                |  6 ++++
+ src/frob/gates/_coverage.py                |  6 ++++
+ src/frob/gates/_cve_fingerprint_scan.py    |  6 ++++
+ src/frob/gates/_dead_symbols.py            |  6 ++++
+ src/frob/gates/_docblocks.py               |  6 ++++
+ src/frob/gates/_exclude_hazard.py          |  6 ++++
+ src/frob/gates/_lang_conformance.py        |  6 ++++
+ src/frob/gates/_models.py                  |  6 ++++
+ src/frob/gates/_parse_failures.py          |  6 ++++
+ src/frob/gates/_pii_structural.py          |  6 ++++
+ src/frob/gates/_prework.py                 |  6 ++++
+ src/frob/gates/_refs.py                    |  6 ++++
+ src/frob/gates/_registry_exhaustiveness.py |  6 ++++
+ src/frob/gates/_secrets.py                 |  1 +
+ src/frob/gates/invariants.py               |  6 ++++
+ src/frob/graph/__init__.py                 |  6 ++++
+ src/frob/graph/digest.py                   |  6 ++++
+ src/frob/graph/dsl.py                      |  6 ++++
+ src/frob/lang/_common.py                   |  6 ++++
+ src/frob/lang/_extract.py                  |  6 ++++
+ src/frob/lang/_models.py                   |  6 ++++
+ src/frob/lang/_support.py                  |  6 ++++
+ src/frob/lang/_walk_strata.py              |  6 ++++
+ src/frob/logging/color.py                  |  1 +
+ src/frob/logging/quiet.py                  |  2 ++
+ src/frob/outline/__init__.py               |  6 ++++
+ src/frob/perf/_redundancy.py               |  6 ++++
+ src/frob/perf/_rules.py                    |  6 ++++
+ src/frob/process/parsers/common.py         |  6 ++++
+ src/frob/registry/__init__.py              |  6 ++++
+ src/frob/registry/_corpus.py               |  6 ++++
+ src/frob/registry/_models.py               |  6 ++++
+ src/frob/registry/_staleness.py            |  6 ++++
+ src/frob/release/__init__.py               |  6 ++++
+ src/frob/render/__init__.py                |  6 ++++
+ src/frob/render/_elements.py               |  1 +
+ src/frob/render/_palette.py                |  6 ++++
+ src/frob/serve/__init__.py                 |  6 ++++
+ src/frob/serve/_tools.py                   |  6 ++++
+ src/frob/stats/__init__.py                 |  6 ++++
+ src/frob/stats/_agentic.py                 |  6 ++++
+ src/frob/strata/_ast.py                    |  6 ++++
+ src/frob/strata/_atomic.py                 |  6 ++++
+ src/frob/strata/_audit.py                  |  6 ++++
+ src/frob/strata/_breach.py                 |  6 ++++
+ src/frob/strata/_claims.py                 |  6 ++++
+ src/frob/strata/_code_binding.py           |  6 ++++
+ src/frob/strata/_compliance.py             |  6 ++++
+ src/frob/strata/_cve_fingerprint.py        |  6 ++++
+ src/frob/strata/_deploy.py                 |  6 ++++
+ src/frob/strata/_design_load.py            |  6 ++++
+ src/frob/strata/_effects.py                |  6 ++++
+ src/frob/strata/_errors.py                 |  6 ++++
+ src/frob/strata/_export.py                 |  6 ++++
+ src/frob/strata/_host.py                   |  6 ++++
+ src/frob/strata/_infra.py                  |  6 ++++
+ src/frob/strata/_krb_movement.py           |  6 ++++
+ src/frob/strata/_lint.py                   |  6 ++++
+ src/frob/strata/_models.py                 |  6 ++++
+ src/frob/strata/_native_staleness.py       |  6 ++++
+ src/frob/strata/_native_test.py            |  6 ++++
+ src/frob/strata/_packs.py                  |  6 ++++
+ src/frob/strata/_parse.py                  |  6 ++++
+ src/frob/strata/_plan.py                   |  6 ++++
+ src/frob/strata/_report.py                 |  6 ++++
+ src/frob/strata/_scenarios.py              |  6 ++++
+ src/frob/strata/_secrets.py                |  6 ++++
+ src/frob/strata/_sysdoc.py                 |  6 ++++
+ src/frob/testing/_collect.py               |  6 ++++
+ src/frob/testing/_incremental_coverage.py  |  6 ++++
+ src/frob/testing/_runners.py               |  6 ++++
+ src/frob/tickets/_journal.py               |  6 ++++
+ src/frob/tickets/_land.py                  |  6 ++++
+ src/frob/tickets/_leases.py                |  6 ++++
+ src/frob/tickets/_models.py                |  6 ++++
+ src/frob/tickets/_provisional.py           |  6 ++++
+ src/frob/tickets/_reconcile.py             |  6 ++++
+ src/frob/tickets/_store.py                 |  6 ++++
+ src/frob/tickets/_worktree_guard.py        |  6 ++++
+ src/frob/vet/_allow.py                     |  6 ++++
+ src/frob/vet/_capability_registry.py       |  6 ++++
+ src/frob/vet/_closedworld.py               |  6 ++++
+ src/frob/vet/_containment.py               |  6 ++++
+ src/frob/vet/_cve.py                       |  6 ++++
+ src/frob/vet/_ecosystem.py                 |  6 ++++
+ src/frob/vet/_lockfile.py                  |  6 ++++
+ src/frob/vet/_models.py                    |  6 ++++
+ src/frob/vet/_obfuscation.py               |  6 ++++
+ src/frob/vet/_osv.py                       |  6 ++++
+ src/frob/vet/_source.py                    |  6 ++++
+ strata-core/src/parse.rs                   |  6 ++++
+ tests/unit/test_logging_module.py          | 27 ++++++++++++++++++
+ tests/unit/test_render.py                  | 45 ++++++++++++++++++++++++++++++
+ 133 files changed, 947 insertions(+)
+```
+
+### Evidence
+(no evidence recorded)
+
+<!-- ticket:T-0591 -->
+```yaml
+id: T-0591
+title: 'TEST-family pool triage: bucket + calibrate + disposition the 335 warn findings'
+state: done
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- tests/**
+- src/frob/registry/**
+- src/frob/graph/**
+- src/frob/lang/**
+scope_changes:
+- op: add
+  glob: src/frob/registry/**
+  reason: TEST014/TEST003 disposition touches per-symbol frob:tests/waivers in producing
+    modules, not only gates/tests
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: src/frob/graph/**
+  reason: TEST014/TEST003 disposition touches per-symbol frob:tests/waivers in producing
+    modules, not only gates/tests
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: src/frob/lang/**
+  reason: TEST014/TEST003 disposition touches per-symbol frob:tests/waivers in producing
+    modules, not only gates/tests
+  actor: logan
+  at: '2026-07-22'
+evidence:
+- tests/test_registry_models.py::TestParseDisposition::test_handled_by
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Triage the TEST-family warning pool per mission: bucket by rule (TEST005/012/013/014/015), calibrate detectors where a noise class dominates, disposition genuine findings. Companion to T-0583 (memoize_per_run wrapper opacity fix).
+
+## Done report
+
+Bucketed `frob check --only test` (post T-0583 merge) by rule against this
+tree:
+
+- TEST005/TEST012/TEST013/TEST015: 0 findings today. Not calibration debt --
+  genuinely clean in this repo right now (TEST013's native-collector gap and
+  TEST015's assertion-evidence gap simply have no matching symbols here).
+  Extended T-0587's and T-0589's bodies with these counts so the next pass
+  doesn't have to re-derive them; left both queued since their actual
+  cross-cutting work (real vitest/ctest collectors, TEST001<->coverage
+  wiring) is unaffected by there being 0 current findings.
+- TEST014: 244 warnings, all pairwise fan-out from 4 distinct leaf-name
+  collision groups (`run` x171 across 20 app/*_runner.py entrypoints,
+  `as_json`/`as_text` x36 each, `format` x1) -- down from the 5 groups
+  T-0588's own body describes (`main` no longer collides). None fixed this
+  pass: disambiguating 20 runner modules' TEST001 credit is precisely
+  T-0588's own declared scope (src/frob/gates/__init__.py) and outsized for
+  a triage pass. Extended T-0588's body with the refreshed count/breakdown
+  instead of duplicating the ticket.
+- TEST003: 2 findings, both package-scoped interfaces with 0 integration
+  tests. src/frob/doctor.py already carried an honest waiver (pre-existing
+  T-0319 debt). src/frob/registry (genuinely no CLI/subprocess integration
+  entrypoint, only unit-tested via its consuming gates) now carries the
+  same honest waiver, disposed to 0 unwaived.
+- TEST006: 1 finding ("no coverage stamp found; run: make coverage") --
+  environmental noise in a fresh worktree per the agent playbook (6b: a
+  dispatched sub-agent must not run `make coverage`; the coordinator stamps
+  it at land). Not disposed here; expected to clear once the coordinator
+  stamps coverage against the merged tree.
+
+Net: gate:TEST is 0 errors both before and after this pass (244->245
+warnings reflects only the TEST003 waiver's bookkeeping, not a new
+finding). No detector calibration was needed -- no bucket showed dominant
+noise requiring a rule-shape fix; T-0583 (COV006, a companion gate) is
+where the actual detector fix in this mission landed.
+
+### Changed
+```
+ src/frob/graph/callgraph.py | 27 +++++++++++++++++-
+ tests/test_graph.py         | 25 ++++++++++++++++
+ tests/test_lang.py          |  2 --
+ tickets.md                  | 69 +++++++++++++++++++++++++++++++++++++++++++--
+ 4 files changed, 118 insertions(+), 5 deletions(-)
+```
+
+### Evidence
+- `tests/test_registry_models.py::TestParseDisposition::test_handled_by` (pytest node id, verified passing when recorded)
+
+<!-- ticket:T-0592 -->
+```yaml
+id: T-0592
+title: 'REG008/REG009 conformance pool: anchor frob:enforces in gate code for the
+  115 registry claims'
+state: done
+kind: docs
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- docs/design/registry/**
+- src/frob/dup/_rules.py
+- src/frob/fuzz/_rules.py
+- src/frob/perf/_rules.py
+scope_changes: []
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+- tests/test_secrets_gate.py::TestTrackedEnvFile::test_env_file_sec002
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Batch-anchor frob:enforces directives at the actual enforcing functions for the REG008 pool flagged by frob check --only registry (91 CHK-GATE entries in check-coverage.yaml plus arch-checks.yaml/pii.yaml/secrets.yaml/weaknesses.yaml entries). Verify each anchor against real enforcing code before adding; flip disposition to deferred:ticket if a yaml claim is false.
+
+## Done report
+
+`frob check --only registry` started at 115 warnings (114 REG008 + 1 REG010, 0
+errors) after merging main (tip 80179a6, later re-verified against 3f92b12)
+and `make core`. Batched by registry file, verifying each anchor against the
+real enforcing function before adding it:
+
+- arch-checks.yaml (2 entries): DUP001/ACC-2-1-DUPLICATED-CODE anchored at
+  `frob.dup._rules.DUP001`; ARCH001/ACC-2-1-LONG-FUNCTION anchored at
+  `frob.gates._arch.arch_gate`. Also anchored the reflexive
+  CHK-GATE-ARCH001/DUP001/DUP002 check-coverage entries at the same
+  functions.
+- pii.yaml (7 entries) + secrets.yaml (2 entries): all 7 pii.yaml corpus
+  entries anchored at `frob.gates._pii_structural.pii_structural_gate`
+  (verified it is the sole PII010/SEC110 enforcer). secrets.yaml's two
+  entries (DETECT_SECRETS_PLUGINS, PROVIDER_TOKEN_FORMATS) were
+  dispositioned `handled_by:SEC002`, which is FALSE -- SEC002 is the
+  tracked-.env-file check, unrelated to plugin/token-format detection; the
+  actual enforcer is the `_PATTERNS` regex table (SEC001, with SEC003 for
+  the unwaivable Stripe-live carve-out). Flipped both dispositions to
+  `handled_by:SEC001` with an inline comment explaining why, then anchored
+  `secrets_gate` for SEC001/SEC002/SEC003 plus the two corrected entries.
+- weaknesses.yaml (16 entries): all 16 SEC-CVE-FINGERPRINT-* needle
+  categories anchored at `frob.gates._cve_fingerprint_scan.
+  cve_fingerprint_scan_gate`, cross-checked against the needle ids in
+  `frob.strata._cve_fingerprint.CVE_FINGERPRINTS`.
+- check-coverage.yaml (87 entries): anchored each CHK-GATE-<rule> at its
+  verified enforcing function across `frob.gates.__init__`,
+  `frob.gates._registry_exhaustiveness` (REG001-007), `frob.gates.
+  decisions`, `frob.gates._docblocks`, `frob.gates._exclude_hazard`,
+  `frob.gates._lang_conformance`, `frob.gates._refs`, `frob.gates.
+  _render_lint`, `frob.gates._walk_lint`, `frob.fuzz._rules` (FUZZ001-003),
+  and `frob.perf._rules.perf_rules` (PERF001-007, which composes
+  `recursion_rules`/`redundant_computation_violations`).
+- REG010 (4 live rules -- TEST012-015 -- with no CHK-GATE entry at all):
+  ran `frob registry audit --sync-gate-rules` to file the 4 missing
+  entries, then anchored TEST012/013/014/015 at their enforcing functions
+  in `frob.gates.__init__`.
+
+Final `frob check --only registry`: 0 errors, 0 warnings for gate:REG (was
+114 REG008 + 1 REG010). The 2 remaining WAIVE002 warnings in the tool
+summary are pre-existing, unrelated `frob:waive DEAD001` typos in
+tests/test_dup_cross_lang.py and tests/unit/test_dup_cache.py -- outside
+this ticket's scope, not touched.
+
+`frob check --ticket T-draft-f8aabdf0` (full check): registry gate clean;
+6 unrelated COV003 errors surfaced (T-0583/T-0585 evidence referencing
+pytest node ids that do not collect even after a fresh `pytest
+--collect-only`) -- pre-existing on main, not caused by this diff (my diff
+never touches those tests or tickets). Filed T-draft-959e1bcd for it rather
+than silently fixing or ignoring.
+
+Counts: anchored 114 (2 arch-checks + 7 pii + 2 secrets(via corrected
+disposition) + 16 weaknesses + 87 check-coverage, including the 4
+REG010-filed TEST012-015), disposition-flipped 2 (secrets.yaml SEC002 ->
+SEC001), entry-added 4 (TEST012-015 via --sync-gate-rules).
+
+### Changed
+```
+ docs/design/registry/check-coverage.yaml   |  18 +-
+ docs/design/registry/secrets.yaml          |  11 +-
+ src/frob/dup/_rules.py                     |   3 +
+ src/frob/fuzz/_rules.py                    |   3 +
+ src/frob/gates/__init__.py                 |  53 +++++
+ src/frob/gates/_arch.py                    |   2 +
+ src/frob/gates/_cve_fingerprint_scan.py    |  17 ++
+ src/frob/gates/_docblocks.py               |   1 +
+ src/frob/gates/_exclude_hazard.py          |   1 +
+ src/frob/gates/_lang_conformance.py        |   3 +
+ src/frob/gates/_pii_structural.py          |   9 +
+ src/frob/gates/_refs.py                    |   3 +
+ src/frob/gates/_registry_exhaustiveness.py |   7 +
+ src/frob/gates/_render_lint.py             |   1 +
+ src/frob/gates/_secrets.py                 |   5 +
+ src/frob/gates/_walk_lint.py               |   1 +
+ src/frob/gates/decisions.py                |   2 +
+ src/frob/perf/_rules.py                    |   7 +
+ tickets.md                                 | 351 ++++++++++++++++++++++++++++-
+ 19 files changed, 491 insertions(+), 7 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
+
+<!-- ticket:T-0593 -->
+```yaml
+id: T-0593
+title: 'COV003: T-0583/T-0585 evidence references pytest node ids that do not exist
+  in the repo'
+state: dropped
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- tickets.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Dropped (2026-07-22): stale-worktree-base artifact -- the flagged COV003 node ids collect cleanly on main (verified by the filing agent after merging main); resolved elsewhere, nothing to do.
+
+Found while working T-draft-f8aabdf0 (REG008 conformance sweep). frob check --ticket flags 6 COV003 errors: T-0583 evidence tests/test_graph.py::TestCallGraph::test_build_call_graph_sees_through_memoize_per_run_wrapper and T-0585 evidence (3 tests in test_logging_module.py/test_render.py) do not resolve to any collected test even after deleting .frob/pytest-collect.json and re-collecting fresh (0 items collected for each). Both tickets are marked done on main. Needs investigation: either the tests were removed/renamed after the ticket closed, or the evidence was recorded without ever actually being collected.
+
+## Failure log
+- 2026-07-22 attempt 1: resolved by main's later commits (INV-037..040/test_graph.py/test_logging_module.py additions) merged into this worktree after filing -- the flagged pytest node ids now collect cleanly, was a stale-worktree-base artifact, not a real gap
