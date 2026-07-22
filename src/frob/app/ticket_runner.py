@@ -1127,65 +1127,34 @@ def _reconcile_cmd(root: Path, cfg: AppConfig) -> None:
         _log.info("reconcile: no orphaned land intents found")
 
 
-def _xref_hits_for_scope(root: Path, scope: tuple[str, ...]) -> list[str]:
-    """Symbol names `xref` resolves for each scope glob's basename stem."""
-    from frob.xref import xref
+# frob:ticket T-0354
+def _run_sweep(root: Path, ticket) -> None:  # noqa: ANN001
+    """Record the pre-work sweep (dup + xref + scope digest) for `ticket`.
 
-    xref_hits: list[str] = []
-    for pattern in scope:
-        base = pattern.split("*", 1)[0].rstrip("/") or "."
-        scan_path = root / base if base != "." else root
-        if not scan_path.exists():
-            continue
-        symbol = Path(pattern).stem
-        xref_result = xref(symbol, root)
-        if xref_result.is_ok:
-            xref_hits.append(xref_result.danger_ok.symbol)
-    return xref_hits
-
-
-def _scope_digest_for_ticket(root: Path, ticket) -> str:  # noqa: ANN001
-    """`scope_digest` for `ticket`, loading (or building) the graph cache first.
-
-    MUST come from frob.gates.scope_digest -- the gate compares against the
-    same function, so recording and checking can never desync.
+    Delegates to `frob.gates.sweep_ticket` (T-0236's flagged follow-up,
+    closed by T-0354): this call site used to carry its own copy of the
+    xref loop with the same two bugs `sweep_ticket` fixed for T-0240 -- an
+    unbounded `xref(symbol, root)` re-walk of the WHOLE tree per scope
+    glob regardless of the per-pattern scan path, and a
+    `Path(pattern).stem` guess that fed glob syntax (`"**"`, `"__init__"`)
+    into xref as if it were a real symbol name. `src/frob/app/**` was out
+    of scope for T-0240, so this copy kept both bugs live until now;
+    delegating collapses the duplication instead of porting a second copy
+    of the same fix.
     """
-    from frob.gates import scope_digest
-    from frob.graph import build_graph, load_graph
+    from frob.gates import sweep_ticket
 
-    cache = root / _CACHE_REL
-    loaded = load_graph(cache)
-    if loaded.is_err:
-        loaded = build_graph(root, cache)
-    return scope_digest(ticket.scope, loaded.danger_ok) if loaded.is_ok else ""
-
-
-def _run_sweep(root: Path, ticket) -> None:
-    """Record the pre-work sweep (dup + xref + scope digest) for `ticket`."""
-    from frob.dup import find_duplicates
-    from frob.gates import PreworkSweep, record_prework
-
-    dup_result = find_duplicates(root)
-    dup_findings = dup_result.total_clones
-    xref_hits = _xref_hits_for_scope(root, ticket.scope or (".",))
-    digest = _scope_digest_for_ticket(root, ticket)
-
-    sweep = PreworkSweep(
-        date=date.today(),
-        dup_findings=dup_findings,
-        xref_hits=tuple(xref_hits),
-        digest=digest,
-    )
-    recorded = record_prework(root, ticket.id, sweep)
-    if recorded.is_err:
-        _log.error("pre-work sweep recording failed: %s", recorded.danger_err)
+    swept = sweep_ticket(root, ticket)
+    if swept.is_err:
+        _log.error("pre-work sweep recording failed: %s", swept.danger_err)
         sys.exit(1)
 
+    sweep = swept.danger_ok
     _log.info(
         "swept %s: dup_findings=%d xref_hits=%d",
         ticket.id,
-        dup_findings,
-        len(xref_hits),
+        sweep.dup_findings,
+        len(sweep.xref_hits),
     )
 
 
