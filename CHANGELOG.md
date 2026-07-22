@@ -17,6 +17,18 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.60.0] - unreleased
+
+T-0555: `frob.lang` gained `partial_parse_files()`, a `reset_parse_cache`-
+scoped accessor (mirroring `parse_cache_stats`'s shape) returning the
+display paths of every file whose tree-sitter parse was salvaged around a
+syntax error since the last reset (T-0404 finding 9) -- previously only a
+scattered `_warn_if_partial_tree` (T-0434) `WARNING` log line, invisible
+below `-v` and with no structured consumer, especially for Rust/C++/TS
+repos with no gates stage at all (T-0546/T-0554) to notice it. Wiring a
+blocking `frob check` violation off this list is a `frob.gates`-family
+change tracked separately.
+
 ## [0.58.0] - unreleased
 
 T-0454: professional ticket organization -- `Ticket`/`TicketSpec` gained
