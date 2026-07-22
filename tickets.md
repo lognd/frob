@@ -4061,9 +4061,9 @@ labels: []
 ```
 Telemetry (this session, 1035 CLI events): ticket=225 check=103 release=19 sys=16 organic; map/outline/xref/parse/gitlog/exports invocations were VIRTUALLY ALL their own test suites (pytest tmp paths), zero organic use by coordinator or ~30 agents -- navigation is owned by Serena/native tools in agentic use. Each command carries doc/test/export/coverage obligations = maintenance tax. Decide per command: KEEP AS PLUMBING (parse: adapter used by pipelines; exports: powers exports stage; gitlog: powers stats/changelog), DEMOTE to documented maintenance-mode porcelain tier (map, outline, xref, docs-search), or frob:deprecated. serve (MCP) kept: valuable for no-shell contexts though unused when agents have a shell. User decision ticket -- evidence in body, recommendation: demote the four navigation commands, revisit removal after one quiet quarter.
 
-<!-- ticket:T-draft-9f90cc43 -->
+<!-- ticket:T-0581 -->
 ```yaml
-id: T-draft-9f90cc43
+id: T-0581
 title: 'perf: run archgate/sys/coverage-class CPU-bound gates in a process pool, not
   shared ThreadPoolExecutor (H3)'
 state: queued
@@ -4085,9 +4085,9 @@ labels: []
 ```
 T-0410 perf audit re-measurement (2026-07-21): archgate/sys are now near-zero (T-0423 memoization) and coverage_gate dropped ~10x after this ticket's parse_file memo fix, so H3 (docs/audits/perf.md) is less urgent than originally measured, but the underlying architecture problem is unchanged and will bite again the moment any thread-pooled gate's PURE input grows (e.g. a repo without T-0423's memoization benefit, or a new heavy gate added to thread_jobs instead of process_jobs). Currently only perf/secrets/pii_structural/dup run in _ProcessJob (frob/gates/__init__.py _PROCESS_POOL_GATES); coverage/drift/invariant/refs/registry/etc share one ThreadPoolExecutor and GIL-serialize when CPU-bound. Audit which thread_jobs entries are actually CPU-bound-pure (coverage_gate qualifies per this ticket's own profile) and move them to the process pool the way perf/secrets/pii already are, or justify why threading is fine now that the redundant-parse costs are gone.
 
-<!-- ticket:T-draft-bafbce1c -->
+<!-- ticket:T-0582 -->
 ```yaml
-id: T-draft-bafbce1c
+id: T-0582
 title: 'perf audit re-measurement: verify vet/secrets/selfconform after T-0410 parse_file
   memo fix; profile refs stage (now 2nd dominator)'
 state: queued
