@@ -3011,7 +3011,7 @@ Discovered while working T-0516: COV006 Violation objects carry no symref (file=
 id: T-0536
 title: Retag/rebind 3 residual COV006 findings after T-0528 calibration (genuinely
   wrong bindings, not blindness)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -3022,8 +3022,59 @@ scope:
 - tests/test_graph.py
 - tests/unit/strata/test_selfconform.py
 - tests/system/test_cli_ticket_land.py
-scope_changes: []
-evidence: []
+- Makefile
+- docs/modules/testing.md
+- src/frob/gates/__init__.py
+- tests/test_coverage.py
+- tests/test_gates_tick005.py
+- tests/test_ticket_land.py
+scope_changes:
+- op: add
+  glob: Makefile
+  reason: 'SCOPE001 collision: T-0538/T-0537''s own already-closed changes are still
+    in this worktree''s uncommitted-vs-main diff (sequential tickets, one worktree);
+    not new edits by T-0536 itself'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/testing.md
+  reason: 'SCOPE001 collision: T-0538/T-0537''s own already-closed changes are still
+    in this worktree''s uncommitted-vs-main diff (sequential tickets, one worktree);
+    not new edits by T-0536 itself'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'SCOPE001 collision: T-0538/T-0537''s own already-closed changes are still
+    in this worktree''s uncommitted-vs-main diff (sequential tickets, one worktree);
+    not new edits by T-0536 itself'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_coverage.py
+  reason: 'SCOPE001 collision: T-0538/T-0537''s own already-closed changes are still
+    in this worktree''s uncommitted-vs-main diff (sequential tickets, one worktree);
+    not new edits by T-0536 itself'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_gates_tick005.py
+  reason: 'SCOPE001 collision: T-0538/T-0537''s own already-closed changes are still
+    in this worktree''s uncommitted-vs-main diff (sequential tickets, one worktree);
+    not new edits by T-0536 itself'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'SCOPE001 collision: T-0538/T-0537''s own already-closed changes are still
+    in this worktree''s uncommitted-vs-main diff (sequential tickets, one worktree);
+    not new edits by T-0536 itself'
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_graph.py::TestBuildIncremental::test_fingerprint_packages_derived_from_lang_registry
+- tests/unit/strata/test_selfconform.py::TestLanguageCoverageDriftLock::test_scanned_languages_equals_registry_languages
+- tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map
 attachments: []
 acceptance: []
 threat: null
@@ -3040,6 +3091,45 @@ T-0528's COV006 calibration pass fixed 54/57 dogfooded findings via checker-side
 
 Also noted during T-0528: frob.graph.callgraph's build_call_graph resolves privacy via _short_name(qualname).startswith('_') -- a PYTHON-only naming convention. Rust's fn/pub fn convention has no such marker, so every rust callee looks 'public' to it and is silently never recorded as a private edge (this is what made all 7 frob-core/src/lib.rs COV006 findings structurally invisible before T-0528 added a non-python-target exemption to COV006 itself as a stopgap). A real fix belongs in frob.graph.callgraph (out of COV006's scope): add real per-language privacy resolution (e.g. consult RawSymbol.public directly instead of re-deriving it from the qualname's leading underscore) so Rust/other non-python languages get real call-graph edges instead of being permanently exempted from this class of check.
 
+## Done report
+
+All 3 residual COV006 findings from T-0528's calibration pass were
+genuinely wrong bindings in the sense the ticket described (asserts a
+module-level constant's set membership/equality, never calls the bound
+private symbol) -- but retargeting the `frob:tests` directive straight at
+the constant (the ticket's first suggested fix) does not work in
+practice: tried it for all three, and `frob check`'s DRIFT002 then
+reports the ref as unresolvable, because a bare module-level assignment
+(`_FINGERPRINT_PACKAGES`, `SCANNED_LANGUAGES`, `_EXTENDED_KINDS`) is not a
+graph node `frob ack` can bind against -- trading COV006 for DRIFT002.
+Used the ticket's second suggested fix instead: `frob:waive COV006` with
+the same module-constant-drift-lock reasoning T-0516's precedent
+(tests/test_gates.py) already established, on each of the 3 tests, kept
+the original (pre-existing, if slightly imprecise) `frob:tests` bindings
+unchanged.
+
+Verified `uv run frob check` (repo-wide, not just `--ticket`): `gate:COV
+0 errors, 0 warnings, 75 waived` -- COV006 unwaived = 0 repo-wide, the
+ticket's stated target.
+
+### Changed
+```
+ Makefile                              |  29 +++++
+ docs/modules/testing.md               |  11 ++
+ src/frob/gates/__init__.py            | 110 ++++++++++++++++-
+ tests/test_coverage.py                |  65 +++++++++-
+ tests/test_gates_tick005.py           | 218 ++++++++++++++++++++++++++++++++++
+ tests/test_graph.py                   |  11 ++
+ tests/test_ticket_land.py             |  35 ++++++
+ tests/unit/strata/test_selfconform.py |  18 +++
+ tickets.md                            | 171 ++++++++++++++++++++++++--
+ 9 files changed, 656 insertions(+), 12 deletions(-)
+```
+
+### Evidence
+- `tests/test_graph.py::TestBuildIncremental::test_fingerprint_packages_derived_from_lang_registry` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestLanguageCoverageDriftLock::test_scanned_languages_equals_registry_languages` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0537 -->
 ```yaml
 id: T-0537
