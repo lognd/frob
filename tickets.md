@@ -14446,3 +14446,66 @@ component: null
 labels: []
 ```
 Root-cause analysis 2026-07-22: several rejects were correctness bugs whose own tests PASSED because they were confirmatory, not adversarial -- written to pass for the reason the implementer built the thing (T-0611, T-0571, T-0682, T-0574, T-0710). A confirmatory test that would pass on BOTH the pre-change and post-change code proves nothing. frob already has `frob mutate`. Add a diff-scoped obligation: for a ticket touching code with new/changed tests, run those tests against the PRE-change version of the changed symbols (or a targeted mutant of the new logic) and require at least ONE recorded evidence test to FAIL on the mutant -- proving the test actually distinguishes the change. A test that passes on the mutant is a confirmatory-only test = a TEST-family warning (ratchet to error via T-0569 pool for security/bug-kind tickets). This is mutation testing scoped to the ticket diff, wired into close/land as evidence-quality verification, reusing frob.mutate.
+
+<!-- ticket:T-0756 -->
+```yaml
+id: T-0756
+title: self-audit-green-at-land + new-gate-rule end-to-end acceptance policy (kill
+  invoked-by-nothing structurally)
+state: queued
+kind: security
+origin: human
+created: '2026-07-22'
+priority: high
+blocked_by: []
+parent: T-0397
+scope:
+- src/frob/check/**
+- src/frob/gates/**
+- src/frob/tickets/**
+- docs/modules/gates.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a change that reddens frob sys audit WHEN land preflight runs THEN land
+    errors naming the new self-audit gap; GIVEN a ticket adding a gate rule id with
+    no before-fails/after-passes fixture in its evidence THEN close is blocked
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Root-cause analysis 2026-07-22: the invoked-by-nothing pattern caused repeated rejects (T-0724 enabling the check reddened frobs OWN sys audit undisclosed; T-0630/T-0595/T-0616/T-0710 built-but-unwired). Two structural fixes: (1) SELF-AUDIT AT LAND: frob check (and frob ticket land preflight) must run the repos own self-conformance/sys-audit and ERROR if the change reddens it -- T-0724s red audit should have been a land gate, not a reviewer catch. selfconform partly does this; extend to run the full sys audit surface (contention, reliability, all SYS families) as a blocking pre-land step so no landed change leaves frobs own model failing. (2) NEW-GATE-RULE ACCEPTANCE POLICY: a ticket that adds a gate/check rule id (detectable: new entry in _KNOWN_GATE_RULES or a new SYS/REL/etc rule) MUST record, as bound acceptance evidence, a fixture that FAILS frob check before and PASSES after -- proving the rule fires through the production invocation, not just its pure function. A new rule with only unit-level evidence and no end-to-end fixture = a close-blocking finding. This makes the catalogued-is-not-enforced doctrine self-enforcing for every future gate.
+
+<!-- ticket:T-0757 -->
+```yaml
+id: T-0757
+title: 'design-invariant encoding: import-forbidding frob:invariant + establish-property
+  obligation (T-0611/T-0682 class as gates)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0330
+scope:
+- src/frob/graph/dsl.py
+- src/frob/gates/**
+- src/frob/arch/_normalized.py
+- src/frob/tickets/_land.py
+- docs/modules/gates.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN _normalized.py gains a tree_sitter import WHEN the INV gate runs THEN
+    an error fires; GIVEN a comparator invariant declared with a property test THEN
+    a violating change fails it; both known cases seeded
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Root-cause analysis 2026-07-22: two rejects (T-0611 tree_sitter imported into the deliberately-pure _normalized.py; T-0682 the newer state must win the splice) were violations of a DESIGN INVARIANT that existed only in the implementers/reviewers head, not as a checkable property. frob already has frob:invariant anchors + INV gates. The thread: module-level design properties (this module must not import X; this comparator must be monotonic in Y; this data model must round-trip) are not being written as invariants at the point they are established, so their violation needs a human skeptic to reconstruct. Deliver: (1) a frob:invariant flavor for IMPORT/DEPENDENCY properties (module M must never import package P) checkable statically -- T-0611s exact case becomes an INV gate error, not a review catch; (2) guidance + lint (docs + a check) that a ticket ESTABLISHING a design property (a new pure module, a new ordering/comparator, a new serialization round-trip) record it as a frob:invariant in the same change; (3) seed the two known ones now: _normalized.py-no-tree_sitter and splice_ledger-newer-wins.
