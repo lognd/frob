@@ -6033,3 +6033,35 @@ component: null
 labels: []
 ```
 T-0264's windows generator hardens an existing SCM service (SID type, privileges via sc.exe config) but cannot CREATE one -- std.host has no binPath/ImagePath (executable path + arguments) vocabulary, so sc.exe create is impossible from the model. T-0254's epic text says the install sequence registers the Windows Service; full-install-from-zero needs the vocabulary. Add the grammar clause (parse.rs node/store symmetry per T-0261 precedent), HostManifest read-back, and wire generate_windows_install_script to sc.exe create idempotently when binPath is declared. Flagged by T-0264's reviewer so the epic's full-install intent is not silently lost.
+
+<!-- ticket:T-0630 -->
+```yaml
+id: T-0630
+title: 'strata: wire real code binding into production discharge entrypoints so G1
+  fail-closed actually fires'
+state: queued
+kind: security
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0595
+parent: T-0401
+scope:
+- src/frob/strata/_audit.py
+- src/frob/strata/_sysdoc.py
+- src/frob/strata/_plan.py
+- src/frob/vet/_containment.py
+- tests/unit/strata/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a fixture repo whose ENDORSE boundary predicate has no observed call site
+  WHEN the production strata audit gate runs (not a unit test) THEN the THREAT003
+  unbound-boundary violation appears in frob check/sys audit output
+threat: tampering
+component: null
+labels: []
+```
+T-0595 added the ENDORSE-boundary code-binding join (observed_call_names + _predicate_is_code_bound threaded through check_discharge_completeness) but every production caller (_audit.py / frob sys audit, _sysdoc.py, _plan.py, vet/_containment.py, _pii.py, _compliance.py) omits the optional binding/root arguments, so the fail-closed path never engages outside the new unit tests -- enforcement exists but nothing invokes it (the catalogued-is-not-enforced trap). Wire the real code tree into each production entrypoint so an unbound sanitizer predicate fails the actual gate, with an integration test proving frob sys audit (or equivalent) reports the THREAT003 on a fixture repo. Disclosed-but-unticketed cut from T-0595's Done report; this is the real ticket.
