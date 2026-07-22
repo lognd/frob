@@ -615,19 +615,43 @@ def _render_uninstall_script(
 # frob:doc docs/strata/host.md#the-deploy-generator
 # frob:tests tests/unit/deploy/test_generate.py::TestAll.test_returns_all kind="unit"
 def generate_all(model: KernelModel) -> dict[str, str]:
-    """`{"install.sh": ..., "status.sh": ..., "uninstall.sh": ...}` -- the
-    ONE call site `frob deploy generate`'s CLI runner and `_drift.py`'s
-    DEPLOY001 recompilation both use, so the three scripts' filenames can
-    never drift apart between the writer and the checker.
+    """`{"install.sh": ..., "status.sh": ..., "uninstall.sh": ...}`, PLUS
+    `{"install.ps1": ..., "status.ps1": ..., "uninstall.ps1": ...}` when
+    `model` declares at least one `HostPlatform.WINDOWS` manifest
+    (T-0264, `frob.deploy._generate_windows`) -- the ONE call site `frob
+    deploy generate`'s CLI runner and `_drift.py`'s DEPLOY001
+    recompilation both use, so no generated filename can ever drift apart
+    between the writer and the checker, on either platform.
 
     T-0281 item 4 (malmberg pilot finding): `sorted_manifest_entries` is
-    computed exactly ONCE here and shared across all three renderers,
-    instead of each one independently re-walking the model -- the shared
-    walk is what stops `host_manifest_for`'s per-node DEBUG log line from
-    firing three times per node for one `frob deploy generate` run."""
+    computed exactly ONCE here and shared across all renderers (bash AND,
+    when applicable, windows), instead of each one independently
+    re-walking the model -- the shared walk is what stops `host_manifest_
+    for`'s per-node DEBUG log line from firing once per renderer per node
+    for one `frob deploy generate` run."""
     entries = sorted_manifest_entries(model)
-    return {
+    rendered = {
         "install.sh": _render_install_script(model, entries),
         "status.sh": _render_status_script(model, entries),
         "uninstall.sh": _render_uninstall_script(model, entries),
     }
+    # Deferred import: `_generate_windows` imports FROM this module
+    # (`DIGEST_HEADER_PREFIX`/`ManifestEntry`/`manifest_digest`/
+    # `sorted_manifest_entries`) -- a top-level import here would cycle.
+    from ._generate_windows import (
+        _krb_manifest_by_node_id,
+        _render_windows_install_script,
+        _render_windows_status_script,
+        _render_windows_uninstall_script,
+        windows_entries,
+    )
+
+    win_entries = windows_entries(entries)
+    if win_entries:
+        krb_by_node = _krb_manifest_by_node_id(model)
+        rendered["install.ps1"] = _render_windows_install_script(
+            model, win_entries, krb_by_node
+        )
+        rendered["status.ps1"] = _render_windows_status_script(model, win_entries)
+        rendered["uninstall.ps1"] = _render_windows_uninstall_script(model, win_entries)
+    return rendered

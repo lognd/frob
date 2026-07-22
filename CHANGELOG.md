@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.79.0] - unreleased
+
+- T-0264: frob deploy generate windows: PowerShell/DSC install/status/uninstall from the manifest, drift-locked
+
 ## [0.78.0] - unreleased
 
 - T-0325: doc-drift digest graph: warm 'what code/docs must update when X changes' query (the north-star)

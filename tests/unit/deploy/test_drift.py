@@ -24,10 +24,47 @@ node api : trusted {
 """
 
 
+_STRATA_SRC_WITH_WINDOWS = """\
+module deploy_drift_fixture
+
+node api : trusted {
+    clearance Internal;
+    runs_as "api-svc";
+    unit;
+    owns "/etc/api" "0644";
+    listens 8080;
+}
+
+node winapi : trusted {
+    clearance Internal;
+    platform "windows";
+    service_account "svc-api";
+    service;
+}
+"""
+
+
 def _write_design(root: Path) -> None:
     design = root / "design"
     design.mkdir(parents=True, exist_ok=True)
     (design / "fixture.strata").write_text(_STRATA_SRC)
+
+
+def _model_with_windows() -> KernelModel:
+    return KernelModel(
+        nodes=(
+            Node(
+                id="api",
+                trust="trusted",
+                attrs=("runs_as=api-svc", "unit", "owns=/etc/api:0644", "listens=8080"),
+            ),
+            Node(
+                id="winapi",
+                trust="trusted",
+                attrs=("platform=windows", "service_account=svc-api", "service"),
+            ),
+        )
+    )
 
 
 # frob:waive DUP001 reason="parallel test fixtures across 3 sibling test \
@@ -120,6 +157,46 @@ class TestDrift:
         deploy_dir = tmp_path / "deploy"
         deploy_dir.mkdir()
         for filename, content in generate_all(_model()).items():
+            (deploy_dir / filename).write_text(content)
+        assert deploy_drift_violations(tmp_path) == ()
+
+    # frob:tests src/frob/deploy/_drift.py::deploy_drift_violations kind="unit"
+    def test_windows_file_no_longer_produced_is_flagged(self, tmp_path):
+        """T-0264: a committed `install.ps1` that the CURRENT model no
+        longer produces at all (no windows manifest declared) is itself
+        drift -- exercises the `filename not in fresh` branch, distinct
+        from a content mismatch."""
+        _write_design(tmp_path)
+        deploy_dir = tmp_path / "deploy"
+        deploy_dir.mkdir()
+        for filename, content in generate_all(_model()).items():
+            (deploy_dir / filename).write_text(content)
+        (deploy_dir / "install.ps1").write_text("# stale windows script\n")
+
+        violations = deploy_drift_violations(tmp_path)
+        assert len(violations) == 1
+        assert violations[0].file == "deploy/install.ps1"
+
+    # frob:tests src/frob/deploy/_drift.py::deploy_drift_violations kind="unit"
+    def test_windows_clean(self, tmp_path):
+        """T-0264: a model WITH a windows manifest regenerates all six
+        filenames clean."""
+        design = tmp_path / "design"
+        design.mkdir()
+        (design / "fixture.strata").write_text(_STRATA_SRC_WITH_WINDOWS)
+        model = _model_with_windows()
+        deploy_dir = tmp_path / "deploy"
+        deploy_dir.mkdir()
+        rendered = generate_all(model)
+        assert set(rendered) == {
+            "install.sh",
+            "status.sh",
+            "uninstall.sh",
+            "install.ps1",
+            "status.ps1",
+            "uninstall.ps1",
+        }
+        for filename, content in rendered.items():
             (deploy_dir / filename).write_text(content)
         assert deploy_drift_violations(tmp_path) == ()
 

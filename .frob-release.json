@@ -205,6 +205,10 @@
     "src/frob/deploy/_generate.py::generate_uninstall_script": "a29251134e34025dd51129a2b480ac7446b6b3125fec4b204a24a3945e1a6686",
     "src/frob/deploy/_generate.py::manifest_digest": "cd1b0e4532da5ad5cf0f2b62bb7ee57a04af00a5628b70aedb7204660b50423c",
     "src/frob/deploy/_generate.py::sorted_manifest_entries": "8d0f3f090dd882c7ac91288fa54c54b45463de337340fdcae42112958f698758",
+    "src/frob/deploy/_generate_windows.py::generate_windows_install_script": "7a3805656f725833be5b60b3e6ff8617abc5c461371209e04afb456ffeaa1f47",
+    "src/frob/deploy/_generate_windows.py::generate_windows_status_script": "a9dacf569e3a7d3bbf51b838d41d7ae8d39853f38283dbd3475031f4493f905c",
+    "src/frob/deploy/_generate_windows.py::generate_windows_uninstall_script": "087ff28707e459f492f51f5e8968993fda67d9a688db5eeb35ab6727eec39dca",
+    "src/frob/deploy/_generate_windows.py::windows_entries": "8a6c515cd8b0dd56312c5e414fe5ed911b2cad4d27c59c954a9afebbd89da307",
     "src/frob/deploy/_vm_runner.py::AuditRunResult": "73bc67bc4f29d924c04f4b41809c8c12d5f9187628164e0c4c5372785e2145d2",
     "src/frob/deploy/_vm_runner.py::VmAuditConfig": "760aa6d6ab086e4a4acf3735f2d3316b649974fd0b49c4cb326f7baa625e159b",
     "src/frob/deploy/_vm_runner.py::run_vm_audit": "1e55d5e4788012727ae101ce6d93226338dac78e9bb650ccbb8248989b10c4c3",
@@ -1175,5 +1179,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.78.0"
+  "version": "0.79.0"
 }

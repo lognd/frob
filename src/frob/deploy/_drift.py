@@ -33,9 +33,22 @@ if TYPE_CHECKING:
 
 _log = get_logger(__name__)
 
-#: The exact filenames `generate_all` produces -- the ONE list this
+#: The exact filenames `generate_all` MAY produce -- the ONE list this
 #: module and `frob.deploy.generate_all` must agree on (no duplication).
-_GENERATED_FILENAMES = ("install.sh", "status.sh", "uninstall.sh")
+#: The three `.ps1` names are only ever present in `generate_all`'s
+#: return value when the model declares at least one `HostPlatform.
+#: WINDOWS` manifest (T-0264); `_drift_for_files` below skips any name
+#: absent from BOTH the committed `deploy/` dir and the fresh
+#: regeneration, so a linux-only repo with no `.ps1` files committed sees
+#: no windows-related DEPLOY001 checking at all.
+_GENERATED_FILENAMES = (
+    "install.sh",
+    "status.sh",
+    "uninstall.sh",
+    "install.ps1",
+    "status.ps1",
+    "uninstall.ps1",
+)
 
 
 # frob:doc docs/strata/host.md#the-deploy-generator
@@ -145,6 +158,28 @@ def _drift_for_files(
         committed_path = deploy_dir / filename
         if not committed_path.exists():
             _log.debug("deploy drift: %s not committed, skipping", filename)
+            continue
+        if filename not in fresh:
+            # T-0264: a committed `.ps1` with no windows manifest left in
+            # the CURRENT model (or vice versa) is itself real drift --
+            # the fresh regeneration no longer produces this filename at
+            # all, which is at least as stale as a content mismatch.
+            _log.error(
+                "deploy drift: deploy/%s is committed but the current "
+                "design model no longer produces it -- run `frob deploy "
+                "generate`",
+                filename,
+            )
+            violations.append(
+                DeployDriftViolation(
+                    file=f"deploy/{filename}",
+                    message=(
+                        f"deploy/{filename} is committed but the current "
+                        "design model no longer produces this file; run "
+                        "`frob deploy generate`"
+                    ),
+                )
+            )
             continue
         committed_text = committed_path.read_text(encoding="utf-8")
         if committed_text != fresh[filename]:
