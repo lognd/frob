@@ -9038,3 +9038,125 @@ component: null
 labels: []
 ```
 Standing home for 27 weaknesses.yaml CWE entries (CWE-20,22,77,78,79,89,94,119,125,190,269,276,287,306,352,362,416,434,476,502,639,787,798,862,863,918,922 -- overlapping the CWE Top-25/OWASP classic set, relevant to T-0674's Top-25 tension follow-up) whose controls are machine-checkable but not yet enforced by any gate/check. They previously carried deferred:T-0384 (the reconciliation ticket itself) -- a self-reference that would orphan them the moment T-0384 closed; T-0384's pass re-pointed them here. Each entry needs either a real enforcing check (then flip to handled_by:<rule-id>) or a reasoned out_of_scope/not-checkable disposition.
+
+<!-- ticket:T-0685 -->
+```yaml
+id: T-0685
+title: 'exception may-raise analysis: per-function may-raise sets with fail-closed
+  unknowns (parent)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/arch/**
+- src/frob/gates/**
+- docs/design/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN the children closed WHEN frob check runs on a fixture with a known exception
+  surface THEN the may-raise sets are queryable and every child gate/advisory fires
+  per its own acceptance
+threat: null
+component: null
+labels: []
+```
+User mandate 2026-07-22: complement the errors-as-values preference with an EXHAUSTIVE static exception story. Compute a per-function may-raise set: explicit raise sites + resolved callees' sets propagated over the call graph + curated builtin-raiser table (dict[k]->KeyError, int()->ValueError, attr->AttributeError, ...). Unresolvable calls (dynamic dispatch, getattr, plugins) contribute an Unknown marker FAIL-CLOSED, per the T-0339 doctrine -- reuse its per-language resolvers (T-0659..T-0664), do not build a second binding analysis. Ubiquitous asynchronous exceptions (MemoryError, KeyboardInterrupt, SystemExit) live in a separate always-possible tier that exhaustiveness never demands enumerated (only a boundary catch-all may discharge). The normalized model's NormalizedRaise/NormalizedCatch events (T-0609..T-0612) are the substrate. Children: Python may-raise resolver, C++ may-throw + noexcept obligation, exhaustive-handling gate + errors-as-values advisory. Umbrella closes when children close.
+
+<!-- ticket:T-0686 -->
+```yaml
+id: T-0686
+title: 'python may-raise resolver: raise sites + callee propagation + builtin-raiser
+  table, Unknown fail-closed'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0659
+parent: T-0685
+scope:
+- src/frob/arch/**
+- tests/unit/test_arch.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a fixture chain f->g->h where h raises ValueError and g catches it and f calls
+  dict subscript WHEN the resolver runs THEN f's may-raise is exactly {KeyError} plus
+  the ubiquitous tier and a fixture with an unresolvable call yields Unknown
+threat: null
+component: null
+labels: []
+```
+Child 1 of T-0685. Over the normalized model (NormalizedRaise/NormalizedCall) plus T-0659's sound Python name-binding: per-function may-raise = own raises (resolve the raised type where statically evident; bare raise re-raises the active set) + union of resolved callees' sets (fixpoint over the call graph, cycles converge) + builtin-raiser table for subscript/attribute/arithmetic/casts/io. Unresolved callee -> Unknown, fail-closed. except clauses SUBTRACT what they catch (mind exception hierarchies: except Exception catches ValueError). Async-ubiquitous tier (MemoryError/KeyboardInterrupt/SystemExit) tracked separately. Deliverable is the queryable analysis + tests on hand-built fixtures with known surfaces; gates/advisories are T-0688's job.
+
+<!-- ticket:T-0687 -->
+```yaml
+id: T-0687
+title: 'c++ may-throw analysis: throw sites + callee propagation + noexcept hard-boundary
+  obligation'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0662
+parent: T-0685
+scope:
+- src/frob/arch/**
+- src/frob/lang/**
+- tests/unit/test_arch.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a noexcept function calling a may-throw callee WHEN the analysis runs THEN
+  an error finding names the call site AND a try/catch(...) boundary discharges Unknown
+threat: null
+component: null
+labels: []
+```
+Child 2 of T-0685. Same may-set shape over the C++ tree-sitter parse: explicit throw + resolved-callee propagation + std-library thrower table (vector::at, new, stoi, ...). Virtual/indirect/function-pointer calls -> Unknown fail-closed (T-0665's obligation pattern). noexcept functions are HARD boundaries: a may-throw (or Unknown) call inside noexcept is an ERROR finding (std::terminate at runtime), not advisory. Document that full soundness needs libclang eventually; the tree-sitter approximation with fail-closed unknowns is the deliverable.
+
+<!-- ticket:T-0688 -->
+```yaml
+id: T-0688
+title: exhaustive-exception gate + errors-as-values advisory over may-raise sets
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0685
+scope:
+- src/frob/gates/**
+- docs/modules/gates.md
+- tests/test_gates.py
+- src/frob/arch/**
+scope_changes:
+- op: add
+  glob: src/frob/arch/**
+  reason: the advisory half lives beside the T-0332 recommender in arch
+  actor: logan
+  at: '2026-07-22'
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a boundary catching a strict subset of its guarded may-raise set WHEN the
+  gate runs THEN the missing exception types are named; GIVEN a public raiser with
+  unhandling callers WHEN arch advisories run THEN a Result recommendation fires with
+  the raise sites
+threat: null
+component: null
+labels: []
+```
+Child 3 of T-0685 (blocked by the python resolver landing; extend to C++ when its child lands). Two consumers of the may-raise sets: (1) EXHAUSTIVE-HANDLING gate: a try block or declared boundary function is exhaustive iff every member of the guarded may-raise set is caught, explicitly declared-propagated (a frob: directive), or waived with reason; Unknown in the set forces a catch-all or fixing the unresolvable call -- silent non-exhaustiveness impossible. (2) ERRORS-AS-VALUES advisory (suggestion severity, T-0332 noise discipline): a public function with non-empty recoverable may-raise whose callers do not handle it recommends typani Result[T,E], with the raise-site list as the sketch; exceptions remain sanctioned for programmer bugs (assert/invariant class exempt). Wire into T-0623's fallibility family; register rule ids in _KNOWN_GATE_RULES; docs in the same change.
