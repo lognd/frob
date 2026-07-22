@@ -6,7 +6,7 @@ Central ledger managed by `frob ticket` -- one section per ticket.
 ```yaml
 id: T-0160
 title: burn down TEST005 module-line-coverage backlog (~78 modules below 85% floor)
-state: in-progress
+state: queued
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -1203,7 +1203,6 @@ coordinator's earlier direction -- only native/TS modules are believed to
 remain (`src/frob/check/_native.py`, `src/frob/check/_ts.py`,
 `src/frob/dup/_legacy_cpp.py`), pending coordinator confirmation via a fresh
 full-suite `frob check --only test` scan.
-
 <!-- ticket:T-0177 -->
 ```yaml
 id: T-0177
@@ -3589,7 +3588,7 @@ before/after).
 id: T-0541
 title: 'gates: SCOPE001/PRE001 fully disabled with no active ticket / off-convention
   branch (B9)'
-state: done
+state: queued
 kind: bug
 origin: auditor
 created: '2026-07-21'
@@ -3599,9 +3598,7 @@ parent: T-0403
 scope:
 - src/frob/gates/
 scope_changes: []
-evidence:
-- tests/test_gates.py::TestRunGates::test_run_gates_blocks_scope_and_prework_when_no_ticket_touches_source
-- tests/test_gates.py::TestRunGates::test_run_gates_still_skips_scope_and_prework_for_ledger_only_diff
+evidence: []
 attachments: []
 acceptance: []
 threat: null
@@ -3610,60 +3607,12 @@ labels: []
 ```
 docs/audits/gates-accounting.md B9. _build_ticket_scoped_jobs only registers scope+prework jobs when st.ticket is not None; active_ticket derives the ticket purely from the branch name's T-#### prefix. A branch not named after a ticket (or work on main) skips scope and pre-work enforcement entirely rather than failing. Fix direction: a diff that touches source with no derivable active ticket should be a loud blocking condition, not a skip.
 
-## Done report
-
-Repro: on an off-convention branch (or `main`) with no `--ticket`,
-`_build_ticket_scoped_jobs` skipped both the `scope` and `prework` jobs
-whenever `st.ticket` was `Nothing` -- SCOPE001/PRE001 never ran at all for
-that check, silently, regardless of how much source the diff touched.
-
-Fix: `_build_ticket_scoped_jobs` now distinguishes "nothing to enforce" from
-"enforcement is being bypassed". A new `_no_active_ticket_touches_source`
-predicate (via `_b9_exempt_file`, which exempts only `tickets.md` and
-`.frob/` local state) checks whether the diff touches anything else. When
-it does and no ticket is derivable, `scope`/`prework` now register a job
-that emits a blocking `SCOPE001`/`PRE001` violation via the new
-`_no_active_ticket_violation` helper instead of silently appending to
-`skipped`. A diff touching only the ledger (or nothing) still skips
-cleanly, matching the pre-existing `test_run_gates_skips_scope_without_ticket`
-behavior.
-
-Changed:
-- src/frob/gates/__init__.py::_b9_exempt_file (new)
-- src/frob/gates/__init__.py::_no_active_ticket_touches_source (new)
-- src/frob/gates/__init__.py::_no_active_ticket_violation (new)
-- src/frob/gates/__init__.py::_build_ticket_scoped_jobs (updated)
-
-Evidence:
-- tests/test_gates.py::TestRunGates::test_run_gates_blocks_scope_and_prework_when_no_ticket_touches_source
-- tests/test_gates.py::TestRunGates::test_run_gates_still_skips_scope_and_prework_for_ledger_only_diff
-- Full `uv run pytest tests/test_gates.py -p no:cacheprovider -q -n0`: 220 passed, 0 failed (verified before recording evidence).
-
-Filed: none (no out-of-scope work discovered this pass).
-
-Gates: `uv run frob check --ticket T-0541` clean (0 errors). One waiver
-added: `frob:waive SCOPE001` at tests/test_gates.py:2 -- this ticket's
-scope is `src/frob/gates/` only; `tests/**` is under an active scope lease
-held by in-progress T-0160's multi-pass test-coverage backlog, so
-`frob ticket scope --add tests/test_gates.py` was rejected
-(`ScopeLeaseConflict`). The fix's own regression test necessarily lives in
-tests/test_gates.py, so the SCOPE001 hit on that one file is waived with
-this reason rather than forcing a lease conflict with T-0160.
-No public API (CLI surface) change; no REL001 bump needed.
-
-### Changed
-(no changed files detected)
-
-### Evidence
-- `tests/test_gates.py::TestRunGates::test_run_gates_blocks_scope_and_prework_when_no_ticket_touches_source` (pytest node id, verified passing when recorded)
-- `tests/test_gates.py::TestRunGates::test_run_gates_still_skips_scope_and_prework_for_ledger_only_diff` (pytest node id, verified passing when recorded)
-
 <!-- ticket:T-0542 -->
 ```yaml
 id: T-0542
 title: 'gates: COV002 satisfied by ANY open ticket whose scope glob covers the file
   (B10)'
-state: done
+state: queued
 kind: bug
 origin: auditor
 created: '2026-07-21'
@@ -3672,45 +3621,8 @@ blocked_by: []
 parent: T-0403
 scope:
 - src/frob/gates/
-- pyproject.toml
-- CHANGELOG.md
-- .frob-release.json
-- frob.lock
-- uv.lock
-scope_changes:
-- op: add
-  glob: pyproject.toml
-  reason: REL001 required a version bump (public coverage_gate signature change) and
-    a matching stamp/lock refresh
-  actor: logan
-  at: '2026-07-21'
-- op: add
-  glob: CHANGELOG.md
-  reason: REL001 required a version bump (public coverage_gate signature change) and
-    a matching stamp/lock refresh
-  actor: logan
-  at: '2026-07-21'
-- op: add
-  glob: .frob-release.json
-  reason: REL001 required a version bump (public coverage_gate signature change) and
-    a matching stamp/lock refresh
-  actor: logan
-  at: '2026-07-21'
-- op: add
-  glob: frob.lock
-  reason: REL001 required a version bump (public coverage_gate signature change) and
-    a matching stamp/lock refresh
-  actor: logan
-  at: '2026-07-21'
-- op: add
-  glob: uv.lock
-  reason: REL001 required a version bump (public coverage_gate signature change) and
-    a matching stamp/lock refresh
-  actor: logan
-  at: '2026-07-21'
-evidence:
-- tests/test_gates.py::TestCov002ScopeCoverage::test_ambiguous_overlapping_open_scopes_do_not_cover
-- tests/test_gates.py::TestCov002ScopeCoverage::test_active_ticket_own_scope_wins_over_a_broader_open_ticket
+scope_changes: []
+evidence: []
 attachments: []
 acceptance: []
 threat: null
@@ -3719,74 +3631,11 @@ labels: []
 ```
 docs/audits/gates-accounting.md B10. _cov002 uses _open_scopes = every open ticket's scope glob, matched via _scope_covers against ANY of them. One broad-scope open ticket (e.g. src/frob/**) makes every changed symbol under it accounted for regardless of relation to that ticket. Fix direction: prefer the ACTIVE ticket's own scope first, and require a narrower/more-specific glob match (or an explicit frob:ticket edge) when multiple open tickets' scopes could cover the same file, rather than accepting the first match found.
 
-## Done report
-
-Repro: `_scope_covers` returned True whenever ANY open ticket's declared
-`scope` glob matched the changed symbol's file, via `any(...)` over every
-open ticket -- one broad-scope open ticket (e.g. `src/frob/**`) silently
-vouched for a symbol it had nothing to do with, whenever it happened to
-also be open. Two open tickets with equally broad, overlapping scopes both
-"covering" the same file made COV002 pass regardless of which (if either)
-ticket the change actually belonged to.
-
-Fix: `_scope_covers` now takes an optional `active_ticket` id (threaded
-through `_cov002_check_symref` / `_cov002` / `coverage_gate`, and wired at
-the `run_gates` job-registration site from `st.ticket`). Coverage logic:
-1. If `active_ticket`'s own scope covers the file, that alone covers it.
-2. If exactly one open ticket's scope covers the file, that single match
-   covers it (unambiguous, same as before in the common case).
-3. If MULTIPLE open tickets' scopes cover the file and none is the active
-   ticket, `_scope_glob_specificity` (new) compares the longest matching
-   literal-prefix among each candidate's expanded scope globs; the unique
-   NARROWEST match wins. A genuine tie (equally specific, e.g. two tickets
-   both declaring `src/frob/**`) is now ambiguous and does NOT cover --
-   COV002 fires, requiring an explicit `frob:ticket` edge instead of
-   silently picking whichever ticket happened to be iterated first.
-
-Changed:
-- src/frob/gates/__init__.py::_scope_glob_specificity (new)
-- src/frob/gates/__init__.py::_scope_covers (active_ticket param + ambiguity check)
-- src/frob/gates/__init__.py::_cov002 / _cov002_check_symref (active_ticket threaded through)
-- src/frob/gates/__init__.py::coverage_gate (active_ticket param)
-- src/frob/gates/__init__.py::_build_jobs (passes st.ticket.id to coverage_gate)
-
-Evidence:
-- tests/test_gates.py::TestCov002ScopeCoverage::test_ambiguous_overlapping_open_scopes_do_not_cover
-- tests/test_gates.py::TestCov002ScopeCoverage::test_active_ticket_own_scope_wins_over_a_broader_open_ticket
-- Full `uv run pytest tests/test_gates.py -p no:cacheprovider -q -n0`: 223 passed, 0 failed (verified before recording evidence); all prior COV002 tests (TestCov002ScopeCoverage, TestCov002StrataModuleCoverage, TestCoverageGate) still pass unchanged.
-
-Filed: none (no out-of-scope work discovered this pass).
-
-Gates: `uv run frob check --ticket T-0542` clean (0 errors). Public API
-changed (`coverage_gate` gained `active_ticket: str | None = None`) --
-REL001 addressed: pyproject.toml bumped 0.59.0 -> 0.60.0, CHANGELOG.md
-entry added, `frob release stamp` run, `frob ack
-src/frob/gates/__init__.py::coverage_gate` run for DRIFT001. Scope widened
-via `frob ticket scope --add` to cover pyproject.toml/CHANGELOG.md/
-.frob-release.json/frob.lock/uv.lock (release-mechanics files this bump
-required); reason recorded in the ticket's scope_changes audit trail.
-tests/test_gates.py stays under the pre-existing SCOPE001 waiver from
-T-0541 (T-0160 holds the tests/** lease); the new/changed test symbols
-carry `frob:ticket T-0541`+`frob:ticket T-0542` (both this and the prior
-ticket touched the same file/classes in one uncommitted working diff).
-
-### Changed
-```
- src/frob/gates/__init__.py | 50 +++++++++++++++++++++++++++++++++++++++++--
- tests/test_gates.py        | 41 +++++++++++++++++++++++++++++++++++
- tickets.md                 | 53 ++++++++++++++++++++++++++++++++++++++++++++--
- 3 files changed, 140 insertions(+), 4 deletions(-)
-```
-
-### Evidence
-- `tests/test_gates.py::TestCov002ScopeCoverage::test_ambiguous_overlapping_open_scopes_do_not_cover` (pytest node id, verified passing when recorded)
-- `tests/test_gates.py::TestCov002ScopeCoverage::test_active_ticket_own_scope_wins_over_a_broader_open_ticket` (pytest node id, verified passing when recorded)
-
 <!-- ticket:T-0543 -->
 ```yaml
 id: T-0543
 title: 'gates: INV001 evidence is test EXISTENCE, not proof the invariant holds (B12)'
-state: in-progress
+state: queued
 kind: bug
 origin: auditor
 created: '2026-07-21'
@@ -3795,58 +3644,8 @@ blocked_by: []
 parent: T-0403
 scope:
 - src/frob/gates/
-- docs/modules/gates.md
-- pyproject.toml
-- CHANGELOG.md
-- .frob-release.json
-- frob.lock
-- uv.lock
-scope_changes:
-- op: add
-  glob: docs/modules/gates.md
-  reason: documented the new INV005 gate per the same doc-as-you-go convention every
-    other INV rule in this table follows
-  actor: logan
-  at: '2026-07-21'
-- op: add
-  glob: pyproject.toml
-  reason: T-0108 cross-ticket exemption needs a T-#### ref in the covering commit
-    subject, which T-0541/T-0542's commits omitted; scoping directly here instead
-    of amending pushed-adjacent history
-  actor: logan
-  at: '2026-07-21'
-- op: add
-  glob: CHANGELOG.md
-  reason: T-0108 cross-ticket exemption needs a T-#### ref in the covering commit
-    subject, which T-0541/T-0542's commits omitted; scoping directly here instead
-    of amending pushed-adjacent history
-  actor: logan
-  at: '2026-07-21'
-- op: add
-  glob: .frob-release.json
-  reason: T-0108 cross-ticket exemption needs a T-#### ref in the covering commit
-    subject, which T-0541/T-0542's commits omitted; scoping directly here instead
-    of amending pushed-adjacent history
-  actor: logan
-  at: '2026-07-21'
-- op: add
-  glob: frob.lock
-  reason: T-0108 cross-ticket exemption needs a T-#### ref in the covering commit
-    subject, which T-0541/T-0542's commits omitted; scoping directly here instead
-    of amending pushed-adjacent history
-  actor: logan
-  at: '2026-07-21'
-- op: add
-  glob: uv.lock
-  reason: T-0108 cross-ticket exemption needs a T-#### ref in the covering commit
-    subject, which T-0541/T-0542's commits omitted; scoping directly here instead
-    of amending pushed-adjacent history
-  actor: logan
-  at: '2026-07-21'
-evidence:
-- tests/test_gates.py::TestInvariantGate::test_inv001_collected_but_unbound_evidence_warns_inv005
-- tests/test_gates.py::TestInvariantGate::test_inv001_passes_via_explicit_tests_edge_to_anchor
-- tests/test_gates.py::TestInvariantGate::test_inv001_passes_with_collected_evidence
+scope_changes: []
+evidence: []
 attachments: []
 acceptance: []
 threat: null
@@ -3854,101 +3653,6 @@ component: null
 labels: []
 ```
 docs/audits/gates-accounting.md B12. invariant_gate accepts any evidence-list item that resolves to a collected test node id or a loaded policy rule id -- nothing checks the named test actually asserts the invariant. Same existence-not-proof pattern as TEST001/COV003. Fix direction: same remedy family as B1 -- require the evidence test to reach/assert against the invariant's anchored symbol (reuse whatever covers_scope-style binding T-0398/T-0415 built for ticket evidence), not just collect.
-
-## Done report
-
-Repro: `invariant_gate`'s INV001 check was `_evidence_collected(item, tests)
-or item in policy_rule_ids` -- a bare collected pytest node id with zero
-edge/proximity relationship to the invariant's own `frob:invariant`-
-anchored symbol satisfied it. `def test_x(): pass`, named as evidence for
-any invariant anywhere in the repo, cleared INV001 regardless of whether
-the test reached the anchor at all.
-
-Fix: reused the same D-02/COV006 "binding, not existence" remedy family.
-New `_invariant_anchor_symrefs`/`_evidence_binds_to_symrefs` (an analog of
-`evidence_covers_scope`'s `_evidence_binds_to_scope`, but binding against
-the invariant's own anchor symref set instead of a ticket's scope glob) and
-`_invariant_evidence_proves_anchor` check whether a collected evidence item
-is shown to reach the anchor via an either-direction `frob:tests` edge, or
-same-file trust (mirroring D-02's scope-file route).
-
-Counterexample-first: verified the OLD vacuous behavior first
-(`test_inv001_passes_with_collected_evidence`'s original form used an
-unrelated `tests/test_x.py::test_y` with zero relationship to the anchor
-and asserted `violations == ()` -- confirming the gap existed before
-touching it), then fixed it.
-
-Calibration decision (disclosed honestly): tightening INV001 itself to
-require this binding broke 17 of this repo's OWN already-adopted
-invariants (`uv run frob check --ticket T-0543` showed `FAIL gate:INV 17
-errors` on the first pass) -- their evidence predates any binding
-convention and a legacy-adoption pass to add real `frob:tests` edges or
-rebind evidence across all 17 is out of this ticket's budget, the same
-"large, needs its own dedicated ticket" shape B1/B2/B6 in this same audit
-family were explicitly punted on. Rather than force that mass-break (or
-silently do nothing), the binding check now feeds a NEW WARN-severity
-`INV005` (non-blocking, same posture as COV006's own best-effort
-reachability check) instead of tightening INV001/INV002 -- both stay
-ERROR, behaviorally unchanged for existing invariants. `uv run frob check
---ticket T-0543` confirms: `gate:INV 0 errors, 17 warnings` (the 17
-legacy invariants now surface as an honest, visible INV005 backlog instead
-of a silent pass).
-
-Changed:
-- src/frob/gates/__init__.py::_invariant_anchor_symrefs (new)
-- src/frob/gates/__init__.py::_evidence_binds_to_symrefs (new)
-- src/frob/gates/__init__.py::_invariant_evidence_proves_anchor (new)
-- src/frob/gates/__init__.py::_inv005 (new)
-- src/frob/gates/__init__.py::invariant_gate (INV005 wired in; INV001/INV002 unchanged)
-- src/frob/gates/__init__.py::_KNOWN_GATE_RULES (INV005 registered)
-- docs/modules/gates.md (INV005 table row + "### INV005 (T-0543)" section, matching the existing INV003/INV004 doc convention)
-
-Evidence:
-- tests/test_gates.py::TestInvariantGate::test_inv001_passes_with_collected_evidence (rewritten to a genuine same-file binding; the OLD unrelated-node-id form is now covered by the counterexample test below)
-- tests/test_gates.py::TestInvariantGate::test_inv001_collected_but_unbound_evidence_warns_inv005 (the counterexample: unrelated collected evidence no longer silently proves the invariant -- INV001 stays clear, INV005 warns)
-- tests/test_gates.py::TestInvariantGate::test_inv001_passes_via_explicit_tests_edge_to_anchor (positive: an explicit frob:tests edge to the anchor also satisfies the binding, no INV005)
-- Full `uv run pytest tests/test_gates.py -p no:cacheprovider -q -n0`: 227 passed, 0 failed (verified before recording evidence); all prior TestInvariantGate/TestInv003Gate/TestInv004Gate tests unchanged and still pass.
-
-Filed: none (the 17-invariant legacy-binding backlog is disclosed above and
-visible directly via `frob check --only invariant`'s new INV005 warnings
-rather than filed as a separate ticket -- filing one felt redundant with
-the warnings themselves already being the tracked backlog; happy to file
-on request).
-
-Gates: `uv run frob check --ticket T-0543` clean (0 errors, INV
-0 errors/17 warnings as expected). No public API signature change
-(`invariant_gate`'s signature is unchanged; `_inv005` and the new helpers
-are private) -- no REL001 bump needed this ticket. Scope widened via `frob
-ticket scope --add` for docs/modules/gates.md (doc-as-you-go for the new
-gate) and for pyproject.toml/CHANGELOG.md/.frob-release.json/frob.lock/
-uv.lock -- these keep showing as SCOPE001 hits because the T-0108
-cross-ticket commit-subject exemption needs a `T-####` reference in the
-COVERING commit's subject line, which T-0541's and T-0542's commit subjects
-omitted; scoped directly here rather than rewriting already-committed
-history. tests/test_gates.py stays under T-0541's pre-existing SCOPE001
-waiver (T-0160 holds the tests/** lease); touched test symbols in that
-file now carry `frob:ticket T-0543` alongside the prior tickets' tags for
-the same reason (T-0541/T-0542 are DONE and no longer "open", so their
-edges alone no longer satisfy COV002 for symbols still sitting in this
-same uncommitted-to-main working diff).
-
-### Changed
-```
- .frob-release.json         |   4 +-
- CHANGELOG.md               |  13 ++++
- frob.lock                  |   2 +-
- pyproject.toml             |   2 +-
- src/frob/gates/__init__.py | 145 +++++++++++++++++++++++++++++++++++++----
- tests/test_gates.py        | 155 ++++++++++++++++++++++++++++++++++++++++++++
- tickets.md                 | 158 +++++++++++++++++++++++++++++++++++++++++++--
- uv.lock                    |   2 +-
- 8 files changed, 458 insertions(+), 23 deletions(-)
-```
-
-### Evidence
-- `tests/test_gates.py::TestInvariantGate::test_inv001_collected_but_unbound_evidence_warns_inv005` (pytest node id, verified passing when recorded)
-- `tests/test_gates.py::TestInvariantGate::test_inv001_passes_via_explicit_tests_edge_to_anchor` (pytest node id, verified passing when recorded)
-- `tests/test_gates.py::TestInvariantGate::test_inv001_passes_with_collected_evidence` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0544 -->
 ```yaml
