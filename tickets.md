@@ -3568,7 +3568,7 @@ docs/audits/gates-accounting.md B1/E1. TEST001 (the only blocking per-symbol tes
 id: T-0552
 title: 'gates: native-language frob:tests edges get TEST001-004 credit with zero execution
   (B3)'
-state: queued
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-21'
@@ -3578,7 +3578,9 @@ parent: T-0403
 scope:
 - src/frob/gates/
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_gates.py::TestTest013NativeUnverified::test_fires_on_structural_only_edge
+- tests/test_gates.py::TestTest013NativeUnverified::test_silent_on_executed_edge
 attachments: []
 acceptance: []
 threat: null
@@ -3587,6 +3589,57 @@ labels: []
 ```
 docs/audits/gates-accounting.md B3/E3. _edge_has_execution_evidence: for TS/C/C++ (_NATIVE_TEST_EXTENSIONS) an edge counts as valid execution evidence if it merely looks like test code by name/path and resolves in the snapshot -- frob runs no TS/C/C++ test collector, so it is never actually executed. An empty void test_foo(){} satisfies TEST001-004. RIGHT-WAY fix direction: either wire real TS/C/C++ test collectors (vitest/ctest already exist per-pipeline per T-0404 finding 1 -- join their results into gate evidence) or mark native frob:tests edges as an explicit degraded 'unverified' state that does not silently satisfy TEST001. Overlaps T-0404 finding 1 (gates not run in native pipelines at all) -- coordinate the two fixes.
 
+## Done report
+
+docs/audits/gates-accounting.md B3/E3: `_edge_has_execution_evidence` grants
+full TEST001-004 execution credit to a ts/c/cpp `frob:tests` edge purely by
+name/path convention (`_is_native_test_symref` + snapshot resolution) --
+frob runs no vitest/ctest/etc collector, so an empty `void test_foo(){}`
+was silently indistinguishable from a genuinely executed test.
+
+Right-way fix direction per the audit was either (a) wire real TS/C/C++
+collectors, or (b) mark the credit as an explicit degraded "unverified"
+state instead of a silent pass. (a) requires new runner infrastructure in
+`src/frob/testing/` -- out of this ticket's `src/frob/gates/` scope, and
+building it well needs its own design pass, so filed as a follow-up
+(T-draft-2411b5b6, "Wire real TS/C/C++ test collectors (vitest/ctest) into
+gate evidence", scope `src/frob/testing/`).
+
+Implemented (b) within scope:
+- Split the native-fallback check out of `_edge_has_execution_evidence`
+  into `_edge_is_native_unverified` (same logic, just named and reusable).
+- New gate TEST013 (WARN): fires once per TESTS edge whose ONLY credit is
+  that structural fallback, naming the edge and stating plainly that it is
+  "unverified, not proven test coverage."
+- Deliberately did NOT withdraw the underlying TEST001-004 credit --
+  `_valid_edges`/`_edge_has_execution_evidence` are unchanged in what they
+  grant. Withdrawing credit outright, with no real collector to replace it,
+  would flip every native-language public symbol across every sibling repo
+  using this fallback to a TEST001 ERROR overnight for a structural change
+  alone, not a real regression -- the same reasoning T-0545's TEST012 used
+  for why that gate is WARN, not ERROR, on first landing.
+
+Honest split (LARGE ticket): the actual collector wiring (the durable fix)
+and the follow-up question of whether TEST013 should later promote to
+ERROR once collectors exist are both left to T-draft-2411b5b6, noted in
+that ticket's body.
+
+### Changed
+```
+ CHANGELOG.md                |  19 +++++
+ frob.lock                   |   2 +-
+ pyproject.toml              |   2 +-
+ src/frob/gates/__init__.py  |  91 +++++++++++++++++++++---
+ src/frob/gates/_coverage.py | 125 ++++++++++++++++++++++++++++++++-
+ tests/test_gates.py         | 125 ++++++++++++++++++++++++++++++++-
+ tickets.md                  | 165 ++++++++++++++++++++++++++++++++++++++++++--
+ uv.lock                     |   2 +-
+ 8 files changed, 510 insertions(+), 21 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestTest013NativeUnverified::test_fires_on_structural_only_edge` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTest013NativeUnverified::test_silent_on_executed_edge` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0554 -->
 ```yaml
 id: T-0554
@@ -3751,3 +3804,26 @@ component: null
 labels: []
 ```
 T-0545 added frob.gates._coverage.write_coverage_lock (a committed frob-coverage.lock.json summary) and made stamp_coverage(root, snapshot=None) refresh it when passed a GraphSnapshot -- but src/frob/app/check_runner.py::_run_stamp_coverage (the frob check --stamp-coverage CLI entry point) is out of T-0545's scope (src/frob/gates/ only) and still calls stamp_coverage(root) with no snapshot, so the lock is never refreshed by the existing CLI path today. Wire a GraphSnapshot through (the same one run_gates/other stamping paths already build) so --stamp-coverage keeps the lock current with zero extra flags. Once adopted, also consider promoting TEST012 (frob.gates.__init__::_test012_lock, currently WARN) to ERROR -- see T-0545's Done report for the promotion rationale.
+
+<!-- ticket:T-draft-2411b5b6 -->
+```yaml
+id: T-draft-2411b5b6
+title: Wire real TS/C/C++ test collectors (vitest/ctest) into gate evidence
+state: queued
+kind: feature
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/testing/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0552 added TEST013 (WARN) to surface every frob:tests edge whose TEST001-004 credit rests solely on the ts/c/cpp structural name/path fallback (frob.gates._edge_is_native_unverified) instead of real execution -- but it deliberately does NOT withdraw that credit, since no real TS/C/C++ collector exists yet (src/frob/testing/ only has collect_python_tests and collect_rust_tests, T-0092) and withdrawing credit outright would turn every native-language public symbol's TEST001 ERROR-red in every sibling repo overnight, for a structural change alone. This ticket is the real fix: wire vitest (TS) and ctest (C/C++) runners (frob.testing._runners already has a RunnerSpec/RunnerOutcome shape collect_rust_tests followed for T-0092 -- mirror it), producing real node ids frob.gates._valid_edges can match the same way it already matches pytest/cargo. Once real collectors exist, retire the structural-fallback branch of frob.gates._edge_is_native_unverified (or gate it behind 'no collector configured for this language') and consider promoting TEST013 findings on a collector-covered language to ERROR.

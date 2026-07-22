@@ -5181,6 +5181,58 @@ class TestTest010KindValidation:
         assert "src/frob/pkg/a.py::gone" in v.message
 
 
+# frob:ticket T-0552
+class TestTest013NativeUnverified:
+    """T-0552 (docs/audits/gates-accounting.md B3/E3): a `frob:tests` edge
+    whose ONLY credit toward TEST001-004 is the ts/c/cpp structural (name/
+    path) fallback -- frob runs no collector that actually executes it --
+    must be surfaced as a loud, filterable TEST013 finding, not stay
+    silently indistinguishable from a real, executed test."""
+
+    # frob:ticket T-0552
+    def test_fires_on_structural_only_edge(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates.py::TestTest013NativeUnverified.test_fires_on_structural_only_edge  # noqa: E501
+        from typani.option import Nothing
+
+        _write(
+            tmp_path,
+            "src/pkg/thing.c",
+            "void some_public_func(void) {}\n\n"
+            '// frob:tests src/pkg/thing.c::some_public_func kind="unit"\n'
+            "void test_something(void) {}\n",
+        )
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(node_ids=frozenset())  # frob never ran this
+        violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
+        test013 = [v for v in violations if v.rule == "TEST013"]
+        assert len(test013) == 1
+        assert test013[0].severity == Severity.WARN
+        assert "test_something" in test013[0].message
+        assert "unverified" in test013[0].message
+
+    # frob:ticket T-0552
+    def test_silent_on_executed_edge(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates.py::TestTest013NativeUnverified.test_silent_on_executed_edge  # noqa: E501
+        # A python edge with real collected execution evidence (pytest node
+        # id) must never be mistaken for the native-unverified case -- the
+        # extension check in `_edge_is_native_unverified` is what keeps
+        # TEST013 scoped to languages frob genuinely cannot execute.
+        from typani.option import Nothing
+
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "def test_helper():\n"
+            '    # frob:tests src/frob/pkg/a.py::helper kind="unit"\n'
+            "    assert True\n",
+        )
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(node_ids=frozenset({"tests/test_a.py::test_helper"}))
+        violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
+        assert "TEST013" not in _rules(violations)
+
+
 class TestPairLevelIntegration:
     def _snap_with_dep(self, tmp_path):
         # consumer pkg src/app uses-contract on provider pkg src/core

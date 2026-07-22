@@ -592,6 +592,18 @@ def _edge_has_execution_evidence(
         return True
     if _node_id_collected(_symref_to_nodeid(e.target), tests.node_ids):
         return True
+    return _edge_is_native_unverified(e, snapshot)
+
+
+# frob:ticket T-0552
+def _edge_is_native_unverified(e: Edge, snapshot: GraphSnapshot | None) -> bool:
+    """True if `e`'s TEST001-004 credit rests solely on the ts/c/cpp
+    structural fallback (T-0090/T-0552, docs/audits/gates-accounting.md B3):
+    frob runs no collector that ever actually executes it -- `e.src` merely
+    *looks like* test code by name/path and resolves in the graph. Split out
+    of `_edge_has_execution_evidence` so `_test013_native_unverified` can
+    identify exactly the edges receiving this weakest tier of credit,
+    without duplicating the check."""
     return (
         snapshot is not None
         and _is_native_test_src(e.src)
@@ -878,6 +890,9 @@ _KNOWN_GATE_RULES = frozenset(
         # T-0545: committed `frob-coverage.lock.json` missing/stale/drifted
         # relative to the live coverage.xml-derived data.
         "TEST012",
+        # T-0552: a `frob:tests` edge credited toward TEST001-004 only via
+        # the ts/c/cpp structural (name/path) fallback, never executed.
+        "TEST013",
         "TODO001",
         "TODO002",
         # T-0412: frob:debt (temporary, ticket-bound, collected-before-
@@ -5108,6 +5123,56 @@ def _test010_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     return tuple(violations)
 
 
+# ---------------------------------------------------------------------------
+# TEST013
+# ---------------------------------------------------------------------------
+
+
+# frob:ticket T-0552
+# frob:tests tests/test_gates.py::TestTest013NativeUnverified.test_fires_on_structural_only_edge  # noqa: E501
+# frob:tests tests/test_gates.py::TestTest013NativeUnverified.test_silent_on_executed_edge  # noqa: E501
+def _test013_native_unverified(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """TEST013 (warn): a `frob:tests` edge's TEST001-004 credit rests solely
+    on the ts/c/cpp structural fallback (docs/audits/gates-accounting.md
+    B3/E3, T-0552) -- frob runs no vitest/ctest/etc collector, so the edge
+    was never actually executed, only pattern-matched by name/path and
+    confirmed to resolve in the graph.
+
+    WARN, not ERROR, and does NOT withdraw the underlying TEST001-004
+    credit (see `_edge_is_native_unverified`'s docstring and T-0552's Done
+    report for why: withdrawing credit outright, with no real TS/C/C++
+    execution collector wired yet, would turn every native-language public
+    symbol in every sibling repo's TEST001 ERROR-red overnight for a
+    structural change alone, not a real regression). The point of this
+    gate is exactly the audit's alternative fix direction: make the
+    degraded-trust state a LOUD, filterable, per-edge finding instead of a
+    silent full pass, so a reviewer or `--delta` triage can see precisely
+    which "tested" native symbols have zero real execution evidence behind
+    them.
+    """
+    violations: list[Violation] = []
+    for edge in snapshot.edges:
+        if edge.kind != EdgeKind.TESTS:
+            continue
+        if not _edge_is_native_unverified(edge, snapshot):
+            continue
+        violations.append(
+            Violation(
+                rule="TEST013",
+                severity=Severity.WARN,
+                file=edge.src.split("::", 1)[0],
+                line=0,
+                message=(
+                    f"TEST013: frob:tests edge {edge.src} -> {edge.target} is "
+                    "credited toward TEST001-004 by name/path convention only "
+                    "-- frob has no collector that executes it, so this is "
+                    "unverified, not proven test coverage"
+                ),
+            )
+        )
+    return tuple(violations)
+
+
 # frob:doc docs/modules/gates.md#public-api
 def test_gate(
     snapshot: GraphSnapshot,
@@ -5116,7 +5181,7 @@ def test_gate(
     tests: CollectedTests,
     cfg: TestPolicy,
 ) -> tuple[Violation, ...]:
-    """TEST001..TEST012. Interfaces derived from packages with public symbols
+    """TEST001..TEST013. Interfaces derived from packages with public symbols
     (see `_test003`'s docstring for the exact alpha semantics). Coverage is
     consumed as recorded evidence, never produced here. TEST009 (T-0225) is
     `.strata` design files' e2e-binding counterpart to TEST003, which
@@ -5133,7 +5198,9 @@ def test_gate(
     accounting chain's attestability check: the committed
     `frob-coverage.lock.json` summary (`frob.gates._coverage.write_coverage_lock`)
     is missing, or its claimed per-module numbers have drifted from this
-    run's `coverage.xml` -- see `_test012_lock`."""
+    run's `coverage.xml` -- see `_test012_lock`. TEST013 (T-0552) makes the
+    ts/c/cpp structural-fallback credit `_valid_edges` already grants
+    LOUD instead of silent: see `_test013_native_unverified`."""
     violations: list[Violation] = []
     violations.extend(_test001_002(snapshot, tests, cfg))
     violations.extend(_test003(snapshot, tests, cfg))
@@ -5143,6 +5210,7 @@ def test_gate(
     violations.extend(_test006(snapshot))
     violations.extend(_test009(snapshot, tests, cfg))
     violations.extend(_test010_violations(snapshot))
+    violations.extend(_test013_native_unverified(snapshot))
     return tuple(violations)
 
 
