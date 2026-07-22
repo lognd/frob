@@ -6377,3 +6377,33 @@ component: null
 labels: []
 ```
 The two T-0577 dispatch items that had no existing design to build against, deferred honestly rather than half-built: (1) a TICK005-backed regression sweep at land time (define the TICK005 rule first, then have land run it); (2) a --push option for frob ticket land so the coordinator can land+push in one verified step. NOTE: T-0577's Done report references this as T-draft-f6f10c67; that draft was filed pre-fix and will not survive T-0577's own land, so this is the real ticket.
+
+<!-- ticket:T-0632 -->
+```yaml
+id: T-0632
+title: 'arch: extend NormalizedCall with arg-position detail and migrate _extract_signatures/_collect_dispatch_refs
+  onto the model'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0610
+parent: T-0329
+scope:
+- src/frob/arch/_normalized.py
+- src/frob/arch/_python.py
+- tests/unit/test_arch.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN the existing T-0360/T-0370 regression tests unmodified WHEN both check families
+  run through the normalized model THEN all pass and no raw-tree walk remains in _collect_dispatch_refs
+  (or a reasoned decision records what stays raw and why)
+threat: null
+component: null
+labels: []
+```
+T-0610 migrated long-function/god-class/deep-nesting onto NormalizedModule but left two check families on the raw tree-sitter walk, with concrete schema gaps documented: _extract_signatures' body-fingerprint needs full raw AST for alpha-renaming, and _collect_dispatch_refs needs argument-position/dict-value detail NormalizedCall does not carry. Extend the model (arg positions on NormalizedCall; a fingerprint-friendly body projection or a documented decision to keep fingerprints raw-AST-based), then migrate both WITHOUT regressing the T-0360 dispatch-family suppression or T-0370 near-dup discriminator protections (their tests must pass unmodified). NOTE: T-0610's Done report references this as T-draft-4e98abb1 (prose only); this is the real ticket.
