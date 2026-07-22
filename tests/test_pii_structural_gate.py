@@ -268,14 +268,18 @@ class TestEmailShapeValues:
 
     def test_email_literal_fires(self) -> None:
         # frob:tests src/frob/gates/_pii_structural.py::_scan_python_email_values  # noqa: E501
-        src = "contact = " + repr("user" + "@" + "example.com") + "\n"
+        # non-reserved domain (T-0539: `example.com` is RFC 2606-reserved
+        # and no longer fires PII011 -- see TestReservedTestDomainEmails)
+        src = "contact = " + repr("user" + "@" + "realmail.dev") + "\n"
         tree = ast.parse(src)
         violations = _scan_python_email_values(tree, "example.py", src)
         assert any(v.rule == "PII011" for v in violations)
 
     def test_fake_marker_on_same_line_discharges(self) -> None:
         src = (
-            "contact = " + repr("user" + "@" + "example.com") + "  # frob:secret-fake\n"
+            "contact = "
+            + repr("user" + "@" + "realmail.dev")
+            + "  # frob:secret-fake\n"
         )
         tree = ast.parse(src)
         violations = _scan_python_email_values(tree, "example.py", src)
@@ -283,7 +287,9 @@ class TestEmailShapeValues:
 
     def test_fake_marker_on_line_above_discharges(self) -> None:
         src = (
-            "# frob:secret-fake\ncontact = " + repr("user" + "@" + "example.com") + "\n"
+            "# frob:secret-fake\ncontact = "
+            + repr("user" + "@" + "realmail.dev")
+            + "\n"
         )
         tree = ast.parse(src)
         violations = _scan_python_email_values(tree, "example.py", src)
@@ -294,6 +300,49 @@ class TestEmailShapeValues:
         tree = ast.parse(src)
         violations = _scan_python_email_values(tree, "example.py", src)
         assert violations == ()
+
+
+class TestReservedTestDomainEmails:
+    """T-0539: an RFC 2606 reserved documentation/testing domain
+    (`example.com`/`.net`/`.org`, or the `.example` TLD) can never resolve
+    to a real person, so PII011 must not fire on it regardless of which
+    file it appears in -- the dominant PII011 false-positive shape found
+    in this gate's 336-finding warn-pool audit (57 of 66 findings)."""
+
+    # frob:tests src/frob/gates/_pii_structural.py::_scan_python_email_values  # noqa: E501
+    def test_example_com_does_not_fire(self) -> None:
+        src = "contact = " + repr("user" + "@" + "example.com") + "\n"
+        tree = ast.parse(src)
+        violations = _scan_python_email_values(tree, "example.py", src)
+        assert violations == ()
+
+    def test_example_org_does_not_fire(self) -> None:
+        src = "contact = " + repr("user" + "@" + "example.org") + "\n"
+        tree = ast.parse(src)
+        violations = _scan_python_email_values(tree, "example.py", src)
+        assert violations == ()
+
+    def test_example_net_does_not_fire(self) -> None:
+        src = "contact = " + repr("user" + "@" + "example.net") + "\n"
+        tree = ast.parse(src)
+        violations = _scan_python_email_values(tree, "example.py", src)
+        assert violations == ()
+
+    def test_dot_example_tld_does_not_fire(self) -> None:
+        src = "contact = " + repr("user" + "@" + "sub.example") + "\n"
+        tree = ast.parse(src)
+        violations = _scan_python_email_values(tree, "example.py", src)
+        assert violations == ()
+
+    def test_lookalike_non_reserved_domain_still_fires(self) -> None:
+        """`example.com.evil.test` is NOT the reserved domain itself (the
+        reserved-domain check must not be a bare substring match) -- a
+        real-shaped domain that merely contains "example.com" still
+        fires."""
+        src = "contact = " + repr("user" + "@" + "example.com.evil.test") + "\n"
+        tree = ast.parse(src)
+        violations = _scan_python_email_values(tree, "example.py", src)
+        assert any(v.rule == "PII011" for v in violations)
 
 
 class TestKeywordSweep:
@@ -350,6 +399,26 @@ class TestKeywordSweep:
         sweep_violations = _scan_python_keyword_sweep(tree, "example.py", src)
         assert any(v.rule == "PII010" for v in field_violations)
         assert not any(v.rule == "PII012" for v in sweep_violations)
+
+    def test_frob_directive_comment_does_not_fire(self) -> None:
+        """T-0539: a `# frob:secret-fake` marker comment literally contains
+        the word "secret" -- the exact PII011 escape hatch would otherwise
+        self-trigger PII012 on the comment that discharges the OTHER
+        rule's finding. `# frob:*` directive comments are excluded as a
+        class."""
+        src = "x = 1  # frob:secret-fake fabricated fixture value\n"
+        tree = ast.parse(src)
+        violations = _scan_python_keyword_sweep(tree, "example.py", src)
+        assert violations == ()
+
+    def test_ordinary_comment_mentioning_secret_still_fires(self) -> None:
+        """The `# frob:*` exclusion is narrow -- an ordinary prose comment
+        that happens to mention "secret" (not a frob directive) still
+        fires, same as before T-0539."""
+        src = "x = 1  # this holds a user secret, be careful\n"
+        tree = ast.parse(src)
+        violations = _scan_python_keyword_sweep(tree, "example.py", src)
+        assert any(v.rule == "PII012" for v in violations)
 
 
 class TestDeclaredSurfaceJoin:
@@ -488,6 +557,28 @@ class TestGateIsGreenOnItself:
         assert not any(
             v.file == "src/frob/gates/_pii_structural.py" for v in violations
         )
+
+    # frob:tests src/frob/gates/_pii_structural.py::_is_pii_self_pattern_file  # noqa: E501
+    @pytest.mark.parametrize(
+        "rel_path",
+        [
+            "src/frob/gates/_secrets.py",
+            "src/frob/strata/_secrets.py",
+            "src/frob/gates/_cve_fingerprint_scan.py",
+            "src/frob/strata/_cve_fingerprint.py",
+            "tests/test_secrets_gate.py",
+            "tests/test_pii_structural_gate.py",
+        ],
+    )
+    def test_corpus_detector_files_produce_no_finding(self, rel_path: str) -> None:
+        """T-0539: the PII011/PII012 warn-pool audit found the majority of
+        this gate's findings landing on frob's OWN secrets/fingerprint
+        detector sources and their dedicated test/fixture files -- the
+        same self-match class T-0253's `is_self_pattern_path` already
+        solved for SYS100, reused here (`_is_pii_self_pattern_file`)."""
+        root = Path(__file__).resolve().parents[1]
+        violations = pii_structural_gate(root)
+        assert not any(v.file == rel_path for v in violations)
 
 
 class TestDriftLock:
