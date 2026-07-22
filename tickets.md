@@ -12474,3 +12474,61 @@ Found while working T-0724: after merging main (which landed src/frob/arch/_srp.
 
 ## Drop reason
 - 2026-07-22: duplicate: T-0724's worktree drafted this for the same 4x SYS100 graphlang/_srp.py issue; T-0729 fixed it (self-pattern exemption, landed, sys audit green) before this draft finalized at T-0724's land (absorbed by T-0729)
+
+<!-- ticket:T-0735 -->
+```yaml
+id: T-0735
+title: 'frob natives build: frob-owned native compilation with shared cache -- Makefiles
+  become one-line shims (parent)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/**
+- docs/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN any frob-enabled repo with [natives] WHEN uv run frob natives build runs THEN
+  natives compile with the shared per-clone cache and the repo Makefile contains no
+  cache logic
+threat: null
+component: null
+labels: []
+```
+User directive 2026-07-22: T-0732's shared CARGO_TARGET_DIR fix lives in THIS repo's Makefile -- wrong layer; fix ALL repos structurally. frob.toml [natives] already declares the native crates (load_natives); the build logic belongs in frob: a  subcommand that does what make core does (maturin develop per declared native) WITH the shared-cache mechanism (git-common-dir keyed CARGO_TARGET_DIR, cargo's own locking -- T-0732's verified design) built in. Every repo's Makefile core target becomes  -- one line, zero per-repo cache logic, upgraded by upgrading frob. Doctor integration: the existing native-staleness fingerprint check points at the new command as remedy. Children: (1) the subcommand + this repo's Makefile shim conversion; (2) scaffold template + conformance drift check; estate rollout via fleet at close.
+
+<!-- ticket:T-0736 -->
+```yaml
+id: T-0736
+title: 'scaffold conformance: managed boilerplate blocks (Makefile shim, guard hooks,
+  gitignore) drift-checked by doctor across all repos'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/scaffold/**
+- src/frob/doctor.py
+- docs/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a repo missing the current guard hooks or Makefile shim WHEN frob doctor runs
+  THEN a finding names each missing/stale managed block with frob scaffold apply as
+  remedy; GIVEN apply runs THEN the repo conforms idempotently AND this repo itself
+  passes the check
+threat: null
+component: null
+labels: []
+```
+User directive 2026-07-22: per-repo boilerplate keeps being fixed per-repo (T-0732 Makefile; T-0574's install_worktree_lease_hook/install_stash_guard are library calls bootstrapped NOWHERE -- the incidents happened in this very repo and it still lacks the guards). Structural fix, mirroring the deploy script<->model drift-lock pattern frob already owns: (1) scaffold templates define MANAGED BLOCKS (marked regions: Makefile core-shim, .gitignore standard entries, hook/guard installs) versioned with frob; (2)  idempotently installs/updates the managed blocks + hooks in any repo; (3) doctor (or a SCAF gate) reports when a repo's managed blocks are missing/stale vs the installed frob version -- so every repo in the estate gets TOLD when it lacks current standards instead of silently rotting; (4) bootstrap THIS repo via the new command as the first consumer (closing T-0574's reviewer flag); (5) at close, file per-sibling adoption tickets via frob fleet route (real filings, TICK006 applies).
