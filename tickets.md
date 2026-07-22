@@ -3781,7 +3781,7 @@ docs/audits/lang-check-docs.md finding 2. _parse_source_file_fresh (graph/__init
 ```yaml
 id: T-draft-6955571e
 title: REF002 single-anchor pool triage (32 findings)
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-21'
