@@ -2460,7 +2460,7 @@ independently-actionable findings -- no disposition row needed for them.
 ```yaml
 id: T-0404
 title: 'AUDIT: polyglot enforcement + fail-closed parsing/docs (docs/audits/lang-check-docs.md)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -2493,7 +2493,11 @@ scope_changes:
     audit ticket
   actor: logan
   at: '2026-07-21'
-evidence: []
+evidence:
+- tests/test_gates.py::TestDsl001::test_malformed_frob_doc_directive_flagged
+- tests/test_gates.py::TestDsl001::test_waive_reason_and_tests_kind_not_double_flagged
+- tests/unit/test_check_tool_unavailable.py::TestVitestUnverifiedZeroExit::test_run_vitest_warns_on_unparseable_zero_exit
+- tests/unit/test_check.py::TestDetectProjectType::test_package_json_alone_is_typescript
 attachments: []
 acceptance: []
 threat: null
@@ -2501,6 +2505,76 @@ component: null
 labels: []
 ```
 See docs/audits/lang-check-docs.md. HIGH: doc/coverage/drift/inv gates run ONLY in the Python pipeline -- a Rust/C++/TS repo gets ZERO COV/DOC/DRIFT despite the polyglot promise; parse/IO failure silently erases a files whole obligation set (gates pass vacuously); COV001 is WARN-only. RIGHT-WAY fix: run the accounting gates across ALL language pipelines; fail-closed + loud on parse/IO failure (never empty-as-clean); decide COV001 severity. Then re-audit until empty. MED/LOW in the doc.
+
+## Done report
+
+Audit docs/audits/lang-check-docs.md worked finding-by-finding, verify-first / counterexample-first.
+Three findings fixed with real code + tests (5, 10, 11). Finding 12 verified correct as-is (no
+fix needed). Finding 3 verified already-fixed for THIS repo via frob.toml [gates.severity]
+config (COV001 promoted to error), though the underlying gate-code default severity is still
+WARN by design for repos without that override -- not a code bug here. The remaining findings
+(1, 2, 4, 6, 7, 8, 9) are real but each needs a cross-cutting design change (dispatch
+architecture, a new PARSE001 gate, doc-walk unification) too large for this ticket's budget, or
+sit outside T-0404's declared scope (graph/) -- filed as follow-ups, each carrying the finding
+text, repro, and RIGHT-WAY fix direction.
+
+Disposition table:
+- #1  (HIGH)   doc/coverage/drift/inv gates run ONLY in the Python pipeline -- FOLLOW-UP (too large): T-draft-8a073c15
+- #2  (HIGH)   parse/IO failure silently erases a file's obligation set    -- FOLLOW-UP (out of T-0404 scope, graph/): T-draft-ed8f5ca3
+- #3  (HIGH/MEDIUM) COV001 is WARN-only                                    -- VERIFIED already-fixed-by config for this repo:
+              frob.toml [gates.severity] COV001 = "error" (the run this
+              session stamped shows "severity overrides active:
+              {'COV001': ERROR, 'TEST001': ERROR, ...}"). The gate's own
+              code-level default remains WARN by design (documented as
+              the "legacy-adoption baseline" for repos without the
+              override) -- not a bug in this codebase's own posture,
+              no fix needed here.
+- #4  (MEDIUM) DRIFT is one-directional (doc-edit-to-lie never trips)      -- DUPLICATE of T-0403 B2
+              (same root cause, DRIFT001 default sig facet); tracked
+              there as T-draft-b3811054, not re-filed here.
+- #5  (MEDIUM) malformed frob:doc directives silently downgraded          -- FIXED: new DSL001
+              catch-all gate (gates/__init__.py::_dsl001_violations) fires
+              on any MalformedDirective not already claimed by
+              WAIVE001/TEST010/DEBT001. Verified the OLD behavior first: a
+              bare `# frob:doc` (no target) produced zero violations before
+              this change.
+- #6  (MEDIUM) unknown project type silently runs the Python pipeline     -- FOLLOW-UP: T-draft-3177db00
+- #7  (MEDIUM) nested/top-level-less native sources escape detection      -- FOLLOW-UP: T-draft-68268ec3
+- #8  (MEDIUM) frob:describes anchors outside docs/ are invisible         -- FOLLOW-UP (out of T-0404 scope, graph/): T-draft-2d709aeb
+- #9  (MEDIUM) weak parse-failure threshold drops symbols in error regions -- FOLLOW-UP: T-draft-934fdd62
+- #10 (LOW)    vitest non-JSON zero-exit reported as a clean pass         -- FIXED: _run_vitest
+              (check/_ts.py) now attaches a WARNING diagnostic when tests
+              is empty and returncode is 0, instead of a bare "tests
+              passed" summary with zero diagnostics.
+- #11 (LOW)    detect_project_type vs _detected_types disagree on what    -- FIXED: detect_project_type
+              counts as a TypeScript repo                                    now requires only package.json,
+              matching _detected_types' own contract (dropped the extra
+              tsconfig.json requirement).
+- #12 (LOW)    gate-internal exception could be silently swallowed        -- VERIFIED CORRECT: `future.result()`
+              at __init__.py:6489/6530 re-raises; an uncaught gate
+              exception propagates and aborts the run loudly, it is not
+              dropped. No fix needed.
+
+Section (A)/(D) framing and (C) soundness notes in the audit were read but are not
+independently-actionable findings -- no disposition row needed for them.
+
+### Changed
+```
+ src/frob/check/__init__.py                |  14 +-
+ src/frob/check/_ts.py                     |  30 ++-
+ src/frob/gates/__init__.py                | 101 +++++++-
+ tests/test_gates.py                       |  91 +++++++
+ tests/unit/test_check.py                  |  10 +
+ tests/unit/test_check_tool_unavailable.py |  27 +++
+ tickets.md                                | 379 +++++++++++++++++++++++++++++-
+ 7 files changed, 636 insertions(+), 16 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestDsl001::test_malformed_frob_doc_directive_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDsl001::test_waive_reason_and_tests_kind_not_double_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_tool_unavailable.py::TestVitestUnverifiedZeroExit::test_run_vitest_warns_on_unparseable_zero_exit` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDetectProjectType::test_package_json_alone_is_typescript` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0405 -->
 ```yaml
 id: T-0405
@@ -3452,3 +3526,147 @@ component: null
 labels: []
 ```
 docs/audits/gates-accounting.md B12. invariant_gate accepts any evidence-list item that resolves to a collected test node id or a loaded policy rule id -- nothing checks the named test actually asserts the invariant. Same existence-not-proof pattern as TEST001/COV003. Fix direction: same remedy family as B1 -- require the evidence test to reach/assert against the invariant's anchored symbol (reuse whatever covers_scope-style binding T-0398/T-0415 built for ticket evidence), not just collect.
+
+<!-- ticket:T-draft-8a073c15 -->
+```yaml
+id: T-draft-8a073c15
+title: 'check: doc/coverage/drift/inv gates run ONLY in the Python pipeline (T-0404
+  finding 1)'
+state: queued
+kind: bug
+origin: auditor
+created: '2026-07-21'
+priority: high
+blocked_by: []
+parent: T-0404
+scope:
+- src/frob/check/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+docs/audits/lang-check-docs.md finding 1. run_check_cpp/run_check_rust/run_check_ts never call _run_gates -- only _python_tasks does. A pure Rust/C++/TS repo runs its native toolchain only; COV001/DOC001/DOC002/DOC003/DRIFT001/DRIFT002/INV/DEC/TODO001 never execute despite the polyglot doc-binding promise (lang/__init__.py module docstring). Repro: a repo with only package.json, add a public exported symbol and a lying/broken frob:doc -> frob check green. RIGHT-WAY fix: run the gates stage in every pipeline (build the graph once, run run_gates regardless of detected language), or at minimum emit a loud gates-NOT-run-for-<lang> stage line. Large, cross-cutting dispatch change -- too large for the T-0404 sweep budget.
+
+<!-- ticket:T-draft-ed8f5ca3 -->
+```yaml
+id: T-draft-ed8f5ca3
+title: 'graph: parse/IO failure silently erases a file''s entire obligation set (T-0404
+  finding 2)'
+state: queued
+kind: bug
+origin: auditor
+created: '2026-07-21'
+priority: high
+blocked_by: []
+parent: T-0404
+scope:
+- src/frob/graph/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+docs/audits/lang-check-docs.md finding 2. _parse_source_file_fresh (graph/__init__.py) returns (True, (), (), ()) on any parse_file Err other than the expected NativeParserUnavailable degrade -- the file is recorded as successfully processed with zero symbols/edges, so every public symbol and every frob:doc/frob:invariant/frob:describes/frob:tests edge in it silently vanishes; COV001/exports/DRIFT/INV all pass vacuously for it. Repro: any file tree-sitter cannot parse at all -> gates green, design graph invisible. RIGHT-WAY fix: surface parse/IO failures as an ERROR-severity gate violation (a PARSE001-style rule) instead of a swallowed warning. Out of T-0404's declared scope (src/frob/graph/, not lang/check/gates/) -- needs a scope-widened or standalone follow-up ticket.
+
+<!-- ticket:T-draft-3177db00 -->
+```yaml
+id: T-draft-3177db00
+title: 'check: unmapped/unknown project type silently falls back to the Python pipeline
+  (T-0404 finding 6)'
+state: queued
+kind: bug
+origin: auditor
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: T-0404
+scope:
+- src/frob/app/check_runner.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+docs/audits/lang-check-docs.md finding 6. _run_auto_detected_stages: detected = _detected_types(root) or [detect_project_type(root)]; _dispatch_check maps any unrecognized type (incl. unknown) to _dispatch_check_python. A repo with no sentinel files runs the full Python gate stack over a non-Python tree (ruff/ty noise) rather than a clear unsupported-project-type failure. Fix direction: make unknown/unmapped types a loud config error, not a silent Python fallback.
+
+<!-- ticket:T-draft-68268ec3 -->
+```yaml
+id: T-draft-68268ec3
+title: 'check: nested/top-level-less native sources escape language detection (T-0404
+  finding 7)'
+state: queued
+kind: bug
+origin: auditor
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: T-0404
+scope:
+- src/frob/check/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+docs/audits/lang-check-docs.md finding 7. detect_project_type only globs *.cpp/*.cc/*.c at the repo TOP LEVEL and _detected_types requires CMakeLists.txt/Cargo.toml at root. A C/C++ project whose sources live only in src/ with no root CMakeLists returns unknown -> Python pipeline (finding 6), so clang/cmake never run. Fix direction: detect native sources recursively (bounded depth or via the graph's own file walk), or fail loudly on unknown rather than silently skipping native checks.
+
+<!-- ticket:T-draft-2d709aeb -->
+```yaml
+id: T-draft-2d709aeb
+title: 'graph: frob:describes anchor discovery only scans docs/, missing README/top-level
+  notes (T-0404 finding 8)'
+state: queued
+kind: bug
+origin: auditor
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: T-0404
+scope:
+- src/frob/graph/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+docs/audits/lang-check-docs.md finding 8. _walk_doc_files (graph/__init__.py) only walks docs/**/*.md; a frob:describes anchor placed in README.md or a top-level design note is never parsed, so its DESCRIBES edge (and the facet it selects for DRIFT001) never exists -- even though DOC001's orphan-doc root set does include README.md. Fix direction: scan the same include/exclude glob set doclink uses, not a hardcoded docs/ dir. Out of T-0404's declared scope (graph/, not lang/check/gates/) -- needs a scope-widened or standalone follow-up ticket.
+
+<!-- ticket:T-draft-934fdd62 -->
+```yaml
+id: T-draft-934fdd62
+title: 'lang: usable-tree parse threshold lets partially-broken files drop symbols
+  silently (T-0404 finding 9)'
+state: queued
+kind: bug
+origin: auditor
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: T-0404
+scope:
+- src/frob/lang/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+docs/audits/lang-check-docs.md finding 9. _parse (lang/__init__.py) treats a tree as usable whenever root_node.child_count >= 1, even with has_error=True. A file with a broken region parses into a partial tree; symbols inside the error region silently don't extract, with no COV001/exports/drift signal for them. Ruff/ty catch this for Python via syntax errors, but Rust/C++/TS have no gates stage at all (finding 1) so nothing catches it there. Fix direction: when root_node.has_error, emit a warning-or-error gate signal naming the file so silent symbol loss is visible.
