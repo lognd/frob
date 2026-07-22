@@ -33,7 +33,10 @@ from concurrent.futures import Future, ProcessPoolExecutor, ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path, PurePosixPath
-from typing import TypeVar
+from typing import TYPE_CHECKING, TypeVar
+
+if TYPE_CHECKING:
+    from frob.graph.callgraph import CallGraph
 
 from pydantic import ValidationError
 from typani import Err, Ok
@@ -109,7 +112,7 @@ from frob.graph import (
     slugify,
 )
 from frob.graph._generated import is_generated_source
-from frob.graph._models import LockFile
+from frob.graph._models import LockFile, SymbolRecord
 from frob.graph.lock import drift as _graph_drift
 from frob.graph.lock import load_lock
 from frob.lang import SymbolKind
@@ -1366,45 +1369,63 @@ def _place001_file(root: Path, file: str) -> tuple[Violation, ...]:
     resolved = _place001_bindings(parsed.comments, file)
     violations: list[Violation] = []
     for comment_id, comment in enumerate(parsed.comments):
-        if not comment.text.startswith("frob:"):
-            continue
-        src, via_following = resolved[comment_id]
-        if via_following:
-            continue
-        _prefix, sep, qualname = src.partition("::")
-        if not sep:
-            continue
-        enclosing_sym = symbol_by_qualname.get(qualname)
-        if enclosing_sym is None or enclosing_sym.kind != SymbolKind.CLASS:
-            continue
-        missed = _place001_missed_symbol(comment, parsed.symbols, lines)
-        if missed is None:
-            continue
-        _log.debug(
-            "PLACE001: %s:%s directive class-falls-back to %s, missed %s",
-            file,
-            comment.span[0],
-            qualname,
-            missed.qualname,
+        violation = _place001_comment_violation(
+            file, comment_id, comment, resolved, symbol_by_qualname, parsed, lines
         )
-        violations.append(
-            Violation(
-                rule="PLACE001",
-                severity=Severity.WARN,
-                file=file,
-                line=comment.span[0],
-                message=(
-                    f"PLACE001: {file}:{comment.span[0]} frob: directive "
-                    f"falls back to enclosing class {qualname!r}, but "
-                    f"{missed.qualname!r} starts at line {missed.span[0]} "
-                    f"with nothing but blank lines/comments/decorators in "
-                    f"between -- likely intended for that symbol; move "
-                    f"the directive within the following-window, or "
-                    f"confirm the class binding is intentional"
-                ),
-            )
-        )
+        if violation is not None:
+            violations.append(violation)
     return tuple(violations)
+
+
+# frob:ticket T-0598
+def _place001_comment_violation(
+    file: str,
+    comment_id: int,
+    comment: RawComment,
+    resolved: dict[int, tuple[str, bool]],
+    symbol_by_qualname: dict[str, RawSymbol],
+    parsed: ParsedFile,
+    lines: list[str],
+) -> Violation | None:
+    """One `frob:` directive's PLACE001 finding, or `None` if it does not
+    class-fall-back to a real missed symbol (`_place001_file`'s per-comment
+    body, split out for ARCH001 -- T-0598)."""
+    if not comment.text.startswith("frob:"):
+        return None
+    src, via_following = resolved[comment_id]
+    if via_following:
+        return None
+    _prefix, sep, qualname = src.partition("::")
+    if not sep:
+        return None
+    enclosing_sym = symbol_by_qualname.get(qualname)
+    if enclosing_sym is None or enclosing_sym.kind != SymbolKind.CLASS:
+        return None
+    missed = _place001_missed_symbol(comment, parsed.symbols, lines)
+    if missed is None:
+        return None
+    _log.debug(
+        "PLACE001: %s:%s directive class-falls-back to %s, missed %s",
+        file,
+        comment.span[0],
+        qualname,
+        missed.qualname,
+    )
+    return Violation(
+        rule="PLACE001",
+        severity=Severity.WARN,
+        file=file,
+        line=comment.span[0],
+        message=(
+            f"PLACE001: {file}:{comment.span[0]} frob: directive "
+            f"falls back to enclosing class {qualname!r}, but "
+            f"{missed.qualname!r} starts at line {missed.span[0]} "
+            f"with nothing but blank lines/comments/decorators in "
+            f"between -- likely intended for that symbol; move "
+            f"the directive within the following-window, or "
+            f"confirm the class binding is intentional"
+        ),
+    )
 
 
 # frob:ticket T-0504
@@ -2588,6 +2609,7 @@ def _cov006_decorator_names(source_lines: list[str], start_line: int) -> list[st
 
 
 # frob:ticket T-0528
+# frob:waive ARCH001 reason="a multi-stage heuristic (dunder-check, then validator-decorator check, then receiver derivation, then an optional graph-closure fallback) where each stage's guard depends on locals the prior stage bound (target_sym, is_dunder/is_validator, receiver); splitting stages into helpers would thread 4-5 locals across new boundaries, adding indirection without reducing the sequential logic itself"  # noqa: E501
 def _cov006_implicit_dispatch_reachable(root: Path, edge: Edge) -> bool:
     """COV006 rescue for Class 1's dunder/validator shapes (T-0528): a
     private target invoked IMPLICITLY by the Python runtime (a protocol
@@ -2854,6 +2876,7 @@ def _cov006_full_call_graph(root: Path, paths: tuple[str, ...]):
 
 
 # frob:ticket T-0528
+# frob:waive ARCH001 reason="a multi-stage heuristic (gather test's called names, expand through same-file helpers, resolve imports to candidate files, then seed a closure search from each resolved public entrypoint) where each stage's input is the prior stage's derived set (called, resolved_called, import_files, entrypoints); splitting would thread that same chain of derived sets across new function boundaries without reducing it"  # noqa: E501
 def _cov006_third_file_reachable(root: Path, edge: Edge) -> bool:
     """COV006 rescue for Class 2 (T-0528): the test reaches the bound
     private target through a real call chain passing through a THIRD file
@@ -2950,6 +2973,7 @@ def _cov006_third_file_reachable(root: Path, edge: Edge) -> bool:
 # frob:ticket T-0506
 # frob:ticket T-0516
 # frob:ticket T-0528
+# frob:waive ARCH001 reason="a multi-stage same-file-wrapper heuristic (resolve the target's own file, find every public symbol in it, check each calls the target, then check the test's own body calls that public symbol by name or import alias) with each stage feeding the next's candidate set; splitting would thread that same candidate-narrowing chain across new boundaries without reducing it"  # noqa: E501
 def _cov006_public_wrapper_reachable(root: Path, edge: Edge) -> bool:
     """COV006 rescue: True if a PUBLIC symbol in the bound private target's
     own file is itself called, by name (or by a Python `X as Y` import
@@ -3144,53 +3168,68 @@ def _cov006(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
       `_cov006_third_file_reachable` (Class 2), each documented at their
       own definition.
     """
-    from frob.graph.callgraph import CallGraph, build_call_graph, closure
-
     graph_cache: dict[tuple[str, ...], CallGraph] = {}
     violations: list[Violation] = []
     for edge in snapshot.edges:
-        if edge.kind != EdgeKind.TESTS:
-            continue
-        target_record = snapshot.symbols.get(edge.target)
-        if target_record is None or target_record.public:
-            continue
-        target_file = edge.target.split("::", 1)[0]
-        if edge.attrs.get("kind") in ("integration", "e2e"):
-            continue
-        if not target_file.endswith(".py"):
-            continue
-        test_file = edge.src.split("::", 1)[0]
-        paths = (test_file,) if test_file == target_file else (test_file, target_file)
-        graph = graph_cache.get(paths)
-        if graph is None:
-            graph = build_call_graph(root, paths)
-            graph_cache[paths] = graph
-        if edge.target in closure(graph, edge.src):
-            continue
-        if _cov006_public_wrapper_reachable(root, edge):
-            continue
-        if _cov006_implicit_dispatch_reachable(root, edge):
-            continue
-        if _cov006_third_file_reachable(root, edge):
-            continue
-        _log.debug(
-            "COV006: %s -> %s has no call-graph reachability", edge.src, edge.target
-        )
-        violations.append(
-            Violation(
-                rule="COV006",
-                severity=Severity.WARN,
-                file=test_file,
-                line=0,
-                message=(
-                    f"COV006: frob:tests {edge.src} -> {edge.target} has no "
-                    f"call-graph reachability to the bound private symbol "
-                    f"(frob.graph.callgraph, best-effort); confirm the test "
-                    f"actually exercises it, or bind a symbol it calls"
-                ),
-            )
-        )
+        violation = _cov006_edge_violation(root, snapshot, edge, graph_cache)
+        if violation is not None:
+            violations.append(violation)
     return tuple(violations)
+
+
+# frob:ticket T-0598
+def _cov006_edge_violation(
+    root: Path,
+    snapshot: GraphSnapshot,
+    edge: Edge,
+    graph_cache: dict[tuple[str, ...], CallGraph],
+) -> Violation | None:
+    """One `frob:tests` edge's COV006 finding, or `None` if it is out of
+    scope (not a TESTS edge, public target, non-python target, an
+    integration/e2e-kind edge) or reachable by the direct closure check or
+    any of the three T-0528 rescue heuristics (`_cov006`'s per-edge body,
+    split out for ARCH001 -- T-0598)."""
+    from frob.graph.callgraph import build_call_graph, closure
+
+    if edge.kind != EdgeKind.TESTS:
+        return None
+    target_record = snapshot.symbols.get(edge.target)
+    if target_record is None or target_record.public:
+        return None
+    target_file = edge.target.split("::", 1)[0]
+    if edge.attrs.get("kind") in ("integration", "e2e"):
+        return None
+    if not target_file.endswith(".py"):
+        return None
+    test_file = edge.src.split("::", 1)[0]
+    paths = (test_file,) if test_file == target_file else (test_file, target_file)
+    graph = graph_cache.get(paths)
+    if graph is None:
+        graph = build_call_graph(root, paths)
+        graph_cache[paths] = graph
+    if edge.target in closure(graph, edge.src):
+        return None
+    if _cov006_public_wrapper_reachable(root, edge):
+        return None
+    if _cov006_implicit_dispatch_reachable(root, edge):
+        return None
+    if _cov006_third_file_reachable(root, edge):
+        return None
+    _log.debug(
+        "COV006: %s -> %s has no call-graph reachability", edge.src, edge.target
+    )
+    return Violation(
+        rule="COV006",
+        severity=Severity.WARN,
+        file=test_file,
+        line=0,
+        message=(
+            f"COV006: frob:tests {edge.src} -> {edge.target} has no "
+            f"call-graph reachability to the bound private symbol "
+            f"(frob.graph.callgraph, best-effort); confirm the test "
+            f"actually exercises it, or bind a symbol it calls"
+        ),
+    )
 
 
 # frob:ticket T-0483
@@ -4825,6 +4864,43 @@ def _test001_002(
 # ---------------------------------------------------------------------------
 
 
+# frob:ticket T-0598
+def _test014_group_by_leaf(
+    snapshot: GraphSnapshot,
+    tests: CollectedTests,
+    unit_edges: dict[str, list[Edge]],
+) -> dict[str, list[tuple[str, str, frozenset[str]]]]:
+    """Every convention-fallback-only public symbol, grouped by its
+    snake-cased leaf name, alongside the collected test node ids that
+    convention-match it (`_test014_ambiguous_convention`'s grouping phase,
+    split out for ARCH001 -- T-0598)."""
+    by_leaf: dict[str, list[tuple[str, str, frozenset[str]]]] = {}
+    for record in snapshot.symbols.values():
+        if (
+            not record.public
+            or record.kind not in (SymbolKind.FUNCTION, SymbolKind.METHOD)
+            or is_test_file(record.id.path)
+            or record.id.path.endswith(".strata")
+            or unit_edges.get(record.symref)
+        ):
+            continue
+        _, _, qualname = record.symref.partition("::")
+        leaf = _snake(qualname.rsplit(".", 1)[-1])
+        if len(leaf) < 3:
+            continue
+        token = re.compile(rf"(^|[^a-z0-9]){re.escape(leaf)}([^a-z0-9]|$)")
+        matched = frozenset(
+            node
+            for node in tests.node_ids
+            if token.search(_snake(node.rsplit("::", 1)[-1]))
+        )
+        if matched:
+            by_leaf.setdefault(leaf, []).append(
+                (record.symref, record.id.path, matched)
+            )
+    return by_leaf
+
+
 # frob:ticket T-0547
 # frob:tests tests/test_gates.py::TestTest014AmbiguousConventionMatch.test_fires_on_cross_file_same_test_collision  # noqa: E501
 # frob:tests tests/test_gates.py::TestTest014AmbiguousConventionMatch.test_silent_when_symbol_has_explicit_edge  # noqa: E501
@@ -4855,30 +4931,7 @@ def _test014_ambiguous_convention(
     to disambiguate, or renaming one of the colliding symbols.
     """
     unit_edges = _unit_test_edges(snapshot, "unit")
-    by_leaf: dict[str, list[tuple[str, str, frozenset[str]]]] = {}
-    for record in snapshot.symbols.values():
-        if (
-            not record.public
-            or record.kind not in (SymbolKind.FUNCTION, SymbolKind.METHOD)
-            or is_test_file(record.id.path)
-            or record.id.path.endswith(".strata")
-            or unit_edges.get(record.symref)
-        ):
-            continue
-        _, _, qualname = record.symref.partition("::")
-        leaf = _snake(qualname.rsplit(".", 1)[-1])
-        if len(leaf) < 3:
-            continue
-        token = re.compile(rf"(^|[^a-z0-9]){re.escape(leaf)}([^a-z0-9]|$)")
-        matched = frozenset(
-            node
-            for node in tests.node_ids
-            if token.search(_snake(node.rsplit("::", 1)[-1]))
-        )
-        if matched:
-            by_leaf.setdefault(leaf, []).append(
-                (record.symref, record.id.path, matched)
-            )
+    by_leaf = _test014_group_by_leaf(snapshot, tests, unit_edges)
 
     violations: list[Violation] = []
     for leaf, entries in sorted(by_leaf.items()):
@@ -4943,51 +4996,66 @@ def _test015_vacuous_credit(
     unit_edges = _unit_test_edges(snapshot, "unit")
     violations: list[Violation] = []
     for record in snapshot.symbols.values():
-        if (
-            not record.public
-            or record.kind not in (SymbolKind.FUNCTION, SymbolKind.METHOD)
-            or is_test_file(record.id.path)
-            or record.id.path.endswith(".strata")
-        ):
-            continue
-        edges = unit_edges.get(record.symref, [])
-        node_ids: set[str] = set()
-        if edges:
-            for edge in _valid_edges(edges, tests, snapshot):
-                base = _symref_to_nodeid(edge.src)
-                node_ids.update(
-                    n for n in tests.node_ids if n == base or n.startswith(f"{base}[")
-                )
-        else:
-            _, _, qualname = record.symref.partition("::")
-            leaf = _snake(qualname.rsplit(".", 1)[-1])
-            if len(leaf) < 3:
-                continue
-            token = re.compile(rf"(^|[^a-z0-9]){re.escape(leaf)}([^a-z0-9]|$)")
-            node_ids = {
-                n for n in tests.node_ids if token.search(_snake(n.rsplit("::", 1)[-1]))
-            }
-        if not node_ids:
-            continue
-        if any(_has_assertion_evidence(root, n.split("[", 1)[0]) for n in node_ids):
-            continue
-        example = sorted(node_ids)[0]
-        violations.append(
-            Violation(
-                rule="TEST015",
-                severity=Severity.WARN,
-                file=record.id.path,
-                line=record.span[0],
-                message=(
-                    f"TEST015: {record.symref} clears TEST001 only via "
-                    f"test(s) with no assertion-shaped construct ({example}"
-                    f"{', ...' if len(node_ids) > 1 else ''}) -- likely a "
-                    "vacuous/no-op test; add a real assertion or bind an "
-                    'explicit frob:tests edge kind="unit" to one'
-                ),
-            )
-        )
+        violation = _test015_record_violation(root, record, tests, snapshot, unit_edges)
+        if violation is not None:
+            violations.append(violation)
     return tuple(violations)
+
+
+# frob:ticket T-0598
+def _test015_record_violation(
+    root: Path,
+    record: SymbolRecord,
+    tests: CollectedTests,
+    snapshot: GraphSnapshot,
+    unit_edges: dict[str, list[Edge]],
+) -> Violation | None:
+    """One public symbol's TEST015 finding, or `None` if it is out of scope
+    or its credit-granting test node ids include at least one real
+    assertion (`_test015_vacuous_credit`'s per-record body, split out for
+    ARCH001 -- T-0598)."""
+    if (
+        not record.public
+        or record.kind not in (SymbolKind.FUNCTION, SymbolKind.METHOD)
+        or is_test_file(record.id.path)
+        or record.id.path.endswith(".strata")
+    ):
+        return None
+    edges = unit_edges.get(record.symref, [])
+    node_ids: set[str] = set()
+    if edges:
+        for edge in _valid_edges(edges, tests, snapshot):
+            base = _symref_to_nodeid(edge.src)
+            node_ids.update(
+                n for n in tests.node_ids if n == base or n.startswith(f"{base}[")
+            )
+    else:
+        _, _, qualname = record.symref.partition("::")
+        leaf = _snake(qualname.rsplit(".", 1)[-1])
+        if len(leaf) < 3:
+            return None
+        token = re.compile(rf"(^|[^a-z0-9]){re.escape(leaf)}([^a-z0-9]|$)")
+        node_ids = {
+            n for n in tests.node_ids if token.search(_snake(n.rsplit("::", 1)[-1]))
+        }
+    if not node_ids:
+        return None
+    if any(_has_assertion_evidence(root, n.split("[", 1)[0]) for n in node_ids):
+        return None
+    example = sorted(node_ids)[0]
+    return Violation(
+        rule="TEST015",
+        severity=Severity.WARN,
+        file=record.id.path,
+        line=record.span[0],
+        message=(
+            f"TEST015: {record.symref} clears TEST001 only via "
+            f"test(s) with no assertion-shaped construct ({example}"
+            f"{', ...' if len(node_ids) > 1 else ''}) -- likely a "
+            "vacuous/no-op test; add a real assertion or bind an "
+            'explicit frob:tests edge kind="unit" to one'
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------

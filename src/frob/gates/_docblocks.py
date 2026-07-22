@@ -456,6 +456,7 @@ def _console_trees(
 _CONSOLE_LINE_RE = re.compile(r"^\s*(?:\$\s*)?([\w.-]+)\b(.*)$")
 
 
+# frob:waive ARCH001 reason="a single per-line scan that both emits STALE findings and accumulates any_resolved_reference for the trailing UNBOUND check; the trailing check depends on state built across every line of the loop, so splitting the loop body into a helper would still need to return that accumulator back out, adding a layer without reducing the scan itself"  # noqa: E501
 def _console_command_violations(
     block: _FencedBlock,
     doc_path: str,
@@ -1183,7 +1184,27 @@ def doc005_gate(root: Path) -> tuple[Violation, ...]:
 
     rows = _readme_table_rows(text)
     violations: list[Violation] = []
+    violations.extend(
+        _doc005_missing_stale_violations(doc_path, console_sources, console_trees, rows)
+    )
+    violations.extend(_doc005_count_violations(doc_path, console_trees, text))
 
+    _log.info("doc005: %d violation(s) over README.md", len(violations))
+    return tuple(violations)
+
+
+# frob:ticket T-0598
+def _doc005_missing_stale_violations(
+    doc_path: str,
+    console_sources: tuple[_ConsoleCommandSource, ...],
+    console_trees: dict[str, dict],
+    rows: list[tuple[int, str, str]],
+) -> list[Violation]:
+    """MISSING (a real subcommand with no README row) and STALE (a README
+    row naming a subcommand that no longer exists) DOC005 findings, one
+    call per configured console source (`doc005_gate`'s per-source table
+    check, split out for ARCH001 -- T-0598)."""
+    violations: list[Violation] = []
     for source in console_sources:
         tree = console_trees.get(source.parser)
         if tree is None:
@@ -1216,7 +1237,17 @@ def doc005_gate(root: Path) -> tuple[Violation, ...]:
                     f"row",
                 )
             )
+    return violations
 
+
+# frob:ticket T-0598
+def _doc005_count_violations(
+    doc_path: str, console_trees: dict[str, dict], text: str
+) -> list[Violation]:
+    """A README "N commands" prose claim whose N does not match the live
+    total command count, summed across every configured source
+    (`doc005_gate`'s count-claim check, split out for ARCH001 -- T-0598)."""
+    violations: list[Violation] = []
     total_live = sum(len(tree) for tree in console_trees.values())
     for line_no, claimed in _readme_count_claims(text):
         if claimed == total_live:
@@ -1229,9 +1260,7 @@ def doc005_gate(root: Path) -> tuple[Violation, ...]:
                 f"registry has {total_live} -- update the claimed count",
             )
         )
-
-    _log.info("doc005: %d violation(s) over README.md", len(violations))
-    return tuple(violations)
+    return violations
 
 
 def _read_md(root: Path, rel_path: str) -> str | None:

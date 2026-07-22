@@ -182,6 +182,19 @@ def _parse_attrs(
         return MalformedDirective(
             file=path, line=lineno, reason=f"bad attribute syntax: {leftover!r}"
         )
+    per_verb_error = _parse_attrs_verb_error(verb, attrs, path=path, lineno=lineno)
+    if per_verb_error is not None:
+        return per_verb_error
+    return attrs
+
+
+# frob:ticket T-0598
+def _parse_attrs_verb_error(
+    verb: str, attrs: dict[str, str], *, path: str, lineno: int
+) -> MalformedDirective | None:
+    """The per-verb attribute requirement `verb` fails to meet, or `None` if
+    it meets every requirement its verb declares (`_parse_attrs`'s per-verb
+    dispatch, split out for ARCH001 -- T-0598)."""
     if verb == "waive" and "reason" not in attrs:
         return MalformedDirective(
             file=path, line=lineno, reason='frob:waive requires reason="..."'
@@ -232,7 +245,7 @@ def _parse_attrs(
                     f"must be one of {sorted(_TESTS_KINDS)}"
                 ),
             )
-    return attrs
+    return None
 
 
 def _parse_line(

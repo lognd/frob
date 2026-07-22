@@ -320,6 +320,7 @@ def _hole_param_name(hole: int, bindings: tuple[tuple[CloneBinding, ...], ...]) 
 
 
 # frob:doc docs/modules/dup.md#clone-template
+# frob:waive ARCH001 reason="an incremental Plotkin lgg fold threading running_labels/running_parents state across an outer fold loop and then a second per-member re-derive loop that depends on the fold's final result; both loops are algorithmically load-bearing steps of one anti-unification pass, not independent checks, so splitting them would just move the same shared running state across a function boundary without reducing it"  # noqa: E501
 def build_group_template(
     root: Path, pairs: tuple[ClonePair, ...]
 ) -> CloneTemplate | None:

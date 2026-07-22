@@ -78,6 +78,7 @@ from __future__ import annotations
 import re
 import tomllib
 from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from typani.result import Err, Ok, Result
@@ -426,58 +427,10 @@ def load_repo_benign_capabilities(
 
     excuses: list[BenignCapability] = []
     for entry in entries:
-        try:
-            kind = entry["kind"]
-            reason = entry["reason"]
-            caught_by = entry["caught_by"]
-            family = entry["family"]
-        except (KeyError, TypeError) as exc:
-            _log.error(
-                "load_repo_benign_capabilities: malformed entry in %s: %s",
-                toml_path,
-                exc,
-            )
-            return Err(StrataError.MalformedBenignConfig)
-        if family not in _BENIGN_EXCUSE_FAMILIES:
-            _log.error(
-                "load_repo_benign_capabilities: entry for kind=%r in %s names "
-                "family=%r, not one of %s",
-                kind,
-                toml_path,
-                family,
-                sorted(_BENIGN_EXCUSE_FAMILIES),
-            )
-            return Err(StrataError.MalformedBenignConfig)
-        family_known = frozenset(
-            _entries_by_capability_kind(_family_catalog_for(family))
-        )
-        if kind in family_known:
-            _log.error(
-                "load_repo_benign_capabilities: entry for kind=%r in %s claims "
-                "family=%r, but %r is ALREADY classified in that family's "
-                "catalog -- not a genuine gap, refusing the excuse",
-                kind,
-                toml_path,
-                family,
-                kind,
-            )
-            return Err(StrataError.MalformedBenignConfig)
-        try:
-            excuses.append(
-                BenignCapability(
-                    kind=kind,
-                    reason=reason,
-                    caught_by=caught_by,
-                    family=family,
-                )
-            )
-        except (TypeError, ValidationError) as exc:
-            _log.error(
-                "load_repo_benign_capabilities: malformed entry in %s: %s",
-                toml_path,
-                exc,
-            )
-            return Err(StrataError.MalformedBenignConfig)
+        validated = _validate_benign_entry(entry, toml_path)
+        if validated.is_err:
+            return Err(validated.danger_err)
+        excuses.append(validated.danger_ok)
 
     _log.info(
         "load_repo_benign_capabilities: loaded %d repo-declared excuse(s) from %s",
@@ -485,6 +438,65 @@ def load_repo_benign_capabilities(
         toml_path,
     )
     return Ok(tuple(excuses))
+
+
+# frob:ticket T-0598
+def _validate_benign_entry(
+    entry: Any, toml_path: Path
+) -> Result[BenignCapability, StrataError]:
+    """One `[[strata.benign_capabilities]]` entry, validated (required keys
+    present, `family` recognized and not already classified in its own
+    catalog) and built into a `BenignCapability`, or the same
+    `MalformedBenignConfig` `Err` `load_repo_benign_capabilities` itself
+    returns for a bad entry (its per-entry body, split out for ARCH001 --
+    T-0598)."""
+    try:
+        kind = entry["kind"]
+        reason = entry["reason"]
+        caught_by = entry["caught_by"]
+        family = entry["family"]
+    except (KeyError, TypeError) as exc:
+        _log.error(
+            "load_repo_benign_capabilities: malformed entry in %s: %s",
+            toml_path,
+            exc,
+        )
+        return Err(StrataError.MalformedBenignConfig)
+    if family not in _BENIGN_EXCUSE_FAMILIES:
+        _log.error(
+            "load_repo_benign_capabilities: entry for kind=%r in %s names "
+            "family=%r, not one of %s",
+            kind,
+            toml_path,
+            family,
+            sorted(_BENIGN_EXCUSE_FAMILIES),
+        )
+        return Err(StrataError.MalformedBenignConfig)
+    family_known = frozenset(_entries_by_capability_kind(_family_catalog_for(family)))
+    if kind in family_known:
+        _log.error(
+            "load_repo_benign_capabilities: entry for kind=%r in %s claims "
+            "family=%r, but %r is ALREADY classified in that family's "
+            "catalog -- not a genuine gap, refusing the excuse",
+            kind,
+            toml_path,
+            family,
+            kind,
+        )
+        return Err(StrataError.MalformedBenignConfig)
+    try:
+        return Ok(
+            BenignCapability(
+                kind=kind, reason=reason, caught_by=caught_by, family=family
+            )
+        )
+    except (TypeError, ValidationError) as exc:
+        _log.error(
+            "load_repo_benign_capabilities: malformed entry in %s: %s",
+            toml_path,
+            exc,
+        )
+        return Err(StrataError.MalformedBenignConfig)
 
 
 # frob:doc docs/strata/threat.md#the-catalog-stdcwe

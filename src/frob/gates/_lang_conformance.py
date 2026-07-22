@@ -164,6 +164,7 @@ def _lang002_unregistered_files(repo_root: Path) -> tuple[Violation, ...]:
 
 
 # frob:enforces CHK-GATE-LANG003
+# frob:waive ARCH001 reason="already split out of project_lang_conformance_gate once for a prior ARCH001 finding (docstring); remaining length is two short linear scans (present-language detection, then a per-facet WARN/ERROR classification) each already minimal -- a second extraction would re-fragment the same two phases previously judged as one gate's cohesive body"  # noqa: E501
 def _lang003_unsound_gaps(repo_root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     """LANG003: one violation per `KNOWN_GAP`/`NOT_APPLICABLE` facet cell
     whose language is actually present in `repo_root`'s tree -- WARN if

@@ -126,6 +126,7 @@ _should_prune_dir = _excludes._should_prune_dir  # noqa: SLF001
 # frob:tests tests/test_graph.py::TestExclude.test_nested_git_worktree_pruned_without_config  # noqa: E501
 # frob:tests tests/test_graph.py::TestExclude.test_walk_source_files_prunes_before_descent  # noqa: E501
 # frob:tests tests/test_graph.py::TestExclude.test_walk_repo_files_classifies_top_level_readme_as_doc  # noqa: E501
+# frob:waive ARCH001 reason="docstring's own T-0239/T-0245 rationale: one os.walk pass deliberately fuses directory-pruning with dual source/doc classification to avoid walking (or stat-ing) the tree twice; extracting the per-file classification into a helper call inside this hot loop would add a call per file across every walked directory, working against the documented perf intent rather than the branching itself"  # noqa: E501
 def _walk_repo_files(
     root: Path, exclude_globs: tuple[str, ...] = ()
 ) -> tuple[list[Path], list[Path]]:

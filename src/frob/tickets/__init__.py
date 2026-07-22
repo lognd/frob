@@ -2089,6 +2089,7 @@ def _sync_cross_worktree_lease(
 
 
 # frob:doc docs/modules/tickets.md#public-api
+# frob:waive ARCH001 reason="a typani Result guard chain (lease, schema, resolution, pass-check, then acceptance-range) where each stage is already its own dedicated helper (_check_evidence_resolution, _check_evidence_passing, ...); the length is the sequence of early-return guard calls itself, matching this module's own idiomatic and_then style -- splitting further would just rename the same guard clauses behind a second layer of indirection"  # noqa: E501
 def add_evidence(
     root: Path,
     ticket_id: str,

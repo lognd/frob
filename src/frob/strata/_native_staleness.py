@@ -234,6 +234,7 @@ def _save_stamps(root: Path, stamps: dict[str, dict[str, str]]) -> None:
 # frob:tests tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_fresh_native_reports_nothing  # noqa: E501
 # frob:tests tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_unbuilt_native_is_not_reported_as_stale  # noqa: E501
 # frob:tests tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_no_matching_source_dir_is_not_reported  # noqa: E501
+# frob:waive ARCH001 reason="T-0513's mtime-then-content-digest tiers are an intentionally ORDERED decision tree over one persisted stamps dict (first-observation baseline, touch-without-rebuild detection, genuine-rebuild refresh) with stamps/stamps_changed mutated across the loop; splitting a tier into a helper would require returning multiple mutations (stale entry, stamp update, changed flag) back out, adding indirection without reducing the ordered reasoning itself"  # noqa: E501
 def stale_natives(root: Path) -> tuple[StaleNative, ...]:
     """Every declared `[[native]]` (T-0333's `frob.toml` `[[native]]` table)
     whose built artifact is older than its own source tree under `root`

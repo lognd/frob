@@ -216,6 +216,7 @@ def _rust_err_call_type(value: Node | None) -> str | None:
     return None
 
 
+# frob:waive ARCH001 reason="a single flat per-node-type dispatch table over rust's grammar, intentionally mirroring _kt_collect_body_events/_ts_collect_body_events's exact walk shape (T-0609) so the three adapters stay structurally comparable; splitting by node-type would fragment one coherent walk into disconnected pieces without reducing the branching itself"  # noqa: E501
 def _rust_collect_body_events(
     node: Node,
     branches: list[NormalizedBranch],

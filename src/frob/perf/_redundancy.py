@@ -194,20 +194,7 @@ def redundant_computation_violations(
     if not heavy_computations:
         return ()
 
-    # {heavy_name: [(file_path, qualname, span_start), ...]} -- one entry
-    # per DISTINCT top-level symbol that calls it (a symbol calling it
-    # twice in its own body is that function's own business, not a
-    # cross-call-site repeat).
-    call_sites: dict[str, list[tuple[str, str, int]]] = defaultdict(list)
-    for file in files:
-        for symbol in file.symbols:
-            if symbol.kind not in _FUNCTION_KINDS:
-                continue
-            for heavy in heavy_computations:
-                if _call_sites(symbol.body_tokens, heavy.name) > 0:
-                    call_sites[heavy.name].append(
-                        (file.path, symbol.qualname, symbol.span[0])
-                    )
+    call_sites = _perf007_call_sites(files, heavy_computations)
 
     violations: list[Violation] = []
     for heavy in heavy_computations:
@@ -249,3 +236,25 @@ def redundant_computation_violations(
         len(violations),
     )
     return tuple(violations)
+
+
+# frob:ticket T-0598
+def _perf007_call_sites(
+    files: Sequence[ParsedFile], heavy_computations: tuple[_HeavyComputation, ...]
+) -> dict[str, list[tuple[str, str, int]]]:
+    """`{heavy_name: [(file_path, qualname, span_start), ...]}` -- one entry
+    per DISTINCT top-level symbol that calls it (a symbol calling it twice
+    in its own body is that function's own business, not a cross-call-site
+    repeat). `redundant_computation_violations`'s collection phase, split
+    out for ARCH001 -- T-0598."""
+    call_sites: dict[str, list[tuple[str, str, int]]] = defaultdict(list)
+    for file in files:
+        for symbol in file.symbols:
+            if symbol.kind not in _FUNCTION_KINDS:
+                continue
+            for heavy in heavy_computations:
+                if _call_sites(symbol.body_tokens, heavy.name) > 0:
+                    call_sites[heavy.name].append(
+                        (file.path, symbol.qualname, symbol.span[0])
+                    )
+    return call_sites
