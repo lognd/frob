@@ -835,3 +835,265 @@ class TestAbstractionOpportunityDiscriminators:
         assert "is_hex_digest" in msg
         assert "is_sha_digest" in msg
         assert "is_valid_url" not in msg
+
+
+# ---------------------------------------------------------------------------
+# design-pattern recommender (T-0332): HALLMARK->PATTERN and
+# ANTI-PATTERN->ESCAPE advisory suggestions.
+# ---------------------------------------------------------------------------
+
+
+class TestPatternRecommender:
+    def test_isinstance_chain_recommends_strategy(self, tmp_path: Path) -> None:
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "shapes.py").write_text(
+            "def area(shape):\n"
+            "    if isinstance(shape, Circle):\n"
+            "        return 1\n"
+            "    elif isinstance(shape, Square):\n"
+            "        return 2\n"
+            "    elif isinstance(shape, Triangle):\n"
+            "        return 3\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "pattern-recommendation"]
+        assert any("Strategy" in s.message for s in hits)
+
+    def test_two_arm_isinstance_chain_not_flagged(self, tmp_path: Path) -> None:
+        # STRONG-HALLMARK-ONLY: two arms is routine control flow, not a
+        # growing type-switch -- must not fire.
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "shapes.py").write_text(
+            "def area(shape):\n"
+            "    if isinstance(shape, Circle):\n"
+            "        return 1\n"
+            "    elif isinstance(shape, Square):\n"
+            "        return 2\n"
+        )
+        result = analyze_project(src_dir)
+        assert not any(
+            "Strategy" in s.message
+            for s in result.suggestions
+            if s.category == "pattern-recommendation"
+        )
+
+    def test_state_field_chain_recommends_state_machine(self, tmp_path: Path) -> None:
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "job.py").write_text(
+            "class Job:\n"
+            "    def step(self):\n"
+            "        if self.status == 'pending':\n"
+            "            pass\n"
+            "        elif self.status == 'running':\n"
+            "            pass\n"
+            "        elif self.status == 'done':\n"
+            "            pass\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "pattern-recommendation"]
+        assert any("State machine" in s.message for s in hits)
+
+    def test_non_state_attribute_chain_not_flagged_state_machine(
+        self, tmp_path: Path
+    ) -> None:
+        # STRONG-HALLMARK-ONLY: an elif chain on a `self.<attr>` whose name
+        # carries no state/status/mode/phase/stage lifecycle hint is an
+        # ordinary attribute comparison, not the growing-state-machine
+        # hallmark -- must not fire State machine.
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "shape.py").write_text(
+            "class Shape:\n"
+            "    def area(self):\n"
+            "        if self.color == 'red':\n"
+            "            pass\n"
+            "        elif self.color == 'blue':\n"
+            "            pass\n"
+            "        elif self.color == 'green':\n"
+            "            pass\n"
+        )
+        result = analyze_project(src_dir)
+        assert not any(
+            "State machine" in s.message
+            for s in result.suggestions
+            if s.category == "pattern-recommendation"
+        )
+
+    def test_telescoping_ctor_recommends_builder(self, tmp_path: Path) -> None:
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "cfg.py").write_text(
+            "class Config:\n"
+            "    def __init__(self, a=1, b=2, c=None, d=None, e=None, f=None):\n"
+            "        self.a = a\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "pattern-recommendation"]
+        assert any("Builder" in s.message for s in hits)
+
+    def test_normal_ctor_not_flagged_as_telescoping(self, tmp_path: Path) -> None:
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "point.py").write_text(
+            "class Point:\n"
+            "    def __init__(self, x, y):\n"
+            "        self.x = x\n"
+            "        self.y = y\n"
+        )
+        result = analyze_project(src_dir)
+        assert not any(
+            "Builder" in s.message
+            for s in result.suggestions
+            if s.category == "pattern-recommendation"
+        )
+
+    def test_scattered_construction_across_files_recommends_factory(
+        self, tmp_path: Path
+    ) -> None:
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "a.py").write_text("def use_a():\n    return Widget(1)\n")
+        (src_dir / "b.py").write_text("def use_b():\n    return Widget(2)\n")
+        (src_dir / "c.py").write_text("def use_c():\n    return Widget(3)\n")
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "pattern-recommendation"]
+        assert any("Factory" in s.message and "Widget" in s.message for s in hits)
+
+    def test_construction_in_two_files_not_flagged(self, tmp_path: Path) -> None:
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "a.py").write_text("def use_a():\n    return Widget(1)\n")
+        (src_dir / "b.py").write_text("def use_b():\n    return Widget(2)\n")
+        result = analyze_project(src_dir)
+        assert not any(
+            "Factory" in s.message
+            for s in result.suggestions
+            if s.category == "pattern-recommendation"
+        )
+
+    def test_wrap_delegate_recommends_decorator(self, tmp_path: Path) -> None:
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "wrapper.py").write_text(
+            "class LoggingList:\n"
+            "    def __init__(self, inner):\n"
+            "        self._inner = inner\n"
+            "\n"
+            "    def append(self):\n"
+            "        return self._inner.append()\n"
+            "\n"
+            "    def pop(self):\n"
+            "        return self._inner.pop()\n"
+            "\n"
+            "    def clear(self):\n"
+            "        return self._inner.clear()\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "pattern-recommendation"]
+        assert any("Decorator" in s.message for s in hits)
+
+    def test_two_method_delegating_wrapper_not_flagged_decorator(
+        self, tmp_path: Path
+    ) -> None:
+        # STRONG-HALLMARK-ONLY: only 2 pass-through methods (below
+        # _MIN_DELEGATE_METHODS=3) is an ordinary small wrapper, not the
+        # wrap-and-delegate hallmark -- must not fire Decorator.
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "wrapper.py").write_text(
+            "class SmallWrapper:\n"
+            "    def __init__(self, inner):\n"
+            "        self._inner = inner\n"
+            "\n"
+            "    def append(self):\n"
+            "        return self._inner.append()\n"
+            "\n"
+            "    def pop(self):\n"
+            "        return self._inner.pop()\n"
+        )
+        result = analyze_project(src_dir)
+        assert not any(
+            "Decorator" in s.message
+            for s in result.suggestions
+            if s.category == "pattern-recommendation"
+        )
+
+    def test_god_class_pairs_with_srp_escape(self, tmp_path: Path) -> None:
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        methods = "\n".join(f"    def m{i}(self): pass" for i in range(14))
+        (src_dir / "big.py").write_text(f"class BigThing:\n{methods}\n")
+        result = analyze_project(src_dir)
+        categories = {s.category for s in result.suggestions}
+        assert "god-class" in categories
+        assert "anti-pattern-escape" in categories
+        escape = next(
+            s for s in result.suggestions if s.category == "anti-pattern-escape"
+        )
+        assert "SRP decompose" in escape.message
+        assert "BigThing" in escape.message
+
+    def test_class_at_threshold_not_flagged_god_object(self, tmp_path: Path) -> None:
+        # STRONG-HALLMARK-ONLY: god-object is PAIRED with god-class
+        # (T-0332's "one detector, two outputs" design) -- a class at
+        # exactly the default max_class_methods=12 threshold does not
+        # trigger god-class, so it must not produce a paired SRP-decompose
+        # escape either.
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        methods = "\n".join(f"    def m{i}(self): pass" for i in range(12))
+        (src_dir / "normal.py").write_text(f"class NormalThing:\n{methods}\n")
+        result = analyze_project(src_dir)
+        categories = {s.category for s in result.suggestions}
+        assert "god-class" not in categories
+        assert "anti-pattern-escape" not in categories
+
+    def test_stringly_typed_recommends_newtype(self, tmp_path: Path) -> None:
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "cmd.py").write_text(
+            "def dispatch(cmd):\n"
+            "    if cmd == 'start':\n"
+            "        pass\n"
+            "    elif cmd == 'stop':\n"
+            "        pass\n"
+            "    elif cmd == 'pause':\n"
+            "        pass\n"
+            "    elif cmd == 'resume':\n"
+            "        pass\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "anti-pattern-escape"]
+        assert any("newtype" in s.message for s in hits)
+
+    def test_short_string_chain_not_flagged_stringly_typed(
+        self, tmp_path: Path
+    ) -> None:
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "cmd.py").write_text(
+            "def dispatch(cmd):\n"
+            "    if cmd == 'start':\n"
+            "        pass\n"
+            "    elif cmd == 'stop':\n"
+            "        pass\n"
+        )
+        result = analyze_project(src_dir)
+        assert not any(
+            "newtype" in s.message
+            for s in result.suggestions
+            if s.category == "anti-pattern-escape"
+        )
+
+    def test_simple_python_no_pattern_recommendations(self) -> None:
+        # Clean fixture project must not produce any advisory pattern
+        # findings -- the STRONG-HALLMARK-ONLY constraint means simple code
+        # never fires.
+        root = FIXTURES / "simple_python" / "src"
+        result = analyze_project(root)
+        categories = {s.category for s in result.suggestions}
+        assert "pattern-recommendation" not in categories
+        assert "anti-pattern-escape" not in categories

@@ -14,6 +14,14 @@ ArchCategory = Literal[
     "deep-nesting",
     "abstraction-opportunity",
     "large-file",
+    # T-0332: advisory design-pattern recommender categories -- a detected
+    # structural HALLMARK maps to a recommended GoF/modern PATTERN, or a
+    # detected ANTI-PATTERN maps to a concrete ESCAPE route. Both stay on
+    # the unwaivable advisory channel like every other category here
+    # (`frob.gates._unwaivable_channel_rules`) -- see docs/modules/arch.md's
+    # "design-pattern recommender" section for the registry.
+    "pattern-recommendation",
+    "anti-pattern-escape",
 ]
 
 ArchSeverity = Literal["warning", "suggestion", "info"]

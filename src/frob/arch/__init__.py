@@ -1,11 +1,12 @@
 """frob.arch -- lightweight architectural analysis (docs/modules/arch.md).
 
 `analyze_project` walks a repo and flags long functions, god classes, deep
-nesting, high coupling, large files, and shared-signature abstraction
-opportunities. The per-language rule sets live in cohesive submodules
-(`_python`, `_cpp`); this package module owns file collection, the
-language-agnostic large-file check, and the orchestration that fans each
-parsed file out to its language's checks.
+nesting, high coupling, large files, shared-signature abstraction
+opportunities, and (T-0332) advisory design-pattern recommendations /
+anti-pattern escapes. The per-language rule sets live in cohesive
+submodules (`_python`, `_cpp`, `_patterns`); this package module owns file
+collection, the language-agnostic large-file check, and the orchestration
+that fans each parsed file out to its language's checks.
 """
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
 # src/frob/arch/__init__.py's exclusivity-vocabulary hit is source-level \
@@ -21,7 +22,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from frob.arch import _cpp, _python
+from frob.arch import _cpp, _patterns, _python
 from frob.arch._models import (
     ArchCategory,
     ArchResult,
@@ -174,11 +175,14 @@ def _analyze_one_file(
     suggestions: list[ArchSuggestion],
     all_py_sigs: list[tuple[str, str, tuple[str, ...], str, str]],
     all_dispatch_refs: dict[str, set[str]],
+    all_constructions: dict[str, set[str]],
 ) -> None:
     """Run every applicable check on one file, appending to `suggestions`,
-    accumulating python signatures for the cross-file pass, and (for
-    eligible python files) accumulating structural dispatch references for
-    `_is_dispatch_family`'s corpus (T-0360)."""
+    accumulating python signatures for the cross-file pass, (for eligible
+    python files) accumulating structural dispatch references for
+    `_is_dispatch_family`'s corpus (T-0360), and accumulating class-
+    construction sites for `_patterns._check_scattered_construction`'s
+    cross-file corpus (T-0332)."""
     from frob.lang import raw_tree
 
     try:
@@ -219,6 +223,7 @@ def _analyze_one_file(
             suggestions,
             all_py_sigs,
             all_dispatch_refs,
+            all_constructions,
             is_test,
         )
     elif language == "cpp":
@@ -238,6 +243,7 @@ def _run_python_checks(
     suggestions: list[ArchSuggestion],
     all_py_sigs: list[tuple[str, str, tuple[str, ...], str, str]],
     all_dispatch_refs: dict[str, set[str]],
+    all_constructions: dict[str, set[str]],
     is_test: bool,
 ) -> None:
     """Every python architectural check on one parsed file, plus signature
@@ -257,13 +263,26 @@ def _run_python_checks(
     populated for non-test, non-`__init__.py` files -- a test file's own
     calls into the functions under test, or an `__init__.py`'s re-export
     list, must never be mistaken for a genuine dispatch site (the
-    reviewer-demonstrated false-suppression path this exclusion closes)."""
+    reviewer-demonstrated false-suppression path this exclusion closes).
+
+    T-0332: the design-pattern recommender's per-file detectors
+    (`type-switch`, `state-field-chain`, `telescoping-ctor`,
+    `wrap-delegate`, `stringly-typed`) skip test files for the same reason
+    as the other advisory categories above; `all_constructions` (the
+    `scattered-construction` cross-file corpus) is likewise only
+    accumulated from non-test files."""
     if not is_test:
         _python._check_long_functions(tree, rel, limits.max_function_lines, suggestions)
         _python._check_god_classes(tree, rel, limits.max_class_methods, suggestions)
         all_py_sigs.extend(_python._extract_signatures(tree, rel))
         if not _is_init_file(rel):
             all_dispatch_refs[rel] = _python._collect_file_dispatch_refs(tree)
+        _patterns._check_type_switch(tree, rel, suggestions)
+        _patterns._check_state_field_chain(tree, rel, suggestions)
+        _patterns._check_telescoping_ctor(tree, rel, suggestions)
+        _patterns._check_wrap_delegate(tree, rel, suggestions)
+        _patterns._check_stringly_typed(tree, rel, suggestions)
+        _patterns._collect_file_constructions(tree, rel, all_constructions)
     _python._check_high_coupling(path, rel, root, limits.max_local_imports, suggestions)
     if not is_test:
         _python._check_deep_nesting(tree, rel, limits.max_nesting_depth, suggestions)
@@ -284,7 +303,9 @@ def analyze_project(
     max_file_lines: int = 500,
 ) -> ArchResult:
     """Scan `root` for long functions, god classes, deep nesting, high
-    coupling, large files, and shared-signature abstraction opportunities.
+    coupling, large files, shared-signature abstraction opportunities, and
+    (T-0332) advisory design-pattern recommendations / anti-pattern
+    escapes.
 
     Memoized per `frob check` run (T-0423, `frob.check._memo.memoize_
     per_run`): a second call with identical arguments in the same run is a
@@ -304,16 +325,30 @@ def analyze_project(
     suggestions: list[ArchSuggestion] = []
     all_py_sigs: list[tuple[str, str, tuple[str, ...], str, str]] = []
     all_dispatch_refs: dict[str, set[str]] = {}
+    all_constructions = _patterns.new_construction_accumulator()
 
     # frob.lang logs at INFO/DEBUG per parse; CLI callers piping `--json`
     # need that off stdout, same reasoning as frob.logging.quiet's docstring.
     with quiet_stdout_logs():
         for path in _collect_files(root):
             _analyze_one_file(
-                path, root, limits, suggestions, all_py_sigs, all_dispatch_refs
+                path,
+                root,
+                limits,
+                suggestions,
+                all_py_sigs,
+                all_dispatch_refs,
+                all_constructions,
             )
 
     _python._check_abstraction_opportunities(
         all_py_sigs, all_dispatch_refs, suggestions
     )
+    _patterns._check_scattered_construction(all_constructions, suggestions)
+    # T-0332: god-object (anti-pattern-escape) is paired with the
+    # already-computed god-class findings above, not a second tree walk --
+    # must run after every god-class-producing check has appended. Scans a
+    # snapshot (list(suggestions)) so appending the paired escape finding
+    # does not mutate the list being iterated.
+    _patterns._check_god_object_escape(list(suggestions), suggestions)
     return ArchResult(root=str(root), suggestions=suggestions)

@@ -24,6 +24,8 @@ has no `elif language == "..."` branch for them yet.
 | `deep-nesting` | a function whose `if`/`for`/`while`/`try`/`with` nesting exceeds `max_nesting_depth` | suggestion |
 | `large-file` | any file longer than `max_file_lines` | info |
 | `abstraction-opportunity` | 3+ Python functions across the project sharing the same annotated parameter/return-type signature, EXCLUDING intentional dispatch/validator families (see below) | suggestion |
+| `pattern-recommendation` | a strong structural HALLMARK (isinstance chain, state-field chain, telescoping constructor, scattered construction, wrap-and-delegate class) matches a registered `frob.arch._patterns` rule | suggestion |
+| `anti-pattern-escape` | a strong structural ANTI-PATTERN (god object, stringly-typed comparison chain) matches a registered `frob.arch._patterns` rule | suggestion |
 
 All thresholds are `analyze_project` keyword arguments with the defaults
 shown in the Public API section below; there is no `frob.toml` table for
@@ -183,6 +185,87 @@ members), while e.g. a literal-duplicate `_has_done_report` defined twice
 still flags (found via body-similarity despite its generic `(str) ->
 bool` signature) and specific-signature families like the `(Path) ->
 tuple[Violation, ...]` gate group still flag in full.
+
+### Design-pattern recommender: `pattern-recommendation` / `anti-pattern-escape` (T-0332)
+
+<a id="design-pattern-registry"></a>
+<!-- frob:describes src/frob/arch/_patterns.py::PatternRuleSpec -->
+<!-- frob:describes src/frob/arch/_patterns.py::PATTERN_REGISTRY -->
+<!-- frob:describes src/frob/arch/_patterns.py::new_construction_accumulator -->
+
+`frob.arch._patterns` is a positive complement to the smell categories
+above: instead of only flagging a structural problem, it maps a strong
+structural HALLMARK to a recommended GoF/modern PATTERN, or a detected
+ANTI-PATTERN to a concrete ESCAPE route. Both directions are pure
+ADVISORY findings -- `severity="suggestion"`, never an error, and both
+categories stay on the unwaivable advisory channel every other
+`frob.arch` category is on (`frob.gates._unwaivable_channel_rules`,
+T-0101) -- forcing a pattern is itself over-engineering, so there is
+nothing here a build can fail on.
+
+Design constraints, in force for every registry row:
+
+- **STRONG-HALLMARK-ONLY / high precision.** Every detector requires a
+  multi-occurrence structural signal (three or more branch arms, call
+  sites, or delegating methods -- see each rule's threshold below), never
+  a single instance. A noisy recommender trains users to ignore it, and
+  the recommender must never fire on code that is already simple.
+- **Pairs with the smell detectors, not a second walk.** `god-object`
+  reuses the already-computed `god-class` findings (`_check_god_classes`)
+  and emits a companion `anti-pattern-escape` suggestion at the same
+  location instead of re-walking the tree -- one detector, two outputs:
+  "violates OCP" and "consider decomposing by responsibility".
+- **Names the FORCE and a concrete sketch.** Every finding's `message`
+  states the tension the pattern resolves; `detail` gives a one-line
+  refactor sketch -- never a bare "use Strategy".
+- **`PatternRuleSpec`** (a frozen dataclass) is the registry's row shape:
+  `rule_id`, `direction` (`"pattern"` or `"escape"`), `hallmark`,
+  `response`, `force`, `sketch`, `languages`. `PATTERN_REGISTRY` is the
+  full tuple of rows, independent of the detector code that matches each
+  one, the same way `frob`'s other registries separate data from
+  matching logic.
+
+Implemented registry rows (each backed by a real tree-sitter detector in
+`frob.arch._patterns`, reusing `frob.arch._python`'s shared function/class
+walk helpers):
+
+| Rule id | Direction | Hallmark | Response |
+|---|---|---|---|
+| `type-switch` | pattern | an `elif` chain of 3+ `isinstance(x, T)` checks on the same `x` | Strategy / polymorphic dispatch |
+| `state-field-chain` | pattern | an `elif` chain of 3+ arms comparing the same `self.<state-like attribute>` (name containing `state`/`status`/`mode`/`phase`/`stage`) against a string literal | State machine (State pattern) |
+| `telescoping-ctor` | pattern | an `__init__` with 6+ parameters, 4+ of them defaulted | Builder |
+| `scattered-construction` | pattern | the same concrete class constructed directly (bare `ClassName(...)` call) across 3+ distinct files | Factory / dependency injection |
+| `wrap-delegate` | pattern | a class storing one constructor-parameter object as `self.<attr>`, with 3+ methods whose entire body is a same-name pass-through call to that attribute | Decorator |
+| `god-object` | escape | a class already flagged `god-class` (more methods than `max_class_methods`) | SRP decompose |
+| `stringly-typed` | escape | a plain identifier (never `self.<attr>` -- that is `state-field-chain`'s territory) compared via `==` against 4+ distinct string literals across one `elif` chain | newtype (Enum / typed value object) |
+
+`type-switch`/`state-field-chain` and `stringly-typed` are deliberately
+disjoint on the same AST shape (an `elif` chain of equality/isinstance
+comparisons): `type-switch` requires an `isinstance()` call,
+`state-field-chain` requires the LHS to be a `self.<attribute>` access
+with a state-lifecycle name hint, and `stringly-typed` requires the LHS to
+be a bare identifier (no `self.` attribute access) -- so the same
+comparison node can never satisfy more than one rule.
+
+`scattered-construction` runs as a cross-file pass, mirroring
+`abstraction-opportunity`'s accumulate-then-check shape:
+`_collect_file_constructions` accumulates each file's Capitalized bare-
+callee constructions into a `new_construction_accumulator()`-created dict
+(class name -> set of files), excluding common builtin exception/
+collection type names, and `_check_scattered_construction` flags any
+class constructed from 3+ distinct files after every file has been
+walked.
+
+**Deferred rows.** T-0332's plan enumerates 8 hallmark->pattern rows and 5
+anti-pattern->escape rows; the 7 above are implemented with real,
+precision-checked detectors. The remaining 6 (`incompatible-interface-
+bridging -> Adapter`, `expensive-object-reuse -> Flyweight/pool`,
+`manual-callback-list -> Observer`, `anemic-domain-model -> move behavior
+to data`, `poltergeist/lava-flow -> delete`, `sequential-coupling ->
+explicit state`) need fuzzier signals that risk the STRONG-HALLMARK-ONLY
+constraint above without a larger detector investment -- deferred, not
+silently dropped; see `tickets.md`'s T-0332 Done report and T-draft-4fb8deee
+(the filed follow-up ticket) for the remaining rows.
 
 ### ARCH001: a reasoned per-function override (T-0289)
 

@@ -117,6 +117,9 @@
     "src/frob/arch/_models.py::ArchResult.as_json": "48b9248523b087dc9e7b32cb2edf9190690bf1624ca640ac8c00b6a7182c4266",
     "src/frob/arch/_models.py::ArchResult.as_text": "172dd4d365ee80aaeb22db8a426cfe5fe2ad5b39de7e8b75834a087a19975f51",
     "src/frob/arch/_models.py::ArchSuggestion": "ed51f32ff65980a28b969f4187c266ee5af7cd754e17ac53614c10065c8c5f5c",
+    "src/frob/arch/_patterns.py::PATTERN_REGISTRY": "11d44025d91b71685f64c9eafc21f15747c8195c5af419b2a3dbb9c427c8dc06",
+    "src/frob/arch/_patterns.py::PatternRuleSpec": "5f94e228567e93c34435e364027092ea5cda8ec14681b79096d00025f853ce30",
+    "src/frob/arch/_patterns.py::new_construction_accumulator": "1bfb532deb6e2cc7913688f782d7691e7b3a2124da47155ebc7a97ce9d302c52",
     "src/frob/bind/__init__.py::BindingDecl": "3b5e35c94b2b01286b132d77890cd1fd9ff79d0b3d76db3fe67233d6383a0d08",
     "src/frob/bind/__init__.py::Mismatch": "a0701edca9cca8d44666676c1df30bc22384bcee9e275faa8b437770a6f79e52",
     "src/frob/bind/__init__.py::SourceDecl": "8fbb821f4555e66ee6624702b9914cf5ff3b7f3fcaeb135ba22eb88176867586",
@@ -1169,5 +1172,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.76.0"
+  "version": "0.77.0"
 }
