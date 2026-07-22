@@ -12532,3 +12532,32 @@ component: null
 labels: []
 ```
 User directive 2026-07-22: per-repo boilerplate keeps being fixed per-repo (T-0732 Makefile; T-0574's install_worktree_lease_hook/install_stash_guard are library calls bootstrapped NOWHERE -- the incidents happened in this very repo and it still lacks the guards). Structural fix, mirroring the deploy script<->model drift-lock pattern frob already owns: (1) scaffold templates define MANAGED BLOCKS (marked regions: Makefile core-shim, .gitignore standard entries, hook/guard installs) versioned with frob; (2) "frob scaffold apply" idempotently installs/updates the managed blocks + hooks in any repo; (3) doctor (or a SCAF gate) reports when a repo's managed blocks are missing/stale vs the installed frob version -- so every repo in the estate gets TOLD when it lacks current standards instead of silently rotting; (4) bootstrap THIS repo via the new command as the first consumer (closing T-0574's reviewer flag); (5) at close, file per-sibling adoption tickets via frob fleet route (real filings, TICK006 applies).
+
+<!-- ticket:T-0737 -->
+```yaml
+id: T-0737
+title: 'ticket CLI: --body-file/--acceptance-file/--reason-file variants so prose
+  never rides the shell'
+state: queued
+kind: ux
+origin: human
+created: '2026-07-22'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/app/ticket_runner.py
+- src/frob/app/config.py
+- docs/modules/tickets.md
+- docs/guides/agent-playbook.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a body file containing backticks, quotes, and dollar signs WHEN frob ticket
+  new --body-file runs THEN the ledger body matches the file byte-for-byte
+threat: null
+component: null
+labels: []
+```
+Shell-substitution hazard, 4 field occurrences 2026-07-22 (T-0627, T-0697, T-0735/T-0736 bodies all lost backticked fragments to command substitution when passed inline through bash): long prose should never ride the shell. Add file-input variants mirroring done-report --why-file: frob ticket new --body-file PATH (and --acceptance-file PATH, one criterion per block/line), frob ticket scope --reason-file, frob ticket review already takes --findings-file (precedent). Inline --body stays for short text. Update the agent playbook to route all multi-sentence ticket prose through the file variants. The coordinator additionally runs a PreToolUse hook blocking backtick-in-double-quoted-flag commands; the file variants make the hazard structurally unreachable for agents too.
