@@ -3306,7 +3306,7 @@ else entirely in most of these sites:
 id: T-0541
 title: 'gates: SCOPE001/PRE001 fully disabled with no active ticket / off-convention
   branch (B9)'
-state: in-progress
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-21'
