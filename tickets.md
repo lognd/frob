@@ -2973,7 +2973,7 @@ Root cause of the arch double-run (T-0418): _arch_violations_from_suggestions wa
 id: T-0424
 title: 'REFLEXIVE completeness: frob''s own check-coverage is an exhaustible registry
   + continuous self-audit (so the AUDITOR is not the user)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -2984,8 +2984,51 @@ scope:
 - docs/audits/
 - src/frob/
 - frob.toml
-scope_changes: []
-evidence: []
+- docs/design/registry/
+- pyproject.toml
+- CHANGELOG.md
+- .frob-release.json
+- uv.lock
+scope_changes:
+- op: add
+  glob: docs/design/registry/
+  reason: T-0424's reflexive check-coverage registry is a docs/design/registry/*.yaml
+    instance (check-coverage.yaml), same home T-0407 unified; also updates README.md/EXHAUSTIVENESS-GATE.md
+    to document the new instance
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: REL001 required a version bump (0.60.0 -> 0.61.0) for T-0424's check-coverage.yaml
+    addition to REGISTRY_FILES; mechanical release-stamp artifacts
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: REL001 required a version bump (0.60.0 -> 0.61.0) for T-0424's check-coverage.yaml
+    addition to REGISTRY_FILES; mechanical release-stamp artifacts
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 required a version bump (0.60.0 -> 0.61.0) for T-0424's check-coverage.yaml
+    addition to REGISTRY_FILES; mechanical release-stamp artifacts
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: REL001 required a version bump (0.60.0 -> 0.61.0) for T-0424's check-coverage.yaml
+    addition to REGISTRY_FILES; mechanical release-stamp artifacts
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_is_in_registry_files
+- tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_loads_without_error
+- tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_gate_rule_entries_match_live_known_rules
+- tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_concern_family_entries_are_deferred_to_open_ticket
+- tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_no_malformed_entries
+- tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_audit_reports_exhausted
+- tests/test_check_coverage_registry.py::TestExhaustivenessGateOverRealCheckCoverage::test_no_check_coverage_violations
 attachments: []
 acceptance: []
 threat: null
@@ -2994,6 +3037,81 @@ labels: []
 ```
 Root-cause analysis (user, 2026-07-20: "why do I have to keep making these requests?"). Every gap the user caught this session is one of: catalogued-not-enforced, present-not-verified, written-not-wired, done-not-maintained, resolved-looking-but-owed, correct-but-wasteful. Two-layer root: (L1) frob checks that a thing EXISTS, not that it DOES ITS JOB (existence != efficacy) -- it was built to track/account, never to check completeness/truth/efficiency/honesty/maintenance of its own guarantees; (L2) frob has NO check-for-missing-checks: its own coverage (the set of "kinds of badness it enforces") is an un-exhausted, un-enforced registry whose ONLY draining process is the users eyeballs -- so the user IS the adversarial efficacy-auditor frob lacks, and each request adds one entry to an implicit "checks frob should have" list. SYSTEMIC FIX (the session-wide principle turned reflexively on frob itself): (1) make frobs CHECK-COVERAGE a first-class EXHAUSTIBLE REGISTRY (an instance of T-0407) -- a living taxonomy of the correctness/quality/security/perf/UX/maintenance concerns frob should enforce, each dispositioned (implemented gate id | open ticket | out-of-scope+reason); the docs/audits/ findings are its first draft; an exhaustiveness gate reds until every known concern is dispositioned, so GAPS are enumerated and driven to zero by the PROCESS. (2) Move the adversarial efficacy-auditing from the USER to the CONTINUOUS pessimistic auditors: schedule the audit-until-empty loop as a STANDING converging process across all subsystems AND reflexively on frobs own efficacy (does each gate actually catch what it claims, not just exist), so new gaps are found by auditors before the user would notice. (3) The meta-principle already in memory ("every got-away-with is a frob enforcement gap -> file the gate") is the DISPOSITION RULE for this registry. Acceptance: a named check-coverage registry exists with per-concern dispositions; a new un-dispositioned concern reds the exhaustiveness gate; the pessimistic-auditor loop runs on a schedule and its findings auto-file as dispositioned entries; measurably, the user stops being the one who finds the gaps.
 
+## Done report
+
+Built the reflexive check-coverage registry as a tenth `docs/design/registry/
+*.yaml` instance (`check-coverage.yaml`), added to `frob.gates
+._registry_exhaustiveness.REGISTRY_FILES` -- T-0407's unification made adding
+a new registry mean exactly this, a filename, not a second mechanism. The
+same REG001-REG007 exhaustiveness gate now enforces it.
+
+Seeded honestly from two real sources named in the ticket:
+- `gate_rule_entries` -- one entry per id `frob.gates.known_gate_rule_ids()`
+  reports LIVE (82 entries at time of writing), each self-referentially
+  `handled_by:<that same rule id>`. Verified programmatically (see
+  `TestCheckCoverageRegistryFile.test_gate_rule_entries_match_live_known_rules`)
+  that every one of these targets is actually in the live rule set, not a
+  frozen snapshot that could silently drift from reality.
+- `concern_family_entries` -- the `docs/audits/` 7-auditor pessimistic pass
+  (2026-07-20) concern families: 5 cross-cutting themes + 8 per-subsystem
+  verdicts (docs/audits/README.md), 13 entries total, each `deferred:T-0397`
+  (the real, open audit-remediation epic that already tracks these findings'
+  per-HIGH-finding children).
+
+`frob registry audit` confirms `check-coverage.yaml` reports
+`total=95 handled=82 deferred=13 duplicate=0 out_of_scope=0 unaccounted=0
+malformed=0 [EXHAUSTED]` against the live build.
+
+Cut, disclosed honestly (acceptance item 2, "the pessimistic-auditor loop
+runs on a schedule and its findings auto-file as dispositioned entries"):
+NOT built in this pass. Wiring a recurring scheduled auditor loop that
+auto-appends new `concern_family_entries` rows is a real scheduling/
+automation feature (a cron-like driver plus an auditor-output-to-YAML
+writer), a materially different and larger unit of work than the registry
+model itself, and doing it properly needs its own ticket rather than a
+rushed bolt-on here. Filed: T-draft-6060f333 (new ticket, scope
+docs/design/registry/+src/frob/, "schedule the pessimistic-auditor loop
+to auto-file new concern_family_entries rows in check-coverage.yaml").
+
+At granularity: this seeds concern FAMILIES (the docs/audits/ verdict/theme
+level), not every individual numbered finding (B1-B15 etc per audit file,
+~100+ atomic items) -- the ticket's own text says "concern families", and
+mapping every atomic finding to a specific already-existing or new child
+ticket under T-0397 is real per-item triage work belonging to T-0397's own
+children, not manufactured here. As those children close a concern down to
+a real gate rule, its `concern_family_entries` disposition moves from
+`deferred:T-0397` to `handled_by:<new rule id>`, and the registry's own
+REG002 requires that rule id to actually exist and fire.
+
+### Changed
+```
+ .frob-release.json                          |  13 +-
+ CHANGELOG.md                                |  20 ++
+ docs/design/registry/EXHAUSTIVENESS-GATE.md |  33 +++
+ pyproject.toml                              |   2 +-
+ src/frob/__main__.py                        |  17 ++
+ src/frob/app/app.py                         |   2 +
+ src/frob/app/config.py                      |  10 +
+ src/frob/app/registry_runner.py             |  74 ++++++
+ src/frob/gates/__init__.py                  |   4 +
+ src/frob/gates/_registry_exhaustiveness.py  | 358 +++++++++++++++-------------
+ src/frob/registry/__init__.py               |  38 +++
+ src/frob/registry/_models.py                | 326 +++++++++++++++++++++++++
+ tests/test_registry_exhaustiveness.py       | 160 ++++++++++++-
+ tests/test_registry_models.py               | 193 +++++++++++++++
+ tickets.md                                  | 118 ++++++++-
+ uv.lock                                     |   2 +-
+ 16 files changed, 1198 insertions(+), 172 deletions(-)
+```
+
+### Evidence
+- `tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_is_in_registry_files` (pytest node id, verified passing when recorded)
+- `tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_loads_without_error` (pytest node id, verified passing when recorded)
+- `tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_gate_rule_entries_match_live_known_rules` (pytest node id, verified passing when recorded)
+- `tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_concern_family_entries_are_deferred_to_open_ticket` (pytest node id, verified passing when recorded)
+- `tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_no_malformed_entries` (pytest node id, verified passing when recorded)
+- `tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_audit_reports_exhausted` (pytest node id, verified passing when recorded)
+- `tests/test_check_coverage_registry.py::TestExhaustivenessGateOverRealCheckCoverage::test_no_check_coverage_violations` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0428 -->
 ```yaml
 id: T-0428
@@ -3838,3 +3956,28 @@ component: null
 labels: []
 ```
 docs/audits/lang-check-docs.md finding 2. _parse_source_file_fresh (graph/__init__.py) returns (True, (), (), ()) on any parse_file Err other than the expected NativeParserUnavailable degrade -- the file is recorded as successfully processed with zero symbols/edges, so every public symbol and every frob:doc/frob:invariant/frob:describes/frob:tests edge in it silently vanishes; COV001/exports/DRIFT/INV all pass vacuously for it. Repro: any file tree-sitter cannot parse at all -> gates green, design graph invisible. RIGHT-WAY fix: surface parse/IO failures as an ERROR-severity gate violation (a PARSE001-style rule) instead of a swallowed warning. Out of T-0404's declared scope (src/frob/graph/, not lang/check/gates/) -- needs a scope-widened or standalone follow-up ticket.
+
+<!-- ticket:T-draft-6060f333 -->
+```yaml
+id: T-draft-6060f333
+title: Schedule the pessimistic-auditor loop to auto-file concern_family_entries in
+  check-coverage.yaml
+state: queued
+kind: feature
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- docs/design/registry/
+- src/frob/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Split out of T-0424: the registry MODEL + honest seed is built (check-coverage.yaml, REG001-007 enforced), but the CONTINUOUS half of T-0424's acceptance ("the pessimistic-auditor loop runs on a schedule and its findings auto-file as dispositioned entries") is a real scheduling/automation feature -- a recurring driver plus an auditor-output-to-YAML writer -- not built in T-0424's pass. This ticket is that follow-up: wire a scheduled (or CI-triggered) pessimistic-auditor run whose findings append new dispositioned concern_family_entries rows to check-coverage.yaml automatically, so new gaps are found before the user notices them, per T-0424's root-cause charter.

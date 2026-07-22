@@ -130,6 +130,10 @@ REGISTRY_FILES: tuple[str, ...] = (
     "supply-chain.yaml",
     "system-design.yaml",
     "weaknesses.yaml",
+    # T-0424: frob's own check-coverage, the reflexive registry -- the
+    # unified model makes adding a new registry instance exactly this,
+    # a filename here, not a second mechanism.
+    "check-coverage.yaml",
 )
 
 # The RECONCILIATION.md split-finding table this gate cross-checks against
