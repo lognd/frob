@@ -4655,3 +4655,26 @@ No behavior change -- comment-only.
 
 ### Evidence
 (no evidence recorded)
+
+<!-- ticket:T-0563 -->
+```yaml
+id: T-0563
+title: 'RENDER001 straggler burndown: migrate the 14 remaining bare prints (7 runner
+  files) and promote the gate to ERROR'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0459 landed RENDER001 warn-first with 14 bare print/stdout call sites remaining in check_runner, clean_runner, debt_runner, doctor_runner, gitlog_runner, registry_runner, test_runner (exact list in T-0459's Done report). Migrate them to frob.render, then flip RENDER001 to error severity so the output layer cannot rot. Scope: those 7 files + src/frob/gates/_render_lint.py + tests.
