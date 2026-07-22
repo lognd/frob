@@ -23,16 +23,25 @@ TWO RULES:
     on every remote/cross-boundary flow -- unbounded hang otherwise").
   - REL201 unproven timeout: a flow DOES declare `timeout`, but the
     PROVABILITY CONSTRAINT (T-0331, non-negotiable) forbids discharging
-    an obligation by bare declaration alone -- the declaring node's
-    ORIGINATING side (`flow.src`, the caller whose code would actually
-    hold a bounded-wait argument at the real call site) must have at
-    least one file bound to it (`_code_binding.py::bind_code`) containing
-    a real `timeout=`-shaped token. A node with NO bound code at all
-    (no `code=` glob, or `managed`/external) is UNCHECKABLE -- honestly
-    silent rather than a guessed-at proof, the same ceiling `_contention.
-    py`'s SYS203 `store_ids` and `_selfconform.py`'s `managed` exemption
-    already establish for "the fact this rule needs is not always
-    reconstructible" cases.
+    an obligation by bare declaration alone -- at least one of the flow's
+    ENDPOINTS (`flow.src` OR `flow.dst`) must have bound code
+    (`_code_binding.py::bind_code`) containing a real `timeout=`-shaped
+    token (T-0758: anchored on whichever endpoint HAS bound code, not
+    only `flow.src` -- the repo's one real network flow,
+    `f_registry_fetch : registry -> vet`, has a foreign/codeless `src`
+    but a genuinely provable `dst` (`vet`'s caller code), so checking
+    `src` alone made the rule this whole family exists to enforce
+    permanently uncheckable-silent on its own motivating case). A flow
+    with NEITHER endpoint bound to any code at all is UNCHECKABLE --
+    honestly silent rather than a guessed-at proof, the same ceiling
+    `_contention.py`'s SYS203 `store_ids` and `_selfconform.py`'s
+    `managed` exemption already establish for "the fact this rule needs
+    is not always reconstructible" cases. When only one endpoint has
+    bound code, that endpoint alone is checked; when both do, either
+    endpoint's code evidencing a `timeout=` token is sufficient proof
+    (an OR, not an AND -- the obligation is that SOME real call site
+    along the flow demonstrably bounds the wait, not that every bound
+    file does).
 
 GRAMMAR-DATA CEILING, HONESTLY: `timeout` is a bare Flow attr (no numeric
 magnitude) -- `strata-core/src/parse.rs`'s generic `attr KEY=VALUE` clause
@@ -231,37 +240,56 @@ def _owner_index(owner: dict[str, str]) -> dict[str, list[str]]:
     return by_node
 
 
+def _bound_endpoints(
+    flow_src: str, flow_dst: str, owner_by_node: dict[str, list[str]]
+) -> list[str]:
+    """The subset of `flow`'s endpoints (`src`, `dst`, deduped, src-first
+    for stable reporting) that own at least one bound file (T-0758:
+    proof-anchoring checks whichever endpoint(s) actually have code, not
+    only `src` -- `_node_has_bound_code` applied per endpoint)."""
+    endpoints = [flow_src] if flow_src == flow_dst else [flow_src, flow_dst]
+    return [node for node in endpoints if _node_has_bound_code(node, owner_by_node)]
+
+
 def _unproven_timeout_violations(
     model: KernelModel, owner_by_node: dict[str, list[str]], root: Path
 ) -> list[ReliabilityViolation]:
-    """REL201: every flow declaring `timeout` whose originating node HAS
-    bound code but that code carries no real timeout-shaped token
-    (PROVABILITY CONSTRAINT: bare declaration is never sufficient). A
-    flow whose src node has NO bound code at all is skipped -- uncheckable,
-    not unproven (module docstring)."""
+    """REL201: every flow declaring `timeout` where at least one endpoint
+    (`src` or `dst`, T-0758) has bound code, but NONE of the bound
+    endpoints' code carries a real timeout-shaped token (PROVABILITY
+    CONSTRAINT: bare declaration is never sufficient). A flow whose
+    NEITHER endpoint has any bound code at all is skipped -- uncheckable,
+    not unproven (module docstring). The reporting `node` is the first
+    bound endpoint checked (src if it has code, else dst), matching the
+    node whose absent proof the violation actually describes."""
     violations: list[ReliabilityViolation] = []
     for flow in model.flows:
         if not _has_timeout_attr(flow.attrs):
             continue
-        if not _node_has_bound_code(flow.src, owner_by_node):
+        bound_endpoints = _bound_endpoints(flow.src, flow.dst, owner_by_node)
+        if not bound_endpoints:
             continue
-        if _files_evidence_timeout(owner_by_node[flow.src], root):
+        if any(
+            _files_evidence_timeout(owner_by_node[node], root)
+            for node in bound_endpoints
+        ):
             continue
+        reporting_node = bound_endpoints[0]
         _log.warning(
-            "reliability: REL201 flow %s declares timeout but %s's bound code "
-            "has no real timeout= token",
+            "reliability: REL201 flow %s declares timeout but bound "
+            "endpoint(s) %s have no real timeout= token",
             flow.id,
-            flow.src,
+            bound_endpoints,
         )
         violations.append(
             ReliabilityViolation(
                 rule=REL_UNPROVEN_TIMEOUT,
-                node=flow.src,
+                node=reporting_node,
                 sub_target=flow.id,
                 detail=(
-                    f"flow {flow.id} declares timeout, but {flow.src}'s bound "
-                    "code has no real timeout=-shaped token (proof-against-code, "
-                    "T-0331 PROVABILITY CONSTRAINT)"
+                    f"flow {flow.id} declares timeout, but bound endpoint(s) "
+                    f"{bound_endpoints}'s code has no real timeout=-shaped "
+                    "token (proof-against-code, T-0331 PROVABILITY CONSTRAINT)"
                 ),
             )
         )

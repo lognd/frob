@@ -132,3 +132,66 @@ class TestUnprovenTimeout:
         assert not [
             v for v in result.danger_ok.violations if v.rule == REL_UNPROVEN_TIMEOUT
         ]
+
+    # frob:tests tests/unit/strata/test_reliability.py::TestUnprovenTimeout.test_codeless_src_with_coded_dst_proves_against_dst
+    def test_codeless_src_with_coded_dst_proves_against_dst(self, tmp_path: Path):
+        # T-0758: this is the f_registry_fetch shape -- the flow's SRC
+        # (a foreign external registry) has no bound code at all, but its
+        # DST (the vet caller) does, and that dst code has a real
+        # `timeout=` token. REL201 must anchor proof on dst and report
+        # PROVED (no violation), not skip it as uncheckable the way it
+        # would if only src were ever considered.
+        _write(
+            tmp_path,
+            "src/vet/_nvd.py",
+            "def fetch():\n    return urlopen(url, timeout=timeout_s)\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(id="registry", trust="untrusted"),
+                Node(id="vet", trust="trusted", attrs=("code=src/vet/**",)),
+            ),
+            flows=(
+                Flow(
+                    id="f_registry_fetch",
+                    src="registry",
+                    dst="vet",
+                    attrs=("timeout",),
+                ),
+            ),
+        )
+        result = check_reliability_timeouts(model, tmp_path)
+        assert result.is_ok
+        assert not [
+            v for v in result.danger_ok.violations if v.rule == REL_UNPROVEN_TIMEOUT
+        ]
+
+    # frob:tests tests/unit/strata/test_reliability.py::TestUnprovenTimeout.test_codeless_src_with_coded_dst_lacking_evidence_fires_against_dst
+    def test_codeless_src_with_coded_dst_lacking_evidence_fires_against_dst(
+        self, tmp_path: Path
+    ):
+        # Same codeless-src/coded-dst shape, but dst's bound code has no
+        # real timeout= token -- REL201 must still fire, reporting the
+        # dst node (the only endpoint it could actually check).
+        _write(tmp_path, "src/vet/_nvd.py", "def fetch():\n    return urlopen(url)\n")
+        model = KernelModel(
+            nodes=(
+                Node(id="registry", trust="untrusted"),
+                Node(id="vet", trust="trusted", attrs=("code=src/vet/**",)),
+            ),
+            flows=(
+                Flow(
+                    id="f_registry_fetch",
+                    src="registry",
+                    dst="vet",
+                    attrs=("timeout",),
+                ),
+            ),
+        )
+        result = check_reliability_timeouts(model, tmp_path)
+        assert result.is_ok
+        violations = [
+            v for v in result.danger_ok.violations if v.rule == REL_UNPROVEN_TIMEOUT
+        ]
+        assert {v.sub_target for v in violations} == {"f_registry_fetch"}
+        assert violations[0].node == "vet"

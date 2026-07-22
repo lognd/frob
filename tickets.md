@@ -5510,7 +5510,7 @@ Root-cause analysis 2026-07-22: two rejects (T-0611 tree_sitter imported into th
 id: T-0758
 title: 'REL201 proof anchoring: check the endpoint with bound code (dst/both), not
   only flow.src -- the one real network flow is silent today'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-22'
@@ -5522,19 +5522,66 @@ scope:
 - tests/unit/strata/
 - design/frob.strata
 scope_changes: []
-evidence: []
+evidence:
+- tests/unit/strata/test_reliability.py::TestUnprovenTimeout::test_codeless_src_with_coded_dst_proves_against_dst
+- tests/unit/strata/test_reliability.py::TestUnprovenTimeout::test_codeless_src_with_coded_dst_lacking_evidence_fires_against_dst
+- tests/unit/strata/test_reliability.py::TestUnprovenTimeout::test_declared_timeout_with_no_code_evidence_fires
+- tests/unit/strata/test_reliability.py::TestUnprovenTimeout::test_declared_timeout_with_real_code_evidence_discharges
+- tests/unit/strata/test_reliability.py::TestUnprovenTimeout::test_declared_timeout_with_no_bound_code_is_uncheckable_not_a_violation
 attachments: []
 acceptance:
 - text: GIVEN f_registry_fetch (foreign src, real timeout=code in the vet caller)
     WHEN REL201 runs THEN it proves against the endpoint with bound code and reports
     PROVED, not uncheckable-silent; a src-codeless dst-coded litmus fixture asserts
     it
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_reliability.py::TestUnprovenTimeout::test_codeless_src_with_coded_dst_proves_against_dst
 threat: null
 component: null
 labels: []
 ```
 Found by T-0640s reviewer: REL201 (timeout proof-against-code) anchors its bind_code proof on flow.src. For the repos ONLY real network flow, f_registry_fetch : registry -> vet, src is the FOREIGN registry node (no bound code), so REL201 is uncheckable-silent there -- while the actual CALLER, vet, has genuinely provable code (src/frob/vet/_registry.py:191, urlopen(url, timeout=timeout_s)). So the one flow this whole family was built to protect is never proof-checked. Fix: REL201 should anchor proof on the endpoint(s) that have bound code -- check the DESTINATION (or both endpoints), not only src -- turning f_registry_fetch from uncheckable-silent into a real PROVED. Add a litmus fixture where src has no code but dst does, asserting the proof runs against dst.
+
+## Done report
+
+REL201 anchored its proof-against-code check on flow.src only, making the
+repo's one real network flow (f_registry_fetch: registry -> vet) forever
+uncheckable-silent -- registry is foreign/codeless, while vet (the real
+caller) has genuinely provable code (src/frob/vet/_nvd.py:163,
+urllib.request.urlopen(url, timeout=timeout_s)).
+
+Fix: `_unproven_timeout_violations` now collects both flow endpoints
+(src, dst), keeps only those with bound code (`_bound_endpoints`), and
+treats the flow as PROVED if ANY bound endpoint's code carries a real
+`timeout=`-shaped token (an OR across endpoints, not just src). A flow
+where neither endpoint has bound code stays uncheckable-silent
+(unchanged). REL200 untouched.
+
+Added two litmus-style unit tests exercising the exact codeless-src/
+coded-dst shape: one where dst's code proves the timeout (must not
+fire), one where dst's code lacks the token (must fire, reporting node
+= dst, the only checkable endpoint).
+
+Verified `uv run frob sys audit` no longer reports any REL201 finding
+for f_registry_fetch (proved silently, i.e. no violation/waiver line
+for it), where before this fix it would have been silently uncheckable
+for the wrong reason (src has no code) rather than genuinely proved
+(dst does, and its code has timeout=).
+
+### Changed
+```
+ src/frob/strata/_reliability.py       | 76 ++++++++++++++++++++++----------
+ tests/unit/strata/test_reliability.py | 63 +++++++++++++++++++++++++++
+ tickets.md                            | 82 +++++++++++++++++++++++++++++++++--
+ 3 files changed, 194 insertions(+), 27 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_reliability.py::TestUnprovenTimeout::test_codeless_src_with_coded_dst_proves_against_dst` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_reliability.py::TestUnprovenTimeout::test_codeless_src_with_coded_dst_lacking_evidence_fires_against_dst` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_reliability.py::TestUnprovenTimeout::test_declared_timeout_with_no_code_evidence_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_reliability.py::TestUnprovenTimeout::test_declared_timeout_with_real_code_evidence_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_reliability.py::TestUnprovenTimeout::test_declared_timeout_with_no_bound_code_is_uncheckable_not_a_violation` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0759 -->
 ```yaml
