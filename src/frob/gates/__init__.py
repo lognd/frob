@@ -759,6 +759,7 @@ _KNOWN_GATE_RULES = frozenset(
         "INV002",
         "INV003",
         "INV004",
+        "INV005",
         "TEST001",
         "TEST002",
         "TEST003",
@@ -3587,6 +3588,84 @@ def _invariant_anchors(snapshot: GraphSnapshot) -> set[str]:
     return {e.target for e in snapshot.edges if e.kind == EdgeKind.INVARIANT}
 
 
+# frob:ticket T-0543
+def _invariant_anchor_symrefs(inv_id: str, snapshot: GraphSnapshot) -> set[str]:
+    """The code symref(s) `inv_id` is anchored to via a `frob:invariant`
+    edge (edge src -> the anchored symbol, edge target -> the invariant
+    id)."""
+    return {
+        e.src
+        for e in snapshot.edges
+        if e.kind == EdgeKind.INVARIANT and e.target == inv_id
+    }
+
+
+# frob:ticket T-0543
+def _evidence_binds_to_symrefs(
+    evidence: str, symrefs: set[str], snapshot: GraphSnapshot
+) -> bool:
+    """Whether `evidence` (a pytest/cargo node id) is the test-side of some
+    `TESTS` edge whose OTHER side is exactly one of `symrefs` -- reuses the
+    same either-direction `TESTS`-edge walk `_evidence_binds_to_scope` (D-02,
+    T-0398) uses to bind ticket evidence to a scope glob, here binding
+    invariant evidence to the invariant's own anchor(s) instead (B12): a
+    test that merely collects, with no edge reaching the anchored symbol at
+    all, proves nothing about THIS invariant."""
+    for edge in snapshot.edges:
+        if edge.kind != EdgeKind.TESTS:
+            continue
+        for test_side, source_side in (
+            (edge.src, edge.target),
+            (edge.target, edge.src),
+        ):
+            if _node_id_matches_symref(evidence, test_side) and source_side in symrefs:
+                return True
+    return False
+
+
+# frob:ticket T-0543
+# frob:ticket T-0543
+def _inv005(inv: Invariant) -> Violation:
+    """INV005: an invariant's collected evidence never shown (via a
+    `frob:tests` edge or same-file trust) to reach its own `frob:invariant`
+    anchor -- WARN, same best-effort posture as COV006, since this is a
+    name/edge-based check that can miss a genuine but unconventionally
+    bound test."""
+    return Violation(
+        rule="INV005",
+        severity=Severity.WARN,
+        file=inv.path,
+        line=0,
+        message=(
+            f"INV005: {inv.id}'s evidence collects but is never shown to "
+            f"reach its frob:invariant anchor; add a frob:tests edge from "
+            f"the evidence test to the anchored symbol, or confirm it "
+            f"genuinely exercises the invariant"
+        ),
+    )
+
+
+def _invariant_evidence_proves_anchor(
+    evidence: str, anchor_symrefs: set[str], snapshot: GraphSnapshot
+) -> bool:
+    """B12: whether `evidence` (already known to be a collected test node
+    id) actually reaches the invariant's anchored symbol, not merely that
+    SOME test collected somewhere in the repo. When the invariant has no
+    anchor at all, this is vacuously satisfied -- INV002 already flags the
+    missing-anchor case on its own, and there is nothing to bind against
+    here. Two routes, mirroring `evidence_covers_scope`'s D-02 routes: (1)
+    a `frob:tests` edge from this evidence to one of `anchor_symrefs`, or
+    (2) the evidence's own file is the same file as an anchor (same-file
+    binding, the same trust `evidence_covers_scope` extends when a
+    ticket's scope already names the test file directly)."""
+    if not anchor_symrefs:
+        return True
+    if _evidence_binds_to_symrefs(evidence, anchor_symrefs, snapshot):
+        return True
+    anchor_files = {a.split("::", 1)[0] for a in anchor_symrefs}
+    return evidence.split("::", 1)[0] in anchor_files
+
+
 # frob:waive DUP001 reason="Violation-builder boilerplate shared shape \
 # with _inv002 below; distinct rule ids and distinct remediation messages \
 # (missing evidence vs missing anchor) -- structural coincidence"
@@ -3629,24 +3708,52 @@ def invariant_gate(
     tests: CollectedTests,
     policy_rule_ids: frozenset[str] = frozenset(),
 ) -> tuple[Violation, ...]:
-    """INV001 (no evidence) and INV002 (no code anchor).
+    """INV001 (no evidence), INV002 (no code anchor), and INV005 (evidence
+    collected but never shown to reach the anchor).
 
     **Deviation**: adds an optional `policy_rule_ids` parameter beyond
     docs/modules/gates.md's `(invariants, snapshot, tests)` signature so INV001 can
     treat a loaded policy rule id as valid evidence, per the doc's own
     evidence-list example (`POL-no-direct-lock-write`); without it there
     would be no way for this pure function to see policy state at all.
+
+    B12 (T-0543): a collected test node id satisfies INV001 by mere
+    EXISTENCE -- `def test_x(): pass` clears it regardless of whether the
+    test reaches, let alone asserts against, the invariant's own anchored
+    symbol. Tightening INV001 itself outright breaks a large slice of this
+    repo's own already-adopted invariants (their evidence predates any
+    edge/same-file binding convention; a legacy-adoption survey to add
+    `frob:tests` edges or rebind evidence across all of them is out of this
+    ticket's budget, same "large, needs its own pass" shape as B1/B6/B2).
+    INV001/INV002 stay behaviorally unchanged (ERROR, ungated by binding);
+    `_invariant_evidence_proves_anchor` instead feeds a new WARN-severity
+    INV005 -- same non-blocking, best-effort posture as COV006's identical
+    remedy family for `frob:tests` reachability -- so an agent adding a NEW
+    invariant gets a loud nudge toward a real binding without a legacy
+    INV001 mass-failure.
     """
     anchors = _invariant_anchors(snapshot)
     violations: list[Violation] = []
     for inv in invariants:
-        has_evidence = any(
-            _evidence_collected(item, tests) or item in policy_rule_ids
-            for item in inv.evidence
+        anchor_symrefs = _invariant_anchor_symrefs(inv.id, snapshot)
+        collected_evidence = [
+            item for item in inv.evidence if _evidence_collected(item, tests)
+        ]
+        has_evidence = bool(collected_evidence) or any(
+            item in policy_rule_ids for item in inv.evidence
         )
         if not inv.evidence or not has_evidence:
             _log.debug("INV001: %s has no standing evidence", inv.id)
             violations.append(_inv001(inv))
+        elif anchor_symrefs and not any(
+            _invariant_evidence_proves_anchor(item, anchor_symrefs, snapshot)
+            for item in collected_evidence
+        ):
+            _log.debug(
+                "INV005: %s's collected evidence never shown to reach its anchor",
+                inv.id,
+            )
+            violations.append(_inv005(inv))
         if inv.id not in anchors:
             _log.debug("INV002: %s has no code anchor", inv.id)
             violations.append(_inv002(inv))

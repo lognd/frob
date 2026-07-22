@@ -1892,6 +1892,7 @@ class TestActiveTicket:
         assert result.is_nothing
 
 
+# frob:ticket T-0543
 class TestInvariantGate:
     def test_inv001_no_evidence(self, tmp_path: Path) -> None:
         from frob.gates.invariants import Invariant
@@ -1918,14 +1919,77 @@ class TestInvariantGate:
         violations = invariant_gate((inv,), snap, tests)
         assert any(v.rule == "INV001" for v in violations)
 
+    # frob:tests src/frob/gates/__init__.py::invariant_gate
+    # frob:ticket T-0543
     def test_inv001_passes_with_collected_evidence(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/__init__.py::invariant_gate
-        source = "def f(x):\n    # frob:invariant INV-001\n    return x\n"
-        _write(tmp_path, "src/a.py", source)
+        """The evidence test lives in the SAME FILE as the invariant's
+        anchor (B12's same-file binding route) -- a genuine binding, not
+        merely a collected node id."""
+        source = (
+            "def f(x):\n"
+            "    # frob:invariant INV-001\n"
+            "    return x\n"
+            "\n"
+            "def test_y():\n"
+            "    assert f(1) == 1\n"
+        )
+        _write(tmp_path, "tests/test_x.py", source)
         snap = _snapshot(tmp_path)
         from frob.gates.invariants import Invariant
 
         node = "tests/test_x.py::test_y"
+        inv = Invariant(
+            id="INV-001", statement="x", criticality=_Criticality.HIGH, evidence=(node,)
+        )
+        tests = CollectedTests(node_ids=frozenset({node}))
+        violations = invariant_gate((inv,), snap, tests)
+        assert violations == ()
+
+    # frob:tests src/frob/gates/__init__.py::_invariant_evidence_proves_anchor
+    # frob:ticket T-0543
+    def test_inv001_collected_but_unbound_evidence_warns_inv005(
+        self, tmp_path: Path
+    ) -> None:
+        """B12 counterexample: a collected test node id that has NO edge
+        to, and lives in a different file than, the invariant's anchor
+        used to clear INV001 by mere existence (`def test_y(): pass`
+        anywhere in the repo). It still passes INV001 (a legacy-adoption
+        mass-break across this repo's own invariants is out of budget --
+        see `invariant_gate`'s docstring) but now WARNs via the new INV005
+        instead of silently proving nothing."""
+        source = "def f(x):\n    # frob:invariant INV-001\n    return x\n"
+        _write(tmp_path, "src/a.py", source)
+        _write(tmp_path, "tests/test_unrelated.py", "def test_y():\n    pass\n")
+        snap = _snapshot(tmp_path)
+        from frob.gates.invariants import Invariant
+
+        node = "tests/test_unrelated.py::test_y"
+        inv = Invariant(
+            id="INV-001", statement="x", criticality=_Criticality.HIGH, evidence=(node,)
+        )
+        tests = CollectedTests(node_ids=frozenset({node}))
+        violations = invariant_gate((inv,), snap, tests)
+        assert not any(v.rule == "INV001" for v in violations)
+        assert any(v.rule == "INV005" for v in violations)
+
+    # frob:tests src/frob/gates/__init__.py::_evidence_binds_to_symrefs
+    # frob:ticket T-0543
+    def test_inv001_passes_via_explicit_tests_edge_to_anchor(
+        self, tmp_path: Path
+    ) -> None:
+        """B12: an evidence test bound to the anchor via an explicit
+        `frob:tests` edge (not merely same-file) also satisfies INV001."""
+        source = "def f(x):\n    # frob:invariant INV-001\n    return x\n"
+        _write(tmp_path, "src/a.py", source)
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "# frob:tests src/a.py::f\ndef test_f():\n    pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        from frob.gates.invariants import Invariant
+
+        node = "tests/test_a.py::test_f"
         inv = Invariant(
             id="INV-001", statement="x", criticality=_Criticality.HIGH, evidence=(node,)
         )
@@ -3605,6 +3669,7 @@ class TestCoverageLoad:
 
 # frob:ticket T-0541
 # frob:ticket T-0542
+# frob:ticket T-0543
 class TestRunGates:
     def test_run_gates_end_to_end(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/__init__.py::run_gates
@@ -3635,6 +3700,7 @@ class TestRunGates:
     # frob:tests src/frob/gates/__init__.py::_build_ticket_scoped_jobs
     # frob:ticket T-0541
     # frob:ticket T-0542
+    # frob:ticket T-0543
     def test_run_gates_blocks_scope_and_prework_when_no_ticket_touches_source(
         self, tmp_path: Path
     ) -> None:
@@ -3657,6 +3723,7 @@ class TestRunGates:
     # frob:tests src/frob/gates/__init__.py::_build_ticket_scoped_jobs
     # frob:ticket T-0541
     # frob:ticket T-0542
+    # frob:ticket T-0543
     def test_run_gates_still_skips_scope_and_prework_for_ledger_only_diff(
         self, tmp_path: Path
     ) -> None:
@@ -4069,6 +4136,7 @@ class TestDocanchorGate:
 
 
 # frob:ticket T-0542
+# frob:ticket T-0543
 class TestCov002ScopeCoverage:
     def test_open_ticket_scope_covers_changed_symbol(self, tmp_path):
         """COV002 passes when a changed symbol's file is within an open
@@ -4114,6 +4182,7 @@ class TestCov002ScopeCoverage:
 
     # frob:tests src/frob/gates/__init__.py::_scope_covers
     # frob:ticket T-0542
+    # frob:ticket T-0543
     def test_ambiguous_overlapping_open_scopes_do_not_cover(self, tmp_path):
         """B10: two open, EQUALLY specific tickets whose scopes both cover
         the same file must NOT silently cover a changed symbol -- that is
@@ -4161,6 +4230,7 @@ class TestCov002ScopeCoverage:
 
     # frob:tests src/frob/gates/__init__.py::_scope_covers
     # frob:ticket T-0542
+    # frob:ticket T-0543
     def test_active_ticket_own_scope_wins_over_a_broader_open_ticket(self, tmp_path):
         """B10: the active ticket's own scope covers the symbol even when a
         second, broader open ticket ALSO happens to cover the same file --

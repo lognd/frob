@@ -30,6 +30,7 @@ declaration).
 | INV002 | invariant | invariant has no code anchor (`frob:invariant`) |
 | INV003 | invariant | (warn) a doc file under `INV003_SPEC_DIRS` (`docs/modules`, `docs/strata`) makes a claim-shaped exclusivity/normative assertion (`only`, `sole`/`solely`, `exclusively`, `nothing else`, `never...except`, `at most/exactly one`, verb required in the same sentence) with no `<!-- frob:invariant INV-### -->` marker naming a real (loaded) invariant, and no reasoned `<!-- frob:waive INV003 reason="..." -->` marker -- see "INV003 (T-0462)" below |
 | INV004 | invariant | (warn, advisory) a `docs/**.md` section uses claim-shaped normative language (`must`, `must not`, `never`, `always`, `shall`, `guarantees`, `ensures`, `requires`, plus INV003's exclusivity vocabulary) but anchors ZERO `frob:invariant` markers and carries no reasoned `<!-- frob:waive INV004 reason="..." -->` marker -- see "INV004 (T-0452)" below |
+| INV005 | invariant | (warn, T-0543/B12) an invariant's evidence collects (satisfies INV001) but is never shown, via a `frob:tests` edge or same-file trust to the anchor, to actually reach its `frob:invariant`-anchored symbol -- a name-match-only existence check proves nothing about which invariant a test covers; see "INV005 (T-0543)" below |
 | DEC001 | decisions | a `frob:decision AD-###` edge points at a record that does not exist (opt-in: a `decisions/` dir must exist) |
 | DEC002 | decisions | an `accepted` decision record has no `frob:decision` code anchor |
 | TEST001 | test | public function/method has no `frob:tests` unit edge |
@@ -954,6 +955,30 @@ and `docs/strata` that assert real behavior with no invariant bound at
 all yet; each needs individual triage (bind a real invariant, reword, or
 waive with a specific reason) rather than a blanket disposition -- tracked
 as a further follow-up ticket rather than hand-closed in this pass.
+
+### INV005 (T-0543)
+
+<!-- frob:describes src/frob/gates/__init__.py::_invariant_evidence_proves_anchor -->
+<!-- frob:describes src/frob/gates/__init__.py::_evidence_binds_to_symrefs -->
+
+INV001 only asks whether an invariant's evidence list contains AT LEAST
+ONE item that resolves to a collected test node id (or a loaded policy
+rule id) -- existence, not proof: `def test_x(): pass`, bound to nothing,
+anywhere in the repo, cleared it. INV005 is the same remedy family as
+COV006/D-02's `evidence_covers_scope`: when the invariant HAS a
+`frob:invariant` anchor, and evidence collected but NONE of it is shown to
+actually bind to that anchor (a `frob:tests` edge either direction, or the
+evidence test living in the same file as the anchor), INV005 fires.
+
+Deliberately `Severity.WARN`, not a tightened INV001: this repo's own
+`invariants/` directory already has evidence entries written before any
+edge/same-file binding convention existed (17 invariants at the time this
+gate was added), and forcing them all through a binding-proof pass in one
+ticket was out of budget -- the same "large, needs its own dedicated
+follow-up" shape as the parallel B1 (TEST001 real-coverage) and B2
+(DRIFT001 body facet) gates-accounting findings. INV001/INV002 keep their
+prior ERROR semantics unchanged; INV005 is the loud-but-non-blocking nudge
+toward a real binding for anything NEW.
 
 ## Policy rules (`frob.toml`, `[policy]`)
 
