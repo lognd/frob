@@ -34333,6 +34333,216 @@ errors -> 0. Landed via file-copy (tickets.md merge tangled -- recovered a
 mis-copy that briefly reverted T-0377/drainer, restored from HEAD, no loss).
 Residuals filed: T-0433 (G6/G7), T-0434 (G4/G9 in frob.lang).
 
+<!-- ticket:T-0403 -->
+```yaml
+id: T-0403
+title: 'AUDIT: accounting gates verify truth not existence (docs/audits/gates-accounting.md)'
+state: done
+kind: bug
+origin: human
+created: '2026-07-20'
+priority: medium
+blocked_by: []
+parent: T-0397
+scope:
+- src/frob/gates/
+- src/frob/graph/
+- tests/test_gates.py
+scope_changes:
+- op: add
+  glob: tests/test_gates.py
+  reason: unit tests for TEST006/REL001 fixes made by this audit ticket
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_gates.py::TestTestGate::test_test006_stale_on_new_file_not_in_stamp
+- tests/test_gates.py::TestTestGate::test_changelog_mentions_rejects_substring_in_prose
+- tests/test_gates.py::TestTestGate::test_changelog_mentions_accepts_real_heading_entry
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+See docs/audits/gates-accounting.md. HIGH: the one blocking per-symbol test gate clears on a vacuous name-matching test while TEST002/005 are non-blocking WARN; DRIFT001 default sig facet is blind to body/behavior rewrites so a documented lie passes; TS/C/C++ frob:tests edges require NO execution evidence. Plus: coverage/stamp/baseline/prework chain is gitignored-local so CI cannot trust it. RIGHT-WAY fix: strengthen test-presence to reject vacuous tests + make it blocking; DRIFT over body/doc facets not just sig; execution evidence for non-Python; make CI-critical signals trackable. Then re-audit until empty. MED/LOW in the doc.
+
+## Done report
+
+Audit docs/audits/gates-accounting.md worked finding-by-finding, verify-first / counterexample-first.
+Two findings fixed with real code + tests (B14, B15). One finding (B13) dispositioned as
+correct-by-design per the audit's own note -- no fix, no follow-up needed. The remaining
+11 findings (B1-B12 except B13) are genuine, HIGH/MEDIUM/LOW, but each requires a
+cross-cutting design change (severity promotion campaigns, digest-facet redesign, new
+collectors, waiver-model changes) too large for this ticket's budget -- filed as
+follow-up tickets under this ticket's parent, each carrying the finding text, repro, and
+a RIGHT-WAY fix direction, per the dispatch's explicit "file a follow-up rather than
+rushing" instruction.
+
+Disposition table:
+- B1  (HIGH)   TEST001 vacuous-test credit, TEST002/005 non-blocking -- FOLLOW-UP (too large): T-draft-45d2f71f
+- B2  (HIGH)   DRIFT001 default sig facet blind to behavior       -- FOLLOW-UP (too large): T-draft-b3811054
+- B3  (HIGH)   native TS/C/C++ frob:tests need no execution        -- FOLLOW-UP (too large, overlaps T-0404#1): T-draft-772cc4a3
+- B4  (MEDIUM) TEST005 skips symbols absent from coverage.xml      -- FOLLOW-UP: T-draft-da68edb5
+- B5  (MEDIUM) coverage/baseline/prework chain gitignored, untrusted -- FOLLOW-UP: T-draft-30bed097
+- B6  (MEDIUM) name-only convention match credits wrong symbol      -- FOLLOW-UP: T-draft-35fbff4e
+- B7  (MEDIUM) parametrized no-op tests inflate case counts         -- FOLLOW-UP: T-draft-612af618
+- B8  (MEDIUM) COV002/SCOPE001/bare-TODO fail open on empty diff    -- FOLLOW-UP: T-draft-64eacee1
+- B9  (MEDIUM) SCOPE001/PRE001 disabled with no active ticket       -- FOLLOW-UP: T-draft-1374d550
+- B10 (MEDIUM) COV002 satisfied by ANY open ticket's broad scope    -- FOLLOW-UP: T-draft-15c96f2d
+- B11 (MEDIUM) file-level waiver blanket-suppresses whole file      -- FOLLOW-UP: T-draft-7ee4ed63
+- B12 (MEDIUM) INV001 evidence is existence not proof               -- FOLLOW-UP: T-draft-1bbab126
+- B13 (LOW)    WAIVE002 doesn't flag a waiver on a real-but-non-firing rule -- VERIFIED CORRECT BY DESIGN
+              per the audit's own note ("which is correct-by-design"); no fix, no ticket.
+- B14 (LOW)    REL001 changelog check passes on ANY substring occurrence of the version --
+              FIXED: _changelog_mentions now requires the version, bounded against
+              adjacent digits/dots, to appear on a markdown HEADING line
+              (gates/__init__.py:_changelog_mentions). Verified the OLD behavior first:
+              a CHANGELOG.md with only "## [1.2.34] ... bumped past 1.2.3" used to satisfy
+              _changelog_mentions(root, "1.2.3") via bare substring match -- now returns
+              False; a real "## [1.2.3]" heading still returns True.
+- B15 (LOW)    TEST006 staleness misses newly ADDED files (stamped_hashes.get(path) is None
+              -> silently skipped, not flagged) -- FIXED: _test006_stale now treats a
+              present-in-snapshot, absent-from-stamp source file as stale, scoped to the
+              same _SOURCE_EXTS set the coverage stamper itself hashes (so doc/.strata
+              files the graph also tracks, but the stamper never did, are not
+              misreported).
+
+Section (A)/(D) framing and (C) soundness notes in the audit were read but are not
+independently-actionable findings -- no disposition row needed for them.
+
+### Changed
+```
+ src/frob/gates/__init__.py | 54 ++++++++++++++++++++++++++++++++++++++++++----
+ tests/test_gates.py        | 53 +++++++++++++++++++++++++++++++++++++++++++++
+ tickets.md                 | 11 +++++++---
+ 3 files changed, 111 insertions(+), 7 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestTestGate::test_test006_stale_on_new_file_not_in_stamp` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTestGate::test_changelog_mentions_rejects_substring_in_prose` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTestGate::test_changelog_mentions_accepts_real_heading_entry` (pytest node id, verified passing when recorded)
+
+<!-- ticket:T-0404 -->
+```yaml
+id: T-0404
+title: 'AUDIT: polyglot enforcement + fail-closed parsing/docs (docs/audits/lang-check-docs.md)'
+state: done
+kind: bug
+origin: human
+created: '2026-07-20'
+priority: medium
+blocked_by: []
+parent: T-0397
+scope:
+- src/frob/lang/
+- src/frob/check/
+- src/frob/gates/
+- tests/test_gates.py
+- tests/unit/test_check.py
+- tests/unit/test_check_tool_unavailable.py
+scope_changes:
+- op: add
+  glob: tests/test_gates.py
+  reason: unit tests for DSL001/vitest-warn/detect_project_type fixes made by this
+    audit ticket
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_check.py
+  reason: unit tests for DSL001/vitest-warn/detect_project_type fixes made by this
+    audit ticket
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_check_tool_unavailable.py
+  reason: unit tests for DSL001/vitest-warn/detect_project_type fixes made by this
+    audit ticket
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_gates.py::TestDsl001::test_malformed_frob_doc_directive_flagged
+- tests/test_gates.py::TestDsl001::test_waive_reason_and_tests_kind_not_double_flagged
+- tests/unit/test_check_tool_unavailable.py::TestVitestUnverifiedZeroExit::test_run_vitest_warns_on_unparseable_zero_exit
+- tests/unit/test_check.py::TestDetectProjectType::test_package_json_alone_is_typescript
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+See docs/audits/lang-check-docs.md. HIGH: doc/coverage/drift/inv gates run ONLY in the Python pipeline -- a Rust/C++/TS repo gets ZERO COV/DOC/DRIFT despite the polyglot promise; parse/IO failure silently erases a files whole obligation set (gates pass vacuously); COV001 is WARN-only. RIGHT-WAY fix: run the accounting gates across ALL language pipelines; fail-closed + loud on parse/IO failure (never empty-as-clean); decide COV001 severity. Then re-audit until empty. MED/LOW in the doc.
+
+## Done report
+
+Audit docs/audits/lang-check-docs.md worked finding-by-finding, verify-first / counterexample-first.
+Three findings fixed with real code + tests (5, 10, 11). Finding 12 verified correct as-is (no
+fix needed). Finding 3 verified already-fixed for THIS repo via frob.toml [gates.severity]
+config (COV001 promoted to error), though the underlying gate-code default severity is still
+WARN by design for repos without that override -- not a code bug here. The remaining findings
+(1, 2, 4, 6, 7, 8, 9) are real but each needs a cross-cutting design change (dispatch
+architecture, a new PARSE001 gate, doc-walk unification) too large for this ticket's budget, or
+sit outside T-0404's declared scope (graph/) -- filed as follow-ups, each carrying the finding
+text, repro, and RIGHT-WAY fix direction.
+
+Disposition table:
+- #1  (HIGH)   doc/coverage/drift/inv gates run ONLY in the Python pipeline -- FOLLOW-UP (too large): T-draft-8a073c15
+- #2  (HIGH)   parse/IO failure silently erases a file's obligation set    -- FOLLOW-UP (out of T-0404 scope, graph/): T-draft-ed8f5ca3
+- #3  (HIGH/MEDIUM) COV001 is WARN-only                                    -- VERIFIED already-fixed-by config for this repo:
+              frob.toml [gates.severity] COV001 = "error" (the run this
+              session stamped shows "severity overrides active:
+              {'COV001': ERROR, 'TEST001': ERROR, ...}"). The gate's own
+              code-level default remains WARN by design (documented as
+              the "legacy-adoption baseline" for repos without the
+              override) -- not a bug in this codebase's own posture,
+              no fix needed here.
+- #4  (MEDIUM) DRIFT is one-directional (doc-edit-to-lie never trips)      -- DUPLICATE of T-0403 B2
+              (same root cause, DRIFT001 default sig facet); tracked
+              there as T-draft-b3811054, not re-filed here.
+- #5  (MEDIUM) malformed frob:doc directives silently downgraded          -- FIXED: new DSL001
+              catch-all gate (gates/__init__.py::_dsl001_violations) fires
+              on any MalformedDirective not already claimed by
+              WAIVE001/TEST010/DEBT001. Verified the OLD behavior first: a
+              bare `# frob:doc` (no target) produced zero violations before
+              this change.
+- #6  (MEDIUM) unknown project type silently runs the Python pipeline     -- FOLLOW-UP: T-draft-3177db00
+- #7  (MEDIUM) nested/top-level-less native sources escape detection      -- FOLLOW-UP: T-draft-68268ec3
+- #8  (MEDIUM) frob:describes anchors outside docs/ are invisible         -- FOLLOW-UP (out of T-0404 scope, graph/): T-draft-2d709aeb
+- #9  (MEDIUM) weak parse-failure threshold drops symbols in error regions -- FOLLOW-UP: T-draft-934fdd62
+- #10 (LOW)    vitest non-JSON zero-exit reported as a clean pass         -- FIXED: _run_vitest
+              (check/_ts.py) now attaches a WARNING diagnostic when tests
+              is empty and returncode is 0, instead of a bare "tests
+              passed" summary with zero diagnostics.
+- #11 (LOW)    detect_project_type vs _detected_types disagree on what    -- FIXED: detect_project_type
+              counts as a TypeScript repo                                    now requires only package.json,
+              matching _detected_types' own contract (dropped the extra
+              tsconfig.json requirement).
+- #12 (LOW)    gate-internal exception could be silently swallowed        -- VERIFIED CORRECT: `future.result()`
+              at __init__.py:6489/6530 re-raises; an uncaught gate
+              exception propagates and aborts the run loudly, it is not
+              dropped. No fix needed.
+
+Section (A)/(D) framing and (C) soundness notes in the audit were read but are not
+independently-actionable findings -- no disposition row needed for them.
+
+### Changed
+```
+ src/frob/check/__init__.py                |  14 +-
+ src/frob/check/_ts.py                     |  30 ++-
+ src/frob/gates/__init__.py                | 101 +++++++-
+ tests/test_gates.py                       |  91 +++++++
+ tests/unit/test_check.py                  |  10 +
+ tests/unit/test_check_tool_unavailable.py |  27 +++
+ tickets.md                                | 379 +++++++++++++++++++++++++++++-
+ 7 files changed, 636 insertions(+), 16 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestDsl001::test_malformed_frob_doc_directive_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDsl001::test_waive_reason_and_tests_kind_not_double_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check_tool_unavailable.py::TestVitestUnverifiedZeroExit::test_run_vitest_warns_on_unparseable_zero_exit` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDetectProjectType::test_package_json_alone_is_typescript` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0409 -->
 ```yaml
 id: T-0409
@@ -46238,3 +46448,534 @@ errors (COV: 0 errors, 3 warnings, 72 waived).
 - `tests/test_gates.py::TestCoverageGate::test_cov005_directive_rebound_to_private_symbol_flags` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestCoverageGate::test_cov005_same_symbol_no_rebind_is_clean` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestCoverageGate::test_cov005_no_old_blob_is_clean` (pytest node id, verified passing when recorded)
+
+<!-- ticket:T-0536 -->
+```yaml
+id: T-0536
+title: Retag/rebind 3 residual COV006 findings after T-0528 calibration (genuinely
+  wrong bindings, not blindness)
+state: done
+kind: bug
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- tests/test_graph.py
+- tests/unit/strata/test_selfconform.py
+- tests/system/test_cli_ticket_land.py
+- Makefile
+- docs/modules/testing.md
+- src/frob/gates/__init__.py
+- tests/test_coverage.py
+- tests/test_gates_tick005.py
+- tests/test_ticket_land.py
+scope_changes:
+- op: add
+  glob: Makefile
+  reason: 'SCOPE001 collision: T-0538/T-0537''s own already-closed changes are still
+    in this worktree''s uncommitted-vs-main diff (sequential tickets, one worktree);
+    not new edits by T-0536 itself'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/testing.md
+  reason: 'SCOPE001 collision: T-0538/T-0537''s own already-closed changes are still
+    in this worktree''s uncommitted-vs-main diff (sequential tickets, one worktree);
+    not new edits by T-0536 itself'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'SCOPE001 collision: T-0538/T-0537''s own already-closed changes are still
+    in this worktree''s uncommitted-vs-main diff (sequential tickets, one worktree);
+    not new edits by T-0536 itself'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_coverage.py
+  reason: 'SCOPE001 collision: T-0538/T-0537''s own already-closed changes are still
+    in this worktree''s uncommitted-vs-main diff (sequential tickets, one worktree);
+    not new edits by T-0536 itself'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_gates_tick005.py
+  reason: 'SCOPE001 collision: T-0538/T-0537''s own already-closed changes are still
+    in this worktree''s uncommitted-vs-main diff (sequential tickets, one worktree);
+    not new edits by T-0536 itself'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'SCOPE001 collision: T-0538/T-0537''s own already-closed changes are still
+    in this worktree''s uncommitted-vs-main diff (sequential tickets, one worktree);
+    not new edits by T-0536 itself'
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_graph.py::TestBuildIncremental::test_fingerprint_packages_derived_from_lang_registry
+- tests/unit/strata/test_selfconform.py::TestLanguageCoverageDriftLock::test_scanned_languages_equals_registry_languages
+- tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0528's COV006 calibration pass fixed 54/57 dogfooded findings via checker-side rescues (implicit dunder/validator dispatch, transitive 3+-file import chains, kind=integration/e2e exemption, non-python target exemption). 3 residual findings could not be fixed from src/frob/gates/__init__.py alone -- scope=[docs/modules/gates.md, src/frob/gates/__init__.py] does not cover the test files that need editing:
+
+1. tests/test_graph.py::TestBuildIncremental.test_fingerprint_packages_derived_from_lang_registry -> src/frob/graph/cache.py::_compute_fingerprint -- GENUINELY WRONG BINDING: the test only asserts GRAMMAR_FINGERPRINT_PACKAGES <= set(graph_cache._FINGERPRINT_PACKAGES), never calling _compute_fingerprint at all. Same shape as the T-0516 file-level waiver already on tests/test_gates.py (module-constant drift lock, not a call). Fix: either rebind the frob:tests directive to whatever symbol actually computes/owns _FINGERPRINT_PACKAGES, or add a frob:waive COV006 with the real reason (constant drift-lock, no call to bind against).
+
+2. tests/unit/strata/test_selfconform.py::TestLanguageCoverageDriftLock.test_scanned_languages_equals_registry_languages -> src/frob/strata/_selfconform.py::_sorted_capability_files -- same shape: asserts set membership over module constants, never calls _sorted_capability_files.
+
+3. tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock.test_extended_kinds_is_disjoint_from_kind_map -> src/frob/strata/_selfconform.py::_observed_extended_kinds_by_node -- same shape: asserts _EXTENDED_KINDS.isdisjoint(_KIND_MAP.keys()) and a union equality, never calls _observed_extended_kinds_by_node.
+
+Also noted during T-0528: frob.graph.callgraph's build_call_graph resolves privacy via _short_name(qualname).startswith('_') -- a PYTHON-only naming convention. Rust's fn/pub fn convention has no such marker, so every rust callee looks 'public' to it and is silently never recorded as a private edge (this is what made all 7 frob-core/src/lib.rs COV006 findings structurally invisible before T-0528 added a non-python-target exemption to COV006 itself as a stopgap). A real fix belongs in frob.graph.callgraph (out of COV006's scope): add real per-language privacy resolution (e.g. consult RawSymbol.public directly instead of re-deriving it from the qualname's leading underscore) so Rust/other non-python languages get real call-graph edges instead of being permanently exempted from this class of check.
+
+## Done report
+
+All 3 residual COV006 findings from T-0528's calibration pass were
+genuinely wrong bindings in the sense the ticket described (asserts a
+module-level constant's set membership/equality, never calls the bound
+private symbol) -- but retargeting the `frob:tests` directive straight at
+the constant (the ticket's first suggested fix) does not work in
+practice: tried it for all three, and `frob check`'s DRIFT002 then
+reports the ref as unresolvable, because a bare module-level assignment
+(`_FINGERPRINT_PACKAGES`, `SCANNED_LANGUAGES`, `_EXTENDED_KINDS`) is not a
+graph node `frob ack` can bind against -- trading COV006 for DRIFT002.
+Used the ticket's second suggested fix instead: `frob:waive COV006` with
+the same module-constant-drift-lock reasoning T-0516's precedent
+(tests/test_gates.py) already established, on each of the 3 tests, kept
+the original (pre-existing, if slightly imprecise) `frob:tests` bindings
+unchanged.
+
+Verified `uv run frob check` (repo-wide, not just `--ticket`): `gate:COV
+0 errors, 0 warnings, 75 waived` -- COV006 unwaived = 0 repo-wide, the
+ticket's stated target.
+
+### Changed
+```
+ Makefile                              |  29 +++++
+ docs/modules/testing.md               |  11 ++
+ src/frob/gates/__init__.py            | 110 ++++++++++++++++-
+ tests/test_coverage.py                |  65 +++++++++-
+ tests/test_gates_tick005.py           | 218 ++++++++++++++++++++++++++++++++++
+ tests/test_graph.py                   |  11 ++
+ tests/test_ticket_land.py             |  35 ++++++
+ tests/unit/strata/test_selfconform.py |  18 +++
+ tickets.md                            | 171 ++++++++++++++++++++++++--
+ 9 files changed, 656 insertions(+), 12 deletions(-)
+```
+
+### Evidence
+- `tests/test_graph.py::TestBuildIncremental::test_fingerprint_packages_derived_from_lang_registry` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestLanguageCoverageDriftLock::test_scanned_languages_equals_registry_languages` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map` (pytest node id, verified passing when recorded)
+
+<!-- ticket:T-0537 -->
+```yaml
+id: T-0537
+title: 'ledger merge: terminal->non-terminal state regression guard (splice + post-merge
+  lint) -- manual conflict resolution resurrected 7 closed tickets'
+state: done
+kind: bug
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/_land.py
+- src/frob/tickets/__init__.py
+- src/frob/gates/__init__.py
+- tests/**
+- Makefile
+- docs/modules/testing.md
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: 'declare scope from ticket prose (Scope: _land.py, tickets/__init__.py,
+    gates/__init__.py, tests)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/tickets/__init__.py
+  reason: 'declare scope from ticket prose (Scope: _land.py, tickets/__init__.py,
+    gates/__init__.py, tests)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'declare scope from ticket prose (Scope: _land.py, tickets/__init__.py,
+    gates/__init__.py, tests)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/**
+  reason: 'declare scope from ticket prose (Scope: _land.py, tickets/__init__.py,
+    gates/__init__.py, tests)'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: Makefile
+  reason: 'SCOPE001 collision: T-0538''s own already-closed changes are still in this
+    worktree''s uncommitted-vs-main diff (sequential tickets, one worktree); not new
+    edits by T-0537 itself'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/testing.md
+  reason: 'SCOPE001 collision: T-0538''s own already-closed changes are still in this
+    worktree''s uncommitted-vs-main diff (sequential tickets, one worktree); not new
+    edits by T-0537 itself'
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_hand_resolved_conflict_resurrecting_done_ticket_is_flagged
+- tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_forward_progress_across_a_merge_is_clean
+- tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_non_merge_commit_never_checked
+- tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_archived_ticket_is_not_flagged
+- tests/test_ticket_land.py::TestSpliceOnlyTicket::test_whole_ledger_splice_never_regresses_a_sibling_from_done
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Incident (2026-07-22): the COV-finish branch hit a tickets.md conflict mid-flight, resolved it manually, and its land carried stale queued states for 7 tickets main had already closed (T-0454/T-0498/T-0500/T-0514/T-0520/T-0526/T-0527); coordinator restored from the pre-merge ledger. T-0479's own-block splice protects frob ticket land, and T-0505 protects CLI writes, but a raw git merge with hand-resolved conflicts bypasses both. Fix: (1) splice_ledger/merge-driver must never move a ticket from done/dropped to an earlier state unless the landing ticket IS that ticket; (2) a cheap post-merge lint (tickets gate) that diffs states vs the merge's first parent and errors on terminal->non-terminal transitions outside the landed ticket. Scope: src/frob/tickets/_land.py, src/frob/tickets/__init__.py, src/frob/gates/__init__.py, tests.
+
+## Done report
+
+Incident: a `tickets.md` conflict resolved by hand (the merge driver not
+invoked, or its own hunk shape declined) can keep stale non-terminal
+states for tickets main had already closed -- the real T-0537 7-ticket
+resurrection.
+
+(a) Investigated `splice_ledger`/`_splice_only_ticket`'s existing
+`_newer` state-rank tiebreak (terminal states rank highest) and confirmed
+it already makes a terminal->non-terminal regression structurally
+impossible for anything that goes THROUGH the splice, whether the
+whole-ledger merge (`frob ticket merge-driver`) or the ticket-scoped
+splice `frob ticket land` uses. Added a new regression-lock test
+(`TestSpliceOnlyTicket::test_whole_ledger_splice_never_regresses_a_sibling_from_done`)
+proving this holds today, rather than introducing a second, redundant
+guard. Did NOT add a "landing ticket" exception to
+`_splice_only_ticket` after prototyping one and finding it broke an
+existing regression test (`TestCloseFailAfterMerge`) that depends on the
+SAME landing-ticket id race being caught, not bypassed -- disclosed here
+rather than silently dropped from the ticket's stated plan.
+
+(b) New TICK005 gate (`src/frob/gates/__init__.py`): after a genuine
+two-parent merge commit, diffs the current ledger against the merge's
+FIRST parent's tickets.md and ERRORs on any ticket that was DONE/DROPPED
+there but is neither DONE nor DROPPED (nor archived) now -- this is the
+part that actually catches the incident, since it inspects git history
+directly and does not depend on which mechanism (or lack of one)
+resolved the conflict. Non-vacuous fixture
+(tests/test_gates_tick005.py) reproduces the exact incident shape: a
+real two-parent merge commit (built via `commit-tree` for a
+deterministic "which side won" outcome) whose tree keeps the stale
+queued state for a ticket done on the other parent.
+
+Verified: `uv run pytest tests/test_gates_tick005.py tests/test_ticket_land.py`
+(53 passed), `uv run ruff check`/`ruff format --check`/`uv run ty check`
+on the touched files (all clean), `uv run frob check --ticket T-0537`
+(0 errors, all gates pass).
+
+### Changed
+```
+ Makefile                    |  29 ++++++
+ docs/modules/testing.md     |  11 +++
+ src/frob/gates/__init__.py  | 110 +++++++++++++++++++++-
+ tests/test_coverage.py      |  65 ++++++++++++-
+ tests/test_gates_tick005.py | 218 ++++++++++++++++++++++++++++++++++++++++++++
+ tests/test_ticket_land.py   |  35 +++++++
+ tickets.md                  |  58 +++++++++++-
+ 7 files changed, 518 insertions(+), 8 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_hand_resolved_conflict_resurrecting_done_ticket_is_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_forward_progress_across_a_merge_is_clean` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_non_merge_commit_never_checked` (pytest node id, verified passing when recorded)
+- `tests/test_gates_tick005.py::TestTick005MergeStateRegression::test_archived_ticket_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestSpliceOnlyTicket::test_whole_ledger_splice_never_regresses_a_sibling_from_done` (pytest node id, verified passing when recorded)
+
+<!-- ticket:T-0538 -->
+```yaml
+id: T-0538
+title: make coverage clobbers maturin natives (uv sync) then fails on strata_core
+  imports -- guard the target
+state: done
+kind: bug
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- Makefile
+- docs/modules/testing.md
+- tests/test_coverage.py
+scope_changes:
+- op: add
+  glob: Makefile
+  reason: declare scope from ticket prose, needed to add Makefile-target dry-run test
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/testing.md
+  reason: declare scope from ticket prose, needed to add Makefile-target dry-run test
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_coverage.py
+  reason: declare scope from ticket prose, needed to add Makefile-target dry-run test
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_coverage.py::TestCoverageTargetNativesGuard::test_coverage_target_restores_and_verifies_natives_before_pytest
+- tests/test_coverage.py::TestCoverageTargetNativesGuard::test_coverage_fast_incremental_branch_restores_and_verifies_natives
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Incident (2026-07-22): make coverage removed the editable strata_core/frob_core natives mid-run (the known uv-sync clobber, same family as the uv build --wheel gotcha), then died collecting tests/system/test_frob_self_model.py and left 44 phantom errors in frob check (SYS004 native-missing, 16 COV003 unresolvable kernel-property evidence, DRIFT fallout) until make core was re-run. Fix: the coverage target must either pin/exclude the natives from sync or run make core (cheap no-op when fresh) before pytest, and frob doctor's native check should run first so the failure is one clear line. Scope: Makefile, docs/modules/testing.md.
+
+## Done report
+
+`make coverage`/`make coverage-fast` both depend on `$(STAMP)` (`uv sync`),
+which reconciles the venv against only the declared dependency set and
+silently removes the editable `strata_core`/`frob_core` natives `make
+core` installed. Both targets now run `make core` (restore) then
+`uv run frob doctor` (verify, exit 1 with one clear line if a native is
+still missing, e.g. no Rust toolchain) before pytest ever collects.
+`coverage-fast`'s incremental (non-fallback) branch got the same guard
+since it shares the `$(STAMP)` dependency and does not always route
+through `coverage:`'s own guard.
+
+Verified via `make -n coverage` / `make -n coverage-fast` dry-runs (no
+recipe line executed) confirming `make core` then `frob doctor` precede
+the pytest invocation in both targets, plus a real `uv run frob doctor`
+run against the now-built natives. Did NOT run the full `make coverage`
+cycle per playbook 6b.
+
+### Changed
+```
+ Makefile                | 29 ++++++++++++++++++++++
+ docs/modules/testing.md | 11 +++++++++
+ tests/test_coverage.py  | 65 ++++++++++++++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 104 insertions(+), 1 deletion(-)
+```
+
+### Evidence
+- `tests/test_coverage.py::TestCoverageTargetNativesGuard::test_coverage_target_restores_and_verifies_natives_before_pytest` (pytest node id, verified passing when recorded)
+- `tests/test_coverage.py::TestCoverageTargetNativesGuard::test_coverage_fast_incremental_branch_restores_and_verifies_natives` (pytest node id, verified passing when recorded)
+
+<!-- ticket:T-0539 -->
+```yaml
+id: T-0539
+title: PII011/PII012 warn-pool calibration + burndown (336 findings)
+state: done
+kind: bug
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/_pii_structural.py
+- src/frob/vet/_capability.py
+- tests/test_pii_structural_gate.py
+- tickets.md
+- tests/integration/test_gitlog.py
+- tests/integration/test_interfaces.py
+- tests/system/test_cli_gitlog.py
+- tests/unit/test_app_runners.py
+- tests/unit/test_app_runners_batch5.py
+- tests/unit/test_gitlog.py
+- pyproject.toml
+- .frob-release.json
+- uv.lock
+scope_changes:
+- op: add
+  glob: tests/integration/test_gitlog.py
+  reason: PII011's remaining 9 non-reserved-domain fixture emails (after RFC2606 calibration
+    covered 57/66) needed a frob:secret-fake marker at their exact sites in these
+    6 test files -- not knowable until the calibrated check ran
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/integration/test_interfaces.py
+  reason: PII011's remaining 9 non-reserved-domain fixture emails (after RFC2606 calibration
+    covered 57/66) needed a frob:secret-fake marker at their exact sites in these
+    6 test files -- not knowable until the calibrated check ran
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/system/test_cli_gitlog.py
+  reason: PII011's remaining 9 non-reserved-domain fixture emails (after RFC2606 calibration
+    covered 57/66) needed a frob:secret-fake marker at their exact sites in these
+    6 test files -- not knowable until the calibrated check ran
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_app_runners.py
+  reason: PII011's remaining 9 non-reserved-domain fixture emails (after RFC2606 calibration
+    covered 57/66) needed a frob:secret-fake marker at their exact sites in these
+    6 test files -- not knowable until the calibrated check ran
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_app_runners_batch5.py
+  reason: PII011's remaining 9 non-reserved-domain fixture emails (after RFC2606 calibration
+    covered 57/66) needed a frob:secret-fake marker at their exact sites in these
+    6 test files -- not knowable until the calibrated check ran
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_gitlog.py
+  reason: PII011's remaining 9 non-reserved-domain fixture emails (after RFC2606 calibration
+    covered 57/66) needed a frob:secret-fake marker at their exact sites in these
+    6 test files -- not knowable until the calibrated check ran
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: is_self_pattern_path gained a new suffixes parameter (T-0539 reuse) -- REL001
+    requires a version bump + release stamp for the public API change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: is_self_pattern_path gained a new suffixes parameter (T-0539 reuse) -- REL001
+    requires a version bump + release stamp for the public API change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: uv.lock's frob package version entry auto-synced with pyproject.toml's 0.59.0
+    bump (REL001)
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_pii_structural_gate.py::TestReservedTestDomainEmails::test_example_com_does_not_fire
+- tests/test_pii_structural_gate.py::TestReservedTestDomainEmails::test_lookalike_non_reserved_domain_still_fires
+- tests/test_pii_structural_gate.py::TestKeywordSweep::test_frob_directive_comment_does_not_fire
+- tests/test_pii_structural_gate.py::TestKeywordSweep::test_ordinary_comment_mentioning_secret_still_fires
+- tests/test_pii_structural_gate.py::TestGateIsGreenOnItself::test_corpus_detector_files_produce_no_finding[src/frob/gates/_secrets.py]
+- tests/test_pii_structural_gate.py::TestGateIsGreenOnItself::test_own_module_source_produces_no_self_finding
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+## Description
+
+The pii_structural gate (PII010/PII011/PII012/SEC110) currently carries
+~336 warn-pool findings, mostly PII012 (identifier/comment keyword-sweep
+suggestions) and PII011 (email-shape), plus a few PII010. Frob is a
+static-analysis tool: its own detector sources, pattern tables, registry
+corpora, and test fixtures legitimately contain PII-keyword text, which is
+expected to dominate the pool -- the same self-match class T-0253's
+scan-evasion discriminator (`is_self_pattern_path` in
+`src/frob/vet/_capability.py`) already solved for SYS100.
+
+## Plan
+
+1. Bucket the 336 findings by file+rule (`frob check --only pii_structural`
+   output) and report the histogram.
+2. Calibrate: extend/reuse `is_self_pattern_path`'s discriminator machinery
+   (root-identity-gated path-suffix exclusion) to cover
+   `_pii_structural.py` itself plus any other dominant detector-definition/
+   corpus/fixture false-positive shape found in the histogram -- no second
+   implementation of the self-match discriminator.
+3. Burn down genuine residual findings: real hits get fixed/annotated in
+   code; true-but-intended hits get a `frob:waive` with a specific reason.
+   Target 0 unwaived PII011/PII012, or file a follow-up ticket with exact
+   counts if the honest remainder exceeds this ticket's budget.
+
+## Done report
+
+Before: `frob check --only pii_structural --json` -- 350 raw diagnostics
+(PII012=269, PII011=66, SEC110=11, PII010=4), all 4 PII010 already fully
+waived, so unwaived starting point was PII012=269, PII011=66.
+
+Calibration (non-vacuous -- an ordinary keyword hit in application code
+still fires):
+
+1. Reused T-0253's `is_self_pattern_path` discriminator (root-identity
+   gate + path-suffix match) from `frob.vet._capability`, adding a
+   `suffixes` parameter so `frob.gates._pii_structural` can pass its OWN
+   suffix list (`_PII_SELF_PATTERN_SUFFIXES`) through the SAME machinery
+   rather than re-deriving it. Excludes this gate's own module, the
+   sibling secrets/fingerprint detector sources, and those detectors'
+   dedicated test/fixture files.
+2. RFC 2606 reserved-domain exclusion for PII011
+   (`_is_reserved_test_domain_email`): an email literal at
+   `example.com`/`.net`/`.org`/`.example` can never resolve to a real
+   person -- killed 57 of 66 PII011 findings outright.
+3. `frob:secret-fake` markers added to the remaining 9 PII011 sites
+   (synthetic git-identity fixtures in 6 test files, none RFC-2606-
+   reserved) -- PII011 now 0.
+4. `# frob:*` directive comments excluded from the PII012 comment sweep
+   (`_FROB_DIRECTIVE_RE`): the `frob:secret-fake` marker itself contains
+   the word "secret", which was self-triggering PII012 on the very
+   comment meant to discharge PII011.
+
+After: PII011 = 0 (was 66). PII010 = 0 unwaived (was already 0 unwaived,
+3 pre-existing waives untouched). PII012 = 102 unwaived (was 269),
+dominated by "token" (67, overwhelmingly a lexer/parse token, not an auth
+token) and "secret" (21, overwhelmingly this codebase's own
+std.secrets-declaration concept) spread across ~50 ordinary application
+files, none over 11 hits. SEC110 untouched (out of this ticket's scope;
+1 unwaived, 10 pre-existing waives).
+
+Filed T-draft-4a78008a for the PII012 residual (exact per-keyword/
+per-file counts recorded in its Description) rather than hand-waiving
+~50 scattered single-line WARN/advisory findings within this ticket's
+budget -- PII012 is deliberately suggestion-severity, never gating, per
+its own module docstring ("no hard fail on names alone").
+
+Changed:
+- src/frob/gates/_pii_structural.py (`_is_pii_self_pattern_file`,
+  `_PII_SELF_PATTERN_SUFFIXES`, `_is_reserved_test_domain_email`,
+  `_RFC2606_RESERVED_EMAIL_DOMAINS`, `_FROB_DIRECTIVE_RE`, wired into
+  `pii_structural_gate`/`_scan_python_email_values`/
+  `_scan_comment_keywords`)
+- src/frob/vet/_capability.py (`is_self_pattern_path` gained a
+  `suffixes` parameter, default-compatible)
+- tests/test_pii_structural_gate.py (TestReservedTestDomainEmails,
+  TestKeywordSweep additions, TestGateIsGreenOnItself corpus-file
+  parametrization)
+- 6 test fixture files: `frob:secret-fake` markers on 9 sites
+  (tests/integration/test_gitlog.py, tests/integration/test_interfaces.py,
+  tests/system/test_cli_gitlog.py, tests/unit/test_app_runners.py,
+  tests/unit/test_app_runners_batch5.py, tests/unit/test_gitlog.py)
+- pyproject.toml/.frob-release.json/uv.lock: version 0.58.0 -> 0.59.0
+  (REL001, `is_self_pattern_path` public API change)
+
+Evidence: 99/99 tests/test_pii_structural_gate.py pass; recorded node
+ids (TestReservedTestDomainEmails, TestKeywordSweep new cases,
+TestGateIsGreenOnItself corpus parametrization). tests/test_vet.py (145
+tests) and the 6 touched fixture test files all still pass.
+
+Gates: `frob check --ticket T-draft-eacc76c5` clean (0 errors), 155
+warnings/171 waived repo-wide unchanged in kind. `gate:PII` 0 errors, 102
+warnings, 3 waived.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_pii_structural_gate.py::TestReservedTestDomainEmails::test_example_com_does_not_fire` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestReservedTestDomainEmails::test_lookalike_non_reserved_domain_still_fires` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestKeywordSweep::test_frob_directive_comment_does_not_fire` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestKeywordSweep::test_ordinary_comment_mentioning_secret_still_fires` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestGateIsGreenOnItself::test_corpus_detector_files_produce_no_finding[src/frob/gates/_secrets.py]` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestGateIsGreenOnItself::test_own_module_source_produces_no_self_finding` (pytest node id, verified passing when recorded)
