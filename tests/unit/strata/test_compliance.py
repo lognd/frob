@@ -472,6 +472,55 @@ class TestRegulationCaughtByIntegrity:
         assert result.danger_ok == ()
 
 
+#: T-0383: same placeholder vocabulary `test_threat.py`'s exhaustive audit
+#: uses -- kept identical (not re-derived) so a "lazy caught_by" means the
+#: same thing across both the security (`OutOfScopeEntry`/
+#: `BenignCapability`) and compliance (`OutOfScopeRegulation`) families.
+_CAUGHT_BY_PLACEHOLDERS = frozenset(
+    {"none", "todo", "tbd", "n/a", "na", "fixme", "unknown", "?", ""}
+)
+
+
+class TestCaughtByAuditExhaustive:
+    """T-0383: audits EVERY built-in `OutOfScopeRegulation` this repo
+    ships (not a sample). Today there is exactly one
+    (`COMPLIANCE_OUT_OF_SCOPE`'s CCPA entry) -- the count assertion below
+    is the forcing function that re-triggers this audit the moment a
+    second one is added without a substantive `caught_by`."""
+
+    # frob:tests tests/unit/strata/test_compliance.py::TestCaughtByAuditExhaustive.test_every_shipped_entry_has_a_substantive_caught_by  # noqa: E501
+    def test_every_shipped_entry_has_a_substantive_caught_by(self):
+        from frob.strata._compliance import COMPLIANCE_OUT_OF_SCOPE
+
+        assert len(COMPLIANCE_OUT_OF_SCOPE) == 1
+        for entry in COMPLIANCE_OUT_OF_SCOPE:
+            normalized = entry.caught_by.strip().lower()
+            assert normalized not in _CAUGHT_BY_PLACEHOLDERS, (
+                f"{entry.id}: caught_by is a bare placeholder, not a "
+                f"substantive control reference: {entry.caught_by!r}"
+            )
+            if normalized.startswith("none"):
+                assert len(entry.caught_by.strip()) > len("none -- "), (
+                    f"{entry.id}: caught_by declares an unexplained "
+                    f"'none': {entry.caught_by!r}"
+                )
+
+    # frob:tests tests/unit/strata/test_compliance.py::TestCaughtByAuditExhaustive.test_every_shipped_entry_passes_real_production_verification  # noqa: E501
+    def test_every_shipped_entry_passes_real_production_verification(self):
+        # Same corpus, but through COMPLIANCE004 with the REAL live
+        # gate-rule-id set, proving the shipped entry passes the actual
+        # production verification path, not merely a permissive default.
+        from frob.gates import known_gate_rule_ids
+        from frob.strata._compliance import COMPLIANCE_OUT_OF_SCOPE
+
+        result = check_regulation_caught_by_integrity(
+            out_of_scope=COMPLIANCE_OUT_OF_SCOPE,
+            known_rule_ids=known_gate_rule_ids(),
+        )
+        assert result.is_ok
+        assert result.danger_ok == ()
+
+
 class TestEvaluateCompliance:
     # frob:tests src/frob/strata/_compliance.py::evaluate_compliance kind="unit"
     def test_conjunction_of_catalog_discharge_and_policy(self):

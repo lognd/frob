@@ -1860,6 +1860,99 @@ class TestCaughtByIntegrity:
         assert result.danger_ok == ()
 
 
+#: T-0383: every entry `caught_by` string a "placeholder/fabricated" audit
+#: must reject outright -- a bare marker with no compensating-control
+#: explanation at all. Real entries either name a control ("CWE-78 in
+#: CWE_CATALOG", "PII010", "frob vet's dependency-supply-chain scan") or
+#: an honest `"none -- <specific reason>"` (`CAUGHT_BY_NONE_MARKER` plus
+#: substance); this set is what a lazy/fabricated entry would look like
+#: instead, so this audit test can tell the two apart mechanically rather
+#: than by re-reading prose.
+_CAUGHT_BY_PLACEHOLDERS = frozenset(
+    {"none", "todo", "tbd", "n/a", "na", "fixme", "unknown", "?", ""}
+)
+
+
+class TestCaughtByAuditExhaustive:
+    """T-0383: audits EVERY built-in `OutOfScopeEntry`/`BenignCapability`
+    this repo ships (not a sample) -- proves each `caught_by` is either a
+    real, resolving compensating-control reference or a substantive,
+    reasoned `"none -- ..."` disclosure, never a bare/fabricated
+    placeholder, and locks the audited count so a future entry added
+    without populating `caught_by` (or with a lazy placeholder) fails this
+    test rather than going unnoticed."""
+
+    # frob:tests tests/unit/strata/test_threat.py::TestCaughtByAuditExhaustive.test_every_shipped_entry_has_a_substantive_caught_by  # noqa: E501
+    def test_every_shipped_entry_has_a_substantive_caught_by(self):
+        from frob.strata._host_isolation import COMPROMISED_OWNER_OUT_OF_SCOPE
+        from frob.strata._krb_movement import KRB_MOVEMENT_OUT_OF_SCOPE
+        from frob.strata._threat import DEFAULT_BENIGN_CAPABILITIES
+
+        all_out_of_scope = (
+            CWE_TOP_25_OUT_OF_SCOPE
+            + QUALITY_OUT_OF_SCOPE
+            + KRB_MOVEMENT_OUT_OF_SCOPE
+            + COMPROMISED_OWNER_OUT_OF_SCOPE
+        )
+        # Exhaustiveness lock: the audited universe is EXACTLY these two
+        # families' entries -- 21 OutOfScopeEntry (16 CWE_TOP_25 + 5
+        # QUALITY; the two krb/host-isolation tuples are empty by design)
+        # + 9 BenignCapability. A future add to any of these tuples that
+        # forgets `caught_by` still satisfies pydantic's `min_length=1`
+        # (whitespace aside) but would change this count -- bumping it is
+        # the forcing function that re-triggers this audit's placeholder
+        # scan below.
+        assert len(all_out_of_scope) == 21
+        assert len(DEFAULT_BENIGN_CAPABILITIES) == 9
+
+        for entry_id, caught_by in (
+            *((e.id, e.caught_by) for e in all_out_of_scope),
+            *((e.kind, e.caught_by) for e in DEFAULT_BENIGN_CAPABILITIES),
+        ):
+            normalized = caught_by.strip().lower()
+            assert normalized not in _CAUGHT_BY_PLACEHOLDERS, (
+                f"{entry_id}: caught_by is a bare placeholder, not a "
+                f"substantive control reference or reasoned disclosure: "
+                f"{caught_by!r}"
+            )
+            if normalized.startswith("none"):
+                # An honest gap must still explain WHY nothing catches it
+                # (docs/strata/threat.md#the-exhaustiveness-proof-the-
+                # point) -- "none" alone (caught above) or "none -- " with
+                # nothing following it is exactly the lazy case this
+                # audit exists to catch.
+                assert len(caught_by.strip()) > len("none -- "), (
+                    f"{entry_id}: caught_by declares an unexplained "
+                    f"'none': {caught_by!r}"
+                )
+
+    # frob:tests tests/unit/strata/test_threat.py::TestCaughtByAuditExhaustive.test_every_shipped_entry_passes_real_production_verification  # noqa: E501
+    def test_every_shipped_entry_passes_real_production_verification(self):
+        # Same corpus, but run through THREAT006 with the REAL live
+        # gate-rule-id set (`frob.gates.known_gate_rule_ids()`), not the
+        # default-empty set `test_clean_default_catalogs_have_no_gaps`
+        # uses -- proves the audited entries pass the actual production
+        # verification path, not merely a permissive test double.
+        from frob.gates import known_gate_rule_ids
+        from frob.strata._host_isolation import COMPROMISED_OWNER_OUT_OF_SCOPE
+        from frob.strata._krb_movement import KRB_MOVEMENT_OUT_OF_SCOPE
+        from frob.strata._threat import DEFAULT_BENIGN_CAPABILITIES
+
+        result = check_caught_by_integrity(
+            out_of_scope=(
+                CWE_TOP_25_OUT_OF_SCOPE
+                + QUALITY_OUT_OF_SCOPE
+                + KRB_MOVEMENT_OUT_OF_SCOPE
+                + COMPROMISED_OWNER_OUT_OF_SCOPE
+            ),
+            benign=DEFAULT_BENIGN_CAPABILITIES,
+            known_rule_ids=known_gate_rule_ids(),
+            catalog=ALL_CATALOG,
+        )
+        assert result.is_ok
+        assert result.danger_ok == ()
+
+
 class TestEvaluateThreats:
     # frob:tests src/frob/strata/_threat.py::evaluate_threats kind="unit"
     def test_conjoins_catalog_and_discharge_violations(self):

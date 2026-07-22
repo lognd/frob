@@ -57,10 +57,22 @@ at face value:
   real entry id somewhere in the registry. A dangling duplicate
   reference is `REG004`.
 - `out_of_scope:<reason>` / `out-of-scope:<reason>` /
-  `out-of-scope(<reason>)` -- valid if `<reason>` is non-empty. Routing
-  through Area-2's verified `caught_by` mechanism (T-0382) is a named,
-  tracked gap: that mechanism does not exist yet in this build, so
-  `caught_by` is accepted as a free-form string for now, not verified.
+  `out-of-scope(<reason>)` -- valid if `<reason>` is non-empty. Area-2's
+  verified `caught_by` mechanism (T-0382, `strata._threat.
+  check_caught_by_integrity` / `strata._compliance.
+  check_regulation_caught_by_integrity`) now EXISTS and is audited
+  exhaustively for every built-in `strata` `OutOfScopeEntry`/
+  `BenignCapability`/`OutOfScopeRegulation` entry (T-0383,
+  `tests/unit/strata/test_threat.py::TestCaughtByAuditExhaustive`,
+  `tests/unit/strata/test_compliance.py::TestCaughtByAuditExhaustive`) --
+  but this registry YAML disposition grammar's own `out_of_scope:<reason>`
+  string is a SEPARATE surface from those `strata` model objects and is
+  not yet routed through that verification; `<reason>` here is still
+  accepted as free-form prose, not resolved against a known-control set.
+  Wiring this registry-YAML disposition through the same verification is
+  a distinct, tracked gap in `frob.gates._registry_exhaustiveness`
+  (outside this doc's authoring scope) -- see T-0383's Done report for
+  the filed follow-up ticket id.
 - anything else -- missing, `pending`, or a bare `addressed` with no
   `handled_by` attached -- is `REG001`, undispositioned. A bare
   `addressed` claim with nothing backing it is deliberately treated as
