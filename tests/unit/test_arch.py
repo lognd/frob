@@ -2431,3 +2431,332 @@ class TestSharedCheckOnPythonAndKotlin:
         # language's NormalizedFunction -- both must fire.
         assert _normalized_is_complex(py_target)
         assert _normalized_is_complex(kt_target)
+
+
+# ---------------------------------------------------------------------------
+# T-0615: the N:1 cross-language equivalence meta-test -- EPIC T-0329's own
+# closing acceptance criterion ("an arch check written once fires correctly
+# across python+ts+rust+kotlin on equivalent code"). T-0610/T-0611/T-0612/
+# T-0614 each proved this PAIRWISE (python vs one other language); this is
+# the four-way superset: one equivalent fixture per language under
+# `tests/fixtures/arch/<language>/equiv.<ext>` (same base/derived class +
+# field + overriding method shape, same nested if/for/while long function,
+# same three-way dispatch function), adapted through all four
+# `LanguageAdapter`s, asserting:
+#
+#   1. every `NormalizedModule` expresses the SAME entity counts/kinds for
+#      the equivalent constructs, with per-language WAIVERS documented
+#      (not silently skipped) where a language genuinely lacks a construct
+#      -- python has no static "override" keyword, so its
+#      `NormalizedFunction.overrides` stays `None` even for a genuine
+#      override, unlike TS/kotlin's explicit `override` modifier and
+#      rust's trait-impl inference;
+#   2. the SHARED check (`_iter_normalized_functions`/`_normalized_is_complex`,
+#      migrated once in T-0610 and reused unmodified by every adapter's
+#      pairwise test) fires IDENTICALLY across all four on the equivalent
+#      long/complex function;
+#   3. the per-language branch-counting divergence on the SAME three-way
+#      dispatch construct (python's if/elif chain folds to ONE branch;
+#      TS's `switch` produces ZERO branches; rust's `match` and kotlin's
+#      `when` each produce THREE, one per arm/entry) is pinned as an
+#      EXPECTED difference with the rationale here, so future drift in
+#      either direction (an adapter starting -- or stopping -- to count
+#      arms) fails this test loudly instead of silently.
+# ---------------------------------------------------------------------------
+
+
+class TestFourWayCrossLanguageEquivalence:
+    """T-0615: adapts `tests/fixtures/arch/{python,typescript,rust,kotlin}/
+    equiv.*` (structurally equivalent fixtures) through all four
+    `LanguageAdapter`s and asserts the shared-check + entity-shape
+    equivalence the epic's acceptance criterion demands."""
+
+    @pytest.fixture()
+    def py_module(self):
+        """Adapts the python equivalence fixture via `PythonAdapter`."""
+        from frob.arch._python import PythonAdapter
+        from frob.lang import raw_tree
+
+        path = FIXTURES / "arch" / "python" / "equiv.py"
+        tree, src, language = raw_tree(path).danger_ok
+        assert language == "python"
+        return PythonAdapter().adapt(tree, src, "equiv.py")
+
+    @pytest.fixture()
+    def ts_module(self):
+        """Adapts the typescript equivalence fixture via `TypeScriptAdapter`."""
+        from frob.arch._typescript import TypeScriptAdapter
+        from frob.lang import raw_tree
+
+        path = FIXTURES / "arch" / "typescript" / "equiv.ts"
+        tree, src, language = raw_tree(path).danger_ok
+        assert language == "typescript"
+        return TypeScriptAdapter().adapt(tree, src, "equiv.ts")
+
+    @pytest.fixture()
+    def rust_module(self):
+        """Adapts the rust equivalence fixture via `RustAdapter`."""
+        from frob.arch._rust import RustAdapter
+        from frob.lang import raw_tree
+
+        path = FIXTURES / "arch" / "rust" / "equiv.rs"
+        tree, src, language = raw_tree(path).danger_ok
+        assert language == "rust"
+        return RustAdapter().adapt(tree, src, "equiv.rs")
+
+    # T-0615 N:1 equivalence fixture (kotlin side), INLINE rather than a
+    # tracked `tests/fixtures/arch/kotlin/equiv.kt` file: `.kt` is not
+    # `frob.lang`-registered at all (T-draft-a78fa200), so a real, tracked
+    # `.kt` file in this repo's tree trips `gate:LANG`'s LANG002 (ERROR,
+    # always, no waiver -- `docs/modules/lang.md`'s own "always" framing)
+    # the moment it exists, regardless of what it is used for. Every other
+    # `TestKotlinAdapter` test already builds kotlin sources inline for
+    # exactly this reason; this fixture follows that same, established
+    # pattern rather than introducing a new tracked `.kt` file. Same
+    # structural shape as `equiv.py` / `equiv.ts` / `equiv.rs`: an
+    # interface, a class implementing it with a field, an overriding
+    # method (kotlin DOES have a static `override` modifier -- captured in
+    # `NormalizedFunction.overrides`, same as TS), and a "dispatch" free
+    # function using kotlin's own idiomatic dispatch construct: `when`.
+    # `frob.arch._kotlin` deliberately counts EACH when-entry as its own
+    # `NormalizedBranch` (T-0614's explicit divergence, the same shape as
+    # rust's `match_arm` counting) -- so `dispatchKind` scores THREE
+    # branches, same as rust's `match` and unlike python's ONE
+    # (elif-folded) / TS's ZERO (switch not branch-producing).
+    _KOTLIN_EQUIV_SOURCE = (
+        "interface Creature {\n"
+        "    fun speak(): String\n"
+        "}\n"
+        "\n"
+        "class Animal(val name: String, val age: Int = 1) : Creature {\n"
+        "    override fun speak(): String {\n"
+        "        return name\n"
+        "    }\n"
+        "}\n"
+        "\n"
+        "fun configurePipeline(a: Boolean, b: Boolean, c: Boolean, d: Int): Boolean {\n"
+        "    if (a) {\n"
+        "        if (b) {\n"
+        "            if (c) {\n"
+        "                for (i in 0 until d) {\n"
+        "                    if (i != 0) {\n"
+        "                        var n = i\n"
+        "                        while (n != 0) {\n"
+        "                            if (a && b) {\n"
+        "                            }\n"
+        "                            n -= 1\n"
+        "                        }\n"
+        "                    }\n"
+        "                }\n"
+        "            }\n"
+        "        }\n"
+        "    }\n"
+        "    return a\n"
+        "}\n"
+        "\n"
+        "fun dispatchKind(kind: String): Int {\n"
+        "    return when (kind) {\n"
+        '        "happy" -> 0\n'
+        '        "sad" -> 1\n'
+        "        else -> 2\n"
+        "    }\n"
+        "}\n"
+    )
+
+    @pytest.fixture()
+    def kt_module(self):
+        """Adapts the inline kotlin equivalence source via `KotlinAdapter`
+        -- `.kt` is not wired into `frob.lang`'s central `raw_tree`
+        dispatch yet (T-draft-a78fa200), so this goes through
+        `parse_kotlin` directly, same as `TestKotlinAdapter`'s own
+        `_adapt` helper."""
+        from frob.arch._kotlin import KotlinAdapter
+        from frob.lang._walk_kotlin import parse_kotlin
+
+        src = self._KOTLIN_EQUIV_SOURCE.encode()
+        tree = parse_kotlin(src)
+        assert not tree.root_node.has_error
+        return KotlinAdapter().adapt(tree, src, "equiv.kt")
+
+    # -- (1) entity counts/kinds equivalence, with documented waivers -----
+
+    def test_one_class_hierarchy_per_language(
+        self, py_module, ts_module, rust_module, kt_module
+    ) -> None:
+        """Every language's fixture yields exactly one base + one derived
+        class/struct/interface-impl pair, i.e. 2 `NormalizedClass` entries."""
+        for module in (py_module, ts_module, rust_module, kt_module):
+            assert len(module.classes) == 2, module.language
+
+    def test_derived_class_has_the_field_and_one_method(
+        self, ts_module, rust_module, kt_module
+    ) -> None:
+        """The derived class (Animal) carries a `name` field and its
+        `speak` method in TS/rust/kotlin, all three of which capture
+        class-level annotated / constructor-set fields via their adapter.
+        Python is asserted separately below (see
+        `test_python_field_detection_is_a_documented_waiver`) since
+        `PythonAdapter` does not capture this shape at all today."""
+        for module in (ts_module, rust_module, kt_module):
+            derived = next(c for c in module.classes if c.name == "Animal")
+            field_names = {f.name for f in derived.fields}
+            assert "name" in field_names, module.language
+            method_names = {m.name for m in derived.methods}
+            assert "speak" in method_names, module.language
+
+    def test_python_field_detection_is_a_documented_waiver(self, py_module) -> None:
+        """WAIVER (T-draft-d49c456f, filed out of T-0615's scope):
+        `PythonAdapter._py_class_fields` never actually matches a
+        class-level annotated field's real grammar shape (the assignment
+        node arrives directly, not `expression_statement`-wrapped, as the
+        filed ticket's repro shows) -- so `Animal.fields` comes back EMPTY
+        for python even though the SAME fixture shape (`name: str` at
+        class level) is captured by TS/rust/kotlin. Asserted explicitly
+        here, not skipped, so a future fix to `_py_class_fields` is
+        caught by this test needing an update rather than silently
+        passing either way."""
+        derived = next(c for c in py_module.classes if c.name == "Animal")
+        assert derived.fields == []
+        method_names = {m.name for m in derived.methods}
+        assert "speak" in method_names
+
+    def test_override_captured_except_pythons_documented_waiver(
+        self, py_module, ts_module, rust_module, kt_module
+    ) -> None:
+        """TS (`override` modifier), rust (trait-impl inference), and
+        kotlin (`override` modifier) all set `NormalizedFunction.overrides`
+        on the derived class's `speak` method. Python has NO static
+        override keyword/annotation for `PythonAdapter` to read -- this is
+        a documented WAIVER (`frob.arch._python` has no `overrides`
+        machinery at all), not a missed mapping: python's `speak` still
+        overrides `Creature.speak` at runtime, it is simply not STATICALLY
+        observable the way the other three languages' grammars make it."""
+        ts_speak = next(
+            m
+            for m in next(c for c in ts_module.classes if c.name == "Animal").methods
+            if m.name == "speak"
+        )
+        assert ts_speak.overrides == "speak"
+
+        rust_speak = next(
+            m
+            for m in next(c for c in rust_module.classes if c.name == "Animal").methods
+            if m.name == "speak"
+        )
+        assert rust_speak.overrides == "speak"
+
+        kt_speak = next(
+            m
+            for m in next(c for c in kt_module.classes if c.name == "Animal").methods
+            if m.name == "speak"
+        )
+        assert kt_speak.overrides == "speak"
+
+        # WAIVER: python's PythonAdapter never sets `overrides` -- assert
+        # the documented absence explicitly rather than skipping the
+        # language, so a future adapter change that starts (or a check that
+        # starts silently assuming) python populates `overrides` is caught.
+        py_speak = next(
+            m
+            for m in next(c for c in py_module.classes if c.name == "Animal").methods
+            if m.name == "speak"
+        )
+        assert py_speak.overrides is None
+
+    # -- (2) shared-check identical firing, four-way -----------------------
+
+    def test_shared_complexity_check_fires_identically_four_ways(
+        self, py_module, ts_module, rust_module, kt_module
+    ) -> None:
+        """`_iter_normalized_functions`/`_normalized_is_complex` -- migrated
+        ONCE in T-0610 and reused unmodified by every pairwise adapter test
+        -- must fire on the equivalent `configure_pipeline`/
+        `configurePipeline` function in ALL FOUR languages, proving the
+        shared check itself carries no per-language branch."""
+        from frob.arch._python import _iter_normalized_functions, _normalized_is_complex
+
+        targets = {
+            "python": next(
+                f
+                for f, _prefix in _iter_normalized_functions(py_module)
+                if f.name == "configure_pipeline"
+            ),
+            "typescript": next(
+                f
+                for f, _prefix in _iter_normalized_functions(ts_module)
+                if f.name == "configurePipeline"
+            ),
+            "rust": next(
+                f
+                for f, _prefix in _iter_normalized_functions(rust_module)
+                if f.name == "configure_pipeline"
+            ),
+            "kotlin": next(
+                f
+                for f, _prefix in _iter_normalized_functions(kt_module)
+                if f.name == "configurePipeline"
+            ),
+        }
+        for language, fn in targets.items():
+            assert _normalized_is_complex(fn), language
+
+    # -- (3) per-language dispatch-branch-count divergence, pinned --------
+
+    def test_dispatch_branch_counts_pin_the_documented_per_language_divergence(
+        self, py_module, ts_module, rust_module, kt_module
+    ) -> None:
+        """The SAME three-way dispatch (happy/sad/else) is expressed via
+        python's if/elif chain, TS's `switch`, rust's `match`, and kotlin's
+        `when` -- and each language's `NormalizedBranch` count for it is
+        DIFFERENT by design, not by accident:
+
+        - python: 1 branch (`tree-sitter-python` folds an entire
+          if/elif/else chain into one `if_statement` node --
+          `frob.arch._python`'s own `_BRANCH_NODE_TYPES` comment).
+        - typescript: 0 branches (`switch_statement` is walked for nesting
+          depth but is NOT one of `frob.arch._typescript`'s
+          branch-producing node types).
+        - rust: 3 branches (`frob.arch._rust` counts each `match_arm` as
+          its own branch, T-0612's documented divergence).
+        - kotlin: 3 branches (`frob.arch._kotlin` counts each `when_entry`
+          as its own branch, T-0614's documented divergence, same shape as
+          rust's).
+
+        Pinning all four counts side by side means an adapter silently
+        changing its dispatch-counting behavior in EITHER direction (an
+        under-count regression, or an over-eager new over-count) fails
+        this test loudly instead of drifting unnoticed."""
+        py_dispatch = next(f for f in py_module.functions if f.name == "dispatch_kind")
+        ts_dispatch = next(f for f in ts_module.functions if f.name == "dispatchKind")
+        rust_dispatch = next(
+            f for f in rust_module.functions if f.name == "dispatch_kind"
+        )
+        kt_dispatch = next(f for f in kt_module.functions if f.name == "dispatchKind")
+
+        assert len(py_dispatch.branches) == 1
+        assert len(ts_dispatch.branches) == 0
+        assert len(rust_dispatch.branches) == 3
+        assert len(kt_dispatch.branches) == 3
+
+    def test_every_module_agrees_the_dispatch_function_exists_and_is_flat(
+        self, py_module, ts_module, rust_module, kt_module
+    ) -> None:
+        """None of the four languages' dispatch function trips the
+        complexity check -- a flat three-way dispatch (whatever its
+        branch-count shape) is exactly the case `_normalized_is_complex`
+        must NOT punish, matching each language's own long-function rule
+        intent (T-0289's "big match/case is not the smell" rationale,
+        which motivated python's match/case exclusion and generalizes
+        here)."""
+        from frob.arch._python import _iter_normalized_functions, _normalized_is_complex
+
+        for module, name in (
+            (py_module, "dispatch_kind"),
+            (ts_module, "dispatchKind"),
+            (rust_module, "dispatch_kind"),
+            (kt_module, "dispatchKind"),
+        ):
+            fn = next(
+                f for f, _prefix in _iter_normalized_functions(module) if f.name == name
+            )
+            assert not _normalized_is_complex(fn), module.language
