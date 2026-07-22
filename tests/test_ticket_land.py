@@ -252,6 +252,41 @@ class TestSpliceOnlyTicket:
         assert spliced.is_ok
         assert "state: planned" in spliced.danger_ok
 
+    # frob:tests src/frob/tickets/_land.py::splice_ledger kind="unit"
+    def test_whole_ledger_splice_never_regresses_a_sibling_from_done(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0537: `splice_ledger` (the whole-ledger merge used by `frob
+        ticket merge-driver`) must never let a stale non-terminal copy of
+        an already-DONE ticket win, regardless of which side
+        (`ours`/`theirs`) carries it -- `_newer`'s state-rank tiebreak
+        (terminal ranks highest) already makes this structurally
+        impossible whenever a divergence goes THROUGH the splice; this is
+        the regression-lock proving it, the exact incident class a
+        hand-resolved `tickets.md` conflict (bypassing the splice
+        entirely) produced instead (7 closed tickets resurrected to
+        queued)."""
+        created = new_ticket(tmp_path, _spec("Closed elsewhere"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        loaded = load_all(tmp_path).danger_ok[tid]
+        done_ticket = loaded.model_copy(update={"state": TicketState.DONE})
+        assert write_ticket(tmp_path, done_ticket).is_ok
+        ours_text = ledger_path(tmp_path).read_text()
+
+        # theirs (a stale branch) still remembers it as queued.
+        stale = done_ticket.model_copy(update={"state": TicketState.QUEUED})
+        assert write_ticket(tmp_path, stale).is_ok
+        theirs_text = ledger_path(tmp_path).read_text()
+
+        spliced = splice_ledger(ours_text, theirs_text)
+        assert spliced.is_ok
+        from frob.tickets._store import _parse_ledger
+
+        parsed = _parse_ledger(spliced.danger_ok)
+        assert parsed.is_ok
+        assert parsed.danger_ok[tid].state == TicketState.DONE
+
 
 class TestLand:
     """`frob.tickets.land` against real fixture repos."""
