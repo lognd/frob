@@ -4164,7 +4164,7 @@ worktree (per this dispatch's standing instruction never to touch
 version/CHANGELOG files); the coordinator bumps at land.
 
 Filed a real follow-up ticket for the overhead test's own fragility risk:
-the follow-up (materializes from provisional id `T-draft-d396f26b` at
+the follow-up (materializes from provisional id `T-0759 (ex-draft, id lost at land)` at
 land, per this repo's off-default-branch id-minting convention; the block
 exists in `tickets.md` today and is NOT flagged by `frob check --only
 tickets` TICK006, i.e. it is a real, resolvable filing, not a phantom)
@@ -5385,3 +5385,31 @@ component: null
 labels: []
 ```
 T-0710's TestStackSampler.test_overhead_under_five_percent measures wall-clock elapsed time (unsampled vs sampled, best-of-3) to assert sampler overhead stays under 5 percent. Under pytest-xdist parallel workers (this repo's default -n auto), concurrent worker contention can inflate wall-clock noise beyond what best-of-3 suppresses, risking flakiness in CI even though the sampler itself is not slow. Fix: mark the test to run serially (a 'serial'/xdist_group marker forcing it off the parallel grid) or relax/parameterize the tolerance for CI, whichever this repo's existing flaky-timing precedent (frob.toml/pytest.ini markers) prefers. Found during T-0710 review round 2.
+
+<!-- ticket:T-0760 -->
+```yaml
+id: T-0760
+title: harden T-0710 hot-graph overhead test against xdist wall-clock fragility
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0710
+scope:
+- tests/unit/perf/
+- src/frob/perf/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN the overhead test WHEN the full suite runs under -n auto THEN it passes
+    reliably (serial marker, CPU-time measure, or documented-tolerance margin), not
+    only under -n0
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+From T-0710: the hot-graph overhead test (attribution sampler <5% overhead) asserts a hard <5% on a ~0.11s workload = ~5.5ms margin, best-of-3 min-vs-min. Under pytest-xdist (-n auto, the default) the baseline and sampled loops compete with 11 concurrent workers for cores -- reproduced live: the test FAILS under -n auto, passes -n0. Harden it: either mark it serial (a no-xdist / serial marker so it runs alone), or relax the CI margin with a documented tolerance, or switch to a CPU-time (not wall-clock) measure immune to core contention. Pick the robust option and document why.
