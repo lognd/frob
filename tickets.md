@@ -2517,6 +2517,7 @@ component: null
 labels: []
 ```
 found while working T-0240: gates/_prework.py::sweep_ticket's xref loop called xref(symbol, root) instead of the scan_path it computed, and derived xref-hit terms via Path(pattern).stem (nonsense for glob patterns). app/ticket_runner.py's _run_sweep + _xref_hits_for_scope + _scope_digest_for_ticket carry an IDENTICAL copy of the same loop (already flagged as duplicate call-site debt in T-0236's Done report, follow-up ticket not yet filed) with the same two bugs. src/frob/app/** was out of scope for T-0240 (whose scope was tickets/gates/dup/tests only), so this sibling copy still has the unbounded-walk + nonsense-stem bugs. Either delegate _run_sweep to frob.gates._prework.sweep_ticket directly (collapsing the duplication per T-0236) or port the same fix.
+
 <!-- ticket:T-0355 -->
 ```yaml
 id: T-0355
@@ -3013,7 +3014,7 @@ META-PRINCIPLE (encode): every time we discover we "got away with" something, th
 id: T-0410
 title: 'Performance audit: frob check hotpaths (archgate 153s + sys 145s dominate),
   redundant full-repo parsing, Rust-lowering, parallelism, daemon caching'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -3024,8 +3025,59 @@ scope:
 - src/frob/
 - frob-core/
 - strata-core/
-scope_changes: []
-evidence: []
+- tests/unit/test_memo.py
+- tests/test_excludes.py
+- docs/audits/perf.md
+- pyproject.toml
+- CHANGELOG.md
+- .frob-release.json
+- uv.lock
+scope_changes:
+- op: add
+  glob: tests/unit/test_memo.py
+  reason: add regression test for parse_file per-run memoization landed for this ticket's
+    cheap win
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_excludes.py
+  reason: add regression coverage for M6 skip-dir fix (BUILTIN_SKIP_DIRS .hypothesis/.serena)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/audits/perf.md
+  reason: re-measurement update for the audit doc this ticket's own findings/fix belong
+    in
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: REL001 version bump + changelog entry for parse_file's public-API-visible
+    memoization behavior change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: REL001 version bump + changelog entry for parse_file's public-API-visible
+    memoization behavior change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 stamp artifact (.frob-release.json) + lockfile version sync from
+    the pyproject.toml bump
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: REL001 stamp artifact (.frob-release.json) + lockfile version sync from
+    the pyproject.toml bump
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/unit/test_memo.py::test_parse_file_second_call_is_memo_hit
+- tests/unit/test_memo.py::test_build_graph_second_call_is_memo_hit
+- tests/test_excludes.py::test_builtin_skip_dirs
 attachments: []
 acceptance: []
 threat: null
@@ -3033,6 +3085,83 @@ component: null
 labels: []
 ```
 User directive (2026-07-20): frob check takes forever; do a PERF audit -- measure where hotpaths ACTUALLY are, lower into native Rust where it helps, review the architecture for stupidity (and note that frob SHOULD have detected its own perf issues -- meta-gap), and think through parallelism/concurrency/multiprocessing. Plus: audit the daemon to ensure we cache what we are supposed to. Grounding measurements (this repo, latest full frob check): archgate=153.6s and sys=145.3s DOMINATE; every other stage is <6s (perf 5.4, pii 1.7, secrets 1.4, test 1.4, tickets 0.27, rest ~0). Strong hypothesis (auditor must MEASURE to confirm/refute via profiling): the repo is tree-sitter-parsed MULTIPLE times per check -- build_graph parses everything, then arch/analyze_project re-parses everything, then strata selfconform (sys) re-parses everything, plus vet/secrets/dup each parse; check/_python.py::_cached_snapshot only memoizes the GRAPH build, NOT arch/sys parses, so trees are not shared across stages. Confound: /mnt/c mount tax (13-60x slower I/O per T-0245) -- the audit MUST distinguish I/O-bound (reading every file N times) from CPU-bound (parsing/walking N times). Deliverables to docs/audits/perf.md (auditor writes it): (A) real profile of a full frob check -- top hotpaths by cumulative time, per stage, with the redundant-parse count actually measured; (B) architecture review: how many times each file is read+parsed, where a single shared parse pass / warm snapshot would collapse work, sqlite connection/contention patterns, any O(n^2) or per-file-stat storms; (C) parallelism/concurrency: are stages actually parallel or serialized? where is the serialization? would a process/thread pool or a shared-parse-then-fan-out help? what belongs in frob-core Rust (hot tree walks: arch complexity, capability scan, hashing -- dup is already Rust)? (D) DAEMON/caching audit: is the warm-graph incremental daemon (T-0177) actually built, and does serve/ cache the parsed graph across requests + invalidate correctly, or re-build/re-parse per call? is the .frob cache doing incremental (only re-parse changed files) or full rebuilds? (E) META-GAP: why did PERF001-004 NOT flag the redundant full-repo parsing / missing shared cache -- what class of architectural/cross-stage perf antipattern is the PERF gate blind to, and what enforcement would catch it (this becomes its own ticket). >=10 concrete findings with measured impact + severity + file:line. REPORT ONLY (auditor). Then remediation children per finding.
+
+## Done report
+
+MEASURE-FIRST, per plan. Fresh `frob check` stage timing on this checkout
+showed the ticket's grounding numbers (archgate=153.6s, sys=145.3s) already
+stale: both are 0.00s/~0.9s today, mooted by T-0423's `@memoize_per_run` on
+`build_graph`/`analyze_project` (landed after the original perf audit but
+before this ticket started -- confirmed via T-0418, closed this session as
+verify-first/no-code-change). Re-profiled `frob check` with the giants gone
+and found the new dominators: `coverage` (36-45s) and `refs` (8-11s), every
+other stage <5s.
+
+Isolated `coverage_gate` under cProfile (natives built, real repo) and found
+a fresh instance of the audit's own H4 class ("no shared single-parse
+pass"): COV006's rescue helpers (`_cov006_third_file_reachable`,
+`_cov006_public_wrapper_reachable`) call `frob.lang.parse_file` ~2000+
+times per run, many repeats on the same path across different candidate
+edges. `_parse` (the raw tree-sitter parse) already has its own content-hash
+cache, but `extract()` (the symbol/comment AST walk) was never cached, so a
+repeat `parse_file` call re-ran the full walk even on a `_parse` cache hit --
+measured ~151s of a ~156s isolated `coverage_gate` profile inside
+`_walk_python`/`_common.walk`.
+
+Landed fix: `@memoize_per_run` on `frob.lang.parse_file`, applied via a
+first-call-deferred wrapper (`_parse_file_uncached` + public `parse_file`)
+rather than a module-level decorator, to avoid a real `frob.lang`/
+`frob.check` circular import (`frob.check.__init__` imports `frob.lang` at
+module scope; a top-level `from frob.check._memo import memoize_per_run` in
+`frob.lang` fails the moment anything imports `frob.lang` before
+`frob.check` finishes, e.g. `frob.arch` -> `frob.lang` -- reproduced and
+confirmed before choosing the lazy-wrap design).
+
+Measured impact: isolated `coverage_gate` profile 155.8s -> 15.9s (~10x);
+real `frob check`'s `coverage` stage timing 36-45s -> 3.3-4.7s across
+several repeat runs. Since `parse_file` is a shared chokepoint, this
+generalizes to any other caller hitting the same path repeatedly in one
+run without further call-site changes -- consistent with T-0423's own
+design intent.
+
+Also landed (cheap, in scope, verified zero-risk): finding M6 from
+`docs/audits/perf.md` -- added `.hypothesis` and `.serena` to
+`frob.excludes.BUILTIN_SKIP_DIRS`. Neither has a tree-sitter grammar, but
+every rglob-based stage was walking/stat'ing/opening every entry inside
+them (measured in the original audit: 1298 `.hypothesis/constants` + 44
+`.hypothesis/examples` + `.serena/cache` files).
+
+`docs/audits/perf.md` updated with a dated 2026-07-21 re-measurement
+section: H1/H2 marked RESOLVED (T-0423), the new coverage_gate finding and
+fix documented, M6 marked landed, and two structural follow-ups filed
+rather than solved in this ticket:
+- T-draft-9f90cc43: H3 (thread pool vs process pool for CPU-bound gates) --
+  lower urgency now that the two original giants are gone, but the
+  architecture gap is unchanged and will resurface with any new heavy
+  thread-pooled gate.
+- T-draft-bafbce1c: re-verify H4's other cited multipliers (vet's
+  `raw_tree`-based capability scan bypasses the new `parse_file` memo
+  entirely; H5's selfconform double-scan) and profile the new `refs` stage
+  dominator (~8-11s, never profiled by the original audit) -- explicitly
+  NOT assumed fixed without a fresh profile.
+
+REL001: public API behavior of `frob.lang.parse_file` changed (memoized
+within an active `run_memo_scope`); bumped `pyproject.toml` 0.68.0 ->
+0.69.0, added a CHANGELOG entry, ran `frob release stamp`.
+
+No frob-core/strata-core (Rust) changes made this pass -- the measured
+hotpath was pure-Python (`extract()`'s AST walk), not a Rust-lowering
+candidate; a native rewrite was not attempted since a Python-level cache
+fix already closed 10x of the measured gap at far lower risk.
+
+### Changed
+```
+ tickets.md | 45 +++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 43 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0417 -->
 ```yaml
@@ -3066,7 +3195,7 @@ Convergence re-audit of the tickets/testing subsystem AFTER T-0398 landed (docs/
 id: T-0418
 title: 'perf: analyze_project runs TWICE per frob check (frob-arch stage + archgate
   gate); wire the DEAD _arch_violations_from_suggestions (~112s)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -3077,7 +3206,8 @@ scope:
 - src/frob/check/
 - src/frob/gates/
 scope_changes: []
-evidence: []
+evidence:
+- tests/unit/test_memo.py::test_analyze_project_second_call_is_memo_hit
 attachments: []
 acceptance: []
 threat: null
@@ -3085,6 +3215,47 @@ component: null
 labels: []
 ```
 User spotted from frob check output: frob-arch appears as its own stage AND archgate=112.81s appears in the gates timing -- arch is analyzed TWICE. Confirmed: check/_python.py::_run_arch (the advisory frob-arch stage) calls analyze_project once (~line 440); gates/_arch.py::arch_gate independently calls analyze_project again for ARCH001 (the archgate timing). The helper written to prevent exactly this -- check/_python.py::_arch_violations_from_suggestions (builds ARCH001 Violations from the already-computed suggestions "without re-running analyze_project a second time") -- is DEAD CODE, grep finds zero callers. FIX: wire the gates stage to build ARCH001 from the suggestions _run_arch already computed (via the dead helper), so analyze_project runs ONCE per check. Verify the same ARCH001 violation set is produced (byte-identical gate output) and archgate drops toward 0 (the work moves into the single frob-arch run). CHECK dup too: _run_dup calls find_duplicates for the frob-dup stage; confirm dup_gate does not ALSO re-run detection (it is default-off so may already skip -- verify). This is the exact "same expensive input recomputed across stages" class T-0413 (PERF meta-gap) must catch. Measured target: ~112s saved.
+
+## Done report
+
+Verified-first, no code change needed: the double-compute this ticket
+describes is already mooted by T-0423's run-scoped memoization
+(`frob.check._memo.memoize_per_run` on `frob.arch.analyze_project`,
+landed in a prior commit on this branch's history). Measured
+`uv run frob check` gate timing shows `archgate=0.00s` (was ~112.81s at
+ticket-file time) -- `gates/_arch.py::arch_gate` still calls
+`analyze_project` directly (unchanged), but within one `frob check`
+process the second call is a memo hit against `_run_arch`'s (the
+frob-arch stage) first call, so `analyze_project`'s real body runs
+exactly once per check. `tests/unit/test_memo.py::
+test_analyze_project_second_call_is_memo_hit` already asserts this
+invariant (1 hit, 1 miss) and passes.
+
+The specific dead helper this ticket names,
+`_arch_violations_from_suggestions`, no longer exists under that name --
+T-0375 built (and wired) its replacement, `check/_python.py::
+_arch001_violations`, used by `_arch_long_function_waived_symrefs` for
+the ARCH001 waiver cross-reference. `frob.gates._dead_symbols` (T-0422's
+DEAD001 gate, built after this ticket was filed) now statically catches
+exactly this class of "written to fix a bug but never wired" helper
+going forward -- it cites this ticket's motivating case in its own
+docstring.
+
+Dup: verified `dup_gate` (src/frob/gates/__init__.py::dup_gate) returns
+early when `[dup].enforce` is off (repo default), so it does not run
+`find_clones` at all in a default check -- no double-run there either,
+per the ticket's own "verify" instruction.
+
+No source changes made; this ticket's premise was already resolved by
+T-0423 (memoization) and T-0375/T-0422 (helper rename + wiring, general
+DEAD001 gate). Closing with the timing/test evidence above rather than
+touching already-correct code.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0428 -->
 ```yaml
@@ -3889,3 +4060,51 @@ component: null
 labels: []
 ```
 Telemetry (this session, 1035 CLI events): ticket=225 check=103 release=19 sys=16 organic; map/outline/xref/parse/gitlog/exports invocations were VIRTUALLY ALL their own test suites (pytest tmp paths), zero organic use by coordinator or ~30 agents -- navigation is owned by Serena/native tools in agentic use. Each command carries doc/test/export/coverage obligations = maintenance tax. Decide per command: KEEP AS PLUMBING (parse: adapter used by pipelines; exports: powers exports stage; gitlog: powers stats/changelog), DEMOTE to documented maintenance-mode porcelain tier (map, outline, xref, docs-search), or frob:deprecated. serve (MCP) kept: valuable for no-shell contexts though unused when agents have a shell. User decision ticket -- evidence in body, recommendation: demote the four navigation commands, revisit removal after one quiet quarter.
+
+<!-- ticket:T-draft-9f90cc43 -->
+```yaml
+id: T-draft-9f90cc43
+title: 'perf: run archgate/sys/coverage-class CPU-bound gates in a process pool, not
+  shared ThreadPoolExecutor (H3)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/__init__.py src/frob/check/_python.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0410 perf audit re-measurement (2026-07-21): archgate/sys are now near-zero (T-0423 memoization) and coverage_gate dropped ~10x after this ticket's parse_file memo fix, so H3 (docs/audits/perf.md) is less urgent than originally measured, but the underlying architecture problem is unchanged and will bite again the moment any thread-pooled gate's PURE input grows (e.g. a repo without T-0423's memoization benefit, or a new heavy gate added to thread_jobs instead of process_jobs). Currently only perf/secrets/pii_structural/dup run in _ProcessJob (frob/gates/__init__.py _PROCESS_POOL_GATES); coverage/drift/invariant/refs/registry/etc share one ThreadPoolExecutor and GIL-serialize when CPU-bound. Audit which thread_jobs entries are actually CPU-bound-pure (coverage_gate qualifies per this ticket's own profile) and move them to the process pool the way perf/secrets/pii already are, or justify why threading is fine now that the redundant-parse costs are gone.
+
+<!-- ticket:T-draft-bafbce1c -->
+```yaml
+id: T-draft-bafbce1c
+title: 'perf audit re-measurement: verify vet/secrets/selfconform after T-0410 parse_file
+  memo fix; profile refs stage (now 2nd dominator)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/vet/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0410 landed one concrete fix: memoize parse_file's extract() walk (coverage_gate 155.8s->15.9s isolated, ~40s->~4s in real frob check) plus M6 (.hypothesis/.serena skip-dirs). Two things from docs/audits/perf.md need re-measurement, not assumption: (1) H4's other cited multipliers (vet.scan_file_capabilities uses raw_tree not parse_file, so bypasses the new memo -- but _parse's own content-hash cache may already make repeats cheap; verify with a profile) and H5 (selfconform's double capability-scan, likely still unfixed). (2) refs_gate is now the 2nd-largest stage (measured ~8-11s across several frob check runs) and was never profiled by the original audit; isolate and profile it the way this ticket isolated coverage_gate. Update docs/audits/perf.md with a dated re-measurement section (mark H1/H2 RESOLVED via T-0423) rather than a fresh audit.

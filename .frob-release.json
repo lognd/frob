@@ -262,7 +262,7 @@
     "src/frob/dup/_rules.py::DUP001": "6165ee1b857f003776a57ba42485843c688daa2ae6c13fefc9aa6e9eb0851883",
     "src/frob/dup/_rules.py::DUP002": "9b940607fe9b7d7eb8ccec313575b126df8b49a603e8a8071f839897352a94ec",
     "src/frob/dup/_template.py::build_group_template": "c3dd160df1d4341c702f5bc9f6921a2c9cd08c7d02911a110d58c1ed55a860c4",
-    "src/frob/excludes.py::BUILTIN_SKIP_DIRS": "e4556e9dea33bfba7b03ae1eedf85e8968f6b853cf969646b90b0bfdc2893d29",
+    "src/frob/excludes.py::BUILTIN_SKIP_DIRS": "fac49d9c65d00d48952c84e7ff73acdb1cc549d672e43dea552eb3b329097961",
     "src/frob/excludes.py::is_excluded": "ffc284498f89cd8d3580a7253b343903818ae8dcd373b9ca30d0f6e796db9be6",
     "src/frob/excludes.py::is_skipped_dir": "af2ba7ef182f8a86d922a8ebb17a766e99db08d5c97b06cec228d118a465cb02",
     "src/frob/excludes.py::is_test_file": "e688298c9e118f268423ca35e03c65c4f1c18e373c79776b35a8af802defbe41",
@@ -1121,5 +1121,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.68.0"
+  "version": "0.69.0"
 }

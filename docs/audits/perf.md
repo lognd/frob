@@ -4,6 +4,67 @@ MEASURE-FIRST. All numbers below are measured on this checkout
 (`/home/logan/projects/frob`, ext4 `/dev/sdd` -- **NOT** `/mnt/c`; see Note 1),
 via `uv run` (0.9.x source tree), not the stale 0.9.0 wheel.
 
+## 2026-07-21 re-measurement (T-0410, second pass)
+
+The grounding numbers throughout this document (archgate=91.5-153.6s,
+sys=77-145.3s) are **stale** -- both were mooted by T-0423's run-scoped
+`@memoize_per_run` (landed after this audit's first pass, `frob.check._memo`),
+which this ticket's own investigation (T-0418, closed as verify-first/no-code-
+change) confirmed with a fresh measurement: current `frob check` on this
+checkout shows `archgate=0.00s, sys=0.68-0.94s` -- **H1 and H2 below are
+RESOLVED**, not by the fix direction each originally proposed (feeding the
+gate the already-built snapshot), but by a more general per-run memo on
+`build_graph`/`analyze_project` themselves that made the SECOND call (from
+whichever stage) a cache hit regardless of call site. Do not re-investigate
+H1/H2 as open findings; a future audit should re-verify only if `archgate`/
+`sys` regress in a fresh timing line.
+
+With H1/H2 gone, the new `frob check` stage-timing dominators (measured,
+`gate-summary`'s bracketed timing) were **coverage=36-45s** and **refs=8-11s**,
+everything else <5s. Profiling `coverage_gate` in isolation (`cProfile` over
+a direct call, natives built) found a THIRD instance of this audit's own H4
+class ("no shared single-parse pass"): `coverage_gate` -> `_cov006`'s COV006
+rescue helpers (`_cov006_third_file_reachable`, `_cov006_public_wrapper_
+reachable`) call `frob.lang.parse_file` ~2000+ times across one run, many
+repeat calls on the SAME path across different candidate `Edge`s -- and
+unlike H1/H2's `analyze_project`/`build_graph`, `parse_file` itself had NO
+per-run memo at all. Worse, `_parse` (the raw tree-sitter parse, one level
+below `parse_file`) already has its own content-hash cache, but `extract()`
+(the symbol/comment walk over the tree) was never cached, so a repeat
+`parse_file` call re-ran the full AST walk (`_walk_python`/`_common.walk`)
+even on a `_parse` cache hit -- measured as ~151s of a ~156s `coverage_gate`
+profile, almost entirely inside that walk.
+
+**Fix landed this pass**: `@memoize_per_run` on `frob.lang.parse_file`
+(`src/frob/lang/__init__.py`), applied via a first-call-deferred wrapper
+rather than a module-level decorator to dodge a real `frob.lang`/`frob.check`
+circular import (`frob.check.__init__` imports `frob.lang` at module scope;
+a top-level `from frob.check._memo import memoize_per_run` in `frob.lang`
+fails the instant anything imports `frob.lang` before `frob.check` finishes,
+e.g. `frob.arch` -> `frob.lang`). Measured: isolated `coverage_gate` profile
+155.8s -> 15.9s (~10x); real `frob check`'s `coverage` stage timing 36-45s ->
+3.5-4.7s. Since `parse_file` is a single chokepoint used by every stage that
+calls it (not just COV006), this generalizes automatically to any other
+caller hitting the same path repeatedly in one run -- no further call-site
+edits needed, matching T-0423's own design intent.
+
+**Also landed this pass**: M6 (below) -- `.hypothesis`/`.serena` added to
+`BUILTIN_SKIP_DIRS` (one-line, zero-risk per the original finding).
+
+**Filed, not landed** (structural, follow-up tickets): H3 is now lower-
+urgency (the two giants it worried about serializing are near-zero) but the
+architectural gap (thread pool used for CPU-bound pure gates instead of the
+process pool `perf`/`secrets`/`pii_structural`/`dup` already use) is
+unchanged and will resurface the moment a new heavy gate is added to
+`thread_jobs` instead of `process_jobs` -- filed as a follow-up (T-draft-
+9f90cc43 at filing time; renumbered on land). H4's OTHER cited multipliers
+(vet's `raw_tree`-based capability scan, which bypasses the new `parse_file`
+memo entirely and may or may not still pay a real cost against `_parse`'s
+own cache; H5's still-apparently-unfixed double selfconform scan) were not
+re-verified this pass -- filed as a follow-up alongside profiling the new
+`refs` stage dominator (T-draft-bafbce1c at filing time). Do not assume
+either is fixed without a fresh profile.
+
 ## (A) REAL PROFILE -- authoritative numbers
 
 **Full `uv run python -m cProfile -m frob check`** completed in **473.7s wall**

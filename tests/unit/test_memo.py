@@ -30,6 +30,7 @@ from frob.check._memo import (
 )
 from frob.dup import find_duplicates
 from frob.graph import build_graph
+from frob.lang import parse_file
 
 
 def test_second_call_with_same_args_is_memo_hit() -> None:
@@ -117,10 +118,19 @@ def _write_py_file(root: Path) -> None:
     )
 
 
+# frob:ticket T-0410
 def test_build_graph_second_call_is_memo_hit(tmp_path: Path) -> None:
     """`build_graph` called twice with the same (root, cache) inside one
     scope returns the identical object the second time -- a memo hit, not
-    a second incremental rebuild."""
+    a second incremental rebuild.
+
+    `run_memo_stats()` is global across every `@memoize_per_run`-wrapped
+    function, not scoped to `build_graph` alone (T-0410): the first
+    `build_graph` call's own internal `parse_file(sample.py)` call is a
+    second, distinct memoized function miss (`parse_file` was never
+    memoized before T-0410), so 2 misses total -- 1 for `build_graph`
+    itself, 1 for the `parse_file` call inside it -- against the single
+    `build_graph` hit the repeat call produces."""
     _write_py_file(tmp_path)
     cache = tmp_path / ".frob" / "cache.db"
 
@@ -131,7 +141,7 @@ def test_build_graph_second_call_is_memo_hit(tmp_path: Path) -> None:
         assert first is second
         hits, misses = run_memo_stats()
         assert hits == 1
-        assert misses == 1
+        assert misses == 2
 
 
 def test_build_graph_outside_scope_is_never_cached(tmp_path: Path) -> None:
@@ -237,6 +247,28 @@ def test_analyze_project_second_call_is_memo_hit(tmp_path: Path) -> None:
     with run_memo_scope():
         first = analyze_project(tmp_path)
         second = analyze_project(tmp_path)
+
+        assert first is second
+        hits, misses = run_memo_stats()
+        assert hits == 1
+        assert misses == 1
+
+
+# frob:ticket T-0410
+def test_parse_file_second_call_is_memo_hit(tmp_path: Path) -> None:
+    """`parse_file` called twice with the same path inside one scope
+    returns the identical object the second time (T-0410): `_parse`'s own
+    content-hash cache already skips the tree-sitter parse on a repeat
+    call, but `extract()` (the symbol/comment walk over that tree) used to
+    re-run every time regardless -- the actual hot cost COV006's rescue
+    helpers pay by calling `parse_file` on the same file many times over
+    in one `frob check` run."""
+    _write_py_file(tmp_path)
+    path = tmp_path / "sample.py"
+
+    with run_memo_scope():
+        first = parse_file(path)
+        second = parse_file(path)
 
         assert first is second
         hits, misses = run_memo_stats()
