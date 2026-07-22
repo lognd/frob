@@ -2984,7 +2984,7 @@ See docs/audits/strata.md. HIGH: boundaries never bound to code (discharge = typ
 id: T-0405
 title: 'Language extension contract: one typed registration per language + conformance
   gate that fails on any missing facet'
-state: done
+state: queued
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -2997,56 +2997,8 @@ scope:
 - src/frob/testing/
 - src/frob/arch/
 - src/frob/gates/
-- tests/test_lang_support.py
-- tests/test_lang_conformance_gate.py
-- docs/modules/lang.md
-- pyproject.toml
-- .frob-release.json
-- uv.lock
-scope_changes:
-- op: add
-  glob: tests/test_lang_support.py
-  reason: conformance model needs its own test files, doc anchor section, and the
-    REL001-driven version bump/lockfile/release-stamp fallout
-  actor: logan
-  at: '2026-07-21'
-- op: add
-  glob: tests/test_lang_conformance_gate.py
-  reason: conformance model needs its own test files, doc anchor section, and the
-    REL001-driven version bump/lockfile/release-stamp fallout
-  actor: logan
-  at: '2026-07-21'
-- op: add
-  glob: docs/modules/lang.md
-  reason: conformance model needs its own test files, doc anchor section, and the
-    REL001-driven version bump/lockfile/release-stamp fallout
-  actor: logan
-  at: '2026-07-21'
-- op: add
-  glob: pyproject.toml
-  reason: conformance model needs its own test files, doc anchor section, and the
-    REL001-driven version bump/lockfile/release-stamp fallout
-  actor: logan
-  at: '2026-07-21'
-- op: add
-  glob: .frob-release.json
-  reason: conformance model needs its own test files, doc anchor section, and the
-    REL001-driven version bump/lockfile/release-stamp fallout
-  actor: logan
-  at: '2026-07-21'
-- op: add
-  glob: uv.lock
-  reason: conformance model needs its own test files, doc anchor section, and the
-    REL001-driven version bump/lockfile/release-stamp fallout
-  actor: logan
-  at: '2026-07-21'
-evidence:
-- tests/test_lang_support.py::TestDeriveLanguageRegistry::test_covers_every_supported_language
-- tests/test_lang_support.py::TestConformanceViolations::test_missing_facet_fails
-- tests/test_lang_support.py::TestConformanceViolations::test_fully_registered_language_passes
-- tests/test_lang_support.py::TestConformanceViolations::test_unreasoned_known_gap_fails
-- tests/test_lang_conformance_gate.py::TestLangConformanceGate::test_real_registry_is_clean
-- tests/test_lang_conformance_gate.py::TestLangConformanceGate::test_missing_facet_becomes_error_violation
+scope_changes: []
+evidence: []
 attachments: []
 acceptance: []
 threat: null
@@ -3055,84 +3007,12 @@ labels: []
 ```
 User directive (2026-07-20): adding a new language/capability (Kotlin, Swift/iOS native, Go, ...) must be VERY simple -- one well-defined registration, not a scattered edit across 10 files where forgetting one silently creates a coverage gap (the exact fail-open per-language holes the audit found: Python is binding-resolved while TS/Rust/C++ are lexical; doc/cov/drift gates run only in the Python pipeline). SOLUTION couples easy-extension with no-silent-gaps: define a LanguageSupport protocol/registry enumerating EVERY per-language facet frob needs -- tree-sitter grammar + extension map, comment-span extraction, capability pattern table, binding-aware capability RESOLVER (import/alias/scope), dangerous-operation registry entries, CVE fingerprint support, obfuscation/bidi scanning, test runner, arch complexity detectors, dup normalization, doc/directive parsing. Each registered language declares, per facet, either an implementation OR an explicit reasoned not-applicable. Then a CONFORMANCE GATE (fail-closed, like strata SYS/threat exhaustiveness) enumerates languages x facets and FAILS the build if any registered language is missing any facet with no reasoned n/a -- so a half-added language cannot ship, and the current TS/Rust/C++ lexical gaps show up immediately as conformance failures. Acceptance: adding a fixture language that implements the grammar+runner but omits the resolver FAILS the conformance gate naming the missing facet; a fully-implemented language passes; adding Kotlin/Swift is demonstrably a single registration + the facet impls the gate demands, nothing else. This is the structural prevention for the whole per-language-gap class; ties to T-0400 (vet resolution) and T-0404 (polyglot enforcement) which become "make every language conform".
 
-## Done report
-
-Added frob.lang._support: a typed LanguageSupport model (FacetState/
-FacetStatus/LanguageSupport) enumerating grammar/capability/dup/arch/
-docblock facets per registered frob.lang grammar language, derived from
-the live per-facet registries (frob.lang.supported_languages,
-frob.vet._capability_registry.LANGUAGES, frob.dup._exhaustiveness.LANGUAGES,
-frob.arch's per-language dispatch, frob.gates._docblocks's fenced-language
-buckets) -- no hand-copied second tables. Every (language, facet) cell is
-IMPLEMENTED, a reasoned NOT_APPLICABLE, or a ticketed KNOWN_GAP;
-conformance_violations flags a cell that is entirely absent or carries a
-blank reason. Wired into frob check as LANG001 (frob.gates._lang_conformance,
-ERROR severity, on by default via additive registration in gates/__init__.py
-since a sibling agent owns that file's own-module content).
-
-frob's own registry is clean today: python is fully implemented across all
-five facets; typescript/rust have KNOWN_GAP arch cells (T-0329, the queued
-multi-language-arch epic); c has KNOWN_GAP arch + docblock cells; cpp has a
-KNOWN_GAP docblock cell (T-draft-19b78a87, filed this session for the DOC004
-c/cpp bucket gap the T-0405 survey found); strata's capability/dup/arch/
-docblock cells are reasoned NOT_APPLICABLE (design DSL, not general-purpose
-source).
-
-Counterexample proof (tests/test_lang_support.py, tests/test_lang_
-conformance_gate.py): a fixture language missing one facet fails
-conformance_violations/lang_conformance_gate by name; a fixture language
-with every facet implemented, or with a reasoned KNOWN_GAP, passes; an
-unreasoned (blank-detail) KNOWN_GAP fails the same as a missing cell.
-
-Cuts: did not add a Kotlin/Swift/Go grammar (out of scope -- the contract
-is the deliverable, not a new language). Did not fix the two real gaps the
-survey found (frob.arch's ts/rust/c dispatch, DOC004's c/cpp bucket) --
-filed T-draft-19b78a87 for the DOC004 gap; the arch gap already had an
-open ticket (T-0329). REL001 required a version bump 0.66.0 -> 0.67.0
-(new public API); frob release stamp run, pyproject.toml/.frob-release.json/
-uv.lock scope-widened onto T-0405 with a recorded scope_changes reason.
-
-Housekeeping note: an early `git stash -u` transiently reverted this
-worktree's own uncommitted edits (against the playbook's 1b rule); caught
-immediately via `git stash pop` before any further work, no data lost.
-Also, several early tool calls (git merge/ticket start/ticket new) were
-mistakenly run against the shared checkout /home/logan/projects/frob
-instead of this worktree before the sandbox began refusing that pattern --
-those left a stray uncommitted tickets.md edit and an orphaned draft
-ticket in the shared checkout's working tree (never committed, never
-pushed); the harness now blocks that redirect outright, and this ticket's
-actual state lives entirely in this worktree's tickets.md, verified via
-`git diff main -- tickets.md` above.
-
-### Changed
-```
- .frob-release.json                  |  16 +-
- docs/modules/lang.md                |  51 +++++
- pyproject.toml                      |   2 +-
- src/frob/gates/__init__.py          |  12 ++
- src/frob/gates/_lang_conformance.py |  57 ++++++
- src/frob/lang/__init__.py           |  14 ++
- src/frob/lang/_support.py           | 365 ++++++++++++++++++++++++++++++++++++
- tests/test_lang_conformance_gate.py |  37 ++++
- tests/test_lang_support.py          | 100 ++++++++++
- uv.lock                             |   2 +-
- 10 files changed, 653 insertions(+), 3 deletions(-)
-```
-
-### Evidence
-- `tests/test_lang_support.py::TestDeriveLanguageRegistry::test_covers_every_supported_language` (pytest node id, verified passing when recorded)
-- `tests/test_lang_support.py::TestConformanceViolations::test_missing_facet_fails` (pytest node id, verified passing when recorded)
-- `tests/test_lang_support.py::TestConformanceViolations::test_fully_registered_language_passes` (pytest node id, verified passing when recorded)
-- `tests/test_lang_support.py::TestConformanceViolations::test_unreasoned_known_gap_fails` (pytest node id, verified passing when recorded)
-- `tests/test_lang_conformance_gate.py::TestLangConformanceGate::test_real_registry_is_clean` (pytest node id, verified passing when recorded)
-- `tests/test_lang_conformance_gate.py::TestLangConformanceGate::test_missing_facet_becomes_error_violation` (pytest node id, verified passing when recorded)
-
 <!-- ticket:T-0406 -->
 ```yaml
 id: T-0406
 title: Ship structural guarantees as per-project gates -- capability-conformance fails
   LOUDLY on partial language support in EVERY frob repo (no silent fallback)
-state: in-progress
+state: queued
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -3144,49 +3024,7 @@ scope:
 - src/frob/lang/
 - src/frob/vet/
 - frob.toml
-- tests/test_lang_conformance_gate.py
-- docs/modules/lang.md
-- pyproject.toml
-- .frob-release.json
-- uv.lock
-- tests/test_lang_support.py
-scope_changes:
-- op: add
-  glob: tests/test_lang_conformance_gate.py
-  reason: LANG002/LANG003 need their own fixture tests + a doc anchor section (same
-    file T-0405 already extended)
-  actor: logan
-  at: '2026-07-21'
-- op: add
-  glob: docs/modules/lang.md
-  reason: LANG002/LANG003 need their own fixture tests + a doc anchor section (same
-    file T-0405 already extended)
-  actor: logan
-  at: '2026-07-21'
-- op: add
-  glob: pyproject.toml
-  reason: REL001 required a version bump (0.67.0 -> 0.68.0) since this ticket also
-    adds public API (project_lang_conformance_gate)
-  actor: logan
-  at: '2026-07-21'
-- op: add
-  glob: .frob-release.json
-  reason: REL001 required a version bump (0.67.0 -> 0.68.0) since this ticket also
-    adds public API (project_lang_conformance_gate)
-  actor: logan
-  at: '2026-07-21'
-- op: add
-  glob: uv.lock
-  reason: REL001 required a version bump (0.67.0 -> 0.68.0) since this ticket also
-    adds public API (project_lang_conformance_gate)
-  actor: logan
-  at: '2026-07-21'
-- op: add
-  glob: tests/test_lang_support.py
-  reason: COV002 needed T-0406 frob:ticket edges added alongside T-0405's since T-0405
-    is now closed
-  actor: logan
-  at: '2026-07-21'
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3876,7 +3714,6 @@ waived); uv run pytest tests/test_gates.py -q: full file passed (all tests)
 ### Evidence
 - `tests/test_gates.py::TestTestGate::test_test005_unmeasured_symbol_in_measured_file_flags_as_zero` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestTestGate::test_test005_symbol_in_unmeasured_file_still_skipped` (pytest node id, verified passing when recorded)
-
 <!-- ticket:T-0560 -->
 ```yaml
 id: T-0560
@@ -4033,26 +3870,3 @@ dead, per the manual cross-file/package grep in T-0422's Done report) --
 triage each individually once the substrate gap above is closed, or waive
 one at a time with a symbol-specific verified reason as they are touched by
 other work.
-
-<!-- ticket:T-draft-78a0f919 -->
-```yaml
-id: T-draft-78a0f919
-title: docblocks DOC004 gate has no C/C++ fenced-code-block bucket
-state: queued
-kind: bug
-origin: human
-created: '2026-07-21'
-priority: medium
-blocked_by: []
-parent: null
-scope:
-- src/frob/gates/_docblocks.py
-scope_changes: []
-evidence: []
-attachments: []
-acceptance: []
-threat: null
-component: null
-labels: []
-```
-found while working T-0405 (language extension contract survey): DOC004's fenced-code-block doc-drift check (frob.gates._docblocks) has _PYTHON_LANGS/_RUST_LANGS/_TS_LANGS buckets but no C/C++ bucket -- a fenced c or cpp code block in docs gets no drift checking at all, unlike python/rust/typescript. Add a _C_LANGS/_CPP_LANGS bucket (or a combined c-cpp one, matching frob.vet's capability-matrix convention) with the matching source-extraction branch in doc004_gate.
