@@ -4187,6 +4187,7 @@ scope:
 - .frob-release.json
 - frob.lock
 - uv.lock
+- CHANGELOG.md
 scope_changes:
 - op: add
   glob: pyproject.toml
@@ -4210,6 +4211,12 @@ scope_changes:
   glob: uv.lock
   reason: REL001 version bump for coverage_gate's new diff_load_failed param (public
     API change)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: REL001 needs a CHANGELOG entry for the version bump(s) this ticket's release
+    stamp covers
   actor: logan
   at: '2026-07-21'
 evidence:
@@ -4271,7 +4278,6 @@ than silently working around it.
 
 ### Evidence
 - `tests/test_gates.py::TestGatesDegradeWithoutDiff::test_diff_dependent_gates_block_loudly_on_failed_diff` (pytest node id, verified passing when recorded)
-
 <!-- ticket:T-0551 -->
 ```yaml
 id: T-0551

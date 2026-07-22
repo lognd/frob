@@ -17,6 +17,26 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.65.0] - unreleased
+
+T-0461/T-0459/T-0562: `RENDER001` (bare stdout `print()` outside
+`frob.render`) landed on `main` between this branch's fork point and its
+merge back in; bumped here to cover that surface alongside T-0550's own
+change (below) since both are unreleased public-API deltas the release
+gate had not yet been stamped against.
+
+## [0.64.0] - unreleased
+
+T-0549/T-0550: two more gates-accounting audit fixes (T-0403 B7/B8).
+`_case_count` caps a parametrized python test's counted variants to 1
+unless its body actually contains an assertion-shaped construct, closing
+the `@pytest.mark.parametrize(range(N))`-with-no-assertions escape from
+`TEST002`/`TEST003`/`TEST009`'s minimum-case floors. `coverage_gate`
+gained an optional `diff_load_failed: bool = False` kwarg: a genuinely
+FAILED `working_diff` (bad `--base`, no merge-base, git error) now fires
+a loud `COV002`/`SCOPE001`/`TODO001` violation instead of silently
+degrading to an empty, clean-looking diff.
+
 ## [0.63.0] - unreleased
 
 T-0541/T-0542: two gates-accounting audit fixes (T-0403 B9/B10).
