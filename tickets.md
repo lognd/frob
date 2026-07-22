@@ -3635,7 +3635,7 @@ docs/audits/gates-accounting.md B10. _cov002 uses _open_scopes = every open tick
 ```yaml
 id: T-0543
 title: 'gates: INV001 evidence is test EXISTENCE, not proof the invariant holds (B12)'
-state: in-progress
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-21'
