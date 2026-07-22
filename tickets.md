@@ -4224,3 +4224,55 @@ component: null
 labels: []
 ```
 Deferred remainder of T-0177 deliverable 2. The warm daemon caches graph snapshot, baseline, and collected test ids, and frob_check_delta filters full-run results against the stamped baseline -- but run_gates itself still evaluates EVERY gate in full on each call. Build per-obligation input tracking inside gate dispatch so a delta call evaluates only obligations whose inputs changed, with the verify=True cold-diff mode as the correctness oracle (incremental results must provably match a cold frob check). NOTE: T-0177's Done report references this as T-draft-7e43ec96; the draft block did not survive  (same draft-loss failure as T-0401's draft -- T-0577 tracks the land-time fix), so this ticket is its real replacement.
+
+<!-- ticket:T-0603 -->
+```yaml
+id: T-0603
+title: wire derived-state integrity manifest into frob check/gates as a hard block
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0570
+scope:
+- src/frob/check/**
+- src/frob/gates/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a truncated .frob/cache.db WHEN frob check runs THEN the run fails closed
+  naming the corrupt artifact before any gate consumes it
+threat: null
+component: null
+labels: []
+```
+T-0570 landed the doctor-first fingerprint/format check (verify_derived_state in src/frob/doctor.py) but frob check/gates still consume derived state (.frob caches, coverage stamp, baseline) without consulting it -- corrupt state is reported by doctor, not blocked at the gate boundary. Wire verify_derived_state in so a corrupt derived artifact fails closed before any gate trusts it. NOTE: T-0570's Done report references this as T-draft-1327a057 (and mislabels it as T-0571); the draft did not survive land (T-0577 tracks the draft-loss bug), so this ticket is its real replacement.
+
+<!-- ticket:T-0604 -->
+```yaml
+id: T-0604
+title: 'derived-state manifest: persist fingerprints and detect drift across runs'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0570
+scope:
+- src/frob/doctor.py
+- tests/system/test_cli_doctor.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a derived artifact rewritten out-of-band between two doctor runs WHEN run_diagnosis
+  executes THEN the drift is reported naming the artifact and both fingerprints
+threat: null
+component: null
+labels: []
+```
+T-0570 computes sha256 fingerprints per run and validates format (SQLite magic, JSON parse) but never persists them -- so content DRIFT between runs (an artifact silently rewritten by a stale tool or a foreign process) is undetectable; only malformed bytes are caught. Store the fingerprints in a manifest file and compare on the next doctor run, reporting any artifact whose hash changed without a corresponding legitimate producer run. Flagged by T-0570's reviewer as the gap between the ticket title's 'manifest' promise and the delivered check-on-read.
