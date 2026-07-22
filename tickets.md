@@ -5692,3 +5692,61 @@ component: null
 labels: []
 ```
 From T-0352 (TS/Rust structural PII, landed): the NAME-kind field detection is cross-language, but TYPE-kind PII signals (Python EmailStr/SecretStr) stay Python-only. Extend to nominal PII-shaped TYPES in TS/Rust: TS branded/nominal email types and known secret-wrapper types; Rust secret-wrapper crate types (secrecy::Secret, SecretString) and newtype PII wrappers. Requires resolving a field/binding TYPE to a known-PII-type registry per language -- coordinate with T-0717 capability taxonomy and the T-0611/T-0612 adapters type info. Disclosed in T-0352 module docstring, not silently dropped.
+
+<!-- ticket:T-0763 -->
+```yaml
+id: T-0763
+title: 'CRITICAL friction: frob ticket land must run closeability preflight BEFORE
+  merging, not fail-after-merge leaving a commit to reset'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-22'
+priority: critical
+blocked_by: []
+parent: T-0577
+scope:
+- src/frob/tickets/_land.py
+- tests/test_ticket_land.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a ticket with an unbound acceptance criterion WHEN frob ticket land
+    runs THEN it errors naming the unbound criterion and creates NO merge/finalize
+    commit (git log unchanged), not fail-after-merge
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Coordinator friction, 15+ occurrences 2026-07-22: frob ticket land MERGES the worktree into main FIRST, then attempts the close, and when close fails (AcceptanceUnbound, EvidenceScopeUnbound, InvalidTransition done->done) it leaves a finalize/merge commit the coordinator must `git reset --hard HEAD~1` before every retry. The close preconditions (acceptance bound, evidence covers scope, state is in-progress) are all knowable BEFORE the merge. Fix: land runs a CLOSEABILITY PREFLIGHT (all close checks, dry) BEFORE the merge/finalize; if it would fail, land errors with the specific unmet precondition and touches NOTHING -- no merge commit to unwind, no reset dance. Only after preflight passes does it merge+finalize+close. This turns every failed land from a 3-command recovery into a one-line actionable error.
+
+<!-- ticket:T-0764 -->
+```yaml
+id: T-0764
+title: 'friction: archive/concurrent-ledger-rewrite silently reverts in-flight tickets
+  start+evidence+acceptance (recovered T-0753 by hand)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-22'
+priority: high
+blocked_by: []
+parent: T-0577
+scope:
+- src/frob/tickets/**
+- tests/test_tickets*.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a live non-stale lease WHEN frob ticket archive runs THEN it refuses
+    without --force; GIVEN an in-flight ticket WHEN main ledger is rewritten under
+    it THEN its start/evidence/acceptance survive the finalize
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Coordinator friction 2026-07-22: frob ticket archive (and any concurrent land that rewrites main tickets.md) causes in-flight worktree tickets to LOSE their start/evidence/acceptance-binding when the worktree next runs the 10b restore (git checkout main -- tickets.md picks up the archived/rewritten ledger where the in-flight ticket is back to queued with empty evidence). Recovered T-0753 by hand (re-start, re-record 6 evidence ids, re-bind acceptance). Fixes: (1) archive should REFUSE (or warn-and-require --force) when live non-stale leases exist -- archiving during in-flight work is the hazard; the TICK003 remediation text already says run in a quiet window, make it enforced. (2) the 10b restore recipe is fragile against a rewritten-ledger main; the real fix is the single-writer done-report/evidence path never needing a full restore -- coordinate with T-0577/T-0637 land machinery so an agent NEVER git-checkout-main-tickets.md (the land --path replay the coordinator already does is the safe pattern).
