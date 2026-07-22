@@ -2743,7 +2743,15 @@ parent: T-0376
 scope:
 - src/frob/vet/
 - docs/design/registry/patterns.yaml
-scope_changes: []
+- tests/test_registry_reconciliation_patterns.py
+scope_changes:
+- op: add
+  glob: tests/test_registry_reconciliation_patterns.py
+  reason: the reconciliation deliverable is the exhaustiveness pin test itself (patterns.yaml
+    was already fully dispositioned by T-0407/T-0426); evidence node ids live in this
+    file
+  actor: logan
+  at: '2026-07-22'
 evidence: []
 attachments: []
 acceptance: []
@@ -2752,7 +2760,6 @@ component: null
 labels: []
 ```
 Reconcile docs/design/registry/patterns.yaml against actual enforcement: every catalogued entry must map to (i) an enforced check, (ii) a documented out-of-scope entry with a verified caught_by (T-0381/T-0382), or (iii) an explicit deferred ticket. Resolve RECONCILIATION.md's undispositioned entries for this registry. Add an EXHAUSTIVENESS meta-test for this registry: catalogued count == enforced+excused+deferred count, so a future gap fails the build. Acceptance: exhaustiveness meta-test passes and is wired into frob check.
-
 <!-- ticket:T-0386 -->
 ```yaml
 id: T-0386
