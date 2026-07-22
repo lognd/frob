@@ -8334,3 +8334,31 @@ component: null
 labels: []
 ```
 Epic close condition. Extends T-0343's per-domain drift-lock with a cross-corpus check over all 11 source docs / 1950+ registry entries: (1) no named concept may exist under >=2 unlinked file-local ids (uses cross_refs, closes finding (b) permanently going forward); (2) no corpus table row may exist with no registry id (closes finding (a) permanently -- the 3 prose-only docs already retrofitted must never regress). Depends on the dedup pass and all five domain-reconciliation tickets (weaknesses/supply-chain/evasion/arch-checks/system-design) landing so the meta-test has a fully-dispositioned base to run against.
+
+<!-- ticket:T-0679 -->
+```yaml
+id: T-0679
+title: 'flake quarantine: recent-tail-window variant of is_hard_regression'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0636
+parent: T-0575
+scope:
+- src/frob/testing/_stability.py
+- tests/unit/testing/test_stability.py
+- docs/modules/testing.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN history [P] followed by K consecutive fails under live quarantine WHEN evaluate_gate
+  and hard_regression_alarms run THEN the gate stays red and the alarm fires
+threat: null
+component: null
+labels: []
+```
+T-0636's is_hard_regression checks all-fail over the ENTIRE bounded 20-run window, so a single stale pass anywhere in the window defeats detection for up to 19 subsequent all-fail runs -- a real hard regression stays promoted and un-alarmed that whole time. Add a recent-tail rule (last K runs all-fail, K configurable, default ~5) alongside or replacing the whole-window rule, with tests covering the one-old-pass-then-long-fail-tail case T-0636's reviewer identified. Update docs/modules/testing.md semantics. NOTE: the hard-regression CLI/alarm wiring is T-0635's scope; T-0636's T-draft-d529c75a duplicated it and needs no refile.
