@@ -13926,8 +13926,7 @@ kind: bug
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by:
-- T-0716
+blocked_by: []
 parent: null
 scope:
 - tests/system/test_cli_check.py
@@ -13977,7 +13976,8 @@ kind: ux
 origin: human
 created: '2026-07-22'
 priority: high
-blocked_by: []
+blocked_by:
+- T-0716
 parent: T-0715
 scope:
 - src/frob/tickets/**
