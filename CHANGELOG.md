@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.92.0] - unreleased
+
+- T-0736: scaffold conformance: managed boilerplate blocks (Makefile shim, guard hooks, gitignore) drift-checked by doctor across all repos
+
 ## [0.91.0] - unreleased
 
 - T-0724: strata: wire `check_resource_contention` (SYS200-203) into the production `frob sys audit` path, threading `Module.stores` id set (`DesignIds.store_ids`) so SYS203 (shared store write) can fire; waived the 4 SYS203 findings frob's own `design/frob.strata` surfaces on `tickets_ledger` (arbitrated by `.frob/tickets.lock`, T-0458/T-0633, until T-0700's grammar can express it)

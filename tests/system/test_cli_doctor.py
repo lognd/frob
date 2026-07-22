@@ -198,3 +198,53 @@ class TestDoctorDerivedStateManifest:
         report = run_diagnosis(tmp_path)
         assert report.healthy is True
         assert all(not d.present for d in report.derived_state)
+
+
+class TestDoctorScaffoldConformance:
+    """T-0736: `frob doctor` folds managed-boilerplate-block conformance
+    into the overall verdict, opt-in on `frob.toml` existing."""
+
+    # frob:tests src/frob/doctor.py
+    def test_run_diagnosis_ignores_non_frob_directory(self, tmp_path: Path) -> None:
+        """No `frob.toml` under `root` -- a bare directory, same as every
+        other doctor test's `tmp_path` -- reports an empty scaffold-blocks
+        list and never drags `healthy` down for it."""
+        from frob.doctor import run_diagnosis
+
+        report = run_diagnosis(tmp_path)
+        assert report.scaffold_blocks == []
+        assert report.healthy is True
+
+    # frob:tests src/frob/doctor.py
+    def test_run_diagnosis_unhealthy_when_scaffold_blocks_missing(
+        self, tmp_path: Path
+    ) -> None:
+        """A `frob.toml`-bearing repo that has never run `frob scaffold
+        apply` reports every managed block missing and folds that into an
+        unhealthy verdict naming `frob scaffold apply` as the remedy."""
+        from frob.doctor import run_diagnosis
+
+        (tmp_path / "frob.toml").write_text("[project]\n")
+        report = run_diagnosis(tmp_path)
+        assert report.healthy is False
+        assert report.scaffold_blocks
+        assert all(not s.present for s in report.scaffold_blocks)
+        assert "frob scaffold apply" in report.remediation
+
+    # frob:tests src/frob/doctor.py
+    def test_run_diagnosis_healthy_after_scaffold_apply(self, tmp_path: Path) -> None:
+        """After `apply_managed_blocks`, the same repo reports every block
+        present and not stale, and the overall verdict is healthy again
+        (assuming natives/derived-state are otherwise clean)."""
+        import subprocess
+
+        from frob.doctor import run_diagnosis
+        from frob.scaffold import apply_managed_blocks
+
+        subprocess.run(["git", "init", "-q", "-b", "main"], cwd=tmp_path, check=True)
+        (tmp_path / "frob.toml").write_text("[project]\n")
+        result = apply_managed_blocks(tmp_path)
+        assert result.is_ok
+
+        report = run_diagnosis(tmp_path)
+        assert all(s.present and not s.stale for s in report.scaffold_blocks)

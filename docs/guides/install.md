@@ -331,3 +331,37 @@ cannot even be consulted, not just flagged) needs `src/frob/check/**` and
 `src/frob/gates/**`, both under other agents' live leases at the time of
 this ticket -- see the Done report for the follow-up ticket filed for that
 enforcement step.
+
+## Scaffold managed-block conformance (T-0736)
+
+<!-- frob:describes src/frob/scaffold/_managed.py::scaffold_conformance_status -->
+
+`frob doctor` also reports whether the CURRENT repo is missing or behind
+on frob's managed boilerplate blocks (`docs/commands/scaffold.md#managed-
+blocks-t-0736`): the Makefile `core:` shim, standard `.gitignore`
+entries, and the T-0431/T-0577 worktree-lease git hooks. This is opt-in
+on `frob.toml` existing under the repo root -- a bare directory (a
+`tmp_path` in a test, a repo that has never adopted frob at all) has
+nothing to be behind ON, so it reports an empty `scaffold_blocks` list
+and never drags the overall verdict down for it.
+
+For a `frob.toml`-bearing repo, any block that is missing entirely, or
+present but drifted from what `frob scaffold apply` would install right
+now (a digest mismatch, the same "regenerate fresh, compare byte-
+identical" check `DEPLOY001` uses for deploy scripts), folds into an
+unhealthy verdict naming the single remedy:
+
+```bash
+frob scaffold apply
+```
+
+`frob doctor --json`'s `scaffold_blocks` array carries one entry per
+managed block/hook (`block_id`, `target`, `kind` -- `"text"` or `"hook"`
+-- `present`, `stale`, `expected_digest`, `actual_digest`). A hook file
+that exists but is NOT recognizably frob's own (no frob install-comment
+marker) is reported present and not-stale -- `frob doctor` never claims a
+repo's genuine custom hook of the same name is drift.
+
+Per-sibling rollout across the estate (bootstrapping every other repo the
+same way this one was) is tracked via adoption tickets filed at land time
+through the fleet route, not enumerated here.

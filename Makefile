@@ -216,16 +216,11 @@ install: $(STAMP) core
 # documented target-dir locking, not a new mechanism to maintain here.
 CARGO_TARGET_DIR := $(shell git rev-parse --git-common-dir 2>/dev/null)/frob-cargo-target-cache
 
-# Build and install the frob-core native extension into the venv. The
-# smart-dup R3+ rungs need it; R1/R2 and every other feature work without
-# it, so this is a best-effort step that warns rather than fails when the
-# Rust toolchain is absent.
-core: $(STAMP)
-	@command -v cargo >/dev/null 2>&1 || { \
-		echo "cargo not found; skipping frob-core (smart-dup R3+ disabled)"; \
-		exit 0; }
-	VIRTUAL_ENV=$(CURDIR)/.venv CARGO_TARGET_DIR=$(CARGO_TARGET_DIR) uvx maturin develop --uv --release -m frob-core/Cargo.toml
-	VIRTUAL_ENV=$(CURDIR)/.venv CARGO_TARGET_DIR=$(CARGO_TARGET_DIR) uvx maturin develop --uv --release -m strata-core/Cargo.toml
+# T-0736: the `core:` target's recipe itself now lives in the
+# `makefile-core-shim` managed block at the bottom of this file (`frob
+# scaffold apply` owns it, carrying this same CARGO_TARGET_DIR mechanism
+# verbatim) instead of being hand-maintained here -- this comment marks
+# where it used to live so the target isn't hunted for twice.
 
 # ---------- standalone tool install (T-0133) ----------
 
@@ -341,3 +336,22 @@ upload: clean
 	git commit -m "chore: bump version to $$NEW"; \
 	git push; \
 	uv build && uv publish
+
+# frob:managed-block BEGIN makefile-core-shim (frob scaffold apply -- do not hand-edit within markers)
+# Build and install the frob-core/strata-core native extensions into the
+# venv (T-0732). Smart-dup R3+ and strata design-model parsing need them;
+# everything else works without them, so this is a best-effort step that
+# warns rather than fails when the Rust toolchain is absent. Requires a
+# STAMP variable (venv install stamp) to already be defined -- see the
+# Makefile shim installed by `frob scaffold apply`.
+# T-0732: CARGO_TARGET_DIR shared per CLONE (not per worktree) via the
+# common .git dir, so a fresh worktree reuses another worktree's already-
+# compiled dependency crates instead of a from-scratch cargo build.
+CARGO_TARGET_DIR := $(shell git rev-parse --git-common-dir 2>/dev/null)/frob-cargo-target-cache
+core: $(STAMP)
+	@command -v cargo >/dev/null 2>&1 || { \
+		echo "cargo not found; skipping frob-core (smart-dup R3+ disabled)"; \
+		exit 0; }
+	VIRTUAL_ENV=$(CURDIR)/.venv CARGO_TARGET_DIR=$(CARGO_TARGET_DIR) uvx maturin develop --uv --release -m frob-core/Cargo.toml
+	VIRTUAL_ENV=$(CURDIR)/.venv CARGO_TARGET_DIR=$(CARGO_TARGET_DIR) uvx maturin develop --uv --release -m strata-core/Cargo.toml
+# frob:managed-block END makefile-core-shim

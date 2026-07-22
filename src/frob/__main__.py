@@ -105,7 +105,7 @@ def _collect_option_strings(parser: argparse.ArgumentParser) -> set[str]:
 
 
 # frob:ticket T-0030
-# frob:ticket T-0030
+# frob:ticket T-0736
 def _add_scaffold_parser(sub) -> None:
     """Register the `frob scaffold` subcommand and its arguments."""
     # -- scaffold ------------------------------------------------------------
@@ -114,6 +114,12 @@ def _add_scaffold_parser(sub) -> None:
     )
     scaffold_sub = scaffold_p.add_subparsers(dest="scaffold_command")
     scaffold_sub.add_parser("list", help="list registered project types")
+    # T-0736: idempotently install/update the managed boilerplate blocks
+    # (Makefile core-shim, standard .gitignore entries, worktree-lease
+    # hooks) in the current repo.
+    scaffold_sub.add_parser(
+        "apply", help="install/update managed boilerplate blocks (T-0736)"
+    )
     scaffold_new_p = scaffold_sub.add_parser("new", help="create a new project")
     scaffold_new_p.add_argument(
         "scaffold_type", metavar="type", help="project type (e.g. python-tool)"

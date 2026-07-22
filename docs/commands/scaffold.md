@@ -112,6 +112,63 @@ def install_worktree_lease_hook(root, *, force=False) -> Result[tuple[Path, ...]
     # to overwrite an existing hook file without force=True.
 ```
 
+## Managed blocks (T-0736)
+
+Boilerplate that used to get fixed one repo at a time (the Makefile
+`core:` shim, standard `.gitignore` entries, the T-0431/T-0577
+worktree-lease git hooks) is now defined ONCE, in
+`src/frob/scaffold/_managed.py`, and drift-checked/installed everywhere
+else -- the same "regenerate fresh, compare byte-identical" posture the
+deploy script<->model drift-lock (`docs/strata/host.md#the-deploy-
+generator`) already uses, applied to scaffold boilerplate instead of
+generated deploy scripts.
+
+<!-- frob:describes src/frob/scaffold/_managed.py::apply_managed_blocks -->
+<!-- frob:describes src/frob/scaffold/_managed.py::scaffold_conformance_status -->
+```bash
+frob scaffold apply   # idempotently install/update every managed block
+```
+
+Two kinds of managed block:
+
+- **Text blocks** (`MANAGED_TEXT_BLOCKS`) live inside an existing file
+  (`Makefile`, `.gitignore`) between a
+  `# frob:managed-block BEGIN <id> ... # frob:managed-block END <id>`
+  marker pair. `frob scaffold apply` appends the block if the markers are
+  absent, replaces the region in place if present-but-different (drifted
+  from the current canonical content), and leaves it alone if already
+  current. Content OUTSIDE the markers -- the rest of a repo's own
+  Makefile/`.gitignore` -- is never touched.
+  - `makefile-core-shim`: T-0732's `core:` target (native-extension
+    build), read directly from this repo's own Makefile as the canonical
+    definition, not duplicated by hand elsewhere.
+  - `gitignore-standard`: the cross-language `.gitignore` entries every
+    frob-managed repo should carry (build artifacts, Python caches, frob
+    local state, secrets).
+- **Hook blocks** (`MANAGED_HOOK_NAMES`) are the two T-0431/T-0577
+  worktree-lease git hooks (`pre-commit`, `pre-merge-commit`) --
+  `apply_managed_blocks` reuses `install_worktree_lease_hook` rather than
+  re-deriving hook content, so there is still exactly one place the hook
+  body is defined. A hook file that already exists and is recognizably
+  frob's own (carries its install-comment marker) is refreshed; a hook
+  that exists and is NOT frob's own is reported and left completely
+  untouched -- `apply` never overwrites a repo's genuine custom hook.
+
+`frob doctor` folds the same conformance check into its report
+(`docs/guides/install.md#scaffold-managed-block-conformance-t-0736`):
+opt-in on `frob.toml` existing (a bare directory with no frob adoption at
+all has nothing to be behind on), a `frob.toml`-bearing repo that is
+missing or stale on any managed block is reported unhealthy with
+`frob scaffold apply` named as the remedy.
+
+**Not built in this pass**: T-0735's planned `frob-natives-build`
+subcommand does not exist yet, so `makefile-core-shim`'s content is the
+literal T-0732 recipe verbatim rather than a call into that subcommand;
+T-0735 will update the one definition here once it lands. Per-sibling
+adoption tickets (rolling `frob scaffold apply` out to the other repos in
+the estate) are filed at land time via the fleet route, not from this
+ticket's worktree.
+
 ## Adding a project type
 
 1. Create `src/frob/scaffold/data/types/<type-name>/` with `.j2` templates.

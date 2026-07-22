@@ -46,6 +46,7 @@ from pathlib import Path
 from pydantic import BaseModel
 
 from frob.logging import get_logger
+from frob.scaffold._managed import ManagedBlockStatus, scaffold_conformance_status
 
 _log = get_logger(__name__)
 
@@ -202,17 +203,29 @@ def _derived_state_remediation(corrupt: tuple[DerivedArtifactStatus, ...]) -> st
     return f"corrupt derived state: {names} -- {commands}"
 
 
+def _scaffold_remediation(missing_or_stale: tuple[ManagedBlockStatus, ...]) -> str:
+    """One clear remediation line naming every missing/stale managed block
+    (T-0736) -- the fix is always the same single command."""
+    names = ", ".join(f"{s.block_id} ({s.target})" for s in missing_or_stale)
+    return (
+        f"managed boilerplate blocks missing/stale: {names} -- "
+        "run `frob scaffold apply`"
+    )
+
+
 # frob:doc docs/guides/install.md#frob-doctor-native-extension-diagnosis-t-0319
 class DoctorReport(BaseModel):
     """Full `frob doctor` diagnosis: per-extension status, derived-artifact
-    integrity manifest (T-0570), the overall verdict, and remediation hint
-    (empty when everything is healthy)."""
+    integrity manifest (T-0570), managed-boilerplate-block conformance
+    (T-0736), the overall verdict, and remediation hint (empty when
+    everything is healthy)."""
 
     model_config = {}
 
     frob_version: str
     extensions: list[NativeExtensionStatus]
     derived_state: list[DerivedArtifactStatus] = []
+    scaffold_blocks: list[ManagedBlockStatus] = []
     healthy: bool
     remediation: str | None = None
 
@@ -241,15 +254,20 @@ def _frob_version() -> str:
 
 
 def _combined_remediation(
-    natives_healthy: bool, corrupt: tuple[DerivedArtifactStatus, ...]
+    natives_healthy: bool,
+    corrupt: tuple[DerivedArtifactStatus, ...],
+    scaffold_needs_apply: tuple[ManagedBlockStatus, ...] = (),
 ) -> str | None:
-    """The full remediation text for a `DoctorReport`: natives hint, derived-
-    state hint, or both joined -- `None` only when both are clean."""
+    """The full remediation text for a `DoctorReport`: natives hint,
+    derived-state hint, scaffold-conformance hint (T-0736), or all joined
+    -- `None` only when every part is clean."""
     parts = []
     if not natives_healthy:
         parts.append(REMEDIATION_HINT)
     if corrupt:
         parts.append(_derived_state_remediation(corrupt))
+    if scaffold_needs_apply:
+        parts.append(_scaffold_remediation(scaffold_needs_apply))
     return " | ".join(parts) if parts else None
 
 
@@ -270,18 +288,26 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
     derived_state = verify_derived_state(root or Path.cwd())
     corrupt = tuple(d for d in derived_state if d.present and not d.healthy)
 
-    healthy = natives_healthy and not corrupt
+    scaffold_blocks = scaffold_conformance_status(root or Path.cwd())
+    scaffold_needs_apply = tuple(s for s in scaffold_blocks if not s.present or s.stale)
+
+    healthy = natives_healthy and not corrupt and not scaffold_needs_apply
     report = DoctorReport(
         frob_version=_frob_version(),
         extensions=extensions,
         derived_state=list(derived_state),
+        scaffold_blocks=list(scaffold_blocks),
         healthy=healthy,
-        remediation=_combined_remediation(natives_healthy, corrupt),
+        remediation=_combined_remediation(
+            natives_healthy, corrupt, scaffold_needs_apply
+        ),
     )
     _log.info(
-        "doctor: healthy=%s extensions=%s derived_state_corrupt=%s",
+        "doctor: healthy=%s extensions=%s derived_state_corrupt=%s "
+        "scaffold_needs_apply=%s",
         healthy,
         extensions,
         [d.name for d in corrupt],
+        [s.block_id for s in scaffold_needs_apply],
     )
     return report
