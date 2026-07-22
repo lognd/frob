@@ -6407,3 +6407,31 @@ component: null
 labels: []
 ```
 T-0610 migrated long-function/god-class/deep-nesting onto NormalizedModule but left two check families on the raw tree-sitter walk, with concrete schema gaps documented: _extract_signatures' body-fingerprint needs full raw AST for alpha-renaming, and _collect_dispatch_refs needs argument-position/dict-value detail NormalizedCall does not carry. Extend the model (arg positions on NormalizedCall; a fingerprint-friendly body projection or a documented decision to keep fingerprints raw-AST-based), then migrate both WITHOUT regressing the T-0360 dispatch-family suppression or T-0370 near-dup discriminator protections (their tests must pass unmodified). NOTE: T-0610's Done report references this as T-draft-4e98abb1 (prose only); this is the real ticket.
+
+<!-- ticket:T-0633 -->
+```yaml
+id: T-0633
+title: 'tickets: ledger writes racing a ticket start background sweep can clobber
+  an unrelated ticket''s block'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/**
+- tests/test_tickets*.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a ticket start whose background sweep completes after a concurrent frob ticket
+  new WHEN both finish THEN both tickets' ledger blocks are fully intact (state, body,
+  evidence)
+threat: null
+component: null
+labels: []
+```
+Two independent occurrences in one session (2026-07-22): (1) the coordinator's T-0630 block was silently wiped from main's tickets.md by a concurrent stale-ledger write; (2) T-0576's implementer observed frob ticket new, run immediately after frob ticket start's BACKGROUND pre-work sweep, overwrite ticket T-0632's ledger block entirely -- the sweep loads the ledger, the new writes it, the sweep's completion writes back its stale copy (lost update). The ledger lock (.frob/tickets.lock) is held per-operation, not across the background sweep's load-modify-write. Fix: the background sweep must re-acquire the lock AND re-load the ledger before writing (or write only its own ticket's sweep fields via a targeted read-modify-write), never write back a whole stale ledger. Add a regression test: start (with slow sweep stubbed) + concurrent new -> both tickets' blocks intact.
