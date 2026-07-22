@@ -1090,6 +1090,7 @@ def _current_actor() -> str:
 
 # frob:ticket T-0455
 # frob:ticket T-0561
+# frob:ticket T-0422
 # frob:waive COV005 reason="T-0485's docstring/signature edit to this already-private helper shifted line offsets against the many other symbols in this file sharing the frob:ticket T-0455 target; COV005's rebind check matches old/new bindings by (kind, target) alone across the whole file and reads the shift as a rebind onto a new private symbol -- this directive has bound _scope_add_conflicts (private) all along, same false-positive class as gates/__init__.py's own documented COV005 waiver"  # noqa: E501
 # frob:tests tests/test_tickets_scope_mutation.py::TestNewFileCarveOut.test_new_file_under_broad_lease_is_exempt  # noqa: E501
 # frob:tests tests/test_tickets_scope_mutation.py::TestNewFileCarveOut.test_existing_file_under_broad_lease_still_conflicts  # noqa: E501
@@ -1153,6 +1154,7 @@ def _scope_add_conflicts(
 
 
 # frob:ticket T-0561
+# frob:ticket T-0422
 def _is_new_concrete_file_glob(glob: str, root: Path) -> bool:
     """Whether `glob` names ONE concrete, not-yet-existing TEST file under
     `root` -- the narrow T-0561 carve-out signal.
@@ -1207,6 +1209,7 @@ def _validate_scope_request(
 
 # frob:ticket T-0455
 # frob:ticket T-0561
+# frob:ticket T-0422
 # frob:waive COV005 reason="T-0485's caller-signature edit (own_scope passthrough to _scope_add_conflicts) shifted line offsets against the many other symbols in this file sharing the frob:ticket T-0455 target; COV005's rebind check matches old/new bindings by (kind, target) alone across the whole file and reads the shift as a rebind onto a new private symbol -- this directive has bound _validate_scope_mutation (private) all along, same false-positive class as gates/__init__.py's own documented COV005 waiver"  # noqa: E501
 def _validate_scope_mutation(
     ticket_id: str,
@@ -1294,6 +1297,8 @@ def _scope_change_entries(
 
 
 # frob:ticket T-0455
+# frob:ticket T-0561
+# frob:ticket T-0422
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_scope_mutation.py::TestMutateScope.test_add_free_path_granted  # noqa: E501
 # frob:tests tests/test_tickets_scope_mutation.py::TestMutateScope.test_add_leased_path_rejected_names_holder  # noqa: E501

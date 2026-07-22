@@ -2948,7 +2948,7 @@ User spotted from frob check output: frob-arch appears as its own stage AND arch
 id: T-0422
 title: 'dead-symbol gate: an unreferenced private symbol is dead code (symbol-level
   analog of REF001; catches written-but-never-wired)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -2958,8 +2958,71 @@ parent: T-0407
 scope:
 - src/frob/gates/
 - src/frob/graph/
-scope_changes: []
-evidence: []
+- src/frob/gates/__init__.py
+- tests/test_gates.py
+- tests/test_graph.py
+- src/frob/tickets/__init__.py
+- tests/test_tickets_scope_mutation.py
+- pyproject.toml
+- CHANGELOG.md
+- .frob-release.json
+- uv.lock
+scope_changes:
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: additive-only registration lines (import + frozenset entry + canonical-order
+    entry + process-job entry) wiring the new dead_symbol_gate module into frob check,
+    per this wave's gates/** ownership split
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_gates.py
+  reason: DEAD001 gate regression tests
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_graph.py
+  reason: build_reference_graph regression test (T-0422's new callgraph.py addition)
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/tickets/__init__.py
+  reason: re-tag COV002-flagged symbols with T-0422 now that T-0561 (their own ticket)
+    is closed -- same precedent as T-0543's Done report
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_tickets_scope_mutation.py
+  reason: same re-tag reason
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: REL001 requires a version bump for T-0422's new public callgraph.build_reference_graph
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: REL001 version-bump artifact
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 version-bump artifact
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: mechanical lockfile refresh alongside version bump
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_gates.py::TestDeadSymbolGate::test_unwired_private_function_is_flagged
+- tests/test_gates.py::TestDeadSymbolGate::test_called_private_helper_is_not_flagged
+- tests/test_gates.py::TestDeadSymbolGate::test_dunder_method_is_not_flagged
+- tests/test_gates.py::TestDeadSymbolGate::test_test_function_is_not_flagged
+- tests/test_gates.py::TestDeadSymbolGate::test_tests_edge_target_is_not_flagged
+- tests/test_graph.py::TestCallGraph::test_build_reference_graph_catches_dispatch_table_entry
 attachments: []
 acceptance: []
 threat: null
@@ -2968,6 +3031,110 @@ labels: []
 ```
 Root cause of the arch double-run (T-0418): _arch_violations_from_suggestions was WRITTEN to prevent the duplication but NEVER WIRED -- zero callers, dead code, and no gate flagged it. Generalize: a private symbol (leading-underscore function/class/method) with NO in-repo references (not called, not re-exported, not a test target, not a registered dispatch entry, not a dunder/protocol method) is DEAD -- either wire it or delete it. This is the SYMBOL-level analog of the anti-orphan FILE gate (REF001/T-0396): a file with no inbound refs is an orphan file; a private symbol with no inbound refs is an orphan symbol. Reuse the graph the orphan-file/callgraph work already builds (references/uses edges). Fail-tier WARN (advisory-but-tracked, like REF). Careful about FALSE POSITIVES: exempt dunders, protocol/ABC methods, pytest test_ functions, registered-via-decorator handlers, and anything reached only dynamically WITH an explicit frob:used-by-style declaration (verified). Acceptance: a written-but-unwired private function like _arch_violations_from_suggestions is flagged; a genuinely-used private helper is not; a decorator-registered handler is not. This stops the entire "intended code silently rots unwired" class.
 
+## Done report
+
+New DEAD001 gate (src/frob/gates/_dead_symbols.py::dead_symbol_gate,
+WARN severity), the symbol-level analog of REF001's anti-orphan file
+gate: a private Python function/class/method with no reference-graph
+caller and no frob:tests/frob:describes/frob:invariant edge is flagged.
+Own standalone module (per this wave's gates/** ownership split);
+gates/__init__.py touched only with additive registration lines (one
+import, one _ALL_GATES entry, one _CANONICAL_GATE_ORDER entry, one
+process-pool registration + one process-job dict entry), same shape as
+T-0558's parse_failure_gate.
+
+Two "wired" signals exempt a symbol: (1) referenced anywhere in its own
+package's reference graph, (2) an existing TESTS/DESCRIBES/INVARIANT
+edge targets it directly (a bare frob:ticket tag does NOT count -- every
+symbol in this repo carries one, which would silence the gate entirely).
+Dunder methods and test_*/Test*-named symbols are exempt by convention;
+anything else genuinely reached only dynamically is exempt via the
+standard frob:waive DEAD001 reason="..." mechanism.
+
+Counterexample-first triage (T-0422's own "expect real findings, triage
+them honestly" instruction) surfaced a REAL soundness gap in the shared
+frob.graph.callgraph substrate, not a bug in this new gate:
+
+1. Running the naive build_call_graph-based check against ALL languages
+   produced 199 findings, ~100% false positives, entirely in
+   frob-core/strata-core Rust sources (e.g. Parser.advance, called
+   dozens of times via self.advance(), came back "uncalled"). Root
+   cause: callgraph._short_name_index hardcodes Python's
+   leading-underscore privacy convention (frob.lang._walk_python); Rust
+   (pub), TypeScript (export), and C (static) each compute
+   SymbolRecord.public from a completely different marker the call
+   graph never consults, so a Rust method's short name never starts
+   with "_" and its calls are never recorded as edges at all. Fix:
+   scoped dead_symbol_gate to Python (.py) files only for this pass,
+   documented in the gate's own docstring -- extending to other
+   languages needs the underlying substrate fixed first, not a
+   per-language guess bolted onto this gate.
+2. Even Python-only, build_call_graph's call-token-only recall
+   (name(...)) missed every dispatch-table-registered handler in this
+   repo's own app/*_runner.py CLI dispatch tables (e.g. "new": _new) --
+   100 false positives. Added frob.graph.callgraph.build_reference_graph
+   (new public function, additive to build_call_graph, same CallGraph
+   shape, shared _resolve_edges/_parse_package helpers factored out of
+   the existing T-0361 split) with broader recall: a bare identifier
+   reference counts, not only a call token. This alone cut the Python
+   finding count from 100 to 51.
+
+Remaining 51 findings (Python-only, frob check --only dead_symbols):
+manually triaged via a cross-file/package grep (not by inspection alone)
+and found a further ~40 are STILL false positives from a third, deeper
+substrate gap -- a symbol referenced ONLY from a bare MODULE-LEVEL
+dict/tuple/list literal (frob.lang.RawSymbol/body_tokens only captures
+function/class/method bodies; a top-level statement's tokens are
+invisible to build_reference_graph too, since there is no enclosing
+symbol to attribute them to). A smaller remainder look like pytest
+fixtures referenced by parameter name across sibling test files, and
+pydantic @field_validator/@model_validator methods invoked by the
+framework (RawSymbol carries no decorator information to detect this
+structurally). Given this, mass-waiving the 51 findings now would be
+dishonest (most are provably NOT dead per the manual grep) and fixing
+the underlying gap (extending frob.lang's extraction contract with a
+module-scope token bucket, or adding decorator info to RawSymbol) is a
+real, separate, cross-cutting piece of work. Filed T-draft-09c8e260
+("DEAD001 burndown: triage 51 findings...") with the exact count and
+both identified false-positive classes, per this ticket's own
+"file ONE burndown follow-up with exact counts if large" instruction.
+
+Also re-tagged 4 already-closed-T-0561 symbols in src/frob/tickets/
+__init__.py and tests/test_tickets_scope_mutation.py with frob:ticket
+T-0422 (COV002 needs an OPEN ticket edge; T-0561 is now DONE) -- no
+functional change to those symbols, same precedent as T-0543/T-0561's
+own Done reports.
+
+Public API changed (new GraphSnapshot-adjacent callgraph.
+build_reference_graph function) -- version bumped 0.64.0 -> 0.65.0
+(pyproject.toml, CHANGELOG.md, .frob-release.json via `frob release
+stamp`, uv.lock via `uv lock`).
+
+### Changed
+```
+ .frob-release.json                   |   4 +-
+ CHANGELOG.md                         |  14 ++
+ pyproject.toml                       |   2 +-
+ src/frob/gates/__init__.py           |   6 +
+ src/frob/gates/_parse_failures.py    |  58 ++++++++
+ src/frob/graph/__init__.py           | 134 +++++++++++++++---
+ src/frob/graph/_models.py            |  26 ++++
+ src/frob/tickets/__init__.py         |  76 +++++++++-
+ tests/test_gates.py                  |  40 ++++++
+ tests/test_graph.py                  | 101 ++++++++++++-
+ tests/test_tickets_scope_mutation.py |  96 +++++++++++++
+ tickets.md                           | 267 +++++++++++++++++++++++++++++++++--
+ uv.lock                              |   2 +-
+ 13 files changed, 788 insertions(+), 38 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestDeadSymbolGate::test_unwired_private_function_is_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDeadSymbolGate::test_called_private_helper_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDeadSymbolGate::test_dunder_method_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDeadSymbolGate::test_test_function_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDeadSymbolGate::test_tests_edge_target_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_graph.py::TestCallGraph::test_build_reference_graph_catches_dispatch_table_entry` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0424 -->
 ```yaml
 id: T-0424
@@ -4682,3 +4849,63 @@ No public API change (`mutate_scope`'s external signature is unchanged;
 - `tests/test_tickets_scope_mutation.py::TestNewFileCarveOut::test_existing_file_under_broad_lease_still_conflicts` (pytest node id, verified passing when recorded)
 - `tests/test_tickets_scope_mutation.py::TestNewFileCarveOut::test_non_test_file_under_broad_lease_still_conflicts` (pytest node id, verified passing when recorded)
 - `tests/test_tickets_scope_mutation.py::TestNewFileCarveOut::test_new_file_exact_match_of_holder_scope_still_conflicts` (pytest node id, verified passing when recorded)
+
+<!-- ticket:T-draft-09c8e260 -->
+```yaml
+id: T-draft-09c8e260
+title: 'DEAD001 burndown: triage 51 findings, most likely false-positive classes (module-level
+  dict refs, pytest fixtures, pydantic validators)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/
+- tests/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+frob check --only dead_symbols reports 51 DEAD001 warnings on this repo (Python-only
+pass, T-0422). Manual triage of all 51 found two systematic FALSE-POSITIVE classes,
+not real dead code, both structural gaps in frob.graph.callgraph's substrate:
+
+1. ~40/51: a private symbol referenced ONLY from a module-level dict/tuple literal
+   (e.g. `_DISPATCH_BY_TYPE = {"cpp": _dispatch_check_cpp, ...}` in
+   src/frob/app/check_runner.py, `_WALKERS = {"python": _walk_python, ...}` in
+   src/frob/lang/_extract.py, PII/secrets pattern-registry tuples). frob.lang's
+   RawSymbol/body_tokens ONLY captures function/class/method bodies -- a bare
+   module-level statement's tokens are invisible to both build_call_graph and
+   T-0422's build_reference_graph, so a symbol wired ONLY via a top-level
+   registry looks identical to genuinely dead code.
+2. A smaller remainder: pytest fixtures referenced by PARAMETER NAME across
+   sibling test files (never a call token or bare mention in their own file,
+   e.g. `_repo_root` in tests/unit/strata/test_litmus_*.py), and what look like
+   pydantic @field_validator/@model_validator methods invoked by the framework,
+   never by name in tracked source (e.g. HostOwns._validate_mode,
+   PolicyDecl._split_meta_rules) -- RawSymbol carries no decorator information
+   to detect the latter structurally today.
+
+Recommended follow-up direction (either, or both):
+- Extend frob.lang's extraction contract with a synthetic "module scope"
+  RawSymbol (or a raw top-level-statement token bucket) per file, so
+  build_reference_graph can see a bare identifier mentioned in a top-level
+  dict/tuple/list literal -- this alone would likely resolve the ~40-count
+  class outright.
+- Give RawSymbol decorator information (at least the presence of unknown
+  decorators) so `_is_dunder`/`_is_test_symbol`-style exemptions can add a
+  "decorated, assume framework-dispatched" rule, closing the validator-method
+  class without a manual frob:waive per-symbol.
+
+Until then: do NOT mass-waive the 51 findings blind (most are provably NOT
+dead, per the manual cross-file/package grep in T-0422's Done report) --
+triage each individually once the substrate gap above is closed, or waive
+one at a time with a symbol-specific verified reason as they are touched by
+other work.

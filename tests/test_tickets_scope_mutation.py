@@ -221,8 +221,10 @@ class TestNewFileCarveOut:
     same-file race or a non-test-file expansion still refuses.
 
     frob:ticket T-0561
+    frob:ticket T-0422
     """
 
+    # frob:ticket T-0422
     def test_new_file_under_broad_lease_is_exempt(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_scope_mutation.py::TestNewFileCarveOut.test_new_file_under_broad_lease_is_exempt  # noqa: E501
         # The exact T-0561 repro shape: a broad tests/** epic in progress,
@@ -241,6 +243,7 @@ class TestNewFileCarveOut:
         assert "tests/unit/test_app_runners_batch6.py" in result.danger_ok.scope
         assert holder.state is TicketState.IN_PROGRESS
 
+    # frob:ticket T-0422
     def test_existing_file_under_broad_lease_still_conflicts(
         self, tmp_path: Path
     ) -> None:
@@ -264,6 +267,7 @@ class TestNewFileCarveOut:
         assert result.is_err and result.danger_err == TicketError.ScopeLeaseConflict
         assert holder.state is TicketState.IN_PROGRESS
 
+    # frob:ticket T-0422
     def test_non_test_file_under_broad_lease_still_conflicts(
         self, tmp_path: Path
     ) -> None:
@@ -287,6 +291,7 @@ class TestNewFileCarveOut:
         assert result.is_err and result.danger_err == TicketError.ScopeLeaseConflict
         assert holder.state is TicketState.IN_PROGRESS
 
+    # frob:ticket T-0422
     def test_new_file_exact_match_of_holder_scope_still_conflicts(
         self, tmp_path: Path
     ) -> None:

@@ -1788,3 +1788,39 @@ class TestGeneratedSource:
         from frob.graph._generated import is_generated_source
 
         assert is_generated_source(tmp_path, "src/does_not_exist.py") is False
+
+
+class TestCallGraph:
+    """T-0422: `build_reference_graph` broadens `build_call_graph`'s
+    call-token-only recall to also catch a bare identifier reference
+    (a dispatch-table/registry entry), for consumers that need "is this
+    symbol referenced anywhere" rather than strictly "is it called".
+
+    frob:ticket T-0422
+    """
+
+    def test_build_reference_graph_catches_dispatch_table_entry(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/callgraph.py::build_reference_graph
+        from frob.graph.callgraph import build_call_graph, build_reference_graph
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def _handler() -> None:\n"
+            "    pass\n"
+            "\n\n"
+            'def register() -> dict:\n    return {"cmd": _handler}\n',
+        )
+        # build_call_graph only ever sees a `name(...)` call token --
+        # `_handler` here is a bare dict VALUE, never called, so the
+        # narrower call graph records no edge at all.
+        call_graph = build_call_graph(tmp_path, ("src/a.py",))
+        assert call_graph.calls == {}
+
+        # build_reference_graph's broader recall catches it: `_handler`'s
+        # bare identifier token appears in `register`'s body regardless
+        # of call form.
+        ref_graph = build_reference_graph(tmp_path, ("src/a.py",))
+        assert ref_graph.calls == {"src/a.py::register": ("src/a.py::_handler",)}

@@ -28,6 +28,7 @@ from pydantic import BaseModel, ConfigDict
 __all__ = [
     "CallGraph",
     "build_call_graph",
+    "build_reference_graph",
     "closure",
 ]
 
@@ -65,6 +66,30 @@ def _called_names(body_tokens: tuple[str, ...]) -> frozenset[str]:
     return frozenset(names)
 
 
+# frob:ticket T-0422
+def _referenced_names(body_tokens: tuple[str, ...]) -> frozenset[str]:
+    """Every bare identifier token, called or not -- broader recall than
+    `_called_names`: also catches a dispatch-table/registry reference
+    (`{"cmd": _foo}`, a decorator target, an attribute assigned to a
+    class body) that never appears as a `name(...)` call token at all."""
+    return frozenset(tok for tok in body_tokens if tok.isidentifier())
+
+
+def _parse_package(root: Path, paths: Sequence[str]) -> dict[str, list]:
+    """`path -> [RawSymbol, ...]` for every file in `paths` that parses
+    cleanly -- the shared indexing phase `build_call_graph` and
+    `build_reference_graph` both start from."""
+    from frob.lang import parse_file
+
+    parsed_by_path: dict[str, list] = {}
+    for path in paths:
+        result = parse_file(root / path)
+        if result.is_err:
+            continue
+        parsed_by_path[path] = list(result.danger_ok.symbols)
+    return parsed_by_path
+
+
 # frob:doc docs/modules/graph.md#call-graph
 # frob:invariant INV-014
 def build_call_graph(root: Path, paths: Sequence[str]) -> CallGraph:
@@ -81,18 +106,29 @@ def build_call_graph(root: Path, paths: Sequence[str]) -> CallGraph:
     Ambiguous same-name matches within the allowed candidate set all get
     an edge (best-effort; `closure` node-caps the fan-out).
     """
-    from frob.lang import parse_file
-
-    parsed_by_path: dict[str, list] = {}
-    for path in paths:
-        result = parse_file(root / path)
-        if result.is_err:
-            continue
-        parsed_by_path[path] = list(result.danger_ok.symbols)
-
+    parsed_by_path = _parse_package(root, paths)
     by_name = _short_name_index(parsed_by_path)
-    calls = _resolve_call_edges(parsed_by_path, by_name)
+    calls = _resolve_edges(parsed_by_path, by_name, _called_names)
     return CallGraph(calls=calls)
+
+
+# frob:doc docs/modules/graph.md#call-graph
+# frob:ticket T-0422
+# frob:tests tests/test_graph.py::TestCallGraph.test_build_reference_graph_catches_dispatch_table_entry  # noqa: E501
+def build_reference_graph(root: Path, paths: Sequence[str]) -> CallGraph:
+    """Like `build_call_graph`, but records a private symbol as REFERENCED
+    the moment another symbol's body names it at all -- a dispatch-table
+    entry (`COMMANDS = {"new": _new}`) or decorator target, not only a
+    `name(...)` call token. Strictly broader recall than `build_call_graph`
+    (same `CallGraph` shape, reused rather than inventing a parallel
+    model) -- T-0422's dead-symbol gate needs "is this symbol referenced
+    anywhere", not strictly "called", since a symbol wired only via a
+    dispatch table would otherwise look identical to genuinely dead code
+    under `build_call_graph` alone."""
+    parsed_by_path = _parse_package(root, paths)
+    by_name = _short_name_index(parsed_by_path)
+    refs = _resolve_edges(parsed_by_path, by_name, _referenced_names)
+    return CallGraph(calls=refs)
 
 
 # frob:ticket T-0361
@@ -114,20 +150,26 @@ def _short_name_index(
 
 
 # frob:ticket T-0361
-def _resolve_call_edges(
+# frob:ticket T-0422
+def _resolve_edges(
     parsed_by_path: dict[str, list],
     by_name: dict[str, list[tuple[str, str, bool]]],
+    name_extractor,
 ) -> dict[str, tuple[str, ...]]:
     """Caller symref -> resolved private-callee symrefs, per `build_call_graph`'s
     resolution rule (never a public symbol, never self); split out of
-    `build_call_graph`'s edge-resolution phase (T-0361)."""
+    `build_call_graph`'s edge-resolution phase (T-0361). `name_extractor`
+    (T-0422: `_called_names` for `build_call_graph`, `_referenced_names`
+    for `build_reference_graph`) is the only thing that differs between
+    the two graphs -- everything else (the by-name index, the
+    private/self filtering) is shared."""
     calls: dict[str, tuple[str, ...]] = {}
     for path, symbols in parsed_by_path.items():
         for sym in symbols:
             caller_symref = f"{path}::{sym.qualname}"
-            called_names = _called_names(sym.body_tokens)
+            names = name_extractor(sym.body_tokens)
             callees: list[str] = []
-            for name in called_names:
+            for name in names:
                 for symref, _cand_path, is_private in by_name.get(name, ()):
                     if symref == caller_symref:
                         continue

@@ -17,6 +17,25 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.65.0] - unreleased
+
+T-0422: new `DEAD001` gate (`frob.gates._dead_symbols.dead_symbol_gate`,
+WARN severity) flags a private Python function/class/method with no
+call-graph caller and no `frob:tests`/`frob:describes`/`frob:invariant`
+edge -- the symbol-level analog of REF001's anti-orphan file gate
+(`_arch_violations_from_suggestions`, written but never wired, was the
+motivating T-0418 case). `frob.graph.callgraph` gained a new public
+`build_reference_graph` function: broader recall than `build_call_graph`
+(catches a dispatch-table/registry bare-identifier reference, not only a
+`name(...)` call token) -- `build_call_graph` alone measured a large
+false-positive rate against this repo's own `app/*_runner.py` dispatch
+tables during development. Python (`.py`) files only for now: Rust/
+TypeScript/C use a different visibility marker than Python's
+leading-underscore convention, which `callgraph`'s privacy check does
+not (yet) account for -- see the gate's own docstring and T-0422's Done
+report for the measured ~100% false-positive rate that scoping decision
+avoids.
+
 ## [0.64.0] - unreleased
 
 T-0558: `frob.graph.GraphSnapshot` gained a `parse_failures` field (new

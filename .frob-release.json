@@ -327,6 +327,7 @@
     "src/frob/gates/_coverage.py::load_stamp": "2126d7d6a7815cc0638aa0e4d6a044ee861032da69b9d659e064ee406e5c023f",
     "src/frob/gates/_coverage.py::stamp_coverage": "17dd518b00c5b5c1c6f90b1092a682270844d7425b395896339e226c5165c903",
     "src/frob/gates/_cve_fingerprint_scan.py::cve_fingerprint_scan_gate": "a7667099c722e4afaa5b0ec0fd40f6f917368267b0ae9afc8116a4f0fe34ddff",
+    "src/frob/gates/_dead_symbols.py::dead_symbol_gate": "ccb75a1a6ec73b33e90b0e278ce29174ab50c40a60fd3da4e75867bee5a7eb97",
     "src/frob/gates/_docblocks.py::doc004_gate": "ae1933bdb3d41939434b20539b217c3b3ea97d541ac837ded6bf3098bf6ba8a9",
     "src/frob/gates/_exclude_hazard.py::exclude_hazard_gate": "6e3505c56c11b17ba244b1e111c1bba69666b59e6c5a678e73e648632c0c6bc0",
     "src/frob/gates/_models.py::CoverageData": "001138b91932cc4d61786cd5c81887b9816e4afa8e020c55b42a31532c511915",
@@ -416,6 +417,7 @@
     "src/frob/graph/cache.py::touch_file_stat": "6c753f05ac5e99619b573b1c8ddd59c6fc1e973e294ffbe26473d5d0c725dc85",
     "src/frob/graph/callgraph.py::CallGraph": "e2747c7571378e936de947725fcafb217ca9f9782c5930fa8a2652485dba6a1d",
     "src/frob/graph/callgraph.py::build_call_graph": "aefafef876a5330bd11a67c70c33a57275b4f3d388d86f08bbcbd094e37dbe01",
+    "src/frob/graph/callgraph.py::build_reference_graph": "1796c447d7ff18e1a6711193fed68b8b746479050264429ed1a056c0852ef6cc",
     "src/frob/graph/callgraph.py::closure": "03a5762b12fa785c4d7b4237e2c9f326ba68d1e047b1f5524b6a8edfbe3af3e2",
     "src/frob/graph/digest.py::compute_digests": "f558880c079f7930093a4e185cc9beef639973ac796d1994563b91bf17287a03",
     "src/frob/graph/dsl.py::dedupe_slug": "33cda9cd0cda63391863536999a922eca9c608fb805374dcdd62f8b02b92fba0",
@@ -1103,5 +1105,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.64.0"
+  "version": "0.65.0"
 }
