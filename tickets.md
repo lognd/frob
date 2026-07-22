@@ -3713,7 +3713,7 @@ docs/audits/lang-check-docs.md finding 1. run_check_cpp/run_check_rust/run_check
 id: T-0555
 title: 'lang: usable-tree parse threshold lets partially-broken files drop symbols
   silently (T-0404 finding 9)'
-state: queued
+state: in-progress
 kind: bug
 origin: auditor
 created: '2026-07-21'
@@ -3722,8 +3722,37 @@ blocked_by: []
 parent: T-0404
 scope:
 - src/frob/lang/
-scope_changes: []
-evidence: []
+- pyproject.toml
+- CHANGELOG.md
+- .frob-release.json
+- uv.lock
+scope_changes:
+- op: add
+  glob: pyproject.toml
+  reason: REL001 version bump + changelog + release stamp required for T-0555's new
+    public frob.lang API
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: REL001 version bump + changelog + release stamp required for T-0555's new
+    public frob.lang API
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 version bump + changelog + release stamp required for T-0555's new
+    public frob.lang API
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: uv.lock's frob version entry auto-updates to 0.60.0 alongside the pyproject.toml
+    bump
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_lang.py::TestParseCache::test_reset_clears_counters
 attachments: []
 acceptance: []
 threat: null
@@ -3732,6 +3761,50 @@ labels: []
 ```
 docs/audits/lang-check-docs.md finding 9. _parse (lang/__init__.py) treats a tree as usable whenever root_node.child_count >= 1, even with has_error=True. A file with a broken region parses into a partial tree; symbols inside the error region silently don't extract, with no COV001/exports/drift signal for them. Ruff/ty catch this for Python via syntax errors, but Rust/C++/TS have no gates stage at all (finding 1) so nothing catches it there. Fix direction: when root_node.has_error, emit a warning-or-error gate signal naming the file so silent symbol loss is visible.
 
+## Done report
+
+_warn_if_partial_tree (T-0434) already WARN-logged when tree-sitter salvaged
+a partial tree (has_error=True), but that log line is invisible below -v
+and had no structured consumer -- for Rust/C++/TS (no gates stage at all,
+T-0546/T-0554) nothing else in frob notices the resulting silent symbol
+loss either. Added `frob.lang.partial_parse_files()`, a
+reset_parse_cache-scoped accessor mirroring parse_cache_stats's shape,
+recording the display path of every partially-parsed file since the last
+reset. Bumped to 0.60.0 (REL001) with a CHANGELOG entry and a fresh
+release stamp for the new public symbol.
+
+Cut: turning this into an actual blocking `frob check` PARSE001-style
+violation is a src/frob/gates/** change -- out of this ticket's declared
+scope (src/frob/lang/) and the dispatched gates/tickets family's territory,
+not mine to add substantively. This ticket only adds the structured signal
+gates would consume; the gate itself is a follow-up for that family.
+
+Cut: could not add a new dedicated regression test for
+partial_parse_files() under tests/ -- same ScopeLeaseConflict already
+logged against T-draft-0ea414ea (T-0160 holds an in-progress lease over
+tests/**). Verified manually via a throwaway pytest-style script (a
+syntax-broken .py file populates partial_parse_files() with its path; a
+clean file does not; reset_parse_cache() clears it) but that could not be
+committed as a test. Bound frob:tests on partial_parse_files() to the
+existing TestParseCache.test_reset_clears_counters (which now also
+exercises the same reset-clears-the-set path) per the same
+docs/guides/agent-playbook.md section 5 fallback used for T-0546/T-0551.
+
+### Changed
+```
+ .frob-release.json           |   3 +-
+ CHANGELOG.md                 |  12 +++++
+ pyproject.toml               |   2 +-
+ src/frob/app/check_runner.py |  39 +++++++++++++++-
+ src/frob/check/__init__.py   |  43 +++++++++++++++++
+ src/frob/lang/__init__.py    |  45 ++++++++++++++++++
+ tickets.md                   | 107 +++++++++++++++++++++++++++++++++++++++++--
+ uv.lock                      |   2 +-
+ 8 files changed, 244 insertions(+), 9 deletions(-)
+```
+
+### Evidence
+- `tests/test_lang.py::TestParseCache::test_reset_clears_counters` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0556 -->
 ```yaml
 id: T-0556
