@@ -13722,3 +13722,32 @@ component: null
 labels: []
 ```
 User mandate 2026-07-22: the hot-graph must cover ALL supported languages, not just Python. The store/section-ids/advisories (T-0711/T-0712) are already language-neutral (symbol digests + normalized-model line spans exist for python/TS/rust/kotlin adapters; C/C++ via the existing tree-sitter parse); this ticket delivers the per-language COLLECTOR ADAPTERS converting each ecosystem native profile format into T-0710 shared (file, line, weight) hit stream: (a) NATIVE (Rust/C/C++ incl. the pyo3 strata_core/frob_core crates in-process): Linux perf record/script output (frame-pointer or dwarf stacks; mixed-mode python+native stacks attribute native frames to crate sections and python frames to the python sampler -- one profile, two resolvers); degrade gracefully (warn + empty) where perf is unavailable, per the vitest/ctest collector precedent (T-0587). (b) V8 (TS/JS): node --cpu-prof .cpuprofile JSON ingestion, hooked into the vitest runner invocation the T-0587 collector already discovers. (c) JVM (Kotlin): JFR recording ingestion (jfr print/JSON) when a JVM test runner is configured. Each adapter is a bounded parser + resolver, tested against small committed fixture profiles (never live-profiling in unit tests); frob.toml [runners] declares which collector attaches to which runner. NO-FAIL-SILENT: an unparseable profile is an ERROR naming the file; frames resolving to no known section are counted and reported as unattributed-weight (a visible number, never dropped) -- an unattributed fraction above a threshold is a finding, since it means the hot-graph is blind to real time.
+
+<!-- ticket:T-0749 -->
+```yaml
+id: T-0749
+title: 'evidence --accepts binding not persisted (at least via --path): acceptance
+  stays unbound after CLI reports success'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: critical
+blocked_by: []
+parent: T-0572
+scope:
+- src/frob/app/ticket_runner.py
+- src/frob/tickets/**
+- tests/test_tickets_acceptance.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN frob ticket evidence X node --accepts 0 --path DIR WHEN the ledger is
+    re-read THEN acceptance[0].evidence contains the node id
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Field bug found landing T-0736 (the first close under T-0572s acceptance gate): frob ticket evidence <id> <node> --accepts N --path <dir> reports the evidence append but the criterion binding does NOT persist -- acceptance[N].evidence stays [] on read-back (reproduced 3x; the plain evidence list grows, the binding is dropped). Unblocked via a direct store-API write. Root-cause candidates: the accepts write path ignores --path, or the binding is applied to a copy the ledger write does not carry. Add a regression test binding via --path and reading back; audit the in-repo (no --path) path too -- T-0572s own tests bound in-repo and passed, so the --path leg is at least the broken one.
