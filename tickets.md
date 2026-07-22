@@ -7120,3 +7120,141 @@ component: null
 labels: []
 ```
 Every service node must declare golden-signal SLOs (latency/traffic/errors/saturation) and an error budget. Depends on the metrics-instrumentation obligation existing first, since an SLO without the underlying signal is unverifiable.
+
+<!-- ticket:T-0649 -->
+```yaml
+id: T-0649
+title: 'strata: SINGLE SOURCE OF TRUTH obligation - two nodes writing one store is
+  a hazard'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0331
+scope:
+- src/frob/strata/**
+- docs/strata/**
+- tests/unit/strata/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given a store with >=2 distinct writer nodes and no declared single-owner/reconciliation,
+  when checked, then the obligation fires
+threat: null
+component: null
+labels: []
+```
+Extends SYS003 hub: a store written by two or more distinct nodes without a declared owner/reconciliation is a hard obligation failure.
+
+<!-- ticket:T-0650 -->
+```yaml
+id: T-0650
+title: 'strata: transactional-boundary obligation on multi-write ops'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0649
+parent: T-0331
+scope:
+- src/frob/strata/**
+- docs/strata/**
+- tests/unit/strata/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given a multi-write op with no transactional-boundary declared, when checked, then
+  the obligation fires
+threat: null
+component: null
+labels: []
+```
+Any op writing to >1 store must declare a transactional boundary (or saga, see distributed-txn ticket). Reuses the store-writer graph built for the single-source-of-truth obligation.
+
+<!-- ticket:T-0651 -->
+```yaml
+id: T-0651
+title: 'strata: MESSAGE SCHEMA VERSION obligation on events/queues'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0331
+scope:
+- src/frob/strata/**
+- docs/strata/**
+- tests/unit/strata/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given an event/queue node with no schema version declared, when checked, then the
+  obligation fires
+threat: null
+component: null
+labels: []
+```
+Every event/queue node must declare a message schema version for backward-compat tracking.
+
+<!-- ticket:T-0652 -->
+```yaml
+id: T-0652
+title: 'strata: exactly-once vs at-least-once delivery-semantics declaration on queues'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0651
+parent: T-0331
+scope:
+- src/frob/strata/**
+- docs/strata/**
+- tests/unit/strata/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given a queue node with no delivery-semantics declared, when checked, then the obligation
+  fires
+threat: null
+component: null
+labels: []
+```
+Every queue node must declare its delivery semantics (exactly-once/at-least-once). Shares the queue-node surface work with the message-schema-version obligation.
+
+<!-- ticket:T-0653 -->
+```yaml
+id: T-0653
+title: 'strata: retention/TTL obligation on PII stores'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0331
+scope:
+- src/frob/strata/**
+- docs/strata/**
+- tests/unit/strata/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given a PII-tagged store with no retention/TTL declared, when checked, then the
+  obligation fires
+threat: null
+component: null
+labels: []
+```
+Every store holding PII must declare a retention/TTL policy (ties T-0207).
