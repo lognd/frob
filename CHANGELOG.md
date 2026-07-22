@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.89.0] - unreleased
+
+- T-0707: selfconform: SYS102 unmodeled code src/frob/registry -- model the registry package
+
 ## [0.88.0] - unreleased
 
 - T-0612: arch: Rust adapter for the normalized code model (`frob.arch._rust.RustAdapter`)

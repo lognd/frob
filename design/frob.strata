@@ -208,6 +208,72 @@ node stratamod : trusted {
     waive "LINT004" reason "no real kill switch around net calls yet -- T-0200 is the follow-on ticket to build one" ticket "T-0200";
 }
 
+// T-0707: the unified registry-entry model (T-0407, `frob.registry`) --
+// one typed shape every `docs/design/registry/*.yaml` manifest instantiates
+// (compliance/patterns/weaknesses/secrets/pii corpora), so a registry
+// entry's schema and disposition grammar live in exactly one place instead
+// of being re-derived ad hoc per consuming gate. Distinct from the
+// `registry` node above: THAT node is the foreign-trust boundary for
+// third-party PACKAGE registries (PyPI/npm/crates, `src/frob/vet/
+// _registry.py`); THIS node is an internal, trusted model/loader package
+// with no network surface at all -- naming collision in the domain, not
+// in this model, so `registry_model` avoids conflating the two.
+// `may` measured the same honest way every other node's header here
+// documents (direct grep of `src/frob/registry/**`, T-0707 Done report):
+// `fs`/`fs-read` (`_models.py`/`_corpus.py`/`_staleness.py` all
+// `Path.read_text` the tracked `docs/design/registry/*.yaml` manifests;
+// `_corpus.py::append_entry` and `_staleness.py`'s rewrite path both
+// `Path.write_text` back to the SAME tracked manifest files -- never an
+// arbitrary path, always the registry file the caller already loaded).
+// `fs-write` is declared as plain `fs` here, not the separate `fs-write`
+// kind, matching every other node/store in this model (`_effects.py`'s
+// `_KIND_MAP` normalizes the write-shaped sink to `fs`, so no node here
+// declares `fs-write` on its own -- doing so trips SYS101 as a capability
+// this scanner never actually reports). No `eval`/`exec`/`net`/`sql`/
+// `fetch_url`/`ffi` call exists anywhere under this package (verified by
+// direct grep) -- it never talks to a network registry itself, it only
+// parses/writes the repo's own tracked YAML.
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+node registry_model : trusted {
+    clearance Internal;
+    code "src/frob/registry/**";
+    may "fs";
+    may "fs-read";
+}
+
+// T-0707 (fleet half, filed separately at T-0708 then resolved directly
+// here since this ticket's mandated gate-green check cannot pass while
+// EITHER unmodeled directory remains): the multi-repo fleet orchestrator
+// (T-0573, `frob.fleet`) -- `load_manifest`/`collect_status`/`rollup`/
+// `route_ticket` over `fleet.toml`, the `frob fleet` subcommand's engine.
+// `may` measured by direct grep of `src/frob/fleet/__init__.py`: `fs`
+// (`load_manifest`'s `path.open("rb")` + `tomllib.load` of the tracked
+// `fleet.toml` -- declared as the plain `fs` kind, not `fs-read`: this
+// scanner's `fs-read` needle only fires on `Path.read_text`-shaped reads,
+// which `open("rb")`/`tomllib.load` is not, so declaring `fs-read` here
+// trips SYS101 as a capability this scanner never actually reports for
+// this file, same precision lesson `registry_model` above already
+// documents for `fs-write`), `exec` (`_git_branch_and_dirty`/
+// `_gate_summary_probe` both `subprocess.run` a FIXED argv --
+// `["git", "status", ...]` and `["uv", "run", "--project", <path>, "frob",
+// "check", "--json"]` -- built from this repo's own manifest-declared
+// sibling paths, never from response/network bytes). No `eval`/`net`/
+// `sql`/`fetch_url`/`ffi`/`deserialize` call exists anywhere under this
+// package (verified by direct grep) -- `json.loads` of a LOCAL
+// subprocess's own stdout is not a `deserialize`-kind sink under this
+// model's vocabulary (no untrusted-network byte stream reaches it).
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+node fleet : trusted {
+    clearance Internal;
+    code "src/frob/fleet/**";
+    may "exec";
+    may "fs";
+    // T-0166/T-0250-class LINT004: no real kill switch around subprocess
+    // spawning yet, same posture as core/tickets_ledger/vet/stratamod
+    // above; waived pending T-0200's real kill-switch mechanism.
+    waive "LINT004" reason "no real kill switch around subprocess spawning yet -- T-0200 is the follow-on ticket to build one" ticket "T-0200";
+}
+
 // dup+frob-core: everything that is real infrastructure but not one of
 // the named components above -- src/frob/dup/**, logging/**, process/**,
 // gitlog/**, gitio.py, xref/**, outline/**, map/**, exports/**,
@@ -387,6 +453,14 @@ flow f_cli_gates : cli -> gates { label Internal; }
 flow f_cli_tickets : cli -> tickets_ledger { label Internal; }
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 flow f_cli_vet : cli -> vet { label Internal; }
+// T-0707: `src/frob/app/registry_runner.py` imports `frob.registry`
+// directly (the `frob registry` subcommand's CLI entrypoint).
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_cli_registry_model : cli -> registry_model { label Internal; }
+// T-0707: `src/frob/app/fleet_runner.py` imports `frob.fleet` directly
+// (the `frob fleet` subcommand's CLI entrypoint).
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_cli_fleet : cli -> fleet { label Internal; }
 
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 flow f_graphlang_core : graphlang -> core { label Internal; }
@@ -413,6 +487,11 @@ flow f_gates_core : gates -> core { label Internal; }
 flow f_gates_strata : gates -> stratamod { label Internal; }
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 flow f_gates_tickets : gates -> tickets_ledger { label Internal; }
+// T-0707: `src/frob/gates/_registry_exhaustiveness.py::registry_gate`
+// imports `frob.registry._models`/`frob.registry._staleness` directly --
+// the one consumer of the unified registry model.
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_gates_registry_model : gates -> registry_model { label Internal; }
 
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 flow f_strata_graphlang : stratamod -> graphlang { label Internal; }
@@ -432,6 +511,16 @@ flow f_vet_core : vet -> core { label Internal; }
 
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 flow f_tickets_core : tickets_ledger -> core { label Internal; }
+
+// T-0707: `frob.fleet.route_ticket` imports `frob.tickets` directly
+// (`TicketSpec`/`doable`/`load_queue`/`new_ticket`) to file a finding into
+// a sibling repo's own ledger.
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_fleet_tickets : fleet -> tickets_ledger { label Internal; }
+// T-0707: `frob.fleet` imports `frob.logging.get_logger` (module logger
+// setup, owned by `core`'s `src/frob/logging/**` glob).
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_fleet_core : fleet -> core { label Internal; }
 
 // -- boundary --------------------------------------------------------
 
@@ -532,6 +621,22 @@ assume "weakness:CWE-78:tickets_ledger" noflow registry -> tickets_ledger owner 
 // scope, but honestly discharged here rather than left dangling.
 // frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
 assume "weakness:CWE-78:vet" noflow registry -> vet owner logan review "2026-10-15"
+
+// T-0707: `fleet` newly declares `may "exec"` (fixed-argv `subprocess.run`
+// for local `git status`/`frob check --json` probes), dragging in the same
+// CWE-78 discharge obligation as core/vet/tickets_ledger above. No flow
+// exists from `registry` (the foreign package-registry node) to `fleet` at
+// all -- `fleet` only talks to `cli`, `tickets_ledger`, and `core` -- so
+// this is the same graph-provable NoFlow case those three nodes' comments
+// already document; `assume` used for the same uniformity reason (the
+// THREAT003 discharge check requires a boundary-kind proof only `assume`/
+// `managed` are exempt from). Every `subprocess.run` argv under `fleet`'s
+// code glob is a hardcoded list (`["git", "status", ...]`,
+// `["uv", "run", "--project", <manifest-declared sibling path>, "frob",
+// "check", "--json"]`) built from `fleet.toml`'s own tracked repo paths,
+// never from registry response bytes. Reviewed 2026-07.
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-78:fleet" noflow registry -> fleet owner logan review "2026-10-15"
 
 // T-0401 (docs/audits/strata.md G3): `eval` used to be globally
 // `BenignCapability`-excused ("no CWE_CATALOG entry targets dynamic code
