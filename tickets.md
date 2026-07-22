@@ -3439,7 +3439,7 @@ Observed misuse: frob ticket list --status (correct: --state), done-report --bod
 ```yaml
 id: T-0579
 title: 'frob ticket drop: first-class CLI for dropped-with-reason (today it is a hand-edit)'
-state: in-progress
+state: done
 kind: ux
 origin: agent
 created: '2026-07-21'
