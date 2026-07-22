@@ -67,6 +67,8 @@ def _dup001_message(
 
 # frob:doc docs/modules/dup.md#gate-integration
 # frob:doc docs/guides/extending/dup-detector-registry.md#dup-detector-registry
+# frob:enforces ACC-2-1-DUPLICATED-CODE
+# frob:enforces CHK-GATE-DUP001
 def DUP001(
     report: CloneReport, touched: frozenset[str], threshold: float
 ) -> tuple[Violation, ...]:
@@ -102,6 +104,7 @@ def DUP001(
 
 # frob:doc docs/modules/dup.md#gate-integration
 # frob:waive TEST005 reason="DUP002 77.8% branch cover, debt T-0160"
+# frob:enforces CHK-GATE-DUP002
 def DUP002(
     report: CloneReport, touched: frozenset[str], threshold: float
 ) -> tuple[Violation, ...]:

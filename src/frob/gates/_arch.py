@@ -30,6 +30,8 @@ _ARCH_LONG_FUNCTION_CATEGORY = "long-function"
 
 
 # frob:doc docs/modules/gates.md#rule-catalog
+# frob:enforces ACC-2-1-LONG-FUNCTION
+# frob:enforces CHK-GATE-ARCH001
 def arch_gate(root: Path) -> tuple[Violation, ...]:
     """ARCH001: one `Violation` per long-AND-complex python/C++ function
     `frob.arch.analyze_project` still flags after its complexity filter
