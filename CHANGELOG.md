@@ -19,6 +19,8 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
 ## [0.91.0] - unreleased
 
+- T-0587: testing: real vitest/ctest test collectors (`frob.testing.collect_ts_tests`, `frob.testing.collect_cpp_tests`)
+- T-0616: arch: SRP/cohesion checks (ARCH1xx) -- LCOM4, god-module, mixed-concern function (`frob.arch._srp`)
 - T-0617: arch: OCP checks (`frob.arch._ocp`) -- `type-dispatch-smell` and `non-exhaustive-enum-match`, reusing T-0332's isinstance-chain detector via the new shared `frob.arch._patterns.iter_type_switch_chains`
 
 ## [0.90.0] - unreleased

@@ -11,8 +11,10 @@ the bindings exist, `frob test` runs the bound tests.
 from __future__ import annotations
 
 from frob.testing._collect import (
+    collect_cpp_tests,
     collect_python_tests,
     collect_rust_tests,
+    collect_ts_tests,
     drop_collection_cache,
 )
 from frob.testing._coverage_wait import (
@@ -68,8 +70,10 @@ __all__ = [
     "TestRunReport",
     "TestingError",
     "capture_python_outcomes",
+    "collect_cpp_tests",
     "collect_python_tests",
     "collect_rust_tests",
+    "collect_ts_tests",
     "coverage_lock_path",
     "drop_collection_cache",
     "evaluate_gate",

@@ -9,6 +9,7 @@ from pathlib import Path
 
 from typani import Err, Ok
 
+import frob.gates  # noqa: F401  (T-0634: import before frob.testing to break the frob.gates<->frob.testing circular-import ordering)
 from frob.gitio import Diff, Hunk, ProcResult, working_diff
 from frob.graph import build_graph
 from frob.testing import (
@@ -2009,3 +2010,338 @@ class TestCollectBranchGaps:
         result = collect_mod._collect_rust_uncached(tmp_path)
         assert result.is_err
         assert result.danger_err == TestingError.CollectFailed
+
+
+# frob:ticket T-0587
+class TestCollectTsTests:
+    """T-0587: `npx vitest list --json` node ids for discovered vitest
+    projects, mirroring `TestCollectRustTests`'s structure."""
+
+    # frob:ticket T-0587
+    def _write_project(self, root: Path, rel: str = ".") -> Path:
+        project_dir = root / rel if rel != "." else root
+        _write(
+            root,
+            f"{rel}/package.json" if rel != "." else "package.json",
+            """
+            {
+              "name": "widget",
+              "devDependencies": { "vitest": "^1.0.0" }
+            }
+            """,
+        )
+        _write(
+            root,
+            f"{rel}/src/widget.test.ts" if rel != "." else "src/widget.test.ts",
+            """
+            test("adds", () => {});
+            """,
+        )
+        return project_dir
+
+    # frob:ticket T-0587
+    def test_collect_ts_tests_parses_and_caches(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_ts_tests
+        import frob.testing._collect as collect_mod
+
+        self._write_project(tmp_path)
+        monkeypatch.setattr(collect_mod.shutil, "which", lambda name: "/usr/bin/npx")
+
+        calls: list[tuple] = []
+
+        # frob:ticket T-0587
+        def fake_run_argv(argv, *, cwd=None, timeout_s=300.0):
+            calls.append(tuple(argv))
+            stdout = '[{"file": "src/widget.test.ts", "name": "adds"}]'
+            return Ok(
+                ProcResult(argv=tuple(argv), returncode=0, stdout=stdout, stderr="")
+            )
+
+        monkeypatch.setattr(collect_mod, "run_argv", fake_run_argv)
+
+        result = collect_mod.collect_ts_tests(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.node_ids == frozenset({"src/widget.test.ts::adds"})
+        assert len(calls) == 1
+
+        result2 = collect_mod.collect_ts_tests(tmp_path)
+        assert result2.is_ok
+        assert result2.danger_ok.node_ids == result.danger_ok.node_ids
+        assert len(calls) == 1  # cache hit, no second spawn
+
+    # frob:ticket T-0587
+    def test_collect_ts_tests_no_projects_is_ok_empty(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_ts_tests
+        from frob.testing._collect import collect_ts_tests
+
+        result = collect_ts_tests(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.node_ids == frozenset()
+
+    # frob:ticket T-0587
+    def test_collect_ts_tests_degrades_when_npx_absent(
+        self, tmp_path: Path, monkeypatch, caplog
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_ts_tests
+        import frob.testing._collect as collect_mod
+
+        self._write_project(tmp_path)
+        monkeypatch.setattr(collect_mod.shutil, "which", lambda name: None)
+
+        # frob:ticket T-0587
+        def fake_run_argv(argv, *, cwd=None, timeout_s=300.0):
+            raise AssertionError("run_argv must not be called when npx is absent")
+
+        monkeypatch.setattr(collect_mod, "run_argv", fake_run_argv)
+
+        with caplog.at_level("WARNING"):
+            result = collect_mod.collect_ts_tests(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.node_ids == frozenset()
+        assert any("npx not found" in msg for msg in caplog.messages)
+
+    # frob:ticket T-0587
+    def test_collect_ts_tests_genuine_failure_is_err(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_ts_tests
+        import frob.testing._collect as collect_mod
+
+        self._write_project(tmp_path)
+        monkeypatch.setattr(collect_mod.shutil, "which", lambda name: "/usr/bin/npx")
+
+        # frob:ticket T-0587
+        def fake_run_argv(argv, *, cwd=None, timeout_s=300.0):
+            return Ok(
+                ProcResult(
+                    argv=tuple(argv),
+                    returncode=1,
+                    stdout="",
+                    stderr="config error",
+                )
+            )
+
+        monkeypatch.setattr(collect_mod, "run_argv", fake_run_argv)
+        result = collect_mod.collect_ts_tests(tmp_path)
+        assert result.is_err
+        assert result.danger_err == TestingError.CollectFailed
+
+    # frob:ticket T-0587
+    def test_collect_ts_tests_skips_malformed_entries(
+        self, tmp_path: Path, monkeypatch, caplog
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_ts_tests
+        import frob.testing._collect as collect_mod
+
+        self._write_project(tmp_path)
+        monkeypatch.setattr(collect_mod.shutil, "which", lambda name: "/usr/bin/npx")
+
+        # frob:ticket T-0587
+        def fake_run_argv(argv, *, cwd=None, timeout_s=300.0):
+            stdout = (
+                '[{"file": "src/widget.test.ts", "name": "adds"}, '
+                '{"file": 5, "name": "bad"}]'
+            )
+            return Ok(
+                ProcResult(argv=tuple(argv), returncode=0, stdout=stdout, stderr="")
+            )
+
+        monkeypatch.setattr(collect_mod, "run_argv", fake_run_argv)
+        with caplog.at_level("WARNING"):
+            result = collect_mod.collect_ts_tests(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.node_ids == frozenset({"src/widget.test.ts::adds"})
+        assert any("malformed vitest entry" in msg for msg in caplog.messages)
+
+
+# frob:ticket T-0587
+class TestFindVitestProjects:
+    # frob:ticket T-0587
+    def test_ignores_node_modules_package_json(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_ts_tests
+        from frob.testing._collect import _find_vitest_projects
+
+        _write(
+            tmp_path,
+            "package.json",
+            '{"devDependencies": {"vitest": "^1.0.0"}}',
+        )
+        _write(
+            tmp_path,
+            "node_modules/some-dep/package.json",
+            '{"devDependencies": {"vitest": "^9.9.9"}}',
+        )
+        found = _find_vitest_projects(tmp_path)
+        assert found == [tmp_path]
+
+    # frob:ticket T-0587
+    def test_ignores_project_without_vitest_dep(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_ts_tests
+        from frob.testing._collect import _find_vitest_projects
+
+        _write(tmp_path, "package.json", '{"dependencies": {"react": "^18.0.0"}}')
+        found = _find_vitest_projects(tmp_path)
+        assert found == []
+
+
+# frob:ticket T-0587
+class TestCollectCppTests:
+    """T-0587: `ctest --show-only=json-v1` node ids for already-configured
+    CMake build directories, mirroring `TestCollectRustTests`'s structure."""
+
+    # frob:ticket T-0587
+    def _write_project(self, root: Path) -> None:
+        _write(
+            root,
+            "CMakeLists.txt",
+            """
+            cmake_minimum_required(VERSION 3.20)
+            project(widget)
+            enable_testing()
+            add_test(NAME widget_adds COMMAND widget_test)
+            """,
+        )
+        _write(root, "build/CTestTestfile.cmake", "add_test(widget_adds widget_test)\n")
+
+    # frob:ticket T-0587
+    def test_collect_cpp_tests_parses_and_caches(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_cpp_tests
+        import frob.testing._collect as collect_mod
+
+        self._write_project(tmp_path)
+        monkeypatch.setattr(collect_mod.shutil, "which", lambda name: "/usr/bin/ctest")
+
+        calls: list[tuple] = []
+
+        # frob:ticket T-0587
+        def fake_run_argv(argv, *, cwd=None, timeout_s=300.0):
+            calls.append(tuple(argv))
+            stdout = '{"tests": [{"name": "widget_adds"}]}'
+            return Ok(
+                ProcResult(argv=tuple(argv), returncode=0, stdout=stdout, stderr="")
+            )
+
+        monkeypatch.setattr(collect_mod, "run_argv", fake_run_argv)
+
+        result = collect_mod.collect_cpp_tests(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.node_ids == frozenset({"build::widget_adds"})
+        assert len(calls) == 1
+
+        result2 = collect_mod.collect_cpp_tests(tmp_path)
+        assert result2.is_ok
+        assert result2.danger_ok.node_ids == result.danger_ok.node_ids
+        assert len(calls) == 1  # cache hit, no second spawn
+
+    # frob:ticket T-0587
+    def test_collect_cpp_tests_no_projects_is_ok_empty(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_cpp_tests
+        from frob.testing._collect import collect_cpp_tests
+
+        result = collect_cpp_tests(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.node_ids == frozenset()
+
+    # frob:ticket T-0587
+    def test_collect_cpp_tests_unconfigured_build_is_ok_empty(
+        self, tmp_path: Path
+    ) -> None:
+        # a CMakeLists.txt with no build/CTestTestfile.cmake yet (not
+        # configured) must degrade to empty, not error.
+        # frob:tests src/frob/testing/_collect.py::collect_cpp_tests
+        from frob.testing._collect import collect_cpp_tests
+
+        _write(
+            tmp_path,
+            "CMakeLists.txt",
+            """
+            cmake_minimum_required(VERSION 3.20)
+            project(widget)
+            """,
+        )
+        result = collect_cpp_tests(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.node_ids == frozenset()
+
+    # frob:ticket T-0587
+    def test_collect_cpp_tests_degrades_when_ctest_absent(
+        self, tmp_path: Path, monkeypatch, caplog
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_cpp_tests
+        import frob.testing._collect as collect_mod
+
+        self._write_project(tmp_path)
+        monkeypatch.setattr(collect_mod.shutil, "which", lambda name: None)
+
+        # frob:ticket T-0587
+        def fake_run_argv(argv, *, cwd=None, timeout_s=300.0):
+            raise AssertionError("run_argv must not be called when ctest is absent")
+
+        monkeypatch.setattr(collect_mod, "run_argv", fake_run_argv)
+
+        with caplog.at_level("WARNING"):
+            result = collect_mod.collect_cpp_tests(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.node_ids == frozenset()
+        assert any("ctest not found" in msg for msg in caplog.messages)
+
+    # frob:ticket T-0587
+    def test_collect_cpp_tests_genuine_failure_is_err(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_cpp_tests
+        import frob.testing._collect as collect_mod
+
+        self._write_project(tmp_path)
+        monkeypatch.setattr(collect_mod.shutil, "which", lambda name: "/usr/bin/ctest")
+
+        # frob:ticket T-0587
+        def fake_run_argv(argv, *, cwd=None, timeout_s=300.0):
+            return Ok(
+                ProcResult(
+                    argv=tuple(argv), returncode=1, stdout="", stderr="no such dir"
+                )
+            )
+
+        monkeypatch.setattr(collect_mod, "run_argv", fake_run_argv)
+        result = collect_mod.collect_cpp_tests(tmp_path)
+        assert result.is_err
+        assert result.danger_err == TestingError.CollectFailed
+
+    # frob:ticket T-0587
+    def test_collect_cpp_tests_unparseable_json_is_err(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_cpp_tests
+        import frob.testing._collect as collect_mod
+
+        self._write_project(tmp_path)
+        monkeypatch.setattr(collect_mod.shutil, "which", lambda name: "/usr/bin/ctest")
+
+        # frob:ticket T-0587
+        def fake_run_argv(argv, *, cwd=None, timeout_s=300.0):
+            return Ok(
+                ProcResult(argv=tuple(argv), returncode=0, stdout="not json", stderr="")
+            )
+
+        monkeypatch.setattr(collect_mod, "run_argv", fake_run_argv)
+        result = collect_mod.collect_cpp_tests(tmp_path)
+        assert result.is_err
+        assert result.danger_err == TestingError.CollectFailed
+
+
+# frob:ticket T-0587
+class TestFindCmakeProjects:
+    # frob:ticket T-0587
+    def test_skips_build_dir_copy_of_cmakelists(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_collect.py::collect_cpp_tests
+        from frob.testing._collect import _find_cmake_projects
+
+        _write(tmp_path, "CMakeLists.txt", "project(widget)\n")
+        _write(tmp_path, "build/CMakeLists.txt", "project(widget)\n")
+        found = _find_cmake_projects(tmp_path)
+        assert found == [tmp_path]

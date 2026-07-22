@@ -5913,7 +5913,7 @@ T-0545 added frob.gates._coverage.write_coverage_lock (a committed frob-coverage
 ```yaml
 id: T-0587
 title: Wire real TS/C/C++ test collectors (vitest/ctest) into gate evidence
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-21'
@@ -5922,8 +5922,62 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/testing/
-scope_changes: []
-evidence: []
+- tests/test_testing.py
+- pyproject.toml
+- .frob-release.json
+- uv.lock
+- CHANGELOG.md
+scope_changes:
+- op: add
+  glob: tests/test_testing.py
+  reason: collector tests mirroring the existing rust/python collector test coverage
+    in the same test module, required by TEST001/COV gates and the ticket's own plan
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: pyproject.toml
+  reason: REL001 requires a version bump (0.89.0 -> 0.90.0) for this ticket's new
+    public API surface (collect_ts_tests/collect_cpp_tests); pyproject.toml/uv.lock/.frob-release.json
+    are the mechanical files that bump touches
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 requires a version bump (0.89.0 -> 0.90.0) for this ticket's new
+    public API surface (collect_ts_tests/collect_cpp_tests); pyproject.toml/uv.lock/.frob-release.json
+    are the mechanical files that bump touches
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: uv.lock
+  reason: REL001 requires a version bump (0.89.0 -> 0.90.0) for this ticket's new
+    public API surface (collect_ts_tests/collect_cpp_tests); pyproject.toml/uv.lock/.frob-release.json
+    are the mechanical files that bump touches
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: CHANGELOG.md
+  reason: REL001 requires a CHANGELOG.md entry accompanying every version bump; main
+    advanced with T-0616's un-bumped API surface (arch SRP checks) between my warm-up
+    merge and land, so this bump (0.90.0 -> 0.91.0) and its changelog entries cover
+    both T-0616 and T-0587
+  actor: logan
+  at: '2026-07-22'
+evidence:
+- tests/test_testing.py::TestCollectTsTests::test_collect_ts_tests_parses_and_caches
+- tests/test_testing.py::TestCollectTsTests::test_collect_ts_tests_no_projects_is_ok_empty
+- tests/test_testing.py::TestCollectTsTests::test_collect_ts_tests_degrades_when_npx_absent
+- tests/test_testing.py::TestCollectTsTests::test_collect_ts_tests_genuine_failure_is_err
+- tests/test_testing.py::TestCollectTsTests::test_collect_ts_tests_skips_malformed_entries
+- tests/test_testing.py::TestFindVitestProjects::test_ignores_node_modules_package_json
+- tests/test_testing.py::TestFindVitestProjects::test_ignores_project_without_vitest_dep
+- tests/test_testing.py::TestCollectCppTests::test_collect_cpp_tests_parses_and_caches
+- tests/test_testing.py::TestCollectCppTests::test_collect_cpp_tests_no_projects_is_ok_empty
+- tests/test_testing.py::TestCollectCppTests::test_collect_cpp_tests_unconfigured_build_is_ok_empty
+- tests/test_testing.py::TestCollectCppTests::test_collect_cpp_tests_degrades_when_ctest_absent
+- tests/test_testing.py::TestCollectCppTests::test_collect_cpp_tests_genuine_failure_is_err
+- tests/test_testing.py::TestCollectCppTests::test_collect_cpp_tests_unparseable_json_is_err
+- tests/test_testing.py::TestFindCmakeProjects::test_skips_build_dir_copy_of_cmakelists
 attachments: []
 acceptance: []
 threat: null
@@ -5933,6 +5987,84 @@ labels: []
 T-0552 added TEST013 (WARN) to surface every frob:tests edge whose TEST001-004 credit rests solely on the ts/c/cpp structural name/path fallback (frob.gates._edge_is_native_unverified) instead of real execution -- but it deliberately does NOT withdraw that credit, since no real TS/C/C++ collector exists yet (src/frob/testing/ only has collect_python_tests and collect_rust_tests, T-0092) and withdrawing credit outright would turn every native-language public symbol's TEST001 ERROR-red in every sibling repo overnight, for a structural change alone. This ticket is the real fix: wire vitest (TS) and ctest (C/C++) runners (frob.testing._runners already has a RunnerSpec/RunnerOutcome shape collect_rust_tests followed for T-0092 -- mirror it), producing real node ids frob.gates._valid_edges can match the same way it already matches pytest/cargo. Once real collectors exist, retire the structural-fallback branch of frob.gates._edge_is_native_unverified (or gate it behind 'no collector configured for this language') and consider promoting TEST013 findings on a collector-covered language to ERROR.
 
 TEST-pool triage (T-draft-edbf1e26, 2026-07-22): re-measured `frob check --only test` -- TEST013 currently reports 0 findings in this repo (this project has no ts/c/cpp public symbols under structural-fallback credit today); the real collector work this ticket tracks remains outstanding for whichever sibling repo actually exercises that fallback, unaffected by this pass.
+
+## Done report
+
+Wired real vitest and ctest test collectors into frob.testing, mirroring
+collect_rust_tests's per-project discovery/cache/degrade shape:
+
+- collect_ts_tests: discovers every package.json declaring a `vitest`
+  dependency (node_modules pruned), runs `npx vitest list --json` per
+  project, parses `(file, name)` pairs into `path::name` node ids, caches
+  on package.json + test-file content hash. Degrades to an empty Ok result
+  (warning, not a hard failure) when `npx` is absent; a genuine vitest
+  failure is still Err(CollectFailed).
+- collect_cpp_tests: discovers CMakeLists.txt project roots, looks for an
+  already-configured conventional `build/CTestTestfile.cmake`, runs
+  `ctest --test-dir <dir> --show-only=json-v1` (the documented CMake
+  json-v1 schema), caches on the CTestTestfile.cmake content hash (the
+  file ctest itself reads, so it fully determines the answer). Node id
+  anchors to `<build_dir>::<test name>` (KNOWN APPROXIMATION -- ctest
+  tests have no required source-file locality, same class of
+  approximation as the existing rust integration-binary symref). Degrades
+  to an empty Ok result when `ctest` is absent; a malformed/unparseable
+  json payload or nonzero exit from an installed ctest is still Err.
+- Both exported from frob.testing; both new public functions carry
+  `frob:doc docs/modules/testing.md#public-api` (the existing anchor
+  collect_rust_tests already points at) and `frob:ticket T-0587` on every
+  new symbol.
+
+Deliberately NOT done (out of declared scope, filed as T-draft-c8ac44fb):
+wiring collect_ts_tests/collect_cpp_tests into frob.gates._load_tests so
+_valid_edges actually credits them, and retiring/downgrading the ts/c/cpp
+structural name/path fallback in _edge_is_native_unverified. T-0587's own
+scope is src/frob/testing/ (+ this ticket's tests/test_testing.py,
+pyproject.toml, .frob-release.json, uv.lock scope extensions for the
+mandatory REL001 version bump) -- frob/gates/__init__.py is a separate
+module the ticket does not glob.
+
+Scope was extended three times via `frob ticket scope --add` (not by
+hand-editing frontmatter), all logged in the ticket's scope_changes audit
+trail: tests/test_testing.py (fixture-backed collector tests, required by
+the ticket's own plan and TEST001/COV002); pyproject.toml/.frob-release.json
+/uv.lock (the mechanical files a REL001-mandated version bump touches); and
+CHANGELOG.md (a second bump, 0.90.0 -> 0.91.0, was required after a
+mid-ticket `git merge main` pulled in T-0616's un-bumped arch SRP API
+surface -- both T-0616's and T-0587's changelog entries are recorded).
+
+Correction from an earlier review round: the gates-wiring follow-up is
+filed as T-draft-c8ac44fb (verified present in tickets.md via grep before
+this report was finalized) -- an earlier claim of T-draft-25e37b0e in this
+same Done report was wrong (that id was minted during this session but its
+ticket block was lost to an out-of-order ledger-restore mistake and never
+re-created before the report was written; the reviewer caught it).
+
+### Changed
+```
+ .frob-release.json           |  14 +-
+ pyproject.toml               |   2 +-
+ src/frob/testing/__init__.py |   4 +
+ src/frob/testing/_collect.py | 381 ++++++++++++++++++++++++++++++++++++++++++-
+ tests/test_testing.py        | 336 ++++++++++++++++++++++++++++++++++++++
+ uv.lock                      |   2 +-
+ 6 files changed, 732 insertions(+), 7 deletions(-)
+```
+
+### Evidence
+- `tests/test_testing.py::TestCollectTsTests::test_collect_ts_tests_parses_and_caches` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestCollectTsTests::test_collect_ts_tests_no_projects_is_ok_empty` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestCollectTsTests::test_collect_ts_tests_degrades_when_npx_absent` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestCollectTsTests::test_collect_ts_tests_genuine_failure_is_err` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestCollectTsTests::test_collect_ts_tests_skips_malformed_entries` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestFindVitestProjects::test_ignores_node_modules_package_json` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestFindVitestProjects::test_ignores_project_without_vitest_dep` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestCollectCppTests::test_collect_cpp_tests_parses_and_caches` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestCollectCppTests::test_collect_cpp_tests_no_projects_is_ok_empty` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestCollectCppTests::test_collect_cpp_tests_unconfigured_build_is_ok_empty` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestCollectCppTests::test_collect_cpp_tests_degrades_when_ctest_absent` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestCollectCppTests::test_collect_cpp_tests_genuine_failure_is_err` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestCollectCppTests::test_collect_cpp_tests_unparseable_json_is_err` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestFindCmakeProjects::test_skips_build_dir_copy_of_cmakelists` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0588 -->
 ```yaml
@@ -11979,3 +12111,118 @@ component: null
 labels: []
 ```
 T-0616's landed _srp.py carries curated classifier tables (_IO_MODULE_PREFIXES: socket., subprocess., requests., urllib. ...) that the capability scanner -- which keys on string-literal content by design, for evasion detection -- reads as live net/exec/fetch_url observations on the graphlang node: frob sys audit on main now reports 4 SYS100 gaps (zero-errors violation). These strings are classifier DATA, not capability usage. Disposition honestly at the correct layer: per-observation waiver with reason (classifier corpus, not usage -- cite the file/lines) via the established SYS waive channel, OR if the scanner has a data-table exemption convention, use it; declaring may net/exec on graphlang would be DISHONEST (the node does no such thing). Found by T-0724's rework (its T-draft-890e0667 duplicates this -- reconcile at land).
+
+<!-- ticket:T-0730 -->
+```yaml
+id: T-0730
+title: 'gates: consume vitest/ctest collector node ids in _load_tests/_valid_edges,
+  retire the ts/c/cpp structural fallback'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0587
+scope:
+- src/frob/gates/**
+- tests/test_gates.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a vitest project with a frob:tests directive naming a real vitest test WHEN
+  gates run THEN the edge resolves against the collected id and the structural fallback
+  no longer credits unverified ts edges
+threat: null
+component: null
+labels: []
+```
+T-0587 built real vitest/ctest collectors (collect_ts_tests, collect_cpp_tests in src/frob/testing/_collect.py, exported from frob.testing) but left frob.gates untouched (out of T-0587's declared scope, src/frob/testing/ only). This ticket wires collect_ts_tests/collect_cpp_tests into frob.gates test-evidence loading (_load_tests, alongside collect_python_tests/collect_rust_tests) so frob:tests directives on TS/C/C++ resolve against REAL collected node ids, and retires _edge_is_native_unverified's structural name/path fallback for those languages once real collection exists (per T-0552's original plan).
+
+<!-- ticket:T-0731 -->
+```yaml
+id: T-0731
+title: 'agent file blacklist: version/CHANGELOG/uv.lock/ledger untouchable in worktrees
+  -- land owns them exclusively'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: critical
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/**
+- src/frob/scaffold/**
+- src/frob/gates/**
+- docs/guides/agent-playbook.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN two concurrent public-API worktrees WHEN both land THEN neither ever edited
+  version/changelog files, the land bumps once each, and zero merge conflicts occur
+  on those files
+threat: null
+component: null
+labels: []
+```
+User directive 2026-07-22: eliminate ALL coordinator conflict resolution on version/changelog/ledger files -- measured as the No.1 time sink (every concurrent public-API ticket collided on pyproject/CHANGELOG/uv.lock; three hand-resolved merges in one hour). Mechanism: (1) REL001 suppressed in agent worktrees (FROB_AGENT set, T-0574 env) -- agents never bump; the land step computes the bump, writes pyproject/uv.lock/.frob-release.json, and AUTO-GENERATES the changelog entry from the ticket title/id (changelog becomes derived state, never hand-appended in worktrees); (2) a scaffold-installed guard (pre-commit hook or the T-0574 wrapper pattern) refusing worktree commits touching pyproject version line/CHANGELOG.md/uv.lock unless FROB_LAND_INTERNAL=1; (3) tickets.md stays writable ONLY via the single-writer CLI (already true) -- the guard also refuses raw hand-edits (diff shape without a CLI marker is hard; acceptable v1: hook warns on tickets.md in a commit not created by the frob CLI paths). Playbook updated: agents stop touching version files entirely, delete the bump-and-chase instructions.
+
+<!-- ticket:T-0732 -->
+```yaml
+id: T-0732
+title: 'worktree warm pool: shared cargo target/native wheel cache + pre-warmed worktrees'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- Makefile
+- src/frob/scaffold/**
+- docs/guides/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a fresh worktree after the change WHEN make core runs THEN it completes in
+  under 10s with warm shared cache (measured), and a cold clone still builds correctly
+threat: null
+component: null
+labels: []
+```
+User directive 2026-07-22: kill the make core cold-build boilerplate (minutes per fresh worktree, ~30 worktrees today; T-0340 fixed re-eviction at 0.6s steady-state but not cold starts; T-0175s Done report has the investigation). Deliver: (1) shared CARGO_TARGET_DIR (or maturin wheel cache) keyed per clone so a fresh worktree's make core reuses compiled artifacts -- target seconds, measure before/after; (2) optionally a warm pool: frob scaffold pool N pre-creates worktrees with natives built + main merged, agents lease from the pool, a background refresh re-warms after lands. (1) alone captures most of the win; (2) is the stretch.
+
+<!-- ticket:T-0733 -->
+```yaml
+id: T-0733
+title: 'daemon continuous verification: post-land re-verify + rebase-bot advance warning
+  for in-flight worktrees'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: high
+blocked_by: []
+parent: T-0177
+scope:
+- src/frob/serve/**
+- src/frob/graph/**
+- docs/modules/serve.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a land on main WHEN the daemon is running THEN a fresh delta verdict is available
+  via MCP within a minute without any agent invoking frob check; GIVEN an in-flight
+  worktree whose eventual land would conflict THEN a warning is published before the
+  agents Done report
+threat: null
+component: null
+labels: []
+```
+User directive 2026-07-22: the serve daemon (T-0177 warm state, frob_check_delta) should run continuously so agents and the coordinator never wait on verification. Two jobs: (1) POST-LAND RE-VERIFY: after each land (file-watch on main HEAD), refresh warm state and run the delta + touched-set tests once, exposing the result via an MCP tool/status file so the coordinators land verification is a lookup; (2) REBASE-BOT: for each active worktree branch (enumerate .claude/worktrees + live leases), periodically merge current main in a SCRATCH copy, run the delta, and publish conflict/baseline-drift warnings BEFORE the agent finishes -- converting the main-moved penalty (the sessions No.1 churn source) into advance notice. PREREQ: T-0581 process-pool deadlock fix before trusting continuous check load (pytest-timeout contains test-side blast radius meanwhile); coordinate with T-0602 (per-obligation incremental) but do not block on it.
