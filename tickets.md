@@ -4108,3 +4108,26 @@ component: null
 labels: []
 ```
 T-0410 landed one concrete fix: memoize parse_file's extract() walk (coverage_gate 155.8s->15.9s isolated, ~40s->~4s in real frob check) plus M6 (.hypothesis/.serena skip-dirs). Two things from docs/audits/perf.md need re-measurement, not assumption: (1) H4's other cited multipliers (vet.scan_file_capabilities uses raw_tree not parse_file, so bypasses the new memo -- but _parse's own content-hash cache may already make repeats cheap; verify with a profile) and H5 (selfconform's double capability-scan, likely still unfixed). (2) refs_gate is now the 2nd-largest stage (measured ~8-11s across several frob check runs) and was never profiled by the original audit; isolate and profile it the way this ticket isolated coverage_gate. Update docs/audits/perf.md with a dated re-measurement section (mark H1/H2 RESOLVED via T-0423) rather than a fresh audit.
+
+<!-- ticket:T-0583 -->
+```yaml
+id: T-0583
+title: COV006 reachability opaque through memoize_per_run wrappers -- decorator indirection
+  loses static callee edges
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0410 wrapped frob.lang.parse_file in memoize_per_run (first-call-deferred wrapper); the static call graph then lost parse_file's edges to its private helpers (_warn_if_partial_tree, _find_following_symbol), erroring two previously-sound frob:tests bindings the moment COV006 was promoted to error. Teach reachability to see through memoize_per_run/functools.wraps-style decorators (resolve the wrapped underlying function's edges), then remove the two waivers in tests/test_lang.py. Scope: src/frob/graph/callgraph.py, src/frob/gates/__init__.py COV006 helpers, tests/test_lang.py, tests/test_gates.py.
