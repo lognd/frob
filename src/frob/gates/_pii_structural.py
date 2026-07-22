@@ -1270,6 +1270,15 @@ def _tracked_python_files(root: Path) -> tuple[str, ...]:
 # frob:tests tests/test_pii_structural_gate.py::TestEnvAccess.test_os_getenv_fires
 # frob:tests tests/test_pii_structural_gate.py::TestSelfMatchExclusion.test_own_file_not_scanned  # noqa: E501
 # frob:tests tests/test_pii_structural_gate.py::TestGateIsGreenOnItself.test_own_module_source_produces_no_self_finding  # noqa: E501
+# frob:enforces SEC-PII-PII-GDPR_SPECIAL_CATEGORIES
+# frob:enforces SEC-PII-PII-CCPA_CATEGORIES
+# frob:enforces SEC-PII-PII-HIPAA_SAFE_HARBOR_IDENTIFIERS
+# frob:enforces SEC-PII-PII-PCI_DSS_GLOSSARY_TERMS
+# frob:enforces SEC-PII-PII-NIST_800_122_DEFINITION
+# frob:enforces SEC-PII-PII-DETECTABLE_SHAPES_CROSSMAP
+# frob:enforces SEC-PII-PII-STD_PII_CATEGORY_RECONCILIATION
+# frob:enforces CHK-GATE-PII010
+# frob:enforces CHK-GATE-SEC110
 def pii_structural_gate(root: Path) -> tuple[Violation, ...]:
     """PII010/SEC110 (docs/modules/gates.md#structural-pii-secrets-
     detection-t-0207): every git-tracked `.py` file scanned for PII-shaped

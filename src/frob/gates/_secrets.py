@@ -744,6 +744,11 @@ def _tracked_files(root: Path) -> tuple[str, ...]:
 # frob:tests tests/test_secrets_gate.py::TestFakeMarking.test_fake_marker_same_line
 # frob:tests tests/test_secrets_gate.py::TestTrackedEnvFile.test_env_file_sec002
 # frob:tests tests/test_secrets_gate.py::TestGateIsGreenOnItself.test_repo_is_clean
+# frob:enforces SEC-SECRETS-SECRETS-DETECT_SECRETS_PLUGINS
+# frob:enforces SEC-SECRETS-SECRETS-PROVIDER_TOKEN_FORMATS
+# frob:enforces CHK-GATE-SEC001
+# frob:enforces CHK-GATE-SEC002
+# frob:enforces CHK-GATE-SEC003
 def secrets_gate(root: Path) -> tuple[Violation, ...]:
     """SEC001/SEC002/SEC003 (docs/modules/gates.md#rule-catalog): every
     git-tracked file scanned for real-looking provider credentials, plus a
