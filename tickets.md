@@ -6,7 +6,7 @@ Central ledger managed by `frob ticket` -- one section per ticket.
 ```yaml
 id: T-0160
 title: burn down TEST005 module-line-coverage backlog (~78 modules below 85% floor)
-state: in-progress
+state: queued
 kind: bug
 origin: agent
 created: '2026-07-18'
@@ -1203,7 +1203,6 @@ coordinator's earlier direction -- only native/TS modules are believed to
 remain (`src/frob/check/_native.py`, `src/frob/check/_ts.py`,
 `src/frob/dup/_legacy_cpp.py`), pending coordinator confirmation via a fresh
 full-suite `frob check --only test` scan.
-
 <!-- ticket:T-0177 -->
 ```yaml
 id: T-0177
@@ -4258,9 +4257,9 @@ labels: []
 ```
 Split out of T-0424: the registry MODEL + honest seed is built (check-coverage.yaml, REG001-007 enforced), but the CONTINUOUS half of T-0424's acceptance ("the pessimistic-auditor loop runs on a schedule and its findings auto-file as dispositioned entries") is a real scheduling/automation feature -- a recurring driver plus an auditor-output-to-YAML writer -- not built in T-0424's pass. This ticket is that follow-up: wire a scheduled (or CI-triggered) pessimistic-auditor run whose findings append new dispositioned concern_family_entries rows to check-coverage.yaml automatically, so new gaps are found before the user notices them, per T-0424's root-cause charter.
 
-<!-- ticket:T-draft-0ea414ea -->
+<!-- ticket:T-0561 -->
 ```yaml
-id: T-draft-0ea414ea
+id: T-0561
 title: 'test-scope-lease: broad tests/** lease on an in-progress epic blocks any other
   ticket from adding a test'
 state: queued
