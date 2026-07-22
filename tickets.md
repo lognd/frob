@@ -7847,3 +7847,122 @@ component: null
 labels: []
 ```
 Epic close condition. Binds the structural-linter-adversarial-hardening.md denominator (5 named principles + 9 arch-evasion + 9 strata-evasion rows, registry ids SLH-RULE-*/SLH-ARCH-EVA-*/SLH-SYS-EVA-*, per RECONCILIATION.md finding (a)) to the five conformance checks built above, following the T-0343 drift-lock framework. Depends on all five checks plus T-0391 (arch-checks registry-domain reconciliation, which owns the SLH-* disposition slice).
+
+<!-- ticket:T-0673 -->
+```yaml
+id: T-0673
+title: 'registry: cross-file concept dedup - link cross_refs for the 10+ known-duplicate
+  concepts, extend to a full pairwise scan'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0346
+scope:
+- docs/design/registry/**
+- tests/unit/strata/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given the 10 named concepts, when the registry is queried, then each has a reviewed
+  cross_refs linkage (either merged to one canonical id or explicitly justified as
+  distinct)
+- Given a full pairwise scan over all 1950 entries, when it completes, then any newly
+  found split is either linked or recorded as a residual finding, not silently dropped
+threat: null
+component: null
+labels: []
+```
+RECONCILIATION.md finding (b): Circuit Breaker, Bulkhead, Idempotent Receiver, Anti-Corruption Layer, Value Object, Repository, Timeout, Singleton, Anemic Domain Model, Saga each currently exist as 2-4 unlinked file-local ids (cross_refs: []) across arch-checks.yaml/patterns.yaml/system-design.yaml/supply-chain.yaml. Make a reviewer judgment call per concept (one canonical id with facets, vs genuinely distinct checkable claims that share a name) and wire cross_refs accordingly. Then extend the spot-check to a full pairwise name-similarity scan over all 1950 entries (the prior pass explicitly did not do this) to surface additional splits beyond the 10 named.
+
+<!-- ticket:T-0674 -->
+```yaml
+id: T-0674
+title: 'registry: adjudicate CWE Top-25 vs cwe-1000-registry.md classification tension
+  (6 CWEs)'
+state: queued
+kind: security
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0384
+parent: T-0346
+scope:
+- docs/design/registry/weaknesses.yaml
+- docs/design/security-corpus.md
+- docs/design/cwe-1000-registry.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given the 6 tension CWEs, when reviewed, then each has one final ruling recorded
+  in weaknesses.yaml with a cross_ref to security-corpus.md's Top-25 entry
+threat: null
+component: null
+labels: []
+```
+RECONCILIATION.md finding (e): CWE-120/121/122/200/284/770 are treated as directly checkable by security-corpus.md's Top-25 tags but reclassified duplicate-of/out-of-scope by cwe-1000-registry.md's stricter rule-based classifier. Make one ruling per CWE, update whichever source doc/registry entry is wrong, and record cross_refs (security-corpus:cwe-top25-2025) once resolved. Depends on T-0384 (weaknesses reconciliation) landing first since that is where the CWE disposition truth lives.
+
+<!-- ticket:T-0675 -->
+```yaml
+id: T-0675
+title: 'registry: resolve compliance/secrets/pii leaf-granularity gap (599+56+44 leaf
+  items)'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0388
+- T-0386
+- T-0387
+parent: T-0346
+scope:
+- docs/design/compliance-corpus.md
+- docs/design/secrets-pii-corpus.md
+- docs/design/registry/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given the decision made, when RECONCILIATION.md is reread, then finding (f) is marked
+  resolved with either the leaf-level registry built or a written granularity-freeze
+  rationale
+threat: null
+component: null
+labels: []
+```
+RECONCILIATION.md finding (f): compliance-corpus.md/secrets-pii-corpus.md are unit-granular (27+3+7 = 37 entries) but their own TOTAL_LEAF_CONTROLS_ENUMERATED fields imply 599+56+44 = 699 individually addressable leaf items that were never actually enumerated row-by-row in the source docs. Make an explicit decision: either (a) expand the source docs to real leaf-level enumeration with stable ids and rebuild the registry at that granularity, or (b) formally freeze at unit granularity with a written rationale recorded in registry/README.md and RECONCILIATION.md, closing the gap as a documented decision rather than an open question. Depends on the three unit-granularity reconciliation tickets having landed.
+
+<!-- ticket:T-0676 -->
+```yaml
+id: T-0676
+title: 'registry: fix supply-chain-corpus.md self-inconsistent TOTAL (41 real entries
+  vs 39 stated)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0389
+parent: T-0346
+scope:
+- docs/design/supply-chain-corpus.md
+- docs/design/registry/supply-chain.yaml
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given supply-chain-corpus.md after the fix, when its own TOTAL field is compared
+  to registry entry count, then they match
+threat: null
+component: null
+labels: []
+```
+RECONCILIATION.md finding (g): the source doc's own denominator_manifest.entries lists 41 unique ids but its TOTAL field says 39, and the totals_by_class explanation does not account for the raw-list discrepancy. Correct the source doc's TOTAL field to 41 (or explain precisely which 2 entries are non-canonical and should be excluded, if that is the real intent) so the registry and the source doc agree. Depends on T-0389 (supply-chain domain reconciliation) landing so the fix is made against the settled registry entries.
