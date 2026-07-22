@@ -104,6 +104,14 @@ from frob.strata._contention import (
     check_resource_contention,
 )
 from frob.strata._crash import CrashContractReport, evaluate_crash_contracts
+from frob.strata._reliability import (
+    REL_MISSING_TIMEOUT,
+    REL_UNPROVEN_TIMEOUT,
+    RELIABILITY_RULES,
+    ReliabilityReport,
+    ReliabilityViolation,
+    check_reliability_timeouts,
+)
 from frob.strata._cve_fingerprint import (
     CVE_FINGERPRINT_VIEWS,
     CVE_FINGERPRINTS,
@@ -429,6 +437,11 @@ __all__ = [
     "ScenarioDecl",
     "ScenarioResult",
     "ScopeSpec",
+    "RELIABILITY_RULES",
+    "REL_MISSING_TIMEOUT",
+    "REL_UNPROVEN_TIMEOUT",
+    "ReliabilityReport",
+    "ReliabilityViolation",
     "RESOURCE_CONTENTION_RULES",
     "ResourceContentionReport",
     "ResourceContentionViolation",
@@ -472,6 +485,7 @@ __all__ = [
     "check_privacy_policy",
     "check_regulation_catalog_completeness",
     "check_regulation_discharge",
+    "check_reliability_timeouts",
     "check_resource_contention",
     "check_self_conformance",
     "compile_policies",

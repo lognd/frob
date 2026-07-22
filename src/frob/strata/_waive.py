@@ -97,6 +97,10 @@ _log = get_logger(__name__)
 #: this set too -- a node can declare several ports/paths/pipes, or write
 #: several stores, so each fires per-resource and needs the same
 #: `RULE:SUBTARGET` discipline SYS100/SYS101 established.
+#: T-0640: REL200/REL201 (`_reliability.py`'s TIMEOUT-obligation family)
+#: join this set too -- a node can originate several flows, so each fires
+#: per-flow and needs the same `RULE:SUBTARGET` discipline (sub-target is
+#: the flow id).
 MULTI_INSTANCE_WAIVER_FAMILIES: frozenset[str] = frozenset(
     {
         "SYS100",
@@ -107,6 +111,8 @@ MULTI_INSTANCE_WAIVER_FAMILIES: frozenset[str] = frozenset(
         "SYS201",
         "SYS202",
         "SYS203",
+        "REL200",
+        "REL201",
     }
 )
 

@@ -1,0 +1,26 @@
+// reliability_timeout_clean.strata -- T-0640 REL200 litmus: the clean
+// twin of reliability_timeout_missing_vuln.strata -- every flow
+// discharges the TIMEOUT obligation, either by declaring `timeout`
+// directly or by an `async`/`local` exemption. REL200 must not fire.
+//
+// tested end to end by tests/unit/strata/test_reliability.py.
+
+module reliability_timeout_clean
+
+node caller : trusted {
+    clearance Internal;
+}
+
+node worker : trusted {
+    clearance Internal;
+}
+
+node queue : trusted {
+    clearance Internal;
+}
+
+flow f_timeout : caller -> worker { label Internal; attr timeout; }
+flow f_async : caller -> queue { label Internal; attr async; }
+flow f_local : caller -> worker { label Internal; attr local; }
+
+// frob:waive REF002 reason="litmus fixture read by exactly one dedicated test module by design (T-0145/T-0255/T-0699/T-0640 litmus suites); a second consumer would not be genuine"

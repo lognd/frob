@@ -57,8 +57,10 @@ from frob.strata import (
     AuditReport,
     KernelModel,
     PlannedTicket,
+    ReliabilityReport,
     ResourceContentionReport,
     SelfConformReport,
+    check_reliability_timeouts,
     check_resource_contention,
     check_self_conformance,
     evaluate_exhaustiveness,
@@ -645,6 +647,71 @@ def _print_contention_report(report: ResourceContentionReport) -> None:
     _log_contention_violations(report)
 
 
+# frob:ticket T-0640
+def _log_waived_reliability(report: ReliabilityReport) -> None:
+    """Log every waived REL2xx reliability finding (T-0174: ALWAYS
+    printed, matching `_log_waived_contention`'s "loud in output" WAIVED
+    line)."""
+    color = _stderr_color()
+    for waived in report.waived:
+        _log.warning(
+            "sys audit: %s family=sys rule=%s node=%s detail=%s",
+            style_warn("WAIVED", color),
+            style_rule(waived.rule, color),
+            waived.node,
+            waived.detail,
+        )
+
+
+# frob:ticket T-0640
+def _log_reliability_proved(report: ReliabilityReport) -> None:
+    """Log the REL2xx reliability PROVED summary line, carrying the waived
+    count inline (same honesty convention as `_log_contention_proved`)."""
+    color = _stdout_color()
+    if report.waived:
+        _log.info(
+            "sys audit: reliability %s (%d waived) -- zero UNWAIVED "
+            "REL2xx gaps",
+            style_ok("PROVED", color),
+            len(report.waived),
+        )
+    else:
+        _log.info(
+            "sys audit: reliability %s -- zero REL2xx gaps",
+            style_ok("PROVED", color),
+        )
+
+
+# frob:ticket T-0640
+def _log_reliability_violations(report: ReliabilityReport) -> None:
+    """Log every REL2xx reliability violation, one per line."""
+    color = _stderr_color()
+    _log.error("sys audit: %d reliability gap(s) found", len(report.violations))
+    for violation in report.violations:
+        _log.error(
+            "sys audit: %s family=sys rule=%s node=%s detail=%s",
+            style_fail("GAP", color),
+            style_rule(violation.rule, color),
+            violation.node,
+            violation.detail,
+        )
+
+
+# frob:doc docs/strata/reliability.md#rel2xx-timeout-obligation-t-0640
+# frob:ticket T-0640
+def _print_reliability_report(report: ReliabilityReport) -> None:
+    """Print `frob sys audit`'s REL2xx TIMEOUT-obligation summary (T-0640
+    wiring `check_reliability_timeouts` into production, mirroring T-0724's
+    contention wiring): every REL200 (missing timeout)/REL201 (unproven
+    timeout) violation, one per line, matching `_print_contention_report`'s
+    CI-parseable style."""
+    _log_waived_reliability(report)
+    if not report.violations:
+        _log_reliability_proved(report)
+        return
+    _log_reliability_violations(report)
+
+
 # frob:ticket T-0158
 def _print_capability_matrix_report() -> bool:
     """Print the T-0158 capability-coverage proof line beside self-
@@ -748,9 +815,10 @@ def _evaluate_audit(model: KernelModel, root: Path):  # noqa: ANN201
 # `[strata.capability_map]` in frob.toml).
 def _run_audit(cfg: AppConfig) -> None:
     """`frob sys audit`: run the full exhaustiveness + self-conformance +
-    SYS2xx resource-contention check (see the comment above; T-0724 added
-    the resource-contention leg) and exit nonzero with a named-gap summary
-    when any part fails."""
+    SYS2xx resource-contention + REL2xx reliability check (see the comment
+    above; T-0724 added the resource-contention leg, T-0640 added the
+    reliability leg) and exit nonzero with a named-gap summary when any
+    part fails."""
     root = _resolve_design_root(cfg, "audit")
     loaded = _load_audit_model(root)
     if loaded is None:
@@ -759,14 +827,20 @@ def _run_audit(cfg: AppConfig) -> None:
 
     report, selfconform = _evaluate_audit(model, root)
     contention = check_resource_contention(model, store_ids=store_ids)
+    reliability = check_reliability_timeouts(model, root)
+    if reliability.is_err:
+        _log.error("sys audit: reliability: %s", reliability.danger_err)
+        sys.exit(1)
     _print_audit_report(report)
     _print_selfconform_report(selfconform)
     _print_contention_report(contention)
+    _print_reliability_report(reliability.danger_ok)
     matrix_proved = _print_capability_matrix_report()
     if (
         not report.proved
         or selfconform.violations
         or contention.violations
+        or reliability.danger_ok.violations
         or not matrix_proved
     ):
         sys.exit(1)

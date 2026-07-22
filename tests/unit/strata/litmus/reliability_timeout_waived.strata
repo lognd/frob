@@ -1,0 +1,25 @@
+// reliability_timeout_waived.strata -- T-0640 REL200 litmus: the same
+// missing-timeout shape as reliability_timeout_missing_vuln.strata, but
+// caller declares `waive "REL200:f_missing" reason ...` -- f_missing's
+// finding must move to `ReliabilityReport.waived`. f_other (a second,
+// unwaived missing-timeout flow on the SAME node) must remain a kept
+// violation, proving a waiver naming one flow id does not silently
+// discharge a sibling flow's finding too.
+//
+// tested end to end by tests/unit/strata/test_reliability.py.
+
+module reliability_timeout_waived
+
+node caller : trusted {
+    clearance Internal;
+    waive "REL200:f_missing" reason "known dev-only debug hook, tracked in T-0640" ticket "T-0640";
+}
+
+node worker : trusted {
+    clearance Internal;
+}
+
+flow f_missing : caller -> worker { label Internal; }
+flow f_other : caller -> worker { label Internal; }
+
+// frob:waive REF002 reason="litmus fixture read by exactly one dedicated test module by design (T-0145/T-0255/T-0699/T-0640 litmus suites); a second consumer would not be genuine"

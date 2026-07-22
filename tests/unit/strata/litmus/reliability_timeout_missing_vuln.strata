@@ -1,0 +1,21 @@
+// reliability_timeout_missing_vuln.strata -- T-0640 REL200 litmus: a
+// flow with no `timeout` attr and no `async`/`local` exemption --
+// unbounded hang risk, must fire. f_ok (declares `attr timeout;`) must
+// NOT fire.
+//
+// tested end to end by tests/unit/strata/test_reliability.py.
+
+module reliability_timeout_missing_vuln
+
+node caller : trusted {
+    clearance Internal;
+}
+
+node worker : trusted {
+    clearance Internal;
+}
+
+flow f_missing : caller -> worker { label Internal; }
+flow f_ok : caller -> worker { label Internal; attr timeout; }
+
+// frob:waive REF002 reason="litmus fixture read by exactly one dedicated test module by design (T-0145/T-0255/T-0699/T-0640 litmus suites); a second consumer would not be genuine"
