@@ -11908,7 +11908,7 @@ threat: null
 component: null
 labels: []
 ```
-Child 1: a sampling collector (py-spy-style stack sampling or sys.monitoring on 3.12+, config-tunable rate) running during the perf harness and optionally frob test; each sample's frame lines map to enclosing sections via the normalized model's line spans (loop bodies, branch arms, function bodies) and call edges (external vs internal callee classification from the import graph). Output: per-section and per-edge hit streams handed to the sketch store. Overhead budget: <5 percent at default rate, measured and documented.
+Child 1: a sampling collector (py-spy-style stack sampling or sys.monitoring on 3.12+, config-tunable rate) running during the perf harness and optionally frob test; each sample's frame lines map to enclosing sections via the normalized model's line spans (loop bodies, branch arms, function bodies) and call edges (external vs internal callee classification from the import graph). Output: per-section and per-edge hit streams handed to the sketch store. Overhead budget: <5 percent at default rate, measured and documented. CONTRACT MANDATE (user, 2026-07-22): the hit-stream format this ticket defines is LANGUAGE-NEUTRAL -- (file, line, weight) frames resolved to section ids via the normalized model, with nothing Python-specific in the stream or the store; the Python sampler is merely the first producer. Sibling ticket ingests native/V8/JVM profiles into the same stream (per-language collector adapters, mirroring the LanguageAdapter pattern).
 
 <!-- ticket:T-0711 -->
 ```yaml
@@ -13456,3 +13456,35 @@ component: null
 labels: []
 ```
 Child 4 of T-0739. Cleanup obligations: (a) intraprocedural -- every acquisition (transition into a resource-held state) must be postdominated by its release on ALL exits, using T-0686 may-raise sets for the exceptional edges (blocked_by T-0686), UNLESS the resource escapes (returned/stored) -- escape transfers the obligation to the receiver via the summary (T-0745); (b) per-protocol cleanup policy: cleanup = always | on-error | process-exit-ok, declared in the protocol (T-0744), default on-error; the *_deinit-never-called case = a protocol with cleanup=always whose deinit is unreachable from entrypoint terminating paths = ERROR. NO-FAIL-SILENT: a path the analysis cannot classify (poisoned/Unknown) is an ERROR at the acquisition site; escapes into containers/globals the summary cannot track are reported as obligation-escaped-untracked findings (waivable), never dropped.
+
+<!-- ticket:T-0748 -->
+```yaml
+id: T-0748
+title: 'hot-graph cross-language collectors: perf (native/Rust/C/C++), V8 cpuprofile
+  (TS), JFR (Kotlin) into the shared hit stream'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: high
+blocked_by:
+- T-0710
+parent: T-0709
+scope:
+- src/frob/perf/**
+- src/frob/testing/**
+- tests/unit/perf/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN committed fixture profiles (perf script, .cpuprofile, JFR) for equivalent
+    hot-loop programs WHEN each collector ingests THEN section hits land in the shared
+    store with deciles readable per language AND an unparseable profile errors naming
+    the file AND unattributed weight is reported as a visible fraction
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+User mandate 2026-07-22: the hot-graph must cover ALL supported languages, not just Python. The store/section-ids/advisories (T-0711/T-0712) are already language-neutral (symbol digests + normalized-model line spans exist for python/TS/rust/kotlin adapters; C/C++ via the existing tree-sitter parse); this ticket delivers the per-language COLLECTOR ADAPTERS converting each ecosystem native profile format into T-0710 shared (file, line, weight) hit stream: (a) NATIVE (Rust/C/C++ incl. the pyo3 strata_core/frob_core crates in-process): Linux perf record/script output (frame-pointer or dwarf stacks; mixed-mode python+native stacks attribute native frames to crate sections and python frames to the python sampler -- one profile, two resolvers); degrade gracefully (warn + empty) where perf is unavailable, per the vitest/ctest collector precedent (T-0587). (b) V8 (TS/JS): node --cpu-prof .cpuprofile JSON ingestion, hooked into the vitest runner invocation the T-0587 collector already discovers. (c) JVM (Kotlin): JFR recording ingestion (jfr print/JSON) when a JVM test runner is configured. Each adapter is a bounded parser + resolver, tested against small committed fixture profiles (never live-profiling in unit tests); frob.toml [runners] declares which collector attaches to which runner. NO-FAIL-SILENT: an unparseable profile is an ERROR naming the file; frames resolving to no known section are counted and reported as unattributed-weight (a visible number, never dropped) -- an unattributed fraction above a threshold is a finding, since it means the hot-graph is blind to real time.
