@@ -10271,3 +10271,63 @@ component: null
 labels: []
 ```
 found while working T-0706: 2642c5f3 (T-0524) removed the docs/guides/extending/capability-registry.md#capability-registry frob:doc anchor above DANGEROUS_OPERATIONS in src/frob/vet/_capability_registry.py as a supposed COV007 duplicate, but no other anchor in the file carried the extending-guide fragment -- broke tests/unit/test_extending_guides_complete.py silently until T-0706 caught and restored it (waived SCOPE001 there). Audit other T-0524 COV007 dedup commits for the same over-pruning pattern against docs/guides/extending/registry_of_registries.json rows.
+
+<!-- ticket:T-0714 -->
+```yaml
+id: T-0714
+title: 'ticket doable: relocate stale-lease/scope diagnostics to frob check (doable
+  output stays clean)'
+state: queued
+kind: ux
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/**
+- src/frob/gates/**
+- src/frob/app/**
+- docs/modules/tickets.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN 5 stale lease files WHEN frob ticket doable runs THEN the queue prints with
+  at most one summary line about leases AND frob check (or doctor) reports each stale
+  lease once with its path and remedy
+threat: null
+component: null
+labels: []
+```
+User mandate 2026-07-22: frob ticket doable currently emits a wall of per-invocation diagnostics (stale-lease warnings -- 'T-XXXX lease references a worktree that no longer exists, treating as stale, skipped' -- repeated for every stale lease on EVERY queue query; observed 5 leases x repeated blocks flooding the session-start listing) plus scope/lease conflict notes. Doable's job is a clean ordered queue listing. Move the diagnostics: (1) doable emits the list only (a single summary line like 'N stale leases skipped, see frob check' is acceptable); (2) a check gate (LEASE001-style, warning tier) or the doctor reports stale leases, lease-worktree mismatches, and scope-conflict details ONCE with remediation (the lease file paths to clean); (3) log-level discipline per T-0202/T-0235 precedent -- the per-lease detail goes to DEBUG, not stdout.
+
+<!-- ticket:T-0715 -->
+```yaml
+id: T-0715
+title: 'ticket organization model: epic -> story -> ticket tiers, sprint grouping,
+  and team views'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/**
+- src/frob/app/ticket_runner.py
+- docs/modules/tickets.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN an epic with two stories each with open leaf tickets WHEN frob ticket doable
+  runs THEN only leaves surface and closing the epic is refused while descendants
+  are open; GIVEN tickets assigned to sprint-1 WHEN frob ticket sprint show sprint-1
+  runs THEN the commitment lists with state rollup and closed-count velocity
+threat: null
+component: null
+labels: []
+```
+User mandate 2026-07-22 (first filing -- nothing like this existed in the ledger): formalize dev-team organization on top of the existing parent/blocked_by graph. (1) TIERS: an explicit tier field (epic|story|ticket, default ticket) with structural rules -- epics parent stories, stories parent tickets, doable only ever surfaces leaf tickets, an epic/story cannot close while an open descendant exists (today's convention, enforced); migration: existing EPIC-titled tickets get tier epic mechanically. (2) SPRINTS: a sprint field (free-form label like 2026-W30 or sprint-14) settable at new/via frob ticket sprint assign; frob ticket sprint show SPRINT lists committed tickets with state rollup; frob ticket doable --sprint SPRINT restricts the queue to the commitment; velocity/burndown derived from ledger state-transition history (closed-per-sprint counts), no new storage. (3) TEAM VIEWS: doable already orders by priority/age -- add --by-parent grouping so a story's remaining leaves display together (the user's pop-the-whole-stack-not-just-the-top concern). Keep the ledger format backward compatible (absent fields default); single-writer CLI discipline throughout. Coordinate with T-0571 (review records) and T-0573 (fleet routing) -- sprint labels should be routable cross-repo via fleet in a follow-up, note it, do not build it here.
