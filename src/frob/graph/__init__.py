@@ -162,7 +162,17 @@ def _walk_repo_files(
             path = dir_path / name
             suffix = Path(name).suffix.lower()
             is_source = suffix in exts
-            is_doc = (under_docs or at_repo_root) and suffix == ".md"
+            # The ticket ledgers are top-level *.md but HISTORY, not docs:
+            # archived Done reports quote frob:describes lines verbatim, and
+            # classifying the ledgers as docs resurrects those historical
+            # edges as live DRIFT obligations (incident: a dangling
+            # describes edge under the archive's 381st done-report heading
+            # appeared the moment T-0544 landed).
+            is_ledger = at_repo_root and name in (
+                "tickets.md",
+                "tickets-archive.md",
+            )
+            is_doc = (under_docs or at_repo_root) and suffix == ".md" and not is_ledger
             if not is_source and not is_doc:
                 continue
             if exclude_globs and _is_excluded(_display_path(path, root), exclude_globs):

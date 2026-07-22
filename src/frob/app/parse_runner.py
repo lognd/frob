@@ -9,8 +9,6 @@ Usage:
     frob parse junit < test_results.xml
 """
 
-# frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
-
 from __future__ import annotations
 
 import sys
@@ -52,7 +50,13 @@ _PARSERS = {
 
 
 # frob:doc docs/modules/app.md#runners
-# frob:waive TEST005 reason="run 0.0% branch cover, debt T-0160"
+# frob:tests tests/unit/test_parse_runner_direct.py::TestParseRunnerRun.test_missing_tool_exits_with_error  # noqa: E501
+# frob:tests tests/unit/test_parse_runner_direct.py::TestParseRunnerRun.test_unknown_tool_exits_with_error  # noqa: E501
+# frob:tests tests/unit/test_parse_runner_direct.py::TestParseRunnerRun.test_unreadable_file_exits_with_error  # noqa: E501
+# frob:tests tests/unit/test_parse_runner_direct.py::TestParseRunnerRun.test_reads_from_file_and_logs_text  # noqa: E501
+# frob:tests tests/unit/test_parse_runner_direct.py::TestParseRunnerRun.test_reads_from_stdin_and_logs_json  # noqa: E501
+# frob:tests tests/unit/test_parse_runner_direct.py::TestParseRunnerRun.test_passthrough_propagates_failing_exit_code  # noqa: E501
+# frob:tests tests/unit/test_parse_runner_direct.py::TestParseRunnerRun.test_no_passthrough_does_not_exit_on_failure  # noqa: E501
 def run(cfg: AppConfig) -> None:
     tool = cfg.parse_tool
     if tool is None:
