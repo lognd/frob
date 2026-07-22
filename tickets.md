@@ -2499,7 +2499,7 @@ T-0207 follow-on: frob.gates._pii_structural.FIELD_SIGNATURES is Python-only (as
 id: T-0354
 title: app/ticket_runner.py _run_sweep has same full-root xref bug as sweep_ticket
   (T-0240 sibling)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -2517,7 +2517,6 @@ component: null
 labels: []
 ```
 found while working T-0240: gates/_prework.py::sweep_ticket's xref loop called xref(symbol, root) instead of the scan_path it computed, and derived xref-hit terms via Path(pattern).stem (nonsense for glob patterns). app/ticket_runner.py's _run_sweep + _xref_hits_for_scope + _scope_digest_for_ticket carry an IDENTICAL copy of the same loop (already flagged as duplicate call-site debt in T-0236's Done report, follow-up ticket not yet filed) with the same two bugs. src/frob/app/** was out of scope for T-0240 (whose scope was tickets/gates/dup/tests only), so this sibling copy still has the unbounded-walk + nonsense-stem bugs. Either delegate _run_sweep to frob.gates._prework.sweep_ticket directly (collapsing the duplication per T-0236) or port the same fix.
-
 <!-- ticket:T-0355 -->
 ```yaml
 id: T-0355
@@ -3596,3 +3595,297 @@ component: null
 labels: []
 ```
 T-0565 fixed the callgraph/const-extraction substrate bugs behind most DEAD001 false positives and triaged the remainder, but src/frob/gates/__init__.py::_documented_srcs (line ~1717) and ::_run_jobs (line ~6986) are out of scope this wave (a sibling agent owns gates/__init__.py). Triage needed: _documented_srcs looks like a genuinely-orphaned helper superseded by _resolved_documented_srcs (verify with grep, likely delete); _run_jobs' docstring references a caller ('_run_jobs used to time each job...') suggesting a similar superseded-helper pattern. Either delete (with a zero-reference grep) or add a correctly-placed frob:tests/frob:invariant directive above the symbol itself (not above a test function -- the DSL binds Edge.src to whatever the comment sits directly above, several of T-0565's residual findings turned out to be frob:tests directives misplaced above the TEST function instead of the SOURCE symbol).
+
+<!-- ticket:T-0568 -->
+```yaml
+id: T-0568
+title: 'frob ticket brief: generate the complete agent mission prompt for a ticket'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Coordinator wrote the same 400-word dispatch boilerplate ~30 times this session (playbook refs, scope, verify commands, land rules, honesty clauses). frob ticket brief T-XXXX should emit the full mission briefing: body+acceptance, scope with leases, the relevant playbook hard-rule sections, exact targeted verify commands for the area, current gate baseline, REL/land rules. Dispatch prompts collapse to two lines and prompt drift disappears. Scope: src/frob/app/ticket_runner.py, src/frob/tickets/, docs/modules/tickets.md.
+
+<!-- ticket:T-0569 -->
+```yaml
+id: T-0569
+title: 'ratchet pools: baseline semantics for new gate rules (error-for-new, tracked-baseline-for-old)'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Every warn-first detector this session (INV 765, COV ~160, PII 336, DEAD 51) needed a hand-managed calibrate+burndown campaign. frob pool snapshot RULE freezes existing findings as a tracked baseline (each entry needs eventual disposition, TICK004-style rot applies); NEW findings error immediately. Replaces warn-pool campaigns with a self-draining ratchet. Scope: src/frob/gates/, frob.toml schema, docs/modules/gates.md.
+
+<!-- ticket:T-0570 -->
+```yaml
+id: T-0570
+title: 'derived-state integrity manifest: doctor-first fingerprint check for every
+  derived artifact'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Three incidents: stale fixture dup.db silently flipped detector results (T-0517), make coverage clobbered natives producing 44 phantom check errors, coverage stamp lagging source. One mechanism: a manifest of derived artifacts (cache.db, dup.db, coverage-stamp, natives, pytest/cargo-collect, goldens) each with a content/version fingerprint, verified by doctor BEFORE any gate reports; on mismatch, one clear banner line instead of dozens of misleading findings. Scope: src/frob/doctor.py, src/frob/check/, .frob layout docs.
+
+<!-- ticket:T-0571 -->
+```yaml
+id: T-0571
+title: 'frob review: structured adversarial review channel as first-class evidence'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Adversarial review is this repo's most load-bearing quality mechanism (every false-confidence detector was caught by it) but lives only in dispatch prompts. frob review generate <diff|ticket> emits a per-diff checklist (detector changed -> demand counterexample; claim added -> demand refutation attempt; suppression code -> demand over-suppression probe); frob review record stores the verdict as a typed evidence channel consumable by close. Scope: new src/frob/review/, app runner, docs.
+
+<!-- ticket:T-0572 -->
+```yaml
+id: T-0572
+title: 'acceptance-evidence binding: close verifies the acceptance mapping, not just
+  evidence existence'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Ticket acceptance: items are prose; close checks that evidence exists and covers scope, not that each acceptance item is evidenced. Bind acceptance items to evidence ids (acceptance: [{text, evidence: [...]}]) and refuse close while any item is unbound, closing the 'closed but not what was asked' hole. Scope: src/frob/tickets/, gates evidence checks, docs/modules/tickets.md.
+
+<!-- ticket:T-0573 -->
+```yaml
+id: T-0573
+title: 'frob fleet: cross-repo status, gate rollup, and ticket routing for the 9-repo
+  estate'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Nine repos run frob; the compliance campaign is coordinated from coordinator memory files. frob fleet status reads a fleet manifest (repo paths/remotes), rolls up per-repo check summaries, open-ticket counts by priority, and reddest-first ordering. Later: cross-repo ticket routing. Scope: new src/frob/fleet/, docs.
+
+<!-- ticket:T-0574 -->
+```yaml
+id: T-0574
+title: 'agent environment hardening: auto-inject FROB_WORKTREE/FROB_AGENT + mechanical
+  stash guard'
+state: queued
+kind: security
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Four agents ran git stash despite playbook 1b; several ran ticket commands against the shared checkout because FROB_WORKTREE was never SET (T-0431 guard exists but inert without it). (1) frob agent env prints/exports the guard env for a worktree; scaffold/playbook wire it into dispatch. (2) a pre-stash guard (hook or wrapper) refuses git stash while sibling agent worktrees exist. Catalogued-is-not-enforced applied to the playbook itself. Scope: src/frob/tickets/_worktree_guard.py, scaffold hooks, playbook.
+
+<!-- ticket:T-0575 -->
+```yaml
+id: T-0575
+title: 'flake quarantine: per-test stability tracking + quarantine-with-ticket in
+  frob test'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+A flaky test blocks every parallel agent. frob test records per-test pass/fail history; a test flipping without related code changes gets flagged, quarantined (excluded from gating) ONLY with an auto-filed ticket, and un-quarantined when stable. Scope: src/frob/testing/, docs/modules/testing.md.
+
+<!-- ticket:T-0576 -->
+```yaml
+id: T-0576
+title: 'frob:deprecated directive: API sunset dates gated like debt'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+frob:debt generalized to API surface: frob:deprecated <since> sunset=<date> ticket=T-#### on a public symbol; a gate warns while in window, errors past sunset or when the ticket closes without removal; release refuses to stamp with expired deprecations. Scope: graph dsl, gates, docs.
+
+<!-- ticket:T-0577 -->
+```yaml
+id: T-0577
+title: 'land completion: auto-finalize drafts (with yaml ref rewrite), serialize version
+  assignment, forbid raw ticket-branch merges'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+All ~30 landings this session were manual: renumbering ~40 drafts (renumber does NOT rewrite registry yaml refs -- bit twice), reconciling 6 version-number collisions from parallel branches, states-regression sweeps. frob ticket land must own: draft finalization including reference rewrite across yaml/docs, version bump assigned AT LAND (serialized, no in-branch collisions), TICK005-backed regression sweep, push option. Then a hook refuses raw git merges of worktree-agent-* branches so land is the only path. Extends T-0338/T-0479. Scope: src/frob/tickets/_land.py, renumber, hooks, playbook.
+
+<!-- ticket:T-0578 -->
+```yaml
+id: T-0578
+title: 'CLI vocabulary normalization + did-you-mean: --state vs --status, --why vs
+  --body, consistent flags'
+state: queued
+kind: ux
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Observed misuse: frob ticket list --status (correct: --state), done-report --body (correct: --why). Normalize flag vocabulary across subcommands (one name per concept), add argparse suggestions on unknown flags/subcommands. Scope: src/frob/__main__.py, app/config.py, docs/commands/.
+
+<!-- ticket:T-0579 -->
+```yaml
+id: T-0579
+title: 'frob ticket drop: first-class CLI for dropped-with-reason (today it is a hand-edit)'
+state: queued
+kind: ux
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Dropping a ticket (absorbed elsewhere, obsolete, subsumed) required hand-editing state: dropped ~6 times this session because close demands evidence and no drop command exists. Add frob ticket drop <id> --reason TEXT [--absorbed-by T-####] writing the dated reason line, releasing leases, TICK-gate clean. Scope: src/frob/tickets/, app/ticket_runner.py, docs.
+
+<!-- ticket:T-0580 -->
+```yaml
+id: T-0580
+title: 'command-tier audit: demote or deprecate the navigation porcelain (map/outline/xref/docs)
+  -- zero organic use'
+state: queued
+kind: ux
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Telemetry (this session, 1035 CLI events): ticket=225 check=103 release=19 sys=16 organic; map/outline/xref/parse/gitlog/exports invocations were VIRTUALLY ALL their own test suites (pytest tmp paths), zero organic use by coordinator or ~30 agents -- navigation is owned by Serena/native tools in agentic use. Each command carries doc/test/export/coverage obligations = maintenance tax. Decide per command: KEEP AS PLUMBING (parse: adapter used by pipelines; exports: powers exports stage; gitlog: powers stats/changelog), DEMOTE to documented maintenance-mode porcelain tier (map, outline, xref, docs-search), or frob:deprecated. serve (MCP) kept: valuable for no-shell contexts though unused when agents have a shell. User decision ticket -- evidence in body, recommendation: demote the four navigation commands, revisit removal after one quiet quarter.
