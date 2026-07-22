@@ -3790,3 +3790,81 @@ component: null
 labels: []
 ```
 gate:ARCH currently reports 0 errors, 17 warnings, 0 waived (frob-arch tool summary: 18 warnings, 79 suggestions; measured 2026-07-22). T-0393 (abstraction-opportunity advisories), T-0394 (deep-nesting advisories), T-0395 (large-file advisories) already cover the SUGGESTIONS tier -- this ticket is the WARNINGS tier, which none of those three touch. Run frob check --only arch (or grep '[gate:ARCH]' from frob check output) to enumerate the current 17 warning sites, classify each by its ARCH rule id, and for each either fix the underlying design issue or add a frob:waive with an honest reason. Acceptance: gate:ARCH summary line reports 0 unwaived warnings (fixed or waived-with-reason), no threshold loosened without a disclosed decision.
+
+<!-- ticket:T-0599 -->
+```yaml
+id: T-0599
+title: 'frob-exports triage: src/frob, src/frob/app, src/frob/check (19 symbols across
+  3 packages)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0204
+scope:
+- src/frob/__init__.py
+- src/frob/app/**
+- src/frob/check/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+frob-exports currently reports (measured 2026-07-22): src/frob 5 public symbols missing from __init__.py, src/frob/app 11, src/frob/check 3 (19 total). For each symbol, decide per-symbol: export it from the package's __init__.py, or demote it to private (leading underscore) if it should not be public API. No blanket waiver -- each symbol gets an explicit decision. Acceptance: frob-exports(src/frob), frob-exports(src/frob/app), frob-exports(src/frob/check) summary lines report 0 unresolved findings (exported, demoted, or waived-with-reason), no threshold loosened without a disclosed decision.
+
+<!-- ticket:T-0600 -->
+```yaml
+id: T-0600
+title: 'frob-exports triage: src/frob/gates, src/frob/graph, src/frob/process/parsers,
+  src/frob/registry (14 symbols across 4 packages)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0204
+scope:
+- src/frob/gates/**
+- src/frob/graph/**
+- src/frob/process/parsers/**
+- src/frob/registry/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+frob-exports currently reports (measured 2026-07-22): src/frob/gates 9 public symbols missing from __init__.py, src/frob/graph 2, src/frob/process/parsers 1, src/frob/registry 2 (14 total). For each symbol, decide per-symbol: export it from the package's __init__.py, or demote it to private (leading underscore) if it should not be public API. No blanket waiver -- each symbol gets an explicit decision. Acceptance: frob-exports(src/frob/gates), frob-exports(src/frob/graph), frob-exports(src/frob/process/parsers), frob-exports(src/frob/registry) summary lines report 0 unresolved findings (exported, demoted, or waived-with-reason), no threshold loosened without a disclosed decision.
+
+<!-- ticket:T-0601 -->
+```yaml
+id: T-0601
+title: 'frob-exports triage: src/frob/strata, src/frob/tickets (22 symbols across
+  2 packages)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0204
+scope:
+- src/frob/strata/**
+- src/frob/tickets/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+frob-exports currently reports (measured 2026-07-22): src/frob/strata 5 public symbols missing from __init__.py, src/frob/tickets 17 (22 total, tickets is the largest single-package residue in this family). For each symbol, decide per-symbol: export it from the package's __init__.py, or demote it to private (leading underscore) if it should not be public API. No blanket waiver -- each symbol gets an explicit decision. Acceptance: frob-exports(src/frob/strata), frob-exports(src/frob/tickets) summary lines report 0 unresolved findings (exported, demoted, or waived-with-reason), no threshold loosened without a disclosed decision.
