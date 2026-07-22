@@ -7653,3 +7653,128 @@ component: null
 labels: []
 ```
 Epic close condition. Binds every capability-evasion-taxonomy.md entry (112: 13+9 Python, 17+9 TS/JS, 13+6 Rust, 7+5 C, 12+5 C++, 11+5 Kotlin) to >=1 litmus fixture that exercises it, mirroring the CVE-fingerprint catalog drift-lock. Fails the build if any construct has no fixture. Depends on all per-language resolver tickets and the opaque-indirection obligation landing, plus T-0390 (evasion registry-domain reconciliation) for disposition accuracy.
+
+<!-- ticket:T-0667 -->
+```yaml
+id: T-0667
+title: 'strata: SYS-COV coverage-totality check - every capable module binds to a
+  modeled node'
+state: queued
+kind: security
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0630
+parent: T-0341
+scope:
+- src/frob/strata/**
+- src/frob/vet/**
+- src/frob/graph/**
+- docs/modules/strata.md
+- tests/unit/strata/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given a module with an observed capability effect and no strata node binding, when
+  checked, then SYS-COV fires
+- Given every module bound to a node, when checked, then SYS-COV is silent
+threat: null
+component: null
+labels: []
+```
+Extend the capability graph (T-0328-resolved) to enumerate every module with an observed capability effect, then cross-check against strata node bindings. A capable-but-unbound module is a hard obligation failure -- this closes acceptance-criterion (1) 'un-modeled modules escape all obligations'. Depends on T-0630 wiring real code binding into production entrypoints so the check has real data to run against, not just unit-test fixtures.
+
+<!-- ticket:T-0668 -->
+```yaml
+id: T-0668
+title: 'strata: exact interface-conformance check - declared node interface == real
+  public code surface'
+state: queued
+kind: security
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0667
+parent: T-0341
+scope:
+- src/frob/strata/**
+- src/frob/graph/**
+- docs/modules/strata.md
+- tests/unit/strata/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given a node declaring fewer public symbols than the bound module exports, when
+  checked, then the obligation fires
+- Given a node declaring a symbol the bound module does not export, when checked,
+  then the obligation fires
+threat: null
+component: null
+labels: []
+```
+A node's declared interface must equal the bound module's real public surface (no under- or over-declaration) -- closes acceptance-criterion (2). Depends on coverage-totality's binding pass existing first (need a bound node before its interface can be checked).
+
+<!-- ticket:T-0669 -->
+```yaml
+id: T-0669
+title: 'strata: PURPOSE contract - node purpose carries an allowed-effect profile
+  checked against code'
+state: queued
+kind: security
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0667
+parent: T-0341
+scope:
+- src/frob/strata/**
+- src/frob/graph/**
+- docs/modules/strata.md
+- tests/unit/strata/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given a node whose purpose declares a read-only effect profile but whose bound code
+  performs a write, when checked, then the obligation fires
+threat: null
+component: null
+labels: []
+```
+Each node's declared purpose must carry an allowed-effect profile (e.g. 'read-only query' cannot emit writes); real observed effects outside that profile fail via _effects.py::check_capability_conformance -- closes acceptance-criterion (3).
+
+<!-- ticket:T-0670 -->
+```yaml
+id: T-0670
+title: 'strata: binding-totality + effect-conformance - reject logic laundered into
+  an unbound file'
+state: queued
+kind: security
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0667
+parent: T-0341
+scope:
+- src/frob/strata/**
+- src/frob/graph/**
+- docs/modules/strata.md
+- tests/unit/strata/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given dangerous logic moved into a helper module not directly bound to any node
+  but reachable from a bound node, when checked, then the effect is still attributed
+  and conformance-checked, not silently dropped
+threat: null
+component: null
+labels: []
+```
+Extend SYS100/SYS101/SYS102 so the bound-set is provably total against the capability graph: a module reachable via import/call from a bound node but itself unbound must not silently escape effect-conformance checking -- closes acceptance-criterion (4) 'binding need not be total, so logic can be laundered into an unbound file'.
