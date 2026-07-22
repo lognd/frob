@@ -17,6 +17,20 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.64.0] - unreleased
+
+T-0558: `frob.graph.GraphSnapshot` gained a `parse_failures` field (new
+public `ParseFailure` model) -- a file `frob.lang.parse_file` could not
+parse/read at all (any `LangError` other than the expected
+`NativeParserUnavailable` degrade) used to come back as
+`(True, (), (), ())`, indistinguishable from an empty file, silently
+erasing its entire symbol/edge/doc-obligation set for that build (T-0404
+finding 2). New standalone `frob.gates._parse_failures.parse_failure_gate`
+(`PARSE001`, ERROR severity) turns a recorded failure into a real `frob
+check` violation instead of a warning only visible in logs. Never cached
+across builds -- a fixed file drops out of the list on its next
+successful build, same as before this fix.
+
 ## [0.63.0] - unreleased
 
 T-0541/T-0542: two gates-accounting audit fixes (T-0403 B9/B10).

@@ -611,6 +611,77 @@ class TestSlugify:
         assert slugs == ["usage", "usage-1", "usage-2"]
 
 
+class TestParseFailures:
+    """T-0558: a parse/IO failure must be surfaced, not silently erased.
+
+    frob:ticket T-0558
+    """
+
+    # frob:ticket T-0558
+    def test_parse_error_is_recorded_as_parse_failure(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A `frob.lang.parse_file` error (other than the expected
+        `NativeParserUnavailable` degrade) used to come back as
+        `(True, (), (), ())`, indistinguishable from an empty file, and the
+        whole file's symbols/edges vanished with no trace. It must now show
+        up in `GraphSnapshot.parse_failures`."""
+        from typani import Err
+
+        import frob.graph as graph_mod
+        from frob.lang import LangError
+
+        _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
+        broken = _write(tmp_path, "src/broken.py", "def bar() -> None:\n    pass\n")
+
+        real_parse_file = graph_mod.parse_file
+
+        def _fake_parse_file(path: Path):  # noqa: ANN202
+            if path == broken:
+                return Err(LangError.ParseFailed)
+            return real_parse_file(path)
+
+        monkeypatch.setattr(graph_mod, "parse_file", _fake_parse_file)
+        cache = tmp_path / ".frob" / "cache.db"
+        snap = build_graph(tmp_path, cache).danger_ok
+
+        assert len(snap.parse_failures) == 1
+        failure = snap.parse_failures[0]
+        assert failure.file == "src/broken.py"
+        assert "ParseFailed" in failure.reason or failure.reason
+
+        # The healthy file's symbols are unaffected.
+        paths = {rec.id.path for rec in snap.symbols.values()}
+        assert "src/a.py" in paths
+        assert "src/broken.py" not in paths
+
+    # frob:ticket T-0558
+    def test_native_parser_unavailable_is_not_a_parse_failure(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The expected T-0133 degrade path (no strata-core native install)
+        must NOT be reported as a `ParseFailure` -- it is a known,
+        environment-level skip, not a file frob.lang genuinely could not
+        parse."""
+        from typani import Err
+
+        import frob.graph as graph_mod
+        from frob.lang import LangError
+
+        strata_file = _write(tmp_path, "src/a.strata", "flow Foo {}\n")
+
+        def _fake_parse_file(path: Path):  # noqa: ANN202
+            if path == strata_file:
+                return Err(LangError.NativeParserUnavailable)
+            raise AssertionError("unexpected parse_file call")
+
+        monkeypatch.setattr(graph_mod, "parse_file", _fake_parse_file)
+        cache = tmp_path / ".frob" / "cache.db"
+        snap = build_graph(tmp_path, cache).danger_ok
+
+        assert snap.parse_failures == ()
+
+
 class TestBuildIncremental:
     def _tree(self, tmp_path: Path) -> Path:
         _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
@@ -819,6 +890,7 @@ class TestExclude:
     """`[graph] exclude` in frob.toml is additive to the built-in dir excludes.
 
     frob:ticket T-0544
+    frob:ticket T-0558
     """
 
     def test_glob_excludes_matching_files(self, tmp_path: Path) -> None:
@@ -896,6 +968,7 @@ class TestExclude:
         # and its "deep"/"deep/deeper" children would all appear here too.
         assert not any(v.startswith("tests/fixtures") for v in visited_rel if v)
 
+    # frob:ticket T-0544
     def test_walk_repo_files_classifies_top_level_readme_as_doc(
         self, tmp_path: Path
     ) -> None:

@@ -67,6 +67,7 @@ from frob.gates._models import (
     Violation,
     WaiverRef,
 )
+from frob.gates._parse_failures import parse_failure_gate
 from frob.gates._pii_structural import pii_structural_gate
 from frob.gates._prework import load_prework, record_prework, sweep_ticket
 from frob.gates._refs import ref_gate
@@ -6322,6 +6323,8 @@ _ALL_GATES = frozenset(
         "excludehazard",
         # T-0412: frob:debt malformed/non-open-ticket/expired-until checks.
         "debt",
+        # T-0558: PARSE001, a swallowed frob.lang parse/IO failure.
+        "parse_failures",
     }
 )
 
@@ -6581,6 +6584,7 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "walk_lint",
     "excludehazard",
     "debt",
+    "parse_failures",
     "scope",
     "prework",
 )
@@ -6665,6 +6669,8 @@ def _build_jobs(
         # the same inbound-reference graph as an unscoped run, same
         # reasoning as docanchor above.
         "refs": lambda: ref_gate(st.repo_root),
+        # T-0558: PARSE001, one violation per snapshot.parse_failures entry.
+        "parse_failures": lambda: parse_failure_gate(st.snapshot),
         # T-0343: fail-closed exhaustiveness drift-lock over
         # docs/design/registry/*.yaml -- known_rules is this run's live
         # gate-rule-id + policy-rule-id union, never a hardcoded list, so

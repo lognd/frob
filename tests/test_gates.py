@@ -1357,6 +1357,43 @@ class TestDsl001:
         assert _dsl001_violations(snap) == ()
 
 
+class TestParseFailureGate:
+    """T-0558: a swallowed frob.lang parse/IO failure must be an ERROR
+    violation (PARSE001), not just a log line.
+
+    frob:ticket T-0558
+    """
+
+    def test_parse_failure_is_an_error_violation(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_parse_failures.py::parse_failure_gate kind="unit"
+        from frob.gates._parse_failures import parse_failure_gate
+        from frob.graph._models import ParseFailure
+
+        _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
+        snap = _snapshot(tmp_path)
+        snap = snap.model_copy(
+            update={
+                "parse_failures": (
+                    ParseFailure(file="src/broken.py", reason="ParseFailed"),
+                )
+            }
+        )
+        violations = parse_failure_gate(snap)
+        assert len(violations) == 1
+        v = violations[0]
+        assert v.rule == "PARSE001"
+        assert v.severity == Severity.ERROR
+        assert v.file == "src/broken.py"
+
+    def test_no_parse_failures_is_clean(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_parse_failures.py::parse_failure_gate kind="unit"
+        from frob.gates._parse_failures import parse_failure_gate
+
+        _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
+        snap = _snapshot(tmp_path)
+        assert parse_failure_gate(snap) == ()
+
+
 class TestDebtGate:
     """T-0412: frob:debt vs frob:waive -- malformed directive (DEBT001),
     non-open ticket (DEBT002), expired until boundary (DEBT003)."""

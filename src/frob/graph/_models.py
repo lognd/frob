@@ -26,6 +26,7 @@ __all__ = [
     "LockEntry",
     "LockFile",
     "MalformedDirective",
+    "ParseFailure",
     "StaleItem",
     "SymbolId",
     "SymbolKind",
@@ -123,6 +124,26 @@ class MalformedDirective(BaseModel):
 
 
 # frob:doc docs/modules/graph.md#data-models
+class ParseFailure(BaseModel):
+    """A source file `frob.lang.parse_file` could not parse at all (T-0558).
+
+    Distinct from `MalformedDirective` (a single bad `frob:` comment line
+    inside an otherwise-parsed file): a `ParseFailure` means the WHOLE
+    file's symbols/edges/doc obligations are unknown for this build, not
+    just one directive -- every gate that would have fired against that
+    file's real content (COV001, DRIFT, INV, ...) instead sees nothing and
+    passes vacuously. Never cached across builds (matching the pre-T-0558
+    behavior of skipping `store_file_data` on a parse error), so a fixed
+    file naturally drops out of this list on its next successful build.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    file: str
+    reason: str
+
+
+# frob:doc docs/modules/graph.md#data-models
 class BuildStats(BaseModel):
     """Per-`build_graph` counters proving incrementality to callers and tests."""
 
@@ -142,6 +163,7 @@ class GraphSnapshot(BaseModel):
     symbols: Mapping[str, SymbolRecord]
     edges: tuple[Edge, ...]
     malformed: tuple[MalformedDirective, ...] = ()
+    parse_failures: tuple[ParseFailure, ...] = ()
     file_hashes: Mapping[str, str] = {}
     stats: BuildStats = BuildStats(parsed=0, cache_hits=0)
 
