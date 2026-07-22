@@ -3251,7 +3251,7 @@ final run).
 ```yaml
 id: T-0384
 title: 'registry reconciliation: weaknesses (944 CWEs)'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-20'
@@ -3264,8 +3264,22 @@ scope:
 - src/frob/vet/
 - src/frob/strata/
 - docs/design/registry/weaknesses.yaml
-scope_changes: []
-evidence: []
+- tests/test_registry_reconciliation_weaknesses.py
+scope_changes:
+- op: add
+  glob: tests/test_registry_reconciliation_weaknesses.py
+  reason: evidence lives in the pin test
+  actor: logan
+  at: '2026-07-22'
+evidence:
+- tests/test_registry_reconciliation_weaknesses.py::TestWeaknessesRegistryFile::test_is_in_registry_files
+- tests/test_registry_reconciliation_weaknesses.py::TestWeaknessesRegistryFile::test_loads_without_error
+- tests/test_registry_reconciliation_weaknesses.py::TestWeaknessesRegistryFile::test_no_malformed_entries
+- tests/test_registry_reconciliation_weaknesses.py::TestWeaknessesExhaustiveness::test_declared_cwe_total_is_944
+- tests/test_registry_reconciliation_weaknesses.py::TestWeaknessesExhaustiveness::test_audit_reports_exhausted
+- tests/test_registry_reconciliation_weaknesses.py::TestWeaknessesExhaustiveness::test_every_deferred_entry_targets_an_open_ticket
+- tests/test_registry_reconciliation_weaknesses.py::TestWeaknessesExhaustiveness::test_no_entry_defers_to_this_reconciliation_ticket
+- tests/test_registry_reconciliation_weaknesses.py::TestExhaustivenessGateOverRealWeaknesses::test_no_weaknesses_violations
 attachments: []
 acceptance: []
 threat: null
@@ -3273,6 +3287,55 @@ component: null
 labels: []
 ```
 Reconcile docs/design/registry/weaknesses.yaml against actual enforcement: every catalogued entry must map to (i) an enforced check, (ii) a documented out-of-scope entry with a verified caught_by (T-0381/T-0382), or (iii) an explicit deferred ticket. Resolve RECONCILIATION.md's undispositioned entries for this registry. Add an EXHAUSTIVENESS meta-test for this registry: catalogued count == enforced+excused+deferred count, so a future gap fails the build. Acceptance: exhaustiveness meta-test passes and is wired into frob check.
+
+## Done report
+
+Reconciled docs/design/registry/weaknesses.yaml (944 CWE-1000-View entries +
+40 other-framework entries = 984 total) against actual enforcement. Ran the
+real registry loader/audit over the file: 16 handled_by, 27 deferred, 143
+duplicate-of, 798 out-of-scope, 0 unaccounted, 0 malformed -- fully exhausted
+already at the disposition level, except all 27 deferred entries dishonestly
+named T-0384 itself (this review-gated reconciliation ticket, expected to
+close), which would break REG003 the moment it closes.
+
+Filed a new standing ticket (drafted off-main as T-draft-05d8f716; drafts do
+not survive `frob ticket land`, T-0577, so a real id replaces it at land time
+-- same precedent as T-0388/T-0607) and re-pointed all 27 self-deferring
+entries (CWE-20/22/77/78/79/89/94/119/125/190/269/276/287/306/352/362/416/
+434/476/502/639/787/798/862/863/918/922) to it. These 27 overlap the CWE
+Top-25/OWASP classic set and are exactly what T-0674 (Top-25 tension, blocked
+on this ticket) will need to look at -- noted for that ticket, not acted on
+here.
+
+Added tests/test_registry_reconciliation_weaknesses.py (8 tests, all real
+data, no fixtures): file loads under the unified model with zero malformed
+entries, declared cwe_total pinned at 944, audit reports exhausted with the
+984 grand total (944 CWE + 40 other-framework), every deferred entry
+resolves to a real non-done ticket in the live queue, no entry defers to
+T-0384 itself, and registry_gate raises zero violations for weaknesses.yaml
+specifically. Added to ticket scope before recording evidence per the
+T-0385 precedent.
+
+`uv run frob check --ticket T-0384` is clean (0 errors, ruff/ty/gate-summary
+all pass). No re-pointing regressions found in sibling registries; only this
+file's self-deferral was touched.
+
+### Changed
+```
+ docs/design/registry/weaknesses.yaml             |  54 +++---
+ tests/test_registry_reconciliation_weaknesses.py | 202 +++++++++++++++++++++++
+ 2 files changed, 229 insertions(+), 27 deletions(-)
+```
+
+### Evidence
+- `tests/test_registry_reconciliation_weaknesses.py::TestWeaknessesRegistryFile::test_is_in_registry_files` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_weaknesses.py::TestWeaknessesRegistryFile::test_loads_without_error` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_weaknesses.py::TestWeaknessesRegistryFile::test_no_malformed_entries` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_weaknesses.py::TestWeaknessesExhaustiveness::test_declared_cwe_total_is_944` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_weaknesses.py::TestWeaknessesExhaustiveness::test_audit_reports_exhausted` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_weaknesses.py::TestWeaknessesExhaustiveness::test_every_deferred_entry_targets_an_open_ticket` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_weaknesses.py::TestWeaknessesExhaustiveness::test_no_entry_defers_to_this_reconciliation_ticket` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_weaknesses.py::TestExhaustivenessGateOverRealWeaknesses::test_no_weaknesses_violations` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0385 -->
 ```yaml
@@ -8949,3 +9012,29 @@ component: null
 labels: []
 ```
 T-0265 made _build_jobs fold drift into every run_gates call so narrowed selections agree with full runs (DRIFT002 is authoritative for edge-endpoint resolution). docs/modules/gates.md does not yet say drift always evaluates under --only; T-0265's reviewer flagged the doc gap. One short note under the --only description. Also note here for the record: the _run_combined_jobs ProcessPoolExecutor-inside-ThreadPoolExecutor fork hazard disclosed in T-0265's Done report is T-0581's territory (its redesign should eliminate it).
+
+<!-- ticket:T-0684 -->
+```yaml
+id: T-0684
+title: implement checkable-control enforcement for CWE weakness registry Top-25-class
+  units
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/vet/
+- src/frob/strata/
+- docs/design/registry/weaknesses.yaml
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Standing home for 27 weaknesses.yaml CWE entries (CWE-20,22,77,78,79,89,94,119,125,190,269,276,287,306,352,362,416,434,476,502,639,787,798,862,863,918,922 -- overlapping the CWE Top-25/OWASP classic set, relevant to T-0674's Top-25 tension follow-up) whose controls are machine-checkable but not yet enforced by any gate/check. They previously carried deferred:T-0384 (the reconciliation ticket itself) -- a self-reference that would orphan them the moment T-0384 closed; T-0384's pass re-pointed them here. Each entry needs either a real enforcing check (then flip to handled_by:<rule-id>) or a reasoned out_of_scope/not-checkable disposition.

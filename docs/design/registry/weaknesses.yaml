@@ -81,7 +81,7 @@ cwe_entries:
   abstraction: Class
   parents: '707'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0384
+  disposition: deferred:T-0684
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-22
@@ -89,7 +89,7 @@ cwe_entries:
   abstraction: Base
   parents: '706'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0384
+  disposition: deferred:T-0684
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-23
@@ -440,7 +440,7 @@ cwe_entries:
   abstraction: Class
   parents: '74'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0384
+  disposition: deferred:T-0684
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-78
@@ -448,7 +448,7 @@ cwe_entries:
   abstraction: Base
   parents: '77'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0384
+  disposition: deferred:T-0684
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-79
@@ -456,7 +456,7 @@ cwe_entries:
   abstraction: Base
   parents: '74'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0384
+  disposition: deferred:T-0684
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-80
@@ -527,7 +527,7 @@ cwe_entries:
   abstraction: Base
   parents: '943'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0384
+  disposition: deferred:T-0684
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-90
@@ -556,7 +556,7 @@ cwe_entries:
   abstraction: Base
   parents: 74,913
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0384
+  disposition: deferred:T-0684
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-95
@@ -718,7 +718,7 @@ cwe_entries:
   abstraction: Class
   parents: '118'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0384
+  disposition: deferred:T-0684
   cross_refs: []
 - id: CWE-120
   name: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')
@@ -763,7 +763,7 @@ cwe_entries:
   abstraction: Base
   parents: '119'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0384
+  disposition: deferred:T-0684
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-126
@@ -1163,7 +1163,7 @@ cwe_entries:
   abstraction: Base
   parents: '682'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0384
+  disposition: deferred:T-0684
   cross_refs: []
 - id: CWE-191
   name: Integer Underflow (Wrap or Wraparound)
@@ -1626,7 +1626,7 @@ cwe_entries:
   abstraction: Class
   parents: '284'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0384
+  disposition: deferred:T-0684
   cross_refs: []
 - id: CWE-270
   name: Privilege Context Switching Error
@@ -1668,7 +1668,7 @@ cwe_entries:
   abstraction: Base
   parents: '732'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0384
+  disposition: deferred:T-0684
   cross_refs: []
 - id: CWE-277
   name: Insecure Inherited Permissions
@@ -1746,7 +1746,7 @@ cwe_entries:
   abstraction: Class
   parents: '284'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0384
+  disposition: deferred:T-0684
   cross_refs: []
 - id: CWE-288
   name: Authentication Bypass Using an Alternate Path or Channel
@@ -1872,7 +1872,7 @@ cwe_entries:
   abstraction: Base
   parents: '287'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0384
+  disposition: deferred:T-0684
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-307
@@ -2181,7 +2181,7 @@ cwe_entries:
   abstraction: Compound
   parents: '345'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0384
+  disposition: deferred:T-0684
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-353
@@ -2238,7 +2238,7 @@ cwe_entries:
   abstraction: Class
   parents: '662'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0384
+  disposition: deferred:T-0684
   cross_refs: []
 - id: CWE-363
   name: Race Condition Enabling Link Following
@@ -2532,7 +2532,7 @@ cwe_entries:
   abstraction: Variant
   parents: '825'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0384
+  disposition: deferred:T-0684
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-419
@@ -2631,7 +2631,7 @@ cwe_entries:
   abstraction: Base
   parents: '669'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0384
+  disposition: deferred:T-0684
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-435
@@ -2870,7 +2870,7 @@ cwe_entries:
   abstraction: Base
   parents: 710,754
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0384
+  disposition: deferred:T-0684
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-477
@@ -3039,7 +3039,7 @@ cwe_entries:
   abstraction: Base
   parents: '913'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0384
+  disposition: deferred:T-0684
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-506
@@ -3824,7 +3824,7 @@ cwe_entries:
   abstraction: Base
   parents: '863'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0384
+  disposition: deferred:T-0684
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-640
@@ -4491,7 +4491,7 @@ cwe_entries:
   abstraction: Base
   parents: '119'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0384
+  disposition: deferred:T-0684
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-788
@@ -4569,7 +4569,7 @@ cwe_entries:
   abstraction: Base
   parents: 1391,344,671
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0384
+  disposition: deferred:T-0684
   cross_refs: []
 - id: CWE-799
   name: Improper Control of Interaction Frequency
@@ -4772,7 +4772,7 @@ cwe_entries:
   abstraction: Class
   parents: '285'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0384
+  disposition: deferred:T-0684
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-863
@@ -4780,7 +4780,7 @@ cwe_entries:
   abstraction: Class
   parents: '285'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0384
+  disposition: deferred:T-0684
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-908
@@ -4859,7 +4859,7 @@ cwe_entries:
   abstraction: Base
   parents: '441'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0384
+  disposition: deferred:T-0684
   cross_refs:
   - security-corpus:cwe-top25-2025
 - id: CWE-920
@@ -4881,7 +4881,7 @@ cwe_entries:
   abstraction: Class
   parents: '664'
   source_doc: docs/design/cwe-1000-registry.md
-  disposition: deferred:T-0384
+  disposition: deferred:T-0684
   cross_refs: []
 - id: CWE-923
   name: Improper Restriction of Communication Channel to Intended Endpoints
