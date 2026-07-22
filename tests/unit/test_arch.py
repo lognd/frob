@@ -1284,3 +1284,355 @@ class TestPythonAdapter:
         funcs = {f.name: f for f in module.functions}
         assert "process_matrix" in funcs
         assert funcs["process_matrix"].max_nesting_depth >= 4
+
+
+# ---------------------------------------------------------------------------
+# T-0611: TypeScriptAdapter -- maps a real parsed TypeScript file onto
+# NormalizedModule, mirroring TestPythonAdapter's structure. Hand-built
+# inline TS fixtures (written to tmp_path) rather than a shared fixtures/
+# directory, since none exists for TypeScript yet.
+# ---------------------------------------------------------------------------
+
+
+class TestTypeScriptAdapter:
+    """T-0611: `frob.arch._typescript.TypeScriptAdapter` is the second
+    `LanguageAdapter` implementation (after T-0610's `PythonAdapter`),
+    built off `tree-sitter-typescript`. These tests hand-build small `.ts`
+    fixtures covering every `NormalizedModule` entity kind, plus one
+    stays-sane test on a more realistic multi-construct snippet."""
+
+    def test_is_a_language_adapter(self) -> None:
+        from frob.arch._normalized import LanguageAdapter
+        from frob.arch._typescript import TypeScriptAdapter
+
+        adapter = TypeScriptAdapter()
+        assert isinstance(adapter, LanguageAdapter)
+        assert adapter.language == "typescript"
+
+    def _adapt(self, tmp_path: Path, source: str, filename: str = "mod.ts"):
+        from frob.arch._typescript import TypeScriptAdapter
+        from frob.lang import raw_tree
+
+        path = tmp_path / filename
+        path.write_text(source)
+        parsed = raw_tree(path)
+        assert parsed.is_ok
+        tree, src, language = parsed.danger_ok
+        assert language == "typescript"
+        return TypeScriptAdapter().adapt(tree, src, filename)
+
+    def test_adapt_imports(self, tmp_path: Path) -> None:
+        module = self._adapt(
+            tmp_path,
+            'import { Base } from "./base";\n'
+            'import * as fs from "fs";\n'
+            'import Default from "mod3";\n'
+            'import "sideeffect";\n',
+        )
+        by_module = {i.module: i for i in module.imports}
+        assert by_module["./base"].names == ["Base"]
+        assert by_module["fs"].names == []
+        assert by_module["mod3"].names == ["Default"]
+        assert by_module["sideeffect"].names == []
+
+    def test_adapt_class_bases_and_fields(self, tmp_path: Path) -> None:
+        module = self._adapt(
+            tmp_path,
+            "class Base {}\n"
+            "interface Greeter { greet(): string; }\n"
+            "class Animal extends Base implements Greeter {\n"
+            "  name: string;\n"
+            "  private age: number = 0;\n"
+            "  greet(): string { return this.name; }\n"
+            "}\n",
+        )
+        classes = {c.name: c for c in module.classes}
+        assert set(classes) == {"Base", "Animal"}
+        animal = classes["Animal"]
+        assert animal.bases == ["Base", "Greeter"]
+        fields = {f.name: f for f in animal.fields}
+        assert fields["name"].type == "string"
+        assert fields["age"].type == "number"
+
+    def test_adapt_function_params_and_return_type(self, tmp_path: Path) -> None:
+        from frob.arch._normalized import NormalizedParam
+
+        module = self._adapt(
+            tmp_path,
+            "function add(x: number, y = 2): number {\n  return x + y;\n}\n",
+        )
+        assert len(module.functions) == 1
+        fn = module.functions[0]
+        assert fn.name == "add"
+        assert fn.return_type == "number"
+        assert fn.params[0] == NormalizedParam(
+            name="x", type="number", has_default=False
+        )
+        assert fn.params[1].name == "y"
+        assert fn.params[1].has_default is True
+        assert fn.returns[0].value_text == "x + y"
+
+    def test_adapt_arrow_function_bound_to_const(self, tmp_path: Path) -> None:
+        module = self._adapt(
+            tmp_path,
+            "const double = (a: number): number => {\n  return a * 2;\n};\n",
+        )
+        funcs = {f.name: f for f in module.functions}
+        assert "double" in funcs
+        assert funcs["double"].params[0].name == "a"
+        assert funcs["double"].returns[0].value_text == "a * 2"
+
+    def test_adapt_branches_loops_calls_field_accesses(self, tmp_path: Path) -> None:
+        module = self._adapt(
+            tmp_path,
+            "class Widget {\n"
+            "  count: number = 0;\n"
+            "  bump(flag: boolean): void {\n"
+            "    if (this.count > 0 && flag) {\n"
+            "      console.log(this.count);\n"
+            "    }\n"
+            "    for (let i = 0; i < 3; i++) {\n"
+            "      this.count = this.count + i;\n"
+            "    }\n"
+            "  }\n"
+            "}\n",
+        )
+        method = module.classes[0].methods[0]
+        assert any(
+            b.condition_text == "this.count > 0 && flag" for b in method.branches
+        )
+        assert any(loop.kind == "for" for loop in method.loops)
+        assert any(c.callee == "console.log" for c in method.calls)
+        writes = [
+            fa for fa in method.field_accesses if fa.name == "count" and fa.is_write
+        ]
+        assert writes
+
+    def test_adapt_for_of_and_ternary(self, tmp_path: Path) -> None:
+        module = self._adapt(
+            tmp_path,
+            "function loopy(items: string[]): void {\n"
+            "  for (const it of items) {\n"
+            "    console.log(it);\n"
+            "  }\n"
+            '  const label = items.length > 0 ? "yes" : "no";\n'
+            "  console.log(label);\n"
+            "}\n",
+        )
+        fn = module.functions[0]
+        assert any(loop.kind == "for" for loop in fn.loops)
+        assert any(b.condition_text == "items.length > 0" for b in fn.branches)
+
+    def test_adapt_raise_and_catch(self, tmp_path: Path) -> None:
+        module = self._adapt(
+            tmp_path,
+            "function risky(): void {\n"
+            "  try {\n"
+            '    throw new RangeError("oops");\n'
+            "  } catch (e) {\n"
+            '    throw new Error("bad");\n'
+            "  }\n"
+            "}\n",
+        )
+        fn = module.functions[0]
+        assert {r.exception_type for r in fn.raises} == {"RangeError", "Error"}
+        assert len(fn.catches) == 1
+
+    def test_adapt_override_modifier(self, tmp_path: Path) -> None:
+        module = self._adapt(
+            tmp_path,
+            "class Base {\n"
+            "  speak(): void {}\n"
+            "}\n"
+            "class Derived extends Base {\n"
+            "  override speak(): void {}\n"
+            "}\n",
+        )
+        derived = next(c for c in module.classes if c.name == "Derived")
+        assert derived.methods[0].overrides == "speak"
+        base = next(c for c in module.classes if c.name == "Base")
+        assert base.methods[0].overrides is None
+
+    def test_adapt_constructor_is_a_method(self, tmp_path: Path) -> None:
+        module = self._adapt(
+            tmp_path,
+            "class Animal {\n"
+            "  name: string;\n"
+            "  constructor(name: string) {\n"
+            "    this.name = name;\n"
+            "  }\n"
+            "}\n",
+        )
+        cls = module.classes[0]
+        ctor = next(m for m in cls.methods if m.name == "constructor")
+        assert ctor.is_method is True
+        assert ctor.params[0].name == "name"
+
+    def test_adapt_export_wrapped_declarations(self, tmp_path: Path) -> None:
+        module = self._adapt(
+            tmp_path,
+            "export function exported(z: string): void {}\n"
+            "export class ExportedClass {}\n",
+        )
+        assert {f.name for f in module.functions} == {"exported"}
+        assert {c.name for c in module.classes} == {"ExportedClass"}
+
+    def test_adapt_stays_sane_on_realistic_snippet(self, tmp_path: Path) -> None:
+        # A denser, more realistic TS module exercising every entity kind
+        # at once (import, class w/ inheritance, constructor, override,
+        # branches/loops/calls/field-accesses/raise/catch, a free function,
+        # an arrow function) -- proves the adapter does not choke or
+        # silently drop entities when they co-occur, the way a fixture
+        # isolating one construct at a time cannot.
+        module = self._adapt(
+            tmp_path,
+            'import { Base } from "./base";\n'
+            "\n"
+            "class Animal extends Base {\n"
+            "  name: string;\n"
+            "  private age: number = 0;\n"
+            "\n"
+            "  constructor(name: string, age = 1) {\n"
+            "    super();\n"
+            "    this.name = name;\n"
+            "    this.age = age;\n"
+            "  }\n"
+            "\n"
+            "  override speak(loud: boolean = false): void {\n"
+            "    if (this.age > 5 && loud) {\n"
+            "      console.log(this.name);\n"
+            "    } else {\n"
+            "      for (let i = 0; i < 3; i++) {\n"
+            "        this.name = this.name + i;\n"
+            "      }\n"
+            "    }\n"
+            "    try {\n"
+            "      this.risky();\n"
+            "    } catch (e) {\n"
+            '      throw new Error("bad");\n'
+            "    }\n"
+            "  }\n"
+            "\n"
+            "  risky(): void {\n"
+            '    throw new RangeError("oops");\n'
+            "  }\n"
+            "}\n"
+            "\n"
+            "function standalone(x: number, y = 2): number {\n"
+            "  return x + y;\n"
+            "}\n"
+            "\n"
+            "const arrowFn = (a: number): number => {\n"
+            "  return a * 2;\n"
+            "};\n",
+        )
+        assert module.language == "typescript"
+        assert module.imports[0].module == "./base"
+        cls = module.classes[0]
+        assert cls.name == "Animal"
+        assert cls.bases == ["Base"]
+        methods = {m.name: m for m in cls.methods}
+        assert set(methods) == {"constructor", "speak", "risky"}
+        assert methods["speak"].overrides == "speak"
+        assert methods["speak"].branches
+        assert methods["speak"].loops
+        assert methods["speak"].calls
+        assert methods["speak"].field_accesses
+        assert methods["speak"].raises[0].exception_type == "Error"
+        assert methods["speak"].catches[0].line
+        assert methods["risky"].raises[0].exception_type == "RangeError"
+        funcs = {f.name: f for f in module.functions}
+        assert set(funcs) == {"standalone", "arrowFn"}
+        assert funcs["standalone"].params[1].has_default is True
+        assert funcs["arrowFn"].returns[0].value_text == "a * 2"
+
+        # Round-trips through pydantic (de)serialization, same as the
+        # hand-built python NormalizedModule shape test (T-0609).
+        from frob.arch._normalized import NormalizedModule
+
+        restored = NormalizedModule.model_validate(module.model_dump())
+        assert restored == module
+
+
+class TestSharedCheckOnPythonAndTypeScript:
+    """T-0611's acceptance criterion: a shared arch check written once
+    against `NormalizedModule` fires identically on an equivalent python
+    fixture (via `PythonAdapter`) and TypeScript fixture (via
+    `TypeScriptAdapter`) -- no per-language branch in the check itself.
+    Reuses `frob.arch._python`'s already-migrated (T-0610)
+    `_iter_normalized_functions`/`_normalized_is_complex` helpers, which
+    operate purely on `NormalizedModule`/`NormalizedFunction` and take no
+    language-specific input."""
+
+    _PY_LONG_FUNC = (
+        "def configure_pipeline(a, b, c, d):\n"
+        "    if a:\n"
+        "        if b:\n"
+        "            if c:\n"
+        "                for i in range(d):\n"
+        "                    if i:\n"
+        "                        while i:\n"
+        "                            if a and b:\n"
+        "                                pass\n"
+        "                            i -= 1\n"
+        "    return a\n"
+    )
+    _TS_LONG_FUNC = (
+        "function configurePipeline(a: boolean, b: boolean, c: boolean, d: number): boolean {\n"
+        "  if (a) {\n"
+        "    if (b) {\n"
+        "      if (c) {\n"
+        "        for (let i = 0; i < d; i++) {\n"
+        "          if (i) {\n"
+        "            while (i) {\n"
+        "              if (a && b) {\n"
+        "              }\n"
+        "              i -= 1;\n"
+        "            }\n"
+        "          }\n"
+        "        }\n"
+        "      }\n"
+        "    }\n"
+        "  }\n"
+        "  return a;\n"
+        "}\n"
+    )
+
+    def test_long_complex_function_flags_identically_across_languages(
+        self, tmp_path: Path
+    ) -> None:
+        from frob.arch._python import (
+            PythonAdapter,
+            _iter_normalized_functions,
+            _normalized_is_complex,
+        )
+        from frob.arch._typescript import TypeScriptAdapter
+        from frob.lang import raw_tree
+
+        py_path = tmp_path / "long_func.py"
+        py_path.write_text(self._PY_LONG_FUNC)
+        py_tree, py_src, py_lang = raw_tree(py_path).danger_ok
+        assert py_lang == "python"
+        py_module = PythonAdapter().adapt(py_tree, py_src, "long_func.py")
+
+        ts_path = tmp_path / "long_func.ts"
+        ts_path.write_text(self._TS_LONG_FUNC)
+        ts_tree, ts_src, ts_lang = raw_tree(ts_path).danger_ok
+        assert ts_lang == "typescript"
+        ts_module = TypeScriptAdapter().adapt(ts_tree, ts_src, "long_func.ts")
+
+        py_target = next(
+            f
+            for f, _prefix in _iter_normalized_functions(py_module)
+            if f.name == "configure_pipeline"
+        )
+        ts_target = next(
+            f
+            for f, _prefix in _iter_normalized_functions(ts_module)
+            if f.name == "configurePipeline"
+        )
+
+        # The SAME shared check function, unmodified, called on each
+        # language's NormalizedFunction -- both must fire.
+        assert _normalized_is_complex(py_target)
+        assert _normalized_is_complex(ts_target)
