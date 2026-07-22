@@ -9278,3 +9278,170 @@ component: null
 labels: []
 ```
 Field evidence 2026-07-22: the CI Test job ran 5h59m30s before cancellation at the 6h cap -- a deadlock, not slow tests. Same hang reproduced locally three ways: TestRunGatesDelta exit-143 timeouts on unmodified main, and TWO zombie pytest trees from dead worktree sessions (12h53m and 10h09m old) wedged inside frob check subprocess tests, swept this session. Root cause class: _run_combined_jobs forks a ProcessPoolExecutor inside an active ThreadPoolExecutor (disclosed in T-0265's Done report; T-0581's process-pool redesign is the structural fix and should be treated as HIGH priority). This ticket is the harness guard: add pytest-timeout (per-test ceiling ~120s, thread method) to the test dependency group and addopts, so any future deadlock fails the one test in minutes and CI reports a named culprit instead of burning the job cap; document the interplay in the testing guide. Keep the ceiling generous enough for the known-slow system tests or mark those with explicit timeout overrides.
+
+<!-- ticket:T-0693 -->
+```yaml
+id: T-0693
+title: 'concurrency hazard analysis: structural deadlock/race/event-loop checks +
+  model-mismatch advisory (parent)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/arch/**
+- src/frob/gates/**
+- docs/design/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN the children closed WHEN frob check runs on fixtures reproducing each hazard
+  class THEN each fires per its own acceptance
+threat: null
+component: null
+labels: []
+```
+User mandate 2026-07-22: static checks for multiprocessing/threading/async code. Not a soundness claim -- a STRUCTURAL may-analysis over the call graph + normalized model (T-0609..T-0612) catching the classes that actually bite, fail-closed on opaque dispatch per T-0339 doctrine. Field motivation from this very session: the ProcessPoolExecutor-inside-ThreadPoolExecutor deadlock (T-0265 disclosure, T-0581 structural fix, T-0692 CI guard) ate a 6h CI job. Children: lock-order graph, fork/pool structural hazards, async event-loop hazards, shared-mutable-state approximation, IO/CPU-bound model-mismatch advisory. Umbrella closes when children close.
+
+<!-- ticket:T-0694 -->
+```yaml
+id: T-0694
+title: 'lock-ordering graph: cyclic acquisition order across call paths = potential-deadlock
+  finding'
+state: queued
+kind: security
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0693
+scope:
+- src/frob/arch/**
+- tests/unit/test_arch.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN two functions acquiring locks A-then-B and B-then-A WHEN the check runs THEN
+  a finding names both call paths; GIVEN consistent global ordering THEN silence
+threat: null
+component: null
+labels: []
+```
+Child 1 of T-0693. Track with-statement (and explicit acquire/release) nesting of statically-identifiable lock objects (module/class-level threading.Lock/RLock/Semaphore, multiprocessing locks, anyio/asyncio locks); build the acquisition-order graph across call paths via the call graph; a cycle = potential deadlock naming both paths and both locks. Unresolvable lock identity -> advisory-tier note, fail-closed philosophy without drowning signal. Fixtures: the classic AB/BA two-lock deadlock fires; single global lock ordering does not.
+
+<!-- ticket:T-0695 -->
+```yaml
+id: T-0695
+title: 'structural fork/pool hazards: pool-inside-pool, fork-after-threads, pipe-wait,
+  self-join'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-22'
+priority: high
+blocked_by: []
+parent: T-0693
+scope:
+- src/frob/arch/**
+- tests/unit/test_arch.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a fixture spawning a process pool inside a thread-pool task WHEN the check
+  runs THEN an error-tier finding fires AND the check fires on src/frob/gates/_run_combined_jobs
+  as it exists today
+threat: null
+component: null
+labels: []
+```
+Child 2 of T-0693 -- the class that ate the 6h CI job this week. Call-graph reachability checks: (a) ProcessPoolExecutor/multiprocessing.Pool construction reachable inside an active ThreadPoolExecutor task or thread target (the T-0265/T-0581 field bug -- this repo's own src/frob/gates/_run_combined_jobs must fire until T-0581 fixes it, proving the check on real code); (b) os.fork/forking-start-method reachable after threading.Thread start on the same path; (c) subprocess pipe-fill-then-wait (communicate-less wait with PIPE stdout on unbounded output); (d) pool.join/executor.shutdown reachable from inside its own submitted task. Fail-closed advisory on opaque dispatch.
+
+<!-- ticket:T-0696 -->
+```yaml
+id: T-0696
+title: 'async event-loop hazards: blocking calls in async def, nested run_until_complete,
+  un-awaited coroutines'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0693
+scope:
+- src/frob/arch/**
+- tests/unit/test_arch.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN time.sleep inside async def WHEN the check runs THEN a finding suggests asyncio.sleep/to_thread;
+  GIVEN an un-awaited coroutine call THEN a finding names the site
+threat: null
+component: null
+labels: []
+```
+Child 3 of T-0693. Curated blocking-call table (time.sleep, requests.*, urllib, sync open/read on large paths, subprocess.run, .result() on futures) flagged when reachable inside async def without run_in_executor/to_thread dispatch; run_until_complete/asyncio.run reachable inside a running-loop context; coroutine-constructing call whose result is neither awaited nor gathered nor stored (un-awaited coroutine); async def containing zero awaits (feeds the model-mismatch advisory too). Table extensible via frob.toml like other curated tables.
+
+<!-- ticket:T-0697 -->
+```yaml
+id: T-0697
+title: 'shared-mutable-state race approximation: unguarded writes on thread/task-reachable
+  paths'
+state: queued
+kind: security
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0693
+scope:
+- src/frob/arch/**
+- tests/unit/test_arch.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a module-level dict written from a thread-submitted function with no enclosing
+  lock WHEN the check runs THEN an advisory names the write site and the spawn path;
+  GIVEN the same write under  THEN silence
+threat: null
+component: null
+labels: []
+```
+Child 4 of T-0693. Approximate data-race detection: a WRITE to module-level or class-level mutable state (assignment, mutating method on list/dict/set) on a call path reachable from a thread target/executor submission/async task, where no lock acquisition encloses the write in that path's context, is an advisory finding (suggestion tier -- approximation, false positives possible; waivable with reason). Reuses the lock-identification machinery from T-0694 and thread-target reachability from T-0695. Single-process cousin of strata's distributed no-shared-mutable-state check (T-0656) -- coordinate rule naming, do not duplicate its model-level logic.
+
+<!-- ticket:T-0698 -->
+```yaml
+id: T-0698
+title: 'concurrency model-mismatch advisory: IO-bound vs CPU-bound classification
+  vs chosen executor'
+state: queued
+kind: ux
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0693
+scope:
+- src/frob/arch/**
+- tests/unit/test_arch.py
+- docs/modules/arch.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a pure-arithmetic loop function submitted to ThreadPoolExecutor WHEN advisories
+  run THEN a GIL-bound suggestion fires naming the loop; GIVEN a socket-read function
+  under threads THEN silence
+threat: null
+component: null
+labels: []
+```
+Child 5 of T-0693, the user's seem-IO-bound/seem-CPU-bound mandate. Classify each function from normalized-model events: IO-BOUND if dominated by curated IO calls (sockets/files/http/subprocess/db), CPU-BOUND if loop/arithmetic-dense with no IO, MIXED/UNKNOWN otherwise (advisories only fire on confident classifications -- T-0332 noise discipline). Advisories: CPU-bound work submitted to ThreadPoolExecutor or awaited in the event loop -> GIL-bound, suggest ProcessPool/native; trivially-small IO-bound tasks under ProcessPoolExecutor -> IPC overhead, suggest threads/async; async def with zero awaits (from T-0696) -> not actually async, suggest plain def; sequential awaits over independent IO -> suggest gather. Each advisory names the classification evidence (the dominating call sites), never a bare switch-your-model.
