@@ -1543,7 +1543,6 @@ coordinator's earlier direction -- only native/TS modules are believed to
 remain (`src/frob/check/_native.py`, `src/frob/check/_ts.py`,
 `src/frob/dup/_legacy_cpp.py`), pending coordinator confirmation via a fresh
 full-suite `frob check --only test` scan.
-
 <!-- ticket:T-0177 -->
 ```yaml
 id: T-0177
@@ -2984,7 +2983,7 @@ See docs/audits/strata.md. HIGH: boundaries never bound to code (discharge = typ
 id: T-0405
 title: 'Language extension contract: one typed registration per language + conformance
   gate that fails on any missing facet'
-state: in-progress
+state: queued
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -2997,49 +2996,7 @@ scope:
 - src/frob/testing/
 - src/frob/arch/
 - src/frob/gates/
-- tests/test_lang_support.py
-- tests/test_lang_conformance_gate.py
-- docs/modules/lang.md
-- pyproject.toml
-- .frob-release.json
-- uv.lock
-scope_changes:
-- op: add
-  glob: tests/test_lang_support.py
-  reason: conformance model needs its own test files + doc anchor section, per the
-    ticket's own acceptance criteria
-  actor: logan
-  at: '2026-07-21'
-- op: add
-  glob: tests/test_lang_conformance_gate.py
-  reason: conformance model needs its own test files + doc anchor section, per the
-    ticket's own acceptance criteria
-  actor: logan
-  at: '2026-07-21'
-- op: add
-  glob: docs/modules/lang.md
-  reason: conformance model needs its own test files + doc anchor section, per the
-    ticket's own acceptance criteria
-  actor: logan
-  at: '2026-07-21'
-- op: add
-  glob: pyproject.toml
-  reason: REL001 required a version bump (0.66.0 -> 0.67.0) since this ticket adds
-    public API; release stamp + lockfile are the mechanical fallout
-  actor: logan
-  at: '2026-07-21'
-- op: add
-  glob: .frob-release.json
-  reason: REL001 required a version bump (0.66.0 -> 0.67.0) since this ticket adds
-    public API; release stamp + lockfile are the mechanical fallout
-  actor: logan
-  at: '2026-07-21'
-- op: add
-  glob: uv.lock
-  reason: REL001 required a version bump (0.66.0 -> 0.67.0) since this ticket adds
-    public API; release stamp + lockfile are the mechanical fallout
-  actor: logan
-  at: '2026-07-21'
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -3801,26 +3758,3 @@ dead, per the manual cross-file/package grep in T-0422's Done report) --
 triage each individually once the substrate gap above is closed, or waive
 one at a time with a symbol-specific verified reason as they are touched by
 other work.
-
-<!-- ticket:T-draft-19b78a87 -->
-```yaml
-id: T-draft-19b78a87
-title: docblocks DOC004 gate has no C/C++ fenced-code-block bucket
-state: queued
-kind: bug
-origin: human
-created: '2026-07-21'
-priority: medium
-blocked_by: []
-parent: null
-scope:
-- src/frob/gates/_docblocks.py
-scope_changes: []
-evidence: []
-attachments: []
-acceptance: []
-threat: null
-component: null
-labels: []
-```
-found while working T-0405 (language extension contract survey): DOC004's fenced-code-block doc-drift check (frob.gates._docblocks) has _PYTHON_LANGS/_RUST_LANGS/_TS_LANGS buckets but no C/C++ bucket -- a fenced c or cpp code block in docs gets no drift checking at all, unlike python/rust/typescript. Add a _C_LANGS/_CPP_LANGS bucket (or a combined c-cpp one, matching frob.vet's capability-matrix convention) with the matching source-extraction branch in doc004_gate.
