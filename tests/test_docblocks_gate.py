@@ -261,3 +261,91 @@ class TestRustNamespace:
         violations = doc004_gate(tmp_path, snapshot)
 
         assert _rule_ids(violations, "docs/guide.md") == []
+
+
+# frob:ticket T-0566
+class TestCCppNamespace:
+    """C/C++: a quoted `#include "..."` of a file this repo actually
+    tracks is a real project reference (UNBOUND if unanchored); a quoted
+    include that resolves to no tracked file (illustrative/external) is
+    skipped; angle-bracket system includes are never flagged."""
+
+    def test_include_of_tracked_header_unanchored_warns(self, tmp_path: Path) -> None:
+        _init_repo(tmp_path)
+        _write(tmp_path, "include/acme/core.h", "#pragma once\nint acme_init(void);\n")
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            '```c\n#include "include/acme/core.h"\nacme_init();\n```\n',
+        )
+        _git(tmp_path, "add", "-A")
+
+        snapshot = _snapshot(tmp_path)
+        violations = doc004_gate(tmp_path, snapshot)
+
+        warns = [v for v in violations if v.severity == Severity.WARN]
+        assert any("not anchored" in v.message for v in warns)
+
+    def test_include_of_tracked_header_anchored_passes(self, tmp_path: Path) -> None:
+        _init_repo(tmp_path)
+        _write(tmp_path, "include/acme/core.h", "#pragma once\nint acme_init(void);\n")
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "<!-- frob:describes include/acme/core.h -->\n\n"
+            '```c\n#include "include/acme/core.h"\nacme_init();\n```\n',
+        )
+        _git(tmp_path, "add", "-A")
+
+        snapshot = _snapshot(tmp_path)
+        violations = doc004_gate(tmp_path, snapshot)
+
+        assert _rule_ids(violations, "docs/guide.md") == []
+
+    def test_include_resolving_to_no_tracked_file_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        _init_repo(tmp_path)
+        _write(tmp_path, "README.md", "placeholder\n")
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            '```cpp\n#include "some/other/projects/header.hpp"\n```\n',
+        )
+        _git(tmp_path, "add", "-A")
+
+        snapshot = _snapshot(tmp_path)
+        violations = doc004_gate(tmp_path, snapshot)
+
+        assert _rule_ids(violations, "docs/guide.md") == []
+
+    def test_angle_bracket_system_include_never_flagged(self, tmp_path: Path) -> None:
+        _init_repo(tmp_path)
+        _write(tmp_path, "README.md", "placeholder\n")
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "```c\n#include <stdio.h>\nint main(void) { return 0; }\n```\n",
+        )
+        _git(tmp_path, "add", "-A")
+
+        snapshot = _snapshot(tmp_path)
+        violations = doc004_gate(tmp_path, snapshot)
+
+        assert _rule_ids(violations, "docs/guide.md") == []
+
+    def test_waive_suppresses_unbound_c_include(self, tmp_path: Path) -> None:
+        _init_repo(tmp_path)
+        _write(tmp_path, "include/acme/core.h", "#pragma once\n")
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            '<!-- frob:waive DOC004 reason="illustrative" -->\n\n'
+            '```c\n#include "include/acme/core.h"\n```\n',
+        )
+        _git(tmp_path, "add", "-A")
+
+        snapshot = _snapshot(tmp_path)
+        violations = doc004_gate(tmp_path, snapshot)
+
+        assert _rule_ids(violations, "docs/guide.md") == []

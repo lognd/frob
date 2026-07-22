@@ -3769,7 +3769,7 @@ Split out of T-0424: the registry MODEL + honest seed is built (check-coverage.y
 ```yaml
 id: T-0566
 title: docblocks DOC004 gate has no C/C++ fenced-code-block bucket
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -3778,7 +3778,29 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/gates/_docblocks.py
-scope_changes: []
+- src/frob/lang/_support.py
+- tests/test_docblocks_gate.py
+- tests/test_lang_support.py
+scope_changes:
+- op: add
+  glob: src/frob/lang/_support.py
+  reason: the c/cpp DOC004 known_gap declaration + T-draft-78a0f919 citation lives
+    here; adding a real bucket in _docblocks.py must update this claim to _implemented,
+    not leave a stale known_gap pointing at a bogus ticket id
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_docblocks_gate.py
+  reason: 'regression tests for the new c/cpp #include DOC004 bucket and its LANG003
+    known_gap->implemented transition'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_lang_support.py
+  reason: 'regression tests for the new c/cpp #include DOC004 bucket and its LANG003
+    known_gap->implemented transition'
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -3787,7 +3809,6 @@ component: null
 labels: []
 ```
 found while working T-0405 (language extension contract survey): DOC004's fenced-code-block doc-drift check (frob.gates._docblocks) has _PYTHON_LANGS/_RUST_LANGS/_TS_LANGS buckets but no C/C++ bucket -- a fenced c or cpp code block in docs gets no drift checking at all, unlike python/rust/typescript. Add a _C_LANGS/_CPP_LANGS bucket (or a combined c-cpp one, matching frob.vet's capability-matrix convention) with the matching source-extraction branch in doc004_gate.
-
 <!-- ticket:T-0567 -->
 ```yaml
 id: T-0567

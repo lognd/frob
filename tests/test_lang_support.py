@@ -49,6 +49,16 @@ class TestDeriveLanguageRegistry:
         registry = derive_language_registry()
         assert conformance_violations(registry) == ()
 
+    # frob:ticket T-0566
+    def test_c_and_cpp_docblock_facet_is_implemented(self) -> None:
+        """T-0566: c/cpp used to be a known_gap on the docblock facet
+        (LANG003) citing a bogus, non-existent ticket id; the new
+        `_C_CPP_LANGS` bucket in `frob.gates._docblocks` makes both real
+        entries in the derived registry."""
+        registry = derive_language_registry()
+        assert registry["c"].facets["docblock"].state == FacetState.IMPLEMENTED
+        assert registry["cpp"].facets["docblock"].state == FacetState.IMPLEMENTED
+
 
 # frob:ticket T-0405
 # frob:ticket T-0406
