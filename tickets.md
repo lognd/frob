@@ -6980,3 +6980,143 @@ component: null
 labels: []
 ```
 A dependency marked CRITICAL must declare a fallback/graceful-degradation path, and the fallback code path must be shown present (proof-against-code) or explicitly waived. Reuses the circuit-breaker ticket's dependency-criticality classification, hence blocked on that groundwork existing.
+
+<!-- ticket:T-0644 -->
+```yaml
+id: T-0644
+title: 'strata: HEALTH liveness+readiness obligation on every service node'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0331
+scope:
+- src/frob/strata/**
+- docs/strata/**
+- tests/unit/strata/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given a service node with no liveness/readiness declared, when checked, then the
+  obligation fires
+threat: null
+component: null
+labels: []
+```
+Every service node must declare liveness+readiness health checks. Proof-against-code: the declared health endpoint/probe must be found in the bound code (T-0331 PROVABILITY CONSTRAINT).
+
+<!-- ticket:T-0645 -->
+```yaml
+id: T-0645
+title: 'strata: SPOF detection - inbound-critical-flow node with replicas_max=1/no
+  redundancy'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0331
+scope:
+- src/frob/strata/**
+- docs/strata/**
+- tests/unit/strata/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given a node with inbound critical flows and replicas_max=1, when checked, then
+  SPOF obligation fires unless waived
+threat: null
+component: null
+labels: []
+```
+A node receiving critical inbound flows with replicas_max=1 or no declared redundancy is a single point of failure; flag as a hard obligation, deny-by-default with reasoned waive (T-0174).
+
+<!-- ticket:T-0646 -->
+```yaml
+id: T-0646
+title: 'strata: BACKPRESSURE bounded-intake obligation on queues/consumers'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0331
+scope:
+- src/frob/strata/**
+- docs/strata/**
+- tests/unit/strata/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given a queue/consumer node with no bounded-intake policy declared, when checked,
+  then the obligation fires
+threat: null
+component: null
+labels: []
+```
+Every queue/consumer node must declare bounded intake (backpressure policy), extending LINT003 surge / LINT005 capacity.
+
+<!-- ticket:T-0647 -->
+```yaml
+id: T-0647
+title: 'strata: boundary-flow metrics+traces+logs obligation + trace-id CORRELATION
+  propagation'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0331
+scope:
+- src/frob/strata/**
+- docs/strata/**
+- tests/unit/strata/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given a boundary flow with no metrics/traces/logs declared, when checked, then the
+  obligation fires
+- Given a multi-hop flow chain with no trace-id propagation declared, when checked,
+  then the obligation fires
+threat: null
+component: null
+labels: []
+```
+Every boundary flow must declare metrics+traces+logs instrumentation; a flow chain must propagate a correlation/trace-id across hops (distributed tracing). Proof-against-code required.
+
+<!-- ticket:T-0648 -->
+```yaml
+id: T-0648
+title: 'strata: golden-signal SLO + error-budget obligation per service'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0647
+parent: T-0331
+scope:
+- src/frob/strata/**
+- docs/strata/**
+- tests/unit/strata/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- Given a service node with no golden-signal SLOs + error budget declared, when checked,
+  then the obligation fires
+threat: null
+component: null
+labels: []
+```
+Every service node must declare golden-signal SLOs (latency/traffic/errors/saturation) and an error budget. Depends on the metrics-instrumentation obligation existing first, since an SLO without the underlying signal is unverifiable.
