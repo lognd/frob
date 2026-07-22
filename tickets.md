@@ -3581,7 +3581,7 @@ found while working T-0355 (deliberately split out, item 2 of that ticket's orig
 id: T-0585
 title: 'INV006 first-turn-on pool: ~167 source-side exclusivity claims need disposition
   (bind invariant / reword / waive)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-21'
