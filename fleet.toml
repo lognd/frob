@@ -1,0 +1,38 @@
+# frob fleet manifest (T-0573, docs/modules/fleet.md): the 9-repo estate
+# `frob fleet status` rolls up. Paths are relative to this repo's root.
+
+[[repo]]
+name = "frob"
+path = "."
+
+[[repo]]
+name = "lithos"
+path = "../lithos"
+
+[[repo]]
+name = "feldspar"
+path = "../feldspar"
+
+[[repo]]
+name = "graphite"
+path = "../graphite"
+
+[[repo]]
+name = "typani"
+path = "../typani"
+
+[[repo]]
+name = "lograder"
+path = "../lograder"
+
+[[repo]]
+name = "aprog-public"
+path = "../aprog-public"
+
+[[repo]]
+name = "aprog-private"
+path = "../aprog-private"
+
+[[repo]]
+name = "logand.app"
+path = "../logand.app"

@@ -728,6 +728,56 @@ def _add_registry_parser(sub) -> None:
     registry_add_p.add_argument("--path", dest="registry_path", metavar="DIR")
 
 
+def _add_fleet_parser(sub) -> None:
+    """Register the `frob fleet` subcommand and its `status`/`route` actions
+    (T-0573, docs/modules/fleet.md)."""
+    fleet_p = sub.add_parser(
+        "fleet",
+        help="cross-repo status, gate rollup, and ticket routing over a "
+        "fleet.toml manifest of sibling repos (T-0573)",
+    )
+    fleet_sub = fleet_p.add_subparsers(dest="fleet_command")
+
+    status_p = fleet_sub.add_parser(
+        "status", help="reddest-first status/gate rollup over every manifest repo"
+    )
+    status_p.add_argument(
+        "--manifest", dest="fleet_manifest", metavar="PATH", default=None
+    )
+    status_p.add_argument("--json", dest="fleet_json", action="store_true")
+    status_p.add_argument(
+        "--skip-gates",
+        dest="fleet_skip_gates",
+        action="store_true",
+        help="skip the frob check --json probe; git/ticket status only",
+    )
+
+    route_p = fleet_sub.add_parser(
+        "route", help="file a ticket directly into a named sibling repo's ledger"
+    )
+    route_p.add_argument(
+        "--manifest", dest="fleet_manifest", metavar="PATH", default=None
+    )
+    route_p.add_argument("--repo", dest="fleet_repo", required=True)
+    route_p.add_argument("--title", dest="fleet_title", required=True)
+    route_p.add_argument(
+        "--kind",
+        dest="fleet_kind",
+        default="bug",
+        choices=["feature", "bug", "security", "ux", "docs", "invariant", "incident"],
+    )
+    route_p.add_argument(
+        "--priority",
+        dest="fleet_priority",
+        default="medium",
+        choices=["low", "medium", "high", "critical"],
+    )
+    route_p.add_argument(
+        "--scope", dest="fleet_scope", action="append", default=[], metavar="GLOB"
+    )
+    route_p.add_argument("--body", dest="fleet_body", default="")
+
+
 def _add_ticket_new_identity_args(ticket_new_p) -> None:
     """Register `frob ticket new`'s title/kind/acceptance/threat classification args."""
     ticket_new_p.add_argument("--title", dest="ticket_title", required=True)
@@ -1852,6 +1902,7 @@ def _add_workflow_subparsers(sub) -> None:
     _add_serve_parser(sub)
     _add_sys_parser(sub)
     _add_deploy_parser(sub)
+    _add_fleet_parser(sub)
     _add_doctor_parser(sub)
     _add_clean_parser(sub)
 

@@ -59,6 +59,8 @@ class Subcommand(str, enum.Enum):
     registry = "registry"
     # T-0569: ratchet-pool baseline snapshot/clear.
     pool = "pool"
+    # T-0573: cross-repo status/gate rollup and ticket routing.
+    fleet = "fleet"
 
 
 # frob:doc docs/modules/app.md#config
@@ -393,6 +395,20 @@ class AppConfig(BaseModel):
     deploy_out_dir: Path | None = None
     deploy_check: bool = False
 
+    # fleet (T-0573): `frob fleet status [--manifest PATH] [--json]
+    # [--skip-gates]` / `frob fleet route --repo NAME --title TEXT
+    # [--kind K] [--priority P] [--scope GLOB...] [--body TEXT]`.
+    fleet_command: str | None = None  # status|route
+    fleet_manifest: Path | None = None
+    fleet_json: bool = False
+    fleet_skip_gates: bool = False
+    fleet_repo: str | None = None
+    fleet_title: str | None = None
+    fleet_kind: str | None = None
+    fleet_priority: str | None = None
+    fleet_scope: list[str] = []
+    fleet_body: str = ""
+
     # deploy audit (T-0259: `frob deploy audit --vm <name>` -- VirtualBox
     # snapshot-diff harness, NOT run by `make check`)
     deploy_vm: str | None = None
@@ -493,6 +509,11 @@ class AppConfig(BaseModel):
             "deploy_ssh_host",
             "deploy_ssh_user",
             "deploy_base_snapshot",
+            "fleet_command",
+            "fleet_repo",
+            "fleet_title",
+            "fleet_kind",
+            "fleet_priority",
         ):
             val = getattr(args, field, None)
             if val is not None:
@@ -541,6 +562,7 @@ class AppConfig(BaseModel):
             "deploy_ssh_key",
             "deploy_audit_output",
             "clean_path",
+            "fleet_manifest",
         ):
             val = getattr(args, path_field, None)
             if val is not None:
@@ -596,6 +618,7 @@ class AppConfig(BaseModel):
             "perf_argv",
             "mutate_argv",
             "dup_probe",
+            "fleet_scope",
         ):
             val = getattr(args, list_field, None)
             if val:
@@ -604,6 +627,10 @@ class AppConfig(BaseModel):
         ticket_body = getattr(args, "ticket_body", None)
         if ticket_body is not None:
             d["ticket_body"] = ticket_body
+
+        fleet_body = getattr(args, "fleet_body", None)
+        if fleet_body is not None:
+            d["fleet_body"] = fleet_body
 
         # Bool flags: only override when explicitly True
         for flag in (
@@ -679,6 +706,8 @@ class AppConfig(BaseModel):
             "clean_deep",
             "clean_yes",
             "clean_json",
+            "fleet_json",
+            "fleet_skip_gates",
         ):
             if getattr(args, flag, False):
                 d[flag] = True

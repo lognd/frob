@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.85.0] - unreleased
+
+- T-0573: frob fleet: cross-repo status, gate rollup, and ticket routing for the 9-repo estate
+
 ## [0.84.0] - unreleased
 
 - T-0576: frob:deprecated directive: API sunset dates gated like debt

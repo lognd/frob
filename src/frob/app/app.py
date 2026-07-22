@@ -23,6 +23,7 @@ _RUNNER_MODULE_NAMES = (
     "docs_runner",
     "dup_runner",
     "exports_runner",
+    "fleet_runner",
     "gitlog_runner",
     "graph_runner",
     "map_runner",
@@ -74,6 +75,7 @@ _SUBCOMMAND_RUNNER_NAMES: dict[Subcommand, str] = {
     Subcommand.arch: "arch_runner",
     Subcommand.docs: "docs_runner",
     Subcommand.exports: "exports_runner",
+    Subcommand.fleet: "fleet_runner",
     Subcommand.check: "check_runner",
     Subcommand.gitlog: "gitlog_runner",
     Subcommand.graph: "graph_runner",
@@ -128,7 +130,7 @@ class App:
                 "usage: frob "
                 "<scaffold|cycle|outline|map|xref|parse|dup|arch|docs|bind|"
                 "exports|check|gitlog|graph|ack|debt|pool|ticket|test|vet|"
-                "perf|release|stats|serve|mutate|sys|deploy|doctor|clean>"
+                "perf|release|stats|serve|mutate|sys|deploy|doctor|clean|fleet>"
                 " ..."
             )
             sys.exit(1)
