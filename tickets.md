@@ -12977,3 +12977,125 @@ component: null
 labels: []
 ```
 Lost draft from T-0612 (Rust adapter): enum variants with associated data currently flatten to NormalizedField, losing the payload shape. Extend the model (NormalizedVariant or fields on NormalizedClass) keeping _normalized.py tree_sitter-free, map Rust enum payloads and coordinate with T-0681 (TS phase 2, same model-extension class).
+
+<!-- ticket:T-0744 -->
+```yaml
+id: T-0744
+title: 'protocol declarations: frob:protocol/transition/requires + init-deinit name-pattern
+  inference'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: high
+blocked_by: []
+parent: T-0739
+scope:
+- src/frob/graph/dsl.py
+- src/frob/graph/_models.py
+- docs/modules/gates.md
+- tests/unit/graph/test_dsl.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a frob:protocol with transitions and requires bindings WHEN parsed THEN the
+  machine round-trips; GIVEN a malformed declaration or an unbound protocol THEN a
+  loud ERROR, never a skip
+threat: null
+component: null
+labels: []
+```
+Child 1 of T-0739. Declaration surface: frob:protocol NAME states=... initial=... (registry-style block or directive), frob:transition proto=NAME from=S to=T on transition functions, frob:requires proto=NAME state=S on state-requiring functions, plus the zero-declaration convenience: name-pattern inference binding X_init/X_deinit (and configurable pairs like open/close, acquire/release) to an implicit 3-state protocol -- inference ONLY for declared name-pair patterns, never for general machines. ENFORCEABILITY (user mandate): a declared protocol consumed by no checker run is itself a DRIFT-class ERROR (the catalogued-is-not-enforced doctrine applied to protocols); parse errors in protocol declarations are ERRORS, never skipped; the declaration registry lists every protocol with its binding counts so an unbound protocol (zero transition/requires bindings) fails loudly.
+
+<!-- ticket:T-0745 -->
+```yaml
+id: T-0745
+title: 'protocol summary engine: per-function fixpoint over the call graph, shared
+  with may-raise'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: high
+blocked_by:
+- T-0744
+parent: T-0739
+scope:
+- src/frob/arch/**
+- src/frob/graph/**
+- tests/unit/test_arch.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a recursive call cluster with transitions WHEN the fixpoint runs THEN summaries
+  converge and match hand-computed values; GIVEN an unresolvable callee THEN the summary
+  is poisoned and surfaces as an ERROR downstream, never silence
+threat: null
+component: null
+labels: []
+```
+Child 2 of T-0739. The shared per-function summary fixpoint engine over the call graph: each function summarizes to (required protocol states, may-perform transitions, acquired/released/escaped resources) computed bottom-up to fixpoint, recursion via lattice join, using the T-0339-family resolvers for callee binding. DESIGN CONSTRAINT: ONE engine shared with T-0686 may-raise (whichever builds first hosts the engine; the other consumes -- coordinate explicitly, no second fixpoint). NO-FAIL-SILENT (user mandate): an unresolvable callee contributes Unknown which POISONS the summary (poisoned summaries are ERRORS at verification unless waived with reason); a function outside the call graph (unreachable from any entrypoint) is reported as not-analyzed, never silently passed; engine timeouts/aborts are ERRORS naming the SCC that failed to converge.
+<!-- ticket:T-0746 -->
+```yaml
+id: T-0746
+title: 'protocol verification gate: state-requirement + invalid-transition errors
+  with recorded language-excuse discharges'
+state: queued
+kind: security
+origin: human
+created: '2026-07-22'
+priority: high
+blocked_by:
+- T-0745
+parent: T-0739
+scope:
+- src/frob/gates/**
+- src/frob/arch/**
+- docs/modules/gates.md
+- tests/test_gates.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a C fixture where net_requires-annotated functions are reachable without net_init
+  WHEN the gate runs THEN an ERROR names the unestablished state and the call path;
+  GIVEN the same shape in Rust with a Drop impl THEN a recorded Drop discharge, and
+  with mem::forget observed THEN the excuse is revoked and the ERROR returns
+threat: null
+component: null
+labels: []
+```
+Child 3 of T-0739. Verification: for every call site of a requires-state function, the caller-context established states (from summaries + entrypoint initial states) must include the required state -- violation is a GATE-TIER ERROR (not advisory; user mandate: enforceable, never fail-silent). A transition function reachable in a state where the transition is undefined = ERROR. The *_init-never-called and *_deinit-orphaned cases fall out: an inferred init protocol whose init is never reachable from any entrypoint while state-requiring functions are = ERROR naming both. LANGUAGE EXCUSES as recorded discharges (T-0383 caught_by doctrine): Rust pairing discharges to Drop UNLESS mem::forget/ManuallyDrop observed on the type (revokes); C++ discharges to RAII only when the init result is observed held by a destructor-bearing class; Python discharges lexically to with-blocks; TS to using/try-finally; GC finalizers NEVER discharge. Every excuse names its mechanism in the finding output; an excuse whose mechanism cannot be observed in code is an ERROR, not a discharge. Unknown/poisoned summaries at a checked call site = ERROR (waivable with reason).
+<!-- ticket:T-0747 -->
+```yaml
+id: T-0747
+title: 'cleanup obligations: release-postdominates-acquisition on all exits incl.
+  exceptional, escape transfer, per-protocol policy'
+state: queued
+kind: security
+origin: human
+created: '2026-07-22'
+priority: high
+blocked_by:
+- T-0745
+- T-0686
+parent: T-0739
+scope:
+- src/frob/arch/**
+- src/frob/gates/**
+- tests/test_gates.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a C fixture acquiring a resource with an early-error return skipping cleanup
+  WHEN the gate runs THEN an ERROR names the leaking path; GIVEN the Python equivalent
+  inside a with-block THEN a recorded context-manager discharge; GIVEN cleanup=process-exit-ok
+  THEN termination paths discharge silently by declared policy only
+threat: null
+component: null
+labels: []
+```
+Child 4 of T-0739. Cleanup obligations: (a) intraprocedural -- every acquisition (transition into a resource-held state) must be postdominated by its release on ALL exits, using T-0686 may-raise sets for the exceptional edges (blocked_by T-0686), UNLESS the resource escapes (returned/stored) -- escape transfers the obligation to the receiver via the summary (T-0745); (b) per-protocol cleanup policy: cleanup = always | on-error | process-exit-ok, declared in the protocol (T-0744), default on-error; the *_deinit-never-called case = a protocol with cleanup=always whose deinit is unreachable from entrypoint terminating paths = ERROR. NO-FAIL-SILENT: a path the analysis cannot classify (poisoned/Unknown) is an ERROR at the acquisition site; escapes into containers/globals the summary cannot track are reported as obligation-escaped-untracked findings (waivable), never dropped.
