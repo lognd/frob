@@ -4564,79 +4564,15 @@ A flaky test blocks every parallel agent. frob test records per-test pass/fail h
 ```yaml
 id: T-0576
 title: 'frob:deprecated directive: API sunset dates gated like debt'
-state: in-progress
+state: queued
 kind: feature
 origin: agent
 created: '2026-07-21'
 priority: medium
 blocked_by: []
 parent: null
-scope:
-- src/frob/graph/dsl.py
-- src/frob/graph/_models.py
-- src/frob/gates/__init__.py
-- src/frob/gates/_models.py
-- docs/modules/gates.md
-- docs/guides/extending/comment-dsl-directives.md
-- tests/test_gates.py
-- tests/unit/graph/test_dsl.py
-scope_changes:
-- op: add
-  glob: src/frob/graph/dsl.py
-  reason: 'T-0576: frob:deprecated directive parse (dsl.py/_models.py), DEPR gate
-    family + release wiring (gates/__init__.py, _models.py DeprecatedEntry), docs,
-    tests'
-  actor: logan
-  at: '2026-07-22'
-- op: add
-  glob: src/frob/graph/_models.py
-  reason: 'T-0576: frob:deprecated directive parse (dsl.py/_models.py), DEPR gate
-    family + release wiring (gates/__init__.py, _models.py DeprecatedEntry), docs,
-    tests'
-  actor: logan
-  at: '2026-07-22'
-- op: add
-  glob: src/frob/gates/__init__.py
-  reason: 'T-0576: frob:deprecated directive parse (dsl.py/_models.py), DEPR gate
-    family + release wiring (gates/__init__.py, _models.py DeprecatedEntry), docs,
-    tests'
-  actor: logan
-  at: '2026-07-22'
-- op: add
-  glob: src/frob/gates/_models.py
-  reason: 'T-0576: frob:deprecated directive parse (dsl.py/_models.py), DEPR gate
-    family + release wiring (gates/__init__.py, _models.py DeprecatedEntry), docs,
-    tests'
-  actor: logan
-  at: '2026-07-22'
-- op: add
-  glob: docs/modules/gates.md
-  reason: 'T-0576: frob:deprecated directive parse (dsl.py/_models.py), DEPR gate
-    family + release wiring (gates/__init__.py, _models.py DeprecatedEntry), docs,
-    tests'
-  actor: logan
-  at: '2026-07-22'
-- op: add
-  glob: docs/guides/extending/comment-dsl-directives.md
-  reason: 'T-0576: frob:deprecated directive parse (dsl.py/_models.py), DEPR gate
-    family + release wiring (gates/__init__.py, _models.py DeprecatedEntry), docs,
-    tests'
-  actor: logan
-  at: '2026-07-22'
-- op: add
-  glob: tests/test_gates.py
-  reason: 'T-0576: frob:deprecated directive parse (dsl.py/_models.py), DEPR gate
-    family + release wiring (gates/__init__.py, _models.py DeprecatedEntry), docs,
-    tests'
-  actor: logan
-  at: '2026-07-22'
-- op: add
-  glob: tests/unit/graph/test_dsl.py
-  reason: 'T-0576: frob:deprecated directive parse (dsl.py/_models.py), DEPR gate
-    family + release wiring (gates/__init__.py, _models.py DeprecatedEntry), docs,
-    tests'
-  actor: logan
-  at: '2026-07-22'
+scope: []
+scope_changes: []
 evidence: []
 attachments: []
 acceptance: []
@@ -4645,6 +4581,7 @@ component: null
 labels: []
 ```
 frob:debt generalized to API surface: frob:deprecated <since> sunset=<date> ticket=T-#### on a public symbol; a gate warns while in window, errors past sunset or when the ticket closes without removal; release refuses to stamp with expired deprecations. Scope: graph dsl, gates, docs.
+
 <!-- ticket:T-0577 -->
 ```yaml
 id: T-0577
@@ -6025,35 +5962,3 @@ component: null
 labels: []
 ```
 T-0264's windows generator hardens an existing SCM service (SID type, privileges via sc.exe config) but cannot CREATE one -- std.host has no binPath/ImagePath (executable path + arguments) vocabulary, so sc.exe create is impossible from the model. T-0254's epic text says the install sequence registers the Windows Service; full-install-from-zero needs the vocabulary. Add the grammar clause (parse.rs node/store symmetry per T-0261 precedent), HostManifest read-back, and wire generate_windows_install_script to sc.exe create idempotently when binPath is declared. Flagged by T-0264's reviewer so the epic's full-install intent is not silently lost.
-
-<!-- ticket:T-0630 -->
-```yaml
-id: T-0630
-title: 'strata: wire real code binding into production discharge entrypoints so G1
-  fail-closed actually fires'
-state: queued
-kind: security
-origin: agent
-created: '2026-07-22'
-priority: medium
-blocked_by:
-- T-0595
-parent: T-0401
-scope:
-- src/frob/strata/_audit.py
-- src/frob/strata/_sysdoc.py
-- src/frob/strata/_plan.py
-- src/frob/vet/_containment.py
-- tests/unit/strata/
-scope_changes: []
-evidence: []
-attachments: []
-acceptance:
-- GIVEN a fixture repo whose ENDORSE boundary predicate has no observed call site
-  WHEN the production strata audit gate runs (not a unit test) THEN the THREAT003
-  unbound-boundary violation appears in frob check/sys audit output
-threat: tampering
-component: null
-labels: []
-```
-T-0595 added the ENDORSE-boundary code-binding join (observed_call_names + _predicate_is_code_bound threaded through check_discharge_completeness) but every production caller (_audit.py / frob sys audit, _sysdoc.py, _plan.py, vet/_containment.py, _pii.py, _compliance.py) omits the optional binding/root arguments, so the fail-closed path never engages outside the new unit tests -- enforcement exists but nothing invokes it (the catalogued-is-not-enforced trap). Wire the real code tree into each production entrypoint so an unbound sanitizer predicate fails the actual gate, with an integration test proving frob sys audit (or equivalent) reports the THREAT003 on a fixture repo. Disclosed-but-unticketed cut from T-0595's Done report; this is the real ticket.
