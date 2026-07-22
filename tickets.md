@@ -8803,3 +8803,31 @@ component: null
 labels: []
 ```
 T-0611's TypeScriptAdapter cannot map interface_declaration, type_alias_declaration, enum_declaration, or TSX/JSX -- no NormalizedModule entity exists for them yet. Extend the model (likely a NormalizedTypeDecl entity or fields on NormalizedClass) keeping _normalized.py tree_sitter-free, then map the four constructs in _typescript.py with fires/near-miss tests. Was T-draft-92681f8e in T-0611's worktree; drafts do not survive land until T-0637's fix lands.
+
+<!-- ticket:T-0682 -->
+```yaml
+id: T-0682
+title: 'ticket merge driver: splice_ledger still prefers main''s stale queued block
+  over worktree''s in-progress+report'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: high
+blocked_by: []
+parent: T-0577
+scope:
+- src/frob/tickets/**
+- tests/test_ticket_land.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a worktree ledger with the landing ticket in-progress plus Done report and
+  main's copy queued WHEN the merge driver splices during land THEN the in-progress
+  state and report both survive without manual repair
+threat: null
+component: null
+labels: []
+```
+T-0577 fixed _splice_only_ticket (land path) to preserve the richer sibling state, but the GIT MERGE DRIVER path (splice_ledger, used when land merges main INTO the worktree, and by any git merge/pull touching tickets.md) still prefers main's stale block: observed twice landing T-0633/T-0637 -- each 'merge main into worktree for landing' regressed the LANDING ticket's own block to queued (report survived, state+start lost), forcing a manual start+commit repair before every land. Port the richer-state preference (Done-report presence, in-progress beats bare queued) into splice_ledger with the same direction tests as T-0577's, and add a land-path integration test that the landing ticket's own state survives the merge stage.
