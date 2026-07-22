@@ -9135,7 +9135,8 @@ kind: feature
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by: []
+blocked_by:
+- T-0686
 parent: T-0685
 scope:
 - src/frob/gates/**
