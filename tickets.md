@@ -2553,7 +2553,7 @@ desync.
 id: T-0355
 title: 'sweep: clean SIGINT message + PRE001 catch-22 on slow mounts + scope_digest
   content-keying'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-20'
@@ -2564,7 +2564,21 @@ scope:
 - src/frob/__main__.py
 - src/frob/gates/**
 - src/frob/tickets/**
-scope_changes: []
+- tests/test_prework_parity.py
+- tests/unit/test_main_entry.py
+scope_changes:
+- op: add
+  glob: tests/test_prework_parity.py
+  reason: add regression tests for the SIGINT clean-message fix and the scope_digest
+    content-portability contract
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_main_entry.py
+  reason: add regression tests for the SIGINT clean-message fix and the scope_digest
+    content-portability contract
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -2573,7 +2587,6 @@ component: null
 labels: []
 ```
 found while working T-0240 (same origin ticket text, deliberately split out): T-0240 fixed the sweep's unbounded full-root xref walk and glob-stem xref terms, but three remaining items from the original malmberg report are NOT addressed by that fix and need their own design/scope: (1) SIGINT during a long sweep prints a bare KeyboardInterrupt traceback instead of a clean message -- __main__.py-level signal handling, out of T-0240's tickets/gates/dup scope. (2) PRE001 catch-22 on slow mounts: editing a ticket's scope demands a re-sweep, and if the sweep itself is what is slow on that mount the ticket can never get back into a checkable state -- needs a design decision (timeout + partial-sweep-ok state, or async sweep), not a bugfix. (3) scope_digest hashes snapshot file-hashes (path+content sha), so a recorded sweep cannot be transplanted between two checkouts with identical file content but different paths/timestamps-derived hashes -- consider keying on content-only digest so sweep records are checkout-portable. None of these are addressed by T-0240's fix.
-
 <!-- ticket:T-0380 -->
 ```yaml
 id: T-0380
@@ -3626,3 +3639,28 @@ component: null
 labels: []
 ```
 T-0565 fixed the callgraph/const-extraction substrate bugs behind most DEAD001 false positives and triaged the remainder, but src/frob/gates/__init__.py::_documented_srcs (line ~1717) and ::_run_jobs (line ~6986) are out of scope this wave (a sibling agent owns gates/__init__.py). Triage needed: _documented_srcs looks like a genuinely-orphaned helper superseded by _resolved_documented_srcs (verify with grep, likely delete); _run_jobs' docstring references a caller ('_run_jobs used to time each job...') suggesting a similar superseded-helper pattern. Either delete (with a zero-reference grep) or add a correctly-placed frob:tests/frob:invariant directive above the symbol itself (not above a test function -- the DSL binds Edge.src to whatever the comment sits directly above, several of T-0565's residual findings turned out to be frob:tests directives misplaced above the TEST function instead of the SOURCE symbol).
+
+<!-- ticket:T-draft-ac820c46 -->
+```yaml
+id: T-draft-ac820c46
+title: 'PRE001 catch-22 on slow mounts: sweep needs a timeout/partial-state or async
+  design (T-0355 item 2)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- src/frob/tickets/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+found while working T-0355 (deliberately split out, item 2 of that ticket's original 3-item report): editing a ticket's scope after start demands a re-sweep before PRE001 is satisfiable, and frob ticket sweep's dup+xref pass is a synchronous full-scope scan -- on a slow mount (WSL /mnt/c, network share) that scan itself can be slow enough that the ticket can never get back into a checkable state within a reasonable session. T-0474 already backgrounds the sweep at frob ticket start time, but frob ticket sweep (the always-available resweep path used after a scope edit) is still fully synchronous by design (see its docstring: 'the always-available, always-synchronous way to record it'), and PRE001 itself only ever compares against a fully-completed digest -- there is no partial-sweep-ok state. This needs an actual design decision before implementation (a timeout + partial-sweep-ok ticket state that prework_gate treats as provisionally clean, vs. making frob ticket sweep itself background-and-poll like start), not a mechanical port of an existing fix, so it was NOT implemented as part of T-0355 (items 1 and 3 of that ticket were: clean SIGINT message in __main__.py, and confirming scope_digest is already content-only/checkout-portable).
