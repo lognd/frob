@@ -1362,8 +1362,10 @@ class TestParseFailureGate:
     violation (PARSE001), not just a log line.
 
     frob:ticket T-0558
+    frob:ticket T-0561
     """
 
+    # frob:ticket T-0561
     def test_parse_failure_is_an_error_violation(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_parse_failures.py::parse_failure_gate kind="unit"
         from frob.gates._parse_failures import parse_failure_gate
@@ -1385,6 +1387,7 @@ class TestParseFailureGate:
         assert v.severity == Severity.ERROR
         assert v.file == "src/broken.py"
 
+    # frob:ticket T-0561
     def test_no_parse_failures_is_clean(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_parse_failures.py::parse_failure_gate kind="unit"
         from frob.gates._parse_failures import parse_failure_gate

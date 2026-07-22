@@ -207,6 +207,7 @@ def _dedupe_symbols(rel_path: str, parsed: ParsedFile) -> tuple[SymbolRecord, ..
 
 # frob:ticket T-0433
 # frob:ticket T-0558
+# frob:ticket T-0561
 # frob:tests tests/test_graph.py::TestBuildIncremental.test_stored_hash_matches_bytes_actually_parsed  # noqa: E501
 # frob:tests tests/test_graph.py::TestParseFailures.test_parse_error_is_recorded_as_parse_failure  # noqa: E501
 def _parse_source_file_fresh(
@@ -278,6 +279,7 @@ def _parse_source_file_fresh(
 # frob:ticket T-0133
 # frob:ticket T-0245
 # frob:ticket T-0558
+# frob:ticket T-0561
 def _process_source_file(
     conn, root: Path, path: Path, stat_key: tuple[int, int]
 ) -> tuple[
@@ -386,6 +388,7 @@ def _process_doc_file(conn, root: Path, path: Path, stat_key: tuple[int, int]) -
 
 
 # frob:ticket T-0558
+# frob:ticket T-0561
 def _ingest_source_files(
     conn, root: Path, source_files: Sequence[Path]
 ) -> tuple[set[str], int, int, tuple[ParseFailure, ...]]:
@@ -497,6 +500,7 @@ def _log_malformed_files(malformed: tuple[MalformedDirective, ...]) -> None:
 
 
 # frob:ticket T-0558
+# frob:ticket T-0561
 def _log_parse_failures(parse_failures: tuple[ParseFailure, ...]) -> None:
     """WARN-log every parse/IO failure's file + reason, same shape as
     `_log_malformed_files` (T-0216) -- the aggregate count alone gives no

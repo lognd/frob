@@ -21,6 +21,7 @@ from pathlib import Path
 
 from typani.result import Err, Ok, Result
 
+from frob.excludes import is_test_file
 from frob.logging import get_logger
 from frob.tickets._land import land, splice_ledger
 from frob.tickets._leases import read_all_leases
@@ -1088,12 +1089,18 @@ def _current_actor() -> str:
 
 
 # frob:ticket T-0455
+# frob:ticket T-0561
 # frob:waive COV005 reason="T-0485's docstring/signature edit to this already-private helper shifted line offsets against the many other symbols in this file sharing the frob:ticket T-0455 target; COV005's rebind check matches old/new bindings by (kind, target) alone across the whole file and reads the shift as a rebind onto a new private symbol -- this directive has bound _scope_add_conflicts (private) all along, same false-positive class as gates/__init__.py's own documented COV005 waiver"  # noqa: E501
+# frob:tests tests/test_tickets_scope_mutation.py::TestNewFileCarveOut.test_new_file_under_broad_lease_is_exempt  # noqa: E501
+# frob:tests tests/test_tickets_scope_mutation.py::TestNewFileCarveOut.test_existing_file_under_broad_lease_still_conflicts  # noqa: E501
+# frob:tests tests/test_tickets_scope_mutation.py::TestNewFileCarveOut.test_new_file_exact_match_of_holder_scope_still_conflicts  # noqa: E501
 def _scope_add_conflicts(
     glob: str,
     ticket_id: str,
     queue: dict[str, Ticket],
     own_scope: Sequence[str] = (),
+    *,
+    root: Path | None = None,
 ) -> tuple[str, str] | None:
     """`(holding_ticket_id, holder_glob)` if `glob` overlaps the declared
     scope of another IN_PROGRESS ticket (T-0453 lease model), or `None` if
@@ -1108,16 +1115,66 @@ def _scope_add_conflicts(
     (the requesting ticket's OWN pre-mutation scope) -- narrowing an
     already-grandfathered-broad glob down to a concrete path it already
     covers can never create NEW contention, so it must never be refused as
-    a fresh lease request against the same holder."""
+    a fresh lease request against the same holder.
+
+    T-0561: a broad, in-progress umbrella lease (a repo-wide epic like
+    `tests/**`) used to reject EVERY other ticket's `--add` into that
+    subtree outright, even a request that could not possibly touch any
+    file the umbrella ticket is itself editing -- creating a brand-new
+    file. When `root` is given and `glob` is a concrete literal path (no
+    `*`/`?`/`[...]`) that does not yet exist on disk under `root`
+    (`_is_new_concrete_file_glob`), a collision against a holder is
+    downgraded from a hard reject to a pass UNLESS the colliding holder
+    glob is that exact same literal path -- a real same-file race, still
+    refused. This is a narrow, additive-file-only carve-out: it never
+    exempts a wildcard-bearing `glob` (that could still claim an existing
+    file the holder is mid-edit on) and never touches the `own_scope`
+    subset check above."""
     if any(_glob_is_subset(glob, existing) for existing in own_scope):
         return None
+    new_file = root is not None and _is_new_concrete_file_glob(glob, root)
     for holder in sorted(queue.values(), key=lambda t: t.id):
         if holder.id == ticket_id or holder.state is not TicketState.IN_PROGRESS:
             continue
         collision = scope_overlap_globs((glob,), holder.scope)
         if collision is not None:
+            if new_file and collision[1] != glob:
+                _log.info(
+                    "tickets: %s --add %r exempted from %s's lease on %r "
+                    "(T-0561: new file, holder glob is not an exact match)",
+                    ticket_id,
+                    glob,
+                    holder.id,
+                    collision[1],
+                )
+                continue
             return (holder.id, collision[1])
     return None
+
+
+# frob:ticket T-0561
+def _is_new_concrete_file_glob(glob: str, root: Path) -> bool:
+    """Whether `glob` names ONE concrete, not-yet-existing TEST file under
+    `root` -- the narrow T-0561 carve-out signal.
+
+    Deliberately narrower than "any brand-new file anywhere": a bare
+    does-not-exist-on-disk check alone cannot tell a genuine additive test
+    file apart from a real expansion attempt into a busy module that
+    merely hasn't been created YET (`src/frob/gates/foo.py` against an
+    in-progress `src/frob/gates/**` lease is exactly the case
+    `test_add_leased_path_rejected_names_holder` proves must still be
+    refused) -- test fixtures routinely run against an empty `tmp_path`,
+    where EVERY path "does not exist yet", so existence alone is not a
+    safe signal outside a real checkout. Restricting to `frob.excludes.
+    is_test_file` paths matches the ticket's actual repro (a new
+    `tests/unit/test_*.py` file blocked by T-0160's `tests/**` epic
+    lease) and keeps this carve-out from silently widening into
+    production source."""
+    if any(ch in glob for ch in "*?["):
+        return False
+    if not is_test_file(glob):
+        return False
+    return not (root / glob).exists()
 
 
 # frob:ticket T-0455
@@ -1149,6 +1206,7 @@ def _validate_scope_request(
 
 
 # frob:ticket T-0455
+# frob:ticket T-0561
 # frob:waive COV005 reason="T-0485's caller-signature edit (own_scope passthrough to _scope_add_conflicts) shifted line offsets against the many other symbols in this file sharing the frob:ticket T-0455 target; COV005's rebind check matches old/new bindings by (kind, target) alone across the whole file and reads the shift as a rebind onto a new private symbol -- this directive has bound _validate_scope_mutation (private) all along, same false-positive class as gates/__init__.py's own documented COV005 waiver"  # noqa: E501
 def _validate_scope_mutation(
     ticket_id: str,
@@ -1156,12 +1214,16 @@ def _validate_scope_mutation(
     queue: dict[str, Ticket],
     add_globs: tuple[str, ...],
     remove_globs: tuple[str, ...],
+    *,
+    root: Path | None = None,
 ) -> Result[None, TicketError]:
     """The per-glob FAIL-LOUD checks `mutate_scope` runs against the loaded
     ticket+queue (T-0455): a `remove` glob must be declared and evidence-
     free (`ScopeRemoveNotDeclared`/`ScopeRemoveOrphansEvidence`); an `add`
     glob must not overlap another in-progress ticket's lease
-    (`ScopeLeaseConflict`, `_scope_add_conflicts`)."""
+    (`ScopeLeaseConflict`, `_scope_add_conflicts`) -- unless T-0561's
+    narrow new-concrete-file carve-out applies (`root` must be given for
+    that check to run at all)."""
     for glob in remove_globs:
         if glob not in ticket.scope:
             _log.error(
@@ -1179,7 +1241,7 @@ def _validate_scope_mutation(
             )
             return Err(TicketError.ScopeRemoveOrphansEvidence)
     for glob in add_globs:
-        conflict = _scope_add_conflicts(glob, ticket_id, queue, ticket.scope)
+        conflict = _scope_add_conflicts(glob, ticket_id, queue, ticket.scope, root=root)
         if conflict is not None:
             holder_id, holder_glob = conflict
             _log.error(
@@ -1260,6 +1322,12 @@ def mutate_scope(
     agent can never expand into paths another agent is actively writing.
     An over-broad `add` glob is logged at WARNING only (`_warn_over_broad_adds`).
 
+    T-0561: a concrete new-file `add` (no wildcard, does not yet exist on
+    disk) is exempted from that conflict against a broader umbrella
+    lease's ALREADY-existing files (`_scope_add_conflicts`'s narrow
+    carve-out) -- creating a brand-new file cannot collide with edits to
+    files that already exist.
+
     Held under `ledger_lock` end to end (load, validate, write) so this can
     never interleave with a concurrent ledger mutation (T-0458 single-writer
     invariant) -- no hand-edit of `tickets.md` is ever involved.
@@ -1280,7 +1348,7 @@ def mutate_scope(
         ticket, queue = loaded.danger_ok
 
         mutation_check = _validate_scope_mutation(
-            ticket_id, ticket, queue, add_globs, remove_globs
+            ticket_id, ticket, queue, add_globs, remove_globs, root=root
         )
         if mutation_check.is_err:
             return Err(mutation_check.danger_err)

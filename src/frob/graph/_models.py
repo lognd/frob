@@ -124,6 +124,8 @@ class MalformedDirective(BaseModel):
 
 
 # frob:doc docs/modules/graph.md#data-models
+# frob:ticket T-0558
+# frob:ticket T-0561
 class ParseFailure(BaseModel):
     """A source file `frob.lang.parse_file` could not parse at all (T-0558).
 
@@ -154,6 +156,8 @@ class BuildStats(BaseModel):
 
 
 # frob:doc docs/modules/graph.md#data-models
+# frob:ticket T-0558
+# frob:ticket T-0561
 class GraphSnapshot(BaseModel):
     """The whole obligation graph at one point in time: symbols, edges, hashes."""
 

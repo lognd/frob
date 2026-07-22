@@ -26,6 +26,7 @@ _log = get_logger(__name__)
 
 # frob:doc docs/modules/gates.md#rule-catalog
 # frob:ticket T-0558
+# frob:ticket T-0561
 # frob:tests tests/test_gates.py::TestParseFailureGate.test_parse_failure_is_an_error_violation  # noqa: E501
 # frob:tests tests/test_gates.py::TestParseFailureGate.test_no_parse_failures_is_clean
 def parse_failure_gate(snapshot: GraphSnapshot) -> tuple[Violation, ...]:

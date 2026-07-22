@@ -615,9 +615,11 @@ class TestParseFailures:
     """T-0558: a parse/IO failure must be surfaced, not silently erased.
 
     frob:ticket T-0558
+    frob:ticket T-0561
     """
 
     # frob:ticket T-0558
+    # frob:ticket T-0561
     def test_parse_error_is_recorded_as_parse_failure(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -656,6 +658,7 @@ class TestParseFailures:
         assert "src/broken.py" not in paths
 
     # frob:ticket T-0558
+    # frob:ticket T-0561
     def test_native_parser_unavailable_is_not_a_parse_failure(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -891,6 +894,7 @@ class TestExclude:
 
     frob:ticket T-0544
     frob:ticket T-0558
+    frob:ticket T-0561
     """
 
     def test_glob_excludes_matching_files(self, tmp_path: Path) -> None:
@@ -969,6 +973,7 @@ class TestExclude:
         assert not any(v.startswith("tests/fixtures") for v in visited_rel if v)
 
     # frob:ticket T-0544
+    # frob:ticket T-0561
     def test_walk_repo_files_classifies_top_level_readme_as_doc(
         self, tmp_path: Path
     ) -> None:
