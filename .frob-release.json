@@ -90,6 +90,7 @@
     "src/frob/app/outline_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/parse_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/perf_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
+    "src/frob/app/registry_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/release_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/scaffold_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/serve_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
@@ -347,7 +348,7 @@
     "src/frob/gates/_prework.py::record_prework": "6b6341690e88e4139864b006a4fb5eda77f3b0f31b69d0a64a43200049c2f372",
     "src/frob/gates/_prework.py::sweep_ticket": "9ac8956046d96fbf8828551b1ca0803ab1f3b34004850e9d0f411b71aee41ca6",
     "src/frob/gates/_refs.py::ref_gate": "5ba0c1e63b3dd13ab6856ceef93052ad4e88c27f03a28ef76d7d1c4a8d12cc03",
-    "src/frob/gates/_registry_exhaustiveness.py::REGISTRY_FILES": "bf319c27057c37080ac35fc23827b77269e330f0c35dbc651198a20e4b7296e8",
+    "src/frob/gates/_registry_exhaustiveness.py::REGISTRY_FILES": "b40e300f3c6d1c635ef5c3fd45838d445c5f1ffebf8ce6afd9154b4899c291a6",
     "src/frob/gates/_registry_exhaustiveness.py::registry_gate": "a5a48fed3dbc1ceaf0e2880616755bf36ffc8e4e2f56adf3a9d9164e481d559f",
     "src/frob/gates/_secrets.py::ALL_PROVIDERS": "a585cbb8022b03ac54ef100f484f2e8748bbef0871483da493ec9092e1292f8c",
     "src/frob/gates/_secrets.py::CRITICAL_PROVIDERS": "988703fc743613c358ba60ffebe24e7ff68de9243434742d52037aa92be1ca22",
@@ -434,7 +435,6 @@
     "src/frob/lang/__init__.py::node_text": "d40c7ed522744beb5bf33cc5cdd6469a7d074f1679dd93d2d3e9ab8449b7d572",
     "src/frob/lang/__init__.py::parse_cache_stats": "fe75e97ace17ed2755134b610e349db44e4cf2ee055358ad95869b1518ff6422",
     "src/frob/lang/__init__.py::parse_file": "22a8b73d0a1aba089b664caa7675ed7ee9e0097df331516e24247e04ea0e6099",
-    "src/frob/lang/__init__.py::partial_parse_files": "6db498c0393d185f06ef581fa9f273cdc0e8909eec4a3e98e86f0c6eb3270fd5",
     "src/frob/lang/__init__.py::raw_tree": "d50a30b12bdbf2182b7d8b500049cf0574e924a3250ab5302ddad8dedd717e89",
     "src/frob/lang/__init__.py::reset_parse_cache": "9d0b18b7167f0bb9fec07b4829b628d4367b066de0c4f2f8ada136a11f1cf1ea",
     "src/frob/lang/__init__.py::resolve_local_import": "26fc40e7c586f26b3a596bc3bc12a5dbc4b291c33a46761aa41b062930e73454",
@@ -544,6 +544,16 @@
     "src/frob/process/parsers/tsc.py::parse_tsc": "5b386a04b5bb775b14f9d8a8a8528691ef9fd990b84709f925bb7e7a6c42d96a",
     "src/frob/process/parsers/ty.py::parse_ty": "3417431db2c9330998c4036d1a81dccf318f48ff4ccac04205d613a09a97f2c4",
     "src/frob/process/parsers/valgrind.py::parse_valgrind": "9f191a16b3cffd9278f38a1f70e3edee2f88dc2c86fddf302e7341b9f3c6ffa2",
+    "src/frob/registry/_models.py::Disposition": "6a6c878c01660047a746d4405b1423aa10c363403667cc1620e3d711918cc985",
+    "src/frob/registry/_models.py::DispositionKind": "d8f48702e28c4b91975637656f1fdf8cbe4b9ea80975f36a5fadc396301e52ea",
+    "src/frob/registry/_models.py::RegistryAudit": "9eb8c26c39128912638cfe69cfdee009ea6101f3f6501809cdf66c4225bee979",
+    "src/frob/registry/_models.py::RegistryAudit.exhausted": "8fd31a7934ca08435839fc4fdc835bfce640e9464ad463775e1e33e10a2f97f5",
+    "src/frob/registry/_models.py::RegistryEntry": "fc7ea983fa428bf684e68223db7531fd207c2cf683a68959c6f00e8fec4080f2",
+    "src/frob/registry/_models.py::RegistryFile": "b3cfae0cd7357433d249dc0ed4dcb9d71107aa39cfb4f3a7f0322836eb45d81c",
+    "src/frob/registry/_models.py::RegistryLoadError": "d906bd06d8cddbbb71f7bdb335089a891d5d9a9e860aac949d2f7a22652be06b",
+    "src/frob/registry/_models.py::audit_registry_file": "69a1b30905d33c4b72664465c1d73b6e32d6eb194d05d77a82237b2b60929cd7",
+    "src/frob/registry/_models.py::load_registry_dir": "2277c812ef1d595e3b5f970dd84d83b339d30dd651ad9451ddb9bf4fd6a937d2",
+    "src/frob/registry/_models.py::parse_disposition": "c4784615dda7caa5f721b07494fc5985225cf7c6fc054e59b5bb67251593ab4e",
     "src/frob/release/__init__.py::BumpClass": "b6a7ccf9f546e710b0be486a7e29196bf8bbbe2eec13ca9fd40c650be145b564",
     "src/frob/release/__init__.py::ReleaseError": "aa4c9a02d46af5ed10a463784c1198a040aaabf70493b5c71d5e2a849fda9ad2",
     "src/frob/release/__init__.py::ReleaseManifest": "6c167cd237c5d1782b51ff2d563443662c073e751424517979dc33f8c66604d0",
@@ -1090,5 +1100,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.60.0"
+  "version": "0.61.0"
 }

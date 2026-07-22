@@ -31,6 +31,35 @@ was folded in -- see `RECONCILIATION.md` for the full audit trail).
 source doc's own stated totals, and for every prose-only miss, split
 entry, and undispositioned entry found in the process.
 
+## `check-coverage.yaml` (T-0424): frob's own reflexive check-coverage registry
+
+`check-coverage.yaml` is a tenth registry file, added by T-0424 as proof
+that T-0407's unified model makes "add a new registry" mean "add a
+filename to `REGISTRY_FILES`", not build a second mechanism. It has two
+entry families:
+
+- `gate_rule_entries` -- one entry per id `frob.gates.known_gate_rule_ids()`
+  reports LIVE at gate-run time, each self-referentially
+  `handled_by:<that same rule id>` (the rule's own existence-and-firing is
+  exactly what `known_gate_rule_ids()` verifies -- this is not circular,
+  it is the reflexive base case: "is this concern enforced" for an
+  already-enforced concern is "yes, by itself").
+- `concern_family_entries` -- the `docs/audits/` (2026-07-20, 7-auditor
+  pessimistic pass) concern families frob does NOT yet enforce: 5
+  cross-cutting themes plus 8 per-subsystem verdicts, each
+  `deferred:T-0397` (the real, open audit-remediation epic tracking them).
+  As T-0397's children close a concern down to a real gate rule, that
+  entry's disposition moves from `deferred:T-0397` to
+  `handled_by:<new rule id>` -- the registry's own drift-lock (REG001-007)
+  then requires the new rule id to actually exist and fire, closing the
+  loop the ticket's charter names: frob checking that things EXIST but not
+  that its own check-coverage is COMPLETE.
+
+A future concern discovered by any audit, auditor, or user request gets a
+new `concern_family_entries` row here, dispositioned honestly
+(`handled_by`/`deferred`/`out_of_scope`) at the point it is discovered --
+never silently dropped, per the exhaustiveness gate's own REG001 rule.
+
 ## Schema
 
 Every entry is a YAML mapping with (at minimum):

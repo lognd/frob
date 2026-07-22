@@ -17,7 +17,7 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
-## [0.60.0] - unreleased
+## [0.62.0] - unreleased
 
 T-0555: `frob.lang` gained `partial_parse_files()`, a `reset_parse_cache`-
 scoped accessor (mirroring `parse_cache_stats`'s shape) returning the
@@ -28,6 +28,42 @@ below `-v` and with no structured consumer, especially for Rust/C++/TS
 repos with no gates stage at all (T-0546/T-0554) to notice it. Wiring a
 blocking `frob check` violation off this list is a `frob.gates`-family
 change tracked separately.
+
+## [0.61.0] - unreleased
+
+T-0424: reflexive check-coverage registry -- `docs/design/registry/
+check-coverage.yaml` is a tenth `docs/design/registry/*.yaml` instance
+(added to `frob.gates._registry_exhaustiveness.REGISTRY_FILES`, the same
+unified gate T-0407 built, no second mechanism), seeded honestly from the
+live `frob.gates.known_gate_rule_ids()` inventory (82 entries, each
+self-referentially `handled_by` its own rule id) plus the `docs/audits/`
+7-auditor pessimistic-pass concern families (5 cross-cutting themes + 8
+per-subsystem verdicts, 13 entries, each `deferred:T-0397`, the real open
+audit-remediation epic). An un-dispositioned concern reds the same
+REG001-REG007 exhaustiveness gate every other registry instance is bound
+to -- frob's own check-coverage is now a first-class, exhaustible,
+gate-enforced registry rather than something only the user's eyeballs
+audit (see docs/design/registry/README.md#check-coverageyaml-t-0424-frobs-own-reflexive-check-coverage-registry).
+
+## [0.60.0] - unreleased
+
+T-0407: unified registry capability -- new `frob.registry` module
+(`RegistryEntry`/`Disposition`/`DispositionKind`/`RegistryFile`/
+`RegistryAudit`, `load_registry_dir`, `audit_registry_file`,
+`parse_disposition`) is now the single source of truth for the
+`docs/design/registry/*.yaml` entry shape and disposition grammar;
+`frob.gates._registry_exhaustiveness.registry_gate` (T-0343) was
+refactored onto it rather than carrying a second, duplicated inline
+parser. Two early-exit/partial-coverage holes the pre-unification gate
+silently allowed are now closed: **REG006** (a malformed list item --
+not a mapping, or missing a string `id` -- previously vanished from every
+count with no trace) and **REG007** (the same `id` defined by two or
+more entries anywhere in the registry, a real collision distinct from an
+intentional `duplicate_of:` reference). New CLI subcommand `frob
+registry audit` reports the per-file `handled`/`deferred`/`duplicate`/
+`out_of_scope`/`unaccounted`/`malformed` accounting against `total`, so
+"is this registry exhausted" is a one-line honest read (see
+docs/design/registry/EXHAUSTIVENESS-GATE.md#unified-model-t-0407).
 
 ## [0.58.0] - unreleased
 
