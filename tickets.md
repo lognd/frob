@@ -8923,3 +8923,29 @@ component: null
 labels: []
 ```
 T-0577 fixed _splice_only_ticket (land path) to preserve the richer sibling state, but the GIT MERGE DRIVER path (splice_ledger, used when land merges main INTO the worktree, and by any git merge/pull touching tickets.md) still prefers main's stale block: observed twice landing T-0633/T-0637 -- each 'merge main into worktree for landing' regressed the LANDING ticket's own block to queued (report survived, state+start lost), forcing a manual start+commit repair before every land. Port the richer-state preference (Done-report presence, in-progress beats bare queued) into splice_ledger with the same direction tests as T-0577's, and add a land-path integration test that the landing ticket's own state survives the merge stage.
+
+<!-- ticket:T-0683 -->
+```yaml
+id: T-0683
+title: 'docs: state that the drift gate always evaluates regardless of --only/narrowed
+  gate selection (T-0265 semantics)'
+state: queued
+kind: docs
+origin: agent
+created: '2026-07-22'
+priority: low
+blocked_by: []
+parent: T-0265
+scope:
+- docs/modules/gates.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN docs/modules/gates.md WHEN a reader checks --only semantics THEN the always-evaluated
+  drift behavior is documented with the T-0265 rationale
+threat: null
+component: null
+labels: []
+```
+T-0265 made _build_jobs fold drift into every run_gates call so narrowed selections agree with full runs (DRIFT002 is authoritative for edge-endpoint resolution). docs/modules/gates.md does not yet say drift always evaluates under --only; T-0265's reviewer flagged the doc gap. One short note under the --only description. Also note here for the record: the _run_combined_jobs ProcessPoolExecutor-inside-ThreadPoolExecutor fork hazard disclosed in T-0265's Done report is T-0581's territory (its redesign should eliminate it).
