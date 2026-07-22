@@ -283,3 +283,54 @@ invalidation fingerprint from this set (plus its own non-language packages,
 if a future grammar is ever loaded through some OTHER package (bypassing
 `tree_sitter_language_pack`); every grammar loaded through the language
 pack needs no update here at all.
+
+## Language support contract
+
+T-0405: `frob.lang._support` gives each registered language ONE typed
+`LanguageSupport` record, enumerating every facet frob needs from a
+language beyond raw grammar/extraction -- capability (`frob.vet`),
+duplicate-detection (`frob.dup`), structural arch checks (`frob.arch`),
+and DOC004 fenced-code-block doc-drift (`frob.gates._docblocks`). This
+does not re-implement any of those registries; it derives a snapshot from
+each one's live state, so this module is always checking today's reality.
+
+```python
+FACETS: tuple[str, ...]  # ("grammar", "capability", "dup", "arch", "docblock")
+
+class FacetState(StrEnum):
+    IMPLEMENTED
+    NOT_APPLICABLE
+    KNOWN_GAP
+
+class FacetStatus(BaseModel):
+    state: FacetState
+    detail: str  # required non-empty for NOT_APPLICABLE/KNOWN_GAP
+
+class LanguageSupport(BaseModel):
+    language: str
+    facets: dict[str, FacetStatus]
+
+def derive_language_registry() -> dict[str, LanguageSupport]
+def conformance_violations(registry: dict[str, LanguageSupport]) -> tuple[str, ...]
+```
+
+Every `(language, facet)` cell is accounted for one of three ways:
+`IMPLEMENTED` (a real code path exists), `NOT_APPLICABLE` with a reason
+(the facet genuinely does not apply -- e.g. `.strata` has no
+clone-detection use case), or `KNOWN_GAP` with a reason naming the
+tracking ticket (a real, acknowledged hole -- e.g. `frob.arch` has no
+typescript/rust dispatch branch yet, tracked by T-0329). A cell entirely
+ABSENT from `LanguageSupport.facets`, or a `NOT_APPLICABLE`/`KNOWN_GAP`
+cell with a blank `detail`, is what `conformance_violations` fails on --
+the unaccounted-for hole this whole contract exists to make loud (the
+PyO3-publicness incident class: a language shipped with one facet quietly
+unimplemented).
+
+`frob.gates._lang_conformance.lang_conformance_gate` wires this into
+`frob check` as LANG001 (ERROR severity, on by default) -- a fixture
+language registered with a missing facet fails the gate by name; a fully
+registered language (every facet implemented, or reasoned
+not-applicable/known-gap) passes cleanly. `frob`'s own registry is clean
+today: every gap the T-0405 survey found (arch's typescript/rust/c
+branches, DOC004's c/cpp fenced-code bucket) is an explicit `KNOWN_GAP`
+naming its tracking ticket, not a silent hole.

@@ -2644,7 +2644,7 @@ See docs/audits/strata.md. HIGH: boundaries never bound to code (discharge = typ
 id: T-0405
 title: 'Language extension contract: one typed registration per language + conformance
   gate that fails on any missing facet'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -2657,7 +2657,49 @@ scope:
 - src/frob/testing/
 - src/frob/arch/
 - src/frob/gates/
-scope_changes: []
+- tests/test_lang_support.py
+- tests/test_lang_conformance_gate.py
+- docs/modules/lang.md
+- pyproject.toml
+- .frob-release.json
+- uv.lock
+scope_changes:
+- op: add
+  glob: tests/test_lang_support.py
+  reason: conformance model needs its own test files + doc anchor section, per the
+    ticket's own acceptance criteria
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_lang_conformance_gate.py
+  reason: conformance model needs its own test files + doc anchor section, per the
+    ticket's own acceptance criteria
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: docs/modules/lang.md
+  reason: conformance model needs its own test files + doc anchor section, per the
+    ticket's own acceptance criteria
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: REL001 required a version bump (0.66.0 -> 0.67.0) since this ticket adds
+    public API; release stamp + lockfile are the mechanical fallout
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 required a version bump (0.66.0 -> 0.67.0) since this ticket adds
+    public API; release stamp + lockfile are the mechanical fallout
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: REL001 required a version bump (0.66.0 -> 0.67.0) since this ticket adds
+    public API; release stamp + lockfile are the mechanical fallout
+  actor: logan
+  at: '2026-07-21'
 evidence: []
 attachments: []
 acceptance: []
@@ -2666,7 +2708,6 @@ component: null
 labels: []
 ```
 User directive (2026-07-20): adding a new language/capability (Kotlin, Swift/iOS native, Go, ...) must be VERY simple -- one well-defined registration, not a scattered edit across 10 files where forgetting one silently creates a coverage gap (the exact fail-open per-language holes the audit found: Python is binding-resolved while TS/Rust/C++ are lexical; doc/cov/drift gates run only in the Python pipeline). SOLUTION couples easy-extension with no-silent-gaps: define a LanguageSupport protocol/registry enumerating EVERY per-language facet frob needs -- tree-sitter grammar + extension map, comment-span extraction, capability pattern table, binding-aware capability RESOLVER (import/alias/scope), dangerous-operation registry entries, CVE fingerprint support, obfuscation/bidi scanning, test runner, arch complexity detectors, dup normalization, doc/directive parsing. Each registered language declares, per facet, either an implementation OR an explicit reasoned not-applicable. Then a CONFORMANCE GATE (fail-closed, like strata SYS/threat exhaustiveness) enumerates languages x facets and FAILS the build if any registered language is missing any facet with no reasoned n/a -- so a half-added language cannot ship, and the current TS/Rust/C++ lexical gaps show up immediately as conformance failures. Acceptance: adding a fixture language that implements the grammar+runner but omits the resolver FAILS the conformance gate naming the missing facet; a fully-implemented language passes; adding Kotlin/Swift is demonstrably a single registration + the facet impls the gate demands, nothing else. This is the structural prevention for the whole per-language-gap class; ties to T-0400 (vet resolution) and T-0404 (polyglot enforcement) which become "make every language conform".
-
 <!-- ticket:T-0406 -->
 ```yaml
 id: T-0406
@@ -3419,3 +3460,26 @@ dead, per the manual cross-file/package grep in T-0422's Done report) --
 triage each individually once the substrate gap above is closed, or waive
 one at a time with a symbol-specific verified reason as they are touched by
 other work.
+
+<!-- ticket:T-draft-19b78a87 -->
+```yaml
+id: T-draft-19b78a87
+title: docblocks DOC004 gate has no C/C++ fenced-code-block bucket
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/_docblocks.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+found while working T-0405 (language extension contract survey): DOC004's fenced-code-block doc-drift check (frob.gates._docblocks) has _PYTHON_LANGS/_RUST_LANGS/_TS_LANGS buckets but no C/C++ bucket -- a fenced c or cpp code block in docs gets no drift checking at all, unlike python/rust/typescript. Add a _C_LANGS/_CPP_LANGS bucket (or a combined c-cpp one, matching frob.vet's capability-matrix convention) with the matching source-extraction branch in doc004_gate.

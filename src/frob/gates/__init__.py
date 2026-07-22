@@ -54,6 +54,7 @@ from frob.gates._dead_symbols import dead_symbol_gate
 from frob.gates._docblocks import doc004_gate
 from frob.gates._exclude_hazard import exclude_hazard_gate
 from frob.gates._filehash import _SOURCE_EXTS
+from frob.gates._lang_conformance import lang_conformance_gate
 from frob.gates._models import (
     CoverageData,
     CoverageError,
@@ -948,6 +949,10 @@ _KNOWN_GATE_RULES = frozenset(
         "SEC-CVE-FINGERPRINT-001",
         # T-0459: bare stdout write outside frob.render (frob.gates._render_lint).
         "RENDER001",
+        # T-0405: language-extension conformance drift-lock
+        # (frob.gates._lang_conformance) -- a registered frob.lang grammar
+        # language missing an accounted-for facet.
+        "LANG001",
     }
 )
 
@@ -6465,6 +6470,8 @@ _ALL_GATES = frozenset(
         "parse_failures",
         # T-0422: DEAD001, an unreferenced private symbol.
         "dead_symbols",
+        # T-0405: LANG001, language-extension conformance drift-lock.
+        "lang_conformance",
     }
 )
 
@@ -6742,6 +6749,7 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "render_lint",
     "parse_failures",
     "dead_symbols",
+    "lang_conformance",
     "scope",
     "prework",
 )
@@ -6837,6 +6845,9 @@ def _build_jobs(
         "registry": lambda: registry_gate(
             st.repo_root, st.queue, _KNOWN_GATE_RULES | st.rule_ids
         ),
+        # T-0405: takes no repo-scanned state -- reads the live in-process
+        # `frob.lang` language-support registry directly.
+        "lang_conformance": lambda: lang_conformance_gate(),
     }
     process_jobs: dict[str, _ProcessJob] = {
         "perf": _ProcessJob(perf_gate, (st.root, st.snapshot)),
@@ -7212,6 +7223,7 @@ __all__ = [
     "list_debt",
     "evidence_covers_scope",
     "fuzz_gate",
+    "lang_conformance_gate",
     "perf_gate",
     "pii_structural_gate",
     "release_gate",

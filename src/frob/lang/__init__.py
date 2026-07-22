@@ -36,6 +36,14 @@ from frob.lang._extract import COMMENT_TYPES, extract
 from frob.lang._extract import extract_imports as _extract_imports
 from frob.lang._extract import iter_identifiers as _iter_identifiers
 from frob.lang._models import ParsedFile, RawComment, RawSymbol, SymbolKind, TreeNode
+from frob.lang._support import (
+    FACETS,
+    FacetState,
+    FacetStatus,
+    LanguageSupport,
+    conformance_violations,
+    derive_language_registry,
+)
 from frob.lang._walk_strata import NATIVE_UNAVAILABLE_MESSAGE as _NATIVE_UNAVAIL_MSG
 from frob.lang._walk_strata import walk_strata as _walk_strata
 from frob.logging import get_logger
@@ -565,13 +573,19 @@ def resolve_local_import(
 
 __all__ = [
     "COMMENT_TYPES",
+    "FACETS",
+    "FacetState",
+    "FacetStatus",
     "LangError",
+    "LanguageSupport",
     "ParsedFile",
     "RawComment",
     "RawSymbol",
     "SymbolKind",
     "child_by_field",
+    "conformance_violations",
     "cpp_function_nodes",
+    "derive_language_registry",
     "extract_imports",
     "flatten_tree",
     "iter_identifiers",
