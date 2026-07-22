@@ -4820,3 +4820,26 @@ component: null
 labels: []
 ```
 found while working T-0355 (deliberately split out, item 2 of that ticket's original 3-item report): editing a ticket's scope after start demands a re-sweep before PRE001 is satisfiable, and frob ticket sweep's dup+xref pass is a synchronous full-scope scan -- on a slow mount (WSL /mnt/c, network share) that scan itself can be slow enough that the ticket can never get back into a checkable state within a reasonable session. T-0474 already backgrounds the sweep at frob ticket start time, but frob ticket sweep (the always-available resweep path used after a scope edit) is still fully synchronous by design (see its docstring: 'the always-available, always-synchronous way to record it'), and PRE001 itself only ever compares against a fully-completed digest -- there is no partial-sweep-ok state. This needs an actual design decision before implementation (a timeout + partial-sweep-ok ticket state that prework_gate treats as provisionally clean, vs. making frob ticket sweep itself background-and-poll like start), not a mechanical port of an existing fix, so it was NOT implemented as part of T-0355 (items 1 and 3 of that ticket were: clean SIGINT message in __main__.py, and confirming scope_digest is already content-only/checkout-portable).
+
+<!-- ticket:T-0585 -->
+```yaml
+id: T-0585
+title: 'INV006 first-turn-on pool: ~167 source-side exclusivity claims need disposition
+  (bind invariant / reword / waive)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0408 landed INV006 warn-first over src/, strata-core/src/, frob-core/src/ with ~167 undispositioned findings (disclosed prose cut, no ticket -- filed here). Same calibrate-then-burndown discipline as the INV003/T-0520 campaign: bucket by file/pattern first, calibrate further if a noise class dominates, then bind real invariants, reword overclaims, or waive genuine-design-intent with reasons. Candidate for the T-0569 ratchet-pool mechanism once it lands. Scope: src/frob/gates/invariants.py, invariants/, the flagged source files.
