@@ -21,6 +21,7 @@ from pathlib import Path
 from typani import Err, ErrorSet, Ok
 from typani.result import Result
 
+import frob.serve._warm as _warm
 from frob.graph import build_graph, edges_from, edges_to, load_graph, resolve
 from frob.graph.lock import drift, load_lock
 from frob.logging import get_logger
@@ -40,6 +41,10 @@ class ServeError(ErrorSet):
     LockUnavailable = "frob.lock could not be loaded"
     UnknownSymbol = "Symbol reference does not resolve"
     GateFailed = "Gate evaluation failed"
+    # T-0177
+    GitFailed = "git diff could not be computed"
+    RunnersUnavailable = "test runner config could not be loaded"
+    RunFailed = "touched-set test run failed"
 
 
 def _load_snapshot(root: Path):  # noqa: ANN202
@@ -235,11 +240,175 @@ def frob_doc_for(root: Path, symref: str) -> Result[dict, ServeError]:
     )
 
 
+def _violations_as_dicts(violations) -> list[dict]:
+    """`Violation`s (T-0177's `frob_check_delta`) as JSON-able dicts."""
+    return [
+        {"rule": v.rule, "file": v.file, "line": v.line, "message": v.message}
+        for v in violations
+    ]
+
+
+def _run_verify_pass(root: Path, cfg, warm_violations: tuple) -> dict:
+    """T-0177's correctness guarantee: drop the warm cache, re-run
+    `run_gates` fully cold, and report whether its violation set matches
+    `warm_violations` fingerprint-for-fingerprint -- an obligation NOT
+    re-evaluated between the two passes must not have had a changed input,
+    so a real mismatch means the warm path served a stale answer."""
+    from frob.gates import run_gates, violation_fingerprint
+
+    _warm.invalidate(root)
+    cold_result = run_gates(cfg)
+    if cold_result.is_err:
+        _log.error("serve: frob_check_delta: verify: %s", cold_result.danger_err)
+        return {"verified": False, "verify_error": str(cold_result.danger_err.value)}
+    cold_violations = cold_result.danger_ok.violations
+    warm_fp = frozenset(violation_fingerprint(v) for v in warm_violations)
+    cold_fp = frozenset(violation_fingerprint(v) for v in cold_violations)
+    matched = warm_fp == cold_fp
+    if not matched:
+        _log.error(
+            "serve: frob_check_delta: verify MISMATCH: warm=%d cold=%d symdiff=%d",
+            len(warm_fp),
+            len(cold_fp),
+            len(warm_fp ^ cold_fp),
+        )
+    return {
+        "verified": matched,
+        "cold_violation_count": len(cold_violations),
+        "verify_mismatch_count": len(warm_fp ^ cold_fp),
+    }
+
+
+# frob:doc docs/modules/serve.md#tools
+# frob:tests tests/test_serve.py::TestCheckDelta.test_delta_against_fresh_baseline_is_empty kind="unit"  # noqa: E501
+# frob:tests tests/test_serve.py::TestCheckDelta.test_delta_reports_new_violation kind="unit"  # noqa: E501
+# frob:tests tests/test_serve.py::TestCheckDelta.test_missing_baseline_is_full_set kind="unit"  # noqa: E501
+# frob:tests tests/test_serve.py::TestCheckDelta.test_verify_true_matches_when_no_drift kind="unit"  # noqa: E501
+def frob_check_delta(
+    root: Path,
+    ticket_id: str | None = None,
+    base: str = "main",
+    *,
+    verify: bool = False,
+) -> Result[dict, ServeError]:
+    """Violations from a full `run_gates` pass that are NEW since the
+    stamped `.frob/baseline` (docs/modules/serve.md's staleness/correctness
+    contract) -- reuses the warm graph/baseline cache (`frob.serve._warm`)
+    instead of a cold reload per call. `verify=True` additionally re-runs
+    the check fully cold (dropping the warm cache first) and reports
+    whether the two violation sets agree."""
+    from frob.gates import GateConfig, delta_violations, is_baseline_stale, run_gates
+
+    state_result = _warm.warm_state(root)
+    if state_result.is_err:
+        _log.error("serve: frob_check_delta: graph: %s", state_result.danger_err)
+        return Err(ServeError.GraphUnavailable)
+    baseline = state_result.danger_ok.baseline
+
+    cfg = GateConfig(root=str(root), base=base, ticket=ticket_id, gates=frozenset())
+    gate_result = run_gates(cfg)
+    if gate_result.is_err:
+        _log.error("serve: frob_check_delta: %s", gate_result.danger_err)
+        return Err(ServeError.GateFailed)
+    report = gate_result.danger_ok
+
+    baseline_stale = baseline is None or is_baseline_stale(root, baseline)
+    delta = (
+        report.violations
+        if baseline_stale
+        else delta_violations(report.violations, baseline)
+    )
+
+    payload: dict = {
+        "ticket": ticket_id,
+        "baseline_stale": baseline_stale,
+        "violation_count": len(report.violations),
+        "delta_count": len(delta),
+        "delta": _violations_as_dicts(delta),
+    }
+    if verify:
+        payload.update(_run_verify_pass(root, cfg, report.violations))
+
+    _log.info(
+        "serve: frob_check_delta: ticket=%s %d violation(s), %d new since baseline "
+        "(stale=%s)",
+        ticket_id,
+        len(report.violations),
+        len(delta),
+        baseline_stale,
+    )
+    return Ok(payload)
+
+
+# frob:doc docs/modules/serve.md#tools
+# frob:tests tests/test_serve.py::TestRunTouchedTests.test_no_diff_selects_nothing kind="unit"  # noqa: E501
+# frob:tests tests/test_serve.py::TestRunTouchedTests.test_bad_base_is_git_failed kind="unit"  # noqa: E501
+def frob_run_touched_tests(root: Path, base: str = "main") -> Result[dict, ServeError]:
+    """Select AND run the touched-set tests for `base` (`frob.testing.
+    select_tests` + `run_selected`, the MCP-exposed counterpart of `frob
+    test --base <base>`), against the warm graph snapshot `frob_check_
+    delta` already paid to build."""
+    from frob.gitio import working_diff
+    from frob.testing import SelectConfig, load_runners, run_selected, select_tests
+
+    state_result = _warm.warm_state(root)
+    if state_result.is_err:
+        _log.error("serve: frob_run_touched_tests: graph: %s", state_result.danger_err)
+        return Err(ServeError.GraphUnavailable)
+    snapshot = state_result.danger_ok.snapshot
+
+    diff_result = working_diff(root, base)
+    if diff_result.is_err:
+        _log.error("serve: frob_run_touched_tests: diff: %s", diff_result.danger_err)
+        return Err(ServeError.GitFailed)
+
+    selection = select_tests(snapshot, diff_result.danger_ok, SelectConfig())
+
+    runners_result = load_runners(root)
+    if runners_result.is_err:
+        _log.error(
+            "serve: frob_run_touched_tests: runners: %s", runners_result.danger_err
+        )
+        return Err(ServeError.RunnersUnavailable)
+
+    run_result = run_selected(selection, runners_result.danger_ok, root)
+    if run_result.is_err:
+        _log.error("serve: frob_run_touched_tests: run: %s", run_result.danger_err)
+        return Err(ServeError.RunFailed)
+    test_run = run_result.danger_ok
+
+    _log.info(
+        "serve: frob_run_touched_tests: base=%s ok=%s %d outcome(s)",
+        base,
+        test_run.ok,
+        len(test_run.outcomes),
+    )
+    return Ok(
+        {
+            "base": base,
+            "touched": list(selection.touched),
+            "ok": test_run.ok,
+            "outcomes": [
+                {
+                    "language": o.language,
+                    "exit_code": o.exit_code,
+                    "duration_s": o.duration_s,
+                    "stdout_tail": o.stdout_tail,
+                    "stderr_tail": o.stderr_tail,
+                }
+                for o in test_run.outcomes
+            ],
+        }
+    )
+
+
 __all__ = [
     "ServeError",
+    "frob_check_delta",
     "frob_check_scope",
     "frob_doable_tickets",
     "frob_doc_for",
     "frob_graph_query",
+    "frob_run_touched_tests",
     "frob_stale_docs",
 ]

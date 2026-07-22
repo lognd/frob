@@ -13,17 +13,23 @@ from datetime import date
 from pathlib import Path
 
 import pytest
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
 from frob.app.config import AppConfig
+from frob.gates import stamp_baseline
 from frob.graph import build_graph
 from frob.graph._models import LockEntry, LockFile
 from frob.graph.lock import write_lock
 from frob.serve import (
     ServeError,
+    _warm,
+    frob_check_delta,
     frob_check_scope,
     frob_doable_tickets,
     frob_doc_for,
     frob_graph_query,
+    frob_run_touched_tests,
     frob_stale_docs,
 )
 from frob.tickets import Origin, Ticket, TicketKind, TicketState
@@ -94,6 +100,10 @@ class TestServeGetattr:
 
 class TestBuildServer:
     def test_registers_all_five_tools(self, tmp_path: Path) -> None:
+        # Name kept as-is despite now covering 7 tools (T-0177 added 2 more):
+        # T-0010/T-0046/T-0520 already cite this node id as `frob:tests`
+        # evidence, and COV003 resolves evidence by exact node id -- a
+        # rename here would silently break their recorded evidence.
         # frob:tests src/frob/serve/server.py::build_server kind="unit"
         from frob.serve.server import build_server
 
@@ -105,6 +115,8 @@ class TestBuildServer:
             "frob_check_scope",
             "frob_graph_query",
             "frob_doc_for",
+            "frob_check_delta",
+            "frob_run_touched_tests",
         }
 
     def test_require_mcp_raises_when_unavailable(self, monkeypatch) -> None:
@@ -268,3 +280,225 @@ class TestDocFor:
         result = frob_doc_for(tmp_path, "does_not_exist")
         assert result.is_err
         assert result.danger_err == ServeError.UnknownSymbol
+
+
+class TestRepoDirtyKey:
+    def test_non_git_root_is_always_dirty(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/serve/_warm.py::repo_dirty_key kind="unit"
+        assert _warm.repo_dirty_key(tmp_path) == _warm._ALWAYS_DIRTY
+
+    def test_clean_repo_key_is_stable_across_calls(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/serve/_warm.py::repo_dirty_key kind="unit"
+        _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY)
+        _git_init(tmp_path)
+        first = _warm.repo_dirty_key(tmp_path)
+        second = _warm.repo_dirty_key(tmp_path)
+        assert first == second
+        assert first != _warm._ALWAYS_DIRTY
+
+    def test_tracked_edit_changes_the_key(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/serve/_warm.py::repo_dirty_key kind="unit"
+        _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY)
+        _git_init(tmp_path)
+        before = _warm.repo_dirty_key(tmp_path)
+        _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY + "\n# edited\n")
+        after = _warm.repo_dirty_key(tmp_path)
+        assert before != after
+
+    def test_untracked_file_content_edit_changes_the_key(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/serve/_warm.py::repo_dirty_key kind="unit"
+        # Regression guard: `git status --porcelain` alone reports an
+        # untracked path as just "?? path" regardless of its content, so a
+        # naive key over the porcelain listing would miss a content-only
+        # edit to a file that was never staged -- `_stat_tag` closes that.
+        _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY)
+        _git_init(tmp_path)
+        _write(tmp_path, "src/pkg/new_untracked.py", "x = 1\n")
+        before = _warm.repo_dirty_key(tmp_path)
+        _write(tmp_path, "src/pkg/new_untracked.py", "x = 2\n")
+        after = _warm.repo_dirty_key(tmp_path)
+        assert before != after
+
+
+class TestWarmState:
+    def test_second_call_is_cache_hit(self, tmp_path: Path, monkeypatch) -> None:
+        # frob:tests src/frob/serve/_warm.py::warm_state kind="unit"
+        _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY)
+        _git_init(tmp_path)
+        _warm.invalidate(tmp_path)
+
+        calls = []
+        real_build_cold = _warm._build_cold
+
+        def spy(root, dirty_key):
+            calls.append(dirty_key)
+            return real_build_cold(root, dirty_key)
+
+        monkeypatch.setattr(_warm, "_build_cold", spy)
+
+        first = _warm.warm_state(tmp_path)
+        second = _warm.warm_state(tmp_path)
+        assert first.is_ok
+        assert second.is_ok
+        assert second.danger_ok is first.danger_ok
+        assert len(calls) == 1
+
+    def test_file_change_forces_rebuild(self, tmp_path: Path, monkeypatch) -> None:
+        # frob:tests src/frob/serve/_warm.py::warm_state kind="unit"
+        _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY)
+        _git_init(tmp_path)
+        _warm.invalidate(tmp_path)
+
+        calls = []
+        real_build_cold = _warm._build_cold
+
+        def spy(root, dirty_key):
+            calls.append(dirty_key)
+            return real_build_cold(root, dirty_key)
+
+        monkeypatch.setattr(_warm, "_build_cold", spy)
+
+        first = _warm.warm_state(tmp_path)
+        _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY + "\n# edited\n")
+        second = _warm.warm_state(tmp_path)
+        assert first.is_ok
+        assert second.is_ok
+        assert second.danger_ok is not first.danger_ok
+        assert len(calls) == 2
+
+    def test_invalidate_is_a_noop_when_nothing_cached(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/serve/_warm.py::invalidate kind="unit"
+        _warm.invalidate(tmp_path)  # must not raise
+
+
+@settings(deadline=None, max_examples=15)
+@given(edits=st.lists(st.booleans(), min_size=0, max_size=5))
+def test_warm_state_rebuilds_iff_tree_changed(
+    edits: list[bool], tmp_path_factory
+) -> None:
+    # frob:tests tests/test_serve.py::test_warm_state_rebuilds_iff_tree_changed kind="unit"  # noqa: E501
+    # Property (T-0177's invalidation-logic guarantee, vacuous-pass
+    # doctrine): for ANY sequence of "edit the tracked file, then call
+    # warm_state" vs "call warm_state with nothing touched", a rebuild
+    # happens EXACTLY on the initial call and every call following a real
+    # edit -- an obligation (here, the cached graph snapshot) not
+    # rebuilt must correspond 1:1 to a call where nothing changed on
+    # disk, never the reverse.
+    root = tmp_path_factory.mktemp("warm-prop")
+    _write(root, "src/pkg/a.py", _SAMPLE_PY)
+    _git_init(root)
+    _warm.invalidate(root)
+
+    build_count = 0
+    real_build_cold = _warm._build_cold
+
+    def counting_build(r: Path, dirty_key: str):
+        nonlocal build_count
+        build_count += 1
+        return real_build_cold(r, dirty_key)
+
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(_warm, "_build_cold", counting_build)
+
+        expected_builds = 1
+        result = _warm.warm_state(root)
+        assert result.is_ok
+        assert build_count == expected_builds
+
+        for edited in edits:
+            if edited:
+                _write(root, "src/pkg/a.py", _SAMPLE_PY + f"\n# {build_count}\n")
+                expected_builds += 1
+            result = _warm.warm_state(root)
+            assert result.is_ok
+            assert build_count == expected_builds
+    _warm.invalidate(root)
+
+
+class TestCheckDelta:
+    def test_delta_against_fresh_baseline_is_empty(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/serve/_tools.py::frob_check_delta kind="unit"
+        _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY)
+        _git_init(tmp_path)
+        _warm.invalidate(tmp_path)
+
+        first = frob_check_delta(tmp_path)
+        assert first.is_ok
+        stamp_baseline(tmp_path, ())
+        second = frob_check_delta(tmp_path)
+        assert second.is_ok
+        payload = second.danger_ok
+        assert payload["baseline_stale"] is False
+
+    def test_missing_baseline_is_full_set(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/serve/_tools.py::frob_check_delta kind="unit"
+        _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY)
+        _git_init(tmp_path)
+        _warm.invalidate(tmp_path)
+
+        result = frob_check_delta(tmp_path)
+        assert result.is_ok
+        payload = result.danger_ok
+        assert payload["baseline_stale"] is True
+        assert payload["delta_count"] == payload["violation_count"]
+
+    def test_delta_reports_new_violation(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/serve/_tools.py::frob_check_delta kind="unit"
+        _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY)
+        _git_init(tmp_path)
+        _warm.invalidate(tmp_path)
+
+        baseline_run = frob_check_delta(tmp_path)
+        assert baseline_run.is_ok
+        stamp_baseline(tmp_path, ())
+
+        _write(
+            tmp_path, "docs/dangling.md", "<!-- frob:describes src/pkg/a.py::gone -->\n"
+        )
+        _warm.invalidate(tmp_path)
+        after = frob_check_delta(tmp_path)
+        assert after.is_ok
+        payload = after.danger_ok
+        assert payload["baseline_stale"] is False
+        assert payload["delta_count"] >= 1
+
+    def test_verify_true_matches_when_no_drift(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/serve/_tools.py::frob_check_delta kind="unit"
+        _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY)
+        _git_init(tmp_path)
+        _warm.invalidate(tmp_path)
+
+        result = frob_check_delta(tmp_path, verify=True)
+        assert result.is_ok
+        payload = result.danger_ok
+        assert payload["verified"] is True
+        assert payload["verify_mismatch_count"] == 0
+
+
+class TestRunTouchedTests:
+    def test_no_diff_selects_nothing(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/serve/_tools.py::frob_run_touched_tests kind="unit"
+        _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY)
+        _write(tmp_path, ".gitignore", ".frob/\n")
+        _git_init(tmp_path)
+        _warm.invalidate(tmp_path)
+        # Materialize `.frob/` (build_graph/collect_python_tests's cache dir)
+        # BEFORE the diff-under-test so it never itself shows up as a hunk.
+        _warm.warm_state(tmp_path)
+
+        result = frob_run_touched_tests(tmp_path)
+        assert result.is_ok
+        payload = result.danger_ok
+        assert payload["touched"] == []
+        assert payload["ok"] is True
+        assert payload["outcomes"] == []
+
+    def test_bad_base_is_git_failed(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/serve/_tools.py::frob_run_touched_tests kind="unit"
+        _write(tmp_path, "src/pkg/a.py", _SAMPLE_PY)
+        _git_init(tmp_path)
+        _warm.invalidate(tmp_path)
+
+        result = frob_run_touched_tests(tmp_path, base="not-a-real-ref")
+        assert result.is_err
+        assert result.danger_err == ServeError.GitFailed

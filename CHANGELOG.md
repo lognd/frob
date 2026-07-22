@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.74.0] - unreleased
+
+- T-0177: frob serve daemon: incremental gate evaluation over the warm obligation graph
+
 ## [0.73.0] - unreleased
 
 T-0579: `frob ticket drop <id> --reason TEXT [--absorbed-by T-####]` is

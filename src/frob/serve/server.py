@@ -30,8 +30,8 @@ def _require_mcp():  # noqa: ANN202
     except ImportError as exc:
         _log.error("serve: mcp SDK not installed: %s", exc)
         raise McpUnavailable(
-            "the 'mcp' SDK is not installed; run `uv add mcp` (or `uv sync`) "
-            "to enable `frob serve`"
+            "the 'mcp' SDK is not installed; run `uv sync --extra serve` "
+            '(or `uv pip install "frob[serve]"`) to enable `frob serve`'
         ) from exc
     return FastMCP
 
@@ -76,6 +76,27 @@ def _register_scope_tool(server, root: Path) -> None:  # noqa: ANN001
         return _unwrap(_tools.frob_check_scope(root, ticket_id))
 
 
+def _register_incremental_tools(server, root: Path) -> None:  # noqa: ANN001
+    """Register the T-0177 `frob_check_delta`/`frob_run_touched_tests`
+    tools, both backed by `frob.serve._warm`'s warm graph/baseline/test
+    cache."""
+
+    @server.tool()
+    def frob_check_delta(
+        ticket_id: str | None = None, base: str = "main", verify: bool = False
+    ) -> dict:
+        """New-since-baseline gate violations for `ticket_id` (all tickets
+        if omitted), against `base`; `verify=True` also cross-checks a
+        fully cold re-run."""
+        return _unwrap(_tools.frob_check_delta(root, ticket_id, base, verify=verify))
+
+    @server.tool()
+    def frob_run_touched_tests(base: str = "main") -> dict:
+        """Select and run the touched-set tests for `base` (the MCP
+        counterpart of `frob test --base <base>`)."""
+        return _unwrap(_tools.frob_run_touched_tests(root, base))
+
+
 # frob:doc docs/modules/serve.md#mcp-sdk
 # frob:invariant INV-021
 def build_server(root: Path):  # noqa: ANN201
@@ -86,8 +107,9 @@ def build_server(root: Path):  # noqa: ANN201
 
     _register_query_tools(server, root)
     _register_scope_tool(server, root)
+    _register_incremental_tools(server, root)
 
-    _log.info("serve: built FastMCP server bound to %s with 5 tools", root)
+    _log.info("serve: built FastMCP server bound to %s with 7 tools", root)
     return server
 
 

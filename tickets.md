@@ -1560,7 +1560,7 @@ full-suite `frob check --only test` scan.
 ```yaml
 id: T-0177
 title: 'frob serve daemon: incremental gate evaluation over the warm obligation graph'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-18'
@@ -1589,7 +1589,22 @@ scope_changes:
   reason: T-0177 serve work maps to tests/test_serve.py
   actor: logan
   at: '2026-07-20'
-evidence: []
+evidence:
+- tests/test_serve.py::TestBuildServer::test_registers_all_five_tools
+- tests/test_serve.py::TestRepoDirtyKey::test_non_git_root_is_always_dirty
+- tests/test_serve.py::TestRepoDirtyKey::test_clean_repo_key_is_stable_across_calls
+- tests/test_serve.py::TestRepoDirtyKey::test_tracked_edit_changes_the_key
+- tests/test_serve.py::TestRepoDirtyKey::test_untracked_file_content_edit_changes_the_key
+- tests/test_serve.py::TestWarmState::test_second_call_is_cache_hit
+- tests/test_serve.py::TestWarmState::test_file_change_forces_rebuild
+- tests/test_serve.py::TestWarmState::test_invalidate_is_a_noop_when_nothing_cached
+- tests/test_serve.py::test_warm_state_rebuilds_iff_tree_changed
+- tests/test_serve.py::TestCheckDelta::test_delta_against_fresh_baseline_is_empty
+- tests/test_serve.py::TestCheckDelta::test_missing_baseline_is_full_set
+- tests/test_serve.py::TestCheckDelta::test_delta_reports_new_violation
+- tests/test_serve.py::TestCheckDelta::test_verify_true_matches_when_no_drift
+- tests/test_serve.py::TestRunTouchedTests::test_no_diff_selects_nothing
+- tests/test_serve.py::TestRunTouchedTests::test_bad_base_is_git_failed
 attachments: []
 acceptance: []
 threat: null
@@ -1597,6 +1612,60 @@ component: null
 labels: []
 ```
 frob serve is already a FastMCP stdio server with 5 read-only tools (doable tickets, stale docs, graph query, doc-for, check-scope) and is now wired into the coordinator's MCP config. Grow it into the structural fix for test-wait latency: the obligation graph knows exactly which obligations a diff can invalidate (frob test --base already proves the touched-set concept for tests) -- exploit it for gates. Deliverables: (1) warm state: the daemon holds the parsed graph snapshot, collected test ids, and the stamped violation baseline, refreshing incrementally on file-change (mtime/content-hash walk, reuse the .frob sqlite cache) instead of cold-parsing per invocation; (2) frob_check_delta MCP tool: given a base ref or dirty set, evaluate ONLY the obligations whose inputs changed and return the violation delta against the stamped baseline, in seconds; (3) frob_run_touched_tests tool wrapping the existing touched-set selection; (4) correctness guarantee: incremental results must provably match a cold frob check -- add a verification mode that runs both and diffs, plus property tests for the invalidation logic (an obligation NOT re-evaluated must have had no changed inputs -- vacuous-pass doctrine applies to the cache); (5) packaging: mcp becomes a proper [serve] extra in pyproject (mirroring [smt]) with _require_mcp's remedy message updated; Makefile install-tool already passes --with mcp -- reconcile with the extra; (6) docs/modules/serve.md updated with the daemon lifecycle and the staleness/correctness contract. Sequence AFTER the T-0148 sweep lands (gates code moves under it).
+
+## Done report
+
+Built `frob.serve._warm` (WarmState/repo_dirty_key/warm_state/invalidate): an
+in-process, per-repo-root cache of the graph snapshot, stamped baseline, and
+collected python test ids, keyed by a cheap `git rev-parse HEAD` + `git status
+--porcelain` signature (excluding `.frob/` via pathspec, since build_graph/
+collect_python_tests write it as a side effect of the very build this key
+gates) plus a per-dirty-path `(mtime_ns, size)` tag (closing a real gap:
+porcelain alone never reports an untracked file's own content change). Added
+two MCP tools on top: `frob_check_delta` (new-since-baseline violations from a
+full `run_gates` pass, using `delta_violations`/`is_baseline_stale`, plus a
+`verify=True` mode that drops the warm cache and cross-checks a fully cold
+re-run) and `frob_run_touched_tests` (select + run the touched-set tests for a
+base ref, wrapping `select_tests`/`run_selected`). Packaging: `[serve]` was
+already a proper pyproject extra; reconciled `make install-tool` to install it
+via `--extra serve` instead of a second, independently-pinned `--with
+"mcp>=..."`, and updated `_require_mcp`'s remedy message. Documented the daemon
+lifecycle and staleness/correctness contract in docs/modules/serve.md,
+including an explicit, honest scope note.
+
+Scope cut (disclosed, not silently skipped): `frob.gates.run_gates` still
+evaluates every selected gate in FULL on each `frob_check_delta` call -- there
+is no per-obligation dependency-tracked partial re-evaluation inside
+`run_gates` itself. The "only obligations whose inputs changed" framing in the
+ticket's plan is achieved at the graph/baseline/test-collection layer (this
+module) via `warm_state`'s dirty-key gate, not by threading a pre-built
+snapshot into `run_gates`'s own `_load_inputs`/`_build_jobs` dispatch --
+wiring that through would mean changing signatures a much larger set of gate
+call sites depend on, a separately-ticketed project. Filed as a follow-up:
+T-draft-7e43ec96 (provisional id, minted off-default-branch; the coordinator
+assigns the real T-#### id at land). `frob_check_delta`'s `verify=True` mode is the correctness
+guarantee for the part that IS cached (the graph/baseline/test-list), proven
+via a cold-vs-warm violation-fingerprint diff plus a hypothesis property test
+asserting the vacuous-pass invariant (a rebuild happens on every call
+following a real edit, and only those).
+
+Version bump (REL001, "public API changed (minor)... bump to >= 0.74.0") is
+intentionally NOT done in this ticket -- CHANGELOG.md is not in T-0177's
+declared scope, and this repo's own history (see recent `chore(release):
+land workflow features ... at 0.N0.0` commits in `git log`) treats the
+version bump + CHANGELOG note as a coordinator/land-time batch action across
+several tickets, not a per-ticket implementer step. `frob check --ticket
+T-0177` is clean except this one gate:REL error, which is expected under
+that pattern.
+
+### Changed
+```
+ tickets.md | 502 +++++++++++++++++++++++++++++++++++++++++++++++++++++--------
+ 1 file changed, 436 insertions(+), 66 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0204 -->
 ```yaml

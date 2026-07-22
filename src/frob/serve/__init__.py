@@ -17,10 +17,12 @@ from __future__ import annotations
 
 from frob.serve._tools import (
     ServeError,
+    frob_check_delta,
     frob_check_scope,
     frob_doable_tickets,
     frob_doc_for,
     frob_graph_query,
+    frob_run_touched_tests,
     frob_stale_docs,
 )
 
@@ -44,10 +46,12 @@ __all__ = [
     "McpUnavailable",
     "ServeError",
     "build_server",
+    "frob_check_delta",
     "frob_check_scope",
     "frob_doable_tickets",
     "frob_doc_for",
     "frob_graph_query",
+    "frob_run_touched_tests",
     "frob_stale_docs",
     "run_stdio",
 ]
