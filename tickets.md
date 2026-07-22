@@ -3731,7 +3731,7 @@ docs/audits/lang-check-docs.md finding 1. run_check_cpp/run_check_rust/run_check
 ```yaml
 id: T-0556
 title: 'gates: DRIFT001 default sig facet is blind to behavior/body rewrites (B2)'
-state: queued
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-21'
@@ -3740,8 +3740,27 @@ blocked_by: []
 parent: T-0403
 scope:
 - src/frob/gates/ src/frob/graph/
-scope_changes: []
-evidence: []
+- src/frob/graph/
+- tests/test_graph_lock.py
+scope_changes:
+- op: add
+  glob: src/frob/graph/
+  reason: ticket's original scope field was a single malformed glob string 'src/frob/gates/
+    src/frob/graph/' instead of two entries; splitting it out, plus tests/test_graph_lock.py
+    for the behavior-change regression updates
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/test_graph_lock.py
+  reason: ticket's original scope field was a single malformed glob string 'src/frob/gates/
+    src/frob/graph/' instead of two entries; splitting it out, plus tests/test_graph_lock.py
+    for the behavior-change regression updates
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_graph_lock.py::TestAckDrift::test_ack_then_sig_edit_yields_stale
+- tests/test_graph_lock.py::TestAckDrift::test_ack_then_body_only_rewrite_yields_stale
+- tests/test_graph_lock.py::TestAckDrift::test_acknowledge_records_every_describes_facet
 attachments: []
 acceptance: []
 threat: null
@@ -3750,6 +3769,73 @@ labels: []
 ```
 docs/audits/gates-accounting.md B2/E2. lock.py _DEFAULT_FACET='sig'; a frob:doc/DESCRIBES ack at the default facet only tracks the signature digest. Rewriting a documented function's body (behavior) after ack never trips DRIFT001 -- the doc can lie about behavior forever. Repro: ack a frob:doc at default facet, rewrite only the body, run frob check -> green. RIGHT-WAY fix direction: default ack facet to sig+body (or require an explicit facet and drift-check body+sig together) so a doc can't silently desync from behavior. Cross-cutting: touches every existing ack in the repo's lock file and the ack CLI UX -- too large for the T-0403 sweep budget.
 
+## Done report
+
+docs/audits/gates-accounting.md B2/E2: `frob.graph.lock._DEFAULT_FACET =
+"sig"`; an ack (`frob:doc`/`frob:describes` with no explicit facet, the
+common case) locked only the signature digest. Rewriting a documented
+function's BODY (the actual behavior a doc claims) after ack never tripped
+DRIFT001 -- the doc could lie about behavior forever. Repro: ack a
+`frob:doc` at default facet, rewrite only the body, `frob check` -> green.
+
+Survey done first (required -- "cross-cutting... too large for the T-0403
+sweep budget"): counted this repo's own `frob.lock` at the time of this
+change -- 43 entries total, ALL `facet=sig`, ZERO existing `facet=body`
+entries. Small, uniform footprint; no existing entry already relies on a
+narrower assumption that a wider default would conflict with.
+
+Landed: `frob.graph.lock._facets_for_ref` now always unions in `"body"`
+alongside whatever facet(s) an ack would otherwise record (explicit
+DESCRIBES facets, or the sig-only fallback) -- never narrows an explicit
+request, only widens coverage. `acknowledge` already skips `body` for
+kinds where it is meaningless (`_BODY_FACET_MEANINGLESS_KINDS`: class/
+const/type have a constant body digest, T-0402/G5), so this cannot create
+a body lock entry that could never observe drift.
+
+Given the small, uniform survey result, landed this as the new DEFAULT
+directly rather than behind an opt-in flag: gating it behind a flag
+nobody would proactively flip would leave B2 open indefinitely for no
+real safety gained, when the measured churn is 43 entries in a lock file
+this size. Existing lock entries are unaffected until their next
+`frob ack` (ordinary lock-format evolution, not a retroactive rewrite).
+
+Updated `tests/test_graph_lock.py` (2 existing tests) for the new
+entry-count expectations, and added a new regression test pinning the
+exact B2 repro: ack at default facet, rewrite ONLY the body, confirm
+DRIFT001-equivalent (`report.stale`) now fires on the `body` facet.
+
+Anomaly found and NOT fixed here (filed instead, out of this ticket's
+actual change): after closing this ticket's own work, a full `frob check`
+(with or without `--ticket` override) shows COV002 firing again on several
+symbols from the ALREADY-CLOSED T-0545/T-0552 (e.g. `stamp_coverage`,
+`test_gate`, `_KNOWN_GATE_RULES`) despite each carrying a valid
+`frob:ticket` directive and both tickets' closures still being part of the
+diff vs `main`. This reproduced identically before any T-0556 code change
+and is unrelated to `lock.py`/`test_graph_lock.py` -- it looks like a
+COV002 grace-window hunk-matching artifact from running many tickets
+sequentially in one worktree/branch (git diff hunk shape shifting as later
+tickets' `tickets.md` operations land). Filed as T-draft-9557a879 rather
+than debugged/fixed here, since it is outside T-0556's declared scope and
+is a pre-existing accounting-gate defect in its own right, not a
+consequence of the DRIFT001 facet fix.
+
+### Changed
+```
+ CHANGELOG.md                |  19 +++
+ frob.lock                   |   2 +-
+ pyproject.toml              |   2 +-
+ src/frob/gates/__init__.py  | 253 +++++++++++++++++++++++++++++++--
+ src/frob/gates/_coverage.py | 125 ++++++++++++++++-
+ tests/test_gates.py         | 249 ++++++++++++++++++++++++++++++++-
+ tickets.md                  | 333 ++++++++++++++++++++++++++++++++++++++++++--
+ uv.lock                     |   2 +-
+ 8 files changed, 961 insertions(+), 24 deletions(-)
+```
+
+### Evidence
+- `tests/test_graph_lock.py::TestAckDrift::test_ack_then_sig_edit_yields_stale` (pytest node id, verified passing when recorded)
+- `tests/test_graph_lock.py::TestAckDrift::test_ack_then_body_only_rewrite_yields_stale` (pytest node id, verified passing when recorded)
+- `tests/test_graph_lock.py::TestAckDrift::test_acknowledge_records_every_describes_facet` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0560 -->
 ```yaml
 id: T-0560
@@ -3913,3 +3999,27 @@ component: null
 labels: []
 ```
 T-0547 added TEST014 (WARN) to surface every case where _inferred_unit_cases's naming-convention fallback ambiguously credits two DIFFERENT files' same-leaf-name public symbols off the same collected test id(s) (docs/audits/gates-accounting.md B6). It deliberately does NOT withdraw TEST001 credit: a compat survey against this repo (T-0547's Done report) found a blanket path/module-correlation requirement breaks ~100% of convention-fallback matches here (96/81 depending on heuristic), since tests/ does not mirror src/frob/<pkg>/ layout. But the survey ALSO found 5 real leaf-name collision groups in this repo TODAY sharing convention-matched tests (main, format, as_text, as_json, run) -- TEST014 will fire WARN for each until resolved. This ticket is to actually resolve those 5 (add explicit frob:tests edges to disambiguate, or accept the WARN permanently via frob:waive with a reason), and to decide/design a general per-symbol tightening path now that real examples exist to test any proposed rule against (e.g. requiring the matched test's own module path to appear as a substring of the target's qualname, or promoting TEST014 to ERROR once explicit edges are added to eliminate ambiguity repo-wide).
+
+<!-- ticket:T-draft-9557a879 -->
+```yaml
+id: T-draft-9557a879
+title: 'COV002 grace-window regression: closed-ticket edges lose coverage across sequential
+  same-worktree ticket closes'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/__init__.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Discovered incidentally while closing T-0556 (unrelated ticket) in a worktree that had already closed T-0567/T-0545/T-0552/T-0547 earlier in the same branch: symbols touched by T-0545/T-0552 (e.g. src/frob/gates/_coverage.py::stamp_coverage, src/frob/gates/__init__.py::_test005/test_gate/_edge_has_execution_evidence/_KNOWN_GATE_RULES/_COVERAGE_LOCK_REL) started failing COV002 again -- 'changed with no frob:ticket edge to an open ticket' -- even though each carries a valid frob:ticket T-0545/T-0552 directive and both tickets' closures are still part of the same uncommitted diff against main (git diff main --stat still shows all the intervening commits). This reproduces with a bare frob check (no --ticket override), so it is not scoped to T-0556's own diff content -- it appeared sometime between T-0552's own clean check (frob check --ticket T-0552 showed 0 COV errors right after closing it) and starting T-0556's ticket workflow (multiple frob ticket scope/sweep operations on tickets.md in between). Hypothesis: _bound_to_open_ticket's grace-window hunk-matching (docs/audits or __init__.py:1917 _bound_to_open_ticket docstring, T-0214/T-0320) depends on a ticket's DONE-transition marker line falling within a single git diff hunk against main; repeated tickets.md rewrites by later ticket operations (scope changes, sweeps, done-report writes for OTHER tickets) can split/relocate that hunk so an EARLIER ticket's own close marker no longer registers as 'in this diff's tickets.md hunk' even though the closure commit is still, in aggregate, part of the diff vs main. Needs investigation: reproduce minimally (two sequential ticket closes in one branch, then a third ticket's ledger operations), confirm the hunk-boundary hypothesis, and either make the grace window robust to intervening unrelated tickets.md hunks or make COV002's message clearer that this is a hunk-shape artifact, not a real missing edge. Related: docs/guides/agent-playbook.md section 10b's existing multi-ticket-worktree warnings (about ledger finalization) -- this is a parallel failure mode in the SAME class of hazard, but for COV002 rather than the Done-report/close ledger writes.

@@ -34,12 +34,15 @@ class TestAckDrift:
     def test_ack_then_sig_edit_yields_stale(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/lock.py::acknowledge
         # frob:tests src/frob/graph/lock.py::drift
+        # T-0556: a no-explicit-facet ack now always also locks `body`
+        # (docs/audits/gates-accounting.md B2), so this yields 2 entries,
+        # not 1 -- `sig` and `body`, both for the same ref.
         snap = self._snapshot(tmp_path)
         ref = "src/a.py::Widget.render"
         lock = load_lock(tmp_path / "frob.lock").danger_ok
         acked = acknowledge(lock, snap, [ref]).danger_ok
-        assert len(acked.entries) == 1
-        assert acked.entries[0].facet == "sig"
+        assert len(acked.entries) == 2
+        assert {e.facet for e in acked.entries} == {"sig", "body"}
 
         _write(
             tmp_path,
@@ -57,6 +60,34 @@ class TestAckDrift:
         assert stale.entry.ref == ref
         assert any(o.startswith("src/a.py") for o in stale.dependents)
         assert report.dangling == ()
+
+    def test_ack_then_body_only_rewrite_yields_stale(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/lock.py::acknowledge
+        # frob:tests src/frob/graph/lock.py::drift
+        # T-0556 (docs/audits/gates-accounting.md B2): the audit's own repro
+        # -- ack a `frob:doc` at the default (no explicit) facet, then
+        # rewrite ONLY the function body, leaving its signature untouched.
+        # Before this fix, a no-facet ack locked only `sig`, so this body
+        # rewrite produced zero DRIFT001 signal -- the doc could lie about
+        # behavior forever. `_facets_for_ref` now always includes `body`.
+        snap = self._snapshot(tmp_path)
+        ref = "src/a.py::Widget.render"
+        lock = load_lock(tmp_path / "frob.lock").danger_ok
+        acked = acknowledge(lock, snap, [ref]).danger_ok
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            _WIDGET_PY.replace(
+                "return str(value)",
+                'return "value=" + str(value)',
+            ),
+        )
+        cache = tmp_path / ".frob" / "cache.db"
+        new_snap = build_graph(tmp_path, cache).danger_ok
+        report = drift(acked, new_snap)
+        assert len(report.stale) == 1
+        assert report.stale[0].entry.facet == "body"
 
     def test_rename_yields_dangling_candidate_via_body_digest(
         self, tmp_path: Path
@@ -125,7 +156,9 @@ class TestAckDrift:
         # FIRST facet found (`_facet_for_ref`, singular) -- the second
         # facet's contract could drift with no `DRIFT001` signal because it
         # was never acked at all. Reverting to the singular-facet lookup
-        # makes `acked.entries` length 1 instead of 2.
+        # makes `acked.entries` length 1 instead of 3.
+        # T-0556: `body` is now always also included (B2), so the expected
+        # set is {"sig", "doc", "body"}, not just the two explicit facets.
         _write(tmp_path, "src/a.py", _WIDGET_PY)
         _write(
             tmp_path,
@@ -140,7 +173,7 @@ class TestAckDrift:
         lock = load_lock(tmp_path / "frob.lock").danger_ok
         acked = acknowledge(lock, snap, [ref]).danger_ok
         facets = {e.facet for e in acked.entries}
-        assert facets == {"sig", "doc"}
+        assert facets == {"sig", "doc", "body"}
 
     def test_acknowledge_skips_meaningless_body_facet_on_class(
         self, tmp_path: Path
