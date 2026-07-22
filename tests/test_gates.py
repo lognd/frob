@@ -43,6 +43,7 @@ from frob.gates import (
     stamp_baseline,
     stamp_coverage,
     sys_gate,
+    tickets_gate,
     violation_fingerprint,
 )
 from frob.gates import (
@@ -6702,3 +6703,197 @@ class TestRenderLintGate:
         violations = render_lint_gate(tmp_path)
 
         assert _by_rule(violations, "RENDER001") == []
+
+
+# frob:ticket T-0726
+class TestTick006PhantomFiling:
+    """TICK006 (T-0726): a Done report's affirmative "filed" claim whose
+    id resolves to no ledger block, distinguished from prose that merely
+    mentions another ticket's id and from explicit filing negations."""
+
+    def _queue(self, *tickets: Ticket) -> TicketQueue:
+        """A `TicketQueue` of `tickets`, keyed by id."""
+        return TicketQueue(tickets={t.id: t for t in tickets})
+
+    # frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_phantom_filed_colon_fires  # noqa: E501
+    def test_phantom_filed_colon_fires(self, tmp_path: Path) -> None:
+        """`Filed: T-draft-deadbeef` (a real T-0726/T-0577-class draft-loss
+        shape) resolving to no block, active or archived, is TICK006."""
+        ticket = _ticket(
+            ticket_id="T-0001",
+            body=(
+                "## Description\nsome bug\n\n"
+                "## Done report\n\n"
+                "Filed: `T-draft-deadbeef` (a follow-up bug, scope foo.py "
+                "-- renumbers to a real T-#### id when this worktree "
+                "merges to main).\n"
+            ),
+        )
+        violations = tickets_gate(tmp_path, self._queue(ticket))
+        tick006 = [v for v in violations if v.rule == "TICK006"]
+        assert len(tick006) == 1
+        assert "T-draft-deadbeef" in tick006[0].message
+        assert tick006[0].severity == Severity.ERROR
+
+    # frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_phantom_filed_as_fires  # noqa: E501
+    def test_phantom_filed_as_fires(self, tmp_path: Path) -> None:
+        """The T-0707 incident class: `filed as T-0999` where T-0999 was
+        never actually filed anywhere -- an invented filing trail."""
+        ticket = _ticket(
+            ticket_id="T-0002",
+            body=(
+                "## Done report\n\n"
+                "The out-of-scope discovery above was filed as T-0999 "
+                "(never actually created).\n"
+            ),
+        )
+        violations = tickets_gate(tmp_path, self._queue(ticket))
+        tick006 = [v for v in violations if v.rule == "TICK006"]
+        assert len(tick006) == 1
+        assert "T-0999" in tick006[0].message
+
+    # frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_filed_colon_real_active_id_is_silent  # noqa: E501
+    def test_filed_colon_real_active_id_is_silent(self, tmp_path: Path) -> None:
+        """`Filed: T-0003` where T-0003 is a real block in the ACTIVE
+        queue does not fire -- this is exactly what a correct filing
+        claim looks like."""
+        followup = _ticket(ticket_id="T-0003", body="## Description\nx\n")
+        # Real Done-report grammar, verbatim shape from tickets-archive.md
+        # (T-0077's own Done report): "Filed: T-0129 (wire `.strata`
+        # into frob.graph/outline/... -- out of T-0077's scope)."
+        reporter = _ticket(
+            ticket_id="T-0004",
+            body=(
+                "## Done report\n\n"
+                "Filed: T-0003 (wire `.strata` into frob.graph/outline/"
+                "xref/testing/policy/cycle_runner/arch's raw_tree call so "
+                "map/outline/xref/COV obligations reach `.strata` symbols "
+                "end to end -- out of T-0004's scope).\n"
+            ),
+        )
+        violations = tickets_gate(tmp_path, self._queue(followup, reporter))
+        assert not any(v.rule == "TICK006" for v in violations)
+
+    # frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_filed_colon_none_is_silent  # noqa: E501
+    def test_filed_colon_none_is_silent(self, tmp_path: Path) -> None:
+        """`Filed: none` -- the common "nothing to file" Done-report
+        shape -- names no id at all and must never fire."""
+        ticket = _ticket(
+            ticket_id="T-0005",
+            body=(
+                "## Done report\n\n"
+                "Filed: none (no out-of-scope work found; the change was "
+                "entirely inside T-0005's declared scope).\n"
+            ),
+        )
+        violations = tickets_gate(tmp_path, self._queue(ticket))
+        assert not any(v.rule == "TICK006" for v in violations)
+
+    # frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_filed_as_real_archived_id_is_silent  # noqa: E501
+    def test_filed_as_real_archived_id_is_silent(self, tmp_path: Path) -> None:
+        """`filed as **T-0137**` resolves against `tickets-archive.md`,
+        not only the active queue -- an id archived long ago is still a
+        real filing, never a phantom."""
+        from frob.tickets._store import write_archive
+
+        archived = _ticket(ticket_id="T-0137", body="## Description\narchived\n")
+        write_archive(tmp_path, {"T-0137": archived}).danger_ok
+        ticket = _ticket(
+            ticket_id="T-0006",
+            body=(
+                "## Done report\n\n"
+                "`strata-core/**` is outside this ticket's scope, so this "
+                "was filed as **T-0137** rather than patched around.\n"
+            ),
+        )
+        violations = tickets_gate(tmp_path, self._queue(ticket))
+        assert not any(v.rule == "TICK006" for v in violations)
+
+    # frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_negation_not_filed_is_silent  # noqa: E501
+    def test_negation_not_filed_is_silent(self, tmp_path: Path) -> None:
+        """ "not filed as a new ticket" (verbatim phrase used repeatedly in
+        this repo's ledger) is an explicit negation and must never fire,
+        even when a phantom-shaped id sits nearby in the same sentence."""
+        ticket = _ticket(
+            ticket_id="T-0007",
+            body=(
+                "## Done report\n\n"
+                "That is out of T-0007's scope; not filed as a new ticket "
+                "this pass because the discovery T-draft-deadbeef "
+                "duplicates existing tracked work.\n"
+            ),
+        )
+        violations = tickets_gate(tmp_path, self._queue(ticket))
+        assert not any(v.rule == "TICK006" for v in violations)
+
+    # frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_negation_no_ticket_filed_is_silent  # noqa: E501
+    def test_negation_no_ticket_filed_is_silent(self, tmp_path: Path) -> None:
+        """ "no new ticket filed" is an explicit negation and must never
+        fire."""
+        ticket = _ticket(
+            ticket_id="T-0008",
+            body=(
+                "## Done report\n\n"
+                "Tracked under T-0008's own pattern (no new ticket filed; "
+                "T-draft-deadbeef is only a scratch note, not a real id).\n"
+            ),
+        )
+        violations = tickets_gate(tmp_path, self._queue(ticket))
+        assert not any(v.rule == "TICK006" for v in violations)
+
+    # frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_description_prose_mentioning_other_ticket_is_silent  # noqa: E501
+    def test_description_prose_mentioning_other_ticket_is_silent(
+        self, tmp_path: Path
+    ) -> None:
+        """Ordinary narrative in a ticket's Description -- BEFORE any Done
+        report heading -- routinely names another (possibly phantom-
+        shaped) ticket id in prose; this is extremely common and must
+        never fire, since it is not a filing claim about this ticket's
+        own work at all."""
+        ticket = _ticket(
+            ticket_id="T-0009",
+            body=(
+                "## Description\n\n"
+                "NOTE: T-0570's Done report references this as "
+                "T-draft-1327a057 (and mislabels it as T-0571); the draft "
+                "did not survive land, so this ticket is its real "
+                "replacement.\n\n"
+                "## Done report\n\nFiled: none.\n"
+            ),
+        )
+        violations = tickets_gate(tmp_path, self._queue(ticket))
+        assert not any(v.rule == "TICK006" for v in violations)
+
+    # frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_no_done_report_heading_is_silent  # noqa: E501
+    def test_no_done_report_heading_is_silent(self, tmp_path: Path) -> None:
+        """A ticket with no Done report at all (still in progress) has
+        nothing for TICK006 to scan, regardless of what its Description
+        says."""
+        ticket = _ticket(
+            ticket_id="T-0010",
+            state=TicketState.IN_PROGRESS,
+            body="## Description\nFiled: T-draft-deadbeef (not real).\n",
+        )
+        violations = tickets_gate(tmp_path, self._queue(ticket))
+        assert not any(v.rule == "TICK006" for v in violations)
+
+    # frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_filed_bare_draft_without_colon_fires  # noqa: E501
+    def test_filed_bare_draft_without_colon_fires(self, tmp_path: Path) -> None:
+        """The T-0577 draft-loss shape: `Filed T-draft-<hex> (mints a real
+        T-#### id at land)` with no colon after "Filed" -- a real filing
+        grammar used repeatedly in this ledger -- still fires when the
+        draft never survived land, since that is TICK006's whole point
+        (a currently-unresolvable phantom, to be waived per-instance if
+        it is a disclosed historical draft-loss case)."""
+        ticket = _ticket(
+            ticket_id="T-0011",
+            body=(
+                "## Done report\n\n"
+                "Filed T-draft-deadbeef (mints a real T-#### id at land) "
+                "for a follow-up entity kind.\n"
+            ),
+        )
+        violations = tickets_gate(tmp_path, self._queue(ticket))
+        tick006 = [v for v in violations if v.rule == "TICK006"]
+        assert len(tick006) == 1
+        assert "T-draft-deadbeef" in tick006[0].message

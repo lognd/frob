@@ -5896,15 +5896,15 @@ falling back to the FULL set plus a WARN diagnostic (never a silent
 no-op) if the baseline is missing or stale. run_check/_python_tasks
 thread delta through. --stamp-baseline/--delta CLI flags need
 src/frob/__main__.py + src/frob/app/check_runner.py (out of T-0095's
-declared scope); filed as T-0104. docs/modules/gates.md +
-docs/commands/check.md documentation also filed under T-0104 (docs/**
+declared scope); filed as T-0107 (refiled here after its original draft id was lost at land). docs/modules/gates.md +
+docs/commands/check.md documentation also filed under T-0107 (refiled here after its original draft id was lost at land) (docs/**
 out of scope).
 Evidence: see evidence: list above (pytest --collect-only verified).
-Filed: T-0104 (CLI/docs wiring), T-0105 (SCOPE001 false-positive on
+Filed: T-0107 (refiled here after its original draft id was lost at land) (CLI/docs wiring), T-0108 (refiled here after its original draft id was lost at land) (SCOPE001 false-positive on
 files already committed by an earlier ticket on the same branch --
 discovered running this ticket's check after T-0102's commit).
 Gates: `frob check --ticket T-0095 --base 05951ad` and plain
-`frob check` both exit 0 (see T-0105 for why --base had to be pinned).
+`frob check` both exit 0 (see T-0108 (refiled here after its original draft id was lost at land) for why --base had to be pinned).
 
 <!-- ticket:T-0096 -->
 ```yaml
@@ -6259,7 +6259,7 @@ section recording the decision and the escape hatch if this changes.
 Evidence: see evidence: list above (pytest --collect-only verified).
 Filed: none (docs/** and tests/** were both in scope for this ticket).
 Gates: `frob check --ticket T-0101 --base 80b5ced` and plain
-`frob check` both exit 0 (see T-0105 for why --base had to be pinned).
+`frob check` both exit 0 (see T-0108 (refiled here after its original draft id was lost at land) for why --base had to be pinned).
 
 <!-- ticket:T-0102 -->
 ```yaml
@@ -10677,11 +10677,11 @@ Design notes:
 - LINT003 (surge scenario bound): a `Scenario` with a `ScaleRate` rewrite nesting no `BoundClaim` (RATE/UTILIZATION) over the scaled flow or its endpoints.
 - LINT004 (kill switch): a node with a risky (exec/net) `may` capability and no `attr flag=<id>` -- reuses the grammar's existing generic `attr IDENT=IDENT` node property, no new keyword.
 - LINT005 (fan-in, caching-agnostic): a node's declared `capacity` (service_rate * replicas_max) exceeded by TOTAL inbound rate, unconditionally -- the LINT002/LINT005 relationship mirrors the PII003/GDPR-RETENTION precedent (can fail one and pass the other).
-- Self-model honesty: design/frob.strata's f_registry_fetch now declares a real `rate 1 req/s`. checker/core/stratamod/vet each hold may "exec"/"net" with NO real kill switch in the codebase today -- rather than fabricate a `flag=<id>` attr, these are left as honest, named LINT004 gaps in `frob sys audit` output (T-0150/T-0151 "declare real facts or waive with reasons" precedent). Follow-on ticket T-draft-47dc1469 filed for the real kill-switch mechanism.
+- Self-model honesty: design/frob.strata's f_registry_fetch now declares a real `rate 1 req/s`. checker/core/stratamod/vet each hold may "exec"/"net" with NO real kill switch in the codebase today -- rather than fabricate a `flag=<id>` attr, these are left as honest, named LINT004 gaps in `frob sys audit` output (T-0150/T-0151 "declare real facts or waive with reasons" precedent). Follow-on ticket T-draft-47dc1469 (never refiled) not filed for the real kill-switch mechanism.
 
 Evidence: 7 pytest node ids recorded via `frob ticket evidence T-0155` (see `evidence:` list above); full suite (`uv run pytest tests/ -q`) green before and after the T-0155 change set, both pre- and post-merge with main.
 
-Filed: T-draft-47dc1469 (add real kill-switch/feature-flag mechanism for exec/net capabilities on checker/core/stratamod/vet, to genuinely discharge LINT004 on design/frob.strata).
+Not Filed: T-draft-47dc1469 (never refiled) (add real kill-switch/feature-flag mechanism for exec/net capabilities on checker/core/stratamod/vet, to genuinely discharge LINT004 on design/frob.strata).
 
 Gates: `uv run frob check --ticket T-0155` clean (exit 0; remaining TEST005/TEST006 items are pre-existing warn-severity baseline debt in src/frob/gates/__init__.py, unrelated to this ticket's scope). `uv run frob test --base main` PASS (python exit=0, strata exit=0). `git diff main --diff-filter=D --stat` empty (no deletions anywhere) after merging main into this branch.
 
@@ -10800,7 +10800,7 @@ Evidence, every number captured in this final pass (post-merge tip
   check`: **"frob check .  [FAIL]  1 error  316 warnings"** (317 total).
   Exactly the coordinator's predicted shape: the 1 error is the
   pre-existing, out-of-scope COV003 on `tickets/T-0168` (evidence-id
-  typo in `tickets-archive.md`, filed as `T-draft-89a86c7a` in round 1);
+  typo in `tickets-archive.md`, not filed as `T-draft-89a86c7a (never refiled)` in round 1);
   no DOC002, no E501, no SYS004. Confirmed both-ruff clean: `ruff check .`
   and `uv run ruff check .` both report "All checks passed!";
   `uv run ruff format --check .` reports "341 files already formatted".
@@ -10818,7 +10818,7 @@ Evidence, every number captured in this final pass (post-merge tip
   exit 0.
 - docs/index.md completeness: unchanged from round 1, still holds.
 
-Filed: `T-draft-89a86c7a` (T-0168 evidence-id typo in
+Not Filed: `T-draft-89a86c7a (never refiled)` (T-0168 evidence-id typo in
 `tickets-archive.md`, round 1, out of scope for T-0156). No new tickets
 this round -- round 4's 3 `E501` findings were the coordinator's own
 fixup fallout, now fixed on `main` (`90f953d`), confirmed gone.
@@ -10827,7 +10827,7 @@ Cuts / honest gaps carried forward, not fixed here (all pre-existing or
 explicitly out of scope per the ticket's declared `scope`):
 - 1 unwaived LINT004 (`tickets_ledger`), tracked as `T-0250`, queued.
 - 1 COV003 on T-0168's archived evidence id (`tickets-archive.md`, out of
-  scope; filed as `T-draft-89a86c7a`).
+  scope; not filed as `T-draft-89a86c7a (never refiled)`).
 - Native crates (`frob-core`, `strata-core`) remain source-build-only
   local `maturin` path packages, no published wheels -- documented in
   `docs/guides/install.md` (pre-existing, T-0133's "why not a pip extra"
@@ -11932,7 +11932,7 @@ off any elaborated `Node`, no store/node distinction). A store's `may` capabilit
 auto-instantiates THREAT003 weakness obligations exactly like a node's would, for the same
 reason (`_threat.py` reads `Node.may` generically).
 
-Filed: T-draft-956203f7 "store grammar still missing on-deploy/observe/errors_total/
+Not Filed: T-draft-956203f7 (never refiled) "store grammar still missing on-deploy/observe/errors_total/
 panics_contained_by from node_prop" -- surface.md's `store_prop := node_prop | ...` grammar
 line literally claims the FULL node_prop set is legal on store; this ticket closed only the
 code/may gap it explicitly named. `on deploy`/`observe`/`errors_total`/`panics_contained_by`
@@ -12225,15 +12225,15 @@ genuine, non-self-match usage), which T-0169's `scope` explicitly excludes.
 CONFIRMED this failure is 100% pre-existing and independent of every change in
 this ticket: `git fetch`+checkout of unmodified `main` tip (3135c5c) and running
 `TestRealGateGreen` there directly reproduces the identical failure with zero of
-my changes present. Filed T-draft-e1beb2a8 (self-match + design recalibration)
-and T-draft-e1beb2a8's sibling T-draft-a8e0354d (the tickets-archive.md splice,
+my changes present. Not Filed T-draft-e1beb2a8 (never refiled) (self-match + design recalibration)
+and T-draft-e1beb2a8 (never refiled)'s sibling T-draft-a8e0354d (never refiled) (the tickets-archive.md splice,
 below) to track both discoveries; this ticket's own diff does not touch
 `design/frob.strata` or the self-match exclusion.
 
-Filed:
-- T-draft-a8e0354d: `tickets-archive.md` stale T-0169 duplicate from an unrelated
+Not Filed:
+- T-draft-a8e0354d (never refiled): `tickets-archive.md` stale T-0169 duplicate from an unrelated
   ledger-conflict splice on `main` (see NOTE below).
-- T-draft-e1beb2a8: self-conformance `TestRealGateGreen` red on the real repo tree
+- T-draft-e1beb2a8 (never refiled): self-conformance `TestRealGateGreen` red on the real repo tree
   (html_render self-match on `_capability_registry.py`; needs both a
   `_selfconform.py`/`_capability.py` exclusion AND a `design/frob.strata` `may`
   recalibration for the `vet` node).
@@ -12808,7 +12808,7 @@ concurrently with, not before, this ticket's original round, so store
 support was never in scope). This is real, unrelated debt from a
 different ticket's concurrent landing, not something T-0174 introduced or
 should silently paper over by scope-creeping grammar work into this
-round. Filed T-draft-41982e4b ("extend waive clause grammar to store
+round. Not Filed T-draft-41982e4b (never refiled) ("extend waive clause grammar to store
 nodes (tickets_ledger LINT004 gap from T-0166)") rather than fixed here.
 `frob sys audit` therefore now exits 1 with exactly ONE honestly-named,
 tracked gap (`tickets_ledger` LINT004) -- this is the correct, intended
@@ -13012,7 +13012,7 @@ collection. Full suite (`uv run frob test . --all`) and
 --ticket T-0176` is 0 errors (269 pre-existing warnings, unrelated to
 this ticket's scope).
 
-Filed: T-draft-4032e080 ("T-0176 scope gap: src/frob/__main__.py missing
+Not Filed: T-draft-4032e080 (never refiled) ("T-0176 scope gap: src/frob/__main__.py missing
 from declared scope") -- T-0176's declared scope omitted
 `src/frob/__main__.py`, but the CLI argparse registration for any new
 `frob ticket` subcommand lives there (as it did for T-0162, whose scope
@@ -13929,7 +13929,7 @@ tests/unit/strata/test_litmus_cwe.py::TestCapabilityKindNoneEntriesNeverFireByDe
 All recorded via `frob ticket evidence T-0189 ...` (two batches, 7 then 3
 ids; final count 10, confirmed by the CLI's own echo).
 
-Filed: T-draft-46c43552 ("release: bump version to 0.14.0 + stamp for
+Not Filed: T-draft-46c43552 (never refiled) ("release: bump version to 0.14.0 + stamp for
 T-0189 CWE-611/XXE catalog addition (REL001)", kind=docs, scope
 pyproject.toml/CHANGELOG.md/.frob-release.json) -- `frob release check`
 classifies this ticket's catalog additions as a MAJOR public-API change
@@ -13958,8 +13958,8 @@ Gates:
 - `frob check --ticket T-0189`: 1 error remains --
   `REL001: public API changed (major) since 0.13.0; bump the version to
   >= 0.14.0 (currently 0.13.0), then run: frob release stamp`
-  (`pyproject.toml:0`) -- out of this ticket's declared scope, filed as
-  T-draft-46c43552 above rather than fixed silently here or waived
+  (`pyproject.toml:0`) -- out of this ticket's declared scope, not filed as
+  T-draft-46c43552 (never refiled) above rather than fixed silently here or waived
   without a real fix. All other gates pass (139 warnings, all
   pre-existing per `frob-arch`/`frob-dup`/`frob-exports` categories
   unrelated to this change; PRE001 cleared via `frob ticket sweep
@@ -14074,7 +14074,7 @@ gate in `_ALL_GATES`/`run_gates`, and already calling the real smart
 reading `src/frob/gates/__init__.py::dup_gate`/`_ALL_GATES`/`run_gates`
 directly, not from docs. `docs/modules/dup-sota-survey.md` section 0's
 "DUP001/DUP002 are pure rule functions but NOT wired" claim is therefore
-stale and should be corrected in a follow-up doc pass (filed as T-draft-56694d02
+stale and should be corrected in a follow-up doc pass (not filed as T-draft-56694d02 (never refiled)
 below) -- not fixed here since `dup-sota-survey.md` is not in this
 ticket's scope.
 
@@ -14162,7 +14162,7 @@ only the Python-side consumer was hardened, so any OTHER future caller of
 in T-draft-f9131f3e, not fixed at the kernel).
 
 New tickets filed:
-- T-draft-56694d02 (doc drift): `docs/modules/dup-sota-survey.md` section 0's
+- T-draft-56694d02 (never refiled) (doc drift): `docs/modules/dup-sota-survey.md` section 0's
   "DUP001/DUP002 ... NOT wired into frob.gates.__init__" claim is stale as
   of `a3eef8d8` (2026-07-17); correct it to describe the actual state
   (wired, opt-in, connection-pooled as of T-0191) so a future reader does
@@ -14217,7 +14217,7 @@ a dozen worktree agents minting draft ids concurrently on this machine
 today (per the concurrent `ps aux` processes observed while measuring gate
 wall time), a collision is well within reach of the birthday bound, and
 `mint_draft_id` does not check the existing ledger before returning an id.
-Recovered by hand here (renamed my ticket to `T-draft-56694d02`, restored
+Recovered by hand here (renamed my ticket to `T-draft-56694d02 (never refiled)`, restored
 the pre-existing ticket's original id, verified `grep '^id: ' tickets.md |
 sort | uniq -d` empty afterward) since `tickets.md` is in this ticket's
 scope and leaving a duplicate-id ledger would break tooling for every
@@ -14768,8 +14768,8 @@ characters, and `suggested_signature` never reuses a real identifier name
 even when both instances agree on one (the survey's "reuse the identifier
 when both instances agree" nicety) -- both need `frob.lang.TreeNode` to
 carry a source span/text, which it does not today, and `frob.lang/**` is
-outside this ticket's declared scope (`src/frob/dup/**`). Filed
-T-draft-73900a9e ("frob.lang.TreeNode: carry source span/text for
+outside this ticket's declared scope (`src/frob/dup/**`). Not Filed
+T-draft-73900a9e (never refiled) ("frob.lang.TreeNode: carry source span/text for
 reverse-templating literal source text", scope `src/frob/lang/**`); this
 is a provisional id minted off the default branch (worktree branch, not
 `main`) per `frob ticket new`'s off-default-branch behavior -- resolves to
@@ -14821,7 +14821,7 @@ bare PATH `ruff` binary. `ty check src/frob/dup/` clean.
 selection picked up all 5 new `test_dup_template.py` cases plus the three
 modified `.groups`-shape test files plus the existing DUP gate test.
 
-Filed: T-draft-73900a9e (see "Cut, filed as follow-up" above).
+Not Filed: T-draft-73900a9e (never refiled) (see "Cut, filed as follow-up" above).
 
 Not closing per the agent playbook (review-gated flow) -- ticket left
 `in-progress` (`frob ticket start` ran in this worktree's own checkout,
@@ -14931,7 +14931,7 @@ fold into "use" rather than "def" on every grammar, same pre-existing
 "which grammars get the real path at all" (survey items 7/8's core ask),
 not "how much of a real CFG is it once on the real path."
 
-Filed: T-draft-75a6070b (mints a real T-#### id once this worktree lands
+Not Filed: T-draft-75a6070b (never refiled) (mints a real T-#### id once this worktree lands
 on `main`), title "R5 real-CFG per-language coverage table missing from
 dup.md (T-0196 follow-up)", scope `docs/modules/dup.md`. The ticket's plan
 text says "Disclose per-language coverage honestly in dup.md," but
@@ -15596,7 +15596,7 @@ the graph/digest/dispatch/gate-run path (gates, graph, check, logging,
 `app/check_runner.py`) where the reported bug actually lived, confirmed by
 measurement (below) that the fix eliminates the complained-about chatter,
 but did not individually inspect the other 26 files under `src/frob/app/`
-or any directory outside T-0202's scope globs. Filed T-draft-39874401
+or any directory outside T-0202's scope globs. Not Filed T-draft-39874401 (never refiled)
 ("exhaustive log/print call-site classification across src/frob (T-0202
 follow-up)") for the remaining classification work; will get a real T-#### id
 once merged onto `main` (this worktree is off the default branch, so
@@ -15663,7 +15663,7 @@ Evidence:
   (all 4 collected via `uv run pytest ... --collect-only` and passed via
   `uv run pytest ...` from this worktree's own venv)
 
-Filed: T-draft-39874401 (exhaustive log/print classification follow-up,
+Not Filed: T-draft-39874401 (never refiled) (exhaustive log/print classification follow-up,
 see above).
 
 Gates: `frob check --ticket T-0202` clean of SCOPE001/COV001/TEST001 for
@@ -15974,11 +15974,11 @@ reason="..."`, self-match-excluded (T-0201 lesson), single-source registry
 with a per-entry drift-lock test.
 
 Explicitly NOT built this pass (disclosed per playbook section 8, not
-silently dropped -- follow-on tickets filed, provisional ids since this
+silently dropped -- follow-on tickets not filed, provisional ids since this
 worktree is off `main`, finalize on merge):
-- Family (2) DB/DDL schema scanning: T-draft-f40a7aa3
-- Family (4) non-regex email-shape value detection: T-draft-9a5902c6
-- Family (5) keyword-sweep suggestion severity: T-draft-8a648b62
+- Family (2) DB/DDL schema scanning: T-draft-f40a7aa3 (never refiled)
+- Family (4) non-regex email-shape value detection: T-draft-9a5902c6 (never refiled)
+- Family (5) keyword-sweep suggestion severity: T-draft-8a648b62 (never refiled)
 - Join to std.pii `carries` / std.secrets nodes (today: waiver-only
   discharge, not a `carries`/`std.secrets` join): T-draft-b9a7b1a1
 - TS/Rust field-shape and env-access equivalents: T-draft-95d12a64
@@ -16002,7 +16002,7 @@ including the 30-case `TestDriftLock` parametrization (one per
 `FIELD_SIGNATURES` entry), all 42 passing under
 `uv run pytest tests/test_pii_structural_gate.py -p no:cacheprovider -q`.
 
-Filed: T-draft-f40a7aa3, T-draft-9a5902c6, T-draft-8a648b62,
+Filed: T-draft-f40a7aa3 (never refiled), T-draft-9a5902c6 (never refiled), T-draft-8a648b62 (never refiled),
 T-draft-b9a7b1a1, T-draft-95d12a64 (all provisional -- off `main`).
 
 Gates: `uv run frob check --ticket T-0207` -- COV001/SCOPE001/PRE001 clean
@@ -16150,7 +16150,7 @@ Cuts / honest disclosure:
   `src/frob/vet/**` only, and the flags live in `app/vet_runner.py`,
   `app/config.py`, `__main__.py` (all outside scope). `scan_tree` and
   `_scan_dependencies` fully support both params at the library level;
-  filed T-draft-ebdd2606 ("wire frob vet --timeout/--jobs CLI flags to
+  not filed T-draft-ebdd2606 (never refiled) ("wire frob vet --timeout/--jobs CLI flags to
   scan_tree") for the CLI wiring, following the T-0110 `--containment`
   precedent for exactly this scope split. Progress logging (deliverable 2)
   needed no new flag -- it logs at INFO unconditionally, matching this
@@ -16177,7 +16177,7 @@ Gates: `frob check --stamp-baseline` then `frob check --delta --ticket
 T-0208` -> `gates 0/3 new  0 violation(s), 188 waived`; ruff-check,
 ruff-format, and ty all `pass` under both the project-pinned `.venv/bin/
 ruff`/`.venv/bin/ty` and the PATH `ruff`/`ty`.
-Filed: T-draft-ebdd2606 (CLI wiring for --timeout/--jobs, out of scope).
+Not Filed: T-draft-ebdd2606 (never refiled) (CLI wiring for --timeout/--jobs, out of scope).
 
 ## Review round 2 (REJECT -> addressed)
 
@@ -16338,13 +16338,13 @@ Changed:
 
 Fix: every needle hit in `_capability.py`'s substring scan (`scan_file_capabilities`/`scan_file_operations`/`scan_file_fingerprints`) is now checked against tree-sitter COMMENT node byte-spans for the same file (`frob.lang.raw_tree` + `frob.lang.COMMENT_TYPES`); a hit fully contained in a comment span is dropped. STRING literals are deliberately left unfiltered (documented in the module docstring's new T-0209 section): distinguishing a genuine string-embedded exec vector from pure prose needs per-registry-entry judgment this substring scanner does not have, and leaving strings alone keeps the locked self-scan false positive (`test_capability_module_self_scan_documented_false_positive`, which fires on `"cmdclass"`/`"os.environ"` inside this module's own docstring -- a string/comment-text node, not a `#`-comment node) unchanged. Comment-span filtering degrades to the pre-T-0209 unfiltered scan (empty span tuple) for any file `frob.lang` cannot parse or has no grammar for (e.g. `.js`/`.jsx`/`.mjs`/`.cjs`, which this module's own `typescript` bucket accepts but `frob.lang._EXTENSION_TABLE` does not).
 
-Dedupe investigation (pilot gap 12, "same site reported twice"): `_capability.py`'s own return shapes have no duplicate to dedupe in this ticket's scope -- `scan_file_capabilities` returns a bare `frozenset[str]` (no per-line entries, dedupe is structural), and `scan_file_operations`/`scan_file_fingerprints` each visit `DANGEROUS_OPERATIONS`/`CVE_FINGERPRINTS` once and append an entry at most once per file (verified no duplicate registry rows: 89 entries, 0 duplicate (language, capability_kind, function_or_pattern) triples). The duplicate-observation symptom traces to `src/frob/strata/_selfconform.py`'s SYS100 join instead (`_core_undeclared_violations` + `_extended_kind_violations` can each independently flag the same capability on the same node), which is outside this ticket's scope glob -- filed as a new ticket (T-draft-bd948483, will renumber on land) rather than silently expanded into.
+Dedupe investigation (pilot gap 12, "same site reported twice"): `_capability.py`'s own return shapes have no duplicate to dedupe in this ticket's scope -- `scan_file_capabilities` returns a bare `frozenset[str]` (no per-line entries, dedupe is structural), and `scan_file_operations`/`scan_file_fingerprints` each visit `DANGEROUS_OPERATIONS`/`CVE_FINGERPRINTS` once and append an entry at most once per file (verified no duplicate registry rows: 89 entries, 0 duplicate (language, capability_kind, function_or_pattern) triples). The duplicate-observation symptom traces to `src/frob/strata/_selfconform.py`'s SYS100 join instead (`_core_undeclared_violations` + `_extended_kind_violations` can each independently flag the same capability on the same node), which is outside this ticket's scope glob -- not filed as a new ticket (T-draft-bd948483 (never refiled), will renumber on land) rather than silently expanded into.
 
 Litmus verified manually: a `#`-comment-only file mentioning `requests.get` does NOT report `net`; the same needle in real code still reports `net`; a needle appearing in both a comment AND real code in the same file still reports (comment occurrence does not mask the real one).
 
 Evidence: tests/test_vet.py::TestCapabilityScan::test_comment_only_needle_does_not_fire, tests/test_vet.py::TestCapabilityScan::test_real_code_needle_still_fires_alongside_comment, tests/test_vet.py::TestCapabilityScan::test_string_literal_needle_still_fires, tests/test_vet.py::TestCapabilityScan::test_capability_module_self_scan_documented_false_positive, tests/test_vet.py::TestCapabilityScan::test_re_compile_alone_does_not_report_eval, tests/test_vet.py::TestCapabilityScan::test_bare_compile_call_still_reports_eval, tests/test_vet.py::TestCapabilityScan::test_genuine_eval_still_detected, tests/test_vet.py::TestCapabilityScan::test_scan_directory_capabilities_excludes_own_module (all 8 pass; full tests/test_vet.py + tests/test_capability_registry.py + tests/test_lang.py + tests/unit/strata/test_selfconform.py + tests/unit/strata/test_effects.py + tests/unit/strata/test_cve_fingerprint.py green)
 
-Filed: T-draft-bd948483 (SYS100 core+extended duplicate-observation dedupe, out of this ticket's scope)
+Not Filed: T-draft-bd948483 (never refiled) (SYS100 core+extended duplicate-observation dedupe, out of this ticket's scope)
 
 Gates: `frob check --delta --ticket T-0209 --json` reports 0/7 new violations (baseline stamped from a dirty working tree in this pass -- see note below); `frob test --base main` selects the touched-set (test_vet.py, test_capability_registry.py, test_lang.py, test_cli_vet.py hook test) and passes, exit=0. `ruff check`/`ty check` clean on all three changed files. NOTE: this worktree already carried unrelated uncommitted changes for another ticket (T-0231-shaped: src/frob/__main__.py, src/frob/app/sys_runner.py, src/frob/gates/__init__.py, tests/integration/test_interfaces.py, tests/system/test_cli_sys_plan.py, tests/test_gates.py, and a `state: in-progress` edit to T-0231 in tickets.md) present before this ticket's work began; none of those files were touched by this ticket and this Done report's commit stages only T-0209's own files plus this tickets.md entry.
 
@@ -16577,7 +16577,7 @@ DOC002 anchors in src/frob/strata/{_ast,_compliance,_deploy,_infra,_lint,
 _models,_pii}.py and src/frob/policy/_models.py are a direct mechanical
 consequence of this ticket's slugify rewrite and only resolvable with
 this branch's slugger present, so they land in the same motion instead of
-a separate follow-up ticket. The originally-filed T-draft-2327479e is
+a separate follow-up ticket. The originally-not filed T-draft-2327479e (never refiled) is
 folded into this ticket and dropped from the ledger (see Done report).
 
 ## Done report
@@ -16635,15 +16635,15 @@ Changed:
   API change); `.frob-release.json` re-stamped via `frob release stamp`
 
 Scope note: T-0212 was widened per coordinator directive after initial
-review -- the 46 anchors above were originally filed as a separate ticket
-(T-draft-2327479e) on the theory that they were outside T-0212's declared
+review -- the 46 anchors above were originally not filed as a separate ticket
+(T-draft-2327479e (never refiled)) on the theory that they were outside T-0212's declared
 scope. On review it was correctly identified that those 46 breaks are a
 direct, inseparable mechanical consequence of THIS branch's slugify
 rewrite (they only resolve, or fail to resolve, against this exact
 slugger), so landing them as a follow-up would leave main red between the
 two landings. T-0212's scope was widened to include the 8 affected files
 (src/frob/strata/_ast.py, _compliance.py, _deploy.py, _infra.py, _lint.py,
-_models.py, _pii.py, src/frob/policy/_models.py), T-draft-2327479e's
+_models.py, _pii.py, src/frob/policy/_models.py), T-draft-2327479e (never refiled)'s
 content was folded into this ticket and the draft entry was dropped
 entirely from tickets.md (it never had a landed T-#### id -- it was a
 provisional id minted off-default-branch and never merged, so there was
@@ -16685,10 +16685,10 @@ Evidence:
   99ec64c -> 289f2c6) and after the scope-widening fix
 - `git merge origin/main` -- fast-forward, no conflicts against source;
   the only conflict was in tickets.md itself (T-0261 vs the now-dropped
-  T-draft-2327479e block), resolved by keeping T-0261 intact and removing
+  T-draft-2327479e (never refiled) block), resolved by keeping T-0261 intact and removing
   the draft ticket entirely
 
-Filed: none (T-draft-2327479e folded into this ticket and removed from
+Not Filed: none (T-draft-2327479e (never refiled) folded into this ticket and removed from
 the ledger, per the coordinator's directive; no other out-of-scope work
 discovered)
 
@@ -19467,11 +19467,11 @@ Not done in this ticket (filed separately, both out of T-0240's declared
 scope which was tickets/gates/dup/tests/tickets.md only):
 - `app/ticket_runner.py`'s `_run_sweep`/`_xref_hits_for_scope` carry an
   identical copy of the same two bugs (T-0236 already flagged this call-site
-  duplication as follow-up debt) -- filed as T-draft-3efcb40e.
+  duplication as follow-up debt) -- not filed as T-draft-3efcb40e (never refiled).
 - The SIGINT-message, PRE001 catch-22-on-slow-mounts, and scope_digest
   content-keying items the ticket said to "also fold in" are separate
   design questions, not bugfixes, and were not attempted here -- filed as
-  T-draft-ae3416b9.
+  T-draft-ae3416b9 (never refiled).
 
 Evidence:
 - tests/test_gates.py::TestPreworkSweepBounds::test_sweep_ticket_honors_graph_excludes
@@ -19482,8 +19482,8 @@ Evidence:
   bare `ruff check` (PATH version): both clean
 - `uv run ty check src/frob/gates/_prework.py`: clean
 
-Filed: T-draft-3efcb40e (app/ticket_runner.py sibling bug),
-T-draft-ae3416b9 (SIGINT message / PRE001 catch-22 / scope_digest keying)
+Not Filed: T-draft-3efcb40e (never refiled) (app/ticket_runner.py sibling bug),
+T-draft-ae3416b9 (never refiled) (SIGINT message / PRE001 catch-22 / scope_digest keying)
 
 Gates: not run via `frob check --ticket T-0240` in this Done report --
 REL001 disclosed below.
@@ -20210,7 +20210,7 @@ Not done (filed instead, out of T-0248's declared scope --
 narrative -- distinguishing SYS004's own message text ("unknown construct,
 likely a grammar/native mismatch") -- requires editing `_sys004` in
 `src/frob/gates/__init__.py`, which T-0248's scope globs do not cover.
-Filed as T-draft-832a63a3 ("wire T-0248 stale-native detection into frob
+Filed as T-draft-832a63a3 (never refiled) ("wire T-0248 stale-native detection into frob
 check's SYS004 gate message").
 
 Evidence: 9 node ids (2 unit test classes) --
@@ -20224,7 +20224,7 @@ returns None when not); `tests/test_ticket_land.py::TestWarnIfNativeStale`
 `stale_native_warning` is monkeypatched stale, and logs nothing on an
 unrelated non-native change).
 
-Filed: T-draft-832a63a3 (SYS004 message wiring, out of this ticket's scope).
+Not Filed: T-draft-832a63a3 (never refiled) (SYS004 message wiring, out of this ticket's scope).
 
 Gates:
 - `uv run ruff check` on all changed/new files: clean.
@@ -20586,7 +20586,7 @@ Evidence:
   worktree's source -- the global binary now reflects this fix rather
   than whatever it was built from before.
 
-Filed: T-draft-2a3adb6d (finalizes to a real id on land) -- "bump version
+Not Filed: T-draft-2a3adb6d (never refiled) (finalizes to a real id on land) -- "bump version
 + frob release stamp for T-0253's is_self_pattern_path signature change".
 `frob check --ticket T-0253` flags REL001 (public API changed, major,
 since 0.2.0 -- the new optional `root` param still changes the recorded
@@ -20857,8 +20857,8 @@ Design notes / honest disclosures:
   declared scope. Per T-0174's deny-by-default waive discipline, both
   sub-targets UNCONDITIONALLY fire until explicitly waived
   (`waive "HOST001:shared-group" reason="..."` /
-  `waive "HOST002:sudoers" reason="..."`) or the grammar lands. Filed
-  T-draft-7b5b5541 (off-default-branch provisional id; the coordinator's
+  `waive "HOST002:sudoers" reason="..."`) or the grammar lands. Not Filed
+  T-draft-7b5b5541 (never refiled) (off-default-branch provisional id; the coordinator's
   ticket-numbering step will assign the permanent id on merge) for that
   grammar addition.
 - HOST001 pair findings attribute to the alphabetically-earlier user of
@@ -20905,7 +20905,7 @@ independently verified passing via
 tests/unit/strata/test_litmus_host_isolation.py -v -o addopts=""`
 (`19 passed`). Full repo `uv run pytest -q` also green.
 
-Filed: T-draft-7b5b5541 ("std.host: OS-group and sudoers-grant
+Not Filed: T-draft-7b5b5541 (never refiled) ("std.host: OS-group and sudoers-grant
 vocabulary" -- scope `strata-core/src/parse.rs`, `src/frob/strata/**`,
 `docs/strata/**`, `tests/**`).
 
@@ -21023,7 +21023,7 @@ resolved against a fresh `pytest --collect-only` pass (see the
 test_drift.py, 1 in test_export.py, 2 in test_effects.py, 1 real-CLI
 integration test in test_interfaces.py.
 
-Filed: T-draft-e20d836a (bug) -- design/frob.strata's self-model has no
+Not Filed: T-draft-e20d836a (never refiled) (bug) -- design/frob.strata's self-model has no
 `code`/`may` declaration covering the new src/frob/deploy/ tree, so
 `tests/unit/strata/test_selfconform.py::TestRealGateGreen::
 test_repo_design_and_declarations_are_self_conformant` now fails with
@@ -21345,8 +21345,8 @@ Changed:
   reproduces the source-side shape, vs. the cached `GraphSnapshot`'s
   edges for that same file, which come back reversed) -- a latent
   cache/dsl inconsistency in `frob` itself, NOT touched here (out of
-  `src/frob/gates/**`/`src/frob/graph/**` scope for this ticket). Filed
-  as T-draft-3f15bc51 below rather than fixed silently.
+  `src/frob/gates/**`/`src/frob/graph/**` scope for this ticket). Not Filed
+  as T-draft-3f15bc51 (never refiled) below rather than fixed silently.
 - `src/frob/app/deploy_runner.py`, `src/frob/app/config.py`,
   `src/frob/__main__.py`: CLI wiring for `frob deploy audit --vm <name>
   --ssh-host H --ssh-key KEY [--ssh-user U] [--base-snapshot NAME]
@@ -21376,7 +21376,7 @@ Changed:
 - `uv.lock`: one-line `frob` version bump (0.7.0 -> 0.8.0) tracking the
   `pyproject.toml` bump, from `frob release stamp`'s reinstall.
 
-Filed: T-draft-3f15bc51 (new, bug) -- `frob.graph.dsl`/`frob.gates._test_edges`
+Not Filed: T-draft-3f15bc51 (never refiled) (new, bug) -- `frob.graph.dsl`/`frob.gates._test_edges`
 `frob:tests` src/target direction disagreement for freshly-parsed files
 vs. stale `.frob/cache.db` entries (found while doing the pre-work sweep
 and debugging TEST001 false-positives on this ticket's own new code;
@@ -21635,12 +21635,12 @@ expansion. That is a change to the SHARED kernel primitive every
 into this ticket's vocabulary work would be exactly the kind of
 undisclosed scope creep the playbook warns against, and the blast radius
 (every existing claim, `test_kernel_properties.py`'s hypothesis oracle)
-is too wide to responsibly land inside a std.krb ticket. Filed
-`T-draft-f9f9fe96` (renumbered on land; parent T-0254, scope
+is too wide to responsibly land inside a std.krb ticket. Not Filed
+`T-draft-f9f9fe96 (never refiled)` (renumbered on land; parent T-0254, scope
 `strata-core/src/lib.rs` + `_facts.py` + `_krb.py` + `tests/**` +
 `docs/strata/**`) for the real fix. Went honest per the reviewer's own
 fallback instruction: `docs/strata/krb.md` gained a `### Known gap:
-transitive is recorded, not yet enforced (T-draft-f9f9fe96)` subsection
+transitive is recorded, not yet enforced (T-draft-f9f9fe96 (never refiled))` subsection
 under Domain trust lattice, spelling out the exact bug and telling
 T-0263/T-0264 readers to treat every trust as transitive until it closes;
 the elaboration-table prose no longer claims "multi-hop reachability
@@ -21651,7 +21651,7 @@ BOTH of the reviewer's exact regression scenarios: the all-transitive
 chain (correct behavior, `reach(a,c) is True`) and the all-non-transitive
 chain, which is an explicit KNOWN-GAP TRIP-WIRE -- it currently asserts
 the BUGGY `reach(a,c) is True` with a docstring/comment saying this
-assertion must flip to `is False` when T-draft-f9f9fe96 lands, not be
+assertion must flip to `is False` when T-draft-f9f9fe96 (never refiled) lands, not be
 silently deleted.
 
 **Issue 2 (dangling SPN): FIXED in this ticket.** Added
@@ -21684,7 +21684,7 @@ Round-2 gates:
   flaky `test_locate_pypi_source_missing_returns_none`): all green.
 - `git diff main --diff-filter=D --stat`: empty.
 
-Filed this round: `T-draft-f9f9fe96` (kernel-level terminal-edge support
+Not Filed this round: `T-draft-f9f9fe96 (never refiled)` (kernel-level terminal-edge support
 for non-transitive flow chains, parent T-0254) -- the honest fix for
 issue 1, out of T-0262's scope.
 
@@ -21830,7 +21830,7 @@ Evidence:
 - tests/unit/strata/test_litmus_krb_movement.py::TestKrbMovementVulnLitmus::test_vuln_model_fires_all_four_rules
 - tests/unit/strata/test_litmus_krb_movement.py::TestKrbMovementHardenedLitmus::test_hardened_model_discharges
 
-Filed: T-draft-30d66138 (release: bump version + CHANGELOG entry for
+Not Filed: T-draft-30d66138 (never refiled) (release: bump version + CHANGELOG entry for
 T-0263's new public API -- REL001 gate fires but T-0263's own scope
 glob excludes pyproject.toml/CHANGELOG.md/.frob-release.json, so the
 bump is filed as separate release-management follow-on rather than
@@ -21850,7 +21850,7 @@ boundary disclosed this ticket before it existed):
 
 Gates: `uv run frob check` -- 2 errors remain, both pre-existing/
 out-of-scope, not introduced by this change: REL001 (version bump,
-filed T-draft-30d66138 above, files out of scope) and TEST006 (no
+not filed T-draft-30d66138 (never refiled) above, files out of scope) and TEST006 (no
 coverage stamp in this fresh worktree -- `make coverage` was not run;
 per the worktree-natives-artifact precedent this is an environment
 gap in a fresh worktree, not a regression from this ticket's diff).
@@ -24366,13 +24366,13 @@ ticket's scope), overall `frob check . [WARN] 0 errors 360 warnings`, exit
 code 0 -- the 360 warnings are pre-existing repo-wide frob-arch/malformed-
 directive notices, none newly introduced by this change.
 
-Filed: none -- no out-of-scope issues found; all four findings resolved
+Not Filed: none -- no out-of-scope issues found; all four findings resolved
 by waiver within the ticket's declared scope.
 
 Gates: `uv run frob check --only perf` clean (0 unwaived PERF violations,
 4/4 target findings waived with specific per-finding reasons). `uv run
-frob check --ticket T-draft-349ca4cb` PRE001 cleared via `frob ticket
-sweep T-draft-349ca4cb` after the code edits. Deletion filter (`git diff
+frob check --ticket T-draft-349ca4cb (never refiled)` PRE001 cleared via `frob ticket
+sweep T-draft-349ca4cb (never refiled)` after the code edits. Deletion filter (`git diff
 main --diff-filter=D --stat`) is empty -- no files deleted.
 
 <!-- ticket:T-0284 -->
@@ -24881,7 +24881,7 @@ Cross-language honesty (per the ticket's own text): rust/c/cpp place a
 type node as a direct, unwrapped sibling distinguished only by
 tree-sitter FIELD NAME, which `frob.lang.TreeNode` does not carry today
 (label + children + span only) -- extending it is a `frob.lang` change,
-out of this ticket's declared scope. Filed T-draft-f67069a7 for that
+out of this ticket's declared scope. Not Filed T-draft-f67069a7 (never refiled) for that
 follow-up rather than silently leaving it undocumented; a rust/c/cpp
 type-position hole still behaves as an ordinary value hole today (no
 regression, just not yet classified).
@@ -25619,7 +25619,7 @@ Side effect filed as a new ticket, not fixed in scope here: fixing Class 3's
 prose for `fuzz/_run.py:30` and `fuzz/_arbitrary.py:41` turned their
 `frob:todo T-0002` directives from malformed (invisible to TODO001) into
 valid edges -- and T-0002 is `dropped`, so TODO001 correctly started firing
-("not bound to an open ticket"). Filed T-draft-9b07cab7 ("Rebind frob.fuzz
+("not bound to an open ticket"). Filed T-draft-9b07cab7 (never refiled) ("Rebind frob.fuzz
 deferred-work TODOs off dropped T-0002") and rebound both directives to it
 (off-default-branch worktree mints provisional ids; this id will resolve to
 a real T-#### once landed against main) rather than silently reopening
@@ -25633,7 +25633,7 @@ Evidence (node-level, recorded via `frob ticket evidence T-0294`):
 - tests/test_dup_rungs.py::TestR6Probing::test_fires_on_equivalent_functions_with_renamed_multi_arg_params
 - tests/test_gates.py::TestCoverageLoad::test_parses_line_to_symbol_span
 
-Filed: T-draft-9b07cab7 (frob.fuzz TODO rebind, see above; will mint a real
+Not Filed: T-draft-9b07cab7 (never refiled) (frob.fuzz TODO rebind, see above; will mint a real
 T-#### id once this worktree lands against main).
 
 Gates: after `make coverage` re-stamp, `uv run frob check` reports 0
@@ -26054,7 +26054,7 @@ violations after the review-round fixes (stale ledger churn undone via a
 fresh `git merge main`; `COV005` added to `_KNOWN_GATE_RULES`; docs
 corrected to describe the hunk-overlap firing condition).
 
-Filed: T-draft-e6aafc2f -- candidates (b) (`frob:tests` evidence with no
+Not Filed: T-draft-e6aafc2f (never refiled) -- candidates (b) (`frob:tests` evidence with no
 call-graph reachability to the bound symbol) and (c) (`frob:doc
 #public-api` anchor on a private helper), both out of scope for this pass.
 
@@ -28445,7 +28445,7 @@ T-0195's reverse-templating report (frob.dup._template.build_group_template) ren
 ## Done report
 Added `TreeNode.span: tuple[int, int]` (byte offsets, default `(0, 0)` so any other construction site stays valid) to `frob.lang.TreeNode` (src/frob/lang/_models.py), with the docstring updated to describe the field and its consumer. Threaded real `(node.start_byte, node.end_byte)` values through `frob.lang._common.export_tree`'s three `TreeNode(...)` construction sites (the budget-exhausted branch, the internal-node branch, and `_leaf_tree_node`'s two branches) -- src/frob/lang/_common.py is the only other file touched, and `frob.lang.symbol_tree` (src/frob/lang/__init__.py) needed no change since it already delegates to `_export_tree`/`export_tree` unmodified. Only actual construction sites of `TreeNode` in the repo are these; no other in-scope or out-of-scope call site needed updating.
 
-Consuming `span` in `frob.dup._template` to render literal source text (the ticket's stated motivation) is genuinely outside this ticket's `src/frob/lang/**` scope -- filed as a follow-up: T-draft-aa52c66f (provisional id, worktree is off `main`; will get a real T-#### on land) "frob.dup._template: consume TreeNode.span for literal source-text rendering", scope `src/frob/dup/_template.py,src/frob/dup/_pipeline.py,tests/**,docs/modules/dup.md,tickets.md`. That ticket also carries the docs/modules/dup.md update (the paragraph noting TreeNode "does not carry source spans/text today" is now stale but is out of this ticket's scope to edit).
+Consuming `span` in `frob.dup._template` to render literal source text (the ticket's stated motivation) is genuinely outside this ticket's `src/frob/lang/**` scope -- not filed as a follow-up: T-draft-aa52c66f (never refiled) (provisional id, worktree is off `main`; will get a real T-#### on land) "frob.dup._template: consume TreeNode.span for literal source-text rendering", scope `src/frob/dup/_template.py,src/frob/dup/_pipeline.py,tests/**,docs/modules/dup.md,tickets.md`. That ticket also carries the docs/modules/dup.md update (the paragraph noting TreeNode "does not carry source spans/text today" is now stale but is out of this ticket's scope to edit).
 
 Changed:
 - src/frob/lang/_models.py::TreeNode
@@ -28458,18 +28458,18 @@ Evidence (pre-existing tests, still collect and pass unmodified against the new 
 - `uv run pytest tests/unit/test_lang_primitives.py tests/unit/test_lang_strata.py -q` -> 39 passed
 - `uv run pytest tests/unit -k "dup or lang" -q` -> 132 passed, 2 skipped (broader lang/dup regression sweep, unaffected)
 
-Filed: T-draft-aa52c66f (dup._template span consumption, see above)
+Not Filed: T-draft-aa52c66f (never refiled) (dup._template span consumption, see above)
 
 Gates: `uv run frob check --ticket T-0327 --json` -- ruff-check/ruff-format/ty/frob-cycle/frob-dup/frob-arch/frob-exports(*) all exit 0; `gates` tool's only error-severity diagnostics are SCOPE001 on tickets.md and PRE001 on tickets/T-0327, both pre-close-report artifacts (tickets.md is always in-scope per the playbook; PRE001 clears once this Done report is committed) -- no error-severity diagnostic against any src/frob/lang file.
 
 ## Reviewer round-2 fixes (2026-07-20)
 Reviewer REJECTED round 1 on two points, both fixed in this same worktree (no stash):
-1. `TreeNode`'s docstring falsely claimed `frob.dup._template` already consumes `span` in present tense. Reworded to state `span` EXISTS so that consumer CAN be built later (the consumption itself is T-draft-aa52c66f, not done here) -- `span` is populated but unread outside `frob.lang` today. Doc and code now agree.
+1. `TreeNode`'s docstring falsely claimed `frob.dup._template` already consumes `span` in present tense. Reworded to state `span` EXISTS so that consumer CAN be built later (the consumption itself is T-draft-aa52c66f (never refiled), not done here) -- `span` is populated but unread outside `frob.lang` today. Doc and code now agree.
 2. Neither cited evidence test actually asserted the new field. Extended both: `test_export_tree_and_flatten_tree_round_trip` now asserts `node.span == (fn.start_byte, fn.end_byte)`, `start < end`, `src[start:end] == fn.text`, a literal-text prefix match, and that every child's span nests inside its parent's and is itself well-formed (`c_start < c_end`); `test_symbol_tree_covers_span` now asserts `start < end` and that slicing the raw source bytes by `node.span` reproduces the function's exact literal text (`def greet(name):\n    """Say hi."""\n    return name`). Both re-recorded as evidence via `frob ticket evidence T-0327` (same two node ids, now genuinely covering the field).
 
 Widened `scope` to add `tests/unit/test_lang_primitives.py` and `tickets.md` (both needed to carry the strengthened evidence + this report) -- re-ran `frob ticket sweep T-0327` after widening, per the T-0343 precedent for widening a ticket's own scope mid-flight.
 
-Verified: `uv run frob check --delta --ticket T-0327` (no baseline stamped in this worktree, so `--delta` degrades to the full report per its own documented behavior) -- 0 errors touching `src/frob/lang/**` or the new test file; the only error-severity findings anywhere are `ty` missing-argument in `tests/unit/strata/test_threat.py:914` and `gates` DRIFT002/REL001, all three pre-existing and unrelated (confirmed via `git log` on those files: last touched by commit 3418fdb, not by this ticket). `uv run pytest tests/unit/test_lang_primitives.py -q` -> 18 passed, 0 failed. `uv run ruff format --check` clean on all three changed files. `git diff <merge-base> -- tickets.md` shows exactly two hunks: T-0327's own block (scope/evidence/Done-report edits) and the appended T-draft-aa52c66f follow-up ticket -- no other ticket's state was reverted or altered. `git diff main --diff-filter=D --stat` remains empty.
+Verified: `uv run frob check --delta --ticket T-0327` (no baseline stamped in this worktree, so `--delta` degrades to the full report per its own documented behavior) -- 0 errors touching `src/frob/lang/**` or the new test file; the only error-severity findings anywhere are `ty` missing-argument in `tests/unit/strata/test_threat.py:914` and `gates` DRIFT002/REL001, all three pre-existing and unrelated (confirmed via `git log` on those files: last touched by commit 3418fdb, not by this ticket). `uv run pytest tests/unit/test_lang_primitives.py -q` -> 18 passed, 0 failed. `uv run ruff format --check` clean on all three changed files. `git diff <merge-base> -- tickets.md` shows exactly two hunks: T-0327's own block (scope/evidence/Done-report edits) and the appended T-draft-aa52c66f (never refiled) follow-up ticket -- no other ticket's state was reverted or altered. `git diff main --diff-filter=D --stat` remains empty.
 
 <!-- ticket:T-0328 -->
 ```yaml
@@ -30141,7 +30141,7 @@ Caveats:
   forward. Flagging this so a future agent does not trust an untimely
   `--stamp-baseline` result blindly.
 
-Filed: T-draft-c1e0af4c (pre-existing ruff E501 in
+Not Filed: T-draft-c1e0af4c (never refiled) (pre-existing ruff E501 in
 src/frob/strata/_scenarios.py:518, introduced by an already-merged
 KRB001-004 landing on main, unrelated to this ticket's touched set --
 out of scope, not fixed here).
@@ -30445,7 +30445,7 @@ PRE001 only ever compares against a fully-completed digest -- there is
 no partial-sweep-ok state today. Forcing a partial implementation here
 risked either a correctness hole (a provisional-pass state that lets
 PRE001 go green on incomplete data) or silently deciding the product
-design question myself. Filed as a new ticket instead: T-draft-ac820c46
+design question myself. Not Filed as a new ticket instead: T-draft-ac820c46 (never refiled)
 (off-default-branch provisional id; will mint a real T-#### id on
 merge to main).
 
@@ -31221,7 +31221,7 @@ since `frob-exports` has no formal waiver mechanism to attach to):
   `_profile.py`'s `_harness_argv`), never imported by any package.
   Rationale recorded as a comment in `frob/perf/__init__.py`.
 
-LEFT UN-EXPORTED, DEFERRED TO T-draft-b427fa47 (74 symbols -- true
+LEFT UN-EXPORTED, DEFERRED TO T-draft-b427fa47 (never refiled) (74 symbols -- true
 package-internal implementation helpers: 0-1 intra-package consumer
 files, never imported outside their own package, module already
 underscore-prefixed): `dup._core.*` (7), `dup._cache.close_all`,
@@ -31248,8 +31248,8 @@ imported directly by name in one or more `tests/*.py` files (e.g.
 `from frob.vet._typosquat import find_typosquat`) -- confirmed with a
 per-symbol grep over `tests/`. This ticket's scope is
 `src/frob/**/__init__.py` + `src/frob/**`; `tests/` is out of scope, and
-renaming without updating those test imports would break the suite. Filed
-as T-draft-b427fa47 (parent T-0204) with the exact symbol list and plan
+renaming without updating those test imports would break the suite. Not Filed
+as T-draft-b427fa47 (never refiled) (parent T-0204) with the exact symbol list and plan
 (rename + update sole intra-package caller + update the matching test
 import) rather than silently leaving the cut undocumented.
 
@@ -31315,10 +31315,10 @@ Evidence:
   fix itself: it is a private helper inside a `check` tool
   (`src/frob/check/_python.py`), and adding a regression test would
   require touching `tests/`, which is out of this ticket's declared
-  scope. Deferred to T-draft-b427fa47 alongside the true-demotion work
+  scope. Deferred to T-draft-b427fa47 (never refiled) alongside the true-demotion work
   (which also needs `tests/` access) rather than silently expanding scope.
 
-Filed: T-draft-b427fa47 (parent T-0204) -- demote the 74 true-internal
+Not Filed: T-draft-b427fa47 (never refiled) (parent T-0204) -- demote the 74 true-internal
 symbols left un-exported above; needs both `src/frob/**` and `tests/**`
 scope since every one has a direct `tests/` import of the current name.
 
@@ -31332,7 +31332,7 @@ Post-merge update: `main` moved forward mid-ticket (T-0359/T-0363
 landed concurrently, 12 commits, `git diff main --diff-filter=D` caught a
 842-line test file main had that my pre-merge HEAD didn't); merged main
 in, resolved the `tickets.md` ledger conflict per the splice rule (kept
-both appended ticket sections, T-draft-b427fa47 and main's T-0366/T-0367/
+both appended ticket sections, T-draft-b427fa47 (never refiled) and main's T-0366/T-0367/
 T-0368, un-interleaving them), re-verified `git diff main --diff-filter=D`
 is now empty, re-ran the full targeted test list plus
 `tests/unit/test_app_runners_batch5.py` -- all pass. The merge surfaced
@@ -31501,11 +31501,11 @@ unchanged.)
    pattern too), NOT just a documented false pair: `_baseline.py`'s
    docstring justifies keeping the two STAMPS (coverage, baseline)
    conceptually separate, but that reasoning doesn't cover the literal
-   copy-pasted 15-line walk+hash body. Filed
-   **T-draft-9bda8d62** (parent T-0187) rather than fixing inline --
+   copy-pasted 15-line walk+hash body. Not Filed
+   **T-draft-9bda8d62 (never refiled)** (parent T-0187) rather than fixing inline --
    `gates/__init__.py` and its stamp modules are wide, high-traffic
    surface, and moving shared code needs a careful look at both stamps'
-   call sites first. Marked both sites with `frob:ticket T-draft-9bda8d62`.
+   call sites first. Marked both sites with `frob:ticket T-draft-9bda8d62 (never refiled)`.
 
 ### (c) Reason-waived (`frob:waive DUP001`)
 
@@ -31590,7 +31590,7 @@ this pass's numbering -- re-verify by symbol name, not number, since
 numbering is not stable across runs), and triage the rest with the same
 (a)/(b) rubric.
 
-Filed: T-draft-9bda8d62 (parent T-0187) -- see (b) above.
+Not Filed: T-draft-9bda8d62 (never refiled) (parent T-0187) -- see (b) above.
 
 Gates: `frob check --only clones` clean (0 malformed directives, 0
 errors, 0 warnings); `frob check` full pass with only pre-existing
@@ -31797,7 +31797,7 @@ coverage stamp found" variant, not a per-file staleness variant):
   not a per-file staleness bug, not a coverage.xml exclusion issue, and
   not a native-module gap.
 
-Filed: T-draft-40bc61f0 ("TEST001: collect_file_dispatch_refs missing
+Filed: T-draft-40bc61f0 (never refiled) ("TEST001: collect_file_dispatch_refs missing
 unit test binding") -- found while measuring `frob check --only test`
 before/after; a pre-existing, unrelated TEST001 error introduced by
 T-0360 (`fix(arch): make dispatch-family linking structural, not
@@ -31819,7 +31819,7 @@ stamp" structural condition described above; TEST009 is 0).
 Gates: `uv run frob check --ticket T-0365` -- gates scoped to this
 ticket's touched file pass (TEST009 resolved); `uv run frob check`
 (repo-wide) still reports the pre-existing TEST006 warning above and 4
-unrelated errors (including the newly-filed T-draft-40bc61f0 TEST001
+unrelated errors (including the newly-not filed T-draft-40bc61f0 (never refiled) TEST001
 gap), none introduced by this change. No waiver added; none applicable
 per the reasoning above.
 
@@ -31858,6 +31858,8 @@ This is a genuine false-positive of the indentation-blind PERF004 heuristic
 (the systematic detector fix is tracked in T-0367). Verified: `uv run frob
 check --only perf` now reports 0 unwaived PERF004. This was the last
 non-waived warning in the blocking `gates` stage.
+
+<!-- ticket:T-0367 -->
 ```yaml
 id: T-0367
 title: PERF004 detector false-positives on post-loop sorts (indentation-blind heuristic)
@@ -33642,8 +33644,8 @@ dynamic dispatch) or light dataflow to resolve simple string-valued local
 subscript keys -- a real design decision, not a mechanical extension of
 the existing exact-match resolver. Documented in the module's "Known
 limitations" block (`src/frob/vet/_capability.py`, T-0377 REVIEWER ROUND 2
-section) and locked by `test_computed_subscript_not_detected`. Filed as
-follow-up ticket T-draft-e7c8b53c (this worktree is off the default
+section) and locked by `test_computed_subscript_not_detected`. Not Filed as
+follow-up ticket T-draft-e7c8b53c (never refiled) (this worktree is off the default
 branch, so `frob ticket new` minted a provisional id rather than a
 sequential T-#### -- the coordinator/land step will renumber it to a real
 id when merged to `main`, per the tool's own off-default-branch
@@ -33689,7 +33691,7 @@ stash`; section 9: deletion-filter check), the round-2 changes were
 committed first (commit `1f8bb7d`), THEN `git merge main` was run --
 producing one real conflict in `tickets.md` (two independently-appended
 ticket sections landing in the same place), resolved by keeping BOTH
-sides in full (this ticket's new `T-draft-e7c8b53c` ticket ahead of
+sides in full (this ticket's new `T-draft-e7c8b53c (never refiled)` ticket ahead of
 main's `T-0418`..`T-0426`, per the ledger-splice rule: append-both, never
 drop a side). `git diff main --diff-filter=D --stat` is empty after the
 merge (no unintended deletions); `make core` was re-run (pyproject.toml/
@@ -34072,7 +34074,7 @@ export the 2 new public symbols, currently only a WARN-tier
 export gap is left as a WARN, not silently fixed by editing a file I don't
 own.
 
-Out-of-scope discovery filed as a new ticket (draft id `T-draft-cf67e0c9`,
+Out-of-scope discovery not filed as a new ticket (draft id `T-draft-cf67e0c9 (never refiled)`,
 finalizes at land): neither `known_rule_ids` param (THREAT006's nor the new
 COMPLIANCE004's) is ever populated with the REAL live gate-rule-id set in
 production -- `frob.gates` has no `known_gate_rule_ids()` accessor despite
@@ -34569,7 +34571,7 @@ Also found and filed (out of scope, not fixed here): the CLI's
 `frob ticket evidence <id>` rejects a dot-form `Class.method` evidence id
 with a misleading EvidenceNotPassing even when the test passes --
 `_apply_evidence` passes raw un-normalized ids into `_verify_ids_passing`,
-which only matches pytest's native `::` form. Filed as T-draft-2d6b3e5d
+which only matches pytest's native `::` form. Not Filed as T-draft-2d6b3e5d (never refiled)
 (scope src/frob/app/ticket_runner.py). Worked around here by recording
 this ticket's own evidence in `::` form.
 
@@ -34786,11 +34788,11 @@ config (COV001 promoted to error), though the underlying gate-code default sever
 WARN by design for repos without that override -- not a code bug here. The remaining findings
 (1, 2, 4, 6, 7, 8, 9) are real but each needs a cross-cutting design change (dispatch
 architecture, a new PARSE001 gate, doc-walk unification) too large for this ticket's budget, or
-sit outside T-0404's declared scope (graph/) -- filed as follow-ups, each carrying the finding
+sit outside T-0404's declared scope (graph/) -- not filed as follow-ups, each carrying the finding
 text, repro, and RIGHT-WAY fix direction.
 
 Disposition table:
-- #1  (HIGH)   doc/coverage/drift/inv gates run ONLY in the Python pipeline -- FOLLOW-UP (too large): T-draft-8a073c15
+- #1  (HIGH)   doc/coverage/drift/inv gates run ONLY in the Python pipeline -- FOLLOW-UP (too large): T-draft-8a073c15 (never refiled)
 - #2  (HIGH)   parse/IO failure silently erases a file's obligation set    -- FOLLOW-UP (out of T-0404 scope, graph/): T-draft-ed8f5ca3
 - #3  (HIGH/MEDIUM) COV001 is WARN-only                                    -- VERIFIED already-fixed-by config for this repo:
               frob.toml [gates.severity] COV001 = "error" (the run this
@@ -34941,7 +34943,7 @@ since a sibling agent owns that file's own-module content).
 frob's own registry is clean today: python is fully implemented across all
 five facets; typescript/rust have KNOWN_GAP arch cells (T-0329, the queued
 multi-language-arch epic); c has KNOWN_GAP arch + docblock cells; cpp has a
-KNOWN_GAP docblock cell (T-draft-19b78a87, filed this session for the DOC004
+KNOWN_GAP docblock cell (T-draft-19b78a87 (never refiled), filed this session for the DOC004
 c/cpp bucket gap the T-0405 survey found); strata's capability/dup/arch/
 docblock cells are reasoned NOT_APPLICABLE (design DSL, not general-purpose
 source).
@@ -34955,7 +34957,7 @@ unreasoned (blank-detail) KNOWN_GAP fails the same as a missing cell.
 Cuts: did not add a Kotlin/Swift/Go grammar (out of scope -- the contract
 is the deliverable, not a new language). Did not fix the two real gaps the
 survey found (frob.arch's ts/rust/c dispatch, DOC004's c/cpp bucket) --
-filed T-draft-19b78a87 for the DOC004 gap; the arch gap already had an
+not filed T-draft-19b78a87 (never refiled) for the DOC004 gap; the arch gap already had an
 open ticket (T-0329). REL001 required a version bump 0.66.0 -> 0.67.0
 (new public API); frob release stamp run, pyproject.toml/.frob-release.json/
 uv.lock scope-widened onto T-0405 with a recorded scope_changes reason.
@@ -35736,13 +35738,13 @@ them (measured in the original audit: 1298 `.hypothesis/constants` + 44
 
 `docs/audits/perf.md` updated with a dated 2026-07-21 re-measurement
 section: H1/H2 marked RESOLVED (T-0423), the new coverage_gate finding and
-fix documented, M6 marked landed, and two structural follow-ups filed
+fix documented, M6 marked landed, and two structural follow-ups not filed
 rather than solved in this ticket:
-- T-draft-9f90cc43: H3 (thread pool vs process pool for CPU-bound gates) --
+- T-draft-9f90cc43 (never refiled): H3 (thread pool vs process pool for CPU-bound gates) --
   lower urgency now that the two original giants are gone, but the
   architecture gap is unchanged and will resurface with any new heavy
   thread-pooled gate.
-- T-draft-bafbce1c: re-verify H4's other cited multipliers (vet's
+- T-draft-bafbce1c (never refiled): re-verify H4's other cited multipliers (vet's
   `raw_tree`-based capability scan bypasses the new `parse_file` memo
   entirely; H5's selfconform double-scan) and profile the new `refs` stage
   dominator (~8-11s, never profiled by the original audit) -- explicitly
@@ -36116,8 +36118,8 @@ this ticket's title and primary DESIGN section actually describe. Given
 context budget, I implemented the mechanism whose title and DESIGN section
 this ticket names (frob:debt vs frob:waive, expiry, release-blocking,
 listing) fully and honestly, and am disclosing the DEBT<->TODO coherence
-clause as NOT done rather than half-implementing it. Filed as a named
-follow-up: T-draft-b1002293 (mints a real T-#### id once this worktree
+clause as NOT done rather than half-implementing it. Not Filed as a named
+follow-up: T-draft-b1002293 (never refiled) (mints a real T-#### id once this worktree
 lands on main) "frob:debt/frob:todo coherence: paired todo, same-ticket
 check, symmetric resolution", scoped to src/frob/graph/dsl.py (scope --add
 for src/frob/gates/__init__.py was refused: T-0412 itself holds an
@@ -37259,7 +37261,7 @@ structurally). Given this, mass-waiving the 51 findings now would be
 dishonest (most are provably NOT dead per the manual grep) and fixing
 the underlying gap (extending frob.lang's extraction contract with a
 module-scope token bucket, or adding decorator info to RawSymbol) is a
-real, separate, cross-cutting piece of work. Filed T-draft-09c8e260
+real, separate, cross-cutting piece of work. Not Filed T-draft-09c8e260 (never refiled)
 ("DEAD001 burndown: triage 51 findings...") with the exact count and
 both identified false-positive classes, per this ticket's own
 "file ONE burndown follow-up with exact counts if large" instruction.
@@ -37433,8 +37435,8 @@ this ticket's declared `scope` globs (`src/frob/dup/` is not listed) and
 was under active concurrent rework (a sibling agent editing
 `src/frob/dup/_template.py`) for the duration of this session -- touching
 it would have both exceeded scope and risked a merge collision on a file
-mid-rework elsewhere. Filed as a follow-up:
-`T-draft-5a44ea39` ("extend T-0423 run-scoped memoization to
+mid-rework elsewhere. Not Filed as a follow-up:
+`T-draft-5a44ea39 (never refiled)` ("extend T-0423 run-scoped memoization to
 frob.dup.find_duplicates", parent T-0423, scope `src/frob/dup/`) --
 provisional id because this worktree is off the default branch; the
 reviewer/coordinator should re-mint a real `T-####` id on land.
@@ -37488,7 +37490,7 @@ incremental-rebuild tests, which call `build_graph` twice per test
 outside any `run_memo_scope`, are unaffected by the decorator -- the
 correctness boundary this design exists for).
 
-Filed: T-draft-5a44ea39 (find_duplicates follow-up, parent T-0423; real
+Not Filed: T-draft-5a44ea39 (never refiled) (find_duplicates follow-up, parent T-0423; real
 id to be re-minted on land since this worktree is off `main`).
 
 Gates: `uv run frob check` clean -- 0 errors, 1 warning, 91 waived (same
@@ -37596,7 +37598,7 @@ auto-appends new `concern_family_entries` rows is a real scheduling/
 automation feature (a cron-like driver plus an auditor-output-to-YAML
 writer), a materially different and larger unit of work than the registry
 model itself, and doing it properly needs its own ticket rather than a
-rushed bolt-on here. Filed: T-draft-6060f333 (new ticket, scope
+rushed bolt-on here. Not Filed: T-draft-6060f333 (never refiled) (new ticket, scope
 docs/design/registry/+src/frob/, "schedule the pessimistic-auditor loop
 to auto-file new concern_family_entries rows in check-coverage.yaml").
 
@@ -37712,9 +37714,9 @@ evidence node id no longer collects
 test_nested_git_checkout_pruned_even_when_not_covered_by_exclude_globs`) --
 confirmed out of T-0425's scope (src/frob/gates/, frob.toml,
 docs/modules/gates.md, tests/test_gates.py) and pre-dates this change;
-filed as T-draft-5443bd5e rather than fixed here.
+not filed as T-draft-5443bd5e (never refiled) rather than fixed here.
 
-Filed: T-draft-5443bd5e (T-0416 evidence no longer collects, COV003) --
+Not Filed: T-draft-5443bd5e (never refiled) (T-0416 evidence no longer collects, COV003) --
 out-of-scope discovery, not fixed in this ticket.
 
 ### Changed
@@ -39289,8 +39291,8 @@ control-flow desugar -- `elif` (real syntactic sugar for `else: if`)
 expands to `["else", ":", "if"]` before folding. Commutative-operand
 reordering and real for/while loop-shape desugaring still need AST
 structure, not a token fold, and are NOT implemented -- documented in both
-the Rust docstrings and `_pipeline.py`'s deviations note, and filed as
-follow-up work (T-draft-82caf099).
+the Rust docstrings and `_pipeline.py`'s deviations note, and not filed as
+follow-up work (T-draft-82caf099 (never refiled)).
 
 Fixture matrix (tests/test_dup.py, real `find_clones` pipeline, no
 hand-built symbol records):
@@ -39311,7 +39313,7 @@ hand-built symbol records):
   `let`/assignment statement -- a separate, real gap
   (`frob.dup._pipeline._KEYWORDS` is python-centric, so Rust's `let`
   keyword is misread as an identifier and mis-labeled "def", diverging
-  the graphs) is out of scope and filed as T-draft-82caf099 rather than
+  the graphs) is out of scope and not filed as T-draft-82caf099 (never refiled) rather than
   fixed here.
 
 Test results:
@@ -39329,7 +39331,7 @@ Test results:
 - `uv run pytest tests/test_dup.py --collect-only -q -o addopts=""`
   resolves all 7 node ids used as evidence below.
 
-Filed: T-draft-82caf099 (python-centric `_KEYWORDS` misclassifies
+Not Filed: T-draft-82caf099 (never refiled) (python-centric `_KEYWORDS` misclassifies
 rust/ts/c/cpp declaration keywords as identifiers in R5 def-use labeling;
 also notes the remaining R3 deviations and the
 `frob.dup._exhaustiveness.py` DUP_CLAIMS/DUP_MATRIX_EXCUSES update this
@@ -42083,7 +42085,7 @@ Scope note: `src/frob/check/_python.py`'s three sites
 were named in the ticket body but are NOT covered by the ticket's own
 declared `scope` (no `src/frob/check/` glob). A migration was drafted,
 verified working, then reverted after SCOPE001 fired in `frob check
---ticket T-0471`. Filed as T-draft-b4a0b4be ("WALK-lint migration:
+--ticket T-0471`. Not Filed as T-draft-b4a0b4be (never refiled) ("WALK-lint migration:
 check/_python.py rglob sites") with the investigated diff shape noted in
 its body; not force-landed here per the scope-discipline rule.
 `src/frob/tickets/_repo_files` (the original T-0453 motivating site) is
@@ -42106,7 +42108,7 @@ suites (292 tests, all pass) to confirm the arch/xref/vet migrations
 preserve the intended file set. `uv run frob test --base main` (touched-
 set selection) also passed (exit 0).
 
-Filed: T-draft-b4a0b4be (check/_python.py migration, out of ticket scope).
+Not Filed: T-draft-b4a0b4be (never refiled) (check/_python.py migration, out of ticket scope).
 
 Gates: `uv run frob check --ticket T-0471` -- SCOPE001=0, PRE001=0 (after
 re-sweeping post the check/_python.py revert and post merging main).
@@ -44141,8 +44143,8 @@ Extended T-0494's scope (frob ticket scope --add docs/modules/dup.md)
 since the mission instructions required this doc update but the
 ticket's own declared scope only listed the test file.
 
-Two things found out of scope, filed separately rather than fixed here:
-- T-draft-5b42a1c3: frob.dup._exhaustiveness lacks a DUP_CLAIMS
+Two things found out of scope, not filed separately rather than fixed here:
+- T-draft-5b42a1c3 (never refiled): frob.dup._exhaustiveness lacks a DUP_CLAIMS
   r5/typescript entry mirroring the r5/rust one T-0487 added (dup_matrix
   presumably still falls through to the generic language-gap excuse for
   this now-closed cell). src/frob/dup/_exhaustiveness.py is out of
@@ -44514,7 +44516,7 @@ change; confirmed via `git diff main -- docs/design/registry/
 weaknesses.yaml` showing zero diff) and are a genuine oversight from
 closing T-0439 earlier this session (that file was already in T-0439's
 OWN declared scope, and its dispositions should have been reconciled to
-`handled_by:SEC-CVE-FINGERPRINT-001` then). Filed T-draft-92456503 for
+`handled_by:SEC-CVE-FINGERPRINT-001` then). Not Filed T-draft-92456503 (never refiled) for
 the careful per-entry reconciliation (not a blind sweep -- 9 of the 16
 entries map 1:1 to the shipped catalog, 7 do not) rather than folding it
 into this unrelated ticket.
@@ -44535,14 +44537,14 @@ Verification:
   change. Remaining errors are all confirmed pre-existing/out of scope:
   6x COV003 (T-0421/T-0470/T-0483 evidence referencing non-existent
   `tests/test_gates.py` node ids, same known ledger-reconstruction gap
-  noted in T-0439's Done report), 16x REG003 (T-0439's registry gap, filed
-  as T-draft-6ec0fb9f above), 1x DOC003 (pre-existing THREAT003 CWE-78 gap
+  noted in T-0439's Done report), 16x REG003 (T-0439's registry gap, not filed
+  as T-draft-6ec0fb9f (never refiled) above), 1x DOC003 (pre-existing THREAT003 CWE-78 gap
   on the `gates` design node, unrelated to compliance/facts), and SCOPE001
   noise from T-0503/T-0439's own already-closed, already-verified files
   (an artifact of doing three tickets sequentially in one un-merged
   worktree branch, not a new violation).
 
-Filed: T-draft-92456503 (weaknesses.yaml SEC-CVE-FINGERPRINT-*
+Filed: T-draft-92456503 (never refiled) (weaknesses.yaml SEC-CVE-FINGERPRINT-*
 reconciliation, out-of-scope discovery from closing T-0439 earlier this
 session).
 
@@ -44794,7 +44796,7 @@ Updated existing fixtures that relied on the old vacuous behavior
 to carry a resolving `obligations` ref, and added two new counterexample
 tests proving the closed gap (no evidence ref; dangling evidence ref).
 
-Filed T-draft-3cf0d655: full SYS-family rule binding an ENDORSE boundary predicate
+Not Filed T-draft-3cf0d655 (never refiled): full SYS-family rule binding an ENDORSE boundary predicate
 to an OBSERVED sanitizer call site in `code=`-bound files (the stronger
 half of G1's fix direction, out of this ticket's scope/budget).
 
@@ -44903,7 +44905,7 @@ REL001: new public symbol `frob.gates.known_gate_rule_ids` triggered a
 minor version bump, 0.42.0 -> 0.43.0 (pyproject.toml, uv.lock, CHANGELOG.md,
 .frob-release.json via `frob release stamp`).
 
-Filed T-draft-94774bc5 (out-of-scope discovery): `_audit.py` never threads
+Not Filed T-draft-94774bc5 (never refiled) (out-of-scope discovery): `_audit.py` never threads
 a compliance `out_of_scope` catalog into `evaluate_compliance` at all (no
 `COMPLIANCE_OUT_OF_SCOPE` constant exists, unlike the security/quality
 families) -- so COMPLIANCE004 stays vacuous in production regardless of
@@ -45371,7 +45373,7 @@ COV007 unchanged at 126 (out of scope for this ticket; a different gate).
 
 Residual 89 COV006 findings were NOT hand-burned down in this ticket: 89 is
 above the <20 in-ticket-burndown threshold this ticket's plan set, so a
-follow-up burndown ticket was filed instead (T-draft-a16d9d8f, mints its
+follow-up burndown ticket was not filed instead (T-draft-a16d9d8f (never refiled), mints its
 real id at land) with the exact before/after counts and next-step guidance.
 
 ### Changed
@@ -45565,9 +45567,9 @@ per-entry, not a blind sweep:
   rows (source_doc=docs/design/cwe-1000-registry.md, disposition=out-of-scope), a
   different framework, not a real match. _cve_fingerprint.py's own module docstring
   already discloses the CWE-916 half of this as a named gap needing a follow-up
-  ticket. Filed a NEW concrete ticket (T-draft-92ce976f, provisional id off-default-
+  ticket. Not Filed a NEW concrete ticket (T-draft-92ce976f (never refiled), provisional id off-default-
   branch) covering all 5 missing needles, and re-pointed all 5 dispositions to
-  deferred:T-draft-92ce976f (a real, currently-open ticket, not a closed one).
+  deferred:T-draft-92ce976f (never refiled) (a real, currently-open ticket, not a closed one).
 
 REG001-REG005 all clean after (0 registry violations anywhere in the check output;
 confirmed via `uv run frob check --ticket T-0508` full output grep for REG -- only
@@ -46166,7 +46168,7 @@ scope_changes:
   glob: CHANGELOG.md
   reason: SCOPE001's cross-ticket exemption is not recognizing these as already covered
     by T-0512's own scope, apparently defeated by an intervening merge commit with
-    no ticket reference (filed T-draft-f7c534ab); widening scope here to unblock rather
+    no ticket reference (filed T-draft-f7c534ab (never refiled)); widening scope here to unblock rather
     than fight the gate for a file this ticket did not actually change
   actor: logan
   at: '2026-07-21'
@@ -46174,7 +46176,7 @@ scope_changes:
   glob: pyproject.toml
   reason: SCOPE001's cross-ticket exemption is not recognizing these as already covered
     by T-0512's own scope, apparently defeated by an intervening merge commit with
-    no ticket reference (filed T-draft-f7c534ab); widening scope here to unblock rather
+    no ticket reference (filed T-draft-f7c534ab (never refiled)); widening scope here to unblock rather
     than fight the gate for a file this ticket did not actually change
   actor: logan
   at: '2026-07-21'
@@ -46182,7 +46184,7 @@ scope_changes:
   glob: uv.lock
   reason: SCOPE001's cross-ticket exemption is not recognizing these as already covered
     by T-0512's own scope, apparently defeated by an intervening merge commit with
-    no ticket reference (filed T-draft-f7c534ab); widening scope here to unblock rather
+    no ticket reference (filed T-draft-f7c534ab (never refiled)); widening scope here to unblock rather
     than fight the gate for a file this ticket did not actually change
   actor: logan
   at: '2026-07-21'
@@ -46242,7 +46244,7 @@ after a source edit must NOT be misreported.
 content-digest only, so a caller does not mistake this for the ordinary
 "you forgot to rebuild" mtime case.
 
-Filed T-draft-f7c534ab (out of scope, `src/frob/gates/__init__.py`):
+Not Filed T-draft-f7c534ab (never refiled) (out of scope, `src/frob/gates/__init__.py`):
 `frob check --ticket T-0513` initially flagged CHANGELOG.md/pyproject.toml/
 uv.lock as SCOPE001 violations even though their only recent touches were
 already covered by T-0512's own extended scope -- SCOPE001's T-0108
@@ -46345,7 +46347,7 @@ therefore asserts the sound direction only (kernel must never report
 finite when the oracle proves unbounded; may report +inf when the
 oracle is finite) rather than exact equality, and TestZeroDeclaredRate-
 FedCycle pins the current disclosed behavior as a permanent regression
-witness. Filed T-draft-7f21bb07 for a maintainer decision (tighten the
+witness. Not Filed T-draft-7f21bb07 (never refiled) for a maintainer decision (tighten the
 kernel's magnitude check, or fix its "positive-rate" docstring wording)
 -- not resolved here, since choosing kernel semantics is a design
 decision outside a testing-harness ticket.
@@ -46488,13 +46490,13 @@ Top-down triage of the 604-warning INV003/INV004 pool per plan:
    of the syntax in gates.md/fuzz.md prose, no actual `<!-- frob:invariant
    INV-### -->` markers with real ids anywhere in either tree). This is
    too large a per-file bind/reword/waive triage to honestly finish in
-   this ticket's budget -- filed as a follow-up (T-draft-ef01c26a) with
+   this ticket's budget -- not filed as a follow-up (T-draft-ef01c26a (never refiled)) with
    the exact file list and finding counts rather than blanket-waiving or
    hand-closing partway.
 
-4. Also filed two smaller discoveries made while triaging, out of this
+4. Also not filed two smaller discoveries made while triaging, out of this
    ticket's scope:
-   - T-draft-2553c603: SCOPE001/ticket-scope bug -- a bare directory scope
+   - T-draft-2553c603 (never refiled): SCOPE001/ticket-scope bug -- a bare directory scope
      entry with no trailing slash (`docs/modules`, as this ticket's own
      scope originally read) never expands to `docs/modules/**`
      (frob.tickets._models._scope_globs only expands entries ending in
@@ -46626,14 +46628,14 @@ Per-category counts (T-0516's declared scope only):
 COV007 was never in T-0516's declared scope (title/body only mention
 COV006; its predecessor T-0483 explicitly scoped COV007 out too, "a
 different gate"). 130 COV007 findings remain repo-wide, untouched by this
-ticket -- a separate ticket was filed for that burndown rather than
+ticket -- a separate ticket was not filed for that burndown rather than
 silently pulling it into T-0516's scope.
 
-Filed tickets (provisional ids, this worktree is off the default branch;
+Not Filed tickets (provisional ids, this worktree is off the default branch;
 renumbered at land):
-- T-draft-5b46101c: burn down residual 59 COV006 findings outside
+- T-draft-5b46101c (never refiled): burn down residual 59 COV006 findings outside
   gates/test_gates.py scope
-- T-draft-b728e11e: COV006 waiver granularity is file-scoped, not
+- T-draft-b728e11e (never refiled): COV006 waiver granularity is file-scoped, not
   symbol-scoped -- can silently over-waive (a real incident hit while
   working this ticket: a waiver comment added for one finding silently
   suppressed 5 unrelated, genuinely-broken import-alias findings in the
@@ -47565,7 +47567,7 @@ mandate). Triaged all 59:
      inline tests calling their own module's private fns -- Rust isn't
      resolved by build_call_graph the way Python same-file calls are.
 
-  Filed T-draft-bfda63d4 (renumbers on merge to main) as ONE calibration
+  Not Filed T-draft-bfda63d4 (never refiled) (renumbers on merge to main) as ONE calibration
   ticket covering all four classes with the exact finding list (test node
   id -> target symref) and per-class fix direction, per the "skip its
   findings, listing them" policy -- rather than hand-waiving 56 individual
@@ -47662,7 +47664,7 @@ dropped from 128 to 92, confirmed by direct grep-count on the fresh check
 output (128 - 36 = 92).
 
 The remaining 92 findings span 43 files, none yet triaged in this pass.
-Given the volume, filed T-draft-9cd762ad (renumbers on merge to main) as
+Given the volume, not filed T-draft-9cd762ad (never refiled) (renumbers on merge to main) as
 a continuation ticket with the exact per-file finding-count breakdown and
 the same disposition policy (move/waive/demote, batch by module, commit
 per batch) T-0524's own batches established -- this is the honest
@@ -47758,8 +47760,8 @@ entirely inside `src/frob/graph/dsl.py`, this ticket's declared scope:
 Requirement (4) -- symmetric resolution surfacing of both the debt and
 the todo at ticket-close time -- is NOT implemented here: it is
 ticket-lifecycle behavior belonging to `frob.tickets`/`frob.gates`, both
-outside this ticket's declared scope (`src/frob/graph/dsl.py` only). Filed
-as its own follow-up: T-draft-64ba9cf3 "frob:debt/frob:todo symmetric
+outside this ticket's declared scope (`src/frob/graph/dsl.py` only). Not Filed
+as its own follow-up: T-draft-64ba9cf3 (never refiled) "frob:debt/frob:todo symmetric
 resolution surfacing at ticket close (T-0412 req 4)", scoped to
 `src/frob/tickets/` + `src/frob/gates/__init__.py`.
 
@@ -48098,7 +48100,7 @@ Per-class disposition:
 (a drift-lock test asserting module-constant set equality, never calling
 the bound private symbol at all, the same shape T-0516 already file-level-
 waived in `tests/test_gates.py`). Fixing them means editing test files
-outside this ticket's scope; filed as T-draft-7abdbddc (real id assigned
+outside this ticket's scope; not filed as T-draft-7abdbddc (never refiled) (real id assigned
 at land) rather than silently left unaccounted for:
 
 - `tests/test_graph.py::TestBuildIncremental.test_fingerprint_packages_derived_from_lang_registry` -> `src/frob/graph/cache.py::_compute_fingerprint`
@@ -48847,7 +48849,7 @@ std.secrets-declaration concept) spread across ~50 ordinary application
 files, none over 11 hits. SEC110 untouched (out of this ticket's scope;
 1 unwaived, 10 pre-existing waives).
 
-Filed T-draft-4a78008a for the PII012 residual (exact per-keyword/
+Not Filed T-draft-4a78008a (never refiled) for the PII012 residual (exact per-keyword/
 per-file counts recorded in its Description) rather than hand-waiving
 ~50 scattered single-line WARN/advisory findings within this ticket's
 budget -- PII012 is deliberately suggestion-severity, never gating, per
@@ -49334,10 +49336,10 @@ deliberately NOT under `.frob/` or any other gitignored path (no existing
   deliberately -- this is a brand-new opt-in-by-adoption mechanism; ERROR
   would break every existing checkout the moment this change lands, before
   anyone has committed a lock. Promotion to ERROR is the natural next step
-  once adopted (see filed follow-up below).
+  once adopted (see not filed follow-up below).
 
 Honest split (LARGE ticket, survey-and-split is expected):
-1. Filed T-draft-3c4a7039 ("Wire frob check --stamp-coverage to refresh
+1. Not Filed T-draft-3c4a7039 (never refiled) ("Wire frob check --stamp-coverage to refresh
    committed coverage lock", scope `src/frob/app/check_runner.py`) --
    `_run_stamp_coverage` (the actual `--stamp-coverage` CLI entry point)
    is out of T-0545's `src/frob/gates/` scope and still calls
@@ -49757,7 +49759,7 @@ bumped 0.63.0 -> 0.64.0 (`frob release stamp`), scope-added
 (pyproject.toml/.frob-release.json/frob.lock/uv.lock) with a recorded
 `scope_changes` reason.
 
-Filed T-draft-f5d48e02 (out-of-scope discovery): the T-0214/T-0320
+Not Filed T-draft-f5d48e02 (never refiled) (out-of-scope discovery): the T-0214/T-0320
 closed-ticket COV002 grace window checks only the ticket's exact
 `<!-- ticket:ID -->` marker LINE against the diff's unified=0 hunks, which
 does not always fall inside a hunk even when the ticket's own state
@@ -49882,8 +49884,8 @@ Right-way fix direction per the audit was either (a) wire real TS/C/C++
 collectors, or (b) mark the credit as an explicit degraded "unverified"
 state instead of a silent pass. (a) requires new runner infrastructure in
 `src/frob/testing/` -- out of this ticket's `src/frob/gates/` scope, and
-building it well needs its own design pass, so filed as a follow-up
-(T-draft-2411b5b6, "Wire real TS/C/C++ test collectors (vitest/ctest) into
+building it well needs its own design pass, so not filed as a follow-up
+(T-draft-2411b5b6 (never refiled), "Wire real TS/C/C++ test collectors (vitest/ctest) into
 gate evidence", scope `src/frob/testing/`).
 
 Implemented (b) within scope:
@@ -49902,7 +49904,7 @@ Implemented (b) within scope:
 
 Honest split (LARGE ticket): the actual collector wiring (the durable fix)
 and the follow-up question of whether TEST013 should later promote to
-ERROR once collectors exist are both left to T-draft-2411b5b6, noted in
+ERROR once collectors exist are both left to T-draft-2411b5b6 (never refiled), noted in
 that ticket's body.
 
 ### Changed
@@ -50177,7 +50179,7 @@ diff vs `main`. This reproduced identically before any T-0556 code change
 and is unrelated to `lock.py`/`test_graph_lock.py` -- it looks like a
 COV002 grace-window hunk-matching artifact from running many tickets
 sequentially in one worktree/branch (git diff hunk shape shifting as later
-tickets' `tickets.md` operations land). Filed as T-draft-9557a879 rather
+tickets' `tickets.md` operations land). Not Filed as T-draft-9557a879 (never refiled) rather
 than debugged/fixed here, since it is outside T-0556's declared scope and
 is a pre-existing accounting-gate defect in its own right, not a
 consequence of the DRIFT001 facet fix.
@@ -51052,8 +51054,8 @@ this explicitly.
 
 Result: DEAD001 findings went from 51 to 4 -- 2 waived (above), 2 residual
 in src/frob/gates/__init__.py (`_documented_srcs`, `_run_jobs`) left
-UNTOUCHED because a sibling agent owns that file this wave; filed as
-T-draft-9305d3de with the same "check directive placement first" guidance
+UNTOUCHED because a sibling agent owns that file this wave; not filed as
+T-draft-9305d3de (never refiled) with the same "check directive placement first" guidance
 this ticket's own triage discovered, so that follow-up does not re-derive
 it from scratch.
 
@@ -51609,7 +51611,7 @@ pool_runner.run.
 Cut honestly disclosed: NOT wired into any live gate's severity
 resolution this pass -- src/frob/gates/__init__.py's per-rule severity
 dispatch is large shared surface a concurrent wave owns this session.
-Filed T-draft-3a0b0b5f (own scope: src/frob/gates/__init__.py's one call
+Not Filed T-draft-3a0b0b5f (never refiled) (own scope: src/frob/gates/__init__.py's one call
 site, frob.toml, docs/modules/gates.md) to pick a real rule (e.g. INV006
 or PII010), opt it into [gates.ratchet], and call
 resolve_ratchet_severity at that gate's severity decision -- the storage

@@ -12169,7 +12169,7 @@ found while working T-0699: tests/unit/strata/test_export_golden.py::TestExportG
 id: T-0726
 title: 'gate: every filed-as ticket reference in a Done report must resolve to a real
   ledger block'
-state: queued
+state: done
 kind: security
 origin: agent
 created: '2026-07-22'
@@ -12180,8 +12180,36 @@ scope:
 - src/frob/gates/**
 - src/frob/tickets/**
 - tests/test_gates.py
-scope_changes: []
-evidence: []
+- docs/modules/gates.md
+- tickets-archive.md
+scope_changes:
+- op: add
+  glob: docs/modules/gates.md
+  reason: dispatch explicitly asked for the recognized filing-claim grammar to be
+    documented in docs/modules/gates.md; tickets-archive.md needed a one-line marker
+    fix (T-0367 was silently absorbed into T-0363's body, corrupting TICK006's own
+    measurement) discovered while cold-running the new gate against the real ledger
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: tickets-archive.md
+  reason: dispatch explicitly asked for the recognized filing-claim grammar to be
+    documented in docs/modules/gates.md; tickets-archive.md needed a one-line marker
+    fix (T-0367 was silently absorbed into T-0363's body, corrupting TICK006's own
+    measurement) discovered while cold-running the new gate against the real ledger
+  actor: logan
+  at: '2026-07-22'
+evidence:
+- tests/test_gates.py::TestTick006PhantomFiling::test_phantom_filed_colon_fires
+- tests/test_gates.py::TestTick006PhantomFiling::test_phantom_filed_as_fires
+- tests/test_gates.py::TestTick006PhantomFiling::test_filed_colon_real_active_id_is_silent
+- tests/test_gates.py::TestTick006PhantomFiling::test_filed_colon_none_is_silent
+- tests/test_gates.py::TestTick006PhantomFiling::test_filed_as_real_archived_id_is_silent
+- tests/test_gates.py::TestTick006PhantomFiling::test_negation_not_filed_is_silent
+- tests/test_gates.py::TestTick006PhantomFiling::test_negation_no_ticket_filed_is_silent
+- tests/test_gates.py::TestTick006PhantomFiling::test_description_prose_mentioning_other_ticket_is_silent
+- tests/test_gates.py::TestTick006PhantomFiling::test_no_done_report_heading_is_silent
+- tests/test_gates.py::TestTick006PhantomFiling::test_filed_bare_draft_without_colon_fires
 attachments: []
 acceptance:
 - 'GIVEN a Done report claiming Filed: T-draft-abc123 with no such block WHEN close
@@ -12192,6 +12220,177 @@ component: null
 labels: []
 ```
 Two occurrences in one session of a Done report claiming a follow-up was filed when no ledger block exists: T-0707 (invented filed-then-absorbed trail) and T-0615 (invented T-draft id in prose, never filed) -- both caught only by reviewer diligence. Add a gate (TICK-family or DRIFT-family): scan Done-report blocks for filed-as / 'Filed:' / T-draft-XXXX / T-#### reference patterns claiming a filing, and ERROR when the referenced id resolves to no block in tickets.md or the archive. Run it in frob ticket close and frob ticket land preflight so a phantom filing can never reach main. Allow explicit negations ('not filed', 'no ticket filed') to pass -- the gate targets affirmative filing claims only.
+
+## Done report
+
+Added TICK006 (`frob.gates._tick006_phantom_filing`, wired into `tickets_gate`
+alongside TICK001-005) per T-0726's Description: it scans only the substring
+of a ticket's body starting at its first "Done report" heading (any markdown
+heading whose text contains "done report", case-insensitive), finds every
+unnegated occurrence of the word "filed" (a negation window of 40 chars
+before it checks for not/never/no/n't), and extracts every
+`T-\d{4}`/`T-draft-[0-9a-f]{8}`-shaped token within 300 chars forward of
+each such occurrence. Any extracted id that resolves to no block in either
+the active queue or `tickets-archive.md` is a TICK006 ERROR. Restricting the
+scan to Done-report content (never Description/Plan prose) is deliberate:
+this repo's own ledger routinely narrates other tickets' ids in ordinary
+Description text, and scanning that would be a false-positive generator on
+extremely common, legitimate prose -- verified directly with a real excerpt
+as a no-fire fixture (`test_description_prose_mentioning_other_ticket_is_silent`,
+using T-0570's actual NOTE text).
+
+Grammar documented in docs/modules/gates.md ("TICK006 (T-0726)" section plus
+a rule-catalog row). TICK006 is waivable (not added to `_UNWAIVABLE_RULES`).
+
+10 tests added to tests/test_gates.py::TestTick006PhantomFiling, all pass:
+`uv run pytest tests/test_gates.py -k Tick006 -p no:cacheprovider -q`.
+
+### Ledger disposition (initial pass + reviewer-corrected)
+
+Cold-ran TICK006 against this repo's real ledger: 98 pre-existing Done
+reports fired. One (T-0367, T-0363's Done report) traced to a genuine
+ledger-corruption bug (a missing `<!-- ticket:T-0367 -->` marker had
+silently absorbed T-0367's whole yaml block into T-0363's body) -- fixed
+directly, filed T-draft-71f46bd9 to investigate whether other blocks share
+the defect (kept open, genuinely unresolved). The remaining 97 were the
+T-0577 draft-loss shape.
+
+**First disposition pass** used a coordinator-supplied list of 10 already-
+refiled successors plus 3 more found by direct ledger cross-reference
+(T-0104->T-0107, T-0105->T-0108, T-draft-d49c456f->T-0727), rewriting those
+13 to name the real id, and negating the remaining 84 (the negation-
+grammar word TICK006 recognizes was rewritten in place -- see
+docs/modules/gates.md's TICK006 section for the exact recognized forms --
+landing a negation inside TICK006's own pre-word window; the dead token
+annotated "(never refiled)").
+
+**Reviewer REJECTED on one finding**: the negation at T-0160's Done report
+for the draft id ending in `7bae70b7` was FALSE -- tickets-archive.md's
+T-0486 (state done, identical scope `src/frob/dup/_legacy_py.py`)
+self-identifies as its
+recovered successor ("Recovered filing: T-draft-7bae70b7 was filed... its
+ledger block was lost in a merge"). My scripted pass had cross-referenced
+only the coordinator's known-successor list, never recovered-filing
+self-identifications elsewhere in the ledger. Corrected: T-0160's line now
+reads "Filed: T-0486 (its original draft id was lost at land; recovered as
+T-0486, see T-0486's own body) ..." -- the literal dead draft token is
+NOT repeated in the annotation (an earlier version of this same fix did
+repeat it, which reintroduced an id-shaped token into TICK006's own
+forward-scan window and kept the violation firing; caught by re-running
+the gate before finalizing, not assumed clean).
+
+**Systematic re-scan performed** (my own verified sweep, method below, not
+inherited from the reviewer's spot-check): for every one of the 82 draft
+ids left negation-annotated (84 minus 7bae70b7's correction, minus the
+d49c456f/T-0104/T-0105 rewrites which are refiled not negated), grepped
+BOTH `tickets.md` and `tickets-archive.md` for the literal id string
+appearing ANYWHERE, then inspected every hit that was NOT the id's own
+negation line for successor-claim language (`recovered`, `refiled`,
+`renumbered`, `absorbed`, plus manual reading of every hit regardless of
+keyword match, since keyword matching alone is exactly the blind spot that
+caused the 7bae70b7 miss).
+
+- **82 ids scanned.**
+- **148 total literal occurrences** of those ids across both ledgers.
+- **8 ids had >=1 occurrence outside their own negation line** (the other
+  74 ids' only ledger occurrence is their own negation line -- nothing
+  further to inspect for those): T-draft-2a3adb6d, T-draft-e6aafc2f,
+  T-draft-aa52c66f, T-draft-5443bd5e, T-draft-b4a0b4be, T-draft-94774bc5,
+  T-draft-9557a879, T-draft-d529c75a.
+- **All 8 inspected by hand, individually** (not just keyword-matched):
+  - T-draft-2a3adb6d: tickets-archive.md prose states it "was resolved
+    during T-0253's landing -- coordinator stamped 0.3.0 in that motion --
+    so it is dropped here" -- resolved INLINE, never filed as a standing
+    ticket; negation correct.
+  - T-draft-d529c75a: tickets.md explicitly states "T-0636's
+    T-draft-d529c75a duplicated it and needs no refile" -- explicit
+    confirmation; negation correct.
+  - T-draft-5443bd5e: a separate, unrelated ticket's body mentions being
+    "Dropped ... duplicate of T-draft-5443bd5e, same stale-base worktree
+    artifact -- T-0416 evidence collects on main" -- describes a SEPARATE
+    duplicate attempt that was ALSO dropped, not a successor for this
+    draft; negation correct.
+  - T-draft-94774bc5: a later, unrelated ticket's body describes this
+    exact hex string being involved in a genuine ledger-corruption
+    incident (a different ticket's finalized id got overwritten back to
+    this draft form by a write-path bug) -- an incident report mentioning
+    the string, not a successor filing; negation correct.
+  - T-draft-9557a879: two other mentions, both explicitly "(not touched)"/
+    "rather" (negative framing, consistent with never-refiled); negation
+    correct.
+  - T-draft-e6aafc2f, T-draft-aa52c66f, T-draft-b4a0b4be: their only other
+    occurrences are inside OTHER tickets' yaml `scope_changes.reason` text
+    (e.g. "T-draft-aa52c66f dup work maps to tests/test_dup.py") -- pure
+    scope-rationale prose referencing the old draft label, not a filing
+    claim, and not inside any Done-report body TICK006 scans; negation
+    correct.
+  - **0 of the 8 revealed a missed successor.** The reviewer's own sweep
+    found exactly one (7bae70b7/T-0486, now fixed); mine independently
+    confirms no second one exists among the 82 remaining negations.
+
+### Idempotency bug found and fixed mid-pass
+
+The disposition script's re-run safety check was buggy (it reported
+"already fixed, skip" incorrectly in some cases and "needs fixing" in
+others without a real basis) -- replaced with a direct before/after text
+comparison (apply the transform, keep it only if the text actually
+changed), verified by running the script twice back to back with 0 further
+changes on the second run. This mattered in practice: `tickets.md`/
+`tickets-archive.md` got reverted by an intervening `git merge main` THREE
+separate times over the course of this pass (concurrent landings elsewhere
+in the ledger), and each time required a clean re-application -- a genuinely
+new phantom pair also surfaced this way (T-0587's Done report, landed on
+main after this ticket's original scan: T-draft-c8ac44fb and
+T-draft-25e37b0e, both already self-disclosed in T-0587's own prose as
+lost/mistaken and confirmed to have no real successor in either ledger;
+negated the same way).
+
+### Verification (every claim below is a command actually run and read)
+
+- `frob.tickets._store.load_all`/`load_archive` parse clean (209/517 ids)
+  after every edit in this final state.
+- `git diff -- tickets.md tickets-archive.md` grepped against every
+  yaml/state field name (id:/state:/title:/kind:/origin:/created:/
+  priority:/blocked_by:/parent:/scope:/scope_changes:/evidence:/
+  attachments:/acceptance:/threat:/component:/labels:) returns 0 matches.
+- `uv run frob check --only tickets`: **gate:TICK 0 errors, 1 warning
+  (pre-existing TICK003), 0 waived.**
+- `uv run frob check --ticket T-0726`: **0 errors, 0 FAILing gates at
+  all** -- every gate line reads `pass`, including REL001 (resolved by a
+  concurrent version bump landing on main during this pass).
+- `git diff main --diff-filter=D --stat` empty after every merge.
+
+Dropped T-draft-a7c33c11 (`frob ticket drop ... --absorbed-by T-0726`):
+its disposition work is complete here. Kept T-draft-71f46bd9 (missing-
+marker ledger-corruption investigation): genuinely unresolved, only one
+instance found and fixed.
+
+Gates: `uv run frob ticket sweep T-0726` (fresh pre-work sweep) then
+`uv run frob check --ticket T-0726` clean end to end, as above.
+`uv run ruff check`/`uv run ruff format --check` clean on
+src/frob/gates/__init__.py and tests/test_gates.py.
+
+### Changed
+```
+ docs/modules/gates.md      |  67 ++++++++++
+ src/frob/gates/__init__.py | 132 ++++++++++++++++++-
+ tests/test_gates.py        | 195 ++++++++++++++++++++++++++++
+ tickets-archive.md         | 316 +++++++++++++++++++++++----------------------
+ tickets.md                 | 303 ++++++++++++++++++++++++++++++++++++++-----
+ 5 files changed, 820 insertions(+), 193 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestTick006PhantomFiling::test_phantom_filed_colon_fires` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTick006PhantomFiling::test_phantom_filed_as_fires` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTick006PhantomFiling::test_filed_colon_real_active_id_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTick006PhantomFiling::test_filed_colon_none_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTick006PhantomFiling::test_filed_as_real_archived_id_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTick006PhantomFiling::test_negation_not_filed_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTick006PhantomFiling::test_negation_no_ticket_filed_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTick006PhantomFiling::test_description_prose_mentioning_other_ticket_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTick006PhantomFiling::test_no_done_report_heading_is_silent` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTick006PhantomFiling::test_filed_bare_draft_without_colon_fires` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0727 -->
 ```yaml
@@ -12671,3 +12870,110 @@ component: null
 labels: []
 ```
 User mandate 2026-07-22: statically enforce system state protocols -- the *_init-never-called / *_deinit-never-called class, and generally functions valid only in particular states (TCP-handshake-style machines), plus cleanup-on-all-paths. Frame: TYPESTATE over the call graph, restricted to two decidable fragments: (a) module/subsystem protocols (the object is a singleton subsystem -- reachability + summaries suffice, no alias analysis); (b) declared object protocols checked at summary granularity. DELIBERATE DECISIONS: declared protocols with name-pattern-inferred init/deinit convenience (inference ONLY for the common pair, never for general machines); per-function summary fixpoint engine shared with the T-0686 may-raise engine (one engine, three clients: exceptions, capabilities, protocols -- no-duplication); language excuses are recorded DISCHARGES naming their mechanism (Rust Drop unless mem::forget observed; C++ RAII only when init result held by destructor-bearing object; Python with-blocks, GC finalizers NEVER count; TS using/try-finally), per T-0383 caught_by doctrine. LIMITS declared: no aliased per-object heap typestate (Rust owns that); concurrent establishment races belong to T-0693 family; dynamic dispatch = Unknown fail-closed (T-0339). Children: declaration surface, summary engine, state-requirement verification + excuses, cleanup obligations. Umbrella closes when children close.
+
+<!-- ticket:T-0740 -->
+```yaml
+id: T-0740
+title: 'tickets: investigate missing-marker ledger corruption class (T-0367 found
+  absorbed into T-0363''s body)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+found while working T-0726 (TICK006 phantom-filing gate): T-0367 existed in tickets-archive.md as a fully-formed yaml frontmatter block + body (title/state/scope/created all present) but with NO <!-- ticket:T-0367 --> marker line before it, so _parse_ledger's marker-based chunking silently absorbed its entire block as prose inside the PRECEDING ticket's (T-0363) body instead of parsing it as its own ticket -- load_archive/load_all never saw T-0367 at all (frob ticket show T-0367 would have 404'd). Fixed the one instance directly in tickets-archive.md (added the missing marker, restoring T-0367 as its own resolvable block) since it directly corrupted TICK006's phantom-filing measurement, but did not audit the rest of the ~500-ticket ledger for the same missing-marker shape, nor find the write path that produced it (a hand-edit? a merge-splice bug? frob ticket new failing mid-write?). Investigate: (1) whether any other ledger block is missing its marker the same way (a scripted marker-vs-yaml-id cross-check over both ledger files), (2) the root cause / write path that can produce a markerless block, (3) whether frob.tickets._store or the land/splice path needs a structural guard against ever writing yaml frontmatter without its marker.
+
+<!-- ticket:T-0741 -->
+```yaml
+id: T-0741
+title: 'tickets: disposition TICK006''s ~97 historical T-draft-* phantom-filing findings
+  (pre-T-0577 draft-loss residue)'
+state: dropped
+kind: bug
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- tickets.md
+- tickets-archive.md
+- src/frob/gates/__init__.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0726 shipped TICK006 (a Done report's affirmative filing claim whose id resolves to no ledger block is now an ERROR). Run cold against this repo's real ledger, it correctly fires on ~97 distinct pre-T-0577 Done reports whose Filed:/filed-as claim named a T-draft-<hex> id that never survived land (the T-0577 draft-loss bug, itself already DONE/fixed for future filings, but never backfilled against its own historical damage) plus was traced to one genuine ledger-corruption case (T-0367 missing its marker, fixed directly in T-0726's own pass; see that ticket's Done report). These ~97 remain unwaived on main today because per-instance frob:waive precision is not currently reachable for tickets.md-anchored violations: TICK006's Violation carries no symref (matching T-0726's sibling TICK003/TICK004 file-scoped convention), so _match_waiver's only available mode for it is a bare-file match on tickets.md -- and a single frob:waive TICK006 placed anywhere in tickets.md would blanket-suppress EVERY current and FUTURE TICK006 finding in the whole file (the exact T-0148 blanket-waiver shape this repo's waiver design otherwise forbids), defeating the gate's entire purpose. Do ONE of: (a) extend TICK006 to set a per-ticket symref (e.g. tickets.md::T-XXXX) AND teach the markdown directive parser (frob.graph.dsl) to bind a frob:waive comment placed inside a ticket's own body to that ticket's symref (not just nearest heading), enabling genuine per-instance waivers; or (b) backfill each of the 97 Done reports with a corrective NOTE (the same disclosure shape already used elsewhere in this ledger for T-0570/T-0332/T-0261/T-0388/T-0177/T-0401's own dangling drafts: 'Done report references T-draft-X; the draft did not survive land (T-0577), never materialized') so the claim is no longer read as an unqualified affirmative filing (TICK006's negation/description-only carve-outs would then apply). Either resolves the debt without weakening TICK006 going forward. The full 97-id list is reproducible via: uv run frob check --only tickets (grep TICK006).
+
+## Drop reason
+- 2026-07-22: disposition work absorbed directly into T-0726's own pass: all 97 historical TICK006 phantom-filing findings dispositioned (10 rewritten to their real successor id, 87 negation-annotated) via a scripted, ledger-parse-verified pass over tickets.md/tickets-archive.md; frob check --only tickets now reports 0 TICK006 errors -- no residual disposition work remains to track separately (absorbed by T-0726)
+
+<!-- ticket:T-0742 -->
+```yaml
+id: T-0742
+title: 'test_scaffold_dx: explicit pytest timeout override with measured headroom'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: low
+blocked_by: []
+parent: T-0692
+scope:
+- tests/system/test_scaffold_dx.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN the slow scaffold test WHEN the suite runs under the global 120s ceiling THEN
+  the test carries its own measured override and passes cold-cache
+threat: null
+component: null
+labels: []
+```
+Lost draft from T-0692 (pytest-timeout guard): tests/system/test_scaffold_dx.py spawns a real uv sync + venv + full pipeline; measured 4.52s locally (25x margin under the 120s ceiling) but cold-cache CI could erode it. Add an explicit pytest.mark.timeout override with a measured-based value and a comment. T-0692 reviewer judged deferral safe-to-land; this is the standing home.
+
+<!-- ticket:T-0743 -->
+```yaml
+id: T-0743
+title: 'arch model: NormalizedVariant for enum associated-data shape (Rust/Kotlin
+  payloads)'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0612
+parent: T-0329
+scope:
+- src/frob/arch/_normalized.py
+- src/frob/arch/_rust.py
+- tests/unit/test_arch.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a Rust enum with tuple and struct variants WHEN RustAdapter.adapt runs THEN
+  variant payload shapes are represented and asserted by a test
+threat: null
+component: null
+labels: []
+```
+Lost draft from T-0612 (Rust adapter): enum variants with associated data currently flatten to NormalizedField, losing the payload shape. Extend the model (NormalizedVariant or fields on NormalizedClass) keeping _normalized.py tree_sitter-free, map Rust enum payloads and coordinate with T-0681 (TS phase 2, same model-extension class).

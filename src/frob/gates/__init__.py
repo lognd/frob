@@ -961,6 +961,10 @@ _KNOWN_GATE_RULES = frozenset(
         # _tick004_queue_rot) -- a queued/planned ticket past its
         # priority-specific rot-day threshold.
         "TICK004",
+        # T-0726: phantom-filing-claim gate (frob.gates.tickets_gate's
+        # _tick006_phantom_filing) -- a Done report's "Filed: ..." claim
+        # whose id resolves to no ledger block.
+        "TICK006",
         "PII010",
         "SEC110",
         # T-0289: long-function is the one frob-arch category channeled into
@@ -6247,18 +6251,140 @@ def _tick005_merge_state_regression(
     return tuple(violations)
 
 
+# frob:ticket T-0726
+#: Matches a `## Done report` (or `### Done report`, `## Round 1 Done
+#: report`, `## Done report (batch 8)`, etc.) heading -- any markdown
+#: heading line whose text contains "done report", case-insensitive. Used
+#: to find where a ticket body's Done-report content starts, since a Done
+#: report always follows a Description/Plan section that must NOT be
+#: scanned (see `_tick006_done_report_text`'s docstring for why).
+_DONE_REPORT_HEADING_RE = re.compile(r"^#{1,6}[^\n]*done report", re.I | re.M)
+
+#: A ticket-id token: a real `T-####` id or a provisional `T-draft-<8 hex>`
+#: id (mirrors `frob.tickets._store._TICKET_ID_RE`). Matches inside a
+#: literal placeholder like `T-####` never fire (`#` is not `\d`), and a
+#: templated `T-draft-XXXXXXXX` placeholder never fires either (`X` is not
+#: `[0-9a-f]`) -- both are common in narrative prose that is not a filing
+#: claim at all.
+_TICK006_ID_RE = re.compile(r"T-(?:\d{4}|draft-[0-9a-f]{8})")
+
+#: A "filed" occurrence preceded within this many characters by a negation
+#: word (not/never/no/n't) is an explicit negation ("not filed", "no
+#: ticket filed", "never filed") per T-0726's Description, and is skipped
+#: rather than treated as an affirmative filing claim.
+_TICK006_NEGATION_RE = re.compile(r"\b(?:not|never|no|n't)\b", re.I)
+_TICK006_NEGATION_WINDOW = 40
+
+#: How far past a "filed" occurrence to look for the id(s) it claims to
+#: have filed -- generous enough to span a wrapped markdown line/sentence
+#: (real Done reports wrap `Filed: T-draft-... (description...)` across
+#: 2-3 lines) without bleeding into an unrelated later paragraph.
+_TICK006_CLAIM_WINDOW = 300
+
+
+# frob:ticket T-0726
+def _tick006_done_report_text(body: str) -> str:
+    """The substring of a ticket `body` starting at its first "Done
+    report" heading, or `""` if none exists (a ticket with no Done report
+    yet has nothing to scan). Restricting to this substring -- rather than
+    the whole body -- is deliberate: a ticket's Description/Plan often
+    narrates OTHER tickets' ids in ordinary prose ("T-0570 landed the...",
+    "NOTE: T-0177's Done report references this as T-draft-...") and none
+    of that is a filing claim about THIS ticket's own work, so scanning it
+    would be a false-positive generator. A Done report's own "Filed: ..."
+    line is the one place a ticket asserts something about a NEW id it
+    is responsible for."""
+    match = _DONE_REPORT_HEADING_RE.search(body)
+    if match is None:
+        return ""
+    return body[match.start() :]
+
+
+# frob:ticket T-0726
+def _tick006_phantom_ids(done_report_text: str) -> tuple[str, ...]:
+    """Every ticket id affirmatively claimed as filed somewhere in
+    `done_report_text` -- i.e. following an unnegated occurrence of the
+    word "filed" within `_TICK006_CLAIM_WINDOW` characters -- in first-seen
+    order, deduplicated. Recognizes the filing-claim grammar actually used
+    in this repo's ledger: `Filed: T-0104`, `Filed: none`, `filed as
+    **T-0137**`, `filed as a follow-up`, `Filed T-draft-4e98abb1 (mints a
+    real T-#### id at land)`, `Filed a new standing ticket (drafted
+    off-main as T-draft-05d8f716...)`. Explicit negations ("not filed",
+    "no ticket filed", "never filed") are skipped per T-0726's Description
+    -- see `_TICK006_NEGATION_RE`."""
+    seen: dict[str, None] = {}
+    for occurrence in re.finditer(r"\bfiled\b", done_report_text, re.I):
+        start = occurrence.start()
+        pre = done_report_text[max(0, start - _TICK006_NEGATION_WINDOW) : start]
+        if _TICK006_NEGATION_RE.search(pre):
+            continue
+        window = done_report_text[start : start + _TICK006_CLAIM_WINDOW]
+        for tid in _TICK006_ID_RE.findall(window):
+            seen.setdefault(tid, None)
+    return tuple(seen)
+
+
+# frob:enforces CHK-GATE-TICK006
+def _tick006_phantom_filing(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
+    """TICK006 (T-0726): ERROR on a Done report's affirmative filing claim
+    (`Filed: ...`, `filed as ...`, a bare `T-draft-<hex>`/`T-#### id`
+    following "filed") whose referenced id resolves to NO block in either
+    `tickets.md` or `tickets-archive.md` -- a phantom filing trail, the
+    T-0707 (invented filed-then-absorbed trail) and T-0615 (invented
+    T-draft id, never actually filed) incidents this rule exists to catch
+    mechanically instead of relying on reviewer diligence alone. A
+    `T-draft-<hex>` id that WAS real at write time but did not survive
+    land (the T-0577 draft-loss bug) also fires here -- that is a genuine,
+    disclosed historical phantom by this rule's own definition (the id
+    resolves to nothing, right now, in the ledger a reader actually has),
+    and is expected to be waived per-instance with an honest reason
+    (docs/modules/gates.md#tick006-t-0726) rather than treated as a false
+    positive to suppress structurally."""
+    archived = _tickets_load_archive(root)
+    known_ids = set(queue.tickets) | (
+        set(archived.danger_ok) if archived.is_ok else set()
+    )
+    violations: list[Violation] = []
+    for ticket in sorted(queue.tickets.values(), key=lambda t: t.id):
+        done_report_text = _tick006_done_report_text(ticket.body)
+        if not done_report_text:
+            continue
+        for tid in _tick006_phantom_ids(done_report_text):
+            if tid in known_ids:
+                continue
+            violations.append(
+                Violation(
+                    rule="TICK006",
+                    severity=Severity.ERROR,
+                    file="tickets.md",
+                    line=0,
+                    message=(
+                        f"TICK006: {ticket.id}'s Done report claims {tid} "
+                        f"was filed, but {tid} resolves to no block in "
+                        f"tickets.md or tickets-archive.md -- a phantom "
+                        f"filing trail (the T-0707/T-0615 incident class); "
+                        f"file the real ticket, correct the Done report to "
+                        f"name the real id, or waive with an honest reason "
+                        f"if this is a disclosed historical draft-loss case"
+                    ),
+                )
+            )
+    return tuple(violations)
+
+
 # frob:doc docs/modules/tickets.md#decision-record-t-0162
 def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
-    """TICK001/TICK002/TICK003/TICK004/TICK005: the T-0162 ticket-id
+    """TICK001/TICK002/TICK003/TICK004/TICK005/TICK006: the T-0162 ticket-id
     collision invariant gate, plus the T-0409 ledger-hygiene check, the
-    T-0411 priority-rot check, and the T-0537 post-merge terminal-state-
-    regression lint."""
+    T-0411 priority-rot check, the T-0537 post-merge terminal-state-
+    regression lint, and the T-0726 phantom-filing-claim check."""
     return (
         _tick001_duplicate_ids(root)
         + _tick002_draft_on_default(root, queue)
         + _tick003_stale_archive(root)
         + _tick004_queue_rot(root, queue)
         + _tick005_merge_state_regression(root, queue)
+        + _tick006_phantom_filing(root, queue)
     )
 
 

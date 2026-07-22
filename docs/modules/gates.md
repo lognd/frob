@@ -32,6 +32,7 @@ declaration).
 | INV004 | invariant | (warn, advisory) a `docs/**.md` section uses claim-shaped normative language (`must`, `must not`, `never`, `always`, `shall`, `guarantees`, `ensures`, `requires`, plus INV003's exclusivity vocabulary) but anchors ZERO `frob:invariant` markers and carries no reasoned `<!-- frob:waive INV004 reason="..." -->` marker -- see "INV004 (T-0452)" below |
 | INV005 | invariant | (warn, T-0543/B12) an invariant's evidence collects (satisfies INV001) but is never shown, via a `frob:tests` edge or same-file trust to the anchor, to actually reach its `frob:invariant`-anchored symbol -- a name-match-only existence check proves nothing about which invariant a test covers; see "INV005 (T-0543)" below |
 | INV006 | invariant | (warn, T-0408) a SOURCE file under `INV006_SRC_DIRS` (`src`, `strata-core/src`, `frob-core/src`) makes a claim-shaped exclusivity assertion (same vocabulary as INV003) with no `frob:invariant` edge anchored anywhere in the file, and no `frob:waive INV006 reason="..."` edge -- see "INV006 (T-0408)" below |
+| TICK006 | tickets | a Done report's affirmative "filed" claim (`Filed: T-####`, `filed as T-####`, `Filed T-draft-<hex>`, ...) whose id resolves to no block in `tickets.md` or `tickets-archive.md` -- see "TICK006 (T-0726)" below |
 | DEC001 | decisions | a `frob:decision AD-###` edge points at a record that does not exist (opt-in: a `decisions/` dir must exist) |
 | DEC002 | decisions | an `accepted` decision record has no `frob:decision` code anchor |
 | TEST001 | test | public function/method has no `frob:tests` unit edge |
@@ -384,6 +385,72 @@ diagnostics -- see docs/modules/dup.md#check-stage-summary-is-waiver-aware-t-037
 and docs/modules/arch.md#check-stage-summary-is-waiver-aware-for-arch001-t-0375.
 This does not change gate pass/fail behavior anywhere -- it only makes the
 advisory count in `frob check`'s printed summary honest.
+
+### TICK006 (T-0726)
+
+<!-- frob:describes src/frob/gates/__init__.py::_tick006_phantom_filing -->
+
+Two occurrences in one session of a Done report claiming a follow-up was
+filed when no ledger block actually exists: T-0707 (an invented
+filed-then-absorbed trail) and T-0615 (an invented `T-draft-*` id in
+prose, never actually filed) -- both caught only by reviewer diligence,
+not by any gate. TICK006 makes this mechanical: it scans every ticket's
+Done-report content for an *affirmative filing claim* and ERRORs when the
+claimed id resolves to no block, active or archived.
+
+**Where it looks.** Only the substring of a ticket's `body` starting at
+its first "Done report" heading (`_tick006_done_report_text`) is scanned
+-- any markdown heading whose text contains "done report",
+case-insensitive (`## Done report`, `### Done report`, `## Round 1 Done
+report`, `## Done report (batch 8)`, ...). A ticket's Description/Plan
+routinely narrates OTHER tickets' ids in ordinary prose (`"T-0570 landed
+the...")`, and this repo's ledger already carries several `NOTE:
+T-XXXX's Done report references this as T-draft-...; the draft did not
+survive land..."` disclosures inside Description bodies (the T-0577
+draft-loss bug's own paper trail) -- none of that is a filing claim
+about the CURRENT ticket's own work, so scanning it would be a
+false-positive generator on extremely common, legitimate prose.
+
+**The filing-claim grammar recognized.** Any occurrence of the word
+"filed" (case-insensitive, word-boundary) in the Done-report text opens a
+claim window extending up to 300 characters forward (long enough to span
+a wrapped `Filed: ... (description...)` line/sentence without bleeding
+into an unrelated later paragraph). Every ticket-id-shaped token in that
+window -- `T-\d{4}` or `T-draft-[0-9a-f]{8}` -- is checked against the
+union of ids in the active queue and `tickets-archive.md`. This grammar
+covers every real shape observed in this repo's own ledger: `Filed:
+T-0104`, `Filed: none` (extracts no id, so never fires), `filed as
+**T-0137**`, `filed as a follow-up` (no id, never fires), `Filed
+T-draft-4e98abb1 (mints a real T-#### id at land)`, `Filed a new standing
+ticket (drafted off-main as T-draft-05d8f716...)`. A literal `T-####`
+placeholder (`#` is not `\d`) or `T-draft-XXXXXXXX` template placeholder
+(`X` is not `[0-9a-f]`) never match, since neither is a real reference.
+
+**Explicit negations.** A "filed" occurrence preceded, within 40
+characters, by a negation word (`not`, `never`, `no`, `n't`) is skipped
+entirely -- covers the "not filed", "no ticket filed", "never filed",
+"not filed as a new ticket this pass" shapes this repo's ledger already
+uses routinely for genuinely-not-filed disclosures.
+
+**A currently-real historical wrinkle.** A `T-draft-<hex>` id that WAS a
+real block in the filer's own worktree ledger at write time, but did not
+survive `frob ticket land` (the T-0577 draft-loss bug, tracked
+separately), resolves to nothing in the ledger a reader has today --
+TICK006 fires on it, by design: the rule's contract is "does this id
+resolve right now", not "was this claim honest when written". Several
+such entries already exist on `main` (pre-dating TICK006). These are
+expected to be dispositioned with a `frob:waive TICK006 reason="..."` per
+instance naming the T-0577 draft-loss incident, not suppressed
+structurally -- see the Done report for this ticket for the specific
+instances found and waived at introduction time.
+
+**Where it runs.** TICK006 is one of `tickets_gate`'s checks (alongside
+TICK001-TICK005), which runs inside `frob check`'s `tickets` stage --
+including `frob ticket close` and `frob ticket land`'s preflight -- so a
+phantom filing trail cannot reach `main` undetected going forward. It is
+waivable (not in `_UNWAIVABLE_RULES`): unlike TICK001/TICK002, a genuine
+draft-loss disclosure is a legitimate, honestly-dispositioned case, not a
+silent invariant break.
 
 ## Public API
 
