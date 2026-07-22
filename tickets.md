@@ -3681,3 +3681,34 @@ component: null
 labels: []
 ```
 T-0569 built frob.gates._ratchet (RatchetLock/snapshot_ratchet/clear_ratchet_entry/resolve_ratchet_severity/ratchet_enabled_rules) as a complete, additive, self-contained mechanism + CLI (frob pool snapshot/clear), deliberately NOT wired into any live gate's severity resolution because src/frob/gates/__init__.py's per-rule dispatch is large shared surface owned by a concurrent wave. This ticket is that follow-up: pick one real warn-first rule (e.g. INV006 or PII010), opt it into [gates.ratchet] rules, and call resolve_ratchet_severity at that gate's severity-decision call site so a baselined finding stays warn and a fresh one errors for real, not just in tests/test_gates_ratchet.py's synthetic fixture. Scope: src/frob/gates/__init__.py (the one call site), frob.toml, docs/modules/gates.md.
+
+<!-- ticket:T-0595 -->
+```yaml
+id: T-0595
+title: 'strata audit G1 (full closure): bind ENDORSE boundary predicate to an OBSERVED
+  sanitizer call site in code'
+state: queued
+kind: security
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0401
+scope:
+- src/frob/strata/_threat.py
+- src/frob/strata/_selfconform.py
+- src/frob/strata/_code_binding.py
+- src/frob/strata/_effects.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a .strata model with an ENDORSE boundary whose sanitizer does not appear at
+  any observed call site in the guarded code path WHEN strata selfconform/threat discharge
+  runs THEN the NoFlow/ENDORSE discharge fails closed with a finding naming the unbound
+  boundary
+threat: tampering
+component: null
+labels: []
+```
+Remaining stronger half of docs/audits/strata.md G1, deferred from T-0401 (its weaker half landed in T-0498: boundary obligations must resolve to a real in-model Claim.id). The gap: an ENDORSE boundary's predicate still discharges by model-side matching alone -- it is never joined against an OBSERVED sanitizer/validator call site in the code. Fix: bind the boundary predicate to a real call-site observation (via the code-binding layer), so a boundary with no observed sanitizer in the guarded path fails closed. NOTE: T-0401's Done report references this as T-draft-9ca06606; that draft never materialized as a ledger block, so this ticket is its real replacement.
