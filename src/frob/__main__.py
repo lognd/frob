@@ -1129,6 +1129,18 @@ def _add_test_parser(sub) -> None:
         action="store_true",
         help="drop and rebuild the pytest collection cache, then exit (T-0333)",
     )
+    # frob:ticket T-0322
+    test_p.add_argument(
+        "--wait-coverage",
+        dest="test_wait_coverage",
+        action="store_true",
+        help=(
+            "block in the foreground until the coverage stamp is fresh "
+            "(single-flight across concurrent callers), then exit -- the "
+            "definitive-result alternative to backgrounding `make coverage` "
+            "and stalling on a notification that never arrives (T-0322)"
+        ),
+    )
     test_p.add_argument("--base", dest="test_base", metavar="REF")
     test_p.add_argument(
         "--lang", dest="test_lang", action="append", default=[], metavar="L"
