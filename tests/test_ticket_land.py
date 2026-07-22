@@ -1024,6 +1024,74 @@ class TestDraftIdFinalization:
         assert landed.danger_ok[report.final_id].state == TicketState.DONE
 
 
+# frob:ticket T-0637
+class TestStandaloneSiblingDraftSurvivesLand:
+    """T-0637 field incident: a worktree's ledger held a REAL ticket being
+    landed AND a completely separate, standalone draft ticket (filed via
+    `frob ticket new` mid-session, `frob:new`'s own scope-cut discovery --
+    the T-0575/T-draft-3d5f6965 and T-0576's two-draft shapes). Before this
+    fix, the sibling draft block was silently dropped by the land splice
+    (never carried forward, since it was neither the ticket being landed
+    nor already present on main) -- it must survive and land with a real,
+    finalized id."""
+
+    def test_sibling_draft_ticket_finalized_and_lands_alongside(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::land kind="unit"
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-j", str(wt)], repo)
+
+        # The ticket actually being landed.
+        primary = new_ticket(wt, _spec("Primary landed work", scope=("src/main3.py",)))
+        assert primary.is_ok
+        primary_id = primary.danger_ok.id
+        assert primary_id.startswith("T-draft-")
+        _make_closeable(wt, primary_id)
+        (wt / "src" / "main3.py").write_text("# primary work\n")
+
+        # A STANDALONE sibling, filed while working the primary ticket,
+        # left QUEUED -- never touched again, never landed on its own.
+        sibling = new_ticket(
+            wt, _spec("Found while working the primary ticket", scope=("src/sib.py",))
+        )
+        assert sibling.is_ok
+        sibling_draft_id = sibling.danger_ok.id
+        assert sibling_draft_id.startswith("T-draft-")
+        assert sibling_draft_id != primary_id
+
+        _commit_all(wt, "primary work plus a standalone sibling draft ticket")
+
+        result = land(repo, primary_id, wt, dry_run=False)
+        assert result.is_ok, result.err
+        report = result.danger_ok
+
+        landed = load_all(repo)
+        assert landed.is_ok
+        landed_map = landed.danger_ok
+
+        # The sibling draft must NOT have vanished, and must NOT still
+        # carry a draft id on main (T-0162: drafts never persist there).
+        assert sibling_draft_id not in landed_map, (
+            "sibling draft id should have been finalized away, not landed verbatim"
+        )
+        finalized_siblings = [
+            tid
+            for tid, t in landed_map.items()
+            if t.title == "Found while working the primary ticket"
+        ]
+        assert finalized_siblings, "standalone sibling draft ticket was dropped at land"
+        assert len(finalized_siblings) == 1
+        sibling_final_id = finalized_siblings[0]
+        assert not sibling_final_id.startswith("T-draft-")
+        assert sibling_final_id != report.final_id
+
+        # It survives in whatever state it was left in (QUEUED) -- landing
+        # the PRIMARY ticket must not itself close/alter the sibling.
+        assert landed_map[sibling_final_id].state == TicketState.QUEUED
+        assert landed_map[report.final_id].state == TicketState.DONE
+
+
 class TestLandNotFound:
     """`land` on a ticket id the worktree's store has never heard of."""
 

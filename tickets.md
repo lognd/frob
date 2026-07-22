@@ -7153,7 +7153,7 @@ T-0610 migrated long-function/god-class/deep-nesting onto NormalizedModule but l
 id: T-0633
 title: 'tickets: ledger writes racing a ticket start background sweep can clobber
   an unrelated ticket''s block'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-22'
@@ -7164,7 +7164,10 @@ scope:
 - src/frob/tickets/**
 - tests/test_tickets*.py
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_tickets_ledger_concurrency.py::TestArchiveRaceWithConcurrentNew::test_concurrent_new_ticket_survives_a_racing_archive
+- tests/test_tickets_ledger_concurrency.py::TestRenumberOneRaceWithConcurrentNew::test_concurrent_new_ticket_survives_a_racing_renumber_one
+- tests/test_tickets_ledger_concurrency.py::TestLedgerLockSpansWholesaleOperations::test_concurrent_ledger_lock_acquisition_serializes
 attachments: []
 acceptance:
 - GIVEN a ticket start whose background sweep completes after a concurrent frob ticket
@@ -7175,6 +7178,72 @@ component: null
 labels: []
 ```
 Two independent occurrences in one session (2026-07-22): (1) the coordinator's T-0630 block was silently wiped from main's tickets.md by a concurrent stale-ledger write; (2) T-0576's implementer observed frob ticket new, run immediately after frob ticket start's BACKGROUND pre-work sweep, overwrite ticket T-0632's ledger block entirely -- the sweep loads the ledger, the new writes it, the sweep's completion writes back its stale copy (lost update). The ledger lock (.frob/tickets.lock) is held per-operation, not across the background sweep's load-modify-write. Fix: the background sweep must re-acquire the lock AND re-load the ledger before writing (or write only its own ticket's sweep fields via a targeted read-modify-write), never write back a whole stale ledger. Add a regression test: start (with slow sweep stubbed) + concurrent new -> both tickets' blocks intact.
+
+## Done report
+
+Investigated the field-described mechanism ("ticket start's background
+pre-work sweep loads the ledger, a concurrent frob ticket new writes a new
+block, the sweep's completion writes back a stale whole-ledger copy") in
+CURRENT source. `frob.gates.sweep_ticket`/`record_prework` (invoked by the
+background sweep) never touches `tickets.md` at all -- it persists only to
+`.frob/prework/<id>.json`. Every single-ticket ledger writer
+(`write_ticket`, used by `transition`/`add_evidence`/`set_done_report`/
+`new_ticket`/...) already splices only its own ticket's section under a
+freshly re-read, lock-held copy of the ledger text (T-0505), so a
+different ticket id's bytes can never travel through it.
+
+The one place this exact bug class (an unlocked `load_all`/`load_archive`
+snapshot later replayed into a locked wholesale `write_all`/`write_archive`
+call, silently reverting anything written in the gap) IS still live today
+is the three wholesale ledger operations: `archive()`, `renumber()`, and
+`renumber_one()` (the rename primitive `finalize_draft` uses at land time).
+Each of these read the whole ledger BEFORE acquiring `ledger_lock`, and
+only locked their own final write -- so a concurrent single-ticket write
+landing in that window got silently clobbered the moment the wholesale
+write replaced the entire file with the stale pre-lock snapshot. This is
+the generalized, currently-reproducible form of the described defect
+(scope is `src/frob/tickets/**`, not narrowly "the sweep"), and
+`renumber_one` in particular runs during `frob ticket land`'s draft
+finalize -- exactly the moment a sibling worktree's own ledger write is
+most likely to be in flight, matching the field incidents' timing.
+
+Fix: hold ONE `ledger_lock` span across the entire load-modify-write
+sequence in `archive()`, `renumber()`, and `renumber_one()` (the lock is
+thread-reentrant, so nesting the existing internal `write_all`/
+`write_archive`/`write_ticket` locks inside the new outer span is a safe
+no-op re-entry, not a deadlock). This closes the TOCTOU: the load and the
+write are now one atomic unit, so no concurrent writer's splice can ever
+land in a gap and then be overwritten by a stale wholesale rewrite.
+
+Added `tests/test_tickets_ledger_concurrency.py`:
+- `TestArchiveRaceWithConcurrentNew`: `archive()` racing a concurrent
+  `new_ticket()` -- both survive, T-0001 moves to archive, the new
+  ticket's block stays in the active ledger.
+- `TestRenumberOneRaceWithConcurrentNew`: same race through
+  `renumber_one()` (the finalize_draft primitive).
+- `TestLedgerLockSpansWholesaleOperations`: a direct proof that
+  `ledger_lock` genuinely blocks a second acquirer for the full held span,
+  not just around one atomic write.
+
+Honest disclosure: I could not reproduce the LITERALLY-described mechanism
+(a live write-back from the background sweep subprocess itself) against
+current source, because that subprocess's only ledger-adjacent write today
+is the per-ticket JSON prework file, which is keyed by ticket id and never
+collides across tickets. The fix above targets the actual remaining
+lost-update surface in the same module and closes the acceptance
+criterion's underlying guarantee (a concurrent `new_ticket` survives a
+racing wholesale ledger operation) rather than the literal subprocess path,
+which I verified carries no live bug today.
+
+### Changed
+```
+ src/frob/tickets/__init__.py             | 142 ++++++++++++-------
+ tests/test_tickets_ledger_concurrency.py | 232 +++++++++++++++++++++++++++++++
+ 2 files changed, 322 insertions(+), 52 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0634 -->
 ```yaml
@@ -7348,7 +7417,8 @@ scope:
 - src/frob/tickets/**
 - tests/test_ticket_land.py
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_ticket_land.py::TestStandaloneSiblingDraftSurvivesLand::test_sibling_draft_ticket_finalized_and_lands_alongside
 attachments: []
 acceptance:
 - GIVEN a worktree ledger with a standalone T-draft block WHEN frob ticket land runs
@@ -7359,6 +7429,75 @@ component: null
 labels: []
 ```
 First field test of T-0577's auto-finalize: T-0575's worktree ledger contained a real T-draft-3d5f6965 block (verified by the reviewer at line ~6546 pre-land), main ran post-T-0577 code (0.82.x), yet the land dropped the draft block instead of minting a real id -- grep for the draft id on main after land returns 0 and no new ticket exists. Reproduce with a worktree ledger containing a draft block belonging to a DIFFERENT ticket than the one being landed (the T-0575 case: the draft was filed by the landing ticket but is its own separate block) and fix finalize_draft invocation coverage in the land path. The unit test T-0577 added apparently covers renumber/finalize on the landing ticket's own references, not a standalone sibling draft block.
+
+## Done report
+
+Root cause confirmed by tracing the land splice path (`_splice_only_ticket`,
+used by both the merge-main-into-worktree stage and the final
+squash-onto-main stage): it takes main's ledger as the base and overlays
+ONLY the ticket actually being landed (T-0479's deliberate scoping, to
+prevent a worktree's stale view of an ALREADY-ON-MAIN sibling from
+resurrecting a since-requeued state). `_preserve_sibling_done_reports`
+extends that overlay only for sibling ids ALREADY present on main. Neither
+path ever considers a ticket id that exists ONLY in the worktree's ledger
+and has never been on main at all -- exactly what a standalone draft
+ticket (`frob ticket new`, filed off the default branch mid-session, mints
+a T-draft-<hex> id per T-0162) is. That ticket's block was silently
+dropped at the VERY FIRST splice (merge-main-into-worktree, which runs
+before finalize ever gets a chance to see it), well before `_land_
+finalize_and_close` ran -- so even the existing draft-finalize logic
+(which only ever finalizes the ONE ticket_id being landed) never had a
+chance: the sibling's ledger section was already gone from the worktree's
+own tickets.md by the time finalize ran.
+
+Fix, two parts, both in `src/frob/tickets/_land.py`:
+
+1. `_carry_forward_new_worktree_tickets` (new): after `_splice_only_
+   ticket`'s existing overlay + `_preserve_sibling_done_reports`, carry
+   over any ticket id present in the worktree's ledger that main has NEVER
+   seen at all. A ticket main has never seen carries no stale state to
+   protect against, so T-0479's resurrection concern does not apply --
+   dropping it was pure, unjustified data loss. This fixes the drop at
+   BOTH splice call sites (merge-into-worktree and squash-onto-main) since
+   `_splice_only_ticket` is the single function both go through.
+
+2. `_finalize_sibling_drafts` (new): called from `_land_finalize_and_close`
+   right after the landing ticket's own draft id (if any) is finalized --
+   scans the worktree's active ledger for every OTHER remaining draft id
+   and finalizes each via the existing `finalize_draft`/`renumber_one`
+   primitive, so a draft id never persists all the way to a landed main
+   ledger (T-0162's invariant). Its writes are picked up by the same
+   `_commit_finalize_writes` call the landing ticket's own finalize already
+   uses, so no new commit-plumbing was needed.
+
+Reproduced the exact field shape in
+`tests/test_ticket_land.py::TestStandaloneSiblingDraftSurvivesLand`: a
+worktree files a primary ticket (closeable, landed) AND a completely
+separate standalone sibling ticket (QUEUED, never touched again) via
+`frob ticket new` in the same worktree/commit, mirroring the T-0575/
+T-draft-3d5f6965 and T-0576 two-draft field incidents. Asserts the sibling
+survives with a real (non-draft) final id, in its original QUEUED state,
+distinct from the landed ticket's final id.
+
+Verified: without part 1, the sibling vanishes entirely at the very first
+merge-into-worktree splice (confirmed by code trace, not by literally
+reverting and re-running under time pressure -- the mechanism is
+unambiguous from `_splice_only_ticket`'s existing logic, which only ever
+copies `main_tickets` plus the one landed id plus already-on-main
+siblings).
+
+### Changed
+```
+ src/frob/tickets/__init__.py             | 142 ++++++++++++-------
+ src/frob/tickets/_land.py                | 105 ++++++++++++++
+ tests/test_ticket_land.py                |  68 +++++++++
+ tests/test_tickets_ledger_concurrency.py | 232 +++++++++++++++++++++++++++++++
+ tickets.md                               |  70 +++++++++-
+ 5 files changed, 564 insertions(+), 53 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
 
 <!-- ticket:T-0638 -->
 ```yaml

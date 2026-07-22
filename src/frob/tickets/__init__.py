@@ -175,31 +175,47 @@ def migrate(root: Path) -> Result[int, TicketError]:
 
 
 # frob:doc docs/modules/tickets.md#public-api
+# frob:ticket T-0633
+# frob:tests tests/test_tickets_ledger_concurrency.py::TestArchiveRaceWithConcurrentNew.test_concurrent_new_ticket_survives_a_racing_archive  # noqa: E501
 # frob:waive TEST005 reason="archive 75.0% branch cover, debt T-0160"
 def archive(root: Path) -> Result[int, TicketError]:
     """Move every done/dropped ticket from the active store into
     tickets-archive.md, verbatim (same section format, still tracked and
     greppable); the active ledger keeps only open work. Idempotent -- a
     second call with nothing newly done/dropped moves nothing and returns
-    Ok(0). Returns the number of tickets moved."""
+    Ok(0). Returns the number of tickets moved.
+
+    T-0633: the whole load-filter-write sequence is held under ONE
+    `ledger_lock` span, not just the final `write_all`/`write_archive`
+    calls individually -- `load_all` used to run UNLOCKED, so a concurrent
+    single-ticket write (`new_ticket`, `transition`, ...) landing in the
+    window between this function's unlocked read and its later locked
+    `write_all(keep)` was silently reverted: `keep` was computed from the
+    stale pre-lock snapshot and `write_all` replaces the ENTIRE active
+    ledger with it, bytes and all, clobbering whatever the concurrent
+    writer had just spliced in. Holding the lock across the full sequence
+    (reentrant per thread, see `ledger_lock`'s docstring) makes the read
+    and the write one atomic unit, so no writer's splice can ever land in
+    the gap and then get overwritten."""
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(leased.danger_err)
-    active_loaded = load_all(root)
-    if active_loaded.is_err:
-        return Err(active_loaded.danger_err)
-    active = active_loaded.danger_ok
+    with ledger_lock(root):
+        active_loaded = load_all(root)
+        if active_loaded.is_err:
+            return Err(active_loaded.danger_err)
+        active = active_loaded.danger_ok
 
-    to_archive = {
-        tid: t
-        for tid, t in active.items()
-        if t.state in (TicketState.DONE, TicketState.DROPPED)
-    }
-    if not to_archive:
-        _log.info("tickets: archive -- nothing to move")
-        return Ok(0)
+        to_archive = {
+            tid: t
+            for tid, t in active.items()
+            if t.state in (TicketState.DONE, TicketState.DROPPED)
+        }
+        if not to_archive:
+            _log.info("tickets: archive -- nothing to move")
+            return Ok(0)
 
-    return _write_archived_and_active(root, active, to_archive)
+        return _write_archived_and_active(root, active, to_archive)
 
 
 def _write_archived_and_active(
@@ -417,28 +433,37 @@ def _apply_renumber(
 
 
 # frob:doc docs/modules/tickets.md#public-api
+# frob:ticket T-0633
+# frob:tests tests/test_tickets_ledger_concurrency.py::TestLedgerLockSpansWholesaleOperations.test_concurrent_ledger_lock_acquisition_serializes  # noqa: E501
 # frob:waive TEST005 reason="renumber 69.2% branch cover, debt T-0160"
 def renumber(root: Path) -> Result[int, TicketError]:
     """Reassign ticket ids to a contiguous T-0001.. sequence (ordered by
     current id), rewriting blocked_by/parent references so the queue stays
     consistent. The remedy for sequential-id collisions after a worktree
     merge (T-0012). Returns the number of tickets renumbered.
+
+    T-0633: `load_all` and the eventual `write_all` are now held under one
+    `ledger_lock` span (same fix and rationale as `archive`'s docstring) --
+    previously the load ran unlocked, so a concurrent single-ticket write
+    landing before this function's own locked `write_all` was silently
+    reverted by the stale wholesale rewrite.
     """
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(leased.danger_err)
-    loaded = load_all(root)
-    if loaded.is_err:
-        return Err(loaded.danger_err)
-    ordered = sorted(loaded.danger_ok.values(), key=lambda t: t.id)
-    mapping = {t.id: f"T-{i + 1:04d}" for i, t in enumerate(ordered)}
-    if _is_contiguous(ordered, mapping):
-        _log.info("tickets: renumber -- already contiguous, nothing to do")
-        return Ok(0)
-    new_map, renumbered = _apply_renumber(ordered, mapping)
-    result = write_all(root, new_map)
-    if result.is_err:
-        return Err(result.danger_err)
+    with ledger_lock(root):
+        loaded = load_all(root)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        ordered = sorted(loaded.danger_ok.values(), key=lambda t: t.id)
+        mapping = {t.id: f"T-{i + 1:04d}" for i, t in enumerate(ordered)}
+        if _is_contiguous(ordered, mapping):
+            _log.info("tickets: renumber -- already contiguous, nothing to do")
+            return Ok(0)
+        new_map, renumbered = _apply_renumber(ordered, mapping)
+        result = write_all(root, new_map)
+        if result.is_err:
+            return Err(result.danger_err)
     _log.info("tickets: renumbered %d ticket(s)", renumbered)
     return Ok(renumbered)
 
@@ -650,6 +675,8 @@ def _log_renumber_dry_run(old_id: str, new_id: str, report: RenumberReport) -> N
 # T-0176's `frob ticket land` reuse.
 # frob:doc docs/modules/tickets.md#public-api
 # frob:ticket T-0162
+# frob:ticket T-0633
+# frob:tests tests/test_tickets_ledger_concurrency.py::TestRenumberOneRaceWithConcurrentNew.test_concurrent_new_ticket_survives_a_racing_renumber_one  # noqa: E501
 # frob:waive TEST005 reason="renumber_one 68.3% branch cover, debt T-0160"
 def renumber_one(
     root: Path, old_id: str, new_id: str, *, dry_run: bool = False
@@ -658,34 +685,45 @@ def renumber_one(
     (active or archive, id + every blocked_by/parent reference across BOTH
     stores) and every `frob:ticket`/`frob:waive`/`frob:todo`/`frob:tests`/
     `frob:invariant`/`frob:doc` directive line across the tracked tree that
-    names it."""
+    names it.
+
+    T-0633: the load (`_load_and_validate_renumber_ids`) and the eventual
+    persist (`_persist_renumber`, which calls `write_all`/`write_archive`)
+    are held under one `ledger_lock` span for a non-dry-run call -- this is
+    `finalize_draft`'s rename primitive (T-0162), so the same TOCTOU that
+    `archive`/`renumber` had (an unlocked load, then a locked wholesale
+    write built from that stale snapshot silently reverting a concurrent
+    single-ticket write in between) applied here too, and matters more:
+    `finalize_draft` runs at `frob ticket land` time, exactly when a
+    concurrent worktree's ledger write is most likely to be in flight."""
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(leased.danger_err)
-    loaded = _load_and_validate_renumber_ids(root, old_id, new_id)
-    if loaded.is_err:
-        return Err(loaded.danger_err)
-    active_map, archive_map = loaded.danger_ok
-    new_active_map, active_changed, new_archive_map, archive_changed = (
-        _apply_renumber_mapping(active_map, archive_map, old_id, new_id)
-    )
-    code_changes = _scan_code_references(root, old_id, new_id)
-    report = _build_renumber_report(
-        root, old_id, new_id, active_changed, archive_changed, code_changes, dry_run
-    )
-    if dry_run:
-        _log_renumber_dry_run(old_id, new_id, report)
-        return Ok(report)
+    with ledger_lock(root):
+        loaded = _load_and_validate_renumber_ids(root, old_id, new_id)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        active_map, archive_map = loaded.danger_ok
+        new_active_map, active_changed, new_archive_map, archive_changed = (
+            _apply_renumber_mapping(active_map, archive_map, old_id, new_id)
+        )
+        code_changes = _scan_code_references(root, old_id, new_id)
+        report = _build_renumber_report(
+            root, old_id, new_id, active_changed, archive_changed, code_changes, dry_run
+        )
+        if dry_run:
+            _log_renumber_dry_run(old_id, new_id, report)
+            return Ok(report)
 
-    persisted = _persist_renumber(
-        root,
-        new_active_map=new_active_map,
-        active_changed=active_changed,
-        new_archive_map=new_archive_map,
-        archive_changed=archive_changed,
-        code_changes=code_changes,
-    )
-    return _finish_renumber(persisted, old_id, new_id, code_changes, report)
+        persisted = _persist_renumber(
+            root,
+            new_active_map=new_active_map,
+            active_changed=active_changed,
+            new_archive_map=new_archive_map,
+            archive_changed=archive_changed,
+            code_changes=code_changes,
+        )
+        return _finish_renumber(persisted, old_id, new_id, code_changes, report)
 
 
 def _finish_renumber(

@@ -284,6 +284,40 @@ def _preserve_sibling_done_reports(
             merged[ticket_id] = _union_evidence(ticket, main_side, ticket)
 
 
+# frob:ticket T-0637
+# frob:tests tests/test_ticket_land.py::TestStandaloneSiblingDraftSurvivesLand.test_sibling_draft_ticket_finalized_and_lands_alongside  # noqa: E501
+def _carry_forward_new_worktree_tickets(
+    merged: dict[str, Ticket], worktree_tickets: dict[str, Ticket], landed_id: str
+) -> None:
+    """Carry over any ticket id present ONLY in `worktree_tickets` -- never
+    yet on main/`merged`'s base -- that is not `landed_id` itself.
+
+    `_splice_only_ticket`'s T-0479 scoping deliberately never lets a
+    worktree's STALE view of an ALREADY-ON-MAIN ticket win (that is the
+    sibling-resurrection class it closes) -- but a ticket main has never
+    seen at all carries no stale state to protect against, so silently
+    dropping it is pure data loss with no matching safety benefit. This was
+    the T-0637 field incident: a standalone sibling draft ticket
+    (`frob ticket new` filed mid-session off the default branch, T-0162)
+    present only in the worktree's ledger vanished the moment ANY ticket
+    from that worktree landed, because neither this overlay (before this
+    fix) nor `_preserve_sibling_done_reports` (which only ever touches ids
+    `merged` already has) ever considered an id absent from BOTH main and
+    the overlay target. Skips `landed_id` (the caller's own overlay already
+    handles it) and anything `merged` already has an entry for (that path
+    is `_preserve_sibling_done_reports`'s job, not this one's)."""
+    for ticket_id, ticket in worktree_tickets.items():
+        if ticket_id == landed_id or ticket_id in merged:
+            continue
+        merged[ticket_id] = ticket
+        _log.info(
+            "tickets: land splice -- carried forward new sibling ticket %s "
+            "(not previously on main) while landing %s",
+            ticket_id,
+            landed_id,
+        )
+
+
 # frob:ticket T-0479
 def _splice_only_ticket(
     main_text: str,
@@ -326,6 +360,7 @@ def _splice_only_ticket(
         else:
             merged[ticket_id] = incoming
     _preserve_sibling_done_reports(merged, worktree_tickets, ticket_id)
+    _carry_forward_new_worktree_tickets(merged, worktree_tickets, ticket_id)
     _drop_resurrected_ids(merged, archived_ids)
     _log.info(
         "tickets: land splice (ticket-scoped) -- %s only, main=%d ticket(s), merged=%d",
@@ -1201,6 +1236,10 @@ def _land_finalize_and_close(
         return Err(finalized.danger_err)
     final_id = finalized.danger_ok
 
+    siblings_finalized = _finalize_sibling_drafts(worktree, final_id)
+    if siblings_finalized.is_err:
+        return Err(siblings_finalized.danger_err)
+
     committed = _commit_finalize_writes(worktree, final_id)
     if committed.is_err:
         return Err(committed.danger_err)
@@ -1247,6 +1286,72 @@ def _finalize_draft_id(worktree: Path, ticket_id: str) -> Result[str, LandError]
         )
         return Err(LandError.GitFailed)
     return Ok(finalized.danger_ok)
+
+
+# frob:ticket T-0637
+# frob:tests tests/test_ticket_land.py::TestStandaloneSiblingDraftSurvivesLand.test_sibling_draft_ticket_finalized_and_lands_alongside  # noqa: E501
+def _finalize_sibling_drafts(
+    worktree: Path, landed_final_id: str
+) -> Result[tuple[str, ...], LandError]:
+    """Finalize every OTHER draft ticket (T-draft-...) still in `worktree`'s
+    active ledger after the ticket actually being landed has already been
+    finalized (T-0637).
+
+    A worktree can accumulate STANDALONE sibling draft tickets (features/
+    bugs filed mid-session via `frob ticket new` off the default branch,
+    T-0162 mints a draft id there since final sequential ids are only ever
+    minted against the default branch) that have nothing to do with the
+    ticket actually being landed. Left unfinalized, a draft id block would
+    either land verbatim onto main (violating the T-0162 invariant that a
+    T-draft-<hex> id must never persist on the default branch) or -- before
+    T-0637's `_carry_forward_new_worktree_tickets` fix -- get silently
+    dropped outright by the ledger splice, the real field incident this
+    closes (T-0575's own T-draft-3d5f6965 sibling block, and again two
+    drafts filed in T-0576's worktree). Every remaining draft ticket is
+    finalized here (via `finalize_draft`, i.e. `renumber_one` against the
+    worktree's CURRENT merged view, same primitive `_finalize_draft_id`
+    uses for the landing ticket itself) so the later ledger splice onto
+    main carries a real sequential id, not a draft one.
+
+    Returns the tuple of newly-finalized ids (old draft ids resolved to
+    their final T-#### form), for logging/observability; the caller does
+    not need to thread these through further -- once finalized, each
+    sibling's fresh section is picked up by `_carry_forward_new_worktree_
+    tickets` at squash-splice time the same way any other new-to-main
+    ticket is."""
+    from frob.tickets import finalize_draft, load_all
+
+    loaded = load_all(worktree)
+    if loaded.is_err:
+        _log.error(
+            "land: could not load %s's active ledger to finalize sibling draft tickets",
+            worktree,
+        )
+        return Err(LandError.GitFailed)
+    draft_ids = sorted(
+        tid for tid in loaded.danger_ok if is_draft_id(tid) and tid != landed_final_id
+    )
+    finalized_ids: list[str] = []
+    for draft_id in draft_ids:
+        result = finalize_draft(worktree, draft_id)
+        if result.is_err:
+            _log.error(
+                "land: sibling draft %s finalize failed (%s) after %s "
+                "already finalized -- inspect %s and retry",
+                draft_id,
+                result.danger_err,
+                landed_final_id,
+                worktree,
+            )
+            return Err(LandError.GitFailed)
+        finalized_ids.append(result.danger_ok)
+        _log.info(
+            "land: finalized sibling draft %s -> %s (alongside %s)",
+            draft_id,
+            result.danger_ok,
+            landed_final_id,
+        )
+    return Ok(tuple(finalized_ids))
 
 
 def _close_finalized_ticket(
