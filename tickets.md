@@ -4748,3 +4748,493 @@ component: null
 labels: []
 ```
 T-0554 wired _run_gates into run_check_cpp/rust/ts with skip_gates/ticket/base/delta kwargs, but src/frob/app/check_runner.py's _dispatch_check_cpp/_dispatch_check_rust/_dispatch_check_ts do not pass cfg.check_skip_gates/check_ticket/check_base/check_delta down -- only _dispatch_check_python does. Gates run unconditionally for non-Python repos (correct default), but CLI-level --ticket/--base/--delta scoping is silently ignored there. Thread the four kwargs through and test each dispatcher. Found by T-0554's reviewer.
+
+<!-- ticket:T-0609 -->
+```yaml
+id: T-0609
+title: 'arch: normalized code model (language-agnostic node types + adapter protocol)'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0329
+scope:
+- src/frob/arch/_models.py
+- src/frob/arch/_normalized.py
+- docs/modules/arch.md
+- tests/unit/test_arch.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Define the normalized-code-model types (module, class, function, method, param, branch, loop, call, import, override, field-access, return, raise/throw, catch) as pydantic models in src/frob/arch/_normalized.py, plus an Adapter protocol each language walker implements to map its tree-sitter grammar onto the model. No behavior change yet: existing python/cpp checks keep running unchanged. Acceptance: model types + protocol defined, unit tests construct a normalized tree by hand for a trivial python snippet and assert shape; docs/modules/arch.md documents the model.
+
+<!-- ticket:T-0610 -->
+```yaml
+id: T-0610
+title: 'arch: refactor python/cpp checks onto normalized model (no regression)'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0609
+parent: T-0329
+scope:
+- src/frob/arch/_python.py
+- src/frob/arch/_normalized.py
+- tests/unit/test_arch.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Add a python-adapter (and cpp-adapter) mapping the existing tree-sitter walks onto the T-0609 normalized model, then re-point the existing arch checks (long-function, god-class, high-coupling, deep-nesting, abstraction-opportunity, large-file, T-0332 pattern recommender) to read from the normalized tree instead of raw tree-sitter nodes. Acceptance: existing test_arch.py suite passes unchanged (same suggestions on the same fixtures) proving zero regression; checks now take a normalized tree, not a language-specific one.
+
+<!-- ticket:T-0611 -->
+```yaml
+id: T-0611
+title: 'arch: TypeScript adapter for normalized code model'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0609
+parent: T-0329
+scope:
+- src/frob/lang/_walk_typescript.py
+- src/frob/arch/_normalized.py
+- tests/unit/test_arch.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Implement the TS adapter mapping tree-sitter-typescript node types onto the T-0609 normalized model (functions, classes, methods, arrow fns, imports/exports, try/catch, throw). Acceptance: a shared arch check (e.g. long-function or god-class) written once against the model fires correctly on an equivalent TS fixture, matching the python fixture's result shape.
+
+<!-- ticket:T-0612 -->
+```yaml
+id: T-0612
+title: 'arch: Rust adapter for normalized code model'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0609
+parent: T-0329
+scope:
+- src/frob/lang/_walk_rust.py
+- src/frob/arch/_normalized.py
+- tests/unit/test_arch.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Implement the Rust adapter mapping tree-sitter-rust node types onto the T-0609 normalized model (fn, impl/trait methods, match arms as branches, loop, use as import, Result-returning fns, panic!/unwrap as raise-equivalent). Acceptance: a shared arch check written once against the model fires correctly on an equivalent Rust fixture.
+
+<!-- ticket:T-0613 -->
+```yaml
+id: T-0613
+title: 'arch: wire tree-sitter-kotlin grammar into frob.lang'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0329
+scope:
+- pyproject.toml
+- src/frob/lang/_walk_kotlin.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Add tree-sitter-kotlin as a dependency (or via tree-sitter-language-pack if it covers kotlin; otherwise pin tree-sitter-kotlin directly) and add a minimal _walk_kotlin.py following the _walk_typescript.py/_walk_rust.py shape (parse, expose raw tree-sitter nodes) with no normalized-model mapping yet. Acceptance: a trivial .kt fixture parses without error; a smoke test asserts the parse tree has expected top-level node types (class, fun).
+
+<!-- ticket:T-0614 -->
+```yaml
+id: T-0614
+title: 'arch: Kotlin adapter for normalized code model'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0613
+- T-0610
+parent: T-0329
+scope:
+- src/frob/lang/_walk_kotlin.py
+- src/frob/arch/_normalized.py
+- tests/unit/test_arch.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Implement the Kotlin adapter mapping tree-sitter-kotlin node types onto the T-0609 normalized model. Acceptance: a shared arch check written once against the model fires correctly on an equivalent Kotlin fixture, matching python/ts/rust fixture result shapes.
+
+<!-- ticket:T-0615 -->
+```yaml
+id: T-0615
+title: 'arch: N:1 cross-language equivalence meta-test (python/ts/rust/kotlin)'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0610
+- T-0611
+- T-0612
+- T-0614
+parent: T-0329
+scope:
+- tests/unit/test_arch.py
+- tests/fixtures/arch/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Add equivalent fixture files (same god-class / long-function / deep-nesting shape) in python, typescript, rust, kotlin under tests/fixtures/arch/, and a parametrized meta-test asserting every shared arch check fires the SAME category+severity across all four languages on its equivalent fixture. This is the epic's own closing acceptance criterion (per T-0329 body: 'an arch check written once fires correctly across python+ts+rust+kotlin on equivalent code'). T-0329 cannot close until this passes.
+
+<!-- ticket:T-0616 -->
+```yaml
+id: T-0616
+title: 'arch: SRP/cohesion checks (ARCH1xx) -- LCOM4, god-module, mixed-concern function'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0609
+parent: T-0330
+scope:
+- src/frob/arch/_solid.py
+- src/frob/arch/_models.py
+- docs/modules/arch.md
+- tests/unit/test_arch.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+New ARCH1xx family for SRP: (1) LCOM4 low-cohesion class -- methods partition into disjoint field-usage components via a connectivity graph over self-field reads/writes; (2) god-module -- unrelated exports clustered by naming/usage disjointness; (3) mixed-concern function -- one body containing I/O capability calls + pure compute + string-formatting. Each check ships its static proxy definition, severity, ARCHxxx id, and is waivable via the existing T-0289 reasoned-override mechanism. Runs on the normalized model (T-0609) so it works across languages already adapted. Acceptance: one fixture per check triggers it; one negative fixture per check does not; docs/modules/arch.md documents each id + proxy.
+
+<!-- ticket:T-0617 -->
+```yaml
+id: T-0617
+title: 'arch: OCP checks (ARCH1xx) -- type-dispatch smell, non-exhaustive enum match'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0609
+parent: T-0330
+scope:
+- src/frob/arch/_solid.py
+- src/frob/arch/_models.py
+- docs/modules/arch.md
+- tests/unit/test_arch.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+type-dispatch smell: N+ isinstance/type==/tag-switch branches on one variable inside a function, flag as a polymorphism opportunity. non-exhaustive enum match: a match/switch over a known closed enum/tagged-union type missing a member and no wildcard/default. Static proxies, severity, ARCHxxx ids, T-0289-waivable. Acceptance: positive+negative fixtures per check; docs updated.
+
+<!-- ticket:T-0618 -->
+```yaml
+id: T-0618
+title: 'arch: LSP checks (ARCH1xx) -- override contract violations'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0609
+parent: T-0330
+scope:
+- src/frob/arch/_solid.py
+- src/frob/arch/_models.py
+- docs/modules/arch.md
+- tests/unit/test_arch.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Override checks against a base/interface method: (1) raises NotImplementedError in a supposedly-concrete override; (2) incompatible signature (narrower accepted params, or wider/different return than base -- variance violation); (3) strengthened precondition (override adds an assert/raise the base lacks on the same param); (4) weakened postcondition; (5) no-op override of a value-returning base method (bare pass/return None where base returns a value). Needs override-resolution over the normalized model (base<->override linkage). Acceptance: one fixture per sub-check; docs updated.
+
+<!-- ticket:T-0619 -->
+```yaml
+id: T-0619
+title: 'arch: ISP checks (ARCH1xx) -- fat interface, narrow-client usage'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0609
+parent: T-0330
+scope:
+- src/frob/arch/_solid.py
+- src/frob/arch/_models.py
+- docs/modules/arch.md
+- tests/unit/test_arch.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+fat interface: ABC/Protocol/trait whose implementers stub most methods with raise NotImplementedError/pass (measured over resolved implementers, not per-class). narrow-client usage: a function/class injected with a wide interface but only calling a small subset of its methods -- flag as an ISP split candidate. Acceptance: positive+negative fixtures; docs updated.
+
+<!-- ticket:T-0620 -->
+```yaml
+id: T-0620
+title: 'arch: DIP layering contract (declared allowed-module-dependency graph) + no-DI
+  construction smell'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0609
+parent: T-0330
+scope:
+- src/frob/arch/_layering.py
+- frob.toml
+- docs/modules/arch.md
+- tests/unit/test_arch.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Layering contract: a frob.toml-declared allowed-module-dependency graph (import-linter style: layers + allowed edges); a violation is a high layer importing a low/concrete module across the declared boundary -- new ARCHxxx id, resolved against actual (not surface) imports per the adversarial-hardening note (transitive re-export resolution, fail-closed on dynamic import). concrete-collaborator construction smell: a method body directly constructs a concrete dependency instead of receiving it via constructor/param injection. Acceptance: a sample frob.toml layering config + fixture violating it fails; a compliant fixture passes; docs updated with the config schema.
+
+<!-- ticket:T-0621 -->
+```yaml
+id: T-0621
+title: 'arch: type-driven design checks (ARCH1xx) -- illegal states, primitive obsession,
+  parse-dont-validate, boolean flag param'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0609
+parent: T-0330
+scope:
+- src/frob/arch/_typedesign.py
+- docs/modules/arch.md
+- tests/unit/test_arch.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+make-illegal-states-unrepresentable: a bool flag field/param whose valid combinations are validated at runtime rather than modeled as an enum/newtype (heuristic: bool field + a validator/assert referencing it + another field it constrains). primitive-obsession: 3+ raw str/int params on one function representing what looks like one domain concept (repeated co-occurrence across call sites). parse-dont-validate: a function that validates its input (raise/assert on shape) then returns the SAME unrefined input type instead of a refined one. boolean/flag parameter: public function with a bool param that switches behavior (branches internally on it) -- split-function candidate. Acceptance: fixture per sub-check; docs updated.
+
+<!-- ticket:T-0622 -->
+```yaml
+id: T-0622
+title: 'arch: logging discipline checks (ARCH1xx) -- unlogged error path, unlogged
+  boundary, print-as-diagnostic'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0609
+parent: T-0330
+scope:
+- src/frob/arch/_logging_checks.py
+- docs/modules/arch.md
+- tests/unit/test_arch.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+unlogged error path: except/raise/return-Err block with no log call inside it. unlogged boundary: public entry point / subprocess call / network call / filesystem call site with no log statement in its immediate scope. print-as-diagnostic: print() call used where a module logger call is expected (not a CLI-output module). Must coincide with strata's observability-of-flow split per CLAUDE.md note -- these checks are logging-IN-CODE only, no runtime/flow correlation. Acceptance: fixture per sub-check; docs updated including the strata/arch boundary note.
+
+<!-- ticket:T-0623 -->
+```yaml
+id: T-0623
+title: 'arch: fallibility checks (ARCH1xx) -- unhandled Result, swallowed exception,
+  wrong-signature raise, over-broad except'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0609
+parent: T-0330
+scope:
+- src/frob/arch/_fallibility.py
+- docs/modules/arch.md
+- tests/unit/test_arch.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+unhandled Result: a call known to return typani Result[T,E] (or Rust #[must_use]) used as a bare statement, discarding the value. swallowed exception: bare except: or except Exception: pass with no re-raise/log/return-Err. recoverable-error-wrong-signature: a function raises a clearly-recoverable error (e.g. ValueError on bad user input) but its signature returns T, not Result[T,E]. over-broad except / re-raise-losing-context: except Exception (or bare except) catching more than the call site can name, or a re-raise that drops the original exception/traceback. Acceptance: fixture per sub-check; docs updated.
+
+<!-- ticket:T-0624 -->
+```yaml
+id: T-0624
+title: 'arch: misc design smells (ARCH1xx) -- mutable default arg, feature envy, data
+  clumps, magic literals, dead private code, deep inheritance, temporal coupling'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0609
+parent: T-0330
+scope:
+- src/frob/arch/_smells.py
+- docs/modules/arch.md
+- tests/unit/test_arch.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+mutable default argument (list/dict/set literal as a default param value). feature envy (method's body references another object's attrs/methods more than self's). data clumps (same 3+-param group passed together across 3+ call sites). magic numbers/strings in logic (bare literal in a comparison/branch outside a named constant). dead private code (unreferenced private symbol, using the T-0288 call graph so helper-splices don't false-positive). deep inheritance (DIT beyond a configurable threshold). temporal coupling (an _initialized-style flag guarding call order instead of the type system). Acceptance: fixture per sub-check; docs updated.
+
+<!-- ticket:T-0625 -->
+```yaml
+id: T-0625
+title: 'arch: module dependency cycle detection (ARCH1xx)'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0620
+parent: T-0330
+scope:
+- src/frob/arch/_smells.py
+- src/frob/graph/**
+- docs/modules/arch.md
+- tests/unit/test_arch.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Detect import cycles across modules using the existing module-dependency graph (shared with T-0620's layering contract, do not fork a second graph builder). Report the cycle path. Acceptance: a fixture pair of modules importing each other fails; docs updated; explicitly reuses T-0620's graph builder (no duplicate import-resolution code).
+
+<!-- ticket:T-0626 -->
+```yaml
+id: T-0626
+title: 'arch: register all ARCH1xx checks in the T-0343 unified registry, close the
+  DENOMINATOR MANIFEST gap for T-0330'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0616
+- T-0617
+- T-0618
+- T-0619
+- T-0620
+- T-0621
+- T-0622
+- T-0623
+- T-0624
+- T-0625
+parent: T-0330
+scope:
+- docs/design/registry/**
+- docs/design/architecture-check-catalog.md
+- docs/design/design-pattern-traps-corpus.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Per T-0330's EXHAUSTIVENESS DRIFT-LOCK paragraph: every tier-1 statically-checkable entry in architecture-check-catalog.md and every trap hallmark in design-pattern-traps-corpus.md that this epic's ARCH1xx family (T-0616..T-0625) was meant to cover must get a disposition in docs/design/registry/ (addressed-by-check <ARCHxxx id> | reasoned-deferral | duplicate-of | out-of-scope), per the T-0343 REG001 gate contract. Acceptance: frob check's registry gate (REG001-family) shows zero unaccounted entries whose owning corpus row maps to T-0330's scope; any entry NOT built in T-0616..T-0625 gets an explicit reasoned-deferral or out-of-scope disposition, never silently dropped. This ticket is the epic's actual close condition -- T-0330 cannot close until this is green.
