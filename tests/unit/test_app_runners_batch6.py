@@ -528,6 +528,7 @@ def _make_check_result(errors: int = 0, warnings: int = 0) -> CheckResult:
     )
 
 
+# frob:ticket T-0563
 class TestCheckRunner:
     """`frob check`: path validation, stamp modes, dispatch, and reporting."""
 
@@ -610,9 +611,13 @@ class TestCheckRunner:
         out = capsys.readouterr().out
         assert out
 
+    # frob:ticket T-0563
     def test_json_mode_prints_json_and_errors_exit_1(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
+        """T-0563: `--json` is logged via `_log.info` (RENDER001), not a
+        bare `print` -- assert against `caplog`, matching `frob map`/`frob
+        dup`'s established `--json`-via-logger test convention."""
         import frob.app.check_runner as check_mod
 
         (tmp_path / "pyproject.toml").write_text("[project]\nname='x'\n")
@@ -620,11 +625,10 @@ class TestCheckRunner:
             check_mod, "run_check", lambda root, **kw: _make_check_result(errors=1)
         )
         cfg = AppConfig(check_path=tmp_path, check_json=True)
-        with pytest.raises(SystemExit) as exc:
+        with caplog.at_level("INFO"), pytest.raises(SystemExit) as exc:
             check_run(cfg)
         assert exc.value.code == 1
-        out = capsys.readouterr().out
-        assert out.strip().startswith("{")
+        assert any(r.message.strip().startswith("{") for r in caplog.records)
 
     def test_pinned_type_warns_polyglot_and_skips_others(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys

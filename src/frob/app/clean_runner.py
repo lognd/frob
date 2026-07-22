@@ -44,6 +44,7 @@ def _print_report(r: Renderer, report, executed: bool) -> None:  # noqa: ANN001
 
 
 # frob:ticket T-0457
+# frob:ticket T-0563
 # frob:doc docs/modules/clean.md#public-api
 def run(cfg: AppConfig) -> None:
     """`frob clean`: tiered, artifact-only workspace cleanup. Defaults to a
@@ -62,7 +63,7 @@ def run(cfg: AppConfig) -> None:
     report = result.danger_ok
 
     if cfg.clean_json:
-        print(report.model_dump_json(indent=2))
+        _log.info(report.model_dump_json(indent=2))
         return
 
     r = Renderer.for_stream(

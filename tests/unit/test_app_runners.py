@@ -64,6 +64,7 @@ class TestMapRunner:
         assert caplog.records
 
 
+# frob:ticket T-0563
 class TestGitlogRunner:
     """`frob gitlog`: text and JSON rendering over a real git repo."""
 
@@ -90,8 +91,11 @@ class TestGitlogRunner:
         out = capsys.readouterr().out
         assert out.strip() != ""
 
-    def test_json_mode_prints_json(self, tmp_path, capsys, monkeypatch):
-        """JSON mode prints the JSON rendering of the commit log."""
+    # frob:ticket T-0563
+    def test_json_mode_prints_json(self, tmp_path, caplog, monkeypatch):
+        """JSON mode logs the JSON rendering of the commit log (T-0563:
+        via `_log.info`/RENDER001, matching `frob map`/`frob dup`'s
+        `--json`-via-logger convention -- assert against `caplog`)."""
         import subprocess
 
         monkeypatch.chdir(tmp_path)
@@ -109,9 +113,12 @@ class TestGitlogRunner:
             ["git", "commit", "-q", "-m", "fix: bug"], cwd=tmp_path, check=True
         )
         cfg = AppConfig(gitlog_path=tmp_path, gitlog_json=True)
-        gitlog_run(cfg)
-        out = capsys.readouterr().out
-        assert out.strip().startswith("{") or out.strip().startswith("[")
+        with caplog.at_level("INFO"):
+            gitlog_run(cfg)
+        assert any(
+            r.message.strip().startswith("{") or r.message.strip().startswith("[")
+            for r in caplog.records
+        )
 
 
 class TestXrefRunner:

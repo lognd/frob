@@ -12,6 +12,7 @@ command over it.
 
 from __future__ import annotations
 
+import contextlib
 import sys
 import tomllib
 from datetime import date
@@ -56,23 +57,33 @@ def _load_snapshot(root: Path):  # noqa: ANN201
     return built.danger_ok
 
 
+# frob:ticket T-0563
 # frob:doc docs/modules/app.md#runners
 def run(cfg: AppConfig) -> None:
     """List every outstanding `frob:debt` entry under `cfg.debt_path`."""
     from frob.gates import list_debt
+    from frob.logging import quiet_stdout_logs
 
     root = (cfg.debt_path or Path(".")).resolve()
-    snapshot = _load_snapshot(root)
-    entries = list_debt(
-        snapshot,
-        current_date=date.today().isoformat(),
-        current_version=_current_version(root),
-    )
+    # T-0563: `--json` wraps snapshot-loading in `quiet_stdout_logs`,
+    # matching `frob map`/`frob dup` -- the graph-build INFO/DEBUG chatter
+    # must not land ahead of the JSON payload on the same stdout-bound
+    # `_log.info` channel now that both go through the logger.
+    ctx = quiet_stdout_logs() if cfg.debt_json else contextlib.nullcontext()
+    with ctx:
+        snapshot = _load_snapshot(root)
+        entries = list_debt(
+            snapshot,
+            current_date=date.today().isoformat(),
+            current_version=_current_version(root),
+        )
 
     if cfg.debt_json:
         import json
 
-        print(json.dumps([e.model_dump() for e in entries], indent=2, sort_keys=True))
+        _log.info(
+            json.dumps([e.model_dump() for e in entries], indent=2, sort_keys=True)
+        )
         return
 
     if not entries:

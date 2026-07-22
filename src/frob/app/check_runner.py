@@ -499,20 +499,25 @@ def _run_stamp_baseline(root: Path, cfg: AppConfig) -> None:
     _log.info("baseline stamp written: %d violation(s)", len(report.violations))
 
 
+# frob:ticket T-0563
 def _report_check_result(cfg: AppConfig, result) -> None:  # noqa: ANN001
-    """Print `result` as JSON or colorized text per `cfg`, then exit 1 on errors.
+    """Emit `result` as JSON or colorized text per `cfg`, then exit 1 on errors.
 
-    Printed directly to stdout rather than through the logger (T-0202): the
-    summary/violations table is `frob check`'s actual deliverable output,
-    not a diagnostic, so it must appear regardless of `-v` level or a
-    caller having raised the stdout handler above INFO.
+    T-0563: routed through `frob.render`/`_log.info` instead of a bare
+    `print`, matching every other runner (RENDER001 forbids bare stdout
+    writes everywhere, including the `--json` escape hatch). `_report_
+    check_result` runs after `_run_all_stages`'s `_stdout_log_ctx` has
+    already restored the stdout handler to its pre-stage level (T-0202),
+    so this is not gated by `-v`/`--json`-forced-quiet the way per-stage
+    diagnostics are -- the summary/violations table always appears.
     """
     if cfg.check_json:
-        print(result.as_json())
+        _log.info(result.as_json())
     else:
         from frob.logging.color import should_color
 
-        print(result.as_text(color=should_color(sys.stdout)))
+        renderer = Renderer.for_stream(sys.stdout)
+        renderer.line(result.as_text(color=should_color(sys.stdout)))
 
     if result.total_errors > 0:
         sys.exit(1)

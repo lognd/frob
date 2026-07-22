@@ -20,16 +20,12 @@ dotted name ends in `.stderr`, e.g. `print(x, file=sys.stderr)` or the
 INV-RENDER-SOLE-STDOUT governs stdout only, `frob.logging` already governs
 the stderr-routed diagnostic path.
 
-WARN severity, not ERROR, today (T-0459's Done report): the render
-migration sweep (T-0461) covered every command-group runner the ticket
-named, but a handful of runners outside that list (`test_runner`,
+ERROR severity (T-0563): the T-0459 straggler list (`test_runner`,
 `check_runner`'s own final report line, `clean_runner`, `debt_runner`,
-`gitlog_runner`, `registry_runner`, `doctor_runner`) still print directly
-and are not yet migrated -- see this gate's own Done report for the exact
-list. Once those are migrated (or waived with a stated reason) this should
-become an ERROR-severity gate so a NEW bare print regresses the build,
-matching PII/SEC's fail-closed posture; that severity bump is intentionally
-left for a follow-up once the list above is empty.
+`gitlog_runner`, `registry_runner`, `doctor_runner` -- 14 bare
+print/stdout call sites total) is now fully migrated to `frob.render`/
+`_log.info`, so a NEW bare print regresses the build immediately, matching
+PII/SEC's fail-closed posture, instead of degrading silently to a warning.
 """
 
 # frob:ticket T-0459
@@ -149,6 +145,7 @@ def _scan_python_prints(tree: ast.Module) -> tuple[_PrintSite, ...]:
 
 
 # frob:ticket T-0459
+# frob:ticket T-0563
 def _render001_violation(rel_path: str, site: _PrintSite) -> Violation:
     """The RENDER001 `Violation` for one bare-stdout-write call site."""
     _log.warning(
@@ -156,7 +153,7 @@ def _render001_violation(rel_path: str, site: _PrintSite) -> Violation:
     )
     return Violation(
         rule="RENDER001",
-        severity=Severity.WARN,
+        severity=Severity.ERROR,
         file=rel_path,
         line=site.lineno,
         message=(
@@ -196,14 +193,14 @@ def _tracked_python_files(root: Path) -> tuple[str, ...]:
 # frob:tests tests/test_gates.py::TestRenderLintGate.test_bare_print_fires
 # frob:tests tests/test_gates.py::TestRenderLintGate.test_render_package_exempt
 # frob:tests tests/test_gates.py::TestRenderLintGate.test_stderr_directed_print_is_silent  # noqa: E501
+# frob:ticket T-0563
 # frob:invariant INV-RENDER-SOLE-STDOUT
 def render_lint_gate(root: Path) -> tuple[Violation, ...]:
     """RENDER001 (docs/modules/render.md#renderer): every git-tracked
     `src/frob/**/*.py` file (outside `src/frob/render/` itself) scanned for
     a bare `print`/`click.echo`/`sys.stdout.write` call that bypasses
-    `frob.render.Renderer`. WARN severity today (module docstring: a known,
-    named straggler list still needs the T-0461 migration or an explicit
-    waiver before this can safely become an ERROR gate)."""
+    `frob.render.Renderer`. ERROR severity (T-0563: the T-0459 straggler
+    list is fully migrated, so a new bare print now fails the build)."""
     root = Path(root)
     violations: list[Violation] = []
     scanned = 0

@@ -20,11 +20,17 @@ def _write(root: Path, rel: str, text: str) -> Path:
     return path
 
 
+# frob:ticket T-0563
 class TestDebtRunner:
+    # frob:ticket T-0563
     def test_json_mode_lists_debt_entries(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
         # frob:tests tests/test_debt_runner.py::TestDebtRunner.test_json_mode_lists_debt_entries
+        """T-0563: `--json` is logged via `_log.info` under
+        `quiet_stdout_logs` (RENDER001), not a bare `print` -- assert
+        against `caplog`, matching `frob map`/`frob dup`'s established
+        `--json`-via-logger test convention."""
         _write(
             tmp_path,
             "src/a.py",
@@ -34,8 +40,11 @@ class TestDebtRunner:
             "    return x\n",
         )
         cfg = AppConfig(debt_path=tmp_path, debt_json=True)
-        run(cfg)
-        out = json.loads(capsys.readouterr().out)
+        with caplog.at_level("INFO"):
+            run(cfg)
+        json_records = [r.message for r in caplog.records if r.message.startswith("[")]
+        assert len(json_records) == 1
+        out = json.loads(json_records[0])
         assert len(out) == 1
         assert out[0]["rule"] == "TEST005"
         assert out[0]["ticket"] == "T-0001"

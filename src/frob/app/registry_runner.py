@@ -32,6 +32,7 @@ def _render_audit_line(audit) -> str:  # noqa: ANN001
     )
 
 
+# frob:ticket T-0563
 # frob:doc docs/modules/app.md#runners
 def run(cfg: AppConfig) -> None:
     """`frob registry audit`: per-registry-file disposition counts under
@@ -48,7 +49,7 @@ def run(cfg: AppConfig) -> None:
         if cfg.registry_json:
             import json
 
-            print(json.dumps([], indent=2))
+            _log.info(json.dumps([], indent=2))
         return
 
     loaded = load_registry_dir(registry_dir, REGISTRY_FILES)
@@ -61,7 +62,7 @@ def run(cfg: AppConfig) -> None:
     if cfg.registry_json:
         import json
 
-        print(
+        _log.info(
             json.dumps(
                 [a.model_dump() for a in sorted(audits, key=lambda a: a.path)],
                 indent=2,

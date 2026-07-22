@@ -2,9 +2,11 @@
 """CLI wiring for `frob doctor` -- native-extension diagnosis (T-0319).
 
 T-0448: migrated to `frob.render.Renderer` as the FOUNDATION exemplar for
-the unified output layer -- the `--json` path is untouched (still a bare
-`print` of the structured payload, per the epic's "json is a separate
-channel" rule); only the human-facing report routes through `Renderer`.
+the unified output layer; the `--json` path stays a separate channel per
+the epic's "json is a separate channel" rule, but (T-0563) routes through
+`_log.info` under `quiet_stdout_logs` rather than a bare `print`, matching
+`frob map`/`frob dup` -- RENDER001 forbids bare stdout writes outside
+`frob.render` everywhere, including the json escape hatch.
 """
 
 from __future__ import annotations
@@ -20,6 +22,7 @@ _log = get_logger(__name__)
 
 # frob:ticket T-0319
 # frob:ticket T-0448
+# frob:ticket T-0563
 # frob:doc docs/guides/install.md#frob-doctor-native-extension-diagnosis-t-0319
 # frob:doc docs/modules/render.md#exemplar-frob-doctor
 def run(cfg: AppConfig) -> None:
@@ -31,7 +34,7 @@ def run(cfg: AppConfig) -> None:
     if cfg.doctor_json:
         with quiet_stdout_logs():
             report = run_diagnosis()
-        print(report.model_dump_json(indent=2))
+        _log.info(report.model_dump_json(indent=2))
         if not report.healthy:
             sys.exit(1)
         return

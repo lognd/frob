@@ -36,18 +36,20 @@ def _fuzz_models_and_digests(root: Path, snapshot, obs) -> tuple[list, dict[str,
     return models, digests
 
 
+# frob:ticket T-0563
 def _print_fuzz_results(results) -> list:  # noqa: ANN001
-    """Print one PASS/FALSIFIED line per fuzz result; return the falsified subset."""
+    """Log one PASS/FALSIFIED line per fuzz result; return the falsified subset."""
     falsified = [r for r in results if r.falsified]
     for r in results:
         mark = (
             f"FALSIFIED: {r.falsified}" if r.falsified else f"{r.examples} examples ok"
         )
-        print(f"  {r.ref}: {mark}")
+        _log.info("  %s: %s", r.ref, mark)
     return falsified
 
 
 # frob:ticket T-0002
+# frob:ticket T-0563
 def _run_fuzz(root: Path) -> None:
     """`frob test --fuzz`: property-test the pydantic models in fuzz-obligated
     signatures via the hypothesis harness, then stamp so FUZZ003 is satisfied.
@@ -63,11 +65,13 @@ def _run_fuzz(root: Path) -> None:
 
     obs = obligations(snapshot, FuzzPolicy(enforce=FuzzEnforce.INVARIANT_ANCHORED))
     if not obs:
-        print("frob test --fuzz: no obligated targets (add frob:invariant anchors)")
+        _log.info("frob test --fuzz: no obligated targets (add frob:invariant anchors)")
         return
     models, digests = _fuzz_models_and_digests(root, snapshot, obs)
     if not models:
-        print("frob test --fuzz: no derived pydantic-model params to fuzz (v1 scope)")
+        _log.info(
+            "frob test --fuzz: no derived pydantic-model params to fuzz (v1 scope)"
+        )
         return
 
     results = run_fuzz(tuple(models), budget_s=60, digests=digests)
@@ -195,6 +199,7 @@ def _run_selected_and_report(cfg: AppConfig, report, runners, root: Path) -> Non
         sys.exit(1)
 
 
+# frob:ticket T-0563
 def _refresh_collection(root: Path) -> None:
     """`frob test --collect`: drop the pytest collection cache and re-collect
     from scratch (T-0333). The honest escape hatch for the rare case the
@@ -209,11 +214,13 @@ def _refresh_collection(root: Path) -> None:
         _log.error("frob test --collect: %s", collected.danger_err)
         sys.exit(1)
     tests = collected.danger_ok
-    print(f"frob test --collect: collected {len(tests.node_ids)} node id(s)")
+    _log.info("frob test --collect: collected %d node id(s)", len(tests.node_ids))
     for spec in tests.missing_natives:
-        print(
-            f"  warning: native extension {spec.name!r} not built "
-            f"(run: {spec.build_cmd}); its tests are absent from collection"
+        _log.info(
+            "  warning: native extension %r not built "
+            "(run: %s); its tests are absent from collection",
+            spec.name,
+            spec.build_cmd,
         )
 
 
