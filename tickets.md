@@ -3425,7 +3425,7 @@ docs/audits/gates-accounting.md B5. coverage.xml, .frob/coverage-stamp, .frob/ba
 id: T-0546
 title: 'check: unmapped/unknown project type silently falls back to the Python pipeline
   (T-0404 finding 6)'
-state: queued
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-21'
@@ -3435,7 +3435,8 @@ parent: T-0404
 scope:
 - src/frob/app/check_runner.py
 scope_changes: []
-evidence: []
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 attachments: []
 acceptance: []
 threat: null
@@ -3444,6 +3445,37 @@ labels: []
 ```
 docs/audits/lang-check-docs.md finding 6. _run_auto_detected_stages: detected = _detected_types(root) or [detect_project_type(root)]; _dispatch_check maps any unrecognized type (incl. unknown) to _dispatch_check_python. A repo with no sentinel files runs the full Python gate stack over a non-Python tree (ruff/ty noise) rather than a clear unsupported-project-type failure. Fix direction: make unknown/unmapped types a loud config error, not a silent Python fallback.
 
+## Done report
+
+`_dispatch_check` used `_DISPATCH_BY_TYPE.get(project_type, _dispatch_check_python)`,
+so any unrecognized `project_type` (including `detect_project_type`'s literal
+`"unknown"` return) silently ran the full Python toolchain (ruff/ty/gates)
+over a non-Python tree instead of failing loudly. Added `"python"` as an
+explicit entry in `_DISPATCH_BY_TYPE` and made `_dispatch_check` return a new
+ERROR-severity `unknown-project-type`/CHECK001 `CheckResult`
+(`_unknown_project_type_result`) for any type with no dispatch entry,
+so `frob check` fails clearly instead of substituting the wrong toolchain.
+
+Cut: could not add a new dedicated regression test under `tests/` --
+`frob ticket scope --add` for `tests/unit/test_app_runners_batch6.py` was
+rejected with `ScopeLeaseConflict` (T-0160 holds an in-progress lease over
+`tests/**`). Verified the fix manually with a throwaway pytest run
+(unrecognized project type -> SystemExit(1) with "CHECK001" and
+"unknown project type" in stdout) but that test could not be committed.
+Bound `frob:tests` on `_dispatch_check` to the existing CLI-dispatch
+integration test per the docs-only-ticket precedent in
+docs/guides/agent-playbook.md section 5, since no dedicated test could be
+landed in this ticket's scope.
+
+### Changed
+```
+ src/frob/app/check_runner.py | 39 +++++++++++++++++++++++++++++++++++++--
+ tickets.md                   | 27 +++++++++++++++++++++++++++
+ 2 files changed, 64 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0547 -->
 ```yaml
 id: T-0547
@@ -3542,7 +3574,7 @@ docs/audits/gates-accounting.md B8. _load_diff degrades to an EMPTY diff (warnin
 id: T-0551
 title: 'check: nested/top-level-less native sources escape language detection (T-0404
   finding 7)'
-state: queued
+state: in-progress
 kind: bug
 origin: auditor
 created: '2026-07-21'
@@ -3560,7 +3592,6 @@ component: null
 labels: []
 ```
 docs/audits/lang-check-docs.md finding 7. detect_project_type only globs *.cpp/*.cc/*.c at the repo TOP LEVEL and _detected_types requires CMakeLists.txt/Cargo.toml at root. A C/C++ project whose sources live only in src/ with no root CMakeLists returns unknown -> Python pipeline (finding 6), so clang/cmake never run. Fix direction: detect native sources recursively (bounded depth or via the graph's own file walk), or fail loudly on unknown rather than silently skipping native checks.
-
 <!-- ticket:T-0552 -->
 ```yaml
 id: T-0552
@@ -3726,3 +3757,27 @@ component: null
 labels: []
 ```
 docs/audits/lang-check-docs.md finding 2. _parse_source_file_fresh (graph/__init__.py) returns (True, (), (), ()) on any parse_file Err other than the expected NativeParserUnavailable degrade -- the file is recorded as successfully processed with zero symbols/edges, so every public symbol and every frob:doc/frob:invariant/frob:describes/frob:tests edge in it silently vanishes; COV001/exports/DRIFT/INV all pass vacuously for it. Repro: any file tree-sitter cannot parse at all -> gates green, design graph invisible. RIGHT-WAY fix: surface parse/IO failures as an ERROR-severity gate violation (a PARSE001-style rule) instead of a swallowed warning. Out of T-0404's declared scope (src/frob/graph/, not lang/check/gates/) -- needs a scope-widened or standalone follow-up ticket.
+
+<!-- ticket:T-draft-0ea414ea -->
+```yaml
+id: T-draft-0ea414ea
+title: 'test-scope-lease: broad tests/** lease on an in-progress epic blocks any other
+  ticket from adding a test'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+found while working T-0546: frob ticket scope --add tests/unit/test_app_runners_batch6.py was rejected with ScopeLeaseConflict because T-0160 holds an in-progress lease over tests/** (a repo-wide coverage-backlog epic). Any other in-flight ticket that needs to add ONE new regression test anywhere under tests/ while such a broad epic is open is structurally blocked from landing a dedicated test for its own fix, and must fall back to binding frob:tests to a pre-existing test instead (weaker evidence). Fix direction: scope-lease conflict check should allow a narrower --add glob (a single new file, or a file the broader ticket has not itself touched) to coexist with a broader in-progress lease, or provide an explicit narrow-carve-out mechanism, rather than a blanket reject on any overlap.
