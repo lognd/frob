@@ -3351,6 +3351,7 @@ before/after).
 - `tests/test_pii_structural_gate.py::TestKeywordSweep::test_data_structure_field_not_double_reported` (pytest node id, verified passing when recorded)
 - `tests/test_pii_structural_gate.py::TestKeywordSweep::test_frob_directive_comment_does_not_fire` (pytest node id, verified passing when recorded)
 - `tests/test_pii_structural_gate.py::TestKeywordSweep::test_ordinary_comment_mentioning_secret_still_fires` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0541 -->
 ```yaml
 id: T-0541
@@ -3777,9 +3778,9 @@ labels: []
 ```
 docs/audits/lang-check-docs.md finding 2. _parse_source_file_fresh (graph/__init__.py) returns (True, (), (), ()) on any parse_file Err other than the expected NativeParserUnavailable degrade -- the file is recorded as successfully processed with zero symbols/edges, so every public symbol and every frob:doc/frob:invariant/frob:describes/frob:tests edge in it silently vanishes; COV001/exports/DRIFT/INV all pass vacuously for it. Repro: any file tree-sitter cannot parse at all -> gates green, design graph invisible. RIGHT-WAY fix: surface parse/IO failures as an ERROR-severity gate violation (a PARSE001-style rule) instead of a swallowed warning. Out of T-0404's declared scope (src/frob/graph/, not lang/check/gates/) -- needs a scope-widened or standalone follow-up ticket.
 
-<!-- ticket:T-draft-6955571e -->
+<!-- ticket:T-0559 -->
 ```yaml
-id: T-draft-6955571e
+id: T-0559
 title: REF002 single-anchor pool triage (32 findings)
 state: done
 kind: bug
