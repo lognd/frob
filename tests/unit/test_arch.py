@@ -1097,3 +1097,115 @@ class TestPatternRecommender:
         categories = {s.category for s in result.suggestions}
         assert "pattern-recommendation" not in categories
         assert "anti-pattern-escape" not in categories
+
+
+# ---------------------------------------------------------------------------
+# T-0609: normalized code model + adapter protocol
+# ---------------------------------------------------------------------------
+
+
+class TestNormalizedModel:
+    """T-0609: hand-build a `NormalizedModule` for a trivial python snippet
+    (no adapter exists yet -- that is T-0610's migration) and assert the
+    model's shape holds together: every entity the ticket calls out
+    (module/class/function/method/param/branch/loop/call/import/override/
+    field-access/return/raise/catch) round-trips through construction and
+    (de)serialization."""
+
+    def test_hand_built_python_snippet_shape(self) -> None:
+        # Mirrors a trivial snippet -- an import, a class with a base
+        # method and an overriding method that branches/loops/calls/raises:
+        #     import os
+        #     class Base:
+        #         def greet(self) -> str: ...
+        #         def speak(self):  # overrides greet
+        #             if self.mood == 'ok': ...
+        from frob.arch._normalized import (
+            NormalizedBranch,
+            NormalizedCall,
+            NormalizedCatch,
+            NormalizedClass,
+            NormalizedField,
+            NormalizedFieldAccess,
+            NormalizedFunction,
+            NormalizedImport,
+            NormalizedLoop,
+            NormalizedModule,
+            NormalizedParam,
+            NormalizedRaise,
+            NormalizedReturn,
+        )
+
+        greet = NormalizedFunction(
+            name="greet",
+            line=4,
+            body_line_count=1,
+            params=[NormalizedParam(name="self")],
+            return_type="str",
+            is_method=True,
+            returns=[NormalizedReturn(line=5, value_text="'hi'")],
+        )
+        speak = NormalizedFunction(
+            name="speak",
+            line=7,
+            body_line_count=6,
+            params=[NormalizedParam(name="self", type=None)],
+            is_method=True,
+            overrides="greet",
+            branches=[NormalizedBranch(line=8, condition_text="self.mood == 'ok'")],
+            loops=[NormalizedLoop(line=10, kind="for")],
+            calls=[NormalizedCall(callee="print", line=9)],
+            field_accesses=[NormalizedFieldAccess(name="mood", line=8, is_write=False)],
+            raises=[NormalizedRaise(line=11, exception_type="ValueError")],
+            catches=[NormalizedCatch(line=12, exception_type="ValueError")],
+        )
+        base = NormalizedClass(
+            name="Base",
+            line=3,
+            fields=[NormalizedField(name="mood", line=3, type="str")],
+            methods=[greet, speak],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py",
+            language="python",
+            imports=[NormalizedImport(module="os", line=1)],
+            classes=[base],
+            functions=[],
+        )
+
+        assert module.language == "python"
+        assert module.imports[0].module == "os"
+        assert module.classes[0].name == "Base"
+        assert module.classes[0].fields[0].name == "mood"
+        methods = {m.name: m for m in module.classes[0].methods}
+        assert methods["greet"].returns[0].value_text == "'hi'"
+        assert methods["speak"].overrides == "greet"
+        assert methods["speak"].branches[0].condition_text == "self.mood == 'ok'"
+        assert methods["speak"].loops[0].kind == "for"
+        assert methods["speak"].calls[0].callee == "print"
+        assert methods["speak"].field_accesses[0].name == "mood"
+        assert methods["speak"].raises[0].exception_type == "ValueError"
+        assert methods["speak"].catches[0].exception_type == "ValueError"
+
+        # Round-trips through the pydantic (de)serialization boundary too --
+        # a `NormalizedModule` must survive a dump/reload cycle unchanged,
+        # since a future adapter registry (T-0610) may cache/transport it.
+        restored = NormalizedModule.model_validate(module.model_dump())
+        assert restored == module
+
+    def test_language_adapter_is_a_runtime_checkable_protocol(self) -> None:
+        # No adapter is implemented in this ticket's scope -- only assert
+        # the protocol shape itself is usable for an isinstance check, the
+        # mechanism a future adapter registry (T-0610) dispatches on.
+        from frob.arch._normalized import LanguageAdapter, NormalizedModule
+
+        class _StubAdapter:
+            language = "python"
+
+            def adapt(self, tree: object, source: bytes, rel: str) -> NormalizedModule:
+                return NormalizedModule(path=rel, language=self.language)
+
+        stub = _StubAdapter()
+        assert isinstance(stub, LanguageAdapter)
+        result = stub.adapt(tree=object(), source=b"", rel="a.py")
+        assert result.path == "a.py"

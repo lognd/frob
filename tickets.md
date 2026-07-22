@@ -5143,7 +5143,7 @@ T-0554 wired _run_gates into run_check_cpp/rust/ts with skip_gates/ticket/base/d
 ```yaml
 id: T-0609
 title: 'arch: normalized code model (language-agnostic node types + adapter protocol)'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -5156,7 +5156,9 @@ scope:
 - docs/modules/arch.md
 - tests/unit/test_arch.py
 scope_changes: []
-evidence: []
+evidence:
+- tests/unit/test_arch.py::TestNormalizedModel::test_hand_built_python_snippet_shape
+- tests/unit/test_arch.py::TestNormalizedModel::test_language_adapter_is_a_runtime_checkable_protocol
 attachments: []
 acceptance: []
 threat: null
@@ -5164,6 +5166,37 @@ component: null
 labels: []
 ```
 Define the normalized-code-model types (module, class, function, method, param, branch, loop, call, import, override, field-access, return, raise/throw, catch) as pydantic models in src/frob/arch/_normalized.py, plus an Adapter protocol each language walker implements to map its tree-sitter grammar onto the model. No behavior change yet: existing python/cpp checks keep running unchanged. Acceptance: model types + protocol defined, unit tests construct a normalized tree by hand for a trivial python snippet and assert shape; docs/modules/arch.md documents the model.
+
+## Done report
+
+EPIC T-0329's ten blocked siblings (T-0610-T-0612, T-0614, T-0616-T-0625)
+all need one shared, language-agnostic model of source structure before
+any of them can write a single check-once-fires-everywhere rule. This
+ticket defines that model (`src/frob/arch/_normalized.py`): pydantic
+types for module/class/function/method/param/branch/loop/call/import/
+override/field-access/return/raise/catch, plus a `LanguageAdapter`
+Protocol each per-grammar walker will implement to produce it. The field
+set was derived directly from what the just-landed T-0332 pattern
+recommender (`frob.arch._patterns`) already needs to walk (isinstance
+chains, state-field chains, telescoping constructors, wrap-delegate,
+scattered construction) so the eventual migration (T-0610) has no missing
+entity to retrofit. No existing check is migrated or behavior-changed in
+this ticket -- `frob.arch._python`/`_cpp` keep parsing tree-sitter
+directly, exactly as before; this is model + protocol only, per the
+ticket's own acceptance criteria.
+
+### Changed
+```
+ docs/modules/arch.md         |  48 +++++++
+ src/frob/arch/_normalized.py | 274 +++++++++++++++++++++++++++++++++++++
+ tests/unit/test_arch.py      | 112 +++++++++++++++
+ tickets.md                   | 316 +++++++++++++++++++++++++++++++++++++++++--
+ 4 files changed, 741 insertions(+), 9 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_arch.py::TestNormalizedModel::test_hand_built_python_snippet_shape` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestNormalizedModel::test_language_adapter_is_a_runtime_checkable_protocol` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0610 -->
 ```yaml

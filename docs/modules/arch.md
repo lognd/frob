@@ -331,6 +331,54 @@ per-parse INFO/DEBUG log lines. C/C++ function/class walks share
 `frob.lang.cpp_function_nodes` with `frob.dup._legacy`'s Type-1/2 scanner
 -- one C/C++ function-declaration walk, not two.
 
+## Normalized code model (T-0609)
+
+<a id="normalized-code-model"></a>
+<!-- frob:describes src/frob/arch/_normalized.py::NormalizedModule -->
+<!-- frob:describes src/frob/arch/_normalized.py::LanguageAdapter -->
+
+EPIC T-0329's foundation: today `_python.py`/`_cpp.py` each hand-walk their
+own tree-sitter grammar for every check -- adding a language means
+re-deriving every detector's walk against a new grammar's node-type names.
+`src/frob/arch/_normalized.py` defines a language-agnostic shape a check
+can be written against exactly once, plus a `LanguageAdapter` protocol
+each per-grammar walker implements to produce it:
+
+| Type | Represents |
+|---|---|
+| `NormalizedModule` | one source file: path, language label, imports, top-level classes/functions |
+| `NormalizedImport` | one import/include/use: module text, line, imported names |
+| `NormalizedClass` | one class/struct: name, base-class names, fields, methods |
+| `NormalizedField` | one class-level or instance field: name, type, first-assignment line |
+| `NormalizedFunction` | one function/method: name, params, return type, `is_method`, `overrides` (base-method name, when determinable), and its flattened body events below |
+| `NormalizedParam` | one parameter: name, optional type, whether it has a default |
+| `NormalizedBranch` | one decision point (`if`/`elif`/ternary/short-circuit): line + condition source text |
+| `NormalizedLoop` | one `for`/`while`: line + kind |
+| `NormalizedCall` | one call site: callee name, line |
+| `NormalizedFieldAccess` | one field read/write inside a body: name, line, `is_write` |
+| `NormalizedReturn` | one `return`: line, optional value text |
+| `NormalizedRaise` | one `raise`/`throw`: line, exception type name where determinable |
+| `NormalizedCatch` | one `except`/`catch`: line, caught exception type name where present |
+
+`LanguageAdapter` is a `typing.Protocol` (`runtime_checkable`): one
+`language` label (a `frob.lang` grammar name) and one method,
+`adapt(tree, source, rel) -> NormalizedModule`, that maps a parsed
+tree-sitter `Tree` onto the model above.
+
+**Scope of T-0609 -- model and protocol only, no migration yet.** No
+adapter is registered or wired into `analyze_project` in this ticket:
+`_python.py`/`_cpp.py` keep parsing and checking directly against
+tree-sitter, unchanged. Migrating the existing python/cpp checks onto the
+model (the first concrete `LanguageAdapter` implementations) is T-0610;
+TypeScript/Rust/Kotlin adapters built against this same protocol are
+EPIC T-0329's remaining children (T-0611 onward). The model's field set
+was derived directly from what `frob.arch._patterns`'s T-0332 detectors
+already walk (isinstance-chain and state-field-chain need branches +
+field accesses; telescoping-ctor needs `__init__` params; wrap-delegate
+needs fields + method-body call targets; scattered-construction needs
+cross-file call sites) so that migration has no missing entity to
+retrofit.
+
 ## Public API
 
 <a id="public-api"></a>
