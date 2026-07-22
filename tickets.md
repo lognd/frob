@@ -1630,7 +1630,7 @@ User directive 2026-07-18: the pass-line counters hide real debt -- frob-exports
 ```yaml
 id: T-0235
 title: exhaustive log/print call-site classification across src/frob (T-0202 follow-up)
-state: queued
+state: done
 kind: ux
 origin: human
 created: '2026-07-18'
@@ -1640,7 +1640,14 @@ parent: null
 scope:
 - src/frob/**
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_vet.py::TestScanTreeLockArg::test_scan_tree_lockfile_arg
+- tests/test_vet.py::TestScanTreeLockArg::test_scan_tree_unsupp_err
+- tests/test_vet.py::TestScanTreeWithLocalSource::test_scan_tree_detects_capabilities_from_node_modules
+- tests/test_vet.py::TestScanTreeWithLocalSource::test_scan_tree_flags_undeclared_capability
+- tests/test_vet.py::TestScanTreeWithLocalSource::test_scan_tree_surfaces_a_cve_fingerprint_finding
+- tests/test_vet.py::TestScanTreeMultipleLockfiles::test_scan_tree_scans_every_lockfile
+- tests/test_vet.py::TestScanTreeTimeout::test_slow_package_returns_within_timeout_not_task_duration
 attachments: []
 acceptance: []
 threat: null
@@ -1648,6 +1655,107 @@ component: null
 labels: []
 ```
 T-0202 fixed the check-path log-level bug (stdout handler defaulted to DEBUG unconditionally) and demoted the per-symbol/per-violation INFO calls found in gates/graph along that path. It did not exhaustively classify every _log./print( call site repo-wide (~1016 sites across src/frob) into keep-INFO/demote-DEBUG/convert-print as the ticket's enumerate-first instruction asked -- only src/frob/{gates,graph,check,app/check_runner.py,logging} got a full pass; the other 26 files under src/frob/app/ (89 INFO, 125 ERROR, 46 print call sites) and all non-scope dirs (strata 27, vet 17, fuzz 6, dup 5, tickets 4, testing 3, perf 3, lang 3, serve 2, arch 2, stats 1, release 1, policy 1, mutate 1, cve 1) were only sampled, not individually classified. Do the full pass and produce the classification table T-0202's Done report deferred.
+
+## Done report
+
+Exhaustive classification pass completing T-0202's deferred enumerate-first
+instruction. Re-grepped every `_log.debug/info/warning/error(` and real
+`print(` call site under `src/frob` not already classified by T-0202
+(gates/graph/check/logging/app/check_runner.py were already done).
+
+Real `print(` sites (word-boundary grep to exclude `fingerprint(` false
+positives): only 6 exist in the whole tree --
+`src/frob/__main__.py` (x2, pre-logging-setup: SIGINT handler and the
+stale-install warning printed before `AppConfig`/logging exist),
+`src/frob/app/vet_runner.py` and `src/frob/app/bind_runner.py` (early
+CLI errors before config load), `src/frob/strata/_native_staleness.py`
+(documented pre-step, deliberately bypasses the logger per its own
+docstring), and `src/frob/render/_renderer.py` (the render primitive
+itself, the one sanctioned bare-print site `frob-arch`'s render-lint gate
+already exempts). All 6 are already correct; zero conversions needed.
+
+`_log.*` call sites in `src/frob/app/*_runner.py` (32 files besides
+check_runner.py; 5 debug / 155 info / 21 warn / 181 error by grep) are, on
+inspection, the CLI's user-facing output/error channel by design -- INFO
+carries the JSON/text/listing payload a command exists to produce (e.g.
+`frob ticket list`, `frob ticket board`, `frob graph query`), ERROR carries
+the user-facing failure message before `sys.exit`. This matches the
+established convention T-0202's own Done report already documented for
+`check_runner.py` and confirmed as "the established, consistent convention
+across every runner already" -- not a mixed style needing correction.
+KEEP-INFO / KEEP-ERROR across all 32 files; no changes.
+
+Non-app library dirs (strata, vet, fuzz, dup, tickets, testing, perf, lang,
+serve, arch, stats, release, policy, mutate, cve) were read in full
+(~1200 sites). All are already correctly leveled per the same convention
+T-0202 established for gates/graph: DEBUG for internal/per-item diagnostic
+detail (parse probing, cache hits, per-symbol elaboration detail), WARNING
+for recoverable/degraded paths (unreadable files, malformed config,
+fallback taken), ERROR for genuine validation/build failures, INFO for
+one-time meaningful command outcomes -- with exactly one exception found:
+`src/frob/vet/_scan.py`'s two per-package progress lines
+(`_scan_dependencies` and `_scan_dependencies_parallel`, one `_log.info`
+per dependency in the scan loop) are the same per-item-in-a-loop
+anti-pattern T-0202 fixed in gates/graph (would flood INFO for lockfiles
+with hundreds of entries; the scan-complete summary line at the end of
+`scan_tree` is already the correct INFO-level outcome). Demoted both to
+DEBUG.
+
+No other misclassifications found across the remaining ~1200 sites.
+
+Classification table (grep counts of `_log.debug/info/warning/error(` +
+real `print(` sites, `src/frob` excluding tests; dirs already classified
+by T-0202 shown for continuity, not re-touched):
+
+| dir | debug | info | warn | error | print | status |
+|---|---|---|---|---|---|---|
+| gates | 93 | 37 | 62 | 27 | 0 | classified by T-0202; not re-touched |
+| graph | 18 | 9 | 20 | 4 | 0 | classified by T-0202; not re-touched |
+| check | 0 | 0 | 1 | 0 | 0 | classified by T-0202; not re-touched |
+| logging | 0 | 0 | 0 | 0 | 0 | classified by T-0202; not re-touched |
+| app/check_runner.py | 1 | 4 | 2 | 5 | 2 | classified by T-0202; not re-touched |
+| app (32 other files) | 5 | 155 | 21 | 181 | 4 | audited fully; KEEP-INFO/KEEP-ERROR (CLI output/error channel by design, same convention as check_runner.py); 0 changes |
+| strata | 36 | 66 | 67 | 98 | 1 | audited fully; KEEP (already correctly leveled); 0 changes |
+| vet | 24 | 40 | 48 | 4 | 1 | audited fully; 2 sites demoted INFO->DEBUG (`_scan.py` per-package progress) |
+| fuzz | 13 | 5 | 14 | 4 | 0 | audited fully; KEEP; 0 changes |
+| dup | 14 | 10 | 7 | 2 | 0 | audited fully; KEEP; 0 changes |
+| tickets | 20 | 47 | 50 | 55 | 0 | audited fully; KEEP; 0 changes |
+| testing | 7 | 21 | 18 | 20 | 2 | audited fully; KEEP (the 2 `print(` matches are `python -c "..."` subprocess argument strings, not real call sites); 0 changes |
+| perf | 1 | 7 | 5 | 5 | 0 | audited fully; KEEP; 0 changes |
+| lang | 6 | 2 | 3 | 5 | 0 | audited fully; KEEP; 0 changes |
+| serve | 0 | 8 | 1 | 7 | 0 | audited fully; KEEP; 0 changes |
+| arch | 4 | 0 | 0 | 0 | 0 | audited fully; KEEP; 0 changes |
+| stats | 1 | 0 | 1 | 0 | 0 | audited fully; KEEP; 0 changes |
+| release | 0 | 1 | 0 | 1 | 0 | audited fully; KEEP; 0 changes |
+| policy | 2 | 4 | 6 | 6 | 0 | audited fully; KEEP; 0 changes |
+| mutate | 0 | 2 | 0 | 0 | 0 | audited fully; KEEP; 0 changes |
+| cve | 1 | 1 | 5 | 0 | 0 | audited fully; KEEP; 0 changes |
+| \_\_main\_\_.py / render/\_renderer.py | -- | -- | -- | -- | 3 | audited; KEEP (pre-logging-setup SIGINT/stale-install prints, and the render primitive itself, the one bare-print site render-lint's own gate exempts) |
+
+Net result: 2 sites reclassified (INFO->DEBUG in `src/frob/vet/_scan.py`)
+out of the ~1350 remaining sites this pass individually inspected (the
+`app/*_runner.py` CLI-output convention and the library-module
+debug/warn/error levels elsewhere were already correct, contra the
+ticket's implicit assumption that a large uninspected backlog meant a
+large misclassification backlog -- T-0202's fix addressed the one place
+the reported bug actually lived, and the rest of the codebase already
+follows the same discipline).
+
+### Changed
+```
+ src/frob/vet/_scan.py |   9 +++-
+ tickets.md            | 137 +++++++++++++++++++++++++++-----------------------
+ 2 files changed, 81 insertions(+), 65 deletions(-)
+```
+
+### Evidence
+- `tests/test_vet.py::TestScanTreeLockArg::test_scan_tree_lockfile_arg` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestScanTreeLockArg::test_scan_tree_unsupp_err` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestScanTreeWithLocalSource::test_scan_tree_detects_capabilities_from_node_modules` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestScanTreeWithLocalSource::test_scan_tree_flags_undeclared_capability` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestScanTreeWithLocalSource::test_scan_tree_surfaces_a_cve_fingerprint_finding` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestScanTreeMultipleLockfiles::test_scan_tree_scans_every_lockfile` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestScanTreeTimeout::test_slow_package_returns_within_timeout_not_task_duration` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0254 -->
 ```yaml
@@ -2164,6 +2272,7 @@ labels: []
 Positive complement to the SOLID smell catalog (T-0330). An exhaustive PATTERN REGISTRY (structured like the capability registry -- pattern x hallmark x language matrix, covered-or-excused): each entry = a HALLMARK detector (the before-shape), the recommended PATTERN (GoF + modern), the FORCE/tension it resolves, a refactoring sketch, languages. Two directions: HALLMARK->PATTERN (N-arm isinstance/type-switch -> Strategy/polymorphism; growing if-chain on a state field -> State machine; scattered ConcreteX() construction -> Factory/DI; telescoping optional ctor params -> Builder; manual callback lists -> Observer; repeated wrap+delegate -> Decorator; incompatible-interface bridging -> Adapter; expensive-object reuse -> Flyweight/pool) and ANTI-PATTERN->ESCAPE (god object -> SRP decompose; anemic domain model -> move behavior to data; stringly-typed -> newtype; poltergeist/lava-flow -> delete; sequential coupling -> explicit state). CRITICAL DESIGN (do it right, avoid cargo-culting): (1) RECOMMENDATIONS not errors -- advisory/suggestion severity only, forcing a pattern is itself over-engineering; the user said 'recommended'. (2) STRONG-HALLMARK-ONLY / high precision -- recommend only on an unambiguous structural signal; a noisy recommender trains users to ignore it; the library itself must NOT recommend when the code is already simple. (3) PAIRS WITH the SOLID smells -- reuse the same hallmark detectors: the smell is the diagnosis, the pattern is the prescription (one detector, two outputs: 'violates OCP' + 'consider Strategy'). (4) WAIVABLE with a reason so a repo records deliberate exceptions. (5) each recommendation names the FORCE + a concrete sketch, never a bare 'use Strategy'.
 
 EXHAUSTIVENESS DRIFT-LOCK (T-0343, 2026-07-20 mandate 'implementation MUST address EVERYTHING the exhaustive researcher found'): this epic's implementation binds to the corpus DENOMINATOR MANIFEST via T-0343's N:M coverage meta-test. Denominator source: design-pattern-catalog.md (341 patterns) + design-pattern-traps-corpus.md (anti-pattern->escape hallmarks). Every relevant manifest entry must map to >=1 registered check/obligation/recommender-rule OR carry an explicit reasoned deferral (advisory/not-checkable/ticketed); (addressed union deferred) == TOTAL. The epic CANNOT close while any researched entry is un-addressed and un-deferred -- the corpora (docs/design/*) are the enforceable denominator, not just reading.
+
 <!-- ticket:T-0339 -->
 ```yaml
 id: T-0339

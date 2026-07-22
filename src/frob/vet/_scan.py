@@ -547,7 +547,10 @@ def _scan_dependencies_sequential(
     verdicts: list[PackageVerdict] = []
     total = len(deps)
     for i, dep in enumerate(deps, start=1):
-        _log.info("vet: package %d/%d %s", i, total, dep.name)
+        # T-0235: per-package progress is DEBUG (one line per dependency
+        # floods INFO for lockfiles with hundreds of entries; the summary
+        # line at the end of the scan is the INFO-level outcome).
+        _log.debug("vet: package %d/%d %s", i, total, dep.name)
         is_new = dep.name not in allow
         dep_violations, verdict = _run_with_timeout(
             dep, root, lockfile, cfg, cache_path, is_new, fetch, timeout
@@ -594,7 +597,9 @@ def _scan_dependencies_parallel(
         ]
         for i, (dep, fut) in enumerate(futures, start=1):
             dep_violations, verdict = fut.result()
-            _log.info("vet: package %d/%d %s", i, total, dep.name)
+            # T-0235: see the jobs<=1 path above -- same per-package
+            # progress noise, demoted to DEBUG.
+            _log.debug("vet: package %d/%d %s", i, total, dep.name)
             violations.extend(dep_violations)
             verdicts.append(verdict)
     return violations, verdicts
