@@ -20,6 +20,13 @@ dependencies = [
     "tree-sitter>=0.25.2",
     "tree-sitter-python>=0.25.0",
     "tree-sitter-cpp>=0.23.4",
+    # T-0613: tree-sitter-language-pack already bundles a kotlin grammar
+    # (get_parser("kotlin")/get_language("kotlin") both resolve) -- no
+    # separate tree-sitter-kotlin pin needed, so frob.lang._walk_kotlin
+    # loads it through the same language-pack loading mechanism every
+    # other tree-sitter grammar here uses (see frob.lang's
+    # GRAMMAR_FINGERPRINT_PACKAGES docstring for why that keeps this
+    # dependency-free of a per-language fingerprint entry).
     "tree-sitter-language-pack>=0.13",
     "pyyaml>=6",
     "jinja2>=3.1",

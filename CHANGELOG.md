@@ -19,6 +19,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
 ## [0.80.0] - unreleased
 
+- T-0613: wire tree-sitter-kotlin grammar into frob.lang (raw walk only, via `frob.lang._walk_kotlin`; no normalized-model mapping yet)
 - T-0609: arch: normalized code model (language-agnostic node types + adapter protocol)
 
 ## [0.79.0] - unreleased
