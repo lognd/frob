@@ -4557,7 +4557,7 @@ Split out of T-0424: the registry MODEL + honest seed is built (check-coverage.y
 id: T-0561
 title: 'test-scope-lease: broad tests/** lease on an in-progress epic blocks any other
   ticket from adding a test'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-21'
