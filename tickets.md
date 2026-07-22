@@ -4378,3 +4378,34 @@ component: null
 labels: []
 ```
 The 6 registry rows T-0332 deferred for precision reasons: each needs a fuzzier structural signal than the >=3-occurrence floors phase 1 shipped, and shipping them imprecise would train users to ignore the advisory channel (the ticket's own noise mandate). Design a high-precision signal per row or record a reasoned not-checkable disposition. Any patterns.yaml entries re-deferred at T-0332 close point HERE -- keep the reconciliation pin test (tests/test_registry_reconciliation_patterns.py) green when this ticket changes dispositions. NOTE: T-0332's Done report references this as T-draft-4fb8deee; drafts do not survive land (T-0577), so this is the real ticket.
+
+<!-- ticket:T-0606 -->
+```yaml
+id: T-0606
+title: 'std.host windows: wire service_account/acl/pipe into HOST001/HOST002 movement-impossibility
+  proofs'
+state: queued
+kind: security
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by:
+- T-0261
+parent: T-0254
+scope:
+- src/frob/strata/_host_isolation.py
+- src/frob/strata/_scenarios.py
+- docs/strata/host.md
+- tests/unit/strata/test_host_isolation.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a windows node whose service_account lacks an acl to a sibling service's data
+  dir WHEN HOST001/HOST002 evaluate THEN a movement-impossibility finding (or proof)
+  is produced equivalent in strength to the linux path
+threat: elevation-of-privilege
+component: null
+labels: []
+```
+T-0261 landed the Windows std.host manifest surface (service_account/gmsa, service, acl, pipe) but HOST001/HOST002 and build_compromised_user_scenario do not branch on any of it -- a windows-only node produces NO movement-impossibility findings today, so the epic's provability promise is linux-only. Wire the windows fields into the isolation rules and the compromised-user scenario builder, mirroring how the linux runs_as/unit/owns fields feed them (T-0256..T-0259 staging precedent). NOTE: T-0261's Done report references this as T-draft-632a0187; drafts do not survive land (T-0577), so this ticket is its real replacement.
