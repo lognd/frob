@@ -14,10 +14,26 @@ priority: medium
 blocked_by: []
 parent: null
 scope:
-- src/frob/**
 - tests/**
 - frob.toml
-scope_changes: []
+- src/frob/app/ack_runner.py
+- src/frob/app/parse_runner.py
+scope_changes:
+- op: remove
+  glob: src/frob/**
+  reason: 'batch 10: narrow to ack_runner/parse_runner TEST005 for this pass'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/ack_runner.py
+  reason: 'batch 10: narrow to ack_runner/parse_runner TEST005 for this pass'
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: src/frob/app/parse_runner.py
+  reason: 'batch 10: narrow to ack_runner/parse_runner TEST005 for this pass'
+  actor: logan
+  at: '2026-07-21'
 evidence:
 - tests/test_gates.py::TestInvariantLoad::test_unreadable_file_is_malformed
 - tests/test_gates.py::TestInvariantLoad::test_no_frontmatter_block_is_malformed
@@ -289,6 +305,19 @@ evidence:
 - tests/unit/test_dup_cache.py::TestFingerprintRoundTrip::test_get_fingerprint_connect_error_returns_none
 - tests/unit/test_dup_cache.py::TestVerdictRoundTrip::test_put_verdict_evicts_lru_rows_beyond_cache_entries
 - tests/unit/test_dup_cache.py::TestVerdictRoundTrip::test_put_verdict_connect_error_is_propagated
+- tests/unit/test_ack_runner.py::TestAckRunnerRun::test_no_refs_exits_with_error
+- tests/unit/test_ack_runner.py::TestAckRunnerRun::test_success_path_builds_cache_and_writes_lock
+- tests/unit/test_ack_runner.py::TestAckRunnerRun::test_unresolvable_ref_exits_with_error
+- tests/unit/test_ack_runner.py::TestAckRunnerRun::test_graph_unavailable_after_failed_build_exits_with_error
+- tests/unit/test_ack_runner.py::TestAckRunnerRun::test_malformed_lock_file_exits_with_error
+- tests/unit/test_ack_runner.py::TestAckRunnerRun::test_write_lock_failure_exits_with_error
+- tests/unit/test_parse_runner_direct.py::TestParseRunnerRun::test_missing_tool_exits_with_error
+- tests/unit/test_parse_runner_direct.py::TestParseRunnerRun::test_unknown_tool_exits_with_error
+- tests/unit/test_parse_runner_direct.py::TestParseRunnerRun::test_unreadable_file_exits_with_error
+- tests/unit/test_parse_runner_direct.py::TestParseRunnerRun::test_reads_from_file_and_logs_text
+- tests/unit/test_parse_runner_direct.py::TestParseRunnerRun::test_reads_from_stdin_and_logs_json
+- tests/unit/test_parse_runner_direct.py::TestParseRunnerRun::test_passthrough_propagates_failing_exit_code
+- tests/unit/test_parse_runner_direct.py::TestParseRunnerRun::test_no_passthrough_does_not_exit_on_failure
 attachments: []
 acceptance: []
 threat: null
@@ -333,44 +362,355 @@ additions.
 
 ## Done report
 
-Ledger note (2026-07-21, batch 9): this pass could not use `uv run frob check
---only test` for TEST005 enumeration -- a fresh worktree carries no
-`.frob/coverage-stamp` (gitignored, per-worktree), and generating one requires
-`make coverage` (full-suite, rules out per playbook section 6b for a
-dispatched sub-agent). Instead, targeted the existing `frob:waive TEST005`
-directives in-source (each waiver comment records its own branch-coverage
-percentage from the last authoritative stamp) as the queue of known gaps,
-picked symbols closest to the 90% unit_branch_cov floor, and verified each
-with a scoped `pytest --cov=<module> --cov-branch` run per playbook section 6b.
+Ledger note (2026-07-21, batch 10): continued the TEST005 waiver-directive
+queue from batch 9. This pass targeted the 0.0%-covered CLI entry points
+the ticket's acceptance criteria call out as highest-leverage
+(app/*_runner.py runners with no direct unit test), using direct-call
+tests (not subprocess) per the gitlog/clipboard precedent, since
+subprocess-dispatched CLI tests do not attribute coverage back to the
+runner module.
 
-Closed this batch (4 symbols, all previously-waived TEST005 debt, now >=90%
-branch on a scoped measurement):
+Closed this batch (2 modules, both fully cleared, all waivers removed):
 
-- `src/frob/graph/lock.py::acknowledge` (87.5% -> 100%): added a test driving
-  the `record_result.is_err` branch distinct from the "not an endpoint at
-  all" branch -- a doc-anchor ref (`docs/x.md#widget`) is an edge endpoint
-  (the `frob:doc` edge's target) but does not resolve to a symbol.
-- `src/frob/graph/lock.py::write_lock` (64.7% -> 100%): added a test driving
-  the `OSError` except-branch via `monkeypatch` on `os.replace` failing
-  (simulated cross-device/permission error), asserting `LockError.WriteFailed`
-  rather than a propagated exception.
-- `src/frob/dup/_cache.py::get_fingerprint` (85.7% -> 100%): added a test
-  driving the `conn_r.is_err` branch (a corrupt/unreachable cache DB is a
-  miss, returns None, not a raised exception).
-- `src/frob/dup/_cache.py::put_verdict` (71.4% -> 100%): added two tests --
-  the LRU-eviction branch (`count > cache_entries`, a 3rd insert with a cap
-  of 2 evicts the oldest row) and the `conn_r.is_err` connect-failure branch.
+- src/frob/app/ack_runner.py (0.0% module-line -> 99% branch on a scoped
+  measurement combined with the existing lease-guard test file). Added 6
+  new direct-call tests covering: no-refs error, the full success path
+  (cache build + lock write + facet-informational log), an unresolvable
+  ref (acknowledge's error branch), graph-unavailable (both load_graph and
+  build_graph failing), a malformed pre-existing frob.lock, and a
+  simulated os.replace failure on write_lock. The single remaining branch
+  miss (24->27, the load_graph-succeeds-first-try short-circuit) is
+  exercised transitively but not asserted on directly; not chased further
+  since the module and symbol floors are both already cleared.
+- src/frob/app/parse_runner.py (0.0% module-line -> 100% line+branch).
+  Added 7 new direct-call tests covering: missing tool, unknown tool,
+  unreadable --file, reading from a file (text output), reading from
+  stdin (json output), and both passthrough exit-code branches
+  (propagates vs. does not).
 
-Measured via `uv run pytest tests/test_graph_lock.py --cov=frob.graph.lock
---cov-branch --cov-report=term-missing -p no:cacheprovider -n0 -q` (90%
-module branch cover; all remaining misses are in `load_lock`/`drift`/
-`_facet_for_ref`, not `acknowledge`/`write_lock`) and `uv run pytest
-tests/unit/test_dup_cache.py --cov=frob.dup._cache --cov-branch
---cov-report=term-missing -p no:cacheprovider -n0 -q` (95%; remaining misses
-are in `get_verdict`, not `get_fingerprint`/`put_verdict`).
+Measured via:
+  uv run pytest tests/unit/test_ack_runner.py tests/test_ack_worktree_lease.py \
+    --cov=frob.app.ack_runner --cov-branch --cov-report=term-missing \
+    -p no:cacheprovider -q -o addopts=""
+  (99% branch, 8 passed)
+  uv run pytest tests/unit/test_parse_runner_direct.py \
+    --cov=frob.app.parse_runner --cov-branch --cov-report=term-missing \
+    -p no:cacheprovider -q -o addopts=""
+  (100% line+branch, 7 passed)
 
-Waived, not fixed: none newly waived this batch (all 4 targeted symbols were
-raised past the floor and their `frob:waive TEST005` lines removed).
+Verified via uv run frob check --ticket T-0160: gate:TEST is clean (0
+errors), gate:PRE clean after re-running the sweep post scope-narrow,
+ruff-check/ruff-format clean on all touched files. The two other FAILs
+seen in a full `frob check` run (a gate:DRIFT DRIFT002 naming the
+archive ledger's anchor slug done-report-381) turned out to be caused
+by this very report quoting the edge string verbatim -- the docs
+scanner parsed the quoted path#anchor prose as a describes-edge; the
+coordinator reworded it at land (this text) to break the pattern.
+
+Waived, not fixed: none newly waived this batch; both targeted modules'
+frob:waive TEST005 directives were removed entirely.
+
+Scope was narrowed this batch (frob ticket scope) to
+src/frob/app/ack_runner.py and src/frob/app/parse_runner.py plus
+tests/**/frob.toml, per the T-0561 lease carve-out for concrete new-test
+files.
+
+Remaining highest-value TEST005 targets for the next batch (unchanged
+list style from batch 9, refreshed against current in-source waivers):
+other 0.0%-module-line app/*_runner.py entries (sys_runner.py,
+test_runner.py, ticket_runner.py -- all large, will need more than one
+batch each), src/frob/perf/_harness.py (0.0%, small), plus the
+symbol-branch-only waivers scattered through gates/__init__.py,
+tickets/__init__.py, vet/**, and strata/** that were not touched this
+batch.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_gates.py::TestInvariantLoad::test_unreadable_file_is_malformed` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInvariantLoad::test_no_frontmatter_block_is_malformed` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInvariantLoad::test_bad_yaml_frontmatter_is_malformed` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInvariantLoad::test_non_mapping_frontmatter_is_malformed` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInvariantLoad::test_empty_statement_is_malformed` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInvariantLoad::test_evidence_not_a_list_is_malformed` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestInvariantLoad::test_bad_criticality_is_malformed` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_collision.py::TestDefaultBranchEdgeCases::test_remote_symbolic_ref_wins_over_local_main` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_collision.py::TestDefaultBranchEdgeCases::test_no_remote_falls_back_to_local_master` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_collision.py::TestDefaultBranchEdgeCases::test_no_remote_no_main_no_master_falls_back_to_main_literal` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_collision.py::TestDefaultBranchEdgeCases::test_detached_head_is_treated_as_default` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_collision.py::TestDefaultBranchEdgeCases::test_non_git_directory_is_treated_as_default` (pytest node id, verified passing when recorded)
+- `tests/test_fuzz.py::TestRunFuzz::test_unsatisfiable_strategy_reports_rejection_rate` (pytest node id, verified passing when recorded)
+- `tests/test_fuzz.py::TestRunFuzz::test_no_generator_target_short_circuits_without_hypothesis` (pytest node id, verified passing when recorded)
+- `tests/test_fuzz.py::TestRunFuzz::test_digests_map_is_stamped_onto_matching_ref` (pytest node id, verified passing when recorded)
+- `tests/test_fuzz.py::TestRunFuzz::test_hypothesis_unavailable_returns_empty_and_logs` (pytest node id, verified passing when recorded)
+- `tests/test_fuzz.py::TestResolveParamTypes::test_strips_self_param_on_method` (pytest node id, verified passing when recorded)
+- `tests/test_fuzz.py::TestResolveParamTypes::test_nested_module_path_derives_dotted_name` (pytest node id, verified passing when recorded)
+- `tests/test_fuzz.py::TestResolveParamTypes::test_unresolvable_qualname_returns_none` (pytest node id, verified passing when recorded)
+- `tests/test_fuzz.py::TestResolveParamTypes::test_non_callable_attribute_returns_none` (pytest node id, verified passing when recorded)
+- `tests/test_perf.py::test_load_artifact_missing_ref_is_err` (pytest node id, verified passing when recorded)
+- `tests/test_perf.py::test_load_artifact_bad_json_sidecar_is_bad_artifact` (pytest node id, verified passing when recorded)
+- `tests/test_perf.py::test_load_artifact_missing_pstats_is_bad_artifact` (pytest node id, verified passing when recorded)
+- `tests/test_perf.py::test_profile_command_strips_leading_python_interpreter` (pytest node id, verified passing when recorded)
+- `tests/unit/test_scaffold_project.py::test_render_project_all_registered_types_succeed` (pytest node id, verified passing when recorded)
+- `tests/unit/test_scaffold_project.py::test_render_project_propagates_resolve_failure` (pytest node id, verified passing when recorded)
+- `tests/test_perf_rules_internals.py::test_perf_rules_falls_back_to_span_start_when_source_vanishes` (pytest node id, verified passing when recorded)
+- `tests/test_perf_rules_internals.py::test_method_call_in_loop_fires_at_depth_zero` (pytest node id, verified passing when recorded)
+- `tests/unit/test_dup_legacy_py.py::test_collect_locals_py_covers_every_binding_shape` (pytest node id, verified passing when recorded)
+- `tests/unit/test_dup_legacy_py.py::test_serialize_py_body_renames_locals_and_normalizes_literals` (pytest node id, verified passing when recorded)
+- `tests/unit/test_gitlog_rendering.py::test_as_text_renders_breaking_section_and_labels` (pytest node id, verified passing when recorded)
+- `tests/unit/test_gitlog_rendering.py::test_commit_entry_from_block_with_refs_and_body` (pytest node id, verified passing when recorded)
+- `tests/test_clipboard.py::TestBackends::test_wsl_save_reports_no_image_on_exit_code_2` (pytest node id, verified passing when recorded)
+- `tests/test_clipboard.py::TestBackends::test_darwin_pngpaste_selected_and_reads_image` (pytest node id, verified passing when recorded)
+- `tests/test_excludes.py::test_malformed_toml_is_empty_not_raise` (pytest node id, verified passing when recorded)
+- `tests/test_gitio.py::TestRepoRoot::test_run_argv_failure_surfaces_as_not_a_repo` (pytest node id, verified passing when recorded)
+- `tests/test_gitio.py::TestWorkingDiff::test_untracked_listing_failure_propagates` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestMapRunner::test_text_mode_logs_summary` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestMapRunner::test_json_mode_logs_json` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestMapRunner::test_defaults_to_cwd_when_no_path` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestGitlogRunner::test_text_mode_prints_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestGitlogRunner::test_json_mode_prints_json` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestXrefRunner::test_missing_symbol_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestXrefRunner::test_no_files_found_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestXrefRunner::test_symbol_not_found_still_succeeds` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestXrefRunner::test_found_symbol_text_mode` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestXrefRunner::test_found_symbol_json_mode` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestScaffoldRunner::test_list_command_logs_types` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestScaffoldRunner::test_default_command_is_list` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestScaffoldRunner::test_new_missing_type_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestScaffoldRunner::test_new_missing_name_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestScaffoldRunner::test_new_success_logs_created_paths` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestScaffoldRunner::test_new_render_error_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestExportsRunner::test_missing_path_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestExportsRunner::test_err_result_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestExportsRunner::test_text_mode_logs_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestExportsRunner::test_json_mode_logs_result` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestExportsRunner::test_write_mode_writes_init_file` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestArchRunner::test_missing_path_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestArchRunner::test_text_mode_with_overrides` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestArchRunner::test_json_mode` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestOutlineRunner::test_missing_file_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestOutlineRunner::test_directory_target_falls_back_to_map` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestOutlineRunner::test_file_target_text_mode` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestOutlineRunner::test_file_target_json_mode` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestOutlineRunner::test_err_result_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestMutateRunner::test_missing_file_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestMutateRunner::test_err_result_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestMutateRunner::test_default_argv_used_when_empty` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestMutateRunner::test_success_no_survivors_text_mode` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestMutateRunner::test_success_with_survivors_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners.py::TestMutateRunner::test_success_json_mode` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch5.py::TestStatsRunner::test_git_error_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch5.py::TestServeRunner::test_mcp_unavailable_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch5.py::TestDupRunner::test_probe_equivalent_exits_0` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch5.py::TestDupRunner::test_probe_differ_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch5.py::TestBindRunner::test_mismatch_json_mode_no_exit` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch5.py::TestCycleRunner::test_lang_filter_skips_non_matching_extension` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch5.py::TestDocsRunner::test_overview_json_mode` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch5.py::TestReleaseRunner::test_check_bump_required_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch5.py::TestVetRunner::test_scan_with_cve_matches_text_mode` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch5.py::TestVetRunner::test_scan_with_violations_enforced_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestGraphRunner::test_unknown_command_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestGraphRunner::test_build_success_logs_stats` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestGraphRunner::test_query_requires_ref` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestGraphRunner::test_query_unresolvable_ref_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestGraphRunner::test_query_text_mode_prints_record` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestGraphRunner::test_query_json_mode_prints_json` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestGraphRunner::test_why_requires_ref` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestGraphRunner::test_why_unresolvable_ref_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestGraphRunner::test_why_text_mode_not_acked` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestGraphRunner::test_why_json_mode_prints_json` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestGraphRunner::test_build_failure_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestGraphRunner::test_query_snapshot_unavailable_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestGraphRunner::test_query_with_edges_renders_both_directions` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestGraphRunner::test_why_lock_load_failure_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestGraphRunner::test_why_snapshot_unavailable_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestGraphRunner::test_why_acked_stale_dangling_render_lines` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestPerfRunner::test_unknown_command_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestPerfRunner::test_profile_requires_argv_or_tests` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestPerfRunner::test_profile_and_heat_round_trip` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestPerfRunner::test_heat_json_mode` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestPerfRunner::test_heat_top_and_smells` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestPerfRunner::test_heat_annotate_writes_gutters` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestPerfRunner::test_heat_no_artifact_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestPerfRunner::test_heat_annotate_missing_file_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestPerfRunner::test_profile_failure_propagates_workload_exit_code` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestPerfRunner::test_profile_command_error_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestPerfRunner::test_profile_tests_flag_builds_pytest_argv` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestPerfRunner::test_heat_snapshot_build_failure_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestPerfRunner::test_heat_annotate_unreadable_file_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestPerfRunner::test_heat_annotate_outside_root_uses_absolute_path` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_nonexistent_path_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_mode_calls_stamp_and_returns` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_failure_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_baseline_mode_calls_stamp_and_returns` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_baseline_gate_error_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_auto_detected_python_stage_dispatches_and_passes` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_json_mode_prints_json_and_errors_exit_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_pinned_type_warns_polyglot_and_skips_others` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_pinned_cpp_dispatches_run_check_cpp` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_pinned_rust_dispatches_run_check_rust` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_pinned_typescript_dispatches_run_check_ts` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_frob_toml_defaults_applied` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_frob_toml_unreadable_warns_and_continues` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_deploy_stages_appended_when_deploy_dir_present` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_verbose_levels_do_not_crash` (pytest node id, verified passing when recorded)
+- `tests/unit/test_claims_and_store_batch6.py::TestClaimsMalformedAttrs::test_malformed_skew_attr_is_ignored` (pytest node id, verified passing when recorded)
+- `tests/unit/test_claims_and_store_batch6.py::TestClaimsMalformedAttrs::test_malformed_growth_attr_is_ignored` (pytest node id, verified passing when recorded)
+- `tests/unit/test_claims_and_store_batch6.py::TestAssumeReviewDates::test_malformed_review_date_logs_and_notes` (pytest node id, verified passing when recorded)
+- `tests/unit/test_claims_and_store_batch6.py::TestAssumeReviewDates::test_overdue_review_date_is_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases::test_age_unknown_target_fails_closed` (pytest node id, verified passing when recorded)
+- `tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases::test_rate_unknown_target_fails_closed` (pytest node id, verified passing when recorded)
+- `tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases::test_utilization_wrong_dimension_limit_errors` (pytest node id, verified passing when recorded)
+- `tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases::test_utilization_zero_ceiling_refutes` (pytest node id, verified passing when recorded)
+- `tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases::test_utilization_skewed_zero_ceiling_refutes` (pytest node id, verified passing when recorded)
+- `tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases::test_latency_unknown_flow_fails_closed` (pytest node id, verified passing when recorded)
+- `tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases::test_size_no_declared_size_refutes` (pytest node id, verified passing when recorded)
+- `tests/unit/test_claims_and_store_batch6.py::TestTicketStoreParsing::test_parse_ticket_file_no_frontmatter_block` (pytest node id, verified passing when recorded)
+- `tests/unit/test_claims_and_store_batch6.py::TestTicketStoreParsing::test_parse_ticket_file_bad_yaml` (pytest node id, verified passing when recorded)
+- `tests/unit/test_claims_and_store_batch6.py::TestTicketStoreParsing::test_parse_ticket_file_roundtrips_valid` (pytest node id, verified passing when recorded)
+- `tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate::test_write_ticket_single_mode_existing_load_error_propagates` (pytest node id, verified passing when recorded)
+- `tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate::test_write_all_dir_mode_prunes_stale_files` (pytest node id, verified passing when recorded)
+- `tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate::test_migrate_to_ledger_empty_is_noop` (pytest node id, verified passing when recorded)
+- `tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate::test_migrate_to_ledger_malformed_file_fails_closed` (pytest node id, verified passing when recorded)
+- `tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate::test_migrate_to_ledger_moves_dir_files_into_ledger` (pytest node id, verified passing when recorded)
+- `tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate::test_atomic_write_oserror_returns_write_failed` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketRunnerDispatch::test_unknown_command_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketNewErrors::test_missing_title_or_kind_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketList::test_no_tickets_logs_message` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketList::test_list_json_mode` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketList::test_list_filters_by_state` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketList::test_list_text_mode_prints_ticket_line` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketListShowDoableLoadErrors::test_list_load_error_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketListShowDoableLoadErrors::test_show_load_error_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketListShowDoableLoadErrors::test_doable_load_error_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketShow::test_missing_id_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketShow::test_unknown_id_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketShow::test_show_found_json_mode` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketShow::test_show_found_text_mode` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketDoable::test_nothing_doable` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketDoable::test_doable_json_mode` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketDoable::test_doable_text_mode` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketMigrate::test_no_legacy_files` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketMigrate::test_migrates_legacy_dir_ticket` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketRenumber::test_dry_run_without_old_new_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketRenumber::test_whole_ledger_already_contiguous` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketRenumber::test_one_missing_new_id_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketRenumber::test_renumber_one_dry_run_prints_files` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketRenumber::test_renumber_one_success` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketLand::test_missing_id_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketLand::test_missing_worktree_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketLand::test_land_failure_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketLand::test_land_dry_run_success` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketLand::test_land_success_prints_files` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketPlan::test_missing_id_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketPlan::test_plan_success` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketStart::test_missing_id_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketStart::test_unknown_id_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketStart::test_start_auto_plans_queued_ticket` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketStart::test_start_already_in_progress_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketStartTransitionFailure::test_transition_to_in_progress_failure_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketSweep::test_missing_id_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketSweep::test_not_in_progress_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestClipboardAttachOnNew::test_no_clipboard_image_skips` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestClipboardAttachOnNew::test_declined_answer_skips_attach` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestClipboardAttachOnNew::test_accepted_answer_attaches` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketAttach::test_missing_id_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketAttach::test_no_path_non_tty_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketAttach::test_attach_from_path_success` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketBlock::test_missing_args_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketBlock::test_block_success` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketClose::test_missing_id_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketClose::test_close_queued_gives_start_hint` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketClose::test_close_missing_evidence_gives_hint` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketClose::test_close_with_bad_evidence_ids_exits_1_without_closing` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketFail::test_missing_args_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketFail::test_unknown_id_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketFail::test_fail_records_attempt` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketEvidence::test_missing_args_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketEvidence::test_evidence_ids_applied` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketEvidence::test_evidence_cmd_applied_for_docs_ticket` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketEvidence::test_evidence_cmd_failure_logs_error` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketArchive::test_nothing_to_archive` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestTicketArchive::test_archives_done_ticket` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSysRunnerDispatch::test_unknown_command_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSysPlan::test_no_design_models` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSysPlan::test_dry_run_prints_plan` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSysPlan::test_apply_writes_tickets` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSysPlan::test_file_arg_fails` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSysPlan::test_malformed_design_file_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSysPlan::test_apply_new_ticket_failure_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSysPlan::test_custom_design_dir_from_frob_toml` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSysPlan::test_unreadable_frob_toml_falls_back_to_default` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSysPlan::test_unchanged_model_second_run_no_new_tickets` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSysDoc::test_no_design_models` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSysDoc::test_renders_matrix` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSysDoc::test_malformed_design_file_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSysDoc::test_unknown_view_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSysExport::test_bad_format_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSysExport::test_directory_path_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSysExport::test_missing_path_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSysExport::test_parse_failure_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSysExport::test_each_format_renders[k8s]` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSysExport::test_each_format_renders[seccomp]` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSysExport::test_each_format_renders[iam]` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSysExport::test_default_design_path` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSysAudit::test_no_design_models` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSysAudit::test_clean_model_passes` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSysAudit::test_malformed_design_file_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSysAudit::test_waived_gap_still_proves_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSysAudit::test_gap_model_exits_1` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app_runners_batch7.py::TestSysAudit::test_file_arg_fails` (pytest node id, verified passing when recorded)
+- `tests/unit/test_store_batch7.py::TestMigrateToLedger::test_atomic_write_failure_propagates` (pytest node id, verified passing when recorded)
+- `tests/unit/test_store_batch7.py::TestMigrateToLedger::test_source_unlink_failure_is_warned_not_fatal` (pytest node id, verified passing when recorded)
+- `tests/unit/test_store_batch7.py::TestAtomicWrite::test_bytes_content_write_mode` (pytest node id, verified passing when recorded)
+- `tests/unit/test_store_batch7.py::TestAtomicWrite::test_nested_unlink_failure_after_write_error_is_swallowed` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestCollectBranchGaps::test_walk_test_files_matches_suffix_style_test_files` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestCollectBranchGaps::test_content_key_unreadable_file_is_skipped_not_raised` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestCollectBranchGaps::test_native_artifact_digest_resolvable_no_compiled_artifact` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestCollectBranchGaps::test_native_artifact_digest_unreadable_artifact` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestCollectBranchGaps::test_missing_natives_treats_find_spec_error_as_missing` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestCollectBranchGaps::test_load_natives_or_empty_degrades_on_malformed_config` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestCollectBranchGaps::test_load_cache_unreadable_json_is_none` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestCollectBranchGaps::test_load_cache_key_mismatch_is_none` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestCollectBranchGaps::test_run_collect_only_spawn_failure_is_err` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestCollectBranchGaps::test_run_collect_only_bad_exit_code_is_err` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestCollectBranchGaps::test_reroot_node_ids_noop_for_dot_cwd` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestCollectBranchGaps::test_python_runner_cwds_degrades_on_bad_runner_config` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestCollectBranchGaps::test_python_runner_cwds_dedupes_repeated_cwd` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestCollectBranchGaps::test_collect_nested_python_propagates_collect_failure` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestCollectBranchGaps::test_collect_python_tests_outer_collection_failure_is_err` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestCollectBranchGaps::test_collect_python_tests_nested_failure_degrades_with_warning` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestCollectBranchGaps::test_rust_content_key_unreadable_file_is_skipped` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestCollectBranchGaps::test_cargo_list_result_spawn_failure_is_err` (pytest node id, verified passing when recorded)
+- `tests/test_testing.py::TestCollectBranchGaps::test_run_cargo_test_list_integration_failure_propagates` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_native_staleness.py::TestNativeStalenessBranchGaps::test_newest_mtime_absent_directory_is_none` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_native_staleness.py::TestNativeStalenessBranchGaps::test_newest_mtime_skips_unstatable_file_and_keeps_max` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_native_staleness.py::TestNativeStalenessBranchGaps::test_artifact_mtime_find_spec_error_is_none` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_native_staleness.py::TestNativeStalenessBranchGaps::test_artifact_mtime_no_compiled_artifact_is_none` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_native_staleness.py::TestNativeStalenessBranchGaps::test_artifact_mtime_unstatable_artifact_is_none` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_native_staleness.py::TestNativeStalenessBranchGaps::test_stale_natives_degrades_on_malformed_config` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_native_staleness.py::TestNativeStalenessBranchGaps::test_stale_natives_skips_empty_source_dir` (pytest node id, verified passing when recorded)
+- `tests/test_serve.py::TestServeGetattr::test_getattr_resolves_lazy_server_names` (pytest node id, verified passing when recorded)
+- `tests/test_serve.py::TestServeGetattr::test_getattr_unknown_name_raises_attribute_error` (pytest node id, verified passing when recorded)
+- `tests/test_graph_lock.py::TestAckDrift::test_acknowledge_endpoint_that_does_not_resolve_is_err` (pytest node id, verified passing when recorded)
+- `tests/test_graph_lock.py::TestAckDrift::test_write_lock_oserror_on_replace_is_write_failed` (pytest node id, verified passing when recorded)
+- `tests/unit/test_dup_cache.py::TestFingerprintRoundTrip::test_get_fingerprint_connect_error_returns_none` (pytest node id, verified passing when recorded)
+- `tests/unit/test_dup_cache.py::TestVerdictRoundTrip::test_put_verdict_evicts_lru_rows_beyond_cache_entries` (pytest node id, verified passing when recorded)
+- `tests/unit/test_dup_cache.py::TestVerdictRoundTrip::test_put_verdict_connect_error_is_propagated` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ack_runner.py::TestAckRunnerRun::test_no_refs_exits_with_error` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ack_runner.py::TestAckRunnerRun::test_success_path_builds_cache_and_writes_lock` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ack_runner.py::TestAckRunnerRun::test_unresolvable_ref_exits_with_error` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ack_runner.py::TestAckRunnerRun::test_graph_unavailable_after_failed_build_exits_with_error` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ack_runner.py::TestAckRunnerRun::test_malformed_lock_file_exits_with_error` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ack_runner.py::TestAckRunnerRun::test_write_lock_failure_exits_with_error` (pytest node id, verified passing when recorded)
+- `tests/unit/test_parse_runner_direct.py::TestParseRunnerRun::test_missing_tool_exits_with_error` (pytest node id, verified passing when recorded)
+- `tests/unit/test_parse_runner_direct.py::TestParseRunnerRun::test_unknown_tool_exits_with_error` (pytest node id, verified passing when recorded)
+- `tests/unit/test_parse_runner_direct.py::TestParseRunnerRun::test_unreadable_file_exits_with_error` (pytest node id, verified passing when recorded)
+- `tests/unit/test_parse_runner_direct.py::TestParseRunnerRun::test_reads_from_file_and_logs_text` (pytest node id, verified passing when recorded)
+- `tests/unit/test_parse_runner_direct.py::TestParseRunnerRun::test_reads_from_stdin_and_logs_json` (pytest node id, verified passing when recorded)
+- `tests/unit/test_parse_runner_direct.py::TestParseRunnerRun::test_passthrough_propagates_failing_exit_code` (pytest node id, verified passing when recorded)
+- `tests/unit/test_parse_runner_direct.py::TestParseRunnerRun::test_no_passthrough_does_not_exit_on_failure` (pytest node id, verified passing when recorded)
 
 ## Done report (batch 9)
 
@@ -3263,6 +3603,7 @@ uv run pytest tests/test_gates.py -q: 250 passed (full file)
 ### Evidence
 - `tests/test_gates.py::TestCoverageGate::test_cov001_waiver_does_not_blanket_suppress_sibling_symbol` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestCoverageGate::test_waiver_suppresses_and_reports` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0554 -->
 ```yaml
 id: T-0554
@@ -3429,6 +3770,7 @@ Gates: uv run frob check --delta --ticket T-0564 clean (0/136 new violations); u
 
 ### Evidence
 - `tests/test_gates.py::TestCoverageGate::test_cov002_grace_matches_hunk_anywhere_in_ticket_block` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0565 -->
 ```yaml
 id: T-0565
