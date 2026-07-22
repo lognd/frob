@@ -202,10 +202,17 @@ class AppConfig(BaseModel):
     debt_path: Path | None = None
 
     # registry (T-0407)
-    registry_command: str | None = None  # audit
+    registry_command: str | None = None  # audit|add
     registry_path: Path | None = None
     registry_json: bool = False
     debt_json: bool = False
+
+    # registry add (T-0429)
+    registry_add_file: str | None = None
+    registry_add_key: str = "entries"
+    registry_add_id: str | None = None
+    registry_add_name: str | None = None
+    registry_add_source_doc: str = ""
 
     # ticket
     ticket_command: str | None = None
@@ -417,6 +424,11 @@ class AppConfig(BaseModel):
             "graph_ref",
             "ack_facet",
             "registry_command",
+            "registry_add_file",
+            "registry_add_key",
+            "registry_add_id",
+            "registry_add_name",
+            "registry_add_source_doc",
             "ticket_command",
             "ticket_id",
             "ticket_title",

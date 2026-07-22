@@ -552,8 +552,9 @@ def _add_debt_parser(sub) -> None:
 
 
 # frob:ticket T-0407
+# frob:ticket T-0429
 def _add_registry_parser(sub) -> None:
-    """Register the `frob registry` subcommand and its `audit` action."""
+    """Register the `frob registry` subcommand and its `audit`/`add` actions."""
     registry_p = sub.add_parser(
         "registry", help="unified design-knowledge registry (T-0407)"
     )
@@ -565,6 +566,23 @@ def _add_registry_parser(sub) -> None:
     )
     registry_audit_p.add_argument("--path", dest="registry_path", metavar="DIR")
     registry_audit_p.add_argument("--json", dest="registry_json", action="store_true")
+
+    # T-0429: the exhaustive-researcher's corpus-emit mechanism -- appends
+    # one new disposition:pending entry directly into the universe SSOT,
+    # never assigning a real disposition itself (T-0428's derived model).
+    registry_add_p = registry_sub.add_parser(
+        "add",
+        help="append a new pending entry to a registry file's universe "
+        "corpus (T-0429 exhaustive-research emit path)",
+    )
+    registry_add_p.add_argument("--file", dest="registry_add_file", required=True)
+    registry_add_p.add_argument("--key", dest="registry_add_key", default="entries")
+    registry_add_p.add_argument("--id", dest="registry_add_id", required=True)
+    registry_add_p.add_argument("--name", dest="registry_add_name", required=True)
+    registry_add_p.add_argument(
+        "--source-doc", dest="registry_add_source_doc", default=""
+    )
+    registry_add_p.add_argument("--path", dest="registry_path", metavar="DIR")
 
 
 def _add_ticket_new_identity_args(ticket_new_p) -> None:
