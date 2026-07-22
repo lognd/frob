@@ -6,6 +6,7 @@ from pathlib import Path
 from frob.app.config import AppConfig
 from frob.dup import find_duplicates
 from frob.logging import get_logger
+from frob.render import Renderer
 
 _log = get_logger(__name__)
 
@@ -41,7 +42,9 @@ def _probe(cfg: AppConfig, dup_path: Path) -> None:
         _log.error("probe %s <-> %s: %s", a, b, result.danger_err)
         sys.exit(1)
     verdict = result.danger_ok
-    print(f"probe {a} <-> {b}: {'EQUIVALENT' if verdict.equivalent else 'DIFFER'}")
+    Renderer.for_stream(sys.stdout).line(
+        f"probe {a} <-> {b}: {'EQUIVALENT' if verdict.equivalent else 'DIFFER'}"
+    )
     sys.exit(0 if verdict.equivalent else 1)
 
 

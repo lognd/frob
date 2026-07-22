@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 from frob.bind import check, scan_bindings, scan_sources
+from frob.render import Renderer
 
 
 def _build_bind_parser() -> argparse.ArgumentParser:
@@ -29,15 +30,17 @@ def _build_bind_parser() -> argparse.ArgumentParser:
 
 def _print_items(items, as_json: bool) -> None:
     """Print scanned binding/source items as JSON or one line each."""
+    renderer = Renderer.for_stream(sys.stdout)
     if as_json:
-        print(json.dumps([vars(i) for i in items], indent=2))
+        renderer.line(json.dumps([vars(i) for i in items], indent=2))
         return
     for i in items:
-        print(f"{i.file}:{i.line}  {i.signature}  [{i.kind}]")
+        renderer.line(f"{i.file}:{i.line}  {i.signature}  [{i.kind}]")
 
 
 def _report_mismatches(mismatches, as_json: bool, root: Path) -> None:
     """Print binding/source mismatches; exit non-zero on any text-mode mismatch."""
+    renderer = Renderer.for_stream(sys.stdout)
     if as_json:
         out = {
             "root": str(root),
@@ -52,13 +55,13 @@ def _report_mismatches(mismatches, as_json: bool, root: Path) -> None:
                 for m in mismatches
             ],
         }
-        print(json.dumps(out, indent=2))
+        renderer.line(json.dumps(out, indent=2))
         return
     if not mismatches:
-        print("ok: all bindings match source declarations")
+        renderer.line("ok: all bindings match source declarations")
         return
     for m in mismatches:
-        print(f"{m.binding.file}:{m.binding.line}: {m.issue}")
+        renderer.line(f"{m.binding.file}:{m.binding.line}: {m.issue}")
     sys.exit(1)
 
 

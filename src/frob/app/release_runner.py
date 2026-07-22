@@ -7,6 +7,7 @@ from pathlib import Path
 
 from frob.app.config import AppConfig
 from frob.logging import get_logger
+from frob.render import Renderer
 
 _log = get_logger(__name__)
 
@@ -66,7 +67,9 @@ def _stamp(root: Path) -> None:
     if result.is_err:
         _log.error("release stamp failed: %s", result.danger_err)
         sys.exit(1)
-    print(f"stamped public API at {version} -> .frob-release.json")
+    Renderer.for_stream(sys.stdout).line(
+        f"stamped public API at {version} -> .frob-release.json"
+    )
 
 
 def _check(root: Path) -> None:
@@ -82,7 +85,7 @@ def _check(root: Path) -> None:
     need = required_version(manifest.version, bump)
     ok = need.is_ok and satisfies(version, need.danger_ok)
     target = need.danger_ok if need.is_ok else "?"
-    print(
+    Renderer.for_stream(sys.stdout).line(
         f"since {manifest.version}: {bump.name.lower()} change -> "
         f"need >= {target} (current {version}): {'OK' if ok else 'BUMP REQUIRED'}"
     )
