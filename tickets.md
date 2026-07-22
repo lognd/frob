@@ -3886,7 +3886,7 @@ via `frob ticket scope --add` before recording evidence.
 ```yaml
 id: T-0390
 title: 'registry reconciliation: evasion (112 entries)'
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-07-20'
