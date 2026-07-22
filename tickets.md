@@ -3776,3 +3776,37 @@ component: null
 labels: []
 ```
 docs/audits/lang-check-docs.md finding 2. _parse_source_file_fresh (graph/__init__.py) returns (True, (), (), ()) on any parse_file Err other than the expected NativeParserUnavailable degrade -- the file is recorded as successfully processed with zero symbols/edges, so every public symbol and every frob:doc/frob:invariant/frob:describes/frob:tests edge in it silently vanishes; COV001/exports/DRIFT/INV all pass vacuously for it. Repro: any file tree-sitter cannot parse at all -> gates green, design graph invisible. RIGHT-WAY fix: surface parse/IO failures as an ERROR-severity gate violation (a PARSE001-style rule) instead of a swallowed warning. Out of T-0404's declared scope (src/frob/graph/, not lang/check/gates/) -- needs a scope-widened or standalone follow-up ticket.
+
+<!-- ticket:T-draft-6955571e -->
+```yaml
+id: T-draft-6955571e
+title: REF002 single-anchor pool triage (32 findings)
+state: in-progress
+kind: bug
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- docs/**
+- src/frob/gates/_refs.py
+scope_changes: []
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+- tests/test_refs_gate.py::TestTiers::test_one_ref_weak_warns_ref002
+- tests/test_refs_gate.py::TestReferenceDetection::test_markdown_link_counts_as_a_reference
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+REF002 pool from `uv run frob check --only refs`: 32 single-inbound-
+reference advisories (WARN, suggestion-severity per the module docstring)
+across md/strata fixtures. Per finding: add a genuine second consumer
+where one is natural (a doc cross-reference or a legitimate second call
+site), or waive with an honest single-anchor-by-design reason following
+the existing litmus-fixture waiver precedent already in this repo. No
+fabricated consumers. Target: REF002 unwaived = 0, or a follow-up ticket
+with the exact honest remainder.
