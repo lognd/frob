@@ -3812,7 +3812,7 @@ still sitting in this same uncommitted-to-main working diff).
 id: T-0544
 title: 'graph: frob:describes anchor discovery only scans docs/, missing README/top-level
   notes (T-0404 finding 8)'
-state: in-progress
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-21'
