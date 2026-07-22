@@ -1,4 +1,4 @@
-# frob:ticket T-draft-edbf1e26
+# frob:ticket T-0591
 # frob:waive TEST003 reason="unit-tested exhaustively via its consuming gates (test_registry_models.py, test_registry_exhaustiveness.py, ...); no CLI/subprocess integration entrypoint exists for this internal model package"  # noqa: E501
 """Unified registry capability (T-0407): one typed model every
 `docs/design/registry/*.yaml` manifest instantiates, so a registry entry's
