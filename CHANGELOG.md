@@ -17,6 +17,13 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.72.0] - unreleased (merge-resolution bump)
+
+Version bump to resolve a merge conflict between this branch's own
+0.69.0 (T-0545/T-0552/T-0547/T-0556/T-0548, below) and `main`'s
+concurrently-landed 0.71.0 (T-0322/T-0410/T-0408) -- no additional public
+API change of its own, just the coordinating bump above both parents.
+
 ## [0.69.0] - unreleased (attestable coverage lock, B5)
 
 T-0545 (docs/audits/gates-accounting.md B5): `.frob/coverage-stamp` and
