@@ -383,6 +383,181 @@ class TestSiblingDoneReportPreserved:
         assert parsed[tid_sibling].state == TicketState.QUEUED
 
 
+# frob:ticket T-0682
+class TestSpliceLedgerRicherStatePreference:
+    """T-0682: the git-merge-driver path (`splice_ledger`, invoked by the
+    registered `tickets.md` merge driver for ANY `git merge`/`pull`/`rebase`
+    -- not just `frob ticket land`'s own already-ticket-scoped internal
+    splice) previously ranked a same-id divergence by state-rank alone,
+    so a divergence where the Done-report side happened to sit at a LOWER
+    state-rank than the reportless side still lost -- observed twice in the
+    field landing T-0633/T-0637, where each land's merge-main-into-worktree
+    stage regressed the landing ticket's own block back toward main's bare
+    state (the Done report text itself survived only because it lives in
+    the body, not the frontmatter `state:` field the rank comparison acted
+    on).
+
+    `_newer`'s fix is a QUALIFIED preference, not a blanket "report always
+    wins": a first pass at this ticket made Done-report presence an
+    unconditional override, which a reviewer caught as the INVERSE bug --
+    a STALE report on a lower-rank block (e.g. a ticket requeued back down
+    without its old report body ever getting stripped) would then beat a
+    genuinely more-advanced, reportless side. The reported side now wins
+    over a reportless one ONLY IF the reportless side does not STRICTLY
+    outrank it; a strictly-higher-rank reportless side still wins. These
+    tests mirror T-0577's two-direction shape, but against `splice_ledger`
+    (the whole-ledger merge) directly rather than the ticket-scoped
+    `_splice_only_ticket`."""
+
+    # frob:tests tests/test_ticket_land.py::TestSpliceLedgerRicherStatePreference.test_report_side_still_wins_when_it_also_outranks_the_reportless_side  # noqa: E501
+    def test_report_side_still_wins_when_it_also_outranks_the_reportless_side(
+        self, tmp_path: Path
+    ) -> None:
+        """The original T-0682 field incident: `ours` (the worktree side,
+        in a `merge main into worktree`) is `in-progress` (rank 2) with a
+        substantive Done report; `theirs` (main) is a bare `queued` (rank
+        0). The reported side is ALSO the higher-rank side here, so it
+        wins under both the old (buggy) and new (qualified) rule -- this
+        pins the incident that motivated the fix in the first place."""
+        created = new_ticket(tmp_path, _spec("Landing ticket"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        assert transition(tmp_path, tid, TicketState.PLANNED).is_ok
+        assert transition(tmp_path, tid, TicketState.IN_PROGRESS).is_ok
+        loaded = load_all(tmp_path).danger_ok[tid]
+        with_report = loaded.model_copy(
+            update={
+                "body": loaded.body
+                + "\n## Done report\n\nSubstantive report text here.\n"
+            }
+        )
+        assert write_ticket(tmp_path, with_report).is_ok
+        ours_text = ledger_path(tmp_path).read_text()
+
+        theirs = with_report.model_copy(
+            update={
+                "state": TicketState.QUEUED,
+                "body": with_report.body.split("## Done report")[0],
+            }
+        )
+        assert write_ticket(tmp_path, theirs).is_ok
+        theirs_text = ledger_path(tmp_path).read_text()
+
+        spliced = splice_ledger(ours_text, theirs_text)
+        assert spliced.is_ok
+        from frob.tickets._store import _parse_ledger
+
+        parsed = _parse_ledger(spliced.danger_ok).danger_ok
+        assert parsed[tid].state == TicketState.IN_PROGRESS
+        assert "## Done report" in parsed[tid].body
+
+    # frob:tests tests/test_ticket_land.py::TestSpliceLedgerRicherStatePreference.test_stale_report_on_lower_rank_still_loses_to_a_strictly_outranking_reportless_side  # noqa: E501
+    def test_stale_report_on_lower_rank_still_loses_to_a_strictly_outranking_reportless_side(  # noqa: E501
+        self, tmp_path: Path
+    ) -> None:
+        """The reviewer-caught inverse case: `ours` is a bare `queued`
+        (rank 0) that still carries a STALE Done report (e.g. requeued
+        back down without the report ever being stripped); `theirs` is
+        `in-progress` (rank 2, strictly higher) with no report at all --
+        genuine further rework since. An unqualified "report always wins"
+        rule would resurrect the stale queued+report block here; the
+        qualification must let the strictly-outranking reportless side
+        win instead."""
+        created = new_ticket(tmp_path, _spec("Landing ticket"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        loaded = load_all(tmp_path).danger_ok[tid]
+        stale_with_report = loaded.model_copy(
+            update={
+                "body": loaded.body
+                + "\n## Done report\n\nSubstantive report text here.\n"
+            }
+        )
+        assert write_ticket(tmp_path, stale_with_report).is_ok
+        ours_text = ledger_path(tmp_path).read_text()
+
+        theirs = stale_with_report.model_copy(
+            update={
+                "state": TicketState.IN_PROGRESS,
+                "body": stale_with_report.body.split("## Done report")[0],
+            }
+        )
+        assert write_ticket(tmp_path, theirs).is_ok
+        theirs_text = ledger_path(tmp_path).read_text()
+
+        spliced = splice_ledger(ours_text, theirs_text)
+        assert spliced.is_ok
+        from frob.tickets._store import _parse_ledger
+
+        parsed = _parse_ledger(spliced.danger_ok).danger_ok
+        assert parsed[tid].state == TicketState.IN_PROGRESS
+        assert "## Done report" not in parsed[tid].body
+
+    # frob:tests tests/test_ticket_land.py::TestSpliceLedgerRicherStatePreference.test_stale_report_on_lower_rank_still_loses_regardless_of_which_side_it_is_on  # noqa: E501
+    def test_stale_report_on_lower_rank_still_loses_regardless_of_which_side_it_is_on(
+        self, tmp_path: Path
+    ) -> None:
+        """Same divergence as the previous test, but with the stale report
+        on `theirs` instead of `ours` -- the qualification is symmetric,
+        not an accidental artifact of argument order."""
+        created = new_ticket(tmp_path, _spec("Landing ticket"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        loaded = load_all(tmp_path).danger_ok[tid]
+        stale_with_report = loaded.model_copy(
+            update={
+                "body": loaded.body
+                + "\n## Done report\n\nSubstantive report text here.\n"
+            }
+        )
+        assert write_ticket(tmp_path, stale_with_report).is_ok
+        theirs_text = ledger_path(tmp_path).read_text()
+
+        ours = stale_with_report.model_copy(
+            update={
+                "state": TicketState.IN_PROGRESS,
+                "body": stale_with_report.body.split("## Done report")[0],
+            }
+        )
+        assert write_ticket(tmp_path, ours).is_ok
+        ours_text = ledger_path(tmp_path).read_text()
+
+        spliced = splice_ledger(ours_text, theirs_text)
+        assert spliced.is_ok
+        from frob.tickets._store import _parse_ledger
+
+        parsed = _parse_ledger(spliced.danger_ok).danger_ok
+        assert parsed[tid].state == TicketState.IN_PROGRESS
+        assert "## Done report" not in parsed[tid].body
+
+    # frob:tests tests/test_ticket_land.py::TestSpliceLedgerRicherStatePreference.test_neither_side_reporting_still_falls_back_to_state_rank  # noqa: E501
+    def test_neither_side_reporting_still_falls_back_to_state_rank(
+        self, tmp_path: Path
+    ) -> None:
+        """The T-0577/T-0537 non-regression guard stays intact: when
+        NEITHER side carries a substantive Done report, the comparison
+        falls back to plain state-rank exactly as before -- this is not a
+        blanket "richer body always wins" rule."""
+        created = new_ticket(tmp_path, _spec("Closed elsewhere"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        loaded = load_all(tmp_path).danger_ok[tid]
+        done_ticket = loaded.model_copy(update={"state": TicketState.DONE})
+        assert write_ticket(tmp_path, done_ticket).is_ok
+        ours_text = ledger_path(tmp_path).read_text()
+
+        stale = done_ticket.model_copy(update={"state": TicketState.QUEUED})
+        assert write_ticket(tmp_path, stale).is_ok
+        theirs_text = ledger_path(tmp_path).read_text()
+
+        spliced = splice_ledger(ours_text, theirs_text)
+        assert spliced.is_ok
+        from frob.tickets._store import _parse_ledger
+
+        parsed = _parse_ledger(spliced.danger_ok).danger_ok
+        assert parsed[tid].state == TicketState.DONE
+
+
 class TestLand:
     """`frob.tickets.land` against real fixture repos."""
 
@@ -1736,3 +1911,67 @@ class TestRebuildNatives:
         result = land(repo, tid, wt, dry_run=False, rebuild_natives=lambda root: False)
         assert result.is_ok, result.err
         assert result.danger_ok.natives_rebuilt is False
+
+
+# frob:ticket T-0682
+class TestMergeMainIntoWorktreeRicherState:
+    """T-0682 integration lock: `_merge_main_into_worktree` (the "merge main
+    into the worktree" stage every `frob ticket land` call runs, and the
+    exact site where the registered `tickets.md` git merge driver
+    auto-fires on `git merge --no-commit --no-ff`) must not let main's
+    bare, reportless copy of the LANDING ticket's own block win over the
+    worktree's Done-reported copy WHEN the worktree's copy also outranks
+    it -- the original T-0682 field incident."""
+
+    def test_landing_tickets_in_progress_report_survives_the_merge_stage(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestMergeMainIntoWorktreeRicherState.test_landing_tickets_in_progress_report_survives_the_merge_stage  # noqa: E501
+        # Ticket is created ON main (a real id, not a draft) so it exists
+        # in BOTH the worktree's and main's ledgers before either side
+        # diverges it -- the scenario under test is a genuine same-id
+        # divergence, not draft finalization (covered elsewhere).
+        created = new_ticket(repo, _spec("Landing ticket", scope=("src/widget.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _commit_all(repo, "file landing ticket")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-richer", str(wt)], repo)
+
+        # Worktree: driven to `in-progress` with a substantive Done report
+        # already attached -- a HIGHER state-rank than main's bare queued
+        # AND a Done report, matching the real field incident (T-0633/
+        # T-0637's landing tickets were in-progress+reported when the
+        # merge stage regressed them).
+        assert transition(wt, tid, TicketState.PLANNED).is_ok
+        assert transition(wt, tid, TicketState.IN_PROGRESS).is_ok
+        loaded = load_all(wt).danger_ok[tid]
+        with_report = loaded.model_copy(
+            update={
+                "body": loaded.body
+                + "\n## Done report\n\nSubstantive report text here.\n"
+            }
+        )
+        assert write_ticket(wt, with_report).is_ok
+        (wt / "src" / "widget.py").write_text("# new widget\n")
+        _commit_all(wt, "advance ticket to in-progress+report")
+        ticket_before_merge = load_all(wt).danger_ok[tid]
+
+        # Main's OWN copy of the SAME ticket never advanced past its bare
+        # `queued` state -- unrelated main-side history, no divergence in
+        # rank OR report to work in the worktree's favor by accident.
+        (repo / "src" / "unrelated.py").write_text("# unrelated main commit\n")
+        _commit_all(repo, "unrelated main-side commit")
+
+        result = _land_mod._merge_main_into_worktree(
+            repo, wt, ticket_before_merge, "main"
+        )
+        assert result.is_ok, result.err
+
+        merged_text = ledger_path(wt).read_text()
+        from frob.tickets._store import _parse_ledger
+
+        parsed = _parse_ledger(merged_text).danger_ok
+        assert parsed[tid].state == TicketState.IN_PROGRESS
+        assert "## Done report" in parsed[tid].body

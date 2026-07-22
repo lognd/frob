@@ -130,23 +130,74 @@ def _has_done_report(body: str) -> bool:
     return has_substantive_done_report(body)
 
 
+_TERMINAL_RANK = 3  # rank shared by TicketState.DONE and TicketState.DROPPED
+
+
+# frob:ticket T-0682
+# frob:tests tests/test_ticket_land.py::TestSpliceLedgerRicherStatePreference.test_report_side_still_wins_when_it_also_outranks_the_reportless_side  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestSpliceLedgerRicherStatePreference.test_stale_report_on_lower_rank_still_loses_to_a_strictly_outranking_reportless_side  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestSpliceLedgerRicherStatePreference.test_stale_report_on_lower_rank_still_loses_regardless_of_which_side_it_is_on  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestSpliceLedgerRicherStatePreference.test_neither_side_reporting_still_falls_back_to_state_rank  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestMergeMainIntoWorktreeRicherState.test_landing_tickets_in_progress_report_survives_the_merge_stage  # noqa: E501
 def _newer(a: Ticket, b: Ticket) -> Ticket:
-    """Which of two same-id ticket versions is "newer": further along the
-    state machine wins; a state-rank tie prefers whichever carries a
-    substantive Done report, then `b` (the incoming/theirs side) as the
-    final deterministic tiebreak -- never a coin flip. Either way, the
-    winner's evidence is UNIONED with the loser's (`_union_evidence`,
-    D-09) rather than the loser's evidence being silently dropped -- the
-    old `len(a.evidence) != len(b.evidence)` tiebreak used to pick ONE
-    side's evidence set wholesale, discarding the other side's ids
-    entirely when two worktrees closed the same ticket with disjoint
-    evidence."""
+    """Which of two same-id ticket versions is "newer" (T-0682: Done-report
+    presence now qualifies state-rank whenever NEITHER side has already
+    reached a terminal state -- but does not blanket-override it).
+
+    Three tiers, checked in order:
+
+    1. TERMINAL SUPREMACY (unchanged from before T-0682): if either side is
+       `done`/`dropped` (rank 3) and the other is not, the terminal side
+       always wins, Done report or not -- a ticket main has already closed
+       or dropped must never be resurrected to a lesser state just because
+       a stale worktree copy happens to carry Done-report text (T-0537's
+       regression lock; also the T-0479-adjacent race where main
+       independently drops a ticket a worktree is still mid-flight on --
+       `close` must still fail against the terminal state, not silently
+       resurrect the worktree's in-progress copy).
+    2. Otherwise, if Done-report presence DIFFERS between the two
+       non-terminal sides, the reported side wins ONLY IF the reportless
+       side does not STRICTLY outrank it. A substantive Done report is
+       strong evidence of real, committed-to-land progress -- stronger
+       than the bare `state:` field, which a stale copy can carry at an
+       EQUAL or LOWER rank than a richer one for free (`queued`/`planned`/
+       `in-progress` are all trivially reachable by hand-editing or a
+       requeue) -- but it is not proof against a genuinely more-advanced
+       rework on the OTHER side: a reviewer-caught inverse of the T-0682
+       field incident found that an unqualified "report always wins" rule
+       let a STALE report on a lower-rank block (e.g. a ticket requeued
+       back down without ever stripping its old report body) beat a
+       reportless side that had since made real further progress at a
+       strictly higher rank. So: reportless-but-strictly-higher-rank wins
+       over reported-but-lower-or-equal-rank; reported wins over
+       reportless in every other differing-presence case (equal rank, or
+       reported side itself at the higher rank). This still closes the
+       original T-0682 incident (the reported side there was ALSO the
+       higher-rank side -- in-progress+report vs main's bare queued --
+       so it wins either way) while no longer resurrecting a stale report
+       over genuine forward progress.
+    3. Otherwise (Done-report presence is a wash -- both sides carry one,
+       or neither does), fall back to the plain state-rank comparison,
+       tie-broken by `b` (the incoming/theirs side) as the final
+       deterministic pick -- never a coin flip.
+
+    Either way, the winner's evidence is UNIONED with the loser's
+    (`_union_evidence`, D-09) rather than the loser's evidence being
+    silently dropped -- the old `len(a.evidence) != len(b.evidence)`
+    tiebreak used to pick ONE side's evidence set wholesale, discarding
+    the other side's ids entirely when two worktrees closed the same
+    ticket with disjoint evidence."""
     rank_a, rank_b = _STATE_RANK[a.state], _STATE_RANK[b.state]
-    if rank_a != rank_b:
+    if _TERMINAL_RANK in (rank_a, rank_b) and rank_a != rank_b:
         winner = a if rank_a > rank_b else b
     else:
         done_a, done_b = _has_done_report(a.body), _has_done_report(b.body)
-        winner = (a if done_a else b) if done_a != done_b else b
+        if done_a != done_b:
+            reported, reported_rank = (a, rank_a) if done_a else (b, rank_b)
+            reportless, reportless_rank = (b, rank_b) if done_a else (a, rank_a)
+            winner = reportless if reportless_rank > reported_rank else reported
+        else:
+            winner = b if rank_a == rank_b else (a if rank_a > rank_b else b)
     return _union_evidence(winner, a, b)
 
 
