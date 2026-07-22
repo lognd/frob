@@ -5202,7 +5202,7 @@ ticket's own acceptance criteria.
 ```yaml
 id: T-0610
 title: 'arch: refactor python/cpp checks onto normalized model (no regression)'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -5223,7 +5223,6 @@ component: null
 labels: []
 ```
 Add a python-adapter (and cpp-adapter) mapping the existing tree-sitter walks onto the T-0609 normalized model, then re-point the existing arch checks (long-function, god-class, high-coupling, deep-nesting, abstraction-opportunity, large-file, T-0332 pattern recommender) to read from the normalized tree instead of raw tree-sitter nodes. Acceptance: existing test_arch.py suite passes unchanged (same suggestions on the same fixtures) proving zero regression; checks now take a normalized tree, not a language-specific one.
-
 <!-- ticket:T-0611 -->
 ```yaml
 id: T-0611
