@@ -3294,7 +3294,7 @@ public-API entries.
 ```yaml
 id: T-0569
 title: 'ratchet pools: baseline semantics for new gate rules (error-for-new, tracked-baseline-for-old)'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-07-21'
