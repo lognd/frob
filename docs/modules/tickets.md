@@ -145,7 +145,17 @@ def transition(root: Path, ticket_id: str, to: TicketState, *,
     # evidence_covers_scope`, injected rather than computed here so
     # frob.tickets stays free of the frob.graph dependency that would pull
     # in (docs/rework.md cycle-avoidance); `covers_scope=None` (default)
-    # skips the check.
+    # skips the check. T-0572: done ALSO requires every acceptance
+    # criterion to have a resolving evidence id -- see unbound_acceptance;
+    # Err(AcceptanceUnbound) names which criteria are still unbound (in the
+    # WARNING log line, not the bare error) if any remain. A ticket with an
+    # empty `acceptance` list is unaffected (backward compat).
+def unbound_acceptance(ticket: Ticket) -> tuple[AcceptanceCriterion, ...]
+    # T-0572: acceptance criteria with no evidence id that both the
+    # criterion itself lists AND still resolves against ticket.evidence --
+    # the done-transition gate above. Always () for an empty acceptance
+    # list. A criterion whose bound id was later dropped from
+    # ticket.evidence reads as unbound again (the binding must hold NOW).
 def record_failure(root: Path, ticket_id: str, entry: FailureEntry) -> Result[Ticket, TicketError]
     # Appends to the failure log so no future session retries a dead end.
 def drop_ticket(root: Path, ticket_id: str, reason: str, *,
@@ -160,7 +170,8 @@ def attach(root: Path, ticket_id: str, source: AttachmentSource,
     # source is a file path or clipboard; stores under tickets/attachments/.
 def add_evidence(root: Path, ticket_id: str, node_ids: Sequence[str],
                   collected: frozenset[str] | None = None,
-                  passed: frozenset[str] | None = None) -> Result[Ticket, TicketError]
+                  passed: frozenset[str] | None = None,
+                  accepts: Sequence[int] | None = None) -> Result[Ticket, TicketError]
     # Validates node_ids against `collected` (frob.testing.collect_python_tests
     # node ids, supplied by the caller) and appends the resolvable ones;
     # rejects the whole batch as Err(UnknownEvidence) if any id is
@@ -171,6 +182,12 @@ def add_evidence(root: Path, ticket_id: str, node_ids: Sequence[str],
     # batch as Err(EvidenceNotPassing), so a collected-but-currently-
     # FAILING test can never become evidence. `passed=None` (default)
     # skips this check.
+    # T-0572: `accepts` is a list of 0-based ticket.acceptance indices --
+    # node_ids are ALSO bound onto each named criterion's own `evidence`
+    # tuple, in the same atomic write as the evidence-list append. An
+    # out-of-range index rejects the whole batch as
+    # Err(AcceptanceIndexOutOfRange) before anything is written.
+    # `accepts=None` (default) binds nothing.
 def run_cmd_evidence(command: str) -> Result[str, TicketError]
     # T-0215: runs `command` through the shell and folds exit status + a
     # stdout digest into one evidence string (`cmd:<command> exit=0
@@ -1144,6 +1161,10 @@ class FailureEntry(BaseModel):
     attempt: int
     summary: str                # WHY it failed, one line minimum
 
+class AcceptanceCriterion(BaseModel):   # T-0572
+    text: str                   # given/when/then prose
+    evidence: tuple[str, ...] = ()   # evidence id(s) demonstrating this criterion
+
 class Ticket(BaseModel):
     id: str                     # ^T-\d{4}$
     title: str
@@ -1157,6 +1178,7 @@ class Ticket(BaseModel):
     scope: tuple[str, ...]      # path globs and/or symrefs
     evidence: tuple[str, ...]   # pytest node ids or policy rule ids
     attachments: tuple[Attachment, ...]
+    acceptance: tuple[AcceptanceCriterion, ...] = ()   # T-0572: each item bound to evidence
     component: str | None = None   # T-0454: which module/area (freeform)
     labels: tuple[str, ...] = ()   # T-0454: freeform tags, orthogonal to component
     body: str                   # markdown after frontmatter, verbatim
@@ -1169,6 +1191,7 @@ class TicketSpec(BaseModel):    # input to new_ticket; id/created assigned
     scope: tuple[str, ...] = ()
     blocked_by: tuple[str, ...] = ()
     parent: str | None = None
+    acceptance: tuple[AcceptanceCriterion, ...] = ()   # `frob ticket new --acceptance TEXT` (repeatable)
     component: str | None = None   # `frob ticket new --component NAME`
     labels: tuple[str, ...] = ()   # `frob ticket new --label TAG` (repeatable)
     body: str = ""

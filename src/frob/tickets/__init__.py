@@ -32,6 +32,7 @@ from frob.tickets._models import (
     LEDGER_PATH,
     OVER_BROAD_LITERAL_GLOBS,
     PRIORITY_RANK,
+    AcceptanceCriterion,
     Attachment,
     AttachmentSource,
     BoardColumn,
@@ -59,6 +60,7 @@ from frob.tickets._models import (
     replace_done_report_section,
     scope_matches,
     scope_overlap_globs,
+    unbound_acceptance,
 )
 from frob.tickets._models import _split_scope_entries as _normalize_scope_entries
 from frob.tickets._provisional import is_draft_id, mint_draft_id, on_default_branch
@@ -1935,9 +1937,12 @@ def _done_transition_guard(
     ticket: Ticket, *, covers_scope: bool | None = None
 ) -> Result[None, TicketError]:
     """Enforce DONE-transition preconditions: evidence + substantive Done
-    report present, no cmd: evidence on a kind that disallows it, and (D-02,
+    report present, no cmd: evidence on a kind that disallows it, (D-02,
     when the caller supplies `covers_scope`) at least one evidence id binds
-    to a touched/scope symbol.
+    to a touched/scope symbol, and (T-0572) every declared acceptance
+    criterion has at least one resolving evidence id -- see
+    `unbound_acceptance`. A ticket with an empty `acceptance` list is
+    unaffected (T-0572 backward compat).
 
     `covers_scope` is injected, never computed here (D-02): answering "does
     an evidence id cover a touched/scope symbol" needs the obligation graph
@@ -1972,6 +1977,14 @@ def _done_transition_guard(
             ticket.id,
         )
         return Err(TicketError.EvidenceScopeUnbound)
+    unbound = unbound_acceptance(ticket)
+    if unbound:
+        _log.warning(
+            "tickets: %s cannot close, unbound acceptance criterion/criteria: %s",
+            ticket.id,
+            [c.text for c in unbound],
+        )
+        return Err(TicketError.AcceptanceUnbound)
     return Ok(None)
 
 
@@ -2082,6 +2095,7 @@ def add_evidence(
     node_ids: Sequence[str],
     collected: frozenset[str] | None = None,
     passed: frozenset[str] | None = None,
+    accepts: Sequence[int] | None = None,
 ) -> Result[Ticket, TicketError]:
     """Validate `node_ids` against `collected` pytest node ids and (D-01)
     against `passed` -- the ids a caller has actually observed PASS on a
@@ -2102,7 +2116,18 @@ def add_evidence(
     ran the tests (`frob.testing.run_selected` or equivalent) opts in by
     passing the observed-passing subset. cmd: evidence entries are exempt
     from `passed` (verified by their own exit-code/digest channel instead,
-    see `add_cmd_evidence`/`reverify_cmd_evidence`)."""
+    see `add_cmd_evidence`/`reverify_cmd_evidence`).
+
+    `accepts` (T-0572) is a list of 0-based `ticket.acceptance` indices:
+    every `node_ids` entry is ALSO bound onto each named acceptance
+    criterion's own `evidence` tuple, in the same write as the evidence-list
+    append -- the CLI surface for closing the "closed but not what was
+    asked" hole (`--accepts N` on `frob ticket evidence`/`close`).
+    `accepts=None` (default) binds nothing, matching every caller before
+    T-0572. An out-of-range index rejects the whole batch
+    (`Err(AcceptanceIndexOutOfRange)`) before anything is written -- a
+    typo'd index must never silently bind evidence to the wrong criterion
+    or to nothing at all."""
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(leased.danger_err)
@@ -2128,7 +2153,19 @@ def add_evidence(
     if passing.is_err:
         return Err(passing.danger_err)
 
-    return _append_evidence_and_write(root, ticket, ticket_id, normalized_ids)
+    if accepts is not None:
+        out_of_range = [i for i in accepts if i < 0 or i >= len(ticket.acceptance)]
+        if out_of_range:
+            _log.warning(
+                "tickets: %s --accepts index/indices out of range %s "
+                "(ticket has %d acceptance item(s))",
+                ticket_id,
+                out_of_range,
+                len(ticket.acceptance),
+            )
+            return Err(TicketError.AcceptanceIndexOutOfRange)
+
+    return _append_evidence_and_write(root, ticket, ticket_id, normalized_ids, accepts)
 
 
 def _check_evidence_resolution(
@@ -2185,14 +2222,35 @@ def _check_evidence_passing(
 
 
 def _append_evidence_and_write(
-    root: Path, ticket: Ticket, ticket_id: str, node_ids: Sequence[str]
+    root: Path,
+    ticket: Ticket,
+    ticket_id: str,
+    node_ids: Sequence[str],
+    accepts: Sequence[int] | None = None,
 ) -> Result[Ticket, TicketError]:
-    """Merge new `node_ids` into `ticket.evidence` (deduplicated) and write
-    the updated ticket."""
+    """Merge new `node_ids` into `ticket.evidence` (deduplicated), bind them
+    onto each `accepts`-named acceptance criterion's own `evidence` tuple
+    (T-0572, also deduplicated), and write the updated ticket in one atomic
+    write -- the append and the acceptance binding are never split across
+    two writes, so a crash between them can never leave evidence recorded
+    without its acceptance mapping (or vice versa)."""
     merged = ticket.evidence + tuple(
         nid for nid in node_ids if nid not in ticket.evidence
     )
-    updated = ticket.model_copy(update={"evidence": merged})
+    acceptance = ticket.acceptance
+    if accepts:
+        acceptance = tuple(
+            c.model_copy(
+                update={
+                    "evidence": c.evidence
+                    + tuple(nid for nid in node_ids if nid not in c.evidence)
+                }
+            )
+            if i in accepts
+            else c
+            for i, c in enumerate(acceptance)
+        )
+    updated = ticket.model_copy(update={"evidence": merged, "acceptance": acceptance})
     write_result = write_ticket(root, updated)
     if write_result.is_err:
         return Err(write_result.danger_err)
@@ -2751,6 +2809,7 @@ def _record_attachment(
 
 
 __all__ = [
+    "AcceptanceCriterion",
     "Attachment",
     "AttachError",
     "AttachmentSource",
@@ -2813,5 +2872,6 @@ __all__ = [
     "set_done_report",
     "splice_ledger",
     "transition",
+    "unbound_acceptance",
     "validate_evidence",
 ]

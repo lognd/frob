@@ -358,6 +358,25 @@ def matches_collected(evidence: str, collected: frozenset[str]) -> bool:
     return any(node.startswith(prefix) for node in collected)
 
 
+# frob:ticket T-0572
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_acceptance.py::TestUnboundAcceptance.test_empty_acceptance_list_is_never_unbound  # noqa: E501
+def unbound_acceptance(ticket: Ticket) -> tuple[AcceptanceCriterion, ...]:
+    """Acceptance criteria on `ticket` with no evidence id that both (a) the
+    criterion itself lists and (b) still resolves against `ticket.evidence`
+    -- the T-0572 close gate this feeds. A criterion whose evidence id was
+    bound but later dropped from `ticket.evidence` (e.g. a scope --remove
+    that orphaned it) is treated as unbound again, not grandfathered: the
+    binding must hold NOW, not merely have been recorded once. An empty
+    `ticket.acceptance` (no criteria declared at all) always returns `()`
+    -- the T-0572 backward-compat rule that a ticket with no acceptance
+    list closes exactly as it did before this feature existed."""
+    evidence_set = set(ticket.evidence)
+    return tuple(
+        c for c in ticket.acceptance if not any(e in evidence_set for e in c.evidence)
+    )
+
+
 # frob:doc docs/modules/tickets.md#public-api
 # T-0458: public (no leading underscore) so `frob.tickets.compose_done_report`
 # can reuse the SAME heading string `has_substantive_done_report`/
@@ -568,6 +587,50 @@ class ScopeChangeOp(StrEnum):
     REMOVE = "remove"
 
 
+# frob:ticket T-0572
+# frob:doc docs/modules/tickets.md#data-models
+class AcceptanceCriterion(BaseModel):
+    """One given/when/then acceptance item bound to the evidence id(s) that
+    demonstrate it (T-0572): `evidence` empty means the criterion is not
+    yet mapped to anything and blocks `done` (see `_unbound_acceptance`).
+    Ids here are expected to also appear in the owning `Ticket.evidence`
+    (bound via `bind_acceptance`/`--accepts`), not a free-standing list --
+    close only trusts evidence it can itself resolve."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    text: str
+    evidence: tuple[str, ...] = ()
+
+    @field_validator("evidence", mode="before")
+    @classmethod
+    def _normalize_evidence(cls, value: Sequence[str]) -> tuple[str, ...]:
+        """Split any comma-joined entry the same way `Ticket.scope`/`labels`
+        do (T-0241 precedent), so a hand-typed `--evidence 'a,b'` still
+        binds both ids."""
+        return _split_scope_entries(value)
+
+
+def _coerce_acceptance(value: Sequence[object]) -> list[dict | object]:
+    """Accept either the legacy plain-string acceptance list (pre-T-0572
+    ledgers: `acceptance: [text, text, ...]`) or the new structured
+    `{text, evidence}` mapping form, normalizing the legacy shape to the
+    structured one so `Ticket`/`TicketSpec` validate either without the
+    caller needing to know which era wrote them. A ticket already on disk
+    with plain-string criteria keeps loading and displaying exactly as
+    before; it simply reads as unbound (empty `evidence`) until someone
+    binds it, which is the correct default -- backward compat is about
+    never failing to LOAD, not about grandfathering unmapped criteria past
+    the new close gate."""
+    coerced: list[dict | object] = []
+    for item in value:
+        if isinstance(item, str):
+            coerced.append({"text": item, "evidence": ()})
+        else:
+            coerced.append(item)
+    return coerced
+
+
 # frob:ticket T-0455
 # frob:doc docs/modules/tickets.md#data-models
 class ScopeChangeEntry(BaseModel):
@@ -610,8 +673,9 @@ class Ticket(BaseModel):
     scope_changes: tuple[ScopeChangeEntry, ...] = ()
     evidence: tuple[str, ...] = ()
     attachments: tuple[Attachment, ...] = ()
-    # given/when/then acceptance criteria the reviewer verifies (T-0006)
-    acceptance: tuple[str, ...] = ()
+    # given/when/then acceptance criteria the reviewer verifies (T-0006),
+    # each bound to the evidence id(s) that demonstrate it (T-0572)
+    acceptance: tuple[AcceptanceCriterion, ...] = ()
     # STRIDE category for kind=security tickets (T-0007)
     threat: Stride | None = None
     # frob:ticket T-0454
@@ -643,6 +707,13 @@ class Ticket(BaseModel):
         -- a hand-typed `--label 'a,b'` must not become one unmatchable tag."""
         return _split_scope_entries(value)
 
+    @field_validator("acceptance", mode="before")
+    @classmethod
+    def _coerce_acceptance_field(cls, value: Sequence[object]) -> list[dict | object]:
+        """Accept legacy plain-string acceptance items alongside the T-0572
+        structured `{text, evidence}` form -- see `_coerce_acceptance`."""
+        return _coerce_acceptance(value)
+
 
 # frob:doc docs/modules/tickets.md#data-models
 class TicketSpec(BaseModel):
@@ -658,7 +729,9 @@ class TicketSpec(BaseModel):
     scope: tuple[str, ...] = ()
     blocked_by: tuple[str, ...] = ()
     parent: str | None = None
-    acceptance: tuple[str, ...] = ()
+    # given/when/then acceptance criteria, each bound to evidence id(s)
+    # (T-0572); see `Ticket.acceptance`
+    acceptance: tuple[AcceptanceCriterion, ...] = ()
     threat: Stride | None = None
     evidence: tuple[str, ...] = ()
     # frob:ticket T-0454
@@ -679,6 +752,13 @@ class TicketSpec(BaseModel):
         """Split any comma-joined entry into separate labels (T-0454) before
         the spec is turned into a `Ticket` -- see `_split_scope_entries`."""
         return _split_scope_entries(value)
+
+    @field_validator("acceptance", mode="before")
+    @classmethod
+    def _coerce_acceptance_field(cls, value: Sequence[object]) -> list[dict | object]:
+        """Accept legacy plain-string acceptance items alongside the T-0572
+        structured `{text, evidence}` form -- see `_coerce_acceptance`."""
+        return _coerce_acceptance(value)
 
 
 # frob:doc docs/modules/tickets.md#data-models
@@ -757,6 +837,10 @@ class TicketError(ErrorSet):
     # T-0579: `frob ticket drop <id> --reason TEXT` failure mode -- a drop
     # with no reason is indistinguishable from a silent discard later.
     DropReasonMissing = "drop requires a non-empty --reason"
+    # T-0572: `frob ticket evidence --accepts N` / `bind_acceptance` failure
+    # modes, and the close-time gate they exist to feed.
+    AcceptanceIndexOutOfRange = "--accepts index does not name an acceptance item"
+    AcceptanceUnbound = "one or more acceptance criteria have no resolving evidence id"
 
 
 # frob:ticket T-0176

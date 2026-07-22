@@ -196,7 +196,13 @@ def compose_brief(root: Path, ticket: Ticket, lease_holders: tuple) -> str:
 
     if ticket.acceptance:
         lines.append("## Acceptance")
-        lines.extend(f"- {item}" for item in ticket.acceptance)
+        # T-0572: each criterion is a {text, evidence} AcceptanceCriterion,
+        # not a bare string -- show its bound-evidence status alongside the
+        # text so a dispatch prompt surfaces which criteria still need
+        # `frob ticket evidence <id> <node-id> --accepts <index>`.
+        for i, item in enumerate(ticket.acceptance):
+            status = f"bound({list(item.evidence)})" if item.evidence else "UNBOUND"
+            lines.append(f"- [{i}] {status}: {item.text}")
         lines.append("")
 
     lines.append("## Scope + leases")

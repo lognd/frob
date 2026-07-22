@@ -1130,6 +1130,17 @@ def _add_ticket_close_parser(ticket_sub):
         "exit status and an output digest as evidence before closing -- "
         "docs-kind tickets only, code kinds still require --evidence node ids",
     )
+    ticket_close_p.add_argument(
+        "--accepts",
+        dest="ticket_accepts",
+        action="append",
+        type=int,
+        default=[],
+        metavar="INDEX",
+        help="T-0572: 0-based ticket.acceptance index that --evidence/"
+        "--evidence-cmd's id(s) also bind to (repeatable); an unbound "
+        "acceptance criterion refuses the close",
+    )
     return ticket_close_p
 
 
@@ -1158,6 +1169,18 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         help="non-pytest evidence channel (T-0215): run COMMAND, record its "
         "exit status and an output digest as evidence -- docs-kind tickets "
         "only, code kinds still require pytest node ids",
+    )
+    ticket_evidence_p.add_argument(
+        "--accepts",
+        dest="ticket_accepts",
+        action="append",
+        type=int,
+        default=[],
+        metavar="INDEX",
+        help="T-0572: 0-based ticket.acceptance index the node id(s) above "
+        "also bind to (repeatable) -- binds evidence to a specific "
+        "acceptance criterion instead of only the ticket's flat evidence "
+        "list",
     )
 
     ticket_drop_p = ticket_sub.add_parser(

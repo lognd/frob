@@ -120,7 +120,14 @@ def _ticket_spec_from_cfg(cfg: AppConfig, *, title: str, kind: str):  # noqa: AN
         scope=tuple(cfg.ticket_scope),
         blocked_by=tuple(cfg.ticket_blocked_by),
         parent=cfg.ticket_parent,
-        acceptance=tuple(cfg.ticket_acceptance),
+        # T-0572: `--acceptance TEXT` (repeatable) gives plain strings;
+        # TicketSpec's `_coerce_acceptance_field` validator wraps each into
+        # a fresh, unbound {text, evidence: ()} AcceptanceCriterion --
+        # `type: ignore` names the mismatch this validator exists to close
+        # (the annotated field type is the POST-validation shape).
+        acceptance=tuple(  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
+            cfg.ticket_acceptance
+        ),
         threat=Stride(cfg.ticket_threat) if cfg.ticket_threat else None,
         # frob:ticket T-0454
         component=cfg.ticket_component,
@@ -243,15 +250,33 @@ def _show(root: Path, cfg: AppConfig) -> None:
 
     color = _stdout_color()
     _log.info(
-        "%s  [%s]  %s  (%s)\nblocked_by=%s scope=%s\n\n%s",
+        "%s  [%s]  %s  (%s)\nblocked_by=%s scope=%s%s\n\n%s",
         style_ticket_id(ticket.id, color),
         style_state(ticket.state.value, color),
         ticket.title,
         ticket.kind.value,
         list(ticket.blocked_by),
         list(ticket.scope),
+        _render_acceptance(ticket),
         ticket.body,
     )
+
+
+# frob:ticket T-0572
+def _render_acceptance(ticket) -> str:  # noqa: ANN001
+    """The `\\nacceptance[i]: <bound|UNBOUND> <text>` lines `frob ticket
+    show` appends after `scope=` (T-0572) -- the human-readable surface for
+    finding an acceptance item's 0-based index to bind with `frob ticket
+    evidence <id> <node-id> --accepts <index>`, without needing `--json`.
+    Empty string (no extra lines) when the ticket declares no acceptance
+    criteria at all, matching pre-T-0572 output exactly."""
+    if not ticket.acceptance:
+        return ""
+    lines = ["\nacceptance:"]
+    for i, item in enumerate(ticket.acceptance):
+        status = f"bound({list(item.evidence)})" if item.evidence else "UNBOUND"
+        lines.append(f"  [{i}] {status}: {item.text}")
+    return "\n".join(lines)
 
 
 # frob:ticket T-0453
@@ -1250,6 +1275,14 @@ def _close_failure_hint(ticket_id: str, state, err) -> str:  # noqa: ANN001
             f"'<command>'`) and write a '## Done report' heading under "
             f"{ticket_id}'s section in tickets.md"
         )
+    if err == TicketError.AcceptanceUnbound:
+        return (
+            f"close failed: {err} -- see the WARNING line above naming "
+            f"which acceptance criterion/criteria still have no resolving "
+            f"evidence id; bind one with `frob ticket evidence {ticket_id} "
+            f"<node-id> --accepts <index>` (0-based, per "
+            f"`frob ticket show {ticket_id}`'s acceptance list)"
+        )
     return f"close failed: {err}"
 
 
@@ -1332,7 +1365,9 @@ def _close(root: Path, cfg: AppConfig) -> None:
     ticket = _load_ticket_or_exit(root, cfg.ticket_id, verb="close")
 
     if cfg.ticket_evidence_ids:
-        added = _apply_evidence(root, cfg.ticket_id, cfg.ticket_evidence_ids)
+        added = _apply_evidence(
+            root, cfg.ticket_id, cfg.ticket_evidence_ids, cfg.ticket_accepts
+        )
         if added.is_err:
             sys.exit(1)
 
@@ -1426,7 +1461,9 @@ def _evidence(root: Path, cfg: AppConfig) -> None:
         sys.exit(1)
 
     if cfg.ticket_evidence_ids:
-        result = _apply_evidence(root, cfg.ticket_id, cfg.ticket_evidence_ids)
+        result = _apply_evidence(
+            root, cfg.ticket_id, cfg.ticket_evidence_ids, cfg.ticket_accepts
+        )
         if result.is_err:
             sys.exit(1)
 
@@ -1862,7 +1899,12 @@ def _run_pytest_directly(root: Path, node_ids) -> bool:  # noqa: ANN001
 # frob:ticket T-0106
 # frob:ticket T-0398
 # frob:tests tests/test_tickets_evidence_cli.py
-def _apply_evidence(root: Path, ticket_id: str, node_ids: list[str]):
+def _apply_evidence(
+    root: Path,
+    ticket_id: str,
+    node_ids: list[str],
+    accepts: list[int] | None = None,
+):
     """Collect pytest node ids, validate `node_ids` against them AND
     actually run them (D-01: `passed`) via `frob.tickets.add_evidence`
     (resolvable-id + passing + dedupe semantics, wholesale batch rejection
@@ -1873,6 +1915,10 @@ def _apply_evidence(root: Path, ticket_id: str, node_ids: list[str]):
     -- never through an ad hoc, unvalidated write. Returns the
     `add_evidence` Result unchanged so callers (e.g. `_close`) can refuse
     to transition state on failure.
+
+    `accepts` (T-0572) threads straight through to `add_evidence`'s own
+    `accepts`: 0-based `ticket.acceptance` indices `node_ids` also bind to,
+    in the same write. `None`/empty binds nothing (the pre-T-0572 default).
 
     T-0301 (feldspar T-0015 escalation): a `--evidence` id must resolve
     against the union of every collected oracle the repo's `[[test.runner]]`
@@ -1923,7 +1969,7 @@ def _apply_evidence(root: Path, ticket_id: str, node_ids: list[str]):
     passing = _verify_ids_passing(root, normalized_ids, python_ids, rust_ids, runners)
 
     result = add_evidence(
-        root, ticket_id, normalized_ids, collected_ids, passed=passing
+        root, ticket_id, normalized_ids, collected_ids, passed=passing, accepts=accepts
     )
     _log_evidence_result(ticket_id, result)
     return result

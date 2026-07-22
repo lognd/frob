@@ -1078,7 +1078,14 @@ class TestSchemaExtras:
             ),
         ).danger_ok
         q = load_queue(tmp_path).danger_ok
-        assert q.tickets[t.id].acceptance == ("given X when Y then Z",)
+        # T-0572: acceptance items round-trip as {text, evidence}
+        # AcceptanceCriterion objects, not bare strings -- a plain-string
+        # spec entry still loads, just unbound (empty evidence) until
+        # bound via `add_evidence(..., accepts=...)`.
+        acceptance = q.tickets[t.id].acceptance
+        assert len(acceptance) == 1
+        assert acceptance[0].text == "given X when Y then Z"
+        assert acceptance[0].evidence == ()
         assert q.tickets[t.id].threat == Stride.TAMPERING
 
     def test_renumber_makes_ids_contiguous(self, tmp_path):

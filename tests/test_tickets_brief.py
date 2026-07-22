@@ -68,7 +68,10 @@ def _ticket(
         scope=scope,
         evidence=(),
         attachments=(),
-        acceptance=acceptance,
+        # Plain-string acceptance items (this helper's pre-T-0572 shape,
+        # kept for its callers' brevity) -- Ticket's own `_coerce_acceptance`
+        # validator wraps each at runtime; see frob.tickets._models.
+        acceptance=acceptance,  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
         body=body,
     )
 

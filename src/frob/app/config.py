@@ -265,6 +265,12 @@ class AppConfig(BaseModel):
     ticket_priority_level: str | None = None
     ticket_evidence_ids: list[str] = []
     ticket_evidence_cmd: str | None = None
+    # frob:ticket T-0572
+    # `frob ticket evidence <id> <node-id>... --accepts N [N ...]` /
+    # `frob ticket close <id> --evidence <node-id>... --accepts N [N ...]`
+    # -- 0-based ticket.acceptance indices the given evidence ids also bind
+    # to, in the same write as the evidence append (see add_evidence).
+    ticket_accepts: list[int] = []
     ticket_old_id: str | None = None
     ticket_new_id: str | None = None
     ticket_dry_run: bool = False
