@@ -3378,3 +3378,279 @@ threat: null
 component: null
 labels: []
 ```
+
+<!-- ticket:T-draft-4a78008a -->
+```yaml
+id: T-draft-4a78008a
+title: 'PII012 keyword-sweep residual burndown: 102 findings, token/secret homonyms
+  in app code'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-21'
+priority: low
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/_pii_structural.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+## Description
+
+T-0539 calibrated PII011/PII012 down from ~336 raw findings to 116 (103
+unwaived), via: (1) reusing `is_self_pattern_path`'s root-identity-gated
+discriminator (T-0253) to exclude detector-definition/corpus/fixture files
+(`_secrets.py`, `_cve_fingerprint.py` + their dedicated tests) from the
+PII scan; (2) an RFC 2606 reserved-test-domain exclusion for PII011
+(killed 57/66 email-shape findings); (3) `frob:secret-fake` markers on the
+9 remaining non-reserved-domain test git-identity fixtures (PII011 -> 0);
+(4) excluding `# frob:*` directive comments from the PII012 comment sweep
+(the `frob:secret-fake` marker itself contains "secret").
+
+Residual after all of the above: 102 unwaived PII012 findings (WARN/
+suggestion severity, non-blocking) across ~50 ordinary application files,
+dominated by two overloaded single-word keywords that mean something
+else entirely in most of these sites:
+
+- `token` (67 hits): overwhelmingly a LEXER/PARSE token (AST/tree-sitter
+  token, hash/dedup token, git-ref token), not an auth token. Top files:
+  `src/frob/gates/_refs.py` (11), `src/frob/dup/_pipeline.py` (7),
+  `src/frob/graph/dsl.py` (3), `src/frob/perf/_rules.py` (3),
+  `src/frob/dup/_exhaustiveness.py` (2), `src/frob/graph/_models.py` (2),
+  `src/frob/lang/_walk_rust.py` (2), plus ~25 files with 1 hit each.
+- `secret` (21 hits): overwhelmingly the CONCEPT of a declared std.secrets
+  node (this codebase's own strata secrets-declaration feature), not a
+  literal secret value. Top files: `src/frob/strata/_threat.py` (6),
+  `src/frob/deploy/_conform.py` (5), `src/frob/gates/__init__.py` (5),
+  `src/frob/vet/_hook.py` (4).
+- `passwd` (6), `diagnosis` (5, frob's own `frob doctor` diagnosis
+  feature name), `fingerprint_scan` (1), `email` (1), `password` (1):
+  small residuals, plausibly real per-site waives.
+
+## Plan
+
+1. Investigate whether `token`/`secret` warrant a narrower keyword shape
+   in `FIELD_SIGNATURES` (T-0353 precedent: `fingerprint` was narrowed to
+   `fingerprint_scan`/`fingerprint_template` for the same over-broad-
+   homonym reason) WITHOUT weakening PII010's deny-by-default value for a
+   field genuinely named `token`/`secret` -- this needs care since
+   `FIELD_SIGNATURES` is shared across PII010/PII011/PII012.
+2. For sites where no narrower keyword shape is safe, disposition each of
+   the ~50 files' findings individually: `frob:waive PII012 reason="..."`
+   with a specific, honest per-site reason (this rule is WARN/advisory by
+   design -- module docstring's "no hard fail on names alone" -- so a
+   waive here is not weakening a real gate, just quieting a confirmed
+   non-finding).
+3. Target: 0 unwaived PII012, or a further-narrowed honest remainder.
+
+```
+
+<!-- ticket:T-draft-eacc76c5 -->
+```yaml
+id: T-draft-eacc76c5
+title: PII011/PII012 warn-pool calibration + burndown (336 findings)
+state: done
+kind: bug
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/_pii_structural.py
+- src/frob/vet/_capability.py
+- tests/test_pii_structural_gate.py
+- tickets.md
+- tests/integration/test_gitlog.py
+- tests/integration/test_interfaces.py
+- tests/system/test_cli_gitlog.py
+- tests/unit/test_app_runners.py
+- tests/unit/test_app_runners_batch5.py
+- tests/unit/test_gitlog.py
+- pyproject.toml
+- .frob-release.json
+- uv.lock
+scope_changes:
+- op: add
+  glob: tests/integration/test_gitlog.py
+  reason: PII011's remaining 9 non-reserved-domain fixture emails (after RFC2606 calibration
+    covered 57/66) needed a frob:secret-fake marker at their exact sites in these
+    6 test files -- not knowable until the calibrated check ran
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/integration/test_interfaces.py
+  reason: PII011's remaining 9 non-reserved-domain fixture emails (after RFC2606 calibration
+    covered 57/66) needed a frob:secret-fake marker at their exact sites in these
+    6 test files -- not knowable until the calibrated check ran
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/system/test_cli_gitlog.py
+  reason: PII011's remaining 9 non-reserved-domain fixture emails (after RFC2606 calibration
+    covered 57/66) needed a frob:secret-fake marker at their exact sites in these
+    6 test files -- not knowable until the calibrated check ran
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_app_runners.py
+  reason: PII011's remaining 9 non-reserved-domain fixture emails (after RFC2606 calibration
+    covered 57/66) needed a frob:secret-fake marker at their exact sites in these
+    6 test files -- not knowable until the calibrated check ran
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_app_runners_batch5.py
+  reason: PII011's remaining 9 non-reserved-domain fixture emails (after RFC2606 calibration
+    covered 57/66) needed a frob:secret-fake marker at their exact sites in these
+    6 test files -- not knowable until the calibrated check ran
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: tests/unit/test_gitlog.py
+  reason: PII011's remaining 9 non-reserved-domain fixture emails (after RFC2606 calibration
+    covered 57/66) needed a frob:secret-fake marker at their exact sites in these
+    6 test files -- not knowable until the calibrated check ran
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: pyproject.toml
+  reason: is_self_pattern_path gained a new suffixes parameter (T-0539 reuse) -- REL001
+    requires a version bump + release stamp for the public API change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: is_self_pattern_path gained a new suffixes parameter (T-0539 reuse) -- REL001
+    requires a version bump + release stamp for the public API change
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: uv.lock's frob package version entry auto-synced with pyproject.toml's 0.59.0
+    bump (REL001)
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_pii_structural_gate.py::TestReservedTestDomainEmails::test_example_com_does_not_fire
+- tests/test_pii_structural_gate.py::TestReservedTestDomainEmails::test_lookalike_non_reserved_domain_still_fires
+- tests/test_pii_structural_gate.py::TestKeywordSweep::test_frob_directive_comment_does_not_fire
+- tests/test_pii_structural_gate.py::TestKeywordSweep::test_ordinary_comment_mentioning_secret_still_fires
+- tests/test_pii_structural_gate.py::TestGateIsGreenOnItself::test_corpus_detector_files_produce_no_finding[src/frob/gates/_secrets.py]
+- tests/test_pii_structural_gate.py::TestGateIsGreenOnItself::test_own_module_source_produces_no_self_finding
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+## Description
+
+The pii_structural gate (PII010/PII011/PII012/SEC110) currently carries
+~336 warn-pool findings, mostly PII012 (identifier/comment keyword-sweep
+suggestions) and PII011 (email-shape), plus a few PII010. Frob is a
+static-analysis tool: its own detector sources, pattern tables, registry
+corpora, and test fixtures legitimately contain PII-keyword text, which is
+expected to dominate the pool -- the same self-match class T-0253's
+scan-evasion discriminator (`is_self_pattern_path` in
+`src/frob/vet/_capability.py`) already solved for SYS100.
+
+## Plan
+
+1. Bucket the 336 findings by file+rule (`frob check --only pii_structural`
+   output) and report the histogram.
+2. Calibrate: extend/reuse `is_self_pattern_path`'s discriminator machinery
+   (root-identity-gated path-suffix exclusion) to cover
+   `_pii_structural.py` itself plus any other dominant detector-definition/
+   corpus/fixture false-positive shape found in the histogram -- no second
+   implementation of the self-match discriminator.
+3. Burn down genuine residual findings: real hits get fixed/annotated in
+   code; true-but-intended hits get a `frob:waive` with a specific reason.
+   Target 0 unwaived PII011/PII012, or file a follow-up ticket with exact
+   counts if the honest remainder exceeds this ticket's budget.
+
+## Done report
+
+Before: `frob check --only pii_structural --json` -- 350 raw diagnostics
+(PII012=269, PII011=66, SEC110=11, PII010=4), all 4 PII010 already fully
+waived, so unwaived starting point was PII012=269, PII011=66.
+
+Calibration (non-vacuous -- an ordinary keyword hit in application code
+still fires):
+
+1. Reused T-0253's `is_self_pattern_path` discriminator (root-identity
+   gate + path-suffix match) from `frob.vet._capability`, adding a
+   `suffixes` parameter so `frob.gates._pii_structural` can pass its OWN
+   suffix list (`_PII_SELF_PATTERN_SUFFIXES`) through the SAME machinery
+   rather than re-deriving it. Excludes this gate's own module, the
+   sibling secrets/fingerprint detector sources, and those detectors'
+   dedicated test/fixture files.
+2. RFC 2606 reserved-domain exclusion for PII011
+   (`_is_reserved_test_domain_email`): an email literal at
+   `example.com`/`.net`/`.org`/`.example` can never resolve to a real
+   person -- killed 57 of 66 PII011 findings outright.
+3. `frob:secret-fake` markers added to the remaining 9 PII011 sites
+   (synthetic git-identity fixtures in 6 test files, none RFC-2606-
+   reserved) -- PII011 now 0.
+4. `# frob:*` directive comments excluded from the PII012 comment sweep
+   (`_FROB_DIRECTIVE_RE`): the `frob:secret-fake` marker itself contains
+   the word "secret", which was self-triggering PII012 on the very
+   comment meant to discharge PII011.
+
+After: PII011 = 0 (was 66). PII010 = 0 unwaived (was already 0 unwaived,
+3 pre-existing waives untouched). PII012 = 102 unwaived (was 269),
+dominated by "token" (67, overwhelmingly a lexer/parse token, not an auth
+token) and "secret" (21, overwhelmingly this codebase's own
+std.secrets-declaration concept) spread across ~50 ordinary application
+files, none over 11 hits. SEC110 untouched (out of this ticket's scope;
+1 unwaived, 10 pre-existing waives).
+
+Filed T-draft-4a78008a for the PII012 residual (exact per-keyword/
+per-file counts recorded in its Description) rather than hand-waiving
+~50 scattered single-line WARN/advisory findings within this ticket's
+budget -- PII012 is deliberately suggestion-severity, never gating, per
+its own module docstring ("no hard fail on names alone").
+
+Changed:
+- src/frob/gates/_pii_structural.py (`_is_pii_self_pattern_file`,
+  `_PII_SELF_PATTERN_SUFFIXES`, `_is_reserved_test_domain_email`,
+  `_RFC2606_RESERVED_EMAIL_DOMAINS`, `_FROB_DIRECTIVE_RE`, wired into
+  `pii_structural_gate`/`_scan_python_email_values`/
+  `_scan_comment_keywords`)
+- src/frob/vet/_capability.py (`is_self_pattern_path` gained a
+  `suffixes` parameter, default-compatible)
+- tests/test_pii_structural_gate.py (TestReservedTestDomainEmails,
+  TestKeywordSweep additions, TestGateIsGreenOnItself corpus-file
+  parametrization)
+- 6 test fixture files: `frob:secret-fake` markers on 9 sites
+  (tests/integration/test_gitlog.py, tests/integration/test_interfaces.py,
+  tests/system/test_cli_gitlog.py, tests/unit/test_app_runners.py,
+  tests/unit/test_app_runners_batch5.py, tests/unit/test_gitlog.py)
+- pyproject.toml/.frob-release.json/uv.lock: version 0.58.0 -> 0.59.0
+  (REL001, `is_self_pattern_path` public API change)
+
+Evidence: 99/99 tests/test_pii_structural_gate.py pass; recorded node
+ids (TestReservedTestDomainEmails, TestKeywordSweep new cases,
+TestGateIsGreenOnItself corpus parametrization). tests/test_vet.py (145
+tests) and the 6 touched fixture test files all still pass.
+
+Gates: `frob check --ticket T-draft-eacc76c5` clean (0 errors), 155
+warnings/171 waived repo-wide unchanged in kind. `gate:PII` 0 errors, 102
+warnings, 3 waived.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_pii_structural_gate.py::TestReservedTestDomainEmails::test_example_com_does_not_fire` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestReservedTestDomainEmails::test_lookalike_non_reserved_domain_still_fires` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestKeywordSweep::test_frob_directive_comment_does_not_fire` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestKeywordSweep::test_ordinary_comment_mentioning_secret_still_fires` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestGateIsGreenOnItself::test_corpus_detector_files_produce_no_finding[src/frob/gates/_secrets.py]` (pytest node id, verified passing when recorded)
+- `tests/test_pii_structural_gate.py::TestGateIsGreenOnItself::test_own_module_source_produces_no_self_finding` (pytest node id, verified passing when recorded)

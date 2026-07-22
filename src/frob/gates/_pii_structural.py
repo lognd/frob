@@ -128,6 +128,7 @@ from frob.logging import get_logger
 from frob.strata._code_binding import bind_code
 from frob.strata._design_load import load_design_ids
 from frob.strata._pii import PII_CATEGORIES, node_pii_tags
+from frob.vet._capability import is_self_pattern_path
 
 _log = get_logger(__name__)
 
@@ -135,6 +136,70 @@ _log = get_logger(__name__)
 #: outright (T-0201 self-match lesson, module docstring). Compared against
 #: the git-relative path `_tracked_python_files` yields.
 _SELF_EXCLUDED_FILES = frozenset({"src/frob/gates/_pii_structural.py"})
+
+# T-0539: the PII011/PII012 warn-pool histogram showed the overwhelming
+# majority of findings landing on this gate's OWN detector-definition
+# sources, the sibling secrets/fingerprint detectors' pattern tables, and
+# those detectors' DEDICATED test/fixture files -- the exact self-match
+# class T-0253's `is_self_pattern_path` discriminator already solved for
+# `frob.vet._capability`'s SYS100 (a static-analysis tool's own keyword/
+# needle tables and the tests that assert those tables fire legitimately
+# CONTAIN the keyword text they detect). Reused here via `is_self_pattern_
+# path`'s new `suffixes` parameter -- the SAME root-identity-gated
+# discriminator (`_is_frob_repo_root` + path-suffix match), a second
+# suffix list, not a second implementation. A genuine keyword hit in
+# ordinary application code is NOT in this list and still fires.
+_PII_SELF_PATTERN_SUFFIXES: tuple[tuple[str, ...], ...] = (
+    ("frob", "gates", "_pii_structural.py"),
+    ("frob", "gates", "_secrets.py"),
+    ("frob", "strata", "_secrets.py"),
+    ("frob", "gates", "_cve_fingerprint_scan.py"),
+    ("frob", "strata", "_cve_fingerprint.py"),
+    ("tests", "test_secrets_gate.py"),
+    ("tests", "test_pii_structural_gate.py"),
+    ("tests", "unit", "strata", "test_secrets.py"),
+    ("tests", "unit", "strata", "test_cve_fingerprint_scan.py"),
+    ("tests", "unit", "strata", "test_compliance.py"),
+    ("tests", "unit", "strata", "test_litmus_deploy_secret.py"),
+)
+
+
+def _is_pii_self_pattern_file(root: Path, rel_path: str) -> bool:
+    """Whether `rel_path` (root-relative) is a PII011/PII012 detector-
+    definition/pattern-table/corpus/fixture self-match file (T-0539),
+    via the shared `is_self_pattern_path` discriminator gated on `root`
+    actually being frob's own repo checkout -- never true when scanning
+    a third-party tree (e.g. `frob vet`'s dependency scan, if this gate
+    is ever reused there)."""
+    return is_self_pattern_path(
+        root / rel_path, root, suffixes=_PII_SELF_PATTERN_SUFFIXES
+    )
+
+
+# RFC 2606 reserves `example.com`/`example.net`/`example.org` (plus the
+# `.example` TLD) for documentation and testing use -- no real person can
+# ever be registered there, so an email literal at one of these domains is
+# STRUCTURALLY guaranteed non-personal regardless of what file it appears
+# in (T-0539: 57 of this gate's 66 PII011 findings were exactly this
+# shape, `test@example.com`/`legal@example.com`/`t@example.com`, spread
+# across dozens of ordinary test files with no `frob:secret-fake` marker).
+# This is a VALUE-shape fact like `_is_email_shaped` itself, not a file
+# exclusion -- reused wherever the literal appears, not gated on path.
+_RFC2606_RESERVED_EMAIL_DOMAINS = frozenset(
+    {"example.com", "example.net", "example.org"}
+)
+_RFC2606_RESERVED_EMAIL_SUFFIX = ".example"
+
+
+def _is_reserved_test_domain_email(value: str) -> bool:
+    """True if `value`'s domain part is an RFC 2606 reserved documentation/
+    testing domain (`_RFC2606_RESERVED_EMAIL_DOMAINS`/`_RFC2606_RESERVED_
+    EMAIL_SUFFIX`) -- such an address can never resolve to a real person,
+    so PII011 must not fire on it no matter where it appears."""
+    domain = value.rpartition("@")[2].lower()
+    if domain in _RFC2606_RESERVED_EMAIL_DOMAINS:
+        return True
+    return domain.endswith(_RFC2606_RESERVED_EMAIL_SUFFIX)
 
 
 @dataclass(frozen=True)
@@ -732,6 +797,8 @@ def _scan_python_email_values(
             continue
         if not _is_email_shaped(node.value):
             continue
+        if _is_reserved_test_domain_email(node.value):
+            continue
         if _line_marks_fake_email(lines, node.lineno):
             continue
         violations.append(_pii011_violation(rel_path, node.lineno, node.value))
@@ -830,14 +897,26 @@ def _scan_identifier_keywords(tree: ast.Module, rel_path: str) -> list[Violation
     return violations
 
 
+#: T-0539: a `# frob:<directive>` comment (`frob:waive`, `frob:tests`,
+#: `frob:ticket`, `frob:secret-fake`, ...) is machine-read metadata syntax,
+#: not narrative prose about the code -- and the `frob:secret-fake` marker
+#: convention itself literally contains the word "secret", so placing that
+#: exact marker (the correct escape hatch for a PII011 email-shape finding)
+#: would otherwise self-trigger PII012 on the very comment that discharges
+#: a DIFFERENT rule's finding. Skipped as a class, not case-by-case.
+_FROB_DIRECTIVE_RE = re.compile(r"^\s*frob:")
+
+
 def _scan_comment_keywords(text: str, rel_path: str) -> list[Violation]:
     """PII012 over every `#`-comment line's word tokens matching a
-    `FIELD_SIGNATURES` name-kind keyword (T-0350 family 5). A plain
-    line-oriented scan of `#`-prefixed trailing text, not a full tokenizer
-    pass -- adequate for a comment-word suggestion signal and avoids
-    misreading a `#` inside a string literal as a comment only in the rare
-    case a string itself contains one, the same trade-off `_secrets.py`'s
-    line-oriented scanner already documents as an honest limitation."""
+    `FIELD_SIGNATURES` name-kind keyword (T-0350 family 5), EXCLUDING
+    `# frob:...` directive comments (`_FROB_DIRECTIVE_RE`, T-0539 -- see
+    its docstring). A plain line-oriented scan of `#`-prefixed trailing
+    text, not a full tokenizer pass -- adequate for a comment-word
+    suggestion signal and avoids misreading a `#` inside a string literal
+    as a comment only in the rare case a string itself contains one, the
+    same trade-off `_secrets.py`'s line-oriented scanner already documents
+    as an honest limitation."""
     violations: list[Violation] = []
     seen: set[tuple[int, str]] = set()
     for lineno, line in enumerate(text.splitlines(), start=1):
@@ -845,6 +924,8 @@ def _scan_comment_keywords(text: str, rel_path: str) -> list[Violation]:
         if hash_index < 0:
             continue
         comment = line[hash_index + 1 :]
+        if _FROB_DIRECTIVE_RE.match(comment):
+            continue
         for match in _COMMENT_WORD_RE.finditer(comment):
             token = match.group(0)
             sig = _field_name_hit(token)
@@ -1049,7 +1130,9 @@ def pii_structural_gate(root: Path) -> tuple[Violation, ...]:
     violations: list[Violation] = []
     scanned = 0
     for rel_path in _tracked_python_files(root):
-        if rel_path in _SELF_EXCLUDED_FILES:
+        if rel_path in _SELF_EXCLUDED_FILES or _is_pii_self_pattern_file(
+            root, rel_path
+        ):
             _log.debug("pii_structural_gate: skipping self-excluded %s", rel_path)
             continue
         try:

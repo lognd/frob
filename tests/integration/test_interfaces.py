@@ -108,6 +108,7 @@ class TestInterfaces:
         repo = tmp_path / "repo"
         repo.mkdir()
         _git(["init"], repo)
+        # frob:secret-fake fabricated git identity for a test fixture repo
         _git(["config", "user.email", "t@t.io"], repo)
         _git(["config", "user.name", "t"], repo)
         (repo / "f.txt").write_text("x")
