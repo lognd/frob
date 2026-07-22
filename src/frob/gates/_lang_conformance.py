@@ -97,6 +97,7 @@ def _verify_known_gap_ticket(detail: str, queue: TicketQueue) -> str | None:
 # frob:ticket T-0405
 # frob:tests tests/test_lang_conformance_gate.py::TestLangConformanceGate.test_real_registry_is_clean  # noqa: E501
 # frob:tests tests/test_lang_conformance_gate.py::TestLangConformanceGate.test_missing_facet_becomes_error_violation  # noqa: E501
+# frob:enforces CHK-GATE-LANG001
 def lang_conformance_gate() -> tuple[Violation, ...]:
     """LANG001 for every unaccounted-for `(language, facet)` cell in the
     live `frob.lang` language-support registry.
@@ -127,6 +128,7 @@ def lang_conformance_gate() -> tuple[Violation, ...]:
     return violations
 
 
+# frob:enforces CHK-GATE-LANG002
 def _lang002_unregistered_files(repo_root: Path) -> tuple[Violation, ...]:
     """LANG002: one ERROR per tracked file whose extension matches a
     well-known candidate language (`_UNREGISTERED_CANDIDATE_LANGUAGES`)
@@ -155,6 +157,7 @@ def _lang002_unregistered_files(repo_root: Path) -> tuple[Violation, ...]:
     return tuple(violations)
 
 
+# frob:enforces CHK-GATE-LANG003
 def _lang003_unsound_gaps(repo_root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     """LANG003: one violation per `KNOWN_GAP`/`NOT_APPLICABLE` facet cell
     whose language is actually present in `repo_root`'s tree -- WARN if

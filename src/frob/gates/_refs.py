@@ -551,6 +551,8 @@ def _declared_line(text: str, target: str) -> int:
     return 1
 
 
+# frob:enforces CHK-GATE-REF001
+# frob:enforces CHK-GATE-REF002
 def _ref001_or_002(rel_path: str, inbound: set[str]) -> Violation | None:
     """The tier violation for `rel_path` given its deduped inbound set, or
     `None` if it clears the 2+ pass bar."""
@@ -589,6 +591,7 @@ def _ref001_or_002(rel_path: str, inbound: set[str]) -> Violation | None:
     return None
 
 
+# frob:enforces CHK-GATE-REF003
 def _dangling_declarations(
     rel_path: str,
     text: str,

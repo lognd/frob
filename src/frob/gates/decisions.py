@@ -104,6 +104,7 @@ def load_decisions(root: Path) -> Result[tuple[Decision, ...], DecisionError]:
     return Ok(tuple(seen.values()))
 
 
+# frob:enforces CHK-GATE-DEC001
 def _dec001(known: set[str], snapshot: GraphSnapshot) -> list:
     """DEC001: a `frob:decision` edge targets a record that does not exist."""
     from frob.gates._models import Severity, Violation
@@ -134,6 +135,7 @@ def _anchored_decisions(snapshot: GraphSnapshot) -> set[str]:
 
 
 # frob:invariant INV-010
+# frob:enforces CHK-GATE-DEC002
 def _dec002(decisions: tuple[Decision, ...], anchored: set[str]) -> list:
     """DEC002: an accepted decision has no `frob:decision` anchor in code."""
     from frob.gates._models import Severity, Violation

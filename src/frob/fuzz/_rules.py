@@ -27,6 +27,7 @@ def _split_ref(ref: str) -> tuple[str, int]:
 
 
 # frob:doc docs/modules/fuzz.md#public-api
+# frob:enforces CHK-GATE-FUZZ001
 def FUZZ001(  # noqa: N802 - rule-id naming convention shared with frob.gates.invariants
     snapshot: GraphSnapshot, obligations: tuple[FuzzObligation, ...]
 ) -> tuple[Violation, ...]:
@@ -58,6 +59,7 @@ def FUZZ001(  # noqa: N802 - rule-id naming convention shared with frob.gates.in
 
 
 # frob:doc docs/modules/fuzz.md#public-api
+# frob:enforces CHK-GATE-FUZZ002
 def FUZZ002(  # noqa: N802 - rule-id naming convention shared with frob.gates.invariants
     obligations: tuple[FuzzObligation, ...],
     param_types: Mapping[str, tuple[type, ...] | None],
@@ -112,6 +114,7 @@ def _ungenerated_param_violations(
 # frob:doc docs/modules/fuzz.md#public-api
 # frob:waive TEST005 reason="FUZZ003 87.5% branch cover, debt T-0160"
 # frob:invariant INV-012
+# frob:enforces CHK-GATE-FUZZ003
 def FUZZ003(  # noqa: N802 - rule-id naming convention shared with frob.gates.invariants
     snapshot: GraphSnapshot,
     obligations: tuple[FuzzObligation, ...],

@@ -928,6 +928,7 @@ def _c_include_violations(
 # ---------------------------------------------------------------------------
 
 
+# frob:enforces CHK-GATE-DOC004
 def _doc004_violation(doc_path: str, line: int, *, tier: str, detail: str) -> Violation:
     """Build one DOC004 `Violation` -- `tier` is `"stale"` (error, a named
     reference does not resolve) or `"unbound"` (warn, a valid reference has

@@ -220,6 +220,7 @@ def _scan_python_walks(tree: ast.Module) -> tuple[_WalkSite, ...]:
     return tuple(sites)
 
 
+# frob:enforces CHK-GATE-WALK001
 def _walk001_violation(rel_path: str, site: _WalkSite) -> Violation:
     """The WALK001 `Violation` for one raw traversal call site."""
     _log.warning(

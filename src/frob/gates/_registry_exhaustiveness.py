@@ -156,6 +156,7 @@ _CHECK_COVERAGE_FILE = "check-coverage.yaml"
 _OUT_OF_SCOPE_CAUGHT_BY_GAP = "T-0382 Area-2 caught_by verification not yet built"
 
 
+# frob:enforces CHK-GATE-REG002
 def _classify_handled_by(
     entry_id: str, rule: str, known_rules: frozenset[str]
 ) -> tuple[str, str] | None:
@@ -171,6 +172,7 @@ def _classify_handled_by(
     return None
 
 
+# frob:enforces CHK-GATE-REG003
 def _classify_deferred(
     entry_id: str, ticket_id: str, queue: TicketQueue
 ) -> tuple[str, str] | None:
@@ -208,6 +210,7 @@ def _classify_duplicate(
     return None
 
 
+# frob:enforces CHK-GATE-REG001
 def _classify_out_of_scope(entry_id: str, reason: str) -> tuple[str, str] | None:
     """REG001 when `out_of_scope` carries no reason text -- split out of
     `_classify` for ARCH001."""
@@ -256,6 +259,7 @@ def _classify(
     return _classify_out_of_scope(entry_id, disposition.target)
 
 
+# frob:enforces CHK-GATE-REG005
 def _reg005_total_mismatch(
     rel_path: str, registry_file: RegistryFile, entries_key: str
 ) -> Violation | None:
@@ -291,6 +295,7 @@ def _reg005_total_mismatch(
     )
 
 
+# frob:enforces CHK-GATE-REG006
 def _reg006_malformed(rel_path: str, registry_file: RegistryFile) -> Violation | None:
     """REG006 (T-0407): one or more list items under `rel_path` were not a
     mapping, or had no string `id` -- these were silently dropped pre-
@@ -330,6 +335,7 @@ def _split_ids_from_reconciliation(text: str) -> frozenset[str]:
     return frozenset(_SPLIT_ID_RE.findall(section))
 
 
+# frob:enforces CHK-GATE-REG004
 def _reg004_unresolved_splits(
     rel_reconciliation: str,
     split_ids: frozenset[str],
@@ -363,6 +369,7 @@ def _reg004_unresolved_splits(
     return violations
 
 
+# frob:enforces CHK-GATE-REG007
 def _reg007_duplicate_ids(
     parsed: dict[str, RegistryFile],
 ) -> list[Violation]:

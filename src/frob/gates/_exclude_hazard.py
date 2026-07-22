@@ -124,6 +124,7 @@ def _shadows_tracked_path(prefix: str, tracked: tuple[str, ...]) -> bool:
 # frob:doc docs/modules/gates.md#public-api
 # frob:tests tests/test_gates.py::TestExcludeHazardGate.test_entry_shadowing_tracked_dir_fires  # noqa: E501
 # frob:tests tests/test_gates.py::TestExcludeHazardGate.test_entry_matching_no_tracked_path_is_silent  # noqa: E501
+# frob:enforces CHK-GATE-EXCL001
 def exclude_hazard_gate(root: Path) -> tuple[Violation, ...]:
     """EXCL001: every `.git/info/exclude` entry that shadows a tracked file
     or a directory containing tracked files.

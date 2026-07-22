@@ -146,6 +146,7 @@ def _scan_python_prints(tree: ast.Module) -> tuple[_PrintSite, ...]:
 
 # frob:ticket T-0459
 # frob:ticket T-0563
+# frob:enforces CHK-GATE-RENDER001
 def _render001_violation(rel_path: str, site: _PrintSite) -> Violation:
     """The RENDER001 `Violation` for one bare-stdout-write call site."""
     _log.warning(

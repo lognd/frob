@@ -628,6 +628,13 @@ def _symbol_violations(file: ParsedFile, symbol: RawSymbol) -> tuple[Violation, 
 
 # frob:doc docs/modules/perf.md#public-api
 # frob:ticket T-0021
+# frob:enforces CHK-GATE-PERF001
+# frob:enforces CHK-GATE-PERF002
+# frob:enforces CHK-GATE-PERF003
+# frob:enforces CHK-GATE-PERF004
+# frob:enforces CHK-GATE-PERF005
+# frob:enforces CHK-GATE-PERF006
+# frob:enforces CHK-GATE-PERF007
 def perf_rules(
     snapshot: GraphSnapshot, files: Sequence[ParsedFile]
 ) -> tuple[Violation, ...]:
