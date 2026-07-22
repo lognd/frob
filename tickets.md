@@ -13926,7 +13926,8 @@ kind: bug
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by: []
+blocked_by:
+- T-0716
 parent: null
 scope:
 - tests/system/test_cli_check.py
@@ -13940,7 +13941,6 @@ component: null
 labels: []
 ```
 found while working T-0627: a wide swath of tests/system/test_cli_check.py (TestCheckCleanProject, TestCheckSkipFlags, TestCheckGatesStage, TestCheckDocAnchorScopedVsUnscoped, TestFrobTomlCheckDefaults, TestCheckTypescript, TestCheckStampBaselineAndDelta, TestCheckTicketScopedAlwaysReportsOnFailure) fail on this worktree's post-merge main: _make_project's tmp_path fixture never git-inits, and newly-merged gates (COV002, SCOPE001, TODO001) now error loudly on a missing git repo instead of the older gates that degraded quietly -- 'working diff against base=main failed to load ... this is a load failure, not a clean/empty diff, so it is not silently passing'. Pre-existing as of the T-0627 warm-up merge, not caused by T-0627's changes (verified: T-0627's own new tests pass; this same failure set reproduces independent of T-0627's diff). Fix is either: git-init tmp_path in the shared fixture, or add gate exemptions those specific tests already relied on for the older gate set.
-
 <!-- ticket:T-0751 -->
 ```yaml
 id: T-0751
@@ -13966,3 +13966,33 @@ component: null
 labels: []
 ```
 follow-up from T-0627: --stamp-baseline runs the full undelta'd gates pass (same ~110s+ wall time as a bare frob check) and is deliberately NOT refused under FROB_AGENT since it is a legitimate one-shot warm-up step, not a repeatable verification loop -- so it can still stall a dispatched sub-agent the same way T-0627 fixed for plain frob check. T-0627's ticket body named this as option (c) (make --stamp-baseline itself incremental) and left it unbuilt. Needs either: stamp per stage-group chunk and merge, or a documented coordinator-only path (stamp-baseline runs from the coordinator's shell before dispatch, never from an agent's).
+
+<!-- ticket:T-0752 -->
+```yaml
+id: T-0752
+title: 'doable: priority column, in-flight/dispatchable split, and undispatched-critical
+  staleness alarm'
+state: queued
+kind: ux
+origin: human
+created: '2026-07-22'
+priority: high
+blocked_by: []
+parent: T-0715
+scope:
+- src/frob/tickets/**
+- src/frob/app/ticket_runner.py
+- docs/modules/tickets.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a critical ticket unleased past threshold WHEN frob ticket doable runs
+    THEN its row shows priority and an UNDISPATCHED alarm at the top of the dispatchable
+    section AND frob check emits a TICK-family warning naming it
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+User mandate 2026-07-22, after T-0731 (CRITICAL) sat filed-but-undispatched for hours while its conflict class kept firing: the doable listing must make dispatch state and priority impossible to miss. (1) PRIORITY COLUMN: doable renders the priority (critical/high/medium/low) per row -- ordering exists (T-0411) but is invisible today, so a critical at rank 4 reads like any other line. (2) DISPATCH-STATE SPLIT: rows with a live, non-stale lease (T-0716 overlay machinery) render in a separate IN-FLIGHT section (or an @worktree marker) below the truly-dispatchable rows, so line 1 of the top section is always the next thing to dispatch -- no mental subtraction of in-flight work. (3) STALENESS ALARM: a critical or high ticket that has been dispatchable (unleased, unblocked) longer than a configurable threshold (frob.toml, default 4h for critical / 24h for high, measured from the last state change or filing) gets a loud UNDISPATCHED marker on its row AND a TICK-family check warning, so the condition surfaces in frob check too, not only when someone happens to run doable. Coordinate with T-0714 (doable noise relocation) and T-0716 (lease overlay) -- one display surface, no duplicate lease-reading logic.
