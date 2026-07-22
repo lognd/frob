@@ -164,6 +164,23 @@ def _marker_line(root: Path, ticket_id: str) -> int:
     raise AssertionError(f"marker for {ticket_id} not found in tickets.md")
 
 
+def _state_line(root: Path, ticket_id: str) -> int:
+    """The 1-indexed line number of `ticket_id`'s YAML `state:` field in
+    `root/tickets.md` -- deliberately BELOW the marker line, for building a
+    `Hunk` span that targets the state-transition line without ever
+    overlapping the marker line itself (T-0564 regression coverage)."""
+    marker = f"<!-- ticket:{ticket_id} -->"
+    lines = (root / "tickets.md").read_text(encoding="utf-8").splitlines()
+    in_block = False
+    for i, line in enumerate(lines, start=1):
+        if marker in line:
+            in_block = True
+            continue
+        if in_block and line.startswith("state:"):
+            return i
+    raise AssertionError(f"state: line for {ticket_id} not found in tickets.md")
+
+
 _WIDGET_PY = '''class Widget:
     """A widget."""
 
@@ -488,6 +505,48 @@ class TestCoverageGate:
             hunks=(
                 Hunk(file="src/a.py", span=record.span),
                 Hunk(file="tickets.md", span=(marker_line, marker_line)),
+            ),
+        )
+        queue = TicketQueue(tickets={"T-0001": done_ticket})
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV002" for v in violations)
+
+    def test_cov002_grace_matches_hunk_anywhere_in_ticket_block(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0564: the ticket's own `state:` line (NOT its marker line)
+        falling inside the touched `tickets.md` hunk must still grant grace
+        -- a state transition (queued -> done) or an evidence-list
+        insertion typically lands several lines below the marker/id/title
+        lines, inside the same YAML block, so scoping the hunk-overlap
+        check to the exact marker line alone would wrongly deny grace to a
+        ticket whose own closing diff plainly IS present."""
+        source = "def helper(x):\n    # frob:ticket T-0001\n    return x\n"
+        _write(tmp_path, "src/a.py", source)
+        ticket = _ticket(state=TicketState.IN_PROGRESS)
+        _write_ticket(tmp_path, ticket)
+        _git_init(tmp_path)
+        done_ticket = _ticket(state=TicketState.DONE)
+        _write_ticket(tmp_path, done_ticket)
+        state_line = _state_line(tmp_path, "T-0001")
+        marker_line = _marker_line(tmp_path, "T-0001")
+        assert state_line != marker_line
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/a.py::helper"]
+        base_sha = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        diff = Diff(
+            base=base_sha,
+            hunks=(
+                Hunk(file="src/a.py", span=record.span),
+                # Hunk touches only the state: line, not the marker line.
+                Hunk(file="tickets.md", span=(state_line, state_line)),
             ),
         )
         queue = TicketQueue(tickets={"T-0001": done_ticket})

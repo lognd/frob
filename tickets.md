@@ -3341,7 +3341,7 @@ T-0459 landed RENDER001 warn-first with 14 bare print/stdout call sites remainin
 id: T-0564
 title: 'gates: COV002 closed-ticket grace window misses marker-in-hunk when unified=0
   diff omits the marker line'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -3351,7 +3351,8 @@ parent: null
 scope:
 - src/frob/gates/
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_gates.py::TestCoverageGate::test_cov002_grace_matches_hunk_anywhere_in_ticket_block
 attachments: []
 acceptance: []
 threat: null
@@ -3360,6 +3361,29 @@ labels: []
 ```
 Discovered while working T-0550: _bound_to_open_ticket's T-0214/T-0320 grace window (closed ticket still covers its own closing diff) requires the ticket's <!-- ticket:ID --> marker LINE to fall inside one of working_diff's unified=0 hunks. A YAML ticket block's marker/id/title lines often sit just above the first line that actually differs (e.g. state: queued -> done, or an evidence: [] -> evidence: [...] insertion later in the block), so the marker line itself is never in any hunk even though the ticket's own state transition clearly is in the diff. Result: once a ticket closes and a LATER ticket becomes active on the same stacked, unmerged branch, a full/ticket-scoped frob check re-flags the closed ticket's already-covered symbols as COV002 violations again, purely due to this narrow hunk-membership check, not a real coverage gap. Fix direction: extend _ticket_marker_in_diff_hunk to also count a hunk anywhere within the ticket's whole YAML block span (marker to closing triple-backtick), not just the exact marker line.
 
+## Done report
+
+## Done report
+
+Changed:
+- src/frob/gates/__init__.py::_ticket_marker_in_diff_hunk
+
+Evidence:
+- tests/test_gates.py::TestCoverageGate::test_cov002_grace_matches_hunk_anywhere_in_ticket_block
+- (regression, unchanged) tests/test_gates.py::TestCoverageGate::test_cov002_done_ticket_covers_own_closing_diff
+- (regression, unchanged) tests/test_gates.py::TestCoverageGate::test_cov002_done_ticket_without_grace_still_fires
+- (regression, unchanged) tests/test_gates.py::TestCoverageGate::test_cov002_stale_done_ticket_unrelated_tickets_md_touch_still_fires
+- (regression, unchanged) tests/test_gates.py::TestCoverageGate::test_cov002_marker_touch_without_state_transition_still_fires
+
+Filed: none
+
+Gates: uv run frob check --delta --ticket T-0564 clean (0/136 new violations); uv run pytest tests/test_gates.py -k cov002 -q: 13 passed
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_gates.py::TestCoverageGate::test_cov002_grace_matches_hunk_anywhere_in_ticket_block` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0565 -->
 ```yaml
 id: T-0565

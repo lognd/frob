@@ -1949,15 +1949,25 @@ def _ledger_states_at_base(root: str, base: str) -> Mapping[str, TicketState]:
     return {tid: t.state for tid, t in parsed.danger_ok.items()}
 
 
+# frob:ticket T-0564
+# frob:tests tests/test_gates.py::TestCoverageGate.test_cov002_grace_matches_hunk_anywhere_in_ticket_block  # noqa: E501
 def _ticket_marker_in_diff_hunk(root: str, diff: Diff, ticket_id: str) -> bool:
-    """True if `tickets.md`'s `<!-- ticket:<ticket_id> -->` marker line falls
-    inside one of `diff`'s `tickets.md` hunk spans.
+    """True if any of `diff`'s `tickets.md` hunk spans overlaps `ticket_id`'s
+    whole YAML block (from its `<!-- ticket:<ticket_id> -->` marker line
+    through the block's closing ` ``` ` fence), not just the exact marker
+    line.
 
-    This is the T-0214-bypass fix: COV002 grace must be scoped to the
-    specific ticket whose close is actually present in this diff's ledger
-    hunk, not merely to "some" hunk existing in `tickets.md" -- otherwise a
-    symbol bound to an unrelated, already-`DONE` ticket rides along on any
-    other ticket's close and never gets flagged.
+    This is the T-0214-bypass fix (scope a hunk to the specific ticket
+    whose close is actually present, not merely "some" hunk existing in
+    `tickets.md`), tightened by T-0564: a ticket's own state transition
+    (e.g. `state: queued -> done`) or an evidence-list insertion typically
+    lands several lines below the marker/id/title lines, inside the same
+    YAML block -- a hunk covering only that later line would miss the
+    marker-line-only check and wrongly deny grace to a ticket whose own
+    closing diff plainly IS present. Matching anywhere in the block span
+    keeps the "unrelated ticket's stale edge doesn't ride along" guarantee
+    (a hunk elsewhere in `tickets.md`, outside this ticket's block, still
+    does not count) while covering the whole block, not one line of it.
     """
     tickets_md_hunks = [h for h in diff.hunks if h.file == "tickets.md"]
     if not tickets_md_hunks:
@@ -1967,13 +1977,24 @@ def _ticket_marker_in_diff_hunk(root: str, diff: Diff, ticket_id: str) -> bool:
         return False
     marker = f"<!-- ticket:{ticket_id} -->"
     lines = tickets_md_path.read_text(encoding="utf-8").splitlines()
+    block_start: int | None = None
+    block_end: int | None = None
+    for idx, line in enumerate(lines):
+        if marker in line:
+            block_start = idx + 1  # 1-indexed line number of the marker
+            for fence_idx in range(idx + 1, len(lines)):
+                if lines[fence_idx].strip() == "```":
+                    block_end = fence_idx + 1  # 1-indexed closing fence line
+                    break
+            break
+    if block_start is None:
+        return False
+    if block_end is None:
+        block_end = len(lines)
     for hunk in tickets_md_hunks:
         start, end = hunk.span
-        for lineno in range(max(1, start), end + 1):
-            if lineno - 1 >= len(lines):
-                break
-            if marker in lines[lineno - 1]:
-                return True
+        if max(start, block_start) <= min(end, block_end):
+            return True
     return False
 
 
