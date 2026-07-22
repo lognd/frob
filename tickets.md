@@ -4409,3 +4409,30 @@ component: null
 labels: []
 ```
 T-0261 landed the Windows std.host manifest surface (service_account/gmsa, service, acl, pipe) but HOST001/HOST002 and build_compromised_user_scenario do not branch on any of it -- a windows-only node produces NO movement-impossibility findings today, so the epic's provability promise is linux-only. Wire the windows fields into the isolation rules and the compromised-user scenario builder, mirroring how the linux runs_as/unit/owns fields feed them (T-0256..T-0259 staging precedent). NOTE: T-0261's Done report references this as T-draft-632a0187; drafts do not survive land (T-0577), so this ticket is its real replacement.
+
+<!-- ticket:T-0607 -->
+```yaml
+id: T-0607
+title: implement checkable-control enforcement for CMPL-* compliance registry units
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/_compliance.py
+- docs/design/registry/compliance.yaml
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN the 17 re-pointed CMPL-* entries WHEN this ticket closes THEN each is handled_by
+  a real check or carries a reasoned terminal disposition AND the compliance reconciliation
+  pin test passes
+threat: null
+component: null
+labels: []
+```
+Standing home for the 17 compliance.yaml entries whose controls are machine-checkable but not yet enforced by any gate/check. They previously carried deferred:T-0388 (the reconciliation ticket itself) -- a self-reference that would orphan them the moment T-0388 closed; T-0388's pass re-pointed them here. Each entry needs either a real enforcing check in src/frob/strata/_compliance.py (then flip to handled_by) or a reasoned out_of_scope/not-checkable disposition. NOTE: T-0388's Done report references this as T-draft-63982a01; drafts do not survive land (T-0577), so this ticket is the real target.
