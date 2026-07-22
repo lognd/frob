@@ -1020,7 +1020,7 @@
     "src/frob/tickets/clipboard.py::clipboard_has_image": "16dd69d6531a3f4a287d539fc5112ea94ee69be195a8f410bae001955953fd6a",
     "src/frob/tickets/clipboard.py::clipboard_image": "b1a83f11e01d1abc8e365d1c3369c57b882ef747d95e06bd5cfddc25f5ad3000",
     "src/frob/vet/_capability.py::SCANNED_LANGUAGES": "5aebd3fdc82504e34242f2ce9cb677f17c218c78396779690308a52ede0a6e08",
-    "src/frob/vet/_capability.py::is_self_pattern_path": "ef9449c8d835900ba126c14ba4df537d846adebd4d4418230f2b76bdb4e4f08c",
+    "src/frob/vet/_capability.py::is_self_pattern_path": "1ea057d4683edc766482d7b467562480082d3ba80cea05970467ce44528102e1",
     "src/frob/vet/_capability.py::language_for": "b4e50c3603e4861cf8713c841dd270a813378269def2c43008711f53bf0bdf81",
     "src/frob/vet/_capability.py::scan_file_capabilities": "4a695059d8ce6f919b7a8295c6516529f0ffcc371ed1d5c3aea4c0276657c520",
     "src/frob/vet/_capability_registry.py::CAPABILITY_KINDS": "02bfbd2fa3010c208005ccc75ef6c43e02984e4c8f55456e01840424c1956d61",
@@ -1089,5 +1089,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.58.0"
+  "version": "0.59.0"
 }
