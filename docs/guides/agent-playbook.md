@@ -345,3 +345,6 @@ hand-edit of `tickets.md`, no `git stash`):
 - `docs/modules/tickets.md` -- the ticket state machine and evidence model.
 - `docs/guides/agentic-workflow.md` -- the human/AI split and the
   worktree-per-agent pattern this playbook assumes.
+- `docs/guides/testing.md` -- the per-test pytest-timeout guard (T-0692),
+  the deadlock class it catches, and how to add an override for a
+  legitimately slow test.

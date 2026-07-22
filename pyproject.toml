@@ -73,6 +73,7 @@ dev = [
     "hypothesis>=6",
     "mcp>=1.28.1",
     "pytest-xdist>=3",
+    "pytest-timeout>=2",
     "ruff>=0.8",
     "ty>=0.0.1a8",
 ]
@@ -116,7 +117,21 @@ select = ["E", "F", "W", "I"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q -n auto"
+# T-0692: --timeout=120/--timeout-method=thread is the CI-hardening guard
+# against the _run_combined_jobs ProcessPoolExecutor-inside-ThreadPoolExecutor
+# deadlock class (T-0265, structural fix tracked as T-0581) -- a wedged
+# test now fails on its own in ~2min with a named traceback dump instead of
+# silently burning the 6h CI job cap. `method=thread` (not the `signal`
+# default) is deliberate: the hang lives inside a forked subprocess/thread
+# pool, and only the thread-based watchdog reliably fires and dumps a
+# stack from inside that state (the signal method can itself be starved by
+# the same deadlock). Tests that legitimately run longer than 120s
+# (`tests/system/test_scaffold_dx.py`'s `pytest.mark.slow` uv-sync/venv
+# case) need their own `@pytest.mark.timeout(N)` override -- see
+# docs/guides/testing.md#per-test-timeout-ci-hardening for the list;
+# T-draft-1770ceef tracks adding those overrides (out of this ticket's
+# docs/guides+config-only scope).
+addopts = "-q -n auto --timeout=120 --timeout-method=thread"
 pythonpath = ["."]
 markers = [
     "slow: long-running system tests excluded from quick loops",
