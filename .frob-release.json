@@ -330,6 +330,8 @@
     "src/frob/gates/_dead_symbols.py::dead_symbol_gate": "ccb75a1a6ec73b33e90b0e278ce29174ab50c40a60fd3da4e75867bee5a7eb97",
     "src/frob/gates/_docblocks.py::doc004_gate": "ae1933bdb3d41939434b20539b217c3b3ea97d541ac837ded6bf3098bf6ba8a9",
     "src/frob/gates/_exclude_hazard.py::exclude_hazard_gate": "6e3505c56c11b17ba244b1e111c1bba69666b59e6c5a678e73e648632c0c6bc0",
+    "src/frob/gates/_lang_conformance.py::lang_conformance_gate": "39dbe48b9e5dd8c93a6abfa14d9100ad749dbfe3c734a915bb503a4a185fe417",
+    "src/frob/gates/_lang_conformance.py::project_lang_conformance_gate": "3441ca25df104459f136a531362ee63d011b46679121e141c1d8f3a7645c7468",
     "src/frob/gates/_models.py::CoverageData": "001138b91932cc4d61786cd5c81887b9816e4afa8e020c55b42a31532c511915",
     "src/frob/gates/_models.py::CoverageError": "fc2537c0a4f1aa14112c26bf6107b886f2c2a6d3076f4b687a8cf2a4e734f601",
     "src/frob/gates/_models.py::DebtEntry": "9f6feb58835b32cbbdc4dba3ee85374b8d51e14e1b895216c42a8f5fffb10979",
@@ -462,6 +464,19 @@
     "src/frob/lang/_models.py::RawSymbol": "05b811e463802be06405362ced0998094c383634b542c0742ad0a14d9a6190b0",
     "src/frob/lang/_models.py::SymbolKind": "c16a4abc353cdf59891ea0ec5287f9de06b3f65cd8b57208f197af2bd10157dd",
     "src/frob/lang/_models.py::TreeNode": "558a642077a7059d00058437187e918f8f9d99163c84365ed56860f80c533be0",
+    "src/frob/lang/_support.py::FACETS": "a9b5eda9e34a046753b51a517da8af6bd49c2c4e4f96070da30c7db4c9e03c4f",
+    "src/frob/lang/_support.py::FACET_ARCH": "d156eeaab7ba1d0aa271fddd72eb42cbf09df1ddd2df6f1490bd949bffa72798",
+    "src/frob/lang/_support.py::FACET_CAPABILITY": "e14ed6f3883fb838235b62a58255f7fd14cc58883ead31cd4b1f33fa42ad7be2",
+    "src/frob/lang/_support.py::FACET_DOCBLOCK": "3c7e5e4fdc6fd2b0a4087480377487ee0995b13477538ac6964ba0b57e6a0530",
+    "src/frob/lang/_support.py::FACET_DUP": "264902d38395690e680000586f35f4d38903d71c14ad844e3c489d094d411494",
+    "src/frob/lang/_support.py::FACET_GRAMMAR": "b9c942199d965d2aea30d2befef2743cf3d0eb2287d7b959d6ebeeb92c04fc4e",
+    "src/frob/lang/_support.py::FacetState": "54012f4d6a5fae0773e27ad526c084017482340fe6c555bdd3aa640ed50d8fa1",
+    "src/frob/lang/_support.py::FacetStatus": "6abfd1ccde429706e6030a3dddecc1da5d637d4de8cfb59a1c59f7ee67f03283",
+    "src/frob/lang/_support.py::LanguageSupport": "057df0ebb1dbf9cd7d98ae9d8d5b6664a3bdc494e71f3f9a6a149ff29cd4444c",
+    "src/frob/lang/_support.py::LanguageSupport.missing_facets": "14877840a9827f1d19b9f4dcb11e368e204d440d8017d1d52d3516575a1aefba",
+    "src/frob/lang/_support.py::LanguageSupport.unreasoned_facets": "a2a6a91b580ce7ec35d49c83ae1dbf83b75e72415f4ab668d6fa07717abb62a4",
+    "src/frob/lang/_support.py::conformance_violations": "b093aeaa52af7095e7ddb1fc3084c82b02a3a54790ce037245c112ad9834abe4",
+    "src/frob/lang/_support.py::derive_language_registry": "aa7c79bcc0559b78eafc26b4d8df7fa3e8d9e089cb275a549a66714029dabf92",
     "src/frob/lang/_walk_strata.py::NATIVE_UNAVAILABLE_MESSAGE": "3c71d796788167f1a40509d172e98aa2777be82e5813223f878446d08e344501",
     "src/frob/lang/_walk_strata.py::walk_strata": "9e98c0be842184b8641ab012ee7332ac8f0be7d391f19df6f6a63bcd70c3e847",
     "src/frob/logging/color.py::BOLD": "4d7c17be0d71c82ccef3817bfd53a36bd5510b809376511afe810446e98257ce",
@@ -1106,5 +1121,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.66.0"
+  "version": "0.68.0"
 }

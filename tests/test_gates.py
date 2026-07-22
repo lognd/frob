@@ -164,6 +164,24 @@ def _marker_line(root: Path, ticket_id: str) -> int:
     raise AssertionError(f"marker for {ticket_id} not found in tickets.md")
 
 
+# frob:ticket T-0564
+def _state_line(root: Path, ticket_id: str) -> int:
+    """The 1-indexed line number of `ticket_id`'s YAML `state:` field in
+    `root/tickets.md` -- deliberately BELOW the marker line, for building a
+    `Hunk` span that targets the state-transition line without ever
+    overlapping the marker line itself (T-0564 regression coverage)."""
+    marker = f"<!-- ticket:{ticket_id} -->"
+    lines = (root / "tickets.md").read_text(encoding="utf-8").splitlines()
+    in_block = False
+    for i, line in enumerate(lines, start=1):
+        if marker in line:
+            in_block = True
+            continue
+        if in_block and line.startswith("state:"):
+            return i
+    raise AssertionError(f"state: line for {ticket_id} not found in tickets.md")
+
+
 _WIDGET_PY = '''class Widget:
     """A widget."""
 
@@ -283,6 +301,7 @@ class TestBaselineDelta:
         assert is_baseline_stale(tmp_path, baseline) is True
 
 
+# frob:ticket T-0553
 class TestCoverageGate:
     def test_cov001_broken_doc_edge_does_not_suppress_finding(
         self, tmp_path: Path
@@ -488,6 +507,49 @@ class TestCoverageGate:
             hunks=(
                 Hunk(file="src/a.py", span=record.span),
                 Hunk(file="tickets.md", span=(marker_line, marker_line)),
+            ),
+        )
+        queue = TicketQueue(tickets={"T-0001": done_ticket})
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV002" for v in violations)
+
+    # frob:ticket T-0564
+    def test_cov002_grace_matches_hunk_anywhere_in_ticket_block(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0564: the ticket's own `state:` line (NOT its marker line)
+        falling inside the touched `tickets.md` hunk must still grant grace
+        -- a state transition (queued -> done) or an evidence-list
+        insertion typically lands several lines below the marker/id/title
+        lines, inside the same YAML block, so scoping the hunk-overlap
+        check to the exact marker line alone would wrongly deny grace to a
+        ticket whose own closing diff plainly IS present."""
+        source = "def helper(x):\n    # frob:ticket T-0001\n    return x\n"
+        _write(tmp_path, "src/a.py", source)
+        ticket = _ticket(state=TicketState.IN_PROGRESS)
+        _write_ticket(tmp_path, ticket)
+        _git_init(tmp_path)
+        done_ticket = _ticket(state=TicketState.DONE)
+        _write_ticket(tmp_path, done_ticket)
+        state_line = _state_line(tmp_path, "T-0001")
+        marker_line = _marker_line(tmp_path, "T-0001")
+        assert state_line != marker_line
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/a.py::helper"]
+        base_sha = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        diff = Diff(
+            base=base_sha,
+            hunks=(
+                Hunk(file="src/a.py", span=record.span),
+                # Hunk touches only the state: line, not the marker line.
+                Hunk(file="tickets.md", span=(state_line, state_line)),
             ),
         )
         queue = TicketQueue(tickets={"T-0001": done_ticket})
@@ -1214,6 +1276,41 @@ class TestCoverageGate:
         waived_cov001 = _first_rule(waived, "COV001")
         assert waived_cov001 is not None
         assert waived_cov001.waived is not None
+
+    # frob:ticket T-0553
+    def test_cov001_waiver_does_not_blanket_suppress_sibling_symbol(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0553 (B11): a `frob:waive COV001` placed above ONE public
+        symbol must not also suppress COV001 for a DIFFERENT public symbol
+        in the same file -- before this fix, COV001's `Violation` carried
+        no `symref`, so `_match_waiver` fell back to file-scoped matching
+        and one directive silently waived every undocumented symbol in the
+        file, not just the one it was written above."""
+        source = (
+            "def waived_helper(x):\n"
+            '    # frob:waive COV001 reason="legacy code, ticket filed"\n'
+            '    """A public helper waived from doc obligations."""\n'
+            "    return x\n"
+            "\n"
+            "def unwaived_helper(x):\n"
+            '    """A different public helper, never waived."""\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+
+        from frob.gates import _apply_waivers  # noqa: PLC0415 - internal, test-only
+
+        kept, waived = _apply_waivers(violations, snap)
+        waived_symrefs = {v.symref for v in waived if v.rule == "COV001"}
+        kept_symrefs = {v.symref for v in kept if v.rule == "COV001"}
+        assert "src/a.py::waived_helper" in waived_symrefs
+        assert "src/a.py::unwaived_helper" in kept_symrefs
 
     def test_waive001_missing_reason(self, tmp_path: Path) -> None:
         source = "def helper(x):\n    # frob:waive COV001\n    return x\n"
@@ -3347,6 +3444,68 @@ class TestTestGate:
         )
         assert not any(
             v.rule == "TEST005" and v.file == record.id.path for v in violations
+        )
+
+    # frob:ticket T-0557
+    def test_test005_unmeasured_symbol_in_measured_file_flags_as_zero(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0557 (B4): a symbol with NO entry in `symbol_branch` -- never
+        executed at all -- must still be flagged at 0% branch coverage when
+        its FILE genuinely was measured (has a `module_line` entry).
+        Previously `_test005_symbols` skipped any symbol absent from
+        `symbol_branch`, silently clearing dead code that a test suite never
+        calls into even once."""
+        from typani.option import Some
+
+        from frob.gates import CoverageData
+
+        _write(tmp_path, "src/frob/pkg/a.py", "def dead(x):\n    return x\n")
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/frob/pkg/a.py::dead"]
+        coverage = CoverageData(
+            source_sha="x",
+            symbol_branch={},
+            module_line={"src/frob/pkg/a.py": 90.0},
+        )
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(
+            snap, (), Some(coverage), tests, TestPolicy(unit_branch_cov=90)
+        )
+        v = next(
+            (
+                v
+                for v in violations
+                if v.rule == "TEST005" and v.symref == record.symref
+            ),
+            None,
+        )
+        assert v is not None
+        assert "0.0%" in v.message
+
+    # frob:ticket T-0557
+    def test_test005_symbol_in_unmeasured_file_still_skipped(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0557 (B4) counterpart: a symbol whose FILE never appears in
+        coverage.xml at all (no `module_line` entry -- excluded from
+        measurement, e.g. never imported by the suite) must still be
+        skipped, not flagged at 0% -- that is a measurement gap, not proof
+        the symbol itself fails the floor."""
+        from typani.option import Some
+
+        from frob.gates import CoverageData
+
+        _write(tmp_path, "src/frob/pkg/a.py", "def unmeasured(x):\n    return x\n")
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/frob/pkg/a.py::unmeasured"]
+        coverage = CoverageData(source_sha="x", symbol_branch={}, module_line={})
+        tests = CollectedTests(node_ids=frozenset())
+        violations = run_test_gate(
+            snap, (), Some(coverage), tests, TestPolicy(unit_branch_cov=90)
+        )
+        assert not any(
+            v.rule == "TEST005" and v.symref == record.symref for v in violations
         )
 
     def test_test005_module_line_floor(self, tmp_path: Path) -> None:

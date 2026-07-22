@@ -269,6 +269,17 @@ call, no manual step needed there either.
 
 ## 10b. Finalizing the ledger before you report (do NOT `git merge main` to fix it)
 
+MULTI-TICKET-WORKTREE WARNING: the restore recipe below (`git checkout
+main -- tickets.md`) restores MAIN's ledger -- which does NOT contain the
+closures of tickets you already finished ON THIS BRANCH. Running it for
+your second/third ticket in the same worktree silently reverts your own
+earlier tickets' closed states (a real incident: T-0405's closure got
+reverted to queued while finalizing T-0406). For every ticket after the
+first, restore from your own last-good branch commit instead:
+`git checkout <your-prior-close-commit> -- tickets.md`, then replay only
+the current ticket's CLI operations. Verify EVERY prior ticket's
+`state:` line before your final commit.
+
 Once your code and tests are done, DO NOT `git merge main` again to "sync"
 your `tickets.md`. This is a timing trap: main keeps advancing while you
 work, so any merge you do is immediately stale. Right before landing, the
