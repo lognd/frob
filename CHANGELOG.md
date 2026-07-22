@@ -17,6 +17,24 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.69.0] - unreleased (INV006 source-side invariant coverage)
+
+T-0408: new `INV006` gate (`frob.gates.inv006_gate`, WARN severity)
+extends INV003's exclusivity-claim scan from doc-only (`docs/modules`,
+`docs/strata`) to SOURCE trees (`INV006_SRC_DIRS`: `src`,
+`strata-core/src`, `frob-core/src`) -- the coverage-COMPLETENESS half of
+T-0408's gap: INV001/INV002 only ever validated invariants that already
+existed, and INV003/INV004 never looked past `docs/`, leaving well over a
+hundred source docstrings/comments asserting "only"/"never...except"/
+"exactly one" guarantees entirely outside any gate's reach. INV006 reuses
+INV003's exact noise-filtered claim vocabulary
+(`frob.gates.invariants.find_exclusivity_claims`) and treats a file as
+covered by any real `frob:invariant` edge anchored anywhere in it
+(joined against the same `GraphSnapshot` every other code-anchor gate
+already loads), with `frob:waive INV006 reason="..."` as the disposition
+path for a claim that is genuine design intent rather than an enforced
+behavior.
+
 ## [0.66.0] - unreleased (graph leaves + DEAD001/PARSE001, part 2)
 
 T-0422: new `DEAD001` gate (`frob.gates._dead_symbols.dead_symbol_gate`,
