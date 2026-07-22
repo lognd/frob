@@ -15,6 +15,12 @@ from frob.testing._collect import (
     collect_rust_tests,
     drop_collection_cache,
 )
+from frob.testing._coverage_wait import (
+    CoverageWaitError,
+    CoverageWaitOutcome,
+    coverage_lock_path,
+    run_coverage_wait,
+)
 from frob.testing._incremental_coverage import python_coverage_targets
 from frob.testing._models import (
     CollectedTests,
@@ -35,6 +41,8 @@ from frob.testing._select import extension_language, select_tests
 
 __all__ = [
     "CollectedTests",
+    "CoverageWaitError",
+    "CoverageWaitOutcome",
     "NativeSpec",
     "RunnerOutcome",
     "RunnerSpec",
@@ -44,11 +52,13 @@ __all__ = [
     "TestingError",
     "collect_python_tests",
     "collect_rust_tests",
+    "coverage_lock_path",
     "drop_collection_cache",
     "extension_language",
     "load_natives",
     "load_runners",
     "python_coverage_targets",
+    "run_coverage_wait",
     "run_selected",
     "select_tests",
 ]

@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import hashlib
 import threading
+from collections.abc import Callable
 from pathlib import Path
 
 from tree_sitter import Node, Tree
@@ -416,10 +417,13 @@ def _parse_strata_file(path: Path) -> Result[ParsedFile, LangError]:
     return Ok(parsed)
 
 
-# frob:doc docs/modules/graph.md#public-api
-# frob:invariant INV-015
-def parse_file(path: Path) -> Result[ParsedFile, LangError]:
-    """Read, parse, and extract `path` into a `ParsedFile` (dispatch by extension).
+# frob:ticket T-0410
+def _parse_file_uncached(path: Path) -> Result[ParsedFile, LangError]:
+    """`parse_file`'s real body, unwrapped -- see `parse_file` (below) for
+    the public contract and the T-0410 memoization rationale. Split out
+    purely so `parse_file` can wrap it in `@memoize_per_run` lazily (the
+    module-level `frob.check`/`frob.lang` circular-import trap `parse_file`
+    documents) without a second copy of the parse/extract logic itself.
 
     `.strata` files route through `_parse_strata_file` (strata-core's own
     parser, no tree-sitter grammar exists for the language); every other
@@ -435,6 +439,45 @@ def parse_file(path: Path) -> Result[ParsedFile, LangError]:
 
     symbols, comments = extract(tree, source, language_label)
     return Ok(_build_parsed_file(path, language_label, symbols, comments, source))
+
+
+_parse_file_memoized: Callable[[Path], Result[ParsedFile, LangError]] | None = None
+
+
+# frob:doc docs/modules/graph.md#public-api
+# frob:invariant INV-015
+# frob:ticket T-0410
+# frob:tests tests/unit/test_memo.py::test_parse_file_second_call_is_memo_hit
+def parse_file(path: Path) -> Result[ParsedFile, LangError]:
+    """Read, parse, and extract `path` into a `ParsedFile` (dispatch by extension).
+
+    `_parse_file_uncached`, wrapped in `@memoize_per_run` on first call
+    (T-0410) -- the wrap itself is deferred past import time (see
+    `_parse_file_uncached`'s docstring) rather than a module-level
+    decorator, purely to dodge the `frob.lang`/`frob.check` circular-import
+    trap; behavior is identical to a plain `@memoize_per_run def
+    parse_file` once the module has finished loading.
+
+    T-0410 perf audit: `@memoize_per_run` closes the gap `_parse`'s own
+    content-hash cache leaves open -- `_parse` caches the raw tree-sitter
+    `Tree`, but `extract()` (the symbol/comment walk over that tree) was
+    NOT cached, so repeat `parse_file` calls on the same path within one
+    `frob check` invocation (measured: COV006's rescue helpers call it
+    ~2000+ times, many on the same test/target files across different
+    candidate edges) re-ran the full extraction walk every time even on a
+    `_parse` cache hit. Profiled cost: `extract()` accounted for ~151s of a
+    ~156s `coverage_gate` run, almost entirely inside `_walk_python`/
+    `_common.walk`'s AST traversal -- measured after the fix, the same
+    `coverage_gate` call drops to ~16s. Safe under the same run-scope
+    invariant `build_graph`/`analyze_project` already rely on (T-0423):
+    only active during `run_memo_scope()`, a transparent passthrough
+    otherwise."""
+    global _parse_file_memoized
+    if _parse_file_memoized is None:
+        from frob.check._memo import memoize_per_run
+
+        _parse_file_memoized = memoize_per_run(_parse_file_uncached)
+    return _parse_file_memoized(path)
 
 
 # frob:doc docs/modules/graph.md#public-api

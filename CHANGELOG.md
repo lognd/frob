@@ -36,6 +36,92 @@ deliberately split for follow-up (see T-0545's Done report): wiring
 through, and promoting TEST012 to ERROR once the lock is adopted
 repo-wide.
 
+T-0552 (docs/audits/gates-accounting.md B3): a ts/c/cpp `frob:tests` edge
+credited toward TEST001-004 purely by name/path convention, with zero
+execution evidence, stayed silently indistinguishable from a genuinely
+executed test. `frob.gates._edge_is_native_unverified` splits that
+structural-fallback check out; new advisory gate TEST013 (WARN) names
+every edge relying on it, without withdrawing the underlying credit
+(promoting to ERROR needs a real vitest/ctest collector, split to
+T-draft-2411b5b6).
+
+T-0547 (docs/audits/gates-accounting.md B6): `_inferred_unit_cases`
+matches a public symbol to a collected test by snake-cased leaf name
+alone, no module/path binding -- two different files' same-named public
+functions can both clear TEST001 off one test exercising only one. New
+advisory gate TEST014 (WARN) flags the ambiguity (verified: a blanket
+path-correlation tightening breaks 81/81 convention matches in this
+repo's own layout, so credit is left unchanged; 5 real collisions found
+and split to T-draft-b7c57519).
+
+T-0556 (docs/audits/gates-accounting.md B2): `frob.graph.lock`'s default
+ack facet (`sig`) meant rewriting a documented function's BODY after ack
+never tripped DRIFT001. `_facets_for_ref` now always also locks `body`
+(a compat survey found only 43 lock entries repo-wide, all sig-only,
+safe to change as the new default outright).
+
+T-0548 (docs/audits/gates-accounting.md B1): TEST001, the only blocking
+per-symbol test gate, is satisfied by a name-matched test with no
+assertion at all (`def test_myfunc(): pass` clears it). New advisory
+gate TEST015 (WARN) reuses T-0549's existing assertion heuristic to
+flag it, without changing what TEST001 blocks on (the actual
+coverage-tied credit tightening is cross-cutting, split to
+T-draft-934c675a).
+
+T-0567: two DEAD001 residuals in `frob.gates.__init__` resolved --
+`_documented_srcs` was genuinely orphaned (deleted); `_run_jobs`/
+`_timed_job` had `frob:tests` directives misplaced above the TEST
+function instead of the source symbols (moved).
+
+## [0.70.0] - unreleased (misc chain: coverage --wait, DOC004 c/cpp)
+
+T-0322: `frob test --wait-coverage` -- a foreground, single-flight,
+blocking-until-fresh coverage contract. Replaces backgrounding `make
+coverage` and stalling on a notification a dispatched sub-agent can never
+receive (docs/guides/agent-playbook.md section 6b): the new command
+blocks under a `.frob/coverage.lock` file lock (so concurrent callers
+serialize onto one real run instead of each re-running the full suite),
+checks the recorded coverage stamp against the current source tree
+(the same staleness contract TEST006 already enforces), and either
+returns immediately if already fresh or runs `make coverage-fast` and
+returns a definitive fresh-or-failed result. New public API:
+`frob.testing.run_coverage_wait`, `coverage_lock_path`,
+`CoverageWaitOutcome`, `CoverageWaitError`.
+## [0.69.0] - unreleased (T-0410 perf: parse_file run-scoped memo)
+
+T-0410: `frob.lang.parse_file` gained a run-scoped `@memoize_per_run` memo
+(T-0423's mechanism, generalized to a new call site), applied via a
+first-call-deferred wrapper (`_parse_file_uncached` + the public `parse_file`
+wrapper) to dodge a real `frob.lang`/`frob.check` circular import a
+module-level decorator would hit. Closes a gap `_parse`'s own content-hash
+cache left open: `_parse` cached the raw tree-sitter `Tree`, but `extract()`
+(the symbol/comment walk over it) re-ran on every call regardless -- COV006's
+rescue helpers call `parse_file` ~2000+ times per `frob check`, many repeats
+on the same path across different candidate edges. Measured: isolated
+`coverage_gate` profile 155.8s -> 15.9s; real `frob check`'s `coverage` stage
+timing 36-45s -> 3.5-4.7s. `frob.excludes.BUILTIN_SKIP_DIRS` also gained
+`.hypothesis`/`.serena` (perf audit finding M6, `docs/audits/perf.md`) --
+neither has a tree-sitter grammar but every rglob-based stage was still
+walking/stat'ing/opening every entry inside them.
+
+## [0.69.0] - unreleased (INV006 source-side invariant coverage)
+
+T-0408: new `INV006` gate (`frob.gates.inv006_gate`, WARN severity)
+extends INV003's exclusivity-claim scan from doc-only (`docs/modules`,
+`docs/strata`) to SOURCE trees (`INV006_SRC_DIRS`: `src`,
+`strata-core/src`, `frob-core/src`) -- the coverage-COMPLETENESS half of
+T-0408's gap: INV001/INV002 only ever validated invariants that already
+existed, and INV003/INV004 never looked past `docs/`, leaving well over a
+hundred source docstrings/comments asserting "only"/"never...except"/
+"exactly one" guarantees entirely outside any gate's reach. INV006 reuses
+INV003's exact noise-filtered claim vocabulary
+(`frob.gates.invariants.find_exclusivity_claims`) and treats a file as
+covered by any real `frob:invariant` edge anchored anywhere in it
+(joined against the same `GraphSnapshot` every other code-anchor gate
+already loads), with `frob:waive INV006 reason="..."` as the disposition
+path for a claim that is genuine design intent rather than an enforced
+behavior.
+
 ## [0.66.0] - unreleased (graph leaves + DEAD001/PARSE001, part 2)
 
 T-0422: new `DEAD001` gate (`frob.gates._dead_symbols.dead_symbol_gate`,

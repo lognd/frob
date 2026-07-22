@@ -199,6 +199,30 @@ def _run_selected_and_report(cfg: AppConfig, report, runners, root: Path) -> Non
         sys.exit(1)
 
 
+# frob:ticket T-0322
+def _run_wait_coverage(root: Path) -> None:
+    """`frob test --wait-coverage`: block in the foreground until the
+    coverage stamp is fresh (single-flight across concurrent callers), then
+    exit 0/1 -- the definitive-result alternative to backgrounding `make
+    coverage` and stalling on a notification that never arrives (an agent
+    dispatched as a sub-agent cannot observe a background job's completion
+    at all, see docs/guides/agent-playbook.md section 6b/3b)."""
+    from frob.testing import run_coverage_wait
+
+    result = run_coverage_wait(root)
+    if result.is_err:
+        _log.error("frob test --wait-coverage: %s", result.danger_err)
+        sys.exit(1)
+    outcome = result.danger_ok
+    if outcome.ran:
+        _log.info(
+            "frob test --wait-coverage: ran coverage, now fresh (%.1fs)",
+            outcome.duration_s,
+        )
+    else:
+        _log.info("frob test --wait-coverage: already fresh, nothing to run")
+
+
 # frob:ticket T-0563
 def _refresh_collection(root: Path) -> None:
     """`frob test --collect`: drop the pytest collection cache and re-collect
@@ -225,9 +249,16 @@ def _refresh_collection(root: Path) -> None:
 
 
 # frob:waive TEST005 reason="run 0.0% branch cover, debt T-0160"
+# frob:ticket T-0322
+# frob:tests tests/test_app.py::TestWaitCoverage.test_wait_coverage_flag_dispatches_and_exits_zero_on_success  # noqa: E501
+# frob:tests tests/test_app.py::TestWaitCoverage.test_wait_coverage_flag_exits_1_on_failure  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """Compute the touched set (or run everything with --all) and run the tests."""
     root = _resolve_test_root(cfg)
+
+    if cfg.test_wait_coverage:
+        _run_wait_coverage(root)
+        return
 
     if cfg.test_collect:
         _refresh_collection(root)

@@ -87,6 +87,25 @@ class TestScopeDigestParity:
         snapshot = build_graph(root, root / ".frob" / "cache.db").danger_ok
         assert scope_digest((), snapshot) == scope_digest(("no/such/dir/**",), snapshot)
 
+    # frob:ticket T-0355
+    def test_digest_is_content_only_portable_across_checkouts(self, tmp_path):
+        """T-0355 (item 3): `scope_digest` keys on (repo-relative path,
+        sha256-of-content) -- `_content_hash` never folds in mtime/size, so
+        two independent checkouts with byte-identical scope files under the
+        same relative layout MUST record the same digest, even though they
+        live at different absolute roots. This pins that contract so a
+        future change that keys on `_stat_key` (mtime, size) instead of the
+        content hash -- which would make a recorded sweep checkout-
+        specific -- shows up as a failing test, not a silent regression."""
+        root_a = _make_repo(tmp_path / "checkout-a")
+        root_b = _make_repo(tmp_path / "checkout-b")
+        snapshot_a = build_graph(root_a, root_a / ".frob" / "cache.db").danger_ok
+        snapshot_b = build_graph(root_b, root_b / ".frob" / "cache.db").danger_ok
+        assert root_a != root_b
+        assert scope_digest(("src/pkg/**",), snapshot_a) == scope_digest(
+            ("src/pkg/**",), snapshot_b
+        )
+
 
 class TestCliStartRecordsGateCompatibleDigest:
     def test_start_then_gate_is_clean(self, tmp_path):

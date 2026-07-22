@@ -95,7 +95,7 @@ from __future__ import annotations
 import re
 import tomllib
 from dataclasses import dataclass, field
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from frob.gates._models import Severity, Violation
 from frob.gitio import run_argv
@@ -310,6 +310,8 @@ def _iter_fenced_blocks(text: str) -> tuple[_FencedBlock, ...]:
 _PYTHON_LANGS = frozenset({"python", "py"})
 _RUST_LANGS = frozenset({"rust", "rs"})
 _TS_LANGS = frozenset({"ts", "tsx", "js", "jsx", "javascript", "typescript"})
+# frob:ticket T-0566
+_C_CPP_LANGS = frozenset({"c", "cpp", "c++", "cxx", "cc", "h", "hpp"})
 _CONSOLE_LANGS = frozenset({"console", "bash", "sh", "shell"})
 
 
@@ -849,6 +851,79 @@ def _ts_reference_violations(
 
 
 # ---------------------------------------------------------------------------
+# C/C++ reference resolution (T-0566)
+# ---------------------------------------------------------------------------
+
+# Quoted (`"..."`) local includes only -- never `<...>` angle-bracket system/
+# library includes, the same "skip anything not clearly this project's own"
+# posture python/rust/ts already take (angle-bracket includes are almost
+# always libc/stdlib/third-party, never this repo's own tracked sources).
+_C_INCLUDE_RE = re.compile(r'#\s*include\s*"([^"]+)"')
+
+
+def _tracked_source_files(root: Path) -> frozenset[str]:
+    """Every git-tracked file in `root`, repo-relative POSIX paths -- the
+    existence check `_c_include_violations` resolves a quoted `#include`
+    against (mirrors `_rust_crate_source_files`'s per-crate `git ls-files`
+    call, just unscoped since C/C++ headers have no crate/package boundary
+    to narrow the search to). Not cached: unlike the rust helper (called
+    once per matched `use`, already narrow), a stale cache here would risk
+    a wrong existence answer across a single process's repeated gate runs
+    against a tree that changed between them (e.g. this module's own test
+    suite)."""
+    spawned = run_argv(("git", "-C", str(root), "ls-files"))
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        return frozenset()
+    return frozenset(line for line in spawned.danger_ok.stdout.splitlines() if line)
+
+
+def _c_include_violations(
+    block: _FencedBlock, doc_path: str, doc_lines: list[str], root: Path
+) -> list[Violation]:
+    """UNBOUND/STALE for a quoted `#include "..."` in a `c`/`cpp` fenced
+    block: no manifest namespace exists for C/C++ (unlike python's package,
+    rust's crate, ts's `package.json` name) to decide "is this project's own
+    surface", so this resolves the include path directly against this
+    repo's own git-tracked files instead -- STALE (error) if the quoted path
+    does not exist as a tracked file ANYWHERE in the repo (checked both
+    relative to the doc's own directory and repo-root-relative, the two
+    resolution bases a real include could plausibly use), else UNBOUND
+    (warn) if it resolves but the block carries no nearby binding
+    directive. A quoted include that resolves to neither base is treated as
+    a generic/illustrative example (some other project's header) and
+    skipped entirely -- the same "skip anything not clearly this project's
+    own" posture the other three buckets take, just keyed on file
+    existence rather than a namespace prefix."""
+    violations: list[Violation] = []
+    window = _nearby_window(doc_lines, block)
+    waive_reason = _nearby_waive_reason(window)
+    tracked = _tracked_source_files(root)
+    doc_dir = PurePosixPath(doc_path).parent
+    seen_project_ref = False
+    for match in _C_INCLUDE_RE.finditer(block.body):
+        included = match.group(1)
+        doc_relative = (doc_dir / included).as_posix()
+        if included not in tracked and doc_relative not in tracked:
+            continue
+        seen_project_ref = True
+    if not seen_project_ref:
+        return violations
+    if waive_reason is not None:
+        _log.debug("doc004: %s waived (%s): c/cpp block", doc_path, waive_reason)
+        return violations
+    if not _has_binding_directive(window):
+        violations.append(
+            _doc004_violation(
+                doc_path,
+                block.start_line,
+                tier="unbound",
+                detail="c/cpp #include of a project header is not anchored",
+            )
+        )
+    return violations
+
+
+# ---------------------------------------------------------------------------
 # Violation building + public entry point
 # ---------------------------------------------------------------------------
 
@@ -962,6 +1037,10 @@ def doc004_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
             elif block.lang in _TS_LANGS:
                 violations.extend(
                     _ts_reference_violations(block, doc_path, doc_lines, namespaces.ts)
+                )
+            elif block.lang in _C_CPP_LANGS:
+                violations.extend(
+                    _c_include_violations(block, doc_path, doc_lines, root)
                 )
             elif block.lang in _CONSOLE_LANGS and console_sources:
                 violations.extend(

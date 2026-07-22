@@ -123,6 +123,7 @@ class TestParsePython:
         assert comments["sum them"].enclosing == "top_level"
 
     # frob:tests src/frob/lang/_common.py::_find_following_symbol
+    # frob:waive COV006 reason="test reaches the helper through parse_file, whose memoize_per_run wrapper (T-0410) is opaque to the static call graph; wrapper-transparent reachability tracked in T-0583"  # noqa: E501
     def test_directive_binds_across_two_blank_lines(self, tmp_path: Path) -> None:
         """T-0434 (audit finding G4, docs/audits/graph.md): the fixed
         following-symbol window used to be `end < span[0] <= end + 2`, so a
@@ -509,6 +510,7 @@ class TestErrors:
         assert "good_one" in names
 
     # frob:tests src/frob/lang/__init__.py::_warn_if_partial_tree
+    # frob:waive COV006 reason="test reaches the helper through parse_file, whose memoize_per_run wrapper (T-0410) is opaque to the static call graph; wrapper-transparent reachability tracked in T-0583"  # noqa: E501
     def test_syntax_error_logs_partial_tree_warning(
         self, caplog: pytest.LogCaptureFixture, tmp_path: Path
     ) -> None:

@@ -201,17 +201,28 @@ _CAPABILITY_C_CPP_MEMBERS = frozenset({"c", "cpp"})
 
 
 def _docblock_languages() -> frozenset[str]:
-    """DOC004's three fenced-language buckets, normalized onto `frob.lang`
+    """DOC004's fenced-language buckets, normalized onto `frob.lang`
     canonical labels -- derived directly from `_PYTHON_LANGS`/`_RUST_LANGS`/
-    `_TS_LANGS` (never a hand-copied second list) so a bucket added there is
-    picked up here automatically. Imported lazily -- see the module-level
-    dependency-order note above."""
-    from frob.gates._docblocks import _PYTHON_LANGS, _RUST_LANGS, _TS_LANGS
+    `_TS_LANGS`/`_C_CPP_LANGS` (never a hand-copied second list) so a bucket
+    added there is picked up here automatically. Imported lazily -- see the
+    module-level dependency-order note above.
+
+    T-0566: `_C_CPP_LANGS` covers both `frob.lang`'s "c" and "cpp" labels
+    (one merged fenced-block bucket, same "c-cpp" merge `_capability_status`
+    already uses for the capability-registry facet -- see
+    `_CAPABILITY_C_CPP_MEMBERS`)."""
+    from frob.gates._docblocks import (
+        _C_CPP_LANGS,
+        _PYTHON_LANGS,
+        _RUST_LANGS,
+        _TS_LANGS,
+    )
 
     return frozenset(
         ({"python"} if _PYTHON_LANGS else set())
         | ({"rust"} if _RUST_LANGS else set())
         | ({"typescript"} if _TS_LANGS else set())
+        | (_CAPABILITY_C_CPP_MEMBERS if _C_CPP_LANGS else set())
     )
 
 
@@ -283,8 +294,9 @@ def _arch_status(language: str) -> FacetStatus:
 
 
 def _docblock_status(language: str) -> FacetStatus:
-    """`.strata` has no fenced-code-block doc convention today; c/cpp have
-    no DOC004 bucket (a real gap, tracked as T-draft-78a0f919)."""
+    """`.strata` has no fenced-code-block doc convention today. c/cpp (T-0566)
+    now share `_C_CPP_LANGS`'s merged bucket, same as every other language
+    with a real `frob.gates._docblocks` entry -- no known_gap remains here."""
     if language == "strata":
         return _not_applicable(
             "no established ```strata fenced-code-block doc convention "
@@ -292,10 +304,7 @@ def _docblock_status(language: str) -> FacetStatus:
         )
     if language in _docblock_languages():
         return _implemented("frob.gates._docblocks fenced-language bucket entry")
-    return _known_gap(
-        f"{language} has no DOC004 fenced-language bucket -- tracked by "
-        f"T-draft-78a0f919"
-    )
+    return _known_gap(f"{language} has no DOC004 fenced-language bucket")
 
 
 # frob:doc docs/modules/lang.md#language-support-contract

@@ -31,6 +31,7 @@ declaration).
 | INV003 | invariant | (warn) a doc file under `INV003_SPEC_DIRS` (`docs/modules`, `docs/strata`) makes a claim-shaped exclusivity/normative assertion (`only`, `sole`/`solely`, `exclusively`, `nothing else`, `never...except`, `at most/exactly one`, verb required in the same sentence) with no `<!-- frob:invariant INV-### -->` marker naming a real (loaded) invariant, and no reasoned `<!-- frob:waive INV003 reason="..." -->` marker -- see "INV003 (T-0462)" below |
 | INV004 | invariant | (warn, advisory) a `docs/**.md` section uses claim-shaped normative language (`must`, `must not`, `never`, `always`, `shall`, `guarantees`, `ensures`, `requires`, plus INV003's exclusivity vocabulary) but anchors ZERO `frob:invariant` markers and carries no reasoned `<!-- frob:waive INV004 reason="..." -->` marker -- see "INV004 (T-0452)" below |
 | INV005 | invariant | (warn, T-0543/B12) an invariant's evidence collects (satisfies INV001) but is never shown, via a `frob:tests` edge or same-file trust to the anchor, to actually reach its `frob:invariant`-anchored symbol -- a name-match-only existence check proves nothing about which invariant a test covers; see "INV005 (T-0543)" below |
+| INV006 | invariant | (warn, T-0408) a SOURCE file under `INV006_SRC_DIRS` (`src`, `strata-core/src`, `frob-core/src`) makes a claim-shaped exclusivity assertion (same vocabulary as INV003) with no `frob:invariant` edge anchored anywhere in the file, and no `frob:waive INV006 reason="..."` edge -- see "INV006 (T-0408)" below |
 | DEC001 | decisions | a `frob:decision AD-###` edge points at a record that does not exist (opt-in: a `decisions/` dir must exist) |
 | DEC002 | decisions | an `accepted` decision record has no `frob:decision` code anchor |
 | TEST001 | test | public function/method has no `frob:tests` unit edge |
@@ -979,6 +980,36 @@ follow-up" shape as the parallel B1 (TEST001 real-coverage) and B2
 (DRIFT001 body facet) gates-accounting findings. INV001/INV002 keep their
 prior ERROR semantics unchanged; INV005 is the loud-but-non-blocking nudge
 toward a real binding for anything NEW.
+
+### INV006 (T-0408)
+
+INV003/INV004 (above) are DOC-only: they scope to `INV003_SPEC_DIRS`
+(`docs/modules`, `docs/strata`) and never look at source code. The user
+named a two-part gap this left open: only a handful of formal invariants
+exist for a large system, while a repo-wide grep finds well over a
+hundred SOURCE files (Python, Rust) asserting a property in
+docstrings/comments -- "always", "never", "only", "exactly once", and
+so on -- with nothing checking whether enough of THOSE claims are
+formalized. INV001/INV002 only ever validated invariants that already
+existed; nothing checked whether enough invariants existed at all.
+
+INV006 closes the source-code half of that gap: it reuses INV003's exact
+claim vocabulary and claim-shape scan (`find_exclusivity_claims`, already
+noise-filtered by T-0509's verb-in-same-sentence requirement) over every
+`.py`/`.rs` file under `INV006_SRC_DIRS`, and treats a file as covered if
+ANY `frob:invariant` edge (the real comment-DSL directive, not an
+HTML-comment marker regex that would never match Python/Rust comment
+syntax) anchors anywhere in that file. A `frob:waive INV006 reason="..."`
+edge on the file (or a symbol in it) dispositions a claim that is
+genuine design intent rather than an enforced behavior, mirroring
+INV003's markdown-side waiver.
+
+WARN severity, same posture as INV003 -- this repo's own first-turn-on
+measurement (`frob check --only invariant`) found ~167 INV006 findings
+across `src/`, `strata-core/src/`, and `frob-core/src/`; driving that
+down to 0 (bind each to a real invariant, waive with a specific reason,
+or reword) is tracked as a follow-up burndown, same as INV003/INV004's
+own residual, not hand-closed in this pass.
 
 ## Policy rules (`frob.toml`, `[policy]`)
 

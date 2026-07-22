@@ -37,6 +37,10 @@ _VERB_TABLE: dict[str, EdgeKind] = {
     "channel": EdgeKind.CHANNEL,
     "boundary": EdgeKind.BOUNDARY,
     "secret": EdgeKind.SECRET,
+    # T-0428: `frob:enforces <concept-id>` -- a rule/detector's own code
+    # declares which registry concept(s) it enforces; see
+    # `frob.gates._registry_exhaustiveness`'s derived-coverage cross-check.
+    "enforces": EdgeKind.ENFORCES,
 }
 
 _LINE_RE = re.compile(r"^frob:(?P<verb>\S+)(?:\s+(?P<rest>.*))?$")

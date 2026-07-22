@@ -13,6 +13,7 @@ such as T-0424's reflexive check-coverage registry) loads through
 
 from __future__ import annotations
 
+from frob.registry._corpus import CorpusError, append_entry, format_entry_block
 from frob.registry._models import (
     Disposition,
     DispositionKind,
@@ -26,13 +27,16 @@ from frob.registry._models import (
 )
 
 __all__ = [
+    "CorpusError",
     "Disposition",
     "DispositionKind",
     "RegistryAudit",
     "RegistryEntry",
     "RegistryFile",
     "RegistryLoadError",
+    "append_entry",
     "audit_registry_file",
+    "format_entry_block",
     "load_registry_dir",
     "parse_disposition",
 ]

@@ -86,6 +86,54 @@ the ticket graph:
 workflow (see `docs/guides/agentic-workflow.md`); `fetch` and `arxiv` are
 additive, needed only for the prose/paper corpus.
 
+## Corpus-emit mechanism (T-0429)
+
+The frontier store above (frob tickets / Obsidian vault) is where a
+research pass tracks its OWN progress. It is not, by itself, the
+`docs/design/registry/*.yaml` universe corpus the exhaustiveness gate
+(`frob.gates._registry_exhaustiveness`) actually reads -- a finding that
+only ever lands in the vault is exactly the "orphaned docs" failure mode
+T-0343/T-0424 named for the registry itself, one layer upstream. This
+section closes that gap: the mechanical path from "research found N
+things" to "the corpus contains N new entries", so nothing is left as
+untranscribed prose.
+
+**Schema.** Every registry entry (`frob.registry.RegistryEntry`) is:
+`id` (a stable, file-namespaced string, e.g. `PAT-TRAP-07-REPOSITORY`),
+`name`, an optional `source_doc` citation, `disposition` (a researcher-
+emitted entry is ALWAYS `"pending"` -- see below), and `cross_refs`
+(empty at emit time). This is the same shape every existing registry
+file already carries; a research pass does not invent a new shape per
+corpus.
+
+**Emit tool.** `frob registry add --file <name.yaml> --key <entries-key>
+--id <ID> --name "<name>" [--source-doc <doc>]` appends one such entry
+directly to the named file under `docs/design/registry/`
+(`frob.registry.append_entry`) -- a research pass writes into the SSOT
+itself, never a side document that later needs hand-transcription. It
+rejects a duplicate id before writing (fail-fast; the exhaustiveness
+gate's REG007 re-verifies this on the next `frob check` regardless).
+
+**Denominator proof.** Registry files may declare a `total:` (or
+`<prefix>_total:` for a split entry-list key) alongside their entries;
+`append_entry` bumps that count in lockstep with every append, so REG005
+(`frob.gates._registry_exhaustiveness`) -- which fails a file whose
+declared total drifts from its actual entry count -- is the exhaustiveness
+gate a research pass's own declared enumeration total is checked against.
+A research pass that says "I enumerated 41" and appends 41 entries to a
+file declaring `total: 41` has a machine-verified denominator, not a
+self-report.
+
+**No dispositions at emit time.** Under the derived-registry model
+(T-0428: `handled_by` is cross-checked against code-declared
+`frob:enforces`, never authored by hand), the researcher's job stops at
+enumeration -- every emitted entry is `disposition: "pending"`. A later
+code change adding `frob:enforces <that-id>` to the rule that actually
+covers it is what makes the entry's eventual `handled_by:<rule>`
+disposition honest; a reviewer or a follow-up ticket handles
+`deferred:`/`out_of_scope:` for the rest. The researcher never
+short-circuits this by writing a disposition it cannot verify.
+
 ## Priors
 
 The design draws on two externalization/memory papers, retrievable via the

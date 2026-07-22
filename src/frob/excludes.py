@@ -25,6 +25,14 @@ _log = get_logger(__name__)
 
 # Always-pruned directory names, additive to the frob.toml globs.
 # frob:doc docs/modules/app.md#shared-exclude-glob-logic
+# frob:ticket T-0410
+# T-0410 perf audit finding M6: `.hypothesis` (Hypothesis's example/
+# constants DB) and `.serena` (Serena MCP's cache dir) were both missing
+# here -- neither has a tree-sitter grammar so nothing gets misparsed as
+# source, but every rglob-based stage still stat's/opens/`is_test_file`-
+# checks each of their entries (measured: 1298 `.hypothesis/constants` +
+# 44 `.hypothesis/examples` + `.serena/cache` files walked, wastefully, by
+# every stage in this checkout). One-line, zero-risk fix.
 BUILTIN_SKIP_DIRS = frozenset(
     {
         "__pycache__",
@@ -41,6 +49,8 @@ BUILTIN_SKIP_DIRS = frozenset(
         ".mypy_cache",
         ".pytest_cache",
         ".ruff_cache",
+        ".hypothesis",
+        ".serena",
     }
 )
 

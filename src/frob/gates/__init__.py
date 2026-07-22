@@ -876,6 +876,7 @@ _KNOWN_GATE_RULES = frozenset(
         "INV003",
         "INV004",
         "INV005",
+        "INV006",
         "TEST001",
         "TEST002",
         "TEST003",
@@ -971,6 +972,15 @@ _KNOWN_GATE_RULES = frozenset(
         # cross-file id collision (REG007) early-exit closures.
         "REG006",
         "REG007",
+        # T-0428: derived-coverage two-SSOT conformance -- REG008
+        # (handled_by claim with no frob:enforces edge in code) / REG009
+        # (a frob:enforces edge naming a concept id the registry doesn't
+        # know).
+        "REG008",
+        "REG009",
+        # T-0560: check-coverage.yaml gate-rule staleness (scheduled-audit
+        # half of T-0424).
+        "REG010",
         # T-0436: unbound/stale fenced-code-block doc-drift heuristic
         # (frob.gates._docblocks).
         "DOC004",
@@ -3529,12 +3539,25 @@ def _release_open_debt_violations(snapshot: GraphSnapshot) -> tuple[Violation, .
 
 
 # frob:doc docs/modules/gates.md#public-api
+# frob:ticket T-0355
+# frob:tests tests/test_prework_parity.py::TestScopeDigestParity.test_digest_is_content_only_portable_across_checkouts  # noqa: E501
 def scope_digest(scope: Sequence[str], snapshot: GraphSnapshot) -> str:
     """Sha256 over the sorted `(file, hash)` pairs of files matching `scope`.
 
     THE one implementation: `frob ticket start/sweep` records it and
     `prework_gate` compares against it -- a second copy of this hash is how
     PRE001 becomes permanently stale (it happened; see tests/test_prework_parity.py).
+
+    T-0355 (item 3): the per-file `hash` half of the pair comes from
+    `frob.graph._content_hash` -- a plain sha256 of the file's bytes, never
+    folded with `_stat_key`'s mtime/size (that pair is only a cheap
+    invalidation check, not part of the recorded hash). Combined with the
+    repo-relative path this is keyed on, a recorded sweep's digest is
+    already checkout-portable: two checkouts with byte-identical scope
+    files at the same relative paths produce the same digest regardless of
+    absolute root, mtime, or timestamps. See
+    test_digest_is_content_only_portable_across_checkouts for the pinned
+    contract.
     """
 
     matched = sorted(
@@ -4262,6 +4285,122 @@ def inv004_gate(root: Path) -> tuple[Violation, ...]:
                 _log.debug("INV004: %s waived by markdown frob:waive marker", path)
                 continue
             violations.extend(file_violations)
+    return tuple(violations)
+
+
+# frob:doc docs/modules/gates.md#invariants
+# frob:ticket T-0408
+# T-0408: INV003/INV004 (T-0509/T-0515) deliberately scope to
+# `INV003_SPEC_DIRS` (docs/modules, docs/strata) -- prose/comment claims
+# living in SOURCE code (docstrings, `//`/`#` comments describing a
+# guarantee) were entirely outside either gate's reach, which is exactly
+# the "128 files asserting a guarantee in prose, only 4 formal
+# invariants" gap the user named: the coverage gate only ever checked
+# DECLARED invariants, never whether enough of the repo's own guarantee
+# claims were declared at all. INV006 closes that blind spot for source
+# trees without re-deriving INV003's noise-prone doc-only heuristics from
+# scratch: same claim vocabulary (`find_exclusivity_claims`, already
+# noise-filtered by T-0509's claim-shape scan), applied per-file to
+# `INV006_SRC_DIRS`, bound-check against the SAME `GraphSnapshot` every
+# other code-anchor gate already loads (a real `frob:invariant` edge
+# anywhere in the file, not an HTML-comment marker regex that would never
+# match non-markdown comment syntax).
+INV006_SRC_DIRS: tuple[str, ...] = (
+    "src",
+    "strata-core/src",
+    "frob-core/src",
+)
+# frob:doc docs/modules/gates.md#inv006-t-0408
+# frob:ticket T-0408
+INV006_SRC_SUFFIXES: tuple[str, ...] = (".py", ".rs")
+
+
+# frob:doc docs/modules/gates.md#invariants
+# frob:ticket T-0408
+def _inv006_waived(rel: str, snapshot: GraphSnapshot) -> bool:
+    """True if some `frob:waive INV006 reason="..."` edge binds to `rel`
+    (dsl.py already refuses a reason-less waive as a MalformedDirective,
+    so every surviving WAIVE edge here carries a reason -- same contract
+    `_waive_edges` documents)."""
+    return any(
+        edge.kind == EdgeKind.WAIVE
+        and edge.target == "INV006"
+        and (
+            edge.origin.rpartition(":")[0] == rel
+            or edge.src == rel
+            or edge.src.startswith(f"{rel}::")
+        )
+        for edge in snapshot.edges
+    )
+
+
+# frob:doc docs/modules/gates.md#invariants
+# frob:ticket T-0408
+def _inv006_src_violations(
+    root: Path, path: Path, snapshot: GraphSnapshot
+) -> tuple[Violation, ...]:
+    """INV006 findings for one source file: an exclusivity claim
+    (`frob.gates.invariants.find_exclusivity_claims`) with no
+    `frob:invariant` edge anchored anywhere in the file."""
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        _log.warning("INV006: could not read %s: %s", path, exc)
+        return ()
+    claims = find_exclusivity_claims(text)
+    if not claims:
+        return ()
+    rel = path.relative_to(root).as_posix()
+    if any(
+        edge.kind == EdgeKind.INVARIANT and edge.origin.rpartition(":")[0] == rel
+        for edge in snapshot.edges
+    ):
+        return ()
+    if _inv006_waived(rel, snapshot):
+        _log.debug("INV006: %s waived by frob:waive INV006", rel)
+        return ()
+    return (
+        Violation(
+            rule="INV006",
+            severity=Severity.WARN,
+            file=rel,
+            line=0,
+            message=(
+                f"INV006: {rel} makes an exclusivity/normative claim "
+                f"({', '.join(sorted(claims))}) with no `frob:invariant "
+                f"INV-###` edge anchored anywhere in the file -- bind an "
+                f"invariant that covers the claim, waive with a reason, "
+                f"or reword to drop the exclusivity language if it isn't "
+                f"actually enforced"
+            ),
+        ),
+    )
+
+
+# frob:doc docs/modules/gates.md#public-api
+# frob:ticket T-0408
+# frob:enforces CHK-GATE-INV006
+def inv006_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """INV006 (advisory): every exclusivity claim in a source file under
+    `INV006_SRC_DIRS` needs a `frob:invariant` edge bound somewhere in
+    that file.
+
+    WARN severity, matching INV003's posture: a source-level claim can
+    still be genuine design intent rather than an enforced behavior, so
+    this surfaces the signal for triage rather than forcing a bind on
+    every hit. This is the coverage-COMPLETENESS half of T-0408 (INV001/
+    INV002 only ever validated invariants that already existed to be
+    validated; nothing previously checked whether ENOUGH of the repo's
+    own prose guarantee claims outside docs/ had one declared at all).
+    """
+    violations: list[Violation] = []
+    for src_dir in INV006_SRC_DIRS:
+        src_root = root / src_dir
+        if not src_root.is_dir():
+            continue
+        for suffix in INV006_SRC_SUFFIXES:
+            for path in iter_files(src_root, suffix=suffix):
+                violations.extend(_inv006_src_violations(root, path, snapshot))
     return tuple(violations)
 
 
@@ -7187,6 +7326,7 @@ def _build_jobs(
             *invariant_gate(st.invariants, st.snapshot, st.tests, st.rule_ids),
             *inv003_gate(st.repo_root, st.invariants),
             *inv004_gate(st.repo_root),
+            *inv006_gate(st.repo_root, st.snapshot),
         ),
         "test": lambda: test_gate(
             st.snapshot, st.systems, st.coverage, st.tests, st.test_policy
@@ -7234,7 +7374,10 @@ def _build_jobs(
         # handled_by:<rule-id> is verified against what this build
         # actually enforces.
         "registry": lambda: registry_gate(
-            st.repo_root, st.queue, _KNOWN_GATE_RULES | st.rule_ids
+            st.repo_root,
+            st.queue,
+            _KNOWN_GATE_RULES | st.rule_ids,
+            snapshot=st.snapshot,
         ),
         # T-0405: takes no repo-scanned state -- reads the live in-process
         # `frob.lang` language-support registry directly.
@@ -7608,6 +7751,7 @@ __all__ = [
     "exclude_hazard_gate",
     "inv003_gate",
     "inv004_gate",
+    "inv006_gate",
     "invariant_gate",
     "coverage_lock_diff",
     "is_baseline_stale",

@@ -46,11 +46,17 @@ def test_is_test_file_false_for_production_module():
     assert not is_test_file("pkg/contest.py")  # 'test' as substring, not a marker
 
 
+# frob:ticket T-0410
 def test_builtin_skip_dirs():
     # frob:tests src/frob/excludes.py::is_skipped_dir
     assert is_skipped_dir("node_modules")
     assert is_skipped_dir(".worktrees")
     assert is_skipped_dir("thing.egg-info")
+    # T-0410 perf audit finding M6: neither had a tree-sitter grammar to
+    # misparse, but every rglob-based stage still walked/stat'd/opened
+    # every entry inside them before this fix.
+    assert is_skipped_dir(".hypothesis")
+    assert is_skipped_dir(".serena")
     assert not is_skipped_dir("src")
 
 

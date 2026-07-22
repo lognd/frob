@@ -82,6 +82,30 @@ like `weaknesses.yaml`'s `cwe_entries`, a `<prefix>_total:`) alongside its
 silent future add/drop without updating the denominator fails `REG005`.
 Files/lists with no declared total are not checked.
 
+## REG010 (gate rule staleness, T-0560)
+
+T-0424 built `check-coverage.yaml` (the reflexive registry: one
+`CHK-GATE-<rule>` entry per rule `known_gate_rule_ids()` reports live) but
+only as a one-time seed -- nothing kept it in sync as new rules landed.
+T-0560 is the CONTINUOUS half: `REG010` (WARN) fires the moment a live
+rule has no corresponding `CHK-GATE-<rule>` entry in `check-coverage.yaml`,
+caught by the very next `frob check` rather than depending on someone
+remembering to re-audit.
+
+A genuinely SCHEDULED daemon was considered for this and rejected as
+dishonest scope: this repo has no always-on process host, and a cron-style
+runner needs its own supervision/alerting this pass does not build. The
+gate above is the honest substitute -- it fires on every single `frob
+check` invocation, which happens far more often than any schedule this
+project could actually operate, so "found before the user notices" is
+satisfied without inventing infrastructure. `frob registry audit
+--sync-gate-rules` (`frob.registry._staleness.sync_gate_rule_entries`) is
+the auto-file mechanism: it appends one `handled_by:<rule>` entry per
+missing rule (self-referentially dispositioned -- "this rule is live" IS
+the verification, not a claim needing later review) and keeps
+`gate_rule_total` in lockstep, so a human or a CI step can clear REG010's
+finding with one command whenever it fires.
+
 ## Honest first-turn-on state
 
 On first turn-on this gate is RED for the ~1950 entries the registry
