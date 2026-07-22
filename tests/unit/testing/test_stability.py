@@ -33,7 +33,12 @@ from frob.testing import (
     quarantined_node_ids,
     record_outcomes,
 )
-from frob.testing._stability import capture_python_outcomes, track_python_stability
+from frob.testing._stability import (
+    capture_python_outcomes,
+    hard_regression_alarms,
+    is_hard_regression,
+    track_python_stability,
+)
 from frob.tickets import (
     Origin,
     TicketKind,
@@ -99,6 +104,23 @@ class TestIsFlaky:
             "b": StabilityEntry(node_id="b", history=("P", "P")),
         }
         assert flaky_node_ids(entries) == frozenset({"a"})
+
+
+class TestHardRegression:
+    def test_past_thresh(self) -> None:
+        # frob:tests src/frob/testing/_stability.py::is_hard_regression
+        entry = StabilityEntry(node_id="x", history=("F", "F", "F"))
+        assert is_hard_regression(entry) is True
+
+    def test_under_thresh(self) -> None:
+        # frob:tests src/frob/testing/_stability.py::is_hard_regression
+        entry = StabilityEntry(node_id="x", history=("F", "F"))
+        assert is_hard_regression(entry) is False
+
+    def test_mixed(self) -> None:
+        # frob:tests src/frob/testing/_stability.py::is_hard_regression
+        entry = StabilityEntry(node_id="x", history=("F", "F", "P"))
+        assert is_hard_regression(entry) is False
 
 
 class TestQuarantine:
@@ -195,6 +217,36 @@ class TestAlarms:
         entries = load_stability(tmp_path)
         assert quarantine_alarms(tmp_path, entries) == ()
 
+    def test_hard_alarm(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_stability.py::hard_regression_alarms
+        ticket = new_ticket(
+            tmp_path,
+            TicketSpec(title="flake", kind=TicketKind.BUG, origin=Origin.AGENT),
+        ).danger_ok
+        quarantine(tmp_path, "tests/t.py::a", ticket_id=ticket.id)
+        record_outcomes(tmp_path, {"tests/t.py::a": False})
+        record_outcomes(tmp_path, {"tests/t.py::a": False})
+        record_outcomes(tmp_path, {"tests/t.py::a": False})
+        entries = load_stability(tmp_path)
+        # regressed to all-fail: no longer flaky, so the expiry alarm
+        # (is_flaky-gated) can never see this -- the hard-regression alarm
+        # must, even while the ticket is still open (T-0636).
+        assert quarantine_alarms(tmp_path, entries) == ()
+        assert hard_regression_alarms(entries) == ("tests/t.py::a",)
+
+    def test_hard_no_alarm_flaky(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_stability.py::hard_regression_alarms
+        ticket = new_ticket(
+            tmp_path,
+            TicketSpec(title="flake", kind=TicketKind.BUG, origin=Origin.AGENT),
+        ).danger_ok
+        quarantine(tmp_path, "tests/t.py::a", ticket_id=ticket.id)
+        record_outcomes(tmp_path, {"tests/t.py::a": False})
+        record_outcomes(tmp_path, {"tests/t.py::a": True})
+        record_outcomes(tmp_path, {"tests/t.py::a": False})
+        entries = load_stability(tmp_path)
+        assert hard_regression_alarms(entries) == ()
+
 
 class TestGate:
     def test_already_ok_stays_ok(self) -> None:
@@ -210,6 +262,19 @@ class TestGate:
         # frob:tests src/frob/testing/_stability.py::evaluate_gate
         entries = {"a": StabilityEntry(node_id="a", quarantine_ticket="T-0001")}
         assert evaluate_gate(False, frozenset({"a", "b"}), entries) is False
+
+    def test_hard_regress_fails(self) -> None:
+        # frob:tests src/frob/testing/_stability.py::evaluate_gate
+        entries = {
+            "a": StabilityEntry(
+                node_id="a",
+                history=("F", "F", "F"),
+                quarantine_ticket="T-0001",
+            )
+        }
+        # quarantined, but now a hard regression (all-fail) -- quarantine
+        # status alone must not promote this back to green (T-0636).
+        assert evaluate_gate(False, frozenset({"a"}), entries) is False
 
 
 class TestCapture:

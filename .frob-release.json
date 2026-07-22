@@ -1032,7 +1032,9 @@
     "src/frob/testing/_stability.py::capture_python_outcomes": "c2765e1b80d3ac219c531164a88f55b4f08e76705c915a67d249ea88754df41a",
     "src/frob/testing/_stability.py::evaluate_gate": "248c8a4b256b84b74a7734c76aa85f0cde3654a8218df1310aaa71e156eaab03",
     "src/frob/testing/_stability.py::flaky_node_ids": "579d44f1d80e0a2b3cd018e90250e7958089da6ff47bd287daa9b2fbb12341a5",
+    "src/frob/testing/_stability.py::hard_regression_alarms": "77f32ef12caee860a6f896692964843caca3e066343c8fa7b4535d112ce7b082",
     "src/frob/testing/_stability.py::is_flaky": "b1b06ebbeccbaa35b4c114dbd240cb1fe683a842336a62e3c8023cf22831afb9",
+    "src/frob/testing/_stability.py::is_hard_regression": "be3007416769e77f40f9b704b50c731627fc0b1635680b12abc1750d6b78d931",
     "src/frob/testing/_stability.py::lift_quarantine": "495b61fa10ddfe113550093dd24309134080635c1409692e92a9982b62198883",
     "src/frob/testing/_stability.py::load_stability": "8001fadb28bdd7833d7fe4f8cd715c85413467d97f4a0425cee14f83211a4ccf",
     "src/frob/testing/_stability.py::quarantine": "63a949c6fad5bd8b1eb38bdad3bc5593056eca74ecf8efe6f742f28ac846d910",
@@ -1230,5 +1232,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.85.0"
+  "version": "0.86.0"
 }

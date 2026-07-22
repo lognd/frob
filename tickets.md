@@ -6988,7 +6988,7 @@ T-0575 landed frob.testing._stability (record_outcomes, evaluate_gate, quarantin
 id: T-0636
 title: 'flake quarantine: hard regression under live quarantine is invisible to both
   gate and alarm'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-22'
@@ -6998,8 +6998,21 @@ parent: T-0575
 scope:
 - src/frob/testing/_stability.py
 - tests/unit/testing/test_stability.py
-scope_changes: []
-evidence: []
+- docs/modules/testing.md
+scope_changes:
+- op: add
+  glob: docs/modules/testing.md
+  reason: ticket's acceptance criteria explicitly requires updating docs/modules/testing.md's
+    semantics section in the same change
+  actor: logan
+  at: '2026-07-22'
+evidence:
+- tests/unit/testing/test_stability.py::TestHardRegression::test_past_thresh
+- tests/unit/testing/test_stability.py::TestHardRegression::test_under_thresh
+- tests/unit/testing/test_stability.py::TestHardRegression::test_mixed
+- tests/unit/testing/test_stability.py::TestAlarms::test_hard_alarm
+- tests/unit/testing/test_stability.py::TestAlarms::test_hard_no_alarm_flaky
+- tests/unit/testing/test_stability.py::TestGate::test_hard_regress_fails
 attachments: []
 acceptance:
 - GIVEN a quarantined test whose last N runs are all failures WHEN quarantine_alarms
@@ -7010,6 +7023,68 @@ component: null
 labels: []
 ```
 T-0575 reviewer MAJOR finding: evaluate_gate promotes on quarantine status alone (never re-checks is_flaky), and quarantine_alarms skips entries where is_flaky is false. A quarantined test that regresses to permanently-failing (all-F history) is by definition no longer flaky, so the gate keeps promoting it green forever AND the alarm never fires -- a silent skip-list, exactly what the ticket's mandate forbids. Fix: alarm (or gate-fail) when a quarantined test's recent history is all-fail beyond a threshold, distinct from the flaky case.
+
+## Done report
+
+The T-0575 reviewer found: evaluate_gate promoted a quarantined test back
+to green purely on quarantine_ticket being set, never re-checking is_flaky,
+and quarantine_alarms only fires while is_flaky is true. A quarantined test
+whose recent history has regressed to all-fail is by definition not flaky
+anymore (is_flaky's own rule excludes all-fail), so it silently fell out of
+both checks: gate-green forever, alarm never fires -- a live quarantine
+masking a permanent regression with no signal anywhere.
+
+Chosen semantics (both surfaces fixed, kept as two distinct signals since
+they call for different responses):
+
+- New `is_hard_regression(entry)`: bounded history has at least 3 recorded
+  runs (one above the flake minimum, so the run right after quarantine
+  can't misfire) and every one is a fail.
+- `evaluate_gate` now excludes any quarantined node id flagged by
+  `is_hard_regression` from the "excused" set before checking
+  `failing_node_ids <= excused` -- a hard-regressed quarantined failure
+  keeps the run red even with `quarantine_ticket` still set.
+- New `hard_regression_alarms(entries)`: pure, no root/ticket lookup,
+  returns every currently-quarantined node id that is_hard_regression flags
+  -- deliberately NOT merged into `quarantine_alarms` (the expiry alarm),
+  since a closed-ticket-still-flaky alarm calls for "re-triage the ticket"
+  while a hard-regression alarm calls for "the fix was never applied at
+  all, revisit the quarantine entirely".
+
+docs/modules/testing.md's Flake quarantine section (semantics + public API
+listing) updated to document is_hard_regression, hard_regression_alarms,
+and evaluate_gate's revised exclusion rule.
+
+Left out of scope, filed as a follow-up (T-draft-d529c75a, minted off
+main so will get a real T-#### id once merged): `frob.testing.__init__`
+does not yet re-export `is_hard_regression`/`hard_regression_alarms`, and
+no CLI path (`frob test`) calls `hard_regression_alarms`/`evaluate_gate`
+automatically yet -- same pre-existing gap `track_python_stability` already
+had, noted in the module's own "known limitation" paragraph.
+
+Also out of scope, left for land: gate:REL (REL001, public API bump)
+fires because this change adds public symbols; per this repo's own commit
+history (chore(release) commits are consistently a separate land-time
+step, not part of an implementer's own commit) the version bump belongs
+to the coordinator at land, not this ticket's declared scope
+(pyproject.toml is not in T-0636's scope).
+
+### Changed
+```
+ docs/modules/testing.md              |   49 +-
+ src/frob/testing/_stability.py       |   85 ++-
+ tests/unit/testing/test_stability.py |   67 +-
+ tickets.md                           | 1401 +++++++++++++++++++++++++++++++++-
+ 4 files changed, 1587 insertions(+), 15 deletions(-)
+```
+
+### Evidence
+- `tests/unit/testing/test_stability.py::TestHardRegression::test_past_thresh` (pytest node id, verified passing when recorded)
+- `tests/unit/testing/test_stability.py::TestHardRegression::test_under_thresh` (pytest node id, verified passing when recorded)
+- `tests/unit/testing/test_stability.py::TestHardRegression::test_mixed` (pytest node id, verified passing when recorded)
+- `tests/unit/testing/test_stability.py::TestAlarms::test_hard_alarm` (pytest node id, verified passing when recorded)
+- `tests/unit/testing/test_stability.py::TestAlarms::test_hard_no_alarm_flaky` (pytest node id, verified passing when recorded)
+- `tests/unit/testing/test_stability.py::TestGate::test_hard_regress_fails` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0637 -->
 ```yaml

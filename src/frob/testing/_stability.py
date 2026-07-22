@@ -54,6 +54,16 @@ HISTORY_WINDOW = 20
 #: is not yet evidence of intermittency, just evidence of a failure.
 _MIN_HISTORY_FOR_FLAKE = 2
 
+#: a quarantined test needs at least this many recorded runs, ALL failing,
+#: before it is treated as a hard regression rather than a flake still
+#: settling right after quarantine (T-0636). One point higher than
+#: `_MIN_HISTORY_FOR_FLAKE` on purpose: quarantining a test resets nothing
+#: in its history, so the run or two immediately following quarantine can
+#: still legitimately read as "all fail so far" without yet being proof the
+#: flake has become a permanent regression -- this threshold is what keeps
+#: that distinction from being a coin flip on the very next run.
+_MIN_HISTORY_FOR_REGRESSION = 3
+
 _PASS = "P"
 _FAIL = "F"
 
@@ -193,6 +203,26 @@ def flaky_node_ids(entries: Mapping[str, StabilityEntry]) -> frozenset[str]:
     """Every node id in `entries` whose history currently reads as flaky
     (`is_flaky`), quarantined or not."""
     return frozenset(node_id for node_id, entry in entries.items() if is_flaky(entry))
+
+
+# frob:tests tests/unit/testing/test_stability.py::TestHardRegression.test_past_thresh
+# frob:tests tests/unit/testing/test_stability.py::TestHardRegression.test_under_thresh
+# frob:tests tests/unit/testing/test_stability.py::TestHardRegression.test_mixed
+# frob:doc docs/modules/testing.md#flake-quarantine-t-0575
+def is_hard_regression(entry: StabilityEntry) -> bool:
+    """The hard-regression rule (T-0636): `entry`'s bounded history has at
+    least `_MIN_HISTORY_FOR_REGRESSION` recorded runs and EVERY one of them
+    is a fail. `is_flaky` deliberately excludes an all-fail history from
+    being a flake ("a real regression, not a flake"), but that exclusion by
+    itself is silent -- nothing separately said a quarantined test in this
+    state needs attention. This is that separate signal: a test can be
+    quarantined for genuine intermittency, then regress to permanently
+    failing, and by definition stop being flaky without the quarantine ever
+    being lifted -- `is_hard_regression` is how callers (the gate,
+    `hard_regression_alarms`) detect that and refuse to keep it green."""
+    if len(entry.history) < _MIN_HISTORY_FOR_REGRESSION:
+        return False
+    return all(mark == _FAIL for mark in entry.history)
 
 
 # frob:tests tests/unit/testing/test_stability.py::TestQuarantine.test_explicit_ticket
@@ -336,7 +366,13 @@ def quarantine_alarms(
     lapse into silent permanent cover. Ticket ids that fail to resolve (a
     typo, a renumbered ticket) are also alarmed -- an unresolvable ticket
     behind a quarantine is exactly the "silent skip-list" this module
-    exists to prevent. Sorted for deterministic reporting."""
+    exists to prevent. Sorted for deterministic reporting. This is the
+    EXPIRY alarm only -- a quarantined test that has regressed to all-fail
+    (no longer flaky by `is_flaky`'s own rule, so it would never trip this
+    alarm) is a DIFFERENT condition surfaced separately by
+    `hard_regression_alarms` (T-0636); the two are not merged into one
+    signal because they call for different responses (re-triage the ticket
+    vs. the fix never landed at all)."""
     alarmed: list[str] = []
     for node_id, entry in entries.items():
         if entry.quarantine_ticket is None:
@@ -351,9 +387,33 @@ def quarantine_alarms(
     return tuple(sorted(alarmed))
 
 
+# frob:tests tests/unit/testing/test_stability.py::TestAlarms.test_hard_alarm
+# frob:tests tests/unit/testing/test_stability.py::TestAlarms.test_hard_no_alarm_flaky
+# frob:doc docs/modules/testing.md#flake-quarantine-t-0575
+def hard_regression_alarms(entries: Mapping[str, StabilityEntry]) -> tuple[str, ...]:
+    """Node ids currently quarantined whose history has regressed to a hard
+    failure (`is_hard_regression`) -- T-0636's fix for the gap
+    `quarantine_alarms` cannot cover: an all-fail history is BY DEFINITION
+    not flaky, so it never enters `quarantine_alarms`'s `is_flaky` filter
+    and would otherwise stay quarantined (and gate-green, see
+    `evaluate_gate`) forever with no alarm at all -- a silent skip-list.
+    Pure and root-independent (unlike `quarantine_alarms`, this needs no
+    ticket-queue lookup: the regression is visible from the history alone).
+    Sorted for deterministic reporting."""
+    alarmed = [
+        node_id
+        for node_id, entry in entries.items()
+        if entry.quarantine_ticket is not None and is_hard_regression(entry)
+    ]
+    # frob:waive PERF004 reason="one sort of the final alarmed list for \
+    # deterministic output, not resorted per loop iteration"
+    return tuple(sorted(alarmed))
+
+
 # frob:tests tests/unit/testing/test_stability.py::TestGate.test_already_ok_stays_ok
 # frob:tests tests/unit/testing/test_stability.py::TestGate.test_all_quarantined_ok
 # frob:tests tests/unit/testing/test_stability.py::TestGate.test_one_bad_stays_failed
+# frob:tests tests/unit/testing/test_stability.py::TestGate.test_hard_regress_fails
 # frob:doc docs/modules/testing.md#public-api
 def evaluate_gate(
     ok: bool, failing_node_ids: frozenset[str], entries: Mapping[str, StabilityEntry]
@@ -361,16 +421,27 @@ def evaluate_gate(
     """Whether a test run's overall pass/fail (`ok`) should stand, once
     quarantine is accounted for: if `ok` is already `True`, unchanged; if
     `False`, it is promoted back to `True` only when EVERY failing node id
-    is currently quarantined (`quarantined_node_ids`) -- a single
-    non-quarantined failure among the losers keeps the run failed. Pure,
-    no IO: callers gather `failing_node_ids` from their own per-test result
-    capture and pass the already-loaded `entries` map in."""
+    is currently quarantined (`quarantined_node_ids`) AND not a hard
+    regression (`is_hard_regression`, T-0636) -- a quarantined test whose
+    history has gone all-fail beyond the threshold is by definition no
+    longer flaky, so quarantine status alone must not promote it back to
+    green: that was the exact silent-skip-list gap this check closes. A
+    single non-quarantined (or hard-regressed) failure among the losers
+    keeps the run failed. Pure, no IO: callers gather `failing_node_ids`
+    from their own per-test result capture and pass the already-loaded
+    `entries` map in."""
     if ok:
         return True
     if not failing_node_ids:
         return ok
     quarantined = quarantined_node_ids(entries)
-    return failing_node_ids <= quarantined
+    hard_regressed = frozenset(
+        node_id
+        for node_id in quarantined
+        if node_id in entries and is_hard_regression(entries[node_id])
+    )
+    excused = quarantined - hard_regressed
+    return failing_node_ids <= excused
 
 
 def _parse_junit_outcomes(
@@ -463,7 +534,9 @@ __all__ = [
     "capture_python_outcomes",
     "evaluate_gate",
     "flaky_node_ids",
+    "hard_regression_alarms",
     "is_flaky",
+    "is_hard_regression",
     "lift_quarantine",
     "load_stability",
     "quarantine",

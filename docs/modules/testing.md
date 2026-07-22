@@ -414,6 +414,8 @@ ticket id -- never a silent skip-list.
 <!-- frob:describes src/frob/testing/_stability.py::quarantine -->
 <!-- frob:describes src/frob/testing/_stability.py::lift_quarantine -->
 <!-- frob:describes src/frob/testing/_stability.py::quarantine_alarms -->
+<!-- frob:describes src/frob/testing/_stability.py::is_hard_regression -->
+<!-- frob:describes src/frob/testing/_stability.py::hard_regression_alarms -->
 <!-- frob:describes src/frob/testing/_stability.py::evaluate_gate -->
 <!-- frob:describes src/frob/testing/_stability.py::capture_python_outcomes -->
 <!-- frob:describes src/frob/testing/_stability.py::track_python_stability -->
@@ -457,12 +459,31 @@ def quarantine_alarms(root: Path, entries: Mapping[str, StabilityEntry]
     # EXPIRY ALARM: node ids whose quarantine ticket has closed (DONE or
     # DROPPED) -- or no longer resolves at all -- while the test is STILL
     # flaky. The flake was never actually fixed; a quarantine must not
-    # silently outlive its own ticket's closure.
+    # silently outlive its own ticket's closure. Does NOT cover a
+    # regressed-to-all-fail quarantine (see is_hard_regression below) --
+    # that test is by definition no longer flaky, so it can never trip this
+    # alarm's is_flaky filter.
+def is_hard_regression(entry: StabilityEntry) -> bool
+    # HARD-REGRESSION RULE (T-0636): history has at least 3 recorded runs
+    # and EVERY one is a fail. Distinct from is_flaky's all-fail exclusion:
+    # is_flaky says an all-fail history is "not flaky", but nothing said
+    # what a currently-QUARANTINED test in that state means -- this is that
+    # signal, one run higher than the flake minimum so the run right after
+    # quarantine doesn't misfire.
+def hard_regression_alarms(entries: Mapping[str, StabilityEntry]
+                           ) -> tuple[str, ...]
+    # HARD-REGRESSION ALARM: node ids currently quarantined whose history
+    # has regressed to is_hard_regression -- the alarm quarantine_alarms
+    # structurally cannot raise (see above). Pure, no root/ticket lookup
+    # needed: the regression is visible from history alone.
 def evaluate_gate(ok: bool, failing_node_ids: frozenset[str],
                   entries: Mapping[str, StabilityEntry]) -> bool
     # Pure. If ok already True, unchanged. If False, promoted back to True
-    # only when EVERY failing node id is currently quarantined -- one
-    # non-quarantined failure keeps the run failed.
+    # only when EVERY failing node id is currently quarantined AND not a
+    # hard regression (is_hard_regression) -- a quarantined test that has
+    # regressed to all-fail no longer gets promoted back to green just
+    # because a quarantine_ticket is still set (T-0636). One
+    # non-quarantined or hard-regressed failure keeps the run failed.
 def capture_python_outcomes(root: Path, node_ids: tuple[str, ...], *,
                             cwd: str = ".") -> Result[dict[str, bool], FlakeError]
     # Runs node_ids directly via `uv run pytest --junit-xml`, bypassing any
@@ -505,6 +526,23 @@ regression, and must stay a hard gate failure, not quarantine-eligible.
   closed (or gone unresolvable) while the test is still flaky -- the
   signal that a quarantine ticket was closed without actually fixing the
   flake.
+- *Hard-regression/alarm* (T-0636): a quarantined test's history can
+  regress to all-fail -- by `is_flaky`'s own rule that means it has
+  STOPPED being flaky, so it silently falls out of `quarantine_alarms`'s
+  filter and, before this fix, `evaluate_gate` kept promoting it to green
+  on quarantine status alone forever: a live quarantine masking a genuine,
+  permanent regression with neither gate failure nor alarm. Two separate
+  changes close this:
+  - `evaluate_gate` now excludes any quarantined node id that
+    `is_hard_regression` flags from the "excused" set, so a hard-regressed
+    quarantined test keeps the gate red even though `quarantine_ticket` is
+    still set.
+  - `hard_regression_alarms` is a new, separate alarm (deliberately not
+    merged into `quarantine_alarms`, since the two call for different
+    responses -- re-triage a ticket that closed too early, vs. a fix that
+    was never applied at all) that flags any currently-quarantined node id
+    whose history is now `is_hard_regression`, independent of the ticket's
+    own open/closed state.
 
 **Known limitation** (T-0575 cut, filed as a follow-up): `capture_python_outcomes`
 zips `node_ids` against a junit-xml report's `<testcase>` elements by run
@@ -514,7 +552,10 @@ codebase's `path::Class::method` symref convention) -- correct as long as
 pytest preserves argv order in its junit output, which it does today.
 Wiring `frob test`'s CLI (`src/frob/app/test_runner.py`, out of this
 ticket's scope) to call `track_python_stability`/`evaluate_gate`
-automatically on every run is left to a follow-up ticket.
+automatically on every run is left to a follow-up ticket; the same follow-up
+also needs to surface `hard_regression_alarms` (T-0636) in that reporting
+path and re-export `is_hard_regression`/`hard_regression_alarms` from
+`frob.testing.__init__`, both currently out of this module's own scope.
 
 ## Git worktrees
 
