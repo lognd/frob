@@ -10,6 +10,7 @@ TERM is not "dumb". JSON output paths must never call paint at all --
 machine output stays byte-stable regardless of environment.
 """
 
+# frob:invariant INV-037
 from __future__ import annotations
 
 import os

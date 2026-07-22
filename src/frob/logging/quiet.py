@@ -27,6 +27,7 @@ fix keeps the existing process-wide-mute semantics that every caller (and
 defense in depth) already assumes.
 """
 
+# frob:invariant INV-038
 from __future__ import annotations
 
 import contextlib

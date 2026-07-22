@@ -4,8 +4,11 @@ element vocabulary, and the `Renderer` facade (T-0448)."""
 from __future__ import annotations
 
 import io
+import re
 
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 
 from frob.render import Renderer, RenderError, resolve_color
 from frob.render._elements import (
@@ -193,6 +196,47 @@ class TestElements:
         result = ticket_id_label("not-a-ticket", color=False)
         assert result.is_err
         assert result.danger_err is RenderError.InvalidTicketId
+
+
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+
+
+class TestElementsPlainShapeInvariant:
+    """INV-040: color only paints substrings of an element's plain shape --
+    it never adds or removes structure. Property-checked across a range of
+    printable inputs by stripping ANSI escapes from the color-mode output
+    and asserting it equals the plain-mode output byte-for-byte."""
+
+    # frob:tests src/frob/render/_elements.py::heading
+    # frob:tests src/frob/render/_elements.py::subhead
+    # frob:tests src/frob/render/_elements.py::kv_row
+    # frob:invariant INV-040
+    @given(st.text(min_size=0, max_size=40))
+    def test_heading_subhead_shape_stable_under_color(self, text: str) -> None:
+        assert _ANSI_RE.sub("", heading(text, color=True)) == heading(
+            text, color=False
+        )
+        assert _ANSI_RE.sub("", subhead(text, color=True)) == subhead(
+            text, color=False
+        )
+
+    # frob:tests src/frob/render/_elements.py::kv_row
+    # frob:invariant INV-040
+    @given(st.text(min_size=0, max_size=20), st.text(min_size=0, max_size=20))
+    def test_kv_row_shape_stable_under_color(self, key: str, value: str) -> None:
+        assert _ANSI_RE.sub("", kv_row(key, value, color=True)) == kv_row(
+            key, value, color=False
+        )
+
+    # frob:tests src/frob/render/_elements.py::count_summary
+    # frob:invariant INV-040
+    @given(st.dictionaries(st.text(min_size=1, max_size=8), st.integers(0, 999)))
+    def test_count_summary_shape_stable_under_color(
+        self, counts: dict[str, int]
+    ) -> None:
+        assert _ANSI_RE.sub("", count_summary(counts, color=True)) == count_summary(
+            counts, color=False
+        )
 
 
 class TestPalette:
