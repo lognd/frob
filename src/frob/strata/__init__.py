@@ -104,14 +104,6 @@ from frob.strata._contention import (
     check_resource_contention,
 )
 from frob.strata._crash import CrashContractReport, evaluate_crash_contracts
-from frob.strata._reliability import (
-    REL_MISSING_TIMEOUT,
-    REL_UNPROVEN_TIMEOUT,
-    RELIABILITY_RULES,
-    ReliabilityReport,
-    ReliabilityViolation,
-    check_reliability_timeouts,
-)
 from frob.strata._cve_fingerprint import (
     CVE_FINGERPRINT_VIEWS,
     CVE_FINGERPRINTS,
@@ -251,6 +243,14 @@ from frob.strata._pii import (
 )
 from frob.strata._plan import MARKER_PREFIX, PlannedTicket, PlanResult, plan_obligations
 from frob.strata._policy import CompiledPolicies, CompiledPolicy, compile_policies
+from frob.strata._reliability import (
+    REL_MISSING_TIMEOUT,
+    REL_UNPROVEN_TIMEOUT,
+    RELIABILITY_RULES,
+    ReliabilityReport,
+    ReliabilityViolation,
+    check_reliability_timeouts,
+)
 from frob.strata._report import render_report, summarize
 from frob.strata._scenarios import (
     ScenarioResult,

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from frob.strata import KernelModel, Module, Node, elaborate, parse_module
+from frob.strata import Flow, KernelModel, Module, Node, elaborate, parse_module
 from frob.strata._reliability import (
     REL_MISSING_TIMEOUT,
     REL_UNPROVEN_TIMEOUT,
@@ -62,7 +62,9 @@ class TestMissingTimeout:
         result = check_reliability_timeouts(model, tmp_path)
         assert result.is_ok
         report = result.danger_ok
-        kept = {v.sub_target for v in report.violations if v.rule == REL_MISSING_TIMEOUT}
+        kept = {
+            v.sub_target for v in report.violations if v.rule == REL_MISSING_TIMEOUT
+        }
         waived = {v.sub_target for v in report.waived if v.rule == REL_MISSING_TIMEOUT}
         assert kept == {"f_other"}
         assert waived == {"f_missing"}
@@ -82,14 +84,7 @@ class TestUnprovenTimeout:
                 Node(id="caller", trust="trusted", attrs=("code=src/widget/**",)),
                 Node(id="worker", trust="trusted"),
             ),
-            flows=(
-                {
-                    "id": "f1",
-                    "src": "caller",
-                    "dst": "worker",
-                    "attrs": ("timeout",),
-                },
-            ),
+            flows=(Flow(id="f1", src="caller", dst="worker", attrs=("timeout",)),),
         )
         result = check_reliability_timeouts(model, tmp_path)
         assert result.is_ok
@@ -111,14 +106,7 @@ class TestUnprovenTimeout:
                 Node(id="caller", trust="trusted", attrs=("code=src/widget/**",)),
                 Node(id="worker", trust="trusted"),
             ),
-            flows=(
-                {
-                    "id": "f1",
-                    "src": "caller",
-                    "dst": "worker",
-                    "attrs": ("timeout",),
-                },
-            ),
+            flows=(Flow(id="f1", src="caller", dst="worker", attrs=("timeout",)),),
         )
         result = check_reliability_timeouts(model, tmp_path)
         assert result.is_ok
@@ -137,14 +125,7 @@ class TestUnprovenTimeout:
                 Node(id="caller", trust="trusted"),
                 Node(id="worker", trust="trusted"),
             ),
-            flows=(
-                {
-                    "id": "f1",
-                    "src": "caller",
-                    "dst": "worker",
-                    "attrs": ("timeout",),
-                },
-            ),
+            flows=(Flow(id="f1", src="caller", dst="worker", attrs=("timeout",)),),
         )
         result = check_reliability_timeouts(model, tmp_path)
         assert result.is_ok

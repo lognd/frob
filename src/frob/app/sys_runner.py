@@ -670,8 +670,7 @@ def _log_reliability_proved(report: ReliabilityReport) -> None:
     color = _stdout_color()
     if report.waived:
         _log.info(
-            "sys audit: reliability %s (%d waived) -- zero UNWAIVED "
-            "REL2xx gaps",
+            "sys audit: reliability %s (%d waived) -- zero UNWAIVED REL2xx gaps",
             style_ok("PROVED", color),
             len(report.waived),
         )

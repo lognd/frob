@@ -53,7 +53,6 @@ from ._compliance import (
     evaluate_compliance,
 )
 from ._contention import RESOURCE_CONTENTION_RULES
-from ._reliability import RELIABILITY_RULES
 from ._cve_fingerprint import (
     CVE_FINGERPRINTS,
     FingerprintViolation,
@@ -65,6 +64,7 @@ from ._host_isolation import HostIsolationViolation, evaluate_host_isolation_wai
 from ._lint import LintViolation, evaluate_lint
 from ._models import KernelModel, Verdict
 from ._pii import PiiViolation, evaluate_pii
+from ._reliability import RELIABILITY_RULES
 from ._scenarios import (
     ScenarioResult,
     build_compromised_user_scenario,

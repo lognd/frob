@@ -89,7 +89,9 @@ REL_UNPROVEN_TIMEOUT = "REL201"
 #: docstring: waiver staleness must be judged only against the rule ids
 #: this caller actually owns, `_waive.py`'s `in_scope` discipline).
 # frob:doc docs/strata/reliability.md#rel2xx-timeout-obligation-t-0640
-RELIABILITY_RULES: frozenset[str] = frozenset({REL_MISSING_TIMEOUT, REL_UNPROVEN_TIMEOUT})
+RELIABILITY_RULES: frozenset[str] = frozenset(
+    {REL_MISSING_TIMEOUT, REL_UNPROVEN_TIMEOUT}
+)
 
 #: Flow attr declaring a caller-side timeout obligation discharged
 #: (module docstring: presence-only, no magnitude -- the grammar-data
@@ -266,7 +268,9 @@ def _unproven_timeout_violations(
     return violations
 
 
-def _apply_reliability_waivers(model: KernelModel, violations: list[ReliabilityViolation]):  # noqa: ANN201, E501
+def _apply_reliability_waivers(
+    model: KernelModel, violations: list[ReliabilityViolation]
+):  # noqa: ANN201, E501
     """Apply every node's `waive` clause to `violations` (T-0174), exactly
     `_contention.py::_apply_contention_waivers`'s pattern reused for the
     REL2xx family: `sub_target_of` returns `ReliabilityViolation.
@@ -284,7 +288,7 @@ def _apply_reliability_waivers(model: KernelModel, violations: list[ReliabilityV
 
 # frob:doc docs/strata/reliability.md#rel2xx-timeout-obligation-t-0640
 # frob:ticket T-0640
-# frob:tests tests/unit/strata/test_reliability.py::TestMissingTimeout.test_flow_without_timeout_fires
+# frob:tests tests/unit/strata/test_reliability.py::TestMissingTimeout.test_flow_without_timeout_fires  # noqa: E501
 def check_reliability_timeouts(
     model: KernelModel, root: Path
 ) -> Result[ReliabilityReport, StrataError]:
