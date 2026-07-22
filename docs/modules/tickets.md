@@ -148,6 +148,13 @@ def transition(root: Path, ticket_id: str, to: TicketState, *,
     # skips the check.
 def record_failure(root: Path, ticket_id: str, entry: FailureEntry) -> Result[Ticket, TicketError]
     # Appends to the failure log so no future session retries a dead end.
+def drop_ticket(root: Path, ticket_id: str, reason: str, *,
+                 absorbed_by: str | None = None) -> Result[Ticket, TicketError]
+    # T-0579: appends a dated line under '## Drop reason' (same append-a-
+    # section shape as record_failure's '## Failure log'), then transitions
+    # to DROPPED so a held lease releases the normal way. Err(
+    # DropReasonMissing) if `reason` is blank; `absorbed_by` is an
+    # unvalidated cross-reference note, not a blocked_by-style edge.
 def attach(root: Path, ticket_id: str, source: AttachmentSource,
            caption: str) -> Result[Attachment, AttachError]
     # source is a file path or clipboard; stores under tickets/attachments/.
@@ -601,6 +608,19 @@ queued -> planned -> in-progress -> done
 
 Any other transition is `Err(InvalidTransition)`. `done` and `dropped` are
 terminal. Cutting scope is `dropped` with a reason -- recorded, not deleted.
+
+`frob ticket drop <id> --reason TEXT [--absorbed-by T-####]` (T-0579) is the
+first-class CLI for this transition, replacing the pre-T-0579 workflow of
+hand-editing `state: dropped` directly into the ledger (which left leases
+dangling and recorded no reason at all). It appends a dated line
+(`- <date>: <reason>` with an optional `(absorbed by T-####)` suffix) under
+a `## Drop reason` body heading -- same append-a-section shape as
+`record_failure`'s `## Failure log` -- then runs the ordinary DROPPED
+transition, so a held worktree lease releases exactly the way any other
+terminal transition releases one. `Err(DropReasonMissing)` if `--reason` is
+blank: a drop with no reason is indistinguishable from a silent discard
+later. Works for `queued`/`planned`/`in-progress`/`blocked` tickets (every
+state DROPPED is reachable from) and for drafts the same as any other id.
 
 The `in-progress -> queued` yield is `frob ticket requeue <id> [--reason
 TEXT]` (T-0472): the honest CLI path for a parked or mis-started ticket,
@@ -1272,7 +1292,7 @@ overwrite an existing hook file without `force=True`.
   `tickets_gate` (TICK001/TICK002, T-0162) checks the id-collision invariant
   -- see "Decision record: T-0162" above.
 - CLI: `frob ticket new|list|show|doable|plan|start|requeue|sweep|migrate|
-  renumber|attach|block|close|fail|evidence|done-report|archive`. `start`
+  renumber|attach|block|close|fail|drop|evidence|done-report|archive`. `start`
   auto-plans a queued ticket (both legal steps); `requeue` is the reverse
   in-progress -> queued yield (T-0472); `sweep` re-records the pre-work
   sweep after a scope change; `migrate` collapses a legacy dir into the ledger;
@@ -1285,7 +1305,10 @@ overwrite an existing hook file without `force=True`.
   validates each id against collected
   tests up front and appends to the structured evidence list (rejecting an
   unresolvable id with remedy text, instead of a typo silently surfacing
-  later as COV003 after close); `archive` moves every done/dropped ticket
+  later as COV003 after close); `drop <id> --reason TEXT [--absorbed-by
+  T-####]` (T-0579) transitions to DROPPED with a dated reason line under
+  `## Drop reason`, replacing the pre-T-0579 hand-edit workflow (see "State
+  machine" above); `archive` moves every done/dropped ticket
   from the active ledger into `tickets-archive.md`, verbatim.
 - `new --evidence <id>...` and `close --evidence <id>...` (T-0106) route
   through the same `add_evidence` validation as the standalone `evidence`

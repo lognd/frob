@@ -710,6 +710,7 @@ class AttachmentSource(BaseModel):
 
 
 # frob:doc docs/modules/tickets.md#error-types
+# frob:ticket T-0579
 class TicketError(ErrorSet):
     """Fallible outcomes of frob.tickets queue/mutation operations."""
 
@@ -747,6 +748,9 @@ class TicketError(ErrorSet):
     WorktreeLeaseViolation = (
         "FROB_WORKTREE is leased to a different worktree than this command's cwd"
     )
+    # T-0579: `frob ticket drop <id> --reason TEXT` failure mode -- a drop
+    # with no reason is indistinguishable from a silent discard later.
+    DropReasonMissing = "drop requires a non-empty --reason"
 
 
 # frob:ticket T-0176

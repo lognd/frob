@@ -109,6 +109,10 @@ _OPEN_STATES = frozenset(
 )
 
 _FAILURE_LOG_HEADING = "## Failure log"
+# frob:ticket T-0579
+# `frob ticket drop` writes its dated reason line under this heading instead
+# of the hand-edited freeform prose the pre-T-0579 workflow used.
+_DROP_REASON_HEADING = "## Drop reason"
 
 
 # frob:doc docs/modules/tickets.md#public-api
@@ -2494,6 +2498,54 @@ def record_failure(
     return Ok(updated)
 
 
+# frob:ticket T-0579
+# frob:doc docs/modules/tickets.md#public-api
+def drop_ticket(
+    root: Path, ticket_id: str, reason: str, *, absorbed_by: str | None = None
+) -> Result[Ticket, TicketError]:
+    """First-class `frob ticket drop` (T-0579): append a dated reason line
+    under '## Drop reason' (creating the section if absent, same pattern as
+    `record_failure`'s '## Failure log'), then transition to DROPPED through
+    the normal state machine so a held worktree lease is released the same
+    way any other terminal transition releases one
+    (`_sync_cross_worktree_lease`) -- this replaces the pre-T-0579 workflow
+    of hand-editing `state: dropped` directly, which left leases dangling
+    and never recorded why. `Err(DropReasonMissing)` if `reason` is blank:
+    a drop with no reason is indistinguishable from a silent discard later.
+    `absorbed_by` (a ticket id) is appended parenthetically to the line when
+    given, but is NOT validated against the queue -- it is a cross-reference
+    note, not a `blocked_by`-style edge."""
+    if not reason.strip():
+        return Err(TicketError.DropReasonMissing)
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
+    loaded = _load_one(root, ticket_id)
+    if loaded.is_err:
+        return Err(loaded.danger_err)
+    ticket = loaded.danger_ok
+
+    line = f"- {date.today().isoformat()}: {reason.strip()}"
+    if absorbed_by:
+        line += f" (absorbed by {absorbed_by})"
+    new_body = _append_to_section(ticket.body, _DROP_REASON_HEADING, line)
+    updated = ticket.model_copy(update={"body": new_body})
+    write_result = write_ticket(root, updated)
+    if write_result.is_err:
+        return Err(write_result.danger_err)
+
+    transitioned = transition(root, ticket_id, TicketState.DROPPED)
+    if transitioned.is_err:
+        _log.error(
+            "tickets: %s drop reason recorded but transition failed: %s",
+            ticket_id,
+            transitioned.danger_err,
+        )
+        return Err(transitioned.danger_err)
+    _log.info("tickets: %s dropped: %s", ticket_id, reason.strip())
+    return transitioned
+
+
 def _append_to_section(body: str, heading: str, line: str) -> str:
     """Append `line` under `heading` in body; create the section at the end if gone."""
     lines = body.splitlines()
@@ -2627,6 +2679,7 @@ __all__ = [
     "compute_changed_lines",
     "doable",
     "doable_blocked",
+    "drop_ticket",
     "is_cmd_evidence",
     "land",
     "large_glob_warnings",

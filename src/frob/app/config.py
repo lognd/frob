@@ -235,6 +235,9 @@ class AppConfig(BaseModel):
     # frob:ticket T-0472
     # `frob ticket requeue <id> [--reason TEXT]` -- optional, logged only.
     ticket_reason: str | None = None
+    # frob:ticket T-0579
+    # `frob ticket drop <id> --reason TEXT [--absorbed-by T-####]`.
+    ticket_absorbed_by: str | None = None
     ticket_caption: str = ""
     ticket_attach_path: Path | None = None
     ticket_json: bool = False
@@ -443,6 +446,7 @@ class AppConfig(BaseModel):
             "ticket_by",
             "ticket_summary",
             "ticket_reason",
+            "ticket_absorbed_by",
             "ticket_caption",
             "ticket_old_id",
             "ticket_new_id",

@@ -17,6 +17,18 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.73.0] - unreleased
+
+T-0579: `frob ticket drop <id> --reason TEXT [--absorbed-by T-####]` is
+now first-class CLI, replacing the pre-T-0579 workflow of hand-editing
+`state: dropped` directly into `tickets.md` (which left leases dangling
+and recorded no reason at all). `frob.tickets.drop_ticket` appends a
+dated line under a `## Drop reason` body heading (same append-a-section
+shape as `record_failure`'s `## Failure log`), then transitions to
+DROPPED through the ordinary state machine so a held worktree lease
+releases the normal way. New `TicketError.DropReasonMissing` -- a drop
+with no reason is indistinguishable from a silent discard later.
+
 ## [0.72.0] - unreleased (merge-resolution bump)
 
 Version bump to resolve a merge conflict between this branch's own

@@ -1,6 +1,7 @@
 """CLI wiring for `frob ticket new|list|show|doable|board|epic|plan|start|
-requeue|sweep|reconcile|land|merge-driver|attach|block|close|fail|evidence|
-done-report|scope|priority|component|label|archive` (docs/modules/tickets.md)."""
+requeue|sweep|reconcile|land|merge-driver|attach|block|close|fail|drop|
+evidence|done-report|scope|priority|component|label|archive`
+(docs/modules/tickets.md)."""
 
 # frob:waive TEST005 reason="module line coverage 22.7%, debt T-0160"
 # frob:waive SCOPE001 reason="T-0323 scope omitted this file, filed T-draft-bc39c17f"
@@ -61,6 +62,7 @@ def _ticket_dispatch_table() -> dict:
         "block": _block,
         "close": _close,
         "fail": _fail,
+        "drop": _drop,
         "evidence": _evidence,
         "done-report": _done_report,
         "scope": _scope,
@@ -84,7 +86,7 @@ def run(cfg: AppConfig) -> None:
         _log.error(
             "usage: frob ticket <new|list|show|doable|board|epic|plan|start|"
             "requeue|sweep|reconcile|land|merge-driver|attach|block|close|"
-            "fail|evidence|done-report|scope|priority|component|label|"
+            "fail|drop|evidence|done-report|scope|priority|component|label|"
             "archive> ..."
         )
         sys.exit(1)
@@ -1374,6 +1376,29 @@ def _fail(root: Path, cfg: AppConfig) -> None:
         _log.error("fail failed: %s", result.danger_err)
         sys.exit(1)
     _log.info("%s: recorded failure attempt %d", cfg.ticket_id, attempt)
+
+
+# frob:ticket T-0579
+def _drop(root: Path, cfg: AppConfig) -> None:
+    """CLI wiring for `frob ticket drop <id> --reason TEXT [--absorbed-by
+    T-####]` (T-0579): the first-class replacement for hand-editing
+    `state: dropped` directly. Delegates entirely to `frob.tickets.
+    drop_ticket` for the reason-line + transition + lease-release
+    mechanics; this layer only validates required args and reports the
+    Result."""
+    from frob.tickets import drop_ticket
+
+    if cfg.ticket_id is None or not cfg.ticket_reason:
+        _log.error("frob ticket drop requires <id> and --reason")
+        sys.exit(1)
+
+    result = drop_ticket(
+        root, cfg.ticket_id, cfg.ticket_reason, absorbed_by=cfg.ticket_absorbed_by
+    )
+    if result.is_err:
+        _log.error("drop failed: %s", result.danger_err)
+        sys.exit(1)
+    _log.info("%s dropped", cfg.ticket_id)
 
 
 # frob:ticket T-0094

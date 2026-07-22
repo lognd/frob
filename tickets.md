@@ -3439,7 +3439,7 @@ Observed misuse: frob ticket list --status (correct: --state), done-report --bod
 ```yaml
 id: T-0579
 title: 'frob ticket drop: first-class CLI for dropped-with-reason (today it is a hand-edit)'
-state: queued
+state: in-progress
 kind: ux
 origin: agent
 created: '2026-07-21'
@@ -3448,7 +3448,16 @@ blocked_by: []
 parent: null
 scope: []
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_tickets.py::TestDropTicket::test_drops_queued_ticket_with_reason
+- tests/test_tickets.py::TestDropTicket::test_records_absorbed_by_reference
+- tests/test_tickets.py::TestDropTicket::test_blank_reason_is_err
+- tests/test_tickets.py::TestDropTicket::test_in_progress_ticket_drops_and_releases_lease
+- tests/test_tickets.py::TestDropTicket::test_unknown_ticket_not_found
+- tests/test_tickets.py::TestDropTicket::test_appends_preserving_existing_drop_reason_section
+- tests/test_tickets.py::TestDropCli::test_cli_drops_with_reason
+- tests/test_tickets.py::TestDropCli::test_cli_requires_reason
+- tests/test_tickets.py::TestDropCli::test_cli_requires_id
 attachments: []
 acceptance: []
 threat: null
@@ -3457,6 +3466,37 @@ labels: []
 ```
 Dropping a ticket (absorbed elsewhere, obsolete, subsumed) required hand-editing state: dropped ~6 times this session because close demands evidence and no drop command exists. Add frob ticket drop <id> --reason TEXT [--absorbed-by T-####] writing the dated reason line, releasing leases, TICK-gate clean. Scope: src/frob/tickets/, app/ticket_runner.py, docs.
 
+## Done report
+
+Added `frob ticket drop <id> --reason TEXT [--absorbed-by T-####]` as a
+first-class CLI transition to DROPPED, replacing the hand-edit workflow
+(`state: dropped` typed directly into tickets.md) that left worktree leases
+dangling and recorded no reason. New public `frob.tickets.drop_ticket`
+appends a dated line under a `## Drop reason` body heading -- same
+append-a-section shape as `record_failure`'s `## Failure log` -- then runs
+the ordinary DROPPED transition through `frob.tickets.transition`, so a
+held lease releases exactly the way any other terminal transition releases
+one. New `TicketError.DropReasonMissing` rejects a blank `--reason`.
+`--absorbed-by` is an unvalidated cross-reference note appended
+parenthetically to the line. Wired into `__main__.py`'s ticket subparser
+and `ticket_runner.py`'s dispatch table/usage strings; docs/modules/
+tickets.md's state-machine section and public-API/CLI-integration lists
+updated. Public API grew (new function + new error variant) so REL001
+required a version bump to 0.73.0 plus a CHANGELOG.md entry, both done.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_tickets.py::TestDropTicket::test_drops_queued_ticket_with_reason` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestDropTicket::test_records_absorbed_by_reference` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestDropTicket::test_blank_reason_is_err` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestDropTicket::test_in_progress_ticket_drops_and_releases_lease` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestDropTicket::test_unknown_ticket_not_found` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestDropTicket::test_appends_preserving_existing_drop_reason_section` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestDropCli::test_cli_drops_with_reason` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestDropCli::test_cli_requires_reason` (pytest node id, verified passing when recorded)
+- `tests/test_tickets.py::TestDropCli::test_cli_requires_id` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0580 -->
 ```yaml
 id: T-0580

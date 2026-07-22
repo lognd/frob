@@ -927,8 +927,10 @@ def _add_ticket_close_parser(ticket_sub):
     return ticket_close_p
 
 
+# frob:ticket T-0579
 def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
-    """Register `fail`/`evidence`/`archive`: the remaining closeout subcommands."""
+    """Register `fail`/`drop`/`evidence`/`archive`: the remaining closeout
+    subcommands."""
     ticket_fail_p = ticket_sub.add_parser(
         "fail", help="record a failed attempt in the failure log"
     )
@@ -952,10 +954,27 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         "only, code kinds still require pytest node ids",
     )
 
+    ticket_drop_p = ticket_sub.add_parser(
+        "drop",
+        help="transition to dropped with a dated --reason (T-0579): "
+        "absorbed elsewhere, obsolete, or subsumed work",
+    )
+    ticket_drop_p.add_argument("ticket_id", metavar="id")
+    ticket_drop_p.add_argument(
+        "--reason", dest="ticket_reason", required=True, metavar="TEXT"
+    )
+    ticket_drop_p.add_argument(
+        "--absorbed-by",
+        dest="ticket_absorbed_by",
+        default=None,
+        metavar="T-####",
+        help="cross-reference the ticket this work was folded into",
+    )
+
     ticket_archive_p = ticket_sub.add_parser(
         "archive", help="move done/dropped tickets into tickets-archive.md"
     )
-    return [ticket_fail_p, ticket_evidence_p, ticket_archive_p]
+    return [ticket_fail_p, ticket_evidence_p, ticket_drop_p, ticket_archive_p]
 
 
 # frob:ticket T-0458
