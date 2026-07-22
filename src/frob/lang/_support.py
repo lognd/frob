@@ -284,7 +284,7 @@ def _arch_status(language: str) -> FacetStatus:
 
 def _docblock_status(language: str) -> FacetStatus:
     """`.strata` has no fenced-code-block doc convention today; c/cpp have
-    no DOC004 bucket (a real gap, tracked as T-draft-19b78a87)."""
+    no DOC004 bucket (a real gap, tracked as T-draft-78a0f919)."""
     if language == "strata":
         return _not_applicable(
             "no established ```strata fenced-code-block doc convention "
@@ -294,7 +294,7 @@ def _docblock_status(language: str) -> FacetStatus:
         return _implemented("frob.gates._docblocks fenced-language bucket entry")
     return _known_gap(
         f"{language} has no DOC004 fenced-language bucket -- tracked by "
-        f"T-draft-19b78a87"
+        f"T-draft-78a0f919"
     )
 
 

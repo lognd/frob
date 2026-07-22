@@ -1,9 +1,34 @@
-"""Tests for frob.gates._lang_conformance -- LANG001 (T-0405)."""
+"""Tests for frob.gates._lang_conformance -- LANG001-LANG003 (T-0405/T-0406)."""
 
 from __future__ import annotations
 
-from frob.gates._lang_conformance import lang_conformance_gate
+from datetime import date
+from pathlib import Path
+
+from frob.gates._lang_conformance import (
+    lang_conformance_gate,
+    project_lang_conformance_gate,
+)
 from frob.gates._models import Severity
+from frob.tickets._models import Origin, Ticket, TicketKind, TicketQueue, TicketState
+
+
+def _queue(*tickets: Ticket) -> TicketQueue:
+    """A minimal `TicketQueue` fixture -- same helper shape as
+    `tests/test_registry_exhaustiveness.py`."""
+    return TicketQueue(tickets={t.id: t for t in tickets})
+
+
+def _ticket(ticket_id: str, state: TicketState) -> Ticket:
+    """A minimal fixture `Ticket` at a given state."""
+    return Ticket(
+        id=ticket_id,
+        title="fixture ticket",
+        state=state,
+        kind=TicketKind.FEATURE,
+        origin=Origin.HUMAN,
+        created=date(2026, 1, 1),
+    )
 
 
 # frob:ticket T-0405
@@ -35,3 +60,51 @@ class TestLangConformanceGate:
         assert all(v.rule == "LANG001" for v in violations)
         assert all(v.severity is Severity.ERROR for v in violations)
         assert any("kotlin" in v.message for v in violations)
+
+
+# frob:ticket T-0406
+class TestProjectLangConformanceGate:
+    """LANG002/LANG003 over a synthetic downstream repo tree (T-0406)."""
+
+    # frob:ticket T-0406
+    def test_unregistered_language_file_fails(self, tmp_path: Path) -> None:
+        """A Kotlin file in a downstream repo -- a language frob has NO
+        grammar registration for at all -- fails LANG002 by name."""
+        (tmp_path / "Main.kt").write_text("fun main() {}\n", encoding="utf-8")
+        violations = project_lang_conformance_gate(tmp_path, _queue())
+        lang002 = [v for v in violations if v.rule == "LANG002"]
+        assert len(lang002) == 1
+        assert lang002[0].severity is Severity.ERROR
+        assert "kotlin" in lang002[0].message
+        assert lang002[0].file == "Main.kt"
+
+    # frob:ticket T-0406
+    def test_all_conformant_project_passes(self, tmp_path: Path) -> None:
+        """A repo containing only python (every facet implemented) has no
+        LANG002/LANG003 findings at all."""
+        (tmp_path / "app.py").write_text("def f() -> None: ...\n", encoding="utf-8")
+        violations = project_lang_conformance_gate(tmp_path, _queue())
+        assert violations == ()
+
+    # frob:ticket T-0406
+    def test_present_known_gap_with_open_ticket_warns(self, tmp_path: Path) -> None:
+        """A repo containing rust files (arch facet is a KNOWN_GAP naming
+        the still-open T-0329) gets a WARN, not silence and not an error."""
+        (tmp_path / "lib.rs").write_text("fn main() {}\n", encoding="utf-8")
+        queue = _queue(_ticket("T-0329", TicketState.QUEUED))
+        violations = project_lang_conformance_gate(tmp_path, queue)
+        lang003 = [v for v in violations if v.rule == "LANG003"]
+        assert any(v.severity is Severity.WARN for v in lang003)
+        assert not any(v.severity is Severity.ERROR for v in lang003)
+
+    # frob:ticket T-0406
+    def test_present_known_gap_with_bad_ticket_ref_errors(self, tmp_path: Path) -> None:
+        """The same rust KNOWN_GAP cell, checked against a queue where the
+        tracking ticket is already done/closed, escalates to ERROR -- a
+        claimed-but-no-longer-real gap is unsound coverage, not tracked
+        coverage."""
+        (tmp_path / "lib.rs").write_text("fn main() {}\n", encoding="utf-8")
+        queue = _queue(_ticket("T-0329", TicketState.DONE))
+        violations = project_lang_conformance_gate(tmp_path, queue)
+        lang003 = [v for v in violations if v.rule == "LANG003"]
+        assert any(v.severity is Severity.ERROR for v in lang003)

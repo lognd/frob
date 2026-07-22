@@ -54,7 +54,10 @@ from frob.gates._dead_symbols import dead_symbol_gate
 from frob.gates._docblocks import doc004_gate
 from frob.gates._exclude_hazard import exclude_hazard_gate
 from frob.gates._filehash import _SOURCE_EXTS
-from frob.gates._lang_conformance import lang_conformance_gate
+from frob.gates._lang_conformance import (
+    lang_conformance_gate,
+    project_lang_conformance_gate,
+)
 from frob.gates._models import (
     CoverageData,
     CoverageError,
@@ -953,6 +956,13 @@ _KNOWN_GATE_RULES = frozenset(
         # (frob.gates._lang_conformance) -- a registered frob.lang grammar
         # language missing an accounted-for facet.
         "LANG001",
+        # T-0406: per-project language conformance -- a completely
+        # unregistered candidate-language file present in this repo
+        # (LANG002), or a registered-but-KNOWN_GAP facet whose language is
+        # actually present here and whose tracking-ticket claim does not
+        # verify (LANG003).
+        "LANG002",
+        "LANG003",
     }
 )
 
@@ -6472,6 +6482,8 @@ _ALL_GATES = frozenset(
         "dead_symbols",
         # T-0405: LANG001, language-extension conformance drift-lock.
         "lang_conformance",
+        # T-0406: LANG002/LANG003, per-project language conformance.
+        "lang_project_conformance",
     }
 )
 
@@ -6750,6 +6762,7 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "parse_failures",
     "dead_symbols",
     "lang_conformance",
+    "lang_project_conformance",
     "scope",
     "prework",
 )
@@ -6848,6 +6861,12 @@ def _build_jobs(
         # T-0405: takes no repo-scanned state -- reads the live in-process
         # `frob.lang` language-support registry directly.
         "lang_conformance": lambda: lang_conformance_gate(),
+        # T-0406: always against repo_root (never the possibly-scoped
+        # st.root) -- a repo's real language mix is a repo-wide concern,
+        # same reasoning as refs/secrets/walk_lint above.
+        "lang_project_conformance": lambda: project_lang_conformance_gate(
+            st.repo_root, st.queue
+        ),
     }
     process_jobs: dict[str, _ProcessJob] = {
         "perf": _ProcessJob(perf_gate, (st.root, st.snapshot)),
@@ -7226,6 +7245,7 @@ __all__ = [
     "lang_conformance_gate",
     "perf_gate",
     "pii_structural_gate",
+    "project_lang_conformance_gate",
     "release_gate",
     "prework_gate",
     "record_prework",

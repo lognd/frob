@@ -14,6 +14,7 @@ from frob.lang import (
 
 
 # frob:ticket T-0405
+# frob:ticket T-0406
 def _full_status() -> dict[str, FacetStatus]:
     """A fully-registered set of facet statuses (fixture helper)."""
     return {
@@ -23,21 +24,25 @@ def _full_status() -> dict[str, FacetStatus]:
 
 
 # frob:ticket T-0405
+# frob:ticket T-0406
 class TestDeriveLanguageRegistry:
     """`derive_language_registry` covers every `frob.lang` grammar language."""
 
     # frob:ticket T-0405
+    # frob:ticket T-0406
     def test_covers_every_supported_language(self) -> None:
         registry = derive_language_registry()
         assert set(registry) == set(supported_languages())
 
     # frob:ticket T-0405
+    # frob:ticket T-0406
     def test_every_language_declares_every_facet(self) -> None:
         registry = derive_language_registry()
         for support in registry.values():
             assert set(support.facets) == set(FACETS)
 
     # frob:ticket T-0405
+    # frob:ticket T-0406
     def test_real_registry_has_no_conformance_violations(self) -> None:
         """Every cell in the real, derived registry is accounted for --
         implemented, a reasoned not-applicable, or a ticketed known gap."""
@@ -46,10 +51,12 @@ class TestDeriveLanguageRegistry:
 
 
 # frob:ticket T-0405
+# frob:ticket T-0406
 class TestConformanceViolations:
     """Fixture-language counterexamples (T-0405 acceptance criteria)."""
 
     # frob:ticket T-0405
+    # frob:ticket T-0406
     def test_missing_facet_fails(self) -> None:
         """A fixture language registered with a missing facet (the
         resolver-omission incident class) FAILS conformance, naming the
@@ -65,6 +72,7 @@ class TestConformanceViolations:
         assert "arch" in violations[0]
 
     # frob:ticket T-0405
+    # frob:ticket T-0406
     def test_fully_registered_language_passes(self) -> None:
         """A fixture language with every facet implemented passes cleanly."""
         registry = {
@@ -75,6 +83,7 @@ class TestConformanceViolations:
         assert conformance_violations(registry) == ()
 
     # frob:ticket T-0405
+    # frob:ticket T-0406
     def test_unreasoned_known_gap_fails(self) -> None:
         """A KNOWN_GAP/NOT_APPLICABLE cell with a blank detail is exactly
         as unaccountable as a missing cell."""
@@ -88,6 +97,7 @@ class TestConformanceViolations:
         assert "dup" in violations[0]
 
     # frob:ticket T-0405
+    # frob:ticket T-0406
     def test_reasoned_known_gap_passes(self) -> None:
         """A KNOWN_GAP cell WITH a reason is accounted for, not a violation."""
         facets = dict(_full_status())

@@ -334,3 +334,37 @@ not-applicable/known-gap) passes cleanly. `frob`'s own registry is clean
 today: every gap the T-0405 survey found (arch's typescript/rust/c
 branches, DOC004's c/cpp fenced-code bucket) is an explicit `KNOWN_GAP`
 naming its tracking ticket, not a silent hole.
+
+### Per-project conformance (LANG002/LANG003, T-0406)
+
+LANG001 only ever checks languages `frob.lang` has ALREADY registered a
+grammar for -- it says nothing about a downstream repo that contains a
+language frob has NO registration for at all. `frob.gates._lang_
+conformance.project_lang_conformance_gate(repo_root, queue)` closes that:
+wired into `frob check` on by default in EVERY frob-enabled repo (not
+just this one), it scans the repo's own tracked file tree.
+
+```python
+def project_lang_conformance_gate(repo_root: Path, queue: TicketQueue) -> tuple[Violation, ...]
+```
+
+- **LANG002** (ERROR, always): a tracked file matching a well-known
+  candidate-language extension frob has zero grammar registration for at
+  all (Kotlin/Swift/Go/Java/Ruby/C#) -- zero capability/dup/arch/doc-drift
+  coverage for that file, and nothing said so before this gate.
+- **LANG003**: a registered language's `KNOWN_GAP`/`NOT_APPLICABLE` facet
+  cell whose language is actually PRESENT in this repo's tree.
+  `NOT_APPLICABLE` never needs a ticket (the facet genuinely does not
+  apply). A `KNOWN_GAP` cell whose `detail` names a real, currently open
+  ticket is WARN (an honestly tracked gap, loud but not a build-breaker).
+  A `KNOWN_GAP` cell whose ticket reference does not verify (missing,
+  unparseable, or already closed/dropped -- the same anti-lie check
+  `frob.gates._registry_exhaustiveness` performs for `handled_by`/
+  `deferred`) escalates to ERROR: a claimed gap that does not actually
+  check out is unsound coverage pretending to be tracked coverage.
+
+Acceptance (T-0406): a synthetic repo containing only a `.kt` file reds
+LANG002 by name; a synthetic repo containing only python passes cleanly;
+a synthetic repo containing rust (arch is `KNOWN_GAP`, T-0329) warns
+while T-0329 stays open and errors the moment it is marked done/dropped
+without the gap actually being closed.
