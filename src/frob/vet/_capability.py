@@ -3186,9 +3186,21 @@ def _is_test_path(path: Path) -> bool:
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-0201
 # frob:ticket T-0253
-def is_self_pattern_path(path: Path, root: Path | None = None) -> bool:
+def is_self_pattern_path(
+    path: Path,
+    root: Path | None = None,
+    suffixes: tuple[tuple[str, ...], ...] = _SELF_PATTERN_SUFFIXES,
+) -> bool:
     """True for this module's own source file, or the T-0158/T-0153 pattern
-    catalogs it compiles from, when `root` is frob's own repo checkout."""
+    catalogs it compiles from, when `root` is frob's own repo checkout.
+
+    `suffixes` (T-0539) defaults to this module's own `_SELF_PATTERN_
+    SUFFIXES` but lets an unrelated pattern-table gate (e.g.
+    `frob.gates._pii_structural`'s PII011/PII012 detector-definition/
+    corpus/fixture self-match class) reuse the SAME root-identity-gated
+    discriminator (`_is_frob_repo_root` + path-suffix match) against its
+    OWN suffix list, rather than re-deriving a second copy of this
+    discriminator for a different pattern-table gate."""
     if root is None or not _is_frob_repo_root(root):
         return False
     try:
@@ -3198,7 +3210,7 @@ def is_self_pattern_path(path: Path, root: Path | None = None) -> bool:
     parts = resolved.parts
     return any(
         len(parts) >= len(suffix) and parts[-len(suffix) :] == suffix
-        for suffix in _SELF_PATTERN_SUFFIXES
+        for suffix in suffixes
     )
 
 
