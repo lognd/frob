@@ -690,6 +690,45 @@ def _waive001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     return tuple(violations)
 
 
+# frob:ticket T-0404
+# frob:tests tests/test_gates.py::TestDsl001.test_malformed_frob_doc_directive_flagged
+# frob:tests tests/test_gates.py::TestDsl001.test_waive_reason_and_tests_kind_not_double_flagged  # noqa: E501
+def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """DSL001: a malformed `frob:` directive not already claimed by a
+    per-flavor check (WAIVE001/TEST010/DEBT001).
+
+    T-0404 finding 5: before this rule existed, a malformed/typo'd
+    `frob:doc` (or `frob:describes`/`frob:ticket`/`frob:invariant`/any
+    other verb) line that `frob.graph.dsl` demotes to a `MalformedDirective`
+    produced NO violation at all -- it silently lost its edge (and, for
+    `frob:doc`, its drift tracking) with the symbol then just looking
+    undocumented rather than "documented wrong". This is the generic
+    catch-all WAIVE001/TEST010/DEBT001 were each hand-rolled duplicates of;
+    it fires for anything they do not already claim, so no `frob:` comment
+    that fails to parse into a real edge goes unreported.
+    """
+    violations: list[Violation] = []
+    for md in snapshot.malformed:
+        if any(
+            flavor in md.reason for flavor in ("frob:waive", "frob:tests", "frob:debt")
+        ):
+            continue  # already surfaced by WAIVE001 / TEST010 / DEBT001
+        _log.debug("DSL001: %s:%d %s", md.file, md.line, md.reason)
+        violations.append(
+            Violation(
+                rule="DSL001",
+                severity=Severity.ERROR,
+                file=md.file,
+                line=md.line,
+                message=(
+                    f"DSL001: {md.file}:{md.line} malformed frob: directive: "
+                    f"{md.reason}"
+                ),
+            )
+        )
+    return tuple(violations)
+
+
 # frob:ticket T-0101
 # Every rule id any Violation-producing gate can emit. `frob:waive` only
 # ever suppresses entries in the GateReport's `violations` tuple (see
@@ -737,6 +776,9 @@ _KNOWN_GATE_RULES = frozenset(
         "DEBT001",
         "DEBT002",
         "DEBT003",
+        # T-0404 finding 5: catch-all for a malformed `frob:` directive not
+        # already claimed by a per-flavor check (WAIVE001/TEST010/DEBT001).
+        "DSL001",
         "WAIVE001",
         "WAIVE002",
         # T-0470: over-broad package-prefix waiver reach.
@@ -6591,11 +6633,12 @@ def _assemble_gate_report(
     start_all: float,
 ) -> GateReport:
     """Run `thread_jobs`/`process_jobs` (T-0415), fold in the WAIVE001/
-    WAIVE002 self-checks, apply waivers and severity overrides, and log the
-    run's final tally."""
+    WAIVE002/DSL001 self-checks, apply waivers and severity overrides, and
+    log the run's final tally."""
     all_violations: list[Violation] = [
         *_waive001_violations(st.snapshot),
         *_waive002_violations(st.snapshot, st.rule_ids),
+        *_dsl001_violations(st.snapshot),
     ]
     job_violations, counts, timing = _run_combined_jobs(thread_jobs, process_jobs)
     counts["waive"] = len(all_violations)

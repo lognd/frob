@@ -152,6 +152,16 @@ class TestDetectProjectType:
         (tmp_path / "tsconfig.json").write_text("{}")
         assert detect_project_type(tmp_path) == "typescript"
 
+    def test_package_json_alone_is_typescript(self, tmp_path: Path) -> None:
+        """T-0404 finding 11: `detect_project_type` and
+        `app.check_runner._detected_types` must agree on what counts as a
+        TypeScript repo -- `_detected_types` only requires `package.json`,
+        so this single-winner detector must not additionally demand
+        `tsconfig.json`.
+        """
+        (tmp_path / "package.json").write_text("{}")
+        assert detect_project_type(tmp_path) == "typescript"
+
     def test_no_sentinel_is_unknown(self, tmp_path: Path) -> None:
         assert detect_project_type(tmp_path) == "unknown"
 

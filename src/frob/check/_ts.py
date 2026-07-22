@@ -150,8 +150,19 @@ def _parse_vitest_report(stdout: str) -> list:
     return tests
 
 
+# frob:ticket T-0404
+# frob:tests tests/unit/test_check_tool_unavailable.py::TestVitestUnverifiedZeroExit.test_run_vitest_warns_on_unparseable_zero_exit  # noqa: E501
 def _run_vitest(root: Path) -> ToolResult:
-    """`vitest run` with the JSON reporter, mapped to per-test cases."""
+    """`vitest run` with the JSON reporter, mapped to per-test cases.
+
+    T-0404 finding 10: non-JSON stdout with a zero exit code used to be
+    reported as a bare "tests passed" with no diagnostic at all -- a
+    crashed-but-somehow-0 run, or a report vitest emitted in a format this
+    parser doesn't understand, looked identical to a real clean pass. Now
+    that case attaches a WARNING diagnostic naming the ambiguity, so a
+    reviewer can tell "verified 0 failures" apart from "exit code alone,
+    unverified" at a glance.
+    """
     proc = _run_npx(root, ["vitest", "run", "--reporter", "json"], "vitest")
     if proc is None:
         return _missing_tool_result("vitest", "npx")
@@ -160,14 +171,29 @@ def _run_vitest(root: Path) -> ToolResult:
 
     tests = _parse_vitest_report(proc.stdout)
     n_failed = sum(1 for t in tests if not t.passed and not t.skipped)
+    diagnostics: list[Diagnostic] = []
     if tests:
         summary = f"{len(tests) - n_failed}/{len(tests)} tests passed"
+    elif not proc.returncode:
+        summary = "tests passed (unverified: no parseable vitest JSON report)"
+        diagnostics.append(
+            Diagnostic(
+                file="vitest",
+                severity="warning",
+                message=(
+                    "vitest exited 0 but produced no parseable JSON report; "
+                    "this is reported as passing on exit code alone, not "
+                    "verified per-test"
+                ),
+            )
+        )
     else:
-        summary = "tests passed" if not proc.returncode else "tests failed"
+        summary = "tests failed"
 
     return ToolResult(
         tool="vitest",
         exit_code=proc.returncode,
         tests=tests,
+        diagnostics=diagnostics,
         summary=summary,
     )

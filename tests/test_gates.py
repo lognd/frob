@@ -1318,6 +1318,44 @@ class TestCoverageGate:
         assert _first_rule(report.violations, "WAIVE002") is not None
 
 
+class TestDsl001:
+    """T-0404 finding 5: a malformed `frob:` directive not already claimed
+    by WAIVE001/TEST010/DEBT001 must still be surfaced, not silently
+    dropped."""
+
+    def test_malformed_frob_doc_directive_flagged(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::_dsl001_violations kind="unit"
+        # A bare `frob:doc` with no target parses to a MalformedDirective
+        # ("missing target for verb 'doc'") -- before DSL001 existed this
+        # produced NO violation at all.
+        source = "def helper(x):\n    # frob:doc\n    return x\n"
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        from frob.gates import _dsl001_violations  # noqa: PLC0415
+
+        violations = _dsl001_violations(snap)
+        assert any(v.rule == "DSL001" for v in violations)
+        assert violations[0].severity == Severity.ERROR
+
+    def test_waive_reason_and_tests_kind_not_double_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # A malformed frob:waive (no reason) and a malformed frob:tests
+        # (bad kind=) are already surfaced by WAIVE001/TEST010 -- DSL001
+        # must not ALSO flag them (no double-reporting the same directive).
+        source = (
+            "def helper(x):\n"
+            "    # frob:waive COV001\n"
+            '    # frob:tests helper kind="bogus"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        from frob.gates import _dsl001_violations  # noqa: PLC0415
+
+        assert _dsl001_violations(snap) == ()
+
+
 class TestDebtGate:
     """T-0412: frob:debt vs frob:waive -- malformed directive (DEBT001),
     non-open ticket (DEBT002), expired until boundary (DEBT003)."""
