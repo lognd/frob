@@ -107,11 +107,17 @@ class TestLandCLI:
         assert result.returncode == 0, out
         assert "DRY RUN clean" in out
 
-        # A dry run must never touch main.
+        # A dry run must never touch main (T-0577: `.frob/` -- `land()`'s
+        # own `.frob/land.lock` serialization lock -- is frob-local scratch
+        # state a real repo is expected to `.gitignore`, never a genuine
+        # leftover this "never touch main" assertion should fail on).
         status = subprocess.run(
             ["git", "status", "--porcelain"],
             cwd=repo,
             capture_output=True,
             text=True,
         )
-        assert status.stdout.strip() == ""
+        real_changes = [
+            line for line in status.stdout.strip().splitlines() if ".frob/" not in line
+        ]
+        assert real_changes == []

@@ -445,6 +445,38 @@ def renumber(root: Path) -> Result[int, TicketError]:
 
 _DIRECTIVE_LINE_RE = re.compile(r"frob:(ticket|waive|todo|tests|invariant|doc)\b")
 
+# T-0577: registry disposition targets (docs/design/registry/*.yaml's
+# `disposition: "deferred:<ticket>"` / `"duplicate_of:<ticket>"` values, per
+# `frob.registry._models.parse_disposition`'s grammar) are ticket-id
+# REFERENCES exactly like a `frob:ticket` directive line, but they live in
+# YAML data files, not source comments -- `_DIRECTIVE_LINE_RE` never matched
+# them. A draft id finalized at land time used to leave every registry
+# yaml's `deferred:T-draft-...` pointing at a now-dead id, silently
+# breaking REG003 (deferred-to-missing-ticket) until a human hand-swapped it
+# (the real T-0388/compliance.yaml incident this pattern closes). Matched
+# independent of `_DIRECTIVE_LINE_RE` so a bare `disposition:
+# "deferred:T-draft-xxxx"` line (no `frob:` prefix at all) still rewrites.
+_REGISTRY_REF_RE = re.compile(r"(?:deferred|duplicate[_-]of):\S+")
+
+
+def _rewrite_registry_references(
+    text: str, old_id: str, new_id: str
+) -> tuple[str, int]:
+    """Replace whole-word `old_id` with `new_id` wherever it appears as the
+    target of a `deferred:`/`duplicate_of:` registry disposition (T-0577,
+    see `_REGISTRY_REF_RE`'s doc) -- never elsewhere, so a ticket id
+    mentioned only in registry prose/free text is left alone."""
+    id_re = re.compile(rf"\b{re.escape(old_id)}\b")
+    hits = 0
+
+    def _sub_ref(match: re.Match[str]) -> str:
+        nonlocal hits
+        rewritten, n = id_re.subn(new_id, match.group(0))
+        hits += n
+        return rewritten
+
+    return _REGISTRY_REF_RE.sub(_sub_ref, text), hits
+
 
 def _tracked_files(root: Path) -> list[Path]:
     """Every git-tracked file under `root`, or (no git repo) every file not
@@ -476,8 +508,10 @@ def _rewrite_directive_references(
 def _scan_code_references(
     root: Path, old_id: str, new_id: str
 ) -> dict[Path, tuple[str, int]]:
-    """Every tracked non-ledger file whose directive lines mention `old_id`,
-    mapped to its rewritten text and the number of references replaced."""
+    """Every tracked non-ledger file whose directive lines OR registry
+    disposition targets (`_rewrite_registry_references`, T-0577) mention
+    `old_id`, mapped to its rewritten text and the number of references
+    replaced (both classes combined)."""
     skip_names = {ledger_path(root).name, archive_path(root).name}
     changed: dict[Path, tuple[str, int]] = {}
     for path in _tracked_files(root):
@@ -489,7 +523,13 @@ def _scan_code_references(
             continue
         if old_id not in text:
             continue
-        rewritten, hits = _rewrite_directive_references(text, old_id, new_id)
+        directive_text, directive_hits = _rewrite_directive_references(
+            text, old_id, new_id
+        )
+        rewritten, registry_hits = _rewrite_registry_references(
+            directive_text, old_id, new_id
+        )
+        hits = directive_hits + registry_hits
         if hits:
             changed[path] = (rewritten, hits)
     return changed

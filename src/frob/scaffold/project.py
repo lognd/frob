@@ -396,7 +396,48 @@ if [ -n "$FROB_AGENT" ]; then
     echo "frob: unset FROB_AGENT if deliberate, or run from the leased worktree" >&2
     exit 1
 fi
-exit 0
+"""
+
+_WORKTREE_LEASE_HOOK_TERMINATOR = "exit 0\n"
+
+# frob:ticket T-0577
+# Second `pre-merge-commit` guard, appended after the T-0431 body above:
+# refuses a REAL (non-squash) merge commit whose incoming side is a
+# `worktree-agent-*` ticket branch, from ANY shell -- including a
+# coordinator's, which the T-0431 guard above deliberately exempts
+# (FROB_AGENT unset). All ~30 landings in one real session were manual
+# raw `git merge`s of these branches, each needing the same hand-repeated
+# draft-renumber/version-bump/ledger-splice surgery `frob ticket land`
+# already automates; this makes bypassing `land` for a ticket branch a
+# hard stop instead of a silently-worse manual path. `land`'s OWN internal
+# git calls never trip this hook in the first place, by construction: both
+# the worktree-into-main merge (`_merge_main_into_worktree`, `--no-commit`
+# then a plain later `git commit`) and the squash-apply (`git merge
+# --squash`) never let git create the automatic merge commit that
+# `pre-merge-commit` fires for -- `--no-commit`/`--squash` both suppress
+# it, and the later explicit `git commit` is an ordinary commit invoking
+# only `pre-commit`, never `pre-merge-commit`. `FROB_LAND_INTERNAL=1` is
+# offered anyway as an explicit, documented manual override for a
+# deliberate exceptional raw merge (never set by `land` itself, since it
+# never needs it).
+_FORBID_RAW_TICKET_MERGE_SCRIPT = """
+# T-0577: forbid a raw (non-land) merge of a worktree-agent-* branch.
+# `git merge` sets GIT_REFLOG_ACTION to "merge <name-given-on-the-command-
+# line>" in the environment every hook it invokes inherits -- read that
+# directly rather than `.git/MERGE_HEAD` (observed, empirically, to no
+# longer be present by the time `pre-merge-commit` fires on a plain,
+# conflict-free merge under this git version/backend, even though older
+# documentation describes it as readable here).
+if [ -z "$FROB_LAND_INTERNAL" ]; then
+    case "$GIT_REFLOG_ACTION" in
+        merge\\ *worktree-agent-*)
+            echo "frob: refusing raw merge of a ticket branch ($GIT_REFLOG_ACTION)" >&2
+            echo "frob: use \\`frob ticket land <id> --worktree <path>\\` instead" >&2
+            echo "frob: (set FROB_LAND_INTERNAL=1 to override deliberately)" >&2
+            exit 1
+            ;;
+    esac
+fi
 """
 
 _WORKTREE_LEASE_HOOK_NAMES = ("pre-commit", "pre-merge-commit")
@@ -447,6 +488,11 @@ def install_worktree_lease_hook(
     hook aborts loudly if `FROB_AGENT` is set in the environment it runs
     in, catching a stray raw `git commit`/`git merge` from an
     agent-context shell that wandered into the wrong checkout.
+    `pre-merge-commit` ALSO carries the T-0577 raw-ticket-branch-merge
+    guard (`_FORBID_RAW_TICKET_MERGE_SCRIPT`): it refuses a real merge
+    commit whose incoming side is a `worktree-agent-*` branch from ANY
+    shell, coordinator included, forcing `frob ticket land` as the only
+    path onto main for a ticket branch.
 
     `Err(OutputExists)` if either hook file already exists and `force` is
     not set -- never silently overwrites a repo's own custom hook.
@@ -470,7 +516,18 @@ def install_worktree_lease_hook(
     try:
         hooks_dir.mkdir(parents=True, exist_ok=True)
         for path in targets:
-            path.write_text(_WORKTREE_LEASE_HOOK_SCRIPT)
+            # T-0577: `pre-merge-commit` ALSO carries the raw-ticket-branch-
+            # merge refusal (`_FORBID_RAW_TICKET_MERGE_SCRIPT`), spliced in
+            # BEFORE the shared unconditional `exit 0` terminator -- the
+            # T-0431 FROB_AGENT check above runs and exits 1 first when it
+            # fires; only when it does NOT fire does control fall through
+            # to this guard, which has its own internal `exit 1` (and, if
+            # neither guard fires, the shared terminator exits 0).
+            body = _WORKTREE_LEASE_HOOK_SCRIPT
+            if path.name == "pre-merge-commit":
+                body += _FORBID_RAW_TICKET_MERGE_SCRIPT
+            body += _WORKTREE_LEASE_HOOK_TERMINATOR
+            path.write_text(body)
             path.chmod(path.stat().st_mode | stat.S_IEXEC | stat.S_IXGRP | stat.S_IXOTH)
             written.append(path)
     except OSError as exc:

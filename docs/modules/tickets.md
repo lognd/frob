@@ -957,6 +957,68 @@ never dropped -- previously an evidence-count tiebreak picked ONE side's
 evidence set wholesale, silently discarding the other side's ids when two
 worktrees closed the same ticket with disjoint evidence.
 
+## Land hardening (T-0577)
+
+Three gaps found in one real landing session, closed together:
+
+- **Registry yaml reference rewrite at draft finalize.** `finalize_draft`'s
+  rename primitive (`renumber_one`) rewrote `frob:` directive lines and the
+  ledger, but a registry yaml's `disposition: "deferred:<ticket>"` /
+  `"duplicate_of:<ticket>"` value (docs/design/registry/*.yaml's grammar,
+  `frob.registry._models.parse_disposition`) is a ticket-id REFERENCE that
+  lives in YAML data, not a source comment -- it was left pointing at the
+  now-dead draft id, breaking REG003 until a human hand-swapped it (a real
+  incident: T-0388's compliance.yaml). `_rewrite_registry_references`
+  (`frob.tickets.__init__`) rewrites these too, independent of the
+  `frob:` directive-line matcher, whenever `renumber_one` runs.
+- **Sibling Done-report preservation on splice.** `_splice_only_ticket`
+  (T-0479) deliberately takes every ticket id OTHER than the one being
+  landed from main untouched, to prevent a worktree's stale, requeued
+  sibling state from resurrecting on main (T-0475). That guard has a real
+  cost in a multi-ticket worktree: landing one ticket first silently
+  erased a SIBLING ticket's already-written Done report (in-progress,
+  review-gated, awaiting its own `land`) whenever main's copy of that
+  sibling was still a bare `queued`/`planned` block -- a real incident
+  (landing T-0386 regressed T-0387/T-0388 to queued, Done reports gone).
+  `_preserve_sibling_done_reports` closes this without reopening T-0479:
+  for each sibling id, the worktree's copy wins ONLY when it carries a
+  substantive Done report main's copy lacks -- a stale advanced state with
+  NO Done report on either side (the T-0479/T-0475 case) is untouched,
+  main's side still wins.
+- **Land-call serialization (`_land_lock`).** The entire `land()` body
+  (precheck through the squash-commit) now runs under a dedicated,
+  cross-process `flock` on `<root>/.frob/land.lock` -- a SEPARATE file from
+  `frob.tickets._store.ledger_lock`'s `.frob/tickets.lock` (reusing that
+  exact path was tried first: a worktree's own committed
+  `.frob/tickets.lock`, picked up by `land`'s `git add -A` wip-commit/
+  finalize-commit steps, collides by identical relative path with the
+  untracked lock file `root`'s own lock would create, and git's
+  squash-merge refuses outright rather than picking a side). A second
+  `land()` against the SAME `root` blocks at the lock acquire instead of
+  racing this one -- the fix for 6 REL001 version-number collisions from
+  parallel branches in one session (two lands could previously both read
+  the same pre-bump manifest version and each compute the same "next"
+  version). `.frob/land.lock` is expected to be `.gitignore`d like every
+  other `.frob/` path; `_porcelain_dirty` ignores anything under `.frob/`
+  when deciding whether `root`/a worktree is "dirty" for exactly this
+  reason.
+- **Raw ticket-branch merges refused.** `frob.scaffold.
+  install_worktree_lease_hook`'s `pre-merge-commit` hook (T-0431) now ALSO
+  carries a second guard (`_FORBID_RAW_TICKET_MERGE_SCRIPT`): it refuses a
+  real merge commit whose incoming side is a `worktree-agent-*` branch,
+  from ANY shell -- including a coordinator's, which the T-0431 FROB_AGENT
+  check deliberately exempts. Detects the incoming branch via
+  `$GIT_REFLOG_ACTION` (git sets this to `merge <branch>` in every hook's
+  environment; `.git/MERGE_HEAD` was tried first and observed, empirically,
+  to no longer be readable by the time `pre-merge-commit` fires on a
+  plain conflict-free merge under this git version/backend). `frob ticket
+  land`'s OWN internal git calls never trip this hook in the first place --
+  both its worktree-into-main merge (`--no-commit` then a later plain
+  `git commit`) and its squash-apply (`git merge --squash`) suppress the
+  automatic merge commit `pre-merge-commit` fires for; `FROB_LAND_INTERNAL=1`
+  is offered anyway as an explicit, documented manual override, never set
+  by `land` itself since it never needs it.
+
 ## Git merge driver
 
 <!-- frob:describes src/frob/app/ticket_runner.py::_merge_driver -->

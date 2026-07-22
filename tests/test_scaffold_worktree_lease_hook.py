@@ -105,3 +105,74 @@ class TestInstallWorktreeLeaseHook:
             check=False,
         )
         assert commit.returncode == 0, commit.stdout + commit.stderr
+
+    @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
+    def test_raw_merge_of_worktree_agent_branch_is_refused(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_raw_merge_of_worktree_agent_branch_is_refused  # noqa: E501
+        """T-0577: even a COORDINATOR shell (no `FROB_AGENT` set -- the
+        T-0431 guard's own exemption) must not be able to raw-merge a real
+        merge commit for a `worktree-agent-*` ticket branch straight onto
+        main; only `frob ticket land` (which never triggers this hook, see
+        `_FORBID_RAW_TICKET_MERGE_SCRIPT`'s doc) is the sanctioned path."""
+        _init_repo(tmp_path)
+        _git("commit", "-q", "-m", "init", cwd=tmp_path)
+        installed = install_worktree_lease_hook(tmp_path)
+        assert installed.is_ok
+
+        _git("branch", "worktree-agent-deadbeef", cwd=tmp_path)
+        _git("checkout", "-q", "worktree-agent-deadbeef", cwd=tmp_path)
+        (tmp_path / "y.txt").write_text("y\n")
+        _git("add", "-A", cwd=tmp_path)
+        _git("commit", "-q", "-m", "ticket work", cwd=tmp_path)
+        _git("checkout", "-q", "main", cwd=tmp_path)
+
+        env = dict(os.environ)
+        env.pop("FROB_AGENT", None)
+        env.pop("FROB_LAND_INTERNAL", None)
+        merged = subprocess.run(
+            ["git", "merge", "--no-ff", "-m", "raw merge", "worktree-agent-deadbeef"],
+            cwd=tmp_path,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert merged.returncode != 0
+        assert "worktree-agent-deadbeef" in (merged.stdout + merged.stderr)
+        assert "frob ticket land" in (merged.stdout + merged.stderr)
+
+    @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
+    def test_raw_merge_override_env_var_allows_it(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_raw_merge_override_env_var_allows_it  # noqa: E501
+        _init_repo(tmp_path)
+        _git("commit", "-q", "-m", "init", cwd=tmp_path)
+        installed = install_worktree_lease_hook(tmp_path)
+        assert installed.is_ok
+
+        _git("branch", "worktree-agent-deadbeef", cwd=tmp_path)
+        _git("checkout", "-q", "worktree-agent-deadbeef", cwd=tmp_path)
+        (tmp_path / "y.txt").write_text("y\n")
+        _git("add", "-A", cwd=tmp_path)
+        _git("commit", "-q", "-m", "ticket work", cwd=tmp_path)
+        _git("checkout", "-q", "main", cwd=tmp_path)
+
+        env = dict(os.environ, FROB_LAND_INTERNAL="1")
+        env.pop("FROB_AGENT", None)
+        merged = subprocess.run(
+            [
+                "git",
+                "merge",
+                "--no-ff",
+                "-m",
+                "override merge",
+                "worktree-agent-deadbeef",
+            ],
+            cwd=tmp_path,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert merged.returncode == 0, merged.stdout + merged.stderr

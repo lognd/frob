@@ -23,8 +23,12 @@ reconstruct by hand.
 from __future__ import annotations
 
 import fnmatch
-from collections.abc import Callable, Sequence
+import importlib
+import os
+from collections.abc import Callable, Iterator, Sequence
+from contextlib import contextmanager
 from pathlib import Path
+from types import ModuleType
 
 from typani.result import Err, Ok, Result
 
@@ -46,7 +50,66 @@ from frob.tickets._models import (
 from frob.tickets._provisional import is_draft_id
 from frob.tickets._store import _parse_ledger, _render_ledger, archive_path, ledger_path
 
+# T-0577: same posix-only degradation as `frob.tickets._store`'s
+# `ledger_lock` -- `_land_lock` degrades to a documented no-op (see its
+# docstring) on a platform without `fcntl`, rather than failing import.
+fcntl: ModuleType | None
+try:
+    fcntl = importlib.import_module("fcntl")
+except ImportError:  # pragma: no cover -- posix-only in this repo's CI
+    fcntl = None
+
 _log = get_logger(__name__)
+
+# T-0577: dedicated lock file for serializing `land()` calls against the
+# SAME `root`, deliberately a DIFFERENT name from `_store.lock_path`'s
+# `.frob/tickets.lock`. Reusing that exact path was tried first and broke:
+# a worktree's own `.frob/tickets.lock` (created the moment ANY ticket
+# operation runs in the worktree, then committed into the branch by
+# `land`'s own `git add -A` wip-commit/finalize-commit steps) collides,
+# by identical relative path, with the untracked lock file `root`'s own
+# lock would have created -- git's squash-merge refuses outright ("would
+# be overwritten by merge") rather than silently picking a side. A
+# distinct filename `root` never shares with anything a worktree branch
+# legitimately commits sidesteps that collision entirely.
+_LAND_LOCK_REL = Path(".frob") / "land.lock"
+
+
+def _land_lock_path(root: Path) -> Path:
+    """The advisory lock file path `_land_lock` holds, serializing every
+    `land()` call against `root` (T-0577)."""
+    return root / _LAND_LOCK_REL
+
+
+@contextmanager
+def _land_lock(root: Path) -> Iterator[None]:
+    """Exclusive, blocking, cross-process lock serializing every `land()`
+    call against `root` (T-0577) -- see `land`'s docstring for why this
+    closes the REL001 version-bump-collision incident class. Degrades to a
+    documented no-op (logged at WARNING) on a platform without `fcntl`,
+    matching `frob.tickets._store.ledger_lock`'s same documented
+    degradation."""
+    if fcntl is None:  # pragma: no cover -- posix-only in this repo's CI
+        _log.warning(
+            "land: _land_lock: fcntl unavailable on this platform, lock is "
+            "a NO-OP -- concurrent `land()` calls against %s are NOT "
+            "serialized here",
+            root,
+        )
+        yield
+        return
+    path = _land_lock_path(root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
+    fcntl.flock(fd, fcntl.LOCK_EX)
+    _log.debug("land: _land_lock acquired (%s)", path)
+    try:
+        yield
+    finally:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        os.close(fd)
+        _log.debug("land: _land_lock released (%s)", path)
+
 
 # frob:doc docs/modules/tickets.md#frob-ticket-land
 _STATE_RANK: dict[TicketState, int] = {
@@ -178,6 +241,49 @@ def _drop_resurrected_ids(
         )
 
 
+# frob:ticket T-0577
+def _preserve_sibling_done_reports(
+    merged: dict[str, Ticket], worktree_tickets: dict[str, Ticket], landed_id: str
+) -> None:
+    """After `_splice_only_ticket` overlays ONLY `landed_id` from the
+    worktree, every OTHER (sibling) ticket id comes from `main_tickets`
+    untouched -- correct for the T-0479/T-0475 resurrection class (a
+    worktree's stale, requeued-on-main sibling must never win), but it has
+    a real cost: in a multi-ticket worktree, a sibling that is ALSO done
+    (in-progress with a substantive Done report already written, awaiting
+    its own `frob ticket land`) has that Done report silently discarded the
+    moment ANY ticket in the same worktree lands first, because main's copy
+    of that sibling is still a bare `queued`/`planned` block from before
+    the worktree ever touched it (real incident: landing T-0386 erased
+    T-0387/T-0388's Done reports and regressed them to queued).
+
+    This closes that gap without reopening T-0479: for each sibling id
+    present in `merged` (from main) that also exists in `worktree_tickets`,
+    keep the WORKTREE's copy in place of main's ONLY when main's side has
+    no substantive Done report yet worktree's does -- richer state
+    (a Done report) always wins over a bare state block, but a genuine
+    main-side requeue (main's side already carries no Done report AND the
+    worktree's side is merely a stale advanced state with no Done report
+    either, the T-0479 case) is untouched, since neither side satisfies
+    the swap condition and main's existing entry is left as-is."""
+    for ticket_id, ticket in worktree_tickets.items():
+        if ticket_id == landed_id or ticket_id not in merged:
+            continue
+        main_side = merged[ticket_id]
+        if main_side == ticket:
+            continue
+        main_has_done = _has_done_report(main_side.body)
+        worktree_has_done = _has_done_report(ticket.body)
+        if worktree_has_done and not main_has_done:
+            _log.info(
+                "tickets: land splice -- preserved %s's Done report from "
+                "worktree (main's copy had none) while landing %s",
+                ticket_id,
+                landed_id,
+            )
+            merged[ticket_id] = _union_evidence(ticket, main_side, ticket)
+
+
 # frob:ticket T-0479
 def _splice_only_ticket(
     main_text: str,
@@ -219,6 +325,7 @@ def _splice_only_ticket(
             merged[ticket_id] = _newer(merged[ticket_id], incoming)
         else:
             merged[ticket_id] = incoming
+    _preserve_sibling_done_reports(merged, worktree_tickets, ticket_id)
     _drop_resurrected_ids(merged, archived_ids)
     _log.info(
         "tickets: land splice (ticket-scoped) -- %s only, main=%d ticket(s), merged=%d",
@@ -230,12 +337,24 @@ def _splice_only_ticket(
 
 
 def _porcelain_dirty(root: Path) -> Result[bool, LandError]:
-    """Whether `root`'s working tree has any uncommitted change (tracked or not)."""
+    """Whether `root`'s working tree has any uncommitted change (tracked or
+    not), ignoring `.frob/` (T-0577): `land`'s own `ledger_lock` creates
+    `.frob/tickets.lock` in `root` BEFORE this check ever runs (the whole
+    `land()` body, `_refuse_if_main_dirty` included, now runs under that
+    lock -- see `land`'s docstring), and `.frob/` is frob-local scratch
+    state a repo is expected to `.gitignore` anyway (baseline/coverage
+    stamps, journal records, this same lock file) -- never a real
+    "uncommitted change" a landing should refuse on."""
     spawned = run_argv(["git", "-C", str(root), "status", "--porcelain"])
     if spawned.is_err or spawned.danger_ok.returncode != 0:
         _log.error("land: git status failed in %s", root)
         return Err(LandError.GitFailed)
-    return Ok(bool(spawned.danger_ok.stdout.strip()))
+    dirty_lines = [
+        line
+        for line in spawned.danger_ok.stdout.splitlines()
+        if line.strip() and not line[3:].strip().startswith(".frob/")
+    ]
+    return Ok(bool(dirty_lines))
 
 
 def _conflicted_files(root: Path) -> set[str]:
@@ -698,9 +817,55 @@ def land(
     the `frob ticket land` CLI, which supplies all three by default --
     see `ticket_runner.py`'s `_land`) provides them. Passing nothing
     preserves the exact pre-D-05 behavior, which is why the library
-    default stays permissive even though the CLI's default is strict."""
+    default stays permissive even though the CLI's default is strict.
+
+    T-0577: the ENTIRE precheck-through-squash-commit body runs under
+    `root`'s dedicated `_land_lock` (a cross-process `flock`, same
+    primitive family as `frob.tickets._store.ledger_lock`'s T-0458
+    single-writer lock but its OWN file -- see `_land_lock`'s doc for why
+    it cannot reuse `ledger_lock`'s path) -- a second `land()` against the
+    SAME `root` (a different agent/coordinator process landing a different
+    ticket concurrently) blocks at the lock acquire instead of racing this
+    one. This is what makes the REL001 version bump (`bump_version`,
+    computed against `root`'s tree from INSIDE this critical section)
+    collision-free: two lands can no longer both read the same
+    pre-bump manifest version and each compute the same "next" version,
+    the real incident (6 version-number collisions from parallel branches
+    in one session) this closes. Manual, non-`land` coordinator surgery
+    that mutates `root` while holding no lock is not protected by this --
+    only concurrent `land()` calls are serialized against each other."""
     root, worktree = root.resolve(), worktree.resolve()
 
+    with _land_lock(root):
+        return _land_locked(
+            root,
+            ticket_id,
+            worktree,
+            dry_run=dry_run,
+            collected=collected,
+            passed=passed,
+            covers_scope=covers_scope,
+            bump_version=bump_version,
+            rebuild_natives=rebuild_natives,
+        )
+
+
+def _land_locked(
+    root: Path,
+    ticket_id: str,
+    worktree: Path,
+    *,
+    dry_run: bool,
+    collected: Callable[[], frozenset[str]] | None,
+    passed: Callable[[Sequence[str]], frozenset[str]] | None,
+    covers_scope: Callable[[Ticket], bool | None] | None,
+    bump_version: Callable[[Path, Ticket, str], Result[str | None, LandError]] | None,
+    rebuild_natives: Callable[[Path], bool] | None,
+) -> Result[LandReport, LandError]:
+    """`land`'s actual body (T-0577), run by the caller already holding
+    `root`'s `ledger_lock` -- split out only so `land`'s docstring can state
+    the locking contract once at the public entry point rather than
+    interleaved with the implementation."""
     precheck = _land_precheck(root, worktree, ticket_id)
     if precheck.is_err:
         return Err(precheck.danger_err)

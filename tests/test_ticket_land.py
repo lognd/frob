@@ -91,6 +91,18 @@ def _commit_all(root: Path, message: str) -> None:
     _run(["git", "commit", "-q", "-m", message], root)
 
 
+def _status_ignoring_frob(root: Path) -> str:
+    """`git status --porcelain` output for `root`, with any `.frob/` entry
+    (T-0577: `land()`'s own `.frob/land.lock` serialization lock, created
+    lazily and left in place like every other `.frob/` scratch artifact --
+    frob-local state a real repo is expected to `.gitignore`, never a
+    genuine leftover a "leaves no trace" assertion should fail on)
+    filtered out."""
+    raw = _run(["git", "status", "--porcelain"], root).stdout.strip()
+    lines = [line for line in raw.splitlines() if ".frob/" not in line]
+    return "\n".join(lines)
+
+
 def _spec(title: str, *, scope: tuple[str, ...] = ()) -> TicketSpec:
     return TicketSpec(
         title=title, kind=TicketKind.FEATURE, origin=Origin.AGENT, scope=scope
@@ -288,6 +300,89 @@ class TestSpliceOnlyTicket:
         assert parsed.danger_ok[tid].state == TicketState.DONE
 
 
+class TestSiblingDoneReportPreserved:
+    """T-0577: a real multi-ticket-worktree incident -- landing T-0386 in a
+    worktree that ALSO carried sibling tickets T-0387/T-0388 (in-progress,
+    review-gated, each with its own substantive Done report already
+    written) spliced main's bare `queued` blocks for those siblings over
+    the worktree's richer copies, erasing their Done reports and
+    regressing their state. `_splice_only_ticket` must keep whichever side
+    carries a substantive Done report when the OTHER side has none, even
+    for a sibling id it does not otherwise touch."""
+
+    # frob:tests src/frob/tickets/_land.py::_splice_only_ticket kind="unit"
+    def test_sibling_done_report_survives_landing_another_ticket(
+        self, tmp_path: Path
+    ) -> None:
+        created_landed = new_ticket(tmp_path, _spec("Landed ticket"))
+        assert created_landed.is_ok
+        tid_landed = created_landed.danger_ok.id
+        created_sibling = new_ticket(tmp_path, _spec("Sibling with done report"))
+        assert created_sibling.is_ok
+        tid_sibling = created_sibling.danger_ok.id
+
+        # Worktree: sibling driven to in-progress with a substantive Done
+        # report already written (review-gated, awaiting its OWN land).
+        _make_closeable(tmp_path, tid_sibling)
+        worktree_text = ledger_path(tmp_path).read_text()
+
+        # Main: sibling is still a bare queued block (never advanced there
+        # -- this worktree is the only place it has been worked).
+        loaded = load_all(tmp_path).danger_ok
+        bare_sibling = loaded[tid_sibling].model_copy(
+            update={
+                "state": TicketState.QUEUED,
+                "evidence": (),
+                "body": loaded[tid_sibling].body.split("## Done report")[0],
+            }
+        )
+        merged = dict(loaded)
+        merged[tid_sibling] = bare_sibling
+        from frob.tickets._store import _render_ledger
+
+        main_text = _render_ledger(merged)
+
+        spliced = _land_mod._splice_only_ticket(main_text, worktree_text, tid_landed)
+        assert spliced.is_ok
+        from frob.tickets._store import _parse_ledger
+
+        parsed = _parse_ledger(spliced.danger_ok).danger_ok
+        assert parsed[tid_sibling].state == TicketState.IN_PROGRESS
+        assert "## Done report" in parsed[tid_sibling].body
+        assert parsed[tid_sibling].evidence == ("tests/test_x.py::test_ok",)
+
+    # frob:tests src/frob/tickets/_land.py::_splice_only_ticket kind="unit"
+    def test_sibling_requeue_on_main_still_wins_when_neither_side_has_a_done_report(
+        self, tmp_path: Path
+    ) -> None:
+        """The T-0479/T-0475 case must stay fixed: a sibling with NO Done
+        report on either side, stale in-progress in the worktree and
+        requeued on main, still resolves to main's requeued state -- the
+        T-0577 preservation rule only fires when the worktree side actually
+        carries a Done report main lacks, never as a blanket "worktree
+        wins" rule."""
+        created_landed = new_ticket(tmp_path, _spec("Landed ticket"))
+        assert created_landed.is_ok
+        tid_landed = created_landed.danger_ok.id
+        created_sibling = new_ticket(tmp_path, _spec("Sibling requeued"))
+        assert created_sibling.is_ok
+        tid_sibling = created_sibling.danger_ok.id
+
+        assert transition(tmp_path, tid_sibling, TicketState.PLANNED).is_ok
+        assert transition(tmp_path, tid_sibling, TicketState.IN_PROGRESS).is_ok
+        worktree_text = ledger_path(tmp_path).read_text()
+
+        assert transition(tmp_path, tid_sibling, TicketState.QUEUED).is_ok
+        main_text = ledger_path(tmp_path).read_text()
+
+        spliced = _land_mod._splice_only_ticket(main_text, worktree_text, tid_landed)
+        assert spliced.is_ok
+        from frob.tickets._store import _parse_ledger
+
+        parsed = _parse_ledger(spliced.danger_ok).danger_ok
+        assert parsed[tid_sibling].state == TicketState.QUEUED
+
+
 class TestLand:
     """`frob.tickets.land` against real fixture repos."""
 
@@ -321,7 +416,7 @@ class TestLand:
             _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == before_main_sha
         )
         assert _run(["git", "rev-parse", "HEAD"], wt).stdout.strip() == before_wt_sha
-        assert _run(["git", "status", "--porcelain"], repo).stdout.strip() == ""
+        assert _status_ignoring_frob(repo) == ""
         assert _run(["git", "status", "--porcelain"], wt).stdout.strip() == ""
 
     def test_real_land_lands(self, repo: Path) -> None:
@@ -375,7 +470,7 @@ class TestLand:
 
         # Nothing must have been touched -- close validation runs BEFORE any
         # git mutation, so main and the worktree are exactly as found.
-        assert _run(["git", "status", "--porcelain"], repo).stdout.strip() == ""
+        assert _status_ignoring_frob(repo) == ""
         assert _run(["git", "status", "--porcelain"], wt).stdout.strip() == ""
 
 
@@ -605,6 +700,46 @@ class TestDraftFinalizeRewritesCodeAndLeavesWorktreeClean:
         wt_src = (wt / "src" / "thing2.py").read_text()
         assert draft_id not in wt_src
         assert f"frob:ticket {final_id}" in wt_src
+
+
+class TestDraftFinalizeRewritesRegistryYamlRefs:
+    """T-0577: draft finalize at land time (`renumber_one`) used to rewrite
+    only `frob:` directive lines -- a registry yaml's `disposition:
+    "deferred:<draft-id>"` value (docs/design/registry/*.yaml's grammar,
+    `frob.registry._models.parse_disposition`) was left pointing at the
+    now-dead draft id, breaking REG003 until a human hand-swapped it (the
+    real T-0388/compliance.yaml incident). `_rewrite_registry_references`
+    must rewrite these too."""
+
+    def test_registry_yaml_deferred_ref_rewritten_to_final_id(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_land.py::land kind="unit"
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-yaml", str(wt)], repo)
+
+        created = new_ticket(wt, _spec("Filed off-branch", scope=("src/thing3.py",)))
+        assert created.is_ok
+        draft_id = created.danger_ok.id
+        assert draft_id.startswith("T-draft-")
+        _make_closeable(wt, draft_id)
+
+        registry_dir = wt / "docs" / "design" / "registry"
+        registry_dir.mkdir(parents=True)
+        (registry_dir / "compliance.yaml").write_text(
+            f'entries:\n  - id: some-check\n    disposition: "deferred:{draft_id}"\n'
+        )
+        (wt / "src" / "thing3.py").write_text("def f():\n    pass\n")
+        _commit_all(wt, "off-branch ticket deferred in a registry yaml")
+
+        result = land(repo, draft_id, wt, dry_run=False)
+        assert result.is_ok, result.err
+        final_id = result.danger_ok.final_id
+        assert final_id != draft_id
+
+        landed_yaml = (
+            repo / "docs" / "design" / "registry" / "compliance.yaml"
+        ).read_text()
+        assert draft_id not in landed_yaml
+        assert f'"deferred:{final_id}"' in landed_yaml
 
 
 class TestArchiveResurrection:
@@ -1396,7 +1531,7 @@ class TestReleaseBump:
         assert (repo / "VERSION_BUMPED").exists()
         # The bump's own write must have landed in the SAME commit as the
         # squash-apply, not a separate uncommitted change.
-        assert _run(["git", "status", "--porcelain"], repo).stdout.strip() == ""
+        assert _status_ignoring_frob(repo) == ""
 
     def test_no_bump_needed_reports_none(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_land.py::TestReleaseBump.test_no_bump_needed_reports_none  # noqa: E501
