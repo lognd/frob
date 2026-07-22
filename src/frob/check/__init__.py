@@ -569,14 +569,24 @@ def run_check_ts(
 
 # frob:doc docs/commands/check.md#public-api
 def detect_project_type(root: Path) -> str:
-    """Returns 'python', 'cpp', 'rust', 'typescript', or 'unknown'."""
+    """Returns 'python', 'cpp', 'rust', 'typescript', or 'unknown'.
+
+    T-0404 finding 11: this single-winner detector used to require BOTH
+    `package.json` AND `tsconfig.json` for 'typescript', while
+    `app.check_runner._detected_types` (the polyglot enumerator) required
+    only `package.json` -- the two "what is a TS repo" definitions
+    disagreed, so `_run_auto_detected_stages`'s `_detected_types(root) or
+    [detect_project_type(root)]` fallback could pick a different verdict
+    than the enumerator for the same tree. `package.json` alone is now the
+    single shared contract for both.
+    """
     if (root / "Cargo.toml").exists():
         return "rust"
     if (root / "CMakeLists.txt").exists():
         return "cpp"
     if (root / "pyproject.toml").exists() or (root / "setup.py").exists():
         return "python"
-    if (root / "package.json").exists() and (root / "tsconfig.json").exists():
+    if (root / "package.json").exists():
         return "typescript"
     if list(root.glob("*.cpp")) or list(root.glob("*.cc")) or list(root.glob("*.c")):
         return "cpp"

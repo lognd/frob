@@ -51,6 +51,7 @@ from frob.gates._coverage import load_coverage, load_stamp, stamp_coverage
 from frob.gates._cve_fingerprint_scan import cve_fingerprint_scan_gate
 from frob.gates._docblocks import doc004_gate
 from frob.gates._exclude_hazard import exclude_hazard_gate
+from frob.gates._filehash import _SOURCE_EXTS
 from frob.gates._models import (
     CoverageData,
     CoverageError,
@@ -689,6 +690,45 @@ def _waive001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     return tuple(violations)
 
 
+# frob:ticket T-0404
+# frob:tests tests/test_gates.py::TestDsl001.test_malformed_frob_doc_directive_flagged
+# frob:tests tests/test_gates.py::TestDsl001.test_waive_reason_and_tests_kind_not_double_flagged  # noqa: E501
+def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """DSL001: a malformed `frob:` directive not already claimed by a
+    per-flavor check (WAIVE001/TEST010/DEBT001).
+
+    T-0404 finding 5: before this rule existed, a malformed/typo'd
+    `frob:doc` (or `frob:describes`/`frob:ticket`/`frob:invariant`/any
+    other verb) line that `frob.graph.dsl` demotes to a `MalformedDirective`
+    produced NO violation at all -- it silently lost its edge (and, for
+    `frob:doc`, its drift tracking) with the symbol then just looking
+    undocumented rather than "documented wrong". This is the generic
+    catch-all WAIVE001/TEST010/DEBT001 were each hand-rolled duplicates of;
+    it fires for anything they do not already claim, so no `frob:` comment
+    that fails to parse into a real edge goes unreported.
+    """
+    violations: list[Violation] = []
+    for md in snapshot.malformed:
+        if any(
+            flavor in md.reason for flavor in ("frob:waive", "frob:tests", "frob:debt")
+        ):
+            continue  # already surfaced by WAIVE001 / TEST010 / DEBT001
+        _log.debug("DSL001: %s:%d %s", md.file, md.line, md.reason)
+        violations.append(
+            Violation(
+                rule="DSL001",
+                severity=Severity.ERROR,
+                file=md.file,
+                line=md.line,
+                message=(
+                    f"DSL001: {md.file}:{md.line} malformed frob: directive: "
+                    f"{md.reason}"
+                ),
+            )
+        )
+    return tuple(violations)
+
+
 # frob:ticket T-0101
 # Every rule id any Violation-producing gate can emit. `frob:waive` only
 # ever suppresses entries in the GateReport's `violations` tuple (see
@@ -736,6 +776,9 @@ _KNOWN_GATE_RULES = frozenset(
         "DEBT001",
         "DEBT002",
         "DEBT003",
+        # T-0404 finding 5: catch-all for a malformed `frob:` directive not
+        # already claimed by a per-flavor check (WAIVE001/TEST010/DEBT001).
+        "DSL001",
         "WAIVE001",
         "WAIVE002",
         # T-0470: over-broad package-prefix waiver reach.
@@ -4513,13 +4556,40 @@ def _test006_missing() -> tuple[Violation, ...]:
     )
 
 
+# frob:ticket T-0403
+# frob:tests tests/test_gates.py::TestTestGate.test_test006_stale_on_new_file_not_in_stamp  # noqa: E501
 def _test006_stale(
     stamped_hashes: dict, snapshot: GraphSnapshot
 ) -> tuple[Violation, ...]:
-    """The TEST006 violation if any stamped file hash moved, else empty."""
+    """TEST006 violation if a stamped file changed OR a source file was added
+    since stamping (T-0403 B15: a brand-new file has no entry in
+    `stamped_hashes` at all, so it must be treated as stale too, not
+    silently skipped -- its coverage is unmeasured by the existing stamp).
+    """
     for path, current_hash in snapshot.file_hashes.items():
+        if not path.endswith(_SOURCE_EXTS):
+            # Coverage stamping only ever hashes _SOURCE_EXTS files
+            # (_collect_file_hashes); a doc/.strata/other file the graph
+            # also tracks was never in scope for `stamped_hashes` and is
+            # not a "new source file" in the coverage sense -- skip it so
+            # it is not misreported as staleness.
+            continue
         stamped = stamped_hashes.get(path)
-        if stamped is not None and stamped != current_hash:
+        if stamped is None:
+            _log.debug("TEST006: coverage stamp missing new file %s", path)
+            return (
+                Violation(
+                    rule="TEST006",
+                    severity=Severity.ERROR,
+                    file=".frob/coverage-stamp",
+                    line=0,
+                    message=(
+                        f"TEST006: coverage stamp is stale ({path} was added "
+                        f"since stamping); run: make coverage"
+                    ),
+                ),
+            )
+        if stamped != current_hash:
             _log.debug("TEST006: coverage stamp stale for %s", path)
             return (
                 Violation(
@@ -5439,15 +5509,33 @@ def _current_version(root: Path) -> str | None:
     return version if isinstance(version, str) else None
 
 
+# frob:ticket T-0403
+# frob:tests tests/test_gates.py::TestTestGate.test_changelog_mentions_rejects_substring_in_prose  # noqa: E501
+# frob:tests tests/test_gates.py::TestTestGate.test_changelog_mentions_accepts_real_heading_entry  # noqa: E501
 def _changelog_mentions(root: Path, version: str) -> bool:
-    """Whether CHANGELOG.md (if present) names `version`; absent file passes."""
+    """Whether CHANGELOG.md (if present) has a HEADING entry for `version`;
+    absent file passes.
+
+    T-0403 B14: a naive substring search matched `version` ANYWHERE in the
+    file -- inside an unrelated older entry's prose, a link, or as a prefix
+    of a longer number (e.g. "1.2.3" inside "1.2.34") -- so a changelog with
+    no real entry for the release could still satisfy REL001. This requires
+    the version to appear, bounded by non-digit/non-dot characters, on a
+    markdown heading line (`#...`), matching the Keep-a-Changelog
+    `## [x.y.z] - ...` convention this repo's own CHANGELOG.md uses.
+    """
+    pattern = re.compile(r"(?<![0-9.])" + re.escape(version) + r"(?![0-9.])")
     for name in ("CHANGELOG.md", "CHANGES.md", "HISTORY.md"):
         path = root / name
         if path.exists():
             try:
-                return version in path.read_text(encoding="utf-8", errors="replace")
+                text = path.read_text(encoding="utf-8", errors="replace")
             except OSError:
                 return True
+            return any(
+                line.lstrip().startswith("#") and pattern.search(line)
+                for line in text.splitlines()
+            )
     return True
 
 
@@ -6545,11 +6633,12 @@ def _assemble_gate_report(
     start_all: float,
 ) -> GateReport:
     """Run `thread_jobs`/`process_jobs` (T-0415), fold in the WAIVE001/
-    WAIVE002 self-checks, apply waivers and severity overrides, and log the
-    run's final tally."""
+    WAIVE002/DSL001 self-checks, apply waivers and severity overrides, and
+    log the run's final tally."""
     all_violations: list[Violation] = [
         *_waive001_violations(st.snapshot),
         *_waive002_violations(st.snapshot, st.rule_ids),
+        *_dsl001_violations(st.snapshot),
     ]
     job_violations, counts, timing = _run_combined_jobs(thread_jobs, process_jobs)
     counts["waive"] = len(all_violations)

@@ -123,6 +123,33 @@ class TestTscUnavailable:
         assert "tool unavailable: npx" in r.summary
 
 
+# frob:ticket T-0404
+class TestVitestUnverifiedZeroExit:
+    def test_run_vitest_warns_on_unparseable_zero_exit(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """T-0404 finding 10: vitest exiting 0 with non-JSON stdout (a crash
+        that somehow returns 0, or an output shape this parser doesn't
+        understand) used to be reported as a bare "tests passed" summary
+        with zero diagnostics -- indistinguishable from a real, verified
+        pass. It must instead attach a WARNING diagnostic so the ambiguity
+        is visible, not silently swallowed.
+        """
+        # frob:tests src/frob/check/_ts.py::_run_vitest kind="unit"
+        import frob.check._ts as ts_mod
+
+        fake_proc = subprocess.CompletedProcess(
+            args=["npx", "vitest"], returncode=0, stdout="not json", stderr=""
+        )
+        monkeypatch.setattr(ts_mod, "_run_npx", lambda root, args, tool: fake_proc)
+        r = ts_mod._run_vitest(tmp_path)
+        assert r.passed  # exit code alone still reads as 0/passed
+        assert r.tests == []
+        assert len(r.diagnostics) == 1
+        assert r.diagnostics[0].severity == "warning"
+        assert "unverified" in r.summary
+
+
 # frob:ticket T-0142
 class TestCheckResultRendersUnavailableTool:
     def test_as_text_shows_unavailable_tool_line(

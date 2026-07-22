@@ -1318,6 +1318,44 @@ class TestCoverageGate:
         assert _first_rule(report.violations, "WAIVE002") is not None
 
 
+class TestDsl001:
+    """T-0404 finding 5: a malformed `frob:` directive not already claimed
+    by WAIVE001/TEST010/DEBT001 must still be surfaced, not silently
+    dropped."""
+
+    def test_malformed_frob_doc_directive_flagged(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::_dsl001_violations kind="unit"
+        # A bare `frob:doc` with no target parses to a MalformedDirective
+        # ("missing target for verb 'doc'") -- before DSL001 existed this
+        # produced NO violation at all.
+        source = "def helper(x):\n    # frob:doc\n    return x\n"
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        from frob.gates import _dsl001_violations  # noqa: PLC0415
+
+        violations = _dsl001_violations(snap)
+        assert any(v.rule == "DSL001" for v in violations)
+        assert violations[0].severity == Severity.ERROR
+
+    def test_waive_reason_and_tests_kind_not_double_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # A malformed frob:waive (no reason) and a malformed frob:tests
+        # (bad kind=) are already surfaced by WAIVE001/TEST010 -- DSL001
+        # must not ALSO flag them (no double-reporting the same directive).
+        source = (
+            "def helper(x):\n"
+            "    # frob:waive COV001\n"
+            '    # frob:tests helper kind="bogus"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        from frob.gates import _dsl001_violations  # noqa: PLC0415
+
+        assert _dsl001_violations(snap) == ()
+
+
 class TestDebtGate:
     """T-0412: frob:debt vs frob:waive -- malformed directive (DEBT001),
     non-open ticket (DEBT002), expired until boundary (DEBT003)."""
@@ -3172,6 +3210,59 @@ class TestTestGate:
         stamp = {
             "source_sha": "x",
             "file_hashes": {"src/frob/pkg/a.py": "not-the-real-hash"},
+        }
+        (tmp_path / ".frob").mkdir(exist_ok=True)
+        (tmp_path / ".frob" / "coverage-stamp").write_text(json.dumps(stamp))
+        from frob.gates import _test006  # noqa: PLC0415
+
+        violations = _test006(snap)
+        assert any(v.rule == "TEST006" for v in violations)
+
+    def test_changelog_mentions_rejects_substring_in_prose(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0403 B14: `version` appearing anywhere in the file (unrelated
+        prose, a longer version number's prefix) must NOT satisfy the
+        changelog check -- only a real heading entry for that exact
+        version does.
+        """
+        from frob.gates import _changelog_mentions  # noqa: PLC0415
+
+        (tmp_path / "CHANGELOG.md").write_text(
+            "# Changelog\n\n## [1.2.34] - 2026-01-01\nbumped past 1.2.3 to fix a bug\n",
+            encoding="utf-8",
+        )
+        # "1.2.3" is a substring of both the heading "1.2.34" and the prose
+        # line, but there is no real heading entry for "1.2.3" itself.
+        assert _changelog_mentions(tmp_path, "1.2.3") is False
+
+    def test_changelog_mentions_accepts_real_heading_entry(
+        self, tmp_path: Path
+    ) -> None:
+        """A genuine `## [version]` heading entry does satisfy the check."""
+        from frob.gates import _changelog_mentions  # noqa: PLC0415
+
+        (tmp_path / "CHANGELOG.md").write_text(
+            "# Changelog\n\n## [1.2.3] - 2026-01-01\nfixed things\n",
+            encoding="utf-8",
+        )
+        assert _changelog_mentions(tmp_path, "1.2.3") is True
+
+    def test_test006_stale_on_new_file_not_in_stamp(self, tmp_path: Path) -> None:
+        """T-0403 B15: a file added after the last stamp has no entry in
+        `file_hashes` at all -- it must be reported stale, not silently
+        skipped (a prior version only compared hashes for paths already
+        present in the stamp, so brand-new files' coverage went unmeasured
+        while TEST006 stayed green).
+        """
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        _write(tmp_path, "src/frob/pkg/b.py", "def other(x):\n    return x\n")
+        snap = _snapshot(tmp_path)
+        # Stamp only knows about a.py -- b.py was added afterward.
+        a_hash = snap.file_hashes["src/frob/pkg/a.py"]
+        stamp = {
+            "source_sha": "x",
+            "file_hashes": {"src/frob/pkg/a.py": a_hash},
         }
         (tmp_path / ".frob").mkdir(exist_ok=True)
         (tmp_path / ".frob" / "coverage-stamp").write_text(json.dumps(stamp))
