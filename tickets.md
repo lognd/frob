@@ -6810,3 +6810,59 @@ component: null
 labels: []
 ```
 First field test of T-0577's auto-finalize: T-0575's worktree ledger contained a real T-draft-3d5f6965 block (verified by the reviewer at line ~6546 pre-land), main ran post-T-0577 code (0.82.x), yet the land dropped the draft block instead of minting a real id -- grep for the draft id on main after land returns 0 and no new ticket exists. Reproduce with a worktree ledger containing a draft block belonging to a DIFFERENT ticket than the one being landed (the T-0575 case: the draft was filed by the landing ticket but is its own separate block) and fix finalize_draft invocation coverage in the land path. The unit test T-0577 added apparently covers renumber/finalize on the landing ticket's own references, not a standalone sibling draft block.
+
+<!-- ticket:T-0638 -->
+```yaml
+id: T-0638
+title: 'frob deprecated CLI subcommand: list deprecations with sunset/ticket status'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0576
+scope:
+- src/frob/app/**
+- src/frob/__main__.py
+- README.md
+- docs/modules/gates.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a repo with frob:deprecated directives WHEN frob deprecated runs THEN each
+  deprecation prints with its DEPR status and the README command table includes the
+  new command
+threat: null
+component: null
+labels: []
+```
+T-0576 landed the frob:deprecated directive and DEPR001-004 gates plus the list_deprecated API, but no CLI surface. Add a frob deprecated subcommand (App/AppConfig runner pattern) listing every deprecation with since/sunset/ticket/status (in-window vs past-sunset vs orphaned), plus the README command-table row and count bump so DOC005 stays green. Was T-draft-e51d8b3b in T-0576's worktree; drafts still do not survive land (T-0637).
+
+<!-- ticket:T-0639 -->
+```yaml
+id: T-0639
+title: 'design: detect a deprecated symbol gaining NEW callers (public-symbol caller
+  graph)'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0576
+scope:
+- src/frob/graph/**
+- src/frob/gates/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN a design decision recorded WHEN implemented THEN a change adding a call to
+  a deprecated public symbol produces a DEPR finding naming the new call site
+threat: null
+component: null
+labels: []
+```
+T-0576's ticket body wanted a deprecated symbol gaining new callers to fire a finding, but frob.graph.callgraph's caller/reference resolution only covers PRIVATE callees by design -- a PUBLIC deprecated symbol's callers are not resolvable today. Design work: either extend the callgraph to public-symbol references (cost/precision tradeoff) or diff-based detection (a new call site referencing the symbol in a change since the directive appeared). Was T-draft-0296fddf in T-0576's worktree; drafts still do not survive land (T-0637).
