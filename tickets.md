@@ -3810,7 +3810,7 @@ CMPL-*-level checks remain future work tracked by T-0607.
 ```yaml
 id: T-0389
 title: 'registry reconciliation: supply-chain (41 entries)'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-20'
@@ -3822,8 +3822,23 @@ parent: T-0376
 scope:
 - src/frob/vet/
 - docs/design/registry/supply-chain.yaml
-scope_changes: []
-evidence: []
+- tests/test_registry_reconciliation_supply_chain.py
+scope_changes:
+- op: add
+  glob: tests/test_registry_reconciliation_supply_chain.py
+  reason: add pin test file for T-0389 acceptance criterion, per agent-playbook.md
+    evidence discipline
+  actor: logan
+  at: '2026-07-22'
+evidence:
+- tests/test_registry_reconciliation_supply_chain.py::TestSupplyChainRegistryFile::test_is_in_registry_files
+- tests/test_registry_reconciliation_supply_chain.py::TestSupplyChainRegistryFile::test_loads_without_error
+- tests/test_registry_reconciliation_supply_chain.py::TestSupplyChainRegistryFile::test_no_malformed_entries
+- tests/test_registry_reconciliation_supply_chain.py::TestSupplyChainExhaustiveness::test_declared_total_is_41
+- tests/test_registry_reconciliation_supply_chain.py::TestSupplyChainExhaustiveness::test_audit_reports_exhausted
+- tests/test_registry_reconciliation_supply_chain.py::TestSupplyChainExhaustiveness::test_every_deferred_entry_targets_an_open_ticket
+- tests/test_registry_reconciliation_supply_chain.py::TestSupplyChainExhaustiveness::test_no_entry_defers_to_this_reconciliation_ticket
+- tests/test_registry_reconciliation_supply_chain.py::TestExhaustivenessGateOverRealSupplyChain::test_no_supply_chain_violations
 attachments: []
 acceptance: []
 threat: null
@@ -3832,11 +3847,46 @@ labels: []
 ```
 Reconcile docs/design/registry/supply-chain.yaml against actual enforcement: every catalogued entry must map to (i) an enforced check, (ii) a documented out-of-scope entry with a verified caught_by (T-0381/T-0382), or (iii) an explicit deferred ticket. Resolve RECONCILIATION.md's undispositioned entries for this registry. Add an EXHAUSTIVENESS meta-test for this registry: catalogued count == enforced+excused+deferred count, so a future gap fails the build. Acceptance: exhaustiveness meta-test passes and is wired into frob check.
 
+## Done report
+
+Reconciled docs/design/registry/supply-chain.yaml (41 entries) against
+actual enforcement. 39 entries carried disposition deferred:T-0389 (a
+self-deferral -- T-0389 is this review-gated reconciliation ticket and
+would orphan the deferral the moment it closes); re-pointed all 39 to a
+newly filed standing ticket, T-draft-88fe9009 (implement checkable-control
+enforcement for SC-* supply-chain registry entries), scoped to
+src/frob/vet/**. The remaining 2 entries (SC-ATTACK-TRANSITIVE-BLINDNESS,
+SC-DEFENSE-CAPABILITY-SANDBOXING) were already honestly dispositioned
+out_of_scope(process-only) before this pass and were left untouched.
+Disposition sum: 39 deferred + 2 out_of_scope = 41 == declared total.
+
+Added tests/test_registry_reconciliation_supply_chain.py (8 tests)
+mirroring the T-0384/T-0385/T-0386/T-0387/T-0388 pin-test precedent:
+registry-file loads/no-malformed, declared total == 41, audit exhausted
+with disposition sum == total, every deferred entry resolves dynamically
+to a real non-done ticket in the live queue, no entry defers to T-0389
+itself (regression lock), and registry_gate raises zero violations for
+supply-chain.yaml specifically. Added the new test file to T-0389's scope
+via `frob ticket scope --add` before recording evidence.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_registry_reconciliation_supply_chain.py::TestSupplyChainRegistryFile::test_is_in_registry_files` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_supply_chain.py::TestSupplyChainRegistryFile::test_loads_without_error` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_supply_chain.py::TestSupplyChainRegistryFile::test_no_malformed_entries` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_supply_chain.py::TestSupplyChainExhaustiveness::test_declared_total_is_41` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_supply_chain.py::TestSupplyChainExhaustiveness::test_audit_reports_exhausted` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_supply_chain.py::TestSupplyChainExhaustiveness::test_every_deferred_entry_targets_an_open_ticket` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_supply_chain.py::TestSupplyChainExhaustiveness::test_no_entry_defers_to_this_reconciliation_ticket` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_supply_chain.py::TestExhaustivenessGateOverRealSupplyChain::test_no_supply_chain_violations` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0390 -->
 ```yaml
 id: T-0390
 title: 'registry reconciliation: evasion (112 entries)'
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-07-20'
@@ -3848,8 +3898,23 @@ parent: T-0376
 scope:
 - src/frob/vet/
 - docs/design/registry/evasion.yaml
-scope_changes: []
-evidence: []
+- tests/test_registry_reconciliation_evasion.py
+scope_changes:
+- op: add
+  glob: tests/test_registry_reconciliation_evasion.py
+  reason: add pin test file for T-0390 acceptance criterion, per agent-playbook.md
+    evidence discipline
+  actor: logan
+  at: '2026-07-22'
+evidence:
+- tests/test_registry_reconciliation_evasion.py::TestEvasionRegistryFile::test_is_in_registry_files
+- tests/test_registry_reconciliation_evasion.py::TestEvasionRegistryFile::test_loads_without_error
+- tests/test_registry_reconciliation_evasion.py::TestEvasionRegistryFile::test_no_malformed_entries
+- tests/test_registry_reconciliation_evasion.py::TestEvasionExhaustiveness::test_declared_total_is_112
+- tests/test_registry_reconciliation_evasion.py::TestEvasionExhaustiveness::test_audit_reports_exhausted
+- tests/test_registry_reconciliation_evasion.py::TestEvasionExhaustiveness::test_every_deferred_entry_targets_an_open_ticket
+- tests/test_registry_reconciliation_evasion.py::TestEvasionExhaustiveness::test_no_entry_defers_to_this_reconciliation_ticket
+- tests/test_registry_reconciliation_evasion.py::TestExhaustivenessGateOverRealEvasion::test_no_evasion_violations
 attachments: []
 acceptance: []
 threat: null
@@ -3857,6 +3922,45 @@ component: null
 labels: []
 ```
 Reconcile docs/design/registry/evasion.yaml against actual enforcement: every catalogued entry must map to (i) an enforced check, (ii) a documented out-of-scope entry with a verified caught_by (T-0381/T-0382), or (iii) an explicit deferred ticket. Resolve RECONCILIATION.md's undispositioned entries for this registry. Add an EXHAUSTIVENESS meta-test for this registry: catalogued count == enforced+excused+deferred count, so a future gap fails the build. Acceptance: exhaustiveness meta-test passes and is wired into frob check.
+
+## Done report
+
+Reconciled docs/design/registry/evasion.yaml (112 entries) against actual
+enforcement. Unlike supply-chain/weaknesses/compliance, this file's 112
+entries were ALREADY honestly dispositioned before this ticket started:
+every entry carries deferred:T-0339, the real open EPIC ("sound
+capability may-analysis -- exhaustive over static name-binding per
+language spec, fail-closed on runtime dispatch") this construct taxonomy
+exists to feed, not T-0390 itself -- no self-deferral hazard to fix.
+Disposition sum: 112 deferred + 0 out_of_scope + 0 handled = 112 ==
+declared total.
+
+Added tests/test_registry_reconciliation_evasion.py (8 tests) mirroring
+the T-0384..T-0389 pin-test precedent: registry-file loads/no-malformed,
+declared total == 112, audit exhausted with disposition sum == total,
+every deferred entry resolves dynamically to a real non-done ticket in
+the live queue, no entry defers to T-0390 itself (regression lock even
+though it never materialized here), and registry_gate raises zero
+violations for evasion.yaml specifically. Added the new test file to
+T-0390's scope via `frob ticket scope --add` before recording evidence.
+
+### Changed
+```
+ docs/design/registry/supply-chain.yaml             |  88 +++++-----
+ tests/test_registry_reconciliation_supply_chain.py | 194 +++++++++++++++++++++
+ tickets.md                                         |  79 ++++++++-
+ 3 files changed, 319 insertions(+), 42 deletions(-)
+```
+
+### Evidence
+- `tests/test_registry_reconciliation_evasion.py::TestEvasionRegistryFile::test_is_in_registry_files` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_evasion.py::TestEvasionRegistryFile::test_loads_without_error` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_evasion.py::TestEvasionRegistryFile::test_no_malformed_entries` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_evasion.py::TestEvasionExhaustiveness::test_declared_total_is_112` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_evasion.py::TestEvasionExhaustiveness::test_audit_reports_exhausted` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_evasion.py::TestEvasionExhaustiveness::test_every_deferred_entry_targets_an_open_ticket` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_evasion.py::TestEvasionExhaustiveness::test_no_entry_defers_to_this_reconciliation_ticket` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_evasion.py::TestExhaustivenessGateOverRealEvasion::test_no_evasion_violations` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0391 -->
 ```yaml
@@ -3888,7 +3992,7 @@ Reconcile docs/design/registry/arch-checks.yaml against actual enforcement: ever
 ```yaml
 id: T-0392
 title: 'registry reconciliation: system-design (119 entries)'
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-07-20'
@@ -3900,8 +4004,23 @@ parent: T-0376
 scope:
 - src/frob/strata/
 - docs/design/registry/system-design.yaml
-scope_changes: []
-evidence: []
+- tests/test_registry_reconciliation_system_design.py
+scope_changes:
+- op: add
+  glob: tests/test_registry_reconciliation_system_design.py
+  reason: add pin test file for T-0392 acceptance criterion, per agent-playbook.md
+    evidence discipline
+  actor: logan
+  at: '2026-07-22'
+evidence:
+- tests/test_registry_reconciliation_system_design.py::TestSystemDesignRegistryFile::test_is_in_registry_files
+- tests/test_registry_reconciliation_system_design.py::TestSystemDesignRegistryFile::test_loads_without_error
+- tests/test_registry_reconciliation_system_design.py::TestSystemDesignRegistryFile::test_no_malformed_entries
+- tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_declared_total_is_119
+- tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_audit_reports_exhausted
+- tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_every_deferred_entry_targets_an_open_ticket
+- tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_no_entry_defers_to_this_reconciliation_ticket
+- tests/test_registry_reconciliation_system_design.py::TestExhaustivenessGateOverRealSystemDesign::test_no_system_design_violations
 attachments: []
 acceptance: []
 threat: null
@@ -3909,6 +4028,61 @@ component: null
 labels: []
 ```
 Reconcile docs/design/registry/system-design.yaml against actual enforcement: every catalogued entry must map to (i) an enforced check, (ii) a documented out-of-scope entry with a verified caught_by (T-0381/T-0382), or (iii) an explicit deferred ticket. Resolve RECONCILIATION.md's undispositioned entries for this registry. Add an EXHAUSTIVENESS meta-test for this registry: catalogued count == enforced+excused+deferred count, so a future gap fails the build. Acceptance: exhaustiveness meta-test passes and is wired into frob check.
+
+## Done report
+
+Reconciled docs/design/registry/system-design.yaml (119 entries: 105
+genuine + 14 manifest-extraction artifacts per RECONCILIATION.md finding
+(d)) against actual enforcement. 49 of the 105 genuine entries carried
+disposition deferred:T-0392 (a self-deferral -- T-0392 is this
+review-gated reconciliation ticket and would orphan the deferral the
+moment it closes); re-pointed all 49 to a newly filed standing ticket,
+T-draft-9bca3276 (implement SYS/REL checkable-control enforcement for
+the 49 unresolved system-design registry entries), scoped to
+src/frob/strata/**. The remaining 56 genuine entries were already
+honestly deferred to T-0331 (the real feeding systems-checks epic) and
+were left untouched. The 14 manifest-extraction-artifact entries stay
+out-of-scope(manifest-extraction-artifact), also untouched. Disposition
+sum: 49 + 56 deferred + 14 out_of_scope = 119 == declared total.
+
+Added tests/test_registry_reconciliation_system_design.py (8 tests)
+mirroring the T-0384..T-0390 pin-test precedent: registry-file
+loads/no-malformed, declared total == 119, audit exhausted with
+disposition sum == total, every deferred entry resolves dynamically to
+a real non-done ticket in the live queue, no entry defers to T-0392
+itself (regression lock), and registry_gate raises zero violations for
+system-design.yaml specifically. Added the new test file to T-0392's
+scope via `frob ticket scope --add` before recording evidence.
+
+T-0392 blocks T-0658 (T-0331 epic's N:M coverage close condition) and
+T-0677/T-0678 (manifest-artifact cleanup / cross-corpus totality). The
+49 re-pointed entries (T-draft-9bca3276) are exactly the piece those
+three tickets were waiting on to treat "registered check" as a real,
+checkable claim over the system-design domain -- T-0658's coverage math
+should account for T-draft-9bca3276's eventual real checks the same way
+it already accounts for the 56 T-0331-deferred entries; T-0677 can now
+proceed with its manifest-extraction-artifact cleanup against a fully
+dispositioned base; T-0678's cross-corpus totality meta-test lists
+T-0392 as a direct blocked_by and can now be unblocked on this leg.
+
+### Changed
+```
+ docs/design/registry/supply-chain.yaml             |  88 +++++-----
+ tests/test_registry_reconciliation_evasion.py      | 185 ++++++++++++++++++++
+ tests/test_registry_reconciliation_supply_chain.py | 194 +++++++++++++++++++++
+ tickets.md                                         | 138 ++++++++++++++-
+ 4 files changed, 560 insertions(+), 45 deletions(-)
+```
+
+### Evidence
+- `tests/test_registry_reconciliation_system_design.py::TestSystemDesignRegistryFile::test_is_in_registry_files` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_system_design.py::TestSystemDesignRegistryFile::test_loads_without_error` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_system_design.py::TestSystemDesignRegistryFile::test_no_malformed_entries` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_declared_total_is_119` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_audit_reports_exhausted` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_every_deferred_entry_targets_an_open_ticket` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_no_entry_defers_to_this_reconciliation_ticket` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_system_design.py::TestExhaustivenessGateOverRealSystemDesign::test_no_system_design_violations` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0393 -->
 ```yaml
@@ -10635,3 +10809,52 @@ component: null
 labels: []
 ```
 T-0692 added a global 120s/thread pytest-timeout default (pyproject.toml addopts). tests/system/test_scaffold_dx.py (pytest.mark.slow, spawns uv sync + a real venv + full lint/typecheck/test/frob-check pipeline) legitimately runs well over 120s and needs an explicit @pytest.mark.timeout(N) override (and an audit of any other tests/system/** file that might exceed 120s) so it does not start failing under the new default. Out of T-0692's docs/guides+config-only scope; filed per that ticket's Done report.
+
+<!-- ticket:T-0721 -->
+```yaml
+id: T-0721
+title: implement checkable-control enforcement for SC-* supply-chain registry entries
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/vet/**
+- docs/design/registry/supply-chain.yaml
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Standing home for the 39 supply-chain.yaml entries whose controls previously carried deferred:T-0389 (the reconciliation ticket itself) -- a self-reference that would orphan them the moment T-0389 closed; T-0389's pass re-pointed them here. Each entry needs either a real enforcing check in src/frob/vet/ (then flip to handled_by) or a reasoned out_of_scope disposition (many require external network/registry data -- checkability tag requires-external-data -- and are legitimate deferrals to future external-data-fetching work, not silent drops).
+
+<!-- ticket:T-0722 -->
+```yaml
+id: T-0722
+title: implement SYS/REL checkable-control enforcement for the 49 unresolved system-design
+  registry entries
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/**
+- docs/design/registry/system-design.yaml
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Standing home for the 49 system-design.yaml entries whose controls previously carried deferred:T-0392 (the reconciliation ticket itself) -- a self-reference that would orphan them the moment T-0392 closed; T-0392's pass re-pointed them here. Each entry needs either a real enforcing SYS2xx/REL2xx check in src/frob/strata/ (then flip to handled_by) or a reasoned out_of_scope/duplicate_of disposition. Related to the T-0331 systems-checks epic and its T-0658 N:M coverage close condition (which is itself blocked by T-0392) -- once this ticket's entries get real checks, T-0658's coverage math should account for them the same way it accounts for the T-0331-deferred 56.
