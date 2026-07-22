@@ -1743,6 +1743,8 @@ def _resolved_documented_srcs(root: Path, snapshot: GraphSnapshot) -> set[str]:
     return resolved
 
 
+# frob:ticket T-0553
+# frob:tests tests/test_gates.py::TestCoverageGate.test_cov001_waiver_does_not_blanket_suppress_sibling_symbol  # noqa: E501
 def _cov001(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """COV001: a public symbol has no explicit, *resolving* `frob:doc` edge.
 
@@ -1786,6 +1788,13 @@ def _cov001(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
                     f"COV001: {record.symref} is public with no frob:doc edge; "
                     f"add: frob:doc <docs/anchor> above it"
                 ),
+                # T-0553 (B11): COV001 is precisely about ONE symbol (this
+                # `record`), so set `symref` to get `_match_waiver`'s
+                # symbol-exact matching -- without it, one `frob:waive
+                # COV001` anywhere in the file blanket-suppresses every
+                # other undocumented public symbol in that file, which is
+                # not what a targeted waiver author intends.
+                symref=record.symref,
             )
         )
     return tuple(violations)
@@ -2071,6 +2080,8 @@ def _cov002(
     return tuple(violations)
 
 
+# frob:ticket T-0553
+# frob:tests tests/test_gates.py::TestCoverageGate.test_cov001_waiver_does_not_blanket_suppress_sibling_symbol  # noqa: E501
 def _cov002_check_symref(
     snapshot: GraphSnapshot,
     queue: TicketQueue,
@@ -2102,6 +2113,12 @@ def _cov002_check_symref(
             f"COV002: {symref} changed with no frob:ticket edge to an open "
             f"ticket; run: frob ticket new, then add: frob:ticket <id>"
         ),
+        # T-0553 (B11): COV002 is precisely about ONE changed symbol, so
+        # set `symref` for `_match_waiver`'s symbol-exact matching --
+        # without it, one `frob:waive COV002` anywhere in the file
+        # blanket-suppresses the missing-ticket-coverage check for every
+        # other changed symbol in that file.
+        symref=symref,
     )
 
 

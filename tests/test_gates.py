@@ -164,6 +164,7 @@ def _marker_line(root: Path, ticket_id: str) -> int:
     raise AssertionError(f"marker for {ticket_id} not found in tickets.md")
 
 
+# frob:ticket T-0564
 def _state_line(root: Path, ticket_id: str) -> int:
     """The 1-indexed line number of `ticket_id`'s YAML `state:` field in
     `root/tickets.md` -- deliberately BELOW the marker line, for building a
@@ -300,6 +301,7 @@ class TestBaselineDelta:
         assert is_baseline_stale(tmp_path, baseline) is True
 
 
+# frob:ticket T-0553
 class TestCoverageGate:
     def test_cov001_broken_doc_edge_does_not_suppress_finding(
         self, tmp_path: Path
@@ -512,6 +514,7 @@ class TestCoverageGate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV002" for v in violations)
 
+    # frob:ticket T-0564
     def test_cov002_grace_matches_hunk_anywhere_in_ticket_block(
         self, tmp_path: Path
     ) -> None:
@@ -1273,6 +1276,41 @@ class TestCoverageGate:
         waived_cov001 = _first_rule(waived, "COV001")
         assert waived_cov001 is not None
         assert waived_cov001.waived is not None
+
+    # frob:ticket T-0553
+    def test_cov001_waiver_does_not_blanket_suppress_sibling_symbol(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0553 (B11): a `frob:waive COV001` placed above ONE public
+        symbol must not also suppress COV001 for a DIFFERENT public symbol
+        in the same file -- before this fix, COV001's `Violation` carried
+        no `symref`, so `_match_waiver` fell back to file-scoped matching
+        and one directive silently waived every undocumented symbol in the
+        file, not just the one it was written above."""
+        source = (
+            "def waived_helper(x):\n"
+            '    # frob:waive COV001 reason="legacy code, ticket filed"\n'
+            '    """A public helper waived from doc obligations."""\n'
+            "    return x\n"
+            "\n"
+            "def unwaived_helper(x):\n"
+            '    """A different public helper, never waived."""\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+
+        from frob.gates import _apply_waivers  # noqa: PLC0415 - internal, test-only
+
+        kept, waived = _apply_waivers(violations, snap)
+        waived_symrefs = {v.symref for v in waived if v.rule == "COV001"}
+        kept_symrefs = {v.symref for v in kept if v.rule == "COV001"}
+        assert "src/a.py::waived_helper" in waived_symrefs
+        assert "src/a.py::unwaived_helper" in kept_symrefs
 
     def test_waive001_missing_reason(self, tmp_path: Path) -> None:
         source = "def helper(x):\n    # frob:waive COV001\n    return x\n"
