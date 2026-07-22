@@ -3085,3 +3085,24 @@ component: null
 labels: []
 ```
 Incident (2026-07-22): make coverage removed the editable strata_core/frob_core natives mid-run (the known uv-sync clobber, same family as the uv build --wheel gotcha), then died collecting tests/system/test_frob_self_model.py and left 44 phantom errors in frob check (SYS004 native-missing, 16 COV003 unresolvable kernel-property evidence, DRIFT fallout) until make core was re-run. Fix: the coverage target must either pin/exclude the natives from sync or run make core (cheap no-op when fresh) before pytest, and frob doctor's native check should run first so the failure is one clear line. Scope: Makefile, docs/modules/testing.md.
+
+<!-- ticket:T-0539 -->
+```yaml
+id: T-0539
+title: PII011/PII012 warn-pool calibration + burndown (336 findings)
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-21'
+priority: medium
+blocked_by: []
+parent: null
+scope: []
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
