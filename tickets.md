@@ -3574,7 +3574,7 @@ docs/audits/gates-accounting.md B8. _load_diff degrades to an EMPTY diff (warnin
 id: T-0551
 title: 'check: nested/top-level-less native sources escape language detection (T-0404
   finding 7)'
-state: in-progress
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-21'
