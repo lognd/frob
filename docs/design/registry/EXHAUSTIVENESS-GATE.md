@@ -8,6 +8,39 @@ the fix: `frob.gates._registry_exhaustiveness.registry_gate`, wired into
 `frob check` at ERROR severity as the `registry` gate, family `REG001`-
 `REG005`.
 
+## Unified model (T-0407)
+
+Parsing (YAML loading, entry shape, the disposition grammar) lives in
+exactly one place: `frob.registry._models` (`RegistryEntry`, `Disposition`,
+`DispositionKind`, `load_registry_dir`, `audit_registry_file`). Before
+T-0407 this parsing was duplicated inline inside
+`frob.gates._registry_exhaustiveness` -- correct, but a second registry
+consumer (T-0424's reflexive check-coverage registry) would either
+duplicate that parser again or reach into a gate-internal module as if it
+were a library. `registry_gate` now calls into `frob.registry` and is
+purely the POLICY layer: which `DispositionKind` earns which `Violation`,
+verified against live state.
+
+T-0407 also closes two early-exit/partial-coverage holes the
+pre-unification gate silently allowed:
+
+- **REG006** -- a list item under `entries:`/`*_entries:` that is not a
+  mapping, or has no string `id`, is now a loud violation instead of a
+  silent `continue`. Pre-T-0407 such an item vanished from every count
+  with no trace -- exactly the "enumerate a universe, then drop part of
+  it silently" shape T-0407 exists to close.
+- **REG007** -- the same `id` string defined by two or more entries
+  anywhere in the loaded registry (a real collision, distinct from an
+  intentional `duplicate_of:` reference, which REG004 already governs).
+  Pre-T-0407 the cross-file id index silently kept only the last-seen
+  entry for a collided id.
+
+`frob registry audit` (also T-0407) reports the per-file `RegistryAudit`
+accounting -- `handled`/`deferred`/`duplicate`/`out_of_scope`/
+`unaccounted`/`malformed` counts against `total` -- so "is this registry
+exhausted" is a one-line honest read, not a re-derivation from the raw
+violation list.
+
 ## Disposition grammar
 
 Every entry's `disposition:` string is parsed and VERIFIED, never taken

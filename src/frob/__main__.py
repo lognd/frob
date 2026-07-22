@@ -551,6 +551,22 @@ def _add_debt_parser(sub) -> None:
     debt_p.add_argument("--json", dest="debt_json", action="store_true")
 
 
+# frob:ticket T-0407
+def _add_registry_parser(sub) -> None:
+    """Register the `frob registry` subcommand and its `audit` action."""
+    registry_p = sub.add_parser(
+        "registry", help="unified design-knowledge registry (T-0407)"
+    )
+    registry_sub = registry_p.add_subparsers(dest="registry_command")
+    registry_audit_p = registry_sub.add_parser(
+        "audit",
+        help="per-registry-file disposition accounting (handled/deferred/"
+        "out-of-scope/unaccounted)",
+    )
+    registry_audit_p.add_argument("--path", dest="registry_path", metavar="DIR")
+    registry_audit_p.add_argument("--json", dest="registry_json", action="store_true")
+
+
 def _add_ticket_new_identity_args(ticket_new_p) -> None:
     """Register `frob ticket new`'s title/kind/acceptance/threat classification args."""
     ticket_new_p.add_argument("--title", dest="ticket_title", required=True)
@@ -1597,6 +1613,7 @@ def _add_workflow_subparsers(sub) -> None:
     _add_graph_parser(sub)
     _add_ack_parser(sub)
     _add_debt_parser(sub)
+    _add_registry_parser(sub)
     _add_ticket_parser(sub)
     _add_test_parser(sub)
     _add_vet_parser(sub)
