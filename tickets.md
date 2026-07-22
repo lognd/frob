@@ -7406,7 +7406,7 @@ to the coordinator at land, not this ticket's declared scope
 id: T-0637
 title: 'land draft auto-finalize failed in the field: T-0575''s draft block dropped
   despite T-0577 landed'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-22'
