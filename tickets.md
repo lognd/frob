@@ -1924,7 +1924,7 @@ fully bypasses it with identical results.
 ```yaml
 id: T-0322
 title: 'coverage --wait / push contract: agents block on a socket recv, never background-and-stall'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-19'
