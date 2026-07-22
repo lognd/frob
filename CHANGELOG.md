@@ -17,6 +17,23 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.69.0] - unreleased (T-0410 perf: parse_file run-scoped memo)
+
+T-0410: `frob.lang.parse_file` gained a run-scoped `@memoize_per_run` memo
+(T-0423's mechanism, generalized to a new call site), applied via a
+first-call-deferred wrapper (`_parse_file_uncached` + the public `parse_file`
+wrapper) to dodge a real `frob.lang`/`frob.check` circular import a
+module-level decorator would hit. Closes a gap `_parse`'s own content-hash
+cache left open: `_parse` cached the raw tree-sitter `Tree`, but `extract()`
+(the symbol/comment walk over it) re-ran on every call regardless -- COV006's
+rescue helpers call `parse_file` ~2000+ times per `frob check`, many repeats
+on the same path across different candidate edges. Measured: isolated
+`coverage_gate` profile 155.8s -> 15.9s; real `frob check`'s `coverage` stage
+timing 36-45s -> 3.5-4.7s. `frob.excludes.BUILTIN_SKIP_DIRS` also gained
+`.hypothesis`/`.serena` (perf audit finding M6, `docs/audits/perf.md`) --
+neither has a tree-sitter grammar but every rglob-based stage was still
+walking/stat'ing/opening every entry inside them.
+
 ## [0.66.0] - unreleased (graph leaves + DEAD001/PARSE001, part 2)
 
 T-0422: new `DEAD001` gate (`frob.gates._dead_symbols.dead_symbol_gate`,
