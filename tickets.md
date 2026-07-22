@@ -9445,3 +9445,62 @@ component: null
 labels: []
 ```
 Child 5 of T-0693, the user's seem-IO-bound/seem-CPU-bound mandate. Classify each function from normalized-model events: IO-BOUND if dominated by curated IO calls (sockets/files/http/subprocess/db), CPU-BOUND if loop/arithmetic-dense with no IO, MIXED/UNKNOWN otherwise (advisories only fire on confident classifications -- T-0332 noise discipline). Advisories: CPU-bound work submitted to ThreadPoolExecutor or awaited in the event loop -> GIL-bound, suggest ProcessPool/native; trivially-small IO-bound tasks under ProcessPoolExecutor -> IPC overhead, suggest threads/async; async def with zero awaits (from T-0696) -> not actually async, suggest plain def; sequential awaits over independent IO -> suggest gather. Each advisory names the classification evidence (the dominating call sites), never a bare switch-your-model.
+
+<!-- ticket:T-0699 -->
+```yaml
+id: T-0699
+title: 'strata SYS rules: resource-contention detection over the EXISTING grammar
+  (duplicate ports, overlapping owns/acl, shared pipes)'
+state: queued
+kind: security
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0331
+scope:
+- src/frob/strata/**
+- tests/unit/strata/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN two nodes listening on the same port WHEN sys checks run THEN a contention
+  error names both nodes; GIVEN overlapping owns paths THEN a finding fires; GIVEN
+  disjoint resources THEN silence
+threat: null
+component: null
+labels: []
+```
+First half of the resource-contention mandate 2026-07-22 -- NO grammar change needed. New SYS rule family over the already-elaborated model: (a) two nodes declaring listens on the same port = hard conflict; (b) two nodes whose owns paths (linux) or acl paths (windows) overlap by prefix = contention finding (severity by whether either grants write-capable rights where expressible); (c) two nodes binding the same pipe NAME; (d) two nodes writing the same store. Litmus fixtures per case, both firing and clean. Coordinate rule naming with the T-0331 reliability/consistency children (T-0649 single-source-of-truth is the data-level cousin); the MODE-aware deeper version is the sibling grammar-extension ticket and must not be duplicated here -- this ticket ships what current grammar data supports, honestly labeled as mode-blind.
+
+<!-- ticket:T-0700 -->
+```yaml
+id: T-0700
+title: 'strata grammar: access modes + shared-resource/lease declarations for contention
+  proofs'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: T-0331
+scope:
+- strata-core/src/parse.rs
+- src/frob/strata/**
+- editors/**
+- docs/strata/**
+- tests/unit/strata/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- GIVEN two nodes with write-mode access to one resource and no arbiter WHEN sys checks
+  run THEN a fail-closed error; GIVEN the same with a declared arbiter or read-only
+  modes THEN the obligation discharges
+threat: null
+component: null
+labels: []
+```
+Second half of the resource-contention mandate -- the grammar extension. Add: (1) access MODE on resource edges (owns/acl/stores gain mode=read|write|exclusive, default write for backward compat with current semantics -- decide and document); (2) a shared-resource declaration with an ARBITER (resource NAME mode... arbitrated_by NODE|lock NAME) so two writers are provable-safe only through a declared arbiter/lease; (3) contention proof obligation: for every resource with >1 writer-mode accessor and no arbiter, a SYS error (fail-closed). parse.rs node/store symmetry per T-0261 precedent, tmLanguage update, docs/strata section, litmus fixtures. Field motivation: frob's own ledger-lock/refs-stash/info-exclude incidents -- repo-global resources with multiple writers and only convention as the arbiter. The mode-blind rules ship first in the sibling ticket; this upgrades them to mode-aware without renaming.
