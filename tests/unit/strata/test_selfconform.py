@@ -916,6 +916,16 @@ class TestCoreUndeclaredInterfaceNonPython:
 
 class TestLanguageCoverageDriftLock:
     # frob:tests src/frob/strata/_selfconform.py::_sorted_capability_files kind="unit"
+    # frob:waive COV006 reason="T-0536: SCANNED_LANGUAGES (frob.vet._capability) \
+    # and LANGUAGES (frob.vet._capability_registry) are both module-level \
+    # constants asserted for set equality here -- neither is ever CALLED \
+    # by this test's body, so there is no call-graph edge for the graph \
+    # to find regardless of which symbol frob:tests names. Retargeting \
+    # the directive straight at SCANNED_LANGUAGES was tried and rejected: \
+    # DRIFT002 then reports the ref as unresolvable (module-level \
+    # assignments are not graph nodes), trading one false positive for \
+    # another. Same module-constant-drift-lock shape as T-0516's \
+    # tests/test_gates.py waiver."
     def test_scanned_languages_equals_registry_languages(self):
         """T-0169 drift lock: the set of languages self-conformance (and
         `vet`) actually reach via `language_for`/`_EXT_LANGUAGE` must equal
@@ -954,6 +964,14 @@ class TestLanguageCoverageDriftLock:
 
 class TestExtendedKindsDriftLock:
     # frob:tests src/frob/strata/_selfconform.py::_observed_extended_kinds_by_node kind="unit"
+    # frob:waive COV006 reason="T-0536: _EXTENDED_KINDS/_KIND_MAP/_PATTERNS \
+    # are module-level constants this test asserts set operations over -- \
+    # never CALLED, so there is no call-graph edge regardless of binding. \
+    # Retargeting straight at _EXTENDED_KINDS was tried and rejected: \
+    # DRIFT002 then reports the ref as unresolvable (module-level \
+    # assignments are not graph nodes), trading one false positive for \
+    # another. Same module-constant-drift-lock shape as T-0516's \
+    # tests/test_gates.py waiver."
     def test_extended_kinds_is_disjoint_from_kind_map(self):
         """`_EXTENDED_KINDS` (SYS100's new-code slice) and `_KIND_MAP`'s keys
         (THREAT004's delegated slice) must never overlap -- a shared kind
