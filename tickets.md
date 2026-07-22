@@ -4687,9 +4687,9 @@ Found while working T-draft-f8aabdf0 (REG008 conformance sweep). frob check --ti
 ## Failure log
 - 2026-07-22 attempt 1: resolved by main's later commits (INV-037..040/test_graph.py/test_logging_module.py additions) merged into this worktree after filing -- the flagged pytest node ids now collect cleanly, was a stale-worktree-base artifact, not a real gap
 
-<!-- ticket:T-draft-3a0b0b5f -->
+<!-- ticket:T-0594 -->
 ```yaml
-id: T-draft-3a0b0b5f
+id: T-0594
 title: Wire ratchet-pool severity resolution into a real gate (frob.gates.__init__)
 state: queued
 kind: feature
