@@ -17,6 +17,19 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.60.0] - unreleased
+
+T-0541/T-0542: two gates-accounting audit fixes (T-0403 B9/B10).
+`coverage_gate` gained an optional `active_ticket: str | None = None`
+kwarg (COV002 now prefers the active ticket's own scope, and treats two
+open tickets whose scopes ambiguously, equally cover the same file as
+NOT covering it rather than picking the first match found). `run_gates`
+no longer silently skips `SCOPE001`/`PRE001` when no active ticket is
+derivable and the diff touches real source (only a `tickets.md`-only or
+empty diff still skips cleanly) -- it now emits a blocking violation
+instead, closing an off-convention-branch/`main`-commit escape from
+scope and pre-work enforcement.
+
 ## [0.58.0] - unreleased
 
 T-0454: professional ticket organization -- `Ticket`/`TicketSpec` gained

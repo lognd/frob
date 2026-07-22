@@ -3603,6 +3603,8 @@ class TestCoverageLoad:
         assert "src/frob/pkg/a.py" in stamp["file_hashes"]
 
 
+# frob:ticket T-0541
+# frob:ticket T-0542
 class TestRunGates:
     def test_run_gates_end_to_end(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/__init__.py::run_gates
@@ -3630,11 +3632,12 @@ class TestRunGates:
         assert "scope" in report.stats.skipped
         assert "prework" in report.stats.skipped
 
+    # frob:tests src/frob/gates/__init__.py::_build_ticket_scoped_jobs
+    # frob:ticket T-0541
+    # frob:ticket T-0542
     def test_run_gates_blocks_scope_and_prework_when_no_ticket_touches_source(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/__init__.py::_build_ticket_scoped_jobs
-        # frob:ticket T-0541
         """B9: an off-convention branch (or `main`) with no `--ticket` and a
         diff that touches real source must not silently skip SCOPE001/
         PRE001 -- it must block instead."""
@@ -3651,11 +3654,12 @@ class TestRunGates:
         assert any(v.rule == "SCOPE001" for v in report.violations)
         assert any(v.rule == "PRE001" for v in report.violations)
 
+    # frob:tests src/frob/gates/__init__.py::_build_ticket_scoped_jobs
+    # frob:ticket T-0541
+    # frob:ticket T-0542
     def test_run_gates_still_skips_scope_and_prework_for_ledger_only_diff(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/__init__.py::_build_ticket_scoped_jobs
-        # frob:ticket T-0541
         """B9's fix must not fire on a `tickets.md`-only diff (ledger
         maintenance, e.g. archiving closed tickets, is a legitimate
         no-ticket main-branch operation)."""
@@ -4064,6 +4068,7 @@ class TestDocanchorGate:
         assert any("no #anchor" in v.message for v in violations)
 
 
+# frob:ticket T-0542
 class TestCov002ScopeCoverage:
     def test_open_ticket_scope_covers_changed_symbol(self, tmp_path):
         """COV002 passes when a changed symbol's file is within an open
@@ -4104,6 +4109,115 @@ class TestCov002ScopeCoverage:
 
         report = run_gates(
             GateConfig(root=str(tmp_path), base="main", gates=frozenset({"coverage"}))
+        ).danger_ok
+        assert not [v for v in report.violations if v.rule == "COV002"]
+
+    # frob:tests src/frob/gates/__init__.py::_scope_covers
+    # frob:ticket T-0542
+    def test_ambiguous_overlapping_open_scopes_do_not_cover(self, tmp_path):
+        """B10: two open, EQUALLY specific tickets whose scopes both cover
+        the same file must NOT silently cover a changed symbol -- that is
+        exactly the false-negative one broad open ticket used to grant
+        everything under it."""
+        import subprocess
+
+        from frob.gates import GateConfig, run_gates
+        from frob.tickets import (
+            Origin,
+            TicketKind,
+            TicketSpec,
+            TicketState,
+            new_ticket,
+            transition,
+        )
+
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(["git", "config", "user.email", "t@t"], cwd=tmp_path, check=True)
+        subprocess.run(["git", "config", "user.name", "t"], cwd=tmp_path, check=True)
+        (tmp_path / "src").mkdir()
+        (tmp_path / "src" / "m.py").write_text("def f():\n    return 1\n")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(["git", "commit", "-qm", "base"], cwd=tmp_path, check=True)
+        subprocess.run(["git", "branch", "-M", "main"], cwd=tmp_path, check=True)
+
+        for title in ("refactor-a", "refactor-b"):
+            t = new_ticket(
+                tmp_path,
+                TicketSpec(
+                    title=title,
+                    kind=TicketKind.FEATURE,
+                    origin=Origin.AGENT,
+                    scope=("src/**",),
+                ),
+            ).danger_ok
+            transition(tmp_path, t.id, TicketState.PLANNED)
+            transition(tmp_path, t.id, TicketState.IN_PROGRESS)
+        (tmp_path / "src" / "m.py").write_text("def f():\n    return 2\n")
+
+        report = run_gates(
+            GateConfig(root=str(tmp_path), base="main", gates=frozenset({"coverage"}))
+        ).danger_ok
+        assert any(v.rule == "COV002" for v in report.violations)
+
+    # frob:tests src/frob/gates/__init__.py::_scope_covers
+    # frob:ticket T-0542
+    def test_active_ticket_own_scope_wins_over_a_broader_open_ticket(self, tmp_path):
+        """B10: the active ticket's own scope covers the symbol even when a
+        second, broader open ticket ALSO happens to cover the same file --
+        no ambiguity should be raised when the active ticket is one of the
+        matches."""
+        import subprocess
+
+        from frob.gates import GateConfig, run_gates
+        from frob.tickets import (
+            Origin,
+            TicketKind,
+            TicketSpec,
+            TicketState,
+            new_ticket,
+            transition,
+        )
+
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(["git", "config", "user.email", "t@t"], cwd=tmp_path, check=True)
+        subprocess.run(["git", "config", "user.name", "t"], cwd=tmp_path, check=True)
+        (tmp_path / "src").mkdir()
+        (tmp_path / "src" / "m.py").write_text("def f():\n    return 1\n")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(["git", "commit", "-qm", "base"], cwd=tmp_path, check=True)
+        subprocess.run(["git", "branch", "-M", "main"], cwd=tmp_path, check=True)
+
+        active = new_ticket(
+            tmp_path,
+            TicketSpec(
+                title="active",
+                kind=TicketKind.FEATURE,
+                origin=Origin.AGENT,
+                scope=("src/**",),
+            ),
+        ).danger_ok
+        transition(tmp_path, active.id, TicketState.PLANNED)
+        transition(tmp_path, active.id, TicketState.IN_PROGRESS)
+        other = new_ticket(
+            tmp_path,
+            TicketSpec(
+                title="other",
+                kind=TicketKind.FEATURE,
+                origin=Origin.AGENT,
+                scope=("src/**",),
+            ),
+        ).danger_ok
+        transition(tmp_path, other.id, TicketState.PLANNED)
+        transition(tmp_path, other.id, TicketState.IN_PROGRESS)
+        (tmp_path / "src" / "m.py").write_text("def f():\n    return 2\n")
+
+        report = run_gates(
+            GateConfig(
+                root=str(tmp_path),
+                base="main",
+                gates=frozenset({"coverage"}),
+                ticket=active.id,
+            )
         ).danger_ok
         assert not [v for v in report.violations if v.rule == "COV002"]
 

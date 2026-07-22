@@ -6,7 +6,7 @@
       "ref": "src/frob/gates/__init__.py::active_ticket"
     },
     {
-      "digest": "29cc2c8355bdb951639a289ff5bcfe685af759b8b30c63ea402966835d88d8ba",
+      "digest": "1176f2eb17212b5fee522b580b2004884374b78a8f5c9ddaac20859390b0ce64",
       "facet": "sig",
       "ref": "src/frob/gates/__init__.py::coverage_gate"
     },

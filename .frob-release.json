@@ -293,7 +293,7 @@
     "src/frob/fuzz/_stamp.py::stamp_fuzz": "9c505b642805f515ce8da6ad4b5c6a55cc0c6a81a1478075d0f26bfc124c296a",
     "src/frob/gates/__init__.py::INV003_SPEC_DIRS": "54109236b9c5717785cb603ffd1ec33ff62533e568a26590704e72a10b624e7e",
     "src/frob/gates/__init__.py::active_ticket": "a3ec91100e15e9216e6c754b0ba623ee6e8c45468ee86805045ad43623853c7b",
-    "src/frob/gates/__init__.py::coverage_gate": "29cc2c8355bdb951639a289ff5bcfe685af759b8b30c63ea402966835d88d8ba",
+    "src/frob/gates/__init__.py::coverage_gate": "1176f2eb17212b5fee522b580b2004884374b78a8f5c9ddaac20859390b0ce64",
     "src/frob/gates/__init__.py::debt_gate": "a376c0cb523fc3a01d0fee3db265624393127590531d12a8f63e851f3f5f82ee",
     "src/frob/gates/__init__.py::decisions_gate": "f6587969f349ac0a2128eb1568924bfa8d4cd498e9f366b56255a5266c75408a",
     "src/frob/gates/__init__.py::docanchor_gate": "c42559cd1fae6c91936f804bc558ed2d3f5fd49bbd3955b96675bb566fdaef20",
@@ -1089,5 +1089,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.59.0"
+  "version": "0.60.0"
 }

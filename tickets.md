@@ -3379,7 +3379,7 @@ No public API (CLI surface) change; no REL001 bump needed.
 id: T-0542
 title: 'gates: COV002 satisfied by ANY open ticket whose scope glob covers the file
   (B10)'
-state: queued
+state: in-progress
 kind: bug
 origin: auditor
 created: '2026-07-21'
@@ -3388,8 +3388,45 @@ blocked_by: []
 parent: T-0403
 scope:
 - src/frob/gates/
-scope_changes: []
-evidence: []
+- pyproject.toml
+- CHANGELOG.md
+- .frob-release.json
+- frob.lock
+- uv.lock
+scope_changes:
+- op: add
+  glob: pyproject.toml
+  reason: REL001 required a version bump (public coverage_gate signature change) and
+    a matching stamp/lock refresh
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: CHANGELOG.md
+  reason: REL001 required a version bump (public coverage_gate signature change) and
+    a matching stamp/lock refresh
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 required a version bump (public coverage_gate signature change) and
+    a matching stamp/lock refresh
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: frob.lock
+  reason: REL001 required a version bump (public coverage_gate signature change) and
+    a matching stamp/lock refresh
+  actor: logan
+  at: '2026-07-21'
+- op: add
+  glob: uv.lock
+  reason: REL001 required a version bump (public coverage_gate signature change) and
+    a matching stamp/lock refresh
+  actor: logan
+  at: '2026-07-21'
+evidence:
+- tests/test_gates.py::TestCov002ScopeCoverage::test_ambiguous_overlapping_open_scopes_do_not_cover
+- tests/test_gates.py::TestCov002ScopeCoverage::test_active_ticket_own_scope_wins_over_a_broader_open_ticket
 attachments: []
 acceptance: []
 threat: null
@@ -3398,6 +3435,68 @@ labels: []
 ```
 docs/audits/gates-accounting.md B10. _cov002 uses _open_scopes = every open ticket's scope glob, matched via _scope_covers against ANY of them. One broad-scope open ticket (e.g. src/frob/**) makes every changed symbol under it accounted for regardless of relation to that ticket. Fix direction: prefer the ACTIVE ticket's own scope first, and require a narrower/more-specific glob match (or an explicit frob:ticket edge) when multiple open tickets' scopes could cover the same file, rather than accepting the first match found.
 
+## Done report
+
+Repro: `_scope_covers` returned True whenever ANY open ticket's declared
+`scope` glob matched the changed symbol's file, via `any(...)` over every
+open ticket -- one broad-scope open ticket (e.g. `src/frob/**`) silently
+vouched for a symbol it had nothing to do with, whenever it happened to
+also be open. Two open tickets with equally broad, overlapping scopes both
+"covering" the same file made COV002 pass regardless of which (if either)
+ticket the change actually belonged to.
+
+Fix: `_scope_covers` now takes an optional `active_ticket` id (threaded
+through `_cov002_check_symref` / `_cov002` / `coverage_gate`, and wired at
+the `run_gates` job-registration site from `st.ticket`). Coverage logic:
+1. If `active_ticket`'s own scope covers the file, that alone covers it.
+2. If exactly one open ticket's scope covers the file, that single match
+   covers it (unambiguous, same as before in the common case).
+3. If MULTIPLE open tickets' scopes cover the file and none is the active
+   ticket, `_scope_glob_specificity` (new) compares the longest matching
+   literal-prefix among each candidate's expanded scope globs; the unique
+   NARROWEST match wins. A genuine tie (equally specific, e.g. two tickets
+   both declaring `src/frob/**`) is now ambiguous and does NOT cover --
+   COV002 fires, requiring an explicit `frob:ticket` edge instead of
+   silently picking whichever ticket happened to be iterated first.
+
+Changed:
+- src/frob/gates/__init__.py::_scope_glob_specificity (new)
+- src/frob/gates/__init__.py::_scope_covers (active_ticket param + ambiguity check)
+- src/frob/gates/__init__.py::_cov002 / _cov002_check_symref (active_ticket threaded through)
+- src/frob/gates/__init__.py::coverage_gate (active_ticket param)
+- src/frob/gates/__init__.py::_build_jobs (passes st.ticket.id to coverage_gate)
+
+Evidence:
+- tests/test_gates.py::TestCov002ScopeCoverage::test_ambiguous_overlapping_open_scopes_do_not_cover
+- tests/test_gates.py::TestCov002ScopeCoverage::test_active_ticket_own_scope_wins_over_a_broader_open_ticket
+- Full `uv run pytest tests/test_gates.py -p no:cacheprovider -q -n0`: 223 passed, 0 failed (verified before recording evidence); all prior COV002 tests (TestCov002ScopeCoverage, TestCov002StrataModuleCoverage, TestCoverageGate) still pass unchanged.
+
+Filed: none (no out-of-scope work discovered this pass).
+
+Gates: `uv run frob check --ticket T-0542` clean (0 errors). Public API
+changed (`coverage_gate` gained `active_ticket: str | None = None`) --
+REL001 addressed: pyproject.toml bumped 0.59.0 -> 0.60.0, CHANGELOG.md
+entry added, `frob release stamp` run, `frob ack
+src/frob/gates/__init__.py::coverage_gate` run for DRIFT001. Scope widened
+via `frob ticket scope --add` to cover pyproject.toml/CHANGELOG.md/
+.frob-release.json/frob.lock/uv.lock (release-mechanics files this bump
+required); reason recorded in the ticket's scope_changes audit trail.
+tests/test_gates.py stays under the pre-existing SCOPE001 waiver from
+T-0541 (T-0160 holds the tests/** lease); the new/changed test symbols
+carry `frob:ticket T-0541`+`frob:ticket T-0542` (both this and the prior
+ticket touched the same file/classes in one uncommitted working diff).
+
+### Changed
+```
+ src/frob/gates/__init__.py | 50 +++++++++++++++++++++++++++++++++++++++++--
+ tests/test_gates.py        | 41 +++++++++++++++++++++++++++++++++++
+ tickets.md                 | 53 ++++++++++++++++++++++++++++++++++++++++++++--
+ 3 files changed, 140 insertions(+), 4 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestCov002ScopeCoverage::test_ambiguous_overlapping_open_scopes_do_not_cover` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCov002ScopeCoverage::test_active_ticket_own_scope_wins_over_a_broader_open_ticket` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0543 -->
 ```yaml
 id: T-0543

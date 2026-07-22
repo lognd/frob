@@ -104,6 +104,8 @@ from frob.tickets import Ticket, TicketQueue, TicketState, closed_ticket_ids, lo
 from frob.tickets._models import (
     CMD_EVIDENCE_ALLOWED_KINDS,
     Priority,
+    _scope_globs,
+    _split_scope_entries,
     is_cmd_evidence,
     matches_collected,
     scope_matches,
@@ -1547,15 +1549,19 @@ def coverage_gate(
     queue: TicketQueue,
     diff: Diff,
     tests: CollectedTests,
+    active_ticket: str | None = None,
 ) -> tuple[Violation, ...]:
     """COV001..COV007, PLACE001, and TODO001/TODO002.
 
     `root` (repo root, T-0233) lets COV001 tell a *resolving* `frob:doc`
     edge apart from a broken one -- see `_resolved_documented_srcs`.
+    `active_ticket` (T-0542/B10) lets COV002 prefer the ticket actually
+    being worked over any other open ticket whose scope happens to also
+    cover the same file.
     """
     violations: list[Violation] = []
     violations.extend(_cov001(root, snapshot))
-    violations.extend(_cov002(snapshot, queue, diff))
+    violations.extend(_cov002(snapshot, queue, diff, active_ticket))
     violations.extend(_cov003(queue, tests))
     violations.extend(_cov004(queue))
     violations.extend(_cov005(root, snapshot, diff))
@@ -1652,11 +1658,65 @@ def _open_scopes(queue: TicketQueue) -> list[tuple[str, tuple[str, ...]]]:
     ]
 
 
-def _scope_covers(path: str, open_scopes: list[tuple[str, tuple[str, ...]]]) -> bool:
-    """True if `path` matches any open ticket's scope (dir/ glob expansion
-    and implicit ledger via `scope_matches`, T-0241)."""
+# frob:ticket T-0542
+def _scope_glob_specificity(path: str, scope: tuple[str, ...]) -> int:
+    """The length of the longest literal (pre-wildcard) prefix among
+    `scope`'s expanded globs that actually match `path` -- how specific a
+    ticket's scope claim on `path` is (B10). `-1` if nothing in `scope`
+    matches `path` at all."""
+    best = -1
+    for glob in _scope_globs(_split_scope_entries(scope)):
+        if not fnmatch.fnmatch(path, glob):
+            continue
+        prefix_len = len(glob.split("*", 1)[0].split("?", 1)[0].split("[", 1)[0])
+        best = max(best, prefix_len)
+    return best
 
-    return any(scope_matches(path, scope) for _tid, scope in open_scopes)
+
+# frob:ticket T-0542
+def _scope_covers(
+    path: str,
+    open_scopes: list[tuple[str, tuple[str, ...]]],
+    active_ticket: str | None = None,
+) -> bool:
+    """True if `path` is unambiguously covered by an open ticket's scope
+    (B10). Prefers `active_ticket`'s own scope first when it covers `path`.
+    Otherwise, when exactly one open ticket's scope matches, that single
+    match covers it -- but when MULTIPLE open tickets' scopes all cover the
+    same path, the broadest first-match-wins behavior this replaces let any
+    one of them (e.g. a `src/frob/**` catch-all) silently vouch for symbols
+    it has nothing to do with. Now the narrowest (most specific) matching
+    scope wins only when it is the UNIQUE narrowest match; a genuine tie
+    (two open tickets whose scopes are equally specific over `path`) is
+    ambiguous and does NOT cover -- an explicit `frob:ticket` edge is
+    required instead."""
+    covering = [tid for tid, scope in open_scopes if scope_matches(path, scope)]
+    if not covering:
+        return False
+    if active_ticket is not None and active_ticket in covering:
+        return True
+    if len(covering) == 1:
+        return True
+    scored = sorted(
+        (
+            (_scope_glob_specificity(path, scope), tid)
+            for tid, scope in open_scopes
+            if tid in covering
+        ),
+        reverse=True,
+    )
+    best_score = scored[0][0]
+    winners = [tid for score, tid in scored if score == best_score]
+    if len(winners) > 1:
+        _log.debug(
+            "COV002: %s ambiguously covered by %d equally-specific open "
+            "ticket scopes %s; not covered, needs an explicit frob:ticket edge",
+            path,
+            len(winners),
+            winners,
+        )
+        return False
+    return True
 
 
 def _ticket_edges(snapshot: GraphSnapshot, symref: str) -> list[Edge]:
@@ -1813,7 +1873,10 @@ def _covered_by_strata_module(
 
 
 def _cov002(
-    snapshot: GraphSnapshot, queue: TicketQueue, diff: Diff
+    snapshot: GraphSnapshot,
+    queue: TicketQueue,
+    diff: Diff,
+    active_ticket: str | None = None,
 ) -> tuple[Violation, ...]:
     """COV002: a changed symbol is accounted for by neither a `frob:ticket`
     edge to an open ticket NOR an open ticket whose declared `scope` covers
@@ -1835,7 +1898,11 @@ def _cov002(
     violations = [
         v
         for symref in touched
-        for v in (_cov002_check_symref(snapshot, queue, symref, open_scopes, diff),)
+        for v in (
+            _cov002_check_symref(
+                snapshot, queue, symref, open_scopes, diff, active_ticket
+            ),
+        )
         if v is not None
     ]
     return tuple(violations)
@@ -1847,18 +1914,19 @@ def _cov002_check_symref(
     symref: str,
     open_scopes: list[tuple[str, tuple[str, ...]]],
     diff: Diff,
+    active_ticket: str | None = None,
 ) -> Violation | None:
     """The COV002 `Violation` for one touched `symref`, or None when it is
     accounted for by a direct ticket edge (open, or `DONE` within this same
-    uncommitted diff -- T-0214), its `.strata` module's edge, or an open
-    ticket's scope."""
+    uncommitted diff -- T-0214), its `.strata` module's edge, or an
+    unambiguous open ticket's scope (B10, see `_scope_covers`)."""
     if _bound_to_open_ticket(snapshot, queue, symref, diff):
         return None
     if _covered_by_strata_module(snapshot, queue, symref, diff):
         _log.debug("COV002: %s covered by its .strata module's ticket edge", symref)
         return None
     record = snapshot.symbols[symref]
-    if _scope_covers(record.id.path, open_scopes):
+    if _scope_covers(record.id.path, open_scopes, active_ticket):
         _log.debug("COV002: %s covered by an open ticket's scope", symref)
         return None
     _log.debug("COV002: %s changed with no open ticket", symref)
@@ -6436,7 +6504,12 @@ def _build_jobs(
     thread_jobs: dict[str, Callable[[], tuple[Violation, ...]]] = {
         "drift": lambda: drift_gate(st.snapshot, st.lock),
         "coverage": lambda: coverage_gate(
-            st.repo_root, st.snapshot, st.queue, st.diff, st.tests
+            st.repo_root,
+            st.snapshot,
+            st.queue,
+            st.diff,
+            st.tests,
+            st.ticket.id if st.ticket is not None else None,
         ),
         "invariant": lambda: (
             *invariant_gate(st.invariants, st.snapshot, st.tests, st.rule_ids),
