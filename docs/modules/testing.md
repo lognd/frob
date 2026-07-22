@@ -397,6 +397,125 @@ class TestingError(ErrorSet):
     UnroutedItem   = "A selected item's file matched zero or >1 same-language [[test.runner]] cwd"
 ```
 
+## Flake quarantine (T-0575)
+
+A flaky test blocks every parallel agent working through `frob test`: a
+single intermittent failure looks the same as a real regression, and an
+agent either wrongly reverts good work chasing it, or starts ignoring red
+runs altogether. `frob.testing._stability` gives per-test pass/fail history
+a static flake rule, and a quarantine mechanism that always carries a real
+ticket id -- never a silent skip-list.
+
+<!-- frob:describes src/frob/testing/_stability.py::load_stability -->
+<!-- frob:describes src/frob/testing/_stability.py::record_outcomes -->
+<!-- frob:describes src/frob/testing/_stability.py::is_flaky -->
+<!-- frob:describes src/frob/testing/_stability.py::flaky_node_ids -->
+<!-- frob:describes src/frob/testing/_stability.py::quarantined_node_ids -->
+<!-- frob:describes src/frob/testing/_stability.py::quarantine -->
+<!-- frob:describes src/frob/testing/_stability.py::lift_quarantine -->
+<!-- frob:describes src/frob/testing/_stability.py::quarantine_alarms -->
+<!-- frob:describes src/frob/testing/_stability.py::evaluate_gate -->
+<!-- frob:describes src/frob/testing/_stability.py::capture_python_outcomes -->
+<!-- frob:describes src/frob/testing/_stability.py::track_python_stability -->
+
+```python
+# frob/testing/_stability.py
+class StabilityEntry(BaseModel):   # frozen; one test's stability record
+    node_id: str
+    history: tuple[str, ...] = ()          # "P"/"F", most-recent-last, bounded
+    quarantine_ticket: str | None = None
+    quarantined_at: str | None = None
+
+HISTORY_WINDOW = 20   # only the last N runs count toward flake detection/storage
+
+def load_stability(root: Path) -> dict[str, StabilityEntry]
+    # Every recorded entry, keyed by node id; {} if .frob/test-stability.json
+    # is absent/unreadable -- no history yet is not an error.
+def record_outcomes(root: Path, outcomes: Mapping[str, bool]
+                    ) -> Result[dict[str, StabilityEntry], FlakeError]
+    # Append one pass/fail per node id onto its window-bounded history and
+    # persist; quarantine fields carry forward untouched.
+def is_flaky(entry: StabilityEntry) -> bool
+    # THE FLAKE RULE: history contains BOTH a pass and a fail. All-pass and
+    # all-fail are NOT flaky (an all-fail test is a real regression, not a
+    # flake). Fewer than 2 recorded runs is never flaky.
+def flaky_node_ids(entries: Mapping[str, StabilityEntry]) -> frozenset[str]
+def quarantined_node_ids(entries: Mapping[str, StabilityEntry]) -> frozenset[str]
+def quarantine(root: Path, node_id: str, *, ticket_id: str | None = None
+              ) -> Result[str, FlakeError]
+    # Quarantine node_id: still runs, still reported, does not fail the
+    # gate. NEVER a silent skip-list -- ticket_id must resolve to a real,
+    # still-open ticket (Err TicketUnresolvable otherwise); if omitted, a
+    # bug ticket is auto-filed via frob.tickets.new_ticket (the public
+    # ticket-creation API -- this module never touches frob.tickets
+    # internals). Returns the ticket id now owning the quarantine.
+def lift_quarantine(root: Path, node_id: str) -> Result[Unit, FlakeError]
+    # Clears quarantine fields, keeps history. Err UnknownTest if node_id
+    # has no recorded entry.
+def quarantine_alarms(root: Path, entries: Mapping[str, StabilityEntry]
+                      ) -> tuple[str, ...]
+    # EXPIRY ALARM: node ids whose quarantine ticket has closed (DONE or
+    # DROPPED) -- or no longer resolves at all -- while the test is STILL
+    # flaky. The flake was never actually fixed; a quarantine must not
+    # silently outlive its own ticket's closure.
+def evaluate_gate(ok: bool, failing_node_ids: frozenset[str],
+                  entries: Mapping[str, StabilityEntry]) -> bool
+    # Pure. If ok already True, unchanged. If False, promoted back to True
+    # only when EVERY failing node id is currently quarantined -- one
+    # non-quarantined failure keeps the run failed.
+def capture_python_outcomes(root: Path, node_ids: tuple[str, ...], *,
+                            cwd: str = ".") -> Result[dict[str, bool], FlakeError]
+    # Runs node_ids directly via `uv run pytest --junit-xml`, bypassing any
+    # configured [[test.runner]] template (which has no report-path
+    # placeholder), and parses per-test pass/fail from the report.
+def track_python_stability(root: Path, node_ids: tuple[str, ...], *,
+                           cwd: str = ".") -> Result[dict[str, StabilityEntry], FlakeError]
+    # capture_python_outcomes + record_outcomes in one call.
+
+class FlakeError(ErrorSet):
+    WriteFailed          = "Could not persist .frob/test-stability.json"
+    ReadFailed           = "Could not read/parse .frob/test-stability.json"
+    UnknownTest          = "The node id has no recorded stability history"
+    TicketUnresolvable   = "The named ticket id does not exist in the queue"
+    TicketCreateFailed   = "Auto-filing a quarantine ticket via frob.tickets failed"
+    CaptureSpawnFailed   = "pytest could not be spawned for per-test stability capture"
+    CaptureReadFailed    = "The junit-xml report from a stability capture run was unreadable"
+```
+
+**Storage shape**: `.frob/test-stability.json`, `{"tests": {<node_id>:
+{node_id, history, quarantine_ticket, quarantined_at}}}` -- per-worktree
+derived state, same posture as the pytest-collection cache and the
+coverage stamp (never shared across checkouts).
+
+**Flake detection rule**: a test is flaky iff its bounded history (last
+`HISTORY_WINDOW` runs) contains both a pass and a fail. This deliberately
+does NOT flag a consistently all-failing test -- that is a real
+regression, and must stay a hard gate failure, not quarantine-eligible.
+
+**Quarantine semantics**:
+- *Enter*: `quarantine(root, node_id, ticket_id=...)` -- always ties to a
+  real, resolvable, still-open ticket (auto-filed via the public
+  `frob.tickets.new_ticket` API when omitted). A quarantined test still
+  runs and still reports; `evaluate_gate` is what actually keeps the gate
+  green around it.
+- *Exit*: `lift_quarantine(root, node_id)` -- explicit only; going stable
+  again does NOT auto-lift a quarantine (a human/agent decision closes the
+  loop, matching the ticket it's tied to).
+- *Expiry/alarm*: `quarantine_alarms` flags any quarantine whose ticket has
+  closed (or gone unresolvable) while the test is still flaky -- the
+  signal that a quarantine ticket was closed without actually fixing the
+  flake.
+
+**Known limitation** (T-0575 cut, filed as a follow-up): `capture_python_outcomes`
+zips `node_ids` against a junit-xml report's `<testcase>` elements by run
+order rather than re-deriving each node id from junit's own
+`classname`/`name` naming (which is pytest's dotted module path, not this
+codebase's `path::Class::method` symref convention) -- correct as long as
+pytest preserves argv order in its junit output, which it does today.
+Wiring `frob test`'s CLI (`src/frob/app/test_runner.py`, out of this
+ticket's scope) to call `track_python_stability`/`evaluate_gate`
+automatically on every run is left to a follow-up ticket.
+
 ## Git worktrees
 
 The worktree workflow (one agent per worktree on its own branch) is a

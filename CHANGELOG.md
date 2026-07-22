@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.83.0] - unreleased
+
+- T-0575: flake quarantine: per-test stability tracking + quarantine-with-ticket in frob test
+
 ## [0.81.0] - unreleased
 
 - T-0595: strata audit G1 (full closure): bind ENDORSE boundary predicate to an OBSERVED sanitizer call site in code
