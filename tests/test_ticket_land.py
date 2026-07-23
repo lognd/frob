@@ -1745,6 +1745,56 @@ class TestLandCompleteness:
         )
         assert _run(["git", "status", "--porcelain"], repo).stdout.strip() == ""
 
+    def test_worktree_pointed_at_same_branch_as_main_is_refused_not_silently_empty(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_worktree_full_changeset kind="unit"
+        # frob:tests src/frob/tickets/_land.py::_true_merge_base kind="unit"
+        """T-0761 regression: the real T-0640 incident. `land()` was invoked
+        with `--worktree` pointing at the SAME checkout/branch `root` had
+        checked out -- no distinct feature branch was ever created. A NEW
+        source file was added and committed directly on that shared branch
+        (mirroring the incident's `src/frob/strata/_reliability.py`), then
+        `land(repo, tid, repo)` ran.
+
+        Before the T-0761 fix, this landed "successfully": the merge/squash
+        steps against `worktree`'s own branch were git no-ops (a branch
+        merged/squashed into itself), so the T-0463 completeness assertion's
+        `expected` changeset came back EMPTY and passed vacuously -- only the
+        version-bump/ledger-splice writes ended up in the final commit, and
+        `new_feature.py` was silently dropped even though `frob ticket land`
+        reported success. After the fix, `land` must refuse with
+        `IncompleteLand` (a completeness error) rather than commit a
+        changeset that drops the new file -- the ticket's acceptance
+        criterion's second branch."""
+        (repo / "src" / "new_feature.py").write_text("# brand new feature code\n")
+        _commit_all(repo, "add new_feature.py directly on the shared branch")
+
+        created = new_ticket(
+            repo, _spec("Same-branch land", scope=("src/new_feature.py",))
+        )
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(repo, tid)
+        _commit_all(repo, "close ticket state directly on the shared branch")
+
+        result = land(repo, tid, repo, dry_run=False)
+
+        assert result.is_err
+        assert result.danger_err == LandError.IncompleteLand
+
+        # Refused, not silently landed: no "land T-XXXX" squash-apply commit
+        # (the false-green signature -- version bump + ledger only) was ever
+        # made, the squash-stage was unwound cleanly, and `new_feature.py`'s
+        # content is exactly what was committed above -- nothing was dropped
+        # by an incomplete commit.
+        log = _run(["git", "log", "--oneline"], repo).stdout
+        assert "land " not in log
+        assert _status_ignoring_frob(repo) == ""
+        assert (repo / "src" / "new_feature.py").read_text() == (
+            "# brand new feature code\n"
+        )
+
 
 # frob:ticket T-0338
 class TestReleaseBump:

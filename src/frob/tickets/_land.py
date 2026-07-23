@@ -1556,7 +1556,50 @@ def _squash_and_splice_ledger(
     return Ok(None)
 
 
+# frob:ticket T-0761
+def _rev_parse(worktree: Path, rev: str) -> Result[str, LandError]:
+    """The full commit sha `rev` resolves to inside `worktree` (e.g. `HEAD`
+    or a branch name) -- a thin `git rev-parse` wrapper shared by
+    `_worktree_full_changeset`'s explicit merge-base computation (T-0761)."""
+    result = run_argv(["git", "-C", str(worktree), "rev-parse", rev])
+    if result.is_err or result.danger_ok.returncode != 0:
+        _log.error("land: git rev-parse %s failed in %s", rev, worktree)
+        return Err(LandError.GitFailed)
+    return Ok(result.danger_ok.stdout.strip())
+
+
+# frob:ticket T-0761
+def _true_merge_base(worktree: Path, main_branch_name: str) -> Result[str, LandError]:
+    """The commit sha `git merge-base main_branch_name HEAD` resolves to
+    inside `worktree` -- the TRUE common ancestor `_worktree_full_changeset`
+    diffs from, computed as its own explicit step (T-0761) rather than left
+    implicit inside a triple-dot diff invocation. This is the root-cause fix
+    for the T-0640 false-green: when `land()` was invoked with `worktree`
+    pointing at the SAME checkout/branch `root` had checked out (no distinct
+    feature branch was ever created), `main_branch_name` and `worktree`'s
+    `HEAD` were literally the same ref, so a triple-dot diff against itself
+    silently resolved to an empty changeset -- the T-0463 completeness
+    assertion had nothing to check against and passed vacuously, while the
+    squash-apply step degenerated to a no-op the exact same way (`git merge
+    --squash` of a branch into itself is a no-op), leaving only the version
+    bump and ledger splice to land. Computing the merge-base explicitly here
+    lets `_worktree_full_changeset` detect and refuse that exact condition
+    (merge-base == HEAD, i.e. zero commits unique to the worktree branch)
+    instead of silently reporting nothing to check."""
+    result = run_argv(
+        ["git", "-C", str(worktree), "merge-base", main_branch_name, "HEAD"]
+    )
+    if result.is_err or result.danger_ok.returncode != 0:
+        _log.error(
+            "land: git merge-base %s HEAD failed in %s", main_branch_name, worktree
+        )
+        return Err(LandError.GitFailed)
+    return Ok(result.danger_ok.stdout.strip())
+
+
 # frob:ticket T-0463
+# frob:ticket T-0761
+# frob:tests tests/test_ticket_land.py::TestLandCompleteness.test_worktree_pointed_at_same_branch_as_main_is_refused_not_silently_empty  # noqa: E501
 def _worktree_full_changeset(
     worktree: Path, main_branch_name: str
 ) -> Result[frozenset[str], LandError]:
@@ -1567,12 +1610,50 @@ def _worktree_full_changeset(
     `land()`'s wip-commit step (`git add -A`) has already turned every
     untracked new file and every deletion into a tracked change on the
     branch by the time this runs, so a plain `git diff --name-only
-    <main>...HEAD` walks the merge-base and reports the true full
-    changeset -- unlike a hand `git diff HEAD` / patch-based land, which
-    only ever sees tracked deltas against the CURRENT commit and silently
-    omits anything that was untracked (T-0463: the root cause of the
-    T-0448 `docs/modules/render.md` loss, where a surgical git-diff-patch
-    land dropped an untracked file with no error)."""
+    <base>..HEAD` (against the TRUE merge-base, resolved explicitly via
+    `_true_merge_base`) reports the true full changeset -- unlike a hand
+    `git diff HEAD` / patch-based land, which only ever sees tracked deltas
+    against the CURRENT commit and silently omits anything that was
+    untracked (T-0463: the root cause of the T-0448
+    `docs/modules/render.md` loss, where a surgical git-diff-patch land
+    dropped an untracked file with no error).
+
+    T-0761: before diffing, this now ALSO refuses (`Err(IncompleteLand)`)
+    if the resolved merge-base commit is identical to `worktree`'s `HEAD`
+    commit -- meaning the worktree branch carries not one commit beyond
+    `main_branch_name` (the T-0640 false-green condition: `worktree` was
+    pointed at the same checkout/branch as `root`, so every git operation
+    `land()` performs against "the worktree's own branch" silently
+    degenerated to a self-merge/self-diff no-op). A genuine landing always
+    has at least the finalize-and-close commit (`_commit_finalize_writes`)
+    uniquely on the worktree branch by the time this runs; a merge-base
+    equal to HEAD here is never a legitimate "nothing to land" case, only
+    this misconfiguration."""
+    base = _true_merge_base(worktree, main_branch_name)
+    if base.is_err:
+        return Err(base.danger_err)
+    head = _rev_parse(worktree, "HEAD")
+    if head.is_err:
+        return Err(head.danger_err)
+    if base.danger_ok == head.danger_ok:
+        _log.error(
+            "land: %s's HEAD (%s) has NO commits beyond the true merge-base "
+            "with %s (%s) -- the worktree branch is identical to (or an "
+            "ancestor of) %s, so there is nothing to squash-apply. This is "
+            "the T-0640 false-green condition: `--worktree` almost "
+            "certainly points at the SAME checkout/branch %s has checked "
+            "out, rather than a distinct feature branch. Create a real "
+            "feature branch (`git -C %s worktree add -b <branch> <path>`) "
+            "and retry",
+            worktree,
+            head.danger_ok,
+            main_branch_name,
+            base.danger_ok,
+            main_branch_name,
+            worktree,
+            worktree,
+        )
+        return Err(LandError.IncompleteLand)
     diff = run_argv(
         [
             "git",
@@ -1580,7 +1661,7 @@ def _worktree_full_changeset(
             str(worktree),
             "diff",
             "--name-only",
-            f"{main_branch_name}...HEAD",
+            f"{base.danger_ok}..HEAD",
         ]
     )
     if diff.is_err or diff.danger_ok.returncode != 0:
