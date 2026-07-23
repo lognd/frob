@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import subprocess
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -310,10 +311,10 @@ class TestRunArgv:
         spawned = False
         real_run = subprocess.run
 
-        def _spy(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        def _spy(*args: Any, **kwargs: Any) -> subprocess.CompletedProcess[str]:
             nonlocal spawned
             spawned = True
-            return real_run(*args, **kwargs)  # type: ignore[arg-type]
+            return real_run(*args, **kwargs)
 
         monkeypatch.setattr(subprocess, "run", _spy)
         with caplog.at_level(logging.WARNING):
