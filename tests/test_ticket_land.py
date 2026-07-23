@@ -3622,9 +3622,7 @@ class TestMutationEvidencePrecheck:
                 ),
             ),
         )
-        result = _land_mod._check_mutation_evidence(
-            tmp_path, ticket, "main", skip=True
-        )
+        result = _land_mod._check_mutation_evidence(tmp_path, ticket, "main", skip=True)
         assert result.is_ok
 
 
