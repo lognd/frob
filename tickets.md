@@ -11851,3 +11851,32 @@ lands (its model then knows the field). Register CHK-GATE-TICK008 +
 gate_rule_total at land per precedent. Include a fuzzy-match hint in
 the message (unknown field 'priorty' -- did you mean 'priority'?) via
 difflib.get_close_matches.
+
+<!-- ticket:T-0843 -->
+```yaml
+id: T-0843
+title: 'ticket archive: refusal hint says force=True not the CLI flag; T-0753 guard
+  over-broad for in-progress-only leases'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/app/ticket_runner.py
+- src/frob/tickets/__init__.py
+- tests/test_ticket_runner_archive_force.py
+threat: null
+component: null
+```
+`frob ticket archive` refusal message says "pass force=True to override"
+-- that is the internal python kwarg, not the CLI surface. The CLI flag
+is --force (verify; if absent, add it mirroring other force flags).
+Remedy hints must be copy-pastable commands (the repo's own violation-
+message convention). Also consider: when the only live leases belong to
+tickets whose blocks archive would NOT touch (in-progress tickets are
+never archived), the refusal is over-broad -- evaluate narrowing the
+T-0753 guard to refuse only when a live-leased ticket's OWN block would
+be moved/rewritten, so a red TICK003 can be cleared without waiting for
+unrelated in-flight work.
