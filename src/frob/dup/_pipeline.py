@@ -614,11 +614,27 @@ def _caller_counts(state: _FpState, path: str, graph: CallGraph) -> dict[str, in
     return counts
 
 
+# frob:ticket T-0814
+def _is_symref(entry: str) -> bool:
+    """True if `entry` looks like a real `path::qualname` call-graph node
+    (a `CallGraph.calls` entry), false for a non-symref sentinel such as
+    `frob.graph.callgraph.UNRESOLVED_CALLEE` -- every raw `graph.calls`
+    consumer here must check this before `split("::", 1)`, which
+    IndexErrors/ValueErrors on a bare sentinel with no `::` (T-0814)."""
+    return "::" in entry
+
+
 def _callee_name_map(graph: CallGraph, caller_symref: str) -> dict[str, str]:
     """`{short_call_name: callee_symref}` for one caller's recorded PRIVATE
-    callees (see `build_call_graph`)."""
+    callees (see `build_call_graph`). Skips any non-symref sentinel entry
+    (e.g. `UNRESOLVED_CALLEE`) -- it names no real callee to inline or
+    splice (T-0814); downstream consumers (`_splice_call_site`,
+    `_callee_tokens`) only ever see values pulled from this map, so
+    filtering here protects them too."""
     result: dict[str, str] = {}
     for callee_symref in graph.calls.get(caller_symref, ()):
+        if not _is_symref(callee_symref):
+            continue
         short = callee_symref.split("::", 1)[1].rsplit(".", 1)[-1]
         result[short] = callee_symref
     return result

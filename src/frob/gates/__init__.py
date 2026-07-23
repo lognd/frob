@@ -3457,6 +3457,16 @@ def _cov006_full_call_graph(root: Path, paths: tuple[str, ...]):
 
 # frob:ticket T-0528
 # frob:waive ARCH001 reason="a multi-stage heuristic (gather test's called names, expand through same-file helpers, resolve imports to candidate files, then seed a closure search from each resolved public entrypoint) where each stage's input is the prior stage's derived set (called, resolved_called, import_files, entrypoints); splitting would thread that same chain of derived sets across new function boundaries without reducing it"  # noqa: E501
+# frob:ticket T-0814
+def _is_symref(entry: str) -> bool:
+    """True if `entry` looks like a real `path::qualname` call-graph node
+    (a `closure()`/`CallGraph.calls` entry), false for a non-symref
+    sentinel such as `frob.graph.callgraph.UNRESOLVED_CALLEE` -- every
+    closure consumer here must check this before `split("::", 1)[1]`,
+    which IndexErrors on a bare sentinel with no `::` (T-0814)."""
+    return "::" in entry
+
+
 def _cov006_third_file_reachable(root: Path, edge: Edge) -> bool:
     """COV006 rescue for Class 2 (T-0528): the test reaches the bound
     private target through a real call chain passing through a THIRD file
@@ -3511,6 +3521,10 @@ def _cov006_third_file_reachable(root: Path, edge: Edge) -> bool:
     reached_helpers = closure(test_only_graph, edge.src, max_depth=6, max_nodes=100)
     symbols_by_qualname = {sym.qualname: sym for sym in test_symbols}
     for helper_symref in reached_helpers:
+        if not _is_symref(helper_symref):
+            # T-0814: a non-symref sentinel (e.g. UNRESOLVED_CALLEE) has no
+            # `::` to split on -- skip it, it names no real helper symbol.
+            continue
         helper_qualname = helper_symref.split("::", 1)[1]
         helper_sym = symbols_by_qualname.get(helper_qualname)
         if helper_sym is not None:

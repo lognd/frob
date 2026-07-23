@@ -1279,6 +1279,62 @@ class TestCoverageGate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV006" for v in violations)
 
+    # frob:ticket T-0814
+    # frob:tests tests/test_gates.py::TestCoverageGate.test_is_symref_gates kind="unit"
+    def test_is_symref_gates(self) -> None:
+        """T-0814: `_is_symref` distinguishes a real `path::qualname`
+        call-graph node from a non-symref sentinel like
+        `UNRESOLVED_CALLEE` -- the guard every closure consumer in this
+        module must apply before `split("::", 1)[1]`."""
+        from frob.gates import _is_symref
+        from frob.graph.callgraph import UNRESOLVED_CALLEE
+
+        assert _is_symref("src/a.py::_helper") is True
+        assert _is_symref(UNRESOLVED_CALLEE) is False
+        assert _is_symref("no-double-colon-here") is False
+
+    # frob:ticket T-0814
+    # frob:tests tests/test_gates.py::TestCoverageGate.test_cov006_third_file_reachable_skips_unresolved_callee_sentinel kind="unit"  # noqa: E501
+    def test_cov006_third_file_reachable_skips_unresolved_callee_sentinel(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """T-0814 (T-0809 reviewer condition b): `_cov006_third_file_reachable`
+        iterates `closure(...)`'s output and used to do
+        `helper_symref.split("::", 1)[1]` unconditionally -- a bare
+        `UNRESOLVED_CALLEE` sentinel entry (no `::`) IndexErrors that.
+        Forcing `closure` to always return the sentinel proves the
+        function now skips it and returns cleanly instead of raising."""
+        import frob.graph.callgraph as callgraph_mod
+        from frob.gates import _cov006_third_file_reachable
+        from frob.graph import Edge, EdgeKind
+        from frob.graph.callgraph import UNRESOLVED_CALLEE
+
+        _write(tmp_path, "src/a.py", "def _target(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "tests/test_x.py",
+            "# frob:tests src/a.py::_target\ndef test_foo():\n    _stuff()\n",
+        )
+        edge = Edge(
+            kind=EdgeKind.TESTS,
+            src="tests/test_x.py::test_foo",
+            target="src/a.py::_target",
+            origin="tests/test_x.py:1",
+        )
+
+        real_closure = callgraph_mod.closure
+
+        def _closure_always_sentinel(*args, **kwargs):
+            """Test double: real closure output plus a poisoned sentinel
+            entry, so every consumer sees a non-symref member."""
+            return real_closure(*args, **kwargs) + (UNRESOLVED_CALLEE,)
+
+        monkeypatch.setattr(callgraph_mod, "closure", _closure_always_sentinel)
+
+        # Must not raise IndexError; the sentinel names no real helper so
+        # this rescue finds nothing further to widen the search with.
+        assert _cov006_third_file_reachable(tmp_path, edge) is False
+
     def test_cov007_flags_doc_anchor_on_private_helper(self, tmp_path: Path) -> None:
         """T-0483: a `frob:doc` edge whose src symbol is PRIVATE fires
         COV007 -- doc anchors are for the public API surface."""
@@ -1512,6 +1568,46 @@ class TestCoverageGate:
         assert result.is_ok
         report = result.danger_ok
         assert _first_rule(report.violations, "WAIVE002") is not None
+
+
+class TestDupPipelineClosureConsumers:
+    """T-0814: `frob.dup._pipeline`'s raw `CallGraph.calls` consumers share
+    the same non-symref-entry assumption as the `frob.gates` COV006
+    closure consumers (T-0809 reviewer condition b) -- covered here,
+    scoped to `tests/test_gates.py` per T-0814's declared scope."""
+
+    # frob:ticket T-0814
+    # frob:tests tests/test_gates.py::TestDupPipelineClosureConsumers.test_is_symref_dup kind="unit"  # noqa: E501
+    def test_is_symref_dup(self) -> None:
+        """T-0814: `frob.dup._pipeline._is_symref` mirrors `frob.gates`'s
+        helper of the same name -- both files are outside a shared home
+        (`frob/graph/callgraph.py`) per T-0814's declared scope, so each
+        keeps its own copy of this one-line predicate."""
+        from frob.dup._pipeline import _is_symref
+        from frob.graph.callgraph import UNRESOLVED_CALLEE
+
+        assert _is_symref("src/a.py::_helper") is True
+        assert _is_symref(UNRESOLVED_CALLEE) is False
+
+    # frob:ticket T-0814
+    # frob:tests tests/test_gates.py::TestDupPipelineClosureConsumers.test_callee_name_map_skips_unresolved_callee_sentinel kind="unit"  # noqa: E501
+    def test_callee_name_map_skips_unresolved_callee_sentinel(self) -> None:
+        """T-0814: `_callee_name_map` iterates `graph.calls.get(caller, ())`
+        and used to do `callee_symref.split("::", 1)[1]` unconditionally --
+        a bare `UNRESOLVED_CALLEE` sentinel entry (no `::`) IndexErrors
+        that. A `CallGraph` carrying the sentinel alongside a real callee
+        must not raise, and the real callee must still resolve -- the
+        sentinel is skipped, not silently swallowing real entries too."""
+        from frob.dup._pipeline import _callee_name_map
+        from frob.graph.callgraph import UNRESOLVED_CALLEE, CallGraph
+
+        graph = CallGraph(
+            calls={
+                "src/a.py::caller": ("src/a.py::_real_helper", UNRESOLVED_CALLEE),
+            }
+        )
+        result = _callee_name_map(graph, "src/a.py::caller")
+        assert result == {"_real_helper": "src/a.py::_real_helper"}
 
 
 class TestDsl001:
