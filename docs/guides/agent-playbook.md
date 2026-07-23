@@ -476,6 +476,39 @@ hand-edit of `tickets.md`, no `git stash`):
   under the other is not actually clean. Check both before reporting a
   ruff pass.
 
+## 12b. Coordinator worktree cleanup (T-0836)
+
+A coordinator that hand-sweeps stale `.claude/worktrees/` entries with a
+raw `git worktree remove` loop, skip-listed only by git's own dirty
+check, is not safe: git's dirty check cannot see a LIVE agent between
+writes -- a worktree an agent is mid-diagnosis in (nothing uncommitted
+yet) reads exactly like an abandoned one. This happened for real: a
+coordinator's bulk sweep of 68 stale worktree registrations destroyed a
+live agent's clean, in-progress worktree because the skip-list had no way
+to tell the two apart.
+
+Use `frob worktree sweep [path] [--dry-run] [--min-age HOURS]` instead of
+a raw bulk `git worktree remove` loop, always. It reuses this repo's own
+cross-worktree lease machinery (`frob.tickets._leases.read_all_leases`/
+`is_lease_ttl_expired`, section 1's T-0473/T-0782/T-0835 lineage) to tell
+a genuinely-idle worktree from a live one, removing a candidate ONLY if
+it is BOTH clean AND holds no live (unexpired) lease for any
+non-terminal ticket -- an expired lease is treated the same as a dead
+agent's abandoned worktree and does not block removal. `--dry-run`
+previews every verdict (`removed` / `kept:lease(<ticket> <age>)` /
+`kept:dirty` / `kept:age`) without removing anything; run it first when
+sweeping a session with multiple concurrent agents. `frob worktree sweep`
+never deletes a branch -- only the worktree registration/checkout.
+
+Per-worktree verify-then-remove (checking a SPECIFIC just-landed ticket's
+worktree by hand: confirm its ticket is closed/dropped/failed, confirm
+`git status --porcelain` is empty, then `git worktree remove <path>`) is
+still fine for a single worktree you just finished landing yourself --
+the hazard is specifically a BULK sweep across many worktrees you are not
+individually re-verifying one at a time. A raw bulk `git worktree remove`
+loop across `.claude/worktrees/*` is forbidden; `frob worktree sweep` (or
+the single-worktree recipe just described) are the only sanctioned paths.
+
 ## See also
 
 - `docs/modules/gates.md` -- the full gate catalog, `--delta`/baseline

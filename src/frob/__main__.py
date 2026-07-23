@@ -451,6 +451,43 @@ def _add_agent_parser(sub) -> None:
     )
 
 
+# frob:ticket T-0836
+def _add_worktree_parser(sub) -> None:
+    """Register the `frob worktree` subcommand tree for `--help` discovery
+    only -- actual dispatch bypasses this parser entirely (see `_dispatch`
+    below and `frob.app.worktree_runner`'s module docstring), mirroring
+    `bind`/`agent`'s own precedent."""
+    worktree_p = sub.add_parser(
+        "worktree",
+        help="manage dispatched-agent git worktrees (T-0836)",
+    )
+    worktree_sub = worktree_p.add_subparsers(dest="worktree_command")
+    worktree_sweep_p = worktree_sub.add_parser(
+        "sweep", help="lease-aware stale-worktree cleanup"
+    )
+    worktree_sweep_p.add_argument(
+        "worktree_sweep_path",
+        metavar="path",
+        nargs="?",
+        default=".",
+        help="repo root to scan (default: cwd)",
+    )
+    worktree_sweep_p.add_argument(
+        "--dry-run",
+        dest="worktree_sweep_dry_run",
+        action="store_true",
+        help="print verdicts without removing anything",
+    )
+    worktree_sweep_p.add_argument(
+        "--min-age",
+        dest="worktree_sweep_min_age_hours",
+        type=float,
+        default=None,
+        metavar="HOURS",
+        help="skip worktrees whose HEAD commit is newer than this many hours",
+    )
+
+
 def _add_check_skip_args_python(check_p) -> None:
     """Register `frob check`'s Python-toolchain stage-skip flags."""
     check_p.add_argument("--skip-ruff", dest="check_skip_ruff", action="store_true")
@@ -2047,6 +2084,7 @@ def _add_analysis_subparsers(sub) -> None:
     _add_exports_parser(sub)
     _add_bind_parser(sub)
     _add_agent_parser(sub)
+    _add_worktree_parser(sub)
 
 
 def _add_workflow_subparsers(sub) -> None:
@@ -2112,6 +2150,13 @@ def _dispatch(argv: list[str]) -> None:
         from frob.app.agent_runner import run as _agent_run
 
         _agent_run(argv[1:])
+    elif argv and argv[0] == "worktree":
+        # T-0836: `frob worktree` is dispatched directly, mirroring
+        # `bind`/`agent` above -- see `frob.app.worktree_runner`'s module
+        # docstring for why.
+        from frob.app.worktree_runner import run as _worktree_run
+
+        _worktree_run(argv[1:])
     else:
         parser = _build_parser()
         args = parser.parse_args(argv)

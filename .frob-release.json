@@ -125,6 +125,7 @@
     "src/frob/app/telemetry.py::tree_hash": "3159b478fcf403f744bd83292b5d2507533c3efb66b4c94de610234f936b2b4b",
     "src/frob/app/ticket_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/vet_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
+    "src/frob/app/worktree_runner.py::run": "92572764844d8b13ffb2ffb62e56a895e0d81ecd853be11fada4aa366856323b",
     "src/frob/app/xref_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/arch/__init__.py::analyze_project": "9f59a6565b4a0695319083fcc83633a2f7d9a11ef98614e2dc3f15fdf62a87dd",
     "src/frob/arch/_kotlin.py::KotlinAdapter": "01f16c6917a994b14ee14cec4aad49f19dac7a1902f1b863246cd0f4ecc060f6",
@@ -1223,14 +1224,18 @@
     "src/frob/tickets/_leases.py::LEASE_TTL_SECONDS": "e88508fa4933b020e5e9420c23b5e51e967a9be9b46f3569da53fefe0d7a4c2a",
     "src/frob/tickets/_leases.py::LeaseError": "634afaf6d75db7b173f4ba37d4da98ee08baed5d35be4d92d475525a7c5a7dad",
     "src/frob/tickets/_leases.py::LeaseRecord": "da99a31cd773fbfceb2a7e1ead50b0950523d6b74c12b50ba47c46f48791aec2",
+    "src/frob/tickets/_leases.py::WorktreeSweepError": "22b7b589f3ab9ada4d0e7b4ed764e33b5f9552bfa4ec9f580277c9bbde7836b6",
+    "src/frob/tickets/_leases.py::WorktreeVerdict": "8eded3a4763a2cb6135b82b73995b544fc7d517080d610a0c3766dc12b993aaf",
     "src/frob/tickets/_leases.py::git_common_dir": "f0337fd86f96423a68a1604c8cfbacde5446d1322e3868afff23f6b58b9c8084",
     "src/frob/tickets/_leases.py::is_lease_ttl_expired": "e681ae1161930ae13cb3b1309c182860e0a6569a54b75d9e0b0ae763cfe36e9f",
     "src/frob/tickets/_leases.py::lease_age_seconds": "ff57eb024fdac15e42d7805c4c439abd2bc922c423bbca681c860ec53e4fce9c",
     "src/frob/tickets/_leases.py::leases_dir": "112f399e603eeace7d9a023028111e26776fcc901fb4579016acfbcfb67c2ddf",
+    "src/frob/tickets/_leases.py::list_agent_worktrees": "68d6dbb4759dcfbbca1f86fe5d359331adb32b7893436fcf0d025fdc2d521693",
     "src/frob/tickets/_leases.py::read_all_leases": "5a5f63441be5e263d74f8e5c9d38a3ac4c3c3bbd136d812a1a7b21dd46fda60b",
     "src/frob/tickets/_leases.py::record_lease": "ffe05f96a779191678cc371b71f334b5157d8423ec6385c1fa1ce307d211b89a",
     "src/frob/tickets/_leases.py::release_lease": "d67d35f4063182ea14399cf5bdbfb90449d04d593f0aa9f81fc36aca3377d7bb",
     "src/frob/tickets/_leases.py::resolve_lease": "0ffe72650abef319d15634c16daf876442b715db01a2ea03dc008423ac862753",
+    "src/frob/tickets/_leases.py::sweep_worktrees": "716c17c1585517da8a1db7afe9e2e1f6de4ad5ac7c1cad262695ed2c0c086596",
     "src/frob/tickets/_models.py::AcceptanceCriterion": "2bca461ddaee3f57624bec884c629bf0909a29c21a9c3033448538728221642d",
     "src/frob/tickets/_models.py::Attachment": "4bfd3d2416fb5e40f4972cd7c7d4bf518fd7362baea7588bb6572dccbc0613dc",
     "src/frob/tickets/_models.py::AttachmentSource": "a0a9c8975fd2eb8cc28ede62fe915cf5ebd511ef88ecfbb0669c195ddc22980e",
@@ -1384,5 +1389,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.123.0"
+  "version": "0.124.0"
 }

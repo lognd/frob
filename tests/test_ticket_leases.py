@@ -33,8 +33,10 @@ from frob.tickets._leases import (
     LEASE_TTL_SECONDS,
     LeaseRecord,
     leases_dir,
+    list_agent_worktrees,
     read_all_leases,
     resolve_lease,
+    sweep_worktrees,
 )
 
 
@@ -291,3 +293,169 @@ class TestDoubleDispatchIncidentRegression:
         # fails for A, exactly the property that stops the 5.5h duplicate-
         # work incident from repeating.
         assert resolve_lease(repo, "T-0001", repo).is_err
+
+
+# T-0836: `frob worktree sweep` -- lease-aware stale-worktree cleanup. A raw
+# git-level bulk sweep (`git worktree remove` in a loop, skip-listed only by
+# a git-dirty check) destroyed a live agent's CLEAN worktree, because git's
+# own dirty check cannot see a live agent between writes -- only this
+# repo's own lease machinery can. These tests build real fixture repos with
+# multiple `.claude/worktrees/`-shaped worktrees (this repo's own dispatch
+# convention) and exercise `sweep_worktrees`/`list_agent_worktrees`
+# directly against real git state -- no mocking of the lease or git layers.
+
+
+@pytest.fixture
+def sweep_repo(tmp_path: Path) -> Path:
+    """A main checkout with an initial commit, ready to host
+    `.claude/worktrees/`-shaped linked worktrees."""
+    main_repo = tmp_path / "main"
+    _git_init(main_repo)
+    (main_repo / "README.md").write_text("root\n")
+    _commit_all(main_repo, "init")
+    return main_repo
+
+
+def _add_agent_worktree(repo: Path, name: str) -> Path:
+    """Add a linked worktree under `repo`'s own `.claude/worktrees/<name>`
+    convention, on a fresh branch `agent-<name>`."""
+    wt = repo / ".claude" / "worktrees" / name
+    wt.parent.mkdir(parents=True, exist_ok=True)
+    _run(["git", "worktree", "add", "-b", f"agent-{name}", str(wt)], repo)
+    return wt
+
+
+def _branch_exists(repo: Path, branch: str) -> bool:
+    listing = _run(["git", "branch", "--list", branch], repo).stdout
+    return branch in listing
+
+
+class TestListAgentWorktrees:
+    """`list_agent_worktrees` returns only `.claude/worktrees/`-shaped
+    paths, never the repo's own primary checkout."""
+
+    def test_lists_only_dot_claude_worktrees_paths(self, sweep_repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestListAgentWorktrees.test_lists_only_dot_claude_worktrees_paths  # noqa: E501
+        wt = _add_agent_worktree(sweep_repo, "wt1")
+
+        result = list_agent_worktrees(sweep_repo)
+        assert result.is_ok
+        paths = result.danger_ok
+        assert paths == (wt.resolve(),)
+        assert sweep_repo.resolve() not in paths
+
+
+class TestSweepWorktrees:
+    """`sweep_worktrees`'s core removal decision: clean AND no live lease."""
+
+    def test_clean_no_lease_removed(self, sweep_repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_clean_no_lease_removed  # noqa: E501
+        wt = _add_agent_worktree(sweep_repo, "wt1")
+
+        result = sweep_worktrees(sweep_repo)
+        assert result.is_ok
+        verdicts = result.danger_ok
+        assert len(verdicts) == 1
+        assert verdicts[0].verdict == "removed"
+        assert not wt.exists()
+
+    def test_clean_live_lease_kept(self, sweep_repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_clean_live_lease_kept  # noqa: E501
+        wt = _add_agent_worktree(sweep_repo, "wt1")
+        _write_lease(
+            sweep_repo,
+            "T-0900",
+            wt,
+            recorded_at=datetime.now(UTC).isoformat(),
+        )
+
+        result = sweep_worktrees(sweep_repo)
+        assert result.is_ok
+        verdicts = result.danger_ok
+        assert len(verdicts) == 1
+        assert verdicts[0].verdict == "kept:lease"
+        assert "T-0900" in verdicts[0].detail
+        assert wt.exists()
+
+    def test_dirty_kept(self, sweep_repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_dirty_kept  # noqa: E501
+        wt = _add_agent_worktree(sweep_repo, "wt1")
+        (wt / "scratch.txt").write_text("uncommitted\n")
+
+        result = sweep_worktrees(sweep_repo)
+        assert result.is_ok
+        verdicts = result.danger_ok
+        assert len(verdicts) == 1
+        assert verdicts[0].verdict == "kept:dirty"
+        assert wt.exists()
+
+    def test_expired_lease_clean_removed(self, sweep_repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_expired_lease_clean_removed  # noqa: E501
+        wt = _add_agent_worktree(sweep_repo, "wt1")
+        stale_time = (
+            datetime.now(UTC) - timedelta(seconds=LEASE_TTL_SECONDS + 3600)
+        ).isoformat()
+        _write_lease(sweep_repo, "T-0900", wt, recorded_at=stale_time)
+
+        result = sweep_worktrees(sweep_repo)
+        assert result.is_ok
+        verdicts = result.danger_ok
+        assert len(verdicts) == 1
+        assert verdicts[0].verdict == "removed"
+        assert not wt.exists()
+
+    def test_dry_run_removes_nothing(self, sweep_repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_dry_run_removes_nothing  # noqa: E501
+        wt = _add_agent_worktree(sweep_repo, "wt1")
+
+        result = sweep_worktrees(sweep_repo, dry_run=True)
+        assert result.is_ok
+        verdicts = result.danger_ok
+        assert len(verdicts) == 1
+        assert verdicts[0].verdict == "removed"
+        assert wt.exists()
+
+        # A real removal afterward still succeeds -- dry-run genuinely
+        # never touched the worktree.
+        result2 = sweep_worktrees(sweep_repo)
+        assert result2.is_ok
+        assert not wt.exists()
+
+    def test_branches_survive_removal(self, sweep_repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_branches_survive_removal  # noqa: E501
+        _add_agent_worktree(sweep_repo, "wt1")
+        assert _branch_exists(sweep_repo, "agent-wt1")
+
+        result = sweep_worktrees(sweep_repo)
+        assert result.is_ok
+        assert result.danger_ok[0].verdict == "removed"
+        assert _branch_exists(sweep_repo, "agent-wt1")
+
+    def test_min_age_keeps_recent_worktree(self, sweep_repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_min_age_keeps_recent_worktree  # noqa: E501
+        wt = _add_agent_worktree(sweep_repo, "wt1")
+
+        result = sweep_worktrees(sweep_repo, min_age_hours=24)
+        assert result.is_ok
+        verdicts = result.danger_ok
+        assert len(verdicts) == 1
+        assert verdicts[0].verdict == "kept:age"
+        assert wt.exists()
+
+
+class TestWorktreeSweepCli:
+    """`frob worktree sweep`'s CLI entry point (`frob.app.worktree_runner.
+    run`) prints one verdict line per worktree plus a summary count."""
+
+    def test_sweep_cli_prints_verdicts_and_summary(
+        self, sweep_repo: Path, capsys
+    ) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestWorktreeSweepCli.test_sweep_cli_prints_verdicts_and_summary  # noqa: E501
+        from frob.app.worktree_runner import run as worktree_run
+
+        _add_agent_worktree(sweep_repo, "wt1")
+
+        worktree_run(["sweep", str(sweep_repo), "--dry-run"])
+        out = capsys.readouterr().out
+        assert "removed" in out
+        assert "swept 1 worktree(s)" in out

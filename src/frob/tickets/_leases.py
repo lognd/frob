@@ -672,6 +672,229 @@ def read_all_leases(root: Path) -> tuple[LeaseRecord, ...]:
     return tuple(live)
 
 
+# frob:ticket T-0836
+# frob:doc docs/guides/agent-playbook.md#12b-coordinator-worktree-cleanup-t-0836
+class WorktreeSweepError(ErrorSet):
+    """Fallible outcomes of `frob worktree sweep` (T-0836)."""
+
+    NotARepo = "root is not inside a git repository"
+    ListFailed = "git worktree list --porcelain failed"
+
+
+# frob:ticket T-0836
+# frob:doc docs/guides/agent-playbook.md#12b-coordinator-worktree-cleanup-t-0836
+class WorktreeVerdict(BaseModel):
+    """One decided outcome for a single dispatched-agent worktree during
+    `frob worktree sweep` (T-0836): the worktree's resolved path, the
+    verdict tag (`"removed"`, `"kept:lease"`, `"kept:dirty"`, or
+    `"kept:age"`), and a human-readable `detail` string (e.g. the pinning
+    ticket id and lease age for `"kept:lease"`; empty for the other
+    verdicts unless a `git worktree remove` call itself failed)."""
+
+    model_config = {}
+
+    path: str
+    verdict: str
+    detail: str = ""
+
+
+# frob:ticket T-0836
+def _is_agent_worktree_path(path: Path) -> bool:
+    """`True` iff `path` (already resolved) has a `.claude/worktrees`
+    segment anywhere in it -- this repo's own dispatch convention for
+    where a per-ticket agent worktree lives (see `docs/guides/agent-
+    playbook.md`). `frob worktree sweep` only ever considers paths
+    matching this convention as sweep candidates, so the repository's own
+    primary checkout (and any worktree a human made by hand somewhere
+    else on disk) is never a candidate for removal."""
+    parts = path.parts
+    return any(
+        parts[i] == ".claude" and parts[i + 1] == "worktrees"
+        for i in range(len(parts) - 1)
+    )
+
+
+# frob:ticket T-0836
+# frob:doc docs/guides/agent-playbook.md#12b-coordinator-worktree-cleanup-t-0836
+# frob:tests tests/test_ticket_leases.py::TestListAgentWorktrees.test_lists_only_dot_claude_worktrees_paths kind="unit"  # noqa: E501
+def list_agent_worktrees(root: Path) -> Result[tuple[Path, ...], WorktreeSweepError]:
+    """Every git-registered worktree of `root`'s repository whose path
+    matches the `.claude/worktrees/` dispatch convention (T-0836), parsed
+    from `git worktree list --porcelain`'s stable machine-readable format
+    (one blank-line-separated record per worktree, a leading `worktree
+    <path>` line). Filtering to the convention means the repo's own
+    primary checkout, and any worktree living elsewhere on disk, is never
+    returned as a sweep candidate. `Err(ListFailed)` if the `git` call
+    itself fails; never raises."""
+    spawned = gitio.run_argv(
+        ("git", "-C", str(root), "worktree", "list", "--porcelain")
+    )
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        _log.warning(
+            "tickets: worktree sweep: git worktree list --porcelain failed under %s",
+            root,
+        )
+        return Err(WorktreeSweepError.ListFailed)
+    paths: list[Path] = []
+    for block in spawned.danger_ok.stdout.split("\n\n"):
+        for line in block.splitlines():
+            if line.startswith("worktree "):
+                candidate = Path(line[len("worktree ") :]).resolve()
+                if _is_agent_worktree_path(candidate):
+                    paths.append(candidate)
+                break
+    return Ok(tuple(paths))
+
+
+# frob:ticket T-0836
+def _worktree_is_clean(path: Path) -> bool | None:
+    """`True`/`False` iff `path`'s working tree has no modified or
+    untracked files (`git status --porcelain` empty vs. non-empty),
+    `None` if the `git` call itself failed. A caller MUST treat `None`
+    the same as "dirty" -- an unresolvable clean check is never license
+    to remove a worktree."""
+    spawned = gitio.run_argv(("git", "-C", str(path), "status", "--porcelain"))
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        return None
+    return spawned.danger_ok.stdout.strip() == ""
+
+
+# frob:ticket T-0836
+def _worktree_head_age_seconds(
+    path: Path, *, now: datetime | None = None
+) -> float | None:
+    """Seconds since `path`'s HEAD commit (`git log -1 --format=%ct`), or
+    `None` if unresolvable (a worktree with no commits yet, or a `git`
+    failure) -- a caller MUST treat `None` conservatively here too, same
+    as `_worktree_is_clean`'s `None`."""
+    spawned = gitio.run_argv(("git", "-C", str(path), "log", "-1", "--format=%ct"))
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        return None
+    try:
+        committed = int(spawned.danger_ok.stdout.strip())
+    except ValueError:
+        return None
+    current = now if now is not None else datetime.now(UTC)
+    return current.timestamp() - committed
+
+
+# frob:ticket T-0836
+# frob:doc docs/guides/agent-playbook.md#12b-coordinator-worktree-cleanup-t-0836
+# frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_clean_no_lease_removed kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_clean_live_lease_kept kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_dirty_kept kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_expired_lease_clean_removed kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_dry_run_removes_nothing kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_branches_survive_removal kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_min_age_keeps_recent_worktree kind="unit"  # noqa: E501
+def sweep_worktrees(
+    root: Path,
+    *,
+    min_age_hours: float | None = None,
+    dry_run: bool = False,
+    now: datetime | None = None,
+) -> Result[tuple[WorktreeVerdict, ...], WorktreeSweepError]:
+    """Decide, and (unless `dry_run`) act on, a removal verdict for every
+    dispatched-agent worktree under `root`'s repository (T-0836) -- the
+    lease-aware fix for the incident where a raw `git worktree remove`
+    hand-sweep destroyed a live agent's CLEAN worktree: git's own dirty
+    check cannot see a live agent between writes, only this repo's own
+    lease machinery (`read_all_leases`/`is_lease_ttl_expired`) can.
+
+    A worktree is removed only if BOTH hold:
+      (a) its working tree is clean (`_worktree_is_clean` is `True` --
+          `None`/unresolvable counts as dirty, never as clean);
+      (b) no LIVE (unexpired) lease (`is_lease_ttl_expired`) among
+          `read_all_leases(root)` is pinned to it -- an EXPIRED lease is
+          treated as not live, exactly like a dead agent's abandoned
+          worktree, and does not block removal.
+
+    `min_age_hours`, if given, adds a third gate: a worktree whose HEAD
+    commit (`_worktree_head_age_seconds`) is newer than `min_age_hours`
+    (or whose age is unresolvable) is kept regardless of (a)/(b).
+
+    `dry_run=True` computes and returns the same verdicts but never calls
+    `git worktree remove` -- used by `--dry-run` to preview a sweep.
+    Removal NEVER deletes a branch (`git worktree remove` alone never
+    does); the branch this worktree points to survives every removal
+    this function performs.
+
+    Reuses `read_all_leases`/`is_lease_ttl_expired`/`lease_age_seconds`
+    directly rather than re-deriving liveness -- this ticket's own
+    incident was caused by a sweep that bypassed the lease machinery
+    entirely, not by a bug within it.
+
+    `Err(ListFailed)` if `list_agent_worktrees` itself fails; never
+    raises."""
+    candidates = list_agent_worktrees(root)
+    if candidates.is_err:
+        return Err(candidates.danger_err)
+    leases = read_all_leases(root)
+    verdicts: list[WorktreeVerdict] = []
+    for candidate in candidates.danger_ok:
+        clean = _worktree_is_clean(candidate)
+        if clean is not True:
+            verdicts.append(WorktreeVerdict(path=str(candidate), verdict="kept:dirty"))
+            continue
+
+        live_lease: LeaseRecord | None = None
+        for record in leases:
+            try:
+                record_path = Path(record.worktree).resolve()
+            except OSError:
+                continue
+            if record_path != candidate:
+                continue
+            if not is_lease_ttl_expired(record, now=now):
+                live_lease = record
+                break
+        if live_lease is not None:
+            age = lease_age_seconds(live_lease, now=now)
+            age_str = f"{int(age)}s" if age is not None else "unknown-age"
+            verdicts.append(
+                WorktreeVerdict(
+                    path=str(candidate),
+                    verdict="kept:lease",
+                    detail=f"{live_lease.ticket_id} {age_str}",
+                )
+            )
+            continue
+
+        if min_age_hours is not None:
+            head_age = _worktree_head_age_seconds(candidate, now=now)
+            if head_age is None or head_age < min_age_hours * 3600:
+                verdicts.append(
+                    WorktreeVerdict(path=str(candidate), verdict="kept:age")
+                )
+                continue
+
+        if dry_run:
+            verdicts.append(
+                WorktreeVerdict(
+                    path=str(candidate), verdict="removed", detail="dry-run"
+                )
+            )
+            continue
+
+        removed = gitio.run_argv(
+            ("git", "-C", str(root), "worktree", "remove", str(candidate))
+        )
+        if removed.is_err or removed.danger_ok.returncode != 0:
+            _log.warning(
+                "tickets: worktree sweep: git worktree remove failed for %s",
+                candidate,
+            )
+            verdicts.append(
+                WorktreeVerdict(
+                    path=str(candidate), verdict="kept:dirty", detail="remove-failed"
+                )
+            )
+            continue
+        _log.info("tickets: worktree sweep removed %s", candidate)
+        verdicts.append(WorktreeVerdict(path=str(candidate), verdict="removed"))
+    return Ok(tuple(verdicts))
+
+
 def _read_one_lease(leases_root: Path, ticket_id: str) -> LeaseRecord | None:
     """Read exactly `ticket_id`'s own lease file, by its known path
     (`_lease_path`) -- never by globbing/iterating the leases directory the
