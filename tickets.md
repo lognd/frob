@@ -6371,3 +6371,100 @@ component: null
 labels: []
 ```
 T-0695 landed four unwaivable fork/pool-hazard advisories; two fire on src/frob/gates/__init__.py::_run_combined_jobs (pool-inside-pool, fork-after-threads). T-0581 is done -- the ProcessPool-for-CPU-gates + ThreadPool split is the intended design -- but the detectors are same-function co-occurrence heuristics, so the intended shape still fires. Since the channel is unwaivable by design, the only discharge path is restructuring: hoist the ProcessPoolExecutor construction/ownership out of the function containing the ThreadPoolExecutor task submission (e.g. construct both pools in a top-level orchestrator and pass handles) so the hazard co-occurrence no longer exists in any single function. Keep T-0581 behavior and perf. Blocks the zero-warnings drive; these 2 warnings cannot be waived.
+
+<!-- ticket:T-0768 -->
+```yaml
+id: T-0768
+title: 'ticket CLI: quiet diagnostic logger noise (gitio/tickets DEBUG-INFO) by default,
+  -v restores'
+state: in-progress
+kind: ux
+origin: human
+created: '2026-07-22'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/app/ticket_runner.py
+- src/frob/app/config.py
+- src/frob/__main__.py
+- src/frob/logging/quiet.py
+- src/frob/logging/__init__.py
+- pyproject.toml
+- .frob-release.json
+- uv.lock
+- tests/test_ticket_runner_quiet.py
+- tests/unit/test_logging_quiet.py
+scope_changes:
+- op: add
+  glob: pyproject.toml
+  reason: REL001 minor bump + stamp artifacts for new public logger_levels API
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: .frob-release.json
+  reason: REL001 minor bump + stamp artifacts for new public logger_levels API
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: uv.lock
+  reason: REL001 minor bump + stamp artifacts for new public logger_levels API
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: tests/test_ticket_runner_quiet.py
+  reason: evidence tests for the dispatch clamp and logger_levels helper
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: tests/unit/test_logging_quiet.py
+  reason: evidence tests for the dispatch clamp and logger_levels helper
+  actor: logan
+  at: '2026-07-22'
+evidence:
+- tests/test_ticket_runner_quiet.py::TestDiagnosticLogCtx::test_default_clamps_frob_tree_but_pins_runner_output
+- tests/test_ticket_runner_quiet.py::TestDiagnosticLogCtx::test_verbose_skips_the_clamp
+- tests/unit/test_logging_quiet.py::TestLoggerLevels::test_sets_and_restores_mapped_levels
+attachments: []
+acceptance:
+- text: GIVEN frob ticket list at default verbosity WHEN it runs THEN no gitio/tickets
+    DEBUG or INFO diagnostic lines appear while ticket rows still print; GIVEN frob
+    ticket -v list THEN diagnostic INFO/DEBUG lines are restored
+  evidence:
+  - tests/test_ticket_runner_quiet.py::TestDiagnosticLogCtx::test_default_clamps_frob_tree_but_pins_runner_output
+  - tests/test_ticket_runner_quiet.py::TestDiagnosticLogCtx::test_verbose_skips_the_clamp
+  - tests/unit/test_logging_quiet.py::TestLoggerLevels::test_sets_and_restores_mapped_levels
+threat: null
+component: null
+labels: []
+```
+User request 2026-07-22: frob ticket list is drowned in gitio: spawning/returncode DEBUG lines and tickets: loader INFO chatter. Those lines are already DEBUG/INFO -- the stdout handler defaults to DEBUG and only frob check applies the T-0202 stdout_log_level quieting. But ticket CLI OUTPUT itself is _log.info on the runner logger, so a handler-level quiet would swallow the listing. Fix: per-logger overrides -- during ticket dispatch clamp logger frob to WARNING and pin frob.app.ticket_runner to INFO (its output channel), restored after; add a generic logger_levels context manager to frob.logging.quiet as the one shared home; add frob ticket -v (count) to skip the clamp like check -v. WARNING+ lines (stale-lease, over-broad-scope) still show.
+<!-- ticket:T-0769 -->
+```yaml
+id: T-0769
+title: 'vet observer: docstring prose counted as observed capability (exec false-positive
+  on _concurrency.py docs)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: critical
+blocked_by: []
+parent: null
+scope:
+- src/frob/vet/_capability.py
+- tests/test_vet_capability.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a module whose docstrings mention subprocess.Popen/os.fork prose but
+    whose code never resolves an exec-capable call WHEN scan_file_capabilities runs
+    THEN no exec capability is observed; GIVEN real exec calls outside docstrings
+    THEN observation is unchanged; a regression test covers the docstring shape
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Found 2026-07-22 during the zero-drive: T-0695 landed src/frob/arch/_concurrency.py whose DOCSTRINGS document fork/pool hazards (literal subprocess.Popen(...), os.fork() prose). The raw-text needle scan (_needle_hits_outside_comments) excludes comment spans but NOT docstring string-literal spans, so selfconform saw capability exec observed at docstring lines on node graphlang -> 4 SYS100 violations -> TestRealGateGreen RED on main. Docstrings are non-executable string constants; they cannot spawn a process, so excluding them from raw-text observation is sound and does not weaken the fail-closed posture for executable code. Fix: compute docstring spans (module/class/function-head expression string statements) and treat them like comment spans in the raw-text path; keep binding-aware resolution untouched. Mitigation already on main: T-0695 docstrings reworded to avoid needle shapes; the observer fix must add the regression test so future doc prose cannot re-trip it. Note: T-draft-32e61ad6 (filed in the T-0717 worktree) proposed declaring may exec on graphlang instead -- that remedy is WRONG (falsely widens the declared threat surface) and should be dropped in favor of this ticket when it lands.
