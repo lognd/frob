@@ -8219,3 +8219,41 @@ component: null
 labels: []
 ```
 T-0809 reviewer condition (b): _cov006_third_file_reachable (gates/__init__.py ~3361) does split('::',1)[1] on every closure entry and IndexErrors on any non-symref (discovered when mark_unresolved=True injected UNRESOLVED_CALLEE); same shape assumption at 3 gates call sites + dup/_pipeline. Any future graph extension crashes them. Harden all closure consumers.
+
+<!-- ticket:T-0815 -->
+```yaml
+id: T-0815
+title: 'app: sweep --json runners for guard-log stdout pollution (mutate and fleet
+  already emit spawn DEBUG into JSON payloads)'
+state: queued
+kind: bug
+origin: auditor
+created: '2026-07-23'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/app/mutate_runner.py
+- src/frob/app/fleet_runner.py
+- tests/integration/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN every runner module with a json flag whose payload path can reach guarded_subprocess_run
+    WHEN the json mode runs THEN stdout parses as clean JSON (conditional quiet_stdout_logs
+    like xref_runner) and an integration test parses the full stdout per runner; GIVEN
+    human mode THEN diagnostic lines still appear
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+T-0803 reviewer finding: the exec guard now DEBUG-logs every spawn, and the
+stdout handler defaults to DEBUG, so any --json runner spawning through the
+guard pollutes its payload. gitlog_runner was fixed in T-0803
+(unconditionally -- align it to the conditional xref pattern in this
+sweep); mutate_runner and fleet_runner are polluted TODAY. Sweep every
+runner with a _json flag, apply the conditional quiet_stdout_logs pattern
+(quiet when json, nullcontext otherwise), and lock each with a
+json.loads-of-full-stdout integration test.
