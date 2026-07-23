@@ -6420,7 +6420,7 @@ found while working T-0726 (TICK006 phantom-filing gate): T-0367 existed in tick
 ```yaml
 id: T-0742
 title: 'test_scaffold_dx: explicit pytest timeout override with measured headroom'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-22'
