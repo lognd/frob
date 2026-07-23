@@ -11191,3 +11191,35 @@ real spelling.
 
 ## Drop reason
 - 2026-07-23: superseded: fixed upstream by whatever landed on main during this session -- src/frob/exports/__init__.py's frob:doc anchors already read exports-consumers-surface-t-0858 (the correct spelling) after merging main; COV001/DOC002 confirmed 0 errors for this file post-merge
+
+<!-- ticket:T-0882 -->
+```yaml
+id: T-0882
+title: 'SYS100 capability scanner: eval(/exec( needle substring-matches identifiers
+  (self-match false positive)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/strata/**
+- strata-core/**
+- design/frob.strata
+- tests/unit/strata/test_conform_eval_needle.py
+acceptance:
+- text: GIVEN a scanned tree containing a function named _mutation_for_eval and no
+    real eval/exec calls WHEN the SYS100 scan runs THEN no eval capability finding
+    fires
+  evidence: []
+- text: GIVEN a tree with a genuine bare eval( call WHEN the SYS100 scan runs THEN
+    the finding still fires
+  evidence: []
+- text: GIVEN the fixed scanner WHEN design/frob.strata's SYS100:eval waiver is deleted
+    THEN frob sys audit stays green
+  evidence: []
+threat: null
+component: strata
+```
+Found during T-0860: the strata SYS100 capability scanner's bare `eval(` needle substring-matches identifiers that merely CONTAIN "eval(" -- e.g. src/frob/mutate's `_mutation_for_eval(` function name -- producing a false "deploy uses eval" finding with zero real eval/exec builtin calls in the scanned tree. T-0860 recorded an honest waiver (design/frob.strata:519, waive "SYS100:eval" citing this ticket) rather than a false may-declaration. Fix the scanner: match `eval(`/`exec(` as call sites of the BUILTIN identifier (word-boundary / tokenized match, not raw substring), add a fixture reproducing the _mutation_for_eval self-match, then delete the waiver.
