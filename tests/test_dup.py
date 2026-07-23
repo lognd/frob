@@ -504,6 +504,248 @@ class TestErrorChannelDupPairing:
         )
 
 
+class TestConditionalShapeNormalization:
+    """T-0801/T-0800 unit coverage for the combined-vs-split guard axis's
+    three token-level transforms, isolated from the end-to-end dup pairing
+    the classes below cover."""
+
+    def test_abstracts_if_and_elif_conditions_uniformly(self):
+        from frob.dup._pipeline import _abstract_if_conditions
+
+        tokens = (
+            "if",
+            "x",
+            ">",
+            "0",
+            ":",
+            "pass",
+            "elif",
+            "x",
+            "<",
+            "0",
+            ":",
+            "pass",
+        )
+        assert _abstract_if_conditions(tokens) == (
+            "if",
+            "$cond",
+            ":",
+            "pass",
+            "elif",
+            "$cond",
+            ":",
+            "pass",
+        )
+
+    def test_collapses_guard_body_down_to_bare_exit_when_it_ends_in_one(self):
+        from frob.dup._pipeline import _abstract_guard_exit_bodies
+
+        tokens = (
+            "if",
+            "$cond",
+            ":",
+            "_log",
+            ".",
+            "warning",
+            "(",
+            '"',
+            "msg",
+            '"',
+            ")",
+            "return",
+            "$err_exit",
+            "raw",
+            "=",
+            "x",
+        )
+        assert _abstract_guard_exit_bodies(tokens) == (
+            "if",
+            "$cond",
+            ":",
+            "return",
+            "$err_exit",
+            "raw",
+            "=",
+            "x",
+        )
+
+    def test_leaves_a_guard_that_does_not_end_in_a_bare_exit_untouched(self):
+        from frob.dup._pipeline import _abstract_guard_exit_bodies
+
+        tokens = ("if", "$cond", ":", "x", "=", "1")
+        assert _abstract_guard_exit_bodies(tokens) == tokens
+
+    def test_collapses_adjacent_duplicate_guard_exit_blocks(self):
+        from frob.dup._pipeline import _collapse_duplicate_guard_chains
+
+        tokens = (
+            "x",
+            "=",
+            "1",
+            "if",
+            "$cond",
+            ":",
+            "return",
+            "$err_exit",
+            "if",
+            "$cond",
+            ":",
+            "return",
+            "$err_exit",
+            "y",
+            "=",
+            "2",
+        )
+        assert _collapse_duplicate_guard_chains(tokens) == (
+            "x",
+            "=",
+            "1",
+            "if",
+            "$cond",
+            ":",
+            "return",
+            "$err_exit",
+            "y",
+            "=",
+            "2",
+        )
+
+    def test_does_not_collapse_non_adjacent_guard_exit_blocks(self):
+        from frob.dup._pipeline import _collapse_duplicate_guard_chains
+
+        tokens = (
+            "if",
+            "$cond",
+            ":",
+            "return",
+            "$err_exit",
+            "y",
+            "=",
+            "2",
+            "if",
+            "$cond",
+            ":",
+            "return",
+            "$err_exit",
+        )
+        assert _collapse_duplicate_guard_chains(tokens) == tokens
+
+
+class TestConditionalShapeDupPairing:
+    """T-0801/T-0800 end-to-end: the historical shape of the git-common-dir
+    pair -- one combined guard vs. TWO split guards, each logging a
+    DIFFERENT debug message per failure branch (the exact shape
+    `TestErrorChannelDupPairing`'s docstring calls out as a "second,
+    genuinely independent dimension" T-0785 did not cover, and the shape
+    `tickets.md`'s T-0785/T-0800/T-0801 history records as measuring 0.444
+    -- below `_R4_SIMILARITY_FLOOR`) must register as a duplicate group
+    once this axis is also normalized away."""
+
+    @pytest.fixture()
+    def snapshot(self, tmp_path):
+        _write(
+            tmp_path,
+            "common_dir_split.py",
+            "from pathlib import Path\n"
+            "\n"
+            "from typani import Err, Ok\n"
+            "from typani.result import Result\n"
+            "\n"
+            "\n"
+            "def git_common_dir(root: Path) -> Result[Path, LeaseError]:\n"
+            '    """The shared `.git` directory for `root`\'s repository."""\n'
+            "    spawned = run_argv(\n"
+            '        ["git", "-C", str(root), "rev-parse", "--git-common-dir"]\n'
+            "    )\n"
+            "    if spawned.is_err or spawned.danger_ok.returncode != 0:\n"
+            '        _log.warning("tickets: git-common-dir lookup failed under %s", root)\n'  # noqa: E501
+            "        return Err(LeaseError.GitCommonDirUnavailable)\n"
+            "    raw = spawned.danger_ok.stdout.strip()\n"
+            "    if not raw:\n"
+            "        return Err(LeaseError.GitCommonDirUnavailable)\n"
+            "    common_dir = Path(raw)\n"
+            "    if not common_dir.is_absolute():\n"
+            "        common_dir = (root / common_dir).resolve()\n"
+            "    return Ok(common_dir)\n"
+            "\n"
+            "\n"
+            "def _git_common_dir(root: Path) -> Path | None:\n"
+            '    """The shared `.git` common dir for `root`."""\n'
+            "    spawned = run_argv(\n"
+            '        ("git", "-C", str(root), "rev-parse", "--git-common-dir")\n'
+            "    )\n"
+            "    if spawned.is_err:\n"
+            '        _log.debug("exclude_hazard: git rev-parse spawn failed under %s", root)\n'  # noqa: E501
+            "        return None\n"
+            "    if spawned.danger_ok.returncode != 0:\n"
+            '        _log.debug("exclude_hazard: git rev-parse exited nonzero under %s", root)\n'  # noqa: E501
+            "        return None\n"
+            "    raw = spawned.danger_ok.stdout.strip()\n"
+            "    if not raw:\n"
+            "        return None\n"
+            "    common_dir = Path(raw)\n"
+            "    if not common_dir.is_absolute():\n"
+            "        common_dir = (root / common_dir).resolve()\n"
+            "    return common_dir\n",
+        )
+        cache = tmp_path / "graph-cache"
+        result = build_graph(tmp_path, cache)
+        assert result.is_ok, result.err
+        return result.danger_ok
+
+    # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+    # frob:ticket T-0801
+    def test_combined_vs_split_guard_git_common_dir_registers_as_a_duplicate_group(
+        self, snapshot
+    ):
+        report = find_clones(
+            snapshot, DupConfig(min_tokens=5, threshold=0.01)
+        ).danger_ok
+        rungs = _rungs_for(report, "git_common_dir", "_git_common_dir")
+        assert rungs, (
+            "the combined-guard and split-guard (two separately-worded "
+            "failure branches) git-common-dir resolvers must register as "
+            f"a duplicate pair once guard shape is normalized away; got 0 "
+            f"matching pairs, groups={report.groups!r}"
+        )
+
+
+class TestRealGitCommonDirPairRegisters:
+    """T-0801/T-0800 regression lock on the actual real-repo pair the whole
+    dup-cluster normalization axis (T-0785/T-0800/T-0801) was written
+    against: `frob.tickets._leases._git_common_dir` and
+    `frob.gates._exclude_hazard._git_common_dir`. Scans the real source
+    files directly (not a synthetic fixture) so a future edit to either
+    function that reintroduces the divergence this axis was meant to close
+    is caught here, not just in the synthetic fixtures above."""
+
+    @pytest.fixture()
+    def snapshot(self, tmp_path):
+        repo_root = Path(__file__).resolve().parents[1]
+        leases = repo_root / "src" / "frob" / "tickets" / "_leases.py"
+        exclude_hazard = repo_root / "src" / "frob" / "gates" / "_exclude_hazard.py"
+        (tmp_path / "leases.py").write_text(leases.read_text())
+        (tmp_path / "exclude_hazard.py").write_text(exclude_hazard.read_text())
+        cache = tmp_path / "graph-cache"
+        result = build_graph(tmp_path, cache)
+        assert result.is_ok, result.err
+        return result.danger_ok
+
+    # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+    # frob:ticket T-0801
+    def test_real_git_common_dir_pair_registers_as_a_duplicate_group(self, snapshot):
+        report = find_clones(
+            snapshot, DupConfig(min_tokens=5, threshold=0.01)
+        ).danger_ok
+        rungs = _rungs_for(report, "git_common_dir", "_git_common_dir")
+        assert rungs, (
+            "the real frob.tickets._leases._git_common_dir / "
+            "frob.gates._exclude_hazard._git_common_dir pair must register "
+            f"as a duplicate pair; got 0 matching pairs, "
+            f"groups={report.groups!r}"
+        )
+
+
 class TestErrorChannelNormalizationDoesNotOverFire:
     """T-0785 negative control: genuinely different logic must NOT be
     dragged into a false pair just because both sides happen to use an
@@ -545,6 +787,48 @@ class TestErrorChannelNormalizationDoesNotOverFire:
             "sharing a `None`-shaped early-return must not, on its own, "
             f"pair two functions with genuinely different logic; got "
             f"rungs={rungs}, groups={report.groups!r}"
+        )
+
+    # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+    # frob:ticket T-0801
+    def test_genuinely_different_guard_bodies_do_not_falsely_pair(self, tmp_path):
+        """T-0801/T-0800 negative control: two functions that both use a
+        single-condition early-return guard, but whose GUARDED bodies do
+        real, different work afterward (not just "log then exit"), must
+        not be dragged into a false pair just because both have an
+        abstracted `if $cond:` header somewhere -- abstracting the
+        condition/collapsing a guard-then-exit body must not blur bodies
+        that are not actually shaped like a guard clause."""
+        _write(
+            tmp_path,
+            "unrelated_guards.py",
+            "def clamp_to_range(value, low, high):\n"
+            "    if value < low:\n"
+            "        return low\n"
+            "    if value > high:\n"
+            "        return high\n"
+            "    return value\n"
+            "\n"
+            "\n"
+            "def first_even(values):\n"
+            "    if not values:\n"
+            "        return None\n"
+            "    for v in values:\n"
+            "        if v % 2 == 0:\n"
+            "            return v\n"
+            "    return None\n",
+        )
+        cache = tmp_path / "graph-cache"
+        result = build_graph(tmp_path, cache)
+        assert result.is_ok, result.err
+        report = find_clones(
+            result.danger_ok, DupConfig(min_tokens=3, threshold=0.01)
+        ).danger_ok
+        rungs = _rungs_for(report, "clamp_to_range", "first_even")
+        assert not rungs, (
+            "both having an `if`-guard header must not, on its own, pair "
+            f"two functions whose guarded bodies do genuinely different "
+            f"work; got rungs={rungs}, groups={report.groups!r}"
         )
 
 
