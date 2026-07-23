@@ -74,6 +74,34 @@
       "action": "read",
       "effect": "Allow",
       "principal": "cli",
+      "resource": "deploy",
+      "sid": "f_cli_deploy-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "deploy",
+      "sid": "f_cli_deploy-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "fleet",
+      "sid": "f_cli_fleet-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "fleet",
+      "sid": "f_cli_fleet-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "cli",
       "resource": "gates",
       "sid": "f_cli_gates-read"
     },
@@ -83,6 +111,48 @@
       "principal": "cli",
       "resource": "gates",
       "sid": "f_cli_gates-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "mutate",
+      "sid": "f_cli_mutate-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "mutate",
+      "sid": "f_cli_mutate-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "registry_model",
+      "sid": "f_cli_registry_model-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "registry_model",
+      "sid": "f_cli_registry_model-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "serve",
+      "sid": "f_cli_serve-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "serve",
+      "sid": "f_cli_serve-write"
     },
     {
       "action": "read",
@@ -157,6 +227,62 @@
     {
       "action": "read",
       "effect": "Allow",
+      "principal": "deploy",
+      "resource": "core",
+      "sid": "f_deploy_core-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "deploy",
+      "resource": "core",
+      "sid": "f_deploy_core-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "deploy",
+      "resource": "stratamod",
+      "sid": "f_deploy_strata-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "deploy",
+      "resource": "stratamod",
+      "sid": "f_deploy_strata-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "fleet",
+      "resource": "core",
+      "sid": "f_fleet_core-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "fleet",
+      "resource": "core",
+      "sid": "f_fleet_core-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "fleet",
+      "resource": "tickets_ledger",
+      "sid": "f_fleet_tickets-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "fleet",
+      "resource": "tickets_ledger",
+      "sid": "f_fleet_tickets-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
       "principal": "gates",
       "resource": "core",
       "sid": "f_gates_core-read"
@@ -181,6 +307,20 @@
       "principal": "gates",
       "resource": "graphlang",
       "sid": "f_gates_graphlang-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "gates",
+      "resource": "registry_model",
+      "sid": "f_gates_registry_model-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "gates",
+      "resource": "registry_model",
+      "sid": "f_gates_registry_model-write"
     },
     {
       "action": "read",
@@ -227,6 +367,20 @@
     {
       "action": "read",
       "effect": "Allow",
+      "principal": "mutate",
+      "resource": "core",
+      "sid": "f_mutate_core-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "mutate",
+      "resource": "core",
+      "sid": "f_mutate_core-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
       "principal": "cli",
       "resource": "graphlang",
       "sid": "f_parse-read"
@@ -251,6 +405,62 @@
       "principal": "registry",
       "resource": "vet",
       "sid": "f_registry_fetch-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "serve",
+      "resource": "core",
+      "sid": "f_serve_core-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "serve",
+      "resource": "core",
+      "sid": "f_serve_core-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "serve",
+      "resource": "gates",
+      "sid": "f_serve_gates-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "serve",
+      "resource": "gates",
+      "sid": "f_serve_gates-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "serve",
+      "resource": "graphlang",
+      "sid": "f_serve_graphlang-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "serve",
+      "resource": "graphlang",
+      "sid": "f_serve_graphlang-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "serve",
+      "resource": "tickets_ledger",
+      "sid": "f_serve_tickets-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "serve",
+      "resource": "tickets_ledger",
+      "sid": "f_serve_tickets-write"
     },
     {
       "action": "read",

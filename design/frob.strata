@@ -416,7 +416,16 @@ node core : trusted {
 // `guarded_subprocess_run` caller in this model already names, since
 // it is the SAME env var / mechanism (`frob.process._guard.
 // EXEC_KILL_SWITCH_ENV`), not a second one.
+// T-0860: `may "env"` ADDED -- `_run_mutants`'s `child_env = {**os.environ,
+// MUTATION_RUN_ENV: "1"}` reads the whole parent environment to build the
+// mutant subprocess's own env, a genuine (not false-positive) `os.environ`
+// site that postdates the T-0440 survey above and was never folded back
+// into this node's declared capability set, tripping SYS100 (`env`
+// observed but undeclared). No further "No `eval`/`net`/`ffi`/`sql`/
+// `fetch_url`/`deserialize` observed" claim above is affected -- this is
+// the one addition.
 // frob:doc docs/modules/mutate.md#public-api
+// frob:ticket T-0860
 node mutate : trusted {
     clearance Internal;
     code "src/frob/mutate/**";
@@ -424,6 +433,7 @@ node mutate : trusted {
     attr flag=frob_check_exec_kill_switch;
     may "fs";
     may "fs-read";
+    may "env";
 }
 
 // T-0440: `frob serve` -- the MCP adapter exposing frob's enforcement
@@ -491,7 +501,14 @@ node serve : trusted {
 // the ssh/VBoxManage calls are modeled as `exec` (a local subprocess
 // spawn), the same convention `fleet`'s ssh-adjacent git/uv subprocess
 // calls above already use, not as a separate `net` capability.
+// T-0860: the self-match false positive above is now SYS100-visible
+// (`frob.vet._capability`'s scanner still observes it and self-conform
+// diffs observed-vs-declared) -- `waive "SYS100:eval"` records the same
+// honest reasoning as a real waiver instead of leaving the finding red,
+// rather than papering over it with a `may "eval"` this comment already
+// proves is false.
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+// frob:ticket T-0860
 node deploy : trusted {
     clearance Internal;
     code "src/frob/deploy/**";
@@ -499,6 +516,7 @@ node deploy : trusted {
     attr flag=frob_check_exec_kill_switch;
     may "fs";
     may "fs-read";
+    waive "SYS100:eval" reason "scanner self-match false positive: bare-eval(-shaped needle matches _conform.py::_mutation_for_eval's own function name (the substring eval( inside the identifier), not a real eval/exec builtin call -- direct grep of src/frob/deploy/** confirms zero real eval(/exec( calls" ticket "T-0860";
 }
 
 // vet: src/frob/vet/**. Dependency-vetting -- the ONE component that

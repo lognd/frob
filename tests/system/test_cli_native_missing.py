@@ -42,8 +42,21 @@ def _run_with_faked_missing_native(
 ) -> subprocess.CompletedProcess:
     """Run `frob <args>` in a subprocess whose `PYTHONPATH` shadows the real
     `strata_core` with the raise-on-import fixture, so the process sees
-    exactly what a natives-less `uv tool install frob` sees."""
+    exactly what a natives-less `uv tool install frob` sees.
+
+    `FROB_AGENT`/`FROB_WORKTREE` are stripped from the child's env (T-0708):
+    this subprocess runs `frob check`/`frob sys audit` against a throwaway
+    `tmp_path` fixture repo, not the dispatching agent's own worktree --
+    inheriting `FROB_AGENT=1` from a dispatched-agent host process makes the
+    bare, unchunked `frob check` call below hit section 3b's unrelated
+    full-check refusal (`ERROR: frob check: refusing a full/unchunked run
+    under FROB_AGENT`) instead of exercising the SYS004 contract this test
+    actually verifies -- a real false failure observed when this suite runs
+    under `frob ticket evidence`/`close`, which propagate the dispatching
+    agent's own env into every subprocess it spawns."""
     env = dict(os.environ)
+    env.pop("FROB_AGENT", None)
+    env.pop("FROB_WORKTREE", None)
     existing = env.get("PYTHONPATH", "")
     env["PYTHONPATH"] = (
         _FAKE_NATIVE_DIR
@@ -59,10 +72,11 @@ def _init_design_repo(tmp_path: Path, model: str) -> Path:
     """A minimal frob-enabled repo with one `.strata` design file."""
     repo = tmp_path / "repo"
     repo.mkdir()
-    _git("init", "-q", cwd=repo)
+    _git("init", "-q", "-b", "main", cwd=repo)
     _git("config", "user.email", "test@example.com", cwd=repo)
     _git("config", "user.name", "Test", cwd=repo)
     (repo / "tickets.md").write_text("# Tickets\n")
+    (repo / "pyproject.toml").write_text('[project]\nname = "m"\nversion = "0.1.0"\n')
     (repo / "design").mkdir()
     (repo / "design" / "m.strata").write_text(model)
     _git("add", "-A", cwd=repo)
@@ -75,7 +89,7 @@ def _init_no_design_repo(tmp_path: Path) -> Path:
     completely unaffected by a missing native extension (T-0135 opt-in)."""
     repo = tmp_path / "repo"
     repo.mkdir()
-    _git("init", "-q", cwd=repo)
+    _git("init", "-q", "-b", "main", cwd=repo)
     _git("config", "user.email", "test@example.com", cwd=repo)
     _git("config", "user.name", "Test", cwd=repo)
     (repo / "tickets.md").write_text("# Tickets\n")

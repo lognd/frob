@@ -5792,7 +5792,7 @@ User mandate 2026-07-22: the 500k-users-vs-exclusive-write-lock case. Three obli
 ```yaml
 id: T-0708
 title: 'native-missing fail-loud tests broken: SYS004 behavior drifted'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-22'
@@ -5801,14 +5801,107 @@ parent: null
 scope:
 - src/frob/strata/**
 - tests/system/test_cli_native_missing.py
+evidence:
+- tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_sys_audit_fails_loud_when_strata_present
+- tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_check_fails_loud_with_sys004_when_strata_present
+- tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_check_unaffected_when_no_strata_files
 acceptance:
 - text: GIVEN a repo with .strata files and no built native WHEN frob check runs THEN
     SYS004 fails loud AND both tests pass
-  evidence: []
+  evidence:
+  - tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_sys_audit_fails_loud_when_strata_present
+  - tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_check_fails_loud_with_sys004_when_strata_present
+  - tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_check_unaffected_when_no_strata_files
 threat: null
 component: null
 ```
 CI triage 2026-07-22: tests/system/test_cli_native_missing.py x2 fail on current main (test_check_fails_loud_with_sys004_when_strata_present, test_check_unaffected_when_no_strata_files). Investigate whether the native-staleness/fingerprint work (T-0570 doctor, _native_staleness) changed the SYS004 fail-loud contract or the tests' fixtures rotted; fix whichever is wrong -- the contract (a missing native with strata files present must fail LOUD, not silently skip) must hold.
+
+## Done report
+
+Root cause was fixture rot, not a SYS004 contract regression:
+
+1. `_init_design_repo` never wrote a `pyproject.toml` (or any language
+   sentinel), so `detect_project_type` returned "unknown" and CHECK001's
+   `_unknown_project_type_result` fired before `frob check` ever reached
+   the SYS004 strata stage -- fixed by adding a minimal pyproject.toml.
+2. Both fixtures `git init`'d with no explicit branch name; this
+   environment's git defaults `init.defaultBranch` to "master", but
+   `check_runner`'s diff-driven gates (COV002/PRE001/SCOPE001/TODO001)
+   default `base` to "main" when unset -- with no "main" ref/branch in the
+   fixture repo, `working_diff` fails to resolve a merge-base and every
+   diff-driven gate reports a load error, which for
+   `test_check_unaffected_when_no_strata_files` meant a nonzero exit where
+   the test expected clean. Fixed by `git init -b main` in both fixtures.
+3. `_run_with_faked_missing_native` built its subprocess env from
+   `os.environ` unfiltered, so `FROB_AGENT`/`FROB_WORKTREE` (set for every
+   dispatched worktree agent, T-0574) leaked into the fixture repo's own
+   `frob check` subprocess -- tripping T-0627's "refusing a
+   full/unchunked run under FROB_AGENT" guard instead of exercising the
+   SYS004 assertion. Reproduced directly: `FROB_AGENT=1 uv run pytest
+   tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::
+   test_check_fails_loud_with_sys004_when_strata_present` failed before
+   the fix, passed after. Fixed by stripping both vars from the child env.
+
+The SYS004 fail-loud contract itself was never broken -- no src/frob/strata
+changes were needed.
+
+Overlap with T-0860/T-0725: none of this ticket's own file (tests/system/
+test_cli_native_missing.py) touches design/frob.strata or the export
+golden fixtures; committed and verified independently, first in the
+worktree per the coordinator's suggested order.
+
+Cross-ticket ambiguity found and fixed under T-0860 (not this ticket):
+COV002 initially flagged design/frob.strata's mutate/deploy nodes as
+uncovered even with T-0860 open and scoped to the file, because T-0845
+(another open, unrelated ticket) also declares a literal
+"design/frob.strata" scope entry -- a genuine specificity tie per
+COV002's own `_scope_covers` tie-break rule. Fixed by adding explicit
+`frob:ticket T-0860` directives to both nodes; see T-0860's own commit
+and Done report.
+
+Out-of-scope discovery: `frob check --only coverage`/`--only docanchor`
+report 5 pre-existing COV001 + 5 DOC002 errors on
+src/frob/exports/__init__.py (ConsumerRef/ConsumersResult/
+ConsumersResult.as_text/ConsumersResult.as_json/exports_consumers) --
+their `frob:doc docs/modules/cli.md#exports-consumers-t-0858` anchor slug
+does not match the real anchor spelling
+`exports-consumers-surface-t-0858`. Verified via `git log` that this
+landed with T-0858 (0c1ed8cf), untouched by any of T-0708/T-0860/T-0725.
+Filed as T-0881 rather than fixed silently (out of this
+ticket's scope: src/frob/strata/**, tests/system/test_cli_native_missing.py).
+This is the ONLY remaining gate error against T-0708 after all fixes; it
+is not caused by, or fixable within, this ticket's scope.
+
+Measured: `uv run pytest tests/system/test_cli_native_missing.py -p
+no:cacheprovider -q` -> 3 passed (also re-verified with FROB_AGENT=1 set,
+reproducing the dispatched-agent environment exactly). `frob check
+--ticket T-0708 --only lint` -> 0 errors 0 warnings. `--only static` -> 0
+errors, 186 pre-existing warnings (unrelated). `--only gates-native` -> 0
+errors. `--only gates-security` -> 0 errors. `--only gates-fast` -> 10
+errors before disclosure, all 10 = the 5 COV001 + 5 DOC002
+T-0881 findings (0 SCOPE/COV002/PRE001/TODO001 errors of my
+own).
+
+### Changed
+```
+ design/frob.strata                      |   18 +
+ tests/golden/frob_export_iam.json       |  210 +++++++
+ tests/golden/frob_export_k8s.yaml       |  190 ++++++
+ tests/golden/frob_export_seccomp.json   |  117 +++-
+ tests/system/test_cli_native_missing.py |   20 +-
+ tickets.md                              | 1014 ++++++++++++++++++++++++++++++-
+ 6 files changed, 1540 insertions(+), 29 deletions(-)
+```
+
+### Evidence
+- `tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_sys_audit_fails_loud_when_strata_present` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_check_fails_loud_with_sys004_when_strata_present` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_native_missing.py::TestNativeMissingFailsLoud::test_check_unaffected_when_no_strata_files` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0709 -->
 ```yaml
@@ -6080,7 +6173,7 @@ T-0614's KotlinAdapter works standalone but .kt/.kts files are invisible to pars
 id: T-0725
 title: 'strata: export golden fixtures (k8s/seccomp/iam) drifted from design/frob.strata
   after fleet flows landed'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-22'
@@ -6088,11 +6181,116 @@ priority: medium
 parent: null
 scope:
 - tests/unit/strata/test_export_golden.py
-- tests/unit/strata/golden/**
+- tests/golden/**
+scope_changes:
+- op: remove
+  glob: tests/unit/strata/golden/**
+  reason: 'Ticket scope named tests/unit/strata/golden/** but the actual committed
+
+    golden fixtures for test_export_golden.py live at tests/golden/** (verified:
+
+    tests/unit/strata/golden/ does not exist; tests/golden/frob_export_iam.json,
+
+    frob_export_k8s.yaml, frob_export_seccomp.json do, and are exactly what
+
+    test_export_golden.py reads via _GOLDEN_DIR = repo_root/tests/golden).
+
+    Correcting the scope glob to the real path so regenerating these fixtures
+
+    (the ticket''s whole point) is in-scope rather than a silent expansion.
+
+    '
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: tests/golden/**
+  reason: 'Ticket scope named tests/unit/strata/golden/** but the actual committed
+
+    golden fixtures for test_export_golden.py live at tests/golden/** (verified:
+
+    tests/unit/strata/golden/ does not exist; tests/golden/frob_export_iam.json,
+
+    frob_export_k8s.yaml, frob_export_seccomp.json do, and are exactly what
+
+    test_export_golden.py reads via _GOLDEN_DIR = repo_root/tests/golden).
+
+    Correcting the scope glob to the real path so regenerating these fixtures
+
+    (the ticket''s whole point) is in-scope rather than a silent expansion.
+
+    '
+  actor: logan
+  at: '2026-07-23'
+evidence:
+- tests/unit/strata/test_export_golden.py::TestExportGolden::test_k8s
+- tests/unit/strata/test_export_golden.py::TestExportGolden::test_seccomp
+- tests/unit/strata/test_export_golden.py::TestExportGolden::test_iam
 threat: null
 component: null
 ```
 found while working T-0699: tests/unit/strata/test_export_golden.py::TestExportGolden::test_k8s/test_seccomp/test_iam fail on a clean worktree at main tip (e2f38a51, no T-0699 changes involved) -- design/frob.strata gained fleet node/flows (T-0614 era merge) but the committed golden JSON fixtures were not regenerated to match. Pre-existing, unrelated to T-0699's SYS2xx resource-contention work; regenerate the golden fixtures or fix whatever drifted.
+
+## Done report
+
+Confirmed the ticket's own diagnosis: design/frob.strata has gained
+fleet/deploy/mutate/registry_model/serve nodes and flows since the
+committed golden fixtures were last regenerated, plus (in this same
+worktree) T-0860's own `may "env"` (mutate) and `waive "SYS100:eval"`
+(deploy) declaration edits. Regenerated all three exporters against the
+current design/frob.strata (parse + elaborate + export_k8s_netpol/
+export_seccomp/export_iam, each written and independently re-read back to
+confirm determinism, matching what test_export_golden.py itself asserts)
+and committed the regenerated bytes.
+
+Scope correction (recorded via `frob ticket scope`, not a silent
+expansion): the ticket's declared scope named `tests/unit/strata/
+golden/**`, but that directory does not exist -- the fixtures
+test_export_golden.py actually reads live under `tests/golden/**`
+(`_GOLDEN_DIR = repo_root/tests/golden` in the test module itself).
+Verified before touching anything (`ls tests/unit/strata/golden` ->
+nothing; `ls tests/golden` -> the three fixture files). Used `frob ticket
+scope T-0725 --add tests/golden/** --remove tests/unit/strata/golden/**
+--reason-file ...` to correct the glob to the real path before touching
+the fixtures, rather than editing outside the declared scope.
+
+Overlap with T-0860 (per the coordinator's dispatch note): implemented in
+the order T-0708 -> T-0860 -> T-0725, each committed separately.
+Regenerating the goldens is the shared cleanup both tickets' fallout
+needed; this ticket's own commit is the single regeneration that
+resolves both T-0860's export_golden failures and this ticket's own
+fleet-flow drift -- did not duplicate the regen work under T-0860's
+commit, and said so plainly in T-0860's own Done report with a pointer
+back here.
+
+Measured: `uv run pytest tests/unit/strata/test_export_golden.py -p
+no:cacheprovider -q` -> 3 passed (test_k8s, test_seccomp, test_iam, each
+asserting byte-identity against the committed golden AND against a second
+in-process render for determinism). `frob check --ticket T-0725 --only
+lint` -> 0 errors 0 warnings. `--only static` -> 0 errors, 186
+pre-existing warnings (unrelated). `--only coverage` -> 5 errors, all 5
+are the pre-existing T-0881 exports/__init__.py anchor mismatch
+(filed under T-0708's Done report, unrelated to and out of this ticket's
+scope; 0 of my own).
+
+### Changed
+```
+ design/frob.strata                      |   18 +
+ tests/golden/frob_export_iam.json       |  210 +++++++
+ tests/golden/frob_export_k8s.yaml       |  190 ++++++
+ tests/golden/frob_export_seccomp.json   |  117 +++-
+ tests/system/test_cli_native_missing.py |   20 +-
+ tickets.md                              | 1014 ++++++++++++++++++++++++++++++-
+ 6 files changed, 1540 insertions(+), 29 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_export_golden.py::TestExportGolden::test_k8s` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_export_golden.py::TestExportGolden::test_seccomp` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_export_golden.py::TestExportGolden::test_iam` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0727 -->
 ```yaml
@@ -10243,7 +10441,7 @@ new node ids added to the evidence list above (11 total).
 id: T-0860
 title: 'strata self-conformance + export-golden drift: mutate/deploy capabilities
   undeclared, IAM/k8s/seccomp goldens stale'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-23'
@@ -10254,10 +10452,111 @@ scope:
 - src/frob/mutate/**
 - src/frob/deploy/**
 - design/frob.strata
+evidence:
+- tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
+- tests/unit/strata/test_export_golden.py::TestExportGolden::test_k8s
+- tests/unit/strata/test_export_golden.py::TestExportGolden::test_seccomp
+- tests/unit/strata/test_export_golden.py::TestExportGolden::test_iam
 threat: null
 component: null
 ```
 Found while working T-0601 (frob-exports triage, unrelated scope): pytest failures in tests/unit/strata/test_export_golden.py (test_iam, test_k8s, test_seccomp -- IAM/k8s/seccomp export golden files no longer byte-match export_iam/export_k8s_netpol/export_seccomp output for the deploy node) and tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant (SYS100: capability 'env' observed but not declared on node 'mutate', capability 'eval' observed but not declared on node 'deploy'). These are pre-existing on the merged main tip (102688bb) -- neither src/frob/mutate/**, src/frob/deploy/**, design/frob.strata, nor either test file were touched by T-0600 or T-0601's changes, and this drift was discovered only because the targeted verification run for T-0601 happened to include tests/unit/strata/. Needs investigation: either the mutate/deploy code gained an env/eval capability without updating design/frob.strata's declared capabilities, or the golden IAM/k8s/seccomp export fixtures need regenerating against the current design/frob.strata.
+
+## Done report
+
+Both SYS100 findings were real, not scanner noise on inspection, but
+needed opposite treatments:
+
+1. `mutate`: `_run_mutants`'s `child_env = {**os.environ, MUTATION_RUN_ENV:
+   "1"}` genuinely reads the whole parent environment -- a real `env`
+   capability added after the T-0440 survey this node's own comment block
+   documents. Fixed by adding `may "env";` to the node declaration and
+   updating its comment.
+2. `deploy`: SYS100's `eval` finding is a scanner self-match false
+   positive. Traced the exact mechanism: `frob.vet._capability`'s python
+   "eval" capability includes the plain needle "eval(" (from
+   `DANGEROUS_OPERATIONS`'s `eval()/exec()` entry); `_conform.py`'s
+   `_mutation_for_eval(` function definition/call sites contain that exact
+   substring at the end of the identifier ("...eval(") the same way the
+   already-documented `napi`-in-`openapi` and bare-`compile(` false-
+   positive classes do, but this specific needle ("eval(") has no
+   boundary-aware special check the way `compile(` (`_has_bare_compile_
+   call`) and `napi` do. Verified directly: `grep -n "eval(" src/frob/
+   deploy/_conform.py` shows zero real eval/exec builtin calls, only
+   `_mutation_for_eval(`'s own definition and one call site. Rather than
+   declare a false `may "eval"` (an unfalsifiable claim SYS101 exists to
+   catch, and this node's own pre-existing comment already explicitly
+   rejected that route), used the T-0174 `waive "SYS100:eval"` mechanism
+   with the same reasoning recorded as an honest, ticket-bound waiver
+   instead of leaving the finding permanently red.
+
+The underlying scanner bug (plain "eval(" needle has no identifier-
+boundary guard, unlike "compile(" and "napi") lives in
+src/frob/vet/_capability.py / _capability_registry.py -- outside this
+ticket's scope (src/frob/strata/**, src/frob/mutate/**,
+src/frob/deploy/**, design/frob.strata). Did not file a separate draft
+ticket for it: fixing the needle boundary check is a real, non-critical
+scanner-precision improvement, not something blocking any current gate
+(the waiver already resolves the false positive honestly), so filing it
+would be busywork rather than a live gap -- noting the option here rather
+than silently deciding it does not matter.
+
+Export-golden fallout: `may "env"` + `waive "SYS100:eval"` are both
+elaborated into the KernelModel and DO NOT change export_k8s_netpol/
+export_seccomp/export_iam output on their own (verified: env/eval are not
+among the capability kinds either exporter maps to IAM actions/k8s
+netpol/seccomp syscalls) -- the golden regeneration that WAS needed
+(tests/unit/strata/test_export_golden.py) is almost entirely T-0725's
+own fleet/deploy/mutate/registry_model/serve node backlog, not this
+ticket's two declaration edits. Regenerated once, as T-0725's own commit
+(shared fix for both tickets' fallout); see T-0725's Done report and
+evidence for the golden-specific verification. Recording the same three
+export_golden test ids as evidence here too since this ticket's own
+capability-declaration changes are part of what the regenerated goldens
+now encode.
+
+Cross-ticket ambiguity (found and fixed here, in scope): COV002 initially
+flagged both edited nodes as "changed with no frob:ticket edge to an open
+ticket" even though T-0860 was open and its scope literally lists
+"design/frob.strata" -- root cause is T-0845 (a different, unrelated open
+ticket) ALSO declaring that exact literal scope entry, a genuine
+specificity tie per `_scope_covers`'s own tie-break rule (an ambiguous
+tie does not count as covered by design). Fixed by adding explicit
+`// frob:ticket T-0860` directives above both node blocks.
+
+Out-of-scope discovery: filed T-0881 for a pre-existing COV001/
+DOC002 anchor mismatch on src/frob/exports/__init__.py (landed by T-0858,
+unrelated to strata/mutate/deploy) -- see T-0708's Done report for the
+full description; not repeating it here since the file/discovery is
+identical and already tracked once.
+
+Measured: `uv run pytest tests/unit/strata/test_selfconform.py::
+TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
+tests/unit/strata/test_export_golden.py -p no:cacheprovider -q` -> 4
+passed. `frob check --ticket T-0860 --only lint` -> 0 errors 0 warnings.
+`--only static` -> 0 errors, 186 pre-existing warnings (unrelated).
+`--only coverage` -> 5 errors, all 5 = T-0881 (0 of my own).
+
+### Changed
+```
+ design/frob.strata                      |   18 +
+ tests/golden/frob_export_iam.json       |  210 +++++++
+ tests/golden/frob_export_k8s.yaml       |  190 ++++++
+ tests/golden/frob_export_seccomp.json   |  117 +++-
+ tests/system/test_cli_native_missing.py |   20 +-
+ tickets.md                              | 1014 ++++++++++++++++++++++++++++++-
+ 6 files changed, 1540 insertions(+), 29 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_export_golden.py::TestExportGolden::test_k8s` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_export_golden.py::TestExportGolden::test_seccomp` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_export_golden.py::TestExportGolden::test_iam` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0861 -->
 ```yaml
@@ -10858,3 +11157,37 @@ check`/`frob ticket` gate commands need it). Filed here rather than fixed
 silently since tests/system/conftest.py is out of my ticket's own scope
 list for this dispatch in one case (T-0742) and touching the playbook
 docs is a different kind of change than either of my two tickets.
+
+<!-- ticket:T-0881 -->
+```yaml
+id: T-0881
+title: 'COV001/DOC002: exports_consumers frob:doc anchor mismatch (T-0858 landing)'
+state: dropped
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/exports/__init__.py
+- docs/modules/cli.md
+threat: null
+component: null
+```
+Found while verifying gates for T-0708/T-0860/T-0725 (unrelated strata/native-missing
+work) in a worktree merged to main tip 4b43609f: `frob check --only coverage` reports
+COV001 (missing frob:doc edge) for src/frob/exports/__init__.py::ConsumerRef,
+ConsumersResult, ConsumersResult.as_text, ConsumersResult.as_json, exports_consumers,
+plus a DOC002 (broken anchor) for the same symbols' `frob:doc
+docs/modules/cli.md#exports-consumers-t-0858` directive: the computed slug
+`#exports-consumers-t-0858` does not resolve against docs/modules/cli.md, which
+actually has the anchor spelled `exports-consumers-surface-t-0858` (an extra
+"-surface"). This is pre-existing on main as landed by T-0858
+(0c1ed8cf07e07a9c3660da30a873e1429a55d545, "land T-0858 xref sunset reevaluation") --
+none of src/frob/exports/**, docs/modules/cli.md were touched by T-0708/T-0860/T-0725.
+Fix: either rename the anchor in docs/modules/cli.md to match the directive, or fix the
+five `frob:doc` directives in src/frob/exports/__init__.py to point at the anchor's
+real spelling.
+
+## Drop reason
+- 2026-07-23: superseded: fixed upstream by whatever landed on main during this session -- src/frob/exports/__init__.py's frob:doc anchors already read exports-consumers-surface-t-0858 (the correct spelling) after merging main; COV001/DOC002 confirmed 0 errors for this file post-merge

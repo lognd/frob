@@ -71,6 +71,54 @@
       }
     ]
   },
+  "deploy": {
+    "defaultAction": "SCMP_ACT_ERRNO",
+    "syscalls": [
+      {
+        "action": "SCMP_ACT_ALLOW",
+        "names": [
+          "brk",
+          "clone",
+          "close",
+          "execve",
+          "execveat",
+          "exit",
+          "exit_group",
+          "fork",
+          "mmap",
+          "munmap",
+          "read",
+          "rt_sigreturn",
+          "vfork",
+          "write"
+        ]
+      }
+    ]
+  },
+  "fleet": {
+    "defaultAction": "SCMP_ACT_ERRNO",
+    "syscalls": [
+      {
+        "action": "SCMP_ACT_ALLOW",
+        "names": [
+          "brk",
+          "clone",
+          "close",
+          "execve",
+          "execveat",
+          "exit",
+          "exit_group",
+          "fork",
+          "mmap",
+          "munmap",
+          "read",
+          "rt_sigreturn",
+          "vfork",
+          "write"
+        ]
+      }
+    ]
+  },
   "gates": {
     "defaultAction": "SCMP_ACT_ERRNO",
     "syscalls": [
@@ -128,7 +176,69 @@
       }
     ]
   },
+  "mutate": {
+    "defaultAction": "SCMP_ACT_ERRNO",
+    "syscalls": [
+      {
+        "action": "SCMP_ACT_ALLOW",
+        "names": [
+          "brk",
+          "clone",
+          "close",
+          "execve",
+          "execveat",
+          "exit",
+          "exit_group",
+          "fork",
+          "mmap",
+          "munmap",
+          "read",
+          "rt_sigreturn",
+          "vfork",
+          "write"
+        ]
+      }
+    ]
+  },
   "registry": {
+    "defaultAction": "SCMP_ACT_ERRNO",
+    "syscalls": [
+      {
+        "action": "SCMP_ACT_ALLOW",
+        "names": [
+          "brk",
+          "close",
+          "exit",
+          "exit_group",
+          "mmap",
+          "munmap",
+          "read",
+          "rt_sigreturn",
+          "write"
+        ]
+      }
+    ]
+  },
+  "registry_model": {
+    "defaultAction": "SCMP_ACT_ERRNO",
+    "syscalls": [
+      {
+        "action": "SCMP_ACT_ALLOW",
+        "names": [
+          "brk",
+          "close",
+          "exit",
+          "exit_group",
+          "mmap",
+          "munmap",
+          "read",
+          "rt_sigreturn",
+          "write"
+        ]
+      }
+    ]
+  },
+  "serve": {
     "defaultAction": "SCMP_ACT_ERRNO",
     "syscalls": [
       {
@@ -153,21 +263,14 @@
       {
         "action": "SCMP_ACT_ALLOW",
         "names": [
-          "accept",
-          "bind",
           "brk",
           "close",
-          "connect",
           "exit",
           "exit_group",
-          "listen",
           "mmap",
           "munmap",
           "read",
-          "recvfrom",
           "rt_sigreturn",
-          "sendto",
-          "socket",
           "write"
         ]
       }

@@ -45,11 +45,31 @@ spec:
   - to:
     - podSelector:
         matchLabels:
+          app: deploy
+  - to:
+    - podSelector:
+        matchLabels:
+          app: fleet
+  - to:
+    - podSelector:
+        matchLabels:
           app: gates
   - to:
     - podSelector:
         matchLabels:
           app: graphlang
+  - to:
+    - podSelector:
+        matchLabels:
+          app: mutate
+  - to:
+    - podSelector:
+        matchLabels:
+          app: registry_model
+  - to:
+    - podSelector:
+        matchLabels:
+          app: serve
   - to:
     - podSelector:
         matchLabels:
@@ -96,11 +116,27 @@ spec:
   - from:
     - podSelector:
         matchLabels:
+          app: deploy
+  - from:
+    - podSelector:
+        matchLabels:
+          app: fleet
+  - from:
+    - podSelector:
+        matchLabels:
           app: gates
   - from:
     - podSelector:
         matchLabels:
           app: graphlang
+  - from:
+    - podSelector:
+        matchLabels:
+          app: mutate
+  - from:
+    - podSelector:
+        matchLabels:
+          app: serve
   - from:
     - podSelector:
         matchLabels:
@@ -123,6 +159,58 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
+  name: frob-strata-deploy
+spec:
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: core
+  - to:
+    - podSelector:
+        matchLabels:
+          app: stratamod
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: cli
+  podSelector:
+    matchLabels:
+      app: deploy
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frob-strata-fleet
+spec:
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: core
+  - to:
+    - podSelector:
+        matchLabels:
+          app: tickets_ledger
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: cli
+  podSelector:
+    matchLabels:
+      app: fleet
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
   name: frob-strata-gates
 spec:
   egress:
@@ -134,6 +222,10 @@ spec:
     - podSelector:
         matchLabels:
           app: graphlang
+  - to:
+    - podSelector:
+        matchLabels:
+          app: registry_model
   - to:
     - podSelector:
         matchLabels:
@@ -155,6 +247,10 @@ spec:
     - podSelector:
         matchLabels:
           app: core
+  - from:
+    - podSelector:
+        matchLabels:
+          app: serve
   - from:
     - podSelector:
         matchLabels:
@@ -218,6 +314,10 @@ spec:
   - from:
     - podSelector:
         matchLabels:
+          app: serve
+  - from:
+    - podSelector:
+        matchLabels:
           app: stratamod
   - from:
     - podSelector:
@@ -226,6 +326,28 @@ spec:
   podSelector:
     matchLabels:
       app: graphlang
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frob-strata-mutate
+spec:
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: core
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: cli
+  podSelector:
+    matchLabels:
+      app: mutate
   policyTypes:
   - Ingress
   - Egress
@@ -251,6 +373,62 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
+  name: frob-strata-registry_model
+spec:
+  egress: []
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: cli
+  - from:
+    - podSelector:
+        matchLabels:
+          app: gates
+  podSelector:
+    matchLabels:
+      app: registry_model
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frob-strata-serve
+spec:
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: core
+  - to:
+    - podSelector:
+        matchLabels:
+          app: gates
+  - to:
+    - podSelector:
+        matchLabels:
+          app: graphlang
+  - to:
+    - podSelector:
+        matchLabels:
+          app: tickets_ledger
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: cli
+  podSelector:
+    matchLabels:
+      app: serve
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
   name: frob-strata-stratamod
 spec:
   egress:
@@ -267,6 +445,10 @@ spec:
         matchLabels:
           app: vet
   ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: deploy
   - from:
     - podSelector:
         matchLabels:
@@ -300,7 +482,15 @@ spec:
   - from:
     - podSelector:
         matchLabels:
+          app: fleet
+  - from:
+    - podSelector:
+        matchLabels:
           app: gates
+  - from:
+    - podSelector:
+        matchLabels:
+          app: serve
   podSelector:
     matchLabels:
       app: tickets_ledger
