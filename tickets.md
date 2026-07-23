@@ -11958,3 +11958,42 @@ Fix (two halves):
    extra_forbidden -- preserve-and-round-trip unknown fields so a land
    by an older binary does not strip data recorded by a newer one.
    Keep validation strict for KNOWN fields.
+
+<!-- ticket:T-0839 -->
+```yaml
+id: T-0839
+title: 'gates: _merge_canonical_order silently drops violations of gates missing from
+  order tuple (hit live via T-0788)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/__init__.py
+- tests/test_gates.py
+scope_changes: []
+evidence: []
+reviews: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Hit live 2026-07-23: T-0788 added the "compliance" gate to _ALL_GATES
+but not _CANONICAL_GATE_ORDER; _merge_canonical_order silently DROPS
+violations of any gate absent from the order tuple, so COMPLIANCE005
+findings would have been invisible in frob check output (zero live loss
+only because the gate currently fires nothing). The only detector was
+TestGateOrderSetEquality -- red on main but never executed by frob
+check's test stage, so main stayed "green" (see T-0756 for that half).
+
+Fix: _merge_canonical_order must fail loudly (raise, listing the missing
+gate names) when raw contains a gate not in _CANONICAL_GATE_ORDER --
+dropping findings is never acceptable degradation. Add a test proving a
+synthetic unknown-gate key raises. Consider deriving the order tuple
+membership check from _ALL_GATES at import time so the drift is
+impossible to compile, not just caught at runtime.
