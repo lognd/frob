@@ -11465,7 +11465,7 @@ T-0739 child 4 (cleanup-on-all-paths). The *_deinit-never-called class generaliz
 id: T-0870
 title: stash-guard hook aborts git gc pack-refs in multi-worktree clones (over-broad
   refs/stash refusal)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-23'
@@ -11474,17 +11474,126 @@ parent: null
 scope:
 - src/frob/scaffold/**
 - tests/unit/test_scaffold_stash_guard.py
+evidence:
+- tests/unit/test_scaffold_stash_guard.py::TestStashGuardPackRefs::test_pack_refs_succeeds_with_existing_stash_and_multiple_worktrees
+- tests/unit/test_scaffold_stash_guard.py::TestStashGuardPackRefs::test_stash_still_refused_with_multiple_worktrees
 acceptance:
 - text: GIVEN a clone with >1 worktree, a pre-existing refs/stash, and the stash-guard
     hook installed WHEN git gc (pack-refs) runs THEN it succeeds
-  evidence: []
+  evidence:
+  - tests/unit/test_scaffold_stash_guard.py::TestStashGuardPackRefs::test_pack_refs_succeeds_with_existing_stash_and_multiple_worktrees
 - text: GIVEN the same clone WHEN git stash runs THEN the hook still refuses with
     the playbook pointer
-  evidence: []
+  evidence:
+  - tests/unit/test_scaffold_stash_guard.py::TestStashGuardPackRefs::test_stash_still_refused_with_multiple_worktrees
 threat: null
 component: scaffold
 ```
 Observed 2026-07-23 during a normal coordinator commit on main with 14 worktrees registered: git's background auto-gc ran pack-refs, the scaffolded stash-guard reference-transaction hook saw a transaction touching refs/stash and refused it ("refusing 'git stash' -- 14 worktrees exist"), and gc failed ("fatal: failed to run pack-refs / error: task 'gc' failed"). The guard's intent (block `git stash` in multi-worktree clones, playbook 1b) is over-broad: pack-refs REWRITES existing refs (including an existing refs/stash) rather than creating a stash, and aborting it breaks repo maintenance for the whole clone every time gc triggers. Fix in frob.scaffold._managed's stash-guard block: distinguish a stash CREATION/UPDATE (new refs/stash value) from maintenance rewrites (pack-refs presents the same old/new value, or GIT_REF_TRANSACTION context indicates packing) and allow the latter; keep refusing genuine stash pushes. Add a fixture proving `git gc` succeeds under the guard with a pre-existing stash ref and >1 worktree while `git stash` itself still refuses.
+
+## Done report
+
+The scaffolded `reference-transaction` stash-guard hook (`frob.scaffold._managed`,
+T-0574) refused every ref-update touching `refs/stash` unconditionally in a
+multi-worktree clone -- including a maintenance `pack-refs` rewrite triggered by
+`git gc`, which writes the SAME resolved value, just relocating it from a loose
+file to the packed-refs store. That broke `git gc` clone-wide any time it ran
+with >1 worktree registered (reproduced live during this dispatch's own `git
+merge main`, matching the ticket's observed incident).
+
+Root cause (verified empirically against a throwaway git repo, not assumed):
+`git pack-refs` does NOT present a single "old_oid == new_oid" line for
+`refs/stash` the way the ticket's own text speculated -- it fires the
+reference-transaction hook TWICE: once creating the packed-refs entry
+(old=0000...0, new=<existing value>), then once pruning the now-redundant loose
+file (old=<existing value>, new=0000...0). So `old_oid == new_oid` within one
+line never actually happens and is not a usable signal.
+
+Fix: refuse a `refs/stash` line only when it writes a non-zero value that does
+NOT already match what `refs/stash` currently resolves to (checked live via
+`git rev-parse -q --verify refs/stash` at "prepared" time, before the loose
+ref is unlinked). A maintenance repack's "add to packed-refs" half writes a
+value that already matches (the loose ref is still present at that point), so
+it passes through; a genuine `git stash push`/update always writes a value
+that does not match (no ref yet, or the OLD different entry), so it is still
+refused. Pure deletions (new_oid all-zero -- the repack's loose-file prune, or
+a real `stash pop`/`drop`) never collide across worktrees and are never
+blocked either way.
+
+Both hunks touched are entirely inside `_STASH_GUARD_HOOK_SCRIPT` (a shell
+script embedded as a Python string constant) plus adjoining doc comments --
+no executable Python logic was changed, so there is nothing for `frob mutate`
+to mutate in the diff; confirmed via `frob mutate src/frob/scaffold/_managed.py`
+that none of its 19 surviving mutants fall within my diff's hunk ranges (lines
+81-91, 124-141, 144, 148-153 -- all comment or shell-script-string content).
+The actual shell logic is exercised behaviorally by the two new fixture tests
+against real throwaway git repos (never the real clone's own hooks, per the
+ticket's own directive).
+
+New test file `tests/unit/test_scaffold_stash_guard.py`:
+- `TestStashGuardPackRefs.test_pack_refs_succeeds_with_existing_stash_and_multiple_worktrees`
+  -- builds a real tmp_path repo, applies the managed stash-guard hook, creates
+  a genuine stash while it's the only worktree, registers a second worktree,
+  then asserts `git pack-refs --all` and `git gc` both succeed (returncode 0)
+  even with the pre-existing `refs/stash` and 2 worktrees live -- this is the
+  exact regression shape from the ticket's observed incident.
+- `TestStashGuardPackRefs.test_stash_still_refused_with_multiple_worktrees`
+  -- same setup, but with a genuine `git stash push` attempted with 2
+  worktrees live; asserts it is still refused (nonzero exit,
+  "refusing 'git stash'" + the playbook pointer in stderr) -- proves the
+  pack-refs fix did not weaken the original T-0574 guard.
+
+Measured: `uv run pytest tests/unit/test_scaffold_stash_guard.py
+tests/unit/test_scaffold_managed.py -p no:cacheprovider -q` -> 9 passed (2 new
++ 7 existing stash-guard/managed-block tests, all still green after the merge
+and native rebuild).
+
+Gate check (chunked `--only` loop, `--ticket T-0870`):
+- lint: PASS 0 errors 0 warnings
+- static: WARN 0 errors, pre-existing repo-wide warnings only (frob-dup,
+  frob-arch, frob-exports), none touching my diff
+- gates-fast: PASS -- gate:DRIFT 0 errors (after fixing my own frob:tests
+  directive to use the graph's dotted `Class.method` qualname form instead of
+  pytest's `Class::method` node-id form, per playbook section 5's own wording),
+  gate:PRE 0 errors after a `frob ticket sweep T-0870` refresh; the only
+  remaining FAIL in this stage (gate:TICK TICK006, referencing T-0738's Done
+  report) is pre-existing on `main` (verified via `git diff main -- tickets.md`
+  before I touched it), unrelated to this ticket, and resolved on `main`
+  itself by the time I merged (commit c2dde825)
+- gates-native: PASS 0 errors
+- gates-security: PASS 0 errors
+
+Deletion-filter check (`git diff main --diff-filter=D --stat`): initially
+showed 2 unrelated files deleted (`src/frob/process/_lock.py`,
+`tests/unit/test_process_lock.py`) because `main` had advanced past my
+worktree's warm-up merge point while I worked; ran `git merge main` again
+(mid-ticket code sync, sanctioned by playbook 1b) and `make core` to rebuild
+natives, re-ran the new/changed test files to confirm still green, then the
+filter came back empty.
+
+Filed: none -- no out-of-scope discoveries this ticket.
+
+### Changed
+```
+ Makefile                                |  12 +--
+ docs/guides/worktree-pool.md            |  29 +++++---
+ src/frob/__main__.py                    |  24 ++++++
+ src/frob/app/config.py                  |   9 +++
+ src/frob/app/scaffold_runner.py         |  47 ++++++++++++
+ src/frob/scaffold/_managed.py           |  38 +++++++++-
+ tests/system/test_scaffold_pool_cli.py  | 125 ++++++++++++++++++++++++++++++++
+ tests/unit/test_scaffold_stash_guard.py | 101 ++++++++++++++++++++++++++
+ tickets.md                              |   6 +-
+ 9 files changed, 373 insertions(+), 18 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_scaffold_stash_guard.py::TestStashGuardPackRefs::test_pack_refs_succeeds_with_existing_stash_and_multiple_worktrees` (pytest node id, verified passing when recorded)
+- `tests/unit/test_scaffold_stash_guard.py::TestStashGuardPackRefs::test_stash_still_refused_with_multiple_worktrees` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0871 -->
 ```yaml
@@ -11646,7 +11755,7 @@ which were in T-0858's declared scope. Do this before or around the
 id: T-0877
 title: 'frob scaffold pool CLI: wire warm/lease/status subcommands onto the T-0738
   pool API'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-07-23'
@@ -11659,18 +11768,149 @@ scope:
 - Makefile
 - docs/guides/worktree-pool.md
 - tests/system/test_scaffold_pool_cli.py
+evidence:
+- tests/system/test_scaffold_pool_cli.py::TestScaffoldPoolCli::test_warm_lease_status_roundtrip
+- tests/system/test_scaffold_pool_cli.py::TestScaffoldPoolCli::test_lease_on_empty_pool_fails
 acceptance:
 - text: GIVEN a frob-enabled repo WHEN `uv run frob scaffold pool warm 2` then `pool
     status` then `pool lease` run THEN two worktrees are warmed, status lists them,
     and lease returns a merged-current worktree path with a background refill
-  evidence: []
+  evidence:
+  - tests/system/test_scaffold_pool_cli.py::TestScaffoldPoolCli::test_warm_lease_status_roundtrip
 - text: GIVEN the Makefile pool targets WHEN they run THEN they delegate to the CLI
     subcommand, no inline python remains
-  evidence: []
+  evidence:
+  - tests/system/test_scaffold_pool_cli.py::TestScaffoldPoolCli::test_warm_lease_status_roundtrip
 threat: null
 component: scaffold
 ```
 Follow-on to T-0738 (landed 0.139.0): the warm-pool API (warm_pool, lease_worktree, pool_status in frob.scaffold._pool) is reachable only through Makefile targets calling the Python API. Wire a real `frob scaffold pool` CLI subcommand group (warm N / lease / status) through app/scaffold_runner.py + app/config.py + __main__.py, replacing the Makefile's inline-python shims with thin CLI calls. Refiled from worktree draft T-0877 (refiled from a land-lost worktree draft) which did not survive T-0738's land (drafts-die-at-land hazard); T-0738's Done report references that draft id.
+
+## Done report
+
+Wired a real `frob scaffold pool` CLI subcommand group (`warm N` / `lease` /
+`status`) through `src/frob/__main__.py`, `src/frob/app/config.py`, and
+`src/frob/app/scaffold_runner.py`, onto the already-landed T-0738 pool API
+(`frob.scaffold._pool`'s `warm_pool`/`lease_worktree`/`pool_status`). The
+Makefile's `pool-warm`/`pool-lease`/`pool-status` targets now delegate to
+`uv run frob scaffold pool ...` instead of the old `uv run python -c "..."`
+inline-python shims, and `docs/guides/worktree-pool.md` documents the new
+CLI section (with a matching `#cli-frob-scaffold-pool-t-0877` anchor) and
+updates the Makefile-targets section to describe the delegation.
+
+New `_run_pool` helper in `src/frob/app/scaffold_runner.py` dispatches
+`cfg.scaffold_pool_command` (`warm`/`lease`/`status`) to the matching pool
+API call against `Path(".")`, logging each `PoolEntry` the same way the old
+Makefile shims printed them (`{index}: {path} ready={ready}`), and exiting
+1 with the `PoolError` value on failure -- same failure-reporting shape the
+inline-python shims had (`SystemExit(f'... failed: {err.value}')`).
+
+New `AppConfig` fields `scaffold_pool_command: str | None` and
+`scaffold_pool_n: int = 4`, threaded through `from_external`'s existing
+str-field and int-field loops (no new parsing machinery).
+
+New argparse wiring in `_add_scaffold_parser`: `scaffold pool` gets its own
+subparsers (`warm [N]`, `lease`, `status`); `warm`'s `N` is a positional
+`nargs="?"` defaulting to 4, matching the Makefile's existing `N ?= 4`
+default.
+
+Also added explicit `frob:ticket` directives (COV002 fix, not scope creep):
+`# frob:ticket T-0877` above `_add_scaffold_parser` (`__main__.py`) and
+`AppConfig` (`config.py`) -- both files are shared by many open tickets'
+scope globs, so `frob check`'s open-ticket-scope inference is ambiguous
+(multiple equally-specific open scopes cover the same path) and an explicit
+edge is required; `# frob:ticket T-0870` above `_STASH_GUARD_HOOK_SCRIPT`
+in `src/frob/scaffold/_managed.py` for the same reason, covering my prior
+T-0870 diff in this same worktree.
+
+New test file `tests/system/test_scaffold_pool_cli.py` (real CLI subprocess,
+`python -m frob`, matching `tests/system/test_cli_scaffold_apply.py`'s
+pattern -- never the real clone's own worktrees, only throwaway `tmp_path`
+git repos with a trivial no-op `Makefile` `core:` target standing in for a
+real cargo/maturin build, since the CLI has no way to inject a fake
+`build_fn`):
+- `TestScaffoldPoolCli.test_warm_lease_status_roundtrip` -- `pool warm 2`
+  fills two ready slots (asserts both appear with `ready=True`), `pool
+  status` lists them, `pool lease` hands one out (prints a real,
+  now-existing worktree directory path -- found by filtering CLI
+  stdout+stderr lines for the one that actually resolves to a directory,
+  since a concurrent background refill thread's own log lines can
+  interleave around it), and a follow-up `pool status` no longer lists the
+  leased path.
+- `TestScaffoldPoolCli.test_lease_on_empty_pool_fails` -- `pool lease`
+  against a repo with no warmed pool reports `PoolError.Empty` via a
+  nonzero exit and an error message, not a silent no-op.
+
+Measured: `uv run pytest tests/system/test_scaffold_pool_cli.py
+tests/system/test_cli_scaffold_apply.py tests/system/test_scaffold_pool.py
+tests/unit/test_scaffold_stash_guard.py tests/unit/test_scaffold_managed.py
+-p no:cacheprovider -q` -> 23 passed (2 new T-0877 tests + 21 pre-existing
+scaffold tests, all green after the mid-ticket `git merge main` + `make
+core` rebuild). Reran the two new tests 3x in isolation to rule out the
+concurrent-refill-thread interleaving flakiness the fix targets -- stable
+across all 3 runs.
+
+Mutation evidence: `frob mutate src/frob/app/scaffold_runner.py --
+uv run pytest tests/system/test_scaffold_pool_cli.py
+tests/system/test_cli_scaffold_apply.py -p no:cacheprovider -q` -> 7
+mutant(s), 7 killed, 0 survived (100%). This is a feature-kind ticket
+(TEST016's mutation-evidence obligation gates bug-kind lands specifically),
+but a clean 100% score is recorded regardless as it was cheap to run and
+directly measures the new `_run_pool` dispatch logic.
+
+Gate check (chunked `--only` loop, `--ticket T-0877`):
+- lint: PASS 0 errors 0 warnings
+- static: PASS 0 errors (warn-only frob-dup/frob-arch/frob-exports residue,
+  pre-existing repo-wide, none touching my diff)
+- gates-fast: PASS 0 errors after the `frob:ticket T-0877`/`T-0870`
+  directive additions above resolved a COV002 ambiguity (multiple open
+  tickets' scope globs cover `__main__.py`/`config.py`/`_managed.py`)
+- gates-native: PASS 0 errors
+- gates-security: PASS 0 errors
+
+Known multi-ticket-worktree gate cross-talk (not a defect in either
+ticket): running `frob check --ticket T-0877` while T-0870's own commits
+are still present in this same worktree/branch flags
+`src/frob/scaffold/_managed.py` as SCOPE001 (outside T-0877's own declared
+scope) -- correctly so, since that file is T-0870's, not T-0877's. The
+reverse is true running `--ticket T-0870`: it then flags T-0877's files.
+Each ticket's own scope is independently clean when checked against files
+it actually declares (verified above); this cross-ticket noise is inherent
+to two tickets sharing one worktree/branch and is expected to resolve once
+each ticket lands as its own separate commit set, per the coordinator's own
+land workflow.
+
+Deletion-filter check (`git diff main --diff-filter=D --stat`): `main`
+advanced twice more while I worked (once mid-T-0870, once mid-T-0877,
+both landing unrelated tickets); each time re-ran `git merge main` (a
+sanctioned mid-ticket code sync) + `make core`, re-ran the full targeted
+test set to confirm still green, and the filter came back empty both
+times before finishing.
+
+Filed: none -- no out-of-scope discoveries beyond the two small, in-scope
+`frob:ticket` directive additions noted above.
+
+### Changed
+```
+ Makefile                                |  12 +--
+ docs/guides/worktree-pool.md            |  29 +++++---
+ src/frob/__main__.py                    |  24 ++++++
+ src/frob/app/config.py                  |   9 +++
+ src/frob/app/scaffold_runner.py         |  47 ++++++++++++
+ src/frob/scaffold/_managed.py           |  38 +++++++++-
+ tests/system/test_scaffold_pool_cli.py  | 125 ++++++++++++++++++++++++++++++++
+ tests/unit/test_scaffold_stash_guard.py | 101 ++++++++++++++++++++++++++
+ tickets.md                              |   6 +-
+ 9 files changed, 373 insertions(+), 18 deletions(-)
+```
+
+### Evidence
+- `tests/system/test_scaffold_pool_cli.py::TestScaffoldPoolCli::test_warm_lease_status_roundtrip` (pytest node id, verified passing when recorded)
+- `tests/system/test_scaffold_pool_cli.py::TestScaffoldPoolCli::test_lease_on_empty_pool_fails` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0878 -->
 ```yaml
@@ -11877,6 +12117,7 @@ id, or an honest disclosed-historical-draft-loss waiver.
 
 ## Drop reason
 - 2026-07-23: obsolete: the TICK006 it tracks was fixed on main in c2dde825 (T-0738 report retargeted to refiled T-0877) before this draft renumbered
+
 <!-- ticket:T-0884 -->
 ```yaml
 id: T-0884

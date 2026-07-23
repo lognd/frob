@@ -48,6 +48,20 @@ tests substitute a fast fake build step instead of paying a real cargo
 compile per test run; a real caller only needs it to point at a
 different build command.
 
+## CLI (`frob scaffold pool`, T-0877)
+
+```
+frob scaffold pool warm [N]   # fill the pool to N ready slots (default N=4)
+frob scaffold pool lease      # lease one ready slot, print its path, refill in background
+frob scaffold pool status     # print the current manifest
+```
+
+Thin wrappers (`src/frob/app/scaffold_runner.py`'s `_run_pool`) over the
+same `warm_pool`/`lease_worktree`/`pool_status` API above, using the
+default `pool_dir`/`base_ref` in every case -- a caller needing a
+non-default pool directory or base ref still goes through the Python API
+directly.
+
 ## Makefile targets
 
 ```
@@ -56,15 +70,12 @@ make pool-lease         # lease one ready slot, print its path, refill in backgr
 make pool-status        # print the current manifest
 ```
 
-These call directly into `frob.scaffold`'s Python API (`uv run python -c
-...`) rather than through a `frob scaffold pool` CLI subcommand -- CLI
-wiring through `frob.app.scaffold_runner`/`frob.app.config` is a
-separately-filed follow-up ticket (touching `src/frob/app/**`, outside
-this module's `src/frob/scaffold/**`-only scope). Not currently wired
-into `frob worktree sweep` (`src/frob/tickets/_leases.py`) either --
-sweeping a leased-then-abandoned pool worktree still goes through that
-existing mechanism unchanged, since a leased pool slot is, from that
-point on, an ordinary dispatched-agent worktree.
+These now delegate straight to the CLI above (`uv run frob scaffold pool
+...`) -- no inline python left in the Makefile. Not currently wired into
+`frob worktree sweep` (`src/frob/tickets/_leases.py`) either -- sweeping a
+leased-then-abandoned pool worktree still goes through that existing
+mechanism unchanged, since a leased pool slot is, from that point on, an
+ordinary dispatched-agent worktree.
 
 ## Safety notes for testing this module
 

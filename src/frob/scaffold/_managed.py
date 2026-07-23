@@ -78,6 +78,17 @@ _log = get_logger(__name__)
 #:    completely unaffected (different refname, hook exits 0 immediately),
 #:    and `git stash` succeeds normally once back down to one worktree.
 #:
+#: T-0870: the initial version of this hook refused EVERY `refs/stash`
+#: line unconditionally, which also aborted `git gc`'s `pack-refs`
+#: maintenance rewrite of an existing `refs/stash` (a same-clone-wide
+#: repo-maintenance failure, not a stash-collision hazard). Fixed by
+#: refusing only a line that WRITES a value refs/stash does not already
+#: resolve to -- see `_STASH_GUARD_HOOK_SCRIPT`'s own inline comment for
+#: the mechanics (pack-refs presents its rewrite as two separate
+#: transactions, so `old_oid == new_oid` within one line is not a usable
+#: signal; comparing the written value against the ref's current
+#: resolution is).
+#:
 #: Coverage limits (documented honestly, not oversold): this is a
 #: PER-CLONE git hook (`.git/hooks/reference-transaction`, or the shared
 #: `core.hooksPath` dir if a repo uses one) -- like `git stash` itself,
@@ -102,6 +113,7 @@ _STASH_GUARD_HOOK_NAME = "reference-transaction"
 #: goes stale the next time a managed block is added or removed.
 STASH_GUARD_HOOK_NAMES: tuple[str, ...] = (_STASH_GUARD_HOOK_NAME,)
 _STASH_GUARD_HOOK_MARKER = "# Installed by `frob scaffold apply` (T-0574 stash guard)."
+# frob:ticket T-0870
 _STASH_GUARD_HOOK_SCRIPT = f"""#!/bin/sh
 {_STASH_GUARD_HOOK_MARKER}
 #
@@ -110,12 +122,36 @@ _STASH_GUARD_HOOK_SCRIPT = f"""#!/bin/sh
 # see this module's `_STASH_GUARD_HOOK_SCRIPT` docstring-comment for why
 # a `reference-transaction` hook, not a hook name / alias, is what this
 # has to be.
+#
+# T-0870: `git gc` (pack-refs) rewrites refs/stash's STORAGE (loose ->
+# packed) WITHOUT changing its resolved VALUE -- but it does this as TWO
+# separate reference-transaction invocations (one 0000->X adding the
+# packed entry, one X->0000 pruning the now-redundant loose file), never
+# as a single old==new line -- so old_oid == new_oid never actually
+# happens in practice and is not a usable signal. Instead: only refuse a
+# line that WRITES a new/changed value (new_oid not all-zero) whose value
+# does not already match what refs/stash currently resolves to -- a
+# maintenance repack's "add to packed-refs" half writes the SAME value
+# refs/stash already has (the loose ref file is still present at
+# "prepared" time, so `git rev-parse refs/stash` still resolves to it),
+# so it is let through; a genuine `git stash push`/update always writes a
+# value that does not match what refs/stash currently resolves to (there
+# is no ref yet, or it resolves to the OLD, different, entry), so it is
+# still refused. Pure deletions (new_oid all-zero -- a repack's loose-file
+# prune, or a `stash pop`/`drop`) never collide across worktrees and are
+# never blocked either way.
 state="$1"
 [ "$state" = "prepared" ] || exit 0
+zero_oid="0000000000000000000000000000000000000000"
 blocked=0
 while read -r old_oid new_oid refname; do
     case "$refname" in
-        refs/stash) blocked=1 ;;
+        refs/stash)
+            if [ "$new_oid" != "$zero_oid" ]; then
+                current_oid=$(git rev-parse -q --verify refs/stash 2>/dev/null)
+                [ "$current_oid" = "$new_oid" ] || blocked=1
+            fi
+            ;;
     esac
 done
 [ "$blocked" -eq 1 ] || exit 0

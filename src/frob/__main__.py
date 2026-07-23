@@ -107,6 +107,7 @@ def _collect_option_strings(parser: argparse.ArgumentParser) -> set[str]:
 
 # frob:ticket T-0030
 # frob:ticket T-0736
+# frob:ticket T-0877
 def _add_scaffold_parser(sub) -> None:
     """Register the `frob scaffold` subcommand and its arguments."""
     # -- scaffold ------------------------------------------------------------
@@ -133,6 +134,29 @@ def _add_scaffold_parser(sub) -> None:
         action="store_true",
         help="overwrite existing files",
     )
+
+    # T-0877: `frob scaffold pool warm/lease/status`, wired onto the
+    # T-0738 `frob.scaffold._pool` API -- replaces the Makefile's
+    # inline-python `pool-warm`/`pool-lease`/`pool-status` shims.
+    scaffold_pool_p = scaffold_sub.add_parser(
+        "pool", help="worktree warm pool: warm/lease/status (T-0738/T-0877)"
+    )
+    scaffold_pool_sub = scaffold_pool_p.add_subparsers(dest="scaffold_pool_command")
+    scaffold_pool_warm_p = scaffold_pool_sub.add_parser(
+        "warm", help="fill the pool to N ready slots"
+    )
+    scaffold_pool_warm_p.add_argument(
+        "scaffold_pool_n",
+        metavar="N",
+        type=int,
+        nargs="?",
+        default=4,
+        help="number of ready slots to maintain (default 4)",
+    )
+    scaffold_pool_sub.add_parser(
+        "lease", help="lease one ready slot, print its path, refill in background"
+    )
+    scaffold_pool_sub.add_parser("status", help="print the current pool manifest")
 
 
 # frob:ticket T-0030

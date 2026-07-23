@@ -69,6 +69,7 @@ class Subcommand(str, enum.Enum):
 # frob:ticket T-0030
 # frob:ticket T-0085
 # frob:ticket T-0115
+# frob:ticket T-0877
 class AppConfig(BaseModel):
     # frob:ticket T-0021
     subcommand: Subcommand | None = None
@@ -84,6 +85,10 @@ class AppConfig(BaseModel):
     scaffold_name: str | None = None
     scaffold_output: Path | None = None
     scaffold_force: bool = False
+    # scaffold pool (T-0877): `frob scaffold pool warm/lease/status`, wired
+    # onto the T-0738 `frob.scaffold._pool` API.
+    scaffold_pool_command: str | None = None
+    scaffold_pool_n: int = 4
 
     # cycle
     cycle_path: Path | None = None
@@ -525,6 +530,8 @@ class AppConfig(BaseModel):
             "scaffold_command",
             "scaffold_type",
             "scaffold_name",
+            # frob:ticket T-0877
+            "scaffold_pool_command",
             "cycle_lang",
             "xref_symbol",
             "xref_lang",
@@ -669,6 +676,8 @@ class AppConfig(BaseModel):
             "check_verbose",
             "ticket_verbose",
             "vet_jobs",
+            # frob:ticket T-0877
+            "scaffold_pool_n",
         ):
             val = getattr(args, int_field, None)
             if val is not None:

@@ -6,9 +6,52 @@ from pathlib import Path
 from frob.app.config import AppConfig
 from frob.logging import get_logger
 from frob.scaffold._managed import apply_managed_blocks
+from frob.scaffold._pool import lease_worktree, pool_status, warm_pool
 from frob.scaffold.project import list_project_types, render_project
 
 _log = get_logger(__name__)
+
+
+# frob:doc docs/guides/worktree-pool.md#cli-frob-scaffold-pool-t-0877
+# frob:ticket T-0877
+# frob:tests tests/system/test_scaffold_pool_cli.py::TestScaffoldPoolCli.test_warm_lease_status_roundtrip  # noqa: E501
+def _run_pool(cfg: AppConfig) -> None:
+    """`frob scaffold pool warm/lease/status` (T-0877): thin CLI wrapper
+    over `frob.scaffold._pool`'s `warm_pool`/`lease_worktree`/
+    `pool_status`, the same three operations the Makefile's
+    `pool-warm`/`pool-lease`/`pool-status` inline-python shims called
+    directly -- this is what those targets now delegate to."""
+    pool_cmd = cfg.scaffold_pool_command
+    repo_root = Path(".")
+
+    if pool_cmd == "warm":
+        warmed = warm_pool(repo_root, cfg.scaffold_pool_n)
+        if warmed.is_err:
+            _log.error("pool-warm failed: %s", warmed.danger_err.value)
+            sys.exit(1)
+        for entry in warmed.danger_ok:
+            _log.info("%d: %s ready=%s", entry.index, entry.path, entry.ready)
+        return
+
+    if pool_cmd == "lease":
+        leased = lease_worktree(repo_root)
+        if leased.is_err:
+            _log.error("pool-lease failed: %s", leased.danger_err.value)
+            sys.exit(1)
+        _log.info(str(leased.danger_ok.path))
+        return
+
+    if pool_cmd == "status":
+        status = pool_status(repo_root)
+        if status.is_err:
+            _log.error("pool-status failed: %s", status.danger_err.value)
+            sys.exit(1)
+        for entry in status.danger_ok:
+            _log.info("%d: %s ready=%s", entry.index, entry.path, entry.ready)
+        return
+
+    _log.error("frob scaffold pool requires a subcommand (warm/lease/status)")
+    sys.exit(1)
 
 
 # frob:doc docs/modules/app.md#runners
@@ -28,6 +71,10 @@ def run(cfg: AppConfig) -> None:
             sys.exit(1)
         for line in result.danger_ok:
             _log.info(line)
+        return
+
+    if cmd == "pool":
+        _run_pool(cfg)
         return
 
     proj_type = cfg.scaffold_type
