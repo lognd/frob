@@ -6173,7 +6173,7 @@ T-0614's KotlinAdapter works standalone but .kt/.kts files are invisible to pars
 id: T-0725
 title: 'strata: export golden fixtures (k8s/seccomp/iam) drifted from design/frob.strata
   after fleet flows landed'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-22'
