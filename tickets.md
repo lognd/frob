@@ -7659,3 +7659,293 @@ available and should be wired in as defense in depth:
 
 Scope: src/frob/app/check_runner.py, src/frob/gates/__init__.py (the
 `active_ticket`/`_resolve_ticket` region only).
+
+<!-- ticket:T-0778 -->
+```yaml
+id: T-0778
+title: 'security: FROB_DISABLE_EXEC kill switch is a partial no-op -- wire gitio/serve/tickets
+  through the T-0200 guard, delete stale waivers'
+state: queued
+kind: security
+origin: auditor
+created: '2026-07-23'
+priority: critical
+blocked_by: []
+parent: null
+scope:
+- src/frob/gitio.py
+- src/frob/process/_guard.py
+- design/frob.strata
+- tests/test_gitio.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN FROB_DISABLE_EXEC=1 WHEN any frob code path attempts a git spawn via
+    run_argv (including the serve daemon and lease reads) THEN the spawn is refused
+    by the guard and logged; GIVEN the five strata nodes THEN no LINT004 waiver cites
+    T-0200 as pending
+  evidence: []
+threat: denial-of-service
+component: null
+labels: []
+```
+Audit H2 (docs/audits/frob-blindspots-2026-07-23.md): five strata nodes (core,
+fleet, tickets_ledger, stratamod, vet) waive LINT004 with reason "no real kill
+switch around subprocess spawning yet -- T-0200 is the follow-on ticket to
+build one". T-0200 is DONE (archived) and shipped
+src/frob/process/_guard.py::guarded_subprocess_run, but only check/_python.py,
+check/_ts.py, check/_native.py wired in. gitio.run_argv (the single git seam),
+the serve daemon (spawning git every 20s in a background thread), and the
+tickets lease git calls all bypass the guard -- so FROB_DISABLE_EXEC=1 is a
+partial no-op while _guard.py's docstring promises it "genuinely stops EVERY
+process this component spawns". Fix: route gitio.run_argv through
+guarded_subprocess_run (which transitively covers serve+tickets since all git
+IO flows through run_argv), verify no other subprocess call sites bypass it
+(grep subprocess. outside _guard.py/gitio.py), DELETE the five stale waivers
+from design/frob.strata (the mechanism exists; honest state is wired, not
+pending), and add a test that FROB_DISABLE_EXEC=1 makes run_argv refuse.
+
+<!-- ticket:T-0779 -->
+```yaml
+id: T-0779
+title: 'gates: stale-waiver detection -- waive reason citing a DONE/DROPPED ticket
+  is an error (WAIVE-tier)'
+state: queued
+kind: security
+origin: auditor
+created: '2026-07-23'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+- tests/test_waive_gate.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a waive directive (frob:waive or strata waive) whose reason or ticket
+    attribute references a ticket that is DONE or DROPPED in the ledger/archive WHEN
+    frob check runs THEN a gate error fires naming the waiver site and the closed
+    ticket; GIVEN a waiver citing an open ticket THEN no finding
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Audit H2 gate-direction (docs/audits/frob-blindspots-2026-07-23.md): the five LINT004 kill-switch waivers cite T-0200 as the follow-on ticket to build -- but T-0200 closed long ago, and no gate re-litigates a waiver once its justifying ticket lands. A waiver justified by pending-T-XXXX must not outlive T-XXXX. Implement in the WAIVE gate family: resolve every ticket id referenced in waiver reasons/attributes against the ledger+archive; DONE/DROPPED means the waiver must be re-justified or deleted. Land AFTER T-0778 clears the five current offenders or the gate reds main immediately (sequencing note for the coordinator, not a design choice).
+
+<!-- ticket:T-0780 -->
+```yaml
+id: T-0780
+title: 'security: serve daemon feeds peer-writable lease branch names into git argv
+  -- validate + ''--'' terminator'
+state: queued
+kind: security
+origin: auditor
+created: '2026-07-23'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/serve/_daemon.py
+- src/frob/tickets/_leases.py
+- tests/test_serve_daemon.py
+- tests/test_tickets_leases.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a lease JSON with branch or worktree starting with a dash or containing
+    a git-invalid ref shape WHEN read_all_leases loads it THEN the record is rejected
+    and logged, never admitted; GIVEN daemon merge-base/merge-tree invocations THEN
+    ref operands follow a -- terminator; a regression test injects a crafted evil
+    lease and asserts no git call receives it
+  evidence: []
+threat: elevation-of-privilege
+component: null
+labels: []
+```
+Audit M1 (docs/audits/frob-blindspots-2026-07-23.md): poll_rebase_bot passes lease-JSON branch strings verbatim into git merge-base/merge-tree argv with no -- terminator and no ref validation. Any local process able to write under the shared .git common dir (every co-located worktree agent) can drop evil.json with branch='--output=...' and the unattended daemon executes git option injection. Fix both layers: (1) read_all_leases/resolve_lease validate branch/worktree shape (reject leading dash; git check-ref-format-conformant allowlist) and drop+log failures; (2) daemon git calls put -- before ref operands. NOTE: also coordinate with T-0778 (guard wiring) and the M2 lease-TTL ticket -- same files, serialize dispatch.
+
+<!-- ticket:T-0781 -->
+```yaml
+id: T-0781
+title: 'vet/gates: taint rule -- repo-writable state (.git/.frob JSON or text) reaching
+  subprocess argv requires validation or ''--'''
+state: queued
+kind: security
+origin: auditor
+created: '2026-07-23'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/vet/**
+- src/frob/gates/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a fixture where a value parsed from a file under .git/ or .frob/ flows
+    into a subprocess argv position without passing a registered validator or a preceding
+    -- literal WHEN the check runs THEN a finding fires naming source and sink; GIVEN
+    the same flow through a validator THEN no finding
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Audit M1 gate-direction: SEC gates catch shell=True and f-string-into-argv but not the trust-boundary shape (peer-writable state file -> argv). Model the source set (read_text/json.loads on .git//.frob paths) and the sink (subprocess/run_argv argv positions); require a validator hop or -- terminator. Same rule covers worktree paths reaching Path.exists/display. This is a dataflow rule -- scope it honestly as intra-module flow first, interprocedural later.
+
+<!-- ticket:T-0782 -->
+```yaml
+id: T-0782
+title: 'leases: implement T-0476 cleanup -- unlink stale leases opportunistically
+  + TTL for dead-agent leases (daemon stops re-simulating)'
+state: queued
+kind: bug
+origin: auditor
+created: '2026-07-23'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/_leases.py
+- src/frob/serve/_daemon.py
+- tests/test_tickets_leases.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a lease whose worktree path no longer exists WHEN read_all_leases judges
+    it stale THEN the file is unlinked (guarded so a live worktree lease is never
+    removed) and the directory stops growing; GIVEN a live-path lease older than the
+    TTL with no refresh THEN the daemon skips re-simulating it and logs once
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Audit M2: .git/frob-leases/ grows monotonically -- release only happens on clean IN_PROGRESS exit; stale leases are skipped-not-deleted (T-0476 deferral comment in read_all_leases); a dead agent with a still-existing worktree burns 2 git spawns per 20s daemon cycle forever. Implement the deferred T-0476 reconcile plus recorded_at TTL. Same files as T-0780 -- coordinator serializes dispatch.
+
+<!-- ticket:T-0783 -->
+```yaml
+id: T-0783
+title: 'gates: long-deferred-obligation rule -- shipped deferral comment citing a
+  still-open ticket past a release boundary'
+state: queued
+kind: feature
+origin: auditor
+created: '2026-07-23'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a shipped comment deferring work to ticket T-X (that ticket's job shape
+    or frob:todo) WHEN T-X remains open across a REL001 version bump since the comment
+    landed THEN a warning fires naming the deferral site and age; GIVEN the ticket
+    closes THEN the finding clears
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Audit M2 gate-direction: deferred cleanup silently became permanent (T-0476 open since the lease layer shipped). Detect deferral comments bound to open tickets that have crossed release boundaries so deferrals get re-litigated instead of fossilizing.
+
+<!-- ticket:T-0784 -->
+```yaml
+id: T-0784
+title: 'gitio: promote git_common_dir to the single git seam (3 divergent copies)
+  + batch the lease-write double spawn'
+state: queued
+kind: bug
+origin: auditor
+created: '2026-07-23'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/gitio.py
+- src/frob/tickets/_leases.py
+- src/frob/gates/_exclude_hazard.py
+- tests/test_gitio.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN the repo WHEN searched for rev-parse --git-common-dir call sites THEN
+    exactly one implementation exists (frob.gitio) and _leases/_exclude_hazard delegate
+    to it; GIVEN record_lease THEN common-dir and branch are fetched in one spawn
+    not two
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Audit M3 + L1: three near-identical git-common-dir resolvers (Result vs Path|None error channels) violate the single-seam claim in gitio's own docstring; a fix to one silently desyncs the others. Promote git_common_dir(root) -> Result into frob.gitio; batch record_lease's two spawns (rev-parse --git-common-dir + branch --show-current) into one. COORDINATE: T-0773 adds memoization for the same function -- land T-0773 first, then this refactor moves the memoized seam, or merge scopes if the same implementer takes both.
+
+<!-- ticket:T-0785 -->
+```yaml
+id: T-0785
+title: 'dup: normalize error-channel (Result vs Optional vs raise) before similarity
+  compare'
+state: queued
+kind: feature
+origin: auditor
+created: '2026-07-23'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/dup/**
+- tests/test_dup.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN two functions identical except one returns Result and the other Optional-with-None
+    WHEN the dup scan runs THEN they register as a duplicate group; GIVEN genuinely
+    different logic THEN no false pair
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Audit M3 gate-direction: the triplicated git-common-dir resolver slipped under DUP's similarity threshold purely on error-channel shape. Normalize Ok/Err vs return-None vs raise into a canonical form before comparing.
+
+<!-- ticket:T-0786 -->
+```yaml
+id: T-0786
+title: 'AUDIT: gate-by-gate vacuous-satisfaction sweep + lang parser trust-boundary
+  pass (blindspot audit boundary)'
+state: queued
+kind: security
+origin: auditor
+created: '2026-07-23'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- docs/audits/gates-vacuous.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN the audit doc WHEN complete THEN every gate in gates/__init__.py has
+    a recorded verdict for empty-diff/empty-scope/cached-stale satisfaction (can it
+    go green without doing its work) and the lang/** tree-sitter ingestion of untrusted
+    files has a recorded DoS/traversal verdict; every defect found is filed as its
+    own ticket
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+The 2026-07-23 blindspot audit explicitly skipped: (a) a full vacuous-satisfaction sweep of gates/__init__.py (8568 lines -- can any gate be satisfied by an empty diff, empty scope, or stale cache?), and (b) lang/** parser trust boundary (tree-sitter on untrusted repo files). These are the largest unaudited surfaces. Run per the audit-until-empty discipline (docs/audits/, pessimistic auditor told to find 10+, repeat until 0).
