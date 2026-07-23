@@ -6342,3 +6342,32 @@ component: null
 labels: []
 ```
 Observed during T-0695 (2026-07-22, heavy concurrent multi-agent load): frob check --ticket T-0695 twice ran against a completely different worktree (agent-a86ce74bd40394899, which held the T-0733 lease) via stale ticket-lease state, until frob ticket start T-0695 was re-run. Leases are worktree-local since T-0473, but some path in check's lease resolution still picked up a sibling worktree's state. Root-cause the resolution order (env FROB_WORKTREE? lease file mtime? first-match iteration?) and pin check --ticket to the invoking worktree's own lease, failing loudly if absent rather than borrowing a sibling's.
+
+<!-- ticket:T-0767 -->
+```yaml
+id: T-0767
+title: 'gates: restructure _run_combined_jobs so pool-inside-pool/fork-after-threads
+  advisories discharge (post-T-0581 shape)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/__init__.py
+- tests/unit/test_arch.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN main after the T-0695 checks WHEN frob check runs THEN gate:ARCH reports
+    zero fork/pool-hazard warnings on src/frob/gates while the T-0581 process-pool/thread-pool
+    split behavior is preserved and the real-repo negative case is a regression test
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+T-0695 landed four unwaivable fork/pool-hazard advisories; two fire on src/frob/gates/__init__.py::_run_combined_jobs (pool-inside-pool, fork-after-threads). T-0581 is done -- the ProcessPool-for-CPU-gates + ThreadPool split is the intended design -- but the detectors are same-function co-occurrence heuristics, so the intended shape still fires. Since the channel is unwaivable by design, the only discharge path is restructuring: hoist the ProcessPoolExecutor construction/ownership out of the function containing the ThreadPoolExecutor task submission (e.g. construct both pools in a top-level orchestrator and pass handles) so the hazard co-occurrence no longer exists in any single function. Keep T-0581 behavior and perf. Blocks the zero-warnings drive; these 2 warnings cannot be waived.
