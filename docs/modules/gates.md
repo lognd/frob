@@ -822,6 +822,51 @@ matching `registry_gate`'s own missing-directory posture. It is waivable
 reason="..."` can disposition a specific, honest, temporary exception the
 same way REG001-004 allow one.
 
+### DERIVED001 (T-0603): derived-state integrity precheck
+
+`frob doctor`'s `verify_derived_state` (T-0570) fingerprints every entry in
+`DERIVED_ARTIFACTS` (`.frob/cache.db`, `.frob/dup.db`, `.frob/vet.db`,
+`.frob/coverage-stamp`, `.frob/baseline`, `frob-coverage.lock.json`) and
+reports each as absent (fine, nothing written yet -- not corruption),
+healthy, or present-but-corrupt (fails a format-specific validity check:
+SQLite magic header, or `json.loads`). Before T-0603, this diagnosis
+existed but nothing in `frob check` ever consulted it -- a truncated
+`.frob/cache.db` would silently feed the graph/dup gates wrong data
+instead of failing loudly, and `frob doctor` was a diagnosis nobody was
+required to run.
+
+`frob.check._derived_state_integrity_result` (`src/frob/check/__init__.py`)
+closes that gap: every `run_check`/`run_check_cpp`/`run_check_rust`/
+`run_check_ts` entry point calls it once, synchronously, BEFORE
+dispatching any concurrent stage. If any derived artifact is
+present-but-corrupt, the entire check run short-circuits to a single
+`derived-state-integrity` `ToolResult` (diagnostic code `DERIVED001`,
+ERROR severity) naming every corrupt artifact and the `rm -f` command to
+clear it, pointing at `frob doctor` for the full diagnosis -- no gate ever
+sees the corrupt cache. An absent artifact (fresh clone, `frob clean`, a
+worktree that has never run `frob check`) is NOT a violation: `run_gates`
+and the cache layer already know how to build a missing artifact from
+scratch, so only a PRESENT-but-invalid artifact fails closed.
+
+This is deliberately NOT one of `_KNOWN_GATE_RULES` / the `registry_gate`
+rule catalog above -- it is a check-orchestration-level precondition (the
+same tier as a tool being unavailable), not a `Violation` a `frob:waive`
+can target, so it stays unwaivable by construction: a corrupt cache is
+never a legitimate, intentional state to accept.
+
+**Why the check runs once, up front, rather than from inside the `gates`
+stage itself.** `arch`, `dup`, and `gates` all read or rebuild the same
+`.frob/cache.db`/`dup.db` inside `frob check`'s `ThreadPoolExecutor`
+batch. Fingerprinting from inside one of those stages while the others
+run concurrently races a live writer: a cache mid-rebuild, observed by
+another thread, reads as "corrupt" (truncated/incomplete bytes) when it
+is merely momentarily in-progress. This was caught for real during T-0603
+development by `TestCheckBuildsGraphOnce.test_run_check_calls_build_graph_
+exactly_once` turning red once the precheck lived inside `_run_gates`;
+moving it to run once, serially, before any stage is dispatched removes
+the race entirely and is also strictly cheaper (one fingerprint pass per
+`frob check` run instead of one per gate family).
+
 ## Public API
 
 <!-- frob:describes src/frob/gates/__init__.py::SCOPED_RUN_FLAKY_RULE_IDS -->

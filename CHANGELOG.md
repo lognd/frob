@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.134.0] - unreleased
+
+- T-0604: derived-state manifest: persist fingerprints and detect drift across runs
+
 ## [0.133.0] - unreleased
 
 - T-0847: land: wip pre-land snapshot fails on line-ending phantom-dirty worktrees (nothing to commit after add -A renormalizes)

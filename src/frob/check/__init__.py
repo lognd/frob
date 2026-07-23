@@ -54,6 +54,7 @@ from frob.check._python import (
     _run_ty,
 )
 from frob.check._ts import _run_eslint, _run_prettier, _run_tsc, _run_vitest
+from frob.doctor import verify_derived_state
 from frob.lang import reset_parse_cache
 from frob.logging import get_logger
 from frob.logging.quiet import _stdout_stream_handlers as _stdout_log_handlers
@@ -66,6 +67,63 @@ _log = get_logger(__name__)
 _TOOL_STAGES = frozenset(
     {"ruff", "ty", "cycle", "dup", "arch", "bind", "exports", "gates"}
 )
+
+
+# frob:doc docs/modules/gates.md#rule-catalog
+# frob:ticket T-0603
+# frob:tests tests/unit/test_check.py::TestDerivedStateIntegrityGate.test_corrupt_artifact_fails_closed_before_any_stage_runs  # noqa: E501
+# frob:tests tests/unit/test_check.py::TestDerivedStateIntegrityGate.test_absent_artifact_is_not_a_violation  # noqa: E501
+# frob:ticket T-0603
+def _derived_state_integrity_result(root: Path) -> ToolResult | None:
+    """`None` if every derived artifact under `root` is present-and-healthy
+    or simply absent (T-0570's `verify_derived_state` fail-open-on-absent
+    semantics -- a fresh clone/post-clean tree has no artifacts yet, which
+    is not corruption); a single hard-ERROR `ToolResult` naming every
+    present-but-corrupt artifact otherwise (T-0603).
+
+    Every `run_check*` entry point calls this exactly ONCE, synchronously,
+    BEFORE dispatching any concurrent stage -- never from inside a stage
+    that runs concurrently with others. `arch`/`dup`/`gates` all read or
+    (re)build the same `.frob/cache.db`/`dup.db` this function fingerprints;
+    checking from inside one of those stages while the others run
+    concurrently in the same `ThreadPoolExecutor` batch races a live
+    writer (a mid-rebuild cache observed by another thread reads as
+    "corrupt" when it is merely momentarily empty/in-progress) -- this bit
+    for real during T-0603 development, caught by
+    `TestCheckBuildsGraphOnce.test_run_check_calls_build_graph_exactly_once`
+    turning red. Checking once, up front, serializes the integrity read
+    before any writer starts, which is also strictly cheaper than a
+    per-stage recheck (one fingerprint pass per `frob check` run, not one
+    per gate family)."""
+    corrupt = tuple(
+        d for d in verify_derived_state(root) if d.present and not d.healthy
+    )
+    if not corrupt:
+        return None
+    names = ", ".join(f"{d.name} ({d.path}: {d.detail})" for d in corrupt)
+    commands = " ; ".join(f"rm -f {d.path}" for d in corrupt)
+    return ToolResult(
+        tool="derived-state-integrity",
+        exit_code=1,
+        diagnostics=[
+            Diagnostic(
+                file=d.path,
+                severity="error",
+                code="DERIVED001",
+                message=(
+                    f"DERIVED001: derived artifact {d.name} ({d.path}) is "
+                    f"corrupt: {d.detail}. This is cached/derived state, not "
+                    "source of truth -- run `frob doctor` for the full "
+                    f"diagnosis, then `rm -f {d.path}` to let it rebuild."
+                ),
+            )
+            for d in corrupt
+        ],
+        summary=(
+            f"derived-state-integrity FAILED: corrupt derived state: {names} "
+            f"-- {commands}"
+        ),
+    )
 
 
 def _bucket_diags(
@@ -505,6 +563,13 @@ def _run_check_with_skips(
 ) -> CheckResult:
     """`run_check`'s task-selection and execution tail, once its many
     `skip_*` flags have been collapsed into `skips`."""
+    # T-0603: single, synchronous, pre-dispatch integrity check -- see
+    # `_derived_state_integrity_result`'s docstring for why this must run
+    # before any concurrent stage starts, not from inside one.
+    integrity_failure = _derived_state_integrity_result(root)
+    if integrity_failure is not None:
+        return CheckResult(path=str(root), results=[integrity_failure])
+
     # T-0414: fresh parse-cache instrumentation per invocation (see
     # `frob.lang.reset_parse_cache`'s docstring) -- correctness never
     # depends on this reset, only the per-run hit/miss counters do.
@@ -561,7 +626,16 @@ def run_check_cpp(
     Python pipeline ever called `_run_gates`, so a pure C/C++ repo's
     COV001/DOC001-3/DRIFT001-2/INV/DEC/TODO001 gates silently never
     executed (docs/audits/lang-check-docs.md finding 1).
+
+    T-0603: a corrupt derived artifact (`.frob/cache.db`, `.frob/baseline`,
+    etc.) short-circuits everything below with a single
+    `derived-state-integrity` ERROR result, checked once before the build
+    even starts -- see `_derived_state_integrity_result`'s docstring.
     """
+    integrity_failure = _derived_state_integrity_result(root)
+    if integrity_failure is not None:
+        return CheckResult(path=str(root), results=[integrity_failure])
+
     results: list[ToolResult] = []
     bdir = build_dir or (root / "build")
 
@@ -643,7 +717,15 @@ def run_check_rust(
     (`_run_gates`) -- previously only the Python pipeline ran it, so a pure
     Rust repo's COV001/DOC001-3/DRIFT001-2/INV/DEC/TODO001 gates silently
     never executed (docs/audits/lang-check-docs.md finding 1).
+
+    T-0603: a corrupt derived artifact short-circuits everything below
+    with a single `derived-state-integrity` ERROR result, checked once up
+    front -- see `_derived_state_integrity_result`'s docstring.
     """
+    integrity_failure = _derived_state_integrity_result(root)
+    if integrity_failure is not None:
+        return CheckResult(path=str(root), results=[integrity_failure])
+
     results: list[ToolResult] = []
 
     if not skip_check:
@@ -698,7 +780,15 @@ def run_check_ts(
     (`_run_gates`) -- previously only the Python pipeline ran it, so a pure
     TypeScript repo's COV001/DOC001-3/DRIFT001-2/INV/DEC/TODO001 gates
     silently never executed (docs/audits/lang-check-docs.md finding 1).
+
+    T-0603: a corrupt derived artifact short-circuits everything below
+    with a single `derived-state-integrity` ERROR result, checked once up
+    front -- see `_derived_state_integrity_result`'s docstring.
     """
+    integrity_failure = _derived_state_integrity_result(root)
+    if integrity_failure is not None:
+        return CheckResult(path=str(root), results=[integrity_failure])
+
     tasks: list[Callable[[], ToolResult | list[ToolResult] | None]] = []
     if not skip_tsc:
         tasks.append(lambda: _run_tsc(root))

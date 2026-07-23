@@ -200,6 +200,112 @@ class TestDoctorDerivedStateManifest:
         assert all(not d.present for d in report.derived_state)
 
 
+class TestDoctorDerivedStateDrift:
+    """T-0604: `frob doctor` persists a fingerprint manifest each run and
+    reports content drift against the PREVIOUS run's manifest -- an
+    artifact rewritten out-of-band between two `frob doctor` invocations,
+    distinct from T-0570's per-run corruption check."""
+
+    # frob:tests src/frob/doctor.py
+    def test_first_run_reports_no_drift_and_writes_manifest(
+        self, tmp_path: Path
+    ) -> None:
+        """A brand-new tree has no prior manifest to compare against, so
+        the first `run_diagnosis` call reports zero drift -- and leaves a
+        manifest behind for the next call to compare against."""
+        from frob.doctor import run_diagnosis
+
+        frob_dir = tmp_path / ".frob"
+        frob_dir.mkdir()
+        (frob_dir / "baseline").write_text('{"violations": []}')
+
+        report = run_diagnosis(tmp_path)
+        assert report.drift == []
+        assert (frob_dir / "derived-state-manifest.json").exists()
+
+    # frob:tests src/frob/doctor.py
+    def test_rewritten_artifact_between_two_runs_reports_drift(
+        self, tmp_path: Path
+    ) -> None:
+        """An artifact rewritten (still validly-formatted) between two
+        `frob doctor` runs is reported as drift naming both fingerprints
+        -- the T-0604 acceptance case."""
+        from frob.doctor import run_diagnosis
+
+        frob_dir = tmp_path / ".frob"
+        frob_dir.mkdir()
+        (frob_dir / "baseline").write_text('{"violations": []}')
+
+        first = run_diagnosis(tmp_path)
+        assert first.drift == []
+
+        # Simulate a foreign process/stale tool rewriting the artifact
+        # out-of-band, between the two doctor invocations.
+        (frob_dir / "baseline").write_text('{"violations": ["something new"]}')
+
+        second = run_diagnosis(tmp_path)
+        assert len(second.drift) == 1
+        drifted = second.drift[0]
+        assert drifted.name == "baseline"
+        assert drifted.previous_fingerprint != drifted.current_fingerprint
+        assert drifted.previous_fingerprint
+        assert drifted.current_fingerprint
+
+    # frob:tests src/frob/doctor.py
+    def test_drift_is_informational_and_does_not_affect_healthy(
+        self, tmp_path: Path
+    ) -> None:
+        """Drift alone (a validly-formatted artifact that simply changed)
+        must never flip `healthy` to False -- ordinary cache churn between
+        two `frob doctor` runs (frob's own tools rewriting their own
+        caches) is expected, not a failure."""
+        from frob.doctor import run_diagnosis
+
+        frob_dir = tmp_path / ".frob"
+        frob_dir.mkdir()
+        (frob_dir / "baseline").write_text('{"violations": []}')
+
+        run_diagnosis(tmp_path)
+        (frob_dir / "baseline").write_text('{"violations": ["something new"]}')
+        second = run_diagnosis(tmp_path)
+
+        assert second.drift != []
+        assert second.healthy is True
+
+    # frob:tests src/frob/doctor.py
+    def test_unchanged_artifact_reports_no_drift(self, tmp_path: Path) -> None:
+        """An artifact that is byte-identical across two runs is never
+        reported as drift."""
+        from frob.doctor import run_diagnosis
+
+        frob_dir = tmp_path / ".frob"
+        frob_dir.mkdir()
+        (frob_dir / "baseline").write_text('{"violations": []}')
+
+        run_diagnosis(tmp_path)
+        second = run_diagnosis(tmp_path)
+
+        assert second.drift == []
+
+    # frob:tests src/frob/doctor.py
+    def test_malformed_manifest_is_treated_as_no_prior_run(
+        self, tmp_path: Path
+    ) -> None:
+        """A corrupt/malformed manifest file (itself derived state) must
+        not crash `run_diagnosis` -- it degrades to "no prior data",
+        exactly like a missing manifest."""
+        from frob.doctor import run_diagnosis
+
+        frob_dir = tmp_path / ".frob"
+        frob_dir.mkdir()
+        (frob_dir / "baseline").write_text('{"violations": []}')
+        (frob_dir / "derived-state-manifest.json").write_text("not json at all")
+
+        report = run_diagnosis(tmp_path)
+        assert report.drift == []
+        assert report.healthy is True
+
+
 class TestDoctorScaffoldConformance:
     """T-0736: `frob doctor` folds managed-boilerplate-block conformance
     into the overall verdict, opt-in on `frob.toml` existing."""

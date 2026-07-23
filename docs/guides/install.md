@@ -325,12 +325,51 @@ the text report's overall `healthy`/`remediation` fields fold in any
 corrupt entry alongside the native-extension check above, naming the exact
 `rm -f <path>` for each offender.
 
-T-0570 deliberately scoped this to `src/frob/doctor.py` reporting only:
-wiring an actual BLOCK into `frob check`/`frob gates` (so a corrupt cache
-cannot even be consulted, not just flagged) needs `src/frob/check/**` and
-`src/frob/gates/**`, both under other agents' live leases at the time of
-this ticket -- see the Done report for the follow-up ticket filed for that
-enforcement step.
+T-0570 originally scoped this to `src/frob/doctor.py` reporting only,
+noting that wiring an actual BLOCK into `frob check`/`frob gates` (so a
+corrupt cache cannot even be consulted, not just flagged) was out of
+scope. **That follow-up has since landed as T-0603**: `frob check`'s
+`run_check`/`run_check_cpp`/`run_check_rust`/`run_check_ts` entry points
+now each call `frob.check._derived_state_integrity_result` once,
+synchronously, before dispatching any stage, and fail the whole check run
+closed (a single `derived-state-integrity` ERROR result, code
+`DERIVED001`) if any derived artifact is present-but-corrupt -- see
+`docs/modules/gates.md#derived001-t-0603-derived-state-integrity-precheck`
+for the enforcement side.
+
+### Cross-run content drift (T-0604)
+
+<!-- frob:describes src/frob/doctor.py::detect_derived_state_drift -->
+
+T-0570's fingerprint check above is per-run: it catches an artifact that
+is malformed RIGHT NOW, but says nothing about an artifact that is still
+validly formatted yet was silently REWRITTEN out-of-band since the last
+`frob doctor` run (a stale tool or a foreign process touching a cache
+between two invocations). T-0604 closes that gap: `run_diagnosis`
+persists a `{artifact name: fingerprint}` manifest under
+`.frob/derived-state-manifest.json` after every run, and compares this
+run's fingerprints against the manifest the PREVIOUS run left behind
+(`detect_derived_state_drift`). Any artifact present in both, with a
+fingerprint mismatch, is reported as a `DerivedArtifactDrift` entry
+(`name`, `path`, `previous_fingerprint`, `current_fingerprint`) in the
+new `DoctorReport.drift` list -- surfaced automatically via `frob doctor
+--json` alongside `derived_state`, no CLI rendering changes needed. An
+artifact missing from the prior manifest (first-ever run, or a newly
+added `DERIVED_ARTIFACTS` entry) or absent this run (deleted since, e.g.
+`frob clean`) never reports drift -- only a present-in-both,
+fingerprint-mismatched pair does.
+
+Drift is deliberately **informational only**: unlike T-0603's
+corrupt-artifact block above, it does NOT feed into
+`DoctorReport.healthy`/`remediation`. `frob`'s own tools legitimately
+rewrite these same caches between two `frob doctor` invocations during
+ordinary use -- running `frob check` updates `.frob/cache.db`, `frob dup`
+updates `.frob/dup.db`, and so on -- so treating every such expected
+rewrite as a hard failure would make a session's second `frob doctor`
+call cry wolf on completely normal churn. Callers that want the raw
+signal (an audit trail, "did anything touch my caches while I wasn't
+looking") read `DoctorReport.drift` or call
+`detect_derived_state_drift` directly.
 
 ## Scaffold managed-block conformance (T-0736)
 

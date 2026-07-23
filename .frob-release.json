@@ -290,11 +290,13 @@
     "src/frob/docs/__init__.py::overview": "7bdf5ce56bde94213fb2153e67eeb8d07e37a102b43fc7a97b44bf033ad36029",
     "src/frob/docs/__init__.py::search": "b3a9ed0fac89851d01ca88da07cfc6eaa69d3a67189fca0e5a5c30d167042890",
     "src/frob/doctor.py::DERIVED_ARTIFACTS": "e676221f7220b28e11b645b847e77b406797a9e8a5658fcc9fcb15d1a8627fee",
+    "src/frob/doctor.py::DerivedArtifactDrift": "5646973f887c8886812e612cba0e8d6f2437b1491d327fa309a669205d31cb50",
     "src/frob/doctor.py::DerivedArtifactStatus": "46c01a6894e15e81ad12cfe2c722989599360b0e2d23e6c9c2f4d5046e811085",
     "src/frob/doctor.py::DoctorReport": "5124e9b4331bb1078dd52623f0fa817b69e56254ea620a808f11346044a10d07",
     "src/frob/doctor.py::NATIVE_EXTENSIONS": "ffd76f39a459f41fcc3c55ee7e0faab4bf1714b127b00f3cd9646e89578c5448",
     "src/frob/doctor.py::NativeExtensionStatus": "fe9d34aedff7c69b12dc90075cf5a866902cc64f7115071e2569f63b141420da",
     "src/frob/doctor.py::REMEDIATION_HINT": "72cba9976f5df20853ad28c1ce4d321119df5f4c0588b11ec7e117f23e0801b6",
+    "src/frob/doctor.py::detect_derived_state_drift": "51c4b5fe0d2122161e27f362c3c5efe30fea75034249b908026f7468a6621ae1",
     "src/frob/doctor.py::run_diagnosis": "917cc603ca15dc0ffd9985b54551d7e2c5fd5ec62f5c89f673890705db3a6049",
     "src/frob/doctor.py::verify_derived_state": "49abd14b5828c5397700248137fe88c069f916fb8a465cab5b7ac92a61be3765",
     "src/frob/dup/_cache.py::get_fingerprint": "13d3a6a454e05691e443e7d8dc6ed772d0242112249fd8e098171317edde0f44",
@@ -1427,5 +1429,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.133.0"
+  "version": "0.134.0"
 }

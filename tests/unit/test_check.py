@@ -439,6 +439,57 @@ class TestRunGatesQueueFailure:
         assert any(d.severity == "error" for d in result.diagnostics)
 
 
+# frob:ticket T-0603
+class TestDerivedStateIntegrityGate:
+    """T-0603: a corrupt derived artifact must fail closed BEFORE any check
+    stage (gates or otherwise) is dispatched -- and an absent artifact
+    (fresh clone/post-clean) must not be mistaken for corruption.
+
+    The precheck runs once, synchronously, before the concurrent
+    `ThreadPoolExecutor` batch starts (not from inside a stage that runs
+    concurrently with `arch`/`dup`, which write the same caches) -- see
+    `_derived_state_integrity_result`'s docstring in
+    `frob.check.__init__` for the race this avoids."""
+
+    def test_corrupt_artifact_fails_closed_before_any_stage_runs(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/check/__init__.py::run_check kind="unit"
+        (tmp_path / "tickets.md").write_text("# Tickets\n")
+        frob_dir = tmp_path / ".frob"
+        frob_dir.mkdir()
+        (frob_dir / "cache.db").write_bytes(b"not a sqlite file at all")
+
+        def _fail_if_called(*_args: object, **_kwargs: object) -> None:
+            raise AssertionError(
+                "no check stage may run once a derived artifact has "
+                "already failed the integrity precheck"
+            )
+
+        monkeypatch.setattr("frob.check._python._run_ruff", _fail_if_called)
+        monkeypatch.setattr("frob.check._python._run_ty", _fail_if_called)
+        monkeypatch.setattr("frob.check._python._run_arch", _fail_if_called)
+        monkeypatch.setattr("frob.check._python._run_dup", _fail_if_called)
+        monkeypatch.setattr("frob.gates.run_gates", _fail_if_called)
+
+        check_result = run_check(tmp_path)
+
+        assert len(check_result.results) == 1
+        result = check_result.results[0]
+        assert result.tool == "derived-state-integrity"
+        assert result.exit_code != 0
+        assert any(d.code == "DERIVED001" for d in result.diagnostics)
+        assert "cache.db" in result.summary
+
+    def test_absent_artifact_is_not_a_violation(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/check/__init__.py::_derived_state_integrity_result kind="unit"
+        from frob.check import _derived_state_integrity_result
+
+        # A completely fresh tree: no .frob/ directory at all, nothing to
+        # be corrupt -- this must report no violation (absent != corrupt).
+        assert _derived_state_integrity_result(tmp_path) is None
+
+
 class TestRunGatesDelta:
     """T-0095: --delta filters to violations new since .frob/baseline."""
 

@@ -32,7 +32,19 @@ that catches it before dozens of misleading findings follow. Wiring an
 actual BLOCK into `frob check`/`frob gates` (rather than just reporting
 here) is out of this ticket's scope -- `src/frob/check/**` and
 `src/frob/gates/**` carry other agents' live leases at the time of this
-ticket -- see T-0570's Done report for the follow-up ticket filed for that.
+ticket -- see T-0570's Done report for the follow-up ticket filed for that
+(landed as T-0603).
+
+T-0604: `run_diagnosis` also persists a `{artifact name: fingerprint}`
+manifest under `.frob/derived-state-manifest.json` after every run and
+compares against the manifest the PREVIOUS run left behind
+(`detect_derived_state_drift`), so a valid-format artifact that was
+silently REWRITTEN out-of-band between two `frob doctor` invocations (not
+just one that is malformed right now, T-0570's check) shows up as named
+content drift with both fingerprints. This is deliberately informational
+(`DoctorReport.drift`, does not affect `healthy`) -- see that function's
+docstring for why treating ordinary cache churn between two doctor runs
+as a hard failure would be wrong.
 """
 
 from __future__ import annotations
@@ -111,6 +123,26 @@ class DerivedArtifactStatus(BaseModel):
     healthy: bool
     fingerprint: str | None = None
     detail: str | None = None
+
+
+# frob:doc docs/guides/install.md#derived-state-integrity-manifest-t-0570
+class DerivedArtifactDrift(BaseModel):
+    """Content drift detected for one derived artifact ACROSS TWO `frob
+    doctor` runs (T-0604): its fingerprint from the manifest the previous
+    run persisted no longer matches this run's live fingerprint, meaning
+    something rewrote the artifact between the two invocations. This is
+    orthogonal to `DerivedArtifactStatus.healthy` (T-0570's per-run
+    format/corruption check) -- an artifact can drift while staying
+    perfectly well-formed (a legitimate rewrite by a stale tool or a
+    foreign process is still valid SQLite/JSON, just different content
+    than last observed)."""
+
+    model_config = {}
+
+    name: str
+    path: str
+    previous_fingerprint: str
+    current_fingerprint: str
 
 
 def _sqlite_validity(data: bytes) -> str | None:
@@ -193,6 +225,104 @@ def verify_derived_state(root: Path) -> tuple[DerivedArtifactStatus, ...]:
     )
 
 
+#: `.frob/` cache dir this manifest lives under (T-0604) -- derived,
+#: gitignored bookkeeping the same way every other entry in
+#: `DERIVED_ARTIFACTS` is; deliberately NOT itself in `DERIVED_ARTIFACTS`
+#: (a manifest fingerprinting its own drift would be circular).
+_DRIFT_MANIFEST_REL_PATH = ".frob/derived-state-manifest.json"
+
+
+def _load_drift_manifest(root: Path) -> dict[str, str]:
+    """Best-effort load of the `{artifact name: fingerprint}` manifest the
+    PREVIOUS `frob doctor` run persisted (T-0604). Missing, unreadable, or
+    malformed manifest data is treated as "no prior run to compare
+    against" (an empty dict) rather than raised -- the manifest is itself
+    disposable derived-state bookkeeping, not a source of truth worth
+    failing over."""
+    path = root / _DRIFT_MANIFEST_REL_PATH
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, ValueError) as exc:
+        _log.warning(
+            "doctor: derived-state manifest at %s unreadable/malformed (%s), "
+            "treating as no prior run",
+            path,
+            exc,
+        )
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    return {k: v for k, v in data.items() if isinstance(k, str) and isinstance(v, str)}
+
+
+def _write_drift_manifest(root: Path, fingerprints: dict[str, str]) -> None:
+    """Persist this run's `{artifact name: fingerprint}` manifest (T-0604)
+    for the NEXT `frob doctor` run's drift comparison. Best-effort: a write
+    failure (read-only tree, missing `.frob/` permissions, ...) is logged
+    and swallowed, never raised -- failing to record a manifest must never
+    make `frob doctor` itself fail."""
+    path = root / _DRIFT_MANIFEST_REL_PATH
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps(fingerprints, indent=2, sort_keys=True), encoding="utf-8"
+        )
+    except OSError as exc:
+        _log.warning(
+            "doctor: failed to write derived-state manifest at %s: %s", path, exc
+        )
+
+
+# frob:doc docs/guides/install.md#derived-state-integrity-manifest-t-0570
+# frob:tests tests/system/test_cli_doctor.py kind="integration"
+# frob:tests tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift.test_rewritten_artifact_between_two_runs_reports_drift kind="unit"  # noqa: E501
+def detect_derived_state_drift(
+    root: Path, current: tuple[DerivedArtifactStatus, ...]
+) -> tuple[DerivedArtifactDrift, ...]:
+    """Compare `current`'s fingerprints against the manifest the PREVIOUS
+    `frob doctor` run persisted (T-0604) and report every artifact whose
+    content changed since then -- content drift, distinct from
+    `verify_derived_state`'s per-run format/corruption check. An artifact
+    missing from the prior manifest (first-ever run, or a newly added
+    `DERIVED_ARTIFACTS` entry) or absent in `current` (deleted since, e.g.
+    `frob clean`) has nothing to compare and never reports drift; only a
+    present-in-both, fingerprint-mismatched pair does.
+
+    Deliberately informational only -- this does NOT feed into
+    `DoctorReport.healthy`/`remediation` the way T-0603's corrupt-artifact
+    check does. `frob`'s OWN tools legitimately rewrite these same caches
+    between two `frob doctor` invocations in normal use (running `frob
+    check` updates `.frob/cache.db`, `frob dup` updates `.frob/dup.db`,
+    ...); treating every such ordinary rewrite as a hard failure would make
+    a session's second `frob doctor` call cry wolf on completely expected
+    churn. Callers that want the raw signal (an audit trail, a "did
+    anything touch my caches while I wasn't looking" check) read this
+    return value or `DoctorReport.drift` directly."""
+    previous = _load_drift_manifest(root)
+    drift: list[DerivedArtifactDrift] = []
+    for d in current:
+        if d.fingerprint is None:
+            continue
+        prev_fingerprint = previous.get(d.name)
+        if prev_fingerprint is not None and prev_fingerprint != d.fingerprint:
+            drift.append(
+                DerivedArtifactDrift(
+                    name=d.name,
+                    path=d.path,
+                    previous_fingerprint=prev_fingerprint,
+                    current_fingerprint=d.fingerprint,
+                )
+            )
+    if drift:
+        _log.info(
+            "doctor: derived-state drift detected for %s since last frob doctor run",
+            [d.name for d in drift],
+        )
+    return tuple(drift)
+
+
 # frob:doc docs/guides/install.md#derived-state-integrity-manifest-t-0570
 def _derived_state_remediation(corrupt: tuple[DerivedArtifactStatus, ...]) -> str:
     """One clear remediation line naming every corrupt derived artifact and
@@ -216,15 +346,20 @@ def _scaffold_remediation(missing_or_stale: tuple[ManagedBlockStatus, ...]) -> s
 # frob:doc docs/guides/install.md#frob-doctor-native-extension-diagnosis-t-0319
 class DoctorReport(BaseModel):
     """Full `frob doctor` diagnosis: per-extension status, derived-artifact
-    integrity manifest (T-0570), managed-boilerplate-block conformance
-    (T-0736), the overall verdict, and remediation hint (empty when
-    everything is healthy)."""
+    integrity manifest (T-0570), cross-run content drift (T-0604),
+    managed-boilerplate-block conformance (T-0736), the overall verdict,
+    and remediation hint (empty when everything is healthy).
+
+    `drift` is informational only -- see `detect_derived_state_drift`'s
+    docstring for why it does not feed into `healthy`/`remediation` the
+    way a corrupt (`derived_state`) artifact does."""
 
     model_config = {}
 
     frob_version: str
     extensions: list[NativeExtensionStatus]
     derived_state: list[DerivedArtifactStatus] = []
+    drift: list[DerivedArtifactDrift] = []
     scaffold_blocks: list[ManagedBlockStatus] = []
     healthy: bool
     remediation: str | None = None
@@ -281,14 +416,26 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
     its integrity check; `remediation` names whichever failed. `root`
     defaults to the current working directory, matching every other
     `frob` command's implicit-root convention -- passing it explicitly is
-    for tests and non-CLI callers."""
+    for tests and non-CLI callers.
+
+    T-0604: also compares this run's fingerprints against the manifest the
+    PREVIOUS `frob doctor` run persisted (`detect_derived_state_drift`)
+    and stamps a fresh manifest for the NEXT run before returning --
+    `report.drift` is informational only and does not affect `healthy`,
+    see that function's docstring for why."""
+    resolved_root = root or Path.cwd()
     extensions = [_extension_status(name) for name in NATIVE_EXTENSIONS]
     natives_healthy = all(ext.available for ext in extensions)
 
-    derived_state = verify_derived_state(root or Path.cwd())
+    derived_state = verify_derived_state(resolved_root)
     corrupt = tuple(d for d in derived_state if d.present and not d.healthy)
+    drift = detect_derived_state_drift(resolved_root, derived_state)
+    _write_drift_manifest(
+        resolved_root,
+        {d.name: d.fingerprint for d in derived_state if d.fingerprint is not None},
+    )
 
-    scaffold_blocks = scaffold_conformance_status(root or Path.cwd())
+    scaffold_blocks = scaffold_conformance_status(resolved_root)
     scaffold_needs_apply = tuple(s for s in scaffold_blocks if not s.present or s.stale)
 
     healthy = natives_healthy and not corrupt and not scaffold_needs_apply
@@ -296,6 +443,7 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
         frob_version=_frob_version(),
         extensions=extensions,
         derived_state=list(derived_state),
+        drift=list(drift),
         scaffold_blocks=list(scaffold_blocks),
         healthy=healthy,
         remediation=_combined_remediation(
@@ -303,11 +451,12 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
         ),
     )
     _log.info(
-        "doctor: healthy=%s extensions=%s derived_state_corrupt=%s "
+        "doctor: healthy=%s extensions=%s derived_state_corrupt=%s drift=%s "
         "scaffold_needs_apply=%s",
         healthy,
         extensions,
         [d.name for d in corrupt],
+        [d.name for d in drift],
         [s.block_id for s in scaffold_needs_apply],
     )
     return report

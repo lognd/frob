@@ -1998,7 +1998,7 @@ Deferred remainder of T-0177 deliverable 2. The warm daemon caches graph snapsho
 ```yaml
 id: T-0603
 title: wire derived-state integrity manifest into frob check/gates as a hard block
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-22'
@@ -2007,20 +2007,186 @@ parent: T-0570
 scope:
 - src/frob/check/**
 - src/frob/gates/**
+- tests/unit/test_check.py
+- docs/modules/gates.md
+scope_changes:
+- op: add
+  glob: tests/unit/test_check.py
+  reason: 'Evidence for the new wiring (corrupt-vs-absent derived-state precheck)
+
+    lives in tests/unit/test_check.py, alongside the existing _run_gates/
+
+    run_check unit tests it extends; adding a test file for one new function
+
+    would duplicate the existing suite''s fixtures and test-collection setup.
+
+    '
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'docs/modules/gates.md is where the rule-catalog frob:doc anchor for the
+
+    new DERIVED001 precheck lives; documenting a new public symbol in the
+
+    same change as the code is required by the playbook (section: New public
+
+    symbols need both a frob:doc and a frob:tests edge).
+
+    '
+  actor: logan
+  at: '2026-07-23'
+evidence:
+- tests/unit/test_check.py::TestDerivedStateIntegrityGate::test_corrupt_artifact_fails_closed_before_any_stage_runs
+- tests/unit/test_check.py::TestDerivedStateIntegrityGate::test_absent_artifact_is_not_a_violation
+- tests/unit/test_check.py::TestCheckBuildsGraphOnce::test_run_check_calls_build_graph_exactly_once
 acceptance:
 - text: GIVEN a truncated .frob/cache.db WHEN frob check runs THEN the run fails closed
     naming the corrupt artifact before any gate consumes it
-  evidence: []
+  evidence:
+  - tests/unit/test_check.py::TestDerivedStateIntegrityGate::test_corrupt_artifact_fails_closed_before_any_stage_runs
 threat: null
 component: null
 ```
 T-0570 landed the doctor-first fingerprint/format check (verify_derived_state in src/frob/doctor.py) but frob check/gates still consume derived state (.frob caches, coverage stamp, baseline) without consulting it -- corrupt state is reported by doctor, not blocked at the gate boundary. Wire verify_derived_state in so a corrupt derived artifact fails closed before any gate trusts it. NOTE: T-0570's Done report references this as T-draft-1327a057 (and mislabels it as T-0571); the draft did not survive land (T-0577 tracks the draft-loss bug), so this ticket is its real replacement.
 
+## Done report
+
+T-0570 landed verify_derived_state (frob.doctor) but nothing in frob check
+ever consulted it, so a corrupt .frob cache/baseline/coverage artifact
+would silently feed wrong data into the graph/dup/gates pipeline instead
+of failing loudly. This ticket wires the precheck into every run_check*
+entry point (run_check, run_check_cpp, run_check_rust, run_check_ts) so a
+present-but-corrupt derived artifact short-circuits the whole check run
+with a single derived-state-integrity ERROR ToolResult (diagnostic code
+DERIVED001) before any stage is dispatched.
+
+Design decision: absent vs corrupt. verify_derived_state already treats a
+missing artifact as healthy (T-0570); this ticket preserves that -- only
+present-but-invalid (fails the sqlite-magic-header or json.loads check)
+trips the new precheck. A fresh clone or post-clean tree never sees this
+fire.
+
+Design decision: where the check runs. The first implementation put the
+check inside _run_gates (the shared choke point every run_check* variant
+calls). That was wrong: arch/dup/gates all read or rebuild the same
+.frob/cache.db concurrently inside frob check's ThreadPoolExecutor batch,
+so fingerprinting from inside one of those stages raced the others' live
+writes -- a cache mid-rebuild, observed by another thread, reads as
+"corrupt" (truncated bytes) when it is merely momentarily in-progress.
+This surfaced for real: TestCheckBuildsGraphOnce's existing
+test_run_check_calls_build_graph_exactly_once started failing
+intermittently once the in-_run_gates version was wired in, because the
+gates stage's integrity check sometimes observed arch's still-empty
+cache.db and refused before build_graph ran at all. The fix was to move
+the check to frob.check._derived_state_integrity_result, called once,
+synchronously, in each run_check* entry point BEFORE any concurrent stage
+is dispatched -- this serializes the integrity read ahead of every writer
+and is also cheaper (one fingerprint pass per frob check run, not one per
+gate family). _run_gates's docstring was updated to explain the
+precondition is now guaranteed by its caller, not itself.
+
+What changed:
+- src/frob/check/__init__.py: new _derived_state_integrity_result(root)
+  helper; wired as the first thing run_check (via
+  _run_check_with_skips), run_check_cpp, run_check_rust, and
+  run_check_ts all do, before dispatching any stage.
+- src/frob/check/_python.py: _run_gates's docstring updated to note the
+  precondition is enforced by its caller now (no functional change to
+  this file beyond the docstring).
+- tests/unit/test_check.py: new TestDerivedStateIntegrityGate class
+  (corrupt artifact fails closed with no stage dispatched; absent
+  artifact is not a violation) plus a scope extension (this file was
+  outside T-0603's original scope, added via frob ticket scope --add).
+- docs/modules/gates.md: new "DERIVED001 (T-0603)" subsection explaining
+  the mechanism, the absent-vs-corrupt distinction, why it is not one of
+  _KNOWN_GATE_RULES (a check-orchestration precondition, not a waivable
+  Violation), and the race the up-front placement avoids. Scope extended
+  to cover this file for the same reason (frob:doc + docs in the same
+  change).
+
+Mutant kill (hand-verified, T-0603): temporarily removed the
+integrity-precheck short-circuit from run_check's _run_check_with_skips
+(restoring the direct call into _python_tasks with no guard) and reran
+tests/unit/test_check.py -k DerivedStateIntegrity -- the corrupt-artifact
+test failed with the expected AssertionError from its
+monkeypatched-run_gates tripwire ("no check stage may run once a derived
+artifact has already failed the integrity precheck"), confirming the test
+actually exercises the wiring rather than passing vacuously. Restored the
+real implementation afterward and reran green.
+
+Evidence executed and observed:
+- tests/unit/test_check.py::TestDerivedStateIntegrityGate::test_corrupt_artifact_fails_closed_before_any_stage_runs
+- tests/unit/test_check.py::TestDerivedStateIntegrityGate::test_absent_artifact_is_not_a_violation
+- tests/unit/test_check.py::TestCheckBuildsGraphOnce::test_run_check_calls_build_graph_exactly_once
+  (the regression this ticket's initial design caused and then fixed;
+  bound as evidence because it is what actually caught the race)
+- Full targeted file: uv run pytest tests/unit/test_check.py -q -o addopts=""
+  -> 42 passed
+- Full verify list from the ticket brief (tests/system/test_cli_check.py,
+  tests/test_check_coverage_registry.py, tests/test_gates.py,
+  tests/test_gates_fmt_directives.py, tests/test_gates_mutation_evidence.py,
+  tests/test_gates_ratchet.py, tests/test_gates_tick005.py,
+  tests/test_gates_tickets_hygiene.py, tests/test_gates_worktree_lease.py,
+  tests/unit/test_check.py, tests/unit/test_check_tool_unavailable.py)
+  -> 560 passed, 3 failed. The 3 failures are pre-existing and unrelated
+  to this change, already tracked in tickets.md before this ticket
+  started: TestGitlessTargetGateSeverity::test_render_lint_gate_warns_not_errors_on_gitless_root
+  (documented order-dependent capsys/logging flake, T-0818) and both
+  TestCheckCoverageRegistryFile/TestExhaustivenessGateOverRealCheckCoverage
+  failures (missing CHK-GATE-TEST016 registry entry, pre-existing REG010
+  gap already filed in tickets.md, "gate: TEST016 missing CHK-GATE-TEST016
+  registry entry (REG010, pre-existing)"). Confirmed unrelated: git diff
+  --name-only shows only src/frob/check/__init__.py,
+  src/frob/check/_python.py, tests/unit/test_check.py, docs/modules/gates.md,
+  and tickets.md touched by this ticket -- none of the failing tests'
+  underlying files are in that set.
+
+Gates: frob check --only lint/static/gates-fast/gates-native/gates-security
+--ticket T-0603 all clean (0 errors) after adding the frob:ticket edge on
+the new test class, correcting the frob:tests qualname separator
+(Class.method, not Class::method), and extending scope to
+tests/unit/test_check.py and docs/modules/gates.md (both needed for the
+frob:doc/frob:tests obligations on the new symbol). git diff main
+--diff-filter=D --stat is empty.
+
+Deviations from the initial plan: none in outcome, but the implementation
+went through one design correction mid-ticket (in-_run_gates check ->
+up-front precheck in each run_check* entry point) after the concurrency
+race described above was caught by existing test coverage, not new
+coverage written for this ticket. No scope other than the two
+documentation/test-file additions above was widened.
+
+Filed: none (no out-of-scope discoveries beyond the two already-tracked
+pre-existing failures noted above).
+
+### Changed
+```
+ docs/guides/install.md          |  51 +++++-
+ docs/modules/gates.md           |  45 ++++++
+ src/frob/check/__init__.py      |  90 +++++++++++
+ src/frob/check/_python.py       |  10 ++
+ src/frob/doctor.py              | 165 ++++++++++++++++++-
+ tests/system/test_cli_doctor.py | 106 +++++++++++++
+ tests/unit/test_check.py        |  51 ++++++
+ tickets.md                      | 341 +++++++++++++++++++++++++++++++++++++++-
+ 8 files changed, 841 insertions(+), 18 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_check.py::TestDerivedStateIntegrityGate::test_corrupt_artifact_fails_closed_before_any_stage_runs` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDerivedStateIntegrityGate::test_absent_artifact_is_not_a_violation` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestCheckBuildsGraphOnce::test_run_check_calls_build_graph_exactly_once` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
+
 <!-- ticket:T-0604 -->
 ```yaml
 id: T-0604
 title: 'derived-state manifest: persist fingerprints and detect drift across runs'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -2029,15 +2195,183 @@ parent: T-0570
 scope:
 - src/frob/doctor.py
 - tests/system/test_cli_doctor.py
+- docs/guides/install.md
+scope_changes:
+- op: add
+  glob: docs/guides/install.md
+  reason: 'docs/guides/install.md#derived-state-integrity-manifest-t-0570 is where
+
+    DerivedArtifactDrift and detect_derived_state_drift''s frob:doc anchor
+
+    lives; the section still described T-0570''s reporting-only behavior and
+
+    still pointed at "out of scope, see follow-up" for the block that T-0603
+
+    already landed -- documenting the new drift symbols and correcting the
+
+    stale sentence belongs in the same change as the code (frob:doc +
+
+    docs in the same change).
+
+    '
+  actor: logan
+  at: '2026-07-23'
+evidence:
+- tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift::test_first_run_reports_no_drift_and_writes_manifest
+- tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift::test_rewritten_artifact_between_two_runs_reports_drift
+- tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift::test_drift_is_informational_and_does_not_affect_healthy
+- tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift::test_unchanged_artifact_reports_no_drift
+- tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift::test_malformed_manifest_is_treated_as_no_prior_run
 acceptance:
 - text: GIVEN a derived artifact rewritten out-of-band between two doctor runs WHEN
     run_diagnosis executes THEN the drift is reported naming the artifact and both
     fingerprints
-  evidence: []
+  evidence:
+  - tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift::test_first_run_reports_no_drift_and_writes_manifest
 threat: null
 component: null
 ```
 T-0570 computes sha256 fingerprints per run and validates format (SQLite magic, JSON parse) but never persists them -- so content DRIFT between runs (an artifact silently rewritten by a stale tool or a foreign process) is undetectable; only malformed bytes are caught. Store the fingerprints in a manifest file and compare on the next doctor run, reporting any artifact whose hash changed without a corresponding legitimate producer run. Flagged by T-0570's reviewer as the gap between the ticket title's 'manifest' promise and the delivered check-on-read.
+
+## Done report
+
+T-0570 computed per-run sha256 fingerprints and validated format
+(SQLite magic header, json.loads) but never persisted them, so content
+DRIFT between two frob doctor runs (an artifact silently rewritten by a
+stale tool or a foreign process, still valid bytes, just different
+content) was undetectable -- only malformed bytes were caught. This
+ticket adds the missing persistence half: a manifest file under
+.frob/derived-state-manifest.json storing {artifact name: fingerprint},
+written after every run_diagnosis call, compared against on the NEXT
+call.
+
+Design decision: manifest location and format. .frob/derived-state-
+manifest.json, plain JSON, keyed by artifact name (not path, matching
+DERIVED_ARTIFACTS' own key). This lives under .frob/, the same
+gitignored derived-cache directory every other entry in
+DERIVED_ARTIFACTS lives under -- never a tracked file. It is
+deliberately excluded from DERIVED_ARTIFACTS itself (a manifest
+fingerprinting its own drift would be circular) and best-effort on both
+read and write: a missing or malformed manifest degrades to "no prior
+run to compare against" (empty dict) rather than raising, and a write
+failure is logged and swallowed rather than raised -- the manifest is
+disposable bookkeeping, not a source of truth worth failing the whole
+diagnosis over.
+
+Design decision: drift is informational, not a hard failure. Unlike
+T-0603's corrupt-artifact block (which DOES fail closed), a fingerprint
+mismatch between two doctor runs does NOT flip DoctorReport.healthy to
+False. Reasoning: frob's own tools legitimately rewrite these same
+caches during ordinary use between two frob doctor invocations --
+running frob check updates .frob/cache.db, frob dup updates
+.frob/dup.db, etc. Treating every such expected rewrite as a failure
+would make a session's second frob doctor call cry wolf on completely
+normal churn, which is a worse failure mode than the drift-blindness
+this ticket is fixing. detect_derived_state_drift's docstring documents
+this explicitly.
+
+Round-1 review REJECT and the fix applied this round: the reviewer found
+that DerivedArtifactDrift and detect_derived_state_drift's frob:doc
+edges pointed at docs/guides/install.md#derived-state-integrity-manifest-t-0570,
+but that section was never touched by the round-1 diff -- it still
+described only T-0570's reporting-only behavior, said nothing about
+DoctorReport.drift or either new symbol, and still called the
+enforcement block "out of this ticket's scope, see the Done report for
+the follow-up" even though that follow-up (T-0603) has since landed in
+this same worktree. The anchor mechanically resolved (satisfying gate:DOC)
+while the prose behind it was stale and, after T-0603 landed, actively
+wrong. Fixed this round: scope widened to docs/guides/install.md (frob
+ticket scope --add, same reason pattern T-0603 used for
+docs/modules/gates.md); the T-0570 paragraph now says the block landed as
+T-0603 and cross-references docs/modules/gates.md's DERIVED001 section;
+a new "Cross-run content drift (T-0604)" subsection documents
+DoctorReport.drift, DerivedArtifactDrift, detect_derived_state_drift, and
+the informational-only rationale, with its own frob:describes anchor for
+detect_derived_state_drift.
+
+What changed (round 2, on top of round 1):
+- docs/guides/install.md: corrected the stale "out of scope" sentence in
+  the existing T-0570 section to point at T-0603/DERIVED001 as landed;
+  added a "Cross-run content drift (T-0604)" subsection under the same
+  H2 covering the new symbols and design rationale.
+- tickets.md: scope extended to include docs/guides/install.md.
+
+What changed (round 1, unchanged this round):
+- src/frob/doctor.py: new DerivedArtifactDrift model; _load_drift_manifest
+  / _write_drift_manifest private helpers (best-effort load/persist);
+  new public detect_derived_state_drift(root, current) function; new
+  DoctorReport.drift field; run_diagnosis now calls
+  detect_derived_state_drift before writing the fresh manifest for the
+  next run. Module docstring updated with the T-0604 paragraph.
+- tests/system/test_cli_doctor.py: new TestDoctorDerivedStateDrift class
+  covering first-run (no prior manifest -> no drift, manifest written),
+  a rewritten artifact between two runs (drift reported with both
+  fingerprints -- the acceptance case), drift not affecting healthy, an
+  unchanged artifact reporting no drift, and a malformed manifest
+  degrading to "no prior run" rather than crashing.
+
+Mutant kill (hand-verified, T-0604, round 1, still valid -- no logic
+changed this round): temporarily replaced detect_derived_state_drift's
+mismatch condition (prev_fingerprint is not None and prev_fingerprint !=
+d.fingerprint) with False and reran tests/system/test_cli_doctor.py -k
+TestDoctorDerivedStateDrift -- test_rewritten_artifact_between_two_runs_reports_drift
+and test_drift_is_informational_and_does_not_affect_healthy both failed
+(asserting drift != [] against an actual [] drift list), confirming the
+tests actually exercise the comparison logic. Restored the real
+implementation afterward and reran green (18 passed).
+
+Evidence executed and observed:
+- tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift::test_first_run_reports_no_drift_and_writes_manifest
+- tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift::test_rewritten_artifact_between_two_runs_reports_drift
+- tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift::test_drift_is_informational_and_does_not_affect_healthy
+- tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift::test_unchanged_artifact_reports_no_drift
+- tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift::test_malformed_manifest_is_treated_as_no_prior_run
+- Full file re-run after the doc fix: uv run pytest tests/system/test_cli_doctor.py
+  -q -o addopts="" -> 18 passed (doc-only change, no source touched this
+  round, confirmed unaffected)
+
+Gates (re-run after the doc fix): frob check --only lint/static/gates-fast
+--ticket T-0604 clean, including gate:DOC (0 errors, 2 warnings) and
+gate:DRIFT (0 errors, 0 warnings, 2 waived) specifically. One disclosed,
+unresolved COV002 finding on tests/unit/test_check.py (outside T-0604's
+scope, T-0603's own test file) persists because T-0603 closed earlier in
+this same worktree/branch, so its frob:ticket T-0603 edge no longer
+points to an "open" ticket relative to this check's base=main comparison
+-- a serial-chain artifact of doing two tickets in one worktree before
+landing, not caused by any T-0604 change, and it self-resolves once both
+tickets land on real main. git diff main --diff-filter=D --stat is empty.
+
+Deviations: none in outcome beyond the round-1-to-round-2 scope widening
+described above, which was explicitly directed by the review finding.
+
+Filed: none (no new out-of-scope discoveries this round; the coordinator
+is separately filing the TOCTOU residual noted on T-0603, unrelated to
+this ticket).
+
+### Changed
+```
+ docs/guides/install.md          |  51 +++++-
+ docs/modules/gates.md           |  45 ++++++
+ src/frob/check/__init__.py      |  90 +++++++++++
+ src/frob/check/_python.py       |  10 ++
+ src/frob/doctor.py              | 165 ++++++++++++++++++-
+ tests/system/test_cli_doctor.py | 106 +++++++++++++
+ tests/unit/test_check.py        |  51 ++++++
+ tickets.md                      | 341 +++++++++++++++++++++++++++++++++++++++-
+ 8 files changed, 841 insertions(+), 18 deletions(-)
+```
+
+### Evidence
+- `tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift::test_first_run_reports_no_drift_and_writes_manifest` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift::test_rewritten_artifact_between_two_runs_reports_drift` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift::test_drift_is_informational_and_does_not_affect_healthy` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift::test_unchanged_artifact_reports_no_drift` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift::test_malformed_manifest_is_treated_as_no_prior_run` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 0 error(s), 980 warning(s), 220 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0605 -->
 ```yaml

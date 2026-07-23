@@ -570,6 +570,16 @@ def _run_gates(
     agent-facing signal-only mode; a missing or stale baseline degrades to
     the full (unfiltered) set with a WARN diagnostic, never a silent no-op.
 
+    T-0603: `frob.check._derived_state_integrity_result` (called once,
+    synchronously, before any check task is dispatched -- see
+    `_run_check_with_skips`/`run_check_cpp`/`run_check_rust`/`run_check_ts`)
+    guards this stage against ever running against a corrupt derived
+    artifact: a truncated/malformed cache or baseline file is caught
+    before dispatch, so by the time `_run_gates` runs concurrently
+    alongside stages that are themselves writing to those same caches
+    (`arch`/`dup`, T-0603's own regression case), the check has already
+    happened and cannot race a live writer.
+
     T-0420: a successful run now reports as a LIST of `ToolResult`s -- one
     named `gate:<FAMILY>` stage per rule family plus a trailing
     `gate-summary` totals+timing line -- rather than one monolithic
