@@ -720,6 +720,11 @@ cwe_entries:
   source_doc: docs/design/cwe-1000-registry.md
   disposition: deferred:T-0684
   cross_refs: []
+# T-0674 adjudication: AFFIRMED. RECONCILIATION.md finding (e) tension
+# (security-corpus.md's Top-25 "advisory/checkable" framing vs this
+# registry's stricter classifier). Ruling: classic buffer overflow is a
+# structural instance of CWE-787 (Out-of-bounds Write); duplicate-of
+# stands, not a code-catalog gap. security-corpus.md updated to match.
 - id: CWE-120
   name: Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')
   abstraction: Base
@@ -728,6 +733,9 @@ cwe_entries:
   disposition: duplicate-of:CWE-787
   cross_refs:
   - security-corpus:cwe-top25-2025
+# T-0674 adjudication: AFFIRMED. Same tension as CWE-120 (see above).
+# Ruling: stack-based overflow is a CWE-119 (memory-buffer-bounds)
+# variant per CWE-1000's own child listing; duplicate-of stands.
 - id: CWE-121
   name: Stack-based Buffer Overflow
   abstraction: Variant
@@ -736,6 +744,9 @@ cwe_entries:
   disposition: duplicate-of:CWE-119
   cross_refs:
   - security-corpus:cwe-top25-2025
+# T-0674 adjudication: AFFIRMED. Same tension as CWE-120/121 (see above).
+# Ruling: heap-based overflow is a CWE-119 variant, same rationale as
+# CWE-121; duplicate-of stands.
 - id: CWE-122
   name: Heap-based Buffer Overflow
   abstraction: Variant
@@ -1221,6 +1232,12 @@ cwe_entries:
   source_doc: docs/design/cwe-1000-registry.md
   disposition: out-of-scope:generic-precondition-model
   cross_refs: []
+# T-0674 adjudication: AFFIRMED. RECONCILIATION.md finding (e) tension
+# (security-corpus.md's Top-25 "advisory/checkable" framing vs this
+# registry's stricter classifier). Ruling: sensitive-info exposure
+# requires a role/authz-boundary model the kernel does not have;
+# out-of-scope stands, not a code-catalog gap. security-corpus.md
+# updated to match.
 - id: CWE-200
   name: Exposure of Sensitive Information to an Unauthorized Actor
   abstraction: Class
@@ -1719,6 +1736,9 @@ cwe_entries:
   source_doc: docs/design/cwe-1000-registry.md
   disposition: out-of-scope:generic-precondition-model
   cross_refs: []
+# T-0674 adjudication: AFFIRMED. Same tension as CWE-200 (see above).
+# Ruling: Pillar-level access control is the same missing-model case as
+# CWE-200/285/863; out-of-scope stands, not a code-catalog gap.
 - id: CWE-284
   name: Improper Access Control
   abstraction: Pillar
@@ -4366,6 +4386,12 @@ cwe_entries:
   source_doc: docs/design/cwe-1000-registry.md
   disposition: out-of-scope:generic-precondition-model
   cross_refs: []
+# T-0674 adjudication: AFFIRMED. RECONCILIATION.md finding (e) tension
+# (security-corpus.md's Top-25 "advisory/checkable" framing vs this
+# registry's stricter classifier). Ruling: resource-budget-vs-input-size
+# has no kernel model outside the unrelated T-0066 latency budget;
+# out-of-scope stands, not a code-catalog gap. security-corpus.md
+# updated to match.
 - id: CWE-770
   name: Allocation of Resources Without Limits or Throttling
   abstraction: Base

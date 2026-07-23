@@ -45,34 +45,60 @@ Primary source: https://cwe.mitre.org/top25/archive/2025/2025_cwe_top25.html
 | 8 | CWE-125 | Out-of-bounds Read | advisory | [IN-REPO] `CWE_TOP_25_OUT_OF_SCOPE` |
 | 9 | CWE-78 | OS Command Injection | design-level-provable | [IN-REPO] `CWE_CATALOG` |
 | 10 | CWE-94 | Code Injection | design-level-provable | [IN-REPO] `CWE_TOP_25_CATALOG` |
-| 11 | CWE-120 | Classic Buffer Overflow | advisory (no buffer model) | **NEW to 2025 list; NOT in repo -- gap** |
+| 11 | CWE-120 | Classic Buffer Overflow | advisory (no buffer model) | registry-dispositioned: `duplicate-of:CWE-787` (`weaknesses.yaml`) -- structurally subsumed, not a code-catalog gap (T-0674) |
 | 12 | CWE-434 | Unrestricted File Upload | advisory | [IN-REPO] `CWE_TOP_25_OUT_OF_SCOPE` |
 | 13 | CWE-476 | NULL Pointer Dereference | advisory | [IN-REPO] `CWE_TOP_25_OUT_OF_SCOPE` |
-| 14 | CWE-121 | Stack-based Buffer Overflow | advisory | **NEW to 2025 list; NOT in repo -- gap** |
+| 14 | CWE-121 | Stack-based Buffer Overflow | advisory | registry-dispositioned: `duplicate-of:CWE-119` (`weaknesses.yaml`) -- structurally subsumed, not a code-catalog gap (T-0674) |
 | 15 | CWE-502 | Deserialization of Untrusted Data | design-level-provable | [IN-REPO] `CWE_CATALOG` |
-| 16 | CWE-122 | Heap-based Buffer Overflow | advisory | **NEW to 2025 list; NOT in repo -- gap** |
+| 16 | CWE-122 | Heap-based Buffer Overflow | advisory | registry-dispositioned: `duplicate-of:CWE-119` (`weaknesses.yaml`) -- structurally subsumed, not a code-catalog gap (T-0674) |
 | 17 | CWE-863 | Incorrect Authorization | advisory | [IN-REPO] `CWE_TOP_25_OUT_OF_SCOPE` |
 | 18 | CWE-20 | Improper Input Validation | advisory (no structural precondition) | [IN-REPO] `CWE_TOP_25_OUT_OF_SCOPE` |
-| 19 | CWE-284 | Improper Access Control | advisory (no role/privilege model) | **NEW to 2025 list; NOT in repo -- gap** |
-| 20 | CWE-200 | Exposure of Sensitive Information | advisory | **NOT in any repo catalog -- gap** |
+| 19 | CWE-284 | Improper Access Control | advisory (no role/privilege model) | registry-dispositioned: `out-of-scope:authn-authz-boundary-predicate` (`weaknesses.yaml`) -- no code-catalog gap (T-0674) |
+| 20 | CWE-200 | Exposure of Sensitive Information | advisory | registry-dispositioned: `out-of-scope:authn-authz-boundary-predicate` (`weaknesses.yaml`) -- no code-catalog gap (T-0674) |
 | 21 | CWE-306 | Missing Authentication for Critical Function | advisory | [IN-REPO] `CWE_TOP_25_OUT_OF_SCOPE` |
 | 22 | CWE-918 | SSRF | design-level-provable | [IN-REPO] `CWE_CATALOG` |
 | 23 | CWE-77 | Command Injection (generic) | advisory (dup of CWE-78 fire path) | [IN-REPO] `CWE_TOP_25_OUT_OF_SCOPE` |
 | 24 | CWE-639 | Authz Bypass via User-Controlled Key | design-level-provable (reuses `sql` kind) | [IN-REPO] `QUALITY_CATALOG` (as security-family row, cited there) |
-| 25 | CWE-770 | Allocation of Resources Without Limits/Throttling | advisory (no resource-budget-vs-input-size model outside T-0066 latency budget) | **NEW to 2025 list; NOT in repo -- gap** |
+| 25 | CWE-770 | Allocation of Resources Without Limits/Throttling | advisory (no resource-budget-vs-input-size model outside T-0066 latency budget) | registry-dispositioned: `out-of-scope:memory-model` (`weaknesses.yaml`) -- no code-catalog gap (T-0674) |
 
 **Finding: the in-repo `CWE_TOP_25_CATALOG`/`CWE_TOP_25_OUT_OF_SCOPE` pair
 (`src/frob/strata/_threat.py` lines ~443-621) is pinned to the **2023**
 list** (its own comment cites
 `https://cwe.mitre.org/top25/archive/2023/2023_top25_list.html`). Two
-newer releases exist (2024, 2025) and five 2025-list ids
-(CWE-120/121/122/284/770) have never been transcribed into the repo at
-all, plus CWE-200 (present on 2025's list, absent from the repo's 2023
-transcription too -- it was not on the 2023 list either, a genuine new
-entrant). This is exactly the staleness case the repo's own docstring
-flags as an owed "gate warning" review. Denominator: 25 (2025 list) vs 25
-(2023 list, repo's pin) -- 20 ids carry over unchanged rank-membership
-(with reordering), 5 are net-new to 2025 and uncataloged.
+newer releases exist (2024, 2025); six 2025-list ids
+(CWE-120/121/122/200/284/770) are absent from that Python catalog's
+2023-pinned transcription. This is exactly the staleness case the repo's
+own docstring flags as an owed "gate warning" review for the CODE catalog
+specifically. Denominator: 25 (2025 list) vs 25 (2023 list, repo's pin) --
+19 ids carry over unchanged rank-membership (with reordering), 6 are
+absent from the 2023-pinned `_threat.py` transcription.
+
+**T-0674 adjudication (RECONCILIATION.md finding (e)):** this absence from
+`_threat.py` is NOT, on its own, evidence of a documentation gap in the
+weakness REGISTRY (`weaknesses.yaml`/`docs/design/cwe-1000-registry.md`).
+The registry already catalogues all six CWEs, each with a disposition from
+the stricter rule-based classifier, and each cross-referencing this table
+(`security-corpus:cwe-top25-2025`):
+
+| CWE | Registry disposition | Ruling |
+|---|---|---|
+| CWE-120 | `duplicate-of:CWE-787` | AFFIRMED -- classic buffer overflow is a structural instance of CWE-787 (Out-of-bounds Write); no separate registry entry needed. |
+| CWE-121 | `duplicate-of:CWE-119` | AFFIRMED -- stack-based overflow is a `CWE-119` (memory-buffer-bounds) variant per CWE-1000's own child listing. |
+| CWE-122 | `duplicate-of:CWE-119` | AFFIRMED -- heap-based overflow is a `CWE-119` variant, same rationale as CWE-121. |
+| CWE-200 | `out-of-scope:authn-authz-boundary-predicate` | AFFIRMED -- sensitive-info exposure requires a role/authz-boundary model the kernel does not have; correctly excused, not omitted. |
+| CWE-284 | `out-of-scope:authn-authz-boundary-predicate` | AFFIRMED -- Pillar-level access control is the same missing-model case as CWE-200/285/863; correctly excused. |
+| CWE-770 | `out-of-scope:memory-model` | AFFIRMED -- resource-budget-vs-input-size has no kernel model outside the unrelated T-0066 latency budget; correctly excused. |
+
+Each ruling affirms the registry's classifier-driven disposition as
+correct: none of the six is a silently dropped entry, and none requires a
+`weaknesses.yaml` change. The defect was this table's own "NOT in
+repo -- gap" phrasing, which conflated "absent from the 2023-pinned
+`_threat.py` CODE catalog" with "absent from the DOCUMENTATION registry" --
+those are two different denominators. The table rows above are corrected
+in place to cite the registry disposition instead of claiming a gap. The
+`_threat.py` 2023-to-2025 pin staleness remains real and is unaffected by
+this ruling; it is a separate, already-flagged code-catalog concern, not
+a registry gap.
 
 ### 1b. 2024 list (intermediate, for drift trail)
 Primary source: https://cwe.mitre.org/top25/archive/2024/2024_cwe_top25.html
@@ -250,7 +276,7 @@ not silently skipped nor fabricated.
 
 | Catalog | Denominator | Repo-covered (design-level-provable or needle-detectable) | Advisory (named, uncheckable today) | Gap (named here, absent from repo) |
 |---|---|---|---|---|
-| CWE Top 25 (2025) | 25 | 8 (CWE-79/89/78/94/502/918/22-partial/639) | 12 (memory-safety cluster + authz cluster + CWE-20/77/306) | 5 net-new-to-2025 uncataloged (CWE-120/121/122/284/770) + CWE-200 |
+| CWE Top 25 (2025) | 25 | 8 (CWE-79/89/78/94/502/918/22-partial/639) | 18 -- includes registry-dispositioned CWE-120/121/122/200/284/770 (T-0674; not gaps, see ruling above) | 0 (the 6 ids formerly listed here as "net-new-to-2025 uncataloged" are registry-dispositioned per T-0674, moved to the advisory column) |
 | OWASP Top 10 (2021) | 10 | 4 categories with partial `WeaknessEntry` coverage (A01 partial, A03, A08 partial, A10) + A06 in separate vet subsystem | 1 (A04, methodology category) | 5 with zero repo representation (A02, A05 non-XXE, A07, A09, and A01/A08's uncovered member CWEs) |
 | CVE fingerprint classes | 18 in-repo + 1 disclosed-non-shipped (Log4Shell/JNDI) = 19 total surveyed | 18 needle-detectable, shipped | -- | 1 (Log4Shell/JNDI -- no equivalent construct in any scanned language) |
 | Threat-modeling frameworks | 7 surveyed (STRIDE, LINDDUN, PASTA, attack trees, ATT&CK, CAPEC, +CWE-1000 as a structural view) | 0 (all methodology-level, not-checkable/advisory) | 7 | 0 (none claimed as checkable that isn't) |
