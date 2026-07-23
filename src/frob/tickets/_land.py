@@ -1640,6 +1640,12 @@ def _land_finalize_and_close(
     if rewritten.is_err:
         return Err(rewritten.danger_err)
 
+    waive_rewritten = _rewrite_draft_references_in_waive_sites(
+        worktree, draft_id_mapping
+    )
+    if waive_rewritten.is_err:
+        return Err(waive_rewritten.danger_err)
+
     committed = _commit_finalize_writes(worktree, final_id)
     if committed.is_err:
         return Err(committed.danger_err)
@@ -1839,6 +1845,124 @@ def _rewrite_draft_references_in_bodies(
             mapping,
             label,
             changed_ids,
+        )
+    return Ok(None)
+
+
+_WAIVE_REWRITE_EXCLUDED_LEDGERS = frozenset({"tickets.md", "tickets-archive.md"})
+
+
+# frob:ticket T-0812
+# frob:tests tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand.test_land_rewrites_strata_waive_clause_draft_id_reference  # noqa: E501
+def _rewrite_draft_references_in_waive_sites(
+    worktree: Path, mapping: dict[str, str]
+) -> Result[None, LandError]:
+    """Rewrite every WAIVE-site reference to a just-finalized draft id (the
+    same `mapping` `_rewrite_draft_references_in_bodies` consumes) across
+    every TRACKED file, not just ledger prose (T-0812).
+
+    `_rewrite_draft_references_in_bodies` (T-0811) only fixes up Done-
+    report prose in `tickets.md`/`tickets-archive.md` -- a `design/*.strata`
+    `waive "RULE" ... ticket "T-draft-<hex8>"` clause, or a source
+    `frob:waive RULE reason="..." ticket=T-draft-<hex8>` comment, citing
+    the SAME renumbered draft id stays dangling forever, because
+    `waive007_gate`'s `_waive007_is_exempt_dangling_ref` unconditionally
+    exempts every `T-draft-*` id from WAIVE007 (the original T-draft-
+    8cd37914 incident this exemption exists for). That exemption is safe
+    only as long as the waiver is rewritten to the final id at land time;
+    left as-is it silently becomes load-bearing instead -- a waiver
+    nobody can ever re-litigate because its ticket ref can never resolve
+    again. This closes that gap by extending the identical draft-id ->
+    final-id substitution to every tracked file a waive site could live
+    in, not just ledger bodies.
+
+    Grep-scoped cheaply via `git grep -l --fixed-strings`, so only files
+    that actually contain a literal old draft id are ever opened -- on a
+    repo this size that is normally zero or a handful of files, never a
+    full-tree walk. The ledger files are excluded here since
+    `_rewrite_draft_references_in_bodies` already rewrote them through
+    the ticket model (a raw-text rewrite of the same files here would
+    race that write); every other tracked file (`.strata`, `.py`, `.rs`,
+    `.ts`, ...) is fair game -- a waive site can live in any language's
+    comment syntax. Reuses the same fixed-width, unambiguous-token regex
+    shape as T-0811 (a draft id can never be a prefix of a longer hex
+    run), so no per-language comment parsing is needed."""
+    if not mapping:
+        return Ok(None)
+    pattern = re.compile(
+        "(?:"
+        + "|".join(
+            re.escape(old_id) for old_id in sorted(mapping, key=len, reverse=True)
+        )
+        + r")(?![0-9a-fA-F])"
+    )
+
+    grep_argv = ["git", "-C", str(worktree), "grep", "-l", "--fixed-strings", "-I"]
+    for old_id in mapping:
+        grep_argv += ["-e", old_id]
+    grepped = run_argv(grep_argv)
+    if grepped.is_err:
+        _log.error(
+            "land: could not grep worktree %s for stale draft-id waive-site "
+            "reference(s) %s (%s)",
+            worktree,
+            mapping,
+            grepped.danger_err,
+        )
+        return Err(LandError.GitFailed)
+    proc = grepped.danger_ok
+    # `git grep -l` returns 1 (not an error) when nothing matches.
+    if proc.returncode not in (0, 1):
+        _log.error(
+            "land: git grep for stale draft-id waive-site reference(s) %s "
+            "failed unexpectedly in %s (exit %s): %s",
+            mapping,
+            worktree,
+            proc.returncode,
+            proc.stderr,
+        )
+        return Err(LandError.GitFailed)
+    if proc.returncode == 1:
+        return Ok(None)
+
+    changed_files: list[str] = []
+    for rel in proc.stdout.splitlines():
+        rel = rel.strip()
+        if not rel or Path(rel).name in _WAIVE_REWRITE_EXCLUDED_LEDGERS:
+            continue
+        target = worktree / rel
+        try:
+            text = target.read_text(encoding="utf-8")
+        except OSError as exc:
+            _log.error(
+                "land: could not read %s while rewriting stale draft-id "
+                "waive-site reference(s) %s (%s)",
+                target,
+                mapping,
+                exc,
+            )
+            return Err(LandError.GitFailed)
+        new_text = pattern.sub(lambda m: mapping[m.group(0)], text)
+        if new_text == text:
+            continue
+        try:
+            target.write_text(new_text, encoding="utf-8")
+        except OSError as exc:
+            _log.error(
+                "land: could not write %s while rewriting stale draft-id "
+                "waive-site reference(s) %s (%s)",
+                target,
+                mapping,
+                exc,
+            )
+            return Err(LandError.GitFailed)
+        changed_files.append(rel)
+
+    if changed_files:
+        _log.info(
+            "land: rewrote stale draft-id waive-site reference(s) %s in %s",
+            mapping,
+            changed_files,
         )
     return Ok(None)
 

@@ -1515,6 +1515,161 @@ class TestDraftReferenceRewriteOnLand:
             "a T-draft- id survived somewhere in the landed ledger text"
         )
 
+    def test_land_rewrites_strata_waive_clause_draft_id_reference(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::land kind="unit"
+        # T-0812: extends the T-0811 body-prose rewrite to a `design/*.
+        # strata` `waive` clause citing the SAME draft id being finalized
+        # -- the original T-draft-8cd37914 incident class WAIVE007's
+        # T-draft-* exemption otherwise leaves dangling forever.
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-strata", str(wt)], repo)
+
+        primary = new_ticket(
+            wt, _spec("Strata-citing draft work", scope=("src/strata_ref.py",))
+        )
+        assert primary.is_ok
+        primary_id = primary.danger_ok.id
+        assert primary_id.startswith("T-draft-")
+        (wt / "src" / "strata_ref.py").write_text("# strata-citing draft work\n")
+
+        design_dir = wt / "design"
+        design_dir.mkdir(parents=True, exist_ok=True)
+        (design_dir / "waivers.strata").write_text(
+            "component demo {\n"
+            f'    waive "SYS203:demo" reason "draft waiver" ticket "{primary_id}";\n'
+            "}\n"
+        )
+
+        assert transition(wt, primary_id, TicketState.PLANNED).is_ok
+        assert transition(wt, primary_id, TicketState.IN_PROGRESS).is_ok
+        loaded = load_all(wt)
+        ticket = loaded.danger_ok[primary_id]
+        ticket = ticket.model_copy(
+            update={
+                "evidence": ("tests/test_x.py::test_ok",),
+                "body": ticket.body + "\n## Done report\n\nevidence attached\n",
+            }
+        )
+        assert write_ticket(wt, ticket).is_ok
+
+        _commit_all(wt, "strata-citing draft work")
+
+        result = land(repo, primary_id, wt, dry_run=False)
+        assert result.is_ok, result.err
+        final_id = result.danger_ok.final_id
+        assert final_id != primary_id
+
+        strata_text = (repo / "design" / "waivers.strata").read_text(encoding="utf-8")
+        assert primary_id not in strata_text, (
+            "stale draft-id reference survived in the landed .strata waive clause"
+        )
+        assert f'ticket "{final_id}"' in strata_text
+
+    def test_land_rewrites_frob_waive_comment_draft_id_reference(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::land kind="unit"
+        # T-0812: same rewrite, source `frob:waive ... ticket=` comment
+        # channel rather than `.strata`.
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-waivecomment", str(wt)], repo)
+
+        primary = new_ticket(
+            wt, _spec("Comment-citing draft work", scope=("src/waive_ref.py",))
+        )
+        assert primary.is_ok
+        primary_id = primary.danger_ok.id
+        assert primary_id.startswith("T-draft-")
+        (wt / "src" / "waive_ref.py").write_text(
+            "x = 1  # noqa: E501\n"
+            f'# frob:waive DEMO001 reason="draft waiver" ticket={primary_id}\n'
+        )
+
+        assert transition(wt, primary_id, TicketState.PLANNED).is_ok
+        assert transition(wt, primary_id, TicketState.IN_PROGRESS).is_ok
+        loaded = load_all(wt)
+        ticket = loaded.danger_ok[primary_id]
+        ticket = ticket.model_copy(
+            update={
+                "evidence": ("tests/test_x.py::test_ok",),
+                "body": ticket.body + "\n## Done report\n\nevidence attached\n",
+            }
+        )
+        assert write_ticket(wt, ticket).is_ok
+
+        _commit_all(wt, "comment-citing draft work")
+
+        result = land(repo, primary_id, wt, dry_run=False)
+        assert result.is_ok, result.err
+        final_id = result.danger_ok.final_id
+        assert final_id != primary_id
+
+        comment_text = (repo / "src" / "waive_ref.py").read_text(encoding="utf-8")
+        assert primary_id not in comment_text, (
+            "stale draft-id reference survived in the landed frob:waive comment"
+        )
+        assert f"ticket={final_id}" in comment_text
+
+    def test_land_leaves_unrelated_draft_id_reference_untouched(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::land kind="unit"
+        # T-0812 (reviewer follow-up on T-0811): the rewrite must be
+        # per-id-keyed against the actual old->new mapping, not a blanket
+        # "strip every T-draft- token" pass -- an UNRELATED draft id
+        # mentioned in ledger prose (one that is not itself being
+        # finalized by this land) must survive verbatim. Kept as its own
+        # test since planting an unrelated draft id conflicts with the
+        # existing blanket "zero T-draft- ids left in the ledger"
+        # assertion in test_land_rewrites_own_draft_id_reference_in_done_report.
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-unrelated", str(wt)], repo)
+
+        primary = new_ticket(
+            wt, _spec("Primary work", scope=("src/unrelated_primary.py",))
+        )
+        assert primary.is_ok
+        primary_id = primary.danger_ok.id
+        assert primary_id.startswith("T-draft-")
+        (wt / "src" / "unrelated_primary.py").write_text("# primary work\n")
+
+        unrelated_draft_id = "T-draft-deadbeef"
+        assert unrelated_draft_id != primary_id
+
+        assert transition(wt, primary_id, TicketState.PLANNED).is_ok
+        assert transition(wt, primary_id, TicketState.IN_PROGRESS).is_ok
+        loaded = load_all(wt)
+        ticket = loaded.danger_ok[primary_id]
+        ticket = ticket.model_copy(
+            update={
+                "evidence": ("tests/test_x.py::test_ok",),
+                "body": (
+                    ticket.body
+                    + "\n## Done report\n\nevidence attached\n"
+                    + f"Note: unrelated to {unrelated_draft_id}, not landing it\n"
+                ),
+            }
+        )
+        assert write_ticket(wt, ticket).is_ok
+
+        _commit_all(wt, "primary work citing an unrelated draft id in prose")
+
+        result = land(repo, primary_id, wt, dry_run=False)
+        assert result.is_ok, result.err
+        final_id = result.danger_ok.final_id
+        assert final_id != primary_id
+
+        landed = load_all(repo)
+        assert landed.is_ok
+        final_ticket = landed.danger_ok[final_id]
+        assert unrelated_draft_id in final_ticket.body, (
+            "unrelated draft id in prose was rewritten/stripped -- the "
+            "substitution must be scoped to this land's own old->new "
+            "mapping, not a blanket T-draft- removal"
+        )
+
 
 class TestLandNotFound:
     """`land` on a ticket id the worktree's store has never heard of."""
