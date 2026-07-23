@@ -215,6 +215,8 @@ required for this one.
 <!-- frob:describes src/frob/gitio.py::working_diff -->
 <!-- frob:describes src/frob/gitio.py::current_branch -->
 <!-- frob:describes src/frob/gitio.py::run_argv -->
+<!-- frob:describes src/frob/gitio.py::spawn_recorder -->
+<!-- frob:describes src/frob/gitio.py::SpawnRecorder -->
 <!-- frob:describes src/frob/testing/_select.py::extension_language -->
 <!-- frob:describes src/frob/testing/_select.py::select_tests -->
 <!-- frob:describes src/frob/testing/_select.py::ALL_SENTINEL -->
@@ -247,6 +249,22 @@ def run_argv(argv: Sequence[str], *, cwd: Path | None = None,
     # keeping a second copy -- frob.gitio must not import frob.testing, so
     # the shared helper lives in gitio and testing depends on it, not the
     # reverse.
+
+@contextmanager
+def spawn_recorder() -> Iterator[SpawnRecorder]
+    # Test-only: every run_argv spawn made while the block is active is
+    # tallied onto the yielded SpawnRecorder. A single ContextVar.get()
+    # per run_argv call outside this block -- zero-cost and behavior-
+    # neutral when not active.
+
+class SpawnRecorder:
+    def record(self, argv: tuple[str, ...]) -> None
+    def counts(self) -> Mapping[tuple[str, ...], int]
+    def duplicates(self, budgets: Mapping[tuple[str, ...], int] | None = None,
+                    *, default_budget: int = 1) -> dict[tuple[str, ...], int]
+        # argv -> count for every argv spawned MORE than its budget
+        # (default 1, i.e. "at most once"); {} means every spawn stayed
+        # within budget.
 
 # frob/testing/__init__.py
 def extension_language(path: str) -> str | None
@@ -380,6 +398,47 @@ class ProcResult(BaseModel):      # frozen; gitio.py's one spawn result shape
     stdout: str
     stderr: str
 ```
+
+## Spawn recorder (T-0776)
+
+`tests/system/test_spawn_budget.py` is the exact-count complement to the
+static loop-invariant-effect detector (`frob.perf`): rather than pattern-
+matching code shape, it wraps a hot CLI entry point in
+`frob.gitio.spawn_recorder()` and asserts no identical `git` argv was
+spawned more than its declared budget (default 1) in one invocation. This
+is heuristic-free -- it would have caught the T-0773 rev-parse-per-ticket-
+row incident the day it regressed, and does not depend on recognizing any
+particular code pattern.
+
+```python
+from frob.gitio import spawn_recorder
+
+with spawn_recorder() as recorder:
+    _list(root, cfg)          # or any code path that goes through run_argv
+
+duplicated = recorder.duplicates()   # {} if every argv stayed within budget
+assert duplicated == {}
+```
+
+Budgets live next to the tests, not in `frob.toml` -- passing a mapping to
+`duplicates(budgets={...})` overrides the default-1 budget per exact argv
+tuple, so a test that needs a path to spawn something N times on purpose
+declares that N inline instead of the check gaining a config surface. The
+recorder only sees spawns that go through `frob.gitio.run_argv` (the
+package's one process-with-timeout seam, see "Public API" above) -- every
+git spawn in the codebase already routes through it, so no site needs
+updating to become visible to the recorder.
+
+`test_ticket_list_spawns_each_argv_at_most_once` and
+`test_ticket_doable_spawns_each_argv_at_most_once` are `xfail(strict=True)`
+and tagged `frob:ticket T-0773`: both hit the same unmemoized
+`git_common_dir` re-derivation the T-0773 rev-parse incident describes, so
+they stay documented debt (not silently green, not silently red) until
+T-0773 lands its memoization -- at which point the unexpected pass becomes
+a hard failure demanding the marker's removal. `test_ticket_show_...` and
+`test_exclude_hazard_gate_...` are plain, non-xfail budget locks: those two
+paths already meet a 1-spawn-per-argv budget today, so a future regression
+there is an immediate hard failure, not a documented one.
 
 ## Error types
 

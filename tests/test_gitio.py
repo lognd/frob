@@ -8,7 +8,14 @@ from pathlib import Path
 
 import pytest
 
-from frob.gitio import GitError, current_branch, repo_root, run_argv, working_diff
+from frob.gitio import (
+    GitError,
+    current_branch,
+    repo_root,
+    run_argv,
+    spawn_recorder,
+    working_diff,
+)
 
 
 # frob:waive DUP001 reason="parallel test fixtures across 3 sibling test \
@@ -299,3 +306,51 @@ class TestCurrentBranch:
         result = current_branch(repo)
         assert result.is_ok
         assert result.danger_ok == "main"
+
+
+# frob:ticket T-0776
+class TestSpawnRecorder:
+    def test_tallies_spawns_made_inside_the_block(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gitio.py::spawn_recorder kind="unit"
+        # frob:tests src/frob/gitio.py::SpawnRecorder.record kind="unit"
+        # frob:tests src/frob/gitio.py::SpawnRecorder.counts kind="unit"
+        with spawn_recorder() as recorder:
+            run_argv(["echo", "one"], cwd=tmp_path)
+            run_argv(["echo", "one"], cwd=tmp_path)
+            run_argv(["echo", "two"], cwd=tmp_path)
+
+        assert recorder.counts() == {
+            ("echo", "one"): 2,
+            ("echo", "two"): 1,
+        }
+
+    def test_spawns_outside_the_block_are_not_tallied(self, tmp_path: Path) -> None:
+        with spawn_recorder() as recorder:
+            run_argv(["echo", "inside"], cwd=tmp_path)
+        run_argv(["echo", "outside"], cwd=tmp_path)
+
+        assert recorder.counts() == {("echo", "inside"): 1}
+
+    def test_duplicates_reports_only_argvs_over_budget(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gitio.py::SpawnRecorder.duplicates kind="unit"
+        with spawn_recorder() as recorder:
+            run_argv(["echo", "once"], cwd=tmp_path)
+            run_argv(["echo", "twice"], cwd=tmp_path)
+            run_argv(["echo", "twice"], cwd=tmp_path)
+
+        assert recorder.duplicates() == {("echo", "twice"): 2}
+
+    def test_duplicates_honors_a_declared_per_argv_budget(self, tmp_path: Path) -> None:
+        argv = ("echo", "expected-twice")
+        with spawn_recorder() as recorder:
+            run_argv(list(argv), cwd=tmp_path)
+            run_argv(list(argv), cwd=tmp_path)
+
+        assert recorder.duplicates({argv: 2}) == {}
+
+    def test_run_argv_outside_any_recorder_does_not_raise(self, tmp_path: Path) -> None:
+        # zero-cost/behavior-neutral when disabled: no active recorder must
+        # never change what run_argv spawns or returns.
+        result = run_argv(["echo", "no-recorder"], cwd=tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.stdout.strip() == "no-recorder"

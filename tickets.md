@@ -723,6 +723,154 @@ this time:
 - `tests/test_gates.py::TestPiiStructuralCrossLanguage::test_rust_tuple_struct_field_not_matched` (pytest node id, verified passing when recorded)
 - `tests/test_gates.py::TestPiiStructuralCrossLanguage::test_ts_and_rust_findings_joined_against_declared_surface` (pytest node id, verified passing when recorded)
 
+<!-- ticket:T-0367 -->
+```yaml
+id: T-0367
+title: PERF004 detector false-positives on post-loop sorts (indentation-blind heuristic)
+state: done
+kind: bug
+origin: human
+created: '2026-07-20'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/perf/
+- tests/test_perf.py
+scope_changes:
+- op: add
+  glob: tests/test_perf.py
+  reason: 'regression tests for PERF004 AST-aware fix, T-0367
+
+    '
+  actor: logan
+  at: '2026-07-23'
+evidence:
+- tests/test_perf.py::test_perf004_does_not_fire_on_sort_after_loop_same_indent
+- tests/test_perf.py::test_perf004_does_not_fire_on_sorted_call_after_loop_same_indent
+- tests/test_perf.py::test_perf004_still_fires_on_sort_nested_deeper_inside_loop_body
+- tests/test_perf.py::test_perf004_fires_on_sort_in_loop
+- tests/test_perf.py::test_perf004_does_not_fire_on_sort_outside_a_loop
+- tests/test_perf.py::test_perf004_does_not_fire_when_sorted_is_the_loop_iterable
+- tests/test_perf.py::test_perf004_does_not_fire_on_sorted_generator_no_preceding_loop
+- tests/test_perf.py::test_perf004_anchors_to_sort_call_line_not_def_line
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0363 had to reason-waive 3 genuine sorted()/.sort() sites (dup/_template.py:159, graph/__init__.py:153, vet/_capability.py:344) because the PERF004 heuristic is token/bracket-depth based and cannot see Python indentation, so it false-positives on any sort textually AFTER a for-loop at the same/outer indent (runs once, not per-iteration). Systematic fix: make the PERF004 detector indentation/AST-aware (tree-sitter: is the sort call a descendant of the loop BODY, not merely lexically after the loop header) so genuine once-after-loop sorts are not flagged and true in-loop sorts still are. Would let the 3 (soon 4, incl T-0366) waivers be removed. Do NOT loosen the true-positive case.
+
+## Done report
+
+Made PERF004 (sort-in-loop) AST-aware instead of indentation-blind. Added
+`_is_sort_call`/`_enclosing_loop_body_hit`/`_perf004_ast_hit_lines` to
+src/frob/perf/_rules.py: re-parses the python file via `frob.lang.raw_tree`
+and checks, for each `sorted(`/`.sort(` call node, whether it is a
+descendant of an ancestor `for`/`while` statement's `body` FIELD
+specifically (not merely lexically after the loop header) -- this is what
+the old flat-token `_loop_gate` heuristic could not see, since
+`RawSymbol.body_tokens` carries no position/indentation information.
+`_python_violations`/`_perf004_python_fires` now prefer this AST-precise
+check and fall back to the old lexical `_perf004_python`/`_perf004_line`
+heuristic only when the file cannot be re-parsed (moved/deleted since the
+original parse). PERF001/002/003 are unchanged -- this ticket is scoped to
+PERF004 only.
+
+Regression tests added to tests/test_perf.py (scope-added, reason on file):
+- test_perf004_does_not_fire_on_sort_after_loop_same_indent (the ticket's
+  headline false-positive: `.sort()` after a `for` loop at the same indent)
+- test_perf004_does_not_fire_on_sorted_call_after_loop_same_indent (same
+  shape, `sorted()` free-function form)
+- test_perf004_still_fires_on_sort_nested_deeper_inside_loop_body (true
+  positive preserved even one level more indented than the simple case)
+
+All prior PERF004 fire/no-fire cases in tests/test_perf.py still pass
+unmodified (fires-in-loop, does-not-fire-standalone, does-not-fire-as-loop-
+iterable, does-not-fire-on-generator, anchors-to-call-line). Full
+tests/test_perf.py: 52 passed. tests/test_perf_loop_invariant_effect_lock.py
+(the T-0775 strict-xfail lock, explicitly out of this ticket's scope) still
+reports XFAIL after this change, confirmed via
+`pytest tests/test_perf_loop_invariant_effect_lock.py -q`.
+
+Real-repo PERF004 count: `frob check --ticket T-0367 --only gates-native`
+now reports gate:PERF PASS, 0 errors. 17 unwaived PERF004 findings remain
+(all genuine loop-body sort calls per the new AST check, spot-checked
+src/frob/arch/_ocp.py:314 by hand -- a `sorted(missing)` call inside a
+`for enum_class in ...:` body, a real hit, not a false positive):
+src/frob/arch/_ocp.py:314, src/frob/arch/_patterns.py:517,
+src/frob/gates/__init__.py:1222, src/frob/gates/__init__.py:5082,
+src/frob/gates/_docblocks.py:210, src/frob/gates/_docblocks.py:236,
+src/frob/gates/_docblocks.py:1217, src/frob/gates/_lang_conformance.py:193,
+src/frob/gates/_registry_exhaustiveness.py:405,
+src/frob/graph/affects.py:132, src/frob/graph/lock.py:153,
+src/frob/perf/_hotgraph.py:323, src/frob/strata/_contention.py:180,
+src/frob/strata/_contention.py:328, src/frob/strata/_contention.py:366,
+src/frob/strata/_design_load.py:259, src/frob/strata/_infra.py:670.
+This is 17, not the 9 the ticket cited from T-0596 -- main has grown new
+sort-in-loop sites since T-0596 was filed; these 17 (including the T-0363
+sites the ticket named, which are now clean) are routed to T-0596 for
+per-site waive/fix triage, not addressed here (out of this bug-fix
+ticket's scope, which is the DETECTOR, not the sites).
+
+Deviations:
+- T-0367 existed in BOTH tickets.md (state=planned) and tickets-archive.md
+  (a stale duplicate at state=queued, no Done report) -- a ledger-
+  corruption instance of the exact class the existing "tickets:
+  investigate missing-marker ledger corruption class" ticket already
+  tracks. Removed the stale archive duplicate directly (it blocked `frob
+  ticket start T-0367` with DuplicateId) since it was purely stale/orphan
+  state with no Done report to lose; did not otherwise touch that
+  investigation ticket's scope.
+- T-0367's `acceptance` list is empty (filed with none at `frob ticket new`
+  time, and there is no CLI path to add acceptance criteria to an existing
+  ticket after filing). Evidence is recorded on the ticket's flat evidence
+  list; `--accepts` could not be used since there is no acceptance index to
+  bind to.
+- `uv.lock` in this worktree's checked-out commit (2ed2d2f6) lags
+  `pyproject.toml`'s version (0.97.0 vs 0.98.0 already on that commit) --
+  every `uv run` invocation auto-resyncs `uv.lock` as a side effect, which
+  then shows up as an unrelated SCOPE001 finding and a `git status` diff.
+  Reverted with `git checkout -- uv.lock` before every commit per the
+  playbook's land-owned-files rule; this file is not part of the committed
+  diff.
+- `tests/unit/perf/test_hotgraph.py::TestStackSampler::test_overhead_under_five_percent`
+  failed once on a shared/loaded machine (0.41 ratio vs 0.05 budget) and
+  passed clean on immediate rerun -- a pre-existing timing-flake unrelated
+  to src/frob/perf/_rules.py, not touched by this ticket.
+- gate:TEST's 2 errors (TEST010 kind='system' on
+  tests/test_perf_loop_invariant_effect_lock.py and
+  tests/system/test_spawn_budget.py) are pre-existing debt landed on main
+  before this ticket started (both outside src/frob/perf/_rules.py and
+  tests/test_perf.py); not introduced or touched by this change.
+- Reviewer round 1 caught collateral splice damage in a prior merge of
+  main into this worktree beyond my own T-0787 restore: T-0788's whole
+  block deleted, T-0774 reverted in-progress -> queued, T-0766's Done
+  report reverted to the phantom pre-T-0787 draft-id sentence.
+  Re-merged against current main (which had since landed T-0676 and filed
+  T-0790) and this time the ticket merge-driver spliced cleanly against
+  the newer main for all three -- but a fresh block-by-block diff against
+  `git show main:tickets.md` then caught a FOURTH, previously-unreported
+  casualty from the same original splice: T-0674 reverted from
+  state=done/full Done-report+evidence back to state=queued/empty, which
+  I restored verbatim from main the same way. A scripted per-ticket-id
+  block comparison against main (all 201 shared ids) now shows zero
+  differences outside this ticket's own T-0367 block.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_perf.py::test_perf004_does_not_fire_on_sort_after_loop_same_indent` (pytest node id, verified passing when recorded)
+- `tests/test_perf.py::test_perf004_does_not_fire_on_sorted_call_after_loop_same_indent` (pytest node id, verified passing when recorded)
+- `tests/test_perf.py::test_perf004_still_fires_on_sort_nested_deeper_inside_loop_body` (pytest node id, verified passing when recorded)
+- `tests/test_perf.py::test_perf004_fires_on_sort_in_loop` (pytest node id, verified passing when recorded)
+- `tests/test_perf.py::test_perf004_does_not_fire_on_sort_outside_a_loop` (pytest node id, verified passing when recorded)
+- `tests/test_perf.py::test_perf004_does_not_fire_when_sorted_is_the_loop_iterable` (pytest node id, verified passing when recorded)
+- `tests/test_perf.py::test_perf004_does_not_fire_on_sorted_generator_no_preceding_loop` (pytest node id, verified passing when recorded)
+- `tests/test_perf.py::test_perf004_anchors_to_sort_call_line_not_def_line` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0380 -->
 ```yaml
 id: T-0380
@@ -8725,6 +8873,7 @@ Two new tests added mirroring T-0763's TestUnboundAcceptancePreflightBeforeMerge
 
 ### Evidence
 (no evidence recorded)
+
 <!-- ticket:T-0775 -->
 ```yaml
 id: T-0775
@@ -8764,7 +8913,7 @@ Motivated by the 2026-07-22 rev-parse incident (T-0773): frob ticket list spawne
 id: T-0776
 title: 'testing: subprocess spawn-budget litmus for CLI hot paths (fail on duplicate
   identical argv per invocation)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-22'
@@ -8775,8 +8924,46 @@ scope:
 - src/frob/gitio.py
 - src/frob/testing/**
 - tests/system/
-scope_changes: []
-evidence: []
+- docs/modules/testing.md
+- tests/test_gitio.py
+- pyproject.toml
+- .frob-release.json
+- uv.lock
+scope_changes:
+- op: add
+  glob: docs/modules/testing.md
+  reason: recorder needs its public-API doc entry per playbook Document-as-you-go
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: tests/test_gitio.py
+  reason: TEST001 requires a unit test for the new spawn_recorder/SpawnRecorder public
+    API next to gitio's existing unit tests
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: pyproject.toml
+  reason: 'REL001: new public gitio.SpawnRecorder/spawn_recorder API required a release
+    stamp; reviewer-directed scope-add'
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: .frob-release.json
+  reason: 'REL001: new public gitio.SpawnRecorder/spawn_recorder API required a release
+    stamp; reviewer-directed scope-add'
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: uv.lock
+  reason: 'REL001: new public gitio.SpawnRecorder/spawn_recorder API required a release
+    stamp; reviewer-directed scope-add'
+  actor: logan
+  at: '2026-07-23'
+evidence:
+- tests/system/test_spawn_budget.py::test_ticket_list_spawns_each_argv_at_most_once
+- tests/system/test_spawn_budget.py::test_ticket_show_spawns_each_argv_at_most_once
+- tests/system/test_spawn_budget.py::test_ticket_doable_spawns_each_argv_at_most_once
+- tests/system/test_spawn_budget.py::test_exclude_hazard_gate_spawns_each_argv_at_most_once
 attachments: []
 acceptance:
 - text: GIVEN a spawn-budget test running frob ticket list against a fixture repo
@@ -8784,12 +8971,94 @@ acceptance:
     derivations like rev-parse --git-common-dir) THEN the test fails listing each
     duplicated argv with its count; GIVEN the post-T-0773 memoized lease layer THEN
     the budget test passes
-  evidence: []
+  evidence:
+  - tests/system/test_spawn_budget.py::test_ticket_list_spawns_each_argv_at_most_once
+  - tests/system/test_spawn_budget.py::test_ticket_show_spawns_each_argv_at_most_once
+  - tests/system/test_spawn_budget.py::test_ticket_doable_spawns_each_argv_at_most_once
+  - tests/system/test_spawn_budget.py::test_exclude_hazard_gate_spawns_each_argv_at_most_once
 threat: null
 component: null
 labels: []
 ```
 Exact-count complement to the static loop-invariant-effect detector: gitio already logs every spawn, so expose a test-mode spawn recorder (context manager or env-gated counter in frob.gitio) and add system tests that run hot CLI entry points (ticket list/doable/show, check --only fast stages) against a fixture repo and assert no identical argv is spawned twice in one invocation unless a declared budget allows it. This is heuristic-free and would have caught the rev-parse incident (T-0773) the day it regressed. Design note: the recorder must be zero-cost when disabled and must not change spawn behavior; budgets live next to the tests, not in frob.toml, to keep the check self-contained.
+
+## Done report
+
+## Done report
+
+Changed:
+src/frob/gitio.py::SpawnRecorder
+src/frob/gitio.py::SpawnRecorder.record
+src/frob/gitio.py::SpawnRecorder.counts
+src/frob/gitio.py::SpawnRecorder.duplicates
+src/frob/gitio.py::spawn_recorder
+src/frob/gitio.py::run_argv (one ContextVar.get() hook, no behavior change)
+tests/system/test_spawn_budget.py (generalized off raw subprocess.run monkeypatch onto spawn_recorder; seed case kept xfail(strict) + T-0773 tag; 3 new budget cases)
+tests/test_gitio.py::TestSpawnRecorder (unit coverage for the new public API)
+docs/modules/testing.md (Public API entries + new "Spawn recorder (T-0776)" section)
+
+Evidence (all pass under `uv run pytest tests/system/test_spawn_budget.py tests/test_gitio.py -q`):
+tests/system/test_spawn_budget.py::test_ticket_list_spawns_each_argv_at_most_once (xfail(strict), T-0773-tagged, bound acceptance[0])
+tests/system/test_spawn_budget.py::test_ticket_show_spawns_each_argv_at_most_once (pass, bound acceptance[0])
+tests/system/test_spawn_budget.py::test_ticket_doable_spawns_each_argv_at_most_once (xfail(strict), T-0773-tagged -- doable hits the SAME rev-parse --git-common-dir per-ticket-row duplication as list, discovered while implementing; bound acceptance[0])
+tests/system/test_spawn_budget.py::test_exclude_hazard_gate_spawns_each_argv_at_most_once (pass, bound acceptance[0])
+tests/test_gitio.py::TestSpawnRecorder::* (5 unit cases, unbound -- pure recorder-mechanism tests, no ticket acceptance criterion covers the mechanism itself separately from the CLI-path litmus)
+
+Filed: none (no new tickets opened; the `doable` duplication found is the SAME pre-existing T-0773 bug the ticket already anticipated, not a new discovery)
+
+Gates: `uv run frob check --ticket T-0776` chunked (lint, static, gates-native, gates-security clean; gates-fast's coverage/test/prework/scope stages show zero findings on any file in T-0776's scope -- remaining FAILs in that stage-group are pre-existing debt in src/frob/perf/_collectors.py and src/frob/vet/_capability_modes.py, unrelated files from an already-landed ticket, confirmed via `--only test` output containing no gitio.py/test_spawn_budget.py/test_gitio.py/testing.md lines). No waivers added.
+
+Deviations from the ticket plan:
+- `test_ticket_doable_spawns_each_argv_at_most_once` is xfail(strict)+T-0773-tagged rather than a plain pass -- discovered it hits the identical unmemoized `git_common_dir` re-derivation `list` does (both walk leases through the same seam), so per the dispatch instruction ("do not fix the duplication yourself") it stays documented debt alongside the seed case, not silently green.
+- Recorder implemented as a `contextvars.ContextVar`-backed context manager directly inside `frob.gitio` (hooked into `run_argv`, the package's one process-with-timeout seam) rather than a raw env-gated counter -- every git spawn in the codebase already routes through `run_argv`, so this needed no call-site changes anywhere else and stays zero-cost (one `ContextVar.get()`) when no recorder is active.
+- "check --only fast stages" budget coverage: implemented against `exclude_hazard_gate` (a fast, git-light gates-fast member) rather than a full `check --only fast` run, which spawns hundreds of non-git subprocesses (ruff/ty/native tools) unrelated to the argv-duplication class this litmus targets and would make the test slow/noisy without adding git-spawn-budget signal.
+
+## Reviewer round-1 fixes (REL001 + TEST010, disclosed)
+
+REL001 (undisclosed release stamp): `SpawnRecorder`/`spawn_recorder` are new
+public API in `frob.gitio.__all__` and had no release stamp recorded.
+Scope-added `pyproject.toml`, `.frob-release.json`, `uv.lock` (reason:
+"REL001: new public gitio.SpawnRecorder/spawn_recorder API required a
+release stamp; reviewer-directed scope-add"). Ran `uv run --frozen frob
+release stamp` (stamped 1337 public symbols at 0.100.0 -> written to
+`.frob-release.json`; `pyproject.toml`'s version line was already at
+0.100.0 from merging main, no separate bump needed on top of that).
+`uv run --frozen frob check --ticket T-0776 --only release` now shows
+**zero `gate:REL` findings at all** (the gate does not print a row when
+it has nothing to report -- confirmed via `grep -c "gate:REL"` on the
+full command output, count 0).
+
+TEST010 (kind divergence from main's landed fix, commit c9d21365): merged
+main into this branch (committed WIP first, no stash; one real conflict
+in `tests/system/test_spawn_budget.py`, resolved by keeping this
+ticket's `spawn_recorder`-based test bodies but adopting main's
+`kind="e2e"` for all four `frob:tests` directives in that file, matching
+main exactly). `tests/test_perf_loop_invariant_effect_lock.py` (outside
+T-0776's own scope, not touched directly) came in already fixed to
+`kind="integration"` via the merge itself -- main's landed commit
+resolved it, the merge was a clean fast-forward-shaped pickup, no
+conflict there. `uv run --frozen frob check --ticket T-0776 --only test`
+now shows **zero `TEST010` findings** for either file (`grep TEST010`
+on the full stage output: no matches for either filename).
+Re-ran `uv run pytest tests/system/test_spawn_budget.py tests/test_gitio.py
+tests/test_perf_loop_invariant_effect_lock.py -q` after reconciliation:
+all pass (2 xfail, as before -- the T-0773 seed + doable case).
+
+### Changed
+```
+ docs/modules/testing.md           |  59 ++++++++++++++++
+ src/frob/gitio.py                 |  74 +++++++++++++++++++-
+ tests/system/test_spawn_budget.py | 137 +++++++++++++++++++++++++++++---------
+ tests/test_gitio.py               |  57 +++++++++++++++-
+ tickets.md                        |  76 +++++++++++++++++++--
+ 5 files changed, 366 insertions(+), 37 deletions(-)
+```
+
+### Evidence
+- `tests/system/test_spawn_budget.py::test_ticket_list_spawns_each_argv_at_most_once` (pytest node id, verified passing when recorded)
+- `tests/system/test_spawn_budget.py::test_ticket_show_spawns_each_argv_at_most_once` (pytest node id, verified passing when recorded)
+- `tests/system/test_spawn_budget.py::test_ticket_doable_spawns_each_argv_at_most_once` (pytest node id, verified passing when recorded)
+- `tests/system/test_spawn_budget.py::test_exclude_hazard_gate_spawns_each_argv_at_most_once` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0777 -->
 ```yaml
@@ -9260,6 +9529,7 @@ Observed landing T-0676 (2026-07-23): first land failed post-merge with Evidence
 
 ## Drop reason
 - 2026-07-23: misdiagnosis: the tautological comparison occurred because the operator ran frob ticket land with cwd INSIDE the worktree (root defaulted to the worktree, making root==worktree) -- the T-0761 guard fired correctly. The real defects are captured in the replacement retry-robustness ticket
+
 <!-- ticket:T-0791 -->
 ```yaml
 id: T-0791
@@ -9527,151 +9797,3 @@ component: null
 labels: []
 ```
 Observed twice during 2026-07-23 lands: worktrees carrying pre-migration cache.db files crashed land mid-flight with 'no such table: symbols' and 'no such column: mtime_ns' (the second crash left a partial squash staged on main). Stamp a schema version in the db and rebuild on mismatch; never let OperationalError escape load paths.
-
-<!-- ticket:T-0367 -->
-```yaml
-id: T-0367
-title: PERF004 detector false-positives on post-loop sorts (indentation-blind heuristic)
-state: done
-kind: bug
-origin: human
-created: '2026-07-20'
-priority: medium
-blocked_by: []
-parent: null
-scope:
-- src/frob/perf/
-- tests/test_perf.py
-scope_changes:
-- op: add
-  glob: tests/test_perf.py
-  reason: 'regression tests for PERF004 AST-aware fix, T-0367
-
-    '
-  actor: logan
-  at: '2026-07-23'
-evidence:
-- tests/test_perf.py::test_perf004_does_not_fire_on_sort_after_loop_same_indent
-- tests/test_perf.py::test_perf004_does_not_fire_on_sorted_call_after_loop_same_indent
-- tests/test_perf.py::test_perf004_still_fires_on_sort_nested_deeper_inside_loop_body
-- tests/test_perf.py::test_perf004_fires_on_sort_in_loop
-- tests/test_perf.py::test_perf004_does_not_fire_on_sort_outside_a_loop
-- tests/test_perf.py::test_perf004_does_not_fire_when_sorted_is_the_loop_iterable
-- tests/test_perf.py::test_perf004_does_not_fire_on_sorted_generator_no_preceding_loop
-- tests/test_perf.py::test_perf004_anchors_to_sort_call_line_not_def_line
-attachments: []
-acceptance: []
-threat: null
-component: null
-labels: []
-```
-T-0363 had to reason-waive 3 genuine sorted()/.sort() sites (dup/_template.py:159, graph/__init__.py:153, vet/_capability.py:344) because the PERF004 heuristic is token/bracket-depth based and cannot see Python indentation, so it false-positives on any sort textually AFTER a for-loop at the same/outer indent (runs once, not per-iteration). Systematic fix: make the PERF004 detector indentation/AST-aware (tree-sitter: is the sort call a descendant of the loop BODY, not merely lexically after the loop header) so genuine once-after-loop sorts are not flagged and true in-loop sorts still are. Would let the 3 (soon 4, incl T-0366) waivers be removed. Do NOT loosen the true-positive case.
-
-## Done report
-
-Made PERF004 (sort-in-loop) AST-aware instead of indentation-blind. Added
-`_is_sort_call`/`_enclosing_loop_body_hit`/`_perf004_ast_hit_lines` to
-src/frob/perf/_rules.py: re-parses the python file via `frob.lang.raw_tree`
-and checks, for each `sorted(`/`.sort(` call node, whether it is a
-descendant of an ancestor `for`/`while` statement's `body` FIELD
-specifically (not merely lexically after the loop header) -- this is what
-the old flat-token `_loop_gate` heuristic could not see, since
-`RawSymbol.body_tokens` carries no position/indentation information.
-`_python_violations`/`_perf004_python_fires` now prefer this AST-precise
-check and fall back to the old lexical `_perf004_python`/`_perf004_line`
-heuristic only when the file cannot be re-parsed (moved/deleted since the
-original parse). PERF001/002/003 are unchanged -- this ticket is scoped to
-PERF004 only.
-
-Regression tests added to tests/test_perf.py (scope-added, reason on file):
-- test_perf004_does_not_fire_on_sort_after_loop_same_indent (the ticket's
-  headline false-positive: `.sort()` after a `for` loop at the same indent)
-- test_perf004_does_not_fire_on_sorted_call_after_loop_same_indent (same
-  shape, `sorted()` free-function form)
-- test_perf004_still_fires_on_sort_nested_deeper_inside_loop_body (true
-  positive preserved even one level more indented than the simple case)
-
-All prior PERF004 fire/no-fire cases in tests/test_perf.py still pass
-unmodified (fires-in-loop, does-not-fire-standalone, does-not-fire-as-loop-
-iterable, does-not-fire-on-generator, anchors-to-call-line). Full
-tests/test_perf.py: 52 passed. tests/test_perf_loop_invariant_effect_lock.py
-(the T-0775 strict-xfail lock, explicitly out of this ticket's scope) still
-reports XFAIL after this change, confirmed via
-`pytest tests/test_perf_loop_invariant_effect_lock.py -q`.
-
-Real-repo PERF004 count: `frob check --ticket T-0367 --only gates-native`
-now reports gate:PERF PASS, 0 errors. 17 unwaived PERF004 findings remain
-(all genuine loop-body sort calls per the new AST check, spot-checked
-src/frob/arch/_ocp.py:314 by hand -- a `sorted(missing)` call inside a
-`for enum_class in ...:` body, a real hit, not a false positive):
-src/frob/arch/_ocp.py:314, src/frob/arch/_patterns.py:517,
-src/frob/gates/__init__.py:1222, src/frob/gates/__init__.py:5082,
-src/frob/gates/_docblocks.py:210, src/frob/gates/_docblocks.py:236,
-src/frob/gates/_docblocks.py:1217, src/frob/gates/_lang_conformance.py:193,
-src/frob/gates/_registry_exhaustiveness.py:405,
-src/frob/graph/affects.py:132, src/frob/graph/lock.py:153,
-src/frob/perf/_hotgraph.py:323, src/frob/strata/_contention.py:180,
-src/frob/strata/_contention.py:328, src/frob/strata/_contention.py:366,
-src/frob/strata/_design_load.py:259, src/frob/strata/_infra.py:670.
-This is 17, not the 9 the ticket cited from T-0596 -- main has grown new
-sort-in-loop sites since T-0596 was filed; these 17 (including the T-0363
-sites the ticket named, which are now clean) are routed to T-0596 for
-per-site waive/fix triage, not addressed here (out of this bug-fix
-ticket's scope, which is the DETECTOR, not the sites).
-
-Deviations:
-- T-0367 existed in BOTH tickets.md (state=planned) and tickets-archive.md
-  (a stale duplicate at state=queued, no Done report) -- a ledger-
-  corruption instance of the exact class the existing "tickets:
-  investigate missing-marker ledger corruption class" ticket already
-  tracks. Removed the stale archive duplicate directly (it blocked `frob
-  ticket start T-0367` with DuplicateId) since it was purely stale/orphan
-  state with no Done report to lose; did not otherwise touch that
-  investigation ticket's scope.
-- T-0367's `acceptance` list is empty (filed with none at `frob ticket new`
-  time, and there is no CLI path to add acceptance criteria to an existing
-  ticket after filing). Evidence is recorded on the ticket's flat evidence
-  list; `--accepts` could not be used since there is no acceptance index to
-  bind to.
-- `uv.lock` in this worktree's checked-out commit (2ed2d2f6) lags
-  `pyproject.toml`'s version (0.97.0 vs 0.98.0 already on that commit) --
-  every `uv run` invocation auto-resyncs `uv.lock` as a side effect, which
-  then shows up as an unrelated SCOPE001 finding and a `git status` diff.
-  Reverted with `git checkout -- uv.lock` before every commit per the
-  playbook's land-owned-files rule; this file is not part of the committed
-  diff.
-- `tests/unit/perf/test_hotgraph.py::TestStackSampler::test_overhead_under_five_percent`
-  failed once on a shared/loaded machine (0.41 ratio vs 0.05 budget) and
-  passed clean on immediate rerun -- a pre-existing timing-flake unrelated
-  to src/frob/perf/_rules.py, not touched by this ticket.
-- gate:TEST's 2 errors (TEST010 kind='system' on
-  tests/test_perf_loop_invariant_effect_lock.py and
-  tests/system/test_spawn_budget.py) are pre-existing debt landed on main
-  before this ticket started (both outside src/frob/perf/_rules.py and
-  tests/test_perf.py); not introduced or touched by this change.
-- Reviewer round 1 caught collateral splice damage in a prior merge of
-  main into this worktree beyond my own T-0787 restore: T-0788's whole
-  block deleted, T-0774 reverted in-progress -> queued, T-0766's Done
-  report reverted to the phantom pre-T-0787 draft-id sentence.
-  Re-merged against current main (which had since landed T-0676 and filed
-  T-0790) and this time the ticket merge-driver spliced cleanly against
-  the newer main for all three -- but a fresh block-by-block diff against
-  `git show main:tickets.md` then caught a FOURTH, previously-unreported
-  casualty from the same original splice: T-0674 reverted from
-  state=done/full Done-report+evidence back to state=queued/empty, which
-  I restored verbatim from main the same way. A scripted per-ticket-id
-  block comparison against main (all 201 shared ids) now shows zero
-  differences outside this ticket's own T-0367 block.
-
-### Changed
-(no changed files detected)
-
-### Evidence
-- `tests/test_perf.py::test_perf004_does_not_fire_on_sort_after_loop_same_indent` (pytest node id, verified passing when recorded)
-- `tests/test_perf.py::test_perf004_does_not_fire_on_sorted_call_after_loop_same_indent` (pytest node id, verified passing when recorded)
-- `tests/test_perf.py::test_perf004_still_fires_on_sort_nested_deeper_inside_loop_body` (pytest node id, verified passing when recorded)
-- `tests/test_perf.py::test_perf004_fires_on_sort_in_loop` (pytest node id, verified passing when recorded)
-- `tests/test_perf.py::test_perf004_does_not_fire_on_sort_outside_a_loop` (pytest node id, verified passing when recorded)
-- `tests/test_perf.py::test_perf004_does_not_fire_when_sorted_is_the_loop_iterable` (pytest node id, verified passing when recorded)
-- `tests/test_perf.py::test_perf004_does_not_fire_on_sorted_generator_no_preceding_loop` (pytest node id, verified passing when recorded)
-- `tests/test_perf.py::test_perf004_anchors_to_sort_call_line_not_def_line` (pytest node id, verified passing when recorded)

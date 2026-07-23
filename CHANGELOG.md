@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.101.0] - unreleased
+
+- T-0776: testing: subprocess spawn-budget litmus for CLI hot paths (fail on duplicate identical argv per invocation)
+
 ## [0.100.0] - unreleased
 
 - T-0607: implement checkable-control enforcement for CMPL-* compliance registry units

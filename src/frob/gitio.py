@@ -12,8 +12,11 @@ package, never a second copy living under `frob.testing`.
 
 from __future__ import annotations
 
+import contextvars
 import subprocess
-from collections.abc import Sequence
+from collections import Counter
+from collections.abc import Iterator, Mapping, Sequence
+from contextlib import contextmanager
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
@@ -68,6 +71,70 @@ class ProcResult(BaseModel):
     stderr: str
 
 
+# frob:doc docs/modules/testing.md#spawn-recorder-t-0776
+class SpawnRecorder:
+    """Tallies every argv spawned through `run_argv` while active (T-0776);
+    the exact-count complement to the static loop-invariant-effect
+    detector -- a test-mode-only litmus for the "same argv spawned twice
+    in one CLI invocation" class of regression (e.g. T-0773's rev-parse
+    incident). Never instantiate directly outside a test; use
+    `spawn_recorder()`."""
+
+    def __init__(self) -> None:
+        self._counts: Counter[tuple[str, ...]] = Counter()
+
+    # frob:doc docs/modules/testing.md#spawn-recorder-t-0776
+    def record(self, argv: tuple[str, ...]) -> None:
+        """Tally one spawned `argv`; called by `run_argv` while this
+        recorder is the active one for the current context."""
+        self._counts[argv] += 1
+
+    # frob:doc docs/modules/testing.md#spawn-recorder-t-0776
+    def counts(self) -> Mapping[tuple[str, ...], int]:
+        """A snapshot `{argv: spawn count}` for everything recorded so far."""
+        return dict(self._counts)
+
+    # frob:doc docs/modules/testing.md#spawn-recorder-t-0776
+    def duplicates(
+        self,
+        budgets: Mapping[tuple[str, ...], int] | None = None,
+        *,
+        default_budget: int = 1,
+    ) -> dict[tuple[str, ...], int]:
+        """Argv tuples whose spawn count exceeds their declared budget --
+        `budgets` overrides `default_budget` (1, i.e. "spawned at most
+        once") per exact argv tuple. Empty dict means every spawn stayed
+        within budget."""
+        budget_map = budgets or {}
+        return {
+            argv: n
+            for argv, n in self._counts.items()
+            if n > budget_map.get(argv, default_budget)
+        }
+
+
+# frob:doc docs/modules/testing.md#spawn-recorder-t-0776
+_active_recorder: contextvars.ContextVar[SpawnRecorder | None] = contextvars.ContextVar(
+    "_frob_gitio_active_recorder", default=None
+)
+
+
+# frob:doc docs/modules/testing.md#spawn-recorder-t-0776
+@contextmanager
+def spawn_recorder() -> Iterator[SpawnRecorder]:
+    """Test-only context manager: every `run_argv` spawn made while the
+    block is active is tallied onto the yielded `SpawnRecorder` (T-0776).
+    Zero-cost and behavior-neutral when not active -- `run_argv` only pays
+    a single `ContextVar.get()` outside this block, and never alters what
+    it spawns or returns either way."""
+    recorder = SpawnRecorder()
+    token = _active_recorder.set(recorder)
+    try:
+        yield recorder
+    finally:
+        _active_recorder.reset(token)
+
+
 def _excerpt(text: str, *, lines: int = _EXCERPT_LINES) -> str:
     """Bound a stdout/stderr blob to its last N lines -- the useful end."""
     parts = text.splitlines()
@@ -86,6 +153,9 @@ def run_argv(
     """Spawn an already-resolved argv (never shell=True); public seam `frob.testing`
     reuses so there is exactly one process-with-timeout helper in the package."""
     full_argv = tuple(argv)
+    recorder = _active_recorder.get()
+    if recorder is not None:
+        recorder.record(full_argv)
     _log.debug("gitio: spawning %s (cwd=%s, timeout=%gs)", full_argv, cwd, timeout_s)
     try:
         completed = subprocess.run(
@@ -268,8 +338,10 @@ __all__ = [
     "GitError",
     "Hunk",
     "ProcResult",
+    "SpawnRecorder",
     "current_branch",
     "repo_root",
     "run_argv",
+    "spawn_recorder",
     "working_diff",
 ]
