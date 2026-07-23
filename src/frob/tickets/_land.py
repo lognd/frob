@@ -2552,7 +2552,13 @@ def _close_finalized_ticket(
     `final_id` FIRST and checking its state lets a retry recognize "already
     done from a prior finalize" and skip straight to returning `final_id`
     for the caller (`_land_finalize_and_close`) to proceed to squash-apply,
-    instead of re-running (and failing) the transition."""
+    instead of re-running (and failing) the transition.
+
+    T-0821: also auto-advances a ticket still in PLANNED (never run
+    through `frob ticket start`, or reverted there by a section-10b ledger
+    restore) to IN_PROGRESS before attempting the DONE transition -- see
+    the inline comment at that check for the recurring incident this
+    closes."""
     from frob.tickets import _load_one, transition
 
     loaded = _load_one(worktree, final_id)
@@ -2574,6 +2580,38 @@ def _close_finalized_ticket(
             worktree,
         )
         return Ok(final_id)
+
+    # T-0821: a ticket landed with full evidence and a Done report but
+    # never actually run through `frob ticket start` (or reverted to
+    # PLANNED by a section-10b ledger restore, T-0752) cannot legally
+    # jump PLANNED -> DONE (`_TRANSITIONS` only allows PLANNED ->
+    # IN_PROGRESS/DROPPED) -- every prior incident (T-0799, T-0752,
+    # T-0815) hit this AFTER the merge already landed in the worktree,
+    # forcing a manual start-then-retry recipe with main untouched but
+    # the coordinator now needing a second pass. Advance PLANNED ->
+    # IN_PROGRESS transparently here, right before the real close
+    # transition, whenever finalize's own preconditions (evidence + a
+    # substantive Done report, the same gate `transition(..., DONE)`
+    # checks a moment later) are otherwise about to be satisfied -- so
+    # the close below always sees a from-state the state machine
+    # actually allows, and a legitimately-done PLANNED ticket never
+    # surfaces `InvalidTransition` post-merge at all.
+    if current.state == TicketState.PLANNED:
+        advanced = transition(worktree, final_id, TicketState.IN_PROGRESS)
+        if advanced.is_err:
+            _log.error(
+                "land: %s could not auto-advance planned -> in-progress in "
+                "%s ahead of close (%s) -- fix evidence/Done report in %s "
+                "and retry `frob ticket land %s --worktree %s`",
+                final_id,
+                worktree,
+                advanced.danger_err,
+                worktree,
+                ticket_id,
+                worktree,
+            )
+            return Err(LandError.CloseFailed)
+        current = advanced.danger_ok
 
     resolved_covers_scope: bool | None = None
     if covers_scope is not None:

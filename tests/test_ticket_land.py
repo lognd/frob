@@ -840,6 +840,48 @@ class TestLand:
         assert _run(["git", "status", "--porcelain"], wt).stdout.strip() == ""
 
 
+class TestPlannedStateAutoAdvanceOnLand:
+    """T-0821: a ticket left in PLANNED (never run through `frob ticket
+    start`, or reverted there by a section-10b ledger restore) but
+    otherwise closeable (evidence + Done report) must land straight to
+    DONE, not die `InvalidTransition` after main already merged."""
+
+    # frob:ticket T-0821
+    # frob:tests tests/test_ticket_land.py::TestPlannedStateAutoAdvanceOnLand.test_planned_ticket_with_full_evidence_lands_to_done  # noqa: E501
+    def test_planned_ticket_with_full_evidence_lands_to_done(self, repo: Path) -> None:
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-planned", str(wt)], repo)
+        created = new_ticket(wt, _spec("Add sprocket", scope=("src/sprocket.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+
+        # Left in PLANNED (`frob ticket start`'s first transition), never
+        # advanced to IN_PROGRESS -- but evidence and a Done report are
+        # both present, exactly the T-0799/T-0752/T-0815 incident shape.
+        assert transition(wt, tid, TicketState.PLANNED).is_ok
+        loaded = load_all(wt)
+        ticket = loaded.danger_ok[tid]
+        ticket = ticket.model_copy(
+            update={
+                "evidence": ("tests/test_x.py::test_ok",),
+                "body": ticket.body + "\n## Done report\n\nevidence attached\n",
+            }
+        )
+        assert write_ticket(wt, ticket).is_ok
+        assert load_all(wt).danger_ok[tid].state == TicketState.PLANNED
+
+        (wt / "src" / "sprocket.py").write_text("# new sprocket\n")
+        _commit_all(wt, "add sprocket")
+
+        result = land(repo, tid, wt, dry_run=False)
+        assert result.is_ok, result.err
+        report = result.danger_ok
+
+        landed = load_all(repo)
+        assert landed.is_ok
+        assert landed.danger_ok[report.final_id].state == TicketState.DONE
+
+
 class TestWarnIfNativeStale:
     """T-0248: `land` warns loudly (without blocking) when the just-landed
     tree's native source outpaces its own built extension -- the T-0166

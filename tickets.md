@@ -8061,7 +8061,7 @@ Sunset-execution ticket for the user's 2026-07-23 deprecation decision (T-0580, 
 id: T-0821
 title: 'land: close path refuses planned-state tickets with full evidence (recurring
   InvalidTransition; auto-advance or preflight-name the state gap)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-23'
@@ -8070,17 +8070,93 @@ parent: null
 scope:
 - src/frob/tickets/_land.py
 - tests/test_ticket_land.py
+evidence:
+- tests/test_ticket_land.py::TestPlannedStateAutoAdvanceOnLand::test_planned_ticket_with_full_evidence_lands_to_done
 acceptance:
 - text: GIVEN a worktree ticket in planned state with evidence bound and a Done report
     WHEN land runs THEN it either advances planned->in-progress->done transparently
     during finalize or the PRE-MERGE preflight refuses naming the state and the frob
     ticket start remedy -- never a post-merge InvalidTransition; a regression test
     covers the planned-state land
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestPlannedStateAutoAdvanceOnLand::test_planned_ticket_with_full_evidence_lands_to_done
 threat: null
 component: null
 ```
 Hit 3x this drive (T-0799, T-0752 post-10b-restore, T-0815): implementers leave tickets planned (never ran start, or a ledger restore reverted the state), evidence+report are complete, land merges+finalizes then dies InvalidTransition at close, forcing the coordinator start-then-retry recipe. Either fold the start transition into finalize when preconditions are met, or extend the T-0763 preflight to check state transitions pre-merge.
+
+## Done report
+
+Root cause: `_close_finalized_ticket` (src/frob/tickets/_land.py) always
+attempted `transition(worktree, final_id, TicketState.DONE, ...)`
+directly. `_TRANSITIONS` (frob.tickets.__init__) only allows
+PLANNED -> IN_PROGRESS/DROPPED, never PLANNED -> DONE, so any ticket that
+reached land in the PLANNED state (never run through `frob ticket start`,
+or reverted there by a section-10b `git checkout main -- tickets.md`
+ledger restore) hit `Err(InvalidTransition)` at close time -- AFTER main
+had already merged into the worktree, forcing the coordinator's manual
+start-then-retry recipe (hit 3x this drive per the ticket: T-0799,
+T-0752, T-0815).
+
+Fix: `_close_finalized_ticket` now auto-advances a PLANNED ticket to
+IN_PROGRESS (a real `transition()` call, same guard checks) immediately
+before attempting the DONE transition, so the close step always sees a
+from-state the state machine actually allows. Preconditions (evidence,
+Done report) are unaffected -- `_validate_closeable`'s pre-merge preflight
+already requires both regardless of state, so the auto-advance never
+promotes a ticket that would not otherwise be closeable. If the
+IN_PROGRESS advance itself fails for some other reason, land aborts with
+`LandError.CloseFailed` and the existing manual-remedy log message,
+exactly like any other close failure -- no new silent path.
+
+Added `TestPlannedStateAutoAdvanceOnLand` (tests/test_ticket_land.py):
+a real fixture-repo test that leaves a ticket in PLANNED with evidence
+and a Done report attached (the exact T-0799/T-0752/T-0815 shape) and
+asserts `land()` succeeds end to end, landing the ticket to DONE.
+
+Verified: `uv run pytest tests/test_ticket_land.py -p no:cacheprovider`
+-- 116 passed (115 pre-existing + 1 new), no failures. `uv run frob check
+--only lint/static/gates-fast/gates-native/gates-security --ticket
+T-0821` (chunked per playbook 3b): all five stage groups report 0 errors
+(gates-fast initially showed 2 SCOPE001 false positives on T-0853's own
+already-committed files from earlier in this same worktree branch -- the
+T-0108 cross-ticket exemption needs the OTHER ticket's id in that
+commit's subject line, which my T-0853 commit's original subject omitted;
+amended that commit's message to include "T-0853" and the exemption
+picked it up, clearing to 0 errors on rerun). ruff clean on both PATH
+ruff and `uv run ruff` for the two touched files.
+
+Gotcha noted for whoever reviews: `frob ticket evidence`'s direct-pytest
+verification path inherits the CALLING SHELL's environment, so when
+FROB_AGENT/FROB_WORKTREE (this worktree's own lease vars, required for
+every other `frob ticket` invocation per the playbook) are exported, the
+new regression test's own real `git worktree add` calls inside a
+throwaway tmp_path repo get refused by `frob.tickets._worktree_guard`
+(WorktreeLeaseViolation) -- the test process incorrectly inherits a lease
+scoped to THIS worktree, not the test's own tmp fixture tree. Worked
+around by recording evidence with those two vars unset for just that one
+call (`unset FROB_WORKTREE; unset FROB_AGENT` in the same shell
+invocation); `frob check`'s own test stage does not hit this (it sanitizes
+the subprocess env differently). Not fixed here -- outside T-0821's
+declared scope (`_worktree_guard.py`/`ticket_runner.py`, not
+`_land.py`/`test_ticket_land.py`) -- filed as T-0884 for whoever owns
+that seam.
+
+### Changed
+```
+ src/frob/tickets/_models.py      | 72 +++++++++++++++++++++++++++++++------
+ tests/test_evidence_integrity.py | 64 +++++++++++++++++++++++++++++++++
+ tickets.md                       | 76 +++++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 201 insertions(+), 11 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestPlannedStateAutoAdvanceOnLand::test_planned_ticket_with_full_evidence_lands_to_done` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 1015 warning(s), 220 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0823 -->
 ```yaml
@@ -9697,7 +9773,7 @@ No out-of-scope discoveries; no drafts filed for this ticket.
 id: T-0853
 title: 'done-report: a narrative line consisting exactly of the Done-report heading
   defeats section-end detection'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-23'
@@ -9706,10 +9782,85 @@ parent: null
 scope:
 - src/frob/tickets/_models.py
 - tests/test_evidence_integrity.py
+evidence:
+- tests/test_evidence_integrity.py::TestDoneReportHeadingImpersonation::test_lookalike_heading_before_real_report_ignored
+- tests/test_evidence_integrity.py::TestDoneReportHeadingImpersonation::test_lookalike_heading_without_changed_marker_not_real
 threat: null
 component: null
 ```
 Found landing T-0848 itself: a --why-file narrative containing a line-wrapped quoted phrase that puts the literal heading text at a line start (the line is exactly the Done-report H2) is indistinguishable from the structural repeated-heading boundary that _done_report_section_end (post-T-0848) stops at. Rewriting then truncates the replaceable window mid-narrative and strands the tail as a phantom section (observed: T-0848's own block accumulated 3 heading lines). Fix direction: escape or reflow heading-identical narrative lines at render time (e.g. prefix a zero-width or backslash marker), or make the boundary check require the heading to be followed by the auto-generated Changed/Evidence structure. Coordinator hand-repaired the block this time.
+
+## Done report
+
+Root cause: `_done_report_section_lines`/`replace_done_report_section`
+(src/frob/tickets/_models.py) found the FIRST line anywhere in a ticket's
+body that read exactly "## Done report" and treated its position as the
+section start, with no check that the match was actually a genuine
+section heading rather than a narrative/description line that merely
+reads identically (e.g. a line-wrapped quoted phrase discussing this very
+class of bug, landing at the start of its own physical line). When such a
+lookalike line sat in the ticket's pre-existing Description/Plan prose
+BEFORE any real Done report existed, `replace_done_report_section` spliced
+the new report in at that lookalike position and silently dropped
+everything in the body that followed it -- observed for real in T-0848's
+own ledger block during its landing.
+
+Fix: added `_is_real_done_report_heading` (src/frob/tickets/_models.py),
+which only accepts a heading match as genuine when it is the first line
+of the body or immediately preceded by a blank line -- the Markdown
+convention every real heading this package writes (or a hand-authored
+--body-file section) follows, and which a mid-paragraph line-wrap
+lookalike never satisfies (it is preceded by another text line continuing
+the same paragraph). `_find_done_report_heading` scans all exact-text
+matches in order and returns the first one that passes this check;
+`_done_report_section_lines` and `replace_done_report_section` both now
+delegate to it instead of taking the first raw string match.
+
+An earlier draft of this fix required a trailing "### Changed" marker
+(the auto-generated Changed-block marker) instead of the blank-line
+heuristic; that broke every legitimately terse Done report with no
+Changed/Evidence block at all (this repo's own D-03 test fixtures use
+bodies like "## Done report\nDone.\n") -- reverted in favor of the
+blank-line-precedes check, which needs nothing about what follows the
+candidate line.
+
+Added TestDoneReportHeadingImpersonation
+(tests/test_evidence_integrity.py) with two cases: a lookalike heading
+line in pre-existing Description prose before any real report exists
+(reproduces the exact T-0848 corruption -- content after the lookalike
+line used to be silently dropped), and a second `done-report` call that
+must still correctly replace only the real prior section when a lookalike
+line also precedes it in the Description.
+
+Verified: `uv run pytest tests/test_evidence_integrity.py
+tests/test_tickets.py tests/unit/test_ticket_store.py -p no:cacheprovider
+-q` -- 185 passed (37+72+76... see console: 3 files, all green, no
+failures). `uv run frob check --only lint/static/gates-fast/gates-native/
+gates-security --ticket T-0853` (chunked per playbook 3b): all five stage
+groups report 0 errors (gates-fast required one `frob ticket sweep
+T-0853` re-run first to clear a stale PRE001 after touching files).
+ruff clean on both PATH ruff and `uv run ruff` for the two touched files.
+
+Deviation from ticket's own fix-direction list: implemented neither of
+the two directions named verbatim ("escape/reflow at render time" or
+"require the Changed/Evidence structure to follow") -- escaping at
+render time cannot fix ALREADY-EXISTING lookalike lines in a ticket's
+hand-authored Description (which set_done_report never touches), and
+requiring Changed/Evidence structure to follow breaks legitimate terse
+reports as described above. Used a third approach (blank-line-preceded
+heading convention) that satisfies the stated acceptance without either
+drawback.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_evidence_integrity.py::TestDoneReportHeadingImpersonation::test_lookalike_heading_before_real_report_ignored` (pytest node id, verified passing when recorded)
+- `tests/test_evidence_integrity.py::TestDoneReportHeadingImpersonation::test_lookalike_heading_without_changed_marker_not_real` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0854 -->
 ```yaml
@@ -9946,7 +10097,7 @@ and still passes, 1 passed.
 id: T-0855
 title: 'mutation-evidence precheck diffs pre-merge in stacked worktrees: already-landed
   sibling code reads as this ticket''s diff'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-23'
@@ -9955,10 +10106,139 @@ parent: null
 scope:
 - src/frob/tickets/_land.py
 - src/frob/tickets/_mutation_evidence.py
+- tests/test_tickets_mutation_evidence.py
+scope_changes:
+- op: add
+  glob: tests/test_tickets_mutation_evidence.py
+  reason: 'The T-0855 fix in src/frob/tickets/_mutation_evidence.py adds
+
+    _matches_base_ref_tip and changes _touched_python_files; its unit test
+
+    coverage (TestTouchedPythonFiles.test_already_landed_sibling_content_excluded
+
+    and the two _matches_base_ref_tip tests) lives in
+
+    tests/test_tickets_mutation_evidence.py, the module''s existing test home,
+
+    not a new file. Extending scope to cover it rather than leaving the new
+
+    tests dangling outside declared scope.
+
+    '
+  actor: logan
+  at: '2026-07-23'
+evidence:
+- tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles::test_already_landed_sibling_content_excluded
+- tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles::test_matches_base_ref_tip_true_for_identical_content
+- tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles::test_matches_base_ref_tip_false_for_differing_content
+- tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles::test_filters_to_scope_and_python
 threat: null
 component: null
 ```
 Seen landing the T-0847/T-0848/T-0850 chain: land runs the TEST016 precheck BEFORE its merge step, diffing the worktree tree against current main. In a stacked multi-ticket worktree whose siblings already landed (squash-applied to main), content-identical files still enumerate as touched until the worktree merges main, so mutants are generated from code this ticket did not change and its evidence rightly kills none of them -- a false EvidenceConfirmatoryOnly block. Coordinator workaround is merge-main-then-retry. Fix: run the precheck against the post-merge state (or skip files whose worktree content is identical to main's blob), keeping the honest block for genuinely-changed lines.
+
+## Done report
+
+Root cause: `frob.gitio.working_diff` (the ONE diff seam this repo uses
+everywhere) diffs the working tree against `merge-base(HEAD, base_ref)`,
+never against `base_ref`'s CURRENT tip. `_touched_python_files`
+(src/frob/tickets/_mutation_evidence.py) fed this diff straight into the
+T-0755 mutation-evidence obligation without correcting for that. In a
+stacked multi-ticket worktree, once a sibling ticket committed earlier on
+this same branch has separately LANDED (squash-applied onto the real
+`base_ref` elsewhere by `frob ticket land`), the merge-base still
+predates that land -- the sibling's file keeps enumerating as "touched"
+relative to the stale merge-base even though `base_ref`'s tip now already
+carries identical content. The mutation-evidence check then mutates code
+this ticket did not actually change, kills zero mutants of it (nothing in
+the ticket's own bound evidence targets unrelated sibling logic), and
+wrongly refuses the land as TEST016 EvidenceConfirmatoryOnly -- exactly
+the T-0847/T-0848/T-0850 incident the ticket names.
+
+Fix: added `_matches_base_ref_tip` (src/frob/tickets/_mutation_evidence.py),
+which compares a candidate file's CURRENT on-disk content against
+`git show <base_ref>:<file>` (the tip, not the merge-base). Best-effort:
+any git failure (file absent at base_ref, unresolvable ref) returns
+`False`, never silently exempting a file this check cannot actually
+verify. `_touched_python_files` now excludes any candidate this returns
+`True` for, even though `working_diff`'s merge-base-relative diff still
+lists it -- stacked-worktree noise, not a genuine unlanded change. A
+genuinely still-unlanded file (this ticket's own real diff) is
+unaffected: `base_ref`'s tip does not yet have its content, so the
+comparison correctly returns `False` and it stays in the candidate set.
+
+Direction taken vs the ticket's own two suggestions ("run the precheck
+against the post-merge state" or "skip files whose worktree content is
+identical to main's blob"): implemented the second -- narrower, entirely
+within `_mutation_evidence.py`'s own scope, and does not require
+reordering `_land.py`'s precheck-before-merge sequencing (which several
+other pre-merge checks, e.g. T-0854's live-tracker citation check, also
+depend on running BEFORE any git mutation).
+
+Added TestTouchedPythonFiles::test_already_landed_sibling_content_excluded
+(tests/test_tickets_mutation_evidence.py): a real git-fixture repro of
+the exact incident -- a sibling-ticket file changed identically on both
+this branch and a divergent `main` (different commits, same content) is
+excluded, while a genuinely still-unlanded file on this same branch is
+still reported. Plus two direct unit tests for `_matches_base_ref_tip`
+(identical / differing content). Scope extended by one file,
+tests/test_tickets_mutation_evidence.py (reason recorded via `frob
+ticket scope --add`) -- the module's existing test home, not a new file.
+
+Verified: `uv run pytest tests/test_tickets_mutation_evidence.py::
+TestTouchedPythonFiles tests/test_tickets_mutation_evidence.py::
+TestEvidenceTestIds -p no:cacheprovider -q` -- 7 passed. `uv run frob
+check --only lint/static/gates-fast/gates-native/gates-security --ticket
+T-0855` (chunked per playbook 3b): all five stage groups report 0 errors
+(gates-fast needed a `frob ticket scope T-0855 --add
+tests/test_tickets_mutation_evidence.py` plus a `frob:ticket T-0855`
+class-level marker on the new test class to clear SCOPE001/COV002, then
+0 errors). ruff clean on both PATH ruff and `uv run ruff` for both
+touched files.
+
+Deliberately NOT run as part of this verification pass: the pre-existing
+`TestCheckTicketMutationEvidence` class in the same test file (including
+its own `test_self_check_t0755_own_diff_zero_error_findings` self-check),
+which mutates this repo's OWN real source files in place
+(src/frob/tickets/_mutation_evidence.py, src/frob/tickets/_land.py) as
+part of its dogfooding design. Running the FULL test file under this
+session's heavy concurrent machine load corrupted
+src/frob/tickets/_mutation_evidence.py on disk twice -- once when an
+external `timeout` wrapper killed the run mid-mutation, once when a
+pytest-xdist worker crashed outright mid-mutation -- in both cases
+leaving a mutant applied with no automatic revert. Recovered both times
+via `git show HEAD:<path>` (the file was never committed in the
+corrupted state). This is a real, pre-existing reliability gap
+(T-0857 covers frob.mutate's own internal crash detection/restore, but
+neither an external SIGTERM nor an xdist worker crash goes through that
+path) -- filed as T-0885 rather than fixed here (out of
+T-0855's declared scope, which is `_land.py`/`_mutation_evidence.py`'s
+OWN logic, not `frob.mutate`'s crash-recovery machinery). My own new
+`_touched_python_files`/`_matches_base_ref_tip` code and its 5 tests were
+verified clean and complete without needing that class at all.
+
+### Changed
+```
+ src/frob/tickets/_land.py               |  40 ++++-
+ src/frob/tickets/_models.py             |  72 +++++++--
+ src/frob/tickets/_mutation_evidence.py  |  67 ++++++++-
+ tests/test_evidence_integrity.py        |  64 ++++++++
+ tests/test_ticket_land.py               |  42 ++++++
+ tests/test_tickets_mutation_evidence.py |  67 +++++++++
+ tickets.md                              | 254 +++++++++++++++++++++++++++++++-
+ 7 files changed, 588 insertions(+), 18 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles::test_already_landed_sibling_content_excluded` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles::test_matches_base_ref_tip_true_for_identical_content` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles::test_matches_base_ref_tip_false_for_differing_content` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles::test_filters_to_scope_and_python` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 0 error(s), 1019 warning(s), 220 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0856 -->
 ```yaml
@@ -11341,3 +11621,99 @@ T-0711's scope: src/frob/stats/**, src/frob/perf/**, tests/unit/perf/,
 docs/modules/perf.md). Needs: either the real ticket T-draft-427ffd5a
 resolved/filed for real, T-0738's Done report corrected to name the real
 id, or an honest disclosed-historical-draft-loss waiver.
+
+<!-- ticket:T-0884 -->
+```yaml
+id: T-0884
+title: 'ticket evidence: direct-pytest verification leaks caller''s FROB_WORKTREE/FROB_AGENT
+  lease env into the spawned test process'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/app/ticket_runner.py
+threat: null
+component: null
+```
+Found while working T-0821: `frob ticket evidence`'s direct-pytest
+verification fallback (`_run_pytest_directly` in
+src/frob/app/ticket_runner.py) spawns `uv run pytest <node_ids> -q -o
+addopts=` inheriting the calling shell's full environment. When the
+caller is a dispatched worktree agent (FROB_AGENT=1, FROB_WORKTREE=<this
+worktree>, both required by every other `frob ticket` invocation per
+docs/guides/agent-playbook.md section 1/3), any test that itself performs
+real git worktree operations against a throwaway tmp_path fixture repo
+(e.g. tests/test_ticket_land.py's `TestLand`/`TestPlannedStateAutoAdvanceOnLand`
+classes) gets refused by `frob.tickets._worktree_guard.enforce_worktree_lease`
+with `WorktreeLeaseViolation`: the guard sees FROB_WORKTREE pointing at
+the AGENT's own worktree and refuses to let the test mutate its own
+unrelated tmp_path repo, since that path does not match the leased
+worktree.
+
+The same test passes cleanly under `frob check`'s own coverage/test gate
+stage (which apparently manages/sanitizes the pytest subprocess
+environment differently) and under a plain `uv run pytest <node_id>` with
+no FROB_AGENT/FROB_WORKTREE exported -- only `frob ticket evidence`'s
+direct-invocation path is affected.
+
+Workaround used in T-0821: unset both vars for just the one `frob ticket
+evidence` call. Real fix belongs in `_run_pytest_directly` (and any sibling
+runner-based verification path with the same shape) in
+src/frob/app/ticket_runner.py -- strip FROB_AGENT/FROB_WORKTREE (and any
+other worktree-lease env) from the subprocess environment before spawning
+the verification pytest run, so a ticket's own evidence-recording step
+never leaks the recorder's own lease into the tests being verified.
+
+<!-- ticket:T-0885 -->
+```yaml
+id: T-0885
+title: 'mutate: leftover mutant journal not auto-restored on next run start (xdist
+  worker crash / external SIGTERM, beyond T-0857''s own-crash detection)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/mutate/**
+threat: null
+component: null
+```
+Found while working T-0855: `tests/test_tickets_mutation_evidence.py::
+TestCheckTicketMutationEvidence::test_self_check_t0755_own_diff_zero_error_findings`
+is a dogfooding self-check that runs `check_ticket_mutation_evidence`
+against THIS repo's own real worktree root (mutating
+src/frob/tickets/_mutation_evidence.py and src/frob/tickets/_land.py in
+place, journaling originals via `frob.mutate._journal` for a safe revert
+per T-0857).
+
+Under heavy concurrent load on the machine (many other agent worktrees
+running `frob check`/pytest simultaneously, observed directly via `ps
+aux` while working T-0855), this test's pytest-xdist worker was observed
+crashing outright ("[gw0] node down: Not properly terminated") while a
+mutant was live, and separately, an EXTERNAL SIGTERM (a `timeout N`
+wrapper killing the foreground pytest process from outside, not a crash
+frob's own harness could detect) also left a mutant applied on disk --
+both left `src/frob/tickets/_mutation_evidence.py` corrupted (formatting
+collapsed, a boolean literal flipped) in the real worktree tree, with no
+automatic recovery on the next run. T-0857 covers the case where
+`frob.mutate`'s OWN harness detects its own crash and restores from the
+journal; neither an xdist worker crash nor an external process kill goes
+through that path, so the journaled backup in `.frob/mutate-backup/`
+sits unused and the corrupted file is never auto-restored.
+
+Both incidents were recovered manually here (`git show HEAD:<path>` to
+get the clean committed original, since the corruption was on an
+uncommitted working-tree file). Suggested fix direction: on `frob check`/
+`frob test`/`pytest` startup (or via a dedicated `frob mutate restore`
+subcommand run by CI/agent tooling at session start), scan
+`.frob/mutate-backup/*.json` for journal entries whose target file's
+current on-disk content does NOT match either the journaled original OR
+a known-applied-mutant state expected by an in-progress run, and restore
+from the journal automatically -- generalizing T-0857's crash-detection
+restore to cover ANY leftover journal entry found stale at the start of
+a fresh run, regardless of what killed the previous one.

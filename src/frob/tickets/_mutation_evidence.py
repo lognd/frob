@@ -33,7 +33,7 @@ from pydantic import BaseModel, ConfigDict
 from typani.error_set import ErrorSet
 from typani.result import Err, Ok, Result
 
-from frob.gitio import working_diff
+from frob.gitio import run_argv, working_diff
 from frob.logging import get_logger
 from frob.mutate import Mutant, MutateError, run_mutations
 from frob.tickets._models import Ticket, scope_matches
@@ -99,15 +99,65 @@ def _evidence_test_ids(ticket: Ticket) -> tuple[str, ...]:
     return tuple(e for e in ticket.evidence if "::" in e and not e.startswith("cmd:"))
 
 
+# frob:ticket T-0855
+def _matches_base_ref_tip(root: Path, file: str, base_ref: str) -> bool:
+    """Whether `file`'s CURRENT on-disk content in `root` is byte-identical
+    to its blob at `base_ref`'s CURRENT tip (`git show <base_ref>:<file>`),
+    T-0855.
+
+    `working_diff` diffs against `merge-base(HEAD, base_ref)`, not
+    `base_ref`'s current tip -- correct for every OTHER `working_diff`
+    caller (they want the branch's own full delta), but wrong for THIS
+    check's purpose in a stacked multi-ticket worktree: once a sibling
+    ticket committed earlier in this same worktree branch has separately
+    LANDED (squash-applied onto the real `base_ref` by `frob ticket land`
+    elsewhere), the merge-base predates that land, so the sibling's file
+    still shows up as "touched" relative to the stale merge-base even
+    though `base_ref`'s tip now already carries the identical content --
+    a false positive T-0755's mutation-evidence obligation then runs
+    against code this ticket did not actually change, killing zero
+    mutants of it and wrongly refusing the land (T-0847/T-0848/T-0850
+    incident). Comparing against the tip directly (not the merge-base)
+    catches exactly this case: `True` only when the content the ticket's
+    own diff would mutate is ALREADY present in `base_ref`, so there is
+    nothing left for this ticket's own evidence to be adversarial against.
+
+    Best-effort: any git failure (file did not exist at `base_ref`, path
+    renamed, `base_ref` unresolvable) returns `False` -- never silently
+    exempts a file this check cannot actually verify is identical; the
+    caller keeps treating it as genuinely touched, same as before this
+    fix existed."""
+    target = root / file
+    if not target.is_file():
+        return False
+    spawned = run_argv(("git", "show", f"{base_ref}:{file}"), cwd=root)
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        return False
+    try:
+        current = target.read_bytes()
+    except OSError:
+        return False
+    return current == spawned.danger_ok.stdout.encode()
+
+
 # frob:waive COV005 reason="T-0601 rework: demoted touched_python_files -> _touched_python_files (frob-exports external-consumer test: only called intra-package by this module's own check_ticket_mutation_evidence, never imported outside frob.tickets); the frob:tests directive deliberately follows the same function to its new private name"  # noqa: E501
 # frob:tests tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles.test_filters_to_scope_and_python  # noqa: E501
+# frob:tests tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles.test_file_identical_to_base_ref_tip_excluded kind="unit"  # noqa: E501
 # frob:ticket T-0601
+# frob:ticket T-0855
 def _touched_python_files(
     root: Path, ticket: Ticket, base_ref: str
 ) -> tuple[Path, ...]:
     """Python files under `ticket.scope` that differ from `base_ref` in the
     working tree (`frob.gitio.working_diff`, the ONE diff seam this repo
     already uses everywhere else -- no second diff implementation).
+
+    T-0855: a file whose current content is already byte-identical to
+    `base_ref`'s CURRENT tip (`_matches_base_ref_tip`) is excluded even
+    when `working_diff`'s merge-base-relative diff still lists it --
+    stacked-worktree noise from an already-landed sibling ticket, not a
+    genuine change this ticket's own evidence needs to be adversarial
+    against.
 
     Deterministically sorted so the first `_MAX_FILES` taken by the caller
     is a stable, reproducible subset run-to-run, not dependent on git's own
@@ -121,7 +171,7 @@ def _touched_python_files(
         )
         return ()
     files = sorted({h.file for h in diff.danger_ok.hunks})
-    return tuple(
+    candidates = tuple(
         Path(f)
         for f in files
         if f.endswith(".py")
@@ -129,6 +179,19 @@ def _touched_python_files(
         and scope_matches(f, ticket.scope, kind=ticket.kind)
         and (root / f).is_file()
     )
+    kept = []
+    for candidate in candidates:
+        if _matches_base_ref_tip(root, str(candidate), base_ref):
+            _log.debug(
+                "mutation-evidence: %s %s already matches %s's tip -- "
+                "already-landed sibling content, excluding (T-0855)",
+                ticket.id,
+                candidate,
+                base_ref,
+            )
+            continue
+        kept.append(candidate)
+    return tuple(kept)
 
 
 # frob:waive COV005 reason="T-0601 rework: demoted changed_line_ranges -> _changed_line_ranges (frob-exports external-consumer test: only called intra-package by this module's own check_ticket_mutation_evidence, never imported outside frob.tickets); the frob:tests directives deliberately follow the same function to its new private name"  # noqa: E501

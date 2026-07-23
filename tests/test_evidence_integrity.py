@@ -372,6 +372,70 @@ class TestDoneReportSectionEndStructuralSentinel:
         assert after_round_two.count("## Evidence") == 1
 
 
+# frob:ticket T-0853
+class TestDoneReportHeadingImpersonation:
+    """A narrative/description line that merely READS like the `## Done
+    report` heading (a line-wrapped quoted phrase, T-0853) must never be
+    mistaken for a genuine section start."""
+
+    # frob:ticket T-0853
+    def test_lookalike_heading_before_real_report_ignored(self) -> None:
+        # frob:tests tests/test_evidence_integrity.py::TestDoneReportHeadingImpersonation.test_lookalike_heading_before_real_report_ignored  # noqa: E501
+        # Description prose written BEFORE any real Done report exists,
+        # containing a line-wrapped quoted phrase that happens to read as
+        # exactly the heading text on its own physical line.
+        body = (
+            "## Description\n"
+            "A narrative quoting the heading in isolation on its own line "
+            "reads as\n"
+            "## Done report\n"
+            "and looks structural even though it is just prose.\n"
+        )
+        round_one = (
+            "## Done report\n\n"
+            "Some intro.\n\n"
+            "### Changed\n(none)\n\n"
+            "### Evidence\n\n"
+            "tests/test_x.py::test_y\n"
+        )
+        after = replace_done_report_section(body, round_one)
+        # The pre-fix bug: the lookalike line was mistaken for the section
+        # start, silently dropping everything that followed it in the body.
+        assert "and looks structural even though it is just prose." in after
+        # And the real report was still appended, not lost.
+        assert "Some intro." in after
+
+    # frob:ticket T-0853
+    def test_lookalike_heading_without_changed_marker_not_real(self) -> None:
+        # frob:tests tests/test_evidence_integrity.py::TestDoneReportHeadingImpersonation.test_lookalike_heading_without_changed_marker_not_real  # noqa: E501
+        # A second `done-report` call must still correctly replace the
+        # real, prior section even when a lookalike heading line precedes
+        # it in the ticket's own Description.
+        body = (
+            "## Description\n"
+            "See also the heading text on its own line:\n"
+            "## Done report\n"
+            "-- that is just an example, not a real section.\n"
+        )
+        round_one = (
+            "## Done report\n\n"
+            "Round one narrative.\n\n"
+            "### Changed\n(none)\n\n"
+            "### Evidence\n\ntests/test_x.py::test_y\n"
+        )
+        after_one = replace_done_report_section(body, round_one)
+        round_two = (
+            "## Done report\n\n"
+            "Round two narrative, corrected.\n\n"
+            "### Changed\n(none)\n\n"
+            "### Evidence\n\ntests/test_x.py::test_y\n"
+        )
+        after_two = replace_done_report_section(after_one, round_two)
+        assert "Round two narrative, corrected." in after_two
+        assert "Round one narrative." not in after_two
+        assert "-- that is just an example, not a real section." in after_two
+
+
 # ---------------------------------------------------------------------------
 # D-04: unknown-language file changes must not silently select 0 tests
 # ---------------------------------------------------------------------------

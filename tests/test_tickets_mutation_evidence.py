@@ -14,6 +14,7 @@ from frob.tickets._models import Origin, Ticket, TicketKind, TicketState
 from frob.tickets._mutation_evidence import (
     MutationEvidenceError,
     _evidence_test_ids,
+    _matches_base_ref_tip,
     _touched_python_files,
     check_ticket_mutation_evidence,
 )
@@ -79,6 +80,7 @@ class TestEvidenceTestIds:
         assert _evidence_test_ids(_ticket(evidence=())) == ()
 
 
+# frob:ticket T-0855
 class TestTouchedPythonFiles:
     def test_filters_to_scope_and_python(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles.test_filters_to_scope_and_python  # noqa: E501
@@ -103,6 +105,72 @@ class TestTouchedPythonFiles:
 
         ticket = _ticket(scope=("m.py",))
         assert _touched_python_files(repo, ticket, "main") == ()
+
+    # frob:ticket T-0855
+    def test_already_landed_sibling_content_excluded(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles.test_already_landed_sibling_content_excluded  # noqa: E501
+        """T-0855 repro: a sibling ticket committed earlier in this same
+        worktree branch (`sibling.py`) has ALSO already landed separately
+        onto `main`'s current tip (identical content, different commit
+        history) -- the merge-base-relative diff still lists it as
+        touched, but it must be excluded since nothing about it is this
+        ticket's own unlanded change. A genuinely still-unlanded file
+        (`m.py`) must still be reported."""
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        (repo / "m.py").write_text("def f():\n    return 1\n", encoding="utf-8")
+        (repo / "sibling.py").write_text("def g():\n    return 1\n", encoding="utf-8")
+        _commit(repo, "init")
+
+        # This worktree's own branch (like the agent's real worktree
+        # branch): diverges from "main" here.
+        _git(repo, "checkout", "-q", "-b", "feature")
+
+        # Simulate this worktree's own earlier sibling-ticket commit.
+        (repo / "sibling.py").write_text("def g():\n    return 2\n", encoding="utf-8")
+        _commit(repo, "sibling ticket change")
+
+        # Simulate the coordinator squash-applying that SAME sibling
+        # change onto main INDEPENDENTLY -- a different commit (built
+        # directly on "main", not a descendant of the feature-branch
+        # commit above) with identical resulting content. main's tip now
+        # already carries sibling.py's content, but this branch's own
+        # merge-base with main is still the ORIGINAL "init" commit (git
+        # cannot know the two commits share content just from history).
+        _git(repo, "checkout", "-q", "main")
+        (repo / "sibling.py").write_text("def g():\n    return 2\n", encoding="utf-8")
+        _commit(repo, "land T-sibling")
+        _git(repo, "checkout", "-q", "feature")
+
+        # This ticket's own genuine, still-unlanded change.
+        (repo / "m.py").write_text("def f():\n    return 2\n", encoding="utf-8")
+
+        ticket = _ticket(scope=("m.py", "sibling.py"))
+        files = _touched_python_files(repo, ticket, "main")
+        assert files == (Path("m.py"),)
+
+    # frob:ticket T-0855
+    def test_matches_base_ref_tip_true_for_identical_content(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles.test_matches_base_ref_tip_true_for_identical_content  # noqa: E501
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        (repo / "m.py").write_text("def f():\n    return 1\n", encoding="utf-8")
+        _commit(repo, "init")
+        assert _matches_base_ref_tip(repo, "m.py", "main") is True
+
+    # frob:ticket T-0855
+    def test_matches_base_ref_tip_false_for_differing_content(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles.test_matches_base_ref_tip_false_for_differing_content  # noqa: E501
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        (repo / "m.py").write_text("def f():\n    return 1\n", encoding="utf-8")
+        _commit(repo, "init")
+        (repo / "m.py").write_text("def f():\n    return 2\n", encoding="utf-8")
+        assert _matches_base_ref_tip(repo, "m.py", "main") is False
 
 
 class TestCheckTicketMutationEvidence:

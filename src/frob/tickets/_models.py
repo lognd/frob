@@ -474,16 +474,63 @@ def _done_report_section_end(lines: list[str], heading_idx: int) -> int:
     return end_idx
 
 
+# frob:ticket T-0853
+# frob:tests tests/test_evidence_integrity.py::TestDoneReportHeadingImpersonation.test_lookalike_heading_without_changed_marker_not_real  # noqa: E501
+def _is_real_done_report_heading(lines: list[str], heading_idx: int) -> bool:
+    """Whether the `## Done report`-matching line at `heading_idx` begins a
+    GENUINE section rather than mere narrative that happens to read
+    identically (T-0853): a line-wrapped quoted phrase inside a `--why-file`
+    narrative (or a hand-authored Description/Plan section discussing this
+    very class of bug) can put the literal heading text at the start of its
+    own physical line, which is byte-for-byte indistinguishable from a real
+    (possibly stray/placeholder) heading by exact-string match alone.
+
+    A genuine `## ` (H2) Markdown heading is always either the very first
+    line of the body or preceded by a blank line -- every site in this
+    package that WRITES a `## Done report` heading (`replace_done_report_
+    section`'s append branch, `compose_done_report`'s `f"{DONE_REPORT_
+    HEADING}\\n\\n..."` shape) follows this convention, and hand-authored
+    ticket prose (Description/Plan, via `ticket new --body-file`) is
+    Markdown too, so a real section heading respects it as well. A
+    heading-lookalike line produced by mid-paragraph line-wrap, by
+    contrast, is immediately preceded by ANOTHER TEXT LINE continuing the
+    same paragraph -- never a blank line -- which is exactly what this
+    check rejects, without requiring anything about what follows the
+    candidate line (unlike an earlier draft of this fix that required a
+    trailing `### Changed` marker and broke every legitimately terse Done
+    report, e.g. this repo's own `## Done report\\nDone.` test fixtures,
+    which never render a Changed/Evidence block at all)."""
+    return heading_idx == 0 or lines[heading_idx - 1].strip() == ""
+
+
+# frob:ticket T-0853
+# frob:tests tests/test_evidence_integrity.py::TestDoneReportHeadingImpersonation.test_lookalike_heading_before_real_report_ignored  # noqa: E501
+def _find_done_report_heading(lines: list[str]) -> int | None:
+    """Index of the first line that begins a GENUINE `## Done report`
+    section, or `None` if no such heading exists (T-0853).
+
+    Scans every line equal to `_DONE_REPORT_HEADING` in order, skipping any
+    match `_is_real_done_report_heading` rejects (a narrative line that
+    merely reads identically to the heading, never an actual section
+    start) -- so a heading-lookalike line anywhere in the body (most
+    commonly BEFORE the real heading, in hand-authored Description/Plan
+    prose describing this very class of bug) can never be mistaken for the
+    real section boundary that `_done_report_section_lines`/
+    `replace_done_report_section` splice against."""
+    for i, line in enumerate(lines):
+        if line.strip() == _DONE_REPORT_HEADING and _is_real_done_report_heading(
+            lines, i
+        ):
+            return i
+    return None
+
+
 def _done_report_section_lines(body: str) -> list[str] | None:
     """The raw lines of body's `## Done report` section (up to the next
     non-Done-report `## ` heading or EOF, T-0493), or `None` if no such
     heading exists."""
     lines = body.splitlines()
-    heading_idx = None
-    for i, line in enumerate(lines):
-        if line.strip() == _DONE_REPORT_HEADING:
-            heading_idx = i
-            break
+    heading_idx = _find_done_report_heading(lines)
     if heading_idx is None:
         return None
     end_idx = _done_report_section_end(lines, heading_idx)
@@ -786,13 +833,18 @@ def replace_done_report_section(body: str, new_section: str) -> str:
     introduced by any means, could never be cleared: this function would
     keep overwriting only the empty first section forever, leaving a
     real second one stuck untouched.
+
+    T-0853: heading detection is delegated to `_find_done_report_heading`,
+    which skips any line that merely READS like the heading (a line-wrapped
+    quoted phrase inside a narrative, with no `### Changed` marker ahead of
+    it) rather than treating the first exact text match anywhere in `body`
+    as the section start -- otherwise a heading-lookalike line sitting in
+    the ticket's pre-existing Description/Plan prose (written before any
+    real Done report exists) gets mistaken for the boundary, and everything
+    that followed it in the body is silently dropped on splice.
     """
     lines = body.splitlines()
-    heading_idx = None
-    for i, line in enumerate(lines):
-        if line.strip() == _DONE_REPORT_HEADING:
-            heading_idx = i
-            break
+    heading_idx = _find_done_report_heading(lines)
     new_lines = new_section.rstrip("\n").splitlines()
     if heading_idx is None:
         separator: list[str] = [] if not lines or lines[-1] == "" else [""]
