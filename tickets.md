@@ -11378,3 +11378,42 @@ ticket's own framing; bound the existing acceptance test as evidence.
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))
 - gates: 0 error(s), 1152 warning(s), 207 waived
+
+<!-- ticket:T-0834 -->
+```yaml
+id: T-0834
+title: 'ticket CLI: no kind editor; evidence-cmd runs from invoking cwd not --path'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/app/ticket_runner.py
+- src/frob/tickets/__init__.py
+- tests/test_ticket_evidence.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Two coordinator frictions hit landing T-0833 (2026-07-23):
+
+1. kind is not editable via CLI. `frob ticket priority/component/label`
+   exist, but correcting a mis-filed kind (feature -> docs, needed
+   because --evidence-cmd is docs-kind-only) required hand-editing the
+   yaml block in tickets.md. Add `frob ticket kind <id> <kind>` with the
+   same audit-trail treatment as priority changes.
+
+2. `frob ticket evidence --evidence-cmd` runs COMMAND from the invoking
+   process cwd, not from the ticket's --path worktree. A relative-path
+   probe (grep over scope files) silently ran against the ROOT checkout
+   and failed with a bare exit=1 and empty stderr tail; the workaround
+   was an absolute-path cd inside the script. Run the command with
+   cwd=<resolved --path> (matching where the evidence claim is about),
+   and include the resolved cwd in the failure message.
