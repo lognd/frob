@@ -89,6 +89,7 @@ def _closest(bad: str, candidates: list[str]) -> str | None:
 
 
 # frob:ticket T-0578
+# frob:invariant terminates reason="_collect_option_strings only recurses into a subparser's own choices, and argparse subparser trees are built once at module load as a finite, non-self-referential tree (a subcommand can never register itself or an ancestor as one of its own subparsers)" measure="depth of the argparse subparser tree strictly decreases with each recursive call"  # noqa: E501
 def _collect_option_strings(parser: argparse.ArgumentParser) -> set[str]:
     """Recursively collect every `--flag` string registered anywhere under
     `parser` (root + every subparser, T-0578) -- argparse exposes no public

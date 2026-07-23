@@ -1278,6 +1278,7 @@ def _waive003_violations(
             continue
         file, _, line_text = origin.rpartition(":")
         line = int(line_text) if line_text.isdigit() else 0
+        # frob:waive PERF004 reason="own distinct files set per (rule, origin) reach entry, not a shared re-sort"  # noqa: E501
         packages = ", ".join(sorted(files))
         _log.warning(
             "WAIVE003: %s frob:waive %s reaches %d packages: %s",
@@ -1734,6 +1735,7 @@ def _waive007_comment_violations(
         if not refs:
             continue
         file, line = _site_from_edge_origin(edge.origin)
+        # frob:waive PERF004 reason="own distinct refs set per waive edge, not a shared re-sort"  # noqa: E501
         for ticket_id in sorted(refs):
             if ticket_id in queue.tickets:
                 continue
@@ -1766,6 +1768,7 @@ def _waive007_strata_violations(
             refs.add(ticket)
         if not refs:
             continue
+        # frob:waive PERF004 reason="own distinct refs set per waive clause site, not a shared re-sort"  # noqa: E501
         for ticket_id in sorted(refs):
             if ticket_id in queue.tickets:
                 continue
@@ -5613,6 +5616,7 @@ def _test014_ambiguous_convention(
             continue  # same leaf, but all in one file -- not the B6 shape
         for i, (symref_a, _, matched_a) in enumerate(entries):
             for symref_b, _, matched_b in entries[i + 1 :]:
+                # frob:waive PERF004 reason="differs per pair, fresh work not a re-sort"  # noqa: E501
                 shared = sorted(matched_a & matched_b)
                 if not shared:
                     continue
@@ -7223,6 +7227,7 @@ def _tick008_unknown_ledger_fields(queue: TicketQueue) -> tuple[Violation, ...]:
         extras = ticket.__pydantic_extra__
         if not extras:
             continue
+        # frob:waive PERF004 reason="own distinct extras set per ticket, not a shared re-sort"  # noqa: E501
         for extra_field in sorted(extras):
             hint = ""
             close = difflib.get_close_matches(extra_field, known_fields, n=1)

@@ -394,6 +394,7 @@ def _reg007_duplicate_ids(
     for entry_id, locations in sorted(seen.items()):
         if len(locations) < 2:
             continue
+        # frob:waive PERF004 reason="own distinct locations list per entry_id, not a shared re-sort"  # noqa: E501
         violations.append(
             Violation(
                 rule="REG007",

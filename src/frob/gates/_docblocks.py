@@ -207,6 +207,7 @@ def _rust_namespaces(root: Path) -> tuple[frozenset[str], dict[str, str]]:
             if not isinstance(pattern, str):
                 continue
             # frob:waive WALK001 reason="Cargo workspace member glob (e.g. 'crates/*'), a single shallow level, not a recursive repo walk"  # noqa: E501
+            # frob:waive PERF004 reason="sorted() is this loop's own iterable, not repeated -- a fresh glob() per member pattern, evaluated once at loop entry"  # noqa: E501
             for member_dir in sorted(root.glob(pattern)):
                 if not member_dir.is_dir():
                     continue
@@ -233,6 +234,7 @@ def _ts_namespaces(root: Path) -> frozenset[str]:
                 if not isinstance(pattern, str):
                     continue
                 # frob:waive WALK001 reason="npm workspaces glob (e.g. 'packages/*'), a single shallow level, not a recursive repo walk"  # noqa: E501
+                # frob:waive PERF004 reason="sorted() is this loop's own iterable, not repeated -- a fresh glob() per member pattern, evaluated once at loop entry"  # noqa: E501
                 for member_dir in sorted(root.glob(pattern)):
                     member_data = _read_toml_json(member_dir / "package.json")
                     if member_data is None:
@@ -394,6 +396,7 @@ def _load_parser_factory(dotted: str):
         return None
 
 
+# frob:invariant terminates reason="_subparser_tree only recurses into a subparser's own choices, and argparse subparser trees are built once at module load as a finite, non-self-referential tree (a subcommand can never register itself or an ancestor as one of its own subparsers)" measure="depth of the argparse subparser tree strictly decreases with each recursive call"  # noqa: E501
 def _subparser_tree(parser) -> dict:
     """`{subcommand_name: subtree}` recursively, walking every
     `argparse._SubParsersAction` registered via `add_subparsers` on
@@ -1214,6 +1217,7 @@ def _doc005_missing_stale_violations(
             name for _, prog, name in rows if prog == source.prog
         )
         missing = live_commands - documented_commands
+        # frob:waive PERF004 reason="own distinct missing-set per console source, not a shared re-sort"  # noqa: E501
         for name in sorted(missing):
             violations.append(
                 _doc005_violation(
