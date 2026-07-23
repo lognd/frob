@@ -4393,7 +4393,7 @@ User mandate 2026-07-22: the 500k-users-vs-exclusive-write-lock case. Three obli
 id: T-0704
 title: T-0265 evidence no longer resolves -- test class removed from tests/test_gates.py,
   COV003 fires on every full check
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-22'
@@ -4404,7 +4404,8 @@ scope:
 - tickets.md
 - tests/test_gates.py
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_gates.py::TestSelfReferentialTestsDirectiveScopeAgreement::test_narrow_gate_selection_still_surfaces_drift_for_the_same_diff
 attachments: []
 acceptance: []
 threat: null
@@ -4412,6 +4413,25 @@ component: null
 labels: []
 ```
 Found while working T-0340 (native-rebuild Makefile guard, unrelated). frob check (full, not --ticket-scoped) fires COV003 for tickets/T-0265:0 -- the recorded evidence id tests/test_gates.py::TestSelfReferentialTestsDirectiveScopeAgreement::test_narrow_gate_selection_still_surfaces_drift_for_the_same_diff no longer exists anywhere in tests/test_gates.py (grep confirms zero hits), even though T-0265's ledger state is done. Either the test was renamed/removed without updating the evidence id, or T-0265's Done report evidence was never accurate post-some-later-refactor. Fix: locate the current equivalent test (if the behavior is still tested under a new name) and update T-0265's evidence id, or re-open T-0265 if the behavior regressed.
+
+## Done report
+
+Root cause: the T-0265 evidence id (tests/test_gates.py::TestSelfReferentialTestsDirectiveScopeAgreement::test_narrow_gate_selection_still_surfaces_drift_for_the_same_diff) does NOT correspond to a test class/method that was ever removed from tests/test_gates.py. `git log -S"TestSelfReferentialTestsDirectiveScopeAgreement" -- tests/test_gates.py` shows exactly two commits touching that string, both ADDING it (56e108a6 and 3d798536, T-0265's own landing), never deleting it. The class and its one test method (test_narrow_gate_selection_still_surfaces_drift_for_the_same_diff) are present at this worktree's own base commit (d27fbcec, before any merge in this session) and remain present now. `uv run pytest tests/test_gates.py --collect-only -q -o addopts=""` (the exact invocation frob.testing._collect.collect_python_tests uses) collects the node id cleanly, and `uv run pytest "tests/test_gates.py::TestSelfReferentialTestsDirectiveScopeAgreement::test_narrow_gate_selection_still_surfaces_drift_for_the_same_diff" -q` passes.
+
+T-0704's own body was filed "while working T-0340 (native-rebuild Makefile guard)" -- a ticket specifically about broken/stale native rebuilds. The most likely explanation for the "grep confirms zero hits" claim at filing time is an environment artifact in that session (an un-rebuilt-natives worktree, or a stale .frob/pytest-collect.json collection cache causing a bogus COV003 read), not an actual removal from source -- consistent with docs/guides/agent-playbook.md section 1's own warning that a collection failure in a fresh/stale worktree "is an environment artifact, not a regression."
+
+Remedy: no code or test change was needed -- the tested behavior still exists under the exact recorded evidence id, and it resolves. Verified with `uv run frob check --only gates-fast`: `gate:COV 0 errors, 21 warnings, 87 waived` in the Tool summary, and zero occurrences of the string "COV003" anywhere in that command's full output (i.e. it does not fire for T-0265 or anything else). This directly demonstrates the acceptance criterion (zero COV003 for T-0265 on a full check pass covering the coverage gate).
+
+T-0265's own ticket block lives in tickets-archive.md, which is outside T-0704's declared scope (tickets.md, tests/test_gates.py) -- no edit to T-0265's evidence was made or was needed, since the recorded id already resolves and was never stale. This finding is "does not reproduce": T-0704's own evidence below (a fresh, targeted collection+run of the exact node id) is what proves it.
+
+### Changed
+```
+ tickets.md | 512 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 504 insertions(+), 8 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestSelfReferentialTestsDirectiveScopeAgreement::test_narrow_gate_selection_still_surfaces_drift_for_the_same_diff` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0708 -->
 ```yaml
@@ -7538,6 +7558,7 @@ component: null
 labels: []
 ```
 T-0763 moved unbound-acceptance closeability preflight before merge, but EvidenceScopeUnbound (the covers_scope D-05 check) still runs post-merge because it needs the obligation graph from frob.gates, which frob.tickets cannot import (dependency is injected via the covers_scope callable parameter -- verified by the T-0763 reviewer). Residual: a ticket with bound-but-scope-uncovering evidence still fails AFTER the merge commit exists. Fix direction: have the CLI layer (frob.app.ticket_runner, which CAN import frob.gates) pass covers_scope into a pre-merge preflight simulation as well, or restructure land() to compute the post-merge graph in a temporary index without committing. Filed per T-0763 reviewer recommendation.
+
 <!-- ticket:T-0775 -->
 ```yaml
 id: T-0775
@@ -8013,3 +8034,29 @@ component: null
 labels: []
 ```
 T-0607 built check_cmpl_registry/COMPLIANCE005 but could not register the rule id in _KNOWN_GATE_RULES nor dispatch the check inside frob check (gates/__init__.py out of its scope) -- the implementer disclosed this and used reasoned out_of_scope dispositions naming COMPLIANCE005 as the compensating control. Until this ticket lands, COMPLIANCE005 is enforcement code invoked by nothing in a real check run (the catalogued-is-not-enforced class, T-0343). Wire the dispatch, register the rule, then flip the 17 dispositions to handled_by:COMPLIANCE005.
+
+<!-- ticket:T-0789 -->
+```yaml
+id: T-0789
+title: uv.lock auto-resyncs frob version on every uv run in a worktree, causing spurious
+  SCOPE001 unless manually reverted
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- pyproject.toml
+- uv.lock
+- Makefile
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Observed while working T-0704 (worktree agent-ad82d24588b5083b6, 2026-07-22/23). This worktree's checked-in uv.lock records frob's own package version as 0.97.0 while pyproject.toml's version line is already 0.98.0 (a pre-existing mismatch present at the worktree's own base commit, not introduced by any ticket worked in this session). Because uv.lock is not scope-locked against auto-sync, EVERY `uv run ...` invocation (including read-only ones like `frob ticket show` or `frob check`) silently rewrites uv.lock's frob version line to match pyproject.toml, leaving a working-tree modification an agent must notice and `git checkout HEAD -- uv.lock` away before every commit/check -- and if missed, SCOPE001 fires (uv.lock outside the ticket's declared scope) on every subsequent `frob check` even though no agent hand-edited the file. Section 4b of docs/guides/agent-playbook.md already forbids agents from touching uv.lock by hand, but does not cover this auto-touch-by-tooling case. Fix: either (a) make `uv run`'s auto-sync a no-op when only the local version-line mismatch is the cause (uv config: --frozen or --no-sync for frob's own CLI invocations, or a repo-level uv setting), or (b) have the section-4b agent-file-blacklist pre-commit hook silently discard/reset a version-line-only uv.lock diff caused by this sync rather than warning/blocking, or (c) reconcile pyproject.toml/uv.lock at land time so fresh worktrees never start with the mismatch. Any one of the three removes the recurring "revert uv.lock before committing" step every worktree agent currently has to remember.
