@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.104.0] - unreleased
+
+- T-0784: gitio: promote git_common_dir to the single git seam (3 divergent copies) + batch the lease-write double spawn
+
 ## [0.103.0] - unreleased
 
 - T-0787: check CLI: wire resolve_lease pinning into --ticket resolution (promote T-0766's lost draft)

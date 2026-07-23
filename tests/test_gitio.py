@@ -11,8 +11,11 @@ import pytest
 
 from frob.gitio import (
     GitError,
+    common_dir_and_branch,
     current_branch,
+    git_common_dir,
     repo_root,
+    reset_common_dir_cache,
     run_argv,
     spawn_recorder,
     working_diff,
@@ -336,6 +339,90 @@ class TestCurrentBranch:
         result = current_branch(repo)
         assert result.is_ok
         assert result.danger_ok == "main"
+
+
+# frob:ticket T-0784
+class TestGitCommonDir:
+    def test_resolves_absolute_common_dir(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gitio.py::git_common_dir kind="unit"
+        reset_common_dir_cache()
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+
+        result = git_common_dir(repo)
+        assert result.is_ok
+        common = result.danger_ok
+        assert common.is_absolute()
+        assert common == (repo / ".git").resolve()
+
+    def test_err_when_not_a_repo(self, tmp_path: Path) -> None:
+        reset_common_dir_cache()
+        not_a_repo = tmp_path / "plain"
+        not_a_repo.mkdir()
+
+        result = git_common_dir(not_a_repo)
+        assert result.is_err
+        assert result.danger_err is GitError.GitFailed
+
+    def test_memoized_per_root(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gitio.py::git_common_dir kind="unit"
+        reset_common_dir_cache()
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+
+        with spawn_recorder() as recorder:
+            first = git_common_dir(repo)
+            second = git_common_dir(repo)
+
+        assert first.is_ok
+        assert first.danger_ok == second.danger_ok
+        spawn_count = sum(
+            n for argv, n in recorder.counts().items() if "--git-common-dir" in argv
+        )
+        assert spawn_count == 1
+
+    def test_reset_clears_cache(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gitio.py::reset_common_dir_cache kind="unit"
+        reset_common_dir_cache()
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        git_common_dir(repo)
+        reset_common_dir_cache()
+
+        with spawn_recorder() as recorder:
+            git_common_dir(repo)
+
+        spawn_count = sum(
+            n for argv, n in recorder.counts().items() if "--git-common-dir" in argv
+        )
+        assert spawn_count == 1
+
+
+# frob:ticket T-0784
+class TestCommonDirAndBranch:
+    def test_single_spawn_parses_both_lines(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gitio.py::common_dir_and_branch kind="unit"
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        (repo / "a.txt").write_text("hello\n")
+        _commit(repo, "init")
+
+        with spawn_recorder() as recorder:
+            result = common_dir_and_branch(repo)
+
+        assert result.is_ok
+        common, branch = result.danger_ok
+        assert common == (repo / ".git").resolve()
+        assert branch == "main"
+        assert sum(recorder.counts().values()) == 1
+
+    def test_err_when_not_a_repo(self, tmp_path: Path) -> None:
+        not_a_repo = tmp_path / "plain"
+        not_a_repo.mkdir()
+
+        result = common_dir_and_branch(not_a_repo)
+        assert result.is_err
+        assert result.danger_err is GitError.GitFailed
 
 
 # frob:ticket T-0776

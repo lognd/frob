@@ -2,18 +2,23 @@
 
 Every git invocation in frob goes through this module: `repo_root` (worktree-
 correct root discovery), `working_diff` (merge-base-to-worktree unified diff,
-including uncommitted and untracked changes), and `current_branch`. Two diff
-implementations would desync (docs/modules/gates.md's old `gates/diff.py` design is
-superseded by this module). `_run_git` is the private spawn primitive;
-`run_argv` is the small public wrapper `frob.testing` reuses for its own
-runner spawns so there is exactly one subprocess-with-timeout helper in the
-package, never a second copy living under `frob.testing`.
+including uncommitted and untracked changes), `current_branch`, and
+`git_common_dir` (the shared `.git` dir across every linked worktree of a
+repo, T-0784 -- `frob.tickets._leases` and `frob.gates._exclude_hazard` both
+delegate here rather than each spawning and parsing their own `rev-parse
+--git-common-dir`). Two diff implementations would desync (docs/modules/
+gates.md's old `gates/diff.py` design is superseded by this module). `_run_git`
+is the private spawn primitive; `run_argv` is the small public wrapper
+`frob.testing` reuses for its own runner spawns so there is exactly one
+subprocess-with-timeout helper in the package, never a second copy living
+under `frob.testing`.
 """
 
 from __future__ import annotations
 
 import contextvars
 import subprocess
+import threading
 from collections import Counter
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
@@ -235,6 +240,125 @@ def current_branch(root: Path) -> Result[str, GitError]:
     return _run_git(("rev-parse", "--abbrev-ref", "HEAD"), cwd=root).map(str.strip)
 
 
+# frob:ticket T-0784
+# Process-lifetime memoization for `git_common_dir`, carried forward from
+# T-0773 (which landed this cache in `frob.tickets._leases` before this
+# ticket promoted the function itself into the single `frob.gitio` seam).
+# Keyed by the RESOLVED root path so different callers spelling the same
+# worktree differently (relative vs. absolute, symlinked) still share one
+# cache entry. Safe because the shared `.git` common dir cannot move
+# mid-invocation, so caching it for the process's lifetime is never stale
+# within one CLI invocation. `_common_dir_lock` (T-0773 precedent)
+# serializes cache reads/writes across threads (`frob.serve`'s daemon
+# thread and a gate pool's workers can call in concurrently); the `git`
+# subprocess itself runs OUTSIDE the lock so one thread spawning it never
+# blocks another thread's unrelated cache lookups.
+_common_dir_lock = threading.Lock()
+_common_dir_cache: dict[Path, Result[Path, GitError]] = {}
+
+
+# frob:doc docs/modules/testing.md#public-api
+# frob:tests tests/test_gitio.py::TestGitCommonDir.test_memoized_per_root kind="unit"
+def git_common_dir(root: Path) -> Result[Path, GitError]:
+    """The shared `.git` directory for `root`'s repository (`git rev-parse
+    --git-common-dir`), resolved to an absolute path -- identical across
+    every linked worktree of the same repo, unlike `root / ".git"` itself
+    (a linked worktree's `.git` is a pointer file, not the shared
+    directory). `Err(GitFailed)` if `root` is not inside a git work tree
+    or the git call fails. The single canonical implementation (T-0784) --
+    `frob.tickets._leases.git_common_dir` and
+    `frob.gates._exclude_hazard._git_common_dir` both delegate here rather
+    than each spawning and parsing their own `rev-parse --git-common-dir`.
+
+    Memoized per resolved `root` for the process's lifetime (T-0773,
+    carried forward by T-0784): a second call for the same `root` returns
+    the cached `Result` instead of spawning `git` again -- this is the fix
+    for the 2026-07-22 incident where a single `frob ticket list`/`doable`
+    spawned this subprocess dozens of times (once per candidate/ticket
+    row). A benign race where two threads both miss the cache and both
+    spawn `git` for the same `root` is possible but harmless (idempotent
+    result, last write wins)."""
+    key = root.resolve()
+    with _common_dir_lock:
+        cached = _common_dir_cache.get(key)
+    if cached is not None:
+        return cached
+    spawned = run_argv(("git", "-C", str(root), "rev-parse", "--git-common-dir"))
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        _log.warning("gitio: git-common-dir lookup failed under %s", root)
+        result: Result[Path, GitError] = Err(GitError.GitFailed)
+        with _common_dir_lock:
+            _common_dir_cache[key] = result
+        return result
+    raw = spawned.danger_ok.stdout.strip()
+    if not raw:
+        result = Err(GitError.GitFailed)
+        with _common_dir_lock:
+            _common_dir_cache[key] = result
+        return result
+    common_dir = Path(raw)
+    if not common_dir.is_absolute():
+        common_dir = (root / common_dir).resolve()
+    result = Ok(common_dir)
+    with _common_dir_lock:
+        _common_dir_cache[key] = result
+    return result
+
+
+# frob:doc docs/modules/testing.md#public-api
+# frob:tests tests/test_gitio.py::TestGitCommonDir.test_reset_clears_cache kind="unit"
+def reset_common_dir_cache() -> None:
+    """Drop the `git_common_dir` process-lifetime memo (T-0773/T-0784),
+    under `_common_dir_lock` -- available to tests that need to simulate a
+    fresh CLI invocation (or a fresh daemon poll cycle) within one
+    interpreter; not required for correctness on the read path otherwise."""
+    with _common_dir_lock:
+        _common_dir_cache.clear()
+
+
+# frob:doc docs/modules/testing.md#public-api
+# frob:tests tests/test_gitio.py::TestCommonDirAndBranch.test_single_spawn_parses_both_lines kind="unit"  # noqa: E501
+def common_dir_and_branch(root: Path) -> Result[tuple[Path, str], GitError]:
+    """`(git_common_dir(root), current-branch-name)` in ONE `git` spawn
+    (T-0784) via `git rev-parse --git-common-dir --abbrev-ref HEAD`, which
+    prints one resolved value per line in the order requested -- the
+    batched replacement for `frob.tickets._leases.record_lease`'s old
+    back-to-back `rev-parse --git-common-dir` + `branch --show-current`
+    calls. Bypasses the `git_common_dir` memo (it always spawns) since the
+    caller also wants the branch, which is not itself cached -- callers
+    that only need the common dir should call `git_common_dir` instead to
+    get the memoized fast path."""
+    spawned = run_argv(
+        (
+            "git",
+            "-C",
+            str(root),
+            "rev-parse",
+            "--git-common-dir",
+            "--abbrev-ref",
+            "HEAD",
+        )
+    )
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        _log.warning("gitio: common_dir_and_branch lookup failed under %s", root)
+        return Err(GitError.GitFailed)
+    lines = spawned.danger_ok.stdout.splitlines()
+    if len(lines) < 2:
+        _log.warning(
+            "gitio: common_dir_and_branch: expected 2 lines, got %d under %s",
+            len(lines),
+            root,
+        )
+        return Err(GitError.GitFailed)
+    raw_common, branch = lines[0].strip(), lines[1].strip()
+    if not raw_common:
+        return Err(GitError.GitFailed)
+    common_dir = Path(raw_common)
+    if not common_dir.is_absolute():
+        common_dir = (root / common_dir).resolve()
+    return Ok((common_dir, branch))
+
+
 def _merge_base(root: Path, base: str) -> Result[str, GitError]:
     """`git merge-base HEAD <base>`, trimmed to a bare sha."""
     return _run_git(("merge-base", "HEAD", base), cwd=root).map(str.strip)
@@ -352,8 +476,11 @@ __all__ = [
     "Hunk",
     "ProcResult",
     "SpawnRecorder",
+    "common_dir_and_branch",
     "current_branch",
+    "git_common_dir",
     "repo_root",
+    "reset_common_dir_cache",
     "run_argv",
     "spawn_recorder",
     "working_diff",

@@ -39,7 +39,7 @@ from pydantic import BaseModel
 from typani.error_set import ErrorSet
 from typani.result import Err, Ok, Result
 
-from frob.gitio import run_argv
+from frob import gitio
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -48,16 +48,12 @@ _log = get_logger(__name__)
 LEASES_DIRNAME = "frob-leases"
 
 # frob:ticket T-0773
-# Process-lifetime memoization for the two hot, previously-uncached reads
-# on this module's critical path (the 2026-07-22 incident: a single `frob
-# ticket list`/`doable` spawned `git rev-parse --git-common-dir` dozens of
-# times and re-scanned the leases directory once per candidate/ticket row).
-# Keyed by the RESOLVED path so different callers spelling the same
-# worktree differently (relative vs. absolute, symlinked) still share one
-# cache entry. Safe for the reason `git_common_dir`'s own docstring
-# already gives: the shared `.git` common dir cannot move mid-invocation,
-# so caching it for the process's lifetime is never stale within one CLI
-# invocation.
+# Process-lifetime memoization for the hot, previously-uncached read on
+# this module's critical path (the 2026-07-22 incident: a single `frob
+# ticket list`/`doable` re-scanned the leases directory once per
+# candidate/ticket row). The git-common-dir half of this memo moved to
+# `frob.gitio.git_common_dir` (T-0784, the single-seam promotion) -- this
+# module now delegates to it instead of keeping its own copy.
 #
 # `read_all_leases`'s per-file cache (`_lease_file_cache`) is a DIFFERENT
 # shape than a plain "compute once, keep forever" memo: it is keyed by
@@ -76,16 +72,15 @@ LEASES_DIRNAME = "frob-leases"
 # `read_all_leases`'s own docstring already argues for the worktree-
 # existence check -- extended here to the lease FILE SET itself.
 #
-# `_cache_lock` (T-0125 precedent, `quiet_stdout_logs`) serializes all
-# three caches' reads/writes: `frob.serve`'s daemon thread and a gate
-# pool's worker processes/threads can call into this module concurrently,
-# and a plain dict has no atomicity guarantee across the
+# `_cache_lock` (T-0125 precedent, `quiet_stdout_logs`) serializes this
+# module's own caches' reads/writes: `frob.serve`'s daemon thread and a
+# gate pool's worker processes/threads can call into this module
+# concurrently, and a plain dict has no atomicity guarantee across the
 # read-check-then-write sequences below (CPython's GIL makes a SINGLE
 # dict `__setitem__`/`__getitem__` atomic, but the multi-step "check stat,
 # maybe parse, write back" sequence in `read_all_leases` is not one
 # operation and must not interleave with another thread's).
 _cache_lock = threading.Lock()
-_common_dir_cache: dict[Path, Result[Path, LeaseError]] = {}
 _lease_file_cache: dict[
     Path, dict[Path, tuple[tuple[int, int], LeaseRecord | None]]
 ] = {}
@@ -94,15 +89,15 @@ _stale_lease_logged: set[tuple[Path, str]] = set()
 
 # frob:ticket T-0773
 def _clear_lease_caches() -> None:
-    """Drop all T-0773 memoization state (`_common_dir_cache`,
-    `_lease_file_cache`, `_stale_lease_logged`) under `_cache_lock` --
-    available to tests that need to simulate a fresh CLI invocation (or a
-    fresh daemon poll cycle) within one interpreter; not required for
+    """Drop all T-0773 memoization state (`gitio`'s common-dir cache via
+    `reset_common_dir_cache`, `_lease_file_cache`, `_stale_lease_logged`)
+    -- available to tests that need to simulate a fresh CLI invocation (or
+    a fresh daemon poll cycle) within one interpreter; not required for
     correctness on the read path any more (`read_all_leases` self-heals
     against sibling-process writes via per-file stat comparison), but
     still useful to force a clean-slate re-parse."""
+    gitio.reset_common_dir_cache()
     with _cache_lock:
-        _common_dir_cache.clear()
         _lease_file_cache.clear()
         _stale_lease_logged.clear()
 
@@ -137,52 +132,24 @@ class LeaseRecord(BaseModel):
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
 # frob:tests tests/test_ticket_leases_cross_worktree.py::TestGitCommonDir.test_shared_across_linked_worktrees kind="unit"  # noqa: E501
 def git_common_dir(root: Path) -> Result[Path, LeaseError]:
-    """The shared `.git` directory for `root`'s repository (`git rev-parse
-    --git-common-dir`), resolved to an absolute path -- identical across
-    every linked worktree of the same repo, unlike `root / ".git"` itself
-    (a linked worktree's `.git` is a pointer file, not the shared
-    directory). `Err(GitCommonDirUnavailable)` if `root` is not inside a
-    git work tree or the git call fails.
+    """The shared `.git` directory for `root`'s repository, resolved to an
+    absolute path -- identical across every linked worktree of the same
+    repo, unlike `root / ".git"` itself (a linked worktree's `.git` is a
+    pointer file, not the shared directory). `Err(GitCommonDirUnavailable)`
+    if `root` is not inside a git work tree or the git call fails.
 
-    Memoized per resolved `root` for the process's lifetime (T-0773): the
-    shared common dir cannot move mid-invocation, so a second call for the
-    same `root` returns the cached `Result` instead of spawning `git`
-    again -- this is the fix for the 2026-07-22 incident where a single
-    `frob ticket list`/`doable` spawned this subprocess dozens of times
-    (once per candidate/ticket row, via `read_all_leases` ->
-    `leases_dir`). Reads/writes to the cache dict are serialized by
-    `_cache_lock` (T-0773 round 2); the `git` subprocess itself runs
-    OUTSIDE the lock so one thread spawning it never blocks another
-    thread's unrelated cache lookups -- a benign race where two threads
-    both miss the cache and both spawn `git` for the same `root` is
-    possible but harmless (idempotent result, last write wins, no
-    duplicate SPAWNS across separate `read_all_leases` calls in steady
-    state since the cache is warm after the first one)."""
-    key = root.resolve()
-    with _cache_lock:
-        cached = _common_dir_cache.get(key)
-    if cached is not None:
-        return cached
-    spawned = run_argv(["git", "-C", str(root), "rev-parse", "--git-common-dir"])
-    if spawned.is_err or spawned.danger_ok.returncode != 0:
+    Thin `LeaseError`-typed wrapper (T-0784) over the single canonical
+    `frob.gitio.git_common_dir` -- this module used to keep its own
+    process-lifetime memoization (T-0773); that cache moved into
+    `frob.gitio` alongside the implementation it memoizes so there is
+    exactly one git-common-dir resolver and one cache, not three
+    near-identical copies (this module, `frob.gates._exclude_hazard`, and
+    a third in `frob.gitio` itself) that could silently desync."""
+    resolved = gitio.git_common_dir(root)
+    if resolved.is_err:
         _log.warning("tickets: git-common-dir lookup failed under %s", root)
-        result: Result[Path, LeaseError] = Err(LeaseError.GitCommonDirUnavailable)
-        with _cache_lock:
-            _common_dir_cache[key] = result
-        return result
-    raw = spawned.danger_ok.stdout.strip()
-    if not raw:
-        result = Err(LeaseError.GitCommonDirUnavailable)
-        with _cache_lock:
-            _common_dir_cache[key] = result
-        return result
-    common_dir = Path(raw)
-    if not common_dir.is_absolute():
-        common_dir = (root / common_dir).resolve()
-    result = Ok(common_dir)
-    with _cache_lock:
-        _common_dir_cache[key] = result
-    return result
+        return Err(LeaseError.GitCommonDirUnavailable)
+    return Ok(resolved.danger_ok)
 
 
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
@@ -221,9 +188,13 @@ def record_lease(
     is the source of truth; this side-channel exists to make OTHER
     worktrees aware of it sooner; it is never allowed to be the thing that
     turns a same-worktree `start`/`scope` failure-mode into a NEW failure
-    mode."""
-    resolved = leases_dir(root)
-    if resolved.is_err:
+    mode.
+
+    T-0784: resolves the common dir and current branch in ONE `git` spawn
+    (`gitio.common_dir_and_branch`) rather than the old back-to-back
+    `rev-parse --git-common-dir` + `branch --show-current` calls."""
+    combined = gitio.common_dir_and_branch(root)
+    if combined.is_err:
         _log.warning(
             "tickets: %s lease not recorded (no shared git dir under %s) -- "
             "cross-worktree collision detection degraded for this ticket",
@@ -231,19 +202,14 @@ def record_lease(
             root,
         )
         return Ok(None)
-    leases_root = resolved.danger_ok
+    common_dir, branch = combined.danger_ok
+    leases_root = common_dir / LEASES_DIRNAME
     try:
         leases_root.mkdir(parents=True, exist_ok=True)
     except OSError as exc:
         _log.warning("tickets: could not create %s: %s", leases_root, exc)
         return Ok(None)
 
-    branch_result = run_argv(["git", "-C", str(root), "branch", "--show-current"])
-    branch = (
-        branch_result.danger_ok.stdout.strip()
-        if branch_result.is_ok and branch_result.danger_ok.returncode == 0
-        else ""
-    )
     record = LeaseRecord(
         ticket_id=ticket_id,
         scope=scope,

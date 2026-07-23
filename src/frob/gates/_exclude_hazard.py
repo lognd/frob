@@ -34,6 +34,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from frob import gitio
 from frob.gates._models import Severity, Violation
 from frob.gitio import run_argv
 from frob.logging import get_logger
@@ -50,22 +51,19 @@ _COMMENT_RE = re.compile(r"^\s*#")
 def _git_common_dir(root: Path) -> Path | None:
     """The shared `.git` common dir for `root` (same dir across every
     worktree of one clone), or `None` if `root` is not a git checkout at
-    all -- degrade-don't-crash, mirroring `frob.gitio`'s posture."""
-    spawned = run_argv(("git", "-C", str(root), "rev-parse", "--git-common-dir"))
-    if spawned.is_err:
-        _log.debug("exclude_hazard: git rev-parse failed: %s", spawned.danger_err)
+    all -- degrade-don't-crash, mirroring `frob.gitio`'s posture.
+
+    Thin wrapper (T-0784) over the single canonical `frob.gitio.
+    git_common_dir` -- this gate used to spawn and parse its own
+    `rev-parse --git-common-dir` copy; delegating here means it also picks
+    up that seam's process-lifetime memoization for free."""
+    resolved = gitio.git_common_dir(root)
+    if resolved.is_err:
+        _log.debug(
+            "exclude_hazard: git-common-dir lookup failed: %s", resolved.danger_err
+        )
         return None
-    result = spawned.danger_ok
-    if result.returncode != 0:
-        _log.debug("exclude_hazard: git rev-parse exited %d", result.returncode)
-        return None
-    raw = result.stdout.strip()
-    if not raw:
-        return None
-    common_dir = Path(raw)
-    if not common_dir.is_absolute():
-        common_dir = (root / common_dir).resolve()
-    return common_dir
+    return resolved.danger_ok
 
 
 def _exclude_entries(exclude_path: Path) -> tuple[str, ...]:

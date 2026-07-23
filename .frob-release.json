@@ -466,8 +466,11 @@
     "src/frob/gitio.py::SpawnRecorder.counts": "da456c38778d454674f3b8c4e57044382071184ba64ddc3e53bbd5b47aac1e1d",
     "src/frob/gitio.py::SpawnRecorder.duplicates": "52053d607f9b5d4ec68962fa0e467090287f4a8d14d74ebc6ffc2d13953711ec",
     "src/frob/gitio.py::SpawnRecorder.record": "293274f076eda334d177a42ddbea4cf11fe3d2e72b2dfe7bd7a07cdc169662aa",
+    "src/frob/gitio.py::common_dir_and_branch": "ea5a178373a5861882a3d16930ddba34cc55e8981b8ad7535200b031d2f9d786",
     "src/frob/gitio.py::current_branch": "66e3ff92d2fc47068c3dd79599699c04a85b3d4696a423fed379ab6d43cbe295",
+    "src/frob/gitio.py::git_common_dir": "e083e425d4594a33ff74d9c782b1c3bce27e468fb6e20ee67f0c6c37e70960ec",
     "src/frob/gitio.py::repo_root": "a9401b65328fdaed09960fa5fa8f012c07b2da09830c74081230620a04d9ff2b",
+    "src/frob/gitio.py::reset_common_dir_cache": "3a96015ab386cf2eb703685efd89c4319499d49c5dbccc49b084be388e6e6fba",
     "src/frob/gitio.py::run_argv": "24c128ec98484a3387c0a9490dfb2760b8c0d0dd9110e72f64a07d70f33cc32e",
     "src/frob/gitio.py::spawn_recorder": "30f95cc53bdae920f1c4cdca27092c5fad758442d17d8c213dbc255e37a6bdf5",
     "src/frob/gitio.py::working_diff": "0b743559c042264d89ed77be0e31ebd24532f7bb29f9ce52f03bfc3d35ca6fd3",
@@ -1340,5 +1343,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.103.0"
+  "version": "0.104.0"
 }
