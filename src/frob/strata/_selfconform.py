@@ -76,9 +76,15 @@ from frob.vet._capability import (
     language_for,
     scan_file_capabilities,
 )
+from frob.vet._capability_modes import canonical_declared_kind, expand_declared_kind
 
 from ._code_binding import FOREIGN, CodeBinding, _node_code_globs, bind_code
-from ._effects import _KIND_MAP, _declared_kinds, check_capability_conformance
+from ._effects import (
+    _KIND_MAP,
+    _declared_kinds,
+    _may_kind,
+    check_capability_conformance,
+)
 from ._errors import StrataError
 from ._models import KernelModel
 from ._waive import STALE_WAIVER_RULE, _stale_detail, apply_waivers
@@ -120,11 +126,13 @@ _EXTENDED_KINDS = frozenset(
         "html_render",
         "fetch_url",
         "client_storage",
-        #: T-0018 (graphite adoption): read-only filesystem access, split
-        #: from `fs`/`fs-write` so a node that only ever reads is not
-        #: forced into a `waive "SYS101:fs"` (module docstring below,
-        #: `_alias_legacy_fs_observations`).
-        "fs-read",
+        #: T-0018 added `fs-read` here as a bespoke extended kind ahead of
+        #: a real mode vocabulary; T-0717 promotes it into `_effects.py::
+        #: _KIND_MAP` (as `fs.read`) instead, alongside `fs-write`'s new
+        #: `fs.write` spelling -- it now has a real tier-2/THREAT004
+        #: analog (this module's SYS100 gap statement no longer applies to
+        #: it) and is REMOVED from here so it is not double-scanned by two
+        #: independent, differently-normalized code paths.
     }
 )
 
@@ -312,18 +320,22 @@ def _observed_all_kinds_by_node(
     binding: CodeBinding, root: Path
 ) -> dict[str, frozenset[str]]:
     """Every node id -> the union of ALL vet capability kinds observed
-    across its bound files, net/fs-write/exec normalized through
-    `_effects.py::_KIND_MAP` to the SAME kind spelling `may` declarations
-    use ("fs" not "fs-write") -- SYS101's observed side, which (unlike
-    SYS100) needs the full vocabulary regardless of THREAT004's scope.
-    `binding` here is the T-0169 `_capability_binding` superset (see that
-    function's docstring), so SYS101 stale-design also covers every
-    registry-scanned language, not just Python. Skips `is_self_pattern_
-    path` files (T-0201), same self-match exclusion as `_observed_
-    extended_kinds_by_node` -- SYS101's declared-but-unobserved direction
-    must not see a pattern catalog's own literals as "observed" either, or
-    a real declaration gets masked by self-match noise on the OPPOSITE
-    side of the join."""
+    across its bound files, net/fs-write/fs-read/exec normalized through
+    `_effects.py::_KIND_MAP` to the SAME precise, mode-qualified spelling
+    `may` declarations resolve to (`fs.write`/`fs.read`, T-0717) -- SYS101's
+    observed side, which (unlike SYS100) needs the full vocabulary
+    regardless of THREAT004's scope. `binding` here is the T-0169
+    `_capability_binding` superset (see that function's docstring), so
+    SYS101 stale-design also covers every registry-scanned language, not
+    just Python. Skips `is_self_pattern_path` files (T-0201), same
+    self-match exclusion as `_observed_extended_kinds_by_node` -- SYS101's
+    declared-but-unobserved direction must not see a pattern catalog's own
+    literals as "observed" either, or a real declaration gets masked by
+    self-match noise on the OPPOSITE side of the join. T-0717: the old
+    `_alias_legacy_fs_observations` bare-`fs`-aliasing hack is REMOVED --
+    `_stale_design_violations` now judges staleness per DECLARED ATOM via
+    `expand_declared_kind` (any of its modes observed discharges it), so no
+    special-casing is needed on the observed side at all."""
     per_node: dict[str, set[str]] = {}
     for rel in _sorted_owned_files(binding):
         path = root / rel
@@ -334,59 +346,26 @@ def _observed_all_kinds_by_node(
         normalized = {_KIND_MAP.get(kind, kind) for kind in raw}
         if normalized:
             per_node.setdefault(owner, set()).update(normalized)
-    return {
-        node_id: _alias_legacy_fs_observations(frozenset(kinds))
-        for node_id, kinds in per_node.items()
-    }
-
-
-def _alias_legacy_fs_observations(observed: frozenset[str]) -> frozenset[str]:
-    """T-0018 (graphite adoption) backward compatibility: a pre-existing
-    `may "fs"` declaration predates the `fs-read`/`fs-write` split and meant
-    "any real filesystem access". If `observed` contains `fs-read` (a
-    read-only node), also report bare `fs` as observed so SYS101's
-    `declared - observed` join does not call an existing `may "fs"`
-    declaration stale just because the only real access turns out to be
-    reads rather than writes. Deliberately one-directional and confined to
-    SYS101's declared-vs-observed side only (`_stale_design_violations`) --
-    NOT applied to SYS100's observed-vs-declared side
-    (`_extended_kind_violations`/`_core_undeclared_violations`), which would
-    otherwise report both `fs-read` and its `fs` alias as separately
-    undeclared for the same single read observation, a redundant duplicate
-    finding for one real capability. A node that declares `may "fs-read"`
-    specifically is unaffected either way: it already matches the raw
-    `fs-read` observation with no aliasing needed."""
-    if "fs-read" in observed and "fs" not in observed:
-        return observed | {"fs"}
-    return observed
+    return {node_id: frozenset(kinds) for node_id, kinds in per_node.items()}
 
 
 def _extended_kind_violations(
     model: KernelModel, binding: CodeBinding, root: Path
 ) -> list[SelfConformViolation]:
-    """SYS100 for eval/env/ffi/install-hook (+ `fs-read`) -- the slice
-    `check_capability_conformance` structurally cannot see (module
-    docstring's SYS100 gap statement). T-0304 follow-up (SYS100 direction
-    of the `fs`/`fs-read` split, `_alias_legacy_fs_observations`'s sibling
-    on THIS side of the join): a bare `may "fs"` declaration predates the
-    split and means "any real filesystem access", so it is a SUPERSET of
-    `fs-read` and must cover an observed `fs-read` with no finding -- a
-    node that only ever reads should not have to narrow its own broader
-    `may "fs"` down to `may "fs-read"` just to silence SYS100. This is
-    deliberately one-directional and confined to `fs-read` specifically:
-    a node declaring `may "fs-read"` only does NOT cover an observed
-    fs-write-class effect (that join lives in `_core_undeclared_
-    violations`/THREAT004, which already requires `may "fs"` for a
-    fs-write observation and correctly still fires when only `fs-read`
-    is declared) -- narrower declarations never cover broader
-    observations, only the reverse."""
+    """SYS100 for eval/env/ffi/install-hook/sql/deserialize/html_render/
+    fetch_url/client_storage -- the slice `check_capability_conformance`
+    structurally cannot see (module docstring's SYS100 gap statement).
+    T-0717: `fs-read` moved OUT of `_EXTENDED_KINDS` into `_effects.py::
+    _KIND_MAP` (it now has a real tier-2/THREAT004 analog as `fs.read`),
+    so this function no longer needs a bare-`fs`-covers-`fs-read` special
+    case -- `_declared_kinds` already expands a coarse `may "fs"`
+    declaration to `{fs.read, fs.write}` generically (`expand_declared_
+    kind`), and `_dedupe_sys100_extended_against_core` keeps the core
+    (THREAT004-delegated) pass as the single source of truth for it."""
     observed_by_node = _observed_extended_kinds_by_node(binding, root)
     found: list[SelfConformViolation] = []
     for node in model.nodes:
-        full_declared = _declared_kinds(node)
-        declared = full_declared & _EXTENDED_KINDS
-        if "fs" in full_declared:
-            declared = declared | {"fs-read"}
+        declared = _declared_kinds(node) & _EXTENDED_KINDS
         observed = observed_by_node.get(node.id, frozenset())
         # frob:waive PERF004 reason="distinct small per-node diff set, not repeated"
         for kind in sorted(observed - declared):
@@ -470,6 +449,16 @@ def _fully_excluded_node_ids(model: KernelModel, root: Path) -> frozenset[str]:
     return frozenset(fully_excluded)
 
 
+def _raw_declared_kinds(node) -> frozenset[str]:  # noqa: ANN001
+    """Every RAW (un-expanded, un-canonicalized) capability kind `node`'s
+    `may` atoms name -- `_stale_design_violations`'s per-atom granularity
+    needs the ORIGINAL spelling (`"fs"`, `"fs-read"`, `"fs.read"`, ...) so
+    a waiver naming `SYS101:fs` still matches and a finding's `detail`
+    still reads the declaration the author actually wrote, never a
+    post-expansion synthetic id."""
+    return frozenset(_may_kind(atom) for atom in node.may)
+
+
 # frob:invariant INV-026
 def _stale_design_violations(
     model: KernelModel, binding: CodeBinding, root: Path
@@ -479,28 +468,41 @@ def _stale_design_violations(
     statement). T-0310: skips any node in `_fully_excluded_node_ids` --
     a node whose entire code-glob set is graph-excluded has nothing
     observable, so 'declared but never observed' is a category error, not
-    real design drift (docs/strata/selfconform.md#sys101-fully-excluded-nodes)."""
+    real design drift (docs/strata/selfconform.md#sys101-fully-excluded-nodes).
+
+    T-0717: judged PER RAW DECLARED ATOM, not over the flat expanded-kind
+    set difference -- a declared atom is stale only if NONE of the precise
+    modes it covers (`expand_declared_kind`) was ever observed. This is
+    what makes a precise `may "fs.read"` declaration discharge NARROWLY
+    (acceptance clause 1: only `fs.read` itself can satisfy it) while a
+    coarse `may "fs"` declaration keeps discharging on EITHER mode being
+    observed (mandate point 2/old `_alias_legacy_fs_observations`
+    backward-compat behavior, now a natural consequence of this generic
+    per-atom join rather than fs-specific code)."""
     observed_by_node = _observed_all_kinds_by_node(binding, root)
     skip_nodes = _fully_excluded_node_ids(model, root)
     found: list[SelfConformViolation] = []
     for node in model.nodes:
         if node.id in skip_nodes:
             continue
-        declared = _declared_kinds(node)
         observed = observed_by_node.get(node.id, frozenset())
         # frob:waive PERF004 reason="distinct small per-node diff set, not repeated"
-        for kind in sorted(declared - observed):
+        for raw_kind in sorted(_raw_declared_kinds(node)):
+            canonical = canonical_declared_kind(raw_kind)
+            expanded = expand_declared_kind(canonical)
+            if expanded & observed:
+                continue
             _log.warning(
                 "selfconform: SYS101 %s declared but never observed on %s",
-                kind,
+                raw_kind,
                 node.id,
             )
             found.append(
                 SelfConformViolation(
                     rule=SYS_STALE_DESIGN,
                     node=node.id,
-                    detail=f"capability {kind!r} declared but never observed",
-                    capability=kind,
+                    detail=f"capability {raw_kind!r} declared but never observed",
+                    capability=raw_kind,
                 )
             )
     return found

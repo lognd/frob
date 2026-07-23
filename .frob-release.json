@@ -897,8 +897,10 @@
     "src/frob/strata/_design_load.py::unbound_constructs": "84a56c9959c90474f6dfd2d0ef3309450a4b486491a557c111ed2f57b910ec5a",
     "src/frob/strata/_effects.py::CapabilityViolation": "f3cc19caba53843e4bb926a7f6cdb5ccaf82cb8ac5814464b70b3c2e5f1b80f6",
     "src/frob/strata/_effects.py::EffectReport": "11e03a6516fdc2876da72cb9ce672e11ffce65f2ebd5cc00172c7659bcfc8bb4",
+    "src/frob/strata/_effects.py::LegacyCapabilityAliasViolation": "da7249cf06828fe7b0d494e644bca0dfe3106aa5849e0ac7e5313e67007a2a71",
     "src/frob/strata/_effects.py::ObservedEffect": "8125e0048d37b1cf5149b04e92d36e1468a8b5a81214b712c3fcee2505f77265",
     "src/frob/strata/_effects.py::check_capability_conformance": "6708f0ab8444fe2707a051b14b71a959e641eea690800284173d2b5702901b09",
+    "src/frob/strata/_effects.py::check_legacy_capability_aliases": "4d91cc807367dceac2c47aae2d08a827e3dd918854976eef7ea448dd37d3fdd8",
     "src/frob/strata/_effects.py::extract_effects": "1f584bfadc0726c8cc47d2d096b07b413ae481dc6c67a2dba2595e65a2a2260b",
     "src/frob/strata/_effects.py::node_may_kinds": "8e83b4e140f3430534f95c3866bd706e4879cb3806031e6baaaf1774c6d14018",
     "src/frob/strata/_elaborate.py::elaborate": "de4a30aab71ce205ec83b51f42338464112ee27af1261bc038bb160202346168",
@@ -1249,6 +1251,18 @@
     "src/frob/vet/_capability.py::is_self_pattern_path": "1ea057d4683edc766482d7b467562480082d3ba80cea05970467ce44528102e1",
     "src/frob/vet/_capability.py::language_for": "b4e50c3603e4861cf8713c841dd270a813378269def2c43008711f53bf0bdf81",
     "src/frob/vet/_capability.py::scan_file_capabilities": "4a695059d8ce6f919b7a8295c6516529f0ffcc371ed1d5c3aea4c0276657c520",
+    "src/frob/vet/_capability_modes.py::CAPABILITY_MODES": "91e4604a6e26c9f6f67b029421ce676d773532619add7965d1d5e94101699948",
+    "src/frob/vet/_capability_modes.py::CAPABILITY_MODE_KINDS": "1fc7cd5f5deee4c1d88a3922cb268f42b6d39f792e1cb74a105bc1d0dd466415",
+    "src/frob/vet/_capability_modes.py::CapabilityModeError": "bdb2aac65e4aa39f7ff03be5203de6426dd781947c9c26f10e074432ee394ad6",
+    "src/frob/vet/_capability_modes.py::DeprecatedCapabilityAlias": "bc0b6bb94108ebda1d213c3604086c1d2c65573090836d64666671da420ecf43",
+    "src/frob/vet/_capability_modes.py::FAMILY_MODES": "d7fcd419308af73cdf0e0393eeb2be05d4fc67d46f8091e3e663813cf5a41151",
+    "src/frob/vet/_capability_modes.py::LEGACY_CAPABILITY_ALIASES": "94e21367fa2ad00f5c3b050387aee24606e380b9c18dd6caef2fb77c39aa9f88",
+    "src/frob/vet/_capability_modes.py::WIRED_MODE_FAMILIES": "e444cad92785378645d50182050d915061be8556db7ad004513a5e806270c299",
+    "src/frob/vet/_capability_modes.py::canonical_declared_kind": "32d14c39fe3abd5bc55bcaa3aebc69bea9c3442e2e70f49186e039f3f46e6477",
+    "src/frob/vet/_capability_modes.py::expand_declared_kind": "12ee475857378ef1c8cad2b8385c6af8e6c084af8bbb94421211e17bd2f1f624",
+    "src/frob/vet/_capability_modes.py::mode_qualified": "9d6dd3f3757653ee0ab85fe734fd41d4658b9e1960358d3b01ee047129228eac",
+    "src/frob/vet/_capability_modes.py::normalize_observed_kind": "49ca081404bd43a1684661c583ed7ab71874e7dd5cffb77352fb499dc026638f",
+    "src/frob/vet/_capability_modes.py::resolve_capability_kind": "f604dec2a89c2bfe5f1d2e1029ac8fd3b7e2a725c0de28606ed8d0bfb1523625",
     "src/frob/vet/_capability_registry.py::CAPABILITY_KINDS": "02bfbd2fa3010c208005ccc75ef6c43e02984e4c8f55456e01840424c1956d61",
     "src/frob/vet/_capability_registry.py::CAPABILITY_MATRIX_EXCUSES": "564284975820c396c9092e869c10c76e302dabb8de2ec0ca58414159350fb19c",
     "src/frob/vet/_capability_registry.py::DANGEROUS_OPERATIONS": "a9036db9cde50e3631d046c1bfcfa31e62d1495fa643daaaa51a0826a9dec457",
@@ -1315,5 +1329,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.97.0"
+  "version": "0.98.0"
 }

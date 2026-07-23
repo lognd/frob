@@ -4846,7 +4846,7 @@ Gates: `uv run frob check --ticket T-0716` clean except:
 id: T-0717
 title: 'capability taxonomy: mode-qualified names (fs.read/fs.write, net.connect/net.listen),
   one vocabulary with T-0700 modes, deprecated-alias migration'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-22'
@@ -4858,8 +4858,49 @@ scope:
 - src/frob/strata/**
 - docs/design/registry/**
 - docs/strata/**
-scope_changes: []
-evidence: []
+- tests/unit/vet/**
+- tests/unit/strata/test_effects.py
+- tests/unit/strata/test_selfconform.py
+scope_changes:
+- op: add
+  glob: tests/unit/vet/**
+  reason: T-0717's new capability-mode vocabulary lives in src/frob/vet/_capability_modes.py;
+    its own unit tests need a home, and tests/unit/vet/ did not exist yet
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: tests/unit/strata/test_effects.py
+  reason: existing SYS100/THREAT004 tests assert the old ambiguous fs-kind spelling
+    and need updating; new legacy-alias/mode-precision tests belong alongside them
+  actor: logan
+  at: '2026-07-22'
+- op: add
+  glob: tests/unit/strata/test_selfconform.py
+  reason: existing SYS100/SYS101 tests assert the old fs-kind spelling; new fs.read
+    narrow-discharge acceptance test belongs alongside them
+  actor: logan
+  at: '2026-07-22'
+evidence:
+- tests/unit/vet/test_capability_modes.py::TestModeQualified::test_joins_family_and_mode
+- tests/unit/vet/test_capability_modes.py::TestModeQualified::test_capability_mode_kinds_includes_fs_read_write
+- tests/unit/vet/test_capability_modes.py::TestExpandDeclaredKind::test_precise_kind_covers_only_itself
+- tests/unit/vet/test_capability_modes.py::TestExpandDeclaredKind::test_coarse_fs_covers_union_of_modes
+- tests/unit/vet/test_capability_modes.py::TestExpandDeclaredKind::test_unwired_family_stays_coarse
+- tests/unit/vet/test_capability_modes.py::TestExpandDeclaredKind::test_kind_with_no_modes_defined_stays_itself
+- tests/unit/vet/test_capability_modes.py::TestResolveCapabilityKind::test_precise_kind_passes_through
+- tests/unit/vet/test_capability_modes.py::TestResolveCapabilityKind::test_coarse_family_is_never_deprecated
+- tests/unit/vet/test_capability_modes.py::TestResolveCapabilityKind::test_legacy_alias_in_window_resolves_and_warns
+- tests/unit/vet/test_capability_modes.py::TestResolveCapabilityKind::test_legacy_alias_past_sunset_is_gate_error
+- tests/unit/vet/test_capability_modes.py::TestResolveCapabilityKind::test_sunset_date_itself_is_already_expired
+- tests/unit/vet/test_capability_modes.py::TestCanonicalAndNormalize::test_canonical_declared_kind_resolves_alias_regardless_of_sunset
+- tests/unit/vet/test_capability_modes.py::TestCanonicalAndNormalize::test_normalize_observed_kind_matches_canonical
+- tests/unit/strata/test_effects.py::TestModeQualifiedFsConformance::test_fs_read_declaration_discharges_read_only_code
+- tests/unit/strata/test_effects.py::TestModeQualifiedFsConformance::test_fs_read_declaration_fails_conformance_on_a_write
+- tests/unit/strata/test_effects.py::TestLegacyCapabilityAliases::test_legacy_alias_in_window_is_a_warning_not_an_error
+- tests/unit/strata/test_effects.py::TestLegacyCapabilityAliases::test_legacy_alias_past_sunset_is_an_error
+- tests/unit/strata/test_effects.py::TestLegacyCapabilityAliases::test_non_legacy_declaration_is_not_flagged
+- tests/unit/strata/test_selfconform.py::TestModeQualifiedFsStaleDesign::test_fs_read_declaration_discharges_on_read_only_code
+- tests/unit/strata/test_selfconform.py::TestModeQualifiedFsStaleDesign::test_fs_read_declaration_stays_stale_when_only_writes_observed
 attachments: []
 acceptance:
 - text: GIVEN a node whose code only reads files WHEN it declares may fs.read THEN
@@ -4867,12 +4908,139 @@ acceptance:
     legacy may fs declaration THEN it works with a deprecation warning naming the
     sunset and migration target; GIVEN the alias sunset passes THEN legacy spellings
     are gate errors
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_effects.py::TestModeQualifiedFsConformance::test_fs_read_declaration_discharges_read_only_code
+  - tests/unit/strata/test_effects.py::TestModeQualifiedFsConformance::test_fs_read_declaration_fails_conformance_on_a_write
+  - tests/unit/strata/test_effects.py::TestLegacyCapabilityAliases::test_legacy_alias_in_window_is_a_warning_not_an_error
+  - tests/unit/strata/test_effects.py::TestLegacyCapabilityAliases::test_legacy_alias_past_sunset_is_an_error
 threat: null
 component: null
 labels: []
 ```
 User mandate 2026-07-22: capability names conflate mode -- measured in src/frob/vet/_capability_registry.py: scanner emits fs-write, _KIND_MAP normalizes it to bare fs for the may vocabulary, fs-read was added later as a separate kind, and SYS101 backward-compatibly satisfies bare may-fs with EITHER observed kind -- so fs is ambiguous (write-derived history, read-satisfiable present). net has no mode split at all. DESIGN MANDATE (think the declarations through, do not just rename): (1) ONE mode vocabulary shared with T-0700's resource modes (read|append|alpha|write|exclusive where meaningful) -- capability families get family.mode ids: fs.read/fs.append/fs.write, net.connect/net.listen, env.read/env.write, proc.spawn, ffi.call...; not every family has every mode (define each family's valid mode set explicitly). (2) COARSE DECLARATIONS STAY LEGAL, INTERPRETED FAIL-CLOSED: may fs means the UNION of fs modes for obligation purposes (a coarse declarer answers for everything), while observed effects always map to the most precise mode; conformance = observed subset-of declared; precision is rewarded (narrower declarations discharge narrower obligations) never required by fiat. (3) MIGRATION: alias table old->new; old spellings keep working but carry frob:deprecated (T-0576 machinery -- sunset date, ticket) so they warn now and error at sunset; mechanical sweep of this repo's .strata models, DEFAULT_BENIGN_CAPABILITIES, registry yamls; ESTATE: the 8 sibling repos' declarations migrate via fleet-routed per-repo tickets (T-0573 routing) -- file them at close, do not hand-edit siblings from here. (4) SYS101's either-satisfies compatibility join becomes an explicit alias-table lookup, not a special case, and dies with the aliases at sunset. Coordinate: T-0701 mode-conformance consumes this vocabulary; T-0339 resolvers classify into it; do not fork a second mode enum anywhere (no-duplication rule).
+
+## Done report
+
+Built a single shared, mode-qualified capability vocabulary
+(`frob.vet._capability_modes`, new module) covering `family.mode` ids
+(`fs.read`/`fs.write`/`net.connect`/`net.listen`/`env.read`/`env.write`/
+`proc.spawn`/`ffi.call`, generated from one `FAMILY_MODES` table so the
+vocabulary cannot fork), a `LEGACY_CAPABILITY_ALIASES` migration table
+(`fs-write`/`fs-read` -> `fs.write`/`fs.read`) with T-0576-shaped
+since/sunset/ticket metadata, and `resolve_capability_kind` (the
+WARN-in-window / ERR-past-sunset gate decision, sunset 2026-10-20).
+`expand_declared_kind` implements the design mandate: a precise
+`family.mode` id covers only itself, a bare coarse family name covers the
+UNION of that family's modes (a coarse declarer answers for everything);
+only `fs` is exploded live this pass (`WIRED_MODE_FAMILIES`) since the vet
+scanner has no connect/listen (or env/proc/ffi mode) distinction to
+normalize observations against yet -- exploding an unwired family would
+make every existing bare declaration spuriously go SYS101-stale.
+
+Wired the vocabulary into `frob.strata._effects` (`_KIND_MAP` now maps
+`fs-write`/`fs-read` scanner kinds to `fs.write`/`fs.read` instead of the
+old ambiguous bare `fs`; `_declared_kinds` canonicalizes+expands every
+`may` atom through the shared module; new `check_legacy_capability_aliases`
+model-wide gate surface) and `frob.strata._selfconform` (`_EXTENDED_KINDS`
+loses `fs-read`, now delegated to the core THREAT004 join like `fs-write`
+always was; the old `_alias_legacy_fs_observations`/bare-`fs`-covers-
+`fs-read` special cases are REMOVED -- `_stale_design_violations` now
+judges SYS101 staleness per RAW DECLARED ATOM via `expand_declared_kind`,
+so a precise `may "fs.read"` discharges narrowly while a coarse `may "fs"`
+still discharges on either mode being observed, as a natural consequence
+of the same generic join rather than fs-specific code).
+
+Not done, filed as a follow-up (T-draft-3e4b416a, converts to a real
+T-#### id at land): extending the live wiring to net/env/proc/ffi (needs a
+real per-mode scanner needle split first) and the ESTATE sibling-repo
+migration (mandate point 3) once those land. `design/frob.strata`'s own
+`may "fs"`/`may "fs-read"` declarations were left untouched (out of this
+ticket's file scope; every node that declares one already declares BOTH,
+so no self-conformance behavior changed for them).
+
+### Changed
+- src/frob/vet/_capability_modes.py (new)
+- src/frob/strata/_effects.py
+- src/frob/strata/_selfconform.py
+- src/frob/strata/__init__.py
+- tests/unit/vet/test_capability_modes.py (new)
+- tests/unit/strata/test_effects.py
+- tests/unit/strata/test_selfconform.py
+
+### Verification
+- `uv run pytest tests/unit/vet/test_capability_modes.py
+  tests/unit/strata/test_effects.py tests/unit/strata/test_selfconform.py
+  tests/test_capability_registry.py -q` -- all pass (20 new node ids plus
+  every pre-existing test in those files, 2 assertions updated for the
+  new `fs.write` spelling per T-0717's rename).
+- `uv run frob test --base main` -- PASS (touched-set selection, exit=0).
+- `uv run frob check --ticket T-0717 --only lint/static/gates-fast/
+  gates-native/gates-security` -- clean except REL001 (pyproject.toml
+  version bump), which is land-owned per the agent playbook section 4b and
+  deliberately untouched here.
+- `git diff main --diff-filter=D --stat` -- empty (no out-of-scope
+  deletions).
+
+Pre-existing, unrelated: `tests/unit/strata/test_export_golden.py`'s
+k8s/seccomp/iam golden fixtures are already stale against `design/
+frob.strata` (a `fleet`-node addition from an earlier, unrelated landed
+ticket) -- confirmed via `git diff --stat HEAD -- src/frob/strata/
+_export.py design/frob.strata tests/unit/strata/test_export_golden.py`
+(empty; none of these files are touched by this ticket).
+
+Also pre-existing, surfaced by the required `git merge main` (deletion-
+filter check, playbook section 9 -- T-0695 landed `src/frob/arch/
+_concurrency.py` after this branch's original base):
+`tests/unit/strata/test_selfconform.py::TestRealGateGreen::
+test_repo_design_and_declarations_are_self_conformant` now fails with 4
+SYS100 findings ("capability 'exec' observed ... but not declared" on
+node `graphlang`, `src/frob/arch/_concurrency.py`) -- T-0695's new file
+uses subprocess/fork without `design/frob.strata`'s `graphlang` node
+declaring `may "exec"`. Confirmed unrelated to this ticket: `_KIND_MAP`'s
+`exec` mapping is untouched by T-0717 (only `fs-write`/`fs-read` changed),
+and neither `design/frob.strata` nor `src/frob/arch/_concurrency.py` are
+touched here or in scope. `uv run frob check --ticket T-0717 --only
+gates-fast/gates-security` both stay clean (REL001 aside) -- the gate
+surface itself does not regress, only this one direct pytest exercise of
+`check_self_conformance` against the live repo. Not fixed here (out of
+scope); flagging for the coordinator/a follow-up ticket rather than
+silently leaving it undocumented.
+
+### Changed
+```
+ src/frob/strata/__init__.py             |   4 +
+ src/frob/strata/_effects.py             | 115 +++++++++++-
+ src/frob/strata/_selfconform.py         | 140 +++++++-------
+ src/frob/vet/_capability_modes.py       | 311 ++++++++++++++++++++++++++++++++
+ tests/unit/strata/test_effects.py       |  88 ++++++++-
+ tests/unit/strata/test_selfconform.py   |  57 +++++-
+ tests/unit/vet/__init__.py              |   0
+ tests/unit/vet/test_capability_modes.py | 105 +++++++++++
+ tickets.md                              | 198 +++++++++++++++++++-
+ 9 files changed, 937 insertions(+), 81 deletions(-)
+```
+
+### Evidence
+- `tests/unit/vet/test_capability_modes.py::TestModeQualified::test_joins_family_and_mode` (pytest node id, verified passing when recorded)
+- `tests/unit/vet/test_capability_modes.py::TestModeQualified::test_capability_mode_kinds_includes_fs_read_write` (pytest node id, verified passing when recorded)
+- `tests/unit/vet/test_capability_modes.py::TestExpandDeclaredKind::test_precise_kind_covers_only_itself` (pytest node id, verified passing when recorded)
+- `tests/unit/vet/test_capability_modes.py::TestExpandDeclaredKind::test_coarse_fs_covers_union_of_modes` (pytest node id, verified passing when recorded)
+- `tests/unit/vet/test_capability_modes.py::TestExpandDeclaredKind::test_unwired_family_stays_coarse` (pytest node id, verified passing when recorded)
+- `tests/unit/vet/test_capability_modes.py::TestExpandDeclaredKind::test_kind_with_no_modes_defined_stays_itself` (pytest node id, verified passing when recorded)
+- `tests/unit/vet/test_capability_modes.py::TestResolveCapabilityKind::test_precise_kind_passes_through` (pytest node id, verified passing when recorded)
+- `tests/unit/vet/test_capability_modes.py::TestResolveCapabilityKind::test_coarse_family_is_never_deprecated` (pytest node id, verified passing when recorded)
+- `tests/unit/vet/test_capability_modes.py::TestResolveCapabilityKind::test_legacy_alias_in_window_resolves_and_warns` (pytest node id, verified passing when recorded)
+- `tests/unit/vet/test_capability_modes.py::TestResolveCapabilityKind::test_legacy_alias_past_sunset_is_gate_error` (pytest node id, verified passing when recorded)
+- `tests/unit/vet/test_capability_modes.py::TestResolveCapabilityKind::test_sunset_date_itself_is_already_expired` (pytest node id, verified passing when recorded)
+- `tests/unit/vet/test_capability_modes.py::TestCanonicalAndNormalize::test_canonical_declared_kind_resolves_alias_regardless_of_sunset` (pytest node id, verified passing when recorded)
+- `tests/unit/vet/test_capability_modes.py::TestCanonicalAndNormalize::test_normalize_observed_kind_matches_canonical` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_effects.py::TestModeQualifiedFsConformance::test_fs_read_declaration_discharges_read_only_code` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_effects.py::TestModeQualifiedFsConformance::test_fs_read_declaration_fails_conformance_on_a_write` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_effects.py::TestLegacyCapabilityAliases::test_legacy_alias_in_window_is_a_warning_not_an_error` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_effects.py::TestLegacyCapabilityAliases::test_legacy_alias_past_sunset_is_an_error` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_effects.py::TestLegacyCapabilityAliases::test_non_legacy_declaration_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestModeQualifiedFsStaleDesign::test_fs_read_declaration_discharges_on_read_only_code` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_selfconform.py::TestModeQualifiedFsStaleDesign::test_fs_read_declaration_stays_stale_when_only_writes_observed` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0718 -->
 ```yaml
@@ -7027,3 +7195,97 @@ component: null
 labels: []
 ```
 Found 2026-07-22 during the zero-drive: T-0695 landed src/frob/arch/_concurrency.py whose DOCSTRINGS document fork/pool hazards (literal subprocess.Popen(...), os.fork() prose). The raw-text needle scan (_needle_hits_outside_comments) excludes comment spans but NOT docstring string-literal spans, so selfconform saw capability exec observed at docstring lines on node graphlang -> 4 SYS100 violations -> TestRealGateGreen RED on main. Docstrings are non-executable string constants; they cannot spawn a process, so excluding them from raw-text observation is sound and does not weaken the fail-closed posture for executable code. Fix: compute docstring spans (module/class/function-head expression string statements) and treat them like comment spans in the raw-text path; keep binding-aware resolution untouched. Mitigation already on main: T-0695 docstrings reworded to avoid needle shapes; the observer fix must add the regression test so future doc prose cannot re-trip it. Note: T-draft-32e61ad6 (filed in the T-0717 worktree) proposed declaring may exec on graphlang instead -- that remedy is WRONG (falsely widens the declared threat surface) and should be dropped in favor of this ticket when it lands.
+
+<!-- ticket:T-0770 -->
+```yaml
+id: T-0770
+title: 'self-conformance: graphlang node missing may exec after T-0695 landed _concurrency.py'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- design/frob.strata
+- tests/unit/strata/test_selfconform.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Discovered while working T-0717 (unrelated ticket) and merging main
+forward: T-0695 landed src/frob/arch/_concurrency.py (subprocess/fork
+usage) without design/frob.strata's graphlang node declaring may "exec"
+for it. tests/unit/strata/test_selfconform.py::TestRealGateGreen::
+test_repo_design_and_declarations_are_self_conformant now fails with 4
+SYS100 findings:
+
+capability 'exec' observed at src/frob/arch/_concurrency.py:28/... but
+not declared, node=graphlang.
+
+Fix: add may "exec" to design/frob.strata's graphlang node declaration
+(or the correct owning node per its code= glob), then re-verify
+TestRealGateGreen passes. Scope: design/frob.strata,
+tests/unit/strata/test_selfconform.py (verification only).
+
+<!-- ticket:T-0771 -->
+```yaml
+id: T-0771
+title: 'capability taxonomy: wire net/env/proc/ffi mode split + sibling-repo migration
+  (T-0717 follow-up)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/vet/**
+- src/frob/strata/**
+- docs/design/registry/**
+- docs/strata/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0717 shipped the shared mode-qualified capability vocabulary
+(frob.vet._capability_modes: FAMILY_MODES, CAPABILITY_MODE_KINDS,
+LEGACY_CAPABILITY_ALIASES, resolve_capability_kind/expand_declared_kind/
+canonical_declared_kind/normalize_observed_kind) and wired it live for the
+fs family only (fs.read/fs.write, WIRED_MODE_FAMILIES={"fs"}) -- the one
+family the acceptance tests exercised. net.connect/net.listen,
+env.read/env.write, proc.spawn, and ffi.call are DEFINED in FAMILY_MODES
+but deliberately NOT exploded by expand_declared_kind/normalize_observed_
+kind yet (a bare may "net" stays exactly {"net"}), because the vet
+scanner has no connect/listen (or env-read/write, proc, ffi-call)
+distinction to normalize observations against -- exploding the
+declaration side without a matching observation side would make every
+existing bare "net"/"env"/etc. declaration spuriously SYS101-stale.
+
+Follow-up work, explicitly not done in T-0717:
+1. Extend frob.vet._capability's per-language needle tables with a real
+   connect-vs-listen split for net (e.g. socket.connect vs socket.bind+
+   listen; net.connect vs net.listen in TS/Rust equivalents), and an
+   env read-vs-write split, before adding those families to
+   WIRED_MODE_FAMILIES.
+2. Mechanical sweep of this repo's own design/frob.strata declarations
+   and DEFAULT_BENIGN_CAPABILITIES (src/frob/strata/_threat.py) once a
+   family is wired, mirroring what T-0717 did for fs (BenignCapability
+   entries + CAPABILITY_KINDS registration would be needed for fs.read/
+   fs.write too if any node ever declares them precisely -- currently
+   design/frob.strata only uses the still-legal coarse "fs"/"fs-read"
+   spellings, so this was deferred).
+3. ESTATE migration (mandate point 3): once net/env/proc/ffi are wired,
+   file per-repo tickets (T-0573 fleet routing) for the 8 sibling repos'
+   own capability declarations to adopt the precise family.mode spellings
+   ahead of the T-0717 alias sunset (fs-write/fs-read, 2026-10-20).

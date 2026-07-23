@@ -123,8 +123,10 @@ from frob.strata._design_load import (
 from frob.strata._effects import (
     CapabilityViolation,
     EffectReport,
+    LegacyCapabilityAliasViolation,
     ObservedEffect,
     check_capability_conformance,
+    check_legacy_capability_aliases,
     extract_effects,
     node_may_kinds,
 )
@@ -400,6 +402,7 @@ __all__ = [
     "is_managed",
     "KrbTrustDecl",
     "Lattice",
+    "LegacyCapabilityAliasViolation",
     "Mediate",
     "Metric",
     "Module",
@@ -486,6 +489,7 @@ __all__ = [
     "check_discharge_completeness",
     "check_effect_completeness",
     "check_import_conformance",
+    "check_legacy_capability_aliases",
     "check_native_staleness_or_exit",
     "check_privacy_policy",
     "check_regulation_catalog_completeness",

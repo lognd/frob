@@ -41,24 +41,40 @@ kernel change, exactly as `_code_binding.py` defers the `code` keyword.
 
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
 
 from frob.logging import get_logger
 from frob.vet._capability import _PATTERNS, is_self_pattern_path, language_for
+from frob.vet._capability_modes import (
+    CAPABILITY_MODE_KINDS,
+    LEGACY_CAPABILITY_ALIASES,
+    canonical_declared_kind,
+    expand_declared_kind,
+    resolve_capability_kind,
+)
 
 from ._code_binding import FOREIGN, CodeBinding
 from ._models import KernelModel, Node
 
 _log = get_logger(__name__)
 
-#: vet capability-table key -> tier-2 effect kind. Only net/fs/exec are in
-#: this ticket's scope (T-0079's title); eval/env/ffi/install-hook are vet-
-#: specific dependency-vetting signals with no `may`-capability analog yet.
+#: vet capability-table key -> tier-2 effect kind. net/fs-write/fs-read/
+#: exec are in this ticket's scope (T-0079's title, T-0717's mode split);
+#: eval/env/ffi/install-hook are vet-specific dependency-vetting signals
+#: with no `may`-capability analog yet. T-0717: `fs-write`/`fs-read` now
+#: normalize to the precise, mode-qualified `fs.write`/`fs.read` spellings
+#: (`frob.vet._capability_modes`) instead of the old ambiguous bare `fs`
+#: -- `fs-read` is promoted here from `_selfconform.py::_EXTENDED_KINDS`
+#: (it now has a real tier-2/THREAT004 analog, closing that module's old
+#: SYS100 gap statement for this one kind) so both directions of the
+#: fs-read/fs-write join share ONE normalization site instead of two.
 _KIND_MAP: dict[str, str] = {
     "net": "net",
-    "fs-write": "fs",
+    "fs-write": "fs.write",
+    "fs-read": "fs.read",
     "exec": "exec",
 }
 
@@ -99,7 +115,16 @@ class EffectReport(BaseModel):
 
 def _may_kind(atom: str) -> str:
     """The capability KIND of one `may` atom: the segment before the first
-    `.` or `:` (`"net.out:stripe.com"` -> `"net"`, `"exec:*"` -> `"exec"`)."""
+    `.` or `:` (`"net.out:stripe.com"` -> `"net"`, `"exec:*"` -> `"exec"`),
+    EXCEPT a T-0717 mode-qualified `family.mode` id (`"fs.read"`,
+    `CAPABILITY_MODE_KINDS`) is recognized whole -- its own `.` is the
+    family/mode separator, not a target-scoping separator, so it must not
+    be split. Only the segment up to a `:` (a target, e.g. `"fs.read:app-
+    data"`) is stripped before that whole-id check, so a mode-qualified
+    atom WITH a target still resolves correctly."""
+    kind_part = atom.split(":", 1)[0]
+    if kind_part in CAPABILITY_MODE_KINDS:
+        return kind_part
     for sep in (".", ":"):
         if sep in atom:
             return atom.split(sep, 1)[0]
@@ -107,8 +132,82 @@ def _may_kind(atom: str) -> str:
 
 
 def _declared_kinds(node: Node) -> frozenset[str]:
-    """Every capability kind `node` declares via its `may` atoms."""
-    return frozenset(_may_kind(atom) for atom in node.may)
+    """Every PRECISE capability kind `node`'s `may` atoms cover (T-0717):
+    each atom's raw kind (`_may_kind`) is canonicalized through the legacy-
+    alias table (`canonical_declared_kind` -- pure, sunset-independent;
+    the sunset ITSELF is a separate gate finding, `check_legacy_capability_
+    aliases`) and then expanded (`expand_declared_kind`) -- a precise
+    `family.mode` id covers only itself, a bare coarse family name covers
+    the UNION of that family's modes (mandate point 2: "a coarse declarer
+    answers for everything"). The union across every atom is this node's
+    full declared-coverage set, which is what every SYS100/THREAT004
+    observed-vs-declared join in this module and `_selfconform.py` reads."""
+    declared: set[str] = set()
+    for atom in node.may:
+        kind = canonical_declared_kind(_may_kind(atom))
+        declared |= expand_declared_kind(kind)
+    return frozenset(declared)
+
+
+# frob:doc docs/strata/selfconform.md#fs-read-fs-write
+class LegacyCapabilityAliasViolation(BaseModel):
+    """One node `may` atom spelled with a T-0717 deprecated legacy
+    capability alias (`fs-write`/`fs-read`): `is_error=False` while inside
+    the alias's sunset window (a WARNING -- T-0717 acceptance clause 2,
+    legacy spellings keep working), `is_error=True` once `today` is on or
+    past the alias's sunset date (T-0717 acceptance clause 3 -- a gate
+    ERROR)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    node: str
+    atom: str
+    kind: str
+    target: str
+    sunset: str
+    ticket: str
+    is_error: bool
+
+
+# frob:doc docs/strata/selfconform.md#fs-read-fs-write
+# frob:ticket T-0717
+# frob:tests tests/unit/strata/test_effects.py::TestLegacyCapabilityAliases kind="unit"
+def check_legacy_capability_aliases(
+    model: KernelModel, *, today: date | None = None
+) -> tuple[LegacyCapabilityAliasViolation, ...]:
+    """Every `may` atom across `model`'s nodes spelled with a T-0717
+    legacy capability alias (`LEGACY_CAPABILITY_ALIASES`), each resolved
+    through `resolve_capability_kind` (which does the actual WARN-vs-ERROR
+    sunset decision and logging) -- this is the model-wide GATE surface a
+    `frob check`/`frob sys audit` caller wires up to fail a release once an
+    alias's sunset has passed (acceptance clause 3), while leaving it a
+    visible-but-passing WARNING before that (acceptance clause 2)."""
+    found: list[LegacyCapabilityAliasViolation] = []
+    for node in model.nodes:
+        for atom in node.may:
+            kind = _may_kind(atom)
+            alias = LEGACY_CAPABILITY_ALIASES.get(kind)
+            if alias is None:
+                continue
+            resolved = resolve_capability_kind(kind, today=today)
+            found.append(
+                LegacyCapabilityAliasViolation(
+                    node=node.id,
+                    atom=atom,
+                    kind=kind,
+                    target=alias.target,
+                    sunset=alias.sunset,
+                    ticket=alias.ticket,
+                    is_error=resolved.is_err,
+                )
+            )
+    _log.info(
+        "strata effects: %d legacy capability alias declaration(s) found (%d past "
+        "sunset)",
+        len(found),
+        sum(1 for v in found if v.is_error),
+    )
+    return tuple(found)
 
 
 # frob:doc docs/strata/surface.md#code-binding-tier-2-v0-implementation
@@ -246,8 +345,10 @@ def check_capability_conformance(
 __all__ = [
     "CapabilityViolation",
     "EffectReport",
+    "LegacyCapabilityAliasViolation",
     "ObservedEffect",
     "check_capability_conformance",
+    "check_legacy_capability_aliases",
     "extract_effects",
     "node_may_kinds",
 ]

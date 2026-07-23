@@ -339,7 +339,9 @@ class TestUndeclaredInterfaceFsReadAlias:
         hit = [
             v for v in result.danger_ok.violations if v.rule == SYS_UNDECLARED_INTERFACE
         ]
-        assert any(v.node == "widget" and v.capability == "fs" for v in hit)
+        # T-0717: a fs-write-class observation now reports the precise
+        # "fs.write" spelling, not the old ambiguous bare "fs".
+        assert any(v.node == "widget" and v.capability == "fs.write" for v in hit)
 
 
 class TestStaleDesign:
@@ -1164,3 +1166,56 @@ class TestBindingErrorPropagation:
         result = check_self_conformance(model, tmp_path)
         assert result.is_err
         assert result.danger_err == StrataError.AmbiguousCodeBinding
+
+
+class TestModeQualifiedFsStaleDesign:
+    """T-0717 acceptance clause 1: a node declaring precisely `may
+    "fs.read"` and whose bound code only reads discharges SYS101 narrowly
+    (only `fs.read` itself can satisfy it)."""
+
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    def test_fs_read_declaration_discharges_on_read_only_code(self, tmp_path: Path):
+        _write(
+            tmp_path,
+            "src/frob/widget/_io.py",
+            "from pathlib import Path\nPath('x').read_text()\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=("code=src/frob/widget/**",),
+                    may=("fs.read",),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        assert not any(v.rule == SYS_STALE_DESIGN for v in result.danger_ok.violations)
+
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    def test_fs_read_declaration_stays_stale_when_only_writes_observed(
+        self, tmp_path: Path
+    ):
+        """The precise declaration does NOT discharge on the OTHER mode --
+        a `fs.read`-only declarer whose code only writes is still stale."""
+        _write(
+            tmp_path,
+            "src/frob/widget/_io.py",
+            "from pathlib import Path\nPath('x').write_text('y')\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=("code=src/frob/widget/**",),
+                    may=("fs.read",),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        hit = [v for v in result.danger_ok.violations if v.rule == SYS_STALE_DESIGN]
+        assert any(v.node == "widget" and v.capability == "fs.read" for v in hit)

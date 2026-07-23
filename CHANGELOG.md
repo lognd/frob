@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.98.0] - unreleased
+
+- T-0717: capability taxonomy: mode-qualified names (fs.read/fs.write, net.connect/net.listen), one vocabulary with T-0700 modes, deprecated-alias migration
+
 ## [0.96.0] - unreleased
 
 - T-0644: strata: HEALTH liveness+readiness obligation on every service node
