@@ -1081,6 +1081,34 @@ def _needle_matches_resolved(needle: str, resolved: str) -> bool:
     return needle in resolved or needle in f"{resolved}("
 
 
+_capability_pattern_cache: dict[int, tuple[tuple[str, re.Pattern[str]], ...]] = {}
+
+
+def _compiled_capability_patterns(
+    table: dict[str, tuple[str, ...]],
+) -> tuple[tuple[str, re.Pattern[str]], ...]:
+    """One compiled alternation-of-needles regex per capability in `table`,
+    cached by `id(table)` in `_capability_pattern_cache` (T-0829: `table` is
+    always one of the fixed module-level `_PATTERNS[language]` dicts, never
+    mutated or replaced after import, so the same object recurs on every
+    call and compiling once amortizes across the whole scan; a plain dict
+    keyed by identity is used instead of `functools.lru_cache` because
+    `table` itself is an unhashable `dict` and cannot be an `lru_cache`
+    argument). A capability with no needles is dropped -- `any(... for
+    needle in ())` on the old per-needle loop was always `False`, so
+    omitting it here changes nothing observable."""
+    cached = _capability_pattern_cache.get(id(table))
+    if cached is not None:
+        return cached
+    compiled = tuple(
+        (capability, re.compile("|".join(re.escape(needle) for needle in needles)))
+        for capability, needles in table.items()
+        if needles
+    )
+    _capability_pattern_cache[id(table)] = compiled
+    return compiled
+
+
 def _python_binding_capabilities(
     path: Path,
     table: dict[str, tuple[str, ...]],
@@ -1090,16 +1118,32 @@ def _python_binding_capabilities(
     (T-0328) -- the union of every registry needle that matches a resolved
     call/attribute target, for sites outside a comment span. Merged into
     `scan_file_capabilities`'s lexical result; adds recall (aliased/from-
-    import evasions) without touching the existing raw-text path at all."""
+    import evasions) without touching the existing raw-text path at all.
+
+    T-0829: matches each candidate against one precompiled regex per
+    capability instead of a Python-level `any(needle in resolved ...)` loop
+    -- see `_compiled_capability_patterns`. `needle in resolved or needle in
+    f"{resolved}("` collapses to a single `needle in f"{resolved}("` check:
+    `resolved` is always a prefix of `f"{resolved}("`, so any needle found
+    in `resolved` is necessarily also found in the longer string; searching
+    only the longer string is behavior-identical and halves the substring
+    work per needle. Also short-circuits the whole per-candidate loop once
+    every capability with a nonempty needle set has already been found."""
     found: set[str] = set()
+    patterns = _compiled_capability_patterns(table)
+    if not patterns:
+        return found
     for resolved, start, end in _python_resolved_candidates(path):
         if _fully_in_any_span(start, end, comment_spans):
             continue
-        for capability, needles in table.items():
+        haystack = f"{resolved}("
+        for capability, pattern in patterns:
             if capability in found:
                 continue
-            if any(_needle_matches_resolved(needle, resolved) for needle in needles):
+            if pattern.search(haystack):
                 found.add(capability)
+        if len(found) == len(patterns):
+            break
     return found
 
 
