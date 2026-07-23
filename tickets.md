@@ -4892,3 +4892,22 @@ threat: null
 component: null
 ```
 The two REL200 waivers on design/frob.strata's graph_cache__fill and graph_cache__inval_f_parse flows exist because elaborator-synthesized in-process cache flows have no attr-forwarding surface: there is no way to declare (or discharge) a timeout/local disposition on a flow the elaborator invents. Add that surface (per-flow attr forwarding from the synthesizing rule, or an explicit local disposition for in-process in-memory flows), then burn down both waivers. Deferred from T-0640 at its salvage-close; the waivers' ticket refs point here.
+
+<!-- ticket:T-0846 -->
+```yaml
+id: T-0846
+title: 'land: ClaimDivergence compares exact error counts across run contexts; scoped-flaky
+  rules make landing a refresh-retry loop'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/tickets/_land.py
+- src/frob/tickets/**
+threat: null
+component: null
+```
+T-0754's claim check compares the captured error COUNT against a fresh post-merge count. Three failure modes burned 5 land attempts this session (T-0755/T-0640): (1) WAIVE004 self-declares 'known-flaky for diff-scoped rules... trust this only from a full, unscoped run' yet still counts toward the scoped-run error total the claim check compares; (2) the capture is taken at done-report time in a different tree state than land's post-merge check, so any main-side drift (even fixes) diverges the count; (3) the remedy loop (refresh done-report, commit, retry land) is manual and non-obvious. Fix direction: compare a SET of finding identities (rule id + location) not a count, exclude rules that self-declare scoped-run flakiness from the comparison, and/or have land re-capture the claim itself post-merge instead of refusing.
