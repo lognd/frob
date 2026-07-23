@@ -35,6 +35,7 @@ from frob.tickets._leases import (
     resolve_lease,
     sweep_worktrees,
 )
+from frob.tickets._live_tracker import live_tracker_citations
 from frob.tickets._models import (
     BOARD_STATES,
     CMD_EVIDENCE_ALLOWED_KINDS,
@@ -2203,12 +2204,14 @@ def _start_blockers(ticket: Ticket, queue: dict[str, Ticket]) -> list[str]:
 
 
 def _transition_guard(
+    root: Path,
     ticket: Ticket,
     to: TicketState,
     queue: dict[str, Ticket],
     *,
     covers_scope: bool | None = None,
     reviewed: bool | None = None,
+    mutation_evidence: bool | None = None,
 ) -> Result[None, TicketError]:
     """Enforce start-blocker and done-evidence preconditions for `to`."""
     if to == TicketState.IN_PROGRESS:
@@ -2220,7 +2223,11 @@ def _transition_guard(
             return Err(TicketError.BlockerOpen)
     if to == TicketState.DONE:
         return _done_transition_guard(
-            ticket, covers_scope=covers_scope, reviewed=reviewed
+            root,
+            ticket,
+            covers_scope=covers_scope,
+            reviewed=reviewed,
+            mutation_evidence=mutation_evidence,
         )
     return Ok(None)
 
@@ -2232,10 +2239,12 @@ def _transition_guard(
 # hand-pasted directly into the ledger, either of which would otherwise
 # slip a code-kind ticket through close on unverifiable evidence.
 def _done_transition_guard(
+    root: Path,
     ticket: Ticket,
     *,
     covers_scope: bool | None = None,
     reviewed: bool | None = None,
+    mutation_evidence: bool | None = None,
 ) -> Result[None, TicketError]:
     """Enforce DONE-transition preconditions: evidence + substantive Done
     report present, no cmd: evidence on a kind that disallows it, (D-02,
@@ -2243,21 +2252,42 @@ def _done_transition_guard(
     to a touched/scope symbol, (T-0572) every declared acceptance criterion
     has at least one resolving evidence id -- see `unbound_acceptance` (a
     ticket with an empty `acceptance` list is unaffected, T-0572 backward
-    compat) -- and (T-0571, when the caller supplies `reviewed`) at least
-    one approve-verdict review record naming the current commit.
+    compat) -- (T-0571, when the caller supplies `reviewed`) at least
+    one approve-verdict review record naming the current commit, (T-0844,
+    when the caller supplies `mutation_evidence=False`) that the ticket
+    does not carry an unwaived ERROR-severity TEST016 confirmatory-only-
+    evidence finding, mirroring `frob.tickets._land._check_mutation_
+    evidence`'s land-time refusal so a security/bug ticket closed directly
+    (never landed) is not exempt from the same obligation, and (T-0854,
+    ALWAYS, not injected) that no registry disposition or waiver still
+    cites `ticket.id` as its live tracker (`frob.tickets._live_tracker.
+    live_tracker_citations`) -- the T-0605-orphaned-41-rows incident class.
 
-    `covers_scope`/`reviewed` are both injected, never computed here:
-    answering "does an evidence id cover a touched/scope symbol" needs the
-    obligation graph (`frob.graph`) and the `TESTS`-edge index
-    `frob.testing`/`frob.gates` already build, and answering "is there an
+    `covers_scope`/`reviewed`/`mutation_evidence` are injected, never
+    computed here: answering "does an evidence id cover a touched/scope
+    symbol" needs the obligation graph (`frob.graph`) and the `TESTS`-edge
+    index `frob.testing`/`frob.gates` already build, answering "is there an
     approve review naming HEAD" needs `git rev-parse` under the caller's
-    root -- `frob.tickets` deliberately stays free of both dependencies
-    (docs/rework.md cycle-avoidance -- `frob.gates` is the one module
-    allowed to join graph + tickets). `None` (the default, matching every
-    caller before D-02/T-0571) skips each check entirely, so existing
-    callers/tests are unaffected; a caller with the needed context
-    (`frob.gates.evidence_covers_scope`, `has_approved_review_for_commit`,
-    or its own equivalent) opts in by passing an explicit `True`/`False`."""
+    root, and answering "did the bound evidence kill a mutant" needs
+    `frob.gates.mutation_evidence_violations` -- `frob.tickets` deliberately
+    stays free of all three dependencies (docs/rework.md cycle-avoidance --
+    `frob.gates` is the one module allowed to join graph + tickets). `None`
+    (the default, matching every caller before D-02/T-0571/T-0844) skips
+    each check entirely, so existing callers/tests are unaffected; a caller
+    with the needed context (`frob.gates.evidence_covers_scope`,
+    `has_approved_review_for_commit`, `frob.gates.mutation_evidence_
+    violations`, or its own equivalent) opts in by passing an explicit
+    `True`/`False`. `live_tracker_citations`, by contrast, is a plain `git
+    grep` under `root` (against `current_branch(root)` as the diff base,
+    T-0854 rework's diff-aware exemption -- see the module docstring in
+    `frob.tickets._live_tracker`) -- cheap enough (T-0854's own PERF
+    guard: "a targeted grep-shaped scan, not a full registry parse per
+    close") to run unconditionally here, so every caller (direct `frob
+    ticket close` and `land`'s own post-merge finalize call) gets it for
+    free with no injection plumbing to wire; an unresolvable branch (not a
+    git work tree) degrades to skipping the check, matching T-0844's own
+    `_close_mutation_evidence_for_ticket` posture for the identical
+    failure mode."""
     if not ticket.evidence or not _has_done_report(ticket.body):
         _log.warning(
             "tickets: %s cannot close, missing evidence or a substantive Done report",
@@ -2296,6 +2326,34 @@ def _done_transition_guard(
             ticket.id,
         )
         return Err(TicketError.MissingApprovedReview)
+    if mutation_evidence is False:
+        _log.warning(
+            "tickets: %s cannot close, confirmatory-only evidence (TEST016 "
+            "ERROR) for kind=%s -- strengthen the named evidence tests or "
+            "retry with --skip-mutation-evidence",
+            ticket.id,
+            ticket.kind,
+        )
+        return Err(TicketError.EvidenceConfirmatoryOnly)
+    from frob.gitio import current_branch
+
+    branch = current_branch(root)
+    citations = (
+        live_tracker_citations(root, ticket.id, base_ref=branch.danger_ok)
+        if branch.is_ok
+        else ()
+    )
+    if citations:
+        _log.warning(
+            "tickets: %s cannot close, %d site(s) still cite it as their "
+            "live tracker (registry deferred:/tracked_by: disposition or a "
+            "waiver ticket= attribute): %s -- file a successor ticket and "
+            "re-point these rows, or re-point them in this same change",
+            ticket.id,
+            len(citations),
+            list(citations),
+        )
+        return Err(TicketError.LiveTrackerCited)
     return Ok(None)
 
 
@@ -2322,6 +2380,9 @@ def _load_ticket_and_queue(
 # frob:invariant INV-002
 # invariant spec: [INV-002](invariants/INV-002.md)
 # frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_evidence_integrity.py::TestT0844MutationEvidenceOnClose.test_transition_rejects_when_mutation_evidence_false  # noqa: E501
+# frob:tests tests/test_evidence_integrity.py::TestT0844MutationEvidenceOnClose.test_transition_allows_when_mutation_evidence_true  # noqa: E501
+# frob:tests tests/test_evidence_integrity.py::TestT0844MutationEvidenceOnClose.test_transition_permissive_when_mutation_evidence_none  # noqa: E501
 def transition(
     root: Path,
     ticket_id: str,
@@ -2329,12 +2390,15 @@ def transition(
     *,
     covers_scope: bool | None = None,
     reviewed: bool | None = None,
+    mutation_evidence: bool | None = None,
 ) -> Result[Ticket, TicketError]:
     """Enforce the state machine; `done` also requires evidence and a
     substantive Done report, (D-02) an evidence id covering a touched/
-    scope symbol whenever the caller supplies `covers_scope=False`, and
+    scope symbol whenever the caller supplies `covers_scope=False`,
     (T-0571) an approve-verdict review record naming the current commit
-    whenever the caller supplies `reviewed=False` (see
+    whenever the caller supplies `reviewed=False`, and (T-0844) refuses on
+    an unwaived ERROR-severity TEST016 confirmatory-only-evidence finding
+    whenever the caller supplies `mutation_evidence=False` (see
     `_done_transition_guard`'s docstring for why these are injected rather
     than computed here)."""
     leased = enforce_worktree_lease(root)
@@ -2368,7 +2432,13 @@ def transition(
         return Err(TicketError.InvalidTransition)
 
     guard = _transition_guard(
-        ticket, to, queue, covers_scope=covers_scope, reviewed=reviewed
+        root,
+        ticket,
+        to,
+        queue,
+        covers_scope=covers_scope,
+        reviewed=reviewed,
+        mutation_evidence=mutation_evidence,
     )
     if guard.is_err:
         return Err(guard.danger_err)

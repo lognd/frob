@@ -1918,6 +1918,39 @@ def _check_mutation_evidence(
     return Ok(None)
 
 
+def _check_live_tracker_citations(
+    worktree: Path, ticket: Ticket, base_ref: str
+) -> Result[None, LandError]:
+    """T-0854: refuse to land while a registry `deferred:`/`tracked_by:`
+    disposition or a waiver `ticket=` attribute in `worktree`'s tree still
+    cites `ticket.id` as its live tracker, AND that exact citation already
+    existed unchanged at `base_ref` (`frob.tickets._live_tracker.
+    live_tracker_citations`'s diff-aware grep-shaped scan, T-0854 rework)
+    -- the T-0605-orphaned-41-rows incident class, caught BEFORE the merge
+    that makes those citations stale, not one `frob check` later. A
+    citation this same diff freshly introduces (never present at
+    `base_ref`) is not reported -- see the T-0854 rework note in
+    `frob.tickets._live_tracker`'s module docstring for why a scope-based
+    exemption was rejected as gameable in favor of this diff-aware one."""
+    from frob.tickets._live_tracker import live_tracker_citations
+
+    citations = live_tracker_citations(worktree, ticket.id, base_ref=base_ref)
+    if not citations:
+        return Ok(None)
+    _log.error(
+        "land: %s cannot land -- %d site(s) still cite it as their live "
+        "tracker (registry deferred:/tracked_by: disposition or a waiver "
+        "ticket= attribute): %s -- file a successor ticket and re-point "
+        "these rows, or re-point them in this same change, then retry "
+        "`frob ticket land %s`",
+        ticket.id,
+        len(citations),
+        list(citations),
+        ticket.id,
+    )
+    return Err(LandError.LiveTrackerCited)
+
+
 def _land_precheck(
     root: Path,
     worktree: Path,
@@ -1928,10 +1961,11 @@ def _land_precheck(
 ) -> Result[tuple[Ticket, str], LandError]:
     """Refuse on root/worktree being the same path (T-0795) or a dirty
     main, load+validate the worktree's ticket is closeable (including,
-    T-0774, a `covers_scope` preflight simulation, and T-0755's diff-scoped
-    mutation-evidence obligation, bypassable via `skip_mutation_evidence`),
-    and resolve main's current branch name -- everything `land` must check
-    BEFORE any git mutation."""
+    T-0774, a `covers_scope` preflight simulation, T-0755's diff-scoped
+    mutation-evidence obligation, bypassable via `skip_mutation_evidence`,
+    and T-0854's live-tracker-citation preflight), and resolve main's
+    current branch name -- everything `land` must check BEFORE any git
+    mutation."""
     from frob.tickets import _load_one
 
     same_path_check = _refuse_if_root_is_worktree(root, worktree, ticket_id)
@@ -1959,6 +1993,12 @@ def _land_precheck(
     main_branch = current_branch(root)
     if main_branch.is_err:
         return Err(LandError.GitFailed)
+
+    live_tracker_check = _check_live_tracker_citations(
+        worktree, ticket, main_branch.danger_ok
+    )
+    if live_tracker_check.is_err:
+        return Err(live_tracker_check.danger_err)
 
     mutation_check = _check_mutation_evidence(
         worktree,

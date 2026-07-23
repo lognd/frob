@@ -138,7 +138,9 @@ def set_priority(root: Path, ticket_id: str, priority: Priority) -> Result[Ticke
     # single-writer way to reprioritize a ticket instead of hand-editing
     # tickets.md frontmatter (same shape as mutate_scope/T-0455).
 def transition(root: Path, ticket_id: str, to: TicketState, *,
-                covers_scope: bool | None = None) -> Result[Ticket, TicketError]
+                covers_scope: bool | None = None,
+                reviewed: bool | None = None,
+                mutation_evidence: bool | None = None) -> Result[Ticket, TicketError]
     # Enforces the state machine; done additionally requires evidence
     # non-empty and a substantive Done report section (a bare heading with
     # nothing under it no longer counts, T-0398 D-03). `covers_scope`
@@ -152,7 +154,15 @@ def transition(root: Path, ticket_id: str, to: TicketState, *,
     # criterion to have a resolving evidence id -- see unbound_acceptance;
     # Err(AcceptanceUnbound) names which criteria are still unbound (in the
     # WARNING log line, not the bare error) if any remain. A ticket with an
-    # empty `acceptance` list is unaffected (backward compat).
+    # empty `acceptance` list is unaffected (backward compat). T-0844:
+    # `mutation_evidence`, when the caller supplies `False`, additionally
+    # refuses on an unwaived ERROR-severity TEST016 confirmatory-only-
+    # evidence finding (Err(EvidenceConfirmatoryOnly)) -- computed via
+    # `frob.gates.mutation_evidence_violations`, injected for the same
+    # cycle-avoidance reason as `covers_scope`; `mutation_evidence=None`
+    # (default) skips the check. `frob ticket close` wires this the same
+    # way `frob ticket land` already did (see "Mutation-evidence
+    # obligation" below).
 def unbound_acceptance(ticket: Ticket) -> tuple[AcceptanceCriterion, ...]
     # T-0572: acceptance criteria with no evidence id that both the
     # criterion itself lists AND still resolves against ticket.evidence --
@@ -1092,10 +1102,64 @@ NOT part of `frob.check`'s `test_gate`/`_ALL_GATES` snapshot pipeline
 pure function of the graph snapshot, safe to run on every `frob check`
 invocation; this rule spawns real bounded subprocesses per ticket, which
 would violate the "must not slow the default `frob check` path for
-tickets that never opt in" guard if it ran unconditionally there. Wiring
-`frob ticket close`'s own CLI path (`frob.app.ticket_runner`, outside this
-ticket's declared scope) to inject the same check is tracked as follow-up
-work, not silently dropped -- see the ticket's own Done report.
+tickets that never opt in" guard if it ran unconditionally there.
+
+**Also wired into `frob ticket close` (T-0844)**, the direct non-land
+close path: `frob.app.ticket_runner._close` computes the same
+`mutation_evidence_violations` check against the CURRENT checkout (there
+is no separate worktree/base_ref split on this path, so it runs against
+`root` with `current_branch(root)` as the diff base -- see
+`_close_mutation_evidence_for_ticket`) and passes the ERROR/no-ERROR
+verdict to `transition(..., mutation_evidence=...)`, which
+`_done_transition_guard` enforces the same way `_check_mutation_evidence`
+does at land (`Err(TicketError.EvidenceConfirmatoryOnly)`). `frob ticket
+close --skip-mutation-evidence` (AppConfig
+`ticket_close_skip_mutation_evidence`, default off) is the close-path
+twin of land's escape hatch: the check still runs and logs its findings,
+it just cannot refuse the close. A security/bug-kind ticket can no longer
+dodge this obligation by closing directly instead of landing.
+
+## Live-tracker citation preflight (T-0854)
+
+<!-- frob:describes src/frob/tickets/_live_tracker.py::live_tracker_citations -->
+
+The T-0605-orphaned-41-rows incident class: closing/landing T-0605
+instantly turned 41 `docs/design/registry/patterns.yaml` rows with
+`disposition: "deferred:T-0605"` into main-wide REG003 errors, discovered
+only on the NEXT `frob check`, one close too late. WAIVE006 already models
+the identical hazard for `frob:waive ... ticket=<id>` bindings, but
+neither check ran AT CLOSE/LAND TIME for the ticket about to disappear.
+
+`frob.tickets._live_tracker.live_tracker_citations(root, ticket_id, *,
+own_scope=())` is a plain `git grep` (not a full registry/graph parse --
+the ticket's own PERF guard: "a targeted grep-shaped scan, not a full
+registry parse per close") for every site that still cites `ticket_id` as
+its live tracker: a registry `deferred:`/`tracked_by:` disposition
+(`duplicate_of:` is excluded -- it never claimed the target still had open
+work), or a waiver `ticket=`/`ticket "..."` attribute (both the
+`frob:waive` comment grammar and the `.strata` `waive` clause grammar). A
+provisional draft id is always clear (WAIVE006/WAIVE007's own `T-draft-*`
+exemption, same rationale: land's draft-finalize step rewrites every
+draft-id reference to the final id in the same commit). `own_scope` (the
+closing/landing ticket's own declared `scope`) excludes citations inside
+files the ticket itself owns -- a self-citing waiver lands/closes in the
+SAME commit as the citation, never orphaned; the T-0605 incident class is
+specifically an unrelated file citing a ticket that closes out from under
+it.
+
+**Wired into `frob ticket land`** (`_land.py::_check_live_tracker_
+citations`, called from `_land_precheck` right after the scope preflight,
+before any git mutation): any citation refuses the land
+(`LandError.LiveTrackerCited`), scanned against the worktree's own tree
+(what is about to be merged). **Also wired into `frob ticket close`**
+(the direct non-land path): `_done_transition_guard` runs the SAME check,
+unconditionally (no injection needed -- unlike `covers_scope`/`reviewed`/
+`mutation_evidence`, this needs no external context beyond `root` and the
+ticket itself, so every caller gets it for free), refusing on
+`TicketError.LiveTrackerCited`. Neither path has a skip flag: the ticket's
+own plan does not call for one, and the remedy (file a successor ticket
+and re-point the citing rows, or re-point them in this same change) is
+always mechanical.
 
 ## Land hardening (T-0577)
 

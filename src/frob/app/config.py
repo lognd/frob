@@ -330,6 +330,12 @@ class AppConfig(BaseModel):
     # hatch: a TEST016 confirmatory-only-evidence finding is logged but does
     # not refuse the land. For genuine false positives only.
     ticket_skip_mutation_evidence: bool = False
+    # frob:ticket T-0844
+    # `frob ticket close <id> --skip-mutation-evidence` -- the close-path
+    # twin of `ticket_skip_mutation_evidence` above: a TEST016 confirmatory-
+    # only-evidence finding is logged but does not refuse the direct close.
+    # For genuine false positives only.
+    ticket_close_skip_mutation_evidence: bool = False
     ticket_worktree: Path | None = None
     # frob:ticket T-0474
     # `frob ticket start <id> --foreground` -- run the pre-work sweep
@@ -786,6 +792,7 @@ class AppConfig(BaseModel):
             "sys_apply",
             "ticket_dry_run",
             "ticket_skip_mutation_evidence",
+            "ticket_close_skip_mutation_evidence",
             "ticket_close_strict",
             "ticket_foreground",
             "ticket_steal",

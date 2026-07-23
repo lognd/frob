@@ -242,6 +242,60 @@ class TestD02ScopeBinding:
 # ---------------------------------------------------------------------------
 # D-03: Done report must be substantive, not a bare heading
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# T-0844: `frob ticket close` (transition's own mutation_evidence
+# parameter) refuses on the same TEST016 confirmatory-only-evidence
+# finding `frob ticket land` already refuses on, instead of being exempt.
+# ---------------------------------------------------------------------------
+class TestT0844MutationEvidenceOnClose:
+    def test_transition_rejects_when_mutation_evidence_false(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_evidence_integrity.py::TestT0844MutationEvidenceOnClose.test_transition_rejects_when_mutation_evidence_false  # noqa: E501
+        ticket = _ticket(
+            state=TicketState.IN_PROGRESS,
+            kind=TicketKind.SECURITY,
+            evidence=("tests/test_thing.py::test_x",),
+            body="## Description\nx\n\n## Done report\nDone.\n",
+        )
+        _write(tmp_path, ticket)
+        result = transition(
+            tmp_path, "T-0001", TicketState.DONE, mutation_evidence=False
+        )
+        assert result.is_err
+        assert result.danger_err == TicketError.EvidenceConfirmatoryOnly
+
+    def test_transition_allows_when_mutation_evidence_true(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_evidence_integrity.py::TestT0844MutationEvidenceOnClose.test_transition_allows_when_mutation_evidence_true  # noqa: E501
+        ticket = _ticket(
+            state=TicketState.IN_PROGRESS,
+            kind=TicketKind.SECURITY,
+            evidence=("tests/test_thing.py::test_x",),
+            body="## Description\nx\n\n## Done report\nDone.\n",
+        )
+        _write(tmp_path, ticket)
+        result = transition(
+            tmp_path, "T-0001", TicketState.DONE, mutation_evidence=True
+        )
+        assert result.is_ok
+
+    def test_transition_permissive_when_mutation_evidence_none(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_evidence_integrity.py::TestT0844MutationEvidenceOnClose.test_transition_permissive_when_mutation_evidence_none  # noqa: E501
+        ticket = _ticket(
+            state=TicketState.IN_PROGRESS,
+            kind=TicketKind.SECURITY,
+            evidence=("tests/test_thing.py::test_x",),
+            body="## Description\nx\n\n## Done report\nDone.\n",
+        )
+        _write(tmp_path, ticket)
+        result = transition(tmp_path, "T-0001", TicketState.DONE)
+        assert result.is_ok
+
+
 class TestD03SubstantiveDoneReport:
     def test_empty_section_rejected(self) -> None:
         # frob:tests tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport.test_empty_section_rejected

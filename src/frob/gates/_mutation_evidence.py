@@ -10,11 +10,12 @@ itself reuses `frob.mutate` -- no parallel mutation engine) per ticket. Not
 something the default snapshot-driven gate pass may do without violating
 the T-0755 PERF guard (must not slow `frob check` for tickets that never
 opt in) -- `frob.check` is out of this ticket's declared scope entirely, so
-`mutation_evidence_violations` has exactly ONE caller today:
+`mutation_evidence_violations` has two callers today:
 `frob.tickets._land._check_mutation_evidence`, invoked from
-`_land_precheck` at `frob ticket land` time. Wiring `frob ticket close`'s
-own CLI path (`frob.app.ticket_runner`) to call it too is tracked follow-up
-work (see the ticket's Done report), not silently dropped.
+`_land_precheck` at `frob ticket land` time, and (T-0844)
+`frob.app.ticket_runner`'s direct `frob ticket close` CLI path, so a
+security/bug-kind ticket closed without landing is not exempt from this
+obligation either.
 
 Severity: WARN by default, promoted to ERROR for `security`/`bug`-kind
 tickets (T-0755's own text: "ratchet to error ... for security/bug-kind

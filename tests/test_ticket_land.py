@@ -1082,7 +1082,18 @@ class TestDraftFinalizeRewritesRegistryYamlRefs:
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-yaml", str(wt)], repo)
 
-        created = new_ticket(wt, _spec("Filed off-branch", scope=("src/thing3.py",)))
+        # T-0854: the ticket's own scope must cover the registry row it
+        # defers to itself -- otherwise T-0854's live-tracker-citation
+        # preflight (correctly) refuses to land a ticket while a registry
+        # disposition still names it as the reason a compliance gap is
+        # open, unless the ticket's own change is what resolves that row.
+        created = new_ticket(
+            wt,
+            _spec(
+                "Filed off-branch",
+                scope=("src/thing3.py", "docs/design/registry/compliance.yaml"),
+            ),
+        )
         assert created.is_ok
         draft_id = created.danger_ok.id
         assert draft_id.startswith("T-draft-")
@@ -3768,6 +3779,61 @@ class TestMutationEvidencePrecheck:
         assert result.is_ok
 
 
+# frob:ticket T-0854
+class TestLiveTrackerCitationPrecheck:
+    """T-0854: `_check_live_tracker_citations` blocks land when a registry
+    disposition or waiver still cites the landing ticket as its live
+    tracker -- unit-level over the private helper (same posture as
+    `TestMutationEvidencePrecheck` above), isolating the refusal decision
+    from a full land() run."""
+
+    def _ticket_t0900(self) -> Any:
+        from frob.tickets._models import Ticket
+
+        return Ticket(
+            id="T-0900",
+            title="sample",
+            state=TicketState.IN_PROGRESS,
+            kind=TicketKind.FEATURE,
+            origin=Origin.HUMAN,
+            created=date(2026, 1, 1),
+            scope=("m.py",),
+            evidence=("test_m.py::test_add",),
+            body="## Description\nx\n",
+        )
+
+    def test_citations_found_blocks(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLiveTrackerCitationPrecheck.test_citations_found_blocks  # noqa: E501
+        import frob.tickets._live_tracker as _live_tracker_mod
+
+        monkeypatch.setattr(
+            _live_tracker_mod,
+            "live_tracker_citations",
+            lambda *a, **k: ("docs/design/registry/patterns.yaml:3: deferred:T-0900",),
+        )
+        result = _land_mod._check_live_tracker_citations(
+            tmp_path, self._ticket_t0900(), "main"
+        )
+        assert result.is_err
+        assert result.danger_err == LandError.LiveTrackerCited
+
+    def test_no_citations_is_ok(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLiveTrackerCitationPrecheck.test_no_citations_is_ok  # noqa: E501
+        import frob.tickets._live_tracker as _live_tracker_mod
+
+        monkeypatch.setattr(
+            _live_tracker_mod, "live_tracker_citations", lambda *a, **k: ()
+        )
+        result = _land_mod._check_live_tracker_citations(
+            tmp_path, self._ticket_t0900(), "main"
+        )
+        assert result.is_ok
+
+
 # frob:ticket T-0755
 class TestSkipMutationEvidenceCliWiring:
     """T-0755 reviewer round 2 finding 4: `frob ticket land
@@ -3816,3 +3882,273 @@ class TestSkipMutationEvidenceCliWiring:
         )
         cfg = AppConfig.from_external(args, tmp_path / "pyproject.toml")
         assert cfg.ticket_skip_mutation_evidence is False
+
+
+# frob:ticket T-0844
+class TestCloseSkipMutationEvidenceCliWiring:
+    """T-0844 rework (reviewer REJECT): the close-path twin of
+    `TestSkipMutationEvidenceCliWiring` above -- `frob ticket close
+    --skip-mutation-evidence` must actually parse and reach `AppConfig`,
+    and default to `False` when omitted, the exact boolean-default shape
+    T-0755's own self-check test flagged as an untested mutant on
+    `ticket_skip_mutation_evidence` the first time that flag landed. This
+    is the same untested-default hole T-0844 originally left open on its
+    OWN new `ticket_close_skip_mutation_evidence` field."""
+
+    def test_flag_parses_to_true(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestCloseSkipMutationEvidenceCliWiring.test_flag_parses_to_true  # noqa: E501
+        from frob.__main__ import _build_parser
+        from frob.app.config import AppConfig
+
+        parser = _build_parser()
+        args = parser.parse_args(
+            [
+                "ticket",
+                "close",
+                "T-0001",
+                "--skip-mutation-evidence",
+                "--path",
+                str(tmp_path),
+            ]
+        )
+        cfg = AppConfig.from_external(args, tmp_path / "pyproject.toml")
+        assert cfg.ticket_close_skip_mutation_evidence is True
+
+    def test_flag_omitted_defaults_false(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestCloseSkipMutationEvidenceCliWiring.test_flag_omitted_defaults_false  # noqa: E501
+        from frob.__main__ import _build_parser
+        from frob.app.config import AppConfig
+
+        parser = _build_parser()
+        args = parser.parse_args(["ticket", "close", "T-0001", "--path", str(tmp_path)])
+        cfg = AppConfig.from_external(args, tmp_path / "pyproject.toml")
+        assert cfg.ticket_close_skip_mutation_evidence is False
+
+
+# frob:ticket T-0844
+class TestCloseMutationEvidenceForTicket:
+    """T-0844 rework (reviewer REJECT): unit tests over
+    `frob.app.ticket_runner._close_mutation_evidence_for_ticket` --
+    proving the ERROR/WARN severity split and the branch-unresolvable
+    ('cannot verify') case are each real, adversarially-covered behavior,
+    not confirmatory-only lines T-0755's own self-check flagged."""
+
+    def _ticket(self, kind: TicketKind = TicketKind.SECURITY) -> Any:
+        from datetime import date as _date
+
+        from frob.tickets._models import Ticket
+
+        return Ticket(
+            id="T-0900",
+            title="sample",
+            state=TicketState.IN_PROGRESS,
+            kind=kind,
+            origin=Origin.HUMAN,
+            created=_date(2026, 1, 1),
+            scope=("m.py",),
+            evidence=("test_m.py::test_add",),
+            body="## Description\nx\n",
+        )
+
+    def test_error_severity_finding_returns_false(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestCloseMutationEvidenceForTicket.test_error_severity_finding_returns_false  # noqa: E501
+        from frob.gates._models import Severity, Violation
+
+        _git_init(tmp_path)
+        (tmp_path / "README.md").write_text("x\n")
+        _commit_all(tmp_path, "init")
+        import frob.gates as _gates_mod
+
+        monkeypatch.setattr(
+            _gates_mod,
+            "mutation_evidence_violations",
+            lambda *a, **k: (
+                Violation(
+                    rule="TEST016",
+                    severity=Severity.ERROR,
+                    file="m.py",
+                    line=0,
+                    message="TEST016: confirmatory-only",
+                ),
+            ),
+        )
+        from frob.app import ticket_runner
+
+        result = ticket_runner._close_mutation_evidence_for_ticket(
+            tmp_path, self._ticket()
+        )
+        assert result is False
+
+    def test_warn_only_severity_returns_true(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestCloseMutationEvidenceForTicket.test_warn_only_severity_returns_true  # noqa: E501
+        from frob.gates._models import Severity, Violation
+
+        _git_init(tmp_path)
+        (tmp_path / "README.md").write_text("x\n")
+        _commit_all(tmp_path, "init")
+        import frob.gates as _gates_mod
+
+        monkeypatch.setattr(
+            _gates_mod,
+            "mutation_evidence_violations",
+            lambda *a, **k: (
+                Violation(
+                    rule="TEST016",
+                    severity=Severity.WARN,
+                    file="m.py",
+                    line=0,
+                    message="TEST016: confirmatory-only",
+                ),
+            ),
+        )
+        from frob.app import ticket_runner
+
+        result = ticket_runner._close_mutation_evidence_for_ticket(
+            tmp_path, self._ticket()
+        )
+        assert result is True
+
+    def test_no_findings_returns_none(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestCloseMutationEvidenceForTicket.test_no_findings_returns_none  # noqa: E501
+        _git_init(tmp_path)
+        (tmp_path / "README.md").write_text("x\n")
+        _commit_all(tmp_path, "init")
+        import frob.gates as _gates_mod
+
+        monkeypatch.setattr(
+            _gates_mod, "mutation_evidence_violations", lambda *a, **k: ()
+        )
+        from frob.app import ticket_runner
+
+        result = ticket_runner._close_mutation_evidence_for_ticket(
+            tmp_path, self._ticket()
+        )
+        assert result is None
+
+    def test_unresolvable_branch_returns_none(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestCloseMutationEvidenceForTicket.test_unresolvable_branch_returns_none  # noqa: E501
+        # tmp_path is NOT a git work tree -- current_branch(root) must
+        # fail, and the whole check degrades to "skip", never a false
+        # ERROR/OK verdict.
+        from frob.app import ticket_runner
+
+        result = ticket_runner._close_mutation_evidence_for_ticket(
+            tmp_path, self._ticket()
+        )
+        assert result is None
+
+
+# frob:ticket T-0844
+class TestCloseFailureHintMutationEvidence:
+    """T-0844 rework (reviewer REJECT): `_close_failure_hint`'s
+    `EvidenceConfirmatoryOnly` branch is real, dedicated behavior (names
+    the skip-flag remedy), not indistinguishable from the generic
+    fallback message -- the exact `compare Eq swapped` mutant T-0755's
+    self-check caught as surviving."""
+
+    def test_confirmatory_only_hint_names_skip_flag_remedy(self) -> None:
+        # frob:tests tests/test_ticket_land.py::TestCloseFailureHintMutationEvidence.test_confirmatory_only_hint_names_skip_flag_remedy  # noqa: E501
+        from frob.app.ticket_runner import _close_failure_hint
+        from frob.tickets._models import TicketError, TicketState
+
+        hint = _close_failure_hint(
+            "T-0900", TicketState.IN_PROGRESS, TicketError.EvidenceConfirmatoryOnly
+        )
+        assert "--skip-mutation-evidence" in hint
+        assert "TEST016" in hint
+
+    def test_other_error_does_not_name_skip_flag_remedy(self) -> None:
+        # frob:tests tests/test_ticket_land.py::TestCloseFailureHintMutationEvidence.test_other_error_does_not_name_skip_flag_remedy  # noqa: E501
+        from frob.app.ticket_runner import _close_failure_hint
+        from frob.tickets._models import TicketError, TicketState
+
+        hint = _close_failure_hint(
+            "T-0900", TicketState.IN_PROGRESS, TicketError.MissingEvidence
+        )
+        assert "--skip-mutation-evidence" not in hint
+
+
+# frob:ticket T-0844
+class TestCloseSkipMutationEvidenceBypass:
+    """T-0844 rework (reviewer REJECT): `_close`'s
+    `mutation_evidence is False and cfg.ticket_close_skip_mutation_evidence`
+    guard -- both operands genuinely matter (kills `bool False negated`
+    and `boolop And swapped`), exercised end to end through a real
+    `frob ticket close` call rather than asserted in isolation."""
+
+    def _write_closeable_security_ticket(
+        self, root: Path, ticket_id: str = "T-0900"
+    ) -> None:
+        from datetime import date as _date
+
+        from frob.tickets import Origin, Ticket, TicketKind, TicketState
+        from frob.tickets._store import _serialize_ticket
+
+        ticket = Ticket(
+            id=ticket_id,
+            title="sample",
+            state=TicketState.IN_PROGRESS,
+            kind=TicketKind.SECURITY,
+            origin=Origin.HUMAN,
+            created=_date(2026, 1, 1),
+            evidence=("tests/test_thing.py::test_it",),
+            body="## Description\nx\n\n## Done report\nDone.\n",
+        )
+        tickets_dir = root / "tickets"
+        tickets_dir.mkdir(parents=True, exist_ok=True)
+        (tickets_dir / f"{ticket_id}-sample.md").write_text(
+            _serialize_ticket(ticket), encoding="utf-8"
+        )
+
+    def test_skip_flag_bypasses_error_verdict(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestCloseSkipMutationEvidenceBypass.test_skip_flag_bypasses_error_verdict  # noqa: E501
+        from frob.app import ticket_runner
+        from frob.app.config import AppConfig
+        from frob.tickets import TicketState, load_all
+
+        self._write_closeable_security_ticket(tmp_path)
+        monkeypatch.setattr(
+            ticket_runner,
+            "_close_mutation_evidence_for_ticket",
+            lambda root, ticket: False,
+        )
+        monkeypatch.setattr(
+            ticket_runner, "_covers_scope_for_ticket", lambda root, ticket: None
+        )
+        cfg = AppConfig(ticket_id="T-0900", ticket_close_skip_mutation_evidence=True)
+        ticket_runner._close(tmp_path, cfg)
+        loaded = load_all(tmp_path)
+        assert loaded.is_ok
+        assert loaded.danger_ok["T-0900"].state == TicketState.DONE
+
+    def test_no_skip_flag_refuses_on_error_verdict(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestCloseSkipMutationEvidenceBypass.test_no_skip_flag_refuses_on_error_verdict  # noqa: E501
+        from frob.app import ticket_runner
+        from frob.app.config import AppConfig
+        from frob.tickets import TicketState, load_all
+
+        self._write_closeable_security_ticket(tmp_path)
+        monkeypatch.setattr(
+            ticket_runner,
+            "_close_mutation_evidence_for_ticket",
+            lambda root, ticket: False,
+        )
+        monkeypatch.setattr(
+            ticket_runner, "_covers_scope_for_ticket", lambda root, ticket: None
+        )
+        cfg = AppConfig(ticket_id="T-0900", ticket_close_skip_mutation_evidence=False)
+        with pytest.raises(SystemExit):
+            ticket_runner._close(tmp_path, cfg)
+        loaded = load_all(tmp_path)
+        assert loaded.is_ok
+        assert loaded.danger_ok["T-0900"].state == TicketState.IN_PROGRESS

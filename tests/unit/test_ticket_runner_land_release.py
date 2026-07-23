@@ -207,3 +207,107 @@ class TestLandRebuildNativesFn:
         fn = ticket_runner._land_rebuild_natives_fn()
         assert fn(tmp_path) is False
         assert not spawned
+
+
+class _FakeRunReport:
+    """Minimal stand-in for `frob.testing.TestRunReport` -- the individual-
+    rerun helpers under test only ever read `.ok`."""
+
+    def __init__(self, ok: bool) -> None:
+        self.ok = ok
+
+
+def _fake_run_selected(failing_ids):  # noqa: ANN001, ANN202
+    """A `run_selected` stand-in: `ok=True` unless the selection's single
+    language bucket contains one of `failing_ids`, mirroring a real batch
+    run's "any red id makes the whole batch not-ok" exit-code semantics
+    without spawning anything."""
+
+    def fn(selection, runners, root):  # noqa: ANN001, ANN202
+        items = next(iter(selection.selected.values()))
+        return Ok(_FakeRunReport(ok=not any(i in failing_ids for i in items)))
+
+    return fn
+
+
+class TestReverifyFailingBucketIndividually:
+    """T-0856: one failing/flaky id in a batch must not misattribute
+    failure to every other id sharing that batch (the T-0588 incident)."""
+
+    def test_only_the_genuinely_failing_id_is_excluded(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_land_release.py::TestReverifyFailingBucketIndividually.test_only_the_genuinely_failing_id_is_excluded  # noqa: E501
+        import frob.testing as _testing_mod
+
+        monkeypatch.setattr(
+            _testing_mod, "run_selected", _fake_run_selected({"tests/x.py::b"})
+        )
+        items = ("tests/x.py::a", "tests/x.py::b", "tests/x.py::c")
+        result = ticket_runner._reverify_failing_bucket_individually(
+            tmp_path, "python", items, ()
+        )
+        assert result == frozenset({"tests/x.py::a", "tests/x.py::c"})
+
+    def test_quarantined_failing_id_still_counts_as_passing(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_land_release.py::TestReverifyFailingBucketIndividually.test_quarantined_failing_id_still_counts_as_passing  # noqa: E501
+        import frob.testing as _testing_mod
+        from frob.testing._stability import StabilityEntry
+
+        monkeypatch.setattr(
+            _testing_mod, "run_selected", _fake_run_selected({"tests/x.py::b"})
+        )
+        monkeypatch.setattr(
+            "frob.testing._stability.load_stability",
+            lambda root: {
+                "tests/x.py::b": StabilityEntry(
+                    node_id="tests/x.py::b",
+                    history=("fail",),
+                    quarantine_ticket="T-0575",
+                )
+            },
+        )
+        items = ("tests/x.py::a", "tests/x.py::b")
+        result = ticket_runner._reverify_failing_bucket_individually(
+            tmp_path, "python", items, ()
+        )
+        assert result == frozenset({"tests/x.py::a", "tests/x.py::b"})
+
+    def test_non_quarantined_failing_id_excluded(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_land_release.py::TestReverifyFailingBucketIndividually.test_non_quarantined_failing_id_excluded  # noqa: E501
+        import frob.testing as _testing_mod
+
+        monkeypatch.setattr(
+            _testing_mod, "run_selected", _fake_run_selected({"tests/x.py::b"})
+        )
+        monkeypatch.setattr("frob.testing._stability.load_stability", lambda root: {})
+        items = ("tests/x.py::a", "tests/x.py::b")
+        result = ticket_runner._reverify_failing_bucket_individually(
+            tmp_path, "python", items, ()
+        )
+        assert result == frozenset({"tests/x.py::a"})
+
+
+class TestVerifyOneBucketPassingRoutesToIndividualReverify:
+    """T-0856: `_verify_one_bucket_passing` must reach for the individual
+    reverify path (not a blanket empty set) whenever the batched run
+    executed but came back not-ok for a multi-id bucket."""
+
+    def test_batch_not_ok_falls_back_to_per_id_attribution(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_land_release.py::TestVerifyOneBucketPassingRoutesToIndividualReverify.test_batch_not_ok_falls_back_to_per_id_attribution  # noqa: E501
+        import frob.testing as _testing_mod
+
+        monkeypatch.setattr(
+            _testing_mod, "run_selected", _fake_run_selected({"tests/x.py::b"})
+        )
+        monkeypatch.setattr("frob.testing._stability.load_stability", lambda root: {})
+        result = ticket_runner._verify_one_bucket_passing(
+            tmp_path, "python", ("tests/x.py::a", "tests/x.py::b"), ()
+        )
+        assert result == frozenset({"tests/x.py::a"})

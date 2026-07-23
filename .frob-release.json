@@ -1234,7 +1234,7 @@
     "src/frob/tickets/__init__.py::set_done_report": "e986c914e7ed5d017e1d766983f12cc042544a6b90712b6e34d93ce1a13cd086",
     "src/frob/tickets/__init__.py::set_kind": "8a4080d822675b2aba306037e1a3af1d01669fe4772c4ecb0077d7427781ebd0",
     "src/frob/tickets/__init__.py::set_priority": "c4c5efc225ac364f5c558302f3dffcb2ca395e77f1c280b69ebcee7bec1c73d5",
-    "src/frob/tickets/__init__.py::transition": "eb026ab50fcb76099d90c42bba790c4bf21f3b007850cff1e8a985041c40b599",
+    "src/frob/tickets/__init__.py::transition": "450338b2daf3459c37000ad39506a9884b7d8e8dfb2e8eb70f1becbd2f8b32e2",
     "src/frob/tickets/__init__.py::undispatched_stale": "5b02a518dd1040bd603d923b7c694e96dc89f8a9076f90f41ce9ff55d4243938",
     "src/frob/tickets/__init__.py::validate_evidence": "1b4100163a3cd37930c828128c2a80be0ab108617beafbcae64cd5fa776a600c",
     "src/frob/tickets/_brief.py::compose_brief": "7e2bfb45f45a9127d1fdb228887a9cf181346a33f93d8a2c01bf2b5f639335da",
@@ -1252,6 +1252,7 @@
     "src/frob/tickets/_leases.py::release_lease": "d67d35f4063182ea14399cf5bdbfb90449d04d593f0aa9f81fc36aca3377d7bb",
     "src/frob/tickets/_leases.py::resolve_lease": "70492f907e5ac544f189da3bace6c81c99a36400c94c96bfed19cd3e8e0c2d66",
     "src/frob/tickets/_leases.py::sweep_worktrees": "8f9b41bb54868ac9770a38919580f3fe2e01b7f22ba31977faabf2282298430f",
+    "src/frob/tickets/_live_tracker.py::live_tracker_citations": "8c94ff5694f8d2663415868e4dcd31be1054c45b7881b6eb7615cbbadf46e2fb",
     "src/frob/tickets/_models.py::AcceptanceCriterion": "2bca461ddaee3f57624bec884c629bf0909a29c21a9c3033448538728221642d",
     "src/frob/tickets/_models.py::Attachment": "4bfd3d2416fb5e40f4972cd7c7d4bf518fd7362baea7588bb6572dccbc0613dc",
     "src/frob/tickets/_models.py::AttachmentSource": "a0a9c8975fd2eb8cc28ede62fe915cf5ebd511ef88ecfbb0669c195ddc22980e",
@@ -1407,5 +1408,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.136.0"
+  "version": "0.137.0"
 }

@@ -1619,6 +1619,16 @@ def _close_failure_hint(ticket_id: str, state, err) -> str:  # noqa: ANN001
             f"{ticket_id} --verdict approve --reviewer NAME --findings-file "
             f"PATH`) before `close --strict` will succeed"
         )
+    if err == TicketError.EvidenceConfirmatoryOnly:
+        return (
+            f"close failed: {err} -- see the WARNING TEST016 line(s) above "
+            f"naming the exact file:line + mutation the bound evidence "
+            f"never killed; strengthen those tests, then retry `frob "
+            f"ticket close {ticket_id}`, or if this is a genuine false "
+            f"positive retry with `frob ticket close {ticket_id} "
+            f"--skip-mutation-evidence` (logs a loud, justification-"
+            f"required override, does not suppress the finding)"
+        )
     return f"close failed: {err}"
 
 
@@ -1673,6 +1683,41 @@ def _covers_scope_for_ticket(root: Path, ticket) -> bool | None:  # noqa: ANN001
         )
         return False
     return evidence_covers_scope(ticket, snapshot.danger_ok)
+
+
+# frob:ticket T-0844
+def _close_mutation_evidence_for_ticket(root: Path, ticket) -> bool | None:  # noqa: ANN001
+    """T-0844: whether `ticket` carries an unwaived ERROR-severity TEST016
+    confirmatory-only-evidence finding, mirroring `frob.tickets._land.
+    _check_mutation_evidence`'s land-time computation
+    (`frob.gates.mutation_evidence_violations`) so `frob ticket close` (the
+    direct, non-land path) is not exempt from the same obligation.
+
+    There is no separate worktree/base_ref split on the close path the way
+    `land` has (close runs against the CURRENT checkout, not a merge of a
+    worktree onto main) -- `root` doubles as both the tree scanned and the
+    diff base's own checkout, and `current_branch(root)` supplies the base
+    ref the diff is scoped against, same as `_land_precheck` does for
+    `land`. Returns `None` (skip the check) when the branch cannot be
+    resolved -- "cannot verify" must never silently become "verified", but
+    this check is additive to the pre-existing evidence gates (T-0755's own
+    posture), so it degrades to a no-op rather than fail-closed here."""
+    from frob.gates import mutation_evidence_violations
+    from frob.gitio import current_branch
+
+    branch = current_branch(root)
+    if branch.is_err:
+        _log.warning(
+            "ticket close: %s could not resolve current branch, skipping "
+            "TEST016 mutation-evidence check",
+            ticket.id,
+        )
+        return None
+    violations = mutation_evidence_violations(root, ticket, branch.danger_ok)
+    for v in violations:
+        _log.warning("ticket close: %s TEST016 %s", ticket.id, v.message)
+    errors = [v for v in violations if v.severity == "error"]
+    return not errors if violations else None
 
 
 # frob:ticket T-0571
@@ -1806,7 +1851,14 @@ def _close(root: Path, cfg: AppConfig) -> None:
     T-0571: `reviewed` is only ever non-`None` when BOTH `--strict` was
     passed AND `[tickets] require_review_for_close` is true in
     `frob.toml` (`_covers_review_for_ticket`) -- config-gated, off by
-    default, so this never breaks a repo/workflow that has not opted in."""
+    default, so this never breaks a repo/workflow that has not opted in.
+
+    T-0844: `mutation_evidence` is ALWAYS computed
+    (`_close_mutation_evidence_for_ticket`) and passed to `transition`, so
+    a security/bug-kind ticket with an ERROR-severity TEST016
+    confirmatory-only-evidence finding refuses the direct close the same
+    way it already refuses `frob ticket land` -- unless `--skip-mutation-
+    evidence` was passed, the close-path twin of land's own escape hatch."""
     from frob.tickets import TicketState, transition
 
     if cfg.ticket_id is None:
@@ -1829,12 +1881,24 @@ def _close(root: Path, cfg: AppConfig) -> None:
         if cmd_added.is_err:
             sys.exit(1)
 
+    if cfg.ticket_close_skip_mutation_evidence:
+        _log.warning(
+            "ticket close: %s --skip-mutation-evidence set -- a TEST016 "
+            "confirmatory-only-evidence finding will be logged but will NOT "
+            "refuse this close (justification required: use only for a "
+            "genuine false positive)",
+            cfg.ticket_id,
+        )
+
     # Re-load: evidence may have just changed above, and covers_scope must
     # be computed against the ticket's CURRENT evidence, not the state
     # loaded before this call's own --evidence/--evidence-cmd applied.
     fresh_ticket = _load_ticket_or_exit(root, cfg.ticket_id, verb="close")
     covers_scope = _covers_scope_for_ticket(root, fresh_ticket)
     reviewed = _covers_review_for_ticket(root, cfg, fresh_ticket)
+    mutation_evidence = _close_mutation_evidence_for_ticket(root, fresh_ticket)
+    if mutation_evidence is False and cfg.ticket_close_skip_mutation_evidence:
+        mutation_evidence = None
 
     result = transition(
         root,
@@ -1842,6 +1906,7 @@ def _close(root: Path, cfg: AppConfig) -> None:
         TicketState.DONE,
         covers_scope=covers_scope,
         reviewed=reviewed,
+        mutation_evidence=mutation_evidence,
     )
     if result.is_err:
         _log.error(_close_failure_hint(cfg.ticket_id, ticket.state, result.danger_err))
@@ -2672,7 +2737,17 @@ def _verify_ids_passing(
     returned passing set, never the whole call. An id that resolves
     against neither collected set is simply absent from the result (it
     already fails resolution elsewhere; this function only concerns
-    itself with ids that at least exist)."""
+    itself with ids that at least exist).
+
+    T-0856: a bucket itself is no longer all-or-nothing either -- when the
+    bucket's OWN single batched run comes back not-ok (but the run
+    executed, i.e. not an infra error),
+    `_reverify_failing_bucket_individually` reruns each id in that bucket
+    on its own so only the genuinely-failing id(s) are withheld, not every
+    id that happened to share a batch with one (the T-0588 incident: 36
+    evidence ids in one batch, one flake, land reported all 36 as failing).
+    A per-id failure that resolves to a currently-quarantined node id
+    (T-0575) does not veto either."""
     from frob.tickets._models import matches_collected
 
     passing: set[str] = set()
@@ -2687,6 +2762,7 @@ def _verify_ids_passing(
 
 
 # frob:ticket T-0398
+# frob:ticket T-0856
 def _verify_one_bucket_passing(
     root: Path,
     language: str,
@@ -2694,12 +2770,16 @@ def _verify_one_bucket_passing(
     runners,  # noqa: ANN001
 ) -> frozenset[str]:
     """One language bucket of `_verify_ids_passing`'s work: run `items`
-    via `run_selected` and return the subset (all-or-nothing per bucket,
-    see `_verify_ids_passing`'s docstring) that passed. Falls back to a
-    direct `pytest <ids>` invocation for python when no `[[test.runner]]`
-    is declared at all -- `frob.toml` is optional, so a repo that never
-    configured one must not fall straight to "not passing" (a false-
-    positive trap this fix was explicitly warned against)."""
+    via ONE batched `run_selected` call first (the cheap common case, all
+    green); on any failure, `_reverify_failing_bucket_individually` (T-0856)
+    attributes the failure to only the ids that genuinely fail on their
+    OWN rerun, so one order-dependent/flaky id can no longer misattribute
+    a whole multi-id batch (up to a ticket's entire evidence set, T-0588's
+    36-id incident) as failing. Falls back to a direct `pytest <ids>`
+    invocation for python when no `[[test.runner]]` is declared at all --
+    `frob.toml` is optional, so a repo that never configured one must not
+    fall straight to "not passing" (a false-positive trap this fix was
+    explicitly warned against)."""
     from frob.testing import SelectionReport, TestingError, run_selected
 
     selection = SelectionReport(
@@ -2715,10 +2795,17 @@ def _verify_one_bucket_passing(
     if run.is_err and language == "python" and run.danger_err == TestingError.NoRunner:
         if _run_pytest_directly(root, items):
             return frozenset(items)
+        if len(items) > 1:
+            return _reverify_direct_pytest_individually(root, items)
         _log.warning(
             "ticket evidence: direct pytest verification FAILED for %s", list(items)
         )
         return frozenset()
+    if run.is_ok and len(items) > 1:
+        # T-0856: the batch itself executed (no infra error) but at least
+        # one id failed -- do NOT blame the whole bucket; find out which
+        # id(s) genuinely fail on their own.
+        return _reverify_failing_bucket_individually(root, language, items, runners)
     _log.warning(
         "ticket evidence: %s verification %s for %s",
         language,
@@ -2726,6 +2813,63 @@ def _verify_one_bucket_passing(
         list(items),
     )
     return frozenset()
+
+
+# frob:ticket T-0856
+def _reverify_failing_bucket_individually(
+    root: Path,
+    language: str,
+    items: tuple[str, ...],
+    runners,  # noqa: ANN001
+) -> frozenset[str]:
+    """T-0856: a batched `run_selected` call over `items` came back not-ok
+    -- rerun EACH id on its own (bounded to this one bucket, only paid on
+    the already-uncommon failing-batch path) so a single order-dependent
+    or genuinely-flaky id cannot misattribute failure to every other id in
+    the same batch (the T-0588 incident: 36 evidence ids ran as one batch,
+    one documented flake failed, land reported all 36 as not passing).
+
+    A per-id failure that resolves to a currently-quarantined node id
+    (`frob.testing._stability.quarantined_node_ids`, T-0575) is still
+    counted as PASSING here: a quarantined flake is not supposed to veto a
+    land/evidence check by design (T-0635 wires quarantine into `frob
+    test` proper -- this is read-only consumption of that same state, not
+    a reimplementation of it). A stability-tracking read failure (no
+    `.frob/stability.json` yet, or any other load error) degrades to an
+    empty quarantine set -- fail-closed on the underlying pass/fail check,
+    never silently permissive just because quarantine state is
+    unavailable."""
+    from frob.testing import SelectionReport, run_selected
+    from frob.testing._stability import load_stability, quarantined_node_ids
+
+    quarantined = quarantined_node_ids(load_stability(root))
+    passing: set[str] = set()
+    for item in items:
+        selection = SelectionReport(
+            touched=(),
+            selected={language: (item,)},
+            ripple=(),
+            unbound=(),
+            fallback="evidence-verify-individual",
+        )
+        run = run_selected(selection, runners, root)
+        if run.is_ok and run.danger_ok.ok:
+            passing.add(item)
+        elif item in quarantined:
+            _log.warning(
+                "ticket evidence: %s %s failed individually but is "
+                "quarantined (T-0575) -- not counted as a veto",
+                language,
+                item,
+            )
+            passing.add(item)
+        else:
+            _log.warning(
+                "ticket evidence: %s %s FAILED individually (not quarantined)",
+                language,
+                item,
+            )
+    return frozenset(passing)
 
 
 # frob:ticket T-0398
@@ -2743,6 +2887,42 @@ def _run_pytest_directly(root: Path, node_ids) -> bool:  # noqa: ANN001
         _log.warning("ticket evidence: direct pytest failed to spawn in %s", root)
         return False
     return spawned.danger_ok.returncode == 0
+
+
+# frob:ticket T-0856
+def _reverify_direct_pytest_individually(
+    root: Path, items: tuple[str, ...]
+) -> frozenset[str]:
+    """T-0856's per-id attribution fix, for the no-`[[test.runner]]`-
+    declared direct-pytest fallback path (`_run_pytest_directly`'s own
+    batch call already failed): rerun each id on its own via the same
+    direct `uv run pytest` invocation, and consult the stability
+    quarantine (`frob.testing._stability.quarantined_node_ids`, T-0575) the
+    same way `_reverify_failing_bucket_individually` does for the runner-
+    based path, so this fallback does not regress to the pre-T-0856 all-
+    or-nothing misattribution just because no `[[test.runner]]` happens to
+    be configured."""
+    from frob.testing._stability import load_stability, quarantined_node_ids
+
+    quarantined = quarantined_node_ids(load_stability(root))
+    passing: set[str] = set()
+    for item in items:
+        if _run_pytest_directly(root, [item]):
+            passing.add(item)
+        elif item in quarantined:
+            _log.warning(
+                "ticket evidence: direct pytest %s failed individually but "
+                "is quarantined (T-0575) -- not counted as a veto",
+                item,
+            )
+            passing.add(item)
+        else:
+            _log.warning(
+                "ticket evidence: direct pytest %s FAILED individually "
+                "(not quarantined)",
+                item,
+            )
+    return frozenset(passing)
 
 
 # frob:ticket T-0106

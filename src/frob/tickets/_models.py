@@ -1267,6 +1267,24 @@ class TicketError(ErrorSet):
     # modes, and the close-time gate they exist to feed.
     AcceptanceIndexOutOfRange = "--accepts index does not name an acceptance item"
     AcceptanceUnbound = "one or more acceptance criteria have no resolving evidence id"
+    # T-0844: `close` (not just `land`) refuses a security/bug-kind ticket
+    # whose bound evidence killed zero mutants (TEST016 at ERROR severity),
+    # mirroring LandError.EvidenceConfirmatoryOnly -- see
+    # `frob.tickets._done_transition_guard`'s `mutation_evidence` parameter.
+    EvidenceConfirmatoryOnly = (
+        "confirmatory-only evidence (TEST016 ERROR) for a security/bug-kind "
+        "ticket; strengthen the named evidence tests or retry close with "
+        "--skip-mutation-evidence"
+    )
+    # T-0854: the T-0605-orphaned-41-rows incident class -- a ticket cannot
+    # close/land while a registry disposition (`deferred:<id>`) or a
+    # `frob:waive`/`.strata waive` `ticket=` attribute still cites it as
+    # its live tracker; see `frob.tickets._live_tracker.live_tracker_citations`.
+    LiveTrackerCited = (
+        "registry dispositions or waivers still cite this ticket as their "
+        "live tracker; file a successor and re-point the citing rows, or "
+        "re-point them in this same change, then retry"
+    )
     # T-0764: `archive()` refuses (unless `force=True`) when a live
     # cross-worktree lease exists anywhere in the repo -- archiving during
     # in-flight work is the hazard the T-0753 incident traced to.
@@ -1312,6 +1330,11 @@ class LandError(ErrorSet):
     EvidenceConfirmatoryOnly = (
         "a security/bug-kind ticket's bound evidence killed zero mutants of "
         "its own diff-touched code -- confirmatory-only, TEST016"
+    )
+    # T-0854: the T-0605-orphaned-41-rows incident class -- see
+    # TicketError.LiveTrackerCited (same remedy, land-time twin).
+    LiveTrackerCited = (
+        "registry dispositions or waivers still cite this ticket as their live tracker"
     )
 
 
