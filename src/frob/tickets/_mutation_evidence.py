@@ -142,7 +142,7 @@ def _matches_base_ref_tip(root: Path, file: str, base_ref: str) -> bool:
 
 # frob:waive COV005 reason="T-0601 rework: demoted touched_python_files -> _touched_python_files (frob-exports external-consumer test: only called intra-package by this module's own check_ticket_mutation_evidence, never imported outside frob.tickets); the frob:tests directive deliberately follows the same function to its new private name"  # noqa: E501
 # frob:tests tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles.test_filters_to_scope_and_python  # noqa: E501
-# frob:tests tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles.test_file_identical_to_base_ref_tip_excluded kind="unit"  # noqa: E501
+# frob:tests tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles.test_already_landed_sibling_content_excluded kind="unit"  # noqa: E501
 # frob:ticket T-0601
 # frob:ticket T-0855
 def _touched_python_files(

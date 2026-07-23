@@ -6055,7 +6055,7 @@ tests/unit/perf/test_sketch_store.py::TestSketchStore::test_store_cap_evicts_col
 plus 20 more passing tests in the same file (algebra edge cases, config parsing, connection reuse, stable-key drift/digest behavior) -- see `frob:tests` directives on each public symbol for the exact binding.
 tests/unit/perf/test_hotgraph.py: 8/9 passed in the same run; TestStackSampler::test_overhead_under_five_percent failed under `-n0` but passed cleanly on an isolated re-run -- pre-existing timing flake in T-0710's own sampler test (not touched by this ticket, no `_sampler.py`/`_hotgraph.py` code changed), reproduced flaky both before and after my change.
 
-Filed: T-0883 (bug, scope tickets.md) -- `frob check --only gates-fast` surfaced TICK006 (T-0738's Done report cites a phantom draft ticket T-draft-427ffd5a) after merging main forward; unrelated to T-0711's scope, filed rather than fixed silently.
+Filed: T-0883 (bug, scope tickets.md) -- `frob check --only gates-fast` surfaced TICK006 (T-0738's Done report cited a land-lost draft, since refiled as T-0877) after merging main forward; unrelated to T-0711's scope, filed rather than fixed silently.
 
 Gates:
 `uv run frob check --only lint --ticket T-0711`: PASS, 0 errors 0 warnings.
@@ -11854,7 +11854,7 @@ Found during T-0860: the strata SYS100 capability scanner's bare `eval(` needle 
 ```yaml
 id: T-0883
 title: 'fix TICK006: T-0738 Done report cites phantom draft ticket T-draft-427ffd5a'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-07-23'
@@ -11875,6 +11875,8 @@ docs/modules/perf.md). Needs: either the real ticket T-draft-427ffd5a
 resolved/filed for real, T-0738's Done report corrected to name the real
 id, or an honest disclosed-historical-draft-loss waiver.
 
+## Drop reason
+- 2026-07-23: obsolete: the TICK006 it tracks was fixed on main in c2dde825 (T-0738 report retargeted to refiled T-0877) before this draft renumbered
 <!-- ticket:T-0884 -->
 ```yaml
 id: T-0884
