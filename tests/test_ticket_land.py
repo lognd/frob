@@ -2105,3 +2105,90 @@ class TestUnboundAcceptancePreflightBeforeMerge:
         # The ticket itself is untouched: still in-progress, not closed.
         still = load_all(wt).danger_ok[tid]
         assert still.state == TicketState.IN_PROGRESS
+
+
+class TestScopeUnboundPreflightBeforeMerge:
+    """T-0774: `EvidenceScopeUnbound` (D-05's injected `covers_scope`
+    callable) must ALSO be caught by land's PRE-merge closeability
+    preflight (`_land_precheck` -> `_validate_scope_covered_preflight`),
+    not discovered only after the merge/finalize commits already exist.
+    Before this fix, `_land_precheck` never consulted `covers_scope` at
+    all -- it was invoked for the first time inside `_land_finalize_and_close`,
+    AFTER the merge commit was already made, so a ticket whose evidence does
+    not cover its scope still merged+committed before `land` refused
+    (`LandError.CloseFailed`, not `NotCloseable`). This test asserts the
+    ENTIRE git log (both `repo`/main and `wt`/worktree) is byte-identical
+    before and after the refused land -- not just that `land` returns an
+    error -- mirroring `TestUnboundAcceptancePreflightBeforeMerge`'s own
+    assertion shape for the sibling D-05 check this ticket closes."""
+
+    def test_scope_unbound_refused_pre_merge_no_commits_created(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestScopeUnboundPreflightBeforeMerge.test_scope_unbound_refused_pre_merge_no_commits_created  # noqa: E501
+        wt = repo.parent / "wt"
+        _run(
+            ["git", "worktree", "add", "-b", "feature-scope-unbound", str(wt)],
+            repo,
+        )
+
+        created = new_ticket(
+            wt,
+            _spec("Ticket with scope-unbound evidence", scope=("src/other4.py",)),
+        )
+        assert created.is_ok
+        tid = created.danger_ok.id
+
+        # Otherwise fully closeable (evidence present, Done report present,
+        # no unbound acceptance criteria) -- isolating this test to the
+        # covers_scope preflight alone.
+        _make_closeable(wt, tid)
+        _commit_all(wt, "advance ticket with scope-unbound evidence")
+
+        main_log_before = _run(["git", "log", "--oneline", "--all"], repo).stdout
+        wt_log_before = _run(["git", "log", "--oneline", "--all"], wt).stdout
+        wt_status_before = _status_ignoring_frob(wt)
+
+        # A `covers_scope` callable that always answers False, exactly the
+        # shape `frob.app.ticket_runner`'s `_land_covers_scope_fn` supplies
+        # via `frob.gates.evidence_covers_scope` when no evidence id binds
+        # to a touched/scope symbol.
+        result = land(repo, tid, wt, dry_run=False, covers_scope=lambda _t: False)
+
+        assert result.is_err
+        assert result.danger_err == LandError.NotCloseable
+
+        # Git log is UNCHANGED on both sides -- no merge commit, no
+        # finalize commit, no squash-apply commit.
+        assert (
+            _run(["git", "log", "--oneline", "--all"], repo).stdout == main_log_before
+        )
+        assert _run(["git", "log", "--oneline", "--all"], wt).stdout == wt_log_before
+        # Working tree is clean -- no merge left half-applied/uncommitted.
+        assert _status_ignoring_frob(wt) == wt_status_before
+        assert _status_ignoring_frob(repo) == ""
+
+        # The ticket itself is untouched: still in-progress, not closed.
+        still = load_all(wt).danger_ok[tid]
+        assert still.state == TicketState.IN_PROGRESS
+
+    def test_covers_scope_true_still_lands_normally(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestScopeUnboundPreflightBeforeMerge.test_covers_scope_true_still_lands_normally  # noqa: E501
+        wt = repo.parent / "wt"
+        _run(
+            ["git", "worktree", "add", "-b", "feature-scope-bound", str(wt)],
+            repo,
+        )
+
+        created = new_ticket(
+            wt,
+            _spec("Ticket with scope-bound evidence", scope=("src/other5.py",)),
+        )
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        _commit_all(wt, "advance ticket with scope-bound evidence")
+
+        result = land(repo, tid, wt, dry_run=False, covers_scope=lambda _t: True)
+
+        assert result.is_ok, result.err

@@ -500,12 +500,16 @@ def _validate_closeable(ticket: Ticket) -> Result[None, LandError]:
     evidence present, Done report present, evidence-kind consistency
     (T-0215), and now unbound acceptance criteria (T-0572) -- is checked
     here, before `_land_merge_stage` ever runs `git merge`. `EvidenceScopeUnbound`
-    is deliberately NOT checked here: whether an evidence id covers a
-    touched/scope symbol needs the obligation graph computed against the
-    POST-merge tree (D-05's `covers_scope` callable, `frob.gates`'s job,
-    which `frob.tickets` cannot import -- docs/rework.md cycle-avoidance),
-    so it stays a post-merge check exactly as before this ticket. Also
-    re-checks the T-0215 kind-consistency rule (`_transition_guard`'s
+    is checked separately, by `_land_precheck`'s own
+    `_validate_scope_covered_preflight` call (T-0774), not inside this
+    function: it needs the injected `covers_scope` callable (`frob.gates`'s
+    job, which `frob.tickets` cannot import -- docs/rework.md cycle-
+    avoidance), which this function does not receive. That preflight is a
+    PRE-merge simulation against the worktree's current tree, closing the
+    residual fail-after-merge class this docstring used to describe as
+    permanent; `_land_finalize_and_close` still re-checks `covers_scope`
+    unconditionally against the actual POST-merge tree as the authoritative
+    check. Also re-checks the T-0215 kind-consistency rule (`_transition_guard`'s
     DONE-path twin): a non-docs-kind ticket carrying any `cmd:` evidence
     entry -- kind hand-edited after the entry was recorded, or the entry
     hand-pasted directly into the ledger -- must never land, mirroring the
@@ -933,7 +937,14 @@ def land(
     ids) returns the subset actually observed passing; `covers_scope
     (ticket)` (given the reloaded post-merge ticket) answers the D-02
     scope-binding question the same way `transition`'s own `covers_scope`
-    parameter does (`True`/`False`/`None`-skip). All three default to
+    parameter does (`True`/`False`/`None`-skip). T-0774: `_land_precheck`
+    ALSO invokes `covers_scope` once more, PRE-merge, against the
+    worktree's still-unmerged ticket -- a preflight simulation of this
+    same D-02 question that lets a landing refuse (with git log unchanged)
+    before `_land_merge_stage` ever runs `git merge`, instead of only
+    discovering an uncovered scope after a merge/finalize commit already
+    exists; the post-merge invocation here remains the authoritative
+    re-check against the tree that will actually land. All three default to
     `None` (skip, matching every caller before D-05) since computing them
     needs `frob.testing`/`frob.graph` access `frob.tickets` deliberately
     does not have (docs/rework.md cycle-avoidance) -- a caller that sits
@@ -991,7 +1002,7 @@ def _land_locked(
     `root`'s `ledger_lock` -- split out only so `land`'s docstring can state
     the locking contract once at the public entry point rather than
     interleaved with the implementation."""
-    precheck = _land_precheck(root, worktree, ticket_id)
+    precheck = _land_precheck(root, worktree, ticket_id, covers_scope=covers_scope)
     if precheck.is_err:
         return Err(precheck.danger_err)
     ticket, main_branch_name = precheck.danger_ok
@@ -1130,12 +1141,62 @@ def _refuse_if_main_dirty(
     return Ok(None)
 
 
+def _validate_scope_covered_preflight(
+    ticket: Ticket, covers_scope: Callable[[Ticket], bool | None] | None
+) -> Result[None, LandError]:
+    """`Err(NotCloseable)` if `covers_scope(ticket)` answers `False` against
+    the PRE-merge worktree ticket (T-0774): D-05's `covers_scope` callable
+    was previously only ever invoked POST-merge (`_land_finalize_and_close`,
+    against the graph rebuilt from the just-merged tree, after `git commit`
+    had already made a merge commit) -- correct for the graph itself
+    (`frob.gates` needs the post-merge tree to know what actually landed),
+    but it left a residual fail-after-merge class T-0763's acceptance/
+    evidence preflight did not close: a ticket whose evidence is bound but
+    does not cover its own scope still merged+committed before failing.
+
+    Invoking the SAME callable again here, before `_land_merge_stage` ever
+    runs `git merge`, is a PREFLIGHT SIMULATION against the pre-merge
+    worktree tree, not a replacement for the post-merge re-check
+    `_land_finalize_and_close` still performs unconditionally afterward --
+    for the common case (the ticket's scope files are untouched by any
+    concurrent main-side change), the pre-merge tree already answers the
+    same D-02 scope-binding question, so a landing whose evidence does not
+    cover its scope now refuses here, with git log unchanged on both sides,
+    instead of only after a merge/finalize commit already exists. A
+    concurrent main-side edit to a scope file between this preflight and
+    the real merge can still only be caught by the existing post-merge
+    check, which is untouched by this addition. `covers_scope=None` (skip,
+    matching every caller before D-02) or a `True`/`None` answer leaves this
+    preflight silent, exactly like the post-merge check's own tri-state
+    contract (`_done_transition_guard`)."""
+    if covers_scope is None:
+        return Ok(None)
+    if covers_scope(ticket) is False:
+        _log.error(
+            "land: %s cannot land -- no evidence id covers a touched/scope "
+            "symbol (scope=%s); bind evidence to the uncovered scope "
+            "(`frob ticket evidence %s <node-id>...`) and retry "
+            "`frob ticket land %s`",
+            ticket.id,
+            list(ticket.scope),
+            ticket.id,
+            ticket.id,
+        )
+        return Err(LandError.NotCloseable)
+    return Ok(None)
+
+
 def _land_precheck(
-    root: Path, worktree: Path, ticket_id: str
+    root: Path,
+    worktree: Path,
+    ticket_id: str,
+    *,
+    covers_scope: Callable[[Ticket], bool | None] | None = None,
 ) -> Result[tuple[Ticket, str], LandError]:
     """Refuse on a dirty main, load+validate the worktree's ticket is
-    closeable, and resolve main's current branch name -- everything `land`
-    must check BEFORE any git mutation."""
+    closeable (including, T-0774, a `covers_scope` preflight simulation),
+    and resolve main's current branch name -- everything `land` must check
+    BEFORE any git mutation."""
     from frob.tickets import _load_one
 
     dirty_check = _refuse_if_main_dirty(root, worktree, ticket_id)
@@ -1151,6 +1212,10 @@ def _land_precheck(
     validated = _validate_closeable(ticket)
     if validated.is_err:
         return Err(validated.danger_err)
+
+    scope_preflight = _validate_scope_covered_preflight(ticket, covers_scope)
+    if scope_preflight.is_err:
+        return Err(scope_preflight.danger_err)
 
     main_branch = current_branch(root)
     if main_branch.is_err:

@@ -670,12 +670,21 @@ def _land_passed_fn(worktree: Path):  # noqa: ANN201
 
 
 # frob:ticket T-0398
+# frob:ticket T-0774
 def _land_covers_scope_fn(worktree: Path):  # noqa: ANN201
-    """D-05/D-02 CLI closure: `land()` calls this with the post-merge/
-    post-finalize `Ticket`, and expects back the D-02 scope-binding
-    answer computed against the WORKTREE's graph (not root's) -- the
-    merged, about-to-be-squashed tree is the one whose scope/evidence
-    actually matter."""
+    """D-05/D-02 CLI closure: `land()` calls this TWICE -- once (T-0774) as
+    a PRE-merge preflight simulation with the worktree's still-unmerged
+    `Ticket` (via `_land_precheck`), and once, as before, with the post-
+    merge/post-finalize `Ticket` (via `_land_finalize_and_close`) -- and
+    expects back the D-02 scope-binding answer computed against the
+    WORKTREE's graph (not root's) either way. `worktree` itself does not
+    change between the two calls (it is this same closure's captured
+    argument); only the ticket state on disk under it does, since `land`'s
+    internal merge mutates the worktree tree in between. The post-merge
+    call remains authoritative -- the merged, about-to-be-squashed tree is
+    the one whose scope/evidence actually matter -- the pre-merge call is
+    only an early, best-effort refusal for the common case where the
+    ticket's scope files are untouched by any concurrent main-side change."""
 
     def fn(ticket):  # noqa: ANN001, ANN202
         return _covers_scope_for_ticket(worktree, ticket)
