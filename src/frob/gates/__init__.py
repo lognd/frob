@@ -37,6 +37,7 @@ from typing import TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
     from frob.graph.callgraph import CallGraph
+    from frob.tickets._leases import LeaseError
 
 from pydantic import ValidationError
 from typani import Err, Ok
@@ -1816,6 +1817,61 @@ def active_ticket(root: Path, explicit: str | None) -> Option[str]:
         return Nothing()
     _log.debug("active_ticket: branch-derived %s", match.group(1))
     return Some(match.group(1))
+
+
+# frob:doc docs/modules/gates.md#public-api
+# frob:ticket T-0787
+# frob:tests tests/test_tickets_leases.py::TestTicketLeasePin.test_no_lease_mechanism_engaged_passes_through kind="unit"  # noqa: E501
+# frob:tests tests/test_tickets_leases.py::TestTicketLeasePin.test_pinned_lease_for_this_worktree_passes kind="unit"  # noqa: E501
+# frob:tests tests/test_tickets_leases.py::TestTicketLeasePin.test_lease_absent_for_this_worktree_refuses kind="unit"  # noqa: E501
+# frob:tests tests/test_tickets_leases.py::TestTicketLeasePin.test_lease_recorded_elsewhere_refuses kind="unit"  # noqa: E501
+def ticket_lease_pin(root: Path, ticket_id: str) -> Result[None, LeaseError]:
+    """Validate `ticket_id`'s cross-worktree lease pins to `root` (T-0787,
+    promoting T-0766's `resolve_lease` primitive into the live `--ticket`
+    resolution path -- previously nothing in `frob check` consulted it at
+    all, a reviewer-flagged hard dependency: the T-0695 stale/cross-worktree
+    lease-resolution guard prevented nothing until something called it).
+
+    `Ok(None)` both when the lease genuinely pins to `root`, AND when the
+    cross-worktree lease mechanism has never been engaged for this repo at
+    all: no shared git common dir (a non-git fixture, or a "plain" repo
+    with no git worktree context), or a leases directory that has never
+    been created because no ticket has ever been `frob ticket start`ed
+    anywhere in this repo. Those are the no-lease paths T-0787 must leave
+    working exactly as before -- non-agent/manual `--ticket` invocations of
+    a repo that never opted into the lease side-channel at all.
+
+    `Err(LeaseError.NoLeaseForTicket | LeaseError.LeaseWorktreeMismatch)`
+    once the mechanism IS engaged elsewhere in this repo (the leases
+    directory exists) but `ticket_id` itself has no lease recorded for
+    `root` specifically -- absent entirely, or recorded for a different
+    worktree. The caller (`frob check`'s CLI entry point) turns either into
+    a loud refusal naming `frob ticket start <ticket_id>`, closing the
+    T-0695 hole `resolve_lease` was built to fix but nothing invoked."""
+    from frob.tickets._leases import leases_dir, resolve_lease
+
+    leases_root_result = leases_dir(root)
+    if leases_root_result.is_err:
+        _log.debug(
+            "ticket_lease_pin: no shared git common dir under %s; lease "
+            "mechanism not engaged, skipping pin check for %s",
+            root,
+            ticket_id,
+        )
+        return Ok(None)
+    leases_root = leases_root_result.danger_ok
+    if not leases_root.is_dir():
+        _log.debug(
+            "ticket_lease_pin: %s never created (no ticket ever started in "
+            "this repo); skipping pin check for %s",
+            leases_root,
+            ticket_id,
+        )
+        return Ok(None)
+    lease_result = resolve_lease(root, ticket_id, root)
+    if lease_result.is_err:
+        return Err(lease_result.danger_err)
+    return Ok(None)
 
 
 # ---------------------------------------------------------------------------
@@ -8603,6 +8659,7 @@ __all__ = [
     "secrets_gate",
     "stamp_baseline",
     "stamp_coverage",
+    "ticket_lease_pin",
     "sweep_ticket",
     "sys_gate",
     "test_gate",

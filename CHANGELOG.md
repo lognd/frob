@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.103.0] - unreleased
+
+- T-0787: check CLI: wire resolve_lease pinning into --ticket resolution (promote T-0766's lost draft)
+
 ## [0.102.0] - unreleased
 
 - T-0773: tickets: memoize git-common-dir/lease reads per CLI invocation (dozens of identical rev-parse spawns per command)

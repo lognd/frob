@@ -734,6 +734,49 @@ def _print_stage_list(cfg: AppConfig) -> None:
         renderer.line("\n".join(stages))
 
 
+# frob:ticket T-0787
+# frob:tests tests/test_tickets_leases.py::TestCheckTicketLeaseCli.test_pins_to_own_worktree_lease kind="integration"  # noqa: E501
+# frob:tests tests/test_tickets_leases.py::TestCheckTicketLeaseCli.test_refuses_when_lease_recorded_for_another_worktree kind="integration"  # noqa: E501
+def _refuse_ticket_lease_mismatch(root: Path, cfg: AppConfig) -> bool:
+    """True (after logging a loud, `frob ticket start`-naming refusal) when
+    `--ticket`/branch-derived ticket resolution does not pin to `root`'s own
+    cross-worktree lease (T-0787).
+
+    Wires `frob.gates.active_ticket` (the same `--ticket`-or-branch
+    resolution `run_gates` itself uses) together with the new
+    `frob.gates.ticket_lease_pin` (which wraps T-0766's `resolve_lease`) at
+    the CLI boundary, before any stage or `run_gates` call -- the earliest
+    point that can refuse loudly instead of letting a later gate silently
+    run against the wrong worktree's ticket the way the T-0695 incident did.
+
+    No active ticket resolves (`active_ticket` returns `Nothing` -- no
+    `--ticket` and no ticket-prefixed branch) short-circuits to `False`
+    immediately: this check only ever applies once a ticket id is in play.
+    `ticket_lease_pin` itself is what keeps the no-lease-mechanism-engaged
+    paths (plain repos, non-agent invocations of a repo where no ticket has
+    ever been `frob ticket start`ed) working unchanged -- this function just
+    surfaces its `Err` loudly at the CLI boundary when it does fire.
+    """
+    from frob.gates import active_ticket, ticket_lease_pin
+
+    ticket_opt = active_ticket(root, cfg.check_ticket)
+    if ticket_opt.is_nothing:
+        return False
+    ticket_id = ticket_opt.danger_some
+    pin_result = ticket_lease_pin(root, ticket_id)
+    if pin_result.is_ok:
+        return False
+    _log.error(
+        "frob check: %s has no valid cross-worktree lease pinned to %s "
+        "(%s) -- run: frob ticket start %s",
+        ticket_id,
+        root,
+        pin_result.danger_err.value,
+        ticket_id,
+    )
+    return True
+
+
 def _handle_stamp_modes(root: Path, cfg: AppConfig) -> bool:
     """Run `--stamp-coverage`/`--stamp-baseline` and return True when one
     fired, so `run` can return immediately instead of running any stage."""
@@ -906,6 +949,10 @@ def run(cfg: AppConfig) -> None:
     # frob:ticket T-0627
     if _refuse_full_check_for_agent(cfg):
         _log.error(_refuse_full_check_message())
+        sys.exit(1)
+
+    # frob:ticket T-0787
+    if _refuse_ticket_lease_mismatch(root, cfg):
         sys.exit(1)
 
     if _handle_stamp_modes(root, cfg):

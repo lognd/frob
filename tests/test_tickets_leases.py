@@ -143,6 +143,101 @@ class TestResolveLease:
         assert result.danger_err == LeaseError.LeaseWorktreeMismatch
 
 
+class TestTicketLeasePin:
+    """`frob.gates.ticket_lease_pin` (T-0787) -- promotes T-0766's
+    `resolve_lease` primitive into a form `frob check`'s `--ticket`
+    resolution can consult. Same fail-loud/pin-or-refuse contract as
+    `resolve_lease` itself, plus the two "mechanism never engaged" passthrough
+    cases `resolve_lease` alone does not decide (it always requires a
+    specific lease file to already resolve one way or the other)."""
+
+    def test_no_lease_mechanism_engaged_passes_through(self, repo: Path) -> None:
+        """No ticket anywhere in this repo has ever been `frob ticket
+        start`ed -- the leases directory does not exist yet. Must pass
+        through `Ok` unchanged (plain-repo/non-agent path, T-0787's own
+        acceptance criterion)."""
+        from frob.gates import ticket_lease_pin
+
+        result = ticket_lease_pin(repo, "T-0787")
+        assert result.is_ok
+
+    def test_pinned_lease_for_this_worktree_passes(self, repo: Path) -> None:
+        """A lease recorded for exactly this worktree resolves `Ok`."""
+        from frob.gates import ticket_lease_pin
+
+        _write_lease(repo, "T-0787", repo)
+        result = ticket_lease_pin(repo, "T-0787")
+        assert result.is_ok
+
+    def test_lease_absent_for_this_worktree_refuses(self, repo: Path) -> None:
+        """The lease mechanism IS engaged in this repo (a different
+        ticket's lease exists, so the leases directory is present) but
+        T-0787 itself was never started -- must refuse loudly
+        (`NoLeaseForTicket`), not silently pass through."""
+        from frob.gates import ticket_lease_pin
+
+        _write_lease(repo, "T-0733", repo)
+        result = ticket_lease_pin(repo, "T-0787")
+        assert result.is_err
+        assert result.danger_err == LeaseError.NoLeaseForTicket
+
+    def test_lease_recorded_elsewhere_refuses(self, repo: Path) -> None:
+        """T-0787 has a recorded lease, but for a different worktree --
+        must refuse loudly (`LeaseWorktreeMismatch`), never silently borrow
+        the sibling worktree's lease (the T-0695 incident shape)."""
+        from frob.gates import ticket_lease_pin
+
+        other_worktree = repo / ".." / "some-other-agent-worktree"
+        _write_lease(repo, "T-0787", other_worktree)
+        result = ticket_lease_pin(repo, "T-0787")
+        assert result.is_err
+        assert result.danger_err == LeaseError.LeaseWorktreeMismatch
+
+
+class TestCheckTicketLeaseCli:
+    """`frob.app.check_runner._refuse_ticket_lease_mismatch` (T-0787) --
+    drives `frob check`'s actual `--ticket` resolution entry point (the
+    same function `run()` calls before any stage/`run_gates` invocation)
+    across two fake worktree paths, reproducing the T-0695 cross-worktree
+    shape end to end at the CLI boundary rather than just the gates-level
+    primitive above."""
+
+    def test_pins_to_own_worktree_lease(self, repo: Path) -> None:
+        """A ticket leased to THIS worktree does not trigger a refusal --
+        the no-mismatch, most-common agent-dispatch path keeps working."""
+        from frob.app.check_runner import _refuse_ticket_lease_mismatch
+        from frob.app.config import AppConfig
+
+        _write_lease(repo, "T-0787", repo)
+        cfg = AppConfig(check_ticket="T-0787")
+        assert _refuse_ticket_lease_mismatch(repo, cfg) is False
+
+    def test_refuses_when_lease_recorded_for_another_worktree(self, repo: Path) -> None:
+        """Reproduces T-0695 end to end: two fake worktree paths, a lease
+        recorded for the SIBLING worktree, and this worktree's own `frob
+        check --ticket T-0787` call must refuse loudly rather than run
+        gates against the wrong worktree's ticket."""
+        from frob.app.check_runner import _refuse_ticket_lease_mismatch
+        from frob.app.config import AppConfig
+
+        this_worktree = repo
+        sibling_worktree = repo / ".." / "agent-sibling-fake-worktree"
+        _write_lease(repo, "T-0787", sibling_worktree)
+        cfg = AppConfig(check_ticket="T-0787")
+        assert _refuse_ticket_lease_mismatch(this_worktree, cfg) is True
+
+    def test_no_ticket_resolved_skips_the_check_entirely(self, repo: Path) -> None:
+        """No `--ticket` and no ticket-prefixed branch (`repo`'s fixture
+        branch is `main`) -- `active_ticket` resolves `Nothing`, so the
+        lease-pin check never fires at all, matching pre-T-0787 behavior
+        for a ticket-less invocation."""
+        from frob.app.check_runner import _refuse_ticket_lease_mismatch
+        from frob.app.config import AppConfig
+
+        cfg = AppConfig(check_ticket=None)
+        assert _refuse_ticket_lease_mismatch(repo, cfg) is False
+
+
 class TestReadAllLeasesSiblingProcessVisibility:
     """T-0773 round 2 (reviewer-caught daemon-blindness bug): `frob.serve`'s
     `poll_rebase_bot` calls `read_all_leases` in a loop for the daemon's
