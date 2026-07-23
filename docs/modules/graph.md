@@ -503,7 +503,6 @@ tree -- safe to delete at any time (see Design decisions below).
 <!-- frob:describes src/frob/graph/cache.py::connect -->
 <!-- frob:describes src/frob/graph/cache.py::set_root -->
 <!-- frob:describes src/frob/graph/cache.py::get_root -->
-<!-- frob:describes src/frob/graph/cache.py::get_file_hash -->
 <!-- frob:describes src/frob/graph/cache.py::get_file_meta -->
 <!-- frob:describes src/frob/graph/cache.py::touch_file_stat -->
 <!-- frob:describes src/frob/graph/cache.py::store_file_data -->
@@ -525,9 +524,6 @@ def set_root(conn: sqlite3.Connection, root: str) -> None
     # Records the snapshot's repo root for a later load_graph.
 def get_root(conn: sqlite3.Connection) -> str | None
     # The stored repo root, or None if nothing was ever saved.
-def get_file_hash(conn: sqlite3.Connection, file_path: str) -> str | None
-    # The cached content hash for one file, or None if never stored --
-    # the check build_graph uses to decide whether to re-parse a file.
 def get_file_meta(conn, file_path: str) -> tuple[str, int, int] | None
     # (content_hash, mtime_ns, size) for one file (T-0245) -- the stat pair
     # build_graph/load_graph check first, before reading any file bytes.

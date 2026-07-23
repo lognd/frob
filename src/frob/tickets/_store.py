@@ -104,15 +104,21 @@ _LOCK_REL = Path(".frob") / "tickets.lock"
 _lock_local = threading.local()
 
 
-# frob:doc docs/modules/tickets.md#storage-internals
 # frob:tests tests/unit/test_ticket_store.py::TestLockPath.test_lock_path_under_frob_dir  # noqa: E501
-def lock_path(root: Path) -> Path:
-    """The advisory lock file path (`.frob/tickets.lock`) `ledger_lock` holds."""
+# frob:waive COV005 reason="T-0601 deliberate rename lock_path -> _lock_path (frob-exports demote decision, no external consumer); the frob:tests directive intentionally follows the same function to its new private name, not an accidental rebind onto a different extracted helper"  # noqa: E501
+# frob:ticket T-0601
+def _lock_path(root: Path) -> Path:
+    """The advisory lock file path (`.frob/tickets.lock`) `ledger_lock` holds.
+
+    Private (T-0601): no consumer outside this module and its own test --
+    `_land.py` deliberately uses its own distinctly-named `_land_lock_path`
+    rather than this one, so there is no cross-module public contract here."""
     return root / _LOCK_REL
 
 
 # frob:doc docs/modules/tickets.md#storage-internals
 # frob:tests tests/unit/test_ticket_store.py::TestLedgerLock.test_two_threads_serialize
+# frob:ticket T-0601
 @contextmanager
 def ledger_lock(root: Path) -> Iterator[None]:
     """Exclusive, blocking, cross-process lock serializing EVERY ledger
@@ -146,7 +152,7 @@ def ledger_lock(root: Path) -> Iterator[None]:
         yield
         return
 
-    path = lock_path(root)
+    path = _lock_path(root)
     path.parent.mkdir(parents=True, exist_ok=True)
     key = str(path)
     maybe_held: dict[str, tuple[int, int]] | None = getattr(_lock_local, "held", None)
@@ -363,9 +369,10 @@ def _render_ledger(tickets: dict[str, Ticket], header: str = _LEDGER_HEADER) -> 
 
 
 # frob:ticket T-0764
-# frob:doc docs/modules/tickets.md#storage-internals
+# frob:waive COV005 reason="T-0601 rework: demoted check_ledger_id_integrity -> _check_ledger_id_integrity (frob-exports external-consumer test: consumed cross-module by this package's own _land.py, never imported outside frob.tickets); the frob:tests directive deliberately follows the same function to its new private name"  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard.test_render_that_would_drop_an_id_is_refused kind="unit"  # noqa: E501
-def check_ledger_id_integrity(
+# frob:ticket T-0601
+def _check_ledger_id_integrity(
     tickets: dict[str, Ticket], rendered: str
 ) -> Result[None, TicketError]:
     """Structural guard against the T-0367 incident class: re-parse
@@ -475,13 +482,14 @@ def load_archive(root: Path) -> Result[dict[str, Ticket], TicketError]:
 
 # frob:doc docs/modules/tickets.md#storage-internals
 # frob:ticket T-0458
+# frob:ticket T-0601
 def write_archive(root: Path, tickets: dict[str, Ticket]) -> Result[None, TicketError]:
     """Replace `tickets-archive.md` wholesale with `tickets` (same ledger
     section format as the active file, distinct header); serialized against
     every other ledger mutation via `ledger_lock` (T-0458)."""
     with ledger_lock(root):
         text = _render_ledger(tickets, _ARCHIVE_HEADER)
-        integrity = check_ledger_id_integrity(tickets, text)
+        integrity = _check_ledger_id_integrity(tickets, text)
         if integrity.is_err:
             return Err(integrity.danger_err)
         return atomic_write(archive_path(root), text)
@@ -526,6 +534,7 @@ def write_ticket(root: Path, ticket: Ticket) -> Result[None, TicketError]:
 
 # frob:doc docs/modules/tickets.md#storage-internals
 # frob:ticket T-0458
+# frob:ticket T-0601
 def write_all(root: Path, tickets: dict[str, Ticket]) -> Result[None, TicketError]:
     """Replace the ENTIRE store with `tickets` (used by renumber). Single mode
     rewrites the ledger wholesale; dir mode writes each file and removes any
@@ -535,7 +544,7 @@ def write_all(root: Path, tickets: dict[str, Ticket]) -> Result[None, TicketErro
     with ledger_lock(root):
         if _store_mode(root) == "single":
             text = _render_ledger(tickets)
-            integrity = check_ledger_id_integrity(tickets, text)
+            integrity = _check_ledger_id_integrity(tickets, text)
             if integrity.is_err:
                 return Err(integrity.danger_err)
             return atomic_write(ledger_path(root), text)

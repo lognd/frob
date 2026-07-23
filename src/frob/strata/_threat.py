@@ -86,7 +86,7 @@ from typani.result import Err, Ok, Result
 from frob.logging import get_logger
 
 from ._claims import evaluate_claims
-from ._code_binding import FOREIGN, CodeBinding, is_managed, observed_call_names
+from ._code_binding import FOREIGN, CodeBinding, _observed_call_names, is_managed
 from ._effects import (
     CapabilityViolation,
     ObservedEffect,
@@ -1401,7 +1401,7 @@ def check_capability_completeness(
 #: control -- "not caught anywhere yet" -- when it starts with this marker,
 #: e.g. `"none -- no CWE_CATALOG entry targets ..."` (many existing
 #: `DEFAULT_BENIGN_CAPABILITIES`/`*_OUT_OF_SCOPE` entries use this exact
-#: convention already). `check_caught_by_integrity` never fails an honest
+#: convention already). `_check_caught_by_integrity` never fails an honest
 #: "none" -- fabricating a control reference to dodge the check would be
 #: worse than admitting the gap; converting each honest "none" into a real
 #: enforced check or a genuine compensating control is T-0383's job, not
@@ -1435,21 +1435,22 @@ def _caught_by_referenced_tokens(
     )
 
 
-# frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
+# frob:waive COV005 reason="T-0601 rework: demoted caught_by_unresolved_tokens -> _caught_by_unresolved_tokens (frob-exports external-consumer test: only called intra-package from _compliance.py and this module's own check_caught_by_integrity, never imported outside frob.strata); the frob:tests directive deliberately follows the same function to its new private name"  # noqa: E501
 # frob:tests tests/unit/strata/test_threat.py::TestCaughtByUnresolvedTokens.test_unknown_rule_id_is_unresolved  # noqa: E501
-def caught_by_unresolved_tokens(
+# frob:ticket T-0601
+def _caught_by_unresolved_tokens(
     caught_by: str,
     known_rule_ids: frozenset[str] = frozenset(),
     cataloged_ids: frozenset[str] = frozenset(),
 ) -> frozenset[str]:
-    """Public (T-0382) sibling of `check_caught_by_integrity`'s per-entry
+    """Sibling of `_check_caught_by_integrity`'s per-entry
     resolution step: every rule-id-/CWE-id-shaped token `caught_by`
     references that resolves to NEITHER `known_rule_ids` (the live
     gate-rule-id set) NOR `cataloged_ids` (a catalog's own id set) --
     empty means every referenced token resolved (or none was referenced
     at all). Exists so `_compliance.py`'s own caught_by family
     (`OutOfScopeRegulation.caught_by`, COMPLIANCE004) can verify its
-    excuses identically to `check_caught_by_integrity`'s THREAT006
+    excuses identically to `_check_caught_by_integrity`'s THREAT006
     without duplicating the token-extraction regexes or the deny-by-
     default resolution rule (charter: no duplication) -- callers still
     own the `CAUGHT_BY_NONE_MARKER` honest-disclosure short-circuit
@@ -1480,8 +1481,8 @@ def _caught_by_violation(
     )
 
 
-# frob:doc docs/strata/threat.md#the-exhaustiveness-proof-the-point
-def check_caught_by_integrity(
+# frob:ticket T-0601
+def _check_caught_by_integrity(
     out_of_scope: tuple[OutOfScopeEntry, ...] = (),
     benign: tuple[BenignCapability, ...] = (),
     known_rule_ids: frozenset[str] = frozenset(),
@@ -1512,7 +1513,7 @@ def check_caught_by_integrity(
     ):
         if caught_by.strip().lower().startswith(CAUGHT_BY_NONE_MARKER):
             continue
-        unresolved = caught_by_unresolved_tokens(
+        unresolved = _caught_by_unresolved_tokens(
             caught_by, known_rule_ids, cataloged_cwes
         )
         if unresolved:
@@ -1628,6 +1629,7 @@ def _boundary_flow_dst(model: KernelModel, boundary: Boundary) -> str | None:
     return None
 
 
+# frob:ticket T-0601
 def _predicate_is_code_bound(
     model: KernelModel,
     binding: CodeBinding | None,
@@ -1640,7 +1642,7 @@ def _predicate_is_code_bound(
     `obligations` resolve to a real `Claim.id` (T-0498's weaker half) is
     still, by itself, only a model-side cross-reference: nothing yet joins
     the boundary's `predicate` against any real sanitizer/validator in the
-    guarded code. `observed_call_names` (`_code_binding.py`) is the code-
+    guarded code. `_observed_call_names` (`_code_binding.py`) is the code-
     side half of that join: `predicate` is trusted as a genuine mitigation
     only when it also names a call target actually invoked somewhere in
     the destination node's bound files.
@@ -1661,7 +1663,7 @@ def _predicate_is_code_bound(
     dst = _boundary_flow_dst(model, boundary)
     if dst is None:
         return False
-    return boundary.predicate in observed_call_names(binding, root, dst)
+    return boundary.predicate in _observed_call_names(binding, root, dst)
 
 
 def _matching_boundary_ids(
@@ -2380,10 +2382,8 @@ __all__ = [
     "ThreatViolation",
     "WeaknessEntry",
     "CAUGHT_BY_NONE_MARKER",
-    "caught_by_unresolved_tokens",
     "check_capability_completeness",
     "check_catalog_completeness",
-    "check_caught_by_integrity",
     "check_discharge_completeness",
     "check_effect_completeness",
     "evaluate_threats",

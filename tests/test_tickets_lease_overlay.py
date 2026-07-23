@@ -2,7 +2,7 @@
 state onto the ledger's own view, not write through to it (writing a
 worktree's view into main's ledger is the T-0633/T-0682 corruption class).
 `display_state` is the single decoration function both consume -- these
-tests exercise it directly against `frob.tickets._leases.LeaseRecord`
+tests exercise it directly against `frob.tickets._leases._LeaseRecord`
 fixtures rather than real `git worktree add` checkouts, since the decision
 under test (decorate vs. not) only depends on `read_all_leases`' already-
 tested stale-vs-live judgment (T-0473/T-0476), not on git plumbing.
@@ -22,7 +22,7 @@ from frob.tickets import (
     TicketState,
     display_state,
 )
-from frob.tickets._leases import LeaseRecord
+from frob.tickets._leases import _LeaseRecord
 
 
 # frob:ticket T-0716
@@ -45,9 +45,9 @@ def _ticket(*, ticket_id: str, state: TicketState = TicketState.QUEUED) -> Ticke
 
 
 # frob:ticket T-0716
-def _lease(ticket_id: str, worktree: Path) -> LeaseRecord:
-    """A `LeaseRecord` fixture pointing at `worktree` for `ticket_id`."""
-    return LeaseRecord(
+def _lease(ticket_id: str, worktree: Path) -> _LeaseRecord:
+    """A `_LeaseRecord` fixture pointing at `worktree` for `ticket_id`."""
+    return _LeaseRecord(
         ticket_id=ticket_id,
         scope=(),
         worktree=str(worktree),

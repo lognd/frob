@@ -67,7 +67,13 @@ from frob.gates._dead_symbols import dead_symbol_gate
 from frob.gates._docblocks import doc004_gate, doc005_gate
 from frob.gates._exclude_hazard import exclude_hazard_gate
 from frob.gates._filehash import _SOURCE_EXTS
-from frob.gates._fmt_directives import marker_for, read_line_length
+from frob.gates._fmt_directives import (
+    FmtChange,
+    FmtReport,
+    format_paths,
+    marker_for,
+    read_line_length,
+)
 from frob.gates._lang_conformance import (
     lang_conformance_gate,
     project_lang_conformance_gate,
@@ -94,10 +100,15 @@ from frob.gates._pii_structural import pii_structural_gate
 from frob.gates._prework import load_prework, record_prework, sweep_ticket
 from frob.gates._protocol_summary import protocol_summary_gate
 from frob.gates._ratchet import (
+    RatchetEntry,
+    RatchetError,
     RatchetLock,
+    RatchetPool,
+    clear_ratchet_entry,
     load_ratchet_lock,
     ratchet_enabled_rules,
     resolve_ratchet_severity,
+    snapshot_ratchet,
 )
 from frob.gates._refs import ref_gate
 from frob.gates._registry_exhaustiveness import registry_gate
@@ -9737,6 +9748,8 @@ __all__ = [
     "CoverageError",
     "DebtEntry",
     "DecisionError",
+    "FmtChange",
+    "FmtReport",
     "GateConfig",
     "GateError",
     "GateReport",
@@ -9744,6 +9757,9 @@ __all__ = [
     "Invariant",
     "InvariantError",
     "PreworkSweep",
+    "RatchetEntry",
+    "RatchetError",
+    "RatchetPool",
     "Severity",
     "SystemSpec",
     "TestPolicy",
@@ -9751,11 +9767,13 @@ __all__ = [
     "WaiverRef",
     "active_ticket",
     "arch_gate",
+    "clear_ratchet_entry",
     "coverage_gate",
     "delta_violations",
     "drift_gate",
     "exclude_hazard_gate",
     "fmt_gate",
+    "format_paths",
     "inv003_gate",
     "inv004_gate",
     "inv006_gate",
@@ -9792,6 +9810,7 @@ __all__ = [
     "scope_digest",
     "scope_gate",
     "secrets_gate",
+    "snapshot_ratchet",
     "stamp_baseline",
     "stamp_coverage",
     "ticket_lease_pin",

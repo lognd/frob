@@ -41,9 +41,9 @@ from frob.strata._threat import (
     QUALITY_OUT_OF_SCOPE,
     QUALITY_VIEWS,
     VIEWS,
+    _caught_by_unresolved_tokens,
+    _check_caught_by_integrity,
     _discharge_claim_id,
-    caught_by_unresolved_tokens,
-    check_caught_by_integrity,
     load_repo_benign_capabilities,
 )
 
@@ -1725,103 +1725,103 @@ class TestEvalFiresCwe94:
 
 
 class TestCaughtByUnresolvedTokens:
-    """T-0382: `caught_by_unresolved_tokens` -- the public per-entry
-    resolution helper `check_caught_by_integrity` (THREAT006) and
-    `_compliance.py`'s `check_regulation_caught_by_integrity`
+    """T-0382: `_caught_by_unresolved_tokens` -- the public per-entry
+    resolution helper `_check_caught_by_integrity` (THREAT006) and
+    `_compliance.py`'s `_check_regulation_caught_by_integrity`
     (COMPLIANCE004) both share, rather than duplicating the token
     regex/resolution rule."""
 
-    # frob:tests src/frob/strata/_threat.py::caught_by_unresolved_tokens kind="unit"
+    # frob:tests src/frob/strata/_threat.py::_caught_by_unresolved_tokens kind="unit"
     def test_unknown_rule_id_is_unresolved(self):
-        unresolved = caught_by_unresolved_tokens(
+        unresolved = _caught_by_unresolved_tokens(
             "already enforced by SEC999", known_rule_ids=frozenset({"SEC001"})
         )
         assert unresolved == frozenset({"SEC999"})
 
-    # frob:tests src/frob/strata/_threat.py::caught_by_unresolved_tokens kind="unit"
+    # frob:tests src/frob/strata/_threat.py::_caught_by_unresolved_tokens kind="unit"
     def test_known_rule_id_resolves(self):
-        unresolved = caught_by_unresolved_tokens(
+        unresolved = _caught_by_unresolved_tokens(
             "already enforced by SEC001", known_rule_ids=frozenset({"SEC001"})
         )
         assert unresolved == frozenset()
 
-    # frob:tests src/frob/strata/_threat.py::caught_by_unresolved_tokens kind="unit"
+    # frob:tests src/frob/strata/_threat.py::_caught_by_unresolved_tokens kind="unit"
     def test_no_referenced_tokens_is_unresolved_empty(self):
-        unresolved = caught_by_unresolved_tokens("legal review, out of scope")
+        unresolved = _caught_by_unresolved_tokens("legal review, out of scope")
         assert unresolved == frozenset()
 
 
 class TestCaughtByIntegrity:
-    """T-0382: `check_caught_by_integrity` (THREAT006) -- a `caught_by`
+    """T-0382: `_check_caught_by_integrity` (THREAT006) -- a `caught_by`
     naming a fabricated rule id or CWE id fails closed; an honest "none"
     or a real reference never does."""
 
-    # frob:tests src/frob/strata/_threat.py::check_caught_by_integrity kind="unit"
+    # frob:tests src/frob/strata/_threat.py::_check_caught_by_integrity kind="unit"
     def test_honest_none_caught_by_never_fails(self):
         entry = OutOfScopeEntry(
             id="CWE-999", reason="not applicable", caught_by="none -- no control"
         )
-        result = check_caught_by_integrity(out_of_scope=(entry,))
+        result = _check_caught_by_integrity(out_of_scope=(entry,))
         assert result.is_ok
         assert result.danger_ok == ()
 
-    # frob:tests src/frob/strata/_threat.py::check_caught_by_integrity kind="unit"
+    # frob:tests src/frob/strata/_threat.py::_check_caught_by_integrity kind="unit"
     def test_free_text_with_no_recognizable_token_passes(self):
         entry = OutOfScopeEntry(
             id="CWE-999",
             reason="handled elsewhere",
             caught_by="content-security-policy review, out of frob scope",
         )
-        result = check_caught_by_integrity(out_of_scope=(entry,))
+        result = _check_caught_by_integrity(out_of_scope=(entry,))
         assert result.is_ok
         assert result.danger_ok == ()
 
-    # frob:tests src/frob/strata/_threat.py::check_caught_by_integrity kind="unit"
+    # frob:tests src/frob/strata/_threat.py::_check_caught_by_integrity kind="unit"
     def test_real_cwe_reference_resolves(self):
         entry = OutOfScopeEntry(
             id="CWE-999",
             reason="already classified elsewhere",
             caught_by="already classified as CWE-78 in CWE_CATALOG",
         )
-        result = check_caught_by_integrity(out_of_scope=(entry,), catalog=CWE_CATALOG)
+        result = _check_caught_by_integrity(out_of_scope=(entry,), catalog=CWE_CATALOG)
         assert result.is_ok
         assert result.danger_ok == ()
 
-    # frob:tests src/frob/strata/_threat.py::check_caught_by_integrity kind="unit"
+    # frob:tests src/frob/strata/_threat.py::_check_caught_by_integrity kind="unit"
     def test_fabricated_cwe_reference_fails_closed(self):
         entry = OutOfScopeEntry(
             id="CWE-999",
             reason="claims coverage elsewhere",
             caught_by="already classified as CWE-000000 in CWE_CATALOG",
         )
-        result = check_caught_by_integrity(out_of_scope=(entry,), catalog=CWE_CATALOG)
+        result = _check_caught_by_integrity(out_of_scope=(entry,), catalog=CWE_CATALOG)
         assert result.is_ok
         violations = result.danger_ok
         assert len(violations) == 1
         assert violations[0].rule == "THREAT006"
         assert "CWE-000000" in violations[0].detail
 
-    # frob:tests src/frob/strata/_threat.py::check_caught_by_integrity kind="unit"
+    # frob:tests src/frob/strata/_threat.py::_check_caught_by_integrity kind="unit"
     def test_real_rule_id_reference_resolves_when_known(self):
         entry = BenignCapability(
             kind="metrics",
             reason="already gated",
             caught_by="already enforced by SEC001",
         )
-        result = check_caught_by_integrity(
+        result = _check_caught_by_integrity(
             benign=(entry,), known_rule_ids=frozenset({"SEC001"})
         )
         assert result.is_ok
         assert result.danger_ok == ()
 
-    # frob:tests src/frob/strata/_threat.py::check_caught_by_integrity kind="unit"
+    # frob:tests src/frob/strata/_threat.py::_check_caught_by_integrity kind="unit"
     def test_fabricated_rule_id_reference_fails_closed(self):
         entry = BenignCapability(
             kind="metrics",
             reason="claims coverage elsewhere",
             caught_by="already enforced by SEC999",
         )
-        result = check_caught_by_integrity(
+        result = _check_caught_by_integrity(
             benign=(entry,), known_rule_ids=frozenset({"SEC001"})
         )
         assert result.is_ok
@@ -1830,7 +1830,7 @@ class TestCaughtByIntegrity:
         assert violations[0].rule == "THREAT006"
         assert "SEC999" in violations[0].detail
 
-    # frob:tests src/frob/strata/_threat.py::check_caught_by_integrity kind="unit"
+    # frob:tests src/frob/strata/_threat.py::_check_caught_by_integrity kind="unit"
     def test_rule_id_reference_unresolved_by_default_empty_known_set(self):
         # `known_rule_ids` defaults to empty (this package cannot import
         # `frob.gates`'s live registry) -- a caller that never passes it
@@ -1838,12 +1838,12 @@ class TestCaughtByIntegrity:
         entry = BenignCapability(
             kind="metrics", reason="claims coverage", caught_by="caught by SEC001"
         )
-        result = check_caught_by_integrity(benign=(entry,))
+        result = _check_caught_by_integrity(benign=(entry,))
         assert result.is_ok
         assert len(result.danger_ok) == 1
         assert result.danger_ok[0].rule == "THREAT006"
 
-    # frob:tests src/frob/strata/_threat.py::check_caught_by_integrity kind="unit"
+    # frob:tests src/frob/strata/_threat.py::_check_caught_by_integrity kind="unit"
     def test_clean_default_catalogs_have_no_gaps(self):
         # The built-in CWE_TOP_25_OUT_OF_SCOPE/QUALITY_OUT_OF_SCOPE/
         # DEFAULT_BENIGN_CAPABILITIES entries this module ships must
@@ -1851,7 +1851,7 @@ class TestCaughtByIntegrity:
         # references among the shipped catalogs).
         from frob.strata._threat import DEFAULT_BENIGN_CAPABILITIES
 
-        result = check_caught_by_integrity(
+        result = _check_caught_by_integrity(
             out_of_scope=CWE_TOP_25_OUT_OF_SCOPE + QUALITY_OUT_OF_SCOPE,
             benign=DEFAULT_BENIGN_CAPABILITIES,
             catalog=ALL_CATALOG,
@@ -1938,7 +1938,7 @@ class TestCaughtByAuditExhaustive:
         from frob.strata._krb_movement import KRB_MOVEMENT_OUT_OF_SCOPE
         from frob.strata._threat import DEFAULT_BENIGN_CAPABILITIES
 
-        result = check_caught_by_integrity(
+        result = _check_caught_by_integrity(
             out_of_scope=(
                 CWE_TOP_25_OUT_OF_SCOPE
                 + QUALITY_OUT_OF_SCOPE

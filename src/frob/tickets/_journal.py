@@ -44,15 +44,17 @@ _log = get_logger(__name__)
 JOURNAL_DIRNAME = "journal"
 
 
-# frob:doc docs/modules/tickets.md#intent-journal-t-0456
-class JournalError(ErrorSet):
+# frob:waive COV005 reason="T-0601 rework: demoted JournalError -> _JournalError (frob-exports external-consumer test: only used intra-package by _land.py, never imported outside frob.tickets)"  # noqa: E501
+# frob:ticket T-0601
+class _JournalError(ErrorSet):
     """Fallible outcomes of the intent-journal side-channel (T-0456)."""
 
     WriteFailed = "writing the journal record failed"
 
 
-# frob:doc docs/modules/tickets.md#intent-journal-t-0456
-class LandIntent(BaseModel):
+# frob:waive COV005 reason="T-0601 rework: demoted LandIntent -> _LandIntent (frob-exports external-consumer test: only used intra-package by _reconcile.py, never imported outside frob.tickets)"  # noqa: E501
+# frob:ticket T-0601
+class _LandIntent(BaseModel):
     """One in-flight `frob ticket land` operation (T-0456): which ticket,
     and when the operation started -- read back by `frob ticket reconcile`
     to detect a land that never reached its own cleanup (crash/interrupt)."""
@@ -64,23 +66,26 @@ class LandIntent(BaseModel):
     started_at: str
 
 
-# frob:doc docs/modules/tickets.md#intent-journal-t-0456
-def journal_dir(root: Path) -> Path:
+# frob:waive COV005 reason="T-0601 rework: demoted journal_dir -> _journal_dir (frob-exports external-consumer test: only used intra-package by this module's own helpers, never imported outside frob.tickets)"  # noqa: E501
+# frob:ticket T-0601
+def _journal_dir(root: Path) -> Path:
     """`<root>/.frob/journal`, where in-flight land intent records live (T-0456)."""
     return root / ".frob" / JOURNAL_DIRNAME
 
 
+# frob:ticket T-0601
 def _intent_path(root: Path, ticket_id: str) -> Path:
     """The per-ticket intent-journal file path under `root`."""
-    return journal_dir(root) / f"{ticket_id}.json"
+    return _journal_dir(root) / f"{ticket_id}.json"
 
 
-# frob:doc docs/modules/tickets.md#intent-journal-t-0456
+# frob:waive COV005 reason="T-0601 rework: demoted write_intent -> _write_intent (frob-exports external-consumer test: only called intra-package by _land.py, never imported outside frob.tickets); the frob:tests directives deliberately follow the same function to its new private name"  # noqa: E501
 # frob:tests tests/test_ticket_journal.py::TestWriteIntent.test_write_then_read_round_trips  # noqa: E501
 # frob:tests tests/test_ticket_journal.py::TestWriteIntent.test_write_failure_returns_err  # noqa: E501
-def write_intent(
+# frob:ticket T-0601
+def _write_intent(
     root: Path, ticket_id: str, worktree: Path
-) -> Result[None, JournalError]:
+) -> Result[None, _JournalError]:
     """Record that a `land` of `ticket_id` (from `worktree`) is starting
     (T-0456) -- called BEFORE `frob.tickets._land.land` mutates anything.
     Best-effort in the same spirit as T-0473's `record_lease`: a write
@@ -88,7 +93,7 @@ def write_intent(
     proceed anyway rather than block an otherwise-working `land` on a
     journal-directory permission problem -- the journal is a recovery aid,
     not the source of truth for whether the land itself succeeded."""
-    intent = LandIntent(
+    intent = _LandIntent(
         ticket_id=ticket_id,
         worktree=str(worktree.resolve()),
         started_at=datetime.now(UTC).isoformat(),
@@ -102,15 +107,16 @@ def write_intent(
             ticket_id,
             written.danger_err,
         )
-        return Err(JournalError.WriteFailed)
+        return Err(_JournalError.WriteFailed)
     _log.info("tickets: land intent recorded for %s", ticket_id)
     return Ok(None)
 
 
-# frob:doc docs/modules/tickets.md#intent-journal-t-0456
+# frob:waive COV005 reason="T-0601 rework: demoted clear_intent -> _clear_intent (frob-exports external-consumer test: only called intra-package by _land.py, never imported outside frob.tickets); the frob:tests directives deliberately follow the same function to its new private name"  # noqa: E501
 # frob:tests tests/test_ticket_journal.py::TestClearIntent.test_clear_removes_the_file  # noqa: E501
 # frob:tests tests/test_ticket_journal.py::TestClearIntent.test_clear_missing_file_is_a_no_op  # noqa: E501
-def clear_intent(root: Path, ticket_id: str) -> None:
+# frob:ticket T-0601
+def _clear_intent(root: Path, ticket_id: str) -> None:
     """Remove `ticket_id`'s land-intent record, if any (T-0456) -- called
     when `land` returns for ANY reason (success or a clean, handled `Err`),
     from a `finally` block so a raised exception still clears it. A missing
@@ -123,11 +129,12 @@ def clear_intent(root: Path, ticket_id: str) -> None:
         _log.warning("tickets: could not clear land intent for %s: %s", ticket_id, exc)
 
 
-# frob:doc docs/modules/tickets.md#intent-journal-t-0456
+# frob:waive COV005 reason="T-0601 rework: demoted read_all_intents -> _read_all_intents (frob-exports external-consumer test: only called intra-package by _reconcile.py, never imported outside frob.tickets); the frob:tests directives deliberately follow the same function to its new private name"  # noqa: E501
 # frob:tests tests/test_ticket_journal.py::TestReadAllIntents.test_reads_every_recorded_intent  # noqa: E501
 # frob:tests tests/test_ticket_journal.py::TestReadAllIntents.test_no_journal_dir_returns_empty  # noqa: E501
 # frob:tests tests/test_ticket_journal.py::TestReadAllIntents.test_malformed_record_is_skipped_not_fatal  # noqa: E501
-def read_all_intents(root: Path) -> tuple[LandIntent, ...]:
+# frob:ticket T-0601
+def _read_all_intents(root: Path) -> tuple[_LandIntent, ...]:
     """Every currently-recorded land-intent record under `root` (T-0456),
     ticket-id-ordered. A record still present means the `land` that wrote
     it never reached its own `clear_intent` call -- either it is still
@@ -138,14 +145,14 @@ def read_all_intents(root: Path) -> tuple[LandIntent, ...]:
     directory does not exist yet (nothing has ever landed); a malformed
     single record is logged and skipped rather than failing the whole
     read, matching `read_all_leases`' (T-0473) same defensive shape."""
-    directory = journal_dir(root)
+    directory = _journal_dir(root)
     if not directory.is_dir():
         return ()
-    records: list[LandIntent] = []
+    records: list[_LandIntent] = []
     for path in sorted(directory.glob("*.json")):
         try:
             raw = json.loads(path.read_text(encoding="utf-8"))
-            records.append(LandIntent.model_validate(raw))
+            records.append(_LandIntent.model_validate(raw))
         except (OSError, ValueError) as exc:
             _log.warning("tickets: could not parse journal file %s: %s", path, exc)
             continue
@@ -154,10 +161,4 @@ def read_all_intents(root: Path) -> tuple[LandIntent, ...]:
 
 __all__ = [
     "JOURNAL_DIRNAME",
-    "JournalError",
-    "LandIntent",
-    "clear_intent",
-    "journal_dir",
-    "read_all_intents",
-    "write_intent",
 ]

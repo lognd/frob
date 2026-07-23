@@ -28,7 +28,7 @@ from frob.tickets import (
     new_ticket,
     transition,
 )
-from frob.tickets._leases import git_common_dir, read_all_leases
+from frob.tickets._leases import _git_common_dir, read_all_leases
 from frob.tickets._store import atomic_write, ledger_path
 
 
@@ -85,8 +85,8 @@ class TestGitCommonDir:
         self, repo: Path, second_worktree: Path
     ) -> None:
         # frob:tests tests/test_ticket_leases_cross_worktree.py::TestGitCommonDir.test_shared_across_linked_worktrees
-        main_common = git_common_dir(repo)
-        wt_common = git_common_dir(second_worktree)
+        main_common = _git_common_dir(repo)
+        wt_common = _git_common_dir(second_worktree)
         assert main_common.is_ok
         assert wt_common.is_ok
         assert main_common.danger_ok == wt_common.danger_ok

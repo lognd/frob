@@ -23,7 +23,7 @@ from frob.tickets import (
     has_live_lease,
     undispatched_stale,
 )
-from frob.tickets._leases import LeaseRecord
+from frob.tickets._leases import _LeaseRecord
 
 
 # frob:ticket T-0752
@@ -53,9 +53,9 @@ def _ticket(
 
 
 # frob:ticket T-0752
-def _lease(ticket_id: str, worktree: Path) -> LeaseRecord:
-    """A `LeaseRecord` fixture pointing at `worktree` for `ticket_id`."""
-    return LeaseRecord(
+def _lease(ticket_id: str, worktree: Path) -> _LeaseRecord:
+    """A `_LeaseRecord` fixture pointing at `worktree` for `ticket_id`."""
+    return _LeaseRecord(
         ticket_id=ticket_id,
         scope=(),
         worktree=str(worktree),

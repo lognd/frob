@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.135.0] - unreleased
+
+- T-0600: frob-exports triage: src/frob/gates, src/frob/graph, src/frob/process/parsers, src/frob/registry (14 symbols across 4 packages)
+
 ## [0.134.0] - unreleased
 
 - T-0604: derived-state manifest: persist fingerprints and detect drift across runs

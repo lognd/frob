@@ -24,11 +24,11 @@ from frob.strata._compliance import (
     CMPL_REGISTRY_UNIT_IDS,
     COMPLIANCE_CATALOG,
     REGULATION_VIEWS,
+    _check_cmpl_registry_unit_dispositions,
+    _check_regulation_caught_by_integrity,
     check_cmpl_registry,
-    check_cmpl_registry_unit_dispositions,
     check_privacy_policy,
     check_regulation_catalog_completeness,
-    check_regulation_caught_by_integrity,
     check_regulation_discharge,
     evaluate_compliance,
 )
@@ -422,7 +422,7 @@ class TestRegulationCaughtByIntegrity:
     the claimed control absent -> discharge REFUSED (negative case below),
     the claimed control present -> discharge succeeds (positive case)."""
 
-    # frob:tests src/frob/strata/_compliance.py::check_regulation_caught_by_integrity kind="unit"
+    # frob:tests src/frob/strata/_compliance.py::_check_regulation_caught_by_integrity kind="unit"
     def test_honest_none_caught_by_never_fails(self):
         entry = OutOfScopeRegulation(
             id="COPPA",
@@ -431,11 +431,11 @@ class TestRegulationCaughtByIntegrity:
             review="2027-01-01",
             caught_by="none -- no compensating control today",
         )
-        result = check_regulation_caught_by_integrity(out_of_scope=(entry,))
+        result = _check_regulation_caught_by_integrity(out_of_scope=(entry,))
         assert result.is_ok
         assert result.danger_ok == ()
 
-    # frob:tests src/frob/strata/_compliance.py::check_regulation_caught_by_integrity kind="unit"
+    # frob:tests src/frob/strata/_compliance.py::_check_regulation_caught_by_integrity kind="unit"
     def test_caught_by_naming_absent_control_is_refused(self):
         """Negative case: the claimed control (SEC999) does not exist in
         the live rule-id set -- discharge must be REFUSED, not silently
@@ -447,7 +447,7 @@ class TestRegulationCaughtByIntegrity:
             review="2027-01-01",
             caught_by="already enforced by SEC999",
         )
-        result = check_regulation_caught_by_integrity(
+        result = _check_regulation_caught_by_integrity(
             out_of_scope=(entry,), known_rule_ids=frozenset({"SEC001"})
         )
         assert result.is_ok
@@ -456,7 +456,7 @@ class TestRegulationCaughtByIntegrity:
         assert violations[0].rule == "COMPLIANCE004"
         assert "SEC999" in violations[0].detail
 
-    # frob:tests src/frob/strata/_compliance.py::check_regulation_caught_by_integrity kind="unit"
+    # frob:tests src/frob/strata/_compliance.py::_check_regulation_caught_by_integrity kind="unit"
     def test_caught_by_naming_present_control_discharges(self):
         """Positive case: the identical claim, but SEC001 is actually in
         the live rule-id set -- discharge succeeds."""
@@ -467,13 +467,13 @@ class TestRegulationCaughtByIntegrity:
             review="2027-01-01",
             caught_by="already enforced by SEC001",
         )
-        result = check_regulation_caught_by_integrity(
+        result = _check_regulation_caught_by_integrity(
             out_of_scope=(entry,), known_rule_ids=frozenset({"SEC001"})
         )
         assert result.is_ok
         assert result.danger_ok == ()
 
-    # frob:tests src/frob/strata/_compliance.py::check_regulation_caught_by_integrity kind="unit"
+    # frob:tests src/frob/strata/_compliance.py::_check_regulation_caught_by_integrity kind="unit"
     def test_free_text_with_no_rule_id_token_is_not_checked_further(self):
         entry = OutOfScopeRegulation(
             id="COPPA",
@@ -482,7 +482,7 @@ class TestRegulationCaughtByIntegrity:
             review="2027-01-01",
             caught_by="legal intake process reviews age-gating at onboarding",
         )
-        result = check_regulation_caught_by_integrity(out_of_scope=(entry,))
+        result = _check_regulation_caught_by_integrity(out_of_scope=(entry,))
         assert result.is_ok
         assert result.danger_ok == ()
 
@@ -528,7 +528,7 @@ class TestCaughtByAuditExhaustive:
         from frob.gates import known_gate_rule_ids
         from frob.strata._compliance import COMPLIANCE_OUT_OF_SCOPE
 
-        result = check_regulation_caught_by_integrity(
+        result = _check_regulation_caught_by_integrity(
             out_of_scope=COMPLIANCE_OUT_OF_SCOPE,
             known_rule_ids=known_gate_rule_ids(),
         )
@@ -605,26 +605,26 @@ class TestEvaluateCompliance:
 
 
 class TestCmplRegistry:
-    """COMPLIANCE005 (T-0607): `check_cmpl_registry_unit_dispositions` over
+    """COMPLIANCE005 (T-0607): `_check_cmpl_registry_unit_dispositions` over
     the 17 `CMPL_REGISTRY_UNIT_IDS` compliance-registry units, plus the
     real-file `check_cmpl_registry` entrypoint."""
 
-    # frob:tests src/frob/strata/_compliance.py::check_cmpl_registry_unit_dispositions kind="unit"
+    # frob:tests src/frob/strata/_compliance.py::_check_cmpl_registry_unit_dispositions kind="unit"
     def test_deferred_disposition_is_refused(self):
         entries = (_cmpl_entry("deferred:T-0001"),)
-        violations = check_cmpl_registry_unit_dispositions(entries)
+        violations = _check_cmpl_registry_unit_dispositions(entries)
         assert len(violations) == 1
         assert violations[0].rule == "COMPLIANCE005"
         assert violations[0].regulation == _SOME_CMPL_ID
 
-    # frob:tests src/frob/strata/_compliance.py::check_cmpl_registry_unit_dispositions kind="unit"
+    # frob:tests src/frob/strata/_compliance.py::_check_cmpl_registry_unit_dispositions kind="unit"
     def test_undispositioned_is_refused(self):
         entries = (_cmpl_entry("pending"),)
-        violations = check_cmpl_registry_unit_dispositions(entries)
+        violations = _check_cmpl_registry_unit_dispositions(entries)
         assert len(violations) == 1
         assert violations[0].rule == "COMPLIANCE005"
 
-    # frob:tests src/frob/strata/_compliance.py::check_cmpl_registry_unit_dispositions kind="unit"
+    # frob:tests src/frob/strata/_compliance.py::_check_cmpl_registry_unit_dispositions kind="unit"
     def test_handled_by_and_out_of_scope_dispositions_pass(self):
         handled = _cmpl_entry(
             "handled_by:COMPLIANCE005", entry_id=sorted(CMPL_REGISTRY_UNIT_IDS)[0]
@@ -632,18 +632,18 @@ class TestCmplRegistry:
         out_of_scope = _cmpl_entry(
             "out_of_scope:reason text", entry_id=sorted(CMPL_REGISTRY_UNIT_IDS)[1]
         )
-        violations = check_cmpl_registry_unit_dispositions((handled, out_of_scope))
+        violations = _check_cmpl_registry_unit_dispositions((handled, out_of_scope))
         assert violations == ()
 
-    # frob:tests src/frob/strata/_compliance.py::check_cmpl_registry_unit_dispositions kind="unit"
+    # frob:tests src/frob/strata/_compliance.py::_check_cmpl_registry_unit_dispositions kind="unit"
     def test_id_outside_the_universe_is_ignored(self):
         entries = (_cmpl_entry("deferred:T-0001", entry_id="CMPL-NOT-TRACKED"),)
-        violations = check_cmpl_registry_unit_dispositions(entries)
+        violations = _check_cmpl_registry_unit_dispositions(entries)
         assert violations == ()
 
-    # frob:tests src/frob/strata/_compliance.py::check_cmpl_registry_unit_dispositions kind="unit"
+    # frob:tests src/frob/strata/_compliance.py::_check_cmpl_registry_unit_dispositions kind="unit"
     def test_id_absent_from_entries_is_silently_skipped(self):
-        violations = check_cmpl_registry_unit_dispositions(())
+        violations = _check_cmpl_registry_unit_dispositions(())
         assert violations == ()
 
     # frob:tests src/frob/strata/_compliance.py::check_cmpl_registry kind="unit"

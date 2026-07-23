@@ -31,9 +31,9 @@ from frob.app.ticket_runner import run as ticket_run
 from frob.tickets import TicketState, load_all, transition
 from frob.tickets._leases import (
     LEASE_TTL_SECONDS,
-    LeaseRecord,
+    _LeaseRecord,
+    _list_agent_worktrees,
     leases_dir,
-    list_agent_worktrees,
     read_all_leases,
     resolve_lease,
     sweep_worktrees,
@@ -98,7 +98,7 @@ def _write_lease(
     assert resolved.is_ok
     leases_root = resolved.danger_ok
     leases_root.mkdir(parents=True, exist_ok=True)
-    record = LeaseRecord(
+    record = _LeaseRecord(
         ticket_id=ticket_id,
         scope=("src/feature.py",),
         worktree=str(worktree),
@@ -301,7 +301,7 @@ class TestDoubleDispatchIncidentRegression:
 # own dirty check cannot see a live agent between writes -- only this
 # repo's own lease machinery can. These tests build real fixture repos with
 # multiple `.claude/worktrees/`-shaped worktrees (this repo's own dispatch
-# convention) and exercise `sweep_worktrees`/`list_agent_worktrees`
+# convention) and exercise `sweep_worktrees`/`_list_agent_worktrees`
 # directly against real git state -- no mocking of the lease or git layers.
 
 
@@ -331,14 +331,14 @@ def _branch_exists(repo: Path, branch: str) -> bool:
 
 
 class TestListAgentWorktrees:
-    """`list_agent_worktrees` returns only `.claude/worktrees/`-shaped
+    """`_list_agent_worktrees` returns only `.claude/worktrees/`-shaped
     paths, never the repo's own primary checkout."""
 
     def test_lists_only_dot_claude_worktrees_paths(self, sweep_repo: Path) -> None:
         # frob:tests tests/test_ticket_leases.py::TestListAgentWorktrees.test_lists_only_dot_claude_worktrees_paths  # noqa: E501
         wt = _add_agent_worktree(sweep_repo, "wt1")
 
-        result = list_agent_worktrees(sweep_repo)
+        result = _list_agent_worktrees(sweep_repo)
         assert result.is_ok
         paths = result.danger_ok
         assert paths == (wt.resolve(),)

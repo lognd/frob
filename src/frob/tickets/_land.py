@@ -36,7 +36,7 @@ from typani.result import Err, Ok, Result
 
 from frob.gitio import current_branch, run_argv
 from frob.logging import get_logger
-from frob.tickets._journal import clear_intent, write_intent
+from frob.tickets._journal import _clear_intent, _write_intent
 from frob.tickets._models import (
     CMD_EVIDENCE_ALLOWED_KINDS,
     LandError,
@@ -52,10 +52,10 @@ from frob.tickets._models import (
 )
 from frob.tickets._provisional import is_draft_id
 from frob.tickets._store import (
+    _check_ledger_id_integrity,
     _parse_ledger,
     _render_ledger,
     archive_path,
-    check_ledger_id_integrity,
     ledger_path,
     load_all,
     load_archive,
@@ -75,7 +75,7 @@ except ImportError:  # pragma: no cover -- posix-only in this repo's CI
 _log = get_logger(__name__)
 
 # T-0577: dedicated lock file for serializing `land()` calls against the
-# SAME `root`, deliberately a DIFFERENT name from `_store.lock_path`'s
+# SAME `root`, deliberately a DIFFERENT name from `_store._lock_path`'s
 # `.frob/tickets.lock`. Reusing that exact path was tried first and broke:
 # a worktree's own `.frob/tickets.lock` (created the moment ANY ticket
 # operation runs in the worktree, then committed into the branch by
@@ -353,6 +353,7 @@ def _union_acceptance(winner: Ticket, a: Ticket, b: Ticket) -> Ticket:
 # resurrecting exactly the active/archive duplicate-id class a human
 # would otherwise have to hand-resolve at merge time (reviewer-caught,
 # T-0176).
+# frob:ticket T-0601
 def splice_ledger(
     ours_text: str,
     theirs_text: str,
@@ -370,7 +371,7 @@ def splice_ledger(
     if any id present on EITHER side vanished from the result without being
     an intentional `archived_ids` drop, or if the rendered text does not
     round-trip every surviving id back out with its marker intact
-    (`check_ledger_id_integrity`, the same guard `write_all`/`write_archive`
+    (`_check_ledger_id_integrity`, the same guard `write_all`/`write_archive`
     run) -- the structural backstop for the T-0367 markerless-block
     incident class at the one place a git-merge-driver-triggered splice
     could otherwise commit a silent loss with no caller ever checking."""
@@ -401,7 +402,7 @@ def splice_ledger(
         )
         return Err(TicketError.LedgerIntegrityViolation)
     rendered = _render_ledger(merged)
-    integrity = check_ledger_id_integrity(merged, rendered)
+    integrity = _check_ledger_id_integrity(merged, rendered)
     if integrity.is_err:
         return Err(integrity.danger_err)
     return Ok(rendered)
@@ -1272,6 +1273,7 @@ def land(
 
 
 # frob:waive ARCH001 reason="already the decomposed orchestrator (T-0577): delegates to _land_precheck/_land_merge_stage/_reverify_evidence_post_merge/_land_finalize_and_close/_land_squash_apply; remaining length is the try/finally intent-marker sequencing plus the D-05/T-0456 ordering-rationale comments themselves, not undecomposed logic"  # noqa: E501
+# frob:ticket T-0601
 def _land_locked(
     root: Path,
     ticket_id: str,
@@ -1307,7 +1309,7 @@ def _land_locked(
     # on every exit (success or a clean, handled Err) so a marker that
     # OUTLIVES this process means it crashed mid-land, the condition `frob
     # ticket reconcile` surfaces as an anomaly instead of it going unnoticed.
-    write_intent(root, ticket_id, worktree)
+    _write_intent(root, ticket_id, worktree)
     try:
         stage = _land_merge_stage(
             root, worktree, ticket, ticket_id, main_branch_name, dry_run
@@ -1384,7 +1386,7 @@ def _land_locked(
             rebuild_natives=rebuild_natives,
         )
     finally:
-        clear_intent(root, ticket_id)
+        _clear_intent(root, ticket_id)
 
 
 def _reverify_evidence_post_merge(

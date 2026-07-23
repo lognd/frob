@@ -35,7 +35,7 @@ from typani.result import Err, Ok, Result
 
 from frob.gitio import run_argv
 from frob.logging import get_logger
-from frob.tickets._journal import clear_intent, read_all_intents
+from frob.tickets._journal import _clear_intent, _read_all_intents
 from frob.tickets._leases import read_all_leases, release_lease
 from frob.tickets._models import TicketError, TicketState
 from frob.tickets._store import load_all
@@ -142,14 +142,15 @@ def _requeue_stale_holds(root: Path, stale_ids: tuple[str, ...]) -> tuple[str, .
     return tuple(requeued)
 
 
+# frob:ticket T-0601
 def _clear_orphaned_intents(root: Path, ticket_ids: tuple[str, ...]) -> tuple[str, ...]:
     """Clear each of `ticket_ids`' land-intent journal record (T-0456);
-    returns the ids actually cleared (`clear_intent` is itself always
+    returns the ids actually cleared (`_clear_intent` is itself always
     best-effort/never-raises, so this is really just a pass-through, kept
     as its own helper for symmetry with `_requeue_stale_holds`/
     `_remove_orphan_worktrees`)."""
     for ticket_id in ticket_ids:
-        clear_intent(root, ticket_id)
+        _clear_intent(root, ticket_id)
         _log.info(
             "tickets: reconcile cleared orphaned land intent for %s "
             "(process that started it never reached its own cleanup)",
@@ -184,6 +185,7 @@ def _remove_orphan_worktrees(root: Path, orphans: tuple[Path, ...]) -> tuple[str
 # frob:doc docs/modules/tickets.md#frob-ticket-reconcile-t-0476
 # frob:tests tests/test_ticket_reconcile.py::TestReconcileStaleHold.test_apply_requeues_stale_hold_and_releases_lease kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_reconcile.py::TestReconcileOrphanWorktree.test_apply_and_remove_orphans_actually_removes_it kind="unit"  # noqa: E501
+# frob:ticket T-0601
 def reconcile(
     root: Path, *, apply: bool = False, remove_orphans: bool = False
 ) -> Result[ReconcileReport, TicketError]:
@@ -212,7 +214,7 @@ def reconcile(
 
     stale_ids = _stale_in_progress_ticket_ids(tickets, leased_ticket_ids)
     orphans = _orphan_worktree_paths(root, leased_worktrees)
-    orphaned_intents = tuple(intent.ticket_id for intent in read_all_intents(root))
+    orphaned_intents = tuple(intent.ticket_id for intent in _read_all_intents(root))
 
     requeued = _requeue_stale_holds(root, stale_ids) if apply else stale_ids
     removed = (

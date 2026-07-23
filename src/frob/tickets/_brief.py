@@ -23,8 +23,8 @@ _SECTION_RE = re.compile(r"^## (\d+[a-z]?)\.\s+(.+)$")
 
 
 # frob:ticket T-0568
-# frob:doc docs/modules/tickets.md#frob-ticket-brief-t-0568
-class PlaybookSection(BaseModel):
+# frob:ticket T-0601
+class _PlaybookSection(BaseModel):
     """One numbered hard-rule section of the agent playbook: its number
     (e.g. "1b"), title, and full body text up to the next `## ` heading."""
 
@@ -36,9 +36,10 @@ class PlaybookSection(BaseModel):
 
 
 # frob:ticket T-0568
-# frob:doc docs/modules/tickets.md#frob-ticket-brief-t-0568
+# frob:waive COV005 reason="T-0601 rework: demoted parse_playbook_sections -> _parse_playbook_sections (frob-exports external-consumer test: only used by this module's own _load_playbook_sections/compose_brief, never imported outside frob.tickets); the frob:tests directive deliberately follows the same function to its new private name"  # noqa: E501
 # frob:tests tests/test_tickets_brief.py::TestParsePlaybookSections.test_parses_numbered_headings_only  # noqa: E501
-def parse_playbook_sections(text: str) -> tuple[PlaybookSection, ...]:
+# frob:ticket T-0601
+def _parse_playbook_sections(text: str) -> tuple[_PlaybookSection, ...]:
     """Parse every numbered `## N[.letter]. Title` heading in `text` into a
     `PlaybookSection` (T-0568): data-driven off the playbook's own
     headings, not a hand-copied list that drifts the moment a section is
@@ -48,7 +49,7 @@ def parse_playbook_sections(text: str) -> tuple[PlaybookSection, ...]:
     `## ` line (numbered or not) ends the current section's body span.
     """
     lines = text.splitlines()
-    sections: list[PlaybookSection] = []
+    sections: list[_PlaybookSection] = []
     i = 0
     while i < len(lines):
         match = _SECTION_RE.match(lines[i])
@@ -62,16 +63,17 @@ def parse_playbook_sections(text: str) -> tuple[PlaybookSection, ...]:
             body_lines.append(lines[j])
             j += 1
         body = "\n".join(body_lines).strip("\n")
-        sections.append(PlaybookSection(number=number, title=title, body=body))
+        sections.append(_PlaybookSection(number=number, title=title, body=body))
         i = j
     return tuple(sections)
 
 
 # frob:ticket T-0568
-# frob:doc docs/modules/tickets.md#frob-ticket-brief-t-0568
+# frob:waive COV005 reason="T-0601 rework: demoted load_playbook_sections -> _load_playbook_sections (frob-exports external-consumer test: only called by this module's own compose_brief, never imported outside frob.tickets)"  # noqa: E501
 # frob:tests tests/test_tickets_brief.py::TestLoadPlaybookSections.test_reads_real_file
-def load_playbook_sections(root: Path) -> tuple[PlaybookSection, ...]:
-    """`parse_playbook_sections` over `root`'s `docs/guides/agent-
+# frob:ticket T-0601
+def _load_playbook_sections(root: Path) -> tuple[_PlaybookSection, ...]:
+    """`_parse_playbook_sections` over `root`'s `docs/guides/agent-
     playbook.md`, or empty if the file does not exist (T-0568) -- a repo
     without this playbook (a sibling repo the pattern has not spread to
     yet) gets a briefing with no hard-rule section rather than a hard
@@ -80,13 +82,14 @@ def load_playbook_sections(root: Path) -> tuple[PlaybookSection, ...]:
     path = root / _PLAYBOOK_REL
     if not path.is_file():
         return ()
-    return parse_playbook_sections(path.read_text(encoding="utf-8"))
+    return _parse_playbook_sections(path.read_text(encoding="utf-8"))
 
 
 # frob:ticket T-0568
-# frob:doc docs/modules/tickets.md#frob-ticket-brief-t-0568
+# frob:waive COV005 reason="T-0601 rework: demoted infer_verify_commands -> _infer_verify_commands (frob-exports external-consumer test: only called by this module's own compose_brief, never imported outside frob.tickets)"  # noqa: E501
 # frob:tests tests/test_tickets_brief.py::TestInferVerifyCommands.test_scope_naming_tests_dir_is_used_directly  # noqa: E501
-def infer_verify_commands(root: Path, ticket: Ticket) -> tuple[str, ...]:
+# frob:ticket T-0601
+def _infer_verify_commands(root: Path, ticket: Ticket) -> tuple[str, ...]:
     """Best-effort exact verify commands for `ticket`'s declared scope
     (T-0568): always the scoped gate check, plus a targeted `pytest`
     invocation over any test files the scope already names directly, or
@@ -121,9 +124,10 @@ def infer_verify_commands(root: Path, ticket: Ticket) -> tuple[str, ...]:
 
 
 # frob:ticket T-0568
-# frob:doc docs/modules/tickets.md#frob-ticket-brief-t-0568
+# frob:waive COV005 reason="T-0601 rework: demoted gate_baseline_summary -> _gate_baseline_summary (frob-exports external-consumer test: only called by this module's own compose_brief, never imported outside frob.tickets)"  # noqa: E501
 # frob:tests tests/test_tickets_brief.py::TestGateBaselineSummary.test_missing_baseline
-def gate_baseline_summary(root: Path) -> str:
+# frob:ticket T-0601
+def _gate_baseline_summary(root: Path) -> str:
     """One-line status of `root`'s stamped `frob check` baseline (T-0568) --
     tells the agent whether `--delta` will report only new violations or
     degrade to the full violation set (docs/guides/agent-playbook.md#6)."""
@@ -141,9 +145,10 @@ def gate_baseline_summary(root: Path) -> str:
 
 
 # frob:ticket T-0568
-# frob:doc docs/modules/tickets.md#frob-ticket-brief-t-0568
+# frob:waive COV005 reason="T-0601 rework: demoted current_version -> _current_version (frob-exports external-consumer test: only called by this module's own _rel_land_rules, never imported outside frob.tickets)"  # noqa: E501
 # frob:tests tests/test_tickets_brief.py::TestCurrentVersion.test_reads_project_version
-def current_version(root: Path) -> str | None:
+# frob:ticket T-0601
+def _current_version(root: Path) -> str | None:
     """The `[project].version` string from `root/pyproject.toml`, or
     `None` if the file/key is absent (T-0568) -- degrades the REL/land
     rules text gracefully instead of failing the whole briefing."""
@@ -168,23 +173,25 @@ _REL_LAND_TEMPLATE = (
 
 
 # frob:ticket T-0568
+# frob:ticket T-0601
 def _rel_land_rules(root: Path) -> str:
-    """`_REL_LAND_TEMPLATE` filled in with `current_version` (T-0568), or
+    """`_REL_LAND_TEMPLATE` filled in with `_current_version` (T-0568), or
     "unknown" if `pyproject.toml` could not be read."""
-    version = current_version(root)
+    version = _current_version(root)
     return _REL_LAND_TEMPLATE.format(version=version or "unknown")
 
 
 # frob:ticket T-0568
 # frob:doc docs/modules/tickets.md#frob-ticket-brief-t-0568
 # frob:tests tests/test_tickets_brief.py::TestBriefTicket.test_composes_full_briefing
+# frob:ticket T-0601
 def compose_brief(root: Path, ticket: Ticket, lease_holders: tuple) -> str:
     """Render the complete T-0568 mission briefing for `ticket`: body +
     acceptance, scope + any colliding lease holders (`lease_holders`, the
     `leased_by` result the caller already computed), the playbook's
-    hard-rule sections (`load_playbook_sections`), inferred verify
-    commands (`infer_verify_commands`), the gate-baseline summary
-    (`gate_baseline_summary`), and the REL/land rules (`_rel_land_rules`)
+    hard-rule sections (`_load_playbook_sections`), inferred verify
+    commands (`_infer_verify_commands`), the gate-baseline summary
+    (`_gate_baseline_summary`), and the REL/land rules (`_rel_land_rules`)
     -- everything a dispatch prompt used to hand-type, in one call."""
     lines: list[str] = [f"# Mission briefing: {ticket.id} -- {ticket.title}", ""]
 
@@ -217,7 +224,7 @@ def compose_brief(root: Path, ticket: Ticket, lease_holders: tuple) -> str:
             lines.append(f"- {holder_id} holds {glob}")
     lines.append("")
 
-    sections = load_playbook_sections(root)
+    sections = _load_playbook_sections(root)
     if sections:
         lines.append("## Playbook hard rules")
         for section in sections:
@@ -226,12 +233,12 @@ def compose_brief(root: Path, ticket: Ticket, lease_holders: tuple) -> str:
             lines.append("")
 
     lines.append("## Verify")
-    for command in infer_verify_commands(root, ticket):
+    for command in _infer_verify_commands(root, ticket):
         lines.append(f"- `{command}`")
     lines.append("")
 
     lines.append("## Gate baseline")
-    lines.append(gate_baseline_summary(root))
+    lines.append(_gate_baseline_summary(root))
     lines.append("")
 
     lines.append(_rel_land_rules(root))

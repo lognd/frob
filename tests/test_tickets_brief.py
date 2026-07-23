@@ -20,11 +20,11 @@ from frob.tickets import (
     brief_ticket,
 )
 from frob.tickets._brief import (
-    current_version,
-    gate_baseline_summary,
-    infer_verify_commands,
-    load_playbook_sections,
-    parse_playbook_sections,
+    _current_version,
+    _gate_baseline_summary,
+    _infer_verify_commands,
+    _load_playbook_sections,
+    _parse_playbook_sections,
 )
 from frob.tickets._store import _serialize_ticket
 
@@ -90,33 +90,33 @@ class TestParsePlaybookSections:
     # frob:ticket T-0568
     def test_parses_numbered_headings_only(self) -> None:
         # frob:tests tests/test_tickets_brief.py::TestParsePlaybookSections.test_parses_numbered_headings_only  # noqa: E501
-        sections = parse_playbook_sections(_PLAYBOOK_SAMPLE)
+        sections = _parse_playbook_sections(_PLAYBOOK_SAMPLE)
         assert [s.number for s in sections] == ["1", "1b"]
         assert sections[0].title == "Worktree warm-up (do this FIRST, every time)"
         assert "Step one" in sections[0].body
 
     # frob:ticket T-0568
     def test_body_stops_at_next_heading_numbered_or_not(self) -> None:
-        sections = parse_playbook_sections(_PLAYBOOK_SAMPLE)
+        sections = _parse_playbook_sections(_PLAYBOOK_SAMPLE)
         assert "some link" not in sections[1].body
 
     # frob:ticket T-0568
     def test_empty_text_yields_no_sections(self) -> None:
-        assert parse_playbook_sections("") == ()
+        assert _parse_playbook_sections("") == ()
 
 
 # frob:ticket T-0568
 class TestLoadPlaybookSections:
     # frob:ticket T-0568
     def test_missing_file_returns_empty(self, tmp_path: Path) -> None:
-        assert load_playbook_sections(tmp_path) == ()
+        assert _load_playbook_sections(tmp_path) == ()
 
     # frob:ticket T-0568
     def test_reads_real_file(self, tmp_path: Path) -> None:
         playbook = tmp_path / "docs" / "guides"
         playbook.mkdir(parents=True)
         (playbook / "agent-playbook.md").write_text(_PLAYBOOK_SAMPLE, encoding="utf-8")
-        sections = load_playbook_sections(tmp_path)
+        sections = _load_playbook_sections(tmp_path)
         assert [s.number for s in sections] == ["1", "1b"]
 
 
@@ -126,7 +126,7 @@ class TestInferVerifyCommands:
     def test_scope_naming_tests_dir_is_used_directly(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_brief.py::TestInferVerifyCommands.test_scope_naming_tests_dir_is_used_directly  # noqa: E501
         ticket = _ticket(scope=("tests/test_foo.py",))
-        commands = infer_verify_commands(tmp_path, ticket)
+        commands = _infer_verify_commands(tmp_path, ticket)
         assert any("uv run frob check --ticket" in c for c in commands)
         assert any("pytest tests/test_foo.py" in c for c in commands)
 
@@ -136,13 +136,13 @@ class TestInferVerifyCommands:
         tests_dir.mkdir()
         (tests_dir / "test_widget.py").write_text("", encoding="utf-8")
         ticket = _ticket(scope=("src/frob/widget.py",))
-        commands = infer_verify_commands(tmp_path, ticket)
+        commands = _infer_verify_commands(tmp_path, ticket)
         assert any("tests/test_widget.py" in c for c in commands)
 
     # frob:ticket T-0568
     def test_no_scope_yields_only_check_command(self, tmp_path: Path) -> None:
         ticket = _ticket(scope=())
-        commands = infer_verify_commands(tmp_path, ticket)
+        commands = _infer_verify_commands(tmp_path, ticket)
         assert len(commands) == 1
         assert "frob check --ticket" in commands[0]
 
@@ -151,28 +151,28 @@ class TestInferVerifyCommands:
 class TestGateBaselineSummary:
     # frob:ticket T-0568
     def test_missing_baseline(self, tmp_path: Path) -> None:
-        assert "no baseline stamped" in gate_baseline_summary(tmp_path)
+        assert "no baseline stamped" in _gate_baseline_summary(tmp_path)
 
     # frob:ticket T-0568
     def test_present_baseline(self, tmp_path: Path) -> None:
         frob_dir = tmp_path / ".frob"
         frob_dir.mkdir()
         (frob_dir / "baseline").write_text("{}", encoding="utf-8")
-        assert "--delta" in gate_baseline_summary(tmp_path)
+        assert "--delta" in _gate_baseline_summary(tmp_path)
 
 
 # frob:ticket T-0568
 class TestCurrentVersion:
     # frob:ticket T-0568
     def test_missing_pyproject_is_none(self, tmp_path: Path) -> None:
-        assert current_version(tmp_path) is None
+        assert _current_version(tmp_path) is None
 
     # frob:ticket T-0568
     def test_reads_project_version(self, tmp_path: Path) -> None:
         (tmp_path / "pyproject.toml").write_text(
             '[project]\nname = "x"\nversion = "1.2.3"\n', encoding="utf-8"
         )
-        assert current_version(tmp_path) == "1.2.3"
+        assert _current_version(tmp_path) == "1.2.3"
 
 
 # frob:ticket T-0568

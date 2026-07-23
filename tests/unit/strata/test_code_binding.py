@@ -22,7 +22,7 @@ from frob.strata import (
     bind_code,
     check_import_conformance,
 )
-from frob.strata._code_binding import observed_call_names
+from frob.strata._code_binding import _observed_call_names
 
 
 def _write(root: Path, rel: str, source: str) -> None:
@@ -335,7 +335,7 @@ class TestObservedCallNames:
     _predicate_is_code_bound` needs -- every distinct call-target name
     observed in one node's own `code=`-bound files."""
 
-    # frob:tests src/frob/strata/_code_binding.py::observed_call_names kind="unit"
+    # frob:tests src/frob/strata/_code_binding.py::_observed_call_names kind="unit"
     # frob:ticket T-0595
     def test_bare_call_name_is_observed(self, tmp_path: Path):
         _write(tmp_path, "api/handler.py", "def f(x):\n    return sanitize(x)\n")
@@ -343,9 +343,9 @@ class TestObservedCallNames:
             nodes=(Node(id="Api", trust="trusted", attrs=("code=api/**",)),)
         )
         binding = bind_code(model, tmp_path).danger_ok
-        assert "sanitize" in observed_call_names(binding, tmp_path, "Api")
+        assert "sanitize" in _observed_call_names(binding, tmp_path, "Api")
 
-    # frob:tests src/frob/strata/_code_binding.py::observed_call_names kind="unit"
+    # frob:tests src/frob/strata/_code_binding.py::_observed_call_names kind="unit"
     # frob:ticket T-0595
     def test_attribute_call_name_is_observed(self, tmp_path: Path):
         _write(
@@ -357,9 +357,9 @@ class TestObservedCallNames:
             nodes=(Node(id="Api", trust="trusted", attrs=("code=api/**",)),)
         )
         binding = bind_code(model, tmp_path).danger_ok
-        assert "sanitize" in observed_call_names(binding, tmp_path, "Api")
+        assert "sanitize" in _observed_call_names(binding, tmp_path, "Api")
 
-    # frob:tests src/frob/strata/_code_binding.py::observed_call_names kind="unit"
+    # frob:tests src/frob/strata/_code_binding.py::_observed_call_names kind="unit"
     # frob:ticket T-0595
     def test_mention_with_no_call_is_not_observed(self, tmp_path: Path):
         _write(
@@ -371,9 +371,9 @@ class TestObservedCallNames:
             nodes=(Node(id="Api", trust="trusted", attrs=("code=api/**",)),)
         )
         binding = bind_code(model, tmp_path).danger_ok
-        assert "sanitize" not in observed_call_names(binding, tmp_path, "Api")
+        assert "sanitize" not in _observed_call_names(binding, tmp_path, "Api")
 
-    # frob:tests src/frob/strata/_code_binding.py::observed_call_names kind="unit"
+    # frob:tests src/frob/strata/_code_binding.py::_observed_call_names kind="unit"
     # frob:ticket T-0595
     def test_call_in_a_different_nodes_files_is_not_observed(self, tmp_path: Path):
         _write(tmp_path, "other/attacker.py", "def f(x):\n    return sanitize(x)\n")
@@ -385,9 +385,9 @@ class TestObservedCallNames:
             )
         )
         binding = bind_code(model, tmp_path).danger_ok
-        assert "sanitize" not in observed_call_names(binding, tmp_path, "Api")
+        assert "sanitize" not in _observed_call_names(binding, tmp_path, "Api")
 
-    # frob:tests src/frob/strata/_code_binding.py::observed_call_names kind="unit"
+    # frob:tests src/frob/strata/_code_binding.py::_observed_call_names kind="unit"
     # frob:ticket T-0595
     def test_unparseable_file_contributes_no_call_names(self, tmp_path: Path):
         _write(tmp_path, "api/handler.py", "def f(x)\n    this is not valid python\n")
@@ -395,4 +395,4 @@ class TestObservedCallNames:
             nodes=(Node(id="Api", trust="trusted", attrs=("code=api/**",)),)
         )
         binding = bind_code(model, tmp_path).danger_ok
-        assert observed_call_names(binding, tmp_path, "Api") == frozenset()
+        assert _observed_call_names(binding, tmp_path, "Api") == frozenset()

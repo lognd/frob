@@ -18,7 +18,7 @@ import pytest
 from frob.app.config import AppConfig
 from frob.app.ticket_runner import run as ticket_run
 from frob.tickets import TicketState, load_active
-from frob.tickets._leases import LeaseRecord, leases_dir
+from frob.tickets._leases import _LeaseRecord, leases_dir
 
 
 def _repo(tmp_path: Path) -> Path:
@@ -37,6 +37,7 @@ def _repo(tmp_path: Path) -> Path:
     return root
 
 
+# frob:ticket T-0601
 def _write_live_lease(root: Path, ticket_id: str, worktree: Path) -> None:
     """Record a lease whose worktree exists on disk, so
     `read_all_leases` treats it as live rather than stale."""
@@ -44,7 +45,7 @@ def _write_live_lease(root: Path, ticket_id: str, worktree: Path) -> None:
     assert resolved.is_ok
     leases_root = resolved.danger_ok
     leases_root.mkdir(parents=True, exist_ok=True)
-    record = LeaseRecord(
+    record = _LeaseRecord(
         ticket_id=ticket_id,
         scope=(),
         worktree=str(worktree),

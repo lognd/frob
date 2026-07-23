@@ -102,10 +102,15 @@ from pathlib import Path, PurePosixPath
 
 from frob.arch._protocol_excuse import python_with_discharge
 from frob.gates._models import Severity, Violation
-from frob.graph import Edge, EdgeKind, GraphSnapshot
+from frob.graph import (
+    Edge,
+    EdgeKind,
+    GraphSnapshot,
+    SummaryResult,
+    compute_protocol_summaries,
+)
 from frob.graph.callgraph import build_call_graph
 from frob.graph.dsl import parse_directives
-from frob.graph.summary import SummaryResult, compute_protocol_summaries
 from frob.logging import get_logger
 
 _log = get_logger(__name__)

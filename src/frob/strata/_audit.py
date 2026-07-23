@@ -90,9 +90,9 @@ from ._threat import (
     OutOfScopeEntry,
     ThreatViolation,
     WeaknessEntry,
+    _check_caught_by_integrity,
     check_capability_completeness,
     check_catalog_completeness,
-    check_caught_by_integrity,
     check_discharge_completeness,
 )
 from ._waive import (
@@ -564,6 +564,7 @@ def _threat_and_quality_gaps(
     return Ok((gaps, checked))
 
 
+# frob:ticket T-0601
 def _caught_by_gaps(
     known_rule_ids: frozenset[str],
     benign: tuple[BenignCapability, ...],
@@ -574,7 +575,7 @@ def _caught_by_gaps(
     (`DEFAULT_BENIGN_CAPABILITIES` plus whatever the repo/caller adds) --
     model-independent (a catalog-level fact, like THREAT001), so this runs
     once per audit rather than once per view."""
-    result = check_caught_by_integrity(
+    result = _check_caught_by_integrity(
         out_of_scope=CWE_TOP_25_OUT_OF_SCOPE + QUALITY_OUT_OF_SCOPE,
         benign=benign,
         known_rule_ids=known_rule_ids,
@@ -712,6 +713,7 @@ def _blast_radius_gaps_per_user(
 # frob:tests tests/unit/strata/test_audit.py::TestHostWiring.test_no_runs_as_no_gaps
 # frob:waive TEST005 reason="Err branches need a deep StrataError; debt T-0160"
 # frob:waive PERF004 reason="sorted() builds iterable once, not a re-sort (T-0283)"
+# frob:ticket T-0601
 def evaluate_exhaustiveness(
     model: KernelModel,
     *,
@@ -734,7 +736,7 @@ def evaluate_exhaustiveness(
     verification checks rule-id-shaped references against
     (`frob.gates.known_gate_rule_ids()`) -- defaults to empty (no rule-id
     reference can resolve) since this package cannot import `frob.gates`
-    itself (`_threat.py::check_caught_by_integrity`'s docstring). Fails
+    itself (`_threat.py::_check_caught_by_integrity`'s docstring). Fails
     closed: an unknown view name in any family propagates as
     `Err(StrataError.UnknownReference)` rather than being silently
     skipped, matching every other exhaustiveness check in this package.

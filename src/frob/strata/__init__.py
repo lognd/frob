@@ -110,8 +110,10 @@ from frob.strata._cve_fingerprint import (
     CVE_FINGERPRINT_VIEWS,
     CVE_FINGERPRINTS,
     CveFingerprint,
+    FingerprintHit,
     FingerprintViolation,
     check_fingerprint_catalog_drift,
+    scan_text_for_fingerprints,
 )
 from frob.strata._deploy import DeployContractReport, evaluate_deploy_contracts
 from frob.strata._design_load import (
@@ -141,7 +143,13 @@ from frob.strata._export import (
     node_allowed_syscalls,
 )
 from frob.strata._facts import FactBase, build_facts
-from frob.strata._host import HostManifest, HostOwns, HostPlatform, host_manifest_for
+from frob.strata._host import (
+    HostAcl,
+    HostManifest,
+    HostOwns,
+    HostPlatform,
+    host_manifest_for,
+)
 from frob.strata._host_isolation import (
     COMPROMISED_OWNER_CATALOG,
     COMPROMISED_OWNER_OUT_OF_SCOPE,
@@ -371,6 +379,7 @@ __all__ = [
     "CompiledPolicy",
     "ConfineUse",
     "CveFingerprint",
+    "FingerprintHit",
     "ConformanceReport",
     "CrashContract",
     "CrashContractReport",
@@ -384,6 +393,7 @@ __all__ = [
     "FactBase",
     "FamilyGap",
     "FaultInjectionCase",
+    "HostAcl",
     "HostIsolationViolation",
     "HostManifest",
     "HostOwns",
@@ -485,6 +495,7 @@ __all__ = [
     "audit_claim",
     "bind_code",
     "build_facts",
+    "scan_text_for_fingerprints",
     "check_capability_completeness",
     "check_capability_conformance",
     "check_catalog_completeness",

@@ -1376,6 +1376,7 @@ class TestDuplicateSymrefs:
         assert "src/m.py::C.v" in snap.symbols
 
 
+# frob:ticket T-0600
 class TestCacheModule:
     """Direct exercise of frob.graph.cache's row-level read/write primitives
     (build_graph/load_graph exercise them transitively, but each function
@@ -1398,7 +1399,7 @@ class TestCacheModule:
     def test_store_and_load_file_data_roundtrip(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/cache.py::store_file_data
         # frob:tests src/frob/graph/cache.py::load_file_data
-        # frob:tests src/frob/graph/cache.py::get_file_hash
+        # frob:tests src/frob/graph/cache.py::_get_file_hash
         # frob:tests src/frob/graph/cache.py::load_all
         from frob.graph import cache as _cache
         from frob.graph._models import Digests, Edge, EdgeKind, SymbolId, SymbolRecord
@@ -1420,7 +1421,7 @@ class TestCacheModule:
                 target="T-0001",
                 origin="src/a.py:1",
             )
-            assert _cache.get_file_hash(conn, "src/a.py") is None
+            assert _cache._get_file_hash(conn, "src/a.py") is None
             _cache.store_file_data(
                 conn,
                 file_path="src/a.py",
@@ -1431,7 +1432,7 @@ class TestCacheModule:
             )
             conn.commit()
 
-            assert _cache.get_file_hash(conn, "src/a.py") == "deadbeef"
+            assert _cache._get_file_hash(conn, "src/a.py") == "deadbeef"
 
             symbols, edges, malformed = _cache.load_file_data(conn, "src/a.py")
             assert symbols == (record,)
@@ -1474,7 +1475,7 @@ class TestCacheModule:
             conn.commit()
             assert _cache.get_file_meta(conn, "src/a.py") == ("deadbeef", 200, 42)
             # content hash is untouched by a stat-only refresh
-            assert _cache.get_file_hash(conn, "src/a.py") == "deadbeef"
+            assert _cache._get_file_hash(conn, "src/a.py") == "deadbeef"
         finally:
             conn.close()
 
@@ -1584,7 +1585,7 @@ class TestCacheModule:
 
         reopened = _cache.connect(cache_path)
         try:
-            assert _cache.get_file_hash(reopened, "src/a.py") is None
+            assert _cache._get_file_hash(reopened, "src/a.py") is None
             symbols, edges, malformed = _cache.load_file_data(reopened, "src/a.py")
             assert symbols == ()
             assert edges == ()

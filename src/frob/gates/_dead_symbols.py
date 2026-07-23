@@ -58,8 +58,7 @@ from __future__ import annotations
 from pathlib import Path, PurePosixPath
 
 from frob.gates._models import Severity, Violation
-from frob.graph import EdgeKind, GraphSnapshot
-from frob.graph.callgraph import build_reference_graph
+from frob.graph import EdgeKind, GraphSnapshot, build_reference_graph
 from frob.lang import SymbolKind, supported_extensions
 from frob.logging import get_logger
 

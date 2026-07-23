@@ -88,9 +88,10 @@ class ConfirmatoryFinding(BaseModel):
     survivors: tuple[Mutant, ...] = ()
 
 
-# frob:doc docs/modules/tickets.md#mutation-evidence-obligation-test016-t-0755
+# frob:waive COV005 reason="T-0601 rework: demoted evidence_test_ids -> _evidence_test_ids (frob-exports external-consumer test: only called intra-package by this module's own check_ticket_mutation_evidence, never imported outside frob.tickets); the frob:tests directive deliberately follows the same function to its new private name"  # noqa: E501
 # frob:tests tests/test_tickets_mutation_evidence.py::TestEvidenceTestIds.test_filters_non_node_id_entries  # noqa: E501
-def evidence_test_ids(ticket: Ticket) -> tuple[str, ...]:
+# frob:ticket T-0601
+def _evidence_test_ids(ticket: Ticket) -> tuple[str, ...]:
     """The subset of `ticket.evidence` that look like pytest node ids
     (`path::name`), excluding `cmd:` entries and any other non-pytest
     evidence shape -- the only entries `frob.mutate`'s `test_argv` can
@@ -98,9 +99,12 @@ def evidence_test_ids(ticket: Ticket) -> tuple[str, ...]:
     return tuple(e for e in ticket.evidence if "::" in e and not e.startswith("cmd:"))
 
 
-# frob:doc docs/modules/tickets.md#mutation-evidence-obligation-test016-t-0755
+# frob:waive COV005 reason="T-0601 rework: demoted touched_python_files -> _touched_python_files (frob-exports external-consumer test: only called intra-package by this module's own check_ticket_mutation_evidence, never imported outside frob.tickets); the frob:tests directive deliberately follows the same function to its new private name"  # noqa: E501
 # frob:tests tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles.test_filters_to_scope_and_python  # noqa: E501
-def touched_python_files(root: Path, ticket: Ticket, base_ref: str) -> tuple[Path, ...]:
+# frob:ticket T-0601
+def _touched_python_files(
+    root: Path, ticket: Ticket, base_ref: str
+) -> tuple[Path, ...]:
     """Python files under `ticket.scope` that differ from `base_ref` in the
     working tree (`frob.gitio.working_diff`, the ONE diff seam this repo
     already uses everywhere else -- no second diff implementation).
@@ -127,10 +131,11 @@ def touched_python_files(root: Path, ticket: Ticket, base_ref: str) -> tuple[Pat
     )
 
 
-# frob:doc docs/modules/tickets.md#mutation-evidence-obligation-test016-t-0755
+# frob:waive COV005 reason="T-0601 rework: demoted changed_line_ranges -> _changed_line_ranges (frob-exports external-consumer test: only called intra-package by this module's own check_ticket_mutation_evidence, never imported outside frob.tickets); the frob:tests directives deliberately follow the same function to its new private name"  # noqa: E501
 # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_confirmatory_test_flagged  # noqa: E501
 # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_large_file_unmutable_changed_lines_is_skipped_not_flagged  # noqa: E501
-def changed_line_ranges(
+# frob:ticket T-0601
+def _changed_line_ranges(
     root: Path, base_ref: str
 ) -> dict[str, tuple[tuple[int, int], ...]]:
     """Every diff-touched file's changed line spans (`frob.gitio.Hunk.span`,
@@ -141,7 +146,7 @@ def changed_line_ranges(
     pre-existing line supply every mutant for a 2-line diff, a false
     positive reproduced on this ticket's own diff against `gates/
     __init__.py`). Empty dict on a `working_diff` failure, matching
-    `touched_python_files`'s own best-effort posture."""
+    `_touched_python_files`'s own best-effort posture."""
     diff = working_diff(root, base_ref)
     if diff.is_err:
         return {}
@@ -168,6 +173,7 @@ def _is_test_file(path: str) -> bool:
 # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_confirmatory_test_flagged  # noqa: E501
 # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_adversarial_test_not_flagged  # noqa: E501
 # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_no_test_evidence_is_ok_empty  # noqa: E501
+# frob:ticket T-0601
 def check_ticket_mutation_evidence(
     root: Path,
     ticket: Ticket,
@@ -202,21 +208,21 @@ def check_ticket_mutation_evidence(
     refusal-is-not-a-verdict posture: reporting "no findings" under a
     disabled exec capability would be a false-clean rubber stamp, not an
     honest empty result."""
-    test_ids = evidence_test_ids(ticket)
+    test_ids = _evidence_test_ids(ticket)
     if not test_ids:
         _log.debug(
             "mutation-evidence: %s has no pytest-node-id evidence, nothing to check",
             ticket.id,
         )
         return Ok(())
-    files = touched_python_files(root, ticket, base_ref)
+    files = _touched_python_files(root, ticket, base_ref)
     if not files:
         _log.debug(
             "mutation-evidence: %s has no in-scope touched .py files, nothing to check",
             ticket.id,
         )
         return Ok(())
-    ranges_by_file = changed_line_ranges(root, base_ref)
+    ranges_by_file = _changed_line_ranges(root, base_ref)
     argv = ("uv", "run", "pytest", *test_ids, "-q")
     findings: list[ConfirmatoryFinding] = []
     for file in files[:max_files]:
@@ -289,8 +295,5 @@ def check_ticket_mutation_evidence(
 __all__ = [
     "ConfirmatoryFinding",
     "MutationEvidenceError",
-    "changed_line_ranges",
     "check_ticket_mutation_evidence",
-    "evidence_test_ids",
-    "touched_python_files",
 ]

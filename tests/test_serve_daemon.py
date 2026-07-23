@@ -142,7 +142,7 @@ class TestPollRebaseBot:
         # frob:tests tests/test_serve_daemon.py::TestPollRebaseBot.test_ttl_expired_lease_skipped_and_logged_once
         import logging
 
-        from frob.tickets._leases import LeaseRecord, leases_dir
+        from frob.tickets._leases import _LeaseRecord, leases_dir
 
         wt = repo.parent / "wt-dead-agent"
         _run(["git", "worktree", "add", "-b", "feature-dead", str(wt)], repo)
@@ -157,7 +157,7 @@ class TestPollRebaseBot:
         assert resolved.is_ok
         leases_root = resolved.danger_ok
         leases_root.mkdir(parents=True, exist_ok=True)
-        stale = LeaseRecord(
+        stale = _LeaseRecord(
             ticket_id="T-0902",
             scope=("src/pkg/a.py",),
             worktree=str(wt.resolve()),
@@ -199,14 +199,14 @@ class TestPollRebaseBotLeaseInjectionGuard:
         # frob:tests tests/test_serve_daemon.py::TestPollRebaseBotLeaseInjectionGuard.test_evil_lease_branch_never_reaches_git_argv
         import logging
 
-        from frob.tickets._leases import LeaseRecord, leases_dir
+        from frob.tickets._leases import _LeaseRecord, leases_dir
 
         wt = repo.parent / "wt-evil"
         resolved = leases_dir(repo)
         assert resolved.is_ok
         leases_root = resolved.danger_ok
         leases_root.mkdir(parents=True, exist_ok=True)
-        evil = LeaseRecord(
+        evil = _LeaseRecord(
             ticket_id="T-0666",
             scope=("src/pkg/a.py",),
             worktree=str(wt),

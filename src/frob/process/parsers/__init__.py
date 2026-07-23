@@ -7,6 +7,7 @@ from frob.process.parsers.common import (
     TestCase,
     ToolResult,
     summarize_severity,
+    tool_disabled_result,
     tool_unavailable_result,
 )
 from frob.process.parsers.eslint import parse_eslint
@@ -35,5 +36,6 @@ __all__ = [
     "TestCase",
     "ToolResult",
     "summarize_severity",
+    "tool_disabled_result",
     "tool_unavailable_result",
 ]

@@ -2220,6 +2220,7 @@ class TestProtocolLanguageExcuseDischarge:
 
 
 # frob:ticket T-0731
+# frob:ticket T-0601
 class TestDebtGate:
     """T-0412: frob:debt vs frob:waive -- malformed directive (DEBT001),
     non-open ticket (DEBT002), expired until boundary (DEBT003)."""
@@ -2534,6 +2535,7 @@ class TestDebtGate:
         )
 
     # frob:ticket T-0807
+    # frob:ticket T-0601
     def test_rel001_land_owned_via_ticket_lease(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -2543,7 +2545,7 @@ class TestDebtGate:
         # frob:tests tests/test_gates.py::TestDebtGate.test_rel001_land_owned_via_ticket_lease  # noqa: E501
         from frob.gates import release_gate
         from frob.release import stamp
-        from frob.tickets._leases import LeaseRecord, leases_dir
+        from frob.tickets._leases import _LeaseRecord, leases_dir
 
         monkeypatch.delenv("FROB_AGENT", raising=False)
         _run(["git", "init", "-q", "-b", "main"], tmp_path)
@@ -2560,7 +2562,7 @@ class TestDebtGate:
         assert leases_root_result.is_ok
         leases_root = leases_root_result.danger_ok
         leases_root.mkdir(parents=True, exist_ok=True)
-        record = LeaseRecord(
+        record = _LeaseRecord(
             ticket_id="T-0900",
             scope=("src/a.py",),
             worktree=str(tmp_path.resolve()),

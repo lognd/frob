@@ -26,7 +26,15 @@ from frob.excludes import is_test_file
 from frob.logging import get_logger
 from frob.process._guard import guarded_subprocess_run
 from frob.tickets._land import land, splice_ledger
-from frob.tickets._leases import read_all_leases
+from frob.tickets._leases import (
+    LeaseError,
+    is_lease_ttl_expired,
+    lease_age_seconds,
+    leases_dir,
+    read_all_leases,
+    resolve_lease,
+    sweep_worktrees,
+)
 from frob.tickets._models import (
     BOARD_STATES,
     CMD_EVIDENCE_ALLOWED_KINDS,
@@ -72,6 +80,11 @@ from frob.tickets._models import (
     unbound_acceptance,
 )
 from frob.tickets._models import _split_scope_entries as _normalize_scope_entries
+from frob.tickets._mutation_evidence import (
+    ConfirmatoryFinding,
+    MutationEvidenceError,
+    check_ticket_mutation_evidence,
+)
 from frob.tickets._provisional import is_draft_id, mint_draft_id, on_default_branch
 from frob.tickets._reconcile import ReconcileReport, reconcile
 from frob.tickets._store import (
@@ -89,7 +102,7 @@ from frob.tickets._store import (
     write_archive,
     write_ticket,
 )
-from frob.tickets._worktree_guard import enforce_worktree_lease
+from frob.tickets._worktree_guard import agent_env_exports, enforce_worktree_lease
 from frob.tickets.clipboard import ClipboardError, clipboard_has_image, clipboard_image
 
 _log = get_logger(__name__)
@@ -3481,4 +3494,15 @@ __all__ = [
     "unbound_acceptance",
     "undispatched_stale",
     "validate_evidence",
+    "LeaseError",
+    "is_lease_ttl_expired",
+    "lease_age_seconds",
+    "leases_dir",
+    "read_all_leases",
+    "resolve_lease",
+    "sweep_worktrees",
+    "ConfirmatoryFinding",
+    "MutationEvidenceError",
+    "check_ticket_mutation_evidence",
+    "agent_env_exports",
 ]

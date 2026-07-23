@@ -32,7 +32,7 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
-from frob.graph.dsl import fold_comment_runs
+from frob.graph import fold_comment_runs
 from frob.logging import get_logger
 
 _log = get_logger(__name__)

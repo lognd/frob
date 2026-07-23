@@ -100,7 +100,7 @@ LEASE_TTL_SECONDS = 6 * 60 * 60
 # operation and must not interleave with another thread's).
 _cache_lock = threading.Lock()
 _lease_file_cache: dict[
-    Path, dict[Path, tuple[tuple[int, int], LeaseRecord | None]]
+    Path, dict[Path, tuple[tuple[int, int], _LeaseRecord | None]]
 ] = {}
 _stale_lease_logged: set[tuple[Path, str]] = set()
 # frob:ticket T-0780
@@ -159,7 +159,8 @@ def _looks_like_a_safe_git_argv_operand(value: str) -> bool:
 
 
 # frob:ticket T-0780
-def _lease_shape_is_safe(record: LeaseRecord) -> bool:
+# frob:ticket T-0601
+def _lease_shape_is_safe(record: _LeaseRecord) -> bool:
     """`True` iff `record`'s `branch` and `worktree` fields are both safe
     argv operands (T-0780) -- the admission check `read_all_leases` and
     `_read_one_lease` run on every parsed record BEFORE returning it, so
@@ -172,7 +173,8 @@ def _lease_shape_is_safe(record: LeaseRecord) -> bool:
 
 
 # frob:ticket T-0780
-def _log_rejected_lease_once(path: Path, record: LeaseRecord) -> None:
+# frob:ticket T-0601
+def _log_rejected_lease_once(path: Path, record: _LeaseRecord) -> None:
     """Warn, once per process per lease file path (T-0780, same pattern as
     `_stale_lease_logged`/T-0773), that a lease record failed
     `_lease_shape_is_safe` and was dropped rather than admitted -- a
@@ -220,8 +222,8 @@ class LeaseError(ErrorSet):
     LeaseWorktreeMismatch = "the ticket's recorded lease belongs to another worktree"
 
 
-# frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
-class LeaseRecord(BaseModel):
+# frob:ticket T-0601
+class _LeaseRecord(BaseModel):
     """One held cross-worktree scope-lease (T-0473): the ticket id, its
     declared scope at the moment the lease was (re)recorded, and which
     worktree/branch holds it -- read back by `leased_by` in every OTHER
@@ -241,8 +243,9 @@ class LeaseRecord(BaseModel):
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
 # frob:tests tests/test_tickets_leases.py::TestLeaseTtl.test_age_seconds_computes_elapsed_time kind="unit"  # noqa: E501
 # frob:tests tests/test_tickets_leases.py::TestLeaseTtl.test_age_seconds_none_for_unparseable_timestamp kind="unit"  # noqa: E501
+# frob:ticket T-0601
 def lease_age_seconds(
-    record: LeaseRecord, *, now: datetime | None = None
+    record: _LeaseRecord, *, now: datetime | None = None
 ) -> float | None:
     """Seconds elapsed since `record.recorded_at`, or `None` if that field
     cannot be parsed as an ISO-8601 timestamp (defensive -- a lease file is
@@ -264,8 +267,9 @@ def lease_age_seconds(
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
 # frob:tests tests/test_tickets_leases.py::TestLeaseTtl.test_expired_past_ttl kind="unit"  # noqa: E501
 # frob:tests tests/test_tickets_leases.py::TestLeaseTtl.test_not_expired_within_ttl kind="unit"  # noqa: E501
+# frob:ticket T-0601
 def is_lease_ttl_expired(
-    record: LeaseRecord,
+    record: _LeaseRecord,
     *,
     now: datetime | None = None,
     ttl_seconds: float = LEASE_TTL_SECONDS,
@@ -286,9 +290,10 @@ def is_lease_ttl_expired(
     return age > ttl_seconds
 
 
-# frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
+# frob:waive COV005 reason="T-0601 rework: demoted git_common_dir -> _git_common_dir (frob-exports external-consumer test: only used intra-package by this module's own leases_dir, never imported outside frob.tickets); the frob:tests directive deliberately follows the same function to its new private name"  # noqa: E501
 # frob:tests tests/test_ticket_leases_cross_worktree.py::TestGitCommonDir.test_shared_across_linked_worktrees kind="unit"  # noqa: E501
-def git_common_dir(root: Path) -> Result[Path, LeaseError]:
+# frob:ticket T-0601
+def _git_common_dir(root: Path) -> Result[Path, LeaseError]:
     """The shared `.git` directory for `root`'s repository, resolved to an
     absolute path -- identical across every linked worktree of the same
     repo, unlike `root / ".git"` itself (a linked worktree's `.git` is a
@@ -311,12 +316,13 @@ def git_common_dir(root: Path) -> Result[Path, LeaseError]:
 
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
 # frob:tests tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.test_lease_written_in_one_worktree_seen_in_another kind="unit"  # noqa: E501
+# frob:ticket T-0601
 def leases_dir(root: Path) -> Result[Path, LeaseError]:
     """`<git-common-dir>/frob-leases`, the directory every worktree of
     `root`'s repository shares (T-0473) -- created on first write, not
     here, so a read-only caller (`read_all_leases`) never has the side
     effect of creating it."""
-    common = git_common_dir(root)
+    common = _git_common_dir(root)
     if common.is_err:
         return Err(common.danger_err)
     return Ok(common.danger_ok / LEASES_DIRNAME)
@@ -366,6 +372,7 @@ def _probe_worktree_liveness(worktree: str) -> str:
 
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
 # frob:tests tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.test_lease_written_in_one_worktree_seen_in_another kind="unit"  # noqa: E501
+# frob:ticket T-0601
 def record_lease(
     root: Path, ticket_id: str, scope: tuple[str, ...]
 ) -> Result[None, LeaseError]:
@@ -404,7 +411,7 @@ def record_lease(
         _log.warning("tickets: could not create %s: %s", leases_root, exc)
         return Ok(None)
 
-    record = LeaseRecord(
+    record = _LeaseRecord(
         ticket_id=ticket_id,
         scope=scope,
         worktree=str(root.resolve()),
@@ -463,7 +470,8 @@ def release_lease(root: Path, ticket_id: str) -> Result[None, LeaseError]:
 # frob:tests tests/test_tickets_leases.py::TestAmbiguousLivenessGuard.test_ambiguous_stat_failure_does_not_unlink kind="unit"  # noqa: E501
 # frob:tests tests/test_tickets_leases.py::TestAmbiguousLivenessGuard.test_ambiguous_failure_is_logged_once_per_process kind="unit"  # noqa: E501
 # frob:tests tests/test_tickets_leases.py::TestAmbiguousLivenessGuard.test_genuine_enoent_still_unlinks kind="unit"  # noqa: E501
-def read_all_leases(root: Path) -> tuple[LeaseRecord, ...]:
+# frob:ticket T-0601
+def read_all_leases(root: Path) -> tuple[_LeaseRecord, ...]:
     """Every currently-recorded cross-worktree lease visible from `root`'s
     repository (T-0473), id-ordered. Degrades to `()` if there is no shared
     git common dir, no leases directory yet (nothing has ever started a
@@ -550,7 +558,7 @@ def read_all_leases(root: Path) -> tuple[LeaseRecord, ...]:
     # decides which files are cache HITS (reuse) vs. MISSES (need a
     # fresh parse below, outside the lock).
     to_parse: list[tuple[Path, tuple[int, int]]] = []
-    hits: dict[Path, LeaseRecord | None] = {}
+    hits: dict[Path, _LeaseRecord | None] = {}
     with _cache_lock:
         file_cache = _lease_file_cache.setdefault(leases_root, {})
         for stale_path in [p for p in file_cache if p not in current_set]:
@@ -568,11 +576,11 @@ def read_all_leases(root: Path) -> tuple[LeaseRecord, ...]:
 
     # Parse every miss OUTSIDE the lock -- file IO/JSON parsing never
     # holds `_cache_lock`, so it never stalls a concurrent caller.
-    freshly_parsed: dict[Path, tuple[tuple[int, int], LeaseRecord | None]] = {}
+    freshly_parsed: dict[Path, tuple[tuple[int, int], _LeaseRecord | None]] = {}
     for path, stat_key in to_parse:
         try:
             raw = json.loads(path.read_text(encoding="utf-8"))
-            record: LeaseRecord | None = LeaseRecord.model_validate(raw)
+            record: _LeaseRecord | None = _LeaseRecord.model_validate(raw)
         except (OSError, ValueError) as exc:
             _log.warning("tickets: could not parse lease file %s: %s", path, exc)
             record = None
@@ -591,7 +599,7 @@ def read_all_leases(root: Path) -> tuple[LeaseRecord, ...]:
     # Recombine in the original sorted (id-ordered) `current_paths` order
     # -- `hits`/`freshly_parsed` are separate dicts, so concatenating them
     # naively would reorder a file-set with a mix of hits and misses.
-    parsed: list[LeaseRecord] = []
+    parsed: list[_LeaseRecord] = []
     for path in current_paths:
         if path in hits:
             record = hits[path]
@@ -602,7 +610,7 @@ def read_all_leases(root: Path) -> tuple[LeaseRecord, ...]:
         if record is not None:
             parsed.append(record)
 
-    live: list[LeaseRecord] = []
+    live: list[_LeaseRecord] = []
     for record in parsed:
         liveness = _probe_worktree_liveness(record.worktree)
         if liveness == "present":
@@ -673,8 +681,8 @@ def read_all_leases(root: Path) -> tuple[LeaseRecord, ...]:
 
 
 # frob:ticket T-0836
-# frob:doc docs/guides/agent-playbook.md#12b-coordinator-worktree-cleanup-t-0836
-class WorktreeSweepError(ErrorSet):
+# frob:ticket T-0601
+class _WorktreeSweepError(ErrorSet):
     """Fallible outcomes of `frob worktree sweep` (T-0836)."""
 
     NotARepo = "root is not inside a git repository"
@@ -682,8 +690,8 @@ class WorktreeSweepError(ErrorSet):
 
 
 # frob:ticket T-0836
-# frob:doc docs/guides/agent-playbook.md#12b-coordinator-worktree-cleanup-t-0836
-class WorktreeVerdict(BaseModel):
+# frob:ticket T-0601
+class _WorktreeVerdict(BaseModel):
     """One decided outcome for a single dispatched-agent worktree during
     `frob worktree sweep` (T-0836): the worktree's resolved path, the
     verdict tag (`"removed"`, `"kept:lease"`, `"kept:dirty"`, or
@@ -715,9 +723,10 @@ def _is_agent_worktree_path(path: Path) -> bool:
 
 
 # frob:ticket T-0836
-# frob:doc docs/guides/agent-playbook.md#12b-coordinator-worktree-cleanup-t-0836
+# frob:waive COV005 reason="T-0601 rework: demoted list_agent_worktrees -> _list_agent_worktrees (frob-exports external-consumer test: only called intra-package by this module's own sweep_worktrees, never imported outside frob.tickets); the frob:tests directive deliberately follows the same function to its new private name"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestListAgentWorktrees.test_lists_only_dot_claude_worktrees_paths kind="unit"  # noqa: E501
-def list_agent_worktrees(root: Path) -> Result[tuple[Path, ...], WorktreeSweepError]:
+# frob:ticket T-0601
+def _list_agent_worktrees(root: Path) -> Result[tuple[Path, ...], _WorktreeSweepError]:
     """Every git-registered worktree of `root`'s repository whose path
     matches the `.claude/worktrees/` dispatch convention (T-0836), parsed
     from `git worktree list --porcelain`'s stable machine-readable format
@@ -734,7 +743,7 @@ def list_agent_worktrees(root: Path) -> Result[tuple[Path, ...], WorktreeSweepEr
             "tickets: worktree sweep: git worktree list --porcelain failed under %s",
             root,
         )
-        return Err(WorktreeSweepError.ListFailed)
+        return Err(_WorktreeSweepError.ListFailed)
     paths: list[Path] = []
     for block in spawned.danger_ok.stdout.split("\n\n"):
         for line in block.splitlines():
@@ -787,13 +796,14 @@ def _worktree_head_age_seconds(
 # frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_dry_run_removes_nothing kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_branches_survive_removal kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestSweepWorktrees.test_min_age_keeps_recent_worktree kind="unit"  # noqa: E501
+# frob:ticket T-0601
 def sweep_worktrees(
     root: Path,
     *,
     min_age_hours: float | None = None,
     dry_run: bool = False,
     now: datetime | None = None,
-) -> Result[tuple[WorktreeVerdict, ...], WorktreeSweepError]:
+) -> Result[tuple[_WorktreeVerdict, ...], _WorktreeSweepError]:
     """Decide, and (unless `dry_run`) act on, a removal verdict for every
     dispatched-agent worktree under `root`'s repository (T-0836) -- the
     lease-aware fix for the incident where a raw `git worktree remove`
@@ -824,20 +834,20 @@ def sweep_worktrees(
     incident was caused by a sweep that bypassed the lease machinery
     entirely, not by a bug within it.
 
-    `Err(ListFailed)` if `list_agent_worktrees` itself fails; never
+    `Err(ListFailed)` if `_list_agent_worktrees` itself fails; never
     raises."""
-    candidates = list_agent_worktrees(root)
+    candidates = _list_agent_worktrees(root)
     if candidates.is_err:
         return Err(candidates.danger_err)
     leases = read_all_leases(root)
-    verdicts: list[WorktreeVerdict] = []
+    verdicts: list[_WorktreeVerdict] = []
     for candidate in candidates.danger_ok:
         clean = _worktree_is_clean(candidate)
         if clean is not True:
-            verdicts.append(WorktreeVerdict(path=str(candidate), verdict="kept:dirty"))
+            verdicts.append(_WorktreeVerdict(path=str(candidate), verdict="kept:dirty"))
             continue
 
-        live_lease: LeaseRecord | None = None
+        live_lease: _LeaseRecord | None = None
         for record in leases:
             try:
                 record_path = Path(record.worktree).resolve()
@@ -852,7 +862,7 @@ def sweep_worktrees(
             age = lease_age_seconds(live_lease, now=now)
             age_str = f"{int(age)}s" if age is not None else "unknown-age"
             verdicts.append(
-                WorktreeVerdict(
+                _WorktreeVerdict(
                     path=str(candidate),
                     verdict="kept:lease",
                     detail=f"{live_lease.ticket_id} {age_str}",
@@ -864,13 +874,13 @@ def sweep_worktrees(
             head_age = _worktree_head_age_seconds(candidate, now=now)
             if head_age is None or head_age < min_age_hours * 3600:
                 verdicts.append(
-                    WorktreeVerdict(path=str(candidate), verdict="kept:age")
+                    _WorktreeVerdict(path=str(candidate), verdict="kept:age")
                 )
                 continue
 
         if dry_run:
             verdicts.append(
-                WorktreeVerdict(
+                _WorktreeVerdict(
                     path=str(candidate), verdict="removed", detail="dry-run"
                 )
             )
@@ -885,17 +895,18 @@ def sweep_worktrees(
                 candidate,
             )
             verdicts.append(
-                WorktreeVerdict(
+                _WorktreeVerdict(
                     path=str(candidate), verdict="kept:dirty", detail="remove-failed"
                 )
             )
             continue
         _log.info("tickets: worktree sweep removed %s", candidate)
-        verdicts.append(WorktreeVerdict(path=str(candidate), verdict="removed"))
+        verdicts.append(_WorktreeVerdict(path=str(candidate), verdict="removed"))
     return Ok(tuple(verdicts))
 
 
-def _read_one_lease(leases_root: Path, ticket_id: str) -> LeaseRecord | None:
+# frob:ticket T-0601
+def _read_one_lease(leases_root: Path, ticket_id: str) -> _LeaseRecord | None:
     """Read exactly `ticket_id`'s own lease file, by its known path
     (`_lease_path`) -- never by globbing/iterating the leases directory the
     way `read_all_leases` does. `None` if the file is missing or
@@ -905,7 +916,7 @@ def _read_one_lease(leases_root: Path, ticket_id: str) -> LeaseRecord | None:
         return None
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
-        record = LeaseRecord.model_validate(raw)
+        record = _LeaseRecord.model_validate(raw)
     except (OSError, ValueError) as exc:
         _log.warning("tickets: could not parse lease file %s: %s", path, exc)
         return None
@@ -921,9 +932,10 @@ def _read_one_lease(leases_root: Path, ticket_id: str) -> LeaseRecord | None:
 # frob:tests tests/test_tickets_leases.py::TestResolveLease.test_never_returns_a_sibling_tickets_lease kind="unit"  # noqa: E501
 # frob:tests tests/test_tickets_leases.py::TestResolveLease.test_no_lease_for_ticket_fails_loudly kind="unit"  # noqa: E501
 # frob:tests tests/test_tickets_leases.py::TestResolveLease.test_lease_recorded_for_a_different_worktree_fails_loudly kind="unit"  # noqa: E501
+# frob:ticket T-0601
 def resolve_lease(
     root: Path, ticket_id: str, invoking_worktree: Path
-) -> Result[LeaseRecord, LeaseError]:
+) -> Result[_LeaseRecord, LeaseError]:
     """`ticket_id`'s OWN cross-worktree lease, pinned to `invoking_worktree`
     (T-0766) -- the fix for the T-0695 incident where `frob check --ticket`
     resolved a completely different ticket's (and worktree's) stale lease

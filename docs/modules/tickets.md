@@ -1021,8 +1021,6 @@ worktrees closed the same ticket with disjoint evidence.
 ## Mutation-evidence obligation (TEST016, T-0755)
 
 <!-- frob:describes src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence -->
-<!-- frob:describes src/frob/tickets/_mutation_evidence.py::evidence_test_ids -->
-<!-- frob:describes src/frob/tickets/_mutation_evidence.py::touched_python_files -->
 <!-- frob:describes src/frob/gates/_mutation_evidence.py::mutation_evidence_violations -->
 <!-- frob:describes src/frob/tickets/_land.py::_check_mutation_evidence -->
 
@@ -1039,10 +1037,10 @@ ticket, base_ref)` closes this with a bounded, diff-scoped mutation pass
 that reuses `frob.mutate` (`generate_mutants`/`run_mutations`) as its ONLY
 mutation engine -- there is no second one:
 
-1. `evidence_test_ids(ticket)` -- the subset of `ticket.evidence` shaped
+1. `_evidence_test_ids(ticket)` -- the subset of `ticket.evidence` shaped
    like a pytest node id (`path::name`); `cmd:` evidence and anything else
    is excluded (nothing `frob.mutate`'s `test_argv` can re-run).
-2. `touched_python_files(root, ticket, base_ref)` -- `.py` files the
+2. `_touched_python_files(root, ticket, base_ref)` -- `.py` files the
    ticket's own `scope` covers that differ from `base_ref` in the working
    tree (`frob.gitio.working_diff`, the one diff seam every other caller
    in this repo already uses). Test files themselves (`test_*.py`,
@@ -1414,7 +1412,6 @@ AttachError = TicketError | ClipboardError
 <!-- frob:describes src/frob/tickets/_store.py::migrate_to_ledger -->
 <!-- frob:describes src/frob/tickets/_store.py::atomic_write -->
 <!-- frob:describes src/frob/tickets/_store.py::ledger_lock -->
-<!-- frob:describes src/frob/tickets/_store.py::lock_path -->
 
 `frob/tickets/_store.py` implements the single-file-ledger-vs-legacy-dir
 backend switch described under Storage above; `frob/tickets/__init__.py`
@@ -1459,12 +1456,9 @@ def migrate_to_ledger(root: Path) -> Result[int, TicketError]
 def atomic_write(path: Path, content: str | bytes) -> Result[None, TicketError]
     # Writes via temp file + os.replace in the same directory (crash-safe);
     # the one write primitive both storage backends funnel through.
-def lock_path(root: Path) -> Path
-    # T-0458: the advisory lock file path (.frob/tickets.lock) ledger_lock
-    # holds -- root / ".frob" / "tickets.lock".
 def ledger_lock(root: Path) -> Iterator[None]
     # T-0458: exclusive, blocking, cross-process lock (fcntl.flock on
-    # lock_path(root)) serializing EVERY ledger mutation -- write_ticket,
+    # _lock_path(root)) serializing EVERY ledger mutation -- write_ticket,
     # write_all, write_archive all acquire it around their own load-then-
     # write, and new_ticket wraps its id-allocation + write in one outer
     # hold so allocation and the claiming write can never be observed by a

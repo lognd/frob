@@ -400,9 +400,13 @@ def get_root(conn: sqlite3.Connection) -> str | None:
     return row[0] if row is not None else None
 
 
-# frob:doc docs/modules/graph.md#cache
-def get_file_hash(conn: sqlite3.Connection, file_path: str) -> str | None:
-    """The cached content hash for `file_path`, or `None` if never stored."""
+# frob:ticket T-0600
+def _get_file_hash(conn: sqlite3.Connection, file_path: str) -> str | None:
+    """The cached content hash for `file_path`, or `None` if never stored.
+
+    Private (T-0600): a low-level cache accessor with no consumer outside
+    this module's own test coverage -- `frob.graph.__init__`'s incremental
+    rebuild path reads staleness via `get_file_meta`, never this directly."""
     cur = conn.execute("SELECT content_hash FROM files WHERE path = ?", (file_path,))
     row = cur.fetchone()
     return row[0] if row is not None else None
@@ -612,7 +616,6 @@ def load_all(
 
 __all__ = [
     "connect",
-    "get_file_hash",
     "get_file_meta",
     "get_root",
     "load_all",

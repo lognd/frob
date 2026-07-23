@@ -112,8 +112,8 @@ class OwnsDecl(BaseModel):
     mode: str
 
 
-# frob:doc docs/strata/host.md#windows-surface-grammar
-class AclDecl(BaseModel):
+# frob:ticket T-0601
+class _AclDecl(BaseModel):
     """A parsed `acl "PATH" "RULE"` clause inside a `node`/`store` block
     (T-0261, docs/strata/host.md#windows-surface-grammar): a Windows NTFS
     path and an opaque `PRINCIPAL:RIGHTS[:deny][:no_inherit]` DACL-entry
@@ -143,6 +143,7 @@ class KrbTrustDecl(BaseModel):
 
 
 # frob:doc docs/strata/surface.md#parser
+# frob:ticket T-0601
 class NodeDecl(BaseModel):
     """A parsed `node` statement, one entry in a `Module`."""
 
@@ -216,7 +217,7 @@ class NodeDecl(BaseModel):
     # `acl "PATH" "RULE"`+, T-0261 (std.host); elaborated to
     # `acl=<path>|<rule>` attrs, one per entry -- the Windows NTFS-ACL
     # analog of `owns` (docs/strata/host.md#windows-surface-grammar).
-    acl: tuple[AclDecl, ...] = ()
+    acl: tuple[_AclDecl, ...] = ()
     # `pipe "NAME"`+, T-0261 (std.host); elaborated to `pipe=<name>` attrs,
     # one per entry -- a named pipe this node's service listens on,
     # additive to (not a replacement for) the platform-agnostic `listens`
@@ -447,6 +448,7 @@ class RefineDecl(BaseModel):
 
 
 # frob:doc docs/strata/surface.md#stdinfra
+# frob:ticket T-0601
 class StoreDecl(BaseModel):
     """A parsed `store` statement (std.infra): a node with engine/durability markers."""
 
@@ -497,7 +499,7 @@ class StoreDecl(BaseModel):
     service_account: str | None = None
     service_account_gmsa: bool = False
     is_service: bool = False
-    acl: tuple[AclDecl, ...] = ()
+    acl: tuple[_AclDecl, ...] = ()
     pipes: tuple[str, ...] = ()
     # `errors_total`/`panics_contained_by`/`observe`/`on deploy { ... }`,
     # T-0247; the observability/deploy-contract subset of `node_prop`

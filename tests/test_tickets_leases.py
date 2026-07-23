@@ -22,7 +22,7 @@ import pytest
 
 from frob.tickets._leases import (
     LeaseError,
-    LeaseRecord,
+    _LeaseRecord,
     is_lease_ttl_expired,
     lease_age_seconds,
     leases_dir,
@@ -73,7 +73,7 @@ def _write_lease(
     assert resolved.is_ok
     leases_root = resolved.danger_ok
     leases_root.mkdir(parents=True, exist_ok=True)
-    record = LeaseRecord(
+    record = _LeaseRecord(
         ticket_id=ticket_id,
         scope=scope,
         worktree=str(worktree),
@@ -424,8 +424,8 @@ class TestLeaseTtl:
     check alone cannot catch (the path is still there; only the lease's OWN
     `recorded_at` timestamp reveals it has gone stale)."""
 
-    def _record(self, recorded_at: str) -> LeaseRecord:
-        return LeaseRecord(
+    def _record(self, recorded_at: str) -> _LeaseRecord:
+        return _LeaseRecord(
             ticket_id="T-0782",
             scope=(),
             worktree="/tmp/whatever",

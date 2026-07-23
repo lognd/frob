@@ -20,7 +20,7 @@ entries to a newly filed ticket, T-0607, as a stopgap; T-0607 then closed
 the loop for real (rather than repeating the same self-reference hazard
 one ticket later): each of the 17 now carries a reasoned `out_of_scope`
 disposition backed by a real standing structural check (COMPLIANCE005,
-`check_cmpl_registry_unit_dispositions` in `src/frob/strata/
+`_check_cmpl_registry_unit_dispositions` in `src/frob/strata/
 _compliance.py`) instead of a `deferred:` promise to some future ticket.
 `compliance.yaml` therefore carries ZERO `deferred:` entries as of
 T-0607 -- the positive `deferred:` fixture test below now asserts that

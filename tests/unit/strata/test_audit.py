@@ -185,7 +185,7 @@ class TestExhaustiveness:
         """T-0503 non-vacuous proof: a `caught_by` naming a control that does
         not exist in `known_rule_ids` must FAIL through the real production
         entrypoint (`evaluate_exhaustiveness`, exactly what `frob sys audit`
-        calls), not just `check_regulation_caught_by_integrity` in isolation.
+        calls), not just `_check_regulation_caught_by_integrity` in isolation.
         Monkeypatches the production `COMPLIANCE_OUT_OF_SCOPE` constant
         `_audit.py` imports to swap in a fabricated `caught_by` -- the
         counterexample half of the litmus pair completed by the clean case

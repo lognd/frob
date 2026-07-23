@@ -33,6 +33,7 @@ from frob.registry._models import (
     load_registry_dir,
     parse_disposition,
 )
+from frob.registry._staleness import missing_gate_rule_ids, sync_gate_rule_entries
 
 __all__ = [
     "CorpusError",
@@ -46,5 +47,7 @@ __all__ = [
     "audit_registry_file",
     "format_entry_block",
     "load_registry_dir",
+    "missing_gate_rule_ids",
     "parse_disposition",
+    "sync_gate_rule_entries",
 ]

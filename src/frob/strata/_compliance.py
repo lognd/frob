@@ -63,9 +63,9 @@ from ._errors import StrataError
 from ._facts import FactBase, build_facts
 from ._models import BoundaryDirection, Flow, KernelModel, Node, Quantity
 
-#: `_threat.py`'s `CAUGHT_BY_NONE_MARKER`/`caught_by_unresolved_tokens`
+#: `_threat.py`'s `CAUGHT_BY_NONE_MARKER`/`_caught_by_unresolved_tokens`
 #: (T-0382) are reused (not duplicated) below, but only via a LOCAL import
-#: inside `check_regulation_caught_by_integrity` -- a module-level import
+#: inside `_check_regulation_caught_by_integrity` -- a module-level import
 #: here would cycle: `frob.strata.__init__` -> `_atomic` -> `_elaborate` ->
 #: `_infra` -> `_pii` -> `_compliance` (this module) -> `_threat` ->
 #: `_effects` -> `frob.vet` -> `frob.gates` -> `frob.gates._pii_structural`
@@ -318,10 +318,11 @@ def _regulation_caught_by_violation(
     )
 
 
-# frob:doc docs/strata/threat.md#compliance-regulatory-obligations-stdcompliance
+# frob:waive COV005 reason="T-0601 rework: demoted check_regulation_caught_by_integrity -> _check_regulation_caught_by_integrity (frob-exports external-consumer test: only called from this module's own evaluate_compliance, never imported outside frob.strata); the frob:tests directives deliberately follow the same function to its new private name"  # noqa: E501
 # frob:tests tests/unit/strata/test_compliance.py::TestRegulationCaughtByIntegrity.test_caught_by_naming_absent_control_is_refused  # noqa: E501
 # frob:tests tests/unit/strata/test_compliance.py::TestRegulationCaughtByIntegrity.test_caught_by_naming_present_control_discharges  # noqa: E501
-def check_regulation_caught_by_integrity(
+# frob:ticket T-0601
+def _check_regulation_caught_by_integrity(
     out_of_scope: tuple[OutOfScopeRegulation, ...] = (),
     known_rule_ids: frozenset[str] = frozenset(),
 ) -> Result[tuple[ComplianceViolation, ...], StrataError]:
@@ -333,20 +334,20 @@ def check_regulation_caught_by_integrity(
     emit) efficacy, not just a registered-looking string. An honest
     `"none -- ..."` `caught_by` (`CAUGHT_BY_NONE_MARKER`) never fails this
     check -- it is already declaring the gap. Mirrors `_threat.py::
-    check_caught_by_integrity` (THREAT006) exactly, reusing its token-
-    resolution helper (`caught_by_unresolved_tokens`) rather than
+    _check_caught_by_integrity` (THREAT006) exactly, reusing its token-
+    resolution helper (`_caught_by_unresolved_tokens`) rather than
     duplicating the regex/logic (imported locally -- module docstring
     above explains why a top-level import cycles). `known_rule_ids`
     defaults to empty (fail closed: no rule-id-shaped reference can
     resolve) since this package cannot import `frob.gates` itself, same
     rationale as THREAT006's own docstring."""
-    from ._threat import CAUGHT_BY_NONE_MARKER, caught_by_unresolved_tokens
+    from ._threat import CAUGHT_BY_NONE_MARKER, _caught_by_unresolved_tokens
 
     violations: list[ComplianceViolation] = []
     for entry in out_of_scope:
         if entry.caught_by.strip().lower().startswith(CAUGHT_BY_NONE_MARKER):
             continue
-        unresolved = caught_by_unresolved_tokens(entry.caught_by, known_rule_ids)
+        unresolved = _caught_by_unresolved_tokens(entry.caught_by, known_rule_ids)
         if unresolved:
             violations.append(
                 _regulation_caught_by_violation(entry.id, entry.caught_by, unresolved)
@@ -857,6 +858,7 @@ def check_privacy_policy(
 
 
 # frob:doc docs/strata/threat.md#compliance-regulatory-obligations-stdcompliance
+# frob:ticket T-0601
 def evaluate_compliance(
     model: KernelModel,
     view: str,
@@ -886,7 +888,7 @@ def evaluate_compliance(
     policy_violations = (
         check_privacy_policy(model, policy) if policy is not None else ()
     )
-    caught_by_violations = check_regulation_caught_by_integrity(
+    caught_by_violations = _check_regulation_caught_by_integrity(
         out_of_scope, known_rule_ids
     )
     if caught_by_violations.is_err:
@@ -915,7 +917,7 @@ def evaluate_compliance(
 #: `process`/`advisory`-tagged entries, which already carry their own
 #: `out_of_scope` disposition and need no further work here. Kept as one
 #: named constant (not re-derived from the yaml at import time) so
-#: `check_cmpl_registry_unit_dispositions` has a fixed universe to check
+#: `_check_cmpl_registry_unit_dispositions` has a fixed universe to check
 #: even if a future edit to the registry file adds/removes entries under
 #: these frameworks -- a drift there is REG005/REG007's job, not this
 #: check's.
@@ -966,11 +968,12 @@ def _cmpl_disposition_violation(entry: RegistryEntry) -> ComplianceViolation:
     )
 
 
-# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#registry-exhaustiveness-drift-lock-t-0343  # noqa: E501
+# frob:waive COV005 reason="T-0601 rework: demoted check_cmpl_registry_unit_dispositions -> _check_cmpl_registry_unit_dispositions (frob-exports external-consumer test: only called from this module's own check_cmpl_registry, never imported outside frob.strata); the frob:tests/frob:ticket directives deliberately follow the same function to its new private name"  # noqa: E501
 # frob:ticket T-0607
 # frob:tests tests/unit/strata/test_compliance.py::TestCmplRegistry.test_deferred_disposition_is_refused  # noqa: E501
 # frob:tests tests/unit/strata/test_compliance.py::TestCmplRegistry.test_handled_by_and_out_of_scope_dispositions_pass  # noqa: E501
-def check_cmpl_registry_unit_dispositions(
+# frob:ticket T-0601
+def _check_cmpl_registry_unit_dispositions(
     entries: tuple[RegistryEntry, ...],
 ) -> tuple[ComplianceViolation, ...]:
     """COMPLIANCE005: every `CMPL_REGISTRY_UNIT_IDS` member present in
@@ -1017,13 +1020,14 @@ def check_cmpl_registry_unit_dispositions(
 # frob:ticket T-0607
 # frob:tests tests/unit/strata/test_compliance.py::TestCmplRegistry.test_check_cmpl_registry_loads_real_file  # noqa: E501
 # frob:tests tests/unit/strata/test_compliance.py::TestCmplRegistry.test_check_cmpl_registry_missing_file_is_parse_failed  # noqa: E501
+# frob:ticket T-0601
 def check_cmpl_registry(
     registry_dir: Path,
 ) -> Result[tuple[ComplianceViolation, ...], StrataError]:
     """COMPLIANCE005 entrypoint: loads `compliance.yaml` from
     `registry_dir` via `frob.registry.load_registry_dir` (the ONE shared
     registry loader, T-0407 -- never re-parsed inline here) and runs
-    `check_cmpl_registry_unit_dispositions` over its `entries:` list.
+    `_check_cmpl_registry_unit_dispositions` over its `entries:` list.
     `Err(StrataError.ParseFailed)` on a missing/unreadable/malformed-YAML
     manifest, mirroring every other kernel-facing Result boundary in this
     module -- an unloadable registry never silently reports "0
@@ -1038,7 +1042,7 @@ def check_cmpl_registry(
         )
         return Err(StrataError.ParseFailed)
     entries = result.danger_ok.entry_lists.get("entries", ())
-    return Ok(check_cmpl_registry_unit_dispositions(entries))
+    return Ok(_check_cmpl_registry_unit_dispositions(entries))
 
 
 __all__ = [
@@ -1052,9 +1056,7 @@ __all__ = [
     "PrivacyPolicy",
     "RegulationEntry",
     "check_cmpl_registry",
-    "check_cmpl_registry_unit_dispositions",
     "check_privacy_policy",
-    "check_regulation_caught_by_integrity",
     "check_regulation_catalog_completeness",
     "check_regulation_discharge",
     "evaluate_compliance",

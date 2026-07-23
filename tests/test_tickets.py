@@ -975,13 +975,13 @@ class TestArchiveRefusesDuringInFlightWork:
         return root
 
     def _write_live_lease(self, root: Path, ticket_id: str, worktree: Path) -> None:
-        from frob.tickets._leases import LeaseRecord, leases_dir
+        from frob.tickets._leases import _LeaseRecord, leases_dir
 
         resolved = leases_dir(root)
         assert resolved.is_ok
         leases_root = resolved.danger_ok
         leases_root.mkdir(parents=True, exist_ok=True)
-        record = LeaseRecord(
+        record = _LeaseRecord(
             ticket_id=ticket_id,
             scope=(),
             worktree=str(worktree),
@@ -1374,18 +1374,18 @@ class TestEmptyCollectionOmission:
     frob's extra_forbidden read."""
 
     def test_dict_without_empty_collections_returned_unchanged(self) -> None:
-        # frob:tests src/frob/tickets/_models.py::omit_empty_collections
-        from frob.tickets._models import omit_empty_collections
+        # frob:tests src/frob/tickets/_models.py::_omit_empty_collections
+        from frob.tickets._models import _omit_empty_collections
 
         data = {"a": 1, "b": "x", "c": None}
-        assert omit_empty_collections(data) == data
+        assert _omit_empty_collections(data) == data
 
     def test_empty_list_and_tuple_values_dropped(self) -> None:
-        # frob:tests src/frob/tickets/_models.py::omit_empty_collections
-        from frob.tickets._models import omit_empty_collections
+        # frob:tests src/frob/tickets/_models.py::_omit_empty_collections
+        from frob.tickets._models import _omit_empty_collections
 
         data = {"a": 1, "b": [], "c": (), "d": [1, 2], "e": None}
-        assert omit_empty_collections(data) == {"a": 1, "d": [1, 2], "e": None}
+        assert _omit_empty_collections(data) == {"a": 1, "d": [1, 2], "e": None}
 
     def test_reviews_empty_never_serialized(self) -> None:
         # frob:tests src/frob/tickets/_models.py::Ticket

@@ -335,8 +335,8 @@ def _call_names(tree: ast.Module) -> frozenset[str]:
     return frozenset(names)
 
 
-# frob:doc docs/strata/surface.md#code-binding-tier-2-v0-implementation
-def observed_call_names(
+# frob:ticket T-0601
+def _observed_call_names(
     binding: CodeBinding, root: Path, node_id: str
 ) -> frozenset[str]:
     """Every distinct call-target name observed anywhere in `node_id`'s
@@ -458,5 +458,4 @@ __all__ = [
     "bind_code",
     "check_import_conformance",
     "is_managed",
-    "observed_call_names",
 ]

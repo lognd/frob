@@ -976,9 +976,9 @@ class ReviewEntry(BaseModel):
 
 
 # frob:ticket T-0838
-# frob:doc docs/modules/tickets.md#public-api
+# frob:waive COV005 reason="T-0601 rework: demoted omit_empty_collections -> _omit_empty_collections (frob-exports external-consumer test: only called intra-package by Ticket._omit_empty_collections_on_dump, never imported outside frob.tickets; a frob:doc anchor alone is not evidence of external need)"  # noqa: E501
 # frob:tests tests/test_tickets.py::TestEmptyCollectionOmission.test_dict_without_empty_collections_returned_unchanged  # noqa: E501
-def omit_empty_collections(data: Mapping[str, object]) -> dict[str, object]:
+def _omit_empty_collections(data: Mapping[str, object]) -> dict[str, object]:
     """Drop every key of `data` whose value is an empty `list`/`tuple` (T-0838).
 
     THE single implementation `Ticket._omit_empty_collections_on_dump` (and
@@ -1123,7 +1123,7 @@ class Ticket(BaseModel):
         omitted on write is exactly as forward-compatible as one that was
         never populated -- it simply reappears once it holds real data)."""
         data = handler(self)
-        return omit_empty_collections(data)
+        return _omit_empty_collections(data)
 
 
 # frob:doc docs/modules/tickets.md#data-models

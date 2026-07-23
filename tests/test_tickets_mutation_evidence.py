@@ -13,9 +13,9 @@ import pytest
 from frob.tickets._models import Origin, Ticket, TicketKind, TicketState
 from frob.tickets._mutation_evidence import (
     MutationEvidenceError,
+    _evidence_test_ids,
+    _touched_python_files,
     check_ticket_mutation_evidence,
-    evidence_test_ids,
-    touched_python_files,
 )
 
 
@@ -73,10 +73,10 @@ class TestEvidenceTestIds:
                 "not-a-node-id",
             )
         )
-        assert evidence_test_ids(ticket) == ("tests/test_m.py::test_add",)
+        assert _evidence_test_ids(ticket) == ("tests/test_m.py::test_add",)
 
     def test_empty_when_no_evidence(self) -> None:
-        assert evidence_test_ids(_ticket(evidence=())) == ()
+        assert _evidence_test_ids(_ticket(evidence=())) == ()
 
 
 class TestTouchedPythonFiles:
@@ -92,7 +92,7 @@ class TestTouchedPythonFiles:
         (repo / "notes.md").write_text("# notes changed\n", encoding="utf-8")
 
         ticket = _ticket(scope=("m.py",))
-        files = touched_python_files(repo, ticket, "main")
+        files = _touched_python_files(repo, ticket, "main")
         assert files == (Path("m.py"),)
 
     def test_empty_when_nothing_touched(self, tmp_path: Path) -> None:
@@ -102,7 +102,7 @@ class TestTouchedPythonFiles:
         _commit(repo, "init")
 
         ticket = _ticket(scope=("m.py",))
-        assert touched_python_files(repo, ticket, "main") == ()
+        assert _touched_python_files(repo, ticket, "main") == ()
 
 
 class TestCheckTicketMutationEvidence:
@@ -246,7 +246,7 @@ class TestCheckTicketMutationEvidence:
         loaded = load_all(repo_root)
         assert loaded.is_ok, loaded.err
         ticket = loaded.danger_ok.get("T-0755")
-        if ticket is None or not evidence_test_ids(ticket):
+        if ticket is None or not _evidence_test_ids(ticket):
             pytest.skip("T-0755 not present/bound in this checkout's ledger")
         violations = mutation_evidence_violations(repo_root, ticket, "main")
         errors = [v for v in violations if v.severity == "error"]

@@ -28,6 +28,7 @@ from frob.tickets._models import (
     replace_done_report_section,
 )
 from frob.tickets._store import (
+    _lock_path,
     _parse_ticket_file,
     _serialize_ticket,
     _store_mode,
@@ -38,7 +39,6 @@ from frob.tickets._store import (
     ledger_path,
     load_all,
     load_archive,
-    lock_path,
     migrate_to_ledger,
     slugify,
     tickets_dir,
@@ -325,17 +325,17 @@ class TestAtomicWrite:
 class TestLockPath:
     def test_lock_path_under_frob_dir(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_ticket_store.py::TestLockPath.test_lock_path_under_frob_dir  # noqa: E501
-        assert lock_path(tmp_path) == tmp_path / ".frob" / "tickets.lock"
+        assert _lock_path(tmp_path) == tmp_path / ".frob" / "tickets.lock"
 
 
 # frob:ticket T-0458
 class TestLedgerLock:
     def test_lock_file_created_under_frob_dir(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_ticket_store.py::TestLedgerLock.test_lock_file_created_under_frob_dir  # noqa: E501
-        assert lock_path(tmp_path) == tmp_path / ".frob" / "tickets.lock"
+        assert _lock_path(tmp_path) == tmp_path / ".frob" / "tickets.lock"
         with ledger_lock(tmp_path):
             pass
-        assert lock_path(tmp_path).exists()
+        assert _lock_path(tmp_path).exists()
 
     def test_reentrant_in_same_thread(self, tmp_path: Path) -> None:
         """Nested `with ledger_lock():` in the SAME thread must not deadlock

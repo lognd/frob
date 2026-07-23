@@ -56,9 +56,26 @@ from frob.graph._models import (
     SymbolRecord,
 )
 from frob.graph.affects import AffectedSet, affects
-from frob.graph.callgraph import CallGraph, build_call_graph, closure
+from frob.graph.callgraph import (
+    CallGraph,
+    build_call_graph,
+    build_reference_graph,
+    closure,
+)
 from frob.graph.digest import compute_digests
-from frob.graph.dsl import dedupe_slug, markdown_anchors, parse_directives, slugify
+from frob.graph.dsl import (
+    dedupe_slug,
+    fold_comment_runs,
+    markdown_anchors,
+    parse_directives,
+    slugify,
+)
+from frob.graph.summary import (
+    FunctionSummary,
+    SCCTimeout,
+    SummaryResult,
+    compute_protocol_summaries,
+)
 from frob.lang import LangError, ParsedFile, parse_file, supported_extensions
 from frob.logging import get_logger
 
@@ -779,6 +796,7 @@ __all__ = [
     "DriftReport",
     "Edge",
     "EdgeKind",
+    "FunctionSummary",
     "GraphError",
     "GraphSnapshot",
     "LockEntry",
@@ -786,17 +804,22 @@ __all__ = [
     "LockFile",
     "MalformedDirective",
     "ParseFailure",
+    "SCCTimeout",
     "StaleItem",
+    "SummaryResult",
     "SymbolId",
     "SymbolRecord",
     "acknowledge",
     "affects",
     "build_call_graph",
     "build_graph",
+    "build_reference_graph",
     "closure",
+    "compute_protocol_summaries",
     "dedupe_slug",
     "edges_from",
     "edges_to",
+    "fold_comment_runs",
     "is_generated_source",
     "load_graph",
     "load_lock",

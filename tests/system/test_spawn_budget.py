@@ -8,10 +8,10 @@ no code-shape pattern matching, just counting real spawns.
 `test_ticket_list_spawns_each_argv_at_most_once` is the seed case
 (T-0776's precursor). The 2026-07-22 rev-parse incident: every ticket
 row's state display re-derived the git common dir through an uncached
-subprocess spawn (`read_all_leases` -> `leases_dir` -> `git_common_dir`),
+subprocess spawn (`read_all_leases` -> `leases_dir` -> `_git_common_dir`),
 so one listing spawned dozens of identical `git rev-parse
 --git-common-dir` processes. T-0773 fixed this by memoizing
-`git_common_dir`/`read_all_leases` per resolved path for the process's
+`_git_common_dir`/`read_all_leases` per resolved path for the process's
 lifetime (`frob.tickets._leases`) and threading one `_all_leases`
 snapshot through `doable`/`doable_blocked`'s per-candidate loop -- this
 test (and `test_ticket_doable_spawns_each_argv_at_most_once` below) is
@@ -56,7 +56,7 @@ def _make_repo_with_tickets(tmp_path: Path, count: int) -> list[str]:
 
 # frob:ticket T-0773
 def test_ticket_list_spawns_each_argv_at_most_once(tmp_path: Path) -> None:
-    # frob:tests src/frob/tickets/_leases.py::git_common_dir kind="e2e"
+    # frob:tests src/frob/tickets/_leases.py::_git_common_dir kind="e2e"
     _make_repo_with_tickets(tmp_path, count=3)
 
     cfg = AppConfig(ticket_command="list", ticket_path=tmp_path)
@@ -88,7 +88,7 @@ def test_ticket_show_spawns_each_argv_at_most_once(tmp_path: Path) -> None:
 
 # frob:ticket T-0773
 def test_ticket_doable_spawns_each_argv_at_most_once(tmp_path: Path) -> None:
-    # frob:tests src/frob/tickets/_leases.py::git_common_dir kind="e2e"
+    # frob:tests src/frob/tickets/_leases.py::_git_common_dir kind="e2e"
     _make_repo_with_tickets(tmp_path, count=3)
 
     cfg = AppConfig(ticket_command="doable", ticket_path=tmp_path)
