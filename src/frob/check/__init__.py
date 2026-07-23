@@ -58,6 +58,7 @@ from frob.doctor import verify_derived_state
 from frob.lang import reset_parse_cache
 from frob.logging import get_logger
 from frob.logging.quiet import _stdout_stream_handlers as _stdout_log_handlers
+from frob.process._lock import derived_state_lock
 from frob.process.parsers.common import Diagnostic, ToolResult
 
 _log = get_logger(__name__)
@@ -563,38 +564,47 @@ def _run_check_with_skips(
 ) -> CheckResult:
     """`run_check`'s task-selection and execution tail, once its many
     `skip_*` flags have been collapsed into `skips`."""
-    # T-0603: single, synchronous, pre-dispatch integrity check -- see
-    # `_derived_state_integrity_result`'s docstring for why this must run
-    # before any concurrent stage starts, not from inside one.
-    integrity_failure = _derived_state_integrity_result(root)
-    if integrity_failure is not None:
-        return CheckResult(path=str(root), results=[integrity_failure])
+    # T-0859: hold a SHARED `derived_state_lock` for the run's entire
+    # duration -- precheck through the last stage's read -- so a second
+    # frob process's EXCLUSIVE writer cannot rewrite `.frob` between this
+    # process's integrity precheck and a later stage's read of the same
+    # artifacts (the cross-process TOCTOU window T-0603 disclosed as its
+    # own residual). See `derived_state_lock`'s docstring for the
+    # shared/exclusive contract.
+    with derived_state_lock(root, exclusive=False):
+        # T-0603: single, synchronous, pre-dispatch integrity check -- see
+        # `_derived_state_integrity_result`'s docstring for why this must
+        # run before any concurrent stage starts, not from inside one.
+        integrity_failure = _derived_state_integrity_result(root)
+        if integrity_failure is not None:
+            return CheckResult(path=str(root), results=[integrity_failure])
 
-    # T-0414: fresh parse-cache instrumentation per invocation (see
-    # `frob.lang.reset_parse_cache`'s docstring) -- correctness never
-    # depends on this reset, only the per-run hit/miss counters do.
-    reset_parse_cache()
-    gate_only, only, unknown = _resolve_only(only)
-    if unknown:
-        return _unknown_only_result(root, unknown)
+        # T-0414: fresh parse-cache instrumentation per invocation (see
+        # `frob.lang.reset_parse_cache`'s docstring) -- correctness never
+        # depends on this reset, only the per-run hit/miss counters do.
+        reset_parse_cache()
+        gate_only, only, unknown = _resolve_only(only)
+        if unknown:
+            return _unknown_only_result(root, unknown)
 
-    # T-0423: memoize the heavy pure analyses (build_graph/analyze_project)
-    # for exactly the lifetime of this run (`frob.check._memo.run_memo_
-    # scope`'s docstring) -- a stage that calls one twice within this
-    # `with` block gets a cache hit; any caller outside it (CLI runners,
-    # tests exercising real incremental rebuilds) is unaffected.
-    with run_memo_scope():
-        tasks = _python_tasks(
-            root,
-            only=only,
-            gate_only=gate_only,
-            ruff_args=ruff_args,
-            ticket=ticket,
-            base=base,
-            skips=skips,
-            delta=delta,
-        )
-        return CheckResult(path=str(root), results=_collect_results(tasks))
+        # T-0423: memoize the heavy pure analyses (build_graph/analyze_
+        # project) for exactly the lifetime of this run (`frob.check.
+        # _memo.run_memo_scope`'s docstring) -- a stage that calls one
+        # twice within this `with` block gets a cache hit; any caller
+        # outside it (CLI runners, tests exercising real incremental
+        # rebuilds) is unaffected.
+        with run_memo_scope():
+            tasks = _python_tasks(
+                root,
+                only=only,
+                gate_only=gate_only,
+                ruff_args=ruff_args,
+                ticket=ticket,
+                base=base,
+                skips=skips,
+                delta=delta,
+            )
+            return CheckResult(path=str(root), results=_collect_results(tasks))
 
 
 # ---------------------------------------------------------------------------
@@ -631,34 +641,39 @@ def run_check_cpp(
     etc.) short-circuits everything below with a single
     `derived-state-integrity` ERROR result, checked once before the build
     even starts -- see `_derived_state_integrity_result`'s docstring.
+
+    T-0859: the precheck through the last stage's read is held under one
+    SHARED `derived_state_lock`, closing the cross-process TOCTOU window
+    a bare precheck leaves open -- see `derived_state_lock`'s docstring.
     """
-    integrity_failure = _derived_state_integrity_result(root)
-    if integrity_failure is not None:
-        return CheckResult(path=str(root), results=[integrity_failure])
+    with derived_state_lock(root, exclusive=False):
+        integrity_failure = _derived_state_integrity_result(root)
+        if integrity_failure is not None:
+            return CheckResult(path=str(root), results=[integrity_failure])
 
-    results: list[ToolResult] = []
-    bdir = build_dir or (root / "build")
+        results: list[ToolResult] = []
+        bdir = build_dir or (root / "build")
 
-    if not skip_build:
-        r = _run_cmake_build(root, bdir)
-        results.append(r)
-        if r.exit_code != 0:
-            skip_tests = True
+        if not skip_build:
+            r = _run_cmake_build(root, bdir)
+            results.append(r)
+            if r.exit_code != 0:
+                skip_tests = True
 
-    post_build = _cpp_post_build_tasks(
-        root,
-        bdir,
-        skip_clang_tidy=skip_clang_tidy,
-        skip_clang_format=skip_clang_format,
-        skip_tests=skip_tests,
-        skip_gates=skip_gates,
-        valgrind=valgrind,
-        ticket=ticket,
-        base=base,
-        delta=delta,
-    )
-    results.extend(_run_tasks_concurrently(post_build))
-    return CheckResult(path=str(root), results=results)
+        post_build = _cpp_post_build_tasks(
+            root,
+            bdir,
+            skip_clang_tidy=skip_clang_tidy,
+            skip_clang_format=skip_clang_format,
+            skip_tests=skip_tests,
+            skip_gates=skip_gates,
+            valgrind=valgrind,
+            ticket=ticket,
+            base=base,
+            delta=delta,
+        )
+        results.extend(_run_tasks_concurrently(post_build))
+        return CheckResult(path=str(root), results=results)
 
 
 def _cpp_post_build_tasks(
@@ -721,37 +736,41 @@ def run_check_rust(
     T-0603: a corrupt derived artifact short-circuits everything below
     with a single `derived-state-integrity` ERROR result, checked once up
     front -- see `_derived_state_integrity_result`'s docstring.
+
+    T-0859: the precheck through the last stage's read is held under one
+    SHARED `derived_state_lock` -- see its docstring.
     """
-    integrity_failure = _derived_state_integrity_result(root)
-    if integrity_failure is not None:
-        return CheckResult(path=str(root), results=[integrity_failure])
+    with derived_state_lock(root, exclusive=False):
+        integrity_failure = _derived_state_integrity_result(root)
+        if integrity_failure is not None:
+            return CheckResult(path=str(root), results=[integrity_failure])
 
-    results: list[ToolResult] = []
+        results: list[ToolResult] = []
 
-    if not skip_check:
-        r = _run_cargo("check", root)
-        if r is not None:
-            results.append(r)
-    if not skip_clippy:
-        r = _run_cargo("clippy", root, extra=["--", "-D", "warnings"])
-        if r is not None:
-            results.append(r)
-    if not skip_fmt:
-        r = _run_cargo_fmt_check(root)
-        if r is not None:
-            results.append(r)
-    if not skip_tests:
-        r = _run_cargo_test(root, valgrind=valgrind)
-        if r is not None:
-            results.append(r)
-    if not skip_gates:
-        gate_result = _run_gates(root, ticket=ticket, base=base, delta=delta)
-        if isinstance(gate_result, list):
-            results.extend(gate_result)
-        else:
-            results.append(gate_result)
+        if not skip_check:
+            r = _run_cargo("check", root)
+            if r is not None:
+                results.append(r)
+        if not skip_clippy:
+            r = _run_cargo("clippy", root, extra=["--", "-D", "warnings"])
+            if r is not None:
+                results.append(r)
+        if not skip_fmt:
+            r = _run_cargo_fmt_check(root)
+            if r is not None:
+                results.append(r)
+        if not skip_tests:
+            r = _run_cargo_test(root, valgrind=valgrind)
+            if r is not None:
+                results.append(r)
+        if not skip_gates:
+            gate_result = _run_gates(root, ticket=ticket, base=base, delta=delta)
+            if isinstance(gate_result, list):
+                results.extend(gate_result)
+            else:
+                results.append(gate_result)
 
-    return CheckResult(path=str(root), results=results)
+        return CheckResult(path=str(root), results=results)
 
 
 # ---------------------------------------------------------------------------
@@ -784,36 +803,42 @@ def run_check_ts(
     T-0603: a corrupt derived artifact short-circuits everything below
     with a single `derived-state-integrity` ERROR result, checked once up
     front -- see `_derived_state_integrity_result`'s docstring.
+
+    T-0859: the precheck through the last stage's read is held under one
+    SHARED `derived_state_lock` -- see its docstring.
     """
-    integrity_failure = _derived_state_integrity_result(root)
-    if integrity_failure is not None:
-        return CheckResult(path=str(root), results=[integrity_failure])
+    with derived_state_lock(root, exclusive=False):
+        integrity_failure = _derived_state_integrity_result(root)
+        if integrity_failure is not None:
+            return CheckResult(path=str(root), results=[integrity_failure])
 
-    tasks: list[Callable[[], ToolResult | list[ToolResult] | None]] = []
-    if not skip_tsc:
-        tasks.append(lambda: _run_tsc(root))
-    if not skip_eslint:
-        tasks.append(lambda: _run_eslint(root))
-    if not skip_prettier:
-        tasks.append(lambda: _run_prettier(root))
-    if not skip_tests:
-        tasks.append(lambda: _run_vitest(root))
-    if not skip_gates:
-        tasks.append(lambda: _run_gates(root, ticket=ticket, base=base, delta=delta))
+        tasks: list[Callable[[], ToolResult | list[ToolResult] | None]] = []
+        if not skip_tsc:
+            tasks.append(lambda: _run_tsc(root))
+        if not skip_eslint:
+            tasks.append(lambda: _run_eslint(root))
+        if not skip_prettier:
+            tasks.append(lambda: _run_prettier(root))
+        if not skip_tests:
+            tasks.append(lambda: _run_vitest(root))
+        if not skip_gates:
+            tasks.append(
+                lambda: _run_gates(root, ticket=ticket, base=base, delta=delta)
+            )
 
-    results: list[ToolResult] = []
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = [executor.submit(fn) for fn in tasks]
-        for future in futures:
-            val = future.result()
-            if val is None:
-                continue
-            if isinstance(val, list):
-                results.extend(val)
-            else:
-                results.append(val)
+        results: list[ToolResult] = []
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = [executor.submit(fn) for fn in tasks]
+            for future in futures:
+                val = future.result()
+                if val is None:
+                    continue
+                if isinstance(val, list):
+                    results.extend(val)
+                else:
+                    results.append(val)
 
-    return CheckResult(path=str(root), results=results)
+        return CheckResult(path=str(root), results=results)
 
 
 # ---------------------------------------------------------------------------

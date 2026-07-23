@@ -38,6 +38,8 @@ case a tool by name.
 <!-- frob:describes src/frob/process/_guard.py::exec_enabled -->
 <!-- frob:describes src/frob/process/_guard.py::net_enabled -->
 <!-- frob:describes src/frob/process/_guard.py::guarded_subprocess_run -->
+<!-- frob:describes src/frob/process/_lock.py::_derived_lock_path -->
+<!-- frob:describes src/frob/process/_lock.py::derived_state_lock -->
 
 ```python
 # frob/process/parsers/common.py -- the shared result shapes every parser below produces
@@ -142,11 +144,39 @@ unset it (or leave it unset) to re-enable.
 
 <!-- frob:invariant INV-019 -->
 
+## Derived-state lock (T-0859)
+
+`frob.process._lock.derived_state_lock` is a cross-process shared/exclusive
+`flock` over a checkout's `.frob/derived.lock`, closing the TOCTOU window
+T-0603's single in-process integrity precheck left open: a SECOND `frob`
+process rewriting or corrupting `.frob`'s derived artifacts between this
+process's precheck and a later stage's read. Every `frob.check` entry point
+(`run_check`, `run_check_cpp`, `run_check_rust`, `run_check_ts`) holds the
+SHARED form for its entire run -- precheck through the last stage's read.
+Any process that rebuilds or rewrites a derived artifact under `.frob` is
+expected to hold the EXCLUSIVE form while it writes; wiring the exclusive
+side into every current writer is tracked as a follow-on, not shipped by
+this module (see this ticket's Done report for what still needs it).
+
+```python
+# frob/process/_lock.py -- cross-process reader/writer lock over .frob
+def derived_state_lock(root: Path, *, exclusive: bool) -> ContextManager[None]
+    # Shared (reader) or exclusive (writer) flock on root/.frob/derived.lock;
+    # no-op with a WARNING log on a platform without fcntl.
+```
+
+Mirrors `frob.tickets._store.ledger_lock` (T-0458): same fcntl-posix-only
+primitive, same documented no-op fallback, same per-thread re-entrancy
+bookkeeping -- applied to `.frob`'s derived state instead of the ticket
+ledger.
+
 ## Dependencies
 
 Pure stdlib + `pydantic` for the shared models; no dependency on `frob.check`
 or `frob.gitio` -- parsers are pure functions over already-captured
-stdout/stderr text, never spawn processes themselves.
+stdout/stderr text, never spawn processes themselves. `frob.process._lock`
+is the one exception: it wraps stdlib `os`/`fcntl` directly (no subprocess
+involved) to serialize `frob.check` against other `frob` processes.
 
 ## Integration points
 

@@ -998,3 +998,298 @@ class TestCheckBuildsGraphOnce:
             "(expected exactly 1) -- a stage is rebuilding the graph "
             "instead of reusing the one build"
         )
+
+
+class _LockSpy:
+    """Test double for `frob.process._lock.derived_state_lock` (T-0859):
+    records every `(root, exclusive)` acquisition and exposes `held` so a
+    probe planted at a specific call site can assert whether the lock was
+    actually held at that instant -- not just that it was acquired
+    somewhere during the run. Used by `TestDerivedStateLockWiring` below
+    to prove `run_check`/`run_check_cpp`/`run_check_rust`/`run_check_ts`
+    genuinely hold the SHARED lock across both the precheck and stage
+    dispatch, closing the gap `TestDerivedStateIntegrityGate` and
+    `tests/unit/test_process_lock.py`'s own tests leave: the lock
+    primitive being correct in isolation does not prove any `run_check*`
+    entry point actually calls it, or holds it for the right span."""
+
+    def __init__(self) -> None:
+        self.calls: list[tuple[Path, bool]] = []
+        self.held = False
+
+    def __call__(self, root: Path, *, exclusive: bool) -> "_LockSpy":
+        self.calls.append((root, exclusive))
+        return self
+
+    def __enter__(self) -> None:
+        self.held = True
+
+    def __exit__(self, *exc_info: object) -> None:
+        self.held = False
+
+
+class TestDerivedStateLockWiring:
+    """T-0859: proves each `run_check*` entry point actually acquires
+    `derived_state_lock` in SHARED (`exclusive=False`) mode and holds it
+    across BOTH the integrity precheck and stage dispatch/execution --
+    not just one or the other, and not with the wrong mode. Every test
+    here plants a probe (via `_LockSpy.held`) at the exact call sites the
+    T-0859 land-preflight mutation run flagged as unproven (the `with
+    derived_state_lock(...)` lines and their immediately-surrounding
+    precheck/dispatch statements in each of the four entry points)."""
+
+    def test_run_check_holds_shared_lock_across_precheck_and_stages(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_check.py::TestDerivedStateLockWiring.test_run_check_holds_shared_lock_across_precheck_and_stages  # noqa: E501
+        (tmp_path / "tickets.md").write_text("# Tickets\n")
+        spy = _LockSpy()
+        monkeypatch.setattr(check_mod, "derived_state_lock", spy)
+
+        precheck_states: list[bool] = []
+
+        def fake_precheck(root: Path) -> None:
+            precheck_states.append(spy.held)
+            return None
+
+        monkeypatch.setattr(check_mod, "_derived_state_integrity_result", fake_precheck)
+
+        stage_states: list[bool] = []
+
+        def fake_collect(tasks: object) -> list[object]:
+            stage_states.append(spy.held)
+            return []
+
+        monkeypatch.setattr(check_mod, "_collect_results", fake_collect)
+
+        run_check(tmp_path, only=frozenset({"gates"}))
+
+        assert spy.calls == [(tmp_path, False)], (
+            "run_check must acquire derived_state_lock exactly once, in "
+            "SHARED (exclusive=False) mode"
+        )
+        assert precheck_states == [True], (
+            "the integrity precheck must run while the lock is held"
+        )
+        assert stage_states == [True], (
+            "stage dispatch must run while the SAME lock acquisition is "
+            "still held, not after it was released"
+        )
+        assert spy.held is False, "the lock must be released once the run completes"
+
+    def test_run_check_precheck_failure_short_circuits_under_lock(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_check.py::TestDerivedStateLockWiring.test_run_check_precheck_failure_short_circuits_under_lock  # noqa: E501
+        spy = _LockSpy()
+        monkeypatch.setattr(check_mod, "derived_state_lock", spy)
+
+        fake_failure = ToolResult(
+            tool="derived-state-integrity",
+            exit_code=1,
+            diagnostics=[],
+            summary="corrupt",
+        )
+        monkeypatch.setattr(
+            check_mod, "_derived_state_integrity_result", lambda root: fake_failure
+        )
+
+        def _fail_if_called(*_args: object, **_kwargs: object) -> list[object]:
+            raise AssertionError(
+                "no stage may run once the precheck under the lock has failed"
+            )
+
+        monkeypatch.setattr(check_mod, "_collect_results", _fail_if_called)
+
+        result = run_check(tmp_path)
+
+        assert result.results == [fake_failure]
+        assert spy.calls == [(tmp_path, False)]
+        assert spy.held is False
+
+    def test_run_check_cpp_holds_shared_lock_across_precheck_and_stages(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_check.py::TestDerivedStateLockWiring.test_run_check_cpp_holds_shared_lock_across_precheck_and_stages  # noqa: E501
+        spy = _LockSpy()
+        monkeypatch.setattr(check_mod, "derived_state_lock", spy)
+
+        precheck_states: list[bool] = []
+        monkeypatch.setattr(
+            check_mod,
+            "_derived_state_integrity_result",
+            lambda root: precheck_states.append(spy.held) or None,
+        )
+
+        stage_states: list[bool] = []
+
+        def fake_run_tasks_concurrently(tasks: object) -> list[object]:
+            stage_states.append(spy.held)
+            return []
+
+        monkeypatch.setattr(
+            check_mod, "_run_tasks_concurrently", fake_run_tasks_concurrently
+        )
+
+        run_check_cpp(
+            tmp_path,
+            skip_build=True,
+            skip_clang_tidy=True,
+            skip_clang_format=True,
+            skip_tests=True,
+            skip_gates=True,
+        )
+
+        assert spy.calls == [(tmp_path, False)]
+        assert precheck_states == [True]
+        assert stage_states == [True]
+        assert spy.held is False
+
+    def test_run_check_cpp_build_failure_skips_tests_under_held_lock(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A failed cmake build must set `skip_tests=True` for the
+        post-build stage -- and both the build call and the post-build
+        stage dispatch must happen while the SAME lock acquisition is
+        held. Kills mutants of the `bdir = build_dir or (root /
+        "build")`, `if not skip_build`, and `if r.exit_code != 0:
+        skip_tests = True` lines the T-0859 land-preflight run flagged."""
+
+        # frob:tests tests/unit/test_check.py::TestDerivedStateLockWiring.test_run_check_cpp_build_failure_skips_tests_under_held_lock  # noqa: E501
+        spy = _LockSpy()
+        monkeypatch.setattr(check_mod, "derived_state_lock", spy)
+        monkeypatch.setattr(
+            check_mod, "_derived_state_integrity_result", lambda root: None
+        )
+
+        build_states: list[bool] = []
+        seen_bdir: list[Path] = []
+
+        def fake_cmake_build(root: Path, bdir: Path) -> ToolResult:
+            build_states.append(spy.held)
+            seen_bdir.append(bdir)
+            return ToolResult(
+                tool="cmake", exit_code=1, diagnostics=[], summary="build failed"
+            )
+
+        monkeypatch.setattr(check_mod, "_run_cmake_build", fake_cmake_build)
+
+        captured_kwargs: dict[str, object] = {}
+
+        def fake_post_build_tasks(
+            root: Path, bdir: Path, **kwargs: object
+        ) -> list[object]:
+            captured_kwargs.update(kwargs)
+            return []
+
+        monkeypatch.setattr(check_mod, "_cpp_post_build_tasks", fake_post_build_tasks)
+
+        stage_states: list[bool] = []
+
+        def fake_run_tasks_concurrently(tasks: object) -> list[object]:
+            stage_states.append(spy.held)
+            return []
+
+        monkeypatch.setattr(
+            check_mod, "_run_tasks_concurrently", fake_run_tasks_concurrently
+        )
+
+        result = run_check_cpp(tmp_path, skip_build=False, skip_tests=False)
+
+        assert spy.calls == [(tmp_path, False)]
+        assert build_states == [True]
+        assert stage_states == [True]
+        assert seen_bdir == [tmp_path / "build"]
+        assert captured_kwargs["skip_tests"] is True, (
+            "a failed cmake build must force the post-build tasks to skip tests"
+        )
+        assert result.results[0].tool == "cmake"
+        assert spy.held is False
+
+    def test_run_check_rust_holds_shared_lock_across_precheck_and_stages(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_check.py::TestDerivedStateLockWiring.test_run_check_rust_holds_shared_lock_across_precheck_and_stages  # noqa: E501
+        spy = _LockSpy()
+        monkeypatch.setattr(check_mod, "derived_state_lock", spy)
+
+        precheck_states: list[bool] = []
+        monkeypatch.setattr(
+            check_mod,
+            "_derived_state_integrity_result",
+            lambda root: precheck_states.append(spy.held) or None,
+        )
+
+        stage_states: list[bool] = []
+
+        def fake_run_gates(
+            root: Path,
+            *,
+            ticket: str | None = None,
+            base: str | None = None,
+            delta: bool = False,
+        ) -> ToolResult:
+            stage_states.append(spy.held)
+            return ToolResult(
+                tool="gate-summary", exit_code=0, diagnostics=[], summary="ok"
+            )
+
+        monkeypatch.setattr(check_mod, "_run_gates", fake_run_gates)
+
+        run_check_rust(
+            tmp_path,
+            skip_check=True,
+            skip_clippy=True,
+            skip_fmt=True,
+            skip_tests=True,
+            skip_gates=False,
+        )
+
+        assert spy.calls == [(tmp_path, False)]
+        assert precheck_states == [True]
+        assert stage_states == [True]
+        assert spy.held is False
+
+    def test_run_check_ts_holds_shared_lock_across_precheck_and_stages(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_check.py::TestDerivedStateLockWiring.test_run_check_ts_holds_shared_lock_across_precheck_and_stages  # noqa: E501
+        spy = _LockSpy()
+        monkeypatch.setattr(check_mod, "derived_state_lock", spy)
+
+        precheck_states: list[bool] = []
+        monkeypatch.setattr(
+            check_mod,
+            "_derived_state_integrity_result",
+            lambda root: precheck_states.append(spy.held) or None,
+        )
+
+        stage_states: list[bool] = []
+
+        def fake_run_gates(
+            root: Path,
+            *,
+            ticket: str | None = None,
+            base: str | None = None,
+            delta: bool = False,
+        ) -> ToolResult:
+            stage_states.append(spy.held)
+            return ToolResult(
+                tool="gate-summary", exit_code=0, diagnostics=[], summary="ok"
+            )
+
+        monkeypatch.setattr(check_mod, "_run_gates", fake_run_gates)
+
+        run_check_ts(
+            tmp_path,
+            skip_tsc=True,
+            skip_eslint=True,
+            skip_prettier=True,
+            skip_tests=True,
+            skip_gates=False,
+        )
+
+        assert spy.calls == [(tmp_path, False)]
+        assert precheck_states == [True]
+        assert stage_states == [True]
+        assert spy.held is False
