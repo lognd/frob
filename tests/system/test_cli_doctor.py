@@ -229,6 +229,7 @@ class TestDoctorScaffoldConformance:
         assert report.healthy is False
         assert report.scaffold_blocks
         assert all(not s.present for s in report.scaffold_blocks)
+        assert report.remediation is not None
         assert "frob scaffold apply" in report.remediation
 
     # frob:tests src/frob/doctor.py
