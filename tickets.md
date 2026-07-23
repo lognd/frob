@@ -1149,8 +1149,50 @@ created: '2026-07-21'
 priority: medium
 blocked_by: []
 parent: null
-scope: []
-scope_changes: []
+scope:
+- src/frob/tickets/_worktree_guard.py
+- src/frob/app/agent_runner.py
+- src/frob/__main__.py
+- src/frob/scaffold/_managed.py
+- docs/guides/agent-playbook.md
+- tests/test_worktree_guard.py
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_worktree_guard.py
+  reason: 'scope from the ticket''s own body: agent env subcommand, guard module,
+    scaffold hook wiring, playbook doc, tests (was scope=[] and undispatchable)'
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: src/frob/app/agent_runner.py
+  reason: 'scope from the ticket''s own body: agent env subcommand, guard module,
+    scaffold hook wiring, playbook doc, tests (was scope=[] and undispatchable)'
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: src/frob/__main__.py
+  reason: 'scope from the ticket''s own body: agent env subcommand, guard module,
+    scaffold hook wiring, playbook doc, tests (was scope=[] and undispatchable)'
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: src/frob/scaffold/_managed.py
+  reason: 'scope from the ticket''s own body: agent env subcommand, guard module,
+    scaffold hook wiring, playbook doc, tests (was scope=[] and undispatchable)'
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: docs/guides/agent-playbook.md
+  reason: 'scope from the ticket''s own body: agent env subcommand, guard module,
+    scaffold hook wiring, playbook doc, tests (was scope=[] and undispatchable)'
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: tests/test_worktree_guard.py
+  reason: 'scope from the ticket''s own body: agent env subcommand, guard module,
+    scaffold hook wiring, playbook doc, tests (was scope=[] and undispatchable)'
+  actor: logan
+  at: '2026-07-23'
 evidence: []
 attachments: []
 acceptance: []
@@ -1159,7 +1201,6 @@ component: null
 labels: []
 ```
 Four agents ran git stash despite playbook 1b; several ran ticket commands against the shared checkout because FROB_WORKTREE was never SET (T-0431 guard exists but inert without it). (1) frob agent env prints/exports the guard env for a worktree; scaffold/playbook wire it into dispatch. (2) a pre-stash guard (hook or wrapper) refuses git stash while sibling agent worktrees exist. Catalogued-is-not-enforced applied to the playbook itself. Scope: src/frob/tickets/_worktree_guard.py, scaffold hooks, playbook.
-
 <!-- ticket:T-0580 -->
 ```yaml
 id: T-0580
@@ -1604,7 +1645,7 @@ The 6 registry rows T-0332 deferred for precision reasons: each needs a fuzzier 
 id: T-0606
 title: 'std.host windows: wire service_account/acl/pipe into HOST001/HOST002 movement-impossibility
   proofs'
-state: queued
+state: in-progress
 kind: security
 origin: agent
 created: '2026-07-22'
@@ -1630,7 +1671,6 @@ component: null
 labels: []
 ```
 T-0261 landed the Windows std.host manifest surface (service_account/gmsa, service, acl, pipe) but HOST001/HOST002 and build_compromised_user_scenario do not branch on any of it -- a windows-only node produces NO movement-impossibility findings today, so the epic's provability promise is linux-only. Wire the windows fields into the isolation rules and the compromised-user scenario builder, mirroring how the linux runs_as/unit/owns fields feed them (T-0256..T-0259 staging precedent). NOTE: T-0261's Done report references this as T-0606 (ex-draft, id lost at land); drafts do not survive land (T-0577), so this ticket is its real replacement.
-
 <!-- ticket:T-0607 -->
 ```yaml
 id: T-0607
