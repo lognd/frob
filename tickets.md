@@ -6357,7 +6357,7 @@ No blockers. No new tickets filed -- all 41 rows were genuinely resolvable withi
 id: T-0850
 title: 'land: gate-state ClaimDivergence still vulnerable to WAIVE004 scoped-run flakiness
   (needs finding-identity comparison)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-23'
