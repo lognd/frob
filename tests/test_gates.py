@@ -8088,6 +8088,103 @@ class TestTick007UndispatchedStale:
             assert v.rule == "TICK007"
 
 
+# frob:ticket T-0842
+class TestTick008UnknownLedgerFields:
+    """TICK008 (T-0842): the T-0838 typo-hazard follow-up -- a ticket
+    carrying unknown/extra ledger field(s) (`extra="allow"` captured them
+    into `__pydantic_extra__` instead of hard-failing `MalformedFrontmatter`)
+    must be a mechanical `frob check` finding on the checked ledger, not
+    just a WARNING log line nothing gates on. WARN severity, not ERROR --
+    an initial ERROR pass was rejected in adversarial review: `frob ticket
+    land`'s claim re-verification spawns `frob check` from the ROOT
+    checkout's OLD `src` tree (playbook section 2), so while a schema-
+    extending ticket is itself landing, root's stale `Ticket` model
+    captures that ticket's own new field as an extra and an ERROR would
+    red the land via `ClaimDivergence` -- a `frob:waive` cannot route
+    around it either, since the same stale binary evaluates the waiver.
+    See `_tick008_unknown_ledger_fields`'s docstring for the full trace."""
+
+    def _queue(self, *tickets: Ticket) -> TicketQueue:
+        """A `TicketQueue` of `tickets`, keyed by id."""
+        return TicketQueue(tickets={t.id: t for t in tickets})
+
+    def _ticket_with_extra(self, ticket_id: str, **extra: object) -> Ticket:
+        """A minimal valid `Ticket` plus arbitrary unknown `extra` fields --
+        `Ticket.model_config` is `extra="allow"`, so these land in
+        `__pydantic_extra__` rather than raising. Goes through
+        `model_validate` (a single `dict[str, object]` argument) rather than
+        keyword-splatting into the constructor, so the mypy/ty-visible
+        signature stays exact for every known field."""
+        data: dict[str, object] = {
+            "id": ticket_id,
+            "title": f"ticket {ticket_id}",
+            "state": TicketState.QUEUED,
+            "kind": TicketKind.FEATURE,
+            "origin": Origin.HUMAN,
+            "created": date(2026, 1, 1),
+            **extra,
+        }
+        return Ticket.model_validate(data)
+
+    # frob:tests tests/test_gates.py::TestTick008UnknownLedgerFields.test_fires_on_unknown_field  # noqa: E501
+    def test_fires_on_unknown_field(self, tmp_path: Path) -> None:
+        """A ticket with a genuinely unknown field fires TICK008, naming
+        both the ticket id and the unknown field, at WARN (not ERROR --
+        see the class docstring for why ERROR was rejected)."""
+        ticket = self._ticket_with_extra("T-9001", not_a_real_field="x")
+        violations = tickets_gate(tmp_path, self._queue(ticket))
+        tick008 = _by_rule(violations, "TICK008")
+        assert len(tick008) == 1
+        assert "T-9001" in tick008[0].message
+        assert "not_a_real_field" in tick008[0].message
+        assert tick008[0].severity == Severity.WARN
+
+    # frob:tests tests/test_gates.py::TestTick008UnknownLedgerFields.test_fuzzy_hint_on_near_miss_typo  # noqa: E501
+    def test_fuzzy_hint_on_near_miss_typo(self, tmp_path: Path) -> None:
+        """A near-miss typo of a known field name (`priorty` for
+        `priority`, the exact incident T-0838's reviewer flagged) gets a
+        fuzzy-match hint naming the likely intended field."""
+        ticket = self._ticket_with_extra("T-9002", priorty="low")
+        violations = tickets_gate(tmp_path, self._queue(ticket))
+        tick008 = _by_rule(violations, "TICK008")
+        assert len(tick008) == 1
+        assert "priorty" in tick008[0].message
+        assert "did you mean 'priority'" in tick008[0].message
+
+    # frob:tests tests/test_gates.py::TestTick008UnknownLedgerFields.test_silent_on_clean_ledger  # noqa: E501
+    def test_silent_on_clean_ledger(self, tmp_path: Path) -> None:
+        """A ticket with only known fields carries no `__pydantic_extra__`
+        and never fires TICK008."""
+        ticket = self._ticket_with_extra("T-9003")
+        violations = tickets_gate(tmp_path, self._queue(ticket))
+        assert not any(v.rule == "TICK008" for v in violations)
+
+    # frob:tests tests/test_gates.py::TestTick008UnknownLedgerFields.test_real_repo_ledger_is_tick008_clean  # noqa: E501
+    def test_real_repo_ledger_is_tick008_clean(self) -> None:
+        """The real-repo smoke test the ticket demands: this repo's own
+        live `tickets.md`/`tickets-archive.md` must produce ZERO TICK008
+        findings today -- a nonzero result here means a genuinely stale
+        known field somewhere in the live ledger, which this ticket's
+        Description says to STOP and report rather than calibrate around."""
+        from frob.tickets import load_queue
+
+        root = Path(__file__).resolve().parents[1]
+        queue = load_queue(root).danger_ok
+        violations = tickets_gate(root, queue)
+        tick008 = _by_rule(violations, "TICK008")
+        assert tick008 == []
+
+    # frob:tests tests/test_gates.py::TestTick008UnknownLedgerFields.test_waivable  # noqa: E501
+    def test_waivable(self) -> None:
+        """TICK008 is waivable like TICK004/TICK006/TICK007 (not added to
+        `_UNWAIVABLE_RULES`) -- a genuinely temporary, disclosed exception
+        (`frob:waive TICK008 reason=...`) stays available, matching the
+        rest of the TICK family."""
+        from frob.gates import _UNWAIVABLE_RULES
+
+        assert "TICK008" not in _UNWAIVABLE_RULES
+
+
 class TestPiiStructuralCrossLanguage:
     """T-0352: PII010/SEC110 field-shape and env-access equivalents over
     TypeScript/Rust source (`frob.gates._pii_structural`'s Python-only

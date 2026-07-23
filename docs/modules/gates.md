@@ -34,6 +34,7 @@ declaration).
 | INV006 | invariant | (warn, T-0408) a SOURCE file under `INV006_SRC_DIRS` (`src`, `strata-core/src`, `frob-core/src`) makes a claim-shaped exclusivity assertion (same vocabulary as INV003) with no `frob:invariant` edge anchored anywhere in the file, and no `frob:waive INV006 reason="..."` edge -- see "INV006 (T-0408)" below |
 | TICK006 | tickets | a Done report's affirmative "filed" claim (`Filed: T-####`, `filed as T-####`, `Filed T-draft-<hex>`, ...) whose id resolves to no block in `tickets.md` or `tickets-archive.md` -- see "TICK006 (T-0726)" below |
 | TICK007 | tickets | (warn) a dispatchable (unblocked, unleased) CRITICAL/HIGH ticket has sat past its `frob.tickets.undispatched_stale` threshold -- see "TICK007 (T-0820)" below |
+| TICK008 | tickets | (warn) a ticket in the checked ledger carries unknown/extra frontmatter field(s) (`Ticket`'s `extra="allow"` captured them into `__pydantic_extra__` instead of hard-failing) -- often a typoed known field, whose value is silently lost to the schema default; see "TICK008 (T-0842)" below |
 | COMPLIANCE005 | compliance | a `docs/design/registry/compliance.yaml` `CMPL_REGISTRY_UNIT_IDS` member carries a `deferred`/undispositioned disposition instead of `handled_by`/`out_of_scope` -- see "COMPLIANCE005 (T-0788)" below |
 | DEC001 | decisions | a `frob:decision AD-###` edge points at a record that does not exist (opt-in: a `decisions/` dir must exist) |
 | DEC002 | decisions | an `accepted` decision record has no `frob:decision` code anchor |
@@ -726,6 +727,67 @@ dispatch is a queue-health signal to act on, not a structural invariant
 break, so a reasoned `frob:waive TICK007 reason="..."` can disposition a
 known, accepted case (e.g. a deliberately deferred CRITICAL awaiting a
 blocker that has not been formally recorded yet).
+
+### TICK008 (T-0842)
+
+<!-- frob:describes src/frob/gates/__init__.py::_tick008_unknown_ledger_fields -->
+
+T-0838 made `Ticket` `extra="allow"` (not `extra="forbid"`) so a ledger
+written by a NEWER `frob` binary -- one that has added a field this
+binary's `Ticket` does not know about yet -- loads instead of hard-failing
+`MalformedFrontmatter`; unknown keys land in `__pydantic_extra__`, are
+logged at WARNING (`_warn_unknown_extras`), and round-trip verbatim on the
+next dump. That reviewer-caught disclosed cost: a TYPOED known field
+(`priorty: low`) is indistinguishable from a genuinely-newer field at load
+time -- it silently becomes an extra, the intended value is lost to the
+schema default, and the only signal was that same WARNING log line, which
+no gate read. TICK008 makes that drift visible mechanically: for every
+ticket in the checked ledger with a non-empty `__pydantic_extra__`,
+`tickets_gate` emits one WARN `Violation` per unknown field, naming the
+ticket id and the field, plus a `difflib.get_close_matches` fuzzy hint
+against `Ticket.model_fields` when a likely intended field name exists
+(`unknown field 'priorty' -- did you mean 'priority'?`).
+
+**Why WARN, not ERROR.** An initial ERROR pass was the original design
+and was REJECTED in adversarial review of T-0842 itself -- worth stating
+explicitly so a future "promote to ERROR" attempt re-derives the same
+constraint rather than re-discovering it the hard way. `frob ticket
+land`'s claim re-verification (`_reverify_done_report_claims_post_merge`)
+spawns `frob check --ticket <id>` via `sys.executable` from the ROOT
+checkout's venv -- the ROOT binary's OLD `src` tree (the playbook's
+"Gate-affecting source only takes effect via `uv run frob`" stale-binary
+hazard, one level up: it applies to `frob ticket land`'s own subprocess,
+not just to a human running a stale global `frob`). While a schema-
+extending ticket is ITSELF being landed, the root binary's `Ticket` model
+does not yet know the new field that very ticket is landing -- a
+populated new field on that ticket's own block gets captured as
+`__pydantic_extra__` by root's stale model. `tickets_gate` correctly does
+NOT scope TICK008 to only the active ticket (a stale field anywhere in
+the ledger is real drift worth surfacing) -- so an ERROR here fires over
+the FULL merged ledger at exactly the moment the schema-owning ticket
+lands, `real_errors` diverges from the worktree-captured claim, and land
+refuses via `ClaimDivergence`. A `frob:waive TICK008` cannot route around
+this either: the same stale root binary evaluating the gate is the one
+evaluating the waiver, so the schema gap that causes the false ERROR
+equally prevents the waiver from being recognized as covering it. The
+original ERROR-severity docstring's claim that "there is no case where
+this rule stays red once the schema catches up" is false during exactly
+that land window -- "the schema catching up" IS the land event being
+refused. WARN avoids this because `frob check`'s pass/fail gating (and
+land's real-errors/claim-divergence comparison) keys off ERROR-severity
+counts, not warnings -- a WARN still renders as a live, mechanical `frob
+check` finding (the actual T-0838 review demand: visibility, not a hard
+gate), matching the TICK004/TICK006/TICK007 precedent of leaving a
+schema-transition/judgment-window case as WARN rather than ERROR.
+
+**Where it runs.** TICK008 is one of `tickets_gate`'s checks (alongside
+TICK001-TICK007), which runs inside `frob check`'s `tickets` stage --
+including `frob ticket close` and `frob ticket land`'s preflight. It is
+waivable (not in `_UNWAIVABLE_RULES`), matching the TICK004/TICK006/
+TICK007 precedent: a genuinely temporary, disclosed exception (e.g. a
+worktree deliberately carrying a not-yet-landed schema-extending field
+across a short review window) can be dispositioned with a reasoned
+`frob:waive TICK008 reason="..."` instead of blocking on it.
 
 ### COMPLIANCE005 (T-0788)
 

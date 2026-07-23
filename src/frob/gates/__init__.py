@@ -997,6 +997,13 @@ _KNOWN_GATE_RULES = frozenset(
         # tickets_gate's _tick007_undispatched_stale) -- the frob check
         # half of T-0752's frob.tickets.undispatched_stale, reused verbatim.
         "TICK007",
+        # T-0842: unknown/extra ledger field gate (frob.gates.tickets_gate's
+        # _tick008_unknown_ledger_fields) -- a ticket carrying a field the
+        # current Ticket model does not know (T-0838's extra="allow"
+        # captured it as __pydantic_extra__ instead of hard-failing), most
+        # often a typoed known field silently losing its value to a schema
+        # default.
+        "TICK008",
         # T-0788: COMPLIANCE005 (frob.gates.compliance_gate, dispatching
         # frob.strata._compliance.check_cmpl_registry built by T-0607) --
         # a checkable-control CMPL-* compliance-registry unit left
@@ -7148,13 +7155,100 @@ def _tick007_undispatched_stale(
     return tuple(violations)
 
 
+# frob:ticket T-0842
+# frob:enforces CHK-GATE-TICK008
+# frob:tests tests/test_gates.py::TestTick008UnknownLedgerFields.test_fires_on_unknown_field  # noqa: E501
+# frob:tests tests/test_gates.py::TestTick008UnknownLedgerFields.test_fuzzy_hint_on_near_miss_typo  # noqa: E501
+# frob:tests tests/test_gates.py::TestTick008UnknownLedgerFields.test_silent_on_clean_ledger  # noqa: E501
+# frob:tests tests/test_gates.py::TestTick008UnknownLedgerFields.test_real_repo_ledger_is_tick008_clean  # noqa: E501
+# frob:tests tests/test_gates.py::TestTick008UnknownLedgerFields.test_waivable  # noqa: E501
+def _tick008_unknown_ledger_fields(queue: TicketQueue) -> tuple[Violation, ...]:
+    """TICK008 (T-0842): WARN on every ticket in the CHECKED ledger that
+    carries unknown/extra frontmatter field(s) -- the mechanical follow-up
+    T-0838's reviewer mandated. T-0838 made `Ticket` `extra="allow"` so a
+    ledger written by a NEWER binary (a field this model does not know
+    about yet) loads instead of hard-failing `MalformedFrontmatter`; the
+    disclosed cost is that a TYPOED known field (`priorty: low`) is
+    indistinguishable from that at load time -- it silently becomes an
+    extra, the schema default is used instead, and the only signal is a
+    WARNING log line (`_warn_unknown_extras`) no gate reads. This makes
+    that drift visible mechanically on `main`, where the ledger must be
+    canonical, without re-tightening `extra="allow"` back to `"forbid"`
+    (that would re-brick forward-compat loading, the exact thing T-0838
+    fixed).
+
+    WARN, NOT ERROR -- this is a corrected decision, not the original one.
+    An initial ERROR pass was REJECTED in adversarial review of T-0842
+    itself, and the failure mode is worth stating explicitly so a future
+    "promote to ERROR" attempt re-derives the same constraint instead of
+    re-discovering it the hard way: `frob ticket land`'s claim
+    re-verification (`_reverify_done_report_claims_post_merge`) spawns
+    `frob check --ticket <id>` via `sys.executable` from the ROOT
+    checkout's venv (playbook section 2's stale-binary hazard -- the ROOT
+    binary's `src` tree, not the landing worktree's). While a schema-
+    extending ticket is ITSELF being landed, the root binary's `Ticket`
+    model does not yet know the new field it is landing -- a populated new
+    field on that very ticket's own block gets captured as
+    `__pydantic_extra__` by the root's OLD model. `tickets_gate` never
+    scopes TICK008 to only the active ticket (it scans the whole merged
+    queue, correctly, since a stale field anywhere is real drift) -- so an
+    ERROR here fires over the full merged ledger at exactly the moment the
+    schema-owning ticket lands, `real_errors` diverges from the worktree-
+    captured claim, and land refuses via `ClaimDivergence`. A
+    `frob:waive TICK008` cannot route around this either: the same stale
+    root binary evaluating the gate is the one evaluating the waiver, so
+    the schema gap that causes the false ERROR equally prevents the waiver
+    from being understood as covering it. In short: "the schema catches up"
+    -- the condition the original docstring claimed made ERROR safe -- IS
+    the land event itself, which is exactly the window ERROR breaks. WARN
+    avoids this because `frob check`'s pass/fail gating (and land's
+    real-errors/claim-divergence comparison) keys off ERROR-severity
+    counts, not warnings; a WARN still renders as a live, mechanical `frob
+    check` finding (the T-0838 review's actual demand -- visibility, not
+    a hard gate), matching the TICK004/TICK006/TICK007 precedent of
+    leaving open-ended-judgment/schema-transition cases as WARN rather
+    than ERROR. Fuzzy-matches each unknown key against the model's own
+    known field names via `difflib.get_close_matches` so a typo like
+    `priorty` names its likely intended field (`priority`) directly in the
+    message instead of leaving the fix to guesswork. Waivable (not added
+    to `_UNWAIVABLE_RULES`) per the TICK004/TICK006/TICK007 precedent: a
+    genuinely temporary, disclosed exception stays available the same way."""
+    known_fields = sorted(Ticket.model_fields)
+    violations: list[Violation] = []
+    for ticket in queue.tickets.values():
+        extras = ticket.__pydantic_extra__
+        if not extras:
+            continue
+        for extra_field in sorted(extras):
+            hint = ""
+            close = difflib.get_close_matches(extra_field, known_fields, n=1)
+            if close:
+                hint = f" -- did you mean '{close[0]}'?"
+            violations.append(
+                Violation(
+                    rule="TICK008",
+                    severity=Severity.WARN,
+                    file="tickets.md",
+                    line=0,
+                    message=(
+                        f"TICK008: {ticket.id} carries unknown ledger "
+                        f"field '{extra_field}'{hint} (value lost to the "
+                        f"schema default until the field name is fixed or "
+                        f"the schema-owning feature lands)"
+                    ),
+                )
+            )
+    return tuple(violations)
+
+
 # frob:doc docs/modules/tickets.md#decision-record-t-0162
 def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
-    """TICK001/TICK002/TICK003/TICK004/TICK005/TICK006/TICK007: the T-0162
-    ticket-id collision invariant gate, plus the T-0409 ledger-hygiene
-    check, the T-0411 priority-rot check, the T-0537 post-merge terminal-
-    state-regression lint, the T-0726 phantom-filing-claim check, and the
-    T-0820/T-0752 undispatched-stale-CRITICAL/HIGH alarm."""
+    """TICK001/TICK002/TICK003/TICK004/TICK005/TICK006/TICK007/TICK008: the
+    T-0162 ticket-id collision invariant gate, plus the T-0409 ledger-
+    hygiene check, the T-0411 priority-rot check, the T-0537 post-merge
+    terminal-state-regression lint, the T-0726 phantom-filing-claim check,
+    the T-0820/T-0752 undispatched-stale-CRITICAL/HIGH alarm, and the
+    T-0842 unknown-ledger-field check."""
     return (
         _tick001_duplicate_ids(root)
         + _tick002_draft_on_default(root, queue)
@@ -7163,6 +7257,7 @@ def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
         + _tick005_merge_state_regression(root, queue)
         + _tick006_phantom_filing(root, queue)
         + _tick007_undispatched_stale(root, queue)
+        + _tick008_unknown_ledger_fields(queue)
     )
 
 
