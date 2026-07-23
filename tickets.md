@@ -7631,7 +7631,7 @@ than re-deriving a second one.
 ```yaml
 id: T-0810
 title: wire --force flag through to frob.tickets.archive's CLI entrypoint
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-23'
@@ -7640,8 +7640,39 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/app/ticket_runner.py
-scope_changes: []
-evidence: []
+- src/frob/__main__.py
+- src/frob/app/config.py
+- tests/test_ticket_runner*.py
+- tests/test_tickets*.py
+scope_changes:
+- op: add
+  glob: src/frob/__main__.py
+  reason: T-0810 needs argparse wiring in __main__.py and an AppConfig field in config.py
+    for --force, plus CLI test home; the T-0764 scope only covered tickets/**
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: src/frob/app/config.py
+  reason: T-0810 needs argparse wiring in __main__.py and an AppConfig field in config.py
+    for --force, plus CLI test home; the T-0764 scope only covered tickets/**
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: tests/test_ticket_runner*.py
+  reason: T-0810 needs argparse wiring in __main__.py and an AppConfig field in config.py
+    for --force, plus CLI test home; the T-0764 scope only covered tickets/**
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: tests/test_tickets*.py
+  reason: T-0810 needs argparse wiring in __main__.py and an AppConfig field in config.py
+    for --force, plus CLI test home; the T-0764 scope only covered tickets/**
+  actor: logan
+  at: '2026-07-23'
+evidence:
+- tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_refuses_without_force_when_a_live_lease_exists
+- tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_force_overrides_the_live_lease_refusal
+- tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_force_with_no_live_leases_stays_quiet
 attachments: []
 acceptance: []
 threat: null
@@ -7649,6 +7680,34 @@ component: null
 labels: []
 ```
 T-0764 added archive(root, *, force: bool = False) in src/frob/tickets/__init__.py, refusing when a live cross-worktree lease exists unless force=True. The CLI entrypoint (_archive in src/frob/app/ticket_runner.py, 'frob ticket archive' subcommand) does not yet expose a --force flag to pass through, since that file is outside T-0764's declared scope (src/frob/tickets/**, tests/test_tickets*.py, tests/test_ticket_land.py). Add an argparse --force flag to the archive subcommand and thread it to archive(root, force=...).
+
+## Done report
+
+## Done report
+
+Changed:
+- src/frob/tickets:archive (unchanged, T-0764) -- consumed by CLI as force=cfg.ticket_force
+- src/frob/app/ticket_runner.py::_archive -- now accepts force kwarg, threads to archive(), logs a warning naming the live-lease count before overriding
+- src/frob/app/ticket_runner.py::_ticket_dispatch_table -- archive lambda now passes cfg.ticket_force
+- src/frob/app/config.py::AppConfig.ticket_force -- new bool field, wired into from_external's bool-field list
+- src/frob/__main__.py::_add_ticket_fail_evidence_archive_parsers -- registers --force on the archive subparser (dest=ticket_force)
+
+Evidence:
+- tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_refuses_without_force_when_a_live_lease_exists
+- tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_force_overrides_the_live_lease_refusal
+- tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_force_with_no_live_leases_stays_quiet
+
+Filed: none
+
+Gates: frob check --ticket T-0810 clean (0 errors); frob test --base main PASS (touched-set: interface/CLI dispatch tests, archive-force CLI tests, AppConfig toml-read test)
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_refuses_without_force_when_a_live_lease_exists` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_force_overrides_the_live_lease_refusal` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_force_with_no_live_leases_stays_quiet` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0811 -->
 ```yaml

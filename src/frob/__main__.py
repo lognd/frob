@@ -1236,6 +1236,13 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
     ticket_archive_p = ticket_sub.add_parser(
         "archive", help="move done/dropped tickets into tickets-archive.md"
     )
+    ticket_archive_p.add_argument(
+        "--force",
+        dest="ticket_force",
+        action="store_true",
+        help="T-0810: override the T-0764 refusal when a live cross-"
+        "worktree lease exists anywhere in the repo -- archive anyway",
+    )
     return [ticket_fail_p, ticket_evidence_p, ticket_drop_p, ticket_archive_p]
 
 

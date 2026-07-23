@@ -268,6 +268,10 @@ class AppConfig(BaseModel):
     # frob:waive SCOPE001 reason="T-0453 scope omitted this file; doable --show-blocked/--ignore-lease need AppConfig fields, T-0176/T-0220 precedent (T-0455)"  # noqa: E501
     ticket_show_blocked: bool = False
     ticket_ignore_lease: bool = False
+    # frob:ticket T-0810
+    # `frob ticket archive --force` -- override T-0764's live-cross-worktree-
+    # lease refusal in `frob.tickets.archive`.
+    ticket_force: bool = False
     # frob:ticket T-0455
     # `frob ticket scope <id> --add GLOB... --remove GLOB... --reason TEXT`
     ticket_scope_add: list[str] = []
@@ -724,6 +728,7 @@ class AppConfig(BaseModel):
             "ticket_json",
             "ticket_show_blocked",
             "ticket_ignore_lease",
+            "ticket_force",
             "test_all",
             "test_fuzz",
             "test_collect",

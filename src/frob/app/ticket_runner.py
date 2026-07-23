@@ -79,7 +79,7 @@ def _ticket_dispatch_table() -> dict:
         "board": _board,
         "epic": _epic,
         "brief": _brief,
-        "archive": lambda root, _cfg: _archive(root),
+        "archive": lambda root, cfg: _archive(root, force=cfg.ticket_force),
     }
 
 
@@ -2171,13 +2171,27 @@ def _apply_cmd_evidence(
 
 
 # frob:ticket T-0096
-def _archive(root: Path) -> None:
+# frob:ticket T-0810
+def _archive(root: Path, *, force: bool = False) -> None:
     """Move every done/dropped ticket from the active ledger into
     tickets-archive.md, verbatim (idempotent -- a second run finds nothing
-    to move)."""
+    to move). T-0810: `--force` threads through to `frob.tickets.archive`,
+    overriding its T-0764 refusal when a live cross-worktree lease exists
+    anywhere in the repo; a warning is logged so an override is never
+    silent."""
     from frob.tickets import archive
+    from frob.tickets._leases import read_all_leases
 
-    result = archive(root)
+    if force:
+        live_leases = read_all_leases(root)
+        if live_leases:
+            _log.warning(
+                "ticket archive --force: overriding %d live cross-worktree "
+                "lease(s) -- archiving anyway",
+                len(live_leases),
+            )
+
+    result = archive(root, force=force)
     if result.is_err:
         _log.error("ticket archive failed: %s", result.danger_err)
         sys.exit(1)
