@@ -558,6 +558,190 @@ class TestSpliceLedgerRicherStatePreference:
         assert parsed[tid].state == TicketState.DONE
 
 
+# frob:ticket T-0764
+class TestSpliceLedgerPrefersEvidenceRichSideOnRankTie:
+    """T-0764: the T-0753 field incident -- an in-flight worktree ticket
+    with `start` + recorded evidence + a bound acceptance criterion but NO
+    Done report yet, tied in state-rank (`in-progress`) with main's bare,
+    reportless `in-progress` copy of the same id (e.g. after an
+    archive/concurrent-ledger-rewrite reset the worktree's own view).
+    Before T-0764 this fell straight to the old arbitrary `b`-wins
+    tiebreak; now the evidence/acceptance-richer side must win."""
+
+    # frob:ticket T-0764
+    # frob:tests tests/test_ticket_land.py::TestSpliceLedgerPrefersEvidenceRichSideOnRankTie.test_evidence_and_acceptance_rich_side_wins_a_same_rank_reportless_tie  # noqa: E501
+    def test_evidence_and_acceptance_rich_side_wins_a_same_rank_reportless_tie(
+        self, tmp_path: Path
+    ) -> None:
+        created = new_ticket(
+            tmp_path,
+            TicketSpec(
+                title="Landing ticket",
+                kind=TicketKind.BUG,
+                origin=Origin.AGENT,
+                acceptance=(AcceptanceCriterion(text="GIVEN..WHEN..THEN.."),),
+            ),
+        )
+        assert created.is_ok
+        tid = created.danger_ok.id
+        assert transition(tmp_path, tid, TicketState.PLANNED).is_ok
+        assert transition(tmp_path, tid, TicketState.IN_PROGRESS).is_ok
+        loaded = load_all(tmp_path).danger_ok[tid]
+
+        rich = loaded.model_copy(
+            update={
+                "evidence": ("tests/test_widget.py::test_x",),
+                "acceptance": (
+                    AcceptanceCriterion(
+                        text="GIVEN..WHEN..THEN..",
+                        evidence=("tests/test_widget.py::test_x",),
+                    ),
+                ),
+            }
+        )
+        assert write_ticket(tmp_path, rich).is_ok
+        ours_text = ledger_path(tmp_path).read_text()
+
+        # `theirs`: same id, same rank, no Done report on EITHER side, but
+        # bare -- no evidence, no bound acceptance -- exactly the
+        # archive/concurrent-rewrite reset shape from the T-0753 incident.
+        bare = loaded.model_copy(update={"evidence": (), "acceptance": ()})
+        assert write_ticket(tmp_path, bare).is_ok
+        theirs_text = ledger_path(tmp_path).read_text()
+
+        spliced = splice_ledger(ours_text, theirs_text)
+        assert spliced.is_ok
+        from frob.tickets._store import _parse_ledger
+
+        parsed = _parse_ledger(spliced.danger_ok).danger_ok
+        assert parsed[tid].evidence == ("tests/test_widget.py::test_x",)
+        assert parsed[tid].acceptance[0].evidence == ("tests/test_widget.py::test_x",)
+
+    # frob:ticket T-0764
+    # frob:tests tests/test_ticket_land.py::TestSpliceLedgerPrefersEvidenceRichSideOnRankTie.test_acceptance_binding_unioned_even_when_the_reportless_higher_rank_side_wins  # noqa: E501
+    def test_acceptance_binding_unioned_even_when_the_reportless_higher_rank_side_wins(
+        self, tmp_path: Path
+    ) -> None:
+        """The `_union_acceptance` twin of D-09's `_union_evidence`: even
+        when the WINNING side is picked for some other reason (here, a
+        strictly higher rank), a criterion binding the LOSING side already
+        had must not be silently dropped."""
+        created = new_ticket(
+            tmp_path,
+            TicketSpec(
+                title="Landing ticket",
+                kind=TicketKind.BUG,
+                origin=Origin.AGENT,
+                acceptance=(AcceptanceCriterion(text="GIVEN..WHEN..THEN.."),),
+            ),
+        )
+        assert created.is_ok
+        tid = created.danger_ok.id
+        loaded = load_all(tmp_path).danger_ok[tid]
+
+        # `ours`: bare queued (rank 0) but with the criterion already bound.
+        bound_but_low_rank = loaded.model_copy(
+            update={
+                "evidence": ("tests/test_widget.py::test_x",),
+                "acceptance": (
+                    AcceptanceCriterion(
+                        text="GIVEN..WHEN..THEN..",
+                        evidence=("tests/test_widget.py::test_x",),
+                    ),
+                ),
+            }
+        )
+        assert write_ticket(tmp_path, bound_but_low_rank).is_ok
+        ours_text = ledger_path(tmp_path).read_text()
+
+        # `theirs`: strictly higher rank (in-progress), unbound criterion,
+        # no Done report -- this side wins on rank, but must inherit the
+        # OTHER side's binding rather than dropping it.
+        assert transition(tmp_path, tid, TicketState.PLANNED).is_ok
+        assert transition(tmp_path, tid, TicketState.IN_PROGRESS).is_ok
+        theirs_text = ledger_path(tmp_path).read_text()
+
+        spliced = splice_ledger(ours_text, theirs_text)
+        assert spliced.is_ok
+        from frob.tickets._store import _parse_ledger
+
+        parsed = _parse_ledger(spliced.danger_ok).danger_ok
+        assert parsed[tid].state == TicketState.IN_PROGRESS
+        assert "tests/test_widget.py::test_x" in parsed[tid].evidence
+        assert parsed[tid].acceptance[0].evidence == ("tests/test_widget.py::test_x",)
+
+
+# frob:ticket T-0764
+class TestSpliceLedgerIdDropGuard:
+    """The structural guard the T-0367 incident demands: `splice_ledger`
+    refuses loudly rather than silently committing a merge that drops an
+    id (markerless-block class) or produces unparseable output."""
+
+    # frob:ticket T-0764
+    # frob:tests tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard.test_a_side_only_id_missing_from_theirs_survives_the_splice  # noqa: E501
+    def test_a_side_only_id_missing_from_theirs_survives_the_splice(
+        self, tmp_path: Path
+    ) -> None:
+        """Sanity: an id present on only ONE side (never archived) is not
+        itself an integrity violation -- the normal union-by-id case."""
+        created = new_ticket(tmp_path, _spec("Ours-only ticket"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        ours_text = ledger_path(tmp_path).read_text()
+        theirs_text = "# Tickets\n\nCentral ledger managed by `frob ticket`.\n"
+
+        spliced = splice_ledger(ours_text, theirs_text)
+        assert spliced.is_ok
+        from frob.tickets._store import _parse_ledger
+
+        parsed = _parse_ledger(spliced.danger_ok).danger_ok
+        assert tid in parsed
+
+    # frob:ticket T-0764
+    # frob:tests tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard.test_malformed_side_is_refused_not_silently_treated_as_empty  # noqa: E501
+    def test_malformed_side_is_refused_not_silently_treated_as_empty(
+        self, tmp_path: Path
+    ) -> None:
+        """A hand-corrupted input ledger (a marker present but its yaml
+        frontmatter fence broken) fails `_parse_ledger` up front --
+        `splice_ledger` must propagate that `Err`, never silently treat the
+        unparseable side as if it carried zero tickets (which would make
+        every id on the OTHER, well-formed side look like a one-sided
+        addition instead of a real divergence needing a human's eyes)."""
+        created = new_ticket(tmp_path, _spec("A ticket"))
+        assert created.is_ok
+        ours_text = ledger_path(tmp_path).read_text()
+
+        # Marker present, but no ```yaml fence follows it at all.
+        theirs_text = "# Tickets\n\n<!-- ticket:T-9999 -->\nno yaml fence here\n"
+
+        spliced = splice_ledger(ours_text, theirs_text)
+        assert spliced.is_err
+
+    # frob:ticket T-0764
+    # frob:tests tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard.test_render_that_would_drop_an_id_is_refused  # noqa: E501
+    def test_render_that_would_drop_an_id_is_refused(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Direct unit-level pin on the guard itself: if the render step
+        (patched here to simulate a future rendering regression) drops an
+        id `_merge_ledger_tickets` produced, `splice_ledger` must refuse
+        rather than commit the truncated text."""
+        created = new_ticket(tmp_path, _spec("A ticket"))
+        assert created.is_ok
+        ours_text = ledger_path(tmp_path).read_text()
+        theirs_text = "# Tickets\n\nCentral ledger managed by `frob ticket`.\n"
+
+        def _dropping_render(tickets: dict) -> str:
+            # Simulate a render bug: silently omit every ticket's section.
+            return "# Tickets\n\nCentral ledger managed by `frob ticket`.\n"
+
+        monkeypatch.setattr(_land_mod, "_render_ledger", _dropping_render)
+        spliced = splice_ledger(ours_text, theirs_text)
+        assert spliced.is_err
+        assert spliced.danger_err.name == "LedgerIntegrityViolation"
+
+
 class TestLand:
     """`frob.tickets.land` against real fixture repos."""
 

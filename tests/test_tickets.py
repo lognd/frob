@@ -907,6 +907,95 @@ class TestArchive:
         assert created.is_err
 
 
+class TestArchiveRefusesDuringInFlightWork:
+    """T-0764: `archive` refuses (unless `force=True`) while a live
+    cross-worktree lease exists anywhere in the repo -- the guard for the
+    T-0753 field incident (archive rewrote main's ledger mid-`start`,
+    which the in-flight worktree's later section-10b restore silently
+    reverted back to `queued` with empty evidence)."""
+
+    def _repo(self, tmp_path: Path) -> Path:
+        import subprocess
+
+        root = tmp_path / "repo"
+        root.mkdir()
+        subprocess.run(["git", "init", "-q", "-b", "main"], cwd=str(root), check=True)
+        subprocess.run(
+            ["git", "config", "user.email", "test@example.com"],
+            cwd=str(root),
+            check=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Test"], cwd=str(root), check=True
+        )
+        (root / "README.md").write_text("x\n", encoding="utf-8")
+        subprocess.run(["git", "add", "-A"], cwd=str(root), check=True)
+        subprocess.run(["git", "commit", "-q", "-m", "init"], cwd=str(root), check=True)
+        return root
+
+    def _write_live_lease(self, root: Path, ticket_id: str, worktree: Path) -> None:
+        from frob.tickets._leases import LeaseRecord, leases_dir
+
+        resolved = leases_dir(root)
+        assert resolved.is_ok
+        leases_root = resolved.danger_ok
+        leases_root.mkdir(parents=True, exist_ok=True)
+        record = LeaseRecord(
+            ticket_id=ticket_id,
+            scope=(),
+            worktree=str(worktree),
+            branch="main",
+            recorded_at="2026-07-22T00:00:00+00:00",
+        )
+        (leases_root / f"{ticket_id}.json").write_text(
+            record.model_dump_json(indent=2) + "\n", encoding="utf-8"
+        )
+
+    def test_archive_refuses_when_a_live_lease_exists(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork.test_archive_refuses_when_a_live_lease_exists  # noqa: E501
+        root = self._repo(tmp_path)
+        _write(root, _ticket(ticket_id="T-0001", state=TicketState.DONE), "done")
+        # T-0002's lease is live -- its worktree (root itself) exists on disk.
+        self._write_live_lease(root, "T-0002", root)
+
+        result = archive(root)
+        assert result.is_err
+        assert result.danger_err == TicketError.ArchiveLiveLeaseExists
+
+        # Nothing moved: the active/archive split is untouched.
+        active = load_active(root).danger_ok
+        assert "T-0001" in active.tickets
+
+    def test_archive_force_overrides_the_live_lease_refusal(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork.test_archive_force_overrides_the_live_lease_refusal  # noqa: E501
+        root = self._repo(tmp_path)
+        _write(root, _ticket(ticket_id="T-0001", state=TicketState.DONE), "done")
+        self._write_live_lease(root, "T-0002", root)
+
+        result = archive(root, force=True)
+        assert result.is_ok
+        assert result.danger_ok == 1
+
+    def test_archive_ignores_a_stale_lease_from_a_removed_worktree(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork.test_archive_ignores_a_stale_lease_from_a_removed_worktree  # noqa: E501
+        root = self._repo(tmp_path)
+        _write(root, _ticket(ticket_id="T-0001", state=TicketState.DONE), "done")
+        # The lease names a worktree path that does not exist on disk --
+        # `read_all_leases` already filters this out as stale, so archive
+        # must proceed normally, not treat it as live in-flight work.
+        self._write_live_lease(
+            root, "T-0002", root / ".." / "gone-worktree-does-not-exist"
+        )
+
+        result = archive(root)
+        assert result.is_ok
+        assert result.danger_ok == 1
+
+
 class TestSingleFileLedger:
     def _spec(self, title="a ticket"):
         from frob.tickets import Origin, TicketKind, TicketSpec

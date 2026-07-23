@@ -841,6 +841,20 @@ class TicketError(ErrorSet):
     # modes, and the close-time gate they exist to feed.
     AcceptanceIndexOutOfRange = "--accepts index does not name an acceptance item"
     AcceptanceUnbound = "one or more acceptance criteria have no resolving evidence id"
+    # T-0764: `archive()` refuses (unless `force=True`) when a live
+    # cross-worktree lease exists anywhere in the repo -- archiving during
+    # in-flight work is the hazard the T-0753 incident traced to.
+    ArchiveLiveLeaseExists = (
+        "a live in-flight ticket lease exists; archive would run concurrently "
+        "with in-flight work -- pass force=True to override"
+    )
+    # T-0764: a ledger write whose rendered text would produce a section
+    # with no marker line, or silently drop an id its input carried, is
+    # refused rather than committed -- the structural guard for the
+    # T-0367 markerless-block/id-drop incident class.
+    LedgerIntegrityViolation = (
+        "rendered ledger text lost a ticket id or marker -- write refused"
+    )
 
 
 # frob:ticket T-0176

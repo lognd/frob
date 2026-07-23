@@ -180,9 +180,13 @@ def migrate(root: Path) -> Result[int, TicketError]:
 
 # frob:doc docs/modules/tickets.md#public-api
 # frob:ticket T-0633
+# frob:ticket T-0764
 # frob:tests tests/test_tickets_ledger_concurrency.py::TestArchiveRaceWithConcurrentNew.test_concurrent_new_ticket_survives_a_racing_archive  # noqa: E501
+# frob:tests tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork.test_archive_refuses_when_a_live_lease_exists  # noqa: E501
+# frob:tests tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork.test_archive_force_overrides_the_live_lease_refusal  # noqa: E501
+# frob:tests tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork.test_archive_ignores_a_stale_lease_from_a_removed_worktree  # noqa: E501
 # frob:waive TEST005 reason="archive 75.0% branch cover, debt T-0160"
-def archive(root: Path) -> Result[int, TicketError]:
+def archive(root: Path, *, force: bool = False) -> Result[int, TicketError]:
     """Move every done/dropped ticket from the active store into
     tickets-archive.md, verbatim (same section format, still tracked and
     greppable); the active ledger keeps only open work. Idempotent -- a
@@ -200,10 +204,39 @@ def archive(root: Path) -> Result[int, TicketError]:
     writer had just spliced in. Holding the lock across the full sequence
     (reentrant per thread, see `ledger_lock`'s docstring) makes the read
     and the write one atomic unit, so no writer's splice can ever land in
-    the gap and then get overwritten."""
+    the gap and then get overwritten.
+
+    T-0764: `ledger_lock` only ever serializes writers against THIS repo's
+    lock file -- it says nothing about a worktree that is mid-`start`
+    (evidence/acceptance already recorded locally, not yet landed) whose
+    OWN change never runs through this process at all. Archiving in that
+    window is exactly the T-0753 field incident: the archiving worktree's
+    rewritten `tickets.md` becomes the new `main`, and the in-flight
+    worktree's later section 10b restore (`git checkout main --
+    tickets.md`) silently reverts its own start/evidence/acceptance back
+    to `queued`. `archive` now refuses (`Err(ArchiveLiveLeaseExists)`)
+    whenever ANY live cross-worktree lease exists anywhere in the repo,
+    unless `force=True` -- archiving is meant to run in a quiet window
+    (the TICK003 remediation text already says so; this makes it
+    enforced, not just advised). A lease for a worktree that no longer
+    exists on disk is stale, not live (`read_all_leases` already filters
+    those out), so a crashed/abandoned worktree can never wedge archive
+    forever."""
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(leased.danger_err)
+    if not force:
+        live_leases = read_all_leases(root)
+        if live_leases:
+            _log.error(
+                "tickets: archive refused -- %d live in-flight lease(s) "
+                "exist (%s); archiving now would risk reverting their "
+                "start/evidence/acceptance on next restore (T-0753) -- "
+                "run in a quiet window or pass force=True",
+                len(live_leases),
+                ", ".join(sorted(lease.ticket_id for lease in live_leases)),
+            )
+            return Err(TicketError.ArchiveLiveLeaseExists)
     with ledger_lock(root):
         active_loaded = load_all(root)
         if active_loaded.is_err:

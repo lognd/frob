@@ -362,6 +362,43 @@ def _render_ledger(tickets: dict[str, Ticket], header: str = _LEDGER_HEADER) -> 
     return "".join(parts)
 
 
+# frob:ticket T-0764
+# frob:doc docs/modules/tickets.md#storage-internals
+# frob:tests tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard.test_render_that_would_drop_an_id_is_refused kind="unit"  # noqa: E501
+def check_ledger_id_integrity(
+    tickets: dict[str, Ticket], rendered: str
+) -> Result[None, TicketError]:
+    """Structural guard against the T-0367 incident class: re-parse
+    `rendered` and refuse loudly (`Err(LedgerIntegrityViolation)`) unless
+    every id in `tickets` round-trips back out with its marker intact.
+
+    A ledger section with no `<!-- ticket:... -->` marker line silently
+    reads as trailing BODY TEXT of the PRECEDING ticket, not as its own
+    ticket -- `_parse_ledger` has no way to notice this on its own, since
+    from its perspective the id simply never existed in the file. The
+    T-0367 field incident lost an entire in-progress block this way with
+    no error anywhere in the chain. Calling this immediately before ANY
+    wholesale ledger commit (`write_all`, `write_archive`) turns that
+    silent loss into a hard `Err` at the one point it is still cheap to
+    catch: right after rendering, before the bytes ever hit disk."""
+    reparsed = _parse_ledger(rendered)
+    if reparsed.is_err:
+        _log.error(
+            "tickets: ledger write refused -- rendered text fails to re-parse (%s)",
+            reparsed.danger_err,
+        )
+        return Err(TicketError.LedgerIntegrityViolation)
+    missing = set(tickets) - set(reparsed.danger_ok)
+    if missing:
+        _log.error(
+            "tickets: ledger write refused -- rendering dropped id(s) %s "
+            "(markerless-block class, T-0764)",
+            sorted(missing),
+        )
+        return Err(TicketError.LedgerIntegrityViolation)
+    return Ok(None)
+
+
 # frob:ticket T-0505
 def _splice_ticket_section(text: str, ticket: Ticket) -> str:
     """Rewrite ONLY `ticket.id`'s own marker block within `text`, leaving
@@ -444,6 +481,9 @@ def write_archive(root: Path, tickets: dict[str, Ticket]) -> Result[None, Ticket
     every other ledger mutation via `ledger_lock` (T-0458)."""
     with ledger_lock(root):
         text = _render_ledger(tickets, _ARCHIVE_HEADER)
+        integrity = check_ledger_id_integrity(tickets, text)
+        if integrity.is_err:
+            return Err(integrity.danger_err)
         return atomic_write(archive_path(root), text)
 
 
@@ -494,7 +534,11 @@ def write_all(root: Path, tickets: dict[str, Ticket]) -> Result[None, TicketErro
     single-ticket `write_ticket`."""
     with ledger_lock(root):
         if _store_mode(root) == "single":
-            return atomic_write(ledger_path(root), _render_ledger(tickets))
+            text = _render_ledger(tickets)
+            integrity = check_ledger_id_integrity(tickets, text)
+            if integrity.is_err:
+                return Err(integrity.danger_err)
+            return atomic_write(ledger_path(root), text)
         keep_files: set[Path] = set()
         for ticket in tickets.values():
             path = _dir_path_for(root, ticket)

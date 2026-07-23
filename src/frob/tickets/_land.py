@@ -50,7 +50,13 @@ from frob.tickets._models import (
     unbound_acceptance,
 )
 from frob.tickets._provisional import is_draft_id
-from frob.tickets._store import _parse_ledger, _render_ledger, archive_path, ledger_path
+from frob.tickets._store import (
+    _parse_ledger,
+    _render_ledger,
+    archive_path,
+    check_ledger_id_integrity,
+    ledger_path,
+)
 
 # T-0577: same posix-only degradation as `frob.tickets._store`'s
 # `ledger_lock` -- `_land_lock` degrades to a documented no-op (see its
@@ -183,24 +189,53 @@ def _newer(a: Ticket, b: Ticket) -> Ticket:
        tie-broken by `b` (the incoming/theirs side) as the final
        deterministic pick -- never a coin flip.
 
-    Either way, the winner's evidence is UNIONED with the loser's
-    (`_union_evidence`, D-09) rather than the loser's evidence being
-    silently dropped -- the old `len(a.evidence) != len(b.evidence)`
-    tiebreak used to pick ONE side's evidence set wholesale, discarding
-    the other side's ids entirely when two worktrees closed the same
-    ticket with disjoint evidence."""
+    Either way, the winner's evidence AND acceptance bindings are UNIONED
+    with the loser's (`_union_evidence`/`_union_acceptance`, D-09/T-0764)
+    rather than the loser's side being silently dropped -- the old
+    `len(a.evidence) != len(b.evidence)` tiebreak used to pick ONE side's
+    evidence set wholesale, discarding the other side's ids entirely when
+    two worktrees closed the same ticket with disjoint evidence.
+
+    T-0764: step 2's Done-report-presence check generalized to a full
+    RICHNESS score (`_richness`: Done-report presence, then evidence
+    count, then bound-acceptance count, checked in that priority order) --
+    the original T-0753 field incident was an IN-PROGRESS ticket with a
+    `start`+evidence+bound-acceptance already recorded but NO Done report
+    yet, tied in state-rank with main's bare `in-progress` (no evidence at
+    all). Neither side differed on Done-report presence, so this used to
+    fall straight through to the old step 3's arbitrary `b`-wins tiebreak
+    -- which happened to discard the richer, evidence-bearing side. Using
+    the same richness tuple for BOTH steps closes that gap while leaving
+    every existing Done-report-differs case decided exactly as before,
+    since Done-report presence is still the tuple's first (highest-
+    priority) component."""
     rank_a, rank_b = _STATE_RANK[a.state], _STATE_RANK[b.state]
     if _TERMINAL_RANK in (rank_a, rank_b) and rank_a != rank_b:
         winner = a if rank_a > rank_b else b
     else:
-        done_a, done_b = _has_done_report(a.body), _has_done_report(b.body)
-        if done_a != done_b:
-            reported, reported_rank = (a, rank_a) if done_a else (b, rank_b)
-            reportless, reportless_rank = (b, rank_b) if done_a else (a, rank_a)
-            winner = reportless if reportless_rank > reported_rank else reported
+        richness_a, richness_b = _richness(a), _richness(b)
+        if richness_a != richness_b:
+            richer, richer_rank = (
+                (a, rank_a) if richness_a > richness_b else (b, rank_b)
+            )
+            poorer, poorer_rank = (
+                (b, rank_b) if richness_a > richness_b else (a, rank_a)
+            )
+            winner = poorer if poorer_rank > richer_rank else richer
         else:
             winner = b if rank_a == rank_b else (a if rank_a > rank_b else b)
-    return _union_evidence(winner, a, b)
+    return _union_acceptance(_union_evidence(winner, a, b), a, b)
+
+
+def _richness(t: Ticket) -> tuple[int, int, int]:
+    """T-0764: `(has_done_report, evidence_count, bound_acceptance_count)`
+    -- the tiebreak signal `_newer` uses to prefer whichever same-id,
+    same-terminality side carries more real recorded progress. Compared as
+    a plain tuple, so Done-report presence dominates (matches the
+    pre-T-0764 priority exactly), evidence count breaks a Done-report tie,
+    and bound-acceptance count breaks an evidence-count tie."""
+    bound_acceptance = sum(1 for c in t.acceptance if c.evidence)
+    return (1 if _has_done_report(t.body) else 0, len(t.evidence), bound_acceptance)
 
 
 def _union_evidence(winner: Ticket, a: Ticket, b: Ticket) -> Ticket:
@@ -223,6 +258,47 @@ def _union_evidence(winner: Ticket, a: Ticket, b: Ticket) -> Ticket:
     return winner.model_copy(update={"evidence": tuple(merged)})
 
 
+# frob:ticket T-0764
+def _union_acceptance(winner: Ticket, a: Ticket, b: Ticket) -> Ticket:
+    """Never let a splice silently drop one side's acceptance BINDING: for
+    each criterion `winner` carries, if the OTHER side has a same-text
+    criterion with an evidence id `winner`'s copy lacks, extend `winner`'s
+    binding with it (deduplicated, winner's own ids first) -- the
+    acceptance-side twin of `_union_evidence` (D-09), closing the T-0764
+    gap where `winner` could be the side whose criterion was never bound
+    even though the loser's copy of the SAME criterion text already was.
+    A criterion whose text does not appear on the other side at all (a
+    genuinely new/edited criterion) is left untouched."""
+    if a.acceptance == b.acceptance:
+        return winner
+    other = b if winner is a else a
+    other_by_text = {c.text: c for c in other.acceptance}
+    changed = False
+    merged_criteria = []
+    for criterion in winner.acceptance:
+        other_criterion = other_by_text.get(criterion.text)
+        if other_criterion is None or not other_criterion.evidence:
+            merged_criteria.append(criterion)
+            continue
+        extra = [e for e in other_criterion.evidence if e not in criterion.evidence]
+        if not extra:
+            merged_criteria.append(criterion)
+            continue
+        changed = True
+        merged_criteria.append(
+            criterion.model_copy(
+                update={"evidence": tuple(list(criterion.evidence) + extra)}
+            )
+        )
+    if not changed:
+        return winner
+    _log.info(
+        "tickets: land splice -- unioned acceptance binding(s) for %s",
+        winner.id,
+    )
+    return winner.model_copy(update={"acceptance": tuple(merged_criteria)})
+
+
 # frob:doc docs/modules/tickets.md#frob-ticket-land
 # `archived_ids` (from main's `tickets-archive.md`, the only authoritative
 # archive) is excluded from the merged result unconditionally, from
@@ -243,7 +319,16 @@ def splice_ledger(
     textual merge -- the fix for the "both sides append a new ticket near
     the same line" false-conflict class (T-0176), and the tiebreak for a
     genuine same-id divergence (e.g. one side closed a ticket the other
-    side is still mid-editing)."""
+    side is still mid-editing).
+
+    T-0764: after the merge, refuses loudly (`Err(LedgerIntegrityViolation)`)
+    if any id present on EITHER side vanished from the result without being
+    an intentional `archived_ids` drop, or if the rendered text does not
+    round-trip every surviving id back out with its marker intact
+    (`check_ledger_id_integrity`, the same guard `write_all`/`write_archive`
+    run) -- the structural backstop for the T-0367 markerless-block
+    incident class at the one place a git-merge-driver-triggered splice
+    could otherwise commit a silent loss with no caller ever checking."""
     ours_parsed = _parse_ledger(ours_text)
     if ours_parsed.is_err:
         return Err(ours_parsed.danger_err)
@@ -260,7 +345,21 @@ def splice_ledger(
         len(theirs),
         len(merged),
     )
-    return Ok(_render_ledger(merged))
+    expected_ids = (set(ours) | set(theirs)) - archived_ids
+    unintended_loss = expected_ids - set(merged)
+    if unintended_loss:
+        _log.error(
+            "tickets: land splice refused -- id(s) %s vanished from the "
+            "merge without being an intentional archive-resurrection drop "
+            "(T-0764)",
+            sorted(unintended_loss),
+        )
+        return Err(TicketError.LedgerIntegrityViolation)
+    rendered = _render_ledger(merged)
+    integrity = check_ledger_id_integrity(merged, rendered)
+    if integrity.is_err:
+        return Err(integrity.danger_err)
+    return Ok(rendered)
 
 
 def _merge_ledger_tickets(
