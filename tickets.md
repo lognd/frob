@@ -6442,7 +6442,7 @@ Lost draft from T-0692 (pytest-timeout guard): tests/system/test_scaffold_dx.py 
 id: T-0743
 title: 'arch model: NormalizedVariant for enum associated-data shape (Rust/Kotlin
   payloads)'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
