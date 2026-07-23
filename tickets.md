@@ -1916,7 +1916,7 @@ reproduce on this measurement; nothing to fix or waive there today.
 id: T-0597
 title: 'frob-dup: triage duplicate-block report (75 groups, 112 waived) into extraction
   vs accepted-false-pair'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-07-22'
@@ -1930,6 +1930,11 @@ component: null
 ```
 frob-dup currently reports 75 duplicate groups (112 waived), measured 2026-07-22 (was 64 groups at T-0204 filing, has grown). This is distinct from the frob-arch abstraction-opportunity advisories already covered by T-0393 -- frob-dup is the raw clone-detector report over both src/frob/** and tests/**, not the arch gate's near-dup-family suggestions. For each of the 75 groups: if it is a genuine extraction candidate (shared logic that should live in one home), extract it; if it is a false pair (coincidental structural similarity, e.g. parallel test scaffolding), waive it with an honest per-group reason. Acceptance: frob-dup summary line reports 0 unwaived groups (fixed or waived-with-reason), no threshold loosened without a disclosed decision.
 
+## Failure log
+- 2026-07-23 attempt 1: re-measured: frob-dup check stage now shows 240 groups/130 unaccounted (was 75 at filing, 3.2x growth in ~1 day of concurrent landings); too large for one honest per-group triage pass with real extraction+test verification -- split into T-0861 (25 src/frob/** extraction-candidate groups) and T-0862 (105 tests/**-only groups, mostly expected false pairs)
+
+## Drop reason
+- 2026-07-23: Superseded: re-measurement showed 3.2x pool drift (75 assumed -> 240 groups, 130 unaccounted) making the single-ticket scope undoable with honest per-group judgment; split into T-0861 (25 src extraction candidates) and T-0862 (105 tests-only scaffolding groups) per the attempt-1 fail log. (absorbed by T-0861)
 <!-- ticket:T-0600 -->
 ```yaml
 id: T-0600
@@ -8047,3 +8052,73 @@ threat: null
 component: null
 ```
 Found while working T-0601 (frob-exports triage, unrelated scope): pytest failures in tests/unit/strata/test_export_golden.py (test_iam, test_k8s, test_seccomp -- IAM/k8s/seccomp export golden files no longer byte-match export_iam/export_k8s_netpol/export_seccomp output for the deploy node) and tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant (SYS100: capability 'env' observed but not declared on node 'mutate', capability 'eval' observed but not declared on node 'deploy'). These are pre-existing on the merged main tip (102688bb) -- neither src/frob/mutate/**, src/frob/deploy/**, design/frob.strata, nor either test file were touched by T-0600 or T-0601's changes, and this drift was discovered only because the targeted verification run for T-0601 happened to include tests/unit/strata/. Needs investigation: either the mutate/deploy code gained an env/eval capability without updating design/frob.strata's declared capabilities, or the golden IAM/k8s/seccomp export fixtures need regenerating against the current design/frob.strata.
+
+<!-- ticket:T-0861 -->
+```yaml
+id: T-0861
+title: 'frob-dup: triage src/frob/** extraction-candidate groups (25 groups, split
+  from T-0597)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/**
+- tests/**
+threat: null
+component: null
+```
+Re-measured 2026-07-23 by T-0597: the frob-dup check stage (frob check --only dup, the legacy find_duplicates scanner T-0597 was scoped against, NOT the newer standalone frob dup CLI's rung pipeline which reports a different, larger count) currently shows 240 total groups, 110 already covered by full-group frob:waive DUP001/DUP002 directives, 130 unaccounted. This ticket carves out the 25 unaccounted groups that touch at least one src/frob/** file -- these need real per-group architectural judgment (genuine extraction vs honest false-pair waiver), unlike the tests/** parallel-scaffolding groups split into a sibling ticket. Full group list (message text from the frob-dup diagnostics, frob check --only dup --json):
+
+1. 30-line: src/frob/gates/_pii_structural.py:492, :829
+2. 29-line: src/frob/gates/__init__.py:4192, :4442, :6626
+3. 25-line: src/frob/gates/_walk_lint.py:247, src/frob/gates/_render_lint.py:174
+4. 23-line: src/frob/deploy/_generate_windows.py:189, :215
+5. 22-line: src/frob/app/sys_runner.py:452, :603, :669
+6. 21-line: src/frob/deploy/_generate_windows.py:321, :345
+7. 20-line: src/frob/process/parsers/common.py:209, :232
+8. 19-line: src/frob/tickets/__init__.py:1746, :1773
+9. 19-line: src/frob/app/check_runner.py:168, :184
+10. 18-line: src/frob/strata/_waive.py:217, src/frob/deploy/_generate.py:300/382/406/571, src/frob/scaffold/_managed.py:140, src/frob/dup/_rules.py:65
+11. 17-line: src/frob/gates/_pii_structural.py:777, :1216
+12. 17-line: src/frob/deploy/_generate_windows.py:285, :305
+13. 16-line: src/frob/gates/_exclude_hazard.py:101, src/frob/gates/_cve_fingerprint_scan.py:96
+14. 16-line: src/frob/gates/__init__.py:8500, src/frob/vet/_scan.py:147, :418
+15. 15-line: src/frob/gates/_pii_structural.py:1178, src/frob/gates/_walk_lint.py:77, src/frob/gates/_render_lint.py:65
+16. 14-line: src/frob/arch/_python.py:285, src/frob/arch/_rust.py:171/181, src/frob/arch/_typescript.py:96
+17. 12-line: src/frob/deploy/_generate.py:191, src/frob/deploy/_generate_windows.py:150
+18. 12-line: src/frob/app/sys_runner.py:529, :587, :653
+19. 11-line: src/frob/gates/_docblocks.py:146, src/frob/perf/_redundancy.py:88
+20. 11-line: src/frob/app/sys_runner.py:560, :623, :687
+21. 10-line: src/frob/gates/_registry_exhaustiveness.py:169, :207
+22. 9-line: src/frob/strata/_host_isolation.py:337, src/frob/strata/_contention.py:156
+23. 9-line: src/frob/arch/_rust.py:378, src/frob/arch/_kotlin.py:129
+24. 8-line: src/frob/vet/_capability.py:654, :2584
+25. 6-line: src/frob/gates/__init__.py:3556, src/frob/perf/_recursion.py:240, src/frob/dup/_pipeline.py:619
+
+Note groups 5/18/20 all sit inside src/frob/app/sys_runner.py's _log_waived_* family and likely share one real extraction opportunity; group 3/15 (_walk_lint.py/_render_lint.py) likewise look related. Re-run frob check --only dup --json at the start of this ticket (do not trust this snapshot -- T-0597's own dispatch drifted 75->240 groups in one day). For each group: genuine extraction (shared logic into one home, update call sites, before/after tests, TEST016 mutant-kill check per the T-0597 dispatch playbook) or an honest full-group frob:waive DUP001/DUP002 reason if it is a false pair. Acceptance: frob check --only dup summary shows these 25 groups' fragments no longer among the unwaived (fixed-or-waived), frob-cycle stays clean, no import cycles introduced.
+
+<!-- ticket:T-0862 -->
+```yaml
+id: T-0862
+title: 'frob-dup: triage tests/**-only near-dup groups (105 groups, split from T-0597)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- tests/**
+threat: null
+component: null
+```
+Re-measured 2026-07-23 by T-0597: the frob-dup check stage (frob check --only dup, the legacy find_duplicates scanner T-0597 was scoped against) currently shows 240 total groups, 110 already covered by full-group frob:waive DUP001/DUP002 directives, 130 unaccounted. Of the 130 unaccounted, 105 involve ONLY tests/** files (no src/frob/** member) -- a sibling ticket (see parent T-0597's Done/fail report) carves out the remaining 25 groups that touch src/frob/** for real extraction judgment; this ticket is the tests-only batch, which the T-0597 dispatch playbook expects to be mostly (not necessarily all) legitimate parallel-scaffolding false pairs.
+
+Do NOT hand-copy a stale list: at the start of this ticket, run:
+
+  uv run frob check --only dup --json
+
+and filter diagnostics with severity=="warning" whose message contains no "src/frob" path segment -- that is the authoritative, current group list (it will have drifted again since this filing; T-0597's own dispatch saw the raw dup group count move 75->240 in about one day of concurrent landings). For each group: waive with an honest, specific, full-group frob:waive DUP001 (or DUP002) reason (T-0375's full-coverage rule -- every fragment's symref must be covered, no any-shared-symref shortcuts) if it is a coincidental structural/parallel-test-scaffolding pair, or extract into a shared test helper/fixture (with before/after test runs) if the shared logic is genuinely one thing duplicated, not parallel-but-distinct test intent. Given the volume, batch the work (e.g. by source test file or by group-size band) and commit incrementally per playbook section 12/discipline. Acceptance: frob check --only dup summary shows 0 unaccounted groups whose fragments are entirely under tests/**, no threshold loosened.
