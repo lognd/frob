@@ -6042,6 +6042,7 @@ stamping it kills the probe mutant and the test fails).
 ### Captured claims
 - tests: 24 passed (from 24 evidence id(s))
 - gates: 6 error(s), 1211 warning(s), 210 waived
+
 <!-- ticket:T-0756 -->
 ```yaml
 id: T-0756
