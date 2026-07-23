@@ -21,9 +21,13 @@ from frob.gates import (
     _waive006_binding_ticket_refs,
     _waive006_comment_violations,
     _waive006_strata_violations,
+    _waive007_comment_violations,
+    _waive007_is_exempt_dangling_ref,
+    _waive007_strata_violations,
     known_gate_rule_ids,
     run_gates,
     waive006_gate,
+    waive007_gate,
 )
 from frob.graph import build_graph
 from frob.graph._models import Edge, EdgeKind
@@ -347,6 +351,193 @@ def _git_init(root: Path) -> None:
     )
 
 
+class TestWaive007ExemptDanglingRef:
+    """`_waive007_is_exempt_dangling_ref` -- the `T-draft-*` exemption in
+    isolation, no gate plumbing involved."""
+
+    def test_draft_id_is_exempt(self) -> None:
+        assert _waive007_is_exempt_dangling_ref("T-draft-8cd37914") is True
+
+    def test_real_ticket_id_is_not_exempt(self) -> None:
+        assert _waive007_is_exempt_dangling_ref("T-0803") is False
+
+
+class TestWaive007CommentChannel:
+    """`_waive007_comment_violations` -- the `frob:waive` comment channel."""
+
+    def test_ticket_attr_bound_to_unresolvable_id_fires(self, tmp_path: Path) -> None:
+        source = (
+            "def helper(x):\n"
+            '    # frob:waive COV001 reason="legacy" ticket="T-9999"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        violations = _waive007_comment_violations(snap, queue)
+        assert len(violations) == 1
+        assert violations[0].rule == "WAIVE007"
+        assert violations[0].severity.name == "WARN"
+        assert "T-9999" in violations[0].message
+
+    def test_binding_reason_phrase_bound_to_unresolvable_id_fires(
+        self, tmp_path: Path
+    ) -> None:
+        source = (
+            "def helper(x):\n"
+            '    # frob:waive COV001 reason="pending T-9998\'s real fix"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        violations = _waive007_comment_violations(snap, queue)
+        assert len(violations) == 1
+
+    def test_ticket_attr_bound_to_resolvable_id_is_silent(self, tmp_path: Path) -> None:
+        source = (
+            "def helper(x):\n"
+            '    # frob:waive COV001 reason="legacy" ticket="T-0003"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={"T-0003": _ticket(state=TicketState.QUEUED)})
+        violations = _waive007_comment_violations(snap, queue)
+        assert violations == ()
+
+    def test_ticket_attr_bound_to_draft_id_is_exempt(self, tmp_path: Path) -> None:
+        """The T-0803 land-renumbering case: a waiver still citing the
+        draft id it was written under must not be flagged."""
+        source = (
+            "def helper(x):\n"
+            '    # frob:waive COV001 reason="legacy" ticket="T-draft-8cd37914"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        violations = _waive007_comment_violations(snap, queue)
+        assert violations == ()
+
+    def test_no_binding_ref_at_all_is_silent(self, tmp_path: Path) -> None:
+        source = (
+            "def helper(x):\n"
+            '    # frob:waive COV001 reason="legacy code, no ticket needed"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        violations = _waive007_comment_violations(snap, queue)
+        assert violations == ()
+
+
+class TestWaive007StrataChannel:
+    """`_waive007_strata_violations` -- the `.strata` `waive` clause channel."""
+
+    def test_strata_ticket_attr_bound_to_unresolvable_id_fires(
+        self, tmp_path: Path
+    ) -> None:
+        (tmp_path / "design").mkdir()
+        _write(
+            tmp_path,
+            "design/sample.strata",
+            "node checker : trusted {\n"
+            '    may "exec";\n'
+            '    waive "LINT004" reason "no kill switch yet" ticket "T-9997";\n'
+            "}\n",
+        )
+        queue = TicketQueue(tickets={})
+        violations = _waive007_strata_violations(tmp_path, queue)
+        assert len(violations) == 1
+        assert violations[0].file == "design/sample.strata"
+        assert "T-9997" in violations[0].message
+
+    def test_strata_ticket_attr_bound_to_draft_id_is_exempt(
+        self, tmp_path: Path
+    ) -> None:
+        (tmp_path / "design").mkdir()
+        _write(
+            tmp_path,
+            "design/sample.strata",
+            "node checker : trusted {\n"
+            '    may "exec";\n'
+            '    waive "LINT004" reason "tracked in T-draft-9f9f9f9f" '
+            'ticket "T-draft-9f9f9f9f";\n'
+            "}\n",
+        )
+        queue = TicketQueue(tickets={})
+        violations = _waive007_strata_violations(tmp_path, queue)
+        assert violations == ()
+
+    def test_strata_ticket_attr_bound_to_resolvable_id_is_silent(
+        self, tmp_path: Path
+    ) -> None:
+        (tmp_path / "design").mkdir()
+        _write(
+            tmp_path,
+            "design/sample.strata",
+            "node checker : trusted {\n"
+            '    may "exec";\n'
+            '    waive "LINT004" reason "no kill switch yet" ticket "T-0100";\n'
+            "}\n",
+        )
+        queue = TicketQueue(tickets={"T-0100": _ticket(state=TicketState.QUEUED)})
+        violations = _waive007_strata_violations(tmp_path, queue)
+        assert violations == ()
+
+    def test_no_design_dir_is_silent(self, tmp_path: Path) -> None:
+        assert _waive007_strata_violations(tmp_path, TicketQueue(tickets={})) == ()
+
+
+class TestWaive007Registration:
+    """WAIVE007 joins `known_gate_rule_ids()` and is itself waivable (not
+    added to the unwaivable-rules set)."""
+
+    def test_waive007_is_a_known_gate_rule(self) -> None:
+        assert "WAIVE007" in known_gate_rule_ids()
+
+    def test_waive007_gate_combines_both_channels(self, tmp_path: Path) -> None:
+        source = (
+            "def helper(x):\n"
+            '    # frob:waive COV001 reason="legacy" ticket="T-9996"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        (tmp_path / "design").mkdir()
+        _write(
+            tmp_path,
+            "design/sample.strata",
+            "node checker : trusted {\n"
+            '    may "exec";\n'
+            '    waive "LINT004" reason "no kill switch yet" ticket "T-9995";\n'
+            "}\n",
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        violations = waive007_gate(tmp_path, snap, queue)
+        assert {v.file for v in violations} == {"src/a.py", "design/sample.strata"}
+
+    def test_waivable_via_frob_waive_comment(self, tmp_path: Path) -> None:
+        """WAIVE007 itself is a normal waivable rule id, not added to
+        `_UNWAIVABLE_RULES` -- proven end-to-end through `run_gates`."""
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def helper(x):\n"
+            '    # frob:waive COV001 reason="legacy" ticket="T-9994"\n'
+            '    # frob:waive WAIVE007 reason="acknowledged, re-review scheduled"\n'
+            "    return x\n",
+        )
+        _git_init(tmp_path)
+        report = run_gates(GateConfig(root=str(tmp_path))).danger_ok
+        assert not any(v.rule == "WAIVE007" for v in report.violations)
+        assert any(w.rule == "WAIVE007" for w in report.waived), (
+            "expected WAIVE007 to appear in the waived set, not vanish silently"
+        )
+
+
 class TestWaive006RealRepo:
     """The calibration proof the ticket demanded: WAIVE006 must find ZERO
     false errors against this repo's OWN real `design/frob.strata` and
@@ -363,4 +554,25 @@ class TestWaive006RealRepo:
         assert violations == (), (
             "WAIVE006 fired on the real repo -- either a genuinely stale "
             f"waiver needs fixing, or the heuristic over-fired: {offending}"
+        )
+
+
+class TestWaive007RealRepo:
+    """The calibration proof T-0808 demanded: WAIVE007 must find ZERO
+    findings against this repo's own real waivers -- run against the live
+    ledger, not a fixture. Main currently has no dangling binding refs
+    after the T-0803 draft-id retarget (the four `design/frob.strata`
+    waivers that used to cite the dead `T-draft-8cd37914` were fixed to
+    cite `T-0803` directly)."""
+
+    def test_zero_findings_on_real_repo(self) -> None:
+        from frob.gates import _load_inputs
+
+        cfg = GateConfig(root=str(_REPO_ROOT))
+        st = _load_inputs(cfg).danger_ok
+        violations = waive007_gate(st.repo_root, st.snapshot, st.queue)
+        offending = [v.message for v in violations]
+        assert violations == (), (
+            "WAIVE007 fired on the real repo -- either a genuinely dangling "
+            f"binding ref needs fixing, or the heuristic over-fired: {offending}"
         )

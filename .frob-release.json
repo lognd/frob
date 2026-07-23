@@ -389,6 +389,7 @@
     "src/frob/gates/__init__.py::ticket_lease_pin": "106fdd5f30bb3063ae82ecd103861ae1ceafbb22030003feac3e0eaa39c053c2",
     "src/frob/gates/__init__.py::tickets_gate": "151a5c8106999e9e13e65e15aef2837187687aa7310a7762ce24aaf82af05844",
     "src/frob/gates/__init__.py::waive006_gate": "6c3a6f2aca83dbda0c48f75695a94faec32a9fa9fcbdb667d293cf92ff507bbb",
+    "src/frob/gates/__init__.py::waive007_gate": "6263da88b1449aecc1c42e2bafd90827fdb82707f0a200c291b07dc5a2c77384",
     "src/frob/gates/_arch.py::arch_gate": "5c500421e8c8b3d7dcee2558fd377960adb17bed740bfc59bbc856b8aed73cb2",
     "src/frob/gates/_baseline.py::delta_violations": "db24f451a1eec615aeab7048461653cbcc5b18d461c0c81bd0400d57cdf6e0ed",
     "src/frob/gates/_baseline.py::is_baseline_stale": "6a9bf7dc2d414187d43b55a1d4d8d7f8030e9cfc39572b3e5ce82f722fef5bcc",
@@ -1353,5 +1354,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.110.0"
+  "version": "0.111.0"
 }

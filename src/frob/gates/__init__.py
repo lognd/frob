@@ -939,6 +939,13 @@ _KNOWN_GATE_RULES = frozenset(
         # T-0779: stale-waiver detection -- a waiver bound (via `ticket=`
         # or binding reason phrasing) to a now-DONE/DROPPED ticket.
         "WAIVE006",
+        # T-0808: a waiver's binding ticket ref that resolves to NO ticket
+        # at all (active or archive) -- a typo, or a draft id renumbered
+        # at land (T-draft-8cd37914 -> T-0803) that left the waiver
+        # pointing at a dead id forever. WARNING-tier: unlike WAIVE006's
+        # provably-closed case, an unresolvable id could still be a
+        # not-yet-synced ledger view, so this does not error.
+        "WAIVE007",
         "DEC001",
         "DEC002",
         "REL001",
@@ -1593,6 +1600,152 @@ def waive006_gate(
     return (
         *_waive006_comment_violations(snapshot, queue),
         *_waive006_strata_violations(root, queue),
+    )
+
+
+# T-0808 (T-0779 reviewer finding): WAIVE006 deliberately skips a binding
+# ticket ref that does not resolve to any ticket at all (active or
+# archive) -- that is a different honesty gap, not WAIVE006's "closed
+# ticket" case, and was silently unflagged. The real incident this closes:
+# four `design/frob.strata` waivers bound to `T-draft-8cd37914`, which was
+# renumbered to `T-0803` at land -- the waivers kept citing a ticket id
+# that no longer (and now never again) resolves, a permanent silent
+# waiver with nothing left to re-litigate it.
+#
+# Exemption: EVERY `T-draft-*` id is exempt from WAIVE007, unconditionally
+# -- not just ones referenced by a still-live worktree lease. A narrower
+# "exempt only if a live lease still claims this draft id" rule was
+# considered and rejected: it would require this gate to cross-reference
+# `frob.tickets._leases` state that is worktree-local and routinely absent
+# in the very run (a landed/merged checkout, CI, another agent's worktree)
+# where the gate needs to be trustworthy, making the exemption itself flaky
+# across environments -- exactly the kind of environment-dependent gate
+# result this repo's gates avoid elsewhere. Drafts are worktree-local
+# transients by construction (`frob.tickets._models` mints `T-draft-<hex>`
+# only inside an active worktree, and `frob ticket land` always renumbers
+# them to a real `T-####` id before the ledger is shared) -- so ANY
+# `T-draft-*` id a gate run observes is either still in-progress (not yet
+# landed, not a dangling reference at all -- the id simply has not been
+# minted into the real ledger this checkout sees) or was already
+# renumbered away and is now permanently unresolvable by design, a state
+# WAIVE006 already treats as out of scope for the identical reason (see
+# `_waive006_stale_ticket`'s docstring). Flagging a renumbered draft as
+# "dangling" would fire on every merged waiver written before its own
+# ticket landed, forever, which is noise WAIVE007 exists to avoid
+# creating, not add.
+def _waive007_is_exempt_dangling_ref(ticket_id: str) -> bool:
+    """`True` for any `T-draft-*` id: worktree-local transient by
+    construction (see the module comment above), never a WAIVE007
+    finding regardless of whether it currently resolves."""
+    return ticket_id.startswith("T-draft-")
+
+
+def _waive007_violation(
+    *, file: str, line: int, site: str, rule_and_target: str, dangling: str
+) -> Violation:
+    """The single WAIVE007 `Violation` for one waiver site whose binding
+    ticket ref does not resolve to any ticket (shared by both waiver
+    channels, mirroring `_waive006_violation`'s shape)."""
+    _log.warning(
+        "WAIVE007: %s (%s) binds to unresolvable ticket %s",
+        site,
+        rule_and_target,
+        dangling,
+    )
+    return Violation(
+        rule="WAIVE007",
+        severity=Severity.WARN,
+        file=file,
+        line=line,
+        message=(
+            f"WAIVE007: {site} waives {rule_and_target}, bound to ticket "
+            f"{dangling}, which does not resolve to any ticket (active or "
+            f"archive) -- a typo, or a draft id renumbered at land; "
+            f"re-point the waiver at the real ticket id or remove the "
+            f"stale binding"
+        ),
+    )
+
+
+# frob:enforces CHK-GATE-WAIVE007
+def _waive007_comment_violations(
+    snapshot: GraphSnapshot, queue: TicketQueue
+) -> tuple[Violation, ...]:
+    """WAIVE007 (`frob:waive` comment channel): a waiver whose `ticket=`
+    attribute, or whose `reason=` text binds itself via
+    `_waive006_binding_ticket_refs` (the same binding-vs-mention
+    extraction WAIVE006 uses), names a ticket id that resolves to nothing
+    in the ledger+archive and is not `_waive007_is_exempt_dangling_ref`."""
+    violations: list[Violation] = []
+    for edge in _waive_edges(snapshot):
+        reason = edge.attrs.get("reason", "")
+        refs = _waive006_binding_ticket_refs(reason)
+        attr_ticket = edge.attrs.get("ticket", "")
+        if attr_ticket:
+            refs.add(attr_ticket)
+        if not refs:
+            continue
+        file, line = _site_from_edge_origin(edge.origin)
+        for ticket_id in sorted(refs):
+            if ticket_id in queue.tickets:
+                continue
+            if _waive007_is_exempt_dangling_ref(ticket_id):
+                continue
+            violations.append(
+                _waive007_violation(
+                    file=file,
+                    line=line,
+                    site=edge.src,
+                    rule_and_target=f"frob:waive {edge.target}",
+                    dangling=ticket_id,
+                )
+            )
+    return tuple(violations)
+
+
+# frob:enforces CHK-GATE-WAIVE007
+def _waive007_strata_violations(
+    root: Path, queue: TicketQueue
+) -> tuple[Violation, ...]:
+    """WAIVE007 (`.strata` `waive` clause channel): the same dangling-
+    binding-ref check `_waive007_comment_violations` runs for `frob:waive`
+    comments, applied to every `waive "RULE" reason "..." [ticket "..."]`
+    clause `_strata_waive_sites` finds."""
+    violations: list[Violation] = []
+    for rel, line, rule, reason, ticket in _strata_waive_sites(root):
+        refs = _waive006_binding_ticket_refs(reason)
+        if ticket:
+            refs.add(ticket)
+        if not refs:
+            continue
+        for ticket_id in sorted(refs):
+            if ticket_id in queue.tickets:
+                continue
+            if _waive007_is_exempt_dangling_ref(ticket_id):
+                continue
+            violations.append(
+                _waive007_violation(
+                    file=rel,
+                    line=line,
+                    site=f"{rel}:{line}",
+                    rule_and_target=f'waive "{rule}"',
+                    dangling=ticket_id,
+                )
+            )
+    return tuple(violations)
+
+
+# frob:doc docs/modules/gates.md#public-api
+def waive007_gate(
+    root: Path, snapshot: GraphSnapshot, queue: TicketQueue
+) -> tuple[Violation, ...]:
+    """WAIVE007: every dangling-binding-ref finding across both waiver
+    channels (`frob:waive` comments and `.strata` `waive` clauses) -- see
+    the module comment above `_waive007_is_exempt_dangling_ref` for the
+    full rule design and the `T-draft-*` exemption rationale."""
+    return (
+        *_waive007_comment_violations(snapshot, queue),
+        *_waive007_strata_violations(root, queue),
     )
 
 
@@ -8943,6 +9096,9 @@ def _assemble_gate_report(
         # violation set dependency, so it runs alongside the other WAIVE00*
         # self-checks rather than after job_violations like WAIVE003/004.
         *waive006_gate(st.repo_root, st.snapshot, st.queue),
+        # T-0808: same dependency shape as WAIVE006 (snapshot waive edges
+        # + merged ticket queue only), so it runs alongside it.
+        *waive007_gate(st.repo_root, st.snapshot, st.queue),
         *_dsl001_violations(st.snapshot),
     ]
     job_violations, counts, timing = _run_combined_jobs(thread_jobs, process_jobs)
@@ -9039,6 +9195,7 @@ __all__ = [
     "test_gate",
     "violation_fingerprint",
     "waive006_gate",
+    "waive007_gate",
     "walk_lint_gate",
     "write_coverage_lock",
 ]

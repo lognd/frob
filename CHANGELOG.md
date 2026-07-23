@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.111.0] - unreleased
+
+- T-0808: gates: WAIVE007 dangling-waiver-ref -- unresolvable BINDING ticket ref in a waiver is a warning, not silence
+
 ## [0.110.0] - unreleased
 
 - T-0807: check: auto-suppress land-owned REL001 bump-half in worktree/ticket context (reviews keep tripping on it)
