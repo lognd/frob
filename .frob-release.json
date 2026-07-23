@@ -152,6 +152,12 @@
     "src/frob/arch/_patterns.py::PatternRuleSpec": "5f94e228567e93c34435e364027092ea5cda8ec14681b79096d00025f853ce30",
     "src/frob/arch/_patterns.py::iter_type_switch_chains": "7e5926d5232dcb885fe1101948398b94d92b709a68f166a49e9d1cc4585273c9",
     "src/frob/arch/_patterns.py::new_construction_accumulator": "1bfb532deb6e2cc7913688f782d7691e7b3a2124da47155ebc7a97ce9d302c52",
+    "src/frob/arch/_protocol_excuse.py::DischargeResult": "41ce54da77c423ed63a6fb54197bb246c348e02813b87e03bc65254149878d91",
+    "src/frob/arch/_protocol_excuse.py::cpp_raii_discharge": "4606516ead9ff0d22556b9a0af910bec0ed1e70672d9dd7696c811a651fb7aed",
+    "src/frob/arch/_protocol_excuse.py::gc_finalizer_discharge": "f79a2eef20e6031f9ad763bbddb659719156b5068fe8d6585f23ef4f3ed45d4a",
+    "src/frob/arch/_protocol_excuse.py::python_with_discharge": "7a46281d211f6d79e356a85b12e73f24135f94cedaf5c75923192183dccd3230",
+    "src/frob/arch/_protocol_excuse.py::rust_drop_discharge": "8936972f84765cd06a8e0c66df6af917d746c8c7862ebfac968556b2dd3d25ba",
+    "src/frob/arch/_protocol_excuse.py::typescript_using_discharge": "850794a6a99ce66c19a5284c614bce98954358c4a379f86d980bc9c863025d0a",
     "src/frob/arch/_python.py::PythonAdapter": "8ad952fe6dc949f63cbfd330f2090da7bcc8be02a6b6c8f21b0e8d3a3c12b42f",
     "src/frob/arch/_python.py::PythonAdapter.adapt": "0c57832dc79ce96209c1a1ae671bbb1808b6b61baffc12c19d893376a6afe64e",
     "src/frob/arch/_rust.py::RustAdapter": "9360bb051d5ec98205256cdb4f8da557e386f6dd46493d75c742787e0cb372bc",
@@ -1376,5 +1382,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.120.0"
+  "version": "0.121.0"
 }

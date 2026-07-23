@@ -22,6 +22,7 @@ scope:
 - tickets.md
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -51,6 +52,7 @@ scope:
 - tickets.md
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -78,6 +80,7 @@ scope:
 - tickets.md
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -114,6 +117,7 @@ scope_changes:
   actor: logan
   at: '2026-07-20'
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -214,6 +218,7 @@ scope_changes:
   actor: logan
   at: '2026-07-20'
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -251,6 +256,7 @@ scope_changes:
   actor: logan
   at: '2026-07-20'
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -303,6 +309,7 @@ scope_changes:
   actor: logan
   at: '2026-07-20'
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -383,6 +390,7 @@ scope_changes:
   actor: logan
   at: '2026-07-20'
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: given a per-language-spec denominator of every name-binding/aliasing/re-export
@@ -453,6 +461,7 @@ scope_changes:
   actor: logan
   at: '2026-07-20'
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: 'COVERAGE TOTALITY (SYS-COV): every deployable/public module -- and every
@@ -517,6 +526,7 @@ scope_changes:
   actor: logan
   at: '2026-07-20'
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: every item across ALL corpora (design patterns, arch checks, traps, system-design,
@@ -568,6 +578,7 @@ scope:
 - tests/test_vet*.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -594,6 +605,7 @@ scope:
 - docs/design/registry/arch-checks.yaml
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -617,6 +629,7 @@ scope:
 - src/frob/
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -640,6 +653,7 @@ scope:
 - src/frob/
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -664,6 +678,7 @@ scope:
 - src/frob/
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -687,6 +702,7 @@ scope:
 - src/frob/
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -713,6 +729,7 @@ scope:
 - frob.toml
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -740,6 +757,7 @@ scope:
 - src/frob/testing/
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -767,6 +785,7 @@ scope:
 - frob.toml
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -793,6 +812,7 @@ scope:
 - tests/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -819,6 +839,7 @@ scope:
 - docs/
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -884,6 +905,7 @@ scope:
 - src/frob/gates/__init__.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -908,6 +930,7 @@ scope:
 - src/frob/gates/
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -932,6 +955,7 @@ scope:
 - src/frob/gates/
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -1025,6 +1049,7 @@ evidence:
 - tests/test_tickets_review.py::TestCloseStrictMode::test_both_gates_on_succeeds_with_matching_approve_review
 - tests/test_tickets_review.py::TestCloseStrictMode::test_both_gates_on_succeeds_with_abbreviated_review_commit
 - tests/test_tickets_review.py::TestCloseStrictMode::test_both_gates_on_blocks_close_with_stale_approve_review
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -1259,6 +1284,7 @@ evidence:
 - tests/unit/test_scaffold_managed.py::TestStashGuardBlock::test_refuses_to_clobber_foreign_reference_transaction_hook
 - tests/unit/test_scaffold_managed.py::TestStashGuardBlock::test_stale_ours_stash_guard_hook_is_updated
 - tests/unit/test_scaffold_managed.py::TestScaffoldConformanceStatus::test_clean_after_apply
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -1367,6 +1393,7 @@ scope_changes:
   at: '2026-07-23'
 evidence:
 - tests/test_lang.py::TestParseCache::test_cross_entry_point_reuse_is_one_parse_per_file
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -1424,6 +1451,7 @@ scope:
 - src/frob/tickets/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -1447,6 +1475,7 @@ scope:
 - src/frob/gates/__init__.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -1472,6 +1501,7 @@ scope:
 - src/frob/gates/__init__.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -1498,6 +1528,7 @@ scope:
 - src/frob/gates/__init__.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -1559,6 +1590,7 @@ evidence:
 - tests/test_gates.py::TestInv006Gate::test_ratchet_baselined_finding_stays_warn
 - tests/test_gates.py::TestInv006Gate::test_ratchet_rule_not_enabled_stays_static_warn
 - tests/test_gates.py::TestInv006Gate::test_this_repos_frob_toml_and_ratchet_lock_calibrate
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -1797,6 +1829,7 @@ scope:
 - src/frob/gates/_docblocks.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -1822,6 +1855,7 @@ scope:
 - tests/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -1858,6 +1892,7 @@ evidence:
 - tests/unit/test_memo.py::test_reset_run_memo_activates_an_unbounded_scope
 - tests/unit/test_memo.py::test_run_memo_scope_deactivates_on_exit
 - tests/unit/test_check.py::TestRunCheck::test_all_stages_skipped_returns_empty_result_for_root
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -1979,6 +2014,7 @@ scope:
 - src/frob/registry/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -2004,6 +2040,7 @@ scope:
 - src/frob/tickets/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -2029,6 +2066,7 @@ scope:
 - src/frob/serve/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a warm daemon and a one-file edit WHEN frob_check_delta runs THEN only
@@ -2057,6 +2095,7 @@ scope:
 - src/frob/gates/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a truncated .frob/cache.db WHEN frob check runs THEN the run fails closed
@@ -2084,6 +2123,7 @@ scope:
 - tests/system/test_cli_doctor.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a derived artifact rewritten out-of-band between two doctor runs WHEN
@@ -2115,6 +2155,7 @@ scope:
 - docs/design/registry/patterns.yaml
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN each of the 6 rows WHEN this ticket closes THEN the row is either detected
@@ -2144,6 +2185,7 @@ scope:
 - tests/unit/test_check.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a TS-only repo WHEN frob check --ticket T-X runs THEN _run_gates receives
@@ -2175,6 +2217,7 @@ scope:
 - tests/unit/test_arch.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -2202,6 +2245,7 @@ scope:
 - tests/unit/test_arch.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -2230,6 +2274,7 @@ scope:
 - tests/unit/test_arch.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -2257,6 +2302,7 @@ scope:
 - tests/unit/test_arch.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -2284,6 +2330,7 @@ scope:
 - tests/unit/test_arch.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -2311,6 +2358,7 @@ scope:
 - tests/unit/test_arch.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -2338,6 +2386,7 @@ scope:
 - tests/unit/test_arch.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -2365,6 +2414,7 @@ scope:
 - tests/unit/test_arch.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -2401,6 +2451,7 @@ scope:
 - docs/design/design-pattern-traps-corpus.md
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -2426,6 +2477,7 @@ scope:
 - docs/modules/graph.md
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a symbol with dependents WHEN frob graph affects SYMREF runs THEN the
@@ -2460,6 +2512,7 @@ scope:
 - tests/unit/deploy/
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a windows node declaring service with a binPath WHEN install.ps1 is
@@ -2489,6 +2542,7 @@ scope:
 - docs/modules/tickets.md
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a land with --push WHEN the land completes THEN the push happens only
@@ -2520,6 +2574,7 @@ scope:
 - tests/unit/test_arch.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN the existing T-0360/T-0370 regression tests unmodified WHEN both check
@@ -2548,6 +2603,7 @@ scope:
 - src/frob/gates/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a fresh python process WHEN import frob.testing runs as the first frob
@@ -2575,6 +2631,7 @@ scope:
 - src/frob/testing/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a flaky test with an open quarantine ticket WHEN frob test runs via
@@ -2605,6 +2662,7 @@ scope:
 - docs/modules/gates.md
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a repo with frob:deprecated directives WHEN frob deprecated runs THEN
@@ -2634,6 +2692,7 @@ scope:
 - src/frob/gates/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a design decision recorded WHEN implemented THEN a change adding a call
@@ -2662,6 +2721,7 @@ scope:
 - tests/unit/strata/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given a .strata flow crossing a service/process boundary with no timeout attr,
@@ -2693,6 +2753,7 @@ scope:
 - tests/unit/strata/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given a flow with retry=true and no backoff/jitter declared, when checked,
@@ -2724,6 +2785,7 @@ scope:
 - tests/unit/strata/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given an external-dependency node with no circuit-breaker/bulkhead declared,
@@ -2754,6 +2816,7 @@ scope:
 - tests/unit/strata/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given a CRITICAL dependency with no fallback declared, when checked, then
@@ -2783,6 +2846,7 @@ scope:
 - tests/unit/strata/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given a node with inbound critical flows and replicas_max=1, when checked,
@@ -2811,6 +2875,7 @@ scope:
 - tests/unit/strata/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given a queue/consumer node with no bounded-intake policy declared, when checked,
@@ -2840,6 +2905,7 @@ scope:
 - tests/unit/strata/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given a boundary flow with no metrics/traces/logs declared, when checked,
@@ -2872,6 +2938,7 @@ scope:
 - tests/unit/strata/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given a service node with no golden-signal SLOs + error budget declared, when
@@ -2901,6 +2968,7 @@ scope:
 - tests/unit/strata/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given a store with >=2 distinct writer nodes and no declared single-owner/reconciliation,
@@ -2930,6 +2998,7 @@ scope:
 - tests/unit/strata/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given a multi-write op with no transactional-boundary declared, when checked,
@@ -2958,6 +3027,7 @@ scope:
 - tests/unit/strata/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given an event/queue node with no schema version declared, when checked, then
@@ -2987,6 +3057,7 @@ scope:
 - tests/unit/strata/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given a queue node with no delivery-semantics declared, when checked, then
@@ -3015,6 +3086,7 @@ scope:
 - tests/unit/strata/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given a PII-tagged store with no retention/TTL declared, when checked, then
@@ -3043,6 +3115,7 @@ scope:
 - tests/unit/strata/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given a sync call chain exceeding the declared/default depth bound, when checked,
@@ -3072,6 +3145,7 @@ scope:
 - tests/unit/strata/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given a cross-service transaction with no saga/compensation declared, when
@@ -3100,6 +3174,7 @@ scope:
 - tests/unit/strata/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given two services sharing a mutable store/memory region across their boundary
@@ -3128,6 +3203,7 @@ scope:
 - tests/unit/strata/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given a cross-node flow with an implicit clock/ordering assumption and no
@@ -3175,6 +3251,7 @@ scope:
 - tests/unit/strata/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given the full system-design-corpus.md denominator, when the meta-test runs,
@@ -3208,6 +3285,7 @@ scope:
 - tests/test_vet.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given every Python static-resolvable construct in the taxonomy's Python table,
@@ -3240,6 +3318,7 @@ scope:
 - tests/test_vet.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given every TS/JS static-resolvable construct in the taxonomy table, when
@@ -3268,6 +3347,7 @@ scope:
 - tests/test_vet.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given every Rust static-resolvable construct in the taxonomy table, when the
@@ -3297,6 +3377,7 @@ scope:
 - tests/test_vet.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given every C static-resolvable construct in the taxonomy table, when the
@@ -3327,6 +3408,7 @@ scope:
 - tests/test_vet.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given every C++ static-resolvable construct in the taxonomy table, when the
@@ -3355,6 +3437,7 @@ scope:
 - tests/test_vet.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given every Kotlin static-resolvable construct in the taxonomy table, when
@@ -3384,6 +3467,7 @@ scope:
 - tests/test_vet.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given code containing a spec-defined runtime-resolved indirection construct
@@ -3424,6 +3508,7 @@ scope:
 - tests/test_vet.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given the full evasion taxonomy denominator, when the meta-test runs, then
@@ -3459,6 +3544,7 @@ scope:
 - tests/unit/strata/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given a module with an observed capability effect and no strata node binding,
@@ -3492,6 +3578,7 @@ scope:
 - tests/unit/strata/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given a node declaring fewer public symbols than the bound module exports,
@@ -3526,6 +3613,7 @@ scope:
 - tests/unit/strata/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given a node whose purpose declares a read-only effect profile but whose bound
@@ -3557,6 +3645,7 @@ scope:
 - tests/unit/strata/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given dangerous logic moved into a helper module not directly bound to any
@@ -3590,6 +3679,7 @@ scope:
 - tests/unit/strata/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given a waiver older than its staleness bound, when checked, then it is treated
@@ -3628,6 +3718,7 @@ scope:
 - tests/unit/strata/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given the structural-linter-adversarial-hardening.md denominator, when the
@@ -3660,6 +3751,7 @@ scope:
 - tests/unit/strata/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given the 10 named concepts, when the registry is queried, then each has a
@@ -3697,6 +3789,7 @@ scope:
 - docs/design/registry/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given the decision made, when RECONCILIATION.md is reread, then finding (f)
@@ -3733,6 +3826,7 @@ scope:
 - tests/unit/strata/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: Given the full registry, when the meta-test runs, then every cross_refs-eligible
@@ -3765,6 +3859,7 @@ scope:
 - docs/modules/testing.md
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN history [P] followed by K consecutive fails under live quarantine WHEN
@@ -3794,6 +3889,7 @@ scope:
 - tests/test_registry_exhaustiveness.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a registry entry with out_of_scope disposition whose reason names no
@@ -3824,6 +3920,7 @@ scope:
 - tests/unit/test_arch.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN TS fixtures with interface, type alias, enum, and a TSX component WHEN
@@ -3852,6 +3949,7 @@ scope:
 - docs/modules/gates.md
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN docs/modules/gates.md WHEN a reader checks --only semantics THEN the
@@ -3881,6 +3979,7 @@ scope:
 - docs/design/registry/weaknesses.yaml
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -3907,6 +4006,7 @@ scope:
 - docs/design/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN the children closed WHEN frob check runs on a fixture with a known exception
@@ -3937,6 +4037,7 @@ scope:
 - tests/unit/test_arch.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a fixture chain f->g->h where h raises ValueError and g catches it and
@@ -3968,6 +4069,7 @@ scope:
 - tests/unit/test_arch.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a noexcept function calling a may-throw callee WHEN the analysis runs
@@ -4004,6 +4106,7 @@ scope_changes:
   actor: logan
   at: '2026-07-22'
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a boundary catching a strict subset of its guarded may-raise set WHEN
@@ -4035,6 +4138,7 @@ scope:
 - tests/unit/test_arch.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a call into an undeclared ctypes function WHEN the resolver runs THEN
@@ -4068,6 +4172,7 @@ scope:
 - docs/modules/gates.md
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a pyo3 function whose Rust side constructs PyValueError but whose frob:raises
@@ -4096,6 +4201,7 @@ scope:
 - docs/design/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN the estate language survey WHEN this ticket closes THEN docs/design
@@ -4126,6 +4232,7 @@ scope:
 - docs/design/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN the children closed WHEN frob check runs on fixtures reproducing each
@@ -4154,6 +4261,7 @@ scope:
 - tests/unit/test_arch.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN two functions acquiring locks A-then-B and B-then-A WHEN the check runs
@@ -4182,6 +4290,7 @@ scope:
 - tests/unit/test_arch.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN time.sleep inside async def WHEN the check runs THEN a finding suggests
@@ -4211,6 +4320,7 @@ scope:
 - tests/unit/test_arch.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a module-level dict written from a thread-submitted function with no
@@ -4241,6 +4351,7 @@ scope:
 - docs/modules/arch.md
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a pure-arithmetic loop function submitted to ThreadPoolExecutor WHEN
@@ -4273,6 +4384,7 @@ scope:
 - tests/unit/strata/
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN two nodes with write-mode access to one resource and no arbiter WHEN
@@ -4305,6 +4417,7 @@ scope:
 - tests/unit/strata/
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a node declaring mode=read whose bound code opens the resource for writing
@@ -4338,6 +4451,7 @@ scope:
 - tests/unit/strata/
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN two entry nodes declaring users 300k and 200k both flowing into one
@@ -4369,6 +4483,7 @@ scope:
 - tests/unit/strata/
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN 500k declared users flowing to a db with mode=exclusive and default
@@ -4399,6 +4514,7 @@ scope:
 - tests/system/test_cli_native_missing.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a repo with .strata files and no built native WHEN frob check runs THEN
@@ -4427,6 +4543,7 @@ scope:
 - docs/design/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN the children closed WHEN the perf harness runs THEN a queryable hot-graph
@@ -4456,6 +4573,7 @@ scope:
 - tests/unit/perf/
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN bimodal latencies (1ms and 100ms modes) WHEN sketched at alpha=2 percent
@@ -4489,6 +4607,7 @@ scope:
 - docs/modules/perf.md
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a section whose p90 regresses beyond tolerance vs the stored prior WHEN
@@ -4517,6 +4636,7 @@ scope:
 - src/frob/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -4544,6 +4664,7 @@ scope:
 - docs/modules/tickets.md
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN 5 stale lease files WHEN frob ticket doable runs THEN the queue prints
@@ -4574,6 +4695,7 @@ scope:
 - docs/modules/tickets.md
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN an epic with two stories each with open leaf tickets WHEN frob ticket
@@ -4605,6 +4727,7 @@ scope:
 - tests/system/test_cli_perf.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -4630,6 +4753,7 @@ scope:
 - src/frob/gates/__init__.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -4653,6 +4777,7 @@ scope:
 - tests/system/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -4677,6 +4802,7 @@ scope:
 - docs/design/registry/supply-chain.yaml
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -4702,6 +4828,7 @@ scope:
 - docs/design/registry/system-design.yaml
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -4728,6 +4855,7 @@ scope:
 - tests/unit/test_lang_kotlin.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a repo with a .kt file WHEN frob check runs THEN the file parses into
@@ -4756,6 +4884,7 @@ scope:
 - tests/unit/strata/golden/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -4781,6 +4910,7 @@ scope:
 - tests/unit/test_arch.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN class Foo with an annotated field WHEN PythonAdapter.adapt runs THEN
@@ -4850,6 +4980,7 @@ evidence:
 - tests/unit/test_arch_srp.py::TestArchGateSrpWiring::test_arch101_respects_explicit_frob_toml_override
 - tests/unit/test_arch_srp.py::TestArchConfigThresholds::test_reads_srp_overrides
 - tests/unit/test_arch_srp.py::TestArchConfigThresholds::test_srp_defaults_without_frob_toml
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a fixture repo with a two-cluster class WHEN frob check runs THEN ARCH101
@@ -5025,6 +5156,7 @@ scope:
 - tests/test_gates.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a vitest project with a frob:tests directive naming a real vitest test
@@ -5054,6 +5186,7 @@ scope:
 - docs/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN any frob-enabled repo with [natives] WHEN uv run frob natives build
@@ -5084,6 +5217,7 @@ scope:
 - docs/guides/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a warm pool of N WHEN an agent leases a worktree THEN it starts with
@@ -5113,6 +5247,7 @@ scope:
 - docs/design/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN the children closed WHEN frob check runs on fixtures for each fragment
@@ -5140,6 +5275,7 @@ scope:
 - src/frob/tickets/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -5163,6 +5299,7 @@ scope:
 - tests/system/test_scaffold_dx.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN the slow scaffold test WHEN the suite runs under the global 120s ceiling
@@ -5193,6 +5330,7 @@ scope:
 - tests/unit/test_arch.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a Rust enum with tuple and struct variants WHEN RustAdapter.adapt runs
@@ -5249,6 +5387,7 @@ evidence:
 - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_unreachable_function_is_reported_not_analyzed_never_silent
 - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_non_converging_scc_is_reported_as_a_timeout_error_and_poisoned
 - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_diamond_shaped_calls_join_without_duplication_or_loss
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a recursive call cluster with transitions WHEN the fixpoint runs THEN
@@ -5383,7 +5522,7 @@ Not closed, not landed (per dispatch instructions) -- ready for review/land.
 id: T-0746
 title: 'protocol verification gate: state-requirement + invalid-transition errors
   with recorded language-excuse discharges'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-22'
@@ -5397,7 +5536,27 @@ scope:
 - docs/modules/gates.md
 - tests/test_gates.py
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_gates.py::TestProtocolVerificationGate::test_state_never_established_is_an_error
+- tests/test_gates.py::TestProtocolVerificationGate::test_state_established_by_a_reachable_transition_is_not_flagged
+- tests/test_gates.py::TestProtocolVerificationGate::test_state_equal_to_initial_is_not_flagged
+- tests/test_gates.py::TestProtocolVerificationGate::test_poisoned_summary_at_a_requires_symbol_is_an_error
+- tests/test_gates.py::TestProtocolVerificationGate::test_invalid_transition_precondition_never_established_is_an_error
+- tests/test_gates.py::TestProtocolVerificationGate::test_valid_transition_chain_is_not_flagged
+- tests/test_gates.py::TestProtocolVerificationGate::test_python_with_block_discharges_the_requirement
+- tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_rust_drop_impl_discharges
+- tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_rust_mem_forget_revokes_the_drop_discharge
+- tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_rust_manually_drop_revokes_the_discharge
+- tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_rust_no_drop_impl_is_not_discharged
+- tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_cpp_raii_destructor_discharges
+- tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_cpp_no_destructor_is_not_discharged
+- tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_python_with_block_discharges
+- tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_python_no_with_block_is_not_discharged
+- tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_typescript_using_discharges
+- tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_typescript_try_finally_discharges
+- tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_typescript_bare_call_is_not_discharged
+- tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_gc_finalizer_never_discharges
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a C fixture where net_requires-annotated functions are reachable without
@@ -5405,12 +5564,179 @@ acceptance:
     call path; GIVEN the same shape in Rust with a Drop impl THEN a recorded Drop
     discharge, and with mem::forget observed THEN the excuse is revoked and the ERROR
     returns
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestProtocolVerificationGate::test_state_never_established_is_an_error
+  - tests/test_gates.py::TestProtocolVerificationGate::test_state_established_by_a_reachable_transition_is_not_flagged
+  - tests/test_gates.py::TestProtocolVerificationGate::test_state_equal_to_initial_is_not_flagged
+  - tests/test_gates.py::TestProtocolVerificationGate::test_poisoned_summary_at_a_requires_symbol_is_an_error
+  - tests/test_gates.py::TestProtocolVerificationGate::test_invalid_transition_precondition_never_established_is_an_error
+  - tests/test_gates.py::TestProtocolVerificationGate::test_valid_transition_chain_is_not_flagged
+  - tests/test_gates.py::TestProtocolVerificationGate::test_python_with_block_discharges_the_requirement
+  - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_rust_drop_impl_discharges
+  - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_rust_mem_forget_revokes_the_drop_discharge
+  - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_rust_manually_drop_revokes_the_discharge
+  - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_rust_no_drop_impl_is_not_discharged
+  - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_cpp_raii_destructor_discharges
+  - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_cpp_no_destructor_is_not_discharged
+  - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_python_with_block_discharges
+  - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_python_no_with_block_is_not_discharged
+  - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_typescript_using_discharges
+  - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_typescript_try_finally_discharges
+  - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_typescript_bare_call_is_not_discharged
+  - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_gc_finalizer_never_discharges
 threat: null
 component: null
 labels: []
 ```
 Child 3 of T-0739. Verification: for every call site of a requires-state function, the caller-context established states (from summaries + entrypoint initial states) must include the required state -- violation is a GATE-TIER ERROR (not advisory; user mandate: enforceable, never fail-silent). A transition function reachable in a state where the transition is undefined = ERROR. The *_init-never-called and *_deinit-orphaned cases fall out: an inferred init protocol whose init is never reachable from any entrypoint while state-requiring functions are = ERROR naming both. LANGUAGE EXCUSES as recorded discharges (T-0383 caught_by doctrine): Rust pairing discharges to Drop UNLESS mem::forget/ManuallyDrop observed on the type (revokes); C++ discharges to RAII only when the init result is observed held by a destructor-bearing class; Python discharges lexically to with-blocks; TS to using/try-finally; GC finalizers NEVER discharge. Every excuse names its mechanism in the finding output; an excuse whose mechanism cannot be observed in code is an ERROR, not a discharge. Unknown/poisoned summaries at a checked call site = ERROR (waivable with reason).
+
+## Done report
+
+## Done report
+
+Changed:
+  src/frob/gates/_protocol_summary.py -- added PROTO002 (state-requirement
+    violation) and PROTO003 (invalid transition) to the existing PROTO001
+    per-package `compute_protocol_summaries` scan (one pass, three
+    findings). New helpers: `_protocol_initial_states`,
+    `_parse_transition_token`, `_established_states`, `_own_requires`,
+    `_own_transitions`, `_discharge`. Fixed a pre-existing latent bug in
+    `_package_edges` (edges came back with ABSOLUTE-path `src`/`origin`
+    from `parse_file(root / rel_path)`, while `snapshot.edges`/entrypoints
+    are always repo-root-relative -- PROTO001 never needed the two to
+    compare equal since poisoning is a pure `CallGraph` fact, but
+    PROTO002/PROTO003's requires/transition lookups key directly off
+    `edge.src == symref`, so this needed fixing to make them work at all).
+  src/frob/arch/_protocol_excuse.py (new) -- `DischargeResult`,
+    `rust_drop_discharge`, `cpp_raii_discharge`, `python_with_discharge`,
+    `typescript_using_discharge`, `gc_finalizer_discharge`: the per-
+    language discharge predicates T-0746's doctrine names. Only
+    `python_with_discharge` is wired into the real repo-scan gate today
+    (see Deferred below).
+  src/frob/gates/__init__.py -- registered PROTO002/PROTO003 in
+    `_KNOWN_GATE_RULES`.
+  docs/modules/gates.md -- new "PROTO002/PROTO003 (T-0746)" section (rule
+    table rows + full doctrine/approximation/discharge-table writeup).
+  tests/test_gates.py -- `TestProtocolVerificationGate` (7 tests) and
+    `TestProtocolLanguageExcuseDischarge` (12 tests), 19 total.
+
+Deferred, disclosed, filed:
+  T-0840 (path-sensitive per-call-site state verification,
+    scope src/frob/graph/**, src/frob/gates/_protocol_summary.py):
+    `compute_protocol_summaries` (T-0745) has no per-call-site statement
+    ordering, so PROTO002/PROTO003 ask an EXISTENTIAL question ("is state
+    S established by SOME reachable transition anywhere in the tagged
+    package closure") rather than a path-sensitive one. Deliberately
+    false-negative-biased, never false-positive -- the crisp, ticket-named
+    case (a state never established by ANY transition anywhere) is caught
+    exactly. Referenced in both the gate module docstring and
+    docs/modules/gates.md.
+  T-0841 (wire Rust/C++/TypeScript discharge into a real
+    call-graph scan, scope src/frob/gates/_protocol_summary.py,
+    src/frob/graph/callgraph.py): the Rust/C++/TypeScript/GC discharge
+    predicates in `frob.arch._protocol_excuse` are built and directly
+    unit-tested but not wired into a real cross-file scan, because
+    `build_call_graph` is Python-only (same disclosed limitation PROTO001
+    already carries). Mirrors T-0745's own T-0809 disclosure pattern
+    rather than building a second, unreviewed call-graph substrate here.
+  (Both drafts will be renumbered by `frob ticket land`; referenced by
+  their draft ids in code/docs per the land-renumber caution in
+  docs/guides/agent-playbook.md.)
+
+Deviation from the acceptance's literal fixture languages: the acceptance
+text describes "a C fixture" for the state-requirement case and "Rust"
+for the discharge-revocation case. `build_call_graph`'s Python-only scope
+(disclosed by PROTO001 already, and unchanged by this ticket) means the
+real repo-scan gate only exercises Python fixtures --
+`test_state_never_established_is_an_error` is the Python-syntax
+equivalent of the ticket's C-shaped example (a `frob:requires`-tagged
+function reachable with no reachable transition establishing its
+state), and the Rust Drop/mem::forget doctrine (acceptance's second
+GIVEN) is verified directly against `rust_drop_discharge`
+(`TestProtocolLanguageExcuseDischarge.test_rust_drop_impl_discharges` /
+`test_rust_mem_forget_revokes_the_drop_discharge`) rather than through a
+full C/Rust repo-scan gate that does not exist yet (T-0841).
+
+docs/design/registry/check-coverage.yaml: NOT touched, per instruction --
+`frob:enforces CHK-GATE-PROTO002`/`CHK-GATE-PROTO003` directives are in
+place on `protocol_summary_gate` (REG009 WARN "phantom enforcement" is
+expected/live until the coordinator adds the registry entries at land,
+same as REG010's "2 live gate rule(s) have no CHK-GATE-<rule> entry"
+finding -- both WARN, both disclosed here rather than worked around).
+
+Evidence (bound via --accepts 0, all 19 collected and passing):
+  tests/test_gates.py::TestProtocolVerificationGate::test_state_never_established_is_an_error
+  tests/test_gates.py::TestProtocolVerificationGate::test_state_established_by_a_reachable_transition_is_not_flagged
+  tests/test_gates.py::TestProtocolVerificationGate::test_state_equal_to_initial_is_not_flagged
+  tests/test_gates.py::TestProtocolVerificationGate::test_poisoned_summary_at_a_requires_symbol_is_an_error
+  tests/test_gates.py::TestProtocolVerificationGate::test_invalid_transition_precondition_never_established_is_an_error
+  tests/test_gates.py::TestProtocolVerificationGate::test_valid_transition_chain_is_not_flagged
+  tests/test_gates.py::TestProtocolVerificationGate::test_python_with_block_discharges_the_requirement
+  tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_rust_drop_impl_discharges
+  tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_rust_mem_forget_revokes_the_drop_discharge
+  tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_rust_manually_drop_revokes_the_discharge
+  tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_rust_no_drop_impl_is_not_discharged
+  tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_cpp_raii_destructor_discharges
+  tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_cpp_no_destructor_is_not_discharged
+  tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_python_with_block_discharges
+  tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_python_no_with_block_is_not_discharged
+  tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_typescript_using_discharges
+  tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_typescript_try_finally_discharges
+  tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_typescript_bare_call_is_not_discharged
+  tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_gc_finalizer_never_discharges
+
+`uv run pytest tests/test_gates.py -q`: 1 pre-existing failure
+(`TestGateOrderSetEquality::test_canonical_gate_order_matches_all_gates`,
+confirmed identical on unmodified `main` -- `compliance` gate missing from
+`_CANONICAL_GATE_ORDER`, unrelated to this ticket's scope), everything
+else green including all 19 new + all pre-existing Protocol* tests.
+
+Severity/main-cleanliness: PROTO002/PROTO003 default to ERROR per the
+ticket's "enforceable, never fail-silent" mandate. This repo's own
+tracked (non-fixture, non-test) source carries zero real `frob:protocol`/
+`frob:requires`/`frob:transition` usage today, so ERROR-by-default
+measures 0 errors against `main` (confirmed via
+`frob check --ticket T-0746 --only <stage>` for every stage group: lint
+PASS 0/0, static WARN 0 errors/168 warnings, gates-fast WARN 0/1118,
+gates-native WARN 0/897, gates-security WARN 0/892 -- all pre-existing
+WARN debt, none newly introduced by this ticket). No severity was
+weakened to hit this number; both rules are genuinely ERROR-tier.
+
+Gates: `frob check --ticket T-0746` (chunked, all 5 stage groups) clean
+at 0 errors each. No new waivers added to production code by this
+ticket's own findings; one `frob:waive INV006` added to
+src/frob/arch/_protocol_excuse.py's module docstring (pre-existing
+INV006 exclusivity-language pool disposition, same shape
+`frob.graph.dsl`'s own module docstring already carries -- not a
+finding introduced by this ticket's logic).
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_gates.py::TestProtocolVerificationGate::test_state_never_established_is_an_error` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestProtocolVerificationGate::test_state_established_by_a_reachable_transition_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestProtocolVerificationGate::test_state_equal_to_initial_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestProtocolVerificationGate::test_poisoned_summary_at_a_requires_symbol_is_an_error` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestProtocolVerificationGate::test_invalid_transition_precondition_never_established_is_an_error` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestProtocolVerificationGate::test_valid_transition_chain_is_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestProtocolVerificationGate::test_python_with_block_discharges_the_requirement` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_rust_drop_impl_discharges` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_rust_mem_forget_revokes_the_drop_discharge` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_rust_manually_drop_revokes_the_discharge` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_rust_no_drop_impl_is_not_discharged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_cpp_raii_destructor_discharges` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_cpp_no_destructor_is_not_discharged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_python_with_block_discharges` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_python_no_with_block_is_not_discharged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_typescript_using_discharges` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_typescript_try_finally_discharges` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_typescript_bare_call_is_not_discharged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_gc_finalizer_never_discharges` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 19 passed (from 19 evidence id(s))
+- gates: 0 error(s), 1203 warning(s), 207 waived
 
 <!-- ticket:T-0747 -->
 ```yaml
@@ -5432,6 +5758,7 @@ scope:
 - tests/test_gates.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a C fixture acquiring a resource with an early-error return skipping
@@ -5463,6 +5790,7 @@ scope:
 - tests/system/conftest.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -5489,6 +5817,7 @@ scope:
 - docs/guides/agent-playbook.md
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -5527,6 +5856,7 @@ evidence:
 - tests/test_tickets_dispatch_stale.py::TestUndispatchedStale::test_high_past_threshold_alarms
 - tests/test_tickets_dispatch_stale.py::TestUndispatchedStale::test_configured_threshold_from_frob_toml
 - tests/system/test_spawn_budget.py::test_ticket_doable_spawns_each_argv_at_most_once
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a critical ticket unleased past threshold WHEN frob ticket doable runs
@@ -5635,6 +5965,7 @@ evidence:
 - tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_divergent_gate_errors_refuses_land
 - tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_divergent_warning_or_waived_count_alone_still_lands
 - tests/test_ticket_land.py::TestDoneReportThenLandRealClosuresEndToEnd::test_real_closures_done_report_then_land_succeeds
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a done-report whose typed test count differs from the actual evidence
@@ -5786,6 +6117,7 @@ scope:
 - docs/modules/tickets.md
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a ticket whose recorded evidence tests all pass against a mutant of
@@ -5818,6 +6150,7 @@ scope:
 - docs/modules/gates.md
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a change that reddens frob sys audit WHEN land preflight runs THEN land
@@ -5850,6 +6183,7 @@ scope:
 - docs/modules/gates.md
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN _normalized.py gains a tree_sitter import WHEN the INV gate runs THEN
@@ -5877,6 +6211,7 @@ scope:
 - tests/unit/perf/test_hotgraph.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -5901,6 +6236,7 @@ scope:
 - src/frob/perf/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN the overhead test WHEN the full suite runs under -n auto THEN it passes
@@ -5931,6 +6267,7 @@ scope:
 - docs/modules/gates.md
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a TS field typed as a known secret-wrapper or a Rust field typed secrecy::SecretString
@@ -5975,6 +6312,7 @@ evidence:
 - tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard::test_a_side_only_id_missing_from_theirs_survives_the_splice
 - tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard::test_malformed_side_is_refused_not_silently_treated_as_empty
 - tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard::test_render_that_would_drop_an_id_is_refused
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a live non-stale lease WHEN frob ticket archive runs THEN it refuses
@@ -6081,6 +6419,7 @@ scope:
 - docs/modules/perf.md
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a repo and a recorded profile artifact (perf script output, .cpuprofile,
@@ -6113,6 +6452,7 @@ scope:
 - docs/strata/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -6185,6 +6525,7 @@ evidence:
 - tests/test_tickets_leases.py::TestReadAllLeasesSiblingProcessVisibility::test_new_lease_file_written_by_a_sibling_process_is_seen_next_call
 - tests/test_tickets_leases.py::TestReadAllLeasesSiblingProcessVisibility::test_lease_file_removed_by_a_sibling_process_is_seen_next_call
 - tests/test_tickets_leases.py::TestReadAllLeasesSiblingProcessVisibility::test_unchanged_lease_file_content_is_reused_from_cache
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN one frob ticket list/doable/show invocation WHEN it completes THEN git
@@ -6492,6 +6833,7 @@ scope:
 - tests/unit/perf/
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a fixture where a loop body calls a function that transitively spawns
@@ -6523,6 +6865,7 @@ scope:
 - src/frob/gates/__init__.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -6584,6 +6927,7 @@ scope:
 scope_changes: []
 evidence:
 - tests/test_gitio.py::TestRunArgv::test_kill_switch_refuses_without_spawning
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN FROB_DISABLE_EXEC=1 WHEN any frob code path attempts a git spawn via
@@ -6704,6 +7048,7 @@ evidence:
 - tests/test_waive_gate.py::TestWaive006Registration::test_waive006_gate_combines_both_channels
 - tests/test_waive_gate.py::TestWaive006Registration::test_waivable_via_frob_waive_comment
 - tests/test_waive_gate.py::TestWaive006RealRepo::test_zero_errors_on_real_repo
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a waive directive (frob:waive or strata waive) whose reason or ticket
@@ -6869,6 +7214,7 @@ evidence:
 - tests/test_tickets_leases.py::TestLeaseShapeValidation::test_resolve_lease_treats_an_evil_branch_as_no_lease
 - tests/test_tickets_leases.py::TestLeaseShapeValidation::test_rejection_is_logged_once_per_process
 - tests/test_serve_daemon.py::TestPollRebaseBotLeaseInjectionGuard::test_evil_lease_branch_never_reaches_git_argv
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a lease JSON with branch or worktree starting with a dash or containing
@@ -6990,6 +7336,7 @@ scope:
 - src/frob/gates/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a fixture where a value parsed from a file under .git/ or .frob/ flows
@@ -7048,6 +7395,7 @@ evidence:
 - tests/test_tickets_leases.py::TestAmbiguousLivenessGuard::test_ambiguous_stat_failure_does_not_unlink
 - tests/test_tickets_leases.py::TestAmbiguousLivenessGuard::test_ambiguous_failure_is_logged_once_per_process
 - tests/test_tickets_leases.py::TestAmbiguousLivenessGuard::test_genuine_enoent_still_unlinks
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a lease whose worktree path no longer exists WHEN read_all_leases judges
@@ -7143,6 +7491,7 @@ scope:
 - src/frob/gates/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a shipped comment deferring work to ticket T-X (that ticket's job shape
@@ -7181,6 +7530,7 @@ evidence:
 - tests/test_gitio.py::TestGitCommonDir::test_reset_clears_cache
 - tests/test_gitio.py::TestCommonDirAndBranch::test_single_spawn_parses_both_lines
 - tests/test_gitio.py::TestCommonDirAndBranch::test_err_when_not_a_repo
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN the repo WHEN searched for rev-parse --git-common-dir call sites THEN
@@ -7290,6 +7640,7 @@ scope:
 - docs/audits/gates-vacuous.md
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN the audit doc WHEN complete THEN every gate in gates/__init__.py has
@@ -7329,6 +7680,7 @@ evidence:
 - tests/test_tickets_leases.py::TestCheckTicketLeaseCli::test_pins_to_own_worktree_lease
 - tests/test_tickets_leases.py::TestCheckTicketLeaseCli::test_refuses_when_lease_recorded_for_another_worktree
 - tests/test_tickets_leases.py::TestCheckTicketLeaseCli::test_no_ticket_resolved_skips_the_check_entirely
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN an agent invoking frob check --ticket T-X from a worktree WHEN T-X has
@@ -7529,6 +7881,7 @@ evidence:
 - tests/test_gates.py::TestComplianceGate::test_compliance005_silent_on_handled_by_and_out_of_scope
 - tests/test_gates.py::TestComplianceGate::test_compliance005_missing_registry_dir_is_silent
 - tests/test_gates.py::TestComplianceGate::test_compliance005_real_repo_registry_passes
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a compliance.yaml entry regressed to deferred or undispositioned WHEN
@@ -7655,6 +8008,7 @@ scope:
 - Makefile
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -7681,6 +8035,7 @@ scope_changes: []
 evidence:
 - tests/unit/strata/test_host_isolation.py::TestMultiAceDenyOverridesAllow::test_narrow_deny_then_broad_allow_same_principal_denies
 - tests/unit/strata/test_host_isolation.py::TestMultiAceDenyOverridesAllow::test_broad_allow_then_narrow_deny_same_principal_still_denies
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN an ACL rule carrying the :deny flag on a write-capable RIGHTS value
@@ -7738,6 +8093,7 @@ evidence:
 - tests/unit/strata/test_host_isolation.py::TestMultiAceDenyOverridesAllow::test_no_write_rights_entries_denies
 - tests/unit/strata/test_host_isolation.py::TestWindowsHostIsolation::test_explicit_deny_acl_flag_does_not_fire_shared_writable_path
 - tests/unit/strata/test_host_isolation.py::TestWindowsHostIsolation::test_explicit_deny_acl_flag_fires_when_write_rights_present_elsewhere
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN two acl entries on the same path (a broad allow after a narrow deny)
@@ -7896,6 +8252,7 @@ evidence:
 - tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_with_other_change_still_refuses
 - tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_version_plus_other_line_still_refuses
 - tests/test_ticket_land.py::TestUvLockSync::test_lock_sync_spawn_failure_unwinds_squash
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a land whose version bump changes pyproject WHEN the land commits THEN
@@ -8021,6 +8378,7 @@ scope:
 scope_changes: []
 evidence:
 - tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_discharges_on_real_repo_vet_scan
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN main WHEN frob check runs THEN zero self-join-deadlock warnings on src/frob/vet
@@ -8065,6 +8423,7 @@ evidence:
 - tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail::test_retry_when_still_queued_re_runs_the_ordinary_transition
 - tests/test_ticket_land.py::TestLandRefusesWhenRootIsWorktree::test_refused_before_any_git_mutation_names_the_real_mistake
 - tests/test_ticket_land.py::TestLandRefusesWhenRootIsWorktree::test_still_refuses_when_worktree_has_diverged_commits
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a land that merged and finalized in the worktree but failed before committing
@@ -8177,6 +8536,7 @@ scope_changes: []
 evidence:
 - tests/test_tickets_evidence_cli.py::TestCmdEvidenceAcceptsBinding::test_evidence_cmd_with_accepts_binds_acceptance_via_cli
 - tests/test_tickets_evidence_cli.py::TestCmdEvidenceAcceptsBinding::test_close_evidence_cmd_with_accepts_binds_acceptance_via_cli
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN frob ticket evidence T-X --evidence-cmd CMD --accepts 0 WHEN the command
@@ -8274,6 +8634,7 @@ evidence:
 - tests/test_gates.py::TestDeprecatedGate::test_deprecated_is_registered_in_all_gates
 - tests/test_gates.py::TestDeprecatedGate::test_deprecated_fires_through_real_gate_dispatch
 - tests/system/test_cli_check.py::TestCheckStageGroups::test_available_stages_cover_every_gate_and_tool
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a frob:deprecated directive in the tree WHEN frob check runs (no --only
@@ -8375,6 +8736,7 @@ scope_changes: []
 evidence:
 - tests/test_dup.py::TestVerdictCacheRulesFingerprintInvalidation::test_dup_code_fingerprint_change_invalidates_cached_verdict
 - tests/test_dup.py::TestVerdictCacheRulesFingerprintInvalidation::test_unchanged_dup_code_fingerprint_still_serves_cached_verdict
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a dup rule/normalization change WHEN frob check runs the dup gate THEN
@@ -8433,6 +8795,7 @@ scope_changes: []
 evidence:
 - tests/unit/graph/test_cache.py::TestSchemaDriftRebuild::test_missing_symbols_table_rebuilds_clean
 - tests/unit/graph/test_cache.py::TestSchemaDriftRebuild::test_missing_mtime_ns_column_rebuilds_clean
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a .frob/cache.db created by an older schema WHEN load_graph opens it
@@ -8514,6 +8877,7 @@ scope:
 - frob-core/src/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -8568,6 +8932,7 @@ scope:
 - tests/test_dup.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN the real _leases.py::git_common_dir and _exclude_hazard.py::_git_common_dir
@@ -8603,6 +8968,7 @@ scope:
 - docs/modules/cli.md
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN the sunset date 2026-10-01 has passed WHEN this ticket is worked THEN
@@ -8711,6 +9077,7 @@ evidence:
 - tests/unit/deploy/test_vm_runner.py::TestAvail::test_kill_switch_refuses_without_spawning
 - tests/unit/test_scaffold_project.py::test_hooks_dir_kill_switch_refuses_without_spawning
 - tests/test_app.py::TestRunCoverageWait::test_kill_switch_refuses_without_spawning
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -8858,6 +9225,7 @@ scope:
 - src/frob/app/map_runner.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -8890,6 +9258,7 @@ evidence:
 - tests/test_tickets_evidence_cli.py::TestRunEvidenceCommandNoShell::test_command_substitution_is_not_expanded
 - tests/test_tickets_evidence_cli.py::TestRunEvidenceCommandNoShell::test_malformed_quoting_fails_cleanly_instead_of_shelling_out
 - tests/test_tickets_evidence_cli.py::TestRunEvidenceCommandNoShell::test_exec_kill_switch_stops_evidence_commands
+reviews: []
 attachments: []
 acceptance:
 - text: 'GIVEN a cmd: evidence entry WHEN _run_evidence_command executes it THEN it
@@ -9030,6 +9399,7 @@ evidence:
 - tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta::test_delta_reports_only_new_violation
 - tests/system/test_cli_check.py::TestCheckPolyglot::test_unpinned_polyglot_runs_python_stage
 - tests/system/test_cli_check.py::TestCheckTicketLeasePinRefusal::test_ticket_lease_recorded_elsewhere_refuses
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN main WHEN tests/system/test_cli_check.py runs THEN TestCheckCleanProject::test_clean_code_exits_zero,
@@ -9196,6 +9566,7 @@ evidence:
 - tests/test_gates.py::TestDebtGate::test_rel001_land_owned_via_linked_worktree_no_ticket
 - tests/test_gates.py::TestDebtGate::test_rel001_land_owned_via_ticket_lease
 - tests/test_gates.py::TestDebtGate::test_rel001_linked_worktree_detected
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN frob check --ticket T-X running in a worktree (or against a ticket with
@@ -9320,6 +9691,7 @@ evidence:
 - tests/test_waive_gate.py::TestWaive007Registration::test_waive007_gate_combines_both_channels
 - tests/test_waive_gate.py::TestWaive007Registration::test_waivable_via_frob_waive_comment
 - tests/test_waive_gate.py::TestWaive007RealRepo::test_zero_findings_on_real_repo
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a waiver whose binding ticket reference resolves to no ticket in active
@@ -9510,6 +9882,7 @@ evidence:
 - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_resource_sets_join_across_a_recursive_cluster
 - tests/unit/graph/test_dsl.py::TestResourceDirectives::test_acquire_release_escapes_round_trip
 - tests/unit/graph/test_dsl.py::TestResourceDirectives::test_acquire_missing_target_is_malformed
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -9736,6 +10109,7 @@ evidence:
 - tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_refuses_without_force_when_a_live_lease_exists
 - tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_force_overrides_the_live_lease_refusal
 - tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_force_with_no_live_leases_stays_quiet
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -9790,6 +10164,7 @@ scope:
 scope_changes: []
 evidence:
 - tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_own_draft_id_reference_in_done_report
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a worktree ledger whose Done reports reference T-draft ids WHEN land
@@ -9872,6 +10247,7 @@ evidence:
 - tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_strata_waive_clause_draft_id_reference
 - tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_frob_waive_comment_draft_id_reference
 - tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_leaves_unrelated_draft_id_reference_untouched
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a worktree whose design/frob.strata or source frob:waive comments cite
@@ -9975,6 +10351,7 @@ evidence:
 - tests/test_graph.py::TestCallGraph::test_build_call_graph_exempts_attribute_call_on_foreign_receiver_from_unresolved
 - tests/test_graph.py::TestCallGraph::test_build_call_graph_exempts_super_dunder_call_from_unresolved
 - tests/test_graph.py::TestCallGraph::test_build_call_graph_still_marks_unresolved_self_attribute_call
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a real repo scan through the protocol-summary entrypoint WHEN a private-convention
@@ -10096,6 +10473,7 @@ evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov006_third_file_reachable_skips_unresolved_callee_sentinel
 - tests/test_gates.py::TestDupPipelineClosureConsumers::test_is_symref_dup
 - tests/test_gates.py::TestDupPipelineClosureConsumers::test_callee_name_map_skips_unresolved_callee_sentinel
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a call-graph closure containing a sentinel or non path::qualname entry
@@ -10220,6 +10598,7 @@ evidence:
 - tests/integration/test_mutate_runner.py::TestMutateRunnerJson::test_human_mode_still_shows_diagnostics
 - tests/integration/test_fleet_integration.py::TestFleetIntegrationJson::test_fleet_status_json_is_clean
 - tests/integration/test_gitlog.py::TestGitlogJson::test_json_valid
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN every runner module with a json flag whose payload path can reach guarded_subprocess_run
@@ -10367,6 +10746,7 @@ scope:
 scope_changes: []
 evidence:
 - tests/unit/test_app_runners_batch7.py::TestSysAudit::test_clean_model_passes
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN main WHEN TestSysAudit::test_clean_model_passes runs THEN it passes
@@ -10485,6 +10865,7 @@ scope:
 - tests/test_vet.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN FROB_DISABLE_NET=1 (or the guard's net flag) WHEN any vet code path
@@ -10522,6 +10903,7 @@ evidence:
 - tests/system/test_cli_check.py::TestCheckTypescript::test_type_error_fails_tsc
 - tests/system/test_cli_check.py::TestGitlessTargetGateSeverity::test_render_lint_gate_warns_not_errors_on_gitless_root
 - tests/system/test_cli_check.py::TestGitlessTargetGateSeverity::test_gitless_target_gates_warn_not_error
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -10698,6 +11080,7 @@ scope:
 - design/frob.strata
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -10731,6 +11114,7 @@ evidence:
 - tests/test_gates.py::TestTick007UndispatchedStale::test_medium_priority_never_fires
 - tests/test_gates.py::TestTick007UndispatchedStale::test_blocked_ticket_is_silent
 - tests/test_gates.py::TestTick007UndispatchedStale::test_real_repo_scan_runs_end_to_end_without_crashing
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -10858,6 +11242,7 @@ scope:
 - tests/test_ticket_land.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a worktree ticket in planned state with evidence bound and a Done report
@@ -10892,6 +11277,7 @@ evidence:
 - tests/test_vet.py::TestRegistryLookup::test_fetch_publish_date_refuses_when_net_disabled
 - tests/test_vet.py::TestNvdLookup::test_fetch_cwe_for_cve_refuses_when_net_disabled
 - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
+reviews: []
 attachments: []
 acceptance:
 - text: Given FROB_DISABLE_NET=1, when vet looks up a registry publish date or an
@@ -10988,6 +11374,7 @@ scope:
 - tests/test_lang_conformance_gate.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN an adopter repo whose queue carries no frob-internal ticket ids WHEN
@@ -11027,6 +11414,7 @@ scope:
 scope_changes: []
 evidence:
 - tests/system/test_cli_check.py::TestCheckStageGroups::test_available_stages_cover_every_gate_and_tool
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -11083,6 +11471,7 @@ scope:
 - tests/unit/strata/test_host_isolation.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a principal with a narrow deny and a broad allow on one path WHEN the
@@ -11125,6 +11514,7 @@ scope:
 - src/frob/tickets/**
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN a why-file that already begins with a Done report heading WHEN frob
@@ -11152,6 +11542,7 @@ scope:
 - README.md
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -11208,6 +11599,7 @@ evidence:
 - tests/test_ticket_land.py::TestGitFailureMessageCarriesStderr::test_describe_git_failure_includes_argv_and_stderr
 - tests/test_ticket_land.py::TestGitFailureMessageCarriesStderr::test_describe_git_failure_includes_spawn_error
 - tests/test_ticket_land.py::TestGitFailureMessageCarriesStderr::test_wip_commit_failure_logs_stderr
+reviews: []
 attachments: []
 acceptance:
 - text: GIVEN the T-0731 pre-commit hook active via core.hooksPath WHEN land creates
@@ -11273,6 +11665,7 @@ evidence:
 - tests/test_vet.py::TestCapabilityScanBindingResolution::test_param_shadowing_import_not_detected
 - tests/test_vet.py::TestCapabilityScanBindingResolution::test_local_variable_shadowing_import_not_detected
 - tests/test_vet.py::TestCapabilityScanBindingResolution::test_bare_name_call_with_no_import_not_detected
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -11363,6 +11756,7 @@ evidence:
 - tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock::test_observed_extended_kinds_by_node_only_ever_yields_extended_kinds
 - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
 - tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -11478,6 +11872,7 @@ evidence:
 - tests/test_refs_gate.py::TestMarkdownWaive::test_ref002_on_md_doc_without_waive_still_fires
 - tests/test_refs_gate.py::TestBacktickTokenizer::test_backtick_wrapped_path_mention_counts_as_reference
 - tests/test_refs_gate.py::TestBacktickTokenizer::test_backtick_wrapped_bare_identifier_not_treated_as_reference
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -11623,6 +12018,7 @@ scope_changes:
 evidence:
 - tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_unmeasured_fresh_check_skips_gate_reverification_land_proceeds
 - tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_two_unmeasured_gate_claims_never_vacuously_match
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -11694,6 +12090,7 @@ evidence:
 - tests/test_gates.py::TestComplianceGate::test_compliance005_silent_on_handled_by_and_out_of_scope
 - cmd:sh /tmp/claude-1000/-home-logan-projects-frob/28006941-9d5c-4153-b3fb-399b3b532639/scratchpad/t0833-evidence.sh
   exit=0 sha256=e3b0c44298fc
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -11780,6 +12177,7 @@ scope:
 - tests/test_ticket_evidence.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -11821,6 +12219,7 @@ scope:
 - tests/test_ticket_leases.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -11860,6 +12259,7 @@ scope:
 - tests/test_ticket_leases.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -11898,6 +12298,7 @@ scope:
 - src/frob/app/ticket_runner.py
 scope_changes: []
 evidence: []
+reviews: []
 attachments: []
 acceptance: []
 threat: null
@@ -11997,3 +12398,79 @@ dropping findings is never acceptable degradation. Add a test proving a
 synthetic unknown-gate key raises. Consider deriving the order tuple
 membership check from _ALL_GATES at import time so the drift is
 impossible to compile, not just caught at runtime.
+
+<!-- ticket:T-0840 -->
+```yaml
+id: T-0840
+title: path-sensitive per-call-site state verification (ordered call graph)
+state: queued
+kind: feature
+origin: human
+created: '2026-07-23'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/graph/**
+- src/frob/gates/_protocol_summary.py
+scope_changes: []
+evidence: []
+reviews: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0746 disclosure: PROTO002/PROTO003 (frob.gates._protocol_summary) ask
+an EXISTENTIAL question over compute_protocol_summaries' unordered,
+per-function transitive requires/transitions sets ("is state S
+established by SOME reachable transition anywhere in the tagged
+package closure") rather than a path-sensitive one ("is S established
+on EVERY path reaching this exact call site"), because the T-0745
+engine has no per-call-site statement ordering yet. This is
+false-negative-biased (a real ordering violation can be missed if some
+other path in the same closure happens to establish the state) -- the
+ticket-named crisp case (a state never established by ANY transition
+anywhere) is still caught soundly. Building real path-sensitivity needs
+an ordered call graph (each function's calls recorded in statement
+order, not just as an unordered edge set) plus a per-call-site
+dataflow pass over compute_protocol_summaries' SCC-ordered worklist.
+Scope: src/frob/graph/**, src/frob/gates/_protocol_summary.py.
+
+<!-- ticket:T-0841 -->
+```yaml
+id: T-0841
+title: wire Rust/C++/TypeScript language-excuse discharge into a real call-graph scan
+state: queued
+kind: feature
+origin: human
+created: '2026-07-23'
+priority: low
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/_protocol_summary.py
+- src/frob/graph/callgraph.py
+scope_changes: []
+evidence: []
+reviews: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0746 disclosure: frob.arch._protocol_excuse's per-language discharge
+predicates (rust_drop_discharge, cpp_raii_discharge,
+typescript_using_discharge, gc_finalizer_discharge) are built and
+directly unit-tested, but only python_with_discharge is wired into the
+real repo-scan protocol_summary_gate today -- because
+frob.graph.callgraph.build_call_graph is Python-only (the same
+disclosed limitation PROTO001 already carries, and DEAD001 before it).
+Wiring Rust/C++/TypeScript discharge into a real cross-file scan needs
+those languages to get build_call_graph support first (or an
+equivalent per-language call-graph substrate); this is deliberately
+NOT built here to avoid a second, unreviewed call-graph implementation
+per language, mirroring T-0745's own T-0809 disclosure pattern.
+Scope: src/frob/gates/_protocol_summary.py, src/frob/graph/callgraph.py.

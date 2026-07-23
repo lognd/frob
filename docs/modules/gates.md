@@ -75,6 +75,8 @@ declaration).
 | DOC005 | docblocks | `README.md`'s command table is out of sync with the live top-level subcommand registry: a real subcommand has no table row (error, "missing"), a table row names a subcommand that no longer exists (error, "stale"), or a "N commands" prose count claim does not equal the live count (error) -- see "DOC005 README command-table drift-lock" below |
 | EXCL001 | excludehazard | a `.git/info/exclude` entry shadows a git-tracked file or a directory containing tracked files -- see "EXCL001 (T-0465)" below |
 | PROTO001 | protocol_summary | (warn) a `frob:requires`/`frob:transition`-tagged symbol's `frob.graph.summary.compute_protocol_summaries` result is `poisoned` (an `UNRESOLVED_CALLEE` somewhere in its transitive call closure) -- see "PROTO001 (T-0813)" below |
+| PROTO002 | protocol_summary | (error) a `frob:requires` symbol's required state is never established anywhere reachable (or its summary is poisoned), and no language-excuse discharges it -- see "PROTO002/PROTO003 (T-0746)" below |
+| PROTO003 | protocol_summary | (error) a `frob:transition` symbol's precondition state is never established anywhere reachable (or its summary is poisoned), and no language-excuse discharges it -- see "PROTO002/PROTO003 (T-0746)" below |
 
 **T-0398 (evidence integrity) note on COV003**: COV003 only ever answers
 "does this evidence id resolve to a currently-collected test" -- it does
@@ -303,6 +305,80 @@ Rust/TypeScript/C soundness gap `DEAD001` already disclosed and scoped
 around, not a new gap this gate introduces. WARN-only (advisory-but-
 tracked, matching `DEAD001`/REF/PERF/FUZZ's posture), waivable with
 `frob:waive PROTO001 reason="..."`.
+
+### PROTO002/PROTO003 (T-0746)
+
+Child 3 of the T-0739 umbrella: the two ERROR-tier verification rules over
+the SAME per-package `frob.gates._protocol_summary.protocol_summary_gate`
+scan that computes PROTO001 -- one pass, three findings, never three
+separate repo walks.
+
+- **PROTO002 (state-requirement violation)**: a `frob:requires proto="P"
+  state="S"` symbol whose summary is poisoned (an unresolved callee makes
+  it untrustworthy -- ERROR here, stricter than PROTO001's WARN for the
+  identical poisoning signal, per the ticket's "unknown/poisoned summaries
+  at a checked call site = ERROR" mandate), or whose required state `S` is
+  never ESTABLISHED anywhere reachable from the package's tagged
+  entrypoints (`S` is neither the protocol's declared `initial=` state nor
+  the `to=` state of any reachable `frob:transition`). The `*_init-never-
+  called`/`*_deinit-orphaned` cases the ticket names fall out of this
+  directly: `frob.graph.dsl`'s T-0744 name-pattern inference (`_init`/
+  `_deinit`, `_open`/`_close`, `_acquire`/`_release`) synthesizes a
+  requires/transition pair with no `frob:protocol` comment at all, so an
+  inferred pair whose init half is unreachable IS exactly "no transition
+  into the active state is reachable".
+- **PROTO003 (invalid transition)**: a `frob:transition proto="P"
+  from="S" to="T"` symbol whose precondition state `S` fails the same
+  established-state test PROTO002 uses -- a transition reached in a state
+  the protocol can never establish.
+
+**APPROXIMATION, disclosed, not silently papered over**:
+`compute_protocol_summaries` (T-0745) has no per-call-site statement
+ordering yet -- real path-sensitivity needs an ordered call graph
+(deferred, T-0840). PROTO002/PROTO003 therefore ask an EXISTENTIAL
+question ("is `S` established by SOME reachable transition anywhere in
+the closure") rather than a path-sensitive one ("is `S` established on
+EVERY path reaching this exact call site") -- deliberately biased toward
+FALSE NEGATIVES (a real ordering bug can be missed if some other path in
+the same closure happens to establish the state) rather than false
+positives (a state genuinely unreachable by any transition anywhere is
+wrong on every path, so that direction is sound). The ticket-named crisp
+case -- "reachable without net_init", init never called at all -- is
+caught exactly.
+
+**Language-excuse discharge**: before either rule reports an ERROR,
+`frob.arch._protocol_excuse`'s per-language predicates get a chance to
+discharge it -- a runtime guarantee the T-0744 DSL cannot see but that
+provably reestablishes or maintains the missing state:
+
+| Language | Mechanism | Revoked by |
+|---|---|---|
+| Rust | `impl Drop for T` | `mem::forget(x)`/`ManuallyDrop<T>` observed on `T` |
+| C++ | a `~T()` destructor (RAII) | (never modeled as revocable here; T-0809's `escaped`/`acquired` sets are the intended "result actually held" cross-check, not yet wired) |
+| Python | a `with` block naming the resource | (lexical; Python's `__exit__` guarantee has no equivalent escape hatch) |
+| TypeScript | a `using` declaration or `try`/`finally` naming the resource | (lexical, same as Python) |
+| GC-finalized (Java/Kotlin/JS) | **never discharges** -- finalizer run timing is unspecified by every mainstream GC | n/a |
+
+A discharge is recorded as a `Severity.WARN` finding (rule `PROTO002`/
+`PROTO003`, never silently dropped -- NO-FAIL-SILENT), naming its
+mechanism, so it stays visible and auditable instead of vanishing.
+`build_call_graph`'s Python-only scope (the same disclosed limitation
+PROTO001 carries) means only `frob.arch._protocol_excuse
+.python_with_discharge` is wired into this repo-scan gate today -- the
+Rust/C++/TypeScript/GC predicates are doctrine-complete and directly
+unit-tested (`TestProtocolLanguageExcuseDischarge` in `tests/test_gates.py`),
+but wiring them into a real cross-file scan is blocked on those languages
+getting `build_call_graph` support at all (filed as T-0841, mirroring
+T-0745's own T-0809 disclosure rather than building a second, unreviewed
+call-graph substrate here).
+
+**Severity**: ERROR by default for both rules (T-0746's own "enforceable,
+never fail-silent" user mandate) -- this repo's own tracked source carries
+zero real (non-fixture, non-test) `frob:protocol` usage today, so
+ERROR-by-default measures clean against `main` at landing time. Both are
+waivable (`frob:waive PROTO002 reason="..."` / `frob:waive PROTO003
+reason="..."`) for a case the engine's existential approximation gets
+wrong.
 
 ### Waive boundary (T-0101, revised T-0289)
 

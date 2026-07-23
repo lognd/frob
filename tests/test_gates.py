@@ -1874,6 +1874,276 @@ class TestProtocolSummaryGate:
         assert isinstance(violations, tuple)
 
 
+# frob:ticket T-0746
+class TestProtocolVerificationGate:
+    """T-0746: PROTO002 (state-requirement violation) and PROTO003 (invalid
+    transition), the ERROR-tier verification rules sharing PROTO001's
+    per-package `protocol_summary_gate` scan."""
+
+    def test_state_never_established_is_an_error(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        from frob.gates._protocol_summary import protocol_summary_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def enter() -> None:\n"
+            '    # frob:requires proto="Net" state="active"\n'
+            "    pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = protocol_summary_gate(tmp_path, snap)
+        v = next((v for v in violations if v.rule == "PROTO002"), None)
+        assert v is not None
+        assert v.severity == Severity.ERROR
+        assert "src/a.py::enter" in v.message
+        assert "Net" in v.message and "active" in v.message
+
+    def test_state_established_by_a_reachable_transition_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        from frob.gates._protocol_summary import protocol_summary_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def net_init() -> None:\n"
+            '    # frob:transition proto="Net" from="idle" to="active"\n'
+            "    pass\n"
+            "\n\n"
+            "def enter() -> None:\n"
+            '    # frob:requires proto="Net" state="active"\n'
+            "    pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = protocol_summary_gate(tmp_path, snap)
+        assert not any(v.rule == "PROTO002" for v in violations)
+
+    def test_state_equal_to_initial_is_not_flagged(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        from frob.gates._protocol_summary import protocol_summary_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            '# frob:protocol Net states="idle,active" initial="idle"\n'
+            "def enter() -> None:\n"
+            '    # frob:requires proto="Net" state="idle"\n'
+            "    pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = protocol_summary_gate(tmp_path, snap)
+        assert not any(v.rule == "PROTO002" for v in violations)
+
+    def test_poisoned_summary_at_a_requires_symbol_is_an_error(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        from frob.gates._protocol_summary import protocol_summary_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def enter() -> None:\n"
+            '    # frob:requires proto="Net" state="active"\n'
+            "    _do_work()\n"
+            "\n\n"
+            "def _do_work() -> None:\n"
+            "    _missing_helper()\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = protocol_summary_gate(tmp_path, snap)
+        v = next((v for v in violations if v.rule == "PROTO002"), None)
+        assert v is not None
+        assert v.severity == Severity.ERROR
+        assert "poisoned" in v.message
+
+    def test_invalid_transition_precondition_never_established_is_an_error(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        from frob.gates._protocol_summary import protocol_summary_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def net_close() -> None:\n"
+            '    # frob:transition proto="Net" from="active" to="closed"\n'
+            "    pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = protocol_summary_gate(tmp_path, snap)
+        v = next((v for v in violations if v.rule == "PROTO003"), None)
+        assert v is not None
+        assert v.severity == Severity.ERROR
+        assert "src/a.py::net_close" in v.message
+        assert "active" in v.message
+
+    def test_valid_transition_chain_is_not_flagged(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        from frob.gates._protocol_summary import protocol_summary_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            '# frob:protocol Net states="idle,active,closed" initial="idle"\n'
+            "def net_init() -> None:\n"
+            '    # frob:transition proto="Net" from="idle" to="active"\n'
+            "    pass\n"
+            "\n\n"
+            "def net_close() -> None:\n"
+            '    # frob:transition proto="Net" from="active" to="closed"\n'
+            "    pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = protocol_summary_gate(tmp_path, snap)
+        assert not any(v.rule == "PROTO003" for v in violations)
+
+    def test_python_with_block_discharges_the_requirement(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        from frob.gates._protocol_summary import protocol_summary_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def enter() -> None:\n"
+            '    # frob:requires proto="Net" state="active"\n'
+            "    with Net() as _n:\n"
+            "        pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = protocol_summary_gate(tmp_path, snap)
+        error = next(
+            (
+                v
+                for v in violations
+                if v.rule == "PROTO002" and v.severity == Severity.ERROR
+            ),
+            None,
+        )
+        assert error is None
+        discharge = next((v for v in violations if v.rule == "PROTO002"), None)
+        assert discharge is not None
+        assert discharge.severity == Severity.WARN
+        assert "python-with" in discharge.message
+
+
+# frob:ticket T-0746
+class TestProtocolLanguageExcuseDischarge:
+    """T-0746: the per-language discharge predicates
+    (`frob.arch._protocol_excuse`) each rule's language-excuse doctrine
+    reduces to -- built and directly tested here even where a real
+    cross-file repo-scan wiring for that language is not built yet
+    (Rust/C++/TypeScript/GC, disclosed T-0839 follow-up; see
+    docs/modules/gates.md#proto002-proto003-t-0746)."""
+
+    def test_rust_drop_impl_discharges(self) -> None:
+        # frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_rust_drop_impl_discharges
+        from frob.arch._protocol_excuse import rust_drop_discharge
+
+        source = "struct Net;\nimpl Drop for Net {\n    fn drop(&mut self) {}\n}\n"
+        result = rust_drop_discharge(source, "Net")
+        assert result.discharged
+        assert result.mechanism == "rust-drop"
+
+    def test_rust_mem_forget_revokes_the_drop_discharge(self) -> None:
+        # frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_rust_mem_forget_revokes_the_drop_discharge
+        from frob.arch._protocol_excuse import rust_drop_discharge
+
+        source = (
+            "struct Net;\n"
+            "impl Drop for Net {\n    fn drop(&mut self) {}\n}\n"
+            "fn leak(n: Net) {\n    mem::forget(n);\n}\n"
+        )
+        result = rust_drop_discharge(source, "Net")
+        assert not result.discharged
+        assert "forget" in result.reason
+
+    def test_rust_manually_drop_revokes_the_discharge(self) -> None:
+        # frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_rust_manually_drop_revokes_the_discharge
+        from frob.arch._protocol_excuse import rust_drop_discharge
+
+        source = (
+            "struct Net;\n"
+            "impl Drop for Net {\n    fn drop(&mut self) {}\n}\n"
+            "struct Holder(ManuallyDrop<Net>);\n"
+        )
+        result = rust_drop_discharge(source, "Net")
+        assert not result.discharged
+        assert "ManuallyDrop" in result.reason
+
+    def test_rust_no_drop_impl_is_not_discharged(self) -> None:
+        # frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_rust_no_drop_impl_is_not_discharged
+        from frob.arch._protocol_excuse import rust_drop_discharge
+
+        result = rust_drop_discharge("struct Net;\n", "Net")
+        assert not result.discharged
+
+    def test_cpp_raii_destructor_discharges(self) -> None:
+        # frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_cpp_raii_destructor_discharges
+        from frob.arch._protocol_excuse import cpp_raii_discharge
+
+        source = "class Net {\npublic:\n    ~Net() {}\n};\n"
+        result = cpp_raii_discharge(source, "Net")
+        assert result.discharged
+        assert result.mechanism == "cpp-raii"
+
+    def test_cpp_no_destructor_is_not_discharged(self) -> None:
+        # frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_cpp_no_destructor_is_not_discharged
+        from frob.arch._protocol_excuse import cpp_raii_discharge
+
+        result = cpp_raii_discharge("class Net {\n};\n", "Net")
+        assert not result.discharged
+
+    def test_python_with_block_discharges(self) -> None:
+        # frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_python_with_block_discharges
+        from frob.arch._protocol_excuse import python_with_discharge
+
+        result = python_with_discharge("with Net() as n:\n    pass\n", "Net")
+        assert result.discharged
+        assert result.mechanism == "python-with"
+
+    def test_python_no_with_block_is_not_discharged(self) -> None:
+        # frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_python_no_with_block_is_not_discharged
+        from frob.arch._protocol_excuse import python_with_discharge
+
+        result = python_with_discharge("Net().connect()\n", "Net")
+        assert not result.discharged
+
+    def test_typescript_using_discharges(self) -> None:
+        # frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_typescript_using_discharges
+        from frob.arch._protocol_excuse import typescript_using_discharge
+
+        result = typescript_using_discharge("using n = Net();\n", "Net")
+        assert result.discharged
+        assert result.mechanism == "typescript-using"
+
+    def test_typescript_try_finally_discharges(self) -> None:
+        # frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_typescript_try_finally_discharges
+        from frob.arch._protocol_excuse import typescript_using_discharge
+
+        source = "try {\n  n.use();\n} finally {\n  n.close();\n}\n"
+        result = typescript_using_discharge(source, "n")
+        assert result.discharged
+        assert result.mechanism == "typescript-try-finally"
+
+    def test_typescript_bare_call_is_not_discharged(self) -> None:
+        # frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_typescript_bare_call_is_not_discharged
+        from frob.arch._protocol_excuse import typescript_using_discharge
+
+        result = typescript_using_discharge("net.connect();\n", "net")
+        assert not result.discharged
+
+    def test_gc_finalizer_never_discharges(self) -> None:
+        # frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_gc_finalizer_never_discharges
+        from frob.arch._protocol_excuse import gc_finalizer_discharge
+
+        result = gc_finalizer_discharge("Net")
+        assert not result.discharged
+        assert result.mechanism == "gc-finalizer"
+
+
 # frob:ticket T-0731
 class TestDebtGate:
     """T-0412: frob:debt vs frob:waive -- malformed directive (DEBT001),

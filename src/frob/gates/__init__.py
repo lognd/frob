@@ -1081,6 +1081,12 @@ _KNOWN_GATE_RULES = frozenset(
         # a frob:requires/frob:transition-tagged symbol whose transitive
         # call closure hits a genuinely unresolved callee.
         "PROTO001",
+        # T-0746: PROTO002 (state-requirement violation) and PROTO003
+        # (invalid transition) -- the ERROR-tier verification rules over
+        # the same `frob.gates._protocol_summary` scan, sharing PROTO001's
+        # per-package `compute_protocol_summaries` pass.
+        "PROTO002",
+        "PROTO003",
     }
 )
 
