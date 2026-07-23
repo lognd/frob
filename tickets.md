@@ -1213,8 +1213,56 @@ created: '2026-07-21'
 priority: medium
 blocked_by: []
 parent: null
-scope: []
-scope_changes: []
+scope:
+- src/frob/app/map_runner.py
+- src/frob/app/outline_runner.py
+- src/frob/app/xref_runner.py
+- src/frob/app/docs_runner.py
+- src/frob/__main__.py
+- docs/modules/cli.md
+scope_changes:
+- op: add
+  glob: src/frob/app/map_runner.py
+  reason: 'user decision 2026-07-23: deprecate map/outline/xref/docs-search with pre-1.0.0
+    sunset; scope covers the four runners, the parser layer for deprecation warnings,
+    and CLI docs'
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: src/frob/app/outline_runner.py
+  reason: 'user decision 2026-07-23: deprecate map/outline/xref/docs-search with pre-1.0.0
+    sunset; scope covers the four runners, the parser layer for deprecation warnings,
+    and CLI docs'
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: src/frob/app/xref_runner.py
+  reason: 'user decision 2026-07-23: deprecate map/outline/xref/docs-search with pre-1.0.0
+    sunset; scope covers the four runners, the parser layer for deprecation warnings,
+    and CLI docs'
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: src/frob/app/docs_runner.py
+  reason: 'user decision 2026-07-23: deprecate map/outline/xref/docs-search with pre-1.0.0
+    sunset; scope covers the four runners, the parser layer for deprecation warnings,
+    and CLI docs'
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: src/frob/__main__.py
+  reason: 'user decision 2026-07-23: deprecate map/outline/xref/docs-search with pre-1.0.0
+    sunset; scope covers the four runners, the parser layer for deprecation warnings,
+    and CLI docs'
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: docs/modules/cli.md
+  reason: 'user decision 2026-07-23: deprecate map/outline/xref/docs-search with pre-1.0.0
+    sunset; scope covers the four runners, the parser layer for deprecation warnings,
+    and CLI docs'
+  actor: logan
+  at: '2026-07-23'
 evidence: []
 attachments: []
 acceptance: []
@@ -1223,7 +1271,6 @@ component: null
 labels: []
 ```
 Telemetry (this session, 1035 CLI events): ticket=225 check=103 release=19 sys=16 organic; map/outline/xref/parse/gitlog/exports invocations were VIRTUALLY ALL their own test suites (pytest tmp paths), zero organic use by coordinator or ~30 agents -- navigation is owned by Serena/native tools in agentic use. Each command carries doc/test/export/coverage obligations = maintenance tax. Decide per command: KEEP AS PLUMBING (parse: adapter used by pipelines; exports: powers exports stage; gitlog: powers stats/changelog), DEMOTE to documented maintenance-mode porcelain tier (map, outline, xref, docs-search), or frob:deprecated. serve (MCP) kept: valuable for no-shell contexts though unused when agents have a shell. User decision ticket -- evidence in body, recommendation: demote the four navigation commands, revisit removal after one quiet quarter.
-
 <!-- ticket:T-0582 -->
 ```yaml
 id: T-0582
