@@ -56,6 +56,16 @@ def _subprocess_env() -> dict[str, str]:
 
 
 @pytest.mark.skipif(not _uv_available(), reason="uv not on PATH")
+# T-0742: measured ~24s warm-cache locally (uv sync already has every
+# wheel resolved+cached), well under the 120s global deadlock ceiling
+# (docs/guides/testing.md) -- but this test's `uv sync` does a real
+# network dependency resolution+download plus a full lint/typecheck/
+# test/`frob check` pipeline, so a cold-cache CI runner (empty uv cache,
+# first-fetch network latency) can run substantially slower than the warm
+# local baseline. 300s gives real headroom above that variance without
+# silently raising the global default that catches genuine hangs
+# everywhere else.
+@pytest.mark.timeout(300)
 def test_python_tool_scaffold_passes_check_immediately(tmp_path: Path) -> None:
     # frob:tests src/frob/scaffold kind="integration"
     # Renders a real project via render_project, commits it, then runs it

@@ -42,6 +42,20 @@ def git(*args: str, cwd: Path) -> None:
     subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True)
 
 
+# frob:ticket T-0750
+# frob:tests tests/system/test_cli_check.py::TestCheckCleanProject.test_clean_code_exits_zero  # noqa: E501
+def git_init_and_config(path: Path, *, branch: str = "main") -> None:
+    """Git-init `path` on `branch` with a fixed test identity (T-0750:
+    extracted from the same three-line `git init` + two `git config` calls
+    repeated inline across a dozen `test_cli_check.py` fixtures -- the
+    gates a gitless `tmp_path` now errors loudly on, COV002/SCOPE001/
+    TODO001, need a real git repo underneath, not just a working-tree diff
+    that silently degrades)."""
+    git("init", "-q", "-b", branch, cwd=path)
+    git("config", "user.email", "test@example.com", cwd=path)
+    git("config", "user.name", "Test", cwd=path)
+
+
 def init_repo(tmp_path: Path, model: str) -> Path:
     """Build a minimal frob-enabled git repo (empty ledger, one `.strata`
     design file) and commit it -- the shared arrange step behind

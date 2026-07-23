@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.system.conftest import FIXTURES, run
+from tests.system.conftest import FIXTURES, git_init_and_config, run
 
 # The TS system test needs a real `typescript` install to exercise `tsc`
 # without hitting the network (npx would otherwise try to fetch it and
@@ -51,9 +51,7 @@ class TestCheckCleanProject:
         # `working_diff` a real, empty diff to resolve instead of a load
         # failure.
         _make_project(tmp_path, "def add(x: int, y: int) -> int:\n    return x + y\n")
-        _git("init", "-q", "-b", "main", cwd=tmp_path)
-        _git("config", "user.email", "test@example.com", cwd=tmp_path)
-        _git("config", "user.name", "Test", cwd=tmp_path)
+        git_init_and_config(tmp_path)
         _git("add", "-A", cwd=tmp_path)
         _git("commit", "-q", "-m", "init", cwd=tmp_path)
         r = run(
@@ -206,9 +204,7 @@ class TestCheckSkipFlags:
         # `_make_project` helper) gives `working_diff` a real, empty diff
         # so COV002/SCOPE001/TODO001 (T-0550) don't treat a git-less root
         # as a load failure -- see TestCheckCleanProject.test_clean_code_exits_zero.
-        _git("init", "-q", "-b", "main", cwd=tmp_path)
-        _git("config", "user.email", "test@example.com", cwd=tmp_path)
-        _git("config", "user.name", "Test", cwd=tmp_path)
+        git_init_and_config(tmp_path)
         _git("add", "-A", cwd=tmp_path)
         _git("commit", "-q", "-m", "init", cwd=tmp_path)
         r = run(
@@ -229,9 +225,7 @@ class TestCheckSkipFlags:
     def test_skip_exports(self, tmp_path):
         # frob:ticket T-0806
         _make_project(tmp_path, "def foo(): ...\n")
-        _git("init", "-q", "-b", "main", cwd=tmp_path)
-        _git("config", "user.email", "test@example.com", cwd=tmp_path)
-        _git("config", "user.name", "Test", cwd=tmp_path)
+        git_init_and_config(tmp_path)
         _git("add", "-A", cwd=tmp_path)
         _git("commit", "-q", "-m", "init", cwd=tmp_path)
         r = run(
@@ -279,9 +273,7 @@ class TestCheckTicketScopedAlwaysReportsOnFailure:
         # failure symptom reported against T-0075 (root-caused as already
         # fixed by T-0122/T-0125's logging-race repair; this pins the
         # behavior so it cannot silently regress).
-        _git("init", "-q", "-b", "main", cwd=tmp_path)
-        _git("config", "user.email", "test@example.com", cwd=tmp_path)
-        _git("config", "user.name", "Test", cwd=tmp_path)
+        git_init_and_config(tmp_path)
         (tmp_path / "pkg.py").write_text(
             "def add(x: int, y: int) -> int:\n    return x + y\n"
         )
@@ -334,9 +326,7 @@ def _write_pyproject(tmp_path: Path, name: str = "pkg") -> None:
 
 class TestCheckGatesStage:
     def test_only_gates_reports_violation_with_remedy(self, tmp_path):
-        _git("init", "-q", "-b", "main", cwd=tmp_path)
-        _git("config", "user.email", "test@example.com", cwd=tmp_path)
-        _git("config", "user.name", "Test", cwd=tmp_path)
+        git_init_and_config(tmp_path)
         _write_pyproject(tmp_path)
         (tmp_path / "pkg.py").write_text(
             "def add(x: int, y: int) -> int:\n    return x + y\n"
@@ -351,9 +341,7 @@ class TestCheckGatesStage:
         assert "frob:tests" in out  # every violation embeds its remedy
 
     def test_only_gates_passes_once_bound_and_tested(self, tmp_path):
-        _git("init", "-q", "-b", "main", cwd=tmp_path)
-        _git("config", "user.email", "test@example.com", cwd=tmp_path)
-        _git("config", "user.name", "Test", cwd=tmp_path)
+        git_init_and_config(tmp_path)
         _write_pyproject(tmp_path)
         (tmp_path / "pkg.py").write_text(
             "def add(x: int, y: int) -> int:\n    return x + y\n"
@@ -400,9 +388,7 @@ class TestCheckDocAnchorScopedVsUnscoped:
         (`pkg/sub/docs/x.md`) never existed and DOC002 fired on a directive
         that is actually clean -- reproduced here by asserting DOC002 is
         absent from BOTH runs, not just the unscoped one."""
-        _git("init", "-q", "-b", "main", cwd=tmp_path)
-        _git("config", "user.email", "test@example.com", cwd=tmp_path)
-        _git("config", "user.name", "Test", cwd=tmp_path)
+        git_init_and_config(tmp_path)
         _write_pyproject(tmp_path)  # frob:ticket T-0806
 
         (tmp_path / "docs").mkdir()
@@ -451,9 +437,7 @@ class TestCheckStampBaselineAndDelta:
 
     def test_stamp_baseline_writes_stamp(self, tmp_path):
         # frob:tests tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta.test_stamp_baseline_writes_stamp
-        _git("init", "-q", "-b", "main", cwd=tmp_path)
-        _git("config", "user.email", "test@example.com", cwd=tmp_path)
-        _git("config", "user.name", "Test", cwd=tmp_path)
+        git_init_and_config(tmp_path)
         (tmp_path / "pkg.py").write_text(
             "def add(x: int, y: int) -> int:\n    return x + y\n"
         )
@@ -468,9 +452,7 @@ class TestCheckStampBaselineAndDelta:
 
     def test_delta_reports_only_new_violation(self, tmp_path):
         # frob:tests tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta.test_delta_reports_only_new_violation
-        _git("init", "-q", "-b", "main", cwd=tmp_path)
-        _git("config", "user.email", "test@example.com", cwd=tmp_path)
-        _git("config", "user.name", "Test", cwd=tmp_path)
+        git_init_and_config(tmp_path)
         _write_pyproject(tmp_path)
         (tmp_path / "pkg.py").write_text(
             "def add(x: int, y: int) -> int:\n    return x + y\n"
@@ -504,9 +486,7 @@ class TestCheckStampBaselineAndDelta:
 
     def test_delta_falls_back_to_full_set_when_no_baseline(self, tmp_path):
         # frob:tests tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta.test_delta_falls_back_to_full_set_when_no_baseline
-        _git("init", "-q", "-b", "main", cwd=tmp_path)
-        _git("config", "user.email", "test@example.com", cwd=tmp_path)
-        _git("config", "user.name", "Test", cwd=tmp_path)
+        git_init_and_config(tmp_path)
         _write_pyproject(tmp_path)
         (tmp_path / "pkg.py").write_text(
             "def add(x: int, y: int) -> int:\n    return x + y\n"
@@ -840,9 +820,7 @@ class TestCheckTypescript:
         )
         # T-0806: git-committing this test's own tmp_path gives `working_diff`
         # a real, empty diff -- see TestCheckCleanProject.test_clean_code_exits_zero.
-        _git("init", "-q", "-b", "main", cwd=tmp_path)
-        _git("config", "user.email", "test@example.com", cwd=tmp_path)
-        _git("config", "user.name", "Test", cwd=tmp_path)
+        git_init_and_config(tmp_path)
         _git("add", "-A", cwd=tmp_path)
         _git("commit", "-q", "-m", "init", cwd=tmp_path)
         r = run(
@@ -957,9 +935,7 @@ class TestCheckTicketLeasePinRefusal:
         pass and never a crash."""
         main_repo = tmp_path / "main"
         main_repo.mkdir()
-        _git("init", "-q", "-b", "main", cwd=main_repo)
-        _git("config", "user.email", "test@example.com", cwd=main_repo)
-        _git("config", "user.name", "Test", cwd=main_repo)
+        git_init_and_config(main_repo)
         (main_repo / "tickets.md").write_text("# Tickets\n\n")
         (main_repo / "src").mkdir()
         (main_repo / "src" / "feature.py").write_text(
