@@ -110,6 +110,9 @@ attachments:
 <!-- frob:describes src/frob/tickets/__init__.py::mutate_labels -->
 <!-- frob:describes src/frob/tickets/__init__.py::board_view -->
 <!-- frob:describes src/frob/tickets/__init__.py::epic_rollup -->
+<!-- frob:describes src/frob/tickets/__init__.py::has_live_lease -->
+<!-- frob:describes src/frob/tickets/__init__.py::dispatch_stale_hours -->
+<!-- frob:describes src/frob/tickets/__init__.py::undispatched_stale -->
 
 ```python
 # frob/tickets/__init__.py
@@ -310,6 +313,21 @@ def brief_ticket(root: Path, ticket_id: str) -> Result[str, TicketError]
     # the agent-playbook's own hard-rule sections (parsed from its
     # headings), inferred verify commands, gate-baseline status, and the
     # REL/land rules. Err(NotFound) if ticket_id does not resolve.
+def has_live_lease(ticket: Ticket, root: Path | None) -> bool
+    # T-0752: whether `ticket` itself (not a scope collision with some
+    # OTHER ticket -- that's leased_by's job) has a live lease against it
+    # right now, via display_state's T-0716 overlay -- the in-flight/
+    # dispatchable row split signal for `frob ticket doable`.
+def dispatch_stale_hours(ticket: Ticket, *, today: date | None = None) -> float
+    # T-0752: hours `ticket` has sat since `Ticket.created` (the only
+    # timestamp the model carries; "last state change" degrades to
+    # "filing", day-granular not wall-clock).
+def undispatched_stale(tickets: Sequence[Ticket], root: Path, *,
+                        today: date | None = None) -> tuple[tuple[Ticket, float, float], ...]
+    # T-0752: (ticket, hours_elapsed, threshold_hours) for every CRITICAL/
+    # HIGH ticket in `tickets` past its `[tickets] dispatch_stale_*_hours`
+    # threshold (frob.toml) -- the single staleness-alarm judgment
+    # `doable`'s row rendering and a future TICK-family gate both call.
 
 # frob/tickets/clipboard.py
 def clipboard_image() -> Result[bytes, ClipboardError]
@@ -357,6 +375,24 @@ and update on every dispatch.
   for every other ticket in the repo. A PRECISE entry on the same holder
   (e.g. `src/frob/gates/`) still hard-blocks a real collision under it.
   Callers with no repo root (`root=None`) get the strict, undemoted check.
+- **In-flight/dispatchable split and staleness alarm (T-0752)**: the
+  default `frob ticket doable` render additionally shows each row's
+  `priority=<level>`, splits any row `has_live_lease` finds a live lease
+  against (the T-0716 `display_state` overlay, reused verbatim -- a
+  worktree already started it even though the local ledger still shows
+  `queued`/`planned`) into a separate in-flight section below the truly-
+  dispatchable rows, and marks a CRITICAL/HIGH row `undispatched_stale`
+  finds sitting dispatchable past its threshold with an `UNDISPATCHED`
+  alarm, sorted to the top of the dispatchable section. The per-priority
+  threshold, in hours, is `[tickets] dispatch_stale_critical_hours`
+  (default `4`) / `dispatch_stale_high_hours` (default `24`) in
+  `frob.toml`, same fail-open-to-defaults shape as `large_glob_max_files`
+  above. Staleness is measured from `Ticket.created` (`dispatch_stale_hours`)
+  -- the ticket model carries no per-transition timestamp yet, so "last
+  state change" degrades to "filing" and the measurement is day-granular,
+  not true wall-clock hours. `--json`/`--ignore-lease` output stays the
+  raw, undecorated `doable()` result -- the split and alarm are a display-
+  layer concern only.
 
 ## Cross-worktree lease side-channel (T-0473)
 

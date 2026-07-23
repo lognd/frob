@@ -1242,6 +1242,117 @@ def display_state(ticket: Ticket, root: Path | None) -> str:
     return ticket.state.value
 
 
+# frob:ticket T-0752
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_dispatch_stale.py::TestHasLiveLease.test_queued_with_live_lease_is_in_flight  # noqa: E501
+# frob:tests tests/test_tickets_dispatch_stale.py::TestHasLiveLease.test_queued_with_no_lease_is_not_in_flight  # noqa: E501
+# frob:tests tests/test_tickets_dispatch_stale.py::TestHasLiveLease.test_no_root_never_in_flight  # noqa: E501
+def has_live_lease(ticket: Ticket, root: Path | None) -> bool:
+    """Whether `ticket` itself (not a scope collision with some OTHER
+    ticket -- that is `leased_by`'s job) currently has a live lease against
+    it, per the same `display_state`/`read_all_leases` overlay `frob ticket
+    list` already uses (T-0716) -- reused verbatim here rather than
+    re-reading the lease directory a second way. Powers `doable`'s
+    in-flight/dispatchable row split (T-0752): a row this returns `True`
+    for is being worked by SOME worktree already, even though the local
+    ledger may still show it `queued`/`planned`, so it belongs in the
+    IN-FLIGHT section, not the "next thing to dispatch" one."""
+    return display_state(ticket, root) != ticket.state.value
+
+
+#: Default per-priority staleness threshold (hours) past which a
+#: dispatchable (unleased, unblocked) CRITICAL/HIGH ticket is considered
+#: dangerously undispatched (T-0752, user mandate: T-0731 sat
+#: filed-but-undispatched for hours). Only CRITICAL/HIGH carry a default --
+#: MEDIUM/LOW are not alarmed on by default (a queue always has some).
+_DISPATCH_STALE_DEFAULT_HOURS: dict[Priority, float] = {
+    Priority.CRITICAL: 4.0,
+    Priority.HIGH: 24.0,
+}
+
+
+# frob:ticket T-0752
+def _dispatch_stale_thresholds(root: Path) -> dict[Priority, float]:
+    """Per-priority undispatched-staleness thresholds, in hours (T-0752),
+    from `frob.toml`'s `[tickets]` table (`dispatch_stale_critical_hours`/
+    `dispatch_stale_high_hours`), defaulting to
+    `_DISPATCH_STALE_DEFAULT_HOURS`. Same fail-open-to-defaults shape as
+    `_tick004_rot_thresholds`/`_load_large_glob_max_files` -- a missing or
+    malformed `frob.toml` degrades to the defaults rather than erroring."""
+    toml_path = root / "frob.toml"
+    if not toml_path.exists():
+        return dict(_DISPATCH_STALE_DEFAULT_HOURS)
+    try:
+        with toml_path.open("rb") as handle:
+            table = tomllib.load(handle).get("tickets", {})
+        return {
+            priority: float(
+                table.get(f"dispatch_stale_{priority.value}_hours", default)
+            )
+            for priority, default in _DISPATCH_STALE_DEFAULT_HOURS.items()
+        }
+    except (OSError, tomllib.TOMLDecodeError, TypeError, ValueError) as exc:
+        _log.warning(
+            "tickets: dispatch-stale thresholds unreadable/malformed in %s (%s), "
+            "using defaults",
+            toml_path,
+            exc,
+        )
+        return dict(_DISPATCH_STALE_DEFAULT_HOURS)
+
+
+# frob:ticket T-0752
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_dispatch_stale.py::TestDispatchStaleHours.test_same_day_is_zero_hours  # noqa: E501
+# frob:tests tests/test_tickets_dispatch_stale.py::TestDispatchStaleHours.test_one_day_old_is_24_hours  # noqa: E501
+def dispatch_stale_hours(ticket: Ticket, *, today: date | None = None) -> float:
+    """Hours `ticket` has been sitting since filing (T-0752's "last state
+    change or filing" measurement) -- `Ticket.created` is the only
+    timestamp this model carries (no per-transition history exists yet, so
+    "last state change" degrades to "filing" here; a finer-grained
+    transition timestamp is a follow-on, not built by this pass), converted
+    from whole days to hours (`(today - ticket.created).days * 24`). `today`
+    is injectable for deterministic tests; omitted, it defaults to
+    `date.today()`."""
+    if today is None:
+        today = date.today()
+    return (today - ticket.created).days * 24.0
+
+
+# frob:ticket T-0752
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_dispatch_stale.py::TestUndispatchedStale.test_critical_past_threshold_alarms  # noqa: E501
+# frob:tests tests/test_tickets_dispatch_stale.py::TestUndispatchedStale.test_critical_under_threshold_no_alarm  # noqa: E501
+# frob:tests tests/test_tickets_dispatch_stale.py::TestUndispatchedStale.test_medium_priority_never_alarms  # noqa: E501
+def undispatched_stale(
+    tickets: Sequence[Ticket],
+    root: Path,
+    *,
+    today: date | None = None,
+) -> tuple[tuple[Ticket, float, float], ...]:
+    """`(ticket, hours_elapsed, threshold_hours)` for every CRITICAL/HIGH
+    ticket in `tickets` whose `dispatch_stale_hours` has crossed its
+    `_dispatch_stale_thresholds` entry (T-0752) -- the single staleness-
+    alarm computation both `frob ticket doable`'s row rendering and a
+    future TICK-family `frob check` gate (T-0714/T-0752 coordination, gate
+    wiring itself is out of this ticket's declared scope --
+    `src/frob/gates/**` -- and tracked separately) are meant to call, so
+    the "past threshold" judgment lives in exactly one place. `tickets`
+    should already be the DISPATCHABLE set (unblocked, unleased) -- this
+    function does not itself re-derive that; pass `doable(...)`'s result
+    filtered to non-in-flight rows (`has_live_lease`)."""
+    thresholds = _dispatch_stale_thresholds(root)
+    alarms: list[tuple[Ticket, float, float]] = []
+    for t in tickets:
+        threshold = thresholds.get(t.priority)
+        if threshold is None:
+            continue
+        elapsed = dispatch_stale_hours(t, today=today)
+        if elapsed > threshold:
+            alarms.append((t, elapsed, threshold))
+    return tuple(alarms)
+
+
 # frob:ticket T-0455
 def _current_actor() -> str:
     """Best-effort identity for a `scope_changes` audit entry's `actor` field
@@ -1816,7 +1927,11 @@ def brief_ticket(root: Path, ticket_id: str) -> Result[str, TicketError]:
 # frob:waive DRIFT001 reason="T-0453 added root/ignore_lease params; frob.lock ack out of scope, no inline-waivable syntax for JSON -- reviewer re-acks at land"  # noqa: E501
 # frob:invariant INV-024
 def doable(
-    queue: TicketQueue, root: Path | None = None, *, ignore_lease: bool = False
+    queue: TicketQueue,
+    root: Path | None = None,
+    *,
+    ignore_lease: bool = False,
+    breadth: tuple[int, tuple[str, ...]] | None = None,
 ) -> tuple[Ticket, ...]:
     """Tickets in {queued, planned} with no open blockers, ordered by
     priority (highest first, T-0411) then oldest-first within a priority tier.
@@ -1836,10 +1951,19 @@ def doable(
     through every `leased_by` call in the filter loop below (same pattern
     as `breadth`), instead of each candidate re-deriving the union of
     local-ledger and cross-worktree leases for itself.
+
+    T-0752: pass a precomputed `breadth` (`scope_breadth_context(root)`,
+    the same kwarg `doable_blocked` already accepts) when the caller has
+    already walked the tree for it -- omitting it while `root` is given
+    computes it internally, same default-to-internal convention as
+    `doable_blocked`. This is what keeps `frob ticket doable`'s default
+    render (which also needs `breadth` for its own warnings) down to a
+    single `git ls-files` walk instead of two.
     """
     candidates = _doable_candidates(queue)
     if not ignore_lease:
-        breadth = scope_breadth_context(root) if root is not None else None
+        if root is not None and breadth is None:
+            breadth = scope_breadth_context(root)
         all_leases = _all_leases(queue, root)
         candidates = [
             t
@@ -2990,10 +3114,12 @@ __all__ = [
     "clipboard_has_image",
     "compose_done_report",
     "compute_changed_lines",
+    "dispatch_stale_hours",
     "display_state",
     "doable",
     "doable_blocked",
     "drop_ticket",
+    "has_live_lease",
     "is_cmd_evidence",
     "land",
     "large_glob_warnings",
@@ -3026,5 +3152,6 @@ __all__ = [
     "splice_ledger",
     "transition",
     "unbound_acceptance",
+    "undispatched_stale",
     "validate_evidence",
 ]

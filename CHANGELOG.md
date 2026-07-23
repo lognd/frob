@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.113.0] - unreleased
+
+- T-0752: doable: priority column, in-flight/dispatchable split, and undispatched-critical staleness alarm
+
 ## [0.112.0] - unreleased
 
 - T-0809: wire real callee-resolution + resource-tracking DSL into the T-0745 protocol summary engine

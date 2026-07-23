@@ -380,8 +380,25 @@ def _doable(root: Path, cfg: AppConfig) -> None:
     `--show-blocked`'s per-exclusion explanation, or `--ignore-lease`'s raw
     blocker-only list (T-0453 scope-lease model) -- also always prints an
     "Active leases" section (what's holding the tree) and large-glob-
-    warning nudges, and a clear message when the result is empty."""
-    from frob.tickets import doable, load_queue, scope_breadth_context
+    warning nudges, and a clear message when the result is empty.
+
+    T-0752: the default (non-json) render additionally (1) shows each
+    row's priority, (2) splits rows with a live lease against them
+    (`has_live_lease`, T-0716 overlay) into a separate IN-FLIGHT section
+    below the truly-dispatchable ones, and (3) marks any CRITICAL/HIGH row
+    that has sat dispatchable past its staleness threshold
+    (`undispatched_stale`) with a loud UNDISPATCHED alarm, sorted to the
+    top of the dispatchable section. `--json`/`--ignore-lease` keep the
+    prior raw/undecorated shape -- the split and alarm are a display-layer
+    concern for the human-facing listing only, not a change to what
+    `doable()` itself returns."""
+    from frob.tickets import (
+        doable,
+        has_live_lease,
+        load_queue,
+        scope_breadth_context,
+        undispatched_stale,
+    )
 
     result = load_queue(root)
     if result.is_err:
@@ -396,7 +413,12 @@ def _doable(root: Path, cfg: AppConfig) -> None:
         _render_doable_show_blocked(root, queue, cfg, breadth=breadth)
         return
 
-    tickets = doable(queue, root, ignore_lease=cfg.ticket_ignore_lease)
+    # T-0752: thread the ALREADY-COMPUTED `breadth` through so `doable()`
+    # does not re-walk the tree a second time for it -- `doable_blocked`
+    # already took this kwarg; `doable` gained it for exactly this call
+    # (was the spawn-budget regression: a second `git ls-files` per
+    # invocation before this fix).
+    tickets = doable(queue, root, ignore_lease=cfg.ticket_ignore_lease, breadth=breadth)
 
     if cfg.ticket_json:
         import json
@@ -415,9 +437,44 @@ def _doable(root: Path, cfg: AppConfig) -> None:
             "starting any ticket would conflict with a ticket in progress)"
         )
         return
+
+    # T-0752 dispatch-state split: a row `doable()` returned may still have
+    # a live lease of its OWN (a worktree started it before main's ledger
+    # learned about it, T-0716's @worktree case) -- those belong in-flight,
+    # not in the "next thing to dispatch" section.
+    in_flight = [t for t in tickets if has_live_lease(t, root)]
+    dispatchable = [t for t in tickets if t not in in_flight]
+
+    alarms = undispatched_stale(dispatchable, root)
+    alarmed_ids = {t.id for t, _elapsed, _threshold in alarms}
+    ordered = [t for t in dispatchable if t.id in alarmed_ids] + [
+        t for t in dispatchable if t.id not in alarmed_ids
+    ]
+    alarm_by_id = {t.id: (elapsed, threshold) for t, elapsed, threshold in alarms}
+
     color = _stdout_color()
-    for t in tickets:
-        _log.info("%s  %s  (%s)", style_ticket_id(t.id, color), t.title, t.kind.value)
+    for t in ordered:
+        row = "%s  %s  (%s)  priority=%s" % (
+            style_ticket_id(t.id, color),
+            t.title,
+            t.kind.value,
+            t.priority.value,
+        )
+        if t.id in alarm_by_id:
+            elapsed, threshold = alarm_by_id[t.id]
+            row += "  [UNDISPATCHED %.0fh > %.0fh threshold]" % (elapsed, threshold)
+        _log.info(row)
+
+    if in_flight:
+        _log.info("In-flight (leased, already being worked):")
+        for t in in_flight:
+            _log.info(
+                "  %s  %s  (%s)  priority=%s",
+                style_ticket_id(t.id, color),
+                t.title,
+                t.kind.value,
+                t.priority.value,
+            )
 
 
 # frob:ticket T-0453
