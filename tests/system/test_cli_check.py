@@ -1,6 +1,7 @@
 """End-to-end tests for `frob check` (Python quality gate)."""
 
 import shutil
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -775,6 +776,22 @@ class TestCheckTypescript:
     path, not just parse_tsc in isolation."""
 
     def _make_ts_project(self, tmp_path: Path, src: str) -> Path:
+        """Minimal TS project, plus the same warn-severity `frob.toml`
+        baseline `_make_project` gives python fixtures (T-0818: without it
+        TEST001/TEST006 hard-error on this fixture's undocumented/untested
+        `add`) and a `tickets.md` carrying an open T-0329 -- LANG003's own
+        documented/tested contract (`tests/test_lang_conformance_gate.py::
+        TestProjectLangConformanceGate.test_present_known_gap_with_open_
+        ticket_warns`) requires the CHECKED repo's own queue to independently
+        track the same ticket id `frob.lang._support._arch_status` names for
+        the typescript `arch` facet's KNOWN_GAP, or LANG003 escalates to
+        ERROR ("does not exist in the loaded queue") -- see T-0818's Done
+        report for why this is the fixture's own required setup, not a
+        product bug: T-0329 is a real, queued ticket in frob's OWN
+        tickets.md, so there is no dangling reference in the shipped
+        product; an isolated downstream repo simply has to mirror it
+        locally the same way any real adopter checking a typescript project
+        would."""
         (tmp_path / "node_modules").symlink_to(_TS_NODE_MODULES)
         (tmp_path / "package.json").write_text(
             '{"name": "tsfixture", "private": true, "type": "module"}\n'
@@ -785,6 +802,34 @@ class TestCheckTypescript:
             '"Bundler"}}\n'
         )
         (tmp_path / "src.ts").write_text(src)
+        (tmp_path / "frob.toml").write_text(
+            "[gates.severity]\n"
+            'COV001 = "warn"\nTEST001 = "warn"\nTEST002 = "warn"\n'
+            'TEST003 = "warn"\nTEST005 = "warn"\nTEST006 = "warn"\n'
+        )
+        (tmp_path / "tickets.md").write_text(
+            "<!-- ticket:T-0329 -->\n"
+            "```yaml\n"
+            "id: T-0329\n"
+            "title: fixture stand-in for frob's own arch multi-language epic\n"
+            "state: queued\n"
+            "kind: feature\n"
+            "origin: human\n"
+            f"created: '{date.today().isoformat()}'\n"
+            "blocked_by: []\n"
+            "parent: null\n"
+            "scope: []\n"
+            "scope_changes: []\n"
+            "evidence: []\n"
+            "attachments: []\n"
+            "acceptance: []\n"
+            "threat: null\n"
+            "component: null\n"
+            "labels: []\n"
+            "```\n"
+            "Fixture stand-in tracking the same gap "
+            "`frob.lang._support._arch_status` names for typescript.\n"
+        )
         return tmp_path
 
     def test_clean_ts_passes_tsc(self, tmp_path):
@@ -864,8 +909,25 @@ class TestGitlessTargetGateSeverity:
         against a git-less root and assert the emitted log line's level
         (via `frob.logging`'s stderr stream handler, not `caplog`: this
         package configures its own root handlers at import time, which
-        `caplog`'s propagation capture does not observe)."""
+        `caplog`'s propagation capture does not observe).
+
+        T-0818: `frob.logging.logger._init()` binds its `StreamHandler`s to
+        whatever `sys.stdout`/`sys.stderr` objects are live AT THE MOMENT
+        `dictConfig` runs, and only ever runs `dictConfig` ONCE per process
+        (`_initialized` guard) -- if an earlier test in this file/worker
+        already triggered a `get_logger()` call before `capsys` replaced the
+        streams for THIS test, the handlers stay bound to the pre-capsys
+        stderr object forever and `capsys.readouterr()` observes nothing,
+        regardless of test body correctness (an order-dependent flake, not a
+        logic bug). Force `_init()` to rebind AFTER `capsys` (an argument
+        above, so already installed by the time this line runs) is active,
+        by clearing the one-shot guard -- deterministic regardless of what
+        ran before this test in the same session/worker, not a reordering
+        or flaky-marking workaround."""
+        import frob.logging.logger as _logger_module
         from frob.gates._render_lint import _tracked_python_files
+
+        _logger_module._initialized = False
 
         result = _tracked_python_files(tmp_path)
         assert result == ()
