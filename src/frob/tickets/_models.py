@@ -489,8 +489,23 @@ _CLAIMS_GATES_RE = re.compile(
     r"^- gates: (\d+) error\(s\), (\d+) warning\(s\), (\d+) waived$"
 )
 
+# frob:ticket T-0832
+# T-0832: the exact rendered marker for an UNMEASURED gate-state claim -- a
+# fresh `frob check --ticket` that produced no parsable gate-summary at
+# done-report time (missing lease, crash, unparsable output). Recognized on
+# parse so an unmeasured claim reads as "no gate-state recorded" rather than
+# "no Captured claims section at all," which would also drop the (separately
+# measurable) test-count claim on the floor. Never a negative sentinel: a
+# real `frob check` run can never produce negative counts, so a stored -1
+# used to compare as vacuously equal to another unmeasured -1 (the T-0830
+# incident this closes) -- this marker instead has no numeric value at all.
+_CLAIMS_GATES_UNMEASURED = (
+    "- gates: unmeasured (no parsable gate-summary from a fresh check)"
+)
+
 
 # frob:ticket T-0754
+# frob:ticket T-0832
 # frob:doc docs/modules/tickets.md#public-api
 class DoneReportClaims(BaseModel):
     """Structured, CAPTURED (never hand-typed) Done-report claims (T-0754):
@@ -511,39 +526,67 @@ class DoneReportClaims(BaseModel):
     compared at land -- repo-global warning/waived counts legitimately
     move on a busy shared branch for reasons that have nothing to do with
     this ticket's own work, so gating on them would produce the same
-    false-refusal class this round's fix closes for timing."""
+    false-refusal class this round's fix closes for timing.
+
+    T-0832: `gate_errors`/`gate_warnings`/`gate_waived` are `int | None` --
+    `None` means UNMEASURED (the fresh `frob check --ticket` that would
+    have produced them found no parsable gate-summary, e.g. because the
+    ticket held no lease at capture time), never a `-1` sentinel. A `-1`
+    sentinel compares equal to another later `-1` sentinel, which let a
+    land's re-verification pass vacuously exactly when it could least
+    measure anything (the T-0830 incident); `None` cannot silently compare
+    equal to a real integer, so callers are forced to branch on
+    "unmeasured" explicitly instead of accidentally trusting it. The test-
+    count fields stay required (`int`, never `None`) -- they are always
+    measurable whenever `run_tests`/`passing_ids` themselves ran at all,
+    unlike the gate state, which depends on a live `frob check` subprocess
+    that can fail for reasons unrelated to the ticket's own evidence."""
 
     model_config = {}
 
     test_count: int
     evidence_count: int
-    gate_errors: int
-    gate_warnings: int
-    gate_waived: int
+    gate_errors: int | None
+    gate_warnings: int | None
+    gate_waived: int | None
 
 
 # frob:ticket T-0754
+# frob:ticket T-0832
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_round_trips_through_a_done_report_body kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match kind="integration"  # noqa: E501
 def render_claims_block(claims: DoneReportClaims) -> str:
     """Render `claims` as a Done report `### Captured claims` section
     (T-0754) -- the mechanical inverse of `parse_claims_from_done_report`,
-    matching `_CLAIMS_TESTS_RE`/`_CLAIMS_GATES_RE` exactly so a round-trip
-    through a written ledger never loses precision."""
+    matching `_CLAIMS_TESTS_RE`/`_CLAIMS_GATES_RE` (or, T-0832, the literal
+    `_CLAIMS_GATES_UNMEASURED` marker when `claims.gate_errors is None`)
+    exactly so a round-trip through a written ledger never loses precision
+    -- and, T-0832, never renders a negative gate count: an unmeasured gate
+    state renders as the explicit `unmeasured` marker line instead."""
+    gates_line = (
+        _CLAIMS_GATES_UNMEASURED
+        if claims.gate_errors is None
+        else (
+            f"- gates: {claims.gate_errors} error(s), {claims.gate_warnings} "
+            f"warning(s), {claims.gate_waived} waived"
+        )
+    )
     return (
         f"{_CLAIMS_HEADING}\n"
         f"- tests: {claims.test_count} passed "
         f"(from {claims.evidence_count} evidence id(s))\n"
-        f"- gates: {claims.gate_errors} error(s), {claims.gate_warnings} "
-        f"warning(s), {claims.gate_waived} waived"
+        f"{gates_line}"
     )
 
 
 # frob:ticket T-0754
+# frob:ticket T-0832
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_round_trips_through_a_done_report_body kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_missing_section_returns_none kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_free_prose_elsewhere_never_masquerades_as_claims kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match kind="integration"  # noqa: E501
 def parse_claims_from_done_report(body: str) -> DoneReportClaims | None:
     """Recover a `### Captured claims` section from `body`'s `## Done
     report`, the inverse of `render_claims_block` (T-0754). Returns `None`
@@ -588,13 +631,16 @@ def parse_claims_from_done_report(body: str) -> DoneReportClaims | None:
             gate_errors, gate_warnings, gate_waived = (
                 int(g) for g in gates_match.groups()
             )
-    if (
-        test_count is None
-        or evidence_count is None
-        or gate_errors is None
-        or gate_warnings is None
-        or gate_waived is None
-    ):
+            continue
+        # T-0832: the explicit "unmeasured" marker is recognized (so it
+        # does not fall through as an unparsed leftover line) but leaves
+        # gate_errors/warnings/waived at their None default -- there is no
+        # numeric value to recover, by design.
+    # T-0832: only the test-count fields are required for a claims section
+    # to exist at all -- gate_errors/warnings/waived may legitimately be
+    # None (unmeasured at capture time) while the test claim is still a
+    # real, measured value worth re-verifying at land.
+    if test_count is None or evidence_count is None:
         return None
     return DoneReportClaims(
         test_count=test_count,

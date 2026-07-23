@@ -2876,10 +2876,12 @@ def compose_done_report(
 
 # frob:ticket T-0458
 # frob:ticket T-0754
+# frob:ticket T-0832
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/unit/test_ticket_store.py::TestSetDoneReport.test_composes_and_writes_atomically  # noqa: E501
 # frob:tests tests/unit/test_ticket_store.py::TestSetDoneReport.test_caller_never_touches_markdown  # noqa: E501
 # frob:tests tests/test_ticket_done_report_claims.py::TestSetDoneReportClaims.test_claims_captured_from_real_callables  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match kind="integration"  # noqa: E501
 def set_done_report(
     root: Path,
     ticket_id: str,
@@ -2887,7 +2889,7 @@ def set_done_report(
     why: str,
     base_ref: str = "main",
     run_tests: Callable[[Sequence[str]], int] | None = None,
-    check_gates: Callable[[], tuple[int, int, int]] | None = None,
+    check_gates: Callable[[], tuple[int, int, int] | None] | None = None,
 ) -> Result[Ticket, TicketError]:
     """THE single write path for a ticket's Done report (T-0458): compose
     `why` (the caller's narrative -- the ONLY thing the caller supplies)
@@ -2919,6 +2921,18 @@ def set_done_report(
     cycle-avoidance); the `frob ticket done-report` CLI supplies both by
     default (see `ticket_runner.py`'s `_done_report`).
 
+    T-0832: `check_gates()` returning `None` means the fresh `frob check
+    --ticket` it ran produced no parsable gate-summary (no lease, a crash,
+    unparsable output) -- this is recorded as an UNMEASURED gate-state
+    claim (`DoneReportClaims.gate_errors=None`, etc.), logged as a
+    warning, and rendered via the explicit `unmeasured` marker
+    (`render_claims_block`), never as a `-1` sentinel. A `-1` sentinel
+    written here previously could later compare equal to another `-1`
+    land observed post-merge, passing a re-verification that had actually
+    measured nothing on either side (the T-0830 incident). The test-count
+    half of the claim is unaffected -- `run_tests` always returns a real
+    measured count whenever it runs at all.
+
     Held under `ledger_lock` end to end (load, compose, write) so a
     concurrent `set_done_report`/`add_evidence`/`new_ticket` call on the
     same ledger can never interleave with this one (T-0458 single-writer
@@ -2935,7 +2949,21 @@ def set_done_report(
         claims = None
         if run_tests is not None and check_gates is not None:
             non_cmd = [e for e in ticket.evidence if not is_cmd_evidence(e)]
-            gate_errors, gate_warnings, gate_waived = check_gates()
+            gate_result = check_gates()
+            if gate_result is None:
+                # T-0832: never embed a -1 sentinel -- record the gate
+                # half of the claim as explicitly unmeasured instead.
+                _log.warning(
+                    "ticket %s: fresh `frob check --ticket %s` produced no "
+                    "parsable gate-summary -- recording the Captured "
+                    "claims gate-state as unmeasured (the test-count claim "
+                    "is unaffected)",
+                    ticket_id,
+                    ticket_id,
+                )
+                gate_errors = gate_warnings = gate_waived = None
+            else:
+                gate_errors, gate_warnings, gate_waived = gate_result
             claims = DoneReportClaims(
                 test_count=run_tests(non_cmd),
                 evidence_count=len(non_cmd),

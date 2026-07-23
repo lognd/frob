@@ -11028,7 +11028,7 @@ and the isolated ref_gate call drops 10.1s -> ~1.3s wall.
 id: T-0832
 title: 'land: T-0754 re-verification compares -1 sentinel when fresh check cannot
   run (done ticket, no lease)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-23'
@@ -11039,8 +11039,42 @@ scope:
 - src/frob/tickets/_land.py
 - src/frob/app/ticket_runner.py
 - tests/test_ticket_land.py
-scope_changes: []
-evidence: []
+- src/frob/tickets/_models.py
+- src/frob/tickets/__init__.py
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: 'Fixing the -1 sentinel required changing DoneReportClaims (gate_errors/
+
+    warnings/waived become int | None) and its render/parse functions in
+
+    _models.py, plus set_done_report''s capture logic in __init__.py -- these
+
+    are the single source of truth the -1 sentinel was stored/rendered
+
+    through. _land.py alone cannot represent "unmeasured" without them.
+
+    '
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: src/frob/tickets/__init__.py
+  reason: 'Fixing the -1 sentinel required changing DoneReportClaims (gate_errors/
+
+    warnings/waived become int | None) and its render/parse functions in
+
+    _models.py, plus set_done_report''s capture logic in __init__.py -- these
+
+    are the single source of truth the -1 sentinel was stored/rendered
+
+    through. _land.py alone cannot represent "unmeasured" without them.
+
+    '
+  actor: logan
+  at: '2026-07-23'
+evidence:
+- tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_unmeasured_fresh_check_skips_gate_reverification_land_proceeds
+- tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_two_unmeasured_gate_claims_never_vacuously_match
 attachments: []
 acceptance: []
 threat: null
@@ -11064,3 +11098,30 @@ crash, exit!=0 without summary), land must say that explicitly and treat
 it as its own failure mode (or re-lease transiently for the check), never
 compare or store the -1 sentinel; done-report should refuse to embed an
 unmeasured claim.
+
+## Done report
+
+Land claim re-verification now models "could not measure" explicitly:
+_check_gates_summary_fn returns None (never -1), DoneReportClaims gate
+fields are int|None rendered as an unmeasured marker, and land skips the
+gate-state compare with a logged notice when either side is unmeasured --
+test-count claims still verified; measurable divergences still refuse.
+
+### Changed
+```
+ src/frob/app/ticket_runner.py |  31 ++++++++-----
+ src/frob/tickets/__init__.py  |  32 ++++++++++++-
+ src/frob/tickets/_land.py     |  64 +++++++++++++++++++++++---
+ src/frob/tickets/_models.py   |  76 ++++++++++++++++++++++++-------
+ tests/test_ticket_land.py     | 102 ++++++++++++++++++++++++++++++++++++++++++
+ tickets.md                    |  87 +++++++++++++++++++++++++++++++++--
+ 6 files changed, 357 insertions(+), 35 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_unmeasured_fresh_check_skips_gate_reverification_land_proceeds` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_two_unmeasured_gate_claims_never_vacuously_match` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: -1 error(s), -1 warning(s), -1 waived

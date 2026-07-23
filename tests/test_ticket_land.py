@@ -3168,6 +3168,108 @@ class TestClaimDivergencePostMerge:
 
         assert result.is_ok
 
+    def test_unmeasured_fresh_check_skips_gate_reverification_land_proceeds(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_unmeasured_fresh_check_skips_gate_reverification_land_proceeds  # noqa: E501
+        """T-0832: when the post-merge `check_gates()` callable cannot
+        produce a gate-summary (e.g. the ticket lost its lease -- the real
+        T-0830 incident), land must not compare a sentinel; it must skip
+        the gate-state half of the claim comparison with an explicit
+        logged notice and still land (the test-count half remains real and
+        matching). No negative count appears anywhere in the notice."""
+        import logging
+
+        wt = repo.parent / "wt"
+        _run(
+            ["git", "worktree", "add", "-b", "feature-claims-unmeasurable", str(wt)],
+            repo,
+        )
+
+        created = new_ticket(wt, _spec("Ticket whose fresh check cannot run"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        self._make_closeable_with_claims(wt, tid, test_count=1, gate_errors=0)
+        _commit_all(wt, "advance ticket with a recorded but now-unmeasurable claim")
+
+        with caplog.at_level(logging.WARNING):
+            result = land(
+                repo,
+                tid,
+                wt,
+                dry_run=False,
+                passed=lambda ids: frozenset(ids),
+                # T-0832: simulates the fresh post-merge check finding no
+                # parsable gate-summary (no lease, a crash, ...).
+                check_gates=lambda: None,
+            )
+
+        assert result.is_ok
+        notices = [
+            r.getMessage()
+            for r in caplog.records
+            if "skipping gate-state re-verification" in r.getMessage()
+        ]
+        assert notices, "expected an explicit skip notice, got none"
+        assert "-1" not in notices[0]
+
+    def test_two_unmeasured_gate_claims_never_vacuously_match(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match  # noqa: E501
+        """T-0832 regression: the T-0830 incident was NOT merely that land
+        printed a nonsense message -- it was that a done-report capture
+        that recorded an unmeasured claim (formerly `-1`) and a land-time
+        fresh check that ALSO could not measure (formerly `-1`) compared
+        as vacuously EQUAL, silently passing a re-verification that
+        actually verified nothing. Reproduce both halves unmeasured (via
+        the real `set_done_report` capture path, not a hand-built claims
+        block) and assert the gate-state comparison is skipped -- not
+        silently "passed" as equal -- while the land still succeeds
+        because the skip is explicit, not a false positive masquerading as
+        one."""
+        wt = repo.parent / "wt"
+        _run(
+            ["git", "worktree", "add", "-b", "feature-claims-both-unmeasured", str(wt)],
+            repo,
+        )
+
+        created = new_ticket(wt, _spec("Ticket with a fully unmeasured claim"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+
+        # Capture the Done report through the REAL `set_done_report` path
+        # with a `check_gates` that cannot measure -- exactly what
+        # `_check_gates_summary_fn` returns for a lease-less/crashed check
+        # (T-0832: `None`, never `-1`).
+        done = set_done_report(
+            wt,
+            tid,
+            why="claims captured while gate state was unmeasurable",
+            run_tests=lambda ids: len(ids),
+            check_gates=lambda: None,
+        )
+        assert done.is_ok, done.err
+        assert "### Captured claims" in done.danger_ok.body
+        assert "unmeasured" in done.danger_ok.body
+        assert "-1" not in done.danger_ok.body
+        _commit_all(wt, "advance ticket with a fully unmeasured captured claim")
+
+        result = land(
+            repo,
+            tid,
+            wt,
+            dry_run=False,
+            passed=lambda ids: frozenset(ids),
+            # Land's own fresh post-merge check ALSO cannot measure.
+            check_gates=lambda: None,
+        )
+
+        # The land succeeds -- but via the explicit "nothing recorded to
+        # compare" skip (claims.gate_errors is None), never via a -1 == -1
+        # false-positive comparison, which is no longer representable at
+        # all now that the sentinel does not exist.
+        assert result.is_ok
+
 
 class TestDoneReportThenLandRealClosuresEndToEnd:
     """T-0754 review round 2 fix #2: exercises the REAL production

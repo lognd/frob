@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.117.0] - unreleased
+
+- T-0832: land: T-0754 re-verification compares -1 sentinel when fresh check cannot run (done ticket, no lease)
+
 ## [0.116.0] - unreleased
 
 - T-0754: captured Done-report claims: test-count and gate-state fields populated from real command output, re-verified at land

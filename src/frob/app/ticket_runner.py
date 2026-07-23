@@ -1700,6 +1700,8 @@ _GATE_SUMMARY_COUNTS_RE = re.compile(
 
 
 # frob:ticket T-0754
+# frob:ticket T-0832
+# frob:tests tests/test_ticket_land.py::TestDoneReportThenLandRealClosuresEndToEnd.test_real_closures_done_report_then_land_succeeds kind="integration"  # noqa: E501
 def _check_gates_summary_fn(root: Path, ticket_id: str):  # noqa: ANN201
     """CLI closure shared by `done-report` capture and `land` re-
     verification (T-0754): calling it spawns a fresh `python -m frob check
@@ -1709,13 +1711,21 @@ def _check_gates_summary_fn(root: Path, ticket_id: str):  # noqa: ANN201
     -- see the regex's own doc) and never composed or retyped by this
     layer. Routed through `guarded_subprocess_run` (T-0778's guard) so
     `FROB_DISABLE_EXEC=1` refuses this spawn too. A refused spawn, a hard
-    subprocess failure, or unparsable output returns a fixed `(-1, -1,
-    -1)` sentinel -- a real `frob check` run can never produce a negative
-    count, so this always shows up as a captured (and later divergent,
-    refusing the land) claim instead of silently matching a lucky `0, 0,
-    0` or crashing the caller."""
+    subprocess failure, or unparsable output returns `None` (T-0832) --
+    never a `(-1, -1, -1)` sentinel. A real `frob check` run can never
+    produce a negative count, but a fixed sentinel is still a VALUE: it
+    compares equal to another sentinel of the same shape, which let a
+    land re-verification (`_land.py`'s
+    `_reverify_done_report_claims_post_merge`) PASS vacuously when both
+    the captured claim and the fresh post-merge check were unmeasurable
+    for unrelated reasons (the T-0830 incident: a self-closed, lease-
+    released ticket's done-report capture and land's own post-merge check
+    both failed to run, both recorded `-1`, and `-1 == -1` read as "no
+    divergence"). `None` cannot silently compare equal to a measured
+    triple, so every caller is forced to branch on "unmeasured"
+    explicitly instead."""
 
-    def fn() -> tuple[int, int, int]:
+    def fn() -> tuple[int, int, int] | None:
         guarded = guarded_subprocess_run(
             [sys.executable, "-m", "frob", "check", "--ticket", ticket_id],
             cwd=root,
@@ -1731,18 +1741,19 @@ def _check_gates_summary_fn(root: Path, ticket_id: str):  # noqa: ANN201
                 ticket_id,
                 ProcessGuardError.ExecDisabled,
             )
-            return (-1, -1, -1)
+            return None
         result = guarded.danger_ok
         match = _GATE_SUMMARY_COUNTS_RE.search(result.stdout)
         if match is None:
             _log.warning(
                 "ticket %s: `frob check --ticket %s` output had no "
-                "parsable gate-summary line (exit=%d)",
+                "parsable gate-summary line (exit=%d) -- gate state is "
+                "unmeasured, not zero",
                 ticket_id,
                 ticket_id,
                 result.returncode,
             )
-            return (-1, -1, -1)
+            return None
         errors, warnings, waived = (int(g) for g in match.groups())
         return (errors, warnings, waived)
 

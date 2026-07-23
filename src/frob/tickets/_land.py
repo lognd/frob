@@ -1115,7 +1115,7 @@ def land(
     bump_version: Callable[[Path, Ticket, str], Result[str | None, LandError]]
     | None = None,
     rebuild_natives: Callable[[Path], bool] | None = None,
-    check_gates: Callable[[], tuple[int, int, int]] | None = None,
+    check_gates: Callable[[], tuple[int, int, int] | None] | None = None,
 ) -> Result[LandReport, LandError]:
     """Land `ticket_id` from `worktree` onto `root`'s current branch:
     precheck, wip-commit + merge + deletion-check, finalize + close, then
@@ -1190,6 +1190,13 @@ def land(
     `collected`/`passed`) -- the `frob ticket land` CLI supplies it by
     default (see `ticket_runner.py`'s `_land`).
 
+    T-0832: `check_gates()` returns `None` (never a negative sentinel)
+    when the fresh check it ran produced no parsable gate-summary; the
+    gate-state half of the claim comparison is then skipped with an
+    explicit logged notice rather than comparing an unmeasured value
+    against anything, and the test-count half is still checked
+    independently whenever `passed` was supplied and ran successfully.
+
     T-0577: the ENTIRE precheck-through-squash-commit body runs under
     `root`'s dedicated `_land_lock` (a cross-process `flock`, same
     primitive family as `frob.tickets._store.ledger_lock`'s T-0458
@@ -1234,7 +1241,7 @@ def _land_locked(
     covers_scope: Callable[[Ticket], bool | None] | None,
     bump_version: Callable[[Path, Ticket, str], Result[str | None, LandError]] | None,
     rebuild_natives: Callable[[Path], bool] | None,
-    check_gates: Callable[[], tuple[int, int, int]] | None = None,
+    check_gates: Callable[[], tuple[int, int, int] | None] | None = None,
 ) -> Result[LandReport, LandError]:
     """`land`'s actual body (T-0577), run by the caller already holding
     `root`'s `ledger_lock` -- split out only so `land`'s docstring can state
@@ -1396,11 +1403,14 @@ def _reverify_evidence_post_merge(
 
 
 # frob:ticket T-0754
+# frob:ticket T-0832
+# frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_unmeasured_fresh_check_skips_gate_reverification_land_proceeds kind="integration"  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match kind="integration"  # noqa: E501
 def _reverify_done_report_claims_post_merge(
     worktree: Path,
     ticket_id: str,
     passing_ids: frozenset[str] | None,
-    check_gates: Callable[[], tuple[int, int, int]] | None,
+    check_gates: Callable[[], tuple[int, int, int] | None] | None,
 ) -> Result[None, LandError]:
     """T-0754's land-side half: re-load `ticket_id` from the POST-MERGE
     worktree ledger, recover any `### Captured claims` section its Done
@@ -1422,7 +1432,24 @@ def _reverify_done_report_claims_post_merge(
     repo-global warning/waived count legitimately drifts on a busy shared
     branch for reasons that have nothing to do with THIS ticket's own
     work, and gating on it would reproduce the same false-refusal failure
-    mode this round's fix closes for the timing blob."""
+    mode this round's fix closes for the timing blob.
+
+    T-0832: the test-count half and the gate-state half are independently
+    measurable, and are now verified independently -- a ticket's test
+    claim is checked whenever `passing_ids` is real (the common case), even
+    on a run where the gate-state half cannot be re-verified at all. The
+    gate-state half is SKIPPED, with an explicit logged notice (never a
+    silent no-op and never a `-1`-vs-`-1` comparison), whenever either side
+    of the comparison is unmeasured: `claims.gate_errors is None` (the Done
+    report itself captured no gate state -- see `set_done_report`) or
+    `check_gates()` returns `None` (the fresh post-merge check produced no
+    parsable gate-summary -- missing lease, crash, unparsable output; this
+    is exactly what happened for T-0830's self-closed, lease-released
+    ticket). A skip is NOT a pass: it means the recorded gate-state claim,
+    if any, could not be re-verified this land, and the notice says so; it
+    does not by itself fail the land, matching this function's existing
+    permissive-by-default posture for claims a caller opted out of
+    measuring."""
     if passing_ids is None or check_gates is None:
         return Ok(None)
     from frob.tickets import _load_one
@@ -1460,7 +1487,34 @@ def _reverify_done_report_claims_post_merge(
         )
         return Err(LandError.ClaimDivergence)
 
-    real_errors, real_warnings, real_waived = check_gates()
+    # T-0832: the gate-state claim can only be re-verified when BOTH sides
+    # are actually measured. Never compare sentinels -- skip explicitly.
+    if claims.gate_errors is None:
+        _log.warning(
+            "land: %s recorded Done report has no measured gate-state "
+            "claim (it was unmeasured at done-report time) -- skipping "
+            "gate-state re-verification; only the test-count claim was "
+            "checked",
+            ticket_id,
+        )
+        return Ok(None)
+
+    fresh = check_gates()
+    if fresh is None:
+        _log.warning(
+            "land: %s fresh `frob check --ticket %s` produced no parsable "
+            "gate-summary post-merge (no lease, a crash, or unparsable "
+            "output) -- cannot re-verify the recorded gate-state claim "
+            "(%d error(s)); skipping gate-state re-verification, not "
+            "comparing against a sentinel; only the test-count claim was "
+            "checked",
+            ticket_id,
+            ticket_id,
+            claims.gate_errors,
+        )
+        return Ok(None)
+
+    real_errors, real_warnings, real_waived = fresh
     if real_errors != claims.gate_errors:
         _log.error(
             "land: %s captured gate-state claim no longer holds post-merge "
