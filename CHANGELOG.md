@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.132.0] - unreleased
+
+- T-0849: pattern registry phase 3: work or disposition the 41 recommender rows previously deferred to T-0605
+
 ## [0.131.0] - unreleased
 
 - T-0851: frob check: FMT001 gate for non-canonical frob: directive lines (T-0441 follow-up)

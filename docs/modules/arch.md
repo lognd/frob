@@ -248,6 +248,8 @@ walk helpers):
 | `god-object` | escape | a class already flagged `god-class` (more methods than `max_class_methods`) | SRP decompose |
 | `stringly-typed` | escape | a plain identifier (never `self.<attr>` -- that is `state-field-chain`'s territory) compared via `==` against 4+ distinct string literals across one `elif` chain | newtype (Enum / typed value object) |
 | `anemic-accessors` | escape | (T-0605) a class with 3+ non-`__init__`, non-dunder methods where EVERY one is a trivial single-statement getter or setter, no real behavior anywhere | move behavior to data (rich domain model) |
+| `dataclass-boilerplate` | pattern | (T-0849) an undecorated class whose ONLY method is `__init__`, itself doing nothing but `self.<attr> = <attr>` for 3+ same-named parameters | `@dataclass` |
+| `manual-decorator-wrap` | pattern | (T-0849) 3+ module-level `def f(...): ...` definitions each immediately followed by `f = wrapper(f)` reassignment | decorator syntax (`@wrapper`) |
 
 `wrap-delegate` and `interface-translate` are disjoint PER-METHOD ONLY
 (a same-name delegating method can never also count as a translating
@@ -316,6 +318,82 @@ registry tracks whether a row is subject to enforceable GATE tracking,
 not whether `frob.arch` happens to implement an advisory recommender for
 it (T-0332's own precedent: its 7 shipped detectors' rows carry the
 identical disposition).
+
+**T-0849 phase 3.** T-0605 closed having worked its own 6 mandated rows;
+41 other `patterns.yaml` rows (9 `DDD-II-*` DDD building blocks, 24
+`RELEASEIT-*` stability anti-patterns/patterns, 8 `PYIDIOM-*` Python
+idioms) had been re-pointed to `deferred:T-0849` when T-0605 closed (a
+deferral to a closed ticket is not a real deferral). T-0849 worked or
+dispositioned every one, and shipped 2 new real detectors in the process
+(`dataclass-boilerplate`, `manual-decorator-wrap`, both in the table
+above):
+
+- **`DDD-II-*` (9 rows: Layered Architecture, Entities, Value Objects,
+  Domain Events, Services, Modules, Aggregates, Repositories, Factories)**
+  -- these are Evans's own building-block VOCABULARY, not a described
+  structural hallmark the way `_patterns.py`'s registry rows are. "Is this
+  class actually an Entity vs. a Value Object" is a domain-semantic
+  judgment (does it have a persistent identity distinct from its
+  attributes?) no single-file structural signal can answer without
+  fabricating a claim -- the identical reasoning `_check_dataclass_
+  boilerplate`'s own docstring and this doc's Flyweight/pool entry above
+  already applies to "equivalent, expensive to construct" without
+  value/dataflow analysis. `patterns.yaml`'s own sibling rows in the same
+  Evans catalog (`DDD-I-*`, `DDD-III-*`) are already `out_of_scope` for
+  the same reason; the 9 `DDD-II-*` rows now match.
+- **`RELEASEIT-*` (24 rows: 12 stability anti-patterns, 12 stability
+  patterns -- timeouts, circuit breaker, bulkheads, chain reactions,
+  cascading failures, etc.)** -- these are runtime/distributed
+  reliability properties (a timeout that fires under real network
+  latency, a circuit breaker that trips under real failure load, a
+  bulkhead that isolates real resource pools) that no per-file structural
+  walk over one language's AST can observe; they require watching actual
+  request/response behavior across a running distributed system, a
+  different kind of analysis than this package performs anywhere. `RELEASEIT-
+  PAT-TIMEOUTS` overlaps `strata`'s REL2xx timeout-obligation family
+  (`docs/design/system-design-corpus.md`) at the concept level, but that
+  is a config/design-graph proof over declared obligations, not a
+  structural code detector `frob.arch` could add here -- the
+  `patterns.yaml` row records this cross-reference rather than inventing
+  a duplicate, weaker arch check.
+- **`PYIDIOM-*` (8 rows: Context Manager, Descriptor Protocol, Duck
+  Typing Protocol, Iterator Protocol, Decorator Syntax, Sentinel Object,
+  Mixin, Dataclass)** -- 2 of the 8 got real, precision-checked detectors
+  this pass (`PYIDIOM-DATACLASS` -> `dataclass-boilerplate`, `PYIDIOM-
+  DECORATOR-SYNTAX` -> `manual-decorator-wrap`); the other 6 stay
+  NOT-CHECKABLE:
+  - **Context Manager** -- the hallmark (a manual `try/finally` block
+    calling `.close()`/`.release()` on the same object across 3+ sites)
+    is real in principle, but distinguishing a resource-cleanup call from
+    an ordinary `finally`-block side effect without tracking the object's
+    actual type/protocol would need cross-file type inference this
+    package does not have; a name-based heuristic (`.close()`) risks
+    firing on unrelated methods that happen to share the name.
+  - **Descriptor Protocol** -- the hallmark is 3+ near-identical `@property`
+    get/set pairs differing only by attribute name; detecting "near-
+    identical" honestly needs a body-similarity comparison this package's
+    tree-sitter walks do not perform anywhere yet (a bigger investment
+    than a bigger detector, not a smaller one).
+  - **Duck Typing Protocol** -- the hallmark is "code accepts anything
+    with the right methods instead of checking a type," which is the
+    ABSENCE of a check, not the presence of a structural shape a walk can
+    match against.
+  - **Iterator Protocol** -- the hallmark ("a method that materializes and
+    returns a full list purely so callers can loop over it") is
+    indistinguishable from a method that legitimately needs to return a
+    list for other reasons without tracking every call site's actual
+    usage.
+  - **Sentinel Object** -- the hallmark ("`None` is overloaded as both
+    'no value' and a valid domain value") requires knowing whether `None`
+    is ever a legitimate domain value for the attribute in question, a
+    domain-semantic judgment no structural check can make.
+  - **Mixin** -- the hallmark (3+ unrelated classes independently
+    duplicating an identical small method set) is a cross-class
+    duplication proxy at least as complex as the Poltergeist/lava-flow
+    call-graph investment above, not a bigger single-file detector.
+
+See `frob.arch._patterns`'s module docstring and `tickets.md`'s T-0849
+Done report for the full per-pattern reasoning.
 
 ### OCP checks: `type-dispatch-smell` / `non-exhaustive-enum-match` (T-0617)
 

@@ -325,6 +325,8 @@ def _run_python_checks(
         _patterns._check_interface_translate(tree, rel, suggestions)
         _patterns._check_manual_callback_list(tree, rel, suggestions)
         _patterns._check_anemic_accessors(tree, rel, suggestions)
+        _patterns._check_dataclass_boilerplate(tree, rel, suggestions)
+        _patterns._check_manual_decorator_wrap(tree, rel, suggestions)
         _patterns._collect_file_constructions(tree, rel, all_constructions)
         _ocp._check_type_dispatch_smell(tree, rel, suggestions)
         _ocp._check_non_exhaustive_enum_match(tree, rel, suggestions)

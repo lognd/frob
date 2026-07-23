@@ -111,6 +111,19 @@ a row is subject to enforceable GATE tracking, not whether `frob.arch`
 happens to implement an advisory recommender for it; a GoF/trap catalog
 entry is inherently advisory-only either way. See `tickets.md`'s T-0605
 Done report for the full per-pattern reasoning.
+
+T-0849 (phase 3) worked or dispositioned the 41 `patterns.yaml` rows
+re-pointed to it when T-0605 closed (`DDD-II-*`, `RELEASEIT-*`,
+`PYIDIOM-*`): 2 new detectors shipped (`dataclass-boilerplate`,
+`manual-decorator-wrap`, both `PYIDIOM-*` rows), the rest recorded
+`out_of_scope` for reasons ranging from "domain-semantic judgment, not a
+structural signal" (`DDD-II-*`) to "runtime/distributed property, no
+single-file signal" (`RELEASEIT-*`) to "the honest structural proxy
+requires an investment (body-similarity comparison, cross-file type
+inference, call-graph reachability) this package does not have anywhere
+yet" (the remaining `PYIDIOM-*` rows). See docs/modules/arch.md's
+"T-0849 phase 3" section and `tickets.md`'s T-0849 Done report for the
+full per-pattern reasoning.
 """
 
 from __future__ import annotations
@@ -164,6 +177,19 @@ _MIN_TRANSLATE_METHODS = 3
 #: fires (T-0605) -- a one- or two-method value holder is not yet the
 #: "moved all behavior elsewhere" smell the escape targets.
 _MIN_ANEMIC_ACCESSORS = 3
+
+#: Minimum `__init__` parameters a hand-written value-holder class must
+#: have before the "boilerplate `__init__`" hallmark fires (T-0849) -- a
+#: one- or two-field holder is not worth a `@dataclass` recommendation;
+#: mirrors `_MIN_ANEMIC_ACCESSORS`'s floor for the same "not worth
+#: flagging yet" reasoning.
+_MIN_DATACLASS_FIELDS = 3
+
+#: Minimum module-level `def f(...): ...` / `f = wrapper(f)` reassignment
+#: pairs required in one file before the manual-decorator-wrap hallmark
+#: fires (T-0849) -- STRONG-HALLMARK-ONLY per this module's doctrine, same
+#: multi-occurrence floor as every chain/scatter detector above.
+_MIN_MANUAL_DECORATOR_WRAPS = 3
 
 
 # frob:doc docs/modules/arch.md#design-pattern-registry
@@ -353,6 +379,44 @@ PATTERN_REGISTRY: tuple[PatternRuleSpec, ...] = (
             "move the operations callers perform on this data onto the "
             "class itself as real methods, so the object enforces its own "
             "invariants instead of exposing raw field access"
+        ),
+        languages=("python",),
+    ),
+    PatternRuleSpec(
+        rule_id="dataclass-boilerplate",
+        direction="pattern",
+        hallmark=(
+            "a plain class whose only member is an `__init__` that does "
+            "nothing but assign every parameter to a same-named `self.<attr>`"
+        ),
+        response="@dataclass",
+        force=(
+            "the class hand-writes constructor boilerplate a `@dataclass` "
+            "generates for free, and gets none of `__repr__`/`__eq__` either"
+        ),
+        sketch=(
+            "replace the hand-written `__init__` with `@dataclass` and a "
+            "plain field per attribute; add `frozen=True` if the value "
+            "should be immutable"
+        ),
+        languages=("python",),
+    ),
+    PatternRuleSpec(
+        rule_id="manual-decorator-wrap",
+        direction="pattern",
+        hallmark=(
+            "a function reassigned to the result of calling a wrapper on "
+            "itself (`f = wrapper(f)`) instead of `@wrapper` syntax"
+        ),
+        response="decorator syntax (`@wrapper`)",
+        force=(
+            "the manual reassignment separates the wrapping from the "
+            "definition it modifies, and is easy to miss or reorder"
+        ),
+        sketch=(
+            "move the wrapper call onto the definition as `@wrapper` "
+            "directly above `def f(...):`, removing the separate "
+            "reassignment statement"
         ),
         languages=("python",),
     ),
@@ -1177,6 +1241,186 @@ def _check_anemic_accessors(tree: object, rel: str, out: list[ArchSuggestion]) -
             subject,
             out,
         )
+
+
+# frob:tests tests/unit/test_arch.py::TestPatternRecommender.test_dataclass_boilerplate_recommends_dataclass  # noqa: E501
+def _check_dataclass_boilerplate(
+    tree: object, rel: str, out: list[ArchSuggestion]
+) -> None:
+    """HALLMARK->PATTERN (T-0849): a plain, undecorated class whose ONLY
+    method is `__init__`, itself doing nothing but `self.<attr> = <param>`
+    assignments (attr name identical to the matching parameter, no
+    computation) for >=3 parameters, recommends `@dataclass` -- the
+    "hand-written value holder" hallmark, distinct from `anemic-accessors`
+    (which requires >=3 *other* trivial getter/setter methods; a class
+    with ONLY `__init__` and no accessors never satisfies that detector's
+    floor, so the two never double-fire on the same class). A decorated
+    class (already `@dataclass`, `@attr.s`, etc.) is a `decorated_
+    definition` node, not a bare `class_definition`, so it is structurally
+    excluded before any body inspection is even attempted -- the same
+    filter every other module-level detector in this file relies on. Any
+    extra method beyond `__init__`, a `*args`/`**kwargs` parameter, a
+    docstring (an extra body statement breaking the 1:1 stmt<->param
+    count), or an init statement that is not a bare `self.<name> = <name>`
+    assignment disqualifies the whole class -- silence over a guessed
+    match. A `@property`/`@staticmethod`/`@classmethod`/`@cached_property`
+    (or any other decorated) method is a `decorated_definition` node, NOT
+    a `function_definition` -- the class-body member scan below counts
+    BOTH node types so a decorated extra method still disqualifies the
+    class instead of silently vanishing from the count (reviewer round 1,
+    T-0849: an `__init__`-only-looking class with an extra `@property`
+    method was wrongly firing before this fix)."""
+    t: Tree = cast("Tree", tree)
+    for c in t.root_node.children:
+        if c.type != "class_definition":
+            continue
+        body = _child(c, "body")
+        if body is None:
+            continue
+        members = [
+            m
+            for m in body.named_children
+            if m.type in ("function_definition", "decorated_definition")
+        ]
+        if len(members) != 1:
+            continue
+        init = members[0]
+        if init.type != "function_definition":
+            continue
+        name_node = _child(init, "name")
+        if name_node is None or _node_text(name_node) != "__init__":
+            continue
+        params = _init_params(init)
+        if len(params) < _MIN_DATACLASS_FIELDS:
+            continue
+        param_names: list[str] = []
+        for p in params:
+            if p.type in ("list_splat_pattern", "dictionary_splat_pattern"):
+                param_names = []
+                break
+            param_names.append(_node_text(p).split("=")[0].split(":")[0].strip())
+        if not param_names:
+            continue
+        stmts = _method_body_stmts(init)
+        if len(stmts) != len(param_names):
+            continue
+        assigned: set[str] = set()
+        ok = True
+        for stmt in stmts:
+            if stmt.type == "assignment":
+                assign: Node | None = stmt
+            elif stmt.type == "expression_statement":
+                assign = stmt.named_children[0] if stmt.named_children else None
+            else:
+                ok = False
+                break
+            if assign is None or assign.type != "assignment":
+                ok = False
+                break
+            target = _child(assign, "left")
+            value = _child(assign, "right")
+            if target is None or value is None:
+                ok = False
+                break
+            if target.type != "attribute" or value.type != "identifier":
+                ok = False
+                break
+            obj = _child(target, "object")
+            if obj is None or _node_text(obj) != "self":
+                ok = False
+                break
+            attr_node = _child(target, "attribute")
+            attr_name = _node_text(attr_node) if attr_node is not None else None
+            value_name = _node_text(value)
+            if (
+                attr_name is None
+                or attr_name != value_name
+                or value_name not in param_names
+            ):
+                ok = False
+                break
+            assigned.add(attr_name)
+        if not ok or len(assigned) != len(param_names):
+            continue
+        name_node = _child(c, "name")
+        cname = _node_text(name_node) if name_node else "?"
+        subject = f"class `{cname}` ({len(param_names)}-field value holder)"
+        _emit(
+            "dataclass-boilerplate",
+            "pattern-recommendation",
+            rel,
+            c.start_point[0] + 1,
+            subject,
+            out,
+        )
+
+
+# frob:tests tests/unit/test_arch.py::TestPatternRecommender.test_manual_decorator_wrap_recommends_decorator_syntax  # noqa: E501
+def _check_manual_decorator_wrap(
+    tree: object, rel: str, out: list[ArchSuggestion]
+) -> None:
+    """HALLMARK->PATTERN (T-0849): 3+ module-level `def f(...): ...`
+    definitions each immediately followed by a bare `f = wrapper(f)`
+    reassignment (the wrapper call's argument list contains a bare
+    identifier matching `f`'s own name somewhere) recommend `@wrapper`
+    decorator syntax instead of the manual reassignment. Module-level
+    statement adjacency only, mirroring `scattered-construction`'s scope
+    choice of a simple, high-precision structural walk over a fuller
+    dataflow trace; a class-method equivalent is left for a future ticket
+    if the same shape is observed inside class bodies. A function that is
+    already `@decorated` is a `decorated_definition` node, not a bare
+    `function_definition`, so it never enters this walk to begin with --
+    the reassignment shape and decorator syntax are structurally
+    mutually exclusive here, never double-counted."""
+    t: Tree = cast("Tree", tree)
+    children = list(t.root_node.children)
+    hits: list[Node] = []
+    for i, c in enumerate(children):
+        if c.type != "function_definition":
+            continue
+        name_node = _child(c, "name")
+        fname = _node_text(name_node) if name_node else ""
+        if not fname:
+            continue
+        nxt = children[i + 1] if i + 1 < len(children) else None
+        if nxt is None:
+            continue
+        if nxt.type == "assignment":
+            assign: Node | None = nxt
+        elif nxt.type == "expression_statement":
+            assign = nxt.named_children[0] if nxt.named_children else None
+        else:
+            continue
+        if assign is None or assign.type != "assignment":
+            continue
+        target = _child(assign, "left")
+        value = _child(assign, "right")
+        if target is None or value is None:
+            continue
+        if target.type != "identifier" or _node_text(target) != fname:
+            continue
+        if value.type != "call":
+            continue
+        args = _child(value, "arguments")
+        if args is None:
+            continue
+        if not any(
+            a.type == "identifier" and _node_text(a) == fname
+            for a in args.named_children
+        ):
+            continue
+        hits.append(c)
+    if len(hits) < _MIN_MANUAL_DECORATOR_WRAPS:
+        return
+    subject = f"{len(hits)} functions manually re-wrapped via reassignment"
+    _emit(
+        "manual-decorator-wrap",
+        "pattern-recommendation",
+        rel,
+        hits[0].start_point[0] + 1,
+        subject,
+        out,
+    )
 
 
 # frob:doc docs/modules/arch.md#design-pattern-registry

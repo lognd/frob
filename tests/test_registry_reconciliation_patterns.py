@@ -113,7 +113,14 @@ class TestPatternsExhaustiveness:
         """REG003's positive case, pinned to real data: every
         `deferred:T-XXXX` disposition in patterns.yaml names a ticket that
         actually exists and is not DONE -- a deferral to a closed or
-        missing ticket is a silent drop wearing a disposition's clothes."""
+        missing ticket is a silent drop wearing a disposition's clothes.
+
+        T-0849 worked or dispositioned the last 41 `deferred:T-0849` rows
+        this file carried (T-0605's own leftover deferrals), so the file
+        currently has zero DEFERRED entries -- the loop below is an
+        exhaustive-but-empty positive check today, not a dropped
+        assertion; it re-activates the instant a future ticket adds a new
+        `deferred:T-XXXX` row to this file."""
         registry_file = load_registry_dir(_REGISTRY_DIR, ("patterns.yaml",))[
             "patterns.yaml"
         ].danger_ok
@@ -124,7 +131,6 @@ class TestPatternsExhaustiveness:
             for entry in entries
             if entry.disposition.kind is DispositionKind.DEFERRED
         ]
-        assert deferred, "expected at least one deferred entry to check against"
         for entry in deferred:
             ticket_id = entry.disposition.target
             assert ticket_id is not None, f"{entry.id} deferred with no target ticket"

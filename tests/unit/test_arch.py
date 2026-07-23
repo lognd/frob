@@ -1364,6 +1364,200 @@ class TestPatternRecommender:
             if s.category == "anti-pattern-escape"
         )
 
+    def test_dataclass_boilerplate_recommends_dataclass(self, tmp_path: Path) -> None:
+        # T-0849: a plain class whose only method is a pure
+        # assign-every-param `__init__` recommends `@dataclass`.
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "point.py").write_text(
+            "class Point3D:\n"
+            "    def __init__(self, x, y, z):\n"
+            "        self.x = x\n"
+            "        self.y = y\n"
+            "        self.z = z\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "pattern-recommendation"]
+        assert any("@dataclass" in s.message for s in hits)
+
+    def test_dataclass_boilerplate_with_computed_field_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # Adversarial near-miss (hand-verified, T-0849): mutate the
+        # discriminator by making ONE assignment computed instead of a
+        # bare parameter pass-through -- the detector must go silent. This
+        # is the exact fixture used to hand-verify the near-miss is
+        # load-bearing: reverting `self.z = z * 2` back to `self.z = z`
+        # makes this test start failing (the class becomes a real 3-field
+        # boilerplate holder again).
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "point.py").write_text(
+            "class Point3D:\n"
+            "    def __init__(self, x, y, z):\n"
+            "        self.x = x\n"
+            "        self.y = y\n"
+            "        self.z = z * 2\n"
+        )
+        result = analyze_project(src_dir)
+        assert not any(
+            "@dataclass" in s.message
+            for s in result.suggestions
+            if s.category == "pattern-recommendation"
+        )
+
+    def test_dataclass_boilerplate_with_extra_method_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # A second method beyond `__init__` (even a trivial one) means
+        # this is not a pure value holder -- must not fire.
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "point.py").write_text(
+            "class Point3D:\n"
+            "    def __init__(self, x, y, z):\n"
+            "        self.x = x\n"
+            "        self.y = y\n"
+            "        self.z = z\n"
+            "\n"
+            "    def magnitude(self):\n"
+            "        return (self.x**2 + self.y**2 + self.z**2) ** 0.5\n"
+        )
+        result = analyze_project(src_dir)
+        assert not any(
+            "@dataclass" in s.message
+            for s in result.suggestions
+            if s.category == "pattern-recommendation"
+        )
+
+    def test_dataclass_boilerplate_with_decorated_extra_method_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # Adversarial near-miss (hand-verified, T-0849 reviewer round 1):
+        # a `@property` method is a `decorated_definition` node, not a
+        # `function_definition` -- the detector's class-body member scan
+        # must count it too, or it silently vanishes from the extra-
+        # method count and the class wrongly looks like a pure `__init__`-
+        # only value holder. Hand-verified: dropping the `decorated_
+        # definition` arm from the member-collection filter makes this
+        # test start failing (the class becomes a false-positive
+        # `@dataclass` recommendation again).
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "point.py").write_text(
+            "class Point3D:\n"
+            "    def __init__(self, x, y, z):\n"
+            "        self.x = x\n"
+            "        self.y = y\n"
+            "        self.z = z\n"
+            "\n"
+            "    @property\n"
+            "    def magnitude(self):\n"
+            "        return (self.x**2 + self.y**2 + self.z**2) ** 0.5\n"
+        )
+        result = analyze_project(src_dir)
+        assert not any(
+            "@dataclass" in s.message
+            for s in result.suggestions
+            if s.category == "pattern-recommendation"
+        )
+
+    def test_already_dataclass_not_flagged(self, tmp_path: Path) -> None:
+        # An already-`@dataclass`-decorated class is a `decorated_
+        # definition` node, structurally excluded before body inspection.
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "point.py").write_text(
+            "from dataclasses import dataclass\n"
+            "\n"
+            "@dataclass\n"
+            "class Point3D:\n"
+            "    x: int\n"
+            "    y: int\n"
+            "    z: int\n"
+        )
+        result = analyze_project(src_dir)
+        assert not any(
+            "@dataclass" in s.message
+            for s in result.suggestions
+            if s.category == "pattern-recommendation"
+        )
+
+    def test_manual_decorator_wrap_recommends_decorator_syntax(
+        self, tmp_path: Path
+    ) -> None:
+        # T-0849: 3+ module-level `def f(...): ...` / `f = wrapper(f)`
+        # reassignment pairs recommend `@wrapper` decorator syntax.
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "registry.py").write_text(
+            "def handler_one():\n"
+            "    pass\n"
+            "handler_one = logged(handler_one)\n"
+            "\n"
+            "def handler_two():\n"
+            "    pass\n"
+            "handler_two = logged(handler_two)\n"
+            "\n"
+            "def handler_three():\n"
+            "    pass\n"
+            "handler_three = logged(handler_three)\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "pattern-recommendation"]
+        assert any("decorator syntax" in s.message for s in hits)
+
+    def test_two_manual_decorator_wraps_not_flagged(self, tmp_path: Path) -> None:
+        # Adversarial near-miss (hand-verified, T-0849): mutate the
+        # discriminator by dropping to 2 occurrences (below
+        # _MIN_MANUAL_DECORATOR_WRAPS=3) -- the STRONG-HALLMARK-ONLY floor
+        # must keep this silent. Hand-verified: adding a third
+        # `handler_three = logged(handler_three)` pair back makes this
+        # test start failing (the file becomes the real 3-site hallmark).
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "registry.py").write_text(
+            "def handler_one():\n"
+            "    pass\n"
+            "handler_one = logged(handler_one)\n"
+            "\n"
+            "def handler_two():\n"
+            "    pass\n"
+            "handler_two = logged(handler_two)\n"
+        )
+        result = analyze_project(src_dir)
+        assert not any(
+            "decorator syntax" in s.message
+            for s in result.suggestions
+            if s.category == "pattern-recommendation"
+        )
+
+    def test_decorator_syntax_wrap_not_flagged(self, tmp_path: Path) -> None:
+        # Functions already wrapped via real `@decorator` syntax are
+        # `decorated_definition` nodes, not bare `function_definition`s --
+        # never enter this walk, never fire.
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "registry.py").write_text(
+            "@logged\n"
+            "def handler_one():\n"
+            "    pass\n"
+            "\n"
+            "@logged\n"
+            "def handler_two():\n"
+            "    pass\n"
+            "\n"
+            "@logged\n"
+            "def handler_three():\n"
+            "    pass\n"
+        )
+        result = analyze_project(src_dir)
+        assert not any(
+            "decorator syntax" in s.message
+            for s in result.suggestions
+            if s.category == "pattern-recommendation"
+        )
+
 
 # ---------------------------------------------------------------------------
 # T-0609: normalized code model + adapter protocol
