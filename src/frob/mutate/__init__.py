@@ -26,6 +26,7 @@ from frob.logging import get_logger
 
 _log = get_logger(__name__)
 
+# frob:doc docs/modules/mutate.md#public-api
 # Set to "1" in the environment of every test process `_run_mutants` spawns.
 # Recursion guard (T-0755): an evidence test that itself invokes the
 # mutation harness against the real repo (the TEST016 self-check) MUST skip
@@ -188,24 +189,28 @@ class _PointCollector(ast.NodeVisitor):
 
     def visit_Compare(self, node: ast.Compare) -> None:  # noqa: N802
         # frob:doc docs/modules/mutate.md#public-api
+        # frob:tests tests/test_mutate.py::test_point_collector_indexing_matches_mutator kind="unit"  # noqa: E501
         self.generic_visit(node)
         if len(node.ops) == 1 and type(node.ops[0]) in _COMPARE_SWAPS:
             self._record(node)
 
     def visit_BinOp(self, node: ast.BinOp) -> None:  # noqa: N802
         # frob:doc docs/modules/mutate.md#public-api
+        # frob:tests tests/test_mutate.py::test_point_collector_indexing_matches_mutator kind="unit"  # noqa: E501
         self.generic_visit(node)
         if type(node.op) in _BINOP_SWAPS:
             self._record(node)
 
     def visit_BoolOp(self, node: ast.BoolOp) -> None:  # noqa: N802
         # frob:doc docs/modules/mutate.md#public-api
+        # frob:tests tests/test_mutate.py::test_point_collector_indexing_matches_mutator kind="unit"  # noqa: E501
         self.generic_visit(node)
         if type(node.op) in _BOOLOP_SWAPS:
             self._record(node)
 
     def visit_Constant(self, node: ast.Constant) -> None:  # noqa: N802
         # frob:doc docs/modules/mutate.md#public-api
+        # frob:tests tests/test_mutate.py::test_point_collector_indexing_matches_mutator kind="unit"  # noqa: E501
         if isinstance(node.value, bool):
             self._record(node)
 

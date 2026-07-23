@@ -134,6 +134,31 @@ def test_generate_mutants_line_ranges_no_match_is_empty():
     assert result == ()
 
 
+def test_point_collector_indexing_matches_mutator():
+    # frob:tests src/frob/mutate/__init__.py::_PointCollector
+    # _PointCollector's whole contract is index parity: point index N in
+    # its (index, lineno) list must be the exact point _Mutator(N) would
+    # apply, across all four node kinds it mirrors. Verify against the
+    # full generate_mutants enumeration on a source exercising each kind.
+    import ast as ast_mod
+
+    from frob.mutate import _PointCollector
+
+    src = (
+        "def f(a, b):\n"
+        "    if a < b:\n"
+        "        return a + b\n"
+        "    x = a and b\n"
+        "    return True\n"
+    )
+    mutants = generate_mutants(src, "m.py").danger_ok
+    kinds = {m.mutant.description.split()[0] for m in mutants}
+    assert {"compare", "binop", "boolop", "bool"} <= kinds
+    collector = _PointCollector()
+    collector.visit(ast_mod.parse(src))
+    assert collector.points == [(i, m.mutant.line) for i, m in enumerate(mutants)]
+
+
 # frob:ticket T-0755
 def test_run_mutations_line_ranges_scopes_to_changed_lines(tmp_path):
     # frob:tests src/frob/mutate/__init__.py::run_mutations

@@ -128,6 +128,8 @@ def touched_python_files(root: Path, ticket: Ticket, base_ref: str) -> tuple[Pat
 
 
 # frob:doc docs/modules/tickets.md#mutation-evidence-obligation-test016-t-0755
+# frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_confirmatory_test_flagged  # noqa: E501
+# frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_large_file_unmutable_changed_lines_is_skipped_not_flagged  # noqa: E501
 def changed_line_ranges(
     root: Path, base_ref: str
 ) -> dict[str, tuple[tuple[int, int], ...]]:
