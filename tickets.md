@@ -7714,7 +7714,7 @@ Gates: frob check --ticket T-0810 clean (0 errors); frob test --base main PASS (
 id: T-0811
 title: 'land: draft renumbering must rewrite draft-id references in Done-report prose
   (recurring TICK006 after every draft-filing land)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-23'
@@ -7725,7 +7725,8 @@ scope:
 - src/frob/tickets/_land.py
 - tests/test_ticket_land.py
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_own_draft_id_reference_in_done_report
 attachments: []
 acceptance:
 - text: GIVEN a worktree ledger whose Done reports reference T-draft ids WHEN land
@@ -7733,9 +7734,57 @@ acceptance:
     in the spliced ledger text is rewritten to the new id and no TICK006 fires post-land;
     a regression test lands a draft-referencing Done report and asserts zero stale
     draft ids
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_own_draft_id_reference_in_done_report
 threat: null
 component: null
 labels: []
 ```
 Recurred 3x this drive (T-0778/T-0797, T-0745/T-0764 pairs): land renumbers T-draft blocks to real ids but leaves Done-report prose citing the old draft id, so TICK006 reds main after every draft-filing land until the coordinator hand-retargets. The renumber step already knows the old->new id mapping; apply it as a text substitution across the spliced ledger (and archive) before the integrity check.
+
+## Done report
+
+renumber_one already rewrites STRUCTURAL id references (a ticket's own id,
+blocked_by/parent, frob:* directive lines in code) when finalizing a
+draft, but never touches free-text Done-report prose (a "Filed: T-draft-
+<hex8> (...)" claim about a sibling draft) since that is not a structural
+field. _land_finalize_and_close now collects the exact old-draft-id ->
+final-id mapping renumber_one/finalize_draft already compute -- both for
+the ticket being landed itself (if it started as a draft) and for every
+sibling draft _finalize_sibling_drafts finalizes alongside it (changed
+that helper's return type from a bare tuple of new ids to an old->new
+dict so the mapping survives) -- then runs a new
+_rewrite_draft_references_in_bodies(worktree, mapping) pass BEFORE
+_commit_finalize_writes: it loads both the active and archive ledgers
+(load_all/load_archive), regex-substitutes every occurrence of an old
+draft id in each ticket's body text with its final id (a fixed-width
+T-draft-<hex8> token has no partial-match risk; a trailing
+(?![0-9a-fA-F]) guard is kept anyway as a structural safety margin), and
+writes back only the stores that actually changed (write_all/
+write_archive), so the rewrite lands in the SAME finalize commit as the
+structural renumbering. This closes the recurring TICK006 phantom-filing-
+claim false-positive (T-0778/T-0797, T-0745/T-0764) without touching
+renumber_one itself, staying inside the ticket's _land.py-only scope.
+
+Regression test (TestDraftReferenceRewriteOnLand): lands a worktree whose
+own Done report cites its own pre-finalize draft id ("Filed: T-draft-...");
+asserts the landed ticket's final id is not the draft id, the draft id
+string is gone from the final ticket's body, "Filed: <final_id>" is
+present instead, and zero "T-draft-" substrings survive anywhere in
+main's landed tickets.md.
+
+Gates: frob check --ticket T-0811 clean (0 errors, gate-summary pass).
+frob test --base main PASS. tests/test_ticket_land.py: 77 passed
+(includes the 76 pre-existing tests plus the new regression test).
+
+Filed: none.
+
+Worktree: /home/logan/projects/frob/.claude/worktrees/agent-a32451bda533ca284
+
+Deviations: none from the ticket's plan.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)

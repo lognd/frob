@@ -56,6 +56,10 @@ from frob.tickets._store import (
     archive_path,
     check_ledger_id_integrity,
     ledger_path,
+    load_all,
+    load_archive,
+    write_all,
+    write_archive,
 )
 
 # T-0577: same posix-only degradation as `frob.tickets._store`'s
@@ -1623,9 +1627,18 @@ def _land_finalize_and_close(
         return Err(finalized.danger_err)
     final_id = finalized.danger_ok
 
+    draft_id_mapping: dict[str, str] = {}
+    if is_draft_id(ticket_id) and ticket_id != final_id:
+        draft_id_mapping[ticket_id] = final_id
+
     siblings_finalized = _finalize_sibling_drafts(worktree, final_id)
     if siblings_finalized.is_err:
         return Err(siblings_finalized.danger_err)
+    draft_id_mapping.update(siblings_finalized.danger_ok)
+
+    rewritten = _rewrite_draft_references_in_bodies(worktree, draft_id_mapping)
+    if rewritten.is_err:
+        return Err(rewritten.danger_err)
 
     committed = _commit_finalize_writes(worktree, final_id)
     if committed.is_err:
@@ -1679,7 +1692,7 @@ def _finalize_draft_id(worktree: Path, ticket_id: str) -> Result[str, LandError]
 # frob:tests tests/test_ticket_land.py::TestStandaloneSiblingDraftSurvivesLand.test_sibling_draft_ticket_finalized_and_lands_alongside  # noqa: E501
 def _finalize_sibling_drafts(
     worktree: Path, landed_final_id: str
-) -> Result[tuple[str, ...], LandError]:
+) -> Result[dict[str, str], LandError]:
     """Finalize every OTHER draft ticket (T-draft-...) still in `worktree`'s
     active ledger after the ticket actually being landed has already been
     finalized (T-0637).
@@ -1700,13 +1713,15 @@ def _finalize_sibling_drafts(
     uses for the landing ticket itself) so the later ledger splice onto
     main carries a real sequential id, not a draft one.
 
-    Returns the tuple of newly-finalized ids (old draft ids resolved to
-    their final T-#### form), for logging/observability; the caller does
-    not need to thread these through further -- once finalized, each
-    sibling's fresh section is picked up by `_carry_forward_new_worktree_
-    tickets` at squash-splice time the same way any other new-to-main
-    ticket is."""
-    from frob.tickets import finalize_draft, load_all
+    Returns the old-draft-id -> final-id mapping for every sibling
+    finalized (T-0811: this is the exact mapping `_rewrite_draft_references_
+    in_bodies` needs to fix up stale Done-report prose citing these old
+    draft ids elsewhere in the ledger), for logging/observability; the
+    caller does not need to thread these through further otherwise --
+    once finalized, each sibling's fresh section is picked up by
+    `_carry_forward_new_worktree_tickets` at squash-splice time the same
+    way any other new-to-main ticket is."""
+    from frob.tickets import finalize_draft
 
     loaded = load_all(worktree)
     if loaded.is_err:
@@ -1718,7 +1733,7 @@ def _finalize_sibling_drafts(
     draft_ids = sorted(
         tid for tid in loaded.danger_ok if is_draft_id(tid) and tid != landed_final_id
     )
-    finalized_ids: list[str] = []
+    finalized_mapping: dict[str, str] = {}
     for draft_id in draft_ids:
         result = finalize_draft(worktree, draft_id)
         if result.is_err:
@@ -1731,14 +1746,101 @@ def _finalize_sibling_drafts(
                 worktree,
             )
             return Err(LandError.GitFailed)
-        finalized_ids.append(result.danger_ok)
+        finalized_mapping[draft_id] = result.danger_ok
         _log.info(
             "land: finalized sibling draft %s -> %s (alongside %s)",
             draft_id,
             result.danger_ok,
             landed_final_id,
         )
-    return Ok(tuple(finalized_ids))
+    return Ok(finalized_mapping)
+
+
+# frob:ticket T-0811
+# frob:tests tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand.test_land_rewrites_own_draft_id_reference_in_done_report  # noqa: E501
+def _rewrite_draft_references_in_bodies(
+    worktree: Path, mapping: dict[str, str]
+) -> Result[None, LandError]:
+    """Rewrite every prose mention of a just-finalized draft id (the
+    `mapping` computed by `_finalize_draft_id`/`_finalize_sibling_drafts`,
+    old draft id -> final id) inside ticket BODY text, across both the
+    active and archive ledgers, before the finalize writes are committed
+    (T-0811).
+
+    `renumber_one` (the rename primitive both callers above use) already
+    rewrites every STRUCTURAL id reference -- a ticket's own id, its
+    `blocked_by`/`parent` fields, and `frob:ticket`/`frob:tests`/etc.
+    directive lines in code -- but a Done report's own free-text "Filed:
+    T-draft-<hex8> (...)" claim about a SIBLING draft is prose, not a
+    structural field, so it survives untouched. When that cited sibling
+    is finalized to a real id in the same land, the claim now points at
+    an id no longer present anywhere in the ledger and TICK006's
+    phantom-filing-claim gate reds main -- the recurring incident this
+    ticket exists to close (T-0778/T-0797, T-0745/T-0764: 3x this drive).
+
+    A draft id (`T-draft-<hex8>`, T-0162) is a fixed-width, unambiguous
+    token -- substituting it as plain text carries no partial-match risk,
+    so a straight regex alternation over `mapping`'s keys (guarded so a
+    match can't be a PREFIX of a longer hex run) is sufficient; no
+    ticket-DSL parsing is needed here, unlike `renumber_one`'s structural
+    rewrite."""
+    if not mapping:
+        return Ok(None)
+    pattern = re.compile(
+        "(?:"
+        + "|".join(
+            re.escape(old_id) for old_id in sorted(mapping, key=len, reverse=True)
+        )
+        + r")(?![0-9a-fA-F])"
+    )
+
+    def _substitute(text: str) -> str:
+        return pattern.sub(lambda m: mapping[m.group(0)], text)
+
+    for loader, writer, label in (
+        (load_all, write_all, "active"),
+        (load_archive, write_archive, "archive"),
+    ):
+        loaded = loader(worktree)
+        if loaded.is_err:
+            _log.error(
+                "land: could not load %s ledger to rewrite stale draft-id "
+                "reference(s) %s (%s)",
+                label,
+                mapping,
+                loaded.danger_err,
+            )
+            return Err(LandError.GitFailed)
+        tickets = loaded.danger_ok
+        rewritten: dict[str, Ticket] = {}
+        changed_ids: list[str] = []
+        for tid, ticket in tickets.items():
+            new_body = _substitute(ticket.body)
+            if new_body == ticket.body:
+                rewritten[tid] = ticket
+                continue
+            rewritten[tid] = ticket.model_copy(update={"body": new_body})
+            changed_ids.append(tid)
+        if not changed_ids:
+            continue
+        written = writer(worktree, rewritten)
+        if written.is_err:
+            _log.error(
+                "land: failed writing %s ledger after rewriting stale "
+                "draft-id reference(s) in %s (%s)",
+                label,
+                changed_ids,
+                written.danger_err,
+            )
+            return Err(LandError.GitFailed)
+        _log.info(
+            "land: rewrote stale draft-id reference(s) %s in %s ledger "
+            "body text for %s",
+            mapping,
+            label,
+            changed_ids,
+        )
+    return Ok(None)
 
 
 def _close_finalized_ticket(

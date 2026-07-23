@@ -1451,6 +1451,71 @@ class TestStandaloneSiblingDraftSurvivesLand:
         assert landed_map[report.final_id].state == TicketState.DONE
 
 
+class TestDraftReferenceRewriteOnLand:
+    """T-0811: land renumbers a finalized draft's structural id fields, but
+    before this fix left Done-report PROSE citing the old draft id
+    untouched, so TICK006's phantom-filing-claim gate reds main the
+    moment the draft finalizes to a real id (recurred 3x this drive:
+    T-0778/T-0797, T-0745/T-0764). A land whose own Done report cites its
+    own (pre-finalize) draft id must come out with that reference rewritten
+    to the final id, and zero `T-draft-` ids left anywhere in the ledger."""
+
+    def test_land_rewrites_own_draft_id_reference_in_done_report(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::land kind="unit"
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-k", str(wt)], repo)
+
+        primary = new_ticket(
+            wt, _spec("Self-citing draft work", scope=("src/self.py",))
+        )
+        assert primary.is_ok
+        primary_id = primary.danger_ok.id
+        assert primary_id.startswith("T-draft-")
+        (wt / "src" / "self.py").write_text("# self-citing draft work\n")
+
+        assert transition(wt, primary_id, TicketState.PLANNED).is_ok
+        assert transition(wt, primary_id, TicketState.IN_PROGRESS).is_ok
+        loaded = load_all(wt)
+        ticket = loaded.danger_ok[primary_id]
+        ticket = ticket.model_copy(
+            update={
+                "evidence": ("tests/test_x.py::test_ok",),
+                "body": (
+                    ticket.body
+                    + "\n## Done report\n\nevidence attached\n"
+                    + f"Filed: {primary_id} (scope-cut note filed against self)\n"
+                ),
+            }
+        )
+        assert write_ticket(wt, ticket).is_ok
+
+        _commit_all(wt, "self-citing draft work")
+
+        result = land(repo, primary_id, wt, dry_run=False)
+        assert result.is_ok, result.err
+        report = result.danger_ok
+        final_id = report.final_id
+        assert final_id != primary_id
+
+        landed = load_all(repo)
+        assert landed.is_ok
+        landed_map = landed.danger_ok
+        assert primary_id not in landed_map
+
+        final_ticket = landed_map[final_id]
+        assert primary_id not in final_ticket.body, (
+            "stale draft-id reference survived in the landed Done report"
+        )
+        assert f"Filed: {final_id}" in final_ticket.body
+
+        ledger_text = ledger_path(repo).read_text(encoding="utf-8")
+        assert "T-draft-" not in ledger_text, (
+            "a T-draft- id survived somewhere in the landed ledger text"
+        )
+
+
 class TestLandNotFound:
     """`land` on a ticket id the worktree's store has never heard of."""
 
