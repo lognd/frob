@@ -12677,3 +12677,47 @@ equivalent per-language call-graph substrate); this is deliberately
 NOT built here to avoid a second, unreviewed call-graph implementation
 per language, mirroring T-0745's own T-0809 disclosure pattern.
 Scope: src/frob/gates/_protocol_summary.py, src/frob/graph/callgraph.py.
+
+<!-- ticket:T-0842 -->
+```yaml
+id: T-0842
+title: 'gates: TICK008 -- unknown/extra ledger fields must be a frob check finding
+  (T-0838 typo hazard)'
+state: queued
+kind: security
+origin: human
+created: '2026-07-23'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/__init__.py
+- src/frob/tickets/_models.py
+- tests/test_gates.py
+scope_changes: []
+evidence: []
+reviews: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0838 made the ledger Ticket model tolerate unknown fields (warn +
+preserve + round-trip) so schema-extending features stop bricking their
+own lands. The disclosed cost: a TYPOED known field (priorty: low) is
+now silently treated as an unknown extra -- the intended value is lost
+to the schema default and the only signal is a WARNING log line no gate
+reads. Reviewer verdict on T-0838 mandates this follow-up.
+
+Fix: new TICK-family gate rule (TICK008) that ERRORs (or at minimum
+WARNs as a frob check finding) on any ticket block in the CHECKED
+ledger carrying unknown/extra fields. Tolerance remains correct at
+LOAD time (that is the forward-compat point); the gate makes the drift
+VISIBLE mechanically on main where the ledger must be canonical. Rule
+must whitelist nothing by default; a worktree mid-land carrying a
+newer-schema field will go green as soon as the schema-owning feature
+lands (its model then knows the field). Register CHK-GATE-TICK008 +
+gate_rule_total at land per precedent. Include a fuzzy-match hint in
+the message (unknown field 'priorty' -- did you mean 'priority'?) via
+difflib.get_close_matches.
