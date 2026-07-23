@@ -314,6 +314,85 @@ def test_perf004_does_not_fire_when_sorted_is_the_loop_iterable(tmp_path):
 # PERF-rule fire/no-fire cases sharing an arrange-act scaffold by design \
 # (one src snippet + one assertion per case); extracting would obscure \
 # per-case intent"
+def test_perf004_does_not_fire_on_sort_after_loop_same_indent(tmp_path):
+    """T-0367: PERF004 does not fire on a `sorted()`/`.sort()` call that
+    occurs textually AFTER a `for` loop at the same (or an outer) indent --
+    it runs once per function call, not once per iteration. The old
+    token/bracket-depth heuristic (`_loop_gate`) is indentation-blind and
+    cannot see that this sort is a SIBLING statement, not a descendant of
+    the loop body; the fix is AST body-field containment
+    (`_enclosing_loop_body_hit`)."""
+    # frob:ticket T-0367
+    # frob:tests src/frob/perf/_rules.py::perf_rules
+    src = (
+        "def process(items):\n"
+        "    out = []\n"
+        "    for x in items:\n"
+        "        out.append(x)\n"
+        "    out.sort()\n"
+        "    return out\n"
+    )
+    path = _write(tmp_path, "mod.py", src)
+    parsed = parse_file(path).danger_ok
+    snapshot = _snapshot(tmp_path)
+    violations = perf_rules(snapshot, [parsed])
+    assert not any(v.rule == "PERF004" for v in violations)
+
+
+# frob:waive DUP001 reason="parallel perf-rule case table: independent \
+# PERF-rule fire/no-fire cases sharing an arrange-act scaffold by design \
+# (one src snippet + one assertion per case); extracting would obscure \
+# per-case intent"
+def test_perf004_does_not_fire_on_sorted_call_after_loop_same_indent(tmp_path):
+    """T-0367: same false-positive shape as the `.sort()` sibling above, but
+    for the `sorted()` free-function call form -- both call shapes
+    (`_is_sort_call`) must be indentation/AST-aware, not just one."""
+    # frob:ticket T-0367
+    # frob:tests src/frob/perf/_rules.py::perf_rules
+    src = (
+        "def process(items):\n"
+        "    out = []\n"
+        "    for x in items:\n"
+        "        out.append(x)\n"
+        "    return sorted(out)\n"
+    )
+    path = _write(tmp_path, "mod.py", src)
+    parsed = parse_file(path).danger_ok
+    snapshot = _snapshot(tmp_path)
+    violations = perf_rules(snapshot, [parsed])
+    assert not any(v.rule == "PERF004" for v in violations)
+
+
+# frob:waive DUP001 reason="parallel perf-rule case table: independent \
+# PERF-rule fire/no-fire cases sharing an arrange-act scaffold by design \
+# (one src snippet + one assertion per case); extracting would obscure \
+# per-case intent"
+def test_perf004_still_fires_on_sort_nested_deeper_inside_loop_body(tmp_path):
+    """T-0367: a genuine in-loop sort still fires even when nested a further
+    level deep inside the loop body (an `if` inside the `for`) -- the
+    AST-aware fix must not lose true positives that are merely more
+    indented than the simple case."""
+    # frob:ticket T-0367
+    # frob:tests src/frob/perf/_rules.py::perf_rules
+    src = (
+        "def rank(rounds, data):\n"
+        "    out = []\n"
+        "    for r in rounds:\n"
+        "        if r:\n"
+        "            out.append(sorted(data))\n"
+        "    return out\n"
+    )
+    path = _write(tmp_path, "mod.py", src)
+    parsed = parse_file(path).danger_ok
+    snapshot = _snapshot(tmp_path)
+    violations = perf_rules(snapshot, [parsed])
+    assert any(v.rule == "PERF004" for v in violations)
+
+
+# frob:waive DUP001 reason="parallel perf-rule case table: independent \
+# PERF-rule fire/no-fire cases sharing an arrange-act scaffold by design \
+# (one src snippet + one assertion per case); extracting would obscure \
+# per-case intent"
 def test_perf004_does_not_fire_on_sorted_generator_no_preceding_loop(tmp_path):
     """PERF004 does not fire on `sorted(x for x in y)` with no preceding
     statement-level loop -- the generator's own `for` is bracket-depth

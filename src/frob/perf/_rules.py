@@ -32,10 +32,16 @@ from __future__ import annotations
 
 import re
 from collections.abc import Sequence
+from functools import lru_cache
 from pathlib import Path
+
+from tree_sitter import Node
 
 from frob.gates._models import Severity, Violation
 from frob.graph import GraphSnapshot
+from frob.lang import child_by_field as _child_by_field
+from frob.lang import node_text as _node_text
+from frob.lang import raw_tree as _raw_tree
 from frob.lang._models import ParsedFile, RawSymbol, SymbolKind
 from frob.logging import get_logger
 from frob.perf._recursion import recursion_rules
@@ -491,6 +497,85 @@ def _perf004_python(tokens: tuple[str, ...], depths: tuple[int, ...]) -> bool:
     return False
 
 
+# frob:ticket T-0367
+def _is_sort_call(node: Node) -> bool:
+    """True if `node` is a `sorted(...)` call or a `<expr>.sort(...)` method
+    call -- the two shapes PERF004 targets, matched off the real tree-sitter
+    `call`/`attribute` node structure instead of adjacent token literals."""
+    if node.type != "call":
+        return False
+    func = _child_by_field(node, "function")
+    if func is None:
+        return False
+    if func.type == "identifier" and _node_text(func) == "sorted":
+        return True
+    if func.type == "attribute":
+        attr = _child_by_field(func, "attribute")
+        return attr is not None and _node_text(attr) == "sort"
+    return False
+
+
+# frob:ticket T-0367
+def _enclosing_loop_body_hit(node: Node) -> bool:
+    """True if `node` (a sort call) is a descendant of some ancestor
+    `for_statement`/`while_statement`'s `body` field specifically -- not
+    merely lexically after the loop's header the way the flat-token
+    `_loop_gate` heuristic sees it (T-0367's false-positive class: a sort
+    call that occurs textually AFTER a loop at the same/outer indent, which
+    runs once per function call, not once per iteration).
+
+    Walking the tree-sitter parent chain and checking each ancestor loop's
+    own `body` field (rather than the loop's `left`/`right`/`condition`
+    header fields) is what makes this indentation/AST-aware: a sort call
+    genuinely inside the loop body sits within `body`'s byte span; a sort
+    call after the loop (even immediately after, same indent) sits outside
+    it. This also naturally keeps excluding `for x in sorted(data):` (the
+    `sorted(...)` there is part of the header's iterable expression, never
+    inside `body`) without needing a separate carve-out."""
+    parent = node.parent
+    while parent is not None:
+        if parent.type in ("for_statement", "while_statement"):
+            body = _child_by_field(parent, "body")
+            if (
+                body is not None
+                and body.start_byte <= node.start_byte
+                and node.end_byte <= body.end_byte
+            ):
+                return True
+        parent = parent.parent
+    return False
+
+
+# frob:ticket T-0367
+@lru_cache(maxsize=None)
+def _perf004_ast_hit_lines(path: str) -> frozenset[int] | None:
+    """1-based line numbers of AST-confirmed PERF004 hits anywhere in the
+    file at `path` (a `sorted(`/`.sort(` call actually nested inside a
+    loop's body block, per `_enclosing_loop_body_hit`) -- or `None` if the
+    file cannot be re-parsed via `frob.lang.raw_tree` (moved/deleted since
+    the original parse, or not a python file). `None` is a distinct signal
+    from "empty set": callers must fall back to the coarser token heuristic
+    (`_perf004_python`) when this is `None`, not assume zero hits.
+
+    Cached per path for the lifetime of one `frob check` process -- a
+    file's AST does not change mid-run, and `_symbol_violations` would
+    otherwise re-parse the same file once per function/method symbol in it."""
+    result = _raw_tree(Path(path))
+    if result.is_err:
+        return None
+    tree, _source, language = result.danger_ok
+    if language != "python":
+        return None
+    hits: set[int] = set()
+    stack = [tree.root_node]
+    while stack:
+        node = stack.pop()
+        if _is_sort_call(node) and _enclosing_loop_body_hit(node):
+            hits.add(node.start_point[0] + 1)
+        stack.extend(node.children)
+    return frozenset(hits)
+
+
 # frob:ticket T-0021
 # frob:ticket T-0161
 def _method_call_in_loop(
@@ -546,19 +631,46 @@ def _violation(rule: str, file: str, line: int, extra: str) -> Violation:
     )
 
 
+# frob:ticket T-0367
+def _perf004_python_fires(
+    tokens: tuple[str, ...],
+    depths: tuple[int, ...],
+    path: str,
+    span: tuple[int, int],
+    span_start: int,
+    lines: tuple[str, ...],
+) -> tuple[bool, int]:
+    """PERF004 (python) fire decision + anchor line, preferring the AST-
+    precise `_perf004_ast_hit_lines` check (T-0367: loop-BODY-field
+    containment, immune to the post-loop-at-same-indent false positive) and
+    falling back to the coarse lexical `_perf004_python`/`_perf004_line`
+    token heuristic only when `path` cannot be re-parsed (`None` from the
+    AST helper -- moved/deleted file, or a non-tree-sitter-backed path)."""
+    ast_hits = _perf004_ast_hit_lines(path)
+    if ast_hits is None:
+        return _perf004_python(tokens, depths), _perf004_line(lines, span_start)
+    span_hits = sorted(h for h in ast_hits if span[0] <= h <= span[1])
+    if not span_hits:
+        return False, span_start
+    return True, span_hits[0]
+
+
 # frob:ticket T-0021
 # frob:ticket T-0230
+# frob:ticket T-0367
 def _python_violations(
     tokens: tuple[str, ...],
     depths: tuple[int, ...],
     path: str,
-    span_start: int,
+    span: tuple[int, int],
     lines: tuple[str, ...],
 ) -> list[Violation]:
     """PERF001/002/004 hits for a python function body (all four rules),
     each anchored at its own offending statement's line (T-0230), not the
-    enclosing `def` line -- `span_start` is only the fallback when `lines`
-    can't locate the real one."""
+    enclosing `def` line -- `span[0]` is only the fallback when `lines`
+    can't locate the real one. PERF004 (T-0367) is AST-precise rather than
+    lexical -- see `_perf004_python_fires`."""
+    span_start = span[0]
     hits: list[Violation] = []
     if _perf001_python(tokens, depths):
         line = _perf001_line(tokens, lines, span_start)
@@ -570,8 +682,8 @@ def _python_violations(
         hits.append(
             _violation("PERF002", path, line, ".index()/.count() call in a loop")
         )
-    if _perf004_python(tokens, depths):
-        line = _perf004_line(lines, span_start)
+    fires, line = _perf004_python_fires(tokens, depths, path, span, span_start, lines)
+    if fires:
         hits.append(
             _violation("PERF004", path, line, "sorted()/.sort() call in a loop")
         )
@@ -617,7 +729,7 @@ def _symbol_violations(file: ParsedFile, symbol: RawSymbol) -> tuple[Violation, 
     span_start = symbol.span[0]
     lines = _source_lines(file.path, symbol.span)
     if file.language == "python":
-        hits = _python_violations(tokens, depths, file.path, span_start, lines)
+        hits = _python_violations(tokens, depths, file.path, symbol.span, lines)
     else:
         hits = _best_effort_violations(
             tokens, depths, file.language, file.path, span_start, lines

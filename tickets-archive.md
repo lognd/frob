@@ -34561,29 +34561,6 @@ This is a genuine false-positive of the indentation-blind PERF004 heuristic
 check --only perf` now reports 0 unwaived PERF004. This was the last
 non-waived warning in the blocking `gates` stage.
 
-<!-- ticket:T-0367 -->
-```yaml
-id: T-0367
-title: PERF004 detector false-positives on post-loop sorts (indentation-blind heuristic)
-state: queued
-kind: bug
-origin: human
-created: '2026-07-20'
-priority: medium
-blocked_by: []
-parent: null
-scope:
-- src/frob/perf/
-scope_changes: []
-evidence: []
-attachments: []
-acceptance: []
-threat: null
-component: null
-labels: []
-```
-T-0363 had to reason-waive 3 genuine sorted()/.sort() sites (dup/_template.py:159, graph/__init__.py:153, vet/_capability.py:344) because the PERF004 heuristic is token/bracket-depth based and cannot see Python indentation, so it false-positives on any sort textually AFTER a for-loop at the same/outer indent (runs once, not per-iteration). Systematic fix: make the PERF004 detector indentation/AST-aware (tree-sitter: is the sort call a descendant of the loop BODY, not merely lexically after the loop header) so genuine once-after-loop sorts are not flagged and true in-loop sorts still are. Would let the 3 (soon 4, incl T-0366) waivers be removed. Do NOT loosen the true-positive case.
-
 <!-- ticket:T-0368 -->
 ```yaml
 id: T-0368
