@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from frob.graph._models import EdgeKind
 from frob.graph.dsl import _RESERVED_MARKER_VERBS, _resolve_block_srcs, parse_directives
 from frob.lang import parse_file
 from frob.lang._models import ParsedFile, RawComment, RawSymbol, SymbolKind
@@ -484,3 +485,166 @@ class TestDeprecatedDirective:
         assert not edges
         assert len(malformed) == 1
         assert "sunset" in malformed[0].reason
+
+
+class TestProtocolDeclarations:
+    """`frob:protocol`/`frob:transition`/`frob:requires` (T-0744)."""
+
+    def test_declared_protocol_round_trips(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/dsl.py::parse_directives
+        src = (
+            '# frob:protocol conn states="idle,open,closed" initial="idle"\n'
+            "def use_conn() -> None:\n"
+            "    pass\n"
+            "\n"
+            '# frob:transition proto="conn" from="idle" to="open"\n'
+            "def open_conn() -> None:\n"
+            "    pass\n"
+            "\n"
+            '# frob:requires proto="conn" state="open"\n'
+            "def send() -> None:\n"
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        by_kind = {e.kind: e for e in edges}
+        assert by_kind[EdgeKind.PROTOCOL].target == "conn"
+        assert by_kind[EdgeKind.PROTOCOL].attrs["states"] == "idle,open,closed"
+        assert by_kind[EdgeKind.PROTOCOL].attrs["initial"] == "idle"
+        assert by_kind[EdgeKind.PROTOCOL].attrs["cleanup"] == "on-error"
+        assert by_kind[EdgeKind.TRANSITION].target == "conn"
+        assert by_kind[EdgeKind.TRANSITION].attrs["from"] == "idle"
+        assert by_kind[EdgeKind.TRANSITION].attrs["to"] == "open"
+        assert by_kind[EdgeKind.REQUIRES].target == "conn"
+        assert by_kind[EdgeKind.REQUIRES].attrs["state"] == "open"
+
+    def test_protocol_missing_states_is_malformed(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/dsl.py::_parse_attrs_verb_error
+        src = '# frob:protocol conn initial="idle"\ndef use_conn() -> None:\n    pass\n'
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not edges
+        assert len(malformed) == 1
+        assert "states" in malformed[0].reason
+
+    def test_protocol_initial_not_in_states_is_malformed(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/dsl.py::_parse_attrs_verb_error
+        src = (
+            '# frob:protocol conn states="idle,open" initial="closed"\n'
+            "def use_conn() -> None:\n"
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not edges
+        assert len(malformed) == 1
+        assert "initial" in malformed[0].reason
+
+    def test_protocol_bad_cleanup_is_malformed(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/dsl.py::_parse_attrs_verb_error
+        src = (
+            '# frob:protocol conn states="idle,open" initial="idle" '
+            'cleanup="whenever"\n'
+            "def use_conn() -> None:\n"
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not edges
+        assert len(malformed) == 1
+        assert "cleanup" in malformed[0].reason
+
+    def test_transition_missing_attrs_is_malformed(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/dsl.py::_parse_attrs_verb_error
+        src = (
+            '# frob:transition proto="conn" from="idle"\n'
+            "def open_conn() -> None:\n"
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not edges
+        assert len(malformed) == 1
+        assert "to" in malformed[0].reason
+
+    def test_requires_missing_state_is_malformed(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/dsl.py::_parse_attrs_verb_error
+        src = '# frob:requires proto="conn"\ndef send() -> None:\n    pass\n'
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not edges
+        assert len(malformed) == 1
+        assert "state" in malformed[0].reason
+
+    def test_unbound_protocol_is_a_loud_error_not_a_skip(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/dsl.py::_protocol_coherence
+        # T-0744 acceptance: a declared protocol with zero transition/
+        # requires bindings anywhere in the file is a malformed-directive
+        # ERROR, never silently accepted.
+        src = (
+            '# frob:protocol conn states="idle,open" initial="idle"\n'
+            "def use_conn() -> None:\n"
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert any(e.kind == EdgeKind.PROTOCOL for e in edges)
+        assert len(malformed) == 1
+        assert "zero" in malformed[0].reason
+        assert "conn" in malformed[0].reason
+
+    def test_bound_protocol_is_not_flagged_unbound(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/dsl.py::_protocol_coherence
+        src = (
+            '# frob:protocol conn states="idle,open" initial="idle"\n'
+            "def use_conn() -> None:\n"
+            "    pass\n"
+            "\n"
+            '# frob:requires proto="conn" state="open"\n'
+            "def send() -> None:\n"
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        _edges, malformed = parse_directives(pf)
+        assert not malformed
+
+
+class TestInitDeinitInference:
+    """Zero-declaration init/deinit name-pattern inference (T-0744)."""
+
+    def test_init_deinit_pair_infers_a_protocol(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/dsl.py::_infer_init_deinit_protocols
+        src = (
+            "def foo_init() -> None:\n    pass\n\ndef foo_deinit() -> None:\n    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        protocol_edges = [e for e in edges if e.kind == EdgeKind.PROTOCOL]
+        transition_edges = [e for e in edges if e.kind == EdgeKind.TRANSITION]
+        assert len(protocol_edges) == 1
+        assert protocol_edges[0].attrs["inferred"] == "true"
+        assert len(transition_edges) == 2
+        srcs = {e.src for e in transition_edges}
+        assert srcs == {f"{pf.path}::foo_init", f"{pf.path}::foo_deinit"}
+
+    def test_open_close_pair_also_infers(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/dsl.py::_infer_init_deinit_protocols
+        src = (
+            "def bar_open() -> None:\n    pass\n\ndef bar_close() -> None:\n    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert any(e.kind == EdgeKind.PROTOCOL for e in edges)
+
+    def test_unpaired_init_infers_nothing(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/dsl.py::_infer_init_deinit_protocols
+        # No general-machine inference: a lone *_init with no matching
+        # *_deinit in the file must not synthesize a protocol.
+        src = "def foo_init() -> None:\n    pass\n"
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert not any(e.kind == EdgeKind.PROTOCOL for e in edges)

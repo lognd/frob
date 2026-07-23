@@ -18,7 +18,7 @@ from __future__ import annotations
 import re
 
 from frob.graph._models import Edge, EdgeKind, MalformedDirective
-from frob.lang import ParsedFile, RawComment
+from frob.lang import ParsedFile, RawComment, SymbolKind
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -52,6 +52,11 @@ _VERB_TABLE: dict[str, EdgeKind] = {
     # declares which registry concept(s) it enforces; see
     # `frob.gates._registry_exhaustiveness`'s derived-coverage cross-check.
     "enforces": EdgeKind.ENFORCES,
+    # T-0744: typestate protocol declaration surface (T-0739 child 1). See
+    # `_ATTR_ONLY_VERBS`/`_parse_attrs_verb_error` for their grammars.
+    "protocol": EdgeKind.PROTOCOL,
+    "transition": EdgeKind.TRANSITION,
+    "requires": EdgeKind.REQUIRES,
 }
 
 _LINE_RE = re.compile(r"^frob:(?P<verb>\S+)(?:\s+(?P<rest>.*))?$")
@@ -62,6 +67,31 @@ _TESTS_KINDS = frozenset({"unit", "integration", "e2e"})
 #: boundary for a lint exception, but a public symbol's sunset is a
 #: real-world date regardless of how the release train moves.
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+#: `frob:protocol`'s optional `cleanup=` attribute (T-0744): the per-protocol
+#: cleanup obligation later verification (T-0739 child 4) enforces. Defaults
+#: to `"on-error"` when omitted (`_parse_attrs_verb_error`'s protocol branch).
+_CLEANUP_KINDS = frozenset({"always", "on-error", "process-exit-ok"})
+
+#: Verbs whose grammar is ALL `key="value"` attributes with no bare target
+#: token (T-0744): `frob:transition proto="NAME" from="S" to="T"` and
+#: `frob:requires proto="NAME" state="S"` bind to their protocol via the
+#: `proto=` attribute itself rather than a leading plain word the way every
+#: other verb's target works -- `_parse_line` special-cases them so the
+#: edge's `target` becomes the parsed `proto` attribute.
+_ATTR_ONLY_VERBS = frozenset({"transition", "requires"})
+
+#: Default zero-declaration init/deinit name-pair patterns (T-0744): a
+#: function named `<prefix>_<init_word>` with a sibling `<prefix>_
+#: <deinit_word>` in the same file implicitly declares a 3-state protocol
+#: (uninitialized -> active -> closed) with no `frob:protocol` comment at
+#: all. Inference is ONLY for these declared pairs, never a general
+#: machine-inference heuristic (T-0744's explicit scope limit).
+_INFER_PAIRS: tuple[tuple[str, str], ...] = (
+    ("init", "deinit"),
+    ("open", "close"),
+    ("acquire", "release"),
+)
 
 #: Verbs that are intentional `frob:<verb>` literal markers owned by a
 #: DIFFERENT subsystem (never routed through `_VERB_TABLE`, never turned
@@ -242,6 +272,66 @@ def _parse_attrs_verb_error(
                     "YYYY-MM-DD date"
                 ),
             )
+    if verb == "protocol":
+        missing = [key for key in ("states", "initial") if key not in attrs]
+        if missing:
+            return MalformedDirective(
+                file=path,
+                line=lineno,
+                reason=(
+                    'frob:protocol requires states="S1,S2,..." and '
+                    f'initial="..." (missing: {", ".join(missing)})'
+                ),
+            )
+        states = [s.strip() for s in attrs["states"].split(",") if s.strip()]
+        if not states:
+            return MalformedDirective(
+                file=path,
+                line=lineno,
+                reason='frob:protocol states="..." must list at least one state',
+            )
+        if attrs["initial"] not in states:
+            return MalformedDirective(
+                file=path,
+                line=lineno,
+                reason=(
+                    f"frob:protocol initial={attrs['initial']!r} is not one "
+                    f"of its own states={states!r}"
+                ),
+            )
+        cleanup = attrs.get("cleanup", "on-error")
+        if cleanup not in _CLEANUP_KINDS:
+            return MalformedDirective(
+                file=path,
+                line=lineno,
+                reason=(
+                    f"frob:protocol cleanup={cleanup!r} must be one of "
+                    f"{sorted(_CLEANUP_KINDS)}"
+                ),
+            )
+        attrs.setdefault("cleanup", "on-error")
+    if verb == "transition":
+        missing = [key for key in ("proto", "from", "to") if key not in attrs]
+        if missing:
+            return MalformedDirective(
+                file=path,
+                line=lineno,
+                reason=(
+                    'frob:transition requires proto="NAME" from="S" to="T" '
+                    f"(missing: {', '.join(missing)})"
+                ),
+            )
+    if verb == "requires":
+        missing = [key for key in ("proto", "state") if key not in attrs]
+        if missing:
+            return MalformedDirective(
+                file=path,
+                line=lineno,
+                reason=(
+                    'frob:requires requires proto="NAME" state="S" '
+                    f"(missing: {', '.join(missing)})"
+                ),
+            )
     if verb == "tests":
         attrs.setdefault("kind", "unit")
         if attrs["kind"] not in _TESTS_KINDS:
@@ -290,10 +380,20 @@ def _parse_line(
             file=path, line=lineno, reason=f"missing target for verb {verb!r}"
         )
 
-    target, _, attr_text = rest.partition(" ")
-    attrs = _parse_attrs(verb, attr_text.strip(), path=path, lineno=lineno)
-    if isinstance(attrs, MalformedDirective):
-        return attrs
+    if verb in _ATTR_ONLY_VERBS:
+        # T-0744: `frob:transition`/`frob:requires` have no bare target
+        # token -- the whole `rest` is `key="value"` attributes, and the
+        # edge's target is the `proto=` attribute itself (guaranteed present
+        # once `_parse_attrs_verb_error`'s per-verb check has passed).
+        attrs = _parse_attrs(verb, rest, path=path, lineno=lineno)
+        if isinstance(attrs, MalformedDirective):
+            return attrs
+        target = attrs["proto"]
+    else:
+        target, _, attr_text = rest.partition(" ")
+        attrs = _parse_attrs(verb, attr_text.strip(), path=path, lineno=lineno)
+        if isinstance(attrs, MalformedDirective):
+            return attrs
 
     # T-0265: a literal self-referential `frob:tests` directive (target ==
     # src) is NOT rejected here -- it is this repo's own widespread,
@@ -537,6 +637,136 @@ def _debt_todo_coherence(
     return extra_edges, malformed
 
 
+# frob:ticket T-0744
+def _protocol_coherence(edges: list[Edge]) -> list[MalformedDirective]:
+    """ENFORCEABILITY (T-0744 user mandate): a `frob:protocol` bound by zero
+    `frob:transition`/`frob:requires` edges in this file is itself a loud
+    error, not a silently-uncatalogued declaration -- the same
+    catalogued-is-not-enforced doctrine `frob:debt`/`frob:todo` coherence
+    (`_debt_todo_coherence`) already applies. Scope note: this pass only
+    sees edges from ONE file's `parse_directives` call, so a protocol
+    declared in one file and bound entirely from another still reads as
+    unbound here -- cross-file protocol binding tallying belongs to a
+    graph-wide consumer (a later T-0739 child), not this per-file DSL pass.
+    """
+    bound = {
+        e.attrs.get("proto")
+        for e in edges
+        if e.kind in (EdgeKind.TRANSITION, EdgeKind.REQUIRES)
+    }
+    malformed: list[MalformedDirective] = []
+    for edge in edges:
+        if edge.kind != EdgeKind.PROTOCOL or edge.target in bound:
+            continue
+        file, _, line = edge.origin.rpartition(":")
+        _log.debug(
+            "T-0744: frob:protocol %r declared with zero bindings in %s",
+            edge.target,
+            file or edge.origin,
+        )
+        malformed.append(
+            MalformedDirective(
+                file=file or edge.origin,
+                line=int(line) if line.isdigit() else 0,
+                reason=(
+                    f"frob:protocol {edge.target!r} declared but has zero "
+                    "frob:transition/frob:requires bindings in this file "
+                    "-- an unenforced protocol is a drift error, never a "
+                    "silent no-op"
+                ),
+            )
+        )
+    return malformed
+
+
+# frob:ticket T-0744
+def _infer_init_deinit_protocols(parsed: ParsedFile) -> tuple[Edge, ...]:
+    """Zero-declaration convenience (T-0744): a bare `<prefix>_<init_word>`/
+    `<prefix>_<deinit_word>` function pair (`_INFER_PAIRS`) implicitly
+    declares a 3-state `uninitialized -> active -> closed` protocol with no
+    `frob:protocol` comment at all, synthesizing the same PROTOCOL/
+    TRANSITION edges an explicit declaration would produce (each carrying
+    `inferred="true"` so a consumer can tell the two apart). Inference is
+    ONLY for these declared name-pair patterns -- never a general machine-
+    inference heuristic, per T-0744's explicit scope limit.
+    """
+    callables = {
+        s.qualname
+        for s in parsed.symbols
+        if s.kind in (SymbolKind.FUNCTION, SymbolKind.METHOD)
+    }
+    edges: list[Edge] = []
+    seen_protocols: set[str] = set()
+    for sym in parsed.symbols:
+        if sym.kind not in (SymbolKind.FUNCTION, SymbolKind.METHOD):
+            continue
+        for init_word, deinit_word in _INFER_PAIRS:
+            suffix = f"_{init_word}"
+            if not sym.qualname.endswith(suffix):
+                continue
+            prefix = sym.qualname[: -len(suffix)]
+            deinit_qualname = f"{prefix}_{deinit_word}"
+            if deinit_qualname not in callables:
+                continue
+            proto = f"{prefix}#{init_word}/{deinit_word}"
+            if proto in seen_protocols:
+                continue
+            seen_protocols.add(proto)
+            origin = f"{parsed.path}:{sym.span[0]}"
+            init_src = f"{parsed.path}::{sym.qualname}"
+            deinit_src = f"{parsed.path}::{deinit_qualname}"
+            _log.debug(
+                "T-0744: inferred protocol %r from %s/%s in %s",
+                proto,
+                sym.qualname,
+                deinit_qualname,
+                parsed.path,
+            )
+            edges.append(
+                Edge(
+                    src=parsed.path,
+                    kind=EdgeKind.PROTOCOL,
+                    target=proto,
+                    origin=origin,
+                    attrs={
+                        "states": "uninitialized,active,closed",
+                        "initial": "uninitialized",
+                        "cleanup": "on-error",
+                        "inferred": "true",
+                    },
+                )
+            )
+            edges.append(
+                Edge(
+                    src=init_src,
+                    kind=EdgeKind.TRANSITION,
+                    target=proto,
+                    origin=origin,
+                    attrs={
+                        "proto": proto,
+                        "from": "uninitialized",
+                        "to": "active",
+                        "inferred": "true",
+                    },
+                )
+            )
+            edges.append(
+                Edge(
+                    src=deinit_src,
+                    kind=EdgeKind.TRANSITION,
+                    target=proto,
+                    origin=origin,
+                    attrs={
+                        "proto": proto,
+                        "from": "active",
+                        "to": "closed",
+                        "inferred": "true",
+                    },
+                )
+            )
+    return tuple(edges)
+
+
 # frob:doc docs/modules/graph.md#comment-dsl
 def parse_directives(
     parsed: ParsedFile,
@@ -568,6 +798,8 @@ def parse_directives(
     extra_edges, coherence_malformed = _debt_todo_coherence(edges)
     edges.extend(extra_edges)
     malformed.extend(coherence_malformed)
+    edges.extend(_infer_init_deinit_protocols(parsed))
+    malformed.extend(_protocol_coherence(edges))
     if malformed:
         _log.warning("%s: %d malformed directive(s)", parsed.path, len(malformed))
     _log.debug("%s: parsed %d directive edge(s)", parsed.path, len(edges))

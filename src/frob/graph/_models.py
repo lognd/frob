@@ -110,6 +110,21 @@ class EdgeKind(StrEnum):
     # `sunset` is still in the future and errors once it has passed or once
     # the owning ticket closes with the directive still in place.
     DEPRECATED = "deprecated"
+    # T-0744: typestate protocol declaration surface (child 1 of the T-0739
+    # umbrella). PROTOCOL declares a named state machine (`states=`,
+    # `initial=`, optional `cleanup=`) at the src the directive binds to
+    # (or, for a name-pattern-inferred protocol, at the enclosing file).
+    PROTOCOL = "protocol"
+    # T-0744: a function's declared state TRANSITION within a protocol
+    # (`proto=`, `from=`, `to=`) -- `target` is the protocol name, `src` is
+    # the transitioning function.
+    TRANSITION = "transition"
+    # T-0744: a function's declared state REQUIREMENT within a protocol
+    # (`proto=`, `state=`) -- `target` is the protocol name, `src` is the
+    # function only callable while that state holds. Verification of these
+    # requirements against the call graph is later T-0739 children, out of
+    # this module's scope; this module only parses the declaration.
+    REQUIRES = "requires"
 
 
 # frob:doc docs/modules/graph.md#data-models

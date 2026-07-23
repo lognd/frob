@@ -197,6 +197,65 @@ itself well-formed/open/unexpired -- a listing tool, not a gate; DEPR001/
 (T-0576 scoped only `frob.graph`/`frob.gates`/docs/tests) -- filed as its
 own follow-up, see this section's ticket history.
 
+### Typestate protocol declarations (T-0744)
+
+`frob:protocol`/`frob:transition`/`frob:requires` (T-0739 umbrella, child 1)
+are the comment-DSL declaration surface for typestate protocols --
+`frob.graph.dsl` parses them into `EdgeKind.PROTOCOL`/`TRANSITION`/
+`REQUIRES` edges; the summary-fixpoint engine and the actual call-graph
+verification (state-requirement violations, invalid-transition errors,
+cleanup-obligation checks) are later T-0739 children, not built by this
+ticket -- this section documents the declaration grammar and its own
+parse-time enforcement only.
+
+```
+frob:protocol <NAME> states="S1,S2,..." initial="S1" [cleanup="always"|"on-error"|"process-exit-ok"]
+frob:transition proto="<NAME>" from="S" to="T"
+frob:requires proto="<NAME>" state="S"
+```
+
+- `frob:protocol` declares a named state machine at whatever symbol the
+  directive binds to (module, class, or function) -- `states=` is a
+  comma-separated list of at least one state name, `initial=` must name one
+  of those states, and the optional `cleanup=` (default `"on-error"`, the
+  later cleanup-obligation gate's policy dial, T-0739 child 4) must be one
+  of `always`/`on-error`/`process-exit-ok`. Any of those requirements
+  failing is a `MalformedDirective`.
+- `frob:transition`/`frob:requires` have no bare target token, unlike every
+  other verb in this DSL -- their whole grammar is `key="value"` attrs, and
+  the edge's `target` becomes the parsed `proto=` attribute itself
+  (`frob.graph.dsl._ATTR_ONLY_VERBS`). `frob:transition` requires `proto=`,
+  `from=`, and `to=`; `frob:requires` requires `proto=` and `state=`;
+  either missing an attr is a `MalformedDirective` naming which one.
+- **Zero-declaration convenience**: a bare `<prefix>_init`/`<prefix>_deinit`
+  function pair in the same file (also `<prefix>_open`/`<prefix>_close` and
+  `<prefix>_acquire`/`<prefix>_release`, `frob.graph.dsl._INFER_PAIRS`)
+  implicitly synthesizes a 3-state `uninitialized -> active -> closed`
+  protocol with no `frob:protocol` comment at all -- the same PROTOCOL/
+  TRANSITION edges an explicit declaration would produce, each carrying
+  `inferred="true"`. Inference is ONLY for these declared name-pair
+  patterns, deliberately never a general state-machine inference heuristic
+  (T-0744's explicit scope limit) -- an unpaired `*_init` with no matching
+  `*_deinit` in the same file infers nothing.
+- **Enforceability (user mandate)**: a `frob:protocol` bound by zero
+  `frob:transition`/`frob:requires` edges in the same file is itself a
+  `MalformedDirective` (`frob.graph.dsl._protocol_coherence`, mirroring
+  `frob:debt`/`frob:todo` coherence's `_debt_todo_coherence`) -- the
+  catalogued-is-not-enforced doctrine applied to protocols: a declaration
+  nothing else in the file binds to is a drift error, never a silent no-op.
+  This check is per-file (matching every other DSL-layer coherence pass);
+  a protocol declared in one file and bound entirely from another still
+  reads as unbound here -- a graph-wide cross-file tally is a later T-0739
+  child's job, not this parse-layer pass.
+
+No new gate rule id was added for this surface: every `MalformedDirective`
+these checks produce (missing/invalid attrs, an unbound protocol) already
+falls through **DSL001**'s existing generic catch-all (any malformed
+`frob:` directive not already claimed by a per-flavor rule -- see the
+`DEBT001`/`DEPR001` entries above for the established shape this reuses),
+so a malformed or unbound protocol declaration fails `frob check` today
+with no `frob.gates` change required.
+
 ### Waive boundary (T-0101, revised T-0289)
 
 `frob:waive` only ever suppresses entries in a `GateReport`'s `violations`
