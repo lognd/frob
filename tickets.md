@@ -4935,7 +4935,7 @@ User mandate: propagate exception info across the FFI boundary and enforce decla
 id: T-0691
 title: 'decision: next language-adapter tier (Go, Java, C#) -- demand-driven per estate
   + TIOBE/Innovation Graph'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-22'
@@ -4943,15 +4943,103 @@ priority: low
 parent: T-0329
 scope:
 - docs/design/**
+- docs/index.md
+scope_changes:
+- op: add
+  glob: docs/index.md
+  reason: 'DOC001 requires the new docs/design/language-adapter-tier-decision.md to
+
+    be linked from somewhere (frob:describes anchor, frob:doc edge, or a
+
+    markdown link crawled from docs/index.md). Every existing docs/design/*.md
+
+    file is registered the same way, as a bullet in docs/index.md''s Design
+
+    research corpora section. Adding this ticket''s own single new-doc bullet
+
+    there is the minimal mechanical registration needed to keep the ticket''s
+
+    own deliverable gate-clean, not unrelated out-of-scope work.
+
+    '
+  actor: logan
+  at: '2026-07-23'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 acceptance:
 - text: GIVEN the estate language survey WHEN this ticket closes THEN docs/design
     records the chosen next adapter tier with rationale and per-language tickets exist
     for chosen languages only
-  evidence: []
+  evidence:
+  - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 threat: null
 component: null
 ```
 User question 2026-07-22: should we expand supported languages per github.com Innovation Graph global metrics and the TIOBE index? Current coverage: Python, TypeScript/JS, Rust, C, C++ (+ Kotlin grammar wired, adapter pending T-0614). By both indexes the largest uncovered languages are Java, Go, C#, then PHP/Ruby/Swift. RECOMMENDATION recorded here: expand DEMAND-DRIVEN, not index-driven -- the adapter protocol (T-0609) makes each language a bounded ~1-session ticket, so speculative adapters are cheap to add when a real repo in the estate (or a user project) needs one, and unexercised adapters are exactly the catalogued-but-unenforced dead weight this repo's doctrine forbids. This DECISION ticket closes by recording the chosen next tier (or explicitly none-for-now) in docs/design/ after checking the 9-repo estate's actual language mix; implementation tickets get filed per language only when chosen.
+
+## Done report
+
+Answered the decision question by surveying the 8 sibling repos actually
+checked out under /home/logan/projects/ (lithos, feldspar, graphite,
+typani, lograder, aprog-public, aprog-private, logand.app -- malmberg not
+present in this checkout, not independently re-surveyed) by reading each
+repo's frob.toml [graph]/[check] config and inspecting source trees
+directly. Result: Python, Rust, TypeScript/JS, C, and C++ are the only
+languages actually present anywhere in the estate; no Go, Java, or C#
+source tree exists in any of the 8 repos checked. Kotlin (T-0614) is the
+only already-committed near-term addition and has no consuming repo yet
+either.
+
+Recorded the decision in a new docs/design/language-adapter-tier-decision.md:
+NONE of Go/Java/C# get an adapter ticket now -- stay demand-driven per the
+ticket's own recommendation, confirmed rather than overridden by the
+survey, with an explicit reopen criterion (a real estate/user repo gains
+one of these languages, or the user explicitly asks for a speculative
+build). Registered the new doc per the repo's existing per-design-doc
+convention (a bullet in docs/index.md's "Design research corpora"
+section, matching every other docs/design/*.md file's registration) --
+this required a small ticket-scope extension (docs/index.md, recorded via
+`frob ticket scope T-0691 --add docs/index.md --reason-file ...`) because
+DOC001 requires every docs/**/*.md file to be reachable from a root and
+docs/index.md is the established root for this doc family; without it the
+new doc is an orphan and DOC001 fails.
+
+No implementation tickets filed for Go/Java/C#, per the "none for now"
+decision -- this is the correct outcome of a decision ticket that decided
+against expansion, not a dropped scope item.
+
+Verification: ran the full chunked `frob check --only <group> --ticket
+T-0691` loop across all five stage groups (lint, static, gates-fast,
+gates-native, gates-security). lint: 0 errors/0 warnings. static: 0
+errors/187 warnings (pre-existing, unrelated dup/PII findings, unchanged
+from baseline). gates-fast: 0 errors/917 warnings/162 waived (DOC001 and
+SCOPE001 both fired mid-pass and were fixed -- see history below --
+0 errors on the final run). gates-native: 0 errors/931 warnings/44
+waived. gates-security: 0 errors/934 warnings/18 waived. This is a
+docs-only ticket with no pytest surface of its own; recorded the existing
+CLI-dispatch integration test as evidence per playbook section 5:
+tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+(ran directly, 1 passed).
+
+Honest disclosure: two intermediate gate-fast runs failed before the
+final clean pass -- DOC001 (new doc file unreachable from docs/index.md)
+and then SCOPE001 (docs/index.md initially outside the ticket's declared
+scope glob) -- both fixed in-ticket before reporting; the final run
+above is the one that counts.
+
+### Changed
+```
+ docs/design/registry/check-coverage.yaml |  6 ++++-
+ tickets.md                               | 39 +++++++++++++++++++++++++++++++-
+ 2 files changed, 43 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0693 -->
 ```yaml
@@ -8212,7 +8300,7 @@ annotation.
 ```yaml
 id: T-0852
 title: 'gate: TEST016 missing CHK-GATE-TEST016 registry entry (REG010, pre-existing)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-23'
@@ -8220,6 +8308,17 @@ priority: medium
 parent: null
 scope:
 - docs/design/registry/check-coverage.yaml
+- tests/test_check_coverage_registry.py
+scope_changes:
+- op: add
+  glob: tests/test_check_coverage_registry.py
+  reason: evidence test file for the registry entry fix; covers_scope needs a code
+    path for a bug-kind ticket (D-02 route 2)
+  actor: logan
+  at: '2026-07-23'
+evidence:
+- tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_gate_rule_entries_match_live_known_rules
+- tests/test_check_coverage_registry.py::TestExhaustivenessGateOverRealCheckCoverage::test_no_check_coverage_violations
 threat: null
 component: null
 ```
@@ -8235,6 +8334,41 @@ T-0851's own FMT001 addition, which is correctly registered).
 Fix: add a CHK-GATE-TEST016 entry (disposition handled_by:TEST016) to
 check-coverage.yaml and bump gate_rule_total, or run
 `frob registry audit --sync-gate-rules` to file it mechanically.
+
+## Done report
+
+Added the missing CHK-GATE-TEST016 entry (disposition handled_by:TEST016,
+cross_refs: []) to docs/design/registry/check-coverage.yaml, placed after
+CHK-GATE-TEST015 following the file's existing per-gate-rule ordering, and
+bumped gate_rule_total from 116 to 117 to match.
+
+Before: REG010 (WARN) fired for TEST016 having no registry entry, and
+tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_gate_rule_entries_match_live_known_rules
+and
+tests/test_check_coverage_registry.py::TestExhaustivenessGateOverRealCheckCoverage::test_no_check_coverage_violations
+failed on main per the ticket's own Description.
+
+After: `uv run pytest tests/test_check_coverage_registry.py -p no:cacheprovider -q`
+-> 7 passed, 0 failed. Ran the full chunked `frob check --only <group> --ticket T-0852`
+loop across all five stage groups (lint, static, gates-fast, gates-native,
+gates-security): every group reports 0 errors; grepped each group's raw
+output for REG010 and found zero occurrences (was previously firing for
+TEST016). Remaining warnings in each group are pre-existing dup/PII/SEC
+findings unrelated to this ticket's scope (docs/design/registry/check-coverage.yaml
+only).
+
+No out-of-scope discoveries; no drafts filed for this ticket.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_gate_rule_entries_match_live_known_rules` (pytest node id, verified passing when recorded)
+- `tests/test_check_coverage_registry.py::TestExhaustivenessGateOverRealCheckCoverage::test_no_check_coverage_violations` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0853 -->
 ```yaml

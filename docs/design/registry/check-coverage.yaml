@@ -19,7 +19,7 @@
 #     fabricated ticket. As T-0397's children close a concern down to
 #     a real gate rule, re-disposition that entry to handled_by:<rule>.
 schema_version: 1
-gate_rule_total: 116
+gate_rule_total: 117
 gate_rule_entries:
   - id: "CHK-GATE-COV001"
     name: "COV001 is a live, enforced gate rule"
@@ -401,6 +401,10 @@ gate_rule_entries:
   - id: "CHK-GATE-TEST015"
     name: "TEST015 is a live, enforced gate rule"
     disposition: "handled_by:TEST015"
+    cross_refs: []
+  - id: "CHK-GATE-TEST016"
+    name: "TEST016 is a live, enforced gate rule"
+    disposition: "handled_by:TEST016"
     cross_refs: []
   - id: "CHK-GATE-DEPR001"
     name: "DEPR001 is a live, enforced gate rule (malformed frob:deprecated directive: missing/invalid sunset= or ticket=, T-0576)"

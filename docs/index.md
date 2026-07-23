@@ -231,6 +231,9 @@ capability may-analysis (T-0339), and conformance totality (T-0341):
 - `docs/design/structural-linter-adversarial-hardening.md` -- the
   anti-evasion structure (ground-truth grounding, model<->code conformance,
   fail-closed, bounded escape hatches, gated config).
+- `docs/design/language-adapter-tier-decision.md` -- T-0691's decision on
+  the next language-adapter tier (Go/Java/C#): none for now, demand-driven
+  per the 9-repo estate's actual language mix, with a reopen criterion.
 - `docs/design/registry/` -- the UNIFIED design-knowledge registry: the
   single machine-readable source of truth (per-domain YAML, canonical
   namespaced ids, cross-refs, per-entry disposition) that all the corpus
