@@ -2965,3 +2965,220 @@ class TestForkPoolHazards:
         result = analyze_project(src_dir)
         hits = [s for s in result.suggestions if s.category == "self-join-deadlock"]
         assert hits == []
+
+
+# ---------------------------------------------------------------------------
+# T-0745: protocol summary engine -- per-function fixpoint over the call graph
+# ---------------------------------------------------------------------------
+
+from frob.graph._models import Edge, EdgeKind  # noqa: E402
+from frob.graph.callgraph import CallGraph  # noqa: E402
+from frob.graph.summary import (  # noqa: E402
+    UNRESOLVED_CALLEE,
+    compute_protocol_summaries,
+)
+
+
+def _transition(src: str, proto: str, frm: str, to: str) -> Edge:
+    """Test helper: a `TRANSITION` edge shaped like `dsl.parse_directives`'s
+    output, without needing real source files to drive the DSL parser."""
+    return Edge(
+        src=src,
+        kind=EdgeKind.TRANSITION,
+        target=proto,
+        origin=f"{src}:1",
+        attrs={"proto": proto, "from": frm, "to": to},
+    )
+
+
+def _requires(src: str, proto: str, state: str) -> Edge:
+    """Test helper: a `REQUIRES` edge shaped like `dsl.parse_directives`'s
+    output."""
+    return Edge(
+        src=src,
+        kind=EdgeKind.REQUIRES,
+        target=proto,
+        origin=f"{src}:1",
+        attrs={"proto": proto, "state": state},
+    )
+
+
+class TestProtocolSummaryEngine:
+    """`frob.graph.summary.compute_protocol_summaries` -- bottom-up fixpoint
+    over a fixture `CallGraph`, no repo-wide scan (docs/modules/graph.md
+    #protocol-summary-engine)."""
+
+    def test_leaf_function_summary_is_its_own_declarations(self):
+        """A leaf with no callees summarizes to exactly its own
+        `frob:transition`/`frob:requires` declarations."""
+        graph = CallGraph(calls={})
+        edges = [_transition("f.py::open_conn", "conn", "closed", "open")]
+        result = compute_protocol_summaries(
+            graph, edges, entrypoints=["f.py::open_conn"]
+        )
+        summary = result.summaries["f.py::open_conn"]
+        assert summary.transitions == {"conn:closed->open"}
+        assert summary.requires == frozenset()
+        assert not summary.poisoned
+        assert result.not_analyzed == ()
+        assert result.timeouts == ()
+
+    def test_caller_summary_includes_callee_transitions(self):
+        """`caller` calls `helper`; `caller`'s summary must include
+        `helper`'s transition even though `caller` declares nothing of its
+        own -- the join propagates upward through one hop."""
+        graph = CallGraph(calls={"f.py::caller": ("f.py::helper",)})
+        edges = [_transition("f.py::helper", "conn", "closed", "open")]
+        result = compute_protocol_summaries(graph, edges, entrypoints=["f.py::caller"])
+        assert result.summaries["f.py::caller"].transitions == {"conn:closed->open"}
+        assert result.summaries["f.py::helper"].transitions == {"conn:closed->open"}
+        assert not result.summaries["f.py::caller"].poisoned
+
+    def test_requires_and_transitions_join_across_two_hops(self):
+        """`top -> mid -> leaf`: `top`'s summary is the union of all three
+        levels' own declarations, hand-computed and compared exactly."""
+        graph = CallGraph(
+            calls={
+                "f.py::top": ("f.py::mid",),
+                "f.py::mid": ("f.py::leaf",),
+            }
+        )
+        edges = [
+            _requires("f.py::top", "lock", "held"),
+            _transition("f.py::mid", "lock", "unheld", "held"),
+            _transition("f.py::leaf", "conn", "closed", "open"),
+        ]
+        result = compute_protocol_summaries(graph, edges, entrypoints=["f.py::top"])
+        top = result.summaries["f.py::top"]
+        assert top.requires == {"lock:held"}
+        assert top.transitions == {"lock:unheld->held", "conn:closed->open"}
+        assert not top.poisoned
+
+    def test_recursive_cluster_converges_to_hand_computed_fixpoint(self):
+        """A mutually-recursive pair (`a` calls `b`, `b` calls `a`), each
+        declaring a distinct transition -- the fixpoint must converge so
+        BOTH functions' summaries include BOTH transitions (recursion via
+        lattice join, T-0745's design sketch)."""
+        graph = CallGraph(
+            calls={
+                "f.py::a": ("f.py::b",),
+                "f.py::b": ("f.py::a",),
+            }
+        )
+        edges = [
+            _transition("f.py::a", "conn", "closed", "open"),
+            _transition("f.py::b", "conn", "open", "closed"),
+        ]
+        result = compute_protocol_summaries(graph, edges, entrypoints=["f.py::a"])
+        expected = {"conn:closed->open", "conn:open->closed"}
+        assert result.summaries["f.py::a"].transitions == expected
+        assert result.summaries["f.py::b"].transitions == expected
+        assert not result.summaries["f.py::a"].poisoned
+        assert not result.summaries["f.py::b"].poisoned
+        assert result.timeouts == ()
+
+    def test_self_recursive_function_converges(self):
+        """A single function that calls itself is its own one-member SCC
+        with a self-loop -- must go through the recursive-cluster branch,
+        not the single-node fast path, and still converge to just its own
+        declaration (nothing new to join from calling itself)."""
+        graph = CallGraph(calls={"f.py::recur": ("f.py::recur",)})
+        edges = [_transition("f.py::recur", "conn", "closed", "open")]
+        result = compute_protocol_summaries(graph, edges, entrypoints=["f.py::recur"])
+        summary = result.summaries["f.py::recur"]
+        assert summary.transitions == {"conn:closed->open"}
+        assert not summary.poisoned
+
+    def test_unresolved_callee_poisons_the_summary(self):
+        """A call to `UNRESOLVED_CALLEE` poisons the caller's summary --
+        NO-FAIL-SILENT: the caller's own declarations are still populated,
+        but `poisoned` is `True` with a reason naming the caller."""
+        graph = CallGraph(calls={"f.py::caller": (UNRESOLVED_CALLEE,)})
+        edges = [_transition("f.py::caller", "conn", "closed", "open")]
+        result = compute_protocol_summaries(graph, edges, entrypoints=["f.py::caller"])
+        summary = result.summaries["f.py::caller"]
+        assert summary.poisoned
+        assert summary.poison_reason is not None
+        assert "unresolved" in summary.poison_reason
+        assert summary.transitions == {"conn:closed->open"}
+
+    def test_poisoning_propagates_transitively_through_a_clean_caller(self):
+        """`top -> mid -> poisoned_leaf`: `mid` calls an unresolved callee,
+        so `mid` is poisoned; `top` calls only `mid` (itself clean) but
+        must ALSO end up poisoned -- poisoning propagates upward through
+        every transitive caller, it never resets at a clean intermediate
+        hop."""
+        graph = CallGraph(
+            calls={
+                "f.py::top": ("f.py::mid",),
+                "f.py::mid": (UNRESOLVED_CALLEE,),
+            }
+        )
+        edges = [_transition("f.py::top", "conn", "closed", "open")]
+        result = compute_protocol_summaries(graph, edges, entrypoints=["f.py::top"])
+        assert result.summaries["f.py::mid"].poisoned
+        assert result.summaries["f.py::top"].poisoned
+        assert result.summaries["f.py::top"].poison_reason is not None
+
+    def test_unreachable_function_is_reported_not_analyzed_never_silent(self):
+        """A function with its own declarations that no entrypoint ever
+        calls must show up in `not_analyzed`, and must NOT get a
+        (falsely-clean) summary -- the NO-FAIL-SILENT mandate applied to
+        reachability."""
+        graph = CallGraph(calls={"f.py::entry": ()})
+        edges = [_transition("f.py::orphan", "conn", "closed", "open")]
+        result = compute_protocol_summaries(graph, edges, entrypoints=["f.py::entry"])
+        assert "f.py::orphan" in result.not_analyzed
+        assert "f.py::orphan" not in result.summaries
+        assert "f.py::entry" in result.summaries
+
+    def test_non_converging_scc_is_reported_as_a_timeout_error_and_poisoned(self):
+        """A three-member mutually-recursive cluster needs more than one
+        join round to fully propagate; capping `max_iterations=1` must
+        surface an `SCCTimeout` naming the cluster, and every member of
+        the cluster must be poisoned -- an abort is a loud ERROR, never a
+        silently-partial summary (T-0745 acceptance)."""
+        graph = CallGraph(
+            calls={
+                "f.py::a": ("f.py::b",),
+                "f.py::b": ("f.py::c",),
+                "f.py::c": ("f.py::a",),
+            }
+        )
+        edges = [_transition("f.py::a", "conn", "closed", "open")]
+        result = compute_protocol_summaries(
+            graph, edges, entrypoints=["f.py::a"], max_iterations=1
+        )
+        assert len(result.timeouts) == 1
+        assert set(result.timeouts[0].members) == {"f.py::a", "f.py::b", "f.py::c"}
+        assert result.timeouts[0].iterations == 1
+        for member in ("f.py::a", "f.py::b", "f.py::c"):
+            summary = result.summaries[member]
+            assert summary.poisoned
+            assert summary.poison_reason is not None
+            assert "did not converge" in summary.poison_reason
+
+    def test_diamond_shaped_calls_join_without_duplication_or_loss(self):
+        """`top` calls both `left` and `right`, which both call `shared` --
+        a diamond. `top`'s summary must include every distinct transition
+        exactly once (set union is naturally idempotent) with nothing
+        dropped from either branch."""
+        graph = CallGraph(
+            calls={
+                "f.py::top": ("f.py::left", "f.py::right"),
+                "f.py::left": ("f.py::shared",),
+                "f.py::right": ("f.py::shared",),
+            }
+        )
+        edges = [
+            _transition("f.py::left", "a", "s0", "s1"),
+            _transition("f.py::right", "b", "s0", "s1"),
+            _transition("f.py::shared", "c", "s0", "s1"),
+        ]
+        result = compute_protocol_summaries(graph, edges, entrypoints=["f.py::top"])
+        assert result.summaries["f.py::top"].transitions == {
+            "a:s0->s1",
+            "b:s0->s1",
+            "c:s0->s1",
+        }
+        assert not result.summaries["f.py::top"].poisoned

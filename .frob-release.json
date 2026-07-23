@@ -530,6 +530,11 @@
     "src/frob/graph/lock.py::drift": "25dee81cd83be7667e48f12e1f5081382dfdbdfe4f5355ae92898397ab5a543f",
     "src/frob/graph/lock.py::load_lock": "e2753e8b041a5d0449de4ad04ea741e7488aaf65e88f6a5494f64316ebebc4ac",
     "src/frob/graph/lock.py::write_lock": "1715452e0664e253f2fa96528dd5ed111fa7cfc4e6cb4a93e0fd90ef84e49882",
+    "src/frob/graph/summary.py::FunctionSummary": "5dfbdbaa84e3758f90ec952d6206fd797ed4e8bd4c36a52f9efb43620679dd9b",
+    "src/frob/graph/summary.py::SCCTimeout": "68d1e03229a940eb9884f81c58f1f3d157a995f1d12b045710d380234bc6089f",
+    "src/frob/graph/summary.py::SummaryResult": "42532b2360e9e1298570a30916ca8d96b09d9893b6c56e8ccfdde37f59b4e10c",
+    "src/frob/graph/summary.py::UNRESOLVED_CALLEE": "eae63292eb86e25132582cdb509da55663c9e16372650ba4f14b132c2757573b",
+    "src/frob/graph/summary.py::compute_protocol_summaries": "7fc0990476fbed473150809319d75281a3d2be610a842012ff3c1101549faa8d",
     "src/frob/lang/__init__.py::GRAMMAR_FINGERPRINT_PACKAGES": "0fb7c91d3df53b4aec4312a2c97e716487a17e6b8f10f6b2a3dcadb121d14623",
     "src/frob/lang/__init__.py::LangError": "072a7cff3ec199ba5ba83d23c6473cc17b5862ff6b4aa480769541a7ce60761c",
     "src/frob/lang/__init__.py::child_by_field": "d905edd12101c35ff1d3b39e5bd8718946b8ff337fe9f43563495dcb0488651f",
@@ -1344,5 +1349,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.106.0"
+  "version": "0.107.0"
 }

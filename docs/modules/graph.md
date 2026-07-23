@@ -147,6 +147,60 @@ Resolution is best-effort (flat token stream, no scope/overload
 disambiguation) -- a triage aid, matching the rest of `frob.dup`'s posture,
 not a soundness guarantee.
 
+## Protocol summary engine
+
+<!-- frob:describes src/frob/graph/summary.py::compute_protocol_summaries -->
+<!-- frob:describes src/frob/graph/summary.py::FunctionSummary -->
+<!-- frob:describes src/frob/graph/summary.py::SCCTimeout -->
+<!-- frob:describes src/frob/graph/summary.py::SummaryResult -->
+<!-- frob:describes src/frob/graph/summary.py::UNRESOLVED_CALLEE -->
+
+`frob.graph.summary` (T-0745, child 2 of the T-0739 typestate umbrella) is
+a shared, bottom-up FIXPOINT engine over a `CallGraph` (above): it
+summarizes every reachable function's transitive contribution to the
+T-0744 protocol DSL (`frob:protocol`/`frob:transition`/`frob:requires`,
+`EdgeKind.PROTOCOL`/`TRANSITION`/`REQUIRES`) -- which protocol states it
+REQUIRES and which state TRANSITIONS it may perform, folding in everything
+it calls, transitively, including through recursion.
+
+- `compute_protocol_summaries(callgraph, edges, entrypoints, *,
+  max_iterations=100)` -- decomposes `callgraph` into strongly-connected
+  components (a private, iterative Tarjan implementation -- deliberately
+  not `frob.cycle.graph.find_cycles`, which drops non-cyclic singleton
+  components this engine still needs a node for) and processes them
+  bottom-up: a callee's summary is always finalized before its caller's.
+  A single-node, non-self-recursive component is one join pass; a
+  recursive cluster (mutual recursion, or a function calling itself)
+  iterates the join to a fixpoint, bounded by `max_iterations`.
+- `FunctionSummary` -- one function's `requires`/`transitions` string sets
+  (`"proto:state"` / `"proto:from->to"`), plus `poisoned`/`poison_reason`.
+- `UNRESOLVED_CALLEE` -- the sentinel callee symref a caller wires into
+  `CallGraph.calls` to mean "this call site could not be bound" (a real
+  resolver integration -- e.g. the T-0339 family -- is left to a future
+  ticket; this engine only defines what an unresolved callee DOES to a
+  summary, not how one gets identified from real source).
+- `SummaryResult` -- `summaries` (reachable functions only), plus two
+  loud-failure channels the NO-FAIL-SILENT mandate requires: `not_analyzed`
+  (functions no `entrypoints` member ever transitively calls -- these get
+  no summary at all rather than a falsely-clean empty one) and `timeouts`
+  (`SCCTimeout` -- a recursive cluster that failed to converge within
+  `max_iterations`, every one of its members poisoned as a result).
+
+Poisoning is monotone and propagates: any callee that is `UNRESOLVED_CALLEE`
+or itself poisoned makes every transitive caller poisoned too, with a
+`poison_reason` naming where it started. `frob.graph.summary` performs no
+filesystem walk or repo scan of its own -- callers (or tests) build the
+`CallGraph`/`Edge` inputs explicitly, keeping the engine itself pure and
+deterministic.
+
+Deferred out of this ticket's scope (see T-0745's Done report): real
+callee-resolution wiring that decides when a call is `UNRESOLVED_CALLEE`
+(the T-0339-family resolvers), the "acquired/released/escaped resources"
+half of the design sketch (no DSL exists yet for resource acquire/
+release -- only protocol transitions/requires), and the T-0686 may-raise
+engine this substrate is meant to eventually share with (may-raise does
+not exist yet to consume it).
+
 ## Comment DSL
 
 <!-- frob:describes src/frob/graph/dsl.py::parse_directives -->

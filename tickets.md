@@ -4320,7 +4320,7 @@ Lost draft from T-0612 (Rust adapter): enum variants with associated data curren
 id: T-0745
 title: 'protocol summary engine: per-function fixpoint over the call graph, shared
   with may-raise'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-22'
@@ -4332,19 +4332,162 @@ scope:
 - src/frob/arch/**
 - src/frob/graph/**
 - tests/unit/test_arch.py
-scope_changes: []
-evidence: []
+- docs/modules/graph.md
+scope_changes:
+- op: add
+  glob: docs/modules/graph.md
+  reason: 'T-0745''s declared scope omitted a docs file, but every new public symbol
+
+    (compute_protocol_summaries, FunctionSummary, SCCTimeout, SummaryResult,
+
+    UNRESOLVED_CALLEE) needs a frob:doc edge resolving to a real anchor
+
+    (COV001). Adding docs/modules/graph.md#protocol-summary-engine via the
+
+    sanctioned frob ticket scope mechanism rather than hand-editing scope.
+
+    '
+  actor: logan
+  at: '2026-07-23'
+evidence:
+- tests/unit/test_arch.py::TestProtocolSummaryEngine::test_leaf_function_summary_is_its_own_declarations
+- tests/unit/test_arch.py::TestProtocolSummaryEngine::test_caller_summary_includes_callee_transitions
+- tests/unit/test_arch.py::TestProtocolSummaryEngine::test_requires_and_transitions_join_across_two_hops
+- tests/unit/test_arch.py::TestProtocolSummaryEngine::test_recursive_cluster_converges_to_hand_computed_fixpoint
+- tests/unit/test_arch.py::TestProtocolSummaryEngine::test_self_recursive_function_converges
+- tests/unit/test_arch.py::TestProtocolSummaryEngine::test_unresolved_callee_poisons_the_summary
+- tests/unit/test_arch.py::TestProtocolSummaryEngine::test_poisoning_propagates_transitively_through_a_clean_caller
+- tests/unit/test_arch.py::TestProtocolSummaryEngine::test_unreachable_function_is_reported_not_analyzed_never_silent
+- tests/unit/test_arch.py::TestProtocolSummaryEngine::test_non_converging_scc_is_reported_as_a_timeout_error_and_poisoned
+- tests/unit/test_arch.py::TestProtocolSummaryEngine::test_diamond_shaped_calls_join_without_duplication_or_loss
 attachments: []
 acceptance:
 - text: GIVEN a recursive call cluster with transitions WHEN the fixpoint runs THEN
     summaries converge and match hand-computed values; GIVEN an unresolvable callee
     THEN the summary is poisoned and surfaces as an ERROR downstream, never silence
-  evidence: []
+  evidence:
+  - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_leaf_function_summary_is_its_own_declarations
+  - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_caller_summary_includes_callee_transitions
+  - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_requires_and_transitions_join_across_two_hops
+  - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_recursive_cluster_converges_to_hand_computed_fixpoint
+  - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_self_recursive_function_converges
+  - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_unresolved_callee_poisons_the_summary
+  - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_poisoning_propagates_transitively_through_a_clean_caller
+  - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_unreachable_function_is_reported_not_analyzed_never_silent
+  - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_non_converging_scc_is_reported_as_a_timeout_error_and_poisoned
+  - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_diamond_shaped_calls_join_without_duplication_or_loss
 threat: null
 component: null
 labels: []
 ```
 Child 2 of T-0739. The shared per-function summary fixpoint engine over the call graph: each function summarizes to (required protocol states, may-perform transitions, acquired/released/escaped resources) computed bottom-up to fixpoint, recursion via lattice join, using the T-0339-family resolvers for callee binding. DESIGN CONSTRAINT: ONE engine shared with T-0686 may-raise (whichever builds first hosts the engine; the other consumes -- coordinate explicitly, no second fixpoint). NO-FAIL-SILENT (user mandate): an unresolvable callee contributes Unknown which POISONS the summary (poisoned summaries are ERRORS at verification unless waived with reason); a function outside the call graph (unreachable from any entrypoint) is reported as not-analyzed, never silently passed; engine timeouts/aborts are ERRORS naming the SCC that failed to converge.
+
+## Done report
+
+## Done report
+
+Built the shared per-function protocol-summary fixpoint engine
+(`frob.graph.summary.compute_protocol_summaries`): a bottom-up fixpoint
+over an explicit `CallGraph` + T-0744 `Edge` sequence (PROTOCOL/
+TRANSITION/REQUIRES), decomposing the graph into SCCs via a private,
+iterative (non-recursive) Tarjan implementation -- deliberately not
+`frob.cycle.graph.find_cycles`, which drops non-cyclic singleton
+components this engine still needs a node for -- processed strictly
+bottom-up (a callee's summary always finalizes before its caller's).
+Recursive clusters (mutual recursion or a self-recursive function)
+iterate the union/or-poison join to a fixpoint, bounded by
+`max_iterations` (default 100).
+
+NO-FAIL-SILENT channels implemented per acceptance: `UNRESOLVED_CALLEE`
+(a sentinel callee symref a caller wires into `CallGraph.calls`) POISONS
+the calling function's summary and propagates through every transitive
+caller, never resetting at a clean intermediate hop
+(`test_poisoning_propagates_transitively_through_a_clean_caller`). A
+function never reached from any passed-in `entrypoints` gets NO summary
+at all -- reported in `SummaryResult.not_analyzed`, not a falsely-clean
+empty one (`test_unreachable_function_is_reported_not_analyzed_never_
+silent`). A recursive SCC that fails to converge within `max_iterations`
+is reported as an `SCCTimeout` naming the cluster, with every member
+poisoned (`test_non_converging_scc_is_reported_as_a_timeout_error_and_
+poisoned`).
+
+Deferred, disclosed, filed as T-draft-c849752c (scope:
+src/frob/graph/**, src/frob/graph/dsl.py, docs/modules/graph.md):
+1. Real callee-resolution wiring (the "T-0339-family resolvers for
+   callee binding" the ticket's design sketch names) -- nothing yet
+   decides, from real source, when a call becomes `UNRESOLVED_CALLEE`;
+   `build_call_graph` today silently omits unresolved calls rather than
+   marking them. This ticket's engine defines what an unresolved callee
+   DOES to a summary; wiring real detection is separate.
+2. The "acquired/released/escaped resources" third of the design
+   sketch's summary shape -- no DSL exists yet for resource acquire/
+   release (only T-0744's protocol/transition/requires).
+3. The T-0686 may-raise DESIGN CONSTRAINT ("ONE engine, whichever builds
+   first hosts it") could not be coordinated on this pass -- T-0686 does
+   not exist yet in this repo. Whoever builds it should consume
+   `frob.graph.summary`'s SCC/fixpoint machinery rather than re-deriving
+   a second one; noted in the module docstring and docs/modules/graph.md.
+
+Scope deviation: T-0745's declared scope omitted a docs file, but every
+new public symbol needs a `frob:doc` edge resolving to a real anchor
+(COV001). Used the sanctioned `frob ticket scope --add --reason-file`
+mechanism (not a hand-edit) to add `docs/modules/graph.md` to scope
+before writing the new "Protocol summary engine" section there.
+
+Changed:
+  src/frob/graph/summary.py (new) -- UNRESOLVED_CALLEE, FunctionSummary,
+    SCCTimeout, SummaryResult, compute_protocol_summaries
+  tests/unit/test_arch.py -- TestProtocolSummaryEngine (10 tests)
+  docs/modules/graph.md -- new "Protocol summary engine" section
+  tickets.md -- T-0745 scope change, evidence, this Done report
+
+Evidence (bound via --accepts 0, all pass):
+  tests/unit/test_arch.py::TestProtocolSummaryEngine::test_leaf_function_summary_is_its_own_declarations
+  tests/unit/test_arch.py::TestProtocolSummaryEngine::test_caller_summary_includes_callee_transitions
+  tests/unit/test_arch.py::TestProtocolSummaryEngine::test_requires_and_transitions_join_across_two_hops
+  tests/unit/test_arch.py::TestProtocolSummaryEngine::test_recursive_cluster_converges_to_hand_computed_fixpoint
+  tests/unit/test_arch.py::TestProtocolSummaryEngine::test_self_recursive_function_converges
+  tests/unit/test_arch.py::TestProtocolSummaryEngine::test_unresolved_callee_poisons_the_summary
+  tests/unit/test_arch.py::TestProtocolSummaryEngine::test_poisoning_propagates_transitively_through_a_clean_caller
+  tests/unit/test_arch.py::TestProtocolSummaryEngine::test_unreachable_function_is_reported_not_analyzed_never_silent
+  tests/unit/test_arch.py::TestProtocolSummaryEngine::test_non_converging_scc_is_reported_as_a_timeout_error_and_poisoned
+  tests/unit/test_arch.py::TestProtocolSummaryEngine::test_diamond_shaped_calls_join_without_duplication_or_loss
+
+`uv run pytest tests/unit/test_arch.py tests/unit/graph/ -q`: 164 passed
+(10 new + full pre-existing arch/graph suites, all green).
+`uv run frob test --base main`: python selection touched=28 ripple=0,
+exit=0, 4.01s.
+
+Filed: T-draft-c849752c (deferred callee-resolution wiring + resource-
+tracking DSL, out-of-scope machinery per the ticket's own instruction to
+disclose rather than build).
+
+Gates: `frob check --ticket T-0745 --only lint/static/gates-fast/
+gates-native/gates-security` all PASS except `gate:REL` (REL001, land-
+owned per docs/guides/agent-playbook.md section 4b -- FROB_AGENT was not
+set in this interactive shell so the bump-suppression half didn't
+trigger; land recomputes the version bump itself, not a worktree
+concern). `frob ticket sweep T-0745` re-run after the scope change to
+clear the stale-sweep PRE001 the scope add produced. No waivers added by
+this ticket's own code.
+
+Worktree: /home/logan/projects/frob/.claude/worktrees/agent-ae284e6e98e77b58f
+Not closed, not landed (per dispatch instructions) -- ready for review/land.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/test_arch.py::TestProtocolSummaryEngine::test_leaf_function_summary_is_its_own_declarations` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestProtocolSummaryEngine::test_caller_summary_includes_callee_transitions` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestProtocolSummaryEngine::test_requires_and_transitions_join_across_two_hops` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestProtocolSummaryEngine::test_recursive_cluster_converges_to_hand_computed_fixpoint` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestProtocolSummaryEngine::test_self_recursive_function_converges` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestProtocolSummaryEngine::test_unresolved_callee_poisons_the_summary` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestProtocolSummaryEngine::test_poisoning_propagates_transitively_through_a_clean_caller` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestProtocolSummaryEngine::test_unreachable_function_is_reported_not_analyzed_never_silent` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestProtocolSummaryEngine::test_non_converging_scc_is_reported_as_a_timeout_error_and_poisoned` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestProtocolSummaryEngine::test_diamond_shaped_calls_join_without_duplication_or_loss` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0746 -->
 ```yaml
@@ -7165,3 +7308,52 @@ component: null
 labels: []
 ```
 T-0779 reviewer finding: WAIVE006 deliberately skips unresolvable binding refs, but a dangling ref (e.g. a draft id renumbered at land -- the T-draft-8cd37914 -> T-0803 case that left four design/frob.strata waivers pointing at a dead id) is a permanent silent waiver, the same accountability shape WAIVE006 closes. Add WAIVE007 warning-tier for dangling BINDING refs (drafts in live worktrees are a legitimate transient -- consider exempting T-draft-* ids younger than N days or referenced by a live lease, document the choice).
+
+<!-- ticket:T-0809 -->
+```yaml
+id: T-0809
+title: wire real callee-resolution + resource-tracking DSL into the T-0745 protocol
+  summary engine
+state: queued
+kind: feature
+origin: human
+created: '2026-07-23'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/graph/**
+- src/frob/graph/dsl.py
+- docs/modules/graph.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0745 built the shared per-function protocol-summary fixpoint engine
+(frob.graph.summary.compute_protocol_summaries) over an explicit
+CallGraph + Edge input, with UNRESOLVED_CALLEE as an engine-level sentinel
+a caller wires in to mean "this call could not be bound". Two pieces of
+the original design sketch were explicitly deferred, not built:
+
+1. Real callee-resolution wiring: nothing yet decides, from real source,
+   when a call site should become UNRESOLVED_CALLEE in the CallGraph fed
+   to the engine (the ticket referenced "T-0339-family resolvers for
+   callee binding" for this). frob.graph.callgraph.build_call_graph today
+   silently omits any call it cannot resolve rather than recording it as
+   unresolved -- that gap needs closing before the engine's poisoning
+   channel means anything on a real repo scan, not just fixture graphs.
+
+2. The "acquired/released/escaped resources" third of the summary
+   (states/transitions are covered; resources are not) -- there is no
+   frob:acquire/frob:release-style DSL surface for this yet, only the
+   T-0744 protocol/transition/requires directives.
+
+Also noted: the T-0745 ticket's own DESIGN CONSTRAINT ("ONE engine shared
+with T-0686 may-raise, whichever builds first hosts it") could not be
+coordinated on this pass -- T-0686 does not exist yet. Whoever builds
+T-0686 should consume frob.graph.summary's SCC/fixpoint machinery rather
+than re-deriving a second one.
