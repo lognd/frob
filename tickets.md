@@ -4411,7 +4411,7 @@ is reported as an `SCCTimeout` naming the cluster, with every member
 poisoned (`test_non_converging_scc_is_reported_as_a_timeout_error_and_
 poisoned`).
 
-Deferred, disclosed, filed as T-draft-c849752c (scope:
+Deferred, disclosed, filed as T-0809 (scope:
 src/frob/graph/**, src/frob/graph/dsl.py, docs/modules/graph.md):
 1. Real callee-resolution wiring (the "T-0339-family resolvers for
    callee binding" the ticket's design sketch names) -- nothing yet
@@ -4458,7 +4458,7 @@ Evidence (bound via --accepts 0, all pass):
 `uv run frob test --base main`: python selection touched=28 ripple=0,
 exit=0, 4.01s.
 
-Filed: T-draft-c849752c (deferred callee-resolution wiring + resource-
+Filed: T-0809 (deferred callee-resolution wiring + resource-
 tracking DSL, out-of-scope machinery per the ticket's own instruction to
 disclose rather than build).
 
@@ -4931,7 +4931,7 @@ closed each with a regression-tested guard:
 Deviations / disclosed cuts:
 - `frob ticket archive`'s CLI entrypoint (src/frob/app/ticket_runner.py)
   does not yet expose `--force` -- that file is outside this ticket's
-  declared scope. Filed T-draft-2509a476 (finalizes to a sequential id at
+  declared scope. Filed T-0810 (finalizes to a sequential id at
   land) for the CLI wiring.
 - The acceptance criterion's "markerless block" half is exercised via a
   direct unit-level pin on `check_ledger_id_integrity`
