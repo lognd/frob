@@ -1227,6 +1227,46 @@ class TestWipCommit:
         assert landed_content == "# uncommitted change to snapshot\n"
 
 
+class TestWipCommitNormalizationOnlyDirty:
+    """T-0847: a worktree that is `_porcelain_dirty` purely because of a
+    line-ending normalization status line (WSL/autocrlf phantom-modified)
+    must not fail land with `GitFailed` -- `add -A` renormalizes back to the
+    identical committed blob, so `git commit` has nothing real to commit and
+    used to exit 1 with no stderr, wrongly surfaced as a land failure."""
+
+    def test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_do_wip_commit kind="unit"
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-wip-crlf", str(wt)], repo)
+        created = new_ticket(wt, _spec("Wip crlf", scope=("src/wip_crlf.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+
+        # Force text normalization on this worktree and commit an LF file
+        # under it -- the committed blob is normalized LF content.
+        _run(["git", "config", "core.autocrlf", "true"], wt)
+        (wt / "src" / "wip_crlf.py").write_text("line one\nline two\n")
+        _commit_all(wt, "wip crlf ticket bits")
+
+        # Simulate the WSL phantom-dirty symptom: the working-tree file now
+        # carries CRLF endings, so `git status --porcelain` reports it
+        # modified, but `add -A` will renormalize it right back to the
+        # identical committed blob (nothing real to snapshot).
+        (wt / "src" / "wip_crlf.py").write_bytes(b"line one\r\nline two\r\n")
+        assert _run(["git", "status", "--porcelain"], wt).stdout.strip() != ""
+
+        result = land(repo, tid, wt, dry_run=False)
+        assert result.is_ok, result.err
+        report = result.danger_ok
+        assert report.wip_committed is False
+
+        wt_log = _run(["git", "log", "--oneline"], wt).stdout
+        assert "wip: pre-land snapshot" not in wt_log
+
+
 class TestKindEvidenceMismatch:
     """`_validate_closeable`'s T-0215 kind-consistency guard: a non-docs-kind
     ticket carrying a `cmd:`-shaped evidence entry must never land, mirroring

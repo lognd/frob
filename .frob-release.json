@@ -388,6 +388,7 @@
     "src/frob/gates/__init__.py::INV003_SPEC_DIRS": "54109236b9c5717785cb603ffd1ec33ff62533e568a26590704e72a10b624e7e",
     "src/frob/gates/__init__.py::INV006_SRC_DIRS": "e68dbcf72ad7bcc7499c9305c1f92fa43b71c020a5af4827eaa0e364fc8dec73",
     "src/frob/gates/__init__.py::INV006_SRC_SUFFIXES": "2058015f176b8b4044379ba949fa87b5564ff31e98e9262b8bfbbbb42d3706fa",
+    "src/frob/gates/__init__.py::SCOPED_RUN_FLAKY_RULE_IDS": "eccec9442287c94baf320554cbed12c317246e8b8907dea1ab52876f8f606c97",
     "src/frob/gates/__init__.py::active_ticket": "a3ec91100e15e9216e6c754b0ba623ee6e8c45468ee86805045ad43623853c7b",
     "src/frob/gates/__init__.py::compliance_gate": "60a1959b205e6503350e1f0dedc94eafc6950be1a1cda0a56a7776ac85bda27b",
     "src/frob/gates/__init__.py::coverage_gate": "d32935ae6ae2df478143c8613e1a0892a185bdfff4fd57c469ddfebd5bef8fc0",
@@ -1273,9 +1274,11 @@
     "src/frob/tickets/_models.py::CLI_WIRING_FILES": "bd8f84831df7858b311d67d7d27d8073c902a0ff46a5161e99c557715f7adfa2",
     "src/frob/tickets/_models.py::CMD_EVIDENCE_ALLOWED_KINDS": "17ae1ff3a3a533e17ee02554605f9265dacac83389214897311c270889ee6fc9",
     "src/frob/tickets/_models.py::DONE_REPORT_HEADING": "9883b39dff3f2fa407a065003b545bb03cabccc5c14f6a68a85b1c66623d6f67",
+    "src/frob/tickets/_models.py::DROP_REASON_HEADING": "d3011ab4c60303735b4904132054778ebf96b2c5fd5cce2bea3f5facf93a49a4",
     "src/frob/tickets/_models.py::DoneReportClaims": "3c634584a9abaa7b5a7f24407cb2887779451840e5ee75c4242a9af0d48822ff",
     "src/frob/tickets/_models.py::EpicRollup": "930a0dccd1512cff5facd9e04cae30c997e4dbdc623449377b357db8f79d9090",
     "src/frob/tickets/_models.py::EpicRollup.percent_complete": "547bea26978e4e0fdb6320e0f29b8197b55b06d11adaa39a6fd9cfc4fd4b0df5",
+    "src/frob/tickets/_models.py::FAILURE_LOG_HEADING": "a7a03824e7274f1ed9a29a853b19ace85672e90dff3e42a2324f04d65afbe909",
     "src/frob/tickets/_models.py::FailureEntry": "64bf31f9c426ea915ff3ad8a81da174d2fb331b4ef7f015b9d99b877eb117b53",
     "src/frob/tickets/_models.py::LEDGER_PATH": "c64eb96ce5a7f3cf520cd9bd9c96bc273bce2405f195fa187026152103a13665",
     "src/frob/tickets/_models.py::LandError": "046e146b71801d4058343d14139e840579046287ecb3cfc38bf9f804cb4d2603",
@@ -1424,5 +1427,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.132.0"
+  "version": "0.133.0"
 }

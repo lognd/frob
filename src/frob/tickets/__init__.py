@@ -31,6 +31,8 @@ from frob.tickets._models import (
     BOARD_STATES,
     CMD_EVIDENCE_ALLOWED_KINDS,
     DONE_REPORT_HEADING,
+    DROP_REASON_HEADING,
+    FAILURE_LOG_HEADING,
     LEDGER_PATH,
     OVER_BROAD_LITERAL_GLOBS,
     PRIORITY_RANK,
@@ -117,11 +119,17 @@ _OPEN_STATES = frozenset(
     s for s in TicketState if s not in (TicketState.DONE, TicketState.DROPPED)
 )
 
-_FAILURE_LOG_HEADING = "## Failure log"
 # frob:ticket T-0579
 # `frob ticket drop` writes its dated reason line under this heading instead
 # of the hand-edited freeform prose the pre-T-0579 workflow used.
-_DROP_REASON_HEADING = "## Drop reason"
+#
+# T-0848: these are `frob.tickets._models`'s own `FAILURE_LOG_HEADING` /
+# `DROP_REASON_HEADING` re-exported under this module's private naming
+# convention, not a second hand-typed copy -- `_models._done_report_
+# section_end`'s structural-sentinel set must never drift out of sync with
+# the headings this module actually writes.
+_FAILURE_LOG_HEADING = FAILURE_LOG_HEADING
+_DROP_REASON_HEADING = DROP_REASON_HEADING
 
 
 # frob:doc docs/modules/tickets.md#public-api

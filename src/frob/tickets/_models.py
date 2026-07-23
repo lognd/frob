@@ -396,6 +396,28 @@ def unbound_acceptance(ticket: Ticket) -> tuple[AcceptanceCriterion, ...]:
 # recognizes as a real Done-report heading.
 DONE_REPORT_HEADING = "## Done report"
 _DONE_REPORT_HEADING = DONE_REPORT_HEADING
+
+# frob:ticket T-0848
+# The only `## ` headings ever written into a ticket body PROGRAMMATICALLY
+# by code in this package, besides `DONE_REPORT_HEADING` itself -- i.e. the
+# complete set of genuine structural section boundaries a Done-report
+# section can legitimately end at. `frob.tickets._append_to_section`
+# (`__init__.py`) writes `## Failure log` / `## Drop reason` entries, and
+# both import this set (rather than each defining its own private copy)
+# so the two can never drift apart (NO DUPLICATION). A `## ` line that is
+# NOT one of these -- e.g. an author's own `## Per-pattern decision` or
+# `## Evidence` sub-heading inside the narrative text passed via
+# `--why-file` -- is part of the Done-report BODY, not a new section, and
+# must not terminate the scan (T-0848: doing so is exactly what let a
+# second `done-report` call duplicate the entire prior narrative instead
+# of replacing it).
+# frob:doc docs/modules/tickets.md#public-api
+FAILURE_LOG_HEADING = "## Failure log"
+# frob:doc docs/modules/tickets.md#public-api
+DROP_REASON_HEADING = "## Drop reason"
+_STRUCTURAL_HEADINGS_AFTER_DONE_REPORT = frozenset(
+    {FAILURE_LOG_HEADING, DROP_REASON_HEADING}
+)
 # D-03: a bare heading with nothing under it (or only blank lines)
 # previously satisfied close/land (`_has_done_report`'s old shape). The bar
 # is deliberately minimal -- 1 non-blank line, a handful of characters --
@@ -408,10 +430,14 @@ _MIN_DONE_REPORT_LINES = 1
 
 
 # frob:ticket T-0493
+# frob:ticket T-0848
+# frob:tests tests/test_evidence_integrity.py::TestDoneReportSectionEndStructuralSentinel.test_narrative_h2_subheadings_do_not_end_the_section  # noqa: E501
 def _done_report_section_end(lines: list[str], heading_idx: int) -> int:
     """The index one past the END of the `## Done report` section starting
-    at `heading_idx`: the next `## ` heading that is NOT itself another
-    `## Done report` heading, or `len(lines)`.
+    at `heading_idx`: the next STRUCTURAL `## ` heading (another
+    `## Done report`, `## Failure log`, or `## Drop reason` -- the fixed
+    set this package ever writes programmatically past a Done report,
+    `_STRUCTURAL_HEADINGS_AFTER_DONE_REPORT`), or `len(lines)`.
 
     T-0493: a stray, empty `## Done report` heading (hand-typed as a
     placeholder, or left behind by an earlier corrupted write) sitting
@@ -425,13 +451,24 @@ def _done_report_section_end(lines: list[str], heading_idx: int) -> int:
     `## Done report` heading as still part of the same section (skip past
     it, keep scanning) means both functions see -- and, for the write
     side, collapse -- the WHOLE run of Done-report headings as one
-    section, so a stray duplicate self-heals the next time either runs."""
+    section, so a stray duplicate self-heals the next time either runs.
+
+    T-0848: a naive "stop at ANY `## ` line" boundary (the pre-fix shape)
+    breaks the moment the Done-report NARRATIVE ITSELF legitimately uses
+    `## ` sub-headings (e.g. `## Per-pattern decision`, `## Evidence`) --
+    the scan used to stop at the FIRST such line, so a second
+    `done-report --why-file` call only ever overwrote the short intro
+    before it, leaving the entire stale prior report (including any
+    factual claim a later round disproved) to survive verbatim just past
+    the new one. Only a heading from the fixed structural set now ends
+    the section; any other `## ` line is narrative content the caller
+    wrote on purpose and stays inside the replaceable window."""
     end_idx = len(lines)
     for i in range(heading_idx + 1, len(lines)):
         stripped = lines[i].strip()
         if stripped == _DONE_REPORT_HEADING:
             continue
-        if stripped.startswith("## "):
+        if stripped in _STRUCTURAL_HEADINGS_AFTER_DONE_REPORT:
             end_idx = i
             break
     return end_idx

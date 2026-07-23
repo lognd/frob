@@ -1043,11 +1043,22 @@ def _wip_commit(
     return _do_wip_commit(worktree, ticket_id)
 
 
+# frob:ticket T-0847
+# frob:tests tests/test_ticket_land.py::TestWipCommitNormalizationOnlyDirty.test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed  # noqa: E501
 def _do_wip_commit(worktree: Path, ticket_id: str) -> Result[bool, LandError]:
     """`git add -A && git commit` a WIP snapshot in `worktree`, under
     `FROB_LAND_INTERNAL=1` (T-0828) so the T-0731 land-owned-files
     `pre-commit` hook does not refuse this land-internal commit if the
-    worktree happens to carry an uncommitted land-owned-file edit."""
+    worktree happens to carry an uncommitted land-owned-file edit.
+
+    `_porcelain_dirty` can see a worktree as dirty purely from a line-ending
+    normalization status line (WSL/autocrlf phantom-modified) -- `add -A`
+    renormalizes to the identical blob, leaving nothing actually staged, and
+    a plain `git commit` in that state exits 1 "nothing to commit" with no
+    stderr, which used to bubble up as a spurious `GitFailed` (T-0847). After
+    staging, re-check with `git diff --cached --quiet`: an empty stage means
+    there was nothing real to snapshot, so we treat it as a no-op success
+    instead of a land failure."""
     add_argv = ["git", "-C", str(worktree), "add", "-A"]
     with _land_internal_git_env():
         add = run_argv(add_argv)
@@ -1058,6 +1069,15 @@ def _do_wip_commit(worktree: Path, ticket_id: str) -> Result[bool, LandError]:
                 _describe_git_failure(add_argv, add),
             )
             return Err(LandError.GitFailed)
+        staged_argv = ["git", "-C", str(worktree), "diff", "--cached", "--quiet"]
+        staged = run_argv(staged_argv)
+        if staged.is_ok and staged.danger_ok.returncode == 0:
+            _log.info(
+                "land: %s wip add staged nothing real (normalization-only"
+                " dirty status) -- treating as no-op, not GitFailed",
+                ticket_id,
+            )
+            return Ok(False)
         commit_argv = [
             "git",
             "-C",

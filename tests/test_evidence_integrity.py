@@ -35,7 +35,11 @@ from frob.tickets import (
     transition,
 )
 from frob.tickets._land import _newer, splice_ledger
-from frob.tickets._models import TicketSpec, has_substantive_done_report
+from frob.tickets._models import (
+    TicketSpec,
+    has_substantive_done_report,
+    replace_done_report_section,
+)
 from frob.tickets._store import (
     _serialize_ticket,
     atomic_write,
@@ -267,6 +271,51 @@ class TestD03SubstantiveDoneReport:
         result = transition(tmp_path, "T-0001", TicketState.DONE)
         assert result.is_err
         assert result.danger_err == TicketError.MissingEvidence
+
+
+# ---------------------------------------------------------------------------
+# T-0848: a Done-report narrative with its own `## ` sub-headings must be
+# fully replaced on a second `done-report` call, not duplicated alongside
+# a surviving stale copy of the first-round narrative.
+# ---------------------------------------------------------------------------
+class TestDoneReportSectionEndStructuralSentinel:
+    def test_narrative_h2_subheadings_do_not_end_the_section(self) -> None:
+        # frob:tests tests/test_evidence_integrity.py::TestDoneReportSectionEndStructuralSentinel.test_narrative_h2_subheadings_do_not_end_the_section  # noqa: E501
+        body = "## Description\nx\n"
+        round_one = (
+            "## Done report\n\n"
+            "Some intro paragraph.\n\n"
+            "## Per-pattern decision\n\n"
+            "the two hallmarks are structurally disjoint per-method.\n\n"
+            "## Evidence\n\n"
+            "tests/test_x.py::test_y\n"
+        )
+        after_round_one = replace_done_report_section(body, round_one)
+        assert "structurally disjoint per-method" in after_round_one
+
+        round_two = (
+            "## Done report\n\n"
+            "Corrected intro paragraph.\n\n"
+            "## Per-pattern decision\n\n"
+            "## Reviewer round 1\n\n"
+            "the disjointness claim above was WRONG; see corrected analysis.\n\n"
+            "## Evidence\n\n"
+            "tests/test_x.py::test_y\n"
+        )
+        after_round_two = replace_done_report_section(after_round_one, round_two)
+
+        # The corrected narrative is present...
+        assert "Corrected intro paragraph" in after_round_two
+        assert "was WRONG" in after_round_two
+        # ...and the stale, disproven round-one narrative must NOT survive
+        # anywhere in the ticket body (this is the exact T-0848 failure: a
+        # naive "stop at any '## '" boundary left it duplicated verbatim
+        # just past the new report).
+        assert "structurally disjoint per-method" not in after_round_two
+        # Exactly one '## Done report' heading and one '## Evidence'
+        # heading -- no duplicated section survives.
+        assert after_round_two.count("## Done report") == 1
+        assert after_round_two.count("## Evidence") == 1
 
 
 # ---------------------------------------------------------------------------

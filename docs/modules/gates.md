@@ -824,6 +824,7 @@ same way REG001-004 allow one.
 
 ## Public API
 
+<!-- frob:describes src/frob/gates/__init__.py::SCOPED_RUN_FLAKY_RULE_IDS -->
 <!-- frob:describes src/frob/gates/__init__.py::run_gates -->
 <!-- frob:describes src/frob/gates/__init__.py::evidence_covers_scope -->
 <!-- frob:describes src/frob/gates/__init__.py::drift_gate -->

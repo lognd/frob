@@ -2014,16 +2014,36 @@ def _python_for_tree(root: Path) -> str:
 # frob:ticket T-0754
 # frob:ticket T-0832
 # frob:ticket T-0846
+# frob:ticket T-0850
 # frob:tests tests/test_ticket_land.py::TestDoneReportThenLandRealClosuresEndToEnd.test_real_closures_done_report_then_land_succeeds kind="integration"  # noqa: E501
 # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestCheckGatesSummaryFn.test_scoped_run_flaky_rule_excluded_from_error_count kind="unit"  # noqa: E501
 def _check_gates_summary_fn(root: Path, ticket_id: str):  # noqa: ANN201
     """CLI closure shared by `done-report` capture and `land` re-
     verification (T-0754): calling it spawns a fresh `python -m frob check
-    --ticket <id>` in `root` and returns `(errors, warnings, waived)` --
-    the `gate-summary` line's own COUNTS, parsed via `_GATE_SUMMARY_COUNTS_
-    RE`, never that line's raw text (whose timing blob is nondeterministic
-    -- see the regex's own doc) and never composed or retyped by this
-    layer. Routed through `guarded_subprocess_run` (T-0778's guard) so
+    --ticket <id>` in `root` and returns `(errors, warnings, waived)`.
+    `warnings`/`waived` are the `gate-summary` line's own COUNTS, parsed via
+    `_GATE_SUMMARY_COUNTS_RE` (never that line's raw text, whose timing blob
+    is nondeterministic -- see the regex's own doc) and never composed or
+    retyped by this layer.
+
+    T-0850: `errors` is NOT that raw count -- it is derived from the SAME
+    `## Errors` section `_check_gate_findings_fn` parses
+    (`_parse_error_findings_from_stdout`), with any `SCOPED_RUN_FLAKY_RULE_
+    IDS` finding excluded (`_exclude_scoped_run_flaky`), so the count-only
+    fallback `_reverify_done_report_claims_post_merge` uses when neither
+    side captured an identity set already excludes the same diff-scoped-
+    flaky rules the identity-based comparison excludes -- an asymmetric
+    exclusion (identities filtered, counts not) would still let a flaky
+    SCOPE001/COV002/TODO001 finding push the raw count up between capture
+    and reverify and cause a false refuse. Falls back to the raw gate-
+    summary count only when the `## Errors` section itself fails to parse
+    (a genuinely unparsable run) but the summary line still did -- keeping
+    this closure's previous total-failure semantics unchanged; `warnings`/
+    `waived` are deliberately NOT filtered (T-0754/T-0832: only
+    `gate_errors` is ever compared).
+
+    Routed through `guarded_subprocess_run` (T-0778's guard) so
     `FROB_DISABLE_EXEC=1` refuses this spawn too. A refused spawn, a hard
     subprocess failure, or unparsable output returns `None` (T-0832) --
     never a `(-1, -1, -1)` sentinel. A real `frob check` run can never
@@ -2068,7 +2088,15 @@ def _check_gates_summary_fn(root: Path, ticket_id: str):  # noqa: ANN201
                 result.returncode,
             )
             return None
-        errors, warnings, waived = (int(g) for g in match.groups())
+        raw_errors, warnings, waived = (int(g) for g in match.groups())
+        findings = _parse_error_findings_from_stdout(
+            ticket_id, result.stdout, result.returncode
+        )
+        errors = (
+            len(_exclude_scoped_run_flaky(findings))
+            if findings is not None
+            else raw_errors
+        )
         return (errors, warnings, waived)
 
     return fn
@@ -2087,7 +2115,75 @@ _GATE_ERROR_LINE_RE = re.compile(
 
 
 # frob:ticket T-0846
+# frob:ticket T-0850
+def _parse_error_findings_from_stdout(
+    ticket_id: str, stdout: str, returncode: int
+) -> frozenset[tuple[str, str]] | None:
+    """Recover the `frozenset[(rule_id, file)]` identity set from a fresh
+    `frob check --ticket <id>` run's captured `stdout`, or `None` when the
+    output carries no parsable gate-summary at all (T-0846: unmeasured,
+    never a false empty-set claim of "definitely zero").
+
+    Shared by `_check_gate_findings_fn` (the identity set itself) and
+    `_check_gates_summary_fn` (T-0850: deriving a `SCOPED_RUN_FLAKY_RULE_
+    IDS`-excluded error COUNT from the same `## Errors` section, rather
+    than trusting the raw gate-summary count that still includes them) so
+    the two never parse the same section text via two independently
+    hand-typed copies (NO DUPLICATION)."""
+    section = stdout.split("## Errors", 1)
+    if len(section) < 2:
+        # No "## Errors" heading at all means zero error diagnostics were
+        # printed this run (`_section_lines` omits an empty section
+        # entirely) -- a real, measured empty set, not "unmeasured": the
+        # gate-summary line's own error count (parsed by
+        # `_GATE_SUMMARY_COUNTS_RE`) is the cross-check that this is
+        # genuinely zero rather than a parse miss.
+        if _GATE_SUMMARY_COUNTS_RE.search(stdout) is None:
+            _log.warning(
+                "ticket %s: `frob check --ticket %s` output had no "
+                "parsable gate-summary line at all (exit=%d) -- "
+                "error-finding identities are unmeasured, not "
+                "necessarily zero",
+                ticket_id,
+                ticket_id,
+                returncode,
+            )
+            return None
+        return frozenset()
+    after_heading = section[1].split("\n\n", 1)[0]
+    findings: set[tuple[str, str]] = set()
+    for line in after_heading.splitlines():
+        match = _GATE_ERROR_LINE_RE.match(line)
+        if match:
+            findings.add((match.group("code"), match.group("file")))
+    return frozenset(findings)
+
+
+# frob:ticket T-0850
+def _exclude_scoped_run_flaky(
+    findings: frozenset[tuple[str, str]],
+) -> frozenset[tuple[str, str]]:
+    """Drop every `(rule_id, file)` pair whose rule is in
+    `frob.gates.SCOPED_RUN_FLAKY_RULE_IDS` (T-0850): a diff-scoped rule
+    (SCOPE001/COV002/TODO001 today) can appear or disappear between two
+    SCOPED `--ticket` checks taken at different times purely from base
+    drift, not a real regression -- comparing these identities at all
+    reintroduces the exact false-`ClaimDivergence` failure mode T-0846
+    already closed for the raw-count case. Applied at the single shared
+    parse both `_check_gate_findings_fn` and `_check_gates_summary_fn`
+    call, so capture time (done-report) and reverify time (land) exclude
+    the same rules symmetrically by construction -- an asymmetric filter
+    (excluding only at one end) would still diverge on pure drift noise."""
+    from frob.gates import SCOPED_RUN_FLAKY_RULE_IDS
+
+    return frozenset(
+        (rule, file) for rule, file in findings if rule not in SCOPED_RUN_FLAKY_RULE_IDS
+    )
+
+
+# frob:ticket T-0846
 # frob:tests tests/test_ticket_land.py::TestDoneReportThenLandRealClosuresEndToEnd.test_real_closures_done_report_then_land_succeeds kind="integration"  # noqa: E501
+# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestCheckGateFindingsFn.test_scoped_run_flaky_rule_excluded_from_findings kind="unit"  # noqa: E501
 def _check_gate_findings_fn(root: Path, ticket_id: str):  # noqa: ANN201
     """CLI closure (T-0846, sibling to `_check_gates_summary_fn`): calling it
     spawns a fresh `python -m frob check --ticket <id>` in `root` (its own
@@ -2095,13 +2191,14 @@ def _check_gate_findings_fn(root: Path, ticket_id: str):  # noqa: ANN201
     doubled-cost tradeoff, see the module-level note this function's own
     docstring references, kept for correctness-first simplicity) and
     returns a `frozenset[(rule_id, file)]` recovered from every `## Errors`
-    diagnostic line the run printed -- the per-finding IDENTITY set
-    `_reverify_done_report_claims_post_merge` compares instead of a raw
-    count, closing the masking gap a scope-wide count alone cannot close
-    (a land's own diff introducing N new errors sailing through whenever
-    an unrelated fix on the same branch removed more than N). Routed
-    through `guarded_subprocess_run` (T-0778's guard), same as
-    `_check_gates_summary_fn`. A refused spawn or a hard subprocess
+    diagnostic line the run printed, MINUS any finding under a
+    `SCOPED_RUN_FLAKY_RULE_IDS` rule (T-0850: `_exclude_scoped_run_flaky`)
+    -- the per-finding IDENTITY set `_reverify_done_report_claims_post_merge`
+    compares instead of a raw count, closing the masking gap a scope-wide
+    count alone cannot close (a land's own diff introducing N new errors
+    sailing through whenever an unrelated fix on the same branch removed
+    more than N). Routed through `guarded_subprocess_run` (T-0778's guard),
+    same as `_check_gates_summary_fn`. A refused spawn or a hard subprocess
     failure returns `None` (unmeasured, never an empty-set false claim of
     "definitely zero") -- `_reverify_done_report_claims_post_merge` falls
     back to the count-only comparison in that case.
@@ -2132,33 +2229,12 @@ def _check_gate_findings_fn(root: Path, ticket_id: str):  # noqa: ANN201
             )
             return None
         result = guarded.danger_ok
-        section = result.stdout.split("## Errors", 1)
-        if len(section) < 2:
-            # No "## Errors" heading at all means zero error diagnostics
-            # were printed this run (`_section_lines` omits an empty
-            # section entirely) -- a real, measured empty set, not
-            # "unmeasured": the gate-summary line's own error count (parsed
-            # by `_GATE_SUMMARY_COUNTS_RE`) is the cross-check that this is
-            # genuinely zero rather than a parse miss.
-            if _GATE_SUMMARY_COUNTS_RE.search(result.stdout) is None:
-                _log.warning(
-                    "ticket %s: `frob check --ticket %s` output had no "
-                    "parsable gate-summary line at all (exit=%d) -- "
-                    "error-finding identities are unmeasured, not "
-                    "necessarily zero",
-                    ticket_id,
-                    ticket_id,
-                    result.returncode,
-                )
-                return None
-            return frozenset()
-        after_heading = section[1].split("\n\n", 1)[0]
-        findings: set[tuple[str, str]] = set()
-        for line in after_heading.splitlines():
-            match = _GATE_ERROR_LINE_RE.match(line)
-            if match:
-                findings.add((match.group("code"), match.group("file")))
-        return frozenset(findings)
+        findings = _parse_error_findings_from_stdout(
+            ticket_id, result.stdout, result.returncode
+        )
+        if findings is None:
+            return None
+        return _exclude_scoped_run_flaky(findings)
 
     return fn
 

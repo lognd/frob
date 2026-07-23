@@ -1391,6 +1391,29 @@ def _waive004_violations(
     return tuple(out)
 
 
+# frob:ticket T-0850
+# frob:doc docs/modules/gates.md#public-api
+# The rule ids this codebase already documents in multiple places (this
+# module's own COV002/SCOPE001/TODO001 diff-driven-gate comments, and
+# WAIVE004's "known-flaky for diff-scoped rules" message text above) as
+# legitimately unstable between two SCOPED runs of the same ticket taken
+# at different times (a `--ticket` check's touched-file set is a function
+# of the diff against `base`, which moves independently of whether this
+# ticket's own work changed) -- a finding here appearing or disappearing
+# reflects branch/base drift, not necessarily a real regression or fix
+# this ticket introduced. T-0850: `frob.tickets._land`'s `ClaimDivergence`
+# identity comparison (T-0846) must exclude findings under these rule ids
+# from BOTH sides of the comparison (the captured claim AND the fresh
+# post-merge re-check) -- filtering only one side would still diverge on
+# pure base-drift noise, reintroducing the exact false-refusal class T-0846
+# already fixed for the raw-count case. `frob.app.ticket_runner`'s
+# `_check_gate_findings_fn`/`_check_gates_summary_fn` apply this exclusion
+# at the single shared closure both `done-report` capture and `land`
+# re-verification call, so the filter is symmetric by construction rather
+# than by two call sites staying in sync by hand.
+SCOPED_RUN_FLAKY_RULE_IDS = frozenset({"SCOPE001", "COV002", "TODO001"})
+
+
 # T-0753: `frob:waive` gains an optional `until="YYYY-MM-DD"` boundary,
 # reusing the same date-only grammar `frob:deprecated`'s `sunset=`/
 # `frob:debt`'s date-shaped `until=` already established (T-0412/T-0576

@@ -34,17 +34,35 @@ class _FakeProc:
         self.stderr = stderr
 
 
+# frob:ticket T-0850
 _TWO_FINDINGS_STDOUT = """frob check .  [FAIL]  2 errors  1 warnings
 
 ## Errors
-  [gate:SCOPE] src/frob/tickets/_land.py:0  SCOPE001  SCOPE001: outside scope
-  [gate:COV] tests/other.py:12  COV002  COV002: no frob:ticket edge
+  [gate:SEC] src/frob/x.py:0  SEC110  SEC110: env-var read
+  [gate:PII] tests/other.py:12  PII010  PII010: pii-shaped field
 
 ## Warnings
   [gate:PERF] src/x.py:1  PERF001  PERF001: whatever
 
 ## Tool summary
   FAIL  gate-summary            2 errors, 1 warnings, 0 waived  [archgate=1.00s]
+"""
+
+# frob:ticket T-0850
+# T-0850: a fixture whose `## Errors` section mixes two
+# `SCOPED_RUN_FLAKY_RULE_IDS` findings (SCOPE001, COV002) with one
+# non-flaky finding (SEC110) -- the flaky pair must be excluded from both
+# `_check_gate_findings_fn`'s identity set and `_check_gates_summary_fn`'s
+# derived error count, leaving only the non-flaky finding/count of 1.
+_MIXED_FLAKY_AND_REAL_FINDINGS_STDOUT = """frob check .  [FAIL]  3 errors  0 warnings
+
+## Errors
+  [gate:SCOPE] src/frob/tickets/_land.py:0  SCOPE001  SCOPE001: outside scope
+  [gate:COV] tests/other.py:12  COV002  COV002: no frob:ticket edge
+  [gate:SEC] src/frob/x.py:0  SEC110  SEC110: env-var read
+
+## Tool summary
+  FAIL  gate-summary            3 errors, 0 warnings, 0 waived  [archgate=1.00s]
 """
 
 _NO_ERRORS_HEADING_MEASURED_STDOUT = """frob check .  [PASS]  0 errors  0 warnings
@@ -60,6 +78,7 @@ class TestCheckGateFindingsFn:
     """frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestCheckGateFindingsFn"""
 
     # frob:ticket T-0846
+    # frob:ticket T-0850
     def test_parses_multiple_findings_from_errors_section(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -77,10 +96,33 @@ class TestCheckGateFindingsFn:
         result = fn()
         assert result == frozenset(
             {
-                ("SCOPE001", "src/frob/tickets/_land.py"),
-                ("COV002", "tests/other.py"),
+                ("SEC110", "src/frob/x.py"),
+                ("PII010", "tests/other.py"),
             }
         )
+
+    # frob:ticket T-0850
+    def test_scoped_run_flaky_rule_excluded_from_findings(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestCheckGateFindingsFn.test_scoped_run_flaky_rule_excluded_from_findings  # noqa: E501
+        """T-0850: SCOPE001/COV002 findings are diff-scoped and can flap
+        between two `--ticket`-scoped runs on base drift alone, not a real
+        regression -- `_check_gate_findings_fn` must exclude them from its
+        returned identity set entirely, leaving only the non-flaky SEC110
+        finding. An asymmetric exclusion (only at land's reverify end, not
+        also at done-report's capture end -- both routed through this SAME
+        closure factory) would still diverge on pure drift noise, so this
+        also pins that both callers get the filtered result via one shared
+        code path rather than each needing its own filter."""
+
+        def _fake_run(argv, **kwargs):  # noqa: ANN001, ANN202
+            return _FakeProc(1, stdout=_MIXED_FLAKY_AND_REAL_FINDINGS_STDOUT)
+
+        monkeypatch.setattr(_guard.subprocess, "run", _fake_run)
+        fn = ticket_runner._check_gate_findings_fn(tmp_path, "T-0001")
+        result = fn()
+        assert result == frozenset({("SEC110", "src/frob/x.py")})
 
     # frob:ticket T-0846
     def test_refused_spawn_returns_none_not_empty_set(
@@ -182,6 +224,55 @@ class TestCheckGateFindingsFn:
         assert captured["capture_output"] is True
         assert captured["text"] is True
         assert captured["check"] is False
+
+
+class TestCheckGatesSummaryFn:
+    """T-0850: `_check_gates_summary_fn`'s `errors` count must exclude
+    `SCOPED_RUN_FLAKY_RULE_IDS` findings the same way
+    `_check_gate_findings_fn`'s identity set does, so the count-only
+    `ClaimDivergence` fallback (used whenever either side of the identity
+    comparison is unavailable) does not diverge on the same diff-scoped
+    base-drift noise the identity path already excludes."""
+
+    # frob:ticket T-0850
+    def test_scoped_run_flaky_rule_excluded_from_error_count(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestCheckGatesSummaryFn.test_scoped_run_flaky_rule_excluded_from_error_count  # noqa: E501
+        """The raw gate-summary line claims 3 errors (SCOPE001, COV002,
+        SEC110), but SCOPE001/COV002 are `SCOPED_RUN_FLAKY_RULE_IDS` --
+        the returned `errors` count must be 1 (only SEC110), not the raw
+        3, proving the count is derived from the filtered `## Errors`
+        section rather than trusting the printed summary count verbatim."""
+
+        def _fake_run(argv, **kwargs):  # noqa: ANN001, ANN202
+            return _FakeProc(1, stdout=_MIXED_FLAKY_AND_REAL_FINDINGS_STDOUT)
+
+        monkeypatch.setattr(_guard.subprocess, "run", _fake_run)
+        fn = ticket_runner._check_gates_summary_fn(tmp_path, "T-0001")
+        errors, warnings, waived = fn()
+        assert errors == 1
+        assert warnings == 0
+        assert waived == 0
+
+    # frob:ticket T-0850
+    def test_unparsable_errors_section_falls_back_to_raw_summary_count(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestCheckGatesSummaryFn.test_unparsable_errors_section_falls_back_to_raw_summary_count  # noqa: E501
+        """A parsable gate-summary line with no `## Errors` heading and no
+        parsable identity set at all still returns a real measured count
+        (0, from `_NO_ERRORS_HEADING_MEASURED_STDOUT`'s own summary line),
+        matching this closure's pre-T-0850 unfiltered behavior when the
+        `## Errors` section genuinely has nothing to filter."""
+
+        def _fake_run(argv, **kwargs):  # noqa: ANN001, ANN202
+            return _FakeProc(0, stdout=_NO_ERRORS_HEADING_MEASURED_STDOUT)
+
+        monkeypatch.setattr(_guard.subprocess, "run", _fake_run)
+        fn = ticket_runner._check_gates_summary_fn(tmp_path, "T-0001")
+        errors, warnings, waived = fn()
+        assert (errors, warnings, waived) == (0, 0, 0)
 
 
 class TestPythonForTree:
