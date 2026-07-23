@@ -5986,7 +5986,7 @@ From T-0710: the hot-graph overhead test (attribution sampler <5% overhead) asse
 id: T-0761
 title: 'CRITICAL: frob ticket land can commit ledger+version but DROP all feature
   code (T-0640 false-green); T-0463 completeness assertion has a hole'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-22'
@@ -6004,7 +6004,8 @@ acceptance:
 - text: GIVEN a worktree branch adding a new source file WHEN frob ticket land runs
     THEN the landed commit contains that file OR land refuses with a completeness
     error; a regression test reproduces the land-drops-code shape
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestLandCompleteness::test_worktree_pointed_at_same_branch_as_main_is_refused_not_silently_empty
 threat: null
 component: null
 labels: []
@@ -6164,7 +6165,6 @@ component: null
 labels: []
 ```
 Coordinator friction, 15+ occurrences 2026-07-22: frob ticket land MERGES the worktree into main FIRST, then attempts the close, and when close fails (AcceptanceUnbound, EvidenceScopeUnbound, InvalidTransition done->done) it leaves a finalize/merge commit the coordinator must `git reset --hard HEAD~1` before every retry. The close preconditions (acceptance bound, evidence covers scope, state is in-progress) are all knowable BEFORE the merge. Fix: land runs a CLOSEABILITY PREFLIGHT (all close checks, dry) BEFORE the merge/finalize; if it would fail, land errors with the specific unmet precondition and touches NOTHING -- no merge commit to unwind, no reset dance. Only after preflight passes does it merge+finalize+close. This turns every failed land from a 3-command recovery into a one-line actionable error.
-
 <!-- ticket:T-0764 -->
 ```yaml
 id: T-0764
