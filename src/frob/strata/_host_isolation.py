@@ -68,9 +68,10 @@ never branching the rule logic itself on `HostManifest.platform`:
   (`HostOwns`, POSIX MODE) and windows `acl` (`HostAcl`, NTFS DACL RULE)
   are merged into one `path -> _PathClaim(write_capable, descriptor)`
   index per user -- `write_capable` reads `_mode_owner_writable` for an
-  `owns` entry or `_acl_grants_write` (this module's RULE-shaped analog,
-  "not `:deny`'d and RIGHTS in `{Write,Modify,FullControl}`") for an
-  `acl` entry. Every HOST001/HOST002 sub-target that intersects owned
+  `owns` entry or `_join_acl_entries` (this module's RULE-shaped analog,
+  T-0792's real NTFS deny-overrides-allow join across every ACE declared
+  for a path) for an `acl` entry. Every HOST001/HOST002 sub-target that
+  intersects owned
   paths (shared-writable-path, root-unit-writable-by-user,
   write-to-higher-trust-path) reads this merged index instead of
   `HostManifest.owns` directly, so a linux/windows pair (or a
@@ -105,6 +106,53 @@ platform-gated in `HostManifest` -- a windows node declaring `group`/
 `sudoers` already derived real HOST001/HOST002 findings before T-0606;
 only the identity/path/listening-surface joins were linux-only.
 
+## Multi-ACE deny-overrides-allow join (T-0792)
+
+`_owned_paths_by_user`'s windows `acl` half used to collapse every ACE
+declared for a path down to whichever one happened to land LAST in
+node/field-declaration order (the same "last write wins" convention
+`_owns_by_user` uses for POSIX `owns`, which is fine there -- a POSIX
+path has exactly one MODE). NTFS ACLs are multi-ACE by design: a real
+DACL can carry several ACEs for the SAME path naming different
+principals, and evaluates them per-principal, not by picking one entry
+and discarding the rest. A last-wins collapse could silently drop an
+earlier ACE's real write grant to a principal OTHER than whichever
+principal's ACE happened to be declared last -- under-reporting a
+`shared-writable-path` finding the model should have caught (the T-0606
+reviewer finding this ticket closes).
+
+`_join_acl_entries` fixes this by joining EVERY ACE declared for a path
+(across all of a user's nodes) instead of picking one: entries are
+grouped by PRINCIPAL, an explicit `:deny` ACE always wins over an
+explicit allow ACE for the SAME principal regardless of which was
+declared first (real NTFS deny-overrides-allow evaluation order), and
+the path is write-capable overall if ANY principal's net verdict is
+allow -- a deny for one principal never reaches across to cancel a
+different principal's real grant.
+
+## Token-privilege classes: explicit out-of-scope disposition (T-0792)
+
+`SeImpersonatePrivilege`/`SeDebugPrivilege`-class windows TOKEN
+PRIVILEGES (as opposed to NTFS DACL/ACE filesystem permissions, which
+`acl`/`_join_acl_entries` above DO model) are explicitly OUT OF SCOPE for
+HOST001/HOST002, by design, not by oversight: `std.host`'s grammar
+(`_host.py::HostManifest`) has no vocabulary for a service account's
+granted Windows privileges at all -- there is no `privilege "NAME"`
+clause parallel to `group`/`sudoers` (T-0272's precedent for closing a
+similar gap) for a manifest to declare one, so there is no fact this
+module could join against without inventing ungrounded data (deny-by-
+default names the honest absence of an equivalent, module docstring's
+"Owned paths" section makes the identical call for POSIX setuid on
+windows). A compromised service account holding SeImpersonatePrivilege
+or SeDebugPrivilege can escalate to SYSTEM via well-known token-
+duplication / process-injection techniques regardless of what its
+declared `acl` grants say -- a real vertical-movement vector this module
+does NOT currently model, structurally, until `std.host` grows a
+`privilege` clause (a `strata-core/src/parse.rs` grammar change, outside
+`src/frob/strata/**`'s scope, mirroring the T-0272 precedent) for
+HOST002 to derive a real finding from. Filed as a follow-up rather than
+silently left unstated.
+
 ## Compromised-service-owner threat catalog rows
 
 `COMPROMISED_OWNER_CATALOG` (below) adds the CWE-522/CWE-269/CWE-284
@@ -125,7 +173,7 @@ from typani.result import Err, Ok, Result
 from frob.logging import get_logger
 
 from ._errors import StrataError
-from ._host import HostManifest, HostOwns, host_manifest_for
+from ._host import HostAcl, HostManifest, HostOwns, host_manifest_for
 from ._models import Flow, KernelModel, Node, Rung
 from ._threat import OutOfScopeEntry, WeaknessEntry
 from ._waive import (
@@ -223,18 +271,53 @@ def _identity_of(manifest: HostManifest) -> str | None:
     )
 
 
-def _acl_grants_write(rule: str) -> bool:
-    """Whether a windows `acl` RULE grants write-capable access -- the
-    windows analog of `_mode_owner_writable` (module docstring): RIGHTS
-    is one of `_ACL_WRITE_RIGHTS` and the rule carries no `:deny` flag.
-    `HostAcl.rule` is already validated `PRINCIPAL:RIGHTS[:deny]
-    [:no_inherit]` shape (`_host.py::HostAcl._validate_rule`), so a plain
-    split is safe here."""
-    _principal, _, rest = rule.partition(":")
+def _acl_ace_of(rule: str) -> tuple[str, bool, bool]:
+    """Decompose a validated windows `acl` RULE into its (PRINCIPAL,
+    is_deny, is_write_rights) triple -- the one parse `_join_acl_entries`
+    (T-0792 multi-ACE deny-overrides-allow join, module docstring's
+    "Owned paths" section) builds on, so the RULE grammar is only ever
+    split in one place (charter: no duplication). `HostAcl.rule` is
+    already validated `PRINCIPAL:RIGHTS[:deny][:no_inherit]` shape
+    (`_host.py::HostAcl._validate_rule`), so a plain split is safe
+    here."""
+    principal, _, rest = rule.partition(":")
     flags = rest.split(":")
     rights = flags[0].strip().lower() if flags else ""
     is_deny = "deny" in flags[1:]
-    return (not is_deny) and rights in _ACL_WRITE_RIGHTS
+    return principal, is_deny, rights in _ACL_WRITE_RIGHTS
+
+
+def _join_acl_entries(entries: list[HostAcl]) -> bool:
+    """T-0792: real NTFS deny-overrides-allow join across EVERY ACE
+    declared for one path, replacing the last-declaration-wins collapse
+    that silently discarded all but the final entry (`_owned_paths_by_
+    user`'s prior overwrite-by-path-key loop, module docstring's T-0606
+    "Owned paths" section -- the reviewer finding this ticket closes).
+
+    NTFS evaluates access per accessing PRINCIPAL: an explicit `:deny` ACE
+    always wins over an explicit allow ACE for the SAME principal, no
+    matter which was declared first (`_acl_ace_of`'s is_deny flag nets out
+    within a principal's own ACEs before anything else is asked). A deny
+    for one principal never reaches across to cancel a DIFFERENT
+    principal's allow -- so the path is write-capable overall if ANY
+    principal's net verdict is "allow", the join's final OR-reduction.
+    This is the fix's soundness direction: the prior collapse could pick
+    whichever ACE happened to land last in iteration order and silently
+    lose an entirely different principal's real write grant, under-
+    reporting a movement violation the model should have caught."""
+    net_allow_by_principal: dict[str, bool] = {}
+    net_deny_by_principal: set[str] = set()
+    for entry in entries:
+        principal, is_deny, is_write_rights = _acl_ace_of(entry.rule)
+        if not is_write_rights:
+            continue
+        if is_deny:
+            net_deny_by_principal.add(principal)
+        else:
+            net_allow_by_principal.setdefault(principal, True)
+    return any(
+        principal not in net_deny_by_principal for principal in net_allow_by_principal
+    )
 
 
 def _rule_of(v: HostIsolationViolation) -> str:
@@ -303,10 +386,21 @@ def _owned_paths_by_user(
 ) -> dict[str, _PathClaim]:
     """Every path a user's node(s) declare ownership of, merged across
     linux `owns` and windows `acl` (module docstring's "Owned paths"
-    section) -- keyed by path, last declaration wins across BOTH
-    vocabularies in node/field-declaration order, matching `_owns_by_
-    user`'s own overwrite convention."""
+    section) -- keyed by path. `owns` stays last-declaration-wins (a POSIX
+    path has exactly one MODE, matching `_owns_by_user`'s own overwrite
+    convention). `acl` is DIFFERENT: NTFS is multi-ACE by design, so every
+    ACE declared for a path (across all of this user's nodes) is
+    accumulated and joined via `_join_acl_entries`'s real deny-overrides-
+    allow semantics (T-0792) instead of the path's dict entry being
+    overwritten ACE by ACE -- the T-0606 reviewer finding this ticket
+    closes: a last-wins overwrite could silently drop an earlier ACE's
+    real write grant to a different principal, under-reporting a movement
+    violation. Cross-vocabulary precedence: a path is never claimed by
+    both `owns` and `acl` in a well-formed manifest, but if it were, the
+    `acl` loop runs SECOND and its `_join_acl_entries` result applies
+    after (overwrites) whatever `owns` wrote for that same path key."""
     claims: dict[str, _PathClaim] = {}
+    acl_entries_by_path: dict[str, list[HostAcl]] = {}
     for node_id in user_nodes:
         manifest = manifests[node_id]
         for entry in manifest.owns:
@@ -316,11 +410,13 @@ def _owned_paths_by_user(
                 descriptor=entry.mode,
             )
         for acl_entry in manifest.acl:
-            claims[acl_entry.path] = _PathClaim(
-                path=acl_entry.path,
-                write_capable=_acl_grants_write(acl_entry.rule),
-                descriptor=acl_entry.rule,
-            )
+            acl_entries_by_path.setdefault(acl_entry.path, []).append(acl_entry)
+    for path, entries in acl_entries_by_path.items():
+        claims[path] = _PathClaim(
+            path=path,
+            write_capable=_join_acl_entries(entries),
+            descriptor="; ".join(entry.rule for entry in entries),
+        )
     return claims
 
 

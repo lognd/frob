@@ -11,9 +11,11 @@ from typani.result import Err
 
 from frob.strata import _host_isolation
 from frob.strata._errors import StrataError
+from frob.strata._host import HostAcl
 from frob.strata._host_isolation import (
     COMPROMISED_OWNER_CATALOG,
     COMPROMISED_OWNER_VIEWS,
+    _join_acl_entries,
     evaluate_host_isolation_waived,
     evaluate_lateral_isolation,
     evaluate_vertical_isolation,
@@ -406,6 +408,69 @@ class TestWindowsHostIsolation:
         violations = evaluate_lateral_isolation(model).danger_ok
         assert "shared-writable-path" not in {v.sub_target for v in violations}
 
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation kind="unit"
+    def test_explicit_deny_acl_flag_does_not_fire_shared_writable_path(self):
+        """T-0791: exercise the `:deny` flag directly (not just a
+        non-write RIGHTS value) -- Everyone:Modify:deny on a write-capable
+        RIGHTS must not grant write, so a shared path where BOTH sides
+        carry only that deny'd ACE must not fire shared-writable-path."""
+        api = Node(
+            id="api",
+            trust="trusted",
+            attrs=(
+                "platform=windows",
+                "service_account=svc-a",
+                "service",
+                "acl=C:\\ProgramData\\denied|Everyone:Modify:deny",
+            ),
+        )
+        worker = Node(
+            id="worker",
+            trust="trusted",
+            attrs=(
+                "platform=windows",
+                "service_account=svc-b",
+                "service",
+                "acl=C:\\ProgramData\\denied|Everyone:Modify:deny",
+            ),
+        )
+        model = KernelModel(nodes=(api, worker))
+        violations = evaluate_lateral_isolation(model).danger_ok
+        assert "shared-writable-path" not in {v.sub_target for v in violations}
+
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation kind="unit"
+    def test_explicit_deny_acl_flag_fires_when_write_rights_present_elsewhere(self):
+        """T-0791's fire counterpart: a `:deny`'d ACE for one principal
+        alongside a plain write-capable ACE for a DIFFERENT principal on
+        the same path must still fire -- the deny only cancels its own
+        principal, it does not blanket-suppress the path (also exercises
+        T-0792's multi-ACE join, see TestMultiAceDenyOverridesAllow)."""
+        api = Node(
+            id="api",
+            trust="trusted",
+            attrs=(
+                "platform=windows",
+                "service_account=svc-a",
+                "service",
+                "acl=C:\\ProgramData\\mixed|svc-x:Modify:deny",
+                "acl=C:\\ProgramData\\mixed|Everyone:Modify",
+            ),
+        )
+        worker = Node(
+            id="worker",
+            trust="trusted",
+            attrs=(
+                "platform=windows",
+                "service_account=svc-b",
+                "service",
+                "acl=C:\\ProgramData\\mixed|svc-x:Modify:deny",
+                "acl=C:\\ProgramData\\mixed|Everyone:Modify",
+            ),
+        )
+        model = KernelModel(nodes=(api, worker))
+        violations = evaluate_lateral_isolation(model).danger_ok
+        assert "shared-writable-path" in {v.sub_target for v in violations}
+
     # frob:tests src/frob/strata/_host_isolation.py::evaluate_vertical_isolation kind="unit"
     def test_service_with_no_account_is_root_run(self):
         """A windows `service` with no `service_account` (SCM's own
@@ -459,6 +524,75 @@ class TestWindowsHostIsolation:
         assert len(results) == 1
         for claim_result in results[0].results:
             assert claim_result.verdict.value == "proved"
+
+
+class TestMultiAceDenyOverridesAllow:
+    """T-0792: `_join_acl_entries`'s real NTFS deny-overrides-allow join
+    across every ACE declared for one path, replacing the last-
+    declaration-wins collapse the T-0606 reviewer flagged as a soundness
+    gap (module docstring's "Multi-ACE deny-overrides-allow join"
+    section)."""
+
+    # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
+    def test_single_deny_entry_denies(self):
+        entries = [HostAcl(path="/p", rule="Everyone:Modify:deny")]
+        assert _join_acl_entries(entries) is False
+
+    # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
+    def test_single_allow_entry_grants(self):
+        entries = [HostAcl(path="/p", rule="Everyone:Modify")]
+        assert _join_acl_entries(entries) is True
+
+    # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
+    def test_narrow_deny_then_broad_allow_same_principal_denies(self):
+        """Same principal, deny declared first, broad allow declared
+        second: the deny is honored regardless of declaration order --
+        NTFS deny-overrides-allow, not last-wins."""
+        entries = [
+            HostAcl(path="/p", rule="Everyone:Modify:deny"),
+            HostAcl(path="/p", rule="Everyone:FullControl"),
+        ]
+        assert _join_acl_entries(entries) is False
+
+    # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
+    def test_broad_allow_then_narrow_deny_same_principal_still_denies(self):
+        """Same principal, allow declared first, deny declared second: a
+        later deny for the SAME principal is honored too -- order-
+        independence cuts both ways, it is not merely 'last wins'
+        restated."""
+        entries = [
+            HostAcl(path="/p", rule="Everyone:FullControl"),
+            HostAcl(path="/p", rule="Everyone:Modify:deny"),
+        ]
+        assert _join_acl_entries(entries) is False
+
+    # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
+    def test_deny_for_one_principal_does_not_cancel_another_principals_allow(self):
+        """The T-0792 fix's core case: a deny for principal X does not
+        reach across to cancel a write grant to a DIFFERENT principal Y
+        on the same path -- a last-declaration-wins collapse could
+        silently drop Y's real grant if X's ACE happened to land last in
+        iteration order, under-reporting the violation."""
+        entries = [
+            HostAcl(path="/p", rule="svc-x:Modify:deny"),
+            HostAcl(path="/p", rule="Everyone:Modify"),
+        ]
+        assert _join_acl_entries(entries) is True
+        # order-independence: the deny'd principal's ACE landing LAST
+        # must not flip the verdict either.
+        reversed_entries = [
+            HostAcl(path="/p", rule="Everyone:Modify"),
+            HostAcl(path="/p", rule="svc-x:Modify:deny"),
+        ]
+        assert _join_acl_entries(reversed_entries) is True
+
+    # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
+    def test_no_write_rights_entries_denies(self):
+        entries = [
+            HostAcl(path="/p", rule="Everyone:Read"),
+            HostAcl(path="/p", rule="svc-x:Read:deny"),
+        ]
+        assert _join_acl_entries(entries) is False
 
 
 # frob:tests src/frob/strata/_scenarios.py::build_compromised_user_scenario kind="unit"
