@@ -7929,3 +7929,65 @@ component: null
 labels: []
 ```
 Combined follow-up from the T-0808 and T-0811 reviews: T-0811's rewrite covers ledger+archive prose only, so a .strata waiver or frob:waive comment citing a renumbered draft (the ORIGINAL T-draft-8cd37914 incident class) stays dangling forever and is unconditionally exempt from WAIVE007 -- the exemption becomes load-bearing instead of safe. Extend the land's old->new mapping substitution to tracked files containing waive sites (grep-scoped, per-id-keyed regex like the T-0811 mechanism). Also add the T-0811 reviewer's missing negative test: an unrelated draft id in prose survives the ledger rewrite untouched (separate test; the existing blanket zero-T-draft assertion conflicts with planting one).
+
+<!-- ticket:T-0813 -->
+```yaml
+id: T-0813
+title: 'graph: production entrypoint wiring mark_unresolved=True into compute_protocol_summaries
+  (opt-in flag currently invoked by nothing)'
+state: queued
+kind: feature
+origin: auditor
+created: '2026-07-23'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/graph/**
+- src/frob/gates/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a real repo scan through the protocol-summary entrypoint WHEN a private-convention
+    callee has no candidates THEN the summary shows UNRESOLVED_CALLEE poisoning end
+    to end; the dunder/cross-package private-method false-positive class (obj._method,
+    super().__init__ with zero in-paths candidates) has a recorded disposition (filtered
+    or documented)
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+T-0809 reviewer condition (a): mark_unresolved is tested but production-dead (no src/ caller passes True; compute_protocol_summaries itself has no production consumer yet). Wire a real entrypoint when the T-0739-family verifier lands, or earlier as a frob graph subcommand. Note the reviewer's residual false-positive class in the heuristic for adjudication at wiring time.
+
+<!-- ticket:T-0814 -->
+```yaml
+id: T-0814
+title: 'gates: closure() consumers IndexError on non-symref graph entries (latent
+  crash class in _cov006 + siblings)'
+state: queued
+kind: bug
+origin: auditor
+created: '2026-07-23'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/__init__.py
+- src/frob/dup/_pipeline.py
+- tests/test_gates.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a call-graph closure containing a sentinel or non path::qualname entry
+    WHEN _cov006_third_file_reachable and sibling closure consumers process it THEN
+    they skip or handle it without raising; a regression test feeds a sentinel entry
+    through each consumer
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+T-0809 reviewer condition (b): _cov006_third_file_reachable (gates/__init__.py ~3361) does split('::',1)[1] on every closure entry and IndexErrors on any non-symref (discovered when mark_unresolved=True injected UNRESOLVED_CALLEE); same shape assumption at 3 gates call sites + dup/_pipeline. Any future graph extension crashes them. Harden all closure consumers.
