@@ -133,3 +133,37 @@ def test_render_project_propagates_resolve_failure(tmp_path: Path, monkeypatch) 
 
     assert result.is_err
     assert result.danger_err is ScaffoldError.RenderFailed
+
+
+# frob:tests tests/unit/test_scaffold_project.py::test_hooks_dir_kill_switch_refuses_without_spawning
+# frob:ticket T-0803
+def test_hooks_dir_kill_switch_refuses_without_spawning(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """T-0803: FROB_DISABLE_EXEC=1 must make `_hooks_dir`'s `git rev-parse
+    --git-path hooks` spawn refuse (via `frob.gitio.run_argv` ->
+    `guarded_subprocess_run`) instead of bypassing the T-0200/T-0778 exec
+    guard -- proven with a spy on the real `subprocess.run` so a spawn
+    attempt would be observed, not assumed. This is the module's one
+    subprocess-touching function; the rest of this file stays pure/
+    subprocess-free per its own docstring."""
+    import subprocess
+
+    from frob.scaffold.project import _hooks_dir
+
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+
+    monkeypatch.setenv("FROB_DISABLE_EXEC", "1")
+    spawned = False
+    real_run = subprocess.run
+
+    def _spy(*args, **kwargs):  # noqa: ANN001, ANN202
+        nonlocal spawned
+        spawned = True
+        return real_run(*args, **kwargs)
+
+    monkeypatch.setattr(subprocess, "run", _spy)
+    result = _hooks_dir(tmp_path)
+    assert not spawned
+    assert result.is_err
+    assert result.danger_err == ScaffoldError.NotAGitRepo

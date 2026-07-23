@@ -960,18 +960,19 @@ def _repo_files_git(root: Path) -> tuple[str, ...] | None:
     not a git work tree / `git` is unavailable (T-0453 perf fix: this
     replaces a full-tree `rglob` walk, which used to include the ~129
     stale worktrees under `.claude/worktrees/` and made `frob ticket
-    doable` take minutes)."""
-    try:
-        result = subprocess.run(
-            ["git", "-C", str(root), "ls-files"],
-            capture_output=True,
-            text=True,
-            timeout=10,
-            check=False,
-        )
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        _log.warning("tickets: git ls-files failed under %s: %s", root, exc)
+    doable` take minutes).
+
+    T-0803: routed through `frob.gitio.run_argv` (gains `guarded_subprocess_
+    run`'s `FROB_DISABLE_EXEC` kill switch transitively, T-0778) instead of
+    a bare `subprocess.run` -- this was the one remaining git spawn in the
+    package bypassing the guard."""
+    from frob.gitio import run_argv
+
+    spawned = run_argv(["git", "-C", str(root), "ls-files"], timeout_s=10)
+    if spawned.is_err:
+        _log.warning("tickets: git ls-files failed under %s", root)
         return None
+    result = spawned.danger_ok
     if result.returncode != 0:
         return None
     return tuple(

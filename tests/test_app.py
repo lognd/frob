@@ -33,11 +33,13 @@ def _make_repo(tmp_path: Path) -> Path:
     return root
 
 
+# frob:ticket T-0803
 class TestRunCoverageWait:
     def test_coverage_lock_path_is_under_frob_dir(self, tmp_path):
         # frob:tests tests/test_app.py::TestRunCoverageWait.test_coverage_lock_path_is_under_frob_dir  # noqa: E501
         assert coverage_lock_path(tmp_path) == tmp_path / ".frob" / "coverage.lock"
 
+    # frob:ticket T-0803
     def test_no_stamp_runs_command_and_reports_ran(self, tmp_path, monkeypatch):
         # frob:tests tests/test_app.py::TestRunCoverageWait.test_no_stamp_runs_command_and_reports_ran  # noqa: E501
         root = _make_repo(tmp_path)
@@ -51,13 +53,14 @@ class TestRunCoverageWait:
 
             return _Result()
 
-        monkeypatch.setattr("frob.testing._coverage_wait.subprocess.run", _fake_run)
+        monkeypatch.setattr("frob.process._guard.subprocess.run", _fake_run)
         result = run_coverage_wait(root, command=("true",))
         assert result.is_ok
         outcome = result.danger_ok
         assert outcome.ran is True
         assert calls == [["true"]]
 
+    # frob:ticket T-0803
     def test_fresh_stamp_skips_the_run(self, tmp_path, monkeypatch):
         # frob:tests tests/test_app.py::TestRunCoverageWait.test_fresh_stamp_skips_the_run  # noqa: E501
         root = _make_repo(tmp_path)
@@ -78,12 +81,13 @@ class TestRunCoverageWait:
 
             return _Result()
 
-        monkeypatch.setattr("frob.testing._coverage_wait.subprocess.run", _fake_run)
+        monkeypatch.setattr("frob.process._guard.subprocess.run", _fake_run)
         result = run_coverage_wait(root, command=("true",))
         assert result.is_ok
         assert result.danger_ok.ran is False
         assert called is False
 
+    # frob:ticket T-0803
     def test_failed_command_is_err(self, tmp_path, monkeypatch):
         # frob:tests tests/test_app.py::TestRunCoverageWait.test_failed_command_is_err  # noqa: E501
         root = _make_repo(tmp_path)
@@ -94,8 +98,33 @@ class TestRunCoverageWait:
 
             return _Result()
 
-        monkeypatch.setattr("frob.testing._coverage_wait.subprocess.run", _fake_run)
+        monkeypatch.setattr("frob.process._guard.subprocess.run", _fake_run)
         result = run_coverage_wait(root, command=("false",))
+        assert result.is_err
+        assert result.danger_err == CoverageWaitError.RunFailed
+
+    def test_kill_switch_refuses_without_spawning(self, tmp_path, monkeypatch):
+        # frob:tests tests/test_app.py::TestRunCoverageWait.test_kill_switch_refuses_without_spawning  # noqa: E501
+        # T-0803: FROB_DISABLE_EXEC=1 must make `run_coverage_wait`'s
+        # coverage-suite spawn refuse (via `guarded_subprocess_run`)
+        # instead of bypassing the T-0200/T-0778 exec guard -- proven with
+        # a spy on the real `subprocess.run` so a spawn attempt would be
+        # observed, not assumed.
+        import subprocess
+
+        root = _make_repo(tmp_path)
+        monkeypatch.setenv("FROB_DISABLE_EXEC", "1")
+        spawned = False
+        real_run = subprocess.run
+
+        def _spy(*args, **kwargs):  # noqa: ANN001, ANN202
+            nonlocal spawned
+            spawned = True
+            return real_run(*args, **kwargs)
+
+        monkeypatch.setattr("frob.process._guard.subprocess.run", _spy)
+        result = run_coverage_wait(root, command=("true",))
+        assert not spawned
         assert result.is_err
         assert result.danger_err == CoverageWaitError.RunFailed
 

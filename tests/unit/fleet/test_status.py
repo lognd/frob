@@ -33,6 +33,7 @@ _CHECK_JSON_PAYLOAD = (
 )
 
 
+# frob:ticket T-0803
 class TestCollectStatus:
     def test_collect_status_ok(self, tmp_path: Path, monkeypatch) -> None:
         repo_dir = tmp_path / "repo"
@@ -103,6 +104,50 @@ class TestCollectStatus:
         assert status.error is not None
         assert status.gates == GateSummary()
         assert status.doable_count == 0
+
+    def test_git_branch_and_dirty_kill_switch_refuses_without_spawning(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests tests/unit/fleet/test_status.py::TestCollectStatus.test_git_branch_and_dirty_kill_switch_refuses_without_spawning
+        # T-0803: FROB_DISABLE_EXEC=1 must make `_git_branch_and_dirty`'s
+        # `git status` spawn refuse (via `guarded_subprocess_run`) instead
+        # of bypassing the T-0200/T-0778 exec guard -- proven with a spy on
+        # the real `subprocess.run` so a spawn attempt would be observed.
+        monkeypatch.setenv("FROB_DISABLE_EXEC", "1")
+        spawned = False
+        real_run = subprocess.run
+
+        def _spy(*args, **kwargs):  # noqa: ANN001, ANN202
+            nonlocal spawned
+            spawned = True
+            return real_run(*args, **kwargs)
+
+        monkeypatch.setattr(subprocess, "run", _spy)
+        branch, dirty = fleet_mod._git_branch_and_dirty(tmp_path)
+        assert not spawned
+        assert branch is None
+        assert dirty is False
+
+    def test_gate_summary_probe_kill_switch_refuses_without_spawning(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests tests/unit/fleet/test_status.py::TestCollectStatus.test_gate_summary_probe_kill_switch_refuses_without_spawning
+        # T-0803: FROB_DISABLE_EXEC=1 must make `_gate_summary_probe`'s
+        # `frob check --json` spawn refuse (via `guarded_subprocess_run`)
+        # too -- proven with the same spy pattern.
+        monkeypatch.setenv("FROB_DISABLE_EXEC", "1")
+        spawned = False
+        real_run = subprocess.run
+
+        def _spy(*args, **kwargs):  # noqa: ANN001, ANN202
+            nonlocal spawned
+            spawned = True
+            return real_run(*args, **kwargs)
+
+        monkeypatch.setattr(subprocess, "run", _spy)
+        summary = fleet_mod._gate_summary_probe(tmp_path)
+        assert not spawned
+        assert summary == GateSummary()
 
 
 class TestRollup:

@@ -13,11 +13,13 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
+from typing import cast
 
 from typani.error_set import ErrorSet
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
+from frob.process._guard import guarded_subprocess_run
 
 _log = get_logger(__name__)
 
@@ -76,7 +78,7 @@ def _probe_report() -> str:
 def _wl_paste_has_image() -> bool:
     _log.debug("clipboard: probing wl-paste --list-types")
     try:
-        proc = subprocess.run(
+        guarded = guarded_subprocess_run(
             ["wl-paste", "--list-types"],
             capture_output=True,
             timeout=_PROBE_TIMEOUT_S,
@@ -85,13 +87,17 @@ def _wl_paste_has_image() -> bool:
     except (OSError, subprocess.TimeoutExpired) as exc:
         _log.warning("clipboard: wl-paste probe failed: %s", exc)
         return False
+    if guarded.is_err:
+        _log.warning("clipboard: wl-paste probe refused (exec disabled)")
+        return False
+    proc = cast("subprocess.CompletedProcess[bytes]", guarded.danger_ok)
     return b"image/png" in proc.stdout or b"image/" in proc.stdout
 
 
 def _wl_paste_image() -> Result[bytes, ClipboardError]:
     _log.info("clipboard: fetching image via wl-paste")
     try:
-        proc = subprocess.run(
+        guarded = guarded_subprocess_run(
             ["wl-paste", "-t", "image/png"],
             capture_output=True,
             timeout=_PASTE_TIMEOUT_S,
@@ -100,6 +106,10 @@ def _wl_paste_image() -> Result[bytes, ClipboardError]:
     except (OSError, subprocess.TimeoutExpired) as exc:
         _log.error("clipboard: wl-paste invocation failed: %s", exc)
         return Err(ClipboardError.BackendFailed)
+    if guarded.is_err:
+        _log.error("clipboard: wl-paste invocation refused (exec disabled)")
+        return Err(ClipboardError.BackendFailed)
+    proc = cast("subprocess.CompletedProcess[bytes]", guarded.danger_ok)
     if proc.returncode != 0:
         _log.error("clipboard: wl-paste exited %d: %s", proc.returncode, proc.stderr)
         return Err(ClipboardError.BackendFailed)
@@ -112,7 +122,7 @@ def _wl_paste_image() -> Result[bytes, ClipboardError]:
 def _xclip_has_image() -> bool:
     _log.debug("clipboard: probing xclip -o -t TARGETS")
     try:
-        proc = subprocess.run(
+        guarded = guarded_subprocess_run(
             ["xclip", "-selection", "clipboard", "-t", "TARGETS", "-o"],
             capture_output=True,
             timeout=_PROBE_TIMEOUT_S,
@@ -121,13 +131,17 @@ def _xclip_has_image() -> bool:
     except (OSError, subprocess.TimeoutExpired) as exc:
         _log.warning("clipboard: xclip probe failed: %s", exc)
         return False
+    if guarded.is_err:
+        _log.warning("clipboard: xclip probe refused (exec disabled)")
+        return False
+    proc = cast("subprocess.CompletedProcess[bytes]", guarded.danger_ok)
     return b"image/png" in proc.stdout
 
 
 def _xclip_image() -> Result[bytes, ClipboardError]:
     _log.info("clipboard: fetching image via xclip")
     try:
-        proc = subprocess.run(
+        guarded = guarded_subprocess_run(
             ["xclip", "-selection", "clipboard", "-t", "image/png", "-o"],
             capture_output=True,
             timeout=_PASTE_TIMEOUT_S,
@@ -136,6 +150,10 @@ def _xclip_image() -> Result[bytes, ClipboardError]:
     except (OSError, subprocess.TimeoutExpired) as exc:
         _log.error("clipboard: xclip invocation failed: %s", exc)
         return Err(ClipboardError.BackendFailed)
+    if guarded.is_err:
+        _log.error("clipboard: xclip invocation refused (exec disabled)")
+        return Err(ClipboardError.BackendFailed)
+    proc = cast("subprocess.CompletedProcess[bytes]", guarded.danger_ok)
     if proc.returncode != 0:
         _log.error("clipboard: xclip exited %d: %s", proc.returncode, proc.stderr)
         return Err(ClipboardError.BackendFailed)
@@ -148,7 +166,7 @@ def _xclip_image() -> Result[bytes, ClipboardError]:
 def _wsl_has_image() -> bool:
     _log.debug("clipboard: probing WSL clipboard via powershell.exe ContainsImage")
     try:
-        proc = subprocess.run(
+        guarded = guarded_subprocess_run(
             [
                 "powershell.exe",
                 "-NoProfile",
@@ -162,6 +180,10 @@ def _wsl_has_image() -> bool:
     except (OSError, subprocess.TimeoutExpired) as exc:
         _log.warning("clipboard: WSL probe failed: %s", exc)
         return False
+    if guarded.is_err:
+        _log.warning("clipboard: WSL probe refused (exec disabled)")
+        return False
+    proc = cast("subprocess.CompletedProcess[bytes]", guarded.danger_ok)
     return b"True" in proc.stdout
 
 
@@ -178,7 +200,7 @@ def _wsl_save_and_read(tmp_dir: str, win_png: str) -> Result[bytes, ClipboardErr
     """Save the WSL clipboard image to `win_png` via powershell, then read it back."""
     script = _WSL_SAVE_SCRIPT.format(win_png=win_png)
     try:
-        proc = subprocess.run(
+        guarded = guarded_subprocess_run(
             ["powershell.exe", "-NoProfile", "-Command", script],
             capture_output=True,
             timeout=_PASTE_TIMEOUT_S,
@@ -187,6 +209,10 @@ def _wsl_save_and_read(tmp_dir: str, win_png: str) -> Result[bytes, ClipboardErr
     except (OSError, subprocess.TimeoutExpired) as exc:
         _log.error("clipboard: WSL powershell invocation failed: %s", exc)
         return Err(ClipboardError.BackendFailed)
+    if guarded.is_err:
+        _log.error("clipboard: WSL powershell invocation refused (exec disabled)")
+        return Err(ClipboardError.BackendFailed)
+    proc = cast("subprocess.CompletedProcess[bytes]", guarded.danger_ok)
     if proc.returncode == 2:
         _log.info("clipboard: WSL clipboard has no image")
         return Err(ClipboardError.NoImage)
@@ -205,12 +231,16 @@ def _wsl_save_and_read(tmp_dir: str, win_png: str) -> Result[bytes, ClipboardErr
 def _wsl_image() -> Result[bytes, ClipboardError]:
     _log.info("clipboard: fetching image via WSL powershell.exe")
     with tempfile.TemporaryDirectory() as tmp_dir:
-        win_tmp = subprocess.run(
+        guarded_win_tmp = guarded_subprocess_run(
             ["wslpath", "-w", tmp_dir],
             capture_output=True,
             timeout=_PROBE_TIMEOUT_S,
             check=False,
         )
+        if guarded_win_tmp.is_err:
+            _log.error("clipboard: wslpath refused (exec disabled) for %s", tmp_dir)
+            return Err(ClipboardError.BackendFailed)
+        win_tmp = cast("subprocess.CompletedProcess[bytes]", guarded_win_tmp.danger_ok)
         if win_tmp.returncode != 0:
             _log.error("clipboard: wslpath failed to translate %s", tmp_dir)
             return Err(ClipboardError.BackendFailed)
@@ -222,7 +252,7 @@ def _wsl_image() -> Result[bytes, ClipboardError]:
 def _pngpaste_has_image() -> bool:
     _log.debug("clipboard: probing pngpaste to /dev/null")
     try:
-        proc = subprocess.run(
+        guarded = guarded_subprocess_run(
             ["pngpaste", "-"],
             capture_output=True,
             timeout=_PROBE_TIMEOUT_S,
@@ -231,13 +261,17 @@ def _pngpaste_has_image() -> bool:
     except (OSError, subprocess.TimeoutExpired) as exc:
         _log.warning("clipboard: pngpaste probe failed: %s", exc)
         return False
+    if guarded.is_err:
+        _log.warning("clipboard: pngpaste probe refused (exec disabled)")
+        return False
+    proc = cast("subprocess.CompletedProcess[bytes]", guarded.danger_ok)
     return proc.returncode == 0 and bool(proc.stdout)
 
 
 def _pngpaste_image() -> Result[bytes, ClipboardError]:
     _log.info("clipboard: fetching image via pngpaste")
     try:
-        proc = subprocess.run(
+        guarded = guarded_subprocess_run(
             ["pngpaste", "-"],
             capture_output=True,
             timeout=_PASTE_TIMEOUT_S,
@@ -246,6 +280,10 @@ def _pngpaste_image() -> Result[bytes, ClipboardError]:
     except (OSError, subprocess.TimeoutExpired) as exc:
         _log.error("clipboard: pngpaste invocation failed: %s", exc)
         return Err(ClipboardError.BackendFailed)
+    if guarded.is_err:
+        _log.error("clipboard: pngpaste invocation refused (exec disabled)")
+        return Err(ClipboardError.BackendFailed)
+    proc = cast("subprocess.CompletedProcess[bytes]", guarded.danger_ok)
     if proc.returncode != 0:
         _log.error("clipboard: pngpaste exited %d: %s", proc.returncode, proc.stderr)
         return Err(ClipboardError.BackendFailed)

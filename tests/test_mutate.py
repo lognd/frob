@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import ast
+import subprocess
 from pathlib import Path
+
+import pytest
 
 from frob.mutate import (
     MutateError,
@@ -78,6 +81,49 @@ def test_run_mutations_missing_file(tmp_path):
     result = run_mutations(tmp_path, Path("nope.py"), ("true",))
     assert result.is_err
     assert result.danger_err == MutateError.NoSource
+
+
+# frob:ticket T-0803
+def test_run_mutations_kill_switch_refuses_without_spawning(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # frob:tests src/frob/mutate/__init__.py::run_mutations
+    # T-0803: FROB_DISABLE_EXEC=1 must make `run_mutations`'s per-mutant
+    # test-suite spawn refuse (via `guarded_subprocess_run`) instead of
+    # bypassing the T-0200/T-0778 exec guard -- proven with a spy on the
+    # real `subprocess.run` so a spawn attempt would be observed. A
+    # refused spawn is NOT a "killed" mutant: unlike a `TimeoutExpired`
+    # hang (real, observed behavior under the mutant), a refusal ran
+    # nothing, so scoring it as killed would fabricate a 100% mutation
+    # score / zero survivors under the kill switch -- an env-var-gameable
+    # rubber stamp. The whole run aborts with `Err(MutateError.
+    # ExecDisabled)` instead (reviewer-mandated fix, matches
+    # `_coverage_wait`/`_vm_runner`'s Err/raise semantics for the same
+    # case).
+    (tmp_path / "m.py").write_text(
+        "def add(a, b):\n    return a + b\n", encoding="utf-8"
+    )
+    (tmp_path / "t.py").write_text(
+        "import m\ndef test_add():\n    assert m.add(2, 3) == 5\n", encoding="utf-8"
+    )
+    monkeypatch.setenv("FROB_DISABLE_EXEC", "1")
+    spawned = False
+    real_run = subprocess.run
+
+    def _spy(*args, **kwargs):  # noqa: ANN001, ANN202
+        nonlocal spawned
+        spawned = True
+        return real_run(*args, **kwargs)
+
+    monkeypatch.setattr(subprocess, "run", _spy)
+    result = run_mutations(
+        tmp_path, Path("m.py"), ("python", "-m", "pytest", "-q", "t.py")
+    )
+    assert not spawned
+    assert result.is_err
+    assert result.danger_err == MutateError.ExecDisabled
+    # the source is restored even though the run aborted
+    assert (tmp_path / "m.py").read_text() == "def add(a, b):\n    return a + b\n"
 
 
 def test_mutation_result_score():

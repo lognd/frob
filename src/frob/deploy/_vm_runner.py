@@ -44,6 +44,7 @@ from frob.deploy._audit import (
 )
 from frob.deploy._conform import MutationTarget
 from frob.logging import get_logger
+from frob.process._guard import EXEC_KILL_SWITCH_ENV, guarded_subprocess_run
 
 _log = get_logger(__name__)
 
@@ -104,16 +105,32 @@ def vboxmanage_available() -> bool:
     return shutil.which("VBoxManage") is not None
 
 
+def _run_guarded(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+    """`subprocess.run(args, **kwargs)` routed through `guarded_subprocess_
+    run` (T-0778/T-0803) so `FROB_DISABLE_EXEC=1` refuses every VBoxManage/
+    ssh/scp spawn this module makes, not just `frob check`'s own tool
+    runners. Raises `RuntimeError` (instead of silently returning) when the
+    kill switch is flipped, matching this module's existing "let a spawn
+    failure raise, no local error handling" contract (`check=True` sites
+    already raise `CalledProcessError` on a nonzero exit; a refused spawn
+    is the same class of hard failure, not a soft skip)."""
+    guarded = guarded_subprocess_run(args, **kwargs)
+    if guarded.is_err:
+        msg = f"exec disabled ({EXEC_KILL_SWITCH_ENV}) -- refused to spawn {args!r}"
+        raise RuntimeError(msg)
+    return guarded.danger_ok
+
+
 def _vboxmanage(*args: str) -> subprocess.CompletedProcess[str]:
     """Run one `VBoxManage` subcommand, capturing output as text."""
-    return subprocess.run(
+    return _run_guarded(
         ["VBoxManage", *args], capture_output=True, text=True, check=True
     )
 
 
 def _ssh(cfg: VmAuditConfig, remote_command: str) -> str:
     """Run one command over ssh on the guest, returning stdout text."""
-    result = subprocess.run(
+    result = _run_guarded(
         [
             "ssh",
             *_SSH_OPTS,
@@ -131,7 +148,7 @@ def _ssh(cfg: VmAuditConfig, remote_command: str) -> str:
 
 def _scp_to_guest(cfg: VmAuditConfig, local_path: Path, remote_path: str) -> None:
     """Copy one local file onto the guest via `scp`."""
-    subprocess.run(
+    _run_guarded(
         [
             "scp",
             *_SSH_OPTS,
@@ -150,7 +167,7 @@ def _restore_base_snapshot(cfg: VmAuditConfig) -> None:
     """Power off (idempotent -- ignores "not running") and restore the
     guest to `cfg.base_snapshot`, then start it headless. This is the
     sequence's very first step, run once before CHECK C0."""
-    subprocess.run(
+    _run_guarded(
         ["VBoxManage", "controlvm", cfg.vm_name, "poweroff"],
         capture_output=True,
         text=True,

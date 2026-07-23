@@ -48,6 +48,45 @@ class TestAvail:
         assert result.reason is not None
         assert result.attestation is None
 
+    # frob:tests src/frob/deploy/_vm_runner.py::run_vm_audit kind="unit"
+    def test_kill_switch_refuses_without_spawning(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # T-0803: FROB_DISABLE_EXEC=1 must make the very first VBoxManage/
+        # ssh spawn (`_restore_base_snapshot`'s poweroff) refuse (via
+        # `guarded_subprocess_run`) instead of bypassing the T-0200/T-0778
+        # exec guard -- proven with a spy on the real `subprocess.run` so a
+        # spawn attempt would be observed, not assumed. Surfaces as a
+        # `RuntimeError` (this module's existing "let a spawn failure
+        # raise" contract), not a silent skip.
+        cfg = VmAuditConfig(
+            vm_name="frob-audit-vm",
+            base_snapshot="base",
+            ssh_host="127.0.0.1",
+            ssh_user="root",
+            ssh_key_path=Path("/nonexistent/key"),
+            deploy_dir=Path("/nonexistent/deploy"),
+            expected_paths=(),
+            expected_units=(),
+            expected_targets=frozenset(),
+        )
+        monkeypatch.setenv("FROB_DISABLE_EXEC", "1")
+        spawned = False
+        real_run = subprocess.run
+
+        def _spy(*args, **kwargs):  # noqa: ANN001, ANN202
+            nonlocal spawned
+            spawned = True
+            return real_run(*args, **kwargs)
+
+        with (
+            patch("shutil.which", return_value="/usr/bin/VBoxManage"),
+            patch("frob.process._guard.subprocess.run", side_effect=_spy),
+            pytest.raises(RuntimeError, match="exec disabled"),
+        ):
+            run_vm_audit(cfg)
+        assert not spawned
+
 
 def _fake_subprocess_run(cmd, **kwargs):
     """Stand-in for `subprocess.run` used by every `_vm_runner` helper
@@ -110,7 +149,7 @@ class TestFullSequence:
         with (
             patch("shutil.which", return_value="/usr/bin/VBoxManage"),
             patch(
-                "frob.deploy._vm_runner.subprocess.run",
+                "frob.process._guard.subprocess.run",
                 side_effect=_fake_subprocess_run,
             ),
         ):
@@ -139,7 +178,7 @@ class TestFullSequence:
 
         with (
             patch("shutil.which", return_value="/usr/bin/VBoxManage"),
-            patch("frob.deploy._vm_runner.subprocess.run", side_effect=_raise),
+            patch("frob.process._guard.subprocess.run", side_effect=_raise),
             pytest.raises(subprocess.CalledProcessError),
         ):
             run_vm_audit(self._cfg())

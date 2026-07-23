@@ -53,6 +53,9 @@ class MutateError(ErrorSet):
 
     ParseFailed = "Source file could not be parsed"
     NoSource = "Target file does not exist"
+    ExecDisabled = (
+        "exec capability disabled via kill switch -- mutation run aborted, no score"
+    )
 
 
 # frob:doc docs/modules/mutate.md#public-api
@@ -225,9 +228,16 @@ def run_mutations(
         return Err(generated.danger_err)
     mutants = generated.danger_ok
     try:
-        killed, survivors = _run_mutants(target, mutants, test_argv, root, timeout_s)
+        run_result = _run_mutants(target, mutants, test_argv, root, timeout_s)
     finally:
         target.write_text(original, encoding="utf-8")
+    if run_result.is_err:
+        _log.error(
+            "mutate: run aborted (%s) -- no mutation score, not a false 100%%",
+            run_result.danger_err,
+        )
+        return Err(run_result.danger_err)
+    killed, survivors = run_result.danger_ok
     _log.info(
         "mutate: %d mutant(s), %d killed, %d survived",
         len(mutants),
@@ -245,19 +255,31 @@ def _run_mutants(
     test_argv: tuple[str, ...],
     root: Path,
     timeout_s: float,
-) -> tuple[int, list[Mutant]]:
+) -> Result[tuple[int, list[Mutant]], MutateError]:
     """Write and test each mutant in turn: `(killed_count, surviving_mutants)`.
 
     Caller is responsible for restoring `target`'s original content afterward.
+
+    T-0803 reviewer fix: a refused spawn (`FROB_DISABLE_EXEC=1`) is NOT
+    scored as "killed" -- unlike a `TimeoutExpired` hang (real, OBSERVED
+    behavior under the mutant), a refusal ran nothing at all, so treating
+    it as a kill would produce a fabricated 100% mutation score / zero
+    survivors under the kill switch, an env-var-gameable rubber stamp on
+    a suite that was never actually exercised. Instead this aborts the
+    whole run with `Err(MutateError.ExecDisabled)` on the FIRST refusal --
+    mirroring the honest `Err`/`raise` semantics `_coverage_wait.py`/
+    `_vm_runner.py` already chose for the same kill-switch case.
     """
     import subprocess
+
+    from frob.process._guard import guarded_subprocess_run
 
     killed = 0
     survivors: list[Mutant] = []
     for mutation in mutants:
         target.write_text(mutation.source, encoding="utf-8")
         try:
-            proc = subprocess.run(
+            guarded = guarded_subprocess_run(
                 list(test_argv),
                 cwd=root,
                 capture_output=True,
@@ -266,12 +288,20 @@ def _run_mutants(
         except subprocess.TimeoutExpired:
             killed += 1  # a mutant that hangs the tests is caught
             continue
+        if guarded.is_err:
+            _log.warning(
+                "mutate: test spawn refused (exec disabled) for mutant %s -- "
+                "aborting run, not scoring as killed",
+                mutation.mutant.description,
+            )
+            return Err(MutateError.ExecDisabled)
+        proc = guarded.danger_ok
         if proc.returncode != 0:
             killed += 1
         else:
             _log.info("mutate: SURVIVOR %s", mutation.mutant.description)
             survivors.append(mutation.mutant)
-    return killed, survivors
+    return Ok((killed, survivors))
 
 
 __all__ = [

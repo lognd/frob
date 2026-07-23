@@ -29,7 +29,12 @@ from typani.result import Err, Ok
 from frob.app._style import style_state, style_ticket_id
 from frob.app.config import AppConfig
 from frob.logging import get_logger, logger_levels
-from frob.process._guard import EXEC_KILL_SWITCH_ENV, exec_enabled
+from frob.process._guard import (
+    EXEC_KILL_SWITCH_ENV,
+    ProcessGuardError,
+    exec_enabled,
+    guarded_subprocess_run,
+)
 
 if TYPE_CHECKING:
     from frob.tickets import TicketQueue
@@ -861,7 +866,11 @@ def _land_rebuild_natives_fn():  # noqa: ANN201
     fault)."""
 
     def fn(root: Path) -> bool:
-        result = subprocess.run(
+        # T-0803: routed through `guarded_subprocess_run` (T-0778's guard)
+        # so `FROB_DISABLE_EXEC=1` refuses this `make core` spawn too;
+        # treated as a failed rebuild (`False`, logged) rather than a hard
+        # error, matching this function's existing best-effort contract.
+        guarded = guarded_subprocess_run(
             ["make", "core"],
             cwd=root,
             capture_output=True,
@@ -869,6 +878,14 @@ def _land_rebuild_natives_fn():  # noqa: ANN201
             timeout=600,
             check=False,
         )
+        if guarded.is_err:
+            _log.warning(
+                "land: `make core` in %s refused to spawn (%s)",
+                root,
+                ProcessGuardError.ExecDisabled,
+            )
+            return False
+        result = guarded.danger_ok
         if result.returncode != 0:
             _log.warning(
                 "land: `make core` in %s exited %d -- stdout=%r stderr=%r",

@@ -585,3 +585,37 @@ class TestBackends:
 
         monkeypatch.setattr(clip.Path, "read_text", raise_oserror)
         assert clip._is_wsl() is False
+
+
+# frob:ticket T-0803
+class TestKillSwitch:
+    def test_clipboard_image_kill_switch_refuses_without_spawning(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/tickets/clipboard.py::clipboard_image
+        # T-0803: FROB_DISABLE_EXEC=1 must make `clipboard_image`'s backend
+        # spawn (wl-paste here) refuse (via `guarded_subprocess_run`)
+        # instead of bypassing the T-0200/T-0778 exec guard -- proven with
+        # a spy on the real `subprocess.run` so a spawn attempt would be
+        # observed, not assumed.
+        _clear_env(monkeypatch)
+        monkeypatch.setenv("WAYLAND_DISPLAY", "wayland-0")
+        monkeypatch.setattr(
+            clip.shutil,
+            "which",
+            lambda name: "/usr/bin/wl-paste" if name == "wl-paste" else None,
+        )
+        monkeypatch.setenv("FROB_DISABLE_EXEC", "1")
+        spawned = False
+        real_run = clip.subprocess.run
+
+        def _spy(*args, **kwargs):  # noqa: ANN001, ANN202
+            nonlocal spawned
+            spawned = True
+            return real_run(*args, **kwargs)
+
+        monkeypatch.setattr(clip.subprocess, "run", _spy)
+        result = clipboard_image()
+        assert not spawned
+        assert result.is_err
+        assert result.danger_err == ClipboardError.BackendFailed

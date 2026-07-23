@@ -9,11 +9,12 @@ changes (feat+fix), or full history.
 from __future__ import annotations
 
 import re
-import subprocess
 from pathlib import Path
 from typing import Literal
 
 from pydantic import BaseModel
+
+from frob.process._guard import guarded_subprocess_run
 
 GranularityLevel = Literal["major", "user", "full", "changelog"]
 
@@ -226,11 +227,20 @@ def _git_log_raw(
         cmd.append(f"--until={until}")
     if limit:
         cmd += ["-n", str(limit)]
+    # T-0803: routed through `guarded_subprocess_run` (T-0778's guard) so
+    # `FROB_DISABLE_EXEC=1` refuses this git spawn instead of bypassing it
+    # -- kept as a direct `guarded_subprocess_run` call rather than
+    # `frob.gitio.run_argv` to preserve this call's exact no-timeout,
+    # `FileNotFoundError`-tolerant contract (`frob.gitio.run_argv` imposes
+    # a default 30s timeout and a different `Result`-based error shape
+    # this module's callers do not expect).
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd)
-        return result.stdout
+        guarded = guarded_subprocess_run(cmd, capture_output=True, text=True, cwd=cwd)
     except FileNotFoundError:
         return ""
+    if guarded.is_err:
+        return ""
+    return guarded.danger_ok.stdout
 
 
 def _tag_from_refs(refs: str) -> str | None:

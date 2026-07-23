@@ -25,6 +25,7 @@ from typani.error_set import ErrorSet
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
+from frob.process._guard import guarded_subprocess_run
 from frob.tickets import TicketSpec, doable, load_queue, new_ticket
 from frob.tickets._store import ledger_path, tickets_dir
 
@@ -160,8 +161,13 @@ def _git_branch_and_dirty(repo_path: Path) -> tuple[str | None, bool]:
     `repo_path`, via a bare `git status --porcelain=v1 -b`; a `None` branch
     (detached HEAD, or `git` unavailable/failed) still reports `dirty` best
     -effort from whatever output was produced."""
+    # T-0803: routed through `guarded_subprocess_run` (T-0778's guard) so
+    # `FROB_DISABLE_EXEC=1` refuses this git spawn -- kept as a direct
+    # `guarded_subprocess_run` call (not `frob.gitio.run_argv`) to preserve
+    # this function's existing best-effort `(None, False)` fallback
+    # contract and its `cwd=`-based invocation shape.
     try:
-        result = subprocess.run(
+        guarded = guarded_subprocess_run(
             ["git", "status", "--porcelain=v2", "--branch"],
             cwd=repo_path,
             capture_output=True,
@@ -172,6 +178,10 @@ def _git_branch_and_dirty(repo_path: Path) -> tuple[str | None, bool]:
     except (OSError, subprocess.TimeoutExpired) as exc:
         _log.warning("fleet: git status failed for %s: %s", repo_path, exc)
         return None, False
+    if guarded.is_err:
+        _log.warning("fleet: git status refused (exec disabled) for %s", repo_path)
+        return None, False
+    result = guarded.danger_ok
     branch = None
     dirty = False
     for line in result.stdout.splitlines():
@@ -190,8 +200,12 @@ def _gate_summary_probe(repo_path: Path) -> GateSummary:
     unreachable sibling never aborts the whole fleet rollup, it just shows
     as all-zero with the caller's own `RepoStatus.error` set."""
     argv = _check_probe_argv(repo_path)
+    # T-0803: routed through `guarded_subprocess_run` (T-0778's guard) so
+    # `FROB_DISABLE_EXEC=1` refuses this `frob check` probe spawn too;
+    # degrades to the same all-zero `GateSummary()` fallback this function
+    # already uses for any other probe failure.
     try:
-        result = subprocess.run(
+        guarded = guarded_subprocess_run(
             argv,
             cwd=repo_path,
             capture_output=True,
@@ -202,6 +216,10 @@ def _gate_summary_probe(repo_path: Path) -> GateSummary:
     except (OSError, subprocess.TimeoutExpired) as exc:
         _log.warning("fleet: check probe failed for %s: %s", repo_path, exc)
         return GateSummary()
+    if guarded.is_err:
+        _log.warning("fleet: check probe refused (exec disabled) for %s", repo_path)
+        return GateSummary()
+    result = guarded.danger_ok
     try:
         payload = json.loads(result.stdout)
     except json.JSONDecodeError:

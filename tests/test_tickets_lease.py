@@ -293,6 +293,7 @@ class TestLargeGlobWarnings:
         assert "matches 2 files" in warnings[0]
 
 
+# frob:ticket T-0803
 class TestBreadthPerf:
     """T-0453 perf-fix guard: the breadth walk (repo-file listing) must run
     ONCE per `doable`/`doable_blocked` call, never once per candidate x
@@ -381,3 +382,34 @@ class TestBreadthPerf:
 
         _threshold, files = scope_breadth_context(tmp_path)
         assert files == ("a.py",)
+
+    def test_repo_files_git_kill_switch_refuses_without_spawning(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests tests/test_tickets_lease.py::TestBreadthPerf.test_repo_files_git_kill_switch_refuses_without_spawning
+        # T-0803: FROB_DISABLE_EXEC=1 must make `_repo_files_git`'s `git
+        # ls-files` spawn refuse (via `frob.gitio.run_argv` ->
+        # `guarded_subprocess_run`) instead of bypassing the T-0200/T-0778
+        # exec guard -- proven with a spy on the real `subprocess.run` so a
+        # spawn attempt would be observed, not assumed.
+        import subprocess
+
+        from frob.tickets import _repo_files_git
+
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        (tmp_path / "a.py").write_text("x = 1\n")
+        subprocess.run(["git", "add", "a.py"], cwd=tmp_path, check=True)
+
+        monkeypatch.setenv("FROB_DISABLE_EXEC", "1")
+        spawned = False
+        real_run = subprocess.run
+
+        def _spy(*args, **kwargs):  # noqa: ANN001, ANN202
+            nonlocal spawned
+            spawned = True
+            return real_run(*args, **kwargs)
+
+        monkeypatch.setattr(subprocess, "run", _spy)
+        result = _repo_files_git(tmp_path)
+        assert not spawned
+        assert result is None

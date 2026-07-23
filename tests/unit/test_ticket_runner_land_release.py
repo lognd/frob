@@ -13,6 +13,7 @@ import pytest
 from typani.result import Err, Ok
 
 from frob.app import ticket_runner
+from frob.process import _guard
 from frob.release import BumpClass, ReleaseManifest
 from frob.tickets._models import LandError
 
@@ -149,7 +150,9 @@ class _FakeProc:
         self.stderr = stderr
 
 
+# frob:ticket T-0803
 class TestLandRebuildNativesFn:
+    # frob:ticket T-0803
     def test_success_returns_true(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -160,11 +163,12 @@ class TestLandRebuildNativesFn:
             calls.append(argv)
             return _FakeProc(0)
 
-        monkeypatch.setattr(ticket_runner.subprocess, "run", _fake_run)
+        monkeypatch.setattr(_guard.subprocess, "run", _fake_run)
         fn = ticket_runner._land_rebuild_natives_fn()
         assert fn(tmp_path) is True
         assert calls == [["make", "core"]]
 
+    # frob:ticket T-0803
     def test_failure_returns_false_and_logs(
         self,
         tmp_path: Path,
@@ -175,8 +179,31 @@ class TestLandRebuildNativesFn:
         def _fake_run(argv, **kwargs):  # noqa: ANN001, ANN202
             return _FakeProc(1, stderr="boom")
 
-        monkeypatch.setattr(ticket_runner.subprocess, "run", _fake_run)
+        monkeypatch.setattr(_guard.subprocess, "run", _fake_run)
         fn = ticket_runner._land_rebuild_natives_fn()
         with caplog.at_level("WARNING", logger="frob.app.ticket_runner"):
             assert fn(tmp_path) is False
         assert any("make core" in r.message for r in caplog.records)
+
+    # frob:ticket T-0803
+    def test_kill_switch_refuses_without_spawning(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_land_release.py::TestLandRebuildNativesFn.test_kill_switch_refuses_without_spawning  # noqa: E501
+        # T-0803: FROB_DISABLE_EXEC=1 must make `_land_rebuild_natives_fn`'s
+        # `make core` spawn refuse (via `guarded_subprocess_run`) instead
+        # of bypassing the T-0200/T-0778 exec guard -- proven with a spy on
+        # the real `subprocess.run` so a spawn attempt would be observed.
+        monkeypatch.setenv("FROB_DISABLE_EXEC", "1")
+        spawned = False
+        real_run = _guard.subprocess.run
+
+        def _spy(*args, **kwargs):  # noqa: ANN001, ANN202
+            nonlocal spawned
+            spawned = True
+            return real_run(*args, **kwargs)
+
+        monkeypatch.setattr(_guard.subprocess, "run", _spy)
+        fn = ticket_runner._land_rebuild_natives_fn()
+        assert fn(tmp_path) is False
+        assert not spawned

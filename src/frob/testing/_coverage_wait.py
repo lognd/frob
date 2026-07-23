@@ -21,7 +21,6 @@ from __future__ import annotations
 
 import fcntl
 import os
-import subprocess
 import time
 from contextlib import contextmanager
 from pathlib import Path
@@ -34,6 +33,7 @@ from typani.error_set import ErrorSet
 from frob.gates import load_stamp
 from frob.graph import GraphSnapshot, build_graph, load_graph
 from frob.logging import get_logger
+from frob.process._guard import guarded_subprocess_run
 
 _log = get_logger(__name__)
 
@@ -148,10 +148,22 @@ def run_coverage_wait(
 
         _log.info("coverage_wait: stamp stale/missing, running: %s", " ".join(command))
         start = time.monotonic()
-        result = subprocess.run(  # noqa: S603
-            list(command), cwd=str(root), check=False
-        )
+        # T-0803: routed through `guarded_subprocess_run` (T-0778's guard)
+        # so `FROB_DISABLE_EXEC=1` refuses this coverage-suite spawn too;
+        # surfaced as the same `RunFailed` error this function already
+        # returns for a nonzero exit, since a refused spawn is just
+        # another "the coverage run did not happen" outcome from the
+        # caller's point of view.
+        guarded = guarded_subprocess_run(list(command), cwd=str(root), check=False)
         duration = time.monotonic() - start
+        if guarded.is_err:
+            _log.error(
+                "coverage_wait: %s refused (exec disabled) after %.1fs",
+                " ".join(command),
+                duration,
+            )
+            return Err(CoverageWaitError.RunFailed)
+        result = guarded.danger_ok
         if result.returncode != 0:
             _log.error(
                 "coverage_wait: %s exited %d after %.1fs",

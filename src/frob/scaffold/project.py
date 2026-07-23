@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import stat
-import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -504,18 +503,20 @@ def _hooks_dir(root: Path) -> Result[Path, ScaffoldError]:
     --git-path hooks`, worktree-correct: a linked worktree normally shares
     the common dir's hooks/ unless `core.hooksPath` says otherwise, and
     `--git-path` resolves that for us rather than assuming `.git/hooks`
-    literally)."""
-    try:
-        completed = subprocess.run(
-            ["git", "-C", str(root), "rev-parse", "--git-path", "hooks"],
-            capture_output=True,
-            text=True,
-            timeout=10,
-            check=False,
-        )
-    except OSError as exc:
-        _log.error("scaffold: git rev-parse --git-path hooks failed: %s", exc)
+    literally).
+
+    T-0803: routed through `frob.gitio.run_argv` (gains `guarded_subprocess_
+    run`'s `FROB_DISABLE_EXEC` kill switch transitively, T-0778) instead of
+    a bare `subprocess.run`."""
+    from frob.gitio import run_argv
+
+    spawned = run_argv(
+        ["git", "-C", str(root), "rev-parse", "--git-path", "hooks"], timeout_s=10
+    )
+    if spawned.is_err:
+        _log.error("scaffold: git rev-parse --git-path hooks failed")
         return Err(ScaffoldError.NotAGitRepo)
+    completed = spawned.danger_ok
     if completed.returncode != 0:
         _log.error(
             "scaffold: %s is not inside a git work tree (git rev-parse --git-path "
