@@ -19,6 +19,7 @@ Two tables, one rule each:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sqlite3
 import threading
@@ -34,6 +35,10 @@ from frob.graph.cache import _compute_fingerprint
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
+
+#: The `frob.dup` package directory, used to source-hash the rule/
+#: normalization code below (T-0798).
+_DUP_PKG_DIR = Path(__file__).resolve().parent
 
 #: Process-lifetime connection cache, keyed by resolved `.frob/dup.db` path.
 #: T-0191: `find_clones` issues thousands of get/put calls on a repo this
@@ -68,10 +73,34 @@ CREATE TABLE IF NOT EXISTS verdicts (
 """
 
 
+# frob:ticket T-0798
+def _dup_code_fingerprint() -> str:
+    """Sha256 hex digest over every `frob.dup/*.py` file's own source bytes.
+
+    `_compute_fingerprint` (below) only changes on an installed-package
+    VERSION bump; a rule/normalization edit landed in the same dev version
+    (e.g. T-0785's rule change) does not touch it, so `_check_fingerprint`
+    saw no change and kept serving verdicts computed under the old rules
+    (T-0798: a gate-integrity hole -- the dup gate reported stale results
+    as current until `.frob/dup.db` was hand-deleted). Hashing this
+    package's own `.py` files directly makes ANY edit to the rule/
+    normalization/pipeline code -- version bump or not -- change the
+    stored fingerprint and trip the existing wholesale-invalidate path,
+    with no second cache-key scheme to keep in sync.
+    """
+    digest = hashlib.sha256()
+    for path in sorted(_DUP_PKG_DIR.glob("*.py")):
+        digest.update(path.name.encode("utf-8"))
+        digest.update(b"\x00")
+        digest.update(path.read_bytes())
+    return digest.hexdigest()
+
+
 # frob:ticket T-0517
+# frob:ticket T-0798
 def _check_fingerprint(conn: sqlite3.Connection) -> None:
-    """Invalidate cached fingerprint/verdict rows if the stored version
-    fingerprint does not match the running process's fingerprint.
+    """Invalidate cached fingerprint/verdict rows if the stored fingerprint
+    does not match the running process's (version + dup source digest).
 
     Reuses `frob.graph.cache`'s `_compute_fingerprint` (T-0243 pattern)
     rather than a second implementation: `dup.db` rows are payloads
@@ -81,9 +110,11 @@ def _check_fingerprint(conn: sqlite3.Connection) -> None:
     while the digest string itself stays the same -- content addressing
     alone cannot catch that, only a version fingerprint can (T-0517: an
     untracked, wrong-version `dup.db` served stale rows -- 6 cache hits,
-    0 pairs verified -- against a landed algorithm change).
+    0 pairs verified -- against a landed algorithm change). Combined with
+    `_dup_code_fingerprint` (T-0798) so an in-tree dup rule/normalization
+    edit invalidates too, not only a package version bump.
     """
-    current = _compute_fingerprint()
+    current = f"{_compute_fingerprint()}|dup={_dup_code_fingerprint()}"
     row = conn.execute("SELECT value FROM meta WHERE key = 'fingerprint'").fetchone()
     stored = row[0] if row is not None else None
     if stored == current:

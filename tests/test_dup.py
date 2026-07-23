@@ -546,3 +546,51 @@ class TestErrorChannelNormalizationDoesNotOverFire:
             f"pair two functions with genuinely different logic; got "
             f"rungs={rungs}, groups={report.groups!r}"
         )
+
+
+class TestVerdictCacheRulesFingerprintInvalidation:
+    """T-0798: `.frob/dup.db` was keyed by content digest only, so a dup
+    rule/normalization change (e.g. T-0785) silently replayed pre-change
+    verdicts until the db was hand-deleted -- a gate-integrity hole. The
+    stored fingerprint now also covers `frob.dup`'s own source bytes
+    (`_cache._dup_code_fingerprint`), so any such change must flip a
+    cached verdict rather than serve it as still-current."""
+
+    # frob:tests tests/test_dup.py::TestVerdictCacheRulesFingerprintInvalidation.test_dup_code_fingerprint_change_invalidates_cached_verdict kind="unit"  # noqa: E501
+    def test_dup_code_fingerprint_change_invalidates_cached_verdict(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from frob.dup import _cache
+
+        # Seed a verdict row as if `find_clones` wrote it under an OLD
+        # frob.dup rule/normalization fingerprint (a landed rule change
+        # like T-0785, with no package version bump -- the scenario the
+        # version-only fingerprint (T-0517) could not catch).
+        monkeypatch.setattr(_cache, "_dup_code_fingerprint", lambda: "old-rules")
+        put_result = _cache.put_verdict(
+            tmp_path, "d1", "d2", "r4", 0, (0.99, ()), cache_entries=200_000
+        )
+        assert put_result.is_ok, put_result.err
+        assert _cache.get_verdict(tmp_path, "d1", "d2", "r4", 0) == [0.99, []]
+
+        # The rules change (a real process would recompute this from the
+        # edited source bytes) and a fresh connection opens, as a new
+        # `frob check` run would. The stale verdict must be gone, not
+        # served as current.
+        _cache._close_all()
+        monkeypatch.setattr(_cache, "_dup_code_fingerprint", lambda: "new-rules")
+        assert _cache.get_verdict(tmp_path, "d1", "d2", "r4", 0) is None
+
+    # frob:tests tests/test_dup.py::TestVerdictCacheRulesFingerprintInvalidation.test_unchanged_dup_code_fingerprint_still_serves_cached_verdict kind="unit"  # noqa: E501
+    def test_unchanged_dup_code_fingerprint_still_serves_cached_verdict(
+        self, tmp_path: Path
+    ) -> None:
+        from frob.dup import _cache
+
+        # Negative control: a same-fingerprint reconnect (the normal case,
+        # no rule change) must NOT wipe the row.
+        _cache.put_verdict(
+            tmp_path, "d3", "d4", "r4", 0, (0.5, ()), cache_entries=200_000
+        )
+        _cache._close_all()
+        assert _cache.get_verdict(tmp_path, "d3", "d4", "r4", 0) == [0.5, []]
