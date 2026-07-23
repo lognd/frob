@@ -5869,6 +5869,16 @@ evidence:
 - tests/test_ticket_land.py::TestSkipMutationEvidenceCliWiring::test_flag_omitted_defaults_false
 - tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_self_check_t0755_own_diff_zero_error_findings
 - tests/test_mutate.py::test_run_mutations_sets_mutation_run_sentinel_in_child_env
+- tests/test_ticket_land.py::TestCloseSkipMutationEvidenceCliWiring::test_flag_parses_to_true
+- tests/test_ticket_land.py::TestCloseSkipMutationEvidenceCliWiring::test_flag_omitted_defaults_false
+- tests/test_ticket_land.py::TestCloseMutationEvidenceForTicket::test_error_severity_finding_returns_false
+- tests/test_ticket_land.py::TestCloseMutationEvidenceForTicket::test_warn_only_severity_returns_true
+- tests/test_ticket_land.py::TestCloseMutationEvidenceForTicket::test_no_findings_returns_none
+- tests/test_ticket_land.py::TestCloseMutationEvidenceForTicket::test_unresolvable_branch_returns_none
+- tests/test_ticket_land.py::TestCloseFailureHintMutationEvidence::test_confirmatory_only_hint_names_skip_flag_remedy
+- tests/test_ticket_land.py::TestCloseFailureHintMutationEvidence::test_other_error_does_not_name_skip_flag_remedy
+- tests/test_ticket_land.py::TestCloseSkipMutationEvidenceBypass::test_skip_flag_bypasses_error_verdict
+- tests/test_ticket_land.py::TestCloseSkipMutationEvidenceBypass::test_no_skip_flag_refuses_on_error_verdict
 acceptance:
 - text: GIVEN a ticket whose recorded evidence tests all pass against a mutant of
     the changed logic WHEN close/land verifies THEN a confirmatory-only-test finding
@@ -6032,7 +6042,6 @@ stamping it kills the probe mutant and the test fails).
 ### Captured claims
 - tests: 24 passed (from 24 evidence id(s))
 - gates: 6 error(s), 1211 warning(s), 210 waived
-
 <!-- ticket:T-0756 -->
 ```yaml
 id: T-0756
