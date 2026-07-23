@@ -2073,7 +2073,7 @@ No new tickets filed for T-0600 itself -- the cross-ticket COV002/SCOPE001 fallo
 id: T-0601
 title: 'frob-exports triage: src/frob/strata, src/frob/tickets (22 symbols across
   2 packages)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-22'
