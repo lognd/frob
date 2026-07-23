@@ -323,6 +323,11 @@ class AppConfig(BaseModel):
     ticket_old_id: str | None = None
     ticket_new_id: str | None = None
     ticket_dry_run: bool = False
+    # frob:ticket T-0755
+    # `frob ticket land <id> --skip-mutation-evidence` -- documented escape
+    # hatch: a TEST016 confirmatory-only-evidence finding is logged but does
+    # not refuse the land. For genuine false positives only.
+    ticket_skip_mutation_evidence: bool = False
     ticket_worktree: Path | None = None
     # frob:ticket T-0474
     # `frob ticket start <id> --foreground` -- run the pre-work sweep
@@ -772,6 +777,7 @@ class AppConfig(BaseModel):
             "perf_smells",
             "sys_apply",
             "ticket_dry_run",
+            "ticket_skip_mutation_evidence",
             "ticket_close_strict",
             "ticket_foreground",
             "ticket_steal",

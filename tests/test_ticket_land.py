@@ -3506,3 +3506,173 @@ class TestGitFailureMessageCarriesStderr:
         assert result.is_err
         assert result.danger_err == LandError.GitFailed
         assert any("simulated failure" in r.message for r in caplog.records)
+
+
+# frob:ticket T-0755
+class TestMutationEvidencePrecheck:
+    """T-0755: `_check_mutation_evidence` blocks a security/bug-kind
+    ticket's land on an ERROR-severity TEST016 finding, but only WARNs
+    (does not block) every other kind -- unit-level over the private
+    helper (same posture as `TestGitFailureMessageCarriesStderr` above),
+    isolating the severity-gate decision from a full land() run."""
+
+    def _ticket(self, kind: TicketKind) -> Any:
+        from datetime import date as _date
+
+        from frob.tickets._models import Ticket
+
+        return Ticket(
+            id="T-0900",
+            title="sample",
+            state=TicketState.IN_PROGRESS,
+            kind=kind,
+            origin=Origin.HUMAN,
+            created=_date(2026, 1, 1),
+            blocked_by=(),
+            parent=None,
+            scope=("m.py",),
+            evidence=("test_m.py::test_add",),
+            attachments=(),
+            body="## Description\nx\n",
+        )
+
+    def test_security_kind_error_finding_blocks(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestMutationEvidencePrecheck.test_security_kind_error_finding_blocks  # noqa: E501
+        from frob.gates._models import Severity, Violation
+
+        ticket = self._ticket(TicketKind.SECURITY)
+        import frob.gates as _gates_mod
+
+        monkeypatch.setattr(
+            _gates_mod,
+            "mutation_evidence_violations",
+            lambda *a, **k: (
+                Violation(
+                    rule="TEST016",
+                    severity=Severity.ERROR,
+                    file="m.py",
+                    line=0,
+                    message="TEST016: confirmatory-only",
+                ),
+            ),
+        )
+        result = _land_mod._check_mutation_evidence(tmp_path, ticket, "main")
+        assert result.is_err
+        assert result.danger_err == LandError.EvidenceConfirmatoryOnly
+
+    def test_feature_kind_warn_finding_does_not_block(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestMutationEvidencePrecheck.test_feature_kind_warn_finding_does_not_block  # noqa: E501
+        from frob.gates._models import Severity, Violation
+
+        ticket = self._ticket(TicketKind.FEATURE)
+        import frob.gates as _gates_mod
+
+        monkeypatch.setattr(
+            _gates_mod,
+            "mutation_evidence_violations",
+            lambda *a, **k: (
+                Violation(
+                    rule="TEST016",
+                    severity=Severity.WARN,
+                    file="m.py",
+                    line=0,
+                    message="TEST016: confirmatory-only",
+                ),
+            ),
+        )
+        result = _land_mod._check_mutation_evidence(tmp_path, ticket, "main")
+        assert result.is_ok
+
+    def test_no_findings_is_ok(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestMutationEvidencePrecheck.test_no_findings_is_ok  # noqa: E501
+        ticket = self._ticket(TicketKind.SECURITY)
+        import frob.gates as _gates_mod
+
+        monkeypatch.setattr(
+            _gates_mod, "mutation_evidence_violations", lambda *a, **k: ()
+        )
+        result = _land_mod._check_mutation_evidence(tmp_path, ticket, "main")
+        assert result.is_ok
+
+    def test_skip_flag_bypasses_error_finding_but_still_logs(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestMutationEvidencePrecheck.test_skip_flag_bypasses_error_finding_but_still_logs  # noqa: E501
+        from frob.gates._models import Severity, Violation
+
+        ticket = self._ticket(TicketKind.SECURITY)
+        import frob.gates as _gates_mod
+
+        monkeypatch.setattr(
+            _gates_mod,
+            "mutation_evidence_violations",
+            lambda *a, **k: (
+                Violation(
+                    rule="TEST016",
+                    severity=Severity.ERROR,
+                    file="m.py",
+                    line=0,
+                    message="TEST016: confirmatory-only",
+                ),
+            ),
+        )
+        result = _land_mod._check_mutation_evidence(
+            tmp_path, ticket, "main", skip=True
+        )
+        assert result.is_ok
+
+
+# frob:ticket T-0755
+class TestSkipMutationEvidenceCliWiring:
+    """T-0755 reviewer round 2 finding 4: `frob ticket land
+    --skip-mutation-evidence` must actually parse and reach `AppConfig`,
+    and default to `False` when omitted -- the exact boolean default this
+    ticket's own self-check (`test_self_check_t0755_own_diff_zero_error_
+    findings`) caught as an UNTESTED mutant on first landing this flag."""
+
+    def test_flag_parses_to_true(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestSkipMutationEvidenceCliWiring.test_flag_parses_to_true  # noqa: E501
+        from frob.__main__ import _build_parser
+        from frob.app.config import AppConfig
+
+        parser = _build_parser()
+        args = parser.parse_args(
+            [
+                "ticket",
+                "land",
+                "T-0001",
+                "--worktree",
+                str(tmp_path),
+                "--skip-mutation-evidence",
+                "--path",
+                str(tmp_path),
+            ]
+        )
+        cfg = AppConfig.from_external(args, tmp_path / "pyproject.toml")
+        assert cfg.ticket_skip_mutation_evidence is True
+
+    def test_flag_omitted_defaults_false(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestSkipMutationEvidenceCliWiring.test_flag_omitted_defaults_false  # noqa: E501
+        from frob.__main__ import _build_parser
+        from frob.app.config import AppConfig
+
+        parser = _build_parser()
+        args = parser.parse_args(
+            [
+                "ticket",
+                "land",
+                "T-0001",
+                "--worktree",
+                str(tmp_path),
+                "--path",
+                str(tmp_path),
+            ]
+        )
+        cfg = AppConfig.from_external(args, tmp_path / "pyproject.toml")
+        assert cfg.ticket_skip_mutation_evidence is False

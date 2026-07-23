@@ -87,6 +87,7 @@ from frob.gates._models import (
     Violation,
     WaiverRef,
 )
+from frob.gates._mutation_evidence import mutation_evidence_violations
 from frob.gates._parse_failures import parse_failure_gate
 from frob.gates._pii_structural import pii_structural_gate
 from frob.gates._prework import load_prework, record_prework, sweep_ticket
@@ -917,6 +918,9 @@ _KNOWN_GATE_RULES = frozenset(
         # T-0548: a public symbol clears TEST001 only via test(s) with no
         # assertion-shaped construct at all (B1's vacuous-test repro).
         "TEST015",
+        # T-0755: a ticket's bound evidence killed zero mutants of a
+        # diff-touched file it claims to cover -- confirmatory-only.
+        "TEST016",
         "TODO001",
         "TODO002",
         # T-0412: frob:debt (temporary, ticket-bound, collected-before-
@@ -9608,6 +9612,7 @@ __all__ = [
     "load_coverage",
     "load_coverage_lock",
     "load_invariants",
+    "mutation_evidence_violations",
     "cve_fingerprint_scan_gate",
     "debt_gate",
     "decisions_gate",

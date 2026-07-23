@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.127.0] - unreleased
+
+- T-0755: adversarial evidence obligation: ticket tests must fail on a diff-scoped mutant (confirmatory-only tests flagged)
+
 ## [0.126.0] - unreleased
 
 - T-0440: strata model debt: deploy/serve/mutate swept into coarse utility-hub node, not modeled as distinct capabilities with own effects/threat surface

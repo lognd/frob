@@ -1018,6 +1018,87 @@ never dropped -- previously an evidence-count tiebreak picked ONE side's
 evidence set wholesale, silently discarding the other side's ids when two
 worktrees closed the same ticket with disjoint evidence.
 
+## Mutation-evidence obligation (TEST016, T-0755)
+
+<!-- frob:describes src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence -->
+<!-- frob:describes src/frob/tickets/_mutation_evidence.py::evidence_test_ids -->
+<!-- frob:describes src/frob/tickets/_mutation_evidence.py::touched_python_files -->
+<!-- frob:describes src/frob/gates/_mutation_evidence.py::mutation_evidence_violations -->
+<!-- frob:describes src/frob/tickets/_land.py::_check_mutation_evidence -->
+
+Several real rejects (T-0611, T-0571, T-0682, T-0574, T-0710) shared one
+root cause: the implementer's own recorded evidence tests PASSED before
+the fix even existed, because they were written CONFIRMATORY ("assert the
+thing I just built does the thing") instead of ADVERSARIAL ("prove a
+mutant of this logic gets caught"). A confirmatory test that would pass on
+both the pre-change and post-change code proves nothing about the change
+it claims to cover.
+
+`frob.tickets._mutation_evidence.check_ticket_mutation_evidence(root,
+ticket, base_ref)` closes this with a bounded, diff-scoped mutation pass
+that reuses `frob.mutate` (`generate_mutants`/`run_mutations`) as its ONLY
+mutation engine -- there is no second one:
+
+1. `evidence_test_ids(ticket)` -- the subset of `ticket.evidence` shaped
+   like a pytest node id (`path::name`); `cmd:` evidence and anything else
+   is excluded (nothing `frob.mutate`'s `test_argv` can re-run).
+2. `touched_python_files(root, ticket, base_ref)` -- `.py` files the
+   ticket's own `scope` covers that differ from `base_ref` in the working
+   tree (`frob.gitio.working_diff`, the one diff seam every other caller
+   in this repo already uses). Test files themselves (`test_*.py`,
+   `*_test.py`, anything under a `tests/` path segment) are excluded --
+   mutating a test file and re-running THAT SAME file as the kill oracle
+   is a self-referential no-op; the boundary this check exists to
+   interrogate is test-vs-logic, not test-vs-itself.
+3. For up to 3 touched files (`_MAX_FILES`), mutate up to 8 points each
+   (`_MAX_MUTANTS_PER_FILE`, `run_mutations`' new `max_mutants` cap, taken
+   in source order so the run is deterministic) and re-run the ticket's
+   own evidence test ids as the kill command, each mutant capped at 90s
+   (`_TIMEOUT_S`). Mutation points are restricted to the file's OWN
+   CHANGED LINES (`run_mutations`' `line_ranges`, fed from the diff's
+   per-file hunk spans) -- a file-wide selection previously let an
+   unrelated pre-existing line supply every mutant for a tiny diff,
+   flagging evidence that had nothing to say about code the ticket never
+   touched. A file where every mutant SURVIVED (0 killed, total > 0)
+   becomes a `ConfirmatoryFinding` naming the file and the evidence ids
+   that failed to distinguish it.
+
+No test evidence recorded, no in-scope touched Python file, or a touched
+file with zero mutable points within its changed lines (a docstring-only
+change, an unmutable one-line diff) are all `Ok(())` -- "nothing to
+check," not a finding. A refused mutant spawn
+under the exec kill switch (`FROB_DISABLE_EXEC=1`, T-0803's own posture)
+is `Err(MutationEvidenceError.ExecDisabled)`, never silently reported as a
+clean pass.
+
+`frob.gates.mutation_evidence_violations(root, ticket, base_ref)` turns
+any `ConfirmatoryFinding`s into `TEST016` `Violation`s: WARN severity by
+default, promoted to ERROR for `security`/`bug`-kind tickets (the exact
+kinds the root-cause incidents above came from). This is a plain per-
+ticket `kind` check, not `frob.gates._ratchet`'s baseline-pool mechanism
+-- no retroactive concern applies, because the obligation only ever runs
+at THIS ticket's own close/land time, never re-scanning an already-closed
+ticket's evidence, so landing this rule cannot turn a past close red.
+
+**Wired into `frob ticket land`** (`_land.py::_check_mutation_evidence`,
+called from `_land_precheck` right after `current_branch` resolves, before
+any git mutation): a `security`/`bug`-kind ticket with an ERROR-severity
+TEST016 finding refuses the land (`LandError.EvidenceConfirmatoryOnly`);
+every other kind's WARN finding is logged and does not block. `frob
+ticket land --skip-mutation-evidence` (AppConfig
+`ticket_skip_mutation_evidence`, default off) is the documented escape
+hatch for a genuine false positive: the check still runs and logs its
+findings at WARNING, it just cannot refuse the land. Deliberately
+NOT part of `frob.check`'s `test_gate`/`_ALL_GATES` snapshot pipeline
+(`frob.check` is out of this ticket's scope): every other TEST rule is a
+pure function of the graph snapshot, safe to run on every `frob check`
+invocation; this rule spawns real bounded subprocesses per ticket, which
+would violate the "must not slow the default `frob check` path for
+tickets that never opt in" guard if it ran unconditionally there. Wiring
+`frob ticket close`'s own CLI path (`frob.app.ticket_runner`, outside this
+ticket's declared scope) to inject the same check is tracked as follow-up
+work, not silently dropped -- see the ticket's own Done report.
+
 ## Land hardening (T-0577)
 
 Three gaps found in one real landing session, closed together:

@@ -3698,7 +3698,7 @@ follow-up from T-0627: --stamp-baseline runs the full undelta'd gates pass (same
 id: T-0755
 title: 'adversarial evidence obligation: ticket tests must fail on a diff-scoped mutant
   (confirmatory-only tests flagged)'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-07-22'
@@ -3709,16 +3709,285 @@ scope:
 - src/frob/tickets/**
 - src/frob/gates/**
 - docs/modules/tickets.md
+- tests/test_mutate.py
+- tests/test_tickets_mutation_evidence.py
+- tests/test_gates_mutation_evidence.py
+- tests/test_ticket_land.py
+- src/frob/__main__.py
+- src/frob/app/config.py
+- src/frob/app/ticket_runner.py
+- docs/modules/mutate.md
+scope_changes:
+- op: add
+  glob: tests/test_mutate.py
+  reason: 'Test files for the T-0755 mutation-evidence obligation (new tests/test_tickets_mutation_evidence.py,
+    tests/test_gates_mutation_evidence.py; edits to tests/test_mutate.py for the new
+    max_mutants cap and tests/test_ticket_land.py for the land precheck) live under
+    tests/, outside the src/**-only scope declared at filing time.
+
+    '
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: tests/test_tickets_mutation_evidence.py
+  reason: 'Test files for the T-0755 mutation-evidence obligation (new tests/test_tickets_mutation_evidence.py,
+    tests/test_gates_mutation_evidence.py; edits to tests/test_mutate.py for the new
+    max_mutants cap and tests/test_ticket_land.py for the land precheck) live under
+    tests/, outside the src/**-only scope declared at filing time.
+
+    '
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: tests/test_gates_mutation_evidence.py
+  reason: 'Test files for the T-0755 mutation-evidence obligation (new tests/test_tickets_mutation_evidence.py,
+    tests/test_gates_mutation_evidence.py; edits to tests/test_mutate.py for the new
+    max_mutants cap and tests/test_ticket_land.py for the land precheck) live under
+    tests/, outside the src/**-only scope declared at filing time.
+
+    '
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'Test files for the T-0755 mutation-evidence obligation (new tests/test_tickets_mutation_evidence.py,
+    tests/test_gates_mutation_evidence.py; edits to tests/test_mutate.py for the new
+    max_mutants cap and tests/test_ticket_land.py for the land precheck) live under
+    tests/, outside the src/**-only scope declared at filing time.
+
+    '
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: src/frob/__main__.py
+  reason: 'Reviewer round-2 finding 4 requires a documented --skip-mutation-evidence
+    escape hatch on `frob ticket land`. Wiring a new CLI flag structurally touches
+    the three CLI-wiring files (dispatch table, AppConfig flag plumbing, runner),
+    matching the existing CLI_WIRING_FILES precedent for feature-shaped work even
+    though this ticket is kind=security.
+
+    '
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: src/frob/app/config.py
+  reason: 'Reviewer round-2 finding 4 requires a documented --skip-mutation-evidence
+    escape hatch on `frob ticket land`. Wiring a new CLI flag structurally touches
+    the three CLI-wiring files (dispatch table, AppConfig flag plumbing, runner),
+    matching the existing CLI_WIRING_FILES precedent for feature-shaped work even
+    though this ticket is kind=security.
+
+    '
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: src/frob/app/ticket_runner.py
+  reason: 'Reviewer round-2 finding 4 requires a documented --skip-mutation-evidence
+    escape hatch on `frob ticket land`. Wiring a new CLI flag structurally touches
+    the three CLI-wiring files (dispatch table, AppConfig flag plumbing, runner),
+    matching the existing CLI_WIRING_FILES precedent for feature-shaped work even
+    though this ticket is kind=security.
+
+    '
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: docs/modules/mutate.md
+  reason: Round-2 changes altered run_mutations' public signature (max_mutants, line_ranges)
+    and added the MUTATION_RUN_ENV recursion-guard sentinel; docs/modules/mutate.md
+    is that surface's doc home and updating it in the same change is the repo's document-as-you-go
+    rule, same precedent as docs/modules/tickets.md already being in scope for the
+    TEST016 section.
+  actor: logan
+  at: '2026-07-23'
+evidence:
+- tests/test_mutate.py::test_run_mutations_max_mutants_caps_points_explored
+- tests/test_tickets_mutation_evidence.py::TestEvidenceTestIds::test_filters_non_node_id_entries
+- tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles::test_filters_to_scope_and_python
+- tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles::test_empty_when_nothing_touched
+- tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_confirmatory_test_flagged
+- tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_adversarial_test_not_flagged
+- tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_no_test_evidence_is_ok_empty
+- tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_exec_disabled_is_err
+- tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations::test_confirmatory_finding_is_warn_for_feature_kind
+- tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations::test_confirmatory_finding_is_error_for_security_kind
+- tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations::test_confirmatory_finding_is_error_for_bug_kind
+- tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations::test_no_findings_no_violations
+- tests/test_ticket_land.py::TestMutationEvidencePrecheck::test_security_kind_error_finding_blocks
+- tests/test_ticket_land.py::TestMutationEvidencePrecheck::test_feature_kind_warn_finding_does_not_block
+- tests/test_ticket_land.py::TestMutationEvidencePrecheck::test_no_findings_is_ok
+- tests/test_mutate.py::test_generate_mutants_line_ranges_filters_to_changed_lines
+- tests/test_mutate.py::test_generate_mutants_line_ranges_no_match_is_empty
+- tests/test_mutate.py::test_run_mutations_line_ranges_scopes_to_changed_lines
+- tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_large_file_unmutable_changed_lines_is_skipped_not_flagged
+- tests/test_ticket_land.py::TestMutationEvidencePrecheck::test_skip_flag_bypasses_error_finding_but_still_logs
+- tests/test_ticket_land.py::TestSkipMutationEvidenceCliWiring::test_flag_parses_to_true
+- tests/test_ticket_land.py::TestSkipMutationEvidenceCliWiring::test_flag_omitted_defaults_false
+- tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_self_check_t0755_own_diff_zero_error_findings
+- tests/test_mutate.py::test_run_mutations_sets_mutation_run_sentinel_in_child_env
 acceptance:
 - text: GIVEN a ticket whose recorded evidence tests all pass against a mutant of
     the changed logic WHEN close/land verifies THEN a confirmatory-only-test finding
     fires naming the tests; GIVEN at least one evidence test fails on the mutant THEN
     it passes
-  evidence: []
+  evidence:
+  - tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_confirmatory_test_flagged
+  - tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_adversarial_test_not_flagged
+  - tests/test_ticket_land.py::TestMutationEvidencePrecheck::test_security_kind_error_finding_blocks
 threat: null
 component: null
 ```
 Root-cause analysis 2026-07-22: several rejects were correctness bugs whose own tests PASSED because they were confirmatory, not adversarial -- written to pass for the reason the implementer built the thing (T-0611, T-0571, T-0682, T-0574, T-0710). A confirmatory test that would pass on BOTH the pre-change and post-change code proves nothing. frob already has `frob mutate`. Add a diff-scoped obligation: for a ticket touching code with new/changed tests, run those tests against the PRE-change version of the changed symbols (or a targeted mutant of the new logic) and require at least ONE recorded evidence test to FAIL on the mutant -- proving the test actually distinguishes the change. A test that passes on the mutant is a confirmatory-only test = a TEST-family warning (ratchet to error via T-0569 pool for security/bug-kind tickets). This is mutation testing scoped to the ticket diff, wired into close/land as evidence-quality verification, reusing frob.mutate.
+
+## Done report
+
+Implements the T-0755 diff-scoped adversarial evidence obligation as
+TEST016: a bounded mutation pass over a ticket's own diff-touched,
+in-scope Python files, using the ticket's own bound pytest evidence ids
+as the kill oracle. Reuses `frob.mutate` exclusively (no parallel
+mutation engine) -- `run_mutations` gained an optional `max_mutants` cap
+(first N mutation points in source order, deterministic) so the check
+stays bounded.
+
+New module `frob.tickets._mutation_evidence` (`evidence_test_ids`,
+`touched_python_files`, `check_ticket_mutation_evidence`) does the
+selection + orchestration: `.py` files under the ticket's scope that
+`frob.gitio.working_diff` shows changed against `base_ref`, excluding
+test files themselves (mutating a test and re-running the SAME test as
+oracle is a self-referential no-op), capped at 3 files x 8 mutants x 90s
+timeout each. A file where every mutant survives becomes a
+`ConfirmatoryFinding`.
+
+New module `frob.gates._mutation_evidence` (`mutation_evidence_violations`)
+turns findings into `TEST016` `Violation`s: WARN by default, ERROR for
+security/bug-kind tickets (T-0569 kind-based ratchet the ticket text
+calls for) -- NOT the `frob.gates._ratchet` baseline-pool mechanism,
+since no retroactive concern applies: the check only ever runs at a
+ticket's own close/land time, never re-scanning an already-closed
+ticket's evidence, so this cannot turn a past close red on landing.
+
+Wired into `frob ticket land` (`_land.py::_check_mutation_evidence`,
+called from `_land_precheck` right after resolving main's branch name,
+before any git mutation): a security/bug-kind ticket with an
+ERROR-severity finding refuses the land (new `LandError.
+EvidenceConfirmatoryOnly`); every other kind's WARN finding is logged,
+non-blocking.
+
+Deviations / disclosed choices:
+
+- `frob.check`'s own gate pipeline (`_ALL_GATES`/`_STAGE_GROUPS`,
+  `src/frob/check/**`) is NOT wired to run TEST016 -- `frob.check` was
+  outside this ticket's declared scope, and every other TEST rule is a
+  pure function of the graph snapshot cheap enough for every `frob
+  check`; this rule spawns real bounded subprocesses per ticket, which
+  would violate the ticket's own PERF guard if it ran unconditionally
+  there. `mutation_evidence_violations` has exactly one caller today:
+  `frob.tickets._land`.
+- `frob ticket close` (the direct, non-land close path through
+  `frob.app.ticket_runner`, also out of scope) is NOT wired -- filed as
+  a follow-up ticket (draft id T-0844, finalizes at land) so a
+  security/bug ticket closed without landing is not silently exempt
+  forever.
+- Landing-safety: satisfied structurally, not via the ratchet-pool
+  mechanism the ticket text mentions as one option -- the check only
+  ever evaluates the CURRENT ticket at its own close/land time, so an
+  already-closed ticket's evidence is never re-scanned and this rule
+  cannot retroactively redden a past close.
+- v1 is Python-only, matching `frob.mutate`'s own existing v1 scope.
+
+Gate state: `frob check --ticket T-0755` chunked (lint/static/gates-fast/
+gates-native/gates-security) all PASS, 0 errors, 0 waivers added beyond
+one `frob:waive INV006` on `gates/_mutation_evidence.py`'s module
+docstring (design-rationale prose hit, T-0585 calibration precedent).
+`git diff main --diff-filter=D --stat` is empty.
+
+
+Reviewer round 2 (4 findings, all addressed):
+
+1. CRITICAL, changed-lines scoping: file-wide mutation-point selection
+   let an unrelated pre-existing line supply every mutant for a tiny
+   diff. `generate_mutants`/`run_mutations` gained `line_ranges`;
+   `check_ticket_mutation_evidence` now derives per-file changed-line
+   spans from the diff and mutates ONLY those spans. A file whose
+   changed lines admit zero mutable points is skipped, never flagged.
+2. Real-repo self-test: `test_self_check_t0755_own_diff_zero_error_
+   findings` runs the actual obligation against this worktree's own
+   T-0755 diff (base_ref=main) and asserts zero ERROR findings.
+3. Large-file skip honesty: an unmutable changed region in a large file
+   is a skip, not a finding (test added).
+4. Documented escape hatch: `frob ticket land --skip-mutation-evidence`
+   (AppConfig `ticket_skip_mutation_evidence`, default False) logs the
+   TEST016 finding at WARNING but does not refuse the land; for genuine
+   false positives only.
+
+Incident found and fixed while landing round 2: the round-2 self-check
+test (finding 2) made the evidence suite self-referential -- the check
+re-runs the ticket's evidence per mutant, and that evidence now
+contained the self-check itself, so each mutant run re-entered the
+harness and the suite became a self-sustaining fork bomb (observed
+2026-07-23: orphaned full-suite pytest processes respawning after their
+drivers died; killed by hand). Fix: `_run_mutants` now stamps
+`MUTATION_RUN_ENV` (`FROB_MUTATION_RUN=1`) into every spawned test
+process's environment, and the self-check skips under that sentinel.
+Guarding inside `check_ticket_mutation_evidence` instead was rejected:
+a vacuous early-return under the sentinel would make the tmp-fixture
+unit tests fail-on-env rather than fail-on-behavior, fabricating kill
+scores -- the same refusal-is-not-a-verdict posture as T-0803. The
+sentinel is itself adversarially evidenced
+(`test_run_mutations_sets_mutation_run_sentinel_in_child_env`: the kill
+oracle exits 0 iff the sentinel is present, so a harness that stopped
+stamping it kills the probe mutant and the test fails).
+
+### Changed
+```
+ docs/modules/mutate.md                  |  17 +-
+ docs/modules/tickets.md                 |  81 +++++++++
+ src/frob/__main__.py                    |  12 ++
+ src/frob/app/config.py                  |   6 +
+ src/frob/app/ticket_runner.py           |  10 ++
+ src/frob/gates/__init__.py              |   5 +
+ src/frob/gates/_mutation_evidence.py    | 110 ++++++++++++
+ src/frob/mutate/__init__.py             | 148 +++++++++++++---
+ src/frob/tickets/_land.py               | 112 +++++++++++-
+ src/frob/tickets/_models.py             |   5 +
+ src/frob/tickets/_mutation_evidence.py  | 294 ++++++++++++++++++++++++++++++
+ tests/test_gates_mutation_evidence.py   |  88 +++++++++
+ tests/test_mutate.py                    | 112 ++++++++++++
+ tests/test_ticket_land.py               | 170 ++++++++++++++++++
+ tests/test_tickets_mutation_evidence.py | 253 ++++++++++++++++++++++++++
+ tickets.md                              | 305 +++++++++++++++++++++++++++++++-
+ 16 files changed, 1700 insertions(+), 28 deletions(-)
+```
+
+### Evidence
+- `tests/test_mutate.py::test_run_mutations_max_mutants_caps_points_explored` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_mutation_evidence.py::TestEvidenceTestIds::test_filters_non_node_id_entries` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles::test_filters_to_scope_and_python` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles::test_empty_when_nothing_touched` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_confirmatory_test_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_adversarial_test_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_no_test_evidence_is_ok_empty` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_exec_disabled_is_err` (pytest node id, verified passing when recorded)
+- `tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations::test_confirmatory_finding_is_warn_for_feature_kind` (pytest node id, verified passing when recorded)
+- `tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations::test_confirmatory_finding_is_error_for_security_kind` (pytest node id, verified passing when recorded)
+- `tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations::test_confirmatory_finding_is_error_for_bug_kind` (pytest node id, verified passing when recorded)
+- `tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations::test_no_findings_no_violations` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestMutationEvidencePrecheck::test_security_kind_error_finding_blocks` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestMutationEvidencePrecheck::test_feature_kind_warn_finding_does_not_block` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestMutationEvidencePrecheck::test_no_findings_is_ok` (pytest node id, verified passing when recorded)
+- `tests/test_mutate.py::test_generate_mutants_line_ranges_filters_to_changed_lines` (pytest node id, verified passing when recorded)
+- `tests/test_mutate.py::test_generate_mutants_line_ranges_no_match_is_empty` (pytest node id, verified passing when recorded)
+- `tests/test_mutate.py::test_run_mutations_line_ranges_scopes_to_changed_lines` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_large_file_unmutable_changed_lines_is_skipped_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestMutationEvidencePrecheck::test_skip_flag_bypasses_error_finding_but_still_logs` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestSkipMutationEvidenceCliWiring::test_flag_parses_to_true` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestSkipMutationEvidenceCliWiring::test_flag_omitted_defaults_false` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence::test_self_check_t0755_own_diff_zero_error_findings` (pytest node id, verified passing when recorded)
+- `tests/test_mutate.py::test_run_mutations_sets_mutation_run_sentinel_in_child_env` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 24 passed (from 24 evidence id(s))
+- gates: 6 error(s), 1211 warning(s), 210 waived
 
 <!-- ticket:T-0756 -->
 ```yaml
@@ -4436,3 +4705,36 @@ never archived), the refusal is over-broad -- evaluate narrowing the
 T-0753 guard to refuse only when a live-leased ticket's OWN block would
 be moved/rewritten, so a red TICK003 can be cleared without waiting for
 unrelated in-flight work.
+
+<!-- ticket:T-0844 -->
+```yaml
+id: T-0844
+title: wire TEST016 mutation-evidence obligation into frob ticket close (not just
+  land)
+state: queued
+kind: security
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/app/ticket_runner.py
+- src/frob/tickets/__init__.py
+threat: null
+component: null
+```
+T-0755 wired the diff-scoped adversarial evidence obligation (TEST016,
+frob.gates.mutation_evidence_violations) into `frob ticket land`
+(frob.tickets._land._check_mutation_evidence), because frob.tickets/**
+and frob.gates/** were in scope but frob.app/** was not.
+
+`frob ticket close` (the direct, non-land close path) goes through
+frob.app.ticket_runner and frob.tickets.transition, and does NOT run the
+mutation-evidence check today -- a security/bug-kind ticket closed
+directly (never landed) can still close on confirmatory-only evidence.
+
+Plan: inject mutation_evidence_violations (or an equivalent
+Callable[[Ticket], tuple[Violation, ...]]) into the close-path CLI
+runner, mirroring the covers_scope/reviewed injection pattern
+transition()/_done_transition_guard() already use, and block DONE on an
+ERROR-severity finding the same way land does.

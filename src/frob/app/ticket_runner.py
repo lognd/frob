@@ -991,6 +991,15 @@ def _land(root: Path, cfg: AppConfig) -> None:
     assert cfg.ticket_worktree is not None
     worktree = cfg.ticket_worktree
 
+    if cfg.ticket_skip_mutation_evidence:
+        _log.warning(
+            "ticket land: %s --skip-mutation-evidence set -- a TEST016 "
+            "confirmatory-only-evidence finding will be logged but will NOT "
+            "refuse this land (justification required: use only for a "
+            "genuine false positive)",
+            cfg.ticket_id,
+        )
+
     result = land(
         root,
         cfg.ticket_id,
@@ -1002,6 +1011,7 @@ def _land(root: Path, cfg: AppConfig) -> None:
         bump_version=_land_bump_version_fn(),
         rebuild_natives=_land_rebuild_natives_fn(),
         check_gates=_check_gates_summary_fn(worktree, cfg.ticket_id),
+        skip_mutation_evidence=cfg.ticket_skip_mutation_evidence,
     )
     if result.is_err:
         _log.error("ticket land failed: %s", result.danger_err)

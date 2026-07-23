@@ -1116,10 +1116,20 @@ def land(
     | None = None,
     rebuild_natives: Callable[[Path], bool] | None = None,
     check_gates: Callable[[], tuple[int, int, int] | None] | None = None,
+    skip_mutation_evidence: bool = False,
 ) -> Result[LandReport, LandError]:
     """Land `ticket_id` from `worktree` onto `root`'s current branch:
     precheck, wip-commit + merge + deletion-check, finalize + close, then
     squash-apply onto main with a conventional-commit message.
+
+    T-0755 reviewer round 2: `skip_mutation_evidence` (default `False`) is
+    the documented escape hatch for the TEST016 mutation-evidence refusal
+    (`_check_mutation_evidence`) -- `frob ticket land --skip-mutation-
+    evidence` sets it. Every use is logged at WARNING with the ticket id
+    naming the override, matching how other land bypasses (e.g. a manual
+    `frob:waive`) leave a visible trail rather than a silent skip; this is
+    a deliberate escape hatch for a genuinely false-positive finding, not
+    a way to make a real confirmatory-evidence problem quietly disappear.
 
     T-0338: `bump_version` and `rebuild_natives` let a caller fold the two
     remaining coordinator-plumbing steps (REL001 version bump/stamp, and
@@ -1226,6 +1236,7 @@ def land(
             bump_version=bump_version,
             rebuild_natives=rebuild_natives,
             check_gates=check_gates,
+            skip_mutation_evidence=skip_mutation_evidence,
         )
 
 
@@ -1242,12 +1253,19 @@ def _land_locked(
     bump_version: Callable[[Path, Ticket, str], Result[str | None, LandError]] | None,
     rebuild_natives: Callable[[Path], bool] | None,
     check_gates: Callable[[], tuple[int, int, int] | None] | None = None,
+    skip_mutation_evidence: bool = False,
 ) -> Result[LandReport, LandError]:
     """`land`'s actual body (T-0577), run by the caller already holding
     `root`'s `ledger_lock` -- split out only so `land`'s docstring can state
     the locking contract once at the public entry point rather than
     interleaved with the implementation."""
-    precheck = _land_precheck(root, worktree, ticket_id, covers_scope=covers_scope)
+    precheck = _land_precheck(
+        root,
+        worktree,
+        ticket_id,
+        covers_scope=covers_scope,
+        skip_mutation_evidence=skip_mutation_evidence,
+    )
     if precheck.is_err:
         return Err(precheck.danger_err)
     ticket, main_branch_name = precheck.danger_ok
@@ -1668,18 +1686,94 @@ def _validate_scope_covered_preflight(
     return Ok(None)
 
 
+def _check_mutation_evidence(
+    worktree: Path,
+    ticket: Ticket,
+    base_ref: str,
+    *,
+    skip: bool = False,
+) -> Result[None, LandError]:
+    """T-0755: run the diff-scoped adversarial evidence obligation
+    (`frob.gates.mutation_evidence_violations`) against `ticket`'s current
+    worktree tree.
+
+    A `security`/`bug`-kind ticket whose bound evidence killed zero
+    mutants (TEST016 at ERROR severity, see `frob.gates._mutation_evidence`'s
+    module docstring for why that severity split, not the ratchet-pool
+    mechanism, is the right tool here) REFUSES the land -- the same
+    "knowable before any git mutation" posture `_validate_closeable` and
+    `_validate_scope_covered_preflight` already hold. Every other kind's
+    TEST016 finding (WARN) is logged and does NOT block: the obligation
+    text calls WARN "a TEST-family warning," not a hard gate, for those
+    kinds. `Err(MutationEvidenceError.ExecDisabled)` (surfaced as an empty
+    violation tuple by `mutation_evidence_violations`, T-0803's honest-
+    empty-is-not-a-pass posture) and any other check failure are logged
+    and treated as non-blocking -- this obligation augments the existing
+    evidence gates, it does not replace their own hard-fail paths if the
+    mutation subsystem itself cannot run.
+
+    `skip=True` (T-0755 reviewer round 2, `frob ticket land
+    --skip-mutation-evidence`) is the documented escape hatch: the check
+    still RUNS (so its findings are still logged and visible) but never
+    refuses the land. Every use is logged at WARNING naming the ticket, so
+    a bypass always leaves a trail -- this is for a genuinely false-
+    positive finding (e.g. a mutation-testing gap the reviewer has not yet
+    closed), never a silent way to wave through real confirmatory
+    evidence."""
+    from frob.gates import mutation_evidence_violations
+
+    violations = mutation_evidence_violations(worktree, ticket, base_ref)
+    if not violations:
+        return Ok(None)
+    errors = [v for v in violations if v.severity == "error"]
+    for v in violations:
+        _log.warning("land: %s TEST016 %s", ticket.id, v.message)
+    if errors and skip:
+        _log.warning(
+            "land: %s --skip-mutation-evidence set -- %d ERROR-severity "
+            "TEST016 finding(s) logged above are NOT blocking this land "
+            "(justification required: this bypass is for a genuinely "
+            "false-positive finding, never a way to wave through real "
+            "confirmatory evidence)",
+            ticket.id,
+            len(errors),
+        )
+        return Ok(None)
+    if errors:
+        _log.error(
+            "land: %s cannot land -- %d confirmatory-only evidence finding(s) "
+            "at ERROR severity (kind=%s); remedies: (1) strengthen the "
+            "named evidence tests so at least one fails on a mutant of the "
+            "changed lines (see the TEST016 lines above for exact "
+            "file:line + mutation), then retry `frob ticket land %s`; or "
+            "(2) if this is a genuine false positive, retry with `frob "
+            "ticket land %s --skip-mutation-evidence` (logs a loud, "
+            "justification-required override, does not suppress the "
+            "finding)",
+            ticket.id,
+            len(errors),
+            ticket.kind,
+            ticket.id,
+            ticket.id,
+        )
+        return Err(LandError.EvidenceConfirmatoryOnly)
+    return Ok(None)
+
+
 def _land_precheck(
     root: Path,
     worktree: Path,
     ticket_id: str,
     *,
     covers_scope: Callable[[Ticket], bool | None] | None = None,
+    skip_mutation_evidence: bool = False,
 ) -> Result[tuple[Ticket, str], LandError]:
     """Refuse on root/worktree being the same path (T-0795) or a dirty
     main, load+validate the worktree's ticket is closeable (including,
-    T-0774, a `covers_scope` preflight simulation), and resolve main's
-    current branch name -- everything `land` must check BEFORE any git
-    mutation."""
+    T-0774, a `covers_scope` preflight simulation, and T-0755's diff-scoped
+    mutation-evidence obligation, bypassable via `skip_mutation_evidence`),
+    and resolve main's current branch name -- everything `land` must check
+    BEFORE any git mutation."""
     from frob.tickets import _load_one
 
     same_path_check = _refuse_if_root_is_worktree(root, worktree, ticket_id)
@@ -1707,6 +1801,16 @@ def _land_precheck(
     main_branch = current_branch(root)
     if main_branch.is_err:
         return Err(LandError.GitFailed)
+
+    mutation_check = _check_mutation_evidence(
+        worktree,
+        ticket,
+        main_branch.danger_ok,
+        skip=skip_mutation_evidence,
+    )
+    if mutation_check.is_err:
+        return Err(mutation_check.danger_err)
+
     return Ok((ticket, main_branch.danger_ok))
 
 

@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 from frob.mutate import (
+    MUTATION_RUN_ENV,
     MutateError,
     MutationResult,
     _Mutator,
@@ -75,6 +76,117 @@ def test_run_mutations_all_killed_by_strong_test(tmp_path):
     report = result.danger_ok
     assert report.score == 1.0
     assert not report.survivors
+
+
+# frob:ticket T-0755
+def test_run_mutations_max_mutants_caps_points_explored(tmp_path):
+    # frob:tests src/frob/mutate/__init__.py::run_mutations
+    # 4 mutation points (2 compares, an add, an and); max_mutants=1 must
+    # spawn the test command at most once, not four times.
+    (tmp_path / "m.py").write_text(
+        "def f(a, b):\n    if a < b and a > b:\n        return a + b\n    return 0\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "t.py").write_text(
+        "import m\ndef test_f():\n    m.f(1, 2)\n", encoding="utf-8"
+    )
+    full = run_mutations(
+        tmp_path, Path("m.py"), ("python", "-m", "pytest", "-q", "t.py")
+    ).danger_ok
+    assert full.total > 1  # sanity: more than one mutation point exists
+    capped = run_mutations(
+        tmp_path,
+        Path("m.py"),
+        ("python", "-m", "pytest", "-q", "t.py"),
+        max_mutants=1,
+    ).danger_ok
+    assert capped.total == 1
+    # the source is restored afterward, same as the uncapped run
+    assert (tmp_path / "m.py").read_text().startswith("def f(a, b):")
+
+
+# frob:ticket T-0755
+def test_generate_mutants_line_ranges_filters_to_changed_lines():
+    # frob:tests src/frob/mutate/__init__.py::generate_mutants
+    # 4 mutable points total: line 2's compare, line 3's binop, and
+    # (nested inside the compare) none else -- but line 5 has an
+    # independent `and`. Restricting to line 5 only must drop every point
+    # NOT on that line.
+    src = (
+        "def f(a, b):\n"
+        "    if a < b:\n"
+        "        return a + b\n"
+        "    return 0\n"
+        "    x = a and b\n"
+    )
+    unrestricted = generate_mutants(src, "m.py").danger_ok
+    assert len(unrestricted) >= 3
+    only_line5 = generate_mutants(src, "m.py", line_ranges=((5, 5),)).danger_ok
+    assert len(only_line5) == 1
+    assert "boolop" in only_line5[0].mutant.description
+    assert only_line5[0].mutant.line == 5
+
+
+def test_generate_mutants_line_ranges_no_match_is_empty():
+    # frob:tests src/frob/mutate/__init__.py::generate_mutants
+    src = "def f(a, b):\n    if a < b:\n        return a + b\n    return 0\n"
+    result = generate_mutants(src, "m.py", line_ranges=((99, 99),)).danger_ok
+    assert result == ()
+
+
+# frob:ticket T-0755
+def test_run_mutations_line_ranges_scopes_to_changed_lines(tmp_path):
+    # frob:tests src/frob/mutate/__init__.py::run_mutations
+    # T-0755 reviewer round 2 CRITICAL fix: a file-wide point selection
+    # let an unrelated pre-existing line supply every mutant for a tiny
+    # diff. Reproduce that shape directly: a "changed" 1-line function
+    # (line 5) alongside unrelated pre-existing mutable code (line 2) --
+    # scoping to line 5's span must mutate ONLY line 5.
+    (tmp_path / "m.py").write_text(
+        "def unrelated(a, b):\n"
+        "    if a < b:\n"
+        "        return a + b\n"
+        "    return 0\n\n"
+        "def changed(a, b):\n"
+        "    return a and b\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "t.py").write_text(
+        "import m\ndef test_changed():\n    m.changed(1, 2)\n", encoding="utf-8"
+    )
+    unrestricted = run_mutations(
+        tmp_path, Path("m.py"), ("python", "-m", "pytest", "-q", "t.py")
+    ).danger_ok
+    assert unrestricted.total >= 2  # sees both unrelated.py's and changed's points
+    scoped = run_mutations(
+        tmp_path,
+        Path("m.py"),
+        ("python", "-m", "pytest", "-q", "t.py"),
+        line_ranges=((6, 7),),
+    ).danger_ok
+    assert scoped.total == 1
+    assert scoped.survivors[0].line == 7
+    # the source is restored afterward
+    assert (tmp_path / "m.py").read_text().startswith("def unrelated(a, b):")
+
+
+# frob:ticket T-0755
+def test_run_mutations_sets_mutation_run_sentinel_in_child_env(tmp_path):
+    # frob:tests src/frob/mutate/__init__.py::run_mutations
+    # Recursion guard: every spawned test process must see
+    # MUTATION_RUN_ENV=1 so self-referential evidence (the TEST016
+    # real-repo self-check) can refuse to re-enter the harness. The test
+    # command here exits 0 (mutant SURVIVES) iff the sentinel is set, so
+    # a harness that stopped stamping it would kill the mutant instead.
+    (tmp_path / "m.py").write_text("def f(a, b):\n    return a + b\n", encoding="utf-8")
+    probe = (
+        "import os, sys\n"
+        f"sys.exit(0 if os.environ.get({MUTATION_RUN_ENV!r}) == '1' else 1)\n"
+    )
+    (tmp_path / "probe.py").write_text(probe, encoding="utf-8")
+    report = run_mutations(tmp_path, Path("m.py"), ("python", "probe.py")).danger_ok
+    assert report.total >= 1
+    assert report.killed == 0  # every mutant "survived": sentinel was seen
 
 
 def test_run_mutations_missing_file(tmp_path):

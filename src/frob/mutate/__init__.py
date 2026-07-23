@@ -26,6 +26,13 @@ from frob.logging import get_logger
 
 _log = get_logger(__name__)
 
+# Set to "1" in the environment of every test process `_run_mutants` spawns.
+# Recursion guard (T-0755): an evidence test that itself invokes the
+# mutation harness against the real repo (the TEST016 self-check) MUST skip
+# when it sees this sentinel, or each mutant run re-enters the harness and
+# the suite becomes a self-sustaining fork bomb.
+MUTATION_RUN_ENV = "FROB_MUTATION_RUN"
+
 # (from-op, to-op) mutations, applied one at a time.
 _COMPARE_SWAPS: dict[type[ast.cmpop], type[ast.cmpop]] = {
     ast.Lt: ast.GtE,
@@ -101,12 +108,19 @@ class _Mutator(ast.NodeTransformer):
         self._target = target_index
         self._seen = 0
         self.applied: str | None = None
+        # T-0755 reviewer round 2: the mutated NODE's own lineno, not the
+        # whole file's -- `_mutation_at` used to report the first lineno of
+        # the ENTIRE reparsed tree (effectively always line 1), which made
+        # every `Mutant.line` wrong for any mutation past the first
+        # statement. Set at the exact `_hit` that fires.
+        self.hit_line = 0
 
-    def _hit(self, desc: str) -> bool:
+    def _hit(self, desc: str, lineno: int) -> bool:
         current = self._seen
         self._seen += 1
         if current == self._target:
             self.applied = desc
+            self.hit_line = lineno
             return True
         return False
 
@@ -114,7 +128,7 @@ class _Mutator(ast.NodeTransformer):
         # frob:doc docs/modules/mutate.md#public-api
         self.generic_visit(node)
         if len(node.ops) == 1 and type(node.ops[0]) in _COMPARE_SWAPS:
-            if self._hit(f"compare {type(node.ops[0]).__name__} swapped"):
+            if self._hit(f"compare {type(node.ops[0]).__name__} swapped", node.lineno):
                 node.ops = [_COMPARE_SWAPS[type(node.ops[0])]()]
         return node
 
@@ -122,7 +136,7 @@ class _Mutator(ast.NodeTransformer):
         # frob:doc docs/modules/mutate.md#public-api
         self.generic_visit(node)
         if type(node.op) in _BINOP_SWAPS and self._hit(
-            f"binop {type(node.op).__name__} swapped"
+            f"binop {type(node.op).__name__} swapped", node.lineno
         ):
             node.op = _BINOP_SWAPS[type(node.op)]()
         return node
@@ -131,7 +145,7 @@ class _Mutator(ast.NodeTransformer):
         # frob:doc docs/modules/mutate.md#public-api
         self.generic_visit(node)
         if type(node.op) in _BOOLOP_SWAPS and self._hit(
-            f"boolop {type(node.op).__name__} swapped"
+            f"boolop {type(node.op).__name__} swapped", node.lineno
         ):
             node.op = _BOOLOP_SWAPS[type(node.op)]()
         return node
@@ -139,7 +153,9 @@ class _Mutator(ast.NodeTransformer):
     # frob:waive TEST005 reason="visit_Constant 75.0% branch cover, debt T-0160"
     def visit_Constant(self, node: ast.Constant):  # noqa: N802
         # frob:doc docs/modules/mutate.md#public-api
-        if isinstance(node.value, bool) and self._hit(f"bool {node.value} negated"):
+        if isinstance(node.value, bool) and self._hit(
+            f"bool {node.value} negated", node.lineno
+        ):
             return ast.copy_location(ast.Constant(value=not node.value), node)
         return node
 
@@ -151,13 +167,62 @@ def _count_mutations(tree: ast.AST) -> int:
     return counter._seen
 
 
-def _first_lineno(tree: ast.AST) -> int:
-    """The lineno of the first node in `tree` that has one, else `0`."""
-    for node in ast.walk(tree):
-        node_line = getattr(node, "lineno", None)
-        if isinstance(node_line, int):
-            return node_line
-    return 0
+class _PointCollector(ast.NodeVisitor):
+    """Records each mutation point's `(index, lineno)` in the SAME order
+    `_Mutator` numbers them (T-0755 reviewer fix), without mutating
+    anything -- lets a caller (`generate_mutants`' `line_ranges` filter)
+    know which point indices fall inside a diff's changed lines BEFORE
+    spending a subprocess on any of them. Mirrors `_Mutator`'s exact
+    visit_X methods and post-order (`generic_visit` first, then check the
+    node itself) so index N here always means the same point index N
+    `_Mutator(N)` would apply."""
+
+    def __init__(self) -> None:
+        self._seen = 0
+        self.points: list[tuple[int, int]] = []
+
+    def _record(self, node: ast.AST) -> None:
+        lineno = getattr(node, "lineno", 0)
+        self.points.append((self._seen, lineno))
+        self._seen += 1
+
+    def visit_Compare(self, node: ast.Compare) -> None:  # noqa: N802
+        # frob:doc docs/modules/mutate.md#public-api
+        self.generic_visit(node)
+        if len(node.ops) == 1 and type(node.ops[0]) in _COMPARE_SWAPS:
+            self._record(node)
+
+    def visit_BinOp(self, node: ast.BinOp) -> None:  # noqa: N802
+        # frob:doc docs/modules/mutate.md#public-api
+        self.generic_visit(node)
+        if type(node.op) in _BINOP_SWAPS:
+            self._record(node)
+
+    def visit_BoolOp(self, node: ast.BoolOp) -> None:  # noqa: N802
+        # frob:doc docs/modules/mutate.md#public-api
+        self.generic_visit(node)
+        if type(node.op) in _BOOLOP_SWAPS:
+            self._record(node)
+
+    def visit_Constant(self, node: ast.Constant) -> None:  # noqa: N802
+        # frob:doc docs/modules/mutate.md#public-api
+        if isinstance(node.value, bool):
+            self._record(node)
+
+
+def _mutation_point_linenos(tree: ast.AST) -> tuple[int, ...]:
+    """Every mutation point's line number, indexed identically to
+    `_Mutator`'s own numbering (T-0755) -- `result[i]` is the line
+    `_Mutator(i)` would mutate."""
+    collector = _PointCollector()
+    collector.visit(tree)
+    return tuple(lineno for _, lineno in collector.points)
+
+
+def _in_any_range(lineno: int, line_ranges: tuple[tuple[int, int], ...]) -> bool:
+    """Whether `lineno` falls inside at least one inclusive `(start, end)`
+    span of `line_ranges` (T-0755's diff-scoping filter)."""
+    return any(start <= lineno <= end for start, end in line_ranges)
 
 
 def _mutation_at(
@@ -178,9 +243,7 @@ def _mutation_at(
     return Ok(
         _Mutation(
             source=ast.unparse(tree),
-            mutant=Mutant(
-                file=file, line=_first_lineno(tree), description=str(applied)
-            ),
+            mutant=Mutant(file=file, line=mutator.hit_line, description=str(applied)),
         )
     )
 
@@ -188,16 +251,37 @@ def _mutation_at(
 # frob:doc docs/modules/mutate.md#public-api
 # frob:waive TEST005 reason="generate_mutants 88.0% branch cover, debt T-0160"
 def generate_mutants(
-    source: str, file: str
+    source: str,
+    file: str,
+    line_ranges: tuple[tuple[int, int], ...] | None = None,
 ) -> Result[tuple[_Mutation, ...], MutateError]:
-    """Every single-point mutation of `source` as (mutated_source, Mutant)."""
+    """Every single-point mutation of `source` as (mutated_source, Mutant).
+
+    T-0755 reviewer fix: `line_ranges` (default `None`, unbounded, every
+    caller before this ticket unaffected), when given, restricts the
+    result to points whose line falls inside at least one inclusive
+    `(start, end)` span -- diff-scoped mutation testing needs to mutate
+    ONLY the changed lines of a file, not "whatever else happens to live
+    in the same file" (a file-wide point selection previously let an
+    unrelated pre-existing line supply every mutant for a 2-line diff, the
+    exact false-positive the reviewer reproduced on this ticket's own
+    diff)."""
     try:
         base = ast.parse(source)
     except SyntaxError:
         return Err(MutateError.ParseFailed)
     total = _count_mutations(base)
+    if line_ranges is not None:
+        linenos = _mutation_point_linenos(base)
+        allowed = {
+            i for i, lineno in enumerate(linenos) if _in_any_range(lineno, line_ranges)
+        }
+    else:
+        allowed = None
     mutations: list[_Mutation] = []
     for i in range(total):
+        if allowed is not None and i not in allowed:
+            continue
         result = _mutation_at(source, i, file)
         if result.is_err:
             return Err(result.danger_err)
@@ -211,22 +295,42 @@ def generate_mutants(
 # frob:waive TEST005 reason="run_mutations 85.2% branch cover, debt T-0160"
 # frob:invariant INV-017
 def run_mutations(
-    root: Path, file: Path, test_argv: tuple[str, ...], timeout_s: float = 300.0
+    root: Path,
+    file: Path,
+    test_argv: tuple[str, ...],
+    timeout_s: float = 300.0,
+    max_mutants: int | None = None,
+    line_ranges: tuple[tuple[int, int], ...] | None = None,
 ) -> Result[MutationResult, MutateError]:
     """Mutate `file` one point at a time; a mutant is KILLED if `test_argv`
     fails against it, SURVIVED if the tests still pass.
 
     The file is restored after every mutant (and on any error), so a crashed
     run never leaves a mutated source behind.
+
+    T-0755: `max_mutants` (default `None`, unbounded, preserving every
+    caller before this ticket) caps how many of `generate_mutants`' points
+    are actually spawned against -- a bound the diff-scoped evidence
+    obligation needs to stay cheap (one mutant is one full test-command
+    subprocess, and a hot file can admit dozens of points). Capping takes
+    the FIRST `max_mutants` points in source order, not a random sample, so
+    a run is deterministic and reproducible run-to-run.
+
+    `line_ranges` (T-0755 reviewer fix, default `None`, unbounded) is
+    forwarded straight to `generate_mutants` -- see its docstring. Applied
+    BEFORE `max_mutants` truncates, so a diff-scoped caller's cap counts
+    only points that actually fall inside the changed lines.
     """
     target = root / file if not file.is_absolute() else file
     if not target.exists():
         return Err(MutateError.NoSource)
     original = target.read_text(encoding="utf-8")
-    generated = generate_mutants(original, str(file))
+    generated = generate_mutants(original, str(file), line_ranges)
     if generated.is_err:
         return Err(generated.danger_err)
     mutants = generated.danger_ok
+    if max_mutants is not None:
+        mutants = mutants[:max_mutants]
     try:
         run_result = _run_mutants(target, mutants, test_argv, root, timeout_s)
     finally:
@@ -270,10 +374,12 @@ def _run_mutants(
     mirroring the honest `Err`/`raise` semantics `_coverage_wait.py`/
     `_vm_runner.py` already chose for the same kill-switch case.
     """
+    import os
     import subprocess
 
     from frob.process._guard import guarded_subprocess_run
 
+    child_env = {**os.environ, MUTATION_RUN_ENV: "1"}
     killed = 0
     survivors: list[Mutant] = []
     for mutation in mutants:
@@ -284,6 +390,7 @@ def _run_mutants(
                 cwd=root,
                 capture_output=True,
                 timeout=timeout_s,
+                env=child_env,
             )
         except subprocess.TimeoutExpired:
             killed += 1  # a mutant that hangs the tests is caught
@@ -305,6 +412,7 @@ def _run_mutants(
 
 
 __all__ = [
+    "MUTATION_RUN_ENV",
     "Mutant",
     "MutateError",
     "MutationResult",

@@ -51,9 +51,22 @@ def _Mutator.visit_BinOp(node) -> ast.BinOp      # maybe swap the arithmetic op
 def _Mutator.visit_BoolOp(node) -> ast.BoolOp    # maybe swap and/or
 def _Mutator.visit_Constant(node) -> ast.Constant  # maybe negate a bool literal
 
-def generate_mutants(source, file) -> Result[tuple[Mutant, ...], MutateError]
-def run_mutations(root, file, test_argv, timeout_s=300.0) -> Result[MutationResult, MutateError]
+def generate_mutants(source, file, line_ranges=None) -> Result[tuple[Mutant, ...], MutateError]
+def run_mutations(root, file, test_argv, timeout_s=300.0, max_mutants=None, line_ranges=None) -> Result[MutationResult, MutateError]
+
+MUTATION_RUN_ENV = "FROB_MUTATION_RUN"  # set to "1" in every spawned test process
 ```
+
+`max_mutants` caps how many mutation points are explored (first N in
+source order, deterministic); `line_ranges` restricts points to the given
+inclusive `(start, end)` line spans -- TEST016 (T-0755) uses both to keep
+its diff-scoped pass bounded and anchored to the diff's own changed lines.
+
+Every test process `run_mutations` spawns gets `MUTATION_RUN_ENV=1` in its
+environment. This is the recursion guard for self-referential evidence: a
+test that itself invokes the mutation harness against the real repo (the
+TEST016 self-check) must skip when it sees the sentinel, otherwise each
+mutant run re-enters the harness and the suite forks without bound.
 
 ## v1 scope (honest)
 

@@ -1188,6 +1188,18 @@ def _add_ticket_land_parser(ticket_sub):
         action="store_true",
         help="run every check and git operation landing would, then unwind it",
     )
+    ticket_land_p.add_argument(
+        "--skip-mutation-evidence",
+        dest="ticket_skip_mutation_evidence",
+        action="store_true",
+        help=(
+            "T-0755 escape hatch: do not let a TEST016 confirmatory-only-"
+            "evidence finding refuse the land (the check still runs and "
+            "logs its findings at WARNING; this only stops it from "
+            "blocking). Use for a genuine false positive, not to wave "
+            "through real confirmatory evidence."
+        ),
+    )
     return ticket_land_p
 
 

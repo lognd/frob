@@ -1207,6 +1207,11 @@ class LandError(ErrorSet):
         "captured Done-report claims (test count or gate state) no longer "
         "hold post-merge (T-0754)"
     )
+    # frob:ticket T-0755
+    EvidenceConfirmatoryOnly = (
+        "a security/bug-kind ticket's bound evidence killed zero mutants of "
+        "its own diff-touched code -- confirmatory-only, TEST016"
+    )
 
 
 # frob:ticket T-0176
