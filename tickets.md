@@ -7200,7 +7200,7 @@ Found 2026-07-22 during the zero-drive: T-0695 landed src/frob/arch/_concurrency
 ```yaml
 id: T-0770
 title: 'self-conformance: graphlang node missing may exec after T-0695 landed _concurrency.py'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-07-22'
@@ -7233,6 +7233,8 @@ Fix: add may "exec" to design/frob.strata's graphlang node declaration
 TestRealGateGreen passes. Scope: design/frob.strata,
 tests/unit/strata/test_selfconform.py (verification only).
 
+## Drop reason
+- 2026-07-22: wrong remedy: the exec observations on _concurrency.py were docstring/comment prose false-positives, not real capabilities; declaring may exec on graphlang would falsely widen the declared threat surface. Superseded by T-0769 (observer excludes non-executable spans) plus the mitigation reword commit; TestRealGateGreen is green on main (absorbed by T-0769)
 <!-- ticket:T-0771 -->
 ```yaml
 id: T-0771
@@ -7295,7 +7297,7 @@ Follow-up work, explicitly not done in T-0717:
 id: T-0772
 title: 'capability modes phase 2: wire net.connect/net.listen, env.read/env.write,
   proc.spawn, ffi.call live + sibling-repo migration'
-state: queued
+state: dropped
 kind: security
 origin: agent
 created: '2026-07-22'
@@ -7323,3 +7325,6 @@ component: null
 labels: []
 ```
 Refile of T-draft-3e4b416a, which T-0717's land dropped from the ledger (the T-0577 land-drops-drafts splice regression -- also note T-draft-32e61ad6 was dropped in the same land; that one proposed declaring may exec on graphlang for the _concurrency.py docstring false-positive and is deliberately NOT refiled: superseded by T-0769 observer fix + mitigation commit). T-0717 shipped the full mode vocabulary (FAMILY_MODES has all five families) but only wired fs live via WIRED_MODE_FAMILIES, because exploding an unwired family live would have produced spurious SYS101 staleness on every existing bare may net/env declaration. Phase 2: wire the remaining families one at a time with per-family staleness-window handling, then the sibling-repo (ESTATE) migration.
+
+## Drop reason
+- 2026-07-22: accidental duplicate: filed as a refile believing T-0717's land dropped draft 3e4b416a, but the land renumbered it to T-0771; T-0771 is the canonical phase-2 modes ticket (absorbed by T-0771)
