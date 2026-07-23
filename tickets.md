@@ -8718,7 +8718,7 @@ Observed while working T-0704 (worktree agent-ad82d24588b5083b6, 2026-07-22/23).
 id: T-0790
 title: 'land: CloseFailed-retry path rebuilds worktree branch onto main and completeness
   guard compares branch against itself'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-07-23'
@@ -8744,6 +8744,8 @@ labels: []
 ```
 Observed landing T-0676 (2026-07-23): first land failed post-merge with EvidenceScopeUnbound (the T-0774 residual); after a scope-add fix in the worktree, the retry committed a wip pre-land snapshot REBUILT onto main's tip (dropping the original commit lineage 677b8a7f/f586d2a8/a506e4f6 from the branch history), merged main, finalized+closed -- then the T-0761 completeness guard errored claiming HEAD has no commits beyond the true merge-base with <its own branch name>, i.e. merge-base(HEAD, HEAD)==HEAD, a tautology. The genuine diff vs main (2 doc files + ledger) existed and was recovered by manual squash-apply (commit on main). Root-cause the retry path's branch/ref bookkeeping and fix the guard's comparison ref.
 
+## Drop reason
+- 2026-07-23: misdiagnosis: the tautological comparison occurred because the operator ran frob ticket land with cwd INSIDE the worktree (root defaulted to the worktree, making root==worktree) -- the T-0761 guard fired correctly. The real defects are captured in the replacement retry-robustness ticket
 <!-- ticket:T-0791 -->
 ```yaml
 id: T-0791
@@ -8802,3 +8804,91 @@ component: null
 labels: []
 ```
 T-0606 reviewer finding: _owned_paths_by_user collapses multiple ACL entries per path to last-declaration-wins, mirroring the POSIX one-owner convention -- but windows ACLs are multi-ACE by design, and an early deny overridden by a later broad allow silently suppresses a violation the proof system should detect (soundness gap in the direction that matters). Implement real deny-overrides-allow joining across all ACEs per path. Also adjudicate SeImpersonatePrivilege/SeDebugPrivilege-class token privileges: model or record out-of-scope with reason.
+
+<!-- ticket:T-0793 -->
+```yaml
+id: T-0793
+title: 'land: re-sync uv.lock in the release-bump commit so per-invocation lock flap
+  stops tripping DirtyMain/SCOPE001'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-23'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/_land.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a land whose version bump changes pyproject WHEN the land commits THEN
+    uv.lock is re-synced and committed in the same land commit and a subsequent uv
+    run in any checkout produces no lock drift
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Promotion of T-0767's worktree draft db4263e7 (manual land skipped the renumber path). The uv.lock version line flaps on every uv run against a bumped pyproject, tripping DirtyMain at land and SCOPE001/PRE001 in every worktree. Land owns the version bump; it should own the lock sync too.
+
+<!-- ticket:T-0794 -->
+```yaml
+id: T-0794
+title: 'arch: discharge self-join-deadlock advisory on vet/_scan.py::_run_with_timeout
+  (same shape as T-0767)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-23'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/vet/_scan.py
+- tests/unit/test_arch.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN main WHEN frob check runs THEN zero self-join-deadlock warnings on src/frob/vet
+    while the timeout behavior is preserved and a regression test locks the discharge
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Promotion of T-0767's worktree draft 1910bd1a: the T-0695 self-join-deadlock advisory fires on vet/_scan.py::_run_with_timeout (unwaivable channel). Restructure the join ownership the same way T-0767 discharged _run_combined_jobs. Required for zero-warnings.
+
+<!-- ticket:T-0795 -->
+```yaml
+id: T-0795
+title: 'land: retry robustness -- close is not idempotent after own finalize (InvalidTransition
+  done->done) + cwd-inside-worktree misdiagnosis'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-23'
+priority: critical
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/_land.py
+- src/frob/app/ticket_runner.py
+- tests/test_ticket_land.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a land that merged and finalized in the worktree but failed before committing
+    to main WHEN land is retried with identical arguments THEN it completes the squash-apply
+    onto main instead of erroring InvalidTransition on the already-done ticket; GIVEN
+    land invoked with cwd inside the worktree THEN the error names the actual mistake
+    (run from the root checkout) instead of the T-0640 false-green diagnosis
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Three lands this drive (T-0676, T-0774, T-0767) merged+finalized in the worktree (ticket transitioned to done in the worktree ledger) then failed before the main commit; every retry then errored InvalidTransition because close re-runs the done transition. Each required a manual splice-apply onto main (see the three land commits). Make the close step idempotent (done ticket + pending squash = proceed to squash-apply) or checkpoint the land so retry resumes at the squash. Separately, when root==worktree because the invoker's cwd is inside the worktree, say so explicitly.
