@@ -246,6 +246,8 @@ _STAGE_GROUPS: dict[str, frozenset[str]] = {
             "lang_project_conformance",
             "scope",
             "prework",
+            # T-0851: FMT001, diff-scoped like coverage/todo above.
+            "fmt",
         }
     ),
     "gates-native": frozenset({"archgate", "clones", "perf"}),

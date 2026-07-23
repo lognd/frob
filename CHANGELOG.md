@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.131.0] - unreleased
+
+- T-0851: frob check: FMT001 gate for non-canonical frob: directive lines (T-0441 follow-up)
+
 ## [0.130.0] - unreleased
 
 - T-0441: frob fmt: auto-wrap over-length frob: directive comment lines via T-0286 continuation so ruff E501 never fires on waive reasons

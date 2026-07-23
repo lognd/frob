@@ -27,6 +27,7 @@ from frob.gates import (
     deprecated_gate,
     drift_gate,
     exclude_hazard_gate,
+    fmt_gate,
     inv003_gate,
     inv004_gate,
     inv006_gate,
@@ -1576,6 +1577,80 @@ class TestCoverageGate:
         assert result.is_ok
         report = result.danger_ok
         assert _first_rule(report.violations, "WAIVE002") is not None
+
+
+# frob:ticket T-0851
+class TestFmt001Gate:
+    """T-0851: FMT001, the T-0441 follow-up -- a diff-touched `frob:`
+    directive comment line over the configured line length gets a `frob
+    fmt <path>` remediation hint; an ordinary long comment or long code
+    line (neither is a `frob:` directive run) does not."""
+
+    # frob:ticket T-0851
+    def test_directive_run_over_limit_flagged(self, tmp_path: Path) -> None:
+        """A single-physical-line `frob:waive` directive over the default
+        88-col limit is FMT001, naming `frob fmt <path>` as the fix."""
+        long_reason = "x" * 70
+        source = (
+            "def helper(x):\n"
+            f'    # frob:waive INV006 reason="{long_reason}"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        diff = Diff(base="x", hunks=(Hunk(file="src/a.py", span=(2, 2)),))
+        violations = fmt_gate(tmp_path, diff)
+        hit = next((v for v in violations if v.rule == "FMT001"), None)
+        assert hit is not None
+        assert hit.file == "src/a.py"
+        assert hit.line == 2
+        assert "frob fmt src/a.py" in hit.message
+
+    # frob:ticket T-0851
+    def test_ordinary_long_comment_not_flagged(self, tmp_path: Path) -> None:
+        """An over-limit comment line that is NOT a `frob:` directive
+        (near-miss #1) never fires FMT001 -- `frob fmt` would not touch it
+        either, so a hint naming it as the fix would be false."""
+        long_comment = "y" * 90
+        source = f"def helper(x):\n    # {long_comment}\n    return x\n"
+        _write(tmp_path, "src/a.py", source)
+        diff = Diff(base="x", hunks=(Hunk(file="src/a.py", span=(2, 2)),))
+        violations = fmt_gate(tmp_path, diff)
+        assert not any(v.rule == "FMT001" for v in violations)
+
+    # frob:ticket T-0851
+    def test_long_code_line_not_flagged(self, tmp_path: Path) -> None:
+        """An over-limit CODE line (near-miss #2, no comment marker at all)
+        never fires FMT001."""
+        source = "def helper(x):\n    y = " + "1" * 90 + "\n    return x\n"
+        _write(tmp_path, "src/a.py", source)
+        diff = Diff(base="x", hunks=(Hunk(file="src/a.py", span=(2, 2)),))
+        violations = fmt_gate(tmp_path, diff)
+        assert not any(v.rule == "FMT001" for v in violations)
+
+    # frob:ticket T-0851
+    def test_untouched_line_not_flagged(self, tmp_path: Path) -> None:
+        """An over-limit directive line the diff does NOT touch is not
+        flagged -- FMT001 is diff-scoped, same posture as TODO001."""
+        long_reason = "x" * 70
+        source = (
+            "def helper(x):\n"
+            f'    # frob:waive INV006 reason="{long_reason}"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        diff = Diff(base="x", hunks=(Hunk(file="src/a.py", span=(3, 3)),))
+        violations = fmt_gate(tmp_path, diff)
+        assert not any(v.rule == "FMT001" for v in violations)
+
+    # frob:ticket T-0851
+    def test_short_directive_not_flagged(self, tmp_path: Path) -> None:
+        """A `frob:` directive line that already fits within the limit is
+        not flagged, even when touched."""
+        source = "def helper(x):\n    # frob:ticket T-0001\n    return x\n"
+        _write(tmp_path, "src/a.py", source)
+        diff = Diff(base="x", hunks=(Hunk(file="src/a.py", span=(2, 2)),))
+        violations = fmt_gate(tmp_path, diff)
+        assert not any(v.rule == "FMT001" for v in violations)
 
 
 class TestDupPipelineClosureConsumers:

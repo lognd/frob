@@ -67,6 +67,7 @@ from frob.gates._dead_symbols import dead_symbol_gate
 from frob.gates._docblocks import doc004_gate, doc005_gate
 from frob.gates._exclude_hazard import exclude_hazard_gate
 from frob.gates._filehash import _SOURCE_EXTS
+from frob.gates._fmt_directives import marker_for, read_line_length
 from frob.gates._lang_conformance import (
     lang_conformance_gate,
     project_lang_conformance_gate,
@@ -123,6 +124,7 @@ from frob.graph import (
 )
 from frob.graph._generated import is_generated_source
 from frob.graph._models import LockFile, SymbolRecord
+from frob.graph.dsl import fold_comment_runs
 from frob.graph.lock import drift as _graph_drift
 from frob.graph.lock import load_lock
 from frob.lang import SymbolKind
@@ -1015,6 +1017,13 @@ _KNOWN_GATE_RULES = frozenset(
         # register it here nor dispatch it (out of that ticket's scope);
         # this closes the catalogued-is-not-enforced gap it disclosed.
         "COMPLIANCE005",
+        # T-0851: FMT001 (frob.gates.fmt_gate) -- a diff-touched frob:
+        # directive comment line over the configured line length, with a
+        # `frob fmt <path>` remediation hint. T-0441 built the underlying
+        # canonicalizer/`frob fmt` CLI but left this half undone --
+        # src/frob/check/ and this rule-catalog were outside that ticket's
+        # declared scope.
+        "FMT001",
         "PII010",
         "SEC110",
         # T-0289: long-function is the one frob-arch category channeled into
@@ -4011,6 +4020,114 @@ def _todo001(
         *_todo002_edges(snapshot, queue),
         *_todo001_bare(snapshot, diff),
     )
+
+
+# frob:ticket T-0851
+def _fmt001_touched_lines(diff: Diff, file: str) -> set[int]:
+    """1-indexed line numbers `diff` touches in `file`, unioned across every
+    hunk (T-0851, mirrors `_todo001_bare`'s diff-scoping posture -- FMT001
+    only fires on lines an agent actually touched this diff, never on
+    pre-existing non-canonical lines elsewhere in the file)."""
+    lines: set[int] = set()
+    for hunk in diff.hunks:
+        if hunk.file != file:
+            continue
+        start, end = hunk.span
+        lines.update(range(start, end + 1))
+    return lines
+
+
+# frob:doc docs/modules/gates.md#fmt001-t-0851
+# frob:tests tests/test_gates.py::TestFmt001Gate.test_directive_run_over_limit_flagged
+# frob:tests \
+# tests/test_gates.py::TestFmt001Gate.test_ordinary_long_comment_not_flagged
+# frob:tests tests/test_gates.py::TestFmt001Gate.test_long_code_line_not_flagged
+# frob:tests tests/test_gates.py::TestFmt001Gate.test_untouched_line_not_flagged
+# frob:tests tests/test_gates.py::TestFmt001Gate.test_short_directive_not_flagged
+def _fmt001_file(
+    root: Path, file: str, limit: int, touched: set[int]
+) -> list[Violation]:
+    """FMT001 findings for one diff-touched `file`: every physical line of a
+    `frob:` directive comment run that both (a) `diff` actually touches and
+    (b) exceeds `limit` columns (T-0851, the deferred half of T-0441 --
+    `frob check` previously had no gate for this at all, only `frob fmt
+    --check` standalone).
+
+    Reuses `frob.gates._fmt_directives.marker_for` (which language/suffix
+    this scans) and `frob.graph.dsl.fold_comment_runs` (T-0286's own
+    continuation-run folding, also what `canonicalize_text` folds through)
+    rather than re-deriving either -- this function's only new logic is the
+    length + diff-touch check on each run's physical lines. An ordinary
+    (non-`frob:`) long comment or a long code line never enters a folded
+    `frob:`-prefixed run, so neither is flagged -- only a directive run is
+    in scope, matching the ticket's remediation ("run `frob fmt`", which
+    only rewrites directive lines)."""
+    if not touched:
+        return []
+    marker = marker_for(file)
+    if marker is None:
+        return []
+    path = root / file
+    try:
+        with open(path, encoding="utf-8", newline="") as fh:
+            text = fh.read()
+    except (OSError, UnicodeDecodeError) as exc:
+        _log.debug("FMT001: skipping unreadable %s (%s)", path, exc)
+        return []
+
+    lines = text.split("\n")
+    entries: list[tuple[int, str, str, int]] = []
+    for i, raw in enumerate(lines):
+        stripped = raw.lstrip(" \t")
+        if not stripped.startswith(marker):
+            continue
+        content = stripped[len(marker) :]
+        if content.startswith(" "):
+            content = content[1:]
+        entries.append((i, content, "", 0))
+    runs = fold_comment_runs(entries)
+
+    violations: list[Violation] = []
+    for logical_text, start_idx, _src, count in runs:
+        if not logical_text.strip().startswith("frob:"):
+            continue
+        for offset in range(count):
+            lineno = start_idx + offset + 1
+            if lineno not in touched:
+                continue
+            raw_line = lines[start_idx + offset].rstrip("\r")
+            if len(raw_line) <= limit:
+                continue
+            _log.debug("FMT001: %s:%d over %d cols", file, lineno, limit)
+            violations.append(
+                Violation(
+                    rule="FMT001",
+                    severity=Severity.WARN,
+                    file=file,
+                    line=lineno,
+                    message=(
+                        f"FMT001: {file}:{lineno} frob: directive line over "
+                        f"{limit} cols; run `frob fmt {file}` to wrap it to "
+                        f"canonical form"
+                    ),
+                )
+            )
+    return violations
+
+
+# frob:doc docs/modules/gates.md#fmt001-t-0851
+# frob:tests tests/test_gates.py::TestFmt001Gate.test_directive_run_over_limit_flagged
+def fmt_gate(root: Path, diff: Diff) -> tuple[Violation, ...]:
+    """FMT001 (warn): a diff-touched `frob:` directive comment line over the
+    project's configured line length -- see `_fmt001_file`. Additive only:
+    never suppresses or rewrites the underlying ruff/lint finding on the
+    same line, just names `frob fmt` as the auto-fix."""
+    limit = read_line_length(root)
+    violations: list[Violation] = []
+    for file in sorted(_touched_files(diff)):
+        touched = _fmt001_touched_lines(diff, file)
+        violations.extend(_fmt001_file(root, file, limit, touched))
+    return tuple(violations)
 
 
 # ---------------------------------------------------------------------------
@@ -8597,6 +8714,8 @@ _ALL_GATES = frozenset(
         # T-0788: COMPLIANCE005, dispatching frob.strata._compliance's
         # check_cmpl_registry (built by T-0607, wired here).
         "compliance",
+        # T-0851: FMT001, the T-0441 follow-up (frob.gates.fmt_gate).
+        "fmt",
     }
 )
 
@@ -8893,6 +9012,8 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "lang_project_conformance",
     "scope",
     "prework",
+    # frob:ticket T-0851
+    "fmt",
 )
 
 # T-0839: import-time guard making the two constants' drift impossible to
@@ -9033,6 +9154,10 @@ def _build_jobs(
         "lang_project_conformance": lambda: project_lang_conformance_gate(
             st.repo_root, st.queue
         ),
+        # T-0851: FMT001, diff-scoped like TODO001/coverage above -- always
+        # against repo_root so a `frob check <subdir>` run resolves the same
+        # repo-relative diff hunk paths coverage_gate's TODO001 half does.
+        "fmt": lambda: fmt_gate(st.repo_root, st.diff),
     }
     process_jobs: dict[str, _ProcessJob] = {
         "perf": _ProcessJob(perf_gate, (st.root, st.snapshot)),
@@ -9607,6 +9732,7 @@ __all__ = [
     "delta_violations",
     "drift_gate",
     "exclude_hazard_gate",
+    "fmt_gate",
     "inv003_gate",
     "inv004_gate",
     "inv006_gate",

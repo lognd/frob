@@ -36,6 +36,7 @@ declaration).
 | TICK007 | tickets | (warn) a dispatchable (unblocked, unleased) CRITICAL/HIGH ticket has sat past its `frob.tickets.undispatched_stale` threshold -- see "TICK007 (T-0820)" below |
 | TICK008 | tickets | (warn) a ticket in the checked ledger carries unknown/extra frontmatter field(s) (`Ticket`'s `extra="allow"` captured them into `__pydantic_extra__` instead of hard-failing) -- often a typoed known field, whose value is silently lost to the schema default; see "TICK008 (T-0842)" below |
 | COMPLIANCE005 | compliance | a `docs/design/registry/compliance.yaml` `CMPL_REGISTRY_UNIT_IDS` member carries a `deferred`/undispositioned disposition instead of `handled_by`/`out_of_scope` -- see "COMPLIANCE005 (T-0788)" below |
+| FMT001 | fmt | (warn) a diff-touched `frob:` directive comment line exceeds the project's configured line length -- see "FMT001 (T-0851)" below |
 | DEC001 | decisions | a `frob:decision AD-###` edge points at a record that does not exist (opt-in: a `decisions/` dir must exist) |
 | DEC002 | decisions | an `accepted` decision record has no `frob:decision` code anchor |
 | TEST001 | test | public function/method has no `frob:tests` unit edge |
@@ -1957,16 +1958,47 @@ file-global guess). `format_paths`' check-only change-detection
 transform, so it cannot report a false-positive change from a
 newline-translation mismatch between the two reads.
 
-**Known cut (T-0441 Done report):** `frob check`'s own remediation-hint
+**T-0441 known cut, closed by T-0851:** `frob check`'s own remediation-hint
 half of this ticket ("directive line over NN cols; run `frob fmt` to
 wrap", emitted as a `frob check` finding when a non-canonical directive
-line is touched) was NOT implemented in this pass -- `src/frob/check/`
-is outside T-0441's declared scope (`src/frob/graph/dsl.py`,
-`src/frob/gates/`, `src/frob/app/`, `docs/`), and wiring a new gate rule
-into the existing stage/rule-catalog machinery in `frob.gates.__init__`
-and the check orchestrator is a separate unit of work. `frob fmt --check`
-covers the same need standalone (non-zero exit on any non-canonical
-file) until that follow-up lands.
+line is touched) was NOT implemented in T-0441's pass -- `src/frob/check/`
+was outside its declared scope, and wiring a new gate rule into the
+existing stage/rule-catalog machinery in `frob.gates.__init__` and the
+check orchestrator was a separate unit of work. See "FMT001 (T-0851)"
+below for the gate that closes this gap. `frob fmt --check` remains
+available standalone (non-zero exit on any non-canonical file) either way.
+
+### FMT001 (T-0851)
+
+`frob.gates.fmt_gate` (gate name `fmt`, default-on, WARN severity,
+diff-scoped). The T-0441 follow-up above: fires when a diff-touched
+`frob:` directive comment line exceeds the project's configured line
+length (`frob.gates._fmt_directives.read_line_length`), with a
+remediation hint naming `frob fmt <path>` as the auto-fix -- the same
+self-remedying-message contract as every other gate.
+
+Additive only, by design: FMT001 never suppresses or rewrites the
+underlying ruff `E501`/lint finding on the same line -- it only
+*annotates* the situation with the one-command fix. A directive line over
+the limit still shows up as a normal ruff finding too; FMT001 exists so an
+agent chasing the ruff finding also sees the faster remedy instead of
+hand-wrapping (fighting T-0286's own continuation syntax by hand) or
+truncating the reason.
+
+Detection reuses two pieces of T-0441's own machinery rather than
+re-deriving them: `marker_for` (which languages/suffixes are in scope --
+`#`/`//` line comments only, same as `frob fmt` itself) and
+`frob.graph.dsl.fold_comment_runs` (the same continuation-run folding
+`canonicalize_text` folds through, so a run's boundaries are identified
+exactly once, in exactly one place). Diff scope comes from the same
+`Diff.hunks` machinery TODO001 uses (`_touched_files`/hunk spans) -- only
+physical lines the diff's hunks actually cover are checked, never a
+pre-existing non-canonical line elsewhere in an untouched part of the
+file. Only a folded run whose logical text starts with `frob:` is
+checked: an ordinary long comment or a long code line never enters such a
+run, so neither is flagged -- matching the gate's own remediation (`frob
+fmt` only ever rewrites directive lines, so a finding named FMT001 must
+mean a directive line specifically).
 
 ## Design decisions
 
