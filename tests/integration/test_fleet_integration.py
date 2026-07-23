@@ -5,6 +5,7 @@ least one integration edge (TEST003)."""
 
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -60,3 +61,37 @@ class TestFleetIntegration:
         assert result.returncode == 0, result.stderr
         assert "repo-a" in result.stdout
         assert "repo-b" in result.stdout
+
+
+class TestFleetIntegrationJson:
+    def test_fleet_status_json_is_clean(self, tmp_path: Path) -> None:
+        """`frob fleet status --json` (T-0815): `collect_status` always
+        spawns `git` through `guarded_subprocess_run` for branch/dirty
+        state, even with `--skip-gates` -- the exec guard's DEBUG spawn
+        line must not leak into the JSON payload. Full stdout json.loads
+        cleanly."""
+        # frob:tests src/frob/fleet kind="integration"
+        repo_a = tmp_path / "repo-a"
+        _init_repo(repo_a)
+
+        manifest = tmp_path / "fleet.toml"
+        manifest.write_text(f'[[repo]]\nname = "repo-a"\npath = "{repo_a}"\n')
+
+        result = subprocess.run(
+            FROB
+            + [
+                "fleet",
+                "status",
+                "--manifest",
+                str(manifest),
+                "--skip-gates",
+                "--json",
+            ],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0, result.stderr
+        data = json.loads(result.stdout)
+        assert "repos" in data
+        names = [r["name"] for r in data["repos"]]
+        assert "repo-a" in names

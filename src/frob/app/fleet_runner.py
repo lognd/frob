@@ -5,6 +5,7 @@ over a `fleet.toml` manifest of sibling repos.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import sys
 from pathlib import Path
@@ -17,7 +18,7 @@ from frob.fleet import (
     rollup,
     route_ticket,
 )
-from frob.logging import get_logger
+from frob.logging import get_logger, quiet_stdout_logs
 from frob.render import Renderer
 from frob.tickets import Origin, Priority, TicketKind, TicketSpec
 
@@ -33,6 +34,7 @@ _FLEET_ERROR_MESSAGES: dict[FleetError, str] = {
 
 
 # frob:doc docs/modules/app.md#runners
+# frob:ticket T-0815
 # frob:tests tests/unit/test_fleet_runner.py::TestFleetRunner.test_run_status_table
 # frob:tests tests/unit/test_fleet_runner.py::TestFleetRunner.test_run_status_missing_manifest  # noqa: E501
 # frob:tests tests/unit/test_fleet_runner.py::TestFleetRunner.test_run_route_ok
@@ -54,17 +56,27 @@ def _manifest_path(cfg: AppConfig) -> Path:
 
 def _run_status(cfg: AppConfig) -> None:
     """Load the manifest, roll up every repo's status, print a reddest-first
-    table (or `--json`). Exits 1 on a missing/malformed manifest."""
-    manifest_path = _manifest_path(cfg)
-    manifest_result = load_manifest(manifest_path)
-    if manifest_result.is_err:
-        _log.error(
-            "fleet status: %s -- %s",
-            _FLEET_ERROR_MESSAGES[manifest_result.danger_err],
-            manifest_path,
-        )
-        sys.exit(1)
-    report = rollup(manifest_result.danger_ok, probe_gates=not cfg.fleet_skip_gates)
+    table (or `--json`). Exits 1 on a missing/malformed manifest.
+
+    T-0815: the entire payload path -- `load_manifest`'s own INFO log plus
+    `rollup`'s `git`/gate probes spawned through `guarded_subprocess_run`
+    (which DEBUG-logs every spawn) -- can leak log lines into stdout ahead
+    of the JSON payload, since this repo's stdout log handler is
+    DEBUG-level by default. Wrapped in `quiet_stdout_logs()` only when
+    `--json` is requested (matching `frob.app.xref_runner`'s conditional
+    pattern); human mode keeps the diagnostic lines visible."""
+    ctx = quiet_stdout_logs() if cfg.fleet_json else contextlib.nullcontext()
+    with ctx:
+        manifest_path = _manifest_path(cfg)
+        manifest_result = load_manifest(manifest_path)
+        if manifest_result.is_err:
+            _log.error(
+                "fleet status: %s -- %s",
+                _FLEET_ERROR_MESSAGES[manifest_result.danger_err],
+                manifest_path,
+            )
+            sys.exit(1)
+        report = rollup(manifest_result.danger_ok, probe_gates=not cfg.fleet_skip_gates)
 
     if cfg.fleet_json:
         payload = json.loads(report.model_dump_json())
