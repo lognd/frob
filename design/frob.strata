@@ -516,7 +516,7 @@ node deploy : trusted {
     attr flag=frob_check_exec_kill_switch;
     may "fs";
     may "fs-read";
-    waive "SYS100:eval" reason "scanner self-match false positive: bare-eval(-shaped needle matches _conform.py::_mutation_for_eval's own function name (the substring eval( inside the identifier), not a real eval/exec builtin call -- direct grep of src/frob/deploy/** confirms zero real eval(/exec( calls" ticket "T-0860";
+    waive "SYS100:eval" reason "scanner self-match false positive: bare-eval(-shaped needle matches _conform.py::_mutation_for_eval's own function name (the substring eval( inside the identifier), not a real eval/exec builtin call -- direct grep of src/frob/deploy/** confirms zero real eval(/exec( calls" ticket "T-0882";
 }
 
 // vet: src/frob/vet/**. Dependency-vetting -- the ONE component that

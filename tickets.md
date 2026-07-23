@@ -10441,7 +10441,7 @@ new node ids added to the evidence list above (11 total).
 id: T-0860
 title: 'strata self-conformance + export-golden drift: mutate/deploy capabilities
   undeclared, IAM/k8s/seccomp goldens stale'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-23'
