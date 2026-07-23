@@ -68,6 +68,8 @@ def _report_mismatches(mismatches, as_json: bool, root: Path) -> None:
 
 
 # frob:doc docs/modules/app.md#runners
+# frob:ticket T-0588
+# frob:tests tests/unit/test_app_runners_batch5.py::TestBindRunner.test_mismatch_json_mode_no_exit  # noqa: E501
 def run(argv=None):
     args = _build_bind_parser().parse_args(argv)
 

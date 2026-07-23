@@ -92,6 +92,8 @@ def _ticket_dispatch_table() -> dict:
 
 # frob:doc docs/modules/app.md#runners
 # frob:waive TEST005 reason="run 20.0% branch cover, debt T-0160"
+# frob:ticket T-0588
+# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketRunnerDispatch.test_unknown_command_exits_1  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """Dispatch to the ticket subcommand named by `cfg.ticket_command`."""
     root = (cfg.ticket_path or Path(".")).resolve()

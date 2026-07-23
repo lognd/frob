@@ -29,6 +29,8 @@ _CPP_EXTS = {".c", ".cc", ".cpp", ".cxx", ".c++", ".h", ".hpp", ".hxx", ".h++"}
 
 
 # frob:doc docs/modules/app.md#runners
+# frob:ticket T-0588
+# frob:tests tests/unit/test_app_runners_batch5.py::TestCycleRunner.test_cycle_found_with_suggest  # noqa: E501
 def run(cfg: AppConfig) -> None:
     if cfg.cycle_path is None:
         _log.error("frob cycle requires <path>")

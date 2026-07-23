@@ -85,6 +85,8 @@ class ModuleOutline(BaseModel):
                 parts.append(line)
         return parts, hidden_classes, hidden_methods
 
+    # frob:ticket T-0588
+    # frob:tests tests/unit/test_outline.py::test_py_outline_as_text
     def as_text(self, include_private: bool = False) -> str:
         # frob:doc docs/commands/outline.md#public-api
         parts = [f"{self.path}  ({self.lines} lines)"]
@@ -105,6 +107,8 @@ class ModuleOutline(BaseModel):
 
         return "\n".join(parts)
 
+    # frob:ticket T-0588
+    # frob:tests tests/unit/test_outline.py::test_py_outline_as_json
     def as_json(self) -> str:
         # frob:doc docs/commands/outline.md#public-api
         return self.model_dump_json(indent=2)

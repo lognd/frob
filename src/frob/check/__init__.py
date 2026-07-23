@@ -165,6 +165,8 @@ class CheckResult(BaseModel):
         )
 
     # frob:waive TEST005 reason="CheckResult.as_json 50.0% branch cover, debt T-0160"
+    # frob:ticket T-0588
+    # frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_json_mode_prints_json_and_errors_exit_1  # noqa: E501
     def as_json(self) -> str:
         # frob:doc docs/commands/check.md#public-api
         """The full structured result as JSON (`--json` CLI output)."""

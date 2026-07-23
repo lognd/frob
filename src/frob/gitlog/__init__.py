@@ -78,6 +78,8 @@ class GitLogResult(BaseModel):
             result.setdefault(c.type, []).append(c)
         return result
 
+    # frob:ticket T-0588
+    # frob:tests tests/unit/test_gitlog_rendering.py::test_as_json_round_trips_groups
     def as_json(self) -> str:
         # frob:doc docs/commands/gitlog.md#public-api
         d = self.model_dump()
@@ -125,6 +127,8 @@ class GitLogResult(BaseModel):
         order += [k for k in groups if k not in seen]
         return order
 
+    # frob:ticket T-0588
+    # frob:tests tests/unit/test_gitlog_rendering.py::test_as_text_no_commits_short_circuit  # noqa: E501
     def as_text(self) -> str:
         # frob:doc docs/commands/gitlog.md#public-api
         if not self.commits:

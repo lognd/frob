@@ -106,6 +106,8 @@ def _run_agentic(cfg: AppConfig) -> None:
 # frob:ticket T-0009
 # frob:ticket T-0562
 # frob:doc docs/modules/app.md#runners
+# frob:ticket T-0588
+# frob:tests tests/unit/test_app_style.py::test_stats_plain_stdout_has_no_ansi
 def run(cfg: AppConfig) -> None:
     """Render the delivery snapshot (queue health + commit cadence), or
     the non-gated agentic time/token breakdown when `FROB_STATS_AGENTIC`

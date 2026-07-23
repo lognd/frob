@@ -84,6 +84,8 @@ def _run_extract(cfg: AppConfig, path: Path) -> None:
 
 
 # frob:doc docs/modules/app.md#runners
+# frob:ticket T-0588
+# frob:tests tests/unit/test_app_runners_batch5.py::TestDocsRunner.test_search_json_mode
 def run(cfg: AppConfig) -> None:
     path = cfg.docs_path
     if path is None:

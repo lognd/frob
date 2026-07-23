@@ -19,6 +19,8 @@ _log = get_logger(__name__)
 
 
 # frob:doc docs/modules/app.md#runners
+# frob:ticket T-0588
+# frob:tests tests/unit/test_app_runners.py::TestArchRunner.test_json_mode
 def run(cfg: AppConfig) -> None:
     from frob.arch import analyze_project
 

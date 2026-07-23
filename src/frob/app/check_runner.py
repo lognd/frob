@@ -843,6 +843,8 @@ class _ColorizedLevelFormatter(logging.Formatter):
         self._color = color
 
     # frob:doc docs/modules/app.md#runners
+    # frob:ticket T-0588
+    # frob:tests tests/system/test_cli_check.py::TestCheckBadCode.test_unused_import_output_mentions_error  # noqa: E501
     def format(self, record: logging.LogRecord) -> str:
         """Format via `base`, then paint ERROR+ red / WARNING yellow when
         `color` is on; DEBUG/INFO pass through unchanged."""

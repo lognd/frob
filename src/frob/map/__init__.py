@@ -36,6 +36,8 @@ class MapResult(BaseModel):
     total_lines: int
     files: list[FileNode]
 
+    # frob:ticket T-0588
+    # frob:tests tests/unit/test_map.py::test_map_as_text
     def as_text(self, max_symbols: int = 6, include_private: bool = False) -> str:
         # frob:doc docs/commands/map.md#public-api
         lines: list[str] = [
@@ -56,6 +58,8 @@ class MapResult(BaseModel):
             )
         return "\n".join(lines)
 
+    # frob:ticket T-0588
+    # frob:tests tests/unit/test_map.py::test_map_as_json
     def as_json(self) -> str:
         # frob:doc docs/commands/map.md#public-api
         return self.model_dump_json(indent=2)

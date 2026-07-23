@@ -68,6 +68,8 @@ class Diagnostic(BaseModel):
     code: str | None = None  # e.g. "F401", "E501", "error[incompatible-type]"
     message: str = ""
 
+    # frob:ticket T-0588
+    # frob:tests tests/unit/test_process.py::test_ruff_as_text
     def as_text(self) -> str:
         # frob:doc docs/modules/process.md#public-api
         """One-line `file:line:col  CODE  message` rendering."""
@@ -180,6 +182,8 @@ class ToolResult(BaseModel):
             ]
         return lines
 
+    # frob:ticket T-0588
+    # frob:tests tests/unit/test_process.py::test_pytest_as_text_shows_failures
     def as_text(self, verbose: bool = False) -> str:
         # frob:doc docs/modules/process.md#public-api
         """
@@ -191,6 +195,8 @@ class ToolResult(BaseModel):
         parts += self._render_tests(verbose)
         return "\n".join(parts)
 
+    # frob:ticket T-0588
+    # frob:tests tests/unit/test_process.py::test_pytest_as_json
     def as_json(self) -> str:
         # frob:doc docs/modules/process.md#public-api
         """The full structured result as JSON."""

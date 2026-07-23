@@ -50,6 +50,8 @@ def _probe(cfg: AppConfig, dup_path: Path) -> None:
 
 
 # frob:doc docs/modules/app.md#runners
+# frob:ticket T-0588
+# frob:tests tests/unit/test_app_runners_batch5.py::TestDupRunner.test_scan_text_mode_logs_result  # noqa: E501
 def run(cfg: AppConfig) -> None:
     dup_path: Path | None = getattr(cfg, "dup_path", None)
     if dup_path is None:

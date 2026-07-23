@@ -20,7 +20,9 @@ _log = get_logger(__name__)
 # frob:ticket T-0563
 # frob:ticket T-0803
 # frob:ticket T-0815
+# frob:ticket T-0588
 # frob:doc docs/modules/app.md#runners
+# frob:tests tests/unit/test_app_runners.py::TestGitlogRunner.test_json_mode_prints_json
 def run(cfg: AppConfig) -> None:
     """`frob gitlog`: report git history grouped by conventional-commit type.
 

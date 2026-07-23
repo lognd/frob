@@ -55,6 +55,8 @@ def _clear(root: Path, cfg: AppConfig) -> None:
 
 # frob:ticket T-0569
 # frob:doc docs/modules/app.md#runners
+# frob:ticket T-0588
+# frob:tests tests/test_pool_runner.py::TestPoolSnapshotCli.test_snapshot_baselines_keys
 def run(cfg: AppConfig) -> None:
     """Dispatch to `frob pool snapshot|clear` (T-0569)."""
     root = (cfg.pool_path or Path(".")).resolve()

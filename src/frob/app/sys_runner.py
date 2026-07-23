@@ -864,6 +864,8 @@ def _run_audit(cfg: AppConfig) -> None:
 # frob:ticket T-0085
 # frob:ticket T-0086
 # frob:waive TEST005 reason="run 0.0% branch cover, debt T-0160"
+# frob:ticket T-0588
+# frob:tests tests/unit/test_app_runners_batch7.py::TestSysRunnerDispatch.test_unknown_command_exits_1  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """Dispatch `frob sys <command>`: `plan` (T-0084), `doc` (T-0085), and
     `export` (T-0086) exist today; roadmap phase 5's `check`/`trace`/

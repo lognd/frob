@@ -14,6 +14,8 @@ _CACHE_REL = Path(".frob") / "cache.db"
 
 
 # frob:doc docs/modules/app.md#runners
+# frob:ticket T-0588
+# frob:tests tests/unit/test_app_runners_batch6.py::TestGraphRunner.test_build_success_logs_stats  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """Dispatch to build/query/why based on `cfg.graph_command`."""
     root = (cfg.graph_path or Path(".")).resolve()

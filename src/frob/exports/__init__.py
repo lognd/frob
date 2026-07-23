@@ -27,6 +27,8 @@ class ExportsResult(BaseModel):
     modules: list[ModuleExports]
 
     # frob:waive TEST005 reason="ExportsResult.as_text 80.0% branch cover, debt T-0160"
+    # frob:ticket T-0588
+    # frob:tests tests/unit/test_exports.py::TestExportsPackage.test_as_text_output
     def as_text(self) -> str:
         # frob:doc docs/commands/exports.md#public-api
         # Find which symbol names are duplicated across modules
@@ -60,6 +62,8 @@ class ExportsResult(BaseModel):
         return "\n".join(lines)
 
     # frob:waive TEST005 reason="ExportsResult.as_json 50.0% branch cover, debt T-0160"
+    # frob:ticket T-0588
+    # frob:tests tests/unit/test_app_runners.py::TestExportsRunner.test_json_mode_logs_result  # noqa: E501
     def as_json(self) -> str:
         # frob:doc docs/commands/exports.md#public-api
         return self.model_dump_json(indent=2)

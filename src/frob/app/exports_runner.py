@@ -11,6 +11,8 @@ _log = get_logger(__name__)
 
 
 # frob:doc docs/modules/app.md#runners
+# frob:ticket T-0588
+# frob:tests tests/unit/test_app_runners.py::TestExportsRunner.test_json_mode_logs_result  # noqa: E501
 def run(cfg: AppConfig) -> None:
     if cfg.exports_path is None:
         _log.error("frob exports requires <path>")

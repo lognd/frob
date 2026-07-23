@@ -77,6 +77,8 @@ class ArchResult(BaseModel):
     root: str
     suggestions: list[ArchSuggestion]
 
+    # frob:ticket T-0588
+    # frob:tests tests/unit/test_arch.py::TestArchResultFormat.test_as_text_clean_project  # noqa: E501
     def as_text(self) -> str:
         # frob:doc docs/modules/arch.md#arch-result
         if not self.suggestions:
@@ -92,6 +94,8 @@ class ArchResult(BaseModel):
                 lines.append(f"  {s.detail}")
         return "\n".join(lines)
 
+    # frob:ticket T-0588
+    # frob:tests tests/unit/test_arch.py::TestArchResultFormat.test_as_json_has_suggestions_key  # noqa: E501
     def as_json(self) -> str:
         # frob:doc docs/modules/arch.md#arch-result
         return json.dumps(self.model_dump(), indent=2)
