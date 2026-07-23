@@ -4738,3 +4738,23 @@ Callable[[Ticket], tuple[Violation, ...]]) into the close-path CLI
 runner, mirroring the covers_scope/reviewed injection pattern
 transition()/_done_transition_guard() already use, and block DONE on an
 ERROR-severity finding the same way land does.
+
+<!-- ticket:T-0845 -->
+```yaml
+id: T-0845
+title: 'strata: attr-forwarding surface for elaborator-synthesized in-process cache
+  flows (REL200 waiver burn-down)'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-23'
+priority: medium
+parent: T-0640
+scope:
+- src/frob/strata/**
+- design/frob.strata
+- tests/unit/strata/**
+threat: null
+component: null
+```
+The two REL200 waivers on design/frob.strata's graph_cache__fill and graph_cache__inval_f_parse flows exist because elaborator-synthesized in-process cache flows have no attr-forwarding surface: there is no way to declare (or discharge) a timeout/local disposition on a flow the elaborator invents. Add that surface (per-flow attr forwarding from the synthesizing rule, or an explicit local disposition for in-process in-memory flows), then burn down both waivers. Deferred from T-0640 at its salvage-close; the waivers' ticket refs point here.
