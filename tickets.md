@@ -954,7 +954,7 @@ Discovered while working T-0516: COV006 Violation objects carry no symref (file=
 id: T-0542
 title: 'gates: COV002 satisfied by ANY open ticket whose scope glob covers the file
   (B10)'
-state: in-progress
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-21'
