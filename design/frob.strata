@@ -211,9 +211,20 @@ node checker : trusted {
 // capability pattern tables (`_effects.py` reuses `frob.vet._capability`).
 // `code` covers only the python half (`strata-core/**`'s rust source is
 // outside `bind_code`'s `*.py` walk, T-0078 scope).
-// T-0155 LINT004: `may "net"` is a risky capability with no real kill
-// switch today -- an honest gap, same posture as `checker` above; waived
-// (T-0174) pending T-0200's real kill-switch mechanism, same reason.
+// T-0769: `may "net"` (formerly here, T-0155/T-0174's LINT004 waiver
+// pending T-0200's kill switch) is DROPPED -- a strictness-increasing
+// narrowing, not a relaxation. T-0769's docstring/comment-prose exclusion
+// fix proved this module's `net` capability was NEVER genuinely observed
+// on real code; the only thing that ever satisfied SYS101 here was a
+// docstring false positive in `_effects.py`'s own module docstring
+// (`requests.post(...)`-shaped prose describing a hypothetical example),
+// now reworded. A direct scan of every file under `src/frob/strata/**`
+// confirms zero real net-capable code today. If this package genuinely
+// grows a net-capable call in the future, `may "net"` must be
+// re-declared then, together with a real kill-switch mechanism (T-0200)
+// -- not carried forward speculatively on the strength of a false
+// positive. See T-draft-22aa6efc for the discovery/investigation this
+// narrowing resolves.
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 node stratamod : trusted {
     clearance Internal;
@@ -226,8 +237,6 @@ node stratamod : trusted {
     // not previously exercised anywhere else in this package.
     may "fs";
     may "fs-read";
-    may "net";
-    waive "LINT004" reason "no real kill switch around net calls yet -- T-0200 is the follow-on ticket to build one" ticket "T-0200";
 }
 
 // T-0707: the unified registry-entry model (T-0407, `frob.registry`) --

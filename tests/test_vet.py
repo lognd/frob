@@ -737,6 +737,21 @@ class TestCapabilityScan:
         # the accepted false-positive class documented in the module
         # docstring and docs/modules/vet.md -- this locks that decision so a
         # future "fix" doesn't silently change the behavior either way.
+        #
+        # T-0769: the ORIGINAL "cmdclass"/"install-hook" instance of this
+        # class no longer applies -- "cmdclass" only ever appeared inside
+        # this module's own module-docstring PROSE (never as real table
+        # data in this file; the actual DANGEROUS_OPERATIONS needle lives in
+        # `_capability_registry.py`), and T-0769 now excludes docstring
+        # spans from the raw-text scan the same way T-0209 already excludes
+        # comment spans -- that is precisely the false-positive class T-0769
+        # closes, not a regression of this one. The accepted false-positive
+        # class this test locks still holds for genuine non-comment,
+        # non-docstring CODE-level string literal data: `_has_bare_compile_
+        # call`'s own `needle = b"compile("` bytes literal (a real code
+        # statement, not prose) still makes this module observe "eval" on
+        # itself, exactly the self-match class the module docstring
+        # documents.
         from frob.vet._capability import scan_file_capabilities
 
         own_path = (
@@ -747,7 +762,8 @@ class TestCapabilityScan:
             / "_capability.py"
         )
         capabilities = scan_file_capabilities(own_path)
-        assert "install-hook" in capabilities  # "cmdclass" appears as data
+        assert "eval" in capabilities  # b"compile(" appears as real code data
+        assert "install-hook" not in capabilities  # T-0769: was docstring-only
 
     def test_scan_directory_capabilities_excludes_own_module(
         self, tmp_path: Path

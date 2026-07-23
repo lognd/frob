@@ -683,6 +683,7 @@ discipline `_capability.py`'s module docstring already documents for
 <!-- frob:describes src/frob/vet/_capability.py::_decode_to_exec_signal -->
 <!-- frob:describes src/frob/vet/_capability.py::_scan_directory_capabilities -->
 <!-- frob:describes src/frob/vet/_capability.py::_scan_directory_fingerprints -->
+<!-- frob:describes src/frob/vet/_capability.py::non_executable_line_numbers -->
 <!-- frob:describes src/frob/vet/_scan.py::scan_tree -->
 <!-- frob:describes src/frob/vet/_lifecycle.py::_scan_lifecycle_scripts -->
 <!-- frob:describes src/frob/vet/_obfuscation.py::_high_entropy_strings -->
@@ -767,6 +768,12 @@ discipline `_capability.py`'s module docstring already documents for
   pattern-table bucket (or `None` for unsupported languages).
 - `scan_file_capabilities` -- capability tokens observed in one source
   file's raw text, via the per-language substring table.
+- `non_executable_line_numbers` -- T-0769: 1-indexed line numbers in a
+  file that a comment or python docstring span touches -- the shared
+  primitive `frob.strata._effects`'s line-level THREAT004 observation
+  scan uses to get the same comment/docstring exclusion this module's own
+  raw-text scanners apply, instead of a needle-in-line check with no
+  prose awareness at all.
 - `scan_file_fingerprints` -- T-0153: `frob.strata.CVE_FINGERPRINTS` entries
   whose needle(s) matched in one source file's raw text (the CVE-fingerprint
   sibling of `scan_file_operations`, docs/strata/threat.md#cve-fingerprints-

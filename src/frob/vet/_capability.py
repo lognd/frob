@@ -82,6 +82,37 @@ file (or an extension `frob.lang` has no grammar for at all, e.g. the
 bucket accepts) degrades to the pre-T-0209 unfiltered scan for that one
 file rather than erroring.
 
+T-0769: docstring prose counted as observed capability. T-0209's comment-span
+exclusion above only ever covered tree-sitter COMMENT nodes; a python
+module/class/function-head DOCSTRING is a `string` expression-statement, a
+completely different node type, so needle prose written there (e.g.
+`_concurrency.py`'s fork/pool-hazard docstrings literally spelling
+`subprocess.Popen(...)`/`os.fork()`) fell straight through the comment
+filter and was observed as a real capability -- a docstring is a non-
+executable string CONSTANT, it cannot spawn a process, so excluding it from
+raw-text observation is sound and does not weaken the fail-closed posture
+for executable code (the string-literal carve-out in the T-0209 paragraph
+above is about ordinary in-code string literals that CAN be an exec vector,
+e.g. an `eval`-shaped payload; a docstring never executes, so it is not
+that case). `_docstring_byte_spans` computes the same kind of span
+`_comment_byte_spans` does, for python only (the only language this module
+extracts a docstring concept for at all), and `_non_executable_byte_spans`
+unions the two -- every call site that used to pass `_comment_byte_spans`
+now passes this union instead, so a needle inside a docstring is treated
+exactly like a needle inside a `#` comment. Separately, T-0769 found the
+SAME class of miss one level up: `frob.strata._effects._line_effects`'s
+line-level needle scan (feeding THREAT004/`check_capability_conformance`,
+which strata's SYS100 selfconform check delegates to) does its own raw
+`needle in line` substring test with NO comment-or-docstring awareness at
+all -- it does not even call into this module's span machinery. That was
+the actual mechanism behind the reported `_concurrency.py:56` false
+positive (prose inside a `#:` COMMENT, still missed because the line-level
+path is comment-blind, not just docstring-blind). `non_executable_line_
+numbers` below is the shared primitive both paths now use: `_effects.py`
+was updated (T-0769, in this same ticket's expanded scope) to skip any
+matched line that primitive reports as non-executable, closing both
+instances of the same underlying gap with one span computation.
+
 T-0244: the embedded-code blind spot. A large HTML/JS-shaped STRING
 LITERAL sitting inside a python module (a whole dashboard's markup/script
 assembled as a python string, invisible to every needle table above since
@@ -210,6 +241,81 @@ def _fully_in_any_span(start: int, end: int, spans: tuple[ByteSpan, ...]) -> boo
     return any(
         span_start <= start and end <= span_end for span_start, span_end in spans
     )
+
+
+#: python container node types whose body can open with a docstring
+#: (T-0769) -- mirrors `frob.lang._walk_python`'s identical vocabulary
+#: (module root, function/method, class), kept as a small local duplicate
+#: rather than importing that module's private helper: this module already
+#: uses `frob.lang`'s PUBLIC `raw_tree`/`node_text` entry points only, and
+#: the "what counts as a docstring" rule is three lines of tree shape, not
+#: worth a cross-module private dependency for.
+_PY_DOCSTRING_CONTAINER_TYPES = ("function_definition", "class_definition")
+
+
+def _py_leading_docstring_node(container):  # noqa: ANN001, ANN201 -- tree_sitter.Node
+    """The leading-statement `string` node opening `container`'s body, if
+    any (T-0769) -- `container` is either the module root itself or a
+    function/class node whose own `body` field holds the statement block.
+    Returns `None` when the first statement is not a bare/expression-
+    wrapped string literal, i.e. there is no docstring here at all."""
+    body = (
+        container
+        if container.type == "module"
+        else container.child_by_field_name("body")
+    )
+    if body is None or body.named_child_count == 0:
+        return None
+    first = body.named_children[0]
+    if first.type == "expression_statement":
+        if first.named_child_count == 0 or first.named_children[0].type != "string":
+            return None
+        return first.named_children[0]
+    if first.type == "string":
+        return first
+    return None
+
+
+def _docstring_byte_spans(path: Path) -> tuple[ByteSpan, ...]:
+    """Byte-range spans of every module/class/function-head docstring
+    STRING node in `path` (T-0769) -- python only, the only language this
+    module extracts a docstring concept for. A docstring is a non-
+    executable string constant; needle prose written there (fork/subprocess
+    hazard documentation, e.g.) must not count as an observed capability
+    any more than the same prose in a `#` comment would (see module
+    docstring T-0769 entry for the false-positive this closes). Returns an
+    empty tuple for a non-python file, an unparseable file, or one
+    `frob.lang` has no grammar for -- same degrade-gracefully posture as
+    `_comment_byte_spans`."""
+    parsed = raw_tree(path)
+    if parsed.is_err:
+        return ()
+    tree, _source, language_label = parsed.danger_ok
+    if language_label != "python":
+        return ()
+
+    spans: list[ByteSpan] = []
+
+    def walk(node, is_top: bool) -> None:  # noqa: ANN001
+        if is_top or node.type in _PY_DOCSTRING_CONTAINER_TYPES:
+            doc = _py_leading_docstring_node(node)
+            if doc is not None:
+                spans.append((doc.start_byte, doc.end_byte))
+        for child in node.children:
+            walk(child, False)
+
+    walk(tree.root_node, True)
+    return tuple(spans)
+
+
+def _non_executable_byte_spans(path: Path) -> tuple[ByteSpan, ...]:
+    """Every byte span in `path` that is prose, not executable code (T-0769):
+    tree-sitter comment spans (T-0209) unioned with python docstring spans
+    (T-0769 above). Every raw-text needle-scan call site in this module
+    that used to exclude comment spans alone now excludes this union
+    instead -- a needle hit fully inside either kind of span is
+    documentation describing an operation, never the operation itself."""
+    return _comment_byte_spans(path) + _docstring_byte_spans(path)
 
 
 #: operator bytes a needle-to-regex conversion treats as "whitespace may
@@ -2088,6 +2194,39 @@ def language_for(path: Path) -> str | None:
     return _EXT_LANGUAGE.get(path.suffix.lower())
 
 
+# frob:ticket T-0769
+# frob:doc docs/modules/vet.md#public-api
+def non_executable_line_numbers(path: Path) -> frozenset[int]:
+    """Every 1-indexed line number in `path` that a comment or python
+    docstring span (`_non_executable_byte_spans`, T-0209/T-0769) touches --
+    the shared primitive `frob.strata._effects._line_effects`'s LINE-level
+    needle scan uses to get the same comment/docstring exclusion this
+    module's own raw-text scanners already apply, instead of duplicating
+    span computation with its own, unfiltered `needle in line` check
+    (T-0769: that duplication was the actual root cause of the reported
+    `_concurrency.py:56` false positive -- a needle inside a `#:` COMMENT,
+    missed because the line-level path never consulted comment spans at
+    all, docstrings or not). A line is included if ANY part of it overlaps
+    a non-executable span, not only a fully-covered line -- deliberately
+    coarser than the byte-precise `_fully_in_any_span` check the set-level
+    scanners use, since a caller here only has line numbers to filter
+    against, never byte offsets. Returns an empty frozenset for a file with
+    no comment/docstring spans at all (never raises)."""
+    spans = _non_executable_byte_spans(path)
+    if not spans:
+        return frozenset()
+    try:
+        raw = path.read_bytes()
+    except OSError:
+        return frozenset()
+    lines: set[int] = set()
+    for start, end in spans:
+        first_line = raw.count(b"\n", 0, start) + 1
+        last_line = raw.count(b"\n", 0, max(end - 1, 0)) + 1
+        lines.update(range(first_line, last_line + 1))
+    return frozenset(lines)
+
+
 # frob:doc docs/modules/vet.md#public-api
 # frob:waive TEST005 reason="scan_file_capabilities 76.9% branch cover, debt T-0160"
 def scan_file_capabilities(path: Path) -> frozenset[str]:
@@ -2105,7 +2244,7 @@ def scan_file_capabilities(path: Path) -> frozenset[str]:
         _log.warning("vet: could not read %s for capability scan: %s", path, exc)
         return frozenset()
 
-    comment_spans = _comment_byte_spans(path)
+    comment_spans = _non_executable_byte_spans(path)
     found = _matched_capabilities(raw, table, language, comment_spans)
     if language == "python":
         # T-0328: import/binding-aware resolution catches aliased/from-
@@ -2188,7 +2327,7 @@ def _scan_file_operations(path: Path) -> tuple[_DangerousOperation, ...]:
         _log.warning("vet: could not read %s for operation scan: %s", path, exc)
         return ()
 
-    comment_spans = _comment_byte_spans(path)
+    comment_spans = _non_executable_byte_spans(path)
     matched = [
         entry
         for entry in DANGEROUS_OPERATIONS
@@ -3044,7 +3183,7 @@ def _scan_file_fingerprints(path: Path) -> tuple[CveFingerprint, ...]:
         _log.warning("vet: could not read %s for fingerprint scan: %s", path, exc)
         return ()
 
-    comment_spans = _comment_byte_spans(path)
+    comment_spans = _non_executable_byte_spans(path)
     matched = tuple(
         entry
         for entry in CVE_FINGERPRINTS

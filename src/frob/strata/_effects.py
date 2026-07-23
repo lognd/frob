@@ -27,10 +27,20 @@ matching the existing `may` docstring example in `_models.py::Node`) and
 joins on kind only -- a node with any `may` atom of kind `net` is allowed
 any net-effect anywhere in its bound code, a node with none is not. Finer
 joins (destination-scoped, e.g. requiring `net.out:stripe.com`
-specifically for an observed `requests.post("https://stripe.com/...")`)
-need a first-class capability grammar to parse targets out of both the
-declaration and the call site; that is a surface-grammar follow-up, not a
-kernel change, exactly as `_code_binding.py` defers the `code` keyword.
+specifically for an observed outbound HTTP POST to `https://stripe.com/...`
+made through a client library) need a first-class capability grammar to
+parse targets out of both the declaration and the call site; that is a
+surface-grammar follow-up, not a kernel change, exactly as
+`_code_binding.py` defers the `code` keyword.
+
+T-0769: the paragraph above used to spell a matching HTTP-client-call
+needle literally, which this same file's `net` needle table
+(`frob.vet._capability._PATTERNS`) matched as a real observation on THIS
+module's own docstring -- a self-inflicted instance of the exact false-
+positive class this ticket fixes (docstring prose, not code, T-0769's
+module-docstring entry in `frob.vet._capability`). Reworded to describe
+the shape without spelling a matching needle, same mitigation precedent as
+T-0695's `_concurrency.py` docstring reword.
 """
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
 # src/frob/strata/_effects.py's exclusivity-vocabulary hit is source-level \
@@ -47,7 +57,12 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict
 
 from frob.logging import get_logger
-from frob.vet._capability import _PATTERNS, is_self_pattern_path, language_for
+from frob.vet._capability import (
+    _PATTERNS,
+    is_self_pattern_path,
+    language_for,
+    non_executable_line_numbers,
+)
 from frob.vet._capability_modes import (
     CAPABILITY_MODE_KINDS,
     LEGACY_CAPABILITY_ALIASES,
@@ -223,12 +238,24 @@ def node_may_kinds(node: Node) -> frozenset[str]:
 
 
 def _needle_matches(
-    rel: str, text: str, table: dict[str, tuple[str, ...]]
+    rel: str,
+    text: str,
+    table: dict[str, tuple[str, ...]],
+    non_executable_lines: frozenset[int],
 ) -> list[ObservedEffect]:
     """Every (line, kind, needle) substring match of `table` against `text`,
-    `rel` filled into the `file` field on each `ObservedEffect`."""
+    `rel` filled into the `file` field on each `ObservedEffect`. T-0769: a
+    line reported in `non_executable_lines` (a comment or python docstring
+    line, `frob.vet._capability.non_executable_line_numbers`) is skipped
+    entirely -- this is the line-level sibling of the comment/docstring
+    exclusion `frob.vet._capability`'s own raw-text scanners already apply;
+    before this fix, this function had NO such exclusion at all, so needle
+    prose in a `#` comment or docstring (fork/subprocess hazard
+    documentation, e.g.) was observed as a real effect."""
     found: list[ObservedEffect] = []
     for lineno, line in enumerate(text.splitlines(), start=1):
+        if lineno in non_executable_lines:
+            continue
         for vet_kind, kind in _KIND_MAP.items():
             for needle in table.get(vet_kind, ()):
                 if needle in line:
@@ -250,7 +277,11 @@ def _line_effects(path: Path, root: Path) -> list[ObservedEffect]:
     `root` (T-0253) doubles as `is_self_pattern_path`'s scan-target
     discriminator: self-conformance always passes frob's own repo root
     here, so the exclusion fires exactly when it always has for this
-    caller."""
+    caller. T-0769: also excludes any line `non_executable_line_numbers`
+    reports as comment/docstring prose, closing the false-positive class
+    that let `_concurrency.py`'s fork/pool-hazard documentation trip
+    THREAT004/SYS100 (docstrings) as well as a plain `#:` comment line
+    (this function previously had zero comment awareness at all)."""
     if is_self_pattern_path(path, root):
         return []
     language = language_for(path)
@@ -264,7 +295,8 @@ def _line_effects(path: Path, root: Path) -> list[ObservedEffect]:
         return []
 
     rel = path.relative_to(root).as_posix()
-    return _needle_matches(rel, text, table)
+    non_executable_lines = non_executable_line_numbers(path)
+    return _needle_matches(rel, text, table, non_executable_lines)
 
 
 def _sorted_owned_files(binding: CodeBinding) -> list[str]:
