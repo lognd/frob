@@ -7902,7 +7902,7 @@ Audit M1 gate-direction: SEC gates catch shell=True and f-string-into-argv but n
 id: T-0783
 title: 'gates: long-deferred-obligation rule -- shipped deferral comment citing a
   still-open ticket past a release boundary'
-state: in-progress
+state: done
 kind: feature
 origin: auditor
 created: '2026-07-23'
