@@ -8997,7 +8997,7 @@ change.
 id: T-0817
 title: 'vet: wire net_enabled kill-switch into vet''s network call sites (LINT004
   net gap)'
-state: queued
+state: dropped
 kind: security
 origin: agent
 created: '2026-07-23'
@@ -9022,6 +9022,8 @@ labels: []
 ```
 The net kill-switch mechanism exists (T-0200 frob.process._guard.net_enabled) but no call site invokes it; vet's strata node holds may-net with a LINT004 waiver that previously cited T-0803 (exec-only sweep, now closed). Wire net_enabled into vet's network paths, declare attr flag on the node, delete the waiver.
 
+## Drop reason
+- 2026-07-23: absorbed: the vet net kill-switch wiring landed as T-0822 (worked from a worktree draft filed when a ledger restore predated T-0817's filing); design flag declared, waiver deleted, sys audit PROVED (absorbed by T-0822)
 <!-- ticket:T-0818 -->
 ```yaml
 id: T-0818
