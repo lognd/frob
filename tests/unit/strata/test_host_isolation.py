@@ -336,6 +336,131 @@ def test_movement_flows():
     assert ("worker", "api") in pairs
 
 
+class TestWindowsHostIsolation:
+    """T-0606: HOST001/HOST002 movement-impossibility proofs wired to the
+    windows `service_account`/`acl`/`pipe` surface (T-0261), equivalent in
+    strength to the linux `runs_as`/`owns`/`listens` path (docs/strata/
+    host.md#windows-wiring-t-0606)."""
+
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation kind="unit"
+    def test_shared_writable_acl_path_and_pipe_fire(self):
+        """Two windows-only nodes (`service_account`/`acl`/`pipe`, no
+        `runs_as`/`owns`/`listens` at all) sharing a write-capable ACL
+        path and a named pipe fire the SAME HOST001 sub-targets a linux
+        pair would."""
+        api = Node(
+            id="api",
+            trust="trusted",
+            attrs=(
+                "platform=windows",
+                "service_account=svc-a",
+                "service",
+                "acl=C:\\ProgramData\\shared|Everyone:Modify",
+                "pipe=api-ipc",
+            ),
+        )
+        worker = Node(
+            id="worker",
+            trust="trusted",
+            attrs=(
+                "platform=windows",
+                "service_account=svc-b",
+                "service",
+                "acl=C:\\ProgramData\\shared|Everyone:Modify",
+                "pipe=api-ipc",
+            ),
+        )
+        model = KernelModel(nodes=(api, worker))
+        violations = evaluate_lateral_isolation(model).danger_ok
+        sub_targets = {v.sub_target for v in violations}
+        assert "shared-writable-path" in sub_targets
+        assert "cross-user-socket" in sub_targets
+
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation kind="unit"
+    def test_deny_acl_does_not_fire_shared_writable_path(self):
+        """A shared ACL path where neither side's RULE grants write (both
+        `:deny`'d, or a read-only RIGHTS) must not fire
+        shared-writable-path -- the windows analog of a non-writable POSIX
+        mode."""
+        api = Node(
+            id="api",
+            trust="trusted",
+            attrs=(
+                "platform=windows",
+                "service_account=svc-a",
+                "service",
+                "acl=C:\\ProgramData\\ro|Everyone:Read",
+            ),
+        )
+        worker = Node(
+            id="worker",
+            trust="trusted",
+            attrs=(
+                "platform=windows",
+                "service_account=svc-b",
+                "service",
+                "acl=C:\\ProgramData\\ro|Everyone:Read",
+            ),
+        )
+        model = KernelModel(nodes=(api, worker))
+        violations = evaluate_lateral_isolation(model).danger_ok
+        assert "shared-writable-path" not in {v.sub_target for v in violations}
+
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_vertical_isolation kind="unit"
+    def test_service_with_no_account_is_root_run(self):
+        """A windows `service` with no `service_account` (SCM's own
+        LocalSystem default) is the root-run-equivalent identity HOST002's
+        root-unit-writable-by-user sub-target guards against -- the
+        windows analog of a `unit` with no `runs_as`."""
+        local_system_service = Node(
+            id="svc-host",
+            trust="trusted",
+            attrs=(
+                "platform=windows",
+                "service",
+                "acl=C:\\ProgramData\\app\\run.exe|Everyone:Modify",
+            ),
+        )
+        user = Node(
+            id="api",
+            trust="trusted",
+            attrs=(
+                "platform=windows",
+                "service_account=svc-a",
+                "service",
+                "acl=C:\\ProgramData\\app\\run.exe|svc-a:Modify",
+            ),
+        )
+        model = KernelModel(nodes=(local_system_service, user))
+        violations = evaluate_vertical_isolation(model).danger_ok
+        assert any(v.sub_target == "root-unit-writable-by-user" for v in violations)
+
+    # frob:tests src/frob/strata/_scenarios.py::build_compromised_user_scenario kind="unit"
+    def test_compromised_windows_service_account_scenario(self):
+        """`build_compromised_user_scenario` resolves a windows
+        `service_account` identity exactly like a linux `runs_as` one."""
+        api = Node(
+            id="api",
+            trust="trusted",
+            attrs=("platform=windows", "service_account=svc-a", "service"),
+        )
+        worker = Node(
+            id="worker",
+            trust="trusted",
+            attrs=("platform=windows", "service_account=svc-b", "service"),
+        )
+        model = KernelModel(nodes=(api, worker))
+        scenario = build_compromised_user_scenario(model, "svc-a", "compromise-svc-a")
+        assert scenario.is_ok
+        model_with_scenario = model.model_copy(
+            update={"scenarios": (scenario.danger_ok,)}
+        )
+        results = evaluate_scenarios(model_with_scenario).danger_ok
+        assert len(results) == 1
+        for claim_result in results[0].results:
+            assert claim_result.verdict.value == "proved"
+
+
 # frob:tests src/frob/strata/_scenarios.py::build_compromised_user_scenario kind="unit"
 def test_blast_radius_refutes_over_shared_writable_path_with_no_declared_flow():
     """The reviewer's exact T-0256 REJECT-round adversarial case: two

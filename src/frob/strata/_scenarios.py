@@ -338,27 +338,30 @@ def build_compromised_user_scenario(
     model: KernelModel, user: str, scenario_id: str
 ) -> Result[Scenario, StrataError]:
     """Build the compromised-service-owner red-team `Scenario` (T-0256):
-    every node declaring `runs_as=<user>` (`_host.py::host_manifest_for`)
-    is downgraded to `SetTrust(node_id, "foreign")` -- the SAME rewrite
+    every node declaring `runs_as=<user>` (linux) OR `service_account=
+    <user>` (windows, T-0606, `_host.py::host_manifest_for`) is
+    downgraded to `SetTrust(node_id, "foreign")` -- the SAME rewrite
     component compromise already uses -- and one `NoFlow(src="foreign",
     dst=<node>)` claim is asserted for EVERY node NOT in the user's
     manifest slice, so `evaluate_scenarios` re-checking this scenario
     proves (or refutes) that the compromise's blast radius is EXACTLY
-    that user's own slice, no wider.
+    that user's own slice, no wider -- a windows `service_account`
+    identity proves the identical shape of blast-radius claim a linux
+    `runs_as` identity does (docs/strata/host.md#windows-wiring-t-0606).
 
     The rewrites ALSO include an `AddFlow` per `_host_isolation.py::
     host_movement_flows`-derived edge (module docstring's REJECT-round
     fix): without these the `NoFlow` claims above would be proved purely
     over the declared app-flow graph, blind to filesystem/OS movement
     HOST001 already detects -- the exact vacuity a review round caught.
-    With them, a shared writable path or reachable socket with NO
+    With them, a shared writable path or reachable socket/pipe with NO
     declared `Flow` correctly REFUTES the claim instead of vacuously
     proving it.
 
     Fails closed (`StrataError.UnknownReference`) when `user` names no
-    `runs_as` declared anywhere in `model` -- zero rewrites would
-    vacuously "prove" every claim, misreporting a typo'd user name as a
-    genuine isolation proof (charter law 2, deny-by-default)."""
+    `runs_as`/`service_account` declared anywhere in `model` -- zero
+    rewrites would vacuously "prove" every claim, misreporting a typo'd
+    user name as a genuine isolation proof (charter law 2, deny-by-default)."""
     user_nodes = _compromised_user_nodes(model, user)
     if not user_nodes:
         return Err(_no_runs_as_error(user))
@@ -386,14 +389,15 @@ def _build_blast_radius_scenario(
 
 
 def _compromised_user_nodes(model: KernelModel, user: str) -> list[str]:
-    """Every node id whose `runs_as` (`_host.py::host_manifest_for`)
-    matches `user`, sorted -- the compromised slice for
+    """Every node id whose `runs_as` (linux) or `service_account`
+    (windows, T-0606) matches `user` (`_host.py::host_manifest_for`),
+    sorted -- the compromised slice for
     `build_compromised_user_scenario`."""
     return sorted(
         node.id
         for node in model.nodes
         if (manifest := host_manifest_for(node)) is not None
-        and manifest.runs_as == user
+        and (manifest.runs_as == user or manifest.service_account == user)
     )
 
 

@@ -314,6 +314,47 @@ declared `group`/`sudoers` now correctly produces no finding.
 needed no new grammar at all -- a 4-digit `owns "PATH" "4755"` mode
 already carries the setuid bit.
 
+### Windows wiring (T-0606)
+
+T-0261 shipped the Windows `std.host` surface (#windows-surface-grammar
+above) but explicitly deferred wiring it into HOST001/HOST002 -- until
+T-0606, a windows-only node declaring solely `service_account`/`acl`/
+`pipe` produced NO HOST001/HOST002 findings at all, not because it was
+proven isolated but because nothing read its windows-shaped facts
+(#scope-boundary-what-is-not-built-here below, pre-T-0606 wording).
+T-0606 generalizes every identity/path/listening-surface join
+`_host_isolation.py` performs to read EITHER platform's fields, without
+ever branching the rule logic itself on `HostManifest.platform`:
+
+- **Service-user identity**: a manifest's `runs_as` (linux) or
+  `service_account` (windows) -- whichever is set -- is the one identity
+  `HOST001`/`HOST002`/`build_compromised_user_scenario` group nodes by.
+- **Owned paths**: linux `owns` (POSIX MODE) and windows `acl` (NTFS
+  DACL RULE) are merged into one per-user path index; a path's
+  write-capability reads the POSIX owner-write bit for an `owns` entry
+  or "RIGHTS is `Write`/`Modify`/`FullControl` and not `:deny`'d" for an
+  `acl` entry. `shared-writable-path`, `root-unit-writable-by-user`, and
+  `write-to-higher-trust-path` all read this merged index, so a
+  linux/windows or windows/windows pair proves the identical shape of
+  finding a linux/linux pair does. `setuid` stays linux-only by
+  construction (no NTFS ACL bit maps onto POSIX setuid) -- an honest
+  absence, not a fabricated windows equivalent.
+- **Listening surface**: linux `listens` (PORT) and windows `pipe` (named
+  pipe) are merged into one labeled set per user, so `cross-user-socket`
+  fires on a shared PORT, a shared PIPE, or one of each. `host_movement_
+  flows` mirrors the same union so `build_compromised_user_scenario`'s
+  blast-radius claims stay non-vacuous over a shared windows pipe exactly
+  like they already were over a shared linux port (#movement-
+  impossibility-proofs above, T-0256's REJECT-round fix).
+- **Root-run identity**: a linux `unit` with no `runs_as` OR a windows
+  `service` with no `service_account` (SCM's own LocalSystem default) is
+  the root-run-equivalent identity `root-unit-writable-by-user` guards
+  against.
+
+`group`/`sudoers` (T-0272, above) needed no change: neither field was
+ever platform-gated, so a windows node declaring them already derived
+real findings before T-0606.
+
 ### Waiver discipline
 
 HOST001/HOST002 are multi-instance-per-node (one finding per pair
@@ -459,22 +500,18 @@ as DEPLOY001.
   targets-t-0272 above.
 - T-0261 ships `HostPlatform.WINDOWS` + the five Windows clauses
   (#windows-surface-grammar above): manifest + model only, mirroring
-  T-0255's own manifest-only scope for linux. NOT built here (deliberately
-  deferred to follow-up tickets, same staged sequencing T-0256/T-0257/
-  T-0258/T-0259 followed for linux): a windows-side deploy generator (no
-  `frob deploy generate` output for SCM services/gMSA provisioning/ACL
-  application), a windows-side conformance checker, a windows VM auditor,
-  and -- most notably -- `HOST001`/`HOST002`/`_scenarios.py::
-  build_compromised_user_scenario` do not yet branch on `service_account`/
-  `acl`/`pipes` at all; today's movement-impossibility proofs only ever
-  intersect `runs_as`/`owns`/`listens`/`group`/`sudoers`, so a windows-only
-  node declaring solely `service_account`/`acl`/`pipe` (no `runs_as`/
-  `owns`/`listens`/`group`/`sudoers`) currently produces NO HOST001/HOST002
-  findings at all, not because it is proven isolated but because nothing
-  reads its windows-shaped facts yet. The manifest is shaped so that
-  follow-up is additive (T-0261's whole point, mirroring `platform`'s
-  already-established "every consumer already branches on it" contract) --
-  see the newly-filed follow-up ticket in the Done report.
+  T-0255's own manifest-only scope for linux. STILL NOT built here: a
+  windows-side deploy generator (no `frob deploy generate` output for SCM
+  services/gMSA provisioning/ACL application), a windows-side conformance
+  checker, a windows VM auditor. T-0606 CLOSED the movement-impossibility
+  half of this gap: `HOST001`/`HOST002`/`_scenarios.py::
+  build_compromised_user_scenario` now branch on `service_account`/`acl`/
+  `pipes` too (#windows-wiring-t-0606 below) -- a windows-only node
+  declaring solely `service_account`/`acl`/`pipe` (no `runs_as`/`owns`/
+  `listens`/`group`/`sudoers`) now produces the SAME shape of HOST001/
+  HOST002 findings a linux node would, equivalent in strength to the
+  linux path. The deploy-generator/conformance/VM-auditor gaps above
+  remain open, unaffected by T-0606's scope.
 
 ## Resource contention (SYS2xx, T-0699)
 
@@ -527,8 +564,8 @@ name, or the store id).
   `HostManifest`, `HostOwns`, `HostAcl` (T-0261), `HostPlatform`.
 - `src/frob/strata/_host_isolation.py` -- HOST001/HOST002,
   `HostIsolationViolation`, `evaluate_host_isolation_waived`,
-  `COMPROMISED_OWNER_CATALOG`. NOT YET windows-aware (#scope-boundary-
-  what-is-not-built-here above).
+  `COMPROMISED_OWNER_CATALOG`. Windows-aware since T-0606
+  (#windows-wiring-t-0606 above).
 - `src/frob/strata/_scenarios.py::build_compromised_user_scenario` --
   the compromised-owner red-team scenario builder.
 - `tests/unit/strata/test_litmus_host.py` -- parse -> elaborate ->

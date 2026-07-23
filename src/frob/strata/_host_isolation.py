@@ -46,6 +46,65 @@ the setuid/setgid/sticky bits (`_mode_owner_writable`/`_mode_has_setuid`
 below) -- no grammar change needed, just reading a field that was
 already there.
 
+## Windows wiring (T-0606)
+
+T-0261 shipped the Windows `std.host` surface (`service_account`/`acl`/
+`pipe`, `docs/strata/host.md#windows-surface-grammar`) but explicitly
+deferred wiring it into HOST001/HOST002 to a follow-up ticket (its Done
+report and `docs/strata/host.md#scope-boundary-what-is-not-built-here`) --
+until T-0606, a windows-only node declaring solely `service_account`/
+`acl`/`pipe` produced NO HOST001/HOST002 findings at all, not because it
+was proven isolated but because nothing read its windows-shaped facts.
+T-0606 closes that gap by generalizing every identity/path/listening-
+surface join this module performs to read EITHER platform's fields,
+never branching the rule logic itself on `HostManifest.platform`:
+
+- **Service-user identity** (`_identity_of`): a manifest's `runs_as`
+  (linux) or `service_account` (windows) -- whichever is set -- is the
+  ONE key `_nodes_by_user` groups nodes by. A manifest declaring neither
+  contributes no identity, exactly like the pre-T-0606 `runs_as is None`
+  skip.
+- **Owned paths** (`_PathClaim`, `_owned_paths_by_user`): linux `owns`
+  (`HostOwns`, POSIX MODE) and windows `acl` (`HostAcl`, NTFS DACL RULE)
+  are merged into one `path -> _PathClaim(write_capable, descriptor)`
+  index per user -- `write_capable` reads `_mode_owner_writable` for an
+  `owns` entry or `_acl_grants_write` (this module's RULE-shaped analog,
+  "not `:deny`'d and RIGHTS in `{Write,Modify,FullControl}`") for an
+  `acl` entry. Every HOST001/HOST002 sub-target that intersects owned
+  paths (shared-writable-path, root-unit-writable-by-user,
+  write-to-higher-trust-path) reads this merged index instead of
+  `HostManifest.owns` directly, so a linux/windows pair (or a
+  windows/windows pair) proves the identical shape of finding a
+  linux/linux pair does. `setuid` stays linux-only by construction, not
+  by a platform branch: `_mode_has_setuid` only ever matches a 4-digit
+  POSIX MODE string, so an `acl` RULE descriptor (which never parses as
+  four decimal digits) structurally cannot trip it -- there is no NTFS
+  ACL bit that maps onto POSIX setuid, so no windows finding is invented
+  in its place (deny-by-default names the honest absence of an
+  equivalent, it does not fabricate one).
+- **Listening surface** (`_listening_surface_by_user`): linux `listens`
+  (TCP/UDP PORT) and windows `pipe` (named pipe) are merged into one
+  labeled string set per user (`"port:9000"` / `"pipe:api-ipc"`) so
+  HOST001's cross-user-socket sub-target fires on a shared PORT, a
+  shared PIPE, or one of each declared on either side -- the labels keep
+  a port number and a same-named pipe from colliding. `host_movement_
+  flows` mirrors the same union so `build_compromised_user_scenario`'s
+  blast-radius claims stay non-vacuous over a windows pipe exactly like
+  they already were over a linux port (module docstring above,
+  T-0256's REJECT-round fix).
+- **Root-run identity** (`_root_run_nodes`): a linux `unit` with no
+  `runs_as` (systemd's own default `User=root`) OR a windows `service`
+  with no `service_account` (SCM's own default LocalSystem) is treated
+  as the root-equivalent identity HOST002's root-unit-writable-by-user
+  sub-target guards against -- the identical "no way to declare root
+  explicitly, absence of a dedicated identity on a unit/service IS the
+  privileged case" reasoning, generalized to both platforms.
+
+`group`/`sudoers` (T-0272) needed NO change here: neither field was ever
+platform-gated in `HostManifest` -- a windows node declaring `group`/
+`sudoers` already derived real HOST001/HOST002 findings before T-0606;
+only the identity/path/listening-surface joins were linux-only.
+
 ## Compromised-service-owner threat catalog rows
 
 `COMPROMISED_OWNER_CATALOG` (below) adds the CWE-522/CWE-269/CWE-284
@@ -104,6 +163,21 @@ _SUB_CROSS_USER_SOCKET = "cross-user-socket"
 _SUB_ROOT_UNIT_WRITABLE = "root-unit-writable-by-user"
 _SUB_HIGHER_TRUST_WRITE = "write-to-higher-trust-path"
 
+#: Windows `acl` RIGHTS values (lowercased) that grant write-capable
+#: access, the windows analog of `_mode_owner_writable`'s POSIX write bit
+#: (module docstring's "Windows wiring" section) -- mirrors `_contention.
+#: py::_ACL_WRITE_RIGHTS`'s vocabulary; kept local (not imported) since
+#: this module's write-capability check is deliberately OWNER/PRINCIPAL-
+#: scoped like `_mode_owner_writable`, a narrower question than
+#: `_contention.py`'s "is ANY digit/rule write-capable" contention join.
+_ACL_WRITE_RIGHTS = {"write", "modify", "fullcontrol"}
+
+#: `"port:<n>"` / `"pipe:<name>"` label prefixes `_listening_surface_by_
+#: user` uses to keep a linux PORT number and a same-named windows PIPE
+#: from colliding in the merged listening-surface set (module docstring).
+_PORT_LABEL_PREFIX = "port:"
+_PIPE_LABEL_PREFIX = "pipe:"
+
 
 # frob:doc docs/strata/host.md#movement-impossibility-proofs
 class HostIsolationViolation(BaseModel):
@@ -120,6 +194,47 @@ class HostIsolationViolation(BaseModel):
     user: str
     peer: str | None = None
     detail: str = ""
+
+
+# frob:doc docs/strata/host.md#windows-wiring-t-0606
+class _PathClaim(BaseModel):
+    """One owned filesystem/registry path, unified across linux `owns`
+    (`HostOwns`, POSIX MODE) and windows `acl` (`HostAcl`, NTFS DACL
+    RULE) -- module docstring's "Owned paths" section. `descriptor` keeps
+    the original mode/rule string for finding detail messages;
+    `write_capable` is the platform-specific write-grant question
+    already reduced to one bool so every path-intersecting sub-target
+    reads it uniformly."""
+
+    model_config = ConfigDict(frozen=True)
+
+    path: str
+    write_capable: bool
+    descriptor: str
+
+
+def _identity_of(manifest: HostManifest) -> str | None:
+    """The one service-user identity a `HostManifest` declares: `runs_as`
+    (linux) or `service_account` (windows), whichever is set -- the join
+    key `_nodes_by_user` groups nodes by (module docstring's "Service-user
+    identity" section). `None` when neither is declared."""
+    return (
+        manifest.runs_as if manifest.runs_as is not None else manifest.service_account
+    )
+
+
+def _acl_grants_write(rule: str) -> bool:
+    """Whether a windows `acl` RULE grants write-capable access -- the
+    windows analog of `_mode_owner_writable` (module docstring): RIGHTS
+    is one of `_ACL_WRITE_RIGHTS` and the rule carries no `:deny` flag.
+    `HostAcl.rule` is already validated `PRINCIPAL:RIGHTS[:deny]
+    [:no_inherit]` shape (`_host.py::HostAcl._validate_rule`), so a plain
+    split is safe here."""
+    _principal, _, rest = rule.partition(":")
+    flags = rest.split(":")
+    rights = flags[0].strip().lower() if flags else ""
+    is_deny = "deny" in flags[1:]
+    return (not is_deny) and rights in _ACL_WRITE_RIGHTS
 
 
 def _rule_of(v: HostIsolationViolation) -> str:
@@ -150,15 +265,20 @@ def _manifests_by_node(model: KernelModel) -> dict[str, HostManifest]:
 def _nodes_by_user(
     nodes_by_id: dict[str, Node], manifests: dict[str, HostManifest]
 ) -> dict[str, list[str]]:
-    """`runs_as` user -> the node ids declaring that user, in declaration
-    order -- a service user may own more than one node's manifest (e.g. a
-    unit plus a store it privately owns)."""
+    """Service-user identity (`_identity_of`: `runs_as` or `service_
+    account`, module docstring's "Windows wiring" section) -> the node ids
+    declaring that identity, in declaration order -- a service user may
+    own more than one node's manifest (e.g. a unit/service plus a store
+    it privately owns)."""
     by_user: dict[str, list[str]] = {}
     for node_id in nodes_by_id:
         manifest = manifests.get(node_id)
-        if manifest is None or manifest.runs_as is None:
+        if manifest is None:
             continue
-        by_user.setdefault(manifest.runs_as, []).append(node_id)
+        identity = _identity_of(manifest)
+        if identity is None:
+            continue
+        by_user.setdefault(identity, []).append(node_id)
     return by_user
 
 
@@ -166,12 +286,42 @@ def _owns_by_user(
     user_nodes: list[str], manifests: dict[str, HostManifest]
 ) -> dict[str, HostOwns]:
     """Every `owns` path a user's node(s) declare, keyed by path (last
-    declaration wins, matching `Node.attrs`'s own overwrite convention)."""
+    declaration wins, matching `Node.attrs`'s own overwrite convention).
+    LINUX-ONLY (`HostOwns`) -- `_setuid_violations` needs the raw
+    `HostOwns` shape (`_mode_has_setuid` has no windows analog, module
+    docstring); every OTHER sub-target reads the platform-merged
+    `_owned_paths_by_user` instead."""
     owns: dict[str, HostOwns] = {}
     for node_id in user_nodes:
         for entry in manifests[node_id].owns:
             owns[entry.path] = entry
     return owns
+
+
+def _owned_paths_by_user(
+    user_nodes: list[str], manifests: dict[str, HostManifest]
+) -> dict[str, _PathClaim]:
+    """Every path a user's node(s) declare ownership of, merged across
+    linux `owns` and windows `acl` (module docstring's "Owned paths"
+    section) -- keyed by path, last declaration wins across BOTH
+    vocabularies in node/field-declaration order, matching `_owns_by_
+    user`'s own overwrite convention."""
+    claims: dict[str, _PathClaim] = {}
+    for node_id in user_nodes:
+        manifest = manifests[node_id]
+        for entry in manifest.owns:
+            claims[entry.path] = _PathClaim(
+                path=entry.path,
+                write_capable=_mode_owner_writable(entry.mode),
+                descriptor=entry.mode,
+            )
+        for acl_entry in manifest.acl:
+            claims[acl_entry.path] = _PathClaim(
+                path=acl_entry.path,
+                write_capable=_acl_grants_write(acl_entry.rule),
+                descriptor=acl_entry.rule,
+            )
+    return claims
 
 
 def _listens_by_user(
@@ -182,6 +332,22 @@ def _listens_by_user(
     for node_id in user_nodes:
         ports.update(manifests[node_id].listens)
     return ports
+
+
+def _listening_surface_by_user(
+    user_nodes: list[str], manifests: dict[str, HostManifest]
+) -> set[str]:
+    """Every labeled listening-surface atom a user's node(s) declare,
+    merged across linux `listens` PORTs and windows `pipe`s (module
+    docstring's "Listening surface" section) -- `"port:9000"` /
+    `"pipe:api-ipc"` labels keep a port number and a same-named pipe from
+    colliding when unioned into one set."""
+    surface: set[str] = set()
+    for node_id in user_nodes:
+        manifest = manifests[node_id]
+        surface.update(f"{_PORT_LABEL_PREFIX}{port}" for port in manifest.listens)
+        surface.update(f"{_PIPE_LABEL_PREFIX}{pipe}" for pipe in manifest.pipes)
+    return surface
 
 
 def _groups_by_user(
@@ -273,15 +439,15 @@ def _shared_writable_path_violations(
     manifests: dict[str, HostManifest],
 ) -> list[HostIsolationViolation]:
     """HOST001 shared-writable-path findings for one user pair -- every
-    path both users own where at least one owner mode is writable."""
-    owns_a = _owns_by_user(nodes_a, manifests)
-    owns_b = _owns_by_user(nodes_b, manifests)
+    path both users own (linux `owns` or windows `acl`, module docstring)
+    where at least one side's claim is write-capable."""
+    owns_a = _owned_paths_by_user(nodes_a, manifests)
+    owns_b = _owned_paths_by_user(nodes_b, manifests)
     # frob:waive PERF004 reason="differs per pair, fresh work not a re-sort"
     shared_writable = sorted(
         path
         for path in (set(owns_a) & set(owns_b))
-        if _mode_owner_writable(owns_a[path].mode)
-        or _mode_owner_writable(owns_b[path].mode)
+        if owns_a[path].write_capable or owns_b[path].write_capable
     )
     return [
         HostIsolationViolation(
@@ -305,11 +471,14 @@ def _shared_socket_violations(
     manifests: dict[str, HostManifest],
 ) -> list[HostIsolationViolation]:
     """HOST001 cross-user-socket finding for one user pair, unless a
-    declared `Flow` already bridges them (the documented escape hatch)."""
-    ports_a = _listens_by_user(nodes_a, manifests)
-    ports_b = _listens_by_user(nodes_b, manifests)
-    shared_ports = sorted(ports_a & ports_b)
-    if not shared_ports or _declared_flow_between(model, nodes_a, nodes_b):
+    declared `Flow` already bridges them (the documented escape hatch).
+    `shared` is over the labeled listening surface (module docstring's
+    "Listening surface" section) -- a shared linux PORT, a shared
+    windows PIPE, or one of each declared on either side."""
+    surface_a = _listening_surface_by_user(nodes_a, manifests)
+    surface_b = _listening_surface_by_user(nodes_b, manifests)
+    shared = sorted(surface_a & surface_b)
+    if not shared or _declared_flow_between(model, nodes_a, nodes_b):
         return []
     return [
         HostIsolationViolation(
@@ -317,8 +486,8 @@ def _shared_socket_violations(
             sub_target=_SUB_CROSS_USER_SOCKET,
             user=user_a,
             peer=user_b,
-            detail=f"users {user_a!r} and {user_b!r} both listen on port(s) "
-            f"{shared_ports} with no declared Flow between their nodes -- "
+            detail=f"users {user_a!r} and {user_b!r} both listen on "
+            f"{shared} with no declared Flow between their nodes -- "
             "an undeclared cross-user socket path",
         )
     ]
@@ -463,14 +632,14 @@ def _writable_path_movement_flows(
     seq: int,
 ) -> tuple[list[Flow], int]:
     """Bidirectional synthetic `Flow`s for every shared writable path
-    between the two users' node lists (see `_movement_flows_for_pair`)."""
-    owns_a = _owns_by_user(nodes_a, manifests)
-    owns_b = _owns_by_user(nodes_b, manifests)
+    (linux `owns` or windows `acl`, module docstring) between the two
+    users' node lists (see `_movement_flows_for_pair`)."""
+    owns_a = _owned_paths_by_user(nodes_a, manifests)
+    owns_b = _owned_paths_by_user(nodes_b, manifests)
     shared_writable = sorted(
         path
         for path in (set(owns_a) & set(owns_b))
-        if _mode_owner_writable(owns_a[path].mode)
-        or _mode_owner_writable(owns_b[path].mode)
+        if owns_a[path].write_capable or owns_b[path].write_capable
     )
     flows: list[Flow] = []
     for path in shared_writable:
@@ -488,10 +657,11 @@ def _shared_port_movement_flows(
     seq: int,
 ) -> tuple[list[Flow], int]:
     """Bidirectional synthetic `Flow`s if the two users share a listening
-    port (see `_movement_flows_for_pair`)."""
-    ports_a = _listens_by_user(nodes_a, manifests)
-    ports_b = _listens_by_user(nodes_b, manifests)
-    if not (ports_a & ports_b):
+    surface -- a PORT, a windows PIPE, or both (see `_movement_flows_
+    for_pair`, module docstring's "Listening surface" section)."""
+    surface_a = _listening_surface_by_user(nodes_a, manifests)
+    surface_b = _listening_surface_by_user(nodes_b, manifests)
+    if not (surface_a & surface_b):
         return [], seq
     flows: list[Flow] = []
     seq += 1
@@ -598,14 +768,18 @@ def _all_movement_flows(
 def _root_run_nodes(
     nodes_by_id: dict[str, Node], manifests: dict[str, HostManifest]
 ) -> list[str]:
-    """Node ids that run as root: a declared `unit` with no `runs_as`
-    (the surface has no way to declare "root" explicitly -- absence of a
-    dedicated service user on a unit IS the root-run case, matching
-    systemd's own default `User=root`)."""
+    """Node ids that run as the platform's privileged default identity: a
+    declared `unit` with no `runs_as` (systemd's own default `User=root`)
+    OR a declared `service` with no `service_account` (SCM's own default
+    LocalSystem) -- the surface has no way to declare "root"/"LocalSystem"
+    explicitly on either platform, so absence of a dedicated identity on
+    a unit/service IS the privileged-run case (module docstring's
+    "Root-run identity" section)."""
     return sorted(
         node_id
         for node_id, manifest in manifests.items()
-        if manifest.is_unit and manifest.runs_as is None
+        if (manifest.is_unit and manifest.runs_as is None)
+        or (manifest.is_service and manifest.service_account is None)
     )
 
 
@@ -648,24 +822,30 @@ def _sudoers_violations(
 
 
 def _root_unit_writable_violations(
-    user: str, owns: dict[str, HostOwns], root_nodes: list[str], manifests
+    user: str,
+    owns: dict[str, _PathClaim],
+    root_nodes: list[str],
+    manifests: dict[str, HostManifest],
 ) -> list[HostIsolationViolation]:
-    """HOST002 findings where `user` writably owns a path a root-run unit
-    also owns (a plant-then-root-executes vector)."""
+    """HOST002 findings where `user` writably owns a path a root-run
+    unit/service also owns (linux `owns` or windows `acl`, module
+    docstring) -- a plant-then-root-executes vector."""
     violations: list[HostIsolationViolation] = []
     for root_id in root_nodes:
-        for entry in manifests[root_id].owns:
-            user_entry = owns.get(entry.path)
-            if user_entry is not None and _mode_owner_writable(user_entry.mode):
+        root_paths = _owned_paths_by_user([root_id], manifests)
+        for path, root_claim in root_paths.items():
+            user_entry = owns.get(path)
+            if user_entry is not None and user_entry.write_capable:
                 violations.append(
                     HostIsolationViolation(
                         rule="HOST002",
                         sub_target=_SUB_ROOT_UNIT_WRITABLE,
                         user=user,
-                        detail=f"root-run unit {root_id!r} owns path {entry.path!r}, "
-                        f"which user {user!r} also owns writably (mode "
-                        f"{user_entry.mode!r}) -- a user compromise can plant "
-                        "content a root-run unit later executes/reads",
+                        detail=f"root-run unit/service {root_id!r} owns path "
+                        f"{path!r} ({root_claim.descriptor!r}), which user "
+                        f"{user!r} also owns writably ({user_entry.descriptor!r}) "
+                        "-- a user compromise can plant content a root-run "
+                        "unit/service later executes/reads",
                     )
                 )
     return violations
@@ -676,12 +856,12 @@ def _higher_trust_write_violations(
     trust_by_node: dict[str, str],
     user: str,
     user_nodes: list[str],
-    owns: dict[str, HostOwns],
+    owns: dict[str, _PathClaim],
     manifests: dict[str, HostManifest],
 ) -> list[HostIsolationViolation]:
     """HOST002 findings where `user` writably owns a path also owned by a
-    strictly-higher-trust node (a corrupt-input-for-a-more-trusted-reader
-    vector)."""
+    strictly-higher-trust node (linux `owns` or windows `acl`, module
+    docstring) -- a corrupt-input-for-a-more-trusted-reader vector."""
     violations: list[HostIsolationViolation] = []
     user_trust = trust_by_node.get(user_nodes[0])
     for node_id, node_trust in sorted(trust_by_node.items()):
@@ -693,17 +873,18 @@ def _higher_trust_write_violations(
         peer_manifest = manifests.get(node_id)
         if peer_manifest is None:
             continue
-        for path in sorted(set(owns) & {o.path for o in peer_manifest.owns}):
-            if _mode_owner_writable(owns[path].mode):
+        peer_paths = _owned_paths_by_user([node_id], manifests)
+        for path in sorted(set(owns) & set(peer_paths)):
+            if owns[path].write_capable:
                 violations.append(
                     HostIsolationViolation(
                         rule="HOST002",
                         sub_target=_SUB_HIGHER_TRUST_WRITE,
                         user=user,
                         detail=f"user {user!r} writably owns path {path!r} "
-                        f"({owns[path].mode!r}) also owned by higher-trust node "
-                        f"{node_id!r} ({node_trust}) -- a user compromise can "
-                        "corrupt input a more-trusted node reads",
+                        f"({owns[path].descriptor!r}) also owned by higher-trust "
+                        f"node {node_id!r} ({node_trust}) -- a user compromise "
+                        "can corrupt input a more-trusted node reads",
                     )
                 )
     return violations
@@ -719,10 +900,14 @@ def _vertical_user_violations(
 ) -> list[HostIsolationViolation]:
     """Every HOST002 sub-target finding for one service user, DERIVED from
     that user's `HostManifest` slice plus the model's root-run units and
-    trust lattice (module docstring)."""
-    owns = _owns_by_user(user_nodes, manifests)
+    trust lattice (module docstring). `setuid` reads the linux-only raw
+    `owns` (`_owns_by_user`, no windows analog); every other sub-target
+    reads the platform-merged `_owned_paths_by_user` (module docstring's
+    "Windows wiring" section)."""
+    linux_owns = _owns_by_user(user_nodes, manifests)
+    owns = _owned_paths_by_user(user_nodes, manifests)
     violations: list[HostIsolationViolation] = []
-    violations.extend(_setuid_violations(user, owns))
+    violations.extend(_setuid_violations(user, linux_owns))
     violations.extend(_sudoers_violations(user, user_nodes, manifests))
     violations.extend(_root_unit_writable_violations(user, owns, root_nodes, manifests))
     violations.extend(
