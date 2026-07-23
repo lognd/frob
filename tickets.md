@@ -7289,3 +7289,37 @@ Follow-up work, explicitly not done in T-0717:
    file per-repo tickets (T-0573 fleet routing) for the 8 sibling repos'
    own capability declarations to adopt the precise family.mode spellings
    ahead of the T-0717 alias sunset (fs-write/fs-read, 2026-10-20).
+
+<!-- ticket:T-0772 -->
+```yaml
+id: T-0772
+title: 'capability modes phase 2: wire net.connect/net.listen, env.read/env.write,
+  proc.spawn, ffi.call live + sibling-repo migration'
+state: queued
+kind: security
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/vet/_capability_modes.py
+- src/frob/strata/_effects.py
+- src/frob/strata/_selfconform.py
+- tests/unit/vet/test_capability_modes.py
+- tests/unit/strata/test_effects.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a node declaring may net.connect WHEN only listen behavior is observed
+    THEN conformance fails narrowly per mode; GIVEN existing bare may net/env/proc/ffi
+    declarations THEN they keep discharging coarsely until migrated with no spurious
+    SYS101 staleness; GIVEN sibling repos with legacy declarations THEN a documented
+    migration path exists
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Refile of T-draft-3e4b416a, which T-0717's land dropped from the ledger (the T-0577 land-drops-drafts splice regression -- also note T-draft-32e61ad6 was dropped in the same land; that one proposed declaring may exec on graphlang for the _concurrency.py docstring false-positive and is deliberately NOT refiled: superseded by T-0769 observer fix + mitigation commit). T-0717 shipped the full mode vocabulary (FAMILY_MODES has all five families) but only wired fs live via WIRED_MODE_FAMILIES, because exploding an unwired family live would have produced spurious SYS101 staleness on every existing bare may net/env declaration. Phase 2: wire the remaining families one at a time with per-family staleness-window handling, then the sibling-repo (ESTATE) migration.
