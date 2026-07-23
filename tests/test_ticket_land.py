@@ -32,7 +32,7 @@ from frob.tickets import (
     transition,
 )
 from frob.tickets._land import land, splice_ledger
-from frob.tickets._models import LandError
+from frob.tickets._models import AcceptanceCriterion, LandError
 from frob.tickets._store import (
     atomic_write,
     ledger_path,
@@ -2025,3 +2025,83 @@ class TestMergeMainIntoWorktreeRicherState:
         parsed = _parse_ledger(merged_text).danger_ok
         assert parsed[tid].state == TicketState.IN_PROGRESS
         assert "## Done report" in parsed[tid].body
+
+
+class TestUnboundAcceptancePreflightBeforeMerge:
+    """T-0763: an unbound acceptance criterion must be caught by land's
+    PRE-merge closeability preflight (`_validate_closeable` ->
+    `_validate_acceptance_bound`), not discovered only after the merge/
+    finalize commits are already made. Before this fix, `_validate_closeable`
+    checked only evidence-present/Done-report/cmd-evidence-kind, so an
+    unbound acceptance criterion sailed through the precheck, `land` merged
+    main into the worktree AND committed a finalize commit, and only then
+    failed at `_close_finalized_ticket`'s `transition(..., DONE)` call with
+    `LandError.CloseFailed` -- leaving a merge/finalize commit the caller
+    had to `git reset --hard HEAD~1` before retrying. This test asserts the
+    ENTIRE git log (both `repo`/main and `wt`/worktree) is byte-identical
+    before and after the refused land -- not just that `land` returns an
+    error -- since a fail-AFTER-merge regression would still return
+    `Err(...)` while leaving exactly the commit(s) this asserts are absent.
+    """
+
+    def test_unbound_acceptance_refused_pre_merge_no_commits_created(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestUnboundAcceptancePreflightBeforeMerge.test_unbound_acceptance_refused_pre_merge_no_commits_created  # noqa: E501
+        wt = repo.parent / "wt"
+        _run(
+            ["git", "worktree", "add", "-b", "feature-unbound-acceptance", str(wt)],
+            repo,
+        )
+
+        created = new_ticket(
+            wt,
+            _spec("Ticket with unbound acceptance", scope=("src/other3.py",)),
+        )
+        assert created.is_ok
+        tid = created.danger_ok.id
+
+        # Attach an acceptance criterion whose own `evidence` tuple is
+        # empty -- unbound by construction (T-0572) -- while the ticket
+        # otherwise satisfies every OTHER closeability precondition
+        # (evidence present, Done report present, evidence-kind
+        # consistent), isolating this test to the acceptance-binding gate
+        # alone.
+        _make_closeable(wt, tid)
+        loaded = load_all(wt)
+        ticket = loaded.danger_ok[tid]
+        ticket = ticket.model_copy(
+            update={
+                "acceptance": (
+                    AcceptanceCriterion(text="GIVEN x WHEN y THEN z", evidence=()),
+                )
+            }
+        )
+        assert write_ticket(wt, ticket).is_ok
+        _commit_all(wt, "advance ticket with unbound acceptance criterion")
+
+        main_log_before = _run(["git", "log", "--oneline", "--all"], repo).stdout
+        wt_log_before = _run(["git", "log", "--oneline", "--all"], wt).stdout
+        wt_status_before = _status_ignoring_frob(wt)
+
+        result = land(repo, tid, wt, dry_run=False)
+
+        assert result.is_err
+        assert result.danger_err == LandError.NotCloseable
+
+        # Git log is UNCHANGED on both sides -- no merge commit, no
+        # finalize commit, no squash-apply commit -- not merely "the same
+        # HEAD sha", but the exact same full set of commits (a fail-after-
+        # merge regression would add commits reachable only via a branch
+        # ref, which `--all` catches even if `HEAD` itself were untouched).
+        assert (
+            _run(["git", "log", "--oneline", "--all"], repo).stdout == main_log_before
+        )
+        assert _run(["git", "log", "--oneline", "--all"], wt).stdout == wt_log_before
+        # Working tree is clean -- no merge left half-applied/uncommitted.
+        assert _status_ignoring_frob(wt) == wt_status_before
+        assert _status_ignoring_frob(repo) == ""
+
+        # The ticket itself is untouched: still in-progress, not closed.
+        still = load_all(wt).danger_ok[tid]
+        assert still.state == TicketState.IN_PROGRESS

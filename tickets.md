@@ -6229,7 +6229,7 @@ From T-0352 (TS/Rust structural PII, landed): the NAME-kind field detection is c
 id: T-0763
 title: 'CRITICAL friction: frob ticket land must run closeability preflight BEFORE
   merging, not fail-after-merge leaving a commit to reset'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-22'
@@ -6240,18 +6240,68 @@ scope:
 - src/frob/tickets/_land.py
 - tests/test_ticket_land.py
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_ticket_land.py::TestUnboundAcceptancePreflightBeforeMerge::test_unbound_acceptance_refused_pre_merge_no_commits_created
 attachments: []
 acceptance:
 - text: GIVEN a ticket with an unbound acceptance criterion WHEN frob ticket land
     runs THEN it errors naming the unbound criterion and creates NO merge/finalize
     commit (git log unchanged), not fail-after-merge
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestUnboundAcceptancePreflightBeforeMerge::test_unbound_acceptance_refused_pre_merge_no_commits_created
 threat: null
 component: null
 labels: []
 ```
 Coordinator friction, 15+ occurrences 2026-07-22: frob ticket land MERGES the worktree into main FIRST, then attempts the close, and when close fails (AcceptanceUnbound, EvidenceScopeUnbound, InvalidTransition done->done) it leaves a finalize/merge commit the coordinator must `git reset --hard HEAD~1` before every retry. The close preconditions (acceptance bound, evidence covers scope, state is in-progress) are all knowable BEFORE the merge. Fix: land runs a CLOSEABILITY PREFLIGHT (all close checks, dry) BEFORE the merge/finalize; if it would fail, land errors with the specific unmet precondition and touches NOTHING -- no merge commit to unwind, no reset dance. Only after preflight passes does it merge+finalize+close. This turns every failed land from a 3-command recovery into a one-line actionable error.
+
+## Done report
+
+Added a pre-merge closeability preflight to `frob ticket land`: `_validate_closeable`
+(called from `_land_precheck`, before `_land_merge_stage` ever runs `git merge`) now
+also calls a new `_validate_acceptance_bound`, which uses the existing T-0572
+`unbound_acceptance(ticket)` helper to find any acceptance criterion with no
+resolving evidence id and refuse the land (`LandError.NotCloseable`), logging the
+specific unbound criterion text, before any merge/finalize/squash commit is made.
+
+Previously this same condition (`AcceptanceUnbound`) was only caught inside
+`_close_finalized_ticket`'s `transition(..., DONE)` call, which runs AFTER the
+merge-main-into-worktree commit and the finalize commit -- exactly the fail-after-
+merge friction this ticket documents (15+ coordinator occurrences).
+
+`EvidenceScopeUnbound` (the `covers_scope` D-05 check) is deliberately left as a
+post-merge check: it needs the obligation graph built against the post-merge tree
+(`frob.gates`'s job, which `frob.tickets` cannot import per docs/rework.md
+cycle-avoidance), so it cannot be moved earlier without a larger architectural
+change out of this ticket's scope.
+
+Verification: with the fix reverted (via `git show HEAD:...` swapped in, not
+`git stash`, per the worktree-isolation rule), the new test fails exactly as
+described -- `land()` returns `Err(CloseFailed)` (not `NotCloseable`) after
+having already committed a merge-main-into-worktree commit in the worktree.
+With the fix restored, the same test passes: `land()` returns
+`Err(NotCloseable)` and BOTH `repo` (main) and `wt` (worktree) `git log --oneline
+--all` are byte-identical before/after, and both working trees are clean.
+
+Gates: `frob check --ticket T-0763` chunked (`--only lint/static/gates-fast/
+gates-security/gates-native`) all clean, 0 new errors. A full untouched-set
+`frob test --base main` run also surfaced unrelated pre-existing failures
+(doctor.py scaffold-conformance state, strata export goldens, native sys
+audit health) traced to this worktree's stale scaffold/native state, not to
+this change -- `git diff main --diff-filter=D --stat` is empty (after
+merging main to pick up T-0695, which landed after this worktree branched)
+and every test this ticket's own scope touches passes.
+
+### Changed
+```
+ src/frob/tickets/_land.py | 58 +++++++++++++++++++++++++++------
+ tests/test_ticket_land.py | 82 ++++++++++++++++++++++++++++++++++++++++++++++-
+ tickets.md                | 46 ++++++++++++++++++++++++--
+ 3 files changed, 172 insertions(+), 14 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestUnboundAcceptancePreflightBeforeMerge::test_unbound_acceptance_refused_pre_merge_no_commits_created` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0764 -->
 ```yaml
@@ -6473,6 +6523,7 @@ to 0.97.0 for the new public API.
 - `tests/test_ticket_runner_quiet.py::TestDiagnosticLogCtx::test_default_clamps_frob_tree_but_pins_runner_output` (pytest node id, verified passing when recorded)
 - `tests/test_ticket_runner_quiet.py::TestDiagnosticLogCtx::test_verbose_skips_the_clamp` (pytest node id, verified passing when recorded)
 - `tests/unit/test_logging_quiet.py::TestLoggerLevels::test_sets_and_restores_mapped_levels` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0769 -->
 ```yaml
 id: T-0769

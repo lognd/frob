@@ -46,6 +46,7 @@ from frob.tickets._models import (
     is_cmd_evidence,
     matches_collected,
     scope_matches,
+    unbound_acceptance,
 )
 from frob.tickets._provisional import is_draft_id
 from frob.tickets._store import _parse_ledger, _render_ledger, archive_path, ledger_path
@@ -489,15 +490,26 @@ def _deletion_owned(path: str, scope: tuple[str, ...]) -> bool:
 
 
 def _validate_closeable(ticket: Ticket) -> Result[None, LandError]:
-    """The evidence + Done-report preconditions `transition(..., DONE)` will
-    enforce anyway -- checked here FIRST, before any git mutation, so a
-    landing never merges main into the worktree only to discover at close
-    time that it must be unwound (the exact ordering hazard T-0176 exists
-    to close). Also re-checks the T-0215 kind-consistency rule
-    (`_transition_guard`'s DONE-path twin): a non-docs-kind ticket carrying
-    any `cmd:` evidence entry -- kind hand-edited after the entry was
-    recorded, or the entry hand-pasted directly into the ledger -- must
-    never land, mirroring the write-time gate in `add_cmd_evidence`."""
+    """The evidence + Done-report + acceptance-binding preconditions
+    `transition(..., DONE)` will enforce anyway -- checked here FIRST,
+    before any git mutation, so a landing never merges main (and commits a
+    merge/finalize commit) into the worktree only to discover at close time
+    that it must be unwound (the exact ordering hazard T-0176 exists to
+    close, and T-0763's own closeability-preflight-before-merge fix: every
+    close precondition that is knowable from the PRE-merge ticket alone --
+    evidence present, Done report present, evidence-kind consistency
+    (T-0215), and now unbound acceptance criteria (T-0572) -- is checked
+    here, before `_land_merge_stage` ever runs `git merge`. `EvidenceScopeUnbound`
+    is deliberately NOT checked here: whether an evidence id covers a
+    touched/scope symbol needs the obligation graph computed against the
+    POST-merge tree (D-05's `covers_scope` callable, `frob.gates`'s job,
+    which `frob.tickets` cannot import -- docs/rework.md cycle-avoidance),
+    so it stays a post-merge check exactly as before this ticket. Also
+    re-checks the T-0215 kind-consistency rule (`_transition_guard`'s
+    DONE-path twin): a non-docs-kind ticket carrying any `cmd:` evidence
+    entry -- kind hand-edited after the entry was recorded, or the entry
+    hand-pasted directly into the ledger -- must never land, mirroring the
+    write-time gate in `add_cmd_evidence`."""
     if not ticket.evidence or not _has_done_report(ticket.body):
         _log.error(
             "land: %s cannot land -- missing evidence or a Done report; "
@@ -512,7 +524,33 @@ def _validate_closeable(ticket: Ticket) -> Result[None, LandError]:
             ticket.id,
         )
         return Err(LandError.NotCloseable)
-    return _validate_evidence_kind_consistency(ticket)
+    kind_check = _validate_evidence_kind_consistency(ticket)
+    if kind_check.is_err:
+        return kind_check
+    return _validate_acceptance_bound(ticket)
+
+
+def _validate_acceptance_bound(ticket: Ticket) -> Result[None, LandError]:
+    """`Err(NotCloseable)`, naming the specific unbound criterion/criteria,
+    if `ticket` carries any acceptance criterion with no resolving evidence
+    id (T-0572's `unbound_acceptance`, mirrored here pre-merge so a landing
+    never merges/finalizes only to fail this same check at close time --
+    T-0763). A ticket with no acceptance criteria declared is unaffected,
+    matching `unbound_acceptance`'s own T-0572 backward-compat rule."""
+    unbound = unbound_acceptance(ticket)
+    if unbound:
+        _log.error(
+            "land: %s cannot land -- unbound acceptance criterion/criteria "
+            "(no evidence id resolves them): %s; bind evidence to the "
+            "criterion (`frob ticket evidence %s <node-id>... "
+            "--accepts <index>`, 0-based) and retry `frob ticket land %s`",
+            ticket.id,
+            [c.text for c in unbound],
+            ticket.id,
+            ticket.id,
+        )
+        return Err(LandError.NotCloseable)
+    return Ok(None)
 
 
 def _validate_evidence_kind_consistency(ticket: Ticket) -> Result[None, LandError]:
