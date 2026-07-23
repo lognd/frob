@@ -4935,7 +4935,7 @@ User mandate: propagate exception info across the FFI boundary and enforce decla
 id: T-0691
 title: 'decision: next language-adapter tier (Go, Java, C#) -- demand-driven per estate
   + TIOBE/Innovation Graph'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-22'
@@ -4944,6 +4944,7 @@ parent: T-0329
 scope:
 - docs/design/**
 - docs/index.md
+- tests/integration/test_interfaces.py
 scope_changes:
 - op: add
   glob: docs/index.md
@@ -4962,6 +4963,12 @@ scope_changes:
     own deliverable gate-clean, not unrelated out-of-scope work.
 
     '
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: tests/integration/test_interfaces.py
+  reason: docs-only decision ticket; CLI-dispatch integration test is the T-0167-precedent
+    evidence, scope-added for covers_scope (D-02 route 2)
   actor: logan
   at: '2026-07-23'
 evidence:
