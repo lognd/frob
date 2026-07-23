@@ -1566,7 +1566,7 @@ Evidence:
 
 Filed: one new ticket -- "wire deprecated_gate (DEPR001-004) into
 _ALL_GATES -- currently dead code outside unit tests" (bug,
-scope=src/frob/gates/__init__.py), created as T-draft-f226d099 (real id
+scope=src/frob/gates/__init__.py), created as T-0797 (real id
 assigned on land). Found while verifying this ticket's own evidence;
 fixing it is out of T-0580's declared scope.
 
@@ -4494,7 +4494,7 @@ and it matches this pass's independently-recounted 14 exactly.
 
 Deviation: `frob ticket evidence --evidence-cmd --accepts` did not
 actually bind the cmd: evidence entry to acceptance[0] (a real CLI/
-library gap in src/frob/tickets, filed as T-draft-91ef53bd, out of this
+library gap in src/frob/tickets, filed as T-0796, out of this
 ticket's docs-only scope). Worked around by calling the underlying
 `frob.tickets.add_evidence(root, "T-0677", [<already-recorded cmd:
 entry>], accepts=[0])` library function directly to bind the
@@ -9467,7 +9467,7 @@ combined-vs-split-`if` divergence is a second, genuinely independent
 normalization dimension (control-flow desugaring, not error-channel
 shape) that is out of this ticket's scope; filed as a follow-up rather
 than silently left unaddressed or force-fit into this ticket:
-T-draft-2e4385db "dup: normalize combined-vs-split early-return conditionals before
+T-0801 "dup: normalize combined-vs-split early-return conditionals before
 similarity compare (control-flow axis the real git-common-dir pair still
 needs, T-0785 follow-up)".
 
@@ -9483,7 +9483,7 @@ tests/test_dup.py::TestErrorChannelNormalizationDoesNotOverFire::test_genuinely_
 `uv run --frozen pytest tests/test_dup.py -q` -> 15 passed, all of
 tests/test_dup.py including the pre-existing 8 tests unaffected)
 
-Filed: T-draft-2e4385db (control-flow-axis follow-up, see Deviation above).
+Filed: T-0801 (control-flow-axis follow-up, see Deviation above).
 
 Gates: `frob check --ticket T-0785 --only lint` clean (0/0). `--only
 static` clean of anything my scope touched after `frob ticket sweep
@@ -9987,3 +9987,34 @@ Needs real AST structure (branch condition/body pairs), not a flat
 token-stream heuristic like T-0785's error-channel marker -- likely a
 frob_core kernel addition (parallel to r3_canonicalize's elif desugar)
 rather than a pure-Python _pipeline.py transform.
+
+<!-- ticket:T-0801 -->
+```yaml
+id: T-0801
+title: 'dup: control-flow-shape normalization axis (combined-vs-split if) so the real
+  git_common_dir pair registers'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-23'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/dup/_pipeline.py
+- tests/test_dup.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN the real _leases.py::git_common_dir and _exclude_hazard.py::_git_common_dir
+    pair WHEN the dup scan runs with both error-channel and control-flow normalization
+    THEN they register as a duplicate group (similarity above the 0.6 floor, was 0.444
+    with error-channel alone); repo-wide group delta stays bounded and each new pair
+    is examined
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Promotion of T-0785's worktree draft 2e4385db (worktree removed at land before renumbering). T-0785 landed the error-channel axis; the motivating real pair still differs on a combined-vs-split if structural axis and measures 0.444 (<0.6). Normalize simple guard-shape variants so semantically-one functions pair. Prereq for T-0784's seam unification to be regression-locked by DUP.

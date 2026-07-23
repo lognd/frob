@@ -366,8 +366,7 @@ def _add_docs_parser(sub) -> None:
         dest="docs_search",
         metavar="QUERY",
         help=(
-            "[DEPRECATED, sunset 2026-10-01, see T-0580] full-text search "
-            "through docs/"
+            "[DEPRECATED, sunset 2026-10-01, see T-0580] full-text search through docs/"
         ),
     )
     docs_p.add_argument("--json", dest="docs_json", action="store_true")
