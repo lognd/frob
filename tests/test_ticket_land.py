@@ -10,6 +10,7 @@ point of `land` is real merge/conflict/deletion behavior.
 
 from __future__ import annotations
 
+import os
 import subprocess
 from collections.abc import Callable, Sequence
 from datetime import date
@@ -3265,3 +3266,141 @@ class TestDoneReportThenLandRealClosuresEndToEnd:
             check_gates=_check_gates_summary_fn(wt, tid),
         )
         assert result.is_ok, result.err
+
+
+# T-0828: the T-0731 `pre-commit` hook shape (`_FORBID_LAND_OWNED_FILES_
+# SCRIPT` in `frob.scaffold.project`) refuses any commit that stages
+# CHANGELOG.md unless `FROB_LAND_INTERNAL` is set in the child's env.
+# Copied here (not imported) so the regression test exercises the same
+# guard SHAPE a real scaffolded repo would install, without coupling this
+# test to `frob.scaffold.project`'s internals -- scope is `_land.py`/this
+# test file only.
+_CHANGELOG_GUARD_HOOK = """#!/bin/sh
+if [ -z "$FROB_LAND_INTERNAL" ]; then
+    staged=$(git diff --cached --name-only)
+    case "$staged" in
+        *CHANGELOG.md*)
+            echo "frob: refusing commit -- CHANGELOG.md is land-owned (T-0731)" >&2
+            exit 1
+            ;;
+    esac
+fi
+exit 0
+"""
+
+
+def _install_changelog_guard_hook(repo: Path) -> None:
+    """Install the T-0731-shaped `pre-commit` hook (real hooks dir, shared
+    across every linked worktree of `repo`) that refuses a commit staging
+    CHANGELOG.md unless `FROB_LAND_INTERNAL` is set -- the regression
+    fixture for T-0828."""
+    hooks_dir = Path(
+        _run(["git", "rev-parse", "--git-common-dir"], repo).stdout.strip()
+    )
+    if not hooks_dir.is_absolute():
+        hooks_dir = repo / hooks_dir
+    hooks_dir = hooks_dir / "hooks"
+    hooks_dir.mkdir(parents=True, exist_ok=True)
+    hook_path = hooks_dir / "pre-commit"
+    hook_path.write_text(_CHANGELOG_GUARD_HOOK)
+    hook_path.chmod(0o755)
+
+
+class TestLandInternalEnvThroughHook:
+    """T-0828: every land-internal git commit spawn (worktree wip
+    snapshot, main-into-worktree merge, finalize/close, main-side
+    squash-apply) must set `FROB_LAND_INTERNAL=1` in the child env or a
+    scaffolded T-0731 land-owned-files `pre-commit` hook deadlocks the
+    land the moment any of those commits stages CHANGELOG.md."""
+
+    def test_land_through_changelog_guard_hook_succeeds(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandInternalEnvThroughHook.test_land_through_changelog_guard_hook_succeeds  # noqa: E501
+        (repo / "CHANGELOG.md").write_text("# Changelog\n")
+        _commit_all(repo, "add changelog")
+        _install_changelog_guard_hook(repo)
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-hook", str(wt)], repo)
+        created = new_ticket(wt, _spec("Hits the hook", scope=("src/hooked.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "hooked.py").write_text("# hooked\n")
+        # An uncommitted CHANGELOG.md edit gets swept into `land`'s own
+        # wip-snapshot commit -- exactly the real T-0594 incident shape
+        # (the wip commit, not a hand-authored one, staged the guarded
+        # file and tripped the hook).
+        (wt / "CHANGELOG.md").write_text("# Changelog\n\n## hooked\n")
+
+        result = land(repo, tid, wt, dry_run=False)
+        assert result.is_ok, result.err
+        assert result.danger_ok.commit_sha is not None
+
+    def test_land_internal_git_env_restores_prior_value(self) -> None:
+        # frob:tests src/frob/tickets/_land.py::_land_internal_git_env kind="unit"
+        os.environ.pop("FROB_LAND_INTERNAL", None)
+        with _land_mod._land_internal_git_env():
+            assert os.environ.get("FROB_LAND_INTERNAL") == "1"
+        assert "FROB_LAND_INTERNAL" not in os.environ
+
+        os.environ["FROB_LAND_INTERNAL"] = "prior-value"
+        try:
+            with _land_mod._land_internal_git_env():
+                assert os.environ.get("FROB_LAND_INTERNAL") == "1"
+            assert os.environ.get("FROB_LAND_INTERNAL") == "prior-value"
+        finally:
+            os.environ.pop("FROB_LAND_INTERNAL", None)
+
+
+class TestGitFailureMessageCarriesStderr:
+    """T-0828: a failed land-internal git spawn must surface its argv and
+    stderr in the log line, not collapse to a bare `GitFailed`."""
+
+    def test_describe_git_failure_includes_argv_and_stderr(self) -> None:
+        # frob:tests src/frob/tickets/_land.py::_describe_git_failure kind="unit"
+        argv = ["git", "-C", "/tmp/repo", "commit", "-m", "x"]
+        failed = Ok(
+            ProcResult(
+                argv=tuple(argv),
+                returncode=1,
+                stdout="",
+                stderr="frob: refusing commit -- CHANGELOG.md is land-owned (T-0731)",
+            )
+        )
+        message = _land_mod._describe_git_failure(argv, failed)
+        assert "git -C /tmp/repo commit -m x" in message
+        assert "exit 1" in message
+        assert "CHANGELOG.md is land-owned" in message
+
+    def test_describe_git_failure_includes_spawn_error(self) -> None:
+        # frob:tests src/frob/tickets/_land.py::_describe_git_failure kind="unit"
+        argv = ["git", "-C", "/tmp/repo", "commit", "-m", "x"]
+        message = _land_mod._describe_git_failure(argv, Err(GitError.GitFailed))
+        assert "git -C /tmp/repo commit -m x" in message
+        assert "spawn error" in message
+
+    def test_wip_commit_failure_logs_stderr(
+        self,
+        repo: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_do_wip_commit kind="unit"
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-l8", str(wt)], repo)
+        created = new_ticket(wt, _spec("Whatever", scope=("src/l8.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "l8.py").write_text("# l8\n")
+
+        _failing_run_argv(
+            monkeypatch,
+            lambda argv: str(wt) in argv and "commit" in argv,
+            hard_err=False,
+        )
+        with caplog.at_level("ERROR", logger="frob.tickets._land"):
+            result = land(repo, tid, wt, dry_run=False)
+        assert result.is_err
+        assert result.danger_err == LandError.GitFailed
+        assert any("simulated failure" in r.message for r in caplog.records)

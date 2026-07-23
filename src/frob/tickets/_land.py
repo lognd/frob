@@ -30,6 +30,7 @@ from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
 from types import ModuleType
+from typing import Any
 
 from typani.result import Err, Ok, Result
 
@@ -85,6 +86,46 @@ _log = get_logger(__name__)
 # distinct filename `root` never shares with anything a worktree branch
 # legitimately commits sidesteps that collision entirely.
 _LAND_LOCK_REL = Path(".frob") / "land.lock"
+
+
+@contextmanager
+def _land_internal_git_env() -> Iterator[None]:
+    """Set `FROB_LAND_INTERNAL=1` in the process environment for the
+    duration of a land-internal git commit spawn (T-0828). The T-0731
+    scaffolded `pre-commit` hook refuses a worktree/main commit that
+    touches a land-owned file (CHANGELOG.md, uv.lock, pyproject.toml's
+    version line) unless this is set -- `land()`'s OWN commits (the
+    worktree wip snapshot, the main-into-worktree merge commit, the
+    finalize/close commit, and the main-side squash-apply commit, which
+    can legitimately carry a REL001 version bump + generated changelog
+    entry) must set it around every one of those spawns or the hook
+    deadlocks land against itself. Restores the prior value (or absence)
+    of the variable on exit rather than leaking it into unrelated spawns
+    this process makes afterward."""
+    prior = os.environ.get("FROB_LAND_INTERNAL")
+    os.environ["FROB_LAND_INTERNAL"] = "1"
+    try:
+        yield
+    finally:
+        if prior is None:
+            os.environ.pop("FROB_LAND_INTERNAL", None)
+        else:
+            os.environ["FROB_LAND_INTERNAL"] = prior
+
+
+def _describe_git_failure(argv: Sequence[str], spawned: Result[Any, Any]) -> str:
+    """A one-line, diagnosable description of a failed `run_argv` spawn --
+    the failing argv plus its stderr (or the spawn-level error if the
+    process never even completed) -- so a hook-class refusal (e.g. the
+    T-0731 pre-commit guard) is readable from a single log line instead of
+    collapsing to a bare `GitFailed` with no context (T-0828)."""
+    rendered_argv = " ".join(str(a) for a in argv)
+    if spawned.is_err:
+        return f"git {rendered_argv} -- spawn error: {spawned.danger_err}"
+    result = spawned.danger_ok
+    stderr = str(getattr(result, "stderr", "")).strip() or "(no stderr)"
+    returncode = getattr(result, "returncode", "?")
+    return f"git {rendered_argv} -- exit {returncode}: {stderr}"
 
 
 def _land_lock_path(root: Path) -> Path:
@@ -1003,12 +1044,21 @@ def _wip_commit(
 
 
 def _do_wip_commit(worktree: Path, ticket_id: str) -> Result[bool, LandError]:
-    """`git add -A && git commit` a WIP snapshot in `worktree`."""
-    add = run_argv(["git", "-C", str(worktree), "add", "-A"])
-    if add.is_err or add.danger_ok.returncode != 0:
-        return Err(LandError.GitFailed)
-    commit = run_argv(
-        [
+    """`git add -A && git commit` a WIP snapshot in `worktree`, under
+    `FROB_LAND_INTERNAL=1` (T-0828) so the T-0731 land-owned-files
+    `pre-commit` hook does not refuse this land-internal commit if the
+    worktree happens to carry an uncommitted land-owned-file edit."""
+    add_argv = ["git", "-C", str(worktree), "add", "-A"]
+    with _land_internal_git_env():
+        add = run_argv(add_argv)
+        if add.is_err or add.danger_ok.returncode != 0:
+            _log.error(
+                "land: %s wip add failed: %s",
+                ticket_id,
+                _describe_git_failure(add_argv, add),
+            )
+            return Err(LandError.GitFailed)
+        commit_argv = [
             "git",
             "-C",
             str(worktree),
@@ -1016,8 +1066,13 @@ def _do_wip_commit(worktree: Path, ticket_id: str) -> Result[bool, LandError]:
             "-m",
             f"wip: pre-land snapshot for {ticket_id}",
         ]
-    )
+        commit = run_argv(commit_argv)
     if commit.is_err or commit.danger_ok.returncode != 0:
+        _log.error(
+            "land: %s wip commit failed: %s",
+            ticket_id,
+            _describe_git_failure(commit_argv, commit),
+        )
         return Err(LandError.GitFailed)
     _log.info("land: %s wip-committed uncommitted worktree changes", ticket_id)
     return Ok(True)
@@ -1747,19 +1802,26 @@ def _land_finalize_and_close(
     covers_scope: Callable[[Ticket], bool | None] | None = None,
 ) -> Result[str, LandError]:
     """Commit the merge (if any), finalize a draft id, close the ticket,
-    and commit those writes too -- returns the ticket's final id."""
+    and commit those writes too -- returns the ticket's final id. Runs
+    under `FROB_LAND_INTERNAL=1` (T-0828) so the merge commit is never
+    refused by the T-0731 land-owned-files `pre-commit` hook."""
     if did_merge:
-        commit = run_argv(
-            [
-                "git",
-                "-C",
-                str(worktree),
-                "commit",
-                "-m",
-                f"merge {main_branch_name} into worktree for landing {ticket_id}",
-            ]
-        )
+        commit_argv = [
+            "git",
+            "-C",
+            str(worktree),
+            "commit",
+            "-m",
+            f"merge {main_branch_name} into worktree for landing {ticket_id}",
+        ]
+        with _land_internal_git_env():
+            commit = run_argv(commit_argv)
         if commit.is_err or commit.danger_ok.returncode != 0:
+            _log.error(
+                "land: %s merge commit failed: %s",
+                ticket_id,
+                _describe_git_failure(commit_argv, commit),
+            )
             return Err(LandError.GitFailed)
 
     finalized = _finalize_and_close_ticket(
@@ -2190,17 +2252,25 @@ def _close_finalized_ticket(
 # T-0176). Commit them now so the squash-apply below sees everything, and
 # the worktree ends up clean.
 def _commit_finalize_writes(worktree: Path, final_id: str) -> Result[None, LandError]:
-    """Commit any working-tree changes finalize/close made, if any."""
+    """Commit any working-tree changes finalize/close made, if any -- under
+    `FROB_LAND_INTERNAL=1` (T-0828) so this land-internal commit is never
+    refused by the T-0731 land-owned-files `pre-commit` hook."""
     finalize_dirty = _porcelain_dirty(worktree)
     if finalize_dirty.is_err:
         return Err(finalize_dirty.danger_err)
     if not finalize_dirty.danger_ok:
         return Ok(None)
-    add = run_argv(["git", "-C", str(worktree), "add", "-A"])
-    if add.is_err or add.danger_ok.returncode != 0:
-        return Err(LandError.GitFailed)
-    finalize_commit = run_argv(
-        [
+    add_argv = ["git", "-C", str(worktree), "add", "-A"]
+    with _land_internal_git_env():
+        add = run_argv(add_argv)
+        if add.is_err or add.danger_ok.returncode != 0:
+            _log.error(
+                "land: %s finalize add failed: %s",
+                final_id,
+                _describe_git_failure(add_argv, add),
+            )
+            return Err(LandError.GitFailed)
+        finalize_commit_argv = [
             "git",
             "-C",
             str(worktree),
@@ -2208,8 +2278,13 @@ def _commit_finalize_writes(worktree: Path, final_id: str) -> Result[None, LandE
             "-m",
             f"finalize and close {final_id} for landing",
         ]
-    )
+        finalize_commit = run_argv(finalize_commit_argv)
     if finalize_commit.is_err or finalize_commit.danger_ok.returncode != 0:
+        _log.error(
+            "land: %s finalize commit failed: %s",
+            final_id,
+            _describe_git_failure(finalize_commit_argv, finalize_commit),
+        )
         return Err(LandError.GitFailed)
     return Ok(None)
 
@@ -2505,18 +2580,30 @@ def _land_commit_details(root: Path) -> tuple[str | None, tuple[str, ...]]:
 def _commit_squash_apply(
     root: Path, ticket: Ticket, final_id: str
 ) -> Result[None, LandError]:
-    """Commit the staged squash-apply with a conventional-commit message."""
-    commit = run_argv(
-        ["git", "-C", str(root), "commit", "-m", _commit_message(ticket, final_id)]
-    )
+    """Commit the staged squash-apply with a conventional-commit message,
+    under `FROB_LAND_INTERNAL=1` (T-0828) -- this commit legitimately
+    carries the REL001 version bump and generated CHANGELOG.md entry
+    (`_apply_release_bump`), so it MUST set the flag or the T-0731
+    land-owned-files `pre-commit` hook refuses land's own commit."""
+    commit_argv = [
+        "git",
+        "-C",
+        str(root),
+        "commit",
+        "-m",
+        _commit_message(ticket, final_id),
+    ]
+    with _land_internal_git_env():
+        commit = run_argv(commit_argv)
     if commit.is_err or commit.danger_ok.returncode != 0:
         _log.error(
             "land: %s squash-apply staged onto %s but the final commit "
-            "failed -- inspect `git -C %s status`, commit manually with a "
-            "conventional-commit message, or `git -C %s reset --hard` to "
-            "unwind the staged squash",
+            "failed (%s) -- inspect `git -C %s status`, commit manually "
+            "with a conventional-commit message, or `git -C %s reset "
+            "--hard` to unwind the staged squash",
             final_id,
             root,
+            _describe_git_failure(commit_argv, commit),
             root,
             root,
         )

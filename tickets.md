@@ -10536,7 +10536,7 @@ anchor, which resolves cleanly) but would be a reasonable companion edit.
 id: T-0828
 title: 'land: worktree wip/bump commits do not set FROB_LAND_INTERNAL -- pre-commit
   hook deadlocks every land (hit live)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-23'
@@ -10547,19 +10547,52 @@ scope:
 - src/frob/tickets/_land.py
 - tests/test_ticket_land.py
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_ticket_land.py::TestLandInternalEnvThroughHook::test_land_through_changelog_guard_hook_succeeds
+- tests/test_ticket_land.py::TestLandInternalEnvThroughHook::test_land_internal_git_env_restores_prior_value
+- tests/test_ticket_land.py::TestGitFailureMessageCarriesStderr::test_describe_git_failure_includes_argv_and_stderr
+- tests/test_ticket_land.py::TestGitFailureMessageCarriesStderr::test_describe_git_failure_includes_spawn_error
+- tests/test_ticket_land.py::TestGitFailureMessageCarriesStderr::test_wip_commit_failure_logs_stderr
 attachments: []
 acceptance:
 - text: GIVEN the T-0731 pre-commit hook active via core.hooksPath WHEN land creates
     its wip snapshot and bump commits in the worktree THEN those internal commits
     set FROB_LAND_INTERNAL and succeed; a regression test installs the hook in the
     fixture repo and lands through it
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestLandInternalEnvThroughHook::test_land_through_changelog_guard_hook_succeeds
 threat: null
 component: null
 labels: []
 ```
 Hit live landing T-0594 (2026-07-23): after frob scaffold apply refreshed the hooks, land's worktree wip-snapshot commit was refused by the hook's land-owned CHANGELOG guard -- land sets FROB_LAND_INTERNAL for its main-side commits but not for the worktree wip/bump path, deadlocking every land (GitFailed with the error swallowed; secondary finding: land should surface the failing git command's stderr instead of a bare GitFailed). Coordinator workaround: FROB_LAND_INTERNAL=1 in the invoking env. Fix: set the env on ALL land-internal git commit spawns, and propagate the hook's stderr into the GitFailed error message.
+
+## Done report
+
+Land-internal git commits (wip snapshot, merge, finalize, squash) now set
+FROB_LAND_INTERNAL=1 via a restore-safe context manager, so the T-0731
+pre-commit hook's land-owned guards no longer deadlock land; GitFailed
+errors now carry the failing argv + stderr. Regression test lands through
+a real T-0731-shaped hook installed in the fixture repo.
+
+### Changed
+```
+ src/frob/tickets/_land.py | 151 ++++++++++++++++++++++++++++++++++++----------
+ tests/test_ticket_land.py | 139 ++++++++++++++++++++++++++++++++++++++++++
+ tickets.md                |  64 +++++++++++++++++++-
+ 3 files changed, 319 insertions(+), 35 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestLandInternalEnvThroughHook::test_land_through_changelog_guard_hook_succeeds` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestLandInternalEnvThroughHook::test_land_internal_git_env_restores_prior_value` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestGitFailureMessageCarriesStderr::test_describe_git_failure_includes_argv_and_stderr` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestGitFailureMessageCarriesStderr::test_describe_git_failure_includes_spawn_error` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestGitFailureMessageCarriesStderr::test_wip_commit_failure_logs_stderr` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 0 error(s), 1129 warning(s), 207 waived
 
 <!-- ticket:T-0829 -->
 ```yaml
