@@ -25,6 +25,7 @@ from __future__ import annotations
 import fnmatch
 import importlib
 import os
+import re
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
@@ -442,6 +443,67 @@ def _porcelain_dirty(root: Path) -> Result[bool, LandError]:
         if line.strip() and not line[3:].strip().startswith(".frob/")
     ]
     return Ok(bool(dirty_lines))
+
+
+# frob:ticket T-0793
+_LOCK_VERSION_LINE = re.compile(r'^[+-]version = "[^"]*"$')
+
+
+# frob:ticket T-0793
+def _diff_is_frob_version_line_only(diff_text: str) -> bool:
+    """Whether a unified `git diff` body touches nothing but a single
+    `version = "..."` line flip (one removed, one added) inside the
+    `name = "frob"` package stanza -- the shape uv.lock's own frob-
+    version line takes on every `uv run`/`uv lock` against a pyproject
+    whose version was just bumped by a sibling land, with no other lock
+    content changed. Used to gate the DirtyMain auto-restore (T-0793) so
+    a REAL lock drift (a dependency actually changed) still refuses
+    normally instead of being silently discarded."""
+    changed = [
+        line
+        for line in diff_text.splitlines()
+        if (line.startswith("+") or line.startswith("-"))
+        and not line.startswith("+++")
+        and not line.startswith("---")
+    ]
+    if len(changed) != 2:
+        return False
+    if not all(_LOCK_VERSION_LINE.match(line) for line in changed):
+        return False
+    return 'name = "frob"' in diff_text
+
+
+# frob:ticket T-0793
+def _restore_lock_version_only_drift(root: Path) -> bool:
+    """Auto-restore `root`'s `uv.lock` (T-0793) when the ONLY uncommitted
+    change in the whole tree is uv.lock's frob-version line flapping on
+    every `uv run` against a pyproject bumped by a prior land -- left
+    alone, this alone trips `_refuse_if_main_dirty`'s DirtyMain refusal
+    on every subsequent land attempt until someone runs `git checkout --
+    uv.lock` by hand first (the recurring friction this ticket exists to
+    kill). Returns `True` (and restores the file, clearing the drift)
+    only when `uv.lock` is the SOLE dirty path AND its diff is exactly
+    the version-line-only shape `_diff_is_frob_version_line_only` checks
+    for; any other drift (a real lock change, a second dirty file) is
+    left completely untouched and this returns `False` so the ordinary
+    DirtyMain refusal still fires unchanged."""
+    status = run_argv(["git", "-C", str(root), "status", "--porcelain"])
+    if status.is_err or status.danger_ok.returncode != 0:
+        return False
+    dirty_lines = [
+        line
+        for line in status.danger_ok.stdout.splitlines()
+        if line.strip() and not line[3:].strip().startswith(".frob/")
+    ]
+    if len(dirty_lines) != 1 or dirty_lines[0][3:].strip() != "uv.lock":
+        return False
+    diff = run_argv(["git", "-C", str(root), "diff", "--", "uv.lock"])
+    if diff.is_err or diff.danger_ok.returncode != 0:
+        return False
+    if not _diff_is_frob_version_line_only(diff.danger_ok.stdout):
+        return False
+    restored = run_argv(["git", "-C", str(root), "checkout", "--", "uv.lock"])
+    return restored.is_ok and restored.danger_ok.returncode == 0
 
 
 def _conflicted_files(root: Path) -> set[str]:
@@ -1122,10 +1184,29 @@ def _reverify_evidence_post_merge(
 def _refuse_if_main_dirty(
     root: Path, worktree: Path, ticket_id: str
 ) -> Result[None, LandError]:
-    """`Err(DirtyMain)` if `root` has any uncommitted change."""
+    """`Err(DirtyMain)` if `root` has any uncommitted change.
+
+    Tolerates one specific shape of "dirty" without refusing (T-0793):
+    `uv.lock`'s frob-version line flapping on its own, with nothing else
+    in the tree touched, from a prior `uv run`/`uv lock` invocation
+    against a pyproject a sibling land already bumped. That case is
+    auto-restored (`git checkout -- uv.lock`) before the dirty check is
+    re-evaluated, rather than refusing the land -- any OTHER dirt (a real
+    lock change, any other file) is left alone and still refuses exactly
+    as before."""
     main_dirty = _porcelain_dirty(root)
     if main_dirty.is_err:
         return Err(main_dirty.danger_err)
+    if main_dirty.danger_ok and _restore_lock_version_only_drift(root):
+        _log.info(
+            "land: %s auto-restored a uv.lock frob-version-only drift in "
+            "%s before the DirtyMain check (T-0793)",
+            ticket_id,
+            root,
+        )
+        main_dirty = _porcelain_dirty(root)
+        if main_dirty.is_err:
+            return Err(main_dirty.danger_err)
     if main_dirty.danger_ok:
         _log.error(
             "land: %s refused -- %s has uncommitted changes; commit or stash "
@@ -2038,7 +2119,53 @@ def _apply_release_bump(
             final_id,
             bumped.danger_ok,
         )
+        synced = _sync_uv_lock_for_land(root, final_id)
+        if synced.is_err:
+            run_argv(["git", "-C", str(root), "reset", "--hard"])
+            run_argv(["git", "-C", str(root), "clean", "-fd"])
+            return Err(synced.danger_err)
     return bumped
+
+
+# frob:ticket T-0793
+def _sync_uv_lock_for_land(root: Path, final_id: str) -> Result[None, LandError]:
+    """Re-sync `root`'s `uv.lock` and stage it in the SAME land commit as
+    a just-applied REL001 version bump (T-0793): `uv run`/`uv lock` re-
+    derives the `frob` package's `version = "..."` line from `pyproject.
+    toml` on every invocation, so a bumped pyproject with a stale lock
+    flaps that one line dirty on every subsequent invocation anywhere in
+    the repo, tripping DirtyMain/SCOPE001 for whichever worktree notices
+    next. Runs `uv lock` through `run_argv` (the guarded T-0778 seam --
+    never a bare `subprocess` call, so `FROB_DISABLE_EXEC=1` still
+    refuses it like every other spawn in this module) and `git add`s the
+    result. This is only invoked right after `bump_version` reports a real
+    version change, never on every land.
+
+    Skipped entirely (returns `Ok(None)` without spawning anything) when
+    `root` has no `pyproject.toml` -- not every `land()` caller's tree is
+    a real uv project (test fixtures, other callers of this library), and
+    there is nothing to lock in that case."""
+    if not (root / "pyproject.toml").exists():
+        _log.debug(
+            "land: %s no pyproject.toml at %s, skipping uv.lock re-sync",
+            final_id,
+            root,
+        )
+        return Ok(None)
+    synced = run_argv(["uv", "lock"], cwd=root, timeout_s=120.0)
+    if synced.is_err or synced.danger_ok.returncode != 0:
+        _log.error(
+            "land: %s uv.lock re-sync failed after version bump -- %s",
+            final_id,
+            synced.danger_err if synced.is_err else synced.danger_ok.stderr,
+        )
+        return Err(LandError.ReleaseBumpFailed)
+    staged = run_argv(["git", "-C", str(root), "add", "uv.lock"])
+    if staged.is_err or staged.danger_ok.returncode != 0:
+        _log.error("land: %s failed to stage re-synced uv.lock", final_id)
+        return Err(LandError.GitFailed)
+    _log.info("land: %s re-synced and staged uv.lock after version bump", final_id)
+    return Ok(None)
 
 
 # frob:ticket T-0338

@@ -1890,6 +1890,202 @@ class TestReleaseBump:
         assert result.danger_ok.release_bumped_to is None
 
 
+# frob:ticket T-0793
+class TestUvLockSync:
+    """T-0793: land's release-bump step re-syncs `uv.lock` in the SAME
+    commit as a real version bump, and the DirtyMain check tolerates (and
+    auto-restores) a `uv.lock` whose only drift is the frob-version line
+    flapping from a prior `uv run`/`uv lock` against an already-bumped
+    pyproject.toml."""
+
+    def test_bump_then_lock_synced_in_commit(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestUvLockSync.test_bump_then_lock_synced_in_commit  # noqa: E501
+        (repo / "pyproject.toml").write_text(
+            '[project]\nname = "frob"\nversion = "0.1.0"\n'
+        )
+        _commit_all(repo, "add pyproject")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-lock", str(wt)], repo)
+        created = new_ticket(wt, _spec("Bump with lock", scope=("src/locked.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "locked.py").write_text("# locked\n")
+        _commit_all(wt, "add locked.py")
+
+        def _fake_run_argv(argv: Sequence[str], **kwargs: Any) -> Any:
+            if tuple(argv) == ("uv", "lock"):
+                (kwargs["cwd"] / "uv.lock").write_text(
+                    '[[package]]\nname = "frob"\nversion = "1.2.3"\n'
+                )
+                return Ok(
+                    ProcResult(argv=tuple(argv), returncode=0, stdout="", stderr="")
+                )
+            return run_argv(argv, **kwargs)
+
+        monkeypatch.setattr(_land_mod, "run_argv", _fake_run_argv)
+
+        def bump_version(root: Path, ticket: Any, final_id: str) -> Any:
+            (root / "pyproject.toml").write_text(
+                '[project]\nname = "frob"\nversion = "1.2.3"\n'
+            )
+            _run(["git", "add", "pyproject.toml"], root)
+            return Ok("1.2.3")
+
+        result = land(repo, tid, wt, dry_run=False, bump_version=bump_version)
+        assert result.is_ok, result.err
+        assert result.danger_ok.release_bumped_to == "1.2.3"
+        assert (repo / "uv.lock").read_text().count('version = "1.2.3"') == 1
+        # uv.lock landed in the SAME commit as the bump, not left dirty.
+        assert _status_ignoring_frob(repo) == ""
+        committed_files = _run(
+            ["git", "show", "--name-only", "--pretty=format:", "HEAD"], repo
+        ).stdout.split()
+        assert "uv.lock" in committed_files
+
+    def test_dirty_lock_version_line_only_does_not_refuse(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestUvLockSync.test_dirty_lock_version_line_only_does_not_refuse  # noqa: E501
+        (repo / "uv.lock").write_text(
+            '[[package]]\nname = "frob"\nversion = "0.1.0"\nsource = { editable = "." }\n'
+        )
+        _commit_all(repo, "add uv.lock")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-lockdirty", str(wt)], repo)
+        created = new_ticket(wt, _spec("Tolerate lock drift"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        _commit_all(wt, "wip")
+
+        # Simulate the flap: only the frob version line in uv.lock changed,
+        # nothing else in the tree is dirty.
+        (repo / "uv.lock").write_text(
+            '[[package]]\nname = "frob"\nversion = "0.2.0"\nsource = { editable = "." }\n'
+        )
+
+        result = land(repo, tid, wt, dry_run=True)
+        assert result.is_ok, result.err
+        # The drift was auto-restored back to the committed content.
+        assert 'version = "0.1.0"' in (repo / "uv.lock").read_text()
+        assert _status_ignoring_frob(repo) == ""
+
+    def test_dirty_lock_with_other_change_still_refuses(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestUvLockSync.test_dirty_lock_with_other_change_still_refuses  # noqa: E501
+        (repo / "uv.lock").write_text(
+            '[[package]]\nname = "frob"\nversion = "0.1.0"\nsource = { editable = "." }\n'
+        )
+        _commit_all(repo, "add uv.lock")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-lockplus", str(wt)], repo)
+        created = new_ticket(wt, _spec("Real dirt"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        _commit_all(wt, "wip")
+
+        (repo / "uv.lock").write_text(
+            '[[package]]\nname = "frob"\nversion = "0.2.0"\nsource = { editable = "." }\n'
+        )
+        (repo / "other.txt").write_text("real uncommitted change\n")
+
+        result = land(repo, tid, wt, dry_run=True)
+        assert result.is_err
+        assert result.danger_err == LandError.DirtyMain
+
+    def test_dirty_lock_version_plus_other_line_still_refuses(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestUvLockSync.test_dirty_lock_version_plus_other_line_still_refuses  # noqa: E501
+        (repo / "uv.lock").write_text(
+            "[[package]]\n"
+            'name = "frob"\n'
+            'version = "0.1.0"\n'
+            'source = { editable = "." }\n'
+        )
+        _commit_all(repo, "add uv.lock")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-lockmixed", str(wt)], repo)
+        created = new_ticket(wt, _spec("Mixed lock drift"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        _commit_all(wt, "wip")
+
+        # uv.lock is the SOLE dirty path, but its diff touches BOTH the
+        # frob version line AND another line (a dependency hash flip,
+        # here a changed `source` value) -- `_diff_is_frob_version_line_
+        # only` must reject this shape (len(changed) != 2) so the
+        # destructive auto-restore never fires on real lock content.
+        dirty_content = (
+            "[[package]]\n"
+            'name = "frob"\n'
+            'version = "0.2.0"\n'
+            'source = { editable = "./elsewhere" }\n'
+        )
+        (repo / "uv.lock").write_text(dirty_content)
+
+        result = land(repo, tid, wt, dry_run=True)
+        assert result.is_err
+        assert result.danger_err == LandError.DirtyMain
+        # Not auto-restored: the dirty content is left exactly as written.
+        assert (repo / "uv.lock").read_text() == dirty_content
+
+    def test_lock_sync_spawn_failure_unwinds_squash(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestUvLockSync.test_lock_sync_spawn_failure_unwinds_squash  # noqa: E501
+        (repo / "pyproject.toml").write_text(
+            '[project]\nname = "frob"\nversion = "0.1.0"\n'
+        )
+        _commit_all(repo, "add pyproject")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-lockfail", str(wt)], repo)
+        created = new_ticket(
+            wt, _spec("Bump with failing lock", scope=("src/failedlock.py",))
+        )
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "failedlock.py").write_text("# failed lock\n")
+        _commit_all(wt, "add failedlock.py")
+
+        before_main_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+
+        def _fake_run_argv(argv: Sequence[str], **kwargs: Any) -> Any:
+            if tuple(argv) == ("uv", "lock"):
+                return Ok(
+                    ProcResult(
+                        argv=tuple(argv),
+                        returncode=1,
+                        stdout="",
+                        stderr="simulated uv lock failure",
+                    )
+                )
+            return run_argv(argv, **kwargs)
+
+        monkeypatch.setattr(_land_mod, "run_argv", _fake_run_argv)
+
+        def bump_version(root: Path, ticket: Any, final_id: str) -> Any:
+            (root / "pyproject.toml").write_text(
+                '[project]\nname = "frob"\nversion = "1.2.3"\n'
+            )
+            _run(["git", "add", "pyproject.toml"], root)
+            return Ok("1.2.3")
+
+        result = land(repo, tid, wt, dry_run=False, bump_version=bump_version)
+        assert result.is_err
+        assert result.danger_err == LandError.ReleaseBumpFailed
+        assert (
+            _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == before_main_sha
+        )
+        assert _run(["git", "status", "--porcelain"], repo).stdout.strip() == ""
+
+
 # frob:ticket T-0338
 class TestRebuildNatives:
     """T-0338: `land`'s optional `rebuild_natives` callback -- invoked only
