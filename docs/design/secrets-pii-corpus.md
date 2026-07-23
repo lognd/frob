@@ -440,3 +440,13 @@ totals:
   live_verified_sources: 21
   partial_sources: 3  # Slack legacy/workflow tokens (2), HIPAA HHS guidance page 403'd -> corroborated via CFR text (1)
 ```
+
+**Granularity freeze (T-0675):** the registries (`docs/design/registry/
+secrets.yaml`, `docs/design/registry/pii.yaml`) are built at this
+manifest's SECTION granularity (3 + 7 = 10 sections), not at the
+56 (secrets) + 44 (pii) = 100 leaf-item granularity the `totals` block
+above sums to -- see `docs/design/registry/RECONCILIATION.md` finding
+(f) for the full decision record (the same freeze rationale applies
+here as for `compliance-corpus.md`, even though most of this doc's leaf
+items ARE individually named in the tables above, unlike compliance's
+borrowed external-standard denominators).

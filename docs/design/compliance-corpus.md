@@ -651,3 +651,13 @@ SAMM 5+15 + SLSA 4 + SOC2 5+9 + frob-existing 6 + FedRAMP tiers 3 +
 left unpinned above (SOC2 ~300 points of focus, FedRAMP per-baseline
 control totals, PCI/ISO/HIPAA sub-control text) so the manifest total
 never mixes a verified figure with a guessed one.
+
+**Granularity freeze (T-0675):** the registry (`docs/design/registry/
+compliance.yaml`) is built at this manifest's UNIT granularity (27
+units), not at the 599 leaf-control granularity `TOTAL_LEAF_CONTROLS_
+ENUMERATED` sums to -- most of that 599 is a borrowed denominator from
+an external standard (e.g. `GDPR-ARTICLES: 99`, `ASVS-REQUIREMENTS:
+286`) with no per-leaf text sourced in this document, so minting one
+canonical id per leaf count would fabricate content this doc never
+enumerated. See `docs/design/registry/RECONCILIATION.md` finding (f)
+for the full decision record.

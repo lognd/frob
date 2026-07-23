@@ -21,15 +21,35 @@ was folded in -- see `RECONCILIATION.md` for the full audit trail).
 | `system-design.yaml` | distributed-systems / strata checks | `system-design-corpus.md` | 119 (105 genuine + 14 flagged extraction artifacts) |
 | `evasion.yaml` | capability-evasion construct taxonomy | `capability-evasion-taxonomy.md` | 112 |
 | `weaknesses.yaml` | CWE weaknesses + other security-framework entries | `cwe-1000-registry.md` (primary, 944 CWEs), `security-corpus.md` (cross-ref, 40 non-CWE entries) | 984 |
-| `compliance.yaml` | compliance-framework units | `compliance-corpus.md` | 27 units (599 leaf controls enumerated but not individually id'd -- see note below) |
-| `secrets.yaml` | secret-detector/token-format sections | `secrets-pii-corpus.md` | 3 sections (56 leaf items) |
-| `pii.yaml` | PII-category sections | `secrets-pii-corpus.md` | 7 sections (44 leaf items) |
+| `compliance.yaml` | compliance-framework units | `compliance-corpus.md` | 27 units (599 leaf controls enumerated but not individually id'd -- frozen at unit granularity, see note below) |
+| `secrets.yaml` | secret-detector/token-format sections | `secrets-pii-corpus.md` | 3 sections (56 leaf items, same freeze) |
+| `pii.yaml` | PII-category sections | `secrets-pii-corpus.md` | 7 sections (44 leaf items, same freeze) |
 | `supply-chain.yaml` | supply-chain attack/defense/detection | `supply-chain-corpus.md` | 41 (source doc's own TOTAL field says 39 -- self-inconsistent, see `RECONCILIATION.md`) |
 
 **Grand total: 1950 registry entries** (311 + 346 + 119 + 112 + 984 + 27 +
 3 + 7 + 41). See `RECONCILIATION.md` for how this reconciles against each
 source doc's own stated totals, and for every prose-only miss, split
 entry, and undispositioned entry found in the process.
+
+### Granularity freeze (finding (f), T-0675)
+
+`compliance.yaml` (27 entries), `secrets.yaml` (3 entries), and
+`pii.yaml` (7 entries) are built at their source docs' own UNIT
+granularity, not at the 599 + 56 + 44 = 699 leaf-control granularity
+those docs' `TOTAL_LEAF_CONTROLS_ENUMERATED`-style manifest fields
+imply. This is a deliberate, permanent decision, not an open gap: most
+of the 699 leaf counts are denominators borrowed from external standards
+(GDPR articles, ASVS requirements, CIS safeguards, ISO 27002 controls,
+...) that this repo does not own or redistribute the text of, so minting
+one canonical id per leaf count with no per-leaf text actually sourced
+would fabricate 699 ids dressed as a real enumeration -- the opposite of
+what this registry is for. See `RECONCILIATION.md` finding (f) for the
+full accounting (which leaf counts are borrowed-denominator vs. actually
+itemized in-doc) and why unit granularity is the correct, final answer
+rather than a placeholder for a future leaf-level pass. Reopening this
+would require the source corpus docs themselves to enumerate real
+leaf-level ids with citations first (option (a) in finding (f)) -- not a
+registry-side change.
 
 ## `check-coverage.yaml` (T-0424): frob's own reflexive check-coverage registry
 

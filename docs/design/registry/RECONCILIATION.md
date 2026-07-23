@@ -157,7 +157,7 @@ against `cwe-1000-registry.md`'s 27 `checkable` CWE ids:
   different scope (cwe-1000-registry.md's checkable set is drawn from
   `frob`'s live `CWE_CATALOG`, a superset of the 2025 Top 25 list).
 
-### (f) compliance/secrets/pii granularity gap
+### (f) compliance/secrets/pii granularity gap -- RESOLVED (T-0675, frozen at unit granularity)
 
 `compliance-corpus.md`'s own manifest is UNIT-granular: e.g.
 `GDPR-ARTICLES: count 99` is one manifest line, not 99 individually
@@ -173,6 +173,31 @@ row-by-row -- reported as a structural gap in the SOURCE corpus, not
 silently patched over. `compliance.yaml`, `secrets.yaml`, `pii.yaml` are
 built at the doc's own actual granularity (27 + 3 + 7 = 37 entries) and
 this gap is the reconciliation finding.
+
+**Decision (T-0675): freeze at unit granularity -- option (b) of the
+finding's own two choices.** Expanding to real leaf-level enumeration
+(option (a)) was rejected on the merits, not skipped for convenience:
+the overwhelming majority of the 599 compliance leaf counts are
+denominators borrowed from external standards frob does not own or
+redistribute the text of (e.g. `GDPR-ARTICLES: 99`, `ASVS-REQUIREMENTS:
+286`, `CIS-SAFEGUARDS: 153`, `ISO27002-CONTROLS: 93` together already
+account for 631 of the 599 compliance leaf count). Minting 631 individual
+`GDPR-ART-{1..99}`-style ids from a bare count, with no per-article text
+sourced or cited, would not be a real leaf-level enumeration -- it would
+be 699 fabricated ids dressed as one, which is the exact failure mode
+this reconciliation pass exists to catch, not commit. This freeze was
+already made operationally by the three sibling reconciliation tickets
+T-0675 was blocked on -- T-0386 (secrets.yaml, 3 entries), T-0387
+(pii.yaml, 7 entries), T-0388 (compliance.yaml, 27 entries) -- each of
+which built and closed its registry file at the source doc's own unit
+granularity, with a passing file-specific EXHAUSTIVENESS meta-test wired
+into `frob check`. T-0675 makes that already-landed practice an
+explicit, written decision at the finding level instead of an implicit
+one; see `docs/design/registry/README.md`'s "Granularity freeze (finding
+(f))" note for the rationale as recorded alongside the registry file
+list. `compliance.yaml` + `secrets.yaml` + `pii.yaml` stay at
+27 + 3 + 7 = 37 entries; the 699 leaf-level ids are not built, and this
+finding is closed as a documented decision, not left open.
 
 ### (g) supply-chain-corpus.md self-inconsistent TOTAL
 
