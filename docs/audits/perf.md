@@ -4,6 +4,98 @@ MEASURE-FIRST. All numbers below are measured on this checkout
 (`/home/logan/projects/frob`, ext4 `/dev/sdd` -- **NOT** `/mnt/c`; see Note 1),
 via `uv run` (0.9.x source tree), not the stale 0.9.0 wheel.
 
+## 2026-07-23 re-measurement (T-0582, third pass)
+
+T-0582 re-verified the two items the T-0410 pass explicitly left
+unverified (H4's vet multiplier, H5's selfconform double-scan) and
+profiled the `refs` stage the T-0410 pass identified but never isolated
+(then the 2nd-largest gate-summary dominator, 8-11s).
+
+**Baseline this pass**, real `frob check` on this checkout (natives
+built, warm caches, T-0414's `_parse` memo in place):
+
+```
+gates  [test=16.72s, refs=13.52s, perf=5.66s, archgate=7.93s,
+        coverage=5.43s, pii_structural=4.62s, dead_symbols=3.41s,
+        secrets=2.77s, tickets=1.96s, invariant=1.81s, sys=0.96s,
+        render_lint=0.66s, protocol_summary=0.63s, registry=0.58s,
+        walk_lint=0.91s, docblocks=0.30s, ...]
+```
+
+`archgate`/`sys` (H1/H2, T-0423) stay resolved (7.93s/0.96s here, in the
+same near-zero range as the T-0410 re-measurement -- run-to-run variance,
+not a regression). `refs` is now the clear 2nd-largest dominator behind
+`test`, confirming the T-0410 pass's own prediction.
+
+**(1) H4's vet multiplier -- RESOLVED, but not by the mechanism H4
+guessed.** Direct measurement: called `scan_file_capabilities` (which
+uses `raw_tree`, not `parse_file`) over every one of this repo's 592
+tracked `.py` files and read `frob.lang.parse_cache_stats()` after each
+run -- **1776 hits / 592 misses, i.e. exactly one real parse per unique
+`(path, content)`, zero redundant re-parses**, despite `scan_file_
+capabilities` internally calling `raw_tree` 3x per file (H4's original
+claim). This is because T-0414 (landed between the T-0410 pass and this
+one, not by T-0410 itself) generalized the per-run memo down to `frob.
+lang._parse` itself -- the one chokepoint every public entry point
+(`parse_file`, `raw_tree`, `extract_imports`) funnels through -- rather
+than memoizing `parse_file` alone. `raw_tree` inherits the cache for
+free. **Do not re-investigate H4's parse-multiplier concern; it is
+closed by T-0414, confirmed here by a direct cache-stats measurement,
+not an assumption.**
+
+What the same profile DID surface: `scan_file_capabilities` itself is
+CPU-heavy independent of parsing -- 592 files took 31.8s wall, of which
+~23s was inside `_python_binding_capabilities`'s per-candidate needle
+sweep (`_capability.py`), an O(candidates x capability-kinds x needles)
+substring scan. Real work, not a caching bug, and not obviously safe to
+rewrite blind -- filed as **T-0829** (renumbered on land)
+rather than edited under this measurement ticket's scope discipline.
+
+**(2) H5 (selfconform's double capability-scan) -- CONFIRMED STILL
+UNFIXED.** `_observed_extended_kinds_by_node` and `_observed_all_kinds_
+by_node` (`src/frob/strata/_selfconform.py:296`/`:319`) still each
+independently loop the owned-file set and call `scan_file_capabilities`
+separately, exactly as H5 originally described. The COST of that
+duplication has changed shape since H4 got fixed: it used to mean a
+double PARSE; now (post T-0414) it means a double CAPABILITY-RESOLUTION
+pass instead (the real cost identified in (1) above), which is still
+real -- roughly doubles the ~23s-per-592-files resolution cost across
+whatever fraction of the owned-file set selfconform touches. Measured
+`frob sys audit` on this checkout (286 bound files, a subset of the
+full repo): 6.15s wall end to end; a cProfile pass on `check_self_
+conformance` confirms `_capability.py`'s walk/visit/candidate-resolution
+functions as the internal-time dominators. `src/frob/strata/_selfconform.
+py` is outside T-0582's scope (`src/frob/vet/`) -- filed as
+**T-0830** (renumbered on land) with the same one-scan-two-
+derived-views fix direction H5 originally proposed, still valid.
+
+**(3) `refs` stage profile (new -- never isolated before this pass).**
+Isolated `ref_gate(root)` under cProfile (994 tracked files): dominated
+by `_auto_inbound` (`src/frob/gates/_refs.py:502`) calling `_tokens_
+reach` (`:465`) for every `(candidate, other)` pair -- an O(files^2)
+nested scan, made worse by two of `_tokens_reach`'s fallback checks
+themselves being O(tokens-in-file) generator scans over each file's
+token set. Measured: 38.6M calls into one `token.endswith(...)` genexpr
+alone (71.4s cProfile tottime), 19.5M more into a second one (23.7s),
+95.9M total `str.endswith` calls -- the whole gate's cost is this one
+shape, not parsing (the direct profile shows 0 `_parse` calls; refs
+never touches `frob.lang`). `src/frob/gates/_refs.py` is outside
+T-0582's scope -- filed as **T-0831** (renumbered on land),
+fix direction: replace the O(files^2 x tokens_per_file) pairwise scan
+with a once-built reverse index (basename/stem suffix -> candidate
+files), turning it into roughly O(files x tokens_per_file).
+
+**Verdict table:**
+
+| Item | Audit claim | This pass | Disposition |
+|---|---|---|---|
+| H1 (archgate double-parse) | RESOLVED (T-0410 pass) | still resolved (7.93s) | no action |
+| H2 (sys re-extract imports) | RESOLVED (T-0410 pass) | still resolved (0.96s) | no action |
+| H4 vet multiplier | unverified, "may already be cheap" | RESOLVED (T-0414, confirmed via parse_cache_stats: 592 misses/1776 hits, 0 redundant parses) | closed, do not re-investigate |
+| H4-adjacent: vet's own resolution cost | not identified (masked by H4's parse framing) | real, ~23s/592 files, algorithmic not caching | filed T-0829 (investigate, not blind-fixed) |
+| H5 selfconform double-scan | unfixed | still unfixed; cost is now double-resolution not double-parse | filed T-0830 |
+| refs stage | never profiled, "2nd dominator" | profiled: O(files^2) pairwise token-reach scan in `_tokens_reach`/`_auto_inbound` | filed T-0831 |
+
 ## 2026-07-21 re-measurement (T-0410, second pass)
 
 The grounding numbers throughout this document (archgate=91.5-153.6s,

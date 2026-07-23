@@ -1139,7 +1139,7 @@ none new).
 id: T-0582
 title: 'perf audit re-measurement: verify vet/secrets/selfconform after T-0410 parse_file
   memo fix; profile refs stage (now 2nd dominator)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -1148,8 +1148,23 @@ blocked_by: []
 parent: null
 scope:
 - src/frob/vet/
-scope_changes: []
-evidence: []
+- docs/audits/perf.md
+- tests/test_lang.py
+scope_changes:
+- op: add
+  glob: docs/audits/perf.md
+  reason: ticket body explicitly requires a dated re-measurement section in docs/audits/perf.md
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: tests/test_lang.py
+  reason: 'covers_scope route 2: the T-0414 parse-cache anti-regression test is this
+    measurement ticket''s evidence proving the H4 resolution mechanism; the deliverable
+    itself is the audit-doc re-measurement'
+  actor: logan
+  at: '2026-07-23'
+evidence:
+- tests/test_lang.py::TestParseCache::test_cross_entry_point_reuse_is_one_parse_per_file
 attachments: []
 acceptance: []
 threat: null
@@ -1157,6 +1172,38 @@ component: null
 labels: []
 ```
 T-0410 landed one concrete fix: memoize parse_file's extract() walk (coverage_gate 155.8s->15.9s isolated, ~40s->~4s in real frob check) plus M6 (.hypothesis/.serena skip-dirs). Two things from docs/audits/perf.md need re-measurement, not assumption: (1) H4's other cited multipliers (vet.scan_file_capabilities uses raw_tree not parse_file, so bypasses the new memo -- but _parse's own content-hash cache may already make repeats cheap; verify with a profile) and H5 (selfconform's double capability-scan, likely still unfixed). (2) refs_gate is now the 2nd-largest stage (measured ~8-11s across several frob check runs) and was never profiled by the original audit; isolate and profile it the way this ticket isolated coverage_gate. Update docs/audits/perf.md with a dated re-measurement section (mark H1/H2 RESOLVED via T-0423) rather than a fresh audit.
+
+## Done report
+
+T-0582 re-measured docs/audits/perf.md's H4/H5 findings and profiled the
+refs stage for the first time. H4 (vet's scan_file_capabilities bypassing
+the T-0410 parse memo) is RESOLVED -- not by T-0410 itself but by T-0414
+(a later, more general fix that memoizes frob.lang._parse directly, which
+raw_tree/scan_file_capabilities inherit for free): confirmed via a direct
+parse_cache_stats measurement across all 592 tracked .py files (1776
+hits/592 misses, zero redundant parses), bound as evidence via the
+existing T-0414 anti-regression test. H5 (selfconform's double
+capability-scan) is STILL UNFIXED; its cost shape changed (double
+resolution-pass, not double-parse) but is real. The refs stage (10.5-13.5s
+CPU, 2nd dominator behind test) was profiled and root-caused for the first
+time: an O(files^2 x tokens_per_file) pairwise token-reach scan in
+_auto_inbound/_tokens_reach (src/frob/gates/_refs.py). A new finding not
+in the original audit also surfaced: once parsing is cheap, vet's own
+capability-resolution work (_python_binding_capabilities' per-candidate
+needle sweep) is itself a real ~23s/592-files algorithmic cost, distinct
+from any caching gap.
+
+All three actionable findings outside T-0582's scope (src/frob/vet/,
+docs/audits/perf.md) were filed as follow-up tickets rather than fixed
+blind: refs O(n^2) scan, selfconform H5 merge, and a vet capability-scan
+algorithmic investigation. The full measurement table and verdicts are
+recorded in docs/audits/perf.md's new dated section.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_lang.py::TestParseCache::test_cross_entry_point_reuse_is_one_parse_per_file` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0584 -->
 ```yaml
@@ -10366,3 +10413,191 @@ component: null
 labels: []
 ```
 Hit live landing T-0594 (2026-07-23): after frob scaffold apply refreshed the hooks, land's worktree wip-snapshot commit was refused by the hook's land-owned CHANGELOG guard -- land sets FROB_LAND_INTERNAL for its main-side commits but not for the worktree wip/bump path, deadlocking every land (GitFailed with the error swallowed; secondary finding: land should surface the failing git command's stderr instead of a bare GitFailed). Coordinator workaround: FROB_LAND_INTERNAL=1 in the invoking env. Fix: set the env on ALL land-internal git commit spawns, and propagate the hook's stderr into the GitFailed error message.
+
+<!-- ticket:T-0829 -->
+```yaml
+id: T-0829
+title: 'vet capability scan: _python_binding_capabilities'' per-candidate needle sweep
+  is the real CPU cost once parsing is cached (T-0414); investigate trie/short-circuit'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/vet/_capability.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0582 (perf audit re-measurement) profiled `scan_file_capabilities`
+(src/frob/vet/_capability.py:2232) directly over every tracked .py file in
+this repo (592 files) after confirming parsing itself is now cheap (T-0414's
+`_parse` memo -- 592 misses / 1776 hits, exactly one parse per unique file
+content, zero re-parse waste). The remaining 31.8s wall for 592 files is
+real Python work, not caching: `_python_binding_capabilities` (line 1084)
+alone accounted for ~23s of it (cProfile, `tottime` breakdown), inside
+`_collect_py_candidates`/`_resolve_py_expr`/`_shadowing_scope`/`walk`.
+
+What's algorithmically expensive: for every resolved call/attribute
+candidate in a file (`_python_resolved_candidates`), `_python_binding_
+capabilities` loops every not-yet-found capability kind in `table.items()`
+and, for each, checks `any(_needle_matches_resolved(needle, resolved) for
+needle in needles)` -- a substring containment test (`needle in resolved`,
+`_capability.py:1072`). This is O(candidates * remaining_capability_kinds *
+needles_per_kind) per file; measured 2.0M+ calls into the needle-match
+genexpr (`_capability.py:1101`) and 1.3M+ into `_collect_py_candidates`
+itself for 592 files.
+
+This is inherent recall-oriented analysis work (T-0328's binding-aware
+resolution), not an obvious redundancy bug like H5 or the refs O(n^2) scan
+-- no single clear fix direction was confident enough to apply blind in a
+measurement ticket. Possible directions worth investigating (NOT vetted
+here): (a) precompute a single flat needle-trie (Aho-Corasick style) per
+language ONCE at module load instead of re-iterating `table.items()` per
+candidate, turning the per-candidate cost from O(capability_kinds *
+needles) into O(len(resolved)) trie lookups; (b) short-circuit the whole
+per-candidate loop once `len(found) == len(table)` (all capability kinds
+already observed in this file) -- cheap to add but only helps files that
+trigger every kind, likely low win in practice, worth measuring before
+committing to it as the fix.
+
+Filed rather than fixed: correctness risk of a nontrivial resolver rewrite
+under a measurement ticket's scope discipline. A dedicated ticket should
+prototype option (a) or (b) with its own before/after profile against this
+same 592-file corpus before landing either.
+
+<!-- ticket:T-0830 -->
+```yaml
+id: T-0830
+title: 'selfconform: merge _observed_extended_kinds_by_node/_observed_all_kinds_by_node
+  into one scan_file_capabilities pass per file (H5)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/_selfconform.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0582 (perf audit re-measurement) re-verified docs/audits/perf.md's H5
+finding against current main: STILL UNFIXED. `_observed_extended_kinds_by_
+node` (src/frob/strata/_selfconform.py:296) and `_observed_all_kinds_by_
+node` (src/frob/strata/_selfconform.py:319) each independently loop
+`_sorted_owned_files(binding)` and call `scan_file_capabilities(path)` on
+the SAME files -- two full passes over the owned-file set to compute two
+views (the extended-kinds subset, and the `_KIND_MAP`-normalized full set)
+of the same underlying capability scan.
+
+Re-verification note (this is NOT the same cost H5 originally described):
+T-0414 (landed after the original perf audit, before this ticket) already
+generalized `frob.lang`'s per-run content-hash parse memo down to `_parse`
+itself, which `raw_tree` (and therefore `scan_file_capabilities`) now goes
+through -- so the double CALL no longer means a double PARSE. Measured
+directly (T-0582): running `scan_file_capabilities` over every tracked .py
+file in this repo shows `frob.lang.parse_cache_stats()` = exactly one miss
+per unique (path, content) and the rest hits, confirming H4's "vet bypasses
+the memo" concern is RESOLVED for `_parse`/`raw_tree` specifically.
+
+What's still real: `scan_file_capabilities` itself does substantial
+non-parse Python work per call (import/binding-aware resolution --
+`_python_binding_capabilities`, `_collect_py_candidates`, `_resolve_py_
+expr`, `_shadowing_scope` -- an O(candidates * capability-kinds * needles)
+substring-match sweep over the resolved call/attribute sites). A full-repo
+direct-call profile (592 .py files) spent ~23s of a 32s wall inside exactly
+that resolution path, NOT inside parsing. Calling it twice per owned file
+(H5's actual remaining cost) roughly doubles that portion. Measured on this
+checkout's `frob sys audit` (286 bound files, smaller than the full repo):
+6.15s wall end to end; a cProfile pass on `check_self_conformance` shows
+`_capability.py`'s walk/visit/any functions as the internal-time dominators
+network-wide, consistent with the double-call pattern.
+
+Fix direction (matches perf.md's original H5 fix direction, still valid):
+scan each owned file ONCE into `raw = scan_file_capabilities(path)`, then
+derive `raw & _EXTENDED_KINDS` for the extended-kinds view and the
+`_KIND_MAP`-normalized set for the all-kinds view from that single `raw`
+result, instead of two independent full passes. One scan per file, two
+cheap derived views.
+
+Not fixed as part of T-0582: `src/frob/strata/_selfconform.py` is outside
+T-0582's declared scope (src/frob/vet/, docs/audits/perf.md). This ticket
+is the paired fix for H5's "verify... selfconform" mandate. See
+docs/audits/perf.md's dated re-measurement section for the full T-0582
+measurement table.
+
+<!-- ticket:T-0831 -->
+```yaml
+id: T-0831
+title: 'refs gate: O(files^2) pairwise token-reach scan in _auto_inbound/_tokens_reach
+  dominates refs stage (13.5s CPU)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/_refs.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0582 (perf audit re-measurement) profiled the refs gate in isolation
+(cProfile over a direct ref_gate(root) call, natives built, warm parse
+cache). It IS the confirmed 2nd-largest gate-summary dominator (refs=13.52s
+CPU in a real `frob check` run on this checkout, second only to test=16.72s;
+everything else is under 8s).
+
+Root cause, not re-parsing: `_auto_inbound` (src/frob/gates/_refs.py:502)
+calls `_tokens_reach` (src/frob/gates/_refs.py:465) for every (candidate,
+other) pair of the 994 tracked files -- an O(files^2) nested scan. Inside
+`_tokens_reach`, two of the fallback checks are themselves O(tokens-in-file)
+generator scans (`any(token.endswith(...) for token in tokens)`), so the
+real cost is O(files^2 * tokens_per_file). Isolated cProfile measured 38.6M
+calls into the `token.endswith("/" + basename)` genexpr at line 492 alone
+(71.4s tottime under cProfile instrumentation), plus 19.5M more at the
+stem-suffix genexpr at line 502 (23.7s tottime) -- both dwarfing everything
+else in the gate (`endswith` itself: 95.9M calls, 56.9s tottime). isolated
+wall under cProfile was 226.59s (profiler-inflated; the trustworthy number
+is the real run's thread_time refs=13.52s CPU, consistent with an O(n^2)
+shape at n~994 without cProfile's per-call overhead multiplier).
+
+Fix direction: replace the O(files^2) pairwise scan with a reverse index
+built once, O(files * tokens_per_file): for every tracked file, extract its
+own basename/full-path/stem as index keys and its `_candidate_tokens` set;
+build a dict from (basename suffix / stem suffix) -> the set of files whose
+own path could satisfy that suffix, then for each candidate look up its own
+basename/stem against a SINGLE combined trie/suffix index of all tokens
+across all files, rather than re-scanning every other file's raw token set
+per candidate. A simpler bounded win: precompute, once, a flat
+multiset/Counter of every token's trailing path-segment and stem across all
+files (a single O(total_tokens) pass), then `_tokens_reach` becomes an O(1)
+dict lookup instead of an O(tokens_in_one_file) scan repeated per candidate
+pair. Either shape turns the current O(files^2 * tokens_per_file) into
+roughly O(files * tokens_per_file), which is the actual win refs needs.
+
+Not fixed as part of T-0582: `src/frob/gates/_refs.py` is outside T-0582's
+declared scope (src/frob/vet/, docs/audits/perf.md). This ticket is the
+paired fix for the "profile refs stage" half of T-0582's re-measurement
+mandate. See docs/audits/perf.md's dated re-measurement section for the
+full T-0582 measurement table.
