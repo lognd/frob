@@ -6193,3 +6193,34 @@ component: null
 labels: []
 ```
 Coordinator friction 2026-07-22: frob ticket archive (and any concurrent land that rewrites main tickets.md) causes in-flight worktree tickets to LOSE their start/evidence/acceptance-binding when the worktree next runs the 10b restore (git checkout main -- tickets.md picks up the archived/rewritten ledger where the in-flight ticket is back to queued with empty evidence). Recovered T-0753 by hand (re-start, re-record 6 evidence ids, re-bind acceptance). Fixes: (1) archive should REFUSE (or warn-and-require --force) when live non-stale leases exist -- archiving during in-flight work is the hazard; the TICK003 remediation text already says run in a quiet window, make it enforced. (2) the 10b restore recipe is fragile against a rewritten-ledger main; the real fix is the single-writer done-report/evidence path never needing a full restore -- coordinate with T-0577/T-0637 land machinery so an agent NEVER git-checkout-main-tickets.md (the land --path replay the coordinator already does is the safe pattern).
+
+<!-- ticket:T-0765 -->
+```yaml
+id: T-0765
+title: 'frob perf CLI: live collector wiring (perf/V8/JFR + python sampler) end-to-end
+  subcommand'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/app/**
+- src/frob/perf/**
+- docs/modules/perf.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a repo and a recorded profile artifact (perf script output, .cpuprofile,
+    or JFR print output) WHEN the user runs the frob perf collect subcommand THEN
+    the hit stream is resolved through resolve_stream and per-language deciles are
+    readable from the CLI output
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+T-0748 delivered the collector parser adapters (parse_perf_script, parse_v8_cpuprofile, parse_jfr_print + build_class_to_file) proven through resolve_stream/HitStream, but no frob perf CLI entrypoint exists for any collector including the T-0710 python sampler. Wire a subcommand that accepts a profile artifact path (or invokes the sampler), runs the matching collector, and renders the resolved hot-graph deciles. Filed per T-0748 reviewer recommendation (disclosed deviation, real unscoped work).
