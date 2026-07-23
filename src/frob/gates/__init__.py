@@ -993,6 +993,10 @@ _KNOWN_GATE_RULES = frozenset(
         # _tick006_phantom_filing) -- a Done report's "Filed: ..." claim
         # whose id resolves to no ledger block.
         "TICK006",
+        # T-0820: undispatched-stale CRITICAL/HIGH alarm (frob.gates.
+        # tickets_gate's _tick007_undispatched_stale) -- the frob check
+        # half of T-0752's frob.tickets.undispatched_stale, reused verbatim.
+        "TICK007",
         "PII010",
         "SEC110",
         # T-0289: long-function is the one frob-arch category channeled into
@@ -7080,12 +7084,57 @@ def _tick006_phantom_filing(root: Path, queue: TicketQueue) -> tuple[Violation, 
     return tuple(violations)
 
 
+# frob:ticket T-0820
+# frob:enforces CHK-GATE-TICK007
+# frob:tests tests/test_gates.py::TestTick007UndispatchedStale.test_stale_critical_fires  # noqa: E501
+# frob:tests tests/test_gates.py::TestTick007UndispatchedStale.test_fresh_critical_is_silent  # noqa: E501
+# frob:tests tests/test_gates.py::TestTick007UndispatchedStale.test_medium_priority_never_fires  # noqa: E501
+# frob:tests tests/test_gates.py::TestTick007UndispatchedStale.test_blocked_ticket_is_silent  # noqa: E501
+# frob:tests tests/test_gates.py::TestTick007UndispatchedStale.test_real_repo_scan_runs_end_to_end_without_crashing  # noqa: E501
+def _tick007_undispatched_stale(
+    root: Path, queue: TicketQueue
+) -> tuple[Violation, ...]:
+    """TICK007 (T-0820): WARN per dispatchable (unblocked, unleased)
+    CRITICAL/HIGH ticket that has sat past its `undispatched_stale`
+    threshold (T-0752's `frob.tickets.undispatched_stale`/
+    `dispatch_stale_hours` -- reused verbatim here, per T-0820's Description:
+    the staleness judgment lives in exactly one place, this gate only
+    surfaces it). T-0752 already renders this alarm in `frob ticket
+    doable`'s human-facing listing; this is the same signal's `frob check`
+    half, so it is caught mechanically rather than only when someone
+    happens to run `doable` and read the UNDISPATCHED marker."""
+    from frob.tickets import doable, has_live_lease, undispatched_stale
+
+    tickets = doable(queue, root)
+    dispatchable = [t for t in tickets if not has_live_lease(t, root)]
+    alarms = undispatched_stale(dispatchable, root)
+    violations: list[Violation] = []
+    for t, elapsed, threshold in alarms:
+        violations.append(
+            Violation(
+                rule="TICK007",
+                severity=Severity.WARN,
+                file="tickets.md",
+                line=0,
+                message=(
+                    f"TICK007: {t.id} ({t.priority.value} priority) has sat "
+                    f"dispatchable and unleased for {elapsed:.0f}h "
+                    f"(threshold {threshold:.0f}h) -- it is undispatched-"
+                    f"stale; dispatch it or re-prioritize it "
+                    f"(`frob ticket priority {t.id} <level>`)"
+                ),
+            )
+        )
+    return tuple(violations)
+
+
 # frob:doc docs/modules/tickets.md#decision-record-t-0162
 def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
-    """TICK001/TICK002/TICK003/TICK004/TICK005/TICK006: the T-0162 ticket-id
-    collision invariant gate, plus the T-0409 ledger-hygiene check, the
-    T-0411 priority-rot check, the T-0537 post-merge terminal-state-
-    regression lint, and the T-0726 phantom-filing-claim check."""
+    """TICK001/TICK002/TICK003/TICK004/TICK005/TICK006/TICK007: the T-0162
+    ticket-id collision invariant gate, plus the T-0409 ledger-hygiene
+    check, the T-0411 priority-rot check, the T-0537 post-merge terminal-
+    state-regression lint, the T-0726 phantom-filing-claim check, and the
+    T-0820/T-0752 undispatched-stale-CRITICAL/HIGH alarm."""
     return (
         _tick001_duplicate_ids(root)
         + _tick002_draft_on_default(root, queue)
@@ -7093,6 +7142,7 @@ def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
         + _tick004_queue_rot(root, queue)
         + _tick005_merge_state_regression(root, queue)
         + _tick006_phantom_filing(root, queue)
+        + _tick007_undispatched_stale(root, queue)
     )
 
 

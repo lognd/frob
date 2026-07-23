@@ -33,6 +33,7 @@ declaration).
 | INV005 | invariant | (warn, T-0543/B12) an invariant's evidence collects (satisfies INV001) but is never shown, via a `frob:tests` edge or same-file trust to the anchor, to actually reach its `frob:invariant`-anchored symbol -- a name-match-only existence check proves nothing about which invariant a test covers; see "INV005 (T-0543)" below |
 | INV006 | invariant | (warn, T-0408) a SOURCE file under `INV006_SRC_DIRS` (`src`, `strata-core/src`, `frob-core/src`) makes a claim-shaped exclusivity assertion (same vocabulary as INV003) with no `frob:invariant` edge anchored anywhere in the file, and no `frob:waive INV006 reason="..."` edge -- see "INV006 (T-0408)" below |
 | TICK006 | tickets | a Done report's affirmative "filed" claim (`Filed: T-####`, `filed as T-####`, `Filed T-draft-<hex>`, ...) whose id resolves to no block in `tickets.md` or `tickets-archive.md` -- see "TICK006 (T-0726)" below |
+| TICK007 | tickets | (warn) a dispatchable (unblocked, unleased) CRITICAL/HIGH ticket has sat past its `frob.tickets.undispatched_stale` threshold -- see "TICK007 (T-0820)" below |
 | DEC001 | decisions | a `frob:decision AD-###` edge points at a record that does not exist (opt-in: a `decisions/` dir must exist) |
 | DEC002 | decisions | an `accepted` decision record has no `frob:decision` code anchor |
 | TEST001 | test | public function/method has no `frob:tests` unit edge |
@@ -618,6 +619,36 @@ phantom filing trail cannot reach `main` undetected going forward. It is
 waivable (not in `_UNWAIVABLE_RULES`): unlike TICK001/TICK002, a genuine
 draft-loss disclosure is a legitimate, honestly-dispositioned case, not a
 silent invariant break.
+
+### TICK007 (T-0820)
+
+<!-- frob:describes src/frob/gates/__init__.py::_tick007_undispatched_stale -->
+
+T-0752 built the pure staleness-alarm computation
+(`frob.tickets.undispatched_stale`/`dispatch_stale_hours`/
+`_dispatch_stale_thresholds`) and wired it into `frob ticket doable`'s
+human-facing row rendering (a loud UNDISPATCHED marker) -- but that only
+surfaces the alarm to someone who happens to run `doable` and read it.
+T-0820 is the `frob check` half of the same signal: `tickets_gate` calls
+`undispatched_stale` (imported and reused verbatim, per T-0752's own
+Done-report note that the staleness judgment must live in exactly one
+place -- this gate does not re-derive it) over the doable set filtered to
+non-in-flight (`has_live_lease`) rows, and emits one WARN `Violation` per
+alarmed ticket.
+
+**Thresholds.** Same `[tickets]` `frob.toml` table T-0752 defined
+(`dispatch_stale_critical_hours`/`dispatch_stale_high_hours`), defaulting
+to 4h (CRITICAL) / 24h (HIGH). MEDIUM/LOW never alarm, matching T-0752's
+mandate that "a queue always has some" at those priorities.
+
+**Where it runs.** TICK007 is one of `tickets_gate`'s checks (alongside
+TICK001-TICK006), which runs inside `frob check`'s `tickets` stage --
+including `frob ticket close` and `frob ticket land`'s preflight. It is
+waivable (not in `_UNWAIVABLE_RULES`): unlike TICK001/TICK002, a stale
+dispatch is a queue-health signal to act on, not a structural invariant
+break, so a reasoned `frob:waive TICK007 reason="..."` can disposition a
+known, accepted case (e.g. a deliberately deferred CRITICAL awaiting a
+blocker that has not been formally recorded yet).
 
 ## Public API
 

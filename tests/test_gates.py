@@ -62,7 +62,7 @@ from frob.gitio import Diff, Hunk, working_diff
 from frob.graph import build_graph
 from frob.graph._models import LockEntry, LockFile
 from frob.testing import CollectedTests
-from frob.tickets import Origin, Ticket, TicketKind, TicketQueue, TicketState
+from frob.tickets import Origin, Priority, Ticket, TicketKind, TicketQueue, TicketState
 from frob.tickets._store import write_ticket
 
 
@@ -7571,6 +7571,143 @@ class TestTick006PhantomFiling:
         tick006 = [v for v in violations if v.rule == "TICK006"]
         assert len(tick006) == 1
         assert "T-draft-deadbeef" in tick006[0].message
+
+
+# frob:ticket T-0820
+class TestTick007UndispatchedStale:
+    """TICK007 (T-0820): the `frob check` half of T-0752's undispatched-
+    stale-CRITICAL/HIGH alarm -- `tickets_gate` reuses
+    `frob.tickets.undispatched_stale` verbatim over the dispatchable
+    (unblocked, unleased) set and WARNs per alarmed ticket, mirroring
+    `frob ticket doable`'s UNDISPATCHED row marker as a mechanical gate
+    finding instead of a display-only nicety."""
+
+    # frob:ticket T-0820
+    def _queue(self, *tickets: Ticket) -> TicketQueue:
+        """A `TicketQueue` of `tickets`, keyed by id."""
+        return TicketQueue(tickets={t.id: t for t in tickets})
+
+    # frob:ticket T-0820
+    def _priority_ticket(
+        self,
+        *,
+        ticket_id: str,
+        priority: Priority,
+        created: date,
+        state: TicketState = TicketState.QUEUED,
+        blocked_by: tuple[str, ...] = (),
+    ) -> Ticket:
+        """A minimal queued `Ticket` at `priority`/`created`, optionally
+        `blocked_by` an id, no scope -- the shape `undispatched_stale`
+        needs, with every other field defaulted the same way
+        `test_tickets_priority.py`'s `_ticket` helper does. `Ticket` is
+        frozen (`model_config = ConfigDict(frozen=True, ...)`), so
+        `blocked_by` must be set here, not assigned after construction."""
+        return Ticket(
+            id=ticket_id,
+            title=f"ticket {ticket_id}",
+            state=state,
+            kind=TicketKind.FEATURE,
+            origin=Origin.HUMAN,
+            created=created,
+            priority=priority,
+            blocked_by=blocked_by,
+            parent=None,
+            scope=(),
+            evidence=(),
+            attachments=(),
+            acceptance=(),
+            threat=None,
+            body="",
+        )
+
+    # frob:ticket T-0820
+    # frob:tests tests/test_gates.py::TestTick007UndispatchedStale.test_stale_critical_fires  # noqa: E501
+    def test_stale_critical_fires(self, tmp_path: Path) -> None:
+        """A CRITICAL ticket filed long ago (far past the 4h default
+        threshold), still queued and unblocked, is TICK007."""
+        ticket = self._priority_ticket(
+            ticket_id="T-4001",
+            priority=Priority.CRITICAL,
+            created=date(2026, 1, 1),
+        )
+        violations = tickets_gate(tmp_path, self._queue(ticket))
+        tick007 = [v for v in violations if v.rule == "TICK007"]
+        assert len(tick007) == 1
+        assert "T-4001" in tick007[0].message
+        assert tick007[0].severity == Severity.WARN
+
+    # frob:ticket T-0820
+    # frob:tests tests/test_gates.py::TestTick007UndispatchedStale.test_fresh_critical_is_silent  # noqa: E501
+    def test_fresh_critical_is_silent(self, tmp_path: Path) -> None:
+        """A CRITICAL ticket filed today has not crossed the 4h threshold
+        yet (whole-day granularity means same-day is 0h elapsed) -- no
+        TICK007."""
+        ticket = self._priority_ticket(
+            ticket_id="T-4002",
+            priority=Priority.CRITICAL,
+            created=date.today(),
+        )
+        violations = tickets_gate(tmp_path, self._queue(ticket))
+        assert not any(v.rule == "TICK007" for v in violations)
+
+    # frob:ticket T-0820
+    # frob:tests tests/test_gates.py::TestTick007UndispatchedStale.test_medium_priority_never_fires  # noqa: E501
+    def test_medium_priority_never_fires(self, tmp_path: Path) -> None:
+        """MEDIUM/LOW carry no default threshold (T-0752: "a queue always
+        has some") -- an ancient MEDIUM ticket never alarms TICK007."""
+        ticket = self._priority_ticket(
+            ticket_id="T-4003",
+            priority=Priority.MEDIUM,
+            created=date(2020, 1, 1),
+        )
+        violations = tickets_gate(tmp_path, self._queue(ticket))
+        assert not any(v.rule == "TICK007" for v in violations)
+
+    # frob:ticket T-0820
+    # frob:tests tests/test_gates.py::TestTick007UndispatchedStale.test_blocked_ticket_is_silent  # noqa: E501
+    def test_blocked_ticket_is_silent(self, tmp_path: Path) -> None:
+        """A CRITICAL ticket blocked on an open blocker is not in the
+        dispatchable set at all (`doable()` excludes it), so it never
+        reaches `undispatched_stale` and cannot fire TICK007."""
+        blocker = self._priority_ticket(
+            ticket_id="T-4004",
+            priority=Priority.HIGH,
+            created=date(2026, 1, 1),
+        )
+        blocked = self._priority_ticket(
+            ticket_id="T-4005",
+            priority=Priority.CRITICAL,
+            created=date(2026, 1, 1),
+            blocked_by=(blocker.id,),
+        )
+        violations = tickets_gate(tmp_path, self._queue(blocker, blocked))
+        tick007 = [v for v in violations if v.rule == "TICK007"]
+        assert not any("T-4005" in v.message for v in tick007)
+
+    # frob:ticket T-0820
+    # frob:tests tests/test_gates.py::TestTick007UndispatchedStale.test_real_repo_scan_runs_end_to_end_without_crashing  # noqa: E501
+    def test_real_repo_scan_runs_end_to_end_without_crashing(self) -> None:
+        """The honest "real repo scan" smoke test (T-0813 precedent): runs
+        `tickets_gate` over this repo's OWN live `tickets.md`, not a
+        fabricated fixture, and just proves TICK007's `doable()` +
+        `has_live_lease()` + `undispatched_stale()` plumbing completes
+        without crashing against real ticket data (blockers, leases,
+        scopes, every priority) -- it deliberately does NOT assert
+        fires-or-not, since the live queue's staleness state churns
+        between sessions (a CRITICAL/HIGH ticket dispatched an hour before
+        this test runs vs. one left sitting are both legitimate states);
+        every violation, if any, must simply carry the TICK007 rule id and
+        a WARN severity."""
+        from frob.tickets import load_queue
+
+        root = Path(__file__).resolve().parents[1]
+        queue = load_queue(root).danger_ok
+        violations = tickets_gate(root, queue)
+        tick007 = [v for v in violations if v.rule == "TICK007"]
+        for v in tick007:
+            assert v.severity == Severity.WARN
+            assert v.rule == "TICK007"
 
 
 class TestPiiStructuralCrossLanguage:
