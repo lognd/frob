@@ -1131,7 +1131,7 @@ _CLEAN_MODEL = """\
 module m
 node evil : foreign
 node api : trusted
-flow f1 : evil -> api { rate 5 req/s; }
+flow f1 : evil -> api { rate 5 req/s; attr timeout; }
 """
 
 _GAP_MODEL = """\
