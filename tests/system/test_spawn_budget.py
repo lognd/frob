@@ -52,7 +52,7 @@ def _make_repo_with_tickets(tmp_path: Path, count: int) -> None:
 def test_ticket_list_spawns_each_argv_at_most_once(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    # frob:tests src/frob/tickets/_leases.py::git_common_dir kind="system"
+    # frob:tests src/frob/tickets/_leases.py::git_common_dir kind="e2e"
     _make_repo_with_tickets(tmp_path, count=3)
 
     counts: Counter[tuple[str, ...]] = Counter()

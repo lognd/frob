@@ -61,7 +61,7 @@ _CALLER_SRC = (
     ),
 )
 def test_loop_invariant_spawning_callee_in_loop_is_flagged(tmp_path: Path) -> None:
-    # frob:tests src/frob/perf/_rules.py::perf_rules kind="system"
+    # frob:tests src/frob/perf/_rules.py::perf_rules kind="integration"
     helper = tmp_path / "helper.py"
     helper.write_text(_HELPER_SRC)
     caller = tmp_path / "caller.py"

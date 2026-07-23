@@ -247,6 +247,7 @@ Full-repo pessimistic capability audit (2026-07-20): every way a green
   per-subsystem "is this good enough?" verdicts + cross-cutting themes.
 - [docs/audits/tickets-testing.md](audits/tickets-testing.md) -- evidence integrity.
 - [docs/audits/tickets-testing-round2.md](audits/tickets-testing-round2.md) -- evidence integrity convergence re-audit (round 2).
+- [docs/audits/frob-blindspots-2026-07-23.md](audits/frob-blindspots-2026-07-23.md) -- structural-inefficiency/security blind spots frob's own gates bless (kill-switch wiring, lease-layer respawns, daemon argv trust boundary); fix+gate tickets T-0778..T-0786.
 - [docs/audits/strata.md](audits/strata.md) -- proof-engine vacuous-proof gaps.
 - [docs/audits/vet.md](audits/vet.md) -- capability/supply-chain resolution + fail-open.
 - [docs/audits/gates-accounting.md](audits/gates-accounting.md) -- accounting gates.
