@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.110.0] - unreleased
+
+- T-0807: check: auto-suppress land-owned REL001 bump-half in worktree/ticket context (reviews keep tripping on it)
+
 ## [0.109.0] - unreleased
 
 - T-0764: friction: archive/concurrent-ledger-rewrite silently reverts in-flight tickets start+evidence+acceptance (recovered T-0753 by hand)

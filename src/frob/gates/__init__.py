@@ -7465,32 +7465,121 @@ def _rel001_version(manifest, snapshot, current_version):  # noqa: ANN001
 # frob:tests tests/test_gates.py::TestDebtGate.test_release_gate_bump_suppressed_under_frob_agent  # noqa: E501
 # frob:tests tests/test_gates.py::TestDebtGate.test_release_gate_bump_fires_without_frob_agent  # noqa: E501
 def _rel001_bump_suppressed_under_agent() -> bool:
-    """T-0731: whether the bump/changelog half of REL001 must be skipped
-    because we are running inside a dispatched agent worktree.
+    """T-0731: whether the bump/changelog half of REL001 is suppressed
+    because `FROB_AGENT` (T-0574) names this an explicitly-flagged agent
+    shell.
 
     Version bump and changelog authorship are land-time steps owned
     exclusively by `frob ticket land` (T-0731) -- agents must never
     touch `pyproject.toml`'s version, `uv.lock`, or `CHANGELOG.md`
-    themselves, so the gate that used to demand they do so is disabled
-    whenever `FROB_AGENT` (T-0574) is set. The open-debt and expired-
-    deprecation halves of `release_gate` still run unconditionally: those
-    are real release blockers, not bump-and-chase busywork.
+    themselves. This is the explicit-env-var override T-0807 preserves
+    alongside its own context-derived detection (`_rel001_land_owned`)
+    below -- a shell that sets `FROB_AGENT` by hand still gets the same
+    suppression it always has, with no worktree/lease evidence required.
     """
     return bool(os.environ.get("FROB_AGENT"))
 
 
 # frob:doc docs/modules/gates.md#public-api
+# frob:ticket T-0807
+# frob:tests tests/test_gates.py::TestDebtGate.test_rel001_linked_worktree_detected  # noqa: E501
+def _rel001_is_linked_worktree(root: Path) -> bool:
+    """T-0807: whether `root` is a LINKED git worktree (as opposed to the
+    repo's main/root checkout) -- `git rev-parse --git-dir` resolves to a
+    worktree-private path (`.git/worktrees/<name>`) that differs from
+    `--git-common-dir` (the shared `.git` every worktree of the clone
+    points back at) exactly when `root` is a linked worktree; in the main
+    checkout the two spawns resolve to the same path. Degrades to `False`
+    (no suppression) on any git failure -- a plain, non-worktree checkout
+    is the default REL001 posture this must never silently change.
+    """
+    git_dir_spawned = run_argv(("git", "-C", str(root), "rev-parse", "--git-dir"))
+    common_dir_spawned = run_argv(
+        ("git", "-C", str(root), "rev-parse", "--git-common-dir")
+    )
+    if git_dir_spawned.is_err or common_dir_spawned.is_err:
+        return False
+    git_dir_result = git_dir_spawned.danger_ok
+    common_dir_result = common_dir_spawned.danger_ok
+    if git_dir_result.returncode != 0 or common_dir_result.returncode != 0:
+        return False
+    git_dir = Path(git_dir_result.stdout.strip())
+    common_dir = Path(common_dir_result.stdout.strip())
+    if not git_dir.is_absolute():
+        git_dir = (root / git_dir).resolve()
+    if not common_dir.is_absolute():
+        common_dir = (root / common_dir).resolve()
+    return git_dir != common_dir
+
+
+# frob:doc docs/modules/gates.md#public-api
+# frob:ticket T-0807
+# frob:tests tests/test_gates.py::TestDebtGate.test_rel001_land_owned_via_ticket_lease  # noqa: E501
+# frob:tests tests/test_gates.py::TestDebtGate.test_rel001_land_owned_via_linked_worktree_no_ticket  # noqa: E501
+# frob:tests tests/test_gates.py::TestDebtGate.test_rel001_not_land_owned_root_checkout_no_ticket  # noqa: E501
+def _rel001_land_owned(root: Path, ticket_id: str | None) -> bool:
+    """T-0807: whether REL001's bump/changelog half is land-owned in THIS
+    check run, derived from CONTEXT rather than the `FROB_AGENT` env var
+    reviewers and some dispatch shells never set (the recurring-friction
+    report this ticket exists to fix -- 4+ review cycles hand-rejected a
+    bump `frob ticket land` auto-cleared seconds later).
+
+    Land-owned whenever EITHER holds:
+
+    - `ticket_id` is set and its cross-worktree lease (`resolve_lease`,
+      T-0766) pins to `root` -- an in-progress ticket in its own worktree
+      is definitionally pre-land.
+    - `root` itself is a linked worktree (`_rel001_is_linked_worktree`),
+      regardless of ticket id -- a linked worktree is never where a
+      release gets cut, ticket context or not.
+
+    A plain root-checkout run with no `--ticket` and no live lease is
+    NOT land-owned -- REL001 errors exactly as before T-0807 there,
+    which is the explicit "keep the plain no-ticket behavior erroring"
+    acceptance case. `_rel001_bump_suppressed_under_agent`'s explicit
+    `FROB_AGENT` override is checked separately by the caller and is
+    unaffected by this function's result.
+    """
+    from frob.tickets._leases import resolve_lease
+
+    if ticket_id is not None:
+        lease_result = resolve_lease(root, ticket_id, root)
+        if lease_result.is_ok:
+            _log.debug(
+                "release_gate: %s lease pins to %s -- land-owned via ticket lease",
+                ticket_id,
+                root,
+            )
+            return True
+    if _rel001_is_linked_worktree(root):
+        _log.debug("release_gate: %s is a linked worktree -- land-owned", root)
+        return True
+    return False
+
+
+# frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0003
+# frob:ticket T-0807
 # frob:waive TEST005 reason="release_gate 82.4% branch cover, debt T-0160"
-def release_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+def release_gate(
+    root: Path, snapshot: GraphSnapshot, ticket_id: str | None = None
+) -> tuple[Violation, ...]:
     """REL001: the public-API change since the last `frob release stamp`
     demands a version bump the declared version does not cover, or the
     changelog does not mention the version.
 
     Opt-in: runs only when a `.frob-release.json` manifest exists. The
-    version-bump/changelog half is suppressed under `FROB_AGENT` (T-0731)
-    -- version bump is a land-time step owned by `frob ticket land`, not
-    something a worktree agent does.
+    version-bump/changelog half is suppressed whenever it is LAND-OWNED
+    (T-0807): either the explicit `FROB_AGENT` env-var override (T-0731,
+    `_rel001_bump_suppressed_under_agent`), or context derived from
+    `ticket_id`/`root` (`_rel001_land_owned` -- a live worktree lease for
+    `ticket_id`, or `root` itself being a linked worktree). A land-owned
+    run that WOULD have needed a bump still reports it, downgraded to an
+    informational `WARN` rather than an `ERROR` (`_rel001_land_note`) --
+    version bump is a land-time step owned by `frob ticket land`, not
+    something a worktree agent or reviewer does, but the API-diff signal
+    itself stays visible. A plain root checkout with no ticket and no
+    lease keeps erroring exactly as before T-0807.
     """
     from frob.release import load_manifest
 
@@ -7506,6 +7595,9 @@ def release_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
         return ()
 
     if _rel001_bump_suppressed_under_agent():
+        # T-0731's explicit `FROB_AGENT` override: full legacy silence, no
+        # informational note either -- an agent shell that opts in by hand
+        # gets exactly the pre-T-0807 behavior, unchanged.
         from frob.release import diff_class
 
         _log.info(
@@ -7513,6 +7605,15 @@ def release_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
             "(T-0731) -- version bump is a land-time step"
         )
         bump, violations = diff_class(manifest_result.danger_ok, snapshot), []
+    elif _rel001_land_owned(root, ticket_id):
+        from frob.release import diff_class
+
+        _log.info(
+            "release_gate: REL001 bump/changelog demand land-owned (T-0807) "
+            "-- reporting the API diff as an informational note, not an error"
+        )
+        bump = diff_class(manifest_result.danger_ok, snapshot)
+        violations = _rel001_land_note(bump, manifest_result.danger_ok, current_version)
     else:
         bump, violations = _rel001_version(
             manifest_result.danger_ok, snapshot, current_version
@@ -7532,6 +7633,43 @@ def release_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     )
     _log.info("release_gate: bump=%s, %d violation(s)", bump.name, len(violations))
     return tuple(violations)
+
+
+# frob:doc docs/modules/gates.md#public-api
+# frob:ticket T-0807
+# frob:tests tests/test_gates.py::TestDebtGate.test_rel001_land_owned_via_linked_worktree_no_ticket  # noqa: E501
+# frob:tests tests/test_gates.py::TestDebtGate.test_rel001_land_owned_via_ticket_lease  # noqa: E501
+def _rel001_land_note(bump, manifest, current_version: str) -> list[Violation]:  # noqa: ANN001
+    """REL001, land-owned case (T-0807): a `WARN`-severity note naming the
+    API-diff `bump` class AND the target version (mirroring `_rel001_version`'s
+    `required_version` computation, T-0894 review fix) when a real bump would
+    otherwise be demanded, so a reviewer still SEES both the diff and what
+    `frob ticket land` will bump to ("public API changed (minor) since X;
+    land-owned -- frob ticket land will bump to >= Y") without the review
+    being blocked by a bump `frob ticket land` computes and applies itself
+    seconds later. `[]` when `bump` is the no-op class, or when the required
+    version cannot be computed -- nothing changed (or nothing computable),
+    nothing to note."""
+    from frob.release import required_version
+
+    if bump == 0:
+        return []
+    need = required_version(manifest.version, bump)
+    if need.is_err:
+        return []
+    cls = bump.name.lower()
+    return [
+        Violation(
+            rule="REL001",
+            severity=Severity.WARN,
+            file="pyproject.toml",
+            line=0,
+            message=(
+                f"REL001: public API changed ({cls}) since {manifest.version}; "
+                f"land-owned -- frob ticket land will bump to >= {need.danger_ok}"
+            ),
+        )
+    ]
 
 
 def _rel001_missing_changelog(current_version: str) -> Violation:
@@ -8341,7 +8479,9 @@ def _build_jobs(
             *doc005_gate(st.repo_root),
         ),
         "fuzz": lambda: fuzz_gate(st.root, st.snapshot),
-        "release": lambda: release_gate(st.root, st.snapshot),
+        "release": lambda: release_gate(
+            st.root, st.snapshot, st.ticket.id if st.ticket is not None else None
+        ),
         "decisions": lambda: decisions_gate(st.root, st.snapshot),
         "tickets": lambda: tickets_gate(st.root, st.queue),
         # T-0412: current_date/current_version are injected (debt_gate stays

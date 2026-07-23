@@ -87,6 +87,16 @@ def _write(root: Path, rel: str, text: str) -> Path:
     return path
 
 
+# frob:ticket T-0807
+def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
+    """Run `argv` in `cwd`, raising on a nonzero exit -- a thin `subprocess.run`
+    wrapper for the real-git-repo fixtures T-0807's linked-worktree/lease
+    tests need (mirrors `tests/test_tickets_leases.py::_run`)."""
+    return subprocess.run(
+        argv, cwd=str(cwd), check=True, capture_output=True, text=True
+    )
+
+
 def _snapshot(root: Path):
     cache = root / ".frob" / "cache.db"
     return build_graph(root, cache).danger_ok
@@ -1890,6 +1900,177 @@ class TestDebtGate:
             v.rule == "REL001" and "no CHANGELOG.md entry" in v.message
             for v in violations
         )
+
+    # frob:ticket T-0807
+    def test_rel001_not_land_owned_root_checkout_no_ticket(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-0807: a plain root-checkout `frob check` run (real git repo, no
+        `--ticket`, no live lease, `FROB_AGENT` unset) is NOT land-owned --
+        REL001 still errors exactly as before T-0807."""
+        # frob:tests tests/test_gates.py::TestDebtGate.test_rel001_not_land_owned_root_checkout_no_ticket  # noqa: E501
+        from frob.gates import release_gate
+        from frob.release import stamp
+
+        monkeypatch.delenv("FROB_AGENT", raising=False)
+        _run(["git", "init", "-q", "-b", "main"], tmp_path)
+        _run(["git", "config", "user.email", "test@example.com"], tmp_path)
+        _run(["git", "config", "user.name", "Test"], tmp_path)
+        _write(tmp_path, "src/a.py", "def a(x: int) -> int:\n    return x\n")
+        _write(tmp_path, "pyproject.toml", '[project]\nname = "x"\nversion = "1.0.0"\n')
+        snap = _snapshot(tmp_path)
+        assert stamp(tmp_path, snap, "1.0.0").is_ok
+        _run(["git", "add", "-A"], tmp_path)
+        _run(["git", "commit", "-q", "-m", "init"], tmp_path)
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def a(x: int) -> int:\n    return x\ndef b() -> int:\n    return 0\n",
+        )
+        (tmp_path / ".frob" / "cache.db").unlink()
+        snap2 = _snapshot(tmp_path)
+
+        violations = release_gate(tmp_path, snap2, None)
+        assert any(
+            v.rule == "REL001"
+            and v.severity is Severity.ERROR
+            and "public API changed" in v.message
+            for v in violations
+        )
+
+    # frob:ticket T-0807
+    def test_rel001_land_owned_via_linked_worktree_no_ticket(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-0807: a check run from a LINKED worktree is land-owned even
+        with no `--ticket` in play -- the bump reports as an informational
+        `WARN`, never an `ERROR`."""
+        # frob:tests tests/test_gates.py::TestDebtGate.test_rel001_land_owned_via_linked_worktree_no_ticket  # noqa: E501
+        from frob.gates import release_gate
+        from frob.release import stamp
+
+        monkeypatch.delenv("FROB_AGENT", raising=False)
+        main_root = tmp_path / "main"
+        main_root.mkdir()
+        _run(["git", "init", "-q", "-b", "main"], main_root)
+        _run(["git", "config", "user.email", "test@example.com"], main_root)
+        _run(["git", "config", "user.name", "Test"], main_root)
+        _write(main_root, "src/a.py", "def a(x: int) -> int:\n    return x\n")
+        _write(
+            main_root, "pyproject.toml", '[project]\nname = "x"\nversion = "1.0.0"\n'
+        )
+        snap = _snapshot(main_root)
+        assert stamp(main_root, snap, "1.0.0").is_ok
+        _run(["git", "add", "-A"], main_root)
+        _run(["git", "commit", "-q", "-m", "init"], main_root)
+
+        worktree_root = tmp_path / "wt"
+        _run(
+            ["git", "worktree", "add", "-q", "-b", "T-0807-wt", str(worktree_root)],
+            main_root,
+        )
+        _write(
+            worktree_root,
+            "src/a.py",
+            "def a(x: int) -> int:\n    return x\ndef b() -> int:\n    return 0\n",
+        )
+        snap2 = _snapshot(worktree_root)
+
+        violations = release_gate(worktree_root, snap2, None)
+        assert not any(
+            v.rule == "REL001" and v.severity is Severity.ERROR for v in violations
+        )
+        # T-0894 review fix: the note must name the TARGET version (>= 1.1.0
+        # for a minor bump off 1.0.0), not just the bump class -- a reviewer
+        # otherwise sees "public API changed (minor)" with no idea what
+        # `frob ticket land` will actually bump to.
+        assert any(
+            v.rule == "REL001"
+            and v.severity is Severity.WARN
+            and "public API changed" in v.message
+            and "land will bump to >= 1.1.0" in v.message
+            for v in violations
+        )
+
+    # frob:ticket T-0807
+    def test_rel001_land_owned_via_ticket_lease(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-0807: a check run with `--ticket T-XXXX` whose lease pins to
+        THIS root (no linked worktree required -- e.g. a single-checkout
+        repo with an in-progress ticket) is also land-owned via the lease."""
+        # frob:tests tests/test_gates.py::TestDebtGate.test_rel001_land_owned_via_ticket_lease  # noqa: E501
+        from frob.gates import release_gate
+        from frob.release import stamp
+        from frob.tickets._leases import LeaseRecord, leases_dir
+
+        monkeypatch.delenv("FROB_AGENT", raising=False)
+        _run(["git", "init", "-q", "-b", "main"], tmp_path)
+        _run(["git", "config", "user.email", "test@example.com"], tmp_path)
+        _run(["git", "config", "user.name", "Test"], tmp_path)
+        _write(tmp_path, "src/a.py", "def a(x: int) -> int:\n    return x\n")
+        _write(tmp_path, "pyproject.toml", '[project]\nname = "x"\nversion = "1.0.0"\n')
+        snap = _snapshot(tmp_path)
+        assert stamp(tmp_path, snap, "1.0.0").is_ok
+        _run(["git", "add", "-A"], tmp_path)
+        _run(["git", "commit", "-q", "-m", "init"], tmp_path)
+
+        leases_root_result = leases_dir(tmp_path)
+        assert leases_root_result.is_ok
+        leases_root = leases_root_result.danger_ok
+        leases_root.mkdir(parents=True, exist_ok=True)
+        record = LeaseRecord(
+            ticket_id="T-0900",
+            scope=("src/a.py",),
+            worktree=str(tmp_path.resolve()),
+            branch="main",
+            recorded_at="2026-07-23T00:00:00+00:00",
+        )
+        (leases_root / "T-0900.json").write_text(
+            record.model_dump_json(indent=2) + "\n", encoding="utf-8"
+        )
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def a(x: int) -> int:\n    return x\ndef b() -> int:\n    return 0\n",
+        )
+        (tmp_path / ".frob" / "cache.db").unlink()
+        snap2 = _snapshot(tmp_path)
+
+        violations = release_gate(tmp_path, snap2, "T-0900")
+        assert not any(
+            v.rule == "REL001" and v.severity is Severity.ERROR for v in violations
+        )
+        assert any(
+            v.rule == "REL001" and v.severity is Severity.WARN for v in violations
+        )
+
+    # frob:ticket T-0807
+    def test_rel001_linked_worktree_detected(self, tmp_path: Path) -> None:
+        """T-0807: `_rel001_is_linked_worktree` is `True` for a linked
+        worktree and `False` for the main checkout it was created from."""
+        # frob:tests tests/test_gates.py::TestDebtGate.test_rel001_linked_worktree_detected  # noqa: E501
+        from frob.gates import _rel001_is_linked_worktree
+
+        main_root = tmp_path / "main"
+        main_root.mkdir()
+        _run(["git", "init", "-q", "-b", "main"], main_root)
+        _run(["git", "config", "user.email", "test@example.com"], main_root)
+        _run(["git", "config", "user.name", "Test"], main_root)
+        (main_root / "README.md").write_text("x\n", encoding="utf-8")
+        _run(["git", "add", "-A"], main_root)
+        _run(["git", "commit", "-q", "-m", "init"], main_root)
+
+        worktree_root = tmp_path / "wt"
+        _run(
+            ["git", "worktree", "add", "-q", "-b", "T-0807-detect", str(worktree_root)],
+            main_root,
+        )
+
+        assert _rel001_is_linked_worktree(main_root) is False
+        assert _rel001_is_linked_worktree(worktree_root) is True
 
 
 class TestDeprecatedGate:

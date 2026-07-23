@@ -7438,7 +7438,7 @@ T-0787 reviewer verified these three nodes fail on CURRENT main with git ls-file
 id: T-0807
 title: 'check: auto-suppress land-owned REL001 bump-half in worktree/ticket context
   (reviews keep tripping on it)'
-state: queued
+state: done
 kind: ux
 origin: agent
 created: '2026-07-23'
@@ -7448,8 +7448,29 @@ parent: null
 scope:
 - src/frob/gates/__init__.py
 - src/frob/app/check_runner.py
-scope_changes: []
-evidence: []
+- tests/test_gates.py
+scope_changes:
+- op: add
+  glob: tests/test_gates.py
+  reason: 'Verification tests for T-0807''s context-derived REL001 suppression live
+    in
+
+    tests/test_gates.py (TestDebtGate, alongside the existing T-0731 bump tests
+
+    they extend) -- adding this test home to scope so COV002 accounts for the
+
+    new/changed test methods.
+
+    '
+  actor: logan
+  at: '2026-07-23'
+evidence:
+- tests/test_gates.py::TestDebtGate::test_release_gate_bump_fires_without_frob_agent
+- tests/test_gates.py::TestDebtGate::test_release_gate_bump_suppressed_under_frob_agent
+- tests/test_gates.py::TestDebtGate::test_rel001_not_land_owned_root_checkout_no_ticket
+- tests/test_gates.py::TestDebtGate::test_rel001_land_owned_via_linked_worktree_no_ticket
+- tests/test_gates.py::TestDebtGate::test_rel001_land_owned_via_ticket_lease
+- tests/test_gates.py::TestDebtGate::test_rel001_linked_worktree_detected
 attachments: []
 acceptance:
 - text: GIVEN frob check --ticket T-X running in a worktree (or against a ticket with
@@ -7457,12 +7478,76 @@ acceptance:
     demand is reported as an informational note (land owns the bump) not an error;
     GIVEN a plain root-checkout check with no ticket context THEN REL001 errors as
     today
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestDebtGate::test_rel001_land_owned_via_linked_worktree_no_ticket
+  - tests/test_gates.py::TestDebtGate::test_rel001_land_owned_via_ticket_lease
+  - tests/test_gates.py::TestDebtGate::test_rel001_not_land_owned_root_checkout_no_ticket
 threat: null
 component: null
 labels: []
 ```
 Recurring friction (4+ review cycles this drive): REL001's bump-half fires as an error in worktree reviews/implementations because suppression is keyed on the FROB_AGENT env var, which reviewers and some dispatch shells never set -- every reviewer then REJECTs or hand-waives a violation that frob ticket land auto-clears seconds later (auto-bumps landed 0.97.0 through 0.105.0 this week). Derive the suppression from CONTEXT instead of env: if the check runs with --ticket and that ticket holds a worktree lease (or cwd is a linked worktree), the bump is land-owned by definition. Keep the API-diff REPORTING (reviewers should still see 'public API changed (minor)'), demote only the bump demand.
+
+## Done report
+
+## Done report
+
+Changed:
+src/frob/gates/__init__.py::_rel001_bump_suppressed_under_agent (docstring clarified: explicit FROB_AGENT override only)
+src/frob/gates/__init__.py::_rel001_is_linked_worktree (new)
+src/frob/gates/__init__.py::_rel001_land_owned (new)
+src/frob/gates/__init__.py::release_gate (signature: +ticket_id param; branches on FROB_AGENT override vs context-derived land_owned vs plain error path)
+src/frob/gates/__init__.py::_rel001_land_note (new)
+src/frob/gates/__init__.py::_build_jobs (release job now passes st.ticket.id)
+
+Detection design: REL001's bump/changelog demand is land-owned (WARN
+informational note, not ERROR) when EITHER (a) ticket_id's cross-worktree
+lease (resolve_lease, frob.tickets._leases, unchanged/reused) pins to
+root, or (b) root is a linked git worktree (`git rev-parse --git-dir`
+resolves to a worktree-private path distinct from `--git-common-dir`).
+The pre-existing FROB_AGENT env-var override (T-0731) is preserved as a
+SEPARATE, higher-priority path that still fully suppresses (no note at
+all) -- this keeps the two existing T-0731 tests passing unchanged. A
+plain root checkout with no --ticket and no live lease keeps erroring
+exactly as before T-0807.
+
+Evidence (pytest --collect-only confirmed resolving; frob test --base main green):
+tests/test_gates.py::TestDebtGate::test_release_gate_bump_fires_without_frob_agent (pre-existing, still green)
+tests/test_gates.py::TestDebtGate::test_release_gate_bump_suppressed_under_frob_agent (pre-existing, still green)
+tests/test_gates.py::TestDebtGate::test_rel001_not_land_owned_root_checkout_no_ticket (new)
+tests/test_gates.py::TestDebtGate::test_rel001_land_owned_via_linked_worktree_no_ticket (new)
+tests/test_gates.py::TestDebtGate::test_rel001_land_owned_via_ticket_lease (new)
+tests/test_gates.py::TestDebtGate::test_rel001_linked_worktree_detected (new)
+`uv run --frozen pytest tests/test_gates.py -q` -> 352 passed
+`uv run --frozen pytest tests/test_release.py tests/test_ticket_land.py tests/unit/test_ticket_runner_land_release.py -q` -> all passed
+`uv run --frozen frob test --base main` -> [PASS] python exit=0
+
+Filed: none (no out-of-scope work found)
+
+Gates: `uv run --frozen frob check --ticket T-0807 --only <stage>` clean
+(0 errors) for all 5 stage groups (lint, static, gates-fast, gates-native,
+gates-security) after `frob ticket sweep T-0807` and adding
+tests/test_gates.py to scope (reason: T-0807's own verification tests
+live there, alongside the T-0731 tests they extend -- COV002 needed the
+new/changed test methods accounted for).
+
+Deviation: scope was widened by one file, tests/test_gates.py, via
+`frob ticket scope T-0807 --add tests/test_gates.py --reason-file ...`
+per the playbook's normal scope-add mechanism (not a silent edit) --
+the ticket's own acceptance criteria named "Tests" without a declared
+test-file scope entry, and COV002/DRIFT002 confirmed a real gate
+required it.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_gates.py::TestDebtGate::test_release_gate_bump_fires_without_frob_agent` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDebtGate::test_release_gate_bump_suppressed_under_frob_agent` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDebtGate::test_rel001_not_land_owned_root_checkout_no_ticket` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDebtGate::test_rel001_land_owned_via_linked_worktree_no_ticket` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDebtGate::test_rel001_land_owned_via_ticket_lease` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestDebtGate::test_rel001_linked_worktree_detected` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0808 -->
 ```yaml
