@@ -1790,6 +1790,7 @@ class CoverageData(BaseModel):
 <!-- frob:describes src/frob/gates/_models.py::GateError -->
 <!-- frob:describes src/frob/gates/_models.py::CoverageError -->
 <!-- frob:describes src/frob/policy/_models.py::PolicyError -->
+<!-- frob:describes src/frob/gates/__init__.py::GateOrderDriftError -->
 
 - `GateError` -- failure values `run_gates` and its loading steps
   (graph build, ticket queue, lock, git diff) can return.
@@ -1798,6 +1799,16 @@ class CoverageData(BaseModel):
 - `PolicyError` -- failure values `frob.policy`'s rule loading and
   matching paths can return (malformed rule, non-compiling tree-sitter
   query).
+- `GateOrderDriftError` (T-0839) -- raised, not returned as a `Result`:
+  `_merge_canonical_order` hits it when the process/thread pool result
+  dict names a gate absent from `_CANONICAL_GATE_ORDER`. This is
+  unrecoverable wiring drift (a gate registered in `_ALL_GATES`/
+  `_build_jobs` but never added to the order tuple) -- exactly the T-0788
+  incident, where the "compliance" gate briefly had this gap and its
+  findings would have been silently dropped from `frob check` output. A
+  module-level `assert set(_CANONICAL_GATE_ORDER) == _ALL_GATES` next to
+  the order tuple's definition also catches the same drift at import
+  time, before any gate ever runs.
 
 ```python
 class GateError(ErrorSet):

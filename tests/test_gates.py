@@ -7430,13 +7430,17 @@ class TestArchGateThresholds:
 
 
 class TestGateOrderSetEquality:
-    """T-0438: `_CANONICAL_GATE_ORDER` (T-0415's deterministic merge order)
-    and `_ALL_GATES` (the set of every selectable gate name) must name the
-    exact same gates. If a new gate is added to one but not the other, a
-    gate could silently drop from `frob check` output (missing from the
-    canonical order means it never gets merged back in) or `run_gates`
-    could reject a gate name that was never made orderable -- either way a
-    quiet accounting bug, not a loud one, without this set-equality pin."""
+    """T-0438/T-0839: `_CANONICAL_GATE_ORDER` (T-0415's deterministic merge
+    order) and `_ALL_GATES` (the set of every selectable gate name) must
+    name the exact same gates. If a new gate is added to one but not the
+    other, a gate could silently drop from `frob check` output (missing
+    from the canonical order means it never gets merged back in) or
+    `run_gates` could reject a gate name that was never made orderable --
+    either way a quiet accounting bug, not a loud one, without this
+    set-equality pin. T-0839 splits the single set-equality assertion into
+    both drift directions individually so a failure names exactly which
+    side drifted, and adds `_merge_canonical_order`'s own loud-failure
+    behavior alongside it."""
 
     def test_canonical_gate_order_matches_all_gates(self) -> None:
         # frob:tests src/frob/gates/__init__.py::_merge_canonical_order
@@ -7454,6 +7458,81 @@ class TestGateOrderSetEquality:
         assert len(_CANONICAL_GATE_ORDER) == len(set(_CANONICAL_GATE_ORDER)), (
             "_CANONICAL_GATE_ORDER contains a duplicate gate name"
         )
+
+    def test_all_gates_is_subset_of_canonical_order(self) -> None:
+        # frob:tests src/frob/gates/__init__.py::_merge_canonical_order
+        """T-0839 drift direction 1: every gate in `_ALL_GATES` (selectable,
+        can produce real violations) must appear in `_CANONICAL_GATE_ORDER`
+        -- this is exactly the T-0788 "compliance" incident: a gate added to
+        `_ALL_GATES` but never added to the order tuple, whose findings
+        `_merge_canonical_order` would silently drop."""
+        from frob.gates import _ALL_GATES, _CANONICAL_GATE_ORDER
+
+        missing_from_order = _ALL_GATES - set(_CANONICAL_GATE_ORDER)
+        assert not missing_from_order, (
+            f"gate(s) {sorted(missing_from_order)} are in _ALL_GATES but "
+            "missing from _CANONICAL_GATE_ORDER -- their violations would "
+            "be silently dropped from frob check output"
+        )
+
+    def test_canonical_order_names_no_nonexistent_gate(self) -> None:
+        """T-0839 drift direction 2: every gate named in
+        `_CANONICAL_GATE_ORDER` must actually exist in `_ALL_GATES` -- a
+        stale/typo'd order entry naming a gate nothing ever registers is a
+        harmless no-op today, but a silent one, and the inverse drift of
+        the T-0788 incident.
+        # frob:tests src/frob/gates/__init__.py::_merge_canonical_order
+        """
+        from frob.gates import _ALL_GATES, _CANONICAL_GATE_ORDER
+
+        nonexistent = set(_CANONICAL_GATE_ORDER) - _ALL_GATES
+        assert not nonexistent, (
+            f"gate(s) {sorted(nonexistent)} are named in "
+            "_CANONICAL_GATE_ORDER but do not exist in _ALL_GATES -- remove "
+            "the stale entry or register the gate"
+        )
+
+
+class TestMergeCanonicalOrder:
+    """T-0839: `_merge_canonical_order` must raise loudly on a gate name it
+    cannot place, rather than silently dropping that gate's violations --
+    the failure mode hit live when T-0788's "compliance" gate was briefly
+    absent from `_CANONICAL_GATE_ORDER`."""
+
+    @staticmethod
+    def _violation(rule: str) -> Violation:
+        return Violation(
+            rule=rule,
+            severity=Severity.ERROR,
+            file="src/example.py",
+            line=1,
+            message=f"{rule}: synthetic test violation",
+        )
+
+    def test_unknown_gate_key_raises_with_name(self) -> None:
+        # frob:tests src/frob/gates/__init__.py::_merge_canonical_order
+        from frob.gates import GateOrderDriftError, _merge_canonical_order
+
+        raw: dict[str, tuple[Violation, ...]] = {
+            "not_a_real_gate": (self._violation("FAKE001"),)
+        }
+        with pytest.raises(GateOrderDriftError) as exc_info:
+            _merge_canonical_order(raw)
+        assert "not_a_real_gate" in str(exc_info.value)
+
+    def test_all_current_gates_merge_without_raising(self) -> None:
+        """Every name in `_ALL_GATES` must merge cleanly today -- this is
+        the regression guard for the T-0788 incident itself: had this test
+        existed then, it would have failed the moment "compliance" was
+        added to `_ALL_GATES` without a matching order-tuple entry."""
+        # frob:tests src/frob/gates/__init__.py::_merge_canonical_order
+        from frob.gates import _ALL_GATES, _merge_canonical_order
+
+        raw: dict[str, tuple[Violation, ...]] = {
+            name: (self._violation("SYN001"),) for name in _ALL_GATES
+        }
+        merged = _merge_canonical_order(raw)
+        assert len(merged) == len(_ALL_GATES)
 
 
 class TestDoc004ConsoleCommandDrift:

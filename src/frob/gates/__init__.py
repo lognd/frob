@@ -8791,6 +8791,21 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "prework",
 )
 
+# T-0839: import-time guard making the two constants' drift impossible to
+# ship, not just catchable at runtime -- `TestGateOrderSetEquality`
+# (tests/test_gates.py) is the same check exercised as a test, but this
+# assertion fires the instant the module is imported (any `frob` process),
+# not only when the test suite happens to run.
+assert set(_CANONICAL_GATE_ORDER) == _ALL_GATES, (
+    "_CANONICAL_GATE_ORDER and _ALL_GATES have drifted apart -- every gate "
+    "in _ALL_GATES must appear exactly once in _CANONICAL_GATE_ORDER so "
+    "merge order stays deterministic and no gate silently drops from "
+    "frob check output"
+)
+assert len(_CANONICAL_GATE_ORDER) == len(set(_CANONICAL_GATE_ORDER)), (
+    "_CANONICAL_GATE_ORDER contains a duplicate gate name"
+)
+
 
 # frob:ticket T-0415
 @dataclass(frozen=True)
@@ -9198,11 +9213,46 @@ def _submit_process_pool(
     }
 
 
+# frob:doc docs/modules/gates.md#error-types
+class GateOrderDriftError(RuntimeError):
+    """T-0839: raised by `_merge_canonical_order` when `raw` names a gate
+    absent from `_CANONICAL_GATE_ORDER` -- unrecoverable wiring drift
+    between `_ALL_GATES`/`_build_jobs` and the order tuple, never a
+    legitimate runtime condition a caller should catch and continue past."""
+
+    def __init__(self, missing_gates: list[str]) -> None:
+        """Store `missing_gates` and build the loud, actionable message."""
+        self.missing_gates = missing_gates
+        super().__init__(
+            "gate(s) "
+            f"{missing_gates} produced results but are missing from "
+            "_CANONICAL_GATE_ORDER -- add them to the order tuple "
+            "(src/frob/gates/__init__.py) so their violations are not "
+            "silently dropped from frob check output"
+        )
+
+
 def _merge_canonical_order(raw: dict[str, tuple[Violation, ...]]) -> list[Violation]:
     """Flatten `raw` (gate name -> its violations) into one list ordered by
     `_CANONICAL_GATE_ORDER` (T-0415) -- the fixed order the old single-pool
     `_build_jobs` dict used, so output stays identical regardless of which
-    pool produced a given gate's result first."""
+    pool produced a given gate's result first.
+
+    T-0839: `raw` naming a gate absent from `_CANONICAL_GATE_ORDER` is a
+    wiring-drift programmer bug (a gate registered in `_ALL_GATES`/
+    `_build_jobs` but never added to the order tuple), never a legitimate
+    runtime state -- silently dropping that gate's findings is exactly the
+    live incident this ticket exists to close (T-0788's "compliance" gate
+    briefly had this gap). Raise loudly instead of degrading quietly."""
+    unknown = sorted(set(raw) - set(_CANONICAL_GATE_ORDER))
+    if unknown:
+        _log.error(
+            "_merge_canonical_order: gate(s) %s present in raw results but "
+            "missing from _CANONICAL_GATE_ORDER -- their violations would "
+            "be silently dropped",
+            unknown,
+        )
+        raise GateOrderDriftError(unknown)
     violations: list[Violation] = []
     for name in _CANONICAL_GATE_ORDER:
         if name in raw:

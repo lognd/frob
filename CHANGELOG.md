@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.122.0] - unreleased
+
+- T-0839: gates: _merge_canonical_order silently drops violations of gates missing from order tuple (hit live via T-0788)
+
 ## [0.121.0] - unreleased
 
 - T-0746: protocol verification gate: state-requirement + invalid-transition errors with recorded language-excuse discharges
