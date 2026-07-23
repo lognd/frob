@@ -30,15 +30,87 @@ Design constraints from the ticket, in force for every rule below:
   readings of the identical structural signal.
 
 Registry coverage (T-0332's plan enumerates 8 hallmark->pattern rows and 5
-anti-pattern->escape rows; this module implements 7 of the 13 below with a
-real, precision-checked detector each). The remaining 6 (`incompatible-
-interface-bridging -> Adapter`, `expensive-object-reuse -> Flyweight/pool`,
-`manual-callback-list -> Observer`, `anemic-domain-model -> move behavior
-to data`, `poltergeist/lava-flow -> delete`, `sequential-coupling ->
-explicit state`) need fuzzier signals that risk the STRONG-HALLMARK-ONLY
-constraint above without a larger detector investment; they are
-intentionally deferred, not silently dropped -- see `tickets.md`'s T-0332
-Done report and T-draft-4fb8deee (filed follow-up ticket).
+anti-pattern->escape rows; T-0332 shipped 7 of the 13 with a real,
+precision-checked detector each). T-0605 (phase 2) picks up the 6 T-0332
+deferred and resolves each on its own merits rather than shipping a
+uniform "fuzzier signal" pass:
+
+- `interface-translate -> Adapter`: SHIPPED (`_check_interface_translate`).
+  Reuses `wrap-delegate`'s "stores one constructor-param object as
+  `self.<attr>`" shape but requires the opposite call-name relationship --
+  >=3 methods whose entire body is a single call to a DIFFERENTLY-named
+  method on that inner object (a same-name pass-through is `wrap-delegate`
+  -> Decorator; a renamed/translated call is the Adapter hallmark). The two
+  detectors are disjoint PER-METHOD ONLY (a same-name delegating method can
+  never also count as a translating one) -- NOT per-class. A class that
+  mixes both shapes (some methods same-name pass-through, a separate >=3
+  methods translating) legitimately fires BOTH `wrap-delegate` and
+  `interface-translate`: each recommendation is a true, independent
+  structural fact about a disjoint SUBSET of that class's methods, not a
+  claim about the whole class, so two suggestions naming two different
+  method groups is not a contradiction -- see
+  `test_mixed_delegate_and_translate_methods_fires_both` (reviewer round 1,
+  T-0605).
+- `manual-callback-list -> Observer`: SHIPPED
+  (`_check_manual_callback_list`). Requires THREE co-occurring structural
+  facts in one class: an empty-list attribute initialized in `__init__`,
+  a distinct method that appends to it, and a distinct method that
+  iterates it calling each element -- the register/notify shape a hand-
+  rolled Observer always has. A plain list attribute used for storage
+  only (append, no notify loop) or iterated without ever being appended
+  to does not fire.
+- `anemic-accessors -> move behavior to data` (anti-pattern-escape):
+  SHIPPED (`_check_anemic_accessors`). Requires >=3 non-`__init__`,
+  non-dunder methods where EVERY one is a trivial single-statement getter
+  (`return self.<attr>`, no computation) or setter (`self.<attr> =
+  <param>`) -- a class that does nothing but move data in and out, the
+  textbook anemic-domain-model hallmark. One real method with actual
+  logic (a conditional, a loop, a computed expression) anywhere in the
+  class disqualifies it.
+
+The remaining 3 (`expensive-object-reuse -> Flyweight/pool`,
+`poltergeist/lava-flow -> delete`, `sequential-coupling -> explicit
+state`) are recorded as reasoned NOT-CHECKABLE, not silently dropped:
+
+- Flyweight/pool: the hallmark is "many equivalent, expensive-to-
+  construct objects created where one shared/pooled instance would do."
+  There is no single-file structural signal for "expensive to construct"
+  or "equivalent" without value/dataflow analysis this package does not
+  have (repeated `ClassName(...)` calls in a loop are indistinguishable
+  from an ordinary loop building N *different* objects without knowing
+  whether the constructor arguments are load-bearing) -- any tree-sitter-
+  only heuristic here would be a coin flip, which is worse than silence
+  per the STRONG-HALLMARK-ONLY constraint.
+- Poltergeist/lava-flow: the catalog itself notes poltergeist is "dup of
+  Middle Man, at extreme" (docs/design/architecture-check-catalog.md) --
+  its degenerate case (a class with essentially zero methods beyond a
+  pure-forwarding one or two) is not distinguishable in practice from a
+  small, well-designed adapter/wrapper without knowing whether the class
+  is actually load-bearing elsewhere, and "nobody dares remove it"
+  (lava-flow's half of this combined registry row) requires whole-
+  program reachability/usage evidence (a dead-code/call-graph analysis),
+  not a per-file structural walk -- outside this module's scope.
+- Sequential coupling: the catalog notes it is "dup of Connascence of
+  Execution." A structural proxy exists in principle (a private boolean
+  flag set by one method and checked-and-raised by another, enforcing
+  call order) but is easily confused with ordinary guard-clause
+  validation (`if not self._ready: raise ...` is extremely common and
+  not itself evidence of a *coupling* problem versus a legitimate
+  precondition check) -- distinguishing the two without tracking actual
+  call-order violations across callers would require the same call-graph
+  investment as lava-flow above, not a bigger detector, a DIFFERENT kind
+  of analysis this package does not yet do.
+
+`docs/design/registry/patterns.yaml`'s corresponding rows (`GOF-ADAPTER`,
+`GOF-FLYWEIGHT`, `GOF-OBSERVER`, `PAT-TRAP-20-ANEMIC-DOMAIN-GOD-OBJECT-
+LAVA-FLOW`) all correctly stay `out_of_scope:advisory-design-pattern-
+recommendation` regardless of whether a detector exists for their
+hallmark -- T-0332's own precedent (its 7 shipped detectors' rows carry
+the identical disposition) establishes that this registry tracks whether
+a row is subject to enforceable GATE tracking, not whether `frob.arch`
+happens to implement an advisory recommender for it; a GoF/trap catalog
+entry is inherently advisory-only either way. See `tickets.md`'s T-0605
+Done report for the full per-pattern reasoning.
 """
 
 from __future__ import annotations
@@ -80,6 +152,18 @@ _MIN_SCATTERED_SITES = 3
 #: Minimum delegating methods (single-statement `return self._inner.foo(...)`
 #: bodies) before a class counts as a genuine wrap-and-delegate shape.
 _MIN_DELEGATE_METHODS = 3
+
+#: Minimum translating methods (single-statement calls to a DIFFERENTLY
+#: named method on the stored inner object) before a class counts as the
+#: Adapter hallmark (T-0605) -- mirrors `_MIN_DELEGATE_METHODS`'s floor for
+#: the same-name `wrap-delegate` shape.
+_MIN_TRANSLATE_METHODS = 3
+
+#: Minimum non-`__init__`, non-dunder methods a class must have before the
+#: "every method is a trivial getter/setter" anemic-domain-model hallmark
+#: fires (T-0605) -- a one- or two-method value holder is not yet the
+#: "moved all behavior elsewhere" smell the escape targets.
+_MIN_ANEMIC_ACCESSORS = 3
 
 
 # frob:doc docs/modules/arch.md#design-pattern-registry
@@ -212,6 +296,63 @@ PATTERN_REGISTRY: tuple[PatternRuleSpec, ...] = (
             "replace the raw string with an Enum/Literal type (or a small "
             "value-object wrapper) so invalid values are a type error, not a "
             "silent no-op branch"
+        ),
+        languages=("python",),
+    ),
+    PatternRuleSpec(
+        rule_id="interface-translate",
+        direction="pattern",
+        hallmark=(
+            "a class wraps one inner object with mostly DIFFERENTLY-named "
+            "translating methods"
+        ),
+        response="Adapter",
+        force=(
+            "callers need this object's interface but the only available "
+            "implementation speaks a different, incompatible one"
+        ),
+        sketch=(
+            "keep the wrapper implementing the CALLER's expected interface "
+            "and translate each call into the inner object's own method "
+            "names, isolating the incompatibility at one seam"
+        ),
+        languages=("python",),
+    ),
+    PatternRuleSpec(
+        rule_id="manual-callback-list",
+        direction="pattern",
+        hallmark=(
+            "a class hand-manages a list of callbacks: appended in one "
+            "method, iterated and invoked in another"
+        ),
+        response="Observer",
+        force=(
+            "subscribe/notify bookkeeping is ad hoc instead of a named, "
+            "reusable subject/listener contract"
+        ),
+        sketch=(
+            "formalize the list as a Subject with add_observer/notify (or "
+            "an explicit Listener protocol) so the register/notify contract "
+            "is named and reusable instead of an anonymous list"
+        ),
+        languages=("python",),
+    ),
+    PatternRuleSpec(
+        rule_id="anemic-accessors",
+        direction="escape",
+        hallmark=(
+            "every method on the class is a trivial getter or setter, "
+            "with no real behavior anywhere"
+        ),
+        response="move behavior to data (rich domain model)",
+        force=(
+            "logic that belongs with this data lives scattered in whatever "
+            "callers happen to read/write these fields instead"
+        ),
+        sketch=(
+            "move the operations callers perform on this data onto the "
+            "class itself as real methods, so the object enforces its own "
+            "invariants instead of exposing raw field access"
         ),
         languages=("python",),
     ),
@@ -709,6 +850,331 @@ def _check_stringly_typed(tree: object, rel: str, out: list[ArchSuggestion]) -> 
             rel,
             if_stmt.start_point[0] + 1,
             f"`{lhs}` compared against {len(literals)} string literals",
+            out,
+        )
+
+
+def _translation_target(func_node: Node, inner_attr: str, own_name: str) -> bool:
+    """Whether `func_node`'s ENTIRE body is a single call (bare, or wrapped
+    in a `return`) to `self.<inner_attr>.<other_name>(...)` where
+    `other_name != own_name` -- the Adapter hallmark's per-method signal
+    (T-0605), the mirror image of `_delegation_target`'s same-name check.
+    Reuses `_delegation_target`'s statement-unwrapping shape so the two
+    detectors read identically except for the name comparison."""
+    stmts = _method_body_stmts(func_node)
+    if len(stmts) != 1:
+        return False
+    stmt = stmts[0]
+    call: Node | None = None
+    if stmt.type == "return_statement":
+        val = stmt.named_children[0] if stmt.named_children else None
+        if val is not None and val.type == "call":
+            call = val
+    elif stmt.type == "call":
+        call = stmt
+    elif stmt.type == "expression_statement":
+        inner = stmt.named_children[0] if stmt.named_children else None
+        if inner is not None and inner.type == "call":
+            call = inner
+    if call is None:
+        return False
+    func = _child(call, "function")
+    if func is None or func.type != "attribute":
+        return False
+    obj = _child(func, "object")
+    if obj is None or _node_text(obj) != f"self.{inner_attr}":
+        return False
+    attr_node = _child(func, "attribute")
+    called_name = _node_text(attr_node) if attr_node is not None else ""
+    return bool(called_name) and called_name != own_name
+
+
+# frob:tests tests/unit/test_arch.py::TestPatternRecommender.test_translating_wrapper_recommends_adapter  # noqa: E501
+# frob:tests tests/unit/test_arch.py::TestPatternRecommender.test_mixed_delegate_and_translate_methods_fires_both  # noqa: E501
+def _check_interface_translate(
+    tree: object, rel: str, out: list[ArchSuggestion]
+) -> None:
+    """HALLMARK->PATTERN (T-0605): a class that stores one constructor-
+    parameter object as `self.<attr>` and has >=3 methods whose entire
+    body is a single call to a DIFFERENTLY-named method on that attribute
+    recommends Adapter -- the renamed-call shape that distinguishes
+    "bridging an incompatible interface" from `wrap-delegate`'s same-name
+    pass-through (-> Decorator). A method that same-name delegates never
+    also counts as translating -- the two hallmarks are disjoint PER-
+    METHOD, never per-class: a class with a same-name-delegating subset
+    AND a separate >=3-method translating subset legitimately fires BOTH
+    `wrap-delegate` and `interface-translate` (two independent findings
+    about two disjoint method groups, not a contradictory claim about the
+    whole class) -- see
+    `test_mixed_delegate_and_translate_methods_fires_both` (reviewer round
+    1, T-0605)."""
+    t: Tree = cast("Tree", tree)
+    for c in t.root_node.children:
+        if c.type != "class_definition":
+            continue
+        body = _child(c, "body")
+        if body is None:
+            continue
+        methods = [m for m in body.named_children if m.type == "function_definition"]
+        init = next(
+            (m for m in methods if _node_text(_child(m, "name") or m) == "__init__"),
+            None,
+        )
+        if init is None:
+            continue
+        inner_attr = _find_inner_attr(init)
+        if inner_attr is None:
+            continue
+        n_translating = 0
+        for m in methods:
+            name_node = _child(m, "name")
+            mname = _node_text(name_node) if name_node else ""
+            if mname in ("__init__", ""):
+                continue
+            if _translation_target(m, inner_attr, mname):
+                n_translating += 1
+        if n_translating < _MIN_TRANSLATE_METHODS:
+            continue
+        name_node = _child(c, "name")
+        cname = _node_text(name_node) if name_node else "?"
+        subject = (
+            f"class `{cname}` wraps `self.{inner_attr}`"
+            f" with {n_translating} renamed translating methods"
+        )
+        _emit(
+            "interface-translate",
+            "pattern-recommendation",
+            rel,
+            c.start_point[0] + 1,
+            subject,
+            out,
+        )
+
+
+def _empty_list_attrs(init_func: Node) -> set[str]:
+    """Every `self.<attr> = []` (bare empty-list-literal) assignment target
+    inside `init_func`'s body -- the manual-callback-list hallmark's
+    "backing store" signal (T-0605)."""
+    attrs: set[str] = set()
+    for stmt in _method_body_stmts(init_func):
+        if stmt.type == "assignment":
+            assign = stmt
+        elif stmt.type == "expression_statement":
+            assign = stmt.named_children[0] if stmt.named_children else None
+        else:
+            continue
+        if assign is None or assign.type != "assignment":
+            continue
+        target = _child(assign, "left")
+        value = _child(assign, "right")
+        if target is None or value is None:
+            continue
+        if target.type != "attribute" or value.type != "list" or value.named_children:
+            continue
+        obj = _child(target, "object")
+        if obj is None or _node_text(obj) != "self":
+            continue
+        attr_node = _child(target, "attribute")
+        if attr_node is not None:
+            attrs.add(_node_text(attr_node))
+    return attrs
+
+
+def _method_appends_to(func_node: Node, attr: str) -> bool:
+    """Whether any `call` node under `func_node`'s body is a bare
+    `self.<attr>.append(...)` -- the manual-callback-list hallmark's
+    "register" signal (T-0605), searched anywhere in the method (not just
+    a single top-level statement, unlike the delegate/translate checks)."""
+
+    def _walk(n: Node) -> bool:
+        if n.type == "call":
+            func = _child(n, "function")
+            if (
+                func is not None
+                and func.type == "attribute"
+                and _node_text(func) == f"self.{attr}.append"
+            ):
+                return True
+        return any(_walk(c) for c in n.children)
+
+    body = _child(func_node, "body")
+    return body is not None and _walk(body)
+
+
+def _method_notifies_from(func_node: Node, attr: str) -> bool:
+    """Whether `func_node`'s body contains a `for <var> in self.<attr>:`
+    loop whose body calls `<var>` itself or a method on `<var>` -- the
+    manual-callback-list hallmark's "notify" signal (T-0605)."""
+
+    def _walk(n: Node) -> bool:
+        if n.type == "for_statement":
+            right = _child(n, "right")
+            if right is not None and _node_text(right) == f"self.{attr}":
+                left = _child(n, "left")
+                loop_var = _node_text(left) if left is not None else None
+                loop_body = _child(n, "body")
+                if (
+                    loop_var
+                    and loop_body is not None
+                    and _calls_var(loop_body, loop_var)
+                ):
+                    return True
+        return any(_walk(c) for c in n.children)
+
+    body = _child(func_node, "body")
+    return body is not None and _walk(body)
+
+
+def _calls_var(node: Node, var: str) -> bool:
+    """Whether `node`'s subtree contains a `call` whose callee is the bare
+    identifier `var` (`var(...)`) or an attribute access rooted at `var`
+    (`var.notify(...)`) -- either shape counts as "invoking" the loop
+    variable for `_method_notifies_from`'s purposes (T-0605)."""
+    for c in node.children:
+        if c.type == "call":
+            func = _child(c, "function")
+            if func is not None:
+                text = _node_text(func)
+                if text == var or text.startswith(f"{var}."):
+                    return True
+        if _calls_var(c, var):
+            return True
+    return False
+
+
+# frob:tests tests/unit/test_arch.py::TestPatternRecommender.test_manual_callback_list_recommends_observer  # noqa: E501
+def _check_manual_callback_list(
+    tree: object, rel: str, out: list[ArchSuggestion]
+) -> None:
+    """HALLMARK->PATTERN (T-0605): a class that initializes `self.<attr> =
+    []` in `__init__`, has a DISTINCT method that appends to it, and a
+    DISTINCT method that iterates it calling each element recommends
+    Observer -- the register/notify shape a hand-rolled callback list
+    always has. Any one or two of the three facts alone (a plain list
+    attribute with only appends, or an iterate-and-call loop over a list
+    nothing ever appends to) is ordinary list usage and must not fire."""
+    t: Tree = cast("Tree", tree)
+    for c in t.root_node.children:
+        if c.type != "class_definition":
+            continue
+        body = _child(c, "body")
+        if body is None:
+            continue
+        methods = [m for m in body.named_children if m.type == "function_definition"]
+        init = next(
+            (m for m in methods if _node_text(_child(m, "name") or m) == "__init__"),
+            None,
+        )
+        if init is None:
+            continue
+        for attr in sorted(_empty_list_attrs(init)):
+            appenders = [
+                m for m in methods if m is not init and _method_appends_to(m, attr)
+            ]
+            notifiers = [
+                m for m in methods if m is not init and _method_notifies_from(m, attr)
+            ]
+            if not appenders or not notifiers:
+                continue
+            name_node = _child(c, "name")
+            cname = _node_text(name_node) if name_node else "?"
+            subject = f"class `{cname}` manages `self.{attr}` via append+notify-loop"
+            _emit(
+                "manual-callback-list",
+                "pattern-recommendation",
+                rel,
+                c.start_point[0] + 1,
+                subject,
+                out,
+            )
+
+
+def _is_trivial_getter(func_node: Node) -> bool:
+    """Whether `func_node` is a bare `def f(self): return self.<attr>`
+    (exactly one parameter, `self`, and a single-statement body that
+    returns an attribute of `self` with no computation) -- the anemic-
+    domain-model hallmark's "getter" half (T-0605)."""
+    if _init_params(func_node):
+        return False
+    stmts = _method_body_stmts(func_node)
+    if len(stmts) != 1 or stmts[0].type != "return_statement":
+        return False
+    val = stmts[0].named_children[0] if stmts[0].named_children else None
+    if val is None or val.type != "attribute":
+        return False
+    obj = _child(val, "object")
+    return obj is not None and _node_text(obj) == "self"
+
+
+def _is_trivial_setter(func_node: Node) -> bool:
+    """Whether `func_node` is a bare `def f(self, x): self.<attr> = x`
+    (exactly one non-`self` parameter, single-statement body that assigns
+    that exact parameter straight onto a `self.<attr>` with no
+    computation) -- the anemic-domain-model hallmark's "setter" half
+    (T-0605)."""
+    params = _init_params(func_node)
+    if len(params) != 1 or params[0].type != "identifier":
+        return False
+    param_name = _node_text(params[0])
+    stmts = _method_body_stmts(func_node)
+    if len(stmts) != 1:
+        return False
+    stmt = stmts[0]
+    if stmt.type == "expression_statement":
+        stmt = stmt.named_children[0] if stmt.named_children else stmt
+    if stmt is None or stmt.type != "assignment":
+        return False
+    target = _child(stmt, "left")
+    value = _child(stmt, "right")
+    if target is None or value is None:
+        return False
+    if target.type != "attribute" or value.type != "identifier":
+        return False
+    obj = _child(target, "object")
+    return (
+        obj is not None
+        and _node_text(obj) == "self"
+        and _node_text(value) == param_name
+    )
+
+
+# frob:tests tests/unit/test_arch.py::TestPatternRecommender.test_anemic_accessors_recommends_move_behavior  # noqa: E501
+def _check_anemic_accessors(tree: object, rel: str, out: list[ArchSuggestion]) -> None:
+    """ANTI-PATTERN->ESCAPE (T-0605): a class with >=3 non-`__init__`,
+    non-dunder methods where EVERY one is a trivial getter or setter (no
+    real computation anywhere) recommends moving behavior onto the class
+    (the anemic-domain-model escape). A single method with any real logic
+    (a conditional, a loop, a computed expression, multiple statements)
+    disqualifies the whole class -- this must never fire on a class that
+    does real work alongside a few accessors."""
+    t: Tree = cast("Tree", tree)
+    for c in t.root_node.children:
+        if c.type != "class_definition":
+            continue
+        body = _child(c, "body")
+        if body is None:
+            continue
+        methods = [m for m in body.named_children if m.type == "function_definition"]
+        candidates = []
+        for m in methods:
+            name_node = _child(m, "name")
+            mname = _node_text(name_node) if name_node else ""
+            if mname == "__init__" or mname.startswith("__"):
+                continue
+            candidates.append(m)
+        if len(candidates) < _MIN_ANEMIC_ACCESSORS:
+            continue
+        if not all(_is_trivial_getter(m) or _is_trivial_setter(m) for m in candidates):
+            continue
+        name_node = _child(c, "name")
+        cname = _node_text(name_node) if name_node else "?"
+        subject = f"class `{cname}` ({len(candidates)} trivial accessor methods)"
+        _emit(
+            "anemic-accessors",
+            "anti-pattern-escape",
+            rel,
+            c.start_point[0] + 1,
+            subject,
             out,
         )
 

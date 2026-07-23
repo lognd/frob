@@ -162,7 +162,7 @@
     "src/frob/arch/_normalized.py::NormalizedParam": "c08f1ba0928c24ee67d5afe49e66b67c98b966f4783f8a095c2459b8aa633160",
     "src/frob/arch/_normalized.py::NormalizedRaise": "15237e2a55a5689a520f3debf29a38dd873eab2ecda48fcff2256a9ad7c3cc1c",
     "src/frob/arch/_normalized.py::NormalizedReturn": "33f1d3860bbf60ff992304d4b6b44d86a896f661ce56f0e74032f54251c6ccca",
-    "src/frob/arch/_patterns.py::PATTERN_REGISTRY": "11d44025d91b71685f64c9eafc21f15747c8195c5af419b2a3dbb9c427c8dc06",
+    "src/frob/arch/_patterns.py::PATTERN_REGISTRY": "953f3036973fd20a386999750e3ebe9e263e3566e605f7f494b440f7a68f4723",
     "src/frob/arch/_patterns.py::PatternRuleSpec": "5f94e228567e93c34435e364027092ea5cda8ec14681b79096d00025f853ce30",
     "src/frob/arch/_patterns.py::iter_type_switch_chains": "7e5926d5232dcb885fe1101948398b94d92b709a68f166a49e9d1cc4585273c9",
     "src/frob/arch/_patterns.py::new_construction_accumulator": "1bfb532deb6e2cc7913688f782d7691e7b3a2124da47155ebc7a97ce9d302c52",
@@ -1415,5 +1415,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.127.0"
+  "version": "0.128.0"
 }

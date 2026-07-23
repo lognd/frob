@@ -2,7 +2,7 @@
 
 `analyze_project` walks a repo and flags long functions, god classes, deep
 nesting, high coupling, large files, shared-signature abstraction
-opportunities, (T-0332) advisory design-pattern recommendations /
+opportunities, (T-0332/T-0605) advisory design-pattern recommendations /
 anti-pattern escapes, and (T-0617) OCP smells (type-dispatch, non-
 exhaustive enum match). The per-language rule sets live in cohesive
 submodules (`_python`, `_cpp`, `_patterns`, `_ocp`); this package module
@@ -286,11 +286,12 @@ def _run_python_checks(
     list, must never be mistaken for a genuine dispatch site (the
     reviewer-demonstrated false-suppression path this exclusion closes).
 
-    T-0332: the design-pattern recommender's per-file detectors
+    T-0332/T-0605: the design-pattern recommender's per-file detectors
     (`type-switch`, `state-field-chain`, `telescoping-ctor`,
-    `wrap-delegate`, `stringly-typed`) skip test files for the same reason
-    as the other advisory categories above; `all_constructions` (the
-    `scattered-construction` cross-file corpus) is likewise only
+    `wrap-delegate`, `stringly-typed`, `interface-translate`,
+    `manual-callback-list`, `anemic-accessors`) skip test files for the
+    same reason as the other advisory categories above; `all_constructions`
+    (the `scattered-construction` cross-file corpus) is likewise only
     accumulated from non-test files.
 
     T-0617: `type-dispatch-smell` and `non-exhaustive-enum-match` (the OCP
@@ -321,6 +322,9 @@ def _run_python_checks(
         _patterns._check_telescoping_ctor(tree, rel, suggestions)
         _patterns._check_wrap_delegate(tree, rel, suggestions)
         _patterns._check_stringly_typed(tree, rel, suggestions)
+        _patterns._check_interface_translate(tree, rel, suggestions)
+        _patterns._check_manual_callback_list(tree, rel, suggestions)
+        _patterns._check_anemic_accessors(tree, rel, suggestions)
         _patterns._collect_file_constructions(tree, rel, all_constructions)
         _ocp._check_type_dispatch_smell(tree, rel, suggestions)
         _ocp._check_non_exhaustive_enum_match(tree, rel, suggestions)

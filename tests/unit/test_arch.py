@@ -1098,6 +1098,272 @@ class TestPatternRecommender:
         assert "pattern-recommendation" not in categories
         assert "anti-pattern-escape" not in categories
 
+    # -- T-0605: interface-translate -> Adapter -----------------------------
+
+    def test_translating_wrapper_recommends_adapter(self, tmp_path: Path) -> None:
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "legacy_adapter.py").write_text(
+            "class LegacyAdapter:\n"
+            "    def __init__(self, legacy):\n"
+            "        self._legacy = legacy\n"
+            "\n"
+            "    def read(self):\n"
+            "        return self._legacy.fetch_old()\n"
+            "\n"
+            "    def write(self, data):\n"
+            "        return self._legacy.store_old(data)\n"
+            "\n"
+            "    def close(self):\n"
+            "        return self._legacy.shutdown_old()\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "pattern-recommendation"]
+        assert any("Adapter" in s.message for s in hits)
+
+    def test_same_name_wrapper_not_flagged_adapter(self, tmp_path: Path) -> None:
+        # Disjointness proof: a SAME-name pass-through wrapper (3+ methods)
+        # is `wrap-delegate` -> Decorator, never `interface-translate` ->
+        # Adapter -- the two hallmarks must never double-fire on identical
+        # call-name shapes.
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "wrapper.py").write_text(
+            "class LoggingList:\n"
+            "    def __init__(self, inner):\n"
+            "        self._inner = inner\n"
+            "\n"
+            "    def append(self):\n"
+            "        return self._inner.append()\n"
+            "\n"
+            "    def pop(self):\n"
+            "        return self._inner.pop()\n"
+            "\n"
+            "    def clear(self):\n"
+            "        return self._inner.clear()\n"
+        )
+        result = analyze_project(src_dir)
+        assert not any(
+            "Adapter" in s.message
+            for s in result.suggestions
+            if s.category == "pattern-recommendation"
+        )
+
+    def test_two_translating_methods_not_flagged_adapter(self, tmp_path: Path) -> None:
+        # STRONG-HALLMARK-ONLY: only 2 translating methods (below
+        # _MIN_TRANSLATE_METHODS=3) is an ordinary small wrapper, not the
+        # interface-translate hallmark -- must not fire Adapter.
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "small_adapter.py").write_text(
+            "class SmallAdapter:\n"
+            "    def __init__(self, legacy):\n"
+            "        self._legacy = legacy\n"
+            "\n"
+            "    def read(self):\n"
+            "        return self._legacy.fetch_old()\n"
+            "\n"
+            "    def write(self, data):\n"
+            "        return self._legacy.store_old(data)\n"
+        )
+        result = analyze_project(src_dir)
+        assert not any(
+            "Adapter" in s.message
+            for s in result.suggestions
+            if s.category == "pattern-recommendation"
+        )
+
+    def test_mixed_delegate_and_translate_methods_fires_both(
+        self, tmp_path: Path
+    ) -> None:
+        # Disjointness pin (reviewer round 1, T-0605): `wrap-delegate` and
+        # `interface-translate` are disjoint PER-METHOD ONLY, never
+        # per-class. A class with a same-name-delegating subset (3
+        # methods) AND a separate translating subset (3 differently-named
+        # methods) on the SAME inner attribute legitimately fires BOTH
+        # Decorator and Adapter -- two true findings about two disjoint
+        # method groups, not a contradiction. This is intentional,
+        # accepted behavior, not a bug to suppress.
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "mixed.py").write_text(
+            "class MixedWrapper:\n"
+            "    def __init__(self, inner):\n"
+            "        self._inner = inner\n"
+            "\n"
+            "    def append(self):\n"
+            "        return self._inner.append()\n"
+            "\n"
+            "    def pop(self):\n"
+            "        return self._inner.pop()\n"
+            "\n"
+            "    def clear(self):\n"
+            "        return self._inner.clear()\n"
+            "\n"
+            "    def read(self):\n"
+            "        return self._inner.fetch_old()\n"
+            "\n"
+            "    def write(self, data):\n"
+            "        return self._inner.store_old(data)\n"
+            "\n"
+            "    def close(self):\n"
+            "        return self._inner.shutdown_old()\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "pattern-recommendation"]
+        assert any("Decorator" in s.message for s in hits)
+        assert any("Adapter" in s.message for s in hits)
+
+    # -- T-0605: manual-callback-list -> Observer ----------------------------
+
+    def test_manual_callback_list_recommends_observer(self, tmp_path: Path) -> None:
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "bus.py").write_text(
+            "class EventBus:\n"
+            "    def __init__(self):\n"
+            "        self._listeners = []\n"
+            "\n"
+            "    def subscribe(self, cb):\n"
+            "        self._listeners.append(cb)\n"
+            "\n"
+            "    def publish(self):\n"
+            "        for cb in self._listeners:\n"
+            "            cb()\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "pattern-recommendation"]
+        assert any("Observer" in s.message for s in hits)
+
+    def test_append_only_list_not_flagged_observer(self, tmp_path: Path) -> None:
+        # No notify loop -- an ordinary list attribute that is only ever
+        # appended to (a plain accumulator) must not fire Observer.
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "log.py").write_text(
+            "class Log:\n"
+            "    def __init__(self):\n"
+            "        self._entries = []\n"
+            "\n"
+            "    def record(self, entry):\n"
+            "        self._entries.append(entry)\n"
+        )
+        result = analyze_project(src_dir)
+        assert not any(
+            "Observer" in s.message
+            for s in result.suggestions
+            if s.category == "pattern-recommendation"
+        )
+
+    def test_iterate_without_append_not_flagged_observer(self, tmp_path: Path) -> None:
+        # A notify-shaped loop over a list nothing ever appends to (e.g. a
+        # fixed, pre-populated list) must not fire Observer either -- both
+        # the register AND notify facts are required.
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "fixed.py").write_text(
+            "class FixedHandlers:\n"
+            "    def __init__(self):\n"
+            "        self._handlers = []\n"
+            "\n"
+            "    def run_all(self):\n"
+            "        for h in self._handlers:\n"
+            "            h()\n"
+        )
+        result = analyze_project(src_dir)
+        assert not any(
+            "Observer" in s.message
+            for s in result.suggestions
+            if s.category == "pattern-recommendation"
+        )
+
+    # -- T-0605: anemic-accessors -> move behavior to data -------------------
+
+    def test_anemic_accessors_recommends_move_behavior(self, tmp_path: Path) -> None:
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "record.py").write_text(
+            "class CustomerRecord:\n"
+            "    def __init__(self, name, email, balance):\n"
+            "        self._name = name\n"
+            "        self._email = email\n"
+            "        self._balance = balance\n"
+            "\n"
+            "    def get_name(self):\n"
+            "        return self._name\n"
+            "\n"
+            "    def set_name(self, name):\n"
+            "        self._name = name\n"
+            "\n"
+            "    def get_email(self):\n"
+            "        return self._email\n"
+            "\n"
+            "    def set_balance(self, balance):\n"
+            "        self._balance = balance\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "anti-pattern-escape"]
+        assert any("move behavior to data" in s.message for s in hits)
+
+    def test_class_with_real_method_not_flagged_anemic(self, tmp_path: Path) -> None:
+        # One real method (actual computation) alongside several trivial
+        # accessors must disqualify the whole class -- a mixed
+        # behavior-plus-accessors class is not anemic.
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "account.py").write_text(
+            "class Account:\n"
+            "    def __init__(self, name, email, balance):\n"
+            "        self._name = name\n"
+            "        self._email = email\n"
+            "        self._balance = balance\n"
+            "\n"
+            "    def get_name(self):\n"
+            "        return self._name\n"
+            "\n"
+            "    def set_name(self, name):\n"
+            "        self._name = name\n"
+            "\n"
+            "    def get_email(self):\n"
+            "        return self._email\n"
+            "\n"
+            "    def apply_interest(self, rate):\n"
+            "        if rate > 0:\n"
+            "            self._balance = self._balance * (1 + rate)\n"
+            "        return self._balance\n"
+        )
+        result = analyze_project(src_dir)
+        assert not any(
+            "move behavior to data" in s.message
+            for s in result.suggestions
+            if s.category == "anti-pattern-escape"
+        )
+
+    def test_two_accessor_class_not_flagged_anemic(self, tmp_path: Path) -> None:
+        # STRONG-HALLMARK-ONLY: only 2 accessor methods (below
+        # _MIN_ANEMIC_ACCESSORS=3) is an ordinary small value holder, not
+        # the anemic-domain-model hallmark -- must not fire.
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "point.py").write_text(
+            "class Point:\n"
+            "    def __init__(self, x, y):\n"
+            "        self._x = x\n"
+            "        self._y = y\n"
+            "\n"
+            "    def get_x(self):\n"
+            "        return self._x\n"
+            "\n"
+            "    def get_y(self):\n"
+            "        return self._y\n"
+        )
+        result = analyze_project(src_dir)
+        assert not any(
+            "move behavior to data" in s.message
+            for s in result.suggestions
+            if s.category == "anti-pattern-escape"
+        )
+
 
 # ---------------------------------------------------------------------------
 # T-0609: normalized code model + adapter protocol

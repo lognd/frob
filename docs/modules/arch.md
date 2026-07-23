@@ -24,8 +24,8 @@ has no `elif language == "..."` branch for them yet.
 | `deep-nesting` | a function whose `if`/`for`/`while`/`try`/`with` nesting exceeds `max_nesting_depth` | suggestion |
 | `large-file` | any file longer than `max_file_lines` | info |
 | `abstraction-opportunity` | 3+ Python functions across the project sharing the same annotated parameter/return-type signature, EXCLUDING intentional dispatch/validator families (see below) | suggestion |
-| `pattern-recommendation` | a strong structural HALLMARK (isinstance chain, state-field chain, telescoping constructor, scattered construction, wrap-and-delegate class) matches a registered `frob.arch._patterns` rule | suggestion |
-| `anti-pattern-escape` | a strong structural ANTI-PATTERN (god object, stringly-typed comparison chain) matches a registered `frob.arch._patterns` rule | suggestion |
+| `pattern-recommendation` | a strong structural HALLMARK (isinstance chain, state-field chain, telescoping constructor, scattered construction, wrap-and-delegate class, translating-wrapper class, manual callback list) matches a registered `frob.arch._patterns` rule | suggestion |
+| `anti-pattern-escape` | a strong structural ANTI-PATTERN (god object, stringly-typed comparison chain, all-trivial-accessor class) matches a registered `frob.arch._patterns` rule | suggestion |
 | `low-cohesion-class` (ARCH101, T-0616) | a class's field-using methods split into 2+ disjoint field-usage components (LCOM4) -- written once against the normalized model, fires across languages | warning |
 | `god-module` (ARCH102, T-0616) | a module's 10+ top-level exports partition into 3+ disjoint naming/usage clusters -- written once against the normalized model | warning |
 | `mixed-concern-function` (ARCH103, T-0616) | one function body mixes an I/O call, a string-formatting call, and 2+ of its own decision points -- written once against the normalized model | suggestion |
@@ -193,7 +193,7 @@ still flags (found via body-similarity despite its generic `(str) ->
 bool` signature) and specific-signature families like the `(Path) ->
 tuple[Violation, ...]` gate group still flag in full.
 
-### Design-pattern recommender: `pattern-recommendation` / `anti-pattern-escape` (T-0332)
+### Design-pattern recommender: `pattern-recommendation` / `anti-pattern-escape` (T-0332/T-0605)
 
 <a id="design-pattern-registry"></a>
 <!-- frob:describes src/frob/arch/_patterns.py::PatternRuleSpec -->
@@ -243,8 +243,20 @@ walk helpers):
 | `telescoping-ctor` | pattern | an `__init__` with 6+ parameters, 4+ of them defaulted | Builder |
 | `scattered-construction` | pattern | the same concrete class constructed directly (bare `ClassName(...)` call) across 3+ distinct files | Factory / dependency injection |
 | `wrap-delegate` | pattern | a class storing one constructor-parameter object as `self.<attr>`, with 3+ methods whose entire body is a same-name pass-through call to that attribute | Decorator |
+| `interface-translate` | pattern | (T-0605) a class storing one constructor-parameter object as `self.<attr>`, with 3+ methods whose entire body is a single call to a DIFFERENTLY-named method on that attribute | Adapter |
+| `manual-callback-list` | pattern | (T-0605) a class initializing `self.<attr> = []` in `__init__`, with a distinct method appending to it and a distinct method iterating it to call each element | Observer |
 | `god-object` | escape | a class already flagged `god-class` (more methods than `max_class_methods`) | SRP decompose |
 | `stringly-typed` | escape | a plain identifier (never `self.<attr>` -- that is `state-field-chain`'s territory) compared via `==` against 4+ distinct string literals across one `elif` chain | newtype (Enum / typed value object) |
+| `anemic-accessors` | escape | (T-0605) a class with 3+ non-`__init__`, non-dunder methods where EVERY one is a trivial single-statement getter or setter, no real behavior anywhere | move behavior to data (rich domain model) |
+
+`wrap-delegate` and `interface-translate` are disjoint PER-METHOD ONLY
+(a same-name delegating method can never also count as a translating
+one), NOT per-class: a class that mixes a same-name-delegating subset
+with a separate 3+-method translating subset legitimately fires BOTH
+`wrap-delegate` (Decorator) and `interface-translate` (Adapter) --
+two independent findings about two disjoint method groups, not a
+contradictory claim about the whole class (reviewer round 1, T-0605;
+see `test_mixed_delegate_and_translate_methods_fires_both`).
 
 `type-switch`/`state-field-chain` and `stringly-typed` are deliberately
 disjoint on the same AST shape (an `elif` chain of equality/isinstance
@@ -263,16 +275,47 @@ collection type names, and `_check_scattered_construction` flags any
 class constructed from 3+ distinct files after every file has been
 walked.
 
-**Deferred rows.** T-0332's plan enumerates 8 hallmark->pattern rows and 5
-anti-pattern->escape rows; the 7 above are implemented with real,
-precision-checked detectors. The remaining 6 (`incompatible-interface-
-bridging -> Adapter`, `expensive-object-reuse -> Flyweight/pool`,
-`manual-callback-list -> Observer`, `anemic-domain-model -> move behavior
-to data`, `poltergeist/lava-flow -> delete`, `sequential-coupling ->
-explicit state`) need fuzzier signals that risk the STRONG-HALLMARK-ONLY
-constraint above without a larger detector investment -- deferred, not
-silently dropped; see `tickets.md`'s T-0332 Done report and T-draft-4fb8deee
-(the filed follow-up ticket) for the remaining rows.
+**T-0605 phase 2.** T-0332's plan enumerated 13 rows and shipped 7; T-0332
+deferred 6 for precision reasons (`incompatible-interface-bridging ->
+Adapter`, `expensive-object-reuse -> Flyweight/pool`, `manual-callback-
+list -> Observer`, `anemic-domain-model -> move behavior to data`,
+`poltergeist/lava-flow -> delete`, `sequential-coupling -> explicit
+state`). T-0605 resolved each on its own merits instead of shipping a
+uniform pass: 3 got real, precision-checked detectors (`interface-
+translate`, `manual-callback-list`, `anemic-accessors`, all in the table
+above), and 3 were recorded as reasoned NOT-CHECKABLE rather than shipped
+imprecise (the ticket's own noise mandate: an imprecise recommender
+trains users to ignore the advisory channel, which is worse than honest
+silence):
+
+- **Flyweight/pool** -- no single-file structural signal distinguishes
+  "expensive to construct, should be shared/pooled" from an ordinary loop
+  building N legitimately different objects without value/dataflow
+  analysis this package does not have.
+- **Poltergeist/lava-flow** -- the architecture-check-catalog itself notes
+  poltergeist is "dup of Middle Man, at extreme" (its degenerate case is
+  not distinguishable from a small, well-designed wrapper without knowing
+  whether callers actually need it elsewhere), and lava-flow ("nobody
+  dares remove it") requires whole-program reachability/usage evidence, a
+  different kind of analysis (dead-code/call-graph) than a per-file
+  structural walk provides.
+- **Sequential coupling** -- the catalog notes it is "dup of Connascence
+  of Execution"; the closest structural proxy (a private flag set by one
+  method, checked-and-raised by another) is indistinguishable from
+  ordinary guard-clause precondition validation without tracking actual
+  call-order violations across real callers -- again a call-graph-class
+  investment, not a bigger detector.
+
+See `frob.arch._patterns`'s module docstring and `tickets.md`'s T-0605
+Done report for the full per-pattern reasoning. `docs/design/registry/
+patterns.yaml`'s corresponding rows (`GOF-ADAPTER`, `GOF-FLYWEIGHT`,
+`GOF-OBSERVER`, `PAT-TRAP-20-ANEMIC-DOMAIN-GOD-OBJECT-LAVA-FLOW`) all
+correctly stay `out_of_scope:advisory-design-pattern-recommendation`
+regardless of whether a detector exists for their hallmark -- this
+registry tracks whether a row is subject to enforceable GATE tracking,
+not whether `frob.arch` happens to implement an advisory recommender for
+it (T-0332's own precedent: its 7 shipped detectors' rows carry the
+identical disposition).
 
 ### OCP checks: `type-dispatch-smell` / `non-exhaustive-enum-match` (T-0617)
 

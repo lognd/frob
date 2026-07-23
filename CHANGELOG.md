@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.128.0] - unreleased
+
+- T-0605: design-pattern recommender phase 2: Adapter, Flyweight/pool, Observer, anemic-domain-model, poltergeist/lava-flow, sequential-coupling detectors
+
 ## [0.127.0] - unreleased
 
 - T-0755: adversarial evidence obligation: ticket tests must fail on a diff-scoped mutant (confirmatory-only tests flagged)
