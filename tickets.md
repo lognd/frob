@@ -5293,3 +5293,24 @@ is fully replaced by the new one -- no stale sub-section survives
 alongside the new report, and no factual claim from a prior round
 persists as live (non-historical) text outside an explicitly-labeled
 review-round heading the caller wrote intentionally.
+
+<!-- ticket:T-0849 -->
+```yaml
+id: T-0849
+title: 'pattern registry phase 3: work or disposition the 41 recommender rows previously
+  deferred to T-0605'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-23'
+priority: medium
+parent: T-0330
+scope:
+- src/frob/arch/**
+- docs/design/registry/patterns.yaml
+- tests/unit/test_arch.py
+- tests/test_registry_reconciliation_patterns.py
+threat: null
+component: null
+```
+T-0605 (recommender phase 2) closed having worked its 6 mandated rows; 41 other patterns.yaml rows (DDD-II-*, RELEASEIT-*, and friends) still carried disposition deferred:T-0605 and became REG003 errors the moment it closed (deferral to a closed ticket is not a real deferral -- the registry analogue of WAIVE006). Those 41 rows are re-pointed here. For each: implement a high-precision detector, or record a reasoned not-checkable/out-of-scope disposition, per the same noise mandate as T-0605. Keep the reconciliation pin test green.
