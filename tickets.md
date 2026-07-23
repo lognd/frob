@@ -6969,3 +6969,32 @@ component: null
 labels: []
 ```
 Recurring friction (4+ review cycles this drive): REL001's bump-half fires as an error in worktree reviews/implementations because suppression is keyed on the FROB_AGENT env var, which reviewers and some dispatch shells never set -- every reviewer then REJECTs or hand-waives a violation that frob ticket land auto-clears seconds later (auto-bumps landed 0.97.0 through 0.105.0 this week). Derive the suppression from CONTEXT instead of env: if the check runs with --ticket and that ticket holds a worktree lease (or cwd is a linked worktree), the bump is land-owned by definition. Keep the API-diff REPORTING (reviewers should still see 'public API changed (minor)'), demote only the bump demand.
+
+<!-- ticket:T-0808 -->
+```yaml
+id: T-0808
+title: 'gates: WAIVE007 dangling-waiver-ref -- unresolvable BINDING ticket ref in
+  a waiver is a warning, not silence'
+state: queued
+kind: security
+origin: auditor
+created: '2026-07-23'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/__init__.py
+- tests/test_waive_gate.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a waiver whose binding ticket reference resolves to no ticket in active
+    or archive WHEN frob check runs THEN a WARNING-tier finding names the site and
+    the dangling id; GIVEN a resolvable open ref THEN no finding
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+T-0779 reviewer finding: WAIVE006 deliberately skips unresolvable binding refs, but a dangling ref (e.g. a draft id renumbered at land -- the T-draft-8cd37914 -> T-0803 case that left four design/frob.strata waivers pointing at a dead id) is a permanent silent waiver, the same accountability shape WAIVE006 closes. Add WAIVE007 warning-tier for dangling BINDING refs (drafts in live worktrees are a legitimate transient -- consider exempting T-draft-* ids younger than N days or referenced by a live lease, document the choice).
