@@ -142,7 +142,13 @@ from frob.lang import SymbolKind
 from frob.lang._models import ParsedFile, RawComment, RawSymbol
 from frob.lang._walk_rust import _MACRO_SYMBOL_SUFFIX
 from frob.logging import get_logger
-from frob.testing import CollectedTests, collect_python_tests, collect_rust_tests
+from frob.testing import (
+    CollectedTests,
+    collect_cpp_tests,
+    collect_python_tests,
+    collect_rust_tests,
+    collect_ts_tests,
+)
 from frob.tickets import Ticket, TicketQueue, TicketState, closed_ticket_ids, load_queue
 from frob.tickets._models import (
     CMD_EVIDENCE_ALLOWED_KINDS,
@@ -532,16 +538,26 @@ def _unit_test_edges(snapshot: GraphSnapshot, kind: str) -> dict[str, list[Edge]
 
 
 # Extensions frob parses but does not (yet) run/collect executed test
-# evidence for -- collect_python_tests only spawns pytest and
-# collect_rust_tests only spawns cargo, so a ts/c/cpp `frob:tests` edge can
-# never have its `src` land in `tests.node_ids`, no matter which file the
-# directive itself lives in (T-0090). Rust was removed from this set by
-# T-0092: `collect_rust_tests` gives rust real execution evidence via
-# `tests.node_ids` (the first branch of `_valid_edges` below), so a rust
-# `frob:tests` src no longer needs (or should use) the structural fallback.
-_NATIVE_TEST_EXTENSIONS = frozenset(
-    {".ts", ".tsx", ".c", ".h", ".cpp", ".hpp", ".cc", ".hh"}
-)
+# evidence for, so a `frob:tests` edge on one of them can never have its
+# `src` land in `tests.node_ids`, no matter which file the directive
+# itself lives in (T-0090). Rust was removed from this set by T-0092
+# (`collect_rust_tests` gives real execution evidence via `tests.
+# node_ids`), and TS was removed by T-0730 (`collect_ts_tests`'s vitest
+# node ids are `path::name` symrefs -- the exact shape `_symref_to_nodeid`
+# already produces from a TS `frob:tests` directive, so an exact/prefix
+# match in `_node_id_collected` just works, same as python/rust).
+#
+# C/C++ stays in this set -- NOT an oversight, a disclosed gap (T-0730's
+# Done report, follow-on T-0886): `collect_cpp_tests` exists
+# (T-0587) but its own docstring discloses a KNOWN APPROXIMATION -- a
+# ctest node id anchors to the BUILD DIRECTORY (`<build_dir>::<test
+# name>`), not the real source file a C/C++ `frob:tests` directive lives
+# above, so a directive's `src` symref can essentially never land in
+# `tests.node_ids` even when the test genuinely exists and ran. Retiring
+# the fallback for C/C++ today would silently drop ALL existing C/C++
+# TEST001-004 credit rather than tighten it -- worse than the structural
+# fallback it would replace.
+_NATIVE_TEST_EXTENSIONS = frozenset({".c", ".h", ".cpp", ".hpp", ".cc", ".hh"})
 
 
 def _is_native_test_src(src: str) -> bool:
@@ -555,11 +571,11 @@ def _is_native_test_symref(src: str) -> bool:
     """True if `src`'s qualname follows a test-code convention this module
     already trusts elsewhere: a `tests` module/namespace segment (rust's
     `#[cfg(test)] mod tests { ... }`, mirroring `is_test_file`'s "tests" dir
-    check) or a `test_`/`_test` leaf name (the C/C++/TS convention, mirroring
+    check) or a `test_`/`_test` leaf name (the C/C++ convention, mirroring
     `_is_test_path`'s python check). Extension alone (`_is_native_test_src`)
     only says "no execution collector exists"; this says "and it actually
     looks like test code" -- required together so a plain `frob:tests`
-    directive on a non-test rust/ts/c/cpp file (e.g. the target's own
+    directive on a non-test rust/c/cpp file (e.g. the target's own
     `lib.rs`) cannot rubber-stamp itself as evidence (T-0090 review)."""
     _, _, qualname = src.partition("::")
     if not qualname:
@@ -574,20 +590,21 @@ def _valid_edges(
     tests: CollectedTests,
     snapshot: GraphSnapshot | None = None,
 ) -> list[Edge]:
-    """Edges whose `src` is a collected pytest or cargo node id (real execution
-    evidence, `_symref_to_nodeid`), or -- for a language frob still has no
-    execution-based test collector for (ts/c/cpp, T-0090) -- a `src` that both
-    looks like test code (`_is_native_test_symref`) and resolves to a real
-    bound symbol in `snapshot`.
+    """Edges whose `src` is a collected pytest, cargo, vitest, or ctest node id
+    (real execution evidence, `_symref_to_nodeid`), or -- for a language frob
+    still has no SOURCE-ACCURATE execution-based test collector for (c/cpp,
+    T-0090/T-0730) -- a `src` that both looks like test code
+    (`_is_native_test_symref`) and resolves to a real bound symbol in
+    `snapshot`.
 
     The comment DSL binds a `frob:tests` directive to its enclosing/following
     symbol regardless of which file it lives in relative to its target
     (`frob.graph.dsl.parse_directives`), so a directive whose src is a genuine
-    ts/c/cpp test function is structurally authoritative the moment it exists;
+    c/cpp test function is structurally authoritative the moment it exists;
     frob just cannot (yet) prove the test actually ran the way it now can for
-    python (`collect_python_tests`) and rust (`collect_rust_tests`, T-0092).
-    `snapshot` is optional so existing callers that only ever see python
-    evidence are unaffected.
+    python (`collect_python_tests`), rust (`collect_rust_tests`, T-0092), and
+    TS (`collect_ts_tests`, T-0730). `snapshot` is optional so existing
+    callers that only ever see python evidence are unaffected.
 
     Two `frob:tests` conventions coexist (see `_unit_test_edges`): `src` is
     the test and `target` is the tested symbol, or `src` is the tested
@@ -625,8 +642,8 @@ def _edge_has_execution_evidence(
 
 # frob:ticket T-0552
 def _edge_is_native_unverified(e: Edge, snapshot: GraphSnapshot | None) -> bool:
-    """True if `e`'s TEST001-004 credit rests solely on the ts/c/cpp
-    structural fallback (T-0090/T-0552, docs/audits/gates-accounting.md B3):
+    """True if `e`'s TEST001-004 credit rests solely on the c/cpp
+    structural fallback (T-0090/T-0552/T-0730, docs/audits/gates-accounting.md B3):
     frob runs no collector that ever actually executes it -- `e.src` merely
     *looks like* test code by name/path and resolves in the graph. Split out
     of `_edge_has_execution_evidence` so `_test013_native_unverified` can
@@ -728,9 +745,9 @@ def _case_count(
     re-counts each edge's *actual* collected node ids: the exact node id
     if present, plus every `base[case-id]` parametrize expansion, each
     counted as its own case. An edge with no execution-based node-id match
-    at all (the ts/c/cpp structural fallback in `_valid_edges`, which has
-    no pytest/cargo evidence to expand) still counts as exactly one case,
-    matching its previous `len(valid_edges)` contribution.
+    at all (the c/cpp structural fallback in `_valid_edges`, which has
+    no pytest/cargo/vitest/ctest evidence to expand) still counts as
+    exactly one case, matching its previous `len(valid_edges)` contribution.
 
     T-0549: that per-case counting is exactly what makes
     `@pytest.mark.parametrize(range(10))` over a test body with NO
@@ -922,7 +939,8 @@ _KNOWN_GATE_RULES = frozenset(
         # relative to the live coverage.xml-derived data.
         "TEST012",
         # T-0552: a `frob:tests` edge credited toward TEST001-004 only via
-        # the ts/c/cpp structural (name/path) fallback, never executed.
+        # the c/cpp structural (name/path) fallback, never executed
+        # (T-0730: ts retired from this fallback, real vitest evidence now).
         "TEST013",
         # T-0547: two different files' same-leaf-name public symbols, both
         # relying only on the naming-convention fallback, credited by the
@@ -936,6 +954,10 @@ _KNOWN_GATE_RULES = frozenset(
         "TEST016",
         "TODO001",
         "TODO002",
+        # T-0783: a frob:todo edge bound to a still-open ticket whose
+        # deferral comment landed under an older project version than the
+        # one on disk now (at least one release has shipped since).
+        "TODO003",
         # T-0412: frob:debt (temporary, ticket-bound, collected-before-
         # release) vs frob:waive (permanent) -- malformed directive,
         # non-open ticket, expired `until` boundary.
@@ -2457,7 +2479,7 @@ def coverage_gate(
     active_ticket: str | None = None,
     diff_load_failed: bool = False,
 ) -> tuple[Violation, ...]:
-    """COV001..COV007, PLACE001, and TODO001/TODO002.
+    """COV001..COV007, PLACE001, and TODO001/TODO002/TODO003.
 
     `root` (repo root, T-0233) lets COV001 tell a *resolving* `frob:doc`
     edge apart from a broken one -- see `_resolved_documented_srcs`.
@@ -2469,6 +2491,9 @@ def coverage_gate(
     TODO001 (both diff-driven, both otherwise silently satisfied by an
     empty diff) are replaced with one loud `_diff_load_failed_violation`
     each instead of being evaluated against a diff known to be bogus.
+    TODO003 (T-0783) is, like TODO002, repo-wide rather than diff-scoped
+    (see `_todo003_long_deferred`), so it runs unconditionally rather than
+    branching on `diff_load_failed`.
     """
     violations: list[Violation] = []
     violations.extend(_cov001(root, snapshot))
@@ -2486,6 +2511,7 @@ def coverage_gate(
         violations.append(_diff_load_failed_violation("TODO001", diff.base))
     else:
         violations.extend(_todo001(snapshot, queue, diff))
+    violations.extend(_todo003_long_deferred(root, snapshot, queue))
     return tuple(violations)
 
 
@@ -3993,6 +4019,119 @@ def _todo002_edges(snapshot: GraphSnapshot, queue: TicketQueue) -> list[Violatio
     return violations
 
 
+# frob:ticket T-0783
+def _pyproject_version_at(root: Path, sha: str) -> str | None:
+    """The `project.version` string from `pyproject.toml` AS IT READ at
+    commit `sha` (`git show <sha>:pyproject.toml`), or `None` if the
+    commit, the file at that commit, or its toml is unreadable/malformed --
+    the same degrade-to-None posture `_current_version` already has for the
+    working tree, reused here for a historical snapshot instead (T-0783's
+    "version at the time the deferral comment landed")."""
+    spawned = run_argv(("git", "-C", str(root), "show", f"{sha}:pyproject.toml"))
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        _log.debug("TODO003: could not read pyproject.toml at %s", sha)
+        return None
+    try:
+        data = tomllib.loads(spawned.danger_ok.stdout)
+    except tomllib.TOMLDecodeError:
+        _log.debug("TODO003: unparseable pyproject.toml at %s", sha)
+        return None
+    version = data.get("project", {}).get("version")
+    return version if isinstance(version, str) else None
+
+
+# frob:ticket T-0783
+# frob:tests \
+# tests/test_gates.py::TestCoverageGate.test_todo003_fires_after_version_bump_since_def\
+# erral_landed  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestCoverageGate.test_todo003_silent_when_no_version_bump_since_\
+# deferral  # noqa: E501
+# frob:tests \
+# tests/test_gates.py::TestCoverageGate.test_todo003_silent_when_ticket_closes  # \
+# noqa: E501
+# frob:enforces CHK-GATE-TODO003
+def _todo003_long_deferred(
+    root: Path, snapshot: GraphSnapshot, queue: TicketQueue
+) -> list[Violation]:
+    """TODO003 (Audit M2 gate-direction, T-0783): a `frob:todo` edge bound
+    to a STILL-OPEN ticket whose deferral comment landed under an OLDER
+    project version than the one on disk now -- at least one `REL001`
+    version bump has shipped since the deferral was written down, and
+    nobody re-litigated it (the exact T-0476 shape the ticket cites: "open
+    since the lease layer shipped"). Repo-wide, not diff-scoped, mirroring
+    `_todo002_edges` -- a deferral does not stop being stale just because
+    today's diff does not touch its line.
+
+    "The comment landed" is read from `git blame` on the directive's own
+    line (`_blame_shas`), not a new persisted state file -- this repo
+    already has one durable per-line landing-commit oracle (git history
+    itself), and deriving from it keeps this gate purely a function of
+    `(snapshot, queue, git log)`, with no new mutable `.frob/` artifact to
+    keep in sync or race against a concurrent `frob check` (T-0783 chose
+    this over stamping a first-seen-version file precisely to avoid that
+    class of bug). A line git cannot blame (uncommitted, blame failure) or
+    a `pyproject.toml` that cannot be read at the landing commit degrades
+    to "not evaluable, no finding" -- never a false fire.
+
+    Scope note (T-0783 Done report, disclosed not silently dropped): only
+    the structured `frob:todo T-####` directive is covered. The ticket
+    body also mentions "that ticket's job shape" -- an informal prose
+    deferral comment with no structured directive at all -- which this
+    pass does not attempt to detect (no reliable structural signal exists
+    for free-text deferral prose the way a dedicated edge kind already
+    exists for the structured directive form); left as a follow-on gap.
+    """
+    violations: list[Violation] = []
+    current_version = _current_version(root)
+    if current_version is None:
+        _log.debug("TODO003: no readable pyproject.toml version, skipping")
+        return violations
+    for edge in snapshot.edges:
+        if edge.kind != EdgeKind.TODO:
+            continue
+        target = queue.tickets.get(edge.target)
+        if target is None or target.state not in _OPEN_STATES:
+            continue
+        file, line = _site_from_edge_origin(edge.origin)
+        shas = _blame_shas(root, file, line, line)
+        if shas.is_nothing:
+            continue
+        real_shas = shas.danger_some - {_UNCOMMITTED_SHA}
+        if not real_shas:
+            continue
+        landed_version: str | None = None
+        for sha in real_shas:
+            landed_version = _pyproject_version_at(root, sha)
+            if landed_version is not None:
+                break
+        if landed_version is None or landed_version == current_version:
+            continue
+        _log.debug(
+            "TODO003: %s -> %s deferred since v%s, now v%s",
+            edge.src,
+            edge.target,
+            landed_version,
+            current_version,
+        )
+        violations.append(
+            Violation(
+                rule="TODO003",
+                severity=Severity.WARN,
+                file=file,
+                line=line,
+                message=(
+                    f"TODO003: frob:todo {edge.target} at {edge.src} was deferred "
+                    f"under v{landed_version} and {edge.target} is still open at "
+                    f"v{current_version} -- at least one release has shipped since; "
+                    f"re-litigate the deferral (close {edge.target}, or confirm it "
+                    "is still the right call) rather than letting it fossilize"
+                ),
+            )
+        )
+    return violations
+
+
 def _todo001_bare(snapshot: GraphSnapshot, diff: Diff) -> list[Violation]:
     """TODO001: bare todo/fixme comments in diff-touched, freshly parsed files.
 
@@ -4218,8 +4357,8 @@ def _debt002_violations(
     point at real, open, owed work, never a closed/nonexistent ticket
     pretending the gap is still tracked). Reuses the same open-ticket
     check `_todo002_edges` (TODO002) applies to `frob:todo`, but at ERROR
-    severity: an untracked TODO is a hygiene warning, a mis-tracked DEBT is
-    a structural lie about what is actually owed."""
+    severity: an untracked deferral is a hygiene warning, a mis-tracked
+    DEBT is a structural lie about what is actually owed."""
     violations: list[Violation] = []
     for edge in _debt_edges(snapshot):
         ticket_id = edge.attrs.get("ticket", "")
@@ -6665,17 +6804,20 @@ def _test010_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # frob:enforces CHK-GATE-TEST013
 def _test013_native_unverified(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """TEST013 (warn): a `frob:tests` edge's TEST001-004 credit rests solely
-    on the ts/c/cpp structural fallback (docs/audits/gates-accounting.md
-    B3/E3, T-0552) -- frob runs no vitest/ctest/etc collector, so the edge
-    was never actually executed, only pattern-matched by name/path and
-    confirmed to resolve in the graph.
+    on the c/cpp structural fallback (docs/audits/gates-accounting.md
+    B3/E3, T-0552; T-0730 retired TS from this fallback -- `collect_ts_
+    tests` gives it real vitest execution evidence now) -- frob runs no
+    source-accurate ctest collector yet, so the edge was never actually
+    executed, only pattern-matched by name/path and confirmed to resolve
+    in the graph.
 
     WARN, not ERROR, and does NOT withdraw the underlying TEST001-004
     credit (see `_edge_is_native_unverified`'s docstring and T-0552's Done
-    report for why: withdrawing credit outright, with no real TS/C/C++
-    execution collector wired yet, would turn every native-language public
-    symbol in every sibling repo's TEST001 ERROR-red overnight for a
-    structural change alone, not a real regression). The point of this
+    report for why: withdrawing credit outright, with no real source-
+    accurate C/C++ execution collector wired yet, would turn every
+    native-language public symbol in every sibling repo's TEST001
+    ERROR-red overnight for a structural change alone, not a real
+    regression). The point of this
     gate is exactly the audit's alternative fix direction: make the
     degraded-trust state a LOUD, filterable, per-edge finding instead of a
     silent full pass, so a reviewer or `--delta` triage can see precisely
@@ -6730,9 +6872,9 @@ def test_gate(
     accounting chain's attestability check: the committed
     `frob-coverage.lock.json` summary (`frob.gates._coverage.write_coverage_lock`)
     is missing, or its claimed per-module numbers have drifted from this
-    run's `coverage.xml` -- see `_test012_lock`. TEST013 (T-0552) makes the
-    ts/c/cpp structural-fallback credit `_valid_edges` already grants
-    LOUD instead of silent: see `_test013_native_unverified`. TEST014
+    run's `coverage.xml` -- see `_test012_lock`. TEST013 (T-0552, narrowed
+    to c/cpp by T-0730) makes the structural-fallback credit `_valid_edges`
+    already grants LOUD instead of silent: see `_test013_native_unverified`. TEST014
     (T-0547) is `_inferred_unit_cases`' name-only ambiguity made loud in
     the same spirit: see `_test014_ambiguous_convention`. TEST015 (T-0548)
     is the audit's own B1 repro (`def test_myfunc(): pass` clearing
@@ -8816,10 +8958,14 @@ def _load_diff(root: Path, base: str) -> tuple[Diff, bool]:
 
 
 def _load_tests(root: Path) -> CollectedTests:
-    """Collected pytest + cargo node ids, degrading each collector independently
-    to an empty set on failure (a missing/broken toolchain must not halt the
-    whole gates run -- but see `_cov003`: an evidence id that consequently
-    fails to resolve becomes a loud violation, never a silent pass, T-0102)."""
+    """Collected pytest + cargo + vitest + ctest node ids, degrading each
+    collector independently to an empty set on failure (a missing/broken
+    toolchain must not halt the whole gates run -- but see `_cov003`: an
+    evidence id that consequently fails to resolve becomes a loud
+    violation, never a silent pass, T-0102). T-0730 adds `collect_ts_tests`
+    (vitest) and `collect_cpp_tests` (ctest) alongside the pre-existing
+    python/rust collectors (T-0587 built the collectors; this is where
+    `frob.gates` starts actually consuming their node ids)."""
     node_ids: set[str] = set()
 
     python_result = collect_python_tests(root)
@@ -8833,6 +8979,18 @@ def _load_tests(root: Path) -> CollectedTests:
         _log.error("run_gates: cargo collection failed: %s", rust_result.danger_err)
     else:
         node_ids.update(rust_result.danger_ok.node_ids)
+
+    ts_result = collect_ts_tests(root)
+    if ts_result.is_err:
+        _log.error("run_gates: vitest collection failed: %s", ts_result.danger_err)
+    else:
+        node_ids.update(ts_result.danger_ok.node_ids)
+
+    cpp_result = collect_cpp_tests(root)
+    if cpp_result.is_err:
+        _log.error("run_gates: ctest collection failed: %s", cpp_result.danger_err)
+    else:
+        node_ids.update(cpp_result.danger_ok.node_ids)
 
     return CollectedTests(node_ids=frozenset(node_ids))
 

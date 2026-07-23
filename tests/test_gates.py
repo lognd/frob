@@ -408,6 +408,7 @@ class TestBaselineDelta:
 
 
 # frob:ticket T-0553
+# frob:ticket T-0783
 class TestCoverageGate:
     def test_cov001_broken_doc_edge_does_not_suppress_finding(
         self, tmp_path: Path
@@ -1415,6 +1416,98 @@ class TestCoverageGate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert any(v.rule == "TODO002" for v in violations)
         assert not any(v.rule == "TODO001" for v in violations)
+
+    # frob:ticket T-0783
+    def _write_pyproject_version(self, tmp_path: Path, version: str) -> None:
+        """A minimal `pyproject.toml` declaring `version` -- `_current_
+        version`/`_pyproject_version_at`'s single read target."""
+        _write(
+            tmp_path,
+            "pyproject.toml",
+            f'[project]\nname = "sample"\nversion = "{version}"\n',
+        )
+
+    # frob:ticket T-0783
+    # frob:tests \
+    # tests/test_gates.py::TestCoverageGate.test_todo003_fires_after_version_bump_since\
+    # _deferral_landed  # noqa: E501
+    def test_todo003_fires_after_version_bump_since_deferral_landed(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0783 acceptance: a `frob:todo` comment lands under v0.1.0,
+        pyproject bumps to v0.2.0 in a later commit that never touches the
+        deferral line, the target ticket is still open -- TODO003 fires,
+        naming the deferred-since version and the current one."""
+        self._write_pyproject_version(tmp_path, "0.1.0")
+        source = "def helper(x):\n    # frob:todo T-0001\n    return x\n"
+        _write(tmp_path, "src/a.py", source)
+        _git_init(tmp_path)
+        self._write_pyproject_version(tmp_path, "0.2.0")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "chore: bump version"],
+            cwd=tmp_path,
+            check=True,
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.QUEUED)})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        todo003 = [v for v in violations if v.rule == "TODO003"]
+        assert len(todo003) == 1
+        assert todo003[0].severity == Severity.WARN
+        assert "T-0001" in todo003[0].message
+        assert "v0.1.0" in todo003[0].message
+        assert "v0.2.0" in todo003[0].message
+
+    # frob:ticket T-0783
+    # frob:tests \
+    # tests/test_gates.py::TestCoverageGate.test_todo003_silent_when_no_version_bump_si\
+    # nce_deferral  # noqa: E501
+    def test_todo003_silent_when_no_version_bump_since_deferral(
+        self, tmp_path: Path
+    ) -> None:
+        """Adversarial: the deferral comment landed under the SAME version
+        still on disk -- no release has shipped since, so TODO003 must
+        stay silent (it has not crossed a boundary yet)."""
+        self._write_pyproject_version(tmp_path, "0.1.0")
+        source = "def helper(x):\n    # frob:todo T-0001\n    return x\n"
+        _write(tmp_path, "src/a.py", source)
+        _git_init(tmp_path)
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.QUEUED)})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "TODO003" for v in violations)
+
+    # frob:ticket T-0783
+    # frob:tests \
+    # tests/test_gates.py::TestCoverageGate.test_todo003_silent_when_ticket_closes  # \
+    # noqa: E501
+    def test_todo003_silent_when_ticket_closes(self, tmp_path: Path) -> None:
+        """Acceptance (T-0783): once the deferred-to ticket closes, the
+        finding clears -- `_todo003_long_deferred` only considers edges
+        whose target is still in `_OPEN_STATES`, same population TODO002
+        already excludes for the inverse reason."""
+        self._write_pyproject_version(tmp_path, "0.1.0")
+        source = "def helper(x):\n    # frob:todo T-0001\n    return x\n"
+        _write(tmp_path, "src/a.py", source)
+        _git_init(tmp_path)
+        self._write_pyproject_version(tmp_path, "0.2.0")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "chore: bump version"],
+            cwd=tmp_path,
+            check=True,
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.DONE)})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "TODO003" for v in violations)
 
     def test_waiver_suppresses_and_reports(self, tmp_path: Path) -> None:
         source = (
@@ -6577,12 +6670,14 @@ class TestTest010KindValidation:
 
 
 # frob:ticket T-0552
+# frob:ticket T-0730
 class TestTest013NativeUnverified:
     """T-0552 (docs/audits/gates-accounting.md B3/E3): a `frob:tests` edge
-    whose ONLY credit toward TEST001-004 is the ts/c/cpp structural (name/
-    path) fallback -- frob runs no collector that actually executes it --
-    must be surfaced as a loud, filterable TEST013 finding, not stay
-    silently indistinguishable from a real, executed test."""
+    whose ONLY credit toward TEST001-004 is the c/cpp structural (name/
+    path) fallback (T-0730 retired TS from this fallback -- see
+    `TestNativeTestCollectors`) -- frob runs no collector that actually
+    executes it -- must be surfaced as a loud, filterable TEST013 finding,
+    not stay silently indistinguishable from a real, executed test."""
 
     # frob:ticket T-0552
     def test_fires_on_structural_only_edge(self, tmp_path: Path) -> None:
@@ -6626,6 +6721,155 @@ class TestTest013NativeUnverified:
         tests = CollectedTests(node_ids=frozenset({"tests/test_a.py::test_helper"}))
         violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
         assert "TEST013" not in _rules(violations)
+
+
+# frob:ticket T-0730
+class TestNativeTestCollectors:
+    """T-0730: `_load_tests` now consumes `collect_ts_tests` (vitest) and
+    `collect_cpp_tests` (ctest) node ids alongside python/rust (T-0587
+    built the collectors; this wires them into `frob.gates`), and TS is
+    retired from `_NATIVE_TEST_EXTENSIONS`'s structural fallback now that a
+    real vitest node id can resolve a TS `frob:tests` edge exactly the way
+    a pytest/cargo node id already does."""
+
+    # frob:ticket T-0730
+    def test_ts_no_longer_in_native_extensions(self) -> None:
+        # frob:tests tests/test_gates.py::TestNativeTestCollectors.test_ts_no_longer_in_native_extensions  # noqa: E501
+        import frob.gates as gates_mod
+
+        assert ".ts" not in gates_mod._NATIVE_TEST_EXTENSIONS
+        assert ".tsx" not in gates_mod._NATIVE_TEST_EXTENSIONS
+        # C/C++ stays -- collect_cpp_tests's node ids anchor to the build
+        # dir, not the source file, so no exact/prefix match is possible
+        # yet (T-0730's Done report, follow-on draft ticket).
+        assert ".cpp" in gates_mod._NATIVE_TEST_EXTENSIONS
+
+    # frob:ticket T-0730
+    def test_load_tests_merges_all_four_collectors(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests tests/test_gates.py::TestNativeTestCollectors.test_load_tests_merges_all_four_collectors  # noqa: E501
+        from typani import Err, Ok
+
+        import frob.gates as gates_mod
+        from frob.testing import TestingError
+
+        monkeypatch.setattr(
+            gates_mod,
+            "collect_python_tests",
+            lambda root: Ok(
+                CollectedTests(node_ids=frozenset({"tests/test_x.py::test_a"}))
+            ),
+        )
+        monkeypatch.setattr(
+            gates_mod,
+            "collect_rust_tests",
+            lambda root: Ok(
+                CollectedTests(node_ids=frozenset({"crate/src/lib.rs::tests::foo"}))
+            ),
+        )
+        monkeypatch.setattr(
+            gates_mod,
+            "collect_ts_tests",
+            lambda root: Ok(
+                CollectedTests(node_ids=frozenset({"src/thing.test.ts::does a thing"}))
+            ),
+        )
+        monkeypatch.setattr(
+            gates_mod,
+            "collect_cpp_tests",
+            lambda root: Ok(CollectedTests(node_ids=frozenset({"build::MyTest"}))),
+        )
+        merged = gates_mod._load_tests(tmp_path)
+        assert merged.node_ids == frozenset(
+            {
+                "tests/test_x.py::test_a",
+                "crate/src/lib.rs::tests::foo",
+                "src/thing.test.ts::does a thing",
+                "build::MyTest",
+            }
+        )
+
+        # A broken vitest collector degrades to "no ts ids", not a crash
+        # and not a wipe of the other three languages' already-collected
+        # ids.
+        monkeypatch.setattr(
+            gates_mod,
+            "collect_ts_tests",
+            lambda root: Err(TestingError.CollectFailed),
+        )
+        merged2 = gates_mod._load_tests(tmp_path)
+        assert merged2.node_ids == frozenset(
+            {
+                "tests/test_x.py::test_a",
+                "crate/src/lib.rs::tests::foo",
+                "build::MyTest",
+            }
+        )
+
+    # frob:ticket T-0730
+    def test_ts_directive_resolves_via_real_vitest_node_id(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_gates.py::TestNativeTestCollectors.test_ts_directive_resolves_via_real_vitest_node_id  # noqa: E501
+        """A TS `frob:tests` directive naming a real collected vitest node id
+        resolves as genuine execution evidence (`_valid_edges`'s FIRST
+        branch, `_symref_to_nodeid`/`_node_id_collected`) -- not the
+        structural fallback, which TS no longer participates in at all."""
+        from typani.option import Nothing
+
+        _write(
+            tmp_path,
+            "src/thing.ts",
+            "export function doThing(): number {\n  return 0;\n}\n",
+        )
+        _write(
+            tmp_path,
+            "src/thing.test.ts",
+            '// frob:tests src/thing.ts::doThing kind="unit"\n'
+            "export function testDoesAThing(): void {\n"
+            "  doThing();\n"
+            "}\n",
+        )
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(
+            node_ids=frozenset({"src/thing.test.ts::testDoesAThing"})
+        )
+        cfg = TestPolicy(min_unit_cases=1)
+        violations = run_test_gate(snap, (), Nothing(), tests, cfg)
+        rule_ids = _rules(violations)
+        assert "TEST001" not in rule_ids
+        assert "TEST002" not in rule_ids
+        assert "TEST013" not in rule_ids
+
+    # frob:ticket T-0730
+    def test_ts_structural_only_edge_no_longer_credited(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates.py::TestNativeTestCollectors.test_ts_structural_only_edge_no_longer_credited  # noqa: E501
+        """Acceptance (T-0730): a TS `frob:tests` edge that only LOOKS like
+        test code by name/path, with NO real collected vitest evidence, no
+        longer gets any TEST001-004 credit at all -- the structural
+        fallback `_edge_is_native_unverified` used to grant TS (T-0552) is
+        retired for `.ts`. The edge still exists (so TEST001, "no edge at
+        all", stays clean), but it now counts zero cases instead of the one
+        the retired fallback used to grant, so it is a genuine TEST002
+        finding rather than a silent pass or a TEST013 warning."""
+        from typani.option import Nothing
+
+        _write(
+            tmp_path,
+            "src/thing.ts",
+            "export function doThing(): number {\n  return 0;\n}\n\n"
+            '// frob:tests src/thing.ts::doThing kind="unit"\n'
+            "export function testDoThing(): void {}\n",
+        )
+        snap = _snapshot(tmp_path)
+        tests = CollectedTests(node_ids=frozenset())  # frob never ran this
+        cfg = TestPolicy(min_unit_cases=1)
+        violations = run_test_gate(snap, (), Nothing(), tests, cfg)
+        rule_ids = _rules(violations)
+        assert "TEST001" not in rule_ids
+        assert "TEST002" in rule_ids
+        assert "TEST013" not in rule_ids
 
 
 # frob:ticket T-0547
@@ -8262,6 +8506,7 @@ class TestTick008UnknownLedgerFields:
         assert "TICK008" not in _UNWAIVABLE_RULES
 
 
+# frob:ticket T-0762
 class TestPiiStructuralCrossLanguage:
     """T-0352: PII010/SEC110 field-shape and env-access equivalents over
     TypeScript/Rust source (`frob.gates._pii_structural`'s Python-only
@@ -8513,6 +8758,103 @@ class TestPiiStructuralCrossLanguage:
         pii010_files = {v.file for v in _by_rule(violations, "PII010")}
         assert "user.ts" in pii010_files
         assert "user.rs" in pii010_files
+
+    # frob:ticket T-0762
+    # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_secret_wrapper_type_field_fires  # noqa: E501
+    def test_ts_secret_wrapper_type_field_fires(self, tmp_path: Path) -> None:
+        """T-0762: a TS field typed as a known secret-wrapper type
+        (`SecretString`) fires PII010 even though its own NAME (`apiKey`)
+        does not itself contain a name-kind keyword token."""
+        self._write(
+            tmp_path,
+            "creds.ts",
+            "interface Creds {\n  wrapped: SecretString;\n}\n",
+        )
+        _git_init(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        pii010 = _by_rule(violations, "PII010")
+        assert any("SecretString" in v.message and "creds.ts" in v.file for v in pii010)
+
+    # frob:ticket T-0762
+    # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_branded_email_type_field_fires  # noqa: E501
+    def test_ts_branded_email_type_field_fires(self, tmp_path: Path) -> None:
+        """T-0762: a TS field typed as a branded/nominal `Email` type fires
+        PII010 -- the TYPE-kind signal, independent of the field's own
+        NAME."""
+        self._write(
+            tmp_path,
+            "contact.ts",
+            "interface Contact {\n  primary: Email;\n}\n",
+        )
+        _git_init(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        pii010 = _by_rule(violations, "PII010")
+        assert any("Email" in v.message and "contact.ts" in v.file for v in pii010)
+
+    # frob:ticket T-0762
+    # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_plain_string_field_type_does_not_fire  # noqa: E501
+    def test_ts_plain_string_field_type_does_not_fire(self, tmp_path: Path) -> None:
+        """Adversarial (T-0762 acceptance): a plain `string`-typed field
+        with a non-PII-shaped name does not fire -- TYPE-kind matching
+        must not over-fire on the ordinary built-in type."""
+        self._write(
+            tmp_path,
+            "clean_type.ts",
+            "interface Widget {\n  label: string;\n}\n",
+        )
+        _git_init(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        assert not any(
+            "clean_type.ts" in v.file for v in _by_rule(violations, "PII010")
+        )
+
+    # frob:ticket T-0762
+    # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_rust_secrecy_secretstring_type_field_fires  # noqa: E501
+    def test_rust_secrecy_secretstring_type_field_fires(self, tmp_path: Path) -> None:
+        """T-0762: a Rust field typed `secrecy::SecretString` fires PII010
+        -- the ticket-named `secrecy` crate wrapper, matched via the scoped
+        type-identifier walk regardless of the field's own NAME."""
+        self._write(
+            tmp_path,
+            "vault.rs",
+            "struct Vault {\n    wrapped: secrecy::SecretString,\n}\n",
+        )
+        _git_init(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        pii010 = _by_rule(violations, "PII010")
+        assert any("SecretString" in v.message and "vault.rs" in v.file for v in pii010)
+
+    # frob:ticket T-0762
+    # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_rust_secret_newtype_type_field_fires  # noqa: E501
+    def test_rust_secret_newtype_type_field_fires(self, tmp_path: Path) -> None:
+        """T-0762: a Rust field typed `secrecy::Secret<String>` fires
+        PII010 -- a generic-wrapped scoped type name still surfaces its
+        inner identifier to the type-identifier walk."""
+        self._write(
+            tmp_path,
+            "vault2.rs",
+            "struct Vault2 {\n    wrapped: secrecy::Secret<String>,\n}\n",
+        )
+        _git_init(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        pii010 = _by_rule(violations, "PII010")
+        assert any("vault2.rs" in v.file for v in pii010)
+
+    # frob:ticket T-0762
+    # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_rust_plain_string_field_type_does_not_fire  # noqa: E501
+    def test_rust_plain_string_field_type_does_not_fire(self, tmp_path: Path) -> None:
+        """Adversarial (T-0762 acceptance): a plain `String`-typed Rust
+        field with a non-PII-shaped name does not fire."""
+        self._write(
+            tmp_path,
+            "clean_type.rs",
+            "struct Widget {\n    label: String,\n}\n",
+        )
+        _git_init(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        assert not any(
+            "clean_type.rs" in v.file for v in _by_rule(violations, "PII010")
+        )
 
 
 # frob:ticket T-0788

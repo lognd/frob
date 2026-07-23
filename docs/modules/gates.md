@@ -1032,9 +1032,7 @@ structures and env-var access sites, drawn from
     declaration`s whose value is an `object_type`, and `class_declaration`
     bodies (`_scan_ts_fields`), and Rust `struct_item` named fields
     (`_scan_rust_fields`) -- reusing `_field_name_hit`/`FIELD_SIGNATURES`
-    unchanged (name-kind entries only; the `EmailStr`/`SecretStr`
-    type-kind entries stay Python-only, an honest gap for a follow-on
-    ticket, not guessed at).
+    (name-kind entries) unchanged.
   - SEC110 over TS `process.env.NAME`/`process.env["NAME"]` and
     `import.meta.env.NAME`/`import.meta.env["NAME"]` (`_scan_ts_env_
     access`), and Rust `std::env::var(...)`/`env::var(...)`/`std::env::
@@ -1054,6 +1052,40 @@ structures and env-var access sites, drawn from
     on a real PII field, just nothing nameable to test).
   - The T-0351 declared-surface join (`_load_declared_surface`) applies
     identically -- it is keyed on rel_path alone, language-agnostic.
+- **Structural PII type-kind for TS/Rust nominal PII-shaped types
+  (T-0762)**: T-0352 left TYPE-kind matching (`EmailStr`/`SecretStr`)
+  Python-only, an honest gap; T-0762 closes it by extending
+  `FIELD_SIGNATURES`'s single-source registry with a `langs` field
+  (`_FieldSignature.langs`, default all three languages for NAME-kind
+  entries; explicit per-entry scope for TYPE-kind entries, since a type
+  name like `SecretStr` or `SecretString` only exists in one language's
+  ecosystem):
+  - TS: a field typed as a known secret-wrapper type (`Secret`,
+    `SecretString`, `SensitiveString`) or a branded/nominal email type
+    (`Email`, `EmailAddress`) fires PII010 via `_ts_type_hit`, even when
+    the field's own NAME carries no name-kind keyword. A plain
+    `string`-typed field does not fire on type alone.
+  - Rust: a field typed `secrecy::Secret<...>`/`secrecy::SecretString`
+    (the `secrecy` crate's wrapper types named in the ticket body) or a
+    conventionally-named `Email` newtype PII wrapper fires PII010 via
+    `_rust_type_hit`. A plain `String`-typed field does not fire on type
+    alone.
+  - Both walk the type-annotation/type subtree for bare type-identifier
+    names (`_type_identifier_names`, the TS/Rust analogue of
+    `_annotation_names`'s Python AST walk) so a generic-wrapped or
+    scoped-path type (`secrecy::SecretString`, `Secret<String>`) still
+    surfaces its inner type name -- one shared walker for both grammars,
+    funneled through one shared `_type_hit(names, lang)` lookup so the
+    `langs` scoping logic lives in exactly one place.
+  - Resolving a field/binding TYPE to an imported type's actual
+    definition (distinguishing an unrelated same-named local `Email` type
+    from a real PII-shaped one, or reading an import alias) is NOT
+    attempted -- this is a bare type-identifier NAME match, the same
+    posture `_field_type_hit` already has for Python's `EmailStr`/
+    `SecretStr`. Full import-resolution-backed type-kind matching is left
+    for a follow-on ticket (coordination with T-0717's capability taxonomy
+    and the T-0611/T-0612 adapters' type info, per T-0762's ticket body),
+    not silently guessed at here.
 
 ### Anti-orphan file-reference gate T-0396
 
@@ -1825,7 +1857,18 @@ site -- no new mechanism needed.
 - `GateReport` -- the merged result of `run_gates`: kept violations,
   waived violations, and stats.
 - `GateConfig` -- everything `run_gates` needs to load state and select
-  which gates run (root, base ref, ticket, gate subset).
+  which gates run (root, base ref, ticket, gate subset). **The `drift`
+  gate (DRIFT001/DRIFT002) always evaluates regardless of `gates`/`--only`
+  narrowing (T-0265)**: `_build_jobs` unconditionally folds a `drift` job
+  into the selected set even when a caller's `gates` subset omits it (e.g.
+  a ticket-scoped `--only scope` pre-flight check), so a narrowly-scoped
+  run can never report clean on a dangling edge (DRIFT002) that a full,
+  unscoped `frob check` on the identical tree would catch -- one
+  authoritative answer to "does this edge endpoint resolve"
+  (`test_gate`'s own docstring: "DRIFT002 already covers TESTS edges"),
+  not two evaluation paths that can silently disagree. This costs nothing
+  extra: `st.snapshot`/`st.lock` are already unconditionally loaded for
+  every gate run before selection is even applied.
 - `PreworkSweep` -- a recorded dup+xref sweep over a ticket's scope,
   stamped at `frob ticket start` time; PRE001's evidence.
 - `SystemSpec` -- one `[[system]]` entry: an e2e-tested surface, its

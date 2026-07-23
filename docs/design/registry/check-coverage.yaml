@@ -19,7 +19,7 @@
 #     fabricated ticket. As T-0397's children close a concern down to
 #     a real gate rule, re-disposition that entry to handled_by:<rule>.
 schema_version: 1
-gate_rule_total: 117
+gate_rule_total: 118
 gate_rule_entries:
   - id: "CHK-GATE-COV001"
     name: "COV001 is a live, enforced gate rule"
@@ -489,6 +489,10 @@ gate_rule_entries:
   - id: "CHK-GATE-PROTO001"
     name: "PROTO001 is a live, enforced gate rule (frob:requires/frob:transition-tagged symbol's protocol summary poisoned by an unresolved callee, T-0813)"
     disposition: "handled_by:PROTO001"
+    cross_refs: []
+  - id: "CHK-GATE-TODO003"
+    name: "TODO003 is a live, enforced gate rule"
+    disposition: "handled_by:TODO003"
     cross_refs: []
 concern_family_total: 13
 concern_family_entries:

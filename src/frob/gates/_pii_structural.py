@@ -302,15 +302,38 @@ class _FieldSignature:
     keyword: str  # matched lowercase against a `_`-tokenized field name
     category: str  # one of frob.strata._pii.PII_CATEGORIES
     kind: str  # "name" | "type" -- which signal this entry matches on
+    #: Which language(s) this entry's `keyword` is meaningful in (T-0762):
+    #: a NAME-kind keyword is the same structural signal in any language
+    #: (default, all three); a TYPE-kind keyword is a concrete type name
+    #: that only exists in one language's ecosystem (`EmailStr`/`SecretStr`
+    #: are Python-only pydantic types; `SecretString`/`Secret` are the
+    #: TS/Rust secret-wrapper equivalents named in the T-0762 ticket body),
+    #: so TYPE-kind entries must scope themselves explicitly.
+    langs: frozenset[str] = frozenset({"py", "ts", "rust"})
 
 
-def _sig(id: str, keyword: str, category: str, kind: str = "name") -> _FieldSignature:
+def _sig(
+    id: str,
+    keyword: str,
+    category: str,
+    kind: str = "name",
+    langs: frozenset[str] | None = None,
+) -> _FieldSignature:
     """Build one `_FieldSignature`, asserting `category` is a real PII_
     CATEGORIES member so the registry can never point at a category PII001
-    would itself reject (deny-by-default consistency across both gates)."""
+    would itself reject (deny-by-default consistency across both gates).
+    `langs` defaults to all three supported languages (T-0762); pass an
+    explicit narrower set for a TYPE-kind entry whose keyword only exists
+    in one language's ecosystem."""
     if category not in PII_CATEGORIES:
         raise ValueError(f"_FieldSignature {id!r}: {category!r} not in PII_CATEGORIES")
-    return _FieldSignature(id=id, keyword=keyword, category=category, kind=kind)
+    return _FieldSignature(
+        id=id,
+        keyword=keyword,
+        category=category,
+        kind=kind,
+        langs=langs if langs is not None else frozenset({"py", "ts", "rust"}),
+    )
 
 
 # frob:doc docs/modules/gates.md#structural-pii-secrets-detection-t-0207
@@ -394,9 +417,11 @@ FIELD_SIGNATURES: tuple[_FieldSignature, ...] = (
     _sig("union_membership", "union_membership", "behavioral"),
     _sig("sexual_orientation", "sexual_orientation", "behavioral"),
     _sig("genetic_data", "genetic_data", "behavioral"),
-    # Type-based signals (corpus Part B.2: EmailStr/SecretStr and TS/Rust
-    # equivalents named in the ticket body -- only the Python types are
-    # scoped this pass, see module docstring).
+    # Type-based signals (corpus Part B.2: EmailStr/SecretStr -- Python
+    # only; every FIELD_SIGNATURES entry needs a firing fixture in
+    # `tests/test_pii_structural_gate.py::TestDriftLock`, so a TS/Rust-only
+    # type keyword belongs in `_CROSS_LANG_TYPE_SIGNATURES` below instead
+    # -- see that table's comment for the T-0762 rationale).
     _sig("emailstr-type", "EmailStr", "contact", kind="type"),
     _sig("secretstr-type", "SecretStr", "credentials", kind="type"),
 )
@@ -408,6 +433,78 @@ FIELD_SIGNATURES: tuple[_FieldSignature, ...] = (
 #: second hand-authored table (module docstring: no duplication).
 _NAME_SIGNATURES = tuple(sig for sig in FIELD_SIGNATURES if sig.kind == "name")
 _TYPE_SIGNATURES = tuple(sig for sig in FIELD_SIGNATURES if sig.kind == "type")
+
+#: TS/Rust-only TYPE-kind signals (T-0762): a field typed as a known
+#: secret-wrapper type or a branded/nominal PII-shaped type, in an
+#: ecosystem with no Python equivalent (so `FIELD_SIGNATURES`'s "every
+#: entry needs a `TestDriftLock` Python fixture" contract, T-0182, does not
+#: apply -- these are proven by the real TS/Rust fixtures in
+#: `tests/test_gates.py::TestPiiStructuralCrossLanguage` instead). Kept as
+#: a SEPARATE table from `FIELD_SIGNATURES` rather than mixed in with a
+#: `langs` filter, specifically so that contract does not need bending: a
+#: python fixture built from `sig.keyword` for `secrecy::SecretString`'s
+#: bare `"SecretString"` would spuriously pass as a `SecretStr`-shaped hit
+#: anyway, silently masking a truly-missing TS/Rust fixture.
+_CROSS_LANG_TYPE_SIGNATURES: tuple[_FieldSignature, ...] = (
+    # TS: known secret-wrapper type names (no single standard library
+    # equivalent to pydantic's SecretStr -- these are the conventional
+    # names used across TS secret-wrapper packages/patterns).
+    _sig(
+        "secret-type-ts", "Secret", "credentials", kind="type", langs=frozenset({"ts"})
+    ),
+    _sig(
+        "secretstring-type-ts",
+        "SecretString",
+        "credentials",
+        kind="type",
+        langs=frozenset({"ts"}),
+    ),
+    _sig(
+        "sensitivestring-type-ts",
+        "SensitiveString",
+        "credentials",
+        kind="type",
+        langs=frozenset({"ts"}),
+    ),
+    # TS: branded/nominal email type names (a field typed as one of these,
+    # rather than plain `string`, is a nominal PII-shaped type by
+    # convention).
+    _sig(
+        "brandedemail-type-ts", "Email", "contact", kind="type", langs=frozenset({"ts"})
+    ),
+    _sig(
+        "brandedemailaddress-type-ts",
+        "EmailAddress",
+        "contact",
+        kind="type",
+        langs=frozenset({"ts"}),
+    ),
+    # Rust: `secrecy` crate wrapper types (ticket body: "secrecy::Secret,
+    # SecretString").
+    _sig(
+        "secret-type-rust",
+        "Secret",
+        "credentials",
+        kind="type",
+        langs=frozenset({"rust"}),
+    ),
+    _sig(
+        "secretstring-type-rust",
+        "SecretString",
+        "credentials",
+        kind="type",
+        langs=frozenset({"rust"}),
+    ),
+    # Rust: newtype PII wrappers by conventional name (`struct Email(String)`
+    # style nominal wrappers named in the ticket body).
+    _sig(
+        "email-newtype-type-rust",
+        "Email",
+        "contact",
+        kind="type",
+        langs=frozenset({"rust"}),
+    ),
+)
 
 
 def _field_name_hit(field_name: str) -> _FieldSignature | None:
@@ -441,14 +538,29 @@ def _annotation_names(node: ast.expr | None) -> set[str]:
     return names
 
 
-def _field_type_hit(annotation: ast.expr | None) -> _FieldSignature | None:
-    """The first `FIELD_SIGNATURES` type-kind entry whose keyword appears
-    among `annotation`'s names (`_annotation_names`), or `None`."""
-    names = _annotation_names(annotation)
-    for sig in _TYPE_SIGNATURES:
-        if sig.keyword in names:
+#: `_TYPE_SIGNATURES` (Python-only, `TestDriftLock`-covered) plus
+#: `_CROSS_LANG_TYPE_SIGNATURES` (TS/Rust-only, T-0762) -- the combined
+#: population `_type_hit` searches, so both `_field_type_hit` and the
+#: TS/Rust `_ts_type_hit`/`_rust_type_hit` share one lookup.
+_ALL_TYPE_SIGNATURES = _TYPE_SIGNATURES + _CROSS_LANG_TYPE_SIGNATURES
+
+
+def _type_hit(names: set[str], lang: str) -> _FieldSignature | None:
+    """The first `_ALL_TYPE_SIGNATURES` entry active for `lang` (`sig.
+    langs`) whose keyword appears in `names`, or `None` -- the
+    language-generic core `_field_type_hit` (Python), `_ts_type_hit`, and
+    `_rust_type_hit` (T-0762) all funnel through, so the langs scoping
+    lives in exactly one place."""
+    for sig in _ALL_TYPE_SIGNATURES:
+        if lang in sig.langs and sig.keyword in names:
             return sig
     return None
+
+
+def _field_type_hit(annotation: ast.expr | None) -> _FieldSignature | None:
+    """The first `FIELD_SIGNATURES` Python type-kind entry whose keyword
+    appears among `annotation`'s names (`_annotation_names`), or `None`."""
+    return _type_hit(_annotation_names(annotation), "py")
 
 
 #: Base-class / decorator name fragments that mark a `ClassDef` as a data
@@ -1298,12 +1410,14 @@ def _tracked_python_files(root: Path) -> tuple[str, ...]:
 # of standing up a second `get_parser`/`Parser.parse` call site. Field-name
 # matching reuses `_field_name_hit`/`FIELD_SIGNATURES` unchanged (a field
 # named `email`/`ssn`/`password` is the identical structural signal in any
-# language); type-annotation matching (`_field_type_hit`, `EmailStr`/
-# `SecretStr`) stays Python-only per the module docstring's single-source
-# registry -- TS/Rust have no equivalent nominal types in this registry
-# yet, and inventing lookalikes (`EmailStr`-shaped TS branded types, a
-# Rust `SecretString` crate type) is left an honest gap for a follow-on
-# ticket rather than guessed at here.
+# language). T-0352 left TYPE-kind matching (`_field_type_hit`, `EmailStr`/
+# `SecretStr`) Python-only, disclosing the TS/Rust nominal-type gap as
+# honest future work rather than guessing at it; T-0762 closes that gap:
+# `_ts_type_hit`/`_rust_type_hit` match a field's TYPE against the same
+# single-source `FIELD_SIGNATURES` registry (langs-scoped per entry, see
+# `_FieldSignature.langs`) -- TS branded/nominal email types and known
+# secret-wrapper types (`Secret`/`SecretString`/`SensitiveString`), and
+# Rust `secrecy::Secret`/`SecretString` plus newtype PII wrappers.
 #
 # NO-FAIL-SILENT (ticket mandate): an unresolvable field shape -- a
 # TypeScript index signature (`[key: string]: T`) or computed property
@@ -1312,6 +1426,39 @@ def _tracked_python_files(root: Path) -> tuple[str, ...]:
 # the existing Python env-access posture (`_scan_python_env_access`
 # already fires on a non-literal `os.environ[dynamic_key]` rather than
 # skip it for lack of a static name).
+
+
+def _type_identifier_names(node: Node | None) -> set[str]:
+    """Every bare type-identifier name appearing anywhere in a TS/Rust type
+    subtree (a `type_annotation` wrapper, generics like `Secret<string>`/
+    `Secret<String>`, scoped paths like `secrecy::SecretString`) -- the
+    TS/Rust analogue of `_annotation_names`'s Python AST walk, shared by
+    `_ts_type_hit` and `_rust_type_hit` (T-0762) so the walk logic lives in
+    exactly one place regardless of which grammar's tree it is handed."""
+    if node is None:
+        return set()
+    names: set[str] = set()
+    stack = [node]
+    while stack:
+        current = stack.pop()
+        if current.type in ("type_identifier", "identifier"):
+            names.add(node_text(current))
+        stack.extend(current.children)
+    return names
+
+
+def _ts_type_hit(type_node: Node | None) -> _FieldSignature | None:
+    """The first `FIELD_SIGNATURES` TS-scoped type-kind entry whose keyword
+    appears in `type_node`'s identifier names (T-0762) -- the TS analogue
+    of `_field_type_hit`."""
+    return _type_hit(_type_identifier_names(type_node), "ts")
+
+
+def _rust_type_hit(type_node: Node | None) -> _FieldSignature | None:
+    """The first `FIELD_SIGNATURES` Rust-scoped type-kind entry whose
+    keyword appears in `type_node`'s identifier names (T-0762) -- the Rust
+    analogue of `_field_type_hit`."""
+    return _type_hit(_type_identifier_names(type_node), "rust")
 
 
 def _pii010_unresolvable_violation(
@@ -1386,8 +1533,9 @@ def _scan_ts_fields(
     `type_alias_declaration`s whose value is an `object_type`, and
     `class_declaration` bodies -- the TS field-shape equivalents of
     `_scan_python_fields`'s pydantic/dataclass/TypedDict scan. Reuses
-    `_field_name_hit`/`FIELD_SIGNATURES` (name-kind entries only, module
-    comment) and `declared` (T-0351 std.pii join) unchanged."""
+    `_field_name_hit`/`FIELD_SIGNATURES` (name-kind entries) plus `_ts_
+    type_hit` (TS-scoped type-kind entries, T-0762) and `declared` (T-0351
+    std.pii join) unchanged."""
     violations: list[Violation] = []
     stack = [tree.root_node]
     while stack:
@@ -1411,7 +1559,7 @@ def _scan_ts_fields(
                 assert (
                     name is not None
                 )  # frob:invariant terminates reason="the (None, ..., description) branch is handled by the unresolvable arm above; every remaining tuple carries a real name" measure="tuple's unresolvable field is None"  # noqa: E501
-                sig = _field_name_hit(name)
+                sig = _field_name_hit(name) or _ts_type_hit(type_node)
                 if sig is not None and not declared._has_pii(rel_path, sig.category):
                     violations.append(_pii010_violation(rel_path, lineno, name, sig))
         stack.extend(node.children)
@@ -1540,7 +1688,8 @@ def _scan_rust_fields(
 ) -> tuple[Violation, ...]:
     """PII010 (T-0352) over Rust `struct_item` named fields -- the Rust
     field-shape equivalent of `_scan_python_fields`. Reuses `_field_name_
-    hit`/`FIELD_SIGNATURES` and `declared` (T-0351) unchanged."""
+    hit`/`FIELD_SIGNATURES` plus `_rust_type_hit` (Rust-scoped type-kind
+    entries, T-0762) and `declared` (T-0351) unchanged."""
     violations: list[Violation] = []
     stack = [tree.root_node]
     while stack:
@@ -1548,8 +1697,8 @@ def _scan_rust_fields(
         if node.type == "struct_item":
             body = node.child_by_field_name("body")
             if body is not None:
-                for name, lineno, _type_node in _rust_struct_field_names(body):
-                    sig = _field_name_hit(name)
+                for name, lineno, type_node in _rust_struct_field_names(body):
+                    sig = _field_name_hit(name) or _rust_type_hit(type_node)
                     if sig is not None and not declared._has_pii(
                         rel_path, sig.category
                     ):
