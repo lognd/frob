@@ -2192,3 +2192,191 @@ class TestScopeUnboundPreflightBeforeMerge:
         result = land(repo, tid, wt, dry_run=False, covers_scope=lambda _t: True)
 
         assert result.is_ok, result.err
+
+
+# frob:ticket T-0795
+class TestLandRetryAfterFinalizeThenFail:
+    """T-0795: three real lands this drive (T-0676, T-0774, T-0767) merged
+    and finalized in the worktree (the ticket transitioned to `done` and
+    that transition was committed there) but then failed at a LATER step
+    -- the squash-apply onto `root` -- before the main commit landed.
+    Retrying the identical `land()` call always errored `InvalidTransition`
+    (`transition(..., DONE)` re-run against an already-`done` ticket), even
+    though the land itself is perfectly resumable; each incident required a
+    manual splice-apply onto main instead. This locks the fix: a retry
+    recognizes the already-done ticket and resumes straight at
+    squash-apply."""
+
+    def test_retry_after_finalize_then_squash_failure_lands_the_diff(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail.test_retry_after_finalize_then_squash_failure_lands_the_diff  # noqa: E501
+        # frob:tests src/frob/tickets/_land.py::_close_finalized_ticket kind="unit"
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-retry", str(wt)], repo)
+        created = new_ticket(wt, _spec("Retry me", scope=("src/retried.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "retried.py").write_text("# retried feature\n")
+        _commit_all(wt, "add retried.py")
+
+        before_main_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+
+        # First attempt: `bump_version` fails (simulating whichever
+        # post-finalize step actually failed in the real incidents --
+        # squash conflict, REL001 bump, or the T-0463 completeness
+        # assertion; all of them unwind `root` cleanly via `reset --hard`
+        # the same way this callback's failure path does) AFTER the
+        # worktree has already merged, finalized, and closed the ticket
+        # (that whole sequence commits in the WORKTREE unconditionally
+        # before `_land_squash_apply` -- see `_land_locked` -- so it
+        # survives this failure).
+        first = land(
+            repo,
+            tid,
+            wt,
+            dry_run=False,
+            bump_version=lambda root, ticket, fid: Err(LandError.ReleaseBumpFailed),
+        )
+        assert first.is_err
+        assert first.danger_err == LandError.ReleaseBumpFailed
+
+        # root: untouched by the failed attempt (the bump failure unwound
+        # the staged squash).
+        assert (
+            _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == before_main_sha
+        )
+        assert _status_ignoring_frob(repo) == ""
+
+        # worktree: the ticket really did reach `done` and that transition
+        # really did commit -- this is the exact precondition that used to
+        # make the retry below error `InvalidTransition`. The first attempt
+        # already finalized `tid`'s draft id to a real sequential id (that
+        # finalize-and-commit step runs BEFORE the bump that then failed),
+        # so the retry -- exactly like a real coordinator's retry -- must
+        # address the ticket by its now-finalized id.
+        wt_tickets = load_all(wt).danger_ok
+        final_id = next(i for i, t in wt_tickets.items() if t.state == TicketState.DONE)
+        assert final_id != tid
+        assert _status_ignoring_frob(wt) == ""
+
+        # Retry, identical arguments (final id, same worktree) except a
+        # bump_version that now succeeds -- must NOT error InvalidTransition
+        # on the already-done ticket; must resume at squash-apply and
+        # actually land.
+        second = land(
+            repo,
+            final_id,
+            wt,
+            dry_run=False,
+            bump_version=lambda root, ticket, fid: Ok(None),
+        )
+        assert second.is_ok, second.err
+        assert second.danger_ok.final_id == final_id
+
+        # The diff really landed onto main: the new file exists on root's
+        # branch, in a real "land <id>" commit distinct from before_main_sha.
+        assert (repo / "src" / "retried.py").read_text() == "# retried feature\n"
+        after_main_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        assert after_main_sha != before_main_sha
+        log = _run(["git", "log", "--oneline"], repo).stdout
+        assert f"land {final_id}" in log
+        assert _status_ignoring_frob(repo) == ""
+
+    def test_retry_when_still_queued_re_runs_the_ordinary_transition(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail.test_retry_when_still_queued_re_runs_the_ordinary_transition  # noqa: E501
+        # frob:tests src/frob/tickets/_land.py::_close_finalized_ticket kind="unit"
+        """Sanity companion: the ordinary (non-retry) first-time land, where
+        the ticket is NOT already done, still runs the real transition --
+        the T-0795 fix only short-circuits when the ticket is ALREADY
+        `done`, it does not skip closing altogether."""
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-firsttime", str(wt)], repo)
+        created = new_ticket(wt, _spec("First time", scope=("src/firsttime.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "firsttime.py").write_text("# first time\n")
+        _commit_all(wt, "add firsttime.py")
+
+        assert load_all(wt).danger_ok[tid].state == TicketState.IN_PROGRESS
+
+        result = land(repo, tid, wt, dry_run=False)
+        assert result.is_ok, result.err
+        assert result.danger_ok.final_id != ""
+
+
+# frob:ticket T-0795
+class TestLandRefusesWhenRootIsWorktree:
+    """T-0795: `land()` invoked with `--worktree` resolving to the SAME
+    path as `root` used to fall through to `_worktree_full_changeset`'s
+    much later T-0640/T-0761 diagnosis ("`--worktree` almost certainly
+    points at the same checkout/branch root has checked out ... create a
+    real feature branch") -- a correct remedy for a worktree genuinely
+    pointed at the wrong branch, but a misleading one for the far more
+    common real cause: `root` defaults to the invoker's cwd, so running
+    `frob ticket land` from a shell sitting INSIDE the worktree makes
+    `root` resolve to `worktree` for free. This locks the new EARLY
+    refusal (before any git mutation) that names the real mistake."""
+
+    def test_refused_before_any_git_mutation_names_the_real_mistake(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandRefusesWhenRootIsWorktree.test_refused_before_any_git_mutation_names_the_real_mistake  # noqa: E501
+        # frob:tests src/frob/tickets/_land.py::_refuse_if_root_is_worktree kind="unit"
+        created = new_ticket(
+            repo, _spec("Same path as root", scope=("src/samepath.py",))
+        )
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(repo, tid)
+        _commit_all(repo, "close ticket state directly on root")
+
+        before_main_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+
+        with caplog.at_level("ERROR", logger="frob.tickets._land"):
+            result = land(repo, tid, repo, dry_run=False)
+
+        assert result.is_err
+        assert result.danger_err == LandError.IncompleteLand
+        assert "cwd" in caplog.text
+        assert "ROOT checkout" in caplog.text
+
+        # Refused before any git mutation at all: no merge/finalize/squash
+        # commit, HEAD unmoved, tree exactly as found.
+        assert (
+            _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == before_main_sha
+        )
+        assert _status_ignoring_frob(repo) == ""
+        still = load_all(repo).danger_ok[tid]
+        assert still.state == TicketState.IN_PROGRESS
+
+    def test_still_refuses_when_worktree_has_diverged_commits(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandRefusesWhenRootIsWorktree.test_still_refuses_when_worktree_has_diverged_commits  # noqa: E501
+        # frob:tests src/frob/tickets/_land.py::_refuse_if_root_is_worktree kind="unit"
+        """T-0761 regression preserved under a different name: the exact
+        prior scenario (a new file committed directly on the branch `root`
+        has checked out, then `land(repo, tid, repo)`) still refuses with
+        `IncompleteLand` -- just via the new, earlier, more specific check
+        rather than falling through to `_worktree_full_changeset`."""
+        (repo / "src" / "new_feature2.py").write_text("# brand new feature code\n")
+        _commit_all(repo, "add new_feature2.py directly on the shared branch")
+
+        created = new_ticket(
+            repo, _spec("Same-branch land 2", scope=("src/new_feature2.py",))
+        )
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(repo, tid)
+        _commit_all(repo, "close ticket state directly on the shared branch")
+
+        result = land(repo, tid, repo, dry_run=False)
+
+        assert result.is_err
+        assert result.danger_err == LandError.IncompleteLand
+        log = _run(["git", "log", "--oneline"], repo).stdout
+        assert "land " not in log
+        assert _status_ignoring_frob(repo) == ""

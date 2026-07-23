@@ -1141,6 +1141,53 @@ def _refuse_if_main_dirty(
     return Ok(None)
 
 
+# frob:ticket T-0795
+def _refuse_if_root_is_worktree(
+    root: Path, worktree: Path, ticket_id: str
+) -> Result[None, LandError]:
+    """`Err(IncompleteLand)`, logged with the ACTUAL mistake named, if
+    `root` and `worktree` (both already `.resolve()`d by `land`) are the
+    identical path (T-0795).
+
+    Before this check, that exact condition (root == worktree) fell
+    through all the way to `_worktree_full_changeset`'s much later T-0640/
+    T-0761 diagnosis ("`--worktree` almost certainly points at the SAME
+    checkout/branch `root` has checked out ... create a real feature
+    branch") -- correct for a worktree genuinely pointed at the wrong
+    branch, but misleading for the far more common real cause: `root`
+    defaults to `cfg.ticket_path or Path(".")` (the invoker's CWD), so
+    running `frob ticket land <id> --worktree <path>` from A SHELL SITTING
+    INSIDE THE WORKTREE (rather than the shared root checkout) makes
+    `root` resolve to `worktree` for free, no misconfigured `--worktree`
+    involved. Refusing here, before `_land_merge_stage` runs any git
+    mutation, names the actual mistake immediately instead of sending an
+    agent chasing the T-0640 "create a real feature branch" remedy for a
+    worktree that was never the problem. Reuses `LandError.IncompleteLand`
+    (no new enum variant -- both are "this land cannot proceed as
+    configured, nothing was committed" outcomes; the log message, not the
+    enum tag, carries the corrected diagnosis) rather than the true-
+    same-branch check (`_worktree_full_changeset`'s merge-base-equals-HEAD
+    test), which still fires unchanged for a distinct-but-branchless
+    worktree path further down the pipeline."""
+    if root != worktree:
+        return Ok(None)
+    _log.error(
+        "land: %s refused -- root (%s) and --worktree (%s) resolve to the "
+        "IDENTICAL path. This is almost always caused by running `frob "
+        "ticket land` from a shell whose cwd is INSIDE the worktree "
+        "(`root` defaults to cwd) rather than a --worktree pointed at the "
+        "wrong branch. Run `frob ticket land %s --worktree %s` from the "
+        "ROOT checkout instead -- cd out of %s first, then retry",
+        ticket_id,
+        root,
+        worktree,
+        ticket_id,
+        worktree,
+        worktree,
+    )
+    return Err(LandError.IncompleteLand)
+
+
 def _validate_scope_covered_preflight(
     ticket: Ticket, covers_scope: Callable[[Ticket], bool | None] | None
 ) -> Result[None, LandError]:
@@ -1193,11 +1240,16 @@ def _land_precheck(
     *,
     covers_scope: Callable[[Ticket], bool | None] | None = None,
 ) -> Result[tuple[Ticket, str], LandError]:
-    """Refuse on a dirty main, load+validate the worktree's ticket is
-    closeable (including, T-0774, a `covers_scope` preflight simulation),
-    and resolve main's current branch name -- everything `land` must check
-    BEFORE any git mutation."""
+    """Refuse on root/worktree being the same path (T-0795) or a dirty
+    main, load+validate the worktree's ticket is closeable (including,
+    T-0774, a `covers_scope` preflight simulation), and resolve main's
+    current branch name -- everything `land` must check BEFORE any git
+    mutation."""
     from frob.tickets import _load_one
+
+    same_path_check = _refuse_if_root_is_worktree(root, worktree, ticket_id)
+    if same_path_check.is_err:
+        return Err(same_path_check.danger_err)
 
     dirty_check = _refuse_if_main_dirty(root, worktree, ticket_id)
     if dirty_check.is_err:
@@ -1518,20 +1570,48 @@ def _close_finalized_ticket(
 ) -> Result[str, LandError]:
     """Transition `final_id` to DONE. `covers_scope`, if supplied, is a
     callable invoked with the just-finalized `Ticket` (loaded fresh here,
-    post-finalize) -- see `land`'s docstring for why this is lazy."""
+    post-finalize) -- see `land`'s docstring for why this is lazy.
+
+    T-0795: idempotent against a RETRY whose prior attempt already reached
+    this transition and committed it (finalize succeeded, close succeeded,
+    but a LATER step -- the squash-apply onto `root` -- failed and the
+    caller retried the same `land()` call). Before this fix, a retry's
+    `transition(..., DONE)` against an already-DONE ticket always errored
+    `InvalidTransition` (`done` is a terminal state with no `done -> done`
+    edge in `_TRANSITIONS`), even though the land is otherwise perfectly
+    resumable -- the real incident this closes (T-0676/T-0774/T-0767: three
+    lands that merged+finalized in the worktree, failed before the main
+    commit, and required a manual splice-apply onto main because the
+    obvious `frob ticket land` retry errored instead of resuming). Loading
+    `final_id` FIRST and checking its state lets a retry recognize "already
+    done from a prior finalize" and skip straight to returning `final_id`
+    for the caller (`_land_finalize_and_close`) to proceed to squash-apply,
+    instead of re-running (and failing) the transition."""
     from frob.tickets import _load_one, transition
+
+    loaded = _load_one(worktree, final_id)
+    if loaded.is_err:
+        _log.error(
+            "land: %s not found post-finalize in %s -- cannot close",
+            final_id,
+            worktree,
+        )
+        return Err(LandError.NotFound)
+    current = loaded.danger_ok
+
+    if current.state == TicketState.DONE:
+        _log.info(
+            "land: %s already done in %s (retry after a prior finalize "
+            "that did not reach the main commit, T-0795) -- skipping the "
+            "done transition, proceeding straight to squash-apply",
+            final_id,
+            worktree,
+        )
+        return Ok(final_id)
 
     resolved_covers_scope: bool | None = None
     if covers_scope is not None:
-        loaded = _load_one(worktree, final_id)
-        if loaded.is_err:
-            _log.error(
-                "land: %s not found post-finalize in %s -- cannot compute covers_scope",
-                final_id,
-                worktree,
-            )
-            return Err(LandError.NotFound)
-        resolved_covers_scope = covers_scope(loaded.danger_ok)
+        resolved_covers_scope = covers_scope(current)
 
     closed = transition(
         worktree, final_id, TicketState.DONE, covers_scope=resolved_covers_scope
