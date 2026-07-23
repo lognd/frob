@@ -8777,6 +8777,8 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "dead_symbols",
     # frob:ticket T-0813
     "protocol_summary",
+    # frob:ticket T-0788
+    "compliance",
     "lang_conformance",
     "lang_project_conformance",
     "scope",
