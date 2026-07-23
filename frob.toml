@@ -258,8 +258,12 @@ language = "rust"
 # T-0569: ratchet pools (docs/modules/gates.md#ratchet-pools) -- rule ids
 # opted into "existing findings stay warn (frob-ratchet.lock.json), new
 # findings error" instead of a plain warn-first campaign. Empty/absent
-# means no rule is ratcheted. Not currently used by any live gate's
-# severity resolution (see docs/modules/gates.md#ratchet-pools) -- this
-# table is schema/config-ready for the integration follow-up.
+# means no rule is ratcheted.
+# T-0594: INV006 is the first rule wired into a live gate's severity
+# resolution (inv006_gate, src/frob/gates/__init__.py) -- its 29
+# pre-existing findings were baselined via `frob pool snapshot INV006`
+# (frob-ratchet.lock.json) at the point this was enabled, so they keep
+# reporting WARN; any file with a NEW unbound exclusivity claim now
+# reports INV006 at ERROR.
 [gates.ratchet]
-rules = []
+rules = ["INV006"]

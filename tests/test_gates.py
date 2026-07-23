@@ -51,6 +51,12 @@ from frob.gates import (
 )
 from frob.gates._docblocks import doc004_gate
 from frob.gates._pii_structural import pii_structural_gate
+from frob.gates._ratchet import (
+    load_ratchet_lock,
+    ratchet_enabled_rules,
+    resolve_ratchet_severity,
+    snapshot_ratchet,
+)
 from frob.gates.invariants import InvariantError, _Criticality, load_invariants
 from frob.gitio import Diff, Hunk, working_diff
 from frob.graph import build_graph
@@ -3304,6 +3310,82 @@ class TestInv006Gate:
     def test_missing_src_dir_is_silent(self, tmp_path: Path) -> None:
         snapshot = _snapshot(tmp_path)
         assert inv006_gate(tmp_path, snapshot) == ()
+
+    # frob:ticket T-0594
+    def test_ratchet_fresh_finding_errors_when_rule_enabled(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0594: `[gates.ratchet] rules = ["INV006"]` with no baseline
+        entry for this file -- `resolve_ratchet_severity` resolves a NEW
+        finding to error, not the gate's static WARN."""
+        _write(
+            tmp_path,
+            "src/pkg.py",
+            '"""Module docstring."""\n\n'
+            "def only_writer() -> None:\n"
+            '    """The only writer of this file is the daemon."""\n',
+        )
+        _write(tmp_path, "frob.toml", '[gates.ratchet]\nrules = ["INV006"]\n')
+        snapshot = _snapshot(tmp_path)
+        violations = inv006_gate(tmp_path, snapshot)
+        assert len(violations) == 1
+        assert violations[0].severity == Severity.ERROR
+
+    # frob:ticket T-0594
+    def test_ratchet_baselined_finding_stays_warn(self, tmp_path: Path) -> None:
+        """T-0594: the same finding, but its key (`src/pkg.py`) is already
+        baselined in `frob-ratchet.lock.json` -- `resolve_ratchet_severity`
+        resolves it to warn, matching the pre-ratchet gate posture."""
+        _write(
+            tmp_path,
+            "src/pkg.py",
+            '"""Module docstring."""\n\n'
+            "def only_writer() -> None:\n"
+            '    """The only writer of this file is the daemon."""\n',
+        )
+        _write(tmp_path, "frob.toml", '[gates.ratchet]\nrules = ["INV006"]\n')
+        snapshot_ratchet(tmp_path, "INV006", ["src/pkg.py"])
+        snapshot = _snapshot(tmp_path)
+        violations = inv006_gate(tmp_path, snapshot)
+        assert len(violations) == 1
+        assert violations[0].severity == Severity.WARN
+
+    # frob:ticket T-0594
+    def test_ratchet_rule_not_enabled_stays_static_warn(self, tmp_path: Path) -> None:
+        """T-0594: no `[gates.ratchet]` opt-in at all -- INV006 keeps
+        reporting its unconditional static WARN, unaffected by ratchet
+        wiring existing in the codebase (opt-in, not opt-out)."""
+        _write(
+            tmp_path,
+            "src/pkg.py",
+            '"""Module docstring."""\n\n'
+            "def only_writer() -> None:\n"
+            '    """The only writer of this file is the daemon."""\n',
+        )
+        snapshot = _snapshot(tmp_path)
+        violations = inv006_gate(tmp_path, snapshot)
+        assert len(violations) == 1
+        assert violations[0].severity == Severity.WARN
+
+    # frob:ticket T-0594
+    def test_this_repos_frob_toml_and_ratchet_lock_calibrate(self) -> None:
+        """T-0594 calibration: this repo's OWN committed `frob.toml`
+        (`[gates.ratchet] rules = ["INV006"]`) and `frob-ratchet.lock.json`
+        (the 29 findings baselined when ratcheting was enabled) resolve
+        every currently-baselined INV006 finding to WARN when run against
+        the real tree -- i.e. wiring this in did not turn `frob check`
+        red on its own pre-existing findings."""
+        root = Path(__file__).resolve().parent.parent
+        assert "INV006" in ratchet_enabled_rules(root)
+        lock = load_ratchet_lock(root)
+        pool = lock.pool_for("INV006")
+        assert pool is not None
+        assert len(pool.entries) > 0
+        for entry in pool.entries:
+            assert resolve_ratchet_severity("INV006", entry.key, lock) == "warn"
+        assert resolve_ratchet_severity("INV006", "src/pkg/not_baselined.py", lock) == (
+            "error"
+        )
 
 
 class TestPlace001Gate:

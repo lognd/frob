@@ -1529,16 +1529,28 @@ mechanism as a self-contained, additive module:
   rule is ratcheted, matching every other per-section `frob.toml` reader's
   missing-is-default posture, e.g. `load_arch_config`).
 
-**Deliberately not wired into a live gate's severity resolution this
-pass**: `src/frob/gates/__init__.py`'s per-rule severity dispatch is large
-shared surface actively owned by a concurrent wave; rewiring a real gate
-through `resolve_ratchet_severity` is a follow-up (filed as a new ticket,
-see this ticket's Done report) once that ownership constraint lifts. The
-storage format, CLI, and severity-resolution contract are complete and
-tested (`tests/test_gates_ratchet.py`, `tests/test_pool_runner.py`) against
-synthetic rule ids in the interim -- a future integration only needs to
-call `resolve_ratchet_severity` at the one call site a chosen gate already
-computes severity, not design anything new.
+**Wired into a live gate (T-0594)**: `INV006` (`inv006_gate`,
+`src/frob/gates/__init__.py`) is the first rule opted into
+`[gates.ratchet] rules = ["INV006"]` in this repo's own `frob.toml`.
+`inv006_gate` loads `ratchet_enabled_rules(root)` and (only when INV006 is
+enabled) `load_ratchet_lock(root)` once per run, then
+`_inv006_src_violations` calls `resolve_ratchet_severity("INV006", rel,
+lock)` per file to pick the reported `Severity` (`rel`, the finding's
+repo-relative path, is INV006's stable key -- findings are file-level,
+`line=0`). This repo's own 29 pre-existing INV006 findings at the point
+ratcheting was enabled were baselined with `frob pool snapshot INV006
+--key <path> ...` so they keep reporting WARN; any file with a NEW,
+unbound exclusivity claim now reports INV006 at ERROR instead of quietly
+joining the warn pile. The storage format, CLI, and severity-resolution
+contract are tested against synthetic rule ids in
+`tests/test_gates_ratchet.py`/`tests/test_pool_runner.py`; the live-gate
+integration itself (opt-in config read, baseline hit stays warn, fresh
+finding errors, calibration against this repo's own committed
+`frob-ratchet.lock.json`) is tested in `tests/test_gates.py`. Any other
+warn-first rule can opt in the same way: add its id to `[gates.ratchet]
+rules`, baseline its current findings with `frob pool snapshot`, and call
+`resolve_ratchet_severity` at that gate's own severity-decision call
+site -- no new mechanism needed.
 
 ## Data models
 

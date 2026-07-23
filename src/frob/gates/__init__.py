@@ -91,6 +91,12 @@ from frob.gates._parse_failures import parse_failure_gate
 from frob.gates._pii_structural import pii_structural_gate
 from frob.gates._prework import load_prework, record_prework, sweep_ticket
 from frob.gates._protocol_summary import protocol_summary_gate
+from frob.gates._ratchet import (
+    RatchetLock,
+    load_ratchet_lock,
+    ratchet_enabled_rules,
+    resolve_ratchet_severity,
+)
 from frob.gates._refs import ref_gate
 from frob.gates._registry_exhaustiveness import registry_gate
 from frob.gates._render_lint import render_lint_gate
@@ -5280,12 +5286,25 @@ def _inv006_waived(rel: str, snapshot: GraphSnapshot) -> bool:
 
 # frob:doc docs/modules/gates.md#invariants
 # frob:ticket T-0408
+# frob:ticket T-0594
 def _inv006_src_violations(
-    root: Path, path: Path, snapshot: GraphSnapshot
+    root: Path,
+    path: Path,
+    snapshot: GraphSnapshot,
+    ratchet_rules: frozenset[str],
+    ratchet_lock: RatchetLock,
 ) -> tuple[Violation, ...]:
     """INV006 findings for one source file: an exclusivity claim
     (`frob.gates.invariants.find_exclusivity_claims`) with no
-    `frob:invariant` edge anchored anywhere in the file."""
+    `frob:invariant` edge anchored anywhere in the file.
+
+    T-0594: when INV006 is opted into `[gates.ratchet] rules` in
+    `frob.toml`, the finding's severity is resolved against the committed
+    `frob-ratchet.lock.json` baseline (`resolve_ratchet_severity`,
+    T-0569) instead of always reporting the gate's static WARN -- a
+    baselined file (an existing claim, already triaged) stays WARN, a
+    NEW one errors for real. `ratchet_rules`/`ratchet_lock` are loaded
+    once by the caller (`inv006_gate`), not per file."""
     try:
         text = path.read_text(encoding="utf-8")
     except OSError as exc:
@@ -5303,10 +5322,17 @@ def _inv006_src_violations(
     if _inv006_waived(rel, snapshot):
         _log.debug("INV006: %s waived by frob:waive INV006", rel)
         return ()
+    severity = Severity.WARN
+    if "INV006" in ratchet_rules:
+        resolved = resolve_ratchet_severity("INV006", rel, ratchet_lock)
+        severity = Severity.ERROR if resolved == "error" else Severity.WARN
+        _log.debug(
+            "INV006: %s ratchet-resolved to %s (rules=%s)", rel, resolved, ratchet_rules
+        )
     return (
         Violation(
             rule="INV006",
-            severity=Severity.WARN,
+            severity=severity,
             file=rel,
             line=0,
             message=(
@@ -5336,7 +5362,17 @@ def inv006_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     INV002 only ever validated invariants that already existed to be
     validated; nothing previously checked whether ENOUGH of the repo's
     own prose guarantee claims outside docs/ had one declared at all).
+
+    T-0594: if `INV006` is opted into `[gates.ratchet] rules` in
+    `root/frob.toml`, per-file severity is resolved against the committed
+    `frob-ratchet.lock.json` baseline (`resolve_ratchet_severity`) instead
+    of the static WARN -- a baselined file stays WARN, a fresh one errors.
+    Ratchet state is loaded once here, not per file.
     """
+    ratchet_rules = ratchet_enabled_rules(root)
+    ratchet_lock = (
+        load_ratchet_lock(root) if "INV006" in ratchet_rules else RatchetLock()
+    )
     violations: list[Violation] = []
     for src_dir in INV006_SRC_DIRS:
         src_root = root / src_dir
@@ -5344,7 +5380,11 @@ def inv006_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
             continue
         for suffix in INV006_SRC_SUFFIXES:
             for path in iter_files(src_root, suffix=suffix):
-                violations.extend(_inv006_src_violations(root, path, snapshot))
+                violations.extend(
+                    _inv006_src_violations(
+                        root, path, snapshot, ratchet_rules, ratchet_lock
+                    )
+                )
     return tuple(violations)
 
 

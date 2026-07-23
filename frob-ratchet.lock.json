@@ -1,0 +1,125 @@
+{
+  "pools": [
+    {
+      "entries": [
+        {
+          "baselined": "2026-07-23",
+          "key": "src/frob/app/fleet_runner.py"
+        },
+        {
+          "baselined": "2026-07-23",
+          "key": "src/frob/app/gitlog_runner.py"
+        },
+        {
+          "baselined": "2026-07-23",
+          "key": "src/frob/app/mutate_runner.py"
+        },
+        {
+          "baselined": "2026-07-23",
+          "key": "src/frob/arch/_concurrency.py"
+        },
+        {
+          "baselined": "2026-07-23",
+          "key": "src/frob/arch/_kotlin.py"
+        },
+        {
+          "baselined": "2026-07-23",
+          "key": "src/frob/arch/_normalized.py"
+        },
+        {
+          "baselined": "2026-07-23",
+          "key": "src/frob/arch/_ocp.py"
+        },
+        {
+          "baselined": "2026-07-23",
+          "key": "src/frob/arch/_patterns.py"
+        },
+        {
+          "baselined": "2026-07-23",
+          "key": "src/frob/arch/_rust.py"
+        },
+        {
+          "baselined": "2026-07-23",
+          "key": "src/frob/arch/_srp.py"
+        },
+        {
+          "baselined": "2026-07-23",
+          "key": "src/frob/arch/_typescript.py"
+        },
+        {
+          "baselined": "2026-07-23",
+          "key": "src/frob/deploy/_drift.py"
+        },
+        {
+          "baselined": "2026-07-23",
+          "key": "src/frob/deploy/_generate_windows.py"
+        },
+        {
+          "baselined": "2026-07-23",
+          "key": "src/frob/gates/_protocol_summary.py"
+        },
+        {
+          "baselined": "2026-07-23",
+          "key": "src/frob/gates/_ratchet.py"
+        },
+        {
+          "baselined": "2026-07-23",
+          "key": "src/frob/gitio.py"
+        },
+        {
+          "baselined": "2026-07-23",
+          "key": "src/frob/graph/_models.py"
+        },
+        {
+          "baselined": "2026-07-23",
+          "key": "src/frob/graph/summary.py"
+        },
+        {
+          "baselined": "2026-07-23",
+          "key": "src/frob/lang/_walk_kotlin.py"
+        },
+        {
+          "baselined": "2026-07-23",
+          "key": "src/frob/perf/_collectors.py"
+        },
+        {
+          "baselined": "2026-07-23",
+          "key": "src/frob/perf/_harness.py"
+        },
+        {
+          "baselined": "2026-07-23",
+          "key": "src/frob/perf/_hotgraph.py"
+        },
+        {
+          "baselined": "2026-07-23",
+          "key": "src/frob/perf/_sampler.py"
+        },
+        {
+          "baselined": "2026-07-23",
+          "key": "src/frob/scaffold/_managed.py"
+        },
+        {
+          "baselined": "2026-07-23",
+          "key": "src/frob/scaffold/project.py"
+        },
+        {
+          "baselined": "2026-07-23",
+          "key": "src/frob/serve/_daemon.py"
+        },
+        {
+          "baselined": "2026-07-23",
+          "key": "src/frob/serve/_warm.py"
+        },
+        {
+          "baselined": "2026-07-23",
+          "key": "src/frob/tickets/_brief.py"
+        },
+        {
+          "baselined": "2026-07-23",
+          "key": "src/frob/vet/_capability_modes.py"
+        }
+      ],
+      "rule_id": "INV006"
+    }
+  ]
+}
