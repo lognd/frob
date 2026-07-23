@@ -29,6 +29,51 @@ track the sunset window and escalate to an error once it passes
   the bare `frob docs <path>` extract path and `--overview` stay as they
   are -- this decision covers `--search` specifically
 
+## Exports-consumers surface (T-0858)
+
+2026-07-23 reevaluation of the navigation-command sunset above, before
+T-0802 executes it: telemetry backs deprecating the standalone `frob xref`
+porcelain (zero organic invocation), but the underlying question it
+answers -- "who imports this symbol" -- is recurring, gate-driven work
+(T-0600/T-0601/T-0588 all leaned on it), and grep/ad-hoc search answers it
+wrong in both directions (misses real references, false-positives on
+comment/prose mentions). Decision: keep `frob xref` deprecated per its
+existing sunset, and fold the surviving capability into the `exports`
+library surface instead of deleting it with the porcelain.
+
+<!-- frob:describes src/frob/exports/__init__.py::ConsumerRef -->
+<!-- frob:describes src/frob/exports/__init__.py::ConsumersResult -->
+<!-- frob:describes src/frob/exports/__init__.py::exports_consumers -->
+
+```python
+# frob/exports/__init__.py
+class ConsumerRef(BaseModel)
+    file: str
+    line: int
+    context: str
+
+class ConsumersResult(BaseModel)
+    symbol: str
+    consumers: list[ConsumerRef]
+    def as_text(self) -> str
+    def as_json(self) -> str
+
+def exports_consumers(
+    symbol: str, root: Path, *, lang: str | None = None,
+) -> Result[ConsumersResult, ExportsError]
+    # Reuses frob.xref.xref's parsed usages, then narrows to lines that
+    # parse as an import statement -- real import-consumers only, not
+    # every textual mention of the symbol name.
+```
+
+This is a library-only surface today (`from frob.exports import
+exports_consumers`); no `frob exports --consumers` CLI flag exists yet --
+wiring one into `frob exports`'s parser/config/runner is out of this
+ticket's scope and tracked as a follow-on (see the drafted ticket below).
+Re-check organic `frob xref` telemetry again at the 2026-10-01 sunset
+before T-0802 executes it, per the caveat that most worktree telemetry
+dies with worktree removal (absence-of-evidence there is weak).
+
 ## Plumbing tier -- kept, unchanged (T-0580)
 
 `frob parse`, `frob exports`, `frob gitlog`, and `frob serve` were

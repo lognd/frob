@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from pydantic import BaseModel
@@ -7,6 +8,7 @@ from typani import Err, ErrorSet, Ok
 from typani.result import Result
 
 from frob.outline import outline_file
+from frob.xref import xref
 
 
 # frob:doc docs/commands/exports.md#public-api
@@ -122,3 +124,76 @@ def exports_package(
             modules.append(mod)
 
     return Ok(ExportsResult(package_dir=str(pkg_dir), modules=modules))
+
+
+# Matches a Python `import x` / `from x import y` statement line (allowing
+# leading whitespace for indented/conditional imports) -- used to separate
+# real import-consumers from mere prose/comment mentions of a symbol name
+# (T-0858: the recurring "who imports this symbol" question that grep
+# demonstrably answers wrong in both directions -- missed matches and false
+# positives on comments).
+_IMPORT_LINE_RE = re.compile(r"^\s*(from\s+\S+\s+import\b|import\s+\S+)")
+
+
+# frob:doc docs/modules/cli.md#exports-consumers-t-0858
+class ConsumerRef(BaseModel):
+    file: str
+    line: int
+    context: str
+
+
+# frob:doc docs/modules/cli.md#exports-consumers-t-0858
+class ConsumersResult(BaseModel):
+    symbol: str
+    consumers: list[ConsumerRef]
+
+    # frob:ticket T-0858
+    # frob:tests tests/unit/test_exports.py::TestExportsConsumers.test_as_text_output
+    def as_text(self) -> str:
+        # frob:doc docs/modules/cli.md#exports-consumers-t-0858
+        parts = [self.symbol]
+        if self.consumers:
+            parts.append("  imported by:")
+            for c in self.consumers:
+                parts.append(f"    {c.file}:{c.line:<6} {c.context}")
+        else:
+            parts.append("  imported by: (none found)")
+        return "\n".join(parts)
+
+    # frob:ticket T-0858
+    # frob:tests tests/unit/test_exports.py::TestExportsConsumers.test_as_json_output
+    def as_json(self) -> str:
+        # frob:doc docs/modules/cli.md#exports-consumers-t-0858
+        return self.model_dump_json(indent=2)
+
+
+# frob:doc docs/modules/cli.md#exports-consumers-t-0858
+# frob:ticket T-0858
+# frob:tests tests/unit/test_exports.py::TestExportsConsumers.test_finds_import_consumer
+# frob:tests tests/unit/test_exports.py::TestExportsConsumers.test_excludes_prose_mention  # noqa: E501
+def exports_consumers(
+    symbol: str, root: Path, *, lang: str | None = None
+) -> Result[ConsumersResult, ExportsError]:
+    """Which files actually `import`/`from ... import` `symbol` under `root`,
+    filtered down from `frob.xref`'s raw identifier usages to real import
+    statements only.
+
+    Folds the one xref query that stayed in recurring, gate-driven use
+    (T-0858's reevaluation of the T-0580/T-0802 navigation-command sunset)
+    into the surviving `exports` surface, so the sunset of the standalone
+    `frob xref` porcelain does not delete the underlying capability. Plain
+    `xref`/grep usage cannot cleanly separate "this file imports the symbol"
+    from "this file merely mentions the symbol name in a comment or string"
+    -- this narrows to lines that parse as an import statement.
+    """
+    result = xref(symbol, root, lang=lang)
+    if result.is_err:
+        return Err(ExportsError.NoSourceFiles)
+
+    xr = result.danger_ok
+    consumers = [
+        ConsumerRef(file=u.file, line=u.line, context=u.context.strip())
+        for u in xr.usages
+        if _IMPORT_LINE_RE.match(u.context)
+    ]
+    return Ok(ConsumersResult(symbol=symbol, consumers=consumers))

@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from frob.exports import ExportsError, exports_package
+from frob.exports import ExportsError, exports_consumers, exports_package
 
 
 class TestExportsPackage:
@@ -107,3 +107,53 @@ class TestExportsPackage:
         syms = result.danger_ok.modules[0].symbols
         assert "Foo" in syms
         assert "Bar" in syms
+
+
+class TestExportsConsumers:
+    """T-0858: exports_consumers folds the xref-sunset's surviving
+    "who imports this symbol" question into the exports library surface."""
+
+    def test_finds_import_consumer(self, tmp_path):
+        # frob:tests src/frob/exports/__init__.py::exports_consumers kind="unit"
+        (tmp_path / "producer.py").write_text("def widget(): ...\n")
+        (tmp_path / "consumer.py").write_text(
+            "from producer import widget\n\nwidget()\n"
+        )
+        result = exports_consumers("widget", tmp_path)
+        assert result.is_ok
+        files = {c.file for c in result.danger_ok.consumers}
+        assert "consumer.py" in files
+
+    def test_excludes_prose_mention(self, tmp_path):
+        # frob:tests src/frob/exports/__init__.py::exports_consumers kind="unit"
+        (tmp_path / "producer.py").write_text("def widget(): ...\n")
+        (tmp_path / "notes.py").write_text(
+            "# see widget for details, but this file does not import it\n"
+        )
+        result = exports_consumers("widget", tmp_path)
+        assert result.is_ok
+        files = {c.file for c in result.danger_ok.consumers}
+        assert "notes.py" not in files
+
+    def test_no_source_files(self, tmp_path):
+        empty = tmp_path / "empty"
+        empty.mkdir()
+        result = exports_consumers("widget", empty)
+        assert result.is_err
+        assert result.danger_err == ExportsError.NoSourceFiles
+
+    def test_as_text_output(self, tmp_path):
+        (tmp_path / "producer.py").write_text("def widget(): ...\n")
+        (tmp_path / "consumer.py").write_text("from producer import widget\n")
+        result = exports_consumers("widget", tmp_path)
+        text = result.danger_ok.as_text()
+        assert "widget" in text
+        assert "consumer.py" in text
+
+    def test_as_json_output(self, tmp_path):
+        (tmp_path / "producer.py").write_text("def widget(): ...\n")
+        (tmp_path / "consumer.py").write_text("from producer import widget\n")
+        result = exports_consumers("widget", tmp_path)
+        js = result.danger_ok.as_json()
+        assert "widget" in js
+        assert "consumer.py" in js

@@ -17,10 +17,15 @@ _log = get_logger(__name__)
 # frob:tests tests/unit/test_app_runners.py::TestXrefRunner.test_found_symbol_json_mode
 def run(cfg: AppConfig) -> None:
     """T-0580: DEPRECATED, sunset 2026-10-01 -- navigation is owned by
-    Serena/native tools in agentic use; zero organic invocation observed."""
+    Serena/native tools in agentic use; zero organic invocation observed.
+    T-0858 reevaluated the sunset and kept it: the "who imports this
+    symbol" question the standalone command answers is recurring and
+    gate-driven, but it now lives in `frob.exports.exports_consumers`
+    instead of this porcelain."""
     _log.warning(
         "frob xref is deprecated, sunset 2026-10-01, use Serena/native "
-        "navigation; see T-0580"
+        "navigation or frob.exports.exports_consumers for import-consumer "
+        "lookups; see T-0580/T-0858"
     )
     if cfg.xref_symbol is None:
         _log.error("frob xref requires <symbol>")

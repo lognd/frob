@@ -6172,6 +6172,7 @@ Filed: none.
 
 ## Drop reason
 - 2026-07-23: exact duplicate of T-0760 (scope strict subset, same test, same fragility); fix landed at 99ba6327 under T-0760 with process_time + xdist-gated tolerance
+
 <!-- ticket:T-0760 -->
 ```yaml
 id: T-0760
@@ -8789,7 +8790,7 @@ Filed: none. Deviations: none -- this rework directly implements the reviewer's 
 id: T-0858
 title: 'xref sunset reevaluation: consumer-audit need is real and recurring but agents
   answer it with grep -- fold into exports/graph surface before 2026-10-01 deletion'
-state: queued
+state: done
 kind: ux
 origin: human
 created: '2026-07-23'
@@ -8799,10 +8800,62 @@ scope:
 - src/frob/app/xref_runner.py
 - src/frob/exports/**
 - docs/modules/cli.md
+evidence:
+- tests/unit/test_exports.py::TestExportsConsumers::test_finds_import_consumer
+- tests/unit/test_exports.py::TestExportsConsumers::test_excludes_prose_mention
+- tests/unit/test_exports.py::TestExportsConsumers::test_no_source_files
+- tests/unit/test_exports.py::TestExportsConsumers::test_as_text_output
+- tests/unit/test_exports.py::TestExportsConsumers::test_as_json_output
 threat: null
 component: null
 ```
 2026-07-23 reevaluation prompted by the user after this session's exports triage (T-0600/T-0601) and TEST014 binding work (T-0588) leaned on who-imports-this-symbol queries. Telemetry verdict: root telemetry has 0 organic xref events today (82 historical, all tests); both surviving agent worktrees show 0 xref events despite dispatch prompts explicitly suggesting frob xref -- agents chose grep/Serena. BUT the underlying question (external consumers of a symbol, distinguishing imports from prose) is now RECURRING gate-driven work, and grep demonstrably errs in both directions (T-0601 reviewer caught a missed comment-prose reference; grep cannot cleanly separate import-consumers from mentions). Decision to make before the 2026-10-01 sunset executes: keep the standalone xref porcelain deprecated (telemetry supports it), and instead fold a consumer-lookup mode into a surface agents actually use (e.g. frob exports --consumers <symbol>, or a graph query verb) so the sunset does not delete the capability along with the porcelain. Re-check telemetry at sunset time; caveat that most worktree telemetry dies with worktree removal, so absence-of-evidence there is weak.
+
+## Done report
+
+Reevaluated the T-0580/T-0802 navigation-command sunset before it executes.
+Conclusion: keep `frob xref` deprecated per its existing 2026-10-01 sunset
+(telemetry still shows zero organic invocation of the standalone command),
+but fold the one recurring, gate-driven capability it answers -- "who
+imports this symbol" -- into the `exports` library surface instead of
+letting it be deleted along with the porcelain.
+
+Added `frob.exports.exports_consumers` (plus `ConsumerRef`/`ConsumersResult`
+models): reuses `frob.xref.xref`'s parsed usages, then narrows to lines
+that parse as an actual import statement, so it answers the consumer
+question without the false positives (comment/prose mentions) or missed
+matches that a plain grep suffers from -- the exact failure mode T-0601's
+reviewer caught. This is a library-only surface for now; there is no
+`frob exports --consumers` CLI flag yet, because wiring one requires
+touching src/frob/app/exports_runner.py, src/frob/app/config.py, and
+src/frob/__main__.py, none of which are in this ticket's declared scope
+(src/frob/app/xref_runner.py, src/frob/exports/**, docs/modules/cli.md).
+Filed T-0876 to do that CLI wiring as a follow-on before/around
+the 2026-10-01 sunset.
+
+Also updated xref_runner.py's deprecation warning/docstring to point at
+the new `exports_consumers` surface, and added a new section to
+docs/modules/cli.md documenting the decision and the new public API
+(frob:describes anchors on ConsumerRef, ConsumersResult, exports_consumers).
+
+This reevaluation directly informs T-0802 (see that ticket's own Done
+report / fail record): the sunset date (2026-10-01) has not passed as of
+today (2026-07-23), and T-0802's own body says not to work it before then,
+so T-0802 is left queued/deferred rather than forced through.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/test_exports.py::TestExportsConsumers::test_finds_import_consumer` (pytest node id, verified passing when recorded)
+- `tests/unit/test_exports.py::TestExportsConsumers::test_excludes_prose_mention` (pytest node id, verified passing when recorded)
+- `tests/unit/test_exports.py::TestExportsConsumers::test_no_source_files` (pytest node id, verified passing when recorded)
+- `tests/unit/test_exports.py::TestExportsConsumers::test_as_text_output` (pytest node id, verified passing when recorded)
+- `tests/unit/test_exports.py::TestExportsConsumers::test_as_json_output` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0859 -->
 ```yaml
@@ -9273,3 +9326,30 @@ threat: null
 component: testing
 ```
 T-0204 child (test family). gate:TEST reports 486 warnings at 2026-07-23 baseline, dominated by TEST005 per-symbol no-direct-coverage warnings (plus TEST002/TEST014/TEST011/TEST003/TEST012/TEST006 stragglers). Zero-warnings requires per-symbol test coverage or explicit per-symbol disposition. This is a campaign: recount at start, group by package, and split into per-package sub-tickets if any package exceeds a session (this child is the accounting). Interacts with T-0589 (promote TEST005/TEST015 into TEST001 credit) -- coordinate so written tests satisfy the promoted rule, not just silence the warning.
+
+<!-- ticket:T-0876 -->
+```yaml
+id: T-0876
+title: wire frob exports --consumers CLI flag onto exports_consumers
+state: queued
+kind: feature
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/app/exports_runner.py
+- src/frob/app/config.py
+- src/frob/__main__.py
+- docs/commands/exports.md
+threat: null
+component: null
+```
+Follow-on to T-0858's xref-sunset reevaluation. `frob.exports.exports_consumers`
+(added by T-0858) answers "who imports this symbol" as a library function, but
+there is no CLI entry point yet -- wiring `frob exports --consumers <symbol>`
+(or a dedicated verb) requires touching src/frob/app/exports_runner.py,
+src/frob/app/config.py, and src/frob/__main__.py's exports parser, none of
+which were in T-0858's declared scope. Do this before or around the
+2026-10-01 T-0802 sunset so the CLI-level capability is not lost when
+`frob xref` porcelain is removed.
