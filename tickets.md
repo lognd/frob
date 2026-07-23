@@ -6377,7 +6377,7 @@ T-0695 landed four unwaivable fork/pool-hazard advisories; two fire on src/frob/
 id: T-0768
 title: 'ticket CLI: quiet diagnostic logger noise (gitio/tickets DEBUG-INFO) by default,
   -v restores'
-state: in-progress
+state: done
 kind: ux
 origin: human
 created: '2026-07-22'
@@ -6439,6 +6439,40 @@ component: null
 labels: []
 ```
 User request 2026-07-22: frob ticket list is drowned in gitio: spawning/returncode DEBUG lines and tickets: loader INFO chatter. Those lines are already DEBUG/INFO -- the stdout handler defaults to DEBUG and only frob check applies the T-0202 stdout_log_level quieting. But ticket CLI OUTPUT itself is _log.info on the runner logger, so a handler-level quiet would swallow the listing. Fix: per-logger overrides -- during ticket dispatch clamp logger frob to WARNING and pin frob.app.ticket_runner to INFO (its output channel), restored after; add a generic logger_levels context manager to frob.logging.quiet as the one shared home; add frob ticket -v (count) to skip the clamp like check -v. WARNING+ lines (stale-lease, over-broad-scope) still show.
+
+## Done report
+
+User-requested UX fix (2026-07-22): frob ticket subcommands printed the full
+gitio/tickets DEBUG-INFO diagnostic firehose because the stdout handler
+defaults to DEBUG and only frob check applied T-0202 quieting; the ticket
+CLI's own output is its module logger's INFO, so a handler-level clamp
+would have swallowed the listing itself. Added frob.logging.logger_levels
+(per-logger save/restore context manager), dispatched every ticket
+subcommand under a clamp (frob tree -> WARNING, runner logger pinned INFO),
+and added frob ticket -v to restore the firehose. WARNING+ diagnostics
+(stale leases, over-broad scopes) still show by default. REL001 minor bump
+to 0.97.0 for the new public API.
+
+### Changed
+```
+ .frob-release.json                |  3 +-
+ pyproject.toml                    |  2 +-
+ src/frob/__main__.py              | 11 +++++
+ src/frob/app/config.py            |  4 ++
+ src/frob/app/ticket_runner.py     | 25 +++++++++-
+ src/frob/logging/__init__.py      |  3 +-
+ src/frob/logging/quiet.py         | 25 ++++++++++
+ tests/test_ticket_runner_quiet.py | 41 +++++++++++++++++
+ tests/unit/test_logging_quiet.py  | 50 ++++++++++++++++++++
+ tickets.md                        | 97 +++++++++++++++++++++++++++++++++++++++
+ uv.lock                           |  2 +-
+ 11 files changed, 257 insertions(+), 6 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_runner_quiet.py::TestDiagnosticLogCtx::test_default_clamps_frob_tree_but_pins_runner_output` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_runner_quiet.py::TestDiagnosticLogCtx::test_verbose_skips_the_clamp` (pytest node id, verified passing when recorded)
+- `tests/unit/test_logging_quiet.py::TestLoggerLevels::test_sets_and_restores_mapped_levels` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0769 -->
 ```yaml
 id: T-0769
