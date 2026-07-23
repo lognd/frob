@@ -3,7 +3,7 @@ STAMP := .venv/.install-stamp
 
 .PHONY: all check install install-tool core format lint lint-fix typecheck test test-fast \
         test-unit test-integration test-system coverage coverage-fast clean upload \
-        sync-skills playbook deploy-audit
+        sync-skills playbook deploy-audit pool-warm pool-lease pool-status
 
 PYPI_NAME := frob
 SRC       := src
@@ -156,6 +156,23 @@ deploy-audit: $(STAMP)
 		--ssh-host "$${FROB_VM_SSH_HOST:?set FROB_VM_SSH_HOST}" \
 		--ssh-key "$${FROB_VM_SSH_KEY:?set FROB_VM_SSH_KEY}" \
 		$(ARGS)
+
+# ---------- worktree warm pool (T-0738, part 2 of T-0732) ----------
+# Pre-creates N git worktrees with natives already built and `main`
+# already merged in (docs/guides/worktree-pool.md), so `pool-lease`
+# hands out a ready worktree instead of paying the per-worktree
+# cargo/maturin build cost on the dispatch critical path. Calls straight
+# into frob.scaffold's Python API (no `frob scaffold pool` CLI subcommand
+# yet -- that wiring is a separately-filed follow-up, see the guide).
+N ?= 4
+pool-warm:
+	uv run python -c "from pathlib import Path; from frob.scaffold import warm_pool; r = warm_pool(Path('.'), $(N)); print('\n'.join(f'{e.index}: {e.path} ready={e.ready}' for e in r.danger_ok)) if r.is_ok else (_ for _ in ()).throw(SystemExit(f'pool-warm failed: {r.danger_err.value}'))"
+
+pool-lease:
+	uv run python -c "from pathlib import Path; from frob.scaffold import lease_worktree; r = lease_worktree(Path('.')); print(r.danger_ok.path) if r.is_ok else (_ for _ in ()).throw(SystemExit(f'pool-lease failed: {r.danger_err.value}'))"
+
+pool-status:
+	uv run python -c "from pathlib import Path; from frob.scaffold import pool_status; r = pool_status(Path('.')); print('\n'.join(f'{e.index}: {e.path} ready={e.ready}' for e in r.danger_ok)) if r.is_ok else (_ for _ in ()).throw(SystemExit(f'pool-status failed: {r.danger_err.value}'))"
 
 # ---------- install (stamp-guarded) ----------
 

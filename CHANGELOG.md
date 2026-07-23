@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.139.0] - unreleased
+
+- T-0738: worktree warm pool: frob scaffold pool N pre-warmed worktrees with background refresh
+
 ## [0.138.0] - unreleased
 
 - T-0858: xref sunset reevaluation: consumer-audit need is real and recurring but agents answer it with grep -- fold into exports/graph surface before 2026-10-01 deletion
