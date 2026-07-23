@@ -5777,3 +5777,37 @@ component: null
 labels: []
 ```
 Promotion of T-0785's worktree draft 2e4385db (worktree removed at land before renumbering). T-0785 landed the error-channel axis; the motivating real pair still differs on a combined-vs-split if structural axis and measures 0.444 (<0.6). Normalize simple guard-shape variants so semantically-one functions pair. Prereq for T-0784's seam unification to be regression-locked by DUP.
+
+<!-- ticket:T-0802 -->
+```yaml
+id: T-0802
+title: 'execute the 2026-10-01 navigation-command sunset: remove map/outline/xref/docs-search
+  per T-0580 deprecation'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-23'
+priority: low
+blocked_by: []
+parent: null
+scope:
+- src/frob/app/map_runner.py
+- src/frob/app/outline_runner.py
+- src/frob/app/xref_runner.py
+- src/frob/app/docs_runner.py
+- src/frob/__main__.py
+- docs/modules/cli.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN the sunset date 2026-10-01 has passed WHEN this ticket is worked THEN
+    the four deprecated navigation commands and their parsers, tests, and doc/test/export
+    obligations are removed (or the sunset is explicitly re-adjudicated with the user),
+    and no frob:deprecated directive for them remains
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Sunset-execution ticket for the user's 2026-07-23 deprecation decision (T-0580, done). Stays OPEN until the sunset so the four frob:deprecated directives have a live ticket binding (DEPR002 requires ticket= to reference an open ticket -- T-0797 registration surfaced that the directives bound to the closed T-0580). Do not work before the sunset date.
