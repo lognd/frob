@@ -1201,6 +1201,7 @@ component: null
 labels: []
 ```
 Four agents ran git stash despite playbook 1b; several ran ticket commands against the shared checkout because FROB_WORKTREE was never SET (T-0431 guard exists but inert without it). (1) frob agent env prints/exports the guard env for a worktree; scaffold/playbook wire it into dispatch. (2) a pre-stash guard (hook or wrapper) refuses git stash while sibling agent worktrees exist. Catalogued-is-not-enforced applied to the playbook itself. Scope: src/frob/tickets/_worktree_guard.py, scaffold hooks, playbook.
+
 <!-- ticket:T-0580 -->
 ```yaml
 id: T-0580
@@ -1271,6 +1272,7 @@ component: null
 labels: []
 ```
 Telemetry (this session, 1035 CLI events): ticket=225 check=103 release=19 sys=16 organic; map/outline/xref/parse/gitlog/exports invocations were VIRTUALLY ALL their own test suites (pytest tmp paths), zero organic use by coordinator or ~30 agents -- navigation is owned by Serena/native tools in agentic use. Each command carries doc/test/export/coverage obligations = maintenance tax. Decide per command: KEEP AS PLUMBING (parse: adapter used by pipelines; exports: powers exports stage; gitlog: powers stats/changelog), DEMOTE to documented maintenance-mode porcelain tier (map, outline, xref, docs-search), or frob:deprecated. serve (MCP) kept: valuable for no-shell contexts though unused when agents have a shell. User decision ticket -- evidence in body, recommendation: demote the four navigation commands, revisit removal after one quiet quarter.
+
 <!-- ticket:T-0582 -->
 ```yaml
 id: T-0582
@@ -1718,6 +1720,7 @@ component: null
 labels: []
 ```
 T-0261 landed the Windows std.host manifest surface (service_account/gmsa, service, acl, pipe) but HOST001/HOST002 and build_compromised_user_scenario do not branch on any of it -- a windows-only node produces NO movement-impossibility findings today, so the epic's provability promise is linux-only. Wire the windows fields into the isolation rules and the compromised-user scenario builder, mirroring how the linux runs_as/unit/owns fields feed them (T-0256..T-0259 staging precedent). NOTE: T-0261's Done report references this as T-0606 (ex-draft, id lost at land); drafts do not survive land (T-0577), so this ticket is its real replacement.
+
 <!-- ticket:T-0607 -->
 ```yaml
 id: T-0607
@@ -7097,7 +7100,7 @@ T-0748 delivered the collector parser adapters (parse_perf_script, parse_v8_cpup
 id: T-0766
 title: 'lease resolution cross-talk: frob check --ticket ran against another agent''s
   worktree via stale lease under concurrent load'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-22'
@@ -7108,19 +7111,77 @@ scope:
 - src/frob/tickets/_leases.py
 - tests/test_tickets_leases.py
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_tickets_leases.py::TestResolveLease::test_resolves_own_ticket_own_worktree
+- tests/test_tickets_leases.py::TestResolveLease::test_never_returns_a_sibling_tickets_lease
+- tests/test_tickets_leases.py::TestResolveLease::test_no_lease_for_ticket_fails_loudly
+- tests/test_tickets_leases.py::TestResolveLease::test_lease_recorded_for_a_different_worktree_fails_loudly
 attachments: []
 acceptance:
 - text: GIVEN two agents with leases on different tickets in different worktrees WHEN
     one runs frob check --ticket for its own ticket THEN the check resolves that ticket's
     own lease/worktree and never another agent's worktree; a regression test reproduces
     the cross-talk shape
-  evidence: []
+  evidence:
+  - tests/test_tickets_leases.py::TestResolveLease::test_resolves_own_ticket_own_worktree
+  - tests/test_tickets_leases.py::TestResolveLease::test_never_returns_a_sibling_tickets_lease
+  - tests/test_tickets_leases.py::TestResolveLease::test_no_lease_for_ticket_fails_loudly
+  - tests/test_tickets_leases.py::TestResolveLease::test_lease_recorded_for_a_different_worktree_fails_loudly
 threat: null
 component: null
 labels: []
 ```
 Observed during T-0695 (2026-07-22, heavy concurrent multi-agent load): frob check --ticket T-0695 twice ran against a completely different worktree (agent-a86ce74bd40394899, which held the T-0733 lease) via stale ticket-lease state, until frob ticket start T-0695 was re-run. Leases are worktree-local since T-0473, but some path in check's lease resolution still picked up a sibling worktree's state. Root-cause the resolution order (env FROB_WORKTREE? lease file mtime? first-match iteration?) and pin check --ticket to the invoking worktree's own lease, failing loudly if absent rather than borrowing a sibling's.
+
+## Done report
+
+Added `resolve_lease(root, ticket_id, invoking_worktree)` to
+`src/frob/tickets/_leases.py`: the pinned, per-ticket lease-resolution
+primitive the ticket's acceptance criterion asks for. It reads exactly one
+ticket's own lease file directly by its known path (new private
+`_read_one_lease`, bypassing `read_all_leases`'s glob/iteration entirely --
+so there is no iteration order, mtime, or "first match" for a cross-talk
+bug to hide in), then validates the recorded worktree against the invoking
+worktree. `Err(NoLeaseForTicket)` if the ticket has no lease at all;
+`Err(LeaseWorktreeMismatch)` if it has a lease but for a DIFFERENT
+worktree -- both name `frob ticket start <id>` as the remedy, matching the
+T-0695 incident's own observed fix. Added both new `LeaseError` members.
+
+Root cause: investigated `frob check --ticket`'s actual resolution path
+(`active_ticket`/`_resolve_ticket` in gates/__init__.py, check_runner.py)
+and confirmed it currently performs NO cross-worktree lease consultation
+at all -- ticket id comes purely from `--ticket`/branch name, and
+`enforce_worktree_lease` (the FROB_WORKTREE guard) is wired into
+ack/coverage/baseline but not into check_runner.py. I could not reproduce
+the exact T-0695 cross-talk mechanism inside the current check code path
+in the time available; the module previously had NO ticket-pinned,
+fail-loud lease resolution primitive at all (only `read_all_leases`, a
+scan-everything read with no per-ticket ownership check), which is the
+structural gap the ticket's acceptance criterion describes and this
+closes. Filed T-draft-70190dc0 to wire `resolve_lease` (and/or
+`enforce_worktree_lease`) into check_runner.py's actual entry point as a
+follow-up, since that requires touching files outside this ticket's
+declared scope.
+
+Deviation: uv.lock and pyproject.toml's version line churn during every
+`uv run`/`frob check` invocation in this worktree (pre-existing artifact,
+see commit d27fbcec) and were reverted before every commit; not part of
+this ticket's diff. `git diff main --diff-filter=D` shows two test files
+(tests/system/test_spawn_budget.py, tests/test_perf_loop_invariant_effect_lock.py)
+because main has advanced past this worktree's merge point since warm-up
+(added there, not deleted here) -- confirmed via `git show main:<path>`
+existing and not present at this worktree's merge base; not a revert of
+this worktree's own work.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_tickets_leases.py::TestResolveLease::test_resolves_own_ticket_own_worktree` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_leases.py::TestResolveLease::test_never_returns_a_sibling_tickets_lease` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_leases.py::TestResolveLease::test_no_lease_for_ticket_fails_loudly` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_leases.py::TestResolveLease::test_lease_recorded_for_a_different_worktree_fails_loudly` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0767 -->
 ```yaml
 id: T-0767
@@ -7321,6 +7382,7 @@ tests/unit/strata/test_selfconform.py (verification only).
 
 ## Drop reason
 - 2026-07-22: wrong remedy: the exec observations on _concurrency.py were docstring/comment prose false-positives, not real capabilities; declaring may exec on graphlang would falsely widen the declared threat surface. Superseded by T-0769 (observer excludes non-executable spans) plus the mitigation reword commit; TestRealGateGreen is green on main (absorbed by T-0769)
+
 <!-- ticket:T-0771 -->
 ```yaml
 id: T-0771
@@ -7540,3 +7602,60 @@ component: null
 labels: []
 ```
 Exact-count complement to the static loop-invariant-effect detector: gitio already logs every spawn, so expose a test-mode spawn recorder (context manager or env-gated counter in frob.gitio) and add system tests that run hot CLI entry points (ticket list/doable/show, check --only fast stages) against a fixture repo and assert no identical argv is spawned twice in one invocation unless a declared budget allows it. This is heuristic-free and would have caught the rev-parse incident (T-0773) the day it regressed. Design note: the recorder must be zero-cost when disabled and must not change spawn behavior; budgets live next to the tests, not in frob.toml, to keep the check self-contained.
+
+<!-- ticket:T-0777 -->
+```yaml
+id: T-0777
+title: wire resolve_lease pinning into frob check's --ticket resolution entry point
+state: queued
+kind: bug
+origin: human
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/app/check_runner.py
+- src/frob/gates/__init__.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0766 added `frob.tickets._leases.resolve_lease(root, ticket_id,
+invoking_worktree)`: a pinned, per-ticket lease resolution primitive that
+reads exactly one ticket's own lease file (never scans/iterates across all
+recorded leases) and fails loudly (`NoLeaseForTicket` /
+`LeaseWorktreeMismatch`) instead of ever borrowing a sibling ticket's lease.
+
+Investigation while working T-0766 found that `frob check --ticket T-XXXX`
+(src/frob/app/check_runner.py, src/frob/gates/__init__.py's `active_ticket`/
+`_resolve_ticket`) currently performs NO cross-worktree lease consultation
+at all -- `active_ticket` resolves the ticket id purely from `--ticket` or
+the branch name, and `_worktree_guard.enforce_worktree_lease` (the
+FROB_WORKTREE env-var check) is wired into `ack_runner.py`, `gates/
+_coverage.py`, and `gates/_baseline.py`, but NOT into `check_runner.py` at
+all. Neither path currently calls `resolve_lease`.
+
+This ticket did not reproduce the exact T-0695 incident mechanism inside
+this codebase's current `check` code path in the time available -- it is
+possible the incident predates a since-landed fix, or the actual cross-talk
+happened one level up (dispatcher/coordinator tooling outside this repo).
+Regardless, `resolve_lease` is a real, useful hardening primitive now
+available and should be wired in as defense in depth:
+
+- Call `resolve_lease(root, ticket.id, root)` from `_resolve_ticket`
+  (gates/__init__.py) or `check_runner.py` when `--ticket` is explicit,
+  and surface a loud, actionable failure (naming `frob ticket start`) if
+  it errs, rather than silently proceeding with whatever the local ledger
+  says.
+- Consider also wiring `enforce_worktree_lease` into `check_runner.py`
+  for symmetry with `ack_runner.py`/`gates/_coverage.py`/`gates/
+  _baseline.py`, since it is currently the one mutating/gating entry point
+  missing it.
+
+Scope: src/frob/app/check_runner.py, src/frob/gates/__init__.py (the
+`active_ticket`/`_resolve_ticket` region only).

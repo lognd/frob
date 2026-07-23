@@ -53,6 +53,8 @@ class LeaseError(ErrorSet):
 
     GitCommonDirUnavailable = "could not resolve the shared git common dir"
     WriteFailed = "writing the lease file failed"
+    NoLeaseForTicket = "the ticket has no recorded lease at all"
+    LeaseWorktreeMismatch = "the ticket's recorded lease belongs to another worktree"
 
 
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
@@ -240,3 +242,77 @@ def read_all_leases(root: Path) -> tuple[LeaseRecord, ...]:
             continue
         records.append(record)
     return tuple(records)
+
+
+def _read_one_lease(leases_root: Path, ticket_id: str) -> LeaseRecord | None:
+    """Read exactly `ticket_id`'s own lease file, by its known path
+    (`_lease_path`) -- never by globbing/iterating the leases directory the
+    way `read_all_leases` does. `None` if the file is missing or
+    unreadable/malformed (logged, not raised)."""
+    path = _lease_path(leases_root, ticket_id)
+    if not path.is_file():
+        return None
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        return LeaseRecord.model_validate(raw)
+    except (OSError, ValueError) as exc:
+        _log.warning("tickets: could not parse lease file %s: %s", path, exc)
+        return None
+
+
+# frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
+# frob:tests tests/test_tickets_leases.py::TestResolveLease.test_resolves_own_ticket_own_worktree kind="unit"  # noqa: E501
+# frob:tests tests/test_tickets_leases.py::TestResolveLease.test_never_returns_a_sibling_tickets_lease kind="unit"  # noqa: E501
+# frob:tests tests/test_tickets_leases.py::TestResolveLease.test_no_lease_for_ticket_fails_loudly kind="unit"  # noqa: E501
+# frob:tests tests/test_tickets_leases.py::TestResolveLease.test_lease_recorded_for_a_different_worktree_fails_loudly kind="unit"  # noqa: E501
+def resolve_lease(
+    root: Path, ticket_id: str, invoking_worktree: Path
+) -> Result[LeaseRecord, LeaseError]:
+    """`ticket_id`'s OWN cross-worktree lease, pinned to `invoking_worktree`
+    (T-0766) -- the fix for the T-0695 incident where `frob check --ticket`
+    resolved a completely different ticket's (and worktree's) stale lease
+    state under concurrent multi-agent load.
+
+    Reads `ticket_id`'s lease file directly by its known per-ticket path
+    (`_read_one_lease`), never by scanning/ordering across every recorded
+    lease the way a caller hand-rolling this on top of `read_all_leases`
+    would have to -- there is no iteration order, mtime, or "first match"
+    for a bug to hide in, structurally, because only ONE file is ever
+    consulted for a given `ticket_id`.
+
+    `Err(NoLeaseForTicket)` if `ticket_id` has no recorded lease at all --
+    the loud, correct outcome when a ticket was never `start`ed (or its
+    lease was released), never a silent borrow of some OTHER ticket's
+    lease. `Err(LeaseWorktreeMismatch)` if `ticket_id` DOES have a recorded
+    lease, but for a worktree other than `invoking_worktree` (paths compared
+    resolved, so a relative vs. absolute or symlinked spelling of the same
+    worktree still matches) -- this is the resolution NEVER borrowing a
+    sibling ticket's lease, no matter how stale or recently-touched it is.
+    Both error messages name `frob ticket start <ticket_id>` as the remedy
+    (re-recording the lease for the CURRENT invoking worktree), matching
+    the T-0695 incident's own observed fix."""
+    resolved = leases_dir(root)
+    if resolved.is_err:
+        return Err(resolved.danger_err)
+    record = _read_one_lease(resolved.danger_ok, ticket_id)
+    if record is None:
+        _log.error(
+            "tickets: %s has no recorded lease for %s -- run: frob ticket start %s",
+            ticket_id,
+            invoking_worktree,
+            ticket_id,
+        )
+        return Err(LeaseError.NoLeaseForTicket)
+    invoking_resolved = invoking_worktree.resolve()
+    if Path(record.worktree).resolve() != invoking_resolved:
+        _log.error(
+            "tickets: %s's recorded lease belongs to %s, not the invoking "
+            "worktree %s -- refusing to borrow a sibling worktree's lease; "
+            "run: frob ticket start %s",
+            ticket_id,
+            record.worktree,
+            invoking_resolved,
+            ticket_id,
+        )
+        return Err(LeaseError.LeaseWorktreeMismatch)
+    return Ok(record)
