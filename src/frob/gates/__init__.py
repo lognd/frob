@@ -936,6 +936,9 @@ _KNOWN_GATE_RULES = frozenset(
         # having passed (expiry, mirroring DEBT003/DEPR004).
         "WAIVE004",
         "WAIVE005",
+        # T-0779: stale-waiver detection -- a waiver bound (via `ticket=`
+        # or binding reason phrasing) to a now-DONE/DROPPED ticket.
+        "WAIVE006",
         "DEC001",
         "DEC002",
         "REL001",
@@ -1365,6 +1368,232 @@ def _waive005_violations(
             )
         )
     return tuple(violations)
+
+
+# T-0779 (audit H2): a waiver justified by "this is pending ticket T-XXXX"
+# must not outlive T-XXXX -- the five LINT004 kill-switch waivers cited
+# T-0200 as the follow-on ticket to build for months after T-0200 closed,
+# and nothing re-litigated them. WAIVE006 resolves every ticket id a
+# waiver BINDS ITSELF to (never a bare historical mention) against the
+# ledger+archive; DONE or DROPPED there means the waiver has outlived its
+# own justification and must be re-justified or removed.
+#
+# Calibration (the hard part): a waiver's reason prose routinely narrates
+# history ("kill-switch mechanism exists (T-0200/T-0778) but ... -- tracked
+# in T-draft-8cd37914") without the mention being a live claim that T-0200
+# is still open or still the reason the gap is excused -- T-0778 rewrote
+# exactly this class of waiver to cite an open follow-on while HISTORICALLY
+# mentioning the now-closed T-0200 that built the underlying mechanism.
+# WAIVE006 must not fire on that. Two things count as binding:
+#   1. An explicit ticket attribute (`frob:waive RULE reason="..."
+#      ticket="T-####"`, or a strata `waive "RULE" reason "..." ticket
+#      "T-####";` clause) -- the author wrote down, structurally, "this is
+#      what tracks the gap".
+#   2. Specific "still pending on this ticket" phrasing INSIDE the reason
+#      text itself (`_WAIVE006_BINDING_PHRASE_RES`) -- "pending T-####" and
+#      "T-#### is the follow-on ticket" are the two shapes this repo's own
+#      history (T-0412/T-0753 debt-style waivers, the pre-T-0778 LINT004
+#      waivers) has actually produced. A bare `(T-0200/T-0778)` aside or a
+#      `T-0200 built a real kill switch` narration is neither shape, so it
+#      is never extracted -- only a ticket reference the reason text itself
+#      claims is the live justification counts.
+_WAIVE006_TICKET_ID_RE = r"T-\d+"
+_WAIVE006_BINDING_PHRASE_RES = tuple(
+    re.compile(pattern, re.IGNORECASE)
+    for pattern in (
+        rf"\bpending\s+({_WAIVE006_TICKET_ID_RE})\b",
+        rf"\bpending[\s-]+on\s+({_WAIVE006_TICKET_ID_RE})\b",
+        rf"\b({_WAIVE006_TICKET_ID_RE})\s+is\s+the\s+follow-on\s+ticket\b",
+        rf"\bfollow-on\s+ticket\s*(?:is|:)?\s*({_WAIVE006_TICKET_ID_RE})\b",
+        rf"\bblocked\s+on\s+({_WAIVE006_TICKET_ID_RE})\b",
+        rf"\bwaiting\s+on\s+({_WAIVE006_TICKET_ID_RE})\b",
+    )
+)
+
+
+def _waive006_binding_ticket_refs(reason: str) -> set[str]:
+    """Ticket ids `reason` BINDS ITSELF to via one of
+    `_WAIVE006_BINDING_PHRASE_RES`'s explicit "still pending on this
+    ticket" phrasings -- never a bare id mention in narration prose (the
+    T-0778 calibration case this module docstring section explains)."""
+    refs: set[str] = set()
+    for pattern in _WAIVE006_BINDING_PHRASE_RES:
+        refs.update(match.group(1) for match in pattern.finditer(reason))
+    return refs
+
+
+def _waive006_stale_ticket(ticket_ids: set[str], queue: TicketQueue) -> str | None:
+    """The first `ticket_ids` entry that resolves in `queue` (active+archive)
+    to a DONE/DROPPED ticket, or `None` if every reference is either open or
+    unresolvable. Unresolvable ids (typos, draft ids not yet finalized) are
+    deliberately NOT flagged here -- that is a different, separate honesty
+    gap from "this ticket closed and nobody re-reviewed the waiver"."""
+    for ticket_id in sorted(ticket_ids):
+        target = queue.tickets.get(ticket_id)
+        if target is not None and target.state in (
+            TicketState.DONE,
+            TicketState.DROPPED,
+        ):
+            return ticket_id
+    return None
+
+
+def _waive006_violation(
+    *, file: str, line: int, site: str, rule_and_target: str, stale: str
+) -> Violation:
+    """The single WAIVE006 `Violation` for one stale-waiver site (shared by
+    both the `frob:waive` comment channel and the `.strata` `waive` clause
+    channel, so the message shape is identical regardless of directive
+    flavor)."""
+    _log.error(
+        "WAIVE006: %s (%s) binds to closed ticket %s", site, rule_and_target, stale
+    )
+    return Violation(
+        rule="WAIVE006",
+        severity=Severity.ERROR,
+        file=file,
+        line=line,
+        message=(
+            f"WAIVE006: {site} waives {rule_and_target}, bound to ticket "
+            f"{stale}, which is DONE/DROPPED; a waiver justified by a "
+            f"pending ticket must not outlive it -- re-justify with a "
+            f"current reason (and, if still needed, an open follow-on "
+            f"ticket) or remove the waiver now that the gap it excused "
+            f"has presumably been addressed"
+        ),
+    )
+
+
+# frob:enforces CHK-GATE-WAIVE006
+def _waive006_comment_violations(
+    snapshot: GraphSnapshot, queue: TicketQueue
+) -> tuple[Violation, ...]:
+    """WAIVE006 (`frob:waive` comment channel): a waiver whose `ticket=`
+    attribute, or whose `reason=` text binds itself via
+    `_waive006_binding_ticket_refs`, names a ticket that is DONE or DROPPED
+    in the ledger+archive."""
+    violations: list[Violation] = []
+    for edge in _waive_edges(snapshot):
+        reason = edge.attrs.get("reason", "")
+        refs = _waive006_binding_ticket_refs(reason)
+        attr_ticket = edge.attrs.get("ticket", "")
+        if attr_ticket:
+            refs.add(attr_ticket)
+        if not refs:
+            continue
+        stale = _waive006_stale_ticket(refs, queue)
+        if stale is None:
+            continue
+        file, line = _site_from_edge_origin(edge.origin)
+        violations.append(
+            _waive006_violation(
+                file=file,
+                line=line,
+                site=edge.src,
+                rule_and_target=f"frob:waive {edge.target}",
+                stale=stale,
+            )
+        )
+    return tuple(violations)
+
+
+# `waive "RULE[:SUBTARGET]" reason "..." [ticket "T-####"]` -- strata-core's
+# `.strata` grammar (docs/strata/waive.md, `frob.strata._waive`'s module
+# docstring). Deliberately a plain single-line regex scan here rather than
+# a `strata_core` parse+elaborate: this rule only needs the literal
+# `reason`/`ticket` string attrs off each clause (no capability/threat
+# model reasoning), and scanning avoids paying the native-extension import
+# cost (T-0135's standalone-install posture) just to read two string
+# fields. Every live `waive` clause in this repo today is single-line
+# (T-0778's own rewrite); a clause split across lines is not matched --
+# documented limitation, not silently wrong (it simply finds nothing to
+# flag there, same fail-open posture `_debt_is_expired` takes on an
+# unparseable `until`).
+_STRATA_WAIVE_RE = re.compile(
+    r'waive\s+"(?P<rule>[^"]+)"\s+reason\s+"(?P<reason>(?:[^"\\]|\\.)*)"'
+    r'(?:\s+ticket\s+"(?P<ticket>[^"]*)")?\s*;'
+)
+
+
+def _strata_waive_sites(root: Path) -> list[tuple[str, int, str, str, str]]:
+    """Every `(file, line, rule, reason, ticket)` `waive` clause found by a
+    line scan of every `.strata` file under this repo's design dir (opt-in:
+    empty when no design dir exists), minus `[graph].exclude` matches --
+    same exclusion posture every other file-walking gate in this module
+    already applies (`is_excluded`/`load_exclude_globs`)."""
+    root = Path(root)
+    design_dir = root / _design_dir(root)
+    if not design_dir.is_dir():
+        return []
+    exclude_globs = load_exclude_globs(root)
+    sites: list[tuple[str, int, str, str, str]] = []
+    for path in sorted(iter_files(design_dir, suffix=".strata")):
+        rel = path.relative_to(root).as_posix()
+        if exclude_globs and is_excluded(rel, exclude_globs):
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError as exc:
+            _log.warning("_strata_waive_sites: could not read %s: %s", rel, exc)
+            continue
+        for lineno, line in enumerate(text.splitlines(), start=1):
+            match = _STRATA_WAIVE_RE.search(line)
+            if match is None:
+                continue
+            sites.append(
+                (
+                    rel,
+                    lineno,
+                    match.group("rule"),
+                    match.group("reason"),
+                    match.group("ticket") or "",
+                )
+            )
+    return sites
+
+
+# frob:enforces CHK-GATE-WAIVE006
+def _waive006_strata_violations(
+    root: Path, queue: TicketQueue
+) -> tuple[Violation, ...]:
+    """WAIVE006 (`.strata` `waive` clause channel): the same stale-waiver
+    check `_waive006_comment_violations` runs for `frob:waive` comments,
+    applied to every `waive "RULE" reason "..." [ticket "..."]` clause
+    `_strata_waive_sites` finds."""
+    violations: list[Violation] = []
+    for rel, line, rule, reason, ticket in _strata_waive_sites(root):
+        refs = _waive006_binding_ticket_refs(reason)
+        if ticket:
+            refs.add(ticket)
+        if not refs:
+            continue
+        stale = _waive006_stale_ticket(refs, queue)
+        if stale is None:
+            continue
+        violations.append(
+            _waive006_violation(
+                file=rel,
+                line=line,
+                site=f"{rel}:{line}",
+                rule_and_target=f'waive "{rule}"',
+                stale=stale,
+            )
+        )
+    return tuple(violations)
+
+
+# frob:doc docs/modules/gates.md#public-api
+def waive006_gate(
+    root: Path, snapshot: GraphSnapshot, queue: TicketQueue
+) -> tuple[Violation, ...]:
+    """WAIVE006: every stale-waiver finding across both waiver channels
+    (`frob:waive` comments and `.strata` `waive` clauses) -- see the module
+    comment above `_waive006_binding_ticket_refs` for the full rule design
+    and the binding-vs-historical-mention calibration."""
+    return (
+        *_waive006_comment_violations(snapshot, queue),
+        *_waive006_strata_violations(root, queue),
+    )
 
 
 # frob:ticket T-0504
@@ -8569,6 +8798,11 @@ def _assemble_gate_report(
         # reads the waive edges' own attrs), so it runs alongside the other
         # up-front WAIVE00*/DSL001 self-checks.
         *_waive005_violations(st.snapshot, current_date=date.today().isoformat()),
+        # T-0779: stale-waiver detection needs only the snapshot's own
+        # waive edges plus the merged ticket queue -- no assembled
+        # violation set dependency, so it runs alongside the other WAIVE00*
+        # self-checks rather than after job_violations like WAIVE003/004.
+        *waive006_gate(st.repo_root, st.snapshot, st.queue),
         *_dsl001_violations(st.snapshot),
     ]
     job_violations, counts, timing = _run_combined_jobs(thread_jobs, process_jobs)
@@ -8664,6 +8898,7 @@ __all__ = [
     "sys_gate",
     "test_gate",
     "violation_fingerprint",
+    "waive006_gate",
     "walk_lint_gate",
     "write_coverage_lock",
 ]

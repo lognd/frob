@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.106.0] - unreleased
+
+- T-0779: gates: stale-waiver detection -- waive reason citing a DONE/DROPPED ticket is an error (WAIVE-tier)
+
 ## [0.105.0] - unreleased
 
 - T-0796: tickets CLI: --evidence-cmd with --accepts silently records evidence UNBOUND (add_cmd_evidence has no accepts param)
