@@ -327,3 +327,219 @@ class TestCrossLanguage:
         out: list = []
         check_lcom4(module, out)
         assert out == []
+
+
+# ---------------------------------------------------------------------------
+# T-0728: wiring proof -- the checks above now fire through the PRODUCTION
+# invocation path (`frob.arch.analyze_project` and `frob.gates._arch.
+# arch_gate`), not just their pure functions. T-0616 built check_lcom4/
+# check_god_module/check_mixed_concern_function but left them un-dispatched
+# and un-registered as gate rules (its Done report's disclosed follow-up);
+# these tests are the fixture-fails-before/passes-after proof this wiring
+# ticket's own new-gate-rule acceptance policy requires.
+# ---------------------------------------------------------------------------
+
+#: A python `BigService` class matching `TestLcom4.test_disjoint_field_
+#: groups_trigger_lcom4`'s hand-built `NormalizedClass` fixture exactly,
+#: as real python source: 6 methods, two disjoint field-usage clusters
+#: (`conn`/`cache` and `report_title`/`report_footer`), no `__init__` (an
+#: `__init__` touching every field would union both clusters into one).
+_LCOM4_TWO_CLUSTER_SOURCE = (
+    "class BigService:\n"
+    "    def connect(self):\n"
+    "        self.conn = 'x'\n"
+    "    def query(self):\n"
+    "        self.conn = self.cache\n"
+    "    def invalidate_cache(self):\n"
+    "        self.cache = None\n"
+    "    def render_title(self):\n"
+    "        self.report_title = ''\n"
+    "    def render_footer(self):\n"
+    "        self.report_footer = self.report_title\n"
+    "    def no_fields_here(self):\n"
+    "        return 1\n"
+)
+
+#: A cohesive python class (every field-using method touches the same
+#: `conn` field) -- the ARCH101 negative fixture.
+_LCOM4_COHESIVE_SOURCE = (
+    "class CohesiveService:\n"
+    "    def connect(self):\n"
+    "        self.conn = 'a'\n"
+    "    def query(self):\n"
+    "        self.conn = self.conn\n"
+    "    def close(self):\n"
+    "        self.conn = ''\n"
+    "    def reconnect(self):\n"
+    "        self.conn = 'b'\n"
+    "    def ping(self):\n"
+    "        self.conn = self.conn\n"
+    "    def status(self):\n"
+    "        self.conn = self.conn\n"
+)
+
+#: 12 free functions in 3 naming-prefix clusters (`alpha_`/`beta_`/
+#: `gamma_`) with no cross-cluster calls -- >= `GOD_MODULE_MIN_EXPORTS`
+#: (10) exports partitioning into >= `GOD_MODULE_MIN_CLUSTERS` (3) clusters,
+#: the ARCH102 fixture.
+_GOD_MODULE_SOURCE = "\n".join(
+    f"def {prefix}_{i}():\n    return {i}\n"
+    for prefix in ("alpha", "beta", "gamma")
+    for i in range(4)
+)
+
+#: A function mixing an I/O call (`print`), a format call (`.format`/
+#: `str`), and 2 of its own decision points -- the ARCH103 fixture.
+_MIXED_CONCERN_SOURCE = (
+    "def do_work(cfg):\n"
+    "    if cfg.get('a'):\n"
+    "        result = 'x'\n"
+    "    else:\n"
+    "        result = 'y'\n"
+    "    if cfg.get('b'):\n"
+    "        msg = '{}'.format(result)\n"
+    "    else:\n"
+    "        msg = str(result)\n"
+    "    print(msg)\n"
+    "    return msg\n"
+)
+
+
+class TestAnalyzeProjectWiring:
+    """T-0728: `analyze_project` dispatches T-0616's ARCH1xx SRP/cohesion
+    family (`frob.arch._run_srp_checks_python`) over real parsed python
+    files, not just hand-built `NormalizedModule`s."""
+
+    def test_two_cluster_class_fires_arch101(self, tmp_path: Path) -> None:
+        """`analyze_project` over a real file containing
+        `_LCOM4_TWO_CLUSTER_SOURCE` reports `low-cohesion-class` --
+        proof the check runs through the production per-file dispatch,
+        not just `check_lcom4` called directly."""
+        from frob.arch import analyze_project
+
+        (tmp_path / "mod.py").write_text(_LCOM4_TWO_CLUSTER_SOURCE)
+        result = analyze_project(tmp_path)
+        low_cohesion = [
+            s for s in result.suggestions if s.category == "low-cohesion-class"
+        ]
+        assert len(low_cohesion) == 1
+        assert low_cohesion[0].symref == "BigService"
+
+    def test_cohesive_class_does_not_fire_arch101(self, tmp_path: Path) -> None:
+        """The negative fixture (`_LCOM4_COHESIVE_SOURCE`) produces no
+        `low-cohesion-class` finding through `analyze_project`."""
+        from frob.arch import analyze_project
+
+        (tmp_path / "mod.py").write_text(_LCOM4_COHESIVE_SOURCE)
+        result = analyze_project(tmp_path)
+        assert not [s for s in result.suggestions if s.category == "low-cohesion-class"]
+
+    def test_god_module_fires_arch102(self, tmp_path: Path) -> None:
+        """`analyze_project` over `_GOD_MODULE_SOURCE` reports
+        `god-module`."""
+        from frob.arch import analyze_project
+
+        (tmp_path / "mod.py").write_text(_GOD_MODULE_SOURCE)
+        result = analyze_project(tmp_path)
+        assert any(s.category == "god-module" for s in result.suggestions)
+
+    def test_mixed_concern_function_fires_arch103(self, tmp_path: Path) -> None:
+        """`analyze_project` over `_MIXED_CONCERN_SOURCE` reports
+        `mixed-concern-function`."""
+        from frob.arch import analyze_project
+
+        (tmp_path / "mod.py").write_text(_MIXED_CONCERN_SOURCE)
+        result = analyze_project(tmp_path)
+        assert any(s.category == "mixed-concern-function" for s in result.suggestions)
+
+
+class TestArchGateSrpWiring:
+    """T-0728: `frob.gates._arch.arch_gate` channels the ARCH1xx SRP/
+    cohesion family into real `ARCH101`/`ARCH102`/`ARCH103` `Violation`s,
+    the same way `long-function`/`ARCH001` already were (T-0289)."""
+
+    def test_two_cluster_class_fires_arch101(self, tmp_path: Path) -> None:
+        from frob.gates._arch import arch_gate
+
+        (tmp_path / "mod.py").write_text(_LCOM4_TWO_CLUSTER_SOURCE)
+        violations = [v for v in arch_gate(tmp_path) if v.rule == "ARCH101"]
+        assert len(violations) == 1
+        assert violations[0].symref == "BigService"
+
+    def test_cohesive_class_does_not_fire_arch101(self, tmp_path: Path) -> None:
+        from frob.gates._arch import arch_gate
+
+        (tmp_path / "mod.py").write_text(_LCOM4_COHESIVE_SOURCE)
+        assert not [v for v in arch_gate(tmp_path) if v.rule == "ARCH101"]
+
+    def test_god_module_fires_arch102(self, tmp_path: Path) -> None:
+        from frob.gates._arch import arch_gate
+
+        (tmp_path / "mod.py").write_text(_GOD_MODULE_SOURCE)
+        assert [v for v in arch_gate(tmp_path) if v.rule == "ARCH102"]
+
+    def test_mixed_concern_function_fires_arch103(self, tmp_path: Path) -> None:
+        from frob.gates._arch import arch_gate
+
+        (tmp_path / "mod.py").write_text(_MIXED_CONCERN_SOURCE)
+        assert [v for v in arch_gate(tmp_path) if v.rule == "ARCH103"]
+
+    def test_arch101_respects_explicit_frob_toml_override(self, tmp_path: Path) -> None:
+        """A `frob.toml` `[arch] lcom4_min_methods = 100` override (well
+        above `_LCOM4_TWO_CLUSTER_SOURCE`'s 6 methods) suppresses ARCH101
+        even though the calibrated default would fire -- proof `arch_gate`
+        actually threads `load_arch_config`'s ARCH1xx keys through, not
+        just its original five."""
+        from frob.gates._arch import arch_gate
+
+        (tmp_path / "mod.py").write_text(_LCOM4_TWO_CLUSTER_SOURCE)
+        (tmp_path / "frob.toml").write_text("[arch]\nlcom4_min_methods = 100\n")
+        assert not [v for v in arch_gate(tmp_path) if v.rule == "ARCH101"]
+
+
+class TestArchConfigThresholds:
+    """T-0728: `load_arch_config` reads the five ARCH1xx SRP/cohesion
+    thresholds from `[arch]` in `frob.toml`, defaulting to `_srp.py`'s own
+    calibrated module constants when unset -- mirrors `TestArchGateThresholds`
+    (`tests/test_gates.py`) for the original five T-0373 knobs."""
+
+    def test_reads_srp_overrides(self, tmp_path: Path) -> None:
+        from frob.app.config import load_arch_config
+
+        (tmp_path / "frob.toml").write_text(
+            "[arch]\n"
+            "lcom4_min_methods = 3\n"
+            "lcom4_min_field_using_methods = 2\n"
+            "god_module_min_exports = 5\n"
+            "god_module_min_clusters = 2\n"
+            "mixed_concern_min_decision_points = 1\n"
+        )
+        cfg = load_arch_config(tmp_path)
+        assert cfg["lcom4_min_methods"] == 3
+        assert cfg["lcom4_min_field_using_methods"] == 2
+        assert cfg["god_module_min_exports"] == 5
+        assert cfg["god_module_min_clusters"] == 2
+        assert cfg["mixed_concern_min_decision_points"] == 1
+
+    def test_srp_defaults_without_frob_toml(self, tmp_path: Path) -> None:
+        from frob.app.config import (
+            ARCH_DEFAULT_GOD_MODULE_MIN_CLUSTERS,
+            ARCH_DEFAULT_GOD_MODULE_MIN_EXPORTS,
+            ARCH_DEFAULT_LCOM4_MIN_FIELD_USING_METHODS,
+            ARCH_DEFAULT_LCOM4_MIN_METHODS,
+            ARCH_DEFAULT_MIXED_CONCERN_MIN_DECISION_POINTS,
+            load_arch_config,
+        )
+
+        cfg = load_arch_config(tmp_path)
+        assert cfg["lcom4_min_methods"] == ARCH_DEFAULT_LCOM4_MIN_METHODS
+        assert (
+            cfg["lcom4_min_field_using_methods"]
+            == ARCH_DEFAULT_LCOM4_MIN_FIELD_USING_METHODS
+        )
+        assert cfg["god_module_min_exports"] == ARCH_DEFAULT_GOD_MODULE_MIN_EXPORTS
+        assert cfg["god_module_min_clusters"] == ARCH_DEFAULT_GOD_MODULE_MIN_CLUSTERS
+        assert (
+            cfg["mixed_concern_min_decision_points"]
+            == ARCH_DEFAULT_MIXED_CONCERN_MIN_DECISION_POINTS
+        )

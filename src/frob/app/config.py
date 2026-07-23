@@ -786,22 +786,58 @@ ARCH_DEFAULT_MAX_NESTING_DEPTH = 4
 # frob:ticket T-0373
 ARCH_DEFAULT_MAX_FILE_LINES = 800
 
+# T-0728: ARCH1xx SRP/cohesion thresholds (T-0616's `frob.arch._srp`
+# checks), wired through the same `[arch]` frob.toml table as the five
+# T-0373 knobs above. Values mirror `_srp.py`'s own module-level defaults
+# (`LCOM4_MIN_METHODS`, etc.) unchanged -- no separate calibration pass has
+# been run on these yet, so the calibrated-default posture here is
+# "identical to the library default until disclosed otherwise", not a
+# deliberately different number.
+#: `check_lcom4`'s `min_methods` default (ARCH101).
+# frob:doc docs/modules/arch.md#frob-toml-arch-config
+# frob:ticket T-0728
+ARCH_DEFAULT_LCOM4_MIN_METHODS = 6
+#: `check_lcom4`'s `min_field_using_methods` default (ARCH101).
+# frob:doc docs/modules/arch.md#frob-toml-arch-config
+# frob:ticket T-0728
+ARCH_DEFAULT_LCOM4_MIN_FIELD_USING_METHODS = 4
+#: `check_god_module`'s `min_exports` default (ARCH102).
+# frob:doc docs/modules/arch.md#frob-toml-arch-config
+# frob:ticket T-0728
+ARCH_DEFAULT_GOD_MODULE_MIN_EXPORTS = 10
+#: `check_god_module`'s `min_clusters` default (ARCH102).
+# frob:doc docs/modules/arch.md#frob-toml-arch-config
+# frob:ticket T-0728
+ARCH_DEFAULT_GOD_MODULE_MIN_CLUSTERS = 3
+#: `check_mixed_concern_function`'s `min_decision_points` default (ARCH103).
+# frob:doc docs/modules/arch.md#frob-toml-arch-config
+# frob:ticket T-0728
+ARCH_DEFAULT_MIXED_CONCERN_MIN_DECISION_POINTS = 2
+
 
 # frob:doc docs/modules/arch.md#frob-toml-arch-config
 # frob:ticket T-0373
+# frob:ticket T-0728
 # frob:tests tests/unit/test_config.py::test_reads_override
 # frob:tests tests/unit/test_config.py::test_missing_toml_defaults
 # frob:tests tests/unit/test_config.py::test_missing_section_defaults
 # frob:tests tests/unit/test_config.py::test_partial_override
 # frob:tests tests/unit/test_config.py::test_malformed_toml_defaults
+# frob:tests tests/unit/test_arch_srp.py::TestArchConfigThresholds.test_reads_srp_overrides  # noqa: E501
+# frob:tests tests/unit/test_arch_srp.py::TestArchConfigThresholds.test_srp_defaults_without_frob_toml  # noqa: E501
 def load_arch_config(root: Path) -> dict[str, int]:
     """The `[arch]` table from `root/frob.toml` (`max_function_lines`,
     `max_class_methods`, `max_local_imports`, `max_nesting_depth`,
-    `max_file_lines`), defaulting every unset key to the calibrated values
-    above -- the fix for T-0373: `frob.arch.analyze_project`'s own
-    keyword defaults were reaching `frob check`'s ARCH gate unchanged,
-    silently overriding the user's already-disclosed calibration decision
-    (large-file at 500, long-function at 30) instead of honoring it.
+    `max_file_lines`, and (T-0728) the five ARCH1xx SRP/cohesion knobs
+    `lcom4_min_methods`, `lcom4_min_field_using_methods`,
+    `god_module_min_exports`, `god_module_min_clusters`,
+    `mixed_concern_min_decision_points`), defaulting every unset key to the
+    calibrated values above -- the fix for T-0373: `frob.arch.analyze_
+    project`'s own keyword defaults were reaching `frob check`'s ARCH gate
+    unchanged, silently overriding the user's already-disclosed calibration
+    decision (large-file at 500, long-function at 30) instead of honoring
+    it. T-0728 extends the same mechanism to T-0616's SRP/cohesion family
+    so ARCH101-103 are frob.toml-tunable the same way ARCH001 already is.
 
     Returns a plain kwargs dict ready to splat into `analyze_project(root,
     **load_arch_config(root))`. A missing or malformed `frob.toml` (or a
@@ -815,6 +851,13 @@ def load_arch_config(root: Path) -> dict[str, int]:
         "max_local_imports": ARCH_DEFAULT_MAX_LOCAL_IMPORTS,
         "max_nesting_depth": ARCH_DEFAULT_MAX_NESTING_DEPTH,
         "max_file_lines": ARCH_DEFAULT_MAX_FILE_LINES,
+        "lcom4_min_methods": ARCH_DEFAULT_LCOM4_MIN_METHODS,
+        "lcom4_min_field_using_methods": ARCH_DEFAULT_LCOM4_MIN_FIELD_USING_METHODS,
+        "god_module_min_exports": ARCH_DEFAULT_GOD_MODULE_MIN_EXPORTS,
+        "god_module_min_clusters": ARCH_DEFAULT_GOD_MODULE_MIN_CLUSTERS,
+        "mixed_concern_min_decision_points": (
+            ARCH_DEFAULT_MIXED_CONCERN_MIN_DECISION_POINTS
+        ),
     }
     toml_path = root / "frob.toml"
     if not toml_path.exists():

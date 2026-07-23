@@ -30,6 +30,17 @@ from frob.arch._models import (
     ArchSeverity,
     ArchSuggestion,
 )
+from frob.arch._normalized import NormalizedModule
+from frob.arch._srp import (
+    GOD_MODULE_MIN_CLUSTERS,
+    GOD_MODULE_MIN_EXPORTS,
+    LCOM4_MIN_FIELD_USING_METHODS,
+    LCOM4_MIN_METHODS,
+    MIXED_CONCERN_MIN_DECISION_POINTS,
+    check_god_module,
+    check_lcom4,
+    check_mixed_concern_function,
+)
 from frob.check._memo import memoize_per_run
 from frob.excludes import (
     is_excluded,
@@ -130,14 +141,22 @@ def _check_large_file(
 
 @dataclass(frozen=True)
 class _Limits:
-    """The five architectural thresholds, bundled so per-file analysis takes
-    one argument instead of five parallel ints."""
+    """The architectural thresholds, bundled so per-file analysis takes one
+    argument instead of a growing list of parallel ints. T-0728 adds the
+    five ARCH1xx SRP/cohesion thresholds (`frob.arch._srp`, T-0616) to the
+    original five long-function/god-class/high-coupling/deep-nesting/
+    large-file knobs."""
 
     max_function_lines: int
     max_class_methods: int
     max_local_imports: int
     max_nesting_depth: int
     max_file_lines: int
+    lcom4_min_methods: int = LCOM4_MIN_METHODS
+    lcom4_min_field_using_methods: int = LCOM4_MIN_FIELD_USING_METHODS
+    god_module_min_exports: int = GOD_MODULE_MIN_EXPORTS
+    god_module_min_clusters: int = GOD_MODULE_MIN_CLUSTERS
+    mixed_concern_min_decision_points: int = MIXED_CONCERN_MIN_DECISION_POINTS
 
 
 def _has_tree_sitter_grammar(path: Path, rel: str) -> bool:
@@ -278,7 +297,19 @@ def _run_python_checks(
     half of the T-0330 SOLID catalog, `frob.arch._ocp`) skip test files for
     the same reason. `type-dispatch-smell` reuses `_patterns`'
     `iter_type_switch_chains` isinstance-chain detector rather than
-    re-walking the tree."""
+    re-walking the tree.
+
+    T-0728: `low-cohesion-class`, `god-module`, and `mixed-concern-function`
+    (the SRP/cohesion half of the T-0330 SOLID catalog, `frob.arch._srp`,
+    ARCH101-103) skip test files for the same reason -- a test module's
+    helper-clustered exports or a fixture class's disjoint setup/assert
+    methods are not production SRP debt. Each check runs against the
+    `PythonAdapter`-built `NormalizedModule` for this file rather than the
+    raw tree, per T-0616's normalized-model design (mirrors `_srp.py`'s own
+    module docstring: written once, fires identically for every language
+    adapter -- python is the only adapter `analyze_project` dispatches
+    through today, matching every other normalized-model check already
+    wired here)."""
     if not is_test:
         _python._check_long_functions(tree, rel, limits.max_function_lines, suggestions)
         _python._check_god_classes(tree, rel, limits.max_class_methods, suggestions)
@@ -294,9 +325,43 @@ def _run_python_checks(
         _ocp._check_type_dispatch_smell(tree, rel, suggestions)
         _ocp._check_non_exhaustive_enum_match(tree, rel, suggestions)
         _concurrency._check_fork_pool_hazards(tree, rel, suggestions)
+        _run_srp_checks_python(tree, rel, limits, suggestions)
     _python._check_high_coupling(path, rel, root, limits.max_local_imports, suggestions)
     if not is_test:
         _python._check_deep_nesting(tree, rel, limits.max_nesting_depth, suggestions)
+
+
+# frob:ticket T-0728
+# frob:tests tests/unit/test_arch_srp.py::TestAnalyzeProjectWiring.test_two_cluster_class_fires_arch101  # noqa: E501
+def _run_srp_checks_python(
+    tree: object,
+    rel: str,
+    limits: _Limits,
+    suggestions: list[ArchSuggestion],
+) -> None:
+    """T-0728: run T-0616's ARCH1xx SRP/cohesion family (`check_lcom4`,
+    `check_god_module`, `check_mixed_concern_function`) against `rel`'s
+    `PythonAdapter`-normalized `NormalizedModule`, threading `limits`'
+    five SRP thresholds through -- the wiring T-0616 disclosed as its own
+    out-of-scope follow-up (`frob.arch._srp`'s module docstring)."""
+    module: NormalizedModule = _python.PythonAdapter().adapt(tree, b"", rel)
+    check_lcom4(
+        module,
+        suggestions,
+        min_methods=limits.lcom4_min_methods,
+        min_field_using_methods=limits.lcom4_min_field_using_methods,
+    )
+    check_god_module(
+        module,
+        suggestions,
+        min_exports=limits.god_module_min_exports,
+        min_clusters=limits.god_module_min_clusters,
+    )
+    check_mixed_concern_function(
+        module,
+        suggestions,
+        min_decision_points=limits.mixed_concern_min_decision_points,
+    )
 
 
 # frob:doc docs/modules/arch.md#public-api
@@ -312,11 +377,17 @@ def analyze_project(
     max_local_imports: int = 8,
     max_nesting_depth: int = 4,
     max_file_lines: int = 500,
+    lcom4_min_methods: int = LCOM4_MIN_METHODS,
+    lcom4_min_field_using_methods: int = LCOM4_MIN_FIELD_USING_METHODS,
+    god_module_min_exports: int = GOD_MODULE_MIN_EXPORTS,
+    god_module_min_clusters: int = GOD_MODULE_MIN_CLUSTERS,
+    mixed_concern_min_decision_points: int = MIXED_CONCERN_MIN_DECISION_POINTS,
 ) -> ArchResult:
     """Scan `root` for long functions, god classes, deep nesting, high
-    coupling, large files, shared-signature abstraction opportunities, and
+    coupling, large files, shared-signature abstraction opportunities,
     (T-0332) advisory design-pattern recommendations / anti-pattern
-    escapes.
+    escapes, and (T-0728) the ARCH1xx SRP/cohesion family (low-cohesion-
+    class, god-module, mixed-concern-function, `frob.arch._srp`, T-0616).
 
     Memoized per `frob check` run (T-0423, `frob.check._memo.memoize_
     per_run`): a second call with identical arguments in the same run is a
@@ -332,6 +403,11 @@ def analyze_project(
         max_local_imports=max_local_imports,
         max_nesting_depth=max_nesting_depth,
         max_file_lines=max_file_lines,
+        lcom4_min_methods=lcom4_min_methods,
+        lcom4_min_field_using_methods=lcom4_min_field_using_methods,
+        god_module_min_exports=god_module_min_exports,
+        god_module_min_clusters=god_module_min_clusters,
+        mixed_concern_min_decision_points=mixed_concern_min_decision_points,
     )
     suggestions: list[ArchSuggestion] = []
     all_py_sigs: list[tuple[str, str, tuple[str, ...], str, str]] = []

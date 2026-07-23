@@ -19,18 +19,30 @@ from types import SimpleNamespace
 import pytest
 
 from frob.app.config import (
+    ARCH_DEFAULT_GOD_MODULE_MIN_CLUSTERS,
+    ARCH_DEFAULT_GOD_MODULE_MIN_EXPORTS,
+    ARCH_DEFAULT_LCOM4_MIN_FIELD_USING_METHODS,
+    ARCH_DEFAULT_LCOM4_MIN_METHODS,
     ARCH_DEFAULT_MAX_CLASS_METHODS,
     ARCH_DEFAULT_MAX_FILE_LINES,
     ARCH_DEFAULT_MAX_FUNCTION_LINES,
     ARCH_DEFAULT_MAX_LOCAL_IMPORTS,
     ARCH_DEFAULT_MAX_NESTING_DEPTH,
+    ARCH_DEFAULT_MIXED_CONCERN_MIN_DECISION_POINTS,
     load_arch_config,
     stale_install_warning,
 )
 
 
 def test_reads_override(tmp_path: Path) -> None:
-    """A frob.toml [arch] table fully overrides the calibrated defaults."""
+    """A frob.toml [arch] table fully overrides the calibrated defaults.
+
+    T-0728: the [arch] table now also carries the five ARCH1xx SRP/cohesion
+    knobs alongside the original five -- left at their calibrated defaults
+    here since this test's own concern is the original five, matching how
+    the ARCH1xx knobs' own override coverage lives in
+    tests/unit/test_arch_srp.py::TestArchConfigThresholds instead of a
+    second copy here."""
     (tmp_path / "frob.toml").write_text(
         "[arch]\n"
         "max_function_lines = 45\n"
@@ -46,11 +58,19 @@ def test_reads_override(tmp_path: Path) -> None:
         "max_local_imports": 10,
         "max_nesting_depth": 5,
         "max_file_lines": 900,
+        "lcom4_min_methods": ARCH_DEFAULT_LCOM4_MIN_METHODS,
+        "lcom4_min_field_using_methods": ARCH_DEFAULT_LCOM4_MIN_FIELD_USING_METHODS,
+        "god_module_min_exports": ARCH_DEFAULT_GOD_MODULE_MIN_EXPORTS,
+        "god_module_min_clusters": ARCH_DEFAULT_GOD_MODULE_MIN_CLUSTERS,
+        "mixed_concern_min_decision_points": (
+            ARCH_DEFAULT_MIXED_CONCERN_MIN_DECISION_POINTS
+        ),
     }
 
 
 def test_missing_toml_defaults(tmp_path: Path) -> None:
-    """No frob.toml at all falls back to the calibrated 60/800/etc defaults."""
+    """No frob.toml at all falls back to the calibrated 60/800/etc defaults
+    (T-0728: now including the five ARCH1xx SRP/cohesion defaults)."""
     cfg = load_arch_config(tmp_path)
     assert cfg == {
         "max_function_lines": ARCH_DEFAULT_MAX_FUNCTION_LINES,
@@ -58,6 +78,13 @@ def test_missing_toml_defaults(tmp_path: Path) -> None:
         "max_local_imports": ARCH_DEFAULT_MAX_LOCAL_IMPORTS,
         "max_nesting_depth": ARCH_DEFAULT_MAX_NESTING_DEPTH,
         "max_file_lines": ARCH_DEFAULT_MAX_FILE_LINES,
+        "lcom4_min_methods": ARCH_DEFAULT_LCOM4_MIN_METHODS,
+        "lcom4_min_field_using_methods": ARCH_DEFAULT_LCOM4_MIN_FIELD_USING_METHODS,
+        "god_module_min_exports": ARCH_DEFAULT_GOD_MODULE_MIN_EXPORTS,
+        "god_module_min_clusters": ARCH_DEFAULT_GOD_MODULE_MIN_CLUSTERS,
+        "mixed_concern_min_decision_points": (
+            ARCH_DEFAULT_MIXED_CONCERN_MIN_DECISION_POINTS
+        ),
     }
     assert cfg["max_function_lines"] == 60
     assert cfg["max_file_lines"] == 800

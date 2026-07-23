@@ -388,6 +388,23 @@ are advisory only and waivable via the existing T-0289 reasoned-override
 mechanism (`frob:waive ARCHxxx reason="..." [ceiling=N]`); nothing here is
 build-blocking on its own.
 
+**Wiring (T-0728).** T-0616 built these three checks but disclosed leaving
+them un-dispatched by `analyze_project` and un-registered as gate rules
+(out of that ticket's scope). T-0728 closes that gap: `analyze_project`
+now runs all three against every python file's `PythonAdapter`-built
+`NormalizedModule` (`frob.arch._run_srp_checks_python`), `frob.gates.
+_arch.arch_gate` channels the same three categories into `ARCH101`/
+`ARCH102`/`ARCH103` `Violation`s exactly like `long-function`/`ARCH001`
+already were, and all three thresholds are `[arch]` `frob.toml`-tunable
+via `frob.app.config.load_arch_config` (see
+[Configuration](#frob-toml-arch-config) below). Wiring for the other
+`LanguageAdapter`s (`TypeScriptAdapter`/`RustAdapter`/`KotlinAdapter`) is
+still open -- `analyze_project`'s per-file dispatch only builds a
+`NormalizedModule` on the python branch today, matching how every other
+normalized-model check already wired into `analyze_project` (the T-0617
+OCP family) is python-only in production despite being written
+language-agnostic.
+
 | Category | ARCH id | Signal | Severity |
 |---|---|---|---|
 | `low-cohesion-class` | ARCH101 | a class's field-using methods partition into 2+ disjoint field-usage components (LCOM4, a connectivity graph over `self.<field>` reads/writes) | warning |
@@ -432,13 +449,13 @@ formatted string is not a smell); only all three together is the
 same STRONG-HALLMARK-ONLY posture `frob.arch._patterns` already uses.
 
 **`run_srp_checks(module) -> list[ArchSuggestion]`** runs all three above
-against one `NormalizedModule` and returns the combined findings -- the
-single entry point a future orchestration-wiring ticket will call per
-parsed file (`analyze_project`'s per-language dispatch and `frob.app.
-config`'s `[arch]` table are both out of T-0616's scope; every threshold
-above is a plain keyword argument with a calibrated module-level default,
-ready for that follow-up wiring to thread through `frob.toml` the same
-way the existing five knobs are).
+against one `NormalizedModule` and returns the combined findings. T-0728's
+`analyze_project` wiring calls `check_lcom4`/`check_god_module`/
+`check_mixed_concern_function` individually rather than through this
+convenience wrapper, so each threshold can be threaded from `_Limits`
+(and, transitively, `frob.toml`) independently; `run_srp_checks` itself is
+unchanged and still useful for a caller that wants all three at their
+plain module defaults.
 
 ### ARCH001: a reasoned per-function override (T-0289)
 
@@ -620,6 +637,11 @@ covered by `tests/unit/test_arch.py::TestArchResultFormat`.
 <!-- frob:describes src/frob/app/config.py::ARCH_DEFAULT_MAX_LOCAL_IMPORTS -->
 <!-- frob:describes src/frob/app/config.py::ARCH_DEFAULT_MAX_NESTING_DEPTH -->
 <!-- frob:describes src/frob/app/config.py::ARCH_DEFAULT_MAX_FILE_LINES -->
+<!-- frob:describes src/frob/app/config.py::ARCH_DEFAULT_LCOM4_MIN_METHODS -->
+<!-- frob:describes src/frob/app/config.py::ARCH_DEFAULT_LCOM4_MIN_FIELD_USING_METHODS -->
+<!-- frob:describes src/frob/app/config.py::ARCH_DEFAULT_GOD_MODULE_MIN_EXPORTS -->
+<!-- frob:describes src/frob/app/config.py::ARCH_DEFAULT_GOD_MODULE_MIN_CLUSTERS -->
+<!-- frob:describes src/frob/app/config.py::ARCH_DEFAULT_MIXED_CONCERN_MIN_DECISION_POINTS -->
 
 `analyze_project`'s keyword defaults above (30/12/8/4/500) are library
 fallbacks for a caller with no `frob.toml` in scope. `frob check`'s ARCH
@@ -633,6 +655,14 @@ calibrated values instead: `max_function_lines=60`, `max_class_methods=12`,
 `load_arch_config` just returns the calibrated defaults, same posture as
 every other per-section `frob.toml` reader in this codebase (e.g.
 `frob.gates._dup_config`).
+
+T-0728 extends the same `[arch]` table with five more keys for T-0616's
+ARCH1xx SRP/cohesion family: `lcom4_min_methods` (default 6),
+`lcom4_min_field_using_methods` (default 4), `god_module_min_exports`
+(default 10), `god_module_min_clusters` (default 3), and
+`mixed_concern_min_decision_points` (default 2) -- identical to `_srp.py`'s
+own module-level defaults, since no separate calibration decision has
+been made for this repo's own source yet.
 
 ```python
 # frob/app/config.py

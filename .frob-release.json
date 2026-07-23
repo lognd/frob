@@ -74,11 +74,16 @@
     "src/frob/app/check_runner.py::_ColorizedLevelFormatter.format": "e18613d80343f4b8f434caf7af974dea4419aeb99c8560f4fd332d7590a3b8c4",
     "src/frob/app/check_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/clean_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
+    "src/frob/app/config.py::ARCH_DEFAULT_GOD_MODULE_MIN_CLUSTERS": "31fdb441802a66340dc5ab46f07322c242bc13b0e1aff2b95dd1dd5aa940fc0e",
+    "src/frob/app/config.py::ARCH_DEFAULT_GOD_MODULE_MIN_EXPORTS": "5993fd0ecedf56d28ca87a44db2fb29537af5d9e57c7a6ae94bf0a77764957fd",
+    "src/frob/app/config.py::ARCH_DEFAULT_LCOM4_MIN_FIELD_USING_METHODS": "334da82fb5762b8db8bc67745ac215932185858ac25e9ce1edbd9fa8df8eb5f3",
+    "src/frob/app/config.py::ARCH_DEFAULT_LCOM4_MIN_METHODS": "60bfb51ea7d88ac8cbc6e44275e197f9e38a1e0fcaa5fbbeb9453f04d32f3dbd",
     "src/frob/app/config.py::ARCH_DEFAULT_MAX_CLASS_METHODS": "0940e49ddce7fc636ee4e8abd8ea62a5dad6a43a24c45483ab2866c2acf6717e",
     "src/frob/app/config.py::ARCH_DEFAULT_MAX_FILE_LINES": "749f07c57c66ae3e8161f81e35d8d1f11183d2e940de8fe0c4fd24182bbd230a",
     "src/frob/app/config.py::ARCH_DEFAULT_MAX_FUNCTION_LINES": "6b67562ea4f28820954771d74eadb0855426cc852125464880430843f32fa399",
     "src/frob/app/config.py::ARCH_DEFAULT_MAX_LOCAL_IMPORTS": "f6977619909b4734b612b1d1a47f4cbeb32f997d59bff0eb133dcc2b76df50c0",
     "src/frob/app/config.py::ARCH_DEFAULT_MAX_NESTING_DEPTH": "60735e8ec6b15327a08e10f71f67f46d874da64870f9cb6fcc7d45b355a04a76",
+    "src/frob/app/config.py::ARCH_DEFAULT_MIXED_CONCERN_MIN_DECISION_POINTS": "023fa0e67c65f7bb4e244a2eb5f121355218c6947f0ccbc520463d8e7dae5bd5",
     "src/frob/app/config.py::AppConfig": "a2f02d74499d79ec415b9bf29041fcecf46c47f2a9b9051a6ee1d6d321df7ac4",
     "src/frob/app/config.py::AppConfig.from_args": "d5512dbbeeb044a72a5d718b1c6c9f4cf67cad56a159a03f1f9ed916b6b5faf4",
     "src/frob/app/config.py::AppConfig.from_external": "3f60f549404bc9cc626a016e900fd840634f969cd5245bdb4aed656dd63d58a0",
@@ -121,7 +126,7 @@
     "src/frob/app/ticket_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/vet_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/xref_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
-    "src/frob/arch/__init__.py::analyze_project": "852f784a8a314e41c9ff1654a2e28d8d93c4710e603606dd3a498e3608082bc7",
+    "src/frob/arch/__init__.py::analyze_project": "9f59a6565b4a0695319083fcc83633a2f7d9a11ef98614e2dc3f15fdf62a87dd",
     "src/frob/arch/_kotlin.py::KotlinAdapter": "01f16c6917a994b14ee14cec4aad49f19dac7a1902f1b863246cd0f4ecc060f6",
     "src/frob/arch/_kotlin.py::KotlinAdapter.adapt": "0c57832dc79ce96209c1a1ae671bbb1808b6b61baffc12c19d893376a6afe64e",
     "src/frob/arch/_models.py::ArchResult": "bb142d78c52b04dc8ce918d87d3be9ff04153b944668c3836d9f0c241930a74d",
@@ -1366,5 +1371,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.118.0"
+  "version": "0.119.0"
 }

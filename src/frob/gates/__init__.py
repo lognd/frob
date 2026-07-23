@@ -1010,6 +1010,13 @@ _KNOWN_GATE_RULES = frozenset(
         # a real gate Violation (see frob.gates._arch's module docstring for
         # why only this one, not the whole ArchCategory surface).
         "ARCH001",
+        # T-0728: T-0616's ARCH1xx SRP/cohesion family (frob.arch._srp),
+        # now dispatched by analyze_project and channeled into Violations
+        # by the same frob.gates._arch.arch_gate as ARCH001 (see that
+        # module's docstring for the T-0728 design-decision note).
+        "ARCH101",
+        "ARCH102",
+        "ARCH103",
         # T-0396: anti-orphan file-reference gate (frob.gates._refs).
         "REF001",
         "REF002",

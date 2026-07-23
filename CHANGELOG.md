@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.119.0] - unreleased
+
+- T-0728: arch: wire ARCH1xx SOLID checks into analyze_project, frob.toml thresholds, gate registry
+
 ## [0.118.0] - unreleased
 
 - T-0788: gates: register COMPLIANCE005 in the live rule set and dispatch check_cmpl_registry in frob check
