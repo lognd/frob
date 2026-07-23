@@ -1478,6 +1478,21 @@ def _add_ticket_priority_parser(ticket_sub):
     return ticket_priority_p
 
 
+# frob:ticket T-0834
+def _add_ticket_kind_parser(ticket_sub):
+    """Register `frob ticket kind <id> <kind>` -- correct a mis-filed kind
+    (T-0834), same shape as `_add_ticket_priority_parser`'s T-0411
+    precedent."""
+    ticket_kind_p = ticket_sub.add_parser("kind", help="set a ticket's kind (T-0834)")
+    ticket_kind_p.add_argument("ticket_id", metavar="id")
+    ticket_kind_p.add_argument(
+        "ticket_kind_value",
+        metavar="kind",
+        choices=["feature", "bug", "security", "ux", "docs", "invariant", "incident"],
+    )
+    return ticket_kind_p
+
+
 # frob:ticket T-0454
 def _add_ticket_component_parser(ticket_sub):
     """Register `frob ticket component <id> <name>` -- set which module/area
@@ -1523,7 +1538,7 @@ def _add_ticket_label_parser(ticket_sub):
 
 def _add_ticket_closeout_parsers(ticket_sub) -> list:
     """Register the ticket closeout subcommands: attach/block/close/fail/
-    evidence/done-report/scope/priority/component/label/review."""
+    evidence/done-report/scope/priority/kind/component/label/review."""
     return (
         _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub)
         + _add_ticket_fail_evidence_archive_parsers(ticket_sub)
@@ -1531,6 +1546,7 @@ def _add_ticket_closeout_parsers(ticket_sub) -> list:
             _add_ticket_done_report_parser(ticket_sub),
             _add_ticket_scope_parser(ticket_sub),
             _add_ticket_priority_parser(ticket_sub),
+            _add_ticket_kind_parser(ticket_sub),
             _add_ticket_component_parser(ticket_sub),
             _add_ticket_label_parser(ticket_sub),
             _add_ticket_review_parser(ticket_sub),

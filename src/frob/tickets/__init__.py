@@ -1743,6 +1743,33 @@ def set_priority(
     return Ok(updated)
 
 
+# frob:ticket T-0834
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_ticket_evidence.py::TestSetKind.test_updates_kind_field
+def set_kind(
+    root: Path, ticket_id: str, kind: TicketKind
+) -> Result[Ticket, TicketError]:
+    """Set `ticket_id`'s `kind` field (T-0834) -- the accountable,
+    single-writer way to correct a mis-filed kind instead of hand-editing
+    `tickets.md` frontmatter, same ledger-locked, no-terminal-state-check
+    pattern `set_priority` uses. A no-op write (still logged) if `kind`
+    already matches."""
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
+    with ledger_lock(root):
+        loaded = _load_ticket_and_queue(root, ticket_id)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        ticket, _queue = loaded.danger_ok
+        updated = ticket.model_copy(update={"kind": kind})
+        write_result = write_ticket(root, updated)
+        if write_result.is_err:
+            return Err(write_result.danger_err)
+    _log.info("tickets: %s kind set to %s", ticket_id, kind.value)
+    return Ok(updated)
+
+
 # frob:ticket T-0454
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_organization.py::TestSetComponent.test_updates_component_field  # noqa: E501
@@ -2535,7 +2562,7 @@ def _append_evidence_and_write(
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_cmd_evidence.py::TestCmdEvidence.test_exit_zero
 # frob:tests tests/test_tickets_cmd_evidence.py::TestCmdEvidence.test_nonzero_exit
-def run_cmd_evidence(command: str) -> Result[str, TicketError]:
+def run_cmd_evidence(command: str, cwd: Path | None = None) -> Result[str, TicketError]:
     """Run `command` as an argv (no shell, T-0805) and fold its outcome
     into one evidence string (`cmd:<command> exit=0 sha256=<12-hex>`) --
     the non-pytest
@@ -2546,8 +2573,15 @@ def run_cmd_evidence(command: str) -> Result[str, TicketError]:
     stdout only (deterministic across whitespace-only stderr noise) so the
     same command run twice against the same repo state records the same
     entry instead of appending a new one every time.
+
+    `cwd` (T-0834) is where `command` is actually run -- `add_cmd_evidence`
+    passes the ticket's resolved `--path` root so a relative-path probe
+    (`grep`/`test` over ticket scope files) runs against the worktree the
+    evidence claim is ABOUT, not whatever directory happened to invoke the
+    CLI. `None` (the `reverify_cmd_evidence` re-check path) keeps the
+    previous behavior of inheriting the current process cwd.
     """
-    completed = _run_evidence_command(command)
+    completed = _run_evidence_command(command, cwd=cwd)
     if completed.is_err:
         return Err(completed.danger_err)
     digest = hashlib.sha256(completed.danger_ok.stdout.encode("utf-8")).hexdigest()[:12]
@@ -2601,10 +2635,18 @@ def reverify_cmd_evidence(entry: str) -> Result[bool, TicketError]:
 
 def _run_evidence_command(
     command: str,
+    cwd: Path | None = None,
 ) -> Result[subprocess.CompletedProcess, TicketError]:
     """Spawn `command` as an argv (never through a shell) and return its
     completed process; `Err(EvidenceCmdFailed)` if it fails to parse, fails
     to launch, or exits nonzero.
+
+    `cwd` (T-0834) is forwarded straight to `guarded_subprocess_run`/
+    `subprocess.run`; `None` inherits the current process's cwd (the
+    pre-T-0834 default, still used by `reverify_cmd_evidence`). A relative-
+    path command (a `grep`/`test` probe over ticket scope files) is only
+    meaningful relative to the ticket's own worktree, not wherever the CLI
+    happened to be invoked from -- see `run_cmd_evidence`.
 
     T-0805: previously ran `command` with `shell=True` -- ticket YAML
     (`cmd:` evidence entries) is repo-writable by any agent/tool, so a
@@ -2643,9 +2685,15 @@ def _run_evidence_command(
             capture_output=True,
             text=True,
             check=False,
+            cwd=cwd,
         )
     except OSError as exc:
-        _log.error("tickets: evidence command %r failed to launch: %s", command, exc)
+        _log.error(
+            "tickets: evidence command %r failed to launch (cwd=%s): %s",
+            command,
+            cwd,
+            exc,
+        )
         return Err(TicketError.EvidenceCmdFailed)
     if guarded.is_err:
         _log.error(
@@ -2655,9 +2703,10 @@ def _run_evidence_command(
     completed = guarded.danger_ok
     if completed.returncode != 0:
         _log.warning(
-            "tickets: evidence command %r exited %d (stderr tail: %r)",
+            "tickets: evidence command %r exited %d (cwd=%s, stderr tail: %r)",
             command,
             completed.returncode,
+            cwd,
             completed.stderr[-500:],
         )
         return Err(TicketError.EvidenceCmdFailed)
@@ -2732,7 +2781,12 @@ def add_cmd_evidence(
             )
             return Err(TicketError.AcceptanceIndexOutOfRange)
 
-    recorded = run_cmd_evidence(command)
+    # T-0834: run the command from the ticket's own resolved `--path` root,
+    # not the invoking process's cwd -- the evidence claim is about the
+    # worktree named by `root`, and a relative-path probe (grep/test over
+    # scope files) silently ran against whatever directory happened to
+    # invoke the CLI before this, with no indication of which cwd it used.
+    recorded = run_cmd_evidence(command, cwd=root)
     if recorded.is_err:
         return Err(recorded.danger_err)
     entry = recorded.danger_ok
@@ -3370,6 +3424,7 @@ __all__ = [
     "mutate_labels",
     "mutate_scope",
     "set_component",
+    "set_kind",
     "set_priority",
     "Stride",
     "board_view",

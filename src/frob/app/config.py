@@ -286,6 +286,11 @@ class AppConfig(BaseModel):
     # frob:waive SCOPE001 reason="T-0411 needs new/priority AppConfig fields; T-0453/T-0455 bootstrap precedent, T-0446 tracks the general gap"  # noqa: E501
     ticket_priority: str | None = None
     ticket_priority_level: str | None = None
+    # frob:ticket T-0834
+    # `frob ticket kind <id> <kind>` -- the new kind value, same shape as
+    # `ticket_priority_level`'s T-0411 precedent (`ticket_kind` above is
+    # already taken by `frob ticket new --kind`).
+    ticket_kind_value: str | None = None
     ticket_evidence_ids: list[str] = []
     ticket_evidence_cmd: str | None = None
     # frob:ticket T-0572
@@ -551,6 +556,7 @@ class AppConfig(BaseModel):
             "ticket_scope_reason",
             "ticket_priority",
             "ticket_priority_level",
+            "ticket_kind_value",
             "ticket_component",
             "ticket_board_component",
             "ticket_board_label",

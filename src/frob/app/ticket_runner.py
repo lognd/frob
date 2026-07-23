@@ -1,7 +1,7 @@
 """CLI wiring for `frob ticket new|list|show|doable|board|epic|brief|plan|
 start|requeue|sweep|reconcile|land|merge-driver|attach|block|close|fail|
-drop|evidence|done-report|scope|priority|component|label|archive|review`
-(docs/modules/tickets.md)."""
+drop|evidence|done-report|scope|priority|kind|component|label|archive|
+review` (docs/modules/tickets.md)."""
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
 # src/frob/app/ticket_runner.py's exclusivity-vocabulary hit is source-level \
 # design-rationale/scope-cut prose (a docstring or comment describing \
@@ -80,6 +80,7 @@ def _ticket_dispatch_table() -> dict:
         "review": _review,
         "scope": _scope,
         "priority": _priority,
+        "kind": _kind,
         "component": _component,
         "label": _label,
         "board": _board,
@@ -100,8 +101,8 @@ def run(cfg: AppConfig) -> None:
         _log.error(
             "usage: frob ticket <new|list|show|doable|board|epic|brief|plan|"
             "start|requeue|sweep|reconcile|land|merge-driver|attach|block|"
-            "close|fail|drop|evidence|done-report|scope|priority|component|"
-            "label|archive|review> ..."
+            "close|fail|drop|evidence|done-report|scope|priority|kind|"
+            "component|label|archive|review> ..."
         )
         sys.exit(1)
     with _diagnostic_log_ctx(cfg):
@@ -2185,6 +2186,38 @@ def _priority(root: Path, cfg: AppConfig) -> None:
         sys.exit(1)
     ticket = result.danger_ok
     _log.info("%s: priority now %s", cfg.ticket_id, ticket.priority.value)
+
+
+# frob:ticket T-0834
+def _kind(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket kind <id> <kind>`: the ONLY thing this command does is
+    forward to `frob.tickets.set_kind` -- no validation is re-derived here
+    (T-0834, same pattern as `_priority`/T-0411). `kind` is validated
+    strictly against the real `TicketKind` enum inside `TicketKind(...)`;
+    an unknown value raises `ValueError`, reported and exited the same way
+    an unresolvable ticket id is."""
+    from frob.tickets import TicketKind, set_kind
+
+    if cfg.ticket_id is None or cfg.ticket_kind_value is None:
+        _log.error("frob ticket kind requires <id> <kind>")
+        sys.exit(1)
+
+    try:
+        kind = TicketKind(cfg.ticket_kind_value)
+    except ValueError:
+        _log.error(
+            "frob ticket kind: %r is not a valid kind (choose from %s)",
+            cfg.ticket_kind_value,
+            sorted(k.value for k in TicketKind),
+        )
+        sys.exit(1)
+
+    result = set_kind(root, cfg.ticket_id, kind)
+    if result.is_err:
+        _log.error("kind change failed: %s", result.danger_err)
+        sys.exit(1)
+    ticket = result.danger_ok
+    _log.info("%s: kind now %s", cfg.ticket_id, ticket.kind.value)
 
 
 # frob:ticket T-0454

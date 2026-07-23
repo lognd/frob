@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.125.0] - unreleased
+
+- T-0834: ticket CLI: no kind editor; evidence-cmd runs from invoking cwd not --path
+
 ## [0.124.0] - unreleased
 
 - T-0836: worktree sweep command: lease-aware stale-worktree cleanup (raw git sweep destroyed a live agent env)
