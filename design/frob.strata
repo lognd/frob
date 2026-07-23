@@ -396,14 +396,19 @@ node core : trusted {
 // a clean self-conformance scan confirms zero real sites for these four --
 // they were never genuinely exercised capabilities, so removing them is
 // the honest fix, not a coverage regression.
-// T-0155 LINT004: `may "net"` is a risky capability. T-0200 built a real
-// net kill-switch mechanism (frob.process._guard.net_enabled/
-// NET_KILL_SWITCH_ENV) but explicitly left wiring a real net call site
-// through it out of scope (T-0200 Done report); T-0778's sweep confirms
-// no caller anywhere in the repo calls `net_enabled()` yet, so vet's own
-// `fetch_url`/`net` call sites (`_nvd.py`/`_registry.py`) remain
-// genuinely unwired -- an honest gap, not a pending mechanism. Follow-on:
-// T-0803.
+// T-0822 (closing T-0155's honest LINT004 gap, same disposition
+// as `checker` above; supersedes T-0803's still-unwired disposition and
+// the never-filed "T-0817" waiver id a stale dispatch prompt referenced):
+// `may "net"` now has a REAL, checked-in kill switch --
+// `frob.process.net_enabled()` (`FROB_DISABLE_NET`, T-0200's mechanism,
+// unused pending a real call site until this ticket wired it). Both of
+// vet's own `urlopen` sites (`_registry.py::_result_from_network`,
+// `_nvd.py::_fetch_from_network`) check `net_enabled()` before ever
+// opening a socket and degrade exactly like a network failure
+// (`ok=False`) when disabled -- live and without a redeploy
+// (`tests/test_vet.py::TestRegistryLookup`), not an aspirational claim
+// (T-0150/T-0151 discipline), so the T-0174 `waive "LINT004"` is retired
+// in favor of the real declaration below.
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 node vet : trusted {
     clearance Internal;
@@ -415,7 +420,7 @@ node vet : trusted {
     may "fs-read";
     may "install-hook";
     may "net";
-    waive "LINT004" reason "net kill-switch mechanism exists (T-0200, frob.process._guard.net_enabled) but no vet call site invokes it yet -- wiring tracked in T-0817" ticket "T-0817";
+    attr flag=frob_vet_net_kill_switch;
 }
 
 // The ticket ledger: tickets.md + tickets/, git-tracked truth.

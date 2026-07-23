@@ -9,6 +9,11 @@ response is reported as "could not verify", never treated as "no CWEs",
 so a live CVE can never silently read as contained for lack of a network
 call. `[vet].registry_base_url`-style host override is `base_url` here too,
 for the same reason (tests never touch the real NVD API).
+
+T-0822: `_fetch_from_network` is gated by `frob.process.net_enabled()` (the
+`FROB_DISABLE_NET` kill switch, T-0200) before the socket is opened -- a
+disabled switch degrades exactly like a network failure (`ok=False`), the
+same offline-must-never-hard-block posture as `_registry.py`.
 """
 
 from __future__ import annotations
@@ -24,6 +29,7 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict
 
 from frob.logging import get_logger
+from frob.process import NET_KILL_SWITCH_ENV, net_enabled
 
 _log = get_logger(__name__)
 
@@ -155,10 +161,18 @@ def _result_from_body(cve_id: str, body: str) -> NvdResult:
     return NvdResult(ok=True, cwe_ids=cwe_ids)
 
 
+# frob:ticket T-0822
 def _fetch_from_network(
     cve_id: str, url: str, cache_path: Path, timeout_s: float
 ) -> NvdResult:
     """Fetch, parse, and cache one CVE's NVD weakness mapping."""
+    if not net_enabled():
+        _log.warning(
+            "vet: nvd query for %s skipped (net disabled via %s)",
+            cve_id,
+            NET_KILL_SWITCH_ENV,
+        )
+        return NvdResult(ok=False, note="could not verify CWE mapping: net disabled")
     try:
         with urllib.request.urlopen(url, timeout=timeout_s) as resp:  # noqa: S310
             body = resp.read().decode("utf-8")

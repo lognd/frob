@@ -2766,6 +2766,71 @@ class TestRegistryLookup:
         assert result.ok is False
         assert result.published_at is None
 
+    # frob:ticket T-0822
+    def test_fetch_publish_date_refuses_when_net_disabled(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-0822: `FROB_DISABLE_NET` degrades `_fetch_publish_date` to
+        `ok=False` without ever calling `urlopen` -- a no-connect spy
+        proves the kill switch short-circuits before the socket opens."""
+        # frob:tests src/frob/vet/_registry.py::_fetch_publish_date kind="unit"
+        # frob:tests src/frob/vet/_registry.py::_result_from_network kind="unit"
+        from frob.vet import _registry
+
+        monkeypatch.setenv("FROB_DISABLE_NET", "1")
+
+        def _no_connect(*_args: object, **_kwargs: object) -> object:
+            raise AssertionError("urlopen must not be called while net is disabled")
+
+        monkeypatch.setattr(_registry.urllib.request, "urlopen", _no_connect)
+
+        result = _registry._fetch_publish_date(
+            "pypi",
+            "some-package",
+            "1.0.0",
+            cache_path=tmp_path / "vet.db",
+            base_url="http://127.0.0.1:1",
+            timeout_s=0.5,
+        )
+        assert result.ok is False
+        assert result.published_at is None
+        assert "net disabled" in result.note
+
+
+# ---------------------------------------------------------------------------
+# NVD CVE->CWE lookups
+# ---------------------------------------------------------------------------
+
+
+class TestNvdLookup:
+    # frob:ticket T-0822
+    def test_fetch_cwe_for_cve_refuses_when_net_disabled(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-0822: `FROB_DISABLE_NET` degrades `fetch_cwe_for_cve` to
+        `ok=False` without ever calling `urlopen` -- a no-connect spy
+        proves the kill switch short-circuits before the socket opens."""
+        # frob:tests src/frob/vet/_nvd.py::fetch_cwe_for_cve kind="unit"
+        # frob:tests src/frob/vet/_nvd.py::_fetch_from_network kind="unit"
+        from frob.vet import _nvd
+
+        monkeypatch.setenv("FROB_DISABLE_NET", "1")
+
+        def _no_connect(*_args: object, **_kwargs: object) -> object:
+            raise AssertionError("urlopen must not be called while net is disabled")
+
+        monkeypatch.setattr(_nvd.urllib.request, "urlopen", _no_connect)
+
+        result = _nvd.fetch_cwe_for_cve(
+            "CVE-2024-00000",
+            cache_path=tmp_path / "vet.db",
+            base_url="http://127.0.0.1:1",
+            timeout_s=0.5,
+        )
+        assert result.ok is False
+        assert result.cwe_ids == ()
+        assert "net disabled" in result.note
+
 
 # ---------------------------------------------------------------------------
 # local-cache source location

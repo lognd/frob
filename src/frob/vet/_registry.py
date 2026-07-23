@@ -4,6 +4,12 @@ Network calls: 5s timeout, degrade to a WARN on any failure (offline must
 never hard-block -- docs/modules/vet.md VET011). `[vet].registry_base_url` swaps the
 host for tests; the path suffix per ecosystem is identical to the real
 registry so parsing logic is shared between real and fake responses.
+
+T-0822: every `urlopen` call here is gated by `frob.process.net_enabled()`
+(the `FROB_DISABLE_NET` kill switch, T-0200) FIRST, before the socket is
+ever opened -- a disabled switch degrades exactly like a network failure
+(`ok=False`, VET011's existing offline-must-never-hard-block posture), it
+never raises and never blocks.
 """
 
 # frob:waive TEST005 reason="module line coverage 39.5%, debt T-0160"
@@ -21,6 +27,7 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict
 
 from frob.logging import get_logger
+from frob.process import NET_KILL_SWITCH_ENV, net_enabled
 
 _log = get_logger(__name__)
 
@@ -177,6 +184,7 @@ def _result_from_cached(
 # a raw network response is parsed/validated into a `_RegistryResult` here,
 # and nothing downstream re-validates it -- delete this validation and the
 # model's `c_no_registry_ledger` noflow claim would (correctly) refute.
+# frob:ticket T-0822
 def _result_from_network(
     ecosystem: str,
     name: str,
@@ -187,6 +195,15 @@ def _result_from_network(
     timeout_s: float,
 ) -> _RegistryResult:
     """Fetch, parse, and (for pinned versions) cache a registry publish date."""
+    if not net_enabled():
+        _log.warning(
+            "vet: registry query for %s skipped (net disabled via %s)",
+            key,
+            NET_KILL_SWITCH_ENV,
+        )
+        return _RegistryResult(
+            ok=False, note="could not verify publish date: net disabled"
+        )
     try:
         with urllib.request.urlopen(url, timeout=timeout_s) as resp:  # noqa: S310
             body = resp.read().decode("utf-8")

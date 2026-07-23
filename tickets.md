@@ -9170,3 +9170,101 @@ component: null
 labels: []
 ```
 Hit 3x this drive (T-0799, T-0752 post-10b-restore, T-0815): implementers leave tickets planned (never ran start, or a ledger restore reverted the state), evidence+report are complete, land merges+finalizes then dies InvalidTransition at close, forcing the coordinator start-then-retry recipe. Either fold the start transition into finalize when preconditions are met, or extend the T-0763 preflight to check state transitions pre-merge.
+
+<!-- ticket:T-0822 -->
+```yaml
+id: T-0822
+title: 'vet: wire net_enabled kill-switch into vet''s network call sites'
+state: done
+kind: security
+origin: agent
+created: '2026-07-23'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/vet/**
+- tests/test_vet.py
+- design/frob.strata
+scope_changes: []
+evidence:
+- tests/test_vet.py::TestRegistryLookup::test_fetch_publish_date_refuses_when_net_disabled
+- tests/test_vet.py::TestNvdLookup::test_fetch_cwe_for_cve_refuses_when_net_disabled
+- tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
+attachments: []
+acceptance:
+- text: Given FROB_DISABLE_NET=1, when vet looks up a registry publish date or an
+    NVD CVE->CWE mapping, then no urlopen call happens and the result degrades to
+    ok=False with a "net disabled" note.
+  evidence:
+  - tests/test_vet.py::TestRegistryLookup::test_fetch_publish_date_refuses_when_net_disabled
+  - tests/test_vet.py::TestNvdLookup::test_fetch_cwe_for_cve_refuses_when_net_disabled
+- text: Given design/frob.strata's vet node, when frob sys audit runs, then the node
+    declares a real attr flag=<id> kill-switch and carries no LINT004 waiver.
+  evidence:
+  - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
+  - tests/test_vet.py::TestRegistryLookup::test_fetch_publish_date_refuses_when_net_disabled
+threat: null
+component: null
+labels: []
+```
+Dispatch referenced ticket id T-0817 ("vet: wire net_enabled kill-switch
+into vet's network call sites"), but no such ticket exists in
+tickets.md/tickets-archive.md (`frob ticket show T-0817` -> "no ticket
+T-0817"). Filing the real ticket here so the implementation has a real
+frob:ticket edge to bind evidence to, per the ticket's own instructions
+("do not force it ... file a ticket").
+
+Survey (done as part of this ticket): vet has two real, live outbound
+`urllib.request.urlopen` call sites -- src/frob/vet/_registry.py::
+_result_from_network (publish-date lookups) and src/frob/vet/_nvd.py::
+_fetch_from_network (CVE->CWE lookups). `_osv.py` and `_popular_*.py`
+do not make network calls (osv-scanner subprocess / static curated
+lists respectively). design/frob.strata's `vet` node already declares
+`may "net"` with a `waive "LINT004"` pointing at T-0200, and T-0200
+already built the real mechanism (`frob.process.net_enabled()` /
+`FROB_DISABLE_NET`, `src/frob/process/_guard.py`) but left it unwired
+pending a real net call site -- this ticket is that wiring.
+
+Plan: gate both `urlopen` sites behind `net_enabled()`, degrading to the
+existing `ok=False` "could not verify" shape each site's docstring
+already commits to for a network failure (VET011's offline-must-never-
+hard-block posture) -- a disabled kill switch is not a new failure mode,
+it degrades identically to an unreachable host. Declare `attr
+flag=frob_vet_net_kill_switch;` on the `vet` node in design/frob.strata
+and delete the LINT004 waiver (mirrors the T-0769 stratamod precedent).
+Add tests with a no-connect `urlopen` spy proving the switch
+short-circuits before any socket opens.
+
+## Done report
+
+Changed:
+src/frob/vet/_registry.py::_result_from_network
+src/frob/vet/_nvd.py::_fetch_from_network
+design/frob.strata (vet node: attr flag=frob_vet_net_kill_switch; replaces waive "LINT004")
+tests/test_vet.py::TestRegistryLookup.test_fetch_publish_date_refuses_when_net_disabled
+tests/test_vet.py::TestNvdLookup.test_fetch_cwe_for_cve_refuses_when_net_disabled
+
+Evidence:
+tests/test_vet.py::TestRegistryLookup::test_fetch_publish_date_refuses_when_net_disabled
+tests/test_vet.py::TestNvdLookup::test_fetch_cwe_for_cve_refuses_when_net_disabled
+uv run --frozen pytest tests/test_vet.py -q -> 145 passed
+uv run --frozen frob test --base main -> [PASS] python exit=0 12.64s (touched-set incl. both new tests + frob self-model sys-gate tests)
+uv run --frozen frob sys audit -> "sys audit: PROVED -- zero gaps across every configured view" (zero LINT004 waivers left anywhere in the model, vet's included)
+
+Filed: none (T-0822 is this ticket itself, filed because dispatch id T-0817 does not exist in the ledger -- see deviations below)
+
+Gates: frob check --only {lint,static,gates-fast,gates-native,gates-security} --ticket T-0822 all clean (0 errors); the one pre-existing lint red (tests/system/test_cli_doctor.py ty diagnostic, predates this change, outside scope) is untouched.
+
+### Changed
+```
+ design/frob.strata        | 23 ++++++++++-------
+ src/frob/vet/_nvd.py      | 14 ++++++++++
+ src/frob/vet/_registry.py | 17 +++++++++++++
+ tests/test_vet.py         | 65 +++++++++++++++++++++++++++++++++++++++++++++++
+ tickets.md                | 58 ++++++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 168 insertions(+), 9 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
