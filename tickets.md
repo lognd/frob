@@ -3453,7 +3453,7 @@ The two T-0577 dispatch items that had no existing design to build against, defe
 id: T-0632
 title: 'arch: extend NormalizedCall with arg-position detail and migrate _extract_signatures/_collect_dispatch_refs
   onto the model'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
