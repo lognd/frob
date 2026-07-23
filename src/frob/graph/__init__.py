@@ -618,7 +618,7 @@ def _first_added_file(
 # frob:tests tests/test_graph.py::TestLoadGraph.test_cache_stale_after_new_doc_added  # noqa: E501
 def load_graph(cache: Path) -> Result[GraphSnapshot, GraphError]:
     """Cache-only read: `Err(CacheStale)` if any on-disk hash moved, `Err(CacheCorrupt)`
-    if the cache is unreadable or has never been built.
+    if the cache is unreadable, schema-mismatched, or has never been built.
 
     Opens `cache` via `connect_readonly` (T-0232), not `connect`: a pure
     read has no business taking sqlite's single writer slot, and doing so
@@ -627,6 +627,21 @@ def load_graph(cache: Path) -> Result[GraphSnapshot, GraphError]:
     neither side had anything to write. A cache this can't open read-only
     (missing, corrupt, or mid-rebuild) is exactly `CacheCorrupt` territory
     -- self-healing it is `build_graph`'s job, not a reader's.
+
+    frob:ticket T-0799
+    A read-only connection can never DDL its way out of schema drift the
+    way `connect()`'s `_apply_schema_with_recovery` does -- a pre-migration
+    cache.db (missing a table T-0245/T-0279 added, or missing a column like
+    `mtime_ns`) surfaces as `sqlite3.OperationalError` ("no such table:
+    symbols", "no such column: mtime_ns") from whatever query happens to
+    touch the drifted shape first: `get_root`, the staleness probes, or
+    `load_all`. Two such crashes escaped this function mid-land on
+    2026-07-23 (one leaving a partial squash staged on main) because only
+    `get_root`'s own query was guarded -- every query after it was not. The
+    whole read body is wrapped in one `OperationalError` handler now: ANY
+    schema-shape error anywhere in this function is `CacheCorrupt`, never a
+    propagating exception -- `build_graph` (via `connect()`'s schema-version
+    check) is what actually rebuilds it on the next write.
     """
     if not cache.exists():
         _log.warning("load_graph: no cache at %s", cache)
@@ -637,36 +652,48 @@ def load_graph(cache: Path) -> Result[GraphSnapshot, GraphError]:
         _log.error("load_graph: cache unreadable at %s: %s", cache, exc)
         return Err(GraphError.CacheCorrupt)
     try:
-        root_str = _cache.get_root(conn)
-    except sqlite3.DatabaseError as exc:
-        # A read-only connection cannot self-heal a garbage/corrupt file the
-        # way `connect()` does (T-0232) -- that would require a write.
-        # Corrupt bytes surface as a query-time error here rather than at
-        # connect time; still `CacheCorrupt`, same as the old self-healing
-        # path's outcome once it found no root ever recorded.
-        _log.error("load_graph: cache unreadable at %s: %s", cache, exc)
-        conn.close()
-        return Err(GraphError.CacheCorrupt)
-    try:
-        if root_str is None:
-            _log.warning("load_graph: cache at %s has never been built", cache)
+        try:
+            root_str = _cache.get_root(conn)
+            if root_str is None:
+                _log.warning("load_graph: cache at %s has never been built", cache)
+                return Err(GraphError.CacheCorrupt)
+            root = Path(root_str)
+            stale_path = _first_stale_cached_file(conn, root)
+            if stale_path is not None:
+                _log.warning("load_graph: %s drifted from cache", stale_path)
+                return Err(GraphError.CacheStale)
+            # frob:ticket T-0402
+            # G1: a hash-only staleness loop is blind to files added since
+            # the last build (they simply have no cache row to compare
+            # against). Catch that shape too, or a load-only reader
+            # silently operates on an incomplete graph forever, never
+            # re-triggering a rebuild.
+            exclude_globs = _load_exclude_globs(root)
+            added_path = _first_added_file(conn, root, exclude_globs)
+            if added_path is not None:
+                _log.warning("load_graph: %s added since cache built", added_path)
+                return Err(GraphError.CacheStale)
+            snapshot = _cache.load_all(conn)
+        except sqlite3.OperationalError as exc:
+            # frob:ticket T-0799
+            # Schema drift (missing table/column from a pre-migration
+            # cache.db) surfaces here as a query-time OperationalError, not
+            # at connect time -- a read-only connection cannot self-heal
+            # it, so treat it exactly like the corrupt-bytes case: give up
+            # and let the writer path rebuild.
+            _log.error(
+                "load_graph: schema mismatch/unreadable cache at %s: %s", cache, exc
+            )
             return Err(GraphError.CacheCorrupt)
-        root = Path(root_str)
-        stale_path = _first_stale_cached_file(conn, root)
-        if stale_path is not None:
-            _log.warning("load_graph: %s drifted from cache", stale_path)
-            return Err(GraphError.CacheStale)
-        # frob:ticket T-0402
-        # G1: a hash-only staleness loop is blind to files added since the
-        # last build (they simply have no cache row to compare against).
-        # Catch that shape too, or a load-only reader silently operates on
-        # an incomplete graph forever, never re-triggering a rebuild.
-        exclude_globs = _load_exclude_globs(root)
-        added_path = _first_added_file(conn, root, exclude_globs)
-        if added_path is not None:
-            _log.warning("load_graph: %s added since cache built", added_path)
-            return Err(GraphError.CacheStale)
-        snapshot = _cache.load_all(conn)
+        except sqlite3.DatabaseError as exc:
+            # A read-only connection cannot self-heal a garbage/corrupt
+            # file the way `connect()` does (T-0232) -- that would require
+            # a write. Corrupt bytes surface as a query-time error here
+            # rather than at connect time; still `CacheCorrupt`, same as
+            # the old self-healing path's outcome once it found no root
+            # ever recorded.
+            _log.error("load_graph: cache unreadable at %s: %s", cache, exc)
+            return Err(GraphError.CacheCorrupt)
         _log.info(
             "load_graph: loaded %d symbols, %d edges",
             len(snapshot.symbols),
