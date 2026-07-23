@@ -29,6 +29,10 @@ has no `elif language == "..."` branch for them yet.
 | `low-cohesion-class` (ARCH101, T-0616) | a class's field-using methods split into 2+ disjoint field-usage components (LCOM4) -- written once against the normalized model, fires across languages | warning |
 | `god-module` (ARCH102, T-0616) | a module's 10+ top-level exports partition into 3+ disjoint naming/usage clusters -- written once against the normalized model | warning |
 | `mixed-concern-function` (ARCH103, T-0616) | one function body mixes an I/O call, a string-formatting call, and 2+ of its own decision points -- written once against the normalized model | suggestion |
+| `pool-inside-pool` (T-0695) | a process-pool construction reachable alongside a thread-pool/thread construction in the same function | warning |
+| `fork-after-threads` (T-0695) | a fork/fork-start-method call reachable after a `Thread(...).start()` on the same function's line order | warning |
+| `pipe-wait-deadlock` (T-0695) | a `Popen` with a `PIPE` stream followed by `.wait()` with no `.communicate()` in the function | warning |
+| `self-join-deadlock` (T-0695) | a function dispatched as a pool/thread task whose own body calls `.join()`/`.shutdown()`/`.close()` | warning |
 
 All thresholds are `analyze_project` keyword arguments with the defaults
 shown in the Public API section below; there is no `frob.toml` table for
@@ -307,6 +311,52 @@ gate-side addition, not a re-instrumentation of these checks.
   enum not locally resolvable makes the match's exhaustiveness
   unverifiable from this file alone, and the check silently skips it
   rather than risk a false positive.
+
+### Fork/pool hazards: `pool-inside-pool` / `fork-after-threads` / `pipe-wait-deadlock` / `self-join-deadlock` (T-0695)
+
+<a id="fork-pool-hazards"></a>
+<!-- frob:describes src/frob/arch/_concurrency.py::_check_fork_pool_hazards -->
+
+`frob.arch._concurrency` is a call-graph-reachability slice, not a
+runtime tracer: every finding is a FAIL-CLOSED syntactic co-occurrence
+heuristic over one parsed python file's function bodies, on the same
+unwaivable advisory channel every other `frob.arch` category is on
+(`frob.gates._unwaivable_channel_rules`). It exists because this repo's
+own `_run_combined_jobs` produced a real 6-hour CI hang (T-0265) from a
+`ProcessPoolExecutor` forked while a sibling thread pool was open --
+T-0581 fixed the runtime ordering, but nothing statically caught the
+SHAPE that made it possible, and `_run_combined_jobs` deliberately still
+trips this check today (an intentional, waived finding, not a bug) to
+prove the detector works on real code rather than only on a fixture.
+
+- **`pool-inside-pool`.** A `ProcessPoolExecutor`/`multiprocessing.Pool`
+  construction reachable in the same function as a `ThreadPoolExecutor`
+  construction, or a `threading.Thread(...)` construction plus a
+  `.start()` call. Presence-only (no ordering requirement): a static
+  syntactic scan cannot see submit-before-open ordering or
+  `mp_context=spawn` safety nets, so it flags the co-occurrence
+  conservatively.
+- **`fork-after-threads`.** An explicit `os.fork()` (or a
+  `multiprocessing.get_context("fork")`/`set_start_method("fork")` call)
+  reachable AFTER a `Thread(...).start()` on the same function's
+  source-line order -- fork inherits only the calling thread, so a
+  sibling thread holding a lock at fork time never releases it in the
+  child.
+- **`pipe-wait-deadlock`.** A `subprocess.Popen(...)` constructed with a
+  `PIPE` stdout/stderr stream, followed by a bare `.wait()` with no
+  `.communicate()` anywhere in the function -- unbounded child output
+  fills the pipe buffer and deadlocks both processes.
+- **`self-join-deadlock`.** A function that is itself submitted/started
+  as a pool/thread task somewhere in the module (`.submit(f)`,
+  `.map(f, ...)`, `.apply_async(f, ...)`, `Thread(target=f)`) whose OWN
+  body calls `.join()`/`.shutdown()`/`.close()` on some pool/thread
+  object -- a worker blocking on the dispatcher running it. The
+  submitted-callee corpus is built once per module (a submit site and
+  its callee can live in different functions), matched against each
+  candidate function's bare name AND its `Class.method` qualified name;
+  this is a name-based heuristic, not full data-flow, so it can over-
+  fire on an unrelated `.join()` inside a dispatched function -- treat a
+  finding as "investigate", not "definitely this exact pool".
 
 ### SRP/cohesion checks: `low-cohesion-class` / `god-module` / `mixed-concern-function` (T-0616)
 

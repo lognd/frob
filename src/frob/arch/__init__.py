@@ -23,7 +23,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from frob.arch import _cpp, _ocp, _patterns, _python
+from frob.arch import _concurrency, _cpp, _ocp, _patterns, _python
 from frob.arch._models import (
     ArchCategory,
     ArchResult,
@@ -293,6 +293,7 @@ def _run_python_checks(
         _patterns._collect_file_constructions(tree, rel, all_constructions)
         _ocp._check_type_dispatch_smell(tree, rel, suggestions)
         _ocp._check_non_exhaustive_enum_match(tree, rel, suggestions)
+        _concurrency._check_fork_pool_hazards(tree, rel, suggestions)
     _python._check_high_coupling(path, rel, root, limits.max_local_imports, suggestions)
     if not is_test:
         _python._check_deep_nesting(tree, rel, limits.max_nesting_depth, suggestions)

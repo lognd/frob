@@ -37,6 +37,16 @@ ArchCategory = Literal[
     # gate-side addition, not a re-instrumentation of these checks.
     "type-dispatch-smell",
     "non-exhaustive-enum-match",
+    # T-0695: structural fork/pool hazard family (call-graph reachability,
+    # not runtime tracing) -- `frob.arch._concurrency`. Every member stays
+    # on the same unwaivable advisory channel as the categories above
+    # (`frob.gates._unwaivable_channel_rules` picks up any new
+    # `ArchCategory` value automatically); see docs/modules/arch.md's
+    # "fork/pool hazards" section for the per-category detection shape.
+    "pool-inside-pool",
+    "fork-after-threads",
+    "pipe-wait-deadlock",
+    "self-join-deadlock",
 ]
 
 ArchSeverity = Literal["warning", "suggestion", "info"]

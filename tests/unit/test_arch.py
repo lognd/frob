@@ -2760,3 +2760,171 @@ class TestFourWayCrossLanguageEquivalence:
                 f for f, _prefix in _iter_normalized_functions(module) if f.name == name
             )
             assert not _normalized_is_complex(fn), module.language
+
+
+# ---------------------------------------------------------------------------
+# T-0695: structural fork/pool hazard family
+# ---------------------------------------------------------------------------
+
+
+class TestForkPoolHazards:
+    """`frob.arch._concurrency` -- pool-inside-pool, fork-after-threads,
+    pipe-wait-deadlock, self-join-deadlock (docs/modules/arch.md#fork-pool-
+    hazards)."""
+
+    def test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool(
+        self, tmp_path
+    ):
+        """A `ProcessPoolExecutor` construction reachable in the same
+        function as a `ThreadPoolExecutor` construction fires
+        `pool-inside-pool` at warning severity -- the T-0265 field-bug
+        shape."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "combined.py").write_text(
+            "from __future__ import annotations\n"
+            "from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor\n\n"
+            "def run_combined(thread_jobs, process_jobs):\n"
+            "    ppool = ProcessPoolExecutor(max_workers=2)\n"
+            "    with ThreadPoolExecutor(max_workers=2) as tpool:\n"
+            "        tpool.submit(lambda: None)\n"
+            "    ppool.shutdown(wait=True)\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "pool-inside-pool"]
+        assert len(hits) == 1
+        assert hits[0].severity == "warning"
+        assert hits[0].symref == "combined.py::run_combined"
+
+    def test_pool_inside_pool_fires_on_real_repo_run_combined_jobs(self):
+        """Acceptance: the check fires on `src/frob/gates/_run_combined_jobs`
+        as it exists TODAY -- T-0581 fixed the runtime ordering (submit
+        before the thread pool opens, `mp_context=spawn`), but the
+        STRUCTURAL co-occurrence this syntactic check flags is still
+        present and is meant to stay flagged (an intentional, waived
+        finding), proving the detector fires on real code, not only a
+        fixture."""
+        root = Path(__file__).parent.parent.parent / "src" / "frob" / "gates"
+        result = analyze_project(root)
+        hits = [
+            s
+            for s in result.suggestions
+            if s.category == "pool-inside-pool"
+            and s.symref == "__init__.py::_run_combined_jobs"
+        ]
+        assert len(hits) == 1
+        assert hits[0].severity == "warning"
+
+    def test_fork_after_threads_fires_when_fork_follows_thread_start(self, tmp_path):
+        """An `os.fork()` reachable AFTER a `Thread(...).start()` on the
+        same function's line order fires `fork-after-threads`."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "forker.py").write_text(
+            "from __future__ import annotations\n"
+            "import os\n"
+            "import threading\n\n"
+            "def spawn_then_fork():\n"
+            "    t = threading.Thread(target=lambda: None)\n"
+            "    t.start()\n"
+            "    pid = os.fork()\n"
+            "    return pid\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "fork-after-threads"]
+        assert len(hits) == 1
+        assert hits[0].symref == "forker.py::spawn_then_fork"
+
+    def test_fork_before_threads_does_not_fire(self, tmp_path):
+        """Forking BEFORE any thread starts is the safe order (T-0581's
+        own fix shape) -- `fork-after-threads` must not fire on it."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "safe_forker.py").write_text(
+            "from __future__ import annotations\n"
+            "import os\n"
+            "import threading\n\n"
+            "def fork_then_spawn():\n"
+            "    pid = os.fork()\n"
+            "    t = threading.Thread(target=lambda: None)\n"
+            "    t.start()\n"
+            "    return pid\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "fork-after-threads"]
+        assert hits == []
+
+    def test_pipe_wait_deadlock_fires_without_communicate(self, tmp_path):
+        """A `Popen(..., stdout=PIPE)` followed by a bare `.wait()` with no
+        `.communicate()` anywhere in the function fires
+        `pipe-wait-deadlock`."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "piper.py").write_text(
+            "from __future__ import annotations\n"
+            "import subprocess\n\n"
+            "def run_and_wait(cmd):\n"
+            "    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)\n"
+            "    proc.wait()\n"
+            "    return proc.returncode\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "pipe-wait-deadlock"]
+        assert len(hits) == 1
+        assert hits[0].symref == "piper.py::run_and_wait"
+
+    def test_pipe_wait_deadlock_does_not_fire_with_communicate(self, tmp_path):
+        """The same `Popen(..., stdout=PIPE)` shape, but drained via
+        `.communicate()` instead of a bare `.wait()`, must not fire."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "safe_piper.py").write_text(
+            "from __future__ import annotations\n"
+            "import subprocess\n\n"
+            "def run_and_communicate(cmd):\n"
+            "    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)\n"
+            "    out, err = proc.communicate()\n"
+            "    return out\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "pipe-wait-deadlock"]
+        assert hits == []
+
+    def test_self_join_deadlock_fires_when_dispatched_task_joins_its_pool(
+        self, tmp_path
+    ):
+        """A function submitted to a pool elsewhere in the module, whose
+        own body calls `.shutdown()`, fires `self-join-deadlock`."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "selfjoin.py").write_text(
+            "from __future__ import annotations\n"
+            "from concurrent.futures import ThreadPoolExecutor\n\n"
+            "def dispatch(pool):\n"
+            "    pool.submit(worker, pool)\n\n"
+            "def worker(pool):\n"
+            "    pool.shutdown(wait=True)\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "self-join-deadlock"]
+        assert len(hits) == 1
+        assert hits[0].symref == "selfjoin.py::worker"
+
+    def test_self_join_deadlock_does_not_fire_on_undispatched_join(self, tmp_path):
+        """A function that calls `.join()` on a pool it owns, but is never
+        itself submitted/started as a task, must not fire -- this is the
+        ordinary caller-joins-its-own-pool shape, not the hazard."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "ordinary.py").write_text(
+            "from __future__ import annotations\n"
+            "from concurrent.futures import ThreadPoolExecutor\n\n"
+            "def run_all(jobs):\n"
+            "    pool = ThreadPoolExecutor(max_workers=2)\n"
+            "    for job in jobs:\n"
+            "        pool.submit(job)\n"
+            "    pool.shutdown(wait=True)\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "self-join-deadlock"]
+        assert hits == []
