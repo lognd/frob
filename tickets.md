@@ -6694,3 +6694,32 @@ _run_evidence_command's own docstring.
 - `tests/test_tickets_evidence_cli.py::TestRunEvidenceCommandNoShell::test_command_substitution_is_not_expanded` (pytest node id, verified passing when recorded)
 - `tests/test_tickets_evidence_cli.py::TestRunEvidenceCommandNoShell::test_malformed_quoting_fails_cleanly_instead_of_shelling_out` (pytest node id, verified passing when recorded)
 - `tests/test_tickets_evidence_cli.py::TestRunEvidenceCommandNoShell::test_exec_kill_switch_stops_evidence_commands` (pytest node id, verified passing when recorded)
+
+<!-- ticket:T-0806 -->
+```yaml
+id: T-0806
+title: 'tests: test_cli_check tmp fixtures broken on main -- git ls-files rc=128,
+  3 system tests red'
+state: queued
+kind: bug
+origin: auditor
+created: '2026-07-23'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- tests/system/test_cli_check.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN main WHEN tests/system/test_cli_check.py runs THEN TestCheckCleanProject::test_clean_code_exits_zero,
+    TestCheckStampBaselineAndDelta::test_delta_reports_only_new_violation, and TestCheckPolyglot::test_unpinned_polyglot_runs_python_stage
+    pass; a run()-level exit-code test for the T-0787 lease-pin refusal is added once
+    the fixture works
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+T-0787 reviewer verified these three nodes fail on CURRENT main with git ls-files exit 128 inside the tmp_path fixture (not-a-git-repository shape) plus JSON parse of polluted stdout -- pre-existing fixture debt unrelated to recent lands, no covering ticket found. Root-cause the fixture (missing git init? cwd leakage? the T-0768 quiet clamp changing expected stdout?), repair, and add the deferred end-to-end run() exit-1 test for ticket_lease_pin refusal (T-0787 reviewer action item b).
