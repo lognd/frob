@@ -25,6 +25,10 @@ class PerfError(ErrorSet):
     SpawnFailed = "Profiled command could not be started"
     NoArtifact = "No profile artifact found; run frob perf profile first"
     BadArtifact = "pstats artifact unreadable"
+    # frob:ticket T-0711
+    SketchStoreCorrupt = (
+        "hot-graph sketch store (.frob/hotgraph_sketches.db) unreadable"
+    )
 
 
 # frob:doc docs/modules/perf.md#public-api

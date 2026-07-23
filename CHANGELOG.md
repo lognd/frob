@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.143.0] - unreleased
+
+- T-0711: hot-graph sketch store: log-bucket quantile sketches with decayed merge in .frob sqlite
+
 ## [0.142.0] - unreleased
 
 - T-0859: DERIVED001 cross-process TOCTOU: a concurrent frob process can rewrite .frob between the integrity precheck and a stage's read

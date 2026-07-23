@@ -5931,7 +5931,7 @@ User mandate 2026-07-22: auditing/advisories for slow operations. Build a repo-w
 id: T-0711
 title: 'hot-graph sketch store: log-bucket quantile sketches with decayed merge in
   .frob sqlite'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-22'
@@ -5941,16 +5941,109 @@ scope:
 - src/frob/stats/**
 - src/frob/perf/**
 - tests/unit/perf/
+- docs/modules/perf.md
+scope_changes:
+- op: add
+  glob: docs/modules/perf.md
+  reason: 'T-0711''s plan requires docs/modules/perf.md updated in the same change
+    (agent playbook + engineering-principles DOCUMENT AS YOU GO); scope initially
+    only listed source/test globs
+
+    '
+  actor: logan
+  at: '2026-07-23'
+evidence:
+- tests/unit/perf/test_sketch_store.py::TestQuantileSketchAlgebra::test_bimodal_quantiles_within_relative_error_and_under_1kb
+- tests/unit/perf/test_sketch_store.py::TestQuantileSketchAlgebra::test_merge_is_associative
+- tests/unit/perf/test_sketch_store.py::TestSketchStore::test_decayed_merge_converges_toward_recent_run_distribution
+- tests/unit/perf/test_sketch_store.py::TestSketchStore::test_store_cap_evicts_coldest_section_first
 acceptance:
 - text: GIVEN bimodal latencies (1ms and 100ms modes) WHEN sketched at alpha=2 percent
     THEN p10/p50/p90 read back within relative error and the serialized sketch is
     <1KB; GIVEN repeated runs THEN decayed merge converges and the store stays under
     its cap
-  evidence: []
+  evidence:
+  - tests/unit/perf/test_sketch_store.py::TestQuantileSketchAlgebra::test_bimodal_quantiles_within_relative_error_and_under_1kb
+  - tests/unit/perf/test_sketch_store.py::TestQuantileSketchAlgebra::test_merge_is_associative
+  - tests/unit/perf/test_sketch_store.py::TestSketchStore::test_decayed_merge_converges_toward_recent_run_distribution
+  - tests/unit/perf/test_sketch_store.py::TestSketchStore::test_store_cap_evicts_coldest_section_first
 threat: null
 component: null
 ```
 Child 2: the user-specified compact encoding. DDSketch-style log-scale bucket sketch per section/edge: tunable relative-error alpha (frob.toml, default ~2 percent), mergeable, serialized to .frob sqlite keyed by stable section id (symbol digest + section kind + span -- survives line drift via the existing symbol digest machinery). prior->update = merge(current_run_sketch, decay(stored_prior, half_life_runs)); deciles/any-quantile computed at read time, never stored. Size budget enforced: a repo-wide store cap (~100KB default) with eviction of coldest sections, so it structurally cannot grow to megabytes. Property tests: merge associativity, quantile relative-error bound holds under adversarial bimodal inputs (the anti-normal-distribution case).
+
+## Done report
+
+## Done report
+
+Changed:
+src/frob/stats/_sketch.py::QuantileSketch
+src/frob/stats/_sketch.py::DEFAULT_ALPHA
+src/frob/stats/_sketch.py::new_sketch
+src/frob/stats/_sketch.py::add_value
+src/frob/stats/_sketch.py::merge_sketches
+src/frob/stats/_sketch.py::decay_sketch
+src/frob/stats/_sketch.py::total_weight
+src/frob/stats/_sketch.py::quantile
+src/frob/stats/_sketch.py::sketch_size_bytes
+src/frob/perf/_sketch_store.py::SketchStoreConfig
+src/frob/perf/_sketch_store.py::load_sketch_config
+src/frob/perf/_sketch_store.py::stable_section_key
+src/frob/perf/_sketch_store.py::get_sketch
+src/frob/perf/_sketch_store.py::put_sketch
+src/frob/perf/_sketch_store.py::store_size_bytes
+src/frob/perf/_sketch_store.py::new_run_sketch
+src/frob/perf/_models.py::PerfError.SketchStoreCorrupt (new ErrorSet member)
+src/frob/perf/__init__.py (re-exports)
+src/frob/stats/__init__.py (re-exports)
+docs/modules/perf.md (new "Hot-graph sketch store (T-0711, EPIC T-0709)" section + Public API frob:describes entries + module listing)
+
+Evidence (observed via `uv run pytest tests/unit/perf/test_sketch_store.py -v -n0`, 24 passed):
+tests/unit/perf/test_sketch_store.py::TestQuantileSketchAlgebra::test_bimodal_quantiles_within_relative_error_and_under_1kb (bound to acceptance[0])
+tests/unit/perf/test_sketch_store.py::TestQuantileSketchAlgebra::test_merge_is_associative (bound to acceptance[0])
+tests/unit/perf/test_sketch_store.py::TestSketchStore::test_decayed_merge_converges_toward_recent_run_distribution (bound to acceptance[0])
+tests/unit/perf/test_sketch_store.py::TestSketchStore::test_store_cap_evicts_coldest_section_first (bound to acceptance[0])
+plus 20 more passing tests in the same file (algebra edge cases, config parsing, connection reuse, stable-key drift/digest behavior) -- see `frob:tests` directives on each public symbol for the exact binding.
+tests/unit/perf/test_hotgraph.py: 8/9 passed in the same run; TestStackSampler::test_overhead_under_five_percent failed under `-n0` but passed cleanly on an isolated re-run -- pre-existing timing flake in T-0710's own sampler test (not touched by this ticket, no `_sampler.py`/`_hotgraph.py` code changed), reproduced flaky both before and after my change.
+
+Filed: T-0883 (bug, scope tickets.md) -- `frob check --only gates-fast` surfaced TICK006 (T-0738's Done report cites a phantom draft ticket T-draft-427ffd5a) after merging main forward; unrelated to T-0711's scope, filed rather than fixed silently.
+
+Gates:
+`uv run frob check --only lint --ticket T-0711`: PASS, 0 errors 0 warnings.
+`uv run frob check --only gates-fast --ticket T-0711`: gate:COV/DEPR/DOC/DRIFT/FMT/INV/LANG/PLACE/REF/REG/REL/TEST/WAIVE/WALK all PASS 0 errors; gate:TICK FAILs with 1 pre-existing TICK006 error (T-0738, unrelated -- see Filed above) plus a pre-existing TICK003 archive-threshold warning.
+`uv run frob check --only static --ticket T-0711`: PASS (frob-cycle/frob-dup/frob-arch/frob-exports all pass; remaining "N public symbols missing from __init__.py" notes on other packages are pre-existing, none in my touched files).
+`uv run frob check --only gates-native --ticket T-0711`: PASS, 0 errors.
+`uv run frob check --only gates-security --ticket T-0711`: PASS, 0 errors.
+`git diff main --diff-filter=D --stat` after a second `git merge main` (main had advanced from 64d4d89a to 37ea6357 mid-ticket): empty -- no out-of-scope deletions.
+
+Honest cuts / scope notes:
+- `stable_section_key`'s line-drift-tolerant keying is layered so a REAL symbol digest (`frob.graph.digest.compute_digests`) can be wired in by a future ticket without touching this module's schema/merge/decay/eviction logic; today it falls back to `section.file` (qualname/kind-precise, not yet line-drift tolerant) since wiring the graph-digest lookup through the hot-graph resolver is outside this ticket's declared scope (`src/frob/stats/**`, `src/frob/perf/**`, `tests/unit/perf/`, `docs/modules/perf.md` -- not `src/frob/graph/**`). `Section.id`'s own T-0710 docstring names this exact ticket as the layer responsible for that keying, and `stable_section_key`'s docstring/tests document the current fallback explicitly rather than silently pretending it is already line-drift tolerant.
+- No CLI subcommand or `frob test` integration wires a live `resolve_stream` output into `put_sketch` yet -- per T-0710's own perf.md doc, that live-invocation wiring is T-0711/T-0712's job and this ticket's own plan frames T-0712 as the consumer; this ticket ships the sketch algebra + persisted store T-0712 calls into, documented explicitly under "What this ticket did not wire" in docs/modules/perf.md's new section.
+- `[perf.sketch]` frob.toml table is parsed/validated (`load_sketch_config`) but nothing in this ticket's scope reads it into a live collector run -- same T-0712 boundary as above.
+
+### Changed
+```
+ docs/modules/perf.md                 | 106 +++++++++++
+ src/frob/perf/__init__.py            |  16 ++
+ src/frob/perf/_models.py             |   4 +
+ src/frob/perf/_sketch_store.py       | 314 ++++++++++++++++++++++++++++++++
+ src/frob/stats/__init__.py           |  18 ++
+ src/frob/stats/_sketch.py            | 244 +++++++++++++++++++++++++
+ tests/unit/perf/test_sketch_store.py | 335 +++++++++++++++++++++++++++++++++++
+ tickets.md                           |  13 +-
+ 8 files changed, 1049 insertions(+), 1 deletion(-)
+```
+
+### Evidence
+- `tests/unit/perf/test_sketch_store.py::TestQuantileSketchAlgebra::test_bimodal_quantiles_within_relative_error_and_under_1kb` (pytest node id, verified passing when recorded)
+- `tests/unit/perf/test_sketch_store.py::TestQuantileSketchAlgebra::test_merge_is_associative` (pytest node id, verified passing when recorded)
+- `tests/unit/perf/test_sketch_store.py::TestSketchStore::test_decayed_merge_converges_toward_recent_run_distribution` (pytest node id, verified passing when recorded)
+- `tests/unit/perf/test_sketch_store.py::TestSketchStore::test_store_cap_evicts_coldest_section_first` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 1 error(s), 1043 warning(s), 220 waived
+- error-findings: TICK006@tickets.md
 
 <!-- ticket:T-0712 -->
 ```yaml
@@ -11223,3 +11316,28 @@ threat: null
 component: strata
 ```
 Found during T-0860: the strata SYS100 capability scanner's bare `eval(` needle substring-matches identifiers that merely CONTAIN "eval(" -- e.g. src/frob/mutate's `_mutation_for_eval(` function name -- producing a false "deploy uses eval" finding with zero real eval/exec builtin calls in the scanned tree. T-0860 recorded an honest waiver (design/frob.strata:519, waive "SYS100:eval" citing this ticket) rather than a false may-declaration. Fix the scanner: match `eval(`/`exec(` as call sites of the BUILTIN identifier (word-boundary / tokenized match, not raw substring), add a fixture reproducing the _mutation_for_eval self-match, then delete the waiver.
+
+<!-- ticket:T-0883 -->
+```yaml
+id: T-0883
+title: 'fix TICK006: T-0738 Done report cites phantom draft ticket T-draft-427ffd5a'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- tickets.md
+threat: null
+component: null
+```
+Found while working T-0711: `frob check --only gates-fast` (TICK006, gate:TICK)
+reports T-0738's Done report claims a filed ticket T-draft-427ffd5a that
+resolves to no block in tickets.md or tickets-archive.md -- a phantom
+filing trail (the T-0707/T-0615 incident class). This surfaced only after
+merging main forward into a T-0711 worktree (T-0738 itself is unrelated to
+T-0711's scope: src/frob/stats/**, src/frob/perf/**, tests/unit/perf/,
+docs/modules/perf.md). Needs: either the real ticket T-draft-427ffd5a
+resolved/filed for real, T-0738's Done report corrected to name the real
+id, or an honest disclosed-historical-draft-loss waiver.

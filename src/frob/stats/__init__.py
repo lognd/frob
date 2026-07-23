@@ -32,6 +32,16 @@ from frob.stats._agentic import (
     ToolTokens,
     agentic_report,
 )
+from frob.stats._sketch import (
+    QuantileSketch,
+    add_value,
+    decay_sketch,
+    merge_sketches,
+    new_sketch,
+    quantile,
+    sketch_size_bytes,
+    total_weight,
+)
 from frob.tickets import TicketQueue, TicketState, load_queue
 
 _log = get_logger(__name__)
@@ -193,14 +203,22 @@ __all__ = [
     "AgenticReport",
     "CategoryTime",
     "CommitStats",
+    "QuantileSketch",
     "RetreadCandidate",
     "StatsReport",
     "TicketCycleTime",
     "TicketStats",
     "TimeSink",
     "ToolTokens",
+    "add_value",
     "agentic_report",
     "collect",
     "commit_stats",
+    "decay_sketch",
+    "merge_sketches",
+    "new_sketch",
+    "quantile",
+    "sketch_size_bytes",
     "ticket_stats",
+    "total_weight",
 ]

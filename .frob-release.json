@@ -719,6 +719,13 @@
     "src/frob/perf/_sampler.py::StackSampler.start": "4af1b69f4ec04021dcea13aa69b436fcba4ac1b1f4a2e319632d2b52ade0ab31",
     "src/frob/perf/_sampler.py::StackSampler.stop": "ddf52bb639d1262750f64d61e840b84bdb50b821279df66f452d73d149fbe974",
     "src/frob/perf/_sampler.py::run_sampled": "0aede666ae8c145d06379f02f59e11e0c7145d50c6fe51bfac8f5d34e0a5f6f8",
+    "src/frob/perf/_sketch_store.py::SketchStoreConfig": "20e0c67e7432d8de10ae7a7d47591648cb8848af6a1a4befbbdd8510d1ecb811",
+    "src/frob/perf/_sketch_store.py::get_sketch": "d70659758bfb64b9c28ba4341f88bc68d2c741b421b9002d327d120b57ac4a47",
+    "src/frob/perf/_sketch_store.py::load_sketch_config": "8f2413b14b048efb9f8061358db0eb26c7d88e32f83a247eb8b4a216ebdc9a56",
+    "src/frob/perf/_sketch_store.py::new_run_sketch": "0bc7145899fce49df09a018ea140dd73cb05fae4d994d26ec0fc57e43a5543e3",
+    "src/frob/perf/_sketch_store.py::put_sketch": "3ebc1bb835d3916315418232d151708d45db9f3527428163c08a5ee2d490b757",
+    "src/frob/perf/_sketch_store.py::stable_section_key": "d1a28fce33519e2095e47dc5e241e9f091549246e94306516398b21e40ab9612",
+    "src/frob/perf/_sketch_store.py::store_size_bytes": "1c77e7f29366960813c6d993924fe0f5140059b8f5f270850eda841324b02412",
     "src/frob/policy/__init__.py::load_policy": "40dfe05a156e5ad5a98e060ec876fc66f66980582f5402ee423a65359cd41cb3",
     "src/frob/policy/__init__.py::policy_gate": "118e0cf396bd30f8d181389be45f119f5a8660c87a0d4d50b5f7a172aa5b6bc6",
     "src/frob/policy/_models.py::PolicyError": "7a9f54fa738e14ba9084cd3549e24ead9b888eda19c830659ccc5996b1628e6b",
@@ -888,6 +895,15 @@
     "src/frob/stats/_agentic.py::TimeSink": "b0d3ddfad113064ad19afd5e19ee740e0d6c1ff822b91476fc084ebb16a11ab6",
     "src/frob/stats/_agentic.py::ToolTokens": "f24d226ac4a20938458e467fdba0eee4403397d4966a6cff37bf1b548872d8b1",
     "src/frob/stats/_agentic.py::agentic_report": "36249f88659e3d0628a563262230b537b358ddf6a3cba5b9190f759e7449e8cc",
+    "src/frob/stats/_sketch.py::DEFAULT_ALPHA": "a9924b59d262b66e8134ca0387db773b8917f703e708e6aee8f6a07c841c3a56",
+    "src/frob/stats/_sketch.py::QuantileSketch": "37a12676dab5a7eae8e01575bca88a668e54ba69a7b7d665d563d4aa2a470071",
+    "src/frob/stats/_sketch.py::add_value": "b2577cdbcfef0a4e0cae0be429abb6d69a93e81c5d7f32749b958089b9b79ab9",
+    "src/frob/stats/_sketch.py::decay_sketch": "beb504cc07191e7574c83e190264426c92b44945759d0111554758627d5b54dd",
+    "src/frob/stats/_sketch.py::merge_sketches": "1d4b173372f21c5a6177dbb097cb58377a66465576b872d5a78490483ba9cea8",
+    "src/frob/stats/_sketch.py::new_sketch": "ad59eb14aa367b8e0aa6bebb06593ab73b73334b0a0baee83cfda044a8c4ec4b",
+    "src/frob/stats/_sketch.py::quantile": "299ea71a05c51cb913cc7c04220418556e7760d5d671bede053bf97816ca9a99",
+    "src/frob/stats/_sketch.py::sketch_size_bytes": "9893442a8719e51177828866e7b568daed88931c75681b441b993d9cf8a1ca2f",
+    "src/frob/stats/_sketch.py::total_weight": "00b5b466b3d86f728d092c3e14e6258e8e25c9486065528c39e6b646a8460206",
     "src/frob/strata/_ast.py::AdmitPhase": "b3829d383cb1dd802421d7e83dbb17bbf83f3fa8913b7f7ba6ea69d2dbadda2f",
     "src/frob/strata/_ast.py::AtCallRequire": "f22de5fa6cf03ff2fde653f4800a7c40728cd758d63889554d2dfe26b222bf39",
     "src/frob/strata/_ast.py::BalancerDecl": "0019d196cd079dcfbed2f9bc5770e3c9c65da90cd047eebc16ccf05f959afe0e",
@@ -1430,5 +1446,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.142.0"
+  "version": "0.143.0"
 }

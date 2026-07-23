@@ -217,6 +217,70 @@ this module.
   language-neutral contract, resolver, and a harness-composable python
   producer for them to build on.
 
+## Hot-graph sketch store (T-0711, EPIC T-0709)
+
+`frob.stats._sketch`/`frob.perf._sketch_store` are the persisted-store half
+of T-0710's hit-stream contract, per that ticket's plan: feed
+`resolve_stream`'s `HitStream` into a cross-run, size-bounded quantile
+store, without ever storing raw samples or precomputed quantiles.
+
+- **The sketch.** `QuantileSketch` (`frob.stats._sketch`) is a DDSketch-
+  style log-bucket histogram: values are mapped onto log-scale buckets
+  sized so every value landing in a bucket is within `alpha` relative
+  error of that bucket's read-time point estimate, regardless of the
+  input distribution's shape -- unlike a moment-based sketch (t-digest),
+  which can be misled by a multi-modal distribution, DDSketch is exact
+  per-bucket by construction. `add_value`/`merge_sketches`/`decay_sketch`
+  each return a NEW sketch (frozen pydantic, matching this project's
+  value-type convention); `quantile(sketch, q)` computes any quantile at
+  READ time, walking bucket weights -- nothing is ever stored pre-
+  aggregated. Buckets are a sparse `dict[int, float]`, so a sketch over a
+  small number of distinct magnitude clusters (the bimodal 1ms/100ms
+  acceptance fixture) stays a handful of entries -- serialized well under
+  1KB regardless of sample count.
+- **The store.** `frob.perf._sketch_store` persists one `QuantileSketch`
+  per hot-graph section in `.frob/hotgraph_sketches.db` (sqlite, one
+  `sketches` table, `section_key -> (kind, last_used, payload)`).
+  `put_sketch` implements the ticket's decayed-merge update rule exactly:
+  `prior' = merge(current_run_sketch, decay(stored_prior,
+  half_life_runs))` -- one decay step per write, so `half_life_runs`
+  really means "runs", not wall-clock time. `store_size_bytes`/
+  `_evict_coldest` enforce `[perf.sketch].store_cap_bytes` (~100KB
+  default) by dropping the least-recently-used section first, so the
+  store structurally cannot grow to megabytes no matter how many distinct
+  sections get sampled over the repo's lifetime.
+- **Keying.** `stable_section_key` deliberately does NOT reuse
+  `Section.id` (the resolver's own run-scoped id, `sha256(file, qualname,
+  kind, start_line)`) verbatim -- that id changes the instant a line
+  above a section drifts, even when the section's own content is
+  unchanged, which would silently fragment a section's history across
+  every unrelated edit elsewhere in the file. `Section.id`'s own
+  docstring names this ticket as the layer responsible for a line-drift-
+  tolerant key; `stable_section_key` accepts an optional `symbol_digest`
+  (intended to be `frob.graph.digest.compute_digests`'s real,
+  content-addressed symbol digest, once a future ticket wires it through
+  the hot-graph resolver) and falls back to `section.file` when the
+  caller has none yet -- still qualname/kind-precise, just not yet
+  line-drift tolerant. Wiring the real digest through only changes which
+  basis string gets hashed, not this module's schema, merge/decay logic,
+  or eviction policy.
+- **Config.** `[perf.sketch]` in `frob.toml` (`SketchStoreConfig`,
+  loaded via `load_sketch_config`): `alpha` (DDSketch relative-error
+  target, default 0.02 i.e. ~2 percent, per the ticket's plan),
+  `half_life_runs` (default 5.0), `store_cap_bytes` (default 100_000).
+  Fails open to defaults on a missing/malformed `frob.toml` or table,
+  matching `frob.perf._redundancy`'s existing `[[perf.heavy]]` parsing
+  posture.
+
+**What this ticket did not wire.** No CLI subcommand or `frob test`
+integration point calls `put_sketch` against a live `HitStream` yet --
+that live-wiring (turning a `resolve_stream` output into per-section
+`QuantileSketch`es and feeding them through this store on every profiled
+run) is T-0712's job, mirroring T-0710/T-0748's own split between
+"contract + resolver" and "live invocation". This ticket ships the
+sketch algebra and the persisted, decayed, size-bounded store T-0712
+calls into.
+
 ## Cross-language collector adapters (T-0748)
 
 `src/frob/perf/_collectors.py` adds the per-language ADAPTER half the
@@ -312,6 +376,21 @@ not a defect in this ticket's own collector-adapter scope.
 <!-- frob:describes src/frob/perf/_sampler.py::StackSampler.start -->
 <!-- frob:describes src/frob/perf/_sampler.py::StackSampler.stop -->
 <!-- frob:describes src/frob/perf/_sampler.py::run_sampled -->
+<!-- frob:describes src/frob/stats/_sketch.py::QuantileSketch -->
+<!-- frob:describes src/frob/stats/_sketch.py::new_sketch -->
+<!-- frob:describes src/frob/stats/_sketch.py::add_value -->
+<!-- frob:describes src/frob/stats/_sketch.py::merge_sketches -->
+<!-- frob:describes src/frob/stats/_sketch.py::decay_sketch -->
+<!-- frob:describes src/frob/stats/_sketch.py::total_weight -->
+<!-- frob:describes src/frob/stats/_sketch.py::quantile -->
+<!-- frob:describes src/frob/stats/_sketch.py::sketch_size_bytes -->
+<!-- frob:describes src/frob/perf/_sketch_store.py::SketchStoreConfig -->
+<!-- frob:describes src/frob/perf/_sketch_store.py::load_sketch_config -->
+<!-- frob:describes src/frob/perf/_sketch_store.py::stable_section_key -->
+<!-- frob:describes src/frob/perf/_sketch_store.py::get_sketch -->
+<!-- frob:describes src/frob/perf/_sketch_store.py::put_sketch -->
+<!-- frob:describes src/frob/perf/_sketch_store.py::store_size_bytes -->
+<!-- frob:describes src/frob/perf/_sketch_store.py::new_run_sketch -->
 
 ```python
 # frob/perf/__init__.py
@@ -418,6 +497,33 @@ class StackSampler:
     def stop(self) -> list[SampledStack]
 
 def run_sampled(fn: Callable[[], None], config: SamplerConfig | None = None) -> tuple[list[SampledStack], float]
+
+# frob/stats/_sketch.py -- DDSketch-style log-bucket quantile sketch, T-0711
+class QuantileSketch(BaseModel):  # frozen; alpha + sparse buckets + zero_count
+    alpha: float = DEFAULT_ALPHA
+    buckets: dict[int, float] = {}
+    zero_count: float = 0.0
+
+def new_sketch(alpha: float = DEFAULT_ALPHA) -> QuantileSketch
+def add_value(sketch: QuantileSketch, value: float, weight: float = 1.0) -> QuantileSketch
+def merge_sketches(a: QuantileSketch, b: QuantileSketch) -> QuantileSketch
+def decay_sketch(sketch: QuantileSketch, factor: float) -> QuantileSketch
+def total_weight(sketch: QuantileSketch) -> float
+def quantile(sketch: QuantileSketch, q: float) -> float
+def sketch_size_bytes(sketch: QuantileSketch) -> int
+
+# frob/perf/_sketch_store.py -- sqlite decayed-merge sketch store, T-0711
+class SketchStoreConfig(BaseModel):  # frozen; [perf.sketch] frob.toml table
+    alpha: float = 0.02
+    half_life_runs: float = 5.0
+    store_cap_bytes: int = 100_000
+
+def load_sketch_config(root: Path) -> SketchStoreConfig
+def stable_section_key(section: Section, symbol_digest: str | None = None) -> str
+def get_sketch(root: Path, section_key: str) -> QuantileSketch | None
+def put_sketch(root: Path, section_key: str, kind: str, run_sketch: QuantileSketch, config: SketchStoreConfig) -> Result[QuantileSketch, PerfError]
+def store_size_bytes(root: Path) -> int
+def new_run_sketch(alpha: float) -> QuantileSketch
 ```
 
 ## Design decisions

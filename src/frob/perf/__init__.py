@@ -47,6 +47,15 @@ from frob.perf._recursion import recursion_rules
 from frob.perf._redundancy import redundant_computation_violations
 from frob.perf._rules import perf_rules
 from frob.perf._sampler import SamplerConfig, StackSampler, run_sampled
+from frob.perf._sketch_store import (
+    SketchStoreConfig,
+    get_sketch,
+    load_sketch_config,
+    new_run_sketch,
+    put_sketch,
+    stable_section_key,
+    store_size_bytes,
+)
 
 # `frob.perf._harness.main` (T-0362) is deliberately NOT re-exported here: it
 # is a standalone subprocess entrypoint invoked as `python _harness.py
@@ -69,16 +78,23 @@ __all__ = [
     "Section",
     "SectionHit",
     "SectionIndex",
+    "SketchStoreConfig",
     "StackSampler",
     "build_section_index",
+    "get_sketch",
     "heat",
     "join_smells",
     "load_artifact",
+    "load_sketch_config",
+    "new_run_sketch",
     "perf_rules",
     "profile_command",
+    "put_sketch",
     "recursion_rules",
     "redundant_computation_violations",
     "render_bar",
     "resolve_stream",
     "run_sampled",
+    "stable_section_key",
+    "store_size_bytes",
 ]
