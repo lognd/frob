@@ -11599,3 +11599,81 @@ Two coordinator frictions hit landing T-0833 (2026-07-23):
    was an absolute-path cd inside the script. Run the command with
    cwd=<resolved --path> (matching where the evidence claim is about),
    and include the resolved cwd in the failure message.
+
+<!-- ticket:T-0835 -->
+```yaml
+id: T-0835
+title: 'tickets: start does not refuse done tickets or live leases in other worktrees
+  (double-dispatch hit live)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/__init__.py
+- src/frob/tickets/_leases.py
+- src/frob/app/ticket_runner.py
+- tests/test_ticket_leases.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Hit live 2026-07-23: T-0806 was dispatched twice (first agent presumed
+dead, redispatched); the first agent's work landed at 04:45 while the
+second agent was still diagnosing in its own worktree -- 5.5h of
+duplicate work. The second agent's `frob ticket start T-0806` succeeded
+(queued -> planned) even though another worktree held a live lease, and
+the ticket later reached done while the duplicate ran on.
+
+Fix: `frob ticket start` must refuse (a) tickets in done/dropped state
+(actionable message naming the landing commit if derivable), and (b)
+tickets holding a live lease pinned to a DIFFERENT worktree (name the
+worktree and lease age; require an explicit --steal to override, which
+must invalidate the old lease so the loser cannot silently land). Both
+refusals need tests.
+
+<!-- ticket:T-0836 -->
+```yaml
+id: T-0836
+title: 'worktree sweep command: lease-aware stale-worktree cleanup (raw git sweep
+  destroyed a live agent env)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-23'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/app/ticket_runner.py
+- src/frob/tickets/_leases.py
+- docs/guides/agent-playbook.md
+- tests/test_ticket_leases.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Hit live 2026-07-23: coordinator hand-swept 68 stale worktree
+registrations with raw `git worktree remove`; the skip-list missed a live
+agent's CLEAN worktree (read-only diagnosis phase, nothing uncommitted)
+and destroyed its environment mid-run. git's own dirty-refusal is not a
+liveness check -- a live agent between writes looks clean.
+
+Fix: add `frob worktree sweep` that enumerates registered agent
+worktrees and removes ONLY those that are (a) clean AND (b) hold no live
+lease for any non-terminal ticket (reuse _probe_worktree_liveness /
+resolve_lease pinning) AND (c) optionally older than --min-age. Print a
+per-worktree verdict (removed / kept:lease / kept:dirty / kept:age).
+Never delete branches. Coordinator playbook + docs updated to forbid raw
+git-level sweeps.
