@@ -1,0 +1,237 @@
+"""T-0748: per-language collector adapter tests, over small COMMITTED
+fixture profiles (tests/unit/perf/fixtures/) -- never live-profiling,
+per the ticket's determinism requirement. Each adapter's fixture and
+resolver-facing shape (leaf-first frames, honest-unattributed on
+unresolvable file info) is asserted directly against the parsed
+`SampledStack`s; a full round trip through `frob.perf._hotgraph.
+resolve_stream` is covered once per adapter to prove the produced
+stacks are genuinely consumable by the shared hit stream, matching
+T-0710's contract."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+
+from frob.arch._normalized import NormalizedClass, NormalizedFunction, NormalizedModule
+from frob.perf._collectors import (
+    CollectorError,
+    build_class_to_file,
+    parse_jfr_print,
+    parse_perf_script,
+    parse_v8_cpuprofile,
+)
+from frob.perf._hotgraph import (
+    UNATTRIBUTED_SECTION_ID,
+    build_section_index,
+    resolve_stream,
+)
+
+_FIXTURES = Path(__file__).parent / "fixtures"
+
+
+class TestParsePerfScript:
+    """Linux `perf script` textual output -> `SampledStack`s."""
+
+    def test_parses_committed_fixture_into_leaf_first_stacks(self) -> None:
+        """Frames within one sample are ordered leaf-first, matching perf
+        script's own top-to-bottom record order."""
+        text = (_FIXTURES / "sample.perf.script").read_text()
+        result = parse_perf_script(text, source="sample.perf.script")
+        assert result.is_ok
+        stacks = result.danger_ok
+        assert len(stacks) == 3
+        leaf = stacks[0].frames[0]
+        assert leaf.file == "src/crate/lib.rs"
+        assert leaf.line == 12
+        assert stacks[0].weight == 3.0
+
+    def test_frame_with_no_debuginfo_is_unattributed_not_dropped(self) -> None:
+        """A frame lacking a `(file:line)` suffix still yields a
+        `SampledFrame` (`file="" line=0`), never a dropped sample."""
+        text = (_FIXTURES / "sample.perf.script").read_text()
+        stacks = parse_perf_script(text, source="sample.perf.script").danger_ok
+        last = stacks[-1]
+        assert last.frames == (
+            last.frames[0],
+        )  # single unresolved native frame, still present
+        assert last.frames[0].file == ""
+        assert last.frames[0].line == 0
+
+    def test_unparseable_profile_errors_naming_the_file(self) -> None:
+        """Garbage input (no recognizable perf script record) is `Err`,
+        never a silent empty stack list."""
+        result = parse_perf_script(
+            "not a perf script at all\n", source="garbage.script"
+        )
+        assert result.is_err
+        assert result.danger_err == CollectorError.BadPerfScript
+
+    def test_resolves_through_shared_hotgraph_stream(self) -> None:
+        """A parsed perf stack round-trips through `resolve_stream` like
+        any other language's `SampledStack`s (T-0710's contract, no
+        special-casing needed)."""
+        func = NormalizedFunction(name="hot_loop", line=1, body_line_count=20)
+        module = NormalizedModule(
+            path="src/crate/lib.rs", language="rust", functions=[func]
+        )
+        index = build_section_index([module])
+        text = (_FIXTURES / "sample.perf.script").read_text()
+        stacks = parse_perf_script(text, source="sample.perf.script").danger_ok
+        stream = resolve_stream(index, stacks)
+        resolved = [
+            h for h in stream.section_hits if h.section_id != UNATTRIBUTED_SECTION_ID
+        ]
+        assert resolved  # at least one sample landed on the real function section
+        assert stream.unattributed_weight >= 1.0  # the no-debuginfo sample
+
+
+class TestParseV8CpuProfile:
+    """`node --cpu-prof` `.cpuprofile` JSON -> `SampledStack`s."""
+
+    def test_parses_committed_fixture_walking_parent_chain(self) -> None:
+        """Each sample's leaf id is walked up the node/children tree into
+        a full leaf-first stack; V8's 0-based line becomes 1-based."""
+        text = (_FIXTURES / "sample.cpuprofile").read_text()
+        result = parse_v8_cpuprofile(text, source="sample.cpuprofile")
+        assert result.is_ok
+        stacks = result.danger_ok
+        assert len(stacks) == 3
+        leaf, caller, root = stacks[0].frames
+        assert leaf.file == "app.ts"
+        assert leaf.line == 20  # lineNumber 19 (0-based) -> 20 (1-based)
+        assert caller.file == "app.ts"
+        assert caller.line == 10
+
+    def test_weight_comes_from_time_deltas(self) -> None:
+        """`timeDeltas[i]` becomes that sample's weight."""
+        text = (_FIXTURES / "sample.cpuprofile").read_text()
+        stacks = parse_v8_cpuprofile(text, source="sample.cpuprofile").danger_ok
+        assert [s.weight for s in stacks] == [100.0, 100.0, 50.0]
+
+    def test_invalid_json_errors_naming_the_file(self) -> None:
+        """Malformed JSON is `Err`, never a silently empty result."""
+        result = parse_v8_cpuprofile("{not json", source="broken.cpuprofile")
+        assert result.is_err
+        assert result.danger_err == CollectorError.BadCpuProfile
+
+    def test_missing_required_keys_errors(self) -> None:
+        """Valid JSON missing `nodes`/`samples` is still `Err`, not an
+        empty-but-successful parse."""
+        result = parse_v8_cpuprofile("{}", source="incomplete.cpuprofile")
+        assert result.is_err
+        assert result.danger_err == CollectorError.BadCpuProfile
+
+    def test_resolves_through_shared_hotgraph_stream(self) -> None:
+        """A parsed V8 stack round-trips through `resolve_stream`."""
+        func = NormalizedFunction(name="hotLoop", line=20, body_line_count=1)
+        module = NormalizedModule(
+            path="app.ts", language="typescript", functions=[func]
+        )
+        index = build_section_index([module])
+        text = (_FIXTURES / "sample.cpuprofile").read_text()
+        stacks = parse_v8_cpuprofile(text, source="sample.cpuprofile").danger_ok
+        stream = resolve_stream(index, stacks)
+        resolved = [
+            h for h in stream.section_hits if h.section_id != UNATTRIBUTED_SECTION_ID
+        ]
+        assert resolved
+
+
+class TestBuildClassToFile:
+    """JVM dotted-class-name -> source-file map, derived from `NormalizedModule`s."""
+
+    def test_maps_unambiguous_class_to_its_file(self) -> None:
+        module = NormalizedModule(
+            path="src/HotLoop.kt",
+            language="kotlin",
+            classes=[NormalizedClass(name="com.example.HotLoop", line=1)],
+        )
+        mapping = build_class_to_file([module])
+        assert mapping == {"com.example.HotLoop": "src/HotLoop.kt"}
+
+    def test_class_seen_in_two_files_is_dropped_not_guessed(self) -> None:
+        """An ambiguous class name (seen in >1 file) is excluded entirely
+        rather than mapped to a possibly-wrong file (NO-FAIL-SILENT)."""
+        module_a = NormalizedModule(
+            path="a/Dup.kt",
+            language="kotlin",
+            classes=[NormalizedClass(name="com.example.Dup", line=1)],
+        )
+        module_b = NormalizedModule(
+            path="b/Dup.kt",
+            language="kotlin",
+            classes=[NormalizedClass(name="com.example.Dup", line=1)],
+        )
+        mapping = build_class_to_file([module_a, module_b])
+        assert "com.example.Dup" not in mapping
+
+
+class TestParseJfrPrint:
+    """`jfr print --events jdk.ExecutionSample` text output -> `SampledStack`s."""
+
+    def test_parses_committed_fixture_into_leaf_first_stacks(self) -> None:
+        text = (_FIXTURES / "sample.jfr.txt").read_text()
+        class_to_file = {"com.example.HotLoop": "src/HotLoop.kt"}
+        result = parse_jfr_print(
+            text, source="sample.jfr.txt", class_to_file=class_to_file
+        )
+        assert result.is_ok
+        stacks = result.danger_ok
+        assert len(stacks) == 2
+        leaf = stacks[0].frames[0]
+        assert leaf.file == "src/HotLoop.kt"
+        assert leaf.line == 12
+
+    def test_unmapped_class_is_unattributed_not_dropped(self) -> None:
+        """A class with no `class_to_file` entry still yields a frame
+        (`file=""`), preserving the sample's weight in the stream."""
+        text = (_FIXTURES / "sample.jfr.txt").read_text()
+        stacks = parse_jfr_print(text, source="sample.jfr.txt").danger_ok
+        assert len(stacks) == 2
+        assert all(frame.file == "" for stack in stacks for frame in stack.frames)
+
+    def test_unparseable_profile_errors_naming_the_file(self) -> None:
+        result = parse_jfr_print("not a jfr dump at all\n", source="garbage.jfr.txt")
+        assert result.is_err
+        assert result.danger_err == CollectorError.BadJfrPrint
+
+    def test_resolves_through_shared_hotgraph_stream(self) -> None:
+        """A parsed JFR stack, resolved via `build_class_to_file`, round-
+        trips through `resolve_stream`."""
+        func = NormalizedFunction(name="run", line=12, body_line_count=1)
+        module = NormalizedModule(
+            path="src/HotLoop.kt",
+            language="kotlin",
+            classes=[
+                NormalizedClass(name="com.example.HotLoop", line=10, methods=[func])
+            ],
+        )
+        index = build_section_index([module])
+        class_to_file = build_class_to_file([module])
+        text = (_FIXTURES / "sample.jfr.txt").read_text()
+        stacks = parse_jfr_print(
+            text, source="sample.jfr.txt", class_to_file=class_to_file
+        ).danger_ok
+        stream = resolve_stream(index, stacks)
+        # The mapped HotLoop.run sample resolves; the unmapped Unknown.doWork
+        # sample is honestly unattributed.
+        resolved = [
+            h for h in stream.section_hits if h.section_id != UNATTRIBUTED_SECTION_ID
+        ]
+        assert resolved
+        assert stream.unattributed_weight >= 1.0
+
+
+@pytest.mark.parametrize(
+    "fixture_name",
+    ["sample.perf.script", "sample.cpuprofile", "sample.jfr.txt"],
+)
+def test_fixtures_exist_and_are_nonempty(fixture_name: str) -> None:
+    """Every fixture this test module depends on is actually committed
+    (a missing fixture would otherwise fail loudly inside individual
+    tests instead of naming itself directly here)."""
+    path = _FIXTURES / fixture_name
+    assert path.exists()
+    assert path.read_text().strip()

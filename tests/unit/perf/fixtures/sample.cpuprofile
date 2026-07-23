@@ -1,0 +1,21 @@
+{
+  "nodes": [
+    {
+      "id": 1,
+      "callFrame": {"functionName": "(root)", "url": "", "lineNumber": -1},
+      "children": [2]
+    },
+    {
+      "id": 2,
+      "callFrame": {"functionName": "main", "url": "app.ts", "lineNumber": 9},
+      "children": [3]
+    },
+    {
+      "id": 3,
+      "callFrame": {"functionName": "hotLoop", "url": "app.ts", "lineNumber": 19},
+      "children": []
+    }
+  ],
+  "samples": [3, 3, 2],
+  "timeDeltas": [100, 100, 50]
+}

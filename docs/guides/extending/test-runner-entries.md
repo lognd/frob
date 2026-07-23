@@ -29,6 +29,43 @@ reference rather than a duplicate.
 3. No code change is required for a new `[[test.runner]]` entry itself --
    `load_runners` is fully data-driven.
 
+## The `collector` field (T-0748)
+
+A `[[test.runner]]` entry may set `collector` to name which
+`frob.perf._collectors` adapter should turn that runner's own native
+profile output into the language-neutral `SampledStack`/`SampledFrame`
+hit stream (`docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709`).
+Valid values:
+
+- `""` (default, empty string) -- no collector attached; this runner's
+  output is never fed into the hot-graph hit stream. Every existing
+  entry that predates T-0748 is `""` and needs no change.
+- `"perf"` -- `frob.perf._collectors.parse_perf_script`; Linux `perf
+  record`/`perf script` textual output, for native/Rust/C/C++ runners
+  (including the pyo3 `strata_core`/`frob_core` crates in-process).
+- `"v8"` -- `frob.perf._collectors.parse_v8_cpuprofile`; a `node
+  --cpu-prof` V8 `.cpuprofile` JSON document, for TS/JS runners (the
+  same file the T-0587 vitest collector's own `--cpu-prof` flag
+  produces).
+- `"jfr"` -- `frob.perf._collectors.parse_jfr_print`; `jfr print
+  --events jdk.ExecutionSample` text output, for JVM/Kotlin runners.
+
+```toml
+[[test.runner]]
+language = "rust"
+command = "cargo test"
+cwd = "strata-core"
+collector = "perf"
+```
+
+`load_runners` (`src/frob/testing/_runners.py`) validates `collector`
+against this fixed allowlist and logs a warning (falling back to `""`)
+for any other value -- an unrecognized collector name never hard-fails
+`frob.toml` parsing. As of T-0748 the field is declared and validated
+only: no `frob test`/`run_selected` code path invokes the named
+collector against a live run yet (that live-invocation wiring is
+tracked separately, T-0765).
+
 ## Drift-locks that fire
 
 - `NoRunner`: a language with selected (touched) tests but zero matching

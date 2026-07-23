@@ -157,9 +157,9 @@ this module.
 - **The stream contract.** A `SampledStack` is nothing but a tuple of
   `SampledFrame(file, line, weight)`, innermost frame first. Nothing
   python-specific leaks into it -- a native/perf, V8, or JVM collector
-  adapter (T-0748) produces the identical shape from its own profile
-  format, mirroring `frob.arch._normalized.LanguageAdapter`'s per-grammar
-  pattern.
+  adapter (T-0748, below) produces the identical shape from its own
+  profile format, mirroring `frob.arch._normalized.LanguageAdapter`'s
+  per-grammar pattern.
 - **The resolver.** `build_section_index(modules: list[NormalizedModule])
   -> SectionIndex` derives one `Section` per function/method body and per
   loop/branch body nested inside one, purely from `NormalizedFunction`/
@@ -216,6 +216,75 @@ this module.
   persisted store, are T-0711/T-0712's job; this ticket ships the
   language-neutral contract, resolver, and a harness-composable python
   producer for them to build on.
+
+## Cross-language collector adapters (T-0748)
+
+`src/frob/perf/_collectors.py` adds the per-language ADAPTER half the
+T-0710 contract above was built to accept: three bounded parsers that
+convert each ecosystem's own native profile format into the same
+`SampledStack`/`SampledFrame` shape `resolve_stream` already consumes,
+with zero changes needed to that contract.
+
+- `parse_perf_script(text: str, source: str) -> Result[list[SampledStack], CollectorError]`
+  -- Linux `perf record`/`perf script` textual output (frame-pointer or
+  dwarf stacks), for native/Rust/C/C++ workloads, including the pyo3
+  `strata_core`/`frob_core` crates in-process. A stack can carry mixed
+  python+native frames; this adapter only resolves the native side (a
+  frame with an `(file:line)` debuginfo suffix) -- a frame with no
+  debuginfo (a python frame on the same stack, or a foreign module frame)
+  gets `SampledFrame(file="", line=0)` rather than a guess.
+- `parse_v8_cpuprofile(text: str, source: str) -> Result[list[SampledStack], CollectorError]`
+  -- `node --cpu-prof` V8 `.cpuprofile` JSON (Chrome DevTools CPU profile
+  format), for TS/JS. V8's `nodes` array only records child pointers, so
+  this rebuilds the parent chain once so each sample's leaf node can walk
+  up to a full stack; `lineNumber` is V8's 0-based convention, converted
+  to this repo's 1-based `SampledFrame.line`. Hooks into the same vitest
+  runner invocation the T-0587 collector already discovers.
+- `parse_jfr_print(text: str, source: str, class_to_file: Mapping[str, str] | None = None) -> Result[list[SampledStack], CollectorError]`
+  -- `jfr print --events jdk.ExecutionSample <file>` text output, for
+  Kotlin/JVM. JFR's own frame shape carries only `(class.method, line)`,
+  never a file path, so a companion helper resolves the file:
+  `build_class_to_file(modules: list[NormalizedModule]) -> dict[str, str]`
+  derives a class-name -> file map from the same `NormalizedModule`s
+  `build_section_index` indexes. A class name seen in more than one
+  module is ambiguous and is dropped from the map entirely (never
+  guessed) -- an unmapped class's frame still parses, with `file=""`.
+
+`CollectorError` (`ErrorSet`) is the shared failure type all three return
+when a WHOLE profile is unparseable (never for one bad sample inside an
+otherwise-good profile, which is logged and skipped instead):
+
+- `BadPerfScript` -- `perf script` output has no recognizable sample
+  blocks at all, or produced zero parsable stacks.
+- `BadCpuProfile` -- the `.cpuprofile` text is not valid JSON, or is
+  missing the `nodes`/`samples` keys the V8 format requires.
+- `BadJfrPrint` -- the `jfr print` output has no `jdk.ExecutionSample`
+  event blocks at all.
+
+Every `Err` names the offending `source` file in its log line (NO-FAIL-
+SILENT) -- a caller always knows which profile failed and why, never a
+bare "parse failed".
+
+**Unattributed-not-dropped frame policy.** Where a frame's true
+`(file, line)` cannot be determined from the source format at all -- a
+`perf` frame with no debuginfo, a JFR frame whose class has no
+`class_to_file` entry -- the frame is still emitted, as
+`SampledFrame(file="", line=0-or-n)`, rather than silently discarded.
+`resolve_stream` can never match `file=""` to a real `Section`, so that
+sample surfaces as visible `HitStream.unattributed_weight` instead of
+vanishing or (worse) being guessed onto the wrong section -- the same
+DEGRADE-TO-CORRECT discipline `frob.perf._hotgraph._block_sections`
+documents for section-span resolution above.
+
+**What this ticket did not wire.** `RunnerSpec.collector`
+(`src/frob/testing/_models.py`, see
+`docs/guides/extending/test-runner-entries.md#the-collector-field-t-0748`)
+declares and validates which collector name attaches to a
+`[[test.runner]]` entry, but no `frob test`/`run_selected` code path
+invokes a named collector against a live run yet, and no `frob perf`
+CLI subcommand shells out to real `perf`/`node`/`jfr` binaries end to
+end -- both are live-invocation wiring, tracked separately as T-0765,
+not a defect in this ticket's own collector-adapter scope.
 
 ## Public API
 

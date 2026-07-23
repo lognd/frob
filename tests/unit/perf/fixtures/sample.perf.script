@@ -1,0 +1,11 @@
+myprog  1234 1234 100.001000: 3 cycles:
+	401234 hot_loop+0x10 (src/crate/lib.rs:12)
+	401256 main+0x40 (src/crate/lib.rs:30)
+	7f0000 __libc_start_main (libc.so.6)
+
+myprog  1234 1234 100.002000: 1 cycles:
+	401234 hot_loop+0x10 (src/crate/lib.rs:12)
+	401256 main+0x40 (src/crate/lib.rs:30)
+
+myprog  1234 1234 100.003000: 1 cycles:
+	7fffaa unknown_native (no debuginfo)

@@ -47,6 +47,11 @@ _log = get_logger(__name__)
 _PLACEHOLDERS = ("{ids}", "{files}", "{filters}", "{regex}")
 _EXCERPT_LINES = 40
 
+# T-0748: the `frob.perf._collectors` adapter names a `[[test.runner]]`
+# entry's `collector` field may declare; empty ("") means no hot-graph
+# collection attaches to that runner.
+_KNOWN_COLLECTORS = ("", "perf", "v8", "jfr")
+
 # pytest's own exit code for "collection ran clean but selected zero tests"
 # (distinct from exit 1+, a genuine failure/error). A package-fallback
 # selection that lands on a source-only package with no tests hits this --
@@ -118,12 +123,22 @@ def _parse_runner_entry(entry: dict) -> RunnerSpec | None:
             command,
         )
         return None
+    collector = entry.get("collector", "")
+    if collector not in _KNOWN_COLLECTORS:
+        _log.error(
+            "load_runners: runner for %r has unknown collector %r (want one of %s)",
+            language,
+            collector,
+            _KNOWN_COLLECTORS,
+        )
+        return None
     return RunnerSpec(
         language=language,
         command=command,
         all_command=all_command,
         cwd=entry.get("cwd", "."),
         timeout_s=entry.get("timeout_s", 900.0),
+        collector=collector,
     )
 
 

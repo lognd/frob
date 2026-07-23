@@ -1,0 +1,18 @@
+jdk.ExecutionSample {
+  startTime = 12:00:00.001
+  sampledThread = "main" (javaThreadId = 1)
+  state = "STATE_RUNNABLE"
+  stackTrace = [
+    com.example.HotLoop.run() line: 12
+    com.example.Main.main() line: 5
+  ]
+}
+
+jdk.ExecutionSample {
+  startTime = 12:00:00.002
+  sampledThread = "main" (javaThreadId = 1)
+  state = "STATE_RUNNABLE"
+  stackTrace = [
+    com.example.Unknown.doWork() line: 42
+  ]
+}

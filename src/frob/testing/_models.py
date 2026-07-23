@@ -11,7 +11,11 @@ from pydantic import BaseModel, ConfigDict
 # frob:doc docs/modules/testing.md#data-models
 # frob:doc docs/guides/extending/test-runner-entries.md#test-runner-entries
 class RunnerSpec(BaseModel):
-    """One `[[test.runner]]` entry: how to invoke a language's test runner."""
+    """One `[[test.runner]]` entry: how to invoke a language's test runner.
+    `collector` (T-0748) names the `frob.perf._collectors` adapter this
+    runner's invocation should be profiled through -- `"perf"`, `"v8"`,
+    `"jfr"`, or `""` (the default) for no hot-graph collection at all;
+    empty is always valid since collection is opt-in per runner."""
 
     model_config = ConfigDict(frozen=True)
 
@@ -20,6 +24,7 @@ class RunnerSpec(BaseModel):
     all_command: tuple[str, ...]
     cwd: str = "."
     timeout_s: float = 900.0
+    collector: str = ""
 
 
 # frob:doc docs/modules/testing.md#data-models
