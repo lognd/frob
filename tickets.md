@@ -7328,3 +7328,63 @@ Refile of T-draft-3e4b416a, which T-0717's land dropped from the ledger (the T-0
 
 ## Drop reason
 - 2026-07-22: accidental duplicate: filed as a refile believing T-0717's land dropped draft 3e4b416a, but the land renumbered it to T-0771; T-0771 is the canonical phase-2 modes ticket (absorbed by T-0771)
+
+<!-- ticket:T-0773 -->
+```yaml
+id: T-0773
+title: 'tickets: memoize git-common-dir/lease reads per CLI invocation (dozens of
+  identical rev-parse spawns per command)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-22'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/_leases.py
+- src/frob/tickets/__init__.py
+- tests/test_tickets_leases.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN one frob ticket list/doable/show invocation WHEN it completes THEN git
+    rev-parse --git-common-dir was spawned at most once and the lease directory was
+    read at most once for that invocation; a regression test counts spawns
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+User observation 2026-07-22: a single frob ticket command spawns git rev-parse --git-common-dir dozens of times and re-reads/re-judges every lease file each time (the same stale-lease WARNING printed 4+ times per command). Cause: read_all_leases -> leases_dir -> git_common_dir runs an uncached subprocess per call, and callers (_cross_worktree_leases via doable ordering, display_state per ticket row, sweep/check paths) call read_all_leases repeatedly within one invocation. Fix: memoize git_common_dir per (root) for the process lifetime (safe: the common dir cannot move mid-invocation) and thread one lease snapshot through a single CLI invocation instead of re-reading per ticket. Keep the WARNING-on-stale behavior but emit each stale lease once per invocation.
+
+<!-- ticket:T-0774 -->
+```yaml
+id: T-0774
+title: 'land: preflight-simulate EvidenceScopeUnbound (covers_scope) pre-merge to
+  close the residual fail-after-merge class'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-22'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/_land.py
+- src/frob/app/ticket_runner.py
+- tests/test_ticket_land.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a ticket whose evidence does not cover its scope WHEN frob ticket land
+    runs THEN it refuses before creating any merge/finalize commit, naming the uncovered
+    scope, with git log unchanged
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+T-0763 moved unbound-acceptance closeability preflight before merge, but EvidenceScopeUnbound (the covers_scope D-05 check) still runs post-merge because it needs the obligation graph from frob.gates, which frob.tickets cannot import (dependency is injected via the covers_scope callable parameter -- verified by the T-0763 reviewer). Residual: a ticket with bound-but-scope-uncovering evidence still fails AFTER the merge commit exists. Fix direction: have the CLI layer (frob.app.ticket_runner, which CAN import frob.gates) pass covers_scope into a pre-merge preflight simulation as well, or restructure land() to compute the post-merge graph in a temporary index without committing. Filed per T-0763 reviewer recommendation.
