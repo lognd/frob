@@ -1654,7 +1654,7 @@ T-0576's ticket body wanted a deprecated symbol gaining new callers to fire a fi
 ```yaml
 id: T-0640
 title: 'strata: TIMEOUT obligation on every remote/cross-boundary flow (REL2xx)'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -1664,17 +1664,151 @@ scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
+- design/frob.strata
+- src/frob/app/sys_runner.py
+scope_changes:
+- op: add
+  glob: design/frob.strata
+  reason: 'Salvage of T-0640 (docs/guides/agent-playbook.md): the REL2xx TIMEOUT
+
+    obligation implementation is already fully landed on main (commits
+
+    cdbd4337, 05264346, b13d2c66, plus T-0644/T-0758 follow-ups) but the
+
+    ticket ledger record itself was never updated past queued/in-progress.
+
+    No new code is being written in this pass, only the ticket record is
+
+    being reconciled against what already exists on disk. The already-landed
+
+    footprint touches design/frob.strata (per-flow attr timeout/local
+
+    disposition + two disclosed REL200 waivers) and src/frob/app/sys_runner.py
+
+    (CLI wiring of check_reliability_timeouts into `frob sys audit`), both
+
+    outside the ticket''s originally declared strata-only scope -- widening
+
+    scope here documents that footprint accurately rather than leaving scope
+
+    narrower than the work it is being credited for.
+
+    '
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: src/frob/app/sys_runner.py
+  reason: 'Salvage of T-0640 (docs/guides/agent-playbook.md): the REL2xx TIMEOUT
+
+    obligation implementation is already fully landed on main (commits
+
+    cdbd4337, 05264346, b13d2c66, plus T-0644/T-0758 follow-ups) but the
+
+    ticket ledger record itself was never updated past queued/in-progress.
+
+    No new code is being written in this pass, only the ticket record is
+
+    being reconciled against what already exists on disk. The already-landed
+
+    footprint touches design/frob.strata (per-flow attr timeout/local
+
+    disposition + two disclosed REL200 waivers) and src/frob/app/sys_runner.py
+
+    (CLI wiring of check_reliability_timeouts into `frob sys audit`), both
+
+    outside the ticket''s originally declared strata-only scope -- widening
+
+    scope here documents that footprint accurately rather than leaving scope
+
+    narrower than the work it is being credited for.
+
+    '
+  actor: logan
+  at: '2026-07-23'
+evidence:
+- tests/unit/strata/test_reliability.py::TestMissingTimeout::test_flow_without_timeout_fires
+- tests/unit/strata/test_reliability.py::TestMissingTimeout::test_discharged_and_exempt_flows_clean
+- tests/unit/strata/test_reliability.py::TestMissingTimeout::test_waiver_on_one_flow_keeps_sibling_flow_finding
+- tests/unit/strata/test_reliability.py::TestUnprovenTimeout::test_declared_timeout_with_no_code_evidence_fires
+- tests/unit/strata/test_reliability.py::TestUnprovenTimeout::test_declared_timeout_with_real_code_evidence_discharges
+- tests/unit/strata/test_reliability.py::TestUnprovenTimeout::test_declared_timeout_with_no_bound_code_is_uncheckable_not_a_violation
+- tests/unit/strata/test_reliability.py::TestUnprovenTimeout::test_codeless_src_with_coded_dst_proves_against_dst
+- tests/unit/strata/test_reliability.py::TestUnprovenTimeout::test_codeless_src_with_coded_dst_lacking_evidence_fires_against_dst
+- tests/unit/strata/test_reliability.py::TestCrossFamilyWaiverScoping::test_timeout_entrypoint_ignores_health_family_and_health_entrypoint_ignores_timeout_family
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates
 acceptance:
 - text: Given a .strata flow crossing a service/process boundary with no timeout attr,
     when frob check runs, then REL2xx fires unless waived with a reason
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_reliability.py::TestMissingTimeout::test_flow_without_timeout_fires
+  - tests/unit/strata/test_reliability.py::TestMissingTimeout::test_waiver_on_one_flow_keeps_sibling_flow_finding
 - text: Given a declared timeout, when the bound code path lacks a matching real timeout
     arg, then the check fails (proof-against-code), not merely passes on declaration
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_reliability.py::TestUnprovenTimeout::test_declared_timeout_with_no_code_evidence_fires
+  - tests/unit/strata/test_reliability.py::TestUnprovenTimeout::test_declared_timeout_with_real_code_evidence_discharges
 threat: null
 component: null
 ```
 Add a flow-level TIMEOUT attribute + REL2xx checker + litmus + docs: every remote/cross-boundary flow must declare a bounded timeout (unbounded hang otherwise). Deny-by-default with reasoned-waive channel (T-0174). Discharge must be proof-against-code (real timeout arg at the call site) per T-0331's PROVABILITY CONSTRAINT, not bare declaration.
+
+## Done report
+
+Salvage/reconciliation pass (docs/guides/agent-playbook.md): the REL2xx
+TIMEOUT obligation this ticket asked for is already fully implemented and
+landed on main -- cdbd4337 (REL2xx TIMEOUT-obligation reliability family,
+REL200 missing-timeout + REL201 unproven-timeout with proof-against-code
+discharge per T-0331's provability constraint), 05264346 (REL2xx waiver
+in_scope per rule-family), b13d2c66 (wired into `frob sys audit` via
+`check_reliability_timeouts` in src/frob/app/sys_runner.py + cross-family
+stale-waiver false-positive fix), hardened further by the T-0644 (REL21x
+HEALTH) and T-0758 (REL201 dst-endpoint proof anchoring) follow-ups. The
+ticket ledger record was simply never updated past queued: no state
+transition, no evidence, no acceptance binding. This pass writes no new
+feature code; it reconciles the record against what exists.
+
+Verification, not assertion: all 10 recorded evidence tests (the full
+tests/unit/strata/test_reliability.py REL2xx suite + the system-level
+self-model parse/elaborate test) run green on current main, and both
+acceptance criteria are bound to the specific tests that prove them
+(missing-timeout fires + waiver stays flow-scoped; declared-but-unproven
+timeout fails against code).
+
+Scope was widened (reasons recorded per-glob) to design/frob.strata and
+src/frob/app/sys_runner.py because the already-landed footprint touches
+both -- leaving them out would credit this ticket for less than the work
+being reconciled.
+
+Deferred remainder made honest: the two REL200 waivers on
+design/frob.strata's elaborator-synthesized in-process cache flows
+(graph_cache__fill, graph_cache__inval_f_parse) previously cited T-0640
+itself as their follow-up. Closing this ticket would have left them bound
+to a done ticket (exactly what WAIVE006 exists to catch), so the
+attr-forwarding surface they wait on is now filed as T-0845 and both
+waivers' ticket refs re-pointed there in this pass.
+
+### Changed
+```
+ design/frob.strata |   4 +-
+ tickets.md         | 140 +++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 2 files changed, 139 insertions(+), 5 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_reliability.py::TestMissingTimeout::test_flow_without_timeout_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_reliability.py::TestMissingTimeout::test_discharged_and_exempt_flows_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_reliability.py::TestMissingTimeout::test_waiver_on_one_flow_keeps_sibling_flow_finding` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_reliability.py::TestUnprovenTimeout::test_declared_timeout_with_no_code_evidence_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_reliability.py::TestUnprovenTimeout::test_declared_timeout_with_real_code_evidence_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_reliability.py::TestUnprovenTimeout::test_declared_timeout_with_no_bound_code_is_uncheckable_not_a_violation` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_reliability.py::TestUnprovenTimeout::test_codeless_src_with_coded_dst_proves_against_dst` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_reliability.py::TestUnprovenTimeout::test_codeless_src_with_coded_dst_lacking_evidence_fires_against_dst` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_reliability.py::TestCrossFamilyWaiverScoping::test_timeout_entrypoint_ignores_health_family_and_health_entrypoint_ignores_timeout_family` (pytest node id, verified passing when recorded)
+- `tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 10 passed (from 10 evidence id(s))
+- gates: 0 error(s), 1209 warning(s), 210 waived
 
 <!-- ticket:T-0641 -->
 ```yaml

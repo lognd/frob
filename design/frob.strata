@@ -139,8 +139,8 @@ node graphlang : trusted {
     // in-process in-memory cache, not a real cross-boundary call) --
     // a CacheDecl attr-forwarding surface is a follow-up ticket, not
     // this one's scope.
-    waive "REL200:graph_cache__fill" reason "elaborator-synthesized cache fill flow, in-process in-memory cache with no attr-forwarding surface yet -- T-0640 follow-up to add one" ticket "T-0640";
-    waive "REL200:graph_cache__inval_f_parse" reason "elaborator-synthesized cache invalidation flow, in-process in-memory cache with no attr-forwarding surface yet -- T-0640 follow-up to add one" ticket "T-0640";
+    waive "REL200:graph_cache__fill" reason "elaborator-synthesized cache fill flow, in-process in-memory cache with no attr-forwarding surface yet -- T-0845 is the follow-on ticket to add one" ticket "T-0845";
+    waive "REL200:graph_cache__inval_f_parse" reason "elaborator-synthesized cache invalidation flow, in-process in-memory cache with no attr-forwarding surface yet -- T-0845 is the follow-on ticket to add one" ticket "T-0845";
 }
 
 // gates: src/frob/gates/**. The obligation-graph rule engine (SYS/DRIFT/
