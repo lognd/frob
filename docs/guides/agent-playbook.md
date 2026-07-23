@@ -56,6 +56,34 @@ late just to sync `tickets.md` -- finalize the ledger via the restore +
 `done-report` recipe in section 10b instead (a late ledger merge corrupts
 sibling tickets).
 
+**This is now backed by a mechanical guard, not just this prose (T-0574).**
+Four agents ran `git stash` in one session despite this section existing --
+prose alone was not enough. `frob scaffold apply` installs a `.git/hooks/
+reference-transaction` hook (`frob.scaffold._managed`'s stash-guard block)
+that refuses any `git stash` while `git worktree list` shows more than one
+worktree for the clone, with `fatal: ref updates aborted by hook` and a
+pointer back to this section. This required actually checking git's hook
+surface rather than assuming one exists: a `pre-stash` hook does not exist
+natively, and neither of the two obvious substitutes actually intercepts
+`git stash` -- an `alias.stash` override is silently ignored by git (aliases
+cannot shadow a built-in subcommand name, verified empirically) and the
+existing `pre-commit`/`pre-merge-commit` hooks never fire for a stash either
+(`git stash` builds its commits via `commit-tree` plumbing, not `git
+commit`). The `reference-transaction` hook (native, git >=2.28) is the
+option that actually works: it fires for every ref update including
+`refs/stash` and can abort the transaction. Its own coverage limits are
+documented in `frob.scaffold._managed`'s module-level comment -- it is a
+per-clone hook (bypassable by an overridden `core.hooksPath`, a deleted
+hook file, or a non-CLI git binding), not an unbypassable sandbox; commit
+your WIP instead of relying on it as the only line of defense.
+
+Dispatch tooling should also mechanically inject the worktree-lease env
+this playbook otherwise just tells you to remember: `eval "$(frob agent env
+<worktree-path>)"` prints `export FROB_WORKTREE=...` / `export
+FROB_AGENT=1` for a given worktree (T-0574) -- the same two vars section 1
+and section 3b's `--only` refusal both depend on, now derivable mechanically
+instead of hand-set per dispatch.
+
 ## 1c. NEVER edit `.git/info/exclude` (it is repo-global, not worktree-local)
 
 Same hazard class as section 1b's `git stash`, same root cause: `.git/

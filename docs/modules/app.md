@@ -90,6 +90,7 @@ semantics live in `AppConfig` and in each subcommand's own docs page.
 <!-- frob:describes src/frob/app/bind_runner.py::run -->
 <!-- frob:describes src/frob/app/cycle_runner.py::run -->
 <!-- frob:describes src/frob/app/map_runner.py::run -->
+<!-- frob:describes src/frob/app/agent_runner.py::run -->
 
 - `gitlog_runner.run` -- runs `frob.gitlog.git_log` over `cfg.gitlog_*` and
   prints text or JSON (docs/commands/gitlog.md).
@@ -131,6 +132,11 @@ semantics live in `AppConfig` and in each subcommand's own docs page.
   `cfg.cycle_path` (docs/commands/cycle.md).
 - `map_runner.run` -- runs `frob.map.map_project` over `cfg.map_path`
   (docs/commands/map.md).
+- `agent_runner.run` -- `frob agent env [path]` (T-0574): prints
+  `FROB_WORKTREE`/`FROB_AGENT` export lines for a worktree so dispatch
+  tooling can inject the guard env mechanically; parses its own argv
+  rather than taking `AppConfig`, dispatched the same way `bind_runner`
+  is.
 
 ## Shared styling helper (T-0179)
 

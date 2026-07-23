@@ -67,6 +67,7 @@
     "src/frob/app/_style.py::style_ticket_id": "06c2be64ae6e39d8f9e9f9c32fa85d9fb33af485d67efe949a0f5e6362fbb4c6",
     "src/frob/app/_style.py::style_warn": "596a7c80baa485b3175f0e13c125f1709f140963504461041b12953adace326b",
     "src/frob/app/ack_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
+    "src/frob/app/agent_runner.py::run": "92572764844d8b13ffb2ffb62e56a895e0d81ecd853be11fada4aa366856323b",
     "src/frob/app/app.py::App": "a317250c7703e3bfcdaa6a635f78e470dcc6c4b379974182a9b10daea30f81d7",
     "src/frob/app/arch_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/bind_runner.py::run": "d9f6c6004b17eea6226d73b5720d6b4ab6a2dabb037ceef438a63d8918972b7a",
@@ -767,6 +768,7 @@
     "src/frob/scaffold/_managed.py::MANAGED_TEXT_BLOCKS": "cd4a0fcc5cbb77deff43c07e47bebd305156aaa1b4b81a7f2697a60538e052ac",
     "src/frob/scaffold/_managed.py::ManagedBlockStatus": "158db285ab16b0d01feeee99ab3fd07a69e63072bf393818ef5123094ddd15cd",
     "src/frob/scaffold/_managed.py::ManagedTextBlock": "943035e0fca5101887b25fbc2b3c57bc189b6faa74f700266d980063cc42aff0",
+    "src/frob/scaffold/_managed.py::STASH_GUARD_HOOK_NAMES": "b67f043c0000dd655ccac0801580932c19212b909878508cba2edf09ee77499f",
     "src/frob/scaffold/_managed.py::apply_managed_blocks": "99e14ce1bdab41f017908e3fce8da44f29124b72698ae6bd1fe9648276ac81bf",
     "src/frob/scaffold/_managed.py::scaffold_conformance_status": "c6ea52726c4d275629982600b16576005da0add454a9675b7a4c67430e7f348d",
     "src/frob/scaffold/project.py::ScaffoldError": "9703e44dc4e54813cc1d3c8b3ba0a852d0684c885c08eedba318e44695260d07",
@@ -1270,7 +1272,9 @@
     "src/frob/tickets/_store.py::write_all": "e96004b345937e120fd78c7150cb73cd9480fce73d48b01a0a7ba0c4c66a5426",
     "src/frob/tickets/_store.py::write_archive": "6987ae90a9178e8ae95e5b3caa5c0e1d71b888062bc9990701af9229f76ee1ce",
     "src/frob/tickets/_store.py::write_ticket": "7a493296c6fa18900d1e71b68e3853de304748ddcdb0a712f57755f6affb5c08",
+    "src/frob/tickets/_worktree_guard.py::FROB_AGENT_ENV": "6f6ad16643b577b93fc9ed9bfd21d31424e84cf04d8bfb1c470c9b95d224bce6",
     "src/frob/tickets/_worktree_guard.py::FROB_WORKTREE_ENV": "30d9b7d45443142e51d7e347b5bceb79199f07ce10725d8252b7d8232f754ccc",
+    "src/frob/tickets/_worktree_guard.py::agent_env_exports": "149643b353f0a30d2d3bf990b10b0725d8cf1c1f3bbedf4ad922a8142c627eda",
     "src/frob/tickets/_worktree_guard.py::enforce_worktree_lease": "240eb6b4ddcd01e15d618beebc279565c51f7d1c34e015d5ae2eb0f8ff8964b0",
     "src/frob/tickets/clipboard.py::ClipboardError": "602f37ca34083cfa40057c58f8a9c407e9fff365766cc0092638719b08b998de",
     "src/frob/tickets/clipboard.py::clipboard_has_image": "16dd69d6531a3f4a287d539fc5112ea94ee69be195a8f410bae001955953fd6a",
@@ -1358,5 +1362,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.114.0"
+  "version": "0.115.0"
 }

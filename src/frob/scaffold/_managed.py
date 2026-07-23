@@ -48,6 +48,87 @@ from frob.scaffold.project import (
 
 _log = get_logger(__name__)
 
+# frob:doc docs/guides/agent-playbook.md#1b-never-git-stash-in-a-worktree-it-is-repo-global-not-worktree-local  # noqa: E501
+#: T-0574: git has NO native pre-stash hook, and this was checked
+#: empirically rather than assumed -- two candidates were tried and one
+#: was disproven before landing on this one:
+#:
+#: 1. A repo-local `alias.stash` override (`git config alias.stash '!...'`)
+#:    -- DISPROVEN. Empirically, git refuses to let an alias shadow a
+#:    built-in subcommand name at all (`git stash` with `alias.stash` set
+#:    to an arbitrary shell command still runs the real, unmodified
+#:    `stash` -- verified with git 2.34.1 by aliasing `stash` to a command
+#:    that unconditionally prints a sentinel and exits nonzero, then
+#:    observing plain stash behavior and exit 0 regardless). Built-in
+#:    command names are simply not alias-able in git; do not resurrect
+#:    this approach without re-verifying against whatever git version is
+#:    in play.
+#: 2. The standard hook names (`pre-commit`, `pre-merge-commit`, ...) --
+#:    DOES NOT FIRE for stash either: `git stash push` builds its commits
+#:    with plumbing (`commit-tree`), not `git commit`, so no pre-commit
+#:    hook runs, matching well-known git behavior (the same reason
+#:    `--no-verify` has no effect on `git stash`).
+#: 3. The `reference-transaction` hook (native, git >=2.28) -- WORKS.
+#:    It fires for EVERY ref update, including `refs/stash`, in a
+#:    "prepared" phase whose nonzero exit ABORTS the transaction
+#:    (`githooks(5)`). Verified empirically: with this hook watching for
+#:    `refs/stash` updates, `git stash` with >1 `git worktree list` entry
+#:    is refused with `fatal: ref updates aborted by hook` (exit 128,
+#:    nothing stashed), a plain `git commit` in the same repo is
+#:    completely unaffected (different refname, hook exits 0 immediately),
+#:    and `git stash` succeeds normally once back down to one worktree.
+#:
+#: Coverage limits (documented honestly, not oversold): this is a
+#: PER-CLONE git hook (`.git/hooks/reference-transaction`, or the shared
+#: `core.hooksPath` dir if a repo uses one) -- like `git stash` itself,
+#: hooks live in the common `.git` dir and so cover every worktree of the
+#: clone uniformly, which is the intended scope here. It does NOT catch:
+#: `git stash` run with `--no-verify`-adjacent tricks that skip hooks
+#: entirely is not applicable here (no such flag exists for reference-
+#: transaction), but `GIT_HOOKS_PATH`/`core.hooksPath` overridden to an
+#: empty or different directory at invocation time DOES bypass it, as
+#: does deleting/renaming the hook file, or a non-CLI git binding
+#: (libgit2, an IDE's stash panel) that does not invoke the hook chain the
+#: same way the `git` CLI does. It is the strongest mechanical option
+#: verified to actually intercept `git stash` through this repo's own git
+#: version -- not an unbypassable sandbox.
+_STASH_GUARD_HOOK_NAME = "reference-transaction"
+# frob:doc docs/commands/scaffold.md#managed-blocks-t-0736
+#: T-0574: the stash-guard hook's own name(s), exposed the same shape as
+#: `MANAGED_HOOK_NAMES` (a tuple, even though there is exactly one today)
+#: so a block-count computation like `scaffold_conformance_status`'s test
+#: can stay structural (`len(MANAGED_TEXT_BLOCKS) + len(MANAGED_HOOK_NAMES)
+#: + len(STASH_GUARD_HOOK_NAMES)`) instead of a magic `+1` that silently
+#: goes stale the next time a managed block is added or removed.
+STASH_GUARD_HOOK_NAMES: tuple[str, ...] = (_STASH_GUARD_HOOK_NAME,)
+_STASH_GUARD_HOOK_MARKER = "# Installed by `frob scaffold apply` (T-0574 stash guard)."
+_STASH_GUARD_HOOK_SCRIPT = f"""#!/bin/sh
+{_STASH_GUARD_HOOK_MARKER}
+#
+# Refuses to let a `git stash` ref-update land while more than one
+# worktree exists for this clone (docs/guides/agent-playbook.md#1b) --
+# see this module's `_STASH_GUARD_HOOK_SCRIPT` docstring-comment for why
+# a `reference-transaction` hook, not a hook name / alias, is what this
+# has to be.
+state="$1"
+[ "$state" = "prepared" ] || exit 0
+blocked=0
+while read -r old_oid new_oid refname; do
+    case "$refname" in
+        refs/stash) blocked=1 ;;
+    esac
+done
+[ "$blocked" -eq 1 ] || exit 0
+n=$(git worktree list --porcelain 2>/dev/null | grep -c '^worktree ')
+if [ "$n" -gt 1 ]; then
+    echo "frob: refusing 'git stash' -- $n worktrees exist for this clone" >&2
+    echo "frob: git stash writes to refs/stash, SHARED across every worktree" >&2
+    echo "frob: docs/guides/agent-playbook.md#1b -- commit WIP, don't stash" >&2
+    exit 1
+fi
+exit 0
+"""
+
 #: A hook file written by `install_worktree_lease_hook` always starts with
 #: this literal comment line -- used to tell "ours, safe to update" apart
 #: from a repo's own genuinely custom hook of the same name, which must
@@ -323,8 +404,10 @@ def scaffold_conformance_status(root: Path) -> tuple[ManagedBlockStatus, ...]:
         _log.debug("scaffold conformance: no frob.toml under %s, skipping", root)
         return ()
 
-    statuses = tuple(_text_block_status(root, b) for b in MANAGED_TEXT_BLOCKS) + tuple(
-        _hook_status(root, name) for name in MANAGED_HOOK_NAMES
+    statuses = (
+        tuple(_text_block_status(root, b) for b in MANAGED_TEXT_BLOCKS)
+        + tuple(_hook_status(root, name) for name in MANAGED_HOOK_NAMES)
+        + (_stash_guard_status(root),)
     )
     _log.info(
         "scaffold conformance: %d block(s), %d missing, %d stale",
@@ -333,6 +416,90 @@ def scaffold_conformance_status(root: Path) -> tuple[ManagedBlockStatus, ...]:
         sum(1 for s in statuses if s.stale),
     )
     return statuses
+
+
+# frob:tests tests/unit/test_scaffold_managed.py::TestStashGuardBlock.test_refuses_to_clobber_foreign_reference_transaction_hook  # noqa: E501
+# frob:tests tests/unit/test_scaffold_managed.py::TestStashGuardBlock.test_stale_ours_stash_guard_hook_is_updated  # noqa: E501
+def _stash_guard_status(root: Path) -> ManagedBlockStatus:
+    """`ManagedBlockStatus` for the T-0574 `reference-transaction` stash
+    guard hook: `present` reflects whether the hooks-dir file exists
+    (missing hooks dir/not a git repo reports `present=False`, never
+    raises); `stale` is True only for a hook that IS ours (carries
+    `_STASH_GUARD_HOOK_MARKER`) but whose body no longer matches the
+    current canonical script -- a foreign (non-frob) hook of the same
+    name is reported present, not-stale, mirroring `_hook_status`."""
+    expected_digest = _digest(_STASH_GUARD_HOOK_SCRIPT)
+    hooks_dir_result = _hooks_dir(root)
+    if hooks_dir_result.is_err:
+        return ManagedBlockStatus(
+            block_id="hook-reference-transaction-stash-guard",
+            target=f".git/hooks/{_STASH_GUARD_HOOK_NAME}",
+            kind="hook",
+            present=False,
+            stale=False,
+            expected_digest=expected_digest,
+        )
+    path = hooks_dir_result.danger_ok / _STASH_GUARD_HOOK_NAME
+    if not path.exists():
+        return ManagedBlockStatus(
+            block_id="hook-reference-transaction-stash-guard",
+            target=f".git/hooks/{_STASH_GUARD_HOOK_NAME}",
+            kind="hook",
+            present=False,
+            stale=False,
+            expected_digest=expected_digest,
+        )
+    body = path.read_text(encoding="utf-8")
+    is_ours = _STASH_GUARD_HOOK_MARKER in body
+    actual_digest = _digest(body)
+    return ManagedBlockStatus(
+        block_id="hook-reference-transaction-stash-guard",
+        target=f".git/hooks/{_STASH_GUARD_HOOK_NAME}",
+        kind="hook",
+        present=True,
+        stale=is_ours and actual_digest != expected_digest,
+        expected_digest=expected_digest,
+        actual_digest=actual_digest if is_ours else None,
+    )
+
+
+# frob:tests tests/unit/test_scaffold_managed.py::TestStashGuardBlock.test_refuses_to_clobber_foreign_reference_transaction_hook  # noqa: E501
+# frob:tests tests/unit/test_scaffold_managed.py::TestStashGuardBlock.test_stale_ours_stash_guard_hook_is_updated  # noqa: E501
+def _apply_stash_guard(root: Path) -> str:
+    """Idempotently install/update the T-0574 `reference-transaction`
+    stash-guard hook under `root`: no-op if already current, force-
+    updates a stale-but-ours hook, installs fresh if absent, and leaves a
+    foreign (non-frob) hook of the same name untouched -- reported, never
+    overwritten, same posture `_apply_hooks` takes for the T-0431 hooks."""
+    status = _stash_guard_status(root)
+    if status.present and status.actual_digest is None:
+        return (
+            f"hook {_STASH_GUARD_HOOK_NAME}: present and NOT frob's own, left untouched"
+        )
+    if status.present and not status.stale:
+        return f"hook {_STASH_GUARD_HOOK_NAME}: already current"
+
+    hooks_dir_result = _hooks_dir(root)
+    if hooks_dir_result.is_err:
+        _log.warning(
+            "scaffold apply: could not resolve hooks dir under %s (%s)",
+            root,
+            hooks_dir_result.danger_err.value,
+        )
+        return f"hook {_STASH_GUARD_HOOK_NAME}: install failed (no hooks dir)"
+    path = hooks_dir_result.danger_ok / _STASH_GUARD_HOOK_NAME
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(_STASH_GUARD_HOOK_SCRIPT, encoding="utf-8")
+        path.chmod(0o755)
+    except OSError as exc:
+        _log.warning(
+            "scaffold apply: failed to write stash guard hook to %s: %s", path, exc
+        )
+        return f"hook {_STASH_GUARD_HOOK_NAME}: install failed ({exc})"
+    verb = "updated stale" if status.present else "installed"
+    _log.info("scaffold apply: %s stash guard hook under %s", verb, root)
+    return f"hook {_STASH_GUARD_HOOK_NAME}: {verb}"
 
 
 def _apply_text_block(root: Path, block: ManagedTextBlock) -> str:
@@ -417,12 +584,14 @@ def apply_managed_blocks(root: Path) -> Result[tuple[str, ...], ScaffoldError]:
     apply`'s CLI output and the Done-report evidence trail."""
     changes: list[str] = [_apply_text_block(root, b) for b in MANAGED_TEXT_BLOCKS]
     changes.extend(_apply_hooks(root))
+    changes.append(_apply_stash_guard(root))
     return Ok(tuple(changes))
 
 
 __all__ = [
     "MANAGED_HOOK_NAMES",
     "MANAGED_TEXT_BLOCKS",
+    "STASH_GUARD_HOOK_NAMES",
     "ManagedBlockStatus",
     "ManagedTextBlock",
     "apply_managed_blocks",

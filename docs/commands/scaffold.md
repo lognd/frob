@@ -153,6 +153,21 @@ Two kinds of managed block:
   frob's own (carries its install-comment marker) is refreshed; a hook
   that exists and is NOT frob's own is reported and left completely
   untouched -- `apply` never overwrites a repo's genuine custom hook.
+- **The T-0574 stash-guard hook** (`STASH_GUARD_HOOK_NAMES`, currently
+  just `reference-transaction`) refuses `git stash` while more than one
+  `git worktree list` entry exists for the clone
+  (docs/guides/agent-playbook.md#1b-never-git-stash-in-a-worktree-it-is-repo-global-not-worktree-local).
+  It exists as its own hook -- not folded into the T-0431 `pre-commit`
+  hooks above -- because `git stash` never invokes `pre-commit` (it
+  builds its commits via `commit-tree` plumbing) and a repo-local
+  `alias.stash` override is silently ignored by git (aliases cannot
+  shadow a built-in subcommand name); `reference-transaction` is the one
+  native hook that actually fires for a `refs/stash` update and can
+  abort it. Same "ours vs foreign" posture as the other hooks: a
+  pre-existing `reference-transaction` hook that is not frob's own is
+  reported and left untouched. Git older than 2.28 has no
+  `reference-transaction` hook at all -- the guard is silently inert
+  there (fail-open, not an install error).
 
 `frob doctor` folds the same conformance check into its report
 (`docs/guides/install.md#scaffold-managed-block-conformance-t-0736`):

@@ -967,7 +967,7 @@ Adversarial review is this repo's most load-bearing quality mechanism (every fal
 id: T-0574
 title: 'agent environment hardening: auto-inject FROB_WORKTREE/FROB_AGENT + mechanical
   stash guard'
-state: queued
+state: done
 kind: security
 origin: agent
 created: '2026-07-21'
@@ -981,6 +981,10 @@ scope:
 - src/frob/scaffold/_managed.py
 - docs/guides/agent-playbook.md
 - tests/test_worktree_guard.py
+- README.md
+- docs/modules/app.md
+- tests/unit/test_scaffold_managed.py
+- docs/commands/scaffold.md
 scope_changes:
 - op: add
   glob: src/frob/tickets/_worktree_guard.py
@@ -1018,7 +1022,41 @@ scope_changes:
     scaffold hook wiring, playbook doc, tests (was scope=[] and undispatchable)'
   actor: logan
   at: '2026-07-23'
-evidence: []
+- op: add
+  glob: README.md
+  reason: 'DOC005: new subcommand needs its command-table row; docs are part of done'
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: docs/modules/app.md
+  reason: 'DOC005: new subcommand needs its command-table row; docs are part of done'
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: tests/unit/test_scaffold_managed.py
+  reason: 'R1: test_clean_after_apply''s block-count arithmetic must account for the
+    new T-0574 stash-guard block'
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: docs/commands/scaffold.md
+  reason: 'M1: document the T-0574 stash-guard hook block alongside the other managed
+    blocks'
+  actor: logan
+  at: '2026-07-23'
+evidence:
+- tests/test_worktree_guard.py::TestAgentEnvExports::test_resolves_worktree_root
+- tests/test_worktree_guard.py::TestAgentEnvExports::test_non_repo_root_errs
+- tests/test_worktree_guard.py::TestAgentRunnerEnv::test_env_prints_export_lines_for_worktree
+- tests/test_worktree_guard.py::TestAgentRunnerEnv::test_env_defaults_to_cwd
+- tests/test_worktree_guard.py::TestAgentRunnerEnv::test_env_non_repo_path_exits_nonzero
+- tests/test_worktree_guard.py::TestStashGuardHook::test_refuses_stash_while_sibling_worktree_exists
+- tests/test_worktree_guard.py::TestStashGuardHook::test_allows_stash_with_no_sibling_worktree
+- tests/test_worktree_guard.py::TestStashGuardHook::test_commit_is_unaffected_by_the_hook
+- tests/test_worktree_guard.py::TestStashGuardHook::test_idempotent_second_apply_is_noop
+- tests/unit/test_scaffold_managed.py::TestStashGuardBlock::test_refuses_to_clobber_foreign_reference_transaction_hook
+- tests/unit/test_scaffold_managed.py::TestStashGuardBlock::test_stale_ours_stash_guard_hook_is_updated
+- tests/unit/test_scaffold_managed.py::TestScaffoldConformanceStatus::test_clean_after_apply
 attachments: []
 acceptance: []
 threat: null
@@ -1026,6 +1064,75 @@ component: null
 labels: []
 ```
 Four agents ran git stash despite playbook 1b; several ran ticket commands against the shared checkout because FROB_WORKTREE was never SET (T-0431 guard exists but inert without it). (1) frob agent env prints/exports the guard env for a worktree; scaffold/playbook wire it into dispatch. (2) a pre-stash guard (hook or wrapper) refuses git stash while sibling agent worktrees exist. Catalogued-is-not-enforced applied to the playbook itself. Scope: src/frob/tickets/_worktree_guard.py, scaffold hooks, playbook.
+
+## Done report
+
+Review fold (REJECT -> addressed, one commit):
+
+R1 (required): scope-added tests/unit/test_scaffold_managed.py ("R1:
+test_clean_after_apply's block-count arithmetic must account for the
+new T-0574 stash-guard block"). Exposed the stash guard's hook name(s)
+as a public STASH_GUARD_HOOK_NAMES tuple in _managed.py (same shape as
+MANAGED_HOOK_NAMES) instead of a magic +1, and used it in
+test_clean_after_apply's expected_count. Verified the test was actually
+red before the fix and green after.
+
+M2: added TestStashGuardBlock with the two missing precedent-mirroring
+cases: test_refuses_to_clobber_foreign_reference_transaction_hook and
+test_stale_ours_stash_guard_hook_is_updated, both bound via frob:tests
+on _stash_guard_status/_apply_stash_guard.
+
+M1: scope-added docs/commands/scaffold.md ("M1: document the T-0574
+stash-guard hook block alongside the other managed blocks") and added a
+bullet in the Managed blocks (T-0736) section explaining why it is its
+own hook (alias.stash is silently ignored by git; pre-commit never
+fires for stash) and its git>=2.28 requirement.
+
+M3: frob agent env now shlex.quote()s each exported value before
+printing, so a worktree path containing a space/quote/shell
+metacharacter cannot break eval "$(frob agent env)". Updated the two
+tests that asserted the literal export line to build the expected
+string via shlex.quote instead of a hardcoded double-quote form.
+
+M5: added a one-line git>=2.28 note to README.md's Setup section: the
+reference-transaction hook is still written on an older git, but git
+itself never invokes that hook name below 2.28, so the guard is
+silently inert -- fail-open, not an install error.
+
+Verification: uv run --frozen pytest tests/unit/test_scaffold_managed.py
+tests/test_worktree_guard.py -q -> 23 passed (7 + 16), all 23 collect
+cleanly and match this ticket's frob:tests directives. uv run --frozen
+frob check --ticket T-0574 --only gates-fast -> gate:DOC 0 errors (was
+2), gate-summary 0 errors, 1093 warnings, 158 waived (all pre-existing,
+none new).
+
+### Changed
+```
+ README.md                           |   3 +-
+ docs/guides/agent-playbook.md       |  28 ++++++
+ docs/modules/app.md                 |   6 ++
+ src/frob/__main__.py                |  30 ++++++
+ src/frob/app/agent_runner.py        |  89 ++++++++++++++++++
+ src/frob/scaffold/_managed.py       | 160 ++++++++++++++++++++++++++++++-
+ src/frob/tickets/_worktree_guard.py |  39 +++++++-
+ tests/test_worktree_guard.py        | 132 +++++++++++++++++++++++++-
+ tickets.md                          | 181 +++++++++++++++++++++++++++++++++++-
+ 9 files changed, 660 insertions(+), 8 deletions(-)
+```
+
+### Evidence
+- `tests/test_worktree_guard.py::TestAgentEnvExports::test_resolves_worktree_root` (pytest node id, verified passing when recorded)
+- `tests/test_worktree_guard.py::TestAgentEnvExports::test_non_repo_root_errs` (pytest node id, verified passing when recorded)
+- `tests/test_worktree_guard.py::TestAgentRunnerEnv::test_env_prints_export_lines_for_worktree` (pytest node id, verified passing when recorded)
+- `tests/test_worktree_guard.py::TestAgentRunnerEnv::test_env_defaults_to_cwd` (pytest node id, verified passing when recorded)
+- `tests/test_worktree_guard.py::TestAgentRunnerEnv::test_env_non_repo_path_exits_nonzero` (pytest node id, verified passing when recorded)
+- `tests/test_worktree_guard.py::TestStashGuardHook::test_refuses_stash_while_sibling_worktree_exists` (pytest node id, verified passing when recorded)
+- `tests/test_worktree_guard.py::TestStashGuardHook::test_allows_stash_with_no_sibling_worktree` (pytest node id, verified passing when recorded)
+- `tests/test_worktree_guard.py::TestStashGuardHook::test_commit_is_unaffected_by_the_hook` (pytest node id, verified passing when recorded)
+- `tests/test_worktree_guard.py::TestStashGuardHook::test_idempotent_second_apply_is_noop` (pytest node id, verified passing when recorded)
+- `tests/unit/test_scaffold_managed.py::TestStashGuardBlock::test_refuses_to_clobber_foreign_reference_transaction_hook` (pytest node id, verified passing when recorded)
+- `tests/unit/test_scaffold_managed.py::TestStashGuardBlock::test_stale_ours_stash_guard_hook_is_updated` (pytest node id, verified passing when recorded)
+- `tests/unit/test_scaffold_managed.py::TestScaffoldConformanceStatus::test_clean_after_apply` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0582 -->
 ```yaml
@@ -1050,6 +1157,7 @@ component: null
 labels: []
 ```
 T-0410 landed one concrete fix: memoize parse_file's extract() walk (coverage_gate 155.8s->15.9s isolated, ~40s->~4s in real frob check) plus M6 (.hypothesis/.serena skip-dirs). Two things from docs/audits/perf.md need re-measurement, not assumption: (1) H4's other cited multipliers (vet.scan_file_capabilities uses raw_tree not parse_file, so bypasses the new memo -- but _parse's own content-hash cache may already make repeats cheap; verify with a profile) and H5 (selfconform's double capability-scan, likely still unfixed). (2) refs_gate is now the 2nd-largest stage (measured ~8-11s across several frob check runs) and was never profiled by the original audit; isolate and profile it the way this ticket isolated coverage_gate. Update docs/audits/perf.md with a dated re-measurement section (mark H1/H2 RESOLVED via T-0423) rather than a fresh audit.
+
 <!-- ticket:T-0584 -->
 ```yaml
 id: T-0584
@@ -9932,3 +10040,52 @@ component: null
 labels: []
 ```
 Recurred 5+ times this drive (reviewers keep flagging it cosmetically): done-report prepends its own heading on top of one already present in --why-file content. Deduplicate at render time.
+
+<!-- ticket:T-0827 -->
+```yaml
+id: T-0827
+title: 'docs: README.md command table + count for frob agent (T-0574 DOC005 gap)'
+state: dropped
+kind: docs
+origin: human
+created: '2026-07-23'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- README.md
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0574 added a real new top-level subcommand, `frob agent` (currently
+`frob agent env`), dispatched directly in __main__._dispatch the same way
+`frob bind` is. T-0574's own declared scope (src/frob/tickets/_worktree_guard.py,
+src/frob/app/agent_runner.py, src/frob/__main__.py, src/frob/scaffold/_managed.py,
+docs/guides/agent-playbook.md, tests/test_worktree_guard.py) did not include
+README.md or docs/modules/app.md, so this was left undone deliberately per
+that ticket's Done report rather than silently expanding scope.
+
+DOC005 (README.md command-table drift-lock) currently fails as a result:
+
+  README.md:0   DOC005: real subcommand `frob agent` has no command-table
+                row in README.md -- add one, or the README silently omits
+                a real command
+  README.md:54  DOC005: README.md claims 31 commands but the live registry
+                has 32 -- update the claimed count
+
+Plan: add a `frob agent` row to README.md's command table (short one-line
+description, e.g. "Print/export the dispatched-agent guard env
+(FROB_WORKTREE/FROB_AGENT) for a worktree"), bump the claimed command count
+from 31 to 32, and re-run `frob check --only docanchor` (or the `gates-fast`
+group) to confirm DOC005 clears. A `docs/modules/app.md` section for
+`frob agent` is optional polish (the `frob:doc` anchors in
+src/frob/app/agent_runner.py currently point at the existing `#runners`
+anchor, which resolves cleanly) but would be a reasonable companion edit.
+
+## Drop reason
+- 2026-07-23: absorbed by T-0574 (scope-added README.md/docs/modules/app.md instead) (absorbed by T-0574)

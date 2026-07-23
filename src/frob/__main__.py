@@ -428,6 +428,29 @@ def _add_bind_parser(sub) -> None:
     bind_p.add_argument("--json", dest="bind_json", action="store_true")
 
 
+# frob:ticket T-0574
+def _add_agent_parser(sub) -> None:
+    """Register the `frob agent` subcommand tree for `--help` discovery
+    only -- actual dispatch bypasses this parser entirely (see `_dispatch`
+    below and `frob.app.agent_runner`'s module docstring), mirroring
+    `bind`'s own precedent."""
+    agent_p = sub.add_parser(
+        "agent",
+        help="print/export the dispatched-agent guard env (T-0574)",
+    )
+    agent_sub = agent_p.add_subparsers(dest="agent_command")
+    agent_env_p = agent_sub.add_parser(
+        "env", help="print FROB_WORKTREE/FROB_AGENT export lines for a worktree"
+    )
+    agent_env_p.add_argument(
+        "agent_env_path",
+        metavar="path",
+        nargs="?",
+        default=".",
+        help="worktree path to resolve (default: cwd)",
+    )
+
+
 def _add_check_skip_args_python(check_p) -> None:
     """Register `frob check`'s Python-toolchain stage-skip flags."""
     check_p.add_argument("--skip-ruff", dest="check_skip_ruff", action="store_true")
@@ -1962,6 +1985,7 @@ def _add_analysis_subparsers(sub) -> None:
     _add_docs_parser(sub)
     _add_exports_parser(sub)
     _add_bind_parser(sub)
+    _add_agent_parser(sub)
 
 
 def _add_workflow_subparsers(sub) -> None:
@@ -2021,6 +2045,12 @@ def _dispatch(argv: list[str]) -> None:
         from frob.app.bind_runner import run as _bind_run
 
         _bind_run(argv[1:])
+    elif argv and argv[0] == "agent":
+        # T-0574: `frob agent` is dispatched directly, mirroring `bind`
+        # above -- see `frob.app.agent_runner`'s module docstring for why.
+        from frob.app.agent_runner import run as _agent_run
+
+        _agent_run(argv[1:])
     else:
         parser = _build_parser()
         args = parser.parse_args(argv)
