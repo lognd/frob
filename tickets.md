@@ -6841,3 +6841,34 @@ component: null
 labels: []
 ```
 T-0787 reviewer verified these three nodes fail on CURRENT main with git ls-files exit 128 inside the tmp_path fixture (not-a-git-repository shape) plus JSON parse of polluted stdout -- pre-existing fixture debt unrelated to recent lands, no covering ticket found. Root-cause the fixture (missing git init? cwd leakage? the T-0768 quiet clamp changing expected stdout?), repair, and add the deferred end-to-end run() exit-1 test for ticket_lease_pin refusal (T-0787 reviewer action item b).
+
+<!-- ticket:T-0807 -->
+```yaml
+id: T-0807
+title: 'check: auto-suppress land-owned REL001 bump-half in worktree/ticket context
+  (reviews keep tripping on it)'
+state: queued
+kind: ux
+origin: agent
+created: '2026-07-23'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/__init__.py
+- src/frob/app/check_runner.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN frob check --ticket T-X running in a worktree (or against a ticket with
+    a live worktree lease) WHEN the public API changed THEN REL001's version-bump
+    demand is reported as an informational note (land owns the bump) not an error;
+    GIVEN a plain root-checkout check with no ticket context THEN REL001 errors as
+    today
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Recurring friction (4+ review cycles this drive): REL001's bump-half fires as an error in worktree reviews/implementations because suppression is keyed on the FROB_AGENT env var, which reviewers and some dispatch shells never set -- every reviewer then REJECTs or hand-waives a violation that frob ticket land auto-clears seconds later (auto-bumps landed 0.97.0 through 0.105.0 this week). Derive the suppression from CONTEXT instead of env: if the check runs with --ticket and that ticket holds a worktree lease (or cwd is a linked worktree), the bump is land-owned by definition. Keep the API-diff REPORTING (reviewers should still see 'public API changed (minor)'), demote only the bump demand.
