@@ -31,6 +31,7 @@ ledger's own `IN_PROGRESS` rows, to compute collisions.
 from __future__ import annotations
 
 import json
+import re
 import threading
 from datetime import UTC, datetime
 from pathlib import Path
@@ -85,6 +86,85 @@ _lease_file_cache: dict[
     Path, dict[Path, tuple[tuple[int, int], LeaseRecord | None]]
 ] = {}
 _stale_lease_logged: set[tuple[Path, str]] = set()
+# frob:ticket T-0780
+# Which lease files this process has already logged a shape-rejection
+# for -- same "log once per process" shape as `_stale_lease_logged`
+# (T-0773), so a daemon that re-reads the SAME peer-written evil lease
+# every poll cycle warns exactly once, not forever.
+_rejected_lease_logged: set[Path] = set()
+
+# frob:ticket T-0780
+# Conservative allowlist for a lease record's `branch`/`worktree` fields
+# before they are ever admitted (`read_all_leases`, `_read_one_lease`) and
+# can flow on into `frob.serve._daemon`'s `git merge-base`/`git merge-tree`
+# argv (audit M1, docs/audits/frob-blindspots-2026-07-23.md): every
+# worktree agent can write under the shared `.git` common dir's
+# `frob-leases/` directory (T-0473's whole design), so a lease file's
+# content is PEER-WRITABLE, not just self-written -- a crafted
+# branch="--output=/tmp/x" must never reach a git argv as an operand.
+# Deliberately NOT full `git check-ref-format` conformance (this repo
+# never shells out to that plumbing command just to validate a string):
+# the allowlist is ASCII alnum/dot/underscore/slash/hyphen, with a leading
+# '-' rejected outright regardless of what follows -- narrow enough that
+# nothing matching it can be parsed as a git option (no leading dash), and
+# permissive enough to admit every real ref shape this repo's lease
+# writer actually produces, including the detached-HEAD sentinel
+# `branch="HEAD"` (T-0784) and an absolute worktree path. `check-ref-
+# format`-level details (no double-dots, no trailing `.lock`, no `@{`)
+# are NOT enforced here -- rejecting those too would risk false-positive
+# rejections of a legitimate lease over a shape that is annoying, not an
+# injection vector; leading-dash rejection is the actual security
+# property this ticket needs (option injection), not ref-format purity.
+_REF_ALLOWLIST_RE = re.compile(r"^[A-Za-z0-9._/-]+$")
+
+
+# frob:ticket T-0780
+def _looks_like_a_safe_git_argv_operand(value: str) -> bool:
+    """`True` iff `value` is safe to later interpolate into a `git` argv
+    call as a bare ref/path operand (T-0780) -- non-empty, does not start
+    with `-` (so it can never be parsed as an option/flag), and matches
+    `_REF_ALLOWLIST_RE`. See that pattern's comment for why this is a
+    conservative injection guard, not full `git check-ref-format`
+    conformance."""
+    if not value or value.startswith("-"):
+        return False
+    return bool(_REF_ALLOWLIST_RE.match(value))
+
+
+# frob:ticket T-0780
+def _lease_shape_is_safe(record: LeaseRecord) -> bool:
+    """`True` iff `record`'s `branch` and `worktree` fields are both safe
+    argv operands (T-0780) -- the admission check `read_all_leases` and
+    `_read_one_lease` run on every parsed record BEFORE returning it, so
+    an option-injection payload smuggled through the peer-writable lease
+    side-channel is dropped here and never reaches `frob.serve._daemon`'s
+    `git merge-base`/`git merge-tree` calls at all."""
+    return _looks_like_a_safe_git_argv_operand(
+        record.branch
+    ) and _looks_like_a_safe_git_argv_operand(record.worktree)
+
+
+# frob:ticket T-0780
+def _log_rejected_lease_once(path: Path, record: LeaseRecord) -> None:
+    """Warn, once per process per lease file path (T-0780, same pattern as
+    `_stale_lease_logged`/T-0773), that a lease record failed
+    `_lease_shape_is_safe` and was dropped rather than admitted -- a
+    peer-writable file under the shared leases directory must never be
+    silently trusted, but a long-lived daemon re-reading the same bad
+    file every poll cycle must not spam the log forever either."""
+    with _cache_lock:
+        already_logged = path in _rejected_lease_logged
+        if not already_logged:
+            _rejected_lease_logged.add(path)
+    if not already_logged:
+        _log.warning(
+            "tickets: rejected lease file %s for ticket %s -- unsafe "
+            "branch=%r or worktree=%r shape, dropped (never admitted)",
+            path,
+            record.ticket_id,
+            record.branch,
+            record.worktree,
+        )
 
 
 # frob:ticket T-0773
@@ -271,7 +351,12 @@ def read_all_leases(root: Path) -> tuple[LeaseRecord, ...]:
     ticket), or a lease file is unreadable/malformed -- a corrupt or
     unreadable single lease file is logged and skipped rather than failing
     the whole read, since one bad file must never blind `doable` to every
-    OTHER worktree's real leases.
+    OTHER worktree's real leases. A record whose `branch`/`worktree` fails
+    `_lease_shape_is_safe` (T-0780 -- an option-injection-shaped value like
+    `branch="--output=/tmp/x"`, written by ANY co-located worktree agent
+    into the shared, peer-writable leases directory) is likewise dropped
+    and logged rather than admitted, since this function's output flows
+    on into `frob.serve._daemon`'s `git merge-base`/`git merge-tree` argv.
 
     Split into a STAT-VALIDATED parse cache and a FRESH liveness check
     (T-0773, revised in round 2 for the daemon-blindness bug a reviewer
@@ -362,6 +447,10 @@ def read_all_leases(root: Path) -> tuple[LeaseRecord, ...]:
         except (OSError, ValueError) as exc:
             _log.warning("tickets: could not parse lease file %s: %s", path, exc)
             record = None
+        if record is not None and not _lease_shape_is_safe(record):
+            # frob:ticket T-0780
+            _log_rejected_lease_once(path, record)
+            record = None
         freshly_parsed[path] = (stat_key, record)
 
     # Short lock #2: write the freshly-parsed results back.
@@ -422,10 +511,15 @@ def _read_one_lease(leases_root: Path, ticket_id: str) -> LeaseRecord | None:
         return None
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
-        return LeaseRecord.model_validate(raw)
+        record = LeaseRecord.model_validate(raw)
     except (OSError, ValueError) as exc:
         _log.warning("tickets: could not parse lease file %s: %s", path, exc)
         return None
+    if not _lease_shape_is_safe(record):
+        # frob:ticket T-0780
+        _log_rejected_lease_once(path, record)
+        return None
+    return record
 
 
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473

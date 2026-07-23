@@ -214,8 +214,28 @@ def _merge_would_conflict(root: Path, branch: str, main_head: str) -> bool | Non
     caller passing the wrong `root` would hit this). Old-style `git
     merge-tree` (this repo's git 2.34 baseline predates the `--write-tree`
     form) always exits 0 and reports conflicts via `<<<<<<<` markers in
-    stdout, not the exit code -- detection here matches that behavior."""
-    base = run_argv(("git", "-C", str(root), "merge-base", "main", branch))
+    stdout, not the exit code -- detection here matches that behavior.
+
+    `branch` is a lease-sourced string (`_worktree_branches`, ultimately
+    `frob.tickets._leases.read_all_leases`) written under a shared,
+    peer-writable directory -- ANY co-located worktree agent's process can
+    write a `frob-leases/*.json` file (audit M1, T-0780). Two independent
+    layers guard against option injection here: (1) `read_all_leases`
+    already rejects an option-injection-shaped `branch`/`worktree` (a
+    leading `-`) before this function ever sees the record, so `branch`
+    is never attacker-controlled in practice by the time it arrives; (2)
+    the `merge-base` argv below still terminates its options with `--`
+    before the ref operands anyway, as a second, independent line of
+    defense. `git merge-tree` (old-style, no `--write-tree`) does NOT
+    accept a `--` terminator on this repo's git 2.34 baseline -- verified
+    directly: `git merge-tree -- <base> <branch1> <branch2>` fails with a
+    usage error on this git version, so adding one there would break
+    every simulation rather than harden one; `merge_base` and `main_head`
+    are always git-computed/self-resolved values (never read from a lease
+    file), so `branch` -- already validated by layer 1 -- is the only
+    lease-sourced operand `merge-tree` receives, and layer 1 alone is
+    that call's defense."""
+    base = run_argv(("git", "-C", str(root), "merge-base", "--", "main", branch))
     if base.is_err or base.danger_ok.returncode != 0:
         _log.warning(
             "serve: daemon: rebase-bot: no merge-base for %s against main under %s",

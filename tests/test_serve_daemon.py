@@ -129,6 +129,60 @@ class TestPollRebaseBot:
         assert warnings == ()
 
 
+class TestPollRebaseBotLeaseInjectionGuard:
+    """T-0780 (audit M1): a crafted lease written directly to the shared,
+    peer-writable `frob-leases/` directory (bypassing `record_lease`
+    entirely, simulating any co-located worktree agent's process) must
+    never reach `poll_rebase_bot`'s `git merge-base`/`git merge-tree`
+    argv -- `frob.tickets._leases.read_all_leases`'s admission check
+    (T-0780) rejects it before `_worktree_branches` can ever hand it to
+    `_merge_would_conflict`."""
+
+    def test_evil_lease_branch_never_reaches_git_argv(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch, caplog
+    ) -> None:
+        # frob:tests tests/test_serve_daemon.py::TestPollRebaseBotLeaseInjectionGuard.test_evil_lease_branch_never_reaches_git_argv
+        import logging
+
+        from frob.tickets._leases import LeaseRecord, leases_dir
+
+        wt = repo.parent / "wt-evil"
+        resolved = leases_dir(repo)
+        assert resolved.is_ok
+        leases_root = resolved.danger_ok
+        leases_root.mkdir(parents=True, exist_ok=True)
+        evil = LeaseRecord(
+            ticket_id="T-0666",
+            scope=("src/pkg/a.py",),
+            worktree=str(wt),
+            branch="--output=/tmp/x",
+            recorded_at="2026-07-23T00:00:00+00:00",
+        )
+        (leases_root / "T-0666.json").write_text(
+            evil.model_dump_json(indent=2) + "\n", encoding="utf-8"
+        )
+
+        calls: list[tuple[str, ...]] = []
+        real_run_argv = _daemon.run_argv
+
+        def _spy(argv):
+            calls.append(tuple(argv))
+            return real_run_argv(argv)
+
+        monkeypatch.setattr(_daemon, "run_argv", _spy)
+        caplog.set_level(logging.WARNING, logger="frob.tickets._leases")
+
+        warnings = _daemon.poll_rebase_bot(repo)
+
+        assert warnings == ()
+        for argv in calls:
+            assert "--output=/tmp/x" not in argv
+        assert any(
+            "T-0666" in record.getMessage() and "rejected lease" in record.getMessage()
+            for record in caplog.records
+        )
+
+
 class TestRunDaemonCycle:
     def test_runs_both_jobs_and_returns_status(self, repo: Path) -> None:
         # frob:tests tests/test_serve_daemon.py::TestRunDaemonCycle.test_runs_both_jobs_and_returns_status

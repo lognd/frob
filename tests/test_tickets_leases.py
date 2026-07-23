@@ -53,12 +53,19 @@ def repo(tmp_path: Path) -> Path:
 
 
 def _write_lease(
-    root: Path, ticket_id: str, worktree: Path, *, scope: tuple[str, ...] = ()
+    root: Path,
+    ticket_id: str,
+    worktree: Path,
+    *,
+    scope: tuple[str, ...] = (),
+    branch: str = "main",
 ) -> None:
-    """Write `ticket_id`'s lease file directly, recording `worktree` as its
-    holder -- bypasses `record_lease`'s own `root.resolve()` capture so
-    tests can simulate a lease held by a DIFFERENT (possibly nonexistent,
-    fake) worktree path than `root` itself."""
+    """Write `ticket_id`'s lease file directly, recording `worktree` (and,
+    T-0780, an overridable `branch`) as its holder -- bypasses
+    `record_lease`'s own `root.resolve()` capture so tests can simulate a
+    lease held by a DIFFERENT (possibly nonexistent, fake) worktree path
+    than `root` itself, or a peer-writable file carrying an
+    injection-shaped `branch`."""
     resolved = leases_dir(root)
     assert resolved.is_ok
     leases_root = resolved.danger_ok
@@ -67,7 +74,7 @@ def _write_lease(
         ticket_id=ticket_id,
         scope=scope,
         worktree=str(worktree),
-        branch="main",
+        branch=branch,
         recorded_at="2026-07-22T00:00:00+00:00",
     )
     (leases_root / f"{ticket_id}.json").write_text(
@@ -319,3 +326,90 @@ class TestReadAllLeasesSiblingProcessVisibility:
         second = read_all_leases(repo)
         assert len(second) == 1
         assert second[0].scope == ("src/a.py",)
+
+
+class TestLeaseShapeValidation:
+    """T-0780 (audit M1): the `frob-leases/` directory is peer-writable --
+    ANY co-located worktree agent can drop a lease JSON there -- and
+    `read_all_leases`'s output ultimately flows into `frob.serve._daemon`'s
+    `git merge-base`/`git merge-tree` argv (`_worktree_branches`). A record
+    whose `branch`/`worktree` is shaped like a git option (leading `-`)
+    must be rejected at admission time, before either read path ever
+    returns it, so no downstream `git` call can ever receive it."""
+
+    def test_read_all_leases_drops_a_dash_prefixed_branch(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """A lease with `branch="--output=/tmp/x"` (the audit's own
+        example payload) is dropped by `read_all_leases`, never admitted
+        into its returned tuple -- and a warning names the rejected
+        ticket/file."""
+        import logging
+
+        caplog.set_level(logging.WARNING, logger="frob.tickets._leases")
+        _write_lease(repo, "T-0666", repo, branch="--output=/tmp/x")
+
+        leases = read_all_leases(repo)
+        assert leases == ()
+        assert any(
+            "T-0666" in record.getMessage() and "rejected lease" in record.getMessage()
+            for record in caplog.records
+        )
+
+    def test_read_all_leases_drops_a_dash_prefixed_worktree(self, repo: Path) -> None:
+        """The same rejection applies to a `worktree` field shaped like a
+        git option, not just `branch` -- both are argv operands somewhere
+        downstream and both are validated identically."""
+        _write_lease(repo, "T-0667", Path("--worktree-payload"), branch="main")
+        leases = read_all_leases(repo)
+        assert leases == ()
+
+    def test_read_all_leases_still_admits_a_legitimate_branch(self, repo: Path) -> None:
+        """A normal branch name (this repo's own naming convention) is
+        never rejected by the new shape check -- the guard is narrow, not
+        a blanket lockout of real leases."""
+        _write_lease(repo, "T-0668", repo, branch="feature-x/agent-1")
+        leases = read_all_leases(repo)
+        assert {lease.ticket_id for lease in leases} == {"T-0668"}
+
+    def test_read_all_leases_admits_detached_head_sentinel(self, repo: Path) -> None:
+        """`branch="HEAD"` (T-0784's detached-HEAD lease sentinel) passes
+        the allowlist -- the guard must never regress that case."""
+        _write_lease(repo, "T-0669", repo, branch="HEAD")
+        leases = read_all_leases(repo)
+        assert {lease.ticket_id for lease in leases} == {"T-0669"}
+
+    def test_resolve_lease_treats_an_evil_branch_as_no_lease(self, repo: Path) -> None:
+        """`resolve_lease` reads via `_read_one_lease`, a separate code
+        path from `read_all_leases` -- the shape guard must apply there
+        too. A rejected record surfaces as `NoLeaseForTicket`, the same
+        loud failure as a lease that was never recorded at all, never a
+        silent pass-through of the unsafe value."""
+        _write_lease(repo, "T-0670", repo, branch="--upload-pack=evil")
+        result = resolve_lease(repo, "T-0670", repo)
+        assert result.is_err
+        assert result.danger_err == LeaseError.NoLeaseForTicket
+
+    def test_rejection_is_logged_once_per_process(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Repeated `read_all_leases` calls against the SAME evil lease
+        file warn exactly once (T-0773's log-once-per-process pattern),
+        not once per call -- a long-lived daemon polling the same
+        peer-written file forever must not spam the log."""
+        import logging
+
+        caplog.set_level(logging.WARNING, logger="frob.tickets._leases")
+        _write_lease(repo, "T-0671", repo, branch="--evil")
+
+        read_all_leases(repo)
+        read_all_leases(repo)
+        read_all_leases(repo)
+
+        rejections = [
+            record
+            for record in caplog.records
+            if "T-0671" in record.getMessage()
+            and "rejected lease" in record.getMessage()
+        ]
+        assert len(rejections) == 1
