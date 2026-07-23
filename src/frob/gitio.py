@@ -266,7 +266,7 @@ def git_common_dir(root: Path) -> Result[Path, GitError]:
     (a linked worktree's `.git` is a pointer file, not the shared
     directory). `Err(GitFailed)` if `root` is not inside a git work tree
     or the git call fails. The single canonical implementation (T-0784) --
-    `frob.tickets._leases.git_common_dir` and
+    `frob.tickets._leases._git_common_dir` and
     `frob.gates._exclude_hazard._git_common_dir` both delegate here rather
     than each spawning and parsing their own `rev-parse --git-common-dir`.
 
