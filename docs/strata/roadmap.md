@@ -80,11 +80,17 @@ search-shaped model (batch index pipelines with freshness lag).
 
 - This effort is tracked in frob tickets from day one: T-0047..T-0086.
 - Phase 4 exit MET (T-0081): `design/frob.strata` declares frob's own
-  architecture -- 8 components rolled up from the repo's 25+ leaf
-  packages (cli/app layer, graph+lang, gates, check, strata, dup+frob-
-  core, vet, plus the `registry` foreign node vet talks to over the
-  network), the tickets ledger as an `append_only` git-tracked `store`,
-  and the `.frob/` symbol-graph cache as a `cache` derived from a
+  architecture -- originally 8 components rolled up from the repo's 25+
+  leaf packages (cli/app layer, graph+lang, gates, check, strata,
+  dup+frob-core, vet, plus the `registry` foreign node vet talks to over
+  the network); T-0707 added `registry_model` and `fleet`, and T-0440
+  split `deploy`/`serve`/`mutate` off the former dup+frob-core utility-hub
+  node into three standalone components with their own `may`/effects
+  declarations (13 components today, dup+frob-core now narrower: dup,
+  logging, process, gitlog, gitio, xref, outline, map, exports, perf,
+  policy, release, scaffold, stats, bind, docs, fuzz, cycle, testing, cve,
+  clean, render), the tickets ledger as an `append_only` git-tracked
+  `store`, and the `.frob/` symbol-graph cache as a `cache` derived from a
   `graphlang` parse -- and `frob check --only sys` enforces it at zero
   violations, superseding the informal dependency diagram in
   `docs/rework.md` as enforced truth. Every flow in the model is a real

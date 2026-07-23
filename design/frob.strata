@@ -314,10 +314,19 @@ node fleet : trusted {
 // dup+frob-core: everything that is real infrastructure but not one of
 // the named components above -- src/frob/dup/**, logging/**, process/**,
 // gitlog/**, gitio.py, xref/**, outline/**, map/**, exports/**,
-// mutate/**, perf/**, policy/**, release/**, scaffold/**, serve/**,
+// perf/**, policy/**, release/**, scaffold/**,
 // stats/**, bind/**, docs/**, fuzz/**, cycle/**, testing/**, cve/** (T-0150
 // self-conformance audit found src/frob/cve/** unmapped -- added here
 // rather than as a ninth component for the same density reason).
+// T-0440: mutate/**, serve/**, and deploy/** are OFF this node now -- see
+// the standalone `mutate`/`serve`/`deploy` nodes below. They used to be
+// folded in here for the same "dense utility mesh" reason the rest of
+// this list still is, but that framing hid three components with real,
+// distinct threat surfaces of their own (mutate spawns the test suite
+// under a mutated source file; serve is the one component with an
+// external-agent-facing MCP transport boundary; deploy generates and
+// remote-execs install/status/uninstall automation on a target host) --
+// splitting them out is a modeling-accuracy fix, not a new capability.
 // src/frob/tickets/** is NOT here (T-0166 un-fold): T-0150 folded it into
 // `core` as a workaround for `store_prop` not accepting `code`/`may` --
 // that grammar gap is now fixed (`strata-core/src/parse.rs::parse_store`,
@@ -348,11 +357,11 @@ node core : trusted {
     code "src/frob/dup/**" "src/frob/logging/**" "src/frob/process/**"
         "src/frob/gitlog/**" "src/frob/gitio.py" "src/frob/xref/**"
         "src/frob/outline/**" "src/frob/map/**" "src/frob/exports/**"
-        "src/frob/mutate/**" "src/frob/perf/**" "src/frob/policy/**"
-        "src/frob/release/**" "src/frob/scaffold/**" "src/frob/serve/**"
+        "src/frob/perf/**" "src/frob/policy/**"
+        "src/frob/release/**" "src/frob/scaffold/**"
         "src/frob/stats/**" "src/frob/bind/**" "src/frob/docs/**"
         "src/frob/fuzz/**" "src/frob/cycle/**" "src/frob/testing/**"
-        "src/frob/cve/**" "src/frob/deploy/**" "src/frob/clean/**"
+        "src/frob/cve/**" "src/frob/clean/**"
         "src/frob/render/**";
     may "env";
     may "eval";
@@ -363,15 +372,133 @@ node core : trusted {
     // T-0778: `src/frob/gitio.py`'s own subprocess spawns are now real,
     // wired kill-switch coverage (frob.process._guard.
     // guarded_subprocess_run, transitively covering the serve daemon and
-    // gitio-based lease reads too) -- but this node folds in several
-    // OTHER packages (gitlog/**, mutate/**, deploy/**, scaffold/**,
-    // testing/**) that still call subprocess.run directly, unguarded.
-    // Honest remaining gap, not a pending mechanism. Follow-on:
-    // T-0803.
+    // gitio-based lease reads too, T-0440: `serve` now calls this code
+    // via a flow edge rather than owning it) -- but this node folds in
+    // several OTHER packages (gitlog/**, scaffold/**, testing/**) that
+    // still call subprocess.run directly, unguarded. Honest remaining
+    // gap, not a pending mechanism. Follow-on: T-0803. (T-0440:
+    // `mutate`/`deploy` used to be part of this same honest gap while
+    // folded into `core` -- both moved onto their OWN nodes below, and
+    // both DO route their subprocess spawns through the real,
+    // guarded_subprocess_run kill switch already, unlike the packages
+    // still listed here.)
     // T-0724: same SYS203/tickets_ledger disposition as `cli` above --
     // the `.frob/tickets.lock` flock (T-0458/T-0633) is the real,
     // untracked-by-the-grammar arbiter; re-evaluate at T-0700.
     waive "SYS203:tickets_ledger" reason "all ledger writers serialize through .frob/tickets.lock (T-0458/T-0633); mode-blind until T-0700 arbitrated_by can express this -- re-evaluate at T-0700" ticket "T-0700";
+}
+
+// T-0440: `frob mutate` -- mutation testing, the honest test-quality
+// oracle (src/frob/mutate/__init__.py, T-0011). Split off `core`'s
+// former utility-hub node because its real threat surface is distinct:
+// it is the one non-`checker`/`vet`/`fleet` component that spawns a
+// subprocess whose ARGV embeds a caller-supplied test command
+// (`run_mutations`'s `test_argv` parameter), against a source tree it
+// has just mutated on disk -- a narrower, more specific CWE-78 exposure
+// than the generic "dense utility mesh" framing gave it credit for.
+// `may` measured by `frob.strata._effects._line_effects` /
+// `frob.vet._capability._scan_directory_capabilities` against
+// `src/frob/mutate/**` (T-0440 Done report): `fs` (`_run_mutants`'s
+// `target.write_text` of each mutant, restored via the same call in the
+// `finally` block) + `fs-read` (`run_mutations`'s `target.read_text` of
+// the original source) + `exec` (`_run_mutants`'s
+// `guarded_subprocess_run` call, imported from `frob.process._guard`
+// inside `_run_mutants` itself -- deferred, but still a real, observed
+// `subprocess.` site in this file's own text, hence declared here rather
+// than left as an undeclared cross-node effect). No `eval`/`net`/`ffi`/
+// `sql`/`fetch_url`/`deserialize`/`env` observed anywhere in this
+// package. The exec capability has a REAL, wired kill switch already:
+// `run_mutations`'s own module docstring (T-0803) documents that a
+// `guarded_subprocess_run` refusal (`FROB_DISABLE_EXEC=1`) aborts the
+// WHOLE run with `Err(MutateError.ExecDisabled)` rather than silently
+// mis-scoring the refused mutant as "killed" -- the same
+// `frob_check_exec_kill_switch` identifier every other
+// `guarded_subprocess_run` caller in this model already names, since
+// it is the SAME env var / mechanism (`frob.process._guard.
+// EXEC_KILL_SWITCH_ENV`), not a second one.
+// frob:doc docs/modules/mutate.md#public-api
+node mutate : trusted {
+    clearance Internal;
+    code "src/frob/mutate/**";
+    may "exec";
+    attr flag=frob_check_exec_kill_switch;
+    may "fs";
+    may "fs-read";
+}
+
+// T-0440: `frob serve` -- the MCP adapter exposing frob's enforcement
+// queries over stdio (src/frob/serve/**, docs/modules/serve.md). Split
+// off `core`'s former utility-hub node because it is the ONE component
+// in this whole model an external MCP CLIENT PROCESS talks to directly
+// (`server.py`'s stdio `FastMCP` transport, `run_stdio`) -- a real,
+// previously-undeclared boundary the coarse hub framing hid entirely, no
+// different in kind from `registry` being the network boundary `vet`
+// crosses. The transport itself is stdio only (no listening socket, no
+// `net` capability observed or plausible: `server.py`/`_tools.py`/
+// `_warm.py`/`_daemon.py`'s own bound code, per `frob.vet._capability.
+// _scan_directory_capabilities` and `frob.strata._effects._line_effects`
+// against `src/frob/serve/**` (T-0440 Done report), observe ZERO net/fs/
+// exec/eval effects of their own -- every filesystem read
+// (`.frob/cache.db`), git subprocess call (`_daemon.py`'s
+// `poll_rebase_bot`), and gate/graph/ticket read this component performs
+// is delegated to `frob.graph`/`frob.gates`/`frob.gitio`/`frob.testing`/
+// `frob.tickets` code that lives on OTHER nodes -- modeled below as real
+// flow edges into `core`/`gates`/`graphlang`/`tickets_ledger`, not as
+// `serve`'s own capabilities (the same "code owns the effect, not its
+// caller" discipline `core`'s `f_core_tickets` comment already
+// documents). This is a genuinely zero-`may` node: no declared
+// capability at all, same shape as the `registry` boundary node above
+// (minus the `foreign` clearance -- `serve` is trusted, internal code,
+// just with no risky effect of its own to declare).
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+node serve : trusted {
+    clearance Internal;
+    code "src/frob/serve/**";
+}
+
+// T-0440: `frob deploy` -- compiles `std.host` manifests into idempotent
+// install/status/uninstall automation (bash + PowerShell/DSC) and runs
+// the `frob deploy audit --vm` snapshot-diff harness against a live
+// target host over ssh/VBoxManage (src/frob/deploy/**, deploy epic
+// T-0254). Split off `core`'s former utility-hub node because its real
+// threat surface is distinct from the rest of that mesh: it is the one
+// component whose generated OUTPUT is itself install/uninstall
+// automation meant to run with host-admin privilege on a REMOTE target,
+// and whose own `_vm_runner.py` spawns `ssh`/`VBoxManage` subprocesses
+// against that target directly.
+// `may` measured by `frob.strata._effects._line_effects` /
+// `frob.vet._capability._scan_directory_capabilities` against
+// `src/frob/deploy/**` (T-0440 Done report): `fs` (`_drift.py`'s
+// `toml_path.open("rb")` -- the scanner's `open(`-shaped needle, same
+// precision note `registry_model`/`fleet` above already document: this
+// declares as the plain `fs` kind, not `fs-write`, matching every other
+// node/store in this model) + `fs-read` (`_drift.py`'s
+// `committed_path.read_text`) + `exec` (`_vm_runner.py`'s
+// `_run_guarded`, routed through `guarded_subprocess_run` -- the SAME
+// real, wired `frob.process._guard.EXEC_KILL_SWITCH_ENV` kill switch
+// every other `guarded_subprocess_run` caller in this model names via
+// `frob_check_exec_kill_switch`). `may "eval"` is deliberately NOT
+// declared: the scanner's bare-`eval(`-shaped needle matches
+// `_conform.py::_mutation_for_eval`'s own PYTHON FUNCTION NAME (the
+// substring "eval(" inside the identifier `_mutation_for_eval(`), not a
+// call to the `eval`/`exec` builtins -- the exact T-0151-class
+// self-match false positive `gates`'s own header comment above already
+// documents for a different needle (`compile(`); direct grep of
+// `src/frob/deploy/**` confirms zero real `eval(`/`exec(` builtin calls
+// anywhere in this package, so declaring `may "eval"` here would be an
+// unfalsifiable claim SYS101 exists to catch, not an honest one. No
+// `net`/`ffi`/`sql`/`fetch_url`/`deserialize`/`env` observed either --
+// the ssh/VBoxManage calls are modeled as `exec` (a local subprocess
+// spawn), the same convention `fleet`'s ssh-adjacent git/uv subprocess
+// calls above already use, not as a separate `net` capability.
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+node deploy : trusted {
+    clearance Internal;
+    code "src/frob/deploy/**";
+    may "exec";
+    attr flag=frob_check_exec_kill_switch;
+    may "fs";
+    may "fs-read";
 }
 
 // vet: src/frob/vet/**. Dependency-vetting -- the ONE component that
@@ -523,6 +650,20 @@ flow f_cli_registry_model : cli -> registry_model { label Internal; attr local; 
 // (the `frob fleet` subcommand's CLI entrypoint).
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 flow f_cli_fleet : cli -> fleet { label Internal; attr local; }
+// T-0440: `src/frob/app/deploy_runner.py` (the `frob deploy` subcommand)
+// and `src/frob/app/check_runner.py` (DEPLOY001/DEPLOY002's
+// `deploy_drift_violations`/`deploy_conformance_violations`) both import
+// `frob.deploy` directly.
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_cli_deploy : cli -> deploy { label Internal; attr local; }
+// T-0440: `src/frob/app/mutate_runner.py` imports `frob.mutate` directly
+// (the `frob mutate` subcommand's CLI entrypoint).
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_cli_mutate : cli -> mutate { label Internal; attr local; }
+// T-0440: `src/frob/app/serve_runner.py` imports `frob.serve` directly
+// (the `frob serve` subcommand's CLI entrypoint).
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_cli_serve : cli -> serve { label Internal; attr local; }
 
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 flow f_graphlang_core : graphlang -> core { label Internal; attr local; }
@@ -573,6 +714,43 @@ flow f_vet_core : vet -> core { label Internal; attr local; }
 
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 flow f_tickets_core : tickets_ledger -> core { label Internal; attr local; }
+
+// T-0440: `frob.deploy._generate`/`_generate_windows.py` import
+// `frob.strata`/`frob.strata._host`/`frob.strata._krb` directly (reads
+// `HostManifest`/`HostAcl`/`krb_manifest_for` to compile a design model
+// into install automation).
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_deploy_strata : deploy -> stratamod { label Internal; attr local; }
+// T-0440: `frob.deploy._vm_runner` imports `frob.process._guard`
+// (`EXEC_KILL_SWITCH_ENV`/`guarded_subprocess_run`) directly.
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_deploy_core : deploy -> core { label Internal; attr local; }
+
+// T-0440: `frob.mutate._run_mutants` imports `frob.process._guard.
+// guarded_subprocess_run` (deferred, inside the function -- still a
+// real call).
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_mutate_core : mutate -> core { label Internal; attr local; }
+
+// T-0440: `frob.serve._daemon`/`_warm.py` import `frob.gitio.run_argv`
+// (git subprocess reads: `poll_rebase_bot`'s `git merge-tree` simulation)
+// and `frob.testing.collect_python_tests` directly.
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_serve_core : serve -> core { label Internal; attr local; }
+// T-0440: `frob.serve._warm` imports `frob.gates.load_baseline` directly
+// (the stamped-baseline half of a warm `WarmState`).
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_serve_gates : serve -> gates { label Internal; attr local; }
+// T-0440: `frob.serve._warm`/`_tools.py` import `frob.graph`'s
+// `build_graph`/`affects`/`edges_from`/`edges_to`/`load_graph`/`resolve`
+// and `frob.graph.lock`'s `drift`/`load_lock` directly.
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_serve_graphlang : serve -> graphlang { label Internal; attr local; }
+// T-0440: `frob.serve._tools`/`_daemon.py` import `frob.tickets`'s
+// `doable`/`load_queue`/`read_all_leases` directly (the doable-tickets
+// MCP query and the rebase-bot's in-flight-lease scan).
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_serve_tickets : serve -> tickets_ledger { label Internal; attr local; }
 
 // T-0707: `frob.fleet.route_ticket` imports `frob.tickets` directly
 // (`TicketSpec`/`doable`/`load_queue`/`new_ticket`) to file a finding into
@@ -642,7 +820,7 @@ assume "weakness:CWE-78:checker" noflow registry -> checker owner logan review "
 // -> vet`, `f_vet_core: vet -> core`), so a plain `assert noflow` here
 // would be REFUTED -- an `assume` is the honest tool, not a workaround:
 // every exec call site under `core`'s `code=` globs
-// (src/frob/gitio.py, src/frob/mutate/**, src/frob/perf/**,
+// (src/frob/gitio.py, src/frob/perf/**,
 // src/frob/gitlog/**) invokes a FIXED, hardcoded argv list (git/cargo
 // subcommands) built from this repo's own config, never from registry
 // response bytes -- the registry->vet->core path carries dependency
@@ -650,7 +828,8 @@ assume "weakness:CWE-78:checker" noflow registry -> checker owner logan review "
 // `b_vet_endorse`), not command arguments, so it cannot reach any of
 // these argv lists. Reviewed 2026-07. (`src/frob/tickets/clipboard.py`'s
 // exec call site moved to `tickets_ledger`'s own discharge below, T-0166
-// un-fold.)
+// un-fold. T-0440: `src/frob/mutate/**`'s exec call site moved to
+// `mutate`'s own discharge below, same un-fold reasoning.)
 // frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
 assume "weakness:CWE-78:core" noflow registry -> core owner logan review "2026-10-15"
 
@@ -699,6 +878,38 @@ assume "weakness:CWE-78:vet" noflow registry -> vet owner logan review "2026-10-
 // never from registry response bytes. Reviewed 2026-07.
 // frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
 assume "weakness:CWE-78:fleet" noflow registry -> fleet owner logan review "2026-10-15"
+
+// T-0440: `mutate` newly declares `may "exec"` (the un-folded T-0011
+// mutation-test-runner subprocess spawn, `_run_mutants`'s
+// `guarded_subprocess_run` call), dragging in the same CWE-78 discharge
+// obligation as core/vet/tickets_ledger/fleet above. No flow exists from
+// `registry` to `mutate` at all -- `mutate` only talks to `cli` (inbound)
+// and `core` (outbound) -- so this is the same graph-provable NoFlow case
+// those nodes' comments already document; `assume` used for the same
+// uniformity reason. The `test_argv` this node's ONE exec call site
+// spawns is caller-supplied (not registry-derived: it comes from
+// `frob.testing`'s touched-set test collection, driven by this repo's
+// OWN tracked test tree), and the source file it mutates is read from
+// this repo's OWN tracked tree, never from a registry response. Reviewed
+// 2026-07-23.
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-78:mutate" noflow registry -> mutate owner logan review "2026-10-15"
+
+// T-0440: `deploy` newly declares `may "exec"` (`_vm_runner.py`'s
+// ssh/VBoxManage `guarded_subprocess_run` calls), dragging in the same
+// CWE-78 discharge obligation as core/vet/tickets_ledger/fleet/mutate
+// above. No flow exists from `registry` to `deploy` at all -- `deploy`
+// only talks to `cli` (inbound) and `core`/`stratamod` (outbound) -- so
+// this is the same graph-provable NoFlow case those nodes' comments
+// already document; `assume` used for the same uniformity reason. Every
+// `_vm_runner.py` argv (`ssh <host> ...`, `VBoxManage ...`) is built from
+// this repo's own tracked `std.host` manifest fields (hostname/vm name),
+// not from registry response bytes -- `deploy`'s only flows are outbound
+// (`f_deploy_core`, `f_deploy_strata`), so no inbound path from
+// `registry` reaches this node's argv construction at all. Reviewed
+// 2026-07-23.
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-78:deploy" noflow registry -> deploy owner logan review "2026-10-15"
 
 // T-0401 (docs/audits/strata.md G3): `eval` used to be globally
 // `BenignCapability`-excused ("no CWE_CATALOG entry targets dynamic code

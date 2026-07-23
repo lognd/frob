@@ -67,6 +67,11 @@ class TestFrobSelfModel:
     # frob:tests design/frob.strata::frob.f_cli_gates kind="unit"
     # frob:tests design/frob.strata::frob.f_cli_tickets kind="unit"
     # frob:tests design/frob.strata::frob.f_cli_vet kind="unit"
+    # frob:tests design/frob.strata::frob.f_cli_registry_model kind="unit"
+    # frob:tests design/frob.strata::frob.f_cli_fleet kind="unit"
+    # frob:tests design/frob.strata::frob.f_cli_deploy kind="unit"
+    # frob:tests design/frob.strata::frob.f_cli_mutate kind="unit"
+    # frob:tests design/frob.strata::frob.f_cli_serve kind="unit"
     # frob:tests design/frob.strata::frob.f_graphlang_core kind="unit"
     # frob:tests design/frob.strata::frob.f_checker_graphlang kind="unit"
     # frob:tests design/frob.strata::frob.f_checker_core kind="unit"
@@ -78,6 +83,7 @@ class TestFrobSelfModel:
     # frob:tests design/frob.strata::frob.f_gates_core kind="unit"
     # frob:tests design/frob.strata::frob.f_gates_strata kind="unit"
     # frob:tests design/frob.strata::frob.f_gates_tickets kind="unit"
+    # frob:tests design/frob.strata::frob.f_gates_registry_model kind="unit"
     # frob:tests design/frob.strata::frob.f_strata_graphlang kind="unit"
     # frob:tests design/frob.strata::frob.f_strata_core kind="unit"
     # frob:tests design/frob.strata::frob.f_strata_vet kind="unit"
@@ -85,18 +91,41 @@ class TestFrobSelfModel:
     # frob:tests design/frob.strata::frob.f_vet_graphlang kind="unit"
     # frob:tests design/frob.strata::frob.f_vet_core kind="unit"
     # frob:tests design/frob.strata::frob.f_tickets_core kind="unit"
+    # frob:tests design/frob.strata::frob.f_fleet_tickets kind="unit"
+    # frob:tests design/frob.strata::frob.f_fleet_core kind="unit"
+    # frob:tests design/frob.strata::frob.f_deploy_strata kind="unit"
+    # frob:tests design/frob.strata::frob.f_deploy_core kind="unit"
+    # frob:tests design/frob.strata::frob.f_mutate_core kind="unit"
+    # frob:tests design/frob.strata::frob.f_serve_core kind="unit"
+    # frob:tests design/frob.strata::frob.f_serve_gates kind="unit"
+    # frob:tests design/frob.strata::frob.f_serve_graphlang kind="unit"
+    # frob:tests design/frob.strata::frob.f_serve_tickets kind="unit"
     # frob:tests design/frob.strata::frob.b_vet_endorse kind="unit"
     # frob:tests strata-core/src/lib.rs kind="integration"
     # frob:tests strata-core/src/parse.rs kind="integration"
     def test_parses_and_elaborates(self, _model) -> None:
-        """Sanity: the model declares a nonzero component/flow/boundary/claim surface."""
-        assert len(_model.nodes) == 10
-        # 25 hand-declared flows (24 component-to-component + the one
-        # registry -> vet network edge) + 2 the `cache graph_cache of
-        # graphlang` sugar auto-generates (`graph_cache__fill` and
-        # `graph_cache__inval_f_parse`, docs/strata/surface.md's desugar
-        # table) = 27.
-        assert len(_model.flows) == 27
+        """Sanity: the model declares a nonzero component/flow/boundary/claim surface.
+
+        T-0440: `deploy`/`serve`/`mutate` split off `core`'s former
+        utility-hub node into three standalone components. This test's
+        node/flow/claim counts were ALREADY stale against the pre-T-0440
+        tree before this ticket touched them (12/32/24 measured directly
+        via `elaborate`, not the 10/27/23 previously asserted here --
+        `fleet`'s T-0707 `may "exec"` addition and its
+        `weakness:CWE-78:fleet` discharge claim were never folded into
+        this docstring's running count) -- disclosed as pre-existing debt
+        in the T-0440 Done report, not introduced by this ticket. T-0440
+        itself adds 3 nodes (12 -> 15), 10 hand-declared flows (32 -> 42:
+        `f_cli_deploy`/`f_cli_mutate`/`f_cli_serve` inbound from `cli`,
+        `f_deploy_strata`/`f_deploy_core`/`f_mutate_core`/`f_serve_core`/
+        `f_serve_gates`/`f_serve_graphlang`/`f_serve_tickets` outbound),
+        and 2 THREAT003 discharge claims (24 -> 26:
+        `weakness:CWE-78:deploy`/`weakness:CWE-78:mutate` -- both newly
+        declare `may "exec"`; `serve` declares no `may` atom at all, so it
+        drags in zero).
+        """
+        assert len(_model.nodes) == 15
+        assert len(_model.flows) == 42
         assert len(_model.boundaries) == 1
         # T-0150: 3 original PROVED architecture claims + 3 `assume
         # weakness:CWE-78:<node>` discharge claims that declaring `may
@@ -120,7 +149,14 @@ class TestFrobSelfModel:
         # eval-only nodes (cli/graphlang/stratamod) = 21. T-0443: `gates`
         # gained `may "eval"` (importlib of the [[docblocks.commands]]
         # parser source), dragging in its own CWE-94 + CWE-78 pair = 23.
-        assert len(_model.claims) == 23
+        # T-0707 (fleet, already-landed pre-T-0440 debt this docstring had
+        # never re-measured): `fleet` gained `may "exec"`, dragging in its
+        # own `weakness:CWE-78:fleet` discharge = 24 (the real pre-T-0440
+        # count). T-0440: `deploy` and `mutate` both newly declare
+        # `may "exec"` (see module docstring above), each dragging its own
+        # `weakness:CWE-78:<node>` discharge = 26. `serve` declares no
+        # `may` atom, so it drags in zero.
+        assert len(_model.claims) == 26
 
     # frob:tests tests/system/test_frob_self_model.py::TestFrobSelfModel.test_every_claim_proves kind="e2e"
     def test_every_claim_proves(self, _model) -> None:
@@ -139,11 +175,20 @@ class TestFrobSelfModel:
         via `c_no_registry_ledger` but still follows the assume-for-
         uniformity precedent, T-0166) -- verified ASSUMED here rather than
         PROVED, and never REFUTED.
+
+        T-0440: this test's `assumed_ids` set was already missing
+        `weakness:CWE-78:fleet` (T-0707's `fleet` node has declared
+        `may "exec"` since before this ticket) -- pre-existing debt this
+        ticket's own re-measurement surfaced and fixed, disclosed in the
+        Done report. T-0440 itself adds `weakness:CWE-78:deploy` and
+        `weakness:CWE-78:mutate` (see `deploy`/`mutate`'s own `assume`
+        directives in design/frob.strata for the per-node reasoning);
+        `serve` declares no `may` atom, so it drags in no discharge claim.
         """
         outcome = evaluate_claims(_model)
         assert outcome.is_ok, f"evaluate_claims failed: {outcome.err}"
         claim_results = outcome.danger_ok
-        assert len(claim_results) == 23
+        assert len(claim_results) == 26
         proved_ids = {
             "c_no_registry_ledger",
             "c_cache_derivable",
@@ -179,6 +224,14 @@ class TestFrobSelfModel:
             # T-0443: `gates` importlib parser-source eval capability.
             "weakness:CWE-94:gates",
             "weakness:CWE-78:gates",
+            # T-0707 (pre-existing debt this docstring never re-measured
+            # until T-0440's own pass surfaced it): `fleet` declares
+            # `may "exec"`.
+            "weakness:CWE-78:fleet",
+            # T-0440: `deploy`/`mutate` split off `core`'s former
+            # utility-hub node, both newly declaring `may "exec"`.
+            "weakness:CWE-78:deploy",
+            "weakness:CWE-78:mutate",
         }
         seen_ids: set[str] = set()
         for claim_result in claim_results:

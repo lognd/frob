@@ -234,3 +234,74 @@ class TestLegacyCapabilityAliases:
             nodes=(Node(id="widget", trust="trusted", may=("fs.read", "net")),)
         )
         assert check_legacy_capability_aliases(model) == ()
+
+
+# T-0440: `deploy`/`serve`/`mutate` split off `core`'s former utility-hub
+# node in design/frob.strata into three standalone components with their
+# own `may` declarations (docs/strata/roadmap.md#self-hosting-commitments-
+# decision-d7). This is the fast, node-scoped regression guard for that
+# split: it binds a hand-built model mirroring ONLY those three nodes'
+# real `code`/`may` declarations against this repo's OWN real source
+# tree and asserts zero undeclared-capability violations -- if a future
+# change to `src/frob/deploy/**`/`src/frob/serve/**`/`src/frob/mutate/**`
+# starts exercising a net/fs/exec effect these three nodes do not declare
+# (or `design/frob.strata`'s declarations silently drift from what the
+# real code does), this fails fast without needing the full self-model
+# elaboration `tests/system/test_frob_self_model.py::
+# TestFrobSelfModel.test_sys_gate_zero_violations` already covers.
+class TestDeployServeMutateNodeSplitConformance:
+    # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
+    def test_deploy_declares_every_real_effect_it_exercises(self):
+        root = Path(__file__).resolve().parents[3]
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="deploy",
+                    trust="trusted",
+                    attrs=("code=src/frob/deploy/**",),
+                    may=("exec", "fs", "fs-read"),
+                ),
+            )
+        )
+        binding = bind_code(model, root).danger_ok
+        report = check_capability_conformance(model, binding, root)
+        assert report.violations == ()
+
+    # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
+    def test_mutate_declares_every_real_effect_it_exercises(self):
+        root = Path(__file__).resolve().parents[3]
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="mutate",
+                    trust="trusted",
+                    attrs=("code=src/frob/mutate/**",),
+                    may=("exec", "fs", "fs-read"),
+                ),
+            )
+        )
+        binding = bind_code(model, root).danger_ok
+        report = check_capability_conformance(model, binding, root)
+        assert report.violations == ()
+
+    # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
+    def test_serve_declares_zero_may_and_exercises_zero_effects(self):
+        """T-0440: `serve` is the deliberately zero-`may` node -- every
+        net/fs/exec effect a `frob serve` request performs is delegated to
+        code bound on ANOTHER node (`core`/`gates`/`graphlang`/
+        `tickets_ledger`, modeled as flow edges, not `serve`'s own `may`).
+        A future change that starts calling `open`/`subprocess`/an HTTP
+        client DIRECTLY from `src/frob/serve/**` (rather than through one
+        of those other components) is exactly the drift this guards: it
+        would surface as a REAL, non-empty violation here, not a silent
+        capability creep.
+        """
+        root = Path(__file__).resolve().parents[3]
+        model = KernelModel(
+            nodes=(
+                Node(id="serve", trust="trusted", attrs=("code=src/frob/serve/**",)),
+            )
+        )
+        binding = bind_code(model, root).danger_ok
+        report = check_capability_conformance(model, binding, root)
+        assert report.violations == ()
