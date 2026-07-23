@@ -10336,3 +10336,33 @@ anchor, which resolves cleanly) but would be a reasonable companion edit.
 
 ## Drop reason
 - 2026-07-23: absorbed by T-0574 (scope-added README.md/docs/modules/app.md instead) (absorbed by T-0574)
+
+<!-- ticket:T-0828 -->
+```yaml
+id: T-0828
+title: 'land: worktree wip/bump commits do not set FROB_LAND_INTERNAL -- pre-commit
+  hook deadlocks every land (hit live)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-23'
+priority: critical
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/_land.py
+- tests/test_ticket_land.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN the T-0731 pre-commit hook active via core.hooksPath WHEN land creates
+    its wip snapshot and bump commits in the worktree THEN those internal commits
+    set FROB_LAND_INTERNAL and succeed; a regression test installs the hook in the
+    fixture repo and lands through it
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Hit live landing T-0594 (2026-07-23): after frob scaffold apply refreshed the hooks, land's worktree wip-snapshot commit was refused by the hook's land-owned CHANGELOG guard -- land sets FROB_LAND_INTERNAL for its main-side commits but not for the worktree wip/bump path, deadlocking every land (GitFailed with the error swallowed; secondary finding: land should surface the failing git command's stderr instead of a bare GitFailed). Coordinator workaround: FROB_LAND_INTERNAL=1 in the invoking env. Fix: set the env on ALL land-internal git commit spawns, and propagate the hook's stderr into the GitFailed error message.
