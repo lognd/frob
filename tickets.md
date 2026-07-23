@@ -1103,7 +1103,7 @@ TEST-pool triage (T-draft-edbf1e26, 2026-07-22): re-measured `frob check --only 
 id: T-0590
 title: 'COV002 grace-window regression: closed-ticket edges lose coverage across sequential
   same-worktree ticket closes'
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -1182,7 +1182,6 @@ be load-bearing for whatever triggered the original observation.
 ### Captured claims
 - tests: 0 passed (from 0 evidence id(s))
 - gates: 6 error(s), 1209 warning(s), 210 waived
-
 <!-- ticket:T-0596 -->
 ```yaml
 id: T-0596
