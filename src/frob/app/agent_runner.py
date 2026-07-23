@@ -78,9 +78,9 @@ def _run_env(path: str) -> None:
 # frob:tests tests/test_worktree_guard.py::TestAgentRunnerEnv.test_env_non_repo_path_exits_nonzero  # noqa: E501
 def run(argv: list[str]) -> None:
     """`frob agent <subcommand>` entry point (T-0574), dispatched directly
-    by `__main__._dispatch` the same way `frob bind` is. Currently only
-    `env` is implemented; an unrecognized/missing subcommand falls through
-    to argparse's own usage error."""
+    by `__main__._dispatch` the same way `frob bind` is. The implemented
+    subcommand surface today is `env`; an unrecognized/missing subcommand
+    falls through to argparse's own usage error."""
     parser = _build_agent_parser()
     args = parser.parse_args(argv)
     if args.agent_command == "env":
