@@ -466,6 +466,145 @@ def has_substantive_done_report(body: str) -> bool:
     )
 
 
+# frob:ticket T-0754
+_CLAIMS_HEADING = "### Captured claims"
+
+# frob:ticket T-0754
+# The `### Captured claims` section's exact rendered line shapes -- single
+# source of truth for both `render_claims_block` (write) and
+# `parse_claims_from_done_report` (read), so the two can never drift apart
+# the way free-prose test/gate claims used to (T-0754's whole point).
+#
+# T-0754 review round 2 (FATAL fix): the gate line is now three plain
+# integers (errors/warnings/waived), NEVER the free-text `frob check`
+# summary line -- that line's own trailing `[archgate=7.99s, ...]` timing
+# blob is different on every single invocation of an IDENTICAL tree (wall
+# time, not content), so a strict-equality re-verification against it
+# refused EVERY land, including this ticket's own. Structured integers
+# have no such nondeterministic tail.
+_CLAIMS_TESTS_RE = re.compile(
+    r"^- tests: (\d+) passed \(from (\d+) evidence id\(s\)\)$"
+)
+_CLAIMS_GATES_RE = re.compile(
+    r"^- gates: (\d+) error\(s\), (\d+) warning\(s\), (\d+) waived$"
+)
+
+
+# frob:ticket T-0754
+# frob:doc docs/modules/tickets.md#public-api
+class DoneReportClaims(BaseModel):
+    """Structured, CAPTURED (never hand-typed) Done-report claims (T-0754):
+    `test_count` is the number of a ticket's non-cmd evidence ids observed
+    ACTUALLY PASSING by a real run at done-report time (not retyped from
+    memory or a stale run -- the root cause of the T-0572/T-0710/T-0724
+    incidents this closes), `evidence_count` is how many non-cmd evidence
+    ids that run was measured against (so a later divergence can tell
+    "fewer passed" from "the evidence set itself changed"), and
+    `gate_errors`/`gate_warnings`/`gate_waived` are a fresh `frob check
+    --ticket` run's own error/warning/waived COUNTS -- deliberately never
+    that run's free-text summary line, whose trailing per-gate timing blob
+    is nondeterministic even against an unchanged tree (T-0754 review
+    round 2). `land` re-captures all of these against the post-merge tree
+    and errors if the test claim or `gate_errors` no longer match
+    (`_land.py`'s `_reverify_done_report_claims_post_merge`); `gate_
+    warnings`/`gate_waived` are recorded for a human reader but NOT
+    compared at land -- repo-global warning/waived counts legitimately
+    move on a busy shared branch for reasons that have nothing to do with
+    this ticket's own work, so gating on them would produce the same
+    false-refusal class this round's fix closes for timing."""
+
+    model_config = {}
+
+    test_count: int
+    evidence_count: int
+    gate_errors: int
+    gate_warnings: int
+    gate_waived: int
+
+
+# frob:ticket T-0754
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_round_trips_through_a_done_report_body kind="unit"  # noqa: E501
+def render_claims_block(claims: DoneReportClaims) -> str:
+    """Render `claims` as a Done report `### Captured claims` section
+    (T-0754) -- the mechanical inverse of `parse_claims_from_done_report`,
+    matching `_CLAIMS_TESTS_RE`/`_CLAIMS_GATES_RE` exactly so a round-trip
+    through a written ledger never loses precision."""
+    return (
+        f"{_CLAIMS_HEADING}\n"
+        f"- tests: {claims.test_count} passed "
+        f"(from {claims.evidence_count} evidence id(s))\n"
+        f"- gates: {claims.gate_errors} error(s), {claims.gate_warnings} "
+        f"warning(s), {claims.gate_waived} waived"
+    )
+
+
+# frob:ticket T-0754
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_round_trips_through_a_done_report_body kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_missing_section_returns_none kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_free_prose_elsewhere_never_masquerades_as_claims kind="unit"  # noqa: E501
+def parse_claims_from_done_report(body: str) -> DoneReportClaims | None:
+    """Recover a `### Captured claims` section from `body`'s `## Done
+    report`, the inverse of `render_claims_block` (T-0754). Returns `None`
+    if no such section is present (a Done report written before T-0754, or
+    by a caller that opted the capture callables out) -- callers treat
+    `None` as "nothing to re-verify," never as a hard failure, since older
+    tickets must still be landable.
+
+    T-0754 review round 2 (security fix): ANCHORED to the `### Captured
+    claims` heading itself -- only lines strictly between that heading and
+    the next `#`-prefixed heading (or the section's end) are matched
+    against `_CLAIMS_TESTS_RE`/`_CLAIMS_GATES_RE`. Scanning the WHOLE Done
+    report (the pre-review-round-2 shape) let a free-prose narrative line
+    that happened to match either regex's shape masquerade as a captured,
+    re-verified claim -- exactly the "unverified free prose" hole T-0754
+    exists to close, just moved one level down."""
+    section = _done_report_section_lines(body)
+    if section is None:
+        return None
+    claims_idx = next(
+        (i for i, line in enumerate(section) if line.strip() == _CLAIMS_HEADING),
+        None,
+    )
+    if claims_idx is None:
+        return None
+    claims_lines: list[str] = []
+    for line in section[claims_idx + 1 :]:
+        if line.strip().startswith("#"):
+            break
+        claims_lines.append(line)
+
+    test_count = evidence_count = None
+    gate_errors = gate_warnings = gate_waived = None
+    for line in claims_lines:
+        stripped = line.strip()
+        tests_match = _CLAIMS_TESTS_RE.match(stripped)
+        if tests_match:
+            test_count, evidence_count = (int(g) for g in tests_match.groups())
+            continue
+        gates_match = _CLAIMS_GATES_RE.match(stripped)
+        if gates_match:
+            gate_errors, gate_warnings, gate_waived = (
+                int(g) for g in gates_match.groups()
+            )
+    if (
+        test_count is None
+        or evidence_count is None
+        or gate_errors is None
+        or gate_warnings is None
+        or gate_waived is None
+    ):
+        return None
+    return DoneReportClaims(
+        test_count=test_count,
+        evidence_count=evidence_count,
+        gate_errors=gate_errors,
+        gate_warnings=gate_warnings,
+        gate_waived=gate_waived,
+    )
+
+
 # frob:ticket T-0458
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/unit/test_ticket_store.py::TestReplaceDoneReportSection.test_replaces_existing_section  # noqa: E501
@@ -878,6 +1017,10 @@ class LandError(ErrorSet):
         "(T-0463 completeness assertion)"
     )
     ReleaseBumpFailed = "the caller's REL001 version-bump callback failed (T-0338)"
+    ClaimDivergence = (
+        "captured Done-report claims (test count or gate state) no longer "
+        "hold post-merge (T-0754)"
+    )
 
 
 # frob:ticket T-0176

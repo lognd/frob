@@ -29,6 +29,7 @@ from frob.tickets import (
     TicketSpec,
     TicketState,
     new_ticket,
+    set_done_report,
     transition,
 )
 from frob.tickets._land import land, splice_ledger
@@ -2980,3 +2981,287 @@ class TestLandRefusesWhenRootIsWorktree:
         log = _run(["git", "log", "--oneline"], repo).stdout
         assert "land " not in log
         assert _status_ignoring_frob(repo) == ""
+
+
+class TestClaimDivergencePostMerge:
+    """T-0754: `land`'s `passed`/`check_gates` callables re-verify a
+    ticket's `### Captured claims` Done-report section against the
+    POST-MERGE tree, mirroring D-05's evidence re-verification but for the
+    captured test-count/gate-state CLAIMS themselves.
+
+    Review round 2: `check_gates` returns `(errors, warnings, waived)`
+    ints (never the raw `frob check` summary line, whose timing blob is
+    nondeterministic even against an unchanged tree -- the FATAL this
+    round's fix closes), and the test-count half is derived from the SAME
+    `passed()` run D-05's own evidence re-verification already made (no
+    separate `run_tests` parameter at the land layer any more)."""
+
+    def _make_closeable_with_claims(
+        self,
+        root: Path,
+        ticket_id: str,
+        *,
+        test_count: int,
+        gate_errors: int = 0,
+        gate_warnings: int = 0,
+        gate_waived: int = 0,
+    ) -> None:
+        """Drive `ticket_id` to closeable (`_make_closeable`) then append a
+        `### Captured claims` section to its Done report, exactly the shape
+        `render_claims_block` writes."""
+        _make_closeable(root, ticket_id)
+        loaded = load_all(root)
+        ticket = loaded.danger_ok[ticket_id]
+        claims_block = (
+            f"### Captured claims\n"
+            f"- tests: {test_count} passed (from 1 evidence id(s))\n"
+            f"- gates: {gate_errors} error(s), {gate_warnings} warning(s), "
+            f"{gate_waived} waived"
+        )
+        ticket = ticket.model_copy(
+            update={"body": ticket.body + "\n" + claims_block + "\n"}
+        )
+        assert write_ticket(root, ticket).is_ok
+
+    def test_matching_claims_land_succeeds(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_matching_claims_land_succeeds  # noqa: E501
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-claims-match", str(wt)], repo)
+
+        created = new_ticket(wt, _spec("Ticket with matching captured claims"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        self._make_closeable_with_claims(wt, tid, test_count=1)
+        _commit_all(wt, "advance ticket with matching captured claims")
+
+        result = land(
+            repo,
+            tid,
+            wt,
+            dry_run=False,
+            passed=lambda ids: frozenset(ids),
+            check_gates=lambda: (0, 0, 0),
+        )
+
+        assert result.is_ok
+
+    def test_divergent_test_count_refuses_land(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_divergent_test_count_refuses_land  # noqa: E501
+        """`passed()` still reports the ticket's one real evidence id as
+        PASSING (so D-05's own evidence re-verify stays green and does not
+        pre-empt this with `NotCloseable`) -- but the Done report's own
+        captured claim says 2 tests passed, which the real post-merge
+        `passed()` run of 1 (D-05's own result, reused per review round 2
+        fix #3) can never match. Isolates the `ClaimDivergence` path from
+        D-05's own evidence-resolution/pass checks."""
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-claims-tests", str(wt)], repo)
+
+        created = new_ticket(wt, _spec("Ticket with stale test-count claim"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        self._make_closeable_with_claims(wt, tid, test_count=2)
+        loaded = load_all(wt)
+        ticket = loaded.danger_ok[tid]
+        assert ticket.evidence == ("tests/test_x.py::test_ok",)
+        _commit_all(wt, "advance ticket with stale test-count claim")
+
+        main_log_before = _run(["git", "log", "--oneline", "--all"], repo).stdout
+        wt_log_before = _run(["git", "log", "--oneline", "--all"], wt).stdout
+
+        result = land(
+            repo,
+            tid,
+            wt,
+            dry_run=False,
+            passed=lambda ids: frozenset(ids),
+            check_gates=lambda: (0, 0, 0),
+        )
+
+        assert result.is_err
+        assert result.danger_err == LandError.ClaimDivergence
+        assert (
+            _run(["git", "log", "--oneline", "--all"], repo).stdout == main_log_before
+        )
+        assert _run(["git", "log", "--oneline", "--all"], wt).stdout == wt_log_before
+
+    def test_divergent_gate_errors_refuses_land(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_divergent_gate_errors_refuses_land  # noqa: E501
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-claims-gates", str(wt)], repo)
+
+        created = new_ticket(wt, _spec("Ticket with stale gate-state claim"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        self._make_closeable_with_claims(wt, tid, test_count=1, gate_errors=0)
+        _commit_all(wt, "advance ticket with stale gate-state claim")
+
+        result = land(
+            repo,
+            tid,
+            wt,
+            dry_run=False,
+            passed=lambda ids: frozenset(ids),
+            check_gates=lambda: (3, 0, 0),
+        )
+
+        assert result.is_err
+        assert result.danger_err == LandError.ClaimDivergence
+
+    def test_divergent_warning_or_waived_count_alone_still_lands(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_divergent_warning_or_waived_count_alone_still_lands  # noqa: E501
+        """Review round 2 fix #1: a warning/waived-count drift ALONE (errors
+        unchanged) must never refuse a land -- repo-global warning counts
+        legitimately move on a busy shared branch for reasons unrelated to
+        this ticket's own work."""
+        wt = repo.parent / "wt"
+        _run(
+            ["git", "worktree", "add", "-b", "feature-claims-warn-drift", str(wt)],
+            repo,
+        )
+
+        created = new_ticket(wt, _spec("Ticket with warning-count drift only"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        self._make_closeable_with_claims(
+            wt, tid, test_count=1, gate_errors=0, gate_warnings=5, gate_waived=2
+        )
+        _commit_all(wt, "advance ticket with warning-count drift only")
+
+        result = land(
+            repo,
+            tid,
+            wt,
+            dry_run=False,
+            passed=lambda ids: frozenset(ids),
+            # errors still 0 (matches the claim); warnings/waived drifted.
+            check_gates=lambda: (0, 41, 9),
+        )
+
+        assert result.is_ok
+
+    def test_no_claims_section_skips_reverification(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_no_claims_section_skips_reverification  # noqa: E501
+        """A Done report predating T-0754 (no `### Captured claims`
+        section) lands normally even with `passed`/`check_gates`
+        supplied -- there is nothing recorded to diverge from."""
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-no-claims", str(wt)], repo)
+
+        created = new_ticket(wt, _spec("Ticket with no captured claims"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        _commit_all(wt, "advance ticket with no captured claims")
+
+        result = land(
+            repo,
+            tid,
+            wt,
+            dry_run=False,
+            passed=lambda ids: frozenset(ids),
+            check_gates=lambda: (99, 99, 99),
+        )
+
+        assert result.is_ok
+
+
+class TestDoneReportThenLandRealClosuresEndToEnd:
+    """T-0754 review round 2 fix #2: exercises the REAL production
+    closures (`_run_tests_count_fn`/`_check_gates_summary_fn`/
+    `_land_passed_fn`/`_land_collected_fn` -- the exact ones `frob ticket
+    done-report`/`frob ticket land` wire in, no fakes) through a full
+    done-report -> land cycle against an IDENTICAL fixture-repo tree.
+
+    This is the test that would have caught the FATAL immediately: the
+    pre-review-round-2 `_check_gates_summary_fn` captured the raw `frob
+    check` summary LINE, timing blob included, which differs on every
+    single invocation even against a completely unchanged tree -- so
+    land's strict-equality re-verification refused EVERY land, including
+    this ticket's own. Every other T-0754 test (`TestClaimDivergencePostMerge`
+    above, `tests/test_ticket_done_report_claims.py`) uses fake
+    `passed=lambda ids: ...`/`check_gates=lambda: ...` callables, which
+    cannot see this class of bug at all -- only a real subprocess spawn,
+    run twice, can."""
+
+    def test_real_closures_done_report_then_land_succeeds(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestDoneReportThenLandRealClosuresEndToEnd.test_real_closures_done_report_then_land_succeeds  # noqa: E501
+        from frob.app.ticket_runner import (
+            _check_gates_summary_fn,
+            _land_collected_fn,
+            _land_passed_fn,
+            _run_tests_count_fn,
+        )
+        from frob.gates import sweep_ticket
+
+        # A deliberately tiny fixture repo -- one real, fast, passing
+        # pytest test -- so the two real `frob check` spawns below (one at
+        # done-report time, one at land time) stay cheap.
+        main_repo = tmp_path / "main"
+        _git_init(main_repo)
+        atomic_write(ledger_path(main_repo), "# Tickets\n\n")
+        tests_dir = main_repo / "tests"
+        tests_dir.mkdir()
+        (tests_dir / "test_sample.py").write_text("def test_ok():\n    assert True\n")
+        _commit_all(main_repo, "init")
+
+        wt = tmp_path / "wt"
+        _run(
+            ["git", "worktree", "add", "-b", "feature-e2e-real-closures", str(wt)],
+            main_repo,
+        )
+
+        created = new_ticket(wt, _spec("e2e real closures"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+
+        assert transition(wt, tid, TicketState.PLANNED).is_ok
+        # T-0473: entering IN_PROGRESS records the cross-worktree lease
+        # `frob check --ticket <id>` requires to run at all (otherwise it
+        # refuses with "no recorded lease ... run: frob ticket start",
+        # matching real `frob ticket start`'s own side effect).
+        assert transition(wt, tid, TicketState.IN_PROGRESS).is_ok
+
+        loaded = load_all(wt)
+        ticket = loaded.danger_ok[tid]
+        ticket = ticket.model_copy(
+            update={"evidence": ("tests/test_sample.py::test_ok",)}
+        )
+        assert write_ticket(wt, ticket).is_ok
+
+        # Record an initial pre-work sweep synchronously (real `frob
+        # ticket start` does this via a background spawn -- inlined here
+        # for test determinism) so PRE001 does not fire on the real
+        # `frob check --ticket` spawns below.
+        swept = sweep_ticket(wt, ticket)
+        assert swept.is_ok
+
+        done = set_done_report(
+            wt,
+            tid,
+            why="real e2e closures -- done-report capture",
+            run_tests=_run_tests_count_fn(wt),
+            check_gates=_check_gates_summary_fn(wt, tid),
+        )
+        assert done.is_ok, done.err
+        assert "### Captured claims" in done.danger_ok.body
+
+        _commit_all(wt, "advance e2e ticket with real captured claims")
+
+        # THE assertion: landing this ticket through its own feature must
+        # succeed -- not refuse with ClaimDivergence just because the
+        # SECOND real `frob check` spawn (here) reports a different
+        # per-gate timing blob than the FIRST one (above) did, against the
+        # exact same tree.
+        result = land(
+            main_repo,
+            tid,
+            wt,
+            dry_run=False,
+            collected=_land_collected_fn(wt),
+            passed=_land_passed_fn(wt),
+            check_gates=_check_gates_summary_fn(wt, tid),
+        )
+        assert result.is_ok, result.err

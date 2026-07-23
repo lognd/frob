@@ -973,7 +973,15 @@ def _land(root: Path, cfg: AppConfig) -> None:
     T-0338: `bump_version`/`rebuild_natives` are ALSO always supplied here
     (`_land_bump_version_fn`/`_land_rebuild_natives_fn`), folding the
     REL001 version-bump/stamp and native-rebuild-trigger coordinator steps
-    into this same one command."""
+    into this same one command.
+
+    T-0754: `check_gates` (`_check_gates_summary_fn`, the SAME closure
+    `_done_report` captures with) is ALSO always supplied here, so a
+    ticket carrying a `### Captured claims` section is re-verified against
+    the post-merge tree before `frob ticket land` ever finalizes/closes/
+    squash-applies it. The claim's test-count half reuses `passed` above
+    -- no separate `run_tests` parameter at the land layer (review round 2
+    fix #3: derive from D-05's own real run instead of a duplicate one)."""
     from frob.tickets import land
 
     _require_land_args(cfg)
@@ -991,6 +999,7 @@ def _land(root: Path, cfg: AppConfig) -> None:
         covers_scope=_land_covers_scope_fn(worktree),
         bump_version=_land_bump_version_fn(),
         rebuild_natives=_land_rebuild_natives_fn(),
+        check_gates=_check_gates_summary_fn(worktree, cfg.ticket_id),
     )
     if result.is_err:
         _log.error("ticket land failed: %s", result.danger_err)
@@ -1675,7 +1684,102 @@ def _resolve_done_report_why(cfg: AppConfig) -> str | None:
     return text or None
 
 
+# frob:ticket T-0754
+# frob:ticket T-0754
+# The `gate-summary` tool line's leading counts, e.g. "0 errors, 3
+# warnings, 12 waived" -- deliberately does NOT match the trailing
+# `[archgate=7.99s, ...]` per-gate timing blob `_gate_summary_result`
+# appends after it, since that blob is wall-clock and therefore different
+# on every single invocation even against an IDENTICAL tree (T-0754 review
+# round 2's FATAL fix: a strict-equality re-verification against the RAW
+# summary LINE, timing blob included, refused every land, including this
+# ticket's own).
+_GATE_SUMMARY_COUNTS_RE = re.compile(
+    r"gate-summary\s+(\d+)\s+errors?,\s+(\d+)\s+warnings?,\s+(\d+)\s+waived"
+)
+
+
+# frob:ticket T-0754
+def _check_gates_summary_fn(root: Path, ticket_id: str):  # noqa: ANN201
+    """CLI closure shared by `done-report` capture and `land` re-
+    verification (T-0754): calling it spawns a fresh `python -m frob check
+    --ticket <id>` in `root` and returns `(errors, warnings, waived)` --
+    the `gate-summary` line's own COUNTS, parsed via `_GATE_SUMMARY_COUNTS_
+    RE`, never that line's raw text (whose timing blob is nondeterministic
+    -- see the regex's own doc) and never composed or retyped by this
+    layer. Routed through `guarded_subprocess_run` (T-0778's guard) so
+    `FROB_DISABLE_EXEC=1` refuses this spawn too. A refused spawn, a hard
+    subprocess failure, or unparsable output returns a fixed `(-1, -1,
+    -1)` sentinel -- a real `frob check` run can never produce a negative
+    count, so this always shows up as a captured (and later divergent,
+    refusing the land) claim instead of silently matching a lucky `0, 0,
+    0` or crashing the caller."""
+
+    def fn() -> tuple[int, int, int]:
+        guarded = guarded_subprocess_run(
+            [sys.executable, "-m", "frob", "check", "--ticket", ticket_id],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            timeout=600,
+            check=False,
+        )
+        if guarded.is_err:
+            _log.warning(
+                "ticket %s: `frob check --ticket %s` refused to spawn (%s)",
+                ticket_id,
+                ticket_id,
+                ProcessGuardError.ExecDisabled,
+            )
+            return (-1, -1, -1)
+        result = guarded.danger_ok
+        match = _GATE_SUMMARY_COUNTS_RE.search(result.stdout)
+        if match is None:
+            _log.warning(
+                "ticket %s: `frob check --ticket %s` output had no "
+                "parsable gate-summary line (exit=%d)",
+                ticket_id,
+                ticket_id,
+                result.returncode,
+            )
+            return (-1, -1, -1)
+        errors, warnings, waived = (int(g) for g in match.groups())
+        return (errors, warnings, waived)
+
+    return fn
+
+
+# frob:ticket T-0754
+def _run_tests_count_fn(root: Path):  # noqa: ANN201
+    """CLI closure shared by `done-report` capture and `land` re-
+    verification (T-0754): calling it with a sequence of non-cmd evidence
+    node ids actually RUNS them (reusing `_verify_ids_passing`, D-01's
+    same real-run verification) and returns the count that ACTUALLY
+    passed -- never the length of the input, so a divergence between
+    "claimed" and "actually ran" is visible even when every id still
+    resolves."""
+
+    def fn(node_ids: Sequence[str]) -> int:
+        if not node_ids:
+            return 0
+        collected = _collect_python_and_rust_ids(root)
+        if collected.is_err:
+            _log.warning(
+                "ticket: capture collection failed (%s) -- treating all %d "
+                "evidence id(s) as not passing",
+                collected.danger_err,
+                len(node_ids),
+            )
+            return 0
+        python_ids, rust_ids, runners = collected.danger_ok
+        passing = _verify_ids_passing(root, node_ids, python_ids, rust_ids, runners)
+        return len(passing)
+
+    return fn
+
+
 # frob:ticket T-0458
+# frob:ticket T-0754
 # frob:tests tests/test_tickets_evidence_cli.py::TestDoneReportCli.test_cli_composes_and_writes  # noqa: E501
 def _done_report(root: Path, cfg: AppConfig) -> None:
     """`frob ticket done-report <id> (--why TEXT | --why-file PATH | -)`:
@@ -1683,7 +1787,14 @@ def _done_report(root: Path, cfg: AppConfig) -> None:
     the ONLY thing this command does is supply `why`; the Changed and
     Evidence sections are composed entirely inside `set_done_report` from
     git and the ticket's own recorded evidence, never parsed/typed here
-    (T-0458)."""
+    (T-0458).
+
+    T-0754: also supplies `run_tests`/`check_gates` (`_run_tests_count_fn`/
+    `_check_gates_summary_fn`) so `set_done_report` captures a real
+    `### Captured claims` section -- a test count from actually running
+    the ticket's own evidence and a gate-state summary from a fresh `frob
+    check --ticket`, neither typed by the agent -- instead of leaving the
+    Done report's test/gate claims as unverified free prose."""
     from frob.tickets import set_done_report
 
     if cfg.ticket_id is None:
@@ -1698,7 +1809,14 @@ def _done_report(root: Path, cfg: AppConfig) -> None:
         )
         sys.exit(1)
 
-    result = set_done_report(root, cfg.ticket_id, why=why, base_ref=cfg.ticket_base_ref)
+    result = set_done_report(
+        root,
+        cfg.ticket_id,
+        why=why,
+        base_ref=cfg.ticket_base_ref,
+        run_tests=_run_tests_count_fn(root),
+        check_gates=_check_gates_summary_fn(root, cfg.ticket_id),
+    )
     if result.is_err:
         _log.error("done-report failed: %s", result.danger_err)
         sys.exit(1)

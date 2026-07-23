@@ -16,7 +16,7 @@ import re
 import shlex
 import subprocess
 import tomllib
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from datetime import date
 from pathlib import Path
 
@@ -38,6 +38,7 @@ from frob.tickets._models import (
     Attachment,
     AttachmentSource,
     BoardColumn,
+    DoneReportClaims,
     EpicRollup,
     FailureEntry,
     LandError,
@@ -59,6 +60,8 @@ from frob.tickets._models import (
     has_substantive_done_report,
     is_cmd_evidence,
     matches_collected,
+    parse_claims_from_done_report,
+    render_claims_block,
     replace_done_report_section,
     scope_matches,
     scope_overlap_globs,
@@ -2846,30 +2849,45 @@ def render_changed_block(lines: Sequence[str]) -> str:
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/unit/test_ticket_store.py::TestComposeDoneReport.test_composes_all_three_sections  # noqa: E501
 def compose_done_report(
-    why: str, changed_lines: Sequence[str], evidence: Sequence[str]
+    why: str,
+    changed_lines: Sequence[str],
+    evidence: Sequence[str],
+    claims: DoneReportClaims | None = None,
 ) -> str:
     """Compose a full '## Done report' section: the caller's narrative
-    `why` plus AUTO-FILLED Changed (`render_changed_block`) and Evidence
-    (`render_evidence_block`) sections (T-0458 REFINEMENT) -- the mechanical
-    parts are always generated, never hand-typed, so they can never drift
-    from what frob and git actually recorded."""
+    `why` plus AUTO-FILLED Changed (`render_changed_block`), Evidence
+    (`render_evidence_block`), and (T-0754, when `claims` is given) Captured
+    claims (`render_claims_block`) sections -- the mechanical parts are
+    always generated, never hand-typed, so they can never drift from what
+    frob, git, and a real test/gate run actually observed. `claims=None`
+    (the default) omits the Captured claims section entirely, matching
+    every caller before T-0754."""
     why_text = why.strip() or "(no narrative supplied)"
     changed_block = render_changed_block(changed_lines)
     evidence_block = render_evidence_block(evidence)
+    claims_section = f"\n\n{render_claims_block(claims)}" if claims is not None else ""
     return (
         f"{DONE_REPORT_HEADING}\n\n"
         f"{why_text}\n\n"
         f"### Changed\n{changed_block}\n\n"
-        f"### Evidence\n{evidence_block}\n"
+        f"### Evidence\n{evidence_block}{claims_section}\n"
     )
 
 
 # frob:ticket T-0458
+# frob:ticket T-0754
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/unit/test_ticket_store.py::TestSetDoneReport.test_composes_and_writes_atomically  # noqa: E501
 # frob:tests tests/unit/test_ticket_store.py::TestSetDoneReport.test_caller_never_touches_markdown  # noqa: E501
+# frob:tests tests/test_ticket_done_report_claims.py::TestSetDoneReportClaims.test_claims_captured_from_real_callables  # noqa: E501
 def set_done_report(
-    root: Path, ticket_id: str, *, why: str, base_ref: str = "main"
+    root: Path,
+    ticket_id: str,
+    *,
+    why: str,
+    base_ref: str = "main",
+    run_tests: Callable[[Sequence[str]], int] | None = None,
+    check_gates: Callable[[], tuple[int, int, int]] | None = None,
 ) -> Result[Ticket, TicketError]:
     """THE single write path for a ticket's Done report (T-0458): compose
     `why` (the caller's narrative -- the ONLY thing the caller supplies)
@@ -2881,6 +2899,25 @@ def set_done_report(
     boundaries by hand (the exact failure mode -- a dropped marker, a
     mis-listed Changed/Evidence block, an Edit landing mid-section -- that
     repeatedly corrupted `tickets.md` when done by hand).
+
+    T-0754: when BOTH `run_tests` and `check_gates` are supplied, this also
+    CAPTURES (never lets the caller type) a `### Captured claims` section:
+    `run_tests(non_cmd_evidence_ids)` actually runs the ticket's own
+    recorded non-cmd evidence and returns the real passing count, and
+    `check_gates()` runs a fresh `frob check --ticket` and returns its
+    `(errors, warnings, waived)` COUNTS -- deliberately not that run's
+    free-text summary line, whose per-gate timing blob is nondeterministic
+    even against an unchanged tree (T-0754 review round 2's FATAL fix) --
+    both rendered via `render_claims_block` into the same Done report
+    `set_done_report` already writes, and later re-verified against the
+    post-merge tree by `frob.tickets._land`'s
+    `_reverify_done_report_claims_post_merge` (T-0754's land-side half).
+    Either or both omitted (the default, `None`) skips the Captured claims
+    section entirely -- unchanged behavior for every caller before T-0754,
+    since computing either needs `frob.testing`/`frob.gates`/subprocess
+    access `frob.tickets` deliberately does not have (docs/rework.md
+    cycle-avoidance); the `frob ticket done-report` CLI supplies both by
+    default (see `ticket_runner.py`'s `_done_report`).
 
     Held under `ledger_lock` end to end (load, compose, write) so a
     concurrent `set_done_report`/`add_evidence`/`new_ticket` call on the
@@ -2895,7 +2932,18 @@ def set_done_report(
             return Err(loaded.danger_err)
         ticket = loaded.danger_ok
         changed_lines = compute_changed_lines(root, base_ref)
-        report = compose_done_report(why, changed_lines, ticket.evidence)
+        claims = None
+        if run_tests is not None and check_gates is not None:
+            non_cmd = [e for e in ticket.evidence if not is_cmd_evidence(e)]
+            gate_errors, gate_warnings, gate_waived = check_gates()
+            claims = DoneReportClaims(
+                test_count=run_tests(non_cmd),
+                evidence_count=len(non_cmd),
+                gate_errors=gate_errors,
+                gate_warnings=gate_warnings,
+                gate_waived=gate_waived,
+            )
+        report = compose_done_report(why, changed_lines, ticket.evidence, claims)
         updated = ticket.model_copy(
             update={"body": replace_done_report_section(ticket.body, report)}
         )
@@ -2903,10 +2951,13 @@ def set_done_report(
         if write_result.is_err:
             return Err(write_result.danger_err)
     _log.info(
-        "tickets: %s Done report set (%d evidence id(s), %d changed line(s))",
+        "tickets: %s Done report set (%d evidence id(s), %d changed line(s)%s)",
         ticket_id,
         len(ticket.evidence),
         len(changed_lines),
+        f", claims={claims.test_count}/{claims.evidence_count} tests"
+        if claims is not None
+        else "",
     )
     return Ok(updated)
 
@@ -3092,6 +3143,7 @@ __all__ = [
     "BOARD_STATES",
     "BoardColumn",
     "ClipboardError",
+    "DoneReportClaims",
     "EpicRollup",
     "FailureEntry",
     "LandError",
@@ -3141,7 +3193,9 @@ __all__ = [
     "record_failure",
     "reconcile",
     "ReconcileReport",
+    "parse_claims_from_done_report",
     "render_changed_block",
+    "render_claims_block",
     "render_evidence_block",
     "reverify_cmd_evidence",
     "run_cmd_evidence",

@@ -1556,6 +1556,40 @@ overwrite an existing hook file without `force=True`.
   # or, from a file:
   frob ticket done-report T-0458 --why-file /tmp/report-why.md --base-ref main
   ```
+  T-0754: the CLI also captures a `### Captured claims` section -- a test
+  count from ACTUALLY RUNNING the ticket's own non-`cmd:` evidence ids
+  (`_run_tests_count_fn`, reusing D-01's real-run verification) and a
+  `(errors, warnings, waived)` gate-state COUNT from a fresh `python -m
+  frob check --ticket <id>` spawn (`_check_gates_summary_fn`, parsed from
+  the `gate-summary` line's own leading integers) -- never typed by the
+  agent, and deliberately never that line's raw text: its trailing
+  `[archgate=7.99s, ...]` per-gate timing blob differs on every single
+  invocation even against an unchanged tree, which is what a strict
+  string-equality land re-verification against it looked like at first
+  (T-0754 review round 2's FATAL finding -- it refused every land,
+  including this ticket's own; fixed by capturing the counts, never the
+  line). This closes the "the Done report is the ONLY pipeline artifact
+  that is unverified free prose" gap (T-0572's 142-reported-as-145
+  incident, T-0710/T-0724's undisclosed gate state): evidence ids resolve,
+  scope binds, the diff is real, but test-count and gate-state CLAIMS used
+  to be retyped from memory. `frob ticket land` re-runs the same two
+  captures against the post-merge tree (`land`'s `passed`/`check_gates`
+  callables -> `_reverify_done_report_claims_post_merge` -- the test-count
+  half is DERIVED from `passed`'s own D-05 run, no second collect+run) and
+  refuses the land (`LandError.ClaimDivergence`) if the real test count or
+  `gate_errors` no longer match -- `gate_warnings`/`gate_waived` are
+  recorded for a human reader but never gate the land, since a repo-global
+  warning/waived count legitimately drifts on a busy shared branch for
+  reasons unrelated to this ticket's own work. This is the general form of
+  D-05's evidence re-verification applied to the claims themselves, not
+  just the evidence ids. A Done report with no Captured claims section
+  (predates T-0754, or the library `set_done_report`/`land` callers that
+  omit the capture callables) is unaffected: there is nothing recorded to
+  diverge from, so it lands exactly as before. `parse_claims_from_done_
+  report` is anchored to the `### Captured claims` heading itself -- a
+  free-prose narrative line elsewhere in the Done report that happens to
+  match the claim shape can never masquerade as a captured, re-verified
+  claim.
 - Close-failure hints (T-0215): closing a `queued`/`planned` ticket fails
   `InvalidTransition` with a message naming the remedy (`frob ticket start
   <id>`); closing without evidence or a Done report fails

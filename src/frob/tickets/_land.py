@@ -1060,6 +1060,7 @@ def land(
     bump_version: Callable[[Path, Ticket, str], Result[str | None, LandError]]
     | None = None,
     rebuild_natives: Callable[[Path], bool] | None = None,
+    check_gates: Callable[[], tuple[int, int, int]] | None = None,
 ) -> Result[LandReport, LandError]:
     """Land `ticket_id` from `worktree` onto `root`'s current branch:
     precheck, wip-commit + merge + deletion-check, finalize + close, then
@@ -1119,6 +1120,21 @@ def land(
     preserves the exact pre-D-05 behavior, which is why the library
     default stays permissive even though the CLI's default is strict.
 
+    T-0754: `check_gates()` re-runs the SAME `frob check --ticket` capture
+    `frob ticket done-report` made when the Done report was written,
+    against the post-merge tree, and refuses the land (`ClaimDivergence`)
+    if the recorded `gate_errors` count no longer matches (warnings/waived
+    are recorded but never gate the land -- review round 2 fix #1, they
+    legitimately drift on a busy shared branch). The test-count half of
+    the SAME claim reuses `passed`'s own post-merge run (review round 2
+    fix #3 -- no second collect+run), so it is checked whenever both
+    `passed` and `check_gates` are supplied, with no separate parameter of
+    its own. A ticket whose Done report carries no Captured claims section
+    (predates T-0754, or was written without the capture callables) is
+    unaffected. `check_gates` defaults to `None` (skip, same posture as
+    `collected`/`passed`) -- the `frob ticket land` CLI supplies it by
+    default (see `ticket_runner.py`'s `_land`).
+
     T-0577: the ENTIRE precheck-through-squash-commit body runs under
     `root`'s dedicated `_land_lock` (a cross-process `flock`, same
     primitive family as `frob.tickets._store.ledger_lock`'s T-0458
@@ -1147,6 +1163,7 @@ def land(
             covers_scope=covers_scope,
             bump_version=bump_version,
             rebuild_natives=rebuild_natives,
+            check_gates=check_gates,
         )
 
 
@@ -1162,6 +1179,7 @@ def _land_locked(
     covers_scope: Callable[[Ticket], bool | None] | None,
     bump_version: Callable[[Path, Ticket, str], Result[str | None, LandError]] | None,
     rebuild_natives: Callable[[Path], bool] | None,
+    check_gates: Callable[[], tuple[int, int, int]] | None = None,
 ) -> Result[LandReport, LandError]:
     """`land`'s actual body (T-0577), run by the caller already holding
     `root`'s `ledger_lock` -- split out only so `land`'s docstring can state
@@ -1186,6 +1204,22 @@ def _land_locked(
             return Err(stage.danger_err)
         wip_committed, did_merge, dry_run_report = stage.danger_ok
 
+        # T-0754 review round 2 fix #4: refresh the pre-work sweep BEFORE
+        # any inner check runs `check_gates()` (a live `frob check
+        # --ticket` spawn) -- landing can pull in unrelated main-side
+        # commits that touch the ticket's scope globs, moving the sweep's
+        # scope digest out from under it (see `_refresh_prework_sweep`'s
+        # own doc, T-0236); done AFTER that check instead, `check_gates()`
+        # would observe a stale-sweep PRE001 the Done report's captured
+        # claim never carried, refusing the land on a false divergence.
+        # Only for a REAL land (`dry_run_report is None` -- the exact same
+        # condition the unconditional call below already required, since a
+        # dry run always returns before reaching it): a dry run must still
+        # leave the worktree exactly as found, and this call's write is
+        # not itself unwound the way the merge commit is.
+        if dry_run_report is None:
+            _refresh_prework_sweep(worktree, ticket)
+
         # D-05: re-verify BEFORE the dry-run early return -- otherwise a
         # `--dry-run` would report clean without ever running the
         # post-merge check, defeating T-0176's "a clean dry run is a real
@@ -1197,11 +1231,26 @@ def _land_locked(
             if did_merge:
                 _abort_merge(worktree)
             return Err(post_merge_check.danger_err)
+        passing_ids = post_merge_check.danger_ok
+
+        # T-0754: re-verify captured Done-report claims (test count, gate
+        # state) against the SAME post-merge tree `post_merge_check` just
+        # re-verified evidence against -- same ordering rationale (before
+        # the dry-run early return, so `--dry-run` stays a real guarantee).
+        # T-0754 review round 2 fix #3: the test-count half is DERIVED from
+        # `passing_ids` (the exact set D-05's own `passed()` run just
+        # computed above), never a second collect+run -- halves the real
+        # cost of a `run_tests`-supplying land.
+        claims_check = _reverify_done_report_claims_post_merge(
+            worktree, ticket_id, passing_ids, check_gates
+        )
+        if claims_check.is_err:
+            if did_merge:
+                _abort_merge(worktree)
+            return Err(claims_check.danger_err)
 
         if dry_run_report is not None:
             return Ok(dry_run_report)
-
-        _refresh_prework_sweep(worktree, ticket)
 
         finalized = _land_finalize_and_close(
             worktree, ticket_id, did_merge, main_branch_name, covers_scope=covers_scope
@@ -1231,7 +1280,7 @@ def _reverify_evidence_post_merge(
     ticket_id: str,
     collected: Callable[[], frozenset[str]] | None,
     passed: Callable[[Sequence[str]], frozenset[str]] | None,
-) -> Result[None, LandError]:
+) -> Result[frozenset[str] | None, LandError]:
     """D-05: re-load `ticket_id` from the POST-MERGE worktree ledger and
     re-check every non-cmd evidence id still resolves against
     `collected()` and still shows passing in `passed(non_cmd_ids)` -- the
@@ -1239,7 +1288,13 @@ def _reverify_evidence_post_merge(
     from what `_land_precheck` validated pre-merge (a splice can rewrite
     `ticket.evidence`, see `_newer`/`_union_evidence`). `collected=None`
     and `passed=None` (both defaults) skip this entirely, so `land`'s
-    behavior is unchanged unless a caller opts in."""
+    behavior is unchanged unless a caller opts in.
+
+    T-0754 review round 2 fix #3: on success, returns the exact `passed()`
+    result (`Ok(frozenset[str])`) when `passed` was supplied, else
+    `Ok(None)` -- letting `_reverify_done_report_claims_post_merge` derive
+    its own re-verified test count from this SAME real run instead of
+    paying for a second collect+run of the identical evidence set."""
     if collected is None and passed is None:
         return Ok(None)
     from frob.tickets import _load_one
@@ -1270,6 +1325,7 @@ def _reverify_evidence_post_merge(
             )
             return Err(LandError.NotCloseable)
 
+    passing_ids: frozenset[str] | None = None
     if passed is not None:
         passing_ids = passed(non_cmd)
         failing = [e for e in non_cmd if e not in passing_ids]
@@ -1281,6 +1337,92 @@ def _reverify_evidence_post_merge(
                 failing,
             )
             return Err(LandError.NotCloseable)
+    return Ok(passing_ids)
+
+
+# frob:ticket T-0754
+def _reverify_done_report_claims_post_merge(
+    worktree: Path,
+    ticket_id: str,
+    passing_ids: frozenset[str] | None,
+    check_gates: Callable[[], tuple[int, int, int]] | None,
+) -> Result[None, LandError]:
+    """T-0754's land-side half: re-load `ticket_id` from the POST-MERGE
+    worktree ledger, recover any `### Captured claims` section its Done
+    report carries (`parse_claims_from_done_report`), and -- when BOTH
+    `passing_ids` (D-05's own real `passed()` run, review round 2 fix #3 --
+    NOT a second collect+run) and `check_gates` are supplied -- compare
+    against what was recorded at done-report time, erroring
+    (`ClaimDivergence`) on a mismatch. `passing_ids=None` (D-05's evidence
+    re-verify itself was skipped, i.e. the caller never supplied `passed`)
+    or `check_gates=None` skips this entirely, matching
+    `_reverify_evidence_post_merge`'s own permissive-by-default shape. A
+    ticket with no Captured claims section (no capture callables were
+    supplied at done-report time, or the Done report predates T-0754) is
+    also skipped -- there is nothing recorded to diverge from.
+
+    T-0754 review round 2 fix #1: only `gate_errors` -- the actual pass/
+    fail signal -- is compared. `gate_warnings`/`gate_waived` are recovered
+    from the claim and the fresh check but deliberately NOT compared: a
+    repo-global warning/waived count legitimately drifts on a busy shared
+    branch for reasons that have nothing to do with THIS ticket's own
+    work, and gating on it would reproduce the same false-refusal failure
+    mode this round's fix closes for the timing blob."""
+    if passing_ids is None or check_gates is None:
+        return Ok(None)
+    from frob.tickets import _load_one
+    from frob.tickets._models import is_cmd_evidence, parse_claims_from_done_report
+
+    loaded = _load_one(worktree, ticket_id)
+    if loaded.is_err:
+        _log.error(
+            "land: %s not found post-merge in %s -- cannot re-verify "
+            "captured Done-report claims",
+            ticket_id,
+            worktree,
+        )
+        return Err(LandError.NotFound)
+    ticket = loaded.danger_ok
+    claims = parse_claims_from_done_report(ticket.body)
+    if claims is None:
+        return Ok(None)
+
+    non_cmd = [e for e in ticket.evidence if not is_cmd_evidence(e)]
+    real_test_count = len(passing_ids)
+    if real_test_count != claims.test_count or len(non_cmd) != claims.evidence_count:
+        _log.error(
+            "land: %s captured test-count claim no longer holds post-merge "
+            "-- recorded %d/%d passing, re-run shows %d/%d passing; the "
+            "merged tree may have changed the evidence set or a test's "
+            "outcome since the Done report was written; refresh with "
+            "`frob ticket done-report %s` and retry",
+            ticket_id,
+            claims.test_count,
+            claims.evidence_count,
+            real_test_count,
+            len(non_cmd),
+            ticket_id,
+        )
+        return Err(LandError.ClaimDivergence)
+
+    real_errors, real_warnings, real_waived = check_gates()
+    if real_errors != claims.gate_errors:
+        _log.error(
+            "land: %s captured gate-state claim no longer holds post-merge "
+            "-- recorded %d error(s), a fresh `frob check --ticket %s` now "
+            "shows %d error(s) (warnings %d->%d, waived %d->%d, informational "
+            "only); refresh with `frob ticket done-report %s` and retry",
+            ticket_id,
+            claims.gate_errors,
+            ticket_id,
+            real_errors,
+            claims.gate_warnings,
+            real_warnings,
+            claims.gate_waived,
+            real_waived,
+            ticket_id,
+        )
+        return Err(LandError.ClaimDivergence)
     return Ok(None)
 
 
