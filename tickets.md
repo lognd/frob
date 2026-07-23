@@ -12,6 +12,12 @@ kind: bug
 origin: human
 created: '2026-07-18'
 priority: medium
+blocked_by:
+- T-0861
+- T-0862
+- T-0871
+- T-0872
+- T-0873
 parent: null
 scope:
 - src/frob/**
@@ -23,7 +29,6 @@ threat: null
 component: null
 ```
 User directive 2026-07-18: the pass-line counters hide real debt -- frob-exports reports 12-253 public symbols missing from __init__.py per package (decide policy: export or demote to private, per package, no blanket waiver), frob-dup 64 duplicate groups (triage: real extraction candidates vs false pairs; feeds T-0187 tree), frob-arch 197 warnings + 123 suggestions (long-function/god-class residue post-calibration -- fix or waive with reasons), perf gate 174 violations (166 waived -- re-audit every waiver still holds after T-0161's heuristic fixes land; the 8 unwaived need real fixes). Deliverable: each family driven to a state where the summary line is HONEST -- zero unwaived findings or a written per-finding reason; no threshold-loosening without a disclosed decision. Split into child tickets per family if any single family exceeds a session of work -- this ticket is the umbrella and the accounting.
-
 <!-- ticket:T-0254 -->
 ```yaml
 id: T-0254
@@ -9020,3 +9025,82 @@ threat: null
 component: scaffold
 ```
 Observed 2026-07-23 during a normal coordinator commit on main with 14 worktrees registered: git's background auto-gc ran pack-refs, the scaffolded stash-guard reference-transaction hook saw a transaction touching refs/stash and refused it ("refusing 'git stash' -- 14 worktrees exist"), and gc failed ("fatal: failed to run pack-refs / error: task 'gc' failed"). The guard's intent (block `git stash` in multi-worktree clones, playbook 1b) is over-broad: pack-refs REWRITES existing refs (including an existing refs/stash) rather than creating a stash, and aborting it breaks repo maintenance for the whole clone every time gc triggers. Fix in frob.scaffold._managed's stash-guard block: distinguish a stash CREATION/UPDATE (new refs/stash value) from maintenance rewrites (pack-refs presents the same old/new value, or GIT_REF_TRANSACTION context indicates packing) and allow the latter; keep refusing genuine stash pushes. Add a fixture proving `git gc` succeeds under the guard with a pre-existing stash ref and >1 worktree while `git stash` itself still refuses.
+
+<!-- ticket:T-0871 -->
+```yaml
+id: T-0871
+title: 'exports policy residue: drive all frob-exports missing-symbol lines to zero
+  (9 packages, 57 symbols)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: T-0204
+scope:
+- src/frob/__init__.py
+- src/frob/arch/__init__.py
+- src/frob/lang/__init__.py
+- src/frob/mutate/__init__.py
+- src/frob/perf/__init__.py
+- src/frob/scaffold/__init__.py
+- src/frob/serve/__init__.py
+- src/frob/testing/__init__.py
+- src/frob/vet/__init__.py
+acceptance:
+- text: GIVEN the repo at this ticket's close WHEN frob check runs THEN every frob-exports
+    package line reports zero public symbols missing from __init__.py, with each resolution
+    being a deliberate export or demotion, not a waiver
+  evidence: []
+threat: null
+component: exports
+```
+T-0204 child (exports family residue, continuing T-0600/T-0601). frob-exports still reports missing public symbols per package: src/frob 2, src/frob/arch 23, src/frob/lang 2, src/frob/mutate 3, src/frob/perf 5, src/frob/scaffold 1, src/frob/serve 11, src/frob/testing 2, src/frob/vet 8 (57 total at 2026-07-23 baseline; recount at start -- concurrent waves move it). Per-package policy decision as in T-0600/T-0601: export via __init__.py or demote to private (underscore) -- no blanket waiver. Deliverable: every frob-exports tool line reports 0 missing.
+
+<!-- ticket:T-0872 -->
+```yaml
+id: T-0872
+title: 'arch warning burn-down: gate:ARCH to zero unwaived (72 warns baseline) + suggestion
+  sweep'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: T-0204
+scope:
+- src/frob/**
+- tests/**
+acceptance:
+- text: GIVEN the repo at this ticket's close WHEN frob check runs THEN gate:ARCH
+    reports zero unwaived warnings and every remaining waiver carries a current, specific
+    reason
+  evidence: []
+threat: null
+component: arch
+```
+T-0204 child (arch family). gate:ARCH reports 72 warnings (13 waived) + frob-arch 55 warnings/183 suggestions at 2026-07-23 baseline (recount at start). Triage every warning: fix the code (long-function/god-class residue, calibrated-threshold stragglers) or waive with a specific reason per T-0289 doctrine. Suggestions: sweep for real fixes; remainder must be explainable. Deliverable: gate:ARCH 0 unwaived warnings and the summary line honest.
+
+<!-- ticket:T-0873 -->
+```yaml
+id: T-0873
+title: 'perf warning burn-down + waiver re-audit: gate:PERF to zero unwaived (24 warns,
+  29 waivers baseline)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: T-0204
+scope:
+- src/frob/**
+- tests/**
+acceptance:
+- text: GIVEN the repo at this ticket's close WHEN frob check runs THEN gate:PERF
+    reports zero unwaived warnings and every remaining waiver has been re-verified
+    with a current reason
+  evidence: []
+threat: null
+component: perf
+```
+T-0204 child (perf family). gate:PERF reports 24 warnings + 29 waived at 2026-07-23 baseline (recount at start). Fix the unwaived findings; re-audit every standing waiver still holds after the T-0161-era heuristic fixes (drop stale waivers, re-reason keepers). Deliverable: gate:PERF 0 unwaived warnings, all waivers re-verified with current reasons.
