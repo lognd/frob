@@ -97,6 +97,7 @@ from __future__ import annotations
 import re
 import tomllib
 from pathlib import Path, PurePosixPath
+from typing import NamedTuple
 
 from frob.excludes import is_excluded, load_exclude_globs
 from frob.gates._models import Severity, Violation
@@ -502,18 +503,69 @@ def _tokens_reach(tokens: frozenset[str], target_path: str) -> bool:
     return any(token.endswith("." + stem) for token in tokens)
 
 
-def _auto_inbound(
-    candidate: str, tokens_by_file: dict[str, frozenset[str]]
-) -> set[str]:
-    """Every OTHER tracked file whose precomputed token set reaches
-    `candidate` (the auto-scan layer -- imports, path literals, doc
-    links, directive targets, all collapse to the same token-reach
-    check)."""
-    return {
-        other
-        for other, tokens in tokens_by_file.items()
-        if other != candidate and _tokens_reach(tokens, candidate)
-    }
+class _ReachIndex(NamedTuple):
+    """Reverse indexes over every tracked file's `_candidate_tokens` (built
+    once by `_build_reach_index`, consumed by `_reaching_files`) so
+    `_auto_inbound` answers "which files reach this target" via O(1)-ish
+    lookups instead of an O(files) rescan per candidate (T-0831: 13.5s
+    CPU at ~994 tracked files). Fields mirror `_tokens_reach`'s three
+    match shapes -- see `_reaching_files` -- so results stay
+    byte-identical to the old pairwise scan."""
+
+    exact: dict[str, frozenset[str]]
+    slash_suffix: dict[str, frozenset[str]]
+    dot_suffix: dict[str, frozenset[str]]
+
+
+def _build_reach_index(tokens_by_file: dict[str, frozenset[str]]) -> _ReachIndex:
+    """Build `_ReachIndex` in one O(total tokens) pass: `exact` keys every
+    token verbatim; `slash_suffix` keys each token's final `/`-segment
+    (`token.endswith("/" + basename)`); `dot_suffix` keys every
+    dot-preceded trailing suffix (`token.endswith("." + stem)`, since a
+    stem may itself contain dots)."""
+    exact: dict[str, set[str]] = {}
+    slash_suffix: dict[str, set[str]] = {}
+    dot_suffix: dict[str, set[str]] = {}
+    for owner, tokens in tokens_by_file.items():
+        for token in tokens:
+            exact.setdefault(token, set()).add(owner)
+            if "/" in token:
+                slash_suffix.setdefault(token.rsplit("/", 1)[1], set()).add(owner)
+            if "." in token:
+                parts = token.split(".")
+                for i in range(1, len(parts)):
+                    dot_suffix.setdefault(".".join(parts[i:]), set()).add(owner)
+    return _ReachIndex(
+        exact={key: frozenset(value) for key, value in exact.items()},
+        slash_suffix={key: frozenset(value) for key, value in slash_suffix.items()},
+        dot_suffix={key: frozenset(value) for key, value in dot_suffix.items()},
+    )
+
+
+def _reaching_files(index: _ReachIndex, target_path: str) -> frozenset[str]:
+    """Every file whose token set reaches `target_path`: exact match on
+    path/basename/stem, or a `slash_suffix`/`dot_suffix` hit on the
+    basename/stem (`.py` targets only for the stem arms)."""
+    basename = PurePosixPath(target_path).name
+    result = (
+        index.exact.get(target_path, frozenset())
+        | index.exact.get(basename, frozenset())
+        | index.slash_suffix.get(basename, frozenset())
+    )
+    if target_path.endswith(".py"):
+        stem = PurePosixPath(target_path).stem
+        result = (
+            result
+            | index.exact.get(stem, frozenset())
+            | index.dot_suffix.get(stem, frozenset())
+        )
+    return frozenset(result)
+
+
+def _auto_inbound(candidate: str, index: _ReachIndex) -> set[str]:
+    """Every OTHER tracked file whose token set reaches `candidate`, from
+    the precomputed `_ReachIndex` (T-0831)."""
+    return set(_reaching_files(index, candidate)) - {candidate}
 
 
 def _directive_target(line: str) -> str | None:
@@ -639,11 +691,12 @@ def _dangling_declarations(
 
 def _build_ref_gate_indexes(
     root: Path, tracked: tuple[str, ...]
-) -> tuple[dict[str, str], dict[str, frozenset[str]], frozenset[str]]:
-    """Read every tracked file once and build its candidate-token set once,
-    so `ref_gate`'s O(n) file loop never re-derives either (extracted from
-    `ref_gate` for ARCH001; T-0449's native-stub pairing still resolves
-    from the returned `tracked_set`)."""
+) -> tuple[dict[str, str], dict[str, frozenset[str]], frozenset[str], _ReachIndex]:
+    """Read every tracked file once and build its candidate-token set and
+    `_ReachIndex` once, so `ref_gate`'s O(n) file loop never re-derives
+    any of them (extracted from `ref_gate` for ARCH001; T-0449's
+    native-stub pairing still resolves from `tracked_set`; `_ReachIndex`
+    is T-0831's O(files^2) -> O(files) fix for `_auto_inbound`)."""
     texts: dict[str, str] = {}
     for rel_path in tracked:
         text = _read_text(root, rel_path)
@@ -653,7 +706,8 @@ def _build_ref_gate_indexes(
     tokens_by_file: dict[str, frozenset[str]] = {
         rel_path: frozenset(_candidate_tokens(text)) for rel_path, text in texts.items()
     }
-    return texts, tokens_by_file, tracked_set
+    reach_index = _build_reach_index(tokens_by_file)
+    return texts, tokens_by_file, tracked_set, reach_index
 
 
 def _ref_gate_file_violations(
@@ -663,6 +717,7 @@ def _ref_gate_file_violations(
     tokens_by_file: dict[str, frozenset[str]],
     allowlist: dict[str, str],
     native_stub_pairs: dict[str, str],
+    reach_index: _ReachIndex,
 ) -> list[Violation]:
     """REF001/002/003 violations for a single tracked file -- the per-file
     body of `ref_gate`'s main loop, extracted for ARCH001 (line-count)."""
@@ -675,7 +730,7 @@ def _ref_gate_file_violations(
     if rel_path in allowlist or _is_collectible_test_filename(rel_path):
         return violations
 
-    auto = _auto_inbound(rel_path, tokens_by_file)
+    auto = _auto_inbound(rel_path, reach_index)
     declared = set()
     if text is not None:
         for target in _declared_consumers(rel_path, text):
@@ -735,7 +790,9 @@ def ref_gate(root: Path) -> tuple[Violation, ...]:
     # T-0449: native-extension `.pyi` stub -> build-manifest edges,
     # resolved once up front from `pyproject.toml`/`[tool.maturin]`
     # rather than re-derived per candidate.
-    texts, tokens_by_file, tracked_set = _build_ref_gate_indexes(root, tracked)
+    texts, tokens_by_file, tracked_set, reach_index = _build_ref_gate_indexes(
+        root, tracked
+    )
     native_stub_pairs = _native_stub_pairs(tracked_set, root)
 
     violations: list[Violation] = []
@@ -750,6 +807,7 @@ def ref_gate(root: Path) -> tuple[Violation, ...]:
                 tokens_by_file,
                 allowlist,
                 native_stub_pairs,
+                reach_index,
             )
         )
 
