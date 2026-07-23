@@ -6572,7 +6572,7 @@ Observed while working T-0704 (worktree agent-ad82d24588b5083b6, 2026-07-22/23).
 id: T-0791
 title: 'strata host: :deny ACL flag path has zero test evidence (deny-overrides verified
   by inspection only)'
-state: in-progress
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-23'
@@ -6598,6 +6598,24 @@ component: null
 labels: []
 ```
 T-0606 reviewer finding: test_deny_acl_does_not_fire_shared_writable_path uses Everyone:Read (non-write RIGHTS), never an actual :deny flag; _acl_grants_write implements deny correctly by inspection but no test exercises that branch. Add the missing fire/no-fire pair.
+
+## Done report
+
+Absorbed by T-0792's land: the deny-flag fire/no-fire coverage the ticket
+demanded exists as TestMultiAceDenyOverridesAllow (both declaration
+orders), constructing explicit :deny ACEs on write-capable RIGHTS and
+asserting no write capability and no shared-writable-path violation. The
+criterion's literal _acl_grants_write reference is superseded: that
+helper was deleted as dead code in the same land (all ACL paths route
+through _join_acl_entries), and the behavior-level criterion is what the
+bound tests prove.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/strata/test_host_isolation.py::TestMultiAceDenyOverridesAllow::test_narrow_deny_then_broad_allow_same_principal_denies` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_host_isolation.py::TestMultiAceDenyOverridesAllow::test_broad_allow_then_narrow_deny_same_principal_still_denies` (pytest node id, verified passing when recorded)
 <!-- ticket:T-0792 -->
 ```yaml
 id: T-0792
