@@ -7010,7 +7010,7 @@ T-0748 delivered the collector parser adapters (parse_perf_script, parse_v8_cpup
 id: T-0766
 title: 'lease resolution cross-talk: frob check --ticket ran against another agent''s
   worktree via stale lease under concurrent load'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-07-22'
@@ -7034,7 +7034,6 @@ component: null
 labels: []
 ```
 Observed during T-0695 (2026-07-22, heavy concurrent multi-agent load): frob check --ticket T-0695 twice ran against a completely different worktree (agent-a86ce74bd40394899, which held the T-0733 lease) via stale ticket-lease state, until frob ticket start T-0695 was re-run. Leases are worktree-local since T-0473, but some path in check's lease resolution still picked up a sibling worktree's state. Root-cause the resolution order (env FROB_WORKTREE? lease file mtime? first-match iteration?) and pin check --ticket to the invoking worktree's own lease, failing loudly if absent rather than borrowing a sibling's.
-
 <!-- ticket:T-0767 -->
 ```yaml
 id: T-0767
@@ -7388,3 +7387,69 @@ component: null
 labels: []
 ```
 T-0763 moved unbound-acceptance closeability preflight before merge, but EvidenceScopeUnbound (the covers_scope D-05 check) still runs post-merge because it needs the obligation graph from frob.gates, which frob.tickets cannot import (dependency is injected via the covers_scope callable parameter -- verified by the T-0763 reviewer). Residual: a ticket with bound-but-scope-uncovering evidence still fails AFTER the merge commit exists. Fix direction: have the CLI layer (frob.app.ticket_runner, which CAN import frob.gates) pass covers_scope into a pre-merge preflight simulation as well, or restructure land() to compute the post-merge graph in a temporary index without committing. Filed per T-0763 reviewer recommendation.
+
+<!-- ticket:T-0775 -->
+```yaml
+id: T-0775
+title: 'perf: loop-invariant effectful call detector (spawn/fs-walk callee in a loop
+  with loop-invariant args)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: high
+blocked_by:
+- T-0632
+parent: null
+scope:
+- src/frob/perf/**
+- src/frob/arch/**
+- tests/unit/perf/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a fixture where a loop body calls a function that transitively spawns
+    a process with arguments invariant across iterations WHEN frob check runs THEN
+    a prove-or-justify finding fires naming the call site, the effectful callee, and
+    the invariant args; GIVEN the same call with a loop-varying argument THEN no finding;
+    GIVEN the pre-T-0773 read_all_leases-per-ticket-row shape THEN the finding fires
+    on the real repo history fixture
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Motivated by the 2026-07-22 rev-parse incident (T-0773): frob ticket list spawned git rev-parse --git-common-dir dozens of times because the loop (ticket rows) and the effect (subprocess spawn 3 calls deep) live in different modules -- no per-function syntactic PERF heuristic can see it. The ingredients already exist: vet capability observation knows which functions transitively proc.spawn/fs-walk; the obligation graph has the call graph; T-0632 adds per-argument call detail needed for the loop-invariance test. Detector: for each loop (incl. comprehensions and per-item pipeline stages), for each reachable effectful callee whose observed effect is spawn/fs-walk, if every argument at the call site is loop-invariant, fire a prove-or-justify finding (hoist, memoize, or frob:waive with a freshness justification -- re-reading mutable state can be deliberate under concurrency, so this is warn-tier with an unwaivable-style justification requirement, not a silent error). Keep recall honest: undecidable invariance leans toward firing per the repo philosophy.
+
+<!-- ticket:T-0776 -->
+```yaml
+id: T-0776
+title: 'testing: subprocess spawn-budget litmus for CLI hot paths (fail on duplicate
+  identical argv per invocation)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-22'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/gitio.py
+- src/frob/testing/**
+- tests/system/
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a spawn-budget test running frob ticket list against a fixture repo
+    WHEN the same argv is spawned more than its declared budget (default 1 for idempotent
+    derivations like rev-parse --git-common-dir) THEN the test fails listing each
+    duplicated argv with its count; GIVEN the post-T-0773 memoized lease layer THEN
+    the budget test passes
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Exact-count complement to the static loop-invariant-effect detector: gitio already logs every spawn, so expose a test-mode spawn recorder (context manager or env-gated counter in frob.gitio) and add system tests that run hot CLI entry points (ticket list/doable/show, check --only fast stages) against a fixture repo and assert no identical argv is spawned twice in one invocation unless a declared budget allows it. This is heuristic-free and would have caught the rev-parse incident (T-0773) the day it regressed. Design note: the recorder must be zero-cost when disabled and must not change spawn behavior; budgets live next to the tests, not in frob.toml, to keep the check self-contained.
