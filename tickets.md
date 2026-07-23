@@ -11914,3 +11914,47 @@ workaround. Write the section (CLI usage: frob ticket review with
 require_review_for_close frob.toml key, ReviewEntry evidence shape) and
 repoint the two anchors in src/frob/tickets/__init__.py /
 src/frob/app/ticket_runner.py back at the new section.
+
+<!-- ticket:T-0838 -->
+```yaml
+id: T-0838
+title: 'tickets ledger: schema-extending features brick their own land (extra_forbidden
+  on new fields, empty collections serialized)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/_models.py
+- src/frob/tickets/__init__.py
+- tests/test_tickets.py
+scope_changes: []
+evidence: []
+reviews: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+Hit live twice: T-0571's original land (yesterday, donor branch) and its
+salvage land today both broke because the feature adds a new Ticket
+field (reviews:) to the ledger schema, and land/close run the ROOT
+checkout's OLD frob build, whose pydantic model is extra_forbidden --
+MalformedFrontmatter, then NotFound at land. Any schema-extending
+feature bricks its own landing; today's workaround was hand-deleting the
+empty `reviews: []` line from the worktree ledger before close.
+
+Fix (two halves):
+1. Serializer: omit empty/default collection fields when rendering
+   ledger blocks (reviews: [] should never be written), so additive
+   fields only appear once populated.
+2. Parser forward-compat: ledger Ticket model should tolerate UNKNOWN
+   fields with a loud warning naming the field and the likely
+   cause (older frob reading a newer ledger) instead of hard-failing
+   extra_forbidden -- preserve-and-round-trip unknown fields so a land
+   by an older binary does not strip data recorded by a newer one.
+   Keep validation strict for KNOWN fields.
