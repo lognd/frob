@@ -11755,7 +11755,7 @@ which were in T-0858's declared scope. Do this before or around the
 id: T-0877
 title: 'frob scaffold pool CLI: wire warm/lease/status subcommands onto the T-0738
   pool API'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-07-23'
