@@ -6355,3 +6355,22 @@ T-0851's own FMT001 addition, which is correctly registered).
 Fix: add a CHK-GATE-TEST016 entry (disposition handled_by:TEST016) to
 check-coverage.yaml and bump gate_rule_total, or run
 `frob registry audit --sync-gate-rules` to file it mechanically.
+
+<!-- ticket:T-0853 -->
+```yaml
+id: T-0853
+title: 'done-report: a narrative line consisting exactly of the Done-report heading
+  defeats section-end detection'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/tickets/_models.py
+- tests/test_evidence_integrity.py
+threat: null
+component: null
+```
+Found landing T-0848 itself: a --why-file narrative containing a line-wrapped quoted phrase that puts the literal heading text at a line start (the line is exactly the Done-report H2) is indistinguishable from the structural repeated-heading boundary that _done_report_section_end (post-T-0848) stops at. Rewriting then truncates the replaceable window mid-narrative and strands the tail as a phantom section (observed: T-0848's own block accumulated 3 heading lines). Fix direction: escape or reflow heading-identical narrative lines at render time (e.g. prefix a zero-width or backslash marker), or make the boundary check require the heading to be followed by the auto-generated Changed/Evidence structure. Coordinator hand-repaired the block this time.
