@@ -299,10 +299,12 @@ node fleet : trusted {
     code "src/frob/fleet/**";
     may "exec";
     may "fs";
-    // T-0166/T-0250-class LINT004: no real kill switch around subprocess
-    // spawning yet, same posture as core/tickets_ledger/vet/stratamod
-    // above; waived pending T-0200's real kill-switch mechanism.
-    waive "LINT004" reason "no real kill switch around subprocess spawning yet -- T-0200 is the follow-on ticket to build one" ticket "T-0200";
+    // T-0778: T-0200's kill switch (frob.process._guard.
+    // guarded_subprocess_run) is real and shipped, but this node's own
+    // `subprocess.run` call sites (src/frob/fleet/__init__.py, not the
+    // git seam T-0778 wired) are not yet routed through it -- an honest
+    // remaining gap, not a pending mechanism. Follow-on: T-draft-8cd37914.
+    waive "LINT004" reason "kill-switch mechanism exists (T-0200/T-0778) but src/frob/fleet/__init__.py's subprocess.run call sites are not yet wired through it -- tracked in T-draft-8cd37914" ticket "T-draft-8cd37914";
     // T-0724: same SYS203/tickets_ledger disposition as `cli` above --
     // the `.frob/tickets.lock` flock (T-0458/T-0633) is the real,
     // untracked-by-the-grammar arbiter; re-evaluate at T-0700.
@@ -357,7 +359,15 @@ node core : trusted {
     may "exec";
     may "fs";
     may "fs-read";
-    waive "LINT004" reason "no real kill switch around subprocess spawning yet -- T-0200 is the follow-on ticket to build one" ticket "T-0200";
+    // T-0778: `src/frob/gitio.py`'s own subprocess spawns are now real,
+    // wired kill-switch coverage (frob.process._guard.
+    // guarded_subprocess_run, transitively covering the serve daemon and
+    // gitio-based lease reads too) -- but this node folds in several
+    // OTHER packages (gitlog/**, mutate/**, deploy/**, scaffold/**,
+    // testing/**) that still call subprocess.run directly, unguarded.
+    // Honest remaining gap, not a pending mechanism. Follow-on:
+    // T-draft-8cd37914.
+    waive "LINT004" reason "kill-switch mechanism exists (T-0200) and gitio.py's spawns are wired (T-0778), but gitlog/mutate/deploy/scaffold/testing subprocess.run call sites folded into this node are not -- tracked in T-draft-8cd37914" ticket "T-draft-8cd37914";
     // T-0724: same SYS203/tickets_ledger disposition as `cli` above --
     // the `.frob/tickets.lock` flock (T-0458/T-0633) is the real,
     // untracked-by-the-grammar arbiter; re-evaluate at T-0700.
@@ -386,9 +396,14 @@ node core : trusted {
 // a clean self-conformance scan confirms zero real sites for these four --
 // they were never genuinely exercised capabilities, so removing them is
 // the honest fix, not a coverage regression.
-// T-0155 LINT004: `may "net"` is a risky capability with no real kill
-// switch today -- an honest gap, same posture as `checker` above; waived
-// (T-0174) pending T-0200's real kill-switch mechanism, same reason.
+// T-0155 LINT004: `may "net"` is a risky capability. T-0200 built a real
+// net kill-switch mechanism (frob.process._guard.net_enabled/
+// NET_KILL_SWITCH_ENV) but explicitly left wiring a real net call site
+// through it out of scope (T-0200 Done report); T-0778's sweep confirms
+// no caller anywhere in the repo calls `net_enabled()` yet, so vet's own
+// `fetch_url`/`net` call sites (`_nvd.py`/`_registry.py`) remain
+// genuinely unwired -- an honest gap, not a pending mechanism. Follow-on:
+// T-draft-8cd37914.
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 node vet : trusted {
     clearance Internal;
@@ -400,7 +415,7 @@ node vet : trusted {
     may "fs-read";
     may "install-hook";
     may "net";
-    waive "LINT004" reason "no real kill switch around net calls yet -- T-0200 is the follow-on ticket to build one" ticket "T-0200";
+    waive "LINT004" reason "net kill-switch mechanism exists (T-0200, frob.process._guard.net_enabled) but no call site in this node (or anywhere in the repo) calls it yet -- tracked in T-draft-8cd37914" ticket "T-draft-8cd37914";
 }
 
 // The ticket ledger: tickets.md + tickets/, git-tracked truth.
@@ -442,12 +457,16 @@ store tickets_ledger : trusted {
     may "exec";
     may "fs";
     may "fs-read";
-    // T-0166 LINT004: `may "exec"` is a risky capability with no real kill
-    // switch today -- an honest gap, same posture as checker/core/
-    // stratamod/vet above; waived (T-0250, extending T-0174's node-only
-    // waive clause to store) pending T-0200's real kill-switch mechanism,
-    // same reason.
-    waive "LINT004" reason "no real kill switch around subprocess spawning yet -- T-0200 is the follow-on ticket to build one" ticket "T-0200";
+    // T-0166 LINT004: `may "exec"` is a risky capability. T-0200 built a
+    // real kill switch and T-0778 wired the git seam (`frob.gitio.
+    // run_argv`, which the serve daemon and gitio-based lease reads reuse
+    // transitively) through it -- but this node's own `exec` sites (`git
+    // ls-files` in `tickets/__init__.py::_repo_files_git`, the
+    // shell=True evidence-command spawn, `clipboard.py`'s subprocess.run
+    // calls) go through neither `run_argv` nor `guarded_subprocess_run`.
+    // Honest remaining gap, not a pending mechanism. Follow-on:
+    // T-draft-8cd37914.
+    waive "LINT004" reason "kill-switch mechanism exists and the git seam is wired (T-0200/T-0778), but tickets/__init__.py's own git ls-files call, its shell=True evidence-command spawn, and clipboard.py's subprocess.run calls are not routed through it -- tracked in T-draft-8cd37914" ticket "T-draft-8cd37914";
 }
 
 // The `.frob/` symbol-graph cache (`frob.graph`'s snapshot cache): derived

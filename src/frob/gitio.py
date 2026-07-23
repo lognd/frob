@@ -24,6 +24,7 @@ from typani import Err, ErrorSet, Ok
 from typani.result import Result
 
 from frob.logging import get_logger
+from frob.process._guard import guarded_subprocess_run
 
 _log = get_logger(__name__)
 
@@ -151,14 +152,20 @@ def run_argv(
     timeout_s: float = _DEFAULT_TIMEOUT_S,
 ) -> Result[ProcResult, GitError]:
     """Spawn an already-resolved argv (never shell=True); public seam `frob.testing`
-    reuses so there is exactly one process-with-timeout helper in the package."""
+    reuses so there is exactly one process-with-timeout helper in the package.
+    Routed through `frob.process._guard.guarded_subprocess_run` (T-0778) so
+    `FROB_DISABLE_EXEC=1` genuinely refuses every git spawn this module (and
+    transitively the serve daemon and tickets lease reads, which have no
+    other spawn seam) would otherwise make -- returns `Err(GitError.
+    GitFailed)` without ever spawning a process while the kill switch is
+    flipped."""
     full_argv = tuple(argv)
     recorder = _active_recorder.get()
     if recorder is not None:
         recorder.record(full_argv)
     _log.debug("gitio: spawning %s (cwd=%s, timeout=%gs)", full_argv, cwd, timeout_s)
     try:
-        completed = subprocess.run(
+        guarded = guarded_subprocess_run(
             list(full_argv),
             cwd=str(cwd) if cwd is not None else None,
             capture_output=True,
@@ -169,6 +176,12 @@ def run_argv(
     except (OSError, subprocess.TimeoutExpired) as exc:
         _log.warning("gitio: spawn failed for %s: %s", full_argv, exc)
         return Err(GitError.GitFailed)
+    if guarded.is_err:
+        # Kill switch flipped (FROB_DISABLE_EXEC=1) -- guard already logged
+        # a warning and never spawned anything; surface as the same
+        # GitError callers already handle.
+        return Err(GitError.GitFailed)
+    completed = guarded.danger_ok
     _log.debug("gitio: %s -> returncode=%d", full_argv, completed.returncode)
     return Ok(
         ProcResult(

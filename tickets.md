@@ -4945,7 +4945,7 @@ Scope: src/frob/app/check_runner.py, src/frob/gates/__init__.py (the
 id: T-0778
 title: 'security: FROB_DISABLE_EXEC kill switch is a partial no-op -- wire gitio/serve/tickets
   through the T-0200 guard, delete stale waivers'
-state: queued
+state: done
 kind: security
 origin: auditor
 created: '2026-07-23'
@@ -4958,14 +4958,16 @@ scope:
 - design/frob.strata
 - tests/test_gitio.py
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_gitio.py::TestRunArgv::test_kill_switch_refuses_without_spawning
 attachments: []
 acceptance:
 - text: GIVEN FROB_DISABLE_EXEC=1 WHEN any frob code path attempts a git spawn via
     run_argv (including the serve daemon and lease reads) THEN the spawn is refused
     by the guard and logged; GIVEN the five strata nodes THEN no LINT004 waiver cites
     T-0200 as pending
-  evidence: []
+  evidence:
+  - tests/test_gitio.py::TestRunArgv::test_kill_switch_refuses_without_spawning
 threat: denial-of-service
 component: null
 labels: []
@@ -4985,6 +4987,40 @@ IO flows through run_argv), verify no other subprocess call sites bypass it
 (grep subprocess. outside _guard.py/gitio.py), DELETE the five stale waivers
 from design/frob.strata (the mechanism exists; honest state is wired, not
 pending), and add a test that FROB_DISABLE_EXEC=1 makes run_argv refuse.
+
+## Done report
+
+Changed:
+- src/frob/gitio.py::run_argv -- routed through frob.process._guard.guarded_subprocess_run so FROB_DISABLE_EXEC=1 refuses every git spawn (Err(GitError.GitFailed), logged) without ever calling subprocess.run; this is gitio's single spawn seam, so the serve daemon (src/frob/serve/_daemon.py, _warm.py, which already call run_argv/working_diff) and every gitio-based read are covered transitively -- no changes needed there.
+- design/frob.strata -- rewrote the 4 stale LINT004 waivers that still cite "T-0200 is the follow-on ticket to build one" (fleet, core, tickets_ledger, vet). T-0200 is done and T-0778 wired gitio.py's own spawns, so each waiver now states the honest remaining gap and points at the new follow-on ticket instead of a since-shipped mechanism. Could not delete these waivers outright (contrary to the ticket's literal instruction) -- see Deviations below.
+- tests/test_gitio.py::TestRunArgv.test_kill_switch_refuses_without_spawning -- new test: FROB_DISABLE_EXEC=1 makes run_argv return Err(GitError.GitFailed), never calls the real subprocess.run (spied via monkeypatch), and logs a WARNING containing "exec disabled".
+
+Sweep for other bypassing subprocess call sites (grep subprocess.run/Popen/call/check_output outside src/frob/process/_guard.py and src/frob/gitio.py):
+- CONFIRMED WIRED (no action needed): src/frob/serve/_daemon.py, src/frob/serve/_warm.py, src/frob/serve/_tools.py all call frob.gitio.run_argv/working_diff, not subprocess directly -- T-0778's gitio wiring covers them.
+- STILL BYPASSING, filed as a follow-up (out of T-0778's scope -- none of these files are in scope=[gitio.py, _guard.py, frob.strata, test_gitio.py]):
+  - src/frob/tickets/__init__.py:930 `_repo_files_git` -- direct `git ls-files` subprocess.run, NOT routed through gitio.run_argv. This is the closest remaining gap to the audit's "tickets lease" language.
+  - src/frob/tickets/__init__.py:2370 `_run_evidence_command` -- shell=True evidence-command spawn.
+  - src/frob/gitlog/__init__.py:230 -- direct `git log` subprocess.run.
+  - src/frob/app/ticket_runner.py:863,1159; src/frob/fleet/__init__.py:164,194; src/frob/tickets/clipboard.py (9 sites); src/frob/mutate/__init__.py:260; src/frob/deploy/_vm_runner.py:109,116,134,153; src/frob/scaffold/project.py:509; src/frob/testing/_coverage_wait.py:151.
+  Filed as T-draft-8cd37914 ("wire remaining subprocess call sites through the T-0200/T-0778 exec guard...").
+
+Deviations from the ticket's literal plan (disclosed, not hidden):
+- The ticket said "DELETE the five stale LINT004 waivers" and, if LINT004 then legitimately re-fires, "the honest fix is wiring that node's spawns through the guard, not re-waiving." I found only 4 waivers with this exact reason text today (checker's was already retired with a real attr flag, and stratamod's net waiver was already dropped by T-0769 -- both before T-0778 started; git history in tickets-archive.md confirms the original 5 were checker/core/stratamod/tickets_ledger/vet). Of the remaining 4 (fleet, core, tickets_ledger, vet), NONE could be honestly deleted: each node's `may "exec"`/`may "net"` capability is attributed to files outside T-0778's scope (fleet/__init__.py's own subprocess.run; core's gitlog/mutate/deploy/scaffold/testing subprocess.run calls, only one of core's many code-glob files being gitio.py; tickets_ledger's git-ls-files/evidence-shell/clipboard.py calls; vet's net_enabled() never being called anywhere). Wiring any of those requires touching files outside scope=[gitio.py, _guard.py, frob.strata, test_gitio.py]. Deleting the waivers and declaring `attr flag=` would have been a false completeness claim -- the exact anti-pattern this repo's T-0150/T-0151 discipline (and this very ticket) exists to prevent. Instead I rewrote each waiver's reason to state the real, current state (mechanism exists and is genuinely wired for the git seam; specific remaining unwired call sites named; pointed at the new follow-on ticket T-draft-8cd37914 instead of the shipped T-0200) -- this satisfies the ticket's actual acceptance criterion ("no LINT004 waiver cites T-0200 as pending") without a false claim. `uv run frob sys audit` confirms selfconform stays clean (0 unwaived findings) after this change.
+
+Evidence: tests/test_gitio.py::TestRunArgv::test_kill_switch_refuses_without_spawning
+- `uv run --frozen pytest tests/test_gitio.py tests/test_serve_daemon.py tests/system/test_spawn_budget.py -v` -> 33 passed, 2 xfailed (both pre-existing/unrelated).
+- `uv run --frozen pytest tests/test_gitio.py -q` -> 23 passed on its own.
+- `uv run --frozen pytest tests/test_gitio.py::TestRunArgv::test_kill_switch_refuses_without_spawning --collect-only -q` confirms the node id resolves.
+
+Filed: T-draft-8cd37914 (wire remaining subprocess call sites through the T-0200/T-0778 exec guard)
+
+Gates: `uv run --frozen frob check --only gates-fast --ticket T-0778` clean (0 errors after `frob ticket sweep T-0778` refreshed PRE001); `--only gates-native --ticket T-0778` clean; `--only gates-security --ticket T-0778` clean; `--only static --ticket T-0778` and `--only lint --ticket T-0778` clean (pre-existing exports/frob-dup noise, all `pass`). `uv run --frozen frob sys audit` -> "sys audit: PROVED (4 waived) -- zero UNWAIVED gaps across every configured view" / "self-conformance PROVED -- zero SYS gaps", the 4 WAIVED LINT004 lines are the rewritten fleet/core/tickets_ledger/vet waivers above, no other node newly reds.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_gitio.py::TestRunArgv::test_kill_switch_refuses_without_spawning` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0779 -->
 ```yaml
@@ -5811,3 +5847,70 @@ component: null
 labels: []
 ```
 Sunset-execution ticket for the user's 2026-07-23 deprecation decision (T-0580, done). Stays OPEN until the sunset so the four frob:deprecated directives have a live ticket binding (DEPR002 requires ticket= to reference an open ticket -- T-0797 registration surfaced that the directives bound to the closed T-0580). Do not work before the sunset date.
+
+<!-- ticket:T-0803 -->
+```yaml
+id: T-0803
+title: wire remaining subprocess call sites through the T-0200/T-0778 exec guard (tickets
+  git spawn, gitlog, fleet, clipboard, mutate, deploy, scaffold, coverage-wait)
+state: queued
+kind: security
+origin: human
+created: '2026-07-23'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/__init__.py
+- src/frob/gitlog/__init__.py
+- src/frob/app/ticket_runner.py
+- src/frob/fleet/__init__.py
+- src/frob/tickets/clipboard.py
+- src/frob/mutate/__init__.py
+- src/frob/deploy/_vm_runner.py
+- src/frob/scaffold/project.py
+- src/frob/testing/_coverage_wait.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0778 (H2 fix) wired frob.gitio.run_argv through
+frob.process._guard.guarded_subprocess_run, which transitively covers every
+git spawn that already goes through gitio (serve daemon, gitio-based lease
+reads). The T-0778 sweep (grep subprocess.run/Popen/call/check_output
+outside src/frob/process/_guard.py and src/frob/gitio.py) found additional
+call sites that still bypass the guard entirely -- FROB_DISABLE_EXEC=1 does
+NOT stop these:
+
+- src/frob/tickets/__init__.py:930 `_repo_files_git` -- direct `git
+  ls-files` subprocess.run, not routed through gitio.run_argv. This is a
+  real git spawn the audit's "tickets lease" language pointed at.
+- src/frob/tickets/__init__.py:2370 `_run_evidence_command` -- shell=True
+  evidence-command spawn (caller-supplied command, T-0215); arguably
+  intentionally outside a git-argv guard shape, but still an unguarded
+  exec capability.
+- src/frob/gitlog/__init__.py:230 -- direct `git log` subprocess.run.
+- src/frob/app/ticket_runner.py:863,1159 -- subprocess.run/Popen.
+- src/frob/fleet/__init__.py:164,194 -- subprocess.run.
+- src/frob/tickets/clipboard.py (9 call sites) -- subprocess.run for
+  clipboard tool spawns (pbcopy/xclip/etc).
+- src/frob/mutate/__init__.py:260 -- subprocess.run.
+- src/frob/deploy/_vm_runner.py:109,116,134,153 -- subprocess.run.
+- src/frob/scaffold/project.py:509 -- subprocess.run.
+- src/frob/testing/_coverage_wait.py:151 -- subprocess.run (noqa S603).
+
+Fix: for each site, either route it through
+frob.process._guard.guarded_subprocess_run (preferred, matching T-0778's
+gitio wiring), or justify in a code comment why it must stay outside the
+kill switch (e.g. a non-exec-capability tool, or a case where refusing to
+spawn would be actively harmful) and record that justification in
+design/frob.strata as a real `attr flag=` or an honest waiver -- never a
+"T-0200 is pending" waiver again, since the mechanism is real now.
+Prioritize the two GIT call sites (tickets/__init__.py:930,
+gitlog/__init__.py:230) since those are the closest remaining gap to
+FROB_DISABLE_EXEC's advertised "stops every process this component
+spawns" claim.

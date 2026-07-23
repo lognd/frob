@@ -294,6 +294,35 @@ class TestRunArgv:
         assert result.is_err
         assert result.danger_err == GitError.GitFailed
 
+    def test_kill_switch_refuses_without_spawning(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # frob:tests src/frob/gitio.py::run_argv
+        # T-0778: FROB_DISABLE_EXEC=1 must make run_argv refuse to spawn
+        # (Result error, logged) rather than partially bypass the T-0200
+        # guard -- this is the audit H2 gap this ticket closes: run_argv is
+        # gitio's single spawn seam, reused by the serve daemon and every
+        # gitio-based lease read, so guarding it here covers all three.
+        monkeypatch.setenv("FROB_DISABLE_EXEC", "1")
+        spawned = False
+        real_run = subprocess.run
+
+        def _spy(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+            nonlocal spawned
+            spawned = True
+            return real_run(*args, **kwargs)  # type: ignore[arg-type]
+
+        monkeypatch.setattr(subprocess, "run", _spy)
+        with caplog.at_level(logging.WARNING):
+            result = run_argv(["echo", "hello"], cwd=tmp_path)
+        assert result.is_err
+        assert result.danger_err == GitError.GitFailed
+        assert not spawned
+        assert any("exec disabled" in record.message for record in caplog.records)
+
 
 class TestCurrentBranch:
     def test_returns_branch_name(self, tmp_path: Path) -> None:
