@@ -72,6 +72,7 @@ declaration).
 | DOC004 | docblocks | a fenced code block in a tracked `.md` doc references the project's OWN code surface (manifest-derived python/rust/ts namespaces) and either does not resolve (error, "stale") or resolves but carries no nearby `frob:doc`/`frob:describes`/`frob:tests` anchor (warn, "unbound") -- see "Unbound/stale doc code blocks" below |
 | DOC005 | docblocks | `README.md`'s command table is out of sync with the live top-level subcommand registry: a real subcommand has no table row (error, "missing"), a table row names a subcommand that no longer exists (error, "stale"), or a "N commands" prose count claim does not equal the live count (error) -- see "DOC005 README command-table drift-lock" below |
 | EXCL001 | excludehazard | a `.git/info/exclude` entry shadows a git-tracked file or a directory containing tracked files -- see "EXCL001 (T-0465)" below |
+| PROTO001 | protocol_summary | (warn) a `frob:requires`/`frob:transition`-tagged symbol's `frob.graph.summary.compute_protocol_summaries` result is `poisoned` (an `UNRESOLVED_CALLEE` somewhere in its transitive call closure) -- see "PROTO001 (T-0813)" below |
 
 **T-0398 (evidence integrity) note on COV003**: COV003 only ever answers
 "does this evidence id resolve to a currently-collected test" -- it does
@@ -255,6 +256,51 @@ falls through **DSL001**'s existing generic catch-all (any malformed
 `DEBT001`/`DEPR001` entries above for the established shape this reuses),
 so a malformed or unbound protocol declaration fails `frob check` today
 with no `frob.gates` change required.
+
+### PROTO001 (T-0813)
+
+`frob.gates._protocol_summary.protocol_summary_gate` is the production
+entrypoint the T-0809 reviewer's condition (a) asked for: the first real
+repo-scan caller of `frob.graph.callgraph.build_call_graph(...,
+mark_unresolved=True)` feeding `frob.graph.summary
+.compute_protocol_summaries`, turning the T-0745 `UNRESOLVED_CALLEE`
+poisoning channel into a real `frob check` finding instead of a
+fixture-only test path.
+
+Scoped narrowly: only a symbol that itself carries a `frob:requires`/
+`frob:transition` directive (an explicit T-0744 protocol participant) is
+ever reported -- `compute_protocol_summaries` still analyzes every
+function transitively reachable from those tagged entrypoints (poisoning
+propagates through untagged helpers too, per T-0745's NO-FAIL-SILENT
+contract); the scoping only decides which POISONED summaries are worth
+surfacing, not what the engine computes. Grouped and cached per package
+(same directory, mirroring `DEAD001`'s posture) -- `build_call_graph` and
+the package's `frob:` directive parse both run at most once per package
+regardless of how many tagged symbols it declares.
+
+**False-positive disposition (dunder/cross-package attribute calls,
+T-0813)**: `obj._method(...)` and `super().__init__(...)` both LOOK like
+this repo's own private-symbol calling convention (leading underscore)
+under `build_call_graph`'s best-effort, name-based resolution, but are
+never actually a call to a local helper the graph could ever bind --
+`obj`'s real class, or the base class `super()` resolves to, is not
+necessarily even in the scanned `paths`. `frob.graph.callgraph
+._unresolved_exempt_names` filters these out of `mark_unresolved`'s
+poisoning trigger: a call name whose EVERY occurrence in a function body
+is an attribute call (`<expr>.name(`) on a receiver other than `self` is
+exempt from ever becoming an `UNRESOLVED_CALLEE` edge. `self._foo(...)`
+is deliberately NOT exempted -- that receiver token IS the enclosing
+class, exactly the intra-package private-helper call this graph exists
+to catch. A name that also appears as a bare call or a `self.`-call
+elsewhere in the same body is not exempt either (one confident occurrence
+keeps it eligible).
+
+Python files ONLY (`.py`): `build_call_graph`'s callee-privacy check
+hardcodes Python's leading-underscore `public` convention -- the same
+Rust/TypeScript/C soundness gap `DEAD001` already disclosed and scoped
+around, not a new gap this gate introduces. WARN-only (advisory-but-
+tracked, matching `DEAD001`/REF/PERF/FUZZ's posture), waivable with
+`frob:waive PROTO001 reason="..."`.
 
 ### Waive boundary (T-0101, revised T-0289)
 

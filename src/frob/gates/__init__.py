@@ -90,6 +90,7 @@ from frob.gates._models import (
 from frob.gates._parse_failures import parse_failure_gate
 from frob.gates._pii_structural import pii_structural_gate
 from frob.gates._prework import load_prework, record_prework, sweep_ticket
+from frob.gates._protocol_summary import protocol_summary_gate
 from frob.gates._refs import ref_gate
 from frob.gates._registry_exhaustiveness import registry_gate
 from frob.gates._render_lint import render_lint_gate
@@ -1051,6 +1052,11 @@ _KNOWN_GATE_RULES = frozenset(
         # targeting a perfectly real, matchable rule id. This was a listing
         # omission, not evidence DEAD001 was ever renamed or removed.
         "DEAD001",
+        # T-0813: the production `mark_unresolved=True` wiring into
+        # `compute_protocol_summaries` (frob.gates._protocol_summary) --
+        # a frob:requires/frob:transition-tagged symbol whose transitive
+        # call closure hits a genuinely unresolved callee.
+        "PROTO001",
     }
 )
 
@@ -8297,6 +8303,9 @@ _ALL_GATES = frozenset(
         # implemented since T-0576 but never registered here, so no real
         # `frob check` run ever evaluated them (catalogued-is-not-enforced).
         "deprecated",
+        # T-0813: PROTO001, the production compute_protocol_summaries
+        # entrypoint (frob.gates._protocol_summary).
+        "protocol_summary",
     }
 )
 
@@ -8537,7 +8546,16 @@ def _load_inputs(cfg: GateConfig) -> Result[_GateInputs, GateError]:
 # other gate is I/O-bound or cheap enough that process-spawn/pickle
 # overhead would not pay for itself, so it stays on the thread pool.
 _PROCESS_POOL_GATES: frozenset[str] = frozenset(
-    {"archgate", "sys", "clones", "perf", "pii_structural", "secrets", "dead_symbols"}
+    {
+        "archgate",
+        "sys",
+        "clones",
+        "perf",
+        "pii_structural",
+        "secrets",
+        "dead_symbols",
+        "protocol_summary",
+    }
 )
 
 # frob:ticket T-0415
@@ -8576,6 +8594,8 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "render_lint",
     "parse_failures",
     "dead_symbols",
+    # frob:ticket T-0813
+    "protocol_summary",
     "lang_conformance",
     "lang_project_conformance",
     "scope",
@@ -8727,6 +8747,10 @@ def _build_jobs(
         # T-0422: per-package build_call_graph calls are CPU-bound like the
         # rest of this pool (archgate/perf/sys), not I/O-bound.
         "dead_symbols": _ProcessJob(dead_symbol_gate, (st.root, st.snapshot)),
+        # T-0813: same CPU-bound per-package build_call_graph posture as
+        # dead_symbols above, plus a fixpoint pass over each package's
+        # protocol-tagged symbols.
+        "protocol_summary": _ProcessJob(protocol_summary_gate, (st.root, st.snapshot)),
     }
     selected_thread = {
         name: job for name, job in thread_jobs.items() if name in selected
@@ -9241,6 +9265,7 @@ __all__ = [
     "perf_gate",
     "pii_structural_gate",
     "project_lang_conformance_gate",
+    "protocol_summary_gate",
     "release_gate",
     "prework_gate",
     "record_prework",

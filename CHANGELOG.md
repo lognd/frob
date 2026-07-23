@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.114.0] - unreleased
+
+- T-0813: graph: production entrypoint wiring mark_unresolved=True into compute_protocol_summaries (opt-in flag currently invoked by nothing)
+
 ## [0.113.0] - unreleased
 
 - T-0752: doable: priority column, in-flight/dispatchable split, and undispatched-critical staleness alarm

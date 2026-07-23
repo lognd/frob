@@ -161,6 +161,17 @@ is the next planned consumer) rather than each re-deriving call resolution.
   future real production wiring of `build_call_graph` into
   `compute_protocol_summaries` passes `mark_unresolved=True` explicitly.
 
+  **T-0813 (the real wiring)**: `frob.gates._protocol_summary
+  .protocol_summary_gate` (docs/modules/gates.md#proto001-t-0813) is that
+  production caller -- `PROTO001`, wired into `frob check` (the
+  `protocol_summary` gate name). It also disposes of the dominant
+  real-repo false-positive class `mark_unresolved=True` surfaces on
+  actual code: `obj._method(...)`/`super().__init__(...)` attribute calls
+  on a non-`self` receiver look like this module's private-symbol
+  convention but are never a call this graph could resolve --
+  `_unresolved_exempt_names` filters them out of the poisoning trigger
+  (see the gates doc's PROTO001 section for the exact rule).
+
   <!-- frob:invariant INV-014 -->
 - `closure(graph, start, *, max_depth, max_nodes)` -- bounded BFS from
   `start`: depth-limited, node-count-capped, cycle-guarded (a visited set

@@ -1927,6 +1927,60 @@ class TestCallGraph:
         assert call_graph.calls == {"src/a.py::public_entry": ("src/a.py::_helper",)}
         assert UNRESOLVED_CALLEE not in call_graph.calls["src/a.py::public_entry"]
 
+    # frob:ticket T-0813
+    def test_build_call_graph_exempts_attribute_call_on_foreign_receiver_from_unresolved(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/callgraph.py::build_call_graph
+        # T-0813: `obj._method(...)` LOOKS like our own private-symbol
+        # convention (leading underscore) but is a method call on some
+        # OTHER object's surface, never a call this graph could resolve --
+        # must not poison a production summary.
+        from frob.graph.callgraph import build_call_graph
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def public_entry(obj) -> None:\n    obj._method()\n",
+        )
+        call_graph = build_call_graph(tmp_path, ("src/a.py",), mark_unresolved=True)
+        assert call_graph.calls == {}
+
+    # frob:ticket T-0813
+    def test_build_call_graph_exempts_super_dunder_call_from_unresolved(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/callgraph.py::build_call_graph
+        # T-0813: `super().__init__(...)` is the language's own object
+        # protocol, never a local private helper this graph could bind.
+        from frob.graph.callgraph import build_call_graph
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "class Foo:\n    def __init__(self) -> None:\n        super().__init__()\n",
+        )
+        call_graph = build_call_graph(tmp_path, ("src/a.py",), mark_unresolved=True)
+        assert call_graph.calls == {}
+
+    # frob:ticket T-0813
+    def test_build_call_graph_still_marks_unresolved_self_attribute_call(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/callgraph.py::build_call_graph
+        # T-0813: `self._foo()` is exactly the intra-class private-helper
+        # call this graph is meant to catch -- the attribute-call exemption
+        # must not swallow a genuine broken `self.` call.
+        from frob.graph.callgraph import UNRESOLVED_CALLEE, build_call_graph
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "class Foo:\n    def bar(self) -> None:\n        self._missing()\n",
+        )
+        call_graph = build_call_graph(tmp_path, ("src/a.py",), mark_unresolved=True)
+        assert call_graph.calls == {"src/a.py::Foo.bar": (UNRESOLVED_CALLEE,)}
+
 
 class TestLedgerNotDoc:
     """The top-level ticket ledgers are history, not docs -- classifying

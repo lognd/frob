@@ -1775,6 +1775,97 @@ class TestDeadSymbolGate:
         assert not any("_never_called" in v.message for v in violations)
 
 
+# frob:ticket T-0813
+class TestProtocolSummaryGate:
+    """T-0813: the production `mark_unresolved=True` wiring into
+    `compute_protocol_summaries` -- a `frob:requires`/`frob:transition`-
+    tagged symbol whose transitive call closure hits an unresolved private
+    callee is PROTO001; a clean or untagged one is not."""
+
+    def test_unresolved_callee_poisons_a_protocol_tagged_symbol(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        from frob.gates._protocol_summary import protocol_summary_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def enter() -> None:\n"
+            '    # frob:requires proto="Lock" state="held"\n'
+            "    _do_work()\n"
+            "\n\n"
+            "def _do_work() -> None:\n"
+            "    _missing_helper()\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = protocol_summary_gate(tmp_path, snap)
+        v = next((v for v in violations if v.rule == "PROTO001"), None)
+        assert v is not None
+        assert "src/a.py::enter" in v.message
+        assert v.severity == Severity.WARN
+
+    def test_clean_protocol_tagged_symbol_is_not_flagged(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        from frob.gates._protocol_summary import protocol_summary_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def enter() -> None:\n"
+            '    # frob:requires proto="Lock" state="held"\n'
+            "    _do_work()\n"
+            "\n\n"
+            "def _do_work() -> None:\n"
+            "    pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = protocol_summary_gate(tmp_path, snap)
+        assert not any(v.rule == "PROTO001" for v in violations)
+
+    def test_untagged_symbol_with_unresolved_call_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        from frob.gates._protocol_summary import protocol_summary_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def enter() -> None:\n"
+            '    # frob:requires proto="Lock" state="held"\n'
+            "    pass\n"
+            "\n\n"
+            "def untagged() -> None:\n"
+            "    _missing_helper()\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = protocol_summary_gate(tmp_path, snap)
+        assert not any(v.rule == "PROTO001" for v in violations)
+
+    def test_real_repo_scan_runs_end_to_end_without_crashing(self) -> None:
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="integration"
+        # T-0813: the honest "real repo scan" smoke test -- runs the actual
+        # production entrypoint (build_call_graph(mark_unresolved=True) +
+        # compute_protocol_summaries) over this repo's OWN real graph
+        # snapshot, not a hand-fabricated fixture. Nothing in this repo's
+        # production code carries a frob:requires/frob:transition directive
+        # yet (T-0744's declaration surface has no first production
+        # consumer besides this gate's own tests), so 0 violations is the
+        # correct, honest result today -- the assertion that matters is
+        # that a real repo scan, including every UNRESOLVED_CALLEE the
+        # dunder/cross-package exemption (T-0813) had to be built to
+        # filter, completes without the IndexError/crash class T-0809's
+        # own Done report disclosed as the reason mark_unresolved defaulted
+        # to False.
+        from frob.gates._protocol_summary import protocol_summary_gate
+
+        root = Path(__file__).resolve().parents[1]
+        snap = _snapshot(root)
+        violations = protocol_summary_gate(root, snap)
+        assert isinstance(violations, tuple)
+
+
 # frob:ticket T-0731
 class TestDebtGate:
     """T-0412: frob:debt vs frob:waive -- malformed directive (DEBT001),

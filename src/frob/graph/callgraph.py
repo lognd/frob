@@ -115,6 +115,50 @@ def _called_names_from_sym(sym) -> frozenset[str]:  # noqa: ANN001
     return _called_names(sym.body_tokens)
 
 
+# frob:ticket T-0813
+# frob:tests tests/test_graph.py::TestCallGraph.test_build_call_graph_exempts_attribute_call_on_foreign_receiver_from_unresolved  # noqa: E501
+# frob:tests tests/test_graph.py::TestCallGraph.test_build_call_graph_exempts_super_dunder_call_from_unresolved  # noqa: E501
+# frob:tests tests/test_graph.py::TestCallGraph.test_build_call_graph_still_marks_unresolved_self_attribute_call  # noqa: E501
+def _unresolved_exempt_names(body_tokens: tuple[str, ...]) -> frozenset[str]:
+    """Names whose EVERY call-token occurrence in `body_tokens` is an
+    attribute call (`<expr>.name(`) on something other than `self` --
+    T-0813's disposition of the dominant real-repo `UNRESOLVED_CALLEE`
+    false-positive class the T-0809 reviewer flagged before production
+    wiring: `obj._method(...)` and `super().__init__(...)` both LOOK like
+    this module's own private-symbol calling convention (leading
+    underscore) but are never actually a call to a local helper this
+    best-effort, name-based graph could ever resolve -- `obj`/`super()`'s
+    real target lives in a different class or a completely different
+    package this run's `paths` may not even include. `self._foo(...)` is
+    NOT exempted (that receiver token IS the enclosing class -- exactly
+    the intra-package private-helper call this graph is meant to catch)
+    -- only checked against the token immediately preceding the `.`, so a
+    chained call (`self._helper()._foo()`) is conservatively exempted too
+    (its receiver is not literally the token `self`); a rare miss, never
+    a false accusation, matching this module's best-effort posture
+    elsewhere. Same miss for `cls._x(...)` inside a classmethod -- `cls`
+    is exactly as much "the enclosing class" as `self` is for an
+    intra-package private-helper call, but this check only ever
+    recognizes the literal token `self`, so a classmethod's own private
+    calls via `cls.` are conservatively exempted too (never a false
+    accusation, just a narrower catch than `self.` gets). A name that
+    ALSO appears as a bare call or a `self.`-call somewhere else in the
+    same body is not exempt -- one confident occurrence is enough to
+    keep it eligible for unresolved marking."""
+    confident: set[str] = set()
+    all_calls: set[str] = set()
+    for i in range(len(body_tokens) - 1):
+        tok = body_tokens[i]
+        if body_tokens[i + 1] != "(" or not tok.isidentifier():
+            continue
+        all_calls.add(tok)
+        is_attr_call = i > 0 and body_tokens[i - 1] == "."
+        receiver_is_self = is_attr_call and i > 1 and body_tokens[i - 2] == "self"
+        if not is_attr_call or receiver_is_self:
+            confident.add(tok)
+    return frozenset(all_calls - confident)
+
+
 # frob:ticket T-0422
 # frob:ticket T-0565
 def _referenced_names(sym) -> frozenset[str]:  # noqa: ANN001
@@ -211,7 +255,19 @@ def build_call_graph(
     parsed_by_path = _parse_package(root, paths)
     by_name = _short_name_index(parsed_by_path)
     calls = _resolve_edges(
-        parsed_by_path, by_name, _called_names_from_sym, mark_unresolved=mark_unresolved
+        parsed_by_path,
+        by_name,
+        _called_names_from_sym,
+        mark_unresolved=mark_unresolved,
+        # T-0813: only `build_call_graph`'s call-token extraction has the
+        # attribute-call context `_unresolved_exempt_names` needs (a
+        # `sym.body_tokens` flat stream); `build_reference_graph` always
+        # passes `mark_unresolved=False` so it never consults this at all.
+        exempt_extractor=(
+            (lambda sym: _unresolved_exempt_names(sym.body_tokens))
+            if mark_unresolved
+            else None
+        ),
     )
     return CallGraph(calls=calls)
 
@@ -270,6 +326,7 @@ def _resolve_edges(
     name_extractor,
     *,
     mark_unresolved: bool = False,
+    exempt_extractor=None,  # noqa: ANN001
 ) -> dict[str, tuple[str, ...]]:
     """Caller symref -> resolved private-callee symrefs, per `build_call_graph`'s
     resolution rule (never a public symbol, never self); split out of
@@ -292,12 +349,23 @@ def _resolve_edges(
     many distinct unresolved private-looking names it has, matching
     `frob.graph.summary`'s treatment of the sentinel as a poisoning FLAG,
     not a per-callee enumeration.
+
+    T-0813: `exempt_extractor(sym)`, when given, returns the subset of
+    `names` that `mark_unresolved` must NOT count toward the unresolved
+    flag even when they are otherwise zero-candidate private-looking
+    names -- `build_call_graph`'s `obj._method(...)`/`super().__init__
+    (...)` false-positive disposition (`_unresolved_exempt_names`).
+    `None` (the default, and `build_reference_graph`'s always-`False`
+    posture) exempts nothing, unchanged prior behavior.
     """
     calls: dict[str, tuple[str, ...]] = {}
     for path, symbols in parsed_by_path.items():
         for sym in symbols:
             caller_symref = f"{path}::{sym.qualname}"
             names = name_extractor(sym)
+            exempt = (
+                exempt_extractor(sym) if exempt_extractor is not None else frozenset()
+            )
             callees: list[str] = []
             saw_unresolved = False
             for name in names:
@@ -314,6 +382,7 @@ def _resolve_edges(
                     and not matched_private
                     and not candidates
                     and name.startswith("_")
+                    and name not in exempt
                 ):
                     saw_unresolved = True
             if saw_unresolved:
