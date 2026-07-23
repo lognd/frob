@@ -39,6 +39,14 @@ from frob.serve import _warm
 
 _log = get_logger(__name__)
 
+# frob:ticket T-0782
+# Which (root, ticket id) pairs `poll_rebase_bot` has already logged a
+# TTL-expiry skip for -- same "log once per process" shape as
+# `frob.tickets._leases._stale_lease_logged` (T-0773), so a long-lived
+# daemon that re-polls the same dead-agent-but-live-worktree lease every
+# ~20s cycle forever warns exactly once, not forever.
+_ttl_skip_logged: set[tuple[Path, str]] = set()
+
 # frob:doc docs/modules/serve.md#daemon-jobs
 DEFAULT_POLL_INTERVAL_S = 20.0
 
@@ -195,13 +203,49 @@ def _worktree_branches(root: Path) -> tuple[tuple[str, str, str], ...]:
     """`(ticket_id, worktree, branch)` for every currently-recorded
     cross-worktree lease visible from `root` (`frob.tickets._leases.
     read_all_leases`, T-0473) -- the same liveness signal `doable` already
-    trusts (a lease whose worktree path no longer exists is filtered out
-    there), reused here so `poll_rebase_bot` enumerates exactly the
-    in-flight worktrees a coordinator would consider live."""
-    from frob.tickets._leases import read_all_leases
+    trusts (a lease whose worktree path no longer exists is filtered out,
+    and opportunistically unlinked, there), reused here so `poll_rebase_bot`
+    enumerates exactly the in-flight worktrees a coordinator would consider
+    live.
+
+    T-0782: `read_all_leases`'s path-existence check alone cannot catch a
+    dead agent whose worktree checkout is still sitting on disk (crashed
+    or abandoned mid-ticket, never `git worktree remove`d) -- that lease
+    reads as perfectly live forever, and this function used to hand every
+    such lease straight to `_merge_would_conflict` every ~20s cycle (audit
+    M2: 2 `git` spawns per cycle, per dead lease, unbounded). A lease whose
+    `recorded_at` is older than `LEASE_TTL_SECONDS` is filtered out here,
+    logged once per (root, ticket id) via `_ttl_skip_logged` -- the daemon
+    stops re-simulating it, but the lease file itself is left alone (only
+    `read_all_leases`'s path-liveness branch unlinks; an over-TTL-but-live
+    worktree may still be a real, if slow, in-progress agent -- expiry
+    here only affects the daemon's OWN re-simulation cost, never deletes
+    anyone's lease)."""
+    from frob.tickets._leases import (
+        LEASE_TTL_SECONDS,
+        is_lease_ttl_expired,
+        read_all_leases,
+    )
 
     leases = read_all_leases(root)
-    return tuple((lease.ticket_id, lease.worktree, lease.branch) for lease in leases)
+    live: list[tuple[str, str, str]] = []
+    for lease in leases:
+        if is_lease_ttl_expired(lease):
+            log_key = (root, lease.ticket_id)
+            already_logged = log_key in _ttl_skip_logged
+            if not already_logged:
+                _ttl_skip_logged.add(log_key)
+                _log.info(
+                    "serve: daemon: rebase-bot: %s lease is past the %ss "
+                    "TTL (recorded_at=%s) -- skipping re-simulation, "
+                    "treating as a dead agent",
+                    lease.ticket_id,
+                    LEASE_TTL_SECONDS,
+                    lease.recorded_at,
+                )
+            continue
+        live.append((lease.ticket_id, lease.worktree, lease.branch))
+    return tuple(live)
 
 
 def _merge_would_conflict(root: Path, branch: str, main_head: str) -> bool | None:
@@ -261,6 +305,7 @@ def _merge_would_conflict(root: Path, branch: str, main_head: str) -> bool | Non
 # frob:tests tests/test_serve_daemon.py::TestPollRebaseBot.test_no_leases_is_no_warnings kind="unit"  # noqa: E501
 # frob:tests tests/test_serve_daemon.py::TestPollRebaseBot.test_conflicting_branch_warns kind="unit"  # noqa: E501
 # frob:tests tests/test_serve_daemon.py::TestPollRebaseBot.test_clean_branch_no_warning kind="unit"  # noqa: E501
+# frob:tests tests/test_serve_daemon.py::TestPollRebaseBot.test_ttl_expired_lease_skipped_and_logged_once kind="unit"  # noqa: E501
 def poll_rebase_bot(root: Path) -> tuple[RebaseWarning, ...]:
     """One rebase-bot cycle (T-0733, job 2): for every in-flight worktree
     branch (`_worktree_branches`), simulate merging current `main` into it

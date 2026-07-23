@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.108.0] - unreleased
+
+- T-0782: leases: implement T-0476 cleanup -- unlink stale leases opportunistically + TTL for dead-agent leases (daemon stops re-simulating)
+
 ## [0.107.0] - unreleased
 
 - T-0745: protocol summary engine: per-function fixpoint over the call graph, shared with may-raise

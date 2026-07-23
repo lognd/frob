@@ -87,6 +87,7 @@ class TestPollPostLand:
         assert second.head != first.head
 
 
+# frob:ticket T-0782
 class TestPollRebaseBot:
     def test_no_leases_is_no_warnings(self, repo: Path) -> None:
         # frob:tests tests/test_serve_daemon.py::TestPollRebaseBot.test_no_leases_is_no_warnings
@@ -127,6 +128,60 @@ class TestPollRebaseBot:
 
         warnings = _daemon.poll_rebase_bot(repo)
         assert warnings == ()
+
+    # frob:ticket T-0782
+    def test_ttl_expired_lease_skipped_and_logged_once(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """T-0782: a lease whose worktree path is still LIVE (so
+        `read_all_leases`'s path-existence check alone would not drop it)
+        but whose `recorded_at` is long past `LEASE_TTL_SECONDS` -- the
+        deferred T-0476 dead-agent-with-a-live-worktree case. The daemon
+        must skip re-simulating it (never conflict-warn for it) and log
+        the skip exactly once across repeated poll cycles."""
+        # frob:tests tests/test_serve_daemon.py::TestPollRebaseBot.test_ttl_expired_lease_skipped_and_logged_once
+        import logging
+
+        from frob.tickets._leases import LeaseRecord, leases_dir
+
+        wt = repo.parent / "wt-dead-agent"
+        _run(["git", "worktree", "add", "-b", "feature-dead", str(wt)], repo)
+        # A conflicting branch edit, exactly like test_conflicting_branch_warns
+        # -- if the daemon did NOT skip this lease, it would warn here.
+        _write(wt, "src/pkg/a.py", '"""Module."""\nx = "from-dead-branch"\n')
+        _commit_all(wt, "branch edit")
+        _write(repo, "src/pkg/a.py", '"""Module."""\nx = "from-main"\n')
+        _commit_all(repo, "main edit")
+
+        resolved = leases_dir(repo)
+        assert resolved.is_ok
+        leases_root = resolved.danger_ok
+        leases_root.mkdir(parents=True, exist_ok=True)
+        stale = LeaseRecord(
+            ticket_id="T-0902",
+            scope=("src/pkg/a.py",),
+            worktree=str(wt.resolve()),
+            branch="feature-dead",
+            recorded_at="2000-01-01T00:00:00+00:00",
+        )
+        (leases_root / "T-0902.json").write_text(
+            stale.model_dump_json(indent=2) + "\n", encoding="utf-8"
+        )
+
+        caplog.set_level(logging.INFO, logger="frob.serve._daemon")
+
+        first = _daemon.poll_rebase_bot(repo)
+        second = _daemon.poll_rebase_bot(repo)
+
+        assert first == ()
+        assert second == ()
+
+        skip_logs = [
+            record
+            for record in caplog.records
+            if "T-0902" in record.getMessage() and "TTL" in record.getMessage()
+        ]
+        assert len(skip_logs) == 1
 
 
 class TestPollRebaseBotLeaseInjectionGuard:

@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -22,6 +23,8 @@ import pytest
 from frob.tickets._leases import (
     LeaseError,
     LeaseRecord,
+    is_lease_ttl_expired,
+    lease_age_seconds,
     leases_dir,
     read_all_leases,
     resolve_lease,
@@ -413,3 +416,189 @@ class TestLeaseShapeValidation:
             and "rejected lease" in record.getMessage()
         ]
         assert len(rejections) == 1
+
+
+class TestLeaseTtl:
+    """T-0782: `lease_age_seconds`/`is_lease_ttl_expired` -- the T-0476
+    dead-agent-with-a-live-worktree case `read_all_leases`'s path-existence
+    check alone cannot catch (the path is still there; only the lease's OWN
+    `recorded_at` timestamp reveals it has gone stale)."""
+
+    def _record(self, recorded_at: str) -> LeaseRecord:
+        return LeaseRecord(
+            ticket_id="T-0782",
+            scope=(),
+            worktree="/tmp/whatever",
+            branch="main",
+            recorded_at=recorded_at,
+        )
+
+    def test_age_seconds_computes_elapsed_time(self) -> None:
+        recorded = datetime(2026, 7, 23, 0, 0, 0, tzinfo=UTC)
+        now = recorded + timedelta(hours=2)
+        record = self._record(recorded.isoformat())
+        assert lease_age_seconds(record, now=now) == 7200.0
+
+    def test_age_seconds_none_for_unparseable_timestamp(self) -> None:
+        record = self._record("not-a-timestamp")
+        assert lease_age_seconds(record) is None
+
+    def test_expired_past_ttl(self) -> None:
+        now = datetime(2026, 7, 23, 12, 0, 0, tzinfo=UTC)
+        recorded = now - timedelta(seconds=100)
+        record = self._record(recorded.isoformat())
+        assert is_lease_ttl_expired(record, now=now, ttl_seconds=60) is True
+
+    def test_not_expired_within_ttl(self) -> None:
+        now = datetime(2026, 7, 23, 12, 0, 0, tzinfo=UTC)
+        recorded = now - timedelta(seconds=10)
+        record = self._record(recorded.isoformat())
+        assert is_lease_ttl_expired(record, now=now, ttl_seconds=60) is False
+
+    def test_unparseable_timestamp_is_never_treated_as_expired(self) -> None:
+        record = self._record("not-a-timestamp")
+        assert is_lease_ttl_expired(record, ttl_seconds=1) is False
+
+
+class TestOpportunisticUnlink:
+    """T-0782: `read_all_leases` now opportunistically unlinks a lease file
+    whose worktree path no longer exists (the deferred T-0476 reconcile),
+    instead of only skipping it in-memory -- `.git/frob-leases/` used to
+    grow monotonically since a crashed/removed worktree never runs
+    `release_lease` (audit M2)."""
+
+    def test_stale_path_lease_is_unlinked_from_disk(
+        self, repo: Path, tmp_path: Path
+    ) -> None:
+        """A lease recording a worktree path that no longer exists is not
+        just filtered out of `read_all_leases`'s return value -- its file
+        is actually removed from the leases directory on disk."""
+        doomed = tmp_path / "doomed-worktree"
+        doomed.mkdir()
+        _write_lease(repo, "T-0700", doomed)
+        # Path exists right now -- read once so the file enters the cache
+        # (mirrors a real crash: recorded while alive, then removed).
+        assert any(lease.ticket_id == "T-0700" for lease in read_all_leases(repo))
+
+        doomed.rmdir()
+        assert not doomed.exists()
+
+        leases = read_all_leases(repo)
+        assert not any(lease.ticket_id == "T-0700" for lease in leases)
+
+        resolved = leases_dir(repo)
+        assert resolved.is_ok
+        assert not (resolved.danger_ok / "T-0700.json").exists()
+
+    def test_live_lease_is_never_unlinked(self, repo: Path) -> None:
+        """A lease recording a worktree path that DOES exist (`repo`
+        itself) is never removed, no matter how many times
+        `read_all_leases` is called -- the opportunistic unlink only fires
+        after the existing non-existence check, never proactively."""
+        _write_lease(repo, "T-0701", repo)
+        read_all_leases(repo)
+        read_all_leases(repo)
+
+        resolved = leases_dir(repo)
+        assert resolved.is_ok
+        assert (resolved.danger_ok / "T-0701.json").exists()
+        assert any(lease.ticket_id == "T-0701" for lease in read_all_leases(repo))
+
+
+class TestAmbiguousLivenessGuard:
+    """T-0782 reviewer fix: a transient/ambiguous `os.stat` failure on the
+    worktree path (permission error, stale handle, slow mount -- T-0584)
+    must NEVER be treated as confirmed absence -- only a genuine
+    `FileNotFoundError` (with a still-reachable parent directory) may ever
+    trigger the opportunistic unlink. `Path.exists()` alone cannot make
+    this distinction (it swallows every `OSError`), which is exactly the
+    bug this guards against."""
+
+    def test_ambiguous_stat_failure_does_not_unlink(
+        self, repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A `PermissionError` (or any other non-ENOENT `OSError`) raised
+        by `os.stat` on the recorded worktree path must leave the lease
+        file exactly as it was -- neither unlinked from disk nor admitted
+        into `read_all_leases`'s return value (the lease is skipped THIS
+        pass, matching pre-T-0782 behavior, but never destroyed)."""
+        from frob.tickets import _leases as leases_module
+
+        live_worktree = tmp_path / "worktree-under-flaky-mount"
+        live_worktree.mkdir()
+        _write_lease(repo, "T-0800", live_worktree)
+
+        real_stat = os.stat
+
+        def _flaky_stat(path, *args, **kwargs):
+            if Path(path) == live_worktree:
+                raise PermissionError(13, "Permission denied")
+            return real_stat(path, *args, **kwargs)
+
+        monkeypatch.setattr(leases_module.os, "stat", _flaky_stat)
+
+        leases = read_all_leases(repo)
+        assert not any(lease.ticket_id == "T-0800" for lease in leases)
+
+        resolved = leases_dir(repo)
+        assert resolved.is_ok
+        # The lease file must still be on disk -- an ambiguous stat
+        # failure is never grounds for deletion.
+        assert (resolved.danger_ok / "T-0800.json").exists()
+
+    def test_ambiguous_failure_is_logged_once_per_process(
+        self, repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
+    ) -> None:
+        """Repeated `read_all_leases` calls against the SAME
+        ambiguous-liveness lease warn exactly once (the same log-once
+        shape as every other diagnostic in this module), not once per
+        call."""
+        import logging
+
+        from frob.tickets import _leases as leases_module
+
+        live_worktree = tmp_path / "worktree-under-flaky-mount-2"
+        live_worktree.mkdir()
+        _write_lease(repo, "T-0801", live_worktree)
+
+        real_stat = os.stat
+
+        def _flaky_stat(path, *args, **kwargs):
+            if Path(path) == live_worktree:
+                raise OSError("stale NFS file handle")
+            return real_stat(path, *args, **kwargs)
+
+        monkeypatch.setattr(leases_module.os, "stat", _flaky_stat)
+        caplog.set_level(logging.WARNING, logger="frob.tickets._leases")
+
+        read_all_leases(repo)
+        read_all_leases(repo)
+        read_all_leases(repo)
+
+        matches = [
+            record
+            for record in caplog.records
+            if "T-0801" in record.getMessage()
+            and "could not be confirmed" in record.getMessage()
+        ]
+        assert len(matches) == 1
+
+    def test_genuine_enoent_still_unlinks(self, repo: Path, tmp_path: Path) -> None:
+        """The real ENOENT case (no monkeypatching -- a worktree directory
+        that was genuinely removed) still unlinks the lease file, exactly
+        as `TestOpportunisticUnlink.test_stale_path_lease_is_unlinked_from_disk`
+        already proves -- repeated here as the direct counterpart to the
+        two ambiguous-failure tests above, confirming the fix did not
+        regress the genuine-absence path."""
+        doomed = tmp_path / "doomed-worktree-2"
+        doomed.mkdir()
+        _write_lease(repo, "T-0802", doomed)
+        doomed.rmdir()
+        assert not doomed.exists()
+
+        leases = read_all_leases(repo)
+        assert not any(lease.ticket_id == "T-0802" for lease in leases)
+
+        resolved = leases_dir(repo)
+        assert resolved.is_ok
+        assert not (resolved.danger_ok / "T-0802.json").exists()

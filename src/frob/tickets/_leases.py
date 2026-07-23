@@ -31,6 +31,7 @@ ledger's own `IN_PROGRESS` rows, to compute collisions.
 from __future__ import annotations
 
 import json
+import os
 import re
 import threading
 from datetime import UTC, datetime
@@ -47,6 +48,22 @@ _log = get_logger(__name__)
 
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
 LEASES_DIRNAME = "frob-leases"
+
+# frob:ticket T-0782
+# frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
+# Default staleness horizon for a LIVE-path lease's `recorded_at` (T-0476
+# full reconcile): a worktree whose path still exists on disk but whose
+# lease has not been refreshed (re-`record_lease`d, e.g. by `mutate_scope`
+# or a fresh `frob ticket start`) in this long is treated as belonging to
+# a dead/abandoned agent, not an active one -- the daemon's
+# `poll_rebase_bot` (`frob.serve._daemon`) stops re-simulating a merge for
+# it every ~20s cycle forever (audit M2: 2 git spawns per cycle, per dead
+# lease, unbounded). 6 hours is deliberately generous relative to a single
+# dispatched ticket's typical wall-clock lifetime (usually well under an
+# hour, per this repo's own Done-report timestamps) -- the goal is to
+# reclaim leases from agents that crashed or were abandoned mid-ticket,
+# never to expire a slow-but-live one out from under it.
+LEASE_TTL_SECONDS = 6 * 60 * 60
 
 # frob:ticket T-0773
 # Process-lifetime memoization for the hot, previously-uncached read on
@@ -92,6 +109,16 @@ _stale_lease_logged: set[tuple[Path, str]] = set()
 # (T-0773), so a daemon that re-reads the SAME peer-written evil lease
 # every poll cycle warns exactly once, not forever.
 _rejected_lease_logged: set[Path] = set()
+# frob:ticket T-0782
+# Which (leases directory, ticket id) pairs have already had an AMBIGUOUS
+# (non-ENOENT) worktree-liveness probe failure logged -- same log-once
+# shape as `_stale_lease_logged`, for `_probe_worktree_liveness`'s
+# "ambiguous" outcome (T-0584: a slow/flaky mount raising `PermissionError`
+# or another transient `OSError` must not be silently re-logged every poll
+# cycle, but must also never be silent the FIRST time it happens, since it
+# is the signal that a lease is being conservatively kept rather than
+# reconciled).
+_ambiguous_liveness_logged: set[tuple[Path, str]] = set()
 
 # frob:ticket T-0780
 # Conservative allowlist for a lease record's `branch`/`worktree` fields
@@ -180,6 +207,7 @@ def _clear_lease_caches() -> None:
     with _cache_lock:
         _lease_file_cache.clear()
         _stale_lease_logged.clear()
+        _ambiguous_liveness_logged.clear()
 
 
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
@@ -207,6 +235,55 @@ class LeaseRecord(BaseModel):
     worktree: str
     branch: str
     recorded_at: str
+
+
+# frob:ticket T-0782
+# frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
+# frob:tests tests/test_tickets_leases.py::TestLeaseTtl.test_age_seconds_computes_elapsed_time kind="unit"  # noqa: E501
+# frob:tests tests/test_tickets_leases.py::TestLeaseTtl.test_age_seconds_none_for_unparseable_timestamp kind="unit"  # noqa: E501
+def lease_age_seconds(
+    record: LeaseRecord, *, now: datetime | None = None
+) -> float | None:
+    """Seconds elapsed since `record.recorded_at`, or `None` if that field
+    cannot be parsed as an ISO-8601 timestamp (defensive -- a lease file is
+    peer-writable, T-0780) -- `now` is injectable for tests, defaulting to
+    the current UTC time. Used by `is_lease_ttl_expired` to judge a
+    live-path lease's staleness (T-0782/T-0476) without duplicating the
+    parse-and-subtract logic at each call site."""
+    try:
+        recorded = datetime.fromisoformat(record.recorded_at)
+    except ValueError:
+        return None
+    if recorded.tzinfo is None:
+        recorded = recorded.replace(tzinfo=UTC)
+    current = now if now is not None else datetime.now(UTC)
+    return (current - recorded).total_seconds()
+
+
+# frob:ticket T-0782
+# frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
+# frob:tests tests/test_tickets_leases.py::TestLeaseTtl.test_expired_past_ttl kind="unit"  # noqa: E501
+# frob:tests tests/test_tickets_leases.py::TestLeaseTtl.test_not_expired_within_ttl kind="unit"  # noqa: E501
+def is_lease_ttl_expired(
+    record: LeaseRecord,
+    *,
+    now: datetime | None = None,
+    ttl_seconds: float = LEASE_TTL_SECONDS,
+) -> bool:
+    """`True` iff `record`'s `recorded_at` is older than `ttl_seconds`
+    (default `LEASE_TTL_SECONDS`) as of `now` (T-0782, the deferred T-0476
+    dead-agent-with-a-live-worktree case: `read_all_leases`'s existing
+    worktree-path liveness check cannot catch this, since the path still
+    exists -- only staleness of the lease's OWN timestamp can). An
+    unparseable `recorded_at` (see `lease_age_seconds`) is treated as NOT
+    expired -- a malformed timestamp is a shape problem `read_all_leases`'s
+    admission check does not currently police, and defaulting to "keep
+    considering it live" is the safe direction (never silently drops a
+    real lease over a parse quirk)."""
+    age = lease_age_seconds(record, now=now)
+    if age is None:
+        return False
+    return age > ttl_seconds
 
 
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
@@ -248,6 +325,43 @@ def leases_dir(root: Path) -> Result[Path, LeaseError]:
 def _lease_path(leases_root: Path, ticket_id: str) -> Path:
     """The per-ticket lease file path under `leases_root`."""
     return leases_root / f"{ticket_id}.json"
+
+
+# frob:ticket T-0782
+def _probe_worktree_liveness(worktree: str) -> str:
+    """Classifies `worktree`'s on-disk presence as exactly one of
+    `"present"`, `"confirmed_absent"`, or `"ambiguous"` (T-0782 reviewer
+    fix): `Path.exists()` alone cannot be trusted to gate a destructive
+    unlink, because it swallows EVERY `OSError` -- a `PermissionError`, a
+    transient stat failure, a stale NFS handle, or a mid-`git worktree
+    move` race all read identically to a genuine ENOENT (T-0584's known
+    slow-mount concern; the audit's L2 TOCTOU note) and would silently
+    make `read_all_leases` delete a perfectly LIVE peer's lease.
+
+    `"present"`: `os.stat(worktree)` succeeded -- the path is there.
+    `"confirmed_absent"`: `os.stat(worktree)` raised `FileNotFoundError`
+    (the ONLY trustworthy absence signal) AND the PARENT directory itself
+    still stats successfully -- this second check exists so a wholesale
+    mount failure (the parent itself unreachable) can never be
+    misread as "just this one worktree is gone"; only a parent that is
+    itself reachable but a specific child that is provably missing counts.
+    `"ambiguous"`: any other `OSError` (on either stat) -- the safe,
+    conservative fallback that a caller must treat as "cannot confirm
+    either way", never as license to delete anything."""
+    path = Path(worktree)
+    try:
+        os.stat(path)
+    except FileNotFoundError:
+        pass
+    except OSError:
+        return "ambiguous"
+    else:
+        return "present"
+    try:
+        os.stat(path.parent)
+    except OSError:
+        return "ambiguous"
+    return "confirmed_absent"
 
 
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
@@ -344,6 +458,11 @@ def release_lease(root: Path, ticket_id: str) -> Result[None, LeaseError]:
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
 # frob:tests tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.test_doable_in_second_worktree_hides_colliding_ticket kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.test_stale_lease_for_a_removed_worktree_is_skipped kind="unit"  # noqa: E501
+# frob:tests tests/test_tickets_leases.py::TestOpportunisticUnlink.test_stale_path_lease_is_unlinked_from_disk kind="unit"  # noqa: E501
+# frob:tests tests/test_tickets_leases.py::TestOpportunisticUnlink.test_live_lease_is_never_unlinked kind="unit"  # noqa: E501
+# frob:tests tests/test_tickets_leases.py::TestAmbiguousLivenessGuard.test_ambiguous_stat_failure_does_not_unlink kind="unit"  # noqa: E501
+# frob:tests tests/test_tickets_leases.py::TestAmbiguousLivenessGuard.test_ambiguous_failure_is_logged_once_per_process kind="unit"  # noqa: E501
+# frob:tests tests/test_tickets_leases.py::TestAmbiguousLivenessGuard.test_genuine_enoent_still_unlinks kind="unit"  # noqa: E501
 def read_all_leases(root: Path) -> tuple[LeaseRecord, ...]:
     """Every currently-recorded cross-worktree lease visible from `root`'s
     repository (T-0473), id-ordered. Degrades to `()` if there is no shared
@@ -372,15 +491,25 @@ def read_all_leases(root: Path) -> tuple[LeaseRecord, ...]:
     appears in the current listing is dropped from the cache too, so the
     cache can never grow unboundedly stale or leak removed tickets.
 
-    Liveness (`Path(record.worktree).exists()`) is re-checked on EVERY
-    call and never itself cached, same reasoning extended one level
-    further: a lease's worktree can vanish (`git worktree remove`, a
-    crashed agent's checkout deleted by hand) with no write to the
-    leases directory at all, so even a perfectly fresh file-content read
-    could still serve a dead worktree's lease if liveness were cached.
-    The stale-worktree INFO diagnostic is still only logged ONCE per
-    (leases directory, ticket id) per process (`_stale_lease_logged`),
-    even though the liveness check itself reruns every call. All three
+    Liveness (`_probe_worktree_liveness`) is re-checked on EVERY call and
+    never itself cached, same reasoning extended one level further: a
+    lease's worktree can vanish (`git worktree remove`, a crashed agent's
+    checkout deleted by hand) with no write to the leases directory at
+    all, so even a perfectly fresh file-content read could still serve a
+    dead worktree's lease if liveness were cached. `_probe_worktree_
+    liveness` is deliberately NOT a plain `Path.exists()` boolean (T-0782
+    reviewer fix): `exists()` swallows every `OSError`, so a transient stat
+    failure (permission, a stale NFS handle, a slow mount -- T-0584) would
+    read identically to a genuine ENOENT and could delete a perfectly LIVE
+    peer's lease (audit L2's TOCTOU note). Only a `FileNotFoundError` with
+    a still-reachable PARENT directory counts as `"confirmed_absent"` and
+    is opportunistically unlinked; anything else the probe cannot resolve
+    (`"ambiguous"`) is skipped for this pass exactly like the old
+    behavior, but NEVER unlinked. The stale-worktree INFO diagnostic (and
+    the separate ambiguous-liveness WARNING) are still only logged ONCE
+    per (leases directory, ticket id) per process (`_stale_lease_logged`/
+    `_ambiguous_liveness_logged`), even though the liveness probe itself
+    reruns every call. All of these
     caches are guarded by `_cache_lock` (T-0773 round 2), but the lock is
     held only around the dict reads/writes themselves -- NEVER across
     file IO or JSON parsing (T-0773 round 3, a second reviewer catch: an
@@ -475,29 +604,71 @@ def read_all_leases(root: Path) -> tuple[LeaseRecord, ...]:
 
     live: list[LeaseRecord] = []
     for record in parsed:
-        if not Path(record.worktree).exists():
-            # T-0473/T-0476: the worktree that recorded this lease is gone
-            # (removed, never cleaned up after a crash) -- a dead
-            # worktree's stale lease must never wedge `doable` for every
-            # other worktree forever. Liveness is judged structurally, by
-            # the worktree PATH still existing on disk, the same signal
-            # T-0476's fuller reconcile is designed to build on; this read
-            # path just skips it rather than surfacing it, since cleanup
-            # itself is that ticket's job, not this one's.
+        liveness = _probe_worktree_liveness(record.worktree)
+        if liveness == "present":
+            live.append(record)
+            continue
+        if liveness == "ambiguous":
+            # T-0782 reviewer fix (T-0584's slow-mount concern, audit L2's
+            # TOCTOU note): `_probe_worktree_liveness` could not confirm
+            # either way (a `PermissionError`, a transient stat failure, a
+            # stale NFS handle, or a mid-`git worktree move` race) -- the
+            # ONLY safe move is to skip this lease FOR THIS PASS exactly
+            # as pre-T-0782 code did (never treat it as live, so a truly
+            # dead lease still stops wedging `doable` eventually once the
+            # probe resolves), but NEVER unlink it: an ambiguous read is
+            # not evidence of absence, and deleting on it would destroy a
+            # live peer's lease over a transient stat hiccup.
             log_key = (leases_root, record.ticket_id)
             with _cache_lock:
-                already_logged = log_key in _stale_lease_logged
+                already_logged = log_key in _ambiguous_liveness_logged
                 if not already_logged:
-                    _stale_lease_logged.add(log_key)
+                    _ambiguous_liveness_logged.add(log_key)
             if not already_logged:
-                _log.info(
-                    "tickets: %s lease references a worktree that no "
-                    "longer exists (%s) -- treating as stale, skipped",
+                _log.warning(
+                    "tickets: %s lease's worktree liveness could not be "
+                    "confirmed (%s) -- treating as unresolved this pass, "
+                    "NOT unlinking",
                     record.ticket_id,
                     record.worktree,
                 )
             continue
-        live.append(record)
+        # liveness == "confirmed_absent": T-0473/T-0476, the full T-0476
+        # reconcile -- `_probe_worktree_liveness` has confirmed via
+        # `FileNotFoundError` (the only trustworthy absence signal) plus a
+        # successful parent-directory stat (ruling out a wholesale mount
+        # failure) that the worktree is genuinely gone, so it is safe to
+        # opportunistically unlink the lease file itself, not just skip it
+        # in-memory -- otherwise `.git/frob-leases/` grows monotonically
+        # forever (audit M2), since the only prior removal path was a
+        # clean `IN_PROGRESS` exit (`release_lease`), which a
+        # crashed/removed worktree never gets to run.
+        record_path = _lease_path(leases_root, record.ticket_id)
+        try:
+            record_path.unlink(missing_ok=True)
+        except OSError as exc:
+            _log.warning(
+                "tickets: could not opportunistically unlink stale lease %s: %s",
+                record_path,
+                exc,
+            )
+        else:
+            with _cache_lock:
+                file_cache = _lease_file_cache.get(leases_root)
+                if file_cache is not None:
+                    file_cache.pop(record_path, None)
+        log_key = (leases_root, record.ticket_id)
+        with _cache_lock:
+            already_logged = log_key in _stale_lease_logged
+            if not already_logged:
+                _stale_lease_logged.add(log_key)
+        if not already_logged:
+            _log.info(
+                "tickets: %s lease references a worktree that no "
+                "longer exists (%s) -- treating as stale, unlinked",
+                record.ticket_id,
+                record.worktree,
+            )
     return tuple(live)
 
 
