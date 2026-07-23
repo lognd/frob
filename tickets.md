@@ -9700,3 +9700,75 @@ scope (src/frob/check/__init__.py's _STAGE_GROUPS membership, not its
 exports). Fix: add "protocol_summary" to the appropriate _STAGE_GROUPS
 bucket in src/frob/check/__init__.py (likely gates-native or gates-fast
 depending on cost) and re-run the coverage test.
+
+<!-- ticket:T-0825 -->
+```yaml
+id: T-0825
+title: 'strata host: same-principal narrow-deny/broad-allow WRITE_DAC indirection
+  understates; privilege-clause grammar gap'
+state: queued
+kind: security
+origin: auditor
+created: '2026-07-23'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/strata/_host_isolation.py
+- docs/strata/host.md
+- tests/unit/strata/test_host_isolation.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a principal with a narrow deny and a broad allow on one path WHEN the
+    join evaluates THEN the WRITE_DAC indirection corner has a recorded disposition
+    (bit-level modeling or loud documentation plus a behavior-locking test); GIVEN
+    token-privilege classes THEN the grammar-clause decision is recorded
+  evidence: []
+threat: elevation-of-privilege
+component: null
+labels: []
+```
+T-0792 reviewer finding: with per-principal netting, a same-principal
+narrow deny (Modify) plus broad allow (FullControl) nets to
+not-write-capable in the model, but real NTFS still grants
+WRITE_DAC/WRITE_OWNER through the FullControl allow (the denied Modify
+bits do not cover them), so the principal can rewrite the DACL and regain
+write -- the model's ONLY understating (fail-open) corner, currently
+undocumented. Inexpressible in the single-token RIGHTS vocabulary. Pair
+with the disclosed privilege-clause gap (SeImpersonate/SeDebug classes
+need a strata-core grammar clause, per the T-0792 module docstring).
+Either extend the RIGHTS model to bit-level semantics for the deny join,
+or document the corner loudly in the module + host.md and add a fixture
+test locking the current (understating) behavior so any future change is
+deliberate.
+
+<!-- ticket:T-0826 -->
+```yaml
+id: T-0826
+title: 'tickets CLI: done-report --why-file duplicates the ''## Done report'' heading
+  (recurring cosmetic ledger noise)'
+state: queued
+kind: ux
+origin: agent
+created: '2026-07-23'
+priority: low
+blocked_by: []
+parent: null
+scope:
+- src/frob/app/ticket_runner.py
+- src/frob/tickets/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a why-file that already begins with a Done report heading WHEN frob
+    ticket done-report renders it THEN exactly one heading appears in the ledger block;
+    existing double-heading blocks are tolerated by parsers
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Recurred 5+ times this drive (reviewers keep flagging it cosmetically): done-report prepends its own heading on top of one already present in --why-file content. Deduplicate at render time.
