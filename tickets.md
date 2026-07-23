@@ -9977,3 +9977,34 @@ src/frob/app/config.py, and src/frob/__main__.py's exports parser, none of
 which were in T-0858's declared scope. Do this before or around the
 2026-10-01 T-0802 sunset so the CLI-level capability is not lost when
 `frob xref` porcelain is removed.
+
+<!-- ticket:T-0877 -->
+```yaml
+id: T-0877
+title: 'frob scaffold pool CLI: wire warm/lease/status subcommands onto the T-0738
+  pool API'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/app/scaffold_runner.py
+- src/frob/app/config.py
+- src/frob/__main__.py
+- Makefile
+- docs/guides/worktree-pool.md
+- tests/system/test_scaffold_pool_cli.py
+acceptance:
+- text: GIVEN a frob-enabled repo WHEN `uv run frob scaffold pool warm 2` then `pool
+    status` then `pool lease` run THEN two worktrees are warmed, status lists them,
+    and lease returns a merged-current worktree path with a background refill
+  evidence: []
+- text: GIVEN the Makefile pool targets WHEN they run THEN they delegate to the CLI
+    subcommand, no inline python remains
+  evidence: []
+threat: null
+component: scaffold
+```
+Follow-on to T-0738 (landed 0.139.0): the warm-pool API (warm_pool, lease_worktree, pool_status in frob.scaffold._pool) is reachable only through Makefile targets calling the Python API. Wire a real `frob scaffold pool` CLI subcommand group (warm N / lease / status) through app/scaffold_runner.py + app/config.py + __main__.py, replacing the Makefile's inline-python shims with thin CLI calls. Refiled from worktree draft T-draft-427ffd5a which did not survive T-0738's land (drafts-die-at-land hazard); T-0738's Done report references that draft id.
