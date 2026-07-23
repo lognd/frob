@@ -12,7 +12,14 @@ _log = get_logger(__name__)
 
 
 # frob:doc docs/modules/app.md#runners
+# frob:deprecated 2026-07-23 sunset="2026-10-01" ticket="T-0580" reason="zero organic use across 1035 CLI events; navigation owned by Serena/native tools"
 def run(cfg: AppConfig) -> None:
+    """T-0580: DEPRECATED, sunset 2026-10-01 -- navigation is owned by
+    Serena/native tools in agentic use; zero organic invocation observed."""
+    _log.warning(
+        "frob xref is deprecated, sunset 2026-10-01, use Serena/native "
+        "navigation; see T-0580"
+    )
     if cfg.xref_symbol is None:
         _log.error("frob xref requires <symbol>")
         sys.exit(1)

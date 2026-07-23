@@ -15,10 +15,17 @@ _log = get_logger(__name__)
 # frob:ticket T-0448
 # frob:doc docs/modules/app.md#runners
 # frob:doc docs/modules/render.md#exemplar-frob-map
+# frob:deprecated 2026-07-23 sunset="2026-10-01" ticket="T-0580" reason="zero organic use across 1035 CLI events; navigation owned by Serena/native tools"
 def run(cfg: AppConfig) -> None:
     """Render the `frob map` project structure summary; T-0448: migrated
     to `frob.render.Renderer` as the second FOUNDATION exemplar -- `--json`
-    stays a bare structured print, unchanged."""
+    stays a bare structured print, unchanged. T-0580: DEPRECATED, sunset
+    2026-10-01 -- navigation is owned by Serena/native tools in agentic
+    use; zero organic invocation observed."""
+    _log.warning(
+        "frob map is deprecated, sunset 2026-10-01, use Serena/native "
+        "navigation; see T-0580"
+    )
     root = cfg.map_path or Path(".")
     ctx = quiet_stdout_logs() if cfg.map_json else contextlib.nullcontext()
     with ctx:

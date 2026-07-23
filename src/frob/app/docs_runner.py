@@ -11,8 +11,15 @@ from frob.logging import get_logger
 _log = get_logger(__name__)
 
 
+# frob:deprecated 2026-07-23 sunset="2026-10-01" ticket="T-0580" reason="zero organic use across 1035 CLI events; navigation owned by Serena/native tools"
 def _run_search(cfg: AppConfig, path: Path) -> None:
-    """Handle `frob docs --search`: print heading/excerpt matches or JSON."""
+    """Handle `frob docs --search`: print heading/excerpt matches or JSON.
+    T-0580: DEPRECATED, sunset 2026-10-01 -- navigation is owned by
+    Serena/native tools in agentic use; zero organic invocation observed."""
+    _log.warning(
+        "frob docs --search is deprecated, sunset 2026-10-01, use "
+        "Serena/native navigation; see T-0580"
+    )
     docs_dir = find_docs_dir(path)
     if not docs_dir:
         _log.error("error: no docs/ directory found")

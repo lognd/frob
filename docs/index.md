@@ -121,6 +121,8 @@ Support modules underneath the above:
 
 - `docs/modules/app.md` -- `frob.app`: the App/AppConfig runtime wiring and CLI
   entry (`__main__`).
+- `docs/modules/cli.md` -- CLI command tier ledger: which subcommands are
+  plumbing, kept as-is, versus deprecated navigation porcelain (T-0580).
 - `docs/modules/bind.md` -- `frob.bind`: verifies `// BIND:` declarations in
   pybind11/PyO3 glue match a real native-side function, so a Python-facing
   binding never drifts from the C++/Rust signature it wraps.

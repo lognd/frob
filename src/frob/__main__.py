@@ -150,7 +150,10 @@ def _add_outline_parser(sub) -> None:
     # -- outline -------------------------------------------------------------
     outline_p = sub.add_parser(
         "outline",
-        help="show structural skeleton of a file (classes, functions, line numbers)",
+        help=(
+            "[DEPRECATED, sunset 2026-10-01, see T-0580] show structural "
+            "skeleton of a file (classes, functions, line numbers)"
+        ),
     )
     outline_p.add_argument("outline_file", metavar="file")
     outline_p.add_argument("--json", dest="outline_json", action="store_true")
@@ -165,7 +168,10 @@ def _add_map_parser(sub) -> None:
     # -- map -----------------------------------------------------------------
     map_p = sub.add_parser(
         "map",
-        help="show whole-project structural map (symbols + line counts)",
+        help=(
+            "[DEPRECATED, sunset 2026-10-01, see T-0580] show whole-project "
+            "structural map (symbols + line counts)"
+        ),
     )
     map_p.add_argument("map_path", metavar="path", nargs="?", default=".")
     map_p.add_argument("--json", dest="map_json", action="store_true")
@@ -181,7 +187,10 @@ def _add_xref_parser(sub) -> None:
     # -- xref ----------------------------------------------------------------
     xref_p = sub.add_parser(
         "xref",
-        help="find where a symbol is defined and every file that uses it",
+        help=(
+            "[DEPRECATED, sunset 2026-10-01, see T-0580] find where a "
+            "symbol is defined and every file that uses it"
+        ),
     )
     xref_p.add_argument("xref_symbol", metavar="symbol")
     xref_p.add_argument("xref_path", metavar="path", nargs="?", default=".")
@@ -356,7 +365,10 @@ def _add_docs_parser(sub) -> None:
         "--search",
         dest="docs_search",
         metavar="QUERY",
-        help="full-text search through docs/",
+        help=(
+            "[DEPRECATED, sunset 2026-10-01, see T-0580] full-text search "
+            "through docs/"
+        ),
     )
     docs_p.add_argument("--json", dest="docs_json", action="store_true")
 
