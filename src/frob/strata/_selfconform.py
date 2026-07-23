@@ -293,6 +293,68 @@ def _match_capability_owner(
     return Ok(next(iter(matched)) if matched else FOREIGN)
 
 
+def _observed_raw_kinds_by_node(
+    binding: CodeBinding, root: Path
+) -> dict[str, frozenset[str]]:
+    """Every node id -> the union of RAW `scan_file_capabilities` output
+    (no `_EXTENDED_KINDS` filter, no `_KIND_MAP` normalization) across
+    that node's `code=`-bound files -- the SINGLE per-file scan pass
+    `_observed_extended_kinds_by_node` and `_observed_all_kinds_by_node`
+    both derive their view from (H5/T-0830: each owned file used to be
+    scanned TWICE, once per view, via two independent copies of this same
+    loop; deriving both cheap set views from one raw scan halves the
+    per-file resolution work `scan_file_capabilities` does). `binding`
+    here is ALWAYS the T-0169 `_capability_binding` superset, never the
+    raw `.py`-only `bind_code` output -- see that function's docstring.
+    Skips `is_self_pattern_path` files (T-0201): a pattern-catalog data
+    file's needle literals are not code exercising the capability, the
+    same self-match class `frob.vet._capability`'s own aggregation
+    excludes."""
+    per_node: dict[str, set[str]] = {}
+    for rel in _sorted_owned_files(binding):
+        path = root / rel
+        if is_self_pattern_path(path, root):
+            continue
+        owner = binding.owner[rel]
+        found = scan_file_capabilities(path)
+        if found:
+            per_node.setdefault(owner, set()).update(found)
+    return {node_id: frozenset(kinds) for node_id, kinds in per_node.items()}
+
+
+def _extended_kinds_view(
+    raw_by_node: dict[str, frozenset[str]],
+) -> dict[str, frozenset[str]]:
+    """`_EXTENDED_KINDS`-filtered view of an already-scanned raw per-node
+    observed-kinds map (T-0830): derives SYS100-extended's vocabulary from
+    `_observed_raw_kinds_by_node`'s single scan instead of re-scanning
+    every owned file. Only includes a node when its filtered set is
+    non-empty, matching the original per-file `if found:` guard."""
+    return {
+        node_id: extended
+        for node_id, kinds in raw_by_node.items()
+        if (extended := kinds & _EXTENDED_KINDS)
+    }
+
+
+def _all_kinds_view(
+    raw_by_node: dict[str, frozenset[str]],
+) -> dict[str, frozenset[str]]:
+    """`_KIND_MAP`-normalized view of an already-scanned raw per-node
+    observed-kinds map (T-0830): derives SYS101's full vocabulary
+    (net/fs-write/fs-read/exec normalized to the precise, mode-qualified
+    spelling `may` declarations resolve to, T-0717) from
+    `_observed_raw_kinds_by_node`'s single scan instead of re-scanning
+    every owned file. Only includes a node with a non-empty raw set,
+    matching the original per-file `if normalized:` guard (normalizing
+    elementwise never turns a non-empty set empty)."""
+    return {
+        node_id: frozenset(_KIND_MAP.get(kind, kind) for kind in kinds)
+        for node_id, kinds in raw_by_node.items()
+        if kinds
+    }
+
+
 def _observed_extended_kinds_by_node(
     binding: CodeBinding, root: Path
 ) -> dict[str, frozenset[str]]:
@@ -303,17 +365,13 @@ def _observed_extended_kinds_by_node(
     `.py`-only `bind_code` output -- see that function's docstring. Skips
     `is_self_pattern_path` files (T-0201): a pattern-catalog data file's
     needle literals are not code exercising the capability, the same
-    self-match class `frob.vet._capability`'s own aggregation excludes."""
-    per_node: dict[str, set[str]] = {}
-    for rel in _sorted_owned_files(binding):
-        path = root / rel
-        if is_self_pattern_path(path, root):
-            continue
-        owner = binding.owner[rel]
-        found = scan_file_capabilities(path) & _EXTENDED_KINDS
-        if found:
-            per_node.setdefault(owner, set()).update(found)
-    return {node_id: frozenset(kinds) for node_id, kinds in per_node.items()}
+    self-match class `frob.vet._capability`'s own aggregation excludes.
+    T-0830: a thin wrapper over `_observed_raw_kinds_by_node` +
+    `_extended_kinds_view` for standalone callers -- the hot path
+    (`_collect_sys_violations`) calls those two directly so this view and
+    `_observed_all_kinds_by_node`'s share ONE scan of the owned-file set,
+    not two."""
+    return _extended_kinds_view(_observed_raw_kinds_by_node(binding, root))
 
 
 def _observed_all_kinds_by_node(
@@ -335,22 +393,15 @@ def _observed_all_kinds_by_node(
     `_alias_legacy_fs_observations` bare-`fs`-aliasing hack is REMOVED --
     `_stale_design_violations` now judges staleness per DECLARED ATOM via
     `expand_declared_kind` (any of its modes observed discharges it), so no
-    special-casing is needed on the observed side at all."""
-    per_node: dict[str, set[str]] = {}
-    for rel in _sorted_owned_files(binding):
-        path = root / rel
-        if is_self_pattern_path(path, root):
-            continue
-        owner = binding.owner[rel]
-        raw = scan_file_capabilities(path)
-        normalized = {_KIND_MAP.get(kind, kind) for kind in raw}
-        if normalized:
-            per_node.setdefault(owner, set()).update(normalized)
-    return {node_id: frozenset(kinds) for node_id, kinds in per_node.items()}
+    special-casing is needed on the observed side at all. T-0830: a thin
+    wrapper over `_observed_raw_kinds_by_node` + `_all_kinds_view` for
+    standalone callers -- see `_observed_extended_kinds_by_node`'s
+    docstring for why the hot path bypasses both wrappers."""
+    return _all_kinds_view(_observed_raw_kinds_by_node(binding, root))
 
 
 def _extended_kind_violations(
-    model: KernelModel, binding: CodeBinding, root: Path
+    model: KernelModel, observed_by_node: dict[str, frozenset[str]]
 ) -> list[SelfConformViolation]:
     """SYS100 for eval/env/ffi/install-hook/sql/deserialize/html_render/
     fetch_url/client_storage -- the slice `check_capability_conformance`
@@ -361,8 +412,12 @@ def _extended_kind_violations(
     case -- `_declared_kinds` already expands a coarse `may "fs"`
     declaration to `{fs.read, fs.write}` generically (`expand_declared_
     kind`), and `_dedupe_sys100_extended_against_core` keeps the core
-    (THREAT004-delegated) pass as the single source of truth for it."""
-    observed_by_node = _observed_extended_kinds_by_node(binding, root)
+    (THREAT004-delegated) pass as the single source of truth for it.
+    T-0830: `observed_by_node` is precomputed by the caller (an
+    `_extended_kinds_view` derivation) instead of this function scanning
+    the owned-file set itself, so `_collect_sys_violations` can share ONE
+    raw scan with `_stale_design_violations` instead of two independent
+    passes."""
     found: list[SelfConformViolation] = []
     for node in model.nodes:
         declared = _declared_kinds(node) & _EXTENDED_KINDS
@@ -461,7 +516,7 @@ def _raw_declared_kinds(node) -> frozenset[str]:  # noqa: ANN001
 
 # frob:invariant INV-026
 def _stale_design_violations(
-    model: KernelModel, binding: CodeBinding, root: Path
+    model: KernelModel, root: Path, observed_by_node: dict[str, frozenset[str]]
 ) -> list[SelfConformViolation]:
     """SYS101 over every kind (net/fs/exec included) -- new code, since no
     shipped join checks this direction (module docstring's SYS101 gap
@@ -478,8 +533,10 @@ def _stale_design_violations(
     coarse `may "fs"` declaration keeps discharging on EITHER mode being
     observed (mandate point 2/old `_alias_legacy_fs_observations`
     backward-compat behavior, now a natural consequence of this generic
-    per-atom join rather than fs-specific code)."""
-    observed_by_node = _observed_all_kinds_by_node(binding, root)
+    per-atom join rather than fs-specific code). T-0830: `observed_by_node`
+    is precomputed by the caller (an `_all_kinds_view` derivation) instead
+    of this function scanning the owned-file set itself -- see
+    `_extended_kind_violations`'s docstring for why."""
     skip_nodes = _fully_excluded_node_ids(model, root)
     found: list[SelfConformViolation] = []
     for node in model.nodes:
@@ -769,14 +826,26 @@ def _collect_sys_violations(
     for `check_self_conformance`. T-0266: the extended SYS100 pass is
     deduped against the core pass (`_dedupe_sys100_extended_against_core`)
     before being appended, so a `(node, capability)` observed by BOTH
-    passes surfaces as ONE finding, not two."""
+    passes surfaces as ONE finding, not two. T-0830 (H5): the extended
+    (SYS100) and all-kinds (SYS101) observed-kinds views used to be two
+    independent full scans of every owned file (`_observed_extended_kinds_
+    by_node` and `_observed_all_kinds_by_node` each calling
+    `scan_file_capabilities` on the same files); `raw_by_node` is now
+    scanned ONCE here and both cheap set views (`_extended_kinds_view`,
+    `_all_kinds_view`) are derived from it before being handed to the two
+    violation functions."""
     core_violations = _core_undeclared_violations(model, capability_binding, root)
-    extended_violations = _extended_kind_violations(model, capability_binding, root)
+    raw_by_node = _observed_raw_kinds_by_node(capability_binding, root)
+    extended_violations = _extended_kind_violations(
+        model, _extended_kinds_view(raw_by_node)
+    )
     violations = list(core_violations)
     violations.extend(
         _dedupe_sys100_extended_against_core(core_violations, extended_violations)
     )
-    violations.extend(_stale_design_violations(model, capability_binding, root))
+    violations.extend(
+        _stale_design_violations(model, root, _all_kinds_view(raw_by_node))
+    )
     violations.extend(_unmodeled_violations(root, capability_binding))
     return violations
 
