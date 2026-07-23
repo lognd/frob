@@ -51,10 +51,13 @@ bound matters more here than anywhere."
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from pydantic import BaseModel, ConfigDict, Field
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
+from frob.registry import DispositionKind, RegistryEntry, load_registry_dir
 
 from ._errors import StrataError
 from ._facts import FactBase, build_facts
@@ -904,7 +907,142 @@ def evaluate_compliance(
     return Ok(ComplianceReport(violations=all_violations))
 
 
+# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#registry-exhaustiveness-drift-lock-t-0343  # noqa: E501
+# frob:ticket T-0607
+#: The 17 `docs/design/registry/compliance.yaml` `CMPL-*` entries T-0388's
+#: reconciliation pass tagged `checkability: mixed|config|static` and
+#: re-pointed at this ticket (`deferred:T-0607`) rather than the 10
+#: `process`/`advisory`-tagged entries, which already carry their own
+#: `out_of_scope` disposition and need no further work here. Kept as one
+#: named constant (not re-derived from the yaml at import time) so
+#: `check_cmpl_registry_unit_dispositions` has a fixed universe to check
+#: even if a future edit to the registry file adds/removes entries under
+#: these frameworks -- a drift there is REG005/REG007's job, not this
+#: check's.
+CMPL_REGISTRY_UNIT_IDS: frozenset[str] = frozenset(
+    {
+        "CMPL-SOC2-CATEGORIES",
+        "CMPL-SOC2-CC-FAMILIES",
+        "CMPL-PCIDSS-REQUIREMENTS",
+        "CMPL-HIPAA-TECHNICAL-STANDARDS",
+        "CMPL-GDPR-ARTICLES",
+        "CMPL-NIST80053-FAMILIES",
+        "CMPL-NIST80263-VOLUMES",
+        "CMPL-SSDF-PRACTICE-GROUPS",
+        "CMPL-ISO27002-THEMES",
+        "CMPL-ISO27002-CONTROLS",
+        "CMPL-CIS-CONTROLS",
+        "CMPL-CIS-SAFEGUARDS",
+        "CMPL-ASVS-CHAPTERS",
+        "CMPL-ASVS-REQUIREMENTS",
+        "CMPL-FEDRAMP-IMPACT-TIERS",
+        "CMPL-SLSA-BUILD-LEVELS",
+        "CMPL-FROB-CATALOG-ENTRIES",
+    }
+)
+
+
+def _cmpl_disposition_violation(entry: RegistryEntry) -> ComplianceViolation:
+    """COMPLIANCE005 violation helper: one `CMPL_REGISTRY_UNIT_IDS` member
+    stuck `deferred:*`/undispositioned -- exactly the catalogued-not-
+    enforced regression T-0607 exists to close (a `deferred:T-0388` that
+    named T-0388, the reconciliation ticket ITSELF, and would have
+    silently re-orphaned the moment T-0388 closed)."""
+    _log.warning(
+        "compliance: COMPLIANCE005 %s disposition kind %s is neither "
+        "handled_by nor out_of_scope",
+        entry.id,
+        entry.disposition.kind.value,
+    )
+    return ComplianceViolation(
+        rule="COMPLIANCE005",
+        regulation=entry.id,
+        detail=f"{entry.id} disposition {entry.disposition.raw!r} is "
+        f"{entry.disposition.kind.value}, not handled_by/out_of_scope -- "
+        "a checkable-control compliance-registry unit left deferred or "
+        "undispositioned re-orphans itself the moment any named ticket "
+        "closes (the exact T-0388/T-0607 self-reference incident this "
+        "check exists to refuse a repeat of)",
+    )
+
+
+# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#registry-exhaustiveness-drift-lock-t-0343  # noqa: E501
+# frob:ticket T-0607
+# frob:tests tests/unit/strata/test_compliance.py::TestCmplRegistry.test_deferred_disposition_is_refused  # noqa: E501
+# frob:tests tests/unit/strata/test_compliance.py::TestCmplRegistry.test_handled_by_and_out_of_scope_dispositions_pass  # noqa: E501
+def check_cmpl_registry_unit_dispositions(
+    entries: tuple[RegistryEntry, ...],
+) -> tuple[ComplianceViolation, ...]:
+    """COMPLIANCE005: every `CMPL_REGISTRY_UNIT_IDS` member present in
+    `entries` (typically `docs/design/registry/compliance.yaml`'s loaded
+    `entries:` list) must carry a `handled_by:<rule>`/`out_of_scope:
+    <reason>` disposition, never `deferred:*` or an undispositioned/
+    unparseable string. `frob.gates._registry_exhaustiveness`
+    (REG001-REG004) already verifies the disposition grammar is well-
+    formed against LIVE state (a named rule/ticket actually exists right
+    now); this check adds a narrower, PERMANENT guarantee specific to
+    this ticket's 17 units: none of them may ever sit in the `deferred`/
+    undispositioned state again, regardless of whether a would-be
+    `deferred:` target is currently valid -- the T-0388 incident this
+    ticket closes was a `deferred:T-0388` that WAS valid right up until
+    the moment the named ticket closed, only then becoming a REG003
+    violation. An id in `CMPL_REGISTRY_UNIT_IDS` absent from `entries`
+    entirely is silently skipped here (nothing to classify) -- a
+    silently-dropped registry entry is REG005/REG007's job to catch, not
+    this check's."""
+    known = {entry.id: entry for entry in entries}
+    violations: list[ComplianceViolation] = []
+    checked = 0
+    for entry_id in sorted(CMPL_REGISTRY_UNIT_IDS):
+        entry = known.get(entry_id)
+        if entry is None:
+            continue
+        checked += 1
+        if entry.disposition.kind not in (
+            DispositionKind.HANDLED_BY,
+            DispositionKind.OUT_OF_SCOPE,
+        ):
+            violations.append(_cmpl_disposition_violation(entry))
+    _log.info(
+        "compliance: COMPLIANCE005 checked %d/%d CMPL registry unit(s) -> "
+        "%d violation(s)",
+        checked,
+        len(CMPL_REGISTRY_UNIT_IDS),
+        len(violations),
+    )
+    return tuple(violations)
+
+
+# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#registry-exhaustiveness-drift-lock-t-0343  # noqa: E501
+# frob:ticket T-0607
+# frob:tests tests/unit/strata/test_compliance.py::TestCmplRegistry.test_check_cmpl_registry_loads_real_file  # noqa: E501
+# frob:tests tests/unit/strata/test_compliance.py::TestCmplRegistry.test_check_cmpl_registry_missing_file_is_parse_failed  # noqa: E501
+def check_cmpl_registry(
+    registry_dir: Path,
+) -> Result[tuple[ComplianceViolation, ...], StrataError]:
+    """COMPLIANCE005 entrypoint: loads `compliance.yaml` from
+    `registry_dir` via `frob.registry.load_registry_dir` (the ONE shared
+    registry loader, T-0407 -- never re-parsed inline here) and runs
+    `check_cmpl_registry_unit_dispositions` over its `entries:` list.
+    `Err(StrataError.ParseFailed)` on a missing/unreadable/malformed-YAML
+    manifest, mirroring every other kernel-facing Result boundary in this
+    module -- an unloadable registry never silently reports "0
+    violations"."""
+    loaded = load_registry_dir(registry_dir, ("compliance.yaml",))
+    result = loaded.get("compliance.yaml")
+    if result is None or result.is_err:
+        _log.error(
+            "compliance: COMPLIANCE005 compliance.yaml not loadable under %s (%s)",
+            registry_dir,
+            result.danger_err if result is not None else "file absent",
+        )
+        return Err(StrataError.ParseFailed)
+    entries = result.danger_ok.entry_lists.get("entries", ())
+    return Ok(check_cmpl_registry_unit_dispositions(entries))
+
+
 __all__ = [
+    "CMPL_REGISTRY_UNIT_IDS",
     "COMPLIANCE_CATALOG",
     "COMPLIANCE_OUT_OF_SCOPE",
     "REGULATION_VIEWS",
@@ -913,6 +1051,8 @@ __all__ = [
     "OutOfScopeRegulation",
     "PrivacyPolicy",
     "RegulationEntry",
+    "check_cmpl_registry",
+    "check_cmpl_registry_unit_dispositions",
     "check_privacy_policy",
     "check_regulation_caught_by_integrity",
     "check_regulation_catalog_completeness",

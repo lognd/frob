@@ -5,6 +5,9 @@ T-0109/T-0116).
 
 from __future__ import annotations
 
+from pathlib import Path
+
+from frob.registry import RegistryEntry, parse_disposition
 from frob.strata import (
     Boundary,
     BoundaryDirection,
@@ -18,14 +21,26 @@ from frob.strata import (
     Quantity,
 )
 from frob.strata._compliance import (
+    CMPL_REGISTRY_UNIT_IDS,
     COMPLIANCE_CATALOG,
     REGULATION_VIEWS,
+    check_cmpl_registry,
+    check_cmpl_registry_unit_dispositions,
     check_privacy_policy,
     check_regulation_catalog_completeness,
     check_regulation_caught_by_integrity,
     check_regulation_discharge,
     evaluate_compliance,
 )
+
+_SOME_CMPL_ID = next(iter(sorted(CMPL_REGISTRY_UNIT_IDS)))
+
+
+def _cmpl_entry(disposition_raw: str, entry_id: str = _SOME_CMPL_ID) -> RegistryEntry:
+    """A synthetic `RegistryEntry` for `entry_id` carrying `disposition_raw`,
+    parsed through the SAME shared grammar (`frob.registry.parse_disposition`)
+    the real registry loader uses -- never a hand-rolled `Disposition`."""
+    return RegistryEntry(id=entry_id, disposition=parse_disposition(disposition_raw))
 
 
 class TestRegulationCatalogCompleteness:
@@ -587,3 +602,60 @@ class TestEvaluateCompliance:
         assert result.is_ok
         rules = {v.rule for v in result.danger_ok.violations}
         assert "COMPLIANCE004" not in rules
+
+
+class TestCmplRegistry:
+    """COMPLIANCE005 (T-0607): `check_cmpl_registry_unit_dispositions` over
+    the 17 `CMPL_REGISTRY_UNIT_IDS` compliance-registry units, plus the
+    real-file `check_cmpl_registry` entrypoint."""
+
+    # frob:tests src/frob/strata/_compliance.py::check_cmpl_registry_unit_dispositions kind="unit"
+    def test_deferred_disposition_is_refused(self):
+        entries = (_cmpl_entry("deferred:T-0001"),)
+        violations = check_cmpl_registry_unit_dispositions(entries)
+        assert len(violations) == 1
+        assert violations[0].rule == "COMPLIANCE005"
+        assert violations[0].regulation == _SOME_CMPL_ID
+
+    # frob:tests src/frob/strata/_compliance.py::check_cmpl_registry_unit_dispositions kind="unit"
+    def test_undispositioned_is_refused(self):
+        entries = (_cmpl_entry("pending"),)
+        violations = check_cmpl_registry_unit_dispositions(entries)
+        assert len(violations) == 1
+        assert violations[0].rule == "COMPLIANCE005"
+
+    # frob:tests src/frob/strata/_compliance.py::check_cmpl_registry_unit_dispositions kind="unit"
+    def test_handled_by_and_out_of_scope_dispositions_pass(self):
+        handled = _cmpl_entry(
+            "handled_by:COMPLIANCE005", entry_id=sorted(CMPL_REGISTRY_UNIT_IDS)[0]
+        )
+        out_of_scope = _cmpl_entry(
+            "out_of_scope:reason text", entry_id=sorted(CMPL_REGISTRY_UNIT_IDS)[1]
+        )
+        violations = check_cmpl_registry_unit_dispositions((handled, out_of_scope))
+        assert violations == ()
+
+    # frob:tests src/frob/strata/_compliance.py::check_cmpl_registry_unit_dispositions kind="unit"
+    def test_id_outside_the_universe_is_ignored(self):
+        entries = (_cmpl_entry("deferred:T-0001", entry_id="CMPL-NOT-TRACKED"),)
+        violations = check_cmpl_registry_unit_dispositions(entries)
+        assert violations == ()
+
+    # frob:tests src/frob/strata/_compliance.py::check_cmpl_registry_unit_dispositions kind="unit"
+    def test_id_absent_from_entries_is_silently_skipped(self):
+        violations = check_cmpl_registry_unit_dispositions(())
+        assert violations == ()
+
+    # frob:tests src/frob/strata/_compliance.py::check_cmpl_registry kind="unit"
+    def test_check_cmpl_registry_loads_real_file(self):
+        registry_dir = (
+            Path(__file__).resolve().parents[3] / "docs" / "design" / "registry"
+        )
+        result = check_cmpl_registry(registry_dir)
+        assert result.is_ok
+        assert result.danger_ok == ()
+
+    # frob:tests src/frob/strata/_compliance.py::check_cmpl_registry kind="unit"
+    def test_check_cmpl_registry_missing_file_is_parse_failed(self, tmp_path):
+        result = check_cmpl_registry(tmp_path)
+        assert result.is_err

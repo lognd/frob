@@ -1,7 +1,7 @@
-# frob:waive SCOPE001 reason="T-0388's declared scope is src/frob/strata/_compliance.py+docs/design/registry/compliance.yaml; tests/** is leased in-progress by T-0160 so the scope cannot be formally extended here, same ad-hoc precedent as tests/test_check_coverage_registry.py's existing T-0424 SCOPE001 waiver"  # noqa: E501
-"""Real-data EXHAUSTIVENESS meta-test for T-0388 (registry reconciliation:
-compliance, 27 entries) -- docs/design/registry/compliance.yaml,
-docs/design/registry/EXHAUSTIVENESS-GATE.md#unified-model-t-0407.
+"""Real-data EXHAUSTIVENESS meta-test for T-0388/T-0607 (registry
+reconciliation: compliance, 27 entries) -- docs/design/registry/
+compliance.yaml, docs/design/registry/EXHAUSTIVENESS-GATE.md#unified-
+model-t-0407.
 
 Unlike `tests/test_registry_exhaustiveness.py` (synthetic fixtures), this
 loads the REAL `docs/design/registry/compliance.yaml` against the REAL
@@ -12,12 +12,19 @@ in this build, not on a fixture standing in for it. Same posture as
 reconciliation pin tests for patterns/secrets/pii (T-0385/T-0386/T-0387).
 
 Unlike those three, this file's entries were NOT already fully
-dispositioned honestly: 17 of 27 carried `deferred:T-0388`, which is
-T-0388 itself (a review-gated reconciliation ticket expected to close) --
-deferring to the closing ticket would break REG003 (deferred-to-closed-
-ticket) the moment it closes. T-0388 re-pointed those 17 entries to a
-newly filed ticket, T-0607 (real future compliance-checkable-
-control implementation work), before this test pins the file."""
+dispositioned honestly: 17 of 27 originally carried `deferred:T-0388`,
+which is T-0388 itself (a review-gated reconciliation ticket expected to
+close) -- deferring to the closing ticket would break REG003 (deferred-
+to-closed-ticket) the moment it closes. T-0388 re-pointed those 17
+entries to a newly filed ticket, T-0607, as a stopgap; T-0607 then closed
+the loop for real (rather than repeating the same self-reference hazard
+one ticket later): each of the 17 now carries a reasoned `out_of_scope`
+disposition backed by a real standing structural check (COMPLIANCE005,
+`check_cmpl_registry_unit_dispositions` in `src/frob/strata/
+_compliance.py`) instead of a `deferred:` promise to some future ticket.
+`compliance.yaml` therefore carries ZERO `deferred:` entries as of
+T-0607 -- the positive `deferred:` fixture test below now asserts that
+absence directly rather than requiring at least one to exist."""
 
 from __future__ import annotations
 
@@ -85,6 +92,7 @@ class TestComplianceRegistryFile:
 # frob:tests tests/test_registry_reconciliation_compliance.py::TestComplianceExhaustiveness.test_audit_reports_exhausted
 # frob:tests tests/test_registry_reconciliation_compliance.py::TestComplianceExhaustiveness.test_every_deferred_entry_targets_an_open_ticket
 # frob:tests tests/test_registry_reconciliation_compliance.py::TestComplianceExhaustiveness.test_no_entry_defers_to_this_reconciliation_ticket
+# frob:tests tests/test_registry_reconciliation_compliance.py::TestComplianceExhaustiveness.test_cmpl_registry_units_carry_handled_by_or_out_of_scope
 class TestComplianceExhaustiveness:
     """The T-0388 acceptance criterion: catalogued count == enforced +
     excused + deferred, pinned against the file's own declared 27-entry
@@ -118,12 +126,17 @@ class TestComplianceExhaustiveness:
             == (_COMPLIANCE_CATALOGUED_TOTAL)
         )
 
-    # frob:ticket T-0388
+    # frob:ticket T-0607
     def test_every_deferred_entry_targets_an_open_ticket(self) -> None:
         """REG003's positive case, pinned to real data: every
         `deferred:T-XXXX` disposition in compliance.yaml names a ticket
         that actually exists and is not DONE -- a deferral to a closed or
-        missing ticket is a silent drop wearing a disposition's clothes."""
+        missing ticket is a silent drop wearing a disposition's clothes.
+        As of T-0607, compliance.yaml carries ZERO `deferred:` entries
+        (all 17 formerly-deferred units now carry a reasoned
+        `out_of_scope` disposition backed by COMPLIANCE005's standing
+        structural check) -- this loop body is vacuously true, and the
+        emptiness itself is asserted rather than requiring a fixture."""
         registry_file = load_registry_dir(_REGISTRY_DIR, ("compliance.yaml",))[
             "compliance.yaml"
         ].danger_ok
@@ -134,7 +147,11 @@ class TestComplianceExhaustiveness:
             for entry in entries
             if entry.disposition.kind is DispositionKind.DEFERRED
         ]
-        assert deferred, "expected at least one deferred entry to check against"
+        assert deferred == [], (
+            "T-0607 flipped every CMPL-* unit off deferred: -- a new "
+            "deferred entry here needs the same handled_by/out_of_scope "
+            "treatment, not a silent reintroduction"
+        )
         for entry in deferred:
             ticket_id = entry.disposition.target
             assert ticket_id is not None, f"{entry.id} deferred with no target ticket"
@@ -144,14 +161,16 @@ class TestComplianceExhaustiveness:
                 f"{entry.id} defers to closed ticket {ticket_id}"
             )
 
-    # frob:ticket T-0388
+    # frob:ticket T-0607
     def test_no_entry_defers_to_this_reconciliation_ticket(self) -> None:
         """This registry's own hazard, caught honestly rather than
-        pinned around: 17 entries originally read `deferred:T-0388`, but
-        T-0388 IS this review-gated reconciliation ticket and is expected
-        to close -- a deferral naming its own closing ticket is a
-        disposition that silently expires. Locks that the re-pointing
-        away from T-0388 stuck."""
+        pinned around: 17 entries originally read `deferred:T-0388`, then
+        `deferred:T-0607` -- both self-references to the very ticket
+        doing the reconciliation, which would silently expire the moment
+        that ticket closed. Locks that NEITHER re-pointing stuck: no
+        entry defers to T-0388 or T-0607 anymore (T-0607 replaced the
+        deferral with a real out_of_scope disposition, not a third
+        ticket to defer to)."""
         registry_file = load_registry_dir(_REGISTRY_DIR, ("compliance.yaml",))[
             "compliance.yaml"
         ].danger_ok
@@ -162,6 +181,38 @@ class TestComplianceExhaustiveness:
             if entry.disposition.kind is DispositionKind.DEFERRED
         }
         assert "T-0388" not in deferred_targets
+        assert "T-0607" not in deferred_targets
+
+    # frob:ticket T-0607
+    def test_cmpl_registry_units_carry_handled_by_or_out_of_scope(self) -> None:
+        """The T-0607 acceptance criterion in code form: every one of the
+        17 `CMPL_REGISTRY_UNIT_IDS` units now carries `handled_by` or
+        `out_of_scope`, verified against the REAL file -- the same
+        property `check_cmpl_registry` (COMPLIANCE005) enforces going
+        forward, pinned here against today's real data too."""
+        from frob.strata._compliance import (
+            CMPL_REGISTRY_UNIT_IDS,
+            check_cmpl_registry,
+        )
+
+        result = check_cmpl_registry(_REGISTRY_DIR)
+        assert result.is_ok
+        assert result.danger_ok == ()
+
+        registry_file = load_registry_dir(_REGISTRY_DIR, ("compliance.yaml",))[
+            "compliance.yaml"
+        ].danger_ok
+        by_id = {
+            entry.id: entry
+            for entries in registry_file.entry_lists.values()
+            for entry in entries
+        }
+        for unit_id in CMPL_REGISTRY_UNIT_IDS:
+            assert unit_id in by_id, f"{unit_id} missing from compliance.yaml"
+            assert by_id[unit_id].disposition.kind in (
+                DispositionKind.HANDLED_BY,
+                DispositionKind.OUT_OF_SCOPE,
+            )
 
 
 # frob:ticket T-0388
