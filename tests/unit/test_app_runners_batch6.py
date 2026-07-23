@@ -545,7 +545,9 @@ class TestCheckRunner:
     ) -> None:
         import frob.gates as gates_mod
 
-        monkeypatch.setattr(gates_mod, "stamp_coverage", lambda root: Ok(None))
+        monkeypatch.setattr(
+            gates_mod, "stamp_coverage", lambda root, snapshot=None: Ok(None)
+        )
         cfg = AppConfig(check_path=tmp_path, check_stamp_coverage=True)
         with caplog.at_level("INFO"):
             check_run(cfg)
@@ -558,12 +560,40 @@ class TestCheckRunner:
         from frob.gates import GateError
 
         monkeypatch.setattr(
-            gates_mod, "stamp_coverage", lambda root: Err(GateError.QueueUnavailable)
+            gates_mod,
+            "stamp_coverage",
+            lambda root, snapshot=None: Err(GateError.QueueUnavailable),
         )
         cfg = AppConfig(check_path=tmp_path, check_stamp_coverage=True)
         with pytest.raises(SystemExit) as exc:
             check_run(cfg)
         assert exc.value.code == 1
+
+    def test_stamp_coverage_mode_passes_loaded_snapshot(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-0586: `--stamp-coverage` loads the graph snapshot and forwards it
+        into `stamp_coverage`, so the committed coverage lock refreshes
+        instead of only writing the bare stamp file."""
+        import frob.gates as gates_mod
+        import frob.graph as graph_mod
+
+        sentinel_snapshot = object()
+        received: dict = {}
+
+        def _fake_load_graph(cache):
+            return Ok(sentinel_snapshot)
+
+        def _fake_stamp_coverage(root, snapshot=None):
+            received["root"] = root
+            received["snapshot"] = snapshot
+            return Ok(None)
+
+        monkeypatch.setattr(gates_mod, "stamp_coverage", _fake_stamp_coverage)
+        monkeypatch.setattr(graph_mod, "load_graph", _fake_load_graph)
+        cfg = AppConfig(check_path=tmp_path, check_stamp_coverage=True)
+        check_run(cfg)
+        assert received["snapshot"] is sentinel_snapshot
 
     def test_stamp_baseline_mode_calls_stamp_and_returns(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog

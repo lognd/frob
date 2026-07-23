@@ -465,11 +465,45 @@ def _deploy_conformance_tool_result(violations) -> ToolResult:  # noqa: ANN001
     )
 
 
+# frob:ticket T-0586
+# frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_stamp_coverage_mode_passes_loaded_snapshot kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_stamp_coverage_mode_calls_stamp_and_returns kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_stamp_coverage_failure_exits_1 kind="unit"  # noqa: E501
 def _run_stamp_coverage(root: Path) -> None:
-    """`frob check --stamp-coverage`: record coverage.xml as the current stamp."""
-    from frob.gates import stamp_coverage
+    """`frob check --stamp-coverage`: record coverage.xml as the current stamp,
+    and refresh the committed `frob-coverage.lock.json` summary.
 
-    result = stamp_coverage(root)
+    T-0586: `stamp_coverage` only refreshes the lock (`write_coverage_lock`)
+    when handed a `GraphSnapshot` -- without one it still writes the stamp
+    file but silently skips the lock refresh. Loads the same on-disk graph
+    cache `frob.app.sys_runner._load_snapshot` uses (building it if stale)
+    so this CLI entry point keeps the lock current without any new flag.
+    A snapshot load failure degrades to the pre-T-0586 stamp-only behavior
+    (still stamps, just without the lock refresh) rather than failing the
+    whole command -- the lock refresh is a bonus this call provides, not a
+    hard requirement of stamping.
+    """
+    from frob.gates import stamp_coverage
+    from frob.graph import build_graph, load_graph
+
+    cache = root / ".frob" / "cache.db"
+    loaded = load_graph(cache)
+    if loaded.is_err:
+        _log.info(
+            "stamp-coverage: graph cache stale/missing, building: %s",
+            loaded.danger_err,
+        )
+        loaded = build_graph(root, cache)
+    snapshot = None
+    if loaded.is_err:
+        _log.warning(
+            "stamp-coverage: graph unavailable, lock refresh will be skipped: %s",
+            loaded.danger_err,
+        )
+    else:
+        snapshot = loaded.danger_ok
+
+    result = stamp_coverage(root, snapshot)
     if result.is_err:
         _log.error("stamp-coverage failed: %s", result.danger_err)
         sys.exit(1)
