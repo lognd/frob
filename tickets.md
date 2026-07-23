@@ -7982,3 +7982,34 @@ component: null
 labels: []
 ```
 Promotion of a draft filed in T-0766's worktree and lost during that ticket's land recovery (premature worktree removal destroyed uncommitted ledger state; disclosed in coordinator notes). T-0766 landed the resolve_lease(root, ticket_id, invoking_worktree) fail-loud primitive in src/frob/tickets/_leases.py, but nothing in the live check path consults leases at all (verified by the T-0766 reviewer: active_ticket/_resolve_ticket derive the id from --ticket/branch only). The reviewer marked this wiring a HARD DEPENDENCY: the guard prevents nothing until check consults it. Wire check's --ticket resolution through resolve_lease when a lease exists, keeping the no-lease path working for non-agent invocations.
+
+<!-- ticket:T-0788 -->
+```yaml
+id: T-0788
+title: 'gates: register COMPLIANCE005 in the live rule set and dispatch check_cmpl_registry
+  in frob check'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-23'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/__init__.py
+- src/frob/strata/_compliance.py
+- docs/design/registry/compliance.yaml
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a compliance.yaml entry regressed to deferred or undispositioned WHEN
+    frob check runs THEN COMPLIANCE005 fires as a registered, waivable gate rule;
+    GIVEN the 17 CMPL units re-dispositioned by T-0607 THEN their entries may cite
+    handled_by:COMPLIANCE005 and REG002 accepts it
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+T-0607 built check_cmpl_registry/COMPLIANCE005 but could not register the rule id in _KNOWN_GATE_RULES nor dispatch the check inside frob check (gates/__init__.py out of its scope) -- the implementer disclosed this and used reasoned out_of_scope dispositions naming COMPLIANCE005 as the compensating control. Until this ticket lands, COMPLIANCE005 is enforcement code invoked by nothing in a real check run (the catalogued-is-not-enforced class, T-0343). Wire the dispatch, register the rule, then flip the 17 dispositions to handled_by:COMPLIANCE005.
