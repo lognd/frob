@@ -7124,3 +7124,79 @@ threat: null
 component: null
 ```
 Found landing T-0848 itself: a --why-file narrative containing a line-wrapped quoted phrase that puts the literal heading text at a line start (the line is exactly the Done-report H2) is indistinguishable from the structural repeated-heading boundary that _done_report_section_end (post-T-0848) stops at. Rewriting then truncates the replaceable window mid-narrative and strands the tail as a phantom section (observed: T-0848's own block accumulated 3 heading lines). Fix direction: escape or reflow heading-identical narrative lines at render time (e.g. prefix a zero-width or backslash marker), or make the boundary check require the heading to be followed by the auto-generated Changed/Evidence structure. Coordinator hand-repaired the block this time.
+
+<!-- ticket:T-0854 -->
+```yaml
+id: T-0854
+title: 'close/land preflight: block closing a ticket that registry dispositions or
+  waivers still cite as their live tracker'
+state: queued
+kind: feature
+origin: agent
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/tickets/**
+- src/frob/gates/**
+threat: null
+component: null
+```
+The T-0605 incident class: landing/closing T-0605 instantly turned 41 patterns.yaml rows with disposition deferred:T-0605 into main-wide REG003 errors -- discovered only on the NEXT check, after the close was final. WAIVE006 already models the same hazard for waiver ticket= attributes but nothing checks it AT CLOSE TIME, and registry deferred:/tracked-by dispositions are not checked at all. Add a close/land preflight (same family as the T-0763 acceptance preflight): grep registry yamls for deferred:<id> and waiver bindings for ticket=<id>; a nonzero hit refuses the close with the row list and the remedy (file successor, re-point rows in the same change). Coordinator recipe exists in memory; this makes it mechanical.
+
+<!-- ticket:T-0855 -->
+```yaml
+id: T-0855
+title: 'mutation-evidence precheck diffs pre-merge in stacked worktrees: already-landed
+  sibling code reads as this ticket''s diff'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/tickets/_land.py
+- src/frob/tickets/_mutation_evidence.py
+threat: null
+component: null
+```
+Seen landing the T-0847/T-0848/T-0850 chain: land runs the TEST016 precheck BEFORE its merge step, diffing the worktree tree against current main. In a stacked multi-ticket worktree whose siblings already landed (squash-applied to main), content-identical files still enumerate as touched until the worktree merges main, so mutants are generated from code this ticket did not change and its evidence rightly kills none of them -- a false EvidenceConfirmatoryOnly block. Coordinator workaround is merge-main-then-retry. Fix: run the precheck against the post-merge state (or skip files whose worktree content is identical to main's blob), keeping the honest block for genuinely-changed lines.
+
+<!-- ticket:T-0856 -->
+```yaml
+id: T-0856
+title: 'land evidence re-verify: one failing test reports the ENTIRE evidence batch
+  as failed; add per-id attribution + quarantine integration'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/tickets/_land.py
+- src/frob/app/ticket_runner.py
+threat: null
+component: null
+```
+Seen landing T-0588: its 36 evidence ids ran as ONE pytest batch; one documented order-dependent xdist flake failed and land reported every id as 'evidence did not pass post-merge' -- misattribution that sends the coordinator hunting through 36 green tests, and a single flaky test can permanently veto a land. Fix: parse per-test outcomes from the batch (or fall back to per-id reruns of only the failures), name ONLY the failing ids in the refusal, and consult frob.testing._stability quarantine (T-0575) so a quarantined flake does not veto -- blocked_by/cross-ref T-0635 which wires stability into frob test.
+
+<!-- ticket:T-0857 -->
+```yaml
+id: T-0857
+title: 'mutate: crashed harness leaves mutants on disk -- journal originals and detect/restore
+  leftovers'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/mutate/**
+- src/frob/doctor.py
+threat: null
+component: null
+```
+Seen in the T-0755 fork-bomb recovery: killing mutation-harness processes mid-run left real source files in mutant form (ast.unparse output: comments/waivers stripped, quotes flipped) with the true content existing nowhere on disk -- the coordinator had to reconstruct from git plus re-apply uncommitted edits by hand. run_mutations restores on normal exits only. Fix: journal each file's pre-mutation bytes to .frob/mutate-backup/ before the first write and clean up on success; on startup, detect a stale journal and restore (or instruct); teach frob doctor to flag a present mutate-backup journal as needs-restore state. Also consider a guard that any evidence test importing frob.mutate against the real repo must honor MUTATION_RUN_ENV (the recursion class).
