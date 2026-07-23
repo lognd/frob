@@ -31,6 +31,7 @@ threat: null
 component: null
 ```
 User directive 2026-07-18: the pass-line counters hide real debt -- frob-exports reports 12-253 public symbols missing from __init__.py per package (decide policy: export or demote to private, per package, no blanket waiver), frob-dup 64 duplicate groups (triage: real extraction candidates vs false pairs; feeds T-0187 tree), frob-arch 197 warnings + 123 suggestions (long-function/god-class residue post-calibration -- fix or waive with reasons), perf gate 174 violations (166 waived -- re-audit every waiver still holds after T-0161's heuristic fixes land; the 8 unwaived need real fixes). Deliverable: each family driven to a state where the summary line is HONEST -- zero unwaived findings or a written per-finding reason; no threshold-loosening without a disclosed decision. Split into child tickets per family if any single family exceeds a session of work -- this ticket is the umbrella and the accounting.
+
 <!-- ticket:T-0254 -->
 ```yaml
 id: T-0254
@@ -5564,6 +5565,7 @@ threat: null
 component: null
 ```
 User directive 2026-07-22: T-0732's shared CARGO_TARGET_DIR fix lives in THIS repo's Makefile -- wrong layer; fix ALL repos structurally. frob.toml [natives] already declares the native crates (load_natives); the build logic belongs in frob: a "frob natives build" subcommand that does what make core does (maturin develop per declared native) WITH the shared-cache mechanism (git-common-dir keyed CARGO_TARGET_DIR, cargo's own locking -- T-0732's verified design) built in. Every repo's Makefile core target becomes "uv run frob natives build" -- one line, zero per-repo cache logic, upgraded by upgrading frob. Doctor integration: the existing native-staleness fingerprint check points at the new command as remedy. Children: (1) the subcommand + this repo's Makefile shim conversion; (2) scaffold template + conformance drift check; estate rollout via fleet at close.
+
 <!-- ticket:T-0738 -->
 ```yaml
 id: T-0738
@@ -5616,6 +5618,7 @@ threat: null
 component: null
 ```
 User mandate 2026-07-22: statically enforce system state protocols -- the *_init-never-called / *_deinit-never-called class, and generally functions valid only in particular states (TCP-handshake-style machines), plus cleanup-on-all-paths. Frame: TYPESTATE over the call graph, restricted to two decidable fragments: (a) module/subsystem protocols (the object is a singleton subsystem -- reachability + summaries suffice, no alias analysis); (b) declared object protocols checked at summary granularity. DELIBERATE DECISIONS: declared protocols with name-pattern-inferred init/deinit convenience (inference ONLY for the common pair, never for general machines); per-function summary fixpoint engine shared with the T-0686 may-raise engine (one engine, three clients: exceptions, capabilities, protocols -- no-duplication); language excuses are recorded DISCHARGES naming their mechanism (Rust Drop unless mem::forget observed; C++ RAII only when init result held by destructor-bearing object; Python with-blocks, GC finalizers NEVER count; TS using/try-finally), per T-0383 caught_by doctrine. LIMITS declared: no aliased per-object heap typestate (Rust owns that); concurrent establishment races belong to T-0693 family; dynamic dispatch = Unknown fail-closed (T-0339). Children: declaration surface, summary engine, state-requirement verification + excuses, cleanup obligations. Umbrella closes when children close.
+
 <!-- ticket:T-0740 -->
 ```yaml
 id: T-0740
@@ -6113,7 +6116,7 @@ Root-cause analysis 2026-07-22: two rejects (T-0611 tree_sitter imported into th
 ```yaml
 id: T-0759
 title: harden T-0710 overhead test against xdist wall-clock fragility
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-22'
@@ -6126,11 +6129,52 @@ component: null
 ```
 T-0710's TestStackSampler.test_overhead_under_five_percent measures wall-clock elapsed time (unsampled vs sampled, best-of-3) to assert sampler overhead stays under 5 percent. Under pytest-xdist parallel workers (this repo's default -n auto), concurrent worker contention can inflate wall-clock noise beyond what best-of-3 suppresses, risking flakiness in CI even though the sampler itself is not slow. Fix: mark the test to run serially (a 'serial'/xdist_group marker forcing it off the parallel grid) or relax/parameterize the tolerance for CI, whichever this repo's existing flaky-timing precedent (frob.toml/pytest.ini markers) prefers. Found during T-0710 review round 2.
 
+## Done report
+
+Duplicate of T-0760, resolved there. Read both ticket bodies before
+implementing: T-0759 (scope tests/unit/perf/test_hotgraph.py) and T-0760
+(scope tests/unit/perf/, src/frob/perf/**) both report the exact same
+fragility in the exact same test --
+TestStackSampler.test_overhead_under_five_percent's wall-clock overhead
+measurement being inflated by pytest-xdist cross-worker core contention,
+found during T-0710 review round 2 (T-0759) and named directly against
+T-0710 (T-0760). T-0759's scope is a strict subset of T-0760's.
+
+No separate diff was made under T-0759 to avoid re-doing the same fix
+twice or producing two divergent implementations of the same test. The
+actual fix (switch the test to time.process_time() CPU-time measurement,
+plus a worker_id-gated tolerance: 5 percent when uncontended, a
+documented 35 percent when running under an xdist worker) was implemented
+and verified under T-0760's Done report; see that report for the full
+verification transcript (12 passed x2 under -n0, 12 passed x5 under the
+repo's default -n auto including one run under measured host load average
+33 on a 12-core box, ruff clean, all five frob check --only stage groups
+0 errors, no out-of-scope deletions).
+
+Recommend the coordinator drop T-0759 as superseded by T-0760, or close
+both citing the same evidence -- coordinator's call per the dispatch
+instructions.
+
+Cuts: none (no distinct work existed to cut; this was genuinely the same
+ticket filed twice under different titles).
+
+Filed: none.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
+
 <!-- ticket:T-0760 -->
 ```yaml
 id: T-0760
 title: harden T-0710 hot-graph overhead test against xdist wall-clock fragility
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-22'
@@ -6139,15 +6183,85 @@ parent: T-0710
 scope:
 - tests/unit/perf/
 - src/frob/perf/**
+evidence:
+- tests/unit/perf/test_hotgraph.py::TestStackSampler::test_overhead_under_five_percent
 acceptance:
 - text: GIVEN the overhead test WHEN the full suite runs under -n auto THEN it passes
     reliably (serial marker, CPU-time measure, or documented-tolerance margin), not
     only under -n0
-  evidence: []
+  evidence:
+  - tests/unit/perf/test_hotgraph.py::TestStackSampler::test_overhead_under_five_percent
 threat: null
 component: null
 ```
 From T-0710: the hot-graph overhead test (attribution sampler <5% overhead) asserts a hard <5% on a ~0.11s workload = ~5.5ms margin, best-of-3 min-vs-min. Under pytest-xdist (-n auto, the default) the baseline and sampled loops compete with 11 concurrent workers for cores -- reproduced live: the test FAILS under -n auto, passes -n0. Harden it: either mark it serial (a no-xdist / serial marker so it runs alone), or relax the CI margin with a documented tolerance, or switch to a CPU-time (not wall-clock) measure immune to core contention. Pick the robust option and document why.
+
+## Done report
+
+T-0760 and T-0759 report the same underlying fragility in the same test
+(TestStackSampler.test_overhead_under_five_percent in
+tests/unit/perf/test_hotgraph.py): wall-clock overhead measurement under
+pytest-xdist -n auto is inflated by cross-worker core contention,
+independent of the sampler's real overhead. T-0759's scope
+(tests/unit/perf/test_hotgraph.py) is a strict subset of T-0760's
+(tests/unit/perf/, src/frob/perf/**). Implemented once here, under
+T-0760, since it is the more specific/broader-scoped ticket that names
+the actual fix mechanism in its own body; T-0759 is a duplicate resolved
+by this sibling (its own Done report says so, no separate diff).
+
+Fix: switched the test's measurement from wall-clock (time.monotonic())
+to process CPU time (time.process_time(), sum of user+system CPU across
+all of this process's threads including the sampler's own background
+thread), which removes the *external-process* wall-clock steal T-0710's
+review reproduced. Measured live during this session that CPU-time alone
+was not sufficient under this sandbox's actual load (uptime showed load
+average 33 on 12 cores) -- contended locks/futexes still show up as real
+system time under heavy oversubscription, so a plain <5 percent CPU-time
+assertion still failed once (17.7 percent) under concurrent xdist +
+external load. Added a second, minimal layer: the pytest-xdist-provided
+worker_id fixture distinguishes an uncontended run (worker_id == "master",
+i.e. -n0 or a dedicated serial pass) from a contended one (any "gwN"
+worker) and only widens the tolerance (0.05 -> 0.35) in the contended
+case, keeping the tight production budget enforced whenever this test
+runs alone. Both branches are exercised and documented in the test's own
+docstring, including why a serial/xdist-group marker was rejected
+(pytest-xdist cannot pause OTHER files' workers mid-test, so it would not
+have removed the reproduced contention) and why a blanket relaxed
+tolerance with no CPU-time change was rejected (would mask a real
+overhead regression the size of the sampler's own baseline cost in the
+common, uncontended case).
+
+Verification performed this session (all foreground):
+- uv run pytest tests/unit/perf/test_hotgraph.py -p no:cacheprovider -q -n0
+  -> 12 passed (twice)
+- uv run pytest tests/unit/perf/test_hotgraph.py -p no:cacheprovider -q
+  (repo default -n auto) -> 12 passed, run 5 times in a row (including
+  one run under measured host load average 33 on a 12-core box, which
+  originally reproduced the failure before this fix and passed after)
+- uv run ruff check tests/unit/perf/test_hotgraph.py (both PATH ruff and
+  uv run ruff) -> All checks passed
+- FROB_AGENT=1 uv run frob check --ticket T-0760 --only lint / static /
+  gates-fast / gates-native / gates-security (chunked loop, all five
+  stage groups) -> 0 errors in every group (warning counts are pre-
+  existing repo-wide dup/waive findings unrelated to this file; grepped
+  the static-stage output for "test_hotgraph" and found no hits)
+- git diff main --diff-filter=D --stat -> empty (no deletions)
+
+Cuts: none. This is a test-only change, scope tests/unit/perf/ and
+src/frob/perf/** as declared; src/frob/perf/** was not touched (the fix
+lives entirely in the test file).
+
+Filed: none. No out-of-scope work discovered.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/perf/test_hotgraph.py::TestStackSampler::test_overhead_under_five_percent` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0762 -->
 ```yaml
@@ -8886,6 +9000,7 @@ threat: null
 component: natives
 ```
 T-0735 child 2 (estate conformance). Scaffold template: `frob scaffold apply` emits/updates the Makefile `core` target as the one-line `uv run frob natives build` shim in adopter repos. Add a conformance drift check that flags a frob-enabled repo whose Makefile core target carries its own native-build/cache logic instead of the shim (the drift that motivated the parent: per-repo cache hacks at the wrong layer). Estate rollout of the shim across sibling repos happens via fleet at parent close, not in this ticket.
+
 <!-- ticket:T-0866 -->
 ```yaml
 id: T-0866
@@ -8974,6 +9089,7 @@ threat: null
 component: arch
 ```
 T-0739 child 3 (verification + excuses). State-requirement verification: a function valid only in state S must be unreachable on paths where S is not established (init-never-called class; TCP-handshake-style ordering). Language excuses are recorded DISCHARGES naming their mechanism per T-0383 caught_by doctrine: Rust Drop unless mem::forget observed; C++ RAII only when the init result is held by a destructor-bearing object; Python with-blocks count, GC finalizers NEVER count; TS using/try-finally. Declared LIMITS (no aliased per-object heap typestate; concurrency races belong to the T-0693 family) documented, not silently absorbed.
+
 <!-- ticket:T-0869 -->
 ```yaml
 id: T-0869
