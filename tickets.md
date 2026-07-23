@@ -1225,7 +1225,7 @@ The 6 registry rows T-0332 deferred for precision reasons: each needs a fuzzier 
 id: T-0608
 title: 'check CLI: thread --ticket/--base/--delta/--skip-gates through non-Python
   pipeline dispatchers'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-22'
@@ -1234,15 +1234,69 @@ parent: T-0554
 scope:
 - src/frob/app/check_runner.py
 - tests/unit/test_check.py
+evidence:
+- tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_cpp_dispatch_threads_selectors
+- tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_cpp_dispatch_default_selectors_unchanged
+- tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_rust_dispatch_threads_selectors
+- tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_rust_dispatch_default_selectors_unchanged
+- tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_ts_dispatch_threads_selectors
+- tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_ts_dispatch_default_selectors_unchanged
 acceptance:
 - text: GIVEN a TS-only repo WHEN frob check --ticket T-X runs THEN _run_gates receives
     ticket=T-X (asserted via test) and same for --base/--delta/--skip-gates across
     cpp/rust/ts dispatchers
-  evidence: []
+  evidence:
+  - tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_cpp_dispatch_threads_selectors
+  - tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_cpp_dispatch_default_selectors_unchanged
+  - tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_rust_dispatch_threads_selectors
+  - tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_rust_dispatch_default_selectors_unchanged
+  - tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_ts_dispatch_threads_selectors
+  - tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_ts_dispatch_default_selectors_unchanged
 threat: null
 component: null
 ```
 T-0554 wired _run_gates into run_check_cpp/rust/ts with skip_gates/ticket/base/delta kwargs, but src/frob/app/check_runner.py's _dispatch_check_cpp/_dispatch_check_rust/_dispatch_check_ts do not pass cfg.check_skip_gates/check_ticket/check_base/check_delta down -- only _dispatch_check_python does. Gates run unconditionally for non-Python repos (correct default), but CLI-level --ticket/--base/--delta scoping is silently ignored there. Thread the four kwargs through and test each dispatcher. Found by T-0554's reviewer.
+
+## Done report
+
+Threads cfg.check_skip_gates/check_ticket/check_base/check_delta through
+_dispatch_check_cpp/_dispatch_check_rust/_dispatch_check_ts in
+src/frob/app/check_runner.py to the run_check_cpp/rust/ts kwargs T-0554
+added on the receiving side -- previously only _dispatch_check_python
+passed them, so CLI-level --ticket/--base/--delta/--skip-gates scoping
+was silently ignored for non-Python repos (gates ran unconditionally).
+
+Six new tests in tests/unit/test_check.py
+(TestDispatchCheckThreadsGateSelectors): per dispatcher, one asserting
+non-default selector values arrive at the pipeline call and one pinning
+the defaults when flags are omitted. Adversarially verified: all six
+FAIL against the pre-fix check_runner.py (KeyError on the absent kwarg)
+and pass after the fix; the reviewer independently reproduced this by
+reverting the file mid-review. Reviewer verdict: APPROVE.
+
+No scope widening needed; no public API change (dispatchers are
+private); docs untouched by design (behavior now matches what
+docs/modules already describe for check CLI selectors).
+
+### Changed
+```
+ src/frob/app/check_runner.py |  33 ++++++++-
+ tests/unit/test_check.py     | 160 +++++++++++++++++++++++++++++++++++++++++++
+ tickets.md                   |  59 +++++++++++++++-
+ 3 files changed, 247 insertions(+), 5 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_cpp_dispatch_threads_selectors` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_cpp_dispatch_default_selectors_unchanged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_rust_dispatch_threads_selectors` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_rust_dispatch_default_selectors_unchanged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_ts_dispatch_threads_selectors` (pytest node id, verified passing when recorded)
+- `tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors::test_ts_dispatch_default_selectors_unchanged` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: 0 error(s), 1210 warning(s), 210 waived
 
 <!-- ticket:T-0618 -->
 ```yaml

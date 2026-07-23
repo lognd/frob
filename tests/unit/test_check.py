@@ -216,6 +216,166 @@ class TestRunCheckTs:
         assert any(r.tool == "gates" for r in result.results)
 
 
+# frob:ticket T-0608
+class TestDispatchCheckThreadsGateSelectors:
+    """T-0608: `_dispatch_check_cpp/_dispatch_check_rust/_dispatch_check_ts`
+    used to drop `cfg.check_skip_gates`/`check_ticket`/`check_base`/
+    `check_delta` on the floor -- only `_dispatch_check_python` threaded
+    them through, even though `run_check_cpp/rust/ts` (T-0554) all accept
+    them. This left CLI-level `--ticket`/`--base`/`--delta`/`--skip-gates`
+    scoping silently ignored for non-Python repos. These tests fail
+    against the pre-fix dispatchers (which omit the four kwargs from their
+    `run_check_*` calls entirely) and pass once threaded through.
+    """
+
+    # frob:tests tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_cpp_dispatch_threads_selectors kind="unit"
+    def test_cpp_dispatch_threads_selectors(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import frob.app.check_runner as runner_mod
+        from frob.app.config import AppConfig
+
+        captured: dict[str, object] = {}
+
+        def _fake_run_check_cpp(root: Path, **kw: object) -> CheckResult:
+            captured.update(kw)
+            return CheckResult(path=str(root), results=[])
+
+        monkeypatch.setattr(runner_mod, "run_check_cpp", _fake_run_check_cpp)
+        cfg = AppConfig(
+            check_path=tmp_path,
+            check_type="cpp",
+            check_ticket="T-1234",
+            check_base="origin/main",
+            check_delta=True,
+            check_skip_gates=True,
+        )
+        runner_mod._dispatch_check_cpp(cfg, tmp_path)
+        assert captured["ticket"] == "T-1234"
+        assert captured["base"] == "origin/main"
+        assert captured["delta"] is True
+        assert captured["skip_gates"] is True
+
+    # frob:tests tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_cpp_dispatch_default_selectors_unchanged kind="unit"
+    def test_cpp_dispatch_default_selectors_unchanged(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import frob.app.check_runner as runner_mod
+        from frob.app.config import AppConfig
+
+        captured: dict[str, object] = {}
+
+        def _fake_run_check_cpp(root: Path, **kw: object) -> CheckResult:
+            captured.update(kw)
+            return CheckResult(path=str(root), results=[])
+
+        monkeypatch.setattr(runner_mod, "run_check_cpp", _fake_run_check_cpp)
+        cfg = AppConfig(check_path=tmp_path, check_type="cpp")
+        runner_mod._dispatch_check_cpp(cfg, tmp_path)
+        assert captured["ticket"] is None
+        assert captured["base"] is None
+        assert captured["delta"] is False
+        assert captured["skip_gates"] is False
+
+    # frob:tests tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_rust_dispatch_threads_selectors kind="unit"
+    def test_rust_dispatch_threads_selectors(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import frob.app.check_runner as runner_mod
+        from frob.app.config import AppConfig
+
+        captured: dict[str, object] = {}
+
+        def _fake_run_check_rust(root: Path, **kw: object) -> CheckResult:
+            captured.update(kw)
+            return CheckResult(path=str(root), results=[])
+
+        monkeypatch.setattr(runner_mod, "run_check_rust", _fake_run_check_rust)
+        cfg = AppConfig(
+            check_path=tmp_path,
+            check_type="rust",
+            check_ticket="T-5678",
+            check_base="main",
+            check_delta=True,
+            check_skip_gates=True,
+        )
+        runner_mod._dispatch_check_rust(cfg, tmp_path)
+        assert captured["ticket"] == "T-5678"
+        assert captured["base"] == "main"
+        assert captured["delta"] is True
+        assert captured["skip_gates"] is True
+
+    # frob:tests tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_rust_dispatch_default_selectors_unchanged kind="unit"
+    def test_rust_dispatch_default_selectors_unchanged(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import frob.app.check_runner as runner_mod
+        from frob.app.config import AppConfig
+
+        captured: dict[str, object] = {}
+
+        def _fake_run_check_rust(root: Path, **kw: object) -> CheckResult:
+            captured.update(kw)
+            return CheckResult(path=str(root), results=[])
+
+        monkeypatch.setattr(runner_mod, "run_check_rust", _fake_run_check_rust)
+        cfg = AppConfig(check_path=tmp_path, check_type="rust")
+        runner_mod._dispatch_check_rust(cfg, tmp_path)
+        assert captured["ticket"] is None
+        assert captured["base"] is None
+        assert captured["delta"] is False
+        assert captured["skip_gates"] is False
+
+    # frob:tests tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_ts_dispatch_threads_selectors kind="unit"
+    def test_ts_dispatch_threads_selectors(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import frob.app.check_runner as runner_mod
+        from frob.app.config import AppConfig
+
+        captured: dict[str, object] = {}
+
+        def _fake_run_check_ts(root: Path, **kw: object) -> CheckResult:
+            captured.update(kw)
+            return CheckResult(path=str(root), results=[])
+
+        monkeypatch.setattr(runner_mod, "run_check_ts", _fake_run_check_ts)
+        cfg = AppConfig(
+            check_path=tmp_path,
+            check_type="typescript",
+            check_ticket="T-9012",
+            check_base="upstream/main",
+            check_delta=True,
+            check_skip_gates=True,
+        )
+        runner_mod._dispatch_check_ts(cfg, tmp_path)
+        assert captured["ticket"] == "T-9012"
+        assert captured["base"] == "upstream/main"
+        assert captured["delta"] is True
+        assert captured["skip_gates"] is True
+
+    # frob:tests tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_ts_dispatch_default_selectors_unchanged kind="unit"
+    def test_ts_dispatch_default_selectors_unchanged(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import frob.app.check_runner as runner_mod
+        from frob.app.config import AppConfig
+
+        captured: dict[str, object] = {}
+
+        def _fake_run_check_ts(root: Path, **kw: object) -> CheckResult:
+            captured.update(kw)
+            return CheckResult(path=str(root), results=[])
+
+        monkeypatch.setattr(runner_mod, "run_check_ts", _fake_run_check_ts)
+        cfg = AppConfig(check_path=tmp_path, check_type="typescript")
+        runner_mod._dispatch_check_ts(cfg, tmp_path)
+        assert captured["ticket"] is None
+        assert captured["base"] is None
+        assert captured["delta"] is False
+        assert captured["skip_gates"] is False
+
+
 class TestDetectProjectType:
     def test_cargo_toml_is_rust(self, tmp_path: Path) -> None:
         # frob:tests src/frob/check/__init__.py::detect_project_type kind="unit"

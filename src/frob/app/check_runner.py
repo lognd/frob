@@ -224,7 +224,13 @@ def _warn_if_polyglot(root: Path, chosen: str, others: list[str]) -> None:
 
 
 def _dispatch_check_cpp(cfg: AppConfig, root: Path):
-    """Run `run_check_cpp` with `cfg`'s C++-toolchain skip flags."""
+    """Run `run_check_cpp` with `cfg`'s C++-toolchain skip flags and gate selectors.
+
+    T-0608: `check_skip_gates`/`check_ticket`/`check_base`/`check_delta` were
+    silently dropped here (only `_dispatch_check_python` threaded them),
+    so CLI-level `--ticket`/`--base`/`--delta`/`--skip-gates` scoping was
+    ignored for C++ repos even though `run_check_cpp` (T-0554) accepts them.
+    """
     return run_check_cpp(
         root,
         build_dir=cfg.check_build_dir,
@@ -232,30 +238,51 @@ def _dispatch_check_cpp(cfg: AppConfig, root: Path):
         skip_clang_tidy=cfg.check_skip_clang_tidy,
         skip_clang_format=cfg.check_skip_clang_format,
         skip_tests=cfg.check_skip_tests,
+        skip_gates=cfg.check_skip_gates,
         valgrind=cfg.check_valgrind,
+        ticket=cfg.check_ticket,
+        base=cfg.check_base,
+        delta=cfg.check_delta,
     )
 
 
 def _dispatch_check_rust(cfg: AppConfig, root: Path):
-    """Run `run_check_rust` with `cfg`'s Rust-toolchain skip flags."""
+    """Run `run_check_rust` with `cfg`'s Rust-toolchain skip flags and gate selectors.
+
+    T-0608: see `_dispatch_check_cpp`'s docstring -- the same gap applied
+    here for Rust repos.
+    """
     return run_check_rust(
         root,
         skip_check=cfg.check_skip_cargo_check,
         skip_clippy=cfg.check_skip_clippy,
         skip_fmt=cfg.check_skip_fmt,
         skip_tests=cfg.check_skip_tests,
+        skip_gates=cfg.check_skip_gates,
         valgrind=cfg.check_valgrind,
+        ticket=cfg.check_ticket,
+        base=cfg.check_base,
+        delta=cfg.check_delta,
     )
 
 
 def _dispatch_check_ts(cfg: AppConfig, root: Path):
-    """Run `run_check_ts` with `cfg`'s TypeScript-toolchain skip flags."""
+    """Run `run_check_ts` with `cfg`'s TypeScript-toolchain skip flags and
+    gate selectors.
+
+    T-0608: see `_dispatch_check_cpp`'s docstring -- the same gap applied
+    here for TypeScript repos.
+    """
     return run_check_ts(
         root,
         skip_tsc=cfg.check_skip_tsc,
         skip_eslint=cfg.check_skip_eslint,
         skip_prettier=cfg.check_skip_prettier,
         skip_tests=cfg.check_skip_tests,
+        skip_gates=cfg.check_skip_gates,
+        ticket=cfg.check_ticket,
+        base=cfg.check_base,
+        delta=cfg.check_delta,
     )
 
 
