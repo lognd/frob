@@ -11677,3 +11677,38 @@ resolve_lease pinning) AND (c) optionally older than --min-age. Print a
 per-worktree verdict (removed / kept:lease / kept:dirty / kept:age).
 Never delete branches. Coordinator playbook + docs updated to forbid raw
 git-level sweeps.
+
+<!-- ticket:T-0837 -->
+```yaml
+id: T-0837
+title: 'docs: port the frob review channel section for T-0571, repoint its frob:doc
+  anchors'
+state: queued
+kind: docs
+origin: human
+created: '2026-07-23'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- docs/modules/tickets.md
+- src/frob/tickets/__init__.py
+- src/frob/app/ticket_runner.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+T-0571's salvage port (frob review: structured adversarial review channel
+as first-class evidence) landed without its docs section --
+docs/modules/tickets.md was outside the port's six-file scope, so the
+donor's #structured-review-channel-t-0571 section was never ported and
+two frob:doc anchors were repointed at #public-api as a disclosed
+workaround. Write the section (CLI usage: frob ticket review with
+--verdict/--reviewer/--findings-file/--commit, close --strict,
+require_review_for_close frob.toml key, ReviewEntry evidence shape) and
+repoint the two anchors in src/frob/tickets/__init__.py /
+src/frob/app/ticket_runner.py back at the new section.
