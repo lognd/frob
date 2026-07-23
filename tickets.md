@@ -3501,7 +3501,7 @@ import frob.testing as the first frob-touching import raises ImportError (cannot
 ```yaml
 id: T-0635
 title: wire flake-quarantine stability tracking into frob test CLI run path
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
