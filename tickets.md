@@ -9386,3 +9386,44 @@ Gates: frob check --only {lint,static,gates-fast,gates-native,gates-security} --
 
 ### Evidence
 (no evidence recorded)
+
+<!-- ticket:T-0823 -->
+```yaml
+id: T-0823
+title: 'lang: LANG003 known-gap ticket refs unresolvable in adopter repos (escalates
+  to ERROR outside frob itself)'
+state: queued
+kind: bug
+origin: auditor
+created: '2026-07-23'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- src/frob/lang/_support.py
+- src/frob/gates/**
+- tests/test_lang_conformance_gate.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN an adopter repo whose queue carries no frob-internal ticket ids WHEN
+    LANG003 evaluates a known-gap facet THEN it does not hard-error on the unresolvable
+    frob-internal reference (per the chosen design), with a fixture test proving the
+    adopter shape
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Disclosed by T-0818's investigation (2026-07-23): LANG003's KNOWN_GAP facet
+verification requires the CHECKED repo's own ticket queue to carry the
+ticket id named in frob's internal _arch_status gap table (e.g. T-0329
+for typescript arch). For frob itself that id resolves; for any DOWNSTREAM
+adopter repo (the 8-repo rollout) the id is meaningless -- their queues
+will never mirror frob-internal ids, so every known-gap facet escalates
+to ERROR on adopter repos. Adjudicate the design: (a) known-gap ids
+verify against frob's own shipped registry, not the checked repo's queue;
+(b) gap references become adopter-neutral (URL/registry key); or (c)
+document that adopters must waive. Pick one, implement, and add an
+adopter-shaped fixture test (repo with no frob-internal ids).
