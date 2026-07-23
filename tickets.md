@@ -7158,10 +7158,12 @@ in the time available; the module previously had NO ticket-pinned,
 fail-loud lease resolution primitive at all (only `read_all_leases`, a
 scan-everything read with no per-ticket ownership check), which is the
 structural gap the ticket's acceptance criterion describes and this
-closes. Filed T-draft-70190dc0 to wire `resolve_lease` (and/or
+closes. Filed T-0787 to wire `resolve_lease` (and/or
 `enforce_worktree_lease`) into check_runner.py's actual entry point as a
 follow-up, since that requires touching files outside this ticket's
-declared scope.
+declared scope. (Originally filed as a worktree draft that was lost when
+the worktree was removed before its land finalized -- coordinator
+refiled it verbatim as T-0787.)
 
 Deviation: uv.lock and pyproject.toml's version line churn during every
 `uv run`/`frob check` invocation in this worktree (pre-existing artifact,
@@ -7512,7 +7514,7 @@ User observation 2026-07-22: a single frob ticket command spawns git rev-parse -
 id: T-0774
 title: 'land: preflight-simulate EvidenceScopeUnbound (covers_scope) pre-merge to
   close the residual fail-after-merge class'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -7536,7 +7538,6 @@ component: null
 labels: []
 ```
 T-0763 moved unbound-acceptance closeability preflight before merge, but EvidenceScopeUnbound (the covers_scope D-05 check) still runs post-merge because it needs the obligation graph from frob.gates, which frob.tickets cannot import (dependency is injected via the covers_scope callable parameter -- verified by the T-0763 reviewer). Residual: a ticket with bound-but-scope-uncovering evidence still fails AFTER the merge commit exists. Fix direction: have the CLI layer (frob.app.ticket_runner, which CAN import frob.gates) pass covers_scope into a pre-merge preflight simulation as well, or restructure land() to compute the post-merge graph in a temporary index without committing. Filed per T-0763 reviewer recommendation.
-
 <!-- ticket:T-0775 -->
 ```yaml
 id: T-0775
@@ -7949,3 +7950,35 @@ component: null
 labels: []
 ```
 The 2026-07-23 blindspot audit explicitly skipped: (a) a full vacuous-satisfaction sweep of gates/__init__.py (8568 lines -- can any gate be satisfied by an empty diff, empty scope, or stale cache?), and (b) lang/** parser trust boundary (tree-sitter on untrusted repo files). These are the largest unaudited surfaces. Run per the audit-until-empty discipline (docs/audits/, pessimistic auditor told to find 10+, repeat until 0).
+
+<!-- ticket:T-0787 -->
+```yaml
+id: T-0787
+title: 'check CLI: wire resolve_lease pinning into --ticket resolution (promote T-0766''s
+  lost draft)'
+state: queued
+kind: security
+origin: agent
+created: '2026-07-23'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/app/check_runner.py
+- src/frob/gates/__init__.py
+- tests/test_tickets_leases.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN an agent invoking frob check --ticket T-X from a worktree WHEN T-X has
+    a lease THEN the check pins to T-X's own lease/worktree via resolve_lease and
+    refuses loudly (naming frob ticket start) when the lease is absent or recorded
+    for a different worktree; a test drives the check entry point across two fake
+    worktrees
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Promotion of a draft filed in T-0766's worktree and lost during that ticket's land recovery (premature worktree removal destroyed uncommitted ledger state; disclosed in coordinator notes). T-0766 landed the resolve_lease(root, ticket_id, invoking_worktree) fail-loud primitive in src/frob/tickets/_leases.py, but nothing in the live check path consults leases at all (verified by the T-0766 reviewer: active_ticket/_resolve_ticket derive the id from --ticket/branch only). The reviewer marked this wiring a HARD DEPENDENCY: the guard prevents nothing until check consults it. Wire check's --ticket resolution through resolve_lease when a lease exists, keeping the no-lease path working for non-agent invocations.
