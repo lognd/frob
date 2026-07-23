@@ -6643,7 +6643,7 @@ Observed while working T-0704 (worktree agent-ad82d24588b5083b6, 2026-07-22/23).
 id: T-0800
 title: 'dup: normalize combined-vs-split early-return conditionals before similarity
   compare'
-state: in-progress
+state: dropped
 kind: feature
 origin: human
 created: '2026-07-23'
@@ -6733,6 +6733,8 @@ coordinator's.
 - tests: 1 passed (from 1 evidence id(s))
 - gates: unmeasured (no parsable gate-summary from a fresh check)
 
+## Drop reason
+- 2026-07-23: superseded by T-0801 (landed 1a40a97b): guard-shape normalization implemented purely in dup/_pipeline.py covers combined-vs-split early-return conditionals; no Rust-kernel work needed
 <!-- ticket:T-0801 -->
 ```yaml
 id: T-0801
