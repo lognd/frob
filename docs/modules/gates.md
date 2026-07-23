@@ -34,6 +34,7 @@ declaration).
 | INV006 | invariant | (warn, T-0408) a SOURCE file under `INV006_SRC_DIRS` (`src`, `strata-core/src`, `frob-core/src`) makes a claim-shaped exclusivity assertion (same vocabulary as INV003) with no `frob:invariant` edge anchored anywhere in the file, and no `frob:waive INV006 reason="..."` edge -- see "INV006 (T-0408)" below |
 | TICK006 | tickets | a Done report's affirmative "filed" claim (`Filed: T-####`, `filed as T-####`, `Filed T-draft-<hex>`, ...) whose id resolves to no block in `tickets.md` or `tickets-archive.md` -- see "TICK006 (T-0726)" below |
 | TICK007 | tickets | (warn) a dispatchable (unblocked, unleased) CRITICAL/HIGH ticket has sat past its `frob.tickets.undispatched_stale` threshold -- see "TICK007 (T-0820)" below |
+| COMPLIANCE005 | compliance | a `docs/design/registry/compliance.yaml` `CMPL_REGISTRY_UNIT_IDS` member carries a `deferred`/undispositioned disposition instead of `handled_by`/`out_of_scope` -- see "COMPLIANCE005 (T-0788)" below |
 | DEC001 | decisions | a `frob:decision AD-###` edge points at a record that does not exist (opt-in: a `decisions/` dir must exist) |
 | DEC002 | decisions | an `accepted` decision record has no `frob:decision` code anchor |
 | TEST001 | test | public function/method has no `frob:tests` unit edge |
@@ -649,6 +650,38 @@ dispatch is a queue-health signal to act on, not a structural invariant
 break, so a reasoned `frob:waive TICK007 reason="..."` can disposition a
 known, accepted case (e.g. a deliberately deferred CRITICAL awaiting a
 blocker that has not been formally recorded yet).
+
+### COMPLIANCE005 (T-0788)
+
+<!-- frob:describes src/frob/gates/__init__.py::compliance_gate -->
+
+T-0607 built the pure check
+(`frob.strata._compliance.check_cmpl_registry_unit_dispositions`, the
+`CMPL_REGISTRY_UNIT_IDS` constant, and `check_cmpl_registry`) but did not
+wire it into `frob check` -- `_KNOWN_GATE_RULES` and a stage callback both
+lived outside T-0607's declared scope, so a `deferred`/undispositioned
+regression among the 17 checkable-control compliance-registry units
+(`docs/design/registry/compliance.yaml`) would not have failed `frob
+check` at all, only a direct call to the strata function. T-0788 is the
+`frob check` half: `compliance_gate` loads `compliance.yaml` from
+`docs/design/registry` (or a caller-supplied `registry_dir`), calls
+`check_cmpl_registry`, and emits one ERROR `Violation` per
+`CMPL_REGISTRY_UNIT_IDS` member whose disposition kind is neither
+`handled_by` nor `out_of_scope` -- most concretely, a `deferred:<ticket>`
+disposition that becomes factually wrong the instant the named ticket
+closes (the exact T-0388/T-0607 self-reference incident this rule exists
+to refuse a repeat of). T-0833 flipped all 17 `compliance.yaml` entries
+under `CMPL_REGISTRY_UNIT_IDS` from `out_of_scope` to
+`handled_by:COMPLIANCE005`, matching T-0788's original intent.
+
+**Where it runs.** `compliance_gate` is dispatched as the `compliance`
+stage callback (`frob check`'s `gates-fast` stage group). It is silent
+(returns no violations) when `registry_dir` has no `compliance.yaml` at
+all -- a repo with no compliance registry makes no COMPLIANCE005 claim,
+matching `registry_gate`'s own missing-directory posture. It is waivable
+(not in `_UNWAIVABLE_RULES`): a reasoned `frob:waive COMPLIANCE005
+reason="..."` can disposition a specific, honest, temporary exception the
+same way REG001-004 allow one.
 
 ## Public API
 

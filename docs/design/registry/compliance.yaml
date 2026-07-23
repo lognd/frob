@@ -28,21 +28,24 @@ entries:
     leaf_count: 5
     checkability: "mixed"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "out_of_scope:leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text; standing structural coverage (this id can never silently revert to deferred/undispositioned) is enforced instead by COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607"
+    # handled_by:COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607/T-0833; leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text
+    disposition: "handled_by:COMPLIANCE005"
     cross_refs: []
   - id: "CMPL-SOC2-CC-FAMILIES"
     framework: "SOC2"
     leaf_count: 9
     checkability: "mixed"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "out_of_scope:leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text; standing structural coverage (this id can never silently revert to deferred/undispositioned) is enforced instead by COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607"
+    # handled_by:COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607/T-0833; leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text
+    disposition: "handled_by:COMPLIANCE005"
     cross_refs: []
   - id: "CMPL-PCIDSS-REQUIREMENTS"
     framework: "PCI-DSS-v4.0.1"
     leaf_count: 12
     checkability: "mixed"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "out_of_scope:leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text; standing structural coverage (this id can never silently revert to deferred/undispositioned) is enforced instead by COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607"
+    # handled_by:COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607/T-0833; leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text
+    disposition: "handled_by:COMPLIANCE005"
     cross_refs: []
   - id: "CMPL-HIPAA-ADMIN-STANDARDS"
     framework: "HIPAA-Security-Rule"
@@ -63,7 +66,8 @@ entries:
     leaf_count: 5
     checkability: "config"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "out_of_scope:leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text; standing structural coverage (this id can never silently revert to deferred/undispositioned) is enforced instead by COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607"
+    # handled_by:COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607/T-0833; leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text
+    disposition: "handled_by:COMPLIANCE005"
     cross_refs: []
   - id: "CMPL-GDPR-CHAPTERS"
     framework: "GDPR"
@@ -77,7 +81,8 @@ entries:
     leaf_count: 99
     checkability: "mixed"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "out_of_scope:leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text; standing structural coverage (this id can never silently revert to deferred/undispositioned) is enforced instead by COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607"
+    # handled_by:COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607/T-0833; leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text
+    disposition: "handled_by:COMPLIANCE005"
     cross_refs: []
   - id: "CMPL-CCPA-CORE-RIGHTS"
     framework: "CCPA"
@@ -98,7 +103,8 @@ entries:
     leaf_count: 20
     checkability: "mixed"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "out_of_scope:leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text; standing structural coverage (this id can never silently revert to deferred/undispositioned) is enforced instead by COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607"
+    # handled_by:COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607/T-0833; leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text
+    disposition: "handled_by:COMPLIANCE005"
     cross_refs: []
   - id: "CMPL-NISTCSF-FUNCTIONS"
     framework: "NIST-CSF-2.0"
@@ -112,42 +118,48 @@ entries:
     leaf_count: 3
     checkability: "mixed"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "out_of_scope:leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text; standing structural coverage (this id can never silently revert to deferred/undispositioned) is enforced instead by COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607"
+    # handled_by:COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607/T-0833; leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text
+    disposition: "handled_by:COMPLIANCE005"
     cross_refs: []
   - id: "CMPL-SSDF-PRACTICE-GROUPS"
     framework: "NIST-SP-800-218"
     leaf_count: 4
     checkability: "static"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "out_of_scope:leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text; standing structural coverage (this id can never silently revert to deferred/undispositioned) is enforced instead by COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607"
+    # handled_by:COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607/T-0833; leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text
+    disposition: "handled_by:COMPLIANCE005"
     cross_refs: []
   - id: "CMPL-ISO27002-THEMES"
     framework: "ISO-IEC-27001-27002-2022"
     leaf_count: 4
     checkability: "mixed"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "out_of_scope:leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text; standing structural coverage (this id can never silently revert to deferred/undispositioned) is enforced instead by COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607"
+    # handled_by:COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607/T-0833; leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text
+    disposition: "handled_by:COMPLIANCE005"
     cross_refs: []
   - id: "CMPL-ISO27002-CONTROLS"
     framework: "ISO-IEC-27001-27002-2022"
     leaf_count: 93
     checkability: "mixed"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "out_of_scope:leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text; standing structural coverage (this id can never silently revert to deferred/undispositioned) is enforced instead by COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607"
+    # handled_by:COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607/T-0833; leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text
+    disposition: "handled_by:COMPLIANCE005"
     cross_refs: []
   - id: "CMPL-CIS-CONTROLS"
     framework: "CIS-Controls-v8"
     leaf_count: 18
     checkability: "mixed"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "out_of_scope:leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text; standing structural coverage (this id can never silently revert to deferred/undispositioned) is enforced instead by COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607"
+    # handled_by:COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607/T-0833; leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text
+    disposition: "handled_by:COMPLIANCE005"
     cross_refs: []
   - id: "CMPL-CIS-SAFEGUARDS"
     framework: "CIS-Controls-v8"
     leaf_count: 153
     checkability: "config"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "out_of_scope:leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text; standing structural coverage (this id can never silently revert to deferred/undispositioned) is enforced instead by COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607"
+    # handled_by:COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607/T-0833; leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text
+    disposition: "handled_by:COMPLIANCE005"
     cross_refs: []
   - id: "CMPL-CIS-IMPLEMENTATION-GROUPS"
     framework: "CIS-Controls-v8"
@@ -161,14 +173,16 @@ entries:
     leaf_count: 14
     checkability: "static"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "out_of_scope:leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text; standing structural coverage (this id can never silently revert to deferred/undispositioned) is enforced instead by COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607"
+    # handled_by:COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607/T-0833; leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text
+    disposition: "handled_by:COMPLIANCE005"
     cross_refs: []
   - id: "CMPL-ASVS-REQUIREMENTS"
     framework: "OWASP-ASVS-4.0.3"
     leaf_count: 286
     checkability: "static"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "out_of_scope:leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text; standing structural coverage (this id can never silently revert to deferred/undispositioned) is enforced instead by COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607"
+    # handled_by:COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607/T-0833; leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text
+    disposition: "handled_by:COMPLIANCE005"
     cross_refs: []
   - id: "CMPL-ASVS-LEVELS"
     framework: "OWASP-ASVS-4.0.3"
@@ -196,21 +210,24 @@ entries:
     leaf_count: 3
     checkability: "mixed"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "out_of_scope:leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text; standing structural coverage (this id can never silently revert to deferred/undispositioned) is enforced instead by COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607"
+    # handled_by:COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607/T-0833; leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text
+    disposition: "handled_by:COMPLIANCE005"
     cross_refs: []
   - id: "CMPL-SLSA-BUILD-LEVELS"
     framework: "SLSA-v1.0"
     leaf_count: 4
     checkability: "static"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "out_of_scope:leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text; standing structural coverage (this id can never silently revert to deferred/undispositioned) is enforced instead by COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607"
+    # handled_by:COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607/T-0833; leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text
+    disposition: "handled_by:COMPLIANCE005"
     cross_refs: []
   - id: "CMPL-FROB-CATALOG-ENTRIES"
     framework: "frob-std.compliance"
     leaf_count: 6
     checkability: "mixed"
     source_doc: "docs/design/compliance-corpus.md"
-    disposition: "out_of_scope:leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text; standing structural coverage (this id can never silently revert to deferred/undispositioned) is enforced instead by COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607"
+    # handled_by:COMPLIANCE005 -- check_cmpl_registry_unit_dispositions, src/frob/strata/_compliance.py, T-0607/T-0833; leaf-level control text for this unit is partial/paywalled/unverified at the primary source per docs/design/compliance-corpus.md's own research-method note, so per-control static enforcement cannot be built without fabricating unverified control text
+    disposition: "handled_by:COMPLIANCE005"
     cross_refs: []
 total_units: 27
 total_leaf_controls_enumerated: 599
