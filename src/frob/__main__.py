@@ -1039,6 +1039,13 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
         action="store_true",
         help="run the pre-work sweep synchronously instead of backgrounding it",
     )
+    ticket_start_p.add_argument(
+        "--steal",
+        dest="ticket_steal",
+        action="store_true",
+        help="override a refusal caused by another worktree's live lease "
+        "(T-0835); invalidates that worktree's lease for close/land",
+    )
 
     ticket_sweep_p = ticket_sub.add_parser(
         "sweep", help="re-record the pre-work sweep (after widening scope)"

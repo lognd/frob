@@ -323,6 +323,12 @@ class AppConfig(BaseModel):
     # `frob ticket start <id> --foreground` -- run the pre-work sweep
     # synchronously (the pre-T-0474 default) instead of backgrounding it.
     ticket_foreground: bool = False
+    # frob:ticket T-0835
+    # `frob ticket start <id> --steal` -- override a refusal caused by
+    # another worktree holding a live cross-worktree lease on the ticket;
+    # re-records the lease pinned to THIS worktree, invalidating the other
+    # worktree's lease for any later close/land attempt.
+    ticket_steal: bool = False
     # frob:ticket T-0476
     # `frob ticket reconcile [--apply] [--remove-orphans]`.
     ticket_reconcile_apply: bool = False
@@ -762,6 +768,7 @@ class AppConfig(BaseModel):
             "ticket_dry_run",
             "ticket_close_strict",
             "ticket_foreground",
+            "ticket_steal",
             "ticket_reconcile_apply",
             "ticket_reconcile_remove_orphans",
             "deploy_check",

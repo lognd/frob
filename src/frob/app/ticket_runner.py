@@ -1161,13 +1161,142 @@ def _auto_plan_if_queued(root: Path, ticket_id: str, ticket):  # noqa: ANN201
     return planned.danger_ok
 
 
+def _find_landing_commit(root: Path, ticket_id: str) -> str | None:
+    """The short hash of the commit that landed `ticket_id`, if cheaply
+    derivable (T-0835) -- `frob ticket land`'s own commits are conventionally
+    titled `land <id> ...` (see this repo's own git history), so a `git log
+    --grep` for that exact phrase against `root` finds it in one spawn. Best-
+    effort: `None` on any git failure, an empty result, or a non-repo `root`
+    -- a terminal-state refusal must still fire even when the commit cannot
+    be named, just without the extra detail."""
+    from frob import gitio
+
+    spawned = gitio.run_argv(
+        (
+            "git",
+            "-C",
+            str(root),
+            "log",
+            "--oneline",
+            "-E",
+            "--grep",
+            f"land {ticket_id}([^0-9]|$)",
+            "-n",
+            "1",
+        )
+    )
+    if spawned.is_err:
+        return None
+    line = spawned.danger_ok.stdout.strip()
+    if not line:
+        return None
+    return line.split(maxsplit=1)[0]
+
+
+def _refuse_if_terminal(root: Path, ticket_id: str, ticket) -> None:  # noqa: ANN001
+    """`sys.exit(1)` with an actionable message if `ticket` is DONE or
+    DROPPED (T-0835): re-`start`ing a terminal ticket is never legitimate --
+    the T-0835 incident was exactly a second agent's `start` succeeding on a
+    ticket another worktree had already finished. Names the landing commit
+    when `_find_landing_commit` can cheaply find one; otherwise names just
+    the terminal state, never blocking the refusal on git being unavailable."""
+    from frob.tickets import TicketState
+
+    if ticket.state not in (TicketState.DONE, TicketState.DROPPED):
+        return
+    commit = (
+        _find_landing_commit(root, ticket_id)
+        if ticket.state is TicketState.DONE
+        else None
+    )
+    if commit is not None:
+        _log.error(
+            "ticket start failed: %s is already %s (landed at %s) -- nothing to start",
+            ticket_id,
+            ticket.state.value,
+            commit,
+        )
+    else:
+        _log.error(
+            "ticket start failed: %s is already %s -- nothing to start",
+            ticket_id,
+            ticket.state.value,
+        )
+    sys.exit(1)
+
+
+def _refuse_if_foreign_live_lease(root: Path, ticket_id: str, *, steal: bool) -> None:
+    """`sys.exit(1)` if `ticket_id` holds a LIVE lease pinned to a worktree
+    other than `root`, unless `steal` is set (T-0835 -- the double-dispatch
+    fix). A lease pinned to `root` itself is idempotent (no refusal, so a
+    restart after an interrupted session in the SAME worktree keeps
+    working); an EXPIRED lease (`is_lease_ttl_expired`) never blocks --
+    that is the existing dead-agent recovery path (T-0782/T-0476) and must
+    stay intact.
+
+    Stealing does not itself rewrite the lease file: the caller's own
+    `transition(..., TicketState.IN_PROGRESS)` call (via `_sync_cross_
+    worktree_lease`) already re-`record_lease`s pinned to `root`
+    unconditionally, which overwrites the stolen worktree's file in place --
+    reusing that existing machinery rather than inventing a second lease
+    write path. The losing worktree's OWN lease is gone the moment this
+    returns, so its later `resolve_lease`/`ticket_lease_pin` (`frob check
+    --ticket`, `frob ticket close`) fails against the new content, exactly
+    the "cannot silently land" property T-0835 requires."""
+    from frob.tickets._leases import (
+        is_lease_ttl_expired,
+        lease_age_seconds,
+        read_all_leases,
+    )
+
+    record = next((r for r in read_all_leases(root) if r.ticket_id == ticket_id), None)
+    if record is None or is_lease_ttl_expired(record):
+        return
+    record_worktree = Path(record.worktree).resolve()
+    if record_worktree == root.resolve():
+        return
+
+    age = lease_age_seconds(record)
+    age_desc = f"{age:.0f}s ago" if age is not None else "unknown age"
+    if steal:
+        _log.warning(
+            "ticket start: %s stealing live lease from worktree %s "
+            "(recorded %s) -- that worktree's lease is now invalidated and "
+            "cannot close/land %s",
+            ticket_id,
+            record_worktree,
+            age_desc,
+            ticket_id,
+        )
+        return
+    _log.error(
+        "ticket start failed: %s has a live lease held by worktree %s "
+        "(recorded %s) -- pass --steal to override (this invalidates the "
+        "other worktree's lease so it can no longer close/land %s)",
+        ticket_id,
+        record_worktree,
+        age_desc,
+        ticket_id,
+    )
+    sys.exit(1)
+
+
 def _start(root: Path, cfg: AppConfig) -> None:
     """Transition to in-progress (auto-planning a queued ticket first) and
     run the pre-work sweep. Starting a ticket that is ALREADY in-progress is
     a hard error, not a silent no-op or refresh (T-0215): `frob ticket
     sweep <id>` already exists as the idempotent refresh path, so re-running
     `start` on an in-progress ticket is treated as a coordinator mistake and
-    named explicitly, pointing at `sweep` instead of quietly duplicating it."""
+    named explicitly, pointing at `sweep` instead of quietly duplicating it.
+
+    T-0835: also refuses (a) a ticket already in a terminal state (done/
+    dropped) and (b) a ticket holding a LIVE lease pinned to a DIFFERENT
+    worktree, both before the in-progress check above -- either can be true
+    while this worktree's OWN ledger view still shows an earlier state (the
+    double-dispatch incident this ticket fixes), so both must be checked
+    independently of local ticket state. `--steal` (`cfg.ticket_steal`)
+    overrides (b) only; (a) has no override, a terminal ticket is never
+    restartable."""
     from frob.tickets import TicketState, transition
 
     if cfg.ticket_id is None:
@@ -1175,6 +1304,9 @@ def _start(root: Path, cfg: AppConfig) -> None:
         sys.exit(1)
 
     ticket = _load_ticket_or_exit(root, cfg.ticket_id, verb="start")
+    _refuse_if_terminal(root, cfg.ticket_id, ticket)
+    _refuse_if_foreign_live_lease(root, cfg.ticket_id, steal=cfg.ticket_steal)
+
     if ticket.state == TicketState.IN_PROGRESS:
         _log.error(
             "ticket start failed: %s is already in-progress -- run "
