@@ -247,7 +247,10 @@ _STAGE_GROUPS: dict[str, frozenset[str]] = {
         }
     ),
     "gates-native": frozenset({"archgate", "clones", "perf"}),
-    "gates-security": frozenset({"sys", "pii_structural", "secrets", "dead_symbols"}),
+    # frob:ticket T-0824
+    "gates-security": frozenset(
+        {"sys", "pii_structural", "secrets", "dead_symbols", "protocol_summary"}
+    ),
 }
 
 

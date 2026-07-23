@@ -6616,6 +6616,7 @@ bound tests prove.
 ### Evidence
 - `tests/unit/strata/test_host_isolation.py::TestMultiAceDenyOverridesAllow::test_narrow_deny_then_broad_allow_same_principal_denies` (pytest node id, verified passing when recorded)
 - `tests/unit/strata/test_host_isolation.py::TestMultiAceDenyOverridesAllow::test_broad_allow_then_narrow_deny_same_principal_still_denies` (pytest node id, verified passing when recorded)
+
 <!-- ticket:T-0792 -->
 ```yaml
 id: T-0792
@@ -9811,7 +9812,7 @@ adopter-shaped fixture test (repo with no frob-internal ids).
 ```yaml
 id: T-0824
 title: protocol_summary gate missing from _STAGE_GROUPS coverage
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-23'
@@ -9821,7 +9822,8 @@ parent: null
 scope:
 - src/frob/check/__init__.py
 scope_changes: []
-evidence: []
+evidence:
+- tests/system/test_cli_check.py::TestCheckStageGroups::test_available_stages_cover_every_gate_and_tool
 attachments: []
 acceptance: []
 threat: null
@@ -9839,6 +9841,26 @@ scope (src/frob/check/__init__.py's _STAGE_GROUPS membership, not its
 exports). Fix: add "protocol_summary" to the appropriate _STAGE_GROUPS
 bucket in src/frob/check/__init__.py (likely gates-native or gates-fast
 depending on cost) and re-run the coverage test.
+
+## Done report
+
+Added "protocol_summary" to the "gates-security" _STAGE_GROUPS alias in
+src/frob/check/__init__.py. protocol_summary is a process-pool gate
+(frob.gates._protocol_summary.protocol_summary_gate, dispatched via
+_ProcessJob same as dead_symbol_gate) and dead_symbols is already the
+process-pool sibling living in gates-security, so protocol_summary belongs
+in the same bucket rather than gates-native (archgate/clones/perf) or
+gates-fast (thread-pool/cheap gates).
+
+Filed: none
+Gates: frob check --ticket T-0824 clean; frob check --only gates-security
+clean (protocol_summary=0.71s, in budget alongside dead_symbols=3.65s)
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/system/test_cli_check.py::TestCheckStageGroups::test_available_stages_cover_every_gate_and_tool` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0825 -->
 ```yaml
