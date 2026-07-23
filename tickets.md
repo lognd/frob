@@ -12,7 +12,6 @@ kind: bug
 origin: human
 created: '2026-07-18'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/**
@@ -20,14 +19,8 @@ scope:
 - frob.toml
 - docs/**
 - tickets.md
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 User directive 2026-07-18: the pass-line counters hide real debt -- frob-exports reports 12-253 public symbols missing from __init__.py per package (decide policy: export or demote to private, per package, no blanket waiver), frob-dup 64 duplicate groups (triage: real extraction candidates vs false pairs; feeds T-0187 tree), frob-arch 197 warnings + 123 suggestions (long-function/god-class residue post-calibration -- fix or waive with reasons), perf gate 174 violations (166 waived -- re-audit every waiver still holds after T-0161's heuristic fixes land; the 8 unwaived need real fixes). Deliverable: each family driven to a state where the summary line is HONEST -- zero unwaived findings or a written per-finding reason; no threshold-loosening without a disclosed decision. Split into child tickets per family if any single family exceeds a session of work -- this ticket is the umbrella and the accounting.
 
@@ -40,7 +33,6 @@ kind: feature
 origin: human
 created: '2026-07-18'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/**
@@ -50,14 +42,8 @@ scope:
 - tests/**
 - Makefile
 - tickets.md
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 User mandate 2026-07-19: a frob deploy utility built into strata. The threat model: red teams compromise the one user that owns a service and nothing isolates that user -- lateral and vertical movement must be PROVABLY blocked, not hoped. The deployment sequence (idempotent install, status/health, uninstall with NO artifacts) must be auditable end to end, including an expensive opt-in VM-snapshot audit (VirtualBox) that is NOT part of make check. Scripts must tie into the model so hand edits are DETECTABLE through the strata checker, and the 'weird layer between the OS and the backend' (users, groups, units, ownership, ports) becomes provable architecture. Children: std.host OS-layer modeling -> movement-impossibility proofs + deploy script generation -> script<->model conformance gate -> VM snapshot audit harness -> real-service pilot (malmberg) remediating its awkward setup. Umbrella closes when all children close.
 
@@ -78,14 +64,8 @@ scope:
 - docs/**
 - tests/**
 - tickets.md
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 T-0254 child 6 (proof on reality). Apply the full chain to malmberg (the real server product from pilot P3: server_api/ingest/cloudsync/faces/backup/display + media_store): extend design/malmberg.strata with std.host (dedicated service users per component, units, ownership of media_store paths, ports), prove HOST001/HOST002 movement-impossibility or record honest waivers, generate the deploy scripts, run the conformance gate, and if a VirtualBox environment is available run the full VM snapshot audit and attach the attestation. Remediate the current awkward setup step in malmberg's docs/scripts with the generated sequence. Work happens IN THE MALMBERG REPO per the break-and-report pilot protocol (frob-side gaps come back as tickets, filed serially by the coordinator); this frob-side ticket tracks the campaign and collects the gap list. Success = malmberg installs/uninstalls via generated scripts with a green conformance gate and a documented (or executed) VM audit path.
 
@@ -98,7 +78,6 @@ kind: feature
 origin: human
 created: '2026-07-19'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/serve/**
@@ -116,13 +95,8 @@ scope_changes:
   reason: T-0321 serve work maps to docs/modules/serve.md
   actor: logan
   at: '2026-07-20'
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Expands T-0177 into a long-lived per-project daemon that holds warm, incrementally-maintained state (obligation graph + per-symbol digests, test collection, coverage, dup analysis, gate results) and serves it to all clients (agents, make, MCP, CI) via single-flight execution + a content-addressed result cache. Root cause it solves (observed live over a long multi-agent session): N parallel agents each redundantly recompute the same expensive state (make core, make coverage ~5min each, frob check 114s stages, ticket sweep dup-scan ~90s) in isolated worktrees with no sharing, and background-then-stall on make coverage. Children: (a) warm graph + FS-watch incremental invalidation by digest; (b) single-flight coverage/collection keyed by source digest, shared across worktrees with identical content; (c) local unix-socket JSON-RPC query protocol; (d) frob CLI auto-proxies to the daemon if running, else in-process (make targets become thin shims); (e) subscribe/push events (coverage-fresh, graph-changed) -- the stall-killer; (f) resource leases/semaphores (coverage=1 writer). MCP becomes one frontend over the same core. See the design discussion 2026-07-19.
 
@@ -198,7 +172,6 @@ kind: feature
 origin: human
 created: '2026-07-19'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/arch/**
@@ -217,13 +190,8 @@ scope_changes:
   reason: T-0329 arch work maps to tests/unit/test_arch.py
   actor: logan
   at: '2026-07-20'
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 frob arch today has per-language walkers (_python.py, _cpp.py) only. To extend cleanly (not N copies of each check), introduce a NORMALIZED CODE MODEL: a language-agnostic view (module, class, function, method, param, branch, loop, call, import, override, field-access, return, raise/throw, catch) that each language adapter maps its tree-sitter grammar onto. Checks are written ONCE against the model; adapters supply per-grammar node-type maps. Then add adapters for TypeScript, Rust, Kotlin (Kotlin needs tree-sitter-kotlin added to frob.lang; ts/rust/cpp/c already parse via tree-sitter-language-pack). Language-specific checks (Rust must_use/ownership, TS any/strict-null) live in per-language extensions on top of the shared model. Acceptance: an arch check written once fires correctly across python+ts+rust+kotlin on equivalent code; Kotlin grammar wired; the existing python/cpp checks refactored onto the model with no regression. Children: normalized-model, ts-adapter, rust-adapter, kotlin-grammar+adapter.
 
@@ -236,7 +204,6 @@ kind: feature
 origin: human
 created: '2026-07-19'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/arch/**
@@ -255,13 +222,8 @@ scope_changes:
   reason: T-0330 arch work maps to tests/unit/test_arch.py
   actor: logan
   at: '2026-07-20'
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Encode what a senior software designer knows (SOLID, ArjanCodes, Logan-Smith type-driven design, logging, fallibility) as STATIC checks over parsed source -- each with a concrete, non-hacky static proxy (subjective principles get objective detectable smells). CATALOG (each becomes a child ticket, ARCH1xx family):
 SRP/cohesion: LCOM4 low-cohesion class (methods partition into disjoint field-usage components); god-module (unrelated exports); mixed-concern function (I/O capability + pure compute + formatting in one body).
@@ -289,7 +251,6 @@ kind: feature
 origin: human
 created: '2026-07-19'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/strata/**
@@ -308,13 +269,8 @@ scope_changes:
   reason: T-0331 strata work maps to tests/unit/strata/
   actor: logan
   at: '2026-07-20'
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Complete the system-design linter with what a senior systems/reliability engineer checks -- over the .strata MODEL (nodes/flows/boundaries/stores), each a real static obligation, SYS2xx/REL2xx family. CATALOG:
 Reliability: TIMEOUT on every remote/cross-boundary flow (unbounded hang otherwise); RETRY must declare exponential backoff+jitter, and no retry on a non-idempotent op; IDEMPOTENCY key required on a mutating op reachable by a retryable flow (duplicate effects); CIRCUIT BREAKER / bulkhead per external dependency (extends LINT004 kill-switch); FALLBACK / graceful degradation declared for a CRITICAL dependency; HEALTH liveness+readiness on every service node; SPOF -- a node with inbound critical flows and replicas_max=1/no redundancy; BACKPRESSURE bounded intake on queues/consumers (extends LINT003 surge / LINT005 capacity).
@@ -359,7 +315,6 @@ kind: security
 origin: human
 created: '2026-07-20'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/vet/**
@@ -389,9 +344,6 @@ scope_changes:
   reason: T-0339 vet work maps to tests/test_vet.py
   actor: logan
   at: '2026-07-20'
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: given a per-language-spec denominator of every name-binding/aliasing/re-export
     construct that can route a call to a dangerous target (Python, TypeScript/JS,
@@ -414,7 +366,6 @@ acceptance:
   evidence: []
 threat: elevation-of-privilege
 component: null
-labels: []
 ```
 User mandate (2026-07-20): 'ensure that you stop ALL methods EXHAUSTIVELY across ALL LANGUAGES of evading detection. ENSURE THAT IT IS 100% EXHAUSTIVE via LANGUAGE SPEC.' HONEST ARCHITECTURE (recorded so no one later mistakes the goal for the impossible one): a sound STATIC analyzer cannot resolve runtime dispatch (getattr/eval/reflection/dynamic-require/fn-ptr-from-data) -- Rice's theorem. So 'exhaustive' means: (1) EXHAUSTIVE-RESOLVE the DECIDABLE fragment -- enumerate FROM EACH LANGUAGE SPEC every static name-binding/aliasing/re-export/copy construct (imports, import-as, from-import[-as], star-import, local + chained + attribute rebinding, destructuring, tuple/list unpack, Rust use/use-as/pub use, C/C++ #define + using-decl + function-pointer init from a named fn + typedef'd fn-ptr, Kotlin import-as + ::ref + typealias) and resolve calls through all of them, transitively, per-scope, cycle-guarded, WITHOUT regressing shadowing soundness (a benign/param binding must stay silent); (2) FAIL CLOSED on the UNDECIDABLE fragment -- every spec-defined runtime-resolved indirection becomes an 'opaque capability indirection' obligation (fires, requires a reasoned waiver), consistent with strata's prove-or-reject philosophy (T-0290 recursion, arch-override). DELIVERY: (a) dispatch exhaustive-research to produce the per-language evasion denominator from the actual specs (the coverage denominator for acceptance 1) + the opaque-construct list (acceptance 2); (b) child tickets per language implementing the static resolver to its denominator + litmus; (c) one child for the fail-closed opaque-indirection obligation in the scanner/strata may-analysis; (d) a cross-language exhaustiveness meta-test binding each denominator entry to its litmus (fails if a construct has no fixture, like the CVE catalog drift-lock). T-0337 (Python local rebind) and T-0328 (Python import resolution) are the first two leaves. This is the 'you cannot get around it' guarantee the whole tool exists for.
 
@@ -430,7 +381,6 @@ kind: security
 origin: human
 created: '2026-07-20'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/strata/**
@@ -460,9 +410,6 @@ scope_changes:
   reason: T-0341 strata work maps to tests/unit/strata/
   actor: logan
   at: '2026-07-20'
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: 'COVERAGE TOTALITY (SYS-COV): every deployable/public module -- and every
     module the binding-aware scanner finds ANY capability in -- must bind to exactly
@@ -490,7 +437,6 @@ acceptance:
   evidence: []
 threat: elevation-of-privilege
 component: null
-labels: []
 ```
 The user asked (2026-07-20): 'what mechanisms enforce conformance to the .strata file? Do we force every module to declare its purpose and interface?' -- and to harden it adversarially. Design north-star: docs/design/structural-linter-adversarial-hardening.md. Today _code_binding.py (bind_code/ConformanceReport/check_import_conformance) and _effects.py::check_capability_conformance exist, and T-0331 already mandates 'NO obligation satisfied by bare declaration' -- but conformance is NOT TOTAL, which is the evasion surface: (1) un-modeled modules escape all obligations; (2) a node can declare a partial interface while the code exports more; (3) nothing binds a module's PURPOSE to an allowed-effect profile; (4) binding need not be total, so logic can be laundered into an unbound file. This epic closes those into the five acceptance criteria above (SYS-COV coverage totality, exact interface conformance, purpose contract, binding totality + effect conformance, bounded escape hatches + gated config), each a child ticket. Soundness rests entirely on the exhaustive binding-aware scanner (T-0328/T-0337/T-0339) -- this epic is the conformance layer ON TOP of that foundation. Coincident with the arch epic (T-0330) and strata-systems epic (T-0331); this is the 'the model cannot lie about the code' guarantee made total.
 
@@ -506,7 +452,6 @@ kind: feature
 origin: human
 created: '2026-07-20'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - docs/design/**
@@ -525,9 +470,6 @@ scope_changes:
   reason: T-0346 strata work maps to tests/unit/strata/
   actor: logan
   at: '2026-07-20'
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: every item across ALL corpora (design patterns, arch checks, traps, system-design,
     capability-evasion, security/CWE, compliance, secrets, PII, supply-chain) has
@@ -554,7 +496,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 User critique (2026-07-20): the corpora hedged where the mandate is to EXHAUST -- e.g. security-corpus skipped CWE-1000 as 'repo spam' when the intent is to enumerate ALL ~900, categorize each, and reason mitigation per entry; and information split across 10 docs/design/*.md files means an item can exist in one file's prose but be absent from the enforceable denominator ('miss split across two files'). This epic makes the corpus a REGISTRY, not a reading list: (1) a single canonical machine-readable registry aggregating every corpus manifest with stable ids + cross-refs (pattern<->trap<->evasion<->mitigation linked by id); (2) a reconciliation/consolidation pass that de-dups cross-file and flags any prose-only entry; (3) completion of the bulk-skipped enumerations to per-entry disposition; (4) T-0343 (exhaustiveness drift-lock) bound to the registry with a mandatory per-entry disposition. Governs T-0330/331/332/339/341/343 and all the corpus docs. The corpora already emit '## DENOMINATOR MANIFEST' sections (per-doc TOTAL); this epic unifies them into one registry and closes the 'seems like spam so I skipped it' and 'split across two files' gaps permanently.
 
@@ -576,14 +517,8 @@ parent: T-0376
 scope:
 - src/frob/vet/_capability.py
 - tests/test_vet*.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 _scan_file_fingerprints (CVE matching) is lexical needle-matching for EVERY language including Python -- a renamed import defeats a fingerprint even where capability scanning is binding-aware. Reuse the binding tables built for capability resolution (Python + the new TS/Rust/C-C++ tables) to resolve aliases before fingerprint matching for all languages. Acceptance: an aliased import that would evade a lexical fingerprint match is still caught; adversarial test per language.
 
@@ -603,14 +538,8 @@ parent: T-0376
 scope:
 - src/frob/gates/
 - docs/design/registry/arch-checks.yaml
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Reconcile docs/design/registry/arch-checks.yaml against actual enforcement: every catalogued entry must map to (i) an enforced check, (ii) a documented out-of-scope entry with a verified caught_by (T-0381/T-0382), or (iii) an explicit deferred ticket. Resolve RECONCILIATION.md's undispositioned entries for this registry. Add an EXHAUSTIVENESS meta-test for this registry: catalogued count == enforced+excused+deferred count, so a future gap fails the build. Acceptance: exhaustiveness meta-test passes and is wired into frob check.
 
@@ -623,18 +552,11 @@ kind: feature
 origin: human
 created: '2026-07-20'
 priority: medium
-blocked_by: []
 parent: T-0376
 scope:
 - src/frob/
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Triage the 37 frob-arch abstraction-opportunity advisories: for each genuine near-duplicate or specific-signature family, either extract the real shared code into one home, or add an explicit reason-note accepting the duplication. Acceptance: frob check arch advisories for abstraction-opportunity reduced to zero unresolved (each is either fixed or reason-noted).
 
@@ -647,18 +569,11 @@ kind: bug
 origin: human
 created: '2026-07-20'
 priority: medium
-blocked_by: []
 parent: T-0376
 scope:
 - src/frob/
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Address the 2 frob-arch deep-nesting advisories: refactor to reduce nesting depth, or add an explicit reason-note if the nesting is justified. Acceptance: both findings resolved (fixed or reason-noted).
 
@@ -676,14 +591,8 @@ blocked_by:
 parent: T-0376
 scope:
 - src/frob/
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 After T-0373 re-thresholds frob-arch large-file to 800 lines / 60 (function), address the residue that still exceeds 800 lines among the 34 large-file advisories: real module splits, or accepted-with-reason for files that don't decompose cleanly. Acceptance: frob check arch large-file advisories at the calibrated threshold reduced to zero unresolved.
 
@@ -696,18 +605,11 @@ kind: feature
 origin: human
 created: '2026-07-20'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Full-repo pessimistic capability audit (2026-07-20, 7 read-only auditors). North-Star: if frob check / a ticket-close / a strata proof passes, the thing it claims must ACTUALLY hold. The audit found the North-Star is violated in concrete ways across subsystems. Each subsystem audit gets an umbrella child holding its full findings table; each HIGH finding gets an actionable child. Findings files live in the audit run; this epic is the durable tracked home so the audit itself does not become an orphaned document (the exact failure mode that motivated it). Consolidation in progress as the 7 auditors land: tickets/testing (evidence integrity), strata (vacuous proofs), graph/edges, gates-accounting, gates-quality/security, vet (lexical resolution), lang/check/docs.
 
@@ -721,20 +623,13 @@ kind: security
 origin: human
 created: '2026-07-20'
 priority: medium
-blocked_by: []
 parent: T-0397
 scope:
 - src/frob/gates/
 - src/frob/app/config.py
 - frob.toml
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 See docs/audits/gates-quality.md. HIGH: entire quality surface is non-blocking (PERF/PII010/SEC110/ARCH001/DUP/lower-secrets are WARN, frob check exits 0 on them) -- green makes NO quality claim; DUP fails open (default-off AND no-op without natives); frob:secret-fake suppresses real secrets with no accountability/reason/ledger. RIGHT-WAY fix: decide per rule which are error-tier (and default DUP on / fail-closed when natives missing); give secret suppression the same reasoned-waiver accountability as frob:waive. Expect the build to red -- that red is honest. Then re-audit until empty. MED/LOW in the doc.
 
@@ -748,21 +643,14 @@ kind: security
 origin: human
 created: '2026-07-20'
 priority: medium
-blocked_by: []
 parent: T-0398
 scope:
 - src/frob/tickets/
 - src/frob/gates/
 - src/frob/app/ticket_runner.py
 - src/frob/testing/
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Convergence re-audit of the tickets/testing subsystem AFTER T-0398 landed (docs/audits/tickets-testing-round2.md): D-01..D-12 genuinely fixed EXCEPT the subsystem is NOT converged -- 3 new HIGH CLI-reachable bypasses (no --force needed): N-01 omitting --scope skips the D-02 covers_scope binding entirely (a code ticket with no scope closes on any passing evidence); N-02 frob ticket close does NOT re-run the evidence tests -- it trusts the pass status recorded at evidence-record time, so a test recorded green then later broken still closes (TOCTOU); N-03/N-04 pass == pytest exit 0, so a VACUOUS test (asserts nothing) or a self-scoped no-op test satisfies the gate -- the exact vacuous-test class the review loop keeps catching. Plus D-03 is only a 3-char floor (weak done-report substance) and D-10/D-12 unchanged. FIX the RIGHT way: (N-01) fail-CLOSED on empty scope for CODE-kind tickets (a code ticket MUST declare scope + have covering evidence); (N-02) RE-VERIFY evidence at close the way land already does (re-run the evidence tests at close, not just trust record-time status); (N-03/04) detect vacuous/no-assertion evidence tests (a test that passes but asserts nothing / never exercises the scope symbol should not count -- reuse the covers_scope graph binding to require the evidence actually reaches a touched symbol, and consider an assertion-presence check); strengthen D-03 beyond a char floor (require the real sections). Re-audit again after -- converged only when a pessimistic pass finds nothing. Full findings + repros: docs/audits/tickets-testing-round2.md. QUEUED behind T-0343/T-0415 (gates/app overlap) to avoid merge conflict.
 
@@ -776,21 +664,14 @@ kind: feature
 origin: human
 created: '2026-07-20'
 priority: medium
-blocked_by: []
 parent: T-0435
 scope:
 - src/frob/gates/
 - src/frob/graph/
 - docs/
 - frob.toml
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 User (2026-07-20): account for anything that looks like a tool usage/guide, and any documentation that SEEMS to point to something -- and HARDEN the wishy-washy part. THE HARDENING: do not try to detect fuzzy "seems to point to X" intent (unhardenable, high FP). Instead define a CLOSED SET of RECOGNIZED, RESOLVABLE POINTER SHAPES and only fire when a pointer of a known shape targets something that does NOT exist. This converts "seems to point" into a mechanical, resolvable check with a naturally-low FP rate (an unrecognized shape is simply not checked). POINTER KINDS (each detectable + resolvable against the real project): (1) FILE/PATH -- a repo-relative path (src/frob/foo.py, docs/bar.md, frob.toml) mentioned in a code span/block/link must EXIST; (2) CLI INVOCATION / TOOL-GUIDE -- `<project-cli> <subcommand>` and `--flag`/`-x` options against the projects real argparse/command source (frob is one instance; per-project via a configurable command source) -- a nonexistent subcommand or flag is stale; (3) CONFIG REFERENCE -- a `[section]` or `[section].key` or a frob.toml/pyproject/Cargo key referenced must be a REAL config key of that manifest/schema; (4) CODE SYMBOL -- a dotted path / import / use (module.Class.method, from X import Y, use crate::x) resolves in the graph against the projects manifest-derived namespaces (see T-0436: Rust workspace subcrates, pyproject/package.json package names != dir names; external namespaces skipped); (5) DOC-ANCHOR LINK -- a docs/x.md#anchor (or a frob:doc/frob:describes anchor target) must exist. SCOPE: inline code spans AND fenced code blocks AND markdown links AND tool-guide prose ("run `X`", "add `[section]` to frob.toml", "the `--foo` flag", "see `docs/bar.md`"). CONSERVATISM: only a pointer matching a recognized shape whose target is DEFINITIVELY resolvable-or-refutable is checked; an unrecognized/ambiguous token is NOT flagged (the hardening). PROMINENTLY WAIVABLE (frob:waive) for intentional external/illustrative/future-facing pointers. Ships per-project (T-0406), all languages. T-0436 (unbound/stale CODE BLOCKS) is ONE INSTANCE of this; this ticket is the general doc-pointer-resolution gate (the north-star doc-drift check, cf T-0325). Acceptance: a doc mentioning `src/frob/gone.py` (nonexistent) flagged; `frob edit`/`--nonexistent-flag` flagged; a `[bogus.section]` frob.toml reference flagged; a `docs/missing.md#x` link flagged; a real path/command/flag/symbol/anchor passes; an unrecognized prose token NOT flagged; external pointers waivable. Run on frobs own docs, report FP rate, disposition honestly.
 
@@ -804,20 +685,13 @@ kind: security
 origin: human
 created: '2026-07-20'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - design/frob.strata
 - docs/strata/
 - tests/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 
 <!-- ticket:T-0441 -->
@@ -830,21 +704,14 @@ kind: feature
 origin: human
 created: '2026-07-20'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/graph/dsl.py
 - src/frob/gates/
 - src/frob/app/
 - docs/
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Friction hit by hand 2026-07-20: a `frob:waive` reason long enough to be
 useful overflows ruff's E501, so `frob check` (ruff) and the waive author
@@ -899,18 +766,11 @@ kind: bug
 origin: agent
 created: '2026-07-21'
 priority: low
-blocked_by: []
 parent: null
 scope:
 - src/frob/gates/__init__.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Discovered while working T-0516: COV006 Violation objects carry no symref (file=test_file, line=0), so _match_waiver falls back to file-level matching for a frob:waive COV006 comment anywhere in that file -- ANY single COV006 waiver in a test file silently suppresses EVERY COV006 finding in that file, not just the one it was written next to. Verified directly: adding one waiver comment near one test in tests/test_gates.py suppressed all 7 COV006 findings then present in that file, including unrelated ones that were NOT sound (an import-alias false-positive that needed a real fix, not a waiver). Consider giving COV006 violations a symref (the test's own qualname) so _match_waiver can do symbol-exact matching the way most other rules do, instead of falling back to file-scope for a rule that very plausibly has multiple independent findings per file.
 
@@ -919,25 +779,89 @@ Discovered while working T-0516: COV006 Violation objects carry no symref (file=
 id: T-0541
 title: 'gates: SCOPE001/PRE001 fully disabled with no active ticket / off-convention
   branch (B9)'
-state: queued
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-21'
 priority: medium
-blocked_by: []
 parent: T-0403
 scope:
 - src/frob/gates/
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
+evidence:
+- tests/test_gates.py::TestRunGates::test_run_gates_blocks_prework_when_diff_load_fails_with_no_ticket
+- tests/test_gates.py::TestRunGates::test_run_gates_blocks_scope_and_prework_when_no_ticket_touches_source
+- tests/test_gates.py::TestRunGates::test_run_gates_skips_scope_without_ticket
+- tests/test_gates.py::TestRunGates::test_run_gates_still_skips_scope_and_prework_for_ledger_only_diff
 threat: null
 component: null
-labels: []
 ```
 docs/audits/gates-accounting.md B9. _build_ticket_scoped_jobs only registers scope+prework jobs when st.ticket is not None; active_ticket derives the ticket purely from the branch name's T-#### prefix. A branch not named after a ticket (or work on main) skips scope and pre-work enforcement entirely rather than failing. Fix direction: a diff that touches source with no derivable active ticket should be a loud blocking condition, not a skip.
+
+## Done report
+
+B9 was PARTIALLY closed on main before this ticket, not fully closed.
+
+Main already had a loud SCOPE001/PRE001 violation for the primary B9 shape
+(off-convention branch or `main` with a diff that touches real source and
+no `--ticket`/no `T-####-` branch prefix) via `_build_ticket_scoped_jobs`'s
+`no_ticket_blocks` path and `_no_active_ticket_violation`, with existing
+tests in `TestRunGates` (`test_run_gates_blocks_scope_and_prework_when_no_
+ticket_touches_source`, `test_run_gates_still_skips_scope_and_prework_for_
+ledger_only_diff`). SCOPE001 additionally already had a separate,
+unconditional `diff_load_failed` check (T-0550/B8) that fires loudly
+regardless of ticket presence whenever the working diff itself fails to
+load (detached HEAD, bad `--base`, no merge-base).
+
+The remaining gap: PRE001 had NO equivalent `diff_load_failed` check. When
+the working diff fails to load AND no ticket is derivable, `_load_diff`
+degrades to an empty placeholder `Diff`. `no_ticket_blocks` (the shared
+condition both scope's and prework's no-ticket branches consult) asks that
+degraded diff what it touched, sees zero touched files, and silently
+skipped PRE001 -- the exact B9 escape (loud-blocking is required, not a
+skip), reached through the diff-load-failure door instead of the
+branch-naming door. Reproduced directly before the fix: a repo with no git
+history at all (`working_diff` has no merge-base, fails outright) and no
+ticket derivable skipped `prework` while `scope` correctly blocked with
+SCOPE001.
+
+Fix: added a `st.diff_load_failed` branch to the `prework` job assembly in
+`_build_ticket_scoped_jobs`, mirroring SCOPE001's existing pattern --
+fires `_diff_load_failed_violation("PRE001", ...)` when no ticket is
+derivable and the diff genuinely failed to load, instead of falling
+through to the empty-diff no_ticket_blocks check. Scoped to the no-ticket
+case only, since `prework_gate` itself does not consult the diff at all
+when a valid ticket IS present (diff_load_failed is irrelevant there,
+same as before).
+
+The other two edge cases the ticket named were checked and found already
+closed on main, with no code change needed:
+- `--ticket` pointing at a nonexistent ticket id: `_resolve_ticket` looks
+  the id up in the queue, finds nothing, logs a warning, and returns
+  `ticket=None` -- which then routes through the same no-ticket-blocks
+  loud-violation path as an off-convention branch. It does not silently
+  skip (the violation message's "pass --ticket" wording is a little
+  imprecise for this specific sub-case, since a --ticket WAS passed, but
+  it still blocks, which is the actual B9 requirement).
+- genuinely empty diff with no ticket: `no_ticket_blocks` is False and
+  scope/prework are legitimately skipped (nothing touched, nothing to
+  enforce) -- not a gap, this is correct behavior for e.g. a clean working
+  tree on main.
+
+No files outside src/frob/gates/ or tests/test_gates.py needed touching;
+no scope extension was required.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_gates.py::TestRunGates::test_run_gates_blocks_prework_when_diff_load_fails_with_no_ticket` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestRunGates::test_run_gates_blocks_scope_and_prework_when_no_ticket_touches_source` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestRunGates::test_run_gates_skips_scope_without_ticket` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestRunGates::test_run_gates_still_skips_scope_and_prework_for_ledger_only_diff` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 0 error(s), 1200 warning(s), 211 waived
 
 <!-- ticket:T-0542 -->
 ```yaml
@@ -949,18 +873,11 @@ kind: bug
 origin: auditor
 created: '2026-07-21'
 priority: medium
-blocked_by: []
 parent: T-0403
 scope:
 - src/frob/gates/
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 docs/audits/gates-accounting.md B10. _cov002 uses _open_scopes = every open ticket's scope glob, matched via _scope_covers against ANY of them. One broad-scope open ticket (e.g. src/frob/**) makes every changed symbol under it accounted for regardless of relation to that ticket. Fix direction: prefer the ACTIVE ticket's own scope first, and require a narrower/more-specific glob match (or an explicit frob:ticket edge) when multiple open tickets' scopes could cover the same file, rather than accepting the first match found.
 
@@ -973,7 +890,6 @@ kind: feature
 origin: agent
 created: '2026-07-21'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/__main__.py
@@ -1049,12 +965,8 @@ evidence:
 - tests/test_tickets_review.py::TestCloseStrictMode::test_both_gates_on_succeeds_with_matching_approve_review
 - tests/test_tickets_review.py::TestCloseStrictMode::test_both_gates_on_succeeds_with_abbreviated_review_commit
 - tests/test_tickets_review.py::TestCloseStrictMode::test_both_gates_on_blocks_close_with_stale_approve_review
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Adversarial review is this repo's most load-bearing quality mechanism (every false-confidence detector was caught by it) but lives only in dispatch prompts. frob review generate <diff|ticket> emits a per-diff checklist (detector changed -> demand counterexample; claim added -> demand refutation attempt; suppression code -> demand over-suppression probe); frob review record stores the verdict as a typed evidence channel consumable by close. Scope: new src/frob/review/, app runner, docs.
 
@@ -1199,7 +1111,6 @@ kind: security
 origin: agent
 created: '2026-07-21'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/tickets/_worktree_guard.py
@@ -1284,12 +1195,8 @@ evidence:
 - tests/unit/test_scaffold_managed.py::TestStashGuardBlock::test_refuses_to_clobber_foreign_reference_transaction_hook
 - tests/unit/test_scaffold_managed.py::TestStashGuardBlock::test_stale_ours_stash_guard_hook_is_updated
 - tests/unit/test_scaffold_managed.py::TestScaffoldConformanceStatus::test_clean_after_apply
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Four agents ran git stash despite playbook 1b; several ran ticket commands against the shared checkout because FROB_WORKTREE was never SET (T-0431 guard exists but inert without it). (1) frob agent env prints/exports the guard env for a worktree; scaffold/playbook wire it into dispatch. (2) a pre-stash guard (hook or wrapper) refuses git stash while sibling agent worktrees exist. Catalogued-is-not-enforced applied to the playbook itself. Scope: src/frob/tickets/_worktree_guard.py, scaffold hooks, playbook.
 
@@ -1372,7 +1279,6 @@ kind: bug
 origin: human
 created: '2026-07-21'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/vet/
@@ -1393,12 +1299,8 @@ scope_changes:
   at: '2026-07-23'
 evidence:
 - tests/test_lang.py::TestParseCache::test_cross_entry_point_reuse_is_one_parse_per_file
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 T-0410 landed one concrete fix: memoize parse_file's extract() walk (coverage_gate 155.8s->15.9s isolated, ~40s->~4s in real frob check) plus M6 (.hypothesis/.serena skip-dirs). Two things from docs/audits/perf.md need re-measurement, not assumption: (1) H4's other cited multipliers (vet.scan_file_capabilities uses raw_tree not parse_file, so bypasses the new memo -- but _parse's own content-hash cache may already make repeats cheap; verify with a profile) and H5 (selfconform's double capability-scan, likely still unfixed). (2) refs_gate is now the 2nd-largest stage (measured ~8-11s across several frob check runs) and was never profiled by the original audit; isolate and profile it the way this ticket isolated coverage_gate. Update docs/audits/perf.md with a dated re-measurement section (mark H1/H2 RESOLVED via T-0423) rather than a fresh audit.
 
@@ -1444,19 +1346,12 @@ kind: bug
 origin: human
 created: '2026-07-21'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/gates/**
 - src/frob/tickets/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 found while working T-0355 (deliberately split out, item 2 of that ticket's original 3-item report): editing a ticket's scope after start demands a re-sweep before PRE001 is satisfiable, and frob ticket sweep's dup+xref pass is a synchronous full-scope scan -- on a slow mount (WSL /mnt/c, network share) that scan itself can be slow enough that the ticket can never get back into a checkable state within a reasonable session. T-0474 already backgrounds the sweep at frob ticket start time, but frob ticket sweep (the always-available resweep path used after a scope edit) is still fully synchronous by design (see its docstring: 'the always-available, always-synchronous way to record it'), and PRE001 itself only ever compares against a fully-completed digest -- there is no partial-sweep-ok state. This needs an actual design decision before implementation (a timeout + partial-sweep-ok ticket state that prework_gate treats as provisionally clean, vs. making frob ticket sweep itself background-and-poll like start), not a mechanical port of an existing fix, so it was NOT implemented as part of T-0355 (items 1 and 3 of that ticket were: clean SIGINT message in __main__.py, and confirming scope_digest is already content-only/checkout-portable).
 
@@ -1469,18 +1364,11 @@ kind: bug
 origin: human
 created: '2026-07-21'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/gates/__init__.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 T-0547 added TEST014 (WARN) to surface every case where _inferred_unit_cases's naming-convention fallback ambiguously credits two DIFFERENT files' same-leaf-name public symbols off the same collected test id(s) (docs/audits/gates-accounting.md B6). It deliberately does NOT withdraw TEST001 credit: a compat survey against this repo (T-0547's Done report) found a blanket path/module-correlation requirement breaks ~100% of convention-fallback matches here (96/81 depending on heuristic), since tests/ does not mirror src/frob/<pkg>/ layout. But the survey ALSO found 5 real leaf-name collision groups in this repo TODAY sharing convention-matched tests (main, format, as_text, as_json, run) -- TEST014 will fire WARN for each until resolved. This ticket is to actually resolve those 5 (add explicit frob:tests edges to disambiguate, or accept the WARN permanently via frob:waive with a reason), and to decide/design a general per-symbol tightening path now that real examples exist to test any proposed rule against (e.g. requiring the matched test's own module path to appear as a substring of the target's qualname, or promoting TEST014 to ERROR once explicit edges are added to eliminate ambiguity repo-wide).
 
@@ -1495,18 +1383,11 @@ kind: feature
 origin: human
 created: '2026-07-21'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/gates/__init__.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 T-0548 added TEST015 (WARN) reusing T-0549's existing _has_assertion_evidence heuristic to surface a public symbol whose ONLY TEST001 credit comes from a test with no assertion-shaped construct at all (docs/audits/gates-accounting.md B1's def-myfunc-pass repro). It deliberately does NOT change what TEST001 itself blocks on. This ticket is the actual cross-cutting fix the audit asked for: tie TEST001 credit to nonzero per-symbol branch coverage (frob.gates._coverage.CoverageData.symbol_branch, already computed for TEST005) or promote TEST005 to ERROR -- either requires touching TEST002/003/004/005/009's severities and interactions together, plus reconciling with the legacy-adoption WARN campaign frob.toml already documents (see its own comments), which is why it was split out rather than attempted inside T-0548. Concretely: decide whether TEST001 should require symbol_branch[record.symref] > 0 in addition to a name/edge match (requires wiring CoverageData into _test001_002, which today only sees tests: CollectedTests, not coverage), survey how many currently-green symbols would flip red (mirroring T-0547/T-0556's compat-survey precedent in this same audit pass), and land the sound subset.
 
@@ -1522,18 +1403,11 @@ kind: bug
 origin: human
 created: '2026-07-21'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/gates/__init__.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Discovered incidentally while closing T-0556 (unrelated ticket) in a worktree that had already closed T-0567/T-0545/T-0552/T-0547 earlier in the same branch: symbols touched by T-0545/T-0552 (e.g. src/frob/gates/_coverage.py::stamp_coverage, src/frob/gates/__init__.py::_test005/test_gate/_edge_has_execution_evidence/_KNOWN_GATE_RULES/_COVERAGE_LOCK_REL) started failing COV002 again -- 'changed with no frob:ticket edge to an open ticket' -- even though each carries a valid frob:ticket T-0545/T-0552 directive and both tickets' closures are still part of the same uncommitted diff against main (git diff main --stat still shows all the intervening commits). This reproduces with a bare frob check (no --ticket override), so it is not scoped to T-0556's own diff content -- it appeared sometime between T-0552's own clean check (frob check --ticket T-0552 showed 0 COV errors right after closing it) and starting T-0556's ticket workflow (multiple frob ticket scope/sweep operations on tickets.md in between). Hypothesis: _bound_to_open_ticket's grace-window hunk-matching (docs/audits or __init__.py:1917 _bound_to_open_ticket docstring, T-0214/T-0320) depends on a ticket's DONE-transition marker line falling within a single git diff hunk against main; repeated tickets.md rewrites by later ticket operations (scope changes, sweeps, done-report writes for OTHER tickets) can split/relocate that hunk so an EARLIER ticket's own close marker no longer registers as 'in this diff's tickets.md hunk' even though the closure commit is still, in aggregate, part of the diff vs main. Needs investigation: reproduce minimally (two sequential ticket closes in one branch, then a third ticket's ledger operations), confirm the hunk-boundary hypothesis, and either make the grace window robust to intervening unrelated tickets.md hunks or make COV002's message clearer that this is a hunk-shape artifact, not a real missing edge. Related: docs/guides/agent-playbook.md section 10b's existing multi-ticket-worktree warnings (about ledger finalization) -- this is a parallel failure mode in the SAME class of hazard, but for COV002 rather than the Done-report/close ledger writes.
 
@@ -1546,7 +1420,6 @@ kind: feature
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/gates/__init__.py
@@ -1590,12 +1463,8 @@ evidence:
 - tests/test_gates.py::TestInv006Gate::test_ratchet_baselined_finding_stays_warn
 - tests/test_gates.py::TestInv006Gate::test_ratchet_rule_not_enabled_stays_static_warn
 - tests/test_gates.py::TestInv006Gate::test_this_repos_frob_toml_and_ratchet_lock_calibrate
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 T-0569 built frob.gates._ratchet (RatchetLock/snapshot_ratchet/clear_ratchet_entry/resolve_ratchet_severity/ratchet_enabled_rules) as a complete, additive, self-contained mechanism + CLI (frob pool snapshot/clear), deliberately NOT wired into any live gate's severity resolution because src/frob/gates/__init__.py's per-rule dispatch is large shared surface owned by a concurrent wave. This ticket is that follow-up: pick one real warn-first rule (e.g. INV006 or PII010), opt it into [gates.ratchet] rules, and call resolve_ratchet_severity at that gate's severity-decision call site so a baselined finding stays warn and a fresh one errors for real, not just in tests/test_gates_ratchet.py's synthetic fixture. Scope: src/frob/gates/__init__.py (the one call site), frob.toml, docs/modules/gates.md.
 
@@ -1817,7 +1686,6 @@ kind: bug
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0204
 scope:
 - src/frob/gates/__init__.py
@@ -1827,14 +1695,8 @@ scope:
 - src/frob/tickets/_brief.py
 - src/frob/__main__.py
 - src/frob/gates/_docblocks.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 gate:PERF currently reports 0 errors, 11 warnings, 39 waived (measured 2026-07-22). The 11 unwaived are: 9x PERF004 sorted()/.sort() in a loop (src/frob/gates/__init__.py:1183,2914,4279,4610,4695; src/frob/gates/_coverage.py:545; src/frob/gates/_registry_exhaustiveness.py:405; src/frob/strata/_cve_fingerprint.py:518; src/frob/tickets/_brief.py:118) and 2x PERF005 no-provable-termination recursion (src/frob/__main__.py:92 _collect_option_strings; src/frob/gates/_docblocks.py:386 _subparser_tree). For each PERF004: hoist the sort out of the loop, switch to a sorted container, or waive with a genuine per-site reason (the existing 39 waived findings on this same gate show the expected reason shape -- 'runs once after the loop', 'own iterable not repeated', etc; do not copy a reason that does not actually hold for the new site). For each PERF005: add a frob:invariant terminates reason=... measure=... annotation with a real termination measure, or restructure. Acceptance: gate:PERF summary line reports 0 unwaived findings (fixed or waived-with-reason), no threshold loosened without a disclosed decision.
 
@@ -1848,19 +1710,12 @@ kind: bug
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0204
 scope:
 - src/frob/**
 - tests/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 frob-dup currently reports 75 duplicate groups (112 waived), measured 2026-07-22 (was 64 groups at T-0204 filing, has grown). This is distinct from the frob-arch abstraction-opportunity advisories already covered by T-0393 -- frob-dup is the raw clone-detector report over both src/frob/** and tests/**, not the arch gate's near-dup-family suggestions. For each of the 75 groups: if it is a genuine extraction candidate (shared logic that should live in one home), extract it; if it is a false pair (coincidental structural similarity, e.g. parallel test scaffolding), waive it with an honest per-group reason. Acceptance: frob-dup summary line reports 0 unwaived groups (fixed or waived-with-reason), no threshold loosened without a disclosed decision.
 
@@ -1874,13 +1729,11 @@ kind: bug
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0204
 scope:
 - src/frob/__init__.py
 - src/frob/app/**
 - src/frob/check/**
-scope_changes: []
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - tests/unit/test_config.py::test_stale_install_warning_flags_version_mismatch
@@ -1892,12 +1745,8 @@ evidence:
 - tests/unit/test_memo.py::test_reset_run_memo_activates_an_unbounded_scope
 - tests/unit/test_memo.py::test_run_memo_scope_deactivates_on_exit
 - tests/unit/test_check.py::TestRunCheck::test_all_stages_skipped_returns_empty_result_for_root
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 frob-exports currently reports (measured 2026-07-22): src/frob 5 public symbols missing from __init__.py, src/frob/app 11, src/frob/check 3 (19 total). For each symbol, decide per-symbol: export it from the package's __init__.py, or demote it to private (leading underscore) if it should not be public API. No blanket waiver -- each symbol gets an explicit decision. Acceptance: frob-exports(src/frob), frob-exports(src/frob/app), frob-exports(src/frob/check) summary lines report 0 unresolved findings (exported, demoted, or waived-with-reason), no threshold loosened without a disclosed decision.
 
@@ -2005,21 +1854,14 @@ kind: bug
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0204
 scope:
 - src/frob/gates/**
 - src/frob/graph/**
 - src/frob/process/parsers/**
 - src/frob/registry/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 frob-exports currently reports (measured 2026-07-22): src/frob/gates 9 public symbols missing from __init__.py, src/frob/graph 2, src/frob/process/parsers 1, src/frob/registry 2 (14 total). For each symbol, decide per-symbol: export it from the package's __init__.py, or demote it to private (leading underscore) if it should not be public API. No blanket waiver -- each symbol gets an explicit decision. Acceptance: frob-exports(src/frob/gates), frob-exports(src/frob/graph), frob-exports(src/frob/process/parsers), frob-exports(src/frob/registry) summary lines report 0 unresolved findings (exported, demoted, or waived-with-reason), no threshold loosened without a disclosed decision.
 
@@ -2033,19 +1875,12 @@ kind: bug
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0204
 scope:
 - src/frob/strata/**
 - src/frob/tickets/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 frob-exports currently reports (measured 2026-07-22): src/frob/strata 5 public symbols missing from __init__.py, src/frob/tickets 17 (22 total, tickets is the largest single-package residue in this family). For each symbol, decide per-symbol: export it from the package's __init__.py, or demote it to private (leading underscore) if it should not be public API. No blanket waiver -- each symbol gets an explicit decision. Acceptance: frob-exports(src/frob/strata), frob-exports(src/frob/tickets) summary lines report 0 unresolved findings (exported, demoted, or waived-with-reason), no threshold loosened without a disclosed decision.
 
@@ -2059,15 +1894,10 @@ kind: feature
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0177
 scope:
 - src/frob/gates/**
 - src/frob/serve/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a warm daemon and a one-file edit WHEN frob_check_delta runs THEN only
     obligations whose inputs include that file are re-evaluated AND verify mode shows
@@ -2075,7 +1905,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Deferred remainder of T-0177 deliverable 2. The warm daemon caches graph snapshot, baseline, and collected test ids, and frob_check_delta filters full-run results against the stamped baseline -- but run_gates itself still evaluates EVERY gate in full on each call. Build per-obligation input tracking inside gate dispatch so a delta call evaluates only obligations whose inputs changed, with the verify=True cold-diff mode as the correctness oracle (incremental results must provably match a cold frob check). NOTE: T-0177's Done report references this as T-0602 (ex-draft, id lost at land); the draft block did not survive  (same draft-loss failure as T-0401's draft -- T-0577 tracks the land-time fix), so this ticket is its real replacement.
 
@@ -2088,22 +1917,16 @@ kind: bug
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0570
 scope:
 - src/frob/check/**
 - src/frob/gates/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a truncated .frob/cache.db WHEN frob check runs THEN the run fails closed
     naming the corrupt artifact before any gate consumes it
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 T-0570 landed the doctor-first fingerprint/format check (verify_derived_state in src/frob/doctor.py) but frob check/gates still consume derived state (.frob caches, coverage stamp, baseline) without consulting it -- corrupt state is reported by doctor, not blocked at the gate boundary. Wire verify_derived_state in so a corrupt derived artifact fails closed before any gate trusts it. NOTE: T-0570's Done report references this as T-draft-1327a057 (and mislabels it as T-0571); the draft did not survive land (T-0577 tracks the draft-loss bug), so this ticket is its real replacement.
 
@@ -2116,15 +1939,10 @@ kind: feature
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0570
 scope:
 - src/frob/doctor.py
 - tests/system/test_cli_doctor.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a derived artifact rewritten out-of-band between two doctor runs WHEN
     run_diagnosis executes THEN the drift is reported naming the artifact and both
@@ -2132,7 +1950,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 T-0570 computes sha256 fingerprints per run and validates format (SQLite magic, JSON parse) but never persists them -- so content DRIFT between runs (an artifact silently rewritten by a stale tool or a foreign process) is undetectable; only malformed bytes are caught. Store the fingerprints in a manifest file and compare on the next doctor run, reporting any artifact whose hash changed without a corresponding legitimate producer run. Flagged by T-0570's reviewer as the gap between the ticket title's 'manifest' promise and the delivered check-on-read.
 
@@ -2146,17 +1963,12 @@ kind: feature
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0332
 scope:
 - src/frob/arch/**
 - docs/modules/arch.md
 - tests/unit/test_arch.py
 - docs/design/registry/patterns.yaml
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN each of the 6 rows WHEN this ticket closes THEN the row is either detected
     by a tested high-precision detector or carries a reasoned not-checkable/out-of-scope
@@ -2164,7 +1976,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 The 6 registry rows T-0332 deferred for precision reasons: each needs a fuzzier structural signal than the >=3-occurrence floors phase 1 shipped, and shipping them imprecise would train users to ignore the advisory channel (the ticket's own noise mandate). Design a high-precision signal per row or record a reasoned not-checkable disposition. Any patterns.yaml entries re-deferred at T-0332 close point HERE -- keep the reconciliation pin test (tests/test_registry_reconciliation_patterns.py) green when this ticket changes dispositions. NOTE: T-0332's Done report references this as T-draft-4fb8deee; drafts do not survive land (T-0577), so this is the real ticket.
 
@@ -2178,15 +1989,10 @@ kind: bug
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0554
 scope:
 - src/frob/app/check_runner.py
 - tests/unit/test_check.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a TS-only repo WHEN frob check --ticket T-X runs THEN _run_gates receives
     ticket=T-X (asserted via test) and same for --base/--delta/--skip-gates across
@@ -2194,7 +2000,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 T-0554 wired _run_gates into run_check_cpp/rust/ts with skip_gates/ticket/base/delta kwargs, but src/frob/app/check_runner.py's _dispatch_check_cpp/_dispatch_check_rust/_dispatch_check_ts do not pass cfg.check_skip_gates/check_ticket/check_base/check_delta down -- only _dispatch_check_python does. Gates run unconditionally for non-Python repos (correct default), but CLI-level --ticket/--base/--delta scoping is silently ignored there. Thread the four kwargs through and test each dispatcher. Found by T-0554's reviewer.
 
@@ -2215,14 +2020,8 @@ scope:
 - src/frob/arch/_models.py
 - docs/modules/arch.md
 - tests/unit/test_arch.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Override checks against a base/interface method: (1) raises NotImplementedError in a supposedly-concrete override; (2) incompatible signature (narrower accepted params, or wider/different return than base -- variance violation); (3) strengthened precondition (override adds an assert/raise the base lacks on the same param); (4) weakened postcondition; (5) no-op override of a value-returning base method (bare pass/return None where base returns a value). Needs override-resolution over the normalized model (base<->override linkage). Acceptance: one fixture per sub-check; docs updated.
 
@@ -2243,14 +2042,8 @@ scope:
 - src/frob/arch/_models.py
 - docs/modules/arch.md
 - tests/unit/test_arch.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 fat interface: ABC/Protocol/trait whose implementers stub most methods with raise NotImplementedError/pass (measured over resolved implementers, not per-class). narrow-client usage: a function/class injected with a wide interface but only calling a small subset of its methods -- flag as an ISP split candidate. Acceptance: positive+negative fixtures; docs updated.
 
@@ -2272,14 +2065,8 @@ scope:
 - frob.toml
 - docs/modules/arch.md
 - tests/unit/test_arch.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Layering contract: a frob.toml-declared allowed-module-dependency graph (import-linter style: layers + allowed edges); a violation is a high layer importing a low/concrete module across the declared boundary -- new ARCHxxx id, resolved against actual (not surface) imports per the adversarial-hardening note (transitive re-export resolution, fail-closed on dynamic import). concrete-collaborator construction smell: a method body directly constructs a concrete dependency instead of receiving it via constructor/param injection. Acceptance: a sample frob.toml layering config + fixture violating it fails; a compliant fixture passes; docs updated with the config schema.
 
@@ -2300,14 +2087,8 @@ scope:
 - src/frob/arch/_typedesign.py
 - docs/modules/arch.md
 - tests/unit/test_arch.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 make-illegal-states-unrepresentable: a bool flag field/param whose valid combinations are validated at runtime rather than modeled as an enum/newtype (heuristic: bool field + a validator/assert referencing it + another field it constrains). primitive-obsession: 3+ raw str/int params on one function representing what looks like one domain concept (repeated co-occurrence across call sites). parse-dont-validate: a function that validates its input (raise/assert on shape) then returns the SAME unrefined input type instead of a refined one. boolean/flag parameter: public function with a bool param that switches behavior (branches internally on it) -- split-function candidate. Acceptance: fixture per sub-check; docs updated.
 
@@ -2328,14 +2109,8 @@ scope:
 - src/frob/arch/_logging_checks.py
 - docs/modules/arch.md
 - tests/unit/test_arch.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 unlogged error path: except/raise/return-Err block with no log call inside it. unlogged boundary: public entry point / subprocess call / network call / filesystem call site with no log statement in its immediate scope. print-as-diagnostic: print() call used where a module logger call is expected (not a CLI-output module). Must coincide with strata's observability-of-flow split per CLAUDE.md note -- these checks are logging-IN-CODE only, no runtime/flow correlation. Acceptance: fixture per sub-check; docs updated including the strata/arch boundary note.
 
@@ -2356,14 +2131,8 @@ scope:
 - src/frob/arch/_fallibility.py
 - docs/modules/arch.md
 - tests/unit/test_arch.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 unhandled Result: a call known to return typani Result[T,E] (or Rust #[must_use]) used as a bare statement, discarding the value. swallowed exception: bare except: or except Exception: pass with no re-raise/log/return-Err. recoverable-error-wrong-signature: a function raises a clearly-recoverable error (e.g. ValueError on bad user input) but its signature returns T, not Result[T,E]. over-broad except / re-raise-losing-context: except Exception (or bare except) catching more than the call site can name, or a re-raise that drops the original exception/traceback. Acceptance: fixture per sub-check; docs updated.
 
@@ -2384,14 +2153,8 @@ scope:
 - src/frob/arch/_smells.py
 - docs/modules/arch.md
 - tests/unit/test_arch.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 mutable default argument (list/dict/set literal as a default param value). feature envy (method's body references another object's attrs/methods more than self's). data clumps (same 3+-param group passed together across 3+ call sites). magic numbers/strings in logic (bare literal in a comparison/branch outside a named constant). dead private code (unreferenced private symbol, using the T-0288 call graph so helper-splices don't false-positive). deep inheritance (DIT beyond a configurable threshold). temporal coupling (an _initialized-style flag guarding call order instead of the type system). Acceptance: fixture per sub-check; docs updated.
 
@@ -2412,14 +2175,8 @@ scope:
 - src/frob/graph/**
 - docs/modules/arch.md
 - tests/unit/test_arch.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Detect import cycles across modules using the existing module-dependency graph (shared with T-0620's layering contract, do not fork a second graph builder). Report the cycle path. Acceptance: a fixture pair of modules importing each other fails; docs updated; explicitly reuses T-0620's graph builder (no duplicate import-resolution code).
 
@@ -2449,14 +2206,8 @@ scope:
 - docs/design/registry/**
 - docs/design/architecture-check-catalog.md
 - docs/design/design-pattern-traps-corpus.md
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Per T-0330's EXHAUSTIVENESS DRIFT-LOCK paragraph: every tier-1 statically-checkable entry in architecture-check-catalog.md and every trap hallmark in design-pattern-traps-corpus.md that this epic's ARCH1xx family (T-0616..T-0625) was meant to cover must get a disposition in docs/design/registry/ (addressed-by-check <ARCHxxx id> | reasoned-deferral | duplicate-of | out-of-scope), per the T-0343 REG001 gate contract. Acceptance: frob check's registry gate (REG001-family) shows zero unaccounted entries whose owning corpus row maps to T-0330's scope; any entry NOT built in T-0616..T-0625 gets an explicit reasoned-deferral or out-of-scope disposition, never silently dropped. This ticket is the epic's actual close condition -- T-0330 cannot close until this is green.
 
@@ -2469,16 +2220,11 @@ kind: feature
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0325
 scope:
 - src/frob/app/graph_runner.py
 - src/frob/gates/**
 - docs/modules/graph.md
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a symbol with dependents WHEN frob graph affects SYMREF runs THEN the
     affected code/docs/tests print with truncation flagged; GIVEN a diff changing
@@ -2487,7 +2233,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 T-0325 landed the warm affects() library query and frob_affects MCP tool but cut two surfaces as out of scope, noting them only in docs/modules/graph.md prose: (a) a frob graph affects REF CLI subcommand in src/frob/app/graph_runner.py so the north-star query is usable outside MCP; (b) a digest-drift gate that consumes the affects closure to FAIL when a changed symbol's dependent docs/code were not updated in the same change -- the enforcement half of the north-star (CLAUDE.md: 'a graph of WHAT DOCUMENTATION and WHAT OTHER CODE needs to be updated whenever something is touched'). Cut work must live in tickets, not prose -- this is that ticket.
 
@@ -2510,10 +2255,6 @@ scope:
 - src/frob/deploy/_generate_windows.py
 - tests/unit/strata/
 - tests/unit/deploy/
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a windows node declaring service with a binPath WHEN install.ps1 is
     generated THEN it idempotently creates the SCM service with that image path before
@@ -2521,7 +2262,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 T-0264's windows generator hardens an existing SCM service (SID type, privileges via sc.exe config) but cannot CREATE one -- std.host has no binPath/ImagePath (executable path + arguments) vocabulary, so sc.exe create is impossible from the model. T-0254's epic text says the install sequence registers the Windows Service; full-install-from-zero needs the vocabulary. Add the grammar clause (parse.rs node/store symmetry per T-0261 precedent), HostManifest read-back, and wire generate_windows_install_script to sc.exe create idempotently when binPath is declared. Flagged by T-0264's reviewer so the epic's full-install intent is not silently lost.
 
@@ -2534,16 +2274,11 @@ kind: feature
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0577
 scope:
 - src/frob/tickets/**
 - src/frob/app/ticket_runner.py
 - docs/modules/tickets.md
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a land with --push WHEN the land completes THEN the push happens only
     after every land verification passed; GIVEN the TICK005 rule defined WHEN land
@@ -2551,7 +2286,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 The two T-0577 dispatch items that had no existing design to build against, deferred honestly rather than half-built: (1) a TICK005-backed regression sweep at land time (define the TICK005 rule first, then have land run it); (2) a --push option for frob ticket land so the coordinator can land+push in one verified step. NOTE: T-0577's Done report references this as T-draft-f6f10c67; that draft was filed pre-fix and will not survive T-0577's own land, so this is the real ticket.
 
@@ -2572,10 +2306,6 @@ scope:
 - src/frob/arch/_normalized.py
 - src/frob/arch/_python.py
 - tests/unit/test_arch.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN the existing T-0360/T-0370 regression tests unmodified WHEN both check
     families run through the normalized model THEN all pass and no raw-tree walk remains
@@ -2583,7 +2313,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 T-0610 migrated long-function/god-class/deep-nesting onto NormalizedModule but left two check families on the raw tree-sitter walk, with concrete schema gaps documented: _extract_signatures' body-fingerprint needs full raw AST for alpha-renaming, and _collect_dispatch_refs needs argument-position/dict-value detail NormalizedCall does not carry. Extend the model (arg positions on NormalizedCall; a fingerprint-friendly body projection or a documented decision to keep fingerprints raw-AST-based), then migrate both WITHOUT regressing the T-0360 dispatch-family suppression or T-0370 near-dup discriminator protections (their tests must pass unmodified). NOTE: T-0610's Done report references this as T-0632 (ex-draft, id lost at land) (prose only); this is the real ticket.
 
@@ -2596,22 +2325,16 @@ kind: bug
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/testing/**
 - src/frob/gates/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a fresh python process WHEN import frob.testing runs as the first frob
     import THEN it succeeds and the test-file workaround import is removed
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 import frob.testing as the first frob-touching import raises ImportError (cannot import name CollectedTests) through the frob.gates cycle; masked in the full suite by import order, breaks standalone runs. tests/unit/testing/test_stability.py carries a documented workaround (import frob.gates first). Was T-draft-3d5f6965 in T-0575's worktree; the draft was dropped at land (see the auto-finalize field-failure ticket).
 
@@ -2624,15 +2347,10 @@ kind: feature
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0575
 scope:
 - src/frob/app/test_runner.py
 - src/frob/testing/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a flaky test with an open quarantine ticket WHEN frob test runs via
     the CLI THEN the run records history, the quarantined failure does not fail the
@@ -2640,7 +2358,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 T-0575 landed frob.testing._stability (record_outcomes, evaluate_gate, quarantine, alarms) but nothing in the frob test CLI path calls it -- tracking only happens if invoked programmatically. Wire capture/track + evaluate_gate + alarm surfacing into src/frob/app/test_runner.py so every frob test run updates history and applies quarantine semantics automatically. Disclosed cut in T-0575's Done report.
 
@@ -2653,17 +2370,12 @@ kind: feature
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0576
 scope:
 - src/frob/app/**
 - src/frob/__main__.py
 - README.md
 - docs/modules/gates.md
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a repo with frob:deprecated directives WHEN frob deprecated runs THEN
     each deprecation prints with its DEPR status and the README command table includes
@@ -2671,7 +2383,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 T-0576 landed the frob:deprecated directive and DEPR001-004 gates plus the list_deprecated API, but no CLI surface. Add a frob deprecated subcommand (App/AppConfig runner pattern) listing every deprecation with since/sunset/ticket/status (in-window vs past-sunset vs orphaned), plus the README command-table row and count bump so DOC005 stays green. Was T-0638 (ex-draft, id lost at land) in T-0576's worktree; drafts still do not survive land (T-0637).
 
@@ -2685,22 +2396,16 @@ kind: feature
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0576
 scope:
 - src/frob/graph/**
 - src/frob/gates/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a design decision recorded WHEN implemented THEN a change adding a call
     to a deprecated public symbol produces a DEPR finding naming the new call site
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 T-0576's ticket body wanted a deprecated symbol gaining new callers to fire a finding, but frob.graph.callgraph's caller/reference resolution only covers PRIVATE callees by design -- a PUBLIC deprecated symbol's callers are not resolvable today. Design work: either extend the callgraph to public-symbol references (cost/precision tradeoff) or diff-based detection (a new call site referencing the symbol in a change since the directive appeared). Was T-0639 (ex-draft, id lost at land) in T-0576's worktree; drafts still do not survive land (T-0637).
 
@@ -2713,16 +2418,11 @@ kind: feature
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0331
 scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given a .strata flow crossing a service/process boundary with no timeout attr,
     when frob check runs, then REL2xx fires unless waived with a reason
@@ -2732,7 +2432,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Add a flow-level TIMEOUT attribute + REL2xx checker + litmus + docs: every remote/cross-boundary flow must declare a bounded timeout (unbounded hang otherwise). Deny-by-default with reasoned-waive channel (T-0174). Discharge must be proof-against-code (real timeout arg at the call site) per T-0331's PROVABILITY CONSTRAINT, not bare declaration.
 
@@ -2745,16 +2444,11 @@ kind: feature
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0331
 scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given a flow with retry=true and no backoff/jitter declared, when checked,
     then it fails
@@ -2764,7 +2458,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 RETRY flow attr must declare exponential backoff+jitter; a retry on a non-idempotent op is a hard obligation failure unless the target op declares an idempotency key. Proof-against-code: retry loop and backoff params must match declared values; bare declaration insufficient (T-0331 PROVABILITY CONSTRAINT).
 
@@ -2777,23 +2470,17 @@ kind: feature
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0331
 scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given an external-dependency node with no circuit-breaker/bulkhead declared,
     when checked, then the obligation fires
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Every external dependency node must declare a circuit-breaker/bulkhead policy, extending LINT004 kill-switch. Proof-against-code required per epic PROVABILITY CONSTRAINT.
 
@@ -2814,17 +2501,12 @@ scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given a CRITICAL dependency with no fallback declared, when checked, then
     the obligation fires
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 A dependency marked CRITICAL must declare a fallback/graceful-degradation path, and the fallback code path must be shown present (proof-against-code) or explicitly waived. Reuses the circuit-breaker ticket's dependency-criticality classification, hence blocked on that groundwork existing.
 
@@ -2838,23 +2520,17 @@ kind: feature
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0331
 scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given a node with inbound critical flows and replicas_max=1, when checked,
     then SPOF obligation fires unless waived
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 A node receiving critical inbound flows with replicas_max=1 or no declared redundancy is a single point of failure; flag as a hard obligation, deny-by-default with reasoned waive (T-0174).
 
@@ -2867,23 +2543,17 @@ kind: feature
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0331
 scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given a queue/consumer node with no bounded-intake policy declared, when checked,
     then the obligation fires
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Every queue/consumer node must declare bounded intake (backpressure policy), extending LINT003 surge / LINT005 capacity.
 
@@ -2897,16 +2567,11 @@ kind: feature
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0331
 scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given a boundary flow with no metrics/traces/logs declared, when checked,
     then the obligation fires
@@ -2916,7 +2581,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Every boundary flow must declare metrics+traces+logs instrumentation; a flow chain must propagate a correlation/trace-id across hops (distributed tracing). Proof-against-code required.
 
@@ -2936,17 +2600,12 @@ scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given a service node with no golden-signal SLOs + error budget declared, when
     checked, then the obligation fires
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Every service node must declare golden-signal SLOs (latency/traffic/errors/saturation) and an error budget. Depends on the metrics-instrumentation obligation existing first, since an SLO without the underlying signal is unverifiable.
 
@@ -2960,23 +2619,17 @@ kind: feature
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0331
 scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given a store with >=2 distinct writer nodes and no declared single-owner/reconciliation,
     when checked, then the obligation fires
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Extends SYS003 hub: a store written by two or more distinct nodes without a declared owner/reconciliation is a hard obligation failure.
 
@@ -2996,17 +2649,12 @@ scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given a multi-write op with no transactional-boundary declared, when checked,
     then the obligation fires
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Any op writing to >1 store must declare a transactional boundary (or saga, see distributed-txn ticket). Reuses the store-writer graph built for the single-source-of-truth obligation.
 
@@ -3019,23 +2667,17 @@ kind: feature
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0331
 scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given an event/queue node with no schema version declared, when checked, then
     the obligation fires
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Every event/queue node must declare a message schema version for backward-compat tracking.
 
@@ -3055,17 +2697,12 @@ scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given a queue node with no delivery-semantics declared, when checked, then
     the obligation fires
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Every queue node must declare its delivery semantics (exactly-once/at-least-once). Shares the queue-node surface work with the message-schema-version obligation.
 
@@ -3078,23 +2715,17 @@ kind: feature
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0331
 scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given a PII-tagged store with no retention/TTL declared, when checked, then
     the obligation fires
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Every store holding PII must declare a retention/TTL policy (ties T-0207).
 
@@ -3107,23 +2738,17 @@ kind: feature
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0331
 scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given a sync call chain exceeding the declared/default depth bound, when checked,
     then the obligation fires
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Bound the depth of synchronous call chains (cascading latency/failure risk), using reachability including non-transitive edges (T-0282).
 
@@ -3143,17 +2768,12 @@ scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given a cross-service transaction with no saga/compensation declared, when
     checked, then the obligation fires
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 A transaction spanning multiple services must declare a saga/compensation strategy; builds on the transactional-boundary obligation's multi-write detection extended across service boundaries.
 
@@ -3166,23 +2786,17 @@ kind: feature
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0331
 scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given two services sharing a mutable store/memory region across their boundary
     with no declared exception, when checked, then the obligation fires
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Detect and flag shared mutable state reachable across a declared service boundary.
 
@@ -3195,23 +2809,17 @@ kind: feature
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0331
 scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given a cross-node flow with an implicit clock/ordering assumption and no
     declared strategy, when checked, then the obligation fires
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Flag flows relying on wall-clock ordering/synchronization assumptions across distributed nodes without a declared clock/ordering strategy (T-0282 reachability).
 
@@ -3249,10 +2857,6 @@ scope:
 - src/frob/strata/**
 - docs/design/registry/system-design.yaml
 - tests/unit/strata/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given the full system-design-corpus.md denominator, when the meta-test runs,
     then every entry has a disposition (addressed-by-check | reasoned-deferral) and
@@ -3263,7 +2867,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Epic close condition. Bind every genuine system-design-corpus.md manifest entry (105 genuine, per RECONCILIATION.md finding (d), plus 14 manifest-extraction artifacts explicitly excluded) to >=1 registered SYS2xx/REL2xx check or a reasoned deferral, following the T-0343 drift-lock framework. (addressed union deferred) == TOTAL. Cannot close while any relevant entry is unaddressed and un-deferred. Depends on all 16 obligation children plus T-0392 (system-design registry-domain reconciliation) landing so 'registered check' is a real, checkable claim.
 
@@ -3277,16 +2880,11 @@ kind: security
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0339
 scope:
 - src/frob/vet/**
 - src/frob/lang/**
 - tests/test_vet.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given every Python static-resolvable construct in the taxonomy's Python table,
     when the resolver runs on a litmus fixture for that construct, then the aliased
@@ -3297,7 +2895,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 T-0328 (import/binding-aware resolution) and T-0337 (local rebinding) are done, but not yet checked against the full capability-evasion-taxonomy.md Python denominator (13 static + 9 opaque entries). Enumerate every remaining Python static construct (chained attribute rebinding, destructuring/unpack aliasing, star-import re-export chains, conditional/try-except import fallback aliasing) and close any gap with a resolver fix + litmus fixture, without regressing shadowing soundness (a benign/param binding must stay silent).
 
@@ -3310,23 +2907,17 @@ kind: security
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0339
 scope:
 - src/frob/vet/**
 - src/frob/lang/**
 - tests/test_vet.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given every TS/JS static-resolvable construct in the taxonomy table, when
     the resolver runs on its litmus fixture, then the aliased dangerous call is detected
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Implement per-scope, transitive, cycle-guarded static name-binding resolution for TS/JS per capability-evasion-taxonomy.md's TS/JS table (17 static + 9 opaque entries): import/import-as, named/default/namespace import, re-export (export ... from), destructuring assignment, CommonJS require aliasing where statically resolvable.
 
@@ -3339,23 +2930,17 @@ kind: security
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0339
 scope:
 - src/frob/vet/**
 - src/frob/lang/**
 - tests/test_vet.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given every Rust static-resolvable construct in the taxonomy table, when the
     resolver runs on its litmus fixture, then the aliased dangerous call is detected
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Implement per-scope, transitive, cycle-guarded static name-binding resolution for Rust per capability-evasion-taxonomy.md's Rust table (13 static + 6 opaque entries): use, use ... as, pub use re-export, glob use, module-path aliasing.
 
@@ -3369,23 +2954,17 @@ kind: security
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0339
 scope:
 - src/frob/vet/**
 - src/frob/lang/**
 - tests/test_vet.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given every C static-resolvable construct in the taxonomy table, when the
     resolver runs on its litmus fixture, then the aliased dangerous call is detected
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Implement static name-binding resolution for C per capability-evasion-taxonomy.md's C table (7 static + 5 opaque entries): #define macro aliasing, function-pointer variable initialized from a named function, typedef'd function-pointer types.
 
@@ -3406,17 +2985,12 @@ scope:
 - src/frob/vet/**
 - src/frob/lang/**
 - tests/test_vet.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given every C++ static-resolvable construct in the taxonomy table, when the
     resolver runs on its litmus fixture, then the aliased dangerous call is detected
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Implement static name-binding resolution for C++ per capability-evasion-taxonomy.md's C++ table (12 static + 5 opaque entries): using-declaration, namespace alias, function-pointer/typedef'd fn-ptr, building on the C resolver's fn-ptr/typedef groundwork.
 
@@ -3429,23 +3003,17 @@ kind: security
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0339
 scope:
 - src/frob/vet/**
 - src/frob/lang/**
 - tests/test_vet.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given every Kotlin static-resolvable construct in the taxonomy table, when
     the resolver runs on its litmus fixture, then the aliased dangerous call is detected
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Implement static name-binding resolution for Kotlin per capability-evasion-taxonomy.md's Kotlin table (11 static + 5 opaque entries): import-as, function-reference (::ref), typealias.
 
@@ -3459,16 +3027,11 @@ kind: security
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0339
 scope:
 - src/frob/vet/**
 - src/frob/strata/**
 - tests/test_vet.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given code containing a spec-defined runtime-resolved indirection construct
     with no waiver, when checked, then the obligation fires
@@ -3478,7 +3041,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Per-language, every spec-defined runtime-resolved indirection construct (Python getattr/eval/importlib; TS dynamic import()/eval; Rust reflection-via-trait-object-from-data; C/C++ dlopen/dlsym/fn-ptr-from-data; Kotlin reflection API) becomes an 'opaque capability indirection' obligation: fires by default, requires a reasoned waiver (T-0174), never a silent pass. Consistent with strata's prove-or-reject philosophy (T-0290).
 
@@ -3506,10 +3068,6 @@ scope:
 - src/frob/vet/**
 - docs/design/registry/evasion.yaml
 - tests/test_vet.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given the full evasion taxonomy denominator, when the meta-test runs, then
     every entry maps to >=1 registered litmus fixture
@@ -3519,7 +3077,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Epic close condition. Binds every capability-evasion-taxonomy.md entry (112: 13+9 Python, 17+9 TS/JS, 13+6 Rust, 7+5 C, 12+5 C++, 11+5 Kotlin) to >=1 litmus fixture that exercises it, mirroring the CVE-fingerprint catalog drift-lock. Fails the build if any construct has no fixture. Depends on all per-language resolver tickets and the opaque-indirection obligation landing, plus T-0390 (evasion registry-domain reconciliation) for disposition accuracy.
 
@@ -3542,10 +3099,6 @@ scope:
 - src/frob/graph/**
 - docs/modules/strata.md
 - tests/unit/strata/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given a module with an observed capability effect and no strata node binding,
     when checked, then SYS-COV fires
@@ -3554,7 +3107,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Extend the capability graph (T-0328-resolved) to enumerate every module with an observed capability effect, then cross-check against strata node bindings. A capable-but-unbound module is a hard obligation failure -- this closes acceptance-criterion (1) 'un-modeled modules escape all obligations'. Depends on T-0630 wiring real code binding into production entrypoints so the check has real data to run against, not just unit-test fixtures.
 
@@ -3576,10 +3128,6 @@ scope:
 - src/frob/graph/**
 - docs/modules/strata.md
 - tests/unit/strata/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given a node declaring fewer public symbols than the bound module exports,
     when checked, then the obligation fires
@@ -3589,7 +3137,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 A node's declared interface must equal the bound module's real public surface (no under- or over-declaration) -- closes acceptance-criterion (2). Depends on coverage-totality's binding pass existing first (need a bound node before its interface can be checked).
 
@@ -3611,17 +3158,12 @@ scope:
 - src/frob/graph/**
 - docs/modules/strata.md
 - tests/unit/strata/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given a node whose purpose declares a read-only effect profile but whose bound
     code performs a write, when checked, then the obligation fires
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Each node's declared purpose must carry an allowed-effect profile (e.g. 'read-only query' cannot emit writes); real observed effects outside that profile fail via _effects.py::check_capability_conformance -- closes acceptance-criterion (3).
 
@@ -3643,10 +3185,6 @@ scope:
 - src/frob/graph/**
 - docs/modules/strata.md
 - tests/unit/strata/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given dangerous logic moved into a helper module not directly bound to any
     node but reachable from a bound node, when checked, then the effect is still attributed
@@ -3654,7 +3192,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Extend SYS100/SYS101/SYS102 so the bound-set is provably total against the capability graph: a module reachable via import/call from a bound node but itself unbound must not silently escape effect-conformance checking -- closes acceptance-criterion (4) 'binding need not be total, so logic can be laundered into an unbound file'.
 
@@ -3677,10 +3214,6 @@ scope:
 - src/frob/strata/**
 - docs/modules/strata.md
 - tests/unit/strata/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given a waiver older than its staleness bound, when checked, then it is treated
     as expired and the underlying obligation re-fires
@@ -3690,7 +3223,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Closes acceptance-criterion (5): every conformance escape hatch (interface/purpose/binding waivers) must be bounded (expiry/staleness-gated) and surfaced in an un-droppable floor view so it cannot become a permanent silent exemption. Depends on the three conformance checks existing first since this wraps their waiver channel.
 
@@ -3716,10 +3248,6 @@ scope:
 - src/frob/strata/**
 - docs/design/registry/arch-checks.yaml
 - tests/unit/strata/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given the structural-linter-adversarial-hardening.md denominator, when the
     meta-test runs, then every SLH-* entry has a disposition (addressed-by-check |
@@ -3730,7 +3258,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Epic close condition. Binds the structural-linter-adversarial-hardening.md denominator (5 named principles + 9 arch-evasion + 9 strata-evasion rows, registry ids SLH-RULE-*/SLH-ARCH-EVA-*/SLH-SYS-EVA-*, per RECONCILIATION.md finding (a)) to the five conformance checks built above, following the T-0343 drift-lock framework. Depends on all five checks plus T-0391 (arch-checks registry-domain reconciliation, which owns the SLH-* disposition slice).
 
@@ -3744,15 +3271,10 @@ kind: feature
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0346
 scope:
 - docs/design/registry/**
 - tests/unit/strata/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given the 10 named concepts, when the registry is queried, then each has a
     reviewed cross_refs linkage (either merged to one canonical id or explicitly justified
@@ -3764,7 +3286,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 RECONCILIATION.md finding (b): Circuit Breaker, Bulkhead, Idempotent Receiver, Anti-Corruption Layer, Value Object, Repository, Timeout, Singleton, Anemic Domain Model, Saga each currently exist as 2-4 unlinked file-local ids (cross_refs: []) across arch-checks.yaml/patterns.yaml/system-design.yaml/supply-chain.yaml. Make a reviewer judgment call per concept (one canonical id with facets, vs genuinely distinct checkable claims that share a name) and wire cross_refs accordingly. Then extend the spot-check to a full pairwise name-similarity scan over all 1950 entries (the prior pass explicitly did not do this) to surface additional splits beyond the 10 named.
 
@@ -3787,10 +3308,6 @@ scope:
 - docs/design/compliance-corpus.md
 - docs/design/secrets-pii-corpus.md
 - docs/design/registry/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given the decision made, when RECONCILIATION.md is reread, then finding (f)
     is marked resolved with either the leaf-level registry built or a written granularity-freeze
@@ -3798,7 +3315,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 RECONCILIATION.md finding (f): compliance-corpus.md/secrets-pii-corpus.md are unit-granular (27+3+7 = 37 entries) but their own TOTAL_LEAF_CONTROLS_ENUMERATED fields imply 599+56+44 = 699 individually addressable leaf items that were never actually enumerated row-by-row in the source docs. Make an explicit decision: either (a) expand the source docs to real leaf-level enumeration with stable ids and rebuild the registry at that granularity, or (b) formally freeze at unit granularity with a written rationale recorded in registry/README.md and RECONCILIATION.md, closing the gap as a documented decision rather than an open question. Depends on the three unit-granularity reconciliation tickets having landed.
 
@@ -3824,10 +3340,6 @@ scope:
 - docs/design/registry/**
 - src/frob/strata/**
 - tests/unit/strata/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: Given the full registry, when the meta-test runs, then every cross_refs-eligible
     concept has exactly one canonical id or a recorded justification for staying split
@@ -3837,7 +3349,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Epic close condition. Extends T-0343's per-domain drift-lock with a cross-corpus check over all 11 source docs / 1950+ registry entries: (1) no named concept may exist under >=2 unlinked file-local ids (uses cross_refs, closes finding (b) permanently going forward); (2) no corpus table row may exist with no registry id (closes finding (a) permanently -- the 3 prose-only docs already retrofitted must never regress). Depends on the dedup pass and all five domain-reconciliation tickets (weaknesses/supply-chain/evasion/arch-checks/system-design) landing so the meta-test has a fully-dispositioned base to run against.
 
@@ -3857,10 +3368,6 @@ scope:
 - src/frob/testing/_stability.py
 - tests/unit/testing/test_stability.py
 - docs/modules/testing.md
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN history [P] followed by K consecutive fails under live quarantine WHEN
     evaluate_gate and hard_regression_alarms run THEN the gate stays red and the alarm
@@ -3868,7 +3375,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 T-0636's is_hard_regression checks all-fail over the ENTIRE bounded 20-run window, so a single stale pass anywhere in the window defeats detection for up to 19 subsequent all-fail runs -- a real hard regression stays promoted and un-alarmed that whole time. Add a recent-tail rule (last K runs all-fail, K configurable, default ~5) alongside or replacing the whole-window rule, with tests covering the one-old-pass-then-long-fail-tail case T-0636's reviewer identified. Update docs/modules/testing.md semantics. NOTE: the hard-regression CLI/alarm wiring is T-0635's scope; T-0636's a lost draft (its scope is covered by T-0635) duplicated it and needs no refile.
 
@@ -3881,16 +3387,11 @@ kind: security
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0383
 scope:
 - src/frob/gates/_registry_exhaustiveness.py
 - docs/design/registry/**
 - tests/test_registry_exhaustiveness.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a registry entry with out_of_scope disposition whose reason names no
     catching control and is not a substantive reasoned-none WHEN the registry gate
@@ -3898,7 +3399,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 The one remaining caught_by gap after T-0382/T-0383: registry-YAML out_of_scope:<reason> disposition strings are a separate surface from the strata model objects and never pass through T-0382's caught_by verification -- a registry entry can be excused with a reason that names no catching control and nothing checks it. Route those disposition reasons through the same verification (or an equivalent registry-side rule) so an out_of_scope registry entry either names a real catching control or carries a substantive reasoned-none, mechanically checked. Was T-0680 (ex-draft, id lost at land) in T-0383's worktree; drafts do not survive land (T-0637).
 
@@ -3918,10 +3418,6 @@ scope:
 - src/frob/arch/_normalized.py
 - src/frob/arch/_typescript.py
 - tests/unit/test_arch.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN TS fixtures with interface, type alias, enum, and a TSX component WHEN
     TypeScriptAdapter.adapt runs THEN each is represented in the NormalizedModule
@@ -3929,7 +3425,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 T-0611's TypeScriptAdapter cannot map interface_declaration, type_alias_declaration, enum_declaration, or TSX/JSX -- no NormalizedModule entity exists for them yet. Extend the model (likely a NormalizedTypeDecl entity or fields on NormalizedClass) keeping _normalized.py tree_sitter-free, then map the four constructs in _typescript.py with fires/near-miss tests. Was T-0681 (ex-draft, id lost at land) in T-0611's worktree; drafts do not survive land until T-0637's fix lands.
 
@@ -3943,21 +3438,15 @@ kind: docs
 origin: agent
 created: '2026-07-22'
 priority: low
-blocked_by: []
 parent: T-0265
 scope:
 - docs/modules/gates.md
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN docs/modules/gates.md WHEN a reader checks --only semantics THEN the
     always-evaluated drift behavior is documented with the T-0265 rationale
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 T-0265 made _build_jobs fold drift into every run_gates call so narrowed selections agree with full runs (DRIFT002 is authoritative for edge-endpoint resolution). docs/modules/gates.md does not yet say drift always evaluates under --only; T-0265's reviewer flagged the doc gap. One short note under the --only description. Also note here for the record: the _run_combined_jobs ProcessPoolExecutor-inside-ThreadPoolExecutor fork hazard disclosed in T-0265's Done report is T-0581's territory (its redesign should eliminate it).
 
@@ -3971,20 +3460,13 @@ kind: feature
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/vet/
 - src/frob/strata/
 - docs/design/registry/weaknesses.yaml
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Standing home for 27 weaknesses.yaml CWE entries (CWE-20,22,77,78,79,89,94,119,125,190,269,276,287,306,352,362,416,434,476,502,639,787,798,862,863,918,922 -- overlapping the CWE Top-25/OWASP classic set, relevant to T-0674's Top-25 tension follow-up) whose controls are machine-checkable but not yet enforced by any gate/check. They previously carried deferred:T-0384 (the reconciliation ticket itself) -- a self-reference that would orphan them the moment T-0384 closed; T-0384's pass re-pointed them here. Each entry needs either a real enforcing check (then flip to handled_by:<rule-id>) or a reasoned out_of_scope/not-checkable disposition.
 
@@ -3998,16 +3480,11 @@ kind: feature
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/arch/**
 - src/frob/gates/**
 - docs/design/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN the children closed WHEN frob check runs on a fixture with a known exception
     surface THEN the may-raise sets are queryable and every child gate/advisory fires
@@ -4015,7 +3492,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 User mandate 2026-07-22: complement the errors-as-values preference with an EXHAUSTIVE static exception story. Compute a per-function may-raise set: explicit raise sites + resolved callees' sets propagated over the call graph + curated builtin-raiser table (dict[k]->KeyError, int()->ValueError, attr->AttributeError, ...). Unresolvable calls (dynamic dispatch, getattr, plugins) contribute an Unknown marker FAIL-CLOSED, per the T-0339 doctrine -- reuse its per-language resolvers (T-0659..T-0664), do not build a second binding analysis. Ubiquitous asynchronous exceptions (MemoryError, KeyboardInterrupt, SystemExit) live in a separate always-possible tier that exhaustiveness never demands enumerated (only a boundary catch-all may discharge). The normalized model's NormalizedRaise/NormalizedCatch events (T-0609..T-0612) are the substrate. Children: Python may-raise resolver, C++ may-throw + noexcept obligation, exhaustive-handling gate + errors-as-values advisory. Umbrella closes when children close.
 
@@ -4035,10 +3511,6 @@ parent: T-0685
 scope:
 - src/frob/arch/**
 - tests/unit/test_arch.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a fixture chain f->g->h where h raises ValueError and g catches it and
     f calls dict subscript WHEN the resolver runs THEN f's may-raise is exactly {KeyError}
@@ -4046,7 +3518,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Child 1 of T-0685. Over the normalized model (NormalizedRaise/NormalizedCall) plus T-0659's sound Python name-binding: per-function may-raise = own raises (resolve the raised type where statically evident; bare raise re-raises the active set) + union of resolved callees' sets (fixpoint over the call graph, cycles converge) + builtin-raiser table for subscript/attribute/arithmetic/casts/io. Unresolved callee -> Unknown, fail-closed. except clauses SUBTRACT what they catch (mind exception hierarchies: except Exception catches ValueError). Async-ubiquitous tier (MemoryError/KeyboardInterrupt/SystemExit) tracked separately. Deliverable is the queryable analysis + tests on hand-built fixtures with known surfaces; gates/advisories are T-0688's job.
 
@@ -4067,10 +3538,6 @@ scope:
 - src/frob/arch/**
 - src/frob/lang/**
 - tests/unit/test_arch.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a noexcept function calling a may-throw callee WHEN the analysis runs
     THEN an error finding names the call site AND a try/catch(...) boundary discharges
@@ -4078,7 +3545,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Child 2 of T-0685. Same may-set shape over the C++ tree-sitter parse: explicit throw + resolved-callee propagation + std-library thrower table (vector::at, new, stoi, ...). Virtual/indirect/function-pointer calls -> Unknown fail-closed (T-0665's obligation pattern). noexcept functions are HARD boundaries: a may-throw (or Unknown) call inside noexcept is an ERROR finding (std::terminate at runtime), not advisory. Document that full soundness needs libclang eventually; the tree-sitter approximation with fail-closed unknowns is the deliverable.
 
@@ -4105,9 +3571,6 @@ scope_changes:
   reason: the advisory half lives beside the T-0332 recommender in arch
   actor: logan
   at: '2026-07-22'
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a boundary catching a strict subset of its guarded may-raise set WHEN
     the gate runs THEN the missing exception types are named; GIVEN a public raiser
@@ -4116,7 +3579,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Child 3 of T-0685 (blocked by the python resolver landing; extend to C++ when its child lands). Two consumers of the may-raise sets: (1) EXHAUSTIVE-HANDLING gate: a try block or declared boundary function is exhaustive iff every member of the guarded may-raise set is caught, explicitly declared-propagated (a frob: directive), or waived with reason; Unknown in the set forces a catch-all or fixing the unresolvable call -- silent non-exhaustiveness impossible. (2) ERRORS-AS-VALUES advisory (suggestion severity, T-0332 noise discipline): a public function with non-empty recoverable may-raise whose callers do not handle it recommends typani Result[T,E], with the raise-site list as the sketch; exceptions remain sanctioned for programmer bugs (assert/invariant class exempt). Wire into T-0623's fallibility family; register rule ids in _KNOWN_GATE_RULES; docs in the same change.
 
@@ -4136,10 +3598,6 @@ parent: T-0685
 scope:
 - src/frob/arch/**
 - tests/unit/test_arch.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a call into an undeclared ctypes function WHEN the resolver runs THEN
     Unknown appears in the caller's may-raise set; GIVEN the same call with a frob:raises
@@ -4147,7 +3605,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 User mandate: account for the builtins AND the ctypes-ish surface we know. Calls crossing into ctypes, cffi, or compiled C-extension modules (module has no Python source in the graph, or known binary-ext loader) contribute Unknown to the caller's may-raise set fail-closed. EXCEPTION: a boundary covered by a frob:raises declaration (sibling ticket) substitutes its declared set. Curate the stdlib C-extension raiser table for modules we know (json.loads -> JSONDecodeError, sqlite3 -> sqlite3.Error family, struct -> struct.error, ...) so common cases resolve precisely instead of Unknown.
 
@@ -4170,10 +3627,6 @@ scope:
 - src/frob/arch/**
 - strata-core/**
 - docs/modules/gates.md
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a pyo3 function whose Rust side constructs PyValueError but whose frob:raises
     omits it WHEN the gate runs THEN a drift error names both sides; GIVEN a ctypes
@@ -4181,7 +3634,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 User mandate: propagate exception info across the FFI boundary and enforce declaration wherever possible. Three tiers by static visibility: (1) OUR pyo3 crates (strata_core/frob_core): the Rust side IS visible -- PyResult error constructions, explicit PyErr types, panic! -> pyo3 PanicException; parse the Rust side (Rust adapter already parses these crates) and CROSS-CHECK the Python-side frob:raises declaration against the observed Rust-side set; drift = gate error. (2) ctypes/extern-C: no exception propagation exists (errno/return codes; a C++ exception crossing extern C is terminate/UB -- flag that pattern in our C++ as an ERROR); declaration is the only truth -- enforce every ctypes boundary in our repos carries frob:raises (declaring the empty set + errno convention is valid). (3) third-party compiled modules: declaration optional; Unknown otherwise. Grammar mirrors frob:deprecated (T-0576 precedent); register rule ids; docs same change.
 
@@ -4195,14 +3647,9 @@ kind: feature
 origin: human
 created: '2026-07-22'
 priority: low
-blocked_by: []
 parent: T-0329
 scope:
 - docs/design/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN the estate language survey WHEN this ticket closes THEN docs/design
     records the chosen next adapter tier with rationale and per-language tickets exist
@@ -4210,7 +3657,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 User question 2026-07-22: should we expand supported languages per github.com Innovation Graph global metrics and the TIOBE index? Current coverage: Python, TypeScript/JS, Rust, C, C++ (+ Kotlin grammar wired, adapter pending T-0614). By both indexes the largest uncovered languages are Java, Go, C#, then PHP/Ruby/Swift. RECOMMENDATION recorded here: expand DEMAND-DRIVEN, not index-driven -- the adapter protocol (T-0609) makes each language a bounded ~1-session ticket, so speculative adapters are cheap to add when a real repo in the estate (or a user project) needs one, and unexercised adapters are exactly the catalogued-but-unenforced dead weight this repo's doctrine forbids. This DECISION ticket closes by recording the chosen next tier (or explicitly none-for-now) in docs/design/ after checking the 9-repo estate's actual language mix; implementation tickets get filed per language only when chosen.
 
@@ -4224,23 +3670,17 @@ kind: feature
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/arch/**
 - src/frob/gates/**
 - docs/design/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN the children closed WHEN frob check runs on fixtures reproducing each
     hazard class THEN each fires per its own acceptance
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 User mandate 2026-07-22: static checks for multiprocessing/threading/async code. Not a soundness claim -- a STRUCTURAL may-analysis over the call graph + normalized model (T-0609..T-0612) catching the classes that actually bite, fail-closed on opaque dispatch per T-0339 doctrine. Field motivation from this very session: the ProcessPoolExecutor-inside-ThreadPoolExecutor deadlock (T-0265 disclosure, T-0581 structural fix, T-0692 CI guard) ate a 6h CI job. Children: lock-order graph, fork/pool structural hazards, async event-loop hazards, shared-mutable-state approximation, IO/CPU-bound model-mismatch advisory. Umbrella closes when children close.
 
@@ -4254,22 +3694,16 @@ kind: security
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0693
 scope:
 - src/frob/arch/**
 - tests/unit/test_arch.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN two functions acquiring locks A-then-B and B-then-A WHEN the check runs
     THEN a finding names both call paths; GIVEN consistent global ordering THEN silence
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Child 1 of T-0693. Track with-statement (and explicit acquire/release) nesting of statically-identifiable lock objects (module/class-level threading.Lock/RLock/Semaphore, multiprocessing locks, anyio/asyncio locks); build the acquisition-order graph across call paths via the call graph; a cycle = potential deadlock naming both paths and both locks. Unresolvable lock identity -> advisory-tier note, fail-closed philosophy without drowning signal. Fixtures: the classic AB/BA two-lock deadlock fires; single global lock ordering does not.
 
@@ -4283,15 +3717,10 @@ kind: bug
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0693
 scope:
 - src/frob/arch/**
 - tests/unit/test_arch.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN time.sleep inside async def WHEN the check runs THEN a finding suggests
     asyncio.sleep/to_thread; GIVEN an un-awaited coroutine call THEN a finding names
@@ -4299,7 +3728,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Child 3 of T-0693. Curated blocking-call table (time.sleep, requests.*, urllib, sync open/read on large paths, subprocess.run, .result() on futures) flagged when reachable inside async def without run_in_executor/to_thread dispatch; run_until_complete/asyncio.run reachable inside a running-loop context; coroutine-constructing call whose result is neither awaited nor gathered nor stored (un-awaited coroutine); async def containing zero awaits (feeds the model-mismatch advisory too). Table extensible via frob.toml like other curated tables.
 
@@ -4313,15 +3741,10 @@ kind: security
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0693
 scope:
 - src/frob/arch/**
 - tests/unit/test_arch.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a module-level dict written from a thread-submitted function with no
     enclosing lock WHEN the check runs THEN an advisory names the write site and the
@@ -4329,7 +3752,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Child 4 of T-0693. Approximate data-race detection: a WRITE to module-level or class-level mutable state (assignment, mutating method on list/dict/set) on a call path reachable from a thread target/executor submission/async task, where no lock acquisition encloses the write in that path's context, is an advisory finding (suggestion tier -- approximation, false positives possible; waivable with reason). Reuses the lock-identification machinery from T-0694 and thread-target reachability from T-0695. Single-process cousin of strata's distributed no-shared-mutable-state check (T-0656) -- coordinate rule naming, do not duplicate its model-level logic.
 
@@ -4343,16 +3765,11 @@ kind: ux
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0693
 scope:
 - src/frob/arch/**
 - tests/unit/test_arch.py
 - docs/modules/arch.md
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a pure-arithmetic loop function submitted to ThreadPoolExecutor WHEN
     advisories run THEN a GIL-bound suggestion fires naming the loop; GIVEN a socket-read
@@ -4360,7 +3777,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Child 5 of T-0693, the user's seem-IO-bound/seem-CPU-bound mandate. Classify each function from normalized-model events: IO-BOUND if dominated by curated IO calls (sockets/files/http/subprocess/db), CPU-BOUND if loop/arithmetic-dense with no IO, MIXED/UNKNOWN otherwise (advisories only fire on confident classifications -- T-0332 noise discipline). Advisories: CPU-bound work submitted to ThreadPoolExecutor or awaited in the event loop -> GIL-bound, suggest ProcessPool/native; trivially-small IO-bound tasks under ProcessPoolExecutor -> IPC overhead, suggest threads/async; async def with zero awaits (from T-0696) -> not actually async, suggest plain def; sequential awaits over independent IO -> suggest gather. Each advisory names the classification evidence (the dominating call sites), never a bare switch-your-model.
 
@@ -4374,7 +3790,6 @@ kind: feature
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0331
 scope:
 - strata-core/src/parse.rs
@@ -4382,10 +3797,6 @@ scope:
 - editors/**
 - docs/strata/**
 - tests/unit/strata/
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN two nodes with write-mode access to one resource and no arbiter WHEN
     sys checks run THEN a fail-closed error; GIVEN the same with a declared arbiter
@@ -4393,7 +3804,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Second half of the resource-contention mandate -- the grammar extension. Add: (1) access MODE on resource edges (owns/acl/stores gain mode=read|append|alpha|write|exclusive, default write for backward compat with current semantics -- decide and document). ALPHA SEMANTICS (user-specified 2026-07-22, the update/upgradeable-lock pattern): alpha declares INTEREST in a future writer lock; many writes need a read just before, so alpha sits between read and write. Compatibility matrix to encode and check: read+read OK; read+alpha OK (alpha never conflicts with readers); alpha+alpha CONFLICT (exactly one writer-intender per resource -- this is what prevents the two-readers-both-upgrading deadlock); alpha+write and write+anything CONFLICT; an alpha holder upgrades to write only once readers drain. (2) a shared-resource declaration with an ARBITER (resource NAME mode... arbitrated_by NODE|lock NAME) so two writers are provable-safe only through a declared arbiter/lease; (3) contention proof obligation: for every resource whose declared accessor modes violate the compatibility matrix (>1 writer-mode with no arbiter, OR >1 alpha declarant) a SYS error (fail-closed). parse.rs node/store symmetry per T-0261 precedent, tmLanguage update, docs/strata section, litmus fixtures. Field motivation: frob's own ledger-lock/refs-stash/info-exclude incidents -- repo-global resources with multiple writers and only convention as the arbiter. The mode-blind rules ship first in the sibling ticket; this upgrades them to mode-aware without renaming.
 
@@ -4415,10 +3825,6 @@ scope:
 - src/frob/strata/**
 - src/frob/vet/**
 - tests/unit/strata/
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a node declaring mode=read whose bound code opens the resource for writing
     WHEN sys checks run THEN a fail-closed error names the write site; GIVEN mode=exclusive
@@ -4427,7 +3833,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 User mandate 2026-07-22: contention semantics are worthless unless ENFORCED -- a declared mode nothing verifies is the catalogued-is-not-enforced trap (T-0343 doctrine). For every node with code= bindings and a declared resource mode (T-0700 grammar), join the declaration against the code's OBSERVED effects (the T-0595 code-binding pattern, wired to production per T-0630; effect classification from the vet/T-0339 capability resolvers): READ = zero write-capable operations against the resource (write-mode opens, os.remove/rename, SQL DML, sends on the port) -- fail-closed on opaque access to the resource; APPEND = writes only via append-mode opens, no truncate/rewrite; ALPHA (update/upgradeable-lock intent, user-specified) = reads freely, but every observed WRITE against the resource must be provably preceded on the same path by an upgrade acquisition (alpha->write transition through the declared arbiter) -- a write reachable while still in alpha-only context fails closed; additionally the model-level alpha+alpha exclusion (at most one alpha declarant per resource) is checked at elaboration, and the code-level analysis flags the upgrade-deadlock ANTI-PATTERN (acquiring write while holding plain read on the same resource, the case alpha exists to prevent -- recommend alpha in the finding); WRITE = read+write allowed but only on declared paths (undeclared sibling access = finding); EXCLUSIVE = write conformance PLUS every observed access provably inside the declared arbiter/lease context (join T-0694's code-level lock identification with the model-level arbiter declaration; an access path outside the arbiter fails closed). Violations are SYS errors naming the node, the declared mode, and the offending observed operation. Litmus fixtures per mode, firing and clean.
 
@@ -4441,7 +3846,6 @@ kind: feature
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0331
 scope:
 - strata-core/src/parse.rs
@@ -4449,10 +3853,6 @@ scope:
 - editors/**
 - docs/strata/**
 - tests/unit/strata/
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN two entry nodes declaring users 300k and 200k both flowing into one
     db resource WHEN elaboration runs THEN the db's aggregate demand is 500k and queryable;
@@ -4460,7 +3860,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 User mandate 2026-07-22 (starvation semantics prerequisite): the model has no notion of LOAD, so an exclusive lock and an exclusive lock behind 500k users look identical. Add: (1) demand declarations on entry nodes -- users N (steady population) and/or rate N per_s (arrival rate), parse.rs node/store symmetry per T-0261; (2) propagation: demand flows along existing Flow edges, SUMMING at fan-in, so any node/resource can be asked 'what aggregate demand reaches you' (elaboration-time computation, queryable like effects); (3) optional capacity/holding-time hints on resources and arbiters (capacity N, holds MS) with documented defaults; (4) tmLanguage + docs/strata section + litmus fixtures (propagation sums correctly across fan-in/fan-out, missing demand is distinguishable from zero demand). Consumers (utilization/starvation obligations) are the sibling ticket.
 
@@ -4481,10 +3880,6 @@ parent: T-0331
 scope:
 - src/frob/strata/**
 - tests/unit/strata/
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN 500k declared users flowing to a db with mode=exclusive and default
     holding time WHEN sys checks run THEN a utilization error fires showing the arithmetic;
@@ -4494,7 +3889,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 User mandate 2026-07-22: the 500k-users-vs-exclusive-write-lock case. Three obligation families over the T-0700 modes + demand grammar: (1) SERIALIZATION-POINT UTILIZATION: every effective-concurrency-1 point (exclusive mode, single arbiter, alpha-gated writer path) compares aggregate inbound demand x holding-time hint against capacity; over threshold = SYS error SHOWING THE ARITHMETIC in the finding (demand, holding time, resulting utilization/wait), not a vibe; an exclusive/arbitered resource with UNDECLARED upstream demand fails closed with demand-undeclared (the check cannot be silently skipped). Coordinate with T-0645 (SPOF -- a saturated single arbiter is quantitative SPOF) and T-0646 (backpressure -- what bounds the queue at the serialization point). (2) WRITER STARVATION policy: read-heavy resource whose declared lock discipline lets readers perpetually preempt the writer (plain RW preference, no alpha or fair-queuing declaration) = advisory recommending alpha (T-0700) or fair queuing, even at low utilization. (3) UNBOUNDED WAIT: lock/arbiter acquisition on a contended resource with no declared timeout joins the T-0640 timeout obligation family. Litmus fixtures per family, firing and clean.
 
@@ -4507,22 +3901,16 @@ kind: bug
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/strata/**
 - tests/system/test_cli_native_missing.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a repo with .strata files and no built native WHEN frob check runs THEN
     SYS004 fails loud AND both tests pass
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 CI triage 2026-07-22: tests/system/test_cli_native_missing.py x2 fail on current main (test_check_fails_loud_with_sys004_when_strata_present, test_check_unaffected_when_no_strata_files). Investigate whether the native-staleness/fingerprint work (T-0570 doctor, _native_staleness) changed the SYS004 fail-loud contract or the tests' fixtures rotted; fix whichever is wrong -- the contract (a missing native with strata files present must fail LOUD, not silently skip) must hold.
 
@@ -4535,23 +3923,17 @@ kind: feature
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/perf/**
 - src/frob/stats/**
 - docs/design/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN the children closed WHEN the perf harness runs THEN a queryable hot-graph
     exists under .frob at sub-100KB with per-section decile readouts
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 User mandate 2026-07-22: auditing/advisories for slow operations. Build a repo-wide hot-graph: per-section timing (major loop/branch bodies, external call edges, internal functions) collected at harness/test time, stored compactly, queryable, with advisories and regression ratcheting. STORAGE DECISION (user-driven): NOT normal distributions (heavy-tailed/multi-modal latency destroys mean/sigma) and NOT raw traces (megabytes) -- mergeable log-bucket quantile sketches (DDSketch-style, tunable relative-error alpha, ~hundreds of bytes/section), decayed merge = prior->update semantics, deciles read off at query time. Attribution WITHOUT sys.settrace: sampling collector + the normalized model's known line spans (T-0609..) map each stack sample to its enclosing section statically. Children: collector+attribution, sketch store, query surface, advisories+ratchet. Builds on src/frob/perf (existing harness/profile artifact, T-0582) and src/frob/stats -- extend, do not fork.
 
@@ -4565,16 +3947,11 @@ kind: feature
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0709
 scope:
 - src/frob/stats/**
 - src/frob/perf/**
 - tests/unit/perf/
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN bimodal latencies (1ms and 100ms modes) WHEN sketched at alpha=2 percent
     THEN p10/p50/p90 read back within relative error and the serialized sketch is
@@ -4583,7 +3960,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Child 2: the user-specified compact encoding. DDSketch-style log-scale bucket sketch per section/edge: tunable relative-error alpha (frob.toml, default ~2 percent), mergeable, serialized to .frob sqlite keyed by stable section id (symbol digest + section kind + span -- survives line drift via the existing symbol digest machinery). prior->update = merge(current_run_sketch, decay(stored_prior, half_life_runs)); deciles/any-quantile computed at read time, never stored. Size budget enforced: a repo-wide store cap (~100KB default) with eviction of coldest sections, so it structurally cannot grow to megabytes. Property tests: merge associativity, quantile relative-error bound holds under adversarial bimodal inputs (the anti-normal-distribution case).
 
@@ -4605,10 +3981,6 @@ scope:
 - src/frob/app/**
 - src/frob/gates/**
 - docs/modules/perf.md
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a section whose p90 regresses beyond tolerance vs the stored prior WHEN
     frob check runs with the ratchet enabled THEN a PERF finding names the section
@@ -4617,7 +3989,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Child 3: consumers. (1) QUERY: frob perf hot [--top N --by p90|p50xcount] renders the hot-graph (section, callee edge, decile readout, sample count) from the sketch store; MCP tool mirror for agents. (2) ADVISORIES (suggestion tier, T-0332 noise discipline): external call edge dominating a loop body's time -> batch/cache/move-out-of-loop suggestion naming the edge and its deciles; nested-loop section hot AND upstream of a fan-in -> complexity suspect; section p90 >> p50 (heavy tail) -> variance advisory naming likely modes. (3) REGRESSION RATCHET: current run sketch vs stored prior -- quantile shift beyond alpha + configured tolerance = PERF finding naming the section and both deciles (ratchet-pool style per T-0569/T-0594 precedent, baseline-old error-new).
 
@@ -4630,18 +4001,11 @@ kind: bug
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 found while working T-0706: 2642c5f3 (T-0524) removed the docs/guides/extending/capability-registry.md#capability-registry frob:doc anchor above DANGEROUS_OPERATIONS in src/frob/vet/_capability_registry.py as a supposed COV007 duplicate, but no other anchor in the file carried the extending-guide fragment -- broke tests/unit/test_extending_guides_complete.py silently until T-0706 caught and restored it (waived SCOPE001 there). Audit other T-0524 COV007 dedup commits for the same over-pruning pattern against docs/guides/extending/registry_of_registries.json rows.
 
@@ -4655,17 +4019,12 @@ kind: ux
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/tickets/**
 - src/frob/gates/**
 - src/frob/app/**
 - docs/modules/tickets.md
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN 5 stale lease files WHEN frob ticket doable runs THEN the queue prints
     with at most one summary line about leases AND frob check (or doctor) reports
@@ -4673,7 +4032,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 User mandate 2026-07-22: frob ticket doable currently emits a wall of per-invocation diagnostics (stale-lease warnings -- 'T-XXXX lease references a worktree that no longer exists, treating as stale, skipped' -- repeated for every stale lease on EVERY queue query; observed 5 leases x repeated blocks flooding the session-start listing) plus scope/lease conflict notes. Doable's job is a clean ordered queue listing. Move the diagnostics: (1) doable emits the list only (a single summary line like 'N stale leases skipped, see frob check' is acceptable); (2) a check gate (LEASE001-style, warning tier) or the doctor reports stale leases, lease-worktree mismatches, and scope-conflict details ONCE with remediation (the lease file paths to clean); (3) log-level discipline per T-0202/T-0235 precedent -- the per-lease detail goes to DEBUG, not stdout.
 
@@ -4687,16 +4045,11 @@ kind: feature
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/tickets/**
 - src/frob/app/ticket_runner.py
 - docs/modules/tickets.md
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN an epic with two stories each with open leaf tickets WHEN frob ticket
     doable runs THEN only leaves surface and closing the epic is refused while descendants
@@ -4705,7 +4058,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 User mandate 2026-07-22 (first filing -- nothing like this existed in the ledger): formalize dev-team organization on top of the existing parent/blocked_by graph. (1) TIERS: an explicit tier field (epic|story|ticket, default ticket) with structural rules -- epics parent stories, stories parent tickets, doable only ever surfaces leaf tickets, an epic/story cannot close while an open descendant exists (today's convention, enforced); migration: existing EPIC-titled tickets get tier epic mechanically. (2) SPRINTS: a sprint field (free-form label like 2026-W30 or sprint-14) settable at new/via frob ticket sprint assign; frob ticket sprint show SPRINT lists committed tickets with state rollup; frob ticket doable --sprint SPRINT restricts the queue to the commitment; velocity/burndown derived from ledger state-transition history (closed-per-sprint counts), no new storage. (3) TEAM VIEWS: doable already orders by priority/age -- add --by-parent grouping so a story's remaining leaves display together (the user's pop-the-whole-stack-not-just-the-top concern). Keep the ledger format backward compatible (absent fields default); single-writer CLI discipline throughout. Coordinate with T-0571 (review records) and T-0573 (fleet routing) -- sprint labels should be routable cross-repo via fleet in a follow-up, note it, do not build it here.
 
@@ -4719,20 +4071,13 @@ kind: bug
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/app/**
 - tests/system/test_cli_check.py
 - tests/system/test_cli_perf.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Found while working T-0705. tests/system/test_cli_check.py::TestCheckTicketScopedAlwaysReportsOnFailure::test_ticket_scoped_nonzero_exit_has_diagnostic_output, tests/system/test_cli_check.py::TestCheckGatesStage::test_only_gates_passes_once_bound_and_tested, and tests/system/test_cli_perf.py::TestCheckOnlyPerf::test_perf001_fixture_warns_but_check_exits_zero all fail with CHECK001 'unknown project type: 'unknown' (no dispatchable language stage)' even though each fixture DOES git init + commit (so this is not the T-0705 git-ls-files mechanism at all). Each of these fixtures writes a bare .py file with no pyproject.toml. Project-type detection (src/frob/app/**, exact site not yet located) appears to require pyproject.toml presence rather than falling back to extension-based detection when only .py files are tracked. Investigate src/frob/app/config.py's project-type resolution and either fix the fixtures (add a pyproject.toml) or fix the detector, whichever is the real contract.
 
@@ -4746,19 +4091,12 @@ kind: bug
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/gitio.py
 - src/frob/gates/__init__.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Found while working T-0705. `_load_diff`'s diff_load_failed classification (T-0550) does not distinguish 'root is not a git repository at all' (GitError.NotARepo-shaped, e.g. a one-off frob check <path> on a plain filesystem directory) from 'a real git repo's working_diff genuinely failed' (bad --base, detached HEAD). Both currently hard-error COV002/SCOPE001/TODO001 identically. This dominates ~9 of T-0705's originally-reported ~12 system-test failures in tests/system/test_cli_check.py (test_clean_code_exits_zero, test_skip_ruff, test_skip_exports, test_check_skip_from_frob_toml, test_scoped_docanchor_matches_unscoped, test_only_gates_reports_violation_with_remedy, test_clean_ts_passes_tsc) -- these fixtures never call git init, so working_diff fails not because a real diff is broken but because there is no repo at all. T-0705's scope (the 4 named git-ls-files gates) was fixed and does not touch this gitio.py/T-0550 mechanism; this ticket tracks whether a genuinely-no-repo root should be treated as an empty/clean diff (skip diff-gates) rather than the loud diff_load_failed violation, without weakening the T-0550 protection against a REAL git failure inside an actual repo.
 
@@ -4771,18 +4109,11 @@ kind: bug
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - tests/system/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 T-0692 added a global 120s/thread pytest-timeout default (pyproject.toml addopts). tests/system/test_scaffold_dx.py (pytest.mark.slow, spawns uv sync + a real venv + full lint/typecheck/test/frob-check pipeline) legitimately runs well over 120s and needs an explicit @pytest.mark.timeout(N) override (and an audit of any other tests/system/** file that might exceed 120s) so it does not start failing under the new default. Out of T-0692's docs/guides+config-only scope; filed per that ticket's Done report.
 
@@ -4795,19 +4126,12 @@ kind: feature
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/vet/**
 - docs/design/registry/supply-chain.yaml
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Standing home for the 39 supply-chain.yaml entries whose controls previously carried deferred:T-0389 (the reconciliation ticket itself) -- a self-reference that would orphan them the moment T-0389 closed; T-0389's pass re-pointed them here. Each entry needs either a real enforcing check in src/frob/vet/ (then flip to handled_by) or a reasoned out_of_scope disposition (many require external network/registry data -- checkability tag requires-external-data -- and are legitimate deferrals to future external-data-fetching work, not silent drops).
 
@@ -4821,19 +4145,12 @@ kind: feature
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/strata/**
 - docs/design/registry/system-design.yaml
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Standing home for the 49 system-design.yaml entries whose controls previously carried deferred:T-0392 (the reconciliation ticket itself) -- a self-reference that would orphan them the moment T-0392 closed; T-0392's pass re-pointed them here. Each entry needs either a real enforcing SYS2xx/REL2xx check in src/frob/strata/ (then flip to handled_by) or a reasoned out_of_scope/duplicate_of disposition. Related to the T-0331 systems-checks epic and its T-0658 N:M coverage close condition (which is itself blocked by T-0392) -- once this ticket's entries get real checks, T-0658's coverage math should account for them the same way it accounts for the T-0331-deferred 56.
 
@@ -4853,17 +4170,12 @@ parent: T-0329
 scope:
 - src/frob/lang/**
 - tests/unit/test_lang_kotlin.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a repo with a .kt file WHEN frob check runs THEN the file parses into
     the symbol graph (no KeyError) and its symbols appear in frob map output
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 T-0614's KotlinAdapter works standalone but .kt/.kts files are invisible to parse_file/frob check: _EXTENSION_TABLE lacks the extensions and _extract.py's _WALKERS dict-subscript (line ~91, no fallback) would KeyError if the table alone were wired. Deliver the RawSymbol walker for kotlin (mirroring the TS/Rust walkers in _extract.py), COMMENT_TYPES entry, and the extension-table wiring together, with tests proving a real .kt file flows through parse_file into the graph. Was T-0723 (ex-draft, id lost at land) (prose-only) in T-0614's Done report.
 
@@ -4877,19 +4189,12 @@ kind: bug
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - tests/unit/strata/test_export_golden.py
 - tests/unit/strata/golden/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 found while working T-0699: tests/unit/strata/test_export_golden.py::TestExportGolden::test_k8s/test_seccomp/test_iam fail on a clean worktree at main tip (e2f38a51, no T-0699 changes involved) -- design/frob.strata gained fleet node/flows (T-0614 era merge) but the committed golden JSON fixtures were not regenerated to match. Pre-existing, unrelated to T-0699's SYS2xx resource-contention work; regenerate the golden fixtures or fix whatever drifted.
 
@@ -4903,15 +4208,10 @@ kind: bug
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0329
 scope:
 - src/frob/arch/_python.py
 - tests/unit/test_arch.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN class Foo with an annotated field WHEN PythonAdapter.adapt runs THEN
     the field appears in NormalizedClass.fields AND the T-0615 waiver test is updated
@@ -4919,7 +4219,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Found while working T-0615 (four-way equivalence meta-test). PythonAdapter._py_class_fields (src/frob/arch/_python.py) gates on 'if c.type != "expression_statement": continue' over a class body's named_children, expecting a class-level annotated assignment to be wrapped in an expression_statement node. In practice tree-sitter-python's grammar yields the assignment node directly as a named child of the class block, with NO expression_statement wrapper. Concrete repro: PythonAdapter().adapt(...) on 'class Foo:\n    x: int = 0\n' returns classes[0].fields == [] every time -- confirmed directly against the adapter, not just inferred. No existing test caught this because TestPythonAdapter's real-fixture tests never assert on .fields via the adapter itself (only a hand-built NormalizedField construction test exists, bypassing the adapter). T-0615's tests/unit/test_arch.py::TestFourWayCrossLanguageEquivalence::test_python_field_detection_is_a_documented_waiver currently PINS this broken behavior as a documented waiver (asserting derived.fields == []) -- fixing this ticket must also update/remove that waiver test to assert real parity with TS/rust/kotlin (which all capture this shape via their own adapters).
 
@@ -4980,8 +4279,6 @@ evidence:
 - tests/unit/test_arch_srp.py::TestArchGateSrpWiring::test_arch101_respects_explicit_frob_toml_override
 - tests/unit/test_arch_srp.py::TestArchConfigThresholds::test_reads_srp_overrides
 - tests/unit/test_arch_srp.py::TestArchConfigThresholds::test_srp_defaults_without_frob_toml
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a fixture repo with a two-cluster class WHEN frob check runs THEN ARCH101
     appears in arch output with frob.toml-tunable thresholds AND the rule ids are
@@ -5000,7 +4297,6 @@ acceptance:
   - tests/unit/test_arch_srp.py::TestArchConfigThresholds::test_srp_defaults_without_frob_toml
 threat: null
 component: null
-labels: []
 ```
 T-0616 (and successive T-0330 children) deliver check families over the normalized model with module-default thresholds, but nothing invokes them in production -- the invoked-by-nothing pattern, called out by T-0616's reviewer with the exact wiring list: (a) register run_srp_checks (and each subsequent family runner) in analyze_project's dispatch so they fire during real frob check; (b) thread the thresholds (LCOM4_MIN_METHODS, LCOM4_MIN_FIELD_USING_METHODS, GOD_MODULE_MIN_EXPORTS, GOD_MODULE_MIN_CLUSTERS, MIXED_CONCERN_MIN_DECISION_POINTS, plus later families') into frob.app.config's [arch] table; (c) add ARCH101-103 (and successors) to _KNOWN_GATE_RULES for waiver/registry visibility; (d) coordinate with T-0626's registry rows. Extend as each T-0617..T-0625 sibling lands -- this is the standing wiring home for the family.
 
@@ -5149,15 +4445,10 @@ kind: feature
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0587
 scope:
 - src/frob/gates/**
 - tests/test_gates.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a vitest project with a frob:tests directive naming a real vitest test
     WHEN gates run THEN the edge resolves against the collected id and the structural
@@ -5165,7 +4456,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 T-0587 built real vitest/ctest collectors (collect_ts_tests, collect_cpp_tests in src/frob/testing/_collect.py, exported from frob.testing) but left frob.gates untouched (out of T-0587's declared scope, src/frob/testing/ only). This ticket wires collect_ts_tests/collect_cpp_tests into frob.gates test-evidence loading (_load_tests, alongside collect_python_tests/collect_rust_tests) so frob:tests directives on TS/C/C++ resolve against REAL collected node ids, and retires _edge_is_native_unverified's structural name/path fallback for those languages once real collection exists (per T-0552's original plan).
 
@@ -5179,15 +4469,10 @@ kind: feature
 origin: human
 created: '2026-07-22'
 priority: high
-blocked_by: []
 parent: null
 scope:
 - src/frob/**
 - docs/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN any frob-enabled repo with [natives] WHEN uv run frob natives build
     runs THEN natives compile with the shared per-clone cache and the repo Makefile
@@ -5195,7 +4480,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 User directive 2026-07-22: T-0732's shared CARGO_TARGET_DIR fix lives in THIS repo's Makefile -- wrong layer; fix ALL repos structurally. frob.toml [natives] already declares the native crates (load_natives); the build logic belongs in frob: a "frob natives build" subcommand that does what make core does (maturin develop per declared native) WITH the shared-cache mechanism (git-common-dir keyed CARGO_TARGET_DIR, cargo's own locking -- T-0732's verified design) built in. Every repo's Makefile core target becomes "uv run frob natives build" -- one line, zero per-repo cache logic, upgraded by upgrading frob. Doctor integration: the existing native-staleness fingerprint check points at the new command as remedy. Children: (1) the subcommand + this repo's Makefile shim conversion; (2) scaffold template + conformance drift check; estate rollout via fleet at close.
 
@@ -5209,23 +4493,17 @@ kind: feature
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0732
 scope:
 - src/frob/scaffold/**
 - Makefile
 - docs/guides/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a warm pool of N WHEN an agent leases a worktree THEN it starts with
     natives built and main current, and the pool refills in the background
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Part 2 of T-0732 (part 1, the shared cargo cache, landed 30.4s->11.4s): pre-create N worktrees with natives built + main merged; agents lease from the pool; a background refresh re-warms after lands. Closes the residual per-worktree crate recompile cost (cargo keys by absolute path) by amortizing it ahead of dispatch. Coordinate with T-0736's scaffold-managed blocks and T-0735's frob natives build.
 
@@ -5239,23 +4517,17 @@ kind: security
 origin: human
 created: '2026-07-22'
 priority: high
-blocked_by: []
 parent: null
 scope:
 - src/frob/arch/**
 - src/frob/graph/**
 - docs/design/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN the children closed WHEN frob check runs on fixtures for each fragment
     THEN each child gate/advisory fires per its own acceptance
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 User mandate 2026-07-22: statically enforce system state protocols -- the *_init-never-called / *_deinit-never-called class, and generally functions valid only in particular states (TCP-handshake-style machines), plus cleanup-on-all-paths. Frame: TYPESTATE over the call graph, restricted to two decidable fragments: (a) module/subsystem protocols (the object is a singleton subsystem -- reachability + summaries suffice, no alias analysis); (b) declared object protocols checked at summary granularity. DELIBERATE DECISIONS: declared protocols with name-pattern-inferred init/deinit convenience (inference ONLY for the common pair, never for general machines); per-function summary fixpoint engine shared with the T-0686 may-raise engine (one engine, three clients: exceptions, capabilities, protocols -- no-duplication); language excuses are recorded DISCHARGES naming their mechanism (Rust Drop unless mem::forget observed; C++ RAII only when init result held by destructor-bearing object; Python with-blocks, GC finalizers NEVER count; TS using/try-finally), per T-0383 caught_by doctrine. LIMITS declared: no aliased per-object heap typestate (Rust owns that); concurrent establishment races belong to T-0693 family; dynamic dispatch = Unknown fail-closed (T-0339). Children: declaration surface, summary engine, state-requirement verification + excuses, cleanup obligations. Umbrella closes when children close.
 
@@ -5269,18 +4541,11 @@ kind: bug
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/tickets/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 found while working T-0726 (TICK006 phantom-filing gate): T-0367 existed in tickets-archive.md as a fully-formed yaml frontmatter block + body (title/state/scope/created all present) but with NO <!-- ticket:T-0367 --> marker line before it, so _parse_ledger's marker-based chunking silently absorbed its entire block as prose inside the PRECEDING ticket's (T-0363) body instead of parsing it as its own ticket -- load_archive/load_all never saw T-0367 at all (frob ticket show T-0367 would have 404'd). Fixed the one instance directly in tickets-archive.md (added the missing marker, restoring T-0367 as its own resolvable block) since it directly corrupted TICK006's phantom-filing measurement, but did not audit the rest of the ~500-ticket ledger for the same missing-marker shape, nor find the write path that produced it (a hand-edit? a merge-splice bug? frob ticket new failing mid-write?). Investigate: (1) whether any other ledger block is missing its marker the same way (a scripted marker-vs-yaml-id cross-check over both ledger files), (2) the root cause / write path that can produce a markerless block, (3) whether frob.tickets._store or the land/splice path needs a structural guard against ever writing yaml frontmatter without its marker.
 
@@ -5293,21 +4558,15 @@ kind: bug
 origin: agent
 created: '2026-07-22'
 priority: low
-blocked_by: []
 parent: T-0692
 scope:
 - tests/system/test_scaffold_dx.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN the slow scaffold test WHEN the suite runs under the global 120s ceiling
     THEN the test carries its own measured override and passes cold-cache
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Lost draft from T-0692 (pytest-timeout guard): tests/system/test_scaffold_dx.py spawns a real uv sync + venv + full pipeline; measured 4.52s locally (25x margin under the 120s ceiling) but cold-cache CI could erode it. Add an explicit pytest.mark.timeout override with a measured-based value and a comment. T-0692 reviewer judged deferral safe-to-land; this is the standing home.
 
@@ -5328,17 +4587,12 @@ scope:
 - src/frob/arch/_normalized.py
 - src/frob/arch/_rust.py
 - tests/unit/test_arch.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a Rust enum with tuple and struct variants WHEN RustAdapter.adapt runs
     THEN variant payload shapes are represented and asserted by a test
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Lost draft from T-0612 (Rust adapter): enum variants with associated data currently flatten to NormalizedField, losing the payload shape. Extend the model (NormalizedVariant or fields on NormalizedClass) keeping _normalized.py tree_sitter-free, map Rust enum payloads and coordinate with T-0681 (TS phase 2, same model-extension class).
 
@@ -5387,8 +4641,6 @@ evidence:
 - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_unreachable_function_is_reported_not_analyzed_never_silent
 - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_non_converging_scc_is_reported_as_a_timeout_error_and_poisoned
 - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_diamond_shaped_calls_join_without_duplication_or_loss
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a recursive call cluster with transitions WHEN the fixpoint runs THEN
     summaries converge and match hand-computed values; GIVEN an unresolvable callee
@@ -5406,7 +4658,6 @@ acceptance:
   - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_diamond_shaped_calls_join_without_duplication_or_loss
 threat: null
 component: null
-labels: []
 ```
 Child 2 of T-0739. The shared per-function summary fixpoint engine over the call graph: each function summarizes to (required protocol states, may-perform transitions, acquired/released/escaped resources) computed bottom-up to fixpoint, recursion via lattice join, using the T-0339-family resolvers for callee binding. DESIGN CONSTRAINT: ONE engine shared with T-0686 may-raise (whichever builds first hosts the engine; the other consumes -- coordinate explicitly, no second fixpoint). NO-FAIL-SILENT (user mandate): an unresolvable callee contributes Unknown which POISONS the summary (poisoned summaries are ERRORS at verification unless waived with reason); a function outside the call graph (unreachable from any entrypoint) is reported as not-analyzed, never silently passed; engine timeouts/aborts are ERRORS naming the SCC that failed to converge.
 
@@ -5535,7 +4786,6 @@ scope:
 - src/frob/arch/**
 - docs/modules/gates.md
 - tests/test_gates.py
-scope_changes: []
 evidence:
 - tests/test_gates.py::TestProtocolVerificationGate::test_state_never_established_is_an_error
 - tests/test_gates.py::TestProtocolVerificationGate::test_state_established_by_a_reachable_transition_is_not_flagged
@@ -5556,8 +4806,6 @@ evidence:
 - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_typescript_try_finally_discharges
 - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_typescript_bare_call_is_not_discharged
 - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_gc_finalizer_never_discharges
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a C fixture where net_requires-annotated functions are reachable without
     net_init WHEN the gate runs THEN an ERROR names the unestablished state and the
@@ -5586,7 +4834,6 @@ acceptance:
   - tests/test_gates.py::TestProtocolLanguageExcuseDischarge::test_gc_finalizer_never_discharges
 threat: null
 component: null
-labels: []
 ```
 Child 3 of T-0739. Verification: for every call site of a requires-state function, the caller-context established states (from summaries + entrypoint initial states) must include the required state -- violation is a GATE-TIER ERROR (not advisory; user mandate: enforceable, never fail-silent). A transition function reachable in a state where the transition is undefined = ERROR. The *_init-never-called and *_deinit-orphaned cases fall out: an inferred init protocol whose init is never reachable from any entrypoint while state-requiring functions are = ERROR naming both. LANGUAGE EXCUSES as recorded discharges (T-0383 caught_by doctrine): Rust pairing discharges to Drop UNLESS mem::forget/ManuallyDrop observed on the type (revokes); C++ discharges to RAII only when the init result is observed held by a destructor-bearing class; Python discharges lexically to with-blocks; TS to using/try-finally; GC finalizers NEVER discharge. Every excuse names its mechanism in the finding output; an excuse whose mechanism cannot be observed in code is an ERROR, not a discharge. Unknown/poisoned summaries at a checked call site = ERROR (waivable with reason).
 
@@ -5756,10 +5003,6 @@ scope:
 - src/frob/arch/**
 - src/frob/gates/**
 - tests/test_gates.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a C fixture acquiring a resource with an early-error return skipping
     cleanup WHEN the gate runs THEN an ERROR names the leaking path; GIVEN the Python
@@ -5769,7 +5012,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Child 4 of T-0739. Cleanup obligations: (a) intraprocedural -- every acquisition (transition into a resource-held state) must be postdominated by its release on ALL exits, using T-0686 may-raise sets for the exceptional edges (blocked_by T-0686), UNLESS the resource escapes (returned/stored) -- escape transfers the obligation to the receiver via the summary (T-0745); (b) per-protocol cleanup policy: cleanup = always | on-error | process-exit-ok, declared in the protocol (T-0744), default on-error; the *_deinit-never-called case = a protocol with cleanup=always whose deinit is unreachable from entrypoint terminating paths = ERROR. NO-FAIL-SILENT: a path the analysis cannot classify (poisoned/Unknown) is an ERROR at the acquisition site; escapes into containers/globals the summary cannot track are reported as obligation-escaped-untracked findings (waivable), never dropped.
 
@@ -5783,19 +5025,12 @@ kind: bug
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - tests/system/test_cli_check.py
 - tests/system/conftest.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 found while working T-0627: a wide swath of tests/system/test_cli_check.py (TestCheckCleanProject, TestCheckSkipFlags, TestCheckGatesStage, TestCheckDocAnchorScopedVsUnscoped, TestFrobTomlCheckDefaults, TestCheckTypescript, TestCheckStampBaselineAndDelta, TestCheckTicketScopedAlwaysReportsOnFailure) fail on this worktree's post-merge main: _make_project's tmp_path fixture never git-inits, and newly-merged gates (COV002, SCOPE001, TODO001) now error loudly on a missing git repo instead of the older gates that degraded quietly -- 'working diff against base=main failed to load ... this is a load failure, not a clean/empty diff, so it is not silently passing'. Pre-existing as of the T-0627 warm-up merge, not caused by T-0627's changes (verified: T-0627's own new tests pass; this same failure set reproduces independent of T-0627's diff). Fix is either: git-init tmp_path in the shared fixture, or add gate exemptions those specific tests already relied on for the older gate set.
 
@@ -5809,20 +5044,13 @@ kind: ux
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/app/check_runner.py
 - src/frob/gates/__init__.py
 - docs/guides/agent-playbook.md
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 follow-up from T-0627: --stamp-baseline runs the full undelta'd gates pass (same ~110s+ wall time as a bare frob check) and is deliberately NOT refused under FROB_AGENT since it is a legitimate one-shot warm-up step, not a repeatable verification loop -- so it can still stall a dispatched sub-agent the same way T-0627 fixed for plain frob check. T-0627's ticket body named this as option (c) (make --stamp-baseline itself incremental) and left it unbuilt. Needs either: stamp per stage-group chunk and merge, or a documented coordinator-only path (stamp-baseline runs from the coordinator's shell before dispatch, never from an agent's).
 
@@ -5843,7 +5071,6 @@ scope:
 - src/frob/tickets/**
 - src/frob/app/ticket_runner.py
 - docs/modules/tickets.md
-scope_changes: []
 evidence:
 - tests/test_tickets_dispatch_stale.py::TestHasLiveLease::test_queued_with_live_lease_is_in_flight
 - tests/test_tickets_dispatch_stale.py::TestHasLiveLease::test_queued_with_no_lease_is_not_in_flight
@@ -5856,8 +5083,6 @@ evidence:
 - tests/test_tickets_dispatch_stale.py::TestUndispatchedStale::test_high_past_threshold_alarms
 - tests/test_tickets_dispatch_stale.py::TestUndispatchedStale::test_configured_threshold_from_frob_toml
 - tests/system/test_spawn_budget.py::test_ticket_doable_spawns_each_argv_at_most_once
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a critical ticket unleased past threshold WHEN frob ticket doable runs
     THEN its row shows priority and an UNDISPATCHED alarm at the top of the dispatchable
@@ -5868,7 +5093,6 @@ acceptance:
   - tests/system/test_spawn_budget.py::test_ticket_doable_spawns_each_argv_at_most_once
 threat: null
 component: null
-labels: []
 ```
 User mandate 2026-07-22, after T-0731 (CRITICAL) sat filed-but-undispatched for hours while its conflict class kept firing: the doable listing must make dispatch state and priority impossible to miss. (1) PRIORITY COLUMN: doable renders the priority (critical/high/medium/low) per row -- ordering exists (T-0411) but is invisible today, so a critical at rank 4 reads like any other line. (2) DISPATCH-STATE SPLIT: rows with a live, non-stale lease (T-0716 overlay machinery) render in a separate IN-FLIGHT section (or an @worktree marker) below the truly-dispatchable rows, so line 1 of the top section is always the next thing to dispatch -- no mental subtraction of in-flight work. (3) STALENESS ALARM: a critical or high ticket that has been dispatchable (unleased, unblocked) longer than a configurable threshold (frob.toml, default 4h for critical / 24h for high, measured from the last state change or filing) gets a loud UNDISPATCHED marker on its row AND a TICK-family check warning, so the condition surfaces in frob check too, not only when someone happens to run doable. Coordinate with T-0714 (doable noise relocation) and T-0716 (lease overlay) -- one display surface, no duplicate lease-reading logic.
 
@@ -5930,7 +5154,6 @@ kind: security
 origin: human
 created: '2026-07-22'
 priority: high
-blocked_by: []
 parent: T-0417
 scope:
 - src/frob/tickets/**
@@ -5965,8 +5188,6 @@ evidence:
 - tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_divergent_gate_errors_refuses_land
 - tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_divergent_warning_or_waived_count_alone_still_lands
 - tests/test_ticket_land.py::TestDoneReportThenLandRealClosuresEndToEnd::test_real_closures_done_report_then_land_succeeds
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a done-report whose typed test count differs from the actual evidence
     run WHEN done-report captures THEN it records the real count and flags the divergence;
@@ -5989,7 +5210,6 @@ acceptance:
   - tests/test_ticket_land.py::TestDoneReportThenLandRealClosuresEndToEnd::test_real_closures_done_report_then_land_succeeds
 threat: null
 component: null
-labels: []
 ```
 Root-cause analysis 2026-07-22: across ~15 review rejects this session, the single largest class was the Done report claiming numbers/state that did not reproduce (T-0572 142-reported-as-145 and 0-errors-that-was-27; T-0710/T-0724 undisclosed gate state; the phantom-filing family already closed by TICK006). The Done report is the ONLY pipeline artifact that is unverified free prose -- evidence ids resolve, scope binds, the diff is real, but the prose claims are typed from memory/stale runs. Fix: CAPTURE, do not type. Extend frob ticket done-report so structured claim fields are populated from REAL command output, not narrative: (1) a test-result field captured by actually running the recorded evidence node ids (pass count + a digest of the run), refusing to record a count the run did not produce; (2) a gate-state field auto-filled from a fresh frob check --ticket capture (the "clean except X" line becomes generated, never typed); (3) at land, re-verify the captured claims still hold against the merged tree and ERROR on divergence. The narrative prose stays for WHY; the CHECKABLE claims become captured artifacts. This is the general form of TICK006 (which made filing-claims checkable) applied to test-count and gate-state claims.
 
@@ -6108,17 +5328,12 @@ kind: security
 origin: human
 created: '2026-07-22'
 priority: high
-blocked_by: []
 parent: T-0417
 scope:
 - src/frob/mutate/**
 - src/frob/tickets/**
 - src/frob/gates/**
 - docs/modules/tickets.md
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a ticket whose recorded evidence tests all pass against a mutant of
     the changed logic WHEN close/land verifies THEN a confirmatory-only-test finding
@@ -6127,7 +5342,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Root-cause analysis 2026-07-22: several rejects were correctness bugs whose own tests PASSED because they were confirmatory, not adversarial -- written to pass for the reason the implementer built the thing (T-0611, T-0571, T-0682, T-0574, T-0710). A confirmatory test that would pass on BOTH the pre-change and post-change code proves nothing. frob already has `frob mutate`. Add a diff-scoped obligation: for a ticket touching code with new/changed tests, run those tests against the PRE-change version of the changed symbols (or a targeted mutant of the new logic) and require at least ONE recorded evidence test to FAIL on the mutant -- proving the test actually distinguishes the change. A test that passes on the mutant is a confirmatory-only test = a TEST-family warning (ratchet to error via T-0569 pool for security/bug-kind tickets). This is mutation testing scoped to the ticket diff, wired into close/land as evidence-quality verification, reusing frob.mutate.
 
@@ -6141,17 +5355,12 @@ kind: security
 origin: human
 created: '2026-07-22'
 priority: high
-blocked_by: []
 parent: T-0397
 scope:
 - src/frob/check/**
 - src/frob/gates/**
 - src/frob/tickets/**
 - docs/modules/gates.md
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a change that reddens frob sys audit WHEN land preflight runs THEN land
     errors naming the new self-audit gap; GIVEN a ticket adding a gate rule id with
@@ -6159,7 +5368,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Root-cause analysis 2026-07-22: the invoked-by-nothing pattern caused repeated rejects (T-0724 enabling the check reddened frobs OWN sys audit undisclosed; T-0630/T-0595/T-0616/T-0710 built-but-unwired). Two structural fixes: (1) SELF-AUDIT AT LAND: frob check (and frob ticket land preflight) must run the repos own self-conformance/sys-audit and ERROR if the change reddens it -- T-0724s red audit should have been a land gate, not a reviewer catch. selfconform partly does this; extend to run the full sys audit surface (contention, reliability, all SYS families) as a blocking pre-land step so no landed change leaves frobs own model failing. (2) NEW-GATE-RULE ACCEPTANCE POLICY: a ticket that adds a gate/check rule id (detectable: new entry in _KNOWN_GATE_RULES or a new SYS/REL/etc rule) MUST record, as bound acceptance evidence, a fixture that FAILS frob check before and PASSES after -- proving the rule fires through the production invocation, not just its pure function. A new rule with only unit-level evidence and no end-to-end fixture = a close-blocking finding. This makes the catalogued-is-not-enforced doctrine self-enforcing for every future gate.
 
@@ -6173,7 +5381,6 @@ kind: feature
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0330
 scope:
 - src/frob/graph/dsl.py
@@ -6181,10 +5388,6 @@ scope:
 - src/frob/arch/_normalized.py
 - src/frob/tickets/_land.py
 - docs/modules/gates.md
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN _normalized.py gains a tree_sitter import WHEN the INV gate runs THEN
     an error fires; GIVEN a comparator invariant declared with a property test THEN
@@ -6192,7 +5395,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Root-cause analysis 2026-07-22: two rejects (T-0611 tree_sitter imported into the deliberately-pure _normalized.py; T-0682 the newer state must win the splice) were violations of a DESIGN INVARIANT that existed only in the implementers/reviewers head, not as a checkable property. frob already has frob:invariant anchors + INV gates. The thread: module-level design properties (this module must not import X; this comparator must be monotonic in Y; this data model must round-trip) are not being written as invariants at the point they are established, so their violation needs a human skeptic to reconstruct. Deliver: (1) a frob:invariant flavor for IMPORT/DEPENDENCY properties (module M must never import package P) checkable statically -- T-0611s exact case becomes an INV gate error, not a review catch; (2) guidance + lint (docs + a check) that a ticket ESTABLISHING a design property (a new pure module, a new ordering/comparator, a new serialization round-trip) record it as a frob:invariant in the same change; (3) seed the two known ones now: _normalized.py-no-tree_sitter and splice_ledger-newer-wins.
 
@@ -6205,18 +5407,11 @@ kind: bug
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - tests/unit/perf/test_hotgraph.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 T-0710's TestStackSampler.test_overhead_under_five_percent measures wall-clock elapsed time (unsampled vs sampled, best-of-3) to assert sampler overhead stays under 5 percent. Under pytest-xdist parallel workers (this repo's default -n auto), concurrent worker contention can inflate wall-clock noise beyond what best-of-3 suppresses, risking flakiness in CI even though the sampler itself is not slow. Fix: mark the test to run serially (a 'serial'/xdist_group marker forcing it off the parallel grid) or relax/parameterize the tolerance for CI, whichever this repo's existing flaky-timing precedent (frob.toml/pytest.ini markers) prefers. Found during T-0710 review round 2.
 
@@ -6229,15 +5424,10 @@ kind: bug
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0710
 scope:
 - tests/unit/perf/
 - src/frob/perf/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN the overhead test WHEN the full suite runs under -n auto THEN it passes
     reliably (serial marker, CPU-time measure, or documented-tolerance margin), not
@@ -6245,7 +5435,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 From T-0710: the hot-graph overhead test (attribution sampler <5% overhead) asserts a hard <5% on a ~0.11s workload = ~5.5ms margin, best-of-3 min-vs-min. Under pytest-xdist (-n auto, the default) the baseline and sampled loops compete with 11 concurrent workers for cores -- reproduced live: the test FAILS under -n auto, passes -n0. Harden it: either mark it serial (a no-xdist / serial marker so it runs alone), or relax the CI margin with a documented tolerance, or switch to a CPU-time (not wall-clock) measure immune to core contention. Pick the robust option and document why.
 
@@ -6259,16 +5448,11 @@ kind: feature
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: T-0352
 scope:
 - src/frob/gates/_pii_structural.py
 - tests/test_gates.py
 - docs/modules/gates.md
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a TS field typed as a known secret-wrapper or a Rust field typed secrecy::SecretString
     WHEN pii_structural runs THEN a type-kind PII finding fires; a plain String field
@@ -6276,7 +5460,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 From T-0352 (TS/Rust structural PII, landed): the NAME-kind field detection is cross-language, but TYPE-kind PII signals (Python EmailStr/SecretStr) stay Python-only. Extend to nominal PII-shaped TYPES in TS/Rust: TS branded/nominal email types and known secret-wrapper types; Rust secret-wrapper crate types (secrecy::Secret, SecretString) and newtype PII wrappers. Requires resolving a field/binding TYPE to a known-PII-type registry per language -- coordinate with T-0717 capability taxonomy and the T-0611/T-0612 adapters type info. Disclosed in T-0352 module docstring, not silently dropped.
 
@@ -6290,7 +5473,6 @@ kind: bug
 origin: human
 created: '2026-07-22'
 priority: high
-blocked_by: []
 parent: T-0577
 scope:
 - src/frob/tickets/**
@@ -6312,8 +5494,6 @@ evidence:
 - tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard::test_a_side_only_id_missing_from_theirs_survives_the_splice
 - tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard::test_malformed_side_is_refused_not_silently_treated_as_empty
 - tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard::test_render_that_would_drop_an_id_is_refused
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a live non-stale lease WHEN frob ticket archive runs THEN it refuses
     without --force; GIVEN an in-flight ticket WHEN main ledger is rewritten under
@@ -6323,7 +5503,6 @@ acceptance:
   - tests/test_ticket_land.py::TestSpliceLedgerPrefersEvidenceRichSideOnRankTie::test_evidence_and_acceptance_rich_side_wins_a_same_rank_reportless_tie
 threat: null
 component: null
-labels: []
 ```
 Coordinator friction 2026-07-22: frob ticket archive (and any concurrent land that rewrites main tickets.md) causes in-flight worktree tickets to LOSE their start/evidence/acceptance-binding when the worktree next runs the 10b restore (git checkout main -- tickets.md picks up the archived/rewritten ledger where the in-flight ticket is back to queued with empty evidence). Recovered T-0753 by hand (re-start, re-record 6 evidence ids, re-bind acceptance). Fixes: (1) archive should REFUSE (or warn-and-require --force) when live non-stale leases exist -- archiving during in-flight work is the hazard; the TICK003 remediation text already says run in a quiet window, make it enforced. (2) the 10b restore recipe is fragile against a rewritten-ledger main; the real fix is the single-writer done-report/evidence path never needing a full restore -- coordinate with T-0577/T-0637 land machinery so an agent NEVER git-checkout-main-tickets.md (the land --path replay the coordinator already does is the safe pattern).
 
@@ -6411,16 +5590,11 @@ kind: feature
 origin: agent
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/app/**
 - src/frob/perf/**
 - docs/modules/perf.md
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a repo and a recorded profile artifact (perf script output, .cpuprofile,
     or JFR print output) WHEN the user runs the frob perf collect subcommand THEN
@@ -6429,7 +5603,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 T-0748 delivered the collector parser adapters (parse_perf_script, parse_v8_cpuprofile, parse_jfr_print + build_class_to_file) proven through resolve_stream/HitStream, but no frob perf CLI entrypoint exists for any collector including the T-0710 python sampler. Wire a subcommand that accepts a profile artifact path (or invokes the sampler), runs the matching collector, and renders the resolved hot-graph deciles. Filed per T-0748 reviewer recommendation (disclosed deviation, real unscoped work).
 
@@ -6443,21 +5616,14 @@ kind: feature
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/vet/**
 - src/frob/strata/**
 - docs/design/registry/**
 - docs/strata/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 T-0717 shipped the shared mode-qualified capability vocabulary
 (frob.vet._capability_modes: FAMILY_MODES, CAPABILITY_MODE_KINDS,
@@ -6501,7 +5667,6 @@ kind: bug
 origin: human
 created: '2026-07-22'
 priority: high
-blocked_by: []
 parent: null
 scope:
 - src/frob/tickets/_leases.py
@@ -6525,8 +5690,6 @@ evidence:
 - tests/test_tickets_leases.py::TestReadAllLeasesSiblingProcessVisibility::test_new_lease_file_written_by_a_sibling_process_is_seen_next_call
 - tests/test_tickets_leases.py::TestReadAllLeasesSiblingProcessVisibility::test_lease_file_removed_by_a_sibling_process_is_seen_next_call
 - tests/test_tickets_leases.py::TestReadAllLeasesSiblingProcessVisibility::test_unchanged_lease_file_content_is_reused_from_cache
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN one frob ticket list/doable/show invocation WHEN it completes THEN git
     rev-parse --git-common-dir was spawned at most once and the lease directory was
@@ -6536,7 +5699,6 @@ acceptance:
   - tests/system/test_spawn_budget.py::test_ticket_doable_spawns_each_argv_at_most_once
 threat: null
 component: null
-labels: []
 ```
 User observation 2026-07-22: a single frob ticket command spawns git rev-parse --git-common-dir dozens of times and re-reads/re-judges every lease file each time (the same stale-lease WARNING printed 4+ times per command). Cause: read_all_leases -> leases_dir -> git_common_dir runs an uncached subprocess per call, and callers (_cross_worktree_leases via doable ordering, display_state per ticket row, sweep/check paths) call read_all_leases repeatedly within one invocation. Fix: memoize git_common_dir per (root) for the process lifetime (safe: the common dir cannot move mid-invocation) and thread one lease snapshot through a single CLI invocation instead of re-reading per ticket. Keep the WARNING-on-stale behavior but emit each stale lease once per invocation.
 
@@ -6831,10 +5993,6 @@ scope:
 - src/frob/perf/**
 - src/frob/arch/**
 - tests/unit/perf/
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a fixture where a loop body calls a function that transitively spawns
     a process with arguments invariant across iterations WHEN frob check runs THEN
@@ -6845,7 +6003,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Motivated by the 2026-07-22 rev-parse incident (T-0773): frob ticket list spawned git rev-parse --git-common-dir dozens of times because the loop (ticket rows) and the effect (subprocess spawn 3 calls deep) live in different modules -- no per-function syntactic PERF heuristic can see it. The ingredients already exist: vet capability observation knows which functions transitively proc.spawn/fs-walk; the obligation graph has the call graph; T-0632 adds per-argument call detail needed for the loop-invariance test. Detector: for each loop (incl. comprehensions and per-item pipeline stages), for each reachable effectful callee whose observed effect is spawn/fs-walk, if every argument at the call site is loop-invariant, fire a prove-or-justify finding (hoist, memoize, or frob:waive with a freshness justification -- re-reading mutable state can be deliberate under concurrency, so this is warn-tier with an unwaivable-style justification requirement, not a silent error). Keep recall honest: undecidable invariance leans toward firing per the repo philosophy.
 
@@ -6858,19 +6015,12 @@ kind: bug
 origin: human
 created: '2026-07-22'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/app/check_runner.py
 - src/frob/gates/__init__.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 T-0766 added `frob.tickets._leases.resolve_lease(root, ticket_id,
 invoking_worktree)`: a pinned, per-ticket lease resolution primitive that
@@ -6917,18 +6067,14 @@ kind: security
 origin: auditor
 created: '2026-07-23'
 priority: critical
-blocked_by: []
 parent: null
 scope:
 - src/frob/gitio.py
 - src/frob/process/_guard.py
 - design/frob.strata
 - tests/test_gitio.py
-scope_changes: []
 evidence:
 - tests/test_gitio.py::TestRunArgv::test_kill_switch_refuses_without_spawning
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN FROB_DISABLE_EXEC=1 WHEN any frob code path attempts a git spawn via
     run_argv (including the serve daemon and lease reads) THEN the spawn is refused
@@ -6938,7 +6084,6 @@ acceptance:
   - tests/test_gitio.py::TestRunArgv::test_kill_switch_refuses_without_spawning
 threat: denial-of-service
 component: null
-labels: []
 ```
 Audit H2 (docs/audits/frob-blindspots-2026-07-23.md): five strata nodes (core,
 fleet, tickets_ledger, stratamod, vet) waive LINT004 with reason "no real kill
@@ -7000,7 +6145,6 @@ kind: security
 origin: auditor
 created: '2026-07-23'
 priority: high
-blocked_by: []
 parent: null
 scope:
 - src/frob/gates/**
@@ -7048,8 +6192,6 @@ evidence:
 - tests/test_waive_gate.py::TestWaive006Registration::test_waive006_gate_combines_both_channels
 - tests/test_waive_gate.py::TestWaive006Registration::test_waivable_via_frob_waive_comment
 - tests/test_waive_gate.py::TestWaive006RealRepo::test_zero_errors_on_real_repo
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a waive directive (frob:waive or strata waive) whose reason or ticket
     attribute references a ticket that is DONE or DROPPED in the ledger/archive WHEN
@@ -7061,7 +6203,6 @@ acceptance:
   - tests/test_waive_gate.py::TestWaive006RealRepo::test_zero_errors_on_real_repo
 threat: null
 component: null
-labels: []
 ```
 Audit H2 gate-direction (docs/audits/frob-blindspots-2026-07-23.md): the five LINT004 kill-switch waivers cite T-0200 as the follow-on ticket to build -- but T-0200 closed long ago, and no gate re-litigates a waiver once its justifying ticket lands. A waiver justified by pending-T-XXXX must not outlive T-XXXX. Implement in the WAIVE gate family: resolve every ticket id referenced in waiver reasons/attributes against the ledger+archive; DONE/DROPPED means the waiver must be re-justified or deleted. Land AFTER T-0778 clears the five current offenders or the gate reds main immediately (sequencing note for the coordinator, not a design choice).
 
@@ -7198,14 +6339,12 @@ kind: security
 origin: auditor
 created: '2026-07-23'
 priority: high
-blocked_by: []
 parent: null
 scope:
 - src/frob/serve/_daemon.py
 - src/frob/tickets/_leases.py
 - tests/test_serve_daemon.py
 - tests/test_tickets_leases.py
-scope_changes: []
 evidence:
 - tests/test_tickets_leases.py::TestLeaseShapeValidation::test_read_all_leases_drops_a_dash_prefixed_branch
 - tests/test_tickets_leases.py::TestLeaseShapeValidation::test_read_all_leases_drops_a_dash_prefixed_worktree
@@ -7214,8 +6353,6 @@ evidence:
 - tests/test_tickets_leases.py::TestLeaseShapeValidation::test_resolve_lease_treats_an_evil_branch_as_no_lease
 - tests/test_tickets_leases.py::TestLeaseShapeValidation::test_rejection_is_logged_once_per_process
 - tests/test_serve_daemon.py::TestPollRebaseBotLeaseInjectionGuard::test_evil_lease_branch_never_reaches_git_argv
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a lease JSON with branch or worktree starting with a dash or containing
     a git-invalid ref shape WHEN read_all_leases loads it THEN the record is rejected
@@ -7232,7 +6369,6 @@ acceptance:
   - tests/test_serve_daemon.py::TestPollRebaseBotLeaseInjectionGuard::test_evil_lease_branch_never_reaches_git_argv
 threat: elevation-of-privilege
 component: null
-labels: []
 ```
 Audit M1 (docs/audits/frob-blindspots-2026-07-23.md): poll_rebase_bot passes lease-JSON branch strings verbatim into git merge-base/merge-tree argv with no -- terminator and no ref validation. Any local process able to write under the shared .git common dir (every co-located worktree agent) can drop evil.json with branch='--output=...' and the unattended daemon executes git option injection. Fix both layers: (1) read_all_leases/resolve_lease validate branch/worktree shape (reject leading dash; git check-ref-format-conformant allowlist) and drop+log failures; (2) daemon git calls put -- before ref operands. NOTE: also coordinate with T-0778 (guard wiring) and the M2 lease-TTL ticket -- same files, serialize dispatch.
 
@@ -7329,15 +6465,10 @@ kind: security
 origin: auditor
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/vet/**
 - src/frob/gates/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a fixture where a value parsed from a file under .git/ or .frob/ flows
     into a subprocess argv position without passing a registered validator or a preceding
@@ -7346,7 +6477,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Audit M1 gate-direction: SEC gates catch shell=True and f-string-into-argv but not the trust-boundary shape (peer-writable state file -> argv). Model the source set (read_text/json.loads on .git//.frob paths) and the sink (subprocess/run_argv argv positions); require a validator hop or -- terminator. Same rule covers worktree paths reaching Path.exists/display. This is a dataflow rule -- scope it honestly as intra-module flow first, interprocedural later.
 
@@ -7360,7 +6490,6 @@ kind: bug
 origin: auditor
 created: '2026-07-23'
 priority: high
-blocked_by: []
 parent: null
 scope:
 - src/frob/tickets/_leases.py
@@ -7395,8 +6524,6 @@ evidence:
 - tests/test_tickets_leases.py::TestAmbiguousLivenessGuard::test_ambiguous_stat_failure_does_not_unlink
 - tests/test_tickets_leases.py::TestAmbiguousLivenessGuard::test_ambiguous_failure_is_logged_once_per_process
 - tests/test_tickets_leases.py::TestAmbiguousLivenessGuard::test_genuine_enoent_still_unlinks
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a lease whose worktree path no longer exists WHEN read_all_leases judges
     it stale THEN the file is unlinked (guarded so a live worktree lease is never
@@ -7409,7 +6536,6 @@ acceptance:
   - tests/test_serve_daemon.py::TestPollRebaseBot::test_ttl_expired_lease_skipped_and_logged_once
 threat: null
 component: null
-labels: []
 ```
 Audit M2: .git/frob-leases/ grows monotonically -- release only happens on clean IN_PROGRESS exit; stale leases are skipped-not-deleted (T-0476 deferral comment in read_all_leases); a dead agent with a still-existing worktree burns 2 git spawns per 20s daemon cycle forever. Implement the deferred T-0476 reconcile plus recorded_at TTL. Same files as T-0780 -- coordinator serializes dispatch.
 
@@ -7485,14 +6611,9 @@ kind: feature
 origin: auditor
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/gates/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a shipped comment deferring work to ticket T-X (that ticket's job shape
     or frob:todo) WHEN T-X remains open across a REL001 version bump since the comment
@@ -7501,7 +6622,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Audit M2 gate-direction: deferred cleanup silently became permanent (T-0476 open since the lease layer shipped). Detect deferral comments bound to open tickets that have crossed release boundaries so deferrals get re-litigated instead of fossilizing.
 
@@ -7515,14 +6635,12 @@ kind: bug
 origin: auditor
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/gitio.py
 - src/frob/tickets/_leases.py
 - src/frob/gates/_exclude_hazard.py
 - tests/test_gitio.py
-scope_changes: []
 evidence:
 - tests/test_gitio.py::TestGitCommonDir::test_resolves_absolute_common_dir
 - tests/test_gitio.py::TestGitCommonDir::test_err_when_not_a_repo
@@ -7530,8 +6648,6 @@ evidence:
 - tests/test_gitio.py::TestGitCommonDir::test_reset_clears_cache
 - tests/test_gitio.py::TestCommonDirAndBranch::test_single_spawn_parses_both_lines
 - tests/test_gitio.py::TestCommonDirAndBranch::test_err_when_not_a_repo
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN the repo WHEN searched for rev-parse --git-common-dir call sites THEN
     exactly one implementation exists (frob.gitio) and _leases/_exclude_hazard delegate
@@ -7541,7 +6657,6 @@ acceptance:
   - tests/test_gitio.py::TestGitCommonDir::test_resolves_absolute_common_dir
 threat: null
 component: null
-labels: []
 ```
 Audit M3 + L1: three near-identical git-common-dir resolvers (Result vs Path|None error channels) violate the single-seam claim in gitio's own docstring; a fix to one silently desyncs the others. Promote git_common_dir(root) -> Result into frob.gitio; batch record_lease's two spawns (rev-parse --git-common-dir + branch --show-current) into one. COORDINATE: T-0773 adds memoization for the same function -- land T-0773 first, then this refactor moves the memoized seam, or merge scopes if the same implementer takes both.
 
@@ -7634,14 +6749,9 @@ kind: security
 origin: auditor
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - docs/audits/gates-vacuous.md
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN the audit doc WHEN complete THEN every gate in gates/__init__.py has
     a recorded verdict for empty-diff/empty-scope/cached-stale satisfaction (can it
@@ -7651,7 +6761,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 The 2026-07-23 blindspot audit explicitly skipped: (a) a full vacuous-satisfaction sweep of gates/__init__.py (8568 lines -- can any gate be satisfied by an empty diff, empty scope, or stale cache?), and (b) lang/** parser trust boundary (tree-sitter on untrusted repo files). These are the largest unaudited surfaces. Run per the audit-until-empty discipline (docs/audits/, pessimistic auditor told to find 10+, repeat until 0).
 
@@ -7665,13 +6774,11 @@ kind: security
 origin: agent
 created: '2026-07-23'
 priority: high
-blocked_by: []
 parent: null
 scope:
 - src/frob/app/check_runner.py
 - src/frob/gates/__init__.py
 - tests/test_tickets_leases.py
-scope_changes: []
 evidence:
 - tests/test_tickets_leases.py::TestTicketLeasePin::test_no_lease_mechanism_engaged_passes_through
 - tests/test_tickets_leases.py::TestTicketLeasePin::test_pinned_lease_for_this_worktree_passes
@@ -7680,8 +6787,6 @@ evidence:
 - tests/test_tickets_leases.py::TestCheckTicketLeaseCli::test_pins_to_own_worktree_lease
 - tests/test_tickets_leases.py::TestCheckTicketLeaseCli::test_refuses_when_lease_recorded_for_another_worktree
 - tests/test_tickets_leases.py::TestCheckTicketLeaseCli::test_no_ticket_resolved_skips_the_check_entirely
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN an agent invoking frob check --ticket T-X from a worktree WHEN T-X has
     a lease THEN the check pins to T-X's own lease/worktree via resolve_lease and
@@ -7698,7 +6803,6 @@ acceptance:
   - tests/test_tickets_leases.py::TestCheckTicketLeaseCli::test_no_ticket_resolved_skips_the_check_entirely
 threat: null
 component: null
-labels: []
 ```
 Promotion of a draft filed in T-0766's worktree and lost during that ticket's land recovery (premature worktree removal destroyed uncommitted ledger state; disclosed in coordinator notes). T-0766 landed the resolve_lease(root, ticket_id, invoking_worktree) fail-loud primitive in src/frob/tickets/_leases.py, but nothing in the live check path consults leases at all (verified by the T-0766 reviewer: active_ticket/_resolve_ticket derive the id from --ticket/branch only). The reviewer marked this wiring a HARD DEPENDENCY: the guard prevents nothing until check consults it. Wire check's --ticket resolution through resolve_lease when a lease exists, keeping the no-lease path working for non-agent invocations.
 
@@ -7804,7 +6908,6 @@ kind: feature
 origin: agent
 created: '2026-07-23'
 priority: high
-blocked_by: []
 parent: null
 scope:
 - src/frob/gates/__init__.py
@@ -7881,8 +6984,6 @@ evidence:
 - tests/test_gates.py::TestComplianceGate::test_compliance005_silent_on_handled_by_and_out_of_scope
 - tests/test_gates.py::TestComplianceGate::test_compliance005_missing_registry_dir_is_silent
 - tests/test_gates.py::TestComplianceGate::test_compliance005_real_repo_registry_passes
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a compliance.yaml entry regressed to deferred or undispositioned WHEN
     frob check runs THEN COMPLIANCE005 fires as a registered, waivable gate rule;
@@ -7893,7 +6994,6 @@ acceptance:
   - tests/test_gates.py::TestComplianceGate::test_compliance005_silent_on_handled_by_and_out_of_scope
 threat: null
 component: null
-labels: []
 ```
 T-0607 built check_cmpl_registry/COMPLIANCE005 but could not register the rule id in _KNOWN_GATE_RULES nor dispatch the check inside frob check (gates/__init__.py out of its scope) -- the implementer disclosed this and used reasoned out_of_scope dispositions naming COMPLIANCE005 as the compensating control. Until this ticket lands, COMPLIANCE005 is enforcement code invoked by nothing in a real check run (the catalogued-is-not-enforced class, T-0343). Wire the dispatch, register the rule, then flip the 17 dispositions to handled_by:COMPLIANCE005.
 
@@ -8000,20 +7100,13 @@ kind: bug
 origin: human
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - pyproject.toml
 - uv.lock
 - Makefile
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Observed while working T-0704 (worktree agent-ad82d24588b5083b6, 2026-07-22/23). This worktree's checked-in uv.lock records frob's own package version as 0.97.0 while pyproject.toml's version line is already 0.98.0 (a pre-existing mismatch present at the worktree's own base commit, not introduced by any ticket worked in this session). Because uv.lock is not scope-locked against auto-sync, EVERY `uv run ...` invocation (including read-only ones like `frob ticket show` or `frob check`) silently rewrites uv.lock's frob version line to match pyproject.toml, leaving a working-tree modification an agent must notice and `git checkout HEAD -- uv.lock` away before every commit/check -- and if missed, SCOPE001 fires (uv.lock outside the ticket's declared scope) on every subsequent `frob check` even though no agent hand-edited the file. Section 4b of docs/guides/agent-playbook.md already forbids agents from touching uv.lock by hand, but does not cover this auto-touch-by-tooling case. Fix: either (a) make `uv run`'s auto-sync a no-op when only the local version-line mismatch is the cause (uv config: --frozen or --no-sync for frob's own CLI invocations, or a repo-level uv setting), or (b) have the section-4b agent-file-blacklist pre-commit hook silently discard/reset a version-line-only uv.lock diff caused by this sync rather than warning/blocking, or (c) reconcile pyproject.toml/uv.lock at land time so fresh worktrees never start with the mismatch. Any one of the three removes the recurring "revert uv.lock before committing" step every worktree agent currently has to remember.
 
@@ -8027,16 +7120,12 @@ kind: bug
 origin: auditor
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - tests/unit/strata/test_host_isolation.py
-scope_changes: []
 evidence:
 - tests/unit/strata/test_host_isolation.py::TestMultiAceDenyOverridesAllow::test_narrow_deny_then_broad_allow_same_principal_denies
 - tests/unit/strata/test_host_isolation.py::TestMultiAceDenyOverridesAllow::test_broad_allow_then_narrow_deny_same_principal_still_denies
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN an ACL rule carrying the :deny flag on a write-capable RIGHTS value
     WHEN _acl_grants_write evaluates it THEN write_capable is False and a shared-writable-path
@@ -8046,7 +7135,6 @@ acceptance:
   - tests/unit/strata/test_host_isolation.py::TestMultiAceDenyOverridesAllow::test_broad_allow_then_narrow_deny_same_principal_still_denies
 threat: null
 component: null
-labels: []
 ```
 T-0606 reviewer finding: test_deny_acl_does_not_fire_shared_writable_path uses Everyone:Read (non-write RIGHTS), never an actual :deny flag; _acl_grants_write implements deny correctly by inspection but no test exercises that branch. Add the missing fire/no-fire pair.
 
@@ -8078,12 +7166,10 @@ kind: security
 origin: auditor
 created: '2026-07-23'
 priority: high
-blocked_by: []
 parent: null
 scope:
 - src/frob/strata/_host_isolation.py
 - tests/unit/strata/test_host_isolation.py
-scope_changes: []
 evidence:
 - tests/unit/strata/test_host_isolation.py::TestMultiAceDenyOverridesAllow::test_single_deny_entry_denies
 - tests/unit/strata/test_host_isolation.py::TestMultiAceDenyOverridesAllow::test_single_allow_entry_grants
@@ -8093,8 +7179,6 @@ evidence:
 - tests/unit/strata/test_host_isolation.py::TestMultiAceDenyOverridesAllow::test_no_write_rights_entries_denies
 - tests/unit/strata/test_host_isolation.py::TestWindowsHostIsolation::test_explicit_deny_acl_flag_does_not_fire_shared_writable_path
 - tests/unit/strata/test_host_isolation.py::TestWindowsHostIsolation::test_explicit_deny_acl_flag_fires_when_write_rights_present_elsewhere
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN two acl entries on the same path (a broad allow after a narrow deny)
     WHEN the movement-impossibility join runs THEN deny-overrides-allow NTFS semantics
@@ -8112,7 +7196,6 @@ acceptance:
   - tests/unit/strata/test_host_isolation.py::TestWindowsHostIsolation::test_explicit_deny_acl_flag_fires_when_write_rights_present_elsewhere
 threat: elevation-of-privilege
 component: null
-labels: []
 ```
 T-0606 reviewer finding: _owned_paths_by_user collapses multiple ACL entries per path to last-declaration-wins, mirroring the POSIX one-owner convention -- but windows ACLs are multi-ACE by design, and an early deny overridden by a later broad allow silently suppresses a violation the proof system should detect (soundness gap in the direction that matters). Implement real deny-overrides-allow joining across all ACEs per path. Also adjudicate SeImpersonatePrivilege/SeDebugPrivilege-class token privileges: model or record out-of-scope with reason.
 
@@ -8228,7 +7311,6 @@ kind: bug
 origin: agent
 created: '2026-07-23'
 priority: high
-blocked_by: []
 parent: null
 scope:
 - src/frob/tickets/_land.py
@@ -8252,8 +7334,6 @@ evidence:
 - tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_with_other_change_still_refuses
 - tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_version_plus_other_line_still_refuses
 - tests/test_ticket_land.py::TestUvLockSync::test_lock_sync_spawn_failure_unwinds_squash
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a land whose version bump changes pyproject WHEN the land commits THEN
     uv.lock is re-synced and committed in the same land commit and a subsequent uv
@@ -8266,7 +7346,6 @@ acceptance:
   - tests/test_ticket_land.py::TestUvLockSync::test_lock_sync_spawn_failure_unwinds_squash
 threat: null
 component: null
-labels: []
 ```
 Promotion of T-0767's worktree draft db4263e7 (manual land skipped the renumber path). The uv.lock version line flaps on every uv run against a bumped pyproject, tripping DirtyMain at land and SCOPE001/PRE001 in every worktree. Land owns the version bump; it should own the lock sync too.
 
@@ -8370,16 +7449,12 @@ kind: bug
 origin: agent
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/vet/_scan.py
 - tests/unit/test_arch.py
-scope_changes: []
 evidence:
 - tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_discharges_on_real_repo_vet_scan
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN main WHEN frob check runs THEN zero self-join-deadlock warnings on src/frob/vet
     while the timeout behavior is preserved and a regression test locks the discharge
@@ -8387,7 +7462,6 @@ acceptance:
   - tests/unit/test_arch.py::TestForkPoolHazards::test_self_join_deadlock_discharges_on_real_repo_vet_scan
 threat: null
 component: null
-labels: []
 ```
 Promotion of T-0767's worktree draft 1910bd1a: the T-0695 self-join-deadlock advisory fires on vet/_scan.py::_run_with_timeout (unwaivable channel). Restructure the join ownership the same way T-0767 discharged _run_combined_jobs. Required for zero-warnings.
 
@@ -8411,20 +7485,16 @@ kind: bug
 origin: agent
 created: '2026-07-23'
 priority: critical
-blocked_by: []
 parent: null
 scope:
 - src/frob/tickets/_land.py
 - src/frob/app/ticket_runner.py
 - tests/test_ticket_land.py
-scope_changes: []
 evidence:
 - tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail::test_retry_after_finalize_then_squash_failure_lands_the_diff
 - tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail::test_retry_when_still_queued_re_runs_the_ordinary_transition
 - tests/test_ticket_land.py::TestLandRefusesWhenRootIsWorktree::test_refused_before_any_git_mutation_names_the_real_mistake
 - tests/test_ticket_land.py::TestLandRefusesWhenRootIsWorktree::test_still_refuses_when_worktree_has_diverged_commits
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a land that merged and finalized in the worktree but failed before committing
     to main WHEN land is retried with identical arguments THEN it completes the squash-apply
@@ -8438,7 +7508,6 @@ acceptance:
   - tests/test_ticket_land.py::TestLandRefusesWhenRootIsWorktree::test_still_refuses_when_worktree_has_diverged_commits
 threat: null
 component: null
-labels: []
 ```
 Three lands this drive (T-0676, T-0774, T-0767) merged+finalized in the worktree (ticket transitioned to done in the worktree ledger) then failed before the main commit; every retry then errored InvalidTransition because close re-runs the done transition. Each required a manual splice-apply onto main (see the three land commits). Make the close step idempotent (done ticket + pending squash = proceed to squash-apply) or checkpoint the land so retry resumes at the squash. Separately, when root==worktree because the invoker's cwd is inside the worktree, say so explicitly.
 
@@ -8526,18 +7595,14 @@ kind: bug
 origin: agent
 created: '2026-07-23'
 priority: high
-blocked_by: []
 parent: null
 scope:
 - src/frob/tickets/__init__.py
 - src/frob/app/ticket_runner.py
 - tests/test_tickets_evidence_cli.py
-scope_changes: []
 evidence:
 - tests/test_tickets_evidence_cli.py::TestCmdEvidenceAcceptsBinding::test_evidence_cmd_with_accepts_binds_acceptance_via_cli
 - tests/test_tickets_evidence_cli.py::TestCmdEvidenceAcceptsBinding::test_close_evidence_cmd_with_accepts_binds_acceptance_via_cli
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN frob ticket evidence T-X --evidence-cmd CMD --accepts 0 WHEN the command
     verifies THEN the cmd evidence is bound to acceptance index 0 exactly like pytest-node
@@ -8547,7 +7612,6 @@ acceptance:
   - tests/test_tickets_evidence_cli.py::TestCmdEvidenceAcceptsBinding::test_close_evidence_cmd_with_accepts_binds_acceptance_via_cli
 threat: null
 component: null
-labels: []
 ```
 Promotion of T-0677's worktree draft 91ef53bd: add_cmd_evidence in frob.tickets has no accepts parameter and both CLI call sites in ticket_runner.py drop cfg.ticket_accepts for cmd evidence, so docs-kind tickets silently end up with UNBOUND acceptance despite the operator passing --accepts (T-0677 worked around via the library add_evidence call). With the T-0763 land preflight now refusing unbound acceptance, this silent drop blocks docs-ticket lands.
 
@@ -8589,7 +7653,6 @@ kind: bug
 origin: agent
 created: '2026-07-23'
 priority: critical
-blocked_by: []
 parent: null
 scope:
 - src/frob/gates/__init__.py
@@ -8634,8 +7697,6 @@ evidence:
 - tests/test_gates.py::TestDeprecatedGate::test_deprecated_is_registered_in_all_gates
 - tests/test_gates.py::TestDeprecatedGate::test_deprecated_fires_through_real_gate_dispatch
 - tests/system/test_cli_check.py::TestCheckStageGroups::test_available_stages_cover_every_gate_and_tool
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a frob:deprecated directive in the tree WHEN frob check runs (no --only
     filter) THEN the deprecated gate evaluates and DEPR003 in-window warnings appear
@@ -8647,7 +7708,6 @@ acceptance:
   - tests/system/test_cli_check.py::TestCheckStageGroups::test_available_stages_cover_every_gate_and_tool
 threat: null
 component: null
-labels: []
 ```
 Promotion of T-0580's worktree draft f226d099 (worktree removed at land before renumbering; refiled by coordinator). deprecated_gate and DEPR001-004 are implemented and unit-tested but 'deprecated' is absent from _ALL_GATES, so no real check run ever evaluates them -- the T-0580 deprecations are currently enforced by nothing (catalogued-is-not-enforced class). One-line registration + regression test. CRITICAL because the user's deprecation decision (map/outline/xref/docs-search, sunset 2026-10-01) silently has no teeth until this lands.
 
@@ -8727,17 +7787,13 @@ kind: bug
 origin: auditor
 created: '2026-07-23'
 priority: high
-blocked_by: []
 parent: null
 scope:
 - src/frob/dup/**
 - tests/test_dup.py
-scope_changes: []
 evidence:
 - tests/test_dup.py::TestVerdictCacheRulesFingerprintInvalidation::test_dup_code_fingerprint_change_invalidates_cached_verdict
 - tests/test_dup.py::TestVerdictCacheRulesFingerprintInvalidation::test_unchanged_dup_code_fingerprint_still_serves_cached_verdict
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a dup rule/normalization change WHEN frob check runs the dup gate THEN
     cached verdicts computed under the old rules are invalidated (cache key includes
@@ -8748,7 +7804,6 @@ acceptance:
   - tests/test_dup.py::TestVerdictCacheRulesFingerprintInvalidation::test_unchanged_dup_code_fingerprint_still_serves_cached_verdict
 threat: null
 component: null
-labels: []
 ```
 T-0785 reviewer-mandated filing: during T-0785 the .frob/dup.db verdict cache silently served pre-rule-change results until manually cleared -- a gate-integrity hole (the dup gate can report stale verdicts as current). Key the cache by (content digest, rules fingerprint) or invalidate on frob.dup code-digest change.
 
@@ -8785,18 +7840,14 @@ kind: bug
 origin: agent
 created: '2026-07-23'
 priority: high
-blocked_by: []
 parent: null
 scope:
 - src/frob/graph/cache.py
 - src/frob/graph/__init__.py
 - tests/unit/graph/test_cache.py
-scope_changes: []
 evidence:
 - tests/unit/graph/test_cache.py::TestSchemaDriftRebuild::test_missing_symbols_table_rebuilds_clean
 - tests/unit/graph/test_cache.py::TestSchemaDriftRebuild::test_missing_mtime_ns_column_rebuilds_clean
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a .frob/cache.db created by an older schema WHEN load_graph opens it
     THEN it detects the schema mismatch and rebuilds the cache instead of raising
@@ -8807,7 +7858,6 @@ acceptance:
   - tests/unit/graph/test_cache.py::TestSchemaDriftRebuild::test_missing_mtime_ns_column_rebuilds_clean
 threat: null
 component: null
-labels: []
 ```
 Observed twice during 2026-07-23 lands: worktrees carrying pre-migration cache.db files crashed land mid-flight with 'no such table: symbols' and 'no such column: mtime_ns' (the second crash left a partial squash staged on main). Stamp a schema version in the db and rebuild on mismatch; never let OperationalError escape load paths.
 
@@ -8870,19 +7920,12 @@ kind: feature
 origin: human
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/dup/**
 - frob-core/src/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Found while working T-0785 (dup: normalize error-channel before similarity
 compare). The ticket's motivating case -- frob.tickets._leases.git_common_dir
@@ -8925,15 +7968,10 @@ kind: feature
 origin: agent
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/dup/_pipeline.py
 - tests/test_dup.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN the real _leases.py::git_common_dir and _exclude_hazard.py::_git_common_dir
     pair WHEN the dup scan runs with both error-channel and control-flow normalization
@@ -8943,7 +7981,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Promotion of T-0785's worktree draft 2e4385db (worktree removed at land before renumbering). T-0785 landed the error-channel axis; the motivating real pair still differs on a combined-vs-split if structural axis and measures 0.444 (<0.6). Normalize simple guard-shape variants so semantically-one functions pair. Prereq for T-0784's seam unification to be regression-locked by DUP.
 
@@ -8957,7 +7994,6 @@ kind: feature
 origin: human
 created: '2026-07-23'
 priority: low
-blocked_by: []
 parent: null
 scope:
 - src/frob/app/map_runner.py
@@ -8966,10 +8002,6 @@ scope:
 - src/frob/app/docs_runner.py
 - src/frob/__main__.py
 - docs/modules/cli.md
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN the sunset date 2026-10-01 has passed WHEN this ticket is worked THEN
     the four deprecated navigation commands and their parsers, tests, and doc/test/export
@@ -8978,7 +8010,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Sunset-execution ticket for the user's 2026-07-23 deprecation decision (T-0580, done). Stays OPEN until the sunset so the four frob:deprecated directives have a live ticket binding (DEPR002 requires ticket= to reference an open ticket -- T-0797 registration surfaced that the directives bound to the closed T-0580). Do not work before the sunset date.
 
@@ -8992,7 +8023,6 @@ kind: security
 origin: human
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/tickets/__init__.py
@@ -9077,12 +8107,8 @@ evidence:
 - tests/unit/deploy/test_vm_runner.py::TestAvail::test_kill_switch_refuses_without_spawning
 - tests/unit/test_scaffold_project.py::test_hooks_dir_kill_switch_refuses_without_spawning
 - tests/test_app.py::TestRunCoverageWait::test_kill_switch_refuses_without_spawning
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 T-0778 (H2 fix) wired frob.gitio.run_argv through
 frob.process._guard.guarded_subprocess_run, which transitively covers every
@@ -9216,21 +8242,14 @@ kind: bug
 origin: human
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/app/xref_runner.py
 - src/frob/app/outline_runner.py
 - src/frob/app/docs_runner.py
 - src/frob/app/map_runner.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 found while working T-0797 (registering the deprecated gate in _ALL_GATES). T-0580 deprecated the four navigation commands (map/outline/xref/docs-search) with frob:deprecated ticket=T-0580, but T-0580 itself is now closed/done -- so a real frob check --only deprecated run reports DEPR002 (bound to a non-open ticket) on all four, not the DEPR003 in-window warning the T-0797 dispatch predicted. Rebind each directive's ticket= to a new open removal-tracking ticket (or reopen/track differently) so the sunset lifecycle is enforceable again.
 
@@ -9247,19 +8266,15 @@ kind: security
 origin: auditor
 created: '2026-07-23'
 priority: high
-blocked_by: []
 parent: null
 scope:
 - src/frob/tickets/__init__.py
 - tests/test_tickets_evidence_cli.py
-scope_changes: []
 evidence:
 - tests/test_tickets_evidence_cli.py::TestRunEvidenceCommandNoShell::test_shell_metacharacters_do_not_reach_a_shell
 - tests/test_tickets_evidence_cli.py::TestRunEvidenceCommandNoShell::test_command_substitution_is_not_expanded
 - tests/test_tickets_evidence_cli.py::TestRunEvidenceCommandNoShell::test_malformed_quoting_fails_cleanly_instead_of_shelling_out
 - tests/test_tickets_evidence_cli.py::TestRunEvidenceCommandNoShell::test_exec_kill_switch_stops_evidence_commands
-reviews: []
-attachments: []
 acceptance:
 - text: 'GIVEN a cmd: evidence entry WHEN _run_evidence_command executes it THEN it
     runs without shell=True (argv form or an explicitly justified sanctioned shell
@@ -9272,7 +8287,6 @@ acceptance:
   - tests/test_tickets_evidence_cli.py::TestRunEvidenceCommandNoShell::test_exec_kill_switch_stops_evidence_commands
 threat: elevation-of-privilege
 component: null
-labels: []
 ```
 Split out of T-0803 per the T-0778 reviewer: tickets/__init__.py::_run_evidence_command runs caller-supplied commands from ticket YAML (repo-writable by every agent/tool) with shell=True -- injection-adjacent surface that must not ride a medium wiring ticket. Note evidence commands are a sanctioned feature (T-0215) so the fix must preserve legitimate cmd evidence (shlex.split argv execution or documented constrained shell) while removing raw shell interpolation, and wire through guarded_subprocess_run (T-0778).
 
@@ -9341,7 +8355,6 @@ kind: bug
 origin: auditor
 created: '2026-07-23'
 priority: high
-blocked_by: []
 parent: null
 scope:
 - tests/system/test_cli_check.py
@@ -9399,8 +8412,6 @@ evidence:
 - tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta::test_delta_reports_only_new_violation
 - tests/system/test_cli_check.py::TestCheckPolyglot::test_unpinned_polyglot_runs_python_stage
 - tests/system/test_cli_check.py::TestCheckTicketLeasePinRefusal::test_ticket_lease_recorded_elsewhere_refuses
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN main WHEN tests/system/test_cli_check.py runs THEN TestCheckCleanProject::test_clean_code_exits_zero,
     TestCheckStampBaselineAndDelta::test_delta_reports_only_new_violation, and TestCheckPolyglot::test_unpinned_polyglot_runs_python_stage
@@ -9413,7 +8424,6 @@ acceptance:
   - tests/system/test_cli_check.py::TestCheckTicketLeasePinRefusal::test_ticket_lease_recorded_elsewhere_refuses
 threat: null
 component: null
-labels: []
 ```
 T-0787 reviewer verified these three nodes fail on CURRENT main with git ls-files exit 128 inside the tmp_path fixture (not-a-git-repository shape) plus JSON parse of polluted stdout -- pre-existing fixture debt unrelated to recent lands, no covering ticket found. Root-cause the fixture (missing git init? cwd leakage? the T-0768 quiet clamp changing expected stdout?), repair, and add the deferred end-to-end run() exit-1 test for ticket_lease_pin refusal (T-0787 reviewer action item b).
 
@@ -9538,7 +8548,6 @@ kind: ux
 origin: agent
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/gates/__init__.py
@@ -9566,8 +8575,6 @@ evidence:
 - tests/test_gates.py::TestDebtGate::test_rel001_land_owned_via_linked_worktree_no_ticket
 - tests/test_gates.py::TestDebtGate::test_rel001_land_owned_via_ticket_lease
 - tests/test_gates.py::TestDebtGate::test_rel001_linked_worktree_detected
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN frob check --ticket T-X running in a worktree (or against a ticket with
     a live worktree lease) WHEN the public API changed THEN REL001's version-bump
@@ -9580,7 +8587,6 @@ acceptance:
   - tests/test_gates.py::TestDebtGate::test_rel001_not_land_owned_root_checkout_no_ticket
 threat: null
 component: null
-labels: []
 ```
 Recurring friction (4+ review cycles this drive): REL001's bump-half fires as an error in worktree reviews/implementations because suppression is keyed on the FROB_AGENT env var, which reviewers and some dispatch shells never set -- every reviewer then REJECTs or hand-waives a violation that frob ticket land auto-clears seconds later (auto-bumps landed 0.97.0 through 0.105.0 this week). Derive the suppression from CONTEXT instead of env: if the check runs with --ticket and that ticket holds a worktree lease (or cwd is a linked worktree), the bump is land-owned by definition. Keep the API-diff REPORTING (reviewers should still see 'public API changed (minor)'), demote only the bump demand.
 
@@ -9655,7 +8661,6 @@ kind: security
 origin: auditor
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/gates/__init__.py
@@ -9691,8 +8696,6 @@ evidence:
 - tests/test_waive_gate.py::TestWaive007Registration::test_waive007_gate_combines_both_channels
 - tests/test_waive_gate.py::TestWaive007Registration::test_waivable_via_frob_waive_comment
 - tests/test_waive_gate.py::TestWaive007RealRepo::test_zero_findings_on_real_repo
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a waiver whose binding ticket reference resolves to no ticket in active
     or archive WHEN frob check runs THEN a WARNING-tier finding names the site and
@@ -9703,7 +8706,6 @@ acceptance:
   - tests/test_waive_gate.py::TestWaive007CommentChannel::test_ticket_attr_bound_to_resolvable_id_is_silent
 threat: null
 component: null
-labels: []
 ```
 T-0779 reviewer finding: WAIVE006 deliberately skips unresolvable binding refs, but a dangling ref (e.g. a draft id renumbered at land -- the T-draft-8cd37914 -> T-0803 case that left four design/frob.strata waivers pointing at a dead id) is a permanent silent waiver, the same accountability shape WAIVE006 closes. Add WAIVE007 warning-tier for dangling BINDING refs (drafts in live worktrees are a legitimate transient -- consider exempting T-draft-* ids younger than N days or referenced by a live lease, document the choice).
 
@@ -9795,7 +8797,6 @@ kind: feature
 origin: human
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/graph/**
@@ -9882,12 +8883,8 @@ evidence:
 - tests/unit/test_arch.py::TestProtocolSummaryEngine::test_resource_sets_join_across_a_recursive_cluster
 - tests/unit/graph/test_dsl.py::TestResourceDirectives::test_acquire_release_escapes_round_trip
 - tests/unit/graph/test_dsl.py::TestResourceDirectives::test_acquire_missing_target_is_malformed
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 T-0745 built the shared per-function protocol-summary fixpoint engine
 (frob.graph.summary.compute_protocol_summaries) over an explicit
@@ -10072,7 +9069,6 @@ kind: bug
 origin: human
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/app/ticket_runner.py
@@ -10109,12 +9105,8 @@ evidence:
 - tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_refuses_without_force_when_a_live_lease_exists
 - tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_force_overrides_the_live_lease_refusal
 - tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI::test_force_with_no_live_leases_stays_quiet
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 T-0764 added archive(root, *, force: bool = False) in src/frob/tickets/__init__.py, refusing when a live cross-worktree lease exists unless force=True. The CLI entrypoint (_archive in src/frob/app/ticket_runner.py, 'frob ticket archive' subcommand) does not yet expose a --force flag to pass through, since that file is outside T-0764's declared scope (src/frob/tickets/**, tests/test_tickets*.py, tests/test_ticket_land.py). Add an argparse --force flag to the archive subcommand and thread it to archive(root, force=...).
 
@@ -10156,16 +9148,12 @@ kind: bug
 origin: agent
 created: '2026-07-23'
 priority: high
-blocked_by: []
 parent: null
 scope:
 - src/frob/tickets/_land.py
 - tests/test_ticket_land.py
-scope_changes: []
 evidence:
 - tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_own_draft_id_reference_in_done_report
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a worktree ledger whose Done reports reference T-draft ids WHEN land
     renumbers those drafts to real ids THEN every reference to the old draft id anywhere
@@ -10176,7 +9164,6 @@ acceptance:
   - tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_own_draft_id_reference_in_done_report
 threat: null
 component: null
-labels: []
 ```
 Recurred 3x this drive (T-0778/T-0797, T-0745/T-0764 pairs): land renumbers T-draft blocks to real ids but leaves Done-report prose citing the old draft id, so TICK006 reds main after every draft-filing land until the coordinator hand-retargets. The renumber step already knows the old->new id mapping; apply it as a text substitution across the spliced ledger (and archive) before the integrity check.
 
@@ -10237,18 +9224,14 @@ kind: bug
 origin: auditor
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/tickets/_land.py
 - tests/test_ticket_land.py
-scope_changes: []
 evidence:
 - tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_strata_waive_clause_draft_id_reference
 - tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_rewrites_frob_waive_comment_draft_id_reference
 - tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_leaves_unrelated_draft_id_reference_untouched
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a worktree whose design/frob.strata or source frob:waive comments cite
     a draft id that land renumbers WHEN the land completes THEN those refs are rewritten
@@ -10261,7 +9244,6 @@ acceptance:
   - tests/test_ticket_land.py::TestDraftReferenceRewriteOnLand::test_land_leaves_unrelated_draft_id_reference_untouched
 threat: null
 component: null
-labels: []
 ```
 Combined follow-up from the T-0808 and T-0811 reviews: T-0811's rewrite covers ledger+archive prose only, so a .strata waiver or frob:waive comment citing a renumbered draft (the ORIGINAL T-draft-8cd37914 incident class) stays dangling forever and is unconditionally exempt from WAIVE007 -- the exemption becomes load-bearing instead of safe. Extend the land's old->new mapping substitution to tracked files containing waive sites (grep-scoped, per-id-keyed regex like the T-0811 mechanism). Also add the T-0811 reviewer's missing negative test: an unrelated draft id in prose survives the ledger rewrite untouched (separate test; the existing blanket zero-T-draft assertion conflicts with planting one).
 
@@ -10293,7 +9275,6 @@ kind: feature
 origin: auditor
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/graph/**
@@ -10351,8 +9332,6 @@ evidence:
 - tests/test_graph.py::TestCallGraph::test_build_call_graph_exempts_attribute_call_on_foreign_receiver_from_unresolved
 - tests/test_graph.py::TestCallGraph::test_build_call_graph_exempts_super_dunder_call_from_unresolved
 - tests/test_graph.py::TestCallGraph::test_build_call_graph_still_marks_unresolved_self_attribute_call
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a real repo scan through the protocol-summary entrypoint WHEN a private-convention
     callee has no candidates THEN the summary shows UNRESOLVED_CALLEE poisoning end
@@ -10369,7 +9348,6 @@ acceptance:
   - tests/test_graph.py::TestCallGraph::test_build_call_graph_still_marks_unresolved_self_attribute_call
 threat: null
 component: null
-labels: []
 ```
 T-0809 reviewer condition (a): mark_unresolved is tested but production-dead (no src/ caller passes True; compute_protocol_summaries itself has no production consumer yet). Wire a real entrypoint when the T-0739-family verifier lands, or earlier as a frob graph subcommand. Note the reviewer's residual false-positive class in the heuristic for adjudication at wiring time.
 
@@ -10461,20 +9439,16 @@ kind: bug
 origin: auditor
 created: '2026-07-23'
 priority: high
-blocked_by: []
 parent: null
 scope:
 - src/frob/gates/__init__.py
 - src/frob/dup/_pipeline.py
 - tests/test_gates.py
-scope_changes: []
 evidence:
 - tests/test_gates.py::TestCoverageGate::test_is_symref_gates
 - tests/test_gates.py::TestCoverageGate::test_cov006_third_file_reachable_skips_unresolved_callee_sentinel
 - tests/test_gates.py::TestDupPipelineClosureConsumers::test_is_symref_dup
 - tests/test_gates.py::TestDupPipelineClosureConsumers::test_callee_name_map_skips_unresolved_callee_sentinel
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a call-graph closure containing a sentinel or non path::qualname entry
     WHEN _cov006_third_file_reachable and sibling closure consumers process it THEN
@@ -10487,7 +9461,6 @@ acceptance:
   - tests/test_gates.py::TestDupPipelineClosureConsumers::test_callee_name_map_skips_unresolved_callee_sentinel
 threat: null
 component: null
-labels: []
 ```
 T-0809 reviewer condition (b): _cov006_third_file_reachable (gates/__init__.py ~3361) does split('::',1)[1] on every closure entry and IndexErrors on any non-symref (discovered when mark_unresolved=True injected UNRESOLVED_CALLEE); same shape assumption at 3 gates call sites + dup/_pipeline. Any future graph extension crashes them. Harden all closure consumers.
 
@@ -10586,20 +9559,16 @@ kind: bug
 origin: auditor
 created: '2026-07-23'
 priority: high
-blocked_by: []
 parent: null
 scope:
 - src/frob/app/mutate_runner.py
 - src/frob/app/fleet_runner.py
 - tests/integration/
-scope_changes: []
 evidence:
 - tests/integration/test_mutate_runner.py::TestMutateRunnerJson::test_json_output_is_clean
 - tests/integration/test_mutate_runner.py::TestMutateRunnerJson::test_human_mode_still_shows_diagnostics
 - tests/integration/test_fleet_integration.py::TestFleetIntegrationJson::test_fleet_status_json_is_clean
 - tests/integration/test_gitlog.py::TestGitlogJson::test_json_valid
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN every runner module with a json flag whose payload path can reach guarded_subprocess_run
     WHEN the json mode runs THEN stdout parses as clean JSON (conditional quiet_stdout_logs
@@ -10611,7 +9580,6 @@ acceptance:
   - tests/integration/test_fleet_integration.py::TestFleetIntegrationJson::test_fleet_status_json_is_clean
 threat: null
 component: null
-labels: []
 ```
 T-0803 reviewer finding: the exec guard now DEBUG-logs every spawn, and the
 stdout handler defaults to DEBUG, so any --json runner spawning through the
@@ -10739,15 +9707,11 @@ kind: bug
 origin: auditor
 created: '2026-07-23'
 priority: high
-blocked_by: []
 parent: null
 scope:
 - tests/unit/test_app_runners_batch7.py
-scope_changes: []
 evidence:
 - tests/unit/test_app_runners_batch7.py::TestSysAudit::test_clean_model_passes
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN main WHEN TestSysAudit::test_clean_model_passes runs THEN it passes
     with every audit leg PROVED, with the fixture updated to current rules (or the
@@ -10757,7 +9721,6 @@ acceptance:
   - tests/unit/test_app_runners_batch7.py::TestSysAudit::test_clean_model_passes
 threat: null
 component: null
-labels: []
 ```
 Found during T-0752 (2026-07-23, confirmed on current main): the sys-audit
 clean-model fixture test fails -- self-conformance and resource-contention
@@ -10858,15 +9821,10 @@ kind: security
 origin: agent
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/vet/**
 - tests/test_vet.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN FROB_DISABLE_NET=1 (or the guard's net flag) WHEN any vet code path
     attempts a network operation THEN it is refused and logged without connecting;
@@ -10875,7 +9833,6 @@ acceptance:
   evidence: []
 threat: denial-of-service
 component: null
-labels: []
 ```
 The net kill-switch mechanism exists (T-0200 frob.process._guard.net_enabled) but no call site invokes it; vet's strata node holds may-net with a LINT004 waiver that previously cited T-0803 (exec-only sweep, now closed). Wire net_enabled into vet's network paths, declare attr flag on the node, delete the waiver.
 
@@ -10892,23 +9849,17 @@ kind: bug
 origin: human
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - tests/system/test_cli_check.py
 - src/frob/gates/**
-scope_changes: []
 evidence:
 - tests/system/test_cli_check.py::TestCheckTypescript::test_clean_ts_passes_tsc
 - tests/system/test_cli_check.py::TestCheckTypescript::test_type_error_fails_tsc
 - tests/system/test_cli_check.py::TestGitlessTargetGateSeverity::test_render_lint_gate_warns_not_errors_on_gitless_root
 - tests/system/test_cli_check.py::TestGitlessTargetGateSeverity::test_gitless_target_gates_warn_not_error
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 While root-causing T-0806 (test_cli_check tmp fixtures broken on main),
 two more failures in tests/system/test_cli_check.py were found -- neither
@@ -11074,18 +10025,11 @@ kind: bug
 origin: human
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - design/frob.strata
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 found while working T-0816: frob check gate:WAIVE fires 4x WAIVE006 errors at design/frob.strata:307,370,418,469 -- each waive() references ticket T-0803 which is now closed, but WAIVE006 treats a closed-ticket binding as stale. Re-review whether the underlying gaps these waivers cover are actually resolved by T-0803's landing (in which case remove the waivers) or still open (in which case re-point them at a still-open follow-on ticket, per the T-0803 waiver text's own note 'tracked in T-0803').
 
@@ -11102,24 +10046,18 @@ kind: feature
 origin: human
 created: '2026-07-23'
 priority: high
-blocked_by: []
 parent: null
 scope:
 - src/frob/gates/**
 - docs/modules/gates.md
-scope_changes: []
 evidence:
 - tests/test_gates.py::TestTick007UndispatchedStale::test_stale_critical_fires
 - tests/test_gates.py::TestTick007UndispatchedStale::test_fresh_critical_is_silent
 - tests/test_gates.py::TestTick007UndispatchedStale::test_medium_priority_never_fires
 - tests/test_gates.py::TestTick007UndispatchedStale::test_blocked_ticket_is_silent
 - tests/test_gates.py::TestTick007UndispatchedStale::test_real_repo_scan_runs_end_to_end_without_crashing
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 T-0752 built the pure staleness-alarm computation (frob.tickets.undispatched_stale, dispatch_stale_hours, _dispatch_stale_thresholds -- src/frob/tickets/__init__.py) and wired it into frob ticket doable's row rendering (src/frob/app/ticket_runner.py), per its acceptance criterion's UNDISPATCHED row marker. The SAME criterion also asks for "AND frob check emits a TICK-family warning naming it" -- a new TICK-family gate (e.g. TICK007) that calls undispatched_stale over the doable set and emits a Violation per alarmed ticket, the same way TICK004 (queue rot) already does. That half requires touching src/frob/gates/__init__.py (and its TICK-family stage wiring), which is OUTSIDE T-0752's declared scope (src/frob/tickets/**, src/frob/app/ticket_runner.py, docs/modules/tickets.md). Filed as a separate ticket per the agent playbook's "found work outside scope -> file, don't fold in" rule. Reuse frob.tickets.undispatched_stale verbatim -- do not re-derive the staleness judgment in the gates module. Coordinate with T-0714 (doable diagnostics relocation to frob check) since both move doable-adjacent signal into the gate layer.
 
@@ -11235,15 +10173,10 @@ kind: bug
 origin: agent
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/tickets/_land.py
 - tests/test_ticket_land.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a worktree ticket in planned state with evidence bound and a Done report
     WHEN land runs THEN it either advances planned->in-progress->done transparently
@@ -11253,7 +10186,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Hit 3x this drive (T-0799, T-0752 post-10b-restore, T-0815): implementers leave tickets planned (never ran start, or a ledger restore reverted the state), evidence+report are complete, land merges+finalizes then dies InvalidTransition at close, forcing the coordinator start-then-retry recipe. Either fold the start transition into finalize when preconditions are met, or extend the T-0763 preflight to check state transitions pre-merge.
 
@@ -11266,19 +10198,15 @@ kind: security
 origin: agent
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/vet/**
 - tests/test_vet.py
 - design/frob.strata
-scope_changes: []
 evidence:
 - tests/test_vet.py::TestRegistryLookup::test_fetch_publish_date_refuses_when_net_disabled
 - tests/test_vet.py::TestNvdLookup::test_fetch_cwe_for_cve_refuses_when_net_disabled
 - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
-reviews: []
-attachments: []
 acceptance:
 - text: Given FROB_DISABLE_NET=1, when vet looks up a registry publish date or an
     NVD CVE->CWE mapping, then no urlopen call happens and the result degrades to
@@ -11293,7 +10221,6 @@ acceptance:
   - tests/test_vet.py::TestRegistryLookup::test_fetch_publish_date_refuses_when_net_disabled
 threat: null
 component: null
-labels: []
 ```
 Dispatch referenced ticket id T-0817 ("vet: wire net_enabled kill-switch
 into vet's network call sites"), but no such ticket exists in
@@ -11366,16 +10293,11 @@ kind: bug
 origin: auditor
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/lang/_support.py
 - src/frob/gates/**
 - tests/test_lang_conformance_gate.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN an adopter repo whose queue carries no frob-internal ticket ids WHEN
     LANG003 evaluates a known-gap facet THEN it does not hard-error on the unresolvable
@@ -11384,7 +10306,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Disclosed by T-0818's investigation (2026-07-23): LANG003's KNOWN_GAP facet
 verification requires the CHECKED repo's own ticket queue to carry the
@@ -11407,19 +10328,13 @@ kind: bug
 origin: human
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/check/__init__.py
-scope_changes: []
 evidence:
 - tests/system/test_cli_check.py::TestCheckStageGroups::test_available_stages_cover_every_gate_and_tool
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 tests/system/test_cli_check.py::TestCheckStageGroups::test_available_stages_cover_every_gate_and_tool
 fails on main (post T-0813 merge): the new `protocol_summary` gate
@@ -11463,16 +10378,11 @@ kind: security
 origin: auditor
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/strata/_host_isolation.py
 - docs/strata/host.md
 - tests/unit/strata/test_host_isolation.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a principal with a narrow deny and a broad allow on one path WHEN the
     join evaluates THEN the WRITE_DAC indirection corner has a recorded disposition
@@ -11481,7 +10391,6 @@ acceptance:
   evidence: []
 threat: elevation-of-privilege
 component: null
-labels: []
 ```
 T-0792 reviewer finding: with per-principal netting, a same-principal
 narrow deny (Modify) plus broad allow (FullControl) nets to
@@ -11507,15 +10416,10 @@ kind: ux
 origin: agent
 created: '2026-07-23'
 priority: low
-blocked_by: []
 parent: null
 scope:
 - src/frob/app/ticket_runner.py
 - src/frob/tickets/**
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN a why-file that already begins with a Done report heading WHEN frob
     ticket done-report renders it THEN exactly one heading appears in the ledger block;
@@ -11523,7 +10427,6 @@ acceptance:
   evidence: []
 threat: null
 component: null
-labels: []
 ```
 Recurred 5+ times this drive (reviewers keep flagging it cosmetically): done-report prepends its own heading on top of one already present in --why-file content. Deduplicate at render time.
 
@@ -11536,18 +10439,11 @@ kind: docs
 origin: human
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - README.md
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 T-0574 added a real new top-level subcommand, `frob agent` (currently
 `frob agent env`), dispatched directly in __main__._dispatch the same way
@@ -11587,20 +10483,16 @@ kind: bug
 origin: agent
 created: '2026-07-23'
 priority: critical
-blocked_by: []
 parent: null
 scope:
 - src/frob/tickets/_land.py
 - tests/test_ticket_land.py
-scope_changes: []
 evidence:
 - tests/test_ticket_land.py::TestLandInternalEnvThroughHook::test_land_through_changelog_guard_hook_succeeds
 - tests/test_ticket_land.py::TestLandInternalEnvThroughHook::test_land_internal_git_env_restores_prior_value
 - tests/test_ticket_land.py::TestGitFailureMessageCarriesStderr::test_describe_git_failure_includes_argv_and_stderr
 - tests/test_ticket_land.py::TestGitFailureMessageCarriesStderr::test_describe_git_failure_includes_spawn_error
 - tests/test_ticket_land.py::TestGitFailureMessageCarriesStderr::test_wip_commit_failure_logs_stderr
-reviews: []
-attachments: []
 acceptance:
 - text: GIVEN the T-0731 pre-commit hook active via core.hooksPath WHEN land creates
     its wip snapshot and bump commits in the worktree THEN those internal commits
@@ -11610,7 +10502,6 @@ acceptance:
   - tests/test_ticket_land.py::TestLandInternalEnvThroughHook::test_land_through_changelog_guard_hook_succeeds
 threat: null
 component: null
-labels: []
 ```
 Hit live landing T-0594 (2026-07-23): after frob scaffold apply refreshed the hooks, land's worktree wip-snapshot commit was refused by the hook's land-owned CHANGELOG guard -- land sets FROB_LAND_INTERNAL for its main-side commits but not for the worktree wip/bump path, deadlocking every land (GitFailed with the error swallowed; secondary finding: land should surface the failing git command's stderr instead of a bare GitFailed). Coordinator workaround: FROB_LAND_INTERNAL=1 in the invoking env. Fix: set the env on ALL land-internal git commit spawns, and propagate the hook's stderr into the GitFailed error message.
 
@@ -11651,11 +10542,9 @@ kind: bug
 origin: human
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/vet/_capability.py
-scope_changes: []
 evidence:
 - tests/test_vet.py::TestCapabilityScanBindingResolution::test_import_as_alias_detected
 - tests/test_vet.py::TestCapabilityScanBindingResolution::test_from_import_detected
@@ -11665,12 +10554,8 @@ evidence:
 - tests/test_vet.py::TestCapabilityScanBindingResolution::test_param_shadowing_import_not_detected
 - tests/test_vet.py::TestCapabilityScanBindingResolution::test_local_variable_shadowing_import_not_detected
 - tests/test_vet.py::TestCapabilityScanBindingResolution::test_bare_name_call_with_no_import_not_detected
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 T-0582 (perf audit re-measurement) profiled `scan_file_capabilities`
 (src/frob/vet/_capability.py:2232) directly over every tracked .py file in
@@ -11747,21 +10632,15 @@ kind: bug
 origin: human
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/strata/_selfconform.py
-scope_changes: []
 evidence:
 - tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock::test_observed_extended_kinds_by_node_only_ever_yields_extended_kinds
 - tests/unit/strata/test_selfconform.py::TestRealGateGreen::test_repo_design_and_declarations_are_self_conformant
 - tests/unit/strata/test_selfconform.py::TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 T-0582 (perf audit re-measurement) re-verified docs/audits/perf.md's H5
 finding against current main: STILL UNFIXED. `_observed_extended_kinds_by_
@@ -11840,11 +10719,9 @@ kind: bug
 origin: human
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/gates/_refs.py
-scope_changes: []
 evidence:
 - tests/test_refs_gate.py::TestTiers::test_zero_refs_warns_ref001
 - tests/test_refs_gate.py::TestTiers::test_one_ref_weak_warns_ref002
@@ -11872,12 +10749,8 @@ evidence:
 - tests/test_refs_gate.py::TestMarkdownWaive::test_ref002_on_md_doc_without_waive_still_fires
 - tests/test_refs_gate.py::TestBacktickTokenizer::test_backtick_wrapped_path_mention_counts_as_reference
 - tests/test_refs_gate.py::TestBacktickTokenizer::test_backtick_wrapped_bare_identifier_not_treated_as_reference
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 T-0582 (perf audit re-measurement) profiled the refs gate in isolation
 (cProfile over a direct ref_gate(root) call, natives built, warm parse
@@ -11976,7 +10849,6 @@ kind: bug
 origin: human
 created: '2026-07-23'
 priority: high
-blocked_by: []
 parent: null
 scope:
 - src/frob/tickets/_land.py
@@ -12018,12 +10890,8 @@ scope_changes:
 evidence:
 - tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_unmeasured_fresh_check_skips_gate_reverification_land_proceeds
 - tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_two_unmeasured_gate_claims_never_vacuously_match
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Hit live landing T-0830 (2026-07-23): the ticket was self-closed (done,
 lease released), so the T-0754 post-merge re-verification's fresh
@@ -12080,22 +10948,16 @@ kind: docs
 origin: human
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - docs/design/registry/compliance.yaml
 - docs/modules/gates.md
-scope_changes: []
 evidence:
 - tests/test_gates.py::TestComplianceGate::test_compliance005_silent_on_handled_by_and_out_of_scope
 - cmd:sh /tmp/claude-1000/-home-logan-projects-frob/28006941-9d5c-4153-b3fb-399b3b532639/scratchpad/t0833-evidence.sh
   exit=0 sha256=e3b0c44298fc
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 T-0788 wired COMPLIANCE005 live (compliance_gate dispatches
 check_cmpl_registry in gates-fast) but left two disclosed gaps:
@@ -12169,20 +11031,13 @@ kind: bug
 origin: human
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/app/ticket_runner.py
 - src/frob/tickets/__init__.py
 - tests/test_ticket_evidence.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Two coordinator frictions hit landing T-0833 (2026-07-23):
 
@@ -12210,7 +11065,6 @@ kind: bug
 origin: human
 created: '2026-07-23'
 priority: high
-blocked_by: []
 parent: null
 scope:
 - src/frob/tickets/__init__.py
@@ -12266,12 +11120,8 @@ evidence:
 - tests/test_ticket_leases.py::TestRefusesForeignLiveLease::test_same_worktree_restart_stays_idempotent
 - tests/test_ticket_leases.py::TestStealOverride::test_steal_succeeds_and_invalidates_the_other_worktrees_lease
 - tests/test_ticket_leases.py::TestDoubleDispatchIncidentRegression::test_incident_shape_end_to_end
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Hit live 2026-07-23: T-0806 was dispatched twice (first agent presumed
 dead, redispatched); the first agent's work landed at 04:45 while the
@@ -12371,21 +11221,14 @@ kind: feature
 origin: human
 created: '2026-07-23'
 priority: high
-blocked_by: []
 parent: null
 scope:
 - src/frob/app/ticket_runner.py
 - src/frob/tickets/_leases.py
 - docs/guides/agent-playbook.md
 - tests/test_ticket_leases.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Hit live 2026-07-23: coordinator hand-swept 68 stale worktree
 registrations with raw `git worktree remove`; the skip-list missed a live
@@ -12411,20 +11254,13 @@ kind: docs
 origin: human
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - docs/modules/tickets.md
 - src/frob/tickets/__init__.py
 - src/frob/app/ticket_runner.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 T-0571's salvage port (frob review: structured adversarial review channel
 as first-class evidence) landed without its docs section --
@@ -12447,13 +11283,11 @@ kind: bug
 origin: human
 created: '2026-07-23'
 priority: high
-blocked_by: []
 parent: null
 scope:
 - src/frob/tickets/_models.py
 - src/frob/tickets/__init__.py
 - tests/test_tickets.py
-scope_changes: []
 evidence:
 - tests/test_tickets.py::TestQueue::test_unknown_frontmatter_key_is_tolerated
 - tests/test_tickets.py::TestQueue::test_unknown_field_with_malformed_known_field_still_errs
@@ -12466,12 +11300,8 @@ evidence:
 - tests/test_tickets.py::TestUnknownFieldForwardCompat::test_unknown_field_logs_warning_named
 - tests/test_tickets.py::TestUnknownFieldForwardCompat::test_unknown_field_preserved_verbatim_on_reserialize
 - tests/test_tickets.py::TestUnknownFieldForwardCompat::test_known_field_still_validated_strictly
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Hit live twice: T-0571's original land (yesterday, donor branch) and its
 salvage land today both broke because the feature adds a new Ticket
@@ -12571,7 +11401,6 @@ kind: bug
 origin: human
 created: '2026-07-23'
 priority: high
-blocked_by: []
 parent: null
 scope:
 - src/frob/gates/__init__.py
@@ -12597,12 +11426,8 @@ evidence:
 - tests/test_gates.py::TestGateOrderSetEquality::test_canonical_order_names_no_nonexistent_gate
 - tests/test_gates.py::TestMergeCanonicalOrder::test_unknown_gate_key_raises_with_name
 - tests/test_gates.py::TestMergeCanonicalOrder::test_all_current_gates_merge_without_raising
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 Hit live 2026-07-23: T-0788 added the "compliance" gate to _ALL_GATES
 but not _CANONICAL_GATE_ORDER; _merge_canonical_order silently DROPS
@@ -12691,19 +11516,12 @@ kind: feature
 origin: human
 created: '2026-07-23'
 priority: medium
-blocked_by: []
 parent: null
 scope:
 - src/frob/graph/**
 - src/frob/gates/_protocol_summary.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 T-0746 disclosure: PROTO002/PROTO003 (frob.gates._protocol_summary) ask
 an EXISTENTIAL question over compute_protocol_summaries' unordered,
@@ -12730,19 +11548,12 @@ kind: feature
 origin: human
 created: '2026-07-23'
 priority: low
-blocked_by: []
 parent: null
 scope:
 - src/frob/gates/_protocol_summary.py
 - src/frob/graph/callgraph.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 T-0746 disclosure: frob.arch._protocol_excuse's per-language discharge
 predicates (rust_drop_discharge, cpp_raii_discharge,
@@ -12768,20 +11579,13 @@ kind: security
 origin: human
 created: '2026-07-23'
 priority: high
-blocked_by: []
 parent: null
 scope:
 - src/frob/gates/__init__.py
 - src/frob/tickets/_models.py
 - tests/test_gates.py
-scope_changes: []
-evidence: []
-reviews: []
-attachments: []
-acceptance: []
 threat: null
 component: null
-labels: []
 ```
 T-0838 made the ledger Ticket model tolerate unknown fields (warn +
 preserve + round-trip) so schema-extending features stop bricking their

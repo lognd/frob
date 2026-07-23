@@ -5568,6 +5568,33 @@ class TestRunGates:
         assert "scope" in report.stats.skipped
         assert "prework" in report.stats.skipped
 
+    # frob:tests src/frob/gates/__init__.py::_build_ticket_scoped_jobs
+    # frob:ticket T-0541
+    def test_run_gates_blocks_prework_when_diff_load_fails_with_no_ticket(
+        self, tmp_path: Path
+    ) -> None:
+        """B9 remainder: a repo with no git history at all (detached-HEAD-
+        shaped: `working_diff` has no merge-base and fails outright) and no
+        derivable ticket must still block PRE001 loudly, not silently skip
+        it. Before this fix, `_load_diff`'s degraded-empty placeholder made
+        `no_ticket_blocks` see zero touched files, so PRE001 skipped even
+        though the diff genuinely failed to load -- the exact B9 escape,
+        reached through the diff-load-failure door instead of the
+        off-convention-branch-name door. SCOPE001 already had a matching
+        unconditional `diff_load_failed` check; PRE001 did not."""
+        (tmp_path / "src").mkdir()
+        (tmp_path / "src" / "m.py").write_text("def f(x):\n    return x\n")
+        cfg = GateConfig(
+            root=str(tmp_path), base="main", gates=frozenset({"scope", "prework"})
+        )
+        result = run_gates(cfg)
+        assert result.is_ok
+        report = result.danger_ok
+        assert "prework" not in report.stats.skipped
+        pre001 = _first_rule(report.violations, "PRE001")
+        assert pre001 is not None
+        assert "failed to load" in pre001.message
+
 
 class TestRunJobsTimingAttribution:
     """T-0232: `_run_jobs` must attribute each job its OWN cost, not a

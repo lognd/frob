@@ -9031,7 +9031,15 @@ def _build_ticket_scoped_jobs(
     """`scope`/`prework` jobs both need `st.ticket`. When no ticket is
     derivable AND the diff touches non-ledger source (B9), that is now a
     loud blocking violation instead of a silent skip; jobs are only truly
-    skipped (not run, not failed) when there is nothing to enforce against."""
+    skipped (not run, not failed) when there is nothing to enforce against.
+
+    PRE001 also blocks loudly (rather than silently skipping) when the
+    working diff itself failed to load and no ticket is derivable: a
+    failed diff degrades to an empty placeholder that looks like "nothing
+    touched" to `no_ticket_blocks`, which is exactly the B9 escape reached
+    through a different door (detached HEAD / bad `--base` instead of an
+    off-convention branch name). SCOPE001 already had this via its own
+    unconditional `diff_load_failed` check; PRE001 did not."""
     jobs: dict[str, Callable[[], tuple[Violation, ...]]] = {}
     skipped: list[str] = []
     no_ticket_blocks = st.ticket is None and _no_active_ticket_touches_source(st.diff)
@@ -9055,6 +9063,18 @@ def _build_ticket_scoped_jobs(
         pre_ticket = st.ticket
         if pre_ticket is not None:
             jobs["prework"] = lambda: prework_gate(pre_ticket, st.snapshot, st.sweep)
+        elif st.diff_load_failed:
+            # T-0541 (B9 remainder): a failed diff load degrades `st.diff`
+            # to `_load_diff`'s empty placeholder, so `no_ticket_blocks`
+            # (which asks the diff what it touched) would see zero touched
+            # files and skip PRE001 -- the exact detached-HEAD/bad-`--base`
+            # shape B9 exists to close, just reached through the diff-load
+            # path instead of the branch-naming path. Mirror SCOPE001's
+            # already-loud `diff_load_failed` handling here instead of
+            # silently trusting the degraded-empty diff.
+            jobs["prework"] = lambda: (
+                _diff_load_failed_violation("PRE001", st.diff.base),
+            )
         elif no_ticket_blocks:
             jobs["prework"] = lambda: _no_active_ticket_violation("PRE001", st.diff)
         else:
