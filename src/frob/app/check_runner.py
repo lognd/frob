@@ -952,10 +952,24 @@ def run(cfg: AppConfig) -> None:
         sys.exit(1)
 
     # frob:ticket T-0787
-    if _refuse_ticket_lease_mismatch(root, cfg):
+    # frob:ticket T-0806
+    # T-0806: `_refuse_ticket_lease_mismatch` (and `_handle_stamp_modes`,
+    # via `stamp_baseline`'s own gate run) can each spawn `git` through
+    # `frob.gitio` before `_run_all_stages` ever enters `_stdout_log_ctx`
+    # below -- their DEBUG/INFO log lines used to print to stdout
+    # unguarded even under `--json`, corrupting the JSON payload (observed
+    # as a `json.loads` failure on real `git ls-files`/`rev-parse` noise
+    # from a tmp-dir fixture with no `.git`). Wrap both under the same
+    # `quiet_stdout_logs` `--json` uses everywhere else; the reentrant
+    # depth-counter (T-0125) means `_run_all_stages`'s own nested entry
+    # later is a no-op, not a double-clamp.
+    lease_ctx = quiet_stdout_logs() if cfg.check_json else contextlib.nullcontext()
+    with lease_ctx:
+        lease_mismatch = _refuse_ticket_lease_mismatch(root, cfg)
+        stamp_mode_ran = False if lease_mismatch else _handle_stamp_modes(root, cfg)
+    if lease_mismatch:
         sys.exit(1)
-
-    if _handle_stamp_modes(root, cfg):
+    if stamp_mode_ran:
         return
 
     if cfg.check_json:

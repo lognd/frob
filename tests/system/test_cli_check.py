@@ -38,7 +38,23 @@ def _make_project(tmp_path: Path, src: str, pkg: str = "mypkg") -> Path:
 
 class TestCheckCleanProject:
     def test_clean_code_exits_zero(self, tmp_path):
+        # frob:ticket T-0806
+        # T-0806: `_make_project` deliberately leaves `tmp_path` git-less
+        # (shared with `TestGitlessTargetGateSeverity`'s intentionally
+        # git-less scenario, T-0705) -- but COV002/SCOPE001/TODO001 (T-0550)
+        # treat ANY git failure, including "no repo at all", as a diff LOAD
+        # FAILURE and fire a loud blocking error rather than silently
+        # passing, so a genuinely clean, git-committed project is the only
+        # way this test's "clean code exits zero" claim can hold. Committing
+        # here (this test's own tmp_path only, not the shared helper) gives
+        # `working_diff` a real, empty diff to resolve instead of a load
+        # failure.
         _make_project(tmp_path, "def add(x: int, y: int) -> int:\n    return x + y\n")
+        _git("init", "-q", "-b", "main", cwd=tmp_path)
+        _git("config", "user.email", "test@example.com", cwd=tmp_path)
+        _git("config", "user.name", "Test", cwd=tmp_path)
+        _git("add", "-A", cwd=tmp_path)
+        _git("commit", "-q", "-m", "init", cwd=tmp_path)
         r = run(
             "check",
             str(tmp_path),
@@ -182,8 +198,18 @@ class TestCheckFixtures:
 class TestCheckSkipFlags:
     def test_skip_ruff(self, tmp_path):
         # Unused import would fail ruff; with --skip-ruff it should not
+        # frob:ticket T-0806
         src = "import os\n\ndef foo() -> None:\n    pass\n"
         _make_project(tmp_path, src)
+        # T-0806: git-committing this test's own tmp_path (not the shared
+        # `_make_project` helper) gives `working_diff` a real, empty diff
+        # so COV002/SCOPE001/TODO001 (T-0550) don't treat a git-less root
+        # as a load failure -- see TestCheckCleanProject.test_clean_code_exits_zero.
+        _git("init", "-q", "-b", "main", cwd=tmp_path)
+        _git("config", "user.email", "test@example.com", cwd=tmp_path)
+        _git("config", "user.name", "Test", cwd=tmp_path)
+        _git("add", "-A", cwd=tmp_path)
+        _git("commit", "-q", "-m", "init", cwd=tmp_path)
         r = run(
             "check",
             str(tmp_path),
@@ -200,7 +226,13 @@ class TestCheckSkipFlags:
         assert r.returncode == 0, r.stdout + r.stderr
 
     def test_skip_exports(self, tmp_path):
+        # frob:ticket T-0806
         _make_project(tmp_path, "def foo(): ...\n")
+        _git("init", "-q", "-b", "main", cwd=tmp_path)
+        _git("config", "user.email", "test@example.com", cwd=tmp_path)
+        _git("config", "user.name", "Test", cwd=tmp_path)
+        _git("add", "-A", cwd=tmp_path)
+        _git("commit", "-q", "-m", "init", cwd=tmp_path)
         r = run(
             "check",
             str(tmp_path),
@@ -284,11 +316,27 @@ def _git(*args, cwd):
     subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True)
 
 
+# frob:ticket T-0806
+# T-0806: `--only gates` still routes through `_dispatch_check`'s project-
+# type detection (`detect_project_type`) before any gate runs -- a bare
+# `pkg.py` with no `pyproject.toml`/`setup.py` resolves to `"unknown"`
+# (CHECK001, T-0546) rather than "python", so every fixture below writes a
+# minimal `pyproject.toml` alongside `pkg.py` to resolve as a real python
+# project instead of tripping the loud unknown-project-type refusal.
+def _write_pyproject(tmp_path: Path, name: str = "pkg") -> None:
+    """Write a minimal `pyproject.toml` so `detect_project_type` resolves
+    `tmp_path` as `python` instead of `unknown` (T-0806)."""
+    (tmp_path / "pyproject.toml").write_text(
+        f'[project]\nname = "{name}"\nversion = "0.1.0"\n'
+    )
+
+
 class TestCheckGatesStage:
     def test_only_gates_reports_violation_with_remedy(self, tmp_path):
         _git("init", "-q", "-b", "main", cwd=tmp_path)
         _git("config", "user.email", "test@example.com", cwd=tmp_path)
         _git("config", "user.name", "Test", cwd=tmp_path)
+        _write_pyproject(tmp_path)
         (tmp_path / "pkg.py").write_text(
             "def add(x: int, y: int) -> int:\n    return x + y\n"
         )
@@ -305,6 +353,7 @@ class TestCheckGatesStage:
         _git("init", "-q", "-b", "main", cwd=tmp_path)
         _git("config", "user.email", "test@example.com", cwd=tmp_path)
         _git("config", "user.name", "Test", cwd=tmp_path)
+        _write_pyproject(tmp_path)
         (tmp_path / "pkg.py").write_text(
             "def add(x: int, y: int) -> int:\n    return x + y\n"
         )
@@ -322,6 +371,15 @@ class TestCheckGatesStage:
 
         stamp = run("check", str(tmp_path), "--stamp-coverage")
         assert stamp.returncode == 0, stamp.stdout + stamp.stderr
+
+        # frob:ticket T-0806
+        # T-0806: `--stamp-coverage` writes `frob-coverage.lock.json` into
+        # the working tree; left uncommitted, the next `working_diff` sees
+        # a 1-file diff with no active ticket and PRE001/SCOPE001 (correctly)
+        # refuse it -- commit the stamp so this run's diff is genuinely
+        # clean, matching what a real repo would do.
+        _git("add", "-A", cwd=tmp_path)
+        _git("commit", "-q", "-m", "stamp", cwd=tmp_path)
 
         r = run("check", str(tmp_path), "--only", "gates")
         out = r.stdout + r.stderr
@@ -344,12 +402,15 @@ class TestCheckDocAnchorScopedVsUnscoped:
         _git("init", "-q", "-b", "main", cwd=tmp_path)
         _git("config", "user.email", "test@example.com", cwd=tmp_path)
         _git("config", "user.name", "Test", cwd=tmp_path)
+        _write_pyproject(tmp_path)  # frob:ticket T-0806
 
         (tmp_path / "docs").mkdir()
         (tmp_path / "docs" / "x.md").write_text("# Doc\n\n## Widget\n\nBody.\n")
 
         sub = tmp_path / "pkg" / "sub"
         sub.mkdir(parents=True)
+        # T-0806: `check <sub>` scans just `sub`, so it needs its own marker.
+        _write_pyproject(sub)
         (sub / "__init__.py").write_text("")
         (sub / "mod.py").write_text(
             "# frob:doc docs/x.md#widget\n"
@@ -409,6 +470,7 @@ class TestCheckStampBaselineAndDelta:
         _git("init", "-q", "-b", "main", cwd=tmp_path)
         _git("config", "user.email", "test@example.com", cwd=tmp_path)
         _git("config", "user.name", "Test", cwd=tmp_path)
+        _write_pyproject(tmp_path)
         (tmp_path / "pkg.py").write_text(
             "def add(x: int, y: int) -> int:\n    return x + y\n"
         )
@@ -444,6 +506,7 @@ class TestCheckStampBaselineAndDelta:
         _git("init", "-q", "-b", "main", cwd=tmp_path)
         _git("config", "user.email", "test@example.com", cwd=tmp_path)
         _git("config", "user.name", "Test", cwd=tmp_path)
+        _write_pyproject(tmp_path)
         (tmp_path / "pkg.py").write_text(
             "def add(x: int, y: int) -> int:\n    return x + y\n"
         )
@@ -602,6 +665,7 @@ class TestFrobTomlCheckDefaults:
         import subprocess
         import sys
 
+        _write_pyproject(tmp_path)  # frob:ticket T-0806
         (tmp_path / "src").mkdir()
         (tmp_path / "src" / "m.py").write_text("def f():\n    return 1\n")
         (tmp_path / "frob.toml").write_text(
@@ -724,10 +788,18 @@ class TestCheckTypescript:
         return tmp_path
 
     def test_clean_ts_passes_tsc(self, tmp_path):
+        # frob:ticket T-0806
         self._make_ts_project(
             tmp_path,
             "export function add(a: number, b: number): number {\n    return a + b;\n}\n",
         )
+        # T-0806: git-committing this test's own tmp_path gives `working_diff`
+        # a real, empty diff -- see TestCheckCleanProject.test_clean_code_exits_zero.
+        _git("init", "-q", "-b", "main", cwd=tmp_path)
+        _git("config", "user.email", "test@example.com", cwd=tmp_path)
+        _git("config", "user.name", "Test", cwd=tmp_path)
+        _git("add", "-A", cwd=tmp_path)
+        _git("commit", "-q", "-m", "init", cwd=tmp_path)
         r = run(
             "check",
             str(tmp_path),
@@ -800,3 +872,85 @@ class TestGitlessTargetGateSeverity:
         err = capsys.readouterr().err
         assert "WARNING: render_lint_gate: git ls-files exited" in err, err
         assert "ERROR: render_lint_gate" not in err, err
+
+
+# frob:ticket T-0787
+# frob:ticket T-0806
+class TestCheckTicketLeasePinRefusal:
+    """T-0787 wired `frob check`'s `--ticket`/branch resolution through
+    `frob.gates.ticket_lease_pin` (T-0766's cross-worktree lease primitive)
+    so a stale/cross-worktree lease refuses loudly instead of silently
+    running gates against the wrong worktree's ticket (the T-0695 hole).
+    T-0787's reviewer flagged the missing end-to-end regression guard --
+    every existing coverage was a `ticket_lease_pin`-level unit test
+    (tests/test_tickets_leases.py::TestTicketLeasePin), never a real
+    `frob check --ticket <id>` CLI run from a worktree that does NOT hold
+    the lease. Deferred to T-0806 (this class) rather than fixed inline
+    with T-0787 -- see this ticket's Done report."""
+
+    def test_ticket_lease_recorded_elsewhere_refuses(self, tmp_path):
+        """`frob check --ticket <id>` from a SECOND linked `git worktree`,
+        when `<id>`'s lease is recorded for the FIRST (main) worktree, exits
+        1 with a refusal naming `frob ticket start <id>` -- never a silent
+        pass and never a crash."""
+        main_repo = tmp_path / "main"
+        main_repo.mkdir()
+        _git("init", "-q", "-b", "main", cwd=main_repo)
+        _git("config", "user.email", "test@example.com", cwd=main_repo)
+        _git("config", "user.name", "Test", cwd=main_repo)
+        (main_repo / "tickets.md").write_text("# Tickets\n\n")
+        (main_repo / "src").mkdir()
+        (main_repo / "src" / "feature.py").write_text(
+            "def add(x: int, y: int) -> int:\n    return x + y\n"
+        )
+        _git("add", "-A", cwd=main_repo)
+        _git("commit", "-q", "-m", "init", cwd=main_repo)
+
+        new = run(
+            "ticket",
+            "new",
+            "--title",
+            "lease pin refusal fixture",
+            "--kind",
+            "bug",
+            "--scope",
+            "src/feature.py",
+            "--path",
+            str(main_repo),
+        )
+        assert new.returncode == 0, new.stdout + new.stderr
+        ticket_id = "T-0001"
+        assert ticket_id in (new.stdout + new.stderr)
+
+        # `start` records this ticket's cross-worktree lease pinned to
+        # `main_repo` (T-0473's shared-git-common-dir side channel).
+        start = run("ticket", "start", ticket_id, "--foreground", cwd=main_repo)
+        assert start.returncode == 0, start.stdout + start.stderr
+
+        # A second linked worktree of the SAME repo: shares `main_repo`'s
+        # git common dir (and therefore its `frob-leases/` side channel)
+        # but never itself ran `frob ticket start` -- no lease of its own.
+        second_worktree = tmp_path / "wt"
+        _git(
+            "worktree",
+            "add",
+            "-b",
+            "second-wt",
+            str(second_worktree),
+            cwd=main_repo,
+        )
+
+        r = run(
+            "check",
+            str(second_worktree),
+            "--ticket",
+            ticket_id,
+            "--only",
+            "gates",
+            cwd=second_worktree,
+        )
+        out = r.stdout + r.stderr
+        assert r.returncode == 1, out
+        assert out.strip(), "a lease-pin refusal must never be silent"
+        assert ticket_id in out
+        assert "frob ticket start" in out

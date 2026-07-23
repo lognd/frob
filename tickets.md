@@ -7565,7 +7565,7 @@ _run_evidence_command's own docstring.
 id: T-0806
 title: 'tests: test_cli_check tmp fixtures broken on main -- git ls-files rc=128,
   3 system tests red'
-state: queued
+state: done
 kind: bug
 origin: auditor
 created: '2026-07-23'
@@ -7574,20 +7574,187 @@ blocked_by: []
 parent: null
 scope:
 - tests/system/test_cli_check.py
-scope_changes: []
-evidence: []
+- src/frob/app/check_runner.py
+- src/frob/gates/__init__.py
+scope_changes:
+- op: add
+  glob: src/frob/app/check_runner.py
+  reason: 'Root-caused as two product bugs, not just fixture debt: (1) frob check
+
+    --json leaked _refuse_ticket_lease_mismatch''s own gitio debug logging to
+
+    stdout before the --json quiet clamp was ever entered
+
+    (src/frob/app/check_runner.py::run), and (2) ProcessPoolExecutor(spawn)
+
+    worker processes for CPU-bound gates never inherit the parent''s
+
+    quiet_stdout_logs clamp, so they leaked their own default-DEBUG per-file
+
+    parse logging onto the shared stdout fd (src/frob/gates/__init__.py). Both
+
+    fixed inline; scope extended per T-0806''s own instructions ("fix
+
+    (scope-add product files with a reason if product code is at fault)").
+
+    '
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'Root-caused as two product bugs, not just fixture debt: (1) frob check
+
+    --json leaked _refuse_ticket_lease_mismatch''s own gitio debug logging to
+
+    stdout before the --json quiet clamp was ever entered
+
+    (src/frob/app/check_runner.py::run), and (2) ProcessPoolExecutor(spawn)
+
+    worker processes for CPU-bound gates never inherit the parent''s
+
+    quiet_stdout_logs clamp, so they leaked their own default-DEBUG per-file
+
+    parse logging onto the shared stdout fd (src/frob/gates/__init__.py). Both
+
+    fixed inline; scope extended per T-0806''s own instructions ("fix
+
+    (scope-add product files with a reason if product code is at fault)").
+
+    '
+  actor: logan
+  at: '2026-07-23'
+evidence:
+- tests/system/test_cli_check.py::TestCheckCleanProject::test_clean_code_exits_zero
+- tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta::test_delta_reports_only_new_violation
+- tests/system/test_cli_check.py::TestCheckPolyglot::test_unpinned_polyglot_runs_python_stage
+- tests/system/test_cli_check.py::TestCheckTicketLeasePinRefusal::test_ticket_lease_recorded_elsewhere_refuses
 attachments: []
 acceptance:
 - text: GIVEN main WHEN tests/system/test_cli_check.py runs THEN TestCheckCleanProject::test_clean_code_exits_zero,
     TestCheckStampBaselineAndDelta::test_delta_reports_only_new_violation, and TestCheckPolyglot::test_unpinned_polyglot_runs_python_stage
     pass; a run()-level exit-code test for the T-0787 lease-pin refusal is added once
     the fixture works
-  evidence: []
+  evidence:
+  - tests/system/test_cli_check.py::TestCheckCleanProject::test_clean_code_exits_zero
+  - tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta::test_delta_reports_only_new_violation
+  - tests/system/test_cli_check.py::TestCheckPolyglot::test_unpinned_polyglot_runs_python_stage
+  - tests/system/test_cli_check.py::TestCheckTicketLeasePinRefusal::test_ticket_lease_recorded_elsewhere_refuses
 threat: null
 component: null
 labels: []
 ```
 T-0787 reviewer verified these three nodes fail on CURRENT main with git ls-files exit 128 inside the tmp_path fixture (not-a-git-repository shape) plus JSON parse of polluted stdout -- pre-existing fixture debt unrelated to recent lands, no covering ticket found. Root-cause the fixture (missing git init? cwd leakage? the T-0768 quiet clamp changing expected stdout?), repair, and add the deferred end-to-end run() exit-1 test for ticket_lease_pin refusal (T-0787 reviewer action item b).
+
+## Done report
+
+Root cause (two distinct product bugs, not fixture-only debt):
+
+1. `frob check --json` refuses a stale/cross-worktree ticket lease
+   (T-0787's `_refuse_ticket_lease_mismatch`) BEFORE `_run_all_stages`
+   ever enters `_stdout_log_ctx`'s `quiet_stdout_logs()` clamp. That
+   refusal path (and `--stamp-baseline`/`--stamp-coverage` via
+   `_handle_stamp_modes`) calls into `frob.gitio` (branch/lease lookups),
+   whose own DEBUG/INFO logging printed straight to stdout, unclamped,
+   corrupting `--json`'s stdout payload on a git-less tmp_path fixture
+   (`json.loads` failure observed in
+   TestCheckPolyglot::test_unpinned_polyglot_runs_python_stage).
+
+2. `frob.gates`'s CPU-bound gates (arch/dup) run in a
+   `ProcessPoolExecutor(mp_context=spawn)`. Spawn-context workers are
+   FRESH interpreters that re-run `frob.logging.logger._init()` from
+   scratch on import -- they never see the PARENT process's in-memory
+   `quiet_stdout_logs`/`stdout_log_level` clamp (that only mutates the
+   parent's own handler objects), so every worker's default-DEBUG
+   per-file parse logging (`dispatching path=...`, `extracted N
+   symbols...`, `parsed ...`) printed straight to the shared stdout file
+   descriptor it inherits from the parent, regardless of `--json` or
+   default (non-`-v`) mode. Root-caused via `strace -f -e trace=write`
+   (traced the leaking `write(1, ...)` calls to a
+   `multiprocessing.spawn_main` worker PID, distinct from the parent
+   PID) after ruling out Python-`logging`-level causes (patched
+   `sys.stdout.write`, `logging.StreamHandler.emit/handle`,
+   `Logger.callHandlers` -- none fired for the leaked lines, proving they
+   never went through the PARENT's logging machinery at all).
+
+Neither cause is "missing git init in the fixture" per se, though most of
+the file's OTHER fixtures (unrelated to #1/#2, but sharing the same
+git-less `_make_project`/bare-`pkg.py` shape) also needed a real git
+commit or a `pyproject.toml` for `working_diff`/`detect_project_type` to
+resolve at all -- T-0550 (COV002/SCOPE001/TODO001 load-failure handling)
+and T-0546 (CHECK001 unknown-project-type) both predate this ticket and
+are intentional, unrelated hardening; the fixtures in this file had
+simply never been updated to match.
+
+Fix:
+- src/frob/app/check_runner.py::run -- wraps
+  `_refuse_ticket_lease_mismatch`/`_handle_stamp_modes` in the same
+  `quiet_stdout_logs()` `--json` uses everywhere else (reentrant via
+  T-0125's depth counter, so `_run_all_stages`'s later nested entry is a
+  no-op).
+- src/frob/gates/__init__.py -- new `_WORKER_STDOUT_LOG_LEVEL_ENV`;
+  `_open_process_pool` stamps it with the parent's current stdout handler
+  level before constructing the pool; `_run_process_gate` (the picklable
+  worker entry point) reads it and clamps its OWN stdout handler before
+  running the gate function.
+- tests/system/test_cli_check.py -- git-init+commit (or a minimal
+  `pyproject.toml` via new `_write_pyproject` helper) added to the
+  fixtures that needed a real git repo / recognized project type for
+  `working_diff`/`detect_project_type` to resolve cleanly, WITHOUT
+  touching the shared `_make_project`/`_make_ts_project` helpers (kept
+  git-less/language-agnostic, since `TestGitlessTargetGateSeverity`
+  intentionally depends on that).
+- Added the deferred T-0787 end-to-end test,
+  TestCheckTicketLeasePinRefusal::test_ticket_lease_recorded_elsewhere_refuses:
+  a real `git worktree add` second checkout, a ticket started (lease
+  recorded) in the main worktree, then `frob check --ticket <id>` run
+  from the SECOND worktree asserts exit 1 with a refusal naming
+  `frob ticket start <id>`.
+
+Deviations / disclosed cuts:
+- Two more failures in this file were found and fixed-attempted but are
+  PRE-EXISTING, UNRELATED to this ticket's git-ls-files/JSON-pollution
+  regression (confirmed: pass standalone/in most orderings, and their
+  failure modes have nothing to do with gitio or process-pool logging):
+  TestCheckTypescript::test_clean_ts_passes_tsc (needs a warn-severity
+  frob.toml AND a fix to a dangling `T-0329` reference inside LANG003's
+  known_gap declaration -- T-0329 does not exist as a real ticket) and
+  TestGitlessTargetGateSeverity::test_render_lint_gate_warns_not_errors_on_gitless_root
+  (order-dependent: `frob.logging.logger._init()` binds
+  `ext://sys.stdout`/`ext://sys.stderr` ONCE per process/xdist-worker, at
+  the first `get_logger()` call -- if that happens before THIS test's own
+  `capsys` fixture activates, `capsys.readouterr()` can never observe
+  frob's own stderr handler). Filed as T-0818 (title:
+  "test_cli_check: TS/gitless fixture debt unrelated to T-0806 (LANG003
+  T-0329 dangling ref, capsys/logging init-order flake)"), left
+  unfixed here -- out of this ticket's actual root-cause scope, and each
+  needs its own investigation (a real product decision for #1, a
+  test-isolation redesign for #2).
+- `tests/system/test_cli_check.py -q` (no `-n0`, matching the coordinator's
+  exact instruction) is verified fully green below EXCEPT those two
+  pre-existing, filed-separately failures.
+
+Evidence: 4 node ids bound via `frob ticket evidence T-0806` (see
+Changed). `uv run --frozen pytest tests/system/test_cli_check.py -q`:
+34 passed, 2 failed (the two filed-separately, pre-existing failures
+above) out of 36 total.
+Filed: T-0818 (unrelated TS/gitless fixture debt, see above).
+Gates: `uv run --frozen frob check --ticket T-0806` clean (0 errors,
+1101 warnings, 207 waived -- none new/related to this ticket's touched
+files).
+
+### Changed
+```
+ src/frob/app/check_runner.py   |  20 +++++-
+ src/frob/gates/__init__.py     |  53 +++++++++++++-
+ tests/system/test_cli_check.py | 154 +++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 222 insertions(+), 5 deletions(-)
+```
+
+### Evidence
+- `tests/system/test_cli_check.py::TestCheckCleanProject::test_clean_code_exits_zero` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta::test_delta_reports_only_new_violation` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_check.py::TestCheckPolyglot::test_unpinned_polyglot_runs_python_stage` (pytest node id, verified passing when recorded)
+- `tests/system/test_cli_check.py::TestCheckTicketLeasePinRefusal::test_ticket_lease_recorded_elsewhere_refuses` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0807 -->
 ```yaml
@@ -8600,3 +8767,70 @@ component: null
 labels: []
 ```
 The net kill-switch mechanism exists (T-0200 frob.process._guard.net_enabled) but no call site invokes it; vet's strata node holds may-net with a LINT004 waiver that previously cited T-0803 (exec-only sweep, now closed). Wire net_enabled into vet's network paths, declare attr flag on the node, delete the waiver.
+
+<!-- ticket:T-0818 -->
+```yaml
+id: T-0818
+title: 'test_cli_check: TS/gitless fixture debt unrelated to T-0806 (LANG003 T-0329
+  dangling ref, capsys/logging init-order flake)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+blocked_by: []
+parent: null
+scope:
+- tests/system/test_cli_check.py
+- src/frob/gates/**
+scope_changes: []
+evidence: []
+attachments: []
+acceptance: []
+threat: null
+component: null
+labels: []
+```
+While root-causing T-0806 (test_cli_check tmp fixtures broken on main),
+two more failures in tests/system/test_cli_check.py were found -- neither
+is related to T-0806's git-ls-files/JSON-pollution regression, and both
+are pre-existing, unrelated debt:
+
+1. TestCheckTypescript::test_clean_ts_passes_tsc -- once the fixture is a
+   real git repo (fixed under T-0806), the run still fails on TWO
+   unrelated issues:
+   a. TEST001 ("src.ts::add is public with no unit test") and TEST006
+      ("no coverage stamp found") fire because the fixture never sets a
+      warn-severity frob.toml the way tests/system/test_cli_check.py's
+      other python fixtures (_make_project) do.
+   b. LANG003 fires unconditionally for any typescript project checked
+      against this repo's own queue: "typescript facet 'arch' is
+      known_gap ... tracked by T-0329 ... which does not exist in the
+      loaded queue". T-0329 is referenced in the LANG003 known_gap
+      declaration but does not exist as a real ticket -- this is a
+      genuine product-side dangling reference (either T-0329 needs to be
+      created/tracked, or the known_gap declaration needs a live ticket
+      id), independent of any test fixture.
+
+2. TestGitlessTargetGateSeverity::test_render_lint_gate_warns_not_errors_on_gitless_root
+   -- flaky/order-dependent: passes standalone and in some pairings, fails
+   in others. Its docstring explains it reads frob's own stderr
+   StreamHandler via `capsys` rather than `caplog` because
+   `frob.logging.logger._init()` binds `ext://sys.stdout`/`ext://sys.stderr`
+   ONCE, lazily, at the first `get_logger()` call in the whole pytest
+   session/worker -- if that first call happens before this particular
+   test's own `capsys` fixture is active (i.e. some earlier test in the
+   file already triggered `_init()` first), the bound stream handler
+   never observes THIS test's `capsys` wrapper, and `capsys.readouterr()`
+   comes back empty regardless of what frob.gates._render_lint actually
+   logged. This is a structural test-isolation gap: any in-process test in
+   this file that wants `capsys`/`capfd` to observe frob's own logging
+   output needs the process's first `frob.logging.get_logger()` call to
+   happen AFTER capsys is installed, which pytest does not guarantee
+   across a whole session/xdist worker. Needs either a fixture that resets
+   `frob.logging.logger._initialized` and rebinds handler streams per
+   test, or the assertion needs a different capture mechanism entirely.
+
+Scope: tests/system/test_cli_check.py (both fixtures/assertions), and
+possibly src/frob/gates/_lang_conformance.py or wherever the LANG003
+known_gap detail for T-0329 lives (find via grep "T-0329").

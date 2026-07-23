@@ -23,6 +23,7 @@ import difflib
 import fnmatch
 import functools
 import hashlib
+import logging
 import multiprocessing
 import os
 import re
@@ -8890,7 +8891,29 @@ def _run_jobs(
     return violations, counts, timing
 
 
+#: T-0806: env var `_open_process_pool` stamps with the parent's CURRENT
+#: stdout log handler level (`logging.getLevelName`) before spawning any
+#: worker. `ProcessPoolExecutor(mp_context=spawn)` workers are fresh
+#: interpreters that re-run `frob.logging.logger._init()` from scratch on
+#: first import -- they never see the parent's in-memory
+#: `quiet_stdout_logs`/`stdout_log_level` clamp (that mutates the PARENT
+#: process's handler objects only), so a `--json`/quiet parent run used to
+#: leak every worker's own default-DEBUG per-file parse logging straight
+#: onto the stdout file descriptor the worker inherits from the parent
+#: (observed corrupting `frob check --json`'s stdout payload and the
+#: default/`-v`-gated `frob check` text output alike -- tests/system/
+#: test_cli_check.py's `TestCheckCleanProject`/`TestCheckPolyglot`/
+#: `TestCheckVerbosity` fixtures, none of which are git repos, both
+#: reliably exercise `arch_gate`'s process-pool path and have no `.git`
+#: noise to mask it). Env vars set before pool construction are inherited
+#: by every spawned worker, so this is visible to `_run_process_gate`
+#: (below) the moment its own module import chain re-runs `_init()`.
+# frob:ticket T-0806
+_WORKER_STDOUT_LOG_LEVEL_ENV = "FROB_WORKER_STDOUT_LOG_LEVEL"
+
+
 # frob:ticket T-0415
+# frob:ticket T-0806
 def _run_process_gate(
     func: Callable[..., tuple[Violation, ...]], args: tuple
 ) -> tuple[tuple[Violation, ...], float]:
@@ -8900,7 +8923,19 @@ def _run_process_gate(
     T-0232) because each worker process runs exactly one job, so there is no
     sibling job to contend with for CPU. Must stay a module-level function
     (not a closure/lambda) so `pickle` can address it by `__module__` +
-    `__qualname__` when the parent ships the call to a worker."""
+    `__qualname__` when the parent ships the call to a worker.
+
+    T-0806: before running `func`, clamps this worker's OWN stdout log
+    handler(s) to `_WORKER_STDOUT_LOG_LEVEL_ENV`'s value when set -- see
+    that constant's docstring for why a worker process needs this at all
+    (it never inherits the parent's in-memory logging clamp, only its
+    environment)."""
+    level_name = os.environ.get(_WORKER_STDOUT_LOG_LEVEL_ENV)
+    if level_name:
+        from frob.logging.quiet import _stdout_stream_handlers
+
+        for handler in _stdout_stream_handlers():
+            handler.setLevel(getattr(logging, level_name))
     cpu_start = time.process_time()
     result = func(*args)
     return result, time.process_time() - cpu_start
@@ -8959,6 +8994,7 @@ def _merge_canonical_order(raw: dict[str, tuple[Violation, ...]]) -> list[Violat
 
 
 # frob:ticket T-0767
+# frob:ticket T-0806
 def _open_process_pool(process_jobs: dict[str, _ProcessJob]) -> ProcessPoolExecutor:
     """Construct the spawn-context `ProcessPoolExecutor` for `process_jobs`
     (which must be non-empty). Hoisted out of `_run_combined_jobs` (T-0767)
@@ -8966,7 +9002,20 @@ def _open_process_pool(process_jobs: dict[str, _ProcessJob]) -> ProcessPoolExecu
     `pool-inside-pool` advisory is a same-function co-occurrence heuristic
     and unwaivable by design, so the safe shape must also be the
     structurally clean one. `mp_context=spawn` is the LOAD-BEARING half of
-    T-0581's fix (see `_run_combined_jobs`); do not remove it."""
+    T-0581's fix (see `_run_combined_jobs`); do not remove it.
+
+    T-0806: stamps `_WORKER_STDOUT_LOG_LEVEL_ENV` with the parent's current
+    stdout log handler level BEFORE constructing the pool (spawn workers
+    start as soon as the pool exists, not on first `submit`) so every
+    worker `_run_process_gate` runs in clamps its own default-DEBUG
+    logging to match -- see `_WORKER_STDOUT_LOG_LEVEL_ENV`'s docstring."""
+    from frob.logging.quiet import _stdout_stream_handlers
+
+    handlers = _stdout_stream_handlers()
+    if handlers:
+        os.environ[_WORKER_STDOUT_LOG_LEVEL_ENV] = logging.getLevelName(
+            handlers[0].level
+        )
     # Bounded worker count (constraint 4): never more workers than
     # jobs, never more than the machine's CPU count.
     proc_workers = max(1, min(len(process_jobs), os.cpu_count() or 4))
