@@ -96,7 +96,15 @@ class TestQueue:
         assert result.is_err
         assert result.danger_err is TicketError.MalformedFrontmatter
 
-    def test_unknown_frontmatter_key_is_err(self, tmp_path: Path) -> None:
+    def test_unknown_frontmatter_key_is_tolerated(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """T-0838: an unknown ledger field no longer hard-fails
+        MalformedFrontmatter -- it loads, with a WARNING naming the field, so
+        an older frob binary can still read a newer ledger without bricking
+        its own land (the schema-extending-feature incident this ticket
+        fixes; see TestUnknownFieldForwardCompat below for the fuller
+        round-trip regression)."""
         tickets_dir = tmp_path / "tickets"
         tickets_dir.mkdir()
         text = (
@@ -104,6 +112,39 @@ class TestQueue:
             "id: T-0001\n"
             "title: Sample\n"
             "state: queued\n"
+            "kind: feature\n"
+            "origin: human\n"
+            "created: 2026-01-01\n"
+            "blocked_by: []\n"
+            "parent: null\n"
+            "scope: []\n"
+            "evidence: []\n"
+            "attachments: []\n"
+            "bogus_field: oops\n"
+            "---\n"
+            "body\n"
+        )
+        (tickets_dir / "T-0001-sample.md").write_text(text)
+        with caplog.at_level(logging.WARNING):
+            result = load_queue(tmp_path)
+        assert result.is_ok
+        ticket = result.danger_ok.tickets["T-0001"]
+        assert ticket.__pydantic_extra__ == {"bogus_field": "oops"}
+        assert any("bogus_field" in rec.message for rec in caplog.records)
+
+    def test_unknown_field_with_malformed_known_field_still_errs(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0838: tolerating an unknown field must never loosen validation
+        of a KNOWN field -- a malformed `state:` alongside an unknown field
+        still fails MalformedFrontmatter."""
+        tickets_dir = tmp_path / "tickets"
+        tickets_dir.mkdir()
+        text = (
+            "---\n"
+            "id: T-0001\n"
+            "title: Sample\n"
+            "state: not-a-real-state\n"
             "kind: feature\n"
             "origin: human\n"
             "created: 2026-01-01\n"
@@ -1322,3 +1363,148 @@ class TestScopeMatching:
         )
         t = new_ticket(tmp_path, spec).danger_ok
         assert t.scope == ("src/a/**", "src/b/**")
+
+
+# frob:ticket T-0838
+class TestEmptyCollectionOmission:
+    """T-0838: empty-collection ledger fields (`reviews: []` and every peer
+    default-empty tuple field) must never be written -- an additive field
+    only appears in the rendered ledger once something actually populates
+    it, so a schema-extending feature's own land never bricks an older
+    frob's extra_forbidden read."""
+
+    def test_dict_without_empty_collections_returned_unchanged(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::omit_empty_collections
+        from frob.tickets._models import omit_empty_collections
+
+        data = {"a": 1, "b": "x", "c": None}
+        assert omit_empty_collections(data) == data
+
+    def test_empty_list_and_tuple_values_dropped(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::omit_empty_collections
+        from frob.tickets._models import omit_empty_collections
+
+        data = {"a": 1, "b": [], "c": (), "d": [1, 2], "e": None}
+        assert omit_empty_collections(data) == {"a": 1, "d": [1, 2], "e": None}
+
+    def test_reviews_empty_never_serialized(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::Ticket
+        ticket = _ticket()
+        assert ticket.reviews == ()
+        text = _serialize_ticket(ticket)
+        assert "reviews:" not in text
+        # every other default-empty tuple field is omitted the same way,
+        # not just reviews (systematic, T-0838)
+        for key in ("scope_changes:", "attachments:", "acceptance:", "labels:"):
+            assert key not in text
+
+    def test_reviews_populated_still_serializes(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::Ticket
+        from datetime import date
+
+        from frob.tickets import ReviewEntry, ReviewVerdict
+
+        ticket = _ticket().model_copy(
+            update={
+                "reviews": (
+                    ReviewEntry(
+                        verdict=ReviewVerdict.APPROVE,
+                        reviewer="alice",
+                        findings="looks good",
+                        commit="a" * 40,
+                        at=date(2026, 1, 1),
+                    ),
+                )
+            }
+        )
+        text = _serialize_ticket(ticket)
+        assert "reviews:" in text
+        assert "verdict: approve" in text
+
+    def test_ticket_with_empty_reviews_round_trips_through_ledger(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/__init__.py::load_queue
+        ticket = _ticket()
+        assert ticket.reviews == ()
+        _write(tmp_path, ticket)
+        result = load_queue(tmp_path)
+        assert result.is_ok
+        loaded = result.danger_ok.tickets["T-0001"]
+        assert loaded.reviews == ()
+        assert loaded == ticket
+
+
+# frob:ticket T-0838
+class TestUnknownFieldForwardCompat:
+    """T-0838 regression: an older frob binary must be able to land a newer
+    worktree's ledger -- a ledger block carrying a field this model does not
+    yet declare (e.g. the T-0571 incident: `reviews:` before this binary
+    knew about it) must load without an exception, log a WARNING naming the
+    field, and re-emit it byte-for-byte on the next write, all while a
+    genuinely malformed KNOWN field still fails validation."""
+
+    _UNKNOWN_FIELD_LEDGER = (
+        "# Tickets\n\n"
+        "<!-- ticket:T-0001 -->\n"
+        "```yaml\n"
+        "id: T-0001\n"
+        "title: Sample\n"
+        "state: queued\n"
+        "kind: feature\n"
+        "origin: human\n"
+        "created: '2026-01-01'\n"
+        "reviews_v2:\n"
+        "- reviewer: bob\n"
+        "  stance: strong-approve\n"
+        "```\n"
+        "body text\n"
+    )
+
+    def test_unknown_field_loads_without_exception(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/__init__.py::load_active
+        (tmp_path / "tickets.md").write_text(self._UNKNOWN_FIELD_LEDGER)
+        result = load_active(tmp_path)
+        assert result.is_ok
+        ticket = result.danger_ok.tickets["T-0001"]
+        extras = ticket.__pydantic_extra__
+        assert extras is not None
+        assert extras["reviews_v2"] == [{"reviewer": "bob", "stance": "strong-approve"}]
+
+    def test_unknown_field_logs_warning_named(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests src/frob/tickets/_models.py::Ticket
+        (tmp_path / "tickets.md").write_text(self._UNKNOWN_FIELD_LEDGER)
+        with caplog.at_level(logging.WARNING):
+            result = load_active(tmp_path)
+        assert result.is_ok
+        messages = " ".join(r.message for r in caplog.records)
+        assert "reviews_v2" in messages
+        assert "T-0001" in messages
+
+    def test_unknown_field_preserved_verbatim_on_reserialize(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_store.py::_render_section
+        from frob.tickets._store import _render_section
+
+        (tmp_path / "tickets.md").write_text(self._UNKNOWN_FIELD_LEDGER)
+        ticket = load_active(tmp_path).danger_ok.tickets["T-0001"]
+        rendered = _render_section("T-0001", ticket)
+        assert "reviews_v2:" in rendered
+        assert "reviewer: bob" in rendered
+        assert "stance: strong-approve" in rendered
+        # re-parsing the re-rendered section preserves the same extra data
+        reloaded = load_active(tmp_path).danger_ok.tickets["T-0001"]
+        assert reloaded.__pydantic_extra__ == ticket.__pydantic_extra__
+
+    def test_known_field_still_validated_strictly(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/__init__.py::load_active
+        malformed = self._UNKNOWN_FIELD_LEDGER.replace(
+            "state: queued", "state: not-a-real-state"
+        )
+        (tmp_path / "tickets.md").write_text(malformed)
+        result = load_active(tmp_path)
+        assert result.is_err
+        assert result.danger_err is TicketError.MalformedFrontmatter

@@ -16,8 +16,19 @@ from datetime import date
 from enum import StrEnum
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    SerializerFunctionWrapHandler,
+    field_validator,
+    model_serializer,
+    model_validator,
+)
 from typani.error_set import ErrorSet
+
+from frob.logging import get_logger
+
+_log = get_logger(__name__)
 
 
 # frob:doc docs/modules/tickets.md#data-models
@@ -863,11 +874,50 @@ class ReviewEntry(BaseModel):
     at: date
 
 
+# frob:ticket T-0838
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets.py::TestEmptyCollectionOmission.test_dict_without_empty_collections_returned_unchanged  # noqa: E501
+def omit_empty_collections(data: Mapping[str, object]) -> dict[str, object]:
+    """Drop every key of `data` whose value is an empty `list`/`tuple` (T-0838).
+
+    THE single implementation `Ticket._omit_empty_collections_on_dump` (and
+    any future ledger-block model needing the same treatment) delegates to,
+    so "what counts as omittable" can never desync between two hand-written
+    copies. Additive collection fields (e.g. `reviews`) default to an empty
+    tuple -- writing that default out as `reviews: []` on every ticket that
+    has never used the feature is exactly the noise this closes: an older
+    frob reading a newer ledger never needs to see a field it never
+    populated. Deliberately NOT applied to scalar/`None` fields (`parent:
+    null`, `threat: null`, ...) -- those already round-trip fine today and
+    doing so is out of this ticket's stated scope (empty COLLECTIONS only).
+    """
+    return {
+        key: value
+        for key, value in data.items()
+        if not (isinstance(value, (list, tuple)) and len(value) == 0)
+    }
+
+
 # frob:doc docs/modules/tickets.md#data-models
 class Ticket(BaseModel):
-    """One ticket: frontmatter fields plus the verbatim markdown body."""
+    """One ticket: frontmatter fields plus the verbatim markdown body.
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    T-0838: `extra="allow"` (not `extra="forbid"`) is a deliberate FORWARD-
+    COMPATIBILITY relaxation -- a ledger written by a NEWER frob binary that
+    has added a field this binary's `Ticket` does not know about (e.g.
+    T-0571's `reviews`, before this model knew about it) must load, not hard
+    -fail `MalformedFrontmatter`. Unknown keys land in `__pydantic_extra__`
+    (pydantic's own capture mechanism), are logged at WARNING by
+    `_warn_unknown_extras` naming the field(s) and the likely cause, and are
+    re-emitted verbatim on the next `model_dump` (pydantic includes
+    `__pydantic_extra__` in serialization automatically) -- so an OLDER
+    binary landing a NEWER worktree's ledger preserves data it cannot itself
+    interpret, instead of silently stripping it. Validation stays STRICT for
+    every KNOWN field: `extra="allow"` only widens what is TOLERATED, it
+    does not loosen a single type/enum check on a field this model already
+    declares."""
+
+    model_config = ConfigDict(frozen=True, extra="allow")
 
     id: str
     title: str
@@ -934,6 +984,45 @@ class Ticket(BaseModel):
         """Accept legacy plain-string acceptance items alongside the T-0572
         structured `{text, evidence}` form -- see `_coerce_acceptance`."""
         return _coerce_acceptance(value)
+
+    # frob:ticket T-0838
+    # frob:tests tests/test_tickets.py::TestUnknownFieldForwardCompat.test_unknown_field_logs_warning_named  # noqa: E501
+    @model_validator(mode="after")
+    def _warn_unknown_extras(self) -> Ticket:
+        """Log a WARNING naming every unknown ledger field this ticket
+        carried in (T-0838): `extra="allow"` means an unrecognized key no
+        longer hard-fails `MalformedFrontmatter`, but it should never be
+        silently invisible either -- a human/agent re-reading this ticket
+        with an OLDER `frob` needs to know it is looking at a ledger written
+        by something newer than itself, and which field(s) it cannot
+        interpret."""
+        extras = self.__pydantic_extra__
+        if extras:
+            _log.warning(
+                "tickets: %s carries unknown ledger field(s) %s -- likely an "
+                "older frob reading a newer ledger; preserved verbatim, not "
+                "validated (T-0838)",
+                self.id,
+                sorted(extras),
+            )
+        return self
+
+    # frob:ticket T-0838
+    # frob:tests tests/test_tickets.py::TestEmptyCollectionOmission.test_reviews_empty_never_serialized  # noqa: E501
+    @model_serializer(mode="wrap")
+    def _omit_empty_collections_on_dump(
+        self, handler: SerializerFunctionWrapHandler
+    ) -> dict[str, object]:
+        """Wrap the default dump so empty-collection fields (`reviews: []`
+        and every peer default-empty tuple field, T-0838) never hit the
+        ledger, while unknown extras captured via `extra="allow"` still
+        round-trip (pydantic includes `__pydantic_extra__` in the base dump
+        this wraps, unaffected by the omission filter below since they are
+        rarely empty collections and, even if one were, an unknown field
+        omitted on write is exactly as forward-compatible as one that was
+        never populated -- it simply reappears once it holds real data)."""
+        data = handler(self)
+        return omit_empty_collections(data)
 
 
 # frob:doc docs/modules/tickets.md#data-models
