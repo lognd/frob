@@ -9436,3 +9436,94 @@ component: null
 labels: []
 ```
 Promotion of T-0677's worktree draft 91ef53bd: add_cmd_evidence in frob.tickets has no accepts parameter and both CLI call sites in ticket_runner.py drop cfg.ticket_accepts for cmd evidence, so docs-kind tickets silently end up with UNBOUND acceptance despite the operator passing --accepts (T-0677 worked around via the library add_evidence call). With the T-0763 land preflight now refusing unbound acceptance, this silent drop blocks docs-ticket lands.
+
+<!-- ticket:T-0797 -->
+```yaml
+id: T-0797
+title: 'gates: DEPR001-004 are dead code -- ''deprecated'' missing from _ALL_GATES
+  so no frob check run evaluates them'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-23'
+priority: critical
+blocked_by: []
+parent: null
+scope:
+- src/frob/gates/__init__.py
+- tests/test_gates.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a frob:deprecated directive in the tree WHEN frob check runs (no --only
+    filter) THEN the deprecated gate evaluates and DEPR003 in-window warnings appear
+    in gate output; frob check --only deprecated is accepted; a regression test locks
+    the gate registration
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Promotion of T-0580's worktree draft f226d099 (worktree removed at land before renumbering; refiled by coordinator). deprecated_gate and DEPR001-004 are implemented and unit-tested but 'deprecated' is absent from _ALL_GATES, so no real check run ever evaluates them -- the T-0580 deprecations are currently enforced by nothing (catalogued-is-not-enforced class). One-line registration + regression test. CRITICAL because the user's deprecation decision (map/outline/xref/docs-search, sunset 2026-10-01) silently has no teeth until this lands.
+
+<!-- ticket:T-0798 -->
+```yaml
+id: T-0798
+title: 'dup: verdict cache serves stale results across rule changes (.frob/dup.db
+  keyed by content digest only)'
+state: queued
+kind: bug
+origin: auditor
+created: '2026-07-23'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/dup/**
+- tests/test_dup.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a dup rule/normalization change WHEN frob check runs the dup gate THEN
+    cached verdicts computed under the old rules are invalidated (cache key includes
+    a rules/version fingerprint) and results reflect current rules; a test proves
+    a rule change flips a cached verdict
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+T-0785 reviewer-mandated filing: during T-0785 the .frob/dup.db verdict cache silently served pre-rule-change results until manually cleared -- a gate-integrity hole (the dup gate can report stale verdicts as current). Key the cache by (content digest, rules fingerprint) or invalidate on frob.dup code-digest change.
+
+<!-- ticket:T-0799 -->
+```yaml
+id: T-0799
+title: 'graph cache: schema drift crashes load_graph (no such column/table) instead
+  of rebuilding'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-23'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/graph/cache.py
+- src/frob/graph/__init__.py
+- tests/unit/graph/test_cache.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a .frob/cache.db created by an older schema WHEN load_graph opens it
+    THEN it detects the schema mismatch and rebuilds the cache instead of raising
+    sqlite3.OperationalError; a test opens an old-schema fixture db and asserts a
+    clean rebuild
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Observed twice during 2026-07-23 lands: worktrees carrying pre-migration cache.db files crashed land mid-flight with 'no such table: symbols' and 'no such column: mtime_ns' (the second crash left a partial squash staged on main). Stamp a schema version in the db and rebuild on mismatch; never let OperationalError escape load paths.
