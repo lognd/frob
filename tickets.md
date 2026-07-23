@@ -6116,7 +6116,7 @@ Root-cause analysis 2026-07-22: two rejects (T-0611 tree_sitter imported into th
 ```yaml
 id: T-0759
 title: harden T-0710 overhead test against xdist wall-clock fragility
-state: in-progress
+state: dropped
 kind: bug
 origin: human
 created: '2026-07-22'
@@ -6170,6 +6170,8 @@ Filed: none.
 - tests: 0 passed (from 0 evidence id(s))
 - gates: unmeasured (no parsable gate-summary from a fresh check)
 
+## Drop reason
+- 2026-07-23: exact duplicate of T-0760 (scope strict subset, same test, same fragility); fix landed at 99ba6327 under T-0760 with process_time + xdist-gated tolerance
 <!-- ticket:T-0760 -->
 ```yaml
 id: T-0760
