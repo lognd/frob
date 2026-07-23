@@ -6320,7 +6320,7 @@ Makefile as pool-warm/pool-lease/pool-status targets (N?=4), calling
 straight into the Python API since a real `frob scaffold pool` CLI
 subcommand would need to touch src/frob/app/scaffold_runner.py and
 src/frob/app/config.py -- both outside this ticket's src/frob/scaffold/**
--only scope. Filed T-draft-427ffd5a for that CLI wiring follow-up.
+-only scope. Filed T-0877 (refiled from a land-lost worktree draft) for that CLI wiring follow-up.
 
 docs/guides/worktree-pool.md documents the pool directory layout, public
 API, Makefile targets, and the testing-safety note (never point tests at
@@ -10647,7 +10647,7 @@ acceptance:
 threat: null
 component: scaffold
 ```
-Follow-on to T-0738 (landed 0.139.0): the warm-pool API (warm_pool, lease_worktree, pool_status in frob.scaffold._pool) is reachable only through Makefile targets calling the Python API. Wire a real `frob scaffold pool` CLI subcommand group (warm N / lease / status) through app/scaffold_runner.py + app/config.py + __main__.py, replacing the Makefile's inline-python shims with thin CLI calls. Refiled from worktree draft T-draft-427ffd5a which did not survive T-0738's land (drafts-die-at-land hazard); T-0738's Done report references that draft id.
+Follow-on to T-0738 (landed 0.139.0): the warm-pool API (warm_pool, lease_worktree, pool_status in frob.scaffold._pool) is reachable only through Makefile targets calling the Python API. Wire a real `frob scaffold pool` CLI subcommand group (warm N / lease / status) through app/scaffold_runner.py + app/config.py + __main__.py, replacing the Makefile's inline-python shims with thin CLI calls. Refiled from worktree draft T-0877 (refiled from a land-lost worktree draft) which did not survive T-0738's land (drafts-die-at-land hazard); T-0738's Done report references that draft id.
 
 <!-- ticket:T-0878 -->
 ```yaml
