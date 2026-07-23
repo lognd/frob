@@ -522,26 +522,39 @@ def quarantine_alarms(root: Path, entries: Mapping[str, StabilityEntry]
     # regressed-to-all-fail quarantine (see is_hard_regression below) --
     # that test is by definition no longer flaky, so it can never trip this
     # alarm's is_flaky filter.
-def is_hard_regression(entry: StabilityEntry) -> bool
-    # HARD-REGRESSION RULE (T-0636): history has at least 3 recorded runs
-    # and EVERY one is a fail. Distinct from is_flaky's all-fail exclusion:
-    # is_flaky says an all-fail history is "not flaky", but nothing said
-    # what a currently-QUARANTINED test in that state means -- this is that
+DEFAULT_REGRESSION_TAIL_K = 5   # default width of the recent-tail-window rule
+
+def is_hard_regression(entry: StabilityEntry, *,
+                       tail_k: int = DEFAULT_REGRESSION_TAIL_K) -> bool
+    # HARD-REGRESSION RULE (T-0636, widened T-0679): history has at least 3
+    # recorded runs, and EITHER the entire bounded history is all-fail OR
+    # the most recent tail_k runs are all-fail (tail_k floored at 3, same as
+    # the whole-window minimum). The tail rule exists because the
+    # whole-window rule alone missed a real case: one stale pass anywhere
+    # in the bounded HISTORY_WINDOW defeats all-fail detection for up to
+    # HISTORY_WINDOW - 1 further runs even after the test has clearly gone
+    # permanently red. Distinct from is_flaky's all-fail exclusion: is_flaky
+    # says an all-fail history is "not flaky", but nothing said what a
+    # currently-QUARANTINED test in that state means -- this is that
     # signal, one run higher than the flake minimum so the run right after
     # quarantine doesn't misfire.
-def hard_regression_alarms(entries: Mapping[str, StabilityEntry]
+def hard_regression_alarms(entries: Mapping[str, StabilityEntry], *,
+                           tail_k: int = DEFAULT_REGRESSION_TAIL_K
                            ) -> tuple[str, ...]
     # HARD-REGRESSION ALARM: node ids currently quarantined whose history
-    # has regressed to is_hard_regression -- the alarm quarantine_alarms
-    # structurally cannot raise (see above). Pure, no root/ticket lookup
-    # needed: the regression is visible from history alone.
+    # has regressed to is_hard_regression (tail_k forwarded) -- the alarm
+    # quarantine_alarms structurally cannot raise (see above). Pure, no
+    # root/ticket lookup needed: the regression is visible from history
+    # alone.
 def evaluate_gate(ok: bool, failing_node_ids: frozenset[str],
-                  entries: Mapping[str, StabilityEntry]) -> bool
+                  entries: Mapping[str, StabilityEntry], *,
+                  tail_k: int = DEFAULT_REGRESSION_TAIL_K) -> bool
     # Pure. If ok already True, unchanged. If False, promoted back to True
     # only when EVERY failing node id is currently quarantined AND not a
-    # hard regression (is_hard_regression) -- a quarantined test that has
-    # regressed to all-fail no longer gets promoted back to green just
-    # because a quarantine_ticket is still set (T-0636). One
+    # hard regression (is_hard_regression, tail_k forwarded) -- a
+    # quarantined test that has regressed to all-fail (whole-window or
+    # recent-tail-window) no longer gets promoted back to green just
+    # because a quarantine_ticket is still set (T-0636/T-0679). One
     # non-quarantined or hard-regressed failure keeps the run failed.
 def capture_python_outcomes(root: Path, node_ids: tuple[str, ...], *,
                             cwd: str = ".") -> Result[dict[str, bool], FlakeError]
@@ -602,19 +615,47 @@ regression, and must stay a hard gate failure, not quarantine-eligible.
     was never applied at all) that flags any currently-quarantined node id
     whose history is now `is_hard_regression`, independent of the ticket's
     own open/closed state.
+- *Recent-tail-window widening* (T-0679): the T-0636 whole-window rule
+  alone checks whether the ENTIRE bounded `HISTORY_WINDOW` history is
+  all-fail, so a single stale pass anywhere in that window (e.g. from
+  before quarantine, or a one-off flake that never repeated) defeats
+  detection for up to `HISTORY_WINDOW - 1` subsequent all-fail runs even
+  though the test has clearly gone permanently red since. `is_hard_regression`
+  now also flags a test whose most recent `tail_k` runs (default
+  `DEFAULT_REGRESSION_TAIL_K = 5`, floored at the same 3-run minimum as the
+  whole-window rule) are all-fail, independent of what came earlier in the
+  window. `hard_regression_alarms` and `evaluate_gate` both forward an
+  optional `tail_k` to `is_hard_regression` so a caller can widen or narrow
+  the window; the default keeps prior whole-window behavior as a strict
+  subset (an all-fail whole window is always also an all-fail tail).
 
-**Known limitation** (T-0575 cut, filed as a follow-up): `capture_python_outcomes`
-zips `node_ids` against a junit-xml report's `<testcase>` elements by run
-order rather than re-deriving each node id from junit's own
-`classname`/`name` naming (which is pytest's dotted module path, not this
-codebase's `path::Class::method` symref convention) -- correct as long as
-pytest preserves argv order in its junit output, which it does today.
-Wiring `frob test`'s CLI (`src/frob/app/test_runner.py`, out of this
-ticket's scope) to call `track_python_stability`/`evaluate_gate`
-automatically on every run is left to a follow-up ticket; the same follow-up
-also needs to surface `hard_regression_alarms` (T-0636) in that reporting
-path and re-export `is_hard_regression`/`hard_regression_alarms` from
-`frob.testing.__init__`, both currently out of this module's own scope.
+**Known limitation** (T-0575 cut): `capture_python_outcomes` zips `node_ids`
+against a junit-xml report's `<testcase>` elements by run order rather than
+re-deriving each node id from junit's own `classname`/`name` naming (which
+is pytest's dotted module path, not this codebase's `path::Class::method`
+symref convention) -- correct as long as pytest preserves argv order in its
+junit output, which it does today.
+
+**CLI wiring** (T-0635, closes T-0575's other disclosed cut):
+`src/frob/app/test_runner.py`'s `_track_python_stability_and_gate` runs
+after every `run_selected` call and, for a concrete python selection
+(`report.selected["python"]`, skipped when it is empty or the
+`ALL_SENTINEL` whole-suite marker -- neither names per-test node ids to
+track against), captures a second, independent pytest invocation via
+`capture_python_outcomes` over exactly those node ids, records it
+(`record_outcomes`), and applies `evaluate_gate` to just the python portion
+of the run's outcome (isolated from any other language's outcomes, which
+this gate never touches, so a real non-python failure is never masked).
+Any `quarantine_alarms`/`hard_regression_alarms` hit is logged as a
+warning on the same run. `frob.testing.__init__` now re-exports
+`is_hard_regression`/`hard_regression_alarms`/`DEFAULT_REGRESSION_TAIL_K`
+alongside the rest of this module's public API, closing the re-export gap
+T-0636's Done report left open. Running pytest a second time (rather than
+reusing the primary run's own per-test results, which `RunnerOutcome`
+does not carry) is a known cost of this v1 wiring, not a hidden one --
+`RunnerOutcome` stays a whole-runner-invocation record; teaching it to
+carry per-test results is a larger `_models.py`/`_runners.py` change left
+for a future ticket if the double-invocation cost becomes a real problem.
 
 ## Git worktrees
 

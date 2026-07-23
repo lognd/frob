@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.140.0] - unreleased
+
+- T-0679: flake quarantine: recent-tail-window variant of is_hard_regression
+
 ## [0.139.0] - unreleased
 
 - T-0738: worktree warm pool: frob scaffold pool N pre-warmed worktrees with background refresh

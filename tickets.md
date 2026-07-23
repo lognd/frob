@@ -3501,7 +3501,7 @@ import frob.testing as the first frob-touching import raises ImportError (cannot
 ```yaml
 id: T-0635
 title: wire flake-quarantine stability tracking into frob test CLI run path
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -3510,15 +3510,123 @@ parent: T-0575
 scope:
 - src/frob/app/test_runner.py
 - src/frob/testing/**
+- tests/test_app.py
+scope_changes:
+- op: add
+  glob: tests/test_app.py
+  reason: 'T-0635''s scope covers src/frob/app/test_runner.py + src/frob/testing/**
+    but
+
+    omits the test file that already covers test_runner.py (tests/test_app.py,
+
+    TestWaitCoverage class) -- the new _track_python_stability_and_gate wiring
+
+    this ticket adds needs a frob:tests edge (TEST001 is an ERROR gate) and its
+
+    own coverage, and the natural home for that is the same file that already
+
+    tests this module''s other CLI dispatch paths. Adding tests/test_app.py so
+
+    the ticket''s own tests can live where its sibling tests already do, rather
+
+    than silently touching an out-of-scope file or inventing a second test file
+
+    for one module.
+
+    '
+  actor: logan
+  at: '2026-07-23'
+evidence:
+- tests/test_app.py::TestStabilityGate::test_quarantined_failure_promotes_to_ok
+- tests/test_app.py::TestStabilityGate::test_hard_regressed_quarantine_stays_failed
+- tests/test_app.py::TestStabilityGate::test_other_language_failure_not_masked
+- tests/test_app.py::TestStabilityGate::test_all_sentinel_selection_is_noop
+- tests/test_app.py::TestStabilityGate::test_empty_python_selection_is_noop
+- tests/test_app.py::TestStabilityGate::test_capture_error_skips_gate
 acceptance:
 - text: GIVEN a flaky test with an open quarantine ticket WHEN frob test runs via
     the CLI THEN the run records history, the quarantined failure does not fail the
     build, and alarms surface for closed-ticket quarantines
-  evidence: []
+  evidence:
+  - tests/test_app.py::TestStabilityGate::test_quarantined_failure_promotes_to_ok
+  - tests/test_app.py::TestStabilityGate::test_hard_regressed_quarantine_stays_failed
+  - tests/test_app.py::TestStabilityGate::test_other_language_failure_not_masked
 threat: null
 component: null
 ```
 T-0575 landed frob.testing._stability (record_outcomes, evaluate_gate, quarantine, alarms) but nothing in the frob test CLI path calls it -- tracking only happens if invoked programmatically. Wire capture/track + evaluate_gate + alarm surfacing into src/frob/app/test_runner.py so every frob test run updates history and applies quarantine semantics automatically. Disclosed cut in T-0575's Done report.
+
+## Done report
+
+T-0575 landed `frob.testing._stability` (record_outcomes, evaluate_gate,
+quarantine, alarms) but nothing in `frob test`'s CLI path called it --
+tracking only happened if invoked programmatically. This wires it in.
+
+`src/frob/app/test_runner.py` gets a new `_track_python_stability_and_gate`
+helper, called from `_run_selected_and_report` right after `run_selected`
+returns. For a concrete python selection (`report.selected["python"]`,
+skipped when empty or the `ALL_SENTINEL` "*" whole-suite marker, since
+neither names per-test node ids to track against) it:
+
+- captures per-test pass/fail via `capture_python_outcomes` and persists it
+  via `record_outcomes` (`.frob/test-stability.json` now updates on every
+  concrete-selection `frob test` run, not just a programmatic call);
+- applies `evaluate_gate` to just the python portion of the run's outcome,
+  isolated from any other language's outcomes (a real non-python failure
+  is never masked -- proven by `test_other_language_failure_not_masked`);
+- logs a warning for every `quarantine_alarms` (closed-ticket-still-flaky)
+  and `hard_regression_alarms` (quarantined-but-now-permanently-failing,
+  T-0636/T-0679) hit.
+
+Also closed the re-export gap T-0636's Done report disclosed:
+`frob.testing.__init__` now re-exports `is_hard_regression`,
+`hard_regression_alarms`, and `DEFAULT_REGRESSION_TAIL_K` alongside the
+rest of the module's public API.
+
+docs/modules/testing.md's Flake quarantine section gets a new "CLI wiring
+(T-0635...)" paragraph explaining the wiring and its known cost (a second,
+independent pytest invocation per `frob test` run, since `RunnerOutcome`
+does not carry per-test results -- teaching it to is left as future work
+if the double-run cost becomes a real problem, not hidden as free).
+
+Known/disclosed gate state: `frob check --ticket T-0635`'s gates-fast pass
+shows 2 SCOPE001 errors on docs/modules/testing.md and
+tests/unit/testing/test_stability.py. Both are a stacked-ticket artifact,
+not real out-of-scope work: T-0679 (recent-tail-window is_hard_regression)
+is committed on this same branch ahead of T-0635 and is still
+`in-progress` (I do not close tickets myself, per dispatch instructions),
+so its scope lease on those two files is still held -- `frob ticket scope
+T-0635 --add docs/modules/testing.md` refuses with `ScopeLeaseConflict:
+requested --add glob overlaps a path leased by another in-progress
+ticket`. T-0635's own actual edit to docs/modules/testing.md is limited to
+the new CLI-wiring paragraph; tests/unit/testing/test_stability.py is
+untouched by T-0635 at all -- SCOPE001 is diffing the whole branch against
+main, which includes T-0679's already-reported, already-evidenced commit.
+This should clear once the coordinator closes T-0679 (releasing its lease)
+or lands both tickets. lint, static, gates-native, and gates-security all
+pass with 0 errors for T-0635 as recorded; gates-fast's only errors are
+the two SCOPE001 findings above.
+
+### Changed
+```
+ docs/modules/testing.md              | 52 +++++++++++++++------
+ src/frob/testing/_stability.py       | 91 ++++++++++++++++++++++++++----------
+ tests/unit/testing/test_stability.py | 63 +++++++++++++++++++++++++
+ tickets.md                           | 61 +++++++++++++++++++++++-
+ 4 files changed, 227 insertions(+), 40 deletions(-)
+```
+
+### Evidence
+- `tests/test_app.py::TestStabilityGate::test_quarantined_failure_promotes_to_ok` (pytest node id, verified passing when recorded)
+- `tests/test_app.py::TestStabilityGate::test_hard_regressed_quarantine_stays_failed` (pytest node id, verified passing when recorded)
+- `tests/test_app.py::TestStabilityGate::test_other_language_failure_not_masked` (pytest node id, verified passing when recorded)
+- `tests/test_app.py::TestStabilityGate::test_all_sentinel_selection_is_noop` (pytest node id, verified passing when recorded)
+- `tests/test_app.py::TestStabilityGate::test_empty_python_selection_is_noop` (pytest node id, verified passing when recorded)
+- `tests/test_app.py::TestStabilityGate::test_capture_error_skips_gate` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0638 -->
 ```yaml
@@ -4881,7 +4989,7 @@ Epic close condition. Extends T-0343's per-domain drift-lock with a cross-corpus
 ```yaml
 id: T-0679
 title: 'flake quarantine: recent-tail-window variant of is_hard_regression'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-22'
@@ -4893,15 +5001,73 @@ scope:
 - src/frob/testing/_stability.py
 - tests/unit/testing/test_stability.py
 - docs/modules/testing.md
+evidence:
+- tests/unit/testing/test_stability.py::TestHardRegression::test_tail_stale
+- tests/unit/testing/test_stability.py::TestHardRegression::test_tail_short
+- tests/unit/testing/test_stability.py::TestHardRegression::test_tail_cfg
+- tests/unit/testing/test_stability.py::TestAlarms::test_hard_alarm_tail
+- tests/unit/testing/test_stability.py::TestGate::test_hard_regress_tail_fails
 acceptance:
 - text: GIVEN history [P] followed by K consecutive fails under live quarantine WHEN
     evaluate_gate and hard_regression_alarms run THEN the gate stays red and the alarm
     fires
-  evidence: []
+  evidence:
+  - tests/unit/testing/test_stability.py::TestAlarms::test_hard_alarm_tail
+  - tests/unit/testing/test_stability.py::TestGate::test_hard_regress_tail_fails
 threat: null
 component: null
 ```
 T-0636's is_hard_regression checks all-fail over the ENTIRE bounded 20-run window, so a single stale pass anywhere in the window defeats detection for up to 19 subsequent all-fail runs -- a real hard regression stays promoted and un-alarmed that whole time. Add a recent-tail rule (last K runs all-fail, K configurable, default ~5) alongside or replacing the whole-window rule, with tests covering the one-old-pass-then-long-fail-tail case T-0636's reviewer identified. Update docs/modules/testing.md semantics. NOTE: the hard-regression CLI/alarm wiring is T-0635's scope; T-0636's a lost draft (its scope is covered by T-0635) duplicated it and needs no refile.
+
+## Done report
+
+T-0636's `is_hard_regression` checked whether the ENTIRE bounded
+`HISTORY_WINDOW` history was all-fail. A single stale pass anywhere in
+that window (e.g. from before quarantine, or a one-off flake that never
+repeated) defeated all-fail detection for up to `HISTORY_WINDOW - 1`
+subsequent all-fail runs even though the test had clearly gone permanently
+red since -- exactly the gap this ticket's reviewer flagged.
+
+Fix: `is_hard_regression` now trips on EITHER the existing whole-window
+all-fail rule OR a new recent-tail-window rule -- its most recent `tail_k`
+runs (new module constant `DEFAULT_REGRESSION_TAIL_K = 5`, floored at the
+same `_MIN_HISTORY_FOR_REGRESSION = 3` minimum as the whole-window rule)
+are all-fail, independent of what came earlier in the window. `tail_k` is
+a keyword-only parameter, defaulting to `DEFAULT_REGRESSION_TAIL_K`, and is
+forwarded through `hard_regression_alarms` and `evaluate_gate` so a caller
+can widen/narrow it; the default keeps the old whole-window behavior as a
+strict subset (an all-fail whole window is always also an all-fail tail).
+
+docs/modules/testing.md's Flake quarantine section updated: the public-API
+listing block for `is_hard_regression`/`hard_regression_alarms`/
+`evaluate_gate` now documents the `tail_k` parameter and
+`DEFAULT_REGRESSION_TAIL_K`, and a new "Recent-tail-window widening
+(T-0679)" paragraph explains the gap and the fix in the semantics
+narrative.
+
+Out of scope, left as noted in T-0636's own Done report (T-0635's scope,
+next in this cluster): `frob.testing.__init__` still does not re-export
+`is_hard_regression`/`hard_regression_alarms`, and `frob test`'s CLI path
+still does not call `track_python_stability`/`evaluate_gate`/
+`hard_regression_alarms` automatically.
+
+No files outside the ticket's declared scope
+(src/frob/testing/_stability.py, tests/unit/testing/test_stability.py,
+docs/modules/testing.md) were touched.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/testing/test_stability.py::TestHardRegression::test_tail_stale` (pytest node id, verified passing when recorded)
+- `tests/unit/testing/test_stability.py::TestHardRegression::test_tail_short` (pytest node id, verified passing when recorded)
+- `tests/unit/testing/test_stability.py::TestHardRegression::test_tail_cfg` (pytest node id, verified passing when recorded)
+- `tests/unit/testing/test_stability.py::TestAlarms::test_hard_alarm_tail` (pytest node id, verified passing when recorded)
+- `tests/unit/testing/test_stability.py::TestGate::test_hard_regress_tail_fails` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0680 -->
 ```yaml

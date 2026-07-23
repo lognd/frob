@@ -180,8 +180,88 @@ def _loaded_runners(cfg: AppConfig, root: Path) -> tuple:
     return runners
 
 
+# frob:ticket T-0635
+def _track_python_stability_and_gate(root: Path, report, test_run) -> bool:
+    """Wire flake-quarantine stability tracking into `frob test`'s own run
+    path (T-0575's disclosed cut, closed by T-0635): capture+record per-test
+    pass/fail for the concrete python node ids this run actually selected
+    (`report.selected["python"]`), then apply `evaluate_gate` to just the
+    python portion of `test_run`'s outcome so a quarantined-and-not-hard-
+    regressed failure no longer fails the build, while any non-python
+    outcome is left untouched. Returns the overall (possibly quarantine-
+    promoted) ok. A whole-suite `--all` selection (`ALL_SENTINEL`) or an
+    empty python selection names no concrete node ids to track against and
+    is left as-is -- tracking degrades to a no-op rather than a hard
+    failure, since `frob test` must still function for languages/selections
+    this module cannot yet attribute per-test outcomes for."""
+    from frob.testing import (
+        capture_python_outcomes,
+        evaluate_gate,
+        hard_regression_alarms,
+        quarantine_alarms,
+        record_outcomes,
+    )
+    from frob.testing._runners import _is_neutral_outcome
+    from frob.testing._select import ALL_SENTINEL
+
+    node_ids = report.selected.get("python", ())
+    if not node_ids or ALL_SENTINEL in node_ids:
+        return test_run.ok
+
+    captured = capture_python_outcomes(root, node_ids)
+    if captured.is_err:
+        _log.warning(
+            "frob test: stability capture failed, skipping quarantine gate: %s",
+            captured.danger_err,
+        )
+        return test_run.ok
+    outcomes = captured.danger_ok
+    recorded = record_outcomes(root, outcomes)
+    if recorded.is_err:
+        _log.warning(
+            "frob test: stability record failed, skipping quarantine gate: %s",
+            recorded.danger_err,
+        )
+        return test_run.ok
+    entries = recorded.danger_ok
+    _log.info("frob test: recorded stability for %d python test(s)", len(outcomes))
+
+    python_outcomes = [o for o in test_run.outcomes if o.language == "python"]
+    other_ok = all(
+        o.exit_code == 0 or _is_neutral_outcome(o)
+        for o in test_run.outcomes
+        if o.language != "python"
+    )
+    python_raw_ok = all(
+        o.exit_code == 0 or _is_neutral_outcome(o) for o in python_outcomes
+    )
+    failing = frozenset(node_id for node_id, passed in outcomes.items() if not passed)
+    gated_python_ok = evaluate_gate(python_raw_ok, failing, entries)
+    if gated_python_ok and not python_raw_ok:
+        _log.info(
+            "frob test: %d quarantined failure(s) excused by the flake gate",
+            len(failing),
+        )
+
+    for node_id in quarantine_alarms(root, entries):
+        _log.warning(
+            "frob test: quarantine EXPIRY alarm -- %s's quarantine ticket has "
+            "closed (or is unresolvable) while the test is still flaky",
+            node_id,
+        )
+    for node_id in hard_regression_alarms(entries):
+        _log.warning(
+            "frob test: HARD-REGRESSION alarm -- %s is quarantined but has "
+            "regressed to a permanent failure",
+            node_id,
+        )
+    return other_ok and gated_python_ok
+
+
 def _run_selected_and_report(cfg: AppConfig, report, runners, root: Path) -> None:
-    """Run the selected tests and report PASS/FAIL, exiting 1 on any failure."""
+    """Run the selected tests, apply the flake-quarantine gate to a concrete
+    python selection (`_track_python_stability_and_gate`, T-0635), report
+    PASS/FAIL, and exit 1 if the (quarantine-adjusted) result is not ok."""
     from frob.testing import run_selected
 
     run_result = run_selected(report, runners, root)
@@ -195,7 +275,8 @@ def _run_selected_and_report(cfg: AppConfig, report, runners, root: Path) -> Non
     else:
         _print_outcomes(test_run)
 
-    if not test_run.ok:
+    gated_ok = _track_python_stability_and_gate(root, report, test_run)
+    if not gated_ok:
         sys.exit(1)
 
 

@@ -34,6 +34,7 @@ from frob.testing import (
     record_outcomes,
 )
 from frob.testing._stability import (
+    DEFAULT_REGRESSION_TAIL_K,
     capture_python_outcomes,
     hard_regression_alarms,
     is_hard_regression,
@@ -121,6 +122,35 @@ class TestHardRegression:
         # frob:tests src/frob/testing/_stability.py::is_hard_regression
         entry = StabilityEntry(node_id="x", history=("F", "F", "P"))
         assert is_hard_regression(entry) is False
+
+    def test_tail_stale(self) -> None:
+        # frob:tests src/frob/testing/_stability.py::is_hard_regression
+        # a stale pass sits early in the window, followed by a
+        # DEFAULT_REGRESSION_TAIL_K-long all-fail tail: the whole-window
+        # rule alone would never fire (T-0636's gap), but the recent-tail
+        # rule must (T-0679).
+        entry = StabilityEntry(
+            node_id="x", history=("P",) + ("F",) * DEFAULT_REGRESSION_TAIL_K
+        )
+        assert is_hard_regression(entry) is True
+
+    def test_tail_short(self) -> None:
+        # frob:tests src/frob/testing/_stability.py::is_hard_regression
+        # only tail_k - 1 consecutive fails after the stale pass: neither
+        # the whole-window rule (a pass is present) nor the tail rule
+        # (not enough fails yet) should fire.
+        entry = StabilityEntry(
+            node_id="x", history=("P",) + ("F",) * (DEFAULT_REGRESSION_TAIL_K - 1)
+        )
+        assert is_hard_regression(entry) is False
+
+    def test_tail_cfg(self) -> None:
+        # frob:tests src/frob/testing/_stability.py::is_hard_regression
+        # a caller-supplied tail_k narrower than the default still trips
+        # on its own shorter fail tail.
+        entry = StabilityEntry(node_id="x", history=("P", "F", "P", "F", "F", "F"))
+        assert is_hard_regression(entry, tail_k=3) is True
+        assert is_hard_regression(entry, tail_k=DEFAULT_REGRESSION_TAIL_K) is False
 
 
 class TestQuarantine:
@@ -247,6 +277,24 @@ class TestAlarms:
         entries = load_stability(tmp_path)
         assert hard_regression_alarms(entries) == ()
 
+    def test_hard_alarm_tail(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_stability.py::hard_regression_alarms
+        ticket = new_ticket(
+            tmp_path,
+            TicketSpec(title="flake", kind=TicketKind.BUG, origin=Origin.AGENT),
+        ).danger_ok
+        quarantine(tmp_path, "tests/t.py::a", ticket_id=ticket.id)
+        # one stale pass, then a long all-fail tail: the whole-window rule
+        # alone (T-0636) would never fire here since a pass is present
+        # somewhere in the bounded history -- the recent-tail rule (T-0679)
+        # must still surface it.
+        record_outcomes(tmp_path, {"tests/t.py::a": True})
+        for _ in range(DEFAULT_REGRESSION_TAIL_K):
+            record_outcomes(tmp_path, {"tests/t.py::a": False})
+        entries = load_stability(tmp_path)
+        assert quarantine_alarms(tmp_path, entries) == ()
+        assert hard_regression_alarms(entries) == ("tests/t.py::a",)
+
 
 class TestGate:
     def test_already_ok_stays_ok(self) -> None:
@@ -274,6 +322,21 @@ class TestGate:
         }
         # quarantined, but now a hard regression (all-fail) -- quarantine
         # status alone must not promote this back to green (T-0636).
+        assert evaluate_gate(False, frozenset({"a"}), entries) is False
+
+    def test_hard_regress_tail_fails(self) -> None:
+        # frob:tests src/frob/testing/_stability.py::evaluate_gate
+        entries = {
+            "a": StabilityEntry(
+                node_id="a",
+                history=("P",) + ("F",) * DEFAULT_REGRESSION_TAIL_K,
+                quarantine_ticket="T-0001",
+            )
+        }
+        # a stale pass earlier in the window plus a live recent-tail
+        # all-fail run: the whole-window rule alone would promote this
+        # back to green (T-0636's original gap); the recent-tail rule
+        # (T-0679) must keep the gate red.
         assert evaluate_gate(False, frozenset({"a"}), entries) is False
 
 

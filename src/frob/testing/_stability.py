@@ -64,6 +64,14 @@ _MIN_HISTORY_FOR_FLAKE = 2
 #: that distinction from being a coin flip on the very next run.
 _MIN_HISTORY_FOR_REGRESSION = 3
 
+# frob:doc docs/modules/testing.md#flake-quarantine-t-0575
+#: default width of the recent-tail-window hard-regression check (T-0679):
+#: the last this-many recorded runs, all-fail, is enough to flag a hard
+#: regression even when an older, now-irrelevant pass sits earlier in the
+#: bounded `HISTORY_WINDOW` history and would otherwise defeat the
+#: whole-window all-fail rule for up to `HISTORY_WINDOW - 1` further runs.
+DEFAULT_REGRESSION_TAIL_K = 5
+
 _PASS = "P"
 _FAIL = "F"
 
@@ -208,21 +216,42 @@ def flaky_node_ids(entries: Mapping[str, StabilityEntry]) -> frozenset[str]:
 # frob:tests tests/unit/testing/test_stability.py::TestHardRegression.test_past_thresh
 # frob:tests tests/unit/testing/test_stability.py::TestHardRegression.test_under_thresh
 # frob:tests tests/unit/testing/test_stability.py::TestHardRegression.test_mixed
+# frob:tests tests/unit/testing/test_stability.py::TestHardRegression.test_tail_stale
+# frob:tests tests/unit/testing/test_stability.py::TestHardRegression.test_tail_short
+# frob:tests tests/unit/testing/test_stability.py::TestHardRegression.test_tail_cfg
 # frob:doc docs/modules/testing.md#flake-quarantine-t-0575
-def is_hard_regression(entry: StabilityEntry) -> bool:
-    """The hard-regression rule (T-0636): `entry`'s bounded history has at
-    least `_MIN_HISTORY_FOR_REGRESSION` recorded runs and EVERY one of them
-    is a fail. `is_flaky` deliberately excludes an all-fail history from
-    being a flake ("a real regression, not a flake"), but that exclusion by
-    itself is silent -- nothing separately said a quarantined test in this
-    state needs attention. This is that separate signal: a test can be
-    quarantined for genuine intermittency, then regress to permanently
-    failing, and by definition stop being flaky without the quarantine ever
-    being lifted -- `is_hard_regression` is how callers (the gate,
-    `hard_regression_alarms`) detect that and refuse to keep it green."""
+def is_hard_regression(
+    entry: StabilityEntry, *, tail_k: int = DEFAULT_REGRESSION_TAIL_K
+) -> bool:
+    """The hard-regression rule (T-0636, widened by T-0679): true when
+    EITHER `entry`'s entire bounded history (at least
+    `_MIN_HISTORY_FOR_REGRESSION` runs) is all-fail, OR its most recent
+    `tail_k` runs are all-fail (also gated by `_MIN_HISTORY_FOR_REGRESSION`
+    as a floor, so a tiny `tail_k` cannot bypass the same settling-in
+    protection the whole-window rule gets). The whole-window rule alone
+    missed a real case: a single stale pass ANYWHERE in the bounded
+    `HISTORY_WINDOW` (e.g. from before quarantine, or a one-off flake that
+    never repeated) defeats all-fail detection for up to `HISTORY_WINDOW -
+    1` subsequent all-fail runs even though the test has clearly gone
+    permanently red since -- the recent-tail-window check catches that by
+    looking only at the tail. `is_flaky` deliberately excludes an all-fail
+    history from being a flake ("a real regression, not a flake"), but that
+    exclusion by itself is silent -- nothing separately said a quarantined
+    test in this state needs attention. This is that separate signal: a
+    test can be quarantined for genuine intermittency, then regress to
+    permanently failing, and by definition stop being flaky without the
+    quarantine ever being lifted -- `is_hard_regression` is how callers
+    (the gate, `hard_regression_alarms`) detect that and refuse to keep it
+    green."""
     if len(entry.history) < _MIN_HISTORY_FOR_REGRESSION:
         return False
-    return all(mark == _FAIL for mark in entry.history)
+    if all(mark == _FAIL for mark in entry.history):
+        return True
+    effective_k = max(tail_k, _MIN_HISTORY_FOR_REGRESSION)
+    if len(entry.history) < effective_k:
+        return False
+    tail = entry.history[-effective_k:]
+    return all(mark == _FAIL for mark in tail)
 
 
 # frob:tests tests/unit/testing/test_stability.py::TestQuarantine.test_explicit_ticket
@@ -389,10 +418,14 @@ def quarantine_alarms(
 
 # frob:tests tests/unit/testing/test_stability.py::TestAlarms.test_hard_alarm
 # frob:tests tests/unit/testing/test_stability.py::TestAlarms.test_hard_no_alarm_flaky
+# frob:tests tests/unit/testing/test_stability.py::TestAlarms.test_hard_alarm_tail
 # frob:doc docs/modules/testing.md#flake-quarantine-t-0575
-def hard_regression_alarms(entries: Mapping[str, StabilityEntry]) -> tuple[str, ...]:
+def hard_regression_alarms(
+    entries: Mapping[str, StabilityEntry], *, tail_k: int = DEFAULT_REGRESSION_TAIL_K
+) -> tuple[str, ...]:
     """Node ids currently quarantined whose history has regressed to a hard
-    failure (`is_hard_regression`) -- T-0636's fix for the gap
+    failure (`is_hard_regression`, `tail_k` forwarded so a caller can widen
+    or narrow the recent-tail-window rule) -- T-0636's fix for the gap
     `quarantine_alarms` cannot cover: an all-fail history is BY DEFINITION
     not flaky, so it never enters `quarantine_alarms`'s `is_flaky` filter
     and would otherwise stay quarantined (and gate-green, see
@@ -403,7 +436,8 @@ def hard_regression_alarms(entries: Mapping[str, StabilityEntry]) -> tuple[str, 
     alarmed = [
         node_id
         for node_id, entry in entries.items()
-        if entry.quarantine_ticket is not None and is_hard_regression(entry)
+        if entry.quarantine_ticket is not None
+        and is_hard_regression(entry, tail_k=tail_k)
     ]
     # frob:waive PERF004 reason="one sort of the final alarmed list for \
     # deterministic output, not resorted per loop iteration"
@@ -414,22 +448,28 @@ def hard_regression_alarms(entries: Mapping[str, StabilityEntry]) -> tuple[str, 
 # frob:tests tests/unit/testing/test_stability.py::TestGate.test_all_quarantined_ok
 # frob:tests tests/unit/testing/test_stability.py::TestGate.test_one_bad_stays_failed
 # frob:tests tests/unit/testing/test_stability.py::TestGate.test_hard_regress_fails
+# frob:tests tests/unit/testing/test_stability.py::TestGate.test_hard_regress_tail_fails
 # frob:doc docs/modules/testing.md#public-api
 def evaluate_gate(
-    ok: bool, failing_node_ids: frozenset[str], entries: Mapping[str, StabilityEntry]
+    ok: bool,
+    failing_node_ids: frozenset[str],
+    entries: Mapping[str, StabilityEntry],
+    *,
+    tail_k: int = DEFAULT_REGRESSION_TAIL_K,
 ) -> bool:
     """Whether a test run's overall pass/fail (`ok`) should stand, once
     quarantine is accounted for: if `ok` is already `True`, unchanged; if
     `False`, it is promoted back to `True` only when EVERY failing node id
     is currently quarantined (`quarantined_node_ids`) AND not a hard
-    regression (`is_hard_regression`, T-0636) -- a quarantined test whose
-    history has gone all-fail beyond the threshold is by definition no
-    longer flaky, so quarantine status alone must not promote it back to
-    green: that was the exact silent-skip-list gap this check closes. A
-    single non-quarantined (or hard-regressed) failure among the losers
-    keeps the run failed. Pure, no IO: callers gather `failing_node_ids`
-    from their own per-test result capture and pass the already-loaded
-    `entries` map in."""
+    regression (`is_hard_regression`, `tail_k` forwarded, T-0636/T-0679) --
+    a quarantined test whose history has gone all-fail (whole-window or
+    recent-tail-window) beyond the threshold is by definition no longer
+    flaky, so quarantine status alone must not promote it back to green:
+    that was the exact silent-skip-list gap this check closes. A single
+    non-quarantined (or hard-regressed) failure among the losers keeps the
+    run failed. Pure, no IO: callers gather `failing_node_ids` from their
+    own per-test result capture and pass the already-loaded `entries` map
+    in."""
     if ok:
         return True
     if not failing_node_ids:
@@ -438,7 +478,7 @@ def evaluate_gate(
     hard_regressed = frozenset(
         node_id
         for node_id in quarantined
-        if node_id in entries and is_hard_regression(entries[node_id])
+        if node_id in entries and is_hard_regression(entries[node_id], tail_k=tail_k)
     )
     excused = quarantined - hard_regressed
     return failing_node_ids <= excused
@@ -528,6 +568,7 @@ def track_python_stability(
 
 
 __all__ = [
+    "DEFAULT_REGRESSION_TAIL_K",
     "FlakeError",
     "HISTORY_WINDOW",
     "StabilityEntry",

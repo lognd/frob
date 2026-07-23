@@ -41,12 +41,15 @@ from frob.testing._runners import (
 )
 from frob.testing._select import extension_language, select_tests
 from frob.testing._stability import (
+    DEFAULT_REGRESSION_TAIL_K,
     FlakeError,
     StabilityEntry,
     capture_python_outcomes,
     evaluate_gate,
     flaky_node_ids,
+    hard_regression_alarms,
     is_flaky,
+    is_hard_regression,
     lift_quarantine,
     load_stability,
     quarantine,
@@ -60,6 +63,7 @@ __all__ = [
     "CollectedTests",
     "CoverageWaitError",
     "CoverageWaitOutcome",
+    "DEFAULT_REGRESSION_TAIL_K",
     "FlakeError",
     "NativeSpec",
     "RunnerOutcome",
@@ -79,7 +83,9 @@ __all__ = [
     "evaluate_gate",
     "extension_language",
     "flaky_node_ids",
+    "hard_regression_alarms",
     "is_flaky",
+    "is_hard_regression",
     "lift_quarantine",
     "load_natives",
     "load_runners",
