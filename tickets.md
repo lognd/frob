@@ -4081,7 +4081,7 @@ ticket's scope.
 id: T-0677
 title: 'registry: system-design-corpus.md manifest-extraction-artifact cleanup (119
   stated vs 105 genuine)'
-state: queued
+state: done
 kind: docs
 origin: agent
 created: '2026-07-22'
@@ -4093,18 +4093,93 @@ scope:
 - docs/design/system-design-corpus.md
 - docs/design/registry/system-design.yaml
 scope_changes: []
-evidence: []
+evidence:
+- 'cmd:test "$(grep -c "^- id: " docs/design/system-design-corpus.md)" = 119 && test
+  "$(grep -c "^- id: .*artifact: true" docs/design/system-design-corpus.md)" = 14
+  exit=0 sha256=e3b0c44298fc'
 attachments: []
 acceptance:
 - text: Given system-design-corpus.md after the fix, when its manifest is parsed,
     then TOTAL reflects only genuine entries or artifact rows are machine-distinguishable
     without a hardcoded exclusion list
-  evidence: []
+  evidence:
+  - 'cmd:test "$(grep -c "^- id: " docs/design/system-design-corpus.md)" = 119 &&
+    test "$(grep -c "^- id: .*artifact: true" docs/design/system-design-corpus.md)"
+    = 14 exit=0 sha256=e3b0c44298fc'
 threat: null
 component: null
 labels: []
 ```
 RECONCILIATION.md finding (d): 14 of the doc's 119 manifest ids are mechanical-extraction artifacts (repeated table-header cells / repeated cell values counted as distinct rows), inflating the doc's own stated TOTAL. Correct the source doc's manifest generation/TOTAL (105 genuine) or add a machine-checkable annotation distinguishing artifact rows from real ones, so future manifest parses do not need an exclusion-list special case. Depends on T-0392 (system-design domain reconciliation) landing first.
+
+## Done report
+
+Corrected system-design-corpus.md's own DENOMINATOR MANIFEST so the
+119-vs-105 discrepancy is machine-distinguishable in the source doc
+itself, not just in the already-reconciled system-design.yaml
+(T-0392 had already tagged the yaml side; the corpus.md side was the
+remaining gap this ticket closed).
+
+Artifact identification (recounted independently against
+RECONCILIATION.md finding (d), then cross-checked line-by-line against
+docs/design/registry/system-design.yaml's own
+`disposition: "out-of-scope(manifest-extraction-artifact)"` entries,
+which matched exactly):
+
+- SDC-1-STRATA-CHECKABILITY, -2, -3, -4, -5 (5) -- header-cell
+  ("STRATA-CHECKABILITY") of section 1's five headerless single-row
+  tables (1.2-1.6) mis-scanned as a named row, once per table.
+- SDC-1-ADVISORY, SDC-1-NOT-CHECKABLE (2) -- the same tables' own
+  checkability-value cell (`advisory`/`not-checkable`) was short enough,
+  once slugified, to collide with a second header-shaped artifact rather
+  than read as a real topic name.
+- SDC-5-STRATA-CHECKABILITY, -2 (2) -- same header-mis-scan for
+  section 5's two headerless tables (5.2 SLO, 5.3 chaos engineering).
+- SDC-10-STRATA-CHECKABILITY (1) -- same pattern, section 10.1 (Jepsen).
+- SDC-13-BEST-PRACTICE, -2, -3, -4 (4) -- header-cell ("Best practice")
+  of 4 of section 13's five seam tables mis-scanned as a named row.
+
+Total: 14 artifact rows, matching RECONCILIATION.md finding (d) and the
+already-landed system-design.yaml disposition list exactly (verified
+id-for-id, not just by count).
+
+Disposition: kept every artifact row in place in the manifest (never
+silently deleted, per the no-silent-drop instruction) and appended
+`| artifact: true | artifact-reason: mechanical-extraction (header-cell/
+short-cell-value mis-scanned as a named row)` to each of the 14 lines.
+Added a new explanatory paragraph directly above the manifest list
+documenting the extraction bug and the disposition, and extended the
+manifest's own format line to declare the optional trailing
+`artifact: true` field. Updated the trailing `TOTAL: 119` line to state
+the 105-genuine / 14-artifact split explicitly.
+
+Final counts (verified by the bound evidence command): 119 total ids,
+14 tagged `artifact: true`, 105 genuine (119 - 14). This satisfies the
+ticket's acceptance criterion via its second disjunct ("artifact rows
+are machine-distinguishable without a hardcoded exclusion list") -- a
+parser can now `grep`/filter on `artifact: true` to get the genuine 105
+without needing the RECONCILIATION.md id list baked into any tool.
+
+docs/design/registry/system-design.yaml needed NO changes: T-0392 had
+already landed the full 14-entry `disposition:
+"out-of-scope(manifest-extraction-artifact)"` set (with
+`total_genuine: 105` / `total_artifacts: 14` fields already present),
+and it matches this pass's independently-recounted 14 exactly.
+
+Deviation: `frob ticket evidence --evidence-cmd --accepts` did not
+actually bind the cmd: evidence entry to acceptance[0] (a real CLI/
+library gap in src/frob/tickets, filed as T-draft-91ef53bd, out of this
+ticket's docs-only scope). Worked around by calling the underlying
+`frob.tickets.add_evidence(root, "T-0677", [<already-recorded cmd:
+entry>], accepts=[0])` library function directly to bind the
+already-verified evidence after the fact -- no source files touched, no
+hand-edited YAML.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `cmd:test "$(grep -c "^- id: " docs/design/system-design-corpus.md)" = 119 && test "$(grep -c "^- id: .*artifact: true" docs/design/system-design-corpus.md)" = 14 exit=0 sha256=e3b0c44298fc` (cmd evidence, exit=0)
 
 <!-- ticket:T-0678 -->
 ```yaml
@@ -9153,3 +9228,33 @@ component: null
 labels: []
 ```
 Three lands this drive (T-0676, T-0774, T-0767) merged+finalized in the worktree (ticket transitioned to done in the worktree ledger) then failed before the main commit; every retry then errored InvalidTransition because close re-runs the done transition. Each required a manual splice-apply onto main (see the three land commits). Make the close step idempotent (done ticket + pending squash = proceed to squash-apply) or checkpoint the land so retry resumes at the squash. Separately, when root==worktree because the invoker's cwd is inside the worktree, say so explicitly.
+
+<!-- ticket:T-0796 -->
+```yaml
+id: T-0796
+title: 'tickets CLI: --evidence-cmd with --accepts silently records evidence UNBOUND
+  (add_cmd_evidence has no accepts param)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-23'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/__init__.py
+- src/frob/app/ticket_runner.py
+- tests/test_tickets_evidence_cli.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN frob ticket evidence T-X --evidence-cmd CMD --accepts 0 WHEN the command
+    verifies THEN the cmd evidence is bound to acceptance index 0 exactly like pytest-node
+    evidence; a regression test drives the CLI path
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Promotion of T-0677's worktree draft 91ef53bd: add_cmd_evidence in frob.tickets has no accepts parameter and both CLI call sites in ticket_runner.py drop cfg.ticket_accepts for cmd evidence, so docs-kind tickets silently end up with UNBOUND acceptance despite the operator passing --accepts (T-0677 worked around via the library add_evidence call). With the T-0763 land preflight now refusing unbound acceptance, this silent drop blocks docs-ticket lands.

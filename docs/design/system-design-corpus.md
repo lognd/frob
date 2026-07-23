@@ -870,8 +870,35 @@ in sections 1-14 above (mechanically extracted; checkability inferred
 from each row's own STRATA-CHECKABILITY cell text: 'provable' ->
 tier1-static, 'not-checkable' -> tier3-not-checkable, else
 tier2-advisory). Format: `- id: <STABLE-ID> | catalog: <section> |
-checkability: <tag> | trap-ref: <section number>`. This is what the
-exhaustiveness drift-lock test binds against.
+checkability: <tag> | trap-ref: <section number>`, with an optional
+trailing `| artifact: true | artifact-reason: <why>` on rows below that
+are not real named entries. This is what the exhaustiveness drift-lock
+test binds against.
+
+**Manifest-extraction-artifact disposition (RECONCILIATION.md finding
+(d), T-0677)**: the mechanical extraction that built this list re-scans
+every markdown table row in sections 1-14 by first-column text, with no
+special-casing for a table that has no dedicated "Name"/"Item"/"Topic"
+column of its own. For a table whose first column is literally the
+`STRATA-CHECKABILITY` header (sections 1.2-1.6, 5.2-5.3, 10.1) or the
+`Best practice` header (section 13's five seam tables), the extractor
+picked up the *header cell text itself* as if it were a distinct named
+row, on top of the table's real (possibly single) data row -- and for
+two of section 1's headerless tables, the data row's own checkability
+value (`advisory`, `not-checkable`) was short enough to be
+indistinguishable from a second header-artifact once slugified. **14 of
+the 119 ids below are these mechanical-extraction artifacts, not real
+catalogued entries** -- each is marked `| artifact: true |
+artifact-reason: mechanical-extraction (header-cell/short-cell-value
+mis-scanned as a named row)` in place, rather than deleted, so a diff of
+this doc still shows exactly what changed and why (never silently drop a
+discrepancy). The genuine content is **105 entries**; `system-
+design.yaml` mirrors this exact split with
+`disposition: "out-of-scope(manifest-extraction-artifact)"` on the same
+14 ids. A parser can therefore either sum `TOTAL` as-is (119, matching
+this doc's own historical manifest count) or filter on `artifact: true`
+to get the genuine 105 -- no hardcoded exclusion list is required either
+way.
 
 - id: SDC-1-NETWORK-RELIABILITY | catalog: system-design-corpus-sec-1 | checkability: tier1-static | trap-ref: 1
 - id: SDC-1-LATENCY-NON-ZERO | catalog: system-design-corpus-sec-1 | checkability: tier1-static | trap-ref: 1
@@ -881,15 +908,15 @@ exhaustiveness drift-lock test binds against.
 - id: SDC-1-SINGLE-ADMINISTRATOR-FALSE | catalog: system-design-corpus-sec-1 | checkability: tier2-advisory | trap-ref: 1
 - id: SDC-1-TRANSPORT-COST-NONZERO | catalog: system-design-corpus-sec-1 | checkability: tier2-advisory | trap-ref: 1
 - id: SDC-1-HETEROGENEOUS-NETWORK-COMPONENT-VERSIONING-SIMPLE-AZURE-VARIANT-OBSERVABILITY-CAN-BE | catalog: system-design-corpus-sec-1 | checkability: tier1-static | trap-ref: 1
-- id: SDC-1-STRATA-CHECKABILITY | catalog: system-design-corpus-sec-1 | checkability: tier2-advisory | trap-ref: 1
-- id: SDC-1-ADVISORY | catalog: system-design-corpus-sec-1 | checkability: tier2-advisory | trap-ref: 1
-- id: SDC-1-STRATA-CHECKABILITY-2 | catalog: system-design-corpus-sec-1 | checkability: tier2-advisory | trap-ref: 1
-- id: SDC-1-NOT-CHECKABLE | catalog: system-design-corpus-sec-1 | checkability: tier3-not-checkable | trap-ref: 1
-- id: SDC-1-STRATA-CHECKABILITY-3 | catalog: system-design-corpus-sec-1 | checkability: tier2-advisory | trap-ref: 1
+- id: SDC-1-STRATA-CHECKABILITY | catalog: system-design-corpus-sec-1 | checkability: tier2-advisory | trap-ref: 1 | artifact: true | artifact-reason: mechanical-extraction (header-cell/short-cell-value mis-scanned as a named row)
+- id: SDC-1-ADVISORY | catalog: system-design-corpus-sec-1 | checkability: tier2-advisory | trap-ref: 1 | artifact: true | artifact-reason: mechanical-extraction (header-cell/short-cell-value mis-scanned as a named row)
+- id: SDC-1-STRATA-CHECKABILITY-2 | catalog: system-design-corpus-sec-1 | checkability: tier2-advisory | trap-ref: 1 | artifact: true | artifact-reason: mechanical-extraction (header-cell/short-cell-value mis-scanned as a named row)
+- id: SDC-1-NOT-CHECKABLE | catalog: system-design-corpus-sec-1 | checkability: tier3-not-checkable | trap-ref: 1 | artifact: true | artifact-reason: mechanical-extraction (header-cell/short-cell-value mis-scanned as a named row)
+- id: SDC-1-STRATA-CHECKABILITY-3 | catalog: system-design-corpus-sec-1 | checkability: tier2-advisory | trap-ref: 1 | artifact: true | artifact-reason: mechanical-extraction (header-cell/short-cell-value mis-scanned as a named row)
 - id: SDC-1-PROVABLE-PRESENCE-OF-ENDPOINT-CHECK-PROXY-ADVISORY-PLACEMENT-JUDGMENT | catalog: system-design-corpus-sec-1 | checkability: tier1-static | trap-ref: 1
-- id: SDC-1-STRATA-CHECKABILITY-4 | catalog: system-design-corpus-sec-1 | checkability: tier2-advisory | trap-ref: 1
+- id: SDC-1-STRATA-CHECKABILITY-4 | catalog: system-design-corpus-sec-1 | checkability: tier2-advisory | trap-ref: 1 | artifact: true | artifact-reason: mechanical-extraction (header-cell/short-cell-value mis-scanned as a named row)
 - id: SDC-1-PROVABLE-PRESENCE-PROXY | catalog: system-design-corpus-sec-1 | checkability: tier1-static | trap-ref: 1
-- id: SDC-1-STRATA-CHECKABILITY-5 | catalog: system-design-corpus-sec-1 | checkability: tier2-advisory | trap-ref: 1
+- id: SDC-1-STRATA-CHECKABILITY-5 | catalog: system-design-corpus-sec-1 | checkability: tier2-advisory | trap-ref: 1 | artifact: true | artifact-reason: mechanical-extraction (header-cell/short-cell-value mis-scanned as a named row)
 - id: SDC-1-PROVABLE-DECLARATION-PRESENCE-NOT-THE-GUARANTEE-ITSELF | catalog: system-design-corpus-sec-1 | checkability: tier1-static | trap-ref: 1
 - id: SDC-2-PAXOS | catalog: system-design-corpus-sec-2 | checkability: tier1-static | trap-ref: 2
 - id: SDC-2-MULTI-PAXOS | catalog: system-design-corpus-sec-2 | checkability: tier1-static | trap-ref: 2
@@ -917,9 +944,9 @@ exhaustiveness drift-lock test binds against.
 - id: SDC-4-OUTBOX-SAGA-PATTERNS | catalog: system-design-corpus-sec-4 | checkability: tier1-static | trap-ref: 4
 - id: SDC-4-CHANGE-DATA-CAPTURE-CDC | catalog: system-design-corpus-sec-4 | checkability: tier1-static | trap-ref: 4
 - id: SDC-5-PROVABLE-DECLARATION-PRESENCE | catalog: system-design-corpus-sec-5 | checkability: tier1-static | trap-ref: 5
-- id: SDC-5-STRATA-CHECKABILITY | catalog: system-design-corpus-sec-5 | checkability: tier2-advisory | trap-ref: 5
+- id: SDC-5-STRATA-CHECKABILITY | catalog: system-design-corpus-sec-5 | checkability: tier2-advisory | trap-ref: 5 | artifact: true | artifact-reason: mechanical-extraction (header-cell/short-cell-value mis-scanned as a named row)
 - id: SDC-5-NOT-CHECKABLE-THE-PRACTICE-ITSELF-IS-RUNTIME-EVIDENCE-NOT-A-STATIC-FACT | catalog: system-design-corpus-sec-5 | checkability: tier3-not-checkable | trap-ref: 5
-- id: SDC-5-STRATA-CHECKABILITY-2 | catalog: system-design-corpus-sec-5 | checkability: tier2-advisory | trap-ref: 5
+- id: SDC-5-STRATA-CHECKABILITY-2 | catalog: system-design-corpus-sec-5 | checkability: tier2-advisory | trap-ref: 5 | artifact: true | artifact-reason: mechanical-extraction (header-cell/short-cell-value mis-scanned as a named row)
 - id: SDC-5-TIMEOUT | catalog: system-design-corpus-sec-5 | checkability: tier1-static | trap-ref: 5
 - id: SDC-5-RETRY-BACKOFF-JITTER | catalog: system-design-corpus-sec-5 | checkability: tier1-static | trap-ref: 5
 - id: SDC-5-IDEMPOTENT-RECEIVER | catalog: system-design-corpus-sec-5 | checkability: tier1-static | trap-ref: 5
@@ -947,7 +974,7 @@ exhaustiveness drift-lock test binds against.
 - id: SDC-9-MULTI-REGION-DISASTER-RECOVERY-RTO-RPO | catalog: system-design-corpus-sec-9 | checkability: tier1-static | trap-ref: 9
 - id: SDC-9-CELL-BASED-ARCHITECTURE | catalog: system-design-corpus-sec-9 | checkability: tier1-static | trap-ref: 9
 - id: SDC-10-NOT-CHECKABLE-THE-FINDINGS-THEMSELVES-ARE-EMPIRICAL-PER-SYSTEM | catalog: system-design-corpus-sec-10 | checkability: tier3-not-checkable | trap-ref: 10
-- id: SDC-10-STRATA-CHECKABILITY | catalog: system-design-corpus-sec-10 | checkability: tier2-advisory | trap-ref: 10
+- id: SDC-10-STRATA-CHECKABILITY | catalog: system-design-corpus-sec-10 | checkability: tier2-advisory | trap-ref: 10 | artifact: true | artifact-reason: mechanical-extraction (header-cell/short-cell-value mis-scanned as a named row)
 - id: SDC-10-ADVISORY-FORMAL-SPEC-IS-ORTHOGONAL-TO-STRATA-S-STATIC-ANALYSIS-APPROACH-A-DIFFERENT | catalog: system-design-corpus-sec-10 | checkability: tier1-static | trap-ref: 10
 - id: SDC-11-THE-GOOGLE-FILE-SYSTEM | catalog: system-design-corpus-sec-11 | checkability: tier2-advisory | trap-ref: 11
 - id: SDC-11-MAPREDUCE-SIMPLIFIED-DATA-PROCESSING-ON-LARGE-CLUSTERS | catalog: system-design-corpus-sec-11 | checkability: tier2-advisory | trap-ref: 11
@@ -970,13 +997,13 @@ exhaustiveness drift-lock test binds against.
 - id: SDC-12-GOODBYE-MICROSERVICES-ORIGINALLY-SEGMENT-ENGINEERING-BLOG-2018-NOW-HOSTED-AT-TWILIO | catalog: system-design-corpus-sec-12 | checkability: tier2-advisory | trap-ref: 12
 - id: SDC-12-DECONSTRUCTING-THE-MONOLITH-AND-UNDER-DECONSTRUCTION-THE-STATE-OF-SHOPIFY-S-MONOLIT | catalog: system-design-corpus-sec-12 | checkability: tier1-static | trap-ref: 12
 - id: SDC-13-A-DECLARED-ABI-ISA-TARGET-IS-STABLE-ACROSS-A-COMPATIBILITY-WINDOW-A-COMPILED-ARTIFA | catalog: system-design-corpus-sec-13 | checkability: tier1-static | trap-ref: 13
-- id: SDC-13-BEST-PRACTICE | catalog: system-design-corpus-sec-13 | checkability: tier2-advisory | trap-ref: 13
+- id: SDC-13-BEST-PRACTICE | catalog: system-design-corpus-sec-13 | checkability: tier2-advisory | trap-ref: 13 | artifact: true | artifact-reason: mechanical-extraction (header-cell/short-cell-value mis-scanned as a named row)
 - id: SDC-13-EVERY-BOOT-CHAIN-STAGE-IS-SIGNED-SECURE-BOOT-OR-MEASURED-INTO-AN-ATTESTABLE-LOG-MEA | catalog: system-design-corpus-sec-13 | checkability: tier1-static | trap-ref: 13
-- id: SDC-13-BEST-PRACTICE-2 | catalog: system-design-corpus-sec-13 | checkability: tier2-advisory | trap-ref: 13
+- id: SDC-13-BEST-PRACTICE-2 | catalog: system-design-corpus-sec-13 | checkability: tier2-advisory | trap-ref: 13 | artifact: true | artifact-reason: mechanical-extraction (header-cell/short-cell-value mis-scanned as a named row)
 - id: SDC-13-EVERY-KERNEL-USERSPACE-INTERFACE-SYSCALL-PROCFS-SYSFS-ENTRY-IOCTL-IS-CLASSIFIED-INT | catalog: system-design-corpus-sec-13 | checkability: tier1-static | trap-ref: 13
-- id: SDC-13-BEST-PRACTICE-3 | catalog: system-design-corpus-sec-13 | checkability: tier2-advisory | trap-ref: 13
+- id: SDC-13-BEST-PRACTICE-3 | catalog: system-design-corpus-sec-13 | checkability: tier2-advisory | trap-ref: 13 | artifact: true | artifact-reason: mechanical-extraction (header-cell/short-cell-value mis-scanned as a named row)
 - id: SDC-13-EVERY-DEPLOYED-PROCESS-DECLARES-ITS-RESOURCE-BOUNDS-CGROUP-LIMITS-CPU-MEMORY-IO-AND | catalog: system-design-corpus-sec-13 | checkability: tier1-static | trap-ref: 13
-- id: SDC-13-BEST-PRACTICE-4 | catalog: system-design-corpus-sec-13 | checkability: tier2-advisory | trap-ref: 13
+- id: SDC-13-BEST-PRACTICE-4 | catalog: system-design-corpus-sec-13 | checkability: tier2-advisory | trap-ref: 13 | artifact: true | artifact-reason: mechanical-extraction (header-cell/short-cell-value mis-scanned as a named row)
 - id: SDC-13-EVERY-SERVICE-TO-SERVICE-API-DECLARES-AN-EXPLICIT-SCHEMA-CONTRACT-WITH-A-VERSIONING | catalog: system-design-corpus-sec-13 | checkability: tier1-static | trap-ref: 13
 - id: SDC-14-LINUS-TORVALDS | catalog: system-design-corpus-sec-14 | checkability: tier1-static | trap-ref: 14
 - id: SDC-14-BARBARA-LISKOV | catalog: system-design-corpus-sec-14 | checkability: tier1-static | trap-ref: 14
@@ -992,4 +1019,6 @@ exhaustiveness drift-lock test binds against.
 - id: SDC-14-DAVID-CUTLER | catalog: system-design-corpus-sec-14 | checkability: tier2-advisory | trap-ref: 14
 - id: SDC-14-ANDREW-S-TANENBAUM | catalog: system-design-corpus-sec-14 | checkability: tier1-static | trap-ref: 14
 - id: SDC-14-MARGARET-HAMILTON | catalog: system-design-corpus-sec-14 | checkability: tier1-static | trap-ref: 14
-TOTAL: 119
+TOTAL: 119 (105 genuine + 14 artifact: true rows, per RECONCILIATION.md
+finding (d) / T-0677 -- filter on `artifact: true` for the genuine-only
+count, no hardcoded exclusion list needed)
