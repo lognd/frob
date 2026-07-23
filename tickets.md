@@ -7649,3 +7649,34 @@ component: null
 labels: []
 ```
 T-0764 added archive(root, *, force: bool = False) in src/frob/tickets/__init__.py, refusing when a live cross-worktree lease exists unless force=True. The CLI entrypoint (_archive in src/frob/app/ticket_runner.py, 'frob ticket archive' subcommand) does not yet expose a --force flag to pass through, since that file is outside T-0764's declared scope (src/frob/tickets/**, tests/test_tickets*.py, tests/test_ticket_land.py). Add an argparse --force flag to the archive subcommand and thread it to archive(root, force=...).
+
+<!-- ticket:T-0811 -->
+```yaml
+id: T-0811
+title: 'land: draft renumbering must rewrite draft-id references in Done-report prose
+  (recurring TICK006 after every draft-filing land)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-23'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/_land.py
+- tests/test_ticket_land.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN a worktree ledger whose Done reports reference T-draft ids WHEN land
+    renumbers those drafts to real ids THEN every reference to the old draft id anywhere
+    in the spliced ledger text is rewritten to the new id and no TICK006 fires post-land;
+    a regression test lands a draft-referencing Done report and asserts zero stale
+    draft ids
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Recurred 3x this drive (T-0778/T-0797, T-0745/T-0764 pairs): land renumbers T-draft blocks to real ids but leaves Done-report prose citing the old draft id, so TICK006 reds main after every draft-filing land until the coordinator hand-retargets. The renumber step already knows the old->new id mapping; apply it as a text substitution across the spliced ledger (and archive) before the integrity check.
