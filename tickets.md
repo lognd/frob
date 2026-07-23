@@ -6224,3 +6224,33 @@ component: null
 labels: []
 ```
 T-0748 delivered the collector parser adapters (parse_perf_script, parse_v8_cpuprofile, parse_jfr_print + build_class_to_file) proven through resolve_stream/HitStream, but no frob perf CLI entrypoint exists for any collector including the T-0710 python sampler. Wire a subcommand that accepts a profile artifact path (or invokes the sampler), runs the matching collector, and renders the resolved hot-graph deciles. Filed per T-0748 reviewer recommendation (disclosed deviation, real unscoped work).
+
+<!-- ticket:T-0766 -->
+```yaml
+id: T-0766
+title: 'lease resolution cross-talk: frob check --ticket ran against another agent''s
+  worktree via stale lease under concurrent load'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-22'
+priority: high
+blocked_by: []
+parent: null
+scope:
+- src/frob/tickets/_leases.py
+- tests/test_tickets_leases.py
+scope_changes: []
+evidence: []
+attachments: []
+acceptance:
+- text: GIVEN two agents with leases on different tickets in different worktrees WHEN
+    one runs frob check --ticket for its own ticket THEN the check resolves that ticket's
+    own lease/worktree and never another agent's worktree; a regression test reproduces
+    the cross-talk shape
+  evidence: []
+threat: null
+component: null
+labels: []
+```
+Observed during T-0695 (2026-07-22, heavy concurrent multi-agent load): frob check --ticket T-0695 twice ran against a completely different worktree (agent-a86ce74bd40394899, which held the T-0733 lease) via stale ticket-lease state, until frob ticket start T-0695 was re-run. Leases are worktree-local since T-0473, but some path in check's lease resolution still picked up a sibling worktree's state. Root-cause the resolution order (env FROB_WORKTREE? lease file mtime? first-match iteration?) and pin check --ticket to the invoking worktree's own lease, failing loudly if absent rather than borrowing a sibling's.
