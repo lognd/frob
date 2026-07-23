@@ -152,6 +152,7 @@
     "src/frob/arch/_normalized.py::LanguageAdapter.adapt": "0c57832dc79ce96209c1a1ae671bbb1808b6b61baffc12c19d893376a6afe64e",
     "src/frob/arch/_normalized.py::NormalizedBranch": "48bba7c4e3e618a3bf0ef92073e4ac587a09504e5538d7481fe8679e3136617d",
     "src/frob/arch/_normalized.py::NormalizedCall": "acfcc785c9d606036b118102886127ff170c31104ae538ed11c6b89b9caa9797",
+    "src/frob/arch/_normalized.py::NormalizedCallArg": "347666041e311326dcc8335763c9c8478d6b80d886aa26671322d49623745f8e",
     "src/frob/arch/_normalized.py::NormalizedCatch": "f115e71b649127a7dd5874bff9fcbd750ec5c9a7b658f02da2619d4ed3f26817",
     "src/frob/arch/_normalized.py::NormalizedClass": "c93c9ce039f9fc0a128f198b426d20afcba538f10e45825aaae95f180911f400",
     "src/frob/arch/_normalized.py::NormalizedField": "b65fcd86f71e4ba176f7b34c88cc876d26cc12e67c494af7567480e73d4576fc",
@@ -163,6 +164,8 @@
     "src/frob/arch/_normalized.py::NormalizedParam": "c08f1ba0928c24ee67d5afe49e66b67c98b966f4783f8a095c2459b8aa633160",
     "src/frob/arch/_normalized.py::NormalizedRaise": "15237e2a55a5689a520f3debf29a38dd873eab2ecda48fcff2256a9ad7c3cc1c",
     "src/frob/arch/_normalized.py::NormalizedReturn": "33f1d3860bbf60ff992304d4b6b44d86a896f661ce56f0e74032f54251c6ccca",
+    "src/frob/arch/_normalized.py::NormalizedVariant": "681b02b4c4514206be00bfc787b16b38a44a59c905ecf7108a531ae7223a9a4a",
+    "src/frob/arch/_normalized.py::NormalizedVariantPayload": "7edd34cd131a28d19feb34353e4de5f5dee1c733040077b1d3bdae1fc556697f",
     "src/frob/arch/_patterns.py::PATTERN_REGISTRY": "5588ed668211c758753b7cce36544d1c147a5ef5ab5c6d56d71bd0a9c6a83dd5",
     "src/frob/arch/_patterns.py::PatternRuleSpec": "5f94e228567e93c34435e364027092ea5cda8ec14681b79096d00025f853ce30",
     "src/frob/arch/_patterns.py::iter_type_switch_chains": "7e5926d5232dcb885fe1101948398b94d92b709a68f166a49e9d1cc4585273c9",
@@ -1426,5 +1429,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.140.0"
+  "version": "0.141.0"
 }

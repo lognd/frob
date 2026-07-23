@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.141.0] - unreleased
+
+- T-0727: arch: PythonAdapter never detects class-level annotated fields (_py_class_fields gates on a nonexistent expression_statement wrapper)
+
 ## [0.140.0] - unreleased
 
 - T-0679: flake quarantine: recent-tail-window variant of is_hard_regression

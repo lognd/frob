@@ -1745,6 +1745,34 @@ class TestPythonAdapter:
         assert "process_matrix" in funcs
         assert funcs["process_matrix"].max_nesting_depth >= 4
 
+    def test_adapt_call_args_capture_position_keyword_and_identifier(
+        self, tmp_path: Path
+    ) -> None:
+        # T-0632: NormalizedCall.args carries per-argument position/keyword
+        # + bare-identifier detail -- a positional identifier arg, a
+        # keyword identifier arg, and a non-identifier (literal) arg that
+        # must NOT get an `ident` back.
+        from frob.arch._python import PythonAdapter
+        from frob.lang import raw_tree
+
+        src_path = tmp_path / "call_args.py"
+        src_path.write_text(
+            "def run(handler, mode):\n    dispatch(handler, mode=mode, retries=3)\n"
+        )
+        parsed = raw_tree(src_path)
+        assert parsed.is_ok
+        tree, source, _language = parsed.danger_ok
+
+        module = PythonAdapter().adapt(tree, source, "call_args.py")
+        funcs = {f.name: f for f in module.functions}
+        call = funcs["run"].calls[0]
+        assert call.callee == "dispatch"
+        by_pos = {a.index: a for a in call.args if a.index is not None}
+        by_kw = {a.keyword: a for a in call.args if a.keyword is not None}
+        assert by_pos[0].ident == "handler"
+        assert by_kw["mode"].ident == "mode"
+        assert by_kw["retries"].ident is None
+
 
 # ---------------------------------------------------------------------------
 # T-0611: TypeScriptAdapter -- maps a real parsed TypeScript file onto
@@ -2181,6 +2209,40 @@ class TestRustAdapter:
             "}\n",
         )
         shape = next(c for c in module.classes if c.name == "Shape")
+        assert {f.name for f in shape.fields} == {"Circle", "Square", "Empty"}
+
+    def test_adapt_enum_variant_payload_shapes(self, tmp_path: Path) -> None:
+        # T-0743: NormalizedClass.variants carries the payload shape
+        # NormalizedField alone cannot -- a tuple variant, a struct
+        # variant, and a unit variant must be distinguishable, with their
+        # payload field names/types intact.
+        module = self._adapt(
+            tmp_path,
+            "enum Shape {\n"
+            "    Circle(f64),\n"
+            "    Square { side: f64 },\n"
+            "    Empty,\n"
+            "}\n",
+        )
+        shape = next(c for c in module.classes if c.name == "Shape")
+        variants = {v.name: v for v in shape.variants}
+        assert set(variants) == {"Circle", "Square", "Empty"}
+
+        circle = variants["Circle"]
+        assert circle.shape == "tuple"
+        assert [(p.name, p.type) for p in circle.payload] == [("0", "f64")]
+
+        square = variants["Square"]
+        assert square.shape == "struct"
+        assert [(p.name, p.type) for p in square.payload] == [("side", "f64")]
+
+        empty = variants["Empty"]
+        assert empty.shape == "unit"
+        assert empty.payload == []
+
+        # The pre-existing NormalizedField mapping is untouched (additive,
+        # not a replacement) -- same assertion as
+        # test_adapt_enum_variants_as_fields, re-checked alongside variants.
         assert {f.name for f in shape.fields} == {"Circle", "Square", "Empty"}
 
     def test_adapt_function_params_and_return_type(self, tmp_path: Path) -> None:
@@ -3049,36 +3111,19 @@ class TestFourWayCrossLanguageEquivalence:
             assert len(module.classes) == 2, module.language
 
     def test_derived_class_has_the_field_and_one_method(
-        self, ts_module, rust_module, kt_module
+        self, py_module, ts_module, rust_module, kt_module
     ) -> None:
         """The derived class (Animal) carries a `name` field and its
-        `speak` method in TS/rust/kotlin, all three of which capture
-        class-level annotated / constructor-set fields via their adapter.
-        Python is asserted separately below (see
-        `test_python_field_detection_is_a_documented_waiver`) since
-        `PythonAdapter` does not capture this shape at all today."""
-        for module in (ts_module, rust_module, kt_module):
+        `speak` method in all four languages -- python included since
+        T-0727 fixed `PythonAdapter._py_class_fields` to match the real
+        (unwrapped) `assignment` node shape tree-sitter-python actually
+        yields, closing what was previously a documented waiver."""
+        for module in (py_module, ts_module, rust_module, kt_module):
             derived = next(c for c in module.classes if c.name == "Animal")
             field_names = {f.name for f in derived.fields}
             assert "name" in field_names, module.language
             method_names = {m.name for m in derived.methods}
             assert "speak" in method_names, module.language
-
-    def test_python_field_detection_is_a_documented_waiver(self, py_module) -> None:
-        """WAIVER (T-draft-d49c456f, filed out of T-0615's scope):
-        `PythonAdapter._py_class_fields` never actually matches a
-        class-level annotated field's real grammar shape (the assignment
-        node arrives directly, not `expression_statement`-wrapped, as the
-        filed ticket's repro shows) -- so `Animal.fields` comes back EMPTY
-        for python even though the SAME fixture shape (`name: str` at
-        class level) is captured by TS/rust/kotlin. Asserted explicitly
-        here, not skipped, so a future fix to `_py_class_fields` is
-        caught by this test needing an update rather than silently
-        passing either way."""
-        derived = next(c for c in py_module.classes if c.name == "Animal")
-        assert derived.fields == []
-        method_names = {m.name for m in derived.methods}
-        assert "speak" in method_names
 
     def test_override_captured_except_pythons_documented_waiver(
         self, py_module, ts_module, rust_module, kt_module

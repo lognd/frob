@@ -66,16 +66,38 @@ class NormalizedFieldAccess(BaseModel):
 
 
 # frob:doc docs/modules/arch.md#normalized-code-model
+class NormalizedCallArg(BaseModel):
+    """One argument at a call site (T-0632): its position -- a 0-based
+    `index` for a positional argument, or a `keyword` name for a keyword
+    argument (exactly one of the two is set) -- and, when the argument
+    itself is a bare identifier reference (`f(x)`, `f(key=x)`), that
+    identifier's text in `ident`. `ident` is `None` for any other argument
+    shape (a literal, a call, an attribute access, ...) -- dispatch/
+    registration detectors (`frob.arch._python._collect_dispatch_refs`)
+    only care about bare-identifier arguments, so non-identifier shapes are
+    not otherwise represented here."""
+
+    model_config = {}
+
+    index: int | None = None
+    keyword: str | None = None
+    ident: str | None = None
+
+
+# frob:doc docs/modules/arch.md#normalized-code-model
 class NormalizedCall(BaseModel):
     """A call site inside a function/method body: the callee name (bare
-    identifier or `obj.method` dotted form) and the source line it occurs
-    at -- the shared unit every dispatch/construction/delegation detector
-    (`frob.arch._patterns`) reasons about."""
+    identifier or `obj.method` dotted form), the source line it occurs at,
+    and its argument list (`args`, T-0632: position/keyword + bare-
+    identifier detail per argument) -- the shared unit every dispatch/
+    construction/delegation detector (`frob.arch._patterns`) reasons
+    about."""
 
     model_config = {}
 
     callee: str
     line: int
+    args: list[NormalizedCallArg] = []
 
 
 # frob:doc docs/modules/arch.md#normalized-code-model
@@ -206,10 +228,49 @@ class NormalizedField(BaseModel):
 
 
 # frob:doc docs/modules/arch.md#normalized-code-model
+class NormalizedVariantPayload(BaseModel):
+    """One associated-data field of an enum variant (T-0743): `name` is a
+    struct-variant field's own name, or a tuple-variant field's positional
+    index as a string (`"0"`, `"1"`, ...) -- the same positional-name
+    convention `NormalizedField` already uses for tuple-struct fields, kept
+    consistent rather than inventing a second one."""
+
+    model_config = {}
+
+    name: str
+    type: str | None = None
+
+
+# frob:doc docs/modules/arch.md#normalized-code-model
+class NormalizedVariant(BaseModel):
+    """One enum variant (T-0743): its name, source line, associated-data
+    `shape` (`"unit"` -- no payload, e.g. `Empty`; `"tuple"` -- positional
+    payload, e.g. `Circle(f64)`; `"struct"` -- named payload, e.g.
+    `Square { side: f64 }`), and the payload fields themselves (empty for
+    `"unit"`). Exists because `NormalizedField` (what enum variants mapped
+    onto before this ticket) has no way to represent a variant's OWN
+    payload shape -- only a bare name -- so a tuple-vs-struct-vs-unit
+    variant and its field types were indistinguishable on the model."""
+
+    model_config = {}
+
+    name: str
+    line: int
+    shape: str = "unit"  # "unit" | "tuple" | "struct"
+    payload: list[NormalizedVariantPayload] = []
+
+
+# frob:doc docs/modules/arch.md#normalized-code-model
 class NormalizedClass(BaseModel):
-    """One class/struct: its name, base-class names (as written in source --
-    an adapter does not resolve inheritance across files), starting line,
-    and its fields/methods."""
+    """One class/struct/enum: its name, base-class names (as written in
+    source -- an adapter does not resolve inheritance across files),
+    starting line, and its fields/methods. `variants` (T-0743) is populated
+    only for an enum-shaped type -- its associated-data payload detail,
+    which `fields` alone cannot represent (see `NormalizedVariant`); an
+    adapter mapping an enum still ALSO fills `fields` with one bare-name
+    entry per variant (unchanged pre-T-0743 behavior, for any consumer that
+    only needs variant names/counts, e.g. `_check_god_classes`-style
+    checks) -- `variants` is additive detail, not a replacement."""
 
     model_config = {}
 
@@ -218,6 +279,7 @@ class NormalizedClass(BaseModel):
     bases: list[str] = []
     fields: list[NormalizedField] = []
     methods: list[NormalizedFunction] = []
+    variants: list[NormalizedVariant] = []
 
 
 # frob:doc docs/modules/arch.md#normalized-code-model

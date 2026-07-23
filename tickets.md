@@ -3453,7 +3453,7 @@ The two T-0577 dispatch items that had no existing design to build against, defe
 id: T-0632
 title: 'arch: extend NormalizedCall with arg-position detail and migrate _extract_signatures/_collect_dispatch_refs
   onto the model'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -3465,15 +3465,125 @@ scope:
 - src/frob/arch/_normalized.py
 - src/frob/arch/_python.py
 - tests/unit/test_arch.py
+evidence:
+- tests/unit/test_arch.py::TestPythonAdapter::test_adapt_call_args_capture_position_keyword_and_identifier
+- tests/unit/test_arch.py::TestDispatchFamilySuppression::test_dispatch_family_no_abstraction_opportunity
+- tests/unit/test_arch.py::TestDispatchFamilySuppression::test_accidental_same_signature_still_flagged
+- tests/unit/test_arch.py::TestAbstractionOpportunityDiscriminators::test_generic_signature_unrelated_bodies_not_flagged
+- tests/unit/test_arch.py::TestAbstractionOpportunityDiscriminators::test_specific_signature_genuine_family_still_flagged
 acceptance:
 - text: GIVEN the existing T-0360/T-0370 regression tests unmodified WHEN both check
     families run through the normalized model THEN all pass and no raw-tree walk remains
     in _collect_dispatch_refs (or a reasoned decision records what stays raw and why)
-  evidence: []
+  evidence:
+  - tests/unit/test_arch.py::TestPythonAdapter::test_adapt_call_args_capture_position_keyword_and_identifier
+  - tests/unit/test_arch.py::TestDispatchFamilySuppression::test_dispatch_family_no_abstraction_opportunity
+  - tests/unit/test_arch.py::TestDispatchFamilySuppression::test_accidental_same_signature_still_flagged
+  - tests/unit/test_arch.py::TestAbstractionOpportunityDiscriminators::test_generic_signature_unrelated_bodies_not_flagged
+  - tests/unit/test_arch.py::TestAbstractionOpportunityDiscriminators::test_specific_signature_genuine_family_still_flagged
 threat: null
 component: null
 ```
 T-0610 migrated long-function/god-class/deep-nesting onto NormalizedModule but left two check families on the raw tree-sitter walk, with concrete schema gaps documented: _extract_signatures' body-fingerprint needs full raw AST for alpha-renaming, and _collect_dispatch_refs needs argument-position/dict-value detail NormalizedCall does not carry. Extend the model (arg positions on NormalizedCall; a fingerprint-friendly body projection or a documented decision to keep fingerprints raw-AST-based), then migrate both WITHOUT regressing the T-0360 dispatch-family suppression or T-0370 near-dup discriminator protections (their tests must pass unmodified). NOTE: T-0610's Done report references this as T-0632 (ex-draft, id lost at land) (prose only); this is the real ticket.
+
+## Done report
+
+T-0610 left `_extract_signatures`/`_collect_dispatch_refs` on the raw
+tree-sitter walk with two documented schema gaps: `NormalizedCall` had no
+argument-position detail, and body-fingerprinting needs the full raw AST
+for alpha-renaming. This ticket:
+
+1. Extends `NormalizedCall` with a new `args: list[NormalizedCallArg]`
+   field (position/keyword + bare-identifier detail per call argument),
+   populated for python via a new `_py_call_args` helper wired into
+   `_py_collect_body_events`'s existing `call` handling.
+2. Migrates `_extract_signatures` fully onto `NormalizedModule`:
+   name/param-types/return-type now come from `_iter_normalized_functions`
+   (the same shape `_check_long_functions`/`_check_deep_nesting` already
+   read) instead of a bespoke `_py_param_types` raw walk, which is deleted
+   as dead code. `body_fingerprint` stays raw-AST-based (paired to its
+   normalized function by a `(class_prefix, name, line)` key, unambiguous
+   since two functions cannot share a definition line) -- a reasoned
+   decision, documented in the function's own docstring: T-0370's
+   alpha-renaming genuinely needs the full raw parse tree, and giving
+   `NormalizedFunction` its own raw-body projection would only duplicate
+   `frob.dup._legacy_py`'s own logic onto the model, not replace a walk
+   with one.
+3. `_collect_dispatch_refs` stays raw-tree-based by a second reasoned
+   decision (the module-level comment block, expanded): dispatch
+   detection needs every dict/list/set-literal element and call argument
+   ANYWHERE in the whole file -- module-level statements and class-body
+   expressions included, not just inside a function/method body.
+   `NormalizedModule` deliberately only models classes/functions/imports
+   (T-0609's scope) with no top-level-statement or arbitrary-literal
+   projection; giving it one just for this consumer would mean modeling
+   nearly the whole expression grammar on the shared model, not migrating
+   a raw walk but rebuilding it as normalized events one-for-one. The new
+   `NormalizedCall.args` field is still real, general-purpose progress --
+   available to any FUTURE detector that only needs call-argument
+   identifiers inside a function body -- without forcing this one
+   whole-file walk to give up its reach to use it.
+
+T-0360 (dispatch-family suppression) and T-0370 (near-dup discriminator)
+regression tests run UNMODIFIED and pass, confirming neither behavior
+regressed.
+
+Known, self-resolving SCOPE001: `tickets-archive.md` still shows as
+outside T-0632's declared scope in a fresh `frob check --ticket T-0632`.
+This is entirely T-0727's own already-committed change (commit 83b20587,
+this same worktree/branch, sequential arch-cluster tickets) -- T-0632
+makes no further edits to that file. The gate's own T-0108 cross-ticket
+exemption could not attribute it away because T-0727's commit subject
+("fix(arch): detect class-level annotated fields in PythonAdapter") does
+not name "T-0727" (an omission on my part I cannot fix without amending
+an already-reported commit, which the playbook forbids). Attempting to
+add tickets-archive.md to T-0632's own scope to route around it hit a
+live lease conflict (`frob ticket scope`: "held by in-progress T-0727"),
+confirming the file is still legitimately owned by T-0727, not orphaned.
+This resolves itself once the coordinator closes/lands T-0727.
+
+Post-commit `git merge main` (main had advanced to T-0691 land while this
+ticket was in progress) plus a `make core` rebuild (T-0691's merge
+included native-crate-adjacent changes; `frob ticket sweep` surfaced a
+stale strata header-regex symbol-count warning until rebuilt) picked up
+one PRE-EXISTING, unrelated gate regression already on main:
+`src/frob/exports/__init__.py` (landed via a different, already-merged
+ticket) has 5 public symbols with no `frob:doc` edge (COV001/DOC004+).
+Filed as T-0878 (scope `src/frob/exports/__init__.py,
+docs/modules/exports.md`) rather than fixed here -- outside T-0632's
+declared scope and pre-dating this ticket's own work. The deletion-filter
+check (`git diff main --diff-filter=D --stat`) is clean after the merge.
+
+### Changed
+```
+ src/frob/arch/_normalized.py |  28 ++++++++-
+ src/frob/arch/_python.py     | 145 +++++++++++++++++++++++++++++++------------
+ tests/unit/test_arch.py      |  57 ++++++++++-------
+ 3 files changed, 164 insertions(+), 66 deletions(-)
+```
+(the done-report tool's auto-filled stat above reused T-0727's stale
+diffstat -- corrected here to `git diff main --stat` scoped to this
+ticket's three files, run and observed directly.)
+
+### Evidence
+- `tests/unit/test_arch.py::TestPythonAdapter::test_adapt_call_args_capture_position_keyword_and_identifier` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestDispatchFamilySuppression::test_dispatch_family_no_abstraction_opportunity` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestDispatchFamilySuppression::test_accidental_same_signature_still_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestAbstractionOpportunityDiscriminators::test_generic_signature_unrelated_bodies_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestAbstractionOpportunityDiscriminators::test_specific_signature_genuine_family_still_flagged` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s), plus the full
+  `tests/unit/test_arch.py` file: 148 passed, 0 failed, observed via
+  `uv run pytest tests/unit/test_arch.py -p no:cacheprovider -n0`)
+- gates: `uv run frob check --ticket T-0632 --only <stage>` chunked loop
+  (playbook section 3b) -- lint/static/gates-fast: 0 errors except the
+  one known, self-resolving SCOPE001 documented above (owned by T-0727,
+  not this ticket's own edits); gates-native/gates-security not
+  re-verified separately in this pass since neither touched file crosses
+  into that surface (same conclusion as T-0727's own measured clean
+  gates-native/gates-security runs moments earlier, unaffected by this
+  ticket's arch-only, single-package change).
 
 <!-- ticket:T-0634 -->
 ```yaml
@@ -5989,7 +6099,7 @@ found while working T-0699: tests/unit/strata/test_export_golden.py::TestExportG
 id: T-0727
 title: 'arch: PythonAdapter never detects class-level annotated fields (_py_class_fields
   gates on a nonexistent expression_statement wrapper)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-22'
@@ -5998,15 +6108,93 @@ parent: T-0329
 scope:
 - src/frob/arch/_python.py
 - tests/unit/test_arch.py
+- tickets-archive.md
+scope_changes:
+- op: add
+  glob: tickets-archive.md
+  reason: 'Fixing T-0727''s PythonAdapter bug removed the class-level field parity
+
+    gap that T-0615''s already-archived Done report pinned as a named waiver
+
+    test (test_python_field_detection_is_a_documented_waiver). That test no
+
+    longer exists once T-0727''s fix folds its assertion into
+
+    test_derived_class_has_the_field_and_one_method''s now-4-way parity
+
+    check, so T-0615''s archived evidence list in tickets-archive.md needed
+
+    its stale node id removed to keep COV003 clean. This is a direct,
+
+    in-scope consequence of T-0727''s own fix, not unrelated archive editing.
+
+    '
+  actor: logan
+  at: '2026-07-23'
+evidence:
+- tests/unit/test_arch.py::TestFourWayCrossLanguageEquivalence::test_derived_class_has_the_field_and_one_method
 acceptance:
 - text: GIVEN class Foo with an annotated field WHEN PythonAdapter.adapt runs THEN
     the field appears in NormalizedClass.fields AND the T-0615 waiver test is updated
     to assert parity
-  evidence: []
+  evidence:
+  - tests/unit/test_arch.py::TestFourWayCrossLanguageEquivalence::test_derived_class_has_the_field_and_one_method
 threat: null
 component: null
 ```
 Found while working T-0615 (four-way equivalence meta-test). PythonAdapter._py_class_fields (src/frob/arch/_python.py) gates on 'if c.type != "expression_statement": continue' over a class body's named_children, expecting a class-level annotated assignment to be wrapped in an expression_statement node. In practice tree-sitter-python's grammar yields the assignment node directly as a named child of the class block, with NO expression_statement wrapper. Concrete repro: PythonAdapter().adapt(...) on 'class Foo:\n    x: int = 0\n' returns classes[0].fields == [] every time -- confirmed directly against the adapter, not just inferred. No existing test caught this because TestPythonAdapter's real-fixture tests never assert on .fields via the adapter itself (only a hand-built NormalizedField construction test exists, bypassing the adapter). T-0615's tests/unit/test_arch.py::TestFourWayCrossLanguageEquivalence::test_python_field_detection_is_a_documented_waiver currently PINS this broken behavior as a documented waiver (asserting derived.fields == []) -- fixing this ticket must also update/remove that waiver test to assert real parity with TS/rust/kotlin (which all capture this shape via their own adapters).
+
+## Done report
+
+PythonAdapter._py_class_fields gated on `c.type == "expression_statement"`
+wrapping a class-level annotated assignment, but tree-sitter-python's
+grammar yields the `assignment` node directly as a named child of the
+class `block` -- no expression_statement wrapper -- so every class-level
+field was silently dropped. Verified the real grammar shape directly
+(tree-sitter-language-pack parse of `class Foo:\n    x: int = 0\n    y:
+str\n` shows `block -> assignment` with no wrapper) before changing the
+gate: now the loop accepts the assignment node directly, still
+transparently unwrapping an expression_statement if one is ever present
+(defensive, matches the doc comment's honesty about the real shape).
+
+T-0615's four-way equivalence meta-test had pinned this bug as a named,
+documented waiver test (`test_python_field_detection_is_a_documented_
+waiver`, asserting `derived.fields == []` for python). Per T-0727's own
+acceptance criterion, that waiver assertion is now folded into
+`test_derived_class_has_the_field_and_one_method`, which asserts full
+4-way parity (python included) instead of carving python out.
+
+T-0615 is already archived (tickets-archive.md, ticket state done) with
+its own Evidence list pointing at the now-removed waiver test node id;
+extended T-0727's scope (frob ticket scope --add tickets-archive.md,
+reasoned) to update that stale archived evidence line so COV003 stays
+clean -- this is a direct, in-scope consequence of T-0727's fix, not
+unrelated archive editing.
+
+### Changed
+```
+ src/frob/arch/_python.py | 13 +++++++++----
+ tests/unit/test_arch.py  | 29 ++++++-----------------------
+ tickets-archive.md       |  4 +---
+ 3 files changed, 16 insertions(+), 30 deletions(-)
+```
+(the done-report tool's own diff detection reported "no changed files
+detected" for an uncommitted working tree against main -- the stat above
+is `git diff main --stat` run directly and observed, not estimated.)
+
+### Evidence
+- `tests/unit/test_arch.py::TestFourWayCrossLanguageEquivalence::test_derived_class_has_the_field_and_one_method` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s), plus the full
+  `tests/unit/test_arch.py` file: 147 passed, 0 failed, observed via
+  `uv run pytest tests/unit/test_arch.py -p no:cacheprovider -n0`)
+- gates: `uv run frob check --ticket T-0727 --only <stage>` for each of
+  lint/static/gates-fast/gates-native/gates-security (the chunked loop,
+  per playbook section 3b) -- 0 errors in every stage-group, all
+  warnings pre-existing/waived; a bare `frob check --ticket T-0727`
+  refuses under FROB_AGENT (expected, not a failure) which is why the
+  CLI's own done-report step reported gates as unmeasured.
 
 <!-- ticket:T-0730 -->
 ```yaml
@@ -6254,7 +6442,7 @@ Lost draft from T-0692 (pytest-timeout guard): tests/system/test_scaffold_dx.py 
 id: T-0743
 title: 'arch model: NormalizedVariant for enum associated-data shape (Rust/Kotlin
   payloads)'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -6266,14 +6454,103 @@ scope:
 - src/frob/arch/_normalized.py
 - src/frob/arch/_rust.py
 - tests/unit/test_arch.py
+evidence:
+- tests/unit/test_arch.py::TestRustAdapter::test_adapt_enum_variant_payload_shapes
 acceptance:
 - text: GIVEN a Rust enum with tuple and struct variants WHEN RustAdapter.adapt runs
     THEN variant payload shapes are represented and asserted by a test
-  evidence: []
+  evidence:
+  - tests/unit/test_arch.py::TestRustAdapter::test_adapt_enum_variant_payload_shapes
 threat: null
 component: null
 ```
 Lost draft from T-0612 (Rust adapter): enum variants with associated data currently flatten to NormalizedField, losing the payload shape. Extend the model (NormalizedVariant or fields on NormalizedClass) keeping _normalized.py tree_sitter-free, map Rust enum payloads and coordinate with T-0681 (TS phase 2, same model-extension class).
+
+## Done report
+
+T-0612's rust adapter flattened every enum variant onto NormalizedField
+(bare name only), losing whether a variant was unit/tuple/struct-shaped
+and its own payload field names/types. Adds two new model types to
+_normalized.py (kept tree_sitter-free, per the ticket's explicit
+constraint):
+
+- NormalizedVariantPayload: one payload field of a variant (name --
+  struct field name or tuple positional index as a string, reusing
+  NormalizedField's existing tuple-index convention -- + optional type).
+- NormalizedVariant: one variant's name, line, shape
+  ("unit"/"tuple"/"struct"), and payload fields.
+
+NormalizedClass gains a `variants: list[NormalizedVariant] = []` field,
+populated only for enum-shaped types. RustAdapter maps it via two new
+helpers (_rust_variant_payload, _rust_enum_variant_shapes), wired into
+_rust_build_class_shell for enum_item nodes. The pre-existing bare-name
+NormalizedField mapping (_rust_enum_variants) is left untouched and still
+populated alongside variants -- additive, not a replacement, so no
+existing consumer of NormalizedClass.fields regresses.
+
+Coordination with T-0681 (TS phase 2, same model-extension class): out of
+this ticket's scope (src/frob/arch/_typescript.py is not in T-0743's
+declared scope) -- the model itself (NormalizedVariant/
+NormalizedVariantPayload) is language-agnostic and ready for a TS/kotlin
+adapter to map onto the same way, whenever that ticket lands.
+
+Also fixed, within T-0632's still-open scope (not T-0743's): a fresh
+gates-fast pass surfaced COV002 on four T-0632/T-0727 changed helpers in
+src/frob/arch/_python.py that were missing frob:ticket edges -- added
+those directives in a small follow-up commit under T-0632 before
+continuing T-0743's own work, since it is a real compliance gap in this
+worktree's own prior tickets, not a new discovery to file separately.
+
+Known, same self-resolving SCOPE001 noise as T-0632's Done report:
+tickets-archive.md (T-0727) and src/frob/arch/_python.py (T-0632) still
+show as outside T-0743's declared scope in a fresh check -- both are
+already-committed work from the other two tickets in this sequential
+arch-cluster worktree, unrelated to any T-0743 edit. Resolves once the
+coordinator lands T-0727/T-0632.
+
+Also, unrelated to this ticket: main advanced again mid-session (now at
+T-0679's land) and this ticket's deletion-filter check showed
+docs/guides/worktree-pool.md, src/frob/scaffold/_pool.py, and
+tests/system/test_scaffold_pool.py as deleted -- purely main moving
+forward while this ticket was in progress (same class of transient as
+T-0632's docs/design/language-adapter-tier-decision.md false positive);
+resolved by merging main again before this commit, verified clean below.
+
+Post-commit `git merge main` (main had advanced further, to T-0679's
+land) picked up more unrelated upstream churn (dup/_pipeline, testing/
+_stability, vet/_capability, scaffold/_pool, exports/__init__); `git diff
+main --diff-filter=D --stat` is empty after the merge. `make core`
+rebuilt native extensions post-merge; `tests/unit/test_arch.py` +
+`tests/unit/test_arch_srp.py` re-run clean afterward: 172 passed, 0
+failed (`uv run pytest tests/unit/test_arch.py tests/unit/test_arch_srp.py
+-p no:cacheprovider -n0`).
+
+### Changed
+```
+ src/frob/arch/_normalized.py | 74 ++++++++++++++++++++++++++++++---
+ src/frob/arch/_rust.py       | 99 ++++++++++++++++++++++++++++++++++++++------
+ tests/unit/test_arch.py      | 91 ++++++++++++++++++++++++++++++----------
+ 3 files changed, 223 insertions(+), 41 deletions(-)
+```
+(the done-report tool's auto-filled stat above reused T-0632's stale
+diffstat again -- corrected here to `git diff main --stat` scoped to
+this ticket's own three files, run and observed directly.)
+
+### Evidence
+- `tests/unit/test_arch.py::TestRustAdapter::test_adapt_enum_variant_payload_shapes` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s), plus the full
+  `tests/unit/test_arch.py` file: 149 passed, 0 failed, observed via
+  `uv run pytest tests/unit/test_arch.py -p no:cacheprovider -n0`)
+- gates: `uv run frob check --ticket T-0743 --only <stage>` chunked loop
+  -- lint/static: 0 errors; gates-fast: 0 errors introduced by this
+  ticket's own edits (the only errors present are the pre-existing
+  `src/frob/exports/__init__.py` COV001/DOC002 debt already filed as
+  T-0878, and the self-resolving T-0727/T-0632 SCOPE001
+  inheritance documented above); a bare `frob check --ticket T-0743`
+  refuses under FROB_AGENT (expected), which is why the CLI's own
+  done-report step reported gates as unmeasured.
 
 <!-- ticket:T-0747 -->
 ```yaml
@@ -10174,3 +10451,22 @@ threat: null
 component: scaffold
 ```
 Follow-on to T-0738 (landed 0.139.0): the warm-pool API (warm_pool, lease_worktree, pool_status in frob.scaffold._pool) is reachable only through Makefile targets calling the Python API. Wire a real `frob scaffold pool` CLI subcommand group (warm N / lease / status) through app/scaffold_runner.py + app/config.py + __main__.py, replacing the Makefile's inline-python shims with thin CLI calls. Refiled from worktree draft T-draft-427ffd5a which did not survive T-0738's land (drafts-die-at-land hazard); T-0738's Done report references that draft id.
+
+<!-- ticket:T-0878 -->
+```yaml
+id: T-0878
+title: 'gate: src/frob/exports/__init__.py missing frob:doc anchors (COV001/DOC, landed
+  via T-0601 area merge)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/exports/__init__.py
+- docs/modules/exports.md
+threat: null
+component: null
+```
+Pre-existing, unrelated to any arch-cluster ticket: after merging current main into a worktree mid-session (T-0632), a fresh frob check --only gates-fast shows 5 new gate:COV001/gate:DOC errors on src/frob/exports/__init__.py (ConsumerRef, ConsumersResult, ConsumersResult.as_text, ConsumersResult.as_json, exports_consumers all public with no frob:doc edge). This file/these symbols are not part of any ticket in this worktree's scope -- discovered purely as a side effect of picking up main's advancement mid-session. File to track adding the missing frob:doc anchors (and any docs/modules/exports.md content they should point at).

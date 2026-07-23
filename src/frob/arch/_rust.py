@@ -70,13 +70,18 @@ as a `NormalizedReturn` too; an `.unwrap()` call is still counted as a
 
 NOT mapped (no `NormalizedModule` entity exists for these -- follow-up
 tickets filed, not folded into this ticket's own scope, matching the
-`_typescript.py`/T-0611 precedent for the same class of gap): a
-`NormalizedVariant`/associated-data shape for enum variants (mapped onto
-`NormalizedField` instead, above); rust generics (`impl<T> Foo<T>`, a
-generic `fn foo<T>`) are read via their own written text, not resolved;
-macro-generated items (anything expanded from a `macro_rules!`/derive
-macro) are invisible to this adapter the same way they are to `frob.lang.
-_walk_rust`'s symbol walker, since tree-sitter never expands macros.
+`_typescript.py`/T-0611 precedent for the same class of gap): rust
+generics (`impl<T> Foo<T>`, a generic `fn foo<T>`) are read via their own
+written text, not resolved; macro-generated items (anything expanded from
+a `macro_rules!`/derive macro) are invisible to this adapter the same way
+they are to `frob.lang._walk_rust`'s symbol walker, since tree-sitter
+never expands macros.
+
+T-0743: enum variant associated-data shape (tuple/struct payloads) IS now
+mapped, onto `NormalizedClass.variants` (`NormalizedVariant`/
+`NormalizedVariantPayload`, `_rust_enum_variant_shapes`) -- ADDITIVE to,
+not a replacement for, the pre-existing bare-name `NormalizedField`
+mapping (`_rust_enum_variants`) every variant still also gets.
 """
 
 from __future__ import annotations
@@ -100,6 +105,8 @@ from frob.arch._normalized import (
     NormalizedParam,
     NormalizedRaise,
     NormalizedReturn,
+    NormalizedVariant,
+    NormalizedVariantPayload,
 )
 from frob.lang import child_by_field as _child
 from frob.lang import node_text as _node_text
@@ -517,12 +524,14 @@ def _rust_struct_fields(struct_node: Node) -> list[NormalizedField]:
     return []
 
 
+# frob:ticket T-0743
 def _rust_enum_variants(enum_node: Node) -> list[NormalizedField]:
-    """An `enum_item`'s variants mapped onto `NormalizedField` entries (no
-    `NormalizedVariant` entity exists -- see this module's docstring):
-    each `enum_variant`'s own name, `type=None` regardless of whether the
-    variant itself carries tuple/struct-shaped associated data (a further
-    per-variant shape is a model extension, out of this adapter's scope)."""
+    """An `enum_item`'s variants mapped onto `NormalizedField` entries: each
+    `enum_variant`'s own bare name, `type=None` regardless of whether the
+    variant itself carries tuple/struct-shaped associated data. Kept
+    alongside `_rust_enum_variant_shapes` (T-0743, `NormalizedVariant`'s
+    fuller payload-shape detail) for any consumer that only needs variant
+    names/counts -- unchanged pre-T-0743 mapping, not superseded."""
     out: list[NormalizedField] = []
     body = _child(enum_node, "body")
     if body is None:
@@ -535,6 +544,68 @@ def _rust_enum_variants(enum_node: Node) -> list[NormalizedField]:
             continue
         out.append(
             NormalizedField(name=_node_text(name_node), line=variant.start_point[0] + 1)
+        )
+    return out
+
+
+# frob:ticket T-0743
+def _rust_variant_payload(body: Node) -> list[NormalizedVariantPayload]:
+    """`NormalizedVariantPayload`s for an enum variant's own body node (a
+    `field_declaration_list` for a struct-shaped variant, or an
+    `ordered_field_declaration_list` for a tuple-shaped one) -- reuses the
+    same field-name conventions as `_rust_field_decl_list_fields`/
+    `_rust_ordered_field_decl_list_fields` (named field's own name; tuple
+    field's positional index as a string), projected onto
+    `NormalizedVariantPayload` instead of `NormalizedField`."""
+    if body.type == "field_declaration_list":
+        return [
+            NormalizedVariantPayload(name=f.name, type=f.type)
+            for f in _rust_field_decl_list_fields(body)
+        ]
+    if body.type == "ordered_field_declaration_list":
+        return [
+            NormalizedVariantPayload(name=f.name, type=f.type)
+            for f in _rust_ordered_field_decl_list_fields(body)
+        ]
+    return []
+
+
+# frob:ticket T-0743
+def _rust_enum_variant_shapes(enum_node: Node) -> list[NormalizedVariant]:
+    """An `enum_item`'s variants as `NormalizedVariant`s (T-0743): each
+    variant's associated-data `shape` ("unit"/"tuple"/"struct") and payload
+    fields, read off the variant's own body node (absent entirely for a
+    unit variant like `Empty`)."""
+    out: list[NormalizedVariant] = []
+    body = _child(enum_node, "body")
+    if body is None:
+        return out
+    for variant in body.named_children:
+        if variant.type != "enum_variant":
+            continue
+        name_node = _child(variant, "name")
+        if name_node is None:
+            continue
+        variant_body = _child(variant, "body")
+        if variant_body is None:
+            shape = "unit"
+            payload: list[NormalizedVariantPayload] = []
+        elif variant_body.type == "field_declaration_list":
+            shape = "struct"
+            payload = _rust_variant_payload(variant_body)
+        elif variant_body.type == "ordered_field_declaration_list":
+            shape = "tuple"
+            payload = _rust_variant_payload(variant_body)
+        else:
+            shape = "unit"
+            payload = []
+        out.append(
+            NormalizedVariant(
+                name=_node_text(name_node),
+                line=variant.start_point[0] + 1,
+                shape=shape,
+                payload=payload,
+            )
         )
     return out
 
@@ -572,17 +643,20 @@ def _rust_trait_methods(trait_node: Node) -> list[NormalizedFunction]:
     return out
 
 
+# frob:ticket T-0743
 def _rust_build_class_shell(node: Node) -> NormalizedClass:
     """The `NormalizedClass` shell for a `struct_item`/`enum_item`/
     `trait_item` -- fields/variants + own methods (traits only), before any
     `impl_item`'s methods are attached (`_rust_attach_impl`)."""
     name_node = _child(node, "name")
     name = _node_text(name_node) if name_node is not None else "?"
+    variants: list[NormalizedVariant] = []
     if node.type == "struct_item":
         fields = _rust_struct_fields(node)
         methods: list[NormalizedFunction] = []
     elif node.type == "enum_item":
         fields = _rust_enum_variants(node)
+        variants = _rust_enum_variant_shapes(node)
         methods = []
     else:  # trait_item
         fields = []
@@ -593,6 +667,7 @@ def _rust_build_class_shell(node: Node) -> NormalizedClass:
         bases=[],
         fields=fields,
         methods=methods,
+        variants=variants,
     )
 
 

@@ -22,6 +22,7 @@ from frob.arch._models import ArchSuggestion
 from frob.arch._normalized import (
     NormalizedBranch,
     NormalizedCall,
+    NormalizedCallArg,
     NormalizedCatch,
     NormalizedClass,
     NormalizedField,
@@ -249,13 +250,36 @@ def _py_max_nesting(func_body_node: Node) -> int:
 # ---------------------------------------------------------------------------
 # T-0610: python `LanguageAdapter` -- maps this module's tree-sitter walks
 # onto the T-0609 `NormalizedModule` shape, and the checks migrated to
-# consume it (long-function, god-class, deep-nesting). `_extract_signatures`/
-# `_collect_file_dispatch_refs` (abstraction-opportunity's cross-file corpus)
-# are NOT migrated here: `NormalizedCall` carries only a callee name and
-# line (no argument-position/dict-value detail), and body-fingerprinting
-# needs the full raw AST for alpha-renaming (`frob.dup._legacy_py`) -- both
-# need more expression detail than the current `NormalizedModule` schema
-# captures. See this ticket's Done report for the filed follow-up.
+# consume it (long-function, god-class, deep-nesting).
+#
+# T-0632: `NormalizedCall` now also carries per-argument position/keyword +
+# bare-identifier detail (`NormalizedCall.args`, `_py_call_args`), and
+# `_extract_signatures` is migrated onto `NormalizedModule` for its
+# name/param-types/return-type fields (see its own docstring for the one
+# piece -- body-fingerprinting -- that stays raw-AST-based by reasoned
+# decision, not oversight).
+#
+# `_collect_file_dispatch_refs`/`_collect_dispatch_refs` (abstraction-
+# opportunity's cross-file dispatch-family corpus) stay on the raw tree-
+# sitter walk, by the same kind of reasoned decision: dispatch detection
+# needs every dict/list/set-literal element and every call argument
+# ANYWHERE in the file -- module-level statements and class-body
+# expressions included, not just inside a function/method body.
+# `NormalizedModule` deliberately only models classes/functions/imports
+# (T-0609's scope), with no top-level-statement or literal-expression
+# projection at all; `_py_collect_body_events` (which DOES walk function
+# bodies) also does not walk into container literals that are not call
+# arguments (a bare `TABLE = {"a": handler}` module constant, for
+# instance) because no current check needs that generality outside
+# dispatch detection. Re-deriving a NormalizedModule shape general enough
+# to carry arbitrary whole-file container literals would mean modeling
+# nearly the entire expression grammar on the shared model for this one
+# consumer -- not migrating a raw walk, but rebuilding it as normalized
+# events one-for-one. `_collect_dispatch_refs` remains the single, already
+# cohesive recursive walk it was before (T-0360); `NormalizedCall.args`
+# added here is available for any FUTURE detector that only needs
+# call-argument identifiers inside a function body, without forcing this
+# one to give up its whole-file reach to use it.
 # ---------------------------------------------------------------------------
 
 _LOOP_KINDS = {"for_statement": "for", "while_statement": "while"}
@@ -279,6 +303,43 @@ def _py_call_callee_text(node: Node) -> str:
     dotted `obj.method` form (`obj.method(...)`)."""
     func = _child(node, "function")
     return _node_text(func) if func is not None else _node_text(node)
+
+
+# frob:ticket T-0632
+def _py_call_args(node: Node) -> list[NormalizedCallArg]:
+    """`NormalizedCallArg`s for a `call` node's `arguments` list (T-0632),
+    in source order: each positional argument gets its 0-based `index`,
+    each keyword argument gets its `keyword` name, and a bare-identifier
+    argument (either shape) also gets its `ident` text -- the detail
+    `_collect_dispatch_refs`' own arg-walk needs, now available on the
+    model instead of only via a raw-tree re-walk."""
+    args_node = _child(node, "arguments")
+    if args_node is None:
+        return []
+    out: list[NormalizedCallArg] = []
+    position = 0
+    for a in args_node.named_children:
+        if a.type == "keyword_argument":
+            val = _child(a, "value")
+            name_node = _child(a, "name")
+            keyword = _node_text(name_node) if name_node is not None else "?"
+            out.append(
+                NormalizedCallArg(
+                    keyword=keyword,
+                    ident=_node_text(val)
+                    if val is not None and val.type == "identifier"
+                    else None,
+                )
+            )
+            continue
+        out.append(
+            NormalizedCallArg(
+                index=position,
+                ident=_node_text(a) if a.type == "identifier" else None,
+            )
+        )
+        position += 1
+    return out
 
 
 def _py_is_field_write(node: Node) -> bool:
@@ -319,6 +380,7 @@ def _py_except_exception_type(node: Node) -> str | None:
     return None
 
 
+# frob:ticket T-0632
 def _py_collect_body_events(
     node: Node,
     branches: list[NormalizedBranch],
@@ -351,7 +413,9 @@ def _py_collect_body_events(
         if c.type == "call":
             calls.append(
                 NormalizedCall(
-                    callee=_py_call_callee_text(c), line=c.start_point[0] + 1
+                    callee=_py_call_callee_text(c),
+                    line=c.start_point[0] + 1,
+                    args=_py_call_args(c),
                 )
             )
         if c.type == "attribute":
@@ -471,16 +535,22 @@ def _py_build_function(func_node: Node, is_method: bool) -> NormalizedFunction:
     )
 
 
+# frob:ticket T-0727
 def _py_class_fields(body: Node) -> list[NormalizedField]:
     """Class-level annotated assignments (`x: int`, `x: int = 0`) directly
     inside a class body -- `self.x = ...` instance fields set only inside
     `__init__` are intentionally not walked here (T-0610's first pass keeps
-    this cheap; no existing check needs instance-field discovery yet)."""
+    this cheap; no existing check needs instance-field discovery yet).
+    tree-sitter-python yields the `assignment` node directly as a named
+    child of the class `block` (no `expression_statement` wrapper, unlike
+    some other grammars) -- T-0727 fixed this gating on a wrapper node
+    that never actually occurs, which silently dropped every class-level
+    field."""
     out: list[NormalizedField] = []
     for c in body.named_children:
-        if c.type != "expression_statement":
-            continue
-        inner = next(iter(c.named_children), None)
+        inner = c
+        if inner.type == "expression_statement":
+            inner = next(iter(inner.named_children), None)
         if inner is None or inner.type != "assignment":
             continue
         left = _child(inner, "left")
@@ -667,20 +737,7 @@ def _annotation_text(node: Node) -> str:
     return _node_text(node).strip()
 
 
-def _py_param_types(func_node: Node) -> list[str]:
-    """Annotated parameter type texts of `func_node` (unannotated skipped)."""
-    params_node = _child(func_node, "parameters")
-    if params_node is None:
-        return []
-    types: list[str] = []
-    for p in params_node.named_children:
-        if p.type in ("typed_parameter", "typed_default_parameter"):
-            ann = _child(p, "type")
-            if ann:
-                types.append(_annotation_text(ann))
-    return types
-
-
+# frob:ticket T-0632
 def _extract_signatures(
     tree: object,
     rel: str,
@@ -689,23 +746,35 @@ def _extract_signatures(
     every python function carrying at least one annotated parameter or an
     annotated return type.
 
-    T-0370: `body_fingerprint` is the alpha-renamed, literal-normalized
-    token serialization of the function body (`frob.dup._legacy_py`'s
-    `_collect_locals_py`/`_serialize_py_body`, the same normalizer the dup
-    scanner uses) -- it lets `_check_abstraction_opportunities` tell a
-    same-signature GROUP of near-duplicate bodies (a real extractable
-    abstraction) apart from a same-signature group of unrelated bodies
-    (a coincidental collision on a generic shape) without a bare shared
-    signature being treated as evidence on its own."""
+    T-0632: `func_name`/`param_types`/`return_type` are read off
+    `NormalizedModule` (`_iter_normalized_functions`, the same shape
+    `_check_long_functions`/`_check_deep_nesting` already consume) instead
+    of a bespoke raw-tree param/return walk -- `_py_param_types` (the prior
+    ad-hoc walk) is gone, folded into the shared `NormalizedParam.type`
+    field every adapter already fills in identically. `body_fingerprint`
+    stays on the raw AST (`_body_fingerprint`, paired to its normalized
+    function by `(class_prefix, name, line)`, a stable per-file key since
+    two functions cannot share a definition line): T-0370's alpha-renaming
+    (`frob.dup._legacy_py`'s `_collect_locals_py`/`_serialize_py_body`)
+    needs the full raw parse tree to walk/rename every local, and
+    `NormalizedFunction` deliberately carries no raw-body projection for
+    it -- adding one would just duplicate the dup-scanner's own
+    local-collection/serialization logic onto the model instead of
+    replacing a raw walk with one, so this one piece is a reasoned
+    decision to stay raw, not an oversight."""
     t: Tree = cast("Tree", tree)
+    module = _py_build_module(tree, rel)
+    fingerprints: dict[tuple[str, str, int], str] = {
+        (prefix, fname, func.start_point[0] + 1): _body_fingerprint(func)
+        for func, prefix, fname in _iter_py_functions(t.root_node)
+    }
     results: list[tuple[str, str, tuple[str, ...], str, str]] = []
-    for func, _prefix, fname in _iter_py_functions(t.root_node):
-        param_types = _py_param_types(func)
-        ret_node = _child(func, "return_type")
-        ret = _annotation_text(ret_node) if ret_node else ""
+    for func, prefix in _iter_normalized_functions(module):
+        param_types = [p.type for p in func.params if p.type]
+        ret = func.return_type or ""
         if param_types or ret:
-            body_fp = _body_fingerprint(func)
-            results.append((rel, fname, tuple(param_types), ret, body_fp))
+            body_fp = fingerprints.get((prefix, func.name, func.line), "")
+            results.append((rel, func.name, tuple(param_types), ret, body_fp))
     return results
 
 
