@@ -6,8 +6,10 @@ file -- it does not trace runtime ordering (mp_context, submit-before-open,
 lock state) the way T-0581's actual fix reasons about; it flags the
 STRUCTURAL shape that made the bug possible in the first place, exactly the
 "advisory on opaque dispatch" posture the ticket calls for. A function that
-is provably safe today (like this repo's own `_run_combined_jobs`, fixed by
-T-0581) still trips the check: like every other `frob.arch` category
+is provably safe today still trips the check if it keeps the structural
+co-occurrence in one body (this repo's own `_run_combined_jobs`, though
+runtime-fixed by T-0581, tripped it until T-0767 hoisted each pool's
+construction into its own helper): like every other `frob.arch` category
 (T-0101's unwaivable advisory channel), a finding here is never build-
 blocking and a `frob:waive` naming it is flagged as ineffective
 (WAIVE002) rather than honored -- the finding simply stays visible in
@@ -321,7 +323,7 @@ def _check_self_join(
 
 # frob:doc docs/modules/arch.md#fork-pool-hazards
 # frob:tests tests/unit/test_arch.py::TestForkPoolHazards.test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool  # noqa: E501
-# frob:tests tests/unit/test_arch.py::TestForkPoolHazards.test_pool_inside_pool_fires_on_real_repo_run_combined_jobs  # noqa: E501
+# frob:tests tests/unit/test_arch.py::TestForkPoolHazards.test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestForkPoolHazards.test_fork_after_threads_fires_when_fork_follows_thread_start  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestForkPoolHazards.test_fork_before_threads_does_not_fire  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestForkPoolHazards.test_pipe_wait_deadlock_fires_without_communicate  # noqa: E501

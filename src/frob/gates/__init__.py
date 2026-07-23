@@ -8359,6 +8359,45 @@ def _merge_canonical_order(raw: dict[str, tuple[Violation, ...]]) -> list[Violat
     return violations
 
 
+# frob:ticket T-0767
+def _open_process_pool(process_jobs: dict[str, _ProcessJob]) -> ProcessPoolExecutor:
+    """Construct the spawn-context `ProcessPoolExecutor` for `process_jobs`
+    (which must be non-empty). Hoisted out of `_run_combined_jobs` (T-0767)
+    so no single function constructs BOTH pools -- the T-0695
+    `pool-inside-pool` advisory is a same-function co-occurrence heuristic
+    and unwaivable by design, so the safe shape must also be the
+    structurally clean one. `mp_context=spawn` is the LOAD-BEARING half of
+    T-0581's fix (see `_run_combined_jobs`); do not remove it."""
+    # Bounded worker count (constraint 4): never more workers than
+    # jobs, never more than the machine's CPU count.
+    proc_workers = max(1, min(len(process_jobs), os.cpu_count() or 4))
+    return ProcessPoolExecutor(
+        max_workers=proc_workers,
+        mp_context=multiprocessing.get_context("spawn"),
+    )
+
+
+# frob:ticket T-0767
+def _run_thread_jobs(
+    thread_jobs: dict[str, Callable[[], tuple[Violation, ...]]],
+    raw: dict[str, tuple[Violation, ...]],
+    counts: dict[str, int],
+    timing: dict[str, float],
+) -> None:
+    """Open the `ThreadPoolExecutor`, submit every `thread_jobs` entry, and
+    drain the futures into the shared accumulators. Hoisted out of
+    `_run_combined_jobs` (T-0767) so the thread-pool construction lives in
+    a different function from the process-pool construction
+    (`_open_process_pool`) -- see that helper's docstring for why. By the
+    time this runs, `_run_combined_jobs` has already created the process
+    pool and submitted its jobs (T-0581 ordering)."""
+    with ThreadPoolExecutor(max_workers=max(1, len(thread_jobs))) as tpool:
+        thread_futures = {
+            name: tpool.submit(_timed_job(job)) for name, job in thread_jobs.items()
+        }
+        _drain_futures(thread_futures, raw, counts, timing, pool_label="")
+
+
 # frob:ticket T-0581
 def _run_combined_jobs(
     thread_jobs: dict[str, Callable[[], tuple[Violation, ...]]],
@@ -8393,6 +8432,14 @@ def _run_combined_jobs(
     pool FIRST remains good hygiene (fewer of our own threads alive)
     rather than forking this one, so it carries no inherited lock state at
     all even if a future refactor reintroduces nested pools by accident.
+
+    T-0767: this function is now a pure orchestrator -- pool CONSTRUCTION
+    is owned by `_open_process_pool` and `_run_thread_jobs` so no single
+    function contains both pool constructions, which discharges the
+    (unwaivable-by-design) T-0695 `pool-inside-pool` structural advisory
+    while preserving the T-0581 ordering exactly: create + submit the
+    process pool first, then open the thread pool, then drain, then shut
+    the process pool down. Do NOT inline either helper back here.
     """
     counts: dict[str, int] = {}
     timing: dict[str, float] = {}
@@ -8403,21 +8450,11 @@ def _run_combined_jobs(
     ppool: ProcessPoolExecutor | None = None
     process_futures: dict[str, Future[tuple[tuple[Violation, ...], float]]] = {}
     if process_jobs:
-        # Bounded worker count (constraint 4): never more workers than
-        # jobs, never more than the machine's CPU count.
-        proc_workers = max(1, min(len(process_jobs), os.cpu_count() or 4))
-        ppool = ProcessPoolExecutor(
-            max_workers=proc_workers,
-            mp_context=multiprocessing.get_context("spawn"),
-        )
+        ppool = _open_process_pool(process_jobs)
         process_futures = _submit_process_pool(ppool, process_jobs)
 
     try:
-        with ThreadPoolExecutor(max_workers=max(1, len(thread_jobs))) as tpool:
-            thread_futures = {
-                name: tpool.submit(_timed_job(job)) for name, job in thread_jobs.items()
-            }
-            _drain_futures(thread_futures, raw, counts, timing, pool_label="")
+        _run_thread_jobs(thread_jobs, raw, counts, timing)
         if ppool is not None:
             _drain_futures(
                 process_futures, raw, counts, timing, pool_label=" (process pool)"

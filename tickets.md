@@ -4598,7 +4598,7 @@ scope_changes:
   at: '2026-07-22'
 evidence:
 - tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool
-- tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_fires_on_real_repo_run_combined_jobs
+- tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs
 - tests/unit/test_arch.py::TestForkPoolHazards::test_fork_after_threads_fires_when_fork_follows_thread_start
 - tests/unit/test_arch.py::TestForkPoolHazards::test_fork_before_threads_does_not_fire
 - tests/unit/test_arch.py::TestForkPoolHazards::test_pipe_wait_deadlock_fires_without_communicate
@@ -4611,7 +4611,7 @@ acceptance:
     check runs THEN an error-tier finding fires AND the check fires on src/frob/gates/_run_combined_jobs
     as it exists today
   evidence:
-  - tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_fires_on_real_repo_run_combined_jobs
+  - tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs
 threat: null
 component: null
 labels: []
@@ -4633,7 +4633,7 @@ Verified the acceptance criterion directly: `analyze_project` run against
 `src/frob/gates/__init__.py::_run_combined_jobs` as it exists today (its
 `ProcessPoolExecutor` construction sits in the same function as the
 `ThreadPoolExecutor` `with` block, the exact T-0265 shape) -- pinned as
-`TestForkPoolHazards.test_pool_inside_pool_fires_on_real_repo_run_combined_jobs`.
+`TestForkPoolHazards.test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs`.
 `_run_combined_jobs` cannot be waived (T-0101's unwaivable channel covers
 every `frob.arch` category including the four new ones), so the finding
 stays permanently visible in `frob check`'s frob-arch summary by design --
@@ -4669,7 +4669,7 @@ DOCUMENT AS YOU GO requires the new checks follow the same pattern.
 
 ### Evidence
 - `tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool` (pytest node id, verified passing when recorded)
-- `tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_fires_on_real_repo_run_combined_jobs` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs` (pytest node id, verified passing when recorded)
 - `tests/unit/test_arch.py::TestForkPoolHazards::test_fork_after_threads_fires_when_fork_follows_thread_start` (pytest node id, verified passing when recorded)
 - `tests/unit/test_arch.py::TestForkPoolHazards::test_fork_before_threads_does_not_fire` (pytest node id, verified passing when recorded)
 - `tests/unit/test_arch.py::TestForkPoolHazards::test_pipe_wait_deadlock_fires_without_communicate` (pytest node id, verified passing when recorded)
@@ -7716,7 +7716,7 @@ this worktree's own work.
 id: T-0767
 title: 'gates: restructure _run_combined_jobs so pool-inside-pool/fork-after-threads
   advisories discharge (post-T-0581 shape)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-22'
@@ -7726,19 +7726,144 @@ parent: null
 scope:
 - src/frob/gates/__init__.py
 - tests/unit/test_arch.py
-scope_changes: []
-evidence: []
+- src/frob/arch/_concurrency.py
+- docs/modules/arch.md
+scope_changes:
+- op: add
+  glob: src/frob/arch/_concurrency.py
+  reason: 'The ticket-mandated rename of TestForkPoolHazards.test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs
+    is referenced by a frob:tests directive in src/frob/arch/_concurrency.py (line
+    324) which would dangle after the rename, and docs/modules/arch.md prose explicitly
+    states _run_combined_jobs "deliberately still" fires pool-inside-pool, which the
+    restructure makes false. Both must be updated in the same change (doc-as-you-go,
+    no dangling test edges); neither is a behavior change to arch detection itself.
+
+    '
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: docs/modules/arch.md
+  reason: 'The ticket-mandated rename of TestForkPoolHazards.test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs
+    is referenced by a frob:tests directive in src/frob/arch/_concurrency.py (line
+    324) which would dangle after the rename, and docs/modules/arch.md prose explicitly
+    states _run_combined_jobs "deliberately still" fires pool-inside-pool, which the
+    restructure makes false. Both must be updated in the same change (doc-as-you-go,
+    no dangling test edges); neither is a behavior change to arch detection itself.
+
+    '
+  actor: logan
+  at: '2026-07-23'
+evidence:
+- tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs
+- tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool
+- tests/test_gates.py::TestProcessPoolGates::test_combined_parallel_path_matches_fully_serial_path
+- tests/test_gates.py::TestProcessPoolGates::test_combined_jobs_merge_in_canonical_order
+- tests/test_gates.py::TestProcessPoolGates::test_process_job_runs_in_a_separate_process
 attachments: []
 acceptance:
 - text: GIVEN main after the T-0695 checks WHEN frob check runs THEN gate:ARCH reports
     zero fork/pool-hazard warnings on src/frob/gates while the T-0581 process-pool/thread-pool
     split behavior is preserved and the real-repo negative case is a regression test
-  evidence: []
+  evidence:
+  - tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs
+  - tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool
+  - tests/test_gates.py::TestProcessPoolGates::test_combined_parallel_path_matches_fully_serial_path
+  - tests/test_gates.py::TestProcessPoolGates::test_combined_jobs_merge_in_canonical_order
+  - tests/test_gates.py::TestProcessPoolGates::test_process_job_runs_in_a_separate_process
 threat: null
 component: null
 labels: []
 ```
 T-0695 landed four unwaivable fork/pool-hazard advisories; two fire on src/frob/gates/__init__.py::_run_combined_jobs (pool-inside-pool, fork-after-threads). T-0581 is done -- the ProcessPool-for-CPU-gates + ThreadPool split is the intended design -- but the detectors are same-function co-occurrence heuristics, so the intended shape still fires. Since the channel is unwaivable by design, the only discharge path is restructuring: hoist the ProcessPoolExecutor construction/ownership out of the function containing the ThreadPoolExecutor task submission (e.g. construct both pools in a top-level orchestrator and pass handles) so the hazard co-occurrence no longer exists in any single function. Keep T-0581 behavior and perf. Blocks the zero-warnings drive; these 2 warnings cannot be waived.
+
+## Done report
+
+Discharged the T-0695 fork/pool-hazard advisories on src/frob/gates the
+only sanctioned way -- restructuring -- while preserving T-0581 behavior
+exactly.
+
+Restructure: `_run_combined_jobs` is now a pure orchestrator. Pool
+construction moved into two new private helpers so no single function
+contains the hazard co-occurrence the (unwaivable-by-design) detectors
+key on: `_open_process_pool` owns the spawn-context
+`ProcessPoolExecutor` construction (same bounded worker count,
+`mp_context=spawn` load-bearing comment carried over), and
+`_run_thread_jobs` owns the `ThreadPoolExecutor` construction, submit,
+and drain. The T-0581 ordering is unchanged: create + submit the
+process pool first, then open the thread pool, then drain thread
+futures, then process futures, then `shutdown(wait=True)` in the same
+try/finally. Job routing, worker bounds, canonical merge order, and
+logging are byte-identical in behavior; only construction ownership
+moved.
+
+Measured discharge: `analyze_project(src/frob/gates)` reports 0
+fork/pool-hazard findings (was 1: pool-inside-pool on
+`_run_combined_jobs`; fork-after-threads named in the ticket does not
+actually fire on the current detector -- `get_context("spawn")` fails
+its "fork" text match -- so pool-inside-pool was the only live hit).
+`frob check --ticket T-0767 --only gates-native`: `pass gate:ARCH 0
+errors, 3 warnings, 14 waived`; the 3 warnings are pre-existing ARCH001
+long-function findings (none in src/frob/gates, none fork/pool), zero
+fork/pool-hazard findings on src/frob/gates.
+
+Test flip per ticket: renamed the T-0695 real-repo acceptance test to
+`TestForkPoolHazards::test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs`;
+it now asserts ZERO findings across all four hazard categories on the
+real src/frob/gates tree (regression-locking the discharge), while the
+synthetic fixture `test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool`
+still proves the detector fires -- the detector itself is untouched.
+
+Verification (all measured): tests/unit/test_arch.py 116 passed;
+tests/test_arch_gate.py 7 passed; tests/test_gates.py 202 passed;
+`uv run frob test` touched-set PASS (exit 0, 3.18s); chunked
+`frob check --ticket T-0767 --only {lint,static,gates-fast,gates-native,gates-security}`
+all pass except one SCOPE001 error on uv.lock, which is the known
+main-side version-line flap (pyproject 0.98.0 vs main's committed lock
+0.97.0; every `uv run` re-syncs it) -- not part of this change, never
+committed, filed as a draft ticket.
+
+Scope: added src/frob/arch/_concurrency.py and docs/modules/arch.md
+(reason recorded in scope_changes) -- the rename ripples into the
+frob:tests directive there and the arch.md prose that claimed
+`_run_combined_jobs` "deliberately still trips" the check. Also edited
+T-0695's recorded evidence entries in tickets.md (2 YAML lines + the
+mirrored Evidence bullet) to the renamed node id: COV003 flagged the
+stale id and no CLI retargets a closed ticket's evidence; historical
+prose left intact, disclosed here. The tickets.md merge splice reverted
+those three lines once mid-flight; re-applied and verified before this
+report.
+
+Filed while verifying (not folded in): draft tickets for the uv.lock
+version-line flap (SCOPE001 artifact in every worktree; land should
+re-sync the lock in the release-bump commit) and the pre-existing
+self-join-deadlock advisory on src/frob/vet/_scan.py::_run_with_timeout
+(same discharge shape as this ticket).
+
+Splice repair (reviewer finding): an earlier bad 3-way splice in this
+worktree deleted the sibling lease-wiring ticket's block (filed by main
+in 55c2ee6a) and reverted T-0766's corrected
+Done-report sentence back to the phantom draft id; repaired by merging
+current main (which restored both regions verbatim) and deleting my own
+now-moot TICK006 draft (it reported the phantom main had already fixed
+in 55c2ee6a), leaving zero references to the phantom draft id and the
+sibling ticket's block intact and byte-identical to main's.
+
+### Changed
+```
+ docs/modules/arch.md          |  13 ++-
+ src/frob/arch/_concurrency.py |   8 +-
+ src/frob/gates/__init__.py    |  61 +++++++++---
+ tests/unit/test_arch.py       |  38 ++++---
+ tickets.md                    | 224 +++++++++++++++++++++++++++++++++++++++++-
+ 5 files changed, 306 insertions(+), 38 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestForkPoolHazards::test_pool_inside_pool_fires_on_process_pool_alongside_thread_pool` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestProcessPoolGates::test_combined_parallel_path_matches_fully_serial_path` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestProcessPoolGates::test_combined_jobs_merge_in_canonical_order` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestProcessPoolGates::test_process_job_runs_in_a_separate_process` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0768 -->
 ```yaml

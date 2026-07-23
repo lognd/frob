@@ -2796,24 +2796,30 @@ class TestForkPoolHazards:
         assert hits[0].severity == "warning"
         assert hits[0].symref == "combined.py::run_combined"
 
-    def test_pool_inside_pool_fires_on_real_repo_run_combined_jobs(self):
-        """Acceptance: the check fires on `src/frob/gates/_run_combined_jobs`
-        as it exists TODAY -- T-0581 fixed the runtime ordering (submit
-        before the thread pool opens, `mp_context=spawn`), but the
-        STRUCTURAL co-occurrence this syntactic check flags is still
-        present and is meant to stay flagged (an intentional, waived
-        finding), proving the detector fires on real code, not only a
-        fixture."""
+    def test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs(self):
+        """Acceptance (T-0767): the restructured gates tree carries ZERO
+        fork/pool-hazard findings. T-0695's real-repo acceptance originally
+        asserted `pool-inside-pool` FIRES on `_run_combined_jobs` (T-0581
+        fixed the runtime ordering but left the structural co-occurrence in
+        one function); the advisory channel is unwaivable by design, so
+        T-0767 hoisted pool construction into `_open_process_pool` /
+        `_run_thread_jobs` and this test's job flipped: it now regression-
+        locks the discharge, across ALL four hazard categories so a future
+        refactor reintroducing the co-occurrence (or any sibling hazard
+        shape) in `src/frob/gates` fails loudly. The synthetic fixture
+        above (`test_pool_inside_pool_fires_on_process_pool_alongside_
+        thread_pool`) still proves the detector itself fires -- the
+        detector was not weakened, only the real-repo hit discharged."""
         root = Path(__file__).parent.parent.parent / "src" / "frob" / "gates"
         result = analyze_project(root)
-        hits = [
-            s
-            for s in result.suggestions
-            if s.category == "pool-inside-pool"
-            and s.symref == "__init__.py::_run_combined_jobs"
-        ]
-        assert len(hits) == 1
-        assert hits[0].severity == "warning"
+        hazard_categories = {
+            "pool-inside-pool",
+            "fork-after-threads",
+            "pipe-wait-deadlock",
+            "self-join-deadlock",
+        }
+        hits = [s for s in result.suggestions if s.category in hazard_categories]
+        assert hits == []
 
     def test_fork_after_threads_fires_when_fork_follows_thread_start(self, tmp_path):
         """An `os.fork()` reachable AFTER a `Thread(...).start()` on the

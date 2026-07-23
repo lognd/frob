@@ -325,9 +325,16 @@ unwaivable advisory channel every other `frob.arch` category is on
 own `_run_combined_jobs` produced a real 6-hour CI hang (T-0265) from a
 `ProcessPoolExecutor` forked while a sibling thread pool was open --
 T-0581 fixed the runtime ordering, but nothing statically caught the
-SHAPE that made it possible, and `_run_combined_jobs` deliberately still
-trips this check today (an intentional, waived finding, not a bug) to
-prove the detector works on real code rather than only on a fixture.
+SHAPE that made it possible. `_run_combined_jobs` initially still
+tripped this check (the channel is unwaivable by design, so no waiver
+could quiet it); T-0767 discharged the real-repo hit the only sanctioned
+way -- restructuring, hoisting each pool's construction into its own
+helper (`_open_process_pool` / `_run_thread_jobs`) so no single function
+contains the co-occurrence -- and
+`tests/unit/test_arch.py::TestForkPoolHazards.
+test_pool_inside_pool_discharges_on_real_repo_run_combined_jobs` now
+regression-locks `src/frob/gates` at zero hazard findings, while the
+synthetic fixtures keep proving each detector fires.
 
 - **`pool-inside-pool`.** A `ProcessPoolExecutor`/`multiprocessing.Pool`
   construction reachable in the same function as a `ThreadPoolExecutor`
