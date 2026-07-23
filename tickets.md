@@ -5234,7 +5234,7 @@ T-0611's TypeScriptAdapter cannot map interface_declaration, type_alias_declarat
 id: T-0683
 title: 'docs: state that the drift gate always evaluates regardless of --only/narrowed
   gate selection (T-0265 semantics)'
-state: in-progress
+state: done
 kind: docs
 origin: agent
 created: '2026-07-22'
@@ -5242,6 +5242,14 @@ priority: low
 parent: T-0265
 scope:
 - docs/modules/gates.md
+- tests/integration/test_interfaces.py
+scope_changes:
+- op: add
+  glob: tests/integration/test_interfaces.py
+  reason: docs-only ticket; CLI-dispatch integration test is the bound evidence (T-0167
+    precedent), scope-added for covers_scope (D-02 route 2)
+  actor: logan
+  at: '2026-07-23'
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 acceptance:
