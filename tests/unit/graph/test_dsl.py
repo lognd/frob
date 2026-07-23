@@ -12,7 +12,12 @@ from __future__ import annotations
 from pathlib import Path
 
 from frob.graph._models import EdgeKind
-from frob.graph.dsl import _RESERVED_MARKER_VERBS, _resolve_block_srcs, parse_directives
+from frob.graph.dsl import (
+    _RESERVED_MARKER_VERBS,
+    _resolve_block_srcs,
+    fold_comment_runs,
+    parse_directives,
+)
 from frob.lang import parse_file
 from frob.lang._models import ParsedFile, RawComment, RawSymbol, SymbolKind
 
@@ -682,3 +687,47 @@ class TestInitDeinitInference:
         edges, malformed = parse_directives(pf)
         assert not malformed
         assert not any(e.kind == EdgeKind.PROTOCOL for e in edges)
+
+
+class TestFoldCommentRuns:
+    """`fold_comment_runs` (T-0441): same fold as `_fold_continuations`, plus
+    the physical-line count each logical entry consumed."""
+
+    def test_run_length_matches_consumed_physical_lines(self) -> None:
+        # frob:tests src/frob/graph/dsl.py::fold_comment_runs
+        lines = [
+            (1, 'frob:waive RULE-1 reason="this reason is intentionally \\', "", 0),
+            (2, 'long so it would overflow the ruff line-length limit"', "", 1),
+            (3, "frob:ticket T-0002", "", 2),
+        ]
+        folded = fold_comment_runs(lines)
+        assert len(folded) == 2
+        text0, lineno0, _src0, count0 = folded[0]
+        assert lineno0 == 1
+        assert count0 == 2
+        assert text0 == (
+            'frob:waive RULE-1 reason="this reason is intentionally '
+            'long so it would overflow the ruff line-length limit"'
+        )
+        text1, lineno1, _src1, count1 = folded[1]
+        assert lineno1 == 3
+        assert count1 == 1
+        assert text1 == "frob:ticket T-0002"
+
+    def test_single_line_run_has_count_one(self) -> None:
+        # frob:tests src/frob/graph/dsl.py::fold_comment_runs
+        lines = [(1, "frob:ticket T-0441", "", 0)]
+        folded = fold_comment_runs(lines)
+        assert folded == [("frob:ticket T-0441", 1, "", 1)]
+
+    def test_matches_fold_continuations_text_and_lineno(self) -> None:
+        # frob:tests src/frob/graph/dsl.py::_fold_continuations
+        from frob.graph.dsl import _fold_continuations
+
+        lines = [
+            (1, 'frob:waive RULE-1 reason="a \\', "", 0),
+            (2, 'b"', "", 1),
+        ]
+        folded_runs = fold_comment_runs(lines)
+        folded_plain = _fold_continuations(lines)
+        assert [(t, ln, s) for t, ln, s, _c in folded_runs] == folded_plain

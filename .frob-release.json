@@ -111,6 +111,7 @@
     "src/frob/app/dup_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/exports_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/fleet_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
+    "src/frob/app/fmt_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/gitlog_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/graph_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/app/map_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
@@ -435,6 +436,12 @@
     "src/frob/gates/_docblocks.py::doc004_gate": "ae1933bdb3d41939434b20539b217c3b3ea97d541ac837ded6bf3098bf6ba8a9",
     "src/frob/gates/_docblocks.py::doc005_gate": "537d82106e7cdbe1f9553e865aa62cac07a136df0c01bd2edadc7082c1960be1",
     "src/frob/gates/_exclude_hazard.py::exclude_hazard_gate": "6e3505c56c11b17ba244b1e111c1bba69666b59e6c5a678e73e648632c0c6bc0",
+    "src/frob/gates/_fmt_directives.py::FmtChange": "ea8741b398fe11d4690d8916903481776ec126dd2a6c5422ebd6f1f7e8fc9ac2",
+    "src/frob/gates/_fmt_directives.py::FmtReport": "11a60528b9ef3d166ee7b3928901298283e5a50d65961937b22ba07fa6dc2c63",
+    "src/frob/gates/_fmt_directives.py::canonicalize_text": "0c5ce61829cec8198bf968017b0e94cc2891613708c533f93413b0ed6ef9c127",
+    "src/frob/gates/_fmt_directives.py::format_paths": "205d4437fa6d2f51b6311b3e7e1fc8524f85f177bc3af2b19542681869ebdd2e",
+    "src/frob/gates/_fmt_directives.py::marker_for": "4ecc2ea6297b65a8707f28903068312f02340040a4f303cc99c98b1e9d390b02",
+    "src/frob/gates/_fmt_directives.py::read_line_length": "fdeac28194531c0a95f14523d29cbb236495a094406a75d92400b2a731fbb700",
     "src/frob/gates/_lang_conformance.py::lang_conformance_gate": "39dbe48b9e5dd8c93a6abfa14d9100ad749dbfe3c734a915bb503a4a185fe417",
     "src/frob/gates/_lang_conformance.py::project_lang_conformance_gate": "3441ca25df104459f136a531362ee63d011b46679121e141c1d8f3a7645c7468",
     "src/frob/gates/_models.py::CoverageData": "001138b91932cc4d61786cd5c81887b9816e4afa8e020c55b42a31532c511915",
@@ -554,6 +561,7 @@
     "src/frob/graph/callgraph.py::closure": "03a5762b12fa785c4d7b4237e2c9f326ba68d1e047b1f5524b6a8edfbe3af3e2",
     "src/frob/graph/digest.py::compute_digests": "f558880c079f7930093a4e185cc9beef639973ac796d1994563b91bf17287a03",
     "src/frob/graph/dsl.py::dedupe_slug": "33cda9cd0cda63391863536999a922eca9c608fb805374dcdd62f8b02b92fba0",
+    "src/frob/graph/dsl.py::fold_comment_runs": "b11a461262d019c2727672946332d2dec259046b791653b9b0eb983e8fdfc994",
     "src/frob/graph/dsl.py::markdown_anchors": "6b0e1198bce910a24a254b683732415e52d9c5c1a2b228c66c051e9df64bc335",
     "src/frob/graph/dsl.py::parse_directives": "9eda477197bb4789ba33e35fe7e24deefdb3dc534fe1ccd5209d7ac134d19f26",
     "src/frob/graph/dsl.py::slugify": "cb94dc53b3a7abbc67f122eb6213a89b8b9df9f485038c15a2bf3b20463b10b7",
@@ -1415,5 +1423,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.129.0"
+  "version": "0.130.0"
 }

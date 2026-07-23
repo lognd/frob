@@ -61,6 +61,8 @@ class Subcommand(str, enum.Enum):
     pool = "pool"
     # T-0573: cross-repo status/gate rollup and ticket routing.
     fleet = "fleet"
+    # T-0441: `frob:` directive comment canonical-form wrap/unwrap.
+    fmt = "fmt"
 
 
 # frob:doc docs/modules/app.md#config
@@ -424,6 +426,11 @@ class AppConfig(BaseModel):
     clean_yes: bool = False
     clean_json: bool = False
 
+    # fmt (T-0441: frob: directive canonical-form wrap/unwrap)
+    fmt_path: Path | None = None
+    fmt_check: bool = False
+    fmt_json: bool = False
+
     # perf
     perf_command: str | None = None  # profile|heat
     perf_path: Path | None = None
@@ -638,6 +645,7 @@ class AppConfig(BaseModel):
             "deploy_audit_output",
             "clean_path",
             "fleet_manifest",
+            "fmt_path",
         ):
             val = getattr(args, path_field, None)
             if val is not None:
@@ -790,6 +798,8 @@ class AppConfig(BaseModel):
             "clean_json",
             "fleet_json",
             "fleet_skip_gates",
+            "fmt_check",
+            "fmt_json",
         ):
             if getattr(args, flag, False):
                 d[flag] = True

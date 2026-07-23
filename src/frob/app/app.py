@@ -24,6 +24,7 @@ _RUNNER_MODULE_NAMES = (
     "dup_runner",
     "exports_runner",
     "fleet_runner",
+    "fmt_runner",
     "gitlog_runner",
     "graph_runner",
     "map_runner",
@@ -95,6 +96,7 @@ _SUBCOMMAND_RUNNER_NAMES: dict[Subcommand, str] = {
     Subcommand.deploy: "deploy_runner",
     Subcommand.doctor: "doctor_runner",
     Subcommand.clean: "clean_runner",
+    Subcommand.fmt: "fmt_runner",
 }
 """Every subcommand handled by a uniform `*_runner.run(AppConfig)` entry point,
 mapped to the runner module name that serves it. `bind` is excluded: it takes
@@ -130,7 +132,7 @@ class App:
                 "usage: frob "
                 "<scaffold|cycle|outline|map|xref|parse|dup|arch|docs|bind|"
                 "exports|check|gitlog|graph|ack|debt|pool|ticket|test|vet|"
-                "perf|release|stats|serve|mutate|sys|deploy|doctor|clean|fleet>"
+                "perf|release|stats|serve|mutate|sys|deploy|doctor|clean|fleet|fmt>"
                 " ..."
             )
             sys.exit(1)

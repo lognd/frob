@@ -1840,6 +1840,25 @@ def _add_clean_parser(sub) -> None:
     clean_p.add_argument("--json", dest="clean_json", action="store_true")
 
 
+# frob:ticket T-0441
+def _add_fmt_parser(sub) -> None:
+    """Register the `frob fmt` subcommand: canonical-form wrap/unwrap of
+    `frob:` directive comment lines (`--check` previews without writing)."""
+    # -- fmt ---------------------------------------------------------------
+    fmt_p = sub.add_parser(
+        "fmt",
+        help="canonicalize frob: directive comment line-wrapping (T-0441)",
+    )
+    fmt_p.add_argument("fmt_path", metavar="path", nargs="?", default=".")
+    fmt_p.add_argument(
+        "--check",
+        dest="fmt_check",
+        action="store_true",
+        help="report non-canonical files without rewriting them",
+    )
+    fmt_p.add_argument("--json", dest="fmt_json", action="store_true")
+
+
 # frob:ticket T-0030
 def _add_serve_parser(sub) -> None:
     """Register the `frob serve` subcommand and its arguments."""
@@ -2115,6 +2134,7 @@ def _add_analysis_subparsers(sub) -> None:
     _add_worktree_parser(sub)
 
 
+# frob:ticket T-0441
 def _add_workflow_subparsers(sub) -> None:
     """Register the workflow/CI subcommand group: check through deploy."""
     _add_check_parser(sub)
@@ -2137,6 +2157,7 @@ def _add_workflow_subparsers(sub) -> None:
     _add_fleet_parser(sub)
     _add_doctor_parser(sub)
     _add_clean_parser(sub)
+    _add_fmt_parser(sub)
 
 
 # frob:doc docs/modules/app.md#entry-point

@@ -1891,6 +1891,83 @@ class CoverageError(ErrorSet):
     Malformed = "coverage.xml could not be parsed"
 ```
 
+## frob fmt: directive canonicalization (T-0441)
+
+`frob.gates._fmt_directives` is a canonical-form line-wrap/UN-wrap
+normalizer for `frob:` directive comment lines, exposed as `frob fmt
+[path] [--check] [--json]`. It exists so a long `frob:waive`/`frob:debt`/
+etc. reason never has to fight ruff E501 by hand: canonical form is the
+FEWEST physical lines that keep every line within the project's line
+length, using T-0286's own trailing-backslash continuation syntax. The
+operation is two-directional and idempotent in both directions:
+
+- `fmt(single-line-too-long)` -> minimally wrapped (word-boundary splits,
+  each non-final physical line ending in `` \ ``).
+- `fmt(wrapped-but-now-fits)` -> joined back to one physical line (the
+  reason got shorter, or the limit got raised, or it was split
+  unnecessarily to begin with).
+- `fmt(already-canonical)` -> no-op.
+
+Public API (`src/frob/gates/_fmt_directives.py`):
+
+- `marker_for(path) -> str | None` -- the line-comment marker (`#`, `//`)
+  for a file's suffix, or `None` for an unsupported language. T-0441 scope
+  is `#`/`//` line comments only; a directive written inside a `/* */`
+  block comment is left untouched.
+- `read_line_length(root) -> int` -- reads `[tool.ruff] line-length` from
+  `root/pyproject.toml`, falling back to ruff's own default (88). Known
+  limitation: this is ONE project-wide limit sourced from ruff's config; a
+  genuinely per-language limit (`rustfmt.toml`'s `max_width`, a
+  `.prettierrc`'s `printWidth`, clang-format's `ColumnLimit`) is not wired
+  up -- every supported language wraps against this single limit today.
+- `canonicalize_text(text, *, path, limit) -> str` -- rewrites every
+  `frob:` directive run in `text` to canonical form; non-directive
+  comments and all code are untouched byte-for-byte.
+- `format_paths(root, *, check_only, limit=None) -> FmtReport` -- walks
+  `root` (via `frob.excludes.iter_files`, so the usual excluded/pruned dirs
+  are skipped) and canonicalizes every supported file; `check_only=True`
+  reports without writing (`frob fmt --check`, CI-friendly, exits 1 if
+  anything is non-canonical).
+
+Folding an existing continuation run back into one logical string reuses
+`frob.graph.dsl.fold_comment_runs` -- T-0286's own continuation fold,
+extended with a physical-line-count 4th tuple element so a caller that
+needs to REWRITE physical lines (not just read the folded text, which is
+all `frob.graph.dsl.parse_directives` needs) knows exactly which lines a
+logical directive's current form spans. `_fold_continuations` is now a
+thin wrapper over `fold_comment_runs` that drops the count -- one fold
+implementation, not two.
+
+**CRLF preservation (T-0441 review round 1 fix).** `format_paths` reads
+and writes through the plain `open()` builtin with `newline=""`
+(`pathlib.Path.read_text`/`write_text` only gained a `newline=` parameter
+in Python 3.13; this repo targets 3.11) -- this disables Python's
+universal-newline translation in BOTH directions. Without it, reading a
+CRLF-authored file (any Windows-authored TS/Rust/C/C++ source) silently
+translates every `\r\n` to `\n`, and writing back re-translates `\n` to
+`os.linesep` (a no-op on Linux) -- so on a Linux worktree, a `frob fmt` run
+over a CRLF file flattened EVERY line's terminator to LF, including lines
+the formatter never touches, not just the directive it rewrapped.
+`canonicalize_text` itself preserves each untouched physical line's own
+trailing `\r` verbatim (it only ever splits on `"\n"`, never `"\r\n"`), and
+re-attaches a matching `\r` to any freshly generated canonical directive
+line based on that RUN's own original convention (not a single
+file-global guess). `format_paths`' check-only change-detection
+(`rewritten == original`) reads both sides through the same `newline=""`
+transform, so it cannot report a false-positive change from a
+newline-translation mismatch between the two reads.
+
+**Known cut (T-0441 Done report):** `frob check`'s own remediation-hint
+half of this ticket ("directive line over NN cols; run `frob fmt` to
+wrap", emitted as a `frob check` finding when a non-canonical directive
+line is touched) was NOT implemented in this pass -- `src/frob/check/`
+is outside T-0441's declared scope (`src/frob/graph/dsl.py`,
+`src/frob/gates/`, `src/frob/app/`, `docs/`), and wiring a new gate rule
+into the existing stage/rule-catalog machinery in `frob.gates.__init__`
+and the check orchestrator is a separate unit of work. `frob fmt --check`
+covers the same need standalone (non-zero exit on any non-canonical
+file) until that follow-up lands.
+
 ## Design decisions
 
 - **Gates are pure functions over loaded state.** Load once (snapshot,

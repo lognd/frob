@@ -482,11 +482,42 @@ def _fold_continuations(
     fresh directive) is treated LITERALLY: it is left in place unfolded
     rather than reported as malformed, since a lone trailing backslash is
     content, not necessarily evidence of a broken continuation.
+
+    Thin wrapper over `fold_comment_runs` (T-0441), which does the actual
+    folding; this just drops the physical-line-count `fold_comment_runs`
+    adds for callers (like `frob fmt`) that need to know which physical
+    lines a logical directive spans, not just its folded text.
     """
-    folded: list[tuple[str, int, str]] = []
+    return [
+        (text, lineno, src) for text, lineno, src, _count in fold_comment_runs(lines)
+    ]
+
+
+# frob:ticket T-0441
+# frob:doc docs/modules/gates.md#frob-fmt-directive-canonicalization-t-0441
+# frob:tests tests/unit/graph/test_dsl.py::TestFoldCommentRuns.\
+# test_run_length_matches_consumed_physical_lines
+def fold_comment_runs(
+    lines: list[tuple[int, str, str, int]],
+) -> list[tuple[str, int, str, int]]:
+    """Fold physical comment lines ending in a trailing backslash into the
+    line that follows, same rule as `_fold_continuations`, but also return
+    each logical line's PHYSICAL LINE COUNT as a 4th tuple element -- how
+    many entries of `lines` were consumed into it.
+
+    `_fold_continuations`'s plain `(logical_text, lineno, src)` triples
+    cannot tell a caller which physical lines a logical directive's folded
+    form actually spans (only where it started); a caller that needs to
+    REWRITE those physical lines in place -- `frob fmt`'s canonical-form
+    wrap/unwrap (T-0441) -- needs the span, so this is the one place that
+    actually walks the fold loop; `_fold_continuations` is now a thin
+    wrapper over this that just drops the count.
+    """
+    folded: list[tuple[str, int, str, int]] = []
     i = 0
     n = len(lines)
     while i < n:
+        start = i
         lineno, text, src, _comment_id = lines[i]
         head = text.rstrip("\r")
         while (
@@ -498,7 +529,7 @@ def _fold_continuations(
             head = head.rstrip()[:-1]
             i += 1
             head += lines[i][1].rstrip("\r")
-        folded.append((head, lineno, src))
+        folded.append((head, lineno, src, i - start + 1))
         i += 1
     return folded
 
@@ -813,4 +844,10 @@ def parse_directives(
     return tuple(edges), tuple(malformed)
 
 
-__all__ = ["dedupe_slug", "markdown_anchors", "parse_directives", "slugify"]
+__all__ = [
+    "dedupe_slug",
+    "fold_comment_runs",
+    "markdown_anchors",
+    "parse_directives",
+    "slugify",
+]
