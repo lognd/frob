@@ -2979,11 +2979,13 @@ def compose_done_report(
 # frob:ticket T-0458
 # frob:ticket T-0754
 # frob:ticket T-0832
+# frob:ticket T-0846
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/unit/test_ticket_store.py::TestSetDoneReport.test_composes_and_writes_atomically  # noqa: E501
 # frob:tests tests/unit/test_ticket_store.py::TestSetDoneReport.test_caller_never_touches_markdown  # noqa: E501
 # frob:tests tests/test_ticket_done_report_claims.py::TestSetDoneReportClaims.test_claims_captured_from_real_callables  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match kind="integration"  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_masked_self_introduced_error_in_own_scope_still_refuses_via_identity kind="integration"  # noqa: E501
 def set_done_report(
     root: Path,
     ticket_id: str,
@@ -2992,6 +2994,7 @@ def set_done_report(
     base_ref: str = "main",
     run_tests: Callable[[Sequence[str]], int] | None = None,
     check_gates: Callable[[], tuple[int, int, int] | None] | None = None,
+    check_gate_findings: Callable[[], frozenset[tuple[str, str]] | None] | None = None,
 ) -> Result[Ticket, TicketError]:
     """THE single write path for a ticket's Done report (T-0458): compose
     `why` (the caller's narrative -- the ONLY thing the caller supplies)
@@ -3035,6 +3038,20 @@ def set_done_report(
     half of the claim is unaffected -- `run_tests` always returns a real
     measured count whenever it runs at all.
 
+    T-0846: `check_gate_findings()` (opt-in, additional to `check_gates`)
+    returns a `frozenset[(rule_id, file)]` of the SAME fresh check's error
+    findings -- captured alongside the plain count so `land`'s
+    re-verification can compare identities (rule id + file) rather than a
+    scope-wide total. A count-only comparison let a land whose own diff
+    introduced N new errors sail through whenever an unrelated fix on the
+    same branch removed more than N (a self-introduced regression
+    laundered by a net-better total) -- the gap the count-only T-0846 `>`
+    fix left open. `check_gate_findings=None` (the default) records no
+    identity set (`DoneReportClaims.error_findings=None`), matching every
+    caller before this addition; `_reverify_done_report_claims_post_merge`
+    falls back to the count-only comparison whenever either side of the
+    claim lacks an identity set.
+
     Held under `ledger_lock` end to end (load, compose, write) so a
     concurrent `set_done_report`/`add_evidence`/`new_ticket` call on the
     same ledger can never interleave with this one (T-0458 single-writer
@@ -3066,12 +3083,16 @@ def set_done_report(
                 gate_errors = gate_warnings = gate_waived = None
             else:
                 gate_errors, gate_warnings, gate_waived = gate_result
+            error_findings = (
+                check_gate_findings() if check_gate_findings is not None else None
+            )
             claims = DoneReportClaims(
                 test_count=run_tests(non_cmd),
                 evidence_count=len(non_cmd),
                 gate_errors=gate_errors,
                 gate_warnings=gate_warnings,
                 gate_waived=gate_waived,
+                error_findings=error_findings,
             )
         report = compose_done_report(why, changed_lines, ticket.evidence, claims)
         updated = ticket.model_copy(

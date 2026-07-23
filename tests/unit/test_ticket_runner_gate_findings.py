@@ -1,0 +1,271 @@
+"""T-0846 (TEST016 round): unit tests for `_check_gate_findings_fn`, the CLI
+closure that spawns a fresh `frob check --ticket` and parses its `## Errors`
+diagnostic lines into a `frozenset[(rule_id, file)]` identity set -- the
+land-side masking-gap fix's real data source. Also covers `_python_for_tree`
+(T-0846 follow-up: the interpreter both this closure and
+`_check_gates_summary_fn` spawn under must resolve from the CHECKED tree,
+not the calling process -- the T-0441 catch-22).
+
+Follows `tests/unit/test_ticket_runner_land_release.py`'s precedent:
+monkeypatch the actual `subprocess.run` seam `guarded_subprocess_run` calls
+(`frob.process._guard.subprocess.run`), never a real `frob check` spawn --
+these are pure/unit tests for the parsing and kwarg-shape logic, not an
+end-to-end integration test (that already exists in
+`tests/test_ticket_land.py::TestDoneReportThenLandRealClosuresEndToEnd`)."""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+import pytest
+
+from frob.app import ticket_runner
+from frob.process import _guard
+
+
+class _FakeProc:
+    """Minimal stand-in for `subprocess.CompletedProcess` -- only the
+    attributes `_check_gate_findings_fn` actually reads."""
+
+    def __init__(self, returncode: int, stdout: str = "", stderr: str = "") -> None:
+        self.returncode = returncode
+        self.stdout = stdout
+        self.stderr = stderr
+
+
+_TWO_FINDINGS_STDOUT = """frob check .  [FAIL]  2 errors  1 warnings
+
+## Errors
+  [gate:SCOPE] src/frob/tickets/_land.py:0  SCOPE001  SCOPE001: outside scope
+  [gate:COV] tests/other.py:12  COV002  COV002: no frob:ticket edge
+
+## Warnings
+  [gate:PERF] src/x.py:1  PERF001  PERF001: whatever
+
+## Tool summary
+  FAIL  gate-summary            2 errors, 1 warnings, 0 waived  [archgate=1.00s]
+"""
+
+_NO_ERRORS_HEADING_MEASURED_STDOUT = """frob check .  [PASS]  0 errors  0 warnings
+
+## Tool summary
+  pass  gate-summary            0 errors, 0 warnings, 0 waived  [archgate=1.00s]
+"""
+
+_UNPARSABLE_STDOUT = "some garbage output with no gate-summary line at all\n"
+
+
+class TestCheckGateFindingsFn:
+    """frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestCheckGateFindingsFn"""
+
+    # frob:ticket T-0846
+    def test_parses_multiple_findings_from_errors_section(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestCheckGateFindingsFn.test_parses_multiple_findings_from_errors_section  # noqa: E501
+        """The happy path: a real `## Errors` section with two diagnostic
+        lines parses into the exact `(rule_id, file)` pair set, ignoring
+        the `## Warnings` section entirely (only errors are identity-
+        compared at land)."""
+
+        def _fake_run(argv, **kwargs):  # noqa: ANN001, ANN202
+            return _FakeProc(1, stdout=_TWO_FINDINGS_STDOUT)
+
+        monkeypatch.setattr(_guard.subprocess, "run", _fake_run)
+        fn = ticket_runner._check_gate_findings_fn(tmp_path, "T-0001")
+        result = fn()
+        assert result == frozenset(
+            {
+                ("SCOPE001", "src/frob/tickets/_land.py"),
+                ("COV002", "tests/other.py"),
+            }
+        )
+
+    # frob:ticket T-0846
+    def test_refused_spawn_returns_none_not_empty_set(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestCheckGateFindingsFn.test_refused_spawn_returns_none_not_empty_set  # noqa: E501
+        """T-0803-style kill-switch proof: with `FROB_DISABLE_EXEC=1`,
+        `guarded_subprocess_run` refuses BEFORE ever calling
+        `subprocess.run` -- proven with a spy that would observe a real
+        spawn attempt. Must return `None` (unmeasured), never
+        `frozenset()` (which would read as "measured, definitely zero" and
+        let land's identity comparison wrongly treat this as authoritative
+        of a genuinely empty finding set)."""
+        monkeypatch.setenv("FROB_DISABLE_EXEC", "1")
+        spawned = False
+        real_run = _guard.subprocess.run
+
+        def _spy(*args, **kwargs):  # noqa: ANN001, ANN202
+            nonlocal spawned
+            spawned = True
+            return real_run(*args, **kwargs)
+
+        monkeypatch.setattr(_guard.subprocess, "run", _spy)
+        fn = ticket_runner._check_gate_findings_fn(tmp_path, "T-0001")
+        assert fn() is None
+        assert not spawned
+
+    # frob:ticket T-0846
+    def test_unparsable_output_returns_none(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestCheckGateFindingsFn.test_unparsable_output_returns_none  # noqa: E501
+        """Output with no `## Errors` heading AND no parsable gate-summary
+        line at all (a crash, a corrupted run) is UNMEASURED -- `None`,
+        never a false "zero findings" claim."""
+
+        def _fake_run(argv, **kwargs):  # noqa: ANN001, ANN202
+            return _FakeProc(1, stdout=_UNPARSABLE_STDOUT)
+
+        monkeypatch.setattr(_guard.subprocess, "run", _fake_run)
+        fn = ticket_runner._check_gate_findings_fn(tmp_path, "T-0001")
+        assert fn() is None
+
+    # frob:ticket T-0846
+    def test_no_errors_heading_with_parsable_summary_is_measured_empty(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestCheckGateFindingsFn.test_no_errors_heading_with_parsable_summary_is_measured_empty  # noqa: E501
+        """Boundary pin for the `len(section) < 2` guard (`section =
+        stdout.split("## Errors", 1)` always has length 1 or 2, since
+        `_section_lines` omits an empty section entirely): when the
+        heading is genuinely ABSENT (`len(section) == 1`, the boundary
+        just below the `< 2` cutoff) but the gate-summary line parses and
+        confirms zero errors, this is a REAL measured empty set
+        (`frozenset()`), not `None`.
+
+        This pins the comparison DIRECTION, not just its outcome: an
+        operand-swapped mutant (`2 < len(section)` instead of
+        `len(section) < 2`) is never true for `len(section) in {1, 2}` --
+        the "heading absent" branch would never fire, and the mutant would
+        instead fall through to `section[1]`, which does not exist for a
+        length-1 list -- an uncaught `IndexError`, which fails this test
+        rather than silently returning the right-looking value by luck."""
+
+        def _fake_run(argv, **kwargs):  # noqa: ANN001, ANN202
+            return _FakeProc(0, stdout=_NO_ERRORS_HEADING_MEASURED_STDOUT)
+
+        monkeypatch.setattr(_guard.subprocess, "run", _fake_run)
+        fn = ticket_runner._check_gate_findings_fn(tmp_path, "T-0001")
+        result = fn()
+        assert result == frozenset()
+        assert result is not None
+
+    # frob:ticket T-0846
+    def test_spawn_kwargs_capture_output_text_and_no_check(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestCheckGateFindingsFn.test_spawn_kwargs_capture_output_text_and_no_check  # noqa: E501
+        """Pins the exact `subprocess.run` kwarg SHAPE `guarded_subprocess_
+        run` forwards verbatim -- `capture_output=True` and `text=True` (so
+        `result.stdout` is a decoded str this closure can regex-match, not
+        raw bytes or nothing at all) and `check=False` (a non-zero `frob
+        check` exit -- the COMMON case, since `frob check --ticket` exits
+        1 whenever it finds any error -- must not raise; this closure
+        parses `result.stdout` regardless of exit code). A test asserting
+        the real captured kwarg values, not just an end-to-end outcome, so
+        each of the three flipped to its opposite is independently caught
+        even where the parsed RESULT would otherwise look unchanged for
+        this particular crafted stdout."""
+        captured: dict[str, object] = {}
+
+        def _fake_run(argv, **kwargs):  # noqa: ANN001, ANN202
+            captured.update(kwargs)
+            return _FakeProc(1, stdout=_TWO_FINDINGS_STDOUT)
+
+        monkeypatch.setattr(_guard.subprocess, "run", _fake_run)
+        fn = ticket_runner._check_gate_findings_fn(tmp_path, "T-0001")
+        fn()
+        assert captured["capture_output"] is True
+        assert captured["text"] is True
+        assert captured["check"] is False
+
+
+class TestPythonForTree:
+    """frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree"""
+
+    # frob:ticket T-0846
+    def test_uses_tree_venv_python_when_present(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree.test_uses_tree_venv_python_when_present  # noqa: E501
+        """T-0441 catch-22 fix: when `root/.venv/bin/python` exists, that
+        path is returned -- NOT `sys.executable` -- so a fresh `frob
+        check` spawn runs the CHECKED tree's own installed code (the
+        worktree's or root's own editable install), never whatever
+        interpreter the calling process happens to run under."""
+        venv_bin = tmp_path / ".venv" / "bin"
+        venv_bin.mkdir(parents=True)
+        venv_python = venv_bin / "python"
+        venv_python.write_text("#!/bin/sh\n")
+
+        assert ticket_runner._python_for_tree(tmp_path) == str(venv_python)
+
+    # frob:ticket T-0846
+    def test_falls_back_to_sys_executable_when_no_tree_venv(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree.test_falls_back_to_sys_executable_when_no_tree_venv  # noqa: E501
+        """No `.venv/bin/python` under `root` at all (a bare checkout, or a
+        non-uv-managed tree) falls back to `sys.executable` -- never a
+        hard error; this is strictly a refinement over the prior
+        unconditional `sys.executable`, not a new failure mode."""
+        assert ticket_runner._python_for_tree(tmp_path) == sys.executable
+
+    # frob:ticket T-0846
+    def test_check_gate_findings_fn_spawns_the_tree_venv_python(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree.test_check_gate_findings_fn_spawns_the_tree_venv_python  # noqa: E501
+        """End-to-end within `_check_gate_findings_fn`: given a `root` with
+        its own `.venv/bin/python`, the spawned argv's interpreter is that
+        path, not `sys.executable` -- the concrete T-0441 reproduction is
+        exactly this: a root-checkout `land` re-verification must run
+        against the WORKTREE/root tree's own installed `frob`, not the
+        calling process's."""
+        venv_bin = tmp_path / ".venv" / "bin"
+        venv_bin.mkdir(parents=True)
+        venv_python = venv_bin / "python"
+        venv_python.write_text("#!/bin/sh\n")
+
+        captured_argv: list[str] = []
+
+        def _fake_run(argv, **kwargs):  # noqa: ANN001, ANN202
+            captured_argv.extend(argv)
+            return _FakeProc(1, stdout=_TWO_FINDINGS_STDOUT)
+
+        monkeypatch.setattr(_guard.subprocess, "run", _fake_run)
+        fn = ticket_runner._check_gate_findings_fn(tmp_path, "T-0001")
+        fn()
+        assert captured_argv[0] == str(venv_python)
+        assert captured_argv[0] != sys.executable
+
+    # frob:ticket T-0846
+    def test_check_gates_summary_fn_spawns_the_tree_venv_python(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree.test_check_gates_summary_fn_spawns_the_tree_venv_python  # noqa: E501
+        """Same T-0441 fix, the sibling count-only closure: `_check_gates_
+        summary_fn` must resolve the SAME tree-local interpreter, not just
+        `_check_gate_findings_fn` -- both closures hit the identical
+        catch-22 independently before this fix."""
+        venv_bin = tmp_path / ".venv" / "bin"
+        venv_bin.mkdir(parents=True)
+        venv_python = venv_bin / "python"
+        venv_python.write_text("#!/bin/sh\n")
+
+        captured_argv: list[str] = []
+
+        def _fake_run(argv, **kwargs):  # noqa: ANN001, ANN202
+            captured_argv.extend(argv)
+            return _FakeProc(
+                0,
+                stdout="frob check .  [PASS]  0 errors  0 warnings\n\ngate-summary 0 errors, 0 warnings, 0 waived\n",
+            )
+
+        monkeypatch.setattr(_guard.subprocess, "run", _fake_run)
+        fn = ticket_runner._check_gates_summary_fn(tmp_path, "T-0001")
+        fn()
+        assert captured_argv[0] == str(venv_python)
+        assert captured_argv[0] != sys.executable

@@ -44,6 +44,56 @@ class TestDoneReportClaimsModel:
         body = f"## Done report\n\nwhy\n\n### Evidence\n(none)\n\n{block}\n"
         assert parse_claims_from_done_report(body) == claims
 
+    # frob:ticket T-0846
+    # frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_error_findings_round_trips_through_a_done_report_body  # noqa: E501
+    def test_error_findings_round_trips_through_a_done_report_body(self) -> None:
+        """T-0846: a claim carrying a real (possibly-empty) `error_findings`
+        identity set round-trips distinctly from one carrying `None` (no
+        identity capture supplied at all) -- `_reverify_done_report_claims_
+        post_merge` branches on that distinction to decide whether the
+        identity-based or count-only comparison applies."""
+        from frob.tickets._models import render_claims_block
+
+        claims = DoneReportClaims(
+            test_count=1,
+            evidence_count=1,
+            gate_errors=2,
+            gate_warnings=0,
+            gate_waived=0,
+            error_findings=frozenset(
+                {("SCOPE001", "src/a.py"), ("COV002", "src/b.py")}
+            ),
+        )
+        block = render_claims_block(claims)
+        body = f"## Done report\n\nwhy\n\n### Evidence\n(none)\n\n{block}\n"
+        assert parse_claims_from_done_report(body) == claims
+
+    # frob:ticket T-0846
+    # frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_measured_empty_error_findings_differs_from_none  # noqa: E501
+    def test_measured_empty_error_findings_differs_from_none(self) -> None:
+        """A MEASURED-but-empty `error_findings` set (a real check ran and
+        found zero errors) must round-trip as `frozenset()`, never as
+        `None` (which means no identity capture was supplied at all) --
+        the same "measured vs unmeasured" distinction T-0832 established
+        for `gate_errors` itself, one level down."""
+        from frob.tickets._models import render_claims_block
+
+        claims = DoneReportClaims(
+            test_count=1,
+            evidence_count=1,
+            gate_errors=0,
+            gate_warnings=0,
+            gate_waived=0,
+            error_findings=frozenset(),
+        )
+        block = render_claims_block(claims)
+        assert "- error-findings: none (measured, zero errors)" in block
+        body = f"## Done report\n\nwhy\n\n### Evidence\n(none)\n\n{block}\n"
+        parsed = parse_claims_from_done_report(body)
+        assert parsed is not None
+        assert parsed.error_findings == frozenset()
+        assert parsed.error_findings is not None
+
     def test_missing_section_returns_none(self) -> None:
         # frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_missing_section_returns_none  # noqa: E501
         body = "## Done report\n\nwhy\n\n### Evidence\n(none)\n"

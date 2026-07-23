@@ -514,10 +514,26 @@ _CLAIMS_GATES_UNMEASURED = (
     "- gates: unmeasured (no parsable gate-summary from a fresh check)"
 )
 
+# frob:ticket T-0846
+# T-0846: the rendered marker for a captured claim whose error IDENTITY set
+# (rule id + file, alongside the plain count) was measured but happened to
+# be empty -- distinct from the line being absent entirely (which means no
+# identity-level capture was supplied at all, e.g. an old Done report or a
+# caller that only ever passed `check_gates`). Never omit the line when the
+# set is genuinely empty: an absent line and an empty-but-measured set mean
+# different things to `_reverify_done_report_claims_post_merge` (identity
+# compare vs count-only fallback).
+_CLAIMS_ERROR_FINDINGS_NONE = "- error-findings: none (measured, zero errors)"
+_CLAIMS_ERROR_FINDINGS_RE = re.compile(r"^- error-findings: (.+)$")
+
 
 # frob:ticket T-0754
 # frob:ticket T-0832
+# frob:ticket T-0846
 # frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_error_findings_round_trips_through_a_done_report_body kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_measured_empty_error_findings_differs_from_none kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_masked_self_introduced_error_in_own_scope_still_refuses_via_identity kind="integration"  # noqa: E501
 class DoneReportClaims(BaseModel):
     """Structured, CAPTURED (never hand-typed) Done-report claims (T-0754):
     `test_count` is the number of a ticket's non-cmd evidence ids observed
@@ -551,7 +567,18 @@ class DoneReportClaims(BaseModel):
     count fields stay required (`int`, never `None`) -- they are always
     measurable whenever `run_tests`/`passing_ids` themselves ran at all,
     unlike the gate state, which depends on a live `frob check` subprocess
-    that can fail for reasons unrelated to the ticket's own evidence."""
+    that can fail for reasons unrelated to the ticket's own evidence.
+
+    T-0846: `error_findings` is an OPTIONAL `frozenset[(rule_id, file)]`
+    alongside the plain `gate_errors` count -- a scope-wide count alone let
+    a land whose own diff introduced N new errors sail through whenever an
+    UNRELATED fix on the same branch removed more than N (a self-introduced
+    regression laundered by a net-better total; the reviewer-flagged gap in
+    the count-only `>` fix). `None` means no identity-level capture was
+    supplied (an old Done report, or a caller that only ever passed
+    `check_gates`) -- `_reverify_done_report_claims_post_merge` falls back
+    to the count-only `>` comparison in that case; a real (possibly empty)
+    frozenset means the identity-diff comparison is authoritative instead."""
 
     model_config = {}
 
@@ -560,12 +587,16 @@ class DoneReportClaims(BaseModel):
     gate_errors: int | None
     gate_warnings: int | None
     gate_waived: int | None
+    error_findings: frozenset[tuple[str, str]] | None = None
 
 
 # frob:ticket T-0754
 # frob:ticket T-0832
+# frob:ticket T-0846
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_round_trips_through_a_done_report_body kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_error_findings_round_trips_through_a_done_report_body kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_measured_empty_error_findings_differs_from_none kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match kind="integration"  # noqa: E501
 def render_claims_block(claims: DoneReportClaims) -> str:
     """Render `claims` as a Done report `### Captured claims` section
@@ -574,7 +605,14 @@ def render_claims_block(claims: DoneReportClaims) -> str:
     `_CLAIMS_GATES_UNMEASURED` marker when `claims.gate_errors is None`)
     exactly so a round-trip through a written ledger never loses precision
     -- and, T-0832, never renders a negative gate count: an unmeasured gate
-    state renders as the explicit `unmeasured` marker line instead."""
+    state renders as the explicit `unmeasured` marker line instead.
+
+    T-0846: an `error_findings` set (when not `None`) renders as its own
+    trailing line, sorted for a deterministic round-trip -- `rule@file`
+    pairs, comma-joined, or the `_CLAIMS_ERROR_FINDINGS_NONE` marker when
+    the set is measured but empty. `None` (no identity capture supplied)
+    omits the line entirely, matching the T-0832 unmeasured-gates
+    precedent: absence and "measured empty" must render differently."""
     gates_line = (
         _CLAIMS_GATES_UNMEASURED
         if claims.gate_errors is None
@@ -583,20 +621,32 @@ def render_claims_block(claims: DoneReportClaims) -> str:
             f"warning(s), {claims.gate_waived} waived"
         )
     )
-    return (
-        f"{_CLAIMS_HEADING}\n"
+    lines = [
+        _CLAIMS_HEADING,
         f"- tests: {claims.test_count} passed "
-        f"(from {claims.evidence_count} evidence id(s))\n"
-        f"{gates_line}"
-    )
+        f"(from {claims.evidence_count} evidence id(s))",
+        gates_line,
+    ]
+    if claims.error_findings is not None:
+        if claims.error_findings:
+            joined = ", ".join(
+                f"{rule}@{file}" for rule, file in sorted(claims.error_findings)
+            )
+            lines.append(f"- error-findings: {joined}")
+        else:
+            lines.append(_CLAIMS_ERROR_FINDINGS_NONE)
+    return "\n".join(lines)
 
 
 # frob:ticket T-0754
 # frob:ticket T-0832
+# frob:ticket T-0846
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_round_trips_through_a_done_report_body kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_missing_section_returns_none kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_free_prose_elsewhere_never_masquerades_as_claims kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_error_findings_round_trips_through_a_done_report_body kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel.test_measured_empty_error_findings_differs_from_none kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match kind="integration"  # noqa: E501
 def parse_claims_from_done_report(body: str) -> DoneReportClaims | None:
     """Recover a `### Captured claims` section from `body`'s `## Done
@@ -631,6 +681,7 @@ def parse_claims_from_done_report(body: str) -> DoneReportClaims | None:
 
     test_count = evidence_count = None
     gate_errors = gate_warnings = gate_waived = None
+    error_findings: frozenset[tuple[str, str]] | None = None
     for line in claims_lines:
         stripped = line.strip()
         tests_match = _CLAIMS_TESTS_RE.match(stripped)
@@ -642,6 +693,18 @@ def parse_claims_from_done_report(body: str) -> DoneReportClaims | None:
             gate_errors, gate_warnings, gate_waived = (
                 int(g) for g in gates_match.groups()
             )
+            continue
+        if stripped == _CLAIMS_ERROR_FINDINGS_NONE:
+            error_findings = frozenset()
+            continue
+        findings_match = _CLAIMS_ERROR_FINDINGS_RE.match(stripped)
+        if findings_match:
+            pairs = set()
+            for token in findings_match.group(1).split(", "):
+                rule, _, file = token.partition("@")
+                if rule and file:
+                    pairs.add((rule, file))
+            error_findings = frozenset(pairs)
             continue
         # T-0832: the explicit "unmeasured" marker is recognized (so it
         # does not fall through as an unparsed leftover line) but leaves
@@ -659,6 +722,7 @@ def parse_claims_from_done_report(body: str) -> DoneReportClaims | None:
         gate_errors=gate_errors,
         gate_warnings=gate_warnings,
         gate_waived=gate_waived,
+        error_findings=error_findings,
     )
 
 

@@ -1011,6 +1011,7 @@ def _land(root: Path, cfg: AppConfig) -> None:
         bump_version=_land_bump_version_fn(),
         rebuild_natives=_land_rebuild_natives_fn(),
         check_gates=_check_gates_summary_fn(worktree, cfg.ticket_id),
+        check_gate_findings=_check_gate_findings_fn(worktree, cfg.ticket_id),
         skip_mutation_evidence=cfg.ticket_skip_mutation_evidence,
     )
     if result.is_err:
@@ -1970,9 +1971,51 @@ _GATE_SUMMARY_COUNTS_RE = re.compile(
 )
 
 
+# frob:ticket T-0846
+# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree kind="unit"  # noqa: E501
+def _python_for_tree(root: Path) -> str:
+    """The interpreter that runs `root`'s OWN installed code (T-0846): the
+    checked-out tree's `.venv/bin/python` when it exists there, else
+    `sys.executable` (the CALLING process's own interpreter) as a
+    fallback.
+
+    T-0846: `_check_gates_summary_fn`/`_check_gate_findings_fn` used to
+    spawn `sys.executable -m frob check` unconditionally -- whatever
+    interpreter the CALLING process happened to run under, not the tree
+    being checked. `done-report` capture runs from inside the worktree (its
+    own venv, an editable install of the worktree's OWN code); `land`
+    re-verification runs from the ROOT checkout (root's venv, `main`'s
+    code) but against `root`'s post-merge tree. For a ticket that adds or
+    removes a public surface a gate validates against the LIVE, running
+    registry (T-0441: a ticket adding a `frob fmt` subcommand), the
+    root-venv fresh check's `frob` package has no `fmt` in its own live
+    `_build_parser` at all, so a gate that cross-checks a doc/registry
+    surface against that live registry (T-0441's concrete reproduction:
+    DOC005, README rows naming `frob fmt` as a subcommand "that no longer
+    exists" -- 34 rows recorded at capture time vs 33 seen fresh) fires
+    deterministically post-merge even though the capture legitimately saw
+    zero. `refresh-done-report-and-retry` can never converge for this
+    class -- the two runs are checking two DIFFERENT installed trees'
+    code, not two views of the same one. Resolving the interpreter from
+    `root` itself closes this: both capture and re-verification always run
+    the CHECKED tree's own installed code, matching what `uv run frob
+    check` would do if invoked there directly.
+
+    Falls back to `sys.executable` (never a hard error) when `root` has no
+    `.venv/bin/python` -- a bare checkout with no venv of its own yet, or a
+    non-uv-managed tree -- so this is strictly a refinement of the prior
+    unconditional `sys.executable`, never a new failure mode."""
+    venv_python = root / ".venv" / "bin" / "python"
+    if venv_python.is_file():
+        return str(venv_python)
+    return sys.executable
+
+
 # frob:ticket T-0754
 # frob:ticket T-0832
+# frob:ticket T-0846
 # frob:tests tests/test_ticket_land.py::TestDoneReportThenLandRealClosuresEndToEnd.test_real_closures_done_report_then_land_succeeds kind="integration"  # noqa: E501
+# frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree kind="unit"  # noqa: E501
 def _check_gates_summary_fn(root: Path, ticket_id: str):  # noqa: ANN201
     """CLI closure shared by `done-report` capture and `land` re-
     verification (T-0754): calling it spawns a fresh `python -m frob check
@@ -1998,7 +2041,7 @@ def _check_gates_summary_fn(root: Path, ticket_id: str):  # noqa: ANN201
 
     def fn() -> tuple[int, int, int] | None:
         guarded = guarded_subprocess_run(
-            [sys.executable, "-m", "frob", "check", "--ticket", ticket_id],
+            [_python_for_tree(root), "-m", "frob", "check", "--ticket", ticket_id],
             cwd=root,
             capture_output=True,
             text=True,
@@ -2027,6 +2070,95 @@ def _check_gates_summary_fn(root: Path, ticket_id: str):  # noqa: ANN201
             return None
         errors, warnings, waived = (int(g) for g in match.groups())
         return (errors, warnings, waived)
+
+    return fn
+
+
+# frob:ticket T-0846
+# T-0846: one printed error-diagnostic line's shape, e.g.
+# "  [gate:SCOPE] src/frob/tickets/_land.py:0  SCOPE001  SCOPE001: message"
+# (`frob.check._section_lines`'s `f"  [{tool}] {d.as_text()}"`, `Diagnostic.
+# as_text`'s own `file:line  CODE  message` rendering) -- captures the file
+# and rule-id code, deliberately not the message (whose wording can change
+# without the finding's identity changing).
+_GATE_ERROR_LINE_RE = re.compile(
+    r"^\s*\[[^\]]*\]\s+(?P<file>\S+?):\d+\s+(?P<code>[A-Za-z][A-Za-z0-9]*)\s"
+)
+
+
+# frob:ticket T-0846
+# frob:tests tests/test_ticket_land.py::TestDoneReportThenLandRealClosuresEndToEnd.test_real_closures_done_report_then_land_succeeds kind="integration"  # noqa: E501
+def _check_gate_findings_fn(root: Path, ticket_id: str):  # noqa: ANN201
+    """CLI closure (T-0846, sibling to `_check_gates_summary_fn`): calling it
+    spawns a fresh `python -m frob check --ticket <id>` in `root` (its own
+    subprocess, NOT shared with `_check_gates_summary_fn`'s -- a documented
+    doubled-cost tradeoff, see the module-level note this function's own
+    docstring references, kept for correctness-first simplicity) and
+    returns a `frozenset[(rule_id, file)]` recovered from every `## Errors`
+    diagnostic line the run printed -- the per-finding IDENTITY set
+    `_reverify_done_report_claims_post_merge` compares instead of a raw
+    count, closing the masking gap a scope-wide count alone cannot close
+    (a land's own diff introducing N new errors sailing through whenever
+    an unrelated fix on the same branch removed more than N). Routed
+    through `guarded_subprocess_run` (T-0778's guard), same as
+    `_check_gates_summary_fn`. A refused spawn or a hard subprocess
+    failure returns `None` (unmeasured, never an empty-set false claim of
+    "definitely zero") -- `_reverify_done_report_claims_post_merge` falls
+    back to the count-only comparison in that case.
+
+    Cost note: today this is a SECOND full `frob check --ticket` spawn
+    whenever both this and `_check_gates_summary_fn` are wired to the same
+    land/done-report call -- deduplicating the two into one shared
+    subprocess run is a real, known follow-up (not silently dropped; see
+    the Done report and the extended T-0850 scope), left for a
+    later pass so this fix lands correctness-first."""
+
+    def fn() -> frozenset[tuple[str, str]] | None:
+        guarded = guarded_subprocess_run(
+            [_python_for_tree(root), "-m", "frob", "check", "--ticket", ticket_id],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            timeout=600,
+            check=False,
+        )
+        if guarded.is_err:
+            _log.warning(
+                "ticket %s: `frob check --ticket %s` refused to spawn for "
+                "error-finding identities (%s)",
+                ticket_id,
+                ticket_id,
+                ProcessGuardError.ExecDisabled,
+            )
+            return None
+        result = guarded.danger_ok
+        section = result.stdout.split("## Errors", 1)
+        if len(section) < 2:
+            # No "## Errors" heading at all means zero error diagnostics
+            # were printed this run (`_section_lines` omits an empty
+            # section entirely) -- a real, measured empty set, not
+            # "unmeasured": the gate-summary line's own error count (parsed
+            # by `_GATE_SUMMARY_COUNTS_RE`) is the cross-check that this is
+            # genuinely zero rather than a parse miss.
+            if _GATE_SUMMARY_COUNTS_RE.search(result.stdout) is None:
+                _log.warning(
+                    "ticket %s: `frob check --ticket %s` output had no "
+                    "parsable gate-summary line at all (exit=%d) -- "
+                    "error-finding identities are unmeasured, not "
+                    "necessarily zero",
+                    ticket_id,
+                    ticket_id,
+                    result.returncode,
+                )
+                return None
+            return frozenset()
+        after_heading = section[1].split("\n\n", 1)[0]
+        findings: set[tuple[str, str]] = set()
+        for line in after_heading.splitlines():
+            match = _GATE_ERROR_LINE_RE.match(line)
+            if match:
+                findings.add((match.group("code"), match.group("file")))
+        return frozenset(findings)
 
     return fn
 
@@ -2098,6 +2230,7 @@ def _done_report(root: Path, cfg: AppConfig) -> None:
         base_ref=cfg.ticket_base_ref,
         run_tests=_run_tests_count_fn(root),
         check_gates=_check_gates_summary_fn(root, cfg.ticket_id),
+        check_gate_findings=_check_gate_findings_fn(root, cfg.ticket_id),
     )
     if result.is_err:
         _log.error("done-report failed: %s", result.danger_err)

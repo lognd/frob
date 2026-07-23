@@ -1116,9 +1116,19 @@ def land(
     | None = None,
     rebuild_natives: Callable[[Path], bool] | None = None,
     check_gates: Callable[[], tuple[int, int, int] | None] | None = None,
+    check_gate_findings: Callable[[], frozenset[tuple[str, str]] | None] | None = None,
     skip_mutation_evidence: bool = False,
 ) -> Result[LandReport, LandError]:
-    """Land `ticket_id` from `worktree` onto `root`'s current branch:
+    """T-0846: `check_gate_findings` (opt-in, alongside `check_gates`) lets
+    a caller with a fresh per-finding (rule id, file) oracle supply it so
+    the gate-state claim re-verification can compare identities scoped to
+    the ticket's own declared scope instead of a raw scope-wide count --
+    see `_reverify_done_report_claims_post_merge`'s own doc for the
+    masking gap this closes. Defaults to `None` (skip, same posture as
+    every other D-05/T-0754 capture callable) -- falls back to the
+    existing count-only comparison unchanged.
+
+    Land `ticket_id` from `worktree` onto `root`'s current branch:
     precheck, wip-commit + merge + deletion-check, finalize + close, then
     squash-apply onto main with a conventional-commit message.
 
@@ -1236,6 +1246,7 @@ def land(
             bump_version=bump_version,
             rebuild_natives=rebuild_natives,
             check_gates=check_gates,
+            check_gate_findings=check_gate_findings,
             skip_mutation_evidence=skip_mutation_evidence,
         )
 
@@ -1253,6 +1264,7 @@ def _land_locked(
     bump_version: Callable[[Path, Ticket, str], Result[str | None, LandError]] | None,
     rebuild_natives: Callable[[Path], bool] | None,
     check_gates: Callable[[], tuple[int, int, int] | None] | None = None,
+    check_gate_findings: Callable[[], frozenset[tuple[str, str]] | None] | None = None,
     skip_mutation_evidence: bool = False,
 ) -> Result[LandReport, LandError]:
     """`land`'s actual body (T-0577), run by the caller already holding
@@ -1322,7 +1334,7 @@ def _land_locked(
         # computed above), never a second collect+run -- halves the real
         # cost of a `run_tests`-supplying land.
         claims_check = _reverify_done_report_claims_post_merge(
-            worktree, ticket_id, passing_ids, check_gates
+            worktree, ticket_id, passing_ids, check_gates, check_gate_findings
         )
         if claims_check.is_err:
             if did_merge:
@@ -1424,11 +1436,14 @@ def _reverify_evidence_post_merge(
 # frob:ticket T-0832
 # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_unmeasured_fresh_check_skips_gate_reverification_land_proceeds kind="integration"  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_two_unmeasured_gate_claims_never_vacuously_match kind="integration"  # noqa: E501
+# frob:ticket T-0846
+# frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_lower_gate_error_count_than_claim_still_lands kind="integration"  # noqa: E501
 def _reverify_done_report_claims_post_merge(
     worktree: Path,
     ticket_id: str,
     passing_ids: frozenset[str] | None,
     check_gates: Callable[[], tuple[int, int, int] | None] | None,
+    check_gate_findings: Callable[[], frozenset[tuple[str, str]] | None] | None = None,
 ) -> Result[None, LandError]:
     """T-0754's land-side half: re-load `ticket_id` from the POST-MERGE
     worktree ledger, recover any `### Captured claims` section its Done
@@ -1467,7 +1482,34 @@ def _reverify_done_report_claims_post_merge(
     if any, could not be re-verified this land, and the notice says so; it
     does not by itself fail the land, matching this function's existing
     permissive-by-default posture for claims a caller opted out of
-    measuring."""
+    measuring.
+
+    T-0846: the gate-state half now refuses only on an INCREASE
+    (`real_errors > claims.gate_errors`), never on exact-count inequality
+    -- a fresh count strictly LOWER than the claim (a sibling land fixed
+    something on main between done-report time and this post-merge check)
+    is logged and allowed through instead of refusing. See the inline
+    comment at the comparison itself for the full incident history (5
+    burned land attempts, T-0755/T-0640) and the WAIVE004 limitation this
+    does not fully close (needs a `frob.gates`/`frob.check` change outside
+    this ticket's scope).
+
+    T-0846 review (reject #1): the count-only `>` comparison above has its
+    OWN masking gap -- a land whose own diff introduces N new errors sails
+    through whenever an UNRELATED fix on the SAME branch removed more than
+    N (a self-introduced regression laundered by a net-better scope-wide
+    total). `check_gate_findings` (opt-in, alongside `check_gates`) closes
+    this: when BOTH the captured claim (`claims.error_findings`) and a
+    fresh `check_gate_findings()` call carry a real `frozenset[(rule_id,
+    file)]`, the comparison is IDENTITY-based and scoped to `ticket.scope`
+    (the diff-touched-files proxy available in this module -- see the
+    inline comment below for why `ticket.scope` stands in for "this land's
+    own diff") instead of a raw count: any NEW (rule, file) pair inside the
+    ticket's own scope refuses, regardless of how the aggregate count
+    moved. Either side missing an identity set (an old capture, or a
+    caller that only ever wired `check_gates`) falls back to the count-only
+    `>` comparison unchanged -- this is strictly additive, never a
+    behavior change for a claim that never captured identities."""
     if passing_ids is None or check_gates is None:
         return Ok(None)
     from frob.tickets import _load_one
@@ -1533,7 +1575,92 @@ def _reverify_done_report_claims_post_merge(
         return Ok(None)
 
     real_errors, real_warnings, real_waived = fresh
-    if real_errors != claims.gate_errors:
+
+    # T-0846 review (reject #1): try the IDENTITY-based, scope-filtered
+    # comparison first -- it is strictly more precise than the count-only
+    # fallback below and closes the masking gap a raw count can never
+    # close (an unrelated fix elsewhere on the branch removing more errors
+    # than this land's own diff introduced would otherwise net out to a
+    # LOWER total and sail through). Only attempted when both sides
+    # actually captured an identity set; either side missing one (an old
+    # claim, or `check_gate_findings` not wired) falls through to the
+    # count-only comparison unchanged.
+    if claims.error_findings is not None and check_gate_findings is not None:
+        fresh_findings = check_gate_findings()
+        if fresh_findings is None:
+            _log.warning(
+                "land: %s fresh `frob check --ticket %s` produced no "
+                "parsable per-finding identities post-merge -- falling "
+                "back to the count-only gate-state comparison",
+                ticket_id,
+                ticket_id,
+            )
+        else:
+            new_findings = fresh_findings - claims.error_findings
+            # T-0846: `ticket.scope` is the diff-touched-files PROXY this
+            # module has on hand -- `frob.tickets` deliberately has no
+            # `frob.gitio`/`frob.gates` diff-computation access
+            # (docs/rework.md cycle-avoidance), so "a file this land's own
+            # diff touched" is approximated by "a file this ticket's own
+            # declared scope covers." A new error outside the ticket's own
+            # scope is attributable to something else on the branch (an
+            # unrelated sibling ticket's own work, still that ticket's own
+            # responsibility to catch at ITS land) and does not refuse
+            # here -- only a new error inside this ticket's own scope does.
+            scoped_new = [
+                (rule, file)
+                for rule, file in new_findings
+                if scope_matches(file, ticket.scope)
+            ]
+            if scoped_new:
+                _log.error(
+                    "land: %s captured gate-state claim no longer holds "
+                    "post-merge -- %d NEW error finding(s) inside this "
+                    "ticket's own scope that were not in the captured "
+                    "claim: %s; refresh with `frob ticket done-report %s` "
+                    "and retry",
+                    ticket_id,
+                    len(scoped_new),
+                    sorted(scoped_new),
+                    ticket_id,
+                )
+                return Err(LandError.ClaimDivergence)
+            _log.info(
+                "land: %s identity-based gate-state re-verification found "
+                "no new in-scope error finding (claim=%d, fresh=%d, "
+                "new-out-of-scope=%d) -- proceeding without refresh",
+                ticket_id,
+                len(claims.error_findings),
+                len(fresh_findings),
+                len(new_findings) - len(scoped_new),
+            )
+            return Ok(None)
+
+    # T-0846: count-only fallback, refusing only on an INCREASE over the
+    # captured claim, never on exact-count equality. The prior strict `!=`
+    # compared a count captured at done-report time against a fresh
+    # post-merge count taken in a DIFFERENT tree state (main keeps moving
+    # between the two captures) -- any main-side drift diverged the count
+    # even when the drift was a genuine IMPROVEMENT (a sibling land fixing
+    # an unrelated error this ticket never touched), refusing a land that
+    # introduced no new problem at all and forcing a manual refresh-done-
+    # report-and-retry loop (5 land attempts burned in one session,
+    # T-0755/T-0640). A fresh count strictly GREATER than the claim is
+    # still the meaningful, actionable signal (something this land or the
+    # merge introduced got worse) and still refuses. A count that only
+    # went down, or stayed the same, no longer refuses.
+    #
+    # T-0846 review (reject #1): this count-only path has a KNOWN masking
+    # gap the identity-based path above closes whenever both sides capture
+    # identities -- a land whose own diff introduces N new errors can
+    # still sail through HERE (count-only) whenever an unrelated fix on
+    # the same branch removed more than N. This path is now only reached
+    # when at least one side of the claim never captured identities (an
+    # old Done report, or a caller that only ever wired `check_gates`);
+    # accepted as a deliberate, documented fallback for that case, not a
+    # silent gap -- `check_gate_findings` closes it going forward for every
+    # ticket whose Done report is written (or refreshed) after this fix.
+    if real_errors > claims.gate_errors:
         _log.error(
             "land: %s captured gate-state claim no longer holds post-merge "
             "-- recorded %d error(s), a fresh `frob check --ticket %s` now "
@@ -1550,6 +1677,15 @@ def _reverify_done_report_claims_post_merge(
             ticket_id,
         )
         return Err(LandError.ClaimDivergence)
+    if real_errors < claims.gate_errors:
+        _log.info(
+            "land: %s fresh post-merge gate-error count (%d) is LOWER than "
+            "the captured claim (%d) -- not a divergence (T-0846: only an "
+            "increase refuses), proceeding without refresh",
+            ticket_id,
+            real_errors,
+            claims.gate_errors,
+        )
     return Ok(None)
 
 

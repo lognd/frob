@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.129.0] - unreleased
+
+- T-0846: land: ClaimDivergence compares exact error counts across run contexts; scoped-flaky rules make landing a refresh-retry loop
+
 ## [0.128.0] - unreleased
 
 - T-0605: design-pattern recommender phase 2: Adapter, Flyweight/pool, Observer, anemic-domain-model, poltergeist/lava-flow, sequential-coupling detectors

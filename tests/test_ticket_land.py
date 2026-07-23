@@ -34,7 +34,12 @@ from frob.tickets import (
     transition,
 )
 from frob.tickets._land import land, splice_ledger
-from frob.tickets._models import AcceptanceCriterion, LandError
+from frob.tickets._models import (
+    AcceptanceCriterion,
+    DoneReportClaims,
+    LandError,
+    render_claims_block,
+)
 from frob.tickets._store import (
     atomic_write,
     ledger_path,
@@ -3104,6 +3109,103 @@ class TestClaimDivergencePostMerge:
             dry_run=False,
             passed=lambda ids: frozenset(ids),
             check_gates=lambda: (3, 0, 0),
+        )
+
+        assert result.is_err
+        assert result.danger_err == LandError.ClaimDivergence
+
+    def test_lower_gate_error_count_than_claim_still_lands(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_lower_gate_error_count_than_claim_still_lands  # noqa: E501
+        """T-0846: a fresh post-merge error count LOWER than the captured
+        claim (a sibling land fixed something on main between done-report
+        time and this post-merge check, or a scoped-run WAIVE004 finding
+        stopped counting) must not refuse the land -- only an INCREASE is
+        the actionable signal. This fails against the pre-T-0846 strict
+        `!=` comparison (3 != 0 also refused a strict decrease) and passes
+        against the fixed `>` comparison."""
+        wt = repo.parent / "wt"
+        _run(
+            ["git", "worktree", "add", "-b", "feature-claims-gate-decrease", str(wt)],
+            repo,
+        )
+
+        created = new_ticket(wt, _spec("Ticket with an improved gate-state claim"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        self._make_closeable_with_claims(wt, tid, test_count=1, gate_errors=3)
+        _commit_all(wt, "advance ticket with an improved gate-state claim")
+
+        result = land(
+            repo,
+            tid,
+            wt,
+            dry_run=False,
+            passed=lambda ids: frozenset(ids),
+            # Recorded claim was 3 error(s); the fresh post-merge check
+            # now shows 0 -- an improvement, not a divergence.
+            check_gates=lambda: (0, 0, 0),
+        )
+
+        assert result.is_ok
+
+    # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_masked_self_introduced_error_in_own_scope_still_refuses_via_identity  # noqa: E501
+    def test_masked_self_introduced_error_in_own_scope_still_refuses_via_identity(
+        self, repo: Path
+    ) -> None:
+        """T-0846 reviewer reject #1: a count-only comparison lets a land
+        whose own diff introduces a NEW error sail through whenever an
+        UNRELATED fix on the same branch removed MORE errors than that --
+        the net total goes DOWN even though this land's own scope now has a
+        genuinely new problem. Captured claim: 2 errors, with identities
+        {RULE_A@src/other.py, RULE_B@src/other.py}. Fresh post-merge: 1
+        error total (net LOWER, so the count-only `>` fallback alone would
+        pass this land) but the ONE surviving finding is a brand-new
+        RULE_C@src/feature.py -- inside THIS ticket's own declared scope
+        (`src/**`) and absent from the captured claim. This must REFUSE via
+        the identity-based comparison even though the raw count went down;
+        it fails against a count-only `>` check (1 > 2 is False, would
+        pass) and passes only when the identity/scope comparison is wired."""
+        wt = repo.parent / "wt"
+        _run(
+            ["git", "worktree", "add", "-b", "feature-claims-masked", str(wt)],
+            repo,
+        )
+
+        created = new_ticket(
+            wt, _spec("Ticket whose own scope covers src/**", scope=("src/**",))
+        )
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        loaded = load_all(wt)
+        ticket = loaded.danger_ok[tid]
+        claims = DoneReportClaims(
+            test_count=1,
+            evidence_count=1,
+            gate_errors=2,
+            gate_warnings=0,
+            gate_waived=0,
+            error_findings=frozenset(
+                {("RULE_A", "src/other.py"), ("RULE_B", "src/other.py")}
+            ),
+        )
+        ticket = ticket.model_copy(
+            update={"body": ticket.body + "\n" + render_claims_block(claims) + "\n"}
+        )
+        assert write_ticket(wt, ticket).is_ok
+        _commit_all(wt, "advance ticket with a to-be-masked gate-state claim")
+
+        result = land(
+            repo,
+            tid,
+            wt,
+            dry_run=False,
+            passed=lambda ids: frozenset(ids),
+            # Scope-wide total DROPPED (2 -> 1) -- the count-only fallback
+            # would pass this. But the one surviving finding is a NEW
+            # identity, in a file this ticket's own scope covers.
+            check_gates=lambda: (1, 0, 0),
+            check_gate_findings=lambda: frozenset({("RULE_C", "src/feature.py")}),
         )
 
         assert result.is_err

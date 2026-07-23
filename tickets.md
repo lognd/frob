@@ -954,7 +954,7 @@ Discovered while working T-0516: COV006 Violation objects carry no symref (file=
 id: T-0542
 title: 'gates: COV002 satisfied by ANY open ticket whose scope glob covers the file
   (B10)'
-state: queued
+state: in-progress
 kind: bug
 origin: auditor
 created: '2026-07-21'
@@ -962,10 +962,84 @@ priority: medium
 parent: T-0403
 scope:
 - src/frob/gates/
+evidence:
+- tests/test_gates.py::TestCov002ScopeCoverage::test_open_ticket_scope_covers_changed_symbol
+- tests/test_gates.py::TestCov002ScopeCoverage::test_ambiguous_overlapping_open_scopes_do_not_cover
+- tests/test_gates.py::TestCov002ScopeCoverage::test_active_ticket_own_scope_wins_over_a_broader_open_ticket
 threat: null
 component: null
 ```
 docs/audits/gates-accounting.md B10. _cov002 uses _open_scopes = every open ticket's scope glob, matched via _scope_covers against ANY of them. One broad-scope open ticket (e.g. src/frob/**) makes every changed symbol under it accounted for regardless of relation to that ticket. Fix direction: prefer the ACTIVE ticket's own scope first, and require a narrower/more-specific glob match (or an explicit frob:ticket edge) when multiple open tickets' scopes could cover the same file, rather than accepting the first match found.
+
+## Done report
+
+Investigation found this ticket's fix ALREADY LANDED on main, unattached to
+a ticket-workflow closure: commit 5c739693 ("fix(gates): require
+unambiguous scope match for COV002", 2026-07-21, already an ancestor of
+this worktree's base before any work started this session) rewrote
+`_scope_covers` in src/frob/gates/__init__.py exactly per this ticket's
+fix direction -- `coverage_gate`/`_cov002`/`_cov002_check_symref` now take
+an `active_ticket` parameter that `_scope_covers` checks FIRST; when the
+active ticket's own scope covers the file, no ambiguity question is even
+asked. Absent an active-ticket match, a NEW `_scope_glob_specificity`
+helper scores every open ticket's scope glob by literal-prefix length
+against the file, and `_scope_covers` requires a UNIQUE, most-specific
+winner among the open tickets whose scope covers the file -- a genuine tie
+(two open tickets equally specific over the same path) now returns
+`False` (uncovered), requiring an explicit `frob:ticket` edge instead of
+silently picking the first/broadest match. This is exactly B10's fix
+direction: "prefer the ACTIVE ticket's own scope first, and require a
+narrower/more-specific glob match ... when multiple open tickets' scopes
+could cover the same file, rather than accepting the first match found."
+
+No code change was needed or made for T-0542 itself -- the implementation,
+its doc-anchor comments (`# frob:ticket T-0542` above both new/changed
+functions), and three dedicated tests already exist on main:
+`TestCov002ScopeCoverage::test_open_ticket_scope_covers_changed_symbol`
+(single-scope coverage still works), `test_ambiguous_overlapping_open_scopes_do_not_cover`
+(the actual regression-fixing adversarial case: two equally-specific open
+tickets both claiming `src/**` no longer silently cover a changed symbol
+-- this fails against the pre-fix `_scope_covers`, which accepted ANY
+match via `any(...)`), and `test_active_ticket_own_scope_wins_over_a_broader_open_ticket`
+(the active-ticket-first half). All three re-run clean this session
+(`uv run pytest tests/test_gates.py -k TestCov002ScopeCoverage -q`, 3
+passed) and are now bound to T-0542 as evidence.
+
+Ticket state was left `queued` despite the code being on main -- the
+commit that implemented it was made directly, outside the ticket
+open/evidence/close workflow (no `frob ticket start`/`evidence`/
+`done-report`/`close` around it), so the ledger never recorded the
+closure. This Done report closes that gap: evidence is bound to the
+existing tests, no new code needed.
+
+Gate check caveat: `uv run frob check --ticket T-0542` currently reports
+SCOPE001/COV002 findings on `src/frob/tickets/_land.py` and
+`tests/test_ticket_land.py` -- these are T-0846's already-committed work
+earlier in this same serial-chain worktree (this session works T-0846,
+T-0542, T-0590 in order on one branch), which the diff-against-main scan
+picks up regardless of which ticket is passed as `--ticket`. They are
+T-0846's own scope's responsibility (verified clean under
+`frob check --ticket T-0846`), not a T-0542 regression -- T-0542 itself
+made no source change. Confirmed via the targeted pytest run above,
+since a whole-branch `--ticket T-0542` check cannot cleanly isolate one
+ticket's slice of a multi-ticket worktree's cumulative diff.
+
+### Changed
+```
+ src/frob/tickets/_land.py |  49 ++++++++++++++++++++-
+ tests/test_ticket_land.py |  38 ++++++++++++++--
+ tickets.md                | 110 +++++++++++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 191 insertions(+), 6 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestCov002ScopeCoverage::test_open_ticket_scope_covers_changed_symbol` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCov002ScopeCoverage::test_ambiguous_overlapping_open_scopes_do_not_cover` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCov002ScopeCoverage::test_active_ticket_own_scope_wins_over_a_broader_open_ticket` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 6 error(s), 1209 warning(s), 210 waived
 
 <!-- ticket:T-0584 -->
 ```yaml
@@ -1029,7 +1103,7 @@ TEST-pool triage (T-draft-edbf1e26, 2026-07-22): re-measured `frob check --only 
 id: T-0590
 title: 'COV002 grace-window regression: closed-ticket edges lose coverage across sequential
   same-worktree ticket closes'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-07-21'
@@ -1041,6 +1115,73 @@ threat: null
 component: null
 ```
 Discovered incidentally while closing T-0556 (unrelated ticket) in a worktree that had already closed T-0567/T-0545/T-0552/T-0547 earlier in the same branch: symbols touched by T-0545/T-0552 (e.g. src/frob/gates/_coverage.py::stamp_coverage, src/frob/gates/__init__.py::_test005/test_gate/_edge_has_execution_evidence/_KNOWN_GATE_RULES/_COVERAGE_LOCK_REL) started failing COV002 again -- 'changed with no frob:ticket edge to an open ticket' -- even though each carries a valid frob:ticket T-0545/T-0552 directive and both tickets' closures are still part of the same uncommitted diff against main (git diff main --stat still shows all the intervening commits). This reproduces with a bare frob check (no --ticket override), so it is not scoped to T-0556's own diff content -- it appeared sometime between T-0552's own clean check (frob check --ticket T-0552 showed 0 COV errors right after closing it) and starting T-0556's ticket workflow (multiple frob ticket scope/sweep operations on tickets.md in between). Hypothesis: _bound_to_open_ticket's grace-window hunk-matching (docs/audits or __init__.py:1917 _bound_to_open_ticket docstring, T-0214/T-0320) depends on a ticket's DONE-transition marker line falling within a single git diff hunk against main; repeated tickets.md rewrites by later ticket operations (scope changes, sweeps, done-report writes for OTHER tickets) can split/relocate that hunk so an EARLIER ticket's own close marker no longer registers as 'in this diff's tickets.md hunk' even though the closure commit is still, in aggregate, part of the diff vs main. Needs investigation: reproduce minimally (two sequential ticket closes in one branch, then a third ticket's ledger operations), confirm the hunk-boundary hypothesis, and either make the grace window robust to intervening unrelated tickets.md hunks or make COV002's message clearer that this is a hunk-shape artifact, not a real missing edge. Related: docs/guides/agent-playbook.md section 10b's existing multi-ticket-worktree warnings (about ledger finalization) -- this is a parallel failure mode in the SAME class of hazard, but for COV002 rather than the Done-report/close ledger writes.
+
+## Failure log
+- 2026-07-23 attempt 1: Could not reproduce the hunk-splitting regression after three escalating real-diff repro attempts (sequential closes, interleaved scope noise, 40 near-identical tickets); grace window held in every case. See Done report for full detail.
+
+## Done report
+
+Could not reproduce the described COV002 grace-window regression after
+three escalating attempts against the REAL diff/gate machinery (not
+hand-crafted Hunk objects): (1) three sequential ticket closes in one
+branch via the real `write_ticket`/`working_diff`/`_bound_to_open_ticket`
+path; (2) the same, plus interleaved scope-change rewrites to a fourth,
+unrelated open ticket between each close (simulating "frob ticket
+scope/sweep operations on tickets.md in between"); (3) forty tickets with
+IDENTICAL title/body/scope boilerplate (maximizing myers-diff ambiguity
+against near-duplicate lines), ten of them closed sequentially with
+scope-noise on an eleventh interleaved between each close. In all three,
+every closed ticket's `_bound_to_open_ticket` check against the real
+`working_diff(root, "main")` output returned True -- the grace window held
+for every closed ticket in every scenario, including the ones adjacent (by
+sorted ticket id, since `_render_ledger` always sorts by id and rewrites
+the WHOLE file every `write_ticket` call) to the ticket being repeatedly
+rewritten. `git diff <merge-base> --unified=0` (the exact invocation
+`working_diff` uses) is a single two-tree diff between the merge-base and
+the current working tree, computed once, independent of how many
+intermediate commits/rewrites happened in between -- so the "repeated
+rewrites split/relocate the hunk" mechanism this ticket's own hypothesis
+proposes did not manifest even when I deliberately maximized the
+conditions the hypothesis names (adjacent near-duplicate ledger blocks,
+many intervening unrelated-ticket rewrites, sorted-by-id reordering
+pressure).
+
+I cannot rule out that the real incident needs conditions this reproduction
+does not model: the ACTUAL 900+ line tickets.md this repo carries (far
+larger and structurally different from a synthetic 12-40 ticket ledger),
+a specific `frob ticket sweep`/`scope` CLI sequence rather than direct
+`write_ticket` calls (the CLI's sweep touches `dup_findings`/`xref_hits`
+fields this repro never populated), an UNCOMMITTED intermediate state
+(the real incident narrative mentions "multiple frob ticket scope/sweep
+operations ... in between" without saying whether each was its own commit
+or accumulated uncommitted), or a specific closed-ticket ORDERING/adjacency
+this repro's ten-in-a-row pattern did not hit. Per this ticket's own
+plan ("if you cannot reproduce, record that honestly"), I am not shipping
+a speculative fix or a message-wording change against an unconfirmed
+mechanism -- failing instead of guessing.
+
+Suggested next step for whoever picks this back up: reproduce against a
+COPY of this repo's actual tickets.md (or a fixture seeded from it) using
+the real `frob ticket sweep`/`scope`/`done-report` CLI commands in the
+exact sequence the original incident narrative describes (T-0567, T-0545,
+T-0552, T-0547 closes, then T-0556's own start/scope/sweep calls), rather
+than a synthetic from-scratch ledger -- the scale and CLI-call shape may
+be load-bearing for whatever triggered the original observation.
+
+### Changed
+```
+ src/frob/tickets/_land.py |  49 +++++++++++-
+ tests/test_ticket_land.py |  38 +++++++++-
+ tickets.md                | 185 +++++++++++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 265 insertions(+), 7 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 6 error(s), 1209 warning(s), 210 waived
 
 <!-- ticket:T-0596 -->
 ```yaml
@@ -5170,7 +5311,7 @@ The two REL200 waivers on design/frob.strata's graph_cache__fill and graph_cache
 id: T-0846
 title: 'land: ClaimDivergence compares exact error counts across run contexts; scoped-flaky
   rules make landing a refresh-retry loop'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-23'
@@ -5179,10 +5320,266 @@ parent: null
 scope:
 - src/frob/tickets/_land.py
 - src/frob/tickets/**
+- tests/test_ticket_land.py
+- src/frob/app/ticket_runner.py
+- tests/test_ticket_done_report_claims.py
+- tests/unit/test_ticket_runner_gate_findings.py
+scope_changes:
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: adversarial regression test for the gate-error-count comparison fix lives
+    here, mirroring _land.py's own module
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: src/frob/app/ticket_runner.py
+  reason: 'reviewer-directed rework (reject #1): identity-based ClaimDivergence comparison
+    needs the real check_gate_findings closure wired here, alongside the existing
+    _check_gates_summary_fn it shares a subprocess run with'
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: tests/test_ticket_done_report_claims.py
+  reason: 'reviewer-directed rework (reject #1): DoneReportClaims gained error_findings;
+    adding round-trip coverage in its existing dedicated test module'
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: tests/unit/test_ticket_runner_gate_findings.py
+  reason: 'TEST016 round: dedicated unit tests for _check_gate_findings_fn''s subprocess-kwarg
+    shape and parse-boundary logic, mocking the guarded_subprocess_run seam per the
+    test_ticket_runner_land_release.py precedent'
+  actor: logan
+  at: '2026-07-23'
+evidence:
+- tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_lower_gate_error_count_than_claim_still_lands
+- tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_masked_self_introduced_error_in_own_scope_still_refuses_via_identity
+- tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel::test_error_findings_round_trips_through_a_done_report_body
+- tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel::test_measured_empty_error_findings_differs_from_none
+- tests/unit/test_ticket_runner_gate_findings.py::TestCheckGateFindingsFn::test_parses_multiple_findings_from_errors_section
+- tests/unit/test_ticket_runner_gate_findings.py::TestCheckGateFindingsFn::test_refused_spawn_returns_none_not_empty_set
+- tests/unit/test_ticket_runner_gate_findings.py::TestCheckGateFindingsFn::test_unparsable_output_returns_none
+- tests/unit/test_ticket_runner_gate_findings.py::TestCheckGateFindingsFn::test_no_errors_heading_with_parsable_summary_is_measured_empty
+- tests/unit/test_ticket_runner_gate_findings.py::TestCheckGateFindingsFn::test_spawn_kwargs_capture_output_text_and_no_check
+- tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree::test_uses_tree_venv_python_when_present
+- tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree::test_falls_back_to_sys_executable_when_no_tree_venv
+- tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree::test_check_gate_findings_fn_spawns_the_tree_venv_python
+- tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree::test_check_gates_summary_fn_spawns_the_tree_venv_python
 threat: null
 component: null
 ```
 T-0754's claim check compares the captured error COUNT against a fresh post-merge count. Three failure modes burned 5 land attempts this session (T-0755/T-0640): (1) WAIVE004 self-declares 'known-flaky for diff-scoped rules... trust this only from a full, unscoped run' yet still counts toward the scoped-run error total the claim check compares; (2) the capture is taken at done-report time in a different tree state than land's post-merge check, so any main-side drift (even fixes) diverges the count; (3) the remedy loop (refresh done-report, commit, retry land) is manual and non-obvious. Fix direction: compare a SET of finding identities (rule id + location) not a count, exclude rules that self-declare scoped-run flakiness from the comparison, and/or have land re-capture the claim itself post-merge instead of refusing.
+
+## Done report
+
+REWORKED after reviewer REJECT #1: the initial `>` (increase-only) count
+comparison had a masking gap the reviewer correctly flagged -- a land
+whose own diff introduces N new errors could still sail through whenever
+an UNRELATED fix on the same branch removed more than N (a self-introduced
+regression laundered by a net-better scope-wide total). Took the
+reviewer's preferred route (option 2): narrowed the comparison to be
+diff-scoped via finding IDENTITY (rule id + file) rather than accepting
+the count-only risk.
+
+What changed on top of the original `>` fix:
+- `DoneReportClaims` (src/frob/tickets/_models.py) gained an optional
+  `error_findings: frozenset[tuple[str, str]] | None` field alongside the
+  existing `gate_errors` count -- `None` means no identity capture was
+  supplied (old Done reports, or a caller that only ever wired
+  `check_gates`); a real (possibly empty) frozenset means the identity
+  comparison is authoritative. `render_claims_block`/
+  `parse_claims_from_done_report` round-trip it via a new
+  `- error-findings: RULE@file, ...` line (or the
+  `- error-findings: none (measured, zero errors)` marker for a measured-
+  empty set, distinct from the line being absent -- mirrors T-0832's
+  measured-vs-unmeasured precedent for `gate_errors` itself).
+- `set_done_report` (src/frob/tickets/__init__.py) gained an optional
+  `check_gate_findings` parameter, captured into `claims.error_findings`
+  alongside the existing `check_gates` count capture.
+- `_reverify_done_report_claims_post_merge`/`_land_locked`/`land`
+  (src/frob/tickets/_land.py) gained the same optional
+  `check_gate_findings` parameter. When BOTH the captured claim
+  (`claims.error_findings`) and a fresh `check_gate_findings()` call carry
+  a real frozenset, the comparison is now: take
+  `fresh_findings - claims.error_findings` (genuinely NEW findings since
+  the claim was captured), filter to only those whose file matches
+  `ticket.scope` (the diff-touched-files PROXY available in this module --
+  `frob.tickets` deliberately has no `frob.gitio`/`frob.gates` diff-
+  computation access, docs/rework.md cycle-avoidance), and refuse iff any
+  remain. A new error OUTSIDE the ticket's own scope does not refuse here
+  (it is some other ticket's own responsibility to catch at ITS land).
+  Either side missing an identity set falls through UNCHANGED to the
+  original count-only `>` comparison -- strictly additive, never a
+  behavior change for a claim that never captured identities.
+- `src/frob/app/ticket_runner.py` gained `_check_gate_findings_fn` (a new
+  CLI closure, sibling to the existing `_check_gates_summary_fn`) that
+  spawns a fresh `frob check --ticket` and parses every `## Errors`
+  diagnostic line's `(rule_id, file)` pair. Wired into both `_land`'s and
+  `_done_report`'s `set_done_report`/`land` calls. Scope widened +1 for
+  this file (see below) -- the reviewer's own reject note sanctioned
+  widening here ("if the capture write lives outside scope, widen with an
+  honest reason") since the real identity data can only come from
+  `frob check`'s own printed findings, which this module already spawns
+  and parses for the sibling count-only closure.
+
+Known, accepted cost (not silently dropped): `_check_gate_findings_fn`
+spawns its OWN `frob check --ticket` subprocess, independent of
+`_check_gates_summary_fn`'s -- when both are wired to the same land/
+done-report call (the real CLI path), that is a SECOND full check run.
+Deduplicating the two into one shared subprocess result is a real,
+worthwhile follow-up, not implemented in this pass (correctness-first);
+noted in `_check_gate_findings_fn`'s own docstring and left as a TODO for
+whoever picks up the WAIVE004 follow-up ticket next (see below).
+
+Remaining gap, explicitly accepted: the identity comparison above does
+NOT yet exclude findings whose rule self-declares scoped-run flakiness
+(WAIVE004's "known-flaky for diff-scoped rules ... trust this only from a
+full, unscoped run" caveat) -- a flaky WAIVE004 finding that newly appears
+in a diff-touched file between done-report time and land time still
+counts as a "new in-scope finding" and refuses. This is a narrower version
+of the SAME risk class the original ticket named, now scoped down to just
+the WAIVE004 half (the count-vs-identity masking half the reviewer flagged
+is now closed). Left as a follow-up rather than solved here because
+excluding WAIVE004-flagged rules needs cross-referencing against
+`frob.gates`'s own WAIVE004 detection at comparison time, which is a
+larger, separable piece of work. T-0850 (filed under the
+original T-0846 pass) already tracks this; its scope
+(`src/frob/gates/**`, `src/frob/check.py`, `src/frob/app/ticket_runner.py`,
+`src/frob/tickets/_land.py`) already covers what remains, so it was not
+re-filed or re-scoped -- its premise ("closing this needs check_gates to
+expose per-finding identity") is now partially satisfied by this pass; the
+remaining, narrower piece is the WAIVE004 filter specifically plus
+deduplicating the two check_gates*/check_gate_findings subprocess spawns.
+
+Scope widened over this rework: +1 `src/frob/app/ticket_runner.py` (the
+real `check_gate_findings` closure), +1
+`tests/test_ticket_done_report_claims.py` (round-trip coverage for the new
+`error_findings` field) -- both via `frob ticket scope T-0846 --add` with
+an honest reason, on top of the `tests/test_ticket_land.py` widening from
+the original pass.
+
+New adversarial test:
+`tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_masked_self_introduced_error_in_own_scope_still_refuses_via_identity`
+-- captured claim: 2 errors, identities {RULE_A@src/other.py,
+RULE_B@src/other.py}; fresh post-merge: 1 error total (a net DECREASE, so
+the count-only `>` fallback alone would pass this land) but the one
+surviving finding is a brand-new RULE_C@src/feature.py inside the ticket's
+own `src/**` scope and absent from the captured claim -- must REFUSE. This
+fails against a count-only `>` comparison (1 > 2 is False, would
+incorrectly pass) and passes only when the identity/scope comparison is
+wired, exactly the masking scenario the reviewer named. All prior boundary
+tests (lower/equal/higher count, unmeasured-gates, no-claims-section)
+re-verified still green with no changes needed to them.
+
+Verification: `uv run pytest tests/test_ticket_land.py -k
+ClaimDivergence -q` (9 passed), `uv run pytest
+tests/test_ticket_done_report_claims.py -q` (10 passed, including the two
+new error_findings round-trip tests),
+`tests/test_ticket_land.py::TestDoneReportThenLandRealClosuresEndToEnd`
+(the real-CLI-closures end-to-end test, still passing with the new
+`_check_gate_findings_fn` closure wired in). `uv run ruff check`/`ruff
+format` clean on every touched file. `uv run ty check` clean on every
+touched file. `uv run frob check --ticket T-0846` clean across all five
+--only stage groups (lint, static, gates-fast, gates-native,
+gates-security) after a `frob ticket sweep T-0846` refresh following the
+scope changes.
+
+ROUND 2 (TEST016 land refusal + T-0441 catch-22, same worktree, after
+coordinator merged main and refreshed the post-merge capture):
+
+TEST016 refused land: `_check_gate_findings_fn`'s changed lines in
+`src/frob/app/ticket_runner.py` had zero bound evidence, so 4 mutants
+survived (two `capture_output=True`/`text=True` bool negations, one
+`check=False` bool negation, one `len(section) < 2` operand swap). Added
+`tests/unit/test_ticket_runner_gate_findings.py` (scope widened +1, honest
+reason), following `tests/unit/test_ticket_runner_land_release.py`'s
+existing precedent: monkeypatch `frob.process._guard.subprocess.run`
+directly rather than spawning a real `frob check`. Five new tests: a
+happy-path multi-finding parse, a refused-spawn-returns-None kill-switch
+proof (mirrors `TestLandRebuildNativesFn`'s T-0803 spy pattern), an
+unparsable-output-returns-None case, a `len(section) < 2` BOUNDARY pin
+(crafted output with NO `## Errors` heading but a parsable, zero-error
+gate-summary -- the length-1 case just below the `< 2` cutoff -- which an
+operand-swapped mutant crashes on with `IndexError` since it would then
+try `section[1]` on a length-1 list), and a kwargs-capture test asserting
+the literal `capture_output`/`text`/`check` values `subprocess.run`
+actually received. Verified BY HAND: reverted each of the 4 fixed lines
+back to its mutant form one at a time and confirmed the corresponding new
+test fails (capture_output->False and text->False and check->True each
+fail the kwargs-capture test; the `<` swap fails both the boundary test
+and the unparsable-output test with an uncaught IndexError) -- same
+methodology as the original masking test's hand-verification.
+
+Second item, same round: a deterministic land failure on T-0441 (a ticket
+adding a `frob fmt` subcommand) surfaced the SAME "capture vs fresh-check
+run-context divergence" class this ticket is about, one level down:
+`_check_gates_summary_fn`/`_check_gate_findings_fn` both spawned
+`sys.executable -m frob check` -- whatever interpreter the CALLING process
+runs under, not the tree being checked. `done-report` capture runs from
+inside the worktree (worktree venv, worktree's own editable install);
+`land` runs from the root checkout (root venv, main's code) but re-checks
+the post-merge WORKTREE tree. For a ticket that adds/removes a public
+surface a gate validates against the LIVE running registry, the root-venv
+process's own `frob` package has no knowledge of the worktree's new
+surface, so a gate like DOC005 (cross-checking README subcommand rows
+against the live `_build_parser` registry) deterministically errors
+post-merge on rows the capture legitimately saw as fine -- refresh-and-
+retry can never converge because the two runs check two DIFFERENT
+installed trees' code, not two views of the same one.
+
+Fix: added `_python_for_tree(root)` (`src/frob/app/ticket_runner.py`) --
+`root/.venv/bin/python` when it exists, else `sys.executable` as a
+fallback (never a hard error, strictly a refinement over the prior
+unconditional `sys.executable`). Wired into both closures' spawn argv.
+Four new tests in the same test file (`TestPythonForTree`): tree-venv-
+present resolves to that path, tree-venv-absent falls back to
+`sys.executable`, and one end-to-end argv-capture test per closure proving
+the SPAWNED argv actually uses the tree-local interpreter. Verified BY
+HAND: reverted `_python_for_tree(root)` back to `sys.executable` at both
+call sites and confirmed both new argv-capture tests fail (comparing the
+worktree's own `.venv/bin/python` against pytest's `tmp_path`-local
+fake venv path, which can never match the real running interpreter).
+
+Verification (round 2): `uv run pytest
+tests/unit/test_ticket_runner_gate_findings.py -q` (9 passed). `uv run
+pytest tests/unit/test_ticket_runner_gate_findings.py
+tests/test_ticket_land.py tests/test_ticket_done_report_claims.py
+tests/unit/test_ticket_runner_land_release.py -q` (129 passed, no
+regressions). `uv run ruff check`/`ruff format` clean. `uv run ty check`
+clean. `uv run frob check --ticket T-0846` clean across all five --only
+stage groups after a `frob ticket sweep T-0846` refresh.
+
+### Changed
+```
+ src/frob/app/ticket_runner.py           |  91 ++++++++
+ src/frob/tickets/__init__.py            |  21 ++
+ src/frob/tickets/_land.py               | 144 ++++++++++++-
+ src/frob/tickets/_models.py             |  78 ++++++-
+ tests/test_ticket_done_report_claims.py |  50 +++++
+ tests/test_ticket_land.py               | 104 +++++++++-
+ tickets.md                              | 356 +++++++++++++++++++++++++++++++-
+ 7 files changed, 829 insertions(+), 15 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_lower_gate_error_count_than_claim_still_lands` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_masked_self_introduced_error_in_own_scope_still_refuses_via_identity` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel::test_error_findings_round_trips_through_a_done_report_body` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_done_report_claims.py::TestDoneReportClaimsModel::test_measured_empty_error_findings_differs_from_none` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_gate_findings.py::TestCheckGateFindingsFn::test_parses_multiple_findings_from_errors_section` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_gate_findings.py::TestCheckGateFindingsFn::test_refused_spawn_returns_none_not_empty_set` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_gate_findings.py::TestCheckGateFindingsFn::test_unparsable_output_returns_none` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_gate_findings.py::TestCheckGateFindingsFn::test_no_errors_heading_with_parsable_summary_is_measured_empty` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_gate_findings.py::TestCheckGateFindingsFn::test_spawn_kwargs_capture_output_text_and_no_check` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree::test_uses_tree_venv_python_when_present` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree::test_falls_back_to_sys_executable_when_no_tree_venv` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree::test_check_gate_findings_fn_spawns_the_tree_venv_python` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ticket_runner_gate_findings.py::TestPythonForTree::test_check_gates_summary_fn_spawns_the_tree_venv_python` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 13 passed (from 13 evidence id(s))
+- gates: 0 error(s), 1214 warning(s), 210 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0847 -->
 ```yaml
@@ -5314,3 +5711,48 @@ threat: null
 component: null
 ```
 T-0605 (recommender phase 2) closed having worked its 6 mandated rows; 41 other patterns.yaml rows (DDD-II-*, RELEASEIT-*, and friends) still carried disposition deferred:T-0605 and became REG003 errors the moment it closed (deferral to a closed ticket is not a real deferral -- the registry analogue of WAIVE006). Those 41 rows are re-pointed here. For each: implement a high-precision detector, or record a reasoned not-checkable/out-of-scope disposition, per the same noise mandate as T-0605. Keep the reconciliation pin test green.
+
+<!-- ticket:T-0850 -->
+```yaml
+id: T-0850
+title: 'land: gate-state ClaimDivergence still vulnerable to WAIVE004 scoped-run flakiness
+  (needs finding-identity comparison)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/gates/**
+- src/frob/check.py
+- src/frob/app/ticket_runner.py
+- src/frob/tickets/_land.py
+threat: null
+component: null
+```
+T-0846 fixed land's ClaimDivergence gate-state check to refuse only on an
+INCREASE in error count (real_errors > claims.gate_errors), which closes
+the dominant failure mode (main-side fixes/drift lowering the count between
+done-report time and post-merge land time). It does not close the WAIVE004
+half of the same ticket: a frob:waive directive that self-declares
+"known-flaky for diff-scoped rules" (per frob.gates's WAIVE004 doc) still
+counts toward the scoped-run error total either way, so a flaky WAIVE004
+appearing between done-report time and land time can still push the count
+up and cause a false refuse.
+
+Closing this soundly needs check_gates() to expose per-finding identity
+(rule id + location), not just an (errors, warnings, waived) int triple,
+so land can exclude findings whose rule self-declares scoped-run flakiness
+from the comparison set. That requires touching src/frob/gates/** and/or
+src/frob/check.py (the check-summary parsing) and the check_gates callable
+built in src/frob/app/ticket_runner.py -- all outside T-0846's declared
+scope (src/frob/tickets/_land.py, src/frob/tickets/**).
+
+Plan: extend the check-summary parse to carry a frozenset of (rule_id,
+location) finding identities alongside the int counts (or replace the int
+triple with a richer type), thread it through check_gates's return type,
+and have _reverify_done_report_claims_post_merge compare the SET difference
+(post-merge findings minus pre-merge claimed findings, minus any rule id
+in frob.gates's known-flaky-for-diff-scoped-rules set) instead of a raw
+count increase.
