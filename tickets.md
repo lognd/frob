@@ -5541,6 +5541,9 @@ kind: feature
 origin: human
 created: '2026-07-22'
 priority: high
+blocked_by:
+- T-0864
+- T-0865
 parent: null
 scope:
 - src/frob/**
@@ -5554,7 +5557,6 @@ threat: null
 component: null
 ```
 User directive 2026-07-22: T-0732's shared CARGO_TARGET_DIR fix lives in THIS repo's Makefile -- wrong layer; fix ALL repos structurally. frob.toml [natives] already declares the native crates (load_natives); the build logic belongs in frob: a "frob natives build" subcommand that does what make core does (maturin develop per declared native) WITH the shared-cache mechanism (git-common-dir keyed CARGO_TARGET_DIR, cargo's own locking -- T-0732's verified design) built in. Every repo's Makefile core target becomes "uv run frob natives build" -- one line, zero per-repo cache logic, upgraded by upgrading frob. Doctor integration: the existing native-staleness fingerprint check points at the new command as remedy. Children: (1) the subcommand + this repo's Makefile shim conversion; (2) scaffold template + conformance drift check; estate rollout via fleet at close.
-
 <!-- ticket:T-0738 -->
 ```yaml
 id: T-0738
@@ -5589,6 +5591,11 @@ kind: security
 origin: human
 created: '2026-07-22'
 priority: high
+blocked_by:
+- T-0866
+- T-0867
+- T-0868
+- T-0869
 parent: null
 scope:
 - src/frob/arch/**
@@ -5602,7 +5609,6 @@ threat: null
 component: null
 ```
 User mandate 2026-07-22: statically enforce system state protocols -- the *_init-never-called / *_deinit-never-called class, and generally functions valid only in particular states (TCP-handshake-style machines), plus cleanup-on-all-paths. Frame: TYPESTATE over the call graph, restricted to two decidable fragments: (a) module/subsystem protocols (the object is a singleton subsystem -- reachability + summaries suffice, no alias analysis); (b) declared object protocols checked at summary granularity. DELIBERATE DECISIONS: declared protocols with name-pattern-inferred init/deinit convenience (inference ONLY for the common pair, never for general machines); per-function summary fixpoint engine shared with the T-0686 may-raise engine (one engine, three clients: exceptions, capabilities, protocols -- no-duplication); language excuses are recorded DISCHARGES naming their mechanism (Rust Drop unless mem::forget observed; C++ RAII only when init result held by destructor-bearing object; Python with-blocks, GC finalizers NEVER count; TS using/try-finally), per T-0383 caught_by doctrine. LIMITS declared: no aliased per-object heap typestate (Rust owns that); concurrent establishment races belong to T-0693 family; dynamic dispatch = Unknown fail-closed (T-0339). Children: declaration surface, summary engine, state-requirement verification + excuses, cleanup obligations. Umbrella closes when children close.
-
 <!-- ticket:T-0740 -->
 ```yaml
 id: T-0740
@@ -8809,3 +8815,182 @@ Remedy: either (1) add/strengthen an adversarial test bound as T-0755 evidence t
 
 ## Drop reason
 - 2026-07-23: Fully resolved by T-0844 rework: new adversarial tests in tests/test_ticket_land.py (TestCloseSkipMutationEvidenceCliWiring, TestCloseMutationEvidenceForTicket, TestCloseFailureHintMutationEvidence, TestCloseSkipMutationEvidenceBypass) were bound as T-0755 evidence, covering the confirmatory-only lines this draft named in config.py/ticket_runner.py. test_self_check_t0755_own_diff_zero_error_findings now passes (verified by direct rerun). No residual gap.
+
+<!-- ticket:T-0864 -->
+```yaml
+id: T-0864
+title: 'natives build subcommand: frob-owned maturin develop per [natives] crate with
+  git-common-dir shared CARGO_TARGET_DIR'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-23'
+priority: high
+parent: T-0735
+scope:
+- src/frob/app/natives_runner.py
+- src/frob/natives/**
+- src/frob/__main__.py
+- Makefile
+- docs/modules/cli.md
+- tests/unit/test_natives_build.py
+acceptance:
+- text: GIVEN a frob-enabled repo with [natives] declared WHEN `uv run frob natives
+    build` runs THEN each declared native crate compiles via maturin develop into
+    the active venv using a git-common-dir-keyed shared CARGO_TARGET_DIR
+  evidence: []
+- text: GIVEN two worktrees of the same clone WHEN both run `frob natives build` THEN
+    they share one cargo target dir and concurrent builds are safe via cargo's own
+    locking
+  evidence: []
+- text: GIVEN this repo WHEN `make core` runs THEN it is a one-line shim delegating
+    to `uv run frob natives build` with no cache logic left in the Makefile
+  evidence: []
+threat: null
+component: natives
+```
+T-0735 child 1 (the subcommand). Implement `frob natives build`: read frob.toml [natives] (load_natives already declares the native crates), run the maturin-develop-per-declared-native sequence that `make core` does today, WITH the shared-cache mechanism built in (git-common-dir keyed CARGO_TARGET_DIR so all worktrees of a clone share one cargo target dir; rely on cargo's own locking for concurrency -- T-0732's verified design). Convert THIS repo's Makefile `core` target to the one-line shim `uv run frob natives build`, removing the cache logic from the Makefile. Doctor integration: the existing native-staleness fingerprint check must point at `frob natives build` as its remedy text.
+
+<!-- ticket:T-0865 -->
+```yaml
+id: T-0865
+title: 'natives build estate conformance: scaffold Makefile shim template + drift
+  check for per-repo cache logic'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-23'
+priority: high
+blocked_by:
+- T-0864
+parent: T-0735
+scope:
+- src/frob/scaffold/**
+- tests/unit/test_scaffold_natives_shim.py
+acceptance:
+- text: GIVEN a scaffolded frob-enabled repo WHEN `frob scaffold apply` runs THEN
+    the Makefile core target is the one-line `uv run frob natives build` shim
+  evidence: []
+- text: GIVEN a repo whose Makefile core target contains its own native-build cache
+    logic WHEN the conformance check runs THEN it reports the drift naming the shim
+    as the remedy
+  evidence: []
+threat: null
+component: natives
+```
+T-0735 child 2 (estate conformance). Scaffold template: `frob scaffold apply` emits/updates the Makefile `core` target as the one-line `uv run frob natives build` shim in adopter repos. Add a conformance drift check that flags a frob-enabled repo whose Makefile core target carries its own native-build/cache logic instead of the shim (the drift that motivated the parent: per-repo cache hacks at the wrong layer). Estate rollout of the shim across sibling repos happens via fleet at parent close, not in this ticket.
+<!-- ticket:T-0866 -->
+```yaml
+id: T-0866
+title: 'typestate declaration surface: module/object protocol declarations + init/deinit
+  pair inference'
+state: queued
+kind: security
+origin: human
+created: '2026-07-23'
+priority: high
+parent: T-0739
+scope:
+- src/frob/graph/dsl.py
+- src/frob/arch/_typestate.py
+- docs/design/typestate.md
+- tests/unit/test_typestate.py
+acceptance:
+- text: GIVEN a module declaring an explicit protocol (states, transitions, per-function
+    state requirements) WHEN the declaration is parsed THEN the model exposes the
+    machine to downstream checks with source locations
+  evidence: []
+- text: GIVEN a module with foo_init/foo_deinit and no explicit declaration WHEN inference
+    runs THEN the init/deinit pair protocol is inferred, and no inference happens
+    for any non-pair machine
+  evidence: []
+threat: null
+component: arch
+```
+T-0739 child 1 (declaration surface). The typestate declaration surface: how a protocol is declared for (a) module/subsystem singleton protocols and (b) declared object protocols. Includes the name-pattern-inferred init/deinit convenience pair (inference ONLY for the common *_init/*_deinit pair, never for general machines) and the explicit declared-state-machine form (states, transitions, functions-valid-in-state). Deliverable: the parsed declaration model + directives/DSL wiring, consumed by the verification child. No enforcement in this ticket.
+
+<!-- ticket:T-0867 -->
+```yaml
+id: T-0867
+title: shared per-function summary fixpoint engine over the resolved call graph (protocol/may-raise/capability
+  clients)
+state: queued
+kind: security
+origin: human
+created: '2026-07-23'
+priority: high
+parent: T-0739
+scope:
+- src/frob/graph/**
+- src/frob/arch/_summaries.py
+- tests/unit/test_summaries.py
+acceptance:
+- text: GIVEN a call graph with cycles WHEN the summary fixpoint runs THEN it terminates
+    with sound summaries and per-function results are queryable
+  evidence: []
+- text: GIVEN a call through dynamic dispatch WHEN summaries are computed THEN the
+    summary records Unknown fail-closed rather than assuming any resolution
+  evidence: []
+threat: null
+component: graph
+```
+T-0739 child 2 (the engine). Per-function summary fixpoint engine over the call graph, shared by design with the T-0685/T-0686 may-raise analysis and the capability analysis (one engine, three clients -- no-duplication mandate). Computes per-function summaries (calls-observed, states-required/established/destroyed) to a fixpoint over the resolved call graph; dynamic dispatch is Unknown and fail-closed per T-0339 doctrine. This ticket delivers the engine + the protocol client's summary shape; the verification rules live in child 3.
+
+<!-- ticket:T-0868 -->
+```yaml
+id: T-0868
+title: typestate state-requirement verification + recorded language-excuse discharges
+state: queued
+kind: security
+origin: human
+created: '2026-07-23'
+priority: high
+blocked_by:
+- T-0866
+- T-0867
+parent: T-0739
+scope:
+- src/frob/arch/_typestate.py
+- src/frob/gates/**
+- tests/unit/test_typestate.py
+acceptance:
+- text: GIVEN a fixture calling a state-requiring function with no path establishing
+    that state WHEN frob check runs THEN the typestate violation fires naming the
+    function, the required state, and the witness path
+  evidence: []
+- text: GIVEN a fixture whose deinit obligation is discharged by a recorded language
+    mechanism (Rust Drop, C++ RAII holder, Python with-block) WHEN frob check runs
+    THEN the obligation is discharged with the mechanism named, and a GC-finalizer-only
+    fixture is NOT discharged
+  evidence: []
+threat: null
+component: arch
+```
+T-0739 child 3 (verification + excuses). State-requirement verification: a function valid only in state S must be unreachable on paths where S is not established (init-never-called class; TCP-handshake-style ordering). Language excuses are recorded DISCHARGES naming their mechanism per T-0383 caught_by doctrine: Rust Drop unless mem::forget observed; C++ RAII only when the init result is held by a destructor-bearing object; Python with-blocks count, GC finalizers NEVER count; TS using/try-finally. Declared LIMITS (no aliased per-object heap typestate; concurrency races belong to the T-0693 family) documented, not silently absorbed.
+<!-- ticket:T-0869 -->
+```yaml
+id: T-0869
+title: typestate cleanup-on-all-paths obligation (deinit-never-called generalized)
+state: queued
+kind: security
+origin: human
+created: '2026-07-23'
+priority: high
+blocked_by:
+- T-0868
+parent: T-0739
+scope:
+- src/frob/arch/_typestate.py
+- tests/unit/test_typestate.py
+acceptance:
+- text: GIVEN a fixture establishing a state then returning early on one branch without
+    cleanup WHEN frob check runs THEN the cleanup-on-all-paths violation fires naming
+    the leaking path
+  evidence: []
+- text: GIVEN a fixture releasing on every path or transferring ownership WHEN frob
+    check runs THEN no violation fires
+  evidence: []
+threat: null
+component: arch
+```
+T-0739 child 4 (cleanup-on-all-paths). The *_deinit-never-called class generalized: every path leaving an established state (normal return, early return, raise/throw) must destroy/release it or hand ownership off, with the child-3 excuse discharges applying. Fixture set covers early-return leaks, exception-path leaks, and conditional-establishment joins.
