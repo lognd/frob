@@ -22,10 +22,10 @@ Four detectors, one shared per-function call scan:
   construction or a `threading.Thread(...).start()` pair (the T-0265 field
   bug's exact shape: forking while a sibling thread may hold an
   interpreter-internal lock).
-- `fork-after-threads`: an explicit `os.fork()` (or a `fork`-start-method
+- `fork-after-threads`: an explicit fork syscall (or a `fork`-start-method
   context/`set_start_method`) reachable AFTER a `Thread(...).start()` on
   the same function's source-line order.
-- `pipe-wait-deadlock`: a `subprocess.Popen(...)` constructed with a `PIPE`
+- `pipe-wait-deadlock`: a `Popen` construction with a `PIPE`
   stdout/stderr, followed by a bare `.wait()` with no `.communicate()`
   anywhere in the function -- the classic pipe-fill-then-wait deadlock on
   unbounded output.
@@ -52,8 +52,8 @@ from frob.logging import get_logger
 
 _log = get_logger(__name__)
 
-#: Construction of a CPU-forking pool: `ProcessPoolExecutor(...)`,
-#: `multiprocessing.Pool(...)`, `mp.Pool(...)` -- deliberately excludes
+#: Construction of a CPU-forking pool: `ProcessPoolExecutor`, or a
+#: `Pool` from `multiprocessing` (any alias) -- deliberately excludes
 #: `ThreadPool` (its last dotted segment is `ThreadPool`, not `Pool`, so it
 #: never matches this pattern).
 _PROCESS_POOL_CTOR_RE = re.compile(r"(?:^|\.)(?:ProcessPoolExecutor|Pool)$")
@@ -222,7 +222,7 @@ def _check_pool_inside_pool(
 def _check_pipe_wait(
     rel: str, fqname: str, calls: list[tuple[str, str, int]], out: list[ArchSuggestion]
 ) -> None:
-    """`pipe-wait-deadlock`: a `Popen(..., stdout=PIPE, ...)` (or stderr)
+    """`pipe-wait-deadlock`: a `Popen` with `stdout=PIPE` (or stderr)
     followed by a bare `.wait()` with no `.communicate()` anywhere in the
     same function -- unbounded child output fills the pipe buffer and both
     processes block forever."""
