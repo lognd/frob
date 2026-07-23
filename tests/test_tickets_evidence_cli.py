@@ -428,6 +428,75 @@ class TestDoneReportCli:
         assert exc.value.code == 1
 
 
+# frob:ticket T-0805
+class TestRunEvidenceCommandNoShell:
+    """`_run_evidence_command` must spawn `cmd:` evidence as an argv, never
+    through a shell (T-0805): ticket YAML is repo-writable, so a string
+    handed to `shell=True` is injection-adjacent. Shell metacharacters
+    (`;`, `$()`, backticks, `|`, `>`) in a crafted evidence command must be
+    treated as literal argv characters, not interpreted."""
+
+    def test_shell_metacharacters_do_not_reach_a_shell(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_tickets_evidence_cli.py::TestRunEvidenceCommandNoShell.test_shell_metacharacters_do_not_reach_a_shell  # noqa: E501
+        from frob.tickets import run_cmd_evidence
+
+        marker = tmp_path / "shell_ran"
+        # If this string ever reached a shell, `;` would sequence a second
+        # command that touches `marker`. Passed as a single argv to
+        # `printf`, the whole thing is inert literal text instead.
+        crafted = f"printf hi; touch {marker}"
+        result = run_cmd_evidence(crafted)
+        assert result.is_ok
+        assert not marker.exists()
+
+    def test_command_substitution_is_not_expanded(self) -> None:
+        # frob:tests tests/test_tickets_evidence_cli.py::TestRunEvidenceCommandNoShell.test_command_substitution_is_not_expanded  # noqa: E501
+        #
+        # T-0805 review round 1 (reviewer): the original version of this
+        # test asserted "$(whoami)" appeared in the *returned evidence
+        # string*, which is built from the caller-supplied command text
+        # verbatim regardless of how (or whether) it was executed -- that
+        # assertion passed identically under the old `shell=True` code and
+        # never actually observed the child process. This version instead
+        # inspects the CHILD'S OWN STDOUT via `_run_evidence_command`
+        # directly: under argv execution `printf` receives the literal
+        # 2-element argv `["printf", "$(whoami)"]` and echoes that text
+        # back unexpanded; under a shell, `$(whoami)` would be substituted
+        # BEFORE printf ever ran and stdout would be the real username
+        # instead. Asserting the literal string on stdout -- and asserting
+        # the actual username is NOT what came back -- can only pass
+        # against genuine no-shell argv execution.
+        import getpass
+
+        from frob.tickets import _run_evidence_command
+
+        result = _run_evidence_command("printf $(whoami)")
+        assert result.is_ok
+        stdout = result.danger_ok.stdout
+        assert stdout == "$(whoami)"
+        assert stdout != getpass.getuser()
+
+    def test_malformed_quoting_fails_cleanly_instead_of_shelling_out(self) -> None:
+        # frob:tests tests/test_tickets_evidence_cli.py::TestRunEvidenceCommandNoShell.test_malformed_quoting_fails_cleanly_instead_of_shelling_out  # noqa: E501
+        from frob.tickets import TicketError, run_cmd_evidence
+
+        result = run_cmd_evidence("printf 'unbalanced")
+        assert result.is_err
+        assert result.danger_err == TicketError.EvidenceCmdFailed
+
+    def test_exec_kill_switch_stops_evidence_commands(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_tickets_evidence_cli.py::TestRunEvidenceCommandNoShell.test_exec_kill_switch_stops_evidence_commands  # noqa: E501
+        from frob.process._guard import EXEC_KILL_SWITCH_ENV
+        from frob.tickets import TicketError, run_cmd_evidence
+
+        monkeypatch.setenv(EXEC_KILL_SWITCH_ENV, "1")
+        result = run_cmd_evidence("printf ok")
+        assert result.is_err
+        assert result.danger_err == TicketError.EvidenceCmdFailed
+
+
 class TestLogEvidenceResultRemedy:
     """`_log_evidence_result`'s failure-path remedy text (T-0445, T-0292
     sibling): must not point at the nonexistent `frob test --collect`

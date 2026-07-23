@@ -13,6 +13,7 @@ import fnmatch
 import getpass
 import hashlib
 import re
+import shlex
 import subprocess
 import tomllib
 from collections.abc import Sequence
@@ -23,6 +24,7 @@ from typani.result import Err, Ok, Result
 
 from frob.excludes import is_test_file
 from frob.logging import get_logger
+from frob.process._guard import guarded_subprocess_run
 from frob.tickets._land import land, splice_ledger
 from frob.tickets._leases import read_all_leases
 from frob.tickets._models import (
@@ -2325,8 +2327,9 @@ def _append_evidence_and_write(
 # frob:tests tests/test_tickets_cmd_evidence.py::TestCmdEvidence.test_exit_zero
 # frob:tests tests/test_tickets_cmd_evidence.py::TestCmdEvidence.test_nonzero_exit
 def run_cmd_evidence(command: str) -> Result[str, TicketError]:
-    """Run `command` through the shell and fold its outcome into one evidence
-    string (`cmd:<command> exit=0 sha256=<12-hex>`) -- the non-pytest
+    """Run `command` as an argv (no shell, T-0805) and fold its outcome
+    into one evidence string (`cmd:<command> exit=0 sha256=<12-hex>`) --
+    the non-pytest
     evidence primitive `add_cmd_evidence` records for docs/design tickets
     (T-0215). A nonzero exit or a command that fails to launch at all is
     Err(EvidenceCmdFailed): a broken or never-run command can never
@@ -2390,12 +2393,44 @@ def reverify_cmd_evidence(entry: str) -> Result[bool, TicketError]:
 def _run_evidence_command(
     command: str,
 ) -> Result[subprocess.CompletedProcess, TicketError]:
-    """Spawn `command` through the shell; `Err(EvidenceCmdFailed)` if it
-    fails to launch or exits nonzero."""
+    """Spawn `command` as an argv (never through a shell) and return its
+    completed process; `Err(EvidenceCmdFailed)` if it fails to parse, fails
+    to launch, or exits nonzero.
+
+    T-0805: previously ran `command` with `shell=True` -- ticket YAML
+    (`cmd:` evidence entries) is repo-writable by any agent/tool, so a
+    string handed to a shell is an injection-adjacent surface, not a
+    hardened one, even though evidence commands are a sanctioned feature
+    (T-0215). A survey of every `cmd:` entry actually recorded in
+    `tickets.md`/`tickets-archive.md` at the time of this fix found five
+    distinct commands; four are plain argv (`grep -n ...`, `grep -q ...`,
+    `python3 <script>`, `uv run frob check --only docblocks`) and parse
+    unchanged under `shlex.split`. Exactly one (an already-closed,
+    archived ticket's evidence, `test "$(grep -c ...)" = N && test ...`)
+    relies on shell command substitution and `&&` sequencing and cannot be
+    expressed as a single argv; that entry is dead (its ticket is `done`,
+    nothing re-verifies it live) and is the documented migration case --
+    future evidence needing multi-step or substitution logic should shell
+    out to a checked-in script (`cmd:python3 <script>` or
+    `cmd:bash <script>`) invoked as a single argv entry instead of relying
+    on inline shell syntax.
+
+    Routed through `guarded_subprocess_run` (T-0778) so `FROB_DISABLE_EXEC`
+    stops evidence commands too, not just `frob check`'s own tool runners.
+    """
     try:
-        completed = subprocess.run(
-            command,
-            shell=True,  # noqa: S602 -- caller-supplied vetted command, T-0215
+        argv = shlex.split(command)
+    except ValueError as exc:
+        _log.error(
+            "tickets: evidence command %r failed to parse as argv: %s", command, exc
+        )
+        return Err(TicketError.EvidenceCmdFailed)
+    if not argv:
+        _log.error("tickets: evidence command %r parsed to an empty argv", command)
+        return Err(TicketError.EvidenceCmdFailed)
+    try:
+        guarded = guarded_subprocess_run(
+            argv,
             capture_output=True,
             text=True,
             check=False,
@@ -2403,6 +2438,12 @@ def _run_evidence_command(
     except OSError as exc:
         _log.error("tickets: evidence command %r failed to launch: %s", command, exc)
         return Err(TicketError.EvidenceCmdFailed)
+    if guarded.is_err:
+        _log.error(
+            "tickets: evidence command %r refused: %s", command, guarded.danger_err
+        )
+        return Err(TicketError.EvidenceCmdFailed)
+    completed = guarded.danger_ok
     if completed.returncode != 0:
         _log.warning(
             "tickets: evidence command %r exited %d (stderr tail: %r)",
