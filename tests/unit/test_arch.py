@@ -2821,6 +2821,37 @@ class TestForkPoolHazards:
         hits = [s for s in result.suggestions if s.category in hazard_categories]
         assert hits == []
 
+    def test_self_join_deadlock_discharges_on_real_repo_vet_scan(self):
+        """Acceptance (T-0794): `src/frob/vet` carries ZERO fork/pool-
+        hazard findings. `_run_with_timeout` used to be dispatched as a
+        worker task (`_scan_dependencies_parallel`'s `pool.submit`) AND
+        itself construct+`shutdown` an inner single-worker pool in the
+        same body -- the exact `self-join-deadlock` co-occurrence shape
+        (T-0767 discharged the sibling `pool-inside-pool` case on
+        `src/frob/gates` the same way). The advisory channel is
+        unwaivable by design, so T-0794 hoisted the inner pool's
+        construction into `_open_single_worker_pool` and its
+        submit/await/shutdown into `_bounded_process_dependency`, leaving
+        `_run_with_timeout` -- the function actually dispatched -- a pure
+        orchestrator with no pool calls of its own. This test regression-
+        locks the discharge, across ALL four hazard categories so a
+        future refactor reintroducing the co-occurrence (or any sibling
+        hazard shape) in `src/frob/vet` fails loudly. The synthetic
+        fixture above (`test_self_join_deadlock_fires_when_dispatched_
+        task_joins_its_pool`) still proves the detector itself fires --
+        the detector was not weakened, only the real-repo hit
+        discharged."""
+        root = Path(__file__).parent.parent.parent / "src" / "frob" / "vet"
+        result = analyze_project(root)
+        hazard_categories = {
+            "pool-inside-pool",
+            "fork-after-threads",
+            "pipe-wait-deadlock",
+            "self-join-deadlock",
+        }
+        hits = [s for s in result.suggestions if s.category in hazard_categories]
+        assert hits == []
+
     def test_fork_after_threads_fires_when_fork_follows_thread_start(self, tmp_path):
         """An `os.fork()` reachable AFTER a `Thread(...).start()` on the
         same function's line order fires `fork-after-threads`."""

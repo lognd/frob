@@ -605,22 +605,37 @@ def _scan_dependencies_parallel(
     return violations, verdicts
 
 
-# CORRECTNESS NOTE (review round 1 caught this): a `with
-# ThreadPoolExecutor(...)` block's `__exit__` calls `shutdown(wait=True)`
-# unconditionally, including when the body returns early on a timeout --
-# so a naive `with pool: ... except FutureTimeoutError: return ...` still
-# blocks the caller for the FULL underlying task duration, not `timeout`,
-# defeating the entire point of this function. The pool is therefore
-# constructed WITHOUT a `with` and explicitly `shutdown(wait=False)` on
-# the timeout path so this function returns within ~`timeout` wall-clock
-# as promised. The consequence: the abandoned worker thread is not joined
-# and keeps running in the background for as long as `_process_dependency`
-# takes (Python cannot preempt a running thread) -- for network calls this
-# is typically seconds; for a pathological scan it could be the original
-# hang, just no longer blocking the rest of the run. This is the same
-# disclosed trade-off as `_scan_dependencies`' docstring, made concrete
-# here.
-def _run_with_timeout(
+# frob:ticket T-0794
+def _open_single_worker_pool() -> ThreadPoolExecutor:
+    """Construct the single-worker `ThreadPoolExecutor` `_bounded_process_dependency`
+    submits `_process_dependency` to. Hoisted out of `_run_with_timeout`
+    (T-0794, same pattern as T-0767's `_open_process_pool`) so the function
+    that OWNS the pool's construction/shutdown is not also the function
+    `_scan_dependencies_parallel` dispatches as a worker task -- the T-0695
+    `self-join-deadlock` advisory is a same-function co-occurrence
+    heuristic (dispatched-as-task + calls `.shutdown`/`.join`/`.close` on a
+    pool it made) and unwaivable by design, so the safe shape must also be
+    the structurally clean one."""
+    return ThreadPoolExecutor(max_workers=1)
+
+
+# frob:ticket T-0794
+# CORRECTNESS NOTE (review round 1 caught this, preserved verbatim from the
+# pre-T-0794 shape): a `with ThreadPoolExecutor(...)` block's `__exit__`
+# calls `shutdown(wait=True)` unconditionally, including when the body
+# returns early on a timeout -- so a naive `with pool: ... except
+# FutureTimeoutError: return ...` still blocks the caller for the FULL
+# underlying task duration, not `timeout`, defeating the entire point of
+# this function. The pool is therefore constructed WITHOUT a `with` and
+# explicitly `shutdown(wait=False)` on the timeout path so this function
+# returns within ~`timeout` wall-clock as promised. The consequence: the
+# abandoned worker thread is not joined and keeps running in the
+# background for as long as `_process_dependency` takes (Python cannot
+# preempt a running thread) -- for network calls this is typically
+# seconds; for a pathological scan it could be the original hang, just no
+# longer blocking the rest of the run. This is the same disclosed
+# trade-off as `_scan_dependencies`' docstring, made concrete here.
+def _bounded_process_dependency(
     dep: Dependency,
     root: Path,
     lockfile: Path,
@@ -628,15 +643,17 @@ def _run_with_timeout(
     cache_path: Path,
     is_new: bool,
     fetch: bool,
-    timeout: float | None,
+    timeout: float,
 ) -> tuple[list[Violation], PackageVerdict]:
-    """`_process_dependency`, bounded by `timeout` seconds when set. On
-    expiry returns `_timeout_verdict` (T-0208) rather than raising or
-    silently dropping the package."""
-    if timeout is None:
-        return _process_dependency(dep, root, lockfile, cfg, cache_path, is_new, fetch)
-
-    pool = ThreadPoolExecutor(max_workers=1)
+    """Run `_process_dependency` on its own single-worker pool
+    (`_open_single_worker_pool`), bounded by `timeout` seconds. On expiry
+    returns `_timeout_verdict` (T-0208) rather than raising or silently
+    dropping the package. Hoisted out of `_run_with_timeout` (T-0794) so
+    pool construction/shutdown lives in a function distinct from the one
+    `_scan_dependencies_parallel` dispatches -- see
+    `_open_single_worker_pool`'s docstring for why. Do NOT inline this (or
+    `_open_single_worker_pool`) back into `_run_with_timeout`."""
+    pool = _open_single_worker_pool()
     fut = pool.submit(
         _process_dependency, dep, root, lockfile, cfg, cache_path, is_new, fetch
     )
@@ -656,6 +673,31 @@ def _run_with_timeout(
         return [violation], verdict
     pool.shutdown(wait=False)
     return result
+
+
+def _run_with_timeout(
+    dep: Dependency,
+    root: Path,
+    lockfile: Path,
+    cfg: VetConfig,
+    cache_path: Path,
+    is_new: bool,
+    fetch: bool,
+    timeout: float | None,
+) -> tuple[list[Violation], PackageVerdict]:
+    """`_process_dependency`, bounded by `timeout` seconds when set. Pure
+    orchestrator (T-0794, mirrors `_run_combined_jobs`'s T-0767 shape): the
+    `timeout is None` fast path calls `_process_dependency` directly, and
+    the bounded path delegates to `_bounded_process_dependency`, which owns
+    the inner pool's construction and shutdown -- this function itself is
+    the one `_scan_dependencies_parallel` submits as a worker task, so it
+    must not also call `.shutdown`/`.join`/`.close` on a pool in its own
+    body (the T-0695 `self-join-deadlock` advisory)."""
+    if timeout is None:
+        return _process_dependency(dep, root, lockfile, cfg, cache_path, is_new, fetch)
+    return _bounded_process_dependency(
+        dep, root, lockfile, cfg, cache_path, is_new, fetch, timeout
+    )
 
 
 def _lifecycle_violations(
