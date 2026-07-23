@@ -301,5 +301,7 @@ entries:
     disposition: "deferred:T-0721"
     cross_refs: []
 total: 41
-total_per_source_doc_TOTAL_field: 39  # mismatch: source doc's own denominator_manifest.TOTAL says
-  # 39 but its own entries: list has 41 unique ids (verified, no duplicates) -- see RECONCILIATION.md
+total_per_source_doc_TOTAL_field: 41  # T-0676: fixed. Source doc's own denominator_manifest.TOTAL
+  # previously said 39 while its own entries: list had 41 unique ids (verified,
+  # no duplicates) -- recounted and corrected in supply-chain-corpus.md; both
+  # now agree at 41. See RECONCILIATION.md finding (g).

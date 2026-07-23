@@ -786,27 +786,28 @@ denominator_manifest:
     - {id: detection-unpinned-ci-action,       class: [detection],         checkability: [statically-detectable]}
     - {id: detection-opaque-binary-artifact,   class: [detection],         checkability: [statically-detectable]}
     - {id: detection-osv-advisory-match,       class: [detection],         checkability: [requires-external-data]}
-  TOTAL: 39
+  TOTAL: 41
   totals_by_class:
     attack: 16
     defense: 9
-    detection: 16
+    detection: 19
     # note: entries with dual class tags counted once per class list above,
-    # so class subtotals sum to more than TOTAL (39) by the number of
-    # dual-tagged entries (2: openssf-scorecard, osv; native-extension-opacity
-    # dual-tagged attack+detection also counts in both).
+    # so class subtotals sum to more than TOTAL (41) by the number of
+    # dual-tagged entries (3: attack-native-extension-opacity [attack+
+    # detection], defense-openssf-scorecard [defense+detection],
+    # defense-osv [defense+detection]).
   totals_by_checkability:
-    statically-detectable_only: 8
-    requires-external-data_only: 15
+    statically-detectable_only: 11
+    requires-external-data_only: 16
     mixed_static_and_external: 9
     process-only: 2
-    advisory_component: 4
+    advisory_component: 3
   sourcing_honesty:
-    fully_primary_sourced: 36
+    fully_primary_sourced: 38
     partial_flagged: 3   # attack-cache-poisoning, defense-in-toto, defense-capability-sandboxing
   frob_vet_reconciliation:
-    implemented: 10   # D4 D5 D6 D7 D10 D11 D12 D13 D16, plus 1.7/1.8 partial python side
-    partial: 3        # attack-maintainer-takeover/protestware (capability-diff missing), attack-native-extension-opacity, attack-unpinned-dependencies (npm-only)
-    not_implemented_gap: 22
-    out_of_scope_by_design: 4   # defense-slsa, defense-sigstore-cosign, defense-reproducible-builds, defense-capability-sandboxing (different tool class, named not hidden)
+    implemented: 11   # attack-transitive-blindness (implemented-by-design), defense-osv, D4 D5 D6 D7 D10 D11 D12 D13 D16
+    partial: 5         # attack-registry-worm, attack-install-script-abuse, attack-unpinned-dependencies, attack-native-extension-opacity, D1 (maintainer-installhook-net)
+    not_implemented_gap: 19
+    out_of_scope_by_design: 6   # defense-slsa, defense-sigstore-cosign, defense-reproducible-builds, defense-capability-sandboxing (different tool class, named not hidden); attack-build-system-compromise, attack-slopsquatting (structurally out of scope for a source-scanner)
 ```
