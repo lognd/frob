@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.105.0] - unreleased
+
+- T-0796: tickets CLI: --evidence-cmd with --accepts silently records evidence UNBOUND (add_cmd_evidence has no accepts param)
+
 ## [0.104.0] - unreleased
 
 - T-0784: gitio: promote git_common_dir to the single git seam (3 divergent copies) + batch the lease-write double spawn

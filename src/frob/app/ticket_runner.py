@@ -19,6 +19,7 @@ from __future__ import annotations
 import re
 import subprocess
 import sys
+from collections.abc import Sequence
 from datetime import date
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -1470,7 +1471,9 @@ def _close(root: Path, cfg: AppConfig) -> None:
             sys.exit(1)
 
     if cfg.ticket_evidence_cmd:
-        cmd_added = _apply_cmd_evidence(root, cfg.ticket_id, cfg.ticket_evidence_cmd)
+        cmd_added = _apply_cmd_evidence(
+            root, cfg.ticket_id, cfg.ticket_evidence_cmd, cfg.ticket_accepts
+        )
         if cmd_added.is_err:
             sys.exit(1)
 
@@ -1566,7 +1569,9 @@ def _evidence(root: Path, cfg: AppConfig) -> None:
             sys.exit(1)
 
     if cfg.ticket_evidence_cmd:
-        cmd_result = _apply_cmd_evidence(root, cfg.ticket_id, cfg.ticket_evidence_cmd)
+        cmd_result = _apply_cmd_evidence(
+            root, cfg.ticket_id, cfg.ticket_evidence_cmd, cfg.ticket_accepts
+        )
         if cmd_result.is_err:
             sys.exit(1)
 
@@ -2126,17 +2131,27 @@ def _log_evidence_result(ticket_id: str, result) -> None:  # noqa: ANN001
 
 
 # frob:ticket T-0215
+# frob:ticket T-0796
 # frob:tests tests/test_tickets_evidence_cli.py
-def _apply_cmd_evidence(root: Path, ticket_id: str, command: str):
+def _apply_cmd_evidence(
+    root: Path, ticket_id: str, command: str, accepts: Sequence[int] | None = None
+):
     """Run `command` via `frob.tickets.add_cmd_evidence` and append its
     exit-status/digest entry to `ticket_id`'s evidence list -- the
     docs/design-kind non-pytest evidence channel (T-0215). Returns the
     `add_cmd_evidence` Result unchanged so callers (`_close`, `_evidence`)
     can refuse to transition state on failure, the same contract
-    `_apply_evidence` gives pytest-node-id evidence."""
+    `_apply_evidence` gives pytest-node-id evidence.
+
+    `accepts` (T-0796) is threaded straight through to `add_cmd_evidence`
+    so `--accepts` binds cmd evidence onto the named acceptance criteria
+    exactly like it already does for pytest-node evidence via
+    `_apply_evidence` -- before this, both call sites below dropped
+    `cfg.ticket_accepts` for the cmd-evidence path, so a docs-kind ticket
+    closed with `--evidence-cmd` + `--accepts` silently ended up UNBOUND."""
     from frob.tickets import add_cmd_evidence
 
-    result = add_cmd_evidence(root, ticket_id, command)
+    result = add_cmd_evidence(root, ticket_id, command, accepts)
     if result.is_err:
         _log.error(
             "ticket evidence-cmd failed: %s (docs-kind tickets only; code "

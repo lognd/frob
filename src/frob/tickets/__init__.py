@@ -2475,7 +2475,10 @@ def _check_cmd_evidence_kind(
 # frob:tests tests/test_tickets_cmd_evidence.py::TestKindGate.test_docs_kind_closes
 # frob:tests tests/test_tickets_cmd_evidence.py::TestKindGate.test_bug_kind_rejected
 def add_cmd_evidence(
-    root: Path, ticket_id: str, command: str
+    root: Path,
+    ticket_id: str,
+    command: str,
+    accepts: Sequence[int] | None = None,
 ) -> Result[Ticket, TicketError]:
     """Kind-gated non-pytest evidence channel (T-0215): runs `command` via
     `run_cmd_evidence` and appends the resulting entry to `ticket_id`'s
@@ -2485,6 +2488,16 @@ def add_cmd_evidence(
     still require real pytest node ids via `add_evidence`, enforced here
     with Err(EvidenceKindNotAllowed) so a code change can never close on an
     unrelated shell command's exit status alone.
+
+    `accepts` (T-0796) mirrors `add_evidence`'s acceptance-binding: a list
+    of 0-based `ticket.acceptance` indices the recorded cmd-evidence entry
+    is ALSO bound onto, in the same write as the evidence-list append. Its
+    validation is identical to `add_evidence` -- an out-of-range index
+    rejects the whole call (`Err(AcceptanceIndexOutOfRange)`) before
+    anything is written. Before T-0796 this parameter did not exist, so
+    `--accepts` passed alongside `--evidence-cmd` on the CLI was silently
+    dropped and docs-kind tickets closed with UNBOUND acceptance despite
+    the operator's explicit binding request.
     """
     leased = enforce_worktree_lease(root)
     if leased.is_err:
@@ -2498,18 +2511,24 @@ def add_cmd_evidence(
     if kind_check.is_err:
         return Err(kind_check.danger_err)
 
+    if accepts is not None:
+        out_of_range = [i for i in accepts if i < 0 or i >= len(ticket.acceptance)]
+        if out_of_range:
+            _log.warning(
+                "tickets: %s --accepts index/indices out of range %s "
+                "(ticket has %d acceptance item(s))",
+                ticket_id,
+                out_of_range,
+                len(ticket.acceptance),
+            )
+            return Err(TicketError.AcceptanceIndexOutOfRange)
+
     recorded = run_cmd_evidence(command)
     if recorded.is_err:
         return Err(recorded.danger_err)
     entry = recorded.danger_ok
 
-    merged = ticket.evidence if entry in ticket.evidence else ticket.evidence + (entry,)
-    updated = ticket.model_copy(update={"evidence": merged})
-    write_result = write_ticket(root, updated)
-    if write_result.is_err:
-        return Err(write_result.danger_err)
-    _log.info("tickets: %s recorded cmd evidence (%s)", ticket_id, entry)
-    return Ok(updated)
+    return _append_evidence_and_write(root, ticket, ticket_id, (entry,), accepts)
 
 
 # frob:ticket T-0458

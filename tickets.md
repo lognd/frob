@@ -6169,7 +6169,7 @@ tests.
 id: T-0796
 title: 'tickets CLI: --evidence-cmd with --accepts silently records evidence UNBOUND
   (add_cmd_evidence has no accepts param)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-23'
@@ -6181,18 +6181,50 @@ scope:
 - src/frob/app/ticket_runner.py
 - tests/test_tickets_evidence_cli.py
 scope_changes: []
-evidence: []
+evidence:
+- tests/test_tickets_evidence_cli.py::TestCmdEvidenceAcceptsBinding::test_evidence_cmd_with_accepts_binds_acceptance_via_cli
+- tests/test_tickets_evidence_cli.py::TestCmdEvidenceAcceptsBinding::test_close_evidence_cmd_with_accepts_binds_acceptance_via_cli
 attachments: []
 acceptance:
 - text: GIVEN frob ticket evidence T-X --evidence-cmd CMD --accepts 0 WHEN the command
     verifies THEN the cmd evidence is bound to acceptance index 0 exactly like pytest-node
     evidence; a regression test drives the CLI path
-  evidence: []
+  evidence:
+  - tests/test_tickets_evidence_cli.py::TestCmdEvidenceAcceptsBinding::test_evidence_cmd_with_accepts_binds_acceptance_via_cli
+  - tests/test_tickets_evidence_cli.py::TestCmdEvidenceAcceptsBinding::test_close_evidence_cmd_with_accepts_binds_acceptance_via_cli
 threat: null
 component: null
 labels: []
 ```
 Promotion of T-0677's worktree draft 91ef53bd: add_cmd_evidence in frob.tickets has no accepts parameter and both CLI call sites in ticket_runner.py drop cfg.ticket_accepts for cmd evidence, so docs-kind tickets silently end up with UNBOUND acceptance despite the operator passing --accepts (T-0677 worked around via the library add_evidence call). With the T-0763 land preflight now refusing unbound acceptance, this silent drop blocks docs-ticket lands.
+
+## Done report
+
+Threaded `accepts: Sequence[int] | None` through `add_cmd_evidence`
+(src/frob/tickets/__init__.py) using the same 0-based validation and
+Err(AcceptanceIndexOutOfRange) shape as `add_evidence`, then delegated the
+merge/write to the existing `_append_evidence_and_write` helper so cmd
+evidence binds onto named acceptance criteria the same way pytest-node
+evidence does. Wired `cfg.ticket_accepts` through both CLI call sites in
+src/frob/app/ticket_runner.py (`_close`, `_evidence`, via `_apply_cmd_evidence`,
+which gained the same `accepts` parameter). Added a regression test class
+(tests/test_tickets_evidence_cli.py::TestCmdEvidenceAcceptsBinding) driving
+both the `evidence` and `close` CLI subcommands with a docs-kind ticket,
+`--evidence-cmd` and `--accepts 0`, asserting `ticket.acceptance[0].evidence`
+is bound to the recorded cmd: entry.
+
+### Changed
+```
+ src/frob/app/ticket_runner.py      | 25 +++++++++---
+ src/frob/tickets/__init__.py       | 35 +++++++++++++----
+ tests/test_tickets_evidence_cli.py | 79 ++++++++++++++++++++++++++++++++++++++
+ tickets.md                         | 31 +++++++++++++--
+ 4 files changed, 154 insertions(+), 16 deletions(-)
+```
+
+### Evidence
+- `tests/test_tickets_evidence_cli.py::TestCmdEvidenceAcceptsBinding::test_evidence_cmd_with_accepts_binds_acceptance_via_cli` (pytest node id, verified passing when recorded)
+- `tests/test_tickets_evidence_cli.py::TestCmdEvidenceAcceptsBinding::test_close_evidence_cmd_with_accepts_binds_acceptance_via_cli` (pytest node id, verified passing when recorded)
 
 <!-- ticket:T-0797 -->
 ```yaml

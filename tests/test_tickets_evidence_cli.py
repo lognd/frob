@@ -497,6 +497,85 @@ class TestRunEvidenceCommandNoShell:
         assert result.danger_err == TicketError.EvidenceCmdFailed
 
 
+# frob:ticket T-0796
+class TestCmdEvidenceAcceptsBinding:
+    """T-0796 regression: `frob ticket evidence T-X --evidence-cmd CMD
+    --accepts N` must bind the recorded cmd evidence onto acceptance index
+    N exactly like `--evidence <pytest-node-id> --accepts N` already does
+    -- before this fix `add_cmd_evidence` had no `accepts` parameter and
+    both CLI call sites (`_close`, `_evidence`) dropped `cfg.ticket_accepts`
+    for the cmd-evidence path, so a docs-kind ticket's acceptance criterion
+    stayed UNBOUND despite the operator passing `--accepts`."""
+
+    def _seed_docs_ticket_with_acceptance(self, tmp_path: Path) -> None:
+        from frob.tickets import (
+            AcceptanceCriterion,
+            Origin,
+            TicketKind,
+            TicketSpec,
+            new_ticket,
+            transition,
+        )
+
+        new_ticket(
+            tmp_path,
+            TicketSpec(
+                title="docs cmd-evidence subject",
+                kind=TicketKind.DOCS,
+                origin=Origin.AGENT,
+                body="## Description\nx\n\n## Done report\nAll good.\n",
+                acceptance=(
+                    AcceptanceCriterion(text="GIVEN doc WHEN updated THEN linked"),
+                ),
+            ),
+        )
+        transition(tmp_path, "T-0001", TicketState.PLANNED)
+        transition(tmp_path, "T-0001", TicketState.IN_PROGRESS)
+
+    def test_evidence_cmd_with_accepts_binds_acceptance_via_cli(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_evidence_cli.py::TestCmdEvidenceAcceptsBinding.test_evidence_cmd_with_accepts_binds_acceptance_via_cli  # noqa: E501
+        from frob.app.ticket_runner import _evidence
+
+        self._seed_docs_ticket_with_acceptance(tmp_path)
+        cfg = AppConfig(
+            ticket_command="evidence",
+            ticket_id="T-0001",
+            ticket_path=tmp_path,
+            ticket_evidence_cmd="printf ok",
+            ticket_accepts=[0],
+        )
+        _evidence(tmp_path, cfg)
+
+        queue = load_queue(tmp_path).danger_ok
+        ticket = queue.tickets["T-0001"]
+        assert len(ticket.evidence) == 1
+        entry = ticket.evidence[0]
+        assert entry.startswith("cmd:")
+        assert ticket.acceptance[0].evidence == (entry,)
+
+    def test_close_evidence_cmd_with_accepts_binds_acceptance_via_cli(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_evidence_cli.py::TestCmdEvidenceAcceptsBinding.test_close_evidence_cmd_with_accepts_binds_acceptance_via_cli  # noqa: E501
+        self._seed_docs_ticket_with_acceptance(tmp_path)
+        cfg = AppConfig(
+            ticket_command="close",
+            ticket_id="T-0001",
+            ticket_path=tmp_path,
+            ticket_evidence_cmd="printf ok",
+            ticket_accepts=[0],
+        )
+        _close(tmp_path, cfg)
+
+        queue = load_queue(tmp_path).danger_ok
+        ticket = queue.tickets["T-0001"]
+        assert ticket.state == TicketState.DONE
+        entry = ticket.evidence[0]
+        assert ticket.acceptance[0].evidence == (entry,)
+
+
 class TestLogEvidenceResultRemedy:
     """`_log_evidence_result`'s failure-path remedy text (T-0445, T-0292
     sibling): must not point at the nonexistent `frob test --collect`
