@@ -18,6 +18,8 @@ blocked_by:
 - T-0871
 - T-0872
 - T-0873
+- T-0874
+- T-0875
 parent: null
 scope:
 - src/frob/**
@@ -9104,3 +9106,52 @@ threat: null
 component: perf
 ```
 T-0204 child (perf family). gate:PERF reports 24 warnings + 29 waived at 2026-07-23 baseline (recount at start). Fix the unwaived findings; re-audit every standing waiver still holds after the T-0161-era heuristic fixes (drop stale waivers, re-reason keepers). Deliverable: gate:PERF 0 unwaived warnings, all waivers re-verified with current reasons.
+
+<!-- ticket:T-0874 -->
+```yaml
+id: T-0874
+title: 'stale-waiver purge: delete full-run WAIVE004 zero-match waivers, gate:WAIVE
+  to zero (562 baseline)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: T-0204
+scope:
+- src/frob/**
+- tests/**
+- frob.toml
+acceptance:
+- text: GIVEN a full frob check after the purge WHEN gate:WAIVE evaluates THEN it
+    reports zero warnings, and no previously-masked ERROR was introduced (any resurfaced
+    finding is fixed or re-waived with a current reason)
+  evidence: []
+threat: null
+component: gates
+```
+T-0204 child (waive family). gate:WAIVE reports 562 warnings at 2026-07-23 baseline, dominated by WAIVE004 "waiver matches 0 findings this run" from a FULL check (authoritative, unlike scoped-run WAIVE004 flakes -- see T-0846/T-0850 history). A waiver matching nothing in a full run is stale: the underlying finding was fixed or the rule changed. Sweep: for each WAIVE004 in a full run, delete the waiver; where deletion resurfaces a real finding, that finding is the honest state (fix or re-waive with a current reason). Also triage any WAIVE003-class aging warnings. MUST be run against a full (not scoped) check and re-verified with a second full run after the purge. Deliverable: gate:WAIVE 0 warnings.
+
+<!-- ticket:T-0875 -->
+```yaml
+id: T-0875
+title: 'TEST-family warning burn-down: per-symbol coverage campaign, gate:TEST to
+  zero (486 baseline)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: T-0204
+scope:
+- src/frob/**
+- tests/**
+acceptance:
+- text: GIVEN a full frob check at close WHEN gate:TEST evaluates THEN it reports
+    zero warnings, with every resolution a real test or a reasoned per-symbol disposition,
+    never a blanket waiver
+  evidence: []
+threat: null
+component: testing
+```
+T-0204 child (test family). gate:TEST reports 486 warnings at 2026-07-23 baseline, dominated by TEST005 per-symbol no-direct-coverage warnings (plus TEST002/TEST014/TEST011/TEST003/TEST012/TEST006 stragglers). Zero-warnings requires per-symbol test coverage or explicit per-symbol disposition. This is a campaign: recount at start, group by package, and split into per-package sub-tickets if any package exceeds a session (this child is the accounting). Interacts with T-0589 (promote TEST005/TEST015 into TEST001 credit) -- coordinate so written tests satisfy the promoted rule, not just silence the warning.
