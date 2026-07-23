@@ -10,23 +10,24 @@ no code-shape pattern matching, just counting real spawns.
 row's state display re-derived the git common dir through an uncached
 subprocess spawn (`read_all_leases` -> `leases_dir` -> `git_common_dir`),
 so one listing spawned dozens of identical `git rev-parse
---git-common-dir` processes. This test pins the budget NOW as a strict
-xfail: it fails today (documented debt), and the moment T-0773 lands its
-memoization the unexpected pass becomes a hard error demanding the
-marker's removal -- converting this lock into a live regression gate with
-no window where the behavior is silently unprotected.
+--git-common-dir` processes. T-0773 fixed this by memoizing
+`git_common_dir`/`read_all_leases` per resolved path for the process's
+lifetime (`frob.tickets._leases`) and threading one `_all_leases`
+snapshot through `doable`/`doable_blocked`'s per-candidate loop -- this
+test (and `test_ticket_doable_spawns_each_argv_at_most_once` below) is
+now a plain, non-xfail regression lock: a future change that reintroduces
+per-row/per-candidate re-derivation fails it immediately, no window where
+the behavior is silently unprotected.
 
-Every other test in this file is a budget the path ALREADY meets --
-non-xfail, so a future regression is a hard, immediate failure rather
-than a documented one.
+Every test in this file is a budget the path ALREADY meets -- non-xfail,
+so a future regression is a hard, immediate failure rather than a
+documented one.
 """
 
 from __future__ import annotations
 
 import subprocess
 from pathlib import Path
-
-import pytest
 
 from frob.app.config import AppConfig
 from frob.app.ticket_runner import _doable, _list, _show
@@ -54,14 +55,6 @@ def _make_repo_with_tickets(tmp_path: Path, count: int) -> list[str]:
 
 
 # frob:ticket T-0773
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "T-0773 not yet landed: the lease layer re-derives the git common "
-        "dir per ticket row instead of once per invocation. When T-0773 "
-        "lands its memoization this xpasses; remove the marker then."
-    ),
-)
 def test_ticket_list_spawns_each_argv_at_most_once(tmp_path: Path) -> None:
     # frob:tests src/frob/tickets/_leases.py::git_common_dir kind="e2e"
     _make_repo_with_tickets(tmp_path, count=3)
@@ -94,15 +87,6 @@ def test_ticket_show_spawns_each_argv_at_most_once(tmp_path: Path) -> None:
 
 
 # frob:ticket T-0773
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "T-0773 not yet landed: `doable` hits the same per-ticket "
-        "git-common-dir re-derivation as `list` (both walk leases through "
-        "the same unmemoized `git_common_dir` seam). xpasses once T-0773 "
-        "lands its memoization; remove the marker then."
-    ),
-)
 def test_ticket_doable_spawns_each_argv_at_most_once(tmp_path: Path) -> None:
     # frob:tests src/frob/tickets/_leases.py::git_common_dir kind="e2e"
     _make_repo_with_tickets(tmp_path, count=3)

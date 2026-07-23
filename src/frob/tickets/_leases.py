@@ -31,6 +31,7 @@ ledger's own `IN_PROGRESS` rows, to compute collisions.
 from __future__ import annotations
 
 import json
+import threading
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -45,6 +46,65 @@ _log = get_logger(__name__)
 
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
 LEASES_DIRNAME = "frob-leases"
+
+# frob:ticket T-0773
+# Process-lifetime memoization for the two hot, previously-uncached reads
+# on this module's critical path (the 2026-07-22 incident: a single `frob
+# ticket list`/`doable` spawned `git rev-parse --git-common-dir` dozens of
+# times and re-scanned the leases directory once per candidate/ticket row).
+# Keyed by the RESOLVED path so different callers spelling the same
+# worktree differently (relative vs. absolute, symlinked) still share one
+# cache entry. Safe for the reason `git_common_dir`'s own docstring
+# already gives: the shared `.git` common dir cannot move mid-invocation,
+# so caching it for the process's lifetime is never stale within one CLI
+# invocation.
+#
+# `read_all_leases`'s per-file cache (`_lease_file_cache`) is a DIFFERENT
+# shape than a plain "compute once, keep forever" memo: it is keyed by
+# leases directory -> {file path: (stat key, parsed record)} and is
+# re-validated against the CURRENT directory listing + per-file
+# mtime/size on every call (T-0773 round 2 -- the reviewer-caught daemon-
+# blindness bug: `frob.serve`'s `poll_rebase_bot` calls `read_all_leases`
+# in a loop for the DAEMON's entire lifetime, and a lease written or
+# removed by a SIBLING process -- a different worktree's CLI invocation
+# -- is never this process's own `record_lease`/`release_lease` call, so
+# there is no local write event to invalidate on). Only the expensive
+# part (globbing + JSON-parsing a file whose stat is UNCHANGED since the
+# last call) is skipped; the directory's current entry set and every
+# file's current stat are always re-read. This is the same "cache the
+# expensive step, never cache the liveness-relevant step" split
+# `read_all_leases`'s own docstring already argues for the worktree-
+# existence check -- extended here to the lease FILE SET itself.
+#
+# `_cache_lock` (T-0125 precedent, `quiet_stdout_logs`) serializes all
+# three caches' reads/writes: `frob.serve`'s daemon thread and a gate
+# pool's worker processes/threads can call into this module concurrently,
+# and a plain dict has no atomicity guarantee across the
+# read-check-then-write sequences below (CPython's GIL makes a SINGLE
+# dict `__setitem__`/`__getitem__` atomic, but the multi-step "check stat,
+# maybe parse, write back" sequence in `read_all_leases` is not one
+# operation and must not interleave with another thread's).
+_cache_lock = threading.Lock()
+_common_dir_cache: dict[Path, Result[Path, LeaseError]] = {}
+_lease_file_cache: dict[
+    Path, dict[Path, tuple[tuple[int, int], LeaseRecord | None]]
+] = {}
+_stale_lease_logged: set[tuple[Path, str]] = set()
+
+
+# frob:ticket T-0773
+def _clear_lease_caches() -> None:
+    """Drop all T-0773 memoization state (`_common_dir_cache`,
+    `_lease_file_cache`, `_stale_lease_logged`) under `_cache_lock` --
+    available to tests that need to simulate a fresh CLI invocation (or a
+    fresh daemon poll cycle) within one interpreter; not required for
+    correctness on the read path any more (`read_all_leases` self-heals
+    against sibling-process writes via per-file stat comparison), but
+    still useful to force a clean-slate re-parse."""
+    with _cache_lock:
+        _common_dir_cache.clear()
+        _lease_file_cache.clear()
+        _stale_lease_logged.clear()
 
 
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
@@ -82,18 +142,47 @@ def git_common_dir(root: Path) -> Result[Path, LeaseError]:
     every linked worktree of the same repo, unlike `root / ".git"` itself
     (a linked worktree's `.git` is a pointer file, not the shared
     directory). `Err(GitCommonDirUnavailable)` if `root` is not inside a
-    git work tree or the git call fails."""
+    git work tree or the git call fails.
+
+    Memoized per resolved `root` for the process's lifetime (T-0773): the
+    shared common dir cannot move mid-invocation, so a second call for the
+    same `root` returns the cached `Result` instead of spawning `git`
+    again -- this is the fix for the 2026-07-22 incident where a single
+    `frob ticket list`/`doable` spawned this subprocess dozens of times
+    (once per candidate/ticket row, via `read_all_leases` ->
+    `leases_dir`). Reads/writes to the cache dict are serialized by
+    `_cache_lock` (T-0773 round 2); the `git` subprocess itself runs
+    OUTSIDE the lock so one thread spawning it never blocks another
+    thread's unrelated cache lookups -- a benign race where two threads
+    both miss the cache and both spawn `git` for the same `root` is
+    possible but harmless (idempotent result, last write wins, no
+    duplicate SPAWNS across separate `read_all_leases` calls in steady
+    state since the cache is warm after the first one)."""
+    key = root.resolve()
+    with _cache_lock:
+        cached = _common_dir_cache.get(key)
+    if cached is not None:
+        return cached
     spawned = run_argv(["git", "-C", str(root), "rev-parse", "--git-common-dir"])
     if spawned.is_err or spawned.danger_ok.returncode != 0:
         _log.warning("tickets: git-common-dir lookup failed under %s", root)
-        return Err(LeaseError.GitCommonDirUnavailable)
+        result: Result[Path, LeaseError] = Err(LeaseError.GitCommonDirUnavailable)
+        with _cache_lock:
+            _common_dir_cache[key] = result
+        return result
     raw = spawned.danger_ok.stdout.strip()
     if not raw:
-        return Err(LeaseError.GitCommonDirUnavailable)
+        result = Err(LeaseError.GitCommonDirUnavailable)
+        with _cache_lock:
+            _common_dir_cache[key] = result
+        return result
     common_dir = Path(raw)
     if not common_dir.is_absolute():
         common_dir = (root / common_dir).resolve()
-    return Ok(common_dir)
+    result = Ok(common_dir)
+    with _cache_lock:
+        _common_dir_cache[key] = result
+    return result
 
 
 # frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
@@ -175,6 +264,10 @@ def record_lease(
         record.worktree,
         record.branch,
     )
+    # T-0773 round 2: no explicit cache invalidation needed here any more
+    # -- `read_all_leases`'s per-file stat check picks up this write (new
+    # mtime/size, or a brand-new path in the directory listing) on its own
+    # next call, from THIS process or any sibling one.
     return Ok(None)
 
 
@@ -195,6 +288,10 @@ def release_lease(root: Path, ticket_id: str) -> Result[None, LeaseError]:
     except OSError as exc:
         _log.warning("tickets: could not remove lease for %s: %s", ticket_id, exc)
         return Ok(None)
+    # T-0773 round 2: same as `record_lease` -- no explicit invalidation
+    # needed, the next `read_all_leases` call (this process or a sibling
+    # one) sees the path missing from the current directory listing and
+    # drops it from `_lease_file_cache` on its own.
     return Ok(None)
 
 
@@ -208,21 +305,121 @@ def read_all_leases(root: Path) -> tuple[LeaseRecord, ...]:
     ticket), or a lease file is unreadable/malformed -- a corrupt or
     unreadable single lease file is logged and skipped rather than failing
     the whole read, since one bad file must never blind `doable` to every
-    OTHER worktree's real leases."""
+    OTHER worktree's real leases.
+
+    Split into a STAT-VALIDATED parse cache and a FRESH liveness check
+    (T-0773, revised in round 2 for the daemon-blindness bug a reviewer
+    caught): the directory's current file listing and every file's
+    current `(mtime_ns, size)` are read on EVERY call -- this is what
+    makes a lease written or removed by a SIBLING process (a different
+    worktree's CLI invocation, invisible to `frob.serve`'s long-lived
+    `poll_rebase_bot` daemon loop, which calls this function forever
+    without ever calling this PROCESS's own `record_lease`/
+    `release_lease`) show up on the very next call. Only the expensive
+    part -- JSON-parsing a file whose stat is UNCHANGED since the last
+    call -- is skipped, via `_lease_file_cache`. A file that no longer
+    appears in the current listing is dropped from the cache too, so the
+    cache can never grow unboundedly stale or leak removed tickets.
+
+    Liveness (`Path(record.worktree).exists()`) is re-checked on EVERY
+    call and never itself cached, same reasoning extended one level
+    further: a lease's worktree can vanish (`git worktree remove`, a
+    crashed agent's checkout deleted by hand) with no write to the
+    leases directory at all, so even a perfectly fresh file-content read
+    could still serve a dead worktree's lease if liveness were cached.
+    The stale-worktree INFO diagnostic is still only logged ONCE per
+    (leases directory, ticket id) per process (`_stale_lease_logged`),
+    even though the liveness check itself reruns every call. All three
+    caches are guarded by `_cache_lock` (T-0773 round 2), but the lock is
+    held only around the dict reads/writes themselves -- NEVER across
+    file IO or JSON parsing (T-0773 round 3, a second reviewer catch: an
+    earlier version held the lock across `path.stat()`/`read_text()`/
+    `json.loads()`/`model_validate()` for every file, which would stall
+    every OTHER concurrent caller -- the daemon thread and a gate pool's
+    workers -- for the whole scan). The sequence per call is: (1) glob +
+    stat every file OUTSIDE the lock; (2) take the lock BRIEFLY to read
+    each file's cached stat key and decide hit-or-miss; (3) for a miss,
+    parse the file OUTSIDE the lock; (4) take the lock BRIEFLY again to
+    write the parsed result back and prune removed paths. A benign race
+    where two threads both miss the cache for the same file and both
+    parse it is possible (last write to the dict wins) -- harmless and
+    idempotent, the same reasoning `git_common_dir`'s double-spawn race
+    already relies on."""
     resolved = leases_dir(root)
     if resolved.is_err:
         return ()
     leases_root = resolved.danger_ok
     if not leases_root.is_dir():
+        with _cache_lock:
+            _lease_file_cache.pop(leases_root, None)
         return ()
-    records: list[LeaseRecord] = []
-    for path in sorted(leases_root.glob("*.json")):
+
+    current_paths = sorted(leases_root.glob("*.json"))
+    current_set = frozenset(current_paths)
+    stats: dict[Path, tuple[int, int] | None] = {}
+    for path in current_paths:
+        try:
+            st = path.stat()
+        except OSError as exc:
+            _log.warning("tickets: could not stat lease file %s: %s", path, exc)
+            stats[path] = None
+            continue
+        stats[path] = (st.st_mtime_ns, st.st_size)
+
+    # Short lock #1: prune stale entries and read cached stat keys --
+    # decides which files are cache HITS (reuse) vs. MISSES (need a
+    # fresh parse below, outside the lock).
+    to_parse: list[tuple[Path, tuple[int, int]]] = []
+    hits: dict[Path, LeaseRecord | None] = {}
+    with _cache_lock:
+        file_cache = _lease_file_cache.setdefault(leases_root, {})
+        for stale_path in [p for p in file_cache if p not in current_set]:
+            del file_cache[stale_path]
+        for path in current_paths:
+            stat_key = stats[path]
+            if stat_key is None:
+                file_cache.pop(path, None)
+                continue
+            cached_entry = file_cache.get(path)
+            if cached_entry is not None and cached_entry[0] == stat_key:
+                hits[path] = cached_entry[1]
+            else:
+                to_parse.append((path, stat_key))
+
+    # Parse every miss OUTSIDE the lock -- file IO/JSON parsing never
+    # holds `_cache_lock`, so it never stalls a concurrent caller.
+    freshly_parsed: dict[Path, tuple[tuple[int, int], LeaseRecord | None]] = {}
+    for path, stat_key in to_parse:
         try:
             raw = json.loads(path.read_text(encoding="utf-8"))
-            record = LeaseRecord.model_validate(raw)
+            record: LeaseRecord | None = LeaseRecord.model_validate(raw)
         except (OSError, ValueError) as exc:
             _log.warning("tickets: could not parse lease file %s: %s", path, exc)
-            continue
+            record = None
+        freshly_parsed[path] = (stat_key, record)
+
+    # Short lock #2: write the freshly-parsed results back.
+    if freshly_parsed:
+        with _cache_lock:
+            file_cache = _lease_file_cache.setdefault(leases_root, {})
+            file_cache.update(freshly_parsed)
+
+    # Recombine in the original sorted (id-ordered) `current_paths` order
+    # -- `hits`/`freshly_parsed` are separate dicts, so concatenating them
+    # naively would reorder a file-set with a mix of hits and misses.
+    parsed: list[LeaseRecord] = []
+    for path in current_paths:
+        if path in hits:
+            record = hits[path]
+        elif path in freshly_parsed:
+            record = freshly_parsed[path][1]
+        else:
+            continue  # unstattable file, already dropped above
+        if record is not None:
+            parsed.append(record)
+
+    live: list[LeaseRecord] = []
+    for record in parsed:
         if not Path(record.worktree).exists():
             # T-0473/T-0476: the worktree that recorded this lease is gone
             # (removed, never cleaned up after a crash) -- a dead
@@ -232,16 +429,21 @@ def read_all_leases(root: Path) -> tuple[LeaseRecord, ...]:
             # T-0476's fuller reconcile is designed to build on; this read
             # path just skips it rather than surfacing it, since cleanup
             # itself is that ticket's job, not this one's.
-            _log.info(
-                "tickets: %s lease at %s references a worktree that no "
-                "longer exists (%s) -- treating as stale, skipped",
-                record.ticket_id,
-                path,
-                record.worktree,
-            )
+            log_key = (leases_root, record.ticket_id)
+            with _cache_lock:
+                already_logged = log_key in _stale_lease_logged
+                if not already_logged:
+                    _stale_lease_logged.add(log_key)
+            if not already_logged:
+                _log.info(
+                    "tickets: %s lease references a worktree that no "
+                    "longer exists (%s) -- treating as stale, skipped",
+                    record.ticket_id,
+                    record.worktree,
+                )
             continue
-        records.append(record)
-    return tuple(records)
+        live.append(record)
+    return tuple(live)
 
 
 def _read_one_lease(leases_root: Path, ticket_id: str) -> LeaseRecord | None:

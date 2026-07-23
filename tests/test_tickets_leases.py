@@ -13,12 +13,19 @@ other's record, in either lease-file write order.
 
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
 
 import pytest
 
-from frob.tickets._leases import LeaseError, LeaseRecord, leases_dir, resolve_lease
+from frob.tickets._leases import (
+    LeaseError,
+    LeaseRecord,
+    leases_dir,
+    read_all_leases,
+    resolve_lease,
+)
 
 
 def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
@@ -134,3 +141,86 @@ class TestResolveLease:
         result = resolve_lease(repo, "T-0695", repo)
         assert result.is_err
         assert result.danger_err == LeaseError.LeaseWorktreeMismatch
+
+
+class TestReadAllLeasesSiblingProcessVisibility:
+    """T-0773 round 2 (reviewer-caught daemon-blindness bug): `frob.serve`'s
+    `poll_rebase_bot` calls `read_all_leases` in a loop for the daemon's
+    ENTIRE process lifetime -- a lease written or removed by a SIBLING
+    process (a different worktree's CLI invocation) is never THIS
+    process's own `record_lease`/`release_lease` call, so there is no
+    local write event for a "cache until my own write" design to
+    invalidate on. `read_all_leases`'s per-file stat comparison must see
+    a sibling's write/removal on the VERY NEXT call regardless -- these
+    tests write/delete lease files directly via file IO (bypassing
+    `record_lease`/`release_lease` entirely) to simulate exactly that."""
+
+    def test_new_lease_file_written_by_a_sibling_process_is_seen_next_call(
+        self, repo: Path
+    ) -> None:
+        """Populate the cache with one lease, then simulate a SIBLING
+        process writing a second lease directly (no `record_lease` call
+        in this process) -- the very next `read_all_leases` call must
+        see it, not just a fresh-process/`_clear_lease_caches` call."""
+        _write_lease(repo, "T-0001", repo)
+        first = read_all_leases(repo)
+        assert {lease.ticket_id for lease in first} == {"T-0001"}
+
+        # Simulate a sibling process recording a second ticket's lease --
+        # this process never called `record_lease` for it.
+        _write_lease(repo, "T-0002", repo)
+        second = read_all_leases(repo)
+        assert {lease.ticket_id for lease in second} == {"T-0001", "T-0002"}
+
+    def test_lease_file_removed_by_a_sibling_process_is_seen_next_call(
+        self, repo: Path
+    ) -> None:
+        """The reverse: a lease file removed by a SIBLING process (no
+        `release_lease` call in this process) must disappear from the
+        very next `read_all_leases` call."""
+        _write_lease(repo, "T-0001", repo)
+        _write_lease(repo, "T-0002", repo)
+        first = read_all_leases(repo)
+        assert {lease.ticket_id for lease in first} == {"T-0001", "T-0002"}
+
+        # Simulate a sibling process's `release_lease` (direct unlink, no
+        # call into this process's `release_lease`).
+        resolved = leases_dir(repo)
+        assert resolved.is_ok
+        (resolved.danger_ok / "T-0002.json").unlink()
+
+        second = read_all_leases(repo)
+        assert {lease.ticket_id for lease in second} == {"T-0001"}
+
+    def test_unchanged_lease_file_content_is_reused_from_cache(
+        self, repo: Path
+    ) -> None:
+        """A lease file whose stat (mtime/size) is unchanged between two
+        `read_all_leases` calls must not be re-parsed from disk -- proven
+        indirectly here by corrupting the file's ON-DISK bytes WITHOUT
+        touching its mtime/size (same length, same modification time),
+        so a naive "always re-read" implementation would fail to parse
+        it while the stat-cached implementation still returns the
+        original, previously-parsed record."""
+        _write_lease(repo, "T-0001", repo, scope=("src/a.py",))
+        first = read_all_leases(repo)
+        assert len(first) == 1
+        assert first[0].scope == ("src/a.py",)
+
+        resolved = leases_dir(repo)
+        assert resolved.is_ok
+        path = resolved.danger_ok / "T-0001.json"
+        stat_before = path.stat()
+        # Overwrite with garbage of the EXACT same byte length, then
+        # restore the original mtime/size signature via utime -- this
+        # simulates a stat collision (same mtime/size, different
+        # content) that only a byte-for-byte re-read would ever catch;
+        # the cache is intentionally NOT byte-for-byte, only stat-keyed,
+        # so it must keep serving the cached parse here.
+        original_bytes = path.read_bytes()
+        path.write_bytes(b"x" * len(original_bytes))
+        os.utime(path, ns=(stat_before.st_mtime_ns, stat_before.st_mtime_ns))
+
+        second = read_all_leases(repo)
+        assert len(second) == 1
+        assert second[0].scope == ("src/a.py",)

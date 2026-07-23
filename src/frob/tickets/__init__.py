@@ -1115,6 +1115,7 @@ def leased_by(
     root: Path | None = None,
     *,
     breadth: tuple[int, tuple[str, ...]] | None = None,
+    all_leases: tuple[tuple[str, tuple[str, ...]], ...] | None = None,
 ) -> tuple[tuple[str, str], ...]:
     """`(holding_ticket_id, glob_that_leases_it)` for every IN_PROGRESS
     ticket whose scope-lease overlaps `ticket`'s own scope (T-0453) --
@@ -1141,11 +1142,24 @@ def leased_by(
     doable` take minutes on this repo's real worktree count before the
     fix). Omitting it while `root` is given computes it internally, for
     standalone/test callers.
+
+    Likewise, pass a precomputed `all_leases` (`_all_leases(queue, root)`)
+    when calling this per-candidate in a loop (`doable`/`doable_blocked`
+    do) so the local-ledger-union-with-cross-worktree-leases computation
+    runs ONCE for the whole call, not once per candidate (T-0773 perf fix
+    -- `frob.tickets._leases.read_all_leases` is itself memoized per
+    process now, so this second layer of threading is belt-and-suspenders
+    rather than the only fix, but it matches the existing `breadth`
+    pattern and avoids even the memoized read's dict-lookup/tuple-copy
+    overhead per candidate). Omitting it computes it internally, same
+    default-to-internal convention as `breadth`.
     """
     if root is not None and breadth is None:
         breadth = scope_breadth_context(root)
+    if all_leases is None:
+        all_leases = _all_leases(queue, root)
     hits: list[tuple[str, str]] = []
-    for holder_id, holder_scope in _all_leases(queue, root):
+    for holder_id, holder_scope in all_leases:
         if holder_id == ticket.id:
             continue
         effective_scope = holder_scope
@@ -1781,12 +1795,20 @@ def doable(
     check then stays strict/undemoted). Pass `ignore_lease=True`
     (`frob ticket doable --ignore-lease`) for the raw, blocker-only list
     with no collision filtering at all.
+
+    T-0773: `_all_leases(queue, root)` is computed ONCE here and threaded
+    through every `leased_by` call in the filter loop below (same pattern
+    as `breadth`), instead of each candidate re-deriving the union of
+    local-ledger and cross-worktree leases for itself.
     """
     candidates = _doable_candidates(queue)
     if not ignore_lease:
         breadth = scope_breadth_context(root) if root is not None else None
+        all_leases = _all_leases(queue, root)
         candidates = [
-            t for t in candidates if not leased_by(queue, t, root, breadth=breadth)
+            t
+            for t in candidates
+            if not leased_by(queue, t, root, breadth=breadth, all_leases=all_leases)
         ]
     return tuple(sorted(candidates, key=_doable_sort_key))
 
@@ -1805,13 +1827,17 @@ def doable_blocked(
     `frob ticket doable --show-blocked` renders (T-0453). See `leased_by`
     for what passing `root` does (over-broad-lease demotion) and what
     passing a precomputed `breadth` (`scope_breadth_context(root)`) avoids
-    (re-walking the tree when the caller already has one)."""
+    (re-walking the tree when the caller already has one). T-0773:
+    `_all_leases(queue, root)` is likewise computed ONCE here and threaded
+    through every `leased_by` call below, rather than each candidate
+    re-deriving it."""
     candidates = _doable_candidates(queue)
     if root is not None and breadth is None:
         breadth = scope_breadth_context(root)
+    all_leases = _all_leases(queue, root)
     blocked: list[tuple[Ticket, tuple[tuple[str, str], ...]]] = []
     for t in sorted(candidates, key=_doable_sort_key):
-        hits = leased_by(queue, t, root, breadth=breadth)
+        hits = leased_by(queue, t, root, breadth=breadth, all_leases=all_leases)
         if hits:
             blocked.append((t, hits))
     return tuple(blocked)

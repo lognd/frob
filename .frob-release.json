@@ -1148,7 +1148,7 @@
     "src/frob/tickets/__init__.py::epic_rollup": "297191af2d9b48074a68b3b25d5ec6c57bf3ece30095b5fab7eca667a57a8fe8",
     "src/frob/tickets/__init__.py::finalize_draft": "fabc7d8cd6074c7a259202ce067e9bc56427516fddf119086d379eea9bab5a61",
     "src/frob/tickets/__init__.py::large_glob_warnings": "bc81256f8895af029238f13990b30a974d685b8a6489de9b1e811cbe97079297",
-    "src/frob/tickets/__init__.py::leased_by": "3c1769adf333c64655c2f1da936f54d873a27daf41234cf1303b2bdf17244f4a",
+    "src/frob/tickets/__init__.py::leased_by": "46f6c90978d52a9f0581ba41dfc00697df186ce54fc3581d3dee02d32912c5f4",
     "src/frob/tickets/__init__.py::load_active": "446f07ba9f26e876683bf7928a7eae79e67a9206e08fc520b061415d03c9f7ad",
     "src/frob/tickets/__init__.py::load_queue": "e44b20c7734cc812f5ab85900637ecc72ebb3d0a34af85eeb17cd97c1aca2d0a",
     "src/frob/tickets/__init__.py::migrate": "659f43aa7f3c95f496f583b8a437963e342095a4d101271583935f279a81d2a8",
@@ -1339,5 +1339,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.101.0"
+  "version": "0.102.0"
 }
