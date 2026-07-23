@@ -1,6 +1,6 @@
 """CLI wiring for `frob ticket new|list|show|doable|board|epic|brief|plan|
 start|requeue|sweep|reconcile|land|merge-driver|attach|block|close|fail|
-drop|evidence|done-report|scope|priority|component|label|archive`
+drop|evidence|done-report|scope|priority|component|label|archive|review`
 (docs/modules/tickets.md)."""
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
 # src/frob/app/ticket_runner.py's exclusivity-vocabulary hit is source-level \
@@ -77,6 +77,7 @@ def _ticket_dispatch_table() -> dict:
         "drop": _drop,
         "evidence": _evidence,
         "done-report": _done_report,
+        "review": _review,
         "scope": _scope,
         "priority": _priority,
         "component": _component,
@@ -100,7 +101,7 @@ def run(cfg: AppConfig) -> None:
             "usage: frob ticket <new|list|show|doable|board|epic|brief|plan|"
             "start|requeue|sweep|reconcile|land|merge-driver|attach|block|"
             "close|fail|drop|evidence|done-report|scope|priority|component|"
-            "label|archive> ..."
+            "label|archive|review> ..."
         )
         sys.exit(1)
     with _diagnostic_log_ctx(cfg):
@@ -1465,6 +1466,13 @@ def _close_failure_hint(ticket_id: str, state, err) -> str:  # noqa: ANN001
             f"<node-id> --accepts <index>` (0-based, per "
             f"`frob ticket show {ticket_id}`'s acceptance list)"
         )
+    if err == TicketError.MissingApprovedReview:
+        return (
+            f"close failed: {err} -- {ticket_id} needs an approve-verdict "
+            f"review naming the current commit (`frob ticket review "
+            f"{ticket_id} --verdict approve --reviewer NAME --findings-file "
+            f"PATH`) before `close --strict` will succeed"
+        )
     return f"close failed: {err}"
 
 
@@ -1521,9 +1529,119 @@ def _covers_scope_for_ticket(root: Path, ticket) -> bool | None:  # noqa: ANN001
     return evidence_covers_scope(ticket, snapshot.danger_ok)
 
 
+# frob:ticket T-0571
+def _current_commit(root: Path) -> str | None:
+    """Best-effort `git rev-parse HEAD` under `root` (`None` on any git
+    failure) -- shared by `_review`'s default `--commit` and `_close`'s
+    strict-mode gate so both name the SAME notion of "current commit"."""
+    try:
+        proc = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+    except OSError:
+        return None
+    if proc.returncode != 0:
+        return None
+    return proc.stdout.strip() or None
+
+
+# frob:ticket T-0571
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_review.py::TestReviewCli.test_cli_writes_review_record
+# frob:tests tests/test_tickets_review.py::TestReviewCli.test_cli_requires_all_flags
+def _review(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket review <id> --verdict approve|reject --reviewer NAME
+    --findings-file PATH [--commit SHA]`: resolve the findings text and
+    commit, then call `frob.tickets.record_review` -- the structured,
+    first-class adversarial-review evidence channel (T-0571). `--commit`
+    defaults to the current `HEAD` under `root` when omitted."""
+    from frob.tickets import ReviewVerdict, record_review
+
+    if (
+        cfg.ticket_id is None
+        or cfg.ticket_review_verdict is None
+        or cfg.ticket_reviewer is None
+        or cfg.ticket_findings_file is None
+    ):
+        _log.error(
+            "frob ticket review requires <id> --verdict approve|reject "
+            "--reviewer NAME --findings-file PATH"
+        )
+        sys.exit(1)
+
+    try:
+        findings = cfg.ticket_findings_file.read_text(encoding="utf-8")
+    except OSError as exc:
+        _log.error(
+            "review: could not read --findings-file %s: %s",
+            cfg.ticket_findings_file,
+            exc,
+        )
+        sys.exit(1)
+
+    commit = cfg.ticket_review_commit or _current_commit(root)
+    if commit is None:
+        _log.error(
+            "review: could not resolve --commit and no --commit was given "
+            "(is %s a git checkout?)",
+            root,
+        )
+        sys.exit(1)
+
+    result = record_review(
+        root,
+        cfg.ticket_id,
+        verdict=ReviewVerdict(cfg.ticket_review_verdict),
+        reviewer=cfg.ticket_reviewer,
+        findings=findings,
+        commit=commit,
+    )
+    if result.is_err:
+        _log.error("review failed: %s", result.danger_err)
+        sys.exit(1)
+    _log.info(
+        "%s: recorded review verdict=%s reviewer=%s commit=%s",
+        cfg.ticket_id,
+        cfg.ticket_review_verdict,
+        cfg.ticket_reviewer,
+        commit,
+    )
+
+
+# frob:ticket T-0571
+def _covers_review_for_ticket(root: Path, cfg: AppConfig, ticket) -> bool | None:  # noqa: ANN001
+    """T-0571's CLI-side strict-mode predicate: `None` (skip the check)
+    unless BOTH `--strict` was passed on this `close` invocation AND
+    `[tickets] require_review_for_close` is true in `frob.toml` -- either
+    condition missing means "not opted in", never a silent enforcement.
+    When both are true, resolves the current commit and asks
+    `frob.tickets.has_approved_review_for_commit`."""
+    from frob.tickets import (
+        has_approved_review_for_commit,
+        load_require_review_for_close,
+    )
+
+    if not cfg.ticket_close_strict or not load_require_review_for_close(root):
+        return None
+    commit = _current_commit(root)
+    if commit is None:
+        _log.warning(
+            "ticket close --strict: could not resolve current commit under "
+            "%s -- refusing to close on unverifiable review",
+            root,
+        )
+        return False
+    return has_approved_review_for_commit(ticket, commit)
+
+
 # frob:ticket T-0106
 # frob:ticket T-0215
 # frob:ticket T-0398
+# frob:ticket T-0571
 def _close(root: Path, cfg: AppConfig) -> None:
     """Transition a ticket to done; if `--evidence` ids or `--evidence-cmd`
     were given, validate and append them first (`_apply_evidence` /
@@ -1537,7 +1655,12 @@ def _close(root: Path, cfg: AppConfig) -> None:
     computed (`_covers_scope_for_ticket`) and always passed to
     `transition`, so evidence that covers none of the ticket's touched/
     scope symbols rejects the close (`EvidenceScopeUnbound`) through the
-    real `frob ticket close` command."""
+    real `frob ticket close` command.
+
+    T-0571: `reviewed` is only ever non-`None` when BOTH `--strict` was
+    passed AND `[tickets] require_review_for_close` is true in
+    `frob.toml` (`_covers_review_for_ticket`) -- config-gated, off by
+    default, so this never breaks a repo/workflow that has not opted in."""
     from frob.tickets import TicketState, transition
 
     if cfg.ticket_id is None:
@@ -1565,9 +1688,14 @@ def _close(root: Path, cfg: AppConfig) -> None:
     # loaded before this call's own --evidence/--evidence-cmd applied.
     fresh_ticket = _load_ticket_or_exit(root, cfg.ticket_id, verb="close")
     covers_scope = _covers_scope_for_ticket(root, fresh_ticket)
+    reviewed = _covers_review_for_ticket(root, cfg, fresh_ticket)
 
     result = transition(
-        root, cfg.ticket_id, TicketState.DONE, covers_scope=covers_scope
+        root,
+        cfg.ticket_id,
+        TicketState.DONE,
+        covers_scope=covers_scope,
+        reviewed=reviewed,
     )
     if result.is_err:
         _log.error(_close_failure_hint(cfg.ticket_id, ticket.state, result.danger_err))

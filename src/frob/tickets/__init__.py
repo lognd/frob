@@ -46,6 +46,8 @@ from frob.tickets._models import (
     Origin,
     Priority,
     RenumberReport,
+    ReviewEntry,
+    ReviewVerdict,
     ScopeChangeEntry,
     ScopeChangeOp,
     Stride,
@@ -931,6 +933,31 @@ def _load_large_glob_max_files(root: Path) -> int:
     if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
         return _LARGE_GLOB_DEFAULT_MAX_FILES
     return value
+
+
+# frob:ticket T-0571
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_review.py::TestLoadRequireReviewForClose.test_defaults_false_with_no_frob_toml  # noqa: E501
+# frob:tests tests/test_tickets_review.py::TestLoadRequireReviewForClose.test_true_when_configured  # noqa: E501
+# frob:tests tests/test_tickets_review.py::TestLoadRequireReviewForClose.test_false_when_absent_from_section  # noqa: E501
+def load_require_review_for_close(root: Path) -> bool:
+    """Read `[tickets] require_review_for_close` from `frob.toml` (T-0571):
+    the strict-mode gate that requires `close` to see at least one
+    `verdict: approve` review record naming the current commit. Absent
+    config, an unreadable/malformed file, or a non-bool value all default to
+    `False` -- off by default for backward compat, matching every other
+    optional `[tickets]` toggle here (`_load_large_glob_max_files`)."""
+    toml_path = root / "frob.toml"
+    if not toml_path.exists():
+        return False
+    try:
+        with toml_path.open("rb") as handle:
+            doc = tomllib.load(handle)
+    except (OSError, tomllib.TOMLDecodeError) as exc:
+        _log.warning("tickets: could not parse %s: %s", toml_path, exc)
+        return False
+    value = doc.get("tickets", {}).get("require_review_for_close")
+    return value is True
 
 
 # frob:ticket T-0453
@@ -2133,6 +2160,7 @@ def _transition_guard(
     queue: dict[str, Ticket],
     *,
     covers_scope: bool | None = None,
+    reviewed: bool | None = None,
 ) -> Result[None, TicketError]:
     """Enforce start-blocker and done-evidence preconditions for `to`."""
     if to == TicketState.IN_PROGRESS:
@@ -2143,7 +2171,9 @@ def _transition_guard(
             )
             return Err(TicketError.BlockerOpen)
     if to == TicketState.DONE:
-        return _done_transition_guard(ticket, covers_scope=covers_scope)
+        return _done_transition_guard(
+            ticket, covers_scope=covers_scope, reviewed=reviewed
+        )
     return Ok(None)
 
 
@@ -2154,26 +2184,32 @@ def _transition_guard(
 # hand-pasted directly into the ledger, either of which would otherwise
 # slip a code-kind ticket through close on unverifiable evidence.
 def _done_transition_guard(
-    ticket: Ticket, *, covers_scope: bool | None = None
+    ticket: Ticket,
+    *,
+    covers_scope: bool | None = None,
+    reviewed: bool | None = None,
 ) -> Result[None, TicketError]:
     """Enforce DONE-transition preconditions: evidence + substantive Done
     report present, no cmd: evidence on a kind that disallows it, (D-02,
     when the caller supplies `covers_scope`) at least one evidence id binds
-    to a touched/scope symbol, and (T-0572) every declared acceptance
-    criterion has at least one resolving evidence id -- see
-    `unbound_acceptance`. A ticket with an empty `acceptance` list is
-    unaffected (T-0572 backward compat).
+    to a touched/scope symbol, (T-0572) every declared acceptance criterion
+    has at least one resolving evidence id -- see `unbound_acceptance` (a
+    ticket with an empty `acceptance` list is unaffected, T-0572 backward
+    compat) -- and (T-0571, when the caller supplies `reviewed`) at least
+    one approve-verdict review record naming the current commit.
 
-    `covers_scope` is injected, never computed here (D-02): answering "does
-    an evidence id cover a touched/scope symbol" needs the obligation graph
-    (`frob.graph`) and the `TESTS`-edge index `frob.testing`/`frob.gates`
-    already build, and `frob.tickets` deliberately stays free of that
-    dependency (docs/rework.md cycle-avoidance -- `frob.gates` is the one
-    module allowed to join graph + tickets). `covers_scope=None` (the
-    default, matching every caller before D-02) skips the check entirely,
-    so existing callers/tests are unaffected; a caller with graph access
-    (`frob.gates.evidence_covers_scope`, or its own equivalent) opts in by
-    passing an explicit `True`/`False`."""
+    `covers_scope`/`reviewed` are both injected, never computed here:
+    answering "does an evidence id cover a touched/scope symbol" needs the
+    obligation graph (`frob.graph`) and the `TESTS`-edge index
+    `frob.testing`/`frob.gates` already build, and answering "is there an
+    approve review naming HEAD" needs `git rev-parse` under the caller's
+    root -- `frob.tickets` deliberately stays free of both dependencies
+    (docs/rework.md cycle-avoidance -- `frob.gates` is the one module
+    allowed to join graph + tickets). `None` (the default, matching every
+    caller before D-02/T-0571) skips each check entirely, so existing
+    callers/tests are unaffected; a caller with the needed context
+    (`frob.gates.evidence_covers_scope`, `has_approved_review_for_commit`,
+    or its own equivalent) opts in by passing an explicit `True`/`False`."""
     if not ticket.evidence or not _has_done_report(ticket.body):
         _log.warning(
             "tickets: %s cannot close, missing evidence or a substantive Done report",
@@ -2205,6 +2241,13 @@ def _done_transition_guard(
             [c.text for c in unbound],
         )
         return Err(TicketError.AcceptanceUnbound)
+    if reviewed is False:
+        _log.warning(
+            "tickets: %s cannot close --strict, no approve-verdict review "
+            "record names the current commit",
+            ticket.id,
+        )
+        return Err(TicketError.MissingApprovedReview)
     return Ok(None)
 
 
@@ -2237,11 +2280,14 @@ def transition(
     to: TicketState,
     *,
     covers_scope: bool | None = None,
+    reviewed: bool | None = None,
 ) -> Result[Ticket, TicketError]:
     """Enforce the state machine; `done` also requires evidence and a
-    substantive Done report, and (D-02) an evidence id covering a touched/
-    scope symbol whenever the caller supplies `covers_scope=False` (see
-    `_done_transition_guard`'s docstring for why this is injected rather
+    substantive Done report, (D-02) an evidence id covering a touched/
+    scope symbol whenever the caller supplies `covers_scope=False`, and
+    (T-0571) an approve-verdict review record naming the current commit
+    whenever the caller supplies `reviewed=False` (see
+    `_done_transition_guard`'s docstring for why these are injected rather
     than computed here)."""
     leased = enforce_worktree_lease(root)
     if leased.is_err:
@@ -2273,7 +2319,9 @@ def transition(
         )
         return Err(TicketError.InvalidTransition)
 
-    guard = _transition_guard(ticket, to, queue, covers_scope=covers_scope)
+    guard = _transition_guard(
+        ticket, to, queue, covers_scope=covers_scope, reviewed=reviewed
+    )
     if guard.is_err:
         return Err(guard.danger_err)
 
@@ -3013,6 +3061,114 @@ def record_failure(
     return Ok(updated)
 
 
+# frob:ticket T-0571
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_review.py::TestRecordReview.test_unresolvable_commit_rejected  # noqa: E501
+# frob:tests tests/test_tickets_review.py::TestRecordReview.test_short_sha_normalized_to_full_sha  # noqa: E501
+def _resolve_review_commit(root: Path, commit: str) -> Result[str, TicketError]:
+    """Resolve `commit` (a short SHA, ref name, `HEAD`, ...) to its full
+    40-char SHA via `git rev-parse` under `root` (T-0571 review round 2):
+    `record_review` must NEVER store a caller-supplied commit verbatim --
+    `has_approved_review_for_commit` does a plain string-equality
+    comparison against a full `rev-parse HEAD` sha, so an abbreviated
+    value (e.g. copied from `git log --oneline`) would silently never
+    match and make `close --strict` permanently unsatisfiable for that
+    review. `Err(ReviewCommitUnresolvable)` on any git failure (unknown
+    ref, not a git repo, ...) -- an unresolvable input is never stored
+    raw."""
+    from frob.gitio import run_argv
+
+    resolved = run_argv(["git", "-C", str(root), "rev-parse", commit])
+    if (
+        resolved.is_err
+        or resolved.danger_ok.returncode != 0
+        or not resolved.danger_ok.stdout.strip()
+    ):
+        _log.warning(
+            "tickets: review --commit %r did not resolve under %s", commit, root
+        )
+        return Err(TicketError.ReviewCommitUnresolvable)
+    return Ok(resolved.danger_ok.stdout.strip())
+
+
+# frob:ticket T-0571
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_review.py::TestRecordReview.test_appends_approve_entry  # noqa: E501
+# frob:tests tests/test_tickets_review.py::TestRecordReview.test_blank_findings_rejected  # noqa: E501
+# frob:tests tests/test_tickets_review.py::TestRecordReview.test_multiple_reviews_append_only  # noqa: E501
+def record_review(
+    root: Path,
+    ticket_id: str,
+    *,
+    verdict: ReviewVerdict,
+    reviewer: str,
+    findings: str,
+    commit: str,
+) -> Result[Ticket, TicketError]:
+    """Append a structured `ReviewEntry` to `ticket_id`'s append-only
+    `reviews` list (T-0571) -- the first-class evidence channel for
+    adversarial review, replacing a verdict pasted only into dispatch
+    chat. `Err(ReviewFindingsMissing)` if `findings` is blank: a review
+    record with no findings text is indistinguishable from one nobody
+    actually read. `commit` is normalized to its full SHA via
+    `_resolve_review_commit` before storage (T-0571 review round 2):
+    `Err(ReviewCommitUnresolvable)` if it does not resolve, rather than
+    storing an abbreviated/unnormalized value that could never satisfy
+    `close --strict`'s exact-match comparison later. Never validates
+    `verdict` against the ticket's own state beyond schema -- `close
+    --strict` is what decides whether a given review record actually
+    satisfies the gate."""
+    if not findings.strip():
+        return Err(TicketError.ReviewFindingsMissing)
+    resolved_commit = _resolve_review_commit(root, commit)
+    if resolved_commit.is_err:
+        return Err(resolved_commit.danger_err)
+    commit = resolved_commit.danger_ok
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
+    loaded = _load_one(root, ticket_id)
+    if loaded.is_err:
+        return Err(loaded.danger_err)
+    ticket = loaded.danger_ok
+
+    entry = ReviewEntry(
+        verdict=verdict,
+        reviewer=reviewer,
+        findings=findings.strip(),
+        commit=commit,
+        at=date.today(),
+    )
+    updated = ticket.model_copy(update={"reviews": ticket.reviews + (entry,)})
+    write_result = write_ticket(root, updated)
+    if write_result.is_err:
+        return Err(write_result.danger_err)
+    _log.info(
+        "tickets: %s recorded review verdict=%s reviewer=%s commit=%s",
+        ticket_id,
+        verdict.value,
+        reviewer,
+        commit,
+    )
+    return Ok(updated)
+
+
+# frob:ticket T-0571
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_review.py::TestHasApprovedReviewForCommit.test_true_only_for_matching_approve  # noqa: E501
+def has_approved_review_for_commit(ticket: Ticket, commit: str) -> bool:
+    """Whether `ticket` carries at least one `verdict: approve` review
+    record naming exactly `commit` (T-0571) -- the predicate `close
+    --strict` gates on. A ticket with zero review records, or reviews that
+    only name earlier commits (the code moved since the last review), both
+    return `False`: a stale approval is not an approval of the CURRENT
+    final commit."""
+    return any(
+        r.verdict == ReviewVerdict.APPROVE and r.commit == commit
+        for r in ticket.reviews
+    )
+
+
 # frob:ticket T-0579
 # frob:doc docs/modules/tickets.md#public-api
 def drop_ticket(
@@ -3179,6 +3335,8 @@ __all__ = [
     "Origin",
     "PRIORITY_RANK",
     "Priority",
+    "ReviewEntry",
+    "ReviewVerdict",
     "ScopeChangeEntry",
     "ScopeChangeOp",
     "Ticket",
@@ -3199,6 +3357,7 @@ __all__ = [
     "doable",
     "doable_blocked",
     "drop_ticket",
+    "has_approved_review_for_commit",
     "has_live_lease",
     "is_cmd_evidence",
     "land",
@@ -3207,6 +3366,7 @@ __all__ = [
     "ledger_lock",
     "load_active",
     "load_queue",
+    "load_require_review_for_close",
     "mutate_labels",
     "mutate_scope",
     "set_component",
@@ -3219,6 +3379,7 @@ __all__ = [
     "new_ticket",
     "renumber",
     "record_failure",
+    "record_review",
     "reconcile",
     "ReconcileReport",
     "parse_claims_from_done_report",

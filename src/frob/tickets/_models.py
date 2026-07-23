@@ -833,6 +833,36 @@ class ScopeChangeEntry(BaseModel):
     at: date
 
 
+# frob:ticket T-0571
+# frob:doc docs/modules/tickets.md#data-models
+class ReviewVerdict(StrEnum):
+    """The outcome an adversarial reviewer records for one review pass
+    (T-0571): `approve` or `reject`, never a silent third option."""
+
+    APPROVE = "approve"
+    REJECT = "reject"
+
+
+# frob:ticket T-0571
+# frob:doc docs/modules/tickets.md#data-models
+class ReviewEntry(BaseModel):
+    """One append-only structured review record (T-0571): who reviewed,
+    what they decided, a findings summary, the commit they reviewed, and
+    when. This is the FIRST-CLASS EVIDENCE channel adversarial review was
+    missing -- before this, a reviewer's APPROVE/REJECT verdict lived only
+    in dispatch-chat prose, invisible to `frob ticket close`. Never edited
+    or removed once written, only appended to (same discipline as
+    `ScopeChangeEntry`/`FailureEntry`)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    verdict: ReviewVerdict
+    reviewer: str
+    findings: str
+    commit: str
+    at: date
+
+
 # frob:doc docs/modules/tickets.md#data-models
 class Ticket(BaseModel):
     """One ticket: frontmatter fields plus the verbatim markdown body."""
@@ -857,6 +887,12 @@ class Ticket(BaseModel):
     # waive.
     scope_changes: tuple[ScopeChangeEntry, ...] = ()
     evidence: tuple[str, ...] = ()
+    # frob:ticket T-0571
+    # append-only structured adversarial-review records (`frob ticket
+    # review`), each naming the commit reviewed -- `close --strict` (T-0571)
+    # requires at least one `verdict: approve` entry naming the CURRENT
+    # final commit before it will transition to done.
+    reviews: tuple[ReviewEntry, ...] = ()
     attachments: tuple[Attachment, ...] = ()
     # given/when/then acceptance criteria the reviewer verifies (T-0006),
     # each bound to the evidence id(s) that demonstrate it (T-0572)
@@ -1022,6 +1058,21 @@ class TicketError(ErrorSet):
     # T-0579: `frob ticket drop <id> --reason TEXT` failure mode -- a drop
     # with no reason is indistinguishable from a silent discard later.
     DropReasonMissing = "drop requires a non-empty --reason"
+    # T-0571: `frob ticket review` failure modes
+    ReviewFindingsMissing = "review requires non-empty --findings-file content"
+    # T-0571 review round 1: a --commit value (short SHA, ref name, etc.)
+    # that does not resolve via `git rev-parse` must never be stored
+    # verbatim -- has_approved_review_for_commit does a plain string
+    # comparison against a full rev-parse HEAD sha, so an unresolved/
+    # unnormalized commit value can never match and would silently make
+    # close --strict unsatisfiable forever.
+    ReviewCommitUnresolvable = "review --commit does not resolve to a real commit"
+    # T-0571: `close --strict` (config-gated) failure mode -- no
+    # verdict=approve review record names the current final commit
+    MissingApprovedReview = (
+        "close --strict requires an approve-verdict review record naming "
+        "the current commit"
+    )
     # T-0572: `frob ticket evidence --accepts N` / `bind_acceptance` failure
     # modes, and the close-time gate they exist to feed.
     AcceptanceIndexOutOfRange = "--accepts index does not name an acceptance item"

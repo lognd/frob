@@ -302,6 +302,19 @@ class AppConfig(BaseModel):
     # T-0572's own tests called `add_evidence`/`_apply_evidence` directly
     # and never exercised this CLI layer, so they never caught it.
     ticket_accepts: list[int] = []
+    # frob:ticket T-0571
+    # `frob ticket review <id> --verdict approve|reject --reviewer NAME
+    # --findings-file PATH [--commit SHA]` -- records a structured
+    # adversarial-review record as first-class evidence.
+    ticket_review_verdict: str | None = None
+    ticket_reviewer: str | None = None
+    ticket_findings_file: Path | None = None
+    ticket_review_commit: str | None = None
+    # frob:ticket T-0571
+    # `frob ticket close <id> --strict` -- config-gated
+    # (`[tickets] require_review_for_close`), off by default: requires an
+    # approve-verdict review record naming the current commit before close.
+    ticket_close_strict: bool = False
     ticket_old_id: str | None = None
     ticket_new_id: str | None = None
     ticket_dry_run: bool = False
@@ -524,6 +537,9 @@ class AppConfig(BaseModel):
             "ticket_old_id",
             "ticket_new_id",
             "ticket_evidence_cmd",
+            "ticket_review_verdict",
+            "ticket_reviewer",
+            "ticket_review_commit",
             "ticket_why",
             "ticket_base_ref",
             "ticket_scope_reason",
@@ -582,6 +598,7 @@ class AppConfig(BaseModel):
             "ticket_merge_ours",
             "ticket_merge_theirs",
             "ticket_why_file",
+            "ticket_findings_file",
             # frob:ticket T-0737
             "ticket_body_file",
             "ticket_acceptance_file",
@@ -743,6 +760,7 @@ class AppConfig(BaseModel):
             "perf_smells",
             "sys_apply",
             "ticket_dry_run",
+            "ticket_close_strict",
             "ticket_foreground",
             "ticket_reconcile_apply",
             "ticket_reconcile_remove_orphans",

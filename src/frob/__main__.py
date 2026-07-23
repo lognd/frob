@@ -1197,7 +1197,60 @@ def _add_ticket_close_parser(ticket_sub):
         "--evidence-cmd's id(s) also bind to (repeatable); an unbound "
         "acceptance criterion refuses the close",
     )
+    # frob:ticket T-0571
+    ticket_close_p.add_argument(
+        "--strict",
+        dest="ticket_close_strict",
+        action="store_true",
+        help="require an approve-verdict `frob ticket review` record "
+        "naming the current commit before closing (T-0571); combined with "
+        "`[tickets] require_review_for_close` in frob.toml, which must "
+        "also be true for this to actually gate -- off by default",
+    )
     return ticket_close_p
+
+
+# frob:ticket T-0571
+def _add_ticket_review_parser(ticket_sub):
+    """Register `frob ticket review <id> --verdict approve|reject
+    --reviewer NAME --findings-file PATH [--commit SHA]` (T-0571): writes a
+    structured review record (verdict, reviewer, findings summary,
+    timestamp, commit reviewed) into the ticket's ledger entry as
+    first-class evidence -- the fix for adversarial review's verdict living
+    only in dispatch-chat prose."""
+    ticket_review_p = ticket_sub.add_parser(
+        "review",
+        help="record a structured adversarial-review verdict (T-0571)",
+    )
+    ticket_review_p.add_argument("ticket_id", metavar="id")
+    ticket_review_p.add_argument(
+        "--verdict",
+        dest="ticket_review_verdict",
+        required=True,
+        choices=["approve", "reject"],
+        help="the reviewer's verdict",
+    )
+    ticket_review_p.add_argument(
+        "--reviewer",
+        dest="ticket_reviewer",
+        required=True,
+        metavar="NAME",
+        help="who performed the review",
+    )
+    ticket_review_p.add_argument(
+        "--findings-file",
+        dest="ticket_findings_file",
+        required=True,
+        metavar="PATH",
+        help="file containing the findings summary",
+    )
+    ticket_review_p.add_argument(
+        "--commit",
+        dest="ticket_review_commit",
+        metavar="SHA",
+        help="the commit reviewed (default: current HEAD)",
+    )
+    return ticket_review_p
 
 
 # frob:ticket T-0579
@@ -1426,7 +1479,7 @@ def _add_ticket_label_parser(ticket_sub):
 
 def _add_ticket_closeout_parsers(ticket_sub) -> list:
     """Register the ticket closeout subcommands: attach/block/close/fail/
-    evidence/done-report/scope/priority/component/label."""
+    evidence/done-report/scope/priority/component/label/review."""
     return (
         _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub)
         + _add_ticket_fail_evidence_archive_parsers(ticket_sub)
@@ -1436,6 +1489,7 @@ def _add_ticket_closeout_parsers(ticket_sub) -> list:
             _add_ticket_priority_parser(ticket_sub),
             _add_ticket_component_parser(ticket_sub),
             _add_ticket_label_parser(ticket_sub),
+            _add_ticket_review_parser(ticket_sub),
         ]
     )
 
