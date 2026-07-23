@@ -997,6 +997,13 @@ _KNOWN_GATE_RULES = frozenset(
         # tickets_gate's _tick007_undispatched_stale) -- the frob check
         # half of T-0752's frob.tickets.undispatched_stale, reused verbatim.
         "TICK007",
+        # T-0788: COMPLIANCE005 (frob.gates.compliance_gate, dispatching
+        # frob.strata._compliance.check_cmpl_registry built by T-0607) --
+        # a checkable-control CMPL-* compliance-registry unit left
+        # deferred/undispositioned. T-0607 built the check but could not
+        # register it here nor dispatch it (out of that ticket's scope);
+        # this closes the catalogued-is-not-enforced gap it disclosed.
+        "COMPLIANCE005",
         "PII010",
         "SEC110",
         # T-0289: long-function is the one frob-arch category channeled into
@@ -7146,6 +7153,80 @@ def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     )
 
 
+# frob:ticket T-0788
+def _compliance005_violation(cv) -> Violation:  # noqa: ANN001
+    """Convert one `frob.strata._compliance.ComplianceViolation` (COMPLIANCE005)
+    into a gate `Violation` -- the `docs/design/registry/compliance.yaml`
+    entry id doubles as the file location since the check has no source-line
+    concept of its own."""
+    return Violation(
+        rule=cv.rule,
+        severity=Severity.ERROR,
+        file="docs/design/registry/compliance.yaml",
+        line=0,
+        message=f"{cv.rule}: {cv.regulation}: {cv.detail}",
+    )
+
+
+# frob:ticket T-0788
+# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#registry-exhaustiveness-drift-lock-t-0343  # noqa: E501
+# frob:tests tests/test_gates.py::TestComplianceGate.test_compliance005_registered_in_known_gate_rules  # noqa: E501
+# frob:tests tests/test_gates.py::TestComplianceGate.test_compliance005_fires_on_deferred_disposition  # noqa: E501
+# frob:tests tests/test_gates.py::TestComplianceGate.test_compliance005_silent_on_handled_by_and_out_of_scope  # noqa: E501
+# frob:tests tests/test_gates.py::TestComplianceGate.test_compliance005_missing_registry_dir_is_silent  # noqa: E501
+# frob:tests tests/test_gates.py::TestComplianceGate.test_compliance005_real_repo_registry_passes  # noqa: E501
+def compliance_gate(
+    repo_root: Path, registry_dir: Path | None = None
+) -> tuple[Violation, ...]:
+    """COMPLIANCE005 (T-0788, closing the T-0607 gate-wiring gap): every
+    `frob.strata._compliance.CMPL_REGISTRY_UNIT_IDS` member present in
+    `docs/design/registry/compliance.yaml` must carry a `handled_by`/
+    `out_of_scope` disposition, never `deferred`/undispositioned --
+    `check_cmpl_registry` (`frob.strata._compliance`, built by T-0607) did
+    this check's real work already; this function is purely the `frob
+    check` dispatch T-0607 disclosed it could not add (`_KNOWN_GATE_RULES`
+    and this stage callback both lived outside T-0607's declared scope).
+    Silent (empty tuple) when `registry_dir` (defaults to `repo_root /
+    "docs/design/registry"`) has no `compliance.yaml` at all -- a repo with
+    no compliance registry makes no COMPLIANCE005 claim, matching
+    `registry_gate`'s own missing-directory posture. Waivable like every
+    other registry-disposition rule (`_UNWAIVABLE_RULES` does not name it) --
+    the ticket's Description does not ask for unwaivable, and a specific,
+    honest `frob:waive COMPLIANCE005 reason=...` stays available for a
+    genuinely temporary exception the same way REG001-004 allow one."""
+    from frob.strata import check_cmpl_registry
+
+    base = (
+        registry_dir
+        if registry_dir is not None
+        else (repo_root / "docs/design/registry")
+    )
+    if not (base / "compliance.yaml").is_file():
+        _log.info("compliance_gate: %s has no compliance.yaml, skipping", base)
+        return ()
+
+    result = check_cmpl_registry(base)
+    if result.is_err:
+        _log.error(
+            "compliance_gate: COMPLIANCE005 compliance.yaml at %s not loadable (%s)",
+            base,
+            result.danger_err,
+        )
+        return (
+            Violation(
+                rule="COMPLIANCE005",
+                severity=Severity.ERROR,
+                file="docs/design/registry/compliance.yaml",
+                line=0,
+                message=(
+                    f"COMPLIANCE005: compliance.yaml at {base} failed to "
+                    f"load ({result.danger_err}); fix the manifest"
+                ),
+            ),
+        )
+    return tuple(_compliance005_violation(cv) for cv in result.danger_ok)
+
+
 # ---------------------------------------------------------------------------
 # SYS001 / SYS002: strata directive <-> design binding (T-0080)
 # ---------------------------------------------------------------------------
@@ -8396,6 +8477,9 @@ _ALL_GATES = frozenset(
         # T-0813: PROTO001, the production compute_protocol_summaries
         # entrypoint (frob.gates._protocol_summary).
         "protocol_summary",
+        # T-0788: COMPLIANCE005, dispatching frob.strata._compliance's
+        # check_cmpl_registry (built by T-0607, wired here).
+        "compliance",
     }
 )
 
@@ -8762,6 +8846,10 @@ def _build_jobs(
         ),
         "decisions": lambda: decisions_gate(st.root, st.snapshot),
         "tickets": lambda: tickets_gate(st.root, st.queue),
+        # T-0788: COMPLIANCE005, always against repo_root (never the
+        # possibly-scoped st.root) -- docs/design/registry/compliance.yaml
+        # is a repo-wide manifest, same reasoning as "registry" below.
+        "compliance": lambda: compliance_gate(st.repo_root),
         # T-0412: current_date/current_version are injected (debt_gate stays
         # a pure function of its args, matching every other gate here) --
         # an unresolvable version degrades to "0.0.0" so a repo with no

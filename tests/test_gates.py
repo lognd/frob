@@ -20,6 +20,7 @@ from frob.gates import (
     TestPolicy,
     Violation,
     active_ticket,
+    compliance_gate,
     coverage_gate,
     debt_gate,
     delta_violations,
@@ -61,6 +62,7 @@ from frob.gates.invariants import InvariantError, _Criticality, load_invariants
 from frob.gitio import Diff, Hunk, working_diff
 from frob.graph import build_graph
 from frob.graph._models import LockEntry, LockFile
+from frob.strata import CMPL_REGISTRY_UNIT_IDS
 from frob.testing import CollectedTests
 from frob.tickets import Origin, Priority, Ticket, TicketKind, TicketQueue, TicketState
 from frob.tickets._store import write_ticket
@@ -7961,3 +7963,94 @@ class TestPiiStructuralCrossLanguage:
         pii010_files = {v.file for v in _by_rule(violations, "PII010")}
         assert "user.ts" in pii010_files
         assert "user.rs" in pii010_files
+
+
+# frob:ticket T-0788
+class TestComplianceGate:
+    """COMPLIANCE005 (T-0788): `compliance_gate` is the `frob check`
+    dispatch of `frob.strata._compliance.check_cmpl_registry` (built by
+    T-0607, which could not register or dispatch it -- out of that
+    ticket's declared scope). Verifies the rule id is a real, registered
+    gate rule and that the dispatch wiring fires/stays silent on the
+    right dispositions, mirroring `tests/unit/strata/test_compliance.py`'s
+    `TestCmplRegistry` fixture shapes at the gate layer."""
+
+    # frob:ticket T-0788
+    def _write_compliance_yaml(self, tmp_path: Path, entries_yaml: str) -> Path:
+        """A minimal `docs/design/registry/compliance.yaml` under `tmp_path`
+        with `entries_yaml` spliced into its `entries:` list."""
+        registry_dir = tmp_path / "docs" / "design" / "registry"
+        registry_dir.mkdir(parents=True)
+        (registry_dir / "compliance.yaml").write_text(
+            "entries:\n" + entries_yaml, encoding="utf-8"
+        )
+        return registry_dir
+
+    # frob:ticket T-0788
+    # frob:tests tests/test_gates.py::TestComplianceGate.test_compliance005_registered_in_known_gate_rules  # noqa: E501
+    def test_compliance005_registered_in_known_gate_rules(self) -> None:
+        """COMPLIANCE005 is in the live `_KNOWN_GATE_RULES` union -- the
+        exact gap T-0607 disclosed (the rule existed in code but was not a
+        real, registered gate rule id anywhere `frob check` consults)."""
+        assert "COMPLIANCE005" in known_gate_rule_ids()
+
+    # frob:ticket T-0788
+    # frob:tests tests/test_gates.py::TestComplianceGate.test_compliance005_fires_on_deferred_disposition  # noqa: E501
+    def test_compliance005_fires_on_deferred_disposition(self, tmp_path: Path) -> None:
+        """A `CMPL_REGISTRY_UNIT_IDS` member left `deferred:*` fires
+        COMPLIANCE005 through the real `frob check` dispatch path, not
+        just the underlying strata check called directly."""
+        entry_id = sorted(CMPL_REGISTRY_UNIT_IDS)[0]
+        registry_dir = self._write_compliance_yaml(
+            tmp_path,
+            f'  - id: "{entry_id}"\n'
+            '    title: "t"\n'
+            '    disposition: "deferred:T-0001"\n',
+        )
+        violations = compliance_gate(tmp_path, registry_dir)
+        cmpl005 = [v for v in violations if v.rule == "COMPLIANCE005"]
+        assert len(cmpl005) == 1
+        assert entry_id in cmpl005[0].message
+        assert cmpl005[0].severity == Severity.ERROR
+
+    # frob:ticket T-0788
+    # frob:tests tests/test_gates.py::TestComplianceGate.test_compliance005_silent_on_handled_by_and_out_of_scope  # noqa: E501
+    def test_compliance005_silent_on_handled_by_and_out_of_scope(
+        self, tmp_path: Path
+    ) -> None:
+        """`handled_by:*` and `out_of_scope:*` are both accepted --
+        COMPLIANCE005 does not fire through the gate dispatch either."""
+        ids = sorted(CMPL_REGISTRY_UNIT_IDS)
+        registry_dir = self._write_compliance_yaml(
+            tmp_path,
+            f'  - id: "{ids[0]}"\n'
+            '    title: "t"\n'
+            '    disposition: "handled_by:COMPLIANCE005"\n'
+            f'  - id: "{ids[1]}"\n'
+            '    title: "t"\n'
+            '    disposition: "out_of_scope:reason text"\n',
+        )
+        violations = compliance_gate(tmp_path, registry_dir)
+        assert not any(v.rule == "COMPLIANCE005" for v in violations)
+
+    # frob:ticket T-0788
+    # frob:tests tests/test_gates.py::TestComplianceGate.test_compliance005_missing_registry_dir_is_silent  # noqa: E501
+    def test_compliance005_missing_registry_dir_is_silent(self, tmp_path: Path) -> None:
+        """No `compliance.yaml` at all (a repo with no compliance
+        registry) makes no COMPLIANCE005 claim -- matches `registry_gate`'s
+        own missing-directory posture, not a false-positive load error."""
+        violations = compliance_gate(tmp_path)
+        assert violations == ()
+
+    # frob:ticket T-0788
+    # frob:tests tests/test_gates.py::TestComplianceGate.test_compliance005_real_repo_registry_passes  # noqa: E501
+    def test_compliance005_real_repo_registry_passes(self) -> None:
+        """The honest "real repo scan" smoke test (T-0813/T-0820
+        precedent): runs `compliance_gate` over this repo's OWN live
+        `docs/design/registry/compliance.yaml` -- every one of the 17
+        `CMPL_REGISTRY_UNIT_IDS` units T-0607 re-dispositioned must still
+        carry a `handled_by`/`out_of_scope` disposition, so this must be
+        silent (0 COMPLIANCE005 findings) against real repo state."""
+        root = Path(__file__).resolve().parents[1]
+        violations = compliance_gate(root)
+        assert not any(v.rule == "COMPLIANCE005" for v in violations)

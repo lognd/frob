@@ -81,6 +81,7 @@ from frob.strata._code_binding import (
     is_managed,
 )
 from frob.strata._compliance import (
+    CMPL_REGISTRY_UNIT_IDS,
     COMPLIANCE_CATALOG,
     REGULATION_VIEWS,
     ComplianceReport,
@@ -88,6 +89,7 @@ from frob.strata._compliance import (
     OutOfScopeRegulation,
     PrivacyPolicy,
     RegulationEntry,
+    check_cmpl_registry,
     check_privacy_policy,
     check_regulation_catalog_completeness,
     check_regulation_discharge,
@@ -315,6 +317,7 @@ __all__ = [
     "NATIVE_SOURCE_DIRS",
     "RISKY_CAPABILITY_KINDS",
     "UNBOUND_REQUIRED_KINDS",
+    "CMPL_REGISTRY_UNIT_IDS",
     "COMPLIANCE_CATALOG",
     "COMPROMISED_OWNER_CATALOG",
     "COMPROMISED_OWNER_OUT_OF_SCOPE",
@@ -486,6 +489,7 @@ __all__ = [
     "check_capability_conformance",
     "check_catalog_completeness",
     "check_fingerprint_catalog_drift",
+    "check_cmpl_registry",
     "check_discharge_completeness",
     "check_effect_completeness",
     "check_import_conformance",

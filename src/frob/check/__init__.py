@@ -214,6 +214,7 @@ def _unknown_only_result(root: Path, unknown: frozenset[str]) -> CheckResult:
 #: `gates-security` each take a few of the CPU-bound giants (measured
 #: comfortably under the 90s per-stage target), `gates-fast` takes every
 #: cheap/I/O-bound gate (also well under budget on its own).
+# frob:ticket T-0788
 _STAGE_GROUPS: dict[str, frozenset[str]] = {
     "lint": frozenset({"ruff", "ty"}),
     "static": frozenset({"cycle", "dup", "arch", "bind", "exports"}),
@@ -232,6 +233,7 @@ _STAGE_GROUPS: dict[str, frozenset[str]] = {
             "tickets",
             "refs",
             "registry",
+            "compliance",
             "docblocks",
             "walk_lint",
             "excludehazard",
