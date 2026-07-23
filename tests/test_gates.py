@@ -2062,6 +2062,42 @@ class TestDeprecatedGate:
             v.rule == "REL001" and "frob:deprecated" in v.message for v in violations
         )
 
+    def test_deprecated_is_registered_in_all_gates(self) -> None:
+        """T-0797: DEPR001-004 were implemented (T-0576) but 'deprecated' was
+        never added to `_ALL_GATES`, so no real `frob check` run ever
+        evaluated them (catalogued-is-not-enforced). Locks the registration
+        so this cannot silently regress again."""
+        # frob:tests tests/test_gates.py::TestDeprecatedGate.test_deprecated_is_registered_in_all_gates  # noqa: E501
+        from frob.gates import _ALL_GATES
+
+        assert "deprecated" in _ALL_GATES
+
+    def test_deprecated_fires_through_real_gate_dispatch(self, tmp_path: Path) -> None:
+        """T-0797: an end-to-end `run_gates` pass (no `--only` filter, the
+        default gate selection) over a `frob:deprecated` directive still
+        inside its warning window must surface DEPR003 -- proving the gate
+        is actually wired into dispatch, not just callable in isolation."""
+        # frob:tests tests/test_gates.py::TestDeprecatedGate.test_deprecated_fires_through_real_gate_dispatch  # noqa: E501
+        _git_init(tmp_path)
+        _write_ticket(tmp_path, _ticket(state=TicketState.QUEUED))
+        source = (
+            "def helper(x):\n"
+            '    # frob:deprecated 0.1.0 sunset="2099-01-01" ticket="T-0001"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "add file"], cwd=tmp_path, check=True
+        )
+        cfg = GateConfig(root=str(tmp_path), base="main")
+        result = run_gates(cfg)
+        assert result.is_ok
+        report = result.danger_ok
+        v = _first_rule(report.violations, "DEPR003")
+        assert v is not None
+        assert v.severity == Severity.WARN
+
 
 class TestScopePrework:
     def test_scope001_out_of_scope_file(self, tmp_path: Path) -> None:

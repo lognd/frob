@@ -15,7 +15,7 @@ _log = get_logger(__name__)
 # frob:ticket T-0448
 # frob:doc docs/modules/app.md#runners
 # frob:doc docs/modules/render.md#exemplar-frob-map
-# frob:deprecated 2026-07-23 sunset="2026-10-01" ticket="T-0580" reason="zero organic use; navigation owned by Serena/native tools"  # noqa: E501
+# frob:deprecated 2026-07-23 sunset="2026-10-01" ticket="T-0802" reason="zero organic use; navigation owned by Serena/native tools"  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """Render the `frob map` project structure summary; T-0448: migrated
     to `frob.render.Renderer` as the second FOUNDATION exemplar -- `--json`

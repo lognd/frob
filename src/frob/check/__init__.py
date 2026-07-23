@@ -228,6 +228,8 @@ _STAGE_GROUPS: dict[str, frozenset[str]] = {
             "walk_lint",
             "excludehazard",
             "debt",
+            # frob:ticket T-0797
+            "deprecated",
             "render_lint",
             "parse_failures",
             "lang_conformance",

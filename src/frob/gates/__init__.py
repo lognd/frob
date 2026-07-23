@@ -7701,6 +7701,11 @@ _ALL_GATES = frozenset(
         "lang_conformance",
         # T-0406: LANG002/LANG003, per-project language conformance.
         "lang_project_conformance",
+        # frob:ticket T-0797
+        # T-0576/T-0797: DEPR001-004, frob:deprecated lifecycle checks --
+        # implemented since T-0576 but never registered here, so no real
+        # `frob check` run ever evaluated them (catalogued-is-not-enforced).
+        "deprecated",
     }
 )
 
@@ -7975,6 +7980,8 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "walk_lint",
     "excludehazard",
     "debt",
+    # frob:ticket T-0797
+    "deprecated",
     "render_lint",
     "parse_failures",
     "dead_symbols",
