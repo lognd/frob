@@ -371,6 +371,53 @@ signal (an audit trail, "did anything touch my caches while I wasn't
 looking") read `DoctorReport.drift` or call
 `detect_derived_state_drift` directly.
 
+## `frob mutate` backup journal: needs-restore state (T-0857)
+
+<!-- frob:describes src/frob/doctor.py::_mutate_journal_remediation -->
+
+`frob doctor` also reports every stale `frob mutate` backup journal found
+under `.frob/mutate-backup/` (`frob.mutate._journal.list_stale_journals`,
+`DoctorReport.mutate_journals`). A journal is written before `frob mutate`
+overwrites a target with a mutant and normally removed once the original
+is restored; a journal still present means a PRIOR mutation run crashed
+(a `SIGKILL`, an OOM kill, the T-0755 fork-bomb scenario) before it could
+restore its target -- the real source file it names may currently be
+sitting on disk in mutant form.
+
+Unlike drift (previous section), this DOES fold into the overall
+`healthy`/`remediation` verdict -- a stale journal names a live source-
+file problem, not disposable cache churn:
+
+```bash
+frob doctor
+# ... mutate-backup journal(s) needing restore: src/pkg/m.py -- re-run
+# `frob mutate <target>` (its startup check restores automatically) or
+# restore by hand from the journal file
+```
+
+`frob doctor --json`'s `mutate_journals` array carries one entry per
+stale journal (`target`, `journal_path`). `frob doctor` itself never
+restores anything -- it is a diagnostic, not a repair tool. The fix is
+either re-running `frob mutate` against the same target (its own startup
+check, `restore_stale_journals`, performs the actual restore before doing
+anything else) or restoring by hand from the named journal file (JSON,
+base64-encoded raw bytes plus a sha256 fingerprint). See
+`docs/modules/mutate.md#crash-safe-backup-journal-t-0857` for the full
+journal design.
+
+**Known residual (PID reuse without `/proc`):** "stale" is PID-reuse-aware
+on Linux -- a journal also records the writer's `/proc/<pid>/stat`
+starttime, so a crashed writer whose PID number later gets recycled by an
+unrelated process is still correctly detected as stale rather than
+reporting "alive" forever (see
+`docs/modules/mutate.md#pid-reuse-why-is-the-writer-alive-is-not-enough-t-0857-reviewer-fix`).
+Wherever `/proc` cannot be read at all (non-Linux, a sandboxed
+environment), staleness falls back to PID-only liveness and this
+detection does not apply: **if `frob doctor` stays clean but a target
+keeps refusing with `JournalCollision`, inspect
+`.frob/mutate-backup/<hash>.json` by hand -- the recorded PID may have
+been reused.**
+
 ## Scaffold managed-block conformance (T-0736)
 
 <!-- frob:describes src/frob/scaffold/_managed.py::scaffold_conformance_status -->

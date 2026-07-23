@@ -355,3 +355,68 @@ class TestDoctorScaffoldConformance:
 
         report = run_diagnosis(tmp_path)
         assert all(s.present and not s.stale for s in report.scaffold_blocks)
+
+
+class TestDoctorMutateJournal:
+    """T-0857: `frob doctor` reports a stale `frob mutate` backup journal
+    (a crashed prior run's not-yet-restored target) as an unhealthy
+    verdict, read-only -- it never restores anything itself."""
+
+    # frob:tests src/frob/doctor.py
+    def test_run_diagnosis_healthy_with_no_mutate_journals(
+        self, tmp_path: Path
+    ) -> None:
+        """No `.frob/mutate-backup/` at all -- the normal case -- reports
+        an empty `mutate_journals` list and never drags `healthy` down."""
+        from frob.doctor import run_diagnosis
+
+        report = run_diagnosis(tmp_path)
+        assert report.mutate_journals == []
+        assert report.healthy is True
+
+    # frob:tests src/frob/doctor.py
+    def test_run_diagnosis_unhealthy_with_stale_mutate_journal(
+        self, tmp_path: Path
+    ) -> None:
+        """A journal left by a crashed (dead-PID) `frob mutate` run folds
+        into an unhealthy verdict naming the target and the fix."""
+        from frob.doctor import run_diagnosis
+        from frob.mutate._journal import write_journal
+
+        target = tmp_path / "m.py"
+        target.write_bytes(b"def add(a, b):\n    return a + b\n")
+        dead_pid_proc = subprocess.Popen(["python3", "-c", "pass"])  # noqa: S603
+        dead_pid_proc.wait()
+        assert write_journal(
+            tmp_path,
+            target,
+            b"def add(a, b):\n    return a + b\n",
+            pid=dead_pid_proc.pid,
+        ).is_ok
+
+        report = run_diagnosis(tmp_path)
+        assert report.healthy is False
+        assert len(report.mutate_journals) == 1
+        assert report.mutate_journals[0].target == "m.py"
+        assert report.remediation is not None
+        assert "m.py" in report.remediation
+        assert "frob mutate" in report.remediation
+
+    # frob:tests src/frob/doctor.py
+    def test_run_diagnosis_ignores_journal_owned_by_live_pid(
+        self, tmp_path: Path
+    ) -> None:
+        """A journal owned by a STILL-RUNNING pid (this test process
+        itself) is an in-progress `frob mutate` run, not a crash -- doctor
+        must not flag it, or every ordinary concurrent run would look
+        broken."""
+        from frob.doctor import run_diagnosis
+        from frob.mutate._journal import write_journal
+
+        target = tmp_path / "m.py"
+        target.write_bytes(b"original\n")
+        assert write_journal(tmp_path, target, b"original\n", pid=os.getpid()).is_ok
+
+        report = run_diagnosis(tmp_path)
+        assert report.mutate_journals == []
+        assert report.healthy is True

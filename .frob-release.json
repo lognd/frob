@@ -661,6 +661,14 @@
     "src/frob/mutate/__init__.py::_PointCollector.visit_Constant": "38dc26f5bc7ed104ccc0693892d3c092a2c5003ed0e546695c56cf6c502f5cf7",
     "src/frob/mutate/__init__.py::generate_mutants": "1484994449add9c8462b9e977beaf8c5d421658732004c98b9b491587d52a247",
     "src/frob/mutate/__init__.py::run_mutations": "1028e3affa1c53b846f49445463d02d2fcab87756ae79eae9344b12b7098a2f6",
+    "src/frob/mutate/_journal.py::JOURNAL_DIR": "6691efef2e47c88b55ad236282de047b7864e2271a401dbadf416b4cf1e9b412",
+    "src/frob/mutate/_journal.py::JournalError": "fea8c9c33a88ab7fae7d0ff7806fd31b29e79dbf57b45a0c71d5685768ccd209",
+    "src/frob/mutate/_journal.py::MutationJournalEntry": "e01ceb1375948c5726b45bf34cbfef4ac68d4a4cec6876e55a1e4017b3824c7c",
+    "src/frob/mutate/_journal.py::StaleJournal": "5524a3cb00e2be5acdf2e2da713adbfb902a9b606f76c80e85853dcfc0fd68c0",
+    "src/frob/mutate/_journal.py::list_stale_journals": "e345c169d753290185c52c400ae5f6010788414eab8c8609db8536e4317d1a33",
+    "src/frob/mutate/_journal.py::remove_journal": "766b00ad995132e5eb9e0d4512b35671320e8257c285efd2ae8bd3121426aff9",
+    "src/frob/mutate/_journal.py::restore_stale_journals": "0c435c2dbba09a10b3880806fc0f76bb2ca3367a47f4f057373d30750474e743",
+    "src/frob/mutate/_journal.py::write_journal": "a5f5096fee6d652515d8fa1c275c4ad783e54c67771f762b905e1a0d6d9e8df4",
     "src/frob/outline/__init__.py::ClassOutline": "18abe714a5d391fe337a438850b847e187e277e5b16b51c8f3a2b051b8b52778",
     "src/frob/outline/__init__.py::FunctionOutline": "cff027643a8d31ebf8ef84ffc4b76228446aa3f14890855de688c67efe06981c",
     "src/frob/outline/__init__.py::ModuleOutline": "eee43ad45d07822759a8c2c579dd38a43370aa1a301884c56266a40fa167f957",
@@ -1399,5 +1407,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.135.0"
+  "version": "0.136.0"
 }

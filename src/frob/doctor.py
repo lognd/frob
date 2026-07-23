@@ -1,9 +1,8 @@
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: src/frob/doctor.py's \
 # exclusivity-vocabulary hit is source-level design-rationale/scope-cut prose (a \
-# docstring or comment describing already-implemented internal behavior, verifiable \
-# by reading the code it annotates) rather than a separate cross-module contract \
-# needing its own tracked invariant; disposed as a calibration batch, not \
-# claim-by-claim"
+# docstring or comment describing already-implemented internal behavior, verifiable by \
+# reading the code it annotates) rather than a separate cross-module contract needing \
+# its own tracked invariant; disposed as a calibration batch, not claim-by-claim"
 # frob:waive SCOPE001 reason="T-0319 scope comma-joined, matches nothing (T-0241 bug)"
 # frob:waive TEST003 reason="pre-existing T-0319 debt, system kind only"
 """`frob doctor`: verify the native extensions (`frob_core`, `strata_core`)
@@ -45,6 +44,33 @@ content drift with both fingerprints. This is deliberately informational
 (`DoctorReport.drift`, does not affect `healthy`) -- see that function's
 docstring for why treating ordinary cache churn between two doctor runs
 as a hard failure would be wrong.
+
+T-0857: `run_diagnosis` also reports every stale `frob mutate` backup
+journal under `.frob/mutate-backup/` (`DoctorReport.mutate_journals`),
+read-only, via `frob.mutate._journal.list_stale_journals`. A present
+journal means a prior `frob mutate` run crashed before restoring its
+target's original bytes -- UNLIKE `derived_state`'s corrupt-cache case,
+this DOES feed into `healthy`/`remediation`: a stale journal names a real
+source file currently sitting in mutant form on disk, not a disposable
+cache. `frob doctor` itself never restores; it only reports and points at
+the fix (re-running `frob mutate` against the same target, whose
+`restore_stale_journals` startup check performs the actual restore).
+
+Staleness itself is PID-reuse-aware (a reviewer-caught gap in this
+ticket's first pass): a bare "is the writer's PID alive" probe cannot
+tell a crashed writer whose PID number the OS later recycled apart from
+the original writer still legitimately running, so a naive version of
+this check would report CLEAN forever once that recycle happened, with a
+real source file silently sitting in mutant form. `frob.mutate._journal`
+also records the writer's `/proc/<pid>/stat` starttime and treats a live
+PID with a MISMATCHED starttime as stale too -- see
+`docs/modules/mutate.md#crash-safe-backup-journal-t-0857` for the full
+mechanism. That check itself falls back to PID-only liveness wherever
+`/proc` cannot be read (non-Linux, sandboxed environments) -- the
+residual PID-reuse window in that fallback case is not detected by
+`frob doctor`: if `frob doctor` stays clean but a target keeps refusing
+with `JournalCollision`, inspect `.frob/mutate-backup/<hash>.json` by
+hand -- the recorded PID may have been reused.
 """
 
 from __future__ import annotations
@@ -58,6 +84,7 @@ from pathlib import Path
 from pydantic import BaseModel
 
 from frob.logging import get_logger
+from frob.mutate._journal import StaleJournal, list_stale_journals
 from frob.scaffold._managed import ManagedBlockStatus, scaffold_conformance_status
 
 _log = get_logger(__name__)
@@ -277,7 +304,9 @@ def _write_drift_manifest(root: Path, fingerprints: dict[str, str]) -> None:
 
 # frob:doc docs/guides/install.md#derived-state-integrity-manifest-t-0570
 # frob:tests tests/system/test_cli_doctor.py kind="integration"
-# frob:tests tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift.test_rewritten_artifact_between_two_runs_reports_drift kind="unit"  # noqa: E501
+# frob:tests \
+# tests/system/test_cli_doctor.py::TestDoctorDerivedStateDrift.test_rewritten_artifact_\
+# between_two_runs_reports_drift kind="unit"  # noqa: E501
 def detect_derived_state_drift(
     root: Path, current: tuple[DerivedArtifactStatus, ...]
 ) -> tuple[DerivedArtifactDrift, ...]:
@@ -343,16 +372,36 @@ def _scaffold_remediation(missing_or_stale: tuple[ManagedBlockStatus, ...]) -> s
     )
 
 
+# frob:doc docs/modules/mutate.md#crash-safe-backup-journal-t-0857
+# frob:tests \
+# tests/system/test_cli_doctor.py::TestDoctorMutateJournal.test_run_diagnosis_unhealthy\
+# _with_stale_mutate_journal kind="unit"  # noqa: E501
+def _mutate_journal_remediation(stale: tuple[StaleJournal, ...]) -> str:
+    """One clear remediation line naming every target still in mutant form
+    on disk (T-0857) -- a stale `frob mutate` backup journal, from a run
+    that crashed before restoring."""
+    names = ", ".join(s.target for s in stale)
+    return (
+        f"mutate-backup journal(s) needing restore: {names} -- "
+        "re-run `frob mutate <target>` (its startup check restores "
+        "automatically) or restore by hand from the journal file"
+    )
+
+
 # frob:doc docs/guides/install.md#frob-doctor-native-extension-diagnosis-t-0319
 class DoctorReport(BaseModel):
     """Full `frob doctor` diagnosis: per-extension status, derived-artifact
     integrity manifest (T-0570), cross-run content drift (T-0604),
-    managed-boilerplate-block conformance (T-0736), the overall verdict,
-    and remediation hint (empty when everything is healthy).
+    managed-boilerplate-block conformance (T-0736), stale mutate-backup
+    journals needing restore (T-0857), the overall verdict, and
+    remediation hint (empty when everything is healthy).
 
     `drift` is informational only -- see `detect_derived_state_drift`'s
     docstring for why it does not feed into `healthy`/`remediation` the
-    way a corrupt (`derived_state`) artifact does."""
+    way a corrupt (`derived_state`) artifact does. `mutate_journals` is
+    the opposite: any entry DOES make `healthy` False -- it names a real
+    source file currently sitting in mutant form on disk, not disposable
+    cache churn."""
 
     model_config = {}
 
@@ -361,6 +410,7 @@ class DoctorReport(BaseModel):
     derived_state: list[DerivedArtifactStatus] = []
     drift: list[DerivedArtifactDrift] = []
     scaffold_blocks: list[ManagedBlockStatus] = []
+    mutate_journals: list[StaleJournal] = []
     healthy: bool
     remediation: str | None = None
 
@@ -392,10 +442,12 @@ def _combined_remediation(
     natives_healthy: bool,
     corrupt: tuple[DerivedArtifactStatus, ...],
     scaffold_needs_apply: tuple[ManagedBlockStatus, ...] = (),
+    stale_mutate_journals: tuple[StaleJournal, ...] = (),
 ) -> str | None:
     """The full remediation text for a `DoctorReport`: natives hint,
-    derived-state hint, scaffold-conformance hint (T-0736), or all joined
-    -- `None` only when every part is clean."""
+    derived-state hint, scaffold-conformance hint (T-0736), stale mutate-
+    journal hint (T-0857), or all joined -- `None` only when every part is
+    clean."""
     parts = []
     if not natives_healthy:
         parts.append(REMEDIATION_HINT)
@@ -403,6 +455,8 @@ def _combined_remediation(
         parts.append(_derived_state_remediation(corrupt))
     if scaffold_needs_apply:
         parts.append(_scaffold_remediation(scaffold_needs_apply))
+    if stale_mutate_journals:
+        parts.append(_mutate_journal_remediation(stale_mutate_journals))
     return " | ".join(parts) if parts else None
 
 
@@ -422,7 +476,12 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
     PREVIOUS `frob doctor` run persisted (`detect_derived_state_drift`)
     and stamps a fresh manifest for the NEXT run before returning --
     `report.drift` is informational only and does not affect `healthy`,
-    see that function's docstring for why."""
+    see that function's docstring for why.
+
+    T-0857: also reports every stale `frob mutate` backup journal under
+    `.frob/mutate-backup/` (`list_stale_journals`) -- UNLIKE `drift`, a
+    present journal DOES make `healthy` False (see `DoctorReport`'s
+    docstring)."""
     resolved_root = root or Path.cwd()
     extensions = [_extension_status(name) for name in NATIVE_EXTENSIONS]
     natives_healthy = all(ext.available for ext in extensions)
@@ -438,25 +497,34 @@ def run_diagnosis(root: Path | None = None) -> DoctorReport:
     scaffold_blocks = scaffold_conformance_status(resolved_root)
     scaffold_needs_apply = tuple(s for s in scaffold_blocks if not s.present or s.stale)
 
-    healthy = natives_healthy and not corrupt and not scaffold_needs_apply
+    stale_mutate_journals = list_stale_journals(resolved_root)
+
+    healthy = (
+        natives_healthy
+        and not corrupt
+        and not scaffold_needs_apply
+        and not stale_mutate_journals
+    )
     report = DoctorReport(
         frob_version=_frob_version(),
         extensions=extensions,
         derived_state=list(derived_state),
         drift=list(drift),
         scaffold_blocks=list(scaffold_blocks),
+        mutate_journals=list(stale_mutate_journals),
         healthy=healthy,
         remediation=_combined_remediation(
-            natives_healthy, corrupt, scaffold_needs_apply
+            natives_healthy, corrupt, scaffold_needs_apply, stale_mutate_journals
         ),
     )
     _log.info(
         "doctor: healthy=%s extensions=%s derived_state_corrupt=%s drift=%s "
-        "scaffold_needs_apply=%s",
+        "scaffold_needs_apply=%s stale_mutate_journals=%s",
         healthy,
         extensions,
         [d.name for d in corrupt],
         [d.name for d in drift],
         [s.block_id for s in scaffold_needs_apply],
+        [s.target for s in stale_mutate_journals],
     )
     return report

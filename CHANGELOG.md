@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.136.0] - unreleased
+
+- T-0857: mutate: crashed harness leaves mutants on disk -- journal originals and detect/restore leftovers
+
 ## [0.135.0] - unreleased
 
 - T-0600: frob-exports triage: src/frob/gates, src/frob/graph, src/frob/process/parsers, src/frob/registry (14 symbols across 4 packages)

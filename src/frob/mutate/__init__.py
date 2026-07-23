@@ -23,6 +23,7 @@ from typani.error_set import ErrorSet
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
+from frob.mutate._journal import remove_journal, restore_stale_journals, write_journal
 
 _log = get_logger(__name__)
 
@@ -63,6 +64,11 @@ class MutateError(ErrorSet):
     NoSource = "Target file does not exist"
     ExecDisabled = (
         "exec capability disabled via kill switch -- mutation run aborted, no score"
+    )
+    JournalCollision = (
+        "a mutate-backup journal for this file already exists with different "
+        "content -- a concurrent mutation run may be active, or a crash left "
+        "a journal `frob doctor` should be consulted for (T-0857)"
     )
 
 
@@ -310,8 +316,17 @@ def run_mutations(
     """Mutate `file` one point at a time; a mutant is KILLED if `test_argv`
     fails against it, SURVIVED if the tests still pass.
 
-    The file is restored after every mutant (and on any error), so a crashed
-    run never leaves a mutated source behind.
+    The file is restored after every mutant (and on any error) via a
+    `finally`. That alone does not survive a KILLED process (a SIGKILL, an
+    OOM kill, the T-0755 fork-bomb scenario never reaches the `finally`) --
+    T-0857 closes that gap: before the first mutant write, the target's
+    pre-mutation bytes are journaled to `.frob/mutate-backup/`
+    (`frob.mutate._journal.write_journal`) and removed only after a
+    successful restore, so a crashed run always leaves a recoverable
+    original on disk instead of the mutant. Every call also restores any
+    STALE journal left by a PRIOR crashed run before doing anything else
+    (`restore_stale_journals`, logged loudly at WARNING) -- `frob doctor`
+    surfaces the same state read-only via `list_stale_journals`.
 
     T-0755: `max_mutants` (default `None`, unbounded, preserving every
     caller before this ticket) caps how many of `generate_mutants`' points
@@ -329,17 +344,42 @@ def run_mutations(
     target = root / file if not file.is_absolute() else file
     if not target.exists():
         return Err(MutateError.NoSource)
-    original = target.read_text(encoding="utf-8")
+    restored = restore_stale_journals(root)
+    if restored:
+        _log.warning(
+            "mutate: restored %d stale journal(s) left by a prior crashed run "
+            "before starting: %s",
+            len(restored),
+            restored,
+        )
+    original_bytes = target.read_bytes()
+    try:
+        original = original_bytes.decode("utf-8")
+    except UnicodeDecodeError:
+        return Err(MutateError.ParseFailed)
     generated = generate_mutants(original, str(file), line_ranges)
     if generated.is_err:
         return Err(generated.danger_err)
     mutants = generated.danger_ok
     if max_mutants is not None:
         mutants = mutants[:max_mutants]
+    journaled = write_journal(root, target, original_bytes)
+    if journaled.is_err:
+        _log.error(
+            "mutate: aborting run for %s -- journal collision (%s)",
+            target,
+            journaled.danger_err,
+        )
+        return Err(MutateError.JournalCollision)
     try:
         run_result = _run_mutants(target, mutants, test_argv, root, timeout_s)
     finally:
-        target.write_text(original, encoding="utf-8")
+        # Only drop the journal once the restore write has actually
+        # succeeded (T-0857) -- if `write_bytes` itself raises (a disk
+        # error mid-restore), the journal must survive so the NEXT
+        # `run_mutations` call's `restore_stale_journals` can still fix it.
+        target.write_bytes(original_bytes)
+        remove_journal(root, target)
     if run_result.is_err:
         _log.error(
             "mutate: run aborted (%s) -- no mutation score, not a false 100%%",
