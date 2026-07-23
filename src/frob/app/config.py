@@ -157,6 +157,9 @@ class AppConfig(BaseModel):
     # -v/-vv count (T-0202): 0=summary+violations only, 1=INFO firehose,
     # 2+=full per-symbol DEBUG.
     check_verbose: int = 0
+    # -v count for `frob ticket` (T-0768): 0=ticket output only (diagnostic
+    # loggers clamped to WARNING), 1+=full INFO/DEBUG diagnostic firehose.
+    ticket_verbose: int = 0
     # check (python)
     check_skip_ruff: bool = False
     check_skip_ty: bool = False
@@ -612,6 +615,7 @@ class AppConfig(BaseModel):
             "perf_top",
             "stats_days",
             "check_verbose",
+            "ticket_verbose",
             "vet_jobs",
         ):
             val = getattr(args, int_field, None)

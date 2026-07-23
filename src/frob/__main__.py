@@ -1411,6 +1411,17 @@ def _add_ticket_lifecycle_parsers(ticket_sub) -> list:
 def _add_ticket_parser(sub) -> None:
     """Register the `frob ticket` subcommand and its arguments."""
     ticket_p = sub.add_parser("ticket", help="the statically-checkable ticket queue")
+    ticket_p.add_argument(
+        "-v",
+        "--verbose",
+        dest="ticket_verbose",
+        action="count",
+        default=0,
+        help=(
+            "restore diagnostic INFO/DEBUG log lines (gitio/tickets loader "
+            "chatter); default shows ticket output and WARNING+ only (T-0768)"
+        ),
+    )
     ticket_sub = ticket_p.add_subparsers(dest="ticket_command")
     _add_ticket_new_parser(ticket_sub)
     path_parsers = _add_ticket_query_parsers(ticket_sub)

@@ -27,7 +27,7 @@ from typani.result import Err, Ok
 
 from frob.app._style import style_state, style_ticket_id
 from frob.app.config import AppConfig
-from frob.logging import get_logger
+from frob.logging import get_logger, logger_levels
 from frob.process._guard import EXEC_KILL_SWITCH_ENV, exec_enabled
 
 if TYPE_CHECKING:
@@ -97,7 +97,28 @@ def run(cfg: AppConfig) -> None:
             "label|archive> ..."
         )
         sys.exit(1)
-    handler(root, cfg)
+    with _diagnostic_log_ctx(cfg):
+        handler(root, cfg)
+
+
+# frob:ticket T-0768
+def _diagnostic_log_ctx(cfg: AppConfig):  # noqa: ANN202
+    """The logger context `run` dispatches every subcommand under (T-0768).
+
+    At default verbosity the `frob` logger tree is clamped to WARNING so
+    library diagnostic chatter (`frob.gitio` spawn/returncode lines, the
+    `frob.tickets` loader's per-run INFO) stays out of the terminal, while
+    this module's own logger -- the ticket CLI's user-facing output channel
+    -- is pinned to INFO so listings still print. `-v` skips the clamp and
+    restores the full firehose. WARNING+ lines (stale leases, over-broad
+    scopes) always show either way.
+    """
+    import contextlib
+    import logging
+
+    if cfg.ticket_verbose > 0:
+        return contextlib.nullcontext()
+    return logger_levels({"frob": logging.WARNING, __name__: logging.INFO})
 
 
 # frob:ticket T-0737

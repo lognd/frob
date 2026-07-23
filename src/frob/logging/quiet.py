@@ -105,3 +105,28 @@ def quiet_stdout_logs() -> Iterator[None]:
                 for h, level in zip(stdout_handlers, _saved_levels, strict=True):
                     h.setLevel(level)
                 _saved_levels = None
+
+
+@contextlib.contextmanager
+# frob:doc docs/modules/logging.md#public-api
+# frob:ticket T-0768
+def logger_levels(levels: dict[str, int]) -> Iterator[None]:
+    """Set each named logger to its mapped level for the duration of the block.
+
+    Backs `frob ticket`'s default-quiet dispatch (T-0768): unlike the
+    handler-wide `stdout_log_level`, this discriminates BY LOGGER, so a
+    runner whose user-facing output channel is its own module logger's
+    INFO (`frob.app.ticket_runner`) can clamp the rest of the `frob` tree
+    to WARNING without swallowing its own output. Plain save/restore --
+    callers own a single top-level CLI invocation, so no T-0125 reentrancy
+    machinery is needed. A logger whose saved level was NOTSET is restored
+    to NOTSET (inheritance), not to its effective level.
+    """
+    saved = {name: logging.getLogger(name).level for name in levels}
+    for name, level in levels.items():
+        logging.getLogger(name).setLevel(level)
+    try:
+        yield
+    finally:
+        for name, level in saved.items():
+            logging.getLogger(name).setLevel(level)
