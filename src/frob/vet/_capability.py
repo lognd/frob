@@ -641,6 +641,79 @@ _SPECIAL_CHECKS: dict[str, dict[str, tuple[_SpecialCheck, ...]]] = {
 _PY_SCOPE_TYPES = ("function_definition", "class_definition", "module")
 
 
+#: every literal needle registered for a python `_DangerousOperation`
+#: (T-0659) -- flattened once at import time so `_py_target_is_dangerous`
+#: can classify an already-resolved dotted target without re-deriving the
+#: needle table on every call. Deliberately the SAME needle vocabulary the
+#: rest of this module scans with (no parallel "dangerous name" list to
+#: desync), just flattened across capability boundaries since fallback-
+#: ordering safety (below) does not care WHICH capability a target belongs
+#: to, only whether it is dangerous at all.
+_PY_ALL_DANGEROUS_NEEDLES: tuple[str, ...] = tuple(
+    needle
+    for entry in DANGEROUS_OPERATIONS
+    if entry.language == "python"
+    for needle in entry.needles
+)
+
+#: every python stdlib/library module name `DANGEROUS_OPERATIONS` curates
+#: an entry for (T-0659) -- used ONLY to decide whether a `from X import *`
+#: wildcard is worth a best-effort fallback resolution (see
+#: `_bind_import_from_statement`'s wildcard branch); a module absent from
+#: this set gets no wildcard binding at all (an honest, documented under-
+#: approximation for a star-import re-export of an UNTRACKED module,
+#: matching the taxonomy's "degrades to opaque" caveat) rather than a
+#: false claim of resolution.
+_PY_WILDCARD_DANGEROUS_MODULES: frozenset[str] = frozenset(
+    entry.library for entry in DANGEROUS_OPERATIONS if entry.language == "python"
+)
+
+#: sentinel import-table KEY (not a legal python identifier, so it can
+#: never collide with a real bound name) recording the set of wildcard-
+#: imported dangerous modules for a file, NUL-joined (T-0659). Piggybacked
+#: onto the plain `dict[str, str]` import table instead of widening every
+#: resolver signature to carry a second collection -- see
+#: `_bind_import_from_statement`'s wildcard branch and
+#: `_resolve_py_identifier`'s fallback read.
+_PY_WILDCARD_TABLE_KEY = "*"
+
+
+def _py_target_is_dangerous(target: str) -> bool:
+    """True if the resolved dotted `target` (e.g. `"subprocess.run"`) matches
+    ANY python registry needle (T-0659) -- the single classification
+    `_bind_py_name` uses to keep a dangerous import-table binding from
+    being silently overwritten by a later, benign one (the conditional/
+    try-except import-fallback soundness gap: order should never determine
+    whether a genuinely dangerous alternative is observed)."""
+    haystack = f"{target}("
+    return any(
+        needle in target or needle in haystack for needle in _PY_ALL_DANGEROUS_NEEDLES
+    )
+
+
+def _bind_py_name(table: dict[str, str], name: str, target: str) -> None:
+    """Bind `name -> target` in `table`, UNLESS `name` already resolves to a
+    dangerous target and `target` itself is not dangerous (T-0659): plain
+    dict assignment is order-sensitive, so a `try`/`except ImportError`
+    fallback pair binding the SAME name to a dangerous import in one branch
+    and a benign one in the other silently loses the dangerous binding
+    whenever the benign branch happens to be walked last (`_py_import_table`
+    walks the whole tree unconditionally, with no notion of which branch
+    actually executes at runtime -- a may-analysis over-approximation, by
+    design, of exactly the kind T-0337's alias table already documents).
+    Keeping the more dangerous of the two candidates makes detection
+    ORDER-INDEPENDENT: whichever branch runs at runtime, the fallback
+    pattern is still flagged."""
+    existing = table.get(name)
+    if (
+        existing is not None
+        and _py_target_is_dangerous(existing)
+        and not _py_target_is_dangerous(target)
+    ):
+        return
+    table[name] = target
+
+
 #: sentinel `bound` position meaning "shadows from the very start of the
 #: scope, regardless of call-site position" -- used for function/lambda
 #: PARAMETERS (always in scope for the whole body) and nested `def`/`class`
@@ -781,30 +854,52 @@ def _bind_import_statement(node, table: dict[str, str]) -> None:  # noqa: ANN001
             dotted = name_node.child_by_field_name("name")
             alias = name_node.child_by_field_name("alias")
             if dotted is not None and alias is not None:
-                table[node_text(alias)] = node_text(dotted)
+                _bind_py_name(table, node_text(alias), node_text(dotted))
 
 
 def _bind_import_from_statement(node, table: dict[str, str]) -> None:  # noqa: ANN001
     """One `import_from_statement` node's contribution to `_py_import_table`
     (T-0328): `from X import Z` -> `{Z: X.Z}`, `from X import Z as W` ->
-    `{W: X.Z}`. `from X import *` adds NO binding (documented limitation,
-    module docstring above)."""
+    `{W: X.Z}`.
+
+    T-0659: `from X import *` (`wildcard_import`) is no longer an
+    unconditional no-op. A star import's individual re-exported names are
+    genuinely untraceable in general (real limitation: this file alone
+    cannot enumerate `X`'s own `__all__`/export surface), so this still
+    adds NO per-name binding for an arbitrary `X`. But when `X` is one of
+    the modules `DANGEROUS_OPERATIONS` already curates
+    (`_PY_WILDCARD_DANGEROUS_MODULES`) -- exactly the closed, reviewed set
+    this scanner's own needle tables treat as dangerous -- a star import of
+    it is recorded via the `_PY_WILDCARD_TABLE_KEY` sentinel so
+    `_resolve_py_identifier` can offer a best-effort `X.<name>` fallback
+    resolution for any bare name that isn't otherwise bound (T-0339's
+    "star-import re-export chain" row). This closes the specific evasion
+    `from subprocess import *; run(x)` without claiming to resolve a star
+    import of an arbitrary, untracked third-party module."""
     module_field = node.child_by_field_name("module_name")
     module_text = node_text(module_field) if module_field is not None else ""
     for name_node in node.children_by_field_name("name"):
         if name_node.type == "dotted_name":
             imported = node_text(name_node)
-            table[imported] = f"{module_text}.{imported}" if module_text else imported
+            target = f"{module_text}.{imported}" if module_text else imported
+            _bind_py_name(table, imported, target)
         elif name_node.type == "aliased_import":
             dotted = name_node.child_by_field_name("name")
             alias = name_node.child_by_field_name("alias")
             if dotted is not None and alias is not None:
                 imported = node_text(dotted)
                 target = f"{module_text}.{imported}" if module_text else imported
-                table[node_text(alias)] = target
-        # wildcard_import ("from X import *"): no binding added -- a
-        # star-imported name is untraceable without also modeling X's own
-        # export surface (documented limitation).
+                _bind_py_name(table, node_text(alias), target)
+    if any(c.type == "wildcard_import" for c in node.children):
+        # `wildcard_import` ("*") carries no `name` field of its own (it is
+        # not itself a name being bound to anything), so it never appears
+        # in the `children_by_field_name("name")` loop above -- checked
+        # separately, directly against `node`'s children.
+        if module_text in _PY_WILDCARD_DANGEROUS_MODULES:
+            existing = table.get(_PY_WILDCARD_TABLE_KEY, "")
+            modules = set(existing.split("\x00")) if existing else set()
+            modules.add(module_text)
+            table[_PY_WILDCARD_TABLE_KEY] = "\x00".join(sorted(modules))
 
 
 def _py_import_table(module_node) -> dict[str, str]:  # noqa: ANN001
@@ -897,6 +992,20 @@ def _resolve_py_expr(
     if node.type == "attribute":
         # frob:invariant terminates reason="mutually recurses with _resolve_py_attribute, which only calls back here with node.child_by_field_name('object'), a proper descendant of node in the finite tree-sitter parse tree" measure="node's subtree depth strictly decreases"  # noqa: E501
         return _resolve_py_attribute(node, import_table, scope_cache, alias_table)
+    if node.type == "assignment":
+        # T-0659: a CHAINED assignment's right-hand side (`a = b = target`)
+        # parses as a nested `assignment` node (`b = target`), not an
+        # identifier/attribute -- peel through it to the ultimate value so
+        # a chain of any depth resolves the same way a single assignment
+        # does. `_record_py_alias` already visits the nested assignment
+        # separately (it recurses over every child), so this is the one
+        # piece that was missing: the OUTER target (`a` above) previously
+        # saw `right.type == "assignment"` and gave up.
+        right = node.child_by_field_name("right")
+        if right is None:
+            return None
+        # frob:invariant terminates reason="right is node's own 'right' field child, a proper descendant of node in the finite tree-sitter parse tree" measure="node's subtree depth strictly decreases"  # noqa: E501
+        return _resolve_py_expr(right, import_table, scope_cache, alias_table)
     return None
 
 
@@ -909,14 +1018,33 @@ def _resolve_py_identifier(
 ) -> str | None:  # noqa: ANN001
     """Resolve a bare `identifier` node to its import-bound target, consulting
     `alias_table` for locally-shadowed names (T-0337); split out of
-    `_resolve_py_expr`'s identifier branch (T-0361)."""
+    `_resolve_py_expr`'s identifier branch (T-0361).
+
+    T-0659: when `name` has no direct import/alias binding at all (never
+    imported, never shadowed), falls back to the `_PY_WILDCARD_TABLE_KEY`
+    sentinel -- a best-effort `module.name` resolution for any bare name
+    when the file did `from module import *` for a module
+    `DANGEROUS_OPERATIONS` curates (see `_bind_import_from_statement`).
+    Ambiguous when more than one dangerous module is star-imported in the
+    same file (picks the lexicographically first, a documented, narrow
+    edge case); never fires for an ordinary un-imported bare name (the
+    T-0328 `test_bare_name_call_with_no_import_not_detected` guarantee is
+    unaffected since the sentinel key is only ever present when a matching
+    wildcard import was actually seen)."""
     name = node_text(node)
     scope = _shadowing_scope(name, node, scope_cache)
     if scope is not None:
         if alias_table is None:
             return None
         return alias_table.get(scope.id, {}).get(name)
-    return import_table.get(name)
+    direct = import_table.get(name)
+    if direct is not None:
+        return direct
+    wildcards = import_table.get(_PY_WILDCARD_TABLE_KEY)
+    if wildcards:
+        module = sorted(wildcards.split("\x00"))[0]
+        return f"{module}.{name}"
+    return None
 
 
 # frob:ticket T-0361
@@ -935,9 +1063,45 @@ def _resolve_py_attribute(
         return None
     # frob:invariant terminates reason="obj is node's own 'object' field child, a proper descendant of node in the finite tree-sitter parse tree; mutually recurses with _resolve_py_expr, which only descends into the 'attribute' branch by calling back here" measure="node's subtree depth strictly decreases"  # noqa: E501
     resolved_obj = _resolve_py_expr(obj, import_table, scope_cache, alias_table)
-    if resolved_obj is None:
-        return None
-    return f"{resolved_obj}.{node_text(attr)}"
+    if resolved_obj is not None:
+        return f"{resolved_obj}.{node_text(attr)}"
+    # T-0659: `obj` is not itself resolvable through the import table (it is
+    # an ordinary local name, not an import or a name aliased to one) --
+    # but its OWN `.attr` may have been directly REBOUND to a dangerous
+    # target (`mod.run = subprocess.run; mod.run(x)`, taxonomy "attribute
+    # rebinding"). `_attr_rebind_lookup` checks for that best-effort, by-
+    # name binding (not a real points-to alias -- `mod` is identified only
+    # by its local name, documented in `_record_py_alias`).
+    if obj.type == "identifier" and alias_table is not None:
+        return _attr_rebind_lookup(node_text(obj), node_text(attr), node, alias_table)
+    return None
+
+
+def _attr_rebind_lookup(
+    obj_name: str,
+    attr_name: str,
+    site,  # noqa: ANN001
+    alias_table: dict[int, dict[str, str]],
+) -> str | None:
+    """Best-effort lookup for an attribute-target REBIND (T-0659,
+    `_record_py_alias`'s attribute branch): walks `site`'s enclosing scope
+    chain (mirrors `_shadowing_scope`'s walk, but keys directly on the
+    synthesized `"{obj_name}.{attr_name}"` string -- never a legal python
+    identifier by itself, so it cannot collide with a real identifier alias
+    key in the same `alias_table`) looking for a scope that recorded
+    `obj.attr = <dangerous target>`. Returns `None` if no enclosing scope
+    ever recorded such a rebind."""
+    key = f"{obj_name}.{attr_name}"
+    cur = site.parent
+    while cur is not None:
+        if cur.type in _PY_SCOPE_TYPES:
+            found = alias_table.get(cur.id, {}).get(key)
+            if found is not None:
+                return found
+            if cur.type == "module":
+                break
+        cur = cur.parent
+    return None
 
 
 def _enclosing_py_scope(node):  # noqa: ANN001, ANN201
@@ -979,17 +1143,119 @@ def _build_py_alias_table(
     call through the name anywhere in the scope is still flagged. This is
     the documented over-approximation choice (T-0337): a name that was EVER
     bound to a dangerous target in a scope may still be dangerous at any
-    call site of that name in that scope."""
+    call site of that name in that scope.
+
+    T-0659: also records a PARAMETER's own alias when a `default_parameter`/
+    `typed_default_parameter`'s default value itself resolves to a
+    dangerous target (`def f(cb=subprocess.run): cb(x)`) -- the parameter
+    is already recorded in `_py_scope_bound_names` as ALWAYS shadowing
+    (`_PY_ALWAYS_SHADOWS`), so without an alias_table entry keyed to the
+    function's own scope id, `_resolve_py_identifier` would find the
+    parameter shadow and then find NOTHING to resolve it through, silently
+    dropping this evasion."""
     alias_table: dict[int, dict[str, str]] = {}
 
     def visit(node) -> None:  # noqa: ANN001
         if node.type == "assignment":
             _record_py_alias(node, import_table, scope_cache, alias_table)
+        elif node.type == "function_definition":
+            _record_py_default_param_aliases(
+                node, import_table, scope_cache, alias_table
+            )
         for child in node.children:
             visit(child)
 
     visit(module_node)
     return alias_table
+
+
+def _record_py_default_param_aliases(
+    func_node,
+    import_table: dict[str, str],
+    scope_cache: dict[int, dict[str, int]],
+    alias_table: dict[int, dict[str, str]],
+) -> None:  # noqa: ANN001
+    """Record an alias entry for every `default_parameter`/
+    `typed_default_parameter` of `func_node` whose default value resolves
+    to a dangerous target (T-0659: default-arg forwarding, taxonomy row
+    `def f(cb=subprocess.run): cb(x)`), keyed to `func_node`'s OWN scope id
+    -- the same scope `_shadowing_scope` returns for a call site inside the
+    function body, since the parameter shadows unconditionally
+    (`_PY_ALWAYS_SHADOWS`)."""
+    params = func_node.child_by_field_name("parameters")
+    if params is None:
+        return
+    scope_aliases = alias_table.setdefault(func_node.id, {})
+    for param in params.children:
+        if param.type not in ("default_parameter", "typed_default_parameter"):
+            continue
+        name_node = param.child_by_field_name("name")
+        value_node = param.child_by_field_name("value")
+        if name_node is None or value_node is None:
+            continue
+        resolved = _resolve_py_expr(value_node, import_table, scope_cache, alias_table)
+        if resolved is not None:
+            scope_aliases.setdefault(node_text(name_node), resolved)
+
+
+#: `assignment`-target pattern node types `_record_py_alias`'s destructuring
+#: branch recurses through (T-0659): an un-parenthesized tuple target
+#: (`pattern_list`, e.g. `f, g = ...`) or a parenthesized/bracketed one
+#: (`tuple_pattern`/`list_pattern`) -- tree-sitter-python's grammar uses
+#: `pattern_list` for the common bare-comma form; the parenthesized/
+#: bracketed variants are included defensively (a plain `tuple`/`list` node
+#: also occurs as a target in some grammar builds) so this does not depend
+#: on which exact node type a given tree-sitter-python build emits.
+_PY_DESTRUCTURE_TARGET_TYPES = ("pattern_list", "tuple_pattern", "list_pattern")
+
+#: RHS node types `_record_py_alias`'s destructuring branch treats as a
+#: literal, positionally-indexable sequence (T-0659) -- `tuple`/`list`
+#: literals and the comma-separated `expression_list` a bare
+#: `a, b = x, y` RHS parses as (no enclosing parens/brackets).
+_PY_SEQUENCE_LITERAL_TYPES = ("tuple", "list", "expression_list")
+
+
+def _record_py_destructure_alias(
+    left_pattern,  # noqa: ANN001
+    right_elements: list,  # noqa: ANN001 -- list[tree_sitter.Node]
+    import_table: dict[str, str],
+    scope_cache: dict[int, dict[str, int]],
+    alias_table: dict[int, dict[str, str]],
+    scope_aliases: dict[str, str],
+) -> None:
+    """Bind each plain-identifier element of `left_pattern` (a
+    `pattern_list`-shaped tuple/list unpacking target) to its POSITIONALLY
+    corresponding element of `right_elements` (T-0659: `f, g = subprocess.
+    run, os.system; f(x)`), honoring a single `list_splat_pattern` (`*rest`)
+    the same way real Python unpacking does: identifiers BEFORE the splat
+    match from the front of `right_elements`, identifiers AFTER it match
+    from the back (`f, *rest = [subprocess.run]` binds `f` to the FIRST
+    element regardless of how many trailing elements `rest` swallows). The
+    splat-bound name itself (`rest`) is never resolvable to a single
+    symbol, so it gets no alias entry -- a documented, correct
+    under-approximation (a container, not a callable). Nested patterns
+    (`(a, b), c = ...`) are not recursed into -- a narrow, documented
+    limitation rather than silently mis-binding one."""
+    left_elements = [c for c in left_pattern.children if c.is_named]
+    splat_index = next(
+        (i for i, c in enumerate(left_elements) if c.type == "list_splat_pattern"),
+        None,
+    )
+    if splat_index is None:
+        pairs = list(zip(left_elements, right_elements, strict=False))
+    else:
+        before = list(
+            zip(left_elements[:splat_index], right_elements[:splat_index], strict=False)
+        )
+        after_left = left_elements[splat_index + 1 :]
+        after_right = right_elements[len(right_elements) - len(after_left) :]
+        pairs = before + list(zip(after_left, after_right, strict=False))
+    for left_el, right_el in pairs:
+        if left_el.type != "identifier":
+            continue
+        resolved = _resolve_py_expr(right_el, import_table, scope_cache, alias_table)
+        if resolved is not None:
+            scope_aliases.setdefault(node_text(left_el), resolved)
 
 
 # frob:ticket T-0361
@@ -1002,18 +1268,48 @@ def _record_py_alias(
     """If `node` (an `assignment`) binds a plain identifier to a resolvable
     RHS, record it in `alias_table` (first resolution wins, per the
     over-approximation policy documented on `_build_py_alias_table`); split
-    out of that function's tree-walk visitor (T-0361)."""
+    out of that function's tree-walk visitor (T-0361).
+
+    T-0659: also handles a tuple/list DESTRUCTURING target (delegates to
+    `_record_py_destructure_alias` when both the left target and the right
+    value are literal, positionally-indexable shapes) -- chained
+    assignment's outer target (`a = b = target`) is handled separately, in
+    `_resolve_py_expr`'s `assignment` branch, since it is a single-name
+    bind through a nested `assignment` RHS rather than a destructuring
+    shape."""
     left = node.child_by_field_name("left")
     right = node.child_by_field_name("right")
-    if left is None or right is None or left.type != "identifier":
-        return
-    resolved = _resolve_py_expr(right, import_table, scope_cache, alias_table)
-    if resolved is None:
+    if left is None or right is None:
         return
     scope = _enclosing_py_scope(node)
     if scope is None:
         return
     scope_aliases = alias_table.setdefault(scope.id, {})
+    if left.type in _PY_DESTRUCTURE_TARGET_TYPES and right.type in (
+        _PY_SEQUENCE_LITERAL_TYPES
+    ):
+        right_elements = [c for c in right.children if c.is_named]
+        _record_py_destructure_alias(
+            left, right_elements, import_table, scope_cache, alias_table, scope_aliases
+        )
+        return
+    if left.type == "attribute":
+        # T-0659: attribute-target rebind (`mod.run = subprocess.run`) --
+        # best-effort, by-NAME object identity only (no real points-to);
+        # see `_attr_rebind_lookup`'s docstring for the tradeoff.
+        obj = left.child_by_field_name("object")
+        attr = left.child_by_field_name("attribute")
+        if obj is None or attr is None or obj.type != "identifier":
+            return
+        resolved = _resolve_py_expr(right, import_table, scope_cache, alias_table)
+        if resolved is not None:
+            scope_aliases.setdefault(f"{node_text(obj)}.{node_text(attr)}", resolved)
+        return
+    if left.type != "identifier":
+        return
+    resolved = _resolve_py_expr(right, import_table, scope_cache, alias_table)
+    if resolved is None:
+        return
     scope_aliases.setdefault(node_text(left), resolved)
 
 

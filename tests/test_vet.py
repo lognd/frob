@@ -1062,6 +1062,203 @@ class TestCapabilityScanLocalRebindResolution:
         assert "exec" not in scan_file_capabilities(pkg)
 
 
+class TestCapabilityScanTaxonomyClosureResolution:
+    """T-0659: closes the remaining Python static-resolvable gaps against
+    docs/design/capability-evasion-taxonomy.md's denominator that T-0328/
+    T-0337 left open -- chained assignment, tuple/starred destructuring,
+    default-argument forwarding, attribute-target rebinding, star-import
+    re-export (for a curated dangerous module), and order-independent
+    conditional/try-except import-fallback aliasing. Every evasion case
+    below is now DETECTED; the accompanying no-regression cases (a benign
+    destructuring bind, a safe-only fallback) stay silent, matching the
+    T-0328 no-false-positive posture."""
+
+    def test_chained_assignment_outer_target_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # `a = b = subprocess.run; a(x)` -- taxonomy "chained assignment".
+        # The OUTER target (`a`) previously saw its RHS as an unresolvable
+        # nested `assignment` node and gave up; `_resolve_py_expr` now
+        # peels through it.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("import subprocess\na = b = subprocess.run\na(['x'])\n")
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_chained_assignment_inner_target_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Same source, calling through the INNER target (`b`) instead --
+        # already worked pre-T-0659 (the plain single-assignment path), a
+        # regression guard alongside the outer-target fix above.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("import subprocess\na = b = subprocess.run\nb(['x'])\n")
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_tuple_unpack_destructuring_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # `f, g = subprocess.run, os.system; f(x)` -- taxonomy "tuple/list
+        # unpacking bind", positional correspondence over the RHS literal.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text(
+            "import subprocess, os\nf, g = subprocess.run, os.system\nf(['x'])\n"
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_tuple_unpack_second_element_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Same source, calling through the SECOND unpacked name -- proves
+        # positional correspondence, not "first name always wins".
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text(
+            "import subprocess, os\nf, g = subprocess.run, os.system\ng('x')\n"
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_starred_unpack_leading_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # `f, *rest = [subprocess.run]; f(x)` -- taxonomy "starred
+        # unpacking bind"; `f` binds to the FIRST element regardless of how
+        # many trailing elements the splat swallows.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("import subprocess\nf, *rest = [subprocess.run]\nf(['x'])\n")
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_starred_unpack_trailing_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # `*rest, g = [1, subprocess.run]; g(x)` -- the splat-BEFORE case,
+        # binding from the back of the sequence.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("import subprocess\n*rest, g = [1, subprocess.run]\ng(['x'])\n")
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_benign_destructuring_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # No-false-positive guard: a destructuring bind whose RHS elements
+        # are not resolvable (two lambdas) must stay silent.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("f, g = (lambda: 1), (lambda: 2)\nf()\n")
+        assert "exec" not in scan_file_capabilities(pkg)
+
+    def test_default_arg_forwarding_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # `def h(cb=subprocess.run): cb(x)` -- taxonomy "default-arg
+        # forwarding a callable".
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("import subprocess\ndef h(cb=subprocess.run):\n    cb(['x'])\n")
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_attribute_target_rebind_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # `mod.run = subprocess.run; mod.run(x)` -- taxonomy "attribute
+        # rebinding" (best-effort, by-name object identity, documented on
+        # `_attr_rebind_lookup`).
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text(
+            "import subprocess\n"
+            "class Mod:\n    pass\n"
+            "mod = Mod()\n"
+            "mod.run = subprocess.run\n"
+            "mod.run(['x'])\n"
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_star_import_reexport_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # `from subprocess import *; run(x)` -- taxonomy "star-import
+        # re-export chain", best-effort for a module `DANGEROUS_OPERATIONS`
+        # curates (subprocess).
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("from subprocess import *\nrun(['x'])\n")
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_star_import_untracked_module_not_claimed(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # No-false-positive/no-overclaim guard: a wildcard import of a
+        # module NOT in `DANGEROUS_OPERATIONS` gets no best-effort binding
+        # at all -- a bare `run(x)` with no matching import anywhere stays
+        # silent (documented honest limitation, not a false resolution).
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("from some_untracked_pkg import *\nrun(['x'])\n")
+        assert "exec" not in scan_file_capabilities(pkg)
+
+    def test_conditional_import_fallback_dangerous_first_detected(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # taxonomy "conditional/try-except import fallback aliasing":
+        # dangerous import in the `try` branch, benign fallback in
+        # `except` -- the LATER (benign) binding must not silently
+        # overwrite the dangerous one in the import table.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text(
+            "try:\n"
+            "    from os import system as run\n"
+            "except ImportError:\n"
+            "    from shlex import quote as run\n"
+            "run('x')\n"
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_conditional_import_fallback_dangerous_second_detected(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Same construct with the branches swapped -- dangerous import
+        # walked SECOND, proving the fix is order-independent, not just
+        # "first wins" or "last wins" by coincidence of tree-walk order.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text(
+            "try:\n"
+            "    from shlex import quote as run\n"
+            "except ImportError:\n"
+            "    from os import system as run\n"
+            "run('x')\n"
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_conditional_import_fallback_both_safe_not_detected(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # No-false-positive guard: both fallback branches benign must stay
+        # silent.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text(
+            "try:\n"
+            "    from shlex import quote as run\n"
+            "except ImportError:\n"
+            "    from textwrap import shorten as run\n"
+            "run('x')\n"
+        )
+        assert "exec" not in scan_file_capabilities(pkg)
+
+
 class TestCapabilityScanTsBindingResolution:
     """T-0377: TS/JS sibling of `TestCapabilityScanBindingResolution` --
     before this, TypeScript/JS capability scanning was pure lexical
