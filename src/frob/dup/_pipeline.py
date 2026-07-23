@@ -343,8 +343,124 @@ def _r1_hash(tokens: tuple[str, ...]) -> str:
     return "r1:" + str(hash(tokens))
 
 
+# T-0785 (audit M3): the marker every recognized error-channel exit shape
+# collapses to. Three real functions in this repo (`frob.tickets._leases
+# .git_common_dir` returning `Result[Path, LeaseError]` and
+# `frob.gates._exclude_hazard._git_common_dir` returning `Path | None`)
+# implement the SAME git-common-dir resolution logic but slipped under
+# DUP's similarity threshold purely because one signals failure with
+# `Err(...)`/`Ok(...)` and the other with `None`/the bare value -- an
+# error-channel-SHAPE difference, not a logic difference. `_r2_normalize`
+# runs this first so R2+ (everything downstream of alpha-renaming: R2's own
+# hash, R3, R4's fingerprints/prefilter vector, R5) compares error-signaling
+# idioms as the same shape; R1 (exact-token copy-paste hash) intentionally
+# does not call this, since R1 exists to catch literal-identical text.
+_ERROR_EXIT_MARKER = "$err_exit"
+
+# Statement-starting keywords that end a `raise ...` statement's token run
+# when reached at bracket depth 0 -- reuses `_STMT_STARTERS` (the same
+# heuristic-statement-boundary set `_split_statements` already relies on)
+# rather than inventing a second one.
+_OPEN_BRACKETS = frozenset({"(", "[", "{"})
+_CLOSE_BRACKETS = frozenset({")", "]", "}"})
+
+
+def _matching_close_paren(tokens: tuple[str, ...], open_idx: int) -> int:
+    """Index of the `)` matching the `(` at `open_idx` in `tokens`, tracking
+    bracket depth across all of `(`/`[`/`{` so a nested call/collection
+    inside the argument list does not close the outer paren early. Returns
+    `len(tokens)` (an unreachable index, no matching close found) if the
+    stream ends first -- callers slice up to this index either way, so an
+    unbalanced/truncated token run degrades to "consume the rest" rather
+    than raising.
+    """
+    depth = 0
+    for idx in range(open_idx, len(tokens)):
+        tok = tokens[idx]
+        if tok in _OPEN_BRACKETS:
+            depth += 1
+        elif tok in _CLOSE_BRACKETS:
+            depth -= 1
+            if depth == 0:
+                return idx
+    return len(tokens)
+
+
+def _normalize_error_channel(tokens: tuple[str, ...]) -> tuple[str, ...]:
+    """Canonicalize `Result`/`Optional`/`raise` error-exit shapes in `tokens`
+    to one shared form before similarity comparison (T-0785, audit M3):
+    `return Err(...)` and `return None` both collapse to
+    `return $ERROR_EXIT_MARKER` (their payload tokens dropped -- only the
+    exit SHAPE matters, not which error value/enum member is carried);
+    `return Ok(<expr>)` unwraps to `return <expr>` (the happy-path payload,
+    same as a plain `Optional`-style `return <expr>`); a `raise ...`
+    statement (its argument run heuristically bounded by the next
+    depth-0 `_STMT_STARTERS` token, the same statement-boundary heuristic
+    `_split_statements` already uses) collapses to `return
+    $ERROR_EXIT_MARKER` too, since raising is also an error-channel exit.
+    Every other token passes through unchanged.
+    """
+    out: list[str] = []
+    i = 0
+    n = len(tokens)
+    while i < n:
+        tok = tokens[i]
+        if (
+            tok == "return"
+            and i + 2 < n
+            and tokens[i + 1] == "Err"
+            and tokens[i + 2] == "("
+        ):
+            close = _matching_close_paren(tokens, i + 2)
+            out.append("return")
+            out.append(_ERROR_EXIT_MARKER)
+            i = close + 1
+            continue
+        if (
+            tok == "return"
+            and i + 2 < n
+            and tokens[i + 1] == "Ok"
+            and tokens[i + 2] == "("
+        ):
+            close = _matching_close_paren(tokens, i + 2)
+            out.append("return")
+            out.extend(tokens[i + 3 : close])
+            i = close + 1
+            continue
+        if tok == "return" and i + 1 < n and tokens[i + 1] == "None":
+            out.append("return")
+            out.append(_ERROR_EXIT_MARKER)
+            i += 2
+            continue
+        if tok == "raise":
+            j = i + 1
+            depth = 0
+            while j < n:
+                t = tokens[j]
+                if t in _OPEN_BRACKETS:
+                    depth += 1
+                elif t in _CLOSE_BRACKETS:
+                    depth -= 1
+                elif depth == 0 and t in _STMT_STARTERS:
+                    break
+                j += 1
+            out.append("return")
+            out.append(_ERROR_EXIT_MARKER)
+            i = j
+            continue
+        out.append(tok)
+        i += 1
+    return tuple(out)
+
+
 def _r2_normalize(tokens: tuple[str, ...]) -> tuple[str, ...]:
-    """Alpha-rename every identifier-shaped token to a positional placeholder."""
+    """Alpha-rename every identifier-shaped token to a positional placeholder,
+    after first canonicalizing error-channel exits (T-0785,
+    `_normalize_error_channel`) so a `Result`'s `Err(...)`/`Ok(...)`, an
+    `Optional`'s `None`, and a `raise` all compare as the same error-exit
+    shape rather than as unrelated token runs.
+    """
+    tokens = _normalize_error_channel(tokens)
     mapping: dict[str, str] = {}
     normalized: list[str] = []
     for tok in tokens:
@@ -1142,8 +1258,20 @@ def _r4_alignment(
         state.cache_hits += 1
         raw = cast("list[list[int]]", cached[1])
         return cast(float, cached[0]), tuple((p[0], p[1]) for p in raw)
-    a_hashes = _statement_hashes(_split_statements(state.body_tokens_by_ref[a]))
-    b_hashes = _statement_hashes(_split_statements(state.body_tokens_by_ref[b]))
+    # T-0785: channel-normalize (but do NOT alpha-rename -- real identifier
+    # text still has to line up exactly for this near-miss floor's raw
+    # per-statement hash match) before splitting into statements, so an
+    # `Err(...)`/`None`/`raise` exit shape difference alone does not sink a
+    # pair's near-miss floor the way the motivating git-common-dir pair did
+    # (audit M3). `state.body_tokens_by_ref` itself stays untouched (R1's
+    # exact-hash and the cache-key digest both intentionally still see the
+    # literal, un-normalized text).
+    a_hashes = _statement_hashes(
+        _split_statements(_normalize_error_channel(state.body_tokens_by_ref[a]))
+    )
+    b_hashes = _statement_hashes(
+        _split_statements(_normalize_error_channel(state.body_tokens_by_ref[b]))
+    )
     result = _core._tree_edit_similarity(a_hashes, b_hashes)
     if result.is_err:
         return None

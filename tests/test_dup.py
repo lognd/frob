@@ -312,3 +312,237 @@ class TestCrossLanguageR5WithLet:
             f"side declares a local `let` binding; got rungs={rungs}, "
             f"groups={report.groups!r}"
         )
+
+
+class TestErrorChannelNormalization:
+    """T-0785 unit coverage for `frob.dup._pipeline._normalize_error_channel`
+    itself: audit M3 found the triplicated git-common-dir resolver slipped
+    under DUP's similarity threshold purely because one implementation
+    signals failure via `Result`'s `Err(...)`/`Ok(...)` and the other via
+    plain `None`/the bare value. These are fast, core-independent checks on
+    the token-level transform in isolation (no `frob_core`, no
+    `find_clones`) -- `TestErrorChannelDupPairing` below covers the actual
+    end-to-end pairing claim through `find_clones`."""
+
+    # frob:tests tests/test_dup.py::TestErrorChannelNormalization.test_err_and_none_collapse_to_the_same_marker kind="unit"  # noqa: E501
+    # frob:ticket T-0785
+    def test_err_and_none_collapse_to_the_same_marker(self):
+        from frob.dup._pipeline import _normalize_error_channel
+
+        err_tokens = (
+            "return",
+            "Err",
+            "(",
+            "LeaseError",
+            ".",
+            "GitCommonDirUnavailable",
+            ")",
+        )
+        none_tokens = ("return", "None")
+        assert _normalize_error_channel(err_tokens) == _normalize_error_channel(
+            none_tokens
+        ), "Err(...) and None must canonicalize to the identical marker shape"
+
+    # frob:tests tests/test_dup.py::TestErrorChannelNormalization.test_ok_unwraps_to_the_bare_payload kind="unit"  # noqa: E501
+    # frob:ticket T-0785
+    def test_ok_unwraps_to_the_bare_payload(self):
+        from frob.dup._pipeline import _normalize_error_channel
+
+        ok_tokens = ("return", "Ok", "(", "common_dir", ")")
+        plain_tokens = ("return", "common_dir")
+        assert (
+            _normalize_error_channel(ok_tokens)
+            == _normalize_error_channel(plain_tokens)
+            == plain_tokens
+        ), "Ok(x) must unwrap to the same bare `return x` an Optional payload uses"
+
+    # frob:tests tests/test_dup.py::TestErrorChannelNormalization.test_raise_collapses_to_the_same_marker_as_err_and_none kind="unit"  # noqa: E501
+    # frob:ticket T-0785
+    def test_raise_collapses_to_the_same_marker_as_err_and_none(self):
+        from frob.dup._pipeline import _normalize_error_channel
+
+        raise_tokens = (
+            "raise",
+            "ValueError",
+            "(",
+            '"',
+            "bad input",
+            '"',
+            ")",
+            "return",
+            "None",
+        )
+        # A `raise` statement followed by an unrelated `return None` should
+        # collapse BOTH exits to the same marker shape, not just the second.
+        normalized = _normalize_error_channel(raise_tokens)
+        assert normalized == ("return", "$err_exit", "return", "$err_exit")
+
+    # frob:tests tests/test_dup.py::TestErrorChannelNormalization.test_a_genuinely_different_return_value_is_not_collapsed kind="unit"  # noqa: E501
+    # frob:ticket T-0785
+    def test_a_genuinely_different_return_value_is_not_collapsed(self):
+        from frob.dup._pipeline import _normalize_error_channel
+
+        # Negative case: two DIFFERENT non-error-channel plain returns must
+        # stay distinct -- normalization must not blur ordinary logic.
+        a = ("return", "x", "+", "1")
+        b = ("return", "x", "-", "1")
+        assert _normalize_error_channel(a) != _normalize_error_channel(b)
+        # And the payload-carrying shapes pass straight through unchanged.
+        assert _normalize_error_channel(a) == a
+        assert _normalize_error_channel(b) == b
+
+    # frob:tests tests/test_dup.py::TestErrorChannelNormalization.test_nested_err_argument_parens_do_not_confuse_the_close_paren_scan kind="unit"  # noqa: E501
+    # frob:ticket T-0785
+    def test_nested_err_argument_parens_do_not_confuse_the_close_paren_scan(self):
+        from frob.dup._pipeline import _normalize_error_channel
+
+        # `Err(SomeError(x, [1, 2]))` -- nested call/collection inside the
+        # Err(...) argument list must not close the outer paren early.
+        nested = (
+            "return",
+            "Err",
+            "(",
+            "SomeError",
+            "(",
+            "x",
+            ",",
+            "[",
+            "1",
+            ",",
+            "2",
+            "]",
+            ")",
+            ")",
+            "pass",
+        )
+        assert _normalize_error_channel(nested) == (
+            "return",
+            "$err_exit",
+            "pass",
+        )
+
+
+class TestErrorChannelDupPairing:
+    """T-0785 (audit M3) end-to-end: the triplicated git-common-dir
+    resolver -- one shaped like `frob.tickets._leases.git_common_dir`
+    (`Result[Path, LeaseError]`, `Err(...)`/`Ok(...)`), the other shaped
+    like `frob.gates._exclude_hazard._git_common_dir` (`Path | None`,
+    `return None`/the bare value) -- must register as a duplicate group
+    once error-channel shape is normalized away. Real repo shapes (message
+    text, variable names, control-flow order) are kept as close to the two
+    real functions as possible; the one deliberate simplification is
+    collapsing `_git_common_dir`'s two separate early-return `if`s (each
+    logging a DIFFERENT debug message) into the same single combined `if`
+    `git_common_dir` uses (both of its branches share ONE error value) --
+    that restructuring is a second, genuinely independent dimension this
+    ticket's scope does not cover (`frob:todo T-0001`-class future work),
+    and left uncollapsed it sinks R4's near-miss floor on its own,
+    independent of the error-channel question this ticket is about."""
+
+    @pytest.fixture()
+    def snapshot(self, tmp_path):
+        _write(
+            tmp_path,
+            "common_dir.py",
+            "from pathlib import Path\n"
+            "\n"
+            "from typani import Err, Ok\n"
+            "from typani.result import Result\n"
+            "\n"
+            "\n"
+            "def git_common_dir(root: Path) -> Result[Path, LeaseError]:\n"
+            '    """The shared `.git` directory for `root`\'s repository."""\n'
+            "    spawned = run_argv(\n"
+            '        ["git", "-C", str(root), "rev-parse", "--git-common-dir"]\n'
+            "    )\n"
+            "    if spawned.is_err or spawned.danger_ok.returncode != 0:\n"
+            '        _log.warning("tickets: git-common-dir lookup failed under %s", root)\n'  # noqa: E501
+            "        return Err(LeaseError.GitCommonDirUnavailable)\n"
+            "    raw = spawned.danger_ok.stdout.strip()\n"
+            "    if not raw:\n"
+            "        return Err(LeaseError.GitCommonDirUnavailable)\n"
+            "    common_dir = Path(raw)\n"
+            "    if not common_dir.is_absolute():\n"
+            "        common_dir = (root / common_dir).resolve()\n"
+            "    return Ok(common_dir)\n"
+            "\n"
+            "\n"
+            "def _git_common_dir(root: Path) -> Path | None:\n"
+            '    """The shared `.git` common dir for `root`."""\n'
+            "    spawned = run_argv(\n"
+            '        ("git", "-C", str(root), "rev-parse", "--git-common-dir")\n'
+            "    )\n"
+            "    if spawned.is_err or spawned.danger_ok.returncode != 0:\n"
+            '        _log.debug("exclude_hazard: git rev-parse failed under %s", root)\n'  # noqa: E501
+            "        return None\n"
+            "    raw = spawned.danger_ok.stdout.strip()\n"
+            "    if not raw:\n"
+            "        return None\n"
+            "    common_dir = Path(raw)\n"
+            "    if not common_dir.is_absolute():\n"
+            "        common_dir = (root / common_dir).resolve()\n"
+            "    return common_dir\n",
+        )
+        cache = tmp_path / "graph-cache"
+        result = build_graph(tmp_path, cache)
+        assert result.is_ok, result.err
+        return result.danger_ok
+
+    # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+    # frob:ticket T-0785
+    def test_result_and_optional_git_common_dir_register_as_a_duplicate_group(
+        self, snapshot
+    ):
+        report = find_clones(
+            snapshot, DupConfig(min_tokens=5, threshold=0.01)
+        ).danger_ok
+        rungs = _rungs_for(report, "git_common_dir", "_git_common_dir")
+        assert rungs, (
+            "the Result-shaped and Optional-shaped git-common-dir resolvers "
+            f"must register as a duplicate pair once error-channel shape is "
+            f"normalized away; got 0 matching pairs, groups={report.groups!r}"
+        )
+
+
+class TestErrorChannelNormalizationDoesNotOverFire:
+    """T-0785 negative control: genuinely different logic must NOT be
+    dragged into a false pair just because both sides happen to use an
+    error-channel exit somewhere in their body -- normalizing the exit
+    SHAPE must not blur everything else two functions do."""
+
+    @pytest.fixture()
+    def snapshot(self, tmp_path):
+        _write(
+            tmp_path,
+            "unrelated.py",
+            "def parse_count(raw):\n"
+            "    if not raw:\n"
+            "        return None\n"
+            "    return int(raw)\n"
+            "\n"
+            "\n"
+            "def average(values):\n"
+            "    if not values:\n"
+            "        return None\n"
+            "    total = 0\n"
+            "    for v in values:\n"
+            "        total = total + v\n"
+            "    return total / len(values)\n",
+        )
+        cache = tmp_path / "graph-cache"
+        result = build_graph(tmp_path, cache)
+        assert result.is_ok, result.err
+        return result.danger_ok
+
+    # frob:tests src/frob/dup/_pipeline.py::find_clones kind="unit"
+    # frob:ticket T-0785
+    def test_genuinely_different_logic_does_not_falsely_pair(self, snapshot):
+        report = find_clones(
+            snapshot, DupConfig(min_tokens=3, threshold=0.01)
+        ).danger_ok
+        rungs = _rungs_for(report, "parse_count", "average")
+        assert not rungs, (
+            "sharing a `None`-shaped early-return must not, on its own, "
+            f"pair two functions with genuinely different logic; got "
+            f"rungs={rungs}, groups={report.groups!r}"
+        )
