@@ -6,6 +6,9 @@ siblings run each language's tools in parallel and aggregate every
 private `_python`/`_native`/`_ts` submodules to keep this module focused on
 the public orchestration surface; the public symbols stay defined here so
 their `frob:doc`/`frob:tests` bindings keep their `__init__.py` symref.
+`frob.check._memo`'s per-run memoization helpers are consumed cross-module
+(`frob.dup._legacy`, `frob.graph`, `frob.arch`, `frob.lang`) and are
+re-exported here for the same reason (T-0599).
 """
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
 # src/frob/check/__init__.py's exclusivity-vocabulary hit is source-level \
@@ -25,7 +28,12 @@ from typing import Callable
 
 from pydantic import BaseModel
 
-from frob.check._memo import run_memo_scope
+from frob.check._memo import (
+    memoize_per_run,
+    reset_run_memo,
+    run_memo_scope,
+    run_memo_stats,
+)
 from frob.check._native import (
     _run_cargo,
     _run_cargo_fmt_check,
@@ -787,8 +795,12 @@ __all__ = [
     "CheckResult",
     "available_stages",
     "detect_project_type",
+    "memoize_per_run",
+    "reset_run_memo",
     "run_check",
     "run_check_cpp",
     "run_check_rust",
     "run_check_ts",
+    "run_memo_scope",
+    "run_memo_stats",
 ]
