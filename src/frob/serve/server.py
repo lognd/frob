@@ -108,6 +108,18 @@ def _register_incremental_tools(server, root: Path) -> None:  # noqa: ANN001
         return _unwrap(_tools.frob_run_touched_tests(root, base))
 
 
+def _register_daemon_tool(server, root: Path) -> None:  # noqa: ANN001
+    """Register the T-0733 `frob_daemon_status` tool, the read side of the
+    background post-land/rebase-bot jobs `run_stdio` starts."""
+
+    @server.tool()
+    def frob_daemon_status() -> dict:
+        """(T-0733) Latest background daemon verdict: the post-land
+        delta/touched-tests result and any in-flight-worktree rebase
+        conflict warnings."""
+        return _unwrap(_tools.frob_daemon_status(root))
+
+
 # frob:doc docs/modules/serve.md#mcp-sdk
 # frob:invariant INV-021
 def build_server(root: Path):  # noqa: ANN201
@@ -119,18 +131,28 @@ def build_server(root: Path):  # noqa: ANN201
     _register_query_tools(server, root)
     _register_scope_tool(server, root)
     _register_incremental_tools(server, root)
+    _register_daemon_tool(server, root)
 
-    _log.info("serve: built FastMCP server bound to %s with 8 tools", root)
+    _log.info("serve: built FastMCP server bound to %s with 9 tools", root)
     return server
 
 
 # frob:doc docs/modules/serve.md#mcp-sdk
 # frob:waive TEST005 reason="run_stdio 50.0% branch cover, debt T-0160"
 def run_stdio(root: Path) -> None:
-    """Build the server and block, serving tool calls over stdio transport."""
+    """Build the server, start the T-0733 background daemon (post-land
+    re-verify + rebase-bot), and block serving tool calls over stdio
+    transport; stops the daemon thread on the way out."""
+    from frob.serve._daemon import start_daemon
+
     server = build_server(root)
+    stop_daemon = start_daemon(root)
     _log.info("serve: starting stdio transport, root=%s", root)
-    server.run(transport="stdio")
+    try:
+        server.run(transport="stdio")
+    finally:
+        stop_daemon.set()
+        _log.info("serve: stdio transport stopped, daemon signaled to stop")
 
 
 __all__ = ["McpUnavailable", "build_server", "run_stdio"]

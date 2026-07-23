@@ -457,11 +457,40 @@ def frob_run_touched_tests(root: Path, base: str = "main") -> Result[dict, Serve
     )
 
 
+# frob:doc docs/modules/serve.md#daemon-jobs
+# frob:tests tests/test_serve_daemon.py::TestFrobDaemonStatus.test_reads_current_status kind="unit"  # noqa: E501
+def frob_daemon_status(root: Path) -> Result[dict, ServeError]:
+    """(T-0733) The background daemon's latest post-land verdict and
+    outstanding rebase warnings for `root`, as JSON-able dicts -- a pure
+    read of `frob.serve._daemon.daemon_status`, never triggers a poll
+    itself; the daemon's own background thread (`_daemon.start_daemon`)
+    keeps this fresh."""
+    from frob.serve import _daemon
+
+    status = _daemon.daemon_status(root)
+    post_land = status.post_land.model_dump(mode="json") if status.post_land else None
+    _log.info(
+        "serve: frob_daemon_status: post_land=%s rebase_warnings=%d",
+        "present" if post_land else "none",
+        len(status.rebase_warnings),
+    )
+    return Ok(
+        {
+            "post_land": post_land,
+            "rebase_warnings": [
+                w.model_dump(mode="json") for w in status.rebase_warnings
+            ],
+            "last_poll_at": status.last_poll_at,
+        }
+    )
+
+
 __all__ = [
     "ServeError",
     "frob_affects",
     "frob_check_delta",
     "frob_check_scope",
+    "frob_daemon_status",
     "frob_doable_tickets",
     "frob_doc_for",
     "frob_graph_query",

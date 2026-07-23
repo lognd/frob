@@ -101,11 +101,11 @@ class TestServeGetattr:
 
 class TestBuildServer:
     def test_registers_all_five_tools(self, tmp_path: Path) -> None:
-        # Name kept as-is despite now covering 8 tools (T-0177 added 2 more,
-        # T-0325 added frob_affects): T-0010/T-0046/T-0520 already cite this
-        # node id as `frob:tests` evidence, and COV003 resolves evidence by
-        # exact node id -- a rename here would silently break their
-        # recorded evidence.
+        # Name kept as-is despite now covering 9 tools (T-0177 added 2 more,
+        # T-0325 added frob_affects, T-0733 added frob_daemon_status):
+        # T-0010/T-0046/T-0520 already cite this node id as `frob:tests`
+        # evidence, and COV003 resolves evidence by exact node id -- a
+        # rename here would silently break their recorded evidence.
         # frob:tests src/frob/serve/server.py::build_server kind="unit"
         from frob.serve.server import build_server
 
@@ -115,6 +115,7 @@ class TestBuildServer:
             "frob_doable_tickets",
             "frob_stale_docs",
             "frob_check_scope",
+            "frob_daemon_status",
             "frob_graph_query",
             "frob_doc_for",
             "frob_affects",
