@@ -5984,7 +5984,7 @@ reconfirmed the full `tests/test_ticket_land.py` suite passes (102 passed).
 id: T-0848
 title: 'tickets CLI: done-report --why-file duplicates the ENTIRE prior report body
   when narrative contains its own H2 headings'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-07-23'
