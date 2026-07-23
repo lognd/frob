@@ -6533,7 +6533,7 @@ is `git diff main --stat` run directly and observed, not estimated.)
 id: T-0730
 title: 'gates: consume vitest/ctest collector node ids in _load_tests/_valid_edges,
   retire the ts/c/cpp structural fallback'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
