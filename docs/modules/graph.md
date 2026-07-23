@@ -130,12 +130,36 @@ not from comment directives. Built once so more than one consumer can share
 it (T-0288's dup helper-inlining triage today; T-0290's recursion detection
 is the next planned consumer) rather than each re-deriving call resolution.
 
-- `build_call_graph(root, paths)` -- parses every file in `paths` (typically
-  one package/directory) and records an edge for every call resolved to a
-  PRIVATE (leading-underscore) or same-file callee. A call to a PUBLIC
-  symbol is never recorded as an edge at all -- that is what makes
-  `closure` stop at the public-API boundary for free, with no separate
-  bookkeeping.
+- `build_call_graph(root, paths, *, mark_unresolved=False)` -- parses every
+  file in `paths` (typically one package/directory) and records an edge
+  for every call resolved to a PRIVATE (leading-underscore) or same-file
+  callee. A call to a PUBLIC symbol is never recorded as an edge at all --
+  that is what makes `closure` stop at the public-API boundary for free,
+  with no separate bookkeeping. T-0809: `mark_unresolved=True` (opt-in --
+  see below for why the default stayed `False`) makes a call target that
+  LOOKS like it should resolve under this module's own private-symbol
+  convention (leading underscore) but matches zero candidates anywhere in
+  `paths` get a `UNRESOLVED_CALLEE` edge instead of being silently
+  dropped -- this is the real callee-resolution wiring the T-0745 protocol
+  summary engine's poisoning channel needed to mean anything on a real
+  scan, not just a hand-fabricated fixture `CallGraph`. A call to a name
+  with no leading underscore (never looked local in the first place -- a
+  builtin, stdlib, or third-party call) stays a silent omission either
+  way; `build_reference_graph` always passes `mark_unresolved=False` (its
+  broader "referenced anywhere" recall has no poisoning consumer to feed).
+
+  **Why the default is `False`, not `True`**: `frob.gates` (three call
+  sites, including `_cov006_third_file_reachable`) and
+  `frob.dup._pipeline` already call `build_call_graph` and feed its
+  output -- including `closure()` over it -- through code that assumes
+  every returned entry is a real `path::qualname` symref splittable on
+  `"::"`. A bare `UNRESOLVED_CALLEE` sentinel breaks that assumption
+  (observed directly: an `IndexError` in `_cov006_third_file_reachable`
+  during this ticket's own gate verification pass). Those call sites are
+  outside this ticket's scope (`src/frob/gates/**`, `src/frob/dup/**`) to
+  widen for `UNRESOLVED_CALLEE`-awareness, so the mechanism is opt-in: a
+  future real production wiring of `build_call_graph` into
+  `compute_protocol_summaries` passes `mark_unresolved=True` explicitly.
 
   <!-- frob:invariant INV-014 -->
 - `closure(graph, start, *, max_depth, max_nodes)` -- bounded BFS from
@@ -153,7 +177,7 @@ not a soundness guarantee.
 <!-- frob:describes src/frob/graph/summary.py::FunctionSummary -->
 <!-- frob:describes src/frob/graph/summary.py::SCCTimeout -->
 <!-- frob:describes src/frob/graph/summary.py::SummaryResult -->
-<!-- frob:describes src/frob/graph/summary.py::UNRESOLVED_CALLEE -->
+<!-- frob:describes src/frob/graph/callgraph.py::UNRESOLVED_CALLEE -->
 
 `frob.graph.summary` (T-0745, child 2 of the T-0739 typestate umbrella) is
 a shared, bottom-up FIXPOINT engine over a `CallGraph` (above): it
@@ -174,11 +198,16 @@ it calls, transitively, including through recursion.
   iterates the join to a fixpoint, bounded by `max_iterations`.
 - `FunctionSummary` -- one function's `requires`/`transitions` string sets
   (`"proto:state"` / `"proto:from->to"`), plus `poisoned`/`poison_reason`.
+  T-0809: also `acquired`/`released`/`escaped` -- plain resource-name
+  string sets (the resource-tracking DSL below), joined transitively the
+  same way `requires`/`transitions` are.
 - `UNRESOLVED_CALLEE` -- the sentinel callee symref a caller wires into
-  `CallGraph.calls` to mean "this call site could not be bound" (a real
-  resolver integration -- e.g. the T-0339 family -- is left to a future
-  ticket; this engine only defines what an unresolved callee DOES to a
-  summary, not how one gets identified from real source).
+  `CallGraph.calls` to mean "this call site could not be bound". T-0809:
+  now RE-EXPORTED from `frob.graph.callgraph` (defined there, since
+  `callgraph.build_call_graph` is the real producer as of T-0809's
+  `mark_unresolved` parameter) -- `frob.graph.summary.UNRESOLVED_CALLEE`
+  still works unchanged for existing callers, it is the same object, not
+  a second sentinel string.
 - `SummaryResult` -- `summaries` (reachable functions only), plus two
   loud-failure channels the NO-FAIL-SILENT mandate requires: `not_analyzed`
   (functions no `entrypoints` member ever transitively calls -- these get
@@ -193,13 +222,34 @@ filesystem walk or repo scan of its own -- callers (or tests) build the
 `CallGraph`/`Edge` inputs explicitly, keeping the engine itself pure and
 deterministic.
 
-Deferred out of this ticket's scope (see T-0745's Done report): real
-callee-resolution wiring that decides when a call is `UNRESOLVED_CALLEE`
-(the T-0339-family resolvers), the "acquired/released/escaped resources"
-half of the design sketch (no DSL exists yet for resource acquire/
-release -- only protocol transitions/requires), and the T-0686 may-raise
-engine this substrate is meant to eventually share with (may-raise does
-not exist yet to consume it).
+### Resource-tracking DSL (T-0809)
+
+`frob:acquire <resource>` / `frob:release <resource>` / `frob:escapes
+<resource>` -- bare-target directives (same grammar shape as `frob:doc`/
+`frob:ticket`, no required attributes) declaring that the enclosing
+function directly acquires, releases, or transfers-out-unreleased
+("escapes", e.g. returns or stores) a named resource (`fd`, `lock`,
+`conn`, any opaque string). Parsed into `EdgeKind.ACQUIRE`/`RELEASE`/
+`ESCAPES` edges by `frob.graph.dsl.parse_directives`, exactly like the
+T-0744 protocol verbs, and folded into `FunctionSummary.acquired`/
+`released`/`escaped` by `compute_protocol_summaries` via plain transitive
+set union -- the same lattice-join treatment `requires`/`transitions`
+already get, not a net-held/leaked computation.
+
+This is the DSL SURFACE only. Real cleanup-obligation VERIFICATION
+(does every acquire actually get released -- or legitimately escape -- on
+every exit path, including exceptional ones) is T-0747 (child 4 of the
+T-0739 umbrella), blocked on this ticket plus T-0686 (may-raise, for the
+exceptional-edge postdominance analysis); `compute_protocol_summaries`
+only exposes the raw transitive sets T-0747's verifier will consume, the
+same posture `requires`/`transitions` already have toward T-0746's
+verification gate.
+
+Deferred out of this ticket's scope (see T-0809's Done report): the
+T-0686 may-raise engine this substrate is meant to eventually share with
+(may-raise does not exist yet to consume it) -- the T-0745 DESIGN
+CONSTRAINT ("one engine, whichever builds first hosts it") could not be
+coordinated on this pass either, unchanged from T-0745's own disclosure.
 
 ## Comment DSL
 
@@ -236,6 +286,9 @@ for the full mechanics (dangling-backslash and CRLF handling included).
 | `frob:tests <pkg-path> kind="integration"` | enclosing test exercises that package's public boundary with real collaborators |
 | `frob:tests <system-id> kind="e2e"` | enclosing test drives that declared system end to end |
 | `frob:decision AD-###` | enclosing symbol implements that decision record (see docs/modules/decisions.md) |
+| `frob:acquire <resource>` | enclosing function acquires that resource (T-0809) |
+| `frob:release <resource>` | enclosing function releases that resource (T-0809) |
+| `frob:escapes <resource>` | enclosing function transfers an unreleased resource out to its caller (T-0809) |
 
 Markdown side (doc anchors), in HTML comments; applies from the comment to
 the next heading of equal or higher level:

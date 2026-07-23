@@ -34,7 +34,7 @@ from collections.abc import Mapping, Sequence
 from pydantic import BaseModel, ConfigDict
 
 from frob.graph._models import Edge, EdgeKind
-from frob.graph.callgraph import CallGraph
+from frob.graph.callgraph import UNRESOLVED_CALLEE, CallGraph
 from frob.logging import get_logger
 
 __all__ = [
@@ -48,27 +48,57 @@ __all__ = [
 _log = get_logger(__name__)
 
 # frob:doc docs/modules/graph.md#protocol-summary-engine
-# A sentinel callee symref a caller wires into `CallGraph.calls` to mean
-# "this call site could not be bound to a real callee" (e.g. a dynamic
-# dispatch, an unresolved import, a T-0339-family resolver miss). The
-# engine treats ANY edge pointing at this exact string as an unresolvable
-# callee -- see the module docstring's NO-FAIL-SILENT clause.
-UNRESOLVED_CALLEE = "?unresolved"
+# frob:ticket T-0809
+# Re-exported from `frob.graph.callgraph` (T-0809) -- ONE sentinel string,
+# not two. `callgraph.build_call_graph` is now the real producer of this
+# edge (see its `mark_unresolved` parameter); this module remains the
+# consumer that defines what the sentinel DOES to a summary
+# (NO-FAIL-SILENT poisoning, module docstring). Kept as a name in THIS
+# module's own namespace (not just relying on the import) for backward
+# compatibility with every existing `frob.graph.summary.UNRESOLVED_CALLEE`
+# reference (tests, docs) predating this ticket. The `import ... as` above
+# already binds the name in this module's namespace; nothing further to
+# do here beyond the `__all__` re-export.
 
 _DEFAULT_MAX_ITERATIONS = 100
 
+# frob:ticket T-0809
+# `(requires, transitions, acquired, released, escaped)` -- the five
+# string-sets carried through `_own_contribution`/`_join_from_callees`'s
+# join step. A type alias, not a model, to match `requires`/`transitions`'
+# existing plain-`frozenset[str]` posture (a lattice join is just set
+# union); named only to keep the two functions' signatures under line
+# length, not a new public shape.
+_FiveSets = tuple[
+    frozenset[str], frozenset[str], frozenset[str], frozenset[str], frozenset[str]
+]
+# `_FiveSets` plus the poisoning outcome `_join_from_callees` also returns.
+_JoinResult = tuple[
+    frozenset[str],
+    frozenset[str],
+    frozenset[str],
+    frozenset[str],
+    frozenset[str],
+    bool,
+    str | None,
+]
 
-def _own_contribution(
-    symref: str, edges: Sequence[Edge]
-) -> tuple[frozenset[str], frozenset[str]]:
-    """`(requires, transitions)` string-sets this `symref` declares directly.
+
+def _own_contribution(symref: str, edges: Sequence[Edge]) -> _FiveSets:
+    """`(requires, transitions, acquired, released, escaped)` string-sets this
+    `symref` declares directly.
 
     `requires` entries render as `"proto:state"`, `transitions` entries as
     `"proto:from->to"` -- both are plain strings (not nested models) so a
     lattice join is just set union, and a hand-computed expected value in
-    a test is a one-line set literal."""
+    a test is a one-line set literal. T-0809: `acquired`/`released`/
+    `escaped` are plain resource-name strings (`frob:acquire`/
+    `frob:release`/`frob:escapes`), joined the same way."""
     requires: set[str] = set()
     transitions: set[str] = set()
+    acquired: set[str] = set()
+    released: set[str] = set()
+    escaped: set[str] = set()
     for e in edges:
         if e.src != symref:
             continue
@@ -81,10 +111,23 @@ def _own_contribution(
             frm = e.attrs.get("from", "")
             to = e.attrs.get("to", "")
             transitions.add(f"{proto}:{frm}->{to}")
-    return frozenset(requires), frozenset(transitions)
+        elif e.kind is EdgeKind.ACQUIRE:
+            acquired.add(e.target)
+        elif e.kind is EdgeKind.RELEASE:
+            released.add(e.target)
+        elif e.kind is EdgeKind.ESCAPES:
+            escaped.add(e.target)
+    return (
+        frozenset(requires),
+        frozenset(transitions),
+        frozenset(acquired),
+        frozenset(released),
+        frozenset(escaped),
+    )
 
 
 # frob:doc docs/modules/graph.md#protocol-summary-engine
+# frob:tests tests/unit/test_arch.py::TestProtocolSummaryEngine.test_leaf_resource_declarations_populate_acquired_released_escaped  # noqa: E501
 class FunctionSummary(BaseModel):
     """One function's fixpoint-computed protocol contribution.
 
@@ -94,13 +137,26 @@ class FunctionSummary(BaseModel):
     `UNRESOLVED_CALLEE` or itself poisoned -- `requires`/`transitions` are
     still populated with whatever WAS resolved (best-effort), but a
     consumer must treat a poisoned summary as untrustworthy, per the
-    NO-FAIL-SILENT mandate (an ERROR downstream, never silence)."""
+    NO-FAIL-SILENT mandate (an ERROR downstream, never silence).
+
+    T-0809: `acquired`/`released`/`escaped` are the same transitive-union
+    treatment applied to the resource-tracking DSL (`frob:acquire`/
+    `frob:release`/`frob:escapes`) -- plain resource-name string sets, not
+    a net-held/leaked computation. Real postdominance-based cleanup
+    verification (does every acquire on every exit path actually reach a
+    release) is T-0747's job, blocked on this engine plus T-0686; this
+    summary only exposes the raw transitive sets a later verifier needs,
+    same posture as `requires`/`transitions` exposing declarations without
+    themselves verifying anything against a call site."""
 
     model_config = ConfigDict(frozen=True)
 
     symref: str
     requires: frozenset[str] = frozenset()
     transitions: frozenset[str] = frozenset()
+    acquired: frozenset[str] = frozenset()
+    released: frozenset[str] = frozenset()
+    escaped: frozenset[str] = frozenset()
     poisoned: bool = False
     poison_reason: str | None = None
 
@@ -145,7 +201,13 @@ def _universe(
             if callee != UNRESOLVED_CALLEE:
                 nodes.add(callee)
     for e in edges:
-        if e.kind in (EdgeKind.REQUIRES, EdgeKind.TRANSITION):
+        if e.kind in (
+            EdgeKind.REQUIRES,
+            EdgeKind.TRANSITION,
+            EdgeKind.ACQUIRE,
+            EdgeKind.RELEASE,
+            EdgeKind.ESCAPES,
+        ):
             nodes.add(e.src)
     return nodes
 
@@ -240,17 +302,25 @@ def _join_from_callees(
     member: str,
     own_req: frozenset[str],
     own_trans: frozenset[str],
+    own_acquired: frozenset[str],
+    own_released: frozenset[str],
+    own_escaped: frozenset[str],
     own_poisoned: bool,
     callgraph: CallGraph,
     lookup: Mapping[str, FunctionSummary],
-) -> tuple[frozenset[str], frozenset[str], bool, str | None]:
+) -> _JoinResult:
     """One join step for `member`: its own declarations unioned with every
     callee's CURRENT summary in `lookup` (cross-SCC callees are final by
     the time this runs; intra-SCC callees are this round's in-progress
     values) -- the lattice-join core both the single-node and recursive-
-    SCC branches of `compute_protocol_summaries` share."""
+    SCC branches of `compute_protocol_summaries` share. T-0809: the
+    resource sets (`acquired`/`released`/`escaped`) join by the same plain
+    set-union rule as `requires`/`transitions`."""
     requires = set(own_req)
     transitions = set(own_trans)
+    acquired = set(own_acquired)
+    released = set(own_released)
+    escaped = set(own_escaped)
     poisoned = own_poisoned
     reason: str | None = None
     for callee in callgraph.calls.get(member, ()):
@@ -268,10 +338,21 @@ def _join_from_callees(
             continue
         requires |= callee_summary.requires
         transitions |= callee_summary.transitions
+        acquired |= callee_summary.acquired
+        released |= callee_summary.released
+        escaped |= callee_summary.escaped
         if callee_summary.poisoned:
             poisoned = True
             reason = reason or f"{member} transitively poisoned via {callee}"
-    return frozenset(requires), frozenset(transitions), poisoned, reason
+    return (
+        frozenset(requires),
+        frozenset(transitions),
+        frozenset(acquired),
+        frozenset(released),
+        frozenset(escaped),
+        poisoned,
+        reason,
+    )
 
 
 # frob:doc docs/modules/graph.md#protocol-summary-engine
@@ -286,6 +367,9 @@ def _join_from_callees(
 # frob:tests tests/unit/test_arch.py::TestProtocolSummaryEngine.test_unreachable_function_is_reported_not_analyzed_never_silent  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestProtocolSummaryEngine.test_non_converging_scc_is_reported_as_a_timeout_error_and_poisoned  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestProtocolSummaryEngine.test_diamond_shaped_calls_join_without_duplication_or_loss  # noqa: E501
+# frob:tests tests/unit/test_arch.py::TestProtocolSummaryEngine.test_leaf_resource_declarations_populate_acquired_released_escaped  # noqa: E501
+# frob:tests tests/unit/test_arch.py::TestProtocolSummaryEngine.test_resource_sets_join_transitively_through_a_caller  # noqa: E501
+# frob:tests tests/unit/test_arch.py::TestProtocolSummaryEngine.test_resource_sets_join_across_a_recursive_cluster  # noqa: E501
 def compute_protocol_summaries(
     callgraph: CallGraph,
     edges: Sequence[Edge],
@@ -319,14 +403,25 @@ def compute_protocol_summaries(
         )
         if len(members) == 1 and not is_self_recursive:
             member = members[0]
-            own_req, own_trans = own_by_symref[member]
-            req, trans, poisoned, reason = _join_from_callees(
-                member, own_req, own_trans, False, callgraph, summaries
+            own_req, own_trans, own_acq, own_rel, own_esc = own_by_symref[member]
+            req, trans, acq, rel, esc, poisoned, reason = _join_from_callees(
+                member,
+                own_req,
+                own_trans,
+                own_acq,
+                own_rel,
+                own_esc,
+                False,
+                callgraph,
+                summaries,
             )
             summaries[member] = FunctionSummary(
                 symref=member,
                 requires=req,
                 transitions=trans,
+                acquired=acq,
+                released=rel,
+                escaped=esc,
                 poisoned=poisoned,
                 poison_reason=reason,
             )
@@ -337,7 +432,12 @@ def compute_protocol_summaries(
         # value changes, bounded by max_iterations.
         current: dict[str, FunctionSummary] = {
             m: FunctionSummary(
-                symref=m, requires=own_by_symref[m][0], transitions=own_by_symref[m][1]
+                symref=m,
+                requires=own_by_symref[m][0],
+                transitions=own_by_symref[m][1],
+                acquired=own_by_symref[m][2],
+                released=own_by_symref[m][3],
+                escaped=own_by_symref[m][4],
             )
             for m in members
         }
@@ -347,14 +447,25 @@ def compute_protocol_summaries(
             changed = False
             next_round: dict[str, FunctionSummary] = {}
             for member in members:
-                own_req, own_trans = own_by_symref[member]
-                req, trans, poisoned, reason = _join_from_callees(
-                    member, own_req, own_trans, False, callgraph, combined
+                own_req, own_trans, own_acq, own_rel, own_esc = own_by_symref[member]
+                req, trans, acq, rel, esc, poisoned, reason = _join_from_callees(
+                    member,
+                    own_req,
+                    own_trans,
+                    own_acq,
+                    own_rel,
+                    own_esc,
+                    False,
+                    callgraph,
+                    combined,
                 )
                 prior = current[member]
                 if (
                     req != prior.requires
                     or trans != prior.transitions
+                    or acq != prior.acquired
+                    or rel != prior.released
+                    or esc != prior.escaped
                     or poisoned != prior.poisoned
                 ):
                     changed = True
@@ -362,6 +473,9 @@ def compute_protocol_summaries(
                     symref=member,
                     requires=req,
                     transitions=trans,
+                    acquired=acq,
+                    released=rel,
+                    escaped=esc,
                     poisoned=poisoned,
                     poison_reason=reason or prior.poison_reason,
                 )

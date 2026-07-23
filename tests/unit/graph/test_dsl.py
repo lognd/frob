@@ -610,6 +610,40 @@ class TestProtocolDeclarations:
         assert not malformed
 
 
+# frob:ticket T-0809
+class TestResourceDirectives:
+    """`frob:acquire`/`frob:release`/`frob:escapes` (T-0809): bare-target
+    verbs, same grammar shape as `frob:doc`/`frob:ticket` -- no required
+    attributes."""
+
+    def test_acquire_release_escapes_round_trip(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/dsl.py::parse_directives
+        src = (
+            "# frob:acquire fd\n"
+            "# frob:release lock\n"
+            "# frob:escapes conn\n"
+            "def open_fd() -> None:\n"
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        by_kind = {e.kind: e for e in edges}
+        assert by_kind[EdgeKind.ACQUIRE].target == "fd"
+        assert by_kind[EdgeKind.RELEASE].target == "lock"
+        assert by_kind[EdgeKind.ESCAPES].target == "conn"
+        assert all(e.src.endswith("::open_fd") for e in edges)
+
+    def test_acquire_missing_target_is_malformed(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/dsl.py::_parse_line
+        src = "# frob:acquire\ndef open_fd() -> None:\n    pass\n"
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not edges
+        assert len(malformed) == 1
+        assert "acquire" in malformed[0].reason
+
+
 class TestInitDeinitInference:
     """Zero-declaration init/deinit name-pattern inference (T-0744)."""
 

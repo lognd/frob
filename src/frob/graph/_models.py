@@ -125,6 +125,21 @@ class EdgeKind(StrEnum):
     # requirements against the call graph is later T-0739 children, out of
     # this module's scope; this module only parses the declaration.
     REQUIRES = "requires"
+    # T-0809: resource-tracking DSL, the "acquired/released/escaped
+    # resources" third of the T-0745 protocol-summary shape (the design
+    # sketch T-0745 itself deferred). `target` is the resource name (a
+    # plain string, e.g. "fd", "lock", "conn" -- opaque, like every other
+    # DSL target). ACQUIRE/RELEASE mark the declaring function as directly
+    # acquiring/releasing that resource; ESCAPES marks it as transferring
+    # an acquired-but-unreleased resource out to its caller (e.g. returned
+    # or stored) rather than releasing it itself. Real postdominance-based
+    # cleanup-obligation VERIFICATION (does every acquire actually get
+    # released on every exit) is T-0747, blocked on this ticket plus
+    # T-0686 -- this module only parses the declaration and folds it into
+    # `frob.graph.summary.FunctionSummary`'s transitive resource sets.
+    ACQUIRE = "acquire"
+    RELEASE = "release"
+    ESCAPES = "escapes"
 
 
 # frob:doc docs/modules/graph.md#data-models

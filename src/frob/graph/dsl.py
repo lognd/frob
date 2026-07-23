@@ -57,6 +57,13 @@ _VERB_TABLE: dict[str, EdgeKind] = {
     "protocol": EdgeKind.PROTOCOL,
     "transition": EdgeKind.TRANSITION,
     "requires": EdgeKind.REQUIRES,
+    # T-0809: resource-tracking DSL -- bare-target verbs (like `doc`/
+    # `ticket`), no required attributes. `frob:acquire <resource>` /
+    # `frob:release <resource>` / `frob:escapes <resource>` on the
+    # declaring function; see EdgeKind's docstring for the full contract.
+    "acquire": EdgeKind.ACQUIRE,
+    "release": EdgeKind.RELEASE,
+    "escapes": EdgeKind.ESCAPES,
 }
 
 _LINE_RE = re.compile(r"^frob:(?P<verb>\S+)(?:\s+(?P<rest>.*))?$")

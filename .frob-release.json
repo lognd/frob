@@ -518,7 +518,8 @@
     "src/frob/graph/cache.py::store_file_data": "70f59a3ac071c07913eda79d99db94b19392cfa0945fc05ca55b94c2b4e750e9",
     "src/frob/graph/cache.py::touch_file_stat": "6c753f05ac5e99619b573b1c8ddd59c6fc1e973e294ffbe26473d5d0c725dc85",
     "src/frob/graph/callgraph.py::CallGraph": "e2747c7571378e936de947725fcafb217ca9f9782c5930fa8a2652485dba6a1d",
-    "src/frob/graph/callgraph.py::build_call_graph": "aefafef876a5330bd11a67c70c33a57275b4f3d388d86f08bbcbd094e37dbe01",
+    "src/frob/graph/callgraph.py::UNRESOLVED_CALLEE": "eae63292eb86e25132582cdb509da55663c9e16372650ba4f14b132c2757573b",
+    "src/frob/graph/callgraph.py::build_call_graph": "2295866498ea9baabfe25bf0628904a37c8e9c3181310914f32075dfb45274e3",
     "src/frob/graph/callgraph.py::build_reference_graph": "1796c447d7ff18e1a6711193fed68b8b746479050264429ed1a056c0852ef6cc",
     "src/frob/graph/callgraph.py::closure": "03a5762b12fa785c4d7b4237e2c9f326ba68d1e047b1f5524b6a8edfbe3af3e2",
     "src/frob/graph/digest.py::compute_digests": "f558880c079f7930093a4e185cc9beef639973ac796d1994563b91bf17287a03",
@@ -534,7 +535,6 @@
     "src/frob/graph/summary.py::FunctionSummary": "5dfbdbaa84e3758f90ec952d6206fd797ed4e8bd4c36a52f9efb43620679dd9b",
     "src/frob/graph/summary.py::SCCTimeout": "68d1e03229a940eb9884f81c58f1f3d157a995f1d12b045710d380234bc6089f",
     "src/frob/graph/summary.py::SummaryResult": "42532b2360e9e1298570a30916ca8d96b09d9893b6c56e8ccfdde37f59b4e10c",
-    "src/frob/graph/summary.py::UNRESOLVED_CALLEE": "eae63292eb86e25132582cdb509da55663c9e16372650ba4f14b132c2757573b",
     "src/frob/graph/summary.py::compute_protocol_summaries": "7fc0990476fbed473150809319d75281a3d2be610a842012ff3c1101549faa8d",
     "src/frob/lang/__init__.py::GRAMMAR_FINGERPRINT_PACKAGES": "0fb7c91d3df53b4aec4312a2c97e716487a17e6b8f10f6b2a3dcadb121d14623",
     "src/frob/lang/__init__.py::LangError": "072a7cff3ec199ba5ba83d23c6473cc17b5862ff6b4aa480769541a7ce60761c",
@@ -1354,5 +1354,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.111.0"
+  "version": "0.112.0"
 }

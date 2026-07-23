@@ -1850,6 +1850,83 @@ class TestCallGraph:
         call_graph = build_call_graph(tmp_path, ("src/a.py",))
         assert call_graph.calls == {"src/a.py::public_entry": ("src/a.py::_helper",)}
 
+    # frob:ticket T-0809
+    def test_build_call_graph_marks_unresolved_private_looking_callee(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/callgraph.py::build_call_graph
+        # T-0809: a call to a name that LOOKS like our own private-symbol
+        # convention (leading underscore) but has no candidate anywhere in
+        # the scanned paths must not be silently dropped -- it becomes an
+        # UNRESOLVED_CALLEE edge so `frob.graph.summary` can poison the
+        # caller's summary on it.
+        from frob.graph.callgraph import UNRESOLVED_CALLEE, build_call_graph
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def public_entry() -> None:\n    _missing_helper()\n",
+        )
+        call_graph = build_call_graph(tmp_path, ("src/a.py",), mark_unresolved=True)
+        assert call_graph.calls == {"src/a.py::public_entry": (UNRESOLVED_CALLEE,)}
+
+    # frob:ticket T-0809
+    def test_build_call_graph_does_not_mark_unresolved_public_looking_call(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/callgraph.py::build_call_graph
+        # T-0809: a call to a name with no leading underscore (a builtin,
+        # stdlib, or third-party call) never looked "local" in the first
+        # place -- it must stay a silent omission, not a poison, matching
+        # the pre-existing best-effort scope this ticket did not widen.
+        from frob.graph.callgraph import build_call_graph
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def public_entry() -> None:\n    some_external_call()\n",
+        )
+        call_graph = build_call_graph(tmp_path, ("src/a.py",), mark_unresolved=True)
+        assert call_graph.calls == {}
+
+    # frob:ticket T-0809
+    def test_build_call_graph_default_preserves_old_silent_omission_behavior(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/callgraph.py::build_call_graph
+        # T-0809: `mark_unresolved` defaults to `False` -- every EXISTING
+        # caller (frob.gates, frob.dup._pipeline) relies on the old
+        # silent-omission behavior and must see it unchanged unless it
+        # opts in.
+        from frob.graph.callgraph import build_call_graph
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def public_entry() -> None:\n    _missing_helper()\n",
+        )
+        call_graph = build_call_graph(tmp_path, ("src/a.py",))
+        assert call_graph.calls == {}
+
+    # frob:ticket T-0809
+    def test_build_call_graph_resolved_private_callee_is_not_also_unresolved(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/callgraph.py::build_call_graph
+        # A private callee that DOES resolve must never also carry the
+        # UNRESOLVED_CALLEE sentinel alongside it.
+        from frob.graph.callgraph import UNRESOLVED_CALLEE, build_call_graph
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def _helper() -> None:\n    pass\n\n\ndef public_entry() -> None:\n"
+            "    _helper()\n",
+        )
+        call_graph = build_call_graph(tmp_path, ("src/a.py",), mark_unresolved=True)
+        assert call_graph.calls == {"src/a.py::public_entry": ("src/a.py::_helper",)}
+        assert UNRESOLVED_CALLEE not in call_graph.calls["src/a.py::public_entry"]
+
 
 class TestLedgerNotDoc:
     """The top-level ticket ledgers are history, not docs -- classifying

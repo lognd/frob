@@ -3003,6 +3003,27 @@ def _requires(src: str, proto: str, state: str) -> Edge:
     )
 
 
+# frob:ticket T-0809
+def _acquire(src: str, resource: str) -> Edge:
+    """Test helper: an `ACQUIRE` edge shaped like `dsl.parse_directives`'s
+    output for `frob:acquire <resource>`."""
+    return Edge(src=src, kind=EdgeKind.ACQUIRE, target=resource, origin=f"{src}:1")
+
+
+# frob:ticket T-0809
+def _release(src: str, resource: str) -> Edge:
+    """Test helper: a `RELEASE` edge shaped like `dsl.parse_directives`'s
+    output for `frob:release <resource>`."""
+    return Edge(src=src, kind=EdgeKind.RELEASE, target=resource, origin=f"{src}:1")
+
+
+# frob:ticket T-0809
+def _escapes(src: str, resource: str) -> Edge:
+    """Test helper: an `ESCAPES` edge shaped like `dsl.parse_directives`'s
+    output for `frob:escapes <resource>`."""
+    return Edge(src=src, kind=EdgeKind.ESCAPES, target=resource, origin=f"{src}:1")
+
+
 class TestProtocolSummaryEngine:
     """`frob.graph.summary.compute_protocol_summaries` -- bottom-up fixpoint
     over a fixture `CallGraph`, no repo-wide scan (docs/modules/graph.md
@@ -3182,3 +3203,46 @@ class TestProtocolSummaryEngine:
             "c:s0->s1",
         }
         assert not result.summaries["f.py::top"].poisoned
+
+    # frob:ticket T-0809
+    def test_leaf_resource_declarations_populate_acquired_released_escaped(self):
+        """A leaf declaring `frob:acquire`/`frob:release`/`frob:escapes`
+        summarizes to exactly those resource-name sets, T-0809's
+        resource-tracking DSL folded the same way `requires`/`transitions`
+        already are."""
+        graph = CallGraph(calls={})
+        edges = [
+            _acquire("f.py::open_fd", "fd"),
+            _release("f.py::open_fd", "lock"),
+            _escapes("f.py::open_fd", "conn"),
+        ]
+        result = compute_protocol_summaries(graph, edges, entrypoints=["f.py::open_fd"])
+        summary = result.summaries["f.py::open_fd"]
+        assert summary.acquired == {"fd"}
+        assert summary.released == {"lock"}
+        assert summary.escaped == {"conn"}
+        assert not summary.poisoned
+
+    # frob:ticket T-0809
+    def test_resource_sets_join_transitively_through_a_caller(self):
+        """`caller` calls `helper`, which acquires a resource -- `caller`'s
+        summary must include it, matching `requires`/`transitions`'
+        existing one-hop join behavior."""
+        graph = CallGraph(calls={"f.py::caller": ("f.py::helper",)})
+        edges = [_acquire("f.py::helper", "fd")]
+        result = compute_protocol_summaries(graph, edges, entrypoints=["f.py::caller"])
+        assert result.summaries["f.py::caller"].acquired == {"fd"}
+        assert result.summaries["f.py::helper"].acquired == {"fd"}
+
+    # frob:ticket T-0809
+    def test_resource_sets_join_across_a_recursive_cluster(self):
+        """A mutually-recursive pair each declaring a distinct resource
+        acquire must converge with BOTH resources in both summaries,
+        mirroring `test_recursive_cluster_converges_to_hand_computed_fixpoint`."""
+        graph = CallGraph(calls={"f.py::a": ("f.py::b",), "f.py::b": ("f.py::a",)})
+        edges = [_acquire("f.py::a", "fd"), _acquire("f.py::b", "lock")]
+        result = compute_protocol_summaries(graph, edges, entrypoints=["f.py::a"])
+        expected = {"fd", "lock"}
+        assert result.summaries["f.py::a"].acquired == expected
+        assert result.summaries["f.py::b"].acquired == expected
+        assert not result.summaries["f.py::a"].poisoned

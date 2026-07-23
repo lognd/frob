@@ -26,6 +26,7 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict
 
 __all__ = [
+    "UNRESOLVED_CALLEE",
     "CallGraph",
     "build_call_graph",
     "build_reference_graph",
@@ -34,6 +35,21 @@ __all__ = [
 
 _DEFAULT_MAX_DEPTH = 3
 _DEFAULT_MAX_NODES = 12
+
+# frob:doc docs/modules/graph.md#call-graph
+# frob:ticket T-0809
+# A sentinel callee symref `build_call_graph` wires into `CallGraph.calls`
+# (see `_resolve_edges`'s `mark_unresolved` branch) the moment a call site's
+# target LOOKS like it should resolve locally under this module's own
+# private-symbol naming convention (a leading underscore) but has zero
+# candidates in the by-name index -- e.g. a helper renamed/removed, or one
+# defined outside the `paths` this build was scoped to. `frob.graph.summary`
+# (T-0745) consumes this exact string as its poisoning sentinel; defined
+# here (not there) because `callgraph` has no dependency on `summary`, and
+# `summary` already depends on `callgraph` -- `summary.UNRESOLVED_CALLEE`
+# re-exports this same object for backward compatibility, never a second
+# divergent sentinel string.
+UNRESOLVED_CALLEE = "?unresolved"
 
 
 # frob:doc docs/modules/graph.md#call-graph
@@ -147,7 +163,14 @@ def _parse_package(root: Path, paths: Sequence[str]) -> dict[str, list]:
 
 # frob:doc docs/modules/graph.md#call-graph
 # frob:invariant INV-014
-def build_call_graph(root: Path, paths: Sequence[str]) -> CallGraph:
+# frob:ticket T-0809
+# frob:tests tests/test_graph.py::TestCallGraph.test_build_call_graph_marks_unresolved_private_looking_callee  # noqa: E501
+# frob:tests tests/test_graph.py::TestCallGraph.test_build_call_graph_does_not_mark_unresolved_public_looking_call  # noqa: E501
+# frob:tests tests/test_graph.py::TestCallGraph.test_build_call_graph_default_preserves_old_silent_omission_behavior  # noqa: E501
+# frob:tests tests/test_graph.py::TestCallGraph.test_build_call_graph_resolved_private_callee_is_not_also_unresolved  # noqa: E501
+def build_call_graph(
+    root: Path, paths: Sequence[str], *, mark_unresolved: bool = False
+) -> CallGraph:
     """Build the intra-file + intra-package call graph over `paths`.
 
     `paths` are repo-root-relative POSIX file paths (typically every
@@ -160,10 +183,36 @@ def build_call_graph(root: Path, paths: Sequence[str]) -> CallGraph:
     public-API boundary automatically (see `CallGraph`'s docstring).
     Ambiguous same-name matches within the allowed candidate set all get
     an edge (best-effort; `closure` node-caps the fan-out).
+
+    T-0809: when `mark_unresolved` (default `False`), a call target that
+    LOOKS like it should resolve under this module's own private-symbol
+    convention (its short name starts with `_`) but matches zero
+    candidates in the by-name index gets a `UNRESOLVED_CALLEE` edge
+    instead of being silently dropped -- this is what lets
+    `frob.graph.summary.compute_protocol_summaries` poison a real
+    caller's summary on a genuinely unresolved private call, not just a
+    fixture-fabricated one. A call to a name that never looked local in
+    the first place (no leading underscore -- a builtin, stdlib, or
+    third-party call) is never marked unresolved; that omission is
+    unchanged, deliberate best-effort scope, not a gap this ticket closes.
+
+    Defaults to `False` (opt-in), NOT `True`: `frob.gates` and
+    `frob.dup._pipeline` already call `build_call_graph` and feed its
+    output (including `closure()` over it) straight through code that
+    assumes every entry is a real `path::qualname` symref -- a bare
+    `UNRESOLVED_CALLEE` sentinel breaks that assumption (observed as an
+    `IndexError` in `frob.gates._cov006_third_file_reachable`'s
+    `helper_symref.split("::", 1)[1]` during this ticket's own gate pass).
+    Widening every existing caller's behavior silently is out of this
+    ticket's scope (`src/frob/gates/**`, `src/frob/dup/**` are not in
+    `scope`); a future caller that wants poisoning-aware resolution (e.g.
+    a real `compute_protocol_summaries` integration) opts in explicitly.
     """
     parsed_by_path = _parse_package(root, paths)
     by_name = _short_name_index(parsed_by_path)
-    calls = _resolve_edges(parsed_by_path, by_name, _called_names_from_sym)
+    calls = _resolve_edges(
+        parsed_by_path, by_name, _called_names_from_sym, mark_unresolved=mark_unresolved
+    )
     return CallGraph(calls=calls)
 
 
@@ -182,7 +231,15 @@ def build_reference_graph(root: Path, paths: Sequence[str]) -> CallGraph:
     under `build_call_graph` alone."""
     parsed_by_path = _parse_package(root, paths)
     by_name = _short_name_index(parsed_by_path)
-    refs = _resolve_edges(parsed_by_path, by_name, _referenced_names)
+    # T-0809: `mark_unresolved=False` here, deliberately -- "referenced but
+    # unbound" is a much weaker/noisier signal than "called but unbound"
+    # (`_referenced_names` includes every bare identifier, not just call
+    # tokens), and `build_reference_graph`'s only consumer (T-0422's dead-
+    # symbol gate) has no poisoning semantics to feed; widening it would
+    # just be unused edges, not a real gap this ticket's scope covers.
+    refs = _resolve_edges(
+        parsed_by_path, by_name, _referenced_names, mark_unresolved=False
+    )
     return CallGraph(calls=refs)
 
 
@@ -206,10 +263,13 @@ def _short_name_index(
 
 # frob:ticket T-0361
 # frob:ticket T-0422
+# frob:ticket T-0809
 def _resolve_edges(
     parsed_by_path: dict[str, list],
     by_name: dict[str, list[tuple[str, str, bool]]],
     name_extractor,
+    *,
+    mark_unresolved: bool = False,
 ) -> dict[str, tuple[str, ...]]:
     """Caller symref -> resolved private-callee symrefs, per `build_call_graph`'s
     resolution rule (never a public symbol, never self); split out of
@@ -220,19 +280,44 @@ def _resolve_edges(
     index, the private/self filtering) is shared. `name_extractor` takes
     the whole `sym` (T-0565, not just `sym.body_tokens`) so it can choose
     which token field(s) to scan -- `_referenced_names` needs both
-    `sig_tokens` and `body_tokens`."""
+    `sig_tokens` and `body_tokens`.
+
+    T-0809: `mark_unresolved` -- when a scanned `name` starts with `_`
+    (looks like our own private-symbol naming convention) but resolves to
+    zero candidates in `by_name` at all (not merely zero PRIVATE
+    candidates -- a name matching only public/ambiguous entries is a
+    normal miss, not evidence of a broken local reference), the caller
+    gets one `UNRESOLVED_CALLEE` edge appended instead of that name being
+    silently dropped. Appended at most once per caller regardless of how
+    many distinct unresolved private-looking names it has, matching
+    `frob.graph.summary`'s treatment of the sentinel as a poisoning FLAG,
+    not a per-callee enumeration.
+    """
     calls: dict[str, tuple[str, ...]] = {}
     for path, symbols in parsed_by_path.items():
         for sym in symbols:
             caller_symref = f"{path}::{sym.qualname}"
             names = name_extractor(sym)
             callees: list[str] = []
+            saw_unresolved = False
             for name in names:
-                for symref, _cand_path, is_private in by_name.get(name, ()):
+                candidates = by_name.get(name, ())
+                matched_private = False
+                for symref, _cand_path, is_private in candidates:
                     if symref == caller_symref:
                         continue
                     if is_private:
                         callees.append(symref)
+                        matched_private = True
+                if (
+                    mark_unresolved
+                    and not matched_private
+                    and not candidates
+                    and name.startswith("_")
+                ):
+                    saw_unresolved = True
+            if saw_unresolved:
+                callees.append(UNRESOLVED_CALLEE)
             if callees:
                 calls[caller_symref] = tuple(callees)
     return calls

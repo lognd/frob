@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.112.0] - unreleased
+
+- T-0809: wire real callee-resolution + resource-tracking DSL into the T-0745 protocol summary engine
+
 ## [0.111.0] - unreleased
 
 - T-0808: gates: WAIVE007 dangling-waiver-ref -- unresolvable BINDING ticket ref in a waiver is a warning, not silence
