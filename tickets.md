@@ -5002,17 +5002,17 @@ Sweep for other bypassing subprocess call sites (grep subprocess.run/Popen/call/
   - src/frob/tickets/__init__.py:2370 `_run_evidence_command` -- shell=True evidence-command spawn.
   - src/frob/gitlog/__init__.py:230 -- direct `git log` subprocess.run.
   - src/frob/app/ticket_runner.py:863,1159; src/frob/fleet/__init__.py:164,194; src/frob/tickets/clipboard.py (9 sites); src/frob/mutate/__init__.py:260; src/frob/deploy/_vm_runner.py:109,116,134,153; src/frob/scaffold/project.py:509; src/frob/testing/_coverage_wait.py:151.
-  Filed as T-draft-8cd37914 ("wire remaining subprocess call sites through the T-0200/T-0778 exec guard...").
+  Filed as T-0803 ("wire remaining subprocess call sites through the T-0200/T-0778 exec guard...").
 
 Deviations from the ticket's literal plan (disclosed, not hidden):
-- The ticket said "DELETE the five stale LINT004 waivers" and, if LINT004 then legitimately re-fires, "the honest fix is wiring that node's spawns through the guard, not re-waiving." I found only 4 waivers with this exact reason text today (checker's was already retired with a real attr flag, and stratamod's net waiver was already dropped by T-0769 -- both before T-0778 started; git history in tickets-archive.md confirms the original 5 were checker/core/stratamod/tickets_ledger/vet). Of the remaining 4 (fleet, core, tickets_ledger, vet), NONE could be honestly deleted: each node's `may "exec"`/`may "net"` capability is attributed to files outside T-0778's scope (fleet/__init__.py's own subprocess.run; core's gitlog/mutate/deploy/scaffold/testing subprocess.run calls, only one of core's many code-glob files being gitio.py; tickets_ledger's git-ls-files/evidence-shell/clipboard.py calls; vet's net_enabled() never being called anywhere). Wiring any of those requires touching files outside scope=[gitio.py, _guard.py, frob.strata, test_gitio.py]. Deleting the waivers and declaring `attr flag=` would have been a false completeness claim -- the exact anti-pattern this repo's T-0150/T-0151 discipline (and this very ticket) exists to prevent. Instead I rewrote each waiver's reason to state the real, current state (mechanism exists and is genuinely wired for the git seam; specific remaining unwired call sites named; pointed at the new follow-on ticket T-draft-8cd37914 instead of the shipped T-0200) -- this satisfies the ticket's actual acceptance criterion ("no LINT004 waiver cites T-0200 as pending") without a false claim. `uv run frob sys audit` confirms selfconform stays clean (0 unwaived findings) after this change.
+- The ticket said "DELETE the five stale LINT004 waivers" and, if LINT004 then legitimately re-fires, "the honest fix is wiring that node's spawns through the guard, not re-waiving." I found only 4 waivers with this exact reason text today (checker's was already retired with a real attr flag, and stratamod's net waiver was already dropped by T-0769 -- both before T-0778 started; git history in tickets-archive.md confirms the original 5 were checker/core/stratamod/tickets_ledger/vet). Of the remaining 4 (fleet, core, tickets_ledger, vet), NONE could be honestly deleted: each node's `may "exec"`/`may "net"` capability is attributed to files outside T-0778's scope (fleet/__init__.py's own subprocess.run; core's gitlog/mutate/deploy/scaffold/testing subprocess.run calls, only one of core's many code-glob files being gitio.py; tickets_ledger's git-ls-files/evidence-shell/clipboard.py calls; vet's net_enabled() never being called anywhere). Wiring any of those requires touching files outside scope=[gitio.py, _guard.py, frob.strata, test_gitio.py]. Deleting the waivers and declaring `attr flag=` would have been a false completeness claim -- the exact anti-pattern this repo's T-0150/T-0151 discipline (and this very ticket) exists to prevent. Instead I rewrote each waiver's reason to state the real, current state (mechanism exists and is genuinely wired for the git seam; specific remaining unwired call sites named; pointed at the new follow-on ticket T-0803 instead of the shipped T-0200) -- this satisfies the ticket's actual acceptance criterion ("no LINT004 waiver cites T-0200 as pending") without a false claim. `uv run frob sys audit` confirms selfconform stays clean (0 unwaived findings) after this change.
 
 Evidence: tests/test_gitio.py::TestRunArgv::test_kill_switch_refuses_without_spawning
 - `uv run --frozen pytest tests/test_gitio.py tests/test_serve_daemon.py tests/system/test_spawn_budget.py -v` -> 33 passed, 2 xfailed (both pre-existing/unrelated).
 - `uv run --frozen pytest tests/test_gitio.py -q` -> 23 passed on its own.
 - `uv run --frozen pytest tests/test_gitio.py::TestRunArgv::test_kill_switch_refuses_without_spawning --collect-only -q` confirms the node id resolves.
 
-Filed: T-draft-8cd37914 (wire remaining subprocess call sites through the T-0200/T-0778 exec guard)
+Filed: T-0803 (wire remaining subprocess call sites through the T-0200/T-0778 exec guard)
 
 Gates: `uv run --frozen frob check --only gates-fast --ticket T-0778` clean (0 errors after `frob ticket sweep T-0778` refreshed PRE001); `--only gates-native --ticket T-0778` clean; `--only gates-security --ticket T-0778` clean; `--only static --ticket T-0778` and `--only lint --ticket T-0778` clean (pre-existing exports/frob-dup noise, all `pass`). `uv run --frozen frob sys audit` -> "sys audit: PROVED (4 waived) -- zero UNWAIVED gaps across every configured view" / "self-conformance PROVED -- zero SYS gaps", the 4 WAIVED LINT004 lines are the rewritten fleet/core/tickets_ledger/vet waivers above, no other node newly reds.
 
@@ -5683,7 +5683,7 @@ navigation commands) are bound via `ticket="T-0580"`, and T-0580 itself
 is now closed/done -- DEPR002 fires because the bound ticket is no
 longer open. This is correct new-gate behavior surfacing a real,
 previously-invisible problem (catalogued-is-not-enforced), not a defect
-in this ticket's registration. Filed T-draft-8124420f (rebind the four
+in this ticket's registration. Filed T-0802 (rebind folded into this ticket at land; the interim draft was dropped as absorbed) (rebind the four
 T-0580 frob:deprecated directives to a new open ticket) rather than
 fixing it here -- out of this ticket's declared scope
 (src/frob/app/{xref,outline,docs,map}_runner.py).
@@ -5703,7 +5703,7 @@ navigation runner files (map/outline/xref/docs_runner.py) with reason
 "DEPR002 rebind: directives must cite an open ticket; T-0802 is the
 sunset-execution ticket", rebound each frob:deprecated directive's
 ticket= from the closed T-0580 to the open T-0802. Dropped
-T-draft-8124420f as absorbed-by T-0797 (its fix landed here instead of
+T-0802 (rebind folded into this ticket at land; the interim draft was dropped as absorbed) as absorbed-by T-0797 (its fix landed here instead of
 as a separate ticket). `frob check --only deprecated` now shows 0
 errors, 4 DEPR003 in-window warnings, matching the ticket's original
 acceptance criterion exactly.
