@@ -7220,3 +7220,22 @@ threat: null
 component: null
 ```
 2026-07-23 reevaluation prompted by the user after this session's exports triage (T-0600/T-0601) and TEST014 binding work (T-0588) leaned on who-imports-this-symbol queries. Telemetry verdict: root telemetry has 0 organic xref events today (82 historical, all tests); both surviving agent worktrees show 0 xref events despite dispatch prompts explicitly suggesting frob xref -- agents chose grep/Serena. BUT the underlying question (external consumers of a symbol, distinguishing imports from prose) is now RECURRING gate-driven work, and grep demonstrably errs in both directions (T-0601 reviewer caught a missed comment-prose reference; grep cannot cleanly separate import-consumers from mentions). Decision to make before the 2026-10-01 sunset executes: keep the standalone xref porcelain deprecated (telemetry supports it), and instead fold a consumer-lookup mode into a surface agents actually use (e.g. frob exports --consumers <symbol>, or a graph query verb) so the sunset does not delete the capability along with the porcelain. Re-check telemetry at sunset time; caveat that most worktree telemetry dies with worktree removal, so absence-of-evidence there is weak.
+
+<!-- ticket:T-0859 -->
+```yaml
+id: T-0859
+title: 'DERIVED001 cross-process TOCTOU: a concurrent frob process can rewrite .frob
+  between the integrity precheck and a stage''s read'
+state: queued
+kind: security
+origin: agent
+created: '2026-07-23'
+priority: medium
+parent: T-0603
+scope:
+- src/frob/check/**
+- src/frob/process/**
+threat: null
+component: null
+```
+T-0603 runs verify_derived_state once, synchronously, before stage dispatch -- sound against the in-process ThreadPoolExecutor race it caught, but a concurrent frob process (frob serve daemon, a parallel agent's frob check in the same checkout, a mutate run) can corrupt or mid-rebuild-rewrite .frob/cache.db AFTER the precheck verified it and BEFORE a later stage reads it: verified-then-corrupted is still trusted. T-0603's docs never claim cross-process safety (reviewer: honest, not a false claim), so this is the disclosed residual as its own obligation. Fix directions to evaluate: an flock-style shared/exclusive lock on .frob during a check run (the ledger_lock precedent), or per-read integrity at each consumer seam, or documenting single-process-per-checkout as an explicit operating assumption with a lock that ENFORCES it. Filed at T-0603's land per its reviewer's recommendation.
