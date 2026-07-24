@@ -1246,7 +1246,7 @@ Every service node must declare golden-signal SLOs (latency/traffic/errors/satur
 id: T-0649
 title: 'strata: SINGLE SOURCE OF TRUTH obligation - two nodes writing one store is
   a hazard'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
