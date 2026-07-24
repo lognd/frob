@@ -3029,7 +3029,7 @@ Audit M1 gate-direction: SEC gates catch shell=True and f-string-into-argv but n
 id: T-0786
 title: 'AUDIT: gate-by-gate vacuous-satisfaction sweep + lang parser trust-boundary
   pass (blindspot audit boundary)'
-state: queued
+state: done
 kind: security
 origin: auditor
 created: '2026-07-23'
@@ -3037,17 +3037,129 @@ priority: medium
 parent: null
 scope:
 - docs/audits/gates-vacuous.md
+- docs/index.md
+- tests/integration/test_interfaces.py
+scope_changes:
+- op: add
+  glob: docs/index.md
+  reason: 'DOC001 requires docs/audits/gates-vacuous.md be linked from docs/index.md
+    (the standard audits-index pattern every other docs/audits/*.md entry follows);
+    adding the one-line index entry, not expanding the audit''s own content scope.
+
+    '
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: tests/integration/test_interfaces.py
+  reason: docs-only audit ticket; CLI-dispatch integration test is the bound evidence
+    (T-0167 precedent), scope-added for covers_scope (D-02 route 2)
+  actor: logan
+  at: '2026-07-23'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 acceptance:
 - text: GIVEN the audit doc WHEN complete THEN every gate in gates/__init__.py has
     a recorded verdict for empty-diff/empty-scope/cached-stale satisfaction (can it
     go green without doing its work) and the lang/** tree-sitter ingestion of untrusted
     files has a recorded DoS/traversal verdict; every defect found is filed as its
     own ticket
-  evidence: []
+  evidence:
+  - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 threat: null
 component: null
 ```
 The 2026-07-23 blindspot audit explicitly skipped: (a) a full vacuous-satisfaction sweep of gates/__init__.py (8568 lines -- can any gate be satisfied by an empty diff, empty scope, or stale cache?), and (b) lang/** parser trust boundary (tree-sitter on untrusted repo files). These are the largest unaudited surfaces. Run per the audit-until-empty discipline (docs/audits/, pessimistic auditor told to find 10+, repeat until 0).
+
+## Done report
+
+FINAL (round 2, after coordinator feedback): completed the full
+gate-by-gate catalog. `known_gate_rule_ids()` returns 118 rule ids;
+this sweep additionally found 7 real, currently-firing rule ids the
+frozenset itself OMITS (PARSE001, TICK005, REG011, PII011, PII012,
+SYSWAIVE002, THREAT006 -- itself H3 below), for 125 distinct rule ids
+total. Every one of the 125 now carries an explicit verdict in
+docs/audits/gates-vacuous.md's "Catalog coverage" table -- swept total
+== catalog total, zero unread, per the acceptance criterion's own bar.
+
+Round 1 (18 examined vectors) covered COV/TODO/SCOPE/PRE/TEST/TICK001-002/
+COMPLIANCE005/REG001-010/DEC/FUZZ/PARSE-partial/SEC/SEC110/the lang parse
+entrypoint/2 strata comment-flagged sites. Round 2 (this pass) closed the
+remaining ~60 rule ids/dispatch sites: INV001-006, DEBT001-003,
+DEPR001-004, DSL001, WAIVE001-007, REL001, DOC001-005, DUP001-002 (native
+path), FUZZ (confirmed), PERF001-007, SYS001-004, TICK003-004/006-008,
+FMT001, PII010-012, ARCH001/101-103, REF001-003, REG011, WALK001
+(confirmed), EXCL001, SEC-CVE-FINGERPRINT-001, RENDER001, LANG001-003,
+DEAD001, PROTO001-003, PARSE001's own dispatch, SYSWAIVE002, THREAT006,
+plus the `_KNOWN_GATE_RULES`-completeness cross-check itself.
+
+Findings by severity (final): 3 HIGH, 4 MEDIUM, 3 LOW (disclosed/
+already-tracked, no new ticket).
+
+HIGH:
+- H1 (round 1): SCOPE001 vacuously passes when `ticket.scope` is empty.
+- H2 (round 1): partial (salvaged) tree-sitter parses silently drop
+  symbols; `partial_parse_files()` has zero gate consumers.
+- H3 (round 2, NEW): `_KNOWN_GATE_RULES` omits 7 real, currently-firing
+  rule ids (PARSE001, TICK005, REG011, PII011, PII012, SYSWAIVE002,
+  THREAT006) -- the exact DEAD001-class listing-omission T-0753 already
+  fixed once, recurred 6+ more times since. Breaks WAIVE002 validity for
+  those 7 ids AND strata/registry `caught_by`/`handled_by` resolution
+  credit for controls that actually ARE enforced by them.
+
+MEDIUM:
+- M1 (round 1): lang/** tree-sitter ingestion has no file-size cap or
+  parse timeout -- untrusted-file trust-boundary gap.
+- M2 (round 1, broadened round 2): registry/design-dir-backed gates
+  (COMPLIANCE005, REG001-011, DEC001-002, and -- newly identified this
+  round -- SYS001-004 and DOC001/DOC003) all share the same "missing
+  backing dir/file/glob-match == no claim" posture that cannot
+  distinguish never-adopted from deleted. SYS*/DOC001/DOC003 instances
+  folded into the existing fix ticket's scope rather than re-filed (one
+  "adopted-then-vanished" detector should cover all six).
+- M3 (round 2, NEW): `dup_gate` silently no-ops (log-only WARNING, no
+  Violation) when `frob-core` native is unavailable, even with
+  `[dup].enforce=true` -- the exact class T-0552/TEST013 already fixed
+  for the coverage gate's own native fallback, never applied to DUP.
+- M4 (round 2, NEW): RENDER001, PII010/SEC110 (via `pii_structural_gate`),
+  and SEC-CVE-FINGERPRINT-001 each run their own private
+  `ast.parse`/file-read outside `frob.lang.parse_file`'s PARSE001-tracked
+  pipeline, silently skipping an unparseable/undecodable file with only a
+  DEBUG log line -- exactly the class T-0558/PARSE001 was built to make
+  loud, recurring in three independent code paths that never route
+  through it.
+
+LOW (disclosed/already-tracked, no new ticket): L1 secrets_gate's
+line-wrap gap (already fully disclosed in-code, T-0151); L2 DEAD001's
+Python-only scope (already disclosed, already has a follow-up ticket
+per its own docstring -- T-0422's Done report); L3 ARCH101-103's missing
+`frob:enforces CHK-GATE-*` cross-link (already disclosed as a pending
+land obligation, same T-0788 precedent).
+
+Draft tickets filed: 7 fix+gate pairs total (14 tickets) -- 4 pairs from
+round 1 (H1, H2, M1, M2/COMPLIANCE005), 3 more pairs round 2 (H3, M3, M4).
+
+docs/index.md's audit-index entry updated to reflect the final, complete
+sweep (125/125, zero unswept) and the full finding list.
+
+Disclosed cut: none remaining -- round 1's disclosed gap (the other half
+of the catalog) is now closed. LANG002's inherent completeness boundary
+(cannot flag a wholly unenumerated file extension) and L1-L3 above are
+the only residual, explicitly-accepted non-defects.
+
+### Changed
+```
+ docs/audits/gates-vacuous.md | 429 +++++++++++++++++++++++++++++++++++++++++++
+ docs/index.md                |   1 +
+ tickets.md                   | 381 +++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 810 insertions(+), 1 deletion(-)
+```
+
+### Evidence
+- `tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0789 -->
 ```yaml
@@ -4175,3 +4287,533 @@ TypeDesignSuggestion's four producer functions in _typedesign.py to build
 frob.arch._models.ArchSuggestion instead of the local model, and delete
 TypeDesignCategory/TypeDesignSuggestion. Purely mechanical -- the four
 check functions' logic does not change, only which model they construct.
+
+<!-- ticket:T-0893 -->
+```yaml
+id: T-0893
+title: lang/** tree-sitter parse has no file-size cap or timeout -- untrusted-file
+  DoS trust-boundary gap
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/lang/__init__.py
+threat: null
+component: null
+```
+Found while working T-0786 (gate-vacuousness sweep).
+
+frob.lang's tree-sitter ingestion (`_parse` in src/frob/lang/__init__.py,
+~line 316-370) reads the ENTIRE file into memory (`path.read_bytes()`) and
+hands it to tree-sitter's `parser.parse(source)` with no file-size cap and
+no parse timeout, for every file frob's graph walk visits -- including
+files under an audited/untrusted repo tree (this is a general-purpose
+static-analysis tool other people's repos get pointed at, not just this
+one's own source). Tree-sitter's incremental-parse error recovery is
+generally robust but is not immune to pathological-input classes (deeply
+nested brackets/parens driving quadratic-ish recovery, or simply a
+multi-GB single file) -- and there is no structural guard here at all, not
+even a generous one: no `st_size` check before `read_bytes()`, no
+wall-clock budget around `parser.parse()`.
+
+Fix direction: add a configurable max-file-size guard (skip + record a
+PARSE001-shaped "too large to parse" finding rather than attempt it) and a
+wall-clock timeout around the tree-sitter parse call in `_parse`, so a
+single adversarial or merely enormous file cannot hang or exhaust memory
+in a `frob check` run over an untrusted tree.
+
+<!-- ticket:T-0894 -->
+```yaml
+id: T-0894
+title: Registry-backed gates (COMPLIANCE005/REG*/DEC*) cannot distinguish never-adopted
+  from deleted-registry
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/gates/__init__.py
+- src/frob/gates/_registry_exhaustiveness.py
+threat: null
+component: null
+```
+Found while working T-0786 (gate-vacuousness sweep).
+
+Several registry-backed gates share one "missing backing file/dir means no
+claim, not a violation" posture, each independently justified in its own
+docstring: `registry_gate` (REG001-011, src/frob/gates/_registry_exhaustiveness.py:812,
+"if not base.is_dir(): ..."), `compliance_gate` (COMPLIANCE005,
+src/frob/gates/__init__.py:7665, explicitly "matching registry_gate's own
+missing-directory posture"), and `decisions_gate`'s DEC001/DEC002 half
+(src/frob/gates/__init__.py:7035, "if not decisions_dir(root).exists():
+return ()"). Each is individually reasonable ("a repo with no registry
+makes no claim") but the aggregate effect is a real vacuousness vector none
+of the three docstrings names: these YAML/markdown backing files, once a
+repo HAS adopted them, become security/compliance-load-bearing artifacts
+(COMPLIANCE005 in particular gates regulatory-control disposition
+exhaustiveness) whose accidental or malicious DELETION is structurally
+indistinguishable, to every one of these gates, from "this repo never
+adopted the registry" -- both silently clear every violation the registry
+existing would have produced. Nothing elsewhere in the gate catalog fires
+on the deletion itself (no REF/DOC-family check treats
+`docs/design/registry/compliance.yaml`'s disappearance as itself a
+finding) once a repo has adopted the file.
+
+Fix direction: for a repo that has ever adopted one of these registries
+(a simple signal: the file/dir is present in the merge-base commit but
+absent in the working tree, or a frob.toml flag marking the registry as
+"required once adopted"), treat its disappearance as a loud, ideally
+unwaivable violation rather than silently degrading to the "never adopted"
+posture. Scope this ticket to at minimum COMPLIANCE005 (the
+highest-stakes instance); REG*/DEC* can follow the same pattern once the
+mechanism exists.
+
+<!-- ticket:T-0895 -->
+```yaml
+id: T-0895
+title: Add regression test for dup_gate native-unavailable loud-violation behavior
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/gates/__init__.py
+- tests/test_gates.py
+threat: null
+component: null
+```
+Found while working T-0786 (gate-by-gate vacuous-satisfaction sweep, round
+2), pairs with the dup_gate native-unavailable fix ticket.
+
+Add a regression test asserting that `dup_gate` with `[dup].enforce=true`
+and a mocked/forced `core_available() == False` produces a real Violation
+(not just a log line), closing the "opted-in enforcement silently no-ops
+when the native toolchain is missing" gap the paired fix ticket addresses.
+
+<!-- ticket:T-0896 -->
+```yaml
+id: T-0896
+title: dup_gate silently no-ops (log-only) when frob-core native is unavailable despite
+  [dup].enforce=true
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/gates/__init__.py
+threat: null
+component: null
+```
+Found while working T-0786 (gate-by-gate vacuous-satisfaction sweep, round
+2).
+
+`dup_gate` (src/frob/gates/__init__.py:8175, DUP001/DUP002) is opt-in via
+`[dup].enforce = true` in frob.toml (disclosed, fine) -- but when enforce
+IS on and the `frob-core` native extension is unavailable
+(`core_available()` returns False), it degrades to:
+
+    _log.warning("dup_gate: frob-core not installed; DUP rules skipped")
+    return ()
+
+a bare log warning, not a `Violation` -- so `frob check`'s exit code and
+violation list are UNCHANGED whether DUP001/002 genuinely found nothing or
+silently could not run at all. This repo's own playbook
+(docs/guides/agent-playbook.md section 1) documents exactly this failure
+mode as a REAL, recurring one: "Fresh worktrees do not inherit a sibling
+worktree's build -- strata_core/frob_core come up missing" (T-0144) --
+meaning a repo that has opted into `[dup].enforce=true` and then runs
+`frob check` from a worktree where `make core` has not yet run gets zero
+DUP001/002 enforcement, with a green gate-summary line and only a WARNING
+in the logs (which the playbook's own section 3 names as something never
+piped/read live in a normal `frob check` invocation).
+
+This is the same class T-0552/TEST013 already fixed for the coverage
+gate's own native-unavailable structural fallback ("make the structural-
+fallback credit ... LOUD instead of silent") -- DUP never got the
+equivalent treatment.
+
+Fix direction: when `[dup].enforce=true` and `core_available()` is False,
+emit a loud WARN (or ERROR)-tier Violation naming the missing native and
+the remediation (`make core`), instead of a log-only degrade -- mirroring
+TEST013's shape for the coverage gate.
+
+<!-- ticket:T-0897 -->
+```yaml
+id: T-0897
+title: RENDER001/PII010/SEC-CVE-FINGERPRINT-001 each run a private silent-skip-on-unparseable
+  file read outside PARSE001
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/gates/_render_lint.py
+- src/frob/gates/_pii_structural.py
+- src/frob/gates/_cve_fingerprint_scan.py
+threat: null
+component: null
+```
+Found while working T-0786 (gate-by-gate vacuous-satisfaction sweep, round
+2).
+
+At least three gates run their OWN private per-file read+parse, entirely
+independent of `frob.lang.parse_file`'s centrally-tracked pipeline (the
+one `snapshot.parse_failures`/PARSE001, T-0558, actually covers) -- and
+each silently skips a file that fails to read/parse, with only a DEBUG log
+line, no Violation of any kind:
+
+- `render_lint_gate` (src/frob/gates/_render_lint.py:220-224):
+  `except (OSError, UnicodeDecodeError, SyntaxError): skip` around its own
+  `ast.parse(text, filename=rel_path)` call.
+- `pii_structural_gate` (src/frob/gates/_pii_structural.py:1861-1865): the
+  identical `except (OSError, UnicodeDecodeError, SyntaxError): skip`
+  shape around its own `ast.parse` call, for PII010/SEC110.
+- `cve_fingerprint_scan_gate` (src/frob/gates/_cve_fingerprint_scan.py:183-187):
+  `except (OSError, UnicodeDecodeError): skip` around its plain text read
+  (no parse, but the same silent-skip shape) for SEC-CVE-FINGERPRINT-001.
+
+Net effect: a Python file with a syntax error (or bad encoding) is
+invisible to RENDER001 (a bare-print-bypassing-Renderer check) and to
+PII010/SEC110 (structural PII/secret-shape detection) -- exactly the two
+gate families where "this file's content was never actually inspected"
+matters most from a security-review standpoint -- with zero surfaced
+signal that the skip happened at all, unlike the general PARSE001
+mechanism T-0558 built specifically to make this class loud for the
+`frob.lang`-routed gates.
+
+Fix direction: route these three gates' file reads through the shared
+`frob.lang.parse_file` (or at minimum consult
+`frob.lang.partial_parse_files()`/`snapshot.parse_failures`) instead of a
+private `ast.parse`/read call with its own silent except, so a single
+PARSE001-shaped signal covers every gate that needs a parseable file
+rather than each gate independently deciding to stay silent on failure.
+
+<!-- ticket:T-0898 -->
+```yaml
+id: T-0898
+title: Add regression tests for RENDER001/PII010 loud-on-unparseable-file behavior
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/gates/_render_lint.py
+- src/frob/gates/_pii_structural.py
+- tests/test_gates.py
+threat: null
+component: null
+```
+Found while working T-0786 (gate-by-gate vacuous-satisfaction sweep, round
+2), pairs with the private-ast.parse-silent-skip fix ticket.
+
+Add a regression test per affected gate (RENDER001, PII010/SEC110 at
+minimum) asserting a syntactically-broken fixture file produces a loud
+finding (a PARSE001-shaped violation, or the gate's own equivalent)
+instead of a silent zero-violation pass, closing the private-parse-path
+silent-skip gap the paired fix ticket addresses.
+
+<!-- ticket:T-0899 -->
+```yaml
+id: T-0899
+title: 'Add regression gate/test: empty-scope ticket must not silently pass SCOPE001'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/gates/__init__.py
+- tests/test_gates.py
+threat: null
+component: null
+```
+Found while working T-0786 (gate-vacuousness sweep), pairs with the
+SCOPE001 empty-scope fix ticket.
+
+Add a regression gate/lint (or extend SCOPE001 itself) that fires loudly
+whenever an in-progress/non-queued ticket carries an empty `scope` tuple --
+so the "no declared scope" state cannot silently coexist with an active
+ticket ever again, whichever fix direction the paired ticket lands. Bind a
+test asserting a ticket with scope=() and a non-empty diff produces a
+violation instead of `scope_gate` returning `()`.
+
+<!-- ticket:T-0900 -->
+```yaml
+id: T-0900
+title: Add regression test for COMPLIANCE005 adopted-then-deleted-registry detection
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/gates/__init__.py
+- tests/test_gates.py
+threat: null
+component: null
+```
+Found while working T-0786 (gate-vacuousness sweep), pairs with the
+registry-deletion detection fix ticket.
+
+Bind a regression test per affected gate (starting with COMPLIANCE005)
+asserting that deleting a previously-present registry file between two
+`frob check` runs on the same tree produces a loud violation rather than a
+silently clean report, closing the "adopted-then-deleted" gap the paired
+fix ticket addresses.
+
+<!-- ticket:T-0901 -->
+```yaml
+id: T-0901
+title: 'Add drift-lock test: every emitted rule= literal must be a _KNOWN_GATE_RULES
+  member'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/gates/__init__.py
+- tests/test_gates.py
+threat: null
+component: null
+```
+Found while working T-0786 (gate-by-gate vacuous-satisfaction sweep, round
+2), pairs with the _KNOWN_GATE_RULES completeness fix ticket.
+
+Add a regression test that statically enumerates every `rule="..."`
+literal passed to a `Violation(...)` constructor call across
+`src/frob/gates/**` and `src/frob/strata/**` (an AST/regex scan is fine,
+mirroring how `_KNOWN_GATE_RULES` itself is a static frozenset) and
+asserts it is a subset of `known_gate_rule_ids()` -- so a new gate/rule
+added without a matching `_KNOWN_GATE_RULES` entry fails CI immediately
+instead of silently reproducing the PARSE001/TICK005/REG011/PII011/
+PII012/SYSWAIVE002/THREAT006 omission class.
+
+<!-- ticket:T-0902 -->
+```yaml
+id: T-0902
+title: Add PARSE002 gate wiring partial_parse_files() into frob check + regression
+  test
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/gates/_parse_failures.py
+- tests/test_gates.py
+threat: null
+component: null
+```
+Found while working T-0786 (gate-vacuousness sweep), pairs with the
+PARSE002 (partial-parse) fix ticket.
+
+Bind a regression test asserting `frob.lang.partial_parse_files()` is
+actually consumed by `frob check`'s gate dispatch (e.g. a fixture with a
+syntax error partway through a file, asserting the missing tail symbol's
+COV001 obligation is NOT silently dropped, and that a PARSE002-shaped
+violation fires). This closes the "queryable accessor with zero consumers"
+class of gap the same way T-0558 closed it for hard parse failures.
+
+<!-- ticket:T-0903 -->
+```yaml
+id: T-0903
+title: _KNOWN_GATE_RULES omits 7 real, currently-firing rule ids (PARSE001/TICK005/REG011/PII011/PII012/SYSWAIVE002/THREAT006)
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/gates/__init__.py
+threat: null
+component: null
+```
+Found while working T-0786 (gate-by-gate vacuous-satisfaction sweep, round 2 --
+completing the full catalog after the first pass's partial coverage).
+
+`frob.gates.known_gate_rule_ids()` / `_KNOWN_GATE_RULES` (src/frob/gates/__init__.py:904)
+is the single frozenset every `frob:waive RULE reason="..."` directive's
+validity (WAIVE002: "rule id can never match") is checked against, AND the
+set `known_rule_ids` a strata `caught_by`/registry `handled_by` resolution
+treats as a recognized, real rule id rather than an unresolved reference
+(the function's own docstring: "for strata caught_by resolution to
+recognize rule-id-shaped references ... instead of treating them as
+unresolved by default").
+
+Verified via direct `known_gate_rule_ids()` call plus a grep for every
+`rule="..."` site that actually constructs a `Violation`: at least 7 real,
+firing rule ids are MISSING from this frozenset, despite gates.py actively
+emitting them today:
+
+- `PARSE001` (src/frob/gates/_parse_failures.py) -- registered as an
+  always-run process job in `_ALL_GATES`'s "parse_failures" entry, but
+  absent from `_KNOWN_GATE_RULES`.
+- `TICK005` (src/frob/gates/__init__.py:7352, `_tick005_merge_state_regression`,
+  dispatched from `tickets_gate`).
+- `REG011` (src/frob/gates/_registry_exhaustiveness.py:301/317, T-0680's
+  out_of_scope-reason check, dispatched from `registry_gate`).
+- `PII011`, `PII012` (src/frob/gates/_pii_structural.py:892/957, dispatched
+  from `pii_structural_gate`).
+- `SYSWAIVE002` (src/frob/strata/_contention.py:437).
+- `THREAT006` (src/frob/strata/_threat.py:1477).
+
+This is exactly the DEAD001-class omission T-0753 already fixed once
+("This was a listing omission, not evidence DEAD001 was ever renamed or
+removed" -- see `_KNOWN_GATE_RULES`'s own DEAD001 comment) -- but the same
+listing-omission bug has recurred at least 6 more times since, for rules
+added by later tickets that never circled back to add their own entry
+here. Concretely: any `frob:waive PARSE001 reason="..."` (or TICK005/
+REG011/PII011/PII012/SYSWAIVE002/THREAT006) written anywhere in the tree
+today is silently flagged WAIVE002-ineffective ("the rule id can never
+match anything") despite targeting a perfectly real, currently-firing
+rule -- and a strata `caught_by`/registry `handled_by` claim naming any of
+these ids is treated as an UNRESOLVED reference rather than a recognized
+enforced control, which can silently understate a threat-model/compliance
+disposition's real coverage.
+
+Fix direction: add the 7 missing ids to `_KNOWN_GATE_RULES`. More
+durably, per this ticket's own pattern-recognition: add a drift-lock test
+(or a small script gate) that diffs `_KNOWN_GATE_RULES` against every
+`rule="..."` string literal actually constructed inside `src/frob/gates/**`
+and `src/frob/strata/**`'s Violation-building sites, failing loud on any
+gap -- so this omission class cannot recur a third time.
+
+<!-- ticket:T-0904 -->
+```yaml
+id: T-0904
+title: Add regression test/lint for lang/** parse size+timeout guard
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/lang/__init__.py
+- tests/unit
+threat: null
+component: null
+```
+Found while working T-0786 (gate-vacuousness sweep), pairs with the
+lang/** file-size/timeout guard fix ticket.
+
+Add a regression test (and, if practical, a static lint) asserting every
+`frob.lang` parse entrypoint (`parse_file`/`_parse`/`_parse_strata_file`)
+enforces a bounded size/time budget before/around the actual
+tree-sitter/strata-core parse call -- so a future refactor cannot silently
+drop the guard the paired fix ticket adds.
+
+<!-- ticket:T-0905 -->
+```yaml
+id: T-0905
+title: Partial tree-sitter parse (salvaged, has_error) silently drops symbols -- partial_parse_files()
+  has zero gate consumers
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/lang/__init__.py
+- src/frob/gates/_parse_failures.py
+threat: null
+component: null
+```
+Found while working T-0786 (gate-vacuousness sweep).
+
+frob.lang's tree-sitter ingestion (src/frob/lang/__init__.py's `_parse`/
+`_warn_if_partial_tree`, ~line 280-315) already distinguishes a HARD parse
+failure (unusable tree: `root_node is None` or `has_error and
+child_count == 0`) from a PARTIAL/salvaged parse (`has_error` but the
+grammar still produced usable top-level structure). The hard-failure case
+is a real, loud gate violation (PARSE001, `frob.gates._parse_failures`,
+T-0558/T-0561). The partial case is NOT: `_warn_if_partial_tree` only logs a
+WARNING and records the path into the module-level `_partial_parse_files`
+set, exposed via the public `partial_parse_files()` accessor -- but nothing
+in `frob.gates` (or the `frob check` CLI dispatch) ever calls
+`partial_parse_files()`. Verified via repo-wide grep: the only references to
+`partial_parse_files`/`_partial_parse_files` are the definition site itself,
+its own docstring, and the `__all__` export -- zero gate, zero CLI, zero
+test consumes it.
+
+This is the PARSE001 vacuousness bug (T-0404 finding 2, T-0558's own
+module docstring) reopened for the partial-tree half: "a syntax error
+present, some top-level symbols may be silently dropped from the salvaged
+tree" -- exactly the class PARSE001 exists to make loud for a full parse
+failure -- but for a partial parse, every downstream gate (COV001, DRIFT,
+INV, TEST001-*, ...) sees only the symbols tree-sitter's error-recovery
+happened to salvage, with the missing remainder invisible and unflagged.
+A source file with a syntax error near its top (a stray unmatched brace, an
+unterminated string before the real content) can silently drop obligations
+for everything after it, with only a DEBUG/WARNING-level log line as
+evidence -- which the T-0558 module docstring itself calls "only visible
+above the default log level" and explicitly names as the still-open gap
+(finding 1 in that docstring: "no gates stage at all ... to notice a
+WARNING here").
+
+Fix direction: add a PARSE002 (or extend PARSE001) ERROR-tier gate over
+`frob.lang.partial_parse_files()`, symmetric with PARSE001's hard-failure
+handling -- loud by default, waivable with an honest reason for a known
+intentionally-malformed fixture.
+
+<!-- ticket:T-0906 -->
+```yaml
+id: T-0906
+title: SCOPE001 vacuously passes when ticket.scope is empty (no non-empty-scope precondition)
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/gates/__init__.py
+- src/frob/tickets/_models.py
+threat: null
+component: null
+```
+Found while working T-0786 (gate-vacuousness sweep).
+
+SCOPE001 (frob.gates._models scope_gate, src/frob/gates/__init__.py:5006)
+returns () with no enforcement at all whenever `ticket.scope` is empty:
+
+    if not ticket.scope:
+        _log.debug(...)
+        return ()
+
+`Ticket.scope`/`TicketSpec.scope` both default to `()` (src/frob/tickets/_models.py)
+and no validator enforces a non-empty scope at ticket-creation time. A ticket
+filed via `frob ticket new` without `--scope` (or one whose scope was cleared
+by a bad `frob ticket scope` edit) is therefore NEVER checked by SCOPE001 --
+its diff can touch any file in the repo and this gate stays silent. This is a
+satisfied-by-absence vacuousness vector: the gate exists specifically to keep
+a worked ticket's diff inside its declared scope, but a ticket with no
+declared scope silently gets the LEAST enforcement, not the most.
+
+Fix direction: either (a) refuse to start/queue a ticket whose scope is empty
+(TicketSpec/Ticket validator, or a `frob ticket start` precondition), or (b)
+change scope_gate's empty-scope branch to a loud, unwaivable violation instead
+of a silent pass -- symmetric with how COV002/TODO001 treat a failed diff
+load (T-0550/T-0719) as a loud violation rather than a silently-cleared
+enforcement surface. Prefer (a): an empty scope should never be a valid
+ticket state to begin work from.

@@ -260,6 +260,7 @@ Full-repo pessimistic capability audit (2026-07-20): every way a green
 - [docs/audits/graph.md](audits/graph.md) -- graph foundation.
 - [docs/audits/lang-check-docs.md](audits/lang-check-docs.md) -- polyglot enforcement.
 - [docs/audits/perf.md](audits/perf.md) -- frob check hotpaths + caching.
+- [docs/audits/gates-vacuous.md](audits/gates-vacuous.md) -- gate-by-gate vacuous-satisfaction sweep, full catalog (125 rule ids, zero unswept): SCOPE001 empty-scope, partial-parse symbol drop, _KNOWN_GATE_RULES omissions, registry/design-dir-deletion, dup native-fallback, private-parse silent-skips, lang parser DoS boundary; 7 fix+gate ticket pairs filed.
 
 ## Planned / tracked work
 
