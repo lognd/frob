@@ -5818,7 +5818,7 @@ REG011 WARN; reworded it to the substantive reasoned-none form
 Out of scope, filed as a draft: REG011 is not yet registered in
 frob.gates.__init__._KNOWN_GATE_RULES or docs/design/registry/check-coverage.yaml
 -- another agent held gates/__init__.py for T-0680's duration per dispatch
-instructions, so that wiring is T-draft-d68387d6 instead.
+instructions, so that wiring is a refiled follow-up ticket instead (REG011 registration).
 
 Mutation-evidence self-check: every branch added
 (_is_reasoned_none's substantive-vs-bare-none split, _classify_out_of_scope_
@@ -13008,3 +13008,51 @@ threat: null
 component: tickets
 ```
 Found during T-0590 attempt 2 (see its failure log): `frob ticket done-report <id> --base-ref main` HANGS indefinitely when run in a clone that has no local `main` branch (e.g. a scratch clone created from a worktree branch). Expected: fail fast with a clear error naming the missing ref (or resolve origin/main), never hang. Likely a subprocess waiting on git prompting or an unbounded retry around the base-ref diff. Repro: clone any repo checked out at a non-main branch without fetching main, run done-report --base-ref main.
+
+<!-- ticket:T-0888 -->
+```yaml
+id: T-0888
+title: register REG011 in _KNOWN_GATE_RULES + CHK-GATE-REG011 registry entry (T-0680
+  follow-up)
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/gates/__init__.py
+- docs/design/registry/check-coverage.yaml
+- tests/test_check_coverage_registry.py
+acceptance:
+- text: GIVEN frob check runs WHEN the registry gate summary renders THEN REG011 appears
+    as a known rule and REG010 reports no missing CHK-GATE-REG011 registry entry
+  evidence: []
+threat: null
+component: gates
+```
+Follow-up to T-0680 (landed 0d7e2f2b): REG011 (out_of_scope caught_by verification, WARN) is implemented in _registry_exhaustiveness.py but not registered in frob.gates.__init__._KNOWN_GATE_RULES nor in docs/design/registry/check-coverage.yaml (CHK-GATE-REG011 entry) -- deferred because another agent held gates/__init__.py during T-0680. Register both (REG010 will demand the yaml row). Refiled from a worktree draft that did not survive T-0680's ledger recovery.
+
+<!-- ticket:T-0889 -->
+```yaml
+id: T-0889
+title: ticket CLI write-back clobbers externally-replaced ledger with stale in-memory
+  snapshot (reverted 3 done tickets)
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-23'
+priority: high
+parent: null
+scope:
+- src/frob/tickets/**
+- tests/test_ticket_store_stale_snapshot.py
+acceptance:
+- text: GIVEN tickets.md is externally replaced between a CLI process's load and its
+    write-back WHEN the write happens THEN no unrelated ticket block regresses (reload-and-merge
+    or loud refusal), proven by a regression test
+  evidence: []
+threat: null
+component: tickets
+```
+Real incident during T-0680 (see its Done report): in a worktree whose tickets.md had just been restored to main's version (section 10b recipe), a sequence of frob ticket start/evidence/sweep/done-report calls SILENTLY REVERTED three unrelated tickets (T-0660/T-0661/T-0719) from done back to queued with evidence and Done reports wiped -- the CLI appears to write back a stale in-memory ticket-queue snapshot loaded before the restore, clobbering the on-disk ledger state. Same corruption family as the land-splice regression (T-0577 lineage) but in the plain CLI write path, not land. Investigate the store's load/write lifecycle for a cached snapshot surviving an external file replacement (mtime/digest check on write-back would fail loudly). Fix = detect ledger-changed-since-load and reload before any write, plus a regression test that replaces tickets.md between load and write.
