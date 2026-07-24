@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.149.0] - unreleased
+
+- T-0620: arch: DIP layering contract (declared allowed-module-dependency graph) + no-DI construction smell
+
 ## [0.148.0] - unreleased
 
 - T-0723: lang: wire kotlin into central dispatch (_EXTENSION_TABLE + RawSymbol walker + COMMENT_TYPES)

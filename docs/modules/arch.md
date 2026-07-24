@@ -31,6 +31,8 @@ has no `elif language == "..."` branch for them yet.
 | `lsp-strengthened-precondition` (ARCH106, T-0618) | an override adds a guard-clause raise on a shared param the base lacks -- written once against the normalized model | warning |
 | `lsp-weakened-postcondition` (ARCH107, T-0618) | an override can return nothing where the base always returns a value -- written once against the normalized model | warning |
 | `lsp-noop-override` (ARCH108, T-0618) | an empty-shell override of a value-returning base method -- written once against the normalized model | warning |
+| `fat-interface` (ARCH109, T-0619) | an ABC/Protocol-family interface whose resolved same-file implementers are mostly stubbed out -- written once against the normalized model | warning |
+| `narrow-client-usage` (ARCH110, T-0619) | a function/method injected with a wide same-file interface that calls only a small fraction of its methods -- written once against the normalized model | suggestion |
 | `low-cohesion-class` (ARCH101, T-0616) | a class's field-using methods split into 2+ disjoint field-usage components (LCOM4) -- written once against the normalized model, fires across languages | warning |
 | `god-module` (ARCH102, T-0616) | a module's 10+ top-level exports partition into 3+ disjoint naming/usage clusters -- written once against the normalized model | warning |
 | `mixed-concern-function` (ARCH103, T-0616) | one function body mixes an I/O call, a string-formatting call, and 2+ of its own decision points -- written once against the normalized model | suggestion |
@@ -38,6 +40,12 @@ has no `elif language == "..."` branch for them yet.
 | `fork-after-threads` (T-0695) | a fork/fork-start-method call reachable after a `Thread(...).start()` on the same function's line order | warning |
 | `pipe-wait-deadlock` (T-0695) | a `Popen` with a `PIPE` stream followed by `.wait()` with no `.communicate()` in the function | warning |
 | `self-join-deadlock` (T-0695) | a function dispatched as a pool/thread task whose own body calls `.join()`/`.shutdown()`/`.close()` | warning |
+| `dip-layering-violation` (T-0620) | an import between two `frob.toml`-declared layers not listed in the declared allow set, or a layered file with unresolvable dynamic-import indirection -- project-wide, resolved imports | warning |
+| `no-di-construction` (T-0620) | a method/function (outside `__init__`/`__new__`/a factory) directly constructs a same-file concrete class instead of receiving it via injection -- written once against the normalized model | suggestion |
+| `illegal-states-representable` (T-0621) | a bool field runtime-guarded against another field's value inside a method body, instead of modeled as an enum/newtype -- written once against the normalized model | suggestion |
+| `primitive-obsession` (T-0621) | a function/method signature with 3+ raw `str`/`int`/`float` params -- written once against the normalized model | suggestion |
+| `parse-dont-validate` (T-0621) | a function that guards its one param then returns the SAME unrefined type instead of a refined one -- written once against the normalized model | suggestion |
+| `boolean-flag-param` (T-0621) | a public function/method with a bool param it branches on internally -- written once against the normalized model | suggestion |
 
 All thresholds are `analyze_project` keyword arguments with the defaults
 shown in the Public API section below; there is no `frob.toml` table for
@@ -533,6 +541,251 @@ no-op than flag a legitimate short override.
 **`run_lsp_checks(module) -> list[ArchSuggestion]`** runs all five above
 against one `NormalizedModule` and returns the combined findings,
 mirroring `frob.arch._srp.run_srp_checks`'s convention.
+
+### ISP checks: `fat-interface` / `narrow-client-usage` (T-0619)
+
+<a id="isp-checks"></a>
+<!-- frob:describes src/frob/arch/_solid.py::check_fat_interface -->
+<!-- frob:describes src/frob/arch/_solid.py::check_narrow_client_usage -->
+<!-- frob:describes src/frob/arch/_solid.py::run_isp_checks -->
+
+`frob.arch._solid` (EPIC T-0330's ARCH1xx ISP family, T-0619) shares its
+module with the LSP checks above -- both are written ONCE against the
+T-0609 normalized model, and ISP's fat-interface check directly reuses
+LSP's no-op/not-implemented "stub body" tests (`_is_stub_method` composes
+`_NOT_IMPLEMENTED_EXCEPTIONS` and `check_noop_override`'s empty-shell
+predicate) rather than re-deriving them. Both categories stay on the same
+unwaivable advisory channel every other `frob.arch` category is on; no
+real ARCH1xx gate is wired in this ticket's scope either -- `run_isp_
+checks` is the entry point a future wiring ticket calls per parsed file.
+
+| Category | ARCH id | Signal | Severity |
+|---|---|---|---|
+| `fat-interface` | ARCH109 | a same-file `ABC`/`Protocol`-family interface (4+ methods) with 2+ resolvable same-file implementers whose AGGREGATE (interface-method, implementer) override slots are 50%+ stub bodies | warning |
+| `narrow-client-usage` | ARCH110 | a function/method with a same-file-typed parameter (4+ method interface) that calls at most 34% of that interface's methods on the parameter (and at least one) | suggestion |
+
+**`fat-interface` (ARCH109, `check_fat_interface`).** "Interface-marked"
+means a class whose `bases` (as written in source) include one of python's
+own ABC/Protocol conventions (`ABC`, `abc.ABC`, `ABCMeta`, `abc.ABCMeta`,
+`Protocol`, `typing.Protocol`) -- languages with an explicit interface/
+trait keyword instead surface it via `NormalizedClass.bases` the same way
+once an adapter maps that keyword onto a base name (no adapter changes are
+in this ticket's scope). Implementers are resolved the same same-file-only
+way `_iter_override_pairs` resolves LSP's base<->override pairs: only a
+class in the SAME `NormalizedModule` naming the interface as a base counts.
+The stub ratio (`_is_stub_method`: raises `NotImplementedError`/
+`NotImplemented`, OR is a structurally empty shell -- no branches/loops/
+calls/field-accesses/catches and no value-returning `return`) is
+**measured over the whole resolved-implementer pool combined, not per
+implementer** (per the ticket's own "not per-class" framing): every
+(interface-method, implementer) pair that IS overridden counts as one
+slot; a name the implementer never overrides at all is not resolvable and
+is skipped, not counted as either implemented or stubbed. `metric` carries
+the raw stub-slot count; `symref` is the interface's own class name.
+
+**`narrow-client-usage` (ARCH110, `check_narrow_client_usage`).** A
+"wide interface" candidate is any same-file class with at least
+`NARROW_CLIENT_MIN_INTERFACE_METHODS` (4) methods -- unlike
+`fat-interface`, no `ABC`/`Protocol` base marker is required, since a
+narrow client can be injected with any concrete wide class just as
+easily. A candidate client is a function/method with a parameter whose
+annotated `type` text names one of those same-file classes; usage is read
+straight off `NormalizedCall.callee`'s dotted `<param>.<method>` text for
+calls inside the client's OWN body (not nested functions). A client
+calling ZERO of the interface's methods on the parameter is a different
+smell (dead/unused parameter) and is deliberately not flagged here --
+only a NON-ZERO but small (`NARROW_CLIENT_MAX_USED_FRACTION`, 34%) slice
+counts as "narrow". `metric` carries the unused-method count (interface
+size minus the number actually called).
+
+**`run_isp_checks(module) -> list[ArchSuggestion]`** runs both checks
+above against one `NormalizedModule` and returns the combined findings,
+mirroring `run_lsp_checks`'s convention.
+
+### DIP layering contract: `dip-layering-violation` (T-0620)
+
+<a id="dip-layering-contract"></a>
+<!-- frob:describes src/frob/arch/_layering.py::LayeringConfig -->
+<!-- frob:describes src/frob/arch/_layering.py::LayeringConfig.layer_for -->
+<!-- frob:describes src/frob/arch/_layering.py::load_layering_config -->
+<!-- frob:describes src/frob/arch/_layering.py::check_layering_violations -->
+
+`frob.arch._layering` (EPIC T-0330's ARCH1xx DIP family, T-0620) is a
+project-wide check, not a per-file `NormalizedModule` one -- a layering
+contract is a claim about the whole import graph, not one file's shape.
+It stays on the same unwaivable advisory channel every other `frob.arch`
+category is on; no real ARCH1xx gate is wired in this ticket's scope
+either (`check_layering_violations` is a library entry point a future
+wiring ticket calls, same as `run_srp_checks`/`run_lsp_checks`/
+`run_isp_checks`).
+
+**Config schema (`[arch.layering]` in `frob.toml`).** Import-linter
+style: named layers plus an explicit allowed-edge set, NOT the
+"higher layer may import any lower layer" convention some tools default
+to -- every cross-layer edge must be named explicitly or it is a
+violation, matching the ticket's "declared allowed-module-dependency
+graph ... layers + allowed edges" framing.
+
+```toml
+[arch.layering.layers]
+app = ["src/frob/app"]
+lang = ["src/frob/lang"]
+
+[arch.layering.allow]
+app = ["lang"]
+lang = []
+```
+
+- `layers` maps a declared layer NAME to the repo-relative path prefixes
+  (POSIX-style, no leading `/`) that belong to it. A file belongs to the
+  layer whose prefix its relative path starts with; if more than one
+  prefix matches, the LONGEST wins (`LayeringConfig.layer_for`). A file
+  matching no declared prefix belongs to no layer and is never scanned
+  or targeted by this check -- the contract only covers what it
+  explicitly names.
+- `allow` maps a layer name to the list of OTHER layer names it may
+  import from. An edge from layer A to layer B where B is not in
+  `allow[A]` is a violation; an edge within the SAME layer is never a
+  violation regardless of `allow`.
+- A missing `frob.toml`, missing `[arch.layering]` table, or malformed
+  config (`load_layering_config`) means "nothing declared" -- the check
+  has nothing to enforce, not an error, same posture as
+  `frob.app.config.load_arch_config`.
+
+This repo's own `frob.toml` carries a real, minimal worked example (not
+wired into `frob check` yet, so inert today): `src/frob/lang` is a leaf
+parsing-utility layer nothing else in this repo may import BACK from,
+while `src/frob/app` (the CLI/orchestration layer) may depend on it.
+
+**Resolved, not surface, imports (adversarial-hardening note).** A raw
+import edge under-counts real coupling two ways this check addresses:
+
+1. **Re-export resolution** (`_resolve_reexports`). Importing a package
+   `__init__.py` that itself re-exports names from a submodule (`from
+   .sub import X`) really couples the importer to `.sub`, not just to
+   the package boundary. One bounded hop: `_resolve_reexports` reads the
+   target `__init__.py`'s OWN local imports and adds those as
+   additional edges from the original importer. Not chased further (an
+   `__init__.py` re-exporting from another `__init__.py` stops there) --
+   a bounded, terminating scan rather than a full transitive closure.
+2. **Fail-closed on dynamic indirection.** A layered file containing
+   `importlib.import_module(`/`__import__(` (`_has_dynamic_import`) can
+   reach any module at runtime -- this scan cannot prove its real import
+   set from static imports alone. Rather than silently passing (imports
+   it does not statically declare are invisible), such a file is
+   flagged as its own `dip-layering-violation` finding, distinct from
+   any specific edge.
+
+**`check_layering_violations(root, config) -> list[ArchSuggestion]`**
+walks every python file under `root` belonging to a declared layer
+(`frob.excludes.iter_files`/`is_excluded`, same exclusion posture every
+other project-wide walk in this codebase uses), resolves its imports via
+`frob.lang.extract_imports`/`resolve_local_import` -- the SAME pair
+`frob.app.cycle_runner._build_graph` already calls for cycle detection,
+reused rather than re-derived -- plus `_resolve_reexports`, and flags
+every resolved edge landing in a declared layer not present in the
+source layer's `allow` list.
+
+### No-DI construction smell: `no-di-construction` (T-0620)
+
+<a id="no-di-construction-smell"></a>
+<!-- frob:describes src/frob/arch/_layering.py::check_no_di_construction -->
+
+Unlike the layering contract above, this check IS written once against
+one file's `NormalizedModule` (T-0609) -- same convention as
+`_solid.py`'s LSP/ISP checks, just kept in `_layering.py` since both
+checks are this ticket's DIP slice of the SOLID catalog.
+
+`check_no_di_construction` flags a method/function whose OWN body (not
+counting nested functions) constructs a same-file concrete class inline
+via a bare `ClassName(...)` call -- EXCLUDING:
+
+- `__init__`/`__new__`. Accepting the collaborator as a constructor
+  param IS the fix this check points at, so constructing it there is
+  not itself the smell being flagged.
+- Factory-named functions (`make_*`/`create_*`/`build_*`/`new_*`
+  prefixes) -- construction IS a factory's job.
+
+A regular method reaching for `Concrete(...)` mid-body instead of using
+an already-injected collaborator hides the dependency inside the method
+instead of making it visible at the class's construction boundary --
+the textbook no-DI smell. Only a BARE (non-dotted) callee matching a
+same-file class name is resolvable enough to flag (`_is_constructor_
+call`) -- a dotted call (`self.foo()`, `pkg.Class()`) or a class defined
+elsewhere is not, and is skipped, fail-toward-silence.
+
+### Type-driven design checks: `illegal-states-representable` / `primitive-obsession` / `parse-dont-validate` / `boolean-flag-param` (T-0621)
+
+<a id="type-driven-design-checks"></a>
+<!-- frob:describes src/frob/arch/_typedesign.py::TypeDesignSuggestion -->
+<!-- frob:describes src/frob/arch/_typedesign.py::check_illegal_states_representable -->
+<!-- frob:describes src/frob/arch/_typedesign.py::check_primitive_obsession -->
+<!-- frob:describes src/frob/arch/_typedesign.py::check_parse_dont_validate -->
+<!-- frob:describes src/frob/arch/_typedesign.py::check_boolean_flag_param -->
+<!-- frob:describes src/frob/arch/_typedesign.py::run_typedesign_checks -->
+
+`frob.arch._typedesign` (EPIC T-0330's "Logan Smith" type-driven-design
+family, T-0621) is written once against the T-0609 normalized model, same
+convention as `_solid.py`'s checks.
+
+**SCOPE-LEASE NOTE (disclosed, not routed around).** This ticket's
+declared scope does not include `src/frob/arch/_models.py`, and at
+implementation time T-0620 (a sibling in the same cluster) held an active
+scope lease on that file (still `in-progress`, per this dispatch's own
+"do not close or land" instruction) -- `frob ticket scope T-0621 --add
+src/frob/arch/_models.py` was attempted first and refused with
+`ScopeLeaseConflict`. Rather than block the whole ticket on another
+ticket's land timing, the four categories below use a LOCAL
+`TypeDesignCategory`/`TypeDesignSuggestion` pair (`_typedesign.py`'s own
+scope) that mirrors `ArchCategory`/`ArchSuggestion`'s shape field-for-
+field instead of extending the shared `Literal`. T-0892 ("arch:
+fold TypeDesignCategory into ArchCategory once _models.py lease is free")
+is the filed, tracked follow-up for the mechanical fold-in -- purely
+mechanical, the four check functions' logic does not change.
+
+| Category | Signal | Severity |
+|---|---|---|
+| `illegal-states-representable` | a class's `bool`-typed field runtime-guarded (a branch mentioning both the bool field's name and another field's name, immediately followed by a raise) inside some method's own body | suggestion |
+| `primitive-obsession` | a function/method signature with 3+ raw `str`/`int`/`float`-typed params | suggestion |
+| `parse-dont-validate` | a function/method with exactly one param, guarded by a branch+raise on that param, whose declared return type is IDENTICAL to the param's declared type | suggestion |
+| `boolean-flag-param` | a PUBLIC function/method with a `bool`-typed param that its own body branches on | suggestion |
+
+**`illegal-states-representable` (`check_illegal_states_representable`).**
+The guard-clause proxy is the same line-adjacency shape LSP's
+strengthened-precondition check uses (`frob.arch._solid._raise_or_assert_
+param_mentions`): a branch whose condition text mentions BOTH a bool
+field's name and another field's name, with a raise at or within two
+lines of the branch's own line. A "this bool field's validity depends on
+that other field" constraint enforced at runtime is exactly the hidden-
+state-machine smell -- modeling the valid combinations as an enum/newtype
+would make the invalid combination impossible to construct at all.
+
+**`primitive-obsession` (`check_primitive_obsession`).** A same-file,
+single-signature proxy: `PRIMITIVE_OBSESSION_MIN_PARAMS` (3) or more
+params annotated with a raw `str`/`int`/`float` type on one signature.
+The ticket's fuller "repeated co-occurrence across call sites" framing
+would need a project-wide call-site scan (out of this check's per-
+signature shape, disclosed here rather than silently narrowed);
+`metric` carries the raw-param count.
+
+**`parse-dont-validate` (`check_parse_dont_validate`).** Requires EXACTLY
+one non-receiver param, a guard on that param (the same line-adjacency
+proxy as above), and a `return_type` IDENTICAL to the param's own `type`
+text -- the function proves an invariant about its input but hands back
+the exact same unrefined type instead of a type that encodes "already
+validated". A different (or absent) return type is the refined-type
+shape this check is pointing callers toward, and is not flagged.
+
+**`boolean-flag-param` (`check_boolean_flag_param`).** Only a PUBLIC
+function/method (name not starting with `_`) is considered -- a private
+helper's bool flag is an implementation detail, not a caller-visible API
+smell. Flags when a `bool`-typed param's name appears in one of the
+function's OWN branch condition texts; `metric` carries the count of
+branches mentioning that param.
+
+**`run_typedesign_checks(module) -> list[TypeDesignSuggestion]`** runs
+all four above against one `NormalizedModule` and returns the combined
+findings, mirroring `run_srp_checks`'s convention.
 
 ### Fork/pool hazards: `pool-inside-pool` / `fork-after-threads` / `pipe-wait-deadlock` / `self-join-deadlock` (T-0695)
 

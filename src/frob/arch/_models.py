@@ -48,6 +48,24 @@ ArchCategory = Literal[
     "lsp-strengthened-precondition",
     "lsp-weakened-postcondition",
     "lsp-noop-override",
+    # T-0619: ISP (Interface Segregation) checks (ARCH1xx family, T-0330's
+    # SOLID catalog), written once against the T-0609 normalized model
+    # (`frob.arch._solid`) so each fires identically across every
+    # `LanguageAdapter` -- see docs/modules/arch.md's "ISP checks" section
+    # for the resolved-implementer/wide-interface resolution rules. Same
+    # unwaivable advisory channel as every other category here.
+    "fat-interface",
+    "narrow-client-usage",
+    # T-0620: DIP (Dependency Inversion) checks (ARCH1xx family, T-0330's
+    # SOLID catalog) -- `frob.arch._layering`. `dip-layering-violation` is
+    # project-wide (a `frob.toml`-declared allowed-module-dependency graph,
+    # resolved against actual imports, not a per-file `NormalizedModule`
+    # check); `no-di-construction` IS written once against the T-0609
+    # normalized model. See docs/modules/arch.md's "DIP layering contract"
+    # and "no-DI construction smell" sections. Same unwaivable advisory
+    # channel as every other category here.
+    "dip-layering-violation",
+    "no-di-construction",
     # T-0695: structural fork/pool hazard family (call-graph reachability,
     # not runtime tracing) -- `frob.arch._concurrency`. Every member stays
     # on the same unwaivable advisory channel as the categories above

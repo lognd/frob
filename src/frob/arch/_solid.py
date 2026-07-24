@@ -1,8 +1,10 @@
-"""LSP (Liskov Substitution Principle) checks (ARCH1xx, T-0618, EPIC T-0330's
-SOLID catalog): override raises `NotImplementedError` where the base is
-concrete, override signature variance violation, override strengthens a
-precondition, override weakens a postcondition, and no-op override of a
-value-returning base method.
+"""LSP (Liskov Substitution Principle) and ISP (Interface Segregation
+Principle) checks (ARCH1xx, T-0618/T-0619, EPIC T-0330's SOLID catalog):
+override raises `NotImplementedError` where the base is concrete, override
+signature variance violation, override strengthens a precondition, override
+weakens a postcondition, no-op override of a value-returning base method
+(LSP), plus a fat interface whose resolved implementers mostly stub it out
+and a narrow-client injected with a wide interface it barely uses (ISP).
 
 WHY here, not `_python.py`/`_cpp.py`: every check in this module is written
 ONCE against `frob.arch._normalized.NormalizedModule` (T-0609), mirroring
@@ -463,4 +465,270 @@ def run_lsp_checks(module: NormalizedModule) -> list[ArchSuggestion]:
     check_override_strengthened_precondition(module, out)
     check_override_weakened_postcondition(module, out)
     check_noop_override(module, out)
+    return out
+
+
+# ---------------------------------------------------------------------------
+# ARCH109: fat interface (ISP, T-0619)
+# ---------------------------------------------------------------------------
+
+#: Base-class names (T-0619) that mark a class as an interface-shaped type
+#: (python ABC/Protocol conventions -- the languages with an explicit
+#: interface/trait keyword instead, Rust/TypeScript/Kotlin, are read from
+#: `NormalizedClass.bases` the same way once an adapter surfaces that
+#: keyword as a base name; no adapter changes are in this ticket's scope).
+_INTERFACE_MARKER_BASES = frozenset(
+    {"ABC", "abc.ABC", "ABCMeta", "abc.ABCMeta", "Protocol", "typing.Protocol"}
+)
+
+#: Minimum method count (T-0619) an interface-marked class must declare
+#: before it is even considered a fat-interface candidate -- a 2-3 method
+#: interface is not "fat" regardless of how implementers treat it.
+# frob:doc docs/modules/arch.md#isp-checks
+FAT_INTERFACE_MIN_METHODS = 4
+
+#: Minimum number of same-file classes that name the interface as a base
+#: (T-0619) before the aggregate stub ratio below is even computed -- the
+#: check is "measured over resolved implementers, not per-class" per the
+#: ticket, so a single implementer is not a big-enough sample.
+# frob:doc docs/modules/arch.md#isp-checks
+FAT_INTERFACE_MIN_IMPLEMENTERS = 2
+
+#: Minimum fraction (T-0619) of resolved (interface-method, implementer)
+#: override slots that must be stub bodies before the interface is flagged
+#: fat -- aggregated across every resolvable implementer combined, not
+#: per-implementer, matching the ticket's "measured over resolved
+#: implementers" framing.
+# frob:doc docs/modules/arch.md#isp-checks
+FAT_INTERFACE_STUB_FRACTION = 0.5
+
+
+def _is_stub_method(func: NormalizedFunction) -> bool:
+    """Whether `func`'s OWN body is a stub implementation (T-0619): either
+    it raises `NotImplementedError`/`NotImplemented` (the explicit
+    "not implemented" shape `check_override_raises_not_implemented`
+    already detects for LSP), OR it is a structurally empty shell (no
+    branches/loops/calls/field-accesses/catches, and no value-returning
+    `return`) -- the same "empty shell" test `check_noop_override` uses,
+    reused here rather than re-derived (T-0619's implementer sample is the
+    same NormalizedFunction shape LSP's no-op check already reads)."""
+    if _NOT_IMPLEMENTED_EXCEPTIONS & {r.exception_type for r in func.raises}:
+        return True
+    return (
+        not func.branches
+        and not func.loops
+        and not func.calls
+        and not func.field_accesses
+        and not func.catches
+        and all(r.value_text is None or r.value_text == "None" for r in func.returns)
+    )
+
+
+def _resolved_implementers(
+    interface: NormalizedClass, module: NormalizedModule
+) -> list[NormalizedClass]:
+    """Every OTHER class in `module` that names `interface` as a base
+    (T-0619's same-file resolvability corpus, matching `_iter_override_
+    pairs`'s fail-toward-silence posture: an implementer defined in
+    another file is not resolvable from this module alone and is not
+    counted)."""
+    return [
+        c for c in module.classes if c is not interface and interface.name in c.bases
+    ]
+
+
+# frob:doc docs/modules/arch.md#isp-checks
+# frob:tests tests/unit/test_arch.py::TestFatInterface.test_mostly_stubbed_implementers_flag_fat_interface  # noqa: E501
+# frob:tests tests/unit/test_arch.py::TestFatInterface.test_mostly_implemented_methods_not_flagged  # noqa: E501
+def check_fat_interface(module: NormalizedModule, out: list[ArchSuggestion]) -> None:
+    """ARCH109: flag every same-file interface-marked class (`ABC`/
+    `Protocol`-family base, T-0619) with at least `FAT_INTERFACE_MIN_
+    METHODS` methods and at least `FAT_INTERFACE_MIN_IMPLEMENTERS`
+    resolvable implementers, whose AGGREGATE (interface-method,
+    implementer) override slots are stubbed (`_is_stub_method`) at or
+    above `FAT_INTERFACE_STUB_FRACTION` -- measured over the whole
+    resolved-implementer pool combined, not per implementer, per the
+    ticket's "not per-class" framing: a handful of implementers each
+    stubbing most of a wide interface is the classic "implement everything
+    or nothing" ISP smell, not any single implementer's own problem.
+    Written once against `NormalizedModule`, so it fires for every
+    `LanguageAdapter`."""
+    for interface in module.classes:
+        if not (set(interface.bases) & _INTERFACE_MARKER_BASES):
+            continue
+        if len(interface.methods) < FAT_INTERFACE_MIN_METHODS:
+            continue
+        implementers = _resolved_implementers(interface, module)
+        if len(implementers) < FAT_INTERFACE_MIN_IMPLEMENTERS:
+            continue
+        interface_method_names = {m.name for m in interface.methods}
+        total_slots = 0
+        stub_slots = 0
+        for impl in implementers:
+            impl_methods = {m.name: m for m in impl.methods}
+            for name in interface_method_names:
+                m = impl_methods.get(name)
+                if m is None:
+                    continue  # not overridden here -- unresolvable, skip
+                total_slots += 1
+                if _is_stub_method(m):
+                    stub_slots += 1
+        if total_slots == 0:
+            continue
+        fraction = stub_slots / total_slots
+        if fraction < FAT_INTERFACE_STUB_FRACTION:
+            continue
+        out.append(
+            ArchSuggestion(
+                file=module.path,
+                line=interface.line,
+                category="fat-interface",
+                severity="warning",
+                message=(
+                    f"`{interface.name}` ({len(interface.methods)} methods,"
+                    f" {len(implementers)} implementers) is"
+                    f" {round(fraction * 100)}% stubbed across its resolved"
+                    " implementers"
+                ),
+                detail=(
+                    "most implementers leave most of this interface"
+                    " unimplemented -- split it along what each implementer"
+                    " actually provides instead of one wide contract"
+                ),
+                symref=interface.name,
+                metric=stub_slots,
+            )
+        )
+
+
+# ---------------------------------------------------------------------------
+# ARCH110: narrow-client usage (ISP, T-0619)
+# ---------------------------------------------------------------------------
+
+#: Minimum method count (T-0619) a same-file class must declare before it
+#: is even considered a "wide interface" a client parameter could be
+#: injected with -- mirrors `FAT_INTERFACE_MIN_METHODS`'s calibration.
+# frob:doc docs/modules/arch.md#isp-checks
+NARROW_CLIENT_MIN_INTERFACE_METHODS = 4
+
+#: Maximum fraction (T-0619) of a wide interface's methods a client
+#: function/method may actually call before it stops reading as a
+#: "narrow" consumer of that interface -- a client using MORE than a third
+#: of a wide interface is using enough of it that splitting the interface
+#: would not obviously help this particular client.
+# frob:doc docs/modules/arch.md#isp-checks
+NARROW_CLIENT_MAX_USED_FRACTION = 0.34
+
+
+def _called_method_names(func: NormalizedFunction, receiver: str) -> set[str]:
+    """Bare method names called as `<receiver>.<name>(...)` anywhere in
+    `func`'s OWN body (T-0619, not counting nested functions) -- the
+    "actually used" half of the narrow-client signal, read straight off
+    `NormalizedCall.callee`'s dotted `obj.method` text (T-0609's adapter
+    contract)."""
+    prefix = f"{receiver}."
+    names: set[str] = set()
+    for call in func.calls:
+        if call.callee.startswith(prefix):
+            names.add(call.callee[len(prefix) :].split(".", 1)[0])
+    return names
+
+
+def _iter_wide_param_clients(
+    module: NormalizedModule,
+) -> list[tuple[str, NormalizedFunction, NormalizedClass]]:
+    """Every `(qualname, func, interface_class)` triple (T-0619) where
+    `func` (module-level or a method, not recursing into nested functions)
+    declares a parameter whose annotated `type` text names a same-file
+    class with at least `NARROW_CLIENT_MIN_INTERFACE_METHODS` methods --
+    the injected-wide-interface corpus `check_narrow_client_usage` scans
+    for actual per-method call usage. A parameter typed with an unresolvable
+    (not same-file, or unannotated) type is not yielded -- fail toward
+    silence, matching every other check in this module."""
+    classes_by_name = {
+        c.name: c
+        for c in module.classes
+        if len(c.methods) >= NARROW_CLIENT_MIN_INTERFACE_METHODS
+    }
+
+    def _scan(
+        func: NormalizedFunction, qualname: str
+    ) -> list[tuple[str, NormalizedFunction, NormalizedClass]]:
+        found: list[tuple[str, NormalizedFunction, NormalizedClass]] = []
+        for p in func.params:
+            if p.type is None:
+                continue
+            iface = classes_by_name.get(p.type)
+            if iface is None:
+                continue
+            found.append((qualname, func, iface))
+        return found
+
+    out: list[tuple[str, NormalizedFunction, NormalizedClass]] = []
+    for f in module.functions:
+        out.extend(_scan(f, f.name))
+    for c in module.classes:
+        for m in c.methods:
+            out.extend(_scan(m, f"{c.name}.{m.name}"))
+    return out
+
+
+# frob:doc docs/modules/arch.md#isp-checks
+# frob:tests tests/unit/test_arch.py::TestNarrowClientUsage.test_client_using_small_method_subset_flagged  # noqa: E501
+# frob:tests tests/unit/test_arch.py::TestNarrowClientUsage.test_client_using_most_of_interface_not_flagged  # noqa: E501
+def check_narrow_client_usage(
+    module: NormalizedModule, out: list[ArchSuggestion]
+) -> None:
+    """ARCH110: flag every function/method (T-0619) injected with a
+    same-file parameter typed as a wide interface (`NARROW_CLIENT_MIN_
+    INTERFACE_METHODS`+ methods) that calls at most `NARROW_CLIENT_MAX_
+    USED_FRACTION` of that interface's methods on the parameter -- a
+    client depending on a wide contract for a narrow slice of it is the
+    ISP split candidate the ticket calls out. A client calling ZERO of the
+    interface's methods is a different smell (an unused/dead parameter,
+    not a narrow-usage one) and is not flagged here. Written once against
+    `NormalizedModule`, so it fires for every `LanguageAdapter`."""
+    for qualname, func, iface in _iter_wide_param_clients(module):
+        param_name = next(p.name for p in func.params if p.type == iface.name)
+        iface_method_names = {m.name for m in iface.methods}
+        used = _called_method_names(func, param_name) & iface_method_names
+        if not used:
+            continue
+        fraction = len(used) / len(iface_method_names)
+        if fraction > NARROW_CLIENT_MAX_USED_FRACTION:
+            continue
+        out.append(
+            ArchSuggestion(
+                file=module.path,
+                line=func.line,
+                category="narrow-client-usage",
+                severity="suggestion",
+                message=(
+                    f"`{qualname}` calls only {len(used)}/"
+                    f"{len(iface_method_names)} methods of `{iface.name}`"
+                    f" on `{param_name}`"
+                ),
+                detail=(
+                    "a narrow slice of a wide injected interface is an ISP"
+                    " split candidate -- depend on a smaller interface"
+                    " naming only the methods this client actually calls"
+                ),
+                symref=qualname,
+                metric=len(iface_method_names) - len(used),
+            )
+        )
+
+
+# frob:doc docs/modules/arch.md#isp-checks
+# frob:tests tests/unit/test_arch.py::TestRunIspChecks.test_combines_both_checks  # noqa: E501
+def run_isp_checks(module: NormalizedModule) -> list[ArchSuggestion]:
+    """Run every ARCH1xx ISP check (T-0619: `check_fat_interface`,
+    `check_narrow_client_usage`) against one `NormalizedModule` and return
+    the combined suggestions -- the single entry point a future
+    orchestration-wiring ticket (`analyze_project`, out of this ticket's
+    scope, mirroring T-0616/T-0618's own disclosed cuts) will call per
+    parsed file, matching `run_lsp_checks`'s convention."""
+    out: list[ArchSuggestion] = []
+    check_fat_interface(module, out)
+    check_narrow_client_usage(module, out)
     return out

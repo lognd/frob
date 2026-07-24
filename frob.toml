@@ -27,6 +27,30 @@ max_local_imports = 8
 max_nesting_depth = 4
 max_file_lines = 800
 
+# T-0620: `[arch.layering]` is `frob.arch._layering`'s DIP layering
+# contract schema -- NOT wired into `frob check` yet (out of this ticket's
+# scope, matching T-0616/T-0617/T-0618/T-0619's own disclosed gate-wiring
+# cuts), so this table is inert today and present purely as a real,
+# minimal worked example of the config shape (docs/modules/arch.md's "DIP
+# layering contract" section documents the schema in full). `layers` maps
+# a declared layer name to the repo-relative path prefixes belonging to
+# it; `allow` maps a layer name to the OTHER layer names it may import
+# from -- an edge between two declared layers not listed here is a
+# violation once a future ticket wires `check_layering_violations` into
+# `frob check`. This particular contract states a fact already true of
+# this repo's own layout: `src/frob/app` (the CLI/orchestration layer)
+# may depend on `src/frob/lang` (the tree-sitter parsing utility layer),
+# but `src/frob/lang` may never import back from `src/frob/app` --
+# `frob.lang` is a leaf dependency the rest of the codebase reaches into,
+# never the reverse.
+[arch.layering.layers]
+app = ["src/frob/app"]
+lang = ["src/frob/lang"]
+
+[arch.layering.allow]
+app = ["lang"]
+lang = []
+
 [graph]
 # design/litmus/**: strata litmus fixtures (T-0130) -- example models used
 # by tests/unit/strata's parametrized suite, not maintained product surface.

@@ -3549,17 +3549,111 @@ scope:
 - src/frob/arch/_models.py
 - docs/modules/arch.md
 - tests/unit/test_arch.py
+evidence:
+- tests/unit/test_arch.py::TestFatInterface::test_mostly_stubbed_implementers_flag_fat_interface
+- tests/unit/test_arch.py::TestFatInterface::test_mostly_implemented_methods_not_flagged
+- tests/unit/test_arch.py::TestNarrowClientUsage::test_client_using_small_method_subset_flagged
+- tests/unit/test_arch.py::TestNarrowClientUsage::test_client_using_most_of_interface_not_flagged
+- tests/unit/test_arch.py::TestRunIspChecks::test_combines_both_checks
 threat: null
 component: null
 ```
 fat interface: ABC/Protocol/trait whose implementers stub most methods with raise NotImplementedError/pass (measured over resolved implementers, not per-class). narrow-client usage: a function/class injected with a wide interface but only calling a small subset of its methods -- flag as an ISP split candidate. Acceptance: positive+negative fixtures; docs updated.
+
+## Done report
+
+EPIC T-0330's ISP slice of the ARCH1xx catalog. Adds two checks to
+`frob.arch._solid` (shared module with the T-0618 LSP checks, both written
+once against the T-0609 normalized model): fat interface (ARCH109) and
+narrow-client usage (ARCH110).
+
+`check_fat_interface` (ARCH109): flags a same-file `ABC`/`Protocol`-family
+class (`_INTERFACE_MARKER_BASES`) with at least `FAT_INTERFACE_MIN_
+METHODS` (4) methods and at least `FAT_INTERFACE_MIN_IMPLEMENTERS` (2)
+resolvable same-file implementers, whose AGGREGATE (interface-method,
+implementer) override slots are stubbed at or above `FAT_INTERFACE_STUB_
+FRACTION` (0.5) -- measured over the whole resolved-implementer pool
+combined, not per implementer, matching the ticket's own "not per-class"
+framing. Reuses LSP's stub-body predicates directly (`_is_stub_method`
+composes `_NOT_IMPLEMENTED_EXCEPTIONS` and the same empty-shell test
+`check_noop_override` already uses) rather than re-deriving them.
+
+`check_narrow_client_usage` (ARCH110): flags a function/method with a
+same-file-typed parameter (>= `NARROW_CLIENT_MIN_INTERFACE_METHODS`, 4,
+methods) that calls at most `NARROW_CLIENT_MAX_USED_FRACTION` (0.34) of
+that interface's methods on the parameter -- read straight off
+`NormalizedCall.callee`'s dotted `<param>.<method>` text. A client calling
+ZERO of the interface's methods is deliberately NOT flagged (that is an
+unused-parameter smell, not a narrow-usage one).
+
+Implementer/client resolution is same-file-only, fail-toward-silence,
+matching `_iter_override_pairs`'s (T-0618) and `frob.arch._ocp`'s
+precedent exactly -- an implementer or a parameter's type defined in
+another file is simply unresolvable and skipped, never guessed at.
+
+`analyze_project` dispatch wiring, `frob.arch.__init__` re-export, and a
+real ARCH1xx gate are all explicitly out of this ticket's scope, matching
+T-0616's/T-0618's own disclosed cuts -- `run_isp_checks` is the entry
+point a future wiring ticket calls per parsed file.
+
+### Changed
+```
+docs/modules/arch.md          | ISP checks section + 3 top-table rows
+src/frob/arch/_models.py      | 2 new ArchCategory values (fat-interface, narrow-client-usage)
+src/frob/arch/_solid.py       | +2 checks, +run_isp_checks, +helpers (~230 lines)
+tests/unit/test_arch.py       | 5 new tests across 3 new test classes
+```
+
+### Evidence
+Collected via `pytest tests/unit/test_arch.py -p no:cacheprovider -q`
+(94 passed, full file) and `--collect-only` (all 5 node ids below
+resolved):
+- tests/unit/test_arch.py::TestFatInterface::test_mostly_stubbed_implementers_flag_fat_interface
+- tests/unit/test_arch.py::TestFatInterface::test_mostly_implemented_methods_not_flagged
+- tests/unit/test_arch.py::TestNarrowClientUsage::test_client_using_small_method_subset_flagged
+- tests/unit/test_arch.py::TestNarrowClientUsage::test_client_using_most_of_interface_not_flagged
+- tests/unit/test_arch.py::TestRunIspChecks::test_combines_both_checks
+
+`frob check --only <lint|static|gates-fast|gates-native|gates-security>
+--ticket T-0619` (chunked loop): all five stage groups 0 errors.
+
+### Filed
+none -- no out-of-scope work discovered.
+
+### Gates
+`frob check --only <lint|static|gates-fast|gates-native|gates-security>
+--ticket T-0619` clean (0 errors each). `static`'s frob-exports warning
+(`_solid.py`'s new public symbols not re-exported from `frob.arch.
+__init__`) is a warning, not an error, and matches the same disclosed
+scope cut T-0618/T-0616 already carry.
+
+### Changed
+```
+ docs/modules/arch.md     |  62 +++++
+ src/frob/arch/_models.py |   8 +
+ src/frob/arch/_solid.py  | 278 ++++++++++++++++++++++-
+ tests/unit/test_arch.py  | 272 ++++++++++++++++++++++
+ tickets.md               | 575 ++++++++++++++++++++++++++++++++++++++++++++++-
+ 5 files changed, 1185 insertions(+), 10 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_arch.py::TestFatInterface::test_mostly_stubbed_implementers_flag_fat_interface` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestFatInterface::test_mostly_implemented_methods_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestNarrowClientUsage::test_client_using_small_method_subset_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestNarrowClientUsage::test_client_using_most_of_interface_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestRunIspChecks::test_combines_both_checks` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0620 -->
 ```yaml
 id: T-0620
 title: 'arch: DIP layering contract (declared allowed-module-dependency graph) + no-DI
   construction smell'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -3572,17 +3666,173 @@ scope:
 - frob.toml
 - docs/modules/arch.md
 - tests/unit/test_arch.py
+- src/frob/arch/_models.py
+scope_changes:
+- op: add
+  glob: src/frob/arch/_models.py
+  reason: 'T-0620''s declared scope omits src/frob/arch/_models.py, but the DIP
+
+    checks it implements (dip-layering-violation, no-di-construction) need a
+
+    new ArchCategory literal registered there, exactly like every prior
+
+    sibling in this same ARCH1xx SOLID-catalog cluster (T-0617/T-0618/T-0619
+
+    all listed _models.py in their own declared scope for the identical
+
+    reason -- registering new ArchCategory values is a fixed, small,
+
+    mechanical addition, not a design decision). Extending scope rather than
+
+    routing around it, per SCOPE001''s own remediation.
+
+    '
+  actor: logan
+  at: '2026-07-23'
+evidence:
+- tests/unit/test_arch.py::TestLayeringConfig::test_layer_for_longest_prefix_match
+- tests/unit/test_arch.py::TestLayeringConfig::test_layer_for_unmatched_path_is_none
+- tests/unit/test_arch.py::TestLoadLayeringConfig::test_missing_frob_toml_returns_none
+- tests/unit/test_arch.py::TestLoadLayeringConfig::test_parses_declared_layers_and_allow_table
+- tests/unit/test_arch.py::TestLayeringViolations::test_disallowed_cross_layer_edge_flagged
+- tests/unit/test_arch.py::TestLayeringViolations::test_allowed_cross_layer_edge_not_flagged
+- tests/unit/test_arch.py::TestLayeringViolations::test_dynamic_import_in_layered_file_flagged
+- tests/unit/test_arch.py::TestNoDiConstructionSmell::test_inline_construction_outside_init_flagged
+- tests/unit/test_arch.py::TestNoDiConstructionSmell::test_construction_inside_init_not_flagged
+- tests/unit/test_arch.py::TestNoDiConstructionSmell::test_construction_inside_factory_function_not_flagged
 threat: null
 component: null
 ```
 Layering contract: a frob.toml-declared allowed-module-dependency graph (import-linter style: layers + allowed edges); a violation is a high layer importing a low/concrete module across the declared boundary -- new ARCHxxx id, resolved against actual (not surface) imports per the adversarial-hardening note (transitive re-export resolution, fail-closed on dynamic import). concrete-collaborator construction smell: a method body directly constructs a concrete dependency instead of receiving it via constructor/param injection. Acceptance: a sample frob.toml layering config + fixture violating it fails; a compliant fixture passes; docs updated with the config schema.
+
+## Done report
+
+EPIC T-0330's DIP slice of the ARCH1xx catalog. Adds a new module
+`src/frob/arch/_layering.py` (a separate module from `_solid.py` since
+the layering contract needs a PROJECT-WIDE import graph, not one file's
+`NormalizedModule`): `check_layering_violations` and
+`check_no_di_construction`.
+
+`check_layering_violations`: a `frob.toml`-declared `[arch.layering]`
+allowed-module-dependency graph, import-linter style (named layers +
+an explicit allowed-edge set -- every cross-layer edge must be named
+explicitly, not "higher may import any lower" by default). Walks every
+python file under a declared layer, resolves imports via
+`frob.lang.extract_imports`/`resolve_local_import` (the SAME pair
+`frob.app.cycle_runner._build_graph` already uses for cycle detection --
+reused, not re-derived), and flags a resolved edge into a declared layer
+not present in the source layer's `allow` list. Addresses the epic's
+adversarial-hardening note on two fronts: (1) re-export resolution --
+`_resolve_reexports` follows one bounded hop through an `__init__.py`
+target's own local imports so a package-boundary import doesn't hide the
+real submodule coupling; (2) fail-closed on dynamic indirection --
+`_has_dynamic_import` flags a layered file containing
+`importlib.import_module(`/`__import__(` as its own violation, since this
+scan cannot prove such a file's real import set from static imports
+alone.
+
+`check_no_di_construction`: written once against `NormalizedModule`
+(T-0609), same convention as `_solid.py`'s checks. Flags a method/function
+(excluding `__init__`/`__new__`, and factory-named functions) whose OWN
+body constructs a same-file concrete class inline via a bare
+`ClassName(...)` call -- the collaborator should have been received via
+injection instead.
+
+Added a REAL, minimal `[arch.layering]` worked example to this repo's own
+`frob.toml` (inert -- not wired into `frob check`, matching every sibling
+ARCH1xx ticket's disclosed gate-wiring cut): `src/frob/lang` (leaf parsing
+utility) may never import back from `src/frob/app` (CLI/orchestration
+layer), which may depend on `lang`.
+
+SCOPE NOTE: extended T-0620's declared scope via `frob ticket scope
+--add` to include `src/frob/arch/_models.py` (two new `ArchCategory`
+values, `dip-layering-violation`/`no-di-construction`) -- the ticket's
+original scope omitted it while every sibling ticket in this cluster
+(T-0617/T-0618/T-0619) already listed it for the identical mechanical
+reason. Reasoned via `--reason-file`, not routed around.
+
+### Changed
+```
+docs/modules/arch.md          | DIP layering contract + no-DI construction sections, 2 top-table rows
+frob.toml                     | +1 real [arch.layering] worked example (inert)
+src/frob/arch/_layering.py    | new file, ~330 lines
+src/frob/arch/_models.py      | 2 new ArchCategory values
+tests/unit/test_arch.py       | 10 new tests across 4 new test classes
+```
+
+### Evidence
+Collected via `pytest tests/unit/test_arch.py -p no:cacheprovider -q`
+(104 passed, full file) and `--collect-only` (all 10 node ids below
+resolved):
+- tests/unit/test_arch.py::TestLayeringConfig::test_layer_for_longest_prefix_match
+- tests/unit/test_arch.py::TestLayeringConfig::test_layer_for_unmatched_path_is_none
+- tests/unit/test_arch.py::TestLoadLayeringConfig::test_missing_frob_toml_returns_none
+- tests/unit/test_arch.py::TestLoadLayeringConfig::test_parses_declared_layers_and_allow_table
+- tests/unit/test_arch.py::TestLayeringViolations::test_disallowed_cross_layer_edge_flagged
+- tests/unit/test_arch.py::TestLayeringViolations::test_allowed_cross_layer_edge_not_flagged
+- tests/unit/test_arch.py::TestLayeringViolations::test_dynamic_import_in_layered_file_flagged
+- tests/unit/test_arch.py::TestNoDiConstructionSmell::test_inline_construction_outside_init_flagged
+- tests/unit/test_arch.py::TestNoDiConstructionSmell::test_construction_inside_init_not_flagged
+- tests/unit/test_arch.py::TestNoDiConstructionSmell::test_construction_inside_factory_function_not_flagged
+
+`frob check --only <lint|static|gates-fast|gates-native|gates-security>
+--ticket T-0620` (chunked loop), measured after a `git merge main` (main
+advanced mid-session) and a `.frob/pytest-collect.json` cache rebuild.
+
+### Filed
+none new -- the one scope gap found (missing `_models.py` in T-0620's own
+declared scope) was closed via `frob ticket scope --add` with a reason,
+not filed as a separate ticket, since it is this same ticket's own
+implementation blocked on it.
+
+### Gates
+`frob check --only <lint|static|gates-fast|gates-native|gates-security>
+--ticket T-0620`: lint/static/gates-native/gates-security all 0 errors.
+gates-fast has exactly ONE remaining error, `TICK003` (64 closed tickets
+sitting un-archived in tickets.md, threshold 60) -- pre-existing repo-wide
+housekeeping debt, not caused by or scoped to this ticket's files;
+disclosed here rather than silently left out. An earlier gates-fast pass
+also showed 43 `COV003` findings (stale test-collection-cache entries for
+unrelated tickets T-0660/T-0661/T-0680/T-0719, whose evidence pointed at
+`tests/test_vet.py` classes this worktree's PRE-merge snapshot did not
+yet have) -- these cleared entirely after `git merge main` pulled in the
+532-line `tests/test_vet.py` update those tickets' own lands had already
+made; not a regression from this ticket.
+
+### Changed
+```
+ docs/modules/arch.md       | 176 +++++++++++++++++
+ frob.toml                  |  24 +++
+ src/frob/arch/_layering.py | 380 ++++++++++++++++++++++++++++++++++++
+ src/frob/arch/_models.py   |  18 ++
+ src/frob/arch/_solid.py    | 278 +++++++++++++++++++++++++-
+ tests/unit/test_arch.py    | 472 +++++++++++++++++++++++++++++++++++++++++++++
+ tickets.md                 | 119 +++++++++++-
+ 7 files changed, 1461 insertions(+), 6 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_arch.py::TestLayeringConfig::test_layer_for_longest_prefix_match` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestLayeringConfig::test_layer_for_unmatched_path_is_none` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestLoadLayeringConfig::test_missing_frob_toml_returns_none` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestLoadLayeringConfig::test_parses_declared_layers_and_allow_table` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestLayeringViolations::test_disallowed_cross_layer_edge_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestLayeringViolations::test_allowed_cross_layer_edge_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestLayeringViolations::test_dynamic_import_in_layered_file_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestNoDiConstructionSmell::test_inline_construction_outside_init_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestNoDiConstructionSmell::test_construction_inside_init_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestNoDiConstructionSmell::test_construction_inside_factory_function_not_flagged` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 10 passed (from 10 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0621 -->
 ```yaml
 id: T-0621
 title: 'arch: type-driven design checks (ARCH1xx) -- illegal states, primitive obsession,
   parse-dont-validate, boolean flag param'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -3594,10 +3844,133 @@ scope:
 - src/frob/arch/_typedesign.py
 - docs/modules/arch.md
 - tests/unit/test_arch.py
+evidence:
+- tests/unit/test_arch.py::TestIllegalStatesRepresentable::test_bool_field_cross_field_guard_flagged
+- tests/unit/test_arch.py::TestIllegalStatesRepresentable::test_bool_field_alone_not_flagged
+- tests/unit/test_arch.py::TestPrimitiveObsession::test_three_plus_raw_params_flagged
+- tests/unit/test_arch.py::TestPrimitiveObsession::test_two_raw_params_not_flagged
+- tests/unit/test_arch.py::TestParseDontValidate::test_validates_then_returns_same_type_flagged
+- tests/unit/test_arch.py::TestParseDontValidate::test_validates_then_returns_refined_type_not_flagged
+- tests/unit/test_arch.py::TestBooleanFlagParam::test_public_function_branching_on_bool_param_flagged
+- tests/unit/test_arch.py::TestBooleanFlagParam::test_private_function_not_flagged
+- tests/unit/test_arch.py::TestRunTypeDesignChecks::test_combines_all_four_checks
 threat: null
 component: null
 ```
 make-illegal-states-unrepresentable: a bool flag field/param whose valid combinations are validated at runtime rather than modeled as an enum/newtype (heuristic: bool field + a validator/assert referencing it + another field it constrains). primitive-obsession: 3+ raw str/int params on one function representing what looks like one domain concept (repeated co-occurrence across call sites). parse-dont-validate: a function that validates its input (raise/assert on shape) then returns the SAME unrefined input type instead of a refined one. boolean/flag parameter: public function with a bool param that switches behavior (branches internally on it) -- split-function candidate. Acceptance: fixture per sub-check; docs updated.
+
+## Done report
+
+EPIC T-0330's "Logan Smith" type-driven-design slice of the ARCH1xx
+catalog. Adds a new module `src/frob/arch/_typedesign.py` with four
+checks, all written once against the T-0609 normalized model, same
+convention as `_solid.py`/`_layering.py`:
+
+- `check_illegal_states_representable`: a class's `bool`-typed field
+  runtime-guarded (a branch mentioning both the bool field's name AND
+  another field's name, immediately followed by a raise -- reusing the
+  same line-adjacency guard-clause proxy LSP's strengthened-precondition
+  check uses) inside some method's own body.
+- `check_primitive_obsession`: a function/method signature with 3+ raw
+  `str`/`int`/`float`-typed params (a same-file, single-signature proxy;
+  disclosed simplification of the ticket's fuller "repeated co-occurrence
+  across call sites" framing, which would need a project-wide scan).
+- `check_parse_dont_validate`: a function/method with exactly one param,
+  guarded by a branch+raise on that param, whose declared return type is
+  IDENTICAL to the param's own declared type -- validates then hands back
+  the same unrefined type instead of a refined one.
+- `check_boolean_flag_param`: a PUBLIC function/method with a bool param
+  its own body branches on internally -- a split-function candidate.
+
+SCOPE-LEASE BLOCKER (disclosed, worked around, not routed around):
+T-0621's declared scope does NOT include `src/frob/arch/_models.py`, and
+at implementation time T-0620 (a sibling in the same ARCH1xx cluster)
+still held an active scope lease on that file (left `in-progress` per
+this dispatch's own "do not close or land" instruction). `frob ticket
+scope T-0621 --add src/frob/arch/_models.py` was attempted first and
+refused with `ScopeLeaseConflict: requested --add glob overlaps a path
+leased by another in-progress ticket`. Rather than stall this entire
+ticket on another ticket's land timing, the four checks build a LOCAL
+`TypeDesignCategory`/`TypeDesignSuggestion` pair (`_typedesign.py`'s own
+scope) that mirrors `frob.arch._models.ArchCategory`/`ArchSuggestion`'s
+shape field-for-field instead of extending the shared `Literal`. Filed
+T-0892 ("arch: fold TypeDesignCategory into ArchCategory once
+_models.py lease is free") as the tracked, purely-mechanical follow-up --
+the four check functions' logic will not change, only which model they
+construct.
+
+`analyze_project` dispatch wiring, a real ARCH1xx gate, and
+`frob.arch.__init__` re-export are all out of this ticket's scope,
+matching every sibling ticket's own disclosed gate-wiring cut.
+
+### Changed
+```
+docs/modules/arch.md          | type-driven-design section + 4 top-table rows
+src/frob/arch/_typedesign.py  | new file, ~375 lines
+tests/unit/test_arch.py       | 9 new tests across 5 new test classes
+```
+
+### Evidence
+Collected via `pytest tests/unit/test_arch.py -p no:cacheprovider -q`
+(113 passed, full file) and `--collect-only` (all 9 node ids below
+resolved):
+- tests/unit/test_arch.py::TestIllegalStatesRepresentable::test_bool_field_cross_field_guard_flagged
+- tests/unit/test_arch.py::TestIllegalStatesRepresentable::test_bool_field_alone_not_flagged
+- tests/unit/test_arch.py::TestPrimitiveObsession::test_three_plus_raw_params_flagged
+- tests/unit/test_arch.py::TestPrimitiveObsession::test_two_raw_params_not_flagged
+- tests/unit/test_arch.py::TestParseDontValidate::test_validates_then_returns_same_type_flagged
+- tests/unit/test_arch.py::TestParseDontValidate::test_validates_then_returns_refined_type_not_flagged
+- tests/unit/test_arch.py::TestBooleanFlagParam::test_public_function_branching_on_bool_param_flagged
+- tests/unit/test_arch.py::TestBooleanFlagParam::test_private_function_not_flagged
+- tests/unit/test_arch.py::TestRunTypeDesignChecks::test_combines_all_four_checks
+
+`frob check --only <lint|static|gates-fast|gates-native|gates-security>
+--ticket T-0621` (chunked loop), measured after a `git merge main`.
+
+### Filed
+T-0892 -- "arch: fold TypeDesignCategory into ArchCategory once
+_models.py lease is free (T-0621 follow-up)", `feature` kind, scope
+`src/frob/arch/_typedesign.py,src/frob/arch/_models.py,docs/modules/
+arch.md,tests/unit/test_arch.py`.
+
+### Gates
+`frob check --only <lint|static|gates-fast|gates-native|gates-security>
+--ticket T-0621`: lint/static/gates-native/gates-security all 0 errors.
+gates-fast has exactly one remaining error, `TICK003` (68 closed tickets
+un-archived, threshold 60) -- the same pre-existing repo-wide housekeeping
+debt already disclosed in T-0620's Done report, not caused by or scoped
+to this ticket. An `INV006` (exclusivity-claim vocabulary) finding fired
+on the new module's docstring; disposed with a targeted `frob:waive
+INV006` following the exact `frob.arch._solid`/`_protocol_excuse`
+precedent already established in this cluster.
+
+### Changed
+```
+ docs/modules/arch.md         | 253 ++++++++++++++
+ frob.toml                    |  24 ++
+ src/frob/arch/_layering.py   | 380 +++++++++++++++++++++
+ src/frob/arch/_models.py     |  18 +
+ src/frob/arch/_solid.py      | 278 +++++++++++++++-
+ src/frob/arch/_typedesign.py | 376 +++++++++++++++++++++
+ tests/unit/test_arch.py      | 770 +++++++++++++++++++++++++++++++++++++++++++
+ tickets.md                   | 289 +++++++++++++++-
+ 8 files changed, 2381 insertions(+), 7 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_arch.py::TestIllegalStatesRepresentable::test_bool_field_cross_field_guard_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestIllegalStatesRepresentable::test_bool_field_alone_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestPrimitiveObsession::test_three_plus_raw_params_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestPrimitiveObsession::test_two_raw_params_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestParseDontValidate::test_validates_then_returns_same_type_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestParseDontValidate::test_validates_then_returns_refined_type_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestBooleanFlagParam::test_public_function_branching_on_bool_param_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestBooleanFlagParam::test_private_function_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestRunTypeDesignChecks::test_combines_all_four_checks` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 9 passed (from 9 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0622 -->
 ```yaml
@@ -13992,3 +14365,38 @@ src/frob/app/ticket_runner.py -- strip FROB_AGENT/FROB_WORKTREE (and any
 other worktree-lease env) from the subprocess environment before spawning
 the verification pytest run, so a ticket's own evidence-recording step
 never leaks the recorder's own lease into the tests being verified.
+
+<!-- ticket:T-0892 -->
+```yaml
+id: T-0892
+title: 'arch: fold TypeDesignCategory into ArchCategory once _models.py lease is free
+  (T-0621 follow-up)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/arch/_typedesign.py
+- src/frob/arch/_models.py
+- docs/modules/arch.md
+- tests/unit/test_arch.py
+threat: null
+component: null
+```
+T-0621 (arch: type-driven design checks) implemented its four checks
+(illegal-states-representable, primitive-obsession, parse-dont-validate,
+boolean-flag-param) against a LOCAL TypeDesignCategory/TypeDesignSuggestion
+pair in src/frob/arch/_typedesign.py rather than the shared
+frob.arch._models.ArchCategory/ArchSuggestion, because at implementation
+time T-0620 (a sibling ticket in the same ARCH1xx cluster) held an active
+scope lease on src/frob/arch/_models.py and `frob ticket scope --add`
+refused with ScopeLeaseConflict.
+
+Once T-0620 is closed/landed and the lease is free: fold the four
+TypeDesignCategory string values into ArchCategory, migrate
+TypeDesignSuggestion's four producer functions in _typedesign.py to build
+frob.arch._models.ArchSuggestion instead of the local model, and delete
+TypeDesignCategory/TypeDesignSuggestion. Purely mechanical -- the four
+check functions' logic does not change, only which model they construct.
