@@ -4316,7 +4316,7 @@ A dependency marked CRITICAL must declare a fallback/graceful-degradation path, 
 id: T-0645
 title: 'strata: SPOF detection - inbound-critical-flow node with replicas_max=1/no
   redundancy'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
