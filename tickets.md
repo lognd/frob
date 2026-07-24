@@ -1145,7 +1145,7 @@ Worktree: /home/logan/projects/frob/.claude/worktrees/agent-aceb0dbbbc97766b3
 id: T-0525
 title: COV006 waiver granularity is file-scoped, not symbol-scoped -- can silently
   over-waive
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-07-21'
