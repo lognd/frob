@@ -3832,7 +3832,7 @@ made; not a regression from this ticket.
 id: T-0621
 title: 'arch: type-driven design checks (ARCH1xx) -- illegal states, primitive obsession,
   parse-dont-validate, boolean flag param'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
