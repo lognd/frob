@@ -37,12 +37,15 @@ grammar and VERIFIED, never trusted at face value:
   (across all files, not just the same file). A dangling duplicate
   reference is REG004.
 - ``out_of_scope:<reason>`` / ``out-of-scope:<reason>`` /
-  ``out-of-scope(<reason>)`` -- valid if `<reason>` is non-empty. Per the
-  ticket's own concession, `caught_by` verification against the T-0382
-  Area-2 mechanism is NOT enforced yet (that mechanism does not exist in
-  this build) -- `caught_by` is accepted as a free-form string for now;
-  this is a named, tracked gap, not a silent one (see the module's
-  `_OUT_OF_SCOPE_CAUGHT_BY_GAP` note below).
+  ``out-of-scope(<reason>)`` -- REG001 (ERROR) if `<reason>` is empty.
+  T-0680 additionally routes non-empty `<reason>` through the same
+  `caught_by` verification T-0382 built for `strata`'s `OutOfScopeEntry`/
+  `BenignCapability`/`OutOfScopeRegulation` models
+  (`frob.strata._threat._caught_by_unresolved_tokens`): `<reason>` must
+  either name a real, live catching control (a rule-id- or CWE-id-shaped
+  token that resolves) or be a substantive `"none -- <explanation>"`
+  reasoned-none disclosure -- anything else is REG011 (WARN; see
+  `_classify_out_of_scope_caught_by` below).
 - anything else -- a missing `disposition`, the bare literal `pending`,
   the bare literal `addressed` with no `handled_by` rule attached, or any
   string that does not parse under the grammar above -- is REG001,
@@ -113,6 +116,17 @@ from frob.registry._models import (
     load_registry_dir,
 )
 from frob.registry._staleness import missing_gate_rule_ids
+
+# NOTE: frob.strata._threat is imported LAZILY (inside the functions below,
+# not here at module scope) -- frob.gates.__init__ imports this module
+# during its own top-level import, which can happen mid-initialization of
+# frob.strata._threat itself (frob.strata._threat -> frob.strata._effects
+# -> frob.vet -> frob.vet._models -> frob.gates._models, which triggers
+# frob.gates.__init__ -> this module). A module-scope import here hits
+# that partially-initialized module and raises ImportError; a lazy,
+# call-time import (same pattern already used by
+# frob.gates.__init__._policy_gate/_native_staleness_gate and others for
+# frob.strata symbols) sidesteps it.
 from frob.tickets._models import TicketQueue, TicketState
 
 _log = get_logger(__name__)
@@ -154,12 +168,11 @@ _RECONCILIATION_FILE = "RECONCILIATION.md"
 # REF001/REF002 for it the same way REGISTRY_FILES does.
 _CHECK_COVERAGE_FILE = "check-coverage.yaml"
 
-# T-0343 named gap: `out_of_scope` dispositions are meant to route through
-# Area-2's VERIFIED `caught_by` mechanism (T-0382); that mechanism does not
-# exist in this build yet, so `caught_by` is accepted as a bare string for
-# now rather than blocking every out-of-scope disposition on unbuilt
-# infrastructure. Tracked here, not silently assumed solved.
-_OUT_OF_SCOPE_CAUGHT_BY_GAP = "T-0382 Area-2 caught_by verification not yet built"
+# T-0343 named this a tracked gap ("out_of_scope dispositions are meant to
+# route through Area-2's VERIFIED caught_by mechanism, T-0382, which does
+# not exist in this build yet"). T-0680 closes it: `_classify_out_of_
+# scope_caught_by` below routes registry-YAML `out_of_scope:<reason>`
+# strings through that now-built T-0382 mechanism (REG011).
 
 
 # frob:enforces CHK-GATE-REG002
@@ -224,6 +237,92 @@ def _classify_out_of_scope(entry_id: str, reason: str) -> tuple[str, str] | None
         return (
             "REG001",
             f"REG001: {entry_id} disposition out_of_scope has no reason",
+        )
+    return None
+
+
+def _is_reasoned_none(reason: str) -> bool:
+    """True if `reason` is a SUBSTANTIVE `"none -- <explanation>"`
+    disclosure per T-0382's `CAUGHT_BY_NONE_MARKER` convention (an honest
+    admission that no compensating control exists yet, WITH the actual
+    explanation) -- the bare word `"none"` alone, with nothing after it,
+    is not substantive and does not count."""
+    from frob.strata._threat import CAUGHT_BY_NONE_MARKER  # lazy: see module note
+
+    stripped = reason.strip()
+    if not stripped.lower().startswith(CAUGHT_BY_NONE_MARKER):
+        return False
+    remainder = stripped[len(CAUGHT_BY_NONE_MARKER) :].strip(" -")
+    return bool(remainder)
+
+
+# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg011-out-of-scope-caught_by-t-0680  # noqa: E501
+# frob:ticket T-0680
+# frob:enforces CHK-GATE-REG011
+def _classify_out_of_scope_caught_by(
+    entry_id: str,
+    reason: str,
+    known_rules: frozenset[str],
+    cataloged_cwes: frozenset[str],
+) -> Violation | None:
+    """REG011 (T-0680): the registry-YAML `out_of_scope:<reason>` surface
+    routed through the same `caught_by` verification T-0382 built for
+    `strata`'s `OutOfScopeEntry`/`BenignCapability`/`OutOfScopeRegulation`
+    models (`frob.strata._threat._caught_by_unresolved_tokens`, reused
+    here rather than re-implemented -- charter: no duplication). An
+    `out_of_scope` reason must either (a) name a real, live catching
+    control -- a rule-id- or CWE-id-shaped token that resolves against
+    `known_rules`/`cataloged_cwes` -- or (b) be a SUBSTANTIVE
+    `"none -- ..."` reasoned-none disclosure (`_is_reasoned_none`). A
+    reason that names no catching control at all AND is not a reasoned-
+    none is exactly the unaccountable excuse this rule exists to make
+    loud; a reason that DOES name a control but the control does not
+    resolve is the fabricated-reference case THREAT006/COMPLIANCE004
+    already catch for the `strata` surface -- REG011 is that same check
+    for the registry-YAML surface T-0343's original gate left unrouted.
+
+    WARN, not ERROR, matching REG008/REG009's first-turn-on precedent
+    (`frob.gates._registry_exhaustiveness.registry_gate`'s own docstring):
+    this repo's registry carries hundreds of pre-existing `out_of_scope`
+    entries (`patterns.yaml`, `compliance.yaml`, ...) written before this
+    check existed, an honest debt this pass surfaces rather than silently
+    retrofits reasons for -- promoting to ERROR is a future reconciliation
+    ticket's job, not this one's."""
+    from frob.strata._threat import (  # lazy: see module note
+        _caught_by_referenced_tokens,
+        _caught_by_unresolved_tokens,
+    )
+
+    if _is_reasoned_none(reason):
+        return None
+    rule_ids, cwe_ids = _caught_by_referenced_tokens(reason)
+    if not rule_ids and not cwe_ids:
+        return Violation(
+            rule="REG011",
+            severity=Severity.WARN,
+            file="",
+            line=0,
+            message=(
+                f"REG011: {entry_id} disposition out_of_scope reason "
+                f"{reason!r} names no catching control (no rule-id- or "
+                f"CWE-id-shaped token) and is not a substantive "
+                f"'none -- <explanation>' reasoned-none disclosure -- an "
+                f"unaccountable excuse"
+            ),
+        )
+    unresolved = _caught_by_unresolved_tokens(reason, known_rules, cataloged_cwes)
+    if unresolved:
+        named = ", ".join(sorted(unresolved))
+        return Violation(
+            rule="REG011",
+            severity=Severity.WARN,
+            file="",
+            line=0,
+            message=(
+                f"REG011: {entry_id} disposition out_of_scope reason "
+                f"{reason!r} references unknown control(s) that do not "
+                f"exist: {named}"
+            ),
         )
     return None
 
@@ -437,9 +536,11 @@ def _classify_all_entries(
     known_rules: frozenset[str],
     all_ids_frozen: frozenset[str],
     queue: TicketQueue,
+    cataloged_cwes: frozenset[str] = frozenset(),
 ) -> list[Violation]:
     """REG001-REG002-REG003-REG004 (disposition) plus REG005/REG006
-    (denominator/structural) violations over every entry in `parsed`."""
+    (denominator/structural) and REG011 (T-0680, out_of_scope caught_by)
+    violations over every entry in `parsed`."""
     violations: list[Violation] = []
     for rel_path, registry_file in parsed.items():
         malformed = _reg006_malformed(rel_path, registry_file)
@@ -465,6 +566,43 @@ def _classify_all_entries(
                         message=message,
                     )
                 )
+            violations.extend(
+                _reg011_out_of_scope_caught_by(
+                    rel_path, entries, known_rules, cataloged_cwes
+                )
+            )
+    return violations
+
+
+def _reg011_out_of_scope_caught_by(
+    rel_path: str,
+    entries: tuple[RegistryEntry, ...],
+    known_rules: frozenset[str],
+    cataloged_cwes: frozenset[str],
+) -> list[Violation]:
+    """REG011 (T-0680) for every `out_of_scope`-dispositioned entry in
+    `entries` -- split out of `_classify_all_entries` for ARCH001; fills
+    in `file=rel_path` since `_classify_out_of_scope_caught_by` is a pure
+    per-entry classifier with no file context of its own."""
+    violations: list[Violation] = []
+    for entry in entries:
+        if entry.disposition.kind is not DispositionKind.OUT_OF_SCOPE:
+            continue
+        assert entry.disposition.target is not None
+        violation = _classify_out_of_scope_caught_by(
+            entry.id, entry.disposition.target, known_rules, cataloged_cwes
+        )
+        if violation is None:
+            continue
+        violations.append(
+            Violation(
+                rule=violation.rule,
+                severity=violation.severity,
+                file=rel_path,
+                line=violation.line,
+                message=violation.message,
+            )
+        )
     return violations
 
 
@@ -665,6 +803,12 @@ def _rel_registry_path(path: Path, repo_root: Path) -> str:
 # frob:tests tests/test_registry_exhaustiveness.py::TestEnforcesConformance.test_no_snapshot_skips_reg008_reg009  # noqa: E501
 # frob:tests tests/test_registry_exhaustiveness.py::TestEnforcesConformance.test_phantom_enforces_edge_warns  # noqa: E501
 # frob:tests tests/test_registry_exhaustiveness.py::TestEnforcesConformance.test_matching_enforces_edge_no_reg009  # noqa: E501
+# T-0680: REG011 routes out_of_scope reasons through T-0382 caught_by verification.
+# frob:tests tests/test_registry_exhaustiveness.py::TestOutOfScopeCaughtBy.test_reason_naming_no_control_warns  # noqa: E501
+# frob:tests tests/test_registry_exhaustiveness.py::TestOutOfScopeCaughtBy.test_reason_naming_unresolved_rule_warns  # noqa: E501
+# frob:tests tests/test_registry_exhaustiveness.py::TestOutOfScopeCaughtBy.test_reason_naming_resolved_rule_is_silent  # noqa: E501
+# frob:tests tests/test_registry_exhaustiveness.py::TestOutOfScopeCaughtBy.test_substantive_reasoned_none_is_silent  # noqa: E501
+# frob:tests tests/test_registry_exhaustiveness.py::TestOutOfScopeCaughtBy.test_bare_none_is_not_substantive  # noqa: E501
 def registry_gate(
     repo_root: Path,
     queue: TicketQueue,
@@ -679,16 +823,22 @@ def registry_gate(
     silently unaccounted for) / REG007 (the same id defined twice, a real
     collision) / REG008 (handled_by claim with no `frob:enforces` edge
     anywhere in code, T-0428) / REG009 (a `frob:enforces` edge naming a
-    concept id absent from the registry, T-0428) over every
+    concept id absent from the registry, T-0428) / REG011 (an
+    out_of_scope reason naming no resolvable catching control and no
+    substantive reasoned-none, T-0680) over every
     `docs/design/registry/*.yaml` manifest under `registry_dir` (defaults
     to `repo_root / "docs/design/registry"`).
 
-    All ERROR severity -- this is the fail-closed anti-lie gate: a
+    REG001-REG007 are ERROR severity -- the fail-closed anti-lie core: a
     catalogued-but-undispositioned entry, or a dispositioned entry whose
     claim does not actually verify, fails `frob check`'s exit code, it
-    does not merely warn. `known_rules` is the caller's live
-    gate-rule-id + policy-rule-id union, so `handled_by` is checked
-    against what this BUILD actually enforces, never a hardcoded list.
+    does not merely warn. REG008-REG011 are WARN/advisory (each an honest
+    first-turn-on debt over this repo's own large pre-existing corpus, per
+    their own docstrings -- not weaker checks, just not yet promotable to
+    ERROR without immediately redding the build on old debt). `known_rules`
+    is the caller's live gate-rule-id + policy-rule-id union, so
+    `handled_by` (and REG011's caught_by resolution) are checked against
+    what this BUILD actually enforces, never a hardcoded list.
 
     T-0407: loading and entry/disposition parsing now go through the
     single `frob.registry.load_registry_dir` loader instead of a
@@ -730,8 +880,15 @@ def registry_gate(
             continue
         parsed[rel_path] = result.danger_ok
 
+    from frob.strata._threat import ALL_CATALOG  # lazy: see module note
+
     entries_by_id, all_ids_frozen = _index_entries_by_id(parsed)
-    violations.extend(_classify_all_entries(parsed, known_rules, all_ids_frozen, queue))
+    cataloged_cwes = frozenset(entry.id for entry in ALL_CATALOG)
+    violations.extend(
+        _classify_all_entries(
+            parsed, known_rules, all_ids_frozen, queue, cataloged_cwes
+        )
+    )
     violations.extend(_reg007_duplicate_ids(parsed))
     violations.extend(_reconciliation_violations(base, repo_root, entries_by_id))
     violations.extend(_reg010_gate_rule_staleness(base, repo_root, known_rules))

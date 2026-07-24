@@ -57,22 +57,10 @@ at face value:
   real entry id somewhere in the registry. A dangling duplicate
   reference is `REG004`.
 - `out_of_scope:<reason>` / `out-of-scope:<reason>` /
-  `out-of-scope(<reason>)` -- valid if `<reason>` is non-empty. Area-2's
-  verified `caught_by` mechanism (T-0382, `strata._threat.
-  check_caught_by_integrity` / `strata._compliance.
-  check_regulation_caught_by_integrity`) now EXISTS and is audited
-  exhaustively for every built-in `strata` `OutOfScopeEntry`/
-  `BenignCapability`/`OutOfScopeRegulation` entry (T-0383,
-  `tests/unit/strata/test_threat.py::TestCaughtByAuditExhaustive`,
-  `tests/unit/strata/test_compliance.py::TestCaughtByAuditExhaustive`) --
-  but this registry YAML disposition grammar's own `out_of_scope:<reason>`
-  string is a SEPARATE surface from those `strata` model objects and is
-  not yet routed through that verification; `<reason>` here is still
-  accepted as free-form prose, not resolved against a known-control set.
-  Wiring this registry-YAML disposition through the same verification is
-  a distinct, tracked gap in `frob.gates._registry_exhaustiveness`
-  (outside this doc's authoring scope) -- see T-0383's Done report for
-  the filed follow-up ticket id.
+  `out-of-scope(<reason>)` -- `REG001` (ERROR) if `<reason>` is empty.
+  `<reason>` is additionally routed through `REG011` (WARN, T-0680, see
+  below) -- the same `caught_by` verification T-0382 built for `strata`'s
+  `OutOfScopeEntry`/`BenignCapability`/`OutOfScopeRegulation` models.
 - anything else -- missing, `pending`, or a bare `addressed` with no
   `handled_by` attached -- is `REG001`, undispositioned. A bare
   `addressed` claim with nothing backing it is deliberately treated as
@@ -117,6 +105,43 @@ missing rule (self-referentially dispositioned -- "this rule is live" IS
 the verification, not a claim needing later review) and keeps
 `gate_rule_total` in lockstep, so a human or a CI step can clear REG010's
 finding with one command whenever it fires.
+
+## REG011 out-of-scope caught_by (T-0680)
+
+T-0343's original gate left one named gap: an `out_of_scope:<reason>`
+disposition was accepted the moment `<reason>` was non-empty, with no
+check that the excuse actually named anything real. T-0382 built exactly
+that verification (`strata._threat._check_caught_by_integrity` /
+`strata._compliance._check_regulation_caught_by_integrity`, THREAT006 /
+COMPLIANCE004) for `strata`'s own `OutOfScopeEntry`/`BenignCapability`/
+`OutOfScopeRegulation` model objects -- but the registry-YAML
+`out_of_scope:<reason>` surface is a separate string, parsed by
+`frob.registry._models`, that never passed through it. `REG011` closes
+that gap by reusing the SAME token-resolution helper T-0382 built
+(`frob.strata._threat._caught_by_unresolved_tokens`, no duplicated
+regex/logic):
+
+- `<reason>` must either (a) name a real, live catching control -- a
+  rule-id-shaped token (e.g. `PII010`) or a CWE-id-shaped token (e.g.
+  `CWE-78`) that resolves against this run's live gate-rule-id set /
+  `strata`'s CWE catalog -- or (b) be a SUBSTANTIVE
+  `"none -- <explanation>"` reasoned-none disclosure (the bare word
+  `"none"` alone, with no explanation after it, does not count).
+- A reason naming no catching control at all, and not a substantive
+  reasoned-none, is `REG011` ("unaccountable excuse").
+- A reason naming a control that does not actually resolve (a typo'd or
+  fabricated rule/CWE id) is also `REG011` ("references unknown
+  control(s)").
+
+`REG011` is WARN, not ERROR, matching `REG008`/`REG009`'s first-turn-on
+precedent: this repo's registry carries hundreds of pre-existing
+`out_of_scope` entries (`patterns.yaml`'s `advisory-design-pattern-
+recommendation` entries, `compliance.yaml`'s `organizational/process
+control` entries, and others) written before this check existed --
+promoting to ERROR immediately would red the build on old debt, not catch
+future drift. Driving it green is a future reconciliation pass, same
+posture as REG001-007's own `T-0384..T-0392` lineage, not this ticket's
+job.
 
 ## Honest first-turn-on state
 

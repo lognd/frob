@@ -189,7 +189,7 @@ entries:
     disposition: "duplicate_of:PAT-HANDLED"
     cross_refs: []
   - id: "PAT-OOS"
-    disposition: "out_of_scope:no code executes this concept"
+    disposition: "out_of_scope:none -- no code executes this concept"
     cross_refs: []
 """,
         )
@@ -754,3 +754,112 @@ entries:
 
         rules = _rules(*(v.rule for v in violations))
         assert "REG009" not in rules
+
+
+class TestOutOfScopeCaughtBy:
+    """REG011 (T-0680) -- routes registry-YAML `out_of_scope:<reason>`
+    strings through the same T-0382 `caught_by` token-resolution
+    verification `strata._threat`/`strata._compliance` already run for
+    their own model objects."""
+
+    def test_reason_naming_no_control_warns(self, tmp_path: Path) -> None:
+        _write_manifest(
+            tmp_path,
+            "patterns.yaml",
+            """\
+schema_version: 1
+entries:
+  - id: "PAT-EXAMPLE"
+    disposition: "out_of_scope:advisory-design-pattern-recommendation"
+    cross_refs: []
+""",
+        )
+        registry_dir = tmp_path / "docs" / "design" / "registry"
+
+        violations = registry_gate(tmp_path, _queue(), frozenset(), registry_dir)
+
+        rules = _rules(*(v.rule for v in violations))
+        assert "REG011" in rules
+        reg011 = next(v for v in violations if v.rule == "REG011")
+        assert reg011.severity == Severity.WARN
+
+    def test_reason_naming_unresolved_rule_warns(self, tmp_path: Path) -> None:
+        _write_manifest(
+            tmp_path,
+            "patterns.yaml",
+            """\
+schema_version: 1
+entries:
+  - id: "PAT-EXAMPLE"
+    disposition: "out_of_scope:caught by SEC999 elsewhere"
+    cross_refs: []
+""",
+        )
+        registry_dir = tmp_path / "docs" / "design" / "registry"
+
+        # SEC999 is not in the (empty) known-rules set passed here, so the
+        # named control does not resolve -- a fabricated/typo'd reference.
+        violations = registry_gate(tmp_path, _queue(), frozenset(), registry_dir)
+
+        rules = _rules(*(v.rule for v in violations))
+        assert "REG011" in rules
+
+    def test_reason_naming_resolved_rule_is_silent(self, tmp_path: Path) -> None:
+        _write_manifest(
+            tmp_path,
+            "patterns.yaml",
+            """\
+schema_version: 1
+entries:
+  - id: "PAT-EXAMPLE"
+    disposition: "out_of_scope:caught by SEC999 elsewhere"
+    cross_refs: []
+""",
+        )
+        registry_dir = tmp_path / "docs" / "design" / "registry"
+
+        # SEC999 IS in known_rules here -- the named control resolves.
+        violations = registry_gate(
+            tmp_path, _queue(), frozenset({"SEC999"}), registry_dir
+        )
+
+        rules = _rules(*(v.rule for v in violations))
+        assert "REG011" not in rules
+
+    def test_substantive_reasoned_none_is_silent(self, tmp_path: Path) -> None:
+        _write_manifest(
+            tmp_path,
+            "patterns.yaml",
+            """\
+schema_version: 1
+entries:
+  - id: "PAT-EXAMPLE"
+    disposition: "out_of_scope:none -- no code executes this concept"
+    cross_refs: []
+""",
+        )
+        registry_dir = tmp_path / "docs" / "design" / "registry"
+
+        violations = registry_gate(tmp_path, _queue(), frozenset(), registry_dir)
+
+        rules = _rules(*(v.rule for v in violations))
+        assert "REG011" not in rules
+
+    def test_bare_none_is_not_substantive(self, tmp_path: Path) -> None:
+        _write_manifest(
+            tmp_path,
+            "patterns.yaml",
+            """\
+schema_version: 1
+entries:
+  - id: "PAT-EXAMPLE"
+    disposition: "out_of_scope:none"
+    cross_refs: []
+""",
+        )
+        registry_dir = tmp_path / "docs" / "design" / "registry"
+
+        violations = registry_gate(tmp_path, _queue(), frozenset(), registry_dir)
+
+        rules = _rules(*(v.rule for v in violations))
+        assert "REG011" in rules
