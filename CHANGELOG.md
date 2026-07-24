@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.150.0] - unreleased
+
+- T-0756: self-audit-green-at-land + new-gate-rule end-to-end acceptance policy (kill invoked-by-nothing structurally)
+
 ## [0.149.0] - unreleased
 
 - T-0620: arch: DIP layering contract (declared allowed-module-dependency graph) + no-DI construction smell

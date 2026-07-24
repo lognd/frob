@@ -86,6 +86,10 @@ from frob.tickets._mutation_evidence import (
     MutationEvidenceError,
     check_ticket_mutation_evidence,
 )
+from frob.tickets._new_gate_rule_acceptance import (
+    missing_acceptance_for_new_rules,
+    new_gate_rule_ids,
+)
 from frob.tickets._provisional import is_draft_id, mint_draft_id, on_default_branch
 from frob.tickets._reconcile import ReconcileReport, reconcile
 from frob.tickets._store import (
@@ -2354,6 +2358,20 @@ def _done_transition_guard(
             list(citations),
         )
         return Err(TicketError.LiveTrackerCited)
+    new_rule_ids = (
+        new_gate_rule_ids(root, base_ref=branch.danger_ok) if branch.is_ok else ()
+    )
+    unaccepted = missing_acceptance_for_new_rules(ticket, new_rule_ids or ())
+    if unaccepted:
+        _log.warning(
+            "tickets: %s cannot close, adds new gate rule id(s) %s with no "
+            "bound before-fails/after-passes fixture acceptance criterion "
+            "(T-0756) -- record one proving the rule fires through the "
+            "production invocation, then retry",
+            ticket.id,
+            list(unaccepted),
+        )
+        return Err(TicketError.NewGateRuleUnaccepted)
     return Ok(None)
 
 

@@ -1396,6 +1396,8 @@
     "src/frob/tickets/_mutation_evidence.py::ConfirmatoryFinding": "0f64c6bade28b890f53af1313630fd0699d22f43d27b257b4b9487fa7f5d8010",
     "src/frob/tickets/_mutation_evidence.py::MutationEvidenceError": "4a83146dd58fbec5716d49ec92a9b52e4cb098768765a9e0bd475dad508cde81",
     "src/frob/tickets/_mutation_evidence.py::check_ticket_mutation_evidence": "4eb7d825600c3b257f34abf39502e99f15049e9190adb04f9b9fa2c08bad0304",
+    "src/frob/tickets/_new_gate_rule_acceptance.py::missing_acceptance_for_new_rules": "cb259847521c252e7f378e97e5cb9a7f7f7a409ca05362bc852f0819a5524547",
+    "src/frob/tickets/_new_gate_rule_acceptance.py::new_gate_rule_ids": "b9b2cf216486574b4fa8492c748ee79f27aeb16cafe6341621cedccaffd7667d",
     "src/frob/tickets/_provisional.py::DRAFT_PREFIX": "cc54a35e6c7d0d8fc9a0364bbefaf94dfc09c0e71920015cc63ff9261da0ca18",
     "src/frob/tickets/_provisional.py::is_draft_id": "c44d604f0cf5ba81fc148db33306d724e4bedab90f1e92a43c330f046560ab59",
     "src/frob/tickets/_provisional.py::mint_draft_id": "aaebcb78dd6575e3abb208ae91771c7f9623a108c566050297e6573305653113",
@@ -1505,5 +1507,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.149.0"
+  "version": "0.150.0"
 }

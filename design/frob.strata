@@ -464,6 +464,18 @@ node mutate : trusted {
 node serve : trusted {
     clearance Internal;
     code "src/frob/serve/**";
+
+    // T-0756: same SYS203/tickets_ledger disposition as `cli`/`gates`/
+    // `fleet`/`core` above (T-0724) -- `serve` also has a Flow into
+    // `tickets_ledger` (`f_serve_tickets` below) via `frob.tickets`'s own
+    // locked writer path, so SYS203's mode-blind "any inbound flow counted
+    // as a write" join fires here too. This waiver was missing purely
+    // because `serve` was added after T-0724's original sweep across its
+    // four sibling nodes, not because the underlying contention model
+    // differs -- discovered when T-0756 folded SYS203 into `frob check`'s
+    // own gate pipeline (SELFAUDIT001) for the first time and this exact
+    // gap surfaced as a real, previously-undisclosed red `frob sys audit`.
+    waive "SYS203:tickets_ledger" reason "all ledger writers serialize through .frob/tickets.lock (T-0458/T-0633); mode-blind until T-0700 arbitrated_by can express this -- re-evaluate at T-0700" ticket "T-0700";
 }
 
 // T-0440: `frob deploy` -- compiles `std.host` manifests into idempotent

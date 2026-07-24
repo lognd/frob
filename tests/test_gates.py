@@ -8187,6 +8187,81 @@ class TestSysGate:
         assert sys004[0].file == "design/m.strata"
 
 
+_SELFAUDIT_DESIGN_STRATA_UNDECLARED = """module m
+node widget : trusted { code "src/frob/widget/**"; }
+"""
+
+
+class TestSelfAuditGate:
+    """T-0756 SELFAUDIT001: sys_gate's production entrypoint folds frob's
+    own self-conformance (SYS100-102)/resource-contention (SYS2xx)/
+    reliability (REL2xx) audit surface into the ordinary gate pipeline
+    (docs/modules/gates.md#self-audit-at-land-selfaudit001-t-0756). Each test is written to
+    prove the PRODUCTION invocation (`sys_gate`, the function `frob check`
+    itself calls) actually fires SELFAUDIT001 -- not a direct call into
+    `frob.strata.check_self_conformance`, which `tests/unit/strata/
+    test_selfconform.py` already covers at the pure-function level."""
+
+    # frob:tests src/frob/gates/__init__.py::sys_gate kind="unit"
+    def test_selfaudit001_folds_selfconform_violation(self, tmp_path: Path) -> None:
+        """GIVEN a node declaring a `code=` glob over a file that exercises
+        a capability (`requests.get`, net) with NO matching `may`
+        declaration, WHEN `sys_gate` (the production `frob check` entry
+        point) runs THEN it FAILS with an unwaived SELFAUDIT001 ERROR
+        naming the underlying SYS100 finding -- proving the fold actually
+        fires through production, not just through `check_self_
+        conformance` called directly."""
+        _write(tmp_path, "design/m.strata", _SELFAUDIT_DESIGN_STRATA_UNDECLARED)
+        _write(
+            tmp_path,
+            "src/frob/widget/_io.py",
+            "import requests\nrequests.get('x')\n",
+        )
+        snapshot = _snapshot(tmp_path)
+        violations = sys_gate(tmp_path, snapshot)
+        selfaudit = _by_rule(violations, "SELFAUDIT001")
+        assert len(selfaudit) >= 1
+        assert selfaudit[0].severity == Severity.ERROR
+        assert "SYS100" in selfaudit[0].message
+        assert "widget" in selfaudit[0].message
+
+    # frob:tests src/frob/gates/__init__.py::sys_gate kind="unit"
+    def test_selfaudit001_clean_model_no_violations(self, tmp_path: Path) -> None:
+        """GIVEN a design model whose declared `may` capabilities are
+        exactly what the bound code exercises WHEN `sys_gate` runs THEN it
+        PASSES with zero SELFAUDIT001 findings -- the after-fix half of the
+        same before/after fixture proof."""
+        design = (
+            "module m\n"
+            'node widget : trusted { code "src/frob/widget/**"; may "net"; }\n'
+        )
+        _write(tmp_path, "design/m.strata", design)
+        _write(
+            tmp_path,
+            "src/frob/widget/_io.py",
+            "import requests\nrequests.get('x')\n",
+        )
+        snapshot = _snapshot(tmp_path)
+        violations = sys_gate(tmp_path, snapshot)
+        assert _by_rule(violations, "SELFAUDIT001") == []
+
+    # frob:tests src/frob/gates/__init__.py::sys_gate kind="unit"
+    def test_selfaudit001_suppressed_on_design_load_error(self, tmp_path: Path) -> None:
+        """A `.strata` file that fails to parse suppresses SELFAUDIT001
+        entirely (matches DOC003/SYS001's suppression posture) -- a broken
+        model cannot be honestly self-audited."""
+        _write(tmp_path, "design/m.strata", "module m\nnode !!! broken\n")
+        _write(
+            tmp_path,
+            "src/frob/widget/_io.py",
+            "import requests\nrequests.get('x')\n",
+        )
+        snapshot = _snapshot(tmp_path)
+        violations = sys_gate(tmp_path, snapshot)
+        assert _by_rule(violations, "SELFAUDIT001") == []
+        assert _by_rule(violations, "SYS004") != []
+
+
 def _complex_function_source(fn_name: str) -> str:
     """A python module with one function long enough to trip the 30-line
     default `max_function_lines` but short enough to stay under the

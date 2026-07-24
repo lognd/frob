@@ -1351,6 +1351,16 @@ class TicketError(ErrorSet):
     LedgerIntegrityViolation = (
         "rendered ledger text lost a ticket id or marker -- write refused"
     )
+    # T-0756: a ticket whose diff adds a new gate rule id (a fresh
+    # `_KNOWN_GATE_RULES` entry, `frob.gates`'s own rule registry) but
+    # carries no bound acceptance criterion proving a fixture failed
+    # before and passed after through the production invocation -- see
+    # `frob.tickets._new_gate_rule_acceptance`.
+    NewGateRuleUnaccepted = (
+        "diff adds a new gate rule id with no bound before-fails/after-passes "
+        "fixture acceptance criterion; record one proving the rule fires "
+        "through the production invocation, then retry"
+    )
 
 
 # frob:ticket T-0176

@@ -1141,6 +1141,11 @@ _KNOWN_GATE_RULES = frozenset(
         # per-package `compute_protocol_summaries` pass.
         "PROTO002",
         "PROTO003",
+        # T-0756: self-audit-at-land -- frob's own SYS100-102/SYS2xx/REL2xx
+        # audit surface, folded into the ordinary gate pipeline so a land
+        # that reddens it is blocked structurally (frob.gates.sys_gate's
+        # _selfaudit_violations).
+        "SELFAUDIT001",
     }
 )
 
@@ -8103,10 +8108,12 @@ def _doc003(root: Path, design_ids) -> list[Violation]:  # noqa: ANN001
 # opted into `design/`.
 def sys_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """SYS001 (dangling directive), SYS002 (unbound boundary/secret), SYS003
-    (undeclared cross-component import, tier-2 conformance), and SYS004 (a
+    (undeclared cross-component import, tier-2 conformance), SYS004 (a
     `.strata` design file failed to parse/elaborate -- suppresses SYS001
     for the whole run since ids are merged across files with no per-file
-    provenance). See the comment above for the opt-in/deferred-import
+    provenance), and SELFAUDIT001 (T-0756: frob's own self-conformance/
+    resource-contention/reliability audit surface, see `_selfaudit_
+    violations`'s doc). See the comment above for the opt-in/deferred-import
     posture."""
     root = Path(root)
     design_dir = _design_dir(root)
@@ -8123,8 +8130,131 @@ def sys_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
         *_sys002(snapshot, design_ids),
         *_sys003(design_ids, root),
         *_doc003(root, design_ids),
+        *_selfaudit_violations(root, design_ids, design_dir),
     )
     _log_sys_gate_summary(design_ids, violations)
+    return violations
+
+
+# frob:ticket T-0756
+def _selfaudit_violation(
+    sub_rule: str, node: str, detail: str, design_dir: str
+) -> Violation:
+    """Build one SELFAUDIT001 finding wrapping a single SYS100-102/SYS2xx/
+    REL2xx underlying finding -- split out of `_selfaudit_violations`
+    purely to keep its loop bodies short."""
+    return Violation(
+        rule="SELFAUDIT001",
+        severity=Severity.ERROR,
+        file=design_dir,
+        line=1,
+        message=(f"SELFAUDIT001: self-audit family {sub_rule} node={node}: {detail}"),
+        symref=node,
+    )
+
+
+# frob:doc docs/modules/gates.md#self-audit-at-land-selfaudit001-t-0756
+# frob:invariant INV-041
+# frob:tests tests/test_gates.py::TestSelfAuditGate.test_selfaudit001_folds_selfconform_violation  # noqa: E501
+# frob:tests tests/test_gates.py::TestSelfAuditGate.test_selfaudit001_clean_model_no_violations  # noqa: E501
+# frob:tests tests/test_gates.py::TestSelfAuditGate.test_selfaudit001_suppressed_on_design_load_error  # noqa: E501
+def _selfaudit_violations(
+    root: Path,
+    design_ids,
+    design_dir: str,  # noqa: ANN001
+) -> list[Violation]:
+    """SELFAUDIT001 (T-0756 SELF-AUDIT AT LAND): fold frob's OWN self-
+    conformance (SYS100 undeclared interface / SYS101 stale design / SYS102
+    unmodeled code, `frob.strata.check_self_conformance`) plus the SYS2xx
+    resource-contention (`check_resource_contention`) and REL2xx
+    reliability (`check_reliability_timeouts`/`check_reliability_health`)
+    audit families -- until this ticket only reachable via the separate
+    `frob sys audit` CLI verb (`frob.app.sys_runner._run_audit`) -- into
+    `frob check`'s own gate pipeline (this function's caller, `sys_gate`).
+
+    Root cause this closes (docs/modules/gates.md
+    #self-audit-at-land-selfaudit001-t-0756):
+    T-0724 enabled a check whose own landing reddened frob's OWN self-audit
+    undisclosed -- nothing blocked that land, because `frob sys audit` was
+    never itself a gate `frob check`/`frob ticket land` consulted, only a
+    separately-run command a reviewer had to remember to invoke by hand.
+    Folding these families into `frob check`'s ordinary Violation pipeline
+    means `frob ticket land`'s EXISTING post-merge `check_gates`/`check_
+    gate_findings` re-verification (`frob.tickets._land.land`, T-0754/
+    T-0846) already refuses a landing that reddens this surface, with zero
+    new land-time wiring needed -- the fix is making this surface a gate at
+    all, not adding a second preflight call site.
+
+    One SELFAUDIT001 `Violation` per underlying finding (never coalesced),
+    each carrying the ORIGINAL rule id (SYS100/SYS101/SYS102/SYS2xx/REL2xx)
+    and node in its message/symref, so a reader can tell exactly which
+    family fired without re-running `frob sys audit` separately. Suppressed
+    (matching DOC003/SYS001-004's posture) whenever any design file failed
+    to load -- self-audit cannot be honestly evaluated against a partial
+    model."""
+    if design_ids.errors:
+        _log.debug(
+            "SELFAUDIT001: suppressed, %d design file(s) failed to load",
+            len(design_ids.errors),
+        )
+        return []
+
+    from frob.strata import (
+        check_reliability_health,
+        check_reliability_timeouts,
+        check_resource_contention,
+        check_self_conformance,
+        merge_models,
+    )
+
+    model = merge_models(design_ids.models)
+    violations: list[Violation] = []
+
+    selfconform = check_self_conformance(model, root)
+    if selfconform.is_err:
+        _log.warning(
+            "SELFAUDIT001: self-conformance evaluation failed (%s), skipping "
+            "that sub-family",
+            selfconform.danger_err,
+        )
+    else:
+        violations.extend(
+            _selfaudit_violation(v.rule, v.node, v.detail, design_dir)
+            for v in selfconform.danger_ok.violations
+        )
+
+    contention = check_resource_contention(model, store_ids=design_ids.store_ids)
+    violations.extend(
+        _selfaudit_violation(v.rule, v.node, v.detail, design_dir)
+        for v in contention.violations
+    )
+
+    timeouts = check_reliability_timeouts(model, root)
+    if timeouts.is_err:
+        _log.warning(
+            "SELFAUDIT001: reliability-timeouts evaluation failed (%s), "
+            "skipping that sub-family",
+            timeouts.danger_err,
+        )
+    else:
+        violations.extend(
+            _selfaudit_violation(v.rule, v.node, v.detail, design_dir)
+            for v in timeouts.danger_ok.violations
+        )
+
+    health = check_reliability_health(model, root)
+    if health.is_err:
+        _log.warning(
+            "SELFAUDIT001: reliability-health evaluation failed (%s), "
+            "skipping that sub-family",
+            health.danger_err,
+        )
+    else:
+        violations.extend(
+            _selfaudit_violation(v.rule, v.node, v.detail, design_dir)
+            for v in health.danger_ok.violations
+        )
+
     return violations
 
 

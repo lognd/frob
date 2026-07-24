@@ -57,6 +57,7 @@ declaration).
 | SYS002 | sys | a `Boundary` or Secret-clearance `Node` in the design model has no `frob:boundary`/`frob:secret` code binding anywhere |
 | SYS003 | sys | (warn) tier-2 code binding (`frob.strata.bind_code`/`check_import_conformance`) finds an undeclared cross-component import between two design-bound files; warn-first on landing, intended to flip to error via `[gates.severity]` once proven |
 | SYS004 | sys | a `.strata` design file failed to parse/elaborate; the message names a stale native build (`make core`) as the likely remedy when one is detected (T-0347, T-0248's `frob.strata.stale_natives`), per the T-0166 incident where a grammar-ahead-of-native mismatch masqueraded as a `.strata` syntax error |
+| SELFAUDIT001 | sys | (T-0756) frob's own self-conformance (SYS100/SYS101/SYS102), resource-contention (SYS2xx), and reliability (REL2xx) audit surface, folded into the ordinary `frob check` gate pipeline -- see "Self-audit at land (SELFAUDIT001, T-0756)" below |
 | SEC001 | secrets | a git-tracked file contains text matching a provider's real-looking credential shape (waivable with reason) |
 | SEC002 | secrets | a git-tracked `.env`/`.env.*` file exists (`.env.example`/`.env.sample`/`.env.template` excepted) |
 | SEC003 | secrets | a git-tracked file contains a live Stripe secret key (`sk_live_...`) or a private-key PEM header -- unwaivable, see `_UNWAIVABLE_RULES` |
@@ -381,6 +382,82 @@ ERROR-by-default measures clean against `main` at landing time. Both are
 waivable (`frob:waive PROTO002 reason="..."` / `frob:waive PROTO003
 reason="..."`) for a case the engine's existential approximation gets
 wrong.
+
+### Self-audit at land (SELFAUDIT001, T-0756)
+
+Root-cause analysis 2026-07-22 (tickets.md T-0756): frob's own self-
+conformance/resource-contention/reliability audit surface
+(`frob.strata.check_self_conformance` SYS100-102, `check_resource_
+contention` SYS2xx, `check_reliability_timeouts`/`check_reliability_health`
+REL2xx) was, until this ticket, reachable ONLY via the separate `frob sys
+audit` CLI verb (`frob.app.sys_runner._run_audit`) -- never a `frob check`
+gate, never something `frob ticket land`'s own preflight consulted. T-0724
+enabled a check whose OWN landing reddened this exact surface undisclosed;
+nothing structurally blocked that land, because a reviewer had to remember
+to run `frob sys audit` by hand and happened not to.
+
+`frob.gates.sys_gate` (the `sys` tool-stage function `frob check` already
+calls unconditionally whenever a `design/`, or `[strata].design_dir`,
+directory exists) now also runs `_selfaudit_violations`, folding every
+finding from all four families into the ordinary `Violation` pipeline under
+one rule id, **SELFAUDIT001** (ERROR, `_KNOWN_GATE_RULES`-registered so
+`frob:waive SELFAUDIT001 reason="..."` matches like any other rule). Each
+`Violation.message` embeds the ORIGINAL underlying rule id (SYS100/SYS101/
+SYS102/SYS200-203/REL200/REL201/REL210/REL211) and node so a reader never
+has to re-run `frob sys audit` separately to see which family fired.
+Suppressed whenever any `.strata` design file failed to load (matches
+DOC003/SYS001-004's posture -- a partial model cannot be honestly
+self-audited).
+
+**Why this closes both halves of the ticket's mandate with ZERO new land
+wiring**: `frob ticket land`'s existing `check_gates`/`check_gate_findings`
+post-merge re-verification (`frob.tickets._land.land`, T-0754/T-0846)
+already re-runs `frob check --ticket` against the just-merged tree and
+refuses (`LandError.ClaimDivergence`) if the recorded gate-error count no
+longer matches. Once SELFAUDIT001 is an ordinary gate `frob check` reports,
+that EXISTING machinery automatically covers it -- landing a change that
+reddens frob's own self-audit now fails the same way landing a change that
+reddens any other ERROR-severity gate already does. No `frob.tickets`/
+`frob.app` code needed to change to wire this in; the fix was making the
+surface a gate at all.
+
+### New-gate-rule acceptance policy (T-0756)
+
+The companion structural fix for the SAME root-cause class: several rejected
+tickets (T-0630/T-0595/T-0616/T-0710) each shipped a gate/check rule that
+was built but never actually reachable from a real invocation --
+"invoked-by-nothing". A rule's own unit tests routinely pass in that state
+(they call the pure function directly), so T-0755's TEST016 mutation-
+evidence obligation cannot catch this class either: TEST016 only asks
+whether recorded evidence is adversarial against the diff, never whether
+the diff is reachable from production at all.
+
+`frob.tickets._new_gate_rule_acceptance.new_gate_rule_ids` detects, via a
+diff-aware scan of `src/frob/gates/__init__.py`'s `_KNOWN_GATE_RULES`
+frozenset literal (the one registry every gate rule id must be listed in),
+any rule id present in the CURRENT working tree that was not present at
+`base_ref`'s tip. `frob.tickets._done_transition_guard` runs this check
+UNCONDITIONALLY on every `DONE` transition (both direct `frob ticket close`
+and `frob ticket land`'s finalize-and-close step, which calls the same
+`transition(..., DONE)` internally -- no separate land-time wiring needed,
+mirroring `frob.tickets._live_tracker.live_tracker_citations`'s posture):
+if any new rule id is found, the ticket must carry at least one BOUND
+acceptance criterion (`frob ticket evidence ... --accepts N`) whose text
+reads as a before-fails/after-passes fixture proof (contains both a FAIL
+and a PASS marker, case-insensitive) -- proving the rule fires through the
+PRODUCTION invocation, not merely a pure-function unit test. A ticket
+missing this is refused with `TicketError.NewGateRuleUnaccepted` /
+`LandError` (via the same `transition` call land's finalize step makes).
+
+**v1 scope, disclosed**: the detector is scoped to `_KNOWN_GATE_RULES`
+specifically (the one registry file every `Violation`-producing gate rule
+must be listed in) -- a rule family added some other way is a known
+residual gap, not silently assumed covered. This ticket's own SELFAUDIT001
+addition folds the previously-uncovered `frob sys audit` SYS1xx/SYS2xx/
+REL2xx families INTO `_KNOWN_GATE_RULES` for exactly this reason. v1 also
+requires ONE qualifying criterion covering the ticket as a whole (not a
+1:1 criterion-per-rule-id mapping) when a diff introduces several rule ids
+in one change.
 
 ### Waive boundary (T-0101, revised T-0289)
 
