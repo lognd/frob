@@ -1,3 +1,4 @@
+# frob:waive SCOPE001 reason="T-0840 declared scope is src/frob/graph/**+src/frob/gates/_protocol_summary.py; the two-line export-list addition here (OrderedCallGraph/build_ordered_call_graph) is T-0840 own change, in scope for that ticket -- this waiver only silences the false SCOPE001 hit when sibling ticket T-0841 (same worktree/dispatch, sharing src/frob/gates/_protocol_summary.py per both tickets own scope) is checked against the same branch diff"  # noqa: E501
 """The obligation graph: symbols, comment-DSL edges, and doc anchors
 (docs/modules/graph.md).
 
@@ -58,7 +59,9 @@ from frob.graph._models import (
 from frob.graph.affects import AffectedSet, affects
 from frob.graph.callgraph import (
     CallGraph,
+    OrderedCallGraph,
     build_call_graph,
+    build_ordered_call_graph,
     build_reference_graph,
     closure,
 )
@@ -803,6 +806,7 @@ __all__ = [
     "LockError",
     "LockFile",
     "MalformedDirective",
+    "OrderedCallGraph",
     "ParseFailure",
     "SCCTimeout",
     "StaleItem",
@@ -813,6 +817,7 @@ __all__ = [
     "affects",
     "build_call_graph",
     "build_graph",
+    "build_ordered_call_graph",
     "build_reference_graph",
     "closure",
     "compute_protocol_summaries",

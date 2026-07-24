@@ -28,7 +28,9 @@ from pydantic import BaseModel, ConfigDict
 __all__ = [
     "UNRESOLVED_CALLEE",
     "CallGraph",
+    "OrderedCallGraph",
     "build_call_graph",
+    "build_ordered_call_graph",
     "build_reference_graph",
     "closure",
 ]
@@ -67,6 +69,38 @@ class CallGraph(BaseModel):
     calls: Mapping[str, tuple[str, ...]] = {}
 
 
+# frob:doc docs/modules/graph.md#call-graph
+# frob:ticket T-0840
+class OrderedCallGraph(BaseModel):
+    """Caller symref -> callee symrefs IN STATEMENT ORDER (T-0840), the
+    ordered counterpart to `CallGraph`. Same private-callee-only
+    resolution rule as `CallGraph` (see `build_call_graph`'s docstring),
+    but `calls[caller]` here is a TUPLE preserving the source-text order
+    each call token appears in (duplicates kept -- calling the same
+    private helper twice yields two entries, one per call site), not an
+    unordered/deduplicated set. This is what lets a consumer (T-0840's
+    `frob.gates._protocol_summary` ordering check) ask "what has this
+    function already called BEFORE this exact call site" -- a question
+    `CallGraph`'s unordered edge set cannot answer at all.
+
+    DISCLOSED SCOPE: order here is purely the LINEAR order call tokens
+    appear in `RawSymbol.body_tokens` (a flat leaf-token stream with no
+    control-flow structure) -- a call inside an `if`/`else` branch, a
+    loop, or after a `return` is indistinguishable from one that always
+    executes. This is "sequential-order-sensitive", not fully
+    "path-sensitive" over branches; the ticket-named crisp win (catching a
+    call to a `frob:requires`-tagged function made BEFORE the transition
+    that establishes its precondition, within one caller's own body) is
+    real and sound in the no-branching case, and conservative
+    (never a false accusation) whenever branches interleave the calls --
+    see `frob.gates._protocol_summary`'s PROTO004 docstring for how this
+    gets used and what remains an approximation."""
+
+    model_config = ConfigDict(frozen=True)
+
+    calls: Mapping[str, tuple[str, ...]] = {}
+
+
 def _short_name(qualname: str) -> str:
     """The final dotted component of a qualname (`Class.method` -> `method`)."""
     return qualname.rsplit(".", 1)[-1]
@@ -81,6 +115,36 @@ def _short_name(qualname: str) -> str:
 # directly.
 # frob:ticket T-0583
 _WRAPPER_MARKER_NAMES = frozenset({"memoize_per_run", "wraps", "lru_cache", "cache"})
+
+
+# frob:ticket T-0840
+def _ordered_called_names(body_tokens: tuple[str, ...]) -> tuple[str, ...]:
+    """Like `_called_names`, but returns call-token NAMES in the STATEMENT
+    ORDER they appear in `body_tokens` (duplicates kept, one entry per
+    occurrence) instead of collapsing into an unordered `frozenset` --
+    `build_ordered_call_graph`'s (T-0840) extractor. `_called_names` itself
+    is unchanged (still frozenset-based; every existing caller of
+    `build_call_graph` keeps its current unordered contract) -- this is a
+    parallel extractor, not a replacement, because widening
+    `build_call_graph`'s own output shape would ripple through every
+    existing consumer (`frob.dup`, `frob.gates._dead_symbols`,
+    `frob.gates._protocol_summary`'s PROTO001/002/003) for no benefit to
+    them; only a caller that actually wants per-call-site ordering
+    (T-0840's `frob.gates._protocol_summary` ordering check) builds the
+    ordered graph instead."""
+    names: list[str] = []
+    for i in range(len(body_tokens) - 1):
+        tok = body_tokens[i]
+        if body_tokens[i + 1] == "(" and tok.isidentifier():
+            names.append(tok)
+            if (
+                tok in _WRAPPER_MARKER_NAMES
+                and i + 2 < len(body_tokens)
+                and body_tokens[i + 2].isidentifier()
+                and (i + 3 >= len(body_tokens) or body_tokens[i + 3] in (")", ","))
+            ):
+                names.append(body_tokens[i + 2])
+    return tuple(names)
 
 
 # frob:ticket T-0583
@@ -219,17 +283,21 @@ def build_call_graph(
 
     `paths` are repo-root-relative POSIX file paths (typically every
     language-supported file in one package/directory). A call token
-    resolves to a callee symbol only when the callee's short name starts
-    with `_` (private/module-local -- never a re-exported public symbol),
-    in the same file or another file under `paths`. This is deliberate,
-    not just an optimization: a call to a PUBLIC symbol is never recorded
-    as an edge here, which is what makes `closure` stop expanding at the
-    public-API boundary automatically (see `CallGraph`'s docstring).
-    Ambiguous same-name matches within the allowed candidate set all get
-    an edge (best-effort; `closure` node-caps the fan-out).
+    resolves to a callee symbol only when `frob.lang.RawSymbol.public` is
+    `False` for that callee (T-0841: each grammar walker's OWN,
+    language-correct publicness rule -- Python's leading underscore,
+    Rust's `pub`/PyO3-export, C++'s `access_specifier`/file-scope
+    `static`, TypeScript's `export`/`accessibility_modifier`; see
+    `_short_name_index`), in the same file or another file under `paths`.
+    This is deliberate, not just an optimization: a call to a PUBLIC
+    symbol is never recorded as an edge here, which is what makes
+    `closure` stop expanding at the public-API boundary automatically
+    (see `CallGraph`'s docstring). Ambiguous same-name matches within the
+    allowed candidate set all get an edge (best-effort; `closure`
+    node-caps the fan-out).
 
     T-0809: when `mark_unresolved` (default `False`), a call target that
-    LOOKS like it should resolve under this module's own private-symbol
+    LOOKS like it should resolve under Python's leading-underscore naming
     convention (its short name starts with `_`) but matches zero
     candidates in the by-name index gets a `UNRESOLVED_CALLEE` edge
     instead of being silently dropped -- this is what lets
@@ -239,6 +307,17 @@ def build_call_graph(
     the first place (no leading underscore -- a builtin, stdlib, or
     third-party call) is never marked unresolved; that omission is
     unchanged, deliberate best-effort scope, not a gap this ticket closes.
+    T-0841 DISCLOSURE: this `mark_unresolved` heuristic is still
+    Python-naming-specific (it scans the CALLED NAME's spelling, which is
+    all a flat token stream offers -- unlike `_short_name_index`'s
+    resolution side, there is no `RawSymbol` for an unresolved callee to
+    read `.public` off of) -- a Rust/C++/TypeScript file with a genuinely
+    dangling private call whose name does not happen to start with `_`
+    will not be flagged unresolved. This is the same false-negative-biased
+    direction every other best-effort rung in this module already accepts
+    (never a false accusation, just a narrower catch outside Python) and
+    is not closed by this ticket -- `mark_unresolved`'s per-language
+    naming heuristics remain future work.
 
     Defaults to `False` (opt-in), NOT `True`: `frob.gates` and
     `frob.dup._pipeline` already call `build_call_graph` and feed its
@@ -273,6 +352,40 @@ def build_call_graph(
 
 
 # frob:doc docs/modules/graph.md#call-graph
+# frob:ticket T-0840
+# frob:tests tests/test_graph.py::TestCallGraph.test_build_ordered_call_graph_preserves_source_text_call_order  # noqa: E501
+# frob:tests tests/test_graph.py::TestCallGraph.test_build_ordered_call_graph_resolves_a_rust_private_callee  # noqa: E501
+def build_ordered_call_graph(root: Path, paths: Sequence[str]) -> OrderedCallGraph:
+    """`build_call_graph`'s ordered counterpart (T-0840): same private-
+    callee-only resolution rule (a callee resolves only when
+    `RawSymbol.public` is `False`, T-0841), but `calls[caller]` preserves
+    the source-text order call tokens appear in, duplicates included,
+    instead of collapsing into an unordered set. No `mark_unresolved`
+    parameter -- an ordering-sensitive consumer (T-0840's PROTO004) treats
+    a genuinely unresolved name the same conservative way `_resolve_edges`
+    already treats a name matching zero candidates: it contributes no
+    callee-summary information for anything AFTER it (see
+    `frob.gates._protocol_summary._ordered_call_sites`'s poisoning-halts-
+    the-walk posture), so no sentinel edge is needed in the ordered shape
+    itself."""
+    parsed_by_path = _parse_package(root, paths)
+    by_name = _short_name_index(parsed_by_path)
+    calls: dict[str, tuple[str, ...]] = {}
+    for path, symbols in parsed_by_path.items():
+        for sym in symbols:
+            caller_symref = f"{path}::{sym.qualname}"
+            callees: list[str] = []
+            for name in _ordered_called_names(sym.body_tokens):
+                for symref, _cand_path, is_private in by_name.get(name, ()):
+                    if symref == caller_symref or not is_private:
+                        continue
+                    callees.append(symref)
+            if callees:
+                calls[caller_symref] = tuple(callees)
+    return OrderedCallGraph(calls=calls)
+
+
+# frob:doc docs/modules/graph.md#call-graph
 # frob:ticket T-0422
 # frob:tests tests/test_graph.py::TestCallGraph.test_build_reference_graph_catches_dispatch_table_entry  # noqa: E501
 def build_reference_graph(root: Path, paths: Sequence[str]) -> CallGraph:
@@ -300,17 +413,35 @@ def build_reference_graph(root: Path, paths: Sequence[str]) -> CallGraph:
 
 
 # frob:ticket T-0361
+# frob:ticket T-0841
 def _short_name_index(
     parsed_by_path: dict[str, list],
 ) -> dict[str, list[tuple[str, str, bool]]]:
     """`short_name -> [(symref, path, is_private)]` index over every symbol
     in `parsed_by_path`; split out of `build_call_graph`'s indexing phase
-    (T-0361)."""
+    (T-0361).
+
+    T-0841: `is_private` is `not sym.public` -- `RawSymbol.public` is each
+    `frob.lang` grammar walker's OWN, language-correct publicness rule
+    (Python's leading underscore, Rust's `pub`/PyO3-export, C++'s
+    `access_specifier`/file-scope `static`, TypeScript's `export`/
+    `accessibility_modifier` -- see `frob.lang._walk_*`), not a re-derived
+    naming heuristic. Before T-0841 this index recomputed privacy via
+    `_short_name(sym.qualname).startswith("_")`, which happens to equal
+    `sym.public` for Python (`_walk_python.py`'s own rule is exactly that
+    check) but is simply wrong for every other supported grammar (Rust
+    privacy is scoping, not spelling; C++'s is `private:`/`static`;
+    TypeScript's is `export`) -- `build_call_graph`/`build_reference_graph`
+    were therefore silently Python-only in practice despite parsing every
+    language `frob.lang.parse_file` supports. Switching to the walker's own
+    `public` field is what actually wires Rust/C++/TypeScript into a real
+    call-graph scan (the T-0841 ask), not a new call-graph implementation
+    per language."""
     by_name: dict[str, list[tuple[str, str, bool]]] = {}
     for path, symbols in parsed_by_path.items():
         for sym in symbols:
             symref = f"{path}::{sym.qualname}"
-            is_private = _short_name(sym.qualname).startswith("_")
+            is_private = not sym.public
             by_name.setdefault(_short_name(sym.qualname), []).append(
                 (symref, path, is_private)
             )

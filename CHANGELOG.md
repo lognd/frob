@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.147.0] - unreleased
+
+- T-0840: path-sensitive per-call-site state verification (ordered call graph)
+
 ## [0.146.0] - unreleased
 
 - T-0641: strata: RETRY backoff+jitter + non-idempotent-op guard + IDEMPOTENCY key obligation

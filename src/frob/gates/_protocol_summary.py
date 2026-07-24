@@ -54,22 +54,36 @@ caught exactly; a real cross-path ordering bug that happens to share a
 closure with a correct call site is the known gap, filed as T-0840 for a
 path-sensitive follow-up once an ordered call graph exists.
 
-LANGUAGE-EXCUSE DISCHARGE (T-0746): before either rule reports an ERROR,
-`frob.arch._protocol_excuse`'s per-language predicates get a chance to
-DISCHARGE it -- a runtime guarantee (Python's `with`, Rust's `Drop`,
-C++'s RAII destructor, TypeScript's `using`/`try`-`finally`) the DSL
-itself cannot see but that provably re-establishes or maintains the
-missing state. A discharge is recorded as a WARN-severity finding (never
-silently dropped -- NO-FAIL-SILENT), naming its mechanism, so it stays
-visible and auditable rather than vanishing. `build_call_graph`'s
-Python-only scope (same disclosed limitation as PROTO001) means only
-`python_with_discharge` is wired into this REPO-SCAN gate today; the
-Rust/C++/TypeScript/GC predicates are built, doctrine-complete, and
-directly unit-tested (`TestProtocolLanguageExcuseDischarge`), but wiring
-them into a real cross-file call-graph scan is blocked on those languages
-getting `build_call_graph` support at all -- filed as T-0841, mirroring
-T-0745's own T-0809 disclosure pattern rather than silently building a
-second, unreviewed call-graph substrate here.
+LANGUAGE-EXCUSE DISCHARGE (T-0746, wired repo-wide by T-0841): before
+either rule reports an ERROR, `frob.arch._protocol_excuse`'s per-language
+predicates get a chance to DISCHARGE it -- a runtime guarantee (Python's
+`with`, Rust's `Drop`, C++'s RAII destructor, TypeScript's `using`/
+`try`-`finally`) the DSL itself cannot see but that provably
+re-establishes or maintains the missing state. A discharge is recorded as
+a WARN-severity finding (never silently dropped -- NO-FAIL-SILENT),
+naming its mechanism, so it stays visible and auditable rather than
+vanishing.
+
+T-0841: `build_call_graph`'s callee-privacy resolution now reads
+`frob.lang.RawSymbol.public` (each grammar walker's own language-correct
+publicness rule -- see `frob.graph.callgraph._short_name_index`) instead
+of Python's leading-underscore naming convention, so a real cross-file
+call-graph scan already works for every `frob.lang`-supported language,
+not just Python -- this gate's own `.py`-only filters are lifted
+accordingly (`_package_edges`, `protocol_summary_gate`'s tagged-package
+grouping) and `_discharge` now dispatches to
+`rust_drop_discharge`/`cpp_raii_discharge`/`typescript_using_discharge`
+by the tagged symbol's own file extension, not just
+`python_with_discharge`. `gc_finalizer_discharge` has no dispatch entry
+here: this repo's `frob.lang` has no GC-language grammar today (Java/
+Kotlin/JS-without-TS are not `_SUPPORTED_LANGUAGES`), so there is no file
+extension that would ever route to it -- it stays built and unit-tested
+for the day a GC-language grammar is added, per its own module's
+doctrine. `mark_unresolved`'s own naming heuristic remains Python-
+specific (`build_call_graph`'s own T-0841 disclosure) -- a call in a
+non-Python file can still fail to be flagged UNRESOLVED_CALLEE even when
+genuinely dangling, the same false-negative-biased gap PROTO001 already
+carries.
 
 Scope, deliberately narrow (all three rules): only a symbol that ITSELF
 carries a `frob:requires`/`frob:transition` directive (i.e. explicitly
@@ -94,22 +108,55 @@ ERROR-by-default measures clean against main at landing time (disclosed
 in the T-0746 Done report); both remain waivable with
 `frob:waive PROTO002 reason="..."`/`frob:waive PROTO003 reason="..."` for
 a case the engine's coarse approximation gets wrong.
+
+PROTO004, PER-CALL-SITE ORDERING (T-0840): PROTO002/PROTO003 ask an
+EXISTENTIAL question over `compute_protocol_summaries`' unordered
+transitive closure -- "is state S established by SOME reachable
+transition anywhere in the package's tagged closure" -- which can miss a
+real ordering bug when some OTHER path in the same closure happens to
+establish the state (this module's own APPROXIMATION paragraph above).
+PROTO004 narrows that gap using `frob.graph.callgraph.
+build_ordered_call_graph`'s source-text-ordered call sequences: for every
+caller in the scanned package (not just protocol-tagged entrypoints --
+any function that calls into one), it walks that caller's OWN calls in
+order, tracking which protocol states are established SO FAR by earlier
+calls in THAT SAME caller, and reports a call to a `frob:requires`-tagged
+callee whose precondition state is not yet established on that exact
+call sequence. This is SEQUENCE-sensitive within one caller's body, not
+fully branch-aware (`OrderedCallGraph`'s own docstring): a call inside an
+untaken `if`/`else` branch is treated as if it always executes, so a
+call genuinely guarded by the right branch can still false-positive here
+-- `frob:waive PROTO004 reason="..."` is expected for that case, same as
+PROTO002/PROTO003's own engine-approximation waiver posture. PROTO004
+gets the same language-excuse discharge chance as PROTO002/PROTO003
+before reporting. Filed as T-0840's own follow-up target: real
+branch-aware path-sensitivity (distinguishing which calls are mutually
+exclusive) is future work, not attempted here -- this is "ordered" not
+yet "control-flow-aware".
 """
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path, PurePosixPath
 
-from frob.arch._protocol_excuse import python_with_discharge
+from frob.arch._protocol_excuse import (
+    DischargeResult,
+    cpp_raii_discharge,
+    python_with_discharge,
+    rust_drop_discharge,
+    typescript_using_discharge,
+)
 from frob.gates._models import Severity, Violation
 from frob.graph import (
     Edge,
     EdgeKind,
+    FunctionSummary,
     GraphSnapshot,
     SummaryResult,
     compute_protocol_summaries,
 )
-from frob.graph.callgraph import build_call_graph
+from frob.graph.callgraph import build_call_graph, build_ordered_call_graph
 from frob.graph.dsl import parse_directives
 from frob.logging import get_logger
 
@@ -170,12 +217,18 @@ def _package_edges(root: Path, files: tuple[str, ...]) -> tuple[Edge, ...]:
     those relative entrypoints -- so every edge's `src`/`origin` gets
     rewritten back to `rel_path`-relative here before being handed back,
     the same convention `frob.graph.callgraph._parse_package` already
-    uses for its OWN (relative) dict keys."""
-    from frob.lang import parse_file
+    uses for its OWN (relative) dict keys.
 
+    T-0841: no longer `.py`-only -- every `frob.lang.supported_extensions()`
+    file `parse_file` can actually turn into directives is scanned, now
+    that `build_call_graph`'s callee resolution is language-correct (not
+    Python-naming-specific, see `frob.graph.callgraph._short_name_index`)."""
+    from frob.lang import parse_file, supported_extensions
+
+    exts = supported_extensions()
     edges: list[Edge] = []
     for rel_path in files:
-        if not rel_path.endswith(".py"):
+        if PurePosixPath(rel_path).suffix.lower() not in exts:
             continue
         result = parse_file(root / rel_path)
         if result.is_err:
@@ -280,21 +333,124 @@ def _own_transitions(
     return tuple(out)
 
 
+# T-0841: extension -> discharge predicate, the real per-language dispatch.
+# `.h`/`.c` (pure C, no grammar-visible RAII/Drop idiom in this repo's
+# doctrine) and `.strata` (no discharge doctrine written for it) have no
+# entry -- `_language_discharge` falls through to a non-discharging
+# `DischargeResult` for those, same as any extension outside
+# `frob.lang.supported_extensions()` entirely.
+_DISCHARGE_BY_SUFFIX = {
+    ".py": python_with_discharge,
+    ".rs": rust_drop_discharge,
+    ".cpp": cpp_raii_discharge,
+    ".hpp": cpp_raii_discharge,
+    ".cc": cpp_raii_discharge,
+    ".hh": cpp_raii_discharge,
+    ".cxx": cpp_raii_discharge,
+    ".ts": typescript_using_discharge,
+    ".tsx": typescript_using_discharge,
+}
+
+
+# frob:ticket T-0841
+def _language_discharge(path: str, source: str, resource: str) -> DischargeResult:
+    """T-0841's per-language dispatch: routes to the T-0746 discharge
+    predicate matching `path`'s extension (`_DISCHARGE_BY_SUFFIX`) --
+    Python's `with`, Rust's `Drop`, C++'s RAII destructor, TypeScript's
+    `using`/`try`-`finally`. An extension with no registered predicate
+    (pure C, `.strata`, anything `frob.lang` does not parse at all) always
+    reports `discharged=False` naming the gap, matching every predicate's
+    own NO-FAIL-SILENT contract (`DischargeResult.reason` always explains
+    a `False`, never bare)."""
+    ext = PurePosixPath(path).suffix.lower()
+    predicate = _DISCHARGE_BY_SUFFIX.get(ext)
+    if predicate is None:
+        return DischargeResult(
+            discharged=False,
+            mechanism="none",
+            reason=f"no T-0746 discharge predicate registered for {ext!r} files",
+        )
+    return predicate(source, resource)
+
+
+# frob:ticket T-0840
+def _ordered_call_site_violations(
+    root: Path,
+    edges: tuple[Edge, ...],
+    ordered_calls: Mapping[str, tuple[str, ...]],
+    summaries: Mapping[str, FunctionSummary],
+    protocol_initials: dict[str, str],
+) -> list[Violation]:
+    """T-0840's per-call-site ordering check (PROTO004, module docstring):
+    for each caller in `ordered_calls`, walks its OWN call sequence in
+    source-text order, tracking which protocol states are established SO
+    FAR (seeded from `protocol_initials`, grown by each earlier callee's
+    OWN transitive `FunctionSummary.transitions`) -- reports a call to a
+    `frob:requires`-tagged callee whose precondition is not yet
+    established on THAT SEQUENCE. Once a callee's own summary is poisoned,
+    no further state is added and no LATER call site in that same caller
+    is checked either (module docstring's SEQUENCE-sensitive-not-branch-
+    aware disclosure; unknowable what a poisoned callee actually
+    established). A discharge (module docstring, `_discharge`) is checked
+    against the CALLER's own file before an ERROR is reported, same as
+    PROTO002/PROTO003."""
+    violations: list[Violation] = []
+    for caller, callees in ordered_calls.items():
+        established: dict[str, set[str]] = {
+            proto: {initial} for proto, initial in protocol_initials.items()
+        }
+        caller_path = caller.split("::", 1)[0]
+        for callee in callees:
+            summary = summaries.get(callee)
+            for proto, state in _own_requires(edges, callee):
+                if state in established.get(proto, set()):
+                    continue
+                discharge = _discharge(root, caller, proto)
+                if discharge is not None:
+                    violations.append(discharge.model_copy(update={"rule": "PROTO004"}))
+                    continue
+                violations.append(
+                    Violation(
+                        rule="PROTO004",
+                        severity=Severity.ERROR,
+                        file=caller_path,
+                        line=0,
+                        message=(
+                            f"PROTO004: {caller} calls {callee}, which requires "
+                            f"{proto}:{state}, but nothing earlier in {caller}'s "
+                            "own call sequence establishes it -- ordering "
+                            "violation on this path; "
+                            'frob:waive PROTO004 reason="..." if a branch this '
+                            "sequential scan cannot distinguish makes this call "
+                            "unreachable without the state"
+                        ),
+                    )
+                )
+            if summary is None or summary.poisoned:
+                break
+            for token in summary.transitions:
+                proto, _frm, to = _parse_transition_token(token)
+                if to:
+                    established.setdefault(proto, set()).add(to)
+    return violations
+
+
 # frob:ticket T-0746
+# frob:ticket T-0841
 def _discharge(root: Path, symref: str, resource: str) -> Violation | None:
-    """A `frob.arch._protocol_excuse.python_with_discharge` recorded
-    discharge for `symref`'s file, keyed loosely on `resource` (the
-    protocol name -- best-effort, textual, same caveat every discharge
-    predicate's own docstring already carries) -- `None` when no
-    discharge applies (the caller reports its ERROR unchanged); a
-    `Violation` (always `Severity.WARN`, NO-FAIL-SILENT: recorded, never
-    silently dropped) naming the mechanism when one does."""
+    """A `_language_discharge` recorded discharge for `symref`'s file,
+    keyed loosely on `resource` (the protocol name -- best-effort,
+    textual, same caveat every discharge predicate's own docstring
+    already carries) -- `None` when no discharge applies (the caller
+    reports its ERROR unchanged); a `Violation` (always `Severity.WARN`,
+    NO-FAIL-SILENT: recorded, never silently dropped) naming the
+    mechanism when one does."""
     path = symref.split("::", 1)[0]
     try:
         source = (root / path).read_text(encoding="utf-8")
     except OSError:
         return None
-    result = python_with_discharge(source, resource)
+    result = _language_discharge(path, source, resource)
     if not result.discharged:
         return None
     return Violation(
@@ -326,6 +482,14 @@ def _discharge(root: Path, symref: str, resource: str) -> Violation | None:
 # frob:tests tests/test_gates.py::TestProtocolVerificationGate.test_invalid_transition_precondition_never_established_is_an_error  # noqa: E501
 # frob:tests tests/test_gates.py::TestProtocolVerificationGate.test_valid_transition_chain_is_not_flagged  # noqa: E501
 # frob:tests tests/test_gates.py::TestProtocolVerificationGate.test_python_with_block_discharges_the_requirement  # noqa: E501
+# frob:ticket T-0841
+# frob:tests tests/test_gates.py::TestProtocolVerificationGate.test_rust_file_state_never_established_is_an_error  # noqa: E501
+# frob:tests tests/test_gates.py::TestProtocolVerificationGate.test_rust_drop_impl_discharges_the_requirement  # noqa: E501
+# frob:tests tests/test_gates.py::TestProtocolVerificationGate.test_typescript_using_discharges_the_requirement  # noqa: E501
+# frob:ticket T-0840
+# frob:tests tests/test_gates.py::TestProtocolOrderingGate.test_call_before_establishing_transition_is_an_ordering_error  # noqa: E501
+# frob:tests tests/test_gates.py::TestProtocolOrderingGate.test_call_after_establishing_transition_is_not_flagged  # noqa: E501
+# frob:tests tests/test_gates.py::TestProtocolOrderingGate.test_python_with_block_discharges_the_ordering_violation  # noqa: E501
 def protocol_summary_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """PROTO001: the real `mark_unresolved=True` production entrypoint into
     `frob.graph.summary.compute_protocol_summaries` (T-0813) -- every
@@ -334,11 +498,19 @@ def protocol_summary_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violatio
     `poisoned` (an unresolved callee somewhere in its transitive call
     closure) is reported.
 
-    Python files ONLY (`.py`): `build_call_graph`'s callee-privacy check
-    hardcodes the leading-underscore convention Python's `SymbolRecord.
-    public` uses -- the same Rust/TypeScript/C soundness gap `DEAD001`
-    (`frob.gates._dead_symbols.dead_symbol_gate`) already disclosed and
-    scoped around, not a new gap this gate introduces.
+    T-0841: every `frob.lang.supported_extensions()` file, not just `.py`
+    -- `build_call_graph`'s callee-privacy check now reads each grammar
+    walker's own `RawSymbol.public` (see
+    `frob.graph.callgraph._short_name_index`) instead of hardcoding
+    Python's leading-underscore convention, so Rust/C++/TypeScript
+    protocol-tagged symbols get the same real repo-scan PROTO001/002/003
+    coverage Python symbols already had. `mark_unresolved`'s own naming
+    heuristic (which NAMES look unresolved, not which symbols resolve) is
+    still Python-specific -- see `build_call_graph`'s T-0841 disclosure --
+    so a genuinely dangling call in a non-Python file can still go
+    unflagged; a narrower, disclosed gap than the one this ticket closes,
+    not the `DEAD001`-class blanket Python-only scope this docstring
+    described before T-0841.
 
     Grouped and cached per package (same directory), mirroring `DEAD001`'s
     posture -- `build_call_graph`/`_package_edges` run at most once per
@@ -350,13 +522,16 @@ def protocol_summary_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violatio
     `frob:transition` symbol whose precondition state is never established)
     -- both ERROR by default, with PROTO002 first checking for a language-
     excuse discharge (module docstring) before reporting."""
+    from frob.lang import supported_extensions
+
+    exts = supported_extensions()
     tagged_by_package: dict[str, list[str]] = {}
     for edge in snapshot.edges:
         if edge.kind not in _PROTOCOL_TAG_KINDS:
             continue
         symref = edge.src
         path = symref.split("::", 1)[0]
-        if not path.endswith(".py"):
+        if PurePosixPath(path).suffix.lower() not in exts:
             continue
         package = str(PurePosixPath(path).parent)
         tagged_by_package.setdefault(package, []).append(symref)
@@ -370,9 +545,27 @@ def protocol_summary_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violatio
         files = _package_files(root, sample_path)
         callgraph = build_call_graph(root, files, mark_unresolved=True)
         edges = _package_edges(root, files)
-        result = compute_protocol_summaries(callgraph, edges, entrypoints)
+        # T-0840: PROTO004's ordering check needs a summary for every
+        # CALLEE any plain (untagged) function in the package calls, not
+        # just what is transitively reachable from the tagged entrypoints
+        # -- an ordinary caller sitting between two tagged functions is
+        # itself untagged and would otherwise never become a root. Every
+        # caller `build_ordered_call_graph` found is added as its own
+        # summary root alongside the tagged entrypoints; this only WIDENS
+        # `result.summaries`' coverage (more roots feeding the same
+        # bottom-up fixpoint), it does not change any existing entry's
+        # computed value.
+        ordered_graph = build_ordered_call_graph(root, files)
+        summary_roots = sorted(set(entrypoints) | set(ordered_graph.calls))
+        result = compute_protocol_summaries(callgraph, edges, summary_roots)
         established = _established_states(edges, result)
         packages_scanned += 1
+        protocol_initials = _protocol_initial_states(edges)
+        violations.extend(
+            _ordered_call_site_violations(
+                root, edges, ordered_graph.calls, result.summaries, protocol_initials
+            )
+        )
         for symref in entrypoints:
             summary = result.summaries.get(symref)
             if summary is None:

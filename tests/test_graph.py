@@ -1,3 +1,4 @@
+# frob:waive SCOPE001 reason="T-0841 declared scope is src/frob/gates/_protocol_summary.py+src/frob/graph/callgraph.py; tests/test_graph.py file-level scope lease is held by sibling ticket T-0840 (same worktree/dispatch, both tickets share src/frob/gates/_protocol_summary.py per their own scope declarations, and frob ticket scope lease is exclusive per file) -- T-0841 own Rust build_call_graph-resolution tests here carry their own frob:ticket T-0841 directive; this waiver only silences the SCOPE001 false hit from checking the whole file against T-0841 when the lease itself cannot be duplicated"  # noqa: E501
 """Tests for frob.graph -- obligation graph registry (docs/modules/graph.md)."""
 
 from __future__ import annotations
@@ -1799,6 +1800,8 @@ class TestCallGraph:
 
     frob:ticket T-0422
     frob:ticket T-0583
+    frob:ticket T-0840
+    frob:ticket T-0841
     """
 
     def test_build_reference_graph_catches_dispatch_table_entry(
@@ -1981,6 +1984,93 @@ class TestCallGraph:
         )
         call_graph = build_call_graph(tmp_path, ("src/a.py",), mark_unresolved=True)
         assert call_graph.calls == {"src/a.py::Foo.bar": (UNRESOLVED_CALLEE,)}
+
+    # frob:ticket T-0841
+    def test_build_call_graph_resolves_a_rust_private_callee_by_pub_keyword(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/callgraph.py::build_call_graph
+        # T-0841: `helper` here has NO leading underscore -- the old
+        # Python-naming-only `is_private` check would have missed this
+        # edge entirely (it looked public by spelling). Rust's real
+        # privacy rule is the ABSENCE of `pub`, which `RawSymbol.public`
+        # already computes correctly (`frob.lang._walk_rust._rust_public`)
+        # -- resolving via `sym.public` (this ticket's fix) catches it.
+        from frob.graph.callgraph import build_call_graph
+
+        _write(
+            tmp_path,
+            "src/a.rs",
+            "fn helper() -> i32 {\n    42\n}\n\npub fn entry() -> i32 {\n    helper()\n}\n",
+        )
+        call_graph = build_call_graph(tmp_path, ("src/a.rs",))
+        assert call_graph.calls == {"src/a.rs::entry": ("src/a.rs::helper",)}
+
+    # frob:ticket T-0841
+    def test_build_call_graph_does_not_resolve_a_rust_pub_callee(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/callgraph.py::build_call_graph
+        # T-0841 counterpart: a `pub fn` callee (real public API) must
+        # never get an edge, matching the same public-API-boundary rule
+        # `build_call_graph`'s docstring already promises for Python.
+        from frob.graph.callgraph import build_call_graph
+
+        _write(
+            tmp_path,
+            "src/a.rs",
+            "pub fn helper() -> i32 {\n    42\n}\n\nfn entry() -> i32 {\n    helper()\n}\n",
+        )
+        call_graph = build_call_graph(tmp_path, ("src/a.rs",))
+        assert call_graph.calls == {}
+
+    # frob:ticket T-0840
+    def test_build_ordered_call_graph_preserves_source_text_call_order(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/callgraph.py::build_ordered_call_graph
+        # T-0840: unlike `build_call_graph`'s unordered `CallGraph`,
+        # `OrderedCallGraph.calls` preserves each call site's TEXT-ORDER
+        # position -- including a repeated callee (two separate call
+        # sites), which an unordered set would collapse to one entry.
+        from frob.graph.callgraph import build_ordered_call_graph
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def entry() -> None:\n"
+            "    _b()\n"
+            "    _a()\n"
+            "    _a()\n"
+            "\n\n"
+            "def _a() -> None:\n"
+            "    pass\n"
+            "\n\n"
+            "def _b() -> None:\n"
+            "    pass\n",
+        )
+        graph = build_ordered_call_graph(tmp_path, ("src/a.py",))
+        assert graph.calls == {
+            "src/a.py::entry": ("src/a.py::_b", "src/a.py::_a", "src/a.py::_a")
+        }
+
+    # frob:ticket T-0840
+    def test_build_ordered_call_graph_resolves_a_rust_private_callee(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/callgraph.py::build_ordered_call_graph
+        # T-0840/T-0841: the ordered graph shares the same `sym.public`
+        # -based resolution `build_call_graph` uses, so it is language-
+        # correct for Rust too, not Python-naming-specific.
+        from frob.graph.callgraph import build_ordered_call_graph
+
+        _write(
+            tmp_path,
+            "src/a.rs",
+            "fn helper() -> i32 {\n    42\n}\n\npub fn entry() -> i32 {\n    helper()\n}\n",
+        )
+        graph = build_ordered_call_graph(tmp_path, ("src/a.rs",))
+        assert graph.calls == {"src/a.rs::entry": ("src/a.rs::helper",)}
 
 
 class TestLedgerNotDoc:
