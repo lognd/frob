@@ -4945,7 +4945,7 @@ evidence <id> <node> --accepts 0`.
 ```yaml
 id: T-0661
 title: 'vet: exhaustive Rust static-binding resolver (use/use-as/pub use/glob use)'
-state: in-progress
+state: done
 kind: security
 origin: agent
 created: '2026-07-22'
