@@ -6,7 +6,12 @@
       "ref": "src/frob/gates/__init__.py::active_ticket"
     },
     {
-      "digest": "d32935ae6ae2df478143c8613e1a0892a185bdfff4fd57c469ddfebd5bef8fc0",
+      "digest": "9266d8b8f892ba395240c701d468d3f5a0779e88815e176a0b7b85513e074b34",
+      "facet": "body",
+      "ref": "src/frob/gates/__init__.py::coverage_gate"
+    },
+    {
+      "digest": "2e723b0affe9fb4c46163f4801fc117308eda1dede290bfb3d2eb725e481f7c4",
       "facet": "sig",
       "ref": "src/frob/gates/__init__.py::coverage_gate"
     },

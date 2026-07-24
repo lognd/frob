@@ -124,6 +124,7 @@ from frob.gates.invariants import (
     load_invariants,
 )
 from frob.gitio import Diff, Hunk, current_branch, run_argv, working_diff
+from frob.gitio import repo_root as _git_repo_root
 from frob.graph import (
     Edge,
     EdgeKind,
@@ -2470,6 +2471,7 @@ def _diff_load_failed_violation(rule: str, base: str) -> Violation:
 
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0550
+# frob:ticket T-0719
 def coverage_gate(
     root: Path,
     snapshot: GraphSnapshot,
@@ -2478,6 +2480,7 @@ def coverage_gate(
     tests: CollectedTests,
     active_ticket: str | None = None,
     diff_load_failed: bool = False,
+    diff_load_no_repo: bool = False,
 ) -> tuple[Violation, ...]:
     """COV001..COV007, PLACE001, and TODO001/TODO002/TODO003.
 
@@ -2494,10 +2497,19 @@ def coverage_gate(
     TODO003 (T-0783) is, like TODO002, repo-wide rather than diff-scoped
     (see `_todo003_long_deferred`), so it runs unconditionally rather than
     branching on `diff_load_failed`.
+
+    T-0719: `diff_load_no_repo` narrows `diff_load_failed` further -- `True`
+    only when the load failed because `root` is not inside a git repository
+    at ALL (`_load_diff`'s `NotARepo`-shaped case), as opposed to a real
+    repo whose `working_diff` genuinely failed (bad `--base`, detached
+    HEAD). A genuinely git-less root is treated the same as a clean/empty
+    diff here -- there is structurally no touched set to enforce against,
+    so COV002/TODO001 evaluate normally (against the empty diff, finding
+    nothing) instead of firing the loud `_diff_load_failed_violation`.
     """
     violations: list[Violation] = []
     violations.extend(_cov001(root, snapshot))
-    if diff_load_failed:
+    if diff_load_failed and not diff_load_no_repo:
         violations.append(_diff_load_failed_violation("COV002", diff.base))
     else:
         violations.extend(_cov002(snapshot, queue, diff, active_ticket))
@@ -2507,7 +2519,7 @@ def coverage_gate(
     violations.extend(_cov006(root, snapshot))
     violations.extend(_cov007(snapshot))
     violations.extend(_place001(root, snapshot))
-    if diff_load_failed:
+    if diff_load_failed and not diff_load_no_repo:
         violations.append(_diff_load_failed_violation("TODO001", diff.base))
     else:
         violations.extend(_todo001(snapshot, queue, diff))
@@ -8926,12 +8938,16 @@ class _GateInputs:
     sweep: Option[PreworkSweep] = field(default_factory=Nothing)
     # frob:ticket T-0550
     diff_load_failed: bool = False
+    # frob:ticket T-0719
+    diff_load_no_repo: bool = False
 
 
 # frob:ticket T-0550
-def _load_diff(root: Path, base: str) -> tuple[Diff, bool]:
+# frob:ticket T-0719
+def _load_diff(root: Path, base: str) -> tuple[Diff, bool, bool]:
     """The working diff against `base`, degrading to an empty diff on failure,
-    plus whether that degrade actually happened.
+    plus whether that degrade happened at all, plus whether it happened
+    because `root` is not inside a git repository in the first place.
 
     A missing diff (fresh repo, unknown base, detached HEAD) must not skip the
     whole gates stage -- only coverage/scope/TODO001 read it, so the
@@ -8945,16 +8961,40 @@ def _load_diff(root: Path, base: str) -> tuple[Diff, bool]:
     element of the returned tuple is that distinguishing signal: `True`
     means `working_diff` itself errored and the `Diff` returned is a
     placeholder, never a real one.
+
+    T-0719: within that "diff genuinely failed" bucket, a genuinely
+    git-less `root` (a plain filesystem directory, no `.git` anywhere above
+    it -- e.g. a system-test fixture that never calls `git init`) is a
+    DIFFERENT failure shape than a real repo's bad `--base`/detached-HEAD
+    working_diff failure -- `working_diff`'s own `GitError` does not
+    distinguish the two (`_merge_base` collapses both to
+    `GitError.GitFailed`), but `repo_root` does (`NotARepo` specifically).
+    The third element of the returned tuple carries that finer signal:
+    `True` only when `root` is not inside a git repository at all. Callers
+    that want T-0550/B8's original "a real repo's diff failed" protection
+    to keep firing exactly as before (PRE001's `no_ticket_blocks`) should
+    keep branching on the second element alone; callers that should treat
+    a no-repo-at-all root the same as a clean/empty diff (COV002/SCOPE001/
+    TODO001, per this ticket) branch on `diff_load_failed and not
+    diff_load_no_repo` instead.
     """
+    no_repo = _git_repo_root(root).is_err
     diff_result = working_diff(root, base)
     if diff_result.is_err:
-        _log.warning(
-            "run_gates: working_diff failed (%s); diff-dependent gates see no "
-            "touched set",
-            diff_result.danger_err,
-        )
-        return Diff(base=base, hunks=()), True
-    return diff_result.danger_ok, False
+        if no_repo:
+            _log.debug(
+                "run_gates: %s is not inside a git repository; COV002/"
+                "SCOPE001/TODO001 see an empty diff, not a diff-load failure",
+                root,
+            )
+        else:
+            _log.warning(
+                "run_gates: working_diff failed (%s); diff-dependent gates "
+                "see no touched set",
+                diff_result.danger_err,
+            )
+        return Diff(base=base, hunks=()), True, no_repo
+    return diff_result.danger_ok, False, False
 
 
 def _load_tests(root: Path) -> CollectedTests:
@@ -9107,7 +9147,7 @@ def _assemble_gate_inputs(root: Path, cfg: GateConfig, required: tuple) -> _Gate
     )
     test_policy, systems = _load_test_config(root)
     ticket, sweep = _resolve_ticket(root, cfg, queue)
-    diff, diff_load_failed = _load_diff(root, cfg.base)
+    diff, diff_load_failed, diff_load_no_repo = _load_diff(root, cfg.base)
     return _GateInputs(
         root=root,
         repo_root=_repo_root_for(root),
@@ -9126,6 +9166,7 @@ def _assemble_gate_inputs(root: Path, cfg: GateConfig, required: tuple) -> _Gate
         ticket=ticket,
         sweep=sweep,
         diff_load_failed=diff_load_failed,
+        diff_load_no_repo=diff_load_no_repo,
     )
 
 
@@ -9260,6 +9301,7 @@ def _build_jobs(
             st.tests,
             st.ticket.id if st.ticket is not None else None,
             st.diff_load_failed,
+            st.diff_load_no_repo,
         ),
         "invariant": lambda: (
             *invariant_gate(st.invariants, st.snapshot, st.tests, st.rule_ids),
@@ -9460,13 +9502,23 @@ def _build_ticket_scoped_jobs(
     touched" to `no_ticket_blocks`, which is exactly the B9 escape reached
     through a different door (detached HEAD / bad `--base` instead of an
     off-convention branch name). SCOPE001 already had this via its own
-    unconditional `diff_load_failed` check; PRE001 did not."""
+    unconditional `diff_load_failed` check; PRE001 did not.
+
+    T-0719: SCOPE001's `diff_load_failed` check narrows to `diff_load_failed
+    and not diff_load_no_repo` -- a genuinely git-less `root` (no `.git`
+    anywhere above it, e.g. a fixture that never calls `git init`) has
+    structurally no touched set to enforce SCOPE001 against, so it is
+    treated the same as a clean/empty diff instead of the loud
+    `_diff_load_failed_violation`. PRE001's own `diff_load_failed` branch
+    below is deliberately left unconditional (not narrowed the same way):
+    a no-ticket, no-repo root is still the B9 shape PRE001 exists to
+    catch, and narrowing it would silently reopen that escape."""
     jobs: dict[str, Callable[[], tuple[Violation, ...]]] = {}
     skipped: list[str] = []
     no_ticket_blocks = st.ticket is None and _no_active_ticket_touches_source(st.diff)
     if "scope" in selected:
         scope_ticket = st.ticket
-        if st.diff_load_failed:
+        if st.diff_load_failed and not st.diff_load_no_repo:
             # T-0550/B8: a failed diff load must not silently clear SCOPE001
             # just because its degraded-empty placeholder touches nothing.
             jobs["scope"] = lambda: (

@@ -6437,16 +6437,77 @@ class TestGatesDegradeWithoutDiff:
         assert any(v.rule == "FUZZ001" for v in report.danger_ok.violations)
 
     # frob:ticket T-0550
+    # frob:ticket T-0719
     # frob:tests src/frob/gates/__init__.py::coverage_gate kind="unit"
     def test_diff_dependent_gates_block_loudly_on_failed_diff(self, tmp_path):
-        """T-0550/B8 counterexample: a repo with no git history at all makes
-        `working_diff` fail outright (no merge-base). Before the fix,
-        `_load_diff` degraded that failure to a silent empty `Diff`,
-        indistinguishable from a genuinely clean tree -- so COV002 (a
-        diff-driven gate) saw zero touched symbols and simply never fired,
-        even though a public, undocumented, untested symbol sits right
-        there. Post-fix, COV002 fires as a loud, diff-load-failure
-        violation instead of silently passing."""
+        """T-0550/B8 counterexample, narrowed by T-0719: a REAL git repo
+        whose `working_diff` genuinely fails (here, a bad `--base` that
+        cannot resolve to a merge-base) must still fire COV002 as a loud,
+        diff-load-failure violation, never silently pass -- this is the
+        T-0550 protection T-0719 explicitly must not weaken. `tmp_path` is
+        `git init`ed with a real commit so the failure is unambiguously
+        "a real repo's diff broke", not "there is no repo at all" (see
+        `test_diff_dependent_gates_pass_quietly_on_a_genuinely_gitless_root`
+        below for that other, now-distinguished, case). Kept under its
+        original T-0550 name -- not renamed -- because T-0550's archived
+        Done report cites this exact pytest node id as evidence
+        (tickets-archive.md); this test's scenario changed (no-repo-at-all
+        -> real-repo-bad-base) to stay a true positive for the assertion it
+        still makes (COV002 fires loudly), but the id itself had to stay
+        stable."""
+        import subprocess
+
+        from frob.gates import GateConfig, run_gates
+
+        (tmp_path / "src").mkdir()
+        (tmp_path / "src" / "m.py").write_text("def undocumented(x):\n    return x\n")
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "-c", "user.email=t@t.t", "-c", "user.name=t", "add", "-A"],
+            cwd=tmp_path,
+            check=True,
+        )
+        subprocess.run(
+            [
+                "git",
+                "-c",
+                "user.email=t@t.t",
+                "-c",
+                "user.name=t",
+                "commit",
+                "-q",
+                "-m",
+                "seed",
+            ],
+            cwd=tmp_path,
+            check=True,
+        )
+
+        report = run_gates(
+            GateConfig(
+                root=str(tmp_path),
+                base="does-not-resolve-to-anything",
+                gates=frozenset({"coverage"}),
+            )
+        )
+        assert report.is_ok, report.err
+        cov002 = [v for v in report.danger_ok.violations if v.rule == "COV002"]
+        assert cov002, "COV002 must not silently pass on a real repo's failed diff load"
+        assert "failed to load" in cov002[0].message
+
+    # frob:ticket T-0719
+    # frob:tests src/frob/gates/__init__.py::coverage_gate kind="unit"
+    def test_diff_dependent_gates_pass_quietly_on_a_genuinely_gitless_root(
+        self, tmp_path
+    ):
+        """T-0719: a genuinely git-less `root` (no `.git` anywhere above it,
+        e.g. a system-test fixture that never calls `git init`) is not the
+        same failure shape as a real repo's broken diff -- there is
+        structurally no touched set to enforce COV002 against, so it must
+        be treated the same as a clean/empty diff (no violation), not the
+        loud diff-load-failure violation
+        `test_diff_dependent_gates_block_loudly_on_failed_diff` above pins
+        for a real repo."""
         from frob.gates import GateConfig, run_gates
 
         (tmp_path / "src").mkdir()
@@ -6457,8 +6518,9 @@ class TestGatesDegradeWithoutDiff:
         )
         assert report.is_ok, report.err
         cov002 = [v for v in report.danger_ok.violations if v.rule == "COV002"]
-        assert cov002, "COV002 must not silently pass on a failed diff load"
-        assert "failed to load" in cov002[0].message
+        assert not cov002, (
+            f"COV002 must not hard-error on a genuinely git-less root: {cov002}"
+        )
 
 
 class TestConventionUnitBinding:

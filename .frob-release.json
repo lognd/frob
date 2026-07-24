@@ -407,7 +407,7 @@
     "src/frob/gates/__init__.py::SCOPED_RUN_FLAKY_RULE_IDS": "eccec9442287c94baf320554cbed12c317246e8b8907dea1ab52876f8f606c97",
     "src/frob/gates/__init__.py::active_ticket": "a3ec91100e15e9216e6c754b0ba623ee6e8c45468ee86805045ad43623853c7b",
     "src/frob/gates/__init__.py::compliance_gate": "60a1959b205e6503350e1f0dedc94eafc6950be1a1cda0a56a7776ac85bda27b",
-    "src/frob/gates/__init__.py::coverage_gate": "d32935ae6ae2df478143c8613e1a0892a185bdfff4fd57c469ddfebd5bef8fc0",
+    "src/frob/gates/__init__.py::coverage_gate": "2e723b0affe9fb4c46163f4801fc117308eda1dede290bfb3d2eb725e481f7c4",
     "src/frob/gates/__init__.py::debt_gate": "a376c0cb523fc3a01d0fee3db265624393127590531d12a8f63e851f3f5f82ee",
     "src/frob/gates/__init__.py::decisions_gate": "f6587969f349ac0a2128eb1568924bfa8d4cd498e9f366b56255a5266c75408a",
     "src/frob/gates/__init__.py::deprecated_gate": "c55eed141fdaed564ced1737f4c530e2f0ea144f2341e042330960165078e531",
@@ -1452,5 +1452,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.144.0"
+  "version": "0.145.0"
 }
