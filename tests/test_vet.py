@@ -1742,6 +1742,538 @@ class TestCapabilityScanRustBindingResolution:
         assert "exec" not in scan_file_capabilities(pkg)
 
 
+class TestCapabilityScanRustTaxonomyClosureResolution:
+    """T-0661: Rust sibling of `TestCapabilityScanTaxonomyClosureResolution`
+    (python T-0659)/`TestCapabilityScanTsTaxonomyClosureResolution` (TS
+    T-0660) -- T-0378 covered aliased `use`/`use ... as` and local-shadow
+    discipline, but left grouped/nested `use` lists, glob `use`, and any
+    `let`-binding alias-copy-propagation entirely unbound (documented
+    limitation). These tests lock the T-0661 fix's litmus against
+    capability-evasion-taxonomy.md's Rust static-resolvable rows not
+    already covered by T-0378: grouped/nested `use`, `pub use`, glob `use`,
+    `let` binding, chained/shadowed `let`, tuple destructuring, and closure
+    capture. Uses an `as`-aliased target throughout (`Command as C`/local
+    let-bound names) so the raw text never contains the literal
+    `"Command::new("` needle -- same isolation rationale as
+    `TestCapabilityScanRustBindingResolution`."""
+
+    def test_grouped_use_alias_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy "use path::{a, b}" (grouped/nested) row, combined with
+        # an `as` rename inside the group: `use std::process::{Command as
+        # C, Stdio}; C::new(cmd)`.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text(
+            'use std::process::{Command as C, Stdio};\nfn f() { C::new("sh"); }\n'
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_nested_grouped_use_alias_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # A further-nested group (`a::{b, c::{d as e}}`) recurses correctly.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text(
+            'use std::{fs, process::{Command as C}};\nfn f() { C::new("sh"); }\n'
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_pub_use_reexport_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy "pub use re-export" row, combined with an `as` rename so
+        # the raw text never contains "Command::new(".
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text(
+            'pub use std::process::Command as C;\nfn f() { C::new("sh"); }\n'
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_glob_use_let_alias_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy "use path::*" (glob) row: `use std::process::*;` binds
+        # the wildcard-fallback sentinel, and a further `let`-bound alias
+        # off the glob-brought-in name resolves through it.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text(
+            'use std::process::*;\nfn f() { let c = Command::new; c("sh"); }\n'
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_let_binding_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy "let binding" row: `let f = std::process::Command::new;
+        # f("sh").spawn();`.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text(
+            'use std::process::Command as C;\nfn f() { let g = C::new; g("sh"); }\n'
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_chained_shadowed_let_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy "chained/shadowed let" row: `let f = cmd_new; let f = f;`.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text(
+            "use std::process::Command as C;\n"
+            'fn f() { let g = C::new; let g = g; g("sh"); }\n'
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_tuple_destructure_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy "tuple/struct destructuring bind" row: `let (f, _) =
+        # (Command::new, 0); f("sh");`.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text(
+            "use std::process::Command as C;\n"
+            'fn f() { let (g, _) = (C::new, 0); g("sh"); }\n'
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_closure_capture_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy "closure capturing a bound path" row: `let f =
+        # Command::new; let c = move |a| f(a).spawn();`.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text(
+            "use std::process::Command as C;\n"
+            'fn f() { let g = C::new; let c = move |a: &str| { g(a); }; c("sh"); }\n'
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_glob_use_untracked_module_not_claimed(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # No false claim: a glob `use` of a module `DANGEROUS_OPERATIONS`
+        # does NOT curate must not resolve any bare name (honest
+        # under-approximation, mirrors `_RUST_WILDCARD_DANGEROUS_MODULES`).
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text('use my_own_crate::*;\nfn f() { helper("sh"); }\n')
+        assert "exec" not in scan_file_capabilities(pkg)
+
+    def test_closure_param_shadowing_let_alias_not_detected(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # No regression: a CLOSURE parameter of the same name as an
+        # enclosing `let`-aliased dangerous target shadows it FOR THE
+        # CLOSURE'S OWN BODY -- the alias table must not resolve through a
+        # local closure-param shadow (the closure's own scope binds `g` to
+        # nothing dangerous, unlike the enclosing function's scope).
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text(
+            "use std::process::Command as C;\n"
+            "fn f() {\n"
+            "    let g = C::new;\n"
+            "    let c = move |g: i32| { g(5); };\n"
+            "    c(5);\n"
+            "}\n"
+        )
+        assert "exec" not in scan_file_capabilities(pkg)
+
+    def test_let_binding_benign_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # No regression: a `let` binding to an ORDINARY (non-`use`-bound)
+        # value must stay silent.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text('fn f() { let x = 5; println!("{}", x); }\n')
+        assert "exec" not in scan_file_capabilities(pkg)
+
+
+class TestCapabilityScanTsTaxonomyClosureResolution:
+    """T-0660: TS/JS sibling of `TestCapabilityScanTaxonomyClosureResolution`
+    (python T-0659) -- T-0377/T-0432 closed import/require/subscript-
+    binding evasions but left this module's own documented gap open: "no
+    scope-local alias copy-propagation" -- a name shadowed by a local
+    binding was simply unresolved past that point, never chased through a
+    further local reassignment. These tests lock the T-0660 fix's litmus
+    against capability-evasion-taxonomy.md's TS/JS static-resolvable rows
+    not already covered by T-0377/T-0432: simple/chained assignment, array
+    destructuring, default-parameter forwarding, and member rebinding.
+    Deliberately uses the axios/"net" needle (dotted, no bare-module-name
+    needle), same isolation rationale as `TestCapabilityScanTsBindingResolution`."""
+
+    def test_simple_assignment_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy "simple assignment": `const f = require("child_process")
+        # .exec; f(x)` -- here `const f = require('axios').get; f(url);`.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("const f = require('axios').get;\nf(url);\n")
+        assert "net" in scan_file_capabilities(pkg)
+
+    def test_chained_assignment_outer_target_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy "chained assignment": `let a, b; a = b = cp.exec; b(x);`
+        # -- here the OUTER target `a` is called.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text(
+            "const ax = require('axios');\nlet a, b;\na = b = ax.get;\na(url);\n"
+        )
+        assert "net" in scan_file_capabilities(pkg)
+
+    def test_chained_assignment_inner_target_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Same chained assignment, INNER target `b` called instead.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text(
+            "const ax = require('axios');\nlet a, b;\na = b = ax.get;\nb(url);\n"
+        )
+        assert "net" in scan_file_capabilities(pkg)
+
+    def test_array_destructure_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy "destructuring bind (array)": `const [f] = [cp.exec];
+        # f(x);`.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("const ax = require('axios');\nconst [f] = [ax.get];\nf(url);\n")
+        assert "net" in scan_file_capabilities(pkg)
+
+    def test_default_param_forwarding_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy "default parameter forwarding": `function f(cb = cp.exec)
+        # { cb(x); }`.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text(
+            "const ax = require('axios');\nfunction h(cb = ax.get) {\n  cb(url);\n}\n"
+        )
+        assert "net" in scan_file_capabilities(pkg)
+
+    def test_member_rebind_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy "member rebinding": `obj.run = cp.exec; obj.run(x);`.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text(
+            "const ax = require('axios');\n"
+            "const obj = {};\n"
+            "obj.run = ax.get;\n"
+            "obj.run(url);\n"
+        )
+        assert "net" in scan_file_capabilities(pkg)
+
+    def test_closure_capture_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy "closure capture": `function outer(){ const r = cp.exec;
+        # return function(){ r(x); }; }`.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text(
+            "const ax = require('axios');\n"
+            "function outer() {\n"
+            "  const r = ax.get;\n"
+            "  return function() { r(url); };\n"
+            "}\n"
+        )
+        assert "net" in scan_file_capabilities(pkg)
+
+    def test_default_param_benign_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # No regression: a default parameter forwarding an ORDINARY (non-
+        # dangerous) callable must stay silent.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("function h(cb = doSomethingSafe) {\n  cb(url);\n}\n")
+        assert "net" not in scan_file_capabilities(pkg)
+
+    def test_member_rebind_benign_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # No regression: rebinding a member to an ORDINARY value must stay
+        # silent.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("const obj = {};\nobj.run = doSomethingSafe;\nobj.run(url);\n")
+        assert "net" not in scan_file_capabilities(pkg)
+
+    def test_reassigned_alias_call_via_chained_target_still_detected(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Sanity check on the alias table's own resolution chain, not just
+        # the raw bare-member-expression finding a plain `const f =
+        # ax.get;` already produces on its own (this scanner treats ANY
+        # resolvable member-expression as a candidate, called or not,
+        # T-0377): calling the ALIASED name a second time through a further
+        # local copy (`const g = f; g(url);`) still resolves.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text(
+            "const ax = require('axios');\nconst f = ax.get;\nconst g = f;\ng(url);\n"
+        )
+        assert "net" in scan_file_capabilities(pkg)
+
+
+def _ts_find(node, node_type: str):  # noqa: ANN001, ANN201
+    """First descendant of `node` (inclusive) with `.type == node_type`, or
+    `None` -- a small DFS helper `TestCapabilityScanTsAliasTablePredicates`
+    uses to pluck a specific tree-sitter node out of a parsed fixture for a
+    white-box call into a private resolver function."""
+    if node.type == node_type:
+        return node
+    for child in node.children:
+        found = _ts_find(child, node_type)
+        if found is not None:
+            return found
+    return None
+
+
+def _ts_find_all(node, node_type: str, out: list) -> None:  # noqa: ANN001
+    """Every descendant of `node` (inclusive) with `.type == node_type`,
+    appended to `out` in document order -- `_ts_find`'s multi-match
+    sibling."""
+    if node.type == node_type:
+        out.append(node)
+    for child in node.children:
+        _ts_find_all(child, node_type, out)
+
+
+class TestCapabilityScanTsAliasTablePredicates:
+    """T-0660 mutation-evidence follow-up (TEST016 land refusal): the
+    `scan_file_capabilities`-level "detected"/"not detected" tests in
+    `TestCapabilityScanTsTaxonomyClosureResolution` do NOT actually kill
+    mutants of several alias-table guard predicates, because
+    `_collect_ts_candidates`'s own file-wide tree walk independently
+    re-resolves the SAME bare member/subscript expression a fixture's RHS
+    happens to contain (e.g. `const f = ax.get;` flags "net" the instant
+    `ax.get` exists ANYWHERE in the file, whether or not the alias-table
+    machinery that copies it to `f` even runs) -- the full-scan API masks
+    these predicates entirely. These tests call the private resolver
+    functions DIRECTLY with a hand-parsed AST so each guard's outcome is
+    the thing under test, not incidentally reproduced by a parallel code
+    path. Confirmed by hand: reverting each guard's operator (`==`<->`!=`,
+    `and`<->`or`, `strict=False`<->`strict=True`) locally and re-running the
+    single matching test here flips it from pass to fail; reverted before
+    committing (frob:ticket T-0660's Done report records which mutation was
+    hand-verified for which test)."""
+
+    def test_member_rebind_lookup_used_only_for_identifier_object(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_resolve_ts_member kind="unit"
+        # Kills the `_capability.py:2217` compare-Eq-swap mutant
+        # (`obj.type == "identifier"` -> `!=`): with a real `identifier`
+        # object and a matching alias-table rebind entry, `_resolve_ts_
+        # member` must reach the rebind fallback and return its value;
+        # the swapped comparison would skip the fallback for this exact
+        # case and return `None` instead.
+        from frob.lang import raw_tree
+        from frob.vet._capability import _TS_SCOPE_TYPES, _resolve_ts_member
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("obj.run(url);\n")
+        tree, _source, _lang = raw_tree(pkg).danger_ok
+        member = _ts_find(tree.root_node, "member_expression")
+        assert member is not None
+        program = tree.root_node
+        assert program.type in _TS_SCOPE_TYPES
+        alias_table = {program.id: {"obj.run": "axios.get"}}
+        resolved = _resolve_ts_member(member, {}, {}, {}, alias_table)
+        assert resolved == "axios.get"
+
+    def test_member_rebind_lookup_skipped_without_alias_table(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_resolve_ts_member kind="unit"
+        # Kills the `_capability.py:2217` boolop-And-swap mutant (`and` ->
+        # `or`): with `alias_table=None`, the real `and` short-circuits
+        # before ever touching `_ts_attr_rebind_lookup`, returning `None`
+        # cleanly; the swapped `or` would call `_ts_attr_rebind_lookup`
+        # with `alias_table=None` anyway (since the identifier check alone
+        # is enough to satisfy `or`), raising `AttributeError` the instant
+        # it tries `None.get(...)`.
+        from frob.lang import raw_tree
+        from frob.vet._capability import _resolve_ts_member
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("obj.run(url);\n")
+        tree, _source, _lang = raw_tree(pkg).danger_ok
+        member = _ts_find(tree.root_node, "member_expression")
+        assert member is not None
+        resolved = _resolve_ts_member(member, {}, {}, {}, None)
+        assert resolved is None
+
+    def test_attr_rebind_lookup_climbs_past_non_matching_scope(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_ts_attr_rebind_lookup kind="unit"
+        # Kills the `_capability.py:2246` compare-Eq-swap mutant (`cur.type
+        # == "program"` -> `!=`): the rebind entry lives TWO scope levels
+        # above the call site (the outer function, not the immediately
+        # enclosing inner one, which is a real intervening non-matching
+        # scope) -- the real code must climb PAST that inner scope to find
+        # it. The swapped comparison breaks the climb at the very first
+        # non-"program" scope it checks (i.e. immediately), so it would
+        # never reach the outer scope's entry at all.
+        from frob.lang import raw_tree
+        from frob.vet._capability import _ts_attr_rebind_lookup
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text(
+            "function outer() {\n  function inner() {\n    obj.run(url);\n  }\n}\n"
+        )
+        tree, _source, _lang = raw_tree(pkg).danger_ok
+        call_site = _ts_find(tree.root_node, "member_expression")
+        assert call_site is not None
+        functions = []
+        _ts_find_all(tree.root_node, "function_declaration", functions)
+        assert len(functions) == 2
+        outer_fn, inner_fn = functions
+        assert outer_fn.start_byte < inner_fn.start_byte
+        # inner's own scope binds nothing for "obj.run" -- only outer does.
+        alias_table = {
+            inner_fn.id: {},
+            outer_fn.id: {"obj.run": "axios.get"},
+        }
+        resolved = _ts_attr_rebind_lookup("obj", "run", call_site, alias_table)
+        assert resolved == "axios.get"
+
+    def test_resolve_expr_peels_through_chained_assignment(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_resolve_ts_expr kind="unit"
+        # Kills the `_capability.py:2292` compare-Eq-swap mutant
+        # (`node.type == "assignment_expression"` -> `!=`): resolving the
+        # OUTER assignment_expression node of `a = b = ax.get` directly
+        # must peel through to `ax.get`'s own resolution; the swapped
+        # comparison would skip the peel-through branch entirely and fall
+        # through to `_resolve_ts_expr`'s final `return None`.
+        from frob.lang import raw_tree
+        from frob.vet._capability import _resolve_ts_expr
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("a = b = ax.get;\n")
+        tree, _source, _lang = raw_tree(pkg).danger_ok
+        outer_assignment = _ts_find(tree.root_node, "assignment_expression")
+        assert outer_assignment is not None
+        resolved = _resolve_ts_expr(outer_assignment, {"ax": "axios"}, {}, {}, None)
+        assert resolved == "axios.get"
+
+    def test_default_param_alias_recorded_for_identifier_pattern(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_record_ts_default_param_aliases kind="unit"
+        # Kills the `_capability.py:2472` compare-NotEq-swap mutant
+        # (`pattern.type != "identifier"` -> `==`): a real identifier
+        # default-parameter pattern with a resolvable default value must
+        # get an alias entry; the swapped comparison would treat the
+        # ordinary identifier case as the one to SKIP.
+        from frob.lang import raw_tree
+        from frob.vet._capability import _record_ts_default_param_aliases
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("function h(cb = ax.get) { cb(url); }\n")
+        tree, _source, _lang = raw_tree(pkg).danger_ok
+        func = _ts_find(tree.root_node, "function_declaration")
+        assert func is not None
+        alias_table: dict = {}
+        _record_ts_default_param_aliases(func, {"ax": "axios"}, {}, {}, alias_table)
+        assert alias_table[func.id]["cb"] == "axios.get"
+
+    def test_default_param_alias_skips_missing_default_value(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_record_ts_default_param_aliases kind="unit"
+        # Kills the `_capability.py:2472` boolop-Or-swap mutant (`or` ->
+        # `and`): a plain parameter with NO default (`value is None`, the
+        # other two clauses false) must be skipped by the real `or`. The
+        # swapped `and` would let it through and call `_resolve_ts_expr`
+        # on a `None` value node, raising `AttributeError`.
+        from frob.lang import raw_tree
+        from frob.vet._capability import _record_ts_default_param_aliases
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("function h(cb) { cb(url); }\n")
+        tree, _source, _lang = raw_tree(pkg).danger_ok
+        func = _ts_find(tree.root_node, "function_declaration")
+        assert func is not None
+        alias_table: dict = {}
+        _record_ts_default_param_aliases(func, {}, {}, {}, alias_table)
+        assert alias_table.get(func.id, {}) == {}
+
+    def test_destructure_alias_tolerates_length_mismatch(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::_record_ts_destructure_alias kind="unit"
+        # Kills the `_capability.py:2499` bool-False-negated mutant
+        # (`strict=False` -> `strict=True`): the array pattern binds FEWER
+        # names than the array literal has elements (a real, benign
+        # over-provisioned RHS) -- the real `zip(..., strict=False)` must
+        # silently truncate to the shorter side; `strict=True` would raise
+        # `ValueError` instead.
+        from frob.lang import raw_tree
+        from frob.vet._capability import _record_ts_destructure_alias
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("const [f] = [ax.get, 0];\n")
+        tree, _source, _lang = raw_tree(pkg).danger_ok
+        left_pattern = _ts_find(tree.root_node, "array_pattern")
+        right_array = _ts_find(tree.root_node, "array")
+        assert left_pattern is not None
+        assert right_array is not None
+        scope_aliases: dict = {}
+        _record_ts_destructure_alias(
+            left_pattern, right_array, {"ax": "axios"}, {}, {}, {}, scope_aliases
+        )
+        assert scope_aliases["f"] == "axios.get"
+
+    def test_destructure_alias_binds_only_identifier_elements(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_record_ts_destructure_alias kind="unit"
+        # Kills the `_capability.py:2500` compare-NotEq-swap mutant
+        # (`left_el.type != "identifier"` -> `==`): a real identifier
+        # destructuring element paired with a resolvable RHS element must
+        # get an alias entry; the swapped comparison would SKIP the
+        # ordinary identifier case instead of an unsupported one.
+        from frob.lang import raw_tree
+        from frob.vet._capability import _record_ts_destructure_alias
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("const [f] = [ax.get];\n")
+        tree, _source, _lang = raw_tree(pkg).danger_ok
+        left_pattern = _ts_find(tree.root_node, "array_pattern")
+        right_array = _ts_find(tree.root_node, "array")
+        assert left_pattern is not None
+        assert right_array is not None
+        scope_aliases: dict = {}
+        _record_ts_destructure_alias(
+            left_pattern, right_array, {"ax": "axios"}, {}, {}, {}, scope_aliases
+        )
+        assert scope_aliases["f"] == "axios.get"
+
+
 class TestCapabilityScanCBindingResolution:
     """T-0379: C/C++ sibling of `TestCapabilityScanRustBindingResolution` --
     before this, C/C++ capability scanning was pure lexical needle-matching,

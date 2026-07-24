@@ -1564,22 +1564,40 @@ def _python_binding_operations(
 # `test_reassigned_const_string_subscript_not_detected`).
 #
 # Known limitations, documented rather than silently eaten (mirrors this
-# module's "Honest limits" posture): no scope-local alias copy-propagation
-# (the T-0337 Python enhancement) -- a name shadowed by a local binding is
-# simply unresolved past that point here, never chased through a further
-# local reassignment; `export {x as y}` / re-export forms add no binding
-# (not import sites); a function-scoped `const`/`require` is folded into the
-# same file-wide binding table as a module-level one when it is a plain
-# `require()` destructure (a narrow, safe-direction over-approximation, same
-# as Python's function-scoped `import`); a COMPUTED bracket subscript --
-# a NON-LITERAL key OR an INTERPOLATED template literal (a static, no-
-# interpolation template literal DOES resolve, round 3 above) -- resolves
-# only through the T-0432 single-literal-binding case above, else stays
-# unresolved (T-draft-e7c8b53c tracks the fully-general case, see above); a
-# `.then(cb)` callback's module binding is added to the FILE-WIDE table
-# rather than scoped to the callback body (the same over-approximation as
-# every other binding here -- can only ADD a resolution, never suppress a
-# real one).
+# module's "Honest limits" posture): `export {x as y}` / re-export forms
+# add no binding (not import sites -- a cross-FILE resolution, and this
+# resolver, like the whole capability scanner, works one file at a time; no
+# `export ... from`/`export * from`/`export default` cross-module linking is
+# attempted, matching the taxonomy's own "needs source-module enumerability"
+# caveat for the `export * from` row); a function-scoped `const`/`require`
+# is folded into the same file-wide binding table as a module-level one when
+# it is a plain `require()` destructure (a narrow, safe-direction over-
+# approximation, same as Python's function-scoped `import`); a COMPUTED
+# bracket subscript -- a NON-LITERAL key OR an INTERPOLATED template literal
+# (a static, no-interpolation template literal DOES resolve, round 3 above)
+# -- resolves only through the T-0432 single-literal-binding case above,
+# else stays unresolved (T-draft-e7c8b53c tracks the fully-general case, see
+# above); a `.then(cb)` callback's module binding is added to the FILE-WIDE
+# table rather than scoped to the callback body (the same over-
+# approximation as every other binding here -- can only ADD a resolution,
+# never suppress a real one). A `class` FIELD holding a bound reference
+# (taxonomy "class field/method holding a bound reference" row, `class C {
+# run = cp.exec; }`) is NOT resolved through a later `new C().run(x)` call
+# site -- that needs points-to tracking through CONSTRUCTED instances, a
+# strictly harder problem than the by-local-name object-identity best effort
+# `_ts_attr_rebind_lookup` gives ordinary object rebinding (T-0660); a
+# `macro`-free language has no analog to Rust's `macro_rules!` row, so no
+# gap exists here for it.
+#
+# T-0660: closes the previously-documented "no scope-local alias copy-
+# propagation" gap (the T-0337 Python enhancement's TS/JS sibling) --
+# `_build_ts_alias_table`/`_record_ts_alias`/`_record_ts_declarator_alias`/
+# `_record_ts_default_param_aliases` now chase a local reassignment
+# (`f = cp.exec`), a chained assignment (`a = b = cp.exec`), an array-
+# destructuring bind (`const [f] = [cp.exec]`), default-parameter
+# forwarding (`function f(cb = cp.exec)`), and a by-name member-target
+# rebind (`obj.run = cp.exec`) the same way the python resolver's alias
+# table does.
 # C-C++/Kotlin remain OUT of scope for this pass; Rust gets its own binding-
 # aware pass, T-0378 below.
 _TS_SCOPE_TYPES = (
@@ -2126,6 +2144,7 @@ def _resolve_ts_subscript(
     import_table: dict[str, str],
     scope_cache: dict[int, frozenset[str]],
     string_bindings: dict[str, str],
+    alias_table: dict[int, dict[str, str]] | None = None,
 ) -> str | None:  # noqa: ANN001
     """`subscript_expression` case of `_resolve_ts_expr` (T-0377 reviewer
     round 2, bracket-access evasion fix; extended round 3 for static
@@ -2154,7 +2173,9 @@ def _resolve_ts_subscript(
     if obj is None or index is None:
         return None
     # frob:invariant terminates reason="obj is node's own 'object' field child, a proper descendant of node in the finite tree-sitter parse tree; mutually recurses with _resolve_ts_expr, which only descends into the subscript/member branches by calling back here" measure="node's subtree depth strictly decreases"  # noqa: E501
-    resolved_obj = _resolve_ts_expr(obj, import_table, scope_cache, string_bindings)
+    resolved_obj = _resolve_ts_expr(
+        obj, import_table, scope_cache, string_bindings, alias_table
+    )
     if resolved_obj is None:
         return None
     static_text = _ts_static_subscript_text(index)
@@ -2170,19 +2191,62 @@ def _resolve_ts_member(
     import_table: dict[str, str],
     scope_cache: dict[int, frozenset[str]],
     string_bindings: dict[str, str],
+    alias_table: dict[int, dict[str, str]] | None = None,
 ) -> str | None:  # noqa: ANN001
     """`member_expression` case of `_resolve_ts_expr` -- split out to keep
-    that function under the arch length ceiling (T-0377 reviewer round
-    2)."""
+    that function under the arch length ceiling (T-0377 reviewer round 2).
+
+    T-0660: when `obj` does not itself resolve through the import table (it
+    is an ordinary local name, never imported or aliased to one), its OWN
+    `.prop` may have been directly REBOUND to a dangerous target (`obj.run =
+    cp.exec; obj.run(x)`, taxonomy "member rebinding") -- `_ts_attr_rebind_
+    lookup` checks for that best-effort, by-name binding recorded in
+    `alias_table` by `_record_ts_alias`'s member-target branch (not a real
+    points-to alias -- `obj` is identified only by its local name, same
+    tradeoff as the python resolver's `_attr_rebind_lookup`)."""
     obj = node.child_by_field_name("object")
     prop = node.child_by_field_name("property")
     if obj is None or prop is None:
         return None
     # frob:invariant terminates reason="obj is node's own 'object' field child, a proper descendant of node in the finite tree-sitter parse tree; mutually recurses with _resolve_ts_expr, which only descends into the subscript/member branches by calling back here" measure="node's subtree depth strictly decreases"  # noqa: E501
-    resolved_obj = _resolve_ts_expr(obj, import_table, scope_cache, string_bindings)
-    if resolved_obj is None:
-        return None
-    return f"{resolved_obj}.{node_text(prop)}"
+    resolved_obj = _resolve_ts_expr(
+        obj, import_table, scope_cache, string_bindings, alias_table
+    )
+    if resolved_obj is not None:
+        return f"{resolved_obj}.{node_text(prop)}"
+    if obj.type == "identifier" and alias_table is not None:
+        return _ts_attr_rebind_lookup(
+            node_text(obj), node_text(prop), node, alias_table
+        )
+    return None
+
+
+def _ts_attr_rebind_lookup(
+    obj_name: str,
+    attr_name: str,
+    site,  # noqa: ANN001
+    alias_table: dict[int, dict[str, str]],
+) -> str | None:
+    """Best-effort lookup for a TS/JS member-expression target REBIND
+    (T-0660, `_record_ts_alias`'s member-target branch): walks `site`'s
+    enclosing scope chain (mirrors `_shadowing_ts_scope`'s walk, but keys
+    directly on the synthesized `"{obj_name}.{attr_name}"` string -- never a
+    legal JS identifier by itself, so it cannot collide with a real
+    identifier alias key in the same `alias_table`) looking for a scope that
+    recorded `obj.attr = <dangerous target>`. `None` if no enclosing scope
+    ever recorded such a rebind -- mirrors the python resolver's `_attr_
+    rebind_lookup`."""
+    key = f"{obj_name}.{attr_name}"
+    cur = site.parent
+    while cur is not None:
+        if cur.type in _TS_SCOPE_TYPES:
+            found = alias_table.get(cur.id, {}).get(key)
+            if found is not None:
+                return found
+            if cur.type == "program":
+                break
+        cur = cur.parent
+    return None
 
 
 def _resolve_ts_expr(
@@ -2190,38 +2254,73 @@ def _resolve_ts_expr(
     import_table: dict[str, str],
     scope_cache: dict[int, frozenset[str]],
     string_bindings: dict[str, str],
+    alias_table: dict[int, dict[str, str]] | None = None,
 ) -> str | None:  # noqa: ANN001
     """Resolve one TS/JS expression node (a bare `identifier`, a
-    `member_expression`/string-literal-`subscript_expression` chain, or an
-    inline `require(...)`/dynamic `import(...)` call) to its fully-
-    qualified import-bound target, or `None` if it is locally shadowed,
-    unresolved, or not a resolvable chain at all (T-0377, extended by the
-    reviewer-round-2 bracket-access/dynamic-import fixes and T-0432's
-    local-constant subscript dataflow) -- mirrors `_resolve_py_expr`'s
-    python job, without the T-0337 alias-copy-propagation layer (documented
-    limitation above). Any other expression (a `new_expression`, a
-    non-import ordinary call, ...) is not a resolvable "object" for chain
-    purposes -- e.g. `new Job()` in `new Job().run()` stops resolution
-    here, so `.run` never reaches the import table (the no-false-positive
-    case)."""
+    `member_expression`/string-literal-`subscript_expression` chain, an
+    inline `require(...)`/dynamic `import(...)` call, or -- T-0660 -- a
+    nested `assignment_expression`, chasing a chained assignment's RHS) to
+    its fully-qualified import-bound target, or `None` if it is locally
+    shadowed, unresolved, or not a resolvable chain at all (T-0377, extended
+    by the reviewer-round-2 bracket-access/dynamic-import fixes, T-0432's
+    local-constant subscript dataflow, and T-0660's scope-local alias-copy-
+    propagation layer -- `alias_table`, mirrors the python resolver's T-0337
+    layer, closing the "no alias-copy-propagation" limitation this module's
+    docstring previously documented) -- mirrors `_resolve_py_expr`'s python
+    job. Any other expression (a `new_expression`, a non-import ordinary
+    call, ...) is not a resolvable "object" for chain purposes -- e.g. `new
+    Job()` in `new Job().run()` stops resolution here, so `.run` never
+    reaches the import table (the no-false-positive case)."""
     if node.type == "identifier":
-        name = node_text(node)
-        if _is_ts_shadowed(name, node, scope_cache):
-            return None
-        return import_table.get(name)
+        return _resolve_ts_identifier(node, import_table, scope_cache, alias_table)
     if node.type == "member_expression":
         # frob:invariant terminates reason="mutually recurses with _resolve_ts_member, which only calls back here with node.child_by_field_name('object'), a proper descendant of node in the finite tree-sitter parse tree" measure="node's subtree depth strictly decreases"  # noqa: E501
-        return _resolve_ts_member(node, import_table, scope_cache, string_bindings)
+        return _resolve_ts_member(
+            node, import_table, scope_cache, string_bindings, alias_table
+        )
     if node.type == "subscript_expression":
         # frob:invariant terminates reason="mutually recurses with _resolve_ts_subscript, which only calls back here with node.child_by_field_name('object'), a proper descendant of node in the finite tree-sitter parse tree" measure="node's subtree depth strictly decreases"  # noqa: E501
-        return _resolve_ts_subscript(node, import_table, scope_cache, string_bindings)
+        return _resolve_ts_subscript(
+            node, import_table, scope_cache, string_bindings, alias_table
+        )
     if node.type == "call_expression":
         # T-0377 reviewer round 2: an INLINE `require('x')['fn']`/
         # `import('x')` used directly as the object of a member/subscript
         # chain, never bound to a name at all -- resolves the call itself
         # to its bare module text so the chain above it can keep going.
         return _ts_module_call_target(node)
+    if node.type == "assignment_expression":
+        # T-0660: chained assignment (`a = b = cp.exec; b(x);`) -- the outer
+        # assignment's RHS is itself an assignment_expression; peel through
+        # to its own `right` so the OUTER target's alias entry resolves the
+        # same dangerous target as the inner one.
+        right = node.child_by_field_name("right")
+        if right is None:
+            return None
+        # frob:invariant terminates reason="right is node's own 'right' field child, a proper descendant of node in the finite tree-sitter parse tree; the recursion only ever descends into a strictly smaller subtree" measure="node's subtree depth strictly decreases"  # noqa: E501
+        return _resolve_ts_expr(
+            right, import_table, scope_cache, string_bindings, alias_table
+        )
     return None
+
+
+def _resolve_ts_identifier(
+    node,
+    import_table: dict[str, str],
+    scope_cache: dict[int, frozenset[str]],
+    alias_table: dict[int, dict[str, str]] | None,
+) -> str | None:  # noqa: ANN001
+    """Resolve a bare `identifier` node to its import-bound target,
+    consulting `alias_table` for locally-shadowed names (T-0660, mirrors
+    the python resolver's `_resolve_py_identifier`) -- split out of
+    `_resolve_ts_expr`'s identifier branch."""
+    name = node_text(node)
+    scope = _shadowing_ts_scope(name, node, scope_cache)
+    if scope is not None:
+        if alias_table is None:
+            return None
+        return alias_table.get(scope.id, {}).get(name)
+    return import_table.get(name)
 
 
 def _collect_ts_candidates(
@@ -2230,12 +2329,14 @@ def _collect_ts_candidates(
     scope_cache: dict[int, frozenset[str]],
     string_bindings: dict[str, str],
     candidates: list[tuple[str, int, int]],
+    alias_table: dict[int, dict[str, str]] | None = None,
 ) -> None:  # noqa: ANN001
     """Recursively walk `node`, appending `(resolved, start_byte, end_byte)`
     to `candidates` for every call/member/subscript-access site that
     resolves through `import_table` (T-0377, extended by the reviewer-
-    round-2 bracket-access fix and T-0432's local-constant subscript
-    dataflow) -- mirrors `_collect_py_candidates`'s python job."""
+    round-2 bracket-access fix, T-0432's local-constant subscript dataflow,
+    and T-0660's `alias_table` copy-propagation layer) -- mirrors `_collect_
+    py_candidates`'s python job."""
     if node.type == "call_expression":
         func = node.child_by_field_name("function")
         if func is not None and func.type in (
@@ -2244,17 +2345,19 @@ def _collect_ts_candidates(
             "subscript_expression",
         ):
             resolved = _resolve_ts_expr(
-                func, import_table, scope_cache, string_bindings
+                func, import_table, scope_cache, string_bindings, alias_table
             )
             if resolved is not None:
                 candidates.append((resolved, node.start_byte, node.end_byte))
     elif node.type in ("member_expression", "subscript_expression"):
-        resolved = _resolve_ts_expr(node, import_table, scope_cache, string_bindings)
+        resolved = _resolve_ts_expr(
+            node, import_table, scope_cache, string_bindings, alias_table
+        )
         if resolved is not None:
             candidates.append((resolved, node.start_byte, node.end_byte))
     for child in node.children:
         _collect_ts_candidates(
-            child, import_table, scope_cache, string_bindings, candidates
+            child, import_table, scope_cache, string_bindings, candidates, alias_table
         )
 
 
@@ -2314,14 +2417,235 @@ def _ts_local_string_bindings(program_node) -> dict[str, str]:  # noqa: ANN001
     return {name: text for name, text in bindings.items() if text is not None}
 
 
+def _enclosing_ts_scope(node):  # noqa: ANN001, ANN201
+    """The nearest `_TS_SCOPE_TYPES` ancestor of `node` (its own function ->
+    class -> ... -> program), or `None` if `node` has no scope ancestor at
+    all -- (T-0660) used by `_build_ts_alias_table` to find which scope an
+    assignment's target name binds into; mirrors `_enclosing_py_scope`."""
+    cur = node.parent
+    while cur is not None:
+        if cur.type in _TS_SCOPE_TYPES:
+            return cur
+        cur = cur.parent
+    return None
+
+
+#: TS/JS function-like node types whose OWN default-parameter values get an
+#: alias-table entry keyed to the function's own scope id (T-0660, taxonomy
+#: "default parameter forwarding" row: `function f(cb = cp.exec) { cb(x); }`)
+#: -- excludes `class_declaration`/`class_expression`/`program` (no
+#: parameter list of their own).
+_TS_FUNCTION_LIKE_SCOPES = (
+    "function_declaration",
+    "generator_function_declaration",
+    "function_expression",
+    "generator_function",
+    "method_definition",
+    "arrow_function",
+)
+
+
+def _record_ts_default_param_aliases(
+    func_node,
+    import_table: dict[str, str],
+    scope_cache: dict[int, frozenset[str]],
+    string_bindings: dict[str, str],
+    alias_table: dict[int, dict[str, str]],
+) -> None:  # noqa: ANN001
+    """Record an alias entry for every `required_parameter`/`optional_
+    parameter` of `func_node` whose default `value` resolves to a dangerous
+    target (T-0660: default-arg forwarding, taxonomy row `function f(cb =
+    cp.exec) { cb(x); }`), keyed to `func_node`'s OWN scope id -- the same
+    scope `_shadowing_ts_scope` returns for a call site inside the function
+    body, since the parameter is already recorded in `_ts_scope_bound_names`
+    as always bound. Mirrors the python resolver's `_record_py_default_
+    param_aliases`."""
+    params = func_node.child_by_field_name("parameters")
+    if params is None:
+        return
+    scope_aliases = alias_table.setdefault(func_node.id, {})
+    for param in params.children:
+        if param.type not in ("required_parameter", "optional_parameter"):
+            continue
+        pattern = param.child_by_field_name("pattern")
+        value = param.child_by_field_name("value")
+        if pattern is None or value is None or pattern.type != "identifier":
+            continue
+        resolved = _resolve_ts_expr(
+            value, import_table, scope_cache, string_bindings, alias_table
+        )
+        if resolved is not None:
+            scope_aliases.setdefault(node_text(pattern), resolved)
+
+
+def _record_ts_destructure_alias(
+    left_pattern,  # noqa: ANN001 -- tree_sitter.Node (array_pattern)
+    right_array,  # noqa: ANN001 -- tree_sitter.Node (array literal)
+    import_table: dict[str, str],
+    scope_cache: dict[int, frozenset[str]],
+    string_bindings: dict[str, str],
+    alias_table: dict[int, dict[str, str]],
+    scope_aliases: dict[str, str],
+) -> None:
+    """Bind each plain-identifier element of `left_pattern` (an
+    `array_pattern` destructuring target) to its POSITIONALLY corresponding
+    element of `right_array`'s named children (T-0660, taxonomy
+    "destructuring bind (array)" row: `const [f] = [cp.exec]; f(x)`). A
+    non-identifier element (a nested pattern, a `...rest` spread) is simply
+    skipped -- a narrow, documented limitation, same posture as the python
+    resolver's nested-pattern gap."""
+    left_elements = [c for c in left_pattern.children if c.is_named]
+    right_elements = [c for c in right_array.children if c.is_named]
+    for left_el, right_el in zip(left_elements, right_elements, strict=False):
+        if left_el.type != "identifier":
+            continue
+        resolved = _resolve_ts_expr(
+            right_el, import_table, scope_cache, string_bindings, alias_table
+        )
+        if resolved is not None:
+            scope_aliases.setdefault(node_text(left_el), resolved)
+
+
+def _record_ts_declarator_alias(
+    node,  # noqa: ANN001 -- tree_sitter.Node (variable_declarator)
+    import_table: dict[str, str],
+    scope_cache: dict[int, frozenset[str]],
+    string_bindings: dict[str, str],
+    alias_table: dict[int, dict[str, str]],
+) -> None:
+    """One `variable_declarator` node's contribution to `alias_table`
+    (T-0660): a plain identifier target whose `value` resolves to a
+    dangerous target (taxonomy "simple assignment" row: `const f =
+    require("child_process").exec; f(x)`) or an `array_pattern` target with
+    an array-literal `value` (delegates to `_record_ts_destructure_alias`).
+    Skips a declarator already handled as an IMPORT SITE by `_ts_import_
+    table` (`_ts_module_call_target` non-`None`) -- same self-shadow
+    avoidance `_bind_ts_variable_declarator` already applies for the scope
+    binder."""
+    name_node = node.child_by_field_name("name")
+    value_node = node.child_by_field_name("value")
+    if name_node is None or value_node is None:
+        return
+    if _ts_module_call_target(value_node) is not None:
+        return
+    scope = _enclosing_ts_scope(node)
+    if scope is None:
+        return
+    scope_aliases = alias_table.setdefault(scope.id, {})
+    if name_node.type == "array_pattern" and value_node.type == "array":
+        _record_ts_destructure_alias(
+            name_node,
+            value_node,
+            import_table,
+            scope_cache,
+            string_bindings,
+            alias_table,
+            scope_aliases,
+        )
+        return
+    if name_node.type != "identifier":
+        return
+    resolved = _resolve_ts_expr(
+        value_node, import_table, scope_cache, string_bindings, alias_table
+    )
+    if resolved is not None:
+        scope_aliases.setdefault(node_text(name_node), resolved)
+
+
+def _record_ts_alias(
+    node,  # noqa: ANN001 -- tree_sitter.Node (assignment_expression)
+    import_table: dict[str, str],
+    scope_cache: dict[int, frozenset[str]],
+    string_bindings: dict[str, str],
+    alias_table: dict[int, dict[str, str]],
+) -> None:
+    """If `node` (an `assignment_expression`) binds a plain identifier or a
+    member-expression target to a resolvable RHS, record it in `alias_table`
+    (first resolution wins, mirrors the python resolver's `_record_py_
+    alias`) -- covers plain reassignment (`f = cp.exec`), CHAINED assignment
+    (`a = b = cp.exec`, via `_resolve_ts_expr`'s `assignment_expression`
+    peel-through: this function is called once per nested `assignment_
+    expression` node the tree walk visits, so both `a` and `b` get their own
+    entry), and member-target REBINDING (`obj.run = cp.exec`, taxonomy
+    "member rebinding" row) -- best-effort, by-NAME object identity only
+    (`_ts_attr_rebind_lookup`'s tradeoff)."""
+    left = node.child_by_field_name("left")
+    right = node.child_by_field_name("right")
+    if left is None or right is None:
+        return
+    scope = _enclosing_ts_scope(node)
+    if scope is None:
+        return
+    scope_aliases = alias_table.setdefault(scope.id, {})
+    if left.type == "member_expression":
+        obj = left.child_by_field_name("object")
+        prop = left.child_by_field_name("property")
+        if obj is None or prop is None or obj.type != "identifier":
+            return
+        resolved = _resolve_ts_expr(
+            right, import_table, scope_cache, string_bindings, alias_table
+        )
+        if resolved is not None:
+            scope_aliases.setdefault(f"{node_text(obj)}.{node_text(prop)}", resolved)
+        return
+    if left.type != "identifier":
+        return
+    resolved = _resolve_ts_expr(
+        right, import_table, scope_cache, string_bindings, alias_table
+    )
+    if resolved is not None:
+        scope_aliases.setdefault(node_text(left), resolved)
+
+
+def _build_ts_alias_table(
+    program_node,  # noqa: ANN001 -- tree_sitter.Node
+    import_table: dict[str, str],
+    scope_cache: dict[int, frozenset[str]],
+    string_bindings: dict[str, str],
+) -> dict[int, dict[str, str]]:
+    """Scope-local copy-propagation table (T-0660, closes this module's
+    previously-documented "no alias-copy-propagation" limitation, the TS/JS
+    sibling of the python resolver's T-0337/T-0659 `_build_py_alias_table`):
+    `id(scope_node) -> {name: resolved_dangerous_target}` for every plain-
+    identifier/member-target assignment (`_record_ts_alias`), destructuring/
+    simple `const`/`let`/`var` declarator (`_record_ts_declarator_alias`),
+    and default-parameter forwarding (`_record_ts_default_param_aliases`)
+    whose RHS resolves (via `_resolve_ts_expr`, which itself consults this
+    same table as it is built) to an import-table entry, a dangerous member
+    chain, or another local name already known to alias one. The tree walk
+    visits assignments/declarators in source (document) order, so an
+    earlier alias is already recorded by the time a later statement copies
+    it -- same document-order soundness argument as the python table."""
+    alias_table: dict[int, dict[str, str]] = {}
+
+    def visit(node) -> None:  # noqa: ANN001
+        if node.type == "assignment_expression":
+            _record_ts_alias(
+                node, import_table, scope_cache, string_bindings, alias_table
+            )
+        elif node.type == "variable_declarator":
+            _record_ts_declarator_alias(
+                node, import_table, scope_cache, string_bindings, alias_table
+            )
+        elif node.type in _TS_FUNCTION_LIKE_SCOPES:
+            _record_ts_default_param_aliases(
+                node, import_table, scope_cache, string_bindings, alias_table
+            )
+        for child in node.children:
+            visit(child)
+
+    visit(program_node)
+    return alias_table
+
+
 def _ts_resolved_candidates(path: Path) -> tuple[tuple[str, int, int], ...]:
     """Every `(resolved_dotted_target, start_byte, end_byte)` this TS/JS
     file's call/member-access sites resolve to through its import/require
-    binding table, enclosing-scope shadow check, and (T-0432) single-
-    literal local-constant subscript table (T-0377). Empty for a
-    non-typescript-bucket file, an unparseable file, or one `frob.lang` has
-    no grammar for -- degrades to the pre-existing lexical-only scan, never
-    raises."""
+    binding table, enclosing-scope shadow check, (T-0432) single-literal
+    local-constant subscript table, and (T-0660) scope-local alias-copy-
+    propagation table (T-0377). Empty for a non-typescript-bucket file, an
+    unparseable file, or one `frob.lang` has no grammar for -- degrades to
+    the pre-existing lexical-only scan, never raises."""
     parsed = raw_tree(path)
     if parsed.is_err:
         return ()
@@ -2332,9 +2656,17 @@ def _ts_resolved_candidates(path: Path) -> tuple[tuple[str, int, int], ...]:
     import_table = _ts_import_table(tree.root_node)
     string_bindings = _ts_local_string_bindings(tree.root_node)
     scope_cache: dict[int, frozenset[str]] = {}
+    alias_table = _build_ts_alias_table(
+        tree.root_node, import_table, scope_cache, string_bindings
+    )
     candidates: list[tuple[str, int, int]] = []
     _collect_ts_candidates(
-        tree.root_node, import_table, scope_cache, string_bindings, candidates
+        tree.root_node,
+        import_table,
+        scope_cache,
+        string_bindings,
+        candidates,
+        alias_table,
     )
     return tuple(candidates)
 
@@ -2756,11 +3088,22 @@ def _extra_ts_binding_operations(
 #   use std::process::Command;        -> {"Command": "std::process::Command"}
 #   use std::process::Command as C;   -> {"C": "std::process::Command"}
 #   use foo;                          -> {"foo": "foo"}
-# Grouped/nested `use` forms (`use std::fs::{self, File};`,
-# `use a::{b, c as d};`) are a documented, deliberately out-of-scope
-# limitation (T-0378) -- narrower than this pass's acceptance criteria
-# (aliased `use` + local-shadow discipline), left for a follow-up ticket
-# rather than risking an under-tested grammar-shape guess.
+# T-0661 closes the T-0378 grouped/nested-`use`/glob-`use` gap: `use a::{b,
+# c as d};` -> `{"b": "a::b", "d": "a::c"}` (`_bind_rust_use_list`, recursed
+# for a further-nested group like `a::{b::{c, d as e}}`); `use std::process
+# ::*;` -> a best-effort glob wildcard fallback for a `_RUST_WILDCARD_
+# DANGEROUS_MODULES`-curated path only (`_bind_rust_use_wildcard`, mirrors
+# the python resolver's `from X import *` fallback). `use std::fs::{self,
+# File};` -- the `self` re-export-of-the-parent-module keyword inside a
+# group -- is not specially recognized (falls through as an ordinary
+# `identifier` child bound to `"<prefix>::self"`, a harmless dead binding
+# rather than a crash); a real fix is a narrow follow-up, not attempted
+# here since it is not itself a capability-routing evasion.
+#
+# `pub use` re-export (taxonomy row): needs NO special-case at all -- a
+# `pub` visibility modifier is simply one more `use_declaration` child this
+# walk never dispatches on, so the path/alias/group/glob children are found
+# exactly the same regardless of whether `pub` precedes them.
 #
 # Scope-awareness (mandatory, mirrors T-0328/T-0377): a function/closure
 # PARAMETER or a local `let` binding of the same name as a `use`-bound alias
@@ -2833,13 +3176,127 @@ def _bind_rust_use_as_clause(node, table: dict[str, str]) -> None:  # noqa: ANN0
         table[node_text(alias_node)] = full
 
 
+def _rust_use_list_prefix(node) -> str | None:  # noqa: ANN001
+    """The `::`-joined path text a `scoped_use_list` node carries BEFORE its
+    trailing `use_list` child (T-0661: `std::process::{Command, Stdio}` ->
+    `"std::process"`, `d::{e, f as g}` (nested) -> `"d"`) -- `None` if the
+    node carries no leading path segment at all (defensive; the grammar
+    always emits at least one for a real `scoped_use_list`)."""
+    parts: list[str] = []
+    for child in node.children:
+        if child.type == "use_list":
+            break
+        if child.type == "identifier":
+            parts.append(node_text(child))
+        elif child.type == "scoped_identifier":
+            full = _rust_path_text(child)
+            if full:
+                parts.append(full)
+    return "::".join(parts) if parts else None
+
+
+def _rust_join_prefix(prefix: str | None, segment: str) -> str:
+    """Join a (possibly absent) enclosing group prefix with one more path
+    segment (T-0661), used by `_bind_rust_use_list`'s recursion into a
+    nested `scoped_use_list`."""
+    return f"{prefix}::{segment}" if prefix else segment
+
+
+def _bind_rust_use_list(
+    list_node,  # noqa: ANN001 -- tree_sitter.Node (use_list)
+    prefix: str | None,
+    table: dict[str, str],
+) -> None:
+    """One `use_list` node's contribution to `_rust_use_table` (T-0661,
+    taxonomy "use path::{a, b}" grouped/nested row): each bare `identifier`
+    child binds `{name: prefix::name}`; each `use_as_clause` child binds
+    `{alias: prefix::name}` (`use std::process::{Command as C, Stdio};` ->
+    `{"C": "std::process::Command", "Stdio": "std::process::Stdio"}` -- the
+    exact evasion the pre-existing lexical scan AND the pre-T-0661 flat-only
+    `_bind_rust_use_declaration` both missed: `C::new(...)` contains neither
+    the literal `Command::new(` needle text nor a bound `use_table` entry);
+    a nested `scoped_use_list` child (`d::{e, f as g}`) recurses with its
+    own prefix segment appended."""
+    for child in list_node.children:
+        if child.type == "identifier":
+            name = node_text(child)
+            table.setdefault(name, _rust_join_prefix(prefix, name))
+        elif child.type == "use_as_clause":
+            children = child.children
+            if len(children) < 3:
+                continue
+            source_node, alias_node = children[0], children[-1]
+            if source_node.type != "identifier" or alias_node.type != "identifier":
+                continue
+            table.setdefault(
+                node_text(alias_node),
+                _rust_join_prefix(prefix, node_text(source_node)),
+            )
+        elif child.type == "scoped_use_list":
+            sub_prefix = _rust_use_list_prefix(child)
+            full_prefix = (
+                _rust_join_prefix(prefix, sub_prefix) if sub_prefix else prefix
+            )
+            inner_list = next((c for c in child.children if c.type == "use_list"), None)
+            if inner_list is not None:
+                _bind_rust_use_list(inner_list, full_prefix, table)
+
+
+#: sentinel `use_table` KEY (not a legal Rust identifier -- starts with a
+#: NUL byte -- so it can never collide with a real bound alias) recording
+#: the set of glob-imported (`use path::*;`) module prefixes for a file,
+#: NUL-joined (T-0661, mirrors the python resolver's `_PY_WILDCARD_TABLE_
+#: KEY`/`_PY_WILDCARD_DANGEROUS_MODULES` best-effort fallback).
+_RUST_WILDCARD_TABLE_KEY = "\x00wildcard"
+
+#: every Rust `library` path `DANGEROUS_OPERATIONS` curates an entry for
+#: (T-0661) -- used ONLY to decide whether a `use path::*;` glob import is
+#: worth a best-effort fallback resolution; a module absent from this set
+#: gets no wildcard binding at all (an honest, documented under-
+#: approximation, matching the python resolver's `_PY_WILDCARD_DANGEROUS_
+#: MODULES` posture for the taxonomy's "degrades to opaque" caveat).
+_RUST_WILDCARD_DANGEROUS_MODULES: frozenset[str] = frozenset(
+    entry.library for entry in DANGEROUS_OPERATIONS if entry.language == "rust"
+)
+
+
+def _bind_rust_use_wildcard(node, table: dict[str, str]) -> None:  # noqa: ANN001
+    """One `use_wildcard` node's contribution to `_rust_use_table` (T-0661,
+    taxonomy "use path::*" glob row): `use std::process::*;` records
+    `"std::process"` into the `_RUST_WILDCARD_TABLE_KEY` sentinel set, ONLY
+    when it is a `_RUST_WILDCARD_DANGEROUS_MODULES`-curated path -- an
+    honest, narrow best-effort fallback (`_resolve_rust_identifier`'s
+    wildcard branch), not a general glob-import points-to resolution."""
+    parts: list[str] = []
+    for child in node.children:
+        if child.type == "*":
+            break
+        if child.type == "identifier":
+            parts.append(node_text(child))
+        elif child.type == "scoped_identifier":
+            full = _rust_path_text(child)
+            if full:
+                parts.append(full)
+    module = "::".join(parts) if parts else None
+    if module is None or module not in _RUST_WILDCARD_DANGEROUS_MODULES:
+        return
+    existing = table.get(_RUST_WILDCARD_TABLE_KEY, "")
+    modules = set(existing.split("\x00")) if existing else set()
+    modules.add(module)
+    table[_RUST_WILDCARD_TABLE_KEY] = "\x00".join(sorted(modules))
+
+
 def _bind_rust_use_declaration(node, table: dict[str, str]) -> None:  # noqa: ANN001
     """One `use_declaration` node's contribution to `_rust_use_table`: an
-    `as`-aliased path (`_bind_rust_use_as_clause`) or a bare path (`use
+    `as`-aliased path (`_bind_rust_use_as_clause`), a bare path (`use
     std::process::Command;` -> `{"Command": "std::process::Command"}`,
-    keyed by the path's last segment). Grouped/nested `use` lists
-    (`scoped_use_list`/`use_list`) are not bound -- documented limitation,
-    see the T-0378 block comment above."""
+    keyed by the path's last segment), a grouped/nested `use` list (T-0661,
+    `_bind_rust_use_list` via its enclosing `scoped_use_list`'s own path
+    prefix), or a glob (T-0661, `_bind_rust_use_wildcard`). A leading `pub`
+    visibility modifier (`pub use ...;`, taxonomy "pub use re-export" row)
+    is simply an extra child this walk never dispatches on, so it needs no
+    special case -- the path/alias/group/glob children are found and bound
+    exactly the same regardless of whether `pub` precedes them."""
     for child in node.children:
         if child.type == "use_as_clause":
             _bind_rust_use_as_clause(child, table)
@@ -2848,13 +3305,21 @@ def _bind_rust_use_declaration(node, table: dict[str, str]) -> None:  # noqa: AN
             if full:
                 alias = full.rsplit("::", 1)[-1]
                 table.setdefault(alias, full)
+        elif child.type == "scoped_use_list":
+            prefix = _rust_use_list_prefix(child)
+            inner_list = next((c for c in child.children if c.type == "use_list"), None)
+            if inner_list is not None:
+                _bind_rust_use_list(inner_list, prefix, table)
+        elif child.type == "use_wildcard":
+            _bind_rust_use_wildcard(child, table)
 
 
 def _rust_use_table(root_node) -> dict[str, str]:  # noqa: ANN001
-    """The file-wide local-alias -> resolved-path binding table (T-0378),
-    built from every `use_declaration` in the tree (not just top-level --
-    mirrors `_py_import_table`'s function-scoped-import over-approximation:
-    a module/fn-local `use` still contributes a file-wide binding)."""
+    """The file-wide local-alias -> resolved-path binding table (T-0378,
+    extended T-0661 for grouped/nested `use` lists and glob imports), built
+    from every `use_declaration` in the tree (not just top-level -- mirrors
+    `_py_import_table`'s function-scoped-import over-approximation: a
+    module/fn-local `use` still contributes a file-wide binding)."""
     table: dict[str, str] = {}
 
     def visit(node) -> None:  # noqa: ANN001
@@ -3012,19 +3477,39 @@ def _rust_is_shadowed(name: str, site, scope_cache: dict[int, dict[str, int]]) -
 
 
 def _resolve_rust_identifier(
-    node, use_table: dict[str, str], scope_cache: dict[int, dict[str, int]]
+    node,
+    use_table: dict[str, str],
+    scope_cache: dict[int, dict[str, int]],
+    alias_table: dict[int, dict[str, str]] | None = None,
 ) -> str | None:  # noqa: ANN001
-    """Resolve a bare `identifier` node to its `use`-bound target, or `None`
-    if it is locally shadowed AT THIS POSITION (T-0378 round 2) or not
-    `use`-bound at all."""
+    """Resolve a bare `identifier` node to its `use`-bound target, or (T-
+    0661) a scope-local `alias_table` entry when it IS locally shadowed AT
+    THIS POSITION (T-0378 round 2) -- mirrors the python/TS resolvers'
+    alias-copy-propagation fallback. When not shadowed at all and not
+    directly `use`-bound, falls back to the glob-import wildcard sentinel
+    (`_RUST_WILDCARD_TABLE_KEY`, T-0661) the same way the python resolver's
+    `from X import *` fallback does -- `None` if none of these apply."""
     name = node_text(node)
-    if _rust_is_shadowed(name, node, scope_cache):
-        return None
-    return use_table.get(name)
+    scope = _rust_shadowing_scope(name, node, scope_cache)
+    if scope is not None:
+        if alias_table is None:
+            return None
+        return alias_table.get(scope.id, {}).get(name)
+    direct = use_table.get(name)
+    if direct is not None:
+        return direct
+    wildcards = use_table.get(_RUST_WILDCARD_TABLE_KEY)
+    if wildcards:
+        module = sorted(wildcards.split("\x00"))[0]
+        return f"{module}::{name}"
+    return None
 
 
 def _resolve_rust_scoped(
-    node, use_table: dict[str, str], scope_cache: dict[int, dict[str, int]]
+    node,
+    use_table: dict[str, str],
+    scope_cache: dict[int, dict[str, int]],
+    alias_table: dict[int, dict[str, str]] | None = None,
 ) -> str | None:  # noqa: ANN001
     """Resolve a `scoped_identifier` chain (`Head::rest::of::path`) by
     resolving its leading segment through `_resolve_rust_identifier` and
@@ -3043,7 +3528,9 @@ def _resolve_rust_scoped(
     collect(node)
     if not parts:
         return None
-    resolved_head = _resolve_rust_identifier(parts[0], use_table, scope_cache)
+    resolved_head = _resolve_rust_identifier(
+        parts[0], use_table, scope_cache, alias_table
+    )
     if resolved_head is None:
         return None
     rest = "::".join(node_text(p) for p in parts[1:])
@@ -3051,17 +3538,126 @@ def _resolve_rust_scoped(
 
 
 def _resolve_rust_expr(
-    node, use_table: dict[str, str], scope_cache: dict[int, dict[str, int]]
+    node,
+    use_table: dict[str, str],
+    scope_cache: dict[int, dict[str, int]],
+    alias_table: dict[int, dict[str, str]] | None = None,
 ) -> str | None:  # noqa: ANN001
     """Resolve one Rust expression node (a bare `identifier` or a
     `scoped_identifier` chain) to its `use`-bound target, or `None` if it is
-    locally shadowed or not `use`-bound. Mirrors `_resolve_py_expr`/
-    `_resolve_ts_expr`'s dispatch."""
+    locally shadowed with no alias entry, or not `use`-bound at all. Mirrors
+    `_resolve_py_expr`/`_resolve_ts_expr`'s dispatch, extended (T-0661) with
+    the `alias_table` copy-propagation parameter."""
     if node.type == "identifier":
-        return _resolve_rust_identifier(node, use_table, scope_cache)
+        return _resolve_rust_identifier(node, use_table, scope_cache, alias_table)
     if node.type == "scoped_identifier":
-        return _resolve_rust_scoped(node, use_table, scope_cache)
+        return _resolve_rust_scoped(node, use_table, scope_cache, alias_table)
     return None
+
+
+def _enclosing_rust_scope(node):  # noqa: ANN001, ANN201
+    """The nearest `_RUST_SCOPE_TYPES` ancestor of `node` (its own function/
+    closure -> ... -> `source_file`), or `None` if `node` has no scope
+    ancestor at all -- (T-0661) used by `_build_rust_alias_table` to find
+    which scope a `let` binding's target name binds into; mirrors
+    `_enclosing_py_scope`/`_enclosing_ts_scope`."""
+    cur = node.parent
+    while cur is not None:
+        if cur.type in _RUST_SCOPE_TYPES:
+            return cur
+        cur = cur.parent
+    return None
+
+
+def _record_rust_destructure_alias(
+    left_pattern,  # noqa: ANN001 -- tree_sitter.Node (tuple_pattern)
+    right_tuple,  # noqa: ANN001 -- tree_sitter.Node (tuple_expression)
+    use_table: dict[str, str],
+    scope_cache: dict[int, dict[str, int]],
+    alias_table: dict[int, dict[str, str]],
+    scope_aliases: dict[str, str],
+) -> None:
+    """Bind each plain-identifier element of `left_pattern` (a `tuple_
+    pattern` destructuring target) to its POSITIONALLY corresponding element
+    of `right_tuple`'s named children (T-0661, taxonomy "tuple/struct
+    destructuring bind" row: `let (f, _) = (Command::new, 0); f("sh");`) --
+    a `_` wildcard-pattern element is simply skipped (not an identifier), a
+    nested pattern is skipped the same way (documented, narrow limitation,
+    same posture as the python/TS resolvers' nested-pattern gap)."""
+    left_elements = [c for c in left_pattern.children if c.is_named]
+    right_elements = [c for c in right_tuple.children if c.is_named]
+    for left_el, right_el in zip(left_elements, right_elements, strict=False):
+        if left_el.type != "identifier":
+            continue
+        resolved = _resolve_rust_expr(right_el, use_table, scope_cache, alias_table)
+        if resolved is not None:
+            scope_aliases.setdefault(node_text(left_el), resolved)
+
+
+def _record_rust_alias(
+    node,  # noqa: ANN001 -- tree_sitter.Node (let_declaration)
+    use_table: dict[str, str],
+    scope_cache: dict[int, dict[str, int]],
+    alias_table: dict[int, dict[str, str]],
+) -> None:
+    """If `node` (a `let_declaration`) binds a plain identifier or a tuple-
+    destructuring pattern to a resolvable `value`, record it in
+    `alias_table` (first resolution wins, mirrors the python/TS resolvers'
+    `_record_py_alias`/`_record_ts_alias`) -- covers a simple `let` binding
+    (`let f = Command::new;`), a CHAINED/shadowed `let` (`let f = cmd_new;
+    let f = f;` -- the second `let` re-resolves the first through this same
+    table, since the tree walk visits `let_declaration`s in source order),
+    and tuple-destructuring (`_record_rust_destructure_alias`). A closure
+    capturing a bound path (`let f = Command::new; let c = move |a|
+    f(a).spawn();`) needs no separate handling here: the closure body's call
+    site resolves `f` through this SAME scope-keyed alias table via
+    `_rust_shadowing_scope`'s enclosing-scope walk once the closure's own
+    scope (which does not itself bind `f`) is climbed past."""
+    pattern = node.child_by_field_name("pattern")
+    value = node.child_by_field_name("value")
+    if pattern is None or value is None:
+        return
+    scope = _enclosing_rust_scope(node)
+    if scope is None:
+        return
+    scope_aliases = alias_table.setdefault(scope.id, {})
+    if pattern.type == "tuple_pattern" and value.type == "tuple_expression":
+        _record_rust_destructure_alias(
+            pattern, value, use_table, scope_cache, alias_table, scope_aliases
+        )
+        return
+    if pattern.type != "identifier":
+        return
+    resolved = _resolve_rust_expr(value, use_table, scope_cache, alias_table)
+    if resolved is not None:
+        scope_aliases.setdefault(node_text(pattern), resolved)
+
+
+def _build_rust_alias_table(
+    root_node,  # noqa: ANN001 -- tree_sitter.Node
+    use_table: dict[str, str],
+    scope_cache: dict[int, dict[str, int]],
+) -> dict[int, dict[str, str]]:
+    """Scope-local copy-propagation table (T-0661, the Rust sibling of the
+    python resolver's T-0337/T-0659 `_build_py_alias_table` and the TS/JS
+    resolver's T-0660 `_build_ts_alias_table`): `id(scope_node) -> {name:
+    resolved_dangerous_target}` for every `let_declaration` whose `value`
+    resolves (via `_resolve_rust_expr`, which itself consults this same
+    table as it is built) to a `use`-table entry or another local name
+    already known to alias one. The tree walk visits `let_declaration`s in
+    source (document) order, so an earlier alias is already recorded by the
+    time a later statement copies it -- same document-order soundness
+    argument as the python/TS tables."""
+    alias_table: dict[int, dict[str, str]] = {}
+
+    def visit(node) -> None:  # noqa: ANN001
+        if node.type == "let_declaration":
+            _record_rust_alias(node, use_table, scope_cache, alias_table)
+        for child in node.children:
+            visit(child)
+
+    visit(root_node)
+    return alias_table
 
 
 def _collect_rust_candidates(
@@ -3069,32 +3665,35 @@ def _collect_rust_candidates(
     use_table: dict[str, str],
     scope_cache: dict[int, dict[str, int]],
     candidates: list[tuple[str, int, int]],
+    alias_table: dict[int, dict[str, str]] | None = None,
 ) -> None:  # noqa: ANN001
     """Recursively walk `node`, appending `(resolved, start_byte, end_byte)`
     to `candidates` for every `call_expression` whose `function` resolves
-    through `use_table` (T-0378) -- mirrors `_collect_py_candidates`/
-    `_collect_ts_candidates`'s job. Only the call site's function target is
-    a resolvable "path" here (a bare `Command::new` field/method-style
-    resolution beyond a plain scoped call is not attempted, matching this
-    pass's narrower acceptance criteria)."""
+    through `use_table` (T-0378) or, when locally shadowed, through
+    `alias_table`'s scope-local copy-propagation (T-0661) -- mirrors
+    `_collect_py_candidates`/`_collect_ts_candidates`'s job. Only the call
+    site's function target is a resolvable "path" here (a bare `Command::
+    new` field/method-style resolution beyond a plain scoped call is not
+    attempted, matching this pass's narrower acceptance criteria)."""
     if node.type == "call_expression":
         func = node.child_by_field_name("function")
         if func is not None and func.type in ("identifier", "scoped_identifier"):
-            resolved = _resolve_rust_expr(func, use_table, scope_cache)
+            resolved = _resolve_rust_expr(func, use_table, scope_cache, alias_table)
             if resolved is not None:
                 candidates.append((resolved, node.start_byte, node.end_byte))
     for child in node.children:
-        _collect_rust_candidates(child, use_table, scope_cache, candidates)
+        _collect_rust_candidates(child, use_table, scope_cache, candidates, alias_table)
 
 
 def _rust_resolved_candidates(path: Path) -> tuple[tuple[str, int, int], ...]:
     """Every `(resolved_path, start_byte, end_byte)` this Rust file's call
-    sites resolve to through its `use` binding table and POSITION-aware
-    enclosing-scope shadow check (T-0378, round 2 fixes an order-
-    insensitivity soundness hole -- see `_rust_scope_bound_names`). Empty
-    for a non-rust file, an unparseable file, or one `frob.lang` has no
-    grammar for -- degrades to the pre-existing lexical-only scan, never
-    raises."""
+    sites resolve to through its `use` binding table (extended T-0661 for
+    grouped/nested `use` lists and glob-import wildcard fallback), POSITION-
+    aware enclosing-scope shadow check (T-0378, round 2 fixes an order-
+    insensitivity soundness hole -- see `_rust_scope_bound_names`), and
+    (T-0661) scope-local `let`-alias copy-propagation table. Empty for a
+    non-rust file, an unparseable file, or one `frob.lang` has no grammar
+    for -- degrades to the pre-existing lexical-only scan, never raises."""
     parsed = raw_tree(path)
     if parsed.is_err:
         return ()
@@ -3104,8 +3703,11 @@ def _rust_resolved_candidates(path: Path) -> tuple[tuple[str, int, int], ...]:
 
     use_table = _rust_use_table(tree.root_node)
     scope_cache: dict[int, dict[str, int]] = {}
+    alias_table = _build_rust_alias_table(tree.root_node, use_table, scope_cache)
     candidates: list[tuple[str, int, int]] = []
-    _collect_rust_candidates(tree.root_node, use_table, scope_cache, candidates)
+    _collect_rust_candidates(
+        tree.root_node, use_table, scope_cache, candidates, alias_table
+    )
     return tuple(candidates)
 
 
