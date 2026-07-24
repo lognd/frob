@@ -104,6 +104,10 @@ _log = get_logger(__name__)
 #: T-0641: REL220/REL221/REL222 (`_retry.py`'s RETRY-obligation family)
 #: join this set for the identical reason -- a node can originate several
 #: retryable flows, so each fires per-flow.
+#: T-0647: REL270/REL271/REL272 (`_observability.py`'s OBSERVABILITY +
+#: CORRELATION-obligation family) join this set for the identical reason
+#: -- a node can originate several boundary or chained flows, so each
+#: fires per-flow.
 MULTI_INSTANCE_WAIVER_FAMILIES: frozenset[str] = frozenset(
     {
         "SYS100",
@@ -119,6 +123,9 @@ MULTI_INSTANCE_WAIVER_FAMILIES: frozenset[str] = frozenset(
         "REL220",
         "REL221",
         "REL222",
+        "REL270",
+        "REL271",
+        "REL272",
     }
 )
 

@@ -429,6 +429,287 @@ node legacy_singleton : trusted {
 }
 ```
 
+## REL26x: BACKPRESSURE obligation (T-0646)
+
+`_backpressure.py::check_backpressure_obligations` reads
+`KernelModel.nodes` (no new kernel field, charter law 1) to find every
+node marked `queue` or `consumer` (this node buffers or drains work -- a
+message queue, a worker pool consumer, anything that can receive faster
+than it can drain) with an undischarged or unproven bounded-intake
+obligation. Extends `_lint.py`'s LINT003 surge/LINT005 capacity ideas to
+a NEW population: a queue/consumer needs its OWN declared bounded-intake
+policy, not just a downstream capacity headroom claim.
+
+- **REL260 missing bounded intake** -- a `queue`/`consumer` node with no
+  `bounded_intake` attr. Deny-by-default: an unbounded queue accepts
+  intake without limit, so a slow/failed consumer becomes an unbounded
+  memory/latency liability.
+- **REL261 unproven bounded intake** -- a node DOES declare
+  `bounded_intake`, but the T-0331 PROVABILITY CONSTRAINT forbids
+  discharging it by bare declaration alone: the node must have at least
+  one file bound to it (`_code_binding.py::bind_code`) containing a real
+  bounded-queue/backpressure-shaped token. A node with no bound code at
+  all is UNCHECKABLE, not unproven -- the same ceiling REL201/REL222/
+  REL231 draw.
+
+### Surface vocabulary
+
+```
+node ingest_queue : trusted {
+    queue;            // this node models a message/work queue
+    bounded_intake;    // discharges REL260; REL261 then checks bound code
+}
+
+node worker_pool : trusted {
+    consumer;
+    bounded_intake;
+}
+```
+
+### GRAMMAR-DATA CEILING, HONESTLY
+
+`queue`/`consumer`/`bounded_intake` are all presence-only bare Node attrs
+(no numeric magnitude -- the same digit-led-literal ceiling every other
+REL2xx marker in this family discloses), so REL260/REL261 prove PRESENCE
+of a declared bounded-intake obligation and its code-level evidence, not
+a specific queue depth or drop policy. REL261's proof-against-code is a
+syntactic token scan (`maxsize=`/`max_size=` kwarg, `Semaphore(`/
+`BoundedSemaphore(`, `backpressure`/`bounded_queue`/`token_bucket`/
+`rate_limit`) over the node's bound source, not a semantic call-argument
+binding -- the same "ship what current tooling supports" honesty line
+REL201/REL222/REL231 already establish.
+
+### Waiver channel
+
+REL260/REL261 do NOT join `_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES`,
+same as REL210/REL211/REL230/REL231/REL240/REL241/REL250: a node carries
+at most one `queue`/`consumer` marker and fires at most one REL260 and
+one REL261 finding, so a bare-rule `waive` clause names exactly one
+thing:
+
+```
+node legacy_queue : trusted {
+    queue;
+    waive "REL260" reason "legacy queue, bounded intake tracked in T-9910-followup" ticket "T-9910";
+}
+```
+
+## REL27x: OBSERVABILITY + CORRELATION obligation (T-0647)
+
+`_observability.py::check_observability_obligations` reads
+`KernelModel.flows`/`KernelModel.boundaries` (no new kernel field,
+charter law 1) to find every boundary flow with an undischarged or
+unproven observability obligation, and every chained (non-first-hop)
+flow with no trace-id correlation propagation.
+
+- **REL270 missing observability** -- a flow attached to a `Boundary`
+  with no `observability` attr. Deny-by-default: a boundary crossing
+  with no metrics/traces/logs instrumentation is an unobserved trust/
+  label change.
+- **REL271 unproven observability** -- a boundary flow DOES declare
+  `observability`, but the T-0331 PROVABILITY CONSTRAINT forbids
+  discharging it by bare declaration alone: at least one of the flow's
+  endpoints (`src` or `dst`, T-0758 proof-anchoring) must have bound code
+  containing a real metrics/tracing/logging-shaped token. A flow with
+  NEITHER endpoint bound to any code at all is UNCHECKABLE, not unproven
+  -- the same ceiling REL201/REL222/REL231/REL261 draw.
+- **REL272 missing correlation propagation** -- a flow that is NOT the
+  first hop of its chain (some other flow's `dst` equals this flow's
+  `src`) with no `correlation` attr. Deny-by-default: a chained call with
+  no propagated trace-id breaks distributed tracing at exactly the hop
+  boundary that matters most for cross-service debugging.
+
+### Surface vocabulary
+
+Two independent Flow `attr` markers, both bare (no `=value`):
+
+```
+flow f_edge : edge -> api {
+    attr observability;  // discharges REL270; REL271 then checks bound code
+}
+
+boundary b_edge on f_edge : endorse foreign -> authenticated;
+
+flow f_chain : api -> db {
+    attr correlation;    // discharges REL272 (only applies to chained hops)
+}
+```
+
+`observability` and `correlation` are deliberately separate markers (not
+one combined attr): a single-hop boundary flow can need observability
+without ever being part of a chain, and an internal chained hop can need
+correlation propagation without crossing any trust/label boundary.
+
+### GRAMMAR-DATA CEILING, HONESTLY
+
+`observability`/`correlation` are both presence-only bare Flow attrs (no
+numeric magnitude, no actual trace-id format round-trips through the
+grammar -- the same digit-led-literal ceiling every other REL2xx marker
+in this family discloses), so REL270/REL271/REL272 prove PRESENCE of a
+declared instrumentation/propagation obligation and its code-level
+evidence (REL271 only), not a specific metric name or trace header
+format. REL271's proof-against-code is a syntactic token scan
+(`prometheus`/`statsd`, `opentelemetry`/`otel`, `tracer.start`/
+`start_as_current_span`, `logger.`/`logging.`) over the bound endpoint's
+source, not a semantic call-argument binding -- the same "ship what
+current tooling supports" honesty line REL201/REL222/REL231/REL261
+already establish.
+
+### Waiver channel
+
+REL270/REL271/REL272 join the SAME T-0174 waiver channel REL200/REL201/
+REL220/REL221/REL222 use (`_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES`) --
+a node can originate more than one boundary or chained flow, so a `waive`
+clause naming one of these MUST carry a `RULE:SUBTARGET` sub-target (the
+flow id):
+
+```
+node edge : trusted {
+    waive "REL270:f_edge" reason "f_edge is a dev-only debug hook, tracked in T-9911" ticket "T-9911";
+}
+```
+
+## REL28x: golden-signal SLO + error-budget obligation (T-0648)
+
+`_slo.py::check_slo_obligations` reads `KernelModel.nodes` (no new kernel
+field, charter law 1) to find every long-lived service/daemon node
+(`_UNIT_ATTR`/`_SERVICE_ATTR`, the IDENTICAL population REL210/REL211
+HEALTH already apply to) with an undischarged or unproven golden-signal-
+SLO-and-error-budget obligation.
+
+- **REL280 missing golden-signal SLO + error budget** -- a service node
+  missing `slo`, `error_budget`, or both. Deny-by-default: a service with
+  no declared golden-signal SLOs (latency/traffic/errors/saturation) and
+  error budget has no tracked reliability target, so a degradation has
+  nothing to breach and nothing pages on.
+- **REL281 unproven SLO** -- a node DOES declare both `slo` and
+  `error_budget`, but the T-0331 PROVABILITY CONSTRAINT forbids
+  discharging it by bare declaration alone: the node must have at least
+  one file bound to it containing a real SLO/error-budget-shaped token. A
+  node with no bound code at all is UNCHECKABLE, not unproven -- the same
+  ceiling REL201/REL222/REL231/REL261/REL271 draw.
+
+This obligation is `blocked_by` T-0647 (OBSERVABILITY) at the ticket
+level (an SLO without the underlying signal is unverifiable), but does
+NOT hard-wire a runtime check against T-0647's `observability` marker:
+`KernelModel` has no node-level "this node's flows are instrumented"
+projection today, and adding one would be a kernel-shape change outside
+this ticket's rule-module scope. REL280/REL281 read `slo`/`error_budget`
+exactly as declared, honoring the dependency at obligation-ordering level
+(T-0647 landed first, in the same ticket batch) rather than a code-level
+cross-check.
+
+### Surface vocabulary
+
+Two Node `attr` markers, both bare (no `=value`), layered on top of
+REL21x's `service`/`unit` marker:
+
+```
+node checkout_svc : trusted {
+    service;
+    slo;            // discharges half of REL280
+    error_budget;   // discharges the other half; REL281 then checks bound code
+}
+```
+
+### GRAMMAR-DATA CEILING, HONESTLY
+
+`slo`/`error_budget` are both presence-only bare Node attrs (no numeric
+magnitude -- the same digit-led-literal ceiling every other REL2xx
+marker in this family discloses), so REL280/REL281 prove PRESENCE of a
+declared golden-signal-SLO-and-error-budget obligation and its code-
+level evidence, not a specific latency/error-rate target or budget
+percentage. REL281's proof-against-code is a syntactic token scan
+(`error_budget`/`errorbudget`, `slo`/`sloth`, a `p50`/`p9[0-9]`
+latency-percentile token) over the node's bound source, not a semantic
+call-argument binding -- the same "ship what current tooling supports"
+honesty line REL201/REL222/REL231/REL261/REL271 already establish.
+
+### Waiver channel
+
+REL280/REL281 do NOT join `_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES`,
+same as REL210/REL211/REL230/REL231/REL240/REL241/REL250/REL260/REL261: a
+node carries at most one `unit`/`service` marker and fires at most one
+REL280 and one REL281 finding, so a bare-rule `waive` clause names
+exactly one thing:
+
+```
+node legacy_service : trusted {
+    service;
+    waive "REL280" reason "legacy service, SLO tracked in T-9912-followup" ticket "T-9912";
+}
+```
+
+## REL29x: SINGLE SOURCE OF TRUTH obligation (T-0649)
+
+`_ssot.py::check_ssot_obligations` reads `KernelModel.flows`/`KernelModel.
+nodes` plus a caller-supplied `store_ids` set (no new kernel field,
+charter law 1 -- same `store_ids` parameter shape `_contention.py`'s
+SYS203 already established) to find every store written by two or more
+distinct nodes with an undischarged or unproven single-source-of-truth
+obligation. Extends `_contention.py`'s SYS203 shared-store-write
+DETECTION with an OBLIGATION: SYS203 alone only reports the fact of
+multi-writer contention; REL290/REL291 additionally require the store to
+declare who owns write authority or how conflicting writes reconcile.
+
+- **REL290 missing owner/reconciliation** -- a multi-writer store (>=2
+  distinct non-store nodes have a `Flow` edge landing on it, SYS203's
+  exact mode-blind detection) with no `owner` attr and no
+  `reconciliation` attr. Deny-by-default: two or more nodes writing the
+  same store with no declared single-owner authority or reconciliation
+  strategy is a hard consistency hazard -- concurrent writers can
+  silently clobber each other with no defined resolution.
+- **REL291 unproven owner** -- a multi-writer store DOES declare `owner`
+  or `reconciliation`, but the T-0331 PROVABILITY CONSTRAINT forbids
+  discharging it by bare declaration alone: the store node must have at
+  least one file bound to it containing a real single-writer/
+  reconciliation-shaped token. A store with no bound code at all is
+  UNCHECKABLE, not unproven -- the same ceiling REL201/REL222/REL231/
+  REL261/REL271/REL281 draw.
+
+### Surface vocabulary
+
+Two Node `attr` markers, either one sufficient to discharge REL290:
+
+```
+node orders_db : trusted {
+    owner;            // OR reconciliation; discharges REL290
+                       // REL291 then checks bound code
+}
+```
+
+`store_ids` is NOT a `KernelModel` fact (module docstring, SYS203's same
+disclosure): callers pass the design file's `Module.stores` ids
+explicitly; an empty `store_ids` emits nothing.
+
+### GRAMMAR-DATA CEILING, HONESTLY
+
+`owner`/`reconciliation` are both presence-only bare Node attrs (no
+numeric magnitude, no actual owning-node-id or reconciliation-strategy
+name round-trips through the grammar -- the same digit-led-literal
+ceiling every other REL2xx marker in this family discloses), so REL290/
+REL291 prove PRESENCE of a declared single-source-of-truth obligation and
+its code-level evidence, not a specific owning node or algorithm.
+REL291's proof-against-code is a syntactic token scan (`single_writer`,
+`leader_election`/`leader_only`, `distributed_lock`/`DistributedLock(`,
+`reconcil`/`CRDT`) over the store's bound source, not a semantic call-
+argument binding -- the same "ship what current tooling supports"
+honesty line REL201/REL222/REL231/REL261/REL271/REL281 already
+establish.
+
+### Waiver channel
+
+REL290/REL291 do NOT join `_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES`,
+same as REL210/REL211/REL230/REL231/REL240/REL241/REL250/REL260/REL261/
+REL280/REL281: a store fires at most one REL290 and one REL291 finding,
+so a bare-rule `waive` clause names exactly one thing:
+
+```
+node legacy_shared_store : trusted {
+    waive "REL290" reason "legacy shared store, owner tracked in T-9913-followup" ticket "T-9913";
+}
+```
+
 ## See also
 
 - `docs/strata/host.md#resource-contention-sys2xx-t-0699` -- the SYS2xx

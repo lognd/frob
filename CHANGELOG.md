@@ -20,6 +20,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 ## [0.150.0] - unreleased
 
 - T-0756: self-audit-green-at-land + new-gate-rule end-to-end acceptance policy (kill invoked-by-nothing structurally)
+- T-0646: strata: BACKPRESSURE bounded-intake obligation on queues/consumers
 
 ## [0.149.0] - unreleased
 

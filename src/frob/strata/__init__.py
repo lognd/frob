@@ -65,6 +65,14 @@ from frob.strata._audit import (
     evaluate_exhaustiveness,
     group_gaps_by_view,
 )
+from frob.strata._backpressure import (
+    BACKPRESSURE_RULES,
+    REL_MISSING_BOUNDED_INTAKE,
+    REL_UNPROVEN_BOUNDED_INTAKE,
+    BackpressureReport,
+    BackpressureViolation,
+    check_backpressure_obligations,
+)
 from frob.strata._breach import (
     BlastRadius,
     BreachContractReport,
@@ -258,6 +266,15 @@ from frob.strata._native_staleness import (
     stale_natives,
 )
 from frob.strata._native_test import NativeAuditOutcome, run_native_sys_audit
+from frob.strata._observability import (
+    OBSERVABILITY_RULES,
+    REL_MISSING_CORRELATION,
+    REL_MISSING_OBSERVABILITY,
+    REL_UNPROVEN_OBSERVABILITY,
+    ObservabilityReport,
+    ObservabilityViolation,
+    check_observability_obligations,
+)
 from frob.strata._packs import ANALYZABLE, ANALYZABLE_POLICY_ID, require_analyzable
 from frob.strata._parse import parse_module
 from frob.strata._pii import (
@@ -315,12 +332,28 @@ from frob.strata._selfconform import (
     SelfConformViolation,
     check_self_conformance,
 )
+from frob.strata._slo import (
+    REL_MISSING_SLO,
+    REL_UNPROVEN_SLO,
+    SLO_RULES,
+    SloReport,
+    SloViolation,
+    check_slo_obligations,
+)
 from frob.strata._spof import (
     REL_SPOF,
     SPOF_RULES,
     SpofReport,
     SpofViolation,
     check_spof,
+)
+from frob.strata._ssot import (
+    REL_MISSING_OWNER,
+    REL_UNPROVEN_OWNER,
+    SSOT_RULES,
+    SsotReport,
+    SsotViolation,
+    check_ssot_obligations,
 )
 from frob.strata._sysdoc import (
     ClaimAuditResult,
@@ -391,6 +424,11 @@ __all__ = [
     "AtCallRequire",
     "AddFlow",
     "AtomicContractReport",
+    "BACKPRESSURE_RULES",
+    "REL_MISSING_BOUNDED_INTAKE",
+    "REL_UNPROVEN_BOUNDED_INTAKE",
+    "BackpressureReport",
+    "BackpressureViolation",
     "BalancerDecl",
     "BenignCapability",
     "BlastRadius",
@@ -458,6 +496,12 @@ __all__ = [
     "Node",
     "NodeDecl",
     "NoFlow",
+    "OBSERVABILITY_RULES",
+    "REL_MISSING_CORRELATION",
+    "REL_MISSING_OBSERVABILITY",
+    "REL_UNPROVEN_OBSERVABILITY",
+    "ObservabilityReport",
+    "ObservabilityViolation",
     "ObservedEffect",
     "ObserveDecl",
     "OperationDecl",
@@ -517,8 +561,18 @@ __all__ = [
     "ReliabilityViolation",
     "RetryReport",
     "RetryViolation",
+    "REL_MISSING_SLO",
+    "REL_UNPROVEN_SLO",
+    "SLO_RULES",
+    "SloReport",
+    "SloViolation",
     "SpofReport",
     "SpofViolation",
+    "REL_MISSING_OWNER",
+    "REL_UNPROVEN_OWNER",
+    "SSOT_RULES",
+    "SsotReport",
+    "SsotViolation",
     "RESOURCE_CONTENTION_RULES",
     "ResourceContentionReport",
     "ResourceContentionViolation",
@@ -552,6 +606,8 @@ __all__ = [
     "bind_code",
     "build_facts",
     "scan_text_for_fingerprints",
+    "check_backpressure_obligations",
+    "check_observability_obligations",
     "check_capability_completeness",
     "check_capability_conformance",
     "check_catalog_completeness",
@@ -571,6 +627,8 @@ __all__ = [
     "check_reliability_timeouts",
     "check_retry_obligations",
     "check_spof",
+    "check_slo_obligations",
+    "check_ssot_obligations",
     "is_critical_dependency",
     "is_external_dependency",
     "check_resource_contention",
