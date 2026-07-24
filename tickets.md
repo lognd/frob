@@ -3536,7 +3536,7 @@ out of this ticket's declared scope, same disclosed cut.
 ```yaml
 id: T-0619
 title: 'arch: ISP checks (ARCH1xx) -- fat interface, narrow-client usage'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
