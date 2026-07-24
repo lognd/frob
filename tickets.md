@@ -1153,10 +1153,94 @@ priority: low
 parent: null
 scope:
 - src/frob/gates/__init__.py
+- tests/test_gates.py
+scope_changes:
+- op: add
+  glob: tests/test_gates.py
+  reason: COV006 symref regression tests + splitting the file-blanket TestProcessPoolGates/TestGateOrderSetEquality
+    waivers into per-test waivers
+  actor: logan
+  at: '2026-07-23'
+evidence:
+- tests/test_gates.py::TestCoverageGate::test_cov006_violation_carries_edge_src_as_symref
+- tests/test_gates.py::TestCoverageGate::test_cov006_waiver_does_not_blanket_suppress_the_whole_file
 threat: null
 component: null
 ```
 Discovered while working T-0516: COV006 Violation objects carry no symref (file=test_file, line=0), so _match_waiver falls back to file-level matching for a frob:waive COV006 comment anywhere in that file -- ANY single COV006 waiver in a test file silently suppresses EVERY COV006 finding in that file, not just the one it was written next to. Verified directly: adding one waiver comment near one test in tests/test_gates.py suppressed all 7 COV006 findings then present in that file, including unrelated ones that were NOT sound (an import-alias false-positive that needed a real fix, not a waiver). Consider giving COV006 violations a symref (the test's own qualname) so _match_waiver can do symbol-exact matching the way most other rules do, instead of falling back to file-scope for a rule that very plausibly has multiple independent findings per file.
+
+## Done report
+
+COV006's Violation now carries symref=edge.src (the offending frob:tests
+edge's own test symref), mirroring TEST005/T-0148's existing precedent for
+symbol-exact waiver matching. _match_waiver's symref-is-not-None branch
+already existed and required no changes -- only COV006's Violation
+construction (_cov006_edge_violation, src/frob/gates/__init__.py) needed
+to start populating it.
+
+Blast-radius check (grep for every `frob:waive COV006` in the tree, 4
+existed before this change, one more added by this change's own tests):
+- tests/test_graph.py:764 and tests/unit/strata/test_selfconform.py:921,969
+  -- each already sat directly above the one test method it was meant to
+  cover; unaffected, still match after the symref change.
+- tests/test_gates.py:5830 (TestProcessPoolGates.
+  test_process_job_runs_in_a_separate_process) was the one genuine
+  file-blanket case: its own reason text said outright "COV006 waivers
+  match at file granularity ... so one waiver here covers both" --
+  covering a SECOND, unrelated finding on
+  TestGateOrderSetEquality.test_canonical_gate_order_matches_all_gates
+  "below" in the same file purely because both were in the same file.
+  This is the exact over-waiving this ticket describes. Split into two
+  waivers, each bound to its own test, same reasoning per site
+  (T-0525 is the T-0516 calibration ticket the old comment referenced).
+  A third sibling, test_all_gates_is_subset_of_canonical_order, had NO
+  waiver before and genuinely needed its own (same never-calls-the-
+  bound-symbol shape) -- added. A fourth sibling,
+  test_canonical_order_names_no_nonexistent_gate, does NOT need one: its
+  frob:tests directive lives inside its docstring text, not a `#`
+  comment, so DSL parsing never creates a TESTS edge for it in the first
+  place -- verified empirically (a waiver placed there fired WAIVE004,
+  "0 matching findings"; removed rather than left as a dead waiver).
+
+Added two regression tests directly exercising the new symref plumbing:
+tests/test_gates.py::TestCoverageGate::
+test_cov006_violation_carries_edge_src_as_symref (asserts the emitted
+Violation.symref equals the edge's src) and
+::test_cov006_waiver_does_not_blanket_suppress_the_whole_file (two
+independent unsound frob:tests edges in one file; a waiver bound to only
+one must not touch the other -- kept/waived split via _apply_waivers).
+Mutation check: reverting symref=edge.src back to symref=None in
+_cov006_edge_violation makes both new tests fail
+(`uv run pytest tests/test_gates.py::TestCoverageGate::
+test_cov006_violation_carries_edge_src_as_symref
+tests/test_gates.py::TestCoverageGate::
+test_cov006_waiver_does_not_blanket_suppress_the_whole_file` -> 2 failed
+under the mutant, 2 passed after reverting), confirming they kill the
+predicate this ticket changes, not just execute it.
+
+Measured: `uv run pytest tests/test_gates.py -p no:cacheprovider -q` ->
+all pass (348 collected in this file, none newly failing).
+`frob check --ticket T-0525 --only gates-fast` -> 0 errors, 931 warnings,
+160 waived (clean); no new unwaived COV006 finding anywhere in the tree,
+confirmed by grepping the full gates-fast output for "COV006" outside a
+"[waived: ...]" annotation (only the one now-removed dead waiver's
+WAIVE004 showed up mid-iteration, gone after removing it).
+
+No cuts: the ticket's own ask (give COV006 a symref so `_match_waiver`
+stops falling back to file-scope) is implemented as scoped, plus the
+concrete over-waiving instance it names (tests/test_gates.py) is repaired
+in the same change.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_gates.py::TestCoverageGate::test_cov006_violation_carries_edge_src_as_symref` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestCoverageGate::test_cov006_waiver_does_not_blanket_suppress_the_whole_file` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0542 -->
 ```yaml
@@ -1667,7 +1751,7 @@ Land note: the order-dependent xdist flake (render-lint gitless system test, doc
 ```yaml
 id: T-0589
 title: Tie TEST001 credit to real per-symbol coverage (promote TEST005/TEST015, cross-cutting)
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-21'
@@ -1675,12 +1759,153 @@ priority: medium
 parent: null
 scope:
 - src/frob/gates/__init__.py
+- src/frob/gates/_models.py
+- tests/test_gates.py
+scope_changes:
+- op: add
+  glob: src/frob/gates/_models.py
+  reason: TestPolicy.require_branch_coverage_for_test001 new opt-in policy field
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: tests/test_gates.py
+  reason: evidence tests for the TEST001 promotion live here; lease was held by sibling
+    T-0525 during implementation, released via requeue for landing order
+  actor: logan
+  at: '2026-07-23'
+evidence:
+- tests/test_gates.py::TestTestGate::test_test001_zero_branch_coverage_flags_when_opted_in
+- tests/test_gates.py::TestTestGate::test_test001_zero_branch_coverage_silent_when_flag_off
+- tests/test_gates.py::TestTestGate::test_test001_nonzero_branch_coverage_stays_silent_when_opted_in
 threat: null
 component: null
 ```
 T-0548 added TEST015 (WARN) reusing T-0549's existing _has_assertion_evidence heuristic to surface a public symbol whose ONLY TEST001 credit comes from a test with no assertion-shaped construct at all (docs/audits/gates-accounting.md B1's def-myfunc-pass repro). It deliberately does NOT change what TEST001 itself blocks on. This ticket is the actual cross-cutting fix the audit asked for: tie TEST001 credit to nonzero per-symbol branch coverage (frob.gates._coverage.CoverageData.symbol_branch, already computed for TEST005) or promote TEST005 to ERROR -- either requires touching TEST002/003/004/005/009's severities and interactions together, plus reconciling with the legacy-adoption WARN campaign frob.toml already documents (see its own comments), which is why it was split out rather than attempted inside T-0548. Concretely: decide whether TEST001 should require symbol_branch[record.symref] > 0 in addition to a name/edge match (requires wiring CoverageData into _test001_002, which today only sees tests: CollectedTests, not coverage), survey how many currently-green symbols would flip red (mirroring T-0547/T-0556's compat-survey precedent in this same audit pass), and land the sound subset.
 
 TEST-pool triage (T-draft-edbf1e26, 2026-07-22): re-measured `frob check --only test` -- TEST005 and TEST015 both currently report 0 findings against this tree (fixture-pinned to `main`+T-0583, no coverage stamp present so a stale/absent stamp masking a real regression cannot be ruled out; re-verify once T-0586's committed-lock wiring lands). No genuine findings to disposition in this pass for either bucket.
+
+## Done report
+
+Wiring implemented (the concrete ask in the ticket body's first option:
+"decide whether TEST001 should require symbol_branch[record.symref] > 0
+in addition to a name/edge match ... requires wiring CoverageData into
+_test001_002, today only sees tests: CollectedTests, not coverage"):
+
+- TestPolicy (src/frob/gates/_models.py) gained
+  require_branch_coverage_for_test001: bool = False.
+- _test001_002/_test001_002_one (src/frob/gates/__init__.py) now accept an
+  Option[CoverageData] parameter (default Nothing(), so every existing
+  caller is unaffected without an explicit change); test_gate's existing
+  `coverage: Option[CoverageData]` param is threaded through at the one
+  call site inside coverage_gate.
+- New _test001_zero_measured_branch_coverage(record, data): when the
+  policy flag is on and coverage data is present, a symbol that already
+  satisfies TEST001 by name/edge match but whose coverage.xml shows the
+  symbol's FILE was measured and the symbol itself NEVER RAN
+  (symbol_branch == 0.0%, reusing _test005_symbols' own T-0557 "file
+  measured, symbol absent from symbol_branch -> 0%" signal) now also
+  fires TEST001 -- the docs/audits/gates-accounting.md B1
+  def-myfunc-pass-shaped gap TEST015 could previously only WARN about.
+  A symbol never measured at all (no module_line entry either) is left
+  alone -- a measurement gap is TEST006's territory, not proof of a
+  vacuous binding.
+
+Why opt-in (off by default) rather than flipping the whole codebase's
+TEST001 severity semantics, per the ticket's own "survey how many
+currently-green symbols would flip red ... and land the sound subset"
+instruction: I could not run that survey in this environment. There is
+no coverage.xml anywhere in this worktree (fresh, never coverage-stamped)
+and generating one means running the full suite under coverage, which
+docs/guides/agent-playbook.md section 6b explicitly forbids a dispatched
+sub-agent from doing (exceeds the foreground cap, cannot be backgrounded-
+and-waited-on from this seat) -- that stamp is a COORDINATOR-only step.
+Flipping the flag's default to True blind, with zero visibility into how
+many of T-0875's 486 baseline TEST-family warnings are TEST005 zero-
+coverage cases that would newly become TEST001 ERRORs, would be landing
+the whole change, not the sound subset the ticket asks for. The flag
+lets the actual promotion happen with a one-line frob.toml flip once a
+coverage stamp is available and the survey is cheap to run (T-0875's own
+population count, once real, tells you exactly how many symbols would
+flip).
+
+TEST005 warning population, measured per the coordinator's request
+(`frob check --ticket T-0589 --only test`, grepping real "TEST005:"
+violation lines and excluding WAIVE004 lines that merely NAME the rule
+in an existing waiver's own text):
+  BEFORE this change: 0 (grep "TEST005:" excluding WAIVE004 -> 0 matches;
+    gate:TEST summary: 0 errors, 9 warnings, 2 waived, none TEST005)
+  AFTER this change:  0 (identical command, identical result)
+Both numbers are 0 because this worktree has never run `make coverage` /
+`frob check --stamp-coverage` -- there is no coverage.xml, so
+`coverage_gate`'s `coverage.is_nothing` guard short-circuits TEST005
+(and TEST008/011/012) to zero findings regardless of this change, exactly
+matching T-0589's own 2026-07-22 "TEST-pool triage" note already recorded
+in this ticket's body ("TEST005 and TEST015 both currently report 0
+findings against this tree ... no coverage stamp present"). This is also,
+independently, an EXPECTED and CORRECT result for this specific change:
+`require_branch_coverage_for_test001` defaults to False and frob.toml was
+NOT edited to flip it, so even with a real coverage stamp, TEST005's own
+findings (a completely separate code path, _test005_symbols, untouched by
+this ticket) cannot have moved -- the promotion this ticket adds is
+opt-in and inert until a future ticket (once T-0875 clears enough debt to
+make a survey cheap) flips the flag.
+
+Regression tests (tests/test_gates.py::TestTestGate, three new methods)
+construct a real CoverageData with symbol_branch={"...::helper": 0.0} and
+a measured module_line entry, proving: (1) the check fires when the flag
+is on and coverage is zero; (2) it stays silent with the SAME coverage
+data when the flag is off (default); (3) it stays silent with the flag on
+if coverage is nonzero (confirms this promotes zero-coverage specifically,
+not the whole TEST005 floor into TEST001). Mutation-killed both new
+predicates directly: disabling the `cfg.require_branch_coverage_for_
+test001 and coverage.is_some` guard, and loosening `pct > 0.0` to
+`pct >= 0.0`, each make the corresponding new test fail; reverted after
+confirming.
+
+Known cross-ticket artifact, not a defect in this change: `frob check
+--ticket T-0589 --only gates-fast` shows 6 COV002 errors, ALL on
+tests/test_gates.py symbols (TestCoverageGate, TestGateOrderSetEquality
+[+2 methods], TestProcessPoolGates [+1 method]) -- every one of these is
+T-0525's own edit (the COV006-waiver-granularity work, same worktree,
+still in-progress and not yet landed when this ticket's check ran).
+T-0589's scope could not --add tests/test_gates.py itself
+(ScopeLeaseConflict: T-0525 already holds that lease in this worktree),
+so T-0589's own new methods carry explicit `frob:ticket T-0589` marker
+comments instead (per-symbol credit, no scope needed) and are NOT among
+the 6 errors (that class, TestTestGate, shows only a pre-existing,
+already-waived COV002 finding). Zero COV errors originate from
+src/frob/gates/__init__.py or src/frob/gates/_models.py, which T-0589
+fully owns. This will read clean once T-0525 lands (or is checked under
+--ticket T-0525, where it already does).
+
+Measured: `uv run pytest tests/test_gates.py -p no:cacheprovider -q` ->
+all pass (no new failures). `frob check --ticket T-0589 --only gates-fast`
+-> 0 errors on src/frob/gates/__init__.py and src/frob/gates/_models.py;
+the 6 COV002 errors present are entirely T-0525's tests/test_gates.py
+edits per the artifact explained above.
+
+No other cuts: the ticket's core ask (wire CoverageData into
+_test001_002 so TEST001 credit CAN be tied to real per-symbol coverage)
+is implemented and tested; the promotion itself is deliberately deferred
+(opt-in, off by default) pending the compat survey this environment
+cannot run.
+
+### Changed
+```
+ src/frob/gates/__init__.py |  10 ++++
+ tests/test_gates.py        | 113 +++++++++++++++++++++++++++++++++++++++++----
+ tickets.md                 |  85 +++++++++++++++++++++++++++++++++-
+ 3 files changed, 197 insertions(+), 11 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestTestGate::test_test001_zero_branch_coverage_flags_when_opted_in` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTestGate::test_test001_zero_branch_coverage_silent_when_flag_off` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestTestGate::test_test001_nonzero_branch_coverage_stays_silent_when_opted_in` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0590 -->
 ```yaml

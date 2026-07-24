@@ -3953,6 +3953,16 @@ def _cov006_edge_violation(
             f"(frob.graph.callgraph, best-effort); confirm the test "
             f"actually exercises it, or bind a symbol it calls"
         ),
+        # T-0525: symbol-exact, not file-scoped -- a COV006 finding is
+        # precisely about ONE frob:tests edge (edge.src, the test's own
+        # symref). Without this, `_match_waiver` falls back to file-scope
+        # matching (its symref-is-None branch) and a single `frob:waive
+        # COV006` comment anywhere in `test_file` silently suppresses
+        # EVERY COV006 finding in that file, including unrelated, unsound
+        # ones (verified: one waiver near one test suppressed all 7
+        # then-present COV006 findings in tests/test_gates.py). Mirrors
+        # TEST005's T-0148 precedent (see `Violation.symref`'s docstring).
+        symref=edge.src,
     )
 
 
@@ -5746,6 +5756,7 @@ def _test001_002_one(
     tests: CollectedTests,
     cfg: TestPolicy,
     snapshot: GraphSnapshot,
+    coverage: Option[CoverageData] = Nothing(),
 ) -> Violation | None:
     """The TEST001/TEST002 verdict for one public function/method, or None."""
     edges = unit_edges.get(record.symref, [])
@@ -5764,7 +5775,53 @@ def _test001_002_one(
         return _test001_no_unit_test(record)
     if effective < cfg.min_unit_cases:
         return _test002_below_min(record, effective, cfg)
+    if cfg.require_branch_coverage_for_test001 and coverage.is_some:
+        zero_cov = _test001_zero_measured_branch_coverage(record, coverage.danger_some)
+        if zero_cov is not None:
+            return zero_cov
     return None
+
+
+# frob:ticket T-0589
+def _test001_zero_measured_branch_coverage(
+    record,  # noqa: ANN001
+    data: CoverageData,
+) -> Violation | None:
+    """T-0589 (opt-in via `TestPolicy.require_branch_coverage_for_test001`):
+    `record` passed the name/edge check above, but `coverage.xml` proves its
+    branch coverage is measured-and-zero -- the `_test005_symbols`/T-0557
+    "file measured, symbol never executed" signal, reused here to promote
+    TEST001 credit from "a test is bound by name/edge" to "that binding
+    actually ran the symbol at least once". `None` (no override) when the
+    symbol was never measured at all (`data.symbol_branch` has no entry AND
+    its file is absent from `data.module_line`) -- a measurement gap is
+    TEST006's territory, not proof this symbol's binding is vacuous."""
+    pct = data.symbol_branch.get(record.symref)
+    if pct is None:
+        if record.id.path not in data.module_line:
+            return None
+        pct = 0.0
+    if pct > 0.0:
+        return None
+    _log.debug(
+        "TEST001: %s has a satisfying name/edge match but 0%% measured "
+        "branch coverage (T-0589)",
+        record.symref,
+    )
+    leaf = _snake(record.id.qualname.rsplit(".", 1)[-1])
+    return Violation(
+        rule="TEST001",
+        severity=Severity.ERROR,
+        file=record.id.path,
+        line=record.span[0],
+        message=(
+            f"TEST001: {record.symref} has a name/edge-matched unit test, "
+            "but coverage.xml shows 0% measured branch coverage -- the "
+            "bound test never actually executes this symbol; add: "
+            f'frob:tests {record.symref} kind="unit" bound to a test that '
+            f"really calls it (or name a test test_{leaf} that does)"
+        ),
+    )
 
 
 # frob:enforces CHK-GATE-TEST001
@@ -5808,7 +5865,10 @@ def _test002_below_min(record, effective: int, cfg: TestPolicy) -> Violation:  #
 
 
 def _test001_002(
-    snapshot: GraphSnapshot, tests: CollectedTests, cfg: TestPolicy
+    snapshot: GraphSnapshot,
+    tests: CollectedTests,
+    cfg: TestPolicy,
+    coverage: Option[CoverageData] = Nothing(),
 ) -> tuple[Violation, ...]:
     """TEST001 (no unit edge) and TEST002 (fewer than min_unit_cases valid edges).
 
@@ -5821,6 +5881,11 @@ def _test001_002(
     `frob:tests` edge here would be a semantically confused warning class,
     consistent with T-0164's COV002 precedent that a `.strata` file is one
     design artifact governed by design-level gates, not pytest bindings.
+
+    `coverage` (T-0589, default `Nothing()`) additionally ties TEST001
+    credit to real per-symbol branch coverage when
+    `cfg.require_branch_coverage_for_test001` is set -- see
+    `_test001_zero_measured_branch_coverage`.
     """
     unit_edges = _unit_test_edges(snapshot, "unit")
     violations: list[Violation] = []
@@ -5832,7 +5897,7 @@ def _test001_002(
             or record.id.path.endswith(".strata")
         ):
             continue
-        verdict = _test001_002_one(record, unit_edges, tests, cfg, snapshot)
+        verdict = _test001_002_one(record, unit_edges, tests, cfg, snapshot, coverage)
         if verdict is not None:
             violations.append(verdict)
     return tuple(violations)
@@ -6893,7 +6958,7 @@ def test_gate(
     TEST001) made loud via T-0549's existing assertion heuristic: see
     `_test015_vacuous_credit`."""
     violations: list[Violation] = []
-    violations.extend(_test001_002(snapshot, tests, cfg))
+    violations.extend(_test001_002(snapshot, tests, cfg, coverage))
     violations.extend(_test003(snapshot, tests, cfg))
     violations.extend(_test007_pairs(snapshot, tests, cfg))
     violations.extend(_test004(systems, snapshot, tests))

@@ -198,6 +198,21 @@ class TestPolicy(BaseModel):
     # TEST007: require a pairwise integration test per cross-package
     # uses-contract dependency (opt-in; off by default). (T-0017)
     pair_integration: bool = False
+    # T-0589: tie TEST001 credit to real per-symbol branch coverage, not
+    # just a name/edge match -- when a symbol's `frob:tests` edge or
+    # convention-named test satisfies TEST001 on its own, but coverage.xml
+    # shows the symbol was MEASURED (its file is covered) and never
+    # actually EXECUTED (symbol_branch == 0.0%, the T-0557 "no entry
+    # despite a measured file" signal `_test005_symbols` already uses),
+    # that is the def-myfunc-pass-shaped gap docs/audits/gates-accounting.md
+    # B1 describes: a test bound by name/edge that never really calls the
+    # function. Opt-in and off by default (a global flip would require the
+    # compat survey T-0589's own body calls for, which needs a coverage
+    # stamp this repo does not carry by default in an agent worktree, and
+    # would immediately promote every one of T-0875's TEST005 warnings to
+    # a TEST001 ERROR without that survey) -- flip once T-0875's TEST005
+    # burn-down has cleared enough debt that a survey is cheap to run.
+    require_branch_coverage_for_test001: bool = False
 
 
 # frob:doc docs/modules/gates.md#data-models

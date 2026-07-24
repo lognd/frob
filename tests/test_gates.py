@@ -1270,6 +1270,83 @@ class TestCoverageGate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV006" for v in violations)
 
+    # frob:ticket T-0525
+    # frob:tests tests/test_gates.py::TestCoverageGate.test_cov006_violation_carries_edge_src_as_symref kind="unit"  # noqa: E501
+    def test_cov006_violation_carries_edge_src_as_symref(self, tmp_path: Path) -> None:
+        """T-0525: a COV006 finding's `symref` is the offending `frob:tests`
+        edge's own `src` (the test's symref), not `None` -- this is what
+        lets `_match_waiver` do symbol-exact matching instead of falling
+        back to file-scope, where a single waiver anywhere in the file
+        used to silently suppress every COV006 finding in it (T-0148's
+        precedent for TEST005, applied here)."""
+        _write(tmp_path, "src/a.py", "def _helper(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "# frob:tests src/a.py::_helper\n"
+            "def test_helper_broken():\n"
+            "    assert True\n",
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        v = _first_rule(violations, "COV006")
+        assert v is not None
+        assert v.symref == "tests/test_a.py::test_helper_broken"
+
+    # frob:ticket T-0525
+    # frob:tests tests/test_gates.py::TestCoverageGate.test_cov006_waiver_does_not_blanket_suppress_the_whole_file kind="unit"  # noqa: E501
+    def test_cov006_waiver_does_not_blanket_suppress_the_whole_file(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0525 regression: two independent, unsound `frob:tests` edges
+        in the SAME test file each produce their own COV006 finding; a
+        `frob:waive COV006` comment bound to only ONE of the two tests
+        must suppress only that one -- NOT both, the T-0148-class
+        blanket-waiver bug this ticket fixes for COV006 specifically
+        (previously verified live: one waiver comment in tests/test_gates.py
+        silently absorbed all 7 COV006 findings then present in that
+        file)."""
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def _helper_one(x):\n"
+            "    return x\n"
+            "\n"
+            "\n"
+            "def _helper_two(x):\n"
+            "    return x\n",
+        )
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "# frob:tests src/a.py::_helper_one\n"
+            '# frob:waive COV006 reason="deliberately unsound for this test"\n'
+            "def test_helper_one_broken():\n"
+            "    assert True\n"
+            "\n"
+            "\n"
+            "# frob:tests src/a.py::_helper_two\n"
+            "def test_helper_two_broken():\n"
+            "    assert True\n",
+        )
+        from frob.gates import _apply_waivers  # noqa: PLC0415 - internal, test-only
+
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        kept, waived = _apply_waivers(violations, snap)
+        kept_cov006 = [v for v in kept if v.rule == "COV006"]
+        waived_cov006 = [v for v in waived if v.rule == "COV006"]
+        assert len(waived_cov006) == 1
+        assert waived_cov006[0].symref == "tests/test_a.py::test_helper_one_broken"
+        assert len(kept_cov006) == 1
+        assert kept_cov006[0].symref == "tests/test_a.py::test_helper_two_broken"
+
     def test_cov006_never_fires_for_a_public_target(self, tmp_path: Path) -> None:
         """`build_call_graph` never records an edge to a PUBLIC callee, so
         checking a public target would ALWAYS look "unreachable" -- COV006
@@ -4327,6 +4404,122 @@ class TestTestGate:
         violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
         assert any(v.rule == "TEST001" for v in violations)
 
+    # frob:ticket T-0589
+    # frob:tests tests/test_gates.py::TestTestGate.test_test001_zero_branch_coverage_flags_when_opted_in kind="unit"  # noqa: E501
+    def test_test001_zero_branch_coverage_flags_when_opted_in(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0589: with `require_branch_coverage_for_test001=True`, a
+        symbol that satisfies TEST001 by name/edge match ALONE, but whose
+        `coverage.xml` shows the symbol's file was measured and the symbol
+        itself never ran (0% branch coverage, the T-0557 dead-code signal),
+        still fires TEST001 -- the def-myfunc-pass-shaped B1 gap TEST015
+        only ever WARNed about, now blocking when this policy flag is on."""
+        from typani.option import Some
+
+        from frob.gates import CoverageData
+
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "def test_helper():\n"
+            '    # frob:tests src/frob/pkg/a.py::helper kind="unit"\n'
+            "    assert True\n",
+        )
+        snap = _snapshot(tmp_path)
+        node = "tests/test_a.py::test_helper"
+        tests = CollectedTests(node_ids=frozenset({node}))
+        coverage = Some(
+            CoverageData(
+                source_sha="x",
+                symbol_branch={"src/frob/pkg/a.py::helper": 0.0},
+                module_line={"src/frob/pkg/a.py": 90.0},
+            )
+        )
+        cfg = TestPolicy(min_unit_cases=1, require_branch_coverage_for_test001=True)
+        violations = run_test_gate(snap, (), coverage, tests, cfg)
+        v = next(
+            (v for v in violations if v.rule == "TEST001"),
+            None,
+        )
+        assert v is not None, violations
+        assert "0% measured branch coverage" in v.message
+
+    # frob:ticket T-0589
+    # frob:tests tests/test_gates.py::TestTestGate.test_test001_zero_branch_coverage_silent_when_flag_off kind="unit"  # noqa: E501
+    def test_test001_zero_branch_coverage_silent_when_flag_off(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0589: the SAME zero-branch-coverage symbol as the sibling test
+        above must NOT fire TEST001 when
+        `require_branch_coverage_for_test001` is left at its default
+        (`False`) -- the new check is opt-in, not a silent global
+        behavior change, since promoting it repo-wide requires the
+        compat survey this ticket's own body calls for."""
+        from typani.option import Some
+
+        from frob.gates import CoverageData
+
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "def test_helper():\n"
+            '    # frob:tests src/frob/pkg/a.py::helper kind="unit"\n'
+            "    assert True\n",
+        )
+        snap = _snapshot(tmp_path)
+        node = "tests/test_a.py::test_helper"
+        tests = CollectedTests(node_ids=frozenset({node}))
+        coverage = Some(
+            CoverageData(
+                source_sha="x",
+                symbol_branch={"src/frob/pkg/a.py::helper": 0.0},
+                module_line={"src/frob/pkg/a.py": 90.0},
+            )
+        )
+        cfg = TestPolicy(min_unit_cases=1)
+        assert cfg.require_branch_coverage_for_test001 is False
+        violations = run_test_gate(snap, (), coverage, tests, cfg)
+        assert not any(v.rule == "TEST001" for v in violations)
+
+    # frob:ticket T-0589
+    # frob:tests tests/test_gates.py::TestTestGate.test_test001_nonzero_branch_coverage_stays_silent_when_opted_in kind="unit"  # noqa: E501
+    def test_test001_nonzero_branch_coverage_stays_silent_when_opted_in(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0589: a symbol WITH nonzero measured branch coverage must not
+        fire the new check even with the flag on -- the promoted check
+        targets zero coverage specifically (a test that never actually
+        called the symbol), not any coverage below the TEST005 floor
+        (that remains TEST005's own, separate, WARN-severity job)."""
+        from typani.option import Some
+
+        from frob.gates import CoverageData
+
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "tests/test_a.py",
+            "def test_helper():\n"
+            '    # frob:tests src/frob/pkg/a.py::helper kind="unit"\n'
+            "    assert True\n",
+        )
+        snap = _snapshot(tmp_path)
+        node = "tests/test_a.py::test_helper"
+        tests = CollectedTests(node_ids=frozenset({node}))
+        coverage = Some(
+            CoverageData(
+                source_sha="x",
+                symbol_branch={"src/frob/pkg/a.py::helper": 42.0},
+                module_line={"src/frob/pkg/a.py": 90.0},
+            )
+        )
+        cfg = TestPolicy(min_unit_cases=1, require_branch_coverage_for_test001=True)
+        violations = run_test_gate(snap, (), coverage, tests, cfg)
+        assert not any(v.rule == "TEST001" for v in violations)
+
     def test_test002_below_min_unit_cases(self, tmp_path: Path) -> None:
         from typani.option import Nothing
 
@@ -6033,16 +6226,22 @@ class TestProcessPoolGates:
         # submits _run_process_gate to a ProcessPoolExecutor by function \
         # reference (ppool.submit(_run_process_gate, ...)), not a \
         # name-call token in the test's own body; (2) \
-        # test_canonical_gate_order_matches_all_gates below checks \
-        # _CANONICAL_GATE_ORDER/_ALL_GATES set-equality directly and never \
-        # calls _merge_canonical_order, the consumer whose correctness \
-        # that invariant protects -- module-level constants have no \
-        # symref for the graph to track. COV006 waivers match at file \
-        # granularity (no violation.symref), so one waiver here covers \
-        # both; do not add more COV006 findings to this file without \
-        # first re-checking whether they still deserve this waiver's \
-        # blanket reach, or split the waiver mechanism to be symbol-scoped \
-        # (see the T-0516 calibration ticket filed for this)"
+        # test_canonical_gate_order_matches_all_gates and its siblings in \
+        # TestGateOrderSetEquality below check _CANONICAL_GATE_ORDER/\
+        # _ALL_GATES set-equality directly and never call \
+        # _merge_canonical_order, the consumer whose correctness that \
+        # invariant protects -- module-level constants have no symref for \
+        # the graph to track. T-0525 gave COV006 a per-edge symref, so \
+        # this waiver now only covers THIS edge (test's own frob:tests -> \
+        # _merge_canonical_order binding); \
+        # test_all_gates_is_subset_of_canonical_order below carries its \
+        # own matching frob:waive COV006 (same reasoning, not a blanket \
+        # reach); test_canonical_order_names_no_nonexistent_gate needs \
+        # none -- its frob:tests directive lives inside its docstring, \
+        # not a `#` comment, so it never creates a real TESTS edge for \
+        # COV006 to flag in the first place (verified: a waiver placed \
+        # there fired WAIVE004, 0 matching findings) \
+        # (the T-0516 calibration ticket this comment used to point at)"
         import os
 
         from frob.gates import _ProcessJob, _run_combined_jobs
@@ -8058,6 +8257,12 @@ class TestGateOrderSetEquality:
         # (the consumer of _CANONICAL_GATE_ORDER whose correctness this
         # set-equality invariant protects; the two constants are module-level
         # data the graph does not track as symbols, so bind to the function)
+        # frob:waive COV006 reason="T-0525: module-level constant \
+        # set-equality, never a call to _merge_canonical_order -- same \
+        # sound-but-invisible-to-the-call-graph shape as \
+        # TestProcessPoolGates.test_process_job_runs_in_a_separate_process \
+        # above; symbol-exact now (T-0525), so this waiver covers only \
+        # this test's own edge"
         from frob.gates import _ALL_GATES, _CANONICAL_GATE_ORDER
 
         assert set(_CANONICAL_GATE_ORDER) == _ALL_GATES, (
@@ -8072,6 +8277,10 @@ class TestGateOrderSetEquality:
 
     def test_all_gates_is_subset_of_canonical_order(self) -> None:
         # frob:tests src/frob/gates/__init__.py::_merge_canonical_order
+        # frob:waive COV006 reason="T-0525: module-level constant \
+        # set-difference, never a call to _merge_canonical_order -- same \
+        # shape as test_canonical_gate_order_matches_all_gates above, \
+        # symbol-exact so this waiver covers only this test's own edge"
         """T-0839 drift direction 1: every gate in `_ALL_GATES` (selectable,
         can produce real violations) must appear in `_CANONICAL_GATE_ORDER`
         -- this is exactly the T-0788 "compliance" incident: a gate added to
