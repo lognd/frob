@@ -11322,7 +11322,7 @@ and still passes, 1 passed.
 id: T-0855
 title: 'mutation-evidence precheck diffs pre-merge in stacked worktrees: already-landed
   sibling code reads as this ticket''s diff'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-23'
@@ -11357,6 +11357,7 @@ evidence:
 - tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles::test_matches_base_ref_tip_true_for_identical_content
 - tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles::test_matches_base_ref_tip_false_for_differing_content
 - tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles::test_filters_to_scope_and_python
+- tests/test_ticket_land.py::TestPlannedStateAutoAdvanceOnLand::test_planned_ticket_with_full_evidence_lands_to_done
 threat: null
 component: null
 ```
@@ -11436,7 +11437,7 @@ via `git show HEAD:<path>` (the file was never committed in the
 corrupted state). This is a real, pre-existing reliability gap
 (T-0857 covers frob.mutate's own internal crash detection/restore, but
 neither an external SIGTERM nor an xdist worker crash goes through that
-path) -- filed as T-0885 rather than fixed here (out of
+path) -- filed as T-0890 (refiled: the original draft did not survive a later git merge main, the T-0577 draft-loss class) rather than fixed here (out of
 T-0855's declared scope, which is `_land.py`/`_mutation_evidence.py`'s
 OWN logic, not `frob.mutate`'s crash-recovery machinery). My own new
 `_touched_python_files`/`_matches_base_ref_tip` code and its 5 tests were
@@ -11444,14 +11445,8 @@ verified clean and complete without needing that class at all.
 
 ### Changed
 ```
- src/frob/tickets/_land.py               |  40 ++++-
- src/frob/tickets/_models.py             |  72 +++++++--
- src/frob/tickets/_mutation_evidence.py  |  67 ++++++++-
- tests/test_evidence_integrity.py        |  64 ++++++++
- tests/test_ticket_land.py               |  42 ++++++
- tests/test_tickets_mutation_evidence.py |  67 +++++++++
- tickets.md                              | 254 +++++++++++++++++++++++++++++++-
- 7 files changed, 588 insertions(+), 18 deletions(-)
+ tickets.md | 114 +++++++++++++++++++++++++++++++++++++++++++++++++++++++------
+ 1 file changed, 103 insertions(+), 11 deletions(-)
 ```
 
 ### Evidence
@@ -11459,11 +11454,12 @@ verified clean and complete without needing that class at all.
 - `tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles::test_matches_base_ref_tip_true_for_identical_content` (pytest node id, verified passing when recorded)
 - `tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles::test_matches_base_ref_tip_false_for_differing_content` (pytest node id, verified passing when recorded)
 - `tests/test_tickets_mutation_evidence.py::TestTouchedPythonFiles::test_filters_to_scope_and_python` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestPlannedStateAutoAdvanceOnLand::test_planned_ticket_with_full_evidence_lands_to_done` (pytest node id, verified passing when recorded)
 
 ### Captured claims
-- tests: 4 passed (from 4 evidence id(s))
-- gates: 0 error(s), 1019 warning(s), 220 waived
-- error-findings: none (measured, zero errors)
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 1 error(s), 2229 warning(s), 220 waived
+- error-findings: TICK003@tickets.md
 
 <!-- ticket:T-0856 -->
 ```yaml
