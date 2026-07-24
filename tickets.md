@@ -9288,7 +9288,7 @@ Sunset-execution ticket for the user's 2026-07-23 deprecation decision (T-0580, 
 id: T-0821
 title: 'land: close path refuses planned-state tickets with full evidence (recurring
   InvalidTransition; auto-advance or preflight-name the state gap)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-07-23'
@@ -9371,10 +9371,8 @@ that seam.
 
 ### Changed
 ```
- src/frob/tickets/_models.py      | 72 +++++++++++++++++++++++++++++++------
- tests/test_evidence_integrity.py | 64 +++++++++++++++++++++++++++++++++
- tickets.md                       | 76 +++++++++++++++++++++++++++++++++++++++-
- 3 files changed, 201 insertions(+), 11 deletions(-)
+ tickets.md | 114 +++++++++++++++++++++++++++++++++++++++++++++++++++++++------
+ 1 file changed, 103 insertions(+), 11 deletions(-)
 ```
 
 ### Evidence
@@ -9382,8 +9380,8 @@ that seam.
 
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))
-- gates: 0 error(s), 1015 warning(s), 220 waived
-- error-findings: none (measured, zero errors)
+- gates: 1 error(s), 2229 warning(s), 220 waived
+- error-findings: TICK003@tickets.md
 
 <!-- ticket:T-0823 -->
 ```yaml
@@ -13300,3 +13298,99 @@ threat: null
 component: tickets
 ```
 Real incident during T-0680 (see its Done report): in a worktree whose tickets.md had just been restored to main's version (section 10b recipe), a sequence of frob ticket start/evidence/sweep/done-report calls SILENTLY REVERTED three unrelated tickets (T-0660/T-0661/T-0719) from done back to queued with evidence and Done reports wiped -- the CLI appears to write back a stale in-memory ticket-queue snapshot loaded before the restore, clobbering the on-disk ledger state. Same corruption family as the land-splice regression (T-0577 lineage) but in the plain CLI write path, not land. Investigate the store's load/write lifecycle for a cached snapshot surviving an external file replacement (mtime/digest check on write-back would fail loudly). Fix = detect ledger-changed-since-load and reload before any write, plus a regression test that replaces tickets.md between load and write.
+
+<!-- ticket:T-0890 -->
+```yaml
+id: T-0890
+title: 'mutate: leftover mutant journal not auto-restored on next run start (xdist
+  worker crash / external SIGTERM, beyond T-0857''s own-crash detection)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/mutate/**
+threat: null
+component: null
+```
+Found while working T-0855: `tests/test_tickets_mutation_evidence.py::
+TestCheckTicketMutationEvidence::test_self_check_t0755_own_diff_zero_error_findings`
+is a dogfooding self-check that runs `check_ticket_mutation_evidence`
+against THIS repo's own real worktree root (mutating
+src/frob/tickets/_mutation_evidence.py and src/frob/tickets/_land.py in
+place, journaling originals via `frob.mutate._journal` for a safe revert
+per T-0857).
+
+Under heavy concurrent load on the machine (many other agent worktrees
+running `frob check`/pytest simultaneously, observed directly via `ps
+aux` while working T-0855), this test's pytest-xdist worker was observed
+crashing outright ("[gw0] node down: Not properly terminated") while a
+mutant was live, and separately, an EXTERNAL SIGTERM (a `timeout N`
+wrapper killing the foreground pytest process from outside, not a crash
+frob's own harness could detect) also left a mutant applied on disk --
+both left `src/frob/tickets/_mutation_evidence.py` corrupted (formatting
+collapsed, a boolean literal flipped) in the real worktree tree, with no
+automatic recovery on the next run. T-0857 covers the case where
+`frob.mutate`'s OWN harness detects its own crash and restores from the
+journal; neither an xdist worker crash nor an external process kill goes
+through that path, so the journaled backup in `.frob/mutate-backup/`
+sits unused and the corrupted file is never auto-restored.
+
+Both incidents were recovered manually here (`git show HEAD:<path>` to
+get the clean committed original, since the corruption was on an
+uncommitted working-tree file). Suggested fix direction: on `frob check`/
+`frob test`/`pytest` startup (or via a dedicated `frob mutate restore`
+subcommand run by CI/agent tooling at session start), scan
+`.frob/mutate-backup/*.json` for journal entries whose target file's
+current on-disk content does NOT match either the journaled original OR
+a known-applied-mutant state expected by an in-progress run, and restore
+from the journal automatically -- generalizing T-0857's crash-detection
+restore to cover ANY leftover journal entry found stale at the start of
+a fresh run, regardless of what killed the previous one.
+
+<!-- ticket:T-0891 -->
+```yaml
+id: T-0891
+title: 'ticket evidence: direct-pytest verification leaks caller''s FROB_WORKTREE/FROB_AGENT
+  lease env into the spawned test process'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/app/ticket_runner.py
+threat: null
+component: null
+```
+Found while working T-0821: `frob ticket evidence`'s direct-pytest
+verification fallback (`_run_pytest_directly` in
+src/frob/app/ticket_runner.py) spawns `uv run pytest <node_ids> -q -o
+addopts=` inheriting the calling shell's full environment. When the
+caller is a dispatched worktree agent (FROB_AGENT=1, FROB_WORKTREE=<this
+worktree>, both required by every other `frob ticket` invocation per
+docs/guides/agent-playbook.md section 1/3), any test that itself performs
+real git worktree operations against a throwaway tmp_path fixture repo
+(e.g. tests/test_ticket_land.py's `TestLand`/`TestPlannedStateAutoAdvanceOnLand`
+classes) gets refused by `frob.tickets._worktree_guard.enforce_worktree_lease`
+with `WorktreeLeaseViolation`: the guard sees FROB_WORKTREE pointing at
+the AGENT's own worktree and refuses to let the test mutate its own
+unrelated tmp_path repo, since that path does not match the leased
+worktree.
+
+The same test passes cleanly under `frob check`'s own coverage/test gate
+stage (which apparently manages/sanitizes the pytest subprocess
+environment differently) and under a plain `uv run pytest <node_id>` with
+no FROB_AGENT/FROB_WORKTREE exported -- only `frob ticket evidence`'s
+direct-invocation path is affected.
+
+Workaround used in T-0821: unset both vars for just the one `frob ticket
+evidence` call. Real fix belongs in `_run_pytest_directly` (and any sibling
+runner-based verification path with the same shape) in
+src/frob/app/ticket_runner.py -- strip FROB_AGENT/FROB_WORKTREE (and any
+other worktree-lease env) from the subprocess environment before spawning
+the verification pytest run, so a ticket's own evidence-recording step
+never leaks the recorder's own lease into the tests being verified.
