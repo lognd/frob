@@ -616,7 +616,7 @@
     "src/frob/lang/_common.py::export_tree": "9f5348dc256c8710baa15478c74174a3ad7af528e95ee48f684754d77833b6ea",
     "src/frob/lang/_common.py::flatten_tree": "a941f0b07ea9b09719acee9db763e7c99df54d64e63c2bc1814f74057606b89a",
     "src/frob/lang/_common.py::iter_cpp_functions": "d7aacc73a30f6f0bfab6ad00793ad63af7bd9979b1937791a218294531a0db58",
-    "src/frob/lang/_extract.py::COMMENT_TYPES": "14b8774334fc38476d536ddc1d41fa7998bca9166e0013802573d04b4f5ed405",
+    "src/frob/lang/_extract.py::COMMENT_TYPES": "994c30c30ea4f1d12e5131e4e7bb9b40f3b17818e82d0373cf31110916bd7df2",
     "src/frob/lang/_extract.py::extract": "3f8f30ba5faeaf42ad29ad798559c3e06b47f6483dc3ed12e88a6296381f5ed0",
     "src/frob/lang/_extract.py::extract_imports": "ba9aa09a3d29c457fff5f0c1460995e8797f75a7be1a79ccb48eb290cb540142",
     "src/frob/lang/_extract.py::iter_identifiers": "2798f2485b4e4b4cb048b65386a6e287573de91af8e92c5717b65ad058879d8f",
@@ -1485,5 +1485,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.147.0"
+  "version": "0.148.0"
 }

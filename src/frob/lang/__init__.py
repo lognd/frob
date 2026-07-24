@@ -77,6 +77,15 @@ _EXTENSION_TABLE: dict[str, tuple[str, str]] = {
     ".cc": ("cpp", "cpp"),
     ".hh": ("cpp", "cpp"),
     ".cxx": ("cpp", "cpp"),
+    # frob:ticket T-0723
+    # T-0613's `parse_kotlin`/`raw_kotlin_tree` already load kotlin's
+    # grammar through this SAME `get_parser` chokepoint standalone; this
+    # entry is what actually makes `.kt`/`.kts` reach `parse_file`'s
+    # general `extract()` dispatch (`_extract.py`'s `_WALKERS`/
+    # `COMMENT_TYPES`, both now carrying a "kotlin" entry too -- see
+    # `frob.lang._walk_kotlin._walk_kotlin`).
+    ".kt": ("kotlin", "kotlin"),
+    ".kts": ("kotlin", "kotlin"),
 }
 
 # `.strata` has no tree-sitter grammar (`_parse`/`_EXTENSION_TABLE` below

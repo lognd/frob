@@ -26,6 +26,7 @@ from frob.lang._common import _find_following_symbol as _find_following
 from frob.lang._common import _span_of, _strip_comment_delims, child_text
 from frob.lang._models import RawComment, RawSymbol
 from frob.lang._walk_c import _walk_c_family
+from frob.lang._walk_kotlin import _walk_kotlin
 from frob.lang._walk_python import _walk_python, _walk_python_docstring_comments
 from frob.lang._walk_rust import _walk_rust
 from frob.lang._walk_typescript import _walk_typescript
@@ -42,6 +43,7 @@ COMMENT_TYPES: dict[str, frozenset[str]] = {
     "rust": frozenset({"line_comment", "block_comment"}),
     "c": frozenset({"comment"}),
     "cpp": frozenset({"comment"}),
+    "kotlin": frozenset({"line_comment", "multiline_comment"}),
 }
 
 
@@ -68,6 +70,7 @@ _WALKERS = {
     "rust": _walk_rust,
     "c": _walk_c,
     "cpp": _walk_cpp,
+    "kotlin": _walk_kotlin,
 }
 
 # frob:ticket T-0342
