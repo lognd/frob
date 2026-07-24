@@ -4188,7 +4188,7 @@ digit-led attr value and strata-core is out of this ticket's scope.
 ```yaml
 id: T-0642
 title: 'strata: CIRCUIT BREAKER / bulkhead obligation per external dependency'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
