@@ -101,6 +101,9 @@ _log = get_logger(__name__)
 #: join this set too -- a node can originate several flows, so each fires
 #: per-flow and needs the same `RULE:SUBTARGET` discipline (sub-target is
 #: the flow id).
+#: T-0641: REL220/REL221/REL222 (`_retry.py`'s RETRY-obligation family)
+#: join this set for the identical reason -- a node can originate several
+#: retryable flows, so each fires per-flow.
 MULTI_INSTANCE_WAIVER_FAMILIES: frozenset[str] = frozenset(
     {
         "SYS100",
@@ -113,6 +116,9 @@ MULTI_INSTANCE_WAIVER_FAMILIES: frozenset[str] = frozenset(
         "SYS203",
         "REL200",
         "REL201",
+        "REL220",
+        "REL221",
+        "REL222",
     }
 )
 

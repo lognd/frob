@@ -4073,7 +4073,7 @@ waivers' ticket refs re-pointed there in this pass.
 ```yaml
 id: T-0641
 title: 'strata: RETRY backoff+jitter + non-idempotent-op guard + IDEMPOTENCY key obligation'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -4083,23 +4083,112 @@ scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
+evidence:
+- tests/unit/strata/test_retry.py::TestMissingBackoff::test_retry_flow_without_backoff_fires
+- tests/unit/strata/test_retry.py::TestMissingBackoff::test_discharged_and_non_retry_flows_clean
+- tests/unit/strata/test_retry.py::TestMissingBackoff::test_waiver_on_one_flow_keeps_sibling_flow_finding
+- tests/unit/strata/test_retry.py::TestNonIdempotentRetry::test_retry_into_unguarded_dst_fires
+- tests/unit/strata/test_retry.py::TestNonIdempotentRetry::test_idempotent_dst_discharges
+- tests/unit/strata/test_retry.py::TestNonIdempotentRetry::test_idempotency_key_dst_discharges
+- tests/unit/strata/test_retry.py::TestUnprovenBackoff::test_declared_backoff_with_no_code_evidence_fires
+- tests/unit/strata/test_retry.py::TestUnprovenBackoff::test_declared_backoff_with_real_code_evidence_discharges
+- tests/unit/strata/test_retry.py::TestUnprovenBackoff::test_declared_backoff_with_no_bound_code_is_uncheckable_not_a_violation
+- tests/unit/strata/test_obligation_proof.py::TestOwnerIndex::test_inverts_file_to_node_map
+- tests/unit/strata/test_obligation_proof.py::TestNodeHasBoundCode::test_true_when_files_present
+- tests/unit/strata/test_obligation_proof.py::TestNodeHasBoundCode::test_false_when_absent
+- tests/unit/strata/test_obligation_proof.py::TestFilesEvidenceToken::test_matches_a_real_token
+- tests/unit/strata/test_obligation_proof.py::TestFilesEvidenceToken::test_no_match_returns_false
+- tests/unit/strata/test_obligation_proof.py::TestFilesEvidenceToken::test_unreadable_file_skipped_not_treated_as_proof
+- tests/unit/strata/test_obligation_proof.py::TestBoundEndpoints::test_both_endpoints_bound_src_first
+- tests/unit/strata/test_obligation_proof.py::TestBoundEndpoints::test_only_dst_bound
+- tests/unit/strata/test_obligation_proof.py::TestBoundEndpoints::test_self_loop_deduped
+- tests/unit/strata/test_obligation_proof.py::TestBoundEndpoints::test_neither_bound_empty
 acceptance:
 - text: Given a flow with retry=true and no backoff/jitter declared, when checked,
     then it fails
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_retry.py::TestMissingBackoff::test_retry_flow_without_backoff_fires
 - text: Given a retryable flow targeting a non-idempotent mutating op with no idempotency
     key, when checked, then it fails
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_retry.py::TestNonIdempotentRetry::test_retry_into_unguarded_dst_fires
 threat: null
 component: null
 ```
 RETRY flow attr must declare exponential backoff+jitter; a retry on a non-idempotent op is a hard obligation failure unless the target op declares an idempotency key. Proof-against-code: retry loop and backoff params must match declared values; bare declaration insufficient (T-0331 PROVABILITY CONSTRAINT).
 
+## Done report
+
+Implements REL22x (T-0641): REL220 missing backoff/jitter on a `retry` flow, REL221
+non-idempotent retry with no `idempotency_key`/`idempotent` dst marker, REL222
+declared-but-unproven backoff (proof-against-code, T-0331 PROVABILITY CONSTRAINT),
+mirroring `_reliability.py`'s T-0640 REL200/REL201 TIMEOUT structure exactly
+(Report/Violation pydantic pair, RULE:SUBTARGET waiver discipline in
+MULTI_INSTANCE_WAIVER_FAMILIES, deny-by-default).
+
+New module `src/frob/strata/_obligation_proof.py` promotes the owner-index/
+bound-code/token-scan trio `_reliability.py` built privately for T-0640 into ONE
+shared home (owner_index, node_has_bound_code, files_evidence_token,
+bound_endpoints) so this ticket's REL222 proof-against-code reuses it rather than
+re-copying the pattern; `_reliability.py` itself is left unchanged (already
+shipped). Sibling tickets T-0642/T-0643 (circuit-breaker/fallback) are expected to
+reuse this same shared module -- noted in both modules' docstrings.
+
+Docs: docs/strata/reliability.md gets a new "REL22x: RETRY obligation (T-0641)"
+section plus a "Shared proof-against-code plumbing (T-0641)" section describing
+_obligation_proof.py's promotion.
+
+Tests: tests/unit/strata/test_retry.py (9 tests, REL220/REL221/REL222
+firing/clean/waived/uncheckable) and tests/unit/strata/test_obligation_proof.py
+(10 direct-call tests for the 4 promoted helpers, satisfying TEST001 on public
+symbols that test_retry.py only exercises indirectly).
+
+Verification: `uv run pytest tests/unit/strata/test_retry.py
+tests/unit/strata/test_obligation_proof.py tests/unit/strata/test_reliability.py
+-p no:cacheprovider -q` -> 34 passed. `frob check --only lint/static/gates-fast/
+gates-native/gates-security --ticket T-0641` all clean except two pre-existing
+repo-wide DRIFT002/TICK006 findings in unrelated files
+(src/frob/tickets/_mutation_evidence.py, tickets.md's T-0711 Done report) --
+neither touches this ticket's scope, confirmed pre-existing baseline debt.
+
+Cuts: none against the ticket's declared plan. `retry`/`backoff_jitter`/
+`idempotency_key` are bare presence-only markers (same grammar-data ceiling
+T-0640 disclosed for `timeout`) since strata-core's parser cannot lex a
+digit-led attr value and strata-core is out of this ticket's scope.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/strata/test_retry.py::TestMissingBackoff::test_retry_flow_without_backoff_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_retry.py::TestMissingBackoff::test_discharged_and_non_retry_flows_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_retry.py::TestMissingBackoff::test_waiver_on_one_flow_keeps_sibling_flow_finding` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_retry.py::TestNonIdempotentRetry::test_retry_into_unguarded_dst_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_retry.py::TestNonIdempotentRetry::test_idempotent_dst_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_retry.py::TestNonIdempotentRetry::test_idempotency_key_dst_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_retry.py::TestUnprovenBackoff::test_declared_backoff_with_no_code_evidence_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_retry.py::TestUnprovenBackoff::test_declared_backoff_with_real_code_evidence_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_retry.py::TestUnprovenBackoff::test_declared_backoff_with_no_bound_code_is_uncheckable_not_a_violation` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_obligation_proof.py::TestOwnerIndex::test_inverts_file_to_node_map` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_obligation_proof.py::TestNodeHasBoundCode::test_true_when_files_present` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_obligation_proof.py::TestNodeHasBoundCode::test_false_when_absent` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_obligation_proof.py::TestFilesEvidenceToken::test_matches_a_real_token` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_obligation_proof.py::TestFilesEvidenceToken::test_no_match_returns_false` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_obligation_proof.py::TestFilesEvidenceToken::test_unreadable_file_skipped_not_treated_as_proof` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_obligation_proof.py::TestBoundEndpoints::test_both_endpoints_bound_src_first` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_obligation_proof.py::TestBoundEndpoints::test_only_dst_bound` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_obligation_proof.py::TestBoundEndpoints::test_self_loop_deduped` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_obligation_proof.py::TestBoundEndpoints::test_neither_bound_empty` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 19 passed (from 19 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
+
 <!-- ticket:T-0642 -->
 ```yaml
 id: T-0642
 title: 'strata: CIRCUIT BREAKER / bulkhead obligation per external dependency'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -4109,14 +4198,92 @@ scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
+evidence:
+- tests/unit/strata/test_circuit_breaker.py::TestPredicates::test_is_external_dependency
+- tests/unit/strata/test_circuit_breaker.py::TestPredicates::test_is_critical_dependency
+- tests/unit/strata/test_circuit_breaker.py::TestMissingCircuitBreaker::test_external_node_without_circuit_breaker_fires
+- tests/unit/strata/test_circuit_breaker.py::TestMissingCircuitBreaker::test_discharged_and_non_external_nodes_clean
+- tests/unit/strata/test_circuit_breaker.py::TestMissingCircuitBreaker::test_waiver_on_one_node_keeps_sibling_node_finding
+- tests/unit/strata/test_circuit_breaker.py::TestUnprovenCircuitBreaker::test_declared_with_no_code_evidence_fires
+- tests/unit/strata/test_circuit_breaker.py::TestUnprovenCircuitBreaker::test_declared_with_real_code_evidence_discharges
+- tests/unit/strata/test_circuit_breaker.py::TestUnprovenCircuitBreaker::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
 acceptance:
 - text: Given an external-dependency node with no circuit-breaker/bulkhead declared,
     when checked, then the obligation fires
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_circuit_breaker.py::TestPredicates::test_is_external_dependency
+  - tests/unit/strata/test_circuit_breaker.py::TestPredicates::test_is_critical_dependency
+  - tests/unit/strata/test_circuit_breaker.py::TestMissingCircuitBreaker::test_external_node_without_circuit_breaker_fires
+  - tests/unit/strata/test_circuit_breaker.py::TestMissingCircuitBreaker::test_discharged_and_non_external_nodes_clean
+  - tests/unit/strata/test_circuit_breaker.py::TestMissingCircuitBreaker::test_waiver_on_one_node_keeps_sibling_node_finding
+  - tests/unit/strata/test_circuit_breaker.py::TestUnprovenCircuitBreaker::test_declared_with_no_code_evidence_fires
+  - tests/unit/strata/test_circuit_breaker.py::TestUnprovenCircuitBreaker::test_declared_with_real_code_evidence_discharges
+  - tests/unit/strata/test_circuit_breaker.py::TestUnprovenCircuitBreaker::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
 threat: null
 component: null
 ```
 Every external dependency node must declare a circuit-breaker/bulkhead policy, extending LINT004 kill-switch. Proof-against-code required per epic PROVABILITY CONSTRAINT.
+
+## Done report
+
+Implements REL23x (T-0642): REL230 missing circuit-breaker/bulkhead on an
+`external` node, REL231 declared-but-unproven circuit breaker (proof-against-
+code, T-0331 PROVABILITY CONSTRAINT). Extends LINT004's kill-switch idea (a
+risky capability needs an operator escape hatch) to a new population: a node
+that depends on something external needs its own escape hatch against that
+dependency's failure. Mirrors T-0640/T-0641's structure and reuses
+_obligation_proof.py's shared proof-against-code plumbing (T-0641).
+
+Also defines CRITICAL_ATTR ("critical" bare marker) and is_critical_dependency
+in this module rather than in _fallback.py, because T-0643 (blocked_by this
+ticket) reuses this exact dependency-criticality classification per its own
+ticket body -- one shared home for the marker rather than two copies.
+
+New: src/frob/strata/_circuit_breaker.py, tests/unit/strata/test_circuit_breaker.py
+(8 tests: predicates + REL230 firing/clean/waived + REL231
+firing/discharged/uncheckable). docs/strata/reliability.md gets a new
+"REL23x: CIRCUIT BREAKER / bulkhead obligation (T-0642)" section.
+
+REL230/REL231 are node-scoped, single-instance-per-node (a node has at most
+one `external` marker), so they are NOT added to
+_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES -- same carve-out as REL210/REL211.
+
+Verification: `uv run pytest tests/unit/strata/test_circuit_breaker.py
+tests/unit/strata/test_retry.py tests/unit/strata/test_reliability.py
+tests/unit/strata/test_obligation_proof.py -p no:cacheprovider -q` -> 52
+passed. `frob check --only lint/static/gates-fast/gates-native/gates-security
+--ticket T-0642` all clean (0 errors across every stage).
+
+Cuts: none against the ticket's declared plan. `external`/`circuit_breaker`/
+`critical` are bare presence-only markers (same grammar-data ceiling as
+T-0640/T-0641), no strata-core change (out of this ticket's scope).
+
+### Changed
+```
+ docs/strata/reliability.md                 |  93 +++++++-
+ src/frob/strata/__init__.py                |  16 ++
+ src/frob/strata/_obligation_proof.py       | 111 +++++++++
+ src/frob/strata/_retry.py                  | 351 +++++++++++++++++++++++++++++
+ src/frob/strata/_waive.py                  |   6 +
+ tests/unit/strata/test_obligation_proof.py |  77 +++++++
+ tests/unit/strata/test_retry.py            | 244 ++++++++++++++++++++
+ tickets.md                                 |  95 +++++++-
+ 8 files changed, 989 insertions(+), 4 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_circuit_breaker.py::TestPredicates::test_is_external_dependency` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_circuit_breaker.py::TestPredicates::test_is_critical_dependency` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_circuit_breaker.py::TestMissingCircuitBreaker::test_external_node_without_circuit_breaker_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_circuit_breaker.py::TestMissingCircuitBreaker::test_discharged_and_non_external_nodes_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_circuit_breaker.py::TestMissingCircuitBreaker::test_waiver_on_one_node_keeps_sibling_node_finding` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_circuit_breaker.py::TestUnprovenCircuitBreaker::test_declared_with_no_code_evidence_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_circuit_breaker.py::TestUnprovenCircuitBreaker::test_declared_with_real_code_evidence_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_circuit_breaker.py::TestUnprovenCircuitBreaker::test_declared_with_no_bound_code_is_uncheckable_not_a_violation` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 8 passed (from 8 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0643 -->
 ```yaml
@@ -4149,7 +4316,7 @@ A dependency marked CRITICAL must declare a fallback/graceful-degradation path, 
 id: T-0645
 title: 'strata: SPOF detection - inbound-critical-flow node with replicas_max=1/no
   redundancy'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -4159,14 +4326,91 @@ scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
+evidence:
+- tests/unit/strata/test_spof.py::TestSpof::test_singleton_node_with_critical_inbound_fires
+- tests/unit/strata/test_spof.py::TestSpof::test_declared_singleton_capacity_fires
+- tests/unit/strata/test_spof.py::TestSpof::test_replicated_capacity_clean
+- tests/unit/strata/test_spof.py::TestSpof::test_redundant_exemption_clean
+- tests/unit/strata/test_spof.py::TestSpof::test_non_critical_flow_clean
+- tests/unit/strata/test_spof.py::TestSpof::test_waiver_on_one_node_keeps_sibling_node_finding
 acceptance:
 - text: Given a node with inbound critical flows and replicas_max=1, when checked,
     then SPOF obligation fires unless waived
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_spof.py::TestSpof::test_singleton_node_with_critical_inbound_fires
+  - tests/unit/strata/test_spof.py::TestSpof::test_declared_singleton_capacity_fires
+  - tests/unit/strata/test_spof.py::TestSpof::test_replicated_capacity_clean
+  - tests/unit/strata/test_spof.py::TestSpof::test_redundant_exemption_clean
+  - tests/unit/strata/test_spof.py::TestSpof::test_non_critical_flow_clean
+  - tests/unit/strata/test_spof.py::TestSpof::test_waiver_on_one_node_keeps_sibling_node_finding
 threat: null
 component: null
 ```
 A node receiving critical inbound flows with replicas_max=1 or no declared redundancy is a single point of failure; flag as a hard obligation, deny-by-default with reasoned waive (T-0174).
+
+## Done report
+
+Implements REL25x (T-0645): REL250 SPOF detection -- a node receiving at least
+one `critical` inbound flow whose declared capacity is a structural singleton
+(node.capacity is None, defaulting to Capacity's own replicas_max=1, or a
+declared Capacity with replicas_max==1 per Capacity.singleton) and does not
+carry the `redundant` exemption attr. Deny-by-default with a reasoned waive
+channel (T-0174), same discipline as the rest of this REL2xx ticket cluster.
+
+Unlike T-0640/T-0641/T-0642/T-0643, REL25x is ONE rule, not a missing/unproven
+pair: SPOF is a structural fact readable straight off KernelModel.nodes/
+.flows (Capacity.replicas_max is already a typed int field, not a bare attr
+needing proof-against-code), so this module does not use
+_obligation_proof.py and check_spof returns a bare SpofReport, not a
+Result[...] (no bind_code call, cannot Err).
+
+`critical` (Flow attr, this module) deliberately reuses T-0642's exact string
+(CRITICAL_ATTR, a Node attr there) at a different grammar site rather than
+importing it -- documented in the module docstring as intentional, not a
+naming collision.
+
+New: src/frob/strata/_spof.py, tests/unit/strata/test_spof.py (6 tests:
+firing on default/declared singleton capacity, clean on replicated capacity,
+clean on redundant exemption, clean on non-critical flow, waiver keeps
+sibling finding). docs/strata/reliability.md gets a new "REL25x: SPOF
+detection (T-0645)" section.
+
+Verification: `uv run pytest tests/unit/strata/test_spof.py -p no:cacheprovider
+-q` -> 6 passed. `frob check --only lint/static/gates-fast/gates-native/
+gates-security --ticket T-0645` all clean (0 errors across every stage).
+
+Cuts: none against the ticket's declared plan. `critical`/`redundant` are
+bare presence-only markers (same grammar-data ceiling as the rest of this
+cluster); no strata-core change (out of scope).
+
+### Changed
+```
+ docs/strata/reliability.md                 | 232 ++++++++++++++++++-
+ src/frob/strata/__init__.py                |  50 ++++
+ src/frob/strata/_circuit_breaker.py        | 318 ++++++++++++++++++++++++++
+ src/frob/strata/_fallback.py               | 262 +++++++++++++++++++++
+ src/frob/strata/_obligation_proof.py       | 111 +++++++++
+ src/frob/strata/_retry.py                  | 351 +++++++++++++++++++++++++++++
+ src/frob/strata/_waive.py                  |   6 +
+ tests/unit/strata/test_circuit_breaker.py  | 170 ++++++++++++++
+ tests/unit/strata/test_fallback.py         | 138 ++++++++++++
+ tests/unit/strata/test_obligation_proof.py |  77 +++++++
+ tests/unit/strata/test_retry.py            | 244 ++++++++++++++++++++
+ tickets.md                                 | 179 ++++++++++++++-
+ 12 files changed, 2131 insertions(+), 7 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_spof.py::TestSpof::test_singleton_node_with_critical_inbound_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_spof.py::TestSpof::test_declared_singleton_capacity_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_spof.py::TestSpof::test_replicated_capacity_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_spof.py::TestSpof::test_redundant_exemption_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_spof.py::TestSpof::test_non_critical_flow_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_spof.py::TestSpof::test_waiver_on_one_node_keeps_sibling_node_finding` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0646 -->
 ```yaml

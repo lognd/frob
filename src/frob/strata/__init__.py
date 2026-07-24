@@ -70,6 +70,17 @@ from frob.strata._breach import (
     BreachContractReport,
     evaluate_breach_contracts,
 )
+from frob.strata._circuit_breaker import (
+    CIRCUIT_BREAKER_RULES,
+    CRITICAL_ATTR,
+    REL_MISSING_CIRCUIT_BREAKER,
+    REL_UNPROVEN_CIRCUIT_BREAKER,
+    CircuitBreakerReport,
+    CircuitBreakerViolation,
+    check_circuit_breaker_obligations,
+    is_critical_dependency,
+    is_external_dependency,
+)
 from frob.strata._claims import evaluate_claims
 from frob.strata._code_binding import (
     FOREIGN,
@@ -143,6 +154,14 @@ from frob.strata._export import (
     node_allowed_syscalls,
 )
 from frob.strata._facts import FactBase, build_facts
+from frob.strata._fallback import (
+    FALLBACK_RULES,
+    REL_MISSING_FALLBACK,
+    REL_UNPROVEN_FALLBACK,
+    FallbackReport,
+    FallbackViolation,
+    check_fallback_obligations,
+)
 from frob.strata._host import (
     HostAcl,
     HostManifest,
@@ -267,6 +286,15 @@ from frob.strata._reliability import (
     check_reliability_timeouts,
 )
 from frob.strata._report import render_report, summarize
+from frob.strata._retry import (
+    REL_MISSING_BACKOFF,
+    REL_NONIDEMPOTENT_RETRY,
+    REL_UNPROVEN_BACKOFF,
+    RETRY_RULES,
+    RetryReport,
+    RetryViolation,
+    check_retry_obligations,
+)
 from frob.strata._scenarios import (
     ScenarioResult,
     build_compromised_krb_scenario,
@@ -286,6 +314,13 @@ from frob.strata._selfconform import (
     SelfConformReport,
     SelfConformViolation,
     check_self_conformance,
+)
+from frob.strata._spof import (
+    REL_SPOF,
+    SPOF_RULES,
+    SpofReport,
+    SpofViolation,
+    check_spof,
 )
 from frob.strata._sysdoc import (
     ClaimAuditResult,
@@ -456,13 +491,34 @@ __all__ = [
     "ScenarioDecl",
     "ScenarioResult",
     "ScopeSpec",
+    "CIRCUIT_BREAKER_RULES",
+    "CRITICAL_ATTR",
+    "FALLBACK_RULES",
     "RELIABILITY_RULES",
+    "REL_MISSING_BACKOFF",
+    "REL_MISSING_CIRCUIT_BREAKER",
+    "REL_MISSING_FALLBACK",
     "REL_MISSING_HEALTH",
     "REL_MISSING_TIMEOUT",
+    "REL_NONIDEMPOTENT_RETRY",
+    "REL_UNPROVEN_BACKOFF",
+    "REL_UNPROVEN_CIRCUIT_BREAKER",
+    "REL_UNPROVEN_FALLBACK",
     "REL_UNPROVEN_HEALTH",
     "REL_UNPROVEN_TIMEOUT",
+    "RETRY_RULES",
+    "REL_SPOF",
+    "SPOF_RULES",
+    "CircuitBreakerReport",
+    "CircuitBreakerViolation",
+    "FallbackReport",
+    "FallbackViolation",
     "ReliabilityReport",
     "ReliabilityViolation",
+    "RetryReport",
+    "RetryViolation",
+    "SpofReport",
+    "SpofViolation",
     "RESOURCE_CONTENTION_RULES",
     "ResourceContentionReport",
     "ResourceContentionViolation",
@@ -509,8 +565,14 @@ __all__ = [
     "check_privacy_policy",
     "check_regulation_catalog_completeness",
     "check_regulation_discharge",
+    "check_circuit_breaker_obligations",
+    "check_fallback_obligations",
     "check_reliability_health",
     "check_reliability_timeouts",
+    "check_retry_obligations",
+    "check_spof",
+    "is_critical_dependency",
+    "is_external_dependency",
     "check_resource_contention",
     "check_self_conformance",
     "compile_policies",
