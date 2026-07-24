@@ -9658,7 +9658,7 @@ issue.
 ```yaml
 id: T-0841
 title: wire Rust/C++/TypeScript language-excuse discharge into a real call-graph scan
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-23'
