@@ -359,7 +359,7 @@ a bare-rule `waive` clause names exactly one thing:
 ```
 node legacy_gateway : untrusted {
     critical;
-    waive "REL240" reason "legacy gateway, fallback path tracked in T-0643-followup" ticket "T-0643";
+    waive "REL240" reason "legacy gateway, fallback path tracked in T-9904-followup" ticket "T-9904";
 }
 ```
 
