@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.144.0] - unreleased
+
+- T-0618: arch: LSP checks (ARCH1xx) -- override contract violations
+
 ## [0.143.0] - unreleased
 
 - T-0711: hot-graph sketch store: log-bucket quantile sketches with decayed merge in .frob sqlite

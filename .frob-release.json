@@ -180,6 +180,12 @@
     "src/frob/arch/_python.py::PythonAdapter.adapt": "0c57832dc79ce96209c1a1ae671bbb1808b6b61baffc12c19d893376a6afe64e",
     "src/frob/arch/_rust.py::RustAdapter": "9360bb051d5ec98205256cdb4f8da557e386f6dd46493d75c742787e0cb372bc",
     "src/frob/arch/_rust.py::RustAdapter.adapt": "0c57832dc79ce96209c1a1ae671bbb1808b6b61baffc12c19d893376a6afe64e",
+    "src/frob/arch/_solid.py::check_noop_override": "b3cd0fad12e5abf7335c6eb1a39ed3fc1fd84a4e2d8a381fb52563a6322fdadd",
+    "src/frob/arch/_solid.py::check_override_raises_not_implemented": "2a5744302eb9f7906bad731ec044c5afe25c4c04532b4e95c46ad036804ee474",
+    "src/frob/arch/_solid.py::check_override_signature_variance": "e56d625820ef2033744b0f792b7add4ffb47aab643646bd30a54e174b07fd3ce",
+    "src/frob/arch/_solid.py::check_override_strengthened_precondition": "78ac776d70858bf8bb9280ec38e2f3745d413cf7559d7e62d6bd20ecb21f0562",
+    "src/frob/arch/_solid.py::check_override_weakened_postcondition": "361b1a36e8dd922f5d88c4768e02f75d682ae606607aeff3580fdc141870eb3b",
+    "src/frob/arch/_solid.py::run_lsp_checks": "bcf73d4b1be3a95de7b8b379dbff1204d9a5f03ed7554f84210231c2f0432fbf",
     "src/frob/arch/_srp.py::GOD_MODULE_MIN_CLUSTERS": "5211c3e1b1d052759ddbcd18489c3ef50634cc6fd8d847ec95a7e2e0577dc540",
     "src/frob/arch/_srp.py::GOD_MODULE_MIN_EXPORTS": "7e409b7c7471bcf62d55e2f62391f9b26646f24c68d99b8d790b62d674add8f1",
     "src/frob/arch/_srp.py::LCOM4_MIN_FIELD_USING_METHODS": "90d7ccf42b01ea8dfc95916adcbc87a006e4e69c812b6dd452c857034787a19e",
@@ -1446,5 +1452,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.143.0"
+  "version": "0.144.0"
 }

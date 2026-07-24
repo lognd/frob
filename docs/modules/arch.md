@@ -26,6 +26,11 @@ has no `elif language == "..."` branch for them yet.
 | `abstraction-opportunity` | 3+ Python functions across the project sharing the same annotated parameter/return-type signature, EXCLUDING intentional dispatch/validator families (see below) | suggestion |
 | `pattern-recommendation` | a strong structural HALLMARK (isinstance chain, state-field chain, telescoping constructor, scattered construction, wrap-and-delegate class, translating-wrapper class, manual callback list) matches a registered `frob.arch._patterns` rule | suggestion |
 | `anti-pattern-escape` | a strong structural ANTI-PATTERN (god object, stringly-typed comparison chain, all-trivial-accessor class) matches a registered `frob.arch._patterns` rule | suggestion |
+| `lsp-not-implemented-override` (ARCH104, T-0618) | an override raises `NotImplementedError` where the same-file base method is concrete -- written once against the normalized model | warning |
+| `lsp-signature-variance` (ARCH105, T-0618) | an override accepts fewer required params, or returns a different annotated type, than its same-file base method -- written once against the normalized model | warning |
+| `lsp-strengthened-precondition` (ARCH106, T-0618) | an override adds a guard-clause raise on a shared param the base lacks -- written once against the normalized model | warning |
+| `lsp-weakened-postcondition` (ARCH107, T-0618) | an override can return nothing where the base always returns a value -- written once against the normalized model | warning |
+| `lsp-noop-override` (ARCH108, T-0618) | an empty-shell override of a value-returning base method -- written once against the normalized model | warning |
 | `low-cohesion-class` (ARCH101, T-0616) | a class's field-using methods split into 2+ disjoint field-usage components (LCOM4) -- written once against the normalized model, fires across languages | warning |
 | `god-module` (ARCH102, T-0616) | a module's 10+ top-level exports partition into 3+ disjoint naming/usage clusters -- written once against the normalized model | warning |
 | `mixed-concern-function` (ARCH103, T-0616) | one function body mixes an I/O call, a string-formatting call, and 2+ of its own decision points -- written once against the normalized model | suggestion |
@@ -432,6 +437,102 @@ gate-side addition, not a re-instrumentation of these checks.
   enum not locally resolvable makes the match's exhaustiveness
   unverifiable from this file alone, and the check silently skips it
   rather than risk a false positive.
+
+### LSP checks: `lsp-not-implemented-override` / `lsp-signature-variance` / `lsp-strengthened-precondition` / `lsp-weakened-postcondition` / `lsp-noop-override` (T-0618)
+
+<a id="lsp-checks"></a>
+<!-- frob:describes src/frob/arch/_solid.py::check_override_raises_not_implemented -->
+<!-- frob:describes src/frob/arch/_solid.py::check_override_signature_variance -->
+<!-- frob:describes src/frob/arch/_solid.py::check_override_strengthened_precondition -->
+<!-- frob:describes src/frob/arch/_solid.py::check_override_weakened_postcondition -->
+<!-- frob:describes src/frob/arch/_solid.py::check_noop_override -->
+<!-- frob:describes src/frob/arch/_solid.py::run_lsp_checks -->
+
+`frob.arch._solid` (EPIC T-0330's ARCH1xx LSP/Liskov family, T-0618) is
+written ONCE against the T-0609 normalized model
+(`frob.arch._normalized.NormalizedModule`), following `frob.arch._srp`'s
+precedent (T-0616): every check below fires identically for every
+`LanguageAdapter` output with no per-language branch in the check itself.
+All five categories stay on the same unwaivable advisory channel every
+other `frob.arch` category is on (`frob.gates._unwaivable_channel_rules`)
+until a future ticket wires a real ARCH1xx gate the way `ARCH001` already
+exists for `long-function`; every finding already carries `symref` (and
+`metric` where there is a natural count) so that wiring is a gate-side
+addition, not a re-instrumentation of these checks. `analyze_project`
+dispatch wiring is out of this ticket's scope, matching T-0616's own
+disclosed cut (see its "Wiring" note above) -- `run_lsp_checks` is the
+single entry point a future wiring ticket calls per parsed file.
+
+**Base<->override linkage.** `NormalizedFunction.overrides` (T-0609) is
+only populated by adapters for languages with an explicit override
+keyword/annotation (Kotlin's `override` modifier, TypeScript's `override`
+modifier, Rust's trait-impl methods) -- python has none, so
+`PythonAdapter` never sets it. Rather than leave python's LSP checks
+permanently blind, `_solid.py` resolves the linkage itself,
+PRECISION-DISCIPLINE style matching `frob.arch._ocp`'s fail-toward-silence
+posture (`_iter_override_pairs`): a class's `bases` (as written in
+source) are looked up against every OTHER class defined in the SAME
+`NormalizedModule`; a base class defined in another file, or not
+resolvable from this file alone, makes the pair unresolvable and it is
+silently skipped rather than risked as a false positive. A method name
+shared between a class and a same-file base class IS the override
+relationship for every check below.
+
+| Category | ARCH id | Signal | Severity |
+|---|---|---|---|
+| `lsp-not-implemented-override` | ARCH104 | an override raises `NotImplementedError`/`NotImplemented` while its same-file base method does NOT raise the same type anywhere in its own body | warning |
+| `lsp-signature-variance` | ARCH105 | an override accepts fewer required (no-default) params than the base, OR its annotated return type differs from the base's annotated return type | warning |
+| `lsp-strengthened-precondition` | ARCH106 | an override adds a guard-clause raise (`if <cond mentioning a shared param>: raise ...`) on a param the base also declares, that the base's own body has no matching guard for | warning |
+| `lsp-weakened-postcondition` | ARCH107 | the same-file base method always returns a real value on every return path, but the override has at least one bare `return`/`return None` path | warning |
+| `lsp-noop-override` | ARCH108 | an override's OWN body has no branches/loops/calls/field-accesses/raises/catches and no value-returning `return`, while the same-file base method DOES return a value on at least one path | warning |
+
+**`lsp-not-implemented-override` (ARCH104, `check_override_raises_
+not_implemented`).** A base method that is itself abstract-shaped (also
+raises `NotImplementedError`/`NotImplemented` somewhere in its own body --
+e.g. a hand-rolled ABC method without `@abstractmethod`) is not flagged:
+the base already documents "override me", so the override doing exactly
+that is not a violation. Only an override whose CONCRETE base does not
+raise the same exception type is flagged.
+
+**`lsp-signature-variance` (ARCH105, `check_override_signature_
+variance`).** Required-param-count comparison excludes a leading
+`self`/`this`/`cls` receiver so a method-vs-method comparison is apples
+to apples regardless of language convention; a narrower override
+(`metric` carries the required-param deficit) is flagged and the
+return-type half is skipped for that pair (one variance finding per pair
+is enough signal). The return-type half only compares when BOTH sides
+carry an annotated return type -- an unannotated type on either side is
+not resolvable, so that half fails toward silence rather than guessing.
+
+**`lsp-strengthened-precondition` (ARCH106, `check_override_
+strengthened_precondition`).** The guard-clause proxy is intentionally
+coarse (line-adjacency, not full data flow, matching `_ocp`'s syntactic-
+proxy posture): a `NormalizedBranch` whose `condition_text` mentions a
+shared param, with a `raise` at or within two lines of the branch's own
+line, reads as `if <cond>: raise ...`. A guard present on BOTH the base
+and the override for the same param is not flagged -- the precondition
+is inherited, not strengthened; `metric` carries the count of newly
+strengthened params.
+
+**`lsp-weakened-postcondition` (ARCH107, `check_override_weakened_
+postcondition`).** "Always returns a value" is a syntactic proxy: every
+`return` statement directly in the function's OWN body (not counting
+nested functions) carries a non-`None` value, AND there is at least one
+such return. A function with zero returns makes no such promise and is
+never treated as the base side of this check.
+
+**`lsp-noop-override` (ARCH108, `check_noop_override`).** The "empty
+shell" test requires the override to have NO structural events at all
+(branches/loops/calls/field-accesses/raises/catches) and either no
+returns or only bare/`None` returns -- a `pass`-only body, or a body that
+is exactly `return`/`return None`, both read as no-op; any real body
+event (even a single call) takes the override out of this check
+entirely, since a real proxy this coarse would rather miss a subtler
+no-op than flag a legitimate short override.
+
+**`run_lsp_checks(module) -> list[ArchSuggestion]`** runs all five above
+against one `NormalizedModule` and returns the combined findings,
+mirroring `frob.arch._srp.run_srp_checks`'s convention.
 
 ### Fork/pool hazards: `pool-inside-pool` / `fork-after-threads` / `pipe-wait-deadlock` / `self-join-deadlock` (T-0695)
 

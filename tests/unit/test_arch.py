@@ -3473,6 +3473,578 @@ class TestForkPoolHazards:
 
 
 # ---------------------------------------------------------------------------
+# T-0618: LSP checks -- override contract violations (docs/modules/arch.md#lsp-checks)
+# ---------------------------------------------------------------------------
+
+
+def _lsp_module(base, override):
+    """Build a two-class `NormalizedModule` (T-0618) with `override`'s
+    `bases` naming `base`'s class name -- the same-file base<->override
+    linkage every `_solid.py` check resolves from."""
+    from frob.arch._normalized import NormalizedModule
+
+    return NormalizedModule(
+        path="pkg/mod.py",
+        language="python",
+        classes=[base, override],
+    )
+
+
+class TestOverrideRaisesNotImplemented:
+    """ARCH104: `check_override_raises_not_implemented`
+    (docs/modules/arch.md#lsp-checks)."""
+
+    def test_concrete_override_raising_not_implemented_flagged(self) -> None:
+        from frob.arch._normalized import (
+            NormalizedClass,
+            NormalizedFunction,
+            NormalizedRaise,
+            NormalizedReturn,
+        )
+        from frob.arch._solid import check_override_raises_not_implemented
+
+        base = NormalizedClass(
+            name="Base",
+            line=1,
+            methods=[
+                NormalizedFunction(
+                    name="greet",
+                    line=2,
+                    body_line_count=1,
+                    is_method=True,
+                    returns=[NormalizedReturn(line=3, value_text="'hi'")],
+                )
+            ],
+        )
+        override = NormalizedClass(
+            name="Sub",
+            line=5,
+            bases=["Base"],
+            methods=[
+                NormalizedFunction(
+                    name="greet",
+                    line=6,
+                    body_line_count=1,
+                    is_method=True,
+                    raises=[
+                        NormalizedRaise(line=7, exception_type="NotImplementedError")
+                    ],
+                )
+            ],
+        )
+        module = _lsp_module(base, override)
+        out: list = []
+        check_override_raises_not_implemented(module, out)
+        assert len(out) == 1
+        assert out[0].category == "lsp-not-implemented-override"
+        assert out[0].symref == "pkg/mod.py::Sub.greet"
+
+    def test_base_itself_raising_not_implemented_is_not_flagged(self) -> None:
+        from frob.arch._normalized import (
+            NormalizedClass,
+            NormalizedFunction,
+            NormalizedRaise,
+        )
+        from frob.arch._solid import check_override_raises_not_implemented
+
+        base = NormalizedClass(
+            name="Base",
+            line=1,
+            methods=[
+                NormalizedFunction(
+                    name="greet",
+                    line=2,
+                    body_line_count=1,
+                    is_method=True,
+                    raises=[
+                        NormalizedRaise(line=3, exception_type="NotImplementedError")
+                    ],
+                )
+            ],
+        )
+        override = NormalizedClass(
+            name="Sub",
+            line=5,
+            bases=["Base"],
+            methods=[
+                NormalizedFunction(
+                    name="greet",
+                    line=6,
+                    body_line_count=1,
+                    is_method=True,
+                    raises=[
+                        NormalizedRaise(line=7, exception_type="NotImplementedError")
+                    ],
+                )
+            ],
+        )
+        module = _lsp_module(base, override)
+        out: list = []
+        check_override_raises_not_implemented(module, out)
+        assert out == []
+
+
+class TestOverrideSignatureVariance:
+    """ARCH105: `check_override_signature_variance`
+    (docs/modules/arch.md#lsp-checks)."""
+
+    def test_narrower_required_params_flagged(self) -> None:
+        from frob.arch._normalized import (
+            NormalizedClass,
+            NormalizedFunction,
+            NormalizedParam,
+        )
+        from frob.arch._solid import check_override_signature_variance
+
+        base = NormalizedClass(
+            name="Base",
+            line=1,
+            methods=[
+                NormalizedFunction(
+                    name="save",
+                    line=2,
+                    body_line_count=1,
+                    is_method=True,
+                    params=[
+                        NormalizedParam(name="self"),
+                        NormalizedParam(name="path"),
+                        NormalizedParam(name="mode"),
+                    ],
+                )
+            ],
+        )
+        override = NormalizedClass(
+            name="Sub",
+            line=5,
+            bases=["Base"],
+            methods=[
+                NormalizedFunction(
+                    name="save",
+                    line=6,
+                    body_line_count=1,
+                    is_method=True,
+                    params=[NormalizedParam(name="self"), NormalizedParam(name="path")],
+                )
+            ],
+        )
+        module = _lsp_module(base, override)
+        out: list = []
+        check_override_signature_variance(module, out)
+        assert len(out) == 1
+        assert out[0].category == "lsp-signature-variance"
+        assert out[0].metric == 1
+
+    def test_wider_return_type_flagged(self) -> None:
+        from frob.arch._normalized import NormalizedClass, NormalizedFunction
+        from frob.arch._solid import check_override_signature_variance
+
+        base = NormalizedClass(
+            name="Base",
+            line=1,
+            methods=[
+                NormalizedFunction(
+                    name="get",
+                    line=2,
+                    body_line_count=1,
+                    is_method=True,
+                    return_type="int",
+                )
+            ],
+        )
+        override = NormalizedClass(
+            name="Sub",
+            line=5,
+            bases=["Base"],
+            methods=[
+                NormalizedFunction(
+                    name="get",
+                    line=6,
+                    body_line_count=1,
+                    is_method=True,
+                    return_type="str",
+                )
+            ],
+        )
+        module = _lsp_module(base, override)
+        out: list = []
+        check_override_signature_variance(module, out)
+        assert len(out) == 1
+        assert out[0].category == "lsp-signature-variance"
+
+    def test_same_shape_signature_not_flagged(self) -> None:
+        from frob.arch._normalized import (
+            NormalizedClass,
+            NormalizedFunction,
+            NormalizedParam,
+        )
+        from frob.arch._solid import check_override_signature_variance
+
+        base = NormalizedClass(
+            name="Base",
+            line=1,
+            methods=[
+                NormalizedFunction(
+                    name="get",
+                    line=2,
+                    body_line_count=1,
+                    is_method=True,
+                    params=[NormalizedParam(name="self"), NormalizedParam(name="x")],
+                    return_type="int",
+                )
+            ],
+        )
+        override = NormalizedClass(
+            name="Sub",
+            line=5,
+            bases=["Base"],
+            methods=[
+                NormalizedFunction(
+                    name="get",
+                    line=6,
+                    body_line_count=1,
+                    is_method=True,
+                    params=[NormalizedParam(name="self"), NormalizedParam(name="x")],
+                    return_type="int",
+                )
+            ],
+        )
+        module = _lsp_module(base, override)
+        out: list = []
+        check_override_signature_variance(module, out)
+        assert out == []
+
+
+class TestOverrideStrengthenedPrecondition:
+    """ARCH106: `check_override_strengthened_precondition`
+    (docs/modules/arch.md#lsp-checks)."""
+
+    def test_added_guard_raise_on_shared_param_flagged(self) -> None:
+        from frob.arch._normalized import (
+            NormalizedBranch,
+            NormalizedClass,
+            NormalizedFunction,
+            NormalizedParam,
+            NormalizedRaise,
+        )
+        from frob.arch._solid import check_override_strengthened_precondition
+
+        base = NormalizedClass(
+            name="Base",
+            line=1,
+            methods=[
+                NormalizedFunction(
+                    name="withdraw",
+                    line=2,
+                    body_line_count=1,
+                    is_method=True,
+                    params=[
+                        NormalizedParam(name="self"),
+                        NormalizedParam(name="amount"),
+                    ],
+                )
+            ],
+        )
+        override = NormalizedClass(
+            name="Sub",
+            line=5,
+            bases=["Base"],
+            methods=[
+                NormalizedFunction(
+                    name="withdraw",
+                    line=6,
+                    body_line_count=3,
+                    is_method=True,
+                    params=[
+                        NormalizedParam(name="self"),
+                        NormalizedParam(name="amount"),
+                    ],
+                    branches=[NormalizedBranch(line=7, condition_text="amount > 100")],
+                    raises=[NormalizedRaise(line=8, exception_type="ValueError")],
+                )
+            ],
+        )
+        module = _lsp_module(base, override)
+        out: list = []
+        check_override_strengthened_precondition(module, out)
+        assert len(out) == 1
+        assert out[0].category == "lsp-strengthened-precondition"
+        assert out[0].metric == 1
+
+    def test_guard_raise_present_in_base_too_not_flagged(self) -> None:
+        from frob.arch._normalized import (
+            NormalizedBranch,
+            NormalizedClass,
+            NormalizedFunction,
+            NormalizedParam,
+            NormalizedRaise,
+        )
+        from frob.arch._solid import check_override_strengthened_precondition
+
+        base = NormalizedClass(
+            name="Base",
+            line=1,
+            methods=[
+                NormalizedFunction(
+                    name="withdraw",
+                    line=2,
+                    body_line_count=3,
+                    is_method=True,
+                    params=[
+                        NormalizedParam(name="self"),
+                        NormalizedParam(name="amount"),
+                    ],
+                    branches=[NormalizedBranch(line=3, condition_text="amount > 100")],
+                    raises=[NormalizedRaise(line=4, exception_type="ValueError")],
+                )
+            ],
+        )
+        override = NormalizedClass(
+            name="Sub",
+            line=6,
+            bases=["Base"],
+            methods=[
+                NormalizedFunction(
+                    name="withdraw",
+                    line=7,
+                    body_line_count=3,
+                    is_method=True,
+                    params=[
+                        NormalizedParam(name="self"),
+                        NormalizedParam(name="amount"),
+                    ],
+                    branches=[NormalizedBranch(line=8, condition_text="amount > 100")],
+                    raises=[NormalizedRaise(line=9, exception_type="ValueError")],
+                )
+            ],
+        )
+        module = _lsp_module(base, override)
+        out: list = []
+        check_override_strengthened_precondition(module, out)
+        assert out == []
+
+
+class TestOverrideWeakenedPostcondition:
+    """ARCH107: `check_override_weakened_postcondition`
+    (docs/modules/arch.md#lsp-checks)."""
+
+    def test_bare_return_where_base_always_returns_value_flagged(self) -> None:
+        from frob.arch._normalized import (
+            NormalizedClass,
+            NormalizedFunction,
+            NormalizedReturn,
+        )
+        from frob.arch._solid import check_override_weakened_postcondition
+
+        base = NormalizedClass(
+            name="Base",
+            line=1,
+            methods=[
+                NormalizedFunction(
+                    name="find",
+                    line=2,
+                    body_line_count=1,
+                    is_method=True,
+                    returns=[NormalizedReturn(line=3, value_text="item")],
+                )
+            ],
+        )
+        override = NormalizedClass(
+            name="Sub",
+            line=5,
+            bases=["Base"],
+            methods=[
+                NormalizedFunction(
+                    name="find",
+                    line=6,
+                    body_line_count=2,
+                    is_method=True,
+                    returns=[NormalizedReturn(line=7, value_text=None)],
+                )
+            ],
+        )
+        module = _lsp_module(base, override)
+        out: list = []
+        check_override_weakened_postcondition(module, out)
+        assert len(out) == 1
+        assert out[0].category == "lsp-weakened-postcondition"
+
+    def test_override_also_always_returning_value_not_flagged(self) -> None:
+        from frob.arch._normalized import (
+            NormalizedClass,
+            NormalizedFunction,
+            NormalizedReturn,
+        )
+        from frob.arch._solid import check_override_weakened_postcondition
+
+        base = NormalizedClass(
+            name="Base",
+            line=1,
+            methods=[
+                NormalizedFunction(
+                    name="find",
+                    line=2,
+                    body_line_count=1,
+                    is_method=True,
+                    returns=[NormalizedReturn(line=3, value_text="item")],
+                )
+            ],
+        )
+        override = NormalizedClass(
+            name="Sub",
+            line=5,
+            bases=["Base"],
+            methods=[
+                NormalizedFunction(
+                    name="find",
+                    line=6,
+                    body_line_count=1,
+                    is_method=True,
+                    returns=[NormalizedReturn(line=7, value_text="other_item")],
+                )
+            ],
+        )
+        module = _lsp_module(base, override)
+        out: list = []
+        check_override_weakened_postcondition(module, out)
+        assert out == []
+
+
+class TestNoOpOverride:
+    """ARCH108: `check_noop_override` (docs/modules/arch.md#lsp-checks)."""
+
+    def test_empty_body_override_of_value_returning_base_flagged(self) -> None:
+        from frob.arch._normalized import (
+            NormalizedClass,
+            NormalizedFunction,
+            NormalizedReturn,
+        )
+        from frob.arch._solid import check_noop_override
+
+        base = NormalizedClass(
+            name="Base",
+            line=1,
+            methods=[
+                NormalizedFunction(
+                    name="compute",
+                    line=2,
+                    body_line_count=1,
+                    is_method=True,
+                    returns=[NormalizedReturn(line=3, value_text="42")],
+                )
+            ],
+        )
+        override = NormalizedClass(
+            name="Sub",
+            line=5,
+            bases=["Base"],
+            methods=[
+                NormalizedFunction(
+                    name="compute",
+                    line=6,
+                    body_line_count=1,
+                    is_method=True,
+                    returns=[],
+                )
+            ],
+        )
+        module = _lsp_module(base, override)
+        out: list = []
+        check_noop_override(module, out)
+        assert len(out) == 1
+        assert out[0].category == "lsp-noop-override"
+
+    def test_override_with_real_body_not_flagged(self) -> None:
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedClass,
+            NormalizedFunction,
+            NormalizedReturn,
+        )
+        from frob.arch._solid import check_noop_override
+
+        base = NormalizedClass(
+            name="Base",
+            line=1,
+            methods=[
+                NormalizedFunction(
+                    name="compute",
+                    line=2,
+                    body_line_count=1,
+                    is_method=True,
+                    returns=[NormalizedReturn(line=3, value_text="42")],
+                )
+            ],
+        )
+        override = NormalizedClass(
+            name="Sub",
+            line=5,
+            bases=["Base"],
+            methods=[
+                NormalizedFunction(
+                    name="compute",
+                    line=6,
+                    body_line_count=2,
+                    is_method=True,
+                    calls=[NormalizedCall(callee="super().compute", line=7)],
+                    returns=[NormalizedReturn(line=7, value_text="43")],
+                )
+            ],
+        )
+        module = _lsp_module(base, override)
+        out: list = []
+        check_noop_override(module, out)
+        assert out == []
+
+
+class TestRunLspChecks:
+    """`run_lsp_checks` combines every ARCH1xx LSP check
+    (docs/modules/arch.md#lsp-checks)."""
+
+    def test_combines_multiple_checks(self) -> None:
+        from frob.arch._normalized import (
+            NormalizedClass,
+            NormalizedFunction,
+            NormalizedRaise,
+            NormalizedReturn,
+        )
+        from frob.arch._solid import run_lsp_checks
+
+        base = NormalizedClass(
+            name="Base",
+            line=1,
+            methods=[
+                NormalizedFunction(
+                    name="greet",
+                    line=2,
+                    body_line_count=1,
+                    is_method=True,
+                    returns=[NormalizedReturn(line=3, value_text="'hi'")],
+                )
+            ],
+        )
+        override = NormalizedClass(
+            name="Sub",
+            line=5,
+            bases=["Base"],
+            methods=[
+                NormalizedFunction(
+                    name="greet",
+                    line=6,
+                    body_line_count=1,
+                    is_method=True,
+                    raises=[
+                        NormalizedRaise(line=7, exception_type="NotImplementedError")
+                    ],
+                )
+            ],
+        )
+        module = _lsp_module(base, override)
+        out = run_lsp_checks(module)
+        categories = {s.category for s in out}
+        assert "lsp-not-implemented-override" in categories
+
+
+# ---------------------------------------------------------------------------
 # T-0745: protocol summary engine -- per-function fixpoint over the call graph
 # ---------------------------------------------------------------------------
 

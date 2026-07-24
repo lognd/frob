@@ -37,6 +37,17 @@ ArchCategory = Literal[
     # gate-side addition, not a re-instrumentation of these checks.
     "type-dispatch-smell",
     "non-exhaustive-enum-match",
+    # T-0618: LSP (Liskov) checks (ARCH1xx family, T-0330's SOLID catalog),
+    # written once against the T-0609 normalized model (`frob.arch._solid`)
+    # so each fires identically across every `LanguageAdapter` -- see
+    # docs/modules/arch.md's "LSP checks" section for the base<->override
+    # resolution rule and per-category proxy definition. Same unwaivable
+    # advisory channel as every other category here.
+    "lsp-not-implemented-override",
+    "lsp-signature-variance",
+    "lsp-strengthened-precondition",
+    "lsp-weakened-postcondition",
+    "lsp-noop-override",
     # T-0695: structural fork/pool hazard family (call-graph reachability,
     # not runtime tracing) -- `frob.arch._concurrency`. Every member stays
     # on the same unwaivable advisory channel as the categories above
