@@ -2475,6 +2475,7 @@ blocked_by:
 - T-0867
 - T-0868
 - T-0869
+- T-0747
 parent: null
 scope:
 - src/frob/arch/**
@@ -2488,7 +2489,6 @@ threat: null
 component: null
 ```
 User mandate 2026-07-22: statically enforce system state protocols -- the *_init-never-called / *_deinit-never-called class, and generally functions valid only in particular states (TCP-handshake-style machines), plus cleanup-on-all-paths. Frame: TYPESTATE over the call graph, restricted to two decidable fragments: (a) module/subsystem protocols (the object is a singleton subsystem -- reachability + summaries suffice, no alias analysis); (b) declared object protocols checked at summary granularity. DELIBERATE DECISIONS: declared protocols with name-pattern-inferred init/deinit convenience (inference ONLY for the common pair, never for general machines); per-function summary fixpoint engine shared with the T-0686 may-raise engine (one engine, three clients: exceptions, capabilities, protocols -- no-duplication); language excuses are recorded DISCHARGES naming their mechanism (Rust Drop unless mem::forget observed; C++ RAII only when init result held by destructor-bearing object; Python with-blocks, GC finalizers NEVER count; TS using/try-finally), per T-0383 caught_by doctrine. LIMITS declared: no aliased per-object heap typestate (Rust owns that); concurrent establishment races belong to T-0693 family; dynamic dispatch = Unknown fail-closed (T-0339). Children: declaration surface, summary engine, state-requirement verification + excuses, cleanup obligations. Umbrella closes when children close.
-
 <!-- ticket:T-0740 -->
 ```yaml
 id: T-0740
@@ -3182,7 +3182,7 @@ T-0735 child 2 (estate conformance). Scaffold template: `frob scaffold apply` em
 id: T-0866
 title: 'typestate declaration surface: module/object protocol declarations + init/deinit
   pair inference'
-state: queued
+state: dropped
 kind: security
 origin: human
 created: '2026-07-23'
@@ -3207,12 +3207,14 @@ component: arch
 ```
 T-0739 child 1 (declaration surface). The typestate declaration surface: how a protocol is declared for (a) module/subsystem singleton protocols and (b) declared object protocols. Includes the name-pattern-inferred init/deinit convenience pair (inference ONLY for the common *_init/*_deinit pair, never for general machines) and the explicit declared-state-machine form (states, transitions, functions-valid-in-state). Deliverable: the parsed declaration model + directives/DSL wiring, consumed by the verification child. No enforcement in this ticket.
 
+## Drop reason
+- 2026-07-23: duplicate of the pre-existing T-0739 child set (T-0744/T-0745/T-0746/T-0747, mostly done) -- filed 2026-07-23 without checking parent-edge children; typestate declaration surface, summary engine, verification+excuses already delivered in graph/dsl.py, graph/summary.py, gates/_protocol_summary.py
 <!-- ticket:T-0867 -->
 ```yaml
 id: T-0867
 title: shared per-function summary fixpoint engine over the resolved call graph (protocol/may-raise/capability
   clients)
-state: queued
+state: dropped
 kind: security
 origin: human
 created: '2026-07-23'
@@ -3234,11 +3236,13 @@ component: graph
 ```
 T-0739 child 2 (the engine). Per-function summary fixpoint engine over the call graph, shared by design with the T-0685/T-0686 may-raise analysis and the capability analysis (one engine, three clients -- no-duplication mandate). Computes per-function summaries (calls-observed, states-required/established/destroyed) to a fixpoint over the resolved call graph; dynamic dispatch is Unknown and fail-closed per T-0339 doctrine. This ticket delivers the engine + the protocol client's summary shape; the verification rules live in child 3.
 
+## Drop reason
+- 2026-07-23: duplicate of the pre-existing T-0739 child set (T-0744/T-0745/T-0746/T-0747, mostly done) -- filed 2026-07-23 without checking parent-edge children; typestate declaration surface, summary engine, verification+excuses already delivered in graph/dsl.py, graph/summary.py, gates/_protocol_summary.py
 <!-- ticket:T-0868 -->
 ```yaml
 id: T-0868
 title: typestate state-requirement verification + recorded language-excuse discharges
-state: queued
+state: dropped
 kind: security
 origin: human
 created: '2026-07-23'
@@ -3266,11 +3270,13 @@ component: arch
 ```
 T-0739 child 3 (verification + excuses). State-requirement verification: a function valid only in state S must be unreachable on paths where S is not established (init-never-called class; TCP-handshake-style ordering). Language excuses are recorded DISCHARGES naming their mechanism per T-0383 caught_by doctrine: Rust Drop unless mem::forget observed; C++ RAII only when the init result is held by a destructor-bearing object; Python with-blocks count, GC finalizers NEVER count; TS using/try-finally. Declared LIMITS (no aliased per-object heap typestate; concurrency races belong to the T-0693 family) documented, not silently absorbed.
 
+## Drop reason
+- 2026-07-23: duplicate of the pre-existing T-0739 child set (T-0744/T-0745/T-0746/T-0747, mostly done) -- filed 2026-07-23 without checking parent-edge children; typestate declaration surface, summary engine, verification+excuses already delivered in graph/dsl.py, graph/summary.py, gates/_protocol_summary.py
 <!-- ticket:T-0869 -->
 ```yaml
 id: T-0869
 title: typestate cleanup-on-all-paths obligation (deinit-never-called generalized)
-state: queued
+state: dropped
 kind: security
 origin: human
 created: '2026-07-23'
@@ -3294,6 +3300,8 @@ component: arch
 ```
 T-0739 child 4 (cleanup-on-all-paths). The *_deinit-never-called class generalized: every path leaving an established state (normal return, early return, raise/throw) must destroy/release it or hand ownership off, with the child-3 excuse discharges applying. Fixture set covers early-return leaks, exception-path leaks, and conditional-establishment joins.
 
+## Drop reason
+- 2026-07-23: duplicate of the pre-existing T-0739 child set (T-0744/T-0745/T-0746/T-0747, mostly done) -- filed 2026-07-23 without checking parent-edge children; typestate declaration surface, summary engine, verification+excuses already delivered in graph/dsl.py, graph/summary.py, gates/_protocol_summary.py
 <!-- ticket:T-0871 -->
 ```yaml
 id: T-0871
