@@ -12914,3 +12914,29 @@ Real fix needs either (a) a ctest source-file mapping (e.g. parsing
 for gtest-discovered cases via `--gtest_list_tests` per test binary, which does
 carry real per-case names closer to source. Scoped out of T-0730 deliberately,
 not silently dropped -- see T-0730's Done report.
+
+<!-- ticket:T-0887 -->
+```yaml
+id: T-0887
+title: done-report --base-ref hangs when the named base ref does not exist in the
+  clone
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-23'
+priority: medium
+parent: null
+scope:
+- src/frob/tickets/**
+- tests/test_ticket_runner_done_report.py
+acceptance:
+- text: GIVEN a clone with no local or remote-tracking main WHEN done-report --base-ref
+    main runs THEN it exits nonzero within seconds naming the unresolvable ref
+  evidence: []
+- text: GIVEN a repo where main exists WHEN done-report --base-ref main runs THEN
+    behavior is unchanged
+  evidence: []
+threat: null
+component: tickets
+```
+Found during T-0590 attempt 2 (see its failure log): `frob ticket done-report <id> --base-ref main` HANGS indefinitely when run in a clone that has no local `main` branch (e.g. a scratch clone created from a worktree branch). Expected: fail fast with a clear error naming the missing ref (or resolve origin/main), never hang. Likely a subprocess waiting on git prompting or an unbounded retry around the base-ref diff. Repro: clone any repo checked out at a non-main branch without fetching main, run done-report --base-ref main.
