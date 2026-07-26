@@ -1665,7 +1665,8 @@ cwe_entries:
   parents: '271'
   source_doc: docs/design/cwe-1000-registry.md
   disposition: duplicate-of:CWE-269
-  cross_refs: []
+  cross_refs:
+    - "ACC-5-7-LEAST-PRIVILEGE"
 - id: CWE-273
   name: Improper Check for Dropped Privileges
   abstraction: Base
@@ -3376,7 +3377,8 @@ cwe_entries:
   parents: '1164'
   source_doc: docs/design/cwe-1000-registry.md
   disposition: out-of-scope:language-runtime-semantics-model
-  cross_refs: []
+  cross_refs:
+    - "ACC-4-LAVA-FLOW-DEAD-FROZEN-CODE-NOBODY-DARES-REMOVE"
 - id: CWE-562
   name: Return of Stack Variable Address
   abstraction: Base
@@ -3684,7 +3686,8 @@ cwe_entries:
   parents: '667'
   source_doc: docs/design/cwe-1000-registry.md
   disposition: out-of-scope:concurrency-scheduling-model
-  cross_refs: []
+  cross_refs:
+    - "POSA2-DOUBLE-CHECKED-LOCKING-OPTIMIZATION"
 - id: CWE-610
   name: Externally Controlled Reference to a Resource in Another Sphere
   abstraction: Class
@@ -5272,7 +5275,8 @@ cwe_entries:
   parents: '405'
   source_doc: docs/design/cwe-1000-registry.md
   disposition: out-of-scope:generic-precondition-model
-  cross_refs: []
+  cross_refs:
+    - "ACC-5-8-CONNECTION-POOLING"
 - id: CWE-1073
   name: Non-SQL Invokable Control Element with Excessive Number of Data Resource Accesses
   abstraction: Base
@@ -5356,7 +5360,8 @@ cwe_entries:
   parents: '1078'
   source_doc: docs/design/cwe-1000-registry.md
   disposition: out-of-scope:sensitive-data-exposure-sink-model
-  cross_refs: []
+  cross_refs:
+    - "ACC-2-2-C5-COMMENTED-OUT-CODE"
 - id: CWE-1086
   name: Class with Excessive Number of Child Classes
   abstraction: Base
@@ -5636,7 +5641,8 @@ cwe_entries:
   parents: '1120'
   source_doc: docs/design/cwe-1000-registry.md
   disposition: out-of-scope:generic-precondition-model
-  cross_refs: []
+  cross_refs:
+    - "ACC-5-7-ATTACK-SURFACE"
 - id: CWE-1126
   name: Declaration of Variable with Unnecessarily Wide Scope
   abstraction: Base
@@ -6867,7 +6873,8 @@ other_weakness_framework_entries:
   source_doc: docs/design/security-corpus.md
   checkability: not-checkable
   disposition: out-of-scope:threat-modeling-methodology-not-an-atomic-checkable-code-rule
-  cross_refs: []
+  cross_refs:
+    - "ACC-5-7-STRIDE"
 - id: SEC-THREAT-FRAMEWORK-LINDDUN
   name: LINDDUN
   framework: threat-framework

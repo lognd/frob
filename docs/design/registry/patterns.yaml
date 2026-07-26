@@ -37,7 +37,9 @@ entries:
     source_ref: "GoF"
     checkability: "tier2-advisory"
     disposition: "out_of_scope:advisory-design-pattern-recommendation"
-    cross_refs: []
+    cross_refs:
+      - "EFFJAVA-SINGLETON"
+      - "PAT-TRAP-11-SINGLETON-OVERUSE"
   - id: "GOF-ADAPTER"
     name: "Gof Adapter"
     source_doc: "docs/design/design-pattern-catalog.md"
@@ -177,7 +179,9 @@ entries:
     source_ref: "POSA-vol1"
     checkability: "tier2-advisory"
     disposition: "out_of_scope:advisory-design-pattern-recommendation"
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-4-PIPES-AND-FILTERS"
+      - "EIP-PIPES-AND-FILTERS"
   - id: "POSA1-BLACKBOARD"
     name: "Posa1 Blackboard"
     source_doc: "docs/design/design-pattern-catalog.md"
@@ -303,7 +307,8 @@ entries:
     source_ref: "POSA-vol2"
     checkability: "tier2-advisory"
     disposition: "out_of_scope:advisory-design-pattern-recommendation"
-    cross_refs: []
+    cross_refs:
+      - "CWE-609"
   - id: "POSA2-ACTIVE-OBJECT"
     name: "Posa2 Active Object"
     source_doc: "docs/design/design-pattern-catalog.md"
@@ -422,7 +427,9 @@ entries:
     source_ref: "PoEAA"
     checkability: "tier2-advisory"
     disposition: "out_of_scope:advisory-design-pattern-recommendation"
-    cross_refs: []
+    cross_refs:
+      - "ACC-4-ANEMIC-DOMAIN-MODEL"
+      - "PAT-TRAP-20-ANEMIC-DOMAIN-GOD-OBJECT-LAVA-FLOW"
   - id: "POEAA-TABLE-MODULE"
     name: "Poeaa Table Module"
     source_doc: "docs/design/design-pattern-catalog.md"
@@ -576,7 +583,8 @@ entries:
     source_ref: "PoEAA"
     checkability: "tier2-advisory"
     disposition: "out_of_scope:advisory-design-pattern-recommendation"
-    cross_refs: []
+    cross_refs:
+      - "PAT-TRAP-21-LAW-OF-DEMETER-DI-CONTAINERS-ORM-REPOSITORY"
   - id: "POEAA-MODEL-VIEW-CONTROLLER"
     name: "Poeaa Model View Controller"
     source_doc: "docs/design/design-pattern-catalog.md"
@@ -744,7 +752,8 @@ entries:
     source_ref: "PoEAA"
     checkability: "tier2-advisory"
     disposition: "out_of_scope:advisory-design-pattern-recommendation"
-    cross_refs: []
+    cross_refs:
+      - "DDD-II-VALUE-OBJECTS"
   - id: "POEAA-MONEY"
     name: "Poeaa Money"
     source_doc: "docs/design/design-pattern-catalog.md"
@@ -814,7 +823,9 @@ entries:
     source_ref: "Enterprise-Integration-Patterns"
     checkability: "tier2-advisory"
     disposition: "out_of_scope:advisory-design-pattern-recommendation"
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-4-PIPES-AND-FILTERS"
+      - "POSA1-PIPES-AND-FILTERS"
   - id: "EIP-MESSAGE-ROUTER"
     name: "Eip Message Router"
     source_doc: "docs/design/design-pattern-catalog.md"
@@ -891,7 +902,8 @@ entries:
     source_ref: "Enterprise-Integration-Patterns"
     checkability: "tier2-advisory"
     disposition: "out_of_scope:advisory-design-pattern-recommendation"
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-4-MESSAGING-BRIDGE"
   - id: "EIP-MESSAGE-BUS"
     name: "Eip Message Bus"
     source_doc: "docs/design/design-pattern-catalog.md"
@@ -926,7 +938,8 @@ entries:
     source_ref: "Enterprise-Integration-Patterns"
     checkability: "tier2-advisory"
     disposition: "out_of_scope:advisory-design-pattern-recommendation"
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-4-ASYNCHRONOUS-REQUEST-REPLY"
   - id: "EIP-RETURN-ADDRESS"
     name: "Eip Return Address"
     source_doc: "docs/design/design-pattern-catalog.md"
@@ -1129,7 +1142,8 @@ entries:
     source_ref: "Enterprise-Integration-Patterns"
     checkability: "tier2-advisory"
     disposition: out_of_scope:advisory-design-pattern-recommendation
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-4-COMPETING-CONSUMERS"
   - id: "EIP-MESSAGE-DISPATCHER"
     name: "Eip Message Dispatcher"
     source_doc: "docs/design/design-pattern-catalog.md"
@@ -1157,7 +1171,9 @@ entries:
     source_ref: "Enterprise-Integration-Patterns"
     checkability: "tier2-advisory"
     disposition: out_of_scope:advisory-design-pattern-recommendation
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-4-IDEMPOTENT-RECEIVER"
+      - "SDC-5-IDEMPOTENT-RECEIVER"
   - id: "EIP-SERVICE-ACTIVATOR"
     name: "Eip Service Activator"
     source_doc: "docs/design/design-pattern-catalog.md"
@@ -1286,7 +1302,8 @@ entries:
     checkability: "tier1-static"
     # out_of_scope:advisory-design-pattern-recommendation -- T-0849: DDD Evans building-block vocabulary, not a described structural hallmark; whether a class is actually an Entity vs. a Value Object vs. an Aggregate is a domain-semantic judgment (does it have persistent identity distinct from its attributes? does it enforce a transactional consistency boundary?) no single-file structural signal can answer without fabricating a claim -- sibling DDD-I-*/DDD-III-* rows in this same catalog are already out_of_scope for the identical reason
     disposition: "out_of_scope:advisory-design-pattern-recommendation"
-    cross_refs: []
+    cross_refs:
+      - "POEAA-VALUE-OBJECT"
   - id: "DDD-II-DOMAIN-EVENTS"
     name: "Ddd Ii Domain Events"
     source_doc: "docs/design/design-pattern-catalog.md"
@@ -1566,7 +1583,8 @@ entries:
     checkability: "tier1-static"
     # out_of_scope:advisory-design-pattern-recommendation -- T-0849: Release-It stability anti-pattern/pattern is a runtime/distributed-systems property (observed under real network latency, real failure/load conditions across a running distributed system), not a single-file structural shape; no per-file AST walk this package performs can observe it. See docs/modules/arch.md "T-0849 phase 3" for the cross-reference to strata's REL2xx timeout-obligation family where one exists at the concept level
     disposition: "out_of_scope:advisory-design-pattern-recommendation"
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-2-INTEGRATION-POINTS"
   - id: "RELEASEIT-ANTI-CHAIN-REACTIONS"
     name: "Releaseit Anti Chain Reactions"
     source_doc: "docs/design/design-pattern-catalog.md"
@@ -1582,7 +1600,8 @@ entries:
     checkability: "tier1-static"
     # out_of_scope:advisory-design-pattern-recommendation -- T-0849: Release-It stability anti-pattern/pattern is a runtime/distributed-systems property (observed under real network latency, real failure/load conditions across a running distributed system), not a single-file structural shape; no per-file AST walk this package performs can observe it. See docs/modules/arch.md "T-0849 phase 3" for the cross-reference to strata's REL2xx timeout-obligation family where one exists at the concept level
     disposition: "out_of_scope:advisory-design-pattern-recommendation"
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-2-CASCADING-FAILURES"
   - id: "RELEASEIT-ANTI-USERS"
     name: "Releaseit Anti Users"
     source_doc: "docs/design/design-pattern-catalog.md"
@@ -1654,7 +1673,8 @@ entries:
     checkability: "tier1-static"
     # out_of_scope:advisory-design-pattern-recommendation -- T-0849: Release-It stability anti-pattern/pattern is a runtime/distributed-systems property (observed under real network latency, real failure/load conditions across a running distributed system), not a single-file structural shape; no per-file AST walk this package performs can observe it. See docs/modules/arch.md "T-0849 phase 3" for the cross-reference to strata's REL2xx timeout-obligation family where one exists at the concept level
     disposition: "out_of_scope:advisory-design-pattern-recommendation"
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-2-UNBOUNDED-RESULT-SETS"
   - id: "RELEASEIT-PAT-TIMEOUTS"
     name: "Releaseit Pat Timeouts"
     source_doc: "docs/design/design-pattern-catalog.md"
@@ -1662,7 +1682,9 @@ entries:
     checkability: "tier1-static"
     # out_of_scope:advisory-design-pattern-recommendation -- T-0849: Release-It stability anti-pattern/pattern is a runtime/distributed-systems property (observed under real network latency, real failure/load conditions across a running distributed system), not a single-file structural shape; no per-file AST walk this package performs can observe it. See docs/modules/arch.md "T-0849 phase 3" for the cross-reference to strata's REL2xx timeout-obligation family where one exists at the concept level
     disposition: "out_of_scope:advisory-design-pattern-recommendation"
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-2-TIMEOUT-PATTERN-PRESENT"
+      - "SDC-5-TIMEOUT"
   - id: "RELEASEIT-PAT-CIRCUIT-BREAKER"
     name: "Releaseit Pat Circuit Breaker"
     source_doc: "docs/design/design-pattern-catalog.md"
@@ -1670,7 +1692,10 @@ entries:
     checkability: "tier1-static"
     # out_of_scope:advisory-design-pattern-recommendation -- T-0849: Release-It stability anti-pattern/pattern is a runtime/distributed-systems property (observed under real network latency, real failure/load conditions across a running distributed system), not a single-file structural shape; no per-file AST walk this package performs can observe it. See docs/modules/arch.md "T-0849 phase 3" for the cross-reference to strata's REL2xx timeout-obligation family where one exists at the concept level
     disposition: "out_of_scope:advisory-design-pattern-recommendation"
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-2-CIRCUIT-BREAKER"
+      - "ACC-5-4-CIRCUIT-BREAKER"
+      - "MSIO-CIRCUIT-BREAKER"
   - id: "RELEASEIT-PAT-BULKHEADS"
     name: "Releaseit Pat Bulkheads"
     source_doc: "docs/design/design-pattern-catalog.md"
@@ -1678,7 +1703,9 @@ entries:
     checkability: "tier1-static"
     # out_of_scope:advisory-design-pattern-recommendation -- T-0849: Release-It stability anti-pattern/pattern is a runtime/distributed-systems property (observed under real network latency, real failure/load conditions across a running distributed system), not a single-file structural shape; no per-file AST walk this package performs can observe it. See docs/modules/arch.md "T-0849 phase 3" for the cross-reference to strata's REL2xx timeout-obligation family where one exists at the concept level
     disposition: "out_of_scope:advisory-design-pattern-recommendation"
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-2-BULKHEAD"
+      - "ACC-5-4-BULKHEAD"
   - id: "RELEASEIT-PAT-STEADY-STATE"
     name: "Releaseit Pat Steady State"
     source_doc: "docs/design/design-pattern-catalog.md"
@@ -1686,7 +1713,8 @@ entries:
     checkability: "tier1-static"
     # out_of_scope:advisory-design-pattern-recommendation -- T-0849: Release-It stability anti-pattern/pattern is a runtime/distributed-systems property (observed under real network latency, real failure/load conditions across a running distributed system), not a single-file structural shape; no per-file AST walk this package performs can observe it. See docs/modules/arch.md "T-0849 phase 3" for the cross-reference to strata's REL2xx timeout-obligation family where one exists at the concept level
     disposition: "out_of_scope:advisory-design-pattern-recommendation"
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-2-STEADY-STATE"
   - id: "RELEASEIT-PAT-FAIL-FAST"
     name: "Releaseit Pat Fail Fast"
     source_doc: "docs/design/design-pattern-catalog.md"
@@ -1694,7 +1722,9 @@ entries:
     checkability: "tier1-static"
     # out_of_scope:advisory-design-pattern-recommendation -- T-0849: Release-It stability anti-pattern/pattern is a runtime/distributed-systems property (observed under real network latency, real failure/load conditions across a running distributed system), not a single-file structural shape; no per-file AST walk this package performs can observe it. See docs/modules/arch.md "T-0849 phase 3" for the cross-reference to strata's REL2xx timeout-obligation family where one exists at the concept level
     disposition: "out_of_scope:advisory-design-pattern-recommendation"
-    cross_refs: []
+    cross_refs:
+      - "ACC-1-5-FAIL-FAST"
+      - "ACC-5-2-FAIL-FAST"
   - id: "RELEASEIT-PAT-LET-IT-CRASH"
     name: "Releaseit Pat Let It Crash"
     source_doc: "docs/design/design-pattern-catalog.md"
@@ -1734,7 +1764,10 @@ entries:
     checkability: "tier1-static"
     # out_of_scope:advisory-design-pattern-recommendation -- T-0849: Release-It stability anti-pattern/pattern is a runtime/distributed-systems property (observed under real network latency, real failure/load conditions across a running distributed system), not a single-file structural shape; no per-file AST walk this package performs can observe it. See docs/modules/arch.md "T-0849 phase 3" for the cross-reference to strata's REL2xx timeout-obligation family where one exists at the concept level
     disposition: "out_of_scope:advisory-design-pattern-recommendation"
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-2-SHED-LOAD-GOVERNOR"
+      - "ACC-5-8-LOAD-SHEDDING"
+      - "SDC-5-LOAD-SHEDDING"
   - id: "RELEASEIT-PAT-CREATE-BACK-PRESSURE"
     name: "Releaseit Pat Create Back Pressure"
     source_doc: "docs/design/design-pattern-catalog.md"
@@ -1806,7 +1839,8 @@ entries:
     source_ref: "microservices.io"
     checkability: "tier2-advisory"
     disposition: out_of_scope:advisory-design-pattern-recommendation
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-4-ANTI-CORRUPTION-LAYER"
   - id: "MSIO-DATABASE-PER-SERVICE"
     name: "Msio Database Per Service"
     source_doc: "docs/design/design-pattern-catalog.md"
@@ -1827,7 +1861,9 @@ entries:
     source_ref: "microservices.io"
     checkability: "tier2-advisory"
     disposition: out_of_scope:advisory-design-pattern-recommendation
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-4-SAGA"
+      - "SDC-4-OUTBOX-SAGA-PATTERNS"
   - id: "MSIO-COMMAND-SIDE-REPLICA"
     name: "Msio Command Side Replica"
     source_doc: "docs/design/design-pattern-catalog.md"
@@ -1862,14 +1898,17 @@ entries:
     source_ref: "microservices.io"
     checkability: "tier2-advisory"
     disposition: out_of_scope:advisory-design-pattern-recommendation
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-4-EVENT-SOURCING"
+      - "PAT-TRAP-18-PREMATURE-CQRS-EVENT-SOURCING"
   - id: "MSIO-TRANSACTIONAL-OUTBOX"
     name: "Msio Transactional Outbox"
     source_doc: "docs/design/design-pattern-catalog.md"
     source_ref: "microservices.io"
     checkability: "tier2-advisory"
     disposition: out_of_scope:advisory-design-pattern-recommendation
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-4-OUTBOX-TRANSACTIONAL-OUTBOX"
   - id: "MSIO-TRANSACTION-LOG-TAILING"
     name: "Msio Transaction Log Tailing"
     source_doc: "docs/design/design-pattern-catalog.md"
@@ -2051,7 +2090,10 @@ entries:
     source_ref: "microservices.io"
     checkability: "tier2-advisory"
     disposition: out_of_scope:advisory-design-pattern-recommendation
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-2-CIRCUIT-BREAKER"
+      - "ACC-5-4-CIRCUIT-BREAKER"
+      - "RELEASEIT-PAT-CIRCUIT-BREAKER"
   - id: "MSIO-ACCESS-TOKEN"
     name: "Msio Access Token"
     source_doc: "docs/design/design-pattern-catalog.md"
@@ -2086,7 +2128,9 @@ entries:
     source_ref: "microservices.io"
     checkability: "tier2-advisory"
     disposition: out_of_scope:advisory-design-pattern-recommendation
-    cross_refs: []
+    cross_refs:
+      - "SDC-11-DAPPER-A-LARGE-SCALE-DISTRIBUTED-SYSTEMS-TRACING-INFRASTRUCTURE"
+      - "SDC-7-DISTRIBUTED-TRACING-DAPPER"
   - id: "MSIO-EXCEPTION-TRACKING"
     name: "Msio Exception Tracking"
     source_doc: "docs/design/design-pattern-catalog.md"
@@ -2233,7 +2277,9 @@ entries:
     source_ref: "Effective-Java"
     checkability: "tier2-advisory"
     disposition: "out_of_scope:advisory-design-pattern-recommendation"
-    cross_refs: []
+    cross_refs:
+      - "GOF-SINGLETON"
+      - "PAT-TRAP-11-SINGLETON-OVERUSE"
   - id: "EFFJAVA-DEPENDENCY-INJECTION"
     name: "Effjava Dependency Injection"
     source_doc: "docs/design/design-pattern-catalog.md"
@@ -2262,7 +2308,8 @@ entries:
     checkability: "tier1-static"
     # out_of_scope:advisory-design-pattern-recommendation -- T-0849: the manual try/finally .close()/.release() hallmark is real in principle, but distinguishing a resource-cleanup call from an ordinary finally-block side effect without cross-file type inference this package does not have risks a name-based false positive on any unrelated .close()-named method
     disposition: "out_of_scope:advisory-design-pattern-recommendation"
-    cross_refs: []
+    cross_refs:
+      - "ACC-3-6-CONTEXT-MANAGER-WITH"
   - id: "PYIDIOM-DESCRIPTOR-PROTOCOL"
     name: "Pyidiom Descriptor Protocol"
     source_doc: "docs/design/design-pattern-catalog.md"
@@ -2381,21 +2428,25 @@ entries:
     source_ref: "trap-topic"
     checkability: "advisory-narrative"
     disposition: "out_of_scope:advisory-design-pattern-recommendation"
-    cross_refs: []
+    cross_refs:
+      - "ACC-2-1-SPECULATIVE-GENERALITY"
   - id: "PAT-TRAP-10-INHERITANCE-VS-COMPOSITION"
     name: "Inheritance Vs Composition"
     source_doc: "docs/design/design-pattern-traps-corpus.md"
     source_ref: "trap-topic"
     checkability: "advisory-narrative"
     disposition: "out_of_scope:advisory-design-pattern-recommendation"
-    cross_refs: []
+    cross_refs:
+      - "ACC-1-5-COMPOSITION-OVER-INHERITANCE"
   - id: "PAT-TRAP-11-SINGLETON-OVERUSE"
     name: "Singleton Overuse"
     source_doc: "docs/design/design-pattern-traps-corpus.md"
     source_ref: "trap-topic"
     checkability: "advisory-narrative"
     disposition: "out_of_scope:advisory-design-pattern-recommendation"
-    cross_refs: []
+    cross_refs:
+      - "EFFJAVA-SINGLETON"
+      - "GOF-SINGLETON"
   - id: "PAT-TRAP-12-FACTORY-EXPLOSION"
     name: "Factory Explosion"
     source_doc: "docs/design/design-pattern-traps-corpus.md"
@@ -2444,7 +2495,9 @@ entries:
     source_ref: "trap-topic"
     checkability: "advisory-narrative"
     disposition: "out_of_scope:advisory-design-pattern-recommendation"
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-4-EVENT-SOURCING"
+      - "MSIO-EVENT-SOURCING"
   - id: "PAT-TRAP-19-TYPE-DRIVEN-FUNCTIONAL-CORE"
     name: "Type Driven Functional Core"
     source_doc: "docs/design/design-pattern-traps-corpus.md"
@@ -2458,12 +2511,15 @@ entries:
     source_ref: "trap-topic"
     checkability: "advisory-narrative"
     disposition: "out_of_scope:advisory-design-pattern-recommendation"
-    cross_refs: []
+    cross_refs:
+      - "ACC-4-ANEMIC-DOMAIN-MODEL"
+      - "POEAA-DOMAIN-MODEL"
   - id: "PAT-TRAP-21-LAW-OF-DEMETER-DI-CONTAINERS-ORM-REPOSITORY"
     name: "Law Of Demeter Di Containers Orm Repository"
     source_doc: "docs/design/design-pattern-traps-corpus.md"
     source_ref: "trap-topic"
     checkability: "advisory-narrative"
     disposition: "out_of_scope:advisory-design-pattern-recommendation"
-    cross_refs: []
+    cross_refs:
+      - "POEAA-REPOSITORY"
 total: 346

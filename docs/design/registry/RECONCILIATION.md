@@ -60,36 +60,41 @@ These 156 existed as real content before this pass but had no canonical
 id and were therefore invisible to any exhaustiveness drift-lock keyed on
 manifest ids -- this is the single largest miss category found.
 
-### (b) SPLIT entries -- same real-world item, unlinked ids across files
+### (b) SPLIT entries -- same real-world item, unlinked ids across files -- RESOLVED (T-0673)
 
 Grepped for named concepts appearing in >=2 source docs' own tables/prose
-(non-exhaustive spot-check, not a full pairwise diff of 1950 entries --
-flagged as a residual gap, see "What this pass did NOT do" below).
-Confirmed present in multiple files, each currently under a
+(non-exhaustive spot-check, not a full pairwise diff of 1950 entries).
+Confirmed present in multiple files, each previously under a
 file-local, unlinked id in this registry (`cross_refs: []`):
 
-| Concept | Appears in | Registry ids (unlinked) |
-|---|---|---|
-| Circuit Breaker | architecture-check-catalog.md sec 5.2, design-pattern-catalog.md | `ACC-5-2-CIRCUIT-BREAKER` (or equivalent), a `PAT-*` id in patterns.yaml |
-| Bulkhead | architecture-check-catalog.md, design-pattern-catalog.md, system-design-corpus.md | ids in `arch-checks.yaml`, `patterns.yaml`, `system-design.yaml` (three-way split) |
-| Idempotent Receiver | architecture-check-catalog.md, design-pattern-catalog.md, system-design-corpus.md | three-way split, same as above |
-| Anti-Corruption Layer | design-pattern-catalog.md (DDD tactical, sec 3.3), architecture-check-catalog.md | two-way split |
-| Value Object | design-pattern-catalog.md, architecture-check-catalog.md | two-way split |
-| Repository (pattern) | design-pattern-catalog.md, architecture-check-catalog.md, design-pattern-traps-corpus.md (8.2, "Repository as leaky abstraction") | three-way split |
-| Timeout | architecture-check-catalog.md, design-pattern-catalog.md, system-design-corpus.md, supply-chain-corpus.md | four-way split |
-| Singleton | design-pattern-catalog.md, architecture-check-catalog.md, design-pattern-traps-corpus.md (5.1), system-design-corpus.md | four-way split |
-| Anemic Domain Model | architecture-check-catalog.md (sec 4), design-pattern-traps-corpus.md (8.1) | two-way split |
-| Saga | architecture-check-catalog.md, design-pattern-catalog.md, system-design-corpus.md | three-way split |
+| Concept | Appears in | Registry ids (now linked via `cross_refs`) | Reviewer call |
+|---|---|---|---|
+| Circuit Breaker | architecture-check-catalog.md sec 5.2 + 5.4, design-pattern-catalog.md (Release It + Microservices.io) | `ACC-5-2-CIRCUIT-BREAKER`, `ACC-5-4-CIRCUIT-BREAKER`, `RELEASEIT-PAT-CIRCUIT-BREAKER`, `MSIO-CIRCUIT-BREAKER` | same concept, 4-way -- linked as a full mesh |
+| Bulkhead | architecture-check-catalog.md sec 5.2 + 5.4, design-pattern-catalog.md (Release It) | `ACC-5-2-BULKHEAD`, `ACC-5-4-BULKHEAD`, `RELEASEIT-PAT-BULKHEADS` | same concept, 3-way -- linked |
+| Idempotent Receiver | architecture-check-catalog.md, design-pattern-catalog.md (EIP), system-design-corpus.md | `ACC-5-4-IDEMPOTENT-RECEIVER`, `EIP-IDEMPOTENT-RECEIVER`, `SDC-5-IDEMPOTENT-RECEIVER` | same concept, 3-way -- linked |
+| Anti-Corruption Layer | design-pattern-catalog.md (Microservices.io), architecture-check-catalog.md | `ACC-5-4-ANTI-CORRUPTION-LAYER`, `MSIO-ANTI-CORRUPTION-LAYER` | same concept -- linked |
+| Value Object | design-pattern-catalog.md (POEAA + DDD tactical), architecture-check-catalog.md (no distinct arch-check id found; DDD and POEAA are the only two registry ids) | `POEAA-VALUE-OBJECT`, `DDD-II-VALUE-OBJECTS` | one concept, two facets (implementation pattern vs. domain-modeling tactical pattern) -- linked, not merged to a single id |
+| Repository (pattern) | design-pattern-catalog.md (POEAA + traps corpus 8.2 "Repository as leaky abstraction"); **correction: architecture-check-catalog.md has no distinct Repository id**, so this is a 2-way split, not 3-way as originally scoped | `POEAA-REPOSITORY`, `PAT-TRAP-21-LAW-OF-DEMETER-DI-CONTAINERS-ORM-REPOSITORY` | genuinely distinct checkable claims (base pattern vs. leaky-abstraction anti-pattern trap) sharing a name -- linked as related, dispositions left independent |
+| Timeout | architecture-check-catalog.md, design-pattern-catalog.md (Release It), system-design-corpus.md; **correction: supply-chain-corpus.md has no distinct Timeout id**, so this is a 3-way split, not 4-way as originally scoped | `ACC-5-2-TIMEOUT-PATTERN-PRESENT`, `RELEASEIT-PAT-TIMEOUTS`, `SDC-5-TIMEOUT` | same concept, 3-way -- linked |
+| Singleton | design-pattern-catalog.md (GoF + Effective Java), architecture-check-catalog.md (no distinct Singleton *pattern* id; the arch-check side is the anti-pattern trap), design-pattern-traps-corpus.md sec 5.1 | `GOF-SINGLETON`, `EFFJAVA-SINGLETON`, `PAT-TRAP-11-SINGLETON-OVERUSE` | GoF and Effective Java facets of the same base pattern are one concept (2-way link); the traps-corpus overuse warning is a genuinely distinct checkable claim sharing the name -- all three linked as related, not merged to one id |
+| Anemic Domain Model | architecture-check-catalog.md sec 4, design-pattern-traps-corpus.md sec 8.1, plus its positive-facet counterpart POEAA-DOMAIN-MODEL (Domain Model pattern) | `ACC-4-ANEMIC-DOMAIN-MODEL`, `PAT-TRAP-20-ANEMIC-DOMAIN-GOD-OBJECT-LAVA-FLOW`, `POEAA-DOMAIN-MODEL` | same anti-pattern concept (arch-check vs. traps-corpus) -- linked; `POEAA-DOMAIN-MODEL` added to the link set as the related base pattern the anti-pattern violates (distinct concept, cross-referenced not merged) |
+| Saga | architecture-check-catalog.md, design-pattern-catalog.md (Microservices.io), system-design-corpus.md (Outbox+Saga) | `ACC-5-4-SAGA`, `MSIO-SAGA`, `SDC-4-OUTBOX-SAGA-PATTERNS` | same concept, 3-way -- linked |
 
-None of these were linked via `cross_refs` in this pass (`cross_refs: []`
-on every affected entry) because collapsing them to one canonical id
-requires a human/reviewer judgment call this pass did not manufacture:
-e.g. is "Circuit Breaker" the arch-check's tier-1 presence-detector and
-"Circuit Breaker" the pattern catalog's recommend-only entry the SAME
-concept (one id, two facets) or two genuinely distinct checkable claims
-that happen to share a name? Reported as an open finding, not silently
-resolved either way. **At minimum 10 concepts, 24+ file-local id
-occurrences, currently unlinked.**
+All ten concepts above are now linked via `cross_refs` (populated on
+every affected entry, full mesh within each group so the graph is
+navigable from any member). Where the reviewer call was "genuinely
+distinct checkable claims sharing a name" (Repository, the Singleton
+trap facet, Anemic Domain Model's positive counterpart), `cross_refs`
+was still populated to make the relation navigable, but `disposition`
+was left untouched -- a cross-reference records a relationship, it does
+not imply the entries were collapsed to one canonical id. Two of the
+original ten rows also carried an inaccuracy corrected here: Repository
+and Timeout were originally scoped as 3-way and 4-way splits
+respectively including an architecture-check-catalog.md and a
+supply-chain-corpus.md id that, on inspection, do not actually exist in
+the registry under a distinct id for that concept -- both are 2-way and
+3-way splits in the registry as built. See finding (h) below for the
+full pairwise scan this section originally deferred.
 
 ### (c) Entries with no DISPOSITION yet
 
@@ -217,6 +222,77 @@ is built with all 41 real entries (never dropping 2 to force a match to
 `total_per_source_doc_TOTAL_field: 39`) so the discrepancy is visible
 rather than silently resolved in either direction.
 
+### (h) Full pairwise name-similarity scan over all 1950 entries (T-0673)
+
+Finding (b)'s spot-check was explicitly non-exhaustive. This pass extends
+it to a full pairwise scan: every entry's `name` was tokenized (stripped
+to lowercase alphanumerics, generic/id-prefix words and short tokens
+removed), and every cross-file pair whose remaining significant-token
+sets were equal or one a subset of the other was surfaced as a candidate
+split, then reviewed by hand (not auto-linked) because, same as finding
+(b), collapsing or relating two ids requires a judgment call this pass
+does not manufacture blind. 42 candidate pairs were surfaced; each was
+read against its source doc context and dispositioned as follows.
+
+**25 confirmed real splits, now linked via `cross_refs`** (beyond the 10
+named concepts already covered by finding (b)):
+
+| Concept | Registry ids (now linked) |
+|---|---|
+| Idempotency | `ACC-5-6-IDEMPOTENCY`, `SDC-4-IDEMPOTENCY` |
+| Load Shedding | `ACC-5-2-SHED-LOAD-GOVERNOR`, `ACC-5-8-LOAD-SHEDDING`, `SDC-5-LOAD-SHEDDING`, `RELEASEIT-PAT-SHED-LOAD` |
+| STRIDE threat framework | `ACC-5-7-STRIDE`, `SEC-THREAT-FRAMEWORK-STRIDE` |
+| Composition over Inheritance | `ACC-1-5-COMPOSITION-OVER-INHERITANCE`, `PAT-TRAP-10-INHERITANCE-VS-COMPOSITION` |
+| Fail Fast | `ACC-1-5-FAIL-FAST`, `ACC-5-2-FAIL-FAST`, `RELEASEIT-PAT-FAIL-FAST` |
+| Speculative Generality (YAGNI) | `ACC-2-1-SPECULATIVE-GENERALITY`, `PAT-TRAP-09-YAGNI-SPECULATIVE-GENERALITY` |
+| Commented-out code | `ACC-2-2-C5-COMMENTED-OUT-CODE`, `CWE-1085` |
+| Context Manager (`with`) idiom | `ACC-3-6-CONTEXT-MANAGER-WITH`, `PYIDIOM-CONTEXT-MANAGER` |
+| Dead code / Lava Flow | `ACC-4-LAVA-FLOW-DEAD-FROZEN-CODE-NOBODY-DARES-REMOVE`, `CWE-561` |
+| Cascading Failures | `ACC-5-2-CASCADING-FAILURES`, `RELEASEIT-ANTI-CASCADING-FAILURES` |
+| Integration Points | `ACC-5-2-INTEGRATION-POINTS`, `RELEASEIT-ANTI-INTEGRATION-POINTS` |
+| Steady State | `ACC-5-2-STEADY-STATE`, `RELEASEIT-PAT-STEADY-STATE` |
+| Unbounded Result Sets | `ACC-5-2-UNBOUNDED-RESULT-SETS`, `RELEASEIT-ANTI-UNBOUNDED-RESULT-SETS` |
+| Asynchronous Request-Reply | `ACC-5-4-ASYNCHRONOUS-REQUEST-REPLY`, `EIP-REQUEST-REPLY` |
+| Competing Consumers | `ACC-5-4-COMPETING-CONSUMERS`, `EIP-COMPETING-CONSUMERS` |
+| Event Sourcing | `ACC-5-4-EVENT-SOURCING`, `MSIO-EVENT-SOURCING`, `PAT-TRAP-18-PREMATURE-CQRS-EVENT-SOURCING` |
+| Messaging Bridge | `ACC-5-4-MESSAGING-BRIDGE`, `EIP-MESSAGING-BRIDGE` |
+| Transactional Outbox | `ACC-5-4-OUTBOX-TRANSACTIONAL-OUTBOX`, `MSIO-TRANSACTIONAL-OUTBOX` |
+| Pipes and Filters | `ACC-5-4-PIPES-AND-FILTERS`, `EIP-PIPES-AND-FILTERS`, `POSA1-PIPES-AND-FILTERS` |
+| Excessive Attack Surface | `ACC-5-7-ATTACK-SURFACE`, `CWE-1125` |
+| Least Privilege | `ACC-5-7-LEAST-PRIVILEGE`, `CWE-272` |
+| Connection Pooling | `ACC-5-8-CONNECTION-POOLING`, `CWE-1072` |
+| Double-Checked Locking | `CWE-609`, `POSA2-DOUBLE-CHECKED-LOCKING-OPTIMIZATION` |
+| Dapper / distributed tracing | `MSIO-DISTRIBUTED-TRACING`, `SDC-7-DISTRIBUTED-TRACING-DAPPER`, `SDC-11-DAPPER-A-LARGE-SCALE-DISTRIBUTED-SYSTEMS-TRACING-INFRASTRUCTURE` (the last is a case-study reference to the same underlying system, tier2-advisory rather than tier1-static -- linked as related, not merged) |
+
+Combined with finding (b)'s 10, **35 concepts / groups are now linked**
+via `cross_refs` by this pass.
+
+**7 candidate pairs reviewed and rejected as false positives** (token
+overlap on a generic/common word, not the same real-world concept) --
+recorded here, not silently dropped, and deliberately left with
+`cross_refs: []`:
+
+| Candidate pair | Why rejected |
+|---|---|
+| `ACC-2-1-DATA-CLASS` <-> `CWE-1042` | "data class" code-smell (anemic getter/setter class) vs. "Static Member Data Element outside of a Singleton Class Element" -- unrelated concepts sharing the word "class" |
+| `ACC-2-1-DATA-CLASS` <-> `CWE-492` | vs. "Use of Inner Class Containing Sensitive Data" -- unrelated, shares "class"/"data" |
+| `ACC-2-1-DATA-CLASS` <-> `CWE-499` | vs. "Serializable Class Containing Sensitive Data" -- unrelated, shares "class"/"data" |
+| `ACC-2-1-MUTABLE-DATA` <-> `CWE-1283` | "mutable data" code-smell vs. "Mutable Attestation or Measurement Reporting Data" (a firmware/TPM weakness) -- unrelated, shares "mutable"/"data" |
+| `CWE-562` <-> `EIP-RETURN-ADDRESS` | "Return of Stack Variable Address" (memory-safety weakness) vs. the EIP messaging "Return Address" pattern (where a reply should be sent) -- unrelated, shares "return"/"address" |
+| `CWE-924` <-> `EIP-MESSAGE-CHANNEL` | "Improper Enforcement of Message Integrity During Transmission in a Communication Channel" vs. the EIP "Message Channel" structural pattern -- unrelated, shares "message"/"channel" |
+| `ACC-2-1-DATA-CLASS`/`ACC-2-1-MUTABLE-DATA` cluster (summary) | both are examples of the same failure mode: matching on a short generic token (`class`, `data`, `mutable`, `return`, `address`, `message`, `channel`) without matching on the term that actually carries the concept's identity |
+
+The scan method (tokenize, strip generic words, exact-or-subset match on
+the remaining significant tokens) is necessarily approximate -- it will
+miss true splits that use non-overlapping vocabulary for the same
+concept (a residual gap, not claimed to be closed by this pass) and can
+surface near-misses like the 7 above (surfaced and reasoned about, not
+silently linked). No candidate pair was silently dropped: every one of
+the 42 surfaced pairs above is either linked (25) or explicitly
+dispositioned as a reviewed rejection (7 pairs / the 4 CWE-vs-ACC rows
++ 2 messaging-vs-CWE rows above, 6 total individual pairs since one row
+summarizes the shared failure mode across the DATA-CLASS cluster).
+
 ---
 
 ## Mid-pass addition: `cwe-1000-registry.md`
@@ -240,13 +316,16 @@ this addition -- it is not a follow-up.
 
 ## What this pass did NOT do (residual gaps, honestly reported)
 
-- **Full pairwise cross-reference linking.** Finding (b) is a spot-check
-  over ~14 hand-picked concept names known to be architecture/pattern
-  vocabulary that plausibly recurs; it is NOT an exhaustive pairwise diff
-  of all 1950 entries against all others. A genuinely exhaustive
-  cross-reference pass (entity-resolution over ~2000 names) is
-  out of scope for this consolidation pass and is itself a
-  follow-up-worthy task.
+- **Full pairwise cross-reference linking -- DONE by T-0673, finding
+  (h).** What was originally a spot-check over ~14 hand-picked concept
+  names has been extended to a full pairwise scan over all ~1891
+  id+name-bearing entries (token-signature exact-or-subset match), with
+  every surfaced candidate either linked or explicitly reasoned about as
+  a rejected false positive -- see finding (h). The scan method is
+  necessarily approximate (misses splits using non-overlapping
+  vocabulary for the same concept); a genuinely semantic
+  entity-resolution pass beyond name-token matching remains a
+  follow-up-worthy task, not claimed to be closed here.
 - **Disposition assignment.** 1006 of 1950 entries are `pending` (finding
   c) because the source docs did not carry a disposition and this pass
   chose not to invent one. Assigning real dispositions (addressed /

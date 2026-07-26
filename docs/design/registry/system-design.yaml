@@ -255,14 +255,17 @@ entries:
     source_ref: "system-design-corpus-sec-4"
     checkability: "tier1-static"
     disposition: "deferred:T-0331"
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-6-IDEMPOTENCY"
   - id: "SDC-4-OUTBOX-SAGA-PATTERNS"
     name: "4 Outbox Saga Patterns"
     source_doc: "docs/design/system-design-corpus.md"
     source_ref: "system-design-corpus-sec-4"
     checkability: "tier1-static"
     disposition: "deferred:T-0331"
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-4-SAGA"
+      - "MSIO-SAGA"
   - id: "SDC-4-CHANGE-DATA-CAPTURE-CDC"
     name: "4 Change Data Capture Cdc"
     source_doc: "docs/design/system-design-corpus.md"
@@ -290,7 +293,9 @@ entries:
     source_ref: "system-design-corpus-sec-5"
     checkability: "tier1-static"
     disposition: "deferred:T-0331"
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-2-TIMEOUT-PATTERN-PRESENT"
+      - "RELEASEIT-PAT-TIMEOUTS"
   - id: "SDC-5-RETRY-BACKOFF-JITTER"
     name: "5 Retry Backoff Jitter"
     source_doc: "docs/design/system-design-corpus.md"
@@ -304,14 +309,19 @@ entries:
     source_ref: "system-design-corpus-sec-5"
     checkability: "tier1-static"
     disposition: "deferred:T-0331"
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-4-IDEMPOTENT-RECEIVER"
+      - "EIP-IDEMPOTENT-RECEIVER"
   - id: "SDC-5-LOAD-SHEDDING"
     name: "5 Load Shedding"
     source_doc: "docs/design/system-design-corpus.md"
     source_ref: "system-design-corpus-sec-5"
     checkability: "tier1-static"
     disposition: "deferred:T-0331"
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-2-SHED-LOAD-GOVERNOR"
+      - "ACC-5-8-LOAD-SHEDDING"
+      - "RELEASEIT-PAT-SHED-LOAD"
   - id: "SDC-5-SHUFFLE-SHARDING"
     name: "5 Shuffle Sharding"
     source_doc: "docs/design/system-design-corpus.md"
@@ -367,7 +377,9 @@ entries:
     source_ref: "system-design-corpus-sec-7"
     checkability: "tier1-static"
     disposition: "deferred:T-0331"
-    cross_refs: []
+    cross_refs:
+      - "MSIO-DISTRIBUTED-TRACING"
+      - "SDC-11-DAPPER-A-LARGE-SCALE-DISTRIBUTED-SYSTEMS-TRACING-INFRASTRUCTURE"
   - id: "SDC-7-HIGH-CARDINALITY-STRUCTURED-EVENTS-HONEYCOMB-CHARITY-MAJORS"
     name: "7 High Cardinality Structured Events Honeycomb Charity Majors"
     source_doc: "docs/design/system-design-corpus.md"
@@ -514,7 +526,9 @@ entries:
     source_ref: "system-design-corpus-sec-11"
     checkability: "tier2-advisory"
     disposition: "deferred:T-0722"
-    cross_refs: []
+    cross_refs:
+      - "MSIO-DISTRIBUTED-TRACING"
+      - "SDC-7-DISTRIBUTED-TRACING-DAPPER"
   - id: "SDC-11-LARGE-SCALE-CLUSTER-MANAGEMENT-AT-GOOGLE-WITH-BORG"
     name: "11 Large Scale Cluster Management At Google With Borg"
     source_doc: "docs/design/system-design-corpus.md"

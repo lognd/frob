@@ -268,7 +268,8 @@ entries:
     source_ref: "architecture-check-catalog-sec-1.5"
     checkability: "tier2-advisory"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "PAT-TRAP-10-INHERITANCE-VS-COMPOSITION"
   - id: "ACC-1-5-TELL-DON-T-ASK"
     name: "1 5 Tell Don T Ask"
     source_doc: "docs/design/architecture-check-catalog.md"
@@ -289,7 +290,9 @@ entries:
     source_ref: "architecture-check-catalog-sec-1.5"
     checkability: "tier2-advisory"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-2-FAIL-FAST"
+      - "RELEASEIT-PAT-FAIL-FAST"
   - id: "ACC-1-5-PRINCIPLE-OF-LEAST-ASTONISHMENT"
     name: "1 5 Principle Of Least Astonishment"
     source_doc: "docs/design/architecture-check-catalog.md"
@@ -485,7 +488,8 @@ entries:
     source_ref: "architecture-check-catalog-sec-2.1"
     checkability: "tier1-static"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "PAT-TRAP-09-YAGNI-SPECULATIVE-GENERALITY"
   - id: "ACC-2-1-TEMPORARY-FIELD"
     name: "2 1 Temporary Field"
     source_doc: "docs/design/architecture-check-catalog.md"
@@ -576,7 +580,8 @@ entries:
     source_ref: "architecture-check-catalog-sec-2.2"
     checkability: "tier1-static"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "CWE-1085"
   - id: "ACC-2-2-NAME"
     name: "2 2 Name"
     source_doc: "docs/design/architecture-check-catalog.md"
@@ -1129,7 +1134,8 @@ entries:
     source_ref: "architecture-check-catalog-sec-3.6"
     checkability: "tier1-static"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "PYIDIOM-CONTEXT-MANAGER"
   - id: "ACC-3-6-DUCK-TYPING-PROTOCOL-OVER-ABC-INHERITANCE"
     name: "3 6 Duck Typing Protocol Over Abc Inheritance"
     source_doc: "docs/design/architecture-check-catalog.md"
@@ -1164,7 +1170,9 @@ entries:
     source_ref: "architecture-check-catalog-sec-4"
     checkability: "tier1-static"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "PAT-TRAP-20-ANEMIC-DOMAIN-GOD-OBJECT-LAVA-FLOW"
+      - "POEAA-DOMAIN-MODEL"
   - id: "ACC-4-POLTERGEIST-SHORT-LIVED-CLASS-THAT-ONLY-FORWARDS-CALLS"
     name: "4 Poltergeist Short Lived Class That Only Forwards Calls"
     source_doc: "docs/design/architecture-check-catalog.md"
@@ -1178,7 +1186,8 @@ entries:
     source_ref: "architecture-check-catalog-sec-4"
     checkability: "tier2-advisory"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "CWE-561"
   - id: "ACC-4-YO-YO-PROBLEM"
     name: "4 Yo Yo Problem"
     source_doc: "docs/design/architecture-check-catalog.md"
@@ -1325,21 +1334,25 @@ entries:
     source_ref: "architecture-check-catalog-sec-5.2"
     checkability: "tier1-static"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "RELEASEIT-ANTI-INTEGRATION-POINTS"
   - id: "ACC-5-2-UNBOUNDED-RESULT-SETS"
     name: "5 2 Unbounded Result Sets"
     source_doc: "docs/design/architecture-check-catalog.md"
     source_ref: "architecture-check-catalog-sec-5.2"
     checkability: "tier1-static"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "RELEASEIT-ANTI-UNBOUNDED-RESULT-SETS"
   - id: "ACC-5-2-TIMEOUT-PATTERN-PRESENT"
     name: "5 2 Timeout Pattern Present"
     source_doc: "docs/design/architecture-check-catalog.md"
     source_ref: "architecture-check-catalog-sec-5.2"
     checkability: "tier1-static"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "RELEASEIT-PAT-TIMEOUTS"
+      - "SDC-5-TIMEOUT"
   - id: "ACC-5-2-CIRCUIT-BREAKER"
     name: "5 2 Circuit Breaker"
     source_doc: "docs/design/architecture-check-catalog.md"
@@ -1347,22 +1360,27 @@ entries:
     checkability: "tier1-static"
     disposition: deferred:T-0391
     cross_refs:
-      - "RELEASEIT-PAT-CIRCUIT-BREAKER"
+      - "ACC-5-4-CIRCUIT-BREAKER"
       - "MSIO-CIRCUIT-BREAKER"
+      - "RELEASEIT-PAT-CIRCUIT-BREAKER"
   - id: "ACC-5-2-BULKHEAD"
     name: "5 2 Bulkhead"
     source_doc: "docs/design/architecture-check-catalog.md"
     source_ref: "architecture-check-catalog-sec-5.2"
     checkability: "tier1-static"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-4-BULKHEAD"
+      - "RELEASEIT-PAT-BULKHEADS"
   - id: "ACC-5-2-FAIL-FAST"
     name: "5 2 Fail Fast"
     source_doc: "docs/design/architecture-check-catalog.md"
     source_ref: "architecture-check-catalog-sec-5.2"
     checkability: "tier1-static"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "ACC-1-5-FAIL-FAST"
+      - "RELEASEIT-PAT-FAIL-FAST"
   - id: "ACC-5-2-LET-IT-CRASH"
     name: "5 2 Let It Crash"
     source_doc: "docs/design/architecture-check-catalog.md"
@@ -1376,14 +1394,16 @@ entries:
     source_ref: "architecture-check-catalog-sec-5.2"
     checkability: "tier3-not-checkable"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "RELEASEIT-PAT-STEADY-STATE"
   - id: "ACC-5-2-CASCADING-FAILURES"
     name: "5 2 Cascading Failures"
     source_doc: "docs/design/architecture-check-catalog.md"
     source_ref: "architecture-check-catalog-sec-5.2"
     checkability: "tier1-static"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "RELEASEIT-ANTI-CASCADING-FAILURES"
   - id: "ACC-5-2-SLA-INVERSION"
     name: "5 2 Sla Inversion"
     source_doc: "docs/design/architecture-check-catalog.md"
@@ -1418,7 +1438,10 @@ entries:
     source_ref: "architecture-check-catalog-sec-5.2"
     checkability: "tier2-advisory"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-8-LOAD-SHEDDING"
+      - "RELEASEIT-PAT-SHED-LOAD"
+      - "SDC-5-LOAD-SHEDDING"
   - id: "ACC-5-2-ROLLBACK"
     name: "5 2 Rollback"
     source_doc: "docs/design/architecture-check-catalog.md"
@@ -1537,14 +1560,18 @@ entries:
     source_ref: "architecture-check-catalog-sec-5.4"
     checkability: "tier2-advisory"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "MSIO-EVENT-SOURCING"
+      - "PAT-TRAP-18-PREMATURE-CQRS-EVENT-SOURCING"
   - id: "ACC-5-4-SAGA"
     name: "5 4 Saga"
     source_doc: "docs/design/architecture-check-catalog.md"
     source_ref: "architecture-check-catalog-sec-5.4"
     checkability: "tier1-static"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "MSIO-SAGA"
+      - "SDC-4-OUTBOX-SAGA-PATTERNS"
   - id: "ACC-5-4-COMPENSATING-TRANSACTION"
     name: "5 4 Compensating Transaction"
     source_doc: "docs/design/architecture-check-catalog.md"
@@ -1558,14 +1585,17 @@ entries:
     source_ref: "architecture-check-catalog-sec-5.4"
     checkability: "tier1-static"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "MSIO-TRANSACTIONAL-OUTBOX"
   - id: "ACC-5-4-IDEMPOTENT-RECEIVER"
     name: "5 4 Idempotent Receiver"
     source_doc: "docs/design/architecture-check-catalog.md"
     source_ref: "architecture-check-catalog-sec-5.4"
     checkability: "tier1-static"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "EIP-IDEMPOTENT-RECEIVER"
+      - "SDC-5-IDEMPOTENT-RECEIVER"
   - id: "ACC-5-4-LEADER-ELECTION"
     name: "5 4 Leader Election"
     source_doc: "docs/design/architecture-check-catalog.md"
@@ -1593,7 +1623,8 @@ entries:
     source_ref: "architecture-check-catalog-sec-5.4"
     checkability: "tier1-static"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "MSIO-ANTI-CORRUPTION-LAYER"
   - id: "ACC-5-4-STRANGLER-FIG"
     name: "5 4 Strangler Fig"
     source_doc: "docs/design/architecture-check-catalog.md"
@@ -1628,7 +1659,8 @@ entries:
     source_ref: "architecture-check-catalog-sec-5.4"
     checkability: "tier2-advisory"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "EIP-COMPETING-CONSUMERS"
   - id: "ACC-5-4-CLAIM-CHECK"
     name: "5 4 Claim Check"
     source_doc: "docs/design/architecture-check-catalog.md"
@@ -1642,7 +1674,9 @@ entries:
     source_ref: "architecture-check-catalog-sec-5.4"
     checkability: "tier2-advisory"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "EIP-PIPES-AND-FILTERS"
+      - "POSA1-PIPES-AND-FILTERS"
   - id: "ACC-5-4-MATERIALIZED-VIEW"
     name: "5 4 Materialized View"
     source_doc: "docs/design/architecture-check-catalog.md"
@@ -1733,7 +1767,8 @@ entries:
     source_ref: "architecture-check-catalog-sec-5.4"
     checkability: "tier1-static"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "EIP-REQUEST-REPLY"
   - id: "ACC-5-4-EXTERNAL-CONFIGURATION-STORE"
     name: "5 4 External Configuration Store"
     source_doc: "docs/design/architecture-check-catalog.md"
@@ -1747,14 +1782,19 @@ entries:
     source_ref: "architecture-check-catalog-sec-5.4"
     checkability: "tier1-static"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-2-BULKHEAD"
+      - "RELEASEIT-PAT-BULKHEADS"
   - id: "ACC-5-4-CIRCUIT-BREAKER"
     name: "5 4 Circuit Breaker"
     source_doc: "docs/design/architecture-check-catalog.md"
     source_ref: "architecture-check-catalog-sec-5.4"
     checkability: "tier1-static"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-2-CIRCUIT-BREAKER"
+      - "MSIO-CIRCUIT-BREAKER"
+      - "RELEASEIT-PAT-CIRCUIT-BREAKER"
   - id: "ACC-5-4-CHOREOGRAPHY"
     name: "5 4 Choreography"
     source_doc: "docs/design/architecture-check-catalog.md"
@@ -1775,7 +1815,8 @@ entries:
     source_ref: "architecture-check-catalog-sec-5.4"
     checkability: "tier2-advisory"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "EIP-MESSAGING-BRIDGE"
   - id: "ACC-5-4-QUARANTINE"
     name: "5 4 Quarantine"
     source_doc: "docs/design/architecture-check-catalog.md"
@@ -1859,7 +1900,8 @@ entries:
     source_ref: "architecture-check-catalog-sec-5.6"
     checkability: "tier1-static"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "SDC-4-IDEMPOTENCY"
   - id: "ACC-5-6-DELIVERY-SEMANTICS"
     name: "5 6 Delivery Semantics"
     source_doc: "docs/design/architecture-check-catalog.md"
@@ -1901,7 +1943,8 @@ entries:
     source_ref: "architecture-check-catalog-sec-5.7"
     checkability: "tier1-static"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "CWE-272"
   - id: "ACC-5-7-DEFENSE-IN-DEPTH"
     name: "5 7 Defense In Depth"
     source_doc: "docs/design/architecture-check-catalog.md"
@@ -1936,14 +1979,16 @@ entries:
     source_ref: "architecture-check-catalog-sec-5.7"
     checkability: "tier3-not-checkable"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "SEC-THREAT-FRAMEWORK-STRIDE"
   - id: "ACC-5-7-ATTACK-SURFACE"
     name: "5 7 Attack Surface"
     source_doc: "docs/design/architecture-check-catalog.md"
     source_ref: "architecture-check-catalog-sec-5.7"
     checkability: "tier2-advisory"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "CWE-1125"
   - id: "ACC-5-8-N-1-QUERIES"
     name: "5 8 N 1 Queries"
     source_doc: "docs/design/architecture-check-catalog.md"
@@ -1957,7 +2002,8 @@ entries:
     source_ref: "architecture-check-catalog-sec-5.8"
     checkability: "tier1-static"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "CWE-1072"
   - id: "ACC-5-8-BATCHING"
     name: "5 8 Batching"
     source_doc: "docs/design/architecture-check-catalog.md"
@@ -1985,7 +2031,10 @@ entries:
     source_ref: "architecture-check-catalog-sec-5.8"
     checkability: "tier2-advisory"
     disposition: deferred:T-0391
-    cross_refs: []
+    cross_refs:
+      - "ACC-5-2-SHED-LOAD-GOVERNOR"
+      - "RELEASEIT-PAT-SHED-LOAD"
+      - "SDC-5-LOAD-SHEDDING"
   - id: "ACC-6-NAMING-HEURISTICS-GENERAL"
     name: "6 Naming Heuristics General"
     source_doc: "docs/design/architecture-check-catalog.md"
