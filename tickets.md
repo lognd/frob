@@ -4156,7 +4156,7 @@ described above.
 id: T-0878
 title: 'gate: src/frob/exports/__init__.py missing frob:doc anchors (COV001/DOC, landed
   via T-0601 area merge)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-23'
@@ -4165,10 +4165,48 @@ parent: null
 scope:
 - src/frob/exports/__init__.py
 - docs/modules/exports.md
+evidence:
+- tests/unit/test_exports.py::TestExportsConsumers::test_as_text_output
+- tests/unit/test_exports.py::TestExportsConsumers::test_as_json_output
+- tests/unit/test_exports.py::TestExportsConsumers::test_finds_import_consumer
+- tests/unit/test_exports.py::TestExportsConsumers::test_excludes_prose_mention
 threat: null
 component: null
 ```
 Pre-existing, unrelated to any arch-cluster ticket: after merging current main into a worktree mid-session (T-0632), a fresh frob check --only gates-fast shows 5 new gate:COV001/gate:DOC errors on src/frob/exports/__init__.py (ConsumerRef, ConsumersResult, ConsumersResult.as_text, ConsumersResult.as_json, exports_consumers all public with no frob:doc edge). This file/these symbols are not part of any ticket in this worktree's scope -- discovered purely as a side effect of picking up main's advancement mid-session. File to track adding the missing frob:doc anchors (and any docs/modules/exports.md content they should point at).
+
+## Done report
+
+Changed: none. Investigation found the gate this ticket describes no longer
+reproduces on current main: T-0876 (landed after this ticket was filed,
+`feat(tickets): land T-0876 ...` in the shared history) added
+`frob:doc docs/modules/cli.md#exports-consumers-surface-t-0858` anchors to
+all five symbols this ticket names --
+src/frob/exports/__init__.py::ConsumerRef,
+src/frob/exports/__init__.py::ConsumersResult,
+src/frob/exports/__init__.py::ConsumersResult.as_text,
+src/frob/exports/__init__.py::ConsumersResult.as_json,
+src/frob/exports/__init__.py::exports_consumers -- and
+docs/modules/cli.md#exports-consumers-surface-t-0858 already carries a
+`frob:describes` block matching those symbols, so the anchor slug resolves
+correctly (verified: "Exports-consumers surface (T-0858)" heading slugifies
+to `exports-consumers-surface-t-0858`, matching every anchor exactly).
+
+Evidence: `uv run frob check --only gates-fast` on this worktree (merged to
+current main, T-0876 included) reports `gate:COV 0 errors, 36 warnings, 92
+waived` and `gate:DOC 0 errors, 3 warnings, 0 waived` -- zero findings of
+any kind mention exports/__init__.py, ConsumerRef, ConsumersResult, or
+exports_consumers anywhere in the full stage output. `--only gates-native`
+also 0 errors. No test changes were needed since no code changed.
+
+Filed: none (no out-of-scope discovery -- the described defect is simply
+already fixed by T-0876).
+
+Gates: `uv run frob check --only gates-fast` clean (0 errors); `uv run frob
+check --only gates-native` clean (0 errors); `uv run frob check --only
+lint` and `--only static` not separately needed since scope files were not
+touched. Full unchunked `frob check` deliberately not run per playbook
+section 3b (FROB_AGENT chunked-loop requirement).
 
 <!-- ticket:T-0879 -->
 ```yaml
