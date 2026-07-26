@@ -3966,7 +3966,7 @@ T-0204 child (test family). gate:TEST reports 486 warnings at 2026-07-23 baselin
 ```yaml
 id: T-0876
 title: wire frob exports --consumers CLI flag onto exports_consumers
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-07-23'
@@ -3988,7 +3988,6 @@ src/frob/app/config.py, and src/frob/__main__.py's exports parser, none of
 which were in T-0858's declared scope. Do this before or around the
 2026-10-01 T-0802 sunset so the CLI-level capability is not lost when
 `frob xref` porcelain is removed.
-
 <!-- ticket:T-0878 -->
 ```yaml
 id: T-0878
@@ -4350,7 +4349,7 @@ Real incident during T-0680 (see its Done report): in a worktree whose tickets.m
 id: T-0890
 title: 'mutate: leftover mutant journal not auto-restored on next run start (xdist
   worker crash / external SIGTERM, beyond T-0857''s own-crash detection)'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-07-23'
@@ -4396,12 +4395,14 @@ from the journal automatically -- generalizing T-0857's crash-detection
 restore to cover ANY leftover journal entry found stale at the start of
 a fresh run, regardless of what killed the previous one.
 
+## Drop reason
+- 2026-07-26: exact duplicate of T-0885 (same body, same scope)
 <!-- ticket:T-0891 -->
 ```yaml
 id: T-0891
 title: 'ticket evidence: direct-pytest verification leaks caller''s FROB_WORKTREE/FROB_AGENT
   lease env into the spawned test process'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-07-23'
@@ -4441,6 +4442,8 @@ other worktree-lease env) from the subprocess environment before spawning
 the verification pytest run, so a ticket's own evidence-recording step
 never leaks the recorder's own lease into the tests being verified.
 
+## Drop reason
+- 2026-07-26: exact duplicate of T-0884 (same body, same scope)
 <!-- ticket:T-0892 -->
 ```yaml
 id: T-0892
