@@ -641,11 +641,9 @@ class TestCheckAgentRefusal:
 
 
 class TestFrobTomlCheckDefaults:
+    # frob:ticket T-0909
     def test_check_skip_from_frob_toml(self, tmp_path):
         """[check] skip in frob.toml disables stages without CLI flags."""
-        import subprocess
-        import sys
-
         _write_pyproject(tmp_path)  # frob:ticket T-0806
         (tmp_path / "src").mkdir()
         (tmp_path / "src" / "m.py").write_text("def f():\n    return 1\n")
@@ -654,12 +652,7 @@ class TestFrobTomlCheckDefaults:
             '"bind", "exports"]\n',
             encoding="utf-8",
         )
-        r = subprocess.run(
-            [sys.executable, "-m", "frob", "check", str(tmp_path), "--json"],
-            capture_output=True,
-            text=True,
-            cwd=tmp_path,
-        )
+        r = run("check", str(tmp_path), "--json", cwd=tmp_path)
         assert r.returncode == 0, r.stdout + r.stderr
         # every stage skipped -> no tool results at all
         import json

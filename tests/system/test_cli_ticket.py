@@ -204,25 +204,21 @@ class TestTicketRoundTrip:
 
 
 class TestTicketNewNonInteractive:
+    # frob:ticket T-0909
     def test_new_does_not_prompt_or_hang_without_a_tty(self, tmp_path):
         _init_repo(tmp_path)
-        # subprocess.run with input=None and no pty attached means stdin is
-        # not a TTY, so the clipboard-attach prompt in `frob ticket new`
-        # must never fire; a 10s timeout catches a hang if it does.
-        r = subprocess.run(
-            FROB
-            + [
-                "ticket",
-                "new",
-                "--title",
-                "no prompt please",
-                "--kind",
-                "feature",
-                "--path",
-                str(tmp_path),
-            ],
-            capture_output=True,
-            text=True,
+        # input=None and no pty attached means stdin is not a TTY, so the
+        # clipboard-attach prompt in `frob ticket new` must never fire; a
+        # 10s timeout catches a hang if it does.
+        r = run(
+            "ticket",
+            "new",
+            "--title",
+            "no prompt please",
+            "--kind",
+            "feature",
+            "--path",
+            str(tmp_path),
             timeout=10,
         )
         out = r.stdout + r.stderr

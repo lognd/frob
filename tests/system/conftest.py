@@ -12,9 +12,12 @@ FIXTURES = Path(__file__).parent.parent / "fixtures"
 
 # frob:ticket T-0627
 # frob:ticket T-0880
+# frob:ticket T-0909
 # frob:tests tests/system/test_cli_check.py::TestCheckAgentRefusal.test_bare_check_refuses_under_frob_agent  # noqa: E501
 # frob:tests tests/system/test_run_helper_env_leak.py::TestRunHelperEnvLeak.test_run_strips_dispatch_agent_env_vars  # noqa: E501
-def run(*args, input=None, cwd=None, env=None):
+# frob:tests tests/system/test_cli_check.py::TestFrobTomlCheckDefaults.test_check_skip_from_frob_toml  # noqa: E501
+# frob:tests tests/system/test_cli_ticket.py::TestTicketNewNonInteractive.test_new_does_not_prompt_or_hang_without_a_tty  # noqa: E501
+def run(*args, input=None, cwd=None, env=None, timeout=None):
     """Run the `frob` CLI as a subprocess and capture its result (T-0364:
     the one shared entry point every system test dispatches through).
 
@@ -32,6 +35,12 @@ def run(*args, input=None, cwd=None, env=None):
     check`/`frob ticket` gate commands) must not leak into the subprocess
     under test, or it spuriously trips the T-0627 bare-check refusal / the
     T-0836 worktree-lease guard for tests that never asked for either.
+
+    T-0909: `timeout` is passed straight through to `subprocess.run` so
+    hang-guard tests (e.g. a non-interactive `ticket new` that must never
+    block on a TTY prompt) can route through this shared helper too,
+    instead of hand-rolling their own `subprocess.run` call and losing the
+    env-stripping above.
     """
     import os
 
@@ -46,6 +55,7 @@ def run(*args, input=None, cwd=None, env=None):
         input=input,
         cwd=cwd,
         env=merged_env,
+        timeout=timeout,
     )
 
 

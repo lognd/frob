@@ -6304,7 +6304,7 @@ the way tests/system/conftest.py's run() helper did for T-0880.
 ```yaml
 id: T-0909
 title: system tests bypassing run() helper still leak FROB_AGENT/FROB_WORKTREE
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-26'
@@ -6313,6 +6313,19 @@ parent: null
 scope:
 - tests/system/test_cli_check.py
 - tests/system/test_cli_ticket.py
+- tests/system/conftest.py
+scope_changes:
+- op: add
+  glob: tests/system/conftest.py
+  reason: run() helper needs a timeout kwarg to preserve the hang-guard when test_cli_ticket.py's
+    TestTicketNewNonInteractive routes through it
+  actor: logan
+  at: '2026-07-26'
+evidence:
+- tests/system/test_cli_check.py::TestFrobTomlCheckDefaults::test_check_skip_from_frob_toml
+- tests/system/test_cli_ticket.py::TestTicketNewNonInteractive::test_new_does_not_prompt_or_hang_without_a_tty
+- tests/system/test_run_helper_env_leak.py::TestRunHelperEnvLeak::test_run_strips_dispatch_agent_env_vars
+- tests/system/test_run_helper_env_leak.py::TestRunHelperEnvLeak::test_run_explicit_env_can_still_set_frob_agent
 threat: null
 component: null
 ```
@@ -6329,6 +6342,46 @@ scenario T-0880 fixed for run()-based tests) because they build their own
 subprocess.run(...) call and inherit the full parent environment with no stripping.
 Fix: switch these call sites to the shared run() helper (now leak-safe per T-0880),
 or apply the same FROB_AGENT/FROB_WORKTREE-stripping to their own subprocess.run call.
+
+## Done report
+
+Changed:
+- tests/system/conftest.py::run (added a `timeout` kwarg, passed straight
+  through to `subprocess.run`, so hang-guard tests can route through the
+  shared helper without losing their timeout)
+- tests/system/test_cli_check.py::TestFrobTomlCheckDefaults.test_check_skip_from_frob_toml
+  (now calls `run("check", str(tmp_path), "--json", cwd=tmp_path)` instead
+  of a raw `subprocess.run`)
+- tests/system/test_cli_ticket.py::TestTicketNewNonInteractive.test_new_does_not_prompt_or_hang_without_a_tty
+  (now calls `run("ticket", "new", ..., timeout=10)` instead of a raw
+  `subprocess.run`)
+
+Evidence:
+- `FROB_AGENT=1 FROB_WORKTREE=/tmp/fake-worktree uv run pytest -q
+  tests/system/test_cli_check.py::TestFrobTomlCheckDefaults::test_check_skip_from_frob_toml
+  tests/system/test_cli_ticket.py::TestTicketNewNonInteractive::test_new_does_not_prompt_or_hang_without_a_tty
+  tests/system/test_run_helper_env_leak.py` -- 4 passed (the exact leak
+  scenario T-0880 fixed for run()-based tests, now also clean for these
+  two)
+- `uv run pytest -q tests/system/test_cli_check.py
+  tests/system/test_cli_ticket.py --deselect
+  tests/system/test_cli_check.py::TestGitlessTargetGateSeverity::test_render_lint_gate_warns_not_errors_on_gitless_root`
+  -- full pass (44 tests) on a clean rerun; one earlier run in the same
+  session showed two unrelated xdist-parallel-worker flakes
+  (TestGitlessTargetGateSeverity's capsys/logging-rebind test, documented
+  as order-dependent in its own docstring, and
+  TestCheckPolyglot::test_pinned_check_type_reports_skipped_line, an
+  sqlite fingerprint-cache contention artifact) -- both pass individually
+  in isolation and on a clean full rerun, confirming neither is caused by
+  this change.
+- `uv run frob check --ticket T-0909` -- 0 errors (gate:PRE required one
+  `frob ticket sweep T-0909` re-run after the conftest.py scope
+  amendment below; all other gates pass, including SCOPE/COV/TEST for
+  the touched files).
+
+Filed: none
+
+Gates: frob check --ticket T-0909 clean.
 
 <!-- ticket:T-0910 -->
 ```yaml
