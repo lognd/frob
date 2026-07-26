@@ -76,6 +76,48 @@ ArchCategory = Literal[
     "fork-after-threads",
     "pipe-wait-deadlock",
     "self-join-deadlock",
+    # T-0622: logging-discipline checks (ARCH1xx family, T-0330's
+    # observability family) -- `frob.arch._logging_checks`, written once
+    # against the T-0609 normalized model so each fires identically across
+    # every `LanguageAdapter`. Same unwaivable advisory channel as every
+    # other category here; see docs/modules/arch.md's "logging discipline
+    # checks" section for the per-category detection shape and the
+    # strata/arch observability boundary note.
+    "unlogged-error-path",
+    "unlogged-boundary",
+    "print-as-diagnostic",
+    # T-0623: fallibility-discipline checks (ARCH1xx family, T-0330's
+    # error-handling family) -- `frob.arch._fallibility`, written once
+    # against the T-0609 normalized model so each fires identically across
+    # every `LanguageAdapter`. Same unwaivable advisory channel as every
+    # other category here; see docs/modules/arch.md's "fallibility checks"
+    # section for the per-category detection shape and the model-limit
+    # disclosure for `unhandled-result`.
+    "unhandled-result",
+    "swallowed-exception",
+    "recoverable-error-wrong-signature",
+    "over-broad-except",
+    # T-0624: misc design-smell checks (ARCH1xx family, T-0330's
+    # catch-all family) -- `frob.arch._smells`, written once against the
+    # T-0609 normalized model so each fires identically across every
+    # `LanguageAdapter`. Same unwaivable advisory channel as every other
+    # category here; see docs/modules/arch.md's "misc design smells"
+    # section for the per-category detection shape and disclosed
+    # per-module (not project-wide) scoping limits.
+    "mutable-default-arg",
+    "feature-envy",
+    "data-clumps",
+    "magic-literal",
+    "dead-private-code",
+    "deep-inheritance",
+    "temporal-coupling",
+    # T-0625: module dependency cycle detection (ARCH1xx family, T-0330's
+    # catch-all family) -- `frob.arch._smells.check_module_dependency_
+    # cycles`, reusing `frob.cycle.graph.DependencyGraph`/`find_cycles`
+    # (Tarjan's algorithm, no second graph builder forked). Same
+    # unwaivable advisory channel as every other category here; see
+    # docs/modules/arch.md's "module dependency cycles" section.
+    "module-dependency-cycle",
 ]
 
 ArchSeverity = Literal["warning", "suggestion", "info"]

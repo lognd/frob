@@ -41,16 +41,24 @@ Language = str
 
 
 # frob:doc docs/modules/arch.md#normalized-code-model
+# frob:ticket T-0624
 class NormalizedParam(BaseModel):
     """One function/method parameter: its name, an optional source-text type
-    annotation, and whether a default value is present (never the default's
-    value itself -- checks reason about SHAPE, not literal defaults)."""
+    annotation, and whether a default value is present. `default_text`
+    (T-0624) is the default's raw source text (`"[]"`, `"{}"`,
+    `"None"`, `"3"`, ...) when `has_default` is true, kept as unparsed text
+    like `NormalizedBranch.condition_text` -- added specifically so
+    `frob.arch._smells.check_mutable_default_arg` can recognize a
+    list/dict/set LITERAL default without needing a full expression
+    grammar; every other check in this package still reasons about SHAPE
+    via `has_default` alone, unaffected by this addition."""
 
     model_config = {}
 
     name: str
     type: str | None = None
     has_default: bool = False
+    default_text: str | None = None
 
 
 # frob:doc docs/modules/arch.md#normalized-code-model

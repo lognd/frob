@@ -816,7 +816,7 @@ Deferred remainder of T-0177 deliverable 2. The warm daemon caches graph snapsho
 id: T-0622
 title: 'arch: logging discipline checks (ARCH1xx) -- unlogged error path, unlogged
   boundary, print-as-diagnostic'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -828,17 +828,114 @@ scope:
 - src/frob/arch/_logging_checks.py
 - docs/modules/arch.md
 - tests/unit/test_arch.py
+evidence:
+- tests/unit/test_arch.py::TestUnloggedErrorPath::test_catch_with_no_nearby_log_call_flagged
+- tests/unit/test_arch.py::TestUnloggedErrorPath::test_catch_with_nearby_log_call_not_flagged
+- tests/unit/test_arch.py::TestUnloggedBoundary::test_public_entry_point_with_no_log_call_flagged
+- tests/unit/test_arch.py::TestUnloggedBoundary::test_boundary_call_with_no_nearby_log_call_flagged
+- tests/unit/test_arch.py::TestUnloggedBoundary::test_private_function_not_flagged
+- tests/unit/test_arch.py::TestPrintAsDiagnostic::test_print_call_flagged
+- tests/unit/test_arch.py::TestPrintAsDiagnostic::test_print_call_in_cli_module_not_flagged
+- tests/unit/test_arch.py::TestRunLoggingChecks::test_combines_all_three_checks
 threat: null
 component: null
 ```
 unlogged error path: except/raise/return-Err block with no log call inside it. unlogged boundary: public entry point / subprocess call / network call / filesystem call site with no log statement in its immediate scope. print-as-diagnostic: print() call used where a module logger call is expected (not a CLI-output module). Must coincide with strata's observability-of-flow split per CLAUDE.md note -- these checks are logging-IN-CODE only, no runtime/flow correlation. Acceptance: fixture per sub-check; docs updated including the strata/arch boundary note.
+
+## Done report
+
+EPIC T-0330's observability family (T-0622): logging-discipline checks
+written once against the T-0609 normalized model, mirroring the sibling
+SOLID/typedesign modules landed just before this dispatch
+(`src/frob/arch/_solid.py`/`_layering.py`/`_typedesign.py`).
+
+`src/frob/arch/_logging_checks.py` adds three ARCH1xx categories:
+`unlogged-error-path` (an except/catch or `return Err(...)` with no log
+call within a 3-line adjacency window -- the same line-adjacency textual
+proxy `frob.arch._solid`'s guard-clause detectors already use, since the
+T-0609 model has no block-scoping finer than a whole function body),
+`unlogged-boundary` (a public function/method with no log call anywhere
+in its own body, or a subprocess/network/filesystem call site with no
+nearby log call), and `print-as-diagnostic` (a bare `print()` call
+outside a CLI-output module, identified by `cli`/`__main__`/`console` in
+the module's repo-relative path).
+
+Unlike T-0621 (whose `_models.py` scope lease was held by a sibling
+in-progress ticket at implementation time, forcing a local
+`TypeDesignCategory` literal), this ticket's `_models.py` lease was free
+-- `frob ticket scope T-0622 --add src/frob/arch/_models.py` succeeded,
+so the three new categories extend the shared `ArchCategory`/
+`ArchSuggestion` directly. No local literal, no fold-in follow-up ticket
+needed.
+
+Per CLAUDE.md's logging/strata-boundary note: these checks are
+logging-IN-CODE only (does a log call exist textually near this error
+path/boundary), with explicitly no runtime/flow correlation -- that is
+`frob.strata`'s observability-of-flow concern
+(`_circuit_breaker`/`_retry`/`_fallback`), disclosed in both the module
+docstring and docs/modules/arch.md rather than silently conflated.
+
+Per this dispatch's own instruction, none of the three new checks are
+wired into `analyze_project`/the check pipeline yet -- `run_srp_checks`
+is the only sibling actually wired so far; `run_logging_checks` joins
+`run_solid_checks`/`run_layering_checks`/`run_typedesign_checks` as
+defined-but-not-yet-registered, matching T-0626's job (last in this
+dispatch's own queue) of doing the unified ARCH1xx registration.
+
+### Verification
+- `uv run pytest tests/unit/test_arch.py -p no:cacheprovider -q` -- full
+  file, 193 passed (8 new: TestUnloggedErrorPath x2,
+  TestUnloggedBoundary x3, TestPrintAsDiagnostic x2,
+  TestRunLoggingChecks x1).
+- `uv run frob check --only lint --ticket T-0622` -- 0 errors, 0 warnings.
+- `uv run frob check --only gates-fast --ticket T-0622` -- 0 errors
+  (fixed one real INV006 hit on the module docstring's "only" prose via
+  the same disclosed `frob:waive INV006` pattern `_solid.py`/
+  `_typedesign.py` already carry, and one PRE001 staleness hit via
+  `frob ticket sweep T-0622` after adding `_models.py` to scope).
+- `uv run frob check --only gates-native --ticket T-0622` -- 0 errors.
+- `uv run frob check --only gates-security --ticket T-0622` -- 0 errors.
+- `git diff main --diff-filter=D --stat` -- empty.
+
+### Cuts disclosed
+- No wiring into `analyze_project`/the check pipeline (see above -- by
+  design, per this dispatch's own T-0626-does-registration-last
+  instruction).
+- `unlogged-error-path`'s `return Err(...)` detection is a `value_text`
+  substring match (typani's Result-error-value convention), not a
+  resolved-type check -- consistent with `NormalizedReturn.value_text`
+  being kept as unparsed text on the T-0609 model itself.
+
+### Changed
+```
+ docs/modules/arch.md             |  71 +++++++++
+ src/frob/arch/_logging_checks.py | 335 +++++++++++++++++++++++++++++++++++++++
+ src/frob/arch/_models.py         |  10 ++
+ tests/unit/test_arch.py          | 189 ++++++++++++++++++++++
+ tickets.md                       |  18 ++-
+ 5 files changed, 618 insertions(+), 5 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_arch.py::TestUnloggedErrorPath::test_catch_with_no_nearby_log_call_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestUnloggedErrorPath::test_catch_with_nearby_log_call_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestUnloggedBoundary::test_public_entry_point_with_no_log_call_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestUnloggedBoundary::test_boundary_call_with_no_nearby_log_call_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestUnloggedBoundary::test_private_function_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestPrintAsDiagnostic::test_print_call_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestPrintAsDiagnostic::test_print_call_in_cli_module_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestRunLoggingChecks::test_combines_all_three_checks` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 8 passed (from 8 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0623 -->
 ```yaml
 id: T-0623
 title: 'arch: fallibility checks (ARCH1xx) -- unhandled Result, swallowed exception,
   wrong-signature raise, over-broad except'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -850,17 +947,121 @@ scope:
 - src/frob/arch/_fallibility.py
 - docs/modules/arch.md
 - tests/unit/test_arch.py
+scope_changes:
+- op: add
+  glob: src/frob/arch/_models.py
+  reason: extend shared ArchCategory for fallibility checks
+  actor: logan
+  at: '2026-07-23'
+- op: remove
+  glob: src/frob/arch/_models.py
+  reason: release lease -- T-0623's own _models.py edit already committed; T-0624/T-0625
+    need the lease next
+  actor: logan
+  at: '2026-07-23'
+evidence:
+- tests/unit/test_arch.py::TestUnhandledResult::test_bare_statement_call_to_result_function_flagged
+- tests/unit/test_arch.py::TestUnhandledResult::test_returned_call_to_result_function_not_flagged
+- tests/unit/test_arch.py::TestSwallowedException::test_bare_except_with_no_reaction_flagged
+- tests/unit/test_arch.py::TestSwallowedException::test_except_with_nearby_log_call_not_flagged
+- tests/unit/test_arch.py::TestRecoverableErrorWrongSignature::test_raises_value_error_without_result_signature_flagged
+- tests/unit/test_arch.py::TestRecoverableErrorWrongSignature::test_raises_value_error_with_result_signature_not_flagged
+- tests/unit/test_arch.py::TestOverBroadExcept::test_bare_except_flagged
+- tests/unit/test_arch.py::TestOverBroadExcept::test_specific_except_not_flagged
+- tests/unit/test_arch.py::TestOverBroadExcept::test_reraise_with_different_type_loses_context_flagged
+- tests/unit/test_arch.py::TestRunFallibilityChecks::test_combines_all_four_checks
 threat: null
 component: null
 ```
 unhandled Result: a call known to return typani Result[T,E] (or Rust #[must_use]) used as a bare statement, discarding the value. swallowed exception: bare except: or except Exception: pass with no re-raise/log/return-Err. recoverable-error-wrong-signature: a function raises a clearly-recoverable error (e.g. ValueError on bad user input) but its signature returns T, not Result[T,E]. over-broad except / re-raise-losing-context: except Exception (or bare except) catching more than the call site can name, or a re-raise that drops the original exception/traceback. Acceptance: fixture per sub-check; docs updated.
+
+## Done report
+
+EPIC T-0330's error-handling family (T-0623): fallibility-discipline
+checks written once against the T-0609 normalized model, mirroring
+T-0622's just-landed `_logging_checks.py` sibling.
+
+`src/frob/arch/_fallibility.py` adds four ARCH1xx categories:
+`unhandled-result` (a call to a same-module Result-returning function
+whose line is not itself a `return` line -- explicitly disclosed as a
+best-effort proxy, since `NormalizedCall` has no assignment/discard
+field on the T-0609 model, so a genuine `x = foo()` local assignment
+looks identical to a discarded bare-statement call under this model),
+`swallowed-exception` (a bare/`Exception` catch with no raise/log-call/
+return within a 3-line adjacency window), `recoverable-error-wrong-
+signature` (a function raises `ValueError`/`KeyError`/`LookupError`/
+`TypeError` but its declared return type is not `Result[...]`), and
+`over-broad-except` (folding both "catches more than nameable" and
+"re-raise-losing-context" into one category, per the ticket's own body
+text presenting them as a single bullet).
+
+`_models.py`'s scope lease was free at implementation time (same as
+T-0622's) -- all four categories extend the shared `ArchCategory`/
+`ArchSuggestion` directly, no local literal needed.
+
+Per this dispatch's own instruction, `run_fallibility_checks` is defined
+but not yet wired into `analyze_project`/the check pipeline -- T-0626
+(last in this dispatch's queue) does the unified ARCH1xx registration.
+
+### Verification
+- `uv run pytest tests/unit/test_arch.py -p no:cacheprovider -q` -- full
+  file, 203 passed (10 new: TestUnhandledResult x2,
+  TestSwallowedException x2, TestRecoverableErrorWrongSignature x2,
+  TestOverBroadExcept x3, TestRunFallibilityChecks x1).
+- `uv run frob check --only lint --ticket T-0623` -- 0 errors, 0 warnings.
+- `uv run frob check --only gates-fast --ticket T-0623` -- 0 errors
+  (fixed the same INV006 module-docstring-prose hit T-0622 hit, via the
+  same disclosed `frob:waive INV006` pattern, and the same PRE001
+  staleness hit via `frob ticket sweep T-0623`).
+- `uv run frob check --only gates-native --ticket T-0623` -- 0 errors.
+- `uv run frob check --only gates-security --ticket T-0623` -- 0 errors.
+- `git diff main --diff-filter=D --stat` -- empty.
+
+### Cuts disclosed
+- No wiring into `analyze_project`/the check pipeline (by design, per
+  T-0626's own job).
+- `unhandled-result`'s false-positive shape (assigned-but-unused local
+  variables look identical to genuinely-discarded bare-statement calls)
+  is a real model limitation, disclosed in both the module docstring and
+  docs/modules/arch.md, not silently narrowed away.
+- `over-broad-except`'s re-raise-losing-context signal cannot confirm a
+  `raise ... from e` chain was actually omitted (no `from`-clause field
+  on `NormalizedRaise`) -- same disclosed adjacency-proxy limitation
+  every check in this module already carries.
+
+### Changed
+```
+ docs/modules/arch.md             | 144 +++++++++++++
+ src/frob/arch/_fallibility.py    | 399 ++++++++++++++++++++++++++++++++++
+ src/frob/arch/_logging_checks.py | 335 ++++++++++++++++++++++++++++
+ src/frob/arch/_models.py         |  21 ++
+ tests/unit/test_arch.py          | 456 +++++++++++++++++++++++++++++++++++++++
+ tickets.md                       | 116 +++++++++-
+ 6 files changed, 1465 insertions(+), 6 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_arch.py::TestUnhandledResult::test_bare_statement_call_to_result_function_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestUnhandledResult::test_returned_call_to_result_function_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestSwallowedException::test_bare_except_with_no_reaction_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestSwallowedException::test_except_with_nearby_log_call_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestRecoverableErrorWrongSignature::test_raises_value_error_without_result_signature_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestRecoverableErrorWrongSignature::test_raises_value_error_with_result_signature_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestOverBroadExcept::test_bare_except_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestOverBroadExcept::test_specific_except_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestOverBroadExcept::test_reraise_with_different_type_loses_context_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestRunFallibilityChecks::test_combines_all_four_checks` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 10 passed (from 10 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0624 -->
 ```yaml
 id: T-0624
 title: 'arch: misc design smells (ARCH1xx) -- mutable default arg, feature envy, data
   clumps, magic literals, dead private code, deep inheritance, temporal coupling'
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -869,19 +1070,172 @@ blocked_by:
 - T-0609
 parent: T-0330
 scope:
-- src/frob/arch/_smells.py
 - docs/modules/arch.md
 - tests/unit/test_arch.py
+- src/frob/arch/_normalized.py
+scope_changes:
+- op: add
+  glob: src/frob/arch/_models.py
+  reason: extend shared ArchCategory for misc design smell checks
+  actor: logan
+  at: '2026-07-23'
+- op: add
+  glob: src/frob/arch/_normalized.py
+  reason: NormalizedParam.default_text field addition
+  actor: logan
+  at: '2026-07-23'
+- op: remove
+  glob: src/frob/arch/_smells.py
+  reason: release lease -- T-0624's own _smells.py work already committed; T-0625
+    needs it (its own scope names this module)
+  actor: logan
+  at: '2026-07-26'
+- op: remove
+  glob: src/frob/arch/_models.py
+  reason: release lease -- T-0624's own _models.py edit already committed; T-0625
+    needs it next
+  actor: logan
+  at: '2026-07-26'
+evidence:
+- tests/unit/test_arch.py::TestMutableDefaultArg::test_list_literal_default_flagged
+- tests/unit/test_arch.py::TestMutableDefaultArg::test_none_default_not_flagged
+- tests/unit/test_arch.py::TestFeatureEnvy::test_method_calling_other_receiver_more_than_self_flagged
+- tests/unit/test_arch.py::TestFeatureEnvy::test_method_calling_self_more_than_others_not_flagged
+- tests/unit/test_arch.py::TestDataClumps::test_same_three_keyword_group_at_three_sites_flagged
+- tests/unit/test_arch.py::TestDataClumps::test_group_at_two_sites_not_flagged
+- tests/unit/test_arch.py::TestMagicLiteral::test_bare_number_in_condition_flagged
+- tests/unit/test_arch.py::TestMagicLiteral::test_zero_and_one_not_flagged
+- tests/unit/test_arch.py::TestDeadPrivateCode::test_unreferenced_private_function_flagged
+- tests/unit/test_arch.py::TestDeadPrivateCode::test_referenced_private_function_not_flagged
+- tests/unit/test_arch.py::TestDeepInheritance::test_chain_beyond_threshold_flagged
+- tests/unit/test_arch.py::TestDeepInheritance::test_shallow_chain_not_flagged
+- tests/unit/test_arch.py::TestTemporalCoupling::test_guard_clause_on_initialized_flag_flagged
+- tests/unit/test_arch.py::TestTemporalCoupling::test_field_not_guarded_not_flagged
+- tests/unit/test_arch.py::TestRunSmellChecks::test_combines_all_seven_checks
 threat: null
 component: null
 ```
 mutable default argument (list/dict/set literal as a default param value). feature envy (method's body references another object's attrs/methods more than self's). data clumps (same 3+-param group passed together across 3+ call sites). magic numbers/strings in logic (bare literal in a comparison/branch outside a named constant). dead private code (unreferenced private symbol, using the T-0288 call graph so helper-splices don't false-positive). deep inheritance (DIT beyond a configurable threshold). temporal coupling (an _initialized-style flag guarding call order instead of the type system). Acceptance: fixture per sub-check; docs updated.
 
+## Done report
+
+EPIC T-0330's catch-all smell family (T-0624): seven misc design-smell
+checks written once against the T-0609 normalized model, mirroring
+T-0622/T-0623's just-landed siblings.
+
+`src/frob/arch/_smells.py` adds `mutable-default-arg` (a param default
+literal starting with `[`/`{`/`list(`/`dict(`/`set(`, requiring a new
+`NormalizedParam.default_text` field the T-0609 model did not carry --
+added in this ticket since the previous model deliberately kept "never
+the default's value itself"), `feature-envy` (a method calling one
+non-self receiver strictly more than self, at least twice),
+`data-clumps` (the same 3+ keyword-arg-name group repeated at 3+ call
+sites), `magic-literal` (a bare numeric literal outside {0,1,-1} in a
+branch condition), `dead-private-code` (PER-MODULE proxy: a private
+top-level function never called by bare name elsewhere in the same
+file), `deep-inheritance` (PER-MODULE proxy: same-file-resolvable base
+chain beyond a configurable threshold), and `temporal-coupling` (a class
+with an initialization/readiness-named bool field runtime-guarded by
+another method via a branch+raise, the same guard-clause proxy
+`_typedesign.py`'s illegal-states-representable check already uses).
+
+`dead-private-code` and `deep-inheritance` are explicitly disclosed as
+PER-MODULE proxies, not the ticket's own project-wide "T-0288 call
+graph" / cross-file base-resolution versions -- `frob.graph.callgraph`
+is a separate subsystem this ticket's `_smells.py`-only scope does not
+integrate with; a genuine cross-file version is a follow-up, not
+silently narrowed here.
+
+### Scope-lease juggling across T-0622/T-0623/T-0624 (disclosed)
+All three tickets in this dispatch batch extend the shared
+`ArchCategory`, and the exclusive single-owner scope lease on
+`_models.py` only allows ONE in-progress ticket to hold it at a time.
+Working the three sequentially in one worktree, I passed the lease
+forward each time (`frob ticket scope --remove` on the finishing
+ticket, `--add` on the next) rather than fighting for concurrent
+ownership. One real gap this produced: T-0622's ledger-restore-to-main
+recipe (section 10b of the agent playbook) silently dropped its
+`_models.py` scope-add from the WORKING TREE (the recipe restores
+main's committed ledger, which predates that scope-add) and I did not
+notice to re-run it before T-0622's own Done report -- so T-0622's
+final committed ticket record does not declare `_models.py` in scope,
+even though its commit (f2fa96f3) genuinely touched it (the three
+logging-discipline `ArchCategory` entries). I attempted to fix this
+retroactively but the exclusive lease meant re-granting it to T-0622
+would have blocked T-0624/T-0625 from ever claiming it in this same
+session, so I left T-0622's scope declaration as-is and am disclosing
+the gap here instead of silently leaving it undiscovered. Recommend the
+coordinator either accept this as a known T-0622 scope-declaration gap
+(the actual diff is legitimate and was gate-verified at the time) or
+open a small follow-up ticket to formally reconcile it.
+
+### Verification
+- `uv run pytest tests/unit/test_arch.py -p no:cacheprovider -q` -- full
+  file, 218 passed (15 new: TestMutableDefaultArg x2, TestFeatureEnvy
+  x2, TestDataClumps x2, TestMagicLiteral x2, TestDeadPrivateCode x2,
+  TestDeepInheritance x2, TestTemporalCoupling x2,
+  TestRunSmellChecks x1).
+- `uv run frob check --only lint --ticket T-0624` -- 0 errors, 0
+  warnings.
+- `uv run frob check --only gates-fast --ticket T-0624` -- 0 errors
+  (fixed 3 real COV001 hits on the new module-level constants, missing
+  `frob:doc` edges, plus the same PRE001 staleness hit via
+  `frob ticket sweep T-0624`).
+- `uv run frob check --only static --ticket T-0624` -- 0 errors.
+- `uv run frob check --only gates-native --ticket T-0624` -- 0 errors.
+- `uv run frob check --only gates-security --ticket T-0624` -- 0 errors.
+- `git diff main --diff-filter=D --stat` -- empty.
+
+### Cuts disclosed
+- No wiring into `analyze_project`/the check pipeline (by design, per
+  T-0626's own job).
+- `check_dead_private_code`/`check_deep_inheritance` are per-module
+  proxies, not the ticket's own project-wide versions (see above).
+- `check_magic_literal` covers numeric literals only; string literals
+  are out of scope (raw branch-condition text cannot reliably
+  distinguish a magic string from an identifier without a real
+  tokenizer), disclosed in the check's own docstring.
+- The T-0622 scope-declaration gap noted above.
+
+### Changed
+```
+ docs/modules/arch.md             | 229 ++++++++++
+ src/frob/arch/_fallibility.py    | 399 ++++++++++++++++++
+ src/frob/arch/_logging_checks.py | 335 +++++++++++++++
+ src/frob/arch/_models.py         |  35 ++
+ src/frob/arch/_normalized.py     |  11 +-
+ src/frob/arch/_smells.py         | 562 +++++++++++++++++++++++++
+ tests/unit/test_arch.py          | 874 +++++++++++++++++++++++++++++++++++++++
+ tickets.md                       | 216 +++++++++-
+ 8 files changed, 2652 insertions(+), 9 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_arch.py::TestMutableDefaultArg::test_list_literal_default_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestMutableDefaultArg::test_none_default_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestFeatureEnvy::test_method_calling_other_receiver_more_than_self_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestFeatureEnvy::test_method_calling_self_more_than_others_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestDataClumps::test_same_three_keyword_group_at_three_sites_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestDataClumps::test_group_at_two_sites_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestMagicLiteral::test_bare_number_in_condition_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestMagicLiteral::test_zero_and_one_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestDeadPrivateCode::test_unreferenced_private_function_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestDeadPrivateCode::test_referenced_private_function_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestDeepInheritance::test_chain_beyond_threshold_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestDeepInheritance::test_shallow_chain_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestTemporalCoupling::test_guard_clause_on_initialized_flag_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestTemporalCoupling::test_field_not_guarded_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestRunSmellChecks::test_combines_all_seven_checks` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 15 passed (from 15 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
+
 <!-- ticket:T-0625 -->
 ```yaml
 id: T-0625
 title: 'arch: module dependency cycle detection (ARCH1xx)'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -894,10 +1248,116 @@ scope:
 - src/frob/graph/**
 - docs/modules/arch.md
 - tests/unit/test_arch.py
+- src/frob/arch/_models.py
+scope_changes:
+- op: add
+  glob: src/frob/arch/_models.py
+  reason: extend shared ArchCategory for module-dependency-cycle category
+  actor: logan
+  at: '2026-07-26'
+evidence:
+- tests/unit/test_arch.py::TestModuleDependencyCycles::test_two_file_import_cycle_flagged
+- tests/unit/test_arch.py::TestModuleDependencyCycles::test_acyclic_imports_not_flagged
 threat: null
 component: null
 ```
 Detect import cycles across modules using the existing module-dependency graph (shared with T-0620's layering contract, do not fork a second graph builder). Report the cycle path. Acceptance: a fixture pair of modules importing each other fails; docs updated; explicitly reuses T-0620's graph builder (no duplicate import-resolution code).
+
+## Done report
+
+EPIC T-0330 catch-all family (T-0625): module dependency cycle detection.
+
+Resumed orphaned work from a dead session: commit 71c6f85f
+("feat(arch): T-0625 add module dependency cycle detection (ARCH1xx)")
+plus an uncommitted tickets.md edit were already in the worktree.
+Reviewed the code diff critically; `check_module_dependency_cycles` in
+`frob.arch._smells` was already complete and correct: it reuses
+`frob.lang.extract_imports`/`resolve_local_import` (the same pair
+`frob.app.cycle_runner._build_graph` and `_layering.check_layering_
+violations` already call) and the existing `frob.cycle.graph.
+DependencyGraph`/`find_cycles` (Tarjan's algorithm) -- no second graph
+builder or cycle-finder forked, per the ticket's own body. Each
+strongly-connected component of size 2+ (or a self-loop) becomes one
+`ArchSuggestion` (category `module-dependency-cycle`) with the full
+cycle path in its message and the node count in `metric`. No code
+changes were needed; the prior session's implementation held up.
+
+### Ledger recovery (the actual orphaned-work gap)
+The prior session's uncommitted `tickets.md` edit (state -> in-progress,
+scope additions, evidence, Done report) was lost during this session's
+`git merge main` -- the ledger merge driver (`frob ticket merge-driver`)
+operates on committed blobs only, and that edit had never been
+committed. The registered driver also initially pointed at a stale
+global `frob` (0.9.0, predating the `merge-driver` subcommand) and
+failed silently to a real conflict on the first attempt; reconfigured
+`git config merge.frob-ledger.driver` to `uv run frob ticket merge-driver
+...` and re-ran the merge, which then spliced cleanly with no other
+sibling tickets disturbed.
+
+Recovered the lost ledger state by replaying the original scope-lease
+handoff via the CLI rather than hand-editing YAML: released
+`src/frob/arch/_smells.py` and `src/frob/arch/_models.py` from T-0624
+(`frob ticket scope T-0624 --remove`, both already-committed-work
+releases) and re-added `src/frob/arch/_models.py` to T-0625 (`frob
+ticket scope T-0625 --add`, extending the shared `ArchCategory` for
+`module-dependency-cycle`), then `frob ticket start T-0625` + `frob
+ticket sweep T-0625` to restore in-progress state and a clean PRE001
+sweep, then `frob ticket evidence T-0625 ...` for both new test ids.
+
+### Out-of-scope discovery filed separately
+`gates-security`'s SELFAUDIT001 stage flagged `src/frob/arch/
+_logging_checks.py` (T-0622's file, untouched by T-0625, pre-existing
+on main since T-0622 landed) for undeclared exec/net/fetch_url
+capabilities on the graphlang design node. Filed as T-0910
+rather than fixed here (outside T-0625's declared scope).
+
+### Verification
+- `make core` (fresh worktree build after merge; native extensions were
+  missing).
+- `uv run pytest tests/unit/test_arch.py -p no:cacheprovider -n0
+  --timeout=300` -- full file, 220 passed (2 new:
+  TestModuleDependencyCycles x2, real on-disk import cycles/acyclic
+  pairs via `tmp_path`).
+- `uv run frob check --only lint --ticket T-0625` -- 0 errors, 0
+  warnings.
+- `uv run frob check --only static --ticket T-0625` -- 0 errors, 213
+  warnings (all pre-existing, unrelated to this ticket's files).
+- `uv run frob check --only gates-fast --ticket T-0625` -- 0 errors
+  (after the scope-lease recovery above; SCOPE001 failed once on
+  `src/frob/arch/_models.py` before the lease was restored).
+- `uv run frob check --only gates-native --ticket T-0625` -- 0 errors.
+- `uv run frob check --only gates-security --ticket T-0625` -- 0 errors
+  in scope (SELFAUDIT001's 5 findings are on the out-of-scope T-0622
+  file above, filed as T-0910, not fixed here).
+- `git diff main --diff-filter=D --stat` -- empty.
+
+### Cuts disclosed
+- No wiring into `analyze_project`/the check pipeline (by design, per
+  T-0626's own job, the last ticket in this batch).
+- Cross-language cycle detection is out of scope -- reuses `frob.lang.
+  extract_imports`, python-only (matching `_layering.check_layering_
+  violations`'s own scope).
+
+### Changed
+```
+ docs/modules/arch.md             | 260 +++++++++++
+ src/frob/arch/_fallibility.py    | 399 +++++++++++++++++
+ src/frob/arch/_logging_checks.py | 335 +++++++++++++++
+ src/frob/arch/_models.py         |  42 ++
+ src/frob/arch/_normalized.py     |  12 +-
+ src/frob/arch/_smells.py         | 648 ++++++++++++++++++++++++++++
+ tests/unit/test_arch.py          | 903 +++++++++++++++++++++++++++++++++++++++
+ tickets.md                       | 350 ++++++++++++++-
+ 8 files changed, 2944 insertions(+), 5 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_arch.py::TestModuleDependencyCycles::test_two_file_import_cycle_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestModuleDependencyCycles::test_acyclic_imports_not_flagged` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0626 -->
 ```yaml
@@ -5717,3 +6177,22 @@ scenario T-0880 fixed for run()-based tests) because they build their own
 subprocess.run(...) call and inherit the full parent environment with no stripping.
 Fix: switch these call sites to the shared run() helper (now leak-safe per T-0880),
 or apply the same FROB_AGENT/FROB_WORKTREE-stripping to their own subprocess.run call.
+
+<!-- ticket:T-0910 -->
+```yaml
+id: T-0910
+title: 'arch: declare exec/net/fetch_url capabilities for _logging_checks.py graphlang
+  node (SELFAUDIT001)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-26'
+priority: medium
+parent: null
+scope:
+- src/frob/arch/_logging_checks.py
+- design/frob.strata
+threat: null
+component: null
+```
+gates-security's SELFAUDIT001 stage flags src/frob/arch/_logging_checks.py:67,70,71,73 (exec/net capability markers, T-0622's own _LOG_CALLEE_MARKERS/_BOUNDARY_CALLEE_MARKERS text-matching heuristics) and a fetch_url capability as observed-but-undeclared on the graphlang design node. Discovered while verifying T-0625's gates-security stage; out of scope there (file untouched by T-0625, pre-existing since T-0622 landed on main). Declare the capabilities on the design node or waive with a reason if these are false-positive text matches, not actual exec/net/fetch_url use.

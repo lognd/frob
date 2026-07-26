@@ -787,6 +787,266 @@ branches mentioning that param.
 all four above against one `NormalizedModule` and returns the combined
 findings, mirroring `run_srp_checks`'s convention.
 
+### Logging discipline checks: `unlogged-error-path` / `unlogged-boundary` / `print-as-diagnostic` (T-0622)
+
+<a id="logging-discipline-checks"></a>
+<!-- frob:describes src/frob/arch/_logging_checks.py::check_unlogged_error_path -->
+<!-- frob:describes src/frob/arch/_logging_checks.py::check_unlogged_boundary -->
+<!-- frob:describes src/frob/arch/_logging_checks.py::check_print_as_diagnostic -->
+<!-- frob:describes src/frob/arch/_logging_checks.py::run_logging_checks -->
+
+`frob.arch._logging_checks` (EPIC T-0330's observability family, T-0622)
+is written once against the T-0609 normalized model, same convention as
+`_typedesign.py`'s checks. Unlike `_typedesign.py` (T-0621), this
+ticket's `_models.py` scope lease was free at implementation time, so all
+three categories extend the shared `ArchCategory`/`ArchSuggestion`
+directly -- no local literal, no fold-in follow-up needed.
+
+**STRATA BOUNDARY NOTE (per CLAUDE.md).** These checks are logging-IN-CODE
+only: "does a log call exist textually near this error path/boundary",
+with no runtime/flow correlation. Whether a log statement actually FIRES
+on the path that needs it at runtime, whether it correlates across a
+distributed call, and log volume/level appropriateness are
+`frob.strata`'s observability-of-flow concern
+(`frob.strata._circuit_breaker`/`_retry`/`_fallback`), not this module's.
+A function can pass every check here and still be silently unobservable
+at runtime if the log call is unreachable dead code -- these checks only
+prove a log call is textually present, not that it executes.
+
+| Category | Signal | Severity |
+|---|---|---|
+| `unlogged-error-path` | an `except`/`catch` clause, or a `return Err(...)`, with no log call within 3 lines | suggestion |
+| `unlogged-boundary` | a public function/method with no log call anywhere in its body, or a subprocess/network/filesystem call site with no log call within 3 lines | suggestion |
+| `print-as-diagnostic` | a `print(...)` call outside a CLI-output module (path containing `cli`/`__main__`/`console`) | suggestion |
+
+**`unlogged-error-path` (`check_unlogged_error_path`).** Scans every
+function/method's `catches` and `returns`. A `catches` entry is flagged
+unless some call in the function's own `calls` list looks like a log
+statement (`_LOG_CALLEE_MARKERS`: a callee whose lowercased text contains
+`log.`/`logger.`/`logging.`/`_log.`/`_logger.`) within 3 source lines
+(`_LOG_ADJACENCY_WINDOW`) of the catch. A `returns` entry is flagged the
+same way when its `value_text` contains `"Err("` (typani's Result-error-
+value convention) and no log call falls within the same window of the
+return's line. This model has no block-scoping finer than a whole
+function body, so the line-adjacency window is the same style of textual
+proxy `frob.arch._solid`'s guard-clause detectors already use for
+raise-adjacent-to-branch.
+
+**`unlogged-boundary` (`check_unlogged_boundary`).** Two shapes, both
+scoped to PUBLIC functions/methods only (name not starting with `_`) for
+the first shape -- a private helper crossing a boundary is usually one
+step inside an already-logged public call:
+1. A public function/method with NO log call anywhere in its own
+   `calls` list is flagged once, at the function's own line -- an
+   operator has no textual evidence it was ever invoked.
+2. Any call (public or private function) whose callee text matches
+   `_BOUNDARY_CALLEE_MARKERS` (`subprocess.`, `os.system`, `os.popen`,
+   `requests.`, `httpx.`, `urllib.`, `socket.`, `open(`, `os.remove`,
+   `os.unlink`, `os.mkdir`, `os.makedirs`, `os.rmdir`, `shutil.`) with no
+   log call within the 3-line adjacency window is flagged at the call's
+   own line.
+
+**`print-as-diagnostic` (`check_print_as_diagnostic`).** Flags every
+`print(...)` call (callee text exactly `"print"`, not a dotted
+`obj.print` attribute call) in a module whose repo-relative path does
+NOT contain `cli`, `__main__`, or `console` (`_CLI_OUTPUT_PATH_MARKERS`)
+-- a CLI-output module's whole job is writing to stdout, so `print`
+there is correct and is not flagged. `print()` elsewhere has no level,
+no logger name, and cannot be filtered by a log aggregator.
+
+**`run_logging_checks(module) -> list[ArchSuggestion]`** runs all three
+above against one `NormalizedModule` and returns the combined findings,
+mirroring `run_typedesign_checks`'s convention.
+
+### Fallibility checks: `unhandled-result` / `swallowed-exception` / `recoverable-error-wrong-signature` / `over-broad-except` (T-0623)
+
+<a id="fallibility-checks"></a>
+<!-- frob:describes src/frob/arch/_fallibility.py::check_unhandled_result -->
+<!-- frob:describes src/frob/arch/_fallibility.py::check_swallowed_exception -->
+<!-- frob:describes src/frob/arch/_fallibility.py::check_recoverable_error_wrong_signature -->
+<!-- frob:describes src/frob/arch/_fallibility.py::check_over_broad_except -->
+<!-- frob:describes src/frob/arch/_fallibility.py::run_fallibility_checks -->
+
+`frob.arch._fallibility` (EPIC T-0330's error-handling family, T-0623) is
+written once against the T-0609 normalized model, same convention as
+`_logging_checks.py`'s checks. `_models.py`'s scope lease was free at
+implementation time (same as T-0622's), so all four categories extend
+the shared `ArchCategory`/`ArchSuggestion` directly.
+
+**MODEL-LIMIT DISCLOSURE.** `NormalizedCall` has no "is this call's
+result assigned / passed along / discarded" field -- the T-0609 model
+tracks a call's callee/line/args only, not its surrounding expression
+context. `unhandled-result` is therefore a disclosed, best-effort proxy,
+not a precise discard check -- see its own entry below.
+
+| Category | Signal | Severity |
+|---|---|---|
+| `unhandled-result` | a call to a same-module Result-returning function whose line is not also a `return` statement's line | suggestion |
+| `swallowed-exception` | a bare/`Exception` catch with no raise/log-call/return within 3 lines | warning |
+| `recoverable-error-wrong-signature` | a function raises `ValueError`/`KeyError`/`LookupError`/`TypeError` but its declared return type is not `Result[...]` | suggestion |
+| `over-broad-except` | a bare/`Exception` catch, OR a raise near a catch whose exception type differs from the caught type | suggestion |
+
+**`unhandled-result` (`check_unhandled_result`).** Builds a same-module
+lookup table of function/method bare names whose `return_type` text
+contains `"Result["` (`_result_returning_names`), then scans every
+function's `calls` for a callee whose trailing dotted segment matches
+that table. A match is flagged UNLESS the call's own line is also one of
+the caller's `returns` lines (the one shape -- `return foo()` -- this
+model can positively confirm consumes the value). A genuine
+`x = foo()` local assignment looks IDENTICAL to a discarded bare-
+statement call under this model (no assignment-target field exists) --
+this is a disclosed false-positive shape, not silently narrowed.
+Cross-module Result-returning functions are out of scope (this model
+does not resolve imports).
+
+**`swallowed-exception` (`check_swallowed_exception`).** A bare `except:`
+/`catch (...)` or `except Exception:` clause (`exception_type` is `None`
+or `"Exception"`) is flagged unless some raise, log call (the same
+`_LOG_CALLEE_MARKERS` text heuristic `_logging_checks` uses, duplicated
+locally since this ticket's scope excludes that module), or return falls
+within 3 lines of the catch (`_catch_does_something`) -- a caught
+exception with no observable reaction is silently swallowed.
+
+**`recoverable-error-wrong-signature`
+(`check_recoverable_error_wrong_signature`).** Flags a function/method
+that raises `ValueError`/`KeyError`/`LookupError`/`TypeError`
+(`_RECOVERABLE_EXCEPTION_TYPES`) while its own declared `return_type` is
+set and does NOT contain `"Result["` -- an expected, recoverable failure
+mode modeled as a raised exception instead of a typed `Result[T, E]`
+return forces every caller into try/except. A function with no declared
+return type at all is not flagged (nothing to compare against).
+
+**`over-broad-except` (`check_over_broad_except`).** Two shapes, folded
+into one category per this ticket's own body text presenting them as a
+single bullet: (a) a bare/`Exception` catch is flagged directly, same
+detection as `swallowed-exception`'s catch-shape test but independent of
+whether the body reacts; (b) a raise within 3 lines of ANY catch whose
+`exception_type` differs from that catch's own caught type is flagged as
+a possible re-raise-losing-context -- this model has no `from`-clause
+field, so it cannot confirm chaining was actually omitted; it is the
+same disclosed adjacency proxy every check in this module uses, not a
+syntactic certainty.
+
+**`run_fallibility_checks(module) -> list[ArchSuggestion]`** runs all
+four above against one `NormalizedModule` and returns the combined
+findings, mirroring `run_logging_checks`'s convention.
+
+### Misc design smells: `mutable-default-arg` / `feature-envy` / `data-clumps` / `magic-literal` / `dead-private-code` / `deep-inheritance` / `temporal-coupling` (T-0624)
+
+<a id="misc-design-smells"></a>
+<!-- frob:describes src/frob/arch/_smells.py::check_mutable_default_arg -->
+<!-- frob:describes src/frob/arch/_smells.py::check_feature_envy -->
+<!-- frob:describes src/frob/arch/_smells.py::check_data_clumps -->
+<!-- frob:describes src/frob/arch/_smells.py::check_magic_literal -->
+<!-- frob:describes src/frob/arch/_smells.py::check_dead_private_code -->
+<!-- frob:describes src/frob/arch/_smells.py::check_deep_inheritance -->
+<!-- frob:describes src/frob/arch/_smells.py::check_temporal_coupling -->
+<!-- frob:describes src/frob/arch/_smells.py::run_smell_checks -->
+
+`frob.arch._smells` (EPIC T-0330's catch-all smell family, T-0624) is
+written once against the T-0609 normalized model, same convention as
+`_fallibility.py`'s checks. `_models.py`'s scope lease was free at
+implementation time, so all seven categories extend the shared
+`ArchCategory`/`ArchSuggestion` directly. `_normalized.py`'s lease was
+ALSO free -- `NormalizedParam.default_text` (raw source text of a
+default value) was added there because `check_mutable_default_arg`
+cannot recognize a list/dict/set literal default without it.
+
+**PER-MODULE SCOPING DISCLOSURE.** `check_dead_private_code` and
+`check_deep_inheritance` are described in T-0624's own body as needing
+project-wide analysis (the T-0288 call graph; cross-file base-class
+resolution) that a single `NormalizedModule` cannot provide --
+`frob.graph.callgraph` is a separate subsystem `_smells.py`'s scope does
+not integrate with. Both are disclosed PER-MODULE proxies below, not the
+true project-wide versions.
+
+| Category | Signal | Severity |
+|---|---|---|
+| `mutable-default-arg` | a param whose `default_text` looks like a list/dict/set literal or no-arg constructor | warning |
+| `feature-envy` | a method calling one non-self receiver more than `self`/`this`/`cls`, at least 2 times | suggestion |
+| `data-clumps` | the same 3+ keyword-arg-name group repeated across 3+ call sites in the module | suggestion |
+| `magic-literal` | a bare numeric literal (not 0/1/-1) inside a branch condition | suggestion |
+| `dead-private-code` | a private top-level function never called by bare name anywhere else in the same file | suggestion |
+| `deep-inheritance` | a class whose same-file-resolvable base chain exceeds `DEEP_INHERITANCE_THRESHOLD` (3) | suggestion |
+| `temporal-coupling` | a class with an initialization/readiness-named bool field runtime-guarded by another method via a branch+raise | suggestion |
+
+**`mutable-default-arg` (`check_mutable_default_arg`).** Flags a param
+with `has_default=True` whose `default_text` starts with `[`, `{`,
+`list(`, `dict(`, or `set(` -- a mutable default is created ONCE and
+shared across every call that omits the argument.
+
+**`feature-envy` (`check_feature_envy`).** Tallies each method's calls by
+receiver (the dotted prefix before the callee's last segment); flags
+when some single non-`self`/`this`/`cls` receiver's call count is
+STRICTLY GREATER than the self-receiver count and at least 2.
+
+**`data-clumps` (`check_data_clumps`).** Groups call sites by their exact
+keyword-argument-name SET (`DATA_CLUMP_MIN_GROUP_SIZE`, 3+ names);
+flags a group repeated at `DATA_CLUMP_MIN_SITES` (3) or more distinct
+call sites, once, at the first site. Positional-only call sites are
+invisible to this proxy (`NormalizedCallArg.keyword` unset).
+
+**`magic-literal` (`check_magic_literal`).** Scans every branch's
+`condition_text` for a bare numeric literal not in `{0, 1, -1}`. String
+literals are out of scope for this proxy (raw condition text cannot
+reliably distinguish a magic string from an identifier without a real
+tokenizer).
+
+**`dead-private-code` (`check_dead_private_code`, PER-MODULE proxy).**
+Flags a private (`_`-prefixed, not dunder) top-level function whose bare
+name never appears as a call callee anywhere else in the SAME module. A
+private symbol called only from another file is invisible to this proxy
+and will false-positive -- disclosed, not the ticket's own project-wide
+T-0288-call-graph version.
+
+**`deep-inheritance` (`check_deep_inheritance`, PER-MODULE proxy).**
+Resolves each class's base chain using only classes defined in the SAME
+file (`_inheritance_depth`); a chain continuing in another file
+under-counts. Flags a same-file-resolvable depth exceeding
+`DEEP_INHERITANCE_THRESHOLD` (3).
+
+**`temporal-coupling` (`check_temporal_coupling`).** Flags a class with a
+`bool` field whose name suggests a call-order gate (contains
+`initialized`/`ready`/`started`/`setup`/`_open`) when some method's own
+body guards on that field (a branch mentioning the field's name,
+immediately followed by a raise -- the same guard-clause line-adjacency
+proxy `_typedesign.py`'s illegal-states-representable check uses).
+
+**`run_smell_checks(module) -> list[ArchSuggestion]`** runs all seven
+above against one `NormalizedModule` and returns the combined findings,
+mirroring `run_fallibility_checks`'s convention. `check_module_dependency_
+cycles` (T-0625, below) is NOT included -- it is project-wide, not
+per-module, and is called separately.
+
+### Module dependency cycles: `module-dependency-cycle` (T-0625)
+
+<a id="module-dependency-cycles"></a>
+<!-- frob:describes src/frob/arch/_smells.py::check_module_dependency_cycles -->
+
+`check_module_dependency_cycles` (T-0625) lives in `frob.arch._smells`
+alongside the misc smell checks above (per this ticket's own declared
+scope naming that module rather than a new one), but is NOT written
+against a single file's `NormalizedModule` -- an import cycle is
+inherently a project-wide property, requiring the WHOLE tree's resolved
+import graph, the same reason `_layering.check_layering_violations`
+(T-0620) also takes `root` instead of a `NormalizedModule`.
+
+**No second graph builder or cycle-finder is forked.** The check reuses,
+directly:
+- `frob.lang.extract_imports`/`resolve_local_import` -- the same import-
+  resolution pair `frob.app.cycle_runner._build_graph` and
+  `_layering.check_layering_violations` already call.
+- `frob.cycle.graph.DependencyGraph`/`find_cycles` -- the EXISTING
+  Tarjan's-algorithm strongly-connected-component finder `frob cycle`'s
+  own CLI command already uses.
+
+Every python file under the scanned root becomes a graph node; each
+resolved local import becomes a directed edge. `find_cycles` returns
+every strongly-connected component of size 2+ (or a self-loop); each
+becomes one `ArchSuggestion` (category `module-dependency-cycle`,
+severity `warning`) whose `message` reports the full cycle path
+(`a -> b -> c -> a`) and whose `metric` carries the cycle's node count.
+
 ### Fork/pool hazards: `pool-inside-pool` / `fork-after-threads` / `pipe-wait-deadlock` / `self-join-deadlock` (T-0695)
 
 <a id="fork-pool-hazards"></a>

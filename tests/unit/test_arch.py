@@ -4815,6 +4815,909 @@ class TestRunTypeDesignChecks:
 
 
 # ---------------------------------------------------------------------------
+# T-0622: logging discipline checks -- unlogged error path, unlogged
+# boundary, print-as-diagnostic
+# ---------------------------------------------------------------------------
+
+
+class TestUnloggedErrorPath:
+    """`check_unlogged_error_path`
+    (docs/modules/arch.md#logging-discipline-checks)."""
+
+    def test_catch_with_no_nearby_log_call_flagged(self) -> None:
+        from frob.arch._logging_checks import check_unlogged_error_path
+        from frob.arch._normalized import (
+            NormalizedCatch,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        func = NormalizedFunction(
+            name="load_config",
+            line=1,
+            body_line_count=4,
+            catches=[NormalizedCatch(line=3, exception_type="OSError")],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[func]
+        )
+        out = check_unlogged_error_path(module)
+        assert len(out) == 1
+        assert out[0].category == "unlogged-error-path"
+        assert out[0].symref == "load_config"
+
+    def test_catch_with_nearby_log_call_not_flagged(self) -> None:
+        from frob.arch._logging_checks import check_unlogged_error_path
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedCatch,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        func = NormalizedFunction(
+            name="load_config",
+            line=1,
+            body_line_count=4,
+            catches=[NormalizedCatch(line=3, exception_type="OSError")],
+            calls=[NormalizedCall(callee="logger.error", line=4)],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[func]
+        )
+        out = check_unlogged_error_path(module)
+        assert out == []
+
+
+class TestUnloggedBoundary:
+    """`check_unlogged_boundary`
+    (docs/modules/arch.md#logging-discipline-checks)."""
+
+    def test_public_entry_point_with_no_log_call_flagged(self) -> None:
+        from frob.arch._logging_checks import check_unlogged_boundary
+        from frob.arch._normalized import NormalizedFunction, NormalizedModule
+
+        func = NormalizedFunction(name="run", line=1, body_line_count=2)
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[func]
+        )
+        out = check_unlogged_boundary(module)
+        assert any(s.category == "unlogged-boundary" for s in out)
+        assert any(s.symref == "run" for s in out)
+
+    def test_boundary_call_with_no_nearby_log_call_flagged(self) -> None:
+        from frob.arch._logging_checks import check_unlogged_boundary
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        func = NormalizedFunction(
+            name="run",
+            line=1,
+            body_line_count=4,
+            calls=[
+                NormalizedCall(callee="logger.info", line=1),
+                NormalizedCall(callee="subprocess.run", line=10),
+            ],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[func]
+        )
+        out = check_unlogged_boundary(module)
+        assert any(s.category == "unlogged-boundary" and s.line == 10 for s in out)
+
+    def test_private_function_not_flagged(self) -> None:
+        from frob.arch._logging_checks import check_unlogged_boundary
+        from frob.arch._normalized import NormalizedFunction, NormalizedModule
+
+        func = NormalizedFunction(name="_run", line=1, body_line_count=2)
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[func]
+        )
+        out = check_unlogged_boundary(module)
+        assert out == []
+
+
+class TestPrintAsDiagnostic:
+    """`check_print_as_diagnostic`
+    (docs/modules/arch.md#logging-discipline-checks)."""
+
+    def test_print_call_flagged(self) -> None:
+        from frob.arch._logging_checks import check_print_as_diagnostic
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        func = NormalizedFunction(
+            name="run",
+            line=1,
+            body_line_count=2,
+            calls=[NormalizedCall(callee="print", line=2)],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[func]
+        )
+        out = check_print_as_diagnostic(module)
+        assert len(out) == 1
+        assert out[0].category == "print-as-diagnostic"
+
+    def test_print_call_in_cli_module_not_flagged(self) -> None:
+        from frob.arch._logging_checks import check_print_as_diagnostic
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        func = NormalizedFunction(
+            name="run",
+            line=1,
+            body_line_count=2,
+            calls=[NormalizedCall(callee="print", line=2)],
+        )
+        module = NormalizedModule(
+            path="pkg/cli.py", language="python", functions=[func]
+        )
+        out = check_print_as_diagnostic(module)
+        assert out == []
+
+
+class TestRunLoggingChecks:
+    """`run_logging_checks` combines every ARCH1xx logging-discipline check
+    (docs/modules/arch.md#logging-discipline-checks)."""
+
+    def test_combines_all_three_checks(self) -> None:
+        from frob.arch._logging_checks import run_logging_checks
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedCatch,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        catch_fn = NormalizedFunction(
+            name="load_config",
+            line=1,
+            body_line_count=4,
+            catches=[NormalizedCatch(line=3, exception_type="OSError")],
+        )
+        print_fn = NormalizedFunction(
+            name="run",
+            line=10,
+            body_line_count=2,
+            calls=[NormalizedCall(callee="print", line=11)],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py",
+            language="python",
+            functions=[catch_fn, print_fn],
+        )
+        out = run_logging_checks(module)
+        categories = {s.category for s in out}
+        assert "unlogged-error-path" in categories
+        assert "unlogged-boundary" in categories
+        assert "print-as-diagnostic" in categories
+
+
+# ---------------------------------------------------------------------------
+# T-0623: fallibility checks -- unhandled Result, swallowed exception,
+# recoverable-error-wrong-signature, over-broad except
+# ---------------------------------------------------------------------------
+
+
+class TestUnhandledResult:
+    """`check_unhandled_result`
+    (docs/modules/arch.md#fallibility-checks)."""
+
+    def test_bare_statement_call_to_result_function_flagged(self) -> None:
+        from frob.arch._fallibility import check_unhandled_result
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        load = NormalizedFunction(
+            name="load", line=1, body_line_count=1, return_type="Result[Config, Err]"
+        )
+        run = NormalizedFunction(
+            name="run",
+            line=5,
+            body_line_count=2,
+            calls=[NormalizedCall(callee="load", line=6)],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[load, run]
+        )
+        out = check_unhandled_result(module)
+        assert len(out) == 1
+        assert out[0].category == "unhandled-result"
+        assert out[0].symref == "run"
+
+    def test_returned_call_to_result_function_not_flagged(self) -> None:
+        from frob.arch._fallibility import check_unhandled_result
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedFunction,
+            NormalizedModule,
+            NormalizedReturn,
+        )
+
+        load = NormalizedFunction(
+            name="load", line=1, body_line_count=1, return_type="Result[Config, Err]"
+        )
+        run = NormalizedFunction(
+            name="run",
+            line=5,
+            body_line_count=2,
+            calls=[NormalizedCall(callee="load", line=6)],
+            returns=[NormalizedReturn(line=6, value_text="load()")],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[load, run]
+        )
+        out = check_unhandled_result(module)
+        assert out == []
+
+
+class TestSwallowedException:
+    """`check_swallowed_exception`
+    (docs/modules/arch.md#fallibility-checks)."""
+
+    def test_bare_except_with_no_reaction_flagged(self) -> None:
+        from frob.arch._fallibility import check_swallowed_exception
+        from frob.arch._normalized import (
+            NormalizedCatch,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        func = NormalizedFunction(
+            name="load",
+            line=1,
+            body_line_count=4,
+            catches=[NormalizedCatch(line=3, exception_type=None)],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[func]
+        )
+        out = check_swallowed_exception(module)
+        assert len(out) == 1
+        assert out[0].category == "swallowed-exception"
+        assert out[0].severity == "warning"
+
+    def test_except_with_nearby_log_call_not_flagged(self) -> None:
+        from frob.arch._fallibility import check_swallowed_exception
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedCatch,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        func = NormalizedFunction(
+            name="load",
+            line=1,
+            body_line_count=4,
+            catches=[NormalizedCatch(line=3, exception_type=None)],
+            calls=[NormalizedCall(callee="logger.warning", line=4)],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[func]
+        )
+        out = check_swallowed_exception(module)
+        assert out == []
+
+
+class TestRecoverableErrorWrongSignature:
+    """`check_recoverable_error_wrong_signature`
+    (docs/modules/arch.md#fallibility-checks)."""
+
+    def test_raises_value_error_without_result_signature_flagged(self) -> None:
+        from frob.arch._fallibility import check_recoverable_error_wrong_signature
+        from frob.arch._normalized import (
+            NormalizedFunction,
+            NormalizedModule,
+            NormalizedRaise,
+        )
+
+        func = NormalizedFunction(
+            name="parse_amount",
+            line=1,
+            body_line_count=2,
+            return_type="int",
+            raises=[NormalizedRaise(line=2, exception_type="ValueError")],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[func]
+        )
+        out = check_recoverable_error_wrong_signature(module)
+        assert len(out) == 1
+        assert out[0].category == "recoverable-error-wrong-signature"
+        assert out[0].symref == "parse_amount"
+
+    def test_raises_value_error_with_result_signature_not_flagged(self) -> None:
+        from frob.arch._fallibility import check_recoverable_error_wrong_signature
+        from frob.arch._normalized import (
+            NormalizedFunction,
+            NormalizedModule,
+            NormalizedRaise,
+        )
+
+        func = NormalizedFunction(
+            name="parse_amount",
+            line=1,
+            body_line_count=2,
+            return_type="Result[int, ParseError]",
+            raises=[NormalizedRaise(line=2, exception_type="ValueError")],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[func]
+        )
+        out = check_recoverable_error_wrong_signature(module)
+        assert out == []
+
+
+class TestOverBroadExcept:
+    """`check_over_broad_except`
+    (docs/modules/arch.md#fallibility-checks)."""
+
+    def test_bare_except_flagged(self) -> None:
+        from frob.arch._fallibility import check_over_broad_except
+        from frob.arch._normalized import (
+            NormalizedCatch,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        func = NormalizedFunction(
+            name="load",
+            line=1,
+            body_line_count=3,
+            catches=[NormalizedCatch(line=2, exception_type="Exception")],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[func]
+        )
+        out = check_over_broad_except(module)
+        assert any(s.category == "over-broad-except" for s in out)
+
+    def test_specific_except_not_flagged(self) -> None:
+        from frob.arch._fallibility import check_over_broad_except
+        from frob.arch._normalized import (
+            NormalizedCatch,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        func = NormalizedFunction(
+            name="load",
+            line=1,
+            body_line_count=3,
+            catches=[NormalizedCatch(line=2, exception_type="OSError")],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[func]
+        )
+        out = check_over_broad_except(module)
+        assert out == []
+
+    def test_reraise_with_different_type_loses_context_flagged(self) -> None:
+        from frob.arch._fallibility import check_over_broad_except
+        from frob.arch._normalized import (
+            NormalizedCatch,
+            NormalizedFunction,
+            NormalizedModule,
+            NormalizedRaise,
+        )
+
+        func = NormalizedFunction(
+            name="load",
+            line=1,
+            body_line_count=4,
+            catches=[NormalizedCatch(line=2, exception_type="OSError")],
+            raises=[NormalizedRaise(line=3, exception_type="RuntimeError")],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[func]
+        )
+        out = check_over_broad_except(module)
+        assert any(
+            "losing context" in (s.message or "").lower()
+            or "context" in (s.detail or "").lower()
+            for s in out
+        )
+
+
+class TestRunFallibilityChecks:
+    """`run_fallibility_checks` combines every ARCH1xx fallibility check
+    (docs/modules/arch.md#fallibility-checks)."""
+
+    def test_combines_all_four_checks(self) -> None:
+        from frob.arch._fallibility import run_fallibility_checks
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedCatch,
+            NormalizedFunction,
+            NormalizedModule,
+            NormalizedRaise,
+        )
+
+        load = NormalizedFunction(
+            name="load", line=1, body_line_count=1, return_type="Result[Config, Err]"
+        )
+        run_fn = NormalizedFunction(
+            name="run",
+            line=5,
+            body_line_count=6,
+            return_type="int",
+            calls=[NormalizedCall(callee="load", line=6)],
+            catches=[NormalizedCatch(line=7, exception_type=None)],
+            raises=[NormalizedRaise(line=30, exception_type="ValueError")],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[load, run_fn]
+        )
+        out = run_fallibility_checks(module)
+        categories = {s.category for s in out}
+        assert "unhandled-result" in categories
+        assert "swallowed-exception" in categories
+        assert "recoverable-error-wrong-signature" in categories
+        assert "over-broad-except" in categories
+
+
+# ---------------------------------------------------------------------------
+# T-0624: misc design smells -- mutable default arg, feature envy, data
+# clumps, magic literals, dead private code, deep inheritance, temporal
+# coupling
+# ---------------------------------------------------------------------------
+
+
+class TestMutableDefaultArg:
+    """`check_mutable_default_arg`
+    (docs/modules/arch.md#misc-design-smells)."""
+
+    def test_list_literal_default_flagged(self) -> None:
+        from frob.arch._normalized import (
+            NormalizedFunction,
+            NormalizedModule,
+            NormalizedParam,
+        )
+        from frob.arch._smells import check_mutable_default_arg
+
+        func = NormalizedFunction(
+            name="add_item",
+            line=1,
+            body_line_count=1,
+            params=[NormalizedParam(name="items", has_default=True, default_text="[]")],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[func]
+        )
+        out = check_mutable_default_arg(module)
+        assert len(out) == 1
+        assert out[0].category == "mutable-default-arg"
+
+    def test_none_default_not_flagged(self) -> None:
+        from frob.arch._normalized import (
+            NormalizedFunction,
+            NormalizedModule,
+            NormalizedParam,
+        )
+        from frob.arch._smells import check_mutable_default_arg
+
+        func = NormalizedFunction(
+            name="add_item",
+            line=1,
+            body_line_count=1,
+            params=[
+                NormalizedParam(name="items", has_default=True, default_text="None")
+            ],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[func]
+        )
+        out = check_mutable_default_arg(module)
+        assert out == []
+
+
+class TestFeatureEnvy:
+    """`check_feature_envy` (docs/modules/arch.md#misc-design-smells)."""
+
+    def test_method_calling_other_receiver_more_than_self_flagged(self) -> None:
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedClass,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+        from frob.arch._smells import check_feature_envy
+
+        method = NormalizedFunction(
+            name="render",
+            line=2,
+            body_line_count=4,
+            is_method=True,
+            calls=[
+                NormalizedCall(callee="other.a", line=3),
+                NormalizedCall(callee="other.b", line=4),
+                NormalizedCall(callee="self.helper", line=5),
+            ],
+        )
+        cls = NormalizedClass(name="Widget", line=1, methods=[method])
+        module = NormalizedModule(path="pkg/mod.py", language="python", classes=[cls])
+        out = check_feature_envy(module)
+        assert len(out) == 1
+        assert out[0].category == "feature-envy"
+
+    def test_method_calling_self_more_than_others_not_flagged(self) -> None:
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedClass,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+        from frob.arch._smells import check_feature_envy
+
+        method = NormalizedFunction(
+            name="render",
+            line=2,
+            body_line_count=4,
+            is_method=True,
+            calls=[
+                NormalizedCall(callee="self.a", line=3),
+                NormalizedCall(callee="self.b", line=4),
+                NormalizedCall(callee="other.helper", line=5),
+            ],
+        )
+        cls = NormalizedClass(name="Widget", line=1, methods=[method])
+        module = NormalizedModule(path="pkg/mod.py", language="python", classes=[cls])
+        out = check_feature_envy(module)
+        assert out == []
+
+
+class TestDataClumps:
+    """`check_data_clumps` (docs/modules/arch.md#misc-design-smells)."""
+
+    def test_same_three_keyword_group_at_three_sites_flagged(self) -> None:
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedCallArg,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+        from frob.arch._smells import check_data_clumps
+
+        args = [
+            NormalizedCallArg(keyword="street"),
+            NormalizedCallArg(keyword="city"),
+            NormalizedCallArg(keyword="zip_code"),
+        ]
+        func = NormalizedFunction(
+            name="run",
+            line=1,
+            body_line_count=3,
+            calls=[
+                NormalizedCall(callee="make_address", line=2, args=args),
+                NormalizedCall(callee="make_address", line=3, args=args),
+                NormalizedCall(callee="make_address", line=4, args=args),
+            ],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[func]
+        )
+        out = check_data_clumps(module)
+        assert len(out) == 1
+        assert out[0].category == "data-clumps"
+        assert out[0].metric == 3
+
+    def test_group_at_two_sites_not_flagged(self) -> None:
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedCallArg,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+        from frob.arch._smells import check_data_clumps
+
+        args = [
+            NormalizedCallArg(keyword="street"),
+            NormalizedCallArg(keyword="city"),
+            NormalizedCallArg(keyword="zip_code"),
+        ]
+        func = NormalizedFunction(
+            name="run",
+            line=1,
+            body_line_count=2,
+            calls=[
+                NormalizedCall(callee="make_address", line=2, args=args),
+                NormalizedCall(callee="make_address", line=3, args=args),
+            ],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[func]
+        )
+        out = check_data_clumps(module)
+        assert out == []
+
+
+class TestMagicLiteral:
+    """`check_magic_literal` (docs/modules/arch.md#misc-design-smells)."""
+
+    def test_bare_number_in_condition_flagged(self) -> None:
+        from frob.arch._normalized import (
+            NormalizedBranch,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+        from frob.arch._smells import check_magic_literal
+
+        func = NormalizedFunction(
+            name="run",
+            line=1,
+            body_line_count=2,
+            branches=[NormalizedBranch(line=2, condition_text="retries > 42")],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[func]
+        )
+        out = check_magic_literal(module)
+        assert len(out) == 1
+        assert out[0].category == "magic-literal"
+
+    def test_zero_and_one_not_flagged(self) -> None:
+        from frob.arch._normalized import (
+            NormalizedBranch,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+        from frob.arch._smells import check_magic_literal
+
+        func = NormalizedFunction(
+            name="run",
+            line=1,
+            body_line_count=2,
+            branches=[NormalizedBranch(line=2, condition_text="count > 0 and n == 1")],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[func]
+        )
+        out = check_magic_literal(module)
+        assert out == []
+
+
+class TestDeadPrivateCode:
+    """`check_dead_private_code`
+    (docs/modules/arch.md#misc-design-smells)."""
+
+    def test_unreferenced_private_function_flagged(self) -> None:
+        from frob.arch._normalized import NormalizedFunction, NormalizedModule
+        from frob.arch._smells import check_dead_private_code
+
+        func = NormalizedFunction(name="_helper", line=1, body_line_count=1)
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[func]
+        )
+        out = check_dead_private_code(module)
+        assert len(out) == 1
+        assert out[0].category == "dead-private-code"
+
+    def test_referenced_private_function_not_flagged(self) -> None:
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+        from frob.arch._smells import check_dead_private_code
+
+        helper = NormalizedFunction(name="_helper", line=1, body_line_count=1)
+        run = NormalizedFunction(
+            name="run",
+            line=5,
+            body_line_count=1,
+            calls=[NormalizedCall(callee="_helper", line=6)],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[helper, run]
+        )
+        out = check_dead_private_code(module)
+        assert out == []
+
+
+class TestDeepInheritance:
+    """`check_deep_inheritance` (docs/modules/arch.md#misc-design-smells)."""
+
+    def test_chain_beyond_threshold_flagged(self) -> None:
+        from frob.arch._normalized import NormalizedClass, NormalizedModule
+        from frob.arch._smells import check_deep_inheritance
+
+        classes = [
+            NormalizedClass(name="A", line=1),
+            NormalizedClass(name="B", line=2, bases=["A"]),
+            NormalizedClass(name="C", line=3, bases=["B"]),
+            NormalizedClass(name="D", line=4, bases=["C"]),
+            NormalizedClass(name="E", line=5, bases=["D"]),
+        ]
+        module = NormalizedModule(path="pkg/mod.py", language="python", classes=classes)
+        out = check_deep_inheritance(module)
+        assert any(s.symref == "pkg/mod.py::E" for s in out)
+
+    def test_shallow_chain_not_flagged(self) -> None:
+        from frob.arch._normalized import NormalizedClass, NormalizedModule
+        from frob.arch._smells import check_deep_inheritance
+
+        classes = [
+            NormalizedClass(name="A", line=1),
+            NormalizedClass(name="B", line=2, bases=["A"]),
+        ]
+        module = NormalizedModule(path="pkg/mod.py", language="python", classes=classes)
+        out = check_deep_inheritance(module)
+        assert out == []
+
+
+class TestTemporalCoupling:
+    """`check_temporal_coupling`
+    (docs/modules/arch.md#misc-design-smells)."""
+
+    def test_guard_clause_on_initialized_flag_flagged(self) -> None:
+        from frob.arch._normalized import (
+            NormalizedBranch,
+            NormalizedClass,
+            NormalizedField,
+            NormalizedFunction,
+            NormalizedModule,
+            NormalizedRaise,
+        )
+        from frob.arch._smells import check_temporal_coupling
+
+        method = NormalizedFunction(
+            name="use",
+            line=5,
+            body_line_count=3,
+            is_method=True,
+            branches=[NormalizedBranch(line=6, condition_text="not self._initialized")],
+            raises=[NormalizedRaise(line=7, exception_type="RuntimeError")],
+        )
+        cls = NormalizedClass(
+            name="Service",
+            line=1,
+            fields=[NormalizedField(name="_initialized", line=2, type="bool")],
+            methods=[method],
+        )
+        module = NormalizedModule(path="pkg/mod.py", language="python", classes=[cls])
+        out = check_temporal_coupling(module)
+        assert len(out) == 1
+        assert out[0].category == "temporal-coupling"
+
+    def test_field_not_guarded_not_flagged(self) -> None:
+        from frob.arch._normalized import (
+            NormalizedClass,
+            NormalizedField,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+        from frob.arch._smells import check_temporal_coupling
+
+        method = NormalizedFunction(
+            name="use", line=5, body_line_count=1, is_method=True
+        )
+        cls = NormalizedClass(
+            name="Service",
+            line=1,
+            fields=[NormalizedField(name="_initialized", line=2, type="bool")],
+            methods=[method],
+        )
+        module = NormalizedModule(path="pkg/mod.py", language="python", classes=[cls])
+        out = check_temporal_coupling(module)
+        assert out == []
+
+
+class TestRunSmellChecks:
+    """`run_smell_checks` combines every ARCH1xx misc design-smell check
+    (docs/modules/arch.md#misc-design-smells)."""
+
+    def test_combines_all_seven_checks(self) -> None:
+        from frob.arch._normalized import (
+            NormalizedBranch,
+            NormalizedCall,
+            NormalizedCallArg,
+            NormalizedClass,
+            NormalizedField,
+            NormalizedFunction,
+            NormalizedModule,
+            NormalizedParam,
+            NormalizedRaise,
+        )
+        from frob.arch._smells import run_smell_checks
+
+        args = [
+            NormalizedCallArg(keyword="a"),
+            NormalizedCallArg(keyword="b"),
+            NormalizedCallArg(keyword="c"),
+        ]
+        top_fn = NormalizedFunction(
+            name="run",
+            line=1,
+            body_line_count=8,
+            params=[NormalizedParam(name="items", has_default=True, default_text="[]")],
+            branches=[NormalizedBranch(line=2, condition_text="retries > 42")],
+            calls=[
+                NormalizedCall(callee="make_thing", line=3, args=args),
+                NormalizedCall(callee="make_thing", line=4, args=args),
+                NormalizedCall(callee="make_thing", line=5, args=args),
+            ],
+        )
+        dead_fn = NormalizedFunction(name="_dead", line=20, body_line_count=1)
+        method = NormalizedFunction(
+            name="use",
+            line=30,
+            body_line_count=3,
+            is_method=True,
+            branches=[
+                NormalizedBranch(line=31, condition_text="not self._initialized")
+            ],
+            raises=[NormalizedRaise(line=32, exception_type="RuntimeError")],
+            calls=[
+                NormalizedCall(callee="other.a", line=31),
+                NormalizedCall(callee="other.b", line=32),
+            ],
+        )
+        cls = NormalizedClass(
+            name="Service",
+            line=25,
+            fields=[NormalizedField(name="_initialized", line=26, type="bool")],
+            methods=[method],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py",
+            language="python",
+            functions=[top_fn, dead_fn],
+            classes=[cls],
+        )
+        out = run_smell_checks(module)
+        categories = {s.category for s in out}
+        assert "mutable-default-arg" in categories
+        assert "data-clumps" in categories
+        assert "magic-literal" in categories
+        assert "dead-private-code" in categories
+        assert "temporal-coupling" in categories
+        assert "feature-envy" in categories
+
+
+# ---------------------------------------------------------------------------
+# T-0625: module dependency cycle detection
+# ---------------------------------------------------------------------------
+
+
+class TestModuleDependencyCycles:
+    """`check_module_dependency_cycles`
+    (docs/modules/arch.md#module-dependency-cycles)."""
+
+    def test_two_file_import_cycle_flagged(self, tmp_path) -> None:  # noqa: ANN001
+        from frob.arch._smells import check_module_dependency_cycles
+
+        (tmp_path / "a.py").write_text("import b\n")
+        (tmp_path / "b.py").write_text("import a\n")
+        out = check_module_dependency_cycles(tmp_path)
+        assert len(out) == 1
+        assert out[0].category == "module-dependency-cycle"
+        assert "a.py" in out[0].message
+        assert "b.py" in out[0].message
+
+    def test_acyclic_imports_not_flagged(self, tmp_path) -> None:  # noqa: ANN001
+        from frob.arch._smells import check_module_dependency_cycles
+
+        (tmp_path / "a.py").write_text("import b\n")
+        (tmp_path / "b.py").write_text("x = 1\n")
+        out = check_module_dependency_cycles(tmp_path)
+        assert out == []
+
+
+# ---------------------------------------------------------------------------
 # T-0745: protocol summary engine -- per-function fixpoint over the call graph
 # ---------------------------------------------------------------------------
 
