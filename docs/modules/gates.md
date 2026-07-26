@@ -198,12 +198,16 @@ ship; only an unenforced, past-sunset one is a release blocker. This is
 T-0576's central requirement: a sunset date with nothing enforcing it is
 not actually a sunset.
 
-`frob.gates.list_deprecated` reports every currently-recorded entry
-(symref, since, sunset, ticket, expired) regardless of whether it is
-itself well-formed/open/unexpired -- a listing tool, not a gate; DEPR001/
-002/004 are what actually fail the build. No CLI subcommand wires it yet
-(T-0576 scoped only `frob.graph`/`frob.gates`/docs/tests) -- filed as its
-own follow-up, see this section's ticket history.
+`frob.gates.list_deprecated` (and the `frob deprecated [--json]` CLI,
+`src/frob/app/deprecated_runner.py`, T-0638) reports every currently-
+recorded entry (symref, since, sunset, ticket, expired) regardless of
+whether it is itself well-formed/open/unexpired -- a listing tool, not a
+gate; DEPR001/002/004 are what actually fail the build. The CLI
+additionally cross-references `tickets.md`/`tickets-archive.md` to label
+each entry's status `in-window`, `past-sunset`, or `orphaned` (ticket
+missing or closed) -- a tri-state view `DeprecatedEntry.expired` alone
+(in-window vs past-sunset) does not carry, mirroring DEPR002's "ticket
+closes without removal" failure mode as a display, not a gate, concern.
 
 ### Typestate protocol declarations (T-0744)
 

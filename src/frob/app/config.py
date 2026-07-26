@@ -63,6 +63,8 @@ class Subcommand(str, enum.Enum):
     fleet = "fleet"
     # T-0441: `frob:` directive comment canonical-form wrap/unwrap.
     fmt = "fmt"
+    # T-0638: list outstanding frob:deprecated entries.
+    deprecated = "deprecated"
 
 
 # frob:doc docs/modules/app.md#config
@@ -227,6 +229,10 @@ class AppConfig(BaseModel):
 
     # debt (T-0412)
     debt_path: Path | None = None
+
+    # deprecated (T-0638)
+    deprecated_path: Path | None = None
+    deprecated_json: bool = False
 
     # registry (T-0407)
     registry_command: str | None = None  # audit|add
@@ -636,6 +642,7 @@ class AppConfig(BaseModel):
             "graph_path",
             "ack_path",
             "debt_path",
+            "deprecated_path",
             "pool_path",
             "registry_path",
             "ticket_path",
@@ -791,6 +798,7 @@ class AppConfig(BaseModel):
             "graph_json",
             "registry_sync_gate_rules",
             "debt_json",
+            "deprecated_json",
             "registry_json",
             "ticket_json",
             "ticket_show_blocked",

@@ -764,6 +764,21 @@ def _add_debt_parser(sub) -> None:
     debt_p.add_argument("--json", dest="debt_json", action="store_true")
 
 
+# frob:ticket T-0638
+def _add_deprecated_parser(sub) -> None:
+    """Register the `frob deprecated` subcommand: list outstanding
+    `frob:deprecated` entries (since/sunset/ticket/status)."""
+    deprecated_p = sub.add_parser(
+        "deprecated",
+        help="list outstanding frob:deprecated entries (symref, since, "
+        "sunset, ticket, status)",
+    )
+    deprecated_p.add_argument(
+        "--path", dest="deprecated_path", metavar="DIR", default="."
+    )
+    deprecated_p.add_argument("--json", dest="deprecated_json", action="store_true")
+
+
 # frob:ticket T-0569
 def _add_pool_parser(sub) -> None:
     """Register the `frob pool snapshot|clear` subcommand: ratchet-pool
@@ -2198,6 +2213,7 @@ def _add_workflow_subparsers(sub) -> None:
     _add_graph_parser(sub)
     _add_ack_parser(sub)
     _add_debt_parser(sub)
+    _add_deprecated_parser(sub)
     _add_pool_parser(sub)
     _add_registry_parser(sub)
     _add_ticket_parser(sub)

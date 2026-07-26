@@ -1494,7 +1494,7 @@ import frob.testing as the first frob-touching import raises ImportError (cannot
 ```yaml
 id: T-0638
 title: 'frob deprecated CLI subcommand: list deprecations with sunset/ticket status'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -1505,15 +1505,53 @@ scope:
 - src/frob/__main__.py
 - README.md
 - docs/modules/gates.md
+- tests/test_deprecated_runner.py
+scope_changes:
+- op: add
+  glob: tests/test_deprecated_runner.py
+  reason: CLI test coverage for the new frob deprecated subcommand, same pattern as
+    T-0412/T-0563's tests/test_debt_runner.py
+  actor: logan
+  at: '2026-07-26'
+evidence:
+- tests/test_deprecated_runner.py::TestDeprecatedRunner::test_json_mode_lists_deprecated_entries
+- tests/test_deprecated_runner.py::TestDeprecatedRunner::test_no_deprecations_logs_clean_message
+- tests/test_deprecated_runner.py::TestDeprecatedRunner::test_human_mode_reports_past_sunset_status
+- tests/test_deprecated_runner.py::TestDeprecatedRunner::test_human_mode_reports_orphaned_status_for_closed_ticket
 acceptance:
 - text: GIVEN a repo with frob:deprecated directives WHEN frob deprecated runs THEN
     each deprecation prints with its DEPR status and the README command table includes
     the new command
-  evidence: []
+  evidence:
+  - tests/test_deprecated_runner.py::TestDeprecatedRunner::test_json_mode_lists_deprecated_entries
+  - tests/test_deprecated_runner.py::TestDeprecatedRunner::test_no_deprecations_logs_clean_message
+  - tests/test_deprecated_runner.py::TestDeprecatedRunner::test_human_mode_reports_past_sunset_status
+  - tests/test_deprecated_runner.py::TestDeprecatedRunner::test_human_mode_reports_orphaned_status_for_closed_ticket
 threat: null
 component: null
 ```
 T-0576 landed the frob:deprecated directive and DEPR001-004 gates plus the list_deprecated API, but no CLI surface. Add a frob deprecated subcommand (App/AppConfig runner pattern) listing every deprecation with since/sunset/ticket/status (in-window vs past-sunset vs orphaned), plus the README command-table row and count bump so DOC005 stays green. Was T-0638 (ex-draft, id lost at land) in T-0576's worktree; drafts still do not survive land (T-0637).
+
+## Done report
+
+Changed:
+- src/frob/app/deprecated_runner.py (new): `run(cfg)` -- `frob deprecated` entry point, mirrors `frob.app.debt_runner`'s shape (snapshot load, `--json`/human dual mode, no mutation); also loads the ticket queue (`frob.tickets.load_queue`) and computes an `in-window`/`past-sunset`/`orphaned` status per entry via `_status_of`/`_load_ticket_states`.
+- src/frob/app/config.py: `Subcommand.deprecated`, `AppConfig.deprecated_path`/`deprecated_json` fields, wired into the existing path/bool field-collection lists.
+- src/frob/__main__.py: `_add_deprecated_parser` (`--path`/`--json`), registered in `_add_workflow_subparsers`.
+- src/frob/app/app.py: `deprecated_runner` added to `_RUNNER_MODULE_NAMES` and `_SUBCOMMAND_RUNNER_NAMES`, usage string updated.
+- README.md: new `frob deprecated` command-table row; total-command count bumped 34 -> 35 (DOC005).
+- docs/modules/gates.md: DEPRECATED gate section now documents the CLI and its tri-state status classification.
+- tests/test_deprecated_runner.py (new): `TestDeprecatedRunner` -- JSON mode, clean-repo message, past-sunset status, orphaned status (closed-ticket) cases.
+
+Evidence:
+- tests/test_deprecated_runner.py::TestDeprecatedRunner::test_json_mode_lists_deprecated_entries
+- tests/test_deprecated_runner.py::TestDeprecatedRunner::test_no_deprecations_logs_clean_message
+- tests/test_deprecated_runner.py::TestDeprecatedRunner::test_human_mode_reports_past_sunset_status
+- tests/test_deprecated_runner.py::TestDeprecatedRunner::test_human_mode_reports_orphaned_status_for_closed_ticket
+
+Filed: none
+
+Gates: `frob check --ticket T-0638` clean across all five chunked stages (gates-fast, gates-native, gates-security, lint, static) -- 0 errors in each after two fix rounds (COV002 missing `frob:ticket` directives on the new test file, DRIFT002 test-symref separator typo, INV006 exclusivity wording in new docstrings, FMT001 long directive line, ruff-format). `frob test --base main` (touched-set) passed 5/5 selected node ids, exit 0.
 
 <!-- ticket:T-0639 -->
 ```yaml
