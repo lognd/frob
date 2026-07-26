@@ -12,6 +12,8 @@ frob exports src/frob/edit/ --all                # include private symbols (_foo
 frob exports src/frob/ --exclude mission --exclude dispatch
 frob exports src/frob/edit/ --write              # write __init__.py in place
 frob exports src/frob/edit/ --json
+frob exports src/frob/ --consumers exports_package  # who imports this symbol
+frob exports src/frob/ --consumers exports_package --lang python --json
 ```
 
 ## Output
@@ -62,7 +64,9 @@ exported is reported as a warning.
 | `--all` | Include private symbols (names starting with `_`) |
 | `--exclude MODULE` | Skip a submodule entirely (repeatable) |
 | `--write` | Write the generated `__init__.py` directly to the package directory |
-| `--json` | Output structured `ExportsResult` as JSON |
+| `--json` | Output structured `ExportsResult` as JSON (or `ConsumersResult` with `--consumers`) |
+| `--consumers SYMBOL` | Look up who imports `SYMBOL` under `<path>` instead of listing package exports (`frob.exports.exports_consumers`, T-0858/T-0876) |
+| `--lang {python,cpp,c}` | Language override for `--consumers` (default: auto-detect) |
 
 ## Public API
 
@@ -70,6 +74,8 @@ exported is reported as a warning.
 <!-- frob:describes src/frob/exports/__init__.py::ModuleExports -->
 <!-- frob:describes src/frob/exports/__init__.py::ExportsResult -->
 <!-- frob:describes src/frob/exports/__init__.py::exports_package -->
+<!-- frob:describes src/frob/exports/__init__.py::ConsumersResult -->
+<!-- frob:describes src/frob/exports/__init__.py::exports_consumers -->
 
 ```python
 # frob/exports/__init__.py
@@ -93,4 +99,17 @@ def exports_package(
 ) -> Result[ExportsResult, ExportsError]
     # Walks pkg_dir's modules via frob.outline, collects public symbols per
     # module; the single entry point behind `frob exports`.
+
+class ConsumersResult(BaseModel)
+    symbol: str
+    consumers: list[ConsumerRef]
+    def as_text(self) -> str    # "symbol" + "imported by: file:line context" per consumer
+    def as_json(self) -> str
+
+def exports_consumers(
+    symbol: str, root: Path, *, lang: str | None = None,
+) -> Result[ConsumersResult, ExportsError]
+    # Which files actually import `symbol` under `root` (narrowed from
+    # frob.xref's raw usages to real import statements); the library entry
+    # point behind `frob exports --consumers` (T-0876).
 ```

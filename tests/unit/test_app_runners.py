@@ -271,6 +271,38 @@ class TestExportsRunner:
         assert init_path.exists()
         assert init_path.read_text().strip() != ""
 
+    # frob:ticket T-0876
+    def test_consumers_mode_logs_result(self, tmp_path, caplog):
+        """`--consumers SYMBOL` logs the text rendering of who imports it."""
+        (tmp_path / "producer.py").write_text("def widget(): ...\n")
+        (tmp_path / "consumer.py").write_text("from producer import widget\n")
+        cfg = AppConfig(exports_path=tmp_path, exports_consumers="widget")
+        with caplog.at_level("INFO"):
+            exports_run(cfg)
+        assert any("consumer.py" in r.message for r in caplog.records)
+
+    # frob:ticket T-0876
+    def test_consumers_mode_json_output(self, tmp_path, caplog):
+        """`--consumers SYMBOL --json` logs the JSON ConsumersResult."""
+        (tmp_path / "producer.py").write_text("def widget(): ...\n")
+        (tmp_path / "consumer.py").write_text("from producer import widget\n")
+        cfg = AppConfig(
+            exports_path=tmp_path, exports_consumers="widget", exports_json=True
+        )
+        with caplog.at_level("INFO"):
+            exports_run(cfg)
+        assert any('"symbol"' in r.message for r in caplog.records)
+
+    # frob:ticket T-0876
+    def test_consumers_mode_err_result_exits_1(self, tmp_path, caplog):
+        """`--consumers` over a directory with no source files exits 1."""
+        empty = tmp_path / "empty"
+        empty.mkdir()
+        cfg = AppConfig(exports_path=empty, exports_consumers="widget")
+        with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
+            exports_run(cfg)
+        assert exc.value.code == 1
+
 
 class TestArchRunner:
     """`frob arch`: missing-path error, kwargs overrides, text/JSON output."""

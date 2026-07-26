@@ -427,6 +427,23 @@ def _add_exports_parser(sub) -> None:
         action="store_true",
         help="write generated content to <path>/__init__.py instead of printing",
     )
+    # frob:ticket T-0876
+    exports_p.add_argument(
+        "--consumers",
+        dest="exports_consumers",
+        metavar="SYMBOL",
+        help=(
+            "look up who imports SYMBOL under <path> instead of listing "
+            "package exports (frob.exports.exports_consumers, T-0858)"
+        ),
+    )
+    # frob:ticket T-0876
+    exports_p.add_argument(
+        "--lang",
+        dest="exports_lang",
+        choices=["python", "cpp", "c"],
+        help="language override for --consumers (default: auto-detect)",
+    )
 
 
 # frob:ticket T-0030

@@ -138,6 +138,13 @@ class AppConfig(BaseModel):
     exports_exclude: list[str] = []
     exports_json: bool = False
     exports_write: bool = False
+    # frob:ticket T-0876
+    #: symbol to look up import-consumers for via `--consumers SYMBOL`;
+    #: None means run the normal `exports_package` listing instead.
+    exports_consumers: str | None = None
+    # frob:ticket T-0876
+    #: language override for `--consumers` (mirrors `xref_lang`'s choices).
+    exports_lang: str | None = None
 
     # check (shared)
     check_path: Path | None = None
@@ -538,6 +545,9 @@ class AppConfig(BaseModel):
             "parse_tool",
             "docs_symbol",
             "docs_search",
+            # frob:ticket T-0876
+            "exports_consumers",
+            "exports_lang",
             "check_type",
             "check_ticket",
             "check_base",
