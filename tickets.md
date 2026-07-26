@@ -5410,7 +5410,7 @@ intentionally-malformed fixture.
 ```yaml
 id: T-0906
 title: SCOPE001 vacuously passes when ticket.scope is empty (no non-empty-scope precondition)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-23'
@@ -5419,6 +5419,9 @@ parent: null
 scope:
 - src/frob/gates/__init__.py
 - src/frob/tickets/_models.py
+evidence:
+- tests/test_gates.py::TestScopePrework::test_scope001_fires_when_no_scope_declared
+- tests/test_gates.py::TestScopePrework::test_scope001_empty_scope_ledger_still_implicitly_in_scope
 threat: null
 component: null
 ```
@@ -5447,6 +5450,57 @@ of a silent pass -- symmetric with how COV002/TODO001 treat a failed diff
 load (T-0550/T-0719) as a loud violation rather than a silently-cleared
 enforcement surface. Prefer (a): an empty scope should never be a valid
 ticket state to begin work from.
+
+## Done report
+
+`scope_gate` (SCOPE001, src/frob/gates/__init__.py) short-circuited to an
+unconditional `return ()` whenever `ticket.scope` was empty, so a ticket
+with no declared scope at all -- the riskiest, least-declared-intent
+state -- got strictly LESS SCOPE001 enforcement than a normally-scoped
+ticket, not more (docs/audits/gates-vacuous.md H1).
+
+Fix: removed the empty-scope early return. `scope_matches` (src/frob/
+tickets/_models.py) already treats an empty `scope` sequence as matching
+only `LEDGER_PATH` (plus a FEATURE ticket's implicit CLI-wiring files, via
+`_scope_globs`), so falling through to the existing per-touched-file loop
+now produces a loud SCOPE001 violation for every other file an
+empty-scope ticket's diff touches, while the ledger itself (needed to
+record the Done report) stays implicitly in scope, matching every other
+ticket's behavior.
+
+Updated the one existing test that asserted the old vacuous-pass shape
+(`test_scope_unrestricted_when_no_scope_declared` -> renamed
+`test_scope001_fires_when_no_scope_declared`, now asserting the loud
+violation) and added a paired ledger-still-in-scope regression test.
+
+The paired regression-gate ticket T-0899 (same session, same worktree)
+also landed in this branch: a third test binds the multi-file, real-diff
+case so scope_gate can never again return the bare `()` sentinel for a
+non-empty out-of-scope diff on an empty-scope ticket.
+
+Verification after merging current main into this worktree: targeted
+pytest (19 tests in TestScopePrework, all pass), full collection of
+tests/test_gates.py (438 tests collected, no errors), and the chunked
+`frob check --ticket T-0906 --only <group>` loop over all five stage
+groups (lint, static, gates-fast, gates-native, gates-security) -- all
+pass (gates-fast required one `frob ticket sweep T-0906` refresh for a
+stale PRE001 pre-work sweep after the main merge).
+
+### Changed
+```
+ src/frob/gates/__init__.py |  19 ++++--
+ tests/test_gates.py        |  48 +++++++++++++-
+ tickets.md                 | 155 ++++++++++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 213 insertions(+), 9 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestScopePrework::test_scope001_fires_when_no_scope_declared` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestScopePrework::test_scope001_empty_scope_ledger_still_implicitly_in_scope` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0907 -->
 ```yaml

@@ -5008,6 +5008,9 @@ def _scope_exempt_file(
 
 
 # frob:doc docs/modules/gates.md#public-api
+# frob:ticket T-0906
+# frob:tests tests/test_gates.py::TestScopePrework.test_scope001_fires_when_no_scope_declared  # noqa: E501
+# frob:tests tests/test_gates.py::TestScopePrework.test_scope001_empty_scope_ledger_still_implicitly_in_scope  # noqa: E501
 def scope_gate(
     diff: Diff,
     ticket: Ticket,
@@ -5021,13 +5024,17 @@ def scope_gate(
     another ticket's own scope (its commits' subjects reference that ticket
     id) is exempt -- fixes SCOPE001 false positives when ticket A's
     already-committed work still shows up in ticket B's diff on the same
-    branch (T-0108)."""
+    branch (T-0108).
 
-    if not ticket.scope:
-        _log.debug(
-            "scope_gate: %s has no declared scope, nothing to enforce", ticket.id
-        )
-        return ()
+    An empty `ticket.scope` is deliberately NOT treated as "nothing to
+    enforce" (T-0906/H1 in docs/audits/gates-vacuous.md): `scope_matches`
+    already treats an empty scope as matching only `LEDGER_PATH` (plus a
+    FEATURE ticket's implicit CLI-wiring files), so falling through to the
+    normal per-file loop below already produces the correct, loud SCOPE001
+    for every other touched file -- an undeclared scope is the riskiest
+    ticket state (no stated intent at all) and must get MORE enforcement,
+    never a silent, unconditional pass."""
+
     touched = sorted(_touched_files(diff))
     violations = [
         v

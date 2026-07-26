@@ -3193,6 +3193,7 @@ class TestDeprecatedGate:
         assert v.severity == Severity.WARN
 
 
+# frob:ticket T-0906
 class TestScopePrework:
     def test_scope001_out_of_scope_file(self, tmp_path: Path) -> None:
         snap = _snapshot(tmp_path)
@@ -3209,11 +3210,56 @@ class TestScopePrework:
         violations = scope_gate(diff, ticket, snap)
         assert violations == ()
 
-    def test_scope_unrestricted_when_no_scope_declared(self, tmp_path: Path) -> None:
+    # frob:ticket T-0906
+    def test_scope001_fires_when_no_scope_declared(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/__init__.py::scope_gate
+        # T-0906/H1 (docs/audits/gates-vacuous.md): an empty ticket.scope
+        # used to short-circuit scope_gate to a silent, unconditional pass
+        # -- the least-declared-intent ticket got the LEAST enforcement.
+        # It must now get the SAME (loud) SCOPE001 enforcement as any other
+        # out-of-scope file.
         snap = _snapshot(tmp_path)
         ticket = _ticket(scope=())
         diff = Diff(base="x", hunks=(Hunk(file="src/anything.py", span=(1, 1)),))
+        violations = scope_gate(diff, ticket, snap)
+        assert any(v.rule == "SCOPE001" for v in violations)
+
+    # frob:ticket T-0906
+    def test_scope001_empty_scope_ledger_still_implicitly_in_scope(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::scope_gate
+        # T-0906: the ledger stays implicitly in scope even for a ticket
+        # with no declared scope at all -- recording a Done report must
+        # never itself trip SCOPE001.
+        snap = _snapshot(tmp_path)
+        ticket = _ticket(scope=())
+        diff = Diff(base="x", hunks=(Hunk(file="tickets.md", span=(1, 1)),))
         assert scope_gate(diff, ticket, snap) == ()
+
+    # frob:ticket T-0899
+    def test_scope001_empty_scope_never_returns_bare_empty_tuple_for_a_real_diff(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::scope_gate
+        # T-0899, the regression-gate pair for T-0906/H1: an in-progress
+        # ticket carrying scope=() must never again silently coexist with
+        # scope_gate returning the bare `()` no-violation sentinel for a
+        # non-empty, out-of-scope diff -- multiple touched files must each
+        # produce their own SCOPE001, not a single silently-cleared pass.
+        snap = _snapshot(tmp_path)
+        ticket = _ticket(scope=())
+        diff = Diff(
+            base="x",
+            hunks=(
+                Hunk(file="src/one.py", span=(1, 1)),
+                Hunk(file="src/two.py", span=(1, 1)),
+            ),
+        )
+        violations = scope_gate(diff, ticket, snap)
+        assert violations != ()
+        assert {v.file for v in violations} == {"src/one.py", "src/two.py"}
+        assert all(v.rule == "SCOPE001" for v in violations)
 
     def test_scope001_comma_joined_entry_splits_and_matches(
         self, tmp_path: Path
