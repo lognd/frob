@@ -16,6 +16,7 @@ review` (docs/modules/tickets.md)."""
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import sys
@@ -2873,20 +2874,58 @@ def _reverify_failing_bucket_individually(
 
 
 # frob:ticket T-0398
+_WORKTREE_LEASE_ENV_VARS = ("FROB_WORKTREE", "FROB_AGENT")
+"""Env vars set by the worktree-lease mechanism (docs/guides/agent-playbook.md
+section 1/3) that must never leak into a spawned verification pytest process
+-- see `_run_pytest_directly`'s docstring for why (T-0884)."""
+
+
+# frob:ticket T-0884
+# frob:tests tests/test_ticket_runner_pytest_env.py::TestRunPytestDirectlyStripsLeaseEnv.test_strips_worktree_and_agent_env  # noqa: E501
+# frob:tests tests/test_ticket_runner_pytest_env.py::TestRunPytestDirectlyStripsLeaseEnv.test_missing_lease_env_is_fine  # noqa: E501
 def _run_pytest_directly(root: Path, node_ids) -> bool:  # noqa: ANN001
     """`uv run pytest <node_ids> -q -o addopts=` in `root`, exit 0 == pass
     -- the no-`[[test.runner]]`-declared fallback `_verify_ids_passing`
     uses so D-01 verification works even in a repo that never configured
     `frob.toml`'s test-runner registry (the same posture
-    `collect_python_tests` already takes for collection)."""
-    from frob.gitio import run_argv
+    `collect_python_tests` already takes for collection).
 
+    Spawns with the CALLER's `FROB_WORKTREE`/`FROB_AGENT` lease env
+    stripped (T-0884): those two vars are set on the recording agent's own
+    process so every `frob ticket` invocation it makes is attributed to its
+    leased worktree, but they have no business governing the test process
+    THIS call spawns to verify a ticket's own node ids -- a test under
+    verification that itself does real git worktree operations against a
+    throwaway `tmp_path` fixture repo (e.g. `tests/test_ticket_land.py`)
+    would otherwise be refused by
+    `frob.tickets._worktree_guard.enforce_worktree_lease`, which sees the
+    recorder's lease pointing at an unrelated path and blocks the test's
+    own, legitimate mutation."""
     argv = ("uv", "run", "pytest", *node_ids, "-q", "-o", "addopts=")
-    spawned = run_argv(argv, cwd=root, timeout_s=300.0)
-    if spawned.is_err:
+    env = {
+        key: value
+        for key, value in os.environ.items()
+        if key not in _WORKTREE_LEASE_ENV_VARS
+    }
+    try:
+        guarded = guarded_subprocess_run(
+            list(argv),
+            cwd=str(root),
+            capture_output=True,
+            timeout=300.0,
+            text=True,
+            check=False,
+            env=env,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        _log.warning(
+            "ticket evidence: direct pytest failed to spawn in %s: %s", root, exc
+        )
+        return False
+    if guarded.is_err:
         _log.warning("ticket evidence: direct pytest failed to spawn in %s", root)
         return False
-    return spawned.danger_ok.returncode == 0
+    return guarded.danger_ok.returncode == 0
 
 
 # frob:ticket T-0856

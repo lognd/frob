@@ -3988,6 +3988,7 @@ src/frob/app/config.py, and src/frob/__main__.py's exports parser, none of
 which were in T-0858's declared scope. Do this before or around the
 2026-10-01 T-0802 sunset so the CLI-level capability is not lost when
 `frob xref` porcelain is removed.
+
 <!-- ticket:T-0878 -->
 ```yaml
 id: T-0878
@@ -4137,7 +4138,7 @@ Found during T-0860: the strata SYS100 capability scanner's bare `eval(` needle 
 id: T-0884
 title: 'ticket evidence: direct-pytest verification leaks caller''s FROB_WORKTREE/FROB_AGENT
   lease env into the spawned test process'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-23'
@@ -4145,6 +4146,17 @@ priority: medium
 parent: null
 scope:
 - src/frob/app/ticket_runner.py
+- tests/test_ticket_runner_pytest_env.py
+scope_changes:
+- op: add
+  glob: tests/test_ticket_runner_pytest_env.py
+  reason: regression test file for the T-0884 fix, per ticket instructions to add
+    a regression test
+  actor: logan
+  at: '2026-07-26'
+evidence:
+- tests/test_ticket_runner_pytest_env.py::TestRunPytestDirectlyStripsLeaseEnv::test_strips_worktree_and_agent_env
+- tests/test_ticket_runner_pytest_env.py::TestRunPytestDirectlyStripsLeaseEnv::test_missing_lease_env_is_fine
 threat: null
 component: null
 ```
@@ -4176,6 +4188,31 @@ src/frob/app/ticket_runner.py -- strip FROB_AGENT/FROB_WORKTREE (and any
 other worktree-lease env) from the subprocess environment before spawning
 the verification pytest run, so a ticket's own evidence-recording step
 never leaks the recorder's own lease into the tests being verified.
+
+## Done report
+
+## Done report
+
+Changed: src/frob/app/ticket_runner.py::_run_pytest_directly
+Changed: src/frob/app/ticket_runner.py::_WORKTREE_LEASE_ENV_VARS
+Changed: tests/test_ticket_runner_pytest_env.py::TestRunPytestDirectlyStripsLeaseEnv
+
+Evidence: tests/test_ticket_runner_pytest_env.py::TestRunPytestDirectlyStripsLeaseEnv::test_strips_worktree_and_agent_env, tests/test_ticket_runner_pytest_env.py::TestRunPytestDirectlyStripsLeaseEnv::test_missing_lease_env_is_fine (both recorded via frob ticket evidence); manual repro confirmed tests/test_ticket_land.py::TestLand now passes when spawned by _run_pytest_directly with FROB_WORKTREE/FROB_AGENT set in the caller's own env (the exact leak scenario T-0884 describes).
+
+Filed: none
+
+Gates: frob check --ticket T-0884 clean across gates-fast, gates-native, gates-security, lint, static (--only stages, per FROB_AGENT chunking requirement); frob test --base main PASS (python exit=0)
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_ticket_runner_pytest_env.py::TestRunPytestDirectlyStripsLeaseEnv::test_strips_worktree_and_agent_env` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_runner_pytest_env.py::TestRunPytestDirectlyStripsLeaseEnv::test_missing_lease_env_is_fine` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0885 -->
 ```yaml
@@ -4397,6 +4434,7 @@ a fresh run, regardless of what killed the previous one.
 
 ## Drop reason
 - 2026-07-26: exact duplicate of T-0885 (same body, same scope)
+
 <!-- ticket:T-0891 -->
 ```yaml
 id: T-0891
@@ -4444,6 +4482,7 @@ never leaks the recorder's own lease into the tests being verified.
 
 ## Drop reason
 - 2026-07-26: exact duplicate of T-0884 (same body, same scope)
+
 <!-- ticket:T-0892 -->
 ```yaml
 id: T-0892
