@@ -513,12 +513,11 @@ node serve : trusted {
 // the ssh/VBoxManage calls are modeled as `exec` (a local subprocess
 // spawn), the same convention `fleet`'s ssh-adjacent git/uv subprocess
 // calls above already use, not as a separate `net` capability.
-// T-0860: the self-match false positive above is now SYS100-visible
-// (`frob.vet._capability`'s scanner still observes it and self-conform
-// diffs observed-vs-declared) -- `waive "SYS100:eval"` records the same
-// honest reasoning as a real waiver instead of leaving the finding red,
-// rather than papering over it with a `may "eval"` this comment already
-// proves is false.
+// T-0882: the T-0860 waiver below is REMOVED -- `frob.vet._capability`'s
+// scanner (`_needle_hits_as_bare_call`/`_BARE_CALL_NEEDLES`) no longer
+// treats `eval(`/`exec(` as a plain substring, so it no longer self-matches
+// `_conform.py::_mutation_for_eval`'s own function name (the identifier
+// merely ENDS in the text "eval(", it is not a bare builtin call site).
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 // frob:ticket T-0860
 node deploy : trusted {
@@ -528,7 +527,6 @@ node deploy : trusted {
     attr flag=frob_check_exec_kill_switch;
     may "fs";
     may "fs-read";
-    waive "SYS100:eval" reason "scanner self-match false positive: bare-eval(-shaped needle matches _conform.py::_mutation_for_eval's own function name (the substring eval( inside the identifier), not a real eval/exec builtin call -- direct grep of src/frob/deploy/** confirms zero real eval(/exec( calls" ticket "T-0882";
 }
 
 // vet: src/frob/vet/**. Dependency-vetting -- the ONE component that

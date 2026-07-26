@@ -377,6 +377,33 @@ def _needle_hits_outside_comments(
         start = idx + 1
 
 
+# frob:ticket T-0882
+def _needle_hits_as_bare_call(
+    haystack: bytes, needle: bytes, comment_spans: tuple[ByteSpan, ...]
+) -> bool:
+    """Sibling of `_needle_hits_outside_comments` for a needle that must be a
+    BARE builtin call, not merely a substring (T-0882, same class as T-0151's
+    `_has_bare_compile_call`): an occurrence only counts when the byte
+    immediately before it is neither an identifier character nor `.`. A plain
+    substring match on a call-shaped needle like `eval(`/`exec(` fires on any
+    identifier that merely ENDS with that text -- e.g. `_mutation_for_eval(`,
+    a function NAME, not a real `eval` call site -- and the `.`-exclusion
+    additionally keeps a dotted method access (`obj.exec(`) from counting as
+    the bare builtin. `_BARE_CALL_NEEDLES` names which needle strings route
+    through this stricter check instead of `_needle_hits_outside_comments`."""
+    start = 0
+    while True:
+        idx = haystack.find(needle, start)
+        if idx == -1:
+            return False
+        end = idx + len(needle)
+        prev = haystack[idx - 1 : idx] if idx > 0 else b""
+        is_bare = prev != b"." and not _is_identifier_byte(prev)
+        if is_bare and not _fully_in_any_span(idx, end, comment_spans):
+            return True
+        start = idx + 1
+
+
 # T-0244: embedded-code blind spot. Every needle table above only ever
 # scans a file's OWN source-grammar text; a large HTML/JS-shaped STRING
 # LITERAL sitting inside a Python module (the malmberg pilot P3 shape -- a
@@ -597,6 +624,19 @@ _SPECIAL_CHECKS: dict[str, dict[str, tuple[_SpecialCheck, ...]]] = {
     # inside the unrelated word "openapi" -- see _has_word_boundary_napi.
     "typescript": {"ffi": (_has_word_boundary_napi,)},
 }
+
+#: Registry needle strings (as UTF-8 bytes) that `_matched_capabilities`
+#: routes through `_needle_hits_as_bare_call` instead of plain-substring
+#: `_needle_hits_outside_comments` (T-0882). `eval(`/`exec(` are call-shaped
+#: builtin needles -- unlike a dotted needle such as `ImageMath.eval(` or
+#: `page.evaluate(` (also filed under the `eval` capability kind but never a
+#: bare-identifier suffix hazard), a plain substring match on these two
+#: fires on any identifier merely ENDING in that text (`_mutation_for_eval(`,
+#: a function NAME). Keeping this as a needle-level opt-out here (rather
+#: than editing the registry's needle tuple) leaves the registry's needle
+#: text unchanged for `_scan_file_operations`'s verbatim citation.
+# frob:ticket T-0882
+_BARE_CALL_NEEDLES: frozenset[bytes] = frozenset({b"eval(", b"exec("})
 
 # T-0328: import/binding-aware resolution for Python, the priority language
 # (highest coverage). The plain substring scan above is EVADED by ordinary
@@ -2952,6 +2992,7 @@ def scan_file_capabilities(path: Path) -> frozenset[str]:
     return frozenset(found)
 
 
+# frob:ticket T-0882
 def _matched_capabilities(
     text: bytes,
     table: dict[str, tuple[str, ...]],
@@ -2960,14 +3001,21 @@ def _matched_capabilities(
 ) -> set[str]:
     """Capability tokens whose needle set appears anywhere in `text` outside
     a comment span (T-0209), plus any `_SPECIAL_CHECKS` hit for that
-    language/capability (T-0151)."""
+    language/capability (T-0151). A needle listed in `_BARE_CALL_NEEDLES`
+    (T-0882: `eval(`/`exec(`) additionally requires a bare-builtin-call
+    boundary, not just substring presence -- see `_needle_hits_as_bare_call`."""
     found: set[str] = set()
     for capability, needles in table.items():
-        if any(
-            _needle_hits_outside_comments(text, needle.encode("utf-8"), comment_spans)
-            for needle in needles
-        ):
-            found.add(capability)
+        for needle in needles:
+            needle_bytes = needle.encode("utf-8")
+            hit = (
+                _needle_hits_as_bare_call(text, needle_bytes, comment_spans)
+                if needle_bytes in _BARE_CALL_NEEDLES
+                else _needle_hits_outside_comments(text, needle_bytes, comment_spans)
+            )
+            if hit:
+                found.add(capability)
+                break
     for capability, checks in _SPECIAL_CHECKS.get(language, {}).items():
         if any(check(text, comment_spans) for check in checks):
             found.add(capability)
@@ -4082,14 +4130,25 @@ def _extra_c_binding_operations(
     return extra
 
 
+# frob:ticket T-0882
 def _operation_entry_matches(
     entry: _DangerousOperation, raw: bytes, comment_spans: tuple[ByteSpan, ...]
 ) -> bool:
     """Whether one `DANGEROUS_OPERATIONS` entry's needle(s) (or bare-compile
-    special check) hit in `raw` outside `comment_spans`."""
+    special check) hit in `raw` outside `comment_spans`. T-0882: a needle in
+    `_BARE_CALL_NEEDLES` (`eval(`/`exec(`) requires a bare-builtin-call
+    boundary here too, the same rule `_matched_capabilities` applies -- an
+    entry citing `eval(`/`exec(` must not fire on an identifier that merely
+    ends with that text (`_mutation_for_eval(`)."""
     if entry.needles:
         return any(
-            _needle_hits_outside_comments(raw, needle.encode("utf-8"), comment_spans)
+            (
+                _needle_hits_as_bare_call(raw, needle.encode("utf-8"), comment_spans)
+                if needle.encode("utf-8") in _BARE_CALL_NEEDLES
+                else _needle_hits_outside_comments(
+                    raw, needle.encode("utf-8"), comment_spans
+                )
+            )
             for needle in entry.needles
         )
     if entry.language == "python" and entry.function_or_pattern.startswith("compile("):
