@@ -272,6 +272,28 @@ say so in your Done report; do not work around the guard.
   run) -- otherwise repo-wide collection hard-fails (T-0144) and the CLI
   cannot record anything, for any ticket, not just ones touching strata.
 
+## 5b. Recording evidence for `tests/system/**` needs no `FROB_AGENT`/`FROB_WORKTREE` care (T-0880, fixed)
+
+Section 1's `FROB_WORKTREE=<path>` / `FROB_AGENT=1` shell env used to leak
+into `tests/system/**`'s own `run()` helper (`tests/system/conftest.py`),
+which spawns the real `frob` CLI as a subprocess via `os.environ | env`.
+Because that merge inherited the *dispatching* agent's own lease vars, a
+system test that called `run("check", ...)` unscoped inherited
+`FROB_AGENT` and tripped the section 3b bare-check refusal, and a test
+running `frob check`/`stamp-coverage` against its own `tmp_path` inherited
+`FROB_WORKTREE` and tripped the section 12b worktree-lease guard (cwd !=
+leased worktree) -- both spurious, since these tests simulate an end user
+invoking the CLI directly, never a dispatched worktree agent.
+
+`run()` now strips `FROB_AGENT`/`FROB_WORKTREE` from its base environment
+before merging in a test's own `env=` overrides, so a dispatching agent's
+shell-level lease vars can never leak into the subprocess under test. A
+test that specifically wants to exercise `FROB_AGENT`/`FROB_WORKTREE`
+behavior still can -- pass it explicitly via `run(..., env={"FROB_AGENT":
+"1"})`, as `TestCheckAgentRefusal` already does. You do not need to unset
+your shell's lease env before recording evidence for `tests/system/**`
+tickets; the helper handles it.
+
 ## 6. Gate measurement discipline
 
 Prefer `frob check --delta` against a stamped baseline over stash-isolation

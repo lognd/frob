@@ -11,7 +11,9 @@ FIXTURES = Path(__file__).parent.parent / "fixtures"
 
 
 # frob:ticket T-0627
+# frob:ticket T-0880
 # frob:tests tests/system/test_cli_check.py::TestCheckAgentRefusal.test_bare_check_refuses_under_frob_agent  # noqa: E501
+# frob:tests tests/system/test_run_helper_env_leak.py::TestRunHelperEnvLeak.test_run_strips_dispatch_agent_env_vars  # noqa: E501
 def run(*args, input=None, cwd=None, env=None):
     """Run the `frob` CLI as a subprocess and capture its result (T-0364:
     the one shared entry point every system test dispatches through).
@@ -21,10 +23,22 @@ def run(*args, input=None, cwd=None, env=None):
     inherit-plus-override shape every other subprocess call in this suite
     relies on implicitly (PATH, the venv, etc.), needed so a test can flip
     one variable (e.g. `FROB_AGENT`) without losing the rest.
+
+    T-0880: `FROB_AGENT`/`FROB_WORKTREE` are always stripped from the base
+    environment before merging (unless a test explicitly sets them via
+    `env`). System tests simulate an end user invoking the CLI directly --
+    never a dispatched worktree agent -- so a *dispatching* agent's own
+    lease env (set in its shell per the agent playbook, to satisfy `frob
+    check`/`frob ticket` gate commands) must not leak into the subprocess
+    under test, or it spuriously trips the T-0627 bare-check refusal / the
+    T-0836 worktree-lease guard for tests that never asked for either.
     """
     import os
 
-    merged_env = os.environ | env if env else None
+    base_env = {
+        k: v for k, v in os.environ.items() if k not in ("FROB_AGENT", "FROB_WORKTREE")
+    }
+    merged_env = base_env | env if env else base_env
     return subprocess.run(
         FROB + list(args),
         capture_output=True,
