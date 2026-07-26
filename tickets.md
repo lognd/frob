@@ -4219,7 +4219,7 @@ Gates: frob check --ticket T-0884 clean across gates-fast, gates-native, gates-s
 id: T-0885
 title: 'mutate: leftover mutant journal not auto-restored on next run start (xdist
   worker crash / external SIGTERM, beyond T-0857''s own-crash detection)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-23'
@@ -4227,6 +4227,24 @@ priority: medium
 parent: null
 scope:
 - src/frob/mutate/**
+- tests/conftest.py
+- tests/test_mutate_journal.py
+scope_changes:
+- op: add
+  glob: tests/conftest.py
+  reason: regression tests + pytest-session-start restore hook for T-0885's leftover-journal
+    fix
+  actor: logan
+  at: '2026-07-26'
+- op: add
+  glob: tests/test_mutate_journal.py
+  reason: regression tests + pytest-session-start restore hook for T-0885's leftover-journal
+    fix
+  actor: logan
+  at: '2026-07-26'
+evidence:
+- tests/test_mutate_journal.py::test_pytest_session_start_restores_leftover_journal
+- tests/test_mutate_journal.py::test_pytest_session_start_skips_restore_on_xdist_worker
 threat: null
 component: null
 ```
@@ -4264,6 +4282,26 @@ a known-applied-mutant state expected by an in-progress run, and restore
 from the journal automatically -- generalizing T-0857's crash-detection
 restore to cover ANY leftover journal entry found stale at the start of
 a fresh run, regardless of what killed the previous one.
+
+## Done report
+
+Leftover mutant journals from an xdist worker crash or external SIGTERM were never restored on the next run start; T-0857 only covered frob mutate's own-crash path. A pytest_configure hook in tests/conftest.py now calls frob.mutate.restore_stale_journals at session start (controller only, skipped on xdist workers), so a corrupted on-disk target left by a killed mutation run is healed before any test executes. Two regression tests reproduce the dead-PID journal incident and the xdist-worker skip.
+
+### Changed
+```
+ tests/conftest.py            | 35 ++++++++++++++++++
+ tests/test_mutate_journal.py | 70 ++++++++++++++++++++++++++++++++++--
+ tickets.md                   | 86 +++++++++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 188 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+- `tests/test_mutate_journal.py::test_pytest_session_start_restores_leftover_journal` (pytest node id, verified passing when recorded)
+- `tests/test_mutate_journal.py::test_pytest_session_start_skips_restore_on_xdist_worker` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0886 -->
 ```yaml

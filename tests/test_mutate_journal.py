@@ -8,6 +8,9 @@ from __future__ import annotations
 
 import subprocess
 from pathlib import Path
+from typing import cast
+
+import pytest
 
 from frob.mutate import MutateError, run_mutations
 from frob.mutate._journal import (
@@ -189,8 +192,6 @@ def test_write_journal_cleans_up_temp_file_on_replace_failure(tmp_path, monkeypa
     # underlying `os.replace` failure itself still propagates (write_journal
     # does not swallow it into a Result) -- only the leftover-temp-file
     # side effect is the bug this guards against.
-    import pytest
-
     from frob.mutate import _journal as journal_mod
 
     target = tmp_path / "m.py"
@@ -265,6 +266,71 @@ def test_run_mutations_journals_and_cleans_up_on_success(tmp_path):
     assert result.is_ok, result.err
     # normal exit: no journal left behind
     assert list_stale_journals(tmp_path) == ()
+
+
+def test_pytest_session_start_restores_leftover_journal(tmp_path, monkeypatch):
+    # frob:ticket T-0885
+    # frob:tests \
+    # tests/test_mutate_journal.py::test_pytest_session_start_restores_leftover_journal
+    # T-0885: generalize T-0857's crash-restore beyond `run_mutations`'
+    # own call site. Simulates the exact incident this ticket describes --
+    # an xdist worker crash / external SIGTERM leaves a stale journal and a
+    # corrupted target on disk, with NO subsequent `frob mutate` call ever
+    # made against that target -- and asserts `conftest.py`'s
+    # `pytest_configure` hook (the generalized restore point) still
+    # recovers it, standing in for the next pytest session's startup.
+    import tests.conftest as repo_conftest
+
+    original = b"true original bytes\n"
+    target = tmp_path / "m.py"
+    target.write_bytes(original)
+    write_journal(tmp_path, target, original, pid=_dead_pid())
+    # simulate the crash: the leftover mutant sits on disk, uncleaned
+    target.write_bytes(b"MUTANT LEFT BY CRASHED WORKER\n")
+    assert list_stale_journals(tmp_path)
+
+    monkeypatch.setattr(repo_conftest, "_REPO_ROOT", tmp_path)
+
+    class _FakeConfigNoWorker:
+        """Stand-in for `pytest.Config` on the xdist CONTROLLER process --
+        no `workerinput` attribute, matching real xdist's own contract."""
+
+    repo_conftest.pytest_configure(cast("pytest.Config", _FakeConfigNoWorker()))
+
+    assert target.read_bytes() == original
+    assert list_stale_journals(tmp_path) == ()
+
+
+def test_pytest_session_start_skips_restore_on_xdist_worker(tmp_path, monkeypatch):
+    # frob:ticket T-0885
+    # frob:tests \
+    # tests/test_mutate_journal.py::test_pytest_session_start_skips_restore_on_xdist_wor\
+    # ker
+    # Restoring from every xdist WORKER process (not just the controller)
+    # would be redundant at best and a `write_journal`-style race at
+    # worst -- the hook must no-op there and leave the journal untouched
+    # for the controller to handle.
+    import tests.conftest as repo_conftest
+
+    original = b"true original bytes\n"
+    target = tmp_path / "m.py"
+    target.write_bytes(original)
+    write_journal(tmp_path, target, original, pid=_dead_pid())
+    target.write_bytes(b"MUTANT LEFT BY CRASHED WORKER\n")
+
+    monkeypatch.setattr(repo_conftest, "_REPO_ROOT", tmp_path)
+
+    class _FakeConfigWorker:
+        """Stand-in for `pytest.Config` on an xdist WORKER process --
+        `workerinput` is present there (real xdist sets it)."""
+
+        workerinput = {}
+
+    repo_conftest.pytest_configure(cast("pytest.Config", _FakeConfigWorker()))
+
+    # untouched: the worker deliberately did not restore
+    assert target.read_bytes() == b"MUTANT LEFT BY CRASHED WORKER\n"
+    assert list_stale_journals(tmp_path)
 
 
 def test_run_mutations_journal_collision_aborts_with_journal_collision_error(

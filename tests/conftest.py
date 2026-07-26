@@ -1,4 +1,39 @@
+from pathlib import Path
+
 import pytest
+
+from frob.mutate import restore_stale_journals
+
+# frob:ticket T-0885
+#: This repo's own worktree root -- the same root `frob mutate`/
+#: `run_mutations` journals backups under (`.frob/mutate-backup/`), so a
+#: leftover journal from a PREVIOUS pytest session (an xdist worker crash
+#: or an external SIGTERM killing the foreground pytest process, neither
+#: of which reaches `run_mutations`' own normal-exit restore) gets picked
+#: up here too.
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+
+
+# frob:ticket T-0885
+# frob:tests tests/test_mutate_journal.py::test_pytest_session_start_restores_leftover_journal kind="unit"  # noqa: E501
+def pytest_configure(config: pytest.Config) -> None:
+    """Restore any leftover mutation-journal backup at the START of the
+    whole pytest session (T-0885), generalizing T-0857's `run_mutations`-
+    only crash restore: an xdist worker crash or an external SIGTERM
+    killing pytest mid-mutation never reaches `run_mutations`' own
+    normal-exit restore, so a stale journal in `.frob/mutate-backup/`
+    would otherwise sit unused (and the corrupted target file un-restored)
+    until someone happens to invoke `frob mutate` against that same
+    target again. Runs only on the controller process under
+    `pytest-xdist` (`config.workerinput` is absent there, present on every
+    worker) -- every worker restoring the same journals concurrently would
+    be redundant at best and a `write_journal`-style race at worst, and
+    `run_mutations` itself already re-checks at its own call site so a
+    worker that legitimately needs a clean target still gets one."""
+    if hasattr(config, "workerinput"):
+        return
+    restore_stale_journals(_REPO_ROOT)
+
 
 PY_SAMPLE = b"""\
 import os
