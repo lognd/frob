@@ -10,8 +10,11 @@ point of `land` is real merge/conflict/deletion behavior.
 
 from __future__ import annotations
 
+import multiprocessing
 import os
+import signal
 import subprocess
+import time
 from collections.abc import Callable, Sequence
 from datetime import date
 from pathlib import Path
@@ -4194,3 +4197,188 @@ class TestCloseSkipMutationEvidenceBypass:
         loaded = load_all(tmp_path)
         assert loaded.is_ok
         assert loaded.danger_ok["T-0900"].state == TicketState.IN_PROGRESS
+
+
+# frob:ticket T-0907
+class TestVerifiedResetRoot:
+    """T-0907: `_verified_reset_root` replaces every bare `git reset --hard`
+    unwind in `land`'s squash-apply stage. A bare reset resolves its target
+    from whatever `HEAD` happens to be AT RESET TIME -- the real incident
+    this closes was a killed land whose unwind reset main to a stale tip
+    ~60 commits behind, because at reset time root's `HEAD` had already
+    (somehow) drifted from what the run started with. `_verified_reset_root`
+    resets to an EXPLICIT sha captured at run start instead, and refuses
+    loudly -- performing NO reset at all -- if root's current tip no longer
+    matches it."""
+
+    def test_resets_to_the_explicit_pre_land_tip_when_current_matches(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestVerifiedResetRoot.test_resets_to_the_explicit_pre_land_tip_when_current_matches  # noqa: E501
+        pre = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        (repo / "scratch.txt").write_text("staged but never committed\n")
+        _run(["git", "add", "scratch.txt"], repo)
+
+        result = _land_mod._verified_reset_root(repo, pre, "T-TEST")
+        assert result.is_ok, result.err
+        assert _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == pre
+        assert _status_ignoring_frob(repo) == ""
+
+    def test_refuses_and_does_not_reset_when_current_tip_has_drifted(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestVerifiedResetRoot.test_refuses_and_does_not_reset_when_current_tip_has_drifted  # noqa: E501
+        pre = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        (repo / "another.txt").write_text("a real commit made after pre was captured\n")
+        _commit_all(repo, "advance main past the recorded pre-land tip")
+        drifted_tip = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        assert drifted_tip != pre
+
+        result = _land_mod._verified_reset_root(repo, pre, "T-TEST")
+        assert result.is_err
+        assert result.danger_err == LandError.GitFailed
+        # NOT reset -- the drifted commit must still be there, untouched.
+        assert _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == drifted_tip
+
+
+# frob:ticket T-0907
+class TestLandRepairMarker:
+    """T-0907: `_repair_stale_land_marker` reconciles a crashed land's
+    leftover land-repair marker at the start of the NEXT `land()` call
+    against the same root/ticket."""
+
+    def test_no_marker_is_a_silent_no_op(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandRepairMarker.test_no_marker_is_a_silent_no_op  # noqa: E501
+        result = _land_mod._repair_stale_land_marker(repo)
+        assert result.is_ok
+
+    def test_repair_resets_root_when_current_tip_matches_the_marker(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandRepairMarker.test_repair_resets_root_when_current_tip_matches_the_marker  # noqa: E501
+        pre = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        _land_mod._write_land_repair_marker(repo, "T-9999", pre)
+        (repo / "leftover.txt").write_text("leftover staged squash content\n")
+        _run(["git", "add", "leftover.txt"], repo)
+
+        result = _land_mod._repair_stale_land_marker(repo)
+        assert result.is_ok, result.err
+        assert _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == pre
+        assert _status_ignoring_frob(repo) == ""
+        marker = _land_mod._land_repair_marker_path(repo, "T-9999")
+        assert not marker.exists()
+
+    def test_repair_refuses_loudly_when_current_tip_has_drifted_from_the_marker(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandRepairMarker.test_repair_refuses_loudly_when_current_tip_has_drifted_from_the_marker  # noqa: E501
+        pre = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        _land_mod._write_land_repair_marker(repo, "T-9999", pre)
+        (repo / "advance.txt").write_text("a real commit landed since the marker\n")
+        _commit_all(repo, "advance main past the marker's recorded tip")
+        drifted = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+
+        result = _land_mod._repair_stale_land_marker(repo)
+        assert result.is_err
+        assert result.danger_err == LandError.GitFailed
+        # refuses WITHOUT resetting -- the drifted commit must survive, and
+        # the marker must be left in place for a human to inspect.
+        assert _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == drifted
+        marker = _land_mod._land_repair_marker_path(repo, "T-9999")
+        assert marker.exists()
+
+
+def _t0907_child_land(
+    root: Path, ticket_id: str, worktree: Path, ready_path: Path
+) -> None:
+    """Multiprocessing target (module-level so `fork` can spawn it, T-0907):
+    monkeypatches `frob.tickets._land.run_argv` (this CHILD process's own
+    copy of the module, `fork` gives every child an independent
+    copy-on-write memory image) so that once `land()`'s squash-apply merge
+    onto `root` actually runs, it signals readiness (`ready_path`) and then
+    sleeps well past however long the parent needs to `SIGKILL` this
+    process -- reproducing "killed mid-staging" deterministically instead
+    of relying on timing luck against a real 580s coordinator timeout."""
+    from typani.result import Result
+
+    import frob.tickets._land as land_mod
+
+    real_run_argv = land_mod.run_argv
+
+    def _patched(
+        argv: Sequence[str], *, cwd: Path | None = None, timeout_s: int | float = 30.0
+    ) -> Result[ProcResult, GitError]:
+        result = real_run_argv(argv, cwd=cwd, timeout_s=timeout_s)
+        if "merge" in argv and "--squash" in argv:
+            ready_path.write_text("ready\n")
+            time.sleep(30)
+        return result
+
+    setattr(land_mod, "run_argv", _patched)  # noqa: B010
+    land_mod.land(root, ticket_id, worktree, dry_run=False)
+
+
+# frob:ticket T-0907
+class TestSigkillMidStaging:
+    """T-0907's own regression lock: a real `SIGKILL` (uncatchable by any
+    in-process signal handler, unlike SIGTERM) delivered while `land()` is
+    mid-squash-apply onto root must leave root's tip completely unchanged,
+    and the crash must be repairable by the next `land()` call for the same
+    ticket -- the incident this ticket exists to close was the opposite: a
+    killed land's own unwind reset main to a stale tip ~60 commits behind."""
+
+    def test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestSigkillMidStaging.test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry  # noqa: E501
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-kill", str(wt)], repo)
+        created = new_ticket(wt, _spec("Add killable", scope=("src/killable.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "killable.py").write_text("# new file\n")
+        _commit_all(wt, "add killable")
+
+        before_main_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        ready_path = repo.parent / "ready.flag"
+
+        ctx = multiprocessing.get_context("fork")
+        proc = ctx.Process(target=_t0907_child_land, args=(repo, tid, wt, ready_path))
+        proc.start()
+        deadline = time.monotonic() + 20
+        while not ready_path.exists() and time.monotonic() < deadline:
+            time.sleep(0.05)
+        assert ready_path.exists(), "child land() never reached the squash-apply step"
+        assert proc.pid is not None
+        os.kill(proc.pid, signal.SIGKILL)
+        proc.join(timeout=15)
+        assert not proc.is_alive()
+
+        # The kill must not have moved root's tip AT ALL.
+        after_kill_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        assert after_kill_sha == before_main_sha
+
+        # A land-repair marker must survive the kill, recording exactly
+        # this run's pre-land tip.
+        marker_dir = repo / ".frob" / "land-repair"
+        marker_files = list(marker_dir.glob("*.json"))
+        assert len(marker_files) == 1, marker_files
+
+        # The killed run already finalized/renumbered the draft id (and
+        # closed it) in the worktree before its own crash -- exactly the
+        # T-0795 retry shape (TestLandRetryAfterFinalizeThenFail above):
+        # the retry addresses the ticket by its now-finalized id.
+        wt_tickets = load_all(wt).danger_ok
+        final_id = next(i for i, t in wt_tickets.items() if t.state == TicketState.DONE)
+
+        # The next `land()` call for the same ticket reconciles the marker
+        # (root's tip still matches it -- the crash happened before any
+        # commit landed on root) and actually lands.
+        result = land(repo, final_id, wt, dry_run=False)
+        assert result.is_ok, result.err
+        assert not marker_files[0].exists()
+        assert (repo / "src" / "killable.py").exists()
+        after_retry_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        assert after_retry_sha != before_main_sha
+        assert _status_ignoring_frob(repo) == ""

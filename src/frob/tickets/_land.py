@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import fnmatch
 import importlib
+import json
 import os
 import re
 from collections.abc import Callable, Iterator, Sequence
@@ -162,6 +163,248 @@ def _land_lock(root: Path) -> Iterator[None]:
         fcntl.flock(fd, fcntl.LOCK_UN)
         os.close(fd)
         _log.debug("land: _land_lock released (%s)", path)
+
+
+# frob:ticket T-0907
+# T-0907 incident: a killed `land()` (SIGTERM/SIGKILL mid-staging) used to
+# unwind root's squash-staging via a BARE `git reset --hard` (target
+# defaults to whatever `HEAD` resolves to AT THAT MOMENT) -- if root's
+# `HEAD`/branch ref was itself corrupted mid-run by the kill (a torn
+# ref-update from an interrupted git subprocess sharing the kill's process
+# group), that bare reset silently CEMENTED the corruption onto main
+# instead of restoring it, observed once as a ~60-commit regression only
+# caught because a human happened to check the reflog before the next
+# `land` committed anything new. `_verified_reset_root`/the land-repair
+# marker below close this two ways: (1) every unwind site now resets to an
+# EXPLICIT sha (`pre_land_tip`, captured via `git rev-parse HEAD` once at
+# THIS run's start and threaded through as a plain local value -- never
+# re-derived from a possibly-corrupted `HEAD` and never stored in shared
+# `.frob` state), refusing loudly instead of resetting at all if root's
+# current tip has already drifted from that recorded value by the time an
+# unwind runs; (2) a marker file recorded under `root`'s `.frob/` BEFORE
+# `_land_squash_apply` starts mutating root survives an uncatchable
+# SIGKILL (a Python signal handler cannot trap that signal at all) and is
+# reconciled by `_repair_stale_land_marker` at the START of the NEXT
+# `land()` call against the same `root`/ticket -- the "leave an explicit
+# marker the next invocation repairs" half of the T-0907 fix requirement.
+_LAND_REPAIR_DIRNAME = "land-repair"
+
+
+# frob:ticket T-0907
+def _land_repair_dir(root: Path) -> Path:
+    """`<root>/.frob/land-repair`, where a crashed `land()`'s pre-mutation
+    root tip is recorded (T-0907) so a later invocation can reconcile it."""
+    return root / ".frob" / _LAND_REPAIR_DIRNAME
+
+
+# frob:ticket T-0907
+def _land_repair_marker_path(root: Path, ticket_id: str) -> Path:
+    """The per-ticket land-repair marker path under `root` (T-0907)."""
+    return _land_repair_dir(root) / f"{ticket_id}.json"
+
+
+# frob:ticket T-0907
+def _write_land_repair_marker(root: Path, ticket_id: str, pre_land_tip: str) -> None:
+    """Record `pre_land_tip` (this run's verified pre-mutation root tip)
+    under `root`'s land-repair marker for `ticket_id` (T-0907), BEFORE
+    `_land_squash_apply` starts mutating `root` -- so a crash between this
+    write and `_clear_land_repair_marker` (including an uncatchable
+    SIGKILL) leaves a durable record of what `root`'s tip legitimately was
+    before this run touched anything, for `_repair_stale_land_marker` to
+    reconcile on the next `land()` call. Best-effort, like the T-0456
+    intent journal: a write failure is logged but does not itself fail the
+    land, since the pre-existing (pre-T-0907) safety net -- root untouched
+    until `_commit_squash_apply`'s final commit -- still holds even with no
+    marker recorded; the marker is an ADDITIONAL recovery aid, not the sole
+    line of defense."""
+    path = _land_repair_marker_path(root, ticket_id)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps({"ticket_id": ticket_id, "pre_land_tip": pre_land_tip}) + "\n",
+            encoding="utf-8",
+        )
+    except OSError as exc:
+        _log.warning(
+            "land: %s could not write land-repair marker (%s) -- proceeding "
+            "without the T-0907 crash-repair aid for this run",
+            ticket_id,
+            exc,
+        )
+
+
+# frob:ticket T-0907
+def _clear_land_repair_marker(root: Path, ticket_id: str) -> None:
+    """Remove `ticket_id`'s land-repair marker under `root`, if any
+    (T-0907) -- called when `_land_squash_apply` returns for ANY reason
+    (success or a clean, handled `Err`), from a `finally` block, mirroring
+    `_clear_intent`'s same unconditional-cleanup shape."""
+    path = _land_repair_marker_path(root, ticket_id)
+    try:
+        path.unlink(missing_ok=True)
+    except OSError as exc:
+        _log.warning("land: %s could not clear land-repair marker: %s", ticket_id, exc)
+
+
+# frob:ticket T-0907
+# frob:tests tests/test_ticket_land.py::TestLandRepairMarker.test_repair_resets_root_when_current_tip_matches_the_marker  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestLandRepairMarker.test_repair_refuses_loudly_when_current_tip_has_drifted_from_the_marker  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestLandRepairMarker.test_no_marker_is_a_silent_no_op  # noqa: E501
+def _repair_stale_land_marker(root: Path) -> Result[None, LandError]:
+    """Reconcile every leftover T-0907 land-repair marker under `root`, if
+    any exist -- called at the very start of `_land_locked`, under `root`'s
+    `_land_lock`, before this run captures its OWN pre-land tip.
+
+    Scans `root`'s ENTIRE land-repair directory rather than looking up one
+    marker by THIS call's own `ticket_id`: a crash can happen AFTER
+    `_land_finalize_and_close` has already renumbered a draft id to its
+    real sequential id (`_write_land_repair_marker` records under the id
+    `_land_locked` was CALLED with, which for a draft ticket is the
+    pre-finalize draft id), so a human's natural retry -- exactly the
+    T-0795 `TestLandRetryAfterFinalizeThenFail` shape this reuses -- passes
+    the now-finalized id, which would never match a marker filename keyed
+    to the draft id it replaced. `root`'s `_land_lock` guarantees at most
+    one `land()` is ever in flight against `root` at a time, so ANY marker
+    found here unambiguously belongs to a fully-finished-or-crashed PRIOR
+    attempt, never this one -- reconciling all of them, regardless of the
+    id in this call, is always correct.
+
+    No marker at all is the overwhelmingly common case and is a silent
+    no-op (`Ok(None)`) -- most `land()` calls never crash mid-staging.
+
+    For each marker found: if `root`'s CURRENT tip still equals the
+    marker's recorded `pre_land_tip`, the crash happened before any commit
+    landed on `root` (the pre-T-0907 safety net -- root is never committed
+    to until `_commit_squash_apply`'s final step -- held), so this resets
+    `root` to that same tip (explicit, not bare) and cleans any leftover
+    staged/conflicted squash state, then clears the marker and continues to
+    the next one.
+
+    When `root`'s current tip has DRIFTED from a marker's recorded value,
+    this is the exact ambiguous condition the T-0907 incident's reset
+    blindly cemented -- refuses loudly (`Err(GitFailed)`) instead of
+    resetting anything, naming both shas and pointing at manual
+    reflog/log inspection, and leaves that marker (and any not yet
+    processed) in place so the next attempt sees the same refusal until a
+    human resolves it."""
+    marker_dir = _land_repair_dir(root)
+    if not marker_dir.is_dir():
+        return Ok(None)
+
+    for marker_path in sorted(marker_dir.glob("*.json")):
+        marker_ticket_id = marker_path.stem
+        try:
+            raw = json.loads(marker_path.read_text(encoding="utf-8"))
+            recorded_tip = str(raw["pre_land_tip"])
+        except (OSError, ValueError, KeyError) as exc:
+            _log.error(
+                "land: found an unreadable T-0907 land-repair marker at %s "
+                "(%s) -- a prior `frob ticket land %s` crashed mid-staging "
+                "but its recorded pre-land tip could not be read; inspect "
+                "%s and `git -C %s reflog`/`git -C %s log --oneline -5` by "
+                "hand, confirm %s's tip is sound, then remove %s and retry",
+                marker_path,
+                exc,
+                marker_ticket_id,
+                marker_path,
+                root,
+                root,
+                root,
+                marker_path,
+            )
+            return Err(LandError.GitFailed)
+
+        current = _rev_parse(root, "HEAD")
+        if current.is_err:
+            return Err(current.danger_err)
+
+        if current.danger_ok != recorded_tip:
+            _log.error(
+                "land: refused -- a prior `frob ticket land %s` crashed "
+                "mid-staging (T-0907) with a land-repair marker recording "
+                "%s's pre-land tip as %s, but %s's CURRENT tip is %s -- "
+                "these differ, so the exact damage cannot be safely "
+                "auto-repaired; inspect `git -C %s reflog` and `git -C %s "
+                "log --oneline -5` by hand, confirm %s's tip is sound "
+                "(recover with `git -C %s reset --hard <known-good-sha>` "
+                "if not), then remove %s and retry",
+                marker_ticket_id,
+                root,
+                recorded_tip,
+                root,
+                current.danger_ok,
+                root,
+                root,
+                root,
+                root,
+                marker_path,
+            )
+            return Err(LandError.GitFailed)
+
+        _log.warning(
+            "land: repairing a prior crashed `frob ticket land %s` -- %s's "
+            "current tip (%s) matches the recorded pre-land tip, resetting "
+            "any leftover staged/conflicted state from the crashed run "
+            "(T-0907)",
+            marker_ticket_id,
+            root,
+            recorded_tip,
+        )
+        reset = run_argv(["git", "-C", str(root), "reset", "--hard", recorded_tip])
+        if reset.is_err or reset.danger_ok.returncode != 0:
+            return Err(LandError.GitFailed)
+        clean = run_argv(["git", "-C", str(root), "clean", "-fd"])
+        if clean.is_err or clean.danger_ok.returncode != 0:
+            return Err(LandError.GitFailed)
+        marker_path.unlink(missing_ok=True)
+        _log.info(
+            "land: %s T-0907 land-repair marker cleared, %s cleaned to %s",
+            marker_ticket_id,
+            root,
+            recorded_tip,
+        )
+    return Ok(None)
+
+
+# frob:ticket T-0907
+def _verified_reset_root(
+    root: Path, pre_land_tip: str, ticket_id: str
+) -> Result[None, LandError]:
+    """Unwind `root`'s staged squash-apply back to `pre_land_tip` -- the
+    T-0907 replacement for a bare `git reset --hard` (which resolves its
+    target from whatever `HEAD` happens to be AT RESET TIME, the exact
+    hazard the incident this ticket fixes exploited): resets to an
+    EXPLICIT sha captured once at this run's start, and refuses loudly
+    (`Err(GitFailed)`, no reset performed) if `root`'s current tip has
+    already drifted from `pre_land_tip` by the time this runs -- root's
+    tip must never move between this run's start and its own final commit
+    (`_commit_squash_apply`), so any drift here means something else
+    touched `root` mid-run and blindly resetting over it would risk
+    exactly the T-0907 incident class."""
+    current = _rev_parse(root, "HEAD")
+    if current.is_err:
+        return Err(current.danger_err)
+    if current.danger_ok != pre_land_tip:
+        _log.error(
+            "land: %s refused to unwind %s -- current tip is %s but this "
+            "run's recorded pre-land tip is %s (drift detected mid-"
+            "staging, T-0907) -- NOT resetting; inspect `git -C %s reflog` "
+            "and `git -C %s log --oneline -5` by hand before retrying",
+            ticket_id,
+            root,
+            current.danger_ok,
+            pre_land_tip,
+            root,
+            root,
+        )
+        return Err(LandError.GitFailed)
+    reset = run_argv(["git", "-C", str(root), "reset", "--hard", pre_land_tip])
+    if reset.is_err or reset.danger_ok.returncode != 0:
+        return Err(LandError.GitFailed)
+    clean = run_argv(["git", "-C", str(root), "clean", "-fd"])
+    if clean.is_err or clean.danger_ok.returncode != 0:
+        return Err(LandError.GitFailed)
+    return Ok(None)
 
 
 # frob:doc docs/modules/tickets.md#frob-ticket-land
@@ -1274,6 +1517,7 @@ def land(
 
 # frob:waive ARCH001 reason="already the decomposed orchestrator (T-0577): delegates to _land_precheck/_land_merge_stage/_reverify_evidence_post_merge/_land_finalize_and_close/_land_squash_apply; remaining length is the try/finally intent-marker sequencing plus the D-05/T-0456 ordering-rationale comments themselves, not undecomposed logic"  # noqa: E501
 # frob:ticket T-0601
+# frob:ticket T-0907
 def _land_locked(
     root: Path,
     ticket_id: str,
@@ -1292,7 +1536,25 @@ def _land_locked(
     """`land`'s actual body (T-0577), run by the caller already holding
     `root`'s `ledger_lock` -- split out only so `land`'s docstring can state
     the locking contract once at the public entry point rather than
-    interleaved with the implementation."""
+    interleaved with the implementation.
+
+    T-0907: before anything else, reconciles a leftover land-repair marker
+    for `ticket_id` (a prior `land()` against this same `root` that crashed
+    mid-staging, see `_repair_stale_land_marker`'s own doc), then captures
+    THIS run's own verified pre-mutation root tip (`root_pre_land_tip`) as
+    a plain local value -- never re-derived from `root`'s possibly-stale
+    `HEAD` later, and never stored in shared `.frob` state -- threaded
+    through to `_land_squash_apply` (the only step that mutates `root`) so
+    every unwind there resets to this exact sha instead of a bare `git
+    reset --hard`."""
+    repaired = _repair_stale_land_marker(root)
+    if repaired.is_err:
+        return Err(repaired.danger_err)
+
+    root_pre_land_tip = _rev_parse(root, "HEAD")
+    if root_pre_land_tip.is_err:
+        return Err(root_pre_land_tip.danger_err)
+
     precheck = _land_precheck(
         root,
         worktree,
@@ -1373,18 +1635,30 @@ def _land_locked(
             return Err(finalized.danger_err)
         final_id = finalized.danger_ok
 
-        return _land_squash_apply(
-            root,
-            worktree,
-            ticket,
-            ticket_id,
-            final_id,
-            wip_committed,
-            did_merge,
-            main_branch_name,
-            bump_version=bump_version,
-            rebuild_natives=rebuild_natives,
-        )
+        # T-0907: the land-repair marker is written right before the ONLY
+        # step that mutates `root` (`_land_squash_apply`) and cleared in
+        # this inner `finally` on any exit -- an uncatchable SIGKILL
+        # between these two points leaves the marker for
+        # `_repair_stale_land_marker` to reconcile on the NEXT `land()`
+        # call, closing the "leave an explicit marker the next invocation
+        # repairs" half of the T-0907 fix requirement.
+        _write_land_repair_marker(root, ticket_id, root_pre_land_tip.danger_ok)
+        try:
+            return _land_squash_apply(
+                root,
+                worktree,
+                ticket,
+                ticket_id,
+                final_id,
+                wip_committed,
+                did_merge,
+                main_branch_name,
+                pre_land_tip=root_pre_land_tip.danger_ok,
+                bump_version=bump_version,
+                rebuild_natives=rebuild_natives,
+            )
+        finally:
+            _clear_land_repair_marker(root, ticket_id)
     finally:
         _clear_intent(root, ticket_id)
 
@@ -2683,23 +2957,25 @@ def _commit_finalize_writes(worktree: Path, final_id: str) -> Result[None, LandE
     return Ok(None)
 
 
+# frob:ticket T-0907
 def _check_squash_conflicted(
-    root: Path, worktree: Path, ticket: Ticket, branch_name: str
+    root: Path, worktree: Path, ticket: Ticket, branch_name: str, pre_land_tip: str
 ) -> Result[None, LandError]:
     """`Err(SquashConflict)` (unwinding the squash) if any IN-SCOPE file
     besides tickets.md is still conflicted after the squash merge; any
     OUT-OF-SCOPE conflict is auto-resolved by taking main's side first
     (T-0479) -- main is `ours` here (root's checked-out branch, with the
-    worktree's finalized branch squash-merged in as `theirs`)."""
+    worktree's finalized branch squash-merged in as `theirs`). `pre_land_tip`
+    (T-0907) is this run's verified pre-mutation root tip, threaded through
+    to `_verified_reset_root` so every unwind here resets to an explicit sha
+    rather than a bare (HEAD-at-reset-time) `git reset --hard`."""
     resolved = _auto_resolve_out_of_scope_conflicts(root, ticket, keep="ours")
     if resolved.is_err:
-        run_argv(["git", "-C", str(root), "reset", "--hard"])
-        run_argv(["git", "-C", str(root), "clean", "-fd"])
-        return Err(resolved.danger_err)
+        unwound = _verified_reset_root(root, pre_land_tip, ticket.id)
+        return Err(unwound.danger_err if unwound.is_err else resolved.danger_err)
     remaining = resolved.danger_ok
     if remaining:
-        run_argv(["git", "-C", str(root), "reset", "--hard"])
-        run_argv(["git", "-C", str(root), "clean", "-fd"])
+        unwound = _verified_reset_root(root, pre_land_tip, ticket.id)
         _log.error(
             "land: %s squash-apply onto %s conflicts in scoped file(s): %s "
             "-- resolve manually (cd %s && git merge --squash %s), commit, "
@@ -2712,17 +2988,25 @@ def _check_squash_conflicted(
             ticket.id,
             worktree,
         )
-        return Err(LandError.SquashConflict)
+        return Err(unwound.danger_err if unwound.is_err else LandError.SquashConflict)
     return Ok(None)
 
 
+# frob:ticket T-0907
 def _squash_and_splice_ledger(
-    root: Path, worktree: Path, ticket: Ticket, final_id: str, branch_name: str
+    root: Path,
+    worktree: Path,
+    ticket: Ticket,
+    final_id: str,
+    branch_name: str,
+    pre_land_tip: str,
 ) -> Result[None, LandError]:
     """`git merge --squash --no-commit` the worktree's finalized `branch_name`
     onto `root`, then splice tickets.md; unwinds the squash on any
     conflict outside `ticket.scope` (or a true in-scope conflict), or a
-    splice failure."""
+    splice failure. `pre_land_tip` (T-0907) is this run's verified
+    pre-mutation root tip, threaded through to `_check_squash_conflicted`
+    and this function's own unwind."""
     root_pre_text = _read_ledger_text_or_empty(root)
 
     squash = run_argv(
@@ -2731,7 +3015,9 @@ def _squash_and_splice_ledger(
     if squash.is_err:
         return Err(LandError.GitFailed)
 
-    conflict_check = _check_squash_conflicted(root, worktree, ticket, branch_name)
+    conflict_check = _check_squash_conflicted(
+        root, worktree, ticket, branch_name, pre_land_tip
+    )
     # (ticket-scoped; final_id is used only for the ledger splice below)
     if conflict_check.is_err:
         return Err(conflict_check.danger_err)
@@ -2750,9 +3036,8 @@ def _squash_and_splice_ledger(
         ticket_id=final_id,
     )
     if spliced.is_err:
-        run_argv(["git", "-C", str(root), "reset", "--hard"])
-        run_argv(["git", "-C", str(root), "clean", "-fd"])
-        return Err(spliced.danger_err)
+        unwound = _verified_reset_root(root, pre_land_tip, final_id)
+        return Err(unwound.danger_err if unwound.is_err else spliced.danger_err)
     return Ok(None)
 
 
@@ -2891,33 +3176,38 @@ def _staged_files(root: Path) -> Result[frozenset[str], LandError]:
 
 
 # frob:ticket T-0463
+# frob:ticket T-0907
 def _assert_land_complete(
-    root: Path, worktree: Path, ticket_id: str, main_branch_name: str
+    root: Path,
+    worktree: Path,
+    ticket_id: str,
+    main_branch_name: str,
+    pre_land_tip: str,
 ) -> Result[frozenset[str], LandError]:
     """Post-squash, pre-commit completeness assertion (T-0463): the set of
     paths staged in `root`'s index must be a SUPERSET of everything the
     worktree changed relative to `main_branch_name` (tracked edits,
     untracked new files, deletions). If any worktree-changed file is
-    missing from staging, the squash is unwound (`reset --hard`, `clean
-    -fd`) and this returns `Err(IncompleteLand)` with the exact missing
-    paths logged -- the land never commits a silently-partial changeset.
-    Returns the worktree's full changeset on success (for the report)."""
+    missing from staging, the squash is unwound (`_verified_reset_root`,
+    T-0907 -- resets to the explicit `pre_land_tip`, not a bare `HEAD`) and
+    this returns `Err(IncompleteLand)` with the exact missing paths logged
+    -- the land never commits a silently-partial changeset. Returns the
+    worktree's full changeset on success (for the report)."""
     expected = _worktree_full_changeset(worktree, main_branch_name)
     if expected.is_err:
-        run_argv(["git", "-C", str(root), "reset", "--hard"])
-        run_argv(["git", "-C", str(root), "clean", "-fd"])
-        return Err(expected.danger_err)
+        unwound = _verified_reset_root(root, pre_land_tip, ticket_id)
+        return Err(unwound.danger_err if unwound.is_err else expected.danger_err)
 
     staged = _staged_files(root)
     if staged.is_err:
-        run_argv(["git", "-C", str(root), "reset", "--hard"])
-        run_argv(["git", "-C", str(root), "clean", "-fd"])
-        return Err(staged.danger_err)
+        unwound = _verified_reset_root(root, pre_land_tip, ticket_id)
+        return Err(unwound.danger_err if unwound.is_err else staged.danger_err)
 
     missing = expected.danger_ok - staged.danger_ok
     if missing:
-        run_argv(["git", "-C", str(root), "reset", "--hard"])
-        run_argv(["git", "-C", str(root), "clean", "-fd"])
+        unwound = _verified_reset_root(root, pre_land_tip, ticket_id)
+        if unwound.is_err:
+            return Err(unwound.danger_err)
         _log.error(
             "land: %s refused -- the staged squash-apply onto %s is missing "
             "file(s) the worktree changed: %s. This is the T-0463 "
@@ -3036,14 +3326,17 @@ def _touches_native_source(changeset: frozenset[str]) -> bool:
 
 
 # frob:ticket T-0338
+# frob:ticket T-0907
 def _apply_release_bump(
     root: Path,
     ticket: Ticket,
     final_id: str,
     bump_version: Callable[[Path, Ticket, str], Result[str | None, LandError]] | None,
+    pre_land_tip: str,
 ) -> Result[str | None, LandError]:
     """Invoke `bump_version(root, ticket, final_id)` if supplied, unwinding
-    the staged squash (`reset --hard`, `clean -fd`) on failure (T-0338).
+    the staged squash via `_verified_reset_root` (T-0907 -- resets to the
+    explicit `pre_land_tip`, not a bare `HEAD`) on failure (T-0338).
     `bump_version=None` (the library default) is a no-op returning
     `Ok(None)` -- see `land`'s docstring for why this is a caller-supplied
     callback rather than computed here."""
@@ -3058,9 +3351,8 @@ def _apply_release_bump(
             final_id,
             bumped.danger_err,
         )
-        run_argv(["git", "-C", str(root), "reset", "--hard"])
-        run_argv(["git", "-C", str(root), "clean", "-fd"])
-        return Err(bumped.danger_err)
+        unwound = _verified_reset_root(root, pre_land_tip, final_id)
+        return Err(unwound.danger_err if unwound.is_err else bumped.danger_err)
     if bumped.danger_ok is not None:
         _log.info(
             "land: %s REL001 version bump applied and staged: -> %s",
@@ -3069,9 +3361,8 @@ def _apply_release_bump(
         )
         synced = _sync_uv_lock_for_land(root, final_id)
         if synced.is_err:
-            run_argv(["git", "-C", str(root), "reset", "--hard"])
-            run_argv(["git", "-C", str(root), "clean", "-fd"])
-            return Err(synced.danger_err)
+            unwound = _verified_reset_root(root, pre_land_tip, final_id)
+            return Err(unwound.danger_err if unwound.is_err else synced.danger_err)
     return bumped
 
 
@@ -3146,6 +3437,7 @@ def _maybe_rebuild_natives(
     return rebuilt
 
 
+# frob:ticket T-0907
 def _land_squash_apply(
     root: Path,
     worktree: Path,
@@ -3156,6 +3448,7 @@ def _land_squash_apply(
     did_merge: bool,
     main_branch_name: str,
     *,
+    pre_land_tip: str,
     bump_version: Callable[[Path, Ticket, str], Result[str | None, LandError]]
     | None = None,
     rebuild_natives: Callable[[Path], bool] | None = None,
@@ -3163,22 +3456,34 @@ def _land_squash_apply(
     """Squash-apply the worktree's finalized branch onto `root`, splice
     tickets.md, apply an optional REL001 version bump (T-0338), assert
     completeness (T-0463) BEFORE committing, commit, trigger an optional
-    native rebuild, and build the final `LandReport`."""
+    native rebuild, and build the final `LandReport`.
+
+    `pre_land_tip` (T-0907) is `root`'s verified `HEAD` sha captured by the
+    caller (`_land_locked`) BEFORE this function started mutating `root` --
+    every unwind path below (`_squash_and_splice_ledger`,
+    `_apply_release_bump`, `_assert_land_complete`) resets to this EXACT
+    value via `_verified_reset_root` rather than a bare `git reset --hard`,
+    the fix for the T-0907 stale-tip incident (see that ticket's module-
+    level comment above `_verified_reset_root`)."""
     branch = current_branch(worktree)
     if branch.is_err:
         return Err(LandError.GitFailed)
     branch_name = branch.danger_ok
 
-    squashed = _squash_and_splice_ledger(root, worktree, ticket, final_id, branch_name)
+    squashed = _squash_and_splice_ledger(
+        root, worktree, ticket, final_id, branch_name, pre_land_tip
+    )
     if squashed.is_err:
         return Err(squashed.danger_err)
 
-    bumped = _apply_release_bump(root, ticket, final_id, bump_version)
+    bumped = _apply_release_bump(root, ticket, final_id, bump_version, pre_land_tip)
     if bumped.is_err:
         return Err(bumped.danger_err)
     release_bumped_to = bumped.danger_ok
 
-    completeness = _assert_land_complete(root, worktree, ticket_id, main_branch_name)
+    completeness = _assert_land_complete(
+        root, worktree, ticket_id, main_branch_name, pre_land_tip
+    )
     if completeness.is_err:
         return Err(completeness.danger_err)
     worktree_changeset = completeness.danger_ok
