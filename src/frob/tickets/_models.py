@@ -1337,12 +1337,16 @@ class TicketError(ErrorSet):
         "live tracker; file a successor and re-point the citing rows, or "
         "re-point them in this same change, then retry"
     )
-    # T-0764: `archive()` refuses (unless `force=True`) when a live
-    # cross-worktree lease exists anywhere in the repo -- archiving during
-    # in-flight work is the hazard the T-0753 incident traced to.
+    # T-0764: `archive()` refuses (unless `force=True`) when a ticket it
+    # would move into tickets-archive.md still holds a live cross-worktree
+    # lease -- archiving during in-flight work is the hazard the T-0753
+    # incident traced to. T-0843: the CLI surface is `--force`, not the
+    # internal `force=True` kwarg -- the hint must name a copy-pastable
+    # command, per the repo's own violation-message convention.
     ArchiveLiveLeaseExists = (
-        "a live in-flight ticket lease exists; archive would run concurrently "
-        "with in-flight work -- pass force=True to override"
+        "a ticket this call would archive has a live in-flight lease; "
+        "archiving now would run concurrently with in-flight work -- run "
+        "in a quiet window or pass --force to override"
     )
     # T-0764: a ledger write whose rendered text would produce a section
     # with no marker line, or silently drop an id its input carried, is

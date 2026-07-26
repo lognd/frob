@@ -948,12 +948,17 @@ class TestArchive:
         assert created.is_err
 
 
+# frob:ticket T-0764
+# frob:ticket T-0843
 class TestArchiveRefusesDuringInFlightWork:
     """T-0764: `archive` refuses (unless `force=True`) while a live
-    cross-worktree lease exists anywhere in the repo -- the guard for the
-    T-0753 field incident (archive rewrote main's ledger mid-`start`,
-    which the in-flight worktree's later section-10b restore silently
-    reverted back to `queued` with empty evidence)."""
+    cross-worktree lease exists on a ticket it would move into
+    tickets-archive.md -- the guard for the T-0753 field incident (archive
+    rewrote main's ledger mid-`start`, which the in-flight worktree's
+    later section-10b restore silently reverted back to `queued` with
+    empty evidence). T-0843: narrowed from "any live lease anywhere in
+    the repo" to "a live lease on a ticket this call would actually
+    archive" -- a lease on unrelated in-progress work is not this hazard."""
 
     def _repo(self, tmp_path: Path) -> Path:
         import subprocess
@@ -996,8 +1001,9 @@ class TestArchiveRefusesDuringInFlightWork:
         # frob:tests tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork.test_archive_refuses_when_a_live_lease_exists  # noqa: E501
         root = self._repo(tmp_path)
         _write(root, _ticket(ticket_id="T-0001", state=TicketState.DONE), "done")
-        # T-0002's lease is live -- its worktree (root itself) exists on disk.
-        self._write_live_lease(root, "T-0002", root)
+        # T-0001 itself -- the ticket this call would move -- still holds a
+        # live lease (its worktree, root itself, exists on disk).
+        self._write_live_lease(root, "T-0001", root)
 
         result = archive(root)
         assert result.is_err
@@ -1013,7 +1019,7 @@ class TestArchiveRefusesDuringInFlightWork:
         # frob:tests tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork.test_archive_force_overrides_the_live_lease_refusal  # noqa: E501
         root = self._repo(tmp_path)
         _write(root, _ticket(ticket_id="T-0001", state=TicketState.DONE), "done")
-        self._write_live_lease(root, "T-0002", root)
+        self._write_live_lease(root, "T-0001", root)
 
         result = archive(root, force=True)
         assert result.is_ok
@@ -1027,14 +1033,36 @@ class TestArchiveRefusesDuringInFlightWork:
         _write(root, _ticket(ticket_id="T-0001", state=TicketState.DONE), "done")
         # The lease names a worktree path that does not exist on disk --
         # `read_all_leases` already filters this out as stale, so archive
-        # must proceed normally, not treat it as live in-flight work.
+        # must proceed normally, not treat it as live in-flight work, even
+        # though the stale lease is for the very ticket being archived.
         self._write_live_lease(
-            root, "T-0002", root / ".." / "gone-worktree-does-not-exist"
+            root, "T-0001", root / ".." / "gone-worktree-does-not-exist"
         )
 
         result = archive(root)
         assert result.is_ok
         assert result.danger_ok == 1
+
+    def test_archive_ignores_a_live_lease_for_a_ticket_it_would_not_touch(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork.test_archive_ignores_a_live_lease_for_a_ticket_it_would_not_touch  # noqa: E501
+        """T-0843: a live lease for a ticket archive would never move (it
+        is not DONE/DROPPED, so its own block is untouched) must not block
+        an unrelated ticket's archival -- the T-0753 guard only protects
+        tickets this call actually rewrites into tickets-archive.md."""
+        root = self._repo(tmp_path)
+        _write(root, _ticket(ticket_id="T-0001", state=TicketState.DONE), "done")
+        # T-0002's lease is live, but T-0002 is unrelated in-progress work
+        # that archive would never touch.
+        self._write_live_lease(root, "T-0002", root)
+
+        result = archive(root)
+        assert result.is_ok
+        assert result.danger_ok == 1
+
+        active = load_active(root).danger_ok
+        assert "T-0001" not in active.tickets
 
 
 class TestSingleFileLedger:

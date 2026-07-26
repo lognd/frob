@@ -89,7 +89,10 @@ class TestTicketArchiveForceCLI:
         # frob:tests tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI.test_refuses_without_force_when_a_live_lease_exists  # noqa: E501
         root = _repo(tmp_path)
         _make_done_ticket(root)
-        _write_live_lease(root, "T-0002", root)
+        # T-0001 itself -- the ticket archive would move -- still holds a
+        # live lease (T-0843: the guard now only cares about leases on
+        # tickets actually being archived).
+        _write_live_lease(root, "T-0001", root)
 
         cfg = AppConfig(ticket_command="archive", ticket_path=root)
         with caplog.at_level("ERROR"), pytest.raises(SystemExit):
@@ -106,7 +109,7 @@ class TestTicketArchiveForceCLI:
         # frob:tests tests/test_ticket_runner_archive_force.py::TestTicketArchiveForceCLI.test_force_overrides_the_live_lease_refusal  # noqa: E501
         root = _repo(tmp_path)
         _make_done_ticket(root)
-        _write_live_lease(root, "T-0002", root)
+        _write_live_lease(root, "T-0001", root)
 
         cfg = AppConfig(ticket_command="archive", ticket_path=root, ticket_force=True)
         with caplog.at_level("INFO"):

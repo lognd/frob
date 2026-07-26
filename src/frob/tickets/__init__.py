@@ -212,10 +212,12 @@ def migrate(root: Path) -> Result[int, TicketError]:
 # frob:doc docs/modules/tickets.md#public-api
 # frob:ticket T-0633
 # frob:ticket T-0764
+# frob:ticket T-0843
 # frob:tests tests/test_tickets_ledger_concurrency.py::TestArchiveRaceWithConcurrentNew.test_concurrent_new_ticket_survives_a_racing_archive  # noqa: E501
 # frob:tests tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork.test_archive_refuses_when_a_live_lease_exists  # noqa: E501
 # frob:tests tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork.test_archive_force_overrides_the_live_lease_refusal  # noqa: E501
 # frob:tests tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork.test_archive_ignores_a_stale_lease_from_a_removed_worktree  # noqa: E501
+# frob:tests tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork.test_archive_ignores_a_live_lease_for_a_ticket_it_would_not_touch  # noqa: E501
 # frob:waive TEST005 reason="archive 75.0% branch cover, debt T-0160"
 def archive(root: Path, *, force: bool = False) -> Result[int, TicketError]:
     """Move every done/dropped ticket from the active store into
@@ -245,29 +247,25 @@ def archive(root: Path, *, force: bool = False) -> Result[int, TicketError]:
     rewritten `tickets.md` becomes the new `main`, and the in-flight
     worktree's later section 10b restore (`git checkout main --
     tickets.md`) silently reverts its own start/evidence/acceptance back
-    to `queued`. `archive` now refuses (`Err(ArchiveLiveLeaseExists)`)
-    whenever ANY live cross-worktree lease exists anywhere in the repo,
-    unless `force=True` -- archiving is meant to run in a quiet window
-    (the TICK003 remediation text already says so; this makes it
-    enforced, not just advised). A lease for a worktree that no longer
-    exists on disk is stale, not live (`read_all_leases` already filters
-    those out), so a crashed/abandoned worktree can never wedge archive
-    forever."""
+    to `queued`. `archive` refuses (`Err(ArchiveLiveLeaseExists)`) unless
+    `force=True` -- archiving is meant to run in a quiet window (the
+    TICK003 remediation text already says so; this makes it enforced, not
+    just advised). A lease for a worktree that no longer exists on disk
+    is stale, not live (`read_all_leases` already filters those out), so
+    a crashed/abandoned worktree can never wedge archive forever.
+
+    T-0843: the guard used to refuse whenever ANY live lease existed
+    anywhere in the repo, even one for a ticket archive would never touch
+    -- in-progress tickets are never archived (only DONE/DROPPED tickets
+    are), so a lease for an in-progress ticket poses no T-0753 risk to
+    that ticket's own block. Narrowed to refuse only when a live lease's
+    ticket_id is actually among the tickets this call would move into
+    `tickets-archive.md` (e.g. a DONE/DROPPED ticket whose lease was never
+    released) -- a red TICK003 caused by unrelated in-flight work no
+    longer has to wait for that work to finish."""
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(leased.danger_err)
-    if not force:
-        live_leases = read_all_leases(root)
-        if live_leases:
-            _log.error(
-                "tickets: archive refused -- %d live in-flight lease(s) "
-                "exist (%s); archiving now would risk reverting their "
-                "start/evidence/acceptance on next restore (T-0753) -- "
-                "run in a quiet window or pass force=True",
-                len(live_leases),
-                ", ".join(sorted(lease.ticket_id for lease in live_leases)),
-            )
-            return Err(TicketError.ArchiveLiveLeaseExists)
     with ledger_lock(root):
         active_loaded = load_all(root)
         if active_loaded.is_err:
@@ -282,6 +280,26 @@ def archive(root: Path, *, force: bool = False) -> Result[int, TicketError]:
         if not to_archive:
             _log.info("tickets: archive -- nothing to move")
             return Ok(0)
+
+        if not force:
+            live_leases = read_all_leases(root)
+            leased_to_archive = sorted(
+                lease.ticket_id
+                for lease in live_leases
+                if lease.ticket_id in to_archive
+            )
+            if leased_to_archive:
+                _log.error(
+                    "tickets: archive refused -- %d ticket(s) this call "
+                    "would move into tickets-archive.md still hold a live "
+                    "cross-worktree lease (%s); archiving now would risk "
+                    "reverting their start/evidence/acceptance on next "
+                    "restore (T-0753) -- run in a quiet window or pass "
+                    "--force",
+                    len(leased_to_archive),
+                    ", ".join(leased_to_archive),
+                )
+                return Err(TicketError.ArchiveLiveLeaseExists)
 
         return _write_archived_and_active(root, active, to_archive)
 
