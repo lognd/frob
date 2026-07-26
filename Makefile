@@ -346,10 +346,20 @@ clean: $(STAMP)
 	uv run frob clean --all -y
 	rm -f .testmondata
 
+# T-0789: bumping pyproject.toml's version without re-locking leaves
+# uv.lock's own recorded frob version stale relative to pyproject.toml.
+# `uv run` silently re-syncs that stale line on every subsequent
+# invocation in every worktree cut from this commit, producing a
+# working-tree uv.lock diff no agent hand-edited -- SCOPE001 then fires
+# on that diff unless someone remembers to `git checkout -- uv.lock`
+# first. Running `uv lock` here and committing the result closes the gap
+# at the source: a worktree cut from this commit starts with uv.lock
+# already in sync, so `uv run` has nothing left to silently rewrite.
 upload: clean
 	@set -a && . ./.env && set +a; \
 	NEW=$$(uv run python scripts/bump_version.py); \
-	git add pyproject.toml; \
+	uv lock; \
+	git add pyproject.toml uv.lock; \
 	git commit -m "chore: bump version to $$NEW"; \
 	git push; \
 	uv build && uv publish

@@ -3918,7 +3918,7 @@ the only residual, explicitly-accepted non-defects.
 id: T-0789
 title: uv.lock auto-resyncs frob version on every uv run in a worktree, causing spurious
   SCOPE001 unless manually reverted
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-23'
@@ -3928,10 +3928,78 @@ scope:
 - pyproject.toml
 - uv.lock
 - Makefile
+- tests/test_makefile_lock_sync.py
+scope_changes:
+- op: add
+  glob: tests/test_makefile_lock_sync.py
+  reason: 'T-0789: regression test asserting the upload Makefile recipe re-locks and
+    commits uv.lock alongside a pyproject.toml version bump, so worktrees never start
+    from a stale lock again.
+
+    '
+  actor: logan
+  at: '2026-07-26'
+evidence:
+- tests/test_makefile_lock_sync.py::test_upload_relocks_after_version_bump
+- tests/test_makefile_lock_sync.py::test_upload_commits_uv_lock_with_pyproject
 threat: null
 component: null
 ```
 Observed while working T-0704 (worktree agent-ad82d24588b5083b6, 2026-07-22/23). This worktree's checked-in uv.lock records frob's own package version as 0.97.0 while pyproject.toml's version line is already 0.98.0 (a pre-existing mismatch present at the worktree's own base commit, not introduced by any ticket worked in this session). Because uv.lock is not scope-locked against auto-sync, EVERY `uv run ...` invocation (including read-only ones like `frob ticket show` or `frob check`) silently rewrites uv.lock's frob version line to match pyproject.toml, leaving a working-tree modification an agent must notice and `git checkout HEAD -- uv.lock` away before every commit/check -- and if missed, SCOPE001 fires (uv.lock outside the ticket's declared scope) on every subsequent `frob check` even though no agent hand-edited the file. Section 4b of docs/guides/agent-playbook.md already forbids agents from touching uv.lock by hand, but does not cover this auto-touch-by-tooling case. Fix: either (a) make `uv run`'s auto-sync a no-op when only the local version-line mismatch is the cause (uv config: --frozen or --no-sync for frob's own CLI invocations, or a repo-level uv setting), or (b) have the section-4b agent-file-blacklist pre-commit hook silently discard/reset a version-line-only uv.lock diff caused by this sync rather than warning/blocking, or (c) reconcile pyproject.toml/uv.lock at land time so fresh worktrees never start with the mismatch. Any one of the three removes the recurring "revert uv.lock before committing" step every worktree agent currently has to remember.
+
+## Done report
+
+## Done report
+
+Changed:
+  Makefile::upload (recipe only -- `uv lock` now runs after the version
+  bump and `uv.lock` is committed alongside `pyproject.toml`)
+  tests/test_makefile_lock_sync.py::test_upload_relocks_after_version_bump (new)
+  tests/test_makefile_lock_sync.py::test_upload_commits_uv_lock_with_pyproject (new)
+
+Evidence:
+  tests/test_makefile_lock_sync.py::test_upload_relocks_after_version_bump
+  tests/test_makefile_lock_sync.py::test_upload_commits_uv_lock_with_pyproject
+  (both bound via `frob ticket evidence T-0789 ...`)
+  Direct run: `uv run --frozen pytest tests/test_makefile_lock_sync.py -q -p no:cacheprovider` -> 2 passed
+
+Filed: none
+
+Gates: `uv run frob check --ticket T-0789` clean (0 errors; gate:PRE cleared
+by re-running `frob ticket sweep T-0789` after the scope expansion for the
+new test file). `uv run frob test --base main` showed pre-existing
+unrelated failures (native-extension/env-fragile tests: test_doctor
+natives cases, test_cli_native_missing, test_export_golden,
+test_selfconform, sys_audit, gitless git-ls-files edge case) -- none touch
+Makefile/pyproject.toml/uv.lock/tests/test_makefile_lock_sync.py and match
+the playbook's documented worktree-natives-artifact class, not a
+regression from this change.
+
+Root cause and fix: `make upload` bumped `pyproject.toml`'s version line
+via `scripts/bump_version.py` but never re-ran `uv lock`, so the commit it
+produced always shipped with `uv.lock`'s own recorded frob version one
+step behind. Every worktree cut from that commit then had `uv run` try to
+reconcile the two on invocation, producing a working-tree `uv.lock` diff
+no agent hand-edited, tripping SCOPE001 unless manually `git checkout --
+uv.lock`ed first. Running `uv lock` immediately after the bump and
+`git add`ing `uv.lock` into the same commit (option (c) from the ticket
+body) closes the gap at the source -- a worktree cut from a post-fix
+version-bump commit starts with an already-synced lock. (T-0793, landed
+separately, already covers the analogous case inside `frob ticket land`'s
+own release-bump step; this ticket was the `make upload` manual-release
+counterpart.)
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_makefile_lock_sync.py::test_upload_relocks_after_version_bump` (pytest node id, verified passing when recorded)
+- `tests/test_makefile_lock_sync.py::test_upload_commits_uv_lock_with_pyproject` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 0 error(s), 1012 warning(s), 220 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0802 -->
 ```yaml
