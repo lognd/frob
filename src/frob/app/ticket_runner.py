@@ -1742,7 +1742,7 @@ def _current_commit(root: Path) -> str | None:
 
 
 # frob:ticket T-0571
-# frob:doc docs/modules/tickets.md#public-api
+# frob:doc docs/modules/tickets.md#structured-review-channel-t-0571
 # frob:tests tests/test_tickets_review.py::TestReviewCli.test_cli_writes_review_record
 # frob:tests tests/test_tickets_review.py::TestReviewCli.test_cli_requires_all_flags
 def _review(root: Path, cfg: AppConfig) -> None:

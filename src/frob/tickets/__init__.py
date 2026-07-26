@@ -3294,7 +3294,7 @@ def _resolve_review_commit(root: Path, commit: str) -> Result[str, TicketError]:
 
 
 # frob:ticket T-0571
-# frob:doc docs/modules/tickets.md#public-api
+# frob:doc docs/modules/tickets.md#structured-review-channel-t-0571
 # frob:tests tests/test_tickets_review.py::TestRecordReview.test_appends_approve_entry  # noqa: E501
 # frob:tests tests/test_tickets_review.py::TestRecordReview.test_blank_findings_rejected  # noqa: E501
 # frob:tests tests/test_tickets_review.py::TestRecordReview.test_multiple_reviews_append_only  # noqa: E501

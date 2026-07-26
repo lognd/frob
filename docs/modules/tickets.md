@@ -346,6 +346,95 @@ def clipboard_has_image() -> bool
     # Cheap probe used to decide whether to offer the interactive prompt.
 ```
 
+## Structured review channel (T-0571)
+
+Adversarial review's verdict used to live only in dispatch-chat prose --
+invisible to `frob ticket close` and lost the moment the chat scrolled
+away. `frob ticket review` records it as first-class, append-only ledger
+evidence instead, and `close --strict` can require it before a ticket is
+allowed to transition to done.
+
+### CLI usage
+
+```
+frob ticket review <id> --verdict approve|reject --reviewer NAME \
+    --findings-file PATH [--commit SHA]
+```
+
+- `--verdict` -- `approve` or `reject`, no silent third option
+  (`ReviewVerdict`, below).
+- `--reviewer` -- who performed the review (freeform name/handle).
+- `--findings-file PATH` -- the findings summary, read verbatim from a
+  file rather than an inline `--findings` flag, per the same
+  shell-command-substitution hazard the other `--*-file` flags guard
+  against (playbook section 1d); a blank/whitespace-only file is rejected
+  (`Err(ReviewFindingsMissing)`) -- a review record with no findings text
+  is indistinguishable from one nobody actually read.
+- `--commit SHA` -- the commit reviewed; defaults to the current `HEAD`
+  under the ticket's root when omitted. Whatever is supplied is normalized
+  to its full 40-char SHA via `git rev-parse` before storage
+  (`_resolve_review_commit`) -- never stored abbreviated, since an
+  abbreviated value could never satisfy `close --strict`'s later
+  exact-match comparison. `Err(ReviewCommitUnresolvable)` if it does not
+  resolve to a real commit.
+
+Each call appends one `ReviewEntry` to the ticket's `reviews` tuple
+(`record_review`); existing entries are never edited or removed, matching
+the append-only discipline `ScopeChangeEntry`/`FailureEntry` already use.
+A ticket accumulates as many review records as it goes through review
+rounds.
+
+### `close --strict` and `require_review_for_close`
+
+`frob ticket close <id> --strict` requires at least one `verdict: approve`
+review record naming the CURRENT final commit before it will let the
+transition through -- `Err(MissingApprovedReview)` otherwise. A review
+against an earlier commit does not count: the code moved since the last
+review, so a stale approval is not an approval of what is actually being
+closed (`has_approved_review_for_commit`).
+
+`--strict` alone is not enough to gate anything: it only takes effect when
+`frob.toml` also sets
+
+```toml
+[tickets]
+require_review_for_close = true
+```
+
+(`load_require_review_for_close`, default `False`). Both must be true --
+`--strict` passed on this specific close call AND the repo-wide config
+toggle -- for the CLI to compute a non-`None` `reviewed` predicate and
+enforce it; this keeps the gate strictly opt-in per repo instead of
+surprising a project that has never turned it on.
+
+### `ReviewEntry` evidence shape
+
+```python
+class ReviewVerdict(StrEnum):
+    APPROVE = "approve"; REJECT = "reject"
+
+class ReviewEntry(BaseModel):
+    verdict: ReviewVerdict
+    reviewer: str
+    findings: str
+    commit: str              # full 40-char SHA, never abbreviated
+    at: date
+
+class Ticket(BaseModel):
+    ...
+    reviews: tuple[ReviewEntry, ...] = ()   # append-only
+```
+
+`Ticket.model_config = ConfigDict(frozen=True, extra="allow")`: the
+`extra="allow"` relaxation is what let an OLDER frob binary (one that
+predates `reviews` entirely) load a ledger a NEWER binary already wrote
+`reviews` entries into, without hard-failing `MalformedFrontmatter` --
+see `## Data models` below for the forward-compatibility rationale in
+full. `TicketError.ReviewFindingsMissing`,
+`TicketError.ReviewCommitUnresolvable`, and
+`TicketError.MissingApprovedReview` are the three review-specific error
+variants (`## Error types` below).
+
 ## Scope-lease model (T-0453)
 
 `frob ticket doable` does not just filter on blockers -- by default it also
