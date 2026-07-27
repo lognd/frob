@@ -1835,7 +1835,10 @@ class TestTypeScriptAdapter:
             "}\n",
         )
         classes = {c.name: c for c in module.classes}
-        assert set(classes) == {"Base", "Animal"}
+        # T-0681: `interface_declaration` now maps onto `NormalizedClass`
+        # too (mirroring `_kotlin.py`'s precedent), so `Greeter` shows up
+        # here alongside the two real classes.
+        assert set(classes) == {"Base", "Animal", "Greeter"}
         animal = classes["Animal"]
         assert animal.bases == ["Base", "Greeter"]
         fields = {f.name: f for f in animal.fields}
@@ -1964,6 +1967,120 @@ class TestTypeScriptAdapter:
         )
         assert {f.name for f in module.functions} == {"exported"}
         assert {c.name for c in module.classes} == {"ExportedClass"}
+
+    def test_adapt_interface_declaration(self, tmp_path: Path) -> None:
+        # T-0681: an interface becomes a `NormalizedClass` (mirroring
+        # `_kotlin.py`'s precedent) -- bases from `extends`, fields from
+        # property signatures, methods (bodyless) from method signatures.
+        module = self._adapt(
+            tmp_path,
+            "interface Named { id: string; }\n"
+            "interface Greeter extends Named {\n"
+            "  loud?: boolean;\n"
+            "  greet(msg: string): void;\n"
+            "}\n",
+        )
+        classes = {c.name: c for c in module.classes}
+        assert set(classes) == {"Named", "Greeter"}
+        greeter = classes["Greeter"]
+        assert greeter.bases == ["Named"]
+        fields = {f.name: f for f in greeter.fields}
+        assert fields["loud"].type == "boolean"
+        methods = {m.name: m for m in greeter.methods}
+        assert "greet" in methods
+        greet = methods["greet"]
+        assert greet.is_method is True
+        assert greet.params[0].name == "msg"
+        assert greet.return_type == "void"
+        # An interface method has no implementation -- no body to walk.
+        assert greet.body_line_count == 0
+        assert greet.branches == []
+
+    def test_adapt_enum_declaration(self, tmp_path: Path) -> None:
+        # T-0681: an enum becomes a `NormalizedClass` with no bases/
+        # methods (mirroring `_rust.py`'s `enum_item` precedent) -- each
+        # member becomes a `NormalizedField` regardless of whether it
+        # carries an explicit value.
+        module = self._adapt(
+            tmp_path,
+            'enum Color {\n  Red,\n  Green = "green",\n  Blue = 3,\n}\n',
+        )
+        assert len(module.classes) == 1
+        color = module.classes[0]
+        assert color.name == "Color"
+        assert color.bases == []
+        assert color.methods == []
+        assert [f.name for f in color.fields] == ["Red", "Green", "Blue"]
+
+    def test_adapt_type_alias_declaration(self, tmp_path: Path) -> None:
+        # T-0681: a type alias becomes a `NormalizedTypeAlias` on
+        # `NormalizedModule.type_aliases` -- no fields/methods/members of
+        # its own, unlike interface/enum, so no existing entity fits.
+        module = self._adapt(
+            tmp_path,
+            "type ID = string;\ntype Result = string | number;\n",
+        )
+        aliases = {a.name: a for a in module.type_aliases}
+        assert set(aliases) == {"ID", "Result"}
+        assert aliases["ID"].target_text == "string"
+        assert aliases["Result"].target_text == "string | number"
+
+    def test_adapt_exported_interface_enum_type_alias(self, tmp_path: Path) -> None:
+        # The T-0681 constructs unwrap an `export` wrapper the same way
+        # `export class`/`export function` already do.
+        module = self._adapt(
+            tmp_path,
+            "export interface Exported { z: boolean; }\n"
+            "export enum ExportedEnum { A, B }\n"
+            "export type ExportedAlias = number;\n",
+        )
+        assert {c.name for c in module.classes} == {"Exported", "ExportedEnum"}
+        assert {a.name for a in module.type_aliases} == {"ExportedAlias"}
+
+    def test_adapt_tsx_component(self, tmp_path: Path) -> None:
+        # T-0681: a `.tsx` file parses through the `tsx` tree-sitter
+        # grammar (still labeled `"typescript"`, see this adapter's
+        # module docstring) -- a component function/arrow-function
+        # returning JSX is represented as a normal `NormalizedFunction`,
+        # with the JSX nodes inside its body contributing no new entity
+        # kind but not breaking the existing event walk either (a
+        # `member_expression` nested inside a `jsx_expression` is still
+        # picked up by the branch condition it appears in).
+        module = self._adapt(
+            tmp_path,
+            'import React from "react";\n'
+            "\n"
+            "interface Props {\n"
+            "  name: string;\n"
+            "}\n"
+            "\n"
+            "export function Greeting(props: Props) {\n"
+            "  if (props.name) {\n"
+            '    return <div className="hi">{props.name}</div>;\n'
+            "  }\n"
+            "  return <span/>;\n"
+            "}\n"
+            "\n"
+            "export const Widget = (props: Props) => {\n"
+            "  return <div>{props.name}</div>;\n"
+            "};\n",
+            filename="mod.tsx",
+        )
+        assert {c.name for c in module.classes} == {"Props"}
+        funcs = {f.name: f for f in module.functions}
+        assert set(funcs) == {"Greeting", "Widget"}
+        assert funcs["Greeting"].branches
+        assert funcs["Greeting"].params[0].name == "props"
+        assert funcs["Widget"].params[0].name == "props"
+
+        # Round-trips through pydantic (de)serialization like the other
+        # entity kinds -- proves the new `NormalizedTypeAlias` field and
+        # the interface/enum-as-`NormalizedClass` shapes are all
+        # (de)serializable, not just constructible.
+        from frob.arch._normalized import NormalizedModule
+
+        restored = NormalizedModule.model_validate(module.model_dump())
+        assert restored == module
 
     def test_adapt_stays_sane_on_realistic_snippet(self, tmp_path: Path) -> None:
         # A denser, more realistic TS module exercising every entity kind

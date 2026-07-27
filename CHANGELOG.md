@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.155.0] - unreleased
+
+- T-0681: arch TS adapter phase 2: interface/type-alias/enum declarations + TSX
+
 ## [0.154.0] - unreleased
 
 - T-0864: natives build subcommand: frob-owned maturin develop per [natives] crate with git-common-dir shared CARGO_TARGET_DIR

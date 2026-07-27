@@ -183,6 +183,7 @@
     "src/frob/arch/_normalized.py::NormalizedParam": "c08f1ba0928c24ee67d5afe49e66b67c98b966f4783f8a095c2459b8aa633160",
     "src/frob/arch/_normalized.py::NormalizedRaise": "15237e2a55a5689a520f3debf29a38dd873eab2ecda48fcff2256a9ad7c3cc1c",
     "src/frob/arch/_normalized.py::NormalizedReturn": "33f1d3860bbf60ff992304d4b6b44d86a896f661ce56f0e74032f54251c6ccca",
+    "src/frob/arch/_normalized.py::NormalizedTypeAlias": "cefb8570e7247f490b0461c1b016466bf1f7998bc7890812df4c12c37c41cb8c",
     "src/frob/arch/_normalized.py::NormalizedVariant": "681b02b4c4514206be00bfc787b16b38a44a59c905ecf7108a531ae7223a9a4a",
     "src/frob/arch/_normalized.py::NormalizedVariantPayload": "7edd34cd131a28d19feb34353e4de5f5dee1c733040077b1d3bdae1fc556697f",
     "src/frob/arch/_patterns.py::PATTERN_REGISTRY": "5588ed668211c758753b7cce36544d1c147a5ef5ab5c6d56d71bd0a9c6a83dd5",
@@ -1570,5 +1571,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.154.0"
+  "version": "0.155.0"
 }

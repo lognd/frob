@@ -291,6 +291,25 @@ class NormalizedClass(BaseModel):
 
 
 # frob:doc docs/modules/arch.md#normalized-code-model
+class NormalizedTypeAlias(BaseModel):
+    """One type-alias declaration (TypeScript `type X = ...;`, and any
+    other language's equivalent -- a name bound to a type expression with
+    no runtime representation of its own, unlike a class/interface/enum,
+    which all become `NormalizedClass` instead since they carry
+    fields/methods/members a check can walk). `target_text` is the raw
+    source text of the aliased type expression, kept as text for the same
+    reason `NormalizedBranch.condition_text` is (T-0609): no detector
+    needs a second type-expression grammar, only presence/shape via
+    lightweight text inspection."""
+
+    model_config = {}
+
+    name: str
+    line: int
+    target_text: str
+
+
+# frob:doc docs/modules/arch.md#normalized-code-model
 class NormalizedImport(BaseModel):
     """One import/include/use statement: the raw module/path text as
     written, the source line, and the specific names imported from it, if
@@ -308,7 +327,11 @@ class NormalizedImport(BaseModel):
 class NormalizedModule(BaseModel):
     """The whole-file normalized view an adapter produces for one source
     file: its path (repo-relative), source language label, top-level
-    imports, top-level classes, and top-level (free) functions. This is
+    imports, top-level classes, top-level (free) functions, and top-level
+    type aliases (T-0681 -- an interface/enum declaration becomes a
+    `NormalizedClass` in `classes` instead, since both carry
+    fields/methods/members `NormalizedClass` already represents; only a
+    bare type-alias binding has no existing entity to become). This is
     the root a language-agnostic check walks instead of a raw tree-sitter
     `Tree` -- everything a check needs (see this module's docstring) is
     reachable from here without touching `frob.lang`/tree-sitter at all."""
@@ -320,6 +343,7 @@ class NormalizedModule(BaseModel):
     imports: list[NormalizedImport] = []
     classes: list[NormalizedClass] = []
     functions: list[NormalizedFunction] = []
+    type_aliases: list[NormalizedTypeAlias] = []
 
 
 # frob:doc docs/modules/arch.md#normalized-code-model

@@ -23,14 +23,30 @@ both `for...of`/`for...in`), calls (`call_expression`), field accesses
 `NormalizedCatch`), and imports (`import_statement`, every clause shape:
 named/default/namespace/side-effect-only).
 
-NOT mapped (no `NormalizedModule` entity exists for these -- filed as
-T-draft-92681f8e, a follow-up ticket, per this ticket's scope: adding a
-new entity kind is a model change outside `TypeScriptAdapter`'s own
-scope): `interface_declaration`, `type_alias_declaration`,
-`enum_declaration`, and TSX JSX syntax (`jsx_element`/
-`jsx_self_closing_element` -- not exercised by any `.ts` fixture here,
-and JSX has no equivalent in the model's function/class/branch/call
-vocabulary either).
+T-0681 (phase 2) adds: `interface_declaration` (-> `NormalizedClass`,
+mirroring `_kotlin.py`'s "an interface is a class with no separate
+entity" precedent -- `extends_type_clause` bases, `property_signature`
+fields, `method_signature` methods with no body, `body_line_count=0`),
+`enum_declaration` (-> `NormalizedClass` with no bases/methods, each
+`property_identifier`/`enum_assignment` member -> a `NormalizedField`
+with `type=None`, mirroring `_rust.py`'s `enum_item` -> `NormalizedField`
+variant handling), `type_alias_declaration` (-> the new
+`NormalizedTypeAlias` entity on `NormalizedModule.type_aliases`, since a
+bare alias binding carries no fields/methods/members an existing entity
+could hold), and TSX (`.tsx` files parse through the `tsx` tree-sitter
+grammar per `frob.lang`'s extension table, but still carry the
+`"typescript"` `NormalizedModule.language` label -- `jsx_element`/
+`jsx_self_closing_element` nodes need no new model entity since JSX only
+ever appears as an expression inside a function body a component
+function/arrow-function already becomes a `NormalizedFunction` for; the
+walk simply recurses through JSX nodes like any other expression,
+picking up whatever calls/branches/field-accesses they contain).
+
+NOT mapped (no `NormalizedModule` entity exists for these, and none of
+the four T-0681 constructs above needs one): TSX prop-typing internals
+(`jsx_expression`, `jsx_attribute` values are not separately modeled --
+only the surrounding function's existing events matter), ambient
+`declare` blocks, and `namespace`/`module` declarations.
 """
 
 from __future__ import annotations
@@ -53,6 +69,7 @@ from frob.arch._normalized import (
     NormalizedParam,
     NormalizedRaise,
     NormalizedReturn,
+    NormalizedTypeAlias,
 )
 from frob.lang import child_by_field as _child
 from frob.lang import node_text as _node_text
@@ -489,18 +506,143 @@ def _ts_build_import(node: Node) -> NormalizedImport:
     return NormalizedImport(module=module, line=node.start_point[0] + 1, names=names)
 
 
+def _ts_interface_bases(node: Node) -> list[str]:
+    """Base interface names of an `interface_declaration` as written: every
+    named child of its `extends_type_clause`, or `[]` when absent -- an
+    interface has no `implements_clause` of its own (only a class does),
+    matching `NormalizedClass.bases`'s "as written" contract."""
+    clause = next((c for c in node.children if c.type == "extends_type_clause"), None)
+    if clause is None:
+        return []
+    return [_node_text(t) for t in clause.named_children]
+
+
+def _ts_interface_fields(body: Node) -> list[NormalizedField]:
+    """`property_signature` members directly inside an `interface_body` as
+    `NormalizedField`s."""
+    out: list[NormalizedField] = []
+    for c in body.named_children:
+        if c.type != "property_signature":
+            continue
+        name_node = _child(c, "name")
+        if name_node is None:
+            continue
+        ann = _child(c, "type")
+        out.append(
+            NormalizedField(
+                name=_node_text(name_node),
+                line=c.start_point[0] + 1,
+                type=_ts_annotation_text(ann),
+            )
+        )
+    return out
+
+
+def _ts_interface_methods(body: Node) -> list[NormalizedFunction]:
+    """`method_signature` members directly inside an `interface_body` as
+    `NormalizedFunction`s -- these carry no `body` field (an interface
+    method has no implementation), so `_ts_build_function` naturally
+    produces `body_line_count=0` and empty event lists for them, the same
+    shape a bodyless abstract method gets from any other adapter."""
+    out: list[NormalizedFunction] = []
+    for c in body.named_children:
+        if c.type != "method_signature":
+            continue
+        name_node = _child(c, "name")
+        name = _node_text(name_node) if name_node is not None else "?"
+        out.append(_ts_build_function(c, name, is_method=True))
+    return out
+
+
+def _ts_build_interface(node: Node) -> NormalizedClass:
+    """One `interface_declaration` as a `NormalizedClass` (T-0681) --
+    mirroring `_kotlin.py`'s "an interface is a class with no separate
+    entity" precedent: bases (`_ts_interface_bases`), fields
+    (`_ts_interface_fields`), and methods (`_ts_interface_methods`)."""
+    name_node = _child(node, "name")
+    name = _node_text(name_node) if name_node is not None else "?"
+    body = _child(node, "body")
+    fields: list[NormalizedField] = []
+    methods: list[NormalizedFunction] = []
+    if body is not None:
+        fields = _ts_interface_fields(body)
+        methods = _ts_interface_methods(body)
+    return NormalizedClass(
+        name=name,
+        line=node.start_point[0] + 1,
+        bases=_ts_interface_bases(node),
+        fields=fields,
+        methods=methods,
+    )
+
+
+def _ts_enum_members(body: Node) -> list[NormalizedField]:
+    """Every member of an `enum_body` as a `NormalizedField` with no type
+    (a bare `property_identifier` member, or the name half of an
+    `enum_assignment` member with an explicit value) -- mirroring
+    `_rust.py`'s `enum_item` -> `NormalizedField` variant handling: no
+    detector today needs the assigned value itself, only the member's
+    name and line."""
+    out: list[NormalizedField] = []
+    for c in body.named_children:
+        if c.type == "property_identifier":
+            out.append(NormalizedField(name=_node_text(c), line=c.start_point[0] + 1))
+        elif c.type == "enum_assignment":
+            name_node = _child(c, "name")
+            if name_node is not None:
+                out.append(
+                    NormalizedField(
+                        name=_node_text(name_node), line=c.start_point[0] + 1
+                    )
+                )
+    return out
+
+
+def _ts_build_enum(node: Node) -> NormalizedClass:
+    """One `enum_declaration` as a `NormalizedClass` with no bases/methods
+    (T-0681): each member (`_ts_enum_members`) becomes a `NormalizedField`,
+    mirroring `_rust.py`'s `enum_item` handling of the same construct."""
+    name_node = _child(node, "name")
+    name = _node_text(name_node) if name_node is not None else "?"
+    body = _child(node, "body")
+    return NormalizedClass(
+        name=name,
+        line=node.start_point[0] + 1,
+        bases=[],
+        fields=_ts_enum_members(body) if body is not None else [],
+        methods=[],
+    )
+
+
+def _ts_build_type_alias(node: Node) -> NormalizedTypeAlias:
+    """One `type_alias_declaration` as a `NormalizedTypeAlias` (T-0681):
+    the alias name and the raw source text of its `value` type
+    expression (`type X = A | B;` -> `target_text="A | B"`)."""
+    name_node = _child(node, "name")
+    name = _node_text(name_node) if name_node is not None else "?"
+    value_node = _child(node, "value")
+    target_text = _node_text(value_node) if value_node is not None else ""
+    return NormalizedTypeAlias(
+        name=name, line=node.start_point[0] + 1, target_text=target_text
+    )
+
+
 def _ts_build_module(tree: object, rel: str) -> NormalizedModule:
-    """The whole-file `NormalizedModule` for a parsed TypeScript file:
-    top-level imports, classes, and free functions (`TypeScriptAdapter.
-    adapt`) -- unwraps a top-level `export [default]` wrapper around a
-    class/function/const-arrow-function declaration first, since export
-    status itself has no `NormalizedModule` field to carry (matching
-    `NormalizedClass`/`NormalizedFunction`'s "as written structure only,
-    no visibility" contract the python adapter also keeps)."""
+    """The whole-file `NormalizedModule` for a parsed TypeScript (or TSX,
+    T-0681 -- both carry the `"typescript"` language label, see this
+    module's docstring) file: top-level imports, classes (including
+    interfaces/enums, T-0681), free functions, and type aliases
+    (`TypeScriptAdapter.adapt`) -- unwraps a top-level `export [default]`
+    wrapper around a class/interface/enum/function/const-arrow-function/
+    type-alias declaration first, since export status itself has no
+    `NormalizedModule` field to carry (matching `NormalizedClass`/
+    `NormalizedFunction`'s "as written structure only, no visibility"
+    contract the python adapter also keeps)."""
     t: Tree = cast("Tree", tree)
     classes: list[NormalizedClass] = []
     functions: list[NormalizedFunction] = []
     imports: list[NormalizedImport] = []
+    type_aliases: list[NormalizedTypeAlias] = []
     for raw_child in t.root_node.children:
         c = raw_child
         if c.type == "export_statement":
@@ -510,6 +652,12 @@ def _ts_build_module(tree: object, rel: str) -> NormalizedModule:
             c = decl
         if c.type == "class_declaration":
             classes.append(_ts_build_class(c))
+        elif c.type == "interface_declaration":
+            classes.append(_ts_build_interface(c))
+        elif c.type == "enum_declaration":
+            classes.append(_ts_build_enum(c))
+        elif c.type == "type_alias_declaration":
+            type_aliases.append(_ts_build_type_alias(c))
         elif c.type == "function_declaration":
             name_node = _child(c, "name")
             name = _node_text(name_node) if name_node is not None else "?"
@@ -532,19 +680,20 @@ def _ts_build_module(tree: object, rel: str) -> NormalizedModule:
         imports=imports,
         classes=classes,
         functions=functions,
+        type_aliases=type_aliases,
     )
 
 
 # frob:doc docs/modules/arch.md#normalized-code-model
 # frob:tests tests/unit/test_arch.py::TestTypeScriptAdapter.test_adapt_stays_sane_on_realistic_snippet  # noqa: E501
 class TypeScriptAdapter:
-    """`LanguageAdapter` (T-0609) for TypeScript (T-0611): maps a
-    `raw_tree`-parsed `.ts`/`.tsx` file's tree-sitter `Tree` onto a
+    """`LanguageAdapter` (T-0609) for TypeScript (T-0611, phase 2 T-0681):
+    maps a `raw_tree`-parsed `.ts`/`.tsx` file's tree-sitter `Tree` onto a
     `NormalizedModule` by walking `tree-sitter-typescript`'s own node
     shapes -- mirroring `frob.arch._python.PythonAdapter`'s structure, not
     its node-type vocabulary (see this section's module-level comment for
-    the exact construct-to-field mapping and the constructs this first
-    pass does not map)."""
+    the exact construct-to-field mapping and the constructs this pass
+    does not map)."""
 
     language = "typescript"
 
