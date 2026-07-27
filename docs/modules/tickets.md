@@ -102,6 +102,7 @@ attachments:
 <!-- frob:describes src/frob/tickets/__init__.py::replay_evidence_from_done_report -->
 <!-- frob:describes src/frob/tickets/__init__.py::render_changed_block -->
 <!-- frob:describes src/frob/tickets/__init__.py::compute_changed_lines -->
+<!-- frob:describes src/frob/tickets/__init__.py::base_ref_resolvable -->
 <!-- frob:describes src/frob/tickets/_store.py::ledger_lock -->
 <!-- frob:describes src/frob/tickets/__init__.py::mutate_scope -->
 <!-- frob:describes src/frob/tickets/__init__.py::set_priority -->
@@ -250,13 +251,28 @@ def set_done_report(root: Path, ticket_id: str, *, why: str,
     # spliced into body's '## Done report' section via
     # replace_done_report_section (frob.tickets._models), so a caller never
     # parses or edits markdown, and can never hand-type a Changed/Evidence
-    # list that drifts from what actually shipped. Held under ledger_lock
-    # end to end. Example:
+    # list that drifts from what actually shipped. Example:
     #   set_done_report(root, "T-0458", why="implemented the thing")
     #   # -> Ok(Ticket(... body="## Done report\n\nimplemented the thing\n\n
     #   #     ### Changed\n```\nsrc/x.py | 3 ++-\n```\n\n### Evidence\n
     #   #     - `tests/x.py::test_y` (pytest node id, verified passing
     #   #     when recorded)\n"))
+    # T-0887: `base_ref` is validated (base_ref_resolvable) FIRST -- an
+    # unresolvable ref (in a real git checkout) returns
+    # Err(TicketError.BaseRefUnresolvable) immediately instead of being
+    # discovered minutes later via a silently-empty diff or a downstream
+    # `frob check` spawn. Only the final load-compose-write is held under
+    # ledger_lock end to end (T-0458 single-writer invariant); the
+    # (potentially slow) run_tests/check_gates/check_gate_findings claims
+    # capture runs BEFORE the lock is taken, since those are read-only and
+    # previously serialized every other concurrent ticket mutation on this
+    # ledger behind up to two 600s `frob check --ticket` subprocess spawns.
+def base_ref_resolvable(root: Path, base_ref: str) -> bool | None
+    # T-0887: bounded git rev-parse check of whether base_ref resolves to a
+    # real commit in root's clone. True/False when root is a real git
+    # checkout; None when root is not a git checkout at all (a DIFFERENT,
+    # unrelated failure -- preserves compute_changed_lines's long-standing
+    # best-effort contract for non-git roots).
 def compose_done_report(why: str, changed_lines: Sequence[str],
                          evidence: Sequence[str]) -> str
     # T-0458: pure composition -- why plus render_changed_block(changed_lines)

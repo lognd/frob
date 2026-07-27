@@ -1380,6 +1380,15 @@ class TicketError(ErrorSet):
         "fixture acceptance criterion; record one proving the rule fires "
         "through the production invocation, then retry"
     )
+    # T-0887: `frob ticket done-report --base-ref <ref>` used to spend
+    # minutes discovering a typo'd/unfetched base ref indirectly (a `git
+    # diff --stat` that silently returned no lines, or a downstream `frob
+    # check --ticket` spawn) instead of failing on the ref itself, in
+    # seconds, up front. See `frob.tickets._base_ref_resolution`.
+    BaseRefUnresolvable = (
+        "base ref does not resolve to a commit in this clone; fetch it or "
+        "pass a base ref that exists, then retry"
+    )
 
 
 # frob:ticket T-0176

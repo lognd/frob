@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.162.0] - unreleased
+
+- T-0887: done-report --base-ref hangs when the named base ref does not exist in the clone
+
 ## [0.161.0] - unreleased
 
 - T-0712: hot-graph query surface + slow-operation advisories + perf regression ratchet

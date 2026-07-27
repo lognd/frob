@@ -3074,6 +3074,51 @@ def replay_evidence_from_done_report(
     return Ok(updated)
 
 
+# frob:ticket T-0887
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_ticket_runner_done_report.py::TestBaseRefResolvable.test_unresolvable_ref_in_a_real_repo_is_false  # noqa: E501
+# frob:tests tests/test_ticket_runner_done_report.py::TestBaseRefResolvable.test_resolvable_ref_is_true  # noqa: E501
+# frob:tests tests/test_ticket_runner_done_report.py::TestBaseRefResolvable.test_non_git_root_is_none  # noqa: E501
+def base_ref_resolvable(root: Path, base_ref: str) -> bool | None:
+    """Bounded (`run_argv`'s own timeout, never unbounded) check of whether
+    `base_ref` resolves to a real commit in `root`'s clone, via `git
+    rev-parse --verify --quiet <base_ref>^{commit}` -- the fail-fast guard
+    `set_done_report` runs before any other work (T-0887: a typo'd or
+    unfetched base ref used to be discovered only indirectly, minutes
+    later, via a silently-empty `git diff --stat` or a downstream `frob
+    check --ticket` spawn, rather than on the ref itself in seconds).
+
+    Returns `True`/`False` when `root` is a real git checkout (ref
+    resolves or does not); returns `None` when `root` itself is not a git
+    checkout at all (git's own `not a git repository` exit code, 128) --
+    that is a DIFFERENT failure than an unresolvable ref, and callers
+    must treat it as "unknown", never as "unresolvable", to preserve the
+    pre-T-0887 best-effort behavior for non-git roots (`compute_changed_
+    lines`'s own long-standing contract, and every existing `set_done_
+    report` caller in the test suite that passes a bare `tmp_path` with
+    no git init at all)."""
+    from frob.gitio import run_argv
+
+    spawned = run_argv(
+        [
+            "git",
+            "-C",
+            str(root),
+            "rev-parse",
+            "--verify",
+            "--quiet",
+            f"{base_ref}^{{commit}}",
+        ]
+    )
+    if spawned.is_err:
+        return None
+    result = spawned.danger_ok
+    if result.returncode == 128:
+        # Not a git repository at all -- unrelated to the ref itself.
+        return None
+    return result.returncode == 0
+
+
 # frob:ticket T-0458
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/unit/test_ticket_store.py::TestComputeChangedLines.test_non_git_root_returns_empty  # noqa: E501
@@ -3220,48 +3265,82 @@ def set_done_report(
     falls back to the count-only comparison whenever either side of the
     claim lacks an identity set.
 
-    Held under `ledger_lock` end to end (load, compose, write) so a
-    concurrent `set_done_report`/`add_evidence`/`new_ticket` call on the
-    same ledger can never interleave with this one (T-0458 single-writer
-    invariant)."""
+    T-0887: `base_ref` is validated (`base_ref_resolvable`) BEFORE any
+    other work -- an unresolvable ref (in a real git checkout) returns
+    `Err(TicketError.BaseRefUnresolvable)` immediately rather than being
+    discovered minutes later via a silently-empty diff or a downstream
+    `frob check` spawn. T-0887 also moves the (potentially slow, up to
+    two 600s `frob check --ticket` subprocess spawns via `check_gates`/
+    `check_gate_findings`) claims capture OUTSIDE the `ledger_lock` --
+    those are read-only and do not need the single-writer lock at all;
+    holding the lock across them used to serialize every OTHER concurrent
+    ticket mutation on this ledger behind up to ~20 minutes of subprocess
+    spawns (the observed "hangs under concurrent tickets.md lock
+    contention" symptom class). Only the final load-compose-write is now
+    held under `ledger_lock` end to end, so a concurrent `set_done_
+    report`/`add_evidence`/`new_ticket` call on the same ledger still can
+    never interleave with THAT part (T-0458 single-writer invariant) --
+    the narrow tradeoff is that `ticket.evidence` used to compute the
+    non-cmd id list fed to `run_tests`/claims is read once, before the
+    lock, and could in principle be stale if evidence changes
+    concurrently between that read and the final write; the Evidence
+    section itself is always rendered from the freshly-reloaded ticket
+    inside the lock, so the written report's Evidence block can never be
+    stale, only (rarely) the Captured claims' `evidence_count`."""
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(leased.danger_err)
+
+    resolvable = base_ref_resolvable(root, base_ref)
+    if resolvable is False:
+        _log.error(
+            "ticket %s: done-report --base-ref %r does not resolve to a "
+            "commit in this clone -- fetch it or pass a base ref that "
+            "exists",
+            ticket_id,
+            base_ref,
+        )
+        return Err(TicketError.BaseRefUnresolvable)
+
+    preloaded = _load_one(root, ticket_id)
+    if preloaded.is_err:
+        return Err(preloaded.danger_err)
+    changed_lines = compute_changed_lines(root, base_ref)
+    claims = None
+    if run_tests is not None and check_gates is not None:
+        non_cmd = [e for e in preloaded.danger_ok.evidence if not is_cmd_evidence(e)]
+        gate_result = check_gates()
+        if gate_result is None:
+            # T-0832: never embed a -1 sentinel -- record the gate
+            # half of the claim as explicitly unmeasured instead.
+            _log.warning(
+                "ticket %s: fresh `frob check --ticket %s` produced no "
+                "parsable gate-summary -- recording the Captured "
+                "claims gate-state as unmeasured (the test-count claim "
+                "is unaffected)",
+                ticket_id,
+                ticket_id,
+            )
+            gate_errors = gate_warnings = gate_waived = None
+        else:
+            gate_errors, gate_warnings, gate_waived = gate_result
+        error_findings = (
+            check_gate_findings() if check_gate_findings is not None else None
+        )
+        claims = DoneReportClaims(
+            test_count=run_tests(non_cmd),
+            evidence_count=len(non_cmd),
+            gate_errors=gate_errors,
+            gate_warnings=gate_warnings,
+            gate_waived=gate_waived,
+            error_findings=error_findings,
+        )
+
     with ledger_lock(root):
         loaded = _load_one(root, ticket_id)
         if loaded.is_err:
             return Err(loaded.danger_err)
         ticket = loaded.danger_ok
-        changed_lines = compute_changed_lines(root, base_ref)
-        claims = None
-        if run_tests is not None and check_gates is not None:
-            non_cmd = [e for e in ticket.evidence if not is_cmd_evidence(e)]
-            gate_result = check_gates()
-            if gate_result is None:
-                # T-0832: never embed a -1 sentinel -- record the gate
-                # half of the claim as explicitly unmeasured instead.
-                _log.warning(
-                    "ticket %s: fresh `frob check --ticket %s` produced no "
-                    "parsable gate-summary -- recording the Captured "
-                    "claims gate-state as unmeasured (the test-count claim "
-                    "is unaffected)",
-                    ticket_id,
-                    ticket_id,
-                )
-                gate_errors = gate_warnings = gate_waived = None
-            else:
-                gate_errors, gate_warnings, gate_waived = gate_result
-            error_findings = (
-                check_gate_findings() if check_gate_findings is not None else None
-            )
-            claims = DoneReportClaims(
-                test_count=run_tests(non_cmd),
-                evidence_count=len(non_cmd),
-                gate_errors=gate_errors,
-                gate_warnings=gate_warnings,
-                gate_waived=gate_waived,
-                error_findings=error_findings,
-            )
         report = compose_done_report(why, changed_lines, ticket.evidence, claims)
         updated = ticket.model_copy(
             update={"body": replace_done_report_section(ticket.body, report)}
@@ -3592,6 +3671,7 @@ __all__ = [
     "add_evidence",
     "archive",
     "attach",
+    "base_ref_resolvable",
     "clipboard_has_image",
     "compose_done_report",
     "compute_changed_lines",
