@@ -359,7 +359,7 @@ EXHAUSTIVENESS DRIFT-LOCK (T-0343, 2026-07-20 mandate 'implementation MUST addre
 id: T-0346
 title: 'EPIC: unified design-knowledge registry -- single source of truth, per-entry
   disposition, no prose-only or split-across-files misses'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-20'
@@ -373,6 +373,7 @@ scope:
 - src/frob/arch/**
 - tickets.md
 - tests/unit/strata/
+- tests/test_registry_reconciliation_weaknesses.py
 scope_changes:
 - op: remove
   glob: tests/**
@@ -384,6 +385,18 @@ scope_changes:
   reason: T-0346 strata work maps to tests/unit/strata/
   actor: logan
   at: '2026-07-20'
+- op: add
+  glob: tests/test_registry_reconciliation_weaknesses.py
+  reason: 'epic close-condition evidence: acceptance [1]/[2] (CWE-1000 full exhaustiveness)
+    cited against T-0384''s weaknesses reconciliation test'
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- tests/unit/strata/test_registry_cross_corpus_totality.py::TestCrossCorpusLinkageIntegrity::test_every_cross_ref_resolves_to_a_real_id
+- tests/unit/strata/test_registry_cross_corpus_totality.py::TestProseOnlyRetrofitIntegrity::test_retrofit_counts_and_source_doc_pointers_hold
+- tests/test_registry_reconciliation_weaknesses.py::TestWeaknessesExhaustiveness::test_declared_cwe_total_is_944
+- tests/test_registry_reconciliation_weaknesses.py::TestWeaknessesExhaustiveness::test_audit_reports_exhausted
+- tests/unit/strata/test_registry_cross_corpus_totality.py::TestCrossCorpusLinkageIntegrity::test_every_cross_ref_is_mutually_navigable
 acceptance:
 - text: every item across ALL corpora (design patterns, arch checks, traps, system-design,
     capability-evasion, security/CWE, compliance, secrets, PII, supply-chain) has
@@ -393,7 +406,9 @@ acceptance:
     any prose entry (a table row / named item in a corpus doc) has no registry id
     (a prose-only miss) or if two docs describe the same item under different unlinked
     ids (a split-across-files miss)
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_registry_cross_corpus_totality.py::TestCrossCorpusLinkageIntegrity::test_every_cross_ref_resolves_to_a_real_id
+  - tests/unit/strata/test_registry_cross_corpus_totality.py::TestCrossCorpusLinkageIntegrity::test_every_cross_ref_is_mutually_navigable
 - text: 'TRUE exhaustiveness: enumerations that were bulk-skipped or census-only get
     COMPLETED to per-entry granularity with an individual disposition each -- CWE-1000
     full (~900+, each: has-design-precondition->checkable / no-kernel-concept->out-of-scope-naming-the-missing-concept
@@ -401,17 +416,100 @@ acceptance:
     only as census (gitleaks/trufflehog/GitHub-partner-patterns). ''seems like spam/redundant''
     is NOT a valid skip; redundant-with-X is a disposition (duplicate-of X), not an
     omission'
-  evidence: []
+  evidence:
+  - tests/test_registry_reconciliation_weaknesses.py::TestWeaknessesExhaustiveness::test_declared_cwe_total_is_944
 - text: 'every registry entry carries a DISPOSITION: addressed-by-check(s) <ids> |
     reasoned-deferral(advisory/not-checkable, reason) | duplicate-of <id> | out-of-scope(named-missing-concept).
     T-0343''s exhaustiveness drift-lock binds to this registry and fails if ANY entry
     lacks a disposition or an addressed entry''s check vanishes -- so an implementing
     ticket provably addresses EVERYTHING'
-  evidence: []
+  evidence:
+  - tests/test_registry_reconciliation_weaknesses.py::TestWeaknessesExhaustiveness::test_audit_reports_exhausted
 threat: null
 component: null
 ```
 User critique (2026-07-20): the corpora hedged where the mandate is to EXHAUST -- e.g. security-corpus skipped CWE-1000 as 'repo spam' when the intent is to enumerate ALL ~900, categorize each, and reason mitigation per entry; and information split across 10 docs/design/*.md files means an item can exist in one file's prose but be absent from the enforceable denominator ('miss split across two files'). This epic makes the corpus a REGISTRY, not a reading list: (1) a single canonical machine-readable registry aggregating every corpus manifest with stable ids + cross-refs (pattern<->trap<->evasion<->mitigation linked by id); (2) a reconciliation/consolidation pass that de-dups cross-file and flags any prose-only entry; (3) completion of the bulk-skipped enumerations to per-entry disposition; (4) T-0343 (exhaustiveness drift-lock) bound to the registry with a mandatory per-entry disposition. Governs T-0330/331/332/339/341/343 and all the corpus docs. The corpora already emit '## DENOMINATOR MANIFEST' sections (per-doc TOTAL); this epic unifies them into one registry and closes the 'seems like spam so I skipped it' and 'split across two files' gaps permanently.
+
+## Done report
+
+Verified T-0346's close condition is genuinely met and closed the epic.
+
+Children: all 6 direct children (T-0673, T-0674, T-0675, T-0676, T-0677,
+T-0678) are state=done, confirmed by direct grep of tickets.md/
+tickets-archive.md for `parent: T-0346` -- no open or blocked child
+remains.
+
+Acceptance [0] (single machine-readable registry + reconciliation test
+catching prose-only and split-across-files misses): `docs/design/
+registry/*.yaml` (10 files, 2190 entries) is the single canonical
+registry every corpus doc's ids now route through; T-0678's `tests/
+unit/strata/test_registry_cross_corpus_totality.py` (just landed) is the
+standing meta-test for both miss classes -- `TestCrossCorpusLinkageIntegrity`
+locks that every cross-file concept link (the "split across files" class,
+finding (b)/(h)) stays resolvable and mutually navigable across the WHOLE
+registry, and `TestProseOnlyRetrofitIntegrity` locks that the 156 ids
+minted for the 3 previously prose-only docs (finding (a)) stay present
+with correct source pointers.
+
+Acceptance [1] (TRUE exhaustiveness, CWE-1000 full to per-entry
+disposition): `weaknesses.yaml` carries 984 entries (944 CWE + 40 other
+weakness-framework entries), matching RECONCILIATION.md's own stated
+CWE-1000 total exactly -- verified live via `frob.registry.
+audit_registry_file`: `total=984, exhausted=True, unaccounted=0`.
+`tests/test_registry_reconciliation_weaknesses.py::
+TestWeaknessesExhaustiveness::test_declared_cwe_total_is_944` and
+`test_audit_reports_exhausted` both independently re-run passing,
+confirming this against the live file.
+
+Acceptance [2] (every registry entry carries a disposition, drift-locked):
+verified live across the ENTIRE registry, all 10 files, not just the ones
+this drive's tickets touched -- `frob.registry.audit_registry_file` over
+every `docs/design/registry/*.yaml` file reports `unaccounted=0` for
+EVERY file (arch-checks 311, check-coverage 240, compliance 27, evasion
+112, patterns 346, pii 7, secrets 3, supply-chain 41, system-design 119,
+weaknesses 984 = grand total 2190, unaccounted 0 across the board). T-0343's
+exhaustiveness drift-lock (`registry_gate`, wired into `frob check`'s
+default REG-family gates) is live and enforcing this today.
+
+Disclosed gap, not silently claimed closed (found while verifying the
+close condition, unrelated to any of T-0346's own children's work): `tests/
+test_registry_reconciliation_weaknesses.py::
+TestExhaustivenessGateOverRealWeaknesses::test_no_weaknesses_violations`
+fails on current main -- `registry_gate` reports 798 REG011 (WARN-severity,
+T-0680, an out_of_scope reason-quality check that landed AFTER T-0384's
+test was written) violations against `weaknesses.yaml`'s `out_of_scope`
+dispositions. This does not affect acceptance [1]/[2] (REG011 is a
+severity=WARN quality-bar check on REASON TEXT, not an exhaustiveness/
+disposition-presence check -- `audit_registry_file`'s `unaccounted=0`
+above is unaffected) but is real, live drift worth fixing. Filed
+T-1037 rather than silently fixed (out of T-0346's own declared
+scope: the affected test file and weaknesses.yaml belong to T-0384's
+scope, not T-0346's `tests/unit/strata/` test-file scope).
+
+Evidence: the T-0678 meta-test (already this ticket's own evidence, cited
+again here as the epic's closing proof) plus the two passing weaknesses.yaml
+exhaustiveness tests (CWE-1000 completeness), all independently re-run.
+
+Gates: verified via direct `frob.registry.audit_registry_file` calls
+against the live registry (see above) rather than a fresh `frob check`
+run -- this ticket makes no code change, only verifies and closes; the
+constituent meta-tests' own gate passes were already recorded at their
+own land time (T-0678's Done report, this same session).
+
+Filed: T-1037 (REG011 quality-bar drift in weaknesses.yaml,
+found while verifying this epic's close condition, unrelated to T-0346's
+own scope of work).
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 0 error(s), 3382 warning(s), 340 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0380 -->
 ```yaml
@@ -5475,3 +5573,29 @@ threat: null
 component: null
 ```
 Observed repeatedly by the T-0690 agent under high ledger churn (many concurrent lands): frob ticket sweep and done-report intermittently rewrote OTHER tickets' sections in tickets.md, caught only by a git diff main -- tickets.md check after each CLI call and repaired by splicing the agent's own block onto a fresh main copy. Root-cause the read-modify-write path: it likely reads the whole ledger, mutates one block, and writes the whole file back without checking the on-disk file changed since read (the T-0889 ledger_digest optimistic-concurrency guard may not cover these two verbs, or the worktree copy diverges from the merged state). Fix = extend the optimistic-concurrency digest guard to every ledger-writing verb and add a churn regression test that interleaves a concurrent block edit between read and write.
+
+<!-- ticket:T-1037 -->
+```yaml
+id: T-1037
+title: 'REG011 quality-bar drift: 798 out_of_scope reasons in weaknesses.yaml fail
+  T-0680''s substantive-disclosure check'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- docs/design/registry/weaknesses.yaml
+- tests/test_registry_reconciliation_weaknesses.py
+- src/frob/gates/_registry_exhaustiveness.py
+threat: null
+component: null
+```
+Found while closing epic T-0346: `tests/test_registry_reconciliation_weaknesses.py::TestExhaustivenessGateOverRealWeaknesses::test_no_weaknesses_violations` fails on current main -- `registry_gate` reports 798 REG011 (WARN severity, T-0680: registry-YAML `out_of_scope:<reason>` quality check requiring a substantive reasoned-none disclosure, not a bare excuse) violations against `docs/design/registry/weaknesses.yaml` alone, out of 1157 total registry violations repo-wide.
+
+Root cause: REG011 was added by T-0680, which landed after T-0384's reconciliation test was written and pinned "zero violations" against `weaknesses.yaml`. T-0384 never anticipated this new WARN-level quality bar. `weaknesses.yaml`'s `out_of_scope:` dispositions (presumably many of its CWE `out-of-scope-naming-the-missing-concept` entries, per T-0346's own acceptance criterion [1] wording) apparently do not meet REG011's substantive-reason bar.
+
+This is a real, live gate warning (not an error) affecting a file this session did not touch. Two possible fixes, for the reviewer to choose: (1) improve the ~798 flagged `out_of_scope` reason strings in weaknesses.yaml to satisfy REG011's substantive-disclosure bar (real remediation, likely large), or (2) if the reasons are already substantive and REG011's heuristic is simply too strict for this file's phrasing convention, adjust REG011 or file targeted waivers. Scope: docs/design/registry/weaknesses.yaml, tests/test_registry_reconciliation_weaknesses.py, possibly src/frob/gates/_registry_exhaustiveness.py (REG011 itself) depending on the reviewer's chosen direction.
