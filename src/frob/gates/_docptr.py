@@ -33,8 +33,8 @@ token under two rule ids):
    in it (`frob.gates.__init__._doc_anchor_slugs`, the same resolver
    DOC002 uses for `frob:doc` edges).
 
-A sixth, source-level check rides alongside the doc-prose scan for the
-SAME reason this ticket names explicitly (the DRIFT002 dotted-vs-`::`
+A source-level check rides alongside the doc-prose scan for the SAME
+reason this ticket names explicitly (the DRIFT002 dotted-vs-`::`
 confusion, T-0940/T-0945): a `frob:tests` directive's target is itself a
 RECOGNIZED, mechanically-checkable shape -- `<file>::<qualname>` with
 exactly one `::` separating the file from a DOTTED (`Class.method`)
@@ -42,11 +42,22 @@ qualname. A target with a SECOND `::` (pytest's own `Class::method`
 collect-only separator, e.g. `foo.py::TestX::test_y`) is definitively the
 wrong shape for a graph-facing `frob:tests` target -- this is caught here,
 directly, rather than waiting for it to surface later as a generic
-DRIFT002 dangling-edge failure with a less specific message.
+DRIFT002 dangling-edge failure with a less specific message. As of T-0986
+this is its OWN rule, DOC007, at ERROR (not DOC006/WARN): the mistake
+recurred four separate times (T-0715, T-0926, T-0976 x8, T-0983), each
+only ever surfacing post-land as a DRIFT002 failure, so it now refuses at
+author time instead. It is split into a dedicated rule id specifically so
+this promotion does not also promote the other ~700 live DOC006 findings
+in this repo (an unrelated, still-WARN burn-down) to ERROR.
 
-Every finding is `frob:waive DOC006 reason="..."`-able (same nearby-line
-convention as DOC004: same line or up to 3 preceding lines), for a
-genuinely external/illustrative/future-facing pointer.
+Every DOC006 finding is `frob:waive DOC006 reason="..."`-able (same
+nearby-line convention as DOC004: same line or up to 3 preceding lines),
+for a genuinely external/illustrative/future-facing pointer. Every DOC007
+finding is likewise `frob:waive DOC007 reason="..."`-able, via the
+standard source-level `frob:waive` edge (T-0986's check operates on graph
+edges, not doc prose, so it goes through the normal edge-waiver path
+`frob.gates.__init__._apply_waivers` uses for every other code-facing
+gate, not DOC006's own `.md`-only nearby-line scan).
 """
 # frob:ticket T-0437
 # frob:waive INV006 reason="T-0437 INV006 first-turn-on pool: this module's \
@@ -162,6 +173,34 @@ def _doc006_violation(file: str, line: int, kind: str, detail: str) -> Violation
             f"DOC006: {kind} pointer in {file}:{line} does not resolve -- "
             f"{detail}; fix the reference or "
             f'`frob:waive DOC006 reason="..."` if intentionally external/'
+            f"illustrative/future-facing"
+        ),
+    )
+
+
+def _doc007_violation(file: str, line: int, detail: str) -> Violation:
+    """Build one DOC007 violation (T-0986): a `frob:tests` target using
+    pytest's `Class::method` collect-only separator instead of this
+    graph's own single-`::`-then-dotted-qualname convention. Split out of
+    DOC006 (rather than promoting that whole family to ERROR) SPECIFICALLY
+    so this one recognized-shape mistake refuses at author time -- the
+    other ~700 live DOC006 findings in this repo stay at WARN, untouched,
+    a separate burn-down. Shipped at ERROR from birth (not the WARN-first-
+    turn-on precedent DOC006 itself used): the shape it catches has zero
+    live occurrences on `main` (verified by grep before this rule shipped)
+    and every historical occurrence (T-0715, T-0926, T-0976 x8, T-0983)
+    only ever surfaced post-land as a DRIFT002 dangling-edge failure --
+    there is no adoption baseline to protect, only a recurring author-time
+    mistake to refuse outright."""
+    return Violation(
+        rule="DOC007",
+        severity=Severity.ERROR,
+        file=file,
+        line=line,
+        message=(
+            f"DOC007: frob:tests target-form in {file}:{line} does not "
+            f"resolve -- {detail}; fix the reference or "
+            f'`frob:waive DOC007 reason="..."` if intentionally external/'
             f"illustrative/future-facing"
         ),
     )
@@ -551,11 +590,12 @@ def _origin_site(origin: str) -> tuple[str, int]:
 
 
 def _tests_target_shape_violations(snapshot: GraphSnapshot) -> list[Violation]:
-    """DOC006 over every `frob:tests` edge's TARGET string: a second `::`
-    (pytest's `Class::method` collect-only separator) where this graph's
-    convention wants a single `::` then a DOTTED `Class.method` qualname is
-    a recognized wrong shape, flagged here directly instead of waiting for
-    it to surface later as a generic DRIFT002 dangling-edge failure."""
+    """DOC007 over every `frob:tests` edge's TARGET string (T-0986,
+    formerly a DOC006 sub-check): a second `::` (pytest's `Class::method`
+    collect-only separator) where this graph's convention wants a single
+    `::` then a DOTTED `Class.method` qualname is a recognized wrong shape,
+    flagged here at ERROR directly instead of waiting for it to surface
+    later as a generic DRIFT002 dangling-edge failure post-land."""
     violations: list[Violation] = []
     for edge in snapshot.edges:
         if edge.kind != EdgeKind.TESTS:
@@ -564,10 +604,9 @@ def _tests_target_shape_violations(snapshot: GraphSnapshot) -> list[Violation]:
             continue
         file, line = _origin_site(edge.origin)
         violations.append(
-            _doc006_violation(
+            _doc007_violation(
                 file,
                 line,
-                "frob:tests target-form",
                 f"{edge.target!r} uses pytest's `Class::method` collect-only "
                 f"separator; this graph's own convention is a single `::` "
                 f"then a DOTTED `Class.method` qualname",

@@ -271,9 +271,12 @@ class TestDoc006Waive:
 
 
 class TestDoc006TestsTargetShape:
-    """The DRIFT002 dotted-vs-:: hardening: a `frob:tests` target with a
-    second `::` (pytest's own `Class::method` separator) is a recognized
-    wrong shape, flagged directly regardless of doc content."""
+    """The DRIFT002 dotted-vs-:: hardening (T-0986: promoted to its own
+    rule, DOC007, at ERROR -- split out of DOC006 so the promotion does
+    not also touch DOC006's ~700 unrelated, still-WARN findings): a
+    `frob:tests` target with a second `::` (pytest's own `Class::method`
+    separator) is a recognized wrong shape, flagged directly regardless of
+    doc content."""
 
     def test_double_separator_target_flagged(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
@@ -284,8 +287,9 @@ class TestDoc006TestsTargetShape:
         )
         _add_all(tmp_path)
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
-        found = [v for v in violations if v.rule == "DOC006"]
+        found = [v for v in violations if v.rule == "DOC007"]
         assert any("TestX::test_y" in v.message for v in found)
+        assert all(v.severity == Severity.ERROR for v in found)
 
     def test_single_separator_target_not_flagged(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
@@ -296,5 +300,5 @@ class TestDoc006TestsTargetShape:
         )
         _add_all(tmp_path)
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
-        found = [v for v in violations if v.rule == "DOC006"]
+        found = [v for v in violations if v.rule == "DOC007"]
         assert not any("tests/test_mod.py::TestX.test_y" in v.message for v in found)

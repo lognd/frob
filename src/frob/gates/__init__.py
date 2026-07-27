@@ -1212,9 +1212,13 @@ _KNOWN_GATE_RULES = frozenset(
         "DOC005",
         # T-0437: doc-pointer resolution over a closed set of recognized
         # shapes (file/path, cli invocation, config reference, code symbol,
-        # doc-anchor link), plus the frob:tests target-form hardening for
-        # the DRIFT002 dotted-vs-:: confusion class (frob.gates._docptr).
+        # doc-anchor link) (frob.gates._docptr).
         "DOC006",
+        # T-0986: split out of DOC006 -- the `frob:tests` target-form
+        # hardening for the DRIFT002 dotted-vs-:: confusion class, shipped
+        # at ERROR from birth (the other ~700 live DOC006 findings stay
+        # WARN, a separate burn-down) (frob.gates._docptr).
+        "DOC007",
         # T-0471: unpruned filesystem traversal (frob.gates._walk_lint).
         "WALK001",
         # T-0465: .git/info/exclude entry shadowing tracked source
