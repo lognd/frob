@@ -277,6 +277,20 @@ ARCH101 = "error"
 # ticket rather than done in this pass. Promoted to error at zero live
 # unwaived findings.
 ARCH102 = "error"
+# T-0990: ARCH103 (mixed-concern-function) -- T-0977 burned 22 of 24 live
+# findings down via reasoned `frob:waive ARCH103` sites; T-0979 resolved
+# 2 more that had moved into `_format_one_path`/`_build_one_crate` post
+# T-0976/T-0985 refactors, but a fresh unscoped re-measure turned up 2
+# OTHER live unwaived findings that had appeared from unrelated recent
+# changes: `perf_runner.py::_collect_stacks_from_file` and
+# `gates/__init__.py::_open_process_pool`. This ticket resolved both by
+# real extraction (splitting the read/format-resolve/parse steps and the
+# two env-marker stamps into single-concern helpers, each below ARCH103's
+# 2-decision-point threshold) rather than a waiver, preserving
+# `_open_process_pool`'s T-0947 forkserver-preload and T-0982 lock-key
+# stamping behavior unchanged. Promoted to error at zero live unwaived
+# findings repo-wide.
+ARCH103 = "error"
 # T-0972: gates-quality audit finding 1 -- PERF001-004 (membership-in-list,
 # .index()/.count(), nested-loop equality-join, sorted()-in-loop) were
 # WARN-only, so a repo could carry real O(n^2)/repeated-work perf smells

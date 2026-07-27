@@ -268,31 +268,69 @@ def _collect_stacks_via_sampler(cfg: AppConfig):  # noqa: ANN201
     return stacks
 
 
-# frob:ticket T-0976
-def _collect_stacks_from_file(cfg: AppConfig):  # noqa: ANN201
-    """Read `--file`'s recorded profile and parse it via
-    `parse_collector_format`, autodetecting the format when `--format` was
-    not given. `sys.exit`s on any read/parse failure."""
-    from frob.perf import detect_collector_format
-    from frob.perf._collectors import parse_collector_format
-
-    if cfg.perf_file is None:
-        _log.error("frob perf collect requires --file PATH or --sampler")
-        sys.exit(1)
-    file = cfg.perf_file
+# frob:ticket T-0990
+# frob:tests tests/system/test_cli_perf.py::TestPerfCollect.test_collect_resolves_a_real_python_hot_frame  # noqa: E501
+def _read_perf_file_text(file: Path) -> str:  # noqa: ANN201
+    """Read `file` as UTF-8 text for `frob perf collect`, exiting with a
+    logged error on any OSError. Split out of `_collect_stacks_from_file`
+    (T-0990) so each of the read/format-resolve/parse steps stays a single,
+    low-branch-count concern of its own -- the ARCH103 mixed-concern-
+    function check flags a function only once it mixes I/O, string-
+    formatting, AND 2+ of its own decision points, and no one of these
+    three helpers alone reaches that bar."""
     try:
-        text = file.read_text(encoding="utf-8")
+        return file.read_text(encoding="utf-8")
     except OSError as exc:
         _log.error("collect: could not read %s: %s", file, exc)
         sys.exit(1)
 
-    fmt = cfg.perf_format or detect_collector_format(file, text)
+
+# frob:ticket T-0990
+# frob:tests tests/system/test_cli_perf.py::TestPerfCollect.test_collect_autodetects_cpuprofile_format  # noqa: E501
+def _resolve_perf_format(cfg: AppConfig, file: Path, text: str) -> str:
+    """Explicit `cfg.perf_format`, else autodetect via
+    `detect_collector_format` (T-0990, split out of
+    `_collect_stacks_from_file` -- see `_read_perf_file_text`'s docstring
+    for why)."""
+    from frob.perf import detect_collector_format
+
+    return cfg.perf_format or detect_collector_format(file, text)
+
+
+# frob:ticket T-0990
+# frob:tests tests/system/test_cli_perf.py::TestPerfCollect.test_collect_json_output_is_valid_json  # noqa: E501
+def _parse_perf_text_or_exit(fmt: str, text: str, file: Path):  # noqa: ANN201
+    """Parse `text` as `fmt` via `parse_collector_format`, exiting with a
+    logged error on any parse failure (T-0990, split out of
+    `_collect_stacks_from_file` -- see `_read_perf_file_text`'s docstring
+    for why)."""
+    from frob.perf._collectors import parse_collector_format
+
     result = parse_collector_format(fmt, text, str(file))
     if result.is_err:
         _log.error("collect: %s: %s", file, result.danger_err)
         sys.exit(1)
-    _log.info("collect: %s parsed as %s", file, fmt)
     return result.danger_ok
+
+
+# frob:ticket T-0976
+# frob:ticket T-0990
+def _collect_stacks_from_file(cfg: AppConfig):  # noqa: ANN201
+    """Read `--file`'s recorded profile and parse it via
+    `parse_collector_format`, autodetecting the format when `--format` was
+    not given. `sys.exit`s on any read/parse failure. T-0990: delegates the
+    read, format-resolution, and parse steps to `_read_perf_file_text`/
+    `_resolve_perf_format`/`_parse_perf_text_or_exit` so this function's own
+    body stays a single straight-line orchestration concern."""
+    if cfg.perf_file is None:
+        _log.error("frob perf collect requires --file PATH or --sampler")
+        sys.exit(1)
+    file = cfg.perf_file
+    text = _read_perf_file_text(file)
+    fmt = _resolve_perf_format(cfg, file, text)
+    stacks = _parse_perf_text_or_exit(fmt, text, file)
+    _log.info("collect: %s parsed as %s", file, fmt)
+    return stacks
 
 
 # frob:ticket T-0765
