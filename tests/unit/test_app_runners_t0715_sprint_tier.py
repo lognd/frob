@@ -16,7 +16,7 @@ class TestTicketNewTierSprint:
     """`frob ticket new --tier ... --sprint ...` (T-0715)."""
 
     def test_new_carries_tier_and_sprint(self, tmp_path: Path, caplog) -> None:
-        # frob:tests tests/unit/test_app_runners_t0715_sprint_tier.py::TestTicketNewTierSprint::test_new_carries_tier_and_sprint  # noqa: E501
+        # frob:tests tests/unit/test_app_runners_t0715_sprint_tier.py::TestTicketNewTierSprint.test_new_carries_tier_and_sprint  # noqa: E501
         cfg = AppConfig(
             ticket_command="new",
             ticket_path=tmp_path,
@@ -40,7 +40,7 @@ class TestTicketDoableSprintByParent:
     """`frob ticket doable --sprint LABEL` / `--by-parent` (T-0715)."""
 
     def test_doable_sprint_filter(self, tmp_path: Path, caplog) -> None:
-        # frob:tests tests/unit/test_app_runners_t0715_sprint_tier.py::TestTicketDoableSprintByParent::test_doable_sprint_filter  # noqa: E501
+        # frob:tests tests/unit/test_app_runners_t0715_sprint_tier.py::TestTicketDoableSprintByParent.test_doable_sprint_filter  # noqa: E501
         ticket_run(
             AppConfig(
                 ticket_command="new",
@@ -70,7 +70,7 @@ class TestTicketDoableSprintByParent:
         assert "T-0002" not in caplog.text
 
     def test_doable_by_parent_groups_leaves(self, tmp_path: Path, caplog) -> None:
-        # frob:tests tests/unit/test_app_runners_t0715_sprint_tier.py::TestTicketDoableSprintByParent::test_doable_by_parent_groups_leaves  # noqa: E501
+        # frob:tests tests/unit/test_app_runners_t0715_sprint_tier.py::TestTicketDoableSprintByParent.test_doable_by_parent_groups_leaves  # noqa: E501
         ticket_run(
             AppConfig(
                 ticket_command="new",
@@ -105,7 +105,7 @@ class TestTicketSprintAssignShow:
     (T-0715)."""
 
     def test_assign_then_show(self, tmp_path: Path, caplog) -> None:
-        # frob:tests tests/unit/test_app_runners_t0715_sprint_tier.py::TestTicketSprintAssignShow::test_assign_then_show  # noqa: E501
+        # frob:tests tests/unit/test_app_runners_t0715_sprint_tier.py::TestTicketSprintAssignShow.test_assign_then_show  # noqa: E501
         ticket_run(
             AppConfig(
                 ticket_command="new",
@@ -135,7 +135,7 @@ class TestTicketSprintAssignShow:
         assert "a ticket" in caplog.text
 
     def test_show_json_mode(self, tmp_path: Path, caplog) -> None:
-        # frob:tests tests/unit/test_app_runners_t0715_sprint_tier.py::TestTicketSprintAssignShow::test_show_json_mode  # noqa: E501
+        # frob:tests tests/unit/test_app_runners_t0715_sprint_tier.py::TestTicketSprintAssignShow.test_show_json_mode  # noqa: E501
         ticket_run(
             AppConfig(
                 ticket_command="new",

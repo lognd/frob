@@ -1867,7 +1867,7 @@ def set_kind(
 
 # frob:ticket T-0715
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_tiers.py::TestSprintAssign::test_updates_sprint_field
+# frob:tests tests/test_tickets_tiers.py::TestSprintAssign.test_updates_sprint_field
 def set_sprint(
     root: Path, ticket_id: str, sprint: str | None
 ) -> Result[Ticket, TicketError]:
@@ -1893,7 +1893,7 @@ def set_sprint(
 
 # frob:ticket T-0715
 # frob:doc docs/modules/tickets.md#public-api
-# frob:tests tests/test_tickets_tiers.py::TestSprintShow::test_state_rollup_and_velocity
+# frob:tests tests/test_tickets_tiers.py::TestSprintShow.test_state_rollup_and_velocity
 def sprint_view(queue: TicketQueue, sprint: str) -> SprintReport:
     """`frob ticket sprint show <label>`: every ticket committed to
     `sprint` (T-0715), a `TicketState -> count` rollup, and `closed`
@@ -2126,7 +2126,7 @@ def brief_ticket(root: Path, ticket_id: str) -> Result[str, TicketError]:
 # frob:ticket T-0453
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_lease.py::TestDoable.test_ignore_lease_returns_raw_list
-# frob:tests tests/test_tickets_tiers.py::TestDoableLeafOnly::test_epic_and_story_never_surface  # noqa: E501
+# frob:tests tests/test_tickets_tiers.py::TestDoableLeafOnly.test_epic_and_story_never_surface  # noqa: E501
 # frob:waive DRIFT001 reason="T-0453 added root/ignore_lease params; frob.lock ack out of scope, no inline-waivable syntax for JSON -- reviewer re-acks at land"  # noqa: E501
 # frob:invariant INV-024
 # frob:ticket T-0715
@@ -2563,8 +2563,8 @@ def _load_ticket_and_queue(
 # frob:tests tests/test_evidence_integrity.py::TestT0844MutationEvidenceOnClose.test_transition_rejects_when_mutation_evidence_false  # noqa: E501
 # frob:tests tests/test_evidence_integrity.py::TestT0844MutationEvidenceOnClose.test_transition_allows_when_mutation_evidence_true  # noqa: E501
 # frob:tests tests/test_evidence_integrity.py::TestT0844MutationEvidenceOnClose.test_transition_permissive_when_mutation_evidence_none  # noqa: E501
-# frob:tests tests/test_tickets_tiers.py::TestCloseOpenDescendantGuard::test_epic_close_refused_with_open_descendant  # noqa: E501
-# frob:tests tests/test_tickets_tiers.py::TestCloseOpenDescendantGuard::test_epic_close_allowed_once_descendant_done  # noqa: E501
+# frob:tests tests/test_tickets_tiers.py::TestCloseOpenDescendantGuard.test_epic_close_refused_with_open_descendant  # noqa: E501
+# frob:tests tests/test_tickets_tiers.py::TestCloseOpenDescendantGuard.test_epic_close_allowed_once_descendant_done  # noqa: E501
 # frob:ticket T-0715
 def transition(
     root: Path,

@@ -59,8 +59,8 @@ class TicketKind(StrEnum):
 
 # frob:ticket T-0715
 # frob:doc docs/modules/tickets.md#data-models
-# frob:tests tests/test_tickets_tiers.py::TestTierField::test_default_tier_is_ticket
-# frob:tests tests/test_tickets_tiers.py::TestTierField::test_serialize_parse_round_trip
+# frob:tests tests/test_tickets_tiers.py::TestTierField.test_default_tier_is_ticket
+# frob:tests tests/test_tickets_tiers.py::TestTierField.test_serialize_parse_round_trip
 class TicketTier(StrEnum):
     """Where a ticket sits in the epic -> story -> ticket organization
     hierarchy (T-0715): `EPIC` parents `STORY` tickets, `STORY` parents leaf
