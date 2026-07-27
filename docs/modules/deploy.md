@@ -31,10 +31,17 @@ Per verb:
 - **`install.ps1`** -- check-then-apply, same idempotency contract the
   bash target established: creates one service account per distinct
   `service_account` (`Install-ADServiceAccount` for a `gmsa`-marked
-  identity, `New-LocalUser` otherwise), hardens an ALREADY-EXISTING
-  `service`-marked node's SCM service (SID type, required-privilege set
-  via `sc.exe config`), applies each declared `acl` entry's NTFS grant
-  (`icacls`), opens a firewall rule per declared `listens` port
+  identity, `New-LocalUser` otherwise). For a `service`-marked node whose
+  manifest declares `bin_path` (`std.host`'s windows binPath/ImagePath
+  vocabulary, T-0629), IDEMPOTENTLY CREATES the SCM service via `sc.exe
+  create` with `binPath=` built from `bin_path`/`bin_path_args` when it
+  is absent, then hardens it (SID type, required-privilege set via
+  `sc.exe config`) the same as an already-existing service; a
+  `service`-marked node with no `bin_path` declared falls back to the
+  pre-T-0629 posture -- hardens the service only if it already exists,
+  and emits a plain skip message (not a fabricated placeholder binary)
+  when it is absent. It also applies each declared `acl` entry's NTFS
+  grant (`icacls`), opens a firewall rule per declared `listens` port
   (`New-NetFirewallRule`), and -- when the SAME node also carries a
   `std.krb` manifest (`frob.strata.krb_manifest_for`, T-0262, NOT
   redefined here) -- registers its `spns` (`setspn`) and applies its
@@ -62,15 +69,16 @@ flagged, distinct from a content mismatch (`src/frob/deploy/_drift.py`'s
 
 ## Scope and honesty notes (`generate` windows)
 
-`std.host` has no windows binPath/ImagePath vocabulary yet (the same
-class of honest gap `docs/strata/host.md` documents for OS-user
-trust-lattice plumbing on the linux side): `install.ps1` cannot itself
-`sc.exe create` a working service, since the manifest declares no binary
-path for it to bind to. It configures hardening on an ALREADY-EXISTING
+`std.host` now has a windows binPath/ImagePath vocabulary (`HostManifest.
+bin_path`/`bin_path_args`, T-0629): when a `service`-marked node declares
+`bin_path`, `install.ps1` idempotently `sc.exe create`s the service with
+that ImagePath before hardening runs, rather than requiring the service
+to pre-exist. A `service`-marked node that declares NO `bin_path` keeps
+the pre-T-0629 posture -- it configures hardening on an ALREADY-EXISTING
 service and says so plainly (rather than fabricating a placeholder
 binary) when the service is absent.
 
-Three v0 scope cuts, disclosed rather than silently dropped:
+Three v0 scope cuts remain, disclosed rather than silently dropped:
 
 - **Required privileges** default to the empty (most restrictive) set
   (`sc.exe privs <name> ""`) -- `std.host` has no windows privilege

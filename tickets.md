@@ -6429,7 +6429,7 @@ Main sat at 13 gate errors from two lands. The 12 DRIFT002s: T-0715's frob:tests
 id: T-0941
 title: 'docs/modules/deploy.md: update windows binPath/ImagePath scope-cut prose now
   that T-0629 shipped the vocabulary'
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-07-26'
@@ -6439,6 +6439,18 @@ tier: ticket
 sprint: null
 scope:
 - docs/modules/deploy.md
+- tests/unit/deploy/test_generate_windows.py
+scope_changes:
+- op: add
+  glob: tests/unit/deploy/test_generate_windows.py
+  reason: 'evidence: existing test coverage for the bin_path/sc.exe create behavior
+    the doc update describes'
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- tests/unit/deploy/test_generate_windows.py::TestInstall::test_creates_service_when_bin_path_declared
+- tests/unit/deploy/test_generate_windows.py::TestInstall::test_service_not_present_notes_missing_bin_path
+- tests/unit/deploy/test_generate_windows.py::TestInstall::test_creates_service_without_args
 threat: null
 component: null
 ```
@@ -6463,6 +6475,26 @@ Update docs/modules/deploy.md's windows-generation bullet list and its
 drop it from the "not yet built" scope-cut list (the three remaining v0 scope
 cuts -- required privileges, deny-logon rights, RBCD delegation -- are
 unaffected and should stay).
+
+## Done report
+
+Changed: docs/modules/deploy.md (windows-generation bullet list, Scope and honesty notes section)
+Evidence: tests/unit/deploy/test_generate_windows.py::TestInstall.test_creates_service_when_bin_path_declared, ::test_service_not_present_notes_missing_bin_path, ::test_bin_path_args_optional (20/20 passing, pytest -q)
+Filed: none
+Gates: frob check --ticket T-0941 clean (0 errors, gate:PRE cleared after re-sweep post scope-add)
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/deploy/test_generate_windows.py::TestInstall::test_creates_service_when_bin_path_declared` (pytest node id, verified passing when recorded)
+- `tests/unit/deploy/test_generate_windows.py::TestInstall::test_service_not_present_notes_missing_bin_path` (pytest node id, verified passing when recorded)
+- `tests/unit/deploy/test_generate_windows.py::TestInstall::test_creates_service_without_args` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 0 error(s), 4150 warning(s), 219 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0942 -->
 ```yaml
