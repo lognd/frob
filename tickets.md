@@ -6826,11 +6826,12 @@ list.
   T-0985 documented, if still unfixed at that point).
 - No new `MalformedDirective`s anywhere in the repo relative to the
   pre-recompaction baseline.
+
 <!-- ticket:T-0989 -->
 ```yaml
 id: T-0989
 title: Split frob.lang's tree-sitter node utilities into their own module
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-27'
@@ -6841,6 +6842,52 @@ sprint: null
 scope:
 - src/frob/lang/__init__.py
 - src/frob/lang/_nodes.py
+- tests/unit/test_lang_primitives.py
+- docs/modules/graph.md
+scope_changes:
+- op: add
+  glob: tests/unit/test_lang_primitives.py
+  reason: 'DRIFT001 fired because tests/unit/test_lang_primitives.py''s frob:tests
+
+    directives pointed at src/frob/lang/__init__.py::{child_by_field,node_text,
+
+    cpp_function_nodes,resolve_local_import}, which no longer resolve there
+
+    after the T-0989 split -- updating those directive targets to
+
+    src/frob/lang/_nodes.py is a direct, mechanical consequence of the split,
+
+    not new scope. docs/modules/graph.md''s #public-api anchor is the
+
+    AFFECT001-required doc touch for the same four moved symbols.
+
+    '
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: docs/modules/graph.md
+  reason: 'DRIFT001 fired because tests/unit/test_lang_primitives.py''s frob:tests
+
+    directives pointed at src/frob/lang/__init__.py::{child_by_field,node_text,
+
+    cpp_function_nodes,resolve_local_import}, which no longer resolve there
+
+    after the T-0989 split -- updating those directive targets to
+
+    src/frob/lang/_nodes.py is a direct, mechanical consequence of the split,
+
+    not new scope. docs/modules/graph.md''s #public-api anchor is the
+
+    AFFECT001-required doc touch for the same four moved symbols.
+
+    '
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- tests/unit/test_lang_primitives.py::test_child_by_field_and_node_text_public_wrappers
+- tests/unit/test_lang_primitives.py::test_cpp_function_nodes_public_wrapper
+- tests/unit/test_lang_primitives.py::test_resolve_local_import_maps_to_repo_relative
+- tests/test_lang.py::test_lang_pipeline_integration
 threat: null
 component: null
 ```
@@ -6857,6 +6904,30 @@ is unaffected, and drop the corresponding lines from the ARCH102 waiver
 reason in `frob/lang/__init__.py` (module export count/cluster count both
 drop, so the waiver may become removable entirely -- re-measure via
 `frob check --only gates-native --json` after the split before deciding).
+
+## Done report
+
+The one genuine split T-0980's god-module analysis justified: frob.lang's four tree-sitter node utilities (cpp_function_nodes, child_by_field, node_text, resolve_local_import) moved to src/frob/lang/_nodes.py with unchanged re-exports -- every caller repo-wide imports via the package, so zero caller edits; the ARCH102 waiver reason narrowed to the two remaining shared-state groups. Directive edges repointed, docs anchor updated, full lang/graph/arch suites green.
+
+### Changed
+```
+ docs/modules/graph.md              |   8 +++
+ src/frob/lang/__init__.py          | 106 ++++++++++---------------------------
+ src/frob/lang/_nodes.py            |  83 +++++++++++++++++++++++++++++
+ tests/unit/test_lang_primitives.py |  14 +++--
+ tickets.md                         |  77 ++++++++++++++++++++++++++-
+ 5 files changed, 205 insertions(+), 83 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_lang_primitives.py::test_child_by_field_and_node_text_public_wrappers` (pytest node id, verified passing when recorded)
+- `tests/unit/test_lang_primitives.py::test_cpp_function_nodes_public_wrapper` (pytest node id, verified passing when recorded)
+- `tests/unit/test_lang_primitives.py::test_resolve_local_import_maps_to_repo_relative` (pytest node id, verified passing when recorded)
+- `tests/test_lang.py::test_lang_pipeline_integration` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0990 -->
 ```yaml

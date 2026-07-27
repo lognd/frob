@@ -661,18 +661,14 @@
     "src/frob/graph/summary.py::compute_protocol_summaries": "7fc0990476fbed473150809319d75281a3d2be610a842012ff3c1101549faa8d",
     "src/frob/lang/__init__.py::GRAMMAR_FINGERPRINT_PACKAGES": "0fb7c91d3df53b4aec4312a2c97e716487a17e6b8f10f6b2a3dcadb121d14623",
     "src/frob/lang/__init__.py::LangError": "072a7cff3ec199ba5ba83d23c6473cc17b5862ff6b4aa480769541a7ce60761c",
-    "src/frob/lang/__init__.py::child_by_field": "d905edd12101c35ff1d3b39e5bd8718946b8ff337fe9f43563495dcb0488651f",
-    "src/frob/lang/__init__.py::cpp_function_nodes": "951f475aa1d8263897369fba5bddc32a4abfb476ab3d0e060f9e9b4129824465",
     "src/frob/lang/__init__.py::extract_imports": "0e91c882e7c7bec98c9d74869e23a294eff906767fe3f73bad31003bcab1e331",
     "src/frob/lang/__init__.py::iter_identifiers": "cd18bf30f813e0239e772e6aee212e96f53f011c75f9571e3a2a591312e3cb7f",
     "src/frob/lang/__init__.py::language_for_extension": "b803a41c5a744042938cd11a5646fdf84ffe02a7b0dfa68dc1cdcd6089b56b3e",
-    "src/frob/lang/__init__.py::node_text": "d40c7ed522744beb5bf33cc5cdd6469a7d074f1679dd93d2d3e9ab8449b7d572",
     "src/frob/lang/__init__.py::parse_cache_stats": "fe75e97ace17ed2755134b610e349db44e4cf2ee055358ad95869b1518ff6422",
     "src/frob/lang/__init__.py::parse_file": "22a8b73d0a1aba089b664caa7675ed7ee9e0097df331516e24247e04ea0e6099",
     "src/frob/lang/__init__.py::partial_parse_files": "6db498c0393d185f06ef581fa9f273cdc0e8909eec4a3e98e86f0c6eb3270fd5",
     "src/frob/lang/__init__.py::raw_tree": "d50a30b12bdbf2182b7d8b500049cf0574e924a3250ab5302ddad8dedd717e89",
     "src/frob/lang/__init__.py::reset_parse_cache": "9d0b18b7167f0bb9fec07b4829b628d4367b066de0c4f2f8ada136a11f1cf1ea",
-    "src/frob/lang/__init__.py::resolve_local_import": "26fc40e7c586f26b3a596bc3bc12a5dbc4b291c33a46761aa41b062930e73454",
     "src/frob/lang/__init__.py::supported_extensions": "5df1c307264a6628c5ae234b580123f873a64c89c1a5ed46a4dcd5772b22cadc",
     "src/frob/lang/__init__.py::supported_languages": "35747d2ab1aa11f396d1bc875f6eb25fe8460872a77fcc1733c9def5d414bf9a",
     "src/frob/lang/__init__.py::symbol_tree": "7776191061fe25a9254e2751aeaa7eab189c5f30b991f63417edd2b65bdf52af",
@@ -691,6 +687,10 @@
     "src/frob/lang/_models.py::RawSymbol": "05b811e463802be06405362ced0998094c383634b542c0742ad0a14d9a6190b0",
     "src/frob/lang/_models.py::SymbolKind": "c16a4abc353cdf59891ea0ec5287f9de06b3f65cd8b57208f197af2bd10157dd",
     "src/frob/lang/_models.py::TreeNode": "558a642077a7059d00058437187e918f8f9d99163c84365ed56860f80c533be0",
+    "src/frob/lang/_nodes.py::child_by_field": "d905edd12101c35ff1d3b39e5bd8718946b8ff337fe9f43563495dcb0488651f",
+    "src/frob/lang/_nodes.py::cpp_function_nodes": "951f475aa1d8263897369fba5bddc32a4abfb476ab3d0e060f9e9b4129824465",
+    "src/frob/lang/_nodes.py::node_text": "d40c7ed522744beb5bf33cc5cdd6469a7d074f1679dd93d2d3e9ab8449b7d572",
+    "src/frob/lang/_nodes.py::resolve_local_import": "26fc40e7c586f26b3a596bc3bc12a5dbc4b291c33a46761aa41b062930e73454",
     "src/frob/lang/_support.py::FACETS": "a9b5eda9e34a046753b51a517da8af6bd49c2c4e4f96070da30c7db4c9e03c4f",
     "src/frob/lang/_support.py::FACET_ARCH": "d156eeaab7ba1d0aa271fddd72eb42cbf09df1ddd2df6f1490bd949bffa72798",
     "src/frob/lang/_support.py::FACET_CAPABILITY": "e14ed6f3883fb838235b62a58255f7fd14cc58883ead31cd4b1f33fa42ad7be2",
@@ -1709,5 +1709,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.181.0"
+  "version": "0.182.0"
 }

@@ -33,6 +33,14 @@ def parse_file(path: Path) -> Result[ParsedFile, LangError]
     # WHY: single entry point; language dispatch is internal (by extension).
 def supported_languages() -> frozenset[str]
 
+# frob/lang/_nodes.py (T-0989; re-exported unchanged from frob/lang/__init__.py
+# -- import path `from frob.lang import ...` is unaffected)
+def cpp_function_nodes(tree: Tree) -> tuple[tuple[Node, str], ...]
+def child_by_field(node: Node, field: str) -> Node | None
+def node_text(node: Node | None) -> str
+def resolve_local_import(specifier: str, language: str, *, file_dir: Path,
+                          root: Path) -> str | None
+
 # frob/graph/__init__.py
 def build_graph(root: Path, cache: Path) -> Result[GraphSnapshot, BuildError]
     # BuildError = GraphError | LangError. Incremental: re-parses only files

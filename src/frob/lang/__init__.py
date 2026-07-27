@@ -15,26 +15,27 @@ comment conventions) lives in `_extract.py`'s per-language walkers or
 `_walk_strata.py`; everything else (models, dispatch, hashing, the Result
 boundary) lives here.
 """
-# frob:waive ARCH102 reason="the 11-cluster count is a real blind spot in \
-# the naming/usage heuristic, not a real fragmentation: this module's \
-# exports fall into three groups, each cohesive around a shared resource \
-# the clustering pass cannot see because it only tracks name prefixes and \
-# direct calls. (1) supported_languages/supported_extensions/ \
-# language_for_extension/tree_sitter_extensions all read the same \
-# module-level _EXTENSION_TABLE/_SUPPORTED_LANGUAGES constants by \
-# subscript, never by calling each other. (2) reset_parse_cache/ \
-# parse_cache_stats/partial_parse_files/parse_file/_parse all read or \
-# mutate the same module-level _parse_cache dict and _parse_cache_hits/ \
-# _parse_cache_misses counters directly, again by shared state rather than \
-# calls -- this is the exact same call-graph blind spot T-0977 fixed for \
-# data-only classes, generalized to shared-mutable-state modules; \
-# splitting the cache-memo functions away from the cache dict they close \
-# over would force the cache into its own tiny module with no callers but \
-# this one. (3) cpp_function_nodes/child_by_field/node_text/ \
-# resolve_local_import are genuinely independent tree-sitter node \
-# utilities with no shared state and no calls into (1) or (2) -- a real \
-# split candidate, tracked as a follow-up rather than done speculatively \
-# in the same pass as this waiver"
+# frob:waive ARCH102 reason="post-T-0989 split, the remaining cluster \
+# count is a real blind spot in the naming/usage heuristic, not real \
+# fragmentation: this module's exports fall into two groups, each \
+# cohesive around a shared resource the clustering pass cannot see \
+# because it only tracks name prefixes and direct calls. (1) \
+# supported_languages/supported_extensions/language_for_extension/ \
+# tree_sitter_extensions all read the same module-level \
+# _EXTENSION_TABLE/_SUPPORTED_LANGUAGES constants by subscript, never by \
+# calling each other. (2) reset_parse_cache/parse_cache_stats/ \
+# partial_parse_files/parse_file/_parse all read or mutate the same \
+# module-level _parse_cache dict and _parse_cache_hits/ \
+# _parse_cache_misses counters directly, again by shared state rather \
+# than calls -- this is the exact same call-graph blind spot T-0977 \
+# fixed for data-only classes, generalized to shared-mutable-state \
+# modules; splitting the cache-memo functions away from the cache dict \
+# they close over would force the cache into its own tiny module with \
+# no callers but this one. The third group named in the prior waiver \
+# reason (cpp_function_nodes/child_by_field/node_text/ \
+# resolve_local_import) has been extracted to `frob.lang._nodes` and \
+# re-exported here (T-0989); re-measure after this change decided \
+# whether this waiver remains needed at the new, lower cluster count"
 
 from __future__ import annotations
 
@@ -43,20 +44,23 @@ import threading
 from collections.abc import Callable
 from pathlib import Path
 
-from tree_sitter import Node, Tree
+from tree_sitter import Tree
 from tree_sitter_language_pack import get_parser
 from typani import Err, ErrorSet, Ok
 from typani.result import Result
 
-from frob.lang._common import child_by_field as _child_by_field
-from frob.lang._common import child_text as _child_text
 from frob.lang._common import export_tree as _export_tree
 from frob.lang._common import flatten_tree
-from frob.lang._common import iter_cpp_functions as _iter_cpp_functions
 from frob.lang._extract import COMMENT_TYPES, extract
 from frob.lang._extract import extract_imports as _extract_imports
 from frob.lang._extract import iter_identifiers as _iter_identifiers
 from frob.lang._models import ParsedFile, RawComment, RawSymbol, SymbolKind, TreeNode
+from frob.lang._nodes import (
+    child_by_field,
+    cpp_function_nodes,
+    node_text,
+    resolve_local_import,
+)
 from frob.lang._support import (
     FACETS,
     FacetState,
@@ -560,31 +564,6 @@ def raw_tree(path: Path) -> Result[tuple[Tree, bytes, str], LangError]:
     return _parse(path)
 
 
-# frob:doc docs/modules/graph.md#public-api
-def cpp_function_nodes(tree: Tree) -> tuple[tuple[Node, str], ...]:
-    """(node, qualified_name) for every C/C++ function in `tree` (one level
-    of class/struct nesting). Thin public wrapper around
-    `frob.lang._common.iter_cpp_functions` -- see its docstring for the
-    exact walk semantics `frob.arch` and `frob.dup._legacy` share."""
-    return _iter_cpp_functions(tree.root_node)
-
-
-# frob:doc docs/modules/graph.md#public-api
-def child_by_field(node: Node, field: str) -> Node | None:
-    """`node.child_by_field_name(field)`, exposed so `frob.arch` and
-    `frob.dup._legacy`'s raw-node walks share one field-lookup call
-    instead of each keeping a local copy (see `frob.lang._common`)."""
-    return _child_by_field(node, field)
-
-
-# frob:doc docs/modules/graph.md#public-api
-def node_text(node: Node | None) -> str:
-    """Decode `node`'s own text, or '' if absent. Public alias of
-    `frob.lang._common.child_text` for callers doing raw node traversal
-    outside the extraction pipeline (`frob.arch`, `frob.dup._legacy`)."""
-    return _child_text(node)
-
-
 # frob:doc docs/modules/dup.md#public-api
 def symbol_tree(path: Path, span: tuple[int, int]) -> Result[TreeNode, LangError]:
     """The `TreeNode` subtree covering `span` (1-based, inclusive lines) in `path`.
@@ -613,35 +592,6 @@ def symbol_tree(path: Path, span: tuple[int, int]) -> Result[TreeNode, LangError
         node = node.parent
     comment_types = COMMENT_TYPES.get(language_label, frozenset())
     return Ok(_export_tree(node, comment_types))
-
-
-# frob:doc docs/modules/graph.md#public-api
-# frob:waive TEST005 reason="resolve_local_import 57.1% branch cover, debt T-0160"
-def resolve_local_import(
-    specifier: str, language: str, *, file_dir: Path, root: Path
-) -> str | None:
-    """Resolve a raw `extract_imports` specifier to a `root`-relative path.
-
-    Returns `None` when the specifier does not point at a file that exists
-    under `root` (a third-party import, a system `<...>` include already
-    filtered out upstream, etc.) -- `frob.cycle` skips those rather than
-    adding a graph edge to nowhere.
-    """
-    if language == "python":
-        base = specifier.replace(".", "/")
-        for suffix in (".py", "/__init__.py"):
-            candidate = Path(base + suffix)
-            if (root / candidate).exists():
-                return candidate.as_posix()
-        return None
-    if language in ("c", "cpp"):
-        candidate = (file_dir / specifier).resolve()
-        try:
-            rel = candidate.relative_to(root.resolve())
-        except ValueError:
-            return None
-        return rel.as_posix() if candidate.exists() else None
-    return None
 
 
 __all__ = [
