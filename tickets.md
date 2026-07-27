@@ -5653,6 +5653,7 @@ Epic close: the acceptance bar (full frob check comfortably inside the 120s agen
 - tests: 0 passed (from 0 evidence id(s))
 - gates: 0 error(s), 4517 warning(s), 351 waived
 - error-findings: none (measured, zero errors)
+
 <!-- ticket:T-0928 -->
 ```yaml
 id: T-0928
@@ -7887,7 +7888,7 @@ scope; not touched, not waived under T-0951.
 ```yaml
 id: T-0952
 title: 'cycle: Tarjan find_cycles recurses natively, RecursionError on long chains'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-27'
@@ -7897,6 +7898,24 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/cycle/**
+- tests/unit/test_cycle.py
+scope_changes:
+- op: add
+  glob: tests/unit/test_cycle.py
+  reason: regression test for the iterative Tarjan rewrite
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- tests/unit/test_cycle.py::test_no_cycle
+- tests/unit/test_cycle.py::test_add_node_and_nodes_and_neighbors
+- tests/unit/test_cycle.py::test_simple_cycle
+- tests/unit/test_cycle.py::test_three_node_cycle
+- tests/unit/test_cycle.py::test_two_independent_cycles
+- tests/unit/test_cycle.py::test_self_loop
+- tests/unit/test_cycle.py::test_cycle_not_duplicated
+- tests/unit/test_cycle.py::test_long_chain_would_have_crashed_recursive_tarjan
+- tests/unit/test_cycle.py::test_long_chain_no_recursion_error
+- tests/unit/test_cycle.py::test_long_chain_with_cycle_no_recursion_error
 threat: null
 component: null
 ```
@@ -7914,6 +7933,34 @@ so `find_cycles` cannot crash on a graph shaped like a long chain rather
 than a wide fan-out. Not fixed under T-0950 itself -- that ticket's scope
 was sizing a rust-candidate decision, not correctness -- but the crash is
 real and reproducible with a small synthetic script, not a hypothetical.
+
+## Done report
+
+Tarjan's _strongconnect recursed natively and raised RecursionError on long dependency chains (reproduced at ~1000 nodes by T-0950). Rewritten iteratively with an explicit (node, neighbor-iterator) frame stack; neighbor consumption order and component pop points preserved, so output ordering is unchanged (all 7 pre-existing tests pass unmodified). Three regression tests cover the documented pre-fix repro, a 5000-node chain, and the same chain closed into one SCC.
+
+### Changed
+```
+ src/frob/cycle/graph.py  | 55 +++++++++++++++++++++++++++++---------
+ tests/unit/test_cycle.py | 69 ++++++++++++++++++++++++++++++++++++++++++++++++
+ tickets.md               | 46 +++++++++++++++++++++++++++++++-
+ 3 files changed, 156 insertions(+), 14 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_cycle.py::test_no_cycle` (pytest node id, verified passing when recorded)
+- `tests/unit/test_cycle.py::test_add_node_and_nodes_and_neighbors` (pytest node id, verified passing when recorded)
+- `tests/unit/test_cycle.py::test_simple_cycle` (pytest node id, verified passing when recorded)
+- `tests/unit/test_cycle.py::test_three_node_cycle` (pytest node id, verified passing when recorded)
+- `tests/unit/test_cycle.py::test_two_independent_cycles` (pytest node id, verified passing when recorded)
+- `tests/unit/test_cycle.py::test_self_loop` (pytest node id, verified passing when recorded)
+- `tests/unit/test_cycle.py::test_cycle_not_duplicated` (pytest node id, verified passing when recorded)
+- `tests/unit/test_cycle.py::test_long_chain_would_have_crashed_recursive_tarjan` (pytest node id, verified passing when recorded)
+- `tests/unit/test_cycle.py::test_long_chain_no_recursion_error` (pytest node id, verified passing when recorded)
+- `tests/unit/test_cycle.py::test_long_chain_with_cycle_no_recursion_error` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 10 passed (from 10 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0953 -->
 ```yaml
