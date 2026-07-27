@@ -6989,3 +6989,94 @@ class TestConcurrencyModelMismatch:
             if s.category in ("gil-bound-in-threadpool", "ipc-overhead-in-processpool")
         ]
         assert hits == []
+
+
+# frob:ticket T-0687
+class TestCppMayThrow:
+    """T-0687: frob.arch._cpp_mayraise -- C++ may-throw analysis wired
+    into analyze_project's "cpp" dispatch branch. A noexcept function
+    whose computed may-throw set (explicit throw, curated STL throwers,
+    same-file callee propagation, Unknown fail-closed for anything else)
+    is non-empty and not discharged by its own catch (...) fires
+    cpp-noexcept-throws at ArchSeverity "error"."""
+
+    # frob:tests tests/unit/test_arch.py::TestCppMayThrow.test_noexcept_calling_throwing_function_fires_error  # noqa: E501
+    def test_noexcept_calling_throwing_function_fires_error(self, tmp_path):
+        """noexcept `caller` calls same-file `risky` (which throws) with
+        no try/catch of its own -- an error finding names the call site."""
+        from frob.arch import analyze_project
+
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "risky.cpp").write_text(
+            "int risky() {\n"
+            '    throw std::runtime_error("bad");\n'
+            "}\n\n"
+            "void caller() noexcept {\n"
+            "    risky();\n"
+            "}\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "cpp-noexcept-throws"]
+        assert hits
+        assert any(s.symref == "risky.cpp::caller" for s in hits)
+        assert any(s.severity == "error" for s in hits)
+
+    # frob:tests tests/unit/test_arch.py::TestCppMayThrow.test_noexcept_with_catch_all_does_not_fire  # noqa: E501
+    def test_noexcept_with_catch_all_does_not_fire(self, tmp_path):
+        """Same shape as above, but `caller` wraps the risky call in a
+        try/catch (...) -- the hard boundary is discharged, no finding."""
+        from frob.arch import analyze_project
+
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "safe.cpp").write_text(
+            "int risky() {\n"
+            '    throw std::runtime_error("bad");\n'
+            "}\n\n"
+            "void caller() noexcept {\n"
+            "    try {\n"
+            "        risky();\n"
+            "    } catch (...) {\n"
+            "    }\n"
+            "}\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "cpp-noexcept-throws"]
+        assert hits == []
+
+    # frob:tests tests/unit/test_arch.py::TestCppMayThrow.test_non_noexcept_function_never_fires  # noqa: E501
+    def test_non_noexcept_function_never_fires(self, tmp_path):
+        """A function that may throw but is NOT noexcept is normal
+        propagation, not a hard-boundary violation -- never flagged."""
+        from frob.arch import analyze_project
+
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "propagates.cpp").write_text(
+            "int risky() {\n"
+            '    throw std::runtime_error("bad");\n'
+            "}\n\n"
+            "void caller() {\n"
+            "    risky();\n"
+            "}\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "cpp-noexcept-throws"]
+        assert hits == []
+
+    # frob:tests tests/unit/test_arch.py::TestCppMayThrow.test_noexcept_calling_vector_at_fires_curated_thrower  # noqa: E501
+    def test_noexcept_calling_vector_at_fires_curated_thrower(self, tmp_path):
+        """A noexcept function calling `.at(...)` (curated STL thrower,
+        out_of_range) with no catch fires, naming out_of_range."""
+        from frob.arch import analyze_project
+
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "at_call.cpp").write_text(
+            "void reads(std::vector<int>& v) noexcept {\n    int x = v.at(0);\n}\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "cpp-noexcept-throws"]
+        assert hits
+        assert any("out_of_range" in s.message for s in hits)

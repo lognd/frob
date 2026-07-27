@@ -28,6 +28,7 @@ from frob.arch import (
     _concurrency,
     _concurrency_model,
     _cpp,
+    _cpp_mayraise,
     _lock_ordering,
     _ocp,
     _patterns,
@@ -262,6 +263,14 @@ def _analyze_one_file(
                 tree, rel, limits.max_function_lines, suggestions
             )
             _cpp._check_god_classes(tree, rel, limits.max_class_methods, suggestions)
+            # T-0687: noexcept hard-boundary may-throw check -- a raw-text
+            # scan over the same `raw` bytes already read above (see
+            # frob.arch._cpp_mayraise's own module docstring for why this
+            # is a text scan, not a tree-sitter node walk like the two
+            # checks above it).
+            _cpp_mayraise.check_cpp_noexcept_violations(
+                raw.decode("utf-8", errors="replace"), rel, suggestions
+            )
 
 
 # frob:ticket T-0617

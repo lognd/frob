@@ -8,6 +8,12 @@ def reachable(
     src: str,
     through_barriers: bool,
 ) -> dict[str, list[str]]: ...
+
+# T-0690: the Rust side's `.expect("...")` on the condensation DAG's
+# zero-indegree SCC lookup is a genuine (unreachable-in-practice, but
+# statically real) panic site -- pyo3 surfaces any Rust panic as
+# `PanicException` at this call boundary.
+# frob:raises PanicException
 def worst_age(
     edges: list[tuple[str, str, str, float]],
     target: str,

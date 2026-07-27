@@ -10796,6 +10796,132 @@ class TestExhaustiveHandlingGate:
         assert not _by_rule(violations, "EXHAUST002")
 
 
+# frob:ticket T-0690
+class TestFfiBoundaryGate:
+    """T-0690: frob.gates._ffi_boundary.ffi_boundary_gate -- FFI001 cross-
+    checks a pyo3 `.pyi` stub's declared `frob:raises` against the Rust
+    source's own observed raised-type set (paired via a `frob:describes
+    <path>.rs` pragma in the stub's module docstring); FFI002 demands a
+    `# frob:callee-raises` declaration on every call made through a
+    ctypes-loaded library handle."""
+
+    # frob:tests \
+    # tests/test_gates.py::TestFfiBoundaryGate.test_pyo3_drift_fires_ffi001
+    def test_pyo3_drift_fires_ffi001(self, tmp_path: Path) -> None:
+        """The Rust side constructs PyValueError but the `.pyi` stub's
+        `frob:raises` omits it -- FFI001 names both sides."""
+        from frob.gates._ffi_boundary import ffi_boundary_gate
+
+        (tmp_path / "crate").mkdir()
+        _write(
+            tmp_path,
+            "crate/lib.rs",
+            (
+                "#[pyfunction]\n"
+                "fn foo(x: i64) -> PyResult<i64> {\n"
+                "    if x < 0 {\n"
+                '        return Err(PyValueError::new_err("bad"));\n'
+                "    }\n"
+                "    Ok(x)\n"
+                "}\n"
+            ),
+        )
+        _write(
+            tmp_path,
+            "crate.pyi",
+            (
+                '"""Stub.\n'
+                "\n"
+                "frob:describes crate/lib.rs\n"
+                '"""\n'
+                "\n"
+                "def foo(x: int) -> int: ...\n"
+            ),
+        )
+        violations = ffi_boundary_gate(tmp_path, tmp_path)
+        found = _by_rule(violations, "FFI001")
+        assert found
+        assert any("ValueError" in v.message for v in found)
+        assert any(v.symref == "crate.pyi::foo" for v in found)
+
+    # frob:tests \
+    # tests/test_gates.py::TestFfiBoundaryGate.test_pyo3_declared_matches_no_drift
+    def test_pyo3_declared_matches_no_drift(self, tmp_path: Path) -> None:
+        """Same Rust side, but the `.pyi` stub declares `# frob:raises
+        ValueError` above `def foo` -- no FFI001."""
+        from frob.gates._ffi_boundary import ffi_boundary_gate
+
+        (tmp_path / "crate").mkdir()
+        _write(
+            tmp_path,
+            "crate/lib.rs",
+            (
+                "#[pyfunction]\n"
+                "fn foo(x: i64) -> PyResult<i64> {\n"
+                "    if x < 0 {\n"
+                '        return Err(PyValueError::new_err("bad"));\n'
+                "    }\n"
+                "    Ok(x)\n"
+                "}\n"
+            ),
+        )
+        _write(
+            tmp_path,
+            "crate.pyi",
+            (
+                '"""Stub.\n'
+                "\n"
+                "frob:describes crate/lib.rs\n"
+                '"""\n'
+                "\n"
+                "# frob:raises ValueError\n"
+                "def foo(x: int) -> int: ...\n"
+            ),
+        )
+        violations = ffi_boundary_gate(tmp_path, tmp_path)
+        assert not _by_rule(violations, "FFI001")
+
+    # frob:tests \
+    # tests/test_gates.py::TestFfiBoundaryGate.test_ctypes_call_without_declaration_fir\
+    # es_ffi002
+    def test_ctypes_call_without_declaration_fires_ffi002(self, tmp_path: Path) -> None:
+        """A call through a ctypes.CDLL-loaded handle with no callee-raises
+        comment (`# frob` + `:callee-raises`) on its own line fires
+        FFI002."""
+        from frob.gates._ffi_boundary import ffi_boundary_gate
+
+        _write(
+            tmp_path,
+            "mod.py",
+            ('import ctypes\nlib = ctypes.CDLL("libfoo.so")\nlib.do_thing(1)\n'),
+        )
+        violations = ffi_boundary_gate(tmp_path, tmp_path)
+        found = _by_rule(violations, "FFI002")
+        assert found
+        assert any("do_thing" in v.message for v in found)
+
+    # frob:tests \
+    # tests/test_gates.py::TestFfiBoundaryGate.test_ctypes_call_with_empty_declaration_\
+    # clean
+    def test_ctypes_call_with_empty_declaration_clean(self, tmp_path: Path) -> None:
+        """The same call, but with a bare `# frob:callee-raises` comment
+        (the valid "raises nothing, errno convention" declaration) on its
+        own line -- no FFI002."""
+        from frob.gates._ffi_boundary import ffi_boundary_gate
+
+        _write(
+            tmp_path,
+            "mod.py",
+            (
+                "import ctypes\n"
+                'lib = ctypes.CDLL("libfoo.so")\n'
+                "lib.do_thing(1)  # frob:callee-raises\n"
+            ),
+        )
+        violations = ffi_boundary_gate(tmp_path, tmp_path)
+        assert not _by_rule(violations, "FFI002")
+
+
 # frob:ticket T-0688
 class TestErrorsAsValuesAdvisory:
     """T-0688: frob.arch._exceptions.check_errors_as_values -- a PUBLIC

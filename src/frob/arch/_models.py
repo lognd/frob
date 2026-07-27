@@ -185,9 +185,32 @@ ArchCategory = Literal[
     # -- see `_exceptions.py`'s own module docstring for why that wiring
     # is a disclosed follow-up, not this ticket's own scope.
     "errors-as-values-recommended",
+    # T-0687 (child 2 of T-0685's exception may-raise umbrella): a
+    # `noexcept` C++ function reached (directly, or via same-file callee
+    # propagation) by a may-throw or Unknown (unresolved-callee,
+    # fail-closed) call with no encompassing `catch (...)` -- a hard
+    # boundary violation (an escaping exception from `noexcept` is
+    # `std::terminate` at runtime, not a recoverable condition), hence
+    # `ArchSeverity` "error" rather than "warning"/"suggestion". See
+    # `frob.arch._cpp_mayraise`'s module docstring.
+    "cpp-noexcept-throws",
 ]
 
-ArchSeverity = Literal["warning", "suggestion", "info"]
+#: T-0687 added `"error"` (previously `warning`/`suggestion`/`info` were
+#: the entire set) for a hard-boundary violation category
+#: (`"cpp-noexcept-throws"`) whose
+#: severity is not advisory -- an escaping exception from a `noexcept`
+#: function is `std::terminate` at runtime, not a recoverable condition a
+#: caller can choose to act on later. Promoting `"error"`-severity
+#: `ArchSuggestion`s into an enforced, unwaivable gate finding (the way
+#: `frob.gates._unwaivable_channel_rules` already does for every OTHER
+#: `ArchCategory`) is `src/frob/gates/**` wiring, out of T-0687's own
+#: declared scope (`src/frob/arch/**`/`src/frob/lang/**`/
+#: `tests/unit/test_arch.py` alone) -- filed as a follow-up, same T-0728
+#: "built and tested first, dispatch wiring landed later" precedent
+#: `frob.arch._exceptions.check_errors_as_values`'s own module docstring
+#: already establishes for exactly this class of scope carve-out.
+ArchSeverity = Literal["warning", "suggestion", "info", "error"]
 
 
 # frob:doc docs/modules/arch.md#arch-suggestion

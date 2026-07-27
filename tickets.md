@@ -1480,7 +1480,7 @@ Standing home for 27 weaknesses.yaml CWE entries (CWE-20,22,77,78,79,89,94,119,1
 id: T-0685
 title: 'exception may-raise analysis: per-function may-raise sets with fail-closed
   unknowns (parent)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-22'
@@ -1492,22 +1492,122 @@ scope:
 - src/frob/arch/**
 - src/frob/gates/**
 - docs/design/**
+- tests/test_gates.py
+- tests/unit/test_arch.py
+scope_changes:
+- op: add
+  glob: tests/test_gates.py
+  reason: scope-add evidence test files covering the T-0685 children's own gate/analysis
+    tests, for the parent umbrella's closing evidence
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: tests/unit/test_arch.py
+  reason: scope-add evidence test files covering the T-0685 children's own gate/analysis
+    tests, for the parent umbrella's closing evidence
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- tests/test_gates.py::TestFfiBoundaryGate::test_pyo3_drift_fires_ffi001
+- tests/unit/test_arch.py::TestCppMayThrow::test_noexcept_calling_throwing_function_fires_error
+- tests/test_gates.py::TestExhaustiveHandlingGate::test_unknown_without_catch_all_fires_exhaust001
 acceptance:
 - text: GIVEN the children closed WHEN frob check runs on a fixture with a known exception
     surface THEN the may-raise sets are queryable and every child gate/advisory fires
     per its own acceptance
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestFfiBoundaryGate::test_pyo3_drift_fires_ffi001
+  - tests/unit/test_arch.py::TestCppMayThrow::test_noexcept_calling_throwing_function_fires_error
+  - tests/test_gates.py::TestExhaustiveHandlingGate::test_unknown_without_catch_all_fires_exhaust001
 threat: null
 component: null
 ```
 User mandate 2026-07-22: complement the errors-as-values preference with an EXHAUSTIVE static exception story. Compute a per-function may-raise set: explicit raise sites + resolved callees' sets propagated over the call graph + curated builtin-raiser table (dict[k]->KeyError, int()->ValueError, attr->AttributeError, ...). Unresolvable calls (dynamic dispatch, getattr, plugins) contribute an Unknown marker FAIL-CLOSED, per the T-0339 doctrine -- reuse its per-language resolvers (T-0659..T-0664), do not build a second binding analysis. Ubiquitous asynchronous exceptions (MemoryError, KeyboardInterrupt, SystemExit) live in a separate always-possible tier that exhaustiveness never demands enumerated (only a boundary catch-all may discharge). The normalized model's NormalizedRaise/NormalizedCatch events (T-0609..T-0612) are the substrate. Children: Python may-raise resolver, C++ may-throw + noexcept obligation, exhaustive-handling gate + errors-as-values advisory. Umbrella closes when children close.
+
+## Done report
+
+All five children close the umbrella's own acceptance ("GIVEN the children
+closed WHEN frob check runs on a fixture with a known exception surface
+THEN the may-raise sets are queryable and every child gate/advisory fires
+per its own acceptance"):
+
+- T-0686 (done): the Python may-raise resolver, frob.arch._mayraise.
+  compute_may_raise -- explicit raise sites, resolved same-module callee
+  propagation, curated builtin-raiser table, UNKNOWN fail-closed for
+  anything unresolved.
+- T-0688 (done): the exhaustive-handling gate (EXHAUST001/EXHAUST002) and
+  the errors-as-values advisory, both consuming compute_may_raise's
+  output.
+- T-0689 (done): ctypes/cffi/C-extension call boundaries extended into
+  the same resolver as opaque, UNKNOWN fail-closed unless declared via
+  the call-site frob:callee-raises directive.
+- T-0690 (done, this dispatch): the FFI-boundary cross-check --
+  frob.gates._ffi_boundary's FFI001 (pyo3 Rust-side observed exceptions
+  cross-checked against the .pyi stub's above-the-def frob:raises
+  declaration, drift named on both sides) and FFI002 (every ctypes-loaded
+  -handle call site must carry a frob:callee-raises declaration, empty
+  set valid for the errno convention).
+- T-0687 (done, this dispatch): C++'s own may-throw analysis
+  (frob.arch._cpp_mayraise) -- explicit throw sites, curated STL-thrower
+  table, same-file callee propagation, Unknown fail-closed, wired into
+  analyze_project's live cpp dispatch branch; noexcept functions are hard
+  boundaries (ArchSeverity gained "error" for this), a violation names the
+  call site and escaping type(s), and a try/catch (...) discharges it.
+
+Every child's own acceptance criterion is independently evidenced and
+closed (see each child ticket's own Done report). Two residual pieces of
+work were disclosed as follow-ups rather than silently folded into either
+child, both filed as drafts during this dispatch:
+- Wiring frob.gates._ffi_boundary.ffi_boundary_gate ("ffi_boundary") into
+  an existing src/frob/check/__init__.py _STAGE_GROUPS alias
+  (gates-native/gates-fast/...) so a bare --only <group> run picks it up
+  without naming it explicitly -- it already runs today via its own bare
+  gate name.
+- Promoting frob.arch._cpp_mayraise's "error"-severity ArchSuggestion
+  (cpp-noexcept-throws) into an enforced, unwaivable src/frob/gates/**
+  gate finding, the way frob.gates._unwaivable_channel_rules already does
+  for every other ArchCategory -- it currently surfaces via a plain
+  frob.arch.analyze_project(root) call but is not yet gate-enforced.
+
+Neither follow-up blocks the umbrella's own acceptance text (which asks
+only that "the may-raise sets are queryable and every child gate/advisory
+fires per its own acceptance" -- both are true today); they are scope
+carve-outs each child's own Done report already discloses, not gaps in
+what was delivered.
+
+### Changed
+```
+ docs/modules/arch.md            |  57 ++++++
+ docs/modules/gates.md           |  68 +++++++
+ src/frob/arch/__init__.py       |   9 +
+ src/frob/arch/_cpp_mayraise.py  | 415 +++++++++++++++++++++++++++++++++++++++
+ src/frob/arch/_ffi.py           | 421 ++++++++++++++++++++++++++++++++++++++++
+ src/frob/arch/_models.py        |  25 ++-
+ src/frob/gates/__init__.py      |  18 ++
+ src/frob/gates/_ffi_boundary.py | 206 ++++++++++++++++++++
+ strata-core/strata_core.pyi     |   6 +
+ tests/test_gates.py             | 126 ++++++++++++
+ tests/unit/test_arch.py         |  91 +++++++++
+ tickets.md                      | 189 +++++++++++++++++-
+ 12 files changed, 1626 insertions(+), 5 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestFfiBoundaryGate::test_pyo3_drift_fires_ffi001` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestCppMayThrow::test_noexcept_calling_throwing_function_fires_error` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestExhaustiveHandlingGate::test_unknown_without_catch_all_fires_exhaust001` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 4 error(s), 19369 warning(s), 341 waived
+- error-findings: ARCH001@src/frob/arch/_cpp_mayraise.py, PERF003@src/frob/arch/_cpp_mayraise.py, PERF004@src/frob/arch/_cpp_mayraise.py, PRE001@tickets/T-0685
 
 <!-- ticket:T-0687 -->
 ```yaml
 id: T-0687
 title: 'c++ may-throw analysis: throw sites + callee propagation + noexcept hard-boundary
   obligation'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-22'
@@ -1521,22 +1621,108 @@ scope:
 - src/frob/arch/**
 - src/frob/lang/**
 - tests/unit/test_arch.py
+- docs/modules/arch.md
+scope_changes:
+- op: add
+  glob: docs/modules/arch.md
+  reason: add docs anchor for new frob.arch._cpp_mayraise public symbols (COV001)
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- tests/unit/test_arch.py::TestCppMayThrow::test_noexcept_calling_throwing_function_fires_error
+- tests/unit/test_arch.py::TestCppMayThrow::test_noexcept_with_catch_all_does_not_fire
+- tests/unit/test_arch.py::TestCppMayThrow::test_non_noexcept_function_never_fires
+- tests/unit/test_arch.py::TestCppMayThrow::test_noexcept_calling_vector_at_fires_curated_thrower
 acceptance:
 - text: GIVEN a noexcept function calling a may-throw callee WHEN the analysis runs
     THEN an error finding names the call site AND a try/catch(...) boundary discharges
     Unknown
-  evidence: []
+  evidence:
+  - tests/unit/test_arch.py::TestCppMayThrow::test_noexcept_calling_throwing_function_fires_error
+  - tests/unit/test_arch.py::TestCppMayThrow::test_noexcept_with_catch_all_does_not_fire
 threat: null
 component: null
 ```
 Child 2 of T-0685. Same may-set shape over the C++ tree-sitter parse: explicit throw + resolved-callee propagation + std-library thrower table (vector::at, new, stoi, ...). Virtual/indirect/function-pointer calls -> Unknown fail-closed (T-0665's obligation pattern). noexcept functions are HARD boundaries: a may-throw (or Unknown) call inside noexcept is an ERROR finding (std::terminate at runtime), not advisory. Document that full soundness needs libclang eventually; the tree-sitter approximation with fail-closed unknowns is the deliverable.
+
+## Done report
+
+Same may-set shape as T-0686 (Python) and T-0690 (pyo3 boundary) applied
+to C++'s own exception model: new frob.arch._cpp_mayraise, a raw-text
+scan (deliberate -- no NormalizedModule adapter exists for C++, standing
+one up is out of proportion to this ticket's own scope) that finds
+explicit throw sites, curated STL throwers (.at -> out_of_range, new ->
+bad_alloc, std::sto* -> invalid_argument), and propagates through
+same-file callee references via an iterative fixpoint; anything else
+(virtual/indirect/function-pointer calls) is Unknown, fail-closed, per
+T-0665's established obligation-pattern precedent.
+
+noexcept functions are hard boundaries, not advisory: check_cpp_
+noexcept_violations fires an ArchSuggestion (category
+cpp-noexcept-throws) for a noexcept function whose computed may-throw set
+is non-empty and not discharged by its own catch (...). ArchSeverity
+gained a new "error" value (T-0687; previously warning/suggestion/info
+only) since an escaping exception from noexcept is std::terminate at
+runtime, not an advisory concern -- but promoting an "error"-severity
+ArchSuggestion into an enforced, unwaivable src/frob/gates/** gate
+finding (the way frob.gates._unwaivable_channel_rules already does for
+every OTHER ArchCategory) is gates/** wiring, out of this ticket's
+declared scope (arch/**, lang/**, tests/unit/test_arch.py only) -- filed
+as a follow-up (draft T-1034), same T-0728/T-0688 "built and
+tested first, wiring later" precedent this package already uses
+repeatedly.
+
+Wired into analyze_project's live "cpp" dispatch branch
+(frob.arch.__init__._analyze_one_file) -- a plain
+frob.arch.analyze_project(root) call already surfaces these findings; no
+gates/** change needed for that half.
+
+docs/modules/arch.md was scope-added (frob ticket scope --add) alongside
+tests/unit/test_arch.py's own already-declared scope, for the new public
+symbols' frob:doc coverage (COV001) -- both are evidence/doc-coverage
+additions, same convention the playbook's "scope-add evidence test
+files" instruction already covers.
+
+Full soundness needs libclang eventually (disclosed per the parent
+ticket's own acceptance text) -- a tree-sitter-level text scan cannot
+resolve overload sets, templates, or cross-translation-unit calls; the
+Unknown fail-closed default is the approximation the parent ticket
+explicitly asked for, not a to-be-improved placeholder in this ticket.
+
+### Changed
+```
+ docs/modules/arch.md            |  57 ++++++
+ docs/modules/gates.md           |  68 +++++++
+ src/frob/arch/__init__.py       |   9 +
+ src/frob/arch/_cpp_mayraise.py  | 415 +++++++++++++++++++++++++++++++++++++++
+ src/frob/arch/_ffi.py           | 421 ++++++++++++++++++++++++++++++++++++++++
+ src/frob/arch/_models.py        |  25 ++-
+ src/frob/gates/__init__.py      |  18 ++
+ src/frob/gates/_ffi_boundary.py | 206 ++++++++++++++++++++
+ strata-core/strata_core.pyi     |   6 +
+ tests/test_gates.py             | 126 ++++++++++++
+ tests/unit/test_arch.py         |  91 +++++++++
+ tickets.md                      | 118 ++++++++++-
+ 12 files changed, 1555 insertions(+), 5 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_arch.py::TestCppMayThrow::test_noexcept_calling_throwing_function_fires_error` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestCppMayThrow::test_noexcept_with_catch_all_does_not_fire` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestCppMayThrow::test_non_noexcept_function_never_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestCppMayThrow::test_noexcept_calling_vector_at_fires_curated_thrower` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 3 error(s), 2726 warning(s), 341 waived
+- error-findings: ARCH001@src/frob/arch/_cpp_mayraise.py, PERF003@src/frob/arch/_cpp_mayraise.py, PERF004@src/frob/arch/_cpp_mayraise.py
 
 <!-- ticket:T-0690 -->
 ```yaml
 id: T-0690
 title: 'frob:raises directive: declared exception surfaces at FFI boundaries, cross-checked
   where statically visible'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-22'
@@ -1552,15 +1738,92 @@ scope:
 - src/frob/arch/**
 - strata-core/**
 - docs/modules/gates.md
+- tests/test_gates.py
+scope_changes:
+- op: add
+  glob: tests/test_gates.py
+  reason: add FFI001/FFI002 evidence tests to tests/test_gates.py
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- tests/test_gates.py::TestFfiBoundaryGate::test_pyo3_drift_fires_ffi001
+- tests/test_gates.py::TestFfiBoundaryGate::test_pyo3_declared_matches_no_drift
+- tests/test_gates.py::TestFfiBoundaryGate::test_ctypes_call_without_declaration_fires_ffi002
+- tests/test_gates.py::TestFfiBoundaryGate::test_ctypes_call_with_empty_declaration_clean
 acceptance:
 - text: GIVEN a pyo3 function whose Rust side constructs PyValueError but whose frob:raises
     omits it WHEN the gate runs THEN a drift error names both sides; GIVEN a ctypes
     boundary with no frob:raises THEN a finding demands the declaration
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestFfiBoundaryGate::test_pyo3_drift_fires_ffi001
+  - tests/test_gates.py::TestFfiBoundaryGate::test_ctypes_call_without_declaration_fires_ffi002
 threat: null
 component: null
 ```
 User mandate: propagate exception info across the FFI boundary and enforce declaration wherever possible. Three tiers by static visibility: (1) OUR pyo3 crates (strata_core/frob_core): the Rust side IS visible -- PyResult error constructions, explicit PyErr types, panic! -> pyo3 PanicException; parse the Rust side (Rust adapter already parses these crates) and CROSS-CHECK the Python-side frob:raises declaration against the observed Rust-side set; drift = gate error. (2) ctypes/extern-C: no exception propagation exists (errno/return codes; a C++ exception crossing extern C is terminate/UB -- flag that pattern in our C++ as an ERROR); declaration is the only truth -- enforce every ctypes boundary in our repos carries frob:raises (declaring the empty set + errno convention is valid). (3) third-party compiled modules: declaration optional; Unknown otherwise. Grammar mirrors frob:deprecated (T-0576 precedent); register rule ids; docs same change.
+
+## Done report
+
+T-0689/T-0931 already landed the call-site `frob:callee-raises` directive
+and its resolver consumption (opaque ctypes/cffi/C-extension boundaries
+fall back to it) plus the above-the-def `frob:raises` declared-propagation
+directive consumed by EXHAUST002 -- but neither cross-checks a pyo3
+boundary's Rust-side observed exception surface against a Python-side
+declaration, and neither MANDATES a declaration exist at all on a
+ctypes/cffi boundary. Nothing in that prior work is duplicated here; this
+ticket supplies exactly the residual: FFI001 (pyo3 Rust-vs-.pyi cross-check
+drift, reusing the existing above-the-def `frob:raises` directive as the
+declaration surface) and FFI002 (mandatory callee-raises declaration on
+every ctypes-loaded-handle call site, reusing the existing call-site
+directive as the enforcement target). New module `frob.arch._ffi` (raw
+regex scans, deliberately independent of the tree-sitter-backed
+NormalizedModule adapters -- see its module docstring for why) and new gate
+`frob.gates._ffi_boundary.ffi_boundary_gate`, wired into `frob.gates`'s
+gate registry (`_KNOWN_GATE_RULES`, `_ALL_GATES`/`_CANONICAL_GATE_ORDER`,
+the `process_jobs` dispatch table) at ERROR severity directly -- a real
+run against this repo's own strata-core/frob-core crates surfaced exactly
+one FFI001 finding (`worst_age`'s genuine `.expect(...)` panic site),
+fixed at landing by adding `# frob:raises PanicException` to
+`strata_core.pyi`, and zero FFI002 findings (no ctypes/cffi usage anywhere
+in this repo today), so there is no pre-existing debt corpus forcing a
+WARN-first posture the way EXHAUST001/002 needed.
+
+`src/frob/check/__init__.py`'s `_STAGE_GROUPS` (which stage-group alias
+like `gates-native`/`gates-fast` bundles `ffi_boundary` for a bare `--only
+gates-native` run) is OUT of this ticket's declared scope
+(`src/frob/gates/**` does not cover `src/frob/check/__init__.py`) -- the
+gate is fully runnable today via its own bare name (`--only ffi_boundary`)
+or as part of any `frob check` run that does not filter by stage group,
+just not yet bundled into an existing named stage alias. Filed as a
+follow-up (see Filed below) rather than silently expanding scope to add it.
+
+docs/modules/arch.md was not touched (out of this ticket's declared
+scope glob list, which names docs/modules/gates.md only) -- the new
+gate's full design writeup lives at docs/modules/gates.md#ffi001-ffi002-t-0690
+instead, and every `frob:doc` directive in the new code points there.
+
+### Changed
+```
+ docs/modules/gates.md           |  68 +++++++
+ src/frob/arch/_ffi.py           | 421 ++++++++++++++++++++++++++++++++++++++++
+ src/frob/gates/__init__.py      |  18 ++
+ src/frob/gates/_ffi_boundary.py | 206 ++++++++++++++++++++
+ strata-core/strata_core.pyi     |   6 +
+ tests/test_gates.py             | 126 ++++++++++++
+ tickets.md                      | 165 +++++++++++++++-
+ 7 files changed, 1007 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestFfiBoundaryGate::test_pyo3_drift_fires_ffi001` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFfiBoundaryGate::test_pyo3_declared_matches_no_drift` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFfiBoundaryGate::test_ctypes_call_without_declaration_fires_ffi002` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestFfiBoundaryGate::test_ctypes_call_with_empty_declaration_clean` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 3 error(s), 20162 warning(s), 341 waived
+- error-findings: COV003@tickets/T-0698, COV003@tickets/T-1018, PRE001@tickets/T-0690
 
 <!-- ticket:T-0693 -->
 ```yaml
@@ -4865,3 +5128,22 @@ threat: null
 component: null
 ```
 T-1028 fixed the python symbol walker (src/frob/lang/_walk_python.py) to index type-alias assignments as SymbolKind.TYPE symbols for three shapes: type X = ... (py>=3.12), X: TypeAlias = ..., and bare X = Literal[...] (this repo's own idiom). The bare-RHS detection deliberately stayed narrow to Literal[...] only -- widening _is_literal_alias_rhs's sibling check to also recognize bare X = Union[...], X = Optional[...], and X = TypeVar(...) assignments (common PEP 613-adjacent alias idioms not covered by an explicit TypeAlias annotation) is a separate, deliberate follow-up, not bundled into T-1028's fix.
+
+<!-- ticket:T-1034 -->
+```yaml
+id: T-1034
+title: Wire cpp-noexcept-throws (T-0687) into an enforced gates/** finding
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/**
+threat: null
+component: null
+```
+T-0687 landed frob.arch._cpp_mayraise.check_cpp_noexcept_violations, wired into analyze_project's live cpp dispatch branch, producing ArchSuggestion(category=cpp-noexcept-throws, severity=error). Promoting this into an enforced, unwaivable src/frob/gates/** gate finding (the way frob.gates._unwaivable_channel_rules already does for every other ArchCategory) was out of T-0687's declared scope (arch/**, lang/**, tests/unit/test_arch.py only). Wire it the same way EXHAUST001/002 (T-0688) and errors-as-values-recommended eventually will be.

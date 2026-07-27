@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.192.0] - unreleased
+
+- T-0690: frob:raises directive: declared exception surfaces at FFI boundaries, cross-checked where statically visible
+
 ## [0.191.0] - unreleased
 
 - T-0894: Registry-backed gates (COMPLIANCE005/REG*/DEC*) cannot distinguish never-adopted from deleted-registry

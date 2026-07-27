@@ -1044,6 +1044,63 @@ does not compute.
   per-function; only a boundary catch-all (bare `except:`) discharges
   them, which is a caller's concern (T-0688), not this resolver's.
 
+### C++ may-throw analysis: `scan_cpp_functions` / `check_cpp_noexcept_violations` / `cpp-noexcept-throws` (T-0687)
+
+<a id="cpp-may-throw-analysis-t-0687"></a>
+<!-- frob:describes src/frob/arch/_cpp_mayraise.py::scan_cpp_functions -->
+<!-- frob:describes src/frob/arch/_cpp_mayraise.py::check_cpp_noexcept_violations -->
+
+Child 2 of T-0685's exception may-raise umbrella, the SAME may-set shape
+the [may-raise resolver](#may-raise-resolver) (T-0686, Python) and the
+[FFI-boundary cross-check](gates.md#ffi001-ffi002-t-0690) (T-0690, pyo3)
+already establish, applied to C++'s own exception model: explicit `throw`
+sites, resolved same-file callee propagation (an iterative fixpoint, same
+shape `compute_may_raise`'s own callee-graph fixpoint uses), a curated
+STL-thrower table (`.at(` -> `out_of_range`, `new` -> `bad_alloc`, the
+`std::sto*` numeric-parse family -> `invalid_argument`), and `UNKNOWN`
+fail-closed for anything this module cannot statically resolve
+(virtual/indirect/function-pointer calls, per T-0665's established
+obligation-pattern precedent for exactly this class of "cannot see
+through this call" gap).
+
+**`noexcept` functions are HARD boundaries**, not advisory ones: a
+`noexcept` function whose computed may-throw set is non-empty (a real
+type, or `UNKNOWN`) escapes to `std::terminate` at runtime the instant
+that exception actually propagates. `check_cpp_noexcept_violations`
+appends an `ArchSuggestion` (category `cpp-noexcept-throws`, severity
+`"error"` -- T-0687 added `"error"` to `ArchSeverity`, previously
+`warning`/`suggestion`/`info` only, see `frob.arch._models`'s own
+module-level comment) for every such violation, naming the escaping
+type(s). A `try { ... } catch (...) { ... }` anywhere in the function
+discharges it (the SAME whole-function, not block-scoped, catch-all
+doctrine [EXHAUST001](gates.md#exhaust001-exhaust002-t-0688) already uses
+for Python's `Unknown` -- same disclosed limitation, not a new one).
+
+**Raw-text scan, not a tree-sitter node walk** (deliberate, mirroring
+`frob.arch._ffi`'s own choice for the same reason, see
+[FFI-boundary cross-check](gates.md#ffi001-ffi002-t-0690)): no
+`NormalizedModule`/`NormalizedFunction` adapter exists for C++ today
+(`frob.arch._cpp`'s existing long-function/god-class checks are
+themselves tree-sitter node walks, not model-adapter output), and
+standing one up is a much larger change than this ticket's own declared
+scope justifies for one new check family.
+
+**Wired into `analyze_project`'s live `"cpp"` dispatch branch**
+(`frob.arch.__init__._analyze_one_file`) -- a plain
+`frob.arch.analyze_project(root)` call already surfaces these findings.
+NOT yet promoted into a `src/frob/gates/**` enforced/unwaivable gate
+finding (that wiring is out of this ticket's declared scope
+(`src/frob/arch/**`/`src/frob/lang/**`/`tests/unit/test_arch.py` only);
+same T-0728/T-0688 "built and tested first, wiring later" precedent this
+package already uses repeatedly).
+
+**Full soundness needs libclang eventually** (disclosed, per the parent
+ticket's own acceptance text): a tree-sitter-level text scan cannot
+resolve overload sets, template instantiation, or cross-translation-unit
+calls -- the `UNKNOWN` fail-closed default is the approximation the
+parent ticket explicitly asked for instead of a to-be-improved
+placeholder.
+
 ### Misc design smells: `mutable-default-arg` / `feature-envy` / `data-clumps` / `magic-literal` / `dead-private-code` / `deep-inheritance` / `temporal-coupling` (T-0624)
 
 <a id="misc-design-smells"></a>

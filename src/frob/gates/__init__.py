@@ -80,6 +80,7 @@ from frob.gates._docblocks import doc004_gate, doc005_gate
 from frob.gates._docptr import doc006_gate
 from frob.gates._exclude_hazard import exclude_hazard_gate
 from frob.gates._exhaustive_handling import exhaustive_handling_gate
+from frob.gates._ffi_boundary import ffi_boundary_gate
 from frob.gates._filehash import _SOURCE_EXTS
 from frob.gates._fmt_directives import (
     FmtChange,
@@ -1362,6 +1363,13 @@ _KNOWN_GATE_RULES = frozenset(
         # sets.
         "EXHAUST001",
         "EXHAUST002",
+        # frob:ticket T-0690
+        # T-0690: FFI001/FFI002 (frob.gates._ffi_boundary's
+        # ffi_boundary_gate) -- the FFI-boundary exception-declaration
+        # cross-check (pyo3 Rust/.pyi drift, mandatory ctypes/cffi
+        # declaration).
+        "FFI001",
+        "FFI002",
         # frob:ticket T-0924
         # T-0924: the larger pre-existing batch T-0901's drift-lock test
         # surfaced beyond T-0903/T-0923's ids, carried in that test's
@@ -10116,6 +10124,9 @@ _ALL_GATES = frozenset(
         # over frob.arch._mayraise.compute_may_raise's per-function sets
         # (frob.gates._exhaustive_handling.exhaustive_handling_gate).
         "exhaustive_handling",
+        # T-0690: FFI001/FFI002, the FFI-boundary exception-declaration
+        # cross-check (frob.gates._ffi_boundary.ffi_boundary_gate).
+        "ffi_boundary",
     }
 )
 
@@ -10463,6 +10474,8 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "affect_drift",
     # frob:ticket T-0688
     "exhaustive_handling",
+    # frob:ticket T-0690
+    "ffi_boundary",
 )
 
 # T-0839: import-time guard making the two constants' drift impossible to
@@ -10632,6 +10645,11 @@ def _build_jobs(
         # a leaked exception from a same-module callee outside the scoped
         # subdir is still a real, repo-wide correctness concern.
         "exhaustive_handling": _ProcessJob(exhaustive_handling_gate, (st.root,)),
+        # T-0690: FFI001/FFI002 -- FFI001 always cross-checks pyo3
+        # boundaries repo-wide internally (see `ffi_boundary_gate`'s own
+        # docstring), FFI002 scans the possibly-scoped `st.root`, same
+        # split reasoning as `exhaustive_handling` above.
+        "ffi_boundary": _ProcessJob(ffi_boundary_gate, (st.root, st.repo_root)),
         "pii_structural": _ProcessJob(pii_structural_gate, (st.root,)),
         # T-0471: whole-repo tracked-file scan, always against repo_root
         # (never the possibly-scoped st.root) -- same reasoning as

@@ -153,12 +153,21 @@
     "src/frob/app/worktree_runner.py::run": "92572764844d8b13ffb2ffb62e56a895e0d81ecd853be11fada4aa366856323b",
     "src/frob/app/xref_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/arch/__init__.py::analyze_project": "9f59a6565b4a0695319083fcc83633a2f7d9a11ef98614e2dc3f15fdf62a87dd",
+    "src/frob/arch/_cpp_mayraise.py::CppFunctionRaises": "a086a06a4defd83c6768122db38bce2b51b0c99c30b1f6e63791d9cc794cef0b",
+    "src/frob/arch/_cpp_mayraise.py::UNKNOWN": "5e1419b54787c00464c3c5dd248237e15b650db564f916179f49efa9aa02d78a",
+    "src/frob/arch/_cpp_mayraise.py::check_cpp_noexcept_violations": "beb48e83241e95c75856d7181ed6c3b1cabed604242f3d92cfe70238533b4f9d",
+    "src/frob/arch/_cpp_mayraise.py::scan_cpp_functions": "7e8a72690f1f689b21a9856b8304082da20ce6d15d3e76b5e2851115e61660d1",
     "src/frob/arch/_exceptions.py::check_errors_as_values": "795af739ed853f2794e79b12483cf91a003042e9753dee0fcd7b126a5e40e797",
     "src/frob/arch/_fallibility.py::check_over_broad_except": "cef7efb44a118eb0aba75b790de0d10ac43180d046d01f9c6247b4905671e250",
     "src/frob/arch/_fallibility.py::check_recoverable_error_wrong_signature": "832f988147f0c063a31fae65bc81bd4fea1564964a47b93867e0fca04f521935",
     "src/frob/arch/_fallibility.py::check_swallowed_exception": "9b2f5259ec0a25f2f557f81d5815f2c203501accf23808fb31037a198d4a2f56",
     "src/frob/arch/_fallibility.py::check_unhandled_result": "6012eb3d61743586790b608b9192dd23f62a7a7a63a07ef65cb8ad7b1862ab77",
     "src/frob/arch/_fallibility.py::run_fallibility_checks": "35603b0a0692c2d9df45c5af567f024e0b512ffa1c2d6196962308400b841785",
+    "src/frob/arch/_ffi.py::CtypesBoundaryCall": "92b93698cbbda525fc96f2eac4b886ca9867ff7b352d92ae455518ded016f14c",
+    "src/frob/arch/_ffi.py::PyO3FunctionRaises": "fcadcf89df96aefc61e1f9b7e2d6847e0193661b8850dce2177a6e17b1f86c13",
+    "src/frob/arch/_ffi.py::parse_pyi_declared_raises": "3aac013b838c4233d1b247698765c547ba6ed6b841478ddb0c46a3fa24624499",
+    "src/frob/arch/_ffi.py::scan_ctypes_boundary_calls": "3205668ec626dd04cd589b262e3ba2a961c9dbee11c67e1dd61d815a7d01bd82",
+    "src/frob/arch/_ffi.py::scan_pyo3_raises": "7bd7655f04e7585f337811372a0cdb3cc21228c39c7f8619b4772fa555b7288f",
     "src/frob/arch/_kotlin.py::KotlinAdapter": "01f16c6917a994b14ee14cec4aad49f19dac7a1902f1b863246cd0f4ecc060f6",
     "src/frob/arch/_kotlin.py::KotlinAdapter.adapt": "0c57832dc79ce96209c1a1ae671bbb1808b6b61baffc12c19d893376a6afe64e",
     "src/frob/arch/_layering.py::LayeringConfig": "7a0d8f44570ca6b2c987f9d9d3eb1e66a314dbd298ef9407c79facad3d5299f2",
@@ -520,6 +529,7 @@
     "src/frob/gates/_docptr.py::doc006_gate": "34982d65c649e8682213661fe1cdc674f96061865b2a33e0654f21b981cd89c4",
     "src/frob/gates/_exclude_hazard.py::exclude_hazard_gate": "6e3505c56c11b17ba244b1e111c1bba69666b59e6c5a678e73e648632c0c6bc0",
     "src/frob/gates/_exhaustive_handling.py::exhaustive_handling_gate": "6c7ec22130f8c90cb92b90d3fce38a0199edfb4b091febd3589ca43fcd1008d1",
+    "src/frob/gates/_ffi_boundary.py::ffi_boundary_gate": "57923ca6fb8c668ab7741001a25337f6bf5d0a682f72388274002baad2bd4eac",
     "src/frob/gates/_fmt_directives.py::FmtChange": "ea8741b398fe11d4690d8916903481776ec126dd2a6c5422ebd6f1f7e8fc9ac2",
     "src/frob/gates/_fmt_directives.py::FmtReport": "11a60528b9ef3d166ee7b3928901298283e5a50d65961937b22ba07fa6dc2c63",
     "src/frob/gates/_fmt_directives.py::canonicalize_text": "0c5ce61829cec8198bf968017b0e94cc2891613708c533f93413b0ed6ef9c127",
@@ -1729,5 +1739,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.191.0"
+  "version": "0.192.0"
 }

@@ -1245,6 +1245,74 @@ ticket (T-0616's SRP-family precedent: built and tested first, dispatch
 wiring landed later as its own ticket, T-0728), not something this ticket
 silently folds in.
 
+## FFI001 FFI002 (T-0690)
+
+<a id="ffi001-ffi002-t-0690"></a>
+<!-- frob:describes src/frob/gates/_ffi_boundary.py::ffi_boundary_gate -->
+
+Child 4 of T-0685's exception may-raise umbrella, completing the residual
+work `frob:callee-raises` (T-0689/T-0931) and the above-the-def
+`frob:raises` directive (EXHAUST001/EXHAUST002 above) left open: neither
+of those already-landed conventions cross-checks a pyo3 boundary's
+Rust-side observed exception surface against its Python-side declaration,
+and neither MANDATES a declaration exist at all on a ctypes/cffi boundary
+(they only let one substitute for the may-raise resolver's fail-closed
+`Unknown` when present). `ffi_boundary_gate` (gate name `ffi_boundary`,
+`gates-native`-style process job, dispatches `frob.arch._ffi`'s two scans,
+docs/modules/gates.md#ffi001-ffi002-t-0690) supplies both, per
+the parent ticket's three-tier FFI mandate:
+
+- **FFI001** (pyo3 cross-check drift, tier 1 -- our own pyo3 crates,
+  `strata-core`/`frob-core`): every `.pyi` stub whose module docstring
+  carries a `frob:describes <path>.rs` pragma is paired with that Rust
+  source file; `frob.arch._ffi.scan_pyo3_raises` computes each
+  `#[pyfunction]`'s OBSERVED raised-type set (explicit `Py<X>Error::
+  new_err(...)`/`PyErr::new::<Py<X>Error>(...)` constructions, plus
+  `panic!`/`unreachable!`/`todo!`/`unimplemented!`/`.unwrap()`/`.expect(`
+  as a `PanicException` sentinel -- pyo3 converts an unhandled Rust panic
+  into that raised type at the Python call boundary) and cross-checks it
+  against the stub's own above-the-def `# frob:raises <Type>` declarations
+  (the SAME directive EXHAUST002 owns, reused here as this boundary's
+  declaration surface, not a second grammar). Any observed type absent
+  from the declared set is FFI001, naming BOTH sides in the message.
+- **FFI002** (mandatory ctypes/cffi declaration, tier 2): ctypes/cffi calls
+  have no exception-propagation contract at all (errno/return-code
+  convention only; a C++ exception crossing an `extern "C"` boundary is
+  `std::terminate`/UB, never a normal Python raise) -- per the mandate, the
+  declaration IS the only truth. `frob.arch._ffi.scan_ctypes_boundary_
+  calls` finds every call made through a variable bound via
+  `ctypes.CDLL`/`ctypes.PyDLL`/`ctypes.WinDLL`/`ctypes.OleDLL`/
+  `ctypes.cdll.LoadLibrary` (and the `pydll`/`windll` siblings) and FFI002
+  fires on any such call site missing a same-line `# frob:callee-raises`
+  comment (T-0689's existing call-site directive) -- a bare `#
+  frob:callee-raises` (declaring the empty set) is a valid, honest
+  "raises nothing, errno convention" declaration and clears the finding.
+
+Tier 3 (third-party compiled modules: "declaration optional, Unknown
+otherwise") is explicitly out of this gate's scope -- `frob.arch.
+_mayraise`'s existing fail-closed `UNKNOWN` default for any unresolved
+callee already covers it unchanged.
+
+Both rules ship at `Severity.ERROR` directly, not `Severity.WARN` -- a
+real run of both scans against this repo's own source at landing time
+surfaced exactly one FFI001 finding (`strata_core.worst_age`'s Rust-side
+`.expect(...)` on the condensation DAG's zero-indegree SCC lookup, a
+genuine if unreachable-in-practice panic site) and zero FFI002 findings
+(this repo has no ctypes/cffi usage anywhere); the one FFI001 finding was
+fixed at landing by adding `# frob:raises PanicException` to `strata_core.
+pyi`'s `worst_age` stub rather than deferred as debt, so there is no
+pre-existing corpus an ERROR severity would instantly red the way
+EXHAUST001/002's own 176-finding first run did.
+
+SCOPE: FFI001 always cross-checks pyo3 boundaries repo-wide (a boundary
+pair is a repo-wide concern, same reasoning EXHAUST001/002 already use for
+running against `repo_root` rather than a possibly-scoped `root`); it only
+fires for `.pyi` stubs actually carrying the `frob:describes ...rs`
+pragma -- a hand-written or third-party `.pyi` with no such pragma is
+silently skipped. FFI002 scans every `.py` file under the possibly-scoped
+`root`, test files excluded (`frob.excludes.is_test_file`, mirroring
+EXHAUST001/002's own carve-out).
+
 ## Public API
 
 <!-- frob:describes src/frob/gates/__init__.py::SCOPED_RUN_FLAKY_RULE_IDS -->
