@@ -17,6 +17,7 @@ import subprocess
 from pathlib import Path
 
 from frob.gates._cve_fingerprint_scan import cve_fingerprint_scan_gate
+from frob.gates._models import Severity
 from frob.strata._cve_fingerprint import CveFingerprint, scan_text_for_fingerprints
 
 _SMELLY_PYTHON = "subprocess.run(cmd, shell=True)\n"
@@ -146,3 +147,43 @@ class TestGate:
 
         violations = cve_fingerprint_scan_gate(repo)
         assert violations == ()
+
+    # frob:ticket T-0897
+    # frob:tests tests/unit/strata/test_cve_fingerprint_scan.py::TestGate.test_undecodable_file_fires_parse001  # noqa: E501
+    def test_undecodable_file_fires_parse001(self, tmp_path: Path):
+        """A `.py` file with bytes that are not valid UTF-8 fires PARSE001
+        instead of being silently dropped from the scan with zero
+        Violation (T-0897)."""
+        repo = _init_git_repo(tmp_path)
+        (repo / "bad_encoding.py").write_bytes(b"x = '\xff\xfe'\n")
+        _commit_all(repo)
+
+        violations = cve_fingerprint_scan_gate(repo)
+        parse001 = [v for v in violations if v.rule == "PARSE001"]
+        offender_hits = [v for v in parse001 if v.file == "bad_encoding.py"]
+        assert len(offender_hits) == 1
+        assert offender_hits[0].severity == Severity.ERROR
+
+    # frob:ticket T-0897
+    # frob:tests tests/unit/strata/test_cve_fingerprint_scan.py::TestGate.test_undecodable_file_under_graph_exclude_is_silent  # noqa: E501
+    def test_undecodable_file_under_graph_exclude_is_silent(self, tmp_path: Path):
+        """An undecodable file under a `[graph].exclude` glob (frob.toml)
+        does NOT fire PARSE001 -- that directory is already carved out of
+        frob's own obligation surface (the `tests/fixtures/**` posture
+        documented across the repo's module docstrings), so this gate
+        stays silent about it too rather than forcing every excluded
+        fixture to carry its own waiver (T-0897)."""
+        repo = _init_git_repo(tmp_path)
+        (repo / "frob.toml").write_text('[graph]\nexclude = ["fixtures/**"]\n')
+        fixtures = repo / "fixtures"
+        fixtures.mkdir()
+        (fixtures / "bad_encoding.py").write_bytes(b"x = '\xff\xfe'\n")
+        _commit_all(repo)
+
+        violations = cve_fingerprint_scan_gate(repo)
+        hits = [
+            v
+            for v in violations
+            if v.rule == "PARSE001" and "bad_encoding.py" in v.file
+        ]
+        assert hits == []

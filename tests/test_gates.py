@@ -8670,6 +8670,28 @@ class TestRenderLintGate:
 
         assert _by_rule(violations, "RENDER001") == []
 
+    # frob:tests tests/test_gates.py::TestRenderLintGate.test_unparseable_file_fires_parse001  # noqa: E501
+    # frob:ticket T-0897
+    def test_unparseable_file_fires_parse001(self, tmp_path: Path) -> None:
+        """A file with a Python syntax error fires PARSE001 instead of
+        being silently dropped from the scan with zero Violation (T-0897)."""
+        from frob.gates._render_lint import render_lint_gate
+
+        self._init_repo(tmp_path)
+        pkg = tmp_path / "src" / "frob" / "app"
+        pkg.mkdir(parents=True)
+        (tmp_path / "src" / "frob" / "__init__.py").write_text("")
+        (pkg / "__init__.py").write_text("")
+        (pkg / "broken_runner.py").write_text("def run(:\n    pass\n")
+        self._commit(tmp_path)
+
+        violations = render_lint_gate(tmp_path)
+
+        hits = _by_rule(violations, "PARSE001")
+        offender_hits = [v for v in hits if v.file == "src/frob/app/broken_runner.py"]
+        assert len(offender_hits) == 1
+        assert offender_hits[0].severity == Severity.ERROR
+
 
 # frob:ticket T-0726
 class TestTick006PhantomFiling:
@@ -9448,6 +9470,40 @@ class TestPiiStructuralCrossLanguage:
         assert not any(
             "clean_type.rs" in v.file for v in _by_rule(violations, "PII010")
         )
+
+    # frob:ticket T-0897
+    # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_unparseable_python_file_fires_parse001  # noqa: E501
+    def test_unparseable_python_file_fires_parse001(self, tmp_path: Path) -> None:
+        """A `.py` file with a syntax error fires PARSE001 instead of
+        being silently dropped from the PII010/SEC110 scan with zero
+        Violation (T-0897)."""
+        self._write(tmp_path, "broken.py", "class C(:\n    pass\n")
+        _git_init(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        hits = _by_rule(violations, "PARSE001")
+        offender_hits = [v for v in hits if v.file == "broken.py"]
+        assert len(offender_hits) == 1
+        assert offender_hits[0].severity == Severity.ERROR
+
+    # frob:ticket T-0897
+    # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_unparseable_file_under_graph_exclude_is_silent  # noqa: E501
+    def test_unparseable_file_under_graph_exclude_is_silent(
+        self, tmp_path: Path
+    ) -> None:
+        """A `.py` file under a `[graph].exclude` glob (frob.toml) that is
+        deliberately, permanently unparseable (the `tests/fixtures/**`
+        posture: kept out of frob's own obligation surface, module
+        docstrings across the repo document this) does NOT fire PARSE001
+        -- only files frob's own graph would otherwise obligate do
+        (T-0897)."""
+        (tmp_path / "frob.toml").write_text(
+            '[graph]\nexclude = ["tests/fixtures/**"]\n'
+        )
+        self._write(tmp_path, "tests/fixtures/broken.py", "class C(:\n    pass\n")
+        _git_init(tmp_path)
+        violations = pii_structural_gate(tmp_path)
+        hits = [v for v in _by_rule(violations, "PARSE001") if "broken.py" in v.file]
+        assert hits == []
 
 
 # frob:ticket T-0788

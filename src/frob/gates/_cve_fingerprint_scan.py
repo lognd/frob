@@ -40,6 +40,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from frob.excludes import is_excluded, load_exclude_globs
 from frob.gates._models import Severity, Violation
 from frob.gitio import run_argv
 from frob.logging import get_logger
@@ -111,6 +112,32 @@ def _tracked_files(root: Path) -> tuple[str, ...]:
     return tuple(line for line in result.stdout.splitlines() if line.strip())
 
 
+# frob:ticket T-0897
+def _parse001_violation(rel_path: str, reason: str) -> Violation:
+    """PARSE001 `Violation` for a file this gate's own read could not get
+    through (T-0897): mirrors `frob.gates._parse_failures.
+    parse_failure_gate`'s rule id, severity, and message shape so a file
+    SEC-CVE-FINGERPRINT-001 cannot inspect surfaces the SAME PARSE001
+    signal as the centrally-tracked `frob.lang`/`snapshot.parse_failures`
+    path, instead of the private silent-skip this gate used to do (T-0786
+    finding: zero Violation, DEBUG-only log, on an unreadable file --
+    exactly the class PARSE001 exists to make loud)."""
+    _log.warning("PARSE001: %s could not be parsed/read (%s)", rel_path, reason)
+    return Violation(
+        rule="PARSE001",
+        severity=Severity.ERROR,
+        file=rel_path,
+        line=0,
+        message=(
+            f"PARSE001: {rel_path} could not be parsed/read -- "
+            f"SEC-CVE-FINGERPRINT-001 cannot scan it for a vulnerable-usage "
+            f"fingerprint (reason: {reason}); fix the file or "
+            'frob:waive PARSE001 reason="..." if this is a known, '
+            "intentionally-unreadable fixture"
+        ),
+    )
+
+
 def _hit_violation(rel_path: str, hit: "FingerprintHit") -> Violation:
     """The `SEC-CVE-FINGERPRINT-001` `Violation` for one matched needle."""
     _log.warning(
@@ -141,6 +168,9 @@ def _hit_violation(rel_path: str, hit: "FingerprintHit") -> Violation:
 # frob:tests tests/unit/strata/test_cve_fingerprint_scan.py::TestGate.test_smelly_file_fires  # noqa: E501
 # frob:tests tests/unit/strata/test_cve_fingerprint_scan.py::TestGate.test_clean_file_does_not_fire  # noqa: E501
 # frob:tests tests/unit/strata/test_cve_fingerprint_scan.py::TestGate.test_self_excluded_files_not_scanned  # noqa: E501
+# frob:tests tests/unit/strata/test_cve_fingerprint_scan.py::TestGate.test_undecodable_file_fires_parse001  # noqa: E501
+# frob:tests tests/unit/strata/test_cve_fingerprint_scan.py::TestGate.test_undecodable_file_under_graph_exclude_is_silent  # noqa: E501
+# frob:ticket T-0897
 # frob:enforces CHK-GATE-SEC-CVE-FINGERPRINT-001
 # frob:enforces SEC-CVE-FINGERPRINT-FP-EXEC-SHELL-001
 # frob:enforces SEC-CVE-FINGERPRINT-FP-XSS-JQUERY-001
@@ -167,10 +197,16 @@ def cve_fingerprint_scan_gate(root: Path) -> tuple[Violation, ...]:
     __init__`'s own deferred-`frob.strata`-import convention (T-0135: a
     top-level import would pay the `strata_core` native-extension cost on
     every `frob check` invocation, even for a repo with no design dir at
-    all)."""
+    all). A file this gate cannot read fires PARSE001 instead of silently
+    dropping out of the scan (T-0897), UNLESS the file matches a
+    `[graph].exclude` glob (frob.toml) -- that config already carves the
+    path out of frob's own obligation surface (e.g. `tests/fixtures/**`'s
+    deliberately-broken parser fixtures), so PARSE001 stays silent there
+    too."""
     from frob.strata._cve_fingerprint import scan_text_for_fingerprints
 
     root = Path(root)
+    exclude_globs = load_exclude_globs(root)
     violations: list[Violation] = []
     scanned = 0
     for rel_path in _tracked_files(root):
@@ -182,8 +218,20 @@ def cve_fingerprint_scan_gate(root: Path) -> tuple[Violation, ...]:
             continue
         try:
             text = (root / rel_path).read_text(encoding="utf-8", errors="strict")
-        except (OSError, UnicodeDecodeError):
-            _log.debug("cve_fingerprint_scan_gate: skipping unreadable %s", rel_path)
+        except (OSError, UnicodeDecodeError) as exc:
+            if is_excluded(rel_path, exclude_globs):
+                # T-0897: `[graph].exclude` (frob.toml) already carves this
+                # path out of frob's own obligation surface (e.g.
+                # tests/fixtures/**'s deliberately-broken parser fixtures)
+                # -- PARSE001 stays silent here, same as the graph-ingested
+                # path already treats it, instead of forcing every such
+                # fixture to carry its own waiver.
+                _log.debug(
+                    "cve_fingerprint_scan_gate: skipping excluded unreadable %s",
+                    rel_path,
+                )
+                continue
+            violations.append(_parse001_violation(rel_path, str(exc)))
             continue
         scanned += 1
         hits = scan_text_for_fingerprints(text, language)

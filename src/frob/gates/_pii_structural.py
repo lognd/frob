@@ -131,6 +131,7 @@ from pathlib import Path
 
 from tree_sitter import Node, Tree
 
+from frob.excludes import is_excluded, load_exclude_globs
 from frob.gates._models import Severity, Violation
 from frob.gitio import run_argv
 from frob.lang import node_text, raw_tree
@@ -596,6 +597,32 @@ def _is_data_structure(cls: ast.ClassDef) -> bool:
         if name in _STRUCTURE_DECORATOR_NAMES:
             return True
     return False
+
+
+# frob:ticket T-0897
+def _parse001_violation(rel_path: str, reason: str) -> Violation:
+    """PARSE001 `Violation` for a file this gate's own read/parse could not
+    get through (T-0897): mirrors `frob.gates._parse_failures.
+    parse_failure_gate`'s rule id, severity, and message shape so a file
+    PII010/SEC110 cannot inspect surfaces the SAME PARSE001 signal as the
+    centrally-tracked `frob.lang`/`snapshot.parse_failures` path, instead
+    of the private silent-skip this gate used to do (T-0786 finding: zero
+    Violation, DEBUG-only log, on an unparseable file -- exactly the class
+    PARSE001 exists to make loud)."""
+    _log.warning("PARSE001: %s could not be parsed/read (%s)", rel_path, reason)
+    return Violation(
+        rule="PARSE001",
+        severity=Severity.ERROR,
+        file=rel_path,
+        line=0,
+        message=(
+            f"PARSE001: {rel_path} could not be parsed/read -- PII010/SEC110 "
+            f"cannot inspect it for PII-shaped fields or secret sources "
+            f"(reason: {reason}); fix the file or "
+            'frob:waive PARSE001 reason="..." if this is a known, '
+            "intentionally-unparseable fixture"
+        ),
+    )
 
 
 def _pii010_violation(
@@ -1831,6 +1858,9 @@ def _scan_cross_language_files(
 # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_rust_struct_ssn_field_fires  # noqa: E501
 # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_ts_process_env_fires  # noqa: E501
 # frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_rust_env_var_fires  # noqa: E501
+# frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_unparseable_python_file_fires_parse001  # noqa: E501
+# frob:tests tests/test_gates.py::TestPiiStructuralCrossLanguage.test_unparseable_file_under_graph_exclude_is_silent  # noqa: E501
+# frob:ticket T-0897
 # frob:enforces SEC-PII-PII-GDPR_SPECIAL_CATEGORIES
 # frob:enforces SEC-PII-PII-CCPA_CATEGORIES
 # frob:enforces SEC-PII-PII-HIPAA_SAFE_HARBOR_IDENTIFIERS
@@ -1849,9 +1879,15 @@ def pii_structural_gate(root: Path) -> tuple[Violation, ...]:
     path (`_SELF_EXCLUDED_FILES`, T-0201 lesson). Joins every PII010/SEC110
     finding against a loaded strata design's std.pii/std.secrets
     declarations (`_load_declared_surface`, T-0351) -- a real declaration
-    discharges a finding outright, not merely a waiver."""
+    discharges a finding outright, not merely a waiver. A `.py` file this
+    gate cannot read/parse fires PARSE001 instead of silently dropping out
+    of the scan (T-0897), UNLESS the file matches a `[graph].exclude` glob
+    (frob.toml) -- that config already carves the path out of frob's own
+    obligation surface (e.g. `tests/fixtures/**`'s deliberately-broken
+    parser fixtures), so PARSE001 stays silent there too."""
     root = Path(root)
     declared = _load_declared_surface(root)
+    exclude_globs = load_exclude_globs(root)
     violations: list[Violation] = []
     scanned = 0
     for rel_path in _tracked_python_files(root):
@@ -1863,8 +1899,20 @@ def pii_structural_gate(root: Path) -> tuple[Violation, ...]:
         try:
             text = (root / rel_path).read_text(encoding="utf-8", errors="strict")
             tree = ast.parse(text, filename=rel_path)
-        except (OSError, UnicodeDecodeError, SyntaxError):
-            _log.debug("pii_structural_gate: skipping unparseable %s", rel_path)
+        except (OSError, UnicodeDecodeError, SyntaxError) as exc:
+            if is_excluded(rel_path, exclude_globs):
+                # T-0897: `[graph].exclude` (frob.toml) already carves this
+                # path out of frob's own obligation surface (e.g.
+                # tests/fixtures/**'s deliberately-broken parser fixtures,
+                # docs/modules/gates.md's `[graph].exclude` rationale) --
+                # PARSE001 stays silent here, same as the graph-ingested
+                # path already treats it, instead of forcing every such
+                # fixture to carry its own waiver.
+                _log.debug(
+                    "pii_structural_gate: skipping excluded unparseable %s", rel_path
+                )
+                continue
+            violations.append(_parse001_violation(rel_path, str(exc)))
             continue
         scanned += 1
         violations.extend(_scan_python_fields(tree, rel_path, declared))

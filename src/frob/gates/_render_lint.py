@@ -170,6 +170,33 @@ def _render001_violation(rel_path: str, site: _PrintSite) -> Violation:
 
 
 # frob:ticket T-0459
+# frob:ticket T-0897
+def _parse001_violation(rel_path: str, reason: str) -> Violation:
+    """PARSE001 `Violation` for a file this gate's own read/`ast.parse`
+    could not get through (T-0897): mirrors `frob.gates._parse_failures.
+    parse_failure_gate`'s rule id, severity, and message shape so a file
+    RENDER001 cannot inspect surfaces the SAME PARSE001 signal as the
+    centrally-tracked `frob.lang`/`snapshot.parse_failures` path, instead
+    of the private silent-skip this gate used to do (T-0786 finding: zero
+    Violation, DEBUG-only log, on an unparseable file -- exactly the class
+    PARSE001 exists to make loud)."""
+    _log.warning("PARSE001: %s could not be parsed/read (%s)", rel_path, reason)
+    return Violation(
+        rule="PARSE001",
+        severity=Severity.ERROR,
+        file=rel_path,
+        line=0,
+        message=(
+            f"PARSE001: {rel_path} could not be parsed/read -- RENDER001 "
+            f"cannot inspect it for a bare stdout write (reason: {reason}); "
+            f"fix the file or "
+            'frob:waive PARSE001 reason="..." if this is a known, '
+            "intentionally-unparseable fixture"
+        ),
+    )
+
+
+# frob:ticket T-0459
 def _tracked_python_files(root: Path) -> tuple[str, ...]:
     """`git ls-files -- src/frob` under `root`, filtered to `.py`,
     root-relative POSIX paths, `()` on any git failure -- RENDER001 only
@@ -202,14 +229,18 @@ def _tracked_python_files(root: Path) -> tuple[str, ...]:
 # frob:tests tests/test_gates.py::TestRenderLintGate.test_bare_print_fires
 # frob:tests tests/test_gates.py::TestRenderLintGate.test_render_package_exempt
 # frob:tests tests/test_gates.py::TestRenderLintGate.test_stderr_directed_print_is_silent  # noqa: E501
+# frob:tests tests/test_gates.py::TestRenderLintGate.test_unparseable_file_fires_parse001  # noqa: E501
 # frob:ticket T-0563
+# frob:ticket T-0897
 # frob:invariant INV-RENDER-SOLE-STDOUT
 def render_lint_gate(root: Path) -> tuple[Violation, ...]:
     """RENDER001 (docs/modules/render.md#renderer): every git-tracked
     `src/frob/**/*.py` file (outside `src/frob/render/` itself) scanned for
     a bare `print`/`click.echo`/`sys.stdout.write` call that bypasses
     `frob.render.Renderer`. ERROR severity (T-0563: the T-0459 straggler
-    list is fully migrated, so a new bare print now fails the build)."""
+    list is fully migrated, so a new bare print now fails the build). A
+    file this gate cannot read/parse fires PARSE001 instead of silently
+    dropping out of the scan (T-0897)."""
     root = Path(root)
     violations: list[Violation] = []
     scanned = 0
@@ -220,8 +251,8 @@ def render_lint_gate(root: Path) -> tuple[Violation, ...]:
         try:
             text = (root / rel_path).read_text(encoding="utf-8", errors="strict")
             tree = ast.parse(text, filename=rel_path)
-        except (OSError, UnicodeDecodeError, SyntaxError):
-            _log.debug("render_lint_gate: skipping unparseable %s", rel_path)
+        except (OSError, UnicodeDecodeError, SyntaxError) as exc:
+            violations.append(_parse001_violation(rel_path, str(exc)))
             continue
         scanned += 1
         violations.extend(
