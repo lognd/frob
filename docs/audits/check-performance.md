@@ -639,3 +639,101 @@ by this ticket; `secrets_gate`/`pii_structural_gate`/`sys_gate` are
 verified byte-identical to their pre-ticket behavior (nothing to diff --
 no edit was made). Measurement scripts used for this disposition were
 scratch-only, not committed.
+## Remediation log (T-0951, archgate/pii_structural rust-candidate feasibility)
+
+T-0930's own instruction (this file's "Remediation log (T-0930)" section
+above) treated `archgate` (row 3, 11.08s) and `pii_structural` (row 7,
+4.60s) as read-level-only, both assumed dominated end-to-end by
+tree-sitter `Node`/`ast` walks with no compute-only sub-boundary. This
+ticket measured both gates directly (`cProfile` first pass, then a
+non-profiled wall-clock isolation to get real numbers uninflated by
+profiler overhead) instead of accepting that assumption at face value,
+per T-0930's own lesson that a rust-candidate row must be SIZED against
+real data, not assumed to win from shape alone.
+
+**`pii_structural`: assumption confirmed, no boundary found.** A direct,
+non-profiled run (`pii_structural_gate(root)`) over this repo's own 689
+tracked `.py`/`.ts`/`.tsx`/`.rs` files measured 5.15s wall. Every
+significant per-file cost is `ast.parse`/tree-sitter-`Node`-shaped
+walking (`_scan_class_fields`, `_scan_python_fields`,
+`_scan_identifier_keywords`, `_scan_ts_fields`, `_scan_rust_fields`,
+...) feeding a genuinely cheap final step (`_field_name_hit`/
+`_field_type_hit`, single dict lookups against `FIELD_SIGNATURES`).
+There is no separable expensive plain-data computation to lift out: the
+walk IS the cost, and the walk needs the `Node`/`ast` object, not
+plain data. Disposed honestly -- NOT a rust candidate at this repo's
+scale; no follow-up ticket filed for this gate.
+
+**`archgate`: assumption WRONG in one specific place -- a real
+compute-only boundary exists and was measured.** `analyze_project`'s
+per-file dispatch (`_run_python_checks`) does span ~15-20 tree-sitter-
+`Node`-shaped detectors (long-function, god-class, SOLID/LSP/OCP,
+concurrency/async/lock-ordering hazards, the SRP/cohesion family over
+`NormalizedModule`) that are genuinely NOT compute-only -- confirming
+the read-level assumption for those. But one detector inside this same
+gate, `_check_abstraction_opportunities` -> `_abstraction_group_evidence`
+-> `_near_duplicate_cluster` (`src/frob/arch/_python.py`), does its
+expensive work AFTER extraction: `_near_duplicate_cluster` takes
+`members: list[tuple[str, str, str]]` -- `(rel, fname,
+body_fingerprint)`, where `body_fingerprint` is a plain, already-
+normalized string (`_body_fingerprint`'s output) -- and runs pairwise
+`difflib.SequenceMatcher(None, a, b).ratio()` over same-signature
+groups, O(n^2) in group size. This is plain strings in, a similarity
+float out -- exactly the shape `frob_core.tree_edit_similarity`/
+`apted_similarity` (`frob.dup._core`, statement-hash-sequence
+similarity) already establishes as a native-kernel precedent in this
+crate, just over raw normalized-token text instead of statement hashes.
+
+Measured (non-profiled wall-clock, `time.perf_counter()`, this repo's
+own tree, `run_memo_scope()` active, single run -- `arch_gate` is not
+memo'd across repeat calls in-process the way a `--only` CLI invocation
+is, so before/after is A/B on the SAME call graph, not two cold runs):
+```
+baseline (archgate, unmodified):                          11.57s
+same call with _near_duplicate_cluster monkeypatched to a
+  no-op (isolates its share by subtraction):                8.47s
+```
+`_near_duplicate_cluster`'s own share: ~3.1s, ~27% of this gate's
+11.08s audit-baseline row -- a real, non-trivial dominator, not the
+whole gate. A `cProfile` pass (109.5s wall under profiler overhead,
+useful for relative shares only) attributes 40.9s cumulative
+(`_check_abstraction_opportunities`) of its own 68.8s
+`_run_python_checks` subtree to this same path. 107,024
+`difflib.find_longest_match` calls were the single largest leaf
+(`tottime` 19.1s under the profiler) in that run.
+
+**Marshaling cost estimate (T-0930's lesson, applied before
+recommending a port, not after)**: T-0930 measured PyO3 per-call
+marshaling overhead alone exceeding a comparable string/token-scan
+kernel's own compute cost at this repo's real per-package/per-symbol
+data volumes (native ~29-79% SLOWER than pure Python once marshaling
+is counted). `_near_duplicate_cluster` is called once per same-
+signature group (not once per pair), so the natural batching boundary
+is "hand one candidate group's list of `(rel, fname, body_text)` tuples
+to Rust once, get back the near-duplicate index set" -- ONE marshal per
+group, not one per pairwise comparison, which is the batching shape
+T-0930's own reverted `resolve_call_edges` prototype did NOT have (its
+regression was measured on a per-symbol-call granularity, not a
+per-batch one). This repo's own groups are typically small (tens of
+members, per the 107,024-comparison profile figure spread across many
+same-signature groups), so the marshal-once-per-group amortization
+should be favorable, but this was NOT measured directly here (would
+require the Rust kernel to exist first) -- sizing the actual marshal
+cost against a real prototype is exactly what a follow-up
+implementation ticket should measure before committing to shipping it
+as the default path, per T-0930's own reverted-and-disclosed precedent.
+
+**Disposition**: `pii_structural` -- no rust-candidate boundary, no
+follow-up filed. `archgate` -- ONE real, measured, plain-data-shaped
+sub-boundary found (`_near_duplicate_cluster`'s body-similarity
+clustering, ~27% of the gate's 11.08s baseline); the other ~73% of
+`archgate` (the tree-sitter-`Node`-shaped detector family) is NOT a
+rust candidate for the same reason `pii_structural` isn't. Filed T-0952
+(port `_near_duplicate_cluster`'s pairwise body-similarity scoring to a
+`frob_core` kernel taking `list[str]` bodies in and returning the
+near-duplicate index set, batched once per same-signature group;
+golden parity test against `difflib.SequenceMatcher.ratio()` at the
+existing `_BODY_SIMILARITY_THRESHOLD = 0.9` cutoff; measure real
+marshal-vs-compute cost with the kernel actually built before wiring it
+as the default path, per T-0930's precedent -- do not ship if measured
+net slower).
