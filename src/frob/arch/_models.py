@@ -153,6 +153,18 @@ ArchCategory = Literal[
     # detection shape.
     "lock-order-cycle",
     "lock-identity-unresolved",
+    # T-0688: errors-as-values advisory (child 3 of T-0685's exception
+    # may-raise umbrella, wires into T-0623's fallibility family) --
+    # `frob.arch._exceptions.check_errors_as_values`, over
+    # `frob.arch._mayraise.compute_may_raise`'s per-function sets. Same
+    # unwaivable advisory channel as every other category here
+    # (`frob.gates._unwaivable_channel_rules` picks up any new
+    # `ArchCategory` value automatically); see
+    # docs/modules/gates.md#errors-as-values-advisory-t-0688 for the detection
+    # shape. Not yet dispatched by `analyze_project`'s live per-file walk
+    # -- see `_exceptions.py`'s own module docstring for why that wiring
+    # is a disclosed follow-up, not this ticket's own scope.
+    "errors-as-values-recommended",
 ]
 
 ArchSeverity = Literal["warning", "suggestion", "info"]

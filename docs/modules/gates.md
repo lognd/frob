@@ -1056,6 +1056,97 @@ than requiring a caller to prove the exact line changed; the query-side
 `frob graph affects <ref>` CLI (docs/modules/graph.md#affects) is the tool
 for a developer to see precisely what the gate is asking about.
 
+## EXHAUST001 EXHAUST002 (T-0688)
+
+<a id="exhaust001exhaust002-t-0688"></a>
+<!-- frob:describes src/frob/gates/_exhaustive_handling.py::exhaustive_handling_gate -->
+
+Child 3 of T-0685's exception may-raise umbrella, over T-0686's
+per-function may-raise resolver (`frob.arch._mayraise.compute_may_raise`,
+docs/modules/arch.md#may-raise-resolver): `exhaustive_handling_gate` (gate
+name `exhaustive_handling`, `gates-native` stage group, `--only
+gates-native`) is the fail-closed exhaustiveness half over that resolver's
+output, a static-type-checker-for-exceptions check that runs before a
+single test does.
+
+A function/method is treated as a declared BOUNDARY only once it has at
+least one `except`/`catch` clause of its own (`NormalizedFunction.
+catches`) -- a plain function with no attempt at handling is just
+propagating, which is normal and not this gate's concern.
+`compute_may_raise`'s `FunctionMayRaise.raises` is already the LEAKED
+remainder after that function's own catches are subtracted (see that
+resolver's own docstring), so any non-empty leaked set on a boundary is,
+by construction, an incompletely-handled one:
+
+- **EXHAUST001** -- `UNKNOWN` (an unresolvable call/raise, per the
+  resolver's fail-closed doctrine) is in the leaked set and none of the
+  boundary's own catches is broad enough to plausibly discharge it (a bare
+  `except:` or `except Exception:`). Per the parent ticket's own
+  acceptance: `Unknown` in the guarded set forces a catch-all or fixing
+  the unresolvable call; a narrow `except ValueError:` never counts.
+- **EXHAUST002** -- a named, non-`UNKNOWN` type is in the leaked set with
+  no matching `# frob:raises <ExceptionType>` directive (below) declaring
+  it as intentional propagation. The violation message names exactly the
+  missing type(s).
+
+Both rules ship at WARN severity as of this landing (T-0688) -- a first
+real run against this repo's own source surfaced 176 pre-existing
+findings, the same first-turn-on-debt scale T-0680's REG008-REG011 and
+T-0728's ARCH101-103 both disclosed for their own new gates; promoting to
+ERROR is deliberately deferred to a follow-up ticket that pays that corpus
+down first, not a softened design. Both attach `symref` (the leaking
+function's `path::qualname`) so `frob:waive EXHAUST001 reason="..."` /
+`frob:waive EXHAUST002 reason="..."` bind precisely to that one function,
+the same waiver-precision convention every other symbol-scoped rule uses.
+
+**Declared propagation directive**: `# frob:raises <ExceptionType>`,
+placed directly above the function's `def`/decorator block (the same
+above-the-def placement every other `frob:` directive in this repo
+already uses), marks that the function intentionally lets
+`<ExceptionType>` escape uncaught -- an explicit, auditable contract
+instead of a silent EXHAUST002 gap. One directive line per declared type;
+`_declared_propagations` scans a bounded lookback window directly above
+the function's start line (`NormalizedFunction` itself carries no raw
+comment text, so this is a raw-source scan, not a model field). A
+directive never discharges `UNKNOWN` -- it names a KNOWN type, and
+`UNKNOWN` is definitionally not one.
+
+SCOPE: python-only (same disclosed limit `compute_may_raise` itself
+already carries); non-python files, files with no tree-sitter grammar, and
+test files (`frob.excludes.is_test_file`) are silently skipped.
+
+### errors-as-values advisory (T-0688)
+
+<a id="errors-as-values-advisory-t-0688"></a>
+<!-- frob:describes src/frob/arch/_exceptions.py::check_errors_as_values -->
+
+The sibling, suggestion-severity consumer of the SAME `compute_may_raise`
+output (`frob.arch._exceptions.check_errors_as_values`), wiring into
+T-0623's fallibility family (docs/modules/arch.md#fallibility-checks): a
+PUBLIC function/method (bare name not underscore-prefixed) whose leaked
+may-raise set contains a member of the curated recoverable set
+(`ValueError`/`KeyError`/`LookupError`/`TypeError`, the same four types
+`frob.arch._fallibility._RECOVERABLE_EXCEPTION_TYPES` already curates),
+with no same-module caller visibly discharging it (a caller with a
+wrapping `except` clause that is a catch-all or names one of the
+recoverable types directly -- a disclosed coarse, function-wide,
+exact-type-or-catch-all proxy, not a subtype-hierarchy walk), gets an
+`ArchSuggestion` (category `errors-as-values-recommended`) recommending a
+typani `Result[T, E]` signature instead, with the raising function as the
+sketch site. `UNKNOWN` and non-recoverable (programmer-bug-class)
+exception types never trigger this advisory -- exceptions remain
+sanctioned for those, per T-0623's own house doctrine.
+
+Like `frob.arch._fallibility.run_fallibility_checks` before it,
+`check_errors_as_values` stays on the unwaivable advisory channel every
+`ArchCategory` lives on by default (`frob.gates._unwaivable_channel_
+rules` picks up the new category automatically) and is not yet dispatched
+by `analyze_project`'s live per-file walk -- wiring the whole fallibility
+family into that dispatch loop is a distinct, larger-surface follow-up
+ticket (T-0616's SRP-family precedent: built and tested first, dispatch
+wiring landed later as its own ticket, T-0728), not something this ticket
+silently folds in.
+
 ## Public API
 
 <!-- frob:describes src/frob/gates/__init__.py::SCOPED_RUN_FLAKY_RULE_IDS -->

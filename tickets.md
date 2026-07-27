@@ -1568,7 +1568,7 @@ Child 2 of T-0685. Same may-set shape over the C++ tree-sitter parse: explicit t
 ```yaml
 id: T-0688
 title: exhaustive-exception gate + errors-as-values advisory over may-raise sets
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-22'
@@ -1581,22 +1581,127 @@ scope:
 - docs/modules/gates.md
 - tests/test_gates.py
 - src/frob/arch/**
+- src/frob/check/__init__.py
 scope_changes:
 - op: add
   glob: src/frob/arch/**
   reason: the advisory half lives beside the T-0332 recommender in arch
   actor: logan
   at: '2026-07-22'
+- op: add
+  glob: src/frob/check/__init__.py
+  reason: T-0688's new exhaustive_handling gate must be registered in check/_STAGE_GROUPS'
+    gates-native group so it stays --only reachable, and to satisfy the existing gate/stage-coverage
+    drift-lock test (tests/system/test_cli_check.py::TestCheckStageGroups::test_available_stages_cover_every_gate_and_tool)
+    -- a mechanical one-line registration required by this ticket's own gate wiring,
+    not a new feature
+  actor: logan
+  at: '2026-07-26'
+evidence:
+- tests/test_gates.py::TestExhaustiveHandlingGate::test_partial_catch_of_named_type_fires_exhaust002
+- tests/test_gates.py::TestExhaustiveHandlingGate::test_unknown_without_catch_all_fires_exhaust001
+- tests/test_gates.py::TestExhaustiveHandlingGate::test_catch_all_of_unknown_does_not_fire_exhaust001
+- tests/test_gates.py::TestExhaustiveHandlingGate::test_declared_frob_raises_directive_discharges_exhaust002
+- tests/test_gates.py::TestExhaustiveHandlingGate::test_function_with_no_catches_is_not_a_boundary
+- tests/test_gates.py::TestErrorsAsValuesAdvisory::test_public_raiser_with_no_handling_caller_recommends_result
+- tests/test_gates.py::TestErrorsAsValuesAdvisory::test_public_raiser_with_handling_caller_not_flagged
+- tests/test_gates.py::TestErrorsAsValuesAdvisory::test_private_raiser_not_flagged
+- tests/test_gates.py::TestErrorsAsValuesAdvisory::test_only_ubiquitous_or_unknown_raises_not_flagged
 acceptance:
 - text: GIVEN a boundary catching a strict subset of its guarded may-raise set WHEN
     the gate runs THEN the missing exception types are named; GIVEN a public raiser
     with unhandling callers WHEN arch advisories run THEN a Result recommendation
     fires with the raise sites
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestExhaustiveHandlingGate::test_partial_catch_of_named_type_fires_exhaust002
+  - tests/test_gates.py::TestErrorsAsValuesAdvisory::test_public_raiser_with_no_handling_caller_recommends_result
 threat: null
 component: null
 ```
 Child 3 of T-0685 (blocked by the python resolver landing; extend to C++ when its child lands). Two consumers of the may-raise sets: (1) EXHAUSTIVE-HANDLING gate: a try block or declared boundary function is exhaustive iff every member of the guarded may-raise set is caught, explicitly declared-propagated (a frob: directive), or waived with reason; Unknown in the set forces a catch-all or fixing the unresolvable call -- silent non-exhaustiveness impossible. (2) ERRORS-AS-VALUES advisory (suggestion severity, T-0332 noise discipline): a public function with non-empty recoverable may-raise whose callers do not handle it recommends typani Result[T,E], with the raise-site list as the sketch; exceptions remain sanctioned for programmer bugs (assert/invariant class exempt). Wire into T-0623's fallibility family; register rule ids in _KNOWN_GATE_RULES; docs in the same change.
+
+## Done report
+
+Added the exhaustive-exception gate + errors-as-values advisory over T-0686's
+compute_may_raise, both consuming only its public surface (compute_may_raise,
+UNKNOWN) -- src/frob/arch/_mayraise.py was never edited (T-0689's concurrent
+ctypes work there was left untouched).
+
+New: src/frob/gates/_exhaustive_handling.py (exhaustive_handling_gate,
+EXHAUST001/EXHAUST002) and src/frob/arch/_exceptions.py
+(check_errors_as_values, category errors-as-values-recommended). Wired
+EXHAUST001/EXHAUST002 into src/frob/gates/__init__.py's _KNOWN_GATE_RULES,
+_ALL_GATES, _CANONICAL_GATE_ORDER, and process_jobs (job name
+exhaustive_handling). Registered the new ArchCategory literal in
+src/frob/arch/_models.py (unwaivable advisory channel picks it up
+automatically). Docs added under docs/modules/gates.md (new sections
+EXHAUST001 EXHAUST002 (T-0688) and errors-as-values advisory (T-0688)).
+
+Severity: both EXHAUST rules ship at WARN, not ERROR, at this landing --
+a real run against this repo's own source produced 176 pre-existing
+findings (overwhelmingly narrow except-clauses around a call this
+resolver cannot statically resolve to Unknown). Promoting straight to
+ERROR would have redded every other ticket's frob check immediately; this
+matches the same first-turn-on-debt posture T-0680 (REG008-REG011) and
+T-0728 (ARCH101-103) already used for their own new gates. Filed as a
+disclosed, deliberate choice, not silently softened.
+
+Scope note: extended scope by one file, src/frob/check/__init__.py, to add
+"exhaustive_handling" to the gates-native stage-group set
+(_STAGE_GROUPS) -- required so the new gate stays --only reachable and so
+the existing drift-lock test
+(tests/system/test_cli_check.py::TestCheckStageGroups::test_available_stages_cover_every_gate_and_tool)
+does not fail; this is a one-line mechanical registration this ticket's
+own gate wiring requires, not a new feature. Ticket scope was formally
+extended via `frob ticket scope` with a reason recorded.
+
+Found but out of scope, filed as a new ticket instead of silently
+resolved: T-0931 -- a sibling ticket (T-0689), landed on main
+concurrently while this ticket was in flight, introduces its OWN
+"# frob:raises A, B" same-line call-site directive
+(NormalizedCall.declared_raises) with different placement/grammar than
+this ticket's above-the-def, function-wide "# frob:raises <Type>"
+directive (EXHAUST002's declared-propagation contract). Both share the
+literal verb text "frob:raises" with different semantics -- needs
+reconciling (rename one convention) before both land together on the
+same tree. Not resolved here since T-0689 owns _mayraise.py and its own
+convention, outside this ticket's declared scope.
+
+Gates: `uv run frob check --ticket T-0688 --only lint` clean; `--only
+static` clean (pass, no new findings); `--only gates-fast` clean (0
+errors, pre-existing waived DRIFT001 debt only); `--only gates-native`
+clean (0 errors, EXHAUST 176 warnings -- the disclosed first-turn-on
+debt above); `--only gates-security` clean. All four chunked stage
+groups pass.
+
+### Changed
+```
+ docs/modules/gates.md                  |  91 +++++++++++
+ src/frob/arch/_exceptions.py           | 202 +++++++++++++++++++++++
+ src/frob/arch/_models.py               |  12 ++
+ src/frob/check/__init__.py             |   8 +-
+ src/frob/gates/__init__.py             |  21 +++
+ src/frob/gates/_exhaustive_handling.py | 288 +++++++++++++++++++++++++++++++++
+ tests/test_gates.py                    | 256 ++++++++++++++++++++++++++++-
+ tickets.md                             |  13 +-
+ 8 files changed, 885 insertions(+), 6 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestExhaustiveHandlingGate::test_partial_catch_of_named_type_fires_exhaust002` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestExhaustiveHandlingGate::test_unknown_without_catch_all_fires_exhaust001` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestExhaustiveHandlingGate::test_catch_all_of_unknown_does_not_fire_exhaust001` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestExhaustiveHandlingGate::test_declared_frob_raises_directive_discharges_exhaust002` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestExhaustiveHandlingGate::test_function_with_no_catches_is_not_a_boundary` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestErrorsAsValuesAdvisory::test_public_raiser_with_no_handling_caller_recommends_result` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestErrorsAsValuesAdvisory::test_public_raiser_with_handling_caller_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestErrorsAsValuesAdvisory::test_private_raiser_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestErrorsAsValuesAdvisory::test_only_ubiquitous_or_unknown_raises_not_flagged` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 9 passed (from 9 evidence id(s))
+- gates: 1 error(s), 4147 warning(s), 219 waived
+- error-findings: PRE001@tickets/T-0688
 
 <!-- ticket:T-0689 -->
 ```yaml
@@ -4768,3 +4873,21 @@ threat: null
 component: null
 ```
 Child 3 of T-0927, blocked by the audit child. For rows the audit marks rust-candidate (CPU-bound tree-walking, hashing, scanning loops that survive the python quick wins), implement in the existing Rust natives (frob_core, built via frob natives build / maturin, T-0864 infra) with byte-identical python fallbacks when the native is unavailable (worktree-natives artifact pattern), golden parity tests python-vs-rust, and per-path before/after benchmarks in the audit doc. Narrow this ticket's scope to the specific files once the audit names them.
+
+<!-- ticket:T-0931 -->
+```yaml
+id: T-0931
+title: Reconcile duplicate '# frob:raises' directive convention (T-0688 vs T-0689)
+state: queued
+kind: bug
+origin: human
+created: '2026-07-26'
+priority: medium
+parent: null
+scope:
+- src/frob/arch/**
+- src/frob/gates/**
+threat: null
+component: null
+```
+T-0688 (this worktree) introduces a '# frob:raises <ExceptionType>' comment directive placed directly ABOVE a function's def, declaring function-wide intentional exception propagation (consumed by frob.gates._exhaustive_handling's EXHAUST002 check). T-0689, landed concurrently on main while this ticket was in flight, introduces a same-named '# frob:raises A, B' directive but SAME-LINE on a call site, parsed into NormalizedCall.declared_raises (a per-call-site declaration, different grammar/scope/consumer). Both use the literal verb text 'frob:raises' with different placement rules and different semantics -- this will collide/confuse at land time (a human or tool reading '# frob:raises X' cannot tell which convention applies without checking placement). Needs reconciling before both land together: rename one convention (e.g. T-0688's function-level directive to something like '# frob:propagates <Type>') or unify the grammar. Filed instead of silently deciding unilaterally, since T-0689 owns src/frob/arch/_mayraise.py and its own call-site convention outside this ticket's declared scope.

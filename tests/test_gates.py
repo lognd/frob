@@ -8950,9 +8950,7 @@ class TestKnownGateRuleIds:
         found: dict[str, str] = {}
         for base in ("src/frob/gates", "src/frob/strata"):
             for path in sorted((repo_root / base).rglob("*.py")):
-                for lineno, line in enumerate(
-                    path.read_text().splitlines(), start=1
-                ):
+                for lineno, line in enumerate(path.read_text().splitlines(), start=1):
                     if line.strip().startswith("#"):
                         continue
                     for m in pattern.finditer(line):
@@ -9972,3 +9970,255 @@ class TestComplianceGate:
         root = Path(__file__).resolve().parents[1]
         violations = compliance_gate(root)
         assert not any(v.rule == "COMPLIANCE005" for v in violations)
+
+
+# frob:ticket T-0688
+class TestExhaustiveHandlingGate:
+    """T-0688: frob.gates._exhaustive_handling.exhaustive_handling_gate --
+    EXHAUST001/EXHAUST002 over frob.arch._mayraise.compute_may_raise's
+    per-function may-raise sets. A function is a "boundary" only once it
+    has at least one except clause of its own; a boundary that leaks
+    Unknown with no catch-all fires EXHAUST001, a boundary that leaks a
+    named type not declared via `# frob:raises <Type>` fires EXHAUST002."""
+
+    # frob:tests tests/test_gates.py::TestExhaustiveHandlingGate.test_partial_catch_of_named_type_fires_exhaust002
+    def test_partial_catch_of_named_type_fires_exhaust002(self, tmp_path: Path) -> None:
+        """`boundary` catches only ValueError but `risky` (which it calls)
+        raises TypeError -- the leaked TypeError is named in EXHAUST002."""
+        from frob.gates._exhaustive_handling import exhaustive_handling_gate
+
+        _write(
+            tmp_path,
+            "mod.py",
+            (
+                "def risky():\n"
+                "    raise TypeError('bad')\n"
+                "\n"
+                "def boundary():\n"
+                "    try:\n"
+                "        risky()\n"
+                "    except ValueError:\n"
+                "        pass\n"
+            ),
+        )
+        violations = exhaustive_handling_gate(tmp_path)
+        found = _by_rule(violations, "EXHAUST002")
+        assert found
+        assert any(v.symref == "mod.py::boundary" for v in found)
+        assert any("TypeError" in v.message for v in found)
+
+    # frob:tests tests/test_gates.py::TestExhaustiveHandlingGate.test_unknown_without_catch_all_fires_exhaust001
+    def test_unknown_without_catch_all_fires_exhaust001(self, tmp_path: Path) -> None:
+        """`boundary` calls an unresolvable function (contributes Unknown)
+        and only catches ValueError -- no catch-all discharges Unknown, so
+        EXHAUST001 fires."""
+        from frob.gates._exhaustive_handling import exhaustive_handling_gate
+
+        _write(
+            tmp_path,
+            "mod.py",
+            (
+                "def boundary():\n"
+                "    try:\n"
+                "        some_unresolved_call()\n"
+                "    except ValueError:\n"
+                "        pass\n"
+            ),
+        )
+        violations = exhaustive_handling_gate(tmp_path)
+        found = _by_rule(violations, "EXHAUST001")
+        assert found
+        assert any(v.symref == "mod.py::boundary" for v in found)
+
+    # frob:tests tests/test_gates.py::TestExhaustiveHandlingGate.test_catch_all_of_unknown_does_not_fire_exhaust001
+    def test_catch_all_of_unknown_does_not_fire_exhaust001(
+        self, tmp_path: Path
+    ) -> None:
+        """Same shape as above but the boundary's own catch is a real
+        catch-all (`except Exception:`) -- Unknown is discharged, no
+        EXHAUST001."""
+        from frob.gates._exhaustive_handling import exhaustive_handling_gate
+
+        _write(
+            tmp_path,
+            "mod.py",
+            (
+                "def boundary():\n"
+                "    try:\n"
+                "        some_unresolved_call()\n"
+                "    except Exception:\n"
+                "        pass\n"
+            ),
+        )
+        violations = exhaustive_handling_gate(tmp_path)
+        assert not _by_rule(violations, "EXHAUST001")
+
+    # frob:tests tests/test_gates.py::TestExhaustiveHandlingGate.test_declared_frob_raises_directive_discharges_exhaust002
+    def test_declared_frob_raises_directive_discharges_exhaust002(
+        self, tmp_path: Path
+    ) -> None:
+        """A `# frob:raises TypeError` directive directly above `boundary`
+        declares the leaked TypeError as intentional propagation -- no
+        EXHAUST002, unlike the undeclared case above."""
+        from frob.gates._exhaustive_handling import exhaustive_handling_gate
+
+        _write(
+            tmp_path,
+            "mod.py",
+            (
+                "def risky():\n"
+                "    raise TypeError('bad')\n"
+                "\n"
+                "# frob:raises TypeError\n"
+                "def boundary():\n"
+                "    try:\n"
+                "        risky()\n"
+                "    except ValueError:\n"
+                "        pass\n"
+            ),
+        )
+        violations = exhaustive_handling_gate(tmp_path)
+        assert not _by_rule(violations, "EXHAUST002")
+
+    # frob:tests tests/test_gates.py::TestExhaustiveHandlingGate.test_function_with_no_catches_is_not_a_boundary
+    def test_function_with_no_catches_is_not_a_boundary(self, tmp_path: Path) -> None:
+        """`caller` calls `risky` (which raises TypeError) but has no
+        `except` clause of its own -- it is plain propagation, not a
+        declared boundary, so neither EXHAUST001 nor EXHAUST002 fires."""
+        from frob.gates._exhaustive_handling import exhaustive_handling_gate
+
+        _write(
+            tmp_path,
+            "mod.py",
+            (
+                "def risky():\n"
+                "    raise TypeError('bad')\n"
+                "\n"
+                "def caller():\n"
+                "    risky()\n"
+            ),
+        )
+        violations = exhaustive_handling_gate(tmp_path)
+        assert not _by_rule(violations, "EXHAUST001")
+        assert not _by_rule(violations, "EXHAUST002")
+
+
+# frob:ticket T-0688
+class TestErrorsAsValuesAdvisory:
+    """T-0688: frob.arch._exceptions.check_errors_as_values -- a PUBLIC
+    function/method whose recoverable may-raise set (computed via
+    frob.arch._mayraise.compute_may_raise) has no same-module caller
+    visibly handling it recommends a typani Result[T, E], the raise sites
+    named as the sketch."""
+
+    # frob:tests tests/test_gates.py::TestErrorsAsValuesAdvisory.test_public_raiser_with_no_handling_caller_recommends_result
+    def test_public_raiser_with_no_handling_caller_recommends_result(
+        self,
+    ) -> None:
+        from frob.arch._exceptions import check_errors_as_values
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedFunction,
+            NormalizedModule,
+            NormalizedRaise,
+        )
+
+        risky = NormalizedFunction(
+            name="risky",
+            line=1,
+            body_line_count=2,
+            raises=[NormalizedRaise(line=2, exception_type="ValueError")],
+        )
+        caller = NormalizedFunction(
+            name="caller",
+            line=5,
+            body_line_count=2,
+            calls=[NormalizedCall(callee="risky", line=6)],
+        )
+        module = NormalizedModule(
+            path="mod.py", language="python", functions=[risky, caller]
+        )
+        suggestions = check_errors_as_values(module)
+        matches = [
+            s for s in suggestions if s.category == "errors-as-values-recommended"
+        ]
+        assert matches
+        assert any(s.symref == "mod.py::risky" for s in matches)
+
+    # frob:tests tests/test_gates.py::TestErrorsAsValuesAdvisory.test_public_raiser_with_handling_caller_not_flagged
+    def test_public_raiser_with_handling_caller_not_flagged(self) -> None:
+        from frob.arch._exceptions import check_errors_as_values
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedCatch,
+            NormalizedFunction,
+            NormalizedModule,
+            NormalizedRaise,
+        )
+
+        risky = NormalizedFunction(
+            name="risky",
+            line=1,
+            body_line_count=2,
+            raises=[NormalizedRaise(line=2, exception_type="ValueError")],
+        )
+        caller = NormalizedFunction(
+            name="caller",
+            line=5,
+            body_line_count=4,
+            calls=[NormalizedCall(callee="risky", line=7)],
+            catches=[NormalizedCatch(line=8, exception_type="ValueError")],
+        )
+        module = NormalizedModule(
+            path="mod.py", language="python", functions=[risky, caller]
+        )
+        suggestions = check_errors_as_values(module)
+        assert not any(
+            s.category == "errors-as-values-recommended" for s in suggestions
+        )
+
+    # frob:tests tests/test_gates.py::TestErrorsAsValuesAdvisory.test_private_raiser_not_flagged
+    def test_private_raiser_not_flagged(self) -> None:
+        from frob.arch._exceptions import check_errors_as_values
+        from frob.arch._normalized import (
+            NormalizedFunction,
+            NormalizedModule,
+            NormalizedRaise,
+        )
+
+        risky = NormalizedFunction(
+            name="_risky",
+            line=1,
+            body_line_count=2,
+            raises=[NormalizedRaise(line=2, exception_type="ValueError")],
+        )
+        module = NormalizedModule(path="mod.py", language="python", functions=[risky])
+        suggestions = check_errors_as_values(module)
+        assert not any(
+            s.category == "errors-as-values-recommended" for s in suggestions
+        )
+
+    # frob:tests tests/test_gates.py::TestErrorsAsValuesAdvisory.test_only_ubiquitous_or_unknown_raises_not_flagged
+    def test_only_ubiquitous_or_unknown_raises_not_flagged(self) -> None:
+        """`risky` calls an unresolvable function only (contributes solely
+        `UNKNOWN`, no `_RECOVERABLE_EXCEPTION_TYPES` member) -- never
+        flagged, since this advisory never recommends a Result signature
+        off an unidentified failure mode alone."""
+        from frob.arch._exceptions import check_errors_as_values
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        risky = NormalizedFunction(
+            name="risky",
+            line=1,
+            body_line_count=2,
+            calls=[NormalizedCall(callee="some_unresolved_call", line=2)],
+        )
+        module = NormalizedModule(path="mod.py", language="python", functions=[risky])
+        suggestions = check_errors_as_values(module)
+        assert not any(
+            s.category == "errors-as-values-recommended" for s in suggestions
+        )

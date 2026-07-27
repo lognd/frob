@@ -66,6 +66,7 @@ from frob.gates._cve_fingerprint_scan import cve_fingerprint_scan_gate
 from frob.gates._dead_symbols import dead_symbol_gate
 from frob.gates._docblocks import doc004_gate, doc005_gate
 from frob.gates._exclude_hazard import exclude_hazard_gate
+from frob.gates._exhaustive_handling import exhaustive_handling_gate
 from frob.gates._filehash import _SOURCE_EXTS
 from frob.gates._fmt_directives import (
     FmtChange,
@@ -1200,6 +1201,13 @@ _KNOWN_GATE_RULES = frozenset(
         # decisions/ record) -- surfaced by T-0901's own drift-lock test,
         # the same listing-omission class as the T-0903/T-0923 batches.
         "DEC000",
+        # frob:ticket T-0688
+        # T-0688: EXHAUST001/EXHAUST002 (frob.gates._exhaustive_handling's
+        # exhaustive_handling_gate) -- the exhaustive-exception gate over
+        # frob.arch._mayraise.compute_may_raise's per-function may-raise
+        # sets.
+        "EXHAUST001",
+        "EXHAUST002",
     }
 )
 
@@ -9263,6 +9271,10 @@ _ALL_GATES = frozenset(
         # T-0628: AFFECT001/AFFECT002, the T-0325 affects()-closure
         # digest-drift enforcement half (frob.gates.affect_drift_gate).
         "affect_drift",
+        # T-0688: EXHAUST001/EXHAUST002, the exhaustive-exception gate
+        # over frob.arch._mayraise.compute_may_raise's per-function sets
+        # (frob.gates._exhaustive_handling.exhaustive_handling_gate).
+        "exhaustive_handling",
     }
 )
 
@@ -9608,6 +9620,8 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "fmt",
     # frob:ticket T-0628
     "affect_drift",
+    # frob:ticket T-0688
+    "exhaustive_handling",
 )
 
 # T-0839: import-time guard making the two constants' drift impossible to
@@ -9764,6 +9778,13 @@ def _build_jobs(
         "sys": _ProcessJob(sys_gate, (st.root, st.snapshot)),
         "secrets": _ProcessJob(secrets_gate, (st.root,)),
         "archgate": _ProcessJob(arch_gate, (st.root,)),
+        # T-0688: EXHAUST001/EXHAUST002, always against repo_root (never
+        # the possibly-scoped st.root) -- same reasoning as `archgate`/
+        # `pii_structural`: a `frob check <subdir>` run should see the same
+        # per-function exhaustiveness verdicts an unscoped run would, since
+        # a leaked exception from a same-module callee outside the scoped
+        # subdir is still a real, repo-wide correctness concern.
+        "exhaustive_handling": _ProcessJob(exhaustive_handling_gate, (st.root,)),
         "pii_structural": _ProcessJob(pii_structural_gate, (st.root,)),
         # T-0471: whole-repo tracked-file scan, always against repo_root
         # (never the possibly-scoped st.root) -- same reasoning as

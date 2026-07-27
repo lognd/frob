@@ -313,7 +313,13 @@ _STAGE_GROUPS: dict[str, frozenset[str]] = {
             "affect_drift",
         }
     ),
-    "gates-native": frozenset({"archgate", "clones", "perf"}),
+    # frob:ticket T-0688
+    # T-0688: exhaustive_handling (EXHAUST001/EXHAUST002) added alongside
+    # archgate -- same process-pool CPU-bound shape (a repo-wide python
+    # parse + per-function may-raise fixpoint), required so the new gate
+    # this ticket registers in frob.gates._ALL_GATES stays reachable via
+    # `--only <group>` and so TestCheckStageGroups' drift-lock stays green.
+    "gates-native": frozenset({"archgate", "clones", "perf", "exhaustive_handling"}),
     # frob:ticket T-0824
     "gates-security": frozenset(
         {"sys", "pii_structural", "secrets", "dead_symbols", "protocol_summary"}

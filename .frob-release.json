@@ -147,6 +147,7 @@
     "src/frob/app/worktree_runner.py::run": "92572764844d8b13ffb2ffb62e56a895e0d81ecd853be11fada4aa366856323b",
     "src/frob/app/xref_runner.py::run": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
     "src/frob/arch/__init__.py::analyze_project": "9f59a6565b4a0695319083fcc83633a2f7d9a11ef98614e2dc3f15fdf62a87dd",
+    "src/frob/arch/_exceptions.py::check_errors_as_values": "795af739ed853f2794e79b12483cf91a003042e9753dee0fcd7b126a5e40e797",
     "src/frob/arch/_fallibility.py::check_over_broad_except": "cef7efb44a118eb0aba75b790de0d10ac43180d046d01f9c6247b4905671e250",
     "src/frob/arch/_fallibility.py::check_recoverable_error_wrong_signature": "832f988147f0c063a31fae65bc81bd4fea1564964a47b93867e0fca04f521935",
     "src/frob/arch/_fallibility.py::check_swallowed_exception": "9b2f5259ec0a25f2f557f81d5815f2c203501accf23808fb31037a198d4a2f56",
@@ -506,6 +507,7 @@
     "src/frob/gates/_docblocks.py::doc004_gate": "ae1933bdb3d41939434b20539b217c3b3ea97d541ac837ded6bf3098bf6ba8a9",
     "src/frob/gates/_docblocks.py::doc005_gate": "537d82106e7cdbe1f9553e865aa62cac07a136df0c01bd2edadc7082c1960be1",
     "src/frob/gates/_exclude_hazard.py::exclude_hazard_gate": "6e3505c56c11b17ba244b1e111c1bba69666b59e6c5a678e73e648632c0c6bc0",
+    "src/frob/gates/_exhaustive_handling.py::exhaustive_handling_gate": "6c7ec22130f8c90cb92b90d3fce38a0199edfb4b091febd3589ca43fcd1008d1",
     "src/frob/gates/_fmt_directives.py::FmtChange": "ea8741b398fe11d4690d8916903481776ec126dd2a6c5422ebd6f1f7e8fc9ac2",
     "src/frob/gates/_fmt_directives.py::FmtReport": "11a60528b9ef3d166ee7b3928901298283e5a50d65961937b22ba07fa6dc2c63",
     "src/frob/gates/_fmt_directives.py::canonicalize_text": "0c5ce61829cec8198bf968017b0e94cc2891613708c533f93413b0ed6ef9c127",
@@ -1617,5 +1619,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.168.0"
+  "version": "0.169.0"
 }
