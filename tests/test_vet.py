@@ -1296,6 +1296,65 @@ class TestCapabilityScanTaxonomyClosureResolution:
         )
         assert "exec" not in scan_file_capabilities(pkg)
 
+    # frob:waive DUP001 reason="parallel test methods within test_vet.py (46 sites) sharing an \
+    # arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
+    def test_closure_capture_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0666: taxonomy "closure capture" row (Lang Ref 4.2 Naming and
+        # binding): `def outer(): r = subprocess.run; def inner(): r(x);
+        # return inner` -- the inner function's call to `r` must resolve
+        # through the enclosing function's local binding.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text(
+            "import subprocess\n"
+            "def outer():\n"
+            "    r = subprocess.run\n"
+            "    def inner():\n"
+            "        r(['ls'])\n"
+            "    return inner\n"
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_with_as_binding_a_callable_bearing_object_detected(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0666: taxonomy "`as` in `with`/`except` binding a callable-
+        # bearing object" row (Lang Ref 8.5 The with statement): the `as`
+        # target of a `with` statement is part of the same bind family as
+        # ordinary assignment -- `with open('x') as f: pass` is benign, but
+        # `with contextlib.suppress(Exception) as e: r = e; r2 = getattr(e,
+        # 'run', None)` illustrates the pattern is a genuine binding site.
+        # The litmus below binds a dangerous callable through a `with ...
+        # as` target directly and calls it inside the block.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text(
+            "import subprocess\n"
+            "import contextlib\n"
+            "@contextlib.contextmanager\n"
+            "def give_run():\n"
+            "    yield subprocess.run\n"
+            "with give_run() as r:\n"
+            "    r(['ls'])\n"
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_walrus_operator_bind_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0666: taxonomy "walrus operator bind" row (Lang Ref 6.12
+        # Assignment expressions): `(f := subprocess.run)(x)` binds AND
+        # calls in one expression.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("import subprocess\n(f := subprocess.run)(['ls'])\n")
+        assert "exec" in scan_file_capabilities(pkg)
+
 
 class TestCapabilityScanTsBindingResolution:
     """T-0377: TS/JS sibling of `TestCapabilityScanBindingResolution` --
@@ -2000,6 +2059,100 @@ class TestCapabilityScanRustTaxonomyClosureResolution:
         pkg.write_text('fn f() { let x = 5; println!("{}", x); }\n')
         assert "exec" not in scan_file_capabilities(pkg)
 
+    def test_function_pointer_coercion_from_named_fn_detected(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0666: taxonomy "function-pointer coercion from a named fn" row:
+        # `let f: fn(&str) -> _ = Command::new; f("sh");` -- an explicit
+        # `fn(...)` type annotation on the `let` target does not change the
+        # binding grammar from an ordinary `let` (per `_capability.py`'s
+        # T-0662 comment: a typedef/type annotation only renames the
+        # declared TYPE, not the binding shape), so this reduces to the
+        # same code path `test_let_binding_detected` already locks.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text(
+            "use std::process::Command as C;\n"
+            'fn f() { let g: fn(&str) -> _ = C::new; g("sh"); }\n'
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_type_alias_for_function_pointer_type_detected(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0666: taxonomy "`type` alias (data, not routing by itself, but
+        # aliases the function-pointer type)" row: `type Spawner = fn(&str)
+        # -> Child;` then `let f: Spawner = Command::new; f("sh");` -- the
+        # `type` item itself never routes a call (the doc's own note); what
+        # this row needs a litmus for is the SUBSEQUENT `let` binding typed
+        # through the alias, same reduction as the fn-pointer-coercion row
+        # above.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text(
+            "use std::process::Command as C;\n"
+            "type Spawner = fn(&str) -> std::process::Child;\n"
+            'fn f() { let g: Spawner = C::new; g("sh"); }\n'
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_struct_update_field_rebind_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0666: taxonomy "field rebinding via struct update" row: `let h =
+        # Handlers { run: Command::new, ..default }; (h.run)("sh");`. The
+        # taxonomy doc itself flags this row "static-resolvable (needs
+        # points-to on struct field)" -- a genuine, currently UNRESOLVED gap
+        # in the Rust resolver (no struct-field alias table exists for a
+        # LATER `(h.run)(...)` call through a constructed struct instance,
+        # unlike C's `_record_c_field_alias`/`_c_field_alias_table`, which
+        # closes the analogous C row via a designated-initializer alias
+        # table T-0662 built). This fixture locks the CURRENT honest
+        # under-detection rather than silently having no fixture for the
+        # row; T-1047 tracks adding Rust struct-field points-to
+        # to close it.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text(
+            "use std::process::Command as C;\n"
+            "struct Handlers { run: fn(&str) -> std::process::Child }\n"
+            "fn f(default: Handlers) {\n"
+            "    let h = Handlers { run: C::new, ..default };\n"
+            '    (h.run)("sh");\n'
+            "}\n"
+        )
+        assert "exec" not in scan_file_capabilities(pkg)
+
+    def test_macro_rules_expansion_emitting_fixed_call_not_detected(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0666: taxonomy "`macro_rules!` expansion emitting a fixed call"
+        # row. Honest documented limitation: this module's own comment
+        # ("`macro`-free language has no analog to Rust's `macro_rules!`
+        # row") is about OTHER languages lacking the row, not about Rust
+        # itself having macro-expansion-aware resolution -- there is no
+        # `macro_rules!`/macro-invocation handling anywhere in the Rust
+        # resolver (no `macro_rule`/`macro_invocation` node type is ever
+        # matched). A macro invocation SITE (`run!("sh")`) produces no
+        # finding since the resolver never expands it to see the
+        # `Command::new(...).spawn()` the macro body defines. This fixture
+        # locks that honest current gap rather than leaving the row
+        # unregistered.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text(
+            "use std::process::Command as C;\n"
+            'macro_rules! run { ($x:expr) => { C::new("sh").arg($x).spawn() } }\n'
+            "fn f() { run!(\"x\"); }\n"
+        )
+        assert "exec" not in scan_file_capabilities(pkg)
+
 
 class TestCapabilityScanTsTaxonomyClosureResolution:
     """T-0660: TS/JS sibling of `TestCapabilityScanTaxonomyClosureResolution`
@@ -2154,6 +2307,87 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
             "const ax = require('axios');\nconst f = ax.get;\nconst g = f;\ng(url);\n"
         )
         assert "net" in scan_file_capabilities(pkg)
+
+    def test_named_import_with_alias_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0666: taxonomy "`import { name as alias } from`" row (ECMA-262
+        # 16.2.2 ImportSpecifier) -- distinct from the CommonJS destructure-
+        # rename case (`test_require_destructure_rename_detected` on the
+        # sibling binding-resolution class): this is the ESM
+        # `import {a as b} from` syntax specifically.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("import { exec as e } from 'child_process';\ne(cmd);\n")
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_export_from_reexport_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0666: taxonomy "`export ... from` re-export" row. `_capability.py`
+        # documents that TRUE cross-module linking of the re-export's own
+        # USE site is not attempted (single-file scope) -- but the scanner's
+        # file-wide member-expression over-approximation (T-0377: any
+        # resolvable member-expression is a candidate, called or not) still
+        # fires on the `child_process.exec` reference the re-export line
+        # itself contains, so this row IS covered end to end, just via the
+        # coarser mechanism rather than true re-export linking.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("export { exec } from 'child_process';\n")
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_export_star_from_reexport_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0666: taxonomy "`export * from` re-export" row -- the taxonomy
+        # doc tags this row "best-effort; needs source-module
+        # enumerability"; the scanner's raw operations scan still flags the
+        # dangerous `child_process` module name on the re-export line.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("export * from 'child_process';\n")
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_export_default_binding_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0666: taxonomy "`export default` binding" row. True resolution
+        # at the import USE site (`import run from './m'; run(x)`) needs
+        # cross-module linking this single-file scanner does not attempt --
+        # but the `cp.exec` member-expression on the export line itself is
+        # still a resolvable candidate under the file-wide over-
+        # approximation, so the construct is covered.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text(
+            "const cp = require('child_process');\nexport default cp.exec;\n"
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_class_field_holding_bound_reference_detected(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0666: taxonomy "class field/method holding a bound reference"
+        # row (`class C { run = cp.exec; }`). `_capability.py` documents
+        # that TRUE points-to tracking through a later `new C().run(x)` call
+        # site is not attempted -- but the field initializer's own
+        # `cp.exec` member-expression is still a resolvable candidate under
+        # the file-wide over-approximation (any resolvable member-
+        # expression counts, called or not), so this row is covered, just
+        # not via genuine instance points-to.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text(
+            "const cp = require('child_process');\n"
+            "class C {\n"
+            "  run = cp.exec;\n"
+            "}\n"
+            "new C().run(cmd);\n"
+        )
+        assert "exec" in scan_file_capabilities(pkg)
 
 
 def _ts_find(node, node_type: str):  # noqa: ANN001, ANN201
@@ -3110,6 +3344,80 @@ class TestCapabilityScanCppTaxonomyClosureResolution:
         )
         assert "exec" in scan_file_capabilities(pkg)
 
+    def test_using_namespace_directive_qualified_call_detected(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0666: taxonomy "`using namespace` directive" row (distinct from
+        # "`using` declaration" above -- a directive opens a whole
+        # namespace rather than importing one name): `using namespace std;
+        # system(x);`. Same "no special resolution needed" shape as the
+        # using-declaration/namespace-alias rows: the bare-name call site's
+        # own text already contains the literal needle "system(".
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.cpp"
+        pkg.write_text('using namespace std;\nvoid g() { system("sh"); }\n')
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_define_macro_aliasing_detected_on_cpp_extension(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0666: taxonomy "`#define` macro aliasing" row, C++'s copy of the
+        # same construct C's `test_macro_alias_detected` already locks --
+        # the preprocessor is shared grammar, so the ".cpp" language label
+        # exercises the identical macro-alias-table code path.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.cpp"
+        pkg.write_text('#define RUN system\nvoid g() { RUN("sh"); }\n')
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_member_function_pointer_bound_to_named_member_not_detected(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0666: taxonomy "member-function pointer bound to a named member"
+        # row: `auto p = &Ops::run; (obj.*p)(x);`. Genuine, currently
+        # UNRESOLVED gap: there is no pointer-to-member (`&Ops::run`,
+        # `.*`/`->*` dereference) handling anywhere in the C/C++ resolver --
+        # only ordinary function pointers, typedefs, `using` aliases,
+        # `std::function`, and structured bindings are tracked. This
+        # fixture locks the CURRENT honest under-detection rather than
+        # silently having no fixture for the row; T-1047 tracks adding
+        # pointer-to-member alias tracking to close it.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.cpp"
+        pkg.write_text(
+            "struct Ops { static void run(const char*); };\n"
+            "void g() {\n"
+            "    auto p = &Ops::run;\n"
+            '    (Ops::*p)("sh");\n'
+            "}\n"
+        )
+        assert "exec" not in scan_file_capabilities(pkg)
+
+    def test_argument_dependent_lookup_call_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0666: taxonomy "argument-dependent lookup (ADL)" row: `run(x);`
+        # resolves to `ns::run` purely via ADL, no `using` in scope. Same
+        # "no special resolution needed" shape as the other qualified-call
+        # rows above -- the unqualified call site's own text already
+        # contains the literal needle "system(" (the taxonomy's own
+        # dangerous-target example is `run(x)` resolving via ADL; this
+        # fixture substitutes the registry's actual dangerous needle,
+        # `system`, in the analogous position).
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.cpp"
+        pkg.write_text(
+            "namespace ns { struct Tag {}; void system(Tag, const char*); }\n"
+            "void g(ns::Tag t) { system(t, \"sh\"); }\n"
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
 
 class TestCapabilityScanCppAliasTablePredicates:
     """T-0663 white-box mutation-kill coverage (TEST016) for the two new
@@ -3367,6 +3675,107 @@ class TestCapabilityScanKotlinTaxonomyClosureResolution:
 
         pkg = tmp_path / "pkg.kt"
         pkg.write_text('val f = 5\nfun g() { println("sh") }\n')
+        assert scan_file_capabilities(pkg) == frozenset()
+
+    def test_destructuring_declaration_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0666: taxonomy "destructuring declaration" row: `val (a, b) =
+        # Pair(::runCmd, 0); a(x)`. Genuine, currently UNRESOLVED gap:
+        # `_kt_property_name_and_value` only matches a single-name
+        # `variable_declaration` node -- kotlin's `multi_variable_
+        # declaration` (destructuring) grammar shape is never visited, so
+        # no alias entry is recorded for either bound name. This fixture
+        # locks the CURRENT honest under-detection rather than silently
+        # having no fixture for the row; T-1047 tracks adding kotlin
+        # destructuring-declaration alias tracking to close it.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.kt"
+        pkg.write_text(
+            "val (a, b) = Pair(::ProcessBuilder, 0)\nfun g() { a(\"sh\") }\n"
+        )
+        assert "exec" not in scan_file_capabilities(pkg)
+
+    def test_lambda_closure_capturing_bound_name_detected(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0666: taxonomy "lambda/closure capturing a bound name" row:
+        # `val f = ::runCmd; val g = { x: String -> f(x) }; g(x)`. The
+        # kotlin var-alias table is built file-wide (no per-function scope
+        # split, T-0664), so a lambda body's call to an outer `val` alias
+        # resolves the same as any other reference.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.kt"
+        pkg.write_text(
+            "val f = ::ProcessBuilder\n"
+            'val g = { x: String -> f() }\nfun h() { g("sh") }\n'
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_default_parameter_forwarding_callable_not_detected(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0666: taxonomy "default parameter forwarding a callable" row:
+        # `fun call(cb: (String) -> Unit = ::runCmd) { cb(x) }`. Genuine,
+        # currently UNRESOLVED gap: unlike C/C++'s `_record_c_param_default_
+        # alias` (T-0663), the kotlin resolver has no analogous default-
+        # value-of-a-parameter alias recording -- `_kt_build_var_alias_
+        # table` only walks `variable_declaration` nodes, never a
+        # `function_value_parameter`'s default. This fixture locks the
+        # CURRENT honest under-detection; T-1047 tracks adding kotlin
+        # parameter-default alias tracking to close it.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.kt"
+        pkg.write_text(
+            "fun call(cb: (String) -> Unit = ::ProcessBuilder) { cb(\"sh\") }\n"
+        )
+        assert "exec" not in scan_file_capabilities(pkg)
+
+    def test_extension_function_reference_bound_via_import_detected(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0666: taxonomy "extension function reference bound via import"
+        # row: `import kotlin.io.path.exists` -- the pattern for binding a
+        # top-level callable via an ordinary import. This reduces to the
+        # SAME import-table code path `test_plain_import_detected` already
+        # locks (an extension function's qualified name is bound and
+        # resolved identically to any other top-level import).
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.kt"
+        pkg.write_text(
+            'import java.lang.ProcessBuilder\nfun g() { ProcessBuilder("sh") }\n'
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_operator_fun_invoke_making_object_directly_callable_not_detected(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0666: taxonomy "`operator fun invoke` making an object directly
+        # callable" row: `class Handler { operator fun invoke(x: String) =
+        # Runtime.getRuntime().exec(x) }; val h = Handler(); h(x)`. The
+        # taxonomy doc's own caveat says this "still needs points-to on the
+        # receiver instance" -- a genuine, currently UNRESOLVED gap: the
+        # kotlin resolver has no receiver-instance points-to (no tracking
+        # from `val h = Handler()` to a later bare `h(x)` call resolving
+        # through the class's `invoke` operator). This fixture locks the
+        # CURRENT honest under-detection; T-1047 tracks adding
+        # instance-points-to for `operator fun invoke` to close it.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.kt"
+        pkg.write_text(
+            "import java.lang.Runtime\n"
+            "class Handler { operator fun invoke(x: String) { "
+            "Runtime.getRuntime() } }\n"
+            "fun g() { val h = Handler(); h(\"sh\") }\n"
+        )
         assert scan_file_capabilities(pkg) == frozenset()
 
 
@@ -5297,3 +5706,703 @@ class TestOpaqueIndirectionGate:
         assert len(waived) == 1
         assert waived[0].waived is not None
         assert "trusted enum member" in waived[0].waived.reason
+
+    # -- T-0666: litmus fixtures for taxonomy runtime-opaque rows that have
+    # NO entry in `RUNTIME_OPAQUE_CONSTRUCTS`/`OPAQUE_SOURCE_INVISIBLE` yet
+    # (no detector, no fail-closed obligation, no excuse-registration).
+    # Each of these locks the CURRENT honest gap -- `_opaque_indirection_
+    # findings` returns no finding for the construct -- rather than leaving
+    # the taxonomy row unregistered. This is real, un-addressed surface
+    # against T-0339's acceptance [1] ("every runtime-opaque construct
+    # FAILS CLOSED"); T-1047 (filed alongside this ticket's Done report)
+    # tracks closing each of these by extending `RUNTIME_OPAQUE_CONSTRUCTS`
+    # or, where the construct is genuinely source-invisible, adding a
+    # REG011 excuse to `OPAQUE_SOURCE_INVISIBLE`.
+
+    def test_python_exec_always_fires_regardless_of_argument(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "exec" row -- distinct construct_name from "eval" above;
+        # RUNTIME_OPAQUE_CONSTRUCTS registers it separately (literal_arg_
+        # index=None), so it should always fire, same shape as eval.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text('exec("import subprocess")\n')
+        findings = _opaque_indirection_findings(pkg)
+        assert any(f.construct_name == "exec" for f in findings)
+
+    def test_python_dunder_import_computed_name_fires(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "`__import__` with computed module name" row.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("__import__(mod_name).run(x)\n")
+        findings = _opaque_indirection_findings(pkg)
+        assert any(f.construct_name == "__import__" for f in findings)
+
+    def test_python_setattr_monkeypatch_fires(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "monkeypatch / module attribute mutation" row.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("setattr(subprocess, name, real_run)\n")
+        findings = _opaque_indirection_findings(pkg)
+        assert any(f.construct_name == "setattr" for f in findings)
+
+    def test_python_container_dynamic_key_not_addressed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "callable in a container, dynamic key" row: `handlers
+        # [key](x)`. No `RUNTIME_OPAQUE_CONSTRUCTS` entry exists for this
+        # shape in any language -- genuine gap, see T-1047.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text(
+            'handlers = {"a": subprocess.run}\nhandlers[key](x)\n'
+        )
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_python_functools_partial_dynamic_target_not_addressed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "`functools.partial`/decorator indirection with dynamic
+        # target" row -- genuine gap, see T-1047.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("functools.partial(resolve_target())(x)\n")
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_python_dunder_getattr_class_interception_not_addressed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "class `__getattr__`/`__getattribute__` interception"
+        # row -- genuine gap, see T-1047.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text(
+            "class Proxy:\n"
+            "    def __getattr__(self, name):\n"
+            "        return subprocess.run\nobj = Proxy()\nobj.run(x)\n"
+        )
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_python_sys_modules_replacement_not_addressed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "direct `sys.modules` replacement" row (added in the
+        # taxonomy doc's Phase 2 pass) -- genuine gap, see T-1047.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text(
+            'sys.modules["subprocess"] = fake_module\n'
+            "import subprocess\nsubprocess.run(x)\n"
+        )
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_typescript_computed_member_non_constant_key_not_addressed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "computed member access, non-constant key" row -- this
+        # shape is handled by the ORDINARY resolver's bounded single-
+        # literal-binding dataflow (`scan_file_capabilities`, T-0432), not
+        # this fail-closed obligation gate; no `RUNTIME_OPAQUE_CONSTRUCTS`
+        # entry exists for it here, genuine gap against acceptance [1]
+        # specifically (fail-CLOSED, not just "resolver stays silent") --
+        # see T-1047.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("cp[key](x);\n")
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_typescript_global_this_bracket_not_addressed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "`globalThis[name]`" row -- genuine gap, see T-1047.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("globalThis[name](x);\n")
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_typescript_reflect_apply_dynamic_target_not_addressed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "`Reflect.get`/`Reflect.apply` with dynamic target" row
+        # -- genuine gap, see T-1047.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("Reflect.apply(Reflect.get(cp, key), null, [x]);\n")
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_typescript_proxy_interception_not_addressed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "`Proxy` interception (`get`/`apply` traps)" row --
+        # genuine gap, see T-1047.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text(
+            "new Proxy(cp, { get(){ return cp.exec; } }).run(x);\n"
+        )
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_typescript_container_dynamic_key_not_addressed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "callable in container, dynamic key" row -- genuine gap,
+        # see T-1047.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("handlers[key](x);\n")
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_typescript_monkeypatch_module_namespace_not_addressed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "monkeypatch / property mutation on module namespace
+        # object" row -- genuine gap, see T-1047.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("require.cache[id].exports.exec = realExec;\n")
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_c_array_nonconstant_index_not_addressed(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "function pointer read via array/struct with non-
+        # constant index/selector" row. The ORDINARY resolver already
+        # proves this stays UNDETECTED as a resolution
+        # (`test_array_fn_ptr_nonconstant_index_not_detected`); this
+        # fixture additionally proves it also does not trip the fail-
+        # closed OBLIGATION gate either -- genuine gap, see T-1047.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text(
+            "void (*tbl[])(const char*) = { system };\n"
+            "void g(int user_selected_index) { tbl[user_selected_index](\"sh\"); }\n"
+        )
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_c_integer_cast_to_function_pointer_not_addressed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "function pointer cast from an integer/opaque value" row
+        # -- genuine gap, see T-1047.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text(
+            "void g(long addr) { ((void(*)(const char*))addr)(\"sh\"); }\n"
+        )
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_c_void_star_backcast_not_addressed(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "function pointer through `void*` indirection and
+        # back-cast" row -- genuine gap, see T-1047.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text(
+            "typedef void (*Handler)(const char*);\n"
+            "void g() { void *p = get_handler(); ((Handler)p)(\"sh\"); }\n"
+        )
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_cpp_array_runtime_index_not_addressed(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "function pointer through array/vector with runtime
+        # index" row -- genuine gap, see T-1047.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.cpp"
+        pkg.write_text(
+            "void g(int user_idx) {\n"
+            "    void (*handlers[])(const char*) = { system };\n"
+            '    handlers[user_idx]("sh");\n'
+            "}\n"
+        )
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_cpp_reinterpret_cast_to_function_pointer_not_addressed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "`reinterpret_cast` from an integer/opaque handle" row
+        # -- genuine gap, see T-1047.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.cpp"
+        pkg.write_text(
+            "typedef void (*Handler)(const char*);\n"
+            'void g(long addr) { reinterpret_cast<Handler>(addr)("sh"); }\n'
+        )
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_cpp_rtti_driven_dispatch_not_addressed(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "RTTI-driven dispatch (`typeid`/`dynamic_cast`)" row --
+        # genuine gap, see T-1047.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.cpp"
+        pkg.write_text(
+            "void g(Base *obj) {\n"
+            "    if (typeid(*obj) == typeid(Derived)) { system(\"sh\"); }\n"
+            "}\n"
+        )
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_rust_trait_object_dynamic_dispatch_not_addressed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "trait-object dynamic dispatch" row. Bounded-polymorphism
+        # dispatch through a statically-enumerable impl set is explicitly
+        # OUT of this gate's scope by design (`_opaque.py`'s own module
+        # docstring) -- but no `frob:enforces`/registry cross-check
+        # currently distinguishes "bounded, in-repo impl set" from "open,
+        # plugin-arriving" trait objects for Rust specifically the way the
+        # gate's docstring claims is handled; this fixture records the
+        # current as-built behavior (silent) rather than asserting the
+        # nuanced claim is fully implemented -- see T-1047.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text(
+            "trait Spawn { fn spawn(&self, x: &str); }\n"
+            "fn g(s: &dyn Spawn, x: &str) { s.spawn(x); }\n"
+        )
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_rust_extern_ffi_symbol_not_addressed(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "`extern` block FFI symbol binding resolved by the
+        # dynamic linker" row. Same source-invisible shape as the C
+        # weak-symbol row `OPAQUE_SOURCE_INVISIBLE` already excuses (T-0665)
+        # -- but no rust `extern`-block entry exists in that registry
+        # (only a rust vtable-patch entry does) -- genuine excuse-
+        # registration gap, see T-1047.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text(
+            'extern "C" { fn run_cmd(s: *const i8); }\n'
+            "fn g(x: *const i8) { unsafe { run_cmd(x); } }\n"
+        )
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_rust_function_pointer_in_container_not_addressed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "function pointer stored in and read from a container"
+        # row -- genuine gap, see T-1047.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text(
+            "use std::process::Command as C;\n"
+            "fn g(i: usize, v: Vec<fn(&str)>) { v[i](\"sh\"); }\n"
+        )
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_rust_boxed_dyn_fn_runtime_selected_not_addressed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "`Box<dyn Fn>` built from a runtime-selected source" row
+        # -- genuine gap, see T-1047.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text(
+            "fn g(cond: bool, a: fn(&str), b: fn(&str), x: &str) {\n"
+            "    let f: Box<dyn Fn(&str)> = if cond { Box::new(a) } else { Box::new(b) };\n"
+            "    f(x);\n"
+            "}\n"
+        )
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_rust_proc_macro_synthesized_call_not_addressed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "procedural / derive macros synthesizing a call from
+        # external input" row -- genuine gap, see T-1047 (mirrors the
+        # `macro_rules!` resolver gap `test_macro_rules_expansion_emitting_
+        # fixed_call_not_detected` already locks for the ordinary resolver;
+        # this is the fail-closed-obligation-gate sibling finding: proc-
+        # macro expansion is invisible to this source-text scanner too).
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.rs"
+        pkg.write_text("#[derive(RunFromAttribute)]\nstruct Job;\n")
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_kotlin_function_value_in_container_not_addressed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "function value stored in and read from a container" row
+        # -- genuine gap, see T-1047.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.kt"
+        pkg.write_text(
+            "val handlers: Map<String, (String) -> Unit> = mapOf(\"a\" to ::ProcessBuilder)\n"
+            "fun g(key: String) { handlers[key]!!(\"sh\") }\n"
+        )
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_kotlin_delegated_property_by_not_addressed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "delegated property / `by` indirection resolving at
+        # runtime" row -- genuine gap, see T-1047.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.kt"
+        pkg.write_text(
+            "val f: (String) -> Unit by lazy { ::ProcessBuilder }\n"
+            "fun g() { f(\"sh\") }\n"
+        )
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_kotlin_dynamic_classloading_not_addressed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "dynamic classloading (`URLClassLoader` etc.)" row --
+        # genuine gap, see T-1047.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.kt"
+        pkg.write_text(
+            "fun g(clsName: String) {\n"
+            "    val cls = URLClassLoader(arrayOf()).loadClass(clsName)\n"
+            "}\n"
+        )
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_kotlin_kcallable_call_always_fires(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "`KFunction`/`KCallable.call` obtained dynamically" row
+        # -- RUNTIME_OPAQUE_CONSTRUCTS registers a separate "KCallable.call"
+        # entry (deliberately broad `.call(` needle, literal_arg_index=
+        # None) from the "Class.forName" entry above.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.kt"
+        pkg.write_text(
+            "fun g(methodName: String, target: Any, x: String) {\n"
+            "    val f = target::class.members.first { it.name == methodName }\n"
+            "    f.call(x)\n"
+            "}\n"
+        )
+        findings = _opaque_indirection_findings(pkg)
+        assert any(f.construct_name == "KCallable.call" for f in findings)
+
+    def test_typescript_eval_always_fires_regardless_of_argument(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "`eval`" row (TS/JS's own copy of the construct Python's
+        # `eval` row above already locks a sibling fixture for) --
+        # RUNTIME_OPAQUE_CONSTRUCTS registers a separate `language=
+        # "typescript"` "eval" entry (literal_arg_index=None), so this row
+        # needs its own litmus rather than reusing Python's.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("eval(\"require('child_process').exec(x)\");\n")
+        findings = _opaque_indirection_findings(pkg)
+        assert any(f.construct_name == "eval" for f in findings)
+
+    def test_typescript_function_constructor_always_fires(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "`new Function(...)`" row.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text(
+            'new Function("x", "return require(\'child_process\').exec(x)")(x);\n'
+        )
+        findings = _opaque_indirection_findings(pkg)
+        assert any(f.construct_name == "Function constructor" for f in findings)
+
+    def test_c_weak_symbol_override_excused_source_invisible(self) -> None:
+        # frob:tests src/frob/vet/_capability_registry.py::OPAQUE_SOURCE_INVISIBLE kind="unit"  # noqa: E501
+        # taxonomy "weak-symbol override resolved by the linker/loader" row
+        # (C). Unlike the other C runtime rows, this one is DELIBERATELY
+        # not a fixture-with-a-finding: the T-0665 sign-off excuses it via
+        # a REG011-compliant "none -- <explanation>" disposition in
+        # `OPAQUE_SOURCE_INVISIBLE` rather than a detector, since no
+        # per-source-file scan can see linker-level symbol interposition.
+        # This litmus locks that the excuse entry itself still exists
+        # (a REG011 accountability record, not silence).
+        from frob.vet._capability_registry import OPAQUE_SOURCE_INVISIBLE
+
+        c_cpp_excuses = [e for e in OPAQUE_SOURCE_INVISIBLE if e.language == "c-cpp"]
+        assert len(c_cpp_excuses) == 1
+        assert "weak-symbol" in c_cpp_excuses[0].reason
+
+    def test_rust_runtime_vtable_patch_excused_source_invisible(self) -> None:
+        # frob:tests src/frob/vet/_capability_registry.py::OPAQUE_SOURCE_INVISIBLE kind="unit"  # noqa: E501
+        # Rust's own `OPAQUE_SOURCE_INVISIBLE` entry is for a runtime
+        # vtable patch (unsafe raw-pointer rewrite of a trait object's
+        # vtable slot) -- a distinct construct from the taxonomy's own
+        # `extern` FFI symbol row (T-1047 tracks adding an
+        # excuse for THAT row specifically; this litmus only locks the
+        # vtable-patch excuse that already exists so a future edit cannot
+        # silently drop it).
+        from frob.vet._capability_registry import OPAQUE_SOURCE_INVISIBLE
+
+        rust_excuses = [e for e in OPAQUE_SOURCE_INVISIBLE if e.language == "rust"]
+        assert len(rust_excuses) == 1
+        assert "vtable" in rust_excuses[0].reason
+
+    def test_cpp_virtual_dispatch_bounded_polymorphism_no_finding(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # taxonomy "virtual dispatch through a base pointer" row.
+        # `_opaque.py`'s own module docstring carves BOUNDED POLYMORPHISM
+        # (ordinary virtual dispatch whose implementation set is statically
+        # enumerable in-repo) OUT of this gate's scope by design -- not a
+        # gap, a deliberate exclusion, since the may-analysis is sound over
+        # the statically-visible override set. This litmus locks that
+        # design intent: an ordinary virtual call produces no
+        # opaque-indirection finding.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.cpp"
+        pkg.write_text(
+            "struct Base { virtual void run(const char*) = 0; };\n"
+            "struct Derived : Base { void run(const char* x) override { system(x); } };\n"
+            "void g(Base *base, const char *x) { base->run(x); }\n"
+        )
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+
+class TestEvasionTaxonomyExhaustiveness:
+    """T-0666: cross-language exhaustiveness meta-test. Parses
+    `docs/design/capability-evasion-taxonomy.md`'s per-language tables AT
+    TEST TIME (not a hardcoded copy of the row counts) and asserts every
+    row maps to >=1 registered litmus fixture via
+    `frob.vet._evasion_coverage._EVASION_LITMUS_MAP` -- the explicit,
+    greppable, statically-checkable registration T-0666's own acceptance
+    criteria require. Validates BOTH directions (the "dangling test refs"
+    check): (1) the doc's row COUNT per (language, category) never exceeds
+    the map's registered litmus COUNT for that pair (a new taxonomy row
+    added with no matching new fixture fails the build, acceptance [1]);
+    (2) every dotted `Class.method` path the map lists actually resolves
+    to a real test defined in this file (a stale/renamed reference fails
+    the build too, not silently passes)."""
+
+    _TAXONOMY_DOC = (
+        Path(__file__).resolve().parent.parent
+        / "docs"
+        / "design"
+        / "capability-evasion-taxonomy.md"
+    )
+
+    @staticmethod
+    def _doc_row_counts() -> dict[tuple[str, str], int]:
+        # frob:tests tests/test_vet.py::TestEvasionTaxonomyExhaustiveness kind="unit"
+        """Parse the taxonomy doc's `## <Language>` sections at call time,
+        counting `| static |...` and `| runtime |...` table rows under
+        each heading -- the doc IS the denominator, never a hardcoded
+        number in this test module."""
+        from frob.vet._evasion_coverage import _DOC_HEADING_TO_LANGUAGE_KEY
+
+        text = TestEvasionTaxonomyExhaustiveness._TAXONOMY_DOC.read_text()
+        counts: dict[tuple[str, str], int] = {}
+        current_key: str | None = None
+        for line in text.splitlines():
+            if line.startswith("## "):
+                heading = line[3:].strip()
+                current_key = _DOC_HEADING_TO_LANGUAGE_KEY.get(heading)
+                continue
+            if current_key is None:
+                continue
+            if line.startswith("| static |"):
+                counts[(current_key, "static")] = (
+                    counts.get((current_key, "static"), 0) + 1
+                )
+            elif line.startswith("| runtime |"):
+                counts[(current_key, "runtime")] = (
+                    counts.get((current_key, "runtime"), 0) + 1
+                )
+        return counts
+
+    def test_every_doc_heading_recognized(self) -> None:
+        # frob:tests src/frob/vet/_evasion_coverage.py::_DOC_HEADING_TO_LANGUAGE_KEY kind="unit"  # noqa: E501
+        # Dangling-heading check: every `## <Language>` heading actually
+        # present in the taxonomy doc must be a key
+        # `_DOC_HEADING_TO_LANGUAGE_KEY` recognizes -- a renamed heading
+        # (e.g. "TypeScript / JavaScript" -> "TypeScript/JavaScript") would
+        # otherwise silently drop that language's rows from the count
+        # entirely rather than failing loudly.
+        from frob.vet._evasion_coverage import _DOC_HEADING_TO_LANGUAGE_KEY
+
+        text = self._TAXONOMY_DOC.read_text()
+        doc_headings = {
+            line[3:].strip() for line in text.splitlines() if line.startswith("## ")
+        }
+        # The doc also carries non-language headings (Purpose, Combined
+        # coverage table, Honesty and sourcing) -- only assert every
+        # KNOWN-LANGUAGE heading this map claims to cover is genuinely
+        # present verbatim (the reverse of "every doc heading is mapped").
+        for heading in _DOC_HEADING_TO_LANGUAGE_KEY:
+            assert heading in doc_headings, (
+                f"_DOC_HEADING_TO_LANGUAGE_KEY claims heading {heading!r} "
+                "but it is not present verbatim in "
+                "capability-evasion-taxonomy.md -- stale mapping"
+            )
+
+    def test_every_litmus_path_resolves_to_a_real_test(self) -> None:
+        # frob:tests src/frob/vet/_evasion_coverage.py::_EVASION_LITMUS_MAP kind="unit"
+        # Dangling-ref check (direction 2): every "Class.method" string in
+        # _EVASION_LITMUS_MAP must be a REAL class+method actually defined
+        # in this file -- a typo'd or renamed-but-not-updated reference
+        # fails loudly rather than silently claiming coverage that does
+        # not exist. Uses `ast` (static, no pytest-collect dependency) so
+        # this check has no test-runner-ordering hazard.
+        import ast
+
+        from frob.vet._evasion_coverage import _EVASION_LITMUS_MAP
+
+        source = Path(__file__).read_text()
+        tree = ast.parse(source)
+        real: set[str] = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef):
+                for child in node.body:
+                    if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                        real.add(f"{node.name}.{child.name}")
+
+        missing: list[str] = []
+        for (language, category), paths in _EVASION_LITMUS_MAP.items():
+            for path in paths:
+                if path not in real:
+                    missing.append(f"{language}/{category}: {path}")
+        assert not missing, (
+            "_EVASION_LITMUS_MAP references test(s) that do not exist in "
+            f"tests/test_vet.py: {missing}"
+        )
+
+    def test_every_taxonomy_row_has_sufficient_registered_litmus_coverage(
+        self,
+    ) -> None:
+        # frob:tests src/frob/vet/_evasion_coverage.py::_EVASION_LITMUS_MAP kind="unit"
+        # Acceptance [0]: "given the full evasion taxonomy denominator,
+        # when the meta-test runs, then every entry maps to >=1 registered
+        # litmus fixture." Acceptance [1]: "given a new taxonomy entry
+        # added with no fixture, when the meta-test runs, then it fails
+        # the build" -- this is the count-floor check that makes that
+        # true: the doc's own row count per (language, category), parsed
+        # fresh every run, must never exceed the number of litmus paths
+        # registered for that pair.
+        from frob.vet._evasion_coverage import _EVASION_LITMUS_MAP
+
+        doc_counts = self._doc_row_counts()
+        shortfalls: list[str] = []
+        for key, doc_count in doc_counts.items():
+            registered = len(_EVASION_LITMUS_MAP.get(key, ()))
+            if registered < doc_count:
+                shortfalls.append(
+                    f"{key[0]}/{key[1]}: doc has {doc_count} row(s), only "
+                    f"{registered} litmus path(s) registered in "
+                    "_EVASION_LITMUS_MAP -- add the missing fixture(s)"
+                )
+        assert not shortfalls, "\n".join(shortfalls)
+
+    def test_map_has_no_orphaned_language_category_pairs(self) -> None:
+        # frob:tests src/frob/vet/_evasion_coverage.py::_EVASION_LITMUS_MAP kind="unit"
+        # Reverse sanity: every (language, category) key in
+        # _EVASION_LITMUS_MAP must correspond to a pair the doc actually has
+        # at least one row for -- catches a typo'd language/category key
+        # in the map itself (e.g. "kotln" or "statc") that would otherwise
+        # silently register litmus paths nothing ever cross-checks.
+        from frob.vet._evasion_coverage import _EVASION_LITMUS_MAP
+
+        doc_counts = self._doc_row_counts()
+        orphaned = [key for key in _EVASION_LITMUS_MAP if key not in doc_counts]
+        assert not orphaned, (
+            f"_EVASION_LITMUS_MAP has key(s) with no matching doc rows: {orphaned}"
+        )
+
+    def test_combined_registered_total_matches_112_entry_denominator(self) -> None:
+        # frob:tests src/frob/vet/_evasion_coverage.py::_EVASION_LITMUS_MAP kind="unit"
+        # T-0339's own framing (and `docs/design/registry/evasion.yaml`'s
+        # 112 EVA-<LANG>-<S|R><NN> ids, reconciled in
+        # `docs/design/registry/RECONCILIATION.md`) name 112 as the
+        # working denominator. This locks that _EVASION_LITMUS_MAP's total
+        # registered litmus count is >= 112 -- never fewer than the
+        # reconciled registry total, even though (per this test class's
+        # own module docstring) the taxonomy doc's OWN raw table-row count
+        # is higher for python's two extra rows found this pass (see this
+        # ticket's Done report for the doc-vs-registry count-mismatch
+        # finding, filed as a documentation-accuracy follow-up rather than
+        # resolved here since docs/design/capability-evasion-taxonomy.md
+        # is outside T-0666's declared scope).
+        from frob.vet._evasion_coverage import _EVASION_LITMUS_MAP
+
+        total = sum(len(v) for v in _EVASION_LITMUS_MAP.values())
+        assert total >= 112, (
+            f"_EVASION_LITMUS_MAP total registered litmus paths ({total}) is "
+            "below the 112-entry reconciled denominator"
+        )
