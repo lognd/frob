@@ -176,8 +176,7 @@ sanctioned exception is `make coverage`, which you must not run at all
 pattern by accident** (T-0627: 4+ occurrences in one session before this
 was fixed). A full check/gates pass on this repo measures well past the
 ~120s foreground cap on its own -- an agent who runs plain `frob check`
-(or `frob check --stamp-baseline`, which runs the same undelta'd gates
-pass) is not choosing to background it, but the harness does it anyway
+is not choosing to background it, but the harness does it anyway
 the moment the timeout hits, and the stall described above follows
 automatically. As of T-0627, this is now a hard stop rather than a trap:
 when `FROB_AGENT` is set in your shell (T-0574 -- true for every
@@ -186,6 +185,50 @@ selection REFUSES immediately (exit 1) instead of running and stalling.
 Use the chunked loop below every time; do not reach for
 `FROB_ALLOW_FULL_CHECK=1` (the escape hatch, meant for a coordinator's own
 shell, not a sub-agent's) just to silence the refusal.
+
+`frob check --stamp-baseline` used to share this exact hazard (it ran one
+undelta'd all-gates `run_gates` call, same as a bare `frob check` -- T-0751
+measured ~187s wall, ~172s inside `run_gates` alone). As of T-0751, a bare
+`--stamp-baseline` (no `--only`) is now explicitly a COORDINATOR-ONLY path,
+same shape as `make coverage` (section 6b) -- running every gate chunk back
+to back in one process is still slower in total than the old single call
+(re-loading gate inputs per chunk adds overhead: measured ~240s wall for
+the naive in-process chunk-and-sum), so it does not help a dispatched
+agent and must not be run from one. An agent instead passes `--only
+<group-or-gate>` (repeatable, exactly like a normal `frob check --only`) to
+`--stamp-baseline` itself: each invocation runs and records just that
+chunk's gates into a scratch accumulator
+(`.frob/baseline-chunks.json`, `_baseline_chunks_path`), and the moment
+every gate has been covered across however many separate calls that took,
+the real `.frob/baseline` is (re)stamped from their union and the scratch
+file is deleted -- so N separate, individually-cheap CLI calls converge on
+exactly the same baseline the old one-shot call used to produce. Under
+normal load the three stage groups (`gates-native`, `gates-security`,
+`gates-fast`) each stay comfortably under the cap (~19s/~24s/~87s
+measured); under contention (multiple agents' `frob` processes competing
+for CPU, as in a busy parallel-drive session) `gates-fast` specifically can
+still push past 120s on its own since it is the largest single group --
+split it further by passing individual gate ids (any bare gate name works
+via `--only`, not just a stage-group alias), e.g.:
+
+```
+uv run frob check --stamp-baseline --only gates-native
+uv run frob check --stamp-baseline --only gates-security
+uv run frob check --stamp-baseline --only test
+uv run frob check --stamp-baseline --only drift --only coverage --only invariant \
+  --only policy --only doclink --only docanchor --only fuzz --only release \
+  --only decisions --only tickets --only refs --only registry --only compliance \
+  --only docblocks --only walk_lint --only excludehazard --only debt --only deprecated \
+  --only render_lint --only parse_failures --only lang_conformance \
+  --only lang_project_conformance --only scope --only prework --only fmt --only affect_drift
+```
+
+(`test` split out on its own because it is the single heaviest gate in
+`gates-fast`, ~35s alone even unloaded.) Order does not matter and neither
+does batching -- the accumulator only cares that the union of every gate id
+seen across calls eventually covers every gate that exists; each call logs
+how many of the total it has covered so far, so a `chunk recorded (N/35
+gate(s) covered so far)` line means keep going, not that something failed.
 
 **The sanctioned chunked loop** -- run one `--only` stage-group per
 invocation, each measured comfortably under the ~90s per-stage budget on
@@ -300,7 +343,9 @@ Prefer `frob check --delta` against a stamped baseline over stash-isolation
 dances (stash changes, run check, unstash, diff).
 
 ```
-uv run frob check --stamp-baseline   # once, before starting work, to record pre-existing violations
+uv run frob check --stamp-baseline --only gates-native      # once, before starting work
+uv run frob check --stamp-baseline --only gates-security    # (chunked -- see section 3b)
+uv run frob check --stamp-baseline --only gates-fast         #
 # ... implement ...
 uv run frob check --delta            # reports only violations NEW since the stamp
 uv run frob check --delta --ticket T-XXXX --json   # scoped + machine-readable, if needed
@@ -317,18 +362,15 @@ New public symbols need both a `frob:doc` edge and a `frob:tests` edge --
 not warnings. Add both at the point you add or change the symbol, not as a
 follow-up.
 
-**`--stamp-baseline` itself still runs the full, undelta'd gates pass**
-(T-0627: it is one of the two known-slow full-check shapes, alongside a
-bare `frob check`) -- it is deliberately NOT refused under `FROB_AGENT`
-(section 3b's refusal only fires for a bare, stage-less invocation), so
-the command above can still exceed the ~120s foreground cap and stall the
-same way. Chunking `--stamp-baseline` itself is tracked separately (T-0627
-considered it and left it as future work, not silently dropped) -- until
-that lands, treat `--stamp-baseline` as a one-time, accept-the-risk step:
-run it once at the very start of a ticket before the tree has much
-uncommitted state to lose, and prefer the section 3b chunked `--only`
-loop (which every stage group is measured safe under) for every
-verification pass after that.
+**`--stamp-baseline` is no longer a one-shot, accept-the-risk step for a
+dispatched agent** (T-0751 fixed the hazard T-0627 had left as future
+work). A bare `--stamp-baseline` (no `--only`) is now a coordinator-only
+path, same as `make coverage` (section 6b) -- see section 3b above for the
+full explanation and the exact chunked recipe an agent must use instead
+(`--stamp-baseline --only <group-or-gate>`, repeatable across as many
+separate CLI calls as needed; results accumulate in
+`.frob/baseline-chunks.json` until every gate is covered, then the real
+stamp is written once).
 
 ## 6b. Do NOT run `make coverage` as a dispatched sub-agent -- you cannot wait on it
 

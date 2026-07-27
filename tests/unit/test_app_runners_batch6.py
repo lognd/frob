@@ -627,6 +627,121 @@ class TestCheckRunner:
             check_run(cfg)
         assert exc.value.code == 1
 
+    # frob:ticket T-0751
+    def test_stamp_baseline_only_chunk_records_without_stamping(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
+    ) -> None:
+        """`--stamp-baseline --only <group>` records just that chunk's gates
+        into the scratch accumulator and does NOT write the real
+        `.frob/baseline` yet (T-0751) -- the incremental path a dispatched
+        agent uses instead of the coordinator-only bare invocation."""
+        import frob.gates as gates_mod
+        from frob.gates import GateReport, Severity, Violation
+        from frob.gates._models import GateStats
+
+        received_gates: list[frozenset[str]] = []
+
+        def _fake_run_gates(cfg):
+            received_gates.append(frozenset(cfg.gates))
+            return Ok(
+                GateReport(
+                    violations=(
+                        Violation(
+                            rule="ARCH001",
+                            severity=Severity.WARN,
+                            file="src/a.py",
+                            line=1,
+                            message="m",
+                        ),
+                    ),
+                    waived=(),
+                    stats=GateStats(),
+                )
+            )
+
+        def _fail_stamp(root, v):
+            raise AssertionError("stamp_baseline must not be called mid-chunk")
+
+        monkeypatch.setattr(gates_mod, "run_gates", _fake_run_gates)
+        monkeypatch.setattr(gates_mod, "stamp_baseline", _fail_stamp)
+        cfg = AppConfig(
+            check_path=tmp_path,
+            check_stamp_baseline=True,
+            check_only=["gates-native"],
+        )
+        with caplog.at_level("INFO"):
+            check_run(cfg)
+
+        assert len(received_gates) == 1
+        assert received_gates[0] == frozenset({"archgate", "clones", "perf"})
+        assert "chunk recorded" in caplog.text
+        assert "baseline stamp written" not in caplog.text
+        chunks_path = tmp_path / ".frob" / "baseline-chunks.json"
+        assert chunks_path.exists()
+
+    # frob:ticket T-0751
+    def test_stamp_baseline_only_chunk_completes_and_stamps(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
+    ) -> None:
+        """The last missing `--only` chunk merges every recorded chunk's
+        violations, writes the real baseline, and deletes the scratch
+        accumulator (T-0751)."""
+        import json
+
+        import frob.gates as gates_mod
+        from frob.check import _STAGE_GROUPS
+        from frob.gates import GateReport, Severity, Violation
+        from frob.gates._models import GateStats
+
+        prior = Violation(
+            rule="PERF001",
+            severity=Severity.WARN,
+            file="src/b.py",
+            line=2,
+            message="m",
+        )
+        chunks_path = tmp_path / ".frob" / "baseline-chunks.json"
+        chunks_path.parent.mkdir(parents=True)
+        already_covered = frozenset().union(
+            _STAGE_GROUPS["gates-native"], _STAGE_GROUPS["gates-security"]
+        )
+        chunks_path.write_text(
+            json.dumps({",".join(sorted(already_covered)): [prior.model_dump_json()]})
+        )
+
+        new_violation = Violation(
+            rule="ARCH001",
+            severity=Severity.WARN,
+            file="src/a.py",
+            line=1,
+            message="m",
+        )
+
+        def _fake_run_gates(cfg):
+            return Ok(
+                GateReport(violations=(new_violation,), waived=(), stats=GateStats())
+            )
+
+        stamped: dict = {}
+
+        def _fake_stamp(root, v):
+            stamped["violations"] = v
+            return Ok(None)
+
+        monkeypatch.setattr(gates_mod, "run_gates", _fake_run_gates)
+        monkeypatch.setattr(gates_mod, "stamp_baseline", _fake_stamp)
+        cfg = AppConfig(
+            check_path=tmp_path,
+            check_stamp_baseline=True,
+            check_only=["gates-fast"],
+        )
+        with caplog.at_level("INFO"):
+            check_run(cfg)
+
+        assert "baseline stamp written" in caplog.text
+        assert set(stamped["violations"]) == {prior, new_violation}
+        assert not chunks_path.exists()
+
     # frob:ticket T-0627
     def test_only_list_prints_stages_and_returns(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
