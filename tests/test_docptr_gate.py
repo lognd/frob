@@ -277,9 +277,7 @@ class TestDoc006Symbol:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "docs/guide.md")
 
-    def test_reexported_class_attribute_chain_not_flagged(
-        self, tmp_path: Path
-    ) -> None:
+    def test_reexported_class_attribute_chain_not_flagged(self, tmp_path: Path) -> None:
         """T-1016: `pkg.Real.SOME_ATTR` where `Real` is defined in `pkg.mod`
         and RE-EXPORTED (not locally defined) through `pkg/__init__.py`'s
         own `from .mod import Real` line -- the same one-level-deeper
