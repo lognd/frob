@@ -6351,3 +6351,30 @@ of the report.
 - tests: 7 passed (from 7 evidence id(s))
 - gates: 8 error(s), 12814 warning(s), 356 waived
 - error-findings: ARCH001@src/frob/arch/_cpp_mayraise.py, COV001@src/frob/arch/_models.py, COV001@src/frob/gitlog/__init__.py, COV001@src/frob/process/parsers/common.py, COV001@src/frob/render/_color.py, COV001@src/frob/render/_elements.py, PERF003@src/frob/arch/_cpp_mayraise.py, PERF004@src/frob/arch/_cpp_mayraise.py
+
+<!-- ticket:T-1042 -->
+```yaml
+id: T-1042
+title: 'PERF008 resolver FP classes: bare-method-name coincidence, receiver conflation,
+  lru_cache blindness'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-27'
+priority: medium
+parent: T-0204
+tier: ticket
+sprint: null
+scope:
+- src/frob/perf/_effect_summaries.py
+- src/frob/perf/_loop_effects.py
+- tests/test_perf.py
+acceptance:
+- text: GIVEN the three FP fixture shapes WHEN the perf gate runs THEN no PERF008
+    fires on them AND a true duplicate-call-in-loop still fires AND the T-1041 waivers
+    are removed without findings returning
+  evidence: []
+threat: null
+component: null
+```
+T-1041 investigated all 11 live PERF008 findings and found every one a resolver false positive, in three classes: (1) bare-method-name coincidence -- a stdlib method like .search/.rglob on a non-repo object resolves to an unrelated same-named repo function; (2) receiver conflation -- calls on DIFFERENT receiver objects mistaken for a repeated identical call; (3) @functools.lru_cache blindness -- an already-cached callee counted as a repeated expensive call. Fix each class in the effect-summary resolution (type/receiver-aware method binding, receiver identity in the loop-invariant key, cache-decorator awareness), add a regression test per class pinning a known-good non-finding plus a true-positive guard, then remove the 11 now-unneeded frob:waive PERF008 directives T-1041 added (plus assess the one in src/frob/arch/_ffi.py:299 from T-0690). Same calibration pattern as T-1018 PERF012.
