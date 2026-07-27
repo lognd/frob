@@ -1784,11 +1784,28 @@ def land(
     bump_version: Callable[[Path, Ticket, str], Result[str | None, LandError]]
     | None = None,
     rebuild_natives: Callable[[Path], bool] | None = None,
+    sync_gate_rules: Callable[[Path, str], Result[tuple[str, ...] | None, LandError]]
+    | None = None,
     check_gates: Callable[[], tuple[int, int, int] | None] | None = None,
     check_gate_findings: Callable[[], frozenset[tuple[str, str]] | None] | None = None,
     skip_mutation_evidence: bool = False,
 ) -> Result[LandReport, LandError]:
-    """T-0846: `check_gate_findings` (opt-in, alongside `check_gates`) lets
+    """T-1011: `sync_gate_rules(root, pre_land_tip)`, if supplied, runs
+    right after `bump_version` (same staged-but-uncommitted point) and
+    decides for itself -- by diffing `pre_land_tip`..`root`'s now-squashed
+    tree -- whether the landing diff touched `_KNOWN_GATE_RULES`
+    (`src/frob/gates/__init__.py`); if so it runs the equivalent of `frob
+    registry audit --sync-gate-rules` and stages `check-coverage.yaml`'s
+    new rows into the SAME land commit, ending the manual re-sync this
+    repo's own history shows drifting twice in one drive
+    (docs/audits/coordination-churn.md). Returns `Ok(None)` (no-op) when
+    nothing needed syncing, `Ok(rule_ids)` after a real sync, or an `Err`
+    that unwinds the staged squash exactly like a `bump_version` failure.
+    Defaults to `None` (skip) for the same cycle-avoidance reason as
+    `bump_version`/`rebuild_natives` (docs/rework.md) -- the `frob ticket
+    land` CLI supplies it by default (see `ticket_runner.py`'s `_land`).
+
+    T-0846: `check_gate_findings` (opt-in, alongside `check_gates`) lets
     a caller with a fresh per-finding (rule id, file) oracle supply it so
     the gate-state claim re-verification can compare identities scoped to
     the ticket's own declared scope instead of a raw scope-wide count --
@@ -1942,6 +1959,7 @@ def land(
             covers_scope=covers_scope,
             bump_version=bump_version,
             rebuild_natives=rebuild_natives,
+            sync_gate_rules=sync_gate_rules,
             check_gates=check_gates,
             check_gate_findings=check_gate_findings,
             skip_mutation_evidence=skip_mutation_evidence,
@@ -1962,6 +1980,8 @@ def _land_locked(
     covers_scope: Callable[[Ticket], bool | None] | None,
     bump_version: Callable[[Path, Ticket, str], Result[str | None, LandError]] | None,
     rebuild_natives: Callable[[Path], bool] | None,
+    sync_gate_rules: Callable[[Path, str], Result[tuple[str, ...] | None, LandError]]
+    | None = None,
     check_gates: Callable[[], tuple[int, int, int] | None] | None = None,
     check_gate_findings: Callable[[], frozenset[tuple[str, str]] | None] | None = None,
     skip_mutation_evidence: bool = False,
@@ -2089,6 +2109,7 @@ def _land_locked(
                 pre_land_tip=root_pre_land_tip.danger_ok,
                 bump_version=bump_version,
                 rebuild_natives=rebuild_natives,
+                sync_gate_rules=sync_gate_rules,
             )
         finally:
             _clear_land_repair_marker(root, ticket_id)
@@ -4352,6 +4373,49 @@ def _apply_release_bump(
     return bumped
 
 
+# frob:ticket T-1011
+# frob:tests tests/test_ticket_land.py::TestSyncGateRulesCallback.test_sync_gate_rules_none_is_noop  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestSyncGateRulesCallback.test_sync_gate_rules_applies_and_stages  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestSyncGateRulesCallback.test_sync_gate_rules_failure_unwinds  # noqa: E501
+def _apply_gate_rule_sync(
+    root: Path,
+    final_id: str,
+    sync_gate_rules: Callable[[Path, str], Result[tuple[str, ...] | None, LandError]]
+    | None,
+    pre_land_tip: str,
+) -> Result[tuple[str, ...] | None, LandError]:
+    """Invoke `sync_gate_rules(root, pre_land_tip)` if supplied, unwinding
+    the staged squash via `_verified_reset_root` (same T-0907 pattern as
+    `_apply_release_bump`) on failure (T-1011). `sync_gate_rules=None` (the
+    library default) is a no-op returning `Ok(None)` -- see `land`'s
+    docstring for why this is a caller-supplied callback rather than
+    computed here (cycle-avoidance, docs/rework.md). A failure here is
+    treated with the same fail-closed posture as a `bump_version` failure:
+    a silently-skipped sync would let a landed gate-rule change slip past
+    REG010 registry staleness undetected."""
+    if sync_gate_rules is None:
+        return Ok(None)
+    synced = sync_gate_rules(root, pre_land_tip)
+    if synced.is_err:
+        _log.error(
+            "land: %s gate-rule registry sync callback failed (%s) -- "
+            "unwinding the staged squash; run `frob registry audit "
+            "--sync-gate-rules` by hand and retry",
+            final_id,
+            synced.danger_err,
+        )
+        unwound = _verified_reset_root(root, pre_land_tip, final_id)
+        return Err(unwound.danger_err if unwound.is_err else synced.danger_err)
+    if synced.danger_ok:
+        _log.info(
+            "land: %s gate-rule registry auto-synced: filed %d rule id(s): %s",
+            final_id,
+            len(synced.danger_ok),
+            ", ".join(synced.danger_ok),
+        )
+    return synced
+
+
 # frob:ticket T-0793
 def _sync_uv_lock_for_land(root: Path, final_id: str) -> Result[None, LandError]:
     """Re-sync `root`'s `uv.lock` and stage it in the SAME land commit as
@@ -4469,6 +4533,8 @@ def _land_squash_apply(
     bump_version: Callable[[Path, Ticket, str], Result[str | None, LandError]]
     | None = None,
     rebuild_natives: Callable[[Path], bool] | None = None,
+    sync_gate_rules: Callable[[Path, str], Result[tuple[str, ...] | None, LandError]]
+    | None = None,
 ) -> Result[LandReport, LandError]:
     """Squash-apply the worktree's finalized branch onto `root`, splice
     tickets.md, apply an optional REL001 version bump (T-0338), assert
@@ -4497,6 +4563,12 @@ def _land_squash_apply(
     if bumped.is_err:
         return Err(bumped.danger_err)
     release_bumped_to = bumped.danger_ok
+
+    gate_rules_synced = _apply_gate_rule_sync(
+        root, final_id, sync_gate_rules, pre_land_tip
+    )
+    if gate_rules_synced.is_err:
+        return Err(gate_rules_synced.danger_err)
 
     completeness = _assert_land_complete(
         root, worktree, ticket_id, main_branch_name, pre_land_tip

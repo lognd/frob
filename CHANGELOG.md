@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.190.0] - unreleased
+
+- T-1011: auto-sync check-coverage gate_rule_entries at land + generate command tables from argparse registry
+
 ## [0.189.0] - unreleased
 
 - T-1005: frob ticket reverify: re-run close verification on a done ticket without state transition

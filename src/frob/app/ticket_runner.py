@@ -933,6 +933,90 @@ def _land_bump_version_fn():  # noqa: ANN201
     return fn
 
 
+# frob:ticket T-1011
+def _land_sync_gate_rules_fn():  # noqa: ANN201
+    """CLI closure (T-1011): `land()` calls this AFTER the REL001 bump is
+    staged onto `root`, letting a landing that changes `_KNOWN_GATE_RULES`
+    (`src/frob/gates/__init__.py`) auto-file the matching `check-coverage.
+    yaml` rows in the SAME commit -- ending the manual `frob registry audit
+    --sync-gate-rules` re-sync docs/audits/coordination-churn.md's item 6
+    disclosed drifting twice in one drive. `frob.gates`/`frob.registry`
+    access lives here (the CLI layer), not in `frob.tickets` (docs/rework.md
+    cycle-avoidance, same reasoning as `_land_bump_version_fn`)."""
+
+    def fn(root: Path, pre_land_tip: str):  # noqa: ANN202
+        return _sync_gate_rules_for_land(root, pre_land_tip)
+
+    return fn
+
+
+# frob:ticket T-1011
+# frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560  # noqa: E501
+def _sync_gate_rules_for_land(root: Path, pre_land_tip: str):  # noqa: ANN201
+    """The body of `_land_sync_gate_rules_fn`'s callback (T-1011): diffs
+    `root`'s just-squashed working tree against `pre_land_tip` for
+    `src/frob/gates/__init__.py`; if `_KNOWN_GATE_RULES` does not appear in
+    that diff, nothing needs syncing (`Ok(None)`, the common case). If it
+    does, scans `root`'s ON-DISK tree (`generated_gate_rule_ids`, the T-0964
+    scanner -- never a live `frob.gates` import, which would read THIS
+    process's own already-imported module, not root's freshly-squashed
+    source) for the live rule-id set and appends any `check-coverage.yaml`
+    row still missing one (`sync_gate_rule_entries`), staging the result.
+    A registry-level failure (missing/malformed `check-coverage.yaml`) is
+    logged and treated as `Ok(None)` -- best-effort, not a landing-critical
+    guarantee the way a REL001 version bump is; only a git staging failure
+    (a genuinely broken working tree) escalates to `Err(GitFailed)`, which
+    `land()` unwinds exactly like a `bump_version` failure."""
+    from frob.gates._rule_id_scan import generated_gate_rule_ids
+    from frob.gitio import run_argv
+    from frob.registry._staleness import sync_gate_rule_entries
+    from frob.tickets._land import LandError
+
+    diffed = run_argv(
+        [
+            "git",
+            "-C",
+            str(root),
+            "diff",
+            pre_land_tip,
+            "--",
+            "src/frob/gates/__init__.py",
+        ]
+    )
+    if diffed.is_err:
+        return Err(LandError.GitFailed)
+    if "_KNOWN_GATE_RULES" not in diffed.danger_ok.stdout:
+        return Ok(None)
+
+    known = generated_gate_rule_ids(root)
+    target = root / "docs" / "design" / "registry" / "check-coverage.yaml"
+    synced = sync_gate_rule_entries(target, known)
+    if synced.is_err:
+        _log.warning(
+            "land: gate-rule registry auto-sync skipped (%s at %s) -- run "
+            "`frob registry audit --sync-gate-rules` by hand if needed",
+            synced.danger_err,
+            target,
+        )
+        return Ok(None)
+    added = synced.danger_ok
+    if not added:
+        return Ok(None)
+    staged = run_argv(
+        [
+            "git",
+            "-C",
+            str(root),
+            "add",
+            "--",
+            "docs/design/registry/check-coverage.yaml",
+        ]
+    )
+    if staged.is_err or staged.danger_ok.returncode != 0:
+        return Err(LandError.GitFailed)
+    return Ok(added)
+
+
 # frob:ticket T-0338
 # frob:ticket T-1007
 # frob:doc docs/modules/tickets.md#frob-ticket-land
@@ -1226,6 +1310,7 @@ def _land(root: Path, cfg: AppConfig) -> None:
         covers_scope=_land_covers_scope_fn(worktree),
         bump_version=_land_bump_version_fn(),
         rebuild_natives=_land_rebuild_natives_fn(),
+        sync_gate_rules=_land_sync_gate_rules_fn(),
         check_gates=_check_gates_summary_fn(
             worktree, cfg.ticket_id, spawn=_shared_spawn
         ),

@@ -370,7 +370,11 @@ def _add_docs_parser(sub) -> None:
         help="extract docstrings or search docs/ for a file/symbol",
     )
     docs_p.add_argument(
-        "docs_path", metavar="path", help="file or directory to inspect"
+        "docs_path",
+        metavar="path",
+        nargs="?",
+        default=None,
+        help="file or directory to inspect (not needed with --sync-commands)",
     )
     docs_p.add_argument(
         "docs_symbol",
@@ -394,6 +398,15 @@ def _add_docs_parser(sub) -> None:
         ),
     )
     docs_p.add_argument("--json", dest="docs_json", action="store_true")
+    docs_p.add_argument(
+        "--sync-commands",
+        dest="docs_sync_commands",
+        action="store_true",
+        help=(
+            "regenerate docs/modules/cli.md's generated command table "
+            "from the live argparse registry (T-1011)"
+        ),
+    )
 
 
 # frob:ticket T-0030

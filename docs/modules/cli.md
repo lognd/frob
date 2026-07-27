@@ -138,4 +138,61 @@ evaluated in the same audit and kept as-is: `parse` is an adapter used by
 pipelines, `exports` powers the `exports` gate stage, `gitlog` powers
 `frob stats`/changelog generation, and `serve` (MCP) is valuable for
 no-shell contexts even though it goes unused when an agent has a shell.
+
+## Generated command reference (T-1011)
+
+Everything between the two marker comments below is written by `frob docs
+--sync-commands` from the live top-level argparse registry (the same
+`[[docblocks.commands]]`-configured factory DOC004/DOC005 already walk) --
+never hand-edited. `frob check`'s DOC005 gate verifies this block stays
+byte-fresh against a live regeneration (`generate_cli_command_table`,
+`src/frob/gates/_docblocks.py`); a stale block is an ERROR, not advisory.
+
+<!-- frob:describes src/frob/gates/_docblocks.py::CLI_COMMAND_TABLE_START -->
+<!-- frob:describes src/frob/gates/_docblocks.py::CLI_COMMAND_TABLE_END -->
+<!-- frob:describes src/frob/gates/_docblocks.py::generate_cli_command_table -->
+<!-- frob:describes src/frob/gates/_docblocks.py::sync_cli_command_table -->
+
+<!-- frob:generated-start cli-commands T-1011 -->
+
+| Command | Description |
+| --- | --- |
+| `frob ack` | acknowledge current digests for one or more symbol refs |
+| `frob agent` | print/export the dispatched-agent guard env (T-0574) |
+| `frob arch` | arch analysis: long functions, god classes, coupling |
+| `frob bind` | verify binding declarations match source signatures |
+| `frob check` | aggregate quality gate: ruff, ty, frob cycle/dup/arch/bind/exports; errors first, easy to hand to subagents |
+| `frob clean` | remove build/test/cache artifacts (tiered, dry-run by default) |
+| `frob cycle` | detect dependency cycles |
+| `frob debt` | list outstanding frob:debt entries (rule, site, ticket, until) |
+| `frob deploy` | compile std.host manifests into install/status/uninstall bash |
+| `frob deprecated` | list outstanding frob:deprecated entries (symref, since, sunset, ticket, status) |
+| `frob docs` | extract docstrings or search docs/ for a file/symbol |
+| `frob doctor` | verify native extensions (frob_core, strata_core) are installed |
+| `frob dup` | detect duplicate/clone code segments (Type 1 exact, Type 2 renamed) |
+| `frob exports` | generate __init__.py from public symbols in a package directory |
+| `frob fleet` | cross-repo status, gate rollup, and ticket routing over a fleet.toml manifest of sibling repos (T-0573) |
+| `frob fmt` | canonicalize frob: directive comment line-wrapping (T-0441) |
+| `frob gitlog` | summarize git history by type/granularity (conventional commits) |
+| `frob graph` | obligation graph: build cache, query symbols, explain drift |
+| `frob map` | [DEPRECATED, sunset 2026-10-01, see T-0580] show whole-project structural map (symbols + line counts) |
+| `frob mutate` | mutation testing: perturb a file, see which mutants survive |
+| `frob natives` | build declared [[native]] crates (T-0864: frob-owned maturin develop, shared CARGO_TARGET_DIR) |
+| `frob outline` | [DEPRECATED, sunset 2026-10-01, see T-0580] show structural skeleton of a file (classes, functions, line numbers) |
+| `frob parse` | parse tool output (pytest/ruff/ty/clang/junit) into compact summary |
+| `frob perf` | profile a command/test suite and inspect its heat-map |
+| `frob pool` | ratchet-pool baseline management (T-0569): warn-rule findings frozen as a tracked baseline, new findings error |
+| `frob registry` | unified design-knowledge registry (T-0407) |
+| `frob release` | mechanical semver from the public-API graph (REL001) |
+| `frob scaffold` | scaffold a new project from a template |
+| `frob serve` | MCP stdio adapter exposing frob's enforcement queries as tools |
+| `frob stats` | delivery measurement: queue health + commit cadence |
+| `frob sys` | strata design-model applications (plan, doc, export, ...) |
+| `frob test` | select and run tests for the touched set (or --all) |
+| `frob ticket` | the statically-checkable ticket queue |
+| `frob vet` | dependency-vetting: lockfile allow conformance, quarantine, typosquat, lifecycle scripts, osv advisories |
+| `frob worktree` | manage dispatched-agent git worktrees (T-0836) |
+| `frob xref` | [DEPRECATED, sunset 2026-10-01, see T-0580] find where a symbol is defined and every file that uses it |
+
+<!-- frob:generated-end cli-commands T-1011 -->
 None of these carry a `frob:deprecated` directive.

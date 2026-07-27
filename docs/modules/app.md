@@ -80,6 +80,12 @@ every other `check_*` behavior untouched; set, it routes `check_runner.run`
 to `_run_budgeted_check` before the normal full/`--only` dispatch (see
 docs/commands/check.md).
 
+T-1011: `docs_sync_commands` (`bool`, default `False`) is `frob docs
+--sync-commands`'s flag, collected via the ordinary bool-field loop in
+`from_external` -- set, `docs_runner.run` regenerates `docs/modules/
+cli.md`'s generated command-table block instead of the ordinary extract/
+search/overview dispatch (`docs_path` is not required in this mode).
+
 ## Runners
 
 Each runner exposes exactly one public function, `run(cfg: AppConfig) -> None`,

@@ -5343,3 +5343,49 @@ class TestUnionZoneMerge:
         theirs = "## Remediation log (T-B)\nfixed thing B\n"
         merged = _land_mod._union_append_only(ours, theirs)
         assert "T-A" in merged and "T-B" in merged
+
+
+# frob:ticket T-1011
+class TestSyncGateRulesCallback:
+    """T-1011(a): `land()`'s optional `sync_gate_rules` callback (invoked
+    right after the REL001 bump, before the completeness assertion) lets a
+    landing that changed `_KNOWN_GATE_RULES` auto-file `check-coverage.
+    yaml` rows in the same commit, with the same fail-closed-unwind
+    posture as `bump_version` on a real failure."""
+
+    def test_sync_gate_rules_none_is_noop(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestSyncGateRulesCallback.test_sync_gate_rules_none_is_noop  # noqa: E501
+        pre_land_tip = _land_mod._rev_parse(repo, "HEAD").danger_ok
+        result = _land_mod._apply_gate_rule_sync(repo, "T-0001", None, pre_land_tip)
+        assert result.is_ok
+        assert result.danger_ok is None
+
+    def test_sync_gate_rules_applies_and_stages(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestSyncGateRulesCallback.test_sync_gate_rules_applies_and_stages  # noqa: E501
+        pre_land_tip = _land_mod._rev_parse(repo, "HEAD").danger_ok
+
+        def _fake_sync(_root: Path, _tip: str) -> Result[tuple[str, ...] | None, Any]:
+            return Ok(("SOME001",))
+
+        result = _land_mod._apply_gate_rule_sync(
+            repo, "T-0001", _fake_sync, pre_land_tip
+        )
+        assert result.is_ok
+        assert result.danger_ok == ("SOME001",)
+        # no unwind happened -- HEAD is untouched by a no-op callback.
+        assert _land_mod._rev_parse(repo, "HEAD").danger_ok == pre_land_tip
+
+    def test_sync_gate_rules_failure_unwinds(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestSyncGateRulesCallback.test_sync_gate_rules_failure_unwinds  # noqa: E501
+        pre_land_tip = _land_mod._rev_parse(repo, "HEAD").danger_ok
+
+        def _fake_sync(_root: Path, _tip: str) -> Result[tuple[str, ...] | None, Any]:
+            return Err(_land_mod.LandError.GitFailed)
+
+        result = _land_mod._apply_gate_rule_sync(
+            repo, "T-0001", _fake_sync, pre_land_tip
+        )
+        assert result.is_err
+        assert result.danger_err == _land_mod.LandError.GitFailed
+        # the (no-op) unwind reset still leaves HEAD at pre_land_tip.
+        assert _land_mod._rev_parse(repo, "HEAD").danger_ok == pre_land_tip

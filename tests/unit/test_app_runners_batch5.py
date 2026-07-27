@@ -404,6 +404,28 @@ class TestDocsRunner:
             docs_run(cfg)
         assert exc.value.code == 1
 
+    # frob:ticket T-1011
+    def test_sync_commands_writes(self, tmp_path, caplog):
+        """`--sync-commands` regenerates docs/modules/cli.md's marked
+        block from the live argparse registry and never touches
+        `docs_path` at all (T-1011)."""
+        (tmp_path / "frob.toml").write_text(
+            '[[docblocks.commands]]\nprog = "acme"\n'
+            'parser = "tests.test_docblocks_gate:_fake_parser_factory"\n'
+        )
+        cli_doc = tmp_path / "docs" / "modules" / "cli.md"
+        cli_doc.parent.mkdir(parents=True)
+        cli_doc.write_text(
+            "before\n\n<!-- frob:generated-start cli-commands T-1011 -->\n\n"
+            "<!-- frob:generated-end cli-commands T-1011 -->\nafter\n"
+        )
+        cfg = AppConfig(docs_path=tmp_path, docs_sync_commands=True)
+        with caplog.at_level("INFO"):
+            docs_run(cfg)
+        text = cli_doc.read_text()
+        assert "| `acme widget` |" in text
+        assert "before\n" in text and "after\n" in text
+
     def test_path_does_not_exist_exits_1(self, tmp_path, caplog):
         """A non-existent `docs_path` errors and exits 1."""
         cfg = AppConfig(docs_path=tmp_path / "missing")

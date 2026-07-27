@@ -1712,6 +1712,20 @@ configured `[[docblocks.commands]]` entry (`frob.__main__:_build_parser`)
 `frob check` immediately; removing a command leaves its stale row failing
 until the row is deleted.
 
+4. T-1011: `docs/modules/cli.md`'s GENERATED command-table block (opted in
+   via `CLI_COMMAND_TABLE_START`/`CLI_COMMAND_TABLE_END` marker comments,
+   see docs/modules/cli.md#generated-command-reference-t-1011) must equal
+   what `generate_cli_command_table` produces RIGHT NOW -- a generator-
+   freshness check (`_doc005_cli_table_freshness_violations`), distinct
+   from checks 1-3 above (which stay a hand-sync MISSING/STALE lock over
+   README's own curated, section-grouped table -- regenerating README
+   wholesale would destroy that hand-curated grouping, so only cli.md's
+   block is fully generated). `frob docs --sync-commands`
+   (`sync_cli_command_table`) is the write side: it regenerates ONLY the
+   marked block in place, leaving the rest of `docs/modules/cli.md`
+   untouched. No marker block present means the doc has not opted in yet
+   -- fail-open, nothing to check, same posture as checks 1-3.
+
 ### DOC006 doc-pointer resolution gate T-0437
 
 `frob.gates._docptr` -- `doc006_gate` (gate name `docblocks`, same as

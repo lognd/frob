@@ -135,6 +135,7 @@ class AppConfig(BaseModel):
     docs_overview: bool = False
     docs_search: str | None = None
     docs_json: bool = False
+    docs_sync_commands: bool = False  # T-1011
 
     # exports
     exports_path: Path | None = None
@@ -831,6 +832,7 @@ class AppConfig(BaseModel):
             "arch_json",
             "docs_json",
             "docs_overview",
+            "docs_sync_commands",
             "exports_all",
             "exports_json",
             "exports_write",

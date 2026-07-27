@@ -106,6 +106,22 @@ the verification, not a claim needing later review) and keeps
 `gate_rule_total` in lockstep, so a human or a CI step can clear REG010's
 finding with one command whenever it fires.
 
+<!-- frob:describes src/frob/app/ticket_runner.py::_sync_gate_rules_for_land -->
+
+T-1011: `frob ticket land` now runs this same sync AUTOMATICALLY, not just
+on request -- `_sync_gate_rules_for_land` (`ticket_runner.py`, wired as
+`land()`'s `sync_gate_rules` callback, `src/frob/tickets/_land.py`) diffs
+the landing worktree's own `_KNOWN_GATE_RULES` change against the squash-
+applied tree right after the REL001 bump is staged; if the diff touched
+`_KNOWN_GATE_RULES`, it scans root's on-disk tree (never a live import --
+`frob.gates._rule_id_scan.generated_gate_rule_ids`, the T-0964 scanner) and
+stages any newly-missing `check-coverage.yaml` rows into the SAME land
+commit. This ends the manual re-sync docs/audits/coordination-churn.md
+disclosed drifting twice in one drive -- a landed gate-rule change can no
+longer outrun `check-coverage.yaml` at all, closing REG010's remaining gap
+between "caught at the next `frob check`" and "never drifts to begin
+with".
+
 ## REG011 out-of-scope caught_by (T-0680)
 
 T-0343's original gate left one named gap: an `out_of_scope:<reason>`

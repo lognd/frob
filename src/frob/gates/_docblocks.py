@@ -1166,6 +1166,8 @@ def _doc005_violation(doc_path: str, line: int, message: str) -> Violation:
 # frob:tests \
 # tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.test_no_config_means_no_read\
 # me_checking
+# frob:ticket T-1011
+# frob:tests tests/test_docblocks_gate.py::TestCliCommandTableGenerator.test_doc005_freshness_passes_after_sync  # noqa: E501
 def doc005_gate(root: Path) -> tuple[Violation, ...]:
     """DOC005 (T-0435): bind `README.md`'s command table (and any "N
     commands" count claim) to the LIVE top-level subcommand registry --
@@ -1181,27 +1183,36 @@ def doc005_gate(root: Path) -> tuple[Violation, ...]:
       is not a real top-level subcommand of the live tree ("STALE" -- the
       command was renamed/removed and the row was never updated);
     - a "N commands" prose claim whose N does not equal the live top-level
-      command count, summed across every configured source.
+      command count, summed across every configured source;
+    - T-1011: `docs/modules/cli.md`'s generated command-table block (if
+      the doc has opted in via `CLI_COMMAND_TABLE_START`/`_END` markers)
+      no longer matches what `generate_cli_command_table` produces right
+      now -- a generator-freshness check, distinct from the README half's
+      hand-sync MISSING/STALE checking above.
 
     No `[[docblocks.commands]]` entries configured, or no `README.md` at
-    `root`, means no checking happens -- fail-open, same posture as every
-    other DOC004 namespace source."""
+    `root`, means no checking happens for the README half -- fail-open,
+    same posture as every other DOC004 namespace source. The cli.md
+    freshness half is independent and still runs even if README.md is
+    absent (it only needs a console source configured)."""
     root = Path(root)
     console_sources = _console_command_sources(root)
     if not console_sources:
         return ()
+
+    violations: list[Violation] = list(_doc005_cli_table_freshness_violations(root))
+
     console_trees = _console_trees(root, console_sources)
     if not console_trees:
-        return ()
+        return tuple(violations)
 
     readme_path = root / "README.md"
     if not readme_path.is_file():
-        return ()
+        return tuple(violations)
     text = readme_path.read_text(encoding="utf-8", errors="replace")
     doc_path = "README.md"
 
     rows = _readme_table_rows(text)
-    violations: list[Violation] = []
     violations.extend(
         _doc005_missing_stale_violations(doc_path, console_sources, console_trees, rows)
     )
@@ -1288,3 +1299,155 @@ def _read_md(root: Path, rel_path: str) -> str | None:
         return (root / rel_path).read_text(encoding="utf-8", errors="replace")
     except OSError:
         return None
+
+
+# ---------------------------------------------------------------------------
+# `frob docs sync-commands` generator + DOC005 freshness check (T-1011)
+# ---------------------------------------------------------------------------
+
+# Marker comments delimiting the generated block `frob docs sync-commands`
+# owns inside `docs/modules/cli.md` -- everything between them is rewritten
+# wholesale on every sync, never hand-edited (mirrors T-1002's union-zone
+# marker convention in `_land.py`, a distinct mechanism for a distinct
+# purpose: THIS block is fully regenerated, not merged).
+# frob:doc docs/modules/cli.md#generated-command-reference-t-1011
+# frob:ticket T-1011
+CLI_COMMAND_TABLE_START = "<!-- frob:generated-start cli-commands T-1011 -->"
+# frob:doc docs/modules/cli.md#generated-command-reference-t-1011
+# frob:ticket T-1011
+CLI_COMMAND_TABLE_END = "<!-- frob:generated-end cli-commands T-1011 -->"
+
+
+# frob:ticket T-1011
+def _top_level_command_help(parser) -> dict[str, str]:  # noqa: ANN001
+    """`{subcommand_name: help_text}` for every TOP-LEVEL subparser
+    registered via `add_subparsers` on `parser` (T-1011) -- the one extra
+    fact `_subparser_tree` (T-0435) does not carry, since DOC005's
+    presence/absence check never needed the help STRING, only the tree
+    shape. Only one level deep, matching the generated table's own
+    granularity (one row per top-level command, not the full recursive
+    tree)."""
+    import argparse
+
+    help_by_name: dict[str, str] = {}
+    subparsers_group = getattr(parser, "_subparsers", None)
+    actions = subparsers_group._group_actions if subparsers_group is not None else ()
+    for action in actions:
+        if not isinstance(action, argparse._SubParsersAction):
+            continue
+        for choice_action in action._choices_actions:
+            help_by_name[choice_action.dest] = choice_action.help or ""
+    return help_by_name
+
+
+# frob:doc docs/modules/cli.md#generated-command-reference-t-1011
+# frob:ticket T-1011
+# frob:tests tests/test_docblocks_gate.py::TestCliCommandTableGenerator.test_generate_sorts_rows_across_sources  # noqa: E501
+# frob:tests tests/test_docblocks_gate.py::TestCliCommandTableGenerator.test_generate_no_config_is_none  # noqa: E501
+def generate_cli_command_table(root: Path) -> str | None:
+    """The exact text `docs/modules/cli.md`'s generated block (between
+    `CLI_COMMAND_TABLE_START`/`CLI_COMMAND_TABLE_END`) must hold (T-1011):
+    one markdown table row per live top-level subcommand, across every
+    configured `[[docblocks.commands]]` source, sorted by `(prog, name)`
+    for a deterministic diff. Returns `None` if no console source is
+    configured at all (same fail-open posture as `doc005_gate`) -- nothing
+    to generate, not an error."""
+    console_sources = _console_command_sources(root)
+    if not console_sources:
+        return None
+    rows: list[tuple[str, str, str]] = []
+    for source in console_sources:
+        factory = _load_parser_factory(source.parser)
+        if factory is None:
+            continue
+        try:
+            parser = factory()
+        except Exception as exc:  # noqa: BLE001 -- a broken factory never crashes the gate
+            _log.warning(
+                "docs sync-commands: parser factory %r raised: %s",
+                source.parser,
+                exc,
+            )
+            continue
+        for name, help_text in _top_level_command_help(parser).items():
+            rows.append((source.prog, name, help_text))
+    rows.sort(key=lambda r: (r[0], r[1]))
+    lines = [CLI_COMMAND_TABLE_START, "", "| Command | Description |", "| --- | --- |"]
+    for prog, name, help_text in rows:
+        lines.append(f"| `{prog} {name}` | {help_text} |")
+    lines.append("")
+    lines.append(CLI_COMMAND_TABLE_END)
+    return "\n".join(lines) + "\n"
+
+
+# frob:doc docs/modules/cli.md#generated-command-reference-t-1011
+# frob:ticket T-1011
+# frob:tests tests/test_docblocks_gate.py::TestCliCommandTableGenerator.test_sync_replaces_only_the_marked_block  # noqa: E501
+# frob:tests tests/test_docblocks_gate.py::TestCliCommandTableGenerator.test_sync_no_markers_returns_false  # noqa: E501
+def sync_cli_command_table(root: Path, doc_path: str = "docs/modules/cli.md") -> bool:
+    """`frob docs sync-commands`'s write step (T-1011): replace the text
+    between `CLI_COMMAND_TABLE_START`/`CLI_COMMAND_TABLE_END` inside
+    `root / doc_path` with `generate_cli_command_table(root)`'s fresh
+    output, in place. Returns `False` (no write) if no console source is
+    configured, the doc file does not exist, or the doc has no marker
+    block to replace -- callers that want the block CREATED must add the
+    marker pair once by hand first, the same one-time opt-in every other
+    generated-block convention in this repo uses. Returns `True` after a
+    real write (idempotent: a second call with nothing changed still
+    returns `True`, since it re-wrote identical content)."""
+    generated = generate_cli_command_table(root)
+    if generated is None:
+        return False
+    target = root / doc_path
+    if not target.is_file():
+        return False
+    text = target.read_text(encoding="utf-8")
+    start = text.find(CLI_COMMAND_TABLE_START)
+    end = text.find(CLI_COMMAND_TABLE_END)
+    if start == -1 or end == -1 or end < start:
+        return False
+    end += len(CLI_COMMAND_TABLE_END)
+    new_text = text[:start] + generated.rstrip("\n") + text[end:]
+    if new_text == text:
+        return True
+    target.write_text(new_text, encoding="utf-8")
+    return True
+
+
+# frob:ticket T-1011
+# frob:tests tests/test_docblocks_gate.py::TestCliCommandTableGenerator.test_generate_sorts_rows_across_sources  # noqa: E501
+# frob:tests tests/test_docblocks_gate.py::TestCliCommandTableGenerator.test_sync_replaces_only_the_marked_block  # noqa: E501
+# frob:tests tests/test_docblocks_gate.py::TestCliCommandTableGenerator.test_doc005_freshness_flags_stale_generated_block  # noqa: E501
+def _doc005_cli_table_freshness_violations(root: Path) -> list[Violation]:
+    """DOC005's freshness half (T-1011): if `docs/modules/cli.md` has a
+    `CLI_COMMAND_TABLE_START`/`_END` marker block, its committed content
+    must equal what `generate_cli_command_table` would produce RIGHT NOW --
+    a generator-freshness check, not the hand-sync MISSING/STALE per-row
+    check `doc005_gate`'s README half still does (that half is unchanged;
+    this is a second, independent DOC005 source). No marker block present
+    means the doc has not opted in yet -- fail-open, nothing to check."""
+    doc_path = "docs/modules/cli.md"
+    text = _read_md(root, doc_path)
+    if text is None:
+        return []
+    start = text.find(CLI_COMMAND_TABLE_START)
+    end = text.find(CLI_COMMAND_TABLE_END)
+    if start == -1 or end == -1 or end < start:
+        return []
+    end += len(CLI_COMMAND_TABLE_END)
+    current_block = text[start:end]
+    generated = generate_cli_command_table(root)
+    if generated is None:
+        return []
+    if current_block.strip() == generated.strip():
+        return []
+    return [
+        _doc005_violation(
+            doc_path,
+            text.count("\n", 0, start) + 1,
+            f"{doc_path}'s generated command table (between "
+            f"{CLI_COMMAND_TABLE_START!r} and {CLI_COMMAND_TABLE_END!r}) is "
+            f"stale relative to the live argparse registry -- run `frob "
+            f"docs --sync-commands` to regenerate it",
+        )
+    ]

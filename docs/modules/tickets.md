@@ -1053,7 +1053,8 @@ def land(root: Path, ticket_id: str, worktree: Path, *,
          passed: frozenset[str] | None = None,
          covers_scope: bool | None = None,
          bump_version: Callable[[Path, Ticket, str], Result[str | None, LandError]] | None = None,
-         rebuild_natives: Callable[[Path], bool] | None = None) -> Result[LandReport, LandError]
+         rebuild_natives: Callable[[Path], bool] | None = None,
+         sync_gate_rules: Callable[[Path, str], Result[tuple[str, ...] | None, LandError]] | None = None) -> Result[LandReport, LandError]
     # T-0398 D-05: `collected`/`passed`/`covers_scope`, when supplied by a
     # caller with a fresh test-collection/run/graph-binding oracle computed
     # against the POST-MERGE worktree tree, re-verify the ticket's evidence
@@ -1070,6 +1071,16 @@ def land(root: Path, ticket_id: str, worktree: Path, *,
     # commit. Both default to `None` (skip) for the same cycle-avoidance
     # reason as collected/passed/covers_scope; `frob ticket land` supplies
     # both by default.
+    # T-1011: `sync_gate_rules(root, pre_land_tip)`, when supplied, runs
+    # right after `bump_version` (same staged-but-uncommitted point) and
+    # decides for itself, by diffing the landing diff, whether
+    # `_KNOWN_GATE_RULES` changed; if so it auto-files any missing
+    # `check-coverage.yaml` row (REG010) into the SAME land commit, ending
+    # the manual `frob registry audit --sync-gate-rules` re-sync
+    # docs/audits/coordination-churn.md disclosed drifting twice in one
+    # drive. Defaults to `None` (skip) for the same cycle-avoidance reason;
+    # `frob ticket land` supplies it by default
+    # (`ticket_runner._land_sync_gate_rules_fn`).
 def splice_ledger(ours_text: str, theirs_text: str) -> Result[str, TicketError]
     # Merge two tickets.md texts at the TICKET-ID level (newest state per
     # id wins) instead of git's line-level textual merge. T-0398 D-09: the

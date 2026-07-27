@@ -83,10 +83,37 @@ def _run_extract(cfg: AppConfig, path: Path) -> None:
         _log.info("")
 
 
+# frob:ticket T-1011
+# frob:tests tests/unit/test_app_runners_batch5.py::TestDocsRunner.test_sync_commands_writes  # noqa: E501
+def _run_sync_commands(cfg: AppConfig) -> None:
+    """Handle `frob docs --sync-commands` (T-1011): regenerate
+    `docs/modules/cli.md`'s generated command-table block from the live
+    argparse registry via `frob.gates._docblocks.sync_cli_command_table`
+    -- the write half of DOC005's freshness check
+    (`_doc005_cli_table_freshness_violations`)."""
+    from frob.gates._docblocks import sync_cli_command_table
+
+    root = (cfg.docs_path or Path(".")).resolve()
+    wrote = sync_cli_command_table(root)
+    if not wrote:
+        _log.warning(
+            "docs sync-commands: nothing synced at %s -- no "
+            "[[docblocks.commands]] source configured, or docs/modules/"
+            "cli.md has no generated-block markers to replace",
+            root,
+        )
+        return
+    _log.info("docs sync-commands: docs/modules/cli.md's generated block synced")
+
+
 # frob:doc docs/modules/app.md#runners
 # frob:ticket T-0588
 # frob:tests tests/unit/test_app_runners_batch5.py::TestDocsRunner.test_search_json_mode
 def run(cfg: AppConfig) -> None:
+    if cfg.docs_sync_commands:
+        _run_sync_commands(cfg)
+        return
+
     path = cfg.docs_path
     if path is None:
         _log.error("frob docs requires <path>")

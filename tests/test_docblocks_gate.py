@@ -496,3 +496,116 @@ class TestDoc005ReadmeTableDrift:
         violations = doc005_gate(tmp_path)
 
         assert violations == ()
+
+
+_CLI_DOC_TEMPLATE = (
+    "# cli doc\n\n<!-- frob:generated-start cli-commands T-1011 -->\n\n"
+    "{body}"
+    "\n<!-- frob:generated-end cli-commands T-1011 -->\n"
+)
+
+
+class TestCliCommandTableGenerator:
+    """T-1011(b): `generate_cli_command_table`/`sync_cli_command_table`
+    regenerate `docs/modules/cli.md`'s marked block from the live argparse
+    registry, and `doc005_gate` flags the block ERROR when it drifts from
+    a fresh regeneration -- reuses `TestDoc005ReadmeTableDrift`'s synthetic
+    `acme widget`/`acme gadget` CLI (`_fake_parser_factory`) so these
+    tests never depend on frob's own live command count."""
+
+    def test_generate_sorts_rows_across_sources(self, tmp_path: Path) -> None:
+        from frob.gates._docblocks import generate_cli_command_table
+
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", _FAKE_CONFIG)
+        _git(tmp_path, "add", "-A")
+
+        generated = generate_cli_command_table(tmp_path)
+
+        assert generated is not None
+        assert "<!-- frob:generated-start cli-commands T-1011 -->" in generated
+        assert "<!-- frob:generated-end cli-commands T-1011 -->" in generated
+        assert "| `acme gadget` | gadget things |" in generated
+        assert "| `acme widget` | widget things |" in generated
+        # sorted: gadget before widget.
+        assert generated.index("gadget") < generated.index("widget")
+
+    def test_generate_no_config_is_none(self, tmp_path: Path) -> None:
+        from frob.gates._docblocks import generate_cli_command_table
+
+        _init_repo(tmp_path)
+        _git(tmp_path, "add", "-A")
+
+        assert generate_cli_command_table(tmp_path) is None
+
+    def test_sync_replaces_only_the_marked_block(self, tmp_path: Path) -> None:
+        from frob.gates._docblocks import sync_cli_command_table
+
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", _FAKE_CONFIG)
+        _write(
+            tmp_path,
+            "docs/modules/cli.md",
+            "before\n\n" + _CLI_DOC_TEMPLATE.format(body="") + "\nafter\n",
+        )
+        _git(tmp_path, "add", "-A")
+
+        wrote = sync_cli_command_table(tmp_path)
+
+        assert wrote is True
+        text = (tmp_path / "docs/modules/cli.md").read_text()
+        assert "before\n" in text
+        assert "after\n" in text
+        assert "| `acme widget` | widget things |" in text
+
+        # idempotent: a second sync leaves it byte-identical.
+        again_text_before = text
+        wrote_again = sync_cli_command_table(tmp_path)
+        assert wrote_again is True
+        assert (tmp_path / "docs/modules/cli.md").read_text() == again_text_before
+
+    def test_sync_no_markers_returns_false(self, tmp_path: Path) -> None:
+        from frob.gates._docblocks import sync_cli_command_table
+
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", _FAKE_CONFIG)
+        _write(tmp_path, "docs/modules/cli.md", "no markers here\n")
+        _git(tmp_path, "add", "-A")
+
+        assert sync_cli_command_table(tmp_path) is False
+
+    def test_doc005_freshness_flags_stale_generated_block(self, tmp_path: Path) -> None:
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", _FAKE_CONFIG)
+        _write(
+            tmp_path,
+            "docs/modules/cli.md",
+            _CLI_DOC_TEMPLATE.format(body="| `acme thingamajig` | stale row |\n"),
+        )
+        _git(tmp_path, "add", "-A")
+
+        violations = doc005_gate(tmp_path)
+
+        assert any(
+            v.rule == "DOC005"
+            and v.severity == Severity.ERROR
+            and "docs/modules/cli.md" in v.file
+            and "stale" in v.message
+            for v in violations
+        )
+
+    def test_doc005_freshness_passes_after_sync(self, tmp_path: Path) -> None:
+        from frob.gates._docblocks import sync_cli_command_table
+
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", _FAKE_CONFIG)
+        _write(tmp_path, "docs/modules/cli.md", _CLI_DOC_TEMPLATE.format(body=""))
+        _git(tmp_path, "add", "-A")
+
+        assert sync_cli_command_table(tmp_path) is True
+
+        violations = doc005_gate(tmp_path)
+
+        assert not any(
+            v.rule == "DOC005" and "docs/modules/cli.md" in v.file for v in violations
+        )
