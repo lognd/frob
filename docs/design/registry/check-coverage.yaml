@@ -19,7 +19,7 @@
 #     fabricated ticket. As T-0397's children close a concern down to
 #     a real gate rule, re-disposition that entry to handled_by:<rule>.
 schema_version: 1
-gate_rule_total: 213
+gate_rule_total: 221
 gate_rule_entries:
   - id: "CHK-GATE-COV001"
     name: "COV001 is a live, enforced gate rule"
@@ -873,6 +873,38 @@ gate_rule_entries:
   - id: "CHK-GATE-REL397"
     name: "REL397 is a live, enforced gate rule"
     disposition: "handled_by:REL397"
+    cross_refs: []
+  - id: "CHK-GATE-DUP003"
+    name: "DUP003 is a live, enforced gate rule"
+    disposition: "handled_by:DUP003"
+    cross_refs: []
+  - id: "CHK-GATE-SYS100"
+    name: "SYS100 is a live, enforced gate rule"
+    disposition: "handled_by:SYS100"
+    cross_refs: []
+  - id: "CHK-GATE-SYS101"
+    name: "SYS101 is a live, enforced gate rule"
+    disposition: "handled_by:SYS101"
+    cross_refs: []
+  - id: "CHK-GATE-SYS102"
+    name: "SYS102 is a live, enforced gate rule"
+    disposition: "handled_by:SYS102"
+    cross_refs: []
+  - id: "CHK-GATE-SYS200"
+    name: "SYS200 is a live, enforced gate rule"
+    disposition: "handled_by:SYS200"
+    cross_refs: []
+  - id: "CHK-GATE-SYS201"
+    name: "SYS201 is a live, enforced gate rule"
+    disposition: "handled_by:SYS201"
+    cross_refs: []
+  - id: "CHK-GATE-SYS202"
+    name: "SYS202 is a live, enforced gate rule"
+    disposition: "handled_by:SYS202"
+    cross_refs: []
+  - id: "CHK-GATE-SYS203"
+    name: "SYS203 is a live, enforced gate rule"
+    disposition: "handled_by:SYS203"
     cross_refs: []
 concern_family_total: 13
 concern_family_entries:
