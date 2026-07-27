@@ -240,6 +240,7 @@ the generic `ParseFailed` a real strata syntax rejection gets.
 
 <!-- frob:describes src/frob/lang/__init__.py::reset_parse_cache -->
 <!-- frob:describes src/frob/lang/__init__.py::parse_cache_stats -->
+<!-- frob:describes src/frob/lang/__init__.py::partial_parse_files -->
 
 T-0414: `_parse` (the sole read+tree-sitter-parse chokepoint every public
 entry point in this module funnels through -- `parse_file`,
@@ -264,7 +265,23 @@ parsed, i.e. missed, at most once per invocation) meaningful.
 ```python
 def reset_parse_cache() -> None
 def parse_cache_stats() -> tuple[int, int]   # (hits, misses)
+def partial_parse_files() -> tuple[str, ...]
 ```
+
+T-0404 finding 9 / T-0905: `_parse` can also SALVAGE a tree-sitter tree
+around a syntax error (`has_error=True` but the grammar still recovers
+usable top-level structure) rather than failing outright -- treating that
+as a hard `Err` would blank out doc/coverage checking for the file's
+entire content over one typo, so `_parse` keeps the salvaged tree, logs a
+WARNING (`_warn_if_partial_tree`), and records the file's display path
+into `partial_parse_files()`. Every symbol after the error region is
+silently absent from that tree, so `partial_parse_files()` is the only
+structured, queryable signal of the loss. `frob.gates._parse_failures.
+parse_failure_gate` (docs/modules/gates.md#rule-catalog, PARSE002, T-0905)
+reads this accessor directly and turns each entry into an ERROR-tier
+`frob check` violation, symmetric with PARSE001's hard-failure handling --
+before T-0905, this accessor had zero consumers and the loss was visible
+only to a WARNING-level log line.
 
 ## Dependencies
 

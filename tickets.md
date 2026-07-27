@@ -3484,7 +3484,7 @@ Gates: frob check --ticket T-0901 clean (0 errors)
 id: T-0902
 title: Add PARSE002 gate wiring partial_parse_files() into frob check + regression
   test
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-23'
@@ -3493,6 +3493,11 @@ parent: null
 scope:
 - src/frob/gates/_parse_failures.py
 - tests/test_gates.py
+evidence:
+- tests/test_gates.py::TestParseFailureGate::test_partial_parse_is_an_error_violation
+- tests/test_gates.py::TestParseFailureGate::test_no_partial_parses_is_clean
+- tests/test_gates.py::TestParseFailureGate::test_no_parse_failures_is_clean
+- tests/test_gates.py::TestParseFailureGate::test_parse_failure_is_an_error_violation
 threat: null
 component: null
 ```
@@ -3505,6 +3510,63 @@ syntax error partway through a file, asserting the missing tail symbol's
 COV001 obligation is NOT silently dropped, and that a PARSE002-shaped
 violation fires). This closes the "queryable accessor with zero consumers"
 class of gap the same way T-0558 closed it for hard parse failures.
+
+## Done report
+
+Changed:
+- src/frob/gates/_parse_failures.py::parse_failure_gate (frob:ticket/
+  frob:tests directives only -- the PARSE002 implementation itself landed
+  in T-0905, this ticket's paired fix)
+- tests/test_gates.py::TestParseFailureGate.test_no_parse_failures_is_clean
+  (added a `reset_parse_cache()` call to make it immune to the T-0905-
+  filed cross-test leak, see below)
+- tests/test_gates.py::TestParseFailureGate.test_partial_parse_is_an_error_violation
+  (new)
+- tests/test_gates.py::TestParseFailureGate.test_no_partial_parses_is_clean
+  (new)
+
+Added the PARSE002 regression tests this ticket exists for:
+`test_partial_parse_is_an_error_violation` writes a fixture with a syntax
+error partway through a file (`def good_one(): ...` then `def broken(:
+...`), builds a real snapshot via `build_graph`, asserts the symbol BEFORE
+the error (`good_one`) IS present in `snapshot.symbols` (proving the
+salvaged-parse tradeoff is real, not just theoretical), then asserts
+`parse_failure_gate` fires exactly one PARSE002 ERROR violation naming
+`broken.py`. `test_no_partial_parses_is_clean` is the paired negative
+case. Both explicitly call `frob.lang.reset_parse_cache()` before (and,
+for the positive case, after) exercising the gate, to keep
+`frob.lang._partial_parse_files`'s process-lifetime global state from
+leaking into whatever test runs next in the same pytest-xdist worker.
+
+Also hardened the pre-existing, otherwise-untouched
+`test_no_parse_failures_is_clean` (T-0558) the same way: while verifying
+T-0905, this test was observed to fail intermittently under xdist when
+scheduled after another test that leaves a stale partial-parse entry in
+the shared global (e.g. `tests/test_lang.py`'s partial-tree WARNING
+test) -- calling `reset_parse_cache()` at its own start closes that hole
+for this specific test without needing the broader cross-file fix
+(tracked separately, see below).
+
+Evidence: full chunked gate loop for this ticket --
+`uv run frob check --ticket T-0902 --only lint` (0 errors), `--only
+static` (0 errors), `--only gates-fast` (0 errors after `frob ticket
+sweep T-0902` cleared a PRE001 stale-sweep finding; confirmed the real
+repo's own `tests/fixtures/lang/broken.py` intentionally-malformed
+fixture does NOT trigger a spurious PARSE002 in a real `frob check` run
+-- it is parsed by other lang-conformance tooling outside the graph-
+build/`parse_failures` gate's own snapshot, so no waiver was needed),
+`--only gates-native` (0 errors), `--only gates-security` (0 errors).
+`uv run pytest tests/test_gates.py::TestParseFailureGate -q` -- 4 passed.
+
+Filed (already filed while working T-0905, not duplicated here):
+T-0926 covers the broader cross-test-file leak class this
+ticket's own `reset_parse_cache()` calls work around locally but do not
+fully close (a `tests/conftest.py` autouse fixture is the recommended
+fix, per that ticket's body).
+
+Gates: `frob check --ticket T-0902` clean across all five stage groups
+(lint/static/gates-fast/gates-native/gates-security), 0 errors in each;
+no waivers needed.
 
 <!-- ticket:T-0903 -->
 ```yaml
@@ -3614,7 +3676,7 @@ drop the guard the paired fix ticket adds.
 id: T-0905
 title: Partial tree-sitter parse (salvaged, has_error) silently drops symbols -- partial_parse_files()
   has zero gate consumers
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-23'
@@ -3623,6 +3685,27 @@ parent: null
 scope:
 - src/frob/lang/__init__.py
 - src/frob/gates/_parse_failures.py
+- docs/modules/gates.md
+- docs/modules/lang.md
+scope_changes:
+- op: add
+  glob: docs/modules/gates.md
+  reason: AFFECT001 requires touching the affects()-closure docs for parse_failure_gate/partial_parse_files;
+    PARSE001 row was also missing entirely from the rule-catalog table (pre-existing
+    gap), added alongside PARSE002
+  actor: logan
+  at: '2026-07-26'
+- op: add
+  glob: docs/modules/lang.md
+  reason: AFFECT001 requires touching the affects()-closure docs for parse_failure_gate/partial_parse_files;
+    PARSE001 row was also missing entirely from the rule-catalog table (pre-existing
+    gap), added alongside PARSE002
+  actor: logan
+  at: '2026-07-26'
+evidence:
+- tests/test_gates.py::TestParseFailureGate::test_parse_failure_is_an_error_violation
+- tests/test_gates.py::TestParseFailureGate::test_no_parse_failures_is_clean
+- tests/test_lang.py::TestErrors::test_syntax_error_logs_partial_tree_warning
 threat: null
 component: null
 ```
@@ -3662,6 +3745,69 @@ Fix direction: add a PARSE002 (or extend PARSE001) ERROR-tier gate over
 `frob.lang.partial_parse_files()`, symmetric with PARSE001's hard-failure
 handling -- loud by default, waivable with an honest reason for a known
 intentionally-malformed fixture.
+
+## Done report
+
+Changed:
+- src/frob/gates/_parse_failures.py::parse_failure_gate
+- src/frob/gates/_parse_failures.py::_partial_parse_violations (new)
+- src/frob/lang/__init__.py::partial_parse_files (docstring only)
+- src/frob/lang/__init__.py::_warn_if_partial_tree (docstring only)
+- docs/modules/gates.md (rule-catalog: added PARSE001 + PARSE002 rows;
+  PARSE001's row had been missing from the table entirely -- a
+  pre-existing gap, fixed alongside PARSE002 since both anchor there)
+- docs/modules/lang.md (Parse cache section: partial_parse_files()
+  signature + explanatory paragraph, frob:describes anchor added)
+
+Wired `frob.lang.partial_parse_files()` into `frob check` as PARSE002, an
+ERROR-tier violation symmetric with PARSE001's hard-failure handling.
+Reused the existing "parse_failures" gate job entry
+(`frob.gates._parse_failures.parse_failure_gate`, already registered in
+`frob.gates._ALL_GATES`/`_build_jobs`) rather than adding a new
+gate-dispatch entry: `parse_failure_gate` now also calls a new private
+`_partial_parse_violations()` helper that reads
+`frob.lang.partial_parse_files()` directly (not threaded through
+`GraphSnapshot`) and emits one PARSE002 ERROR `Violation` per entry. No
+`gates/__init__.py` changes were needed.
+
+Scope was extended +docs/modules/gates.md +docs/modules/lang.md (recorded
+via `frob ticket scope --add ... --reason ...`, see scope_changes above)
+once AFFECT001 required touching the affects()-closure docs for
+`parse_failure_gate`/`partial_parse_files`.
+
+Evidence: ran the full chunked gate loop for this ticket --
+`uv run frob check --ticket T-0905 --only lint` (0 errors after a line-
+length fix), `--only static` (0 errors; PARSE001/PARSE002 rows resolved
+AFFECT001, `frob ticket sweep T-0905` cleared the resulting PRE001 stale-
+sweep finding), `--only gates-fast` (0 errors), `--only gates-native`
+(0 errors), `--only gates-security` (0 errors). Ran the pre-existing
+PARSE001 regression tests plus the existing partial-tree WARNING test as
+regression evidence: `uv run pytest tests/test_gates.py::TestParseFailureGate
+tests/test_lang.py::TestErrors::test_syntax_error_logs_partial_tree_warning
+-q` -- both pass. No new test file added here since `tests/test_gates.py`
+is not in this ticket's declared scope; the paired T-0902 ("add PARSE002
+gate wiring ... + regression test") owns adding the new PARSE002-specific
+test cases there, next in this worktree's sequence.
+
+While verifying, found a real (if narrow) test-isolation hazard, out of
+this ticket's scope: `frob.lang._partial_parse_files` is a process-
+lifetime module-global, correctly reset once per real `frob check` run,
+but `tests/test_gates.py`'s `_snapshot()` helper (and similar helpers)
+call `frob.graph.build_graph` directly, bypassing that reset -- under
+pytest-xdist, an earlier test in the same worker that parses a syntax-
+error fixture can leak a stale PARSE002-shaped entry into a later,
+unrelated test. Reproduced concretely: running `tests/test_lang.py`
+together with `tests/test_gates.py::TestParseFailureGate` under xdist
+intermittently fails the pre-existing, unmodified
+`test_no_parse_failures_is_clean`. Filed rather than silently patched
+here or expanded into.
+
+Filed: T-0926 (partial_parse_files() module-global state leaks
+across tests that call build_graph directly -- PARSE002 flakiness)
+
+Gates: `frob check --ticket T-0905` clean across all five stage groups
+(lint/static/gates-fast/gates-native/gates-security), 0 errors in each
+after the fixes above; no waivers needed.
 
 <!-- ticket:T-0917 -->
 ```yaml
@@ -4301,3 +4447,69 @@ existing "Fork/pool hazards" (T-0695) and "Async event-loop hazards"
 (src/frob/arch/**, tests/unit/test_arch.py) does not include docs/, so no
 frob:doc anchor was added on the check function in that ticket -- add the
 section and the frob:doc directive together here.
+
+<!-- ticket:T-0926 -->
+```yaml
+id: T-0926
+title: partial_parse_files() module-global state leaks across tests that call build_graph
+  directly (PARSE002 flakiness)
+state: queued
+kind: bug
+origin: human
+created: '2026-07-26'
+priority: medium
+parent: null
+scope:
+- tests/conftest.py
+- src/frob/graph/__init__.py
+threat: null
+component: null
+```
+Found while working T-0905 (wiring `frob.lang.partial_parse_files()` into
+the new PARSE002 gate).
+
+`frob.lang._partial_parse_files` is a process-lifetime module-global set,
+correctly reset exactly once per real `frob check` invocation
+(`frob.check._run_check_with_skips` calls `reset_parse_cache()` before any
+gate/snapshot work starts). That is sound for a real one-shot CLI run.
+
+It is NOT sound for the test suite: `tests/test_gates.py::_snapshot` (and
+several other test helpers) call `frob.graph.build_graph` directly,
+bypassing `frob.check`'s reset entirely. Any earlier test in the same
+pytest-xdist worker process that parses a file with a syntax error
+(`_warn_if_partial_tree`) leaves its display path in
+`_partial_parse_files` until some LATER test happens to call
+`reset_parse_cache()` at its own start. Reproduced concretely: running
+`tests/test_lang.py tests/test_gates.py::TestParseFailureGate` together
+under xdist intermittently fails
+`TestParseFailureGate.test_no_parse_failures_is_clean` (added T-0558,
+unmodified) with a leaked PARSE002-shaped violation from an unrelated
+tmp_path in `test_lang.py::TestParse::test_syntax_error_logs_partial_tree_warning`
+-- purely because file collection/worker-assignment order happened to
+place them adjacently with no intervening reset. Running the same two
+files serially (`-n0`) happens to pass only because `test_lang.py`'s LAST
+test (`test_cross_entry_point_reuse_is_one_parse_per_file`) incidentally
+calls `reset_parse_cache()` at its own start, coincidentally scrubbing the
+leak before `test_gates.py` runs -- an accident of file-internal test
+order, not a real guarantee.
+
+Net effect: before T-0905, nothing consumed `partial_parse_files()`, so
+this leak was invisible. Now that `frob.gates._parse_failures.
+parse_failure_gate` reads it directly (PARSE002), any test suite that
+calls `build_graph` directly (not through `frob.check`) is exposed to
+flaky PARSE002 assertions depending on pytest-xdist worker/test ordering
+-- a real, if narrow, source of test flakiness going forward, and it will
+grow as more tests call `parse_failure_gate`/`build_graph` directly (e.g.
+T-0902's own regression tests, which had to add explicit
+`reset_parse_cache()` calls around every case that reads
+`partial_parse_files()`-backed data to route around it).
+
+Fix direction: add an autouse `tests/conftest.py` fixture (or a narrower
+one scoped to test modules that call `build_graph`/`parse_file` directly)
+that calls `frob.lang.reset_parse_cache()` before each test, so the global
+memo/partial-parse-set never carries state across test boundaries no
+matter what order xdist picks. Alternative/complementary: have
+`frob.graph.build_graph` itself call `reset_parse_cache()` internally at
+the top of a fresh (non-incremental) build rather than relying on every
+caller to remember, if that does not conflict with the incremental-cache
+contract (T-0414) -- needs a design decision, not assumed here.

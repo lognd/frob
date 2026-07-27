@@ -1935,10 +1935,57 @@ class TestParseFailureGate:
     def test_no_parse_failures_is_clean(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_parse_failures.py::parse_failure_gate kind="unit"
         from frob.gates._parse_failures import parse_failure_gate
+        from frob.lang import reset_parse_cache
 
+        # T-0905/T-0902: reset frob.lang's process-lifetime partial-parse
+        # set before asserting "clean" -- an earlier test in this xdist
+        # worker that parsed a syntax-error fixture (any test calling
+        # build_graph directly, bypassing frob.check's own once-per-run
+        # reset) would otherwise leak a stale PARSE002 entry in here.
+        reset_parse_cache()
         _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
         snap = _snapshot(tmp_path)
         assert parse_failure_gate(snap) == ()
+
+    # frob:ticket T-0902
+    def test_partial_parse_is_an_error_violation(self, tmp_path: Path) -> None:
+        """T-0905/T-0902: a syntax error partway through a file (tree-sitter
+        salvages a PARTIAL tree, not a hard failure) must fire PARSE002,
+        symmetric with PARSE001's hard-failure handling -- the missing
+        tail symbols are silently dropped from the salvaged tree
+        otherwise, and no other gate would ever notice."""
+        # frob:tests src/frob/gates/_parse_failures.py::parse_failure_gate kind="unit"
+        from frob.gates._parse_failures import parse_failure_gate
+        from frob.lang import reset_parse_cache
+
+        reset_parse_cache()
+        _write(
+            tmp_path,
+            "src/broken.py",
+            "def good_one():\n    pass\n\ndef broken(:\n    pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        assert "src/broken.py::good_one" in snap.symbols
+
+        violations = parse_failure_gate(snap)
+        reset_parse_cache()
+        hits = [v for v in violations if v.rule == "PARSE002"]
+        assert len(hits) == 1
+        assert hits[0].severity == Severity.ERROR
+        assert "broken.py" in hits[0].file
+
+    # frob:ticket T-0902
+    def test_no_partial_parses_is_clean(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_parse_failures.py::parse_failure_gate kind="unit"
+        from frob.gates._parse_failures import parse_failure_gate
+        from frob.lang import reset_parse_cache
+
+        reset_parse_cache()
+        _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
+        snap = _snapshot(tmp_path)
+        violations = parse_failure_gate(snap)
+        reset_parse_cache()
+        assert not any(v.rule == "PARSE002" for v in violations)
 
 
 class TestDeadSymbolGate:

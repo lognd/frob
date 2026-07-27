@@ -24,6 +24,8 @@ declaration).
 | COV006 | coverage | (warn) a `frob:tests` edge bound to a PRIVATE symbol whose test has no `frob.graph.callgraph` reachability to it -- see "COV006/COV007 (T-0483)" below, including a disclosed known false-positive shape |
 | COV007 | coverage | (warn) a `frob:doc` edge whose src symbol is PRIVATE -- see "COV006/COV007 (T-0483)" below |
 | PLACE001 | coverage | (warn) a `frob:` directive that genuinely class-falls-back (not a directive that correctly resolved via `following` straight to a class it precedes) where a nearby real symbol looks plausibly missed -- see "PLACE001 (T-0504)" below |
+| PARSE001 | parse_failures | `frob.lang.parse_file` could not parse/read a tracked source file at all -- its entire symbol/edge set is missing from this build (`GraphSnapshot.parse_failures`, T-0558/T-0561) |
+| PARSE002 | parse_failures | `frob.lang.partial_parse_files()` names a file whose tree-sitter parse was SALVAGED around a syntax error (`has_error=True` but usable structure) -- every symbol after the error region is silently missing from this build (T-0905) |
 | TODO001 | coverage | bare TODO/FIXME comment (not `frob:`-prefixed) in a diff-touched file -- work marked but not accounted for at all |
 | TODO002 | coverage | `frob:todo` edge bound to a non-open (closed or missing) ticket -- work accounted for, but the reference is dangling |
 | SCOPE001 | scope | diff touches paths/symbols outside the active ticket's `scope` |
