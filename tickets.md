@@ -6772,6 +6772,7 @@ created: '2026-07-27'
 priority: medium
 blocked_by:
 - T-0987
+- T-0991
 parent: null
 tier: ticket
 sprint: null
@@ -6825,7 +6826,6 @@ list.
   T-0985 documented, if still unfixed at that point).
 - No new `MalformedDirective`s anywhere in the repo relative to the
   pre-recompaction baseline.
-
 <!-- ticket:T-0989 -->
 ```yaml
 id: T-0989
@@ -6993,3 +6993,29 @@ long frob:tests comments elsewhere).
 - tests: 6 passed (from 6 evidence id(s))
 - gates: 0 error(s), 4886 warning(s), 318 waived
 - error-findings: none (measured, zero errors)
+
+<!-- ticket:T-0991 -->
+```yaml
+id: T-0991
+title: frob fmt wrap drops the word-boundary space before a continuation when a directive
+  carries a trailing attribute (silent token concatenation)
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-27'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/_fmt_directives.py
+- tests/test_gates_fmt_directives.py
+acceptance:
+- text: given any directive with trailing attributes, when canonicalize_text wraps
+    and the parser rejoins it, then the token stream is identical to the unwrapped
+    form at every width
+  evidence: []
+threat: null
+component: null
+```
+Found by T-0988s token-stream verification protocol (1152/1153 hunks clean): wrapping a frob:tests directive whose target is followed by a trailing attribute (kind="unit") split right after the target but dropped the word-boundary space before the continuation, so rejoining concatenated target+attribute into one corrupted token -- a live DRIFT002 (no longer resolves) absent at HEAD. Distinct class from T-0987 (misparse-as-new-directive) -- this is silent target corruption inside a correctly-recognized directive. Fix the wrap/rejoin round-trip to preserve token boundaries exactly; regression tests: the exact TestConventionUnitBinding shape, plus a property test asserting token-stream identity across wrap widths for directives with 0/1/2 trailing attributes. T-0988 (repo-wide recompaction) is blocked on this.
