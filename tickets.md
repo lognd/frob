@@ -1041,7 +1041,7 @@ but not yet wired into `analyze_project`/the check pipeline -- T-0626
 id: T-0624
 title: 'arch: misc design smells (ARCH1xx) -- mutable default arg, feature envy, data
   clumps, magic literals, dead private code, deep inheritance, temporal coupling'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
