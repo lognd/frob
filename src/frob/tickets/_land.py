@@ -810,7 +810,22 @@ def _splice_only_ticket(
         len(main_tickets),
         len(merged),
     )
-    return Ok(_render_ledger(merged))
+    rendered = _render_ledger(merged)
+    # frob:ticket T-0740
+    # T-0740: this scoped splice was the one wholesale-ledger-commit site
+    # that did NOT run the T-0764 `_check_ledger_id_integrity` backstop
+    # (`splice_ledger` and `write_all`/`write_archive` all do). By
+    # construction `_render_ledger` cannot itself drop a marker today, so
+    # this was not a live reproduction of the T-0367 incident -- but it was
+    # a real defense-in-depth gap: `frob ticket land`'s per-ticket path is
+    # the MOST common land shape (T-0479 scoping) and previously had no
+    # backstop at all if a future refactor of `_render_ledger`/
+    # `_render_section` ever regressed. Closing it here so every wholesale
+    # ledger-write path shares the same guard.
+    integrity = _check_ledger_id_integrity(merged, rendered)
+    if integrity.is_err:
+        return Err(integrity.danger_err)
+    return Ok(rendered)
 
 
 def _porcelain_dirty(root: Path) -> Result[bool, LandError]:

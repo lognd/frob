@@ -274,6 +274,36 @@ class TestSpliceOnlyTicket:
         assert spliced.is_ok
         assert "state: planned" in spliced.danger_ok
 
+    # frob:ticket T-0740
+    # frob:tests tests/test_ticket_land.py::TestSpliceOnlyTicket.test_render_that_would_drop_an_id_is_refused  # noqa: E501
+    def test_render_that_would_drop_an_id_is_refused(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-0740: `_splice_only_ticket` (the T-0479 per-ticket `frob ticket
+        land` path) was the one wholesale-ledger-commit site missing the
+        T-0764 `_check_ledger_id_integrity` backstop that `splice_ledger`
+        and `write_all`/`write_archive` all already ran. Pin the fix the
+        same way `TestSpliceLedgerIdDropGuard` pins `splice_ledger`: patch
+        the render step to simulate a future rendering regression that
+        drops every section, and assert the scoped splice refuses rather
+        than silently committing the truncated text."""
+        created = new_ticket(tmp_path, _spec("A ticket"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        main_text = ledger_path(tmp_path).read_text()
+
+        assert transition(tmp_path, tid, TicketState.PLANNED).is_ok
+        worktree_text = ledger_path(tmp_path).read_text()
+
+        def _dropping_render(tickets: dict) -> str:
+            # Simulate a render bug: silently omit every ticket's section.
+            return "# Tickets\n\nCentral ledger managed by `frob ticket`.\n"
+
+        monkeypatch.setattr(_land_mod, "_render_ledger", _dropping_render)
+        spliced = _land_mod._splice_only_ticket(main_text, worktree_text, tid)
+        assert spliced.is_err
+        assert spliced.danger_err.name == "LedgerIntegrityViolation"
+
     # frob:tests src/frob/tickets/_land.py::splice_ledger kind="unit"
     def test_whole_ledger_splice_never_regresses_a_sibling_from_done(
         self, tmp_path: Path
@@ -681,7 +711,6 @@ class TestSpliceLedgerPrefersEvidenceRichSideOnRankTie:
         assert parsed[tid].acceptance[0].evidence == ("tests/test_widget.py::test_x",)
 
 
-# frob:ticket T-0764
 class TestSpliceLedgerIdDropGuard:
     """The structural guard the T-0367 incident demands: `splice_ledger`
     refuses loudly rather than silently committing a merge that drops an

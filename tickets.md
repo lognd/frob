@@ -2004,7 +2004,7 @@ User mandate 2026-07-22: statically enforce system state protocols -- the *_init
 id: T-0740
 title: 'tickets: investigate missing-marker ledger corruption class (T-0367 found
   absorbed into T-0363''s body)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-22'
@@ -2012,10 +2012,47 @@ priority: medium
 parent: null
 scope:
 - src/frob/tickets/**
+- tests/test_ticket_land.py
+scope_changes:
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: regression test locking the _splice_only_ticket integrity guard fix
+  actor: logan
+  at: '2026-07-26'
+evidence:
+- tests/test_ticket_land.py::TestSpliceOnlyTicket::test_render_that_would_drop_an_id_is_refused
 threat: null
 component: null
 ```
 found while working T-0726 (TICK006 phantom-filing gate): T-0367 existed in tickets-archive.md as a fully-formed yaml frontmatter block + body (title/state/scope/created all present) but with NO <!-- ticket:T-0367 --> marker line before it, so _parse_ledger's marker-based chunking silently absorbed its entire block as prose inside the PRECEDING ticket's (T-0363) body instead of parsing it as its own ticket -- load_archive/load_all never saw T-0367 at all (frob ticket show T-0367 would have 404'd). Fixed the one instance directly in tickets-archive.md (added the missing marker, restoring T-0367 as its own resolvable block) since it directly corrupted TICK006's phantom-filing measurement, but did not audit the rest of the ~500-ticket ledger for the same missing-marker shape, nor find the write path that produced it (a hand-edit? a merge-splice bug? frob ticket new failing mid-write?). Investigate: (1) whether any other ledger block is missing its marker the same way (a scripted marker-vs-yaml-id cross-check over both ledger files), (2) the root cause / write path that can produce a markerless block, (3) whether frob.tickets._store or the land/splice path needs a structural guard against ever writing yaml frontmatter without its marker.
+
+## Done report
+
+Verdict: RULED OUT for the originally-filed incident shape (a hand-edited/merge-produced markerless ticket block silently absorbed into the preceding ticket's body), but investigation found and closed a genuine defense-in-depth GAP left over from the T-0764 hardening pass: the `_check_ledger_id_integrity` structural guard (T-0764, added directly in response to this incident class) was already wired into `write_all`, `write_archive`, and `splice_ledger` -- but NOT into `_splice_only_ticket`, which is the T-0479-scoped per-ticket splice `frob ticket land` actually uses for its own single-ticket land path (the MOST common land shape in this repo, more common than the whole-ledger `splice_ledger` merge-driver path). Fixed in this ticket.
+
+Investigation findings, guard-by-guard:
+
+1. `_parse_ledger` (src/frob/tickets/_store.py) still has no way to notice a markerless block on its own -- unchanged, by design; it is a strict parser over `<!-- ticket:ID -->` markers and a markerless block reads as trailing body prose of the preceding ticket, exactly as in the T-0367 incident. This is the ROOT cause shape and is still theoretically possible on read of an already-malformed file (e.g. a hand-edit).
+
+2. `_check_ledger_id_integrity` (T-0764, src/frob/tickets/_store.py:375) is the actual backstop: it re-parses freshly RENDERED text and refuses (`Err(LedgerIntegrityViolation)`) if any id that went in does not come back out with its marker intact. Verified wired into: `write_all` (_store.py:547) -- yes, pre-existing; `write_archive` (_store.py:492) -- yes, pre-existing; `splice_ledger` (_land.py:405, the whole-ledger git-merge-driver path) -- yes, pre-existing, with its own regression test (`TestSpliceLedgerIdDropGuard::test_render_that_would_drop_an_id_is_refused`); `_splice_only_ticket` (_land.py, the T-0479 per-ticket `frob ticket land` path) -- MISSING before this ticket. `_render_ledger` structurally cannot itself omit a marker today (`_render_section` always emits `<!-- ticket:ID -->` programmatically, never from raw text), so this was not a LIVE reproduction of T-0367's exact incident -- but it was a real gap: this is the path every `frob ticket land` call actually exercises, and it had zero backstop against a future `_render_ledger`/`_render_section` regression, unlike every sibling wholesale-ledger-write site. Closed by adding the same `_check_ledger_id_integrity` call before returning `Ok(rendered)`.
+
+3. `write_ticket`'s single-splice path (_store.py:500, `_splice_ticket_section`) was checked and needs no change: it only ever rewrites ITS OWN ticket's marker span via `_render_section` (which always includes the marker) and passes every other byte of the file through completely untouched -- it cannot introduce a markerless block for any OTHER ticket, and its own spliced section is provably well-formed by construction. No gap found here.
+
+4. `expected_digest` optimistic concurrency (T-0889) and the T-0854 marker-anchored splice work were reviewed; neither interacts with the parse-time marker-loss vector (they guard against a different class: concurrent writers racing on the same ticket, not a marker silently missing from rendered output). No change needed there.
+
+Conclusion: the corruption class as originally filed (parse-time markerless-block absorption) is now guarded at every WRITE path that could plausibly reintroduce it via a rendering regression, closing the one gap found (`_splice_only_ticket`). The underlying READ-time fragility in `_parse_ledger` against an already-hand-corrupted file on disk remains unchanged and undetectable until the next write attempt refuses via this guard -- that is a structural property of a strict marker-based parser reading untrusted/hand-edited input, not something this ticket's scope (`src/frob/tickets/**`) can close further without redesigning the ledger format itself; not filing a new ticket for that since no concrete forward plan for a from-scratch format change exists yet and it would be speculative scope-creep beyond this investigation.
+
+Changed:
+- src/frob/tickets/_land.py::_splice_only_ticket -- added `_check_ledger_id_integrity` call before returning the spliced ledger text, matching `splice_ledger`'s existing guard.
+- tests/test_ticket_land.py::TestSpliceOnlyTicket.test_render_that_would_drop_an_id_is_refused -- new regression test (mirrors TestSpliceLedgerIdDropGuard.test_render_that_would_drop_an_id_is_refused) that monkeypatches `_render_ledger` to simulate a future rendering regression and asserts `_splice_only_ticket` now refuses (`LedgerIntegrityViolation`) instead of silently committing truncated text. Verified this test FAILS against the pre-fix code (confirmed by temporarily reverting the guard call and re-running: `1 failed, 3 passed`) and PASSES with the fix (`4 passed`).
+
+Evidence:
+- tests/test_ticket_land.py::TestSpliceOnlyTicket::test_render_that_would_drop_an_id_is_refused (new test, passing: `uv run pytest tests/test_ticket_land.py::TestSpliceOnlyTicket -v` -> 4 passed)
+- Full tests/test_ticket_land.py run: 114 passed, 1 pre-existing failure (`TestDoneReportThenLandRealClosuresEndToEnd::test_real_closures_done_report_then_land_succeeds`, a nested-worktree native-build collection artifact, confirmed to fail identically against unmodified `git show HEAD` copies of both changed files -- unrelated to this ticket's change, not touched further per scope).
+
+Filed: none -- no new out-of-scope ticket needed; the one gap found was directly in scope and fixed.
+
+Gates: `uv run frob check --ticket T-0740 --only <group>` clean (0 errors) for lint, static, gates-fast, gates-native, gates-security (all four stage groups pass; only pre-existing repo-wide warnings/waivers present, none introduced by this change).
 
 <!-- ticket:T-0747 -->
 ```yaml
