@@ -29,12 +29,30 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+import pytest
+
 from frob.app.config import AppConfig
 from frob.app.ticket_runner import _doable, _list, _show
 from frob.gates._exclude_hazard import exclude_hazard_gate
 from frob.gitio import spawn_recorder
 from frob.tickets import TicketKind, TicketSpec, new_ticket
 from frob.tickets._models import Origin
+
+
+# frob:ticket T-0908
+@pytest.fixture(autouse=True)
+def _clear_worktree_lease_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """T-0908: strip `FROB_WORKTREE`/`FROB_AGENT` for the duration of every
+    test in this module. Unlike the subprocess-spawning system tests
+    (`tests/system/conftest.py::run`, T-0880/T-0909), the tests below call
+    `frob.tickets`/`frob.app.ticket_runner` library functions directly
+    IN-PROCESS against their own `tmp_path` repo -- there is no subprocess
+    boundary to strip a dispatching agent's lease env at, so it would
+    otherwise be inherited as-is and trip `enforce_worktree_lease`
+    (`TicketError.WorktreeLeaseViolation`) against the test's own fixture
+    repo, unrelated to the behavior under test."""
+    monkeypatch.delenv("FROB_WORKTREE", raising=False)
+    monkeypatch.delenv("FROB_AGENT", raising=False)
 
 
 def _make_repo_with_tickets(tmp_path: Path, count: int) -> list[str]:

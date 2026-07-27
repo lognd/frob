@@ -13,6 +13,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from tests.system.conftest import init_repo, run
 
 _MODEL = """\
@@ -94,12 +96,23 @@ class TestSysPlanCli:
         assert "-> 0 violation(s)" not in out
         assert "threat: evaluated view=" not in out
 
-    def test_dropped_ticket_is_not_recreated(self, tmp_path: Path) -> None:
+    # frob:ticket T-0908
+    def test_dropped_ticket_is_not_recreated(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """A discharged obligation's ticket is dropped, not left open forever.
         Re-planning must never resurrect it -- a marker match suppresses
         re-creation regardless of the matched ticket's state (module
         docstring in `frob.strata._plan`), so dropping is the durable
-        "this is handled" signal, not a re-open trigger."""
+        "this is handled" signal, not a re-open trigger.
+
+        T-0908: `load_all`/`transition` below are called IN-PROCESS (no
+        subprocess boundary), so a dispatching agent's `FROB_WORKTREE`/
+        `FROB_AGENT` lease env is stripped here first; otherwise it leaks
+        in and trips `enforce_worktree_lease` against this test's own
+        `tmp_path` repo, unrelated to drop/re-plan correctness."""
+        monkeypatch.delenv("FROB_WORKTREE", raising=False)
+        monkeypatch.delenv("FROB_AGENT", raising=False)
         from frob.tickets import TicketState, load_all, transition
 
         repo = _init_repo(tmp_path)
