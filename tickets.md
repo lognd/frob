@@ -21,6 +21,8 @@ blocked_by:
 - T-0874
 - T-0875
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/**
 - tests/**
@@ -42,6 +44,8 @@ origin: human
 created: '2026-07-18'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/**
 - strata-core/**
@@ -68,6 +72,8 @@ priority: medium
 blocked_by:
 - T-0257
 parent: T-0254
+tier: ticket
+sprint: null
 scope:
 - docs/**
 - tests/**
@@ -87,6 +93,8 @@ origin: human
 created: '2026-07-19'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/serve/**
 - src/frob/**
@@ -181,6 +189,8 @@ origin: human
 created: '2026-07-19'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/arch/**
 - src/frob/lang/**
@@ -213,6 +223,8 @@ origin: human
 created: '2026-07-19'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/arch/**
 - src/frob/graph/**
@@ -260,6 +272,8 @@ origin: human
 created: '2026-07-19'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/strata/**
 - strata-core/**
@@ -324,6 +338,8 @@ origin: human
 created: '2026-07-20'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/vet/**
 - src/frob/lang/**
@@ -390,6 +406,8 @@ origin: human
 created: '2026-07-20'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/strata/**
 - src/frob/vet/**
@@ -461,6 +479,8 @@ origin: human
 created: '2026-07-20'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - docs/design/**
 - src/frob/strata/**
@@ -522,6 +542,8 @@ blocked_by:
 - T-0378
 - T-0379
 parent: T-0376
+tier: ticket
+sprint: null
 scope:
 - src/frob/vet/_capability.py
 - tests/test_vet*.py
@@ -543,6 +565,8 @@ blocked_by:
 - T-0382
 - T-0343
 parent: T-0376
+tier: ticket
+sprint: null
 scope:
 - src/frob/gates/
 - docs/design/registry/arch-checks.yaml
@@ -561,6 +585,8 @@ origin: human
 created: '2026-07-20'
 priority: medium
 parent: T-0376
+tier: ticket
+sprint: null
 scope:
 - src/frob/
 threat: null
@@ -578,6 +604,8 @@ origin: human
 created: '2026-07-20'
 priority: medium
 parent: T-0376
+tier: ticket
+sprint: null
 scope:
 - src/frob/
 threat: null
@@ -597,6 +625,8 @@ priority: medium
 blocked_by:
 - T-0373
 parent: T-0376
+tier: ticket
+sprint: null
 scope:
 - src/frob/
 threat: null
@@ -614,6 +644,8 @@ origin: human
 created: '2026-07-20'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/
 threat: null
@@ -632,6 +664,8 @@ origin: human
 created: '2026-07-20'
 priority: medium
 parent: T-0397
+tier: ticket
+sprint: null
 scope:
 - src/frob/gates/
 - src/frob/app/config.py
@@ -652,6 +686,8 @@ origin: human
 created: '2026-07-20'
 priority: medium
 parent: T-0398
+tier: ticket
+sprint: null
 scope:
 - src/frob/tickets/
 - src/frob/gates/
@@ -673,6 +709,8 @@ origin: human
 created: '2026-07-20'
 priority: medium
 parent: T-0435
+tier: ticket
+sprint: null
 scope:
 - src/frob/gates/
 - src/frob/graph/
@@ -694,6 +732,8 @@ origin: human
 created: '2026-07-21'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/gates/**
 - src/frob/tickets/**
@@ -713,6 +753,8 @@ origin: human
 created: '2026-07-21'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/gates/__init__.py
 threat: null
@@ -798,6 +840,8 @@ origin: agent
 created: '2026-07-22'
 priority: medium
 parent: T-0177
+tier: ticket
+sprint: null
 scope:
 - src/frob/gates/**
 - src/frob/serve/**
@@ -824,6 +868,8 @@ priority: medium
 blocked_by:
 - T-0261
 parent: T-0254
+tier: ticket
+sprint: null
 scope:
 - strata-core/src/parse.rs
 - src/frob/strata/_host.py
@@ -851,6 +897,8 @@ origin: agent
 created: '2026-07-22'
 priority: medium
 parent: T-0576
+tier: ticket
+sprint: null
 scope:
 - src/frob/graph/**
 - src/frob/gates/**
@@ -873,6 +921,8 @@ origin: agent
 created: '2026-07-22'
 priority: medium
 parent: T-0331
+tier: ticket
+sprint: null
 scope:
 - src/frob/strata/**
 - docs/strata/**
@@ -964,6 +1014,8 @@ priority: medium
 blocked_by:
 - T-0651
 parent: T-0331
+tier: ticket
+sprint: null
 scope:
 - src/frob/strata/**
 - docs/strata/**
@@ -987,6 +1039,8 @@ origin: agent
 created: '2026-07-22'
 priority: medium
 parent: T-0331
+tier: ticket
+sprint: null
 scope:
 - src/frob/strata/**
 - docs/strata/**
@@ -1010,6 +1064,8 @@ origin: agent
 created: '2026-07-22'
 priority: medium
 parent: T-0331
+tier: ticket
+sprint: null
 scope:
 - src/frob/strata/**
 - docs/strata/**
@@ -1035,6 +1091,8 @@ priority: medium
 blocked_by:
 - T-0650
 parent: T-0331
+tier: ticket
+sprint: null
 scope:
 - src/frob/strata/**
 - docs/strata/**
@@ -1058,6 +1116,8 @@ origin: agent
 created: '2026-07-22'
 priority: medium
 parent: T-0331
+tier: ticket
+sprint: null
 scope:
 - src/frob/strata/**
 - docs/strata/**
@@ -1081,6 +1141,8 @@ origin: agent
 created: '2026-07-22'
 priority: medium
 parent: T-0331
+tier: ticket
+sprint: null
 scope:
 - src/frob/strata/**
 - docs/strata/**
@@ -1124,6 +1186,8 @@ blocked_by:
 - T-0656
 - T-0392
 parent: T-0331
+tier: ticket
+sprint: null
 scope:
 - src/frob/strata/**
 - docs/design/registry/system-design.yaml
@@ -1152,6 +1216,8 @@ origin: agent
 created: '2026-07-22'
 priority: medium
 parent: T-0339
+tier: ticket
+sprint: null
 scope:
 - src/frob/vet/**
 - src/frob/lang/**
@@ -1178,6 +1244,8 @@ priority: medium
 blocked_by:
 - T-0662
 parent: T-0339
+tier: ticket
+sprint: null
 scope:
 - src/frob/vet/**
 - src/frob/lang/**
@@ -1201,6 +1269,8 @@ origin: agent
 created: '2026-07-22'
 priority: medium
 parent: T-0339
+tier: ticket
+sprint: null
 scope:
 - src/frob/vet/**
 - src/frob/lang/**
@@ -1225,6 +1295,8 @@ origin: agent
 created: '2026-07-22'
 priority: medium
 parent: T-0339
+tier: ticket
+sprint: null
 scope:
 - src/frob/vet/**
 - src/frob/strata/**
@@ -1261,6 +1333,8 @@ blocked_by:
 - T-0665
 - T-0390
 parent: T-0339
+tier: ticket
+sprint: null
 scope:
 - src/frob/vet/**
 - docs/design/registry/evasion.yaml
@@ -1290,6 +1364,8 @@ priority: medium
 blocked_by:
 - T-0630
 parent: T-0341
+tier: ticket
+sprint: null
 scope:
 - src/frob/strata/**
 - src/frob/vet/**
@@ -1320,6 +1396,8 @@ priority: medium
 blocked_by:
 - T-0667
 parent: T-0341
+tier: ticket
+sprint: null
 scope:
 - src/frob/strata/**
 - src/frob/graph/**
@@ -1350,6 +1428,8 @@ priority: medium
 blocked_by:
 - T-0667
 parent: T-0341
+tier: ticket
+sprint: null
 scope:
 - src/frob/strata/**
 - src/frob/graph/**
@@ -1377,6 +1457,8 @@ priority: medium
 blocked_by:
 - T-0667
 parent: T-0341
+tier: ticket
+sprint: null
 scope:
 - src/frob/strata/**
 - src/frob/graph/**
@@ -1407,6 +1489,8 @@ blocked_by:
 - T-0669
 - T-0670
 parent: T-0341
+tier: ticket
+sprint: null
 scope:
 - src/frob/strata/**
 - docs/modules/strata.md
@@ -1441,6 +1525,8 @@ blocked_by:
 - T-0671
 - T-0391
 parent: T-0341
+tier: ticket
+sprint: null
 scope:
 - src/frob/strata/**
 - docs/design/registry/arch-checks.yaml
@@ -1476,6 +1562,8 @@ blocked_by:
 - T-0391
 - T-0392
 parent: T-0346
+tier: ticket
+sprint: null
 scope:
 - docs/design/registry/**
 - src/frob/strata/**
@@ -1503,6 +1591,8 @@ origin: human
 created: '2026-07-22'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/vet/
 - src/frob/strata/
@@ -1523,6 +1613,8 @@ origin: human
 created: '2026-07-22'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/arch/**
 - src/frob/gates/**
@@ -1550,6 +1642,8 @@ priority: medium
 blocked_by:
 - T-0662
 parent: T-0685
+tier: ticket
+sprint: null
 scope:
 - src/frob/arch/**
 - src/frob/lang/**
@@ -1576,6 +1670,8 @@ priority: medium
 blocked_by:
 - T-0686
 parent: T-0685
+tier: ticket
+sprint: null
 scope:
 - src/frob/gates/**
 - docs/modules/gates.md
@@ -1716,6 +1812,8 @@ priority: medium
 blocked_by:
 - T-0686
 parent: T-0685
+tier: ticket
+sprint: null
 scope:
 - src/frob/arch/**
 - tests/unit/test_arch.py
@@ -1816,6 +1914,8 @@ priority: medium
 blocked_by:
 - T-0686
 parent: T-0685
+tier: ticket
+sprint: null
 scope:
 - src/frob/graph/dsl.py
 - src/frob/gates/**
@@ -1843,6 +1943,8 @@ origin: human
 created: '2026-07-22'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/arch/**
 - src/frob/gates/**
@@ -1867,6 +1969,8 @@ origin: human
 created: '2026-07-22'
 priority: medium
 parent: T-0693
+tier: ticket
+sprint: null
 scope:
 - src/frob/arch/**
 - tests/unit/test_arch.py
@@ -1979,6 +2083,8 @@ origin: human
 created: '2026-07-22'
 priority: medium
 parent: T-0693
+tier: ticket
+sprint: null
 scope:
 - src/frob/arch/**
 - tests/unit/test_arch.py
@@ -2003,6 +2109,8 @@ origin: human
 created: '2026-07-22'
 priority: medium
 parent: T-0693
+tier: ticket
+sprint: null
 scope:
 - src/frob/arch/**
 - tests/unit/test_arch.py
@@ -2028,6 +2136,8 @@ origin: human
 created: '2026-07-22'
 priority: medium
 parent: T-0331
+tier: ticket
+sprint: null
 scope:
 - strata-core/src/parse.rs
 - src/frob/strata/**
@@ -2058,6 +2168,8 @@ blocked_by:
 - T-0700
 - T-0717
 parent: T-0331
+tier: ticket
+sprint: null
 scope:
 - src/frob/strata/**
 - src/frob/vet/**
@@ -2084,6 +2196,8 @@ origin: human
 created: '2026-07-22'
 priority: medium
 parent: T-0331
+tier: ticket
+sprint: null
 scope:
 - strata-core/src/parse.rs
 - src/frob/strata/**
@@ -2114,6 +2228,8 @@ blocked_by:
 - T-0700
 - T-0702
 parent: T-0331
+tier: ticket
+sprint: null
 scope:
 - src/frob/strata/**
 - tests/unit/strata/
@@ -2139,6 +2255,8 @@ origin: human
 created: '2026-07-22'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/perf/**
 - src/frob/stats/**
@@ -2162,6 +2280,8 @@ origin: human
 created: '2026-07-22'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/**
 threat: null
@@ -2180,6 +2300,8 @@ origin: human
 created: '2026-07-22'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/tickets/**
 - src/frob/gates/**
@@ -2206,6 +2328,8 @@ origin: human
 created: '2026-07-22'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/tickets/**
 - src/frob/app/ticket_runner.py
@@ -2271,8 +2395,6 @@ acceptance:
   - tests/unit/test_app_runners_t0715_sprint_tier.py::TestTicketSprintAssignShow::test_show_json_mode
 threat: null
 component: null
-tier: ticket
-sprint: null
 ```
 User mandate 2026-07-22 (first filing -- nothing like this existed in the ledger): formalize dev-team organization on top of the existing parent/blocked_by graph. (1) TIERS: an explicit tier field (epic|story|ticket, default ticket) with structural rules -- epics parent stories, stories parent tickets, doable only ever surfaces leaf tickets, an epic/story cannot close while an open descendant exists (today's convention, enforced); migration: existing EPIC-titled tickets get tier epic mechanically. (2) SPRINTS: a sprint field (free-form label like 2026-W30 or sprint-14) settable at new/via frob ticket sprint assign; frob ticket sprint show SPRINT lists committed tickets with state rollup; frob ticket doable --sprint SPRINT restricts the queue to the commitment; velocity/burndown derived from ledger state-transition history (closed-per-sprint counts), no new storage. (3) TEAM VIEWS: doable already orders by priority/age -- add --by-parent grouping so a story's remaining leaves display together (the user's pop-the-whole-stack-not-just-the-top concern). Keep the ledger format backward compatible (absent fields default); single-writer CLI discipline throughout. Coordinate with T-0571 (review records) and T-0573 (fleet routing) -- sprint labels should be routable cross-repo via fleet in a follow-up, note it, do not build it here.
 
@@ -2517,20 +2639,132 @@ Final state: **T-0715 is DONE.**
 id: T-0718
 title: 'check: project-type detection reports ''unknown'' when a fixture has no pyproject.toml,
   unrelated to git'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-22'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/app/**
 - tests/system/test_cli_check.py
 - tests/system/test_cli_perf.py
+- src/frob/check/__init__.py
+- tests/unit/test_check.py
+scope_changes:
+- op: add
+  glob: src/frob/check/__init__.py
+  reason: 'Ticket body assumed the project-type detector lived under src/frob/app/config.py,
+    but
+
+    detect_project_type actually lives in src/frob/check/__init__.py -- verified by
+    grep and
+
+    confirmed as the sole call site producing the ''unknown'' CHECK001 result described
+    in the
+
+    ticket. Extending scope to cover the real fix location.
+
+    '
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: tests/unit/test_check.py
+  reason: 'Added a regression unit test for the detect_project_type fix directly alongside
+    its
+
+    existing TestDetectProjectType suite in tests/unit/test_check.py -- this file
+    was not
+
+    in the original declared scope (only tests/system/test_cli_check.py and
+
+    tests/system/test_cli_perf.py were), extending to cover the actual test file touched.
+
+    '
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- tests/unit/test_check.py::TestDetectProjectType::test_bare_py_file_no_pyproject_is_python
+- tests/system/test_cli_check.py::TestCheckTicketScopedAlwaysReportsOnFailure::test_ticket_scoped_nonzero_exit_has_diagnostic_output
+- tests/system/test_cli_check.py::TestCheckGatesStage::test_only_gates_passes_once_bound_and_tested
+- tests/system/test_cli_perf.py::TestCheckOnlyPerf::test_perf001_fixture_warns_but_check_exits_zero
 threat: null
 component: null
 ```
 Found while working T-0705. tests/system/test_cli_check.py::TestCheckTicketScopedAlwaysReportsOnFailure::test_ticket_scoped_nonzero_exit_has_diagnostic_output, tests/system/test_cli_check.py::TestCheckGatesStage::test_only_gates_passes_once_bound_and_tested, and tests/system/test_cli_perf.py::TestCheckOnlyPerf::test_perf001_fixture_warns_but_check_exits_zero all fail with CHECK001 'unknown project type: 'unknown' (no dispatchable language stage)' even though each fixture DOES git init + commit (so this is not the T-0705 git-ls-files mechanism at all). Each of these fixtures writes a bare .py file with no pyproject.toml. Project-type detection (src/frob/app/**, exact site not yet located) appears to require pyproject.toml presence rather than falling back to extension-based detection when only .py files are tracked. Investigate src/frob/app/config.py's project-type resolution and either fix the fixtures (add a pyproject.toml) or fix the detector, whichever is the real contract.
+
+## Done report
+
+Reproduces: YES, on current main. `detect_project_type` (src/frob/check/__init__.py) had a
+root-level extension-based fallback for bare C/C++ source (*.cpp/*.cc/*.c) but none for
+bare *.py files -- a root with tracked .py files and no pyproject.toml/setup.py fell all
+the way through to `_detect_nested_native_project_type` and returned 'unknown', which
+`_dispatch_check` then reported as CHECK001 "unknown project type ... no dispatchable
+language stage". Reproduced by running the three named tests before any fix: 2 of 3
+(test_ticket_scoped_nonzero_exit_has_diagnostic_output, test_only_gates_passes_once_bound_and_tested)
+failed exactly as described; the third (test_perf001_fixture_warns_but_check_exits_zero)
+also failed on CHECK001 the same way.
+
+Fix: added a `root.glob("*.py")` fallback to 'python' in `detect_project_type`, mirroring
+the existing bare-C/C++-source fallback, right before the final
+`_detect_nested_native_project_type` call. `test_no_sentinel_is_unknown` (empty tmp_path,
+no .py files) still passes, so 'unknown' is still returned when there is truly nothing to
+detect.
+
+Second issue found while re-verifying: fixing project-type detection unmasked a SEPARATE,
+already-known bug in `test_perf001_fixture_warns_but_check_exits_zero` -- once the fixture
+correctly detects as 'python', it now reaches PRE001/SCOPE001 ("diff touches 1 file(s) but
+no active ticket is derivable"), the exact hazard already named and fixed elsewhere per
+T-0806 (`--stamp-coverage` leaves `frob-coverage.lock.json` uncommitted, so the next `--only
+gates` run sees a dirty 1-file diff). `test_only_gates_passes_once_bound_and_tested`
+already carries the T-0806 fix (commit the stamp before the second run); this perf test
+did not. Applied the same fix (commit the stamp file) since the file is within this
+ticket's declared scope and this was the ticket's own regression target, not a new
+out-of-scope discovery.
+
+Changed:
+- src/frob/check/__init__.py::detect_project_type (frob:ticket T-0718 added; root-level
+  *.py glob fallback to 'python')
+- tests/unit/test_check.py::TestDetectProjectType.test_bare_py_file_no_pyproject_is_python (new regression test)
+- tests/system/test_cli_perf.py::TestCheckOnlyPerf.test_perf001_fixture_warns_but_check_exits_zero
+  (commit the coverage stamp before the second `--only gates` run, T-0806 pattern)
+
+Scope: the ticket's original declared scope (src/frob/app/**, tests/system/test_cli_check.py,
+tests/system/test_cli_perf.py) assumed the detector lived under src/frob/app/config.py; it
+actually lives in src/frob/check/__init__.py. Extended scope via `frob ticket scope T-0718
+--add src/frob/check/__init__.py --reason-file ...` and `--add tests/unit/test_check.py
+--reason-file ...` (both with recorded reasons, see scope_changes above) to cover the real
+fix location and the new regression test file.
+
+Evidence:
+- tests/unit/test_check.py::TestDetectProjectType (all cases) -- pass
+- tests/system/test_cli_check.py::TestCheckTicketScopedAlwaysReportsOnFailure::test_ticket_scoped_nonzero_exit_has_diagnostic_output -- pass
+- tests/system/test_cli_check.py::TestCheckGatesStage::test_only_gates_passes_once_bound_and_tested -- pass
+- tests/system/test_cli_perf.py::TestCheckOnlyPerf::test_perf001_fixture_warns_but_check_exits_zero -- pass
+- Full `tests/unit/test_check.py` + `tests/system/test_cli_check.py` + `tests/system/test_cli_perf.py` run: 1 unrelated pre-existing failure
+  (TestGitlessTargetGateSeverity::test_render_lint_gate_warns_not_errors_on_gitless_root),
+  confirmed to fail in isolation too and self-documented in its own docstring as an
+  order-dependent capsys/logging-init flake unrelated to project-type detection or this
+  ticket's scope -- not touched.
+- `uv run frob test --base main`: run_selected python exit=0, `frob test: recorded stability
+  for 5 python test(s)`
+
+Filed: T-0939 (bug) -- `frob check --ticket <id> --only scope` hung indefinitely
+in this worktree across 3 repeated fresh invocations regardless of system load; `lslocks`
+showed the same pid holding both READ and a pending WRITE* flock on .frob/derived.lock
+simultaneously (a same-process flock self-deadlock via a second fd, bypassing the existing
+_process_held_counts reentrancy guard in src/frob/process/_lock.py). Out of T-0718's scope
+(a locking bug, not project-type detection), filed separately rather than fixed here.
+
+Gates: `uv run frob check --ticket T-0718 --only scope` could not be run to completion in
+this environment (see T-0939). As a substitute, called the same underlying
+`frob.gates.scope_matches` predicate directly in a `uv run python -c` one-liner against the
+loaded ticket's post-extension `scope` tuple for every file in `git status --short`
+(src/frob/check/__init__.py, tests/system/test_cli_perf.py, tests/unit/test_check.py,
+tickets.md): all four returned True. `uv run frob test --base main` (a separate code path
+from the hanging scope stage) ran to completion cleanly.
 
 <!-- ticket:T-0720 -->
 ```yaml
@@ -2542,6 +2776,8 @@ origin: human
 created: '2026-07-22'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - tests/system/**
 threat: null
@@ -2559,6 +2795,8 @@ origin: human
 created: '2026-07-22'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/vet/**
 - docs/design/registry/supply-chain.yaml
@@ -2581,6 +2819,8 @@ blocked_by:
 - T-0864
 - T-0865
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/**
 - docs/**
@@ -2611,6 +2851,8 @@ blocked_by:
 - T-0869
 - T-0747
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/arch/**
 - src/frob/graph/**
@@ -2728,6 +2970,8 @@ origin: human
 created: '2026-07-22'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/tickets/**
 - tests/test_ticket_land.py
@@ -2786,6 +3030,8 @@ blocked_by:
 - T-0745
 - T-0686
 parent: T-0739
+tier: ticket
+sprint: null
 scope:
 - src/frob/arch/**
 - src/frob/gates/**
@@ -3047,6 +3293,8 @@ origin: human
 created: '2026-07-22'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/app/check_runner.py
 - src/frob/gates/__init__.py
@@ -3155,6 +3403,8 @@ origin: human
 created: '2026-07-22'
 priority: medium
 parent: T-0330
+tier: ticket
+sprint: null
 scope:
 - src/frob/graph/dsl.py
 - src/frob/gates/**
@@ -3182,6 +3432,8 @@ origin: human
 created: '2026-07-22'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/vet/**
 - src/frob/strata/**
@@ -3233,6 +3485,8 @@ origin: auditor
 created: '2026-07-23'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/vet/**
 - src/frob/gates/**
@@ -3258,6 +3512,8 @@ origin: human
 created: '2026-07-23'
 priority: low
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/app/map_runner.py
 - src/frob/app/outline_runner.py
@@ -3287,6 +3543,8 @@ origin: auditor
 created: '2026-07-23'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/lang/_support.py
 - src/frob/gates/**
@@ -3323,6 +3581,8 @@ origin: auditor
 created: '2026-07-23'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/strata/_host_isolation.py
 - docs/strata/host.md
@@ -3361,6 +3621,8 @@ origin: agent
 created: '2026-07-23'
 priority: low
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/app/ticket_runner.py
 - src/frob/tickets/**
@@ -3429,6 +3691,8 @@ origin: agent
 created: '2026-07-23'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/**
 - tests/**
@@ -3475,6 +3739,8 @@ origin: agent
 created: '2026-07-23'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - tests/**
 threat: null
@@ -3499,6 +3765,8 @@ origin: human
 created: '2026-07-23'
 priority: medium
 parent: T-0204
+tier: ticket
+sprint: null
 scope:
 - src/frob/__init__.py
 - src/frob/arch/__init__.py
@@ -3530,6 +3798,8 @@ origin: human
 created: '2026-07-23'
 priority: medium
 parent: T-0204
+tier: ticket
+sprint: null
 scope:
 - src/frob/**
 - tests/**
@@ -3554,6 +3824,8 @@ origin: human
 created: '2026-07-23'
 priority: medium
 parent: T-0204
+tier: ticket
+sprint: null
 scope:
 - src/frob/**
 - tests/**
@@ -3578,6 +3850,8 @@ origin: human
 created: '2026-07-23'
 priority: medium
 parent: T-0204
+tier: ticket
+sprint: null
 scope:
 - src/frob/**
 - tests/**
@@ -3603,6 +3877,8 @@ origin: human
 created: '2026-07-23'
 priority: medium
 parent: T-0204
+tier: ticket
+sprint: null
 scope:
 - src/frob/**
 - tests/**
@@ -3627,6 +3903,8 @@ origin: human
 created: '2026-07-23'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/testing/_collect.py
 - src/frob/gates/__init__.py
@@ -3666,6 +3944,8 @@ origin: human
 created: '2026-07-23'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/arch/_typedesign.py
 - src/frob/arch/_models.py
@@ -3740,6 +4020,8 @@ origin: human
 created: '2026-07-23'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/lang/__init__.py
 threat: null
@@ -3777,6 +4059,8 @@ origin: human
 created: '2026-07-23'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/gates/__init__.py
 - src/frob/gates/_registry_exhaustiveness.py
@@ -3824,6 +4108,8 @@ origin: human
 created: '2026-07-23'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/gates/__init__.py
 - tests/test_gates.py
@@ -3849,6 +4135,8 @@ origin: human
 created: '2026-07-23'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/gates/__init__.py
 threat: null
@@ -3897,6 +4185,8 @@ origin: human
 created: '2026-07-23'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/gates/_render_lint.py
 - src/frob/gates/_pii_structural.py
@@ -3923,6 +4213,8 @@ origin: human
 created: '2026-07-23'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/gates/__init__.py
 - tests/test_gates.py
@@ -3949,6 +4241,8 @@ origin: human
 created: '2026-07-23'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/gates/__init__.py
 - tests/test_gates.py
@@ -3996,6 +4290,8 @@ origin: human
 created: '2026-07-23'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/gates/_parse_failures.py
 - tests/test_gates.py
@@ -4084,6 +4380,8 @@ origin: human
 created: '2026-07-23'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/gates/__init__.py
 evidence:
@@ -4162,6 +4460,8 @@ origin: human
 created: '2026-07-23'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/lang/__init__.py
 - tests/unit
@@ -4188,6 +4488,8 @@ origin: human
 created: '2026-07-23'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/lang/__init__.py
 - src/frob/gates/_parse_failures.py
@@ -4325,6 +4627,8 @@ origin: human
 created: '2026-07-26'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/serve/**
 - tests/test_serve.py
@@ -4394,6 +4698,8 @@ origin: human
 created: '2026-07-26'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/process/_lock.py
 - src/frob/dup/_pipeline.py
@@ -4560,6 +4866,8 @@ origin: human
 created: '2026-07-26'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/app/ticket_runner.py
 - src/frob/perf/**
@@ -4817,6 +5125,8 @@ origin: human
 created: '2026-07-26'
 priority: high
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/perf/**
 - tests/unit/perf/**
@@ -4952,6 +5262,8 @@ origin: human
 created: '2026-07-26'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/gates/__init__.py
 evidence:
@@ -4993,6 +5305,8 @@ origin: human
 created: '2026-07-26'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/gates/__init__.py
 - src/frob/strata/_compliance.py
@@ -5116,6 +5430,8 @@ origin: human
 created: '2026-07-26'
 priority: medium
 parent: T-0694
+tier: ticket
+sprint: null
 scope:
 - docs/modules/arch.md
 - src/frob/arch/_lock_ordering.py
@@ -5142,6 +5458,8 @@ origin: human
 created: '2026-07-26'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - tests/conftest.py
 - src/frob/graph/__init__.py
@@ -5207,6 +5525,8 @@ origin: human
 created: '2026-07-26'
 priority: high
 parent: null
+tier: ticket
+sprint: null
 scope:
 - docs/audits/check-performance.md
 threat: null
@@ -5225,6 +5545,8 @@ origin: human
 created: '2026-07-26'
 priority: high
 parent: T-0927
+tier: ticket
+sprint: null
 scope:
 - docs/audits/check-performance.md
 - src/frob/perf/**
@@ -5258,6 +5580,8 @@ priority: high
 blocked_by:
 - T-0928
 parent: T-0927
+tier: ticket
+sprint: null
 scope:
 - src/frob/check/**
 - src/frob/gates/**
@@ -5278,6 +5602,8 @@ priority: high
 blocked_by:
 - T-0928
 parent: T-0927
+tier: ticket
+sprint: null
 scope:
 - src/frob/**
 threat: null
@@ -5295,6 +5621,8 @@ origin: human
 created: '2026-07-26'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/arch/**
 - src/frob/gates/**
@@ -5313,6 +5641,8 @@ origin: human
 created: '2026-07-26'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/gates/__init__.py
 threat: null
@@ -5350,6 +5680,8 @@ origin: human
 created: '2026-07-27'
 priority: critical
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/process/_lock.py
 - src/frob/check/__init__.py
@@ -5523,6 +5855,8 @@ origin: human
 created: '2026-07-27'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - src/frob/gates/**
 threat: null
@@ -5544,12 +5878,12 @@ origin: human
 created: '2026-07-27'
 priority: medium
 parent: null
+tier: ticket
+sprint: null
 scope:
 - tests/unit/test_app_runners_batch6.py
 threat: null
 component: null
-tier: ticket
-sprint: null
 ```
 Found while working T-0715 (unrelated to its scope, filed instead of
 fixed): `tests/unit/test_app_runners_batch6.py::TestCheckRunner::
@@ -5580,13 +5914,13 @@ origin: human
 created: '2026-07-26'
 priority: medium
 parent: T-0715
+tier: ticket
+sprint: null
 scope:
 - tickets.md
 - tickets-archive.md
 threat: null
 component: null
-tier: ticket
-sprint: null
 ```
 T-0715's user mandate asked for existing EPIC-titled tickets to get
 `tier: epic` mechanically as part of the migration to the new
@@ -5615,6 +5949,8 @@ origin: human
 created: '2026-07-26'
 priority: medium
 parent: T-0715
+tier: ticket
+sprint: null
 scope:
 - src/frob/__main__.py
 - src/frob/app/config.py
@@ -5622,8 +5958,6 @@ scope:
 - docs/modules/tickets.md
 threat: null
 component: null
-tier: ticket
-sprint: null
 ```
 T-0715 filed the `TicketTier` field (epic|story|ticket) plus its two
 structural rules (doable leaf-only, close-blocks-on-open-descendant) and
@@ -5669,12 +6003,12 @@ priority: medium
 blocked_by:
 - T-0715
 parent: T-0715
+tier: ticket
+sprint: null
 scope:
 - src/frob/tickets/**
 threat: null
 component: null
-tier: ticket
-sprint: null
 ```
 T-0715's user mandate also asked for velocity/burndown derived from
 ledger state-transition history (closed-per-sprint counts), explicitly
@@ -5695,3 +6029,48 @@ ticket) is asked for velocity THEN it reports a closed-count derived
 from history, not a hand-maintained counter, and the number matches a
 manual `git log` tally of `state: done` transitions for that sprint's
 tickets.
+
+<!-- ticket:T-0939 -->
+```yaml
+id: T-0939
+title: 'check --only scope hangs: derived.lock self-deadlock (same pid holds READ+WRITE*
+  simultaneously)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/process/_lock.py
+- src/frob/gates/__init__.py
+threat: null
+component: null
+```
+Observed while verifying T-0718: `uv run frob check --ticket <id> --only scope` hung
+indefinitely (multiple repeat attempts, 300s+ each, across varying system load from
+load-average 17 down to under 1) in worktree
+/home/logan/projects/frob/.claude/worktrees/agent-a71338f817a4d2945. `lslocks` showed the
+SAME pid holding both a READ and a WRITE* (pending/blocked) flock on the same
+.frob/derived.lock file at the same time:
+
+  frob  <pid>  FLOCK  WRITE*  .../a71338f817a4d2945/.frob/derived.lock
+  frob  <pid>  FLOCK  READ    .../a71338f817a4d2945/.frob/derived.lock
+
+This looks like the process opened a second fd on derived.lock and requested LOCK_EX
+while its first fd still held LOCK_SH -- flock(2) locks are associated with the open
+file description, not the process, so two different fds in the same process can
+deadlock each other exactly like two different processes would. src/frob/process/_lock.py
+already has same-process reentrancy tracking (_process_held_counts, see its module
+docstring re: avoiding exactly this self-deadlock) -- the --only scope code path
+apparently reaches a second derived_state_lock acquisition that bypasses/misses that
+tracking. Reproduced 3x in a row with fresh invocations (fresh pids each time, same
+symptom). Worked around verification by calling frob.gates.scope_matches directly in
+Python instead of through the CLI gate pipeline.
+
+Investigate src/frob/process/_lock.py's derived_state_lock and whatever in the "scope"
+check-stage wiring (src/frob/gates/__init__.py around scope_gate/PRE001 prework-sweep
+loading, or app/check_runner.py's --only dispatch) acquires it twice without releasing
+the first handle.

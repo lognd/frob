@@ -410,6 +410,14 @@ class TestDetectProjectType:
     def test_no_sentinel_is_unknown(self, tmp_path: Path) -> None:
         assert detect_project_type(tmp_path) == "unknown"
 
+    def test_bare_py_file_no_pyproject_is_python(self, tmp_path: Path) -> None:
+        """T-0718: a root-level `.py` file with no `pyproject.toml`/
+        `setup.py` must still detect as 'python', not fall through to
+        'unknown' the way it did before the extension-based fallback."""
+        # frob:tests src/frob/check/__init__.py::detect_project_type kind="unit"
+        (tmp_path / "pkg.py").write_text("def f() -> None:\n    pass\n")
+        assert detect_project_type(tmp_path) == "python"
+
 
 class TestRunGatesQueueFailure:
     """T-0102: a malformed ticket queue must fail check loudly, not vanish."""

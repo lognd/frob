@@ -201,6 +201,16 @@ class TestCheckOnlyPerf:
         stamp = run("check", str(tmp_path), "--stamp-coverage")
         assert stamp.returncode == 0, stamp.stdout + stamp.stderr
 
+        # frob:ticket T-0718
+        # T-0806: `--stamp-coverage` writes `frob-coverage.lock.json` into
+        # the working tree uncommitted; left as-is, the next `--only gates`
+        # run sees a 1-file diff with no active ticket and PRE001/SCOPE001
+        # (correctly) refuse it -- commit the stamp so this run's diff is
+        # genuinely clean, matching the pattern in
+        # test_only_gates_passes_once_bound_and_tested.
+        _git("add", "-A", cwd=tmp_path)
+        _git("commit", "-q", "-m", "stamp", cwd=tmp_path)
+
         r = run("check", str(tmp_path), "--only", "gates")
         out = r.stdout + r.stderr
         assert "PERF001" in out

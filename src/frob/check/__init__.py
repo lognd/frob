@@ -856,8 +856,16 @@ def run_check_ts(
 
 # frob:doc docs/commands/check.md#public-api
 # frob:ticket T-0551
+# frob:ticket T-0718
 def detect_project_type(root: Path) -> str:
     """Returns 'python', 'cpp', 'rust', 'typescript', or 'unknown'.
+
+    T-0718: a bare root-level `*.py` file with no `pyproject.toml`/
+    `setup.py` used to fall all the way through to
+    `_detect_nested_native_project_type` and report 'unknown' -- there was
+    no extension-based fallback for Python the way `cpp` already had one.
+    Falls back to 'python' when root-level `.py` files exist, mirroring
+    the existing bare-C/C++-source fallback above.
 
     T-0404 finding 11: this single-winner detector used to require BOTH
     `package.json` AND `tsconfig.json` for 'typescript', while
@@ -878,6 +886,8 @@ def detect_project_type(root: Path) -> str:
         return "typescript"
     if list(root.glob("*.cpp")) or list(root.glob("*.cc")) or list(root.glob("*.c")):
         return "cpp"
+    if list(root.glob("*.py")):
+        return "python"
     return _detect_nested_native_project_type(root)
 
 
