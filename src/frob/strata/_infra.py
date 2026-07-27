@@ -78,6 +78,28 @@ _MANAGED_ATTR = "managed"
 #: local for the same import-cycle reason as `_MANAGED_ATTR` above.
 _ERRORS_TOTAL_ATTR = "errors_total"
 
+#: Flow attr marking a `cache`'s elaborator-synthesized fill/invalidation
+#: edges as explicitly NOT crossing a real process/service boundary
+#: (T-0845, the SAME bare-marker literal `_reliability.py::_LOCAL_ATTR`
+#: reads to exempt a flow from the REL200 TIMEOUT obligation -- kept as a
+#: local copy, not an import, for the same cross-module-vocabulary reason
+#: `_MANAGED_ATTR` above documents). This is a deliberate, unconditional
+#: disposition for the `cache` construct specifically (NOT `cdn`): per
+#: docs/strata/surface.md#key-construct-semantics, `cache X of Y` is
+#: std.infra's IN-PROCESS derived view -- its node inherits `Y`'s own
+#: trust directly (`_cache_node_and_fill_flow` below) rather than a
+#: separate provider trust the way `cdn`'s network-fronting variant does
+#: (`_cdn_node_and_fill_flow`, which deliberately does NOT get this attr).
+#: `cache` therefore has no real cross-boundary hop to time-bound in the
+#: first place, for EVERY declaration of it, not just this repo's own
+#: `graph_cache` -- this is the "explicit local disposition for
+#: in-process in-memory flows" T-0845 chose over a per-flow `attr`
+#: grammar clause, since `cache`'s parser (`strata-core::parse_cache`)
+#: has no such clause and adding one is a strata-core change outside this
+#: ticket's scope (src/frob/strata/**, design/frob.strata,
+#: tests/unit/strata/** only).
+_CACHE_LOCAL_ATTR = "local"
+
 
 # frob:waive DUP001 reason="documented deliberate duplication: same \
 # field-for-field mapping as _elaborate.py::_elaborate_deploy, kept local \
@@ -431,7 +453,10 @@ def _cache_invalidation_flow_for(
 ) -> Result[Flow, StrataError]:
     """The single invalidation `Flow` for one `invalidate_on` reference,
     or the fail-closed `Err` if it does not name a declared flow that
-    writes to the cache's source (see `_cache_invalidation_flows`)."""
+    writes to the cache's source (see `_cache_invalidation_flows`).
+    Carries `_CACHE_LOCAL_ATTR` (T-0845): an in-process cache invalidation
+    edge, exempt from REL200's cross-boundary TIMEOUT obligation by
+    construction (see that constant's docstring)."""
     target_flow = known_flow_ids.get(flow_id)
     if target_flow is None:
         _log.error(
@@ -452,7 +477,7 @@ def _cache_invalidation_flow_for(
             src=decl.of,
             dst=decl.id,
             age=Quantity(value=0.0, unit="s"),
-            attrs=("invalidation",),
+            attrs=("invalidation", _CACHE_LOCAL_ATTR),
         )
     )
 
@@ -494,7 +519,10 @@ def _cache_node_and_fill_flow(
     decl: CacheDecl, source: Node, bound: Quantity
 ) -> tuple[Node, Flow]:
     """The `Node` + fill `Flow` a `cache` desugars to, given its resolved
-    source-of-truth `Node` and age `bound` (see `_elaborate_cache`)."""
+    source-of-truth `Node` and age `bound` (see `_elaborate_cache`). The
+    fill flow carries `_CACHE_LOCAL_ATTR` (T-0845): see that constant's
+    docstring for why every `cache` fill edge is exempt from REL200's
+    cross-boundary TIMEOUT obligation by construction."""
     node_attrs: list[str] = []
     if decl.hit is not None:
         node_attrs.append(f"hit={decl.hit}")
@@ -515,7 +543,7 @@ def _cache_node_and_fill_flow(
         dst=decl.id,
         label=source.clearance,
         age=bound,  # type: ignore[arg-type]
-        attrs=("fill",),
+        attrs=("fill", _CACHE_LOCAL_ATTR),
     )
     return node, fill_flow
 

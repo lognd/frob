@@ -60,6 +60,36 @@ class TestMissingTimeout:
         report = result.danger_ok
         assert not [v for v in report.violations if v.rule == REL_MISSING_TIMEOUT]
 
+    # frob:tests tests/unit/strata/test_reliability.py::TestMissingTimeout.test_cache_fill_and_invalidation_flows_are_local_exempt
+    def test_cache_fill_and_invalidation_flows_are_local_exempt(self, tmp_path: Path):
+        """T-0845: a `cache X of Y` construct's elaborator-synthesized
+        fill/invalidation flows now carry `_infra.py::_CACHE_LOCAL_ATTR`
+        unconditionally, so REL200 must never fire on them -- no waiver
+        needed at all (burns down the two `graph_cache__fill`/
+        `graph_cache__inval_*` waivers this ticket removed from
+        `design/frob.strata`)."""
+        text = """
+        module m
+        node api : trusted
+        store db : trusted { clearance Pii; }
+        flow w1 : api -> db { label Pii; attr timeout; }
+        cache c of db {
+            keyed_by user_id;
+            staleness 30 s;
+            invalidate_on w1;
+        }
+        """
+        module = parse_module(text).danger_ok
+        model = elaborate(module).danger_ok
+        result = check_reliability_timeouts(model, tmp_path)
+        assert result.is_ok
+        report = result.danger_ok
+        missing = {v.sub_target for v in report.violations if v.rule == REL_MISSING_TIMEOUT}
+        assert "c__fill" not in missing
+        assert "c__inval_w1" not in missing
+        # No waiver was declared -- this is a real exemption, not a hidden one.
+        assert not report.waived
+
     # frob:tests tests/unit/strata/test_reliability.py::TestMissingTimeout.test_waiver_on_one_flow_keeps_sibling_flow_finding
     def test_waiver_on_one_flow_keeps_sibling_flow_finding(self, tmp_path: Path):
         _module, model = _load("reliability_timeout_waived.strata")

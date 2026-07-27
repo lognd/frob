@@ -4495,7 +4495,7 @@ block directly into tickets.md instead.
 id: T-0845
 title: 'strata: attr-forwarding surface for elaborator-synthesized in-process cache
   flows (REL200 waiver burn-down)'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-23'
@@ -4505,10 +4505,35 @@ scope:
 - src/frob/strata/**
 - design/frob.strata
 - tests/unit/strata/**
+evidence:
+- tests/unit/strata/test_infra.py::TestCacheDesugar::test_cache_node_and_fill_flow
+- tests/unit/strata/test_reliability.py::TestMissingTimeout::test_cache_fill_and_invalidation_flows_are_local_exempt
 threat: null
 component: null
 ```
 The two REL200 waivers on design/frob.strata's graph_cache__fill and graph_cache__inval_f_parse flows exist because elaborator-synthesized in-process cache flows have no attr-forwarding surface: there is no way to declare (or discharge) a timeout/local disposition on a flow the elaborator invents. Add that surface (per-flow attr forwarding from the synthesizing rule, or an explicit local disposition for in-process in-memory flows), then burn down both waivers. Deferred from T-0640 at its salvage-close; the waivers' ticket refs point here.
+
+## Done report
+
+REL200 waiver burn-down for elaborator-synthesized cache flows: the cache grammar has no attr clause, and by this grammar's design a cache is an in-process derived view inheriting its node's trust, so the elaborator now stamps the local attr on every synthesized cache fill/invalidation flow unconditionally (_CACHE_LOCAL_ATTR in src/frob/strata/_infra.py). The two REL200 waivers on the graphlang node are removed; a new reliability test proves REL200 stays silent on cache flows with no waiver declared.
+
+### Changed
+```
+ design/frob.strata                    |  16 ++---
+ src/frob/strata/_infra.py             |  36 +++++++++--
+ tests/unit/strata/test_infra.py       |   5 ++
+ tests/unit/strata/test_reliability.py |  30 +++++++++
+ tickets.md                            | 117 +++++++++++++++++++++++++++++++++-
+ 5 files changed, 191 insertions(+), 13 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_infra.py::TestCacheDesugar::test_cache_node_and_fill_flow` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_reliability.py::TestMissingTimeout::test_cache_fill_and_invalidation_flows_are_local_exempt` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0861 -->
 ```yaml
@@ -6973,6 +6998,7 @@ reason="..."` if these are false positives, so `frob check
 
 ## Drop reason
 - 2026-07-26: duplicate of T-0910 (same SELFAUDIT001 finding on _logging_checks.py, filed independently by two concurrent agents)
+
 <!-- ticket:T-0912 -->
 ```yaml
 id: T-0912
@@ -7005,3 +7031,49 @@ which does NOT trigger REG011. Fix: reword the 14 pre-existing entries'
 disposition strings to a substantive out_of_scope:none -- <explanation> reason
 (same shape T-0722 used), or waive REG011 there with a reasoned frob:waive if
 the bare token is intentionally kept as a distinct "artifact" marker.
+
+<!-- ticket:T-0913 -->
+```yaml
+id: T-0913
+title: 'strata: graphlang node missing exec/net/fetch_url may declarations (SELFAUDIT001
+  SYS100, from T-0625''s _logging_checks.py)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-26'
+priority: medium
+parent: null
+scope:
+- design/frob.strata
+threat: null
+component: null
+```
+Found while working T-0845 (attr-forwarding surface for cache flows,
+scope: src/frob/strata/**, design/frob.strata, tests/unit/strata/**).
+
+`frob check` (SELFAUDIT gate) reports 4 SYS100 findings, pre-existing
+and unrelated to T-0845's own change:
+
+  [gate:SELFAUDIT] design:1  SELFAUDIT001  self-audit family SYS100
+  node=graphlang: capability 'exec' observed at
+  src/frob/arch/_logging_checks.py:67 but not declared
+  node=graphlang: capability 'net' observed at
+  src/frob/arch/_logging_checks.py:70 but not declared
+  node=graphlang: capability 'net' observed at
+  src/frob/arch/_logging_checks.py:71 but not declared
+  node=graphlang: capability 'net' observed at
+  src/frob/arch/_logging_checks.py:73 but not declared
+  node=graphlang: capability 'fetch_url' observed but not declared
+
+design/frob.strata's `graphlang` node (src/frob/graph/**,
+src/frob/lang/**, src/frob/arch/**) currently declares only
+`may "eval"`/`"fs"`/`"fs-read"`/`"sql"`. `src/frob/arch/_logging_checks.py`
+(landed by T-0625's ARCH1xx dependency-cycle work, unrelated to T-0845)
+apparently exercises real exec/net/fetch_url-shaped capability at those
+line numbers -- either graphlang's `may` set needs `"exec"`/`"net"` added
+(with the honest capability-observed rationale precedent other `may`
+additions in this node's comment history already document), or the
+scanner's match there is a false-positive needing the same T-0882-style
+substring/self-match investigation applied to eval/exec elsewhere, or a
+disposed `frob:waive` if genuinely benign. Not investigated further here
+-- out of scope for T-0845's own REL200 attr-forwarding-surface work.

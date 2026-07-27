@@ -97,12 +97,17 @@ class TestCacheDesugar:
         assert fill.age is not None
         assert fill.age.value == 30.0
         assert fill.age.unit == "s"
+        # T-0845: cache's fill flow is an explicit local (in-process)
+        # disposition -- exempt from REL200's TIMEOUT obligation.
+        assert "local" in fill.attrs
 
         inval = next(f for f in model.flows if f.id == "c__inval_w1")
         assert inval.src == "db"
         assert inval.dst == "c"
         assert inval.age is not None
         assert inval.age.value == 0.0
+        # T-0845: same local disposition on the invalidation edge.
+        assert "local" in inval.attrs
 
     # frob:tests src/frob/strata/_infra.py::elaborate_infra kind="unit"
     # frob:waive DUP001 reason="parallel test methods within test_infra.py \

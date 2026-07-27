@@ -133,14 +133,14 @@ node graphlang : trusted {
     may "fs";
     may "fs-read";
     may "sql";
-    // T-0640: graph_cache's fill/invalidation flows are `_infra.py::
-    // _cache_node_and_fill_flow`/`_invalidation_flow`-synthesized edges
-    // with no surface `attr` clause of their own to mark `local` (an
-    // in-process in-memory cache, not a real cross-boundary call) --
-    // a CacheDecl attr-forwarding surface is a follow-up ticket, not
-    // this one's scope.
-    waive "REL200:graph_cache__fill" reason "elaborator-synthesized cache fill flow, in-process in-memory cache with no attr-forwarding surface yet -- T-0845 is the follow-on ticket to add one" ticket "T-0845";
-    waive "REL200:graph_cache__inval_f_parse" reason "elaborator-synthesized cache invalidation flow, in-process in-memory cache with no attr-forwarding surface yet -- T-0845 is the follow-on ticket to add one" ticket "T-0845";
+    // T-0845: graph_cache's fill/invalidation flows are `_infra.py::
+    // _cache_node_and_fill_flow`/`_cache_invalidation_flow_for`-
+    // synthesized edges. They now carry `_infra.py::_CACHE_LOCAL_ATTR`
+    // (`"local"`) unconditionally -- an explicit local disposition for
+    // every `cache` construct's in-process in-memory flows (chosen over
+    // a per-flow `attr` grammar clause, which would need a strata-core
+    // parser change outside this ticket's scope) -- so REL200 no longer
+    // fires on them and the prior waivers are burned down.
 }
 
 // gates: src/frob/gates/**. The obligation-graph rule engine (SYS/DRIFT/
