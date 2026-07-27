@@ -3172,7 +3172,7 @@ Standing home for the 39 supply-chain.yaml entries whose controls previously car
 id: T-0722
 title: implement SYS/REL checkable-control enforcement for the 49 unresolved system-design
   registry entries
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-22'
@@ -3181,10 +3181,108 @@ parent: null
 scope:
 - src/frob/strata/**
 - docs/design/registry/system-design.yaml
+- tests/test_registry_reconciliation_system_design.py
+scope_changes:
+- op: add
+  glob: tests/test_registry_reconciliation_system_design.py
+  reason: 'frob.graph has no grammar for .yaml (confirmed: "no grammar registered
+    for
+
+    extension ''.yaml''" at check time), so system-design.yaml carries no symbol
+
+    nodes a TESTS edge could bind to -- Route 1 of evidence_covers_scope
+
+    (frob.gates.evidence_covers_scope) is structurally unreachable for a
+
+    data-only registry-file scope on a non-docs-kind ticket. Adding the real,
+
+    already-existing pin test file directly to scope (Route 2: evidence id''s
+
+    own file is inside ticket.scope) is the same ad-hoc precedent
+
+    tests/test_registry_reconciliation_system_design.py''s own header comment
+
+    already documents for T-0424/T-0384..T-0390''s sibling reconciliation
+
+    tickets; no source outside the declared registry-YAML work is touched.
+
+    '
+  actor: logan
+  at: '2026-07-26'
+evidence:
+- tests/test_registry_reconciliation_system_design.py::TestSystemDesignRegistryFile::test_is_in_registry_files
+- tests/test_registry_reconciliation_system_design.py::TestSystemDesignRegistryFile::test_loads_without_error
+- tests/test_registry_reconciliation_system_design.py::TestSystemDesignRegistryFile::test_no_malformed_entries
+- tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_declared_total_is_119
+- tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_audit_reports_exhausted
+- tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_every_deferred_entry_targets_an_open_ticket
+- tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_no_entry_defers_to_this_reconciliation_ticket
 threat: null
 component: null
 ```
 Standing home for the 49 system-design.yaml entries whose controls previously carried deferred:T-0392 (the reconciliation ticket itself) -- a self-reference that would orphan them the moment T-0392 closed; T-0392's pass re-pointed them here. Each entry needs either a real enforcing SYS2xx/REL2xx check in src/frob/strata/ (then flip to handled_by) or a reasoned out_of_scope/duplicate_of disposition. Related to the T-0331 systems-checks epic and its T-0658 N:M coverage close condition (which is itself blocked by T-0392) -- once this ticket's entries get real checks, T-0658's coverage math should account for them the same way it accounts for the T-0331-deferred 56.
+
+## Done report
+
+Re-inspected all 49 deferred:T-0722 entries against the fresh (T-0673)
+registry state. Every one of the 49 is a citation/name/section-topic or
+mechanical-extraction artifact from the corpus (paper titles: GFS,
+MapReduce, Bigtable, Spanner, Dapper, Borg, Chubby, Dynamo; company case
+studies: Netflix, Uber, Discord, Shopify, Stripe, Slack, Figma; blog-post
+citations; 14 person bios: Torvalds, Liskov, Lampson, Lamport, Vogels,
+Hamilton x2, Cantrill, Pike, Thompson, Ritchie, Stonebraker, Cutler,
+Tanenbaum; systems-theory concepts/tradeoffs: Little's Law, USL, queueing
+theory, LSM-vs-B-tree, batch-vs-stream, shuffle sharding, rebalancing,
+exactly-once, the two "false-assumption" fallacies; and 6 garbled
+concatenated-heading/meta-commentary extraction artifacts). None describes
+a falsifiable property of THIS codebase's own code -- they are citations
+of, or commentary about, OTHER systems and papers. Per the catalogued-
+is-not-enforced lesson, writing 49 cosmetic SYS/REL "checks" that do not
+actually verify anything real would be worse than an honest disposition,
+so no new src/frob/strata/ code was added.
+
+Disposition applied to all 49 (docs/design/registry/system-design.yaml):
+- 1 entry (SDC-11-DAPPER-A-LARGE-SCALE-DISTRIBUTED-SYSTEMS-TRACING-
+  INFRASTRUCTURE) -> duplicate_of:SDC-7-DISTRIBUTED-TRACING-DAPPER (same
+  paper already cited and out-of-scope-dispositioned there via T-0673's
+  cross_refs -> MSIO-DISTRIBUTED-TRACING).
+- 32 citation/case-study/bio entries -> out_of_scope:none -- <reason>
+  (substantive reasoned-none per T-0680's REG011 grammar).
+- 10 systems-theory-concept entries -> out_of_scope:none -- <reason>.
+- 6 garbled-extraction-artifact entries -> out_of_scope:none -- <reason>
+  (deliberately NOT the bare "manifest-extraction-artifact" token the
+  pre-existing 14 sibling artifacts use -- that bare token fires REG011
+  since it names no catching control and is not a substantive
+  reasoned-none; filed T-0912 to reword those 14 pre-existing
+  ones, left untouched here as out of this ticket's 49-entry scope).
+
+Verified: `frob registry audit --json` for system-design.yaml now shows
+deferred=56 (untouched T-0331 set), duplicate=1, out_of_scope=62 (14
+pre-existing + 48 new), unaccounted=0, total=119 -- REG001-REG004
+(errors) all clean. `frob check --ticket T-0722 --only gates-fast/lint/
+static` all pass with 0 errors (REG011 stays WARN-only, unwaived
+pre-existing debt on the untouched 14; no NEW REG011 from this ticket's
+49). The one failing assertion in
+tests/test_registry_reconciliation_system_design.py
+(test_no_system_design_violations) was independently confirmed already
+red against the pre-T-0722 file (same 14 REG011 warnings) -- pre-existing,
+not introduced here; not claimed as evidence.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_registry_reconciliation_system_design.py::TestSystemDesignRegistryFile::test_is_in_registry_files` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_system_design.py::TestSystemDesignRegistryFile::test_loads_without_error` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_system_design.py::TestSystemDesignRegistryFile::test_no_malformed_entries` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_declared_total_is_119` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_audit_reports_exhausted` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_every_deferred_entry_targets_an_open_ticket` (pytest node id, verified passing when recorded)
+- `tests/test_registry_reconciliation_system_design.py::TestSystemDesignExhaustiveness::test_no_entry_defers_to_this_reconciliation_ticket` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 7 passed (from 7 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0735 -->
 ```yaml
@@ -6738,3 +6836,36 @@ _cve_fingerprint_scan.py). Needs either a std.capabilities declaration
 added to design/*.strata for `graphlang`, or a `frob:waive SELFAUDIT001
 reason="..."` if these are false positives, so `frob check
 --only gates-security` is clean again.
+
+<!-- ticket:T-0912 -->
+```yaml
+id: T-0912
+title: reword 14 legacy manifest-extraction-artifact dispositions to satisfy REG011
+  in system-design.yaml
+state: queued
+kind: bug
+origin: human
+created: '2026-07-26'
+priority: medium
+parent: null
+scope:
+- docs/design/registry/system-design.yaml
+threat: null
+component: null
+```
+tests/test_registry_reconciliation_system_design.py::TestExhaustivenessGateOverRealSystemDesign::test_no_system_design_violations
+asserts registry_gate() returns zero violations for system-design.yaml. It
+was already red before T-0722 (verified against the pre-T-0722 file state):
+the 14 pre-existing manifest-extraction-artifact entries (T-0392's original
+pass) use disposition out-of-scope(manifest-extraction-artifact), whose bare
+reason ("manifest-extraction-artifact") names no catching rule/CWE id and is
+not a substantive "none -- <explanation>" reasoned-none disclosure per T-0680's
+REG011 check -- so each fires a REG011 WARN. WARN severity means frob check
+itself stays green, but this file's own stricter == [] pytest assertion does
+not tolerate any violation, warn or error. T-0722 deliberately left these 14
+untouched (out of its own declared 49-entry scope) and used a substantive
+"none -- ..." reasoned-none phrasing for its own out-of-scope entries instead,
+which does NOT trigger REG011. Fix: reword the 14 pre-existing entries'
+disposition strings to a substantive out_of_scope:none -- <explanation> reason
+(same shape T-0722 used), or waive REG011 there with a reasoned frob:waive if
+the bare token is intentionally kept as a distinct "artifact" marker.
