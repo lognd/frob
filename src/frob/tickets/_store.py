@@ -26,6 +26,7 @@ frob.gates and the CLI never see the difference.
 
 from __future__ import annotations
 
+import hashlib
 import importlib
 import os
 import re
@@ -104,8 +105,13 @@ _LOCK_REL = Path(".frob") / "tickets.lock"
 _lock_local = threading.local()
 
 
-# frob:tests tests/unit/test_ticket_store.py::TestLockPath.test_lock_path_under_frob_dir  # noqa: E501
-# frob:waive COV005 reason="T-0601 deliberate rename lock_path -> _lock_path (frob-exports demote decision, no external consumer); the frob:tests directive intentionally follows the same function to its new private name, not an accidental rebind onto a different extracted helper"  # noqa: E501
+# frob:tests \
+# tests/unit/test_ticket_store.py::TestLockPath.test_lock_path_under_frob_dir  # noqa: \
+# E501
+# frob:waive COV005 reason="T-0601 deliberate rename lock_path -> _lock_path \
+# (frob-exports demote decision, no external consumer); the frob:tests directive \
+# intentionally follows the same function to its new private name, not an accidental \
+# rebind onto a different extracted helper"  # noqa: E501
 # frob:ticket T-0601
 def _lock_path(root: Path) -> Path:
     """The advisory lock file path (`.frob/tickets.lock`) `ledger_lock` holds.
@@ -227,10 +233,9 @@ def _dir_glob(root: Path) -> list[Path]:
 
 
 # frob:doc docs/modules/tickets.md#storage-internals
-# frob:waive COV007 reason="docs/modules/tickets.md's Storage internals \
-# section individually frob:describes this private helper by name \
-# (T-0529) -- a deliberate architecture doc, not accidental drift onto \
-# a private helper"
+# frob:waive COV007 reason="docs/modules/tickets.md's Storage internals section \
+# individually frob:describes this private helper by name (T-0529) -- a deliberate \
+# architecture doc, not accidental drift onto a private helper"
 def _store_mode(root: Path) -> str:
     """Which backend a repo uses: 'single' if tickets.md exists, 'dir' if only
     the legacy tickets/*.md files exist, else 'single' (the default for a
@@ -254,10 +259,9 @@ def _frontmatter_yaml(ticket: Ticket) -> str:
 
 
 # frob:doc docs/modules/tickets.md#storage-internals
-# frob:waive COV007 reason="docs/modules/tickets.md's Storage internals \
-# section individually frob:describes this private helper by name \
-# (T-0529) -- a deliberate architecture doc, not accidental drift onto \
-# a private helper"
+# frob:waive COV007 reason="docs/modules/tickets.md's Storage internals section \
+# individually frob:describes this private helper by name (T-0529) -- a deliberate \
+# architecture doc, not accidental drift onto a private helper"
 def _serialize_ticket(ticket: Ticket) -> str:
     """Render a Ticket to legacy `---`-frontmatter + body (dir-mode file text)."""
     return f"---\n{_frontmatter_yaml(ticket)}---\n{ticket.body}"
@@ -282,10 +286,9 @@ def _validate(data: dict, body: str, where: str) -> Result[Ticket, TicketError]:
 
 
 # frob:doc docs/modules/tickets.md#storage-internals
-# frob:waive COV007 reason="docs/modules/tickets.md's Storage internals \
-# section individually frob:describes this private helper by name \
-# (T-0529) -- a deliberate architecture doc, not accidental drift onto \
-# a private helper"
+# frob:waive COV007 reason="docs/modules/tickets.md's Storage internals section \
+# individually frob:describes this private helper by name (T-0529) -- a deliberate \
+# architecture doc, not accidental drift onto a private helper"
 def _parse_ticket_file(path: Path) -> Result[Ticket, TicketError]:
     """Split a legacy ticket file into frontmatter + body and validate it."""
     text = path.read_text(encoding="utf-8")
@@ -369,8 +372,14 @@ def _render_ledger(tickets: dict[str, Ticket], header: str = _LEDGER_HEADER) -> 
 
 
 # frob:ticket T-0764
-# frob:waive COV005 reason="T-0601 rework: demoted check_ledger_id_integrity -> _check_ledger_id_integrity (frob-exports external-consumer test: consumed cross-module by this package's own _land.py, never imported outside frob.tickets); the frob:tests directive deliberately follows the same function to its new private name"  # noqa: E501
-# frob:tests tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard.test_render_that_would_drop_an_id_is_refused kind="unit"  # noqa: E501
+# frob:waive COV005 reason="T-0601 rework: demoted check_ledger_id_integrity -> \
+# _check_ledger_id_integrity (frob-exports external-consumer test: consumed \
+# cross-module by this package's own _land.py, never imported outside frob.tickets); \
+# the frob:tests directive deliberately follows the same function to its new private \
+# name"  # noqa: E501
+# frob:tests \
+# tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard.test_render_that_would_drop_an\
+# _id_is_refused kind="unit"  # noqa: E501
 # frob:ticket T-0601
 def _check_ledger_id_integrity(
     tickets: dict[str, Ticket], rendered: str
@@ -447,6 +456,38 @@ def _splice_ticket_section(text: str, ticket: Ticket) -> str:
 # ---------------------------------------------------------------------------
 
 
+# frob:ticket T-0889
+_MISSING_LEDGER_DIGEST = ""
+
+
+# frob:ticket T-0889
+# frob:doc docs/modules/tickets.md#storage-internals
+# frob:tests \
+# tests/test_ticket_store_stale_snapshot.py::TestLedgerDigest.test_digest_stable_for_un\
+# changed_content  # noqa: E501
+def ledger_digest(path: Path) -> str:
+    """Sha256 hex digest of `path`'s current raw bytes, or `""`
+    (`_MISSING_LEDGER_DIGEST`) if it does not exist yet -- the on-disk
+    fingerprint `write_all`/`write_archive` compare an `expected_digest`
+    against (T-0889) to detect that the ledger changed since a caller's
+    earlier `load_all`/`load_archive` snapshot, rather than silently
+    overwriting whatever changed with that stale in-memory map.
+
+    Deliberately returns the empty string rather than `None` for a missing
+    file: `write_all`/`write_archive` use `expected_digest=None` to mean
+    "caller opted out of the check entirely" (the pre-T-0889 default,
+    preserved for callers not yet updated) -- collapsing "file did not
+    exist at load time" into that same `None` would make a load-time-
+    missing-file race indistinguishable from no check at all, silently
+    reopening the exact hazard this exists to close. Callers capture this
+    via the same path helper (`ledger_path`/`archive_path`) they load
+    through, immediately after (or immediately before) the load it is
+    meant to pin."""
+    if not path.exists():
+        return _MISSING_LEDGER_DIGEST
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 # frob:doc docs/modules/tickets.md#storage-internals
 def load_all(root: Path) -> Result[dict[str, Ticket], TicketError]:
     """Every ticket in the repo as an id -> Ticket map, backend-agnostic."""
@@ -483,16 +524,43 @@ def load_archive(root: Path) -> Result[dict[str, Ticket], TicketError]:
 # frob:doc docs/modules/tickets.md#storage-internals
 # frob:ticket T-0458
 # frob:ticket T-0601
-def write_archive(root: Path, tickets: dict[str, Ticket]) -> Result[None, TicketError]:
+# frob:ticket T-0889
+def write_archive(
+    root: Path,
+    tickets: dict[str, Ticket],
+    *,
+    expected_digest: str | None = None,
+) -> Result[None, TicketError]:
     """Replace `tickets-archive.md` wholesale with `tickets` (same ledger
     section format as the active file, distinct header); serialized against
-    every other ledger mutation via `ledger_lock` (T-0458)."""
+    every other ledger mutation via `ledger_lock` (T-0458).
+
+    T-0889: when `expected_digest` is given (the caller's `ledger_digest`
+    snapshot from the `load_archive` this wholesale map was computed from),
+    the on-disk archive is re-fingerprinted under the SAME lock right before
+    writing; a mismatch means something else wrote the archive since that
+    load and this call refuses (`Err(LedgerChangedSinceLoad)`) rather than
+    clobbering it with a stale in-memory map. `None` (the default) preserves
+    the pre-T-0889 unconditional-overwrite behavior for callers that have
+    not been updated to pass a digest."""
     with ledger_lock(root):
+        path = archive_path(root)
+        if expected_digest is not None:
+            current = ledger_digest(path)
+            if current != expected_digest:
+                _log.error(
+                    "tickets: write_archive refused -- %s changed on disk "
+                    "since this caller's load (expected digest %s, found %s)",
+                    path,
+                    expected_digest,
+                    current,
+                )
+                return Err(TicketError.LedgerChangedSinceLoad)
         text = _render_ledger(tickets, _ARCHIVE_HEADER)
         integrity = _check_ledger_id_integrity(tickets, text)
         if integrity.is_err:
             return Err(integrity.danger_err)
-        return atomic_write(archive_path(root), text)
+        return atomic_write(path, text)
 
 
 # frob:doc docs/modules/tickets.md#storage-internals
@@ -535,19 +603,52 @@ def write_ticket(root: Path, ticket: Ticket) -> Result[None, TicketError]:
 # frob:doc docs/modules/tickets.md#storage-internals
 # frob:ticket T-0458
 # frob:ticket T-0601
-def write_all(root: Path, tickets: dict[str, Ticket]) -> Result[None, TicketError]:
-    """Replace the ENTIRE store with `tickets` (used by renumber). Single mode
-    rewrites the ledger wholesale; dir mode writes each file and removes any
-    T-*.md whose id is no longer present. Held under `ledger_lock` (T-0458)
-    so a wholesale replace can never interleave with a concurrent
-    single-ticket `write_ticket`."""
+# frob:ticket T-0889
+def write_all(
+    root: Path,
+    tickets: dict[str, Ticket],
+    *,
+    expected_digest: str | None = None,
+) -> Result[None, TicketError]:
+    """Replace the ENTIRE store with `tickets` (used by archive/renumber).
+    Single mode rewrites the ledger wholesale; dir mode writes each file and
+    removes any T-*.md whose id is no longer present. Held under
+    `ledger_lock` (T-0458) so a wholesale replace can never interleave with
+    a concurrent single-ticket `write_ticket`.
+
+    T-0889: when `expected_digest` is given (the caller's `ledger_digest`
+    snapshot from the `load_all` this wholesale `tickets` map was computed
+    from), the on-disk ledger is re-fingerprinted under the SAME lock right
+    before writing; a mismatch means the ledger changed since that load --
+    another writer's splice, or an external replacement (e.g. `git checkout
+    main -- tickets.md`) -- and this call refuses
+    (`Err(LedgerChangedSinceLoad)`) instead of silently overwriting whatever
+    changed with the caller's now-stale in-memory map (the T-0680 field
+    incident: three unrelated done tickets reverted to queued this way).
+    `None` (the default) preserves the pre-T-0889 unconditional-overwrite
+    behavior for callers that have not been updated to pass a digest --
+    single-mode only, since dir mode has no single ledger file to
+    fingerprint."""
     with ledger_lock(root):
         if _store_mode(root) == "single":
+            path = ledger_path(root)
+            if expected_digest is not None:
+                current = ledger_digest(path)
+                if current != expected_digest:
+                    _log.error(
+                        "tickets: write_all refused -- %s changed on disk "
+                        "since this caller's load (expected digest %s, "
+                        "found %s)",
+                        path,
+                        expected_digest,
+                        current,
+                    )
+                    return Err(TicketError.LedgerChangedSinceLoad)
             text = _render_ledger(tickets)
             integrity = _check_ledger_id_integrity(tickets, text)
             if integrity.is_err:
                 return Err(integrity.danger_err)
-            return atomic_write(ledger_path(root), text)
+            return atomic_write(path, text)
         keep_files: set[Path] = set()
         for ticket in tickets.values():
             path = _dir_path_for(root, ticket)
@@ -596,8 +697,12 @@ def migrate_to_ledger(root: Path) -> Result[int, TicketError]:
 
 
 # frob:doc docs/modules/tickets.md#storage-internals
-# frob:tests tests/unit/test_ticket_store.py::TestAtomicWrite.test_fsyncs_file_before_replace  # noqa: E501
-# frob:tests tests/unit/test_ticket_store.py::TestAtomicWrite.test_fsync_failure_is_write_failed_not_a_partial_file  # noqa: E501
+# frob:tests \
+# tests/unit/test_ticket_store.py::TestAtomicWrite.test_fsyncs_file_before_replace  # \
+# noqa: E501
+# frob:tests \
+# tests/unit/test_ticket_store.py::TestAtomicWrite.test_fsync_failure_is_write_failed_n\
+# ot_a_partial_file  # noqa: E501
 def atomic_write(path: Path, content: str | bytes) -> Result[None, TicketError]:
     """Write content via temp file + fsync + os.replace in the same directory
     (T-0456: crash-safe -- `os.replace` alone is atomic AT THE FILESYSTEM

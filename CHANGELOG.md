@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.157.0] - unreleased
+
+- T-0889: ticket CLI write-back clobbers externally-replaced ledger with stale in-memory snapshot (reverted 3 done tickets)
+
 ## [0.156.0] - unreleased
 
 - T-0775: perf: loop-invariant effectful call detector (spawn/fs-walk callee in a loop with loop-invariant args)

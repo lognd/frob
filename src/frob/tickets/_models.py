@@ -1260,6 +1260,7 @@ class AttachmentSource(BaseModel):
 
 # frob:doc docs/modules/tickets.md#error-types
 # frob:ticket T-0579
+# frob:ticket T-0889
 class TicketError(ErrorSet):
     """Fallible outcomes of frob.tickets queue/mutation operations."""
 
@@ -1354,6 +1355,20 @@ class TicketError(ErrorSet):
     # T-0367 markerless-block/id-drop incident class.
     LedgerIntegrityViolation = (
         "rendered ledger text lost a ticket id or marker -- write refused"
+    )
+    # T-0889: a wholesale `write_all`/`write_archive` caller that captured
+    # a digest of the ledger at load time and passed it back as
+    # `expected_digest` gets THIS instead of a silent clobber when the
+    # on-disk ledger no longer matches that digest -- some other writer
+    # (or an external `git checkout`/restore) changed it since the load,
+    # and the caller's in-memory map is a stale snapshot that would
+    # otherwise overwrite whatever changed. The T-0680 field incident
+    # this closes: three unrelated done tickets (T-0660/T-0661/T-0719)
+    # were silently reverted to queued with evidence/Done reports wiped
+    # by exactly this class of blind wholesale write.
+    LedgerChangedSinceLoad = (
+        "ledger changed on disk since this caller's load -- reload and "
+        "retry rather than overwriting with a stale snapshot"
     )
     # T-0756: a ticket whose diff adds a new gate rule id (a fresh
     # `_KNOWN_GATE_RULES` entry, `frob.gates`'s own rule registry) but

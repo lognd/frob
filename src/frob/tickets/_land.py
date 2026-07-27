@@ -57,6 +57,7 @@ from frob.tickets._store import (
     _parse_ledger,
     _render_ledger,
     archive_path,
+    ledger_digest,
     ledger_path,
     load_all,
     load_archive,
@@ -2623,7 +2624,14 @@ def _rewrite_draft_references_in_bodies(
     so a straight regex alternation over `mapping`'s keys (guarded so a
     match can't be a PREFIX of a longer hex run) is sufficient; no
     ticket-DSL parsing is needed here, unlike `renumber_one`'s structural
-    rewrite."""
+    rewrite.
+
+    T-0889: unlike `renumber_one`, this loop's load and its eventual
+    `write_all`/`write_archive` are NOT held under one `ledger_lock` span
+    (each `loader`/`writer` pair acquires its own lock independently) -- so
+    each iteration's load captures a `ledger_digest` snapshot passed
+    through as `expected_digest`; the write refuses instead of clobbering
+    if the ledger changed between this loop's load and its own write."""
     if not mapping:
         return Ok(None)
     pattern = re.compile(
@@ -2637,10 +2645,11 @@ def _rewrite_draft_references_in_bodies(
     def _substitute(text: str) -> str:
         return pattern.sub(lambda m: mapping[m.group(0)], text)
 
-    for loader, writer, label in (
-        (load_all, write_all, "active"),
-        (load_archive, write_archive, "archive"),
+    for loader, writer, path_fn, label in (
+        (load_all, write_all, ledger_path, "active"),
+        (load_archive, write_archive, archive_path, "archive"),
     ):
+        digest = ledger_digest(path_fn(worktree))
         loaded = loader(worktree)
         if loaded.is_err:
             _log.error(
@@ -2663,7 +2672,7 @@ def _rewrite_draft_references_in_bodies(
             changed_ids.append(tid)
         if not changed_ids:
             continue
-        written = writer(worktree, rewritten)
+        written = writer(worktree, rewritten, expected_digest=digest)
         if written.is_err:
             _log.error(
                 "land: failed writing %s ledger after rewriting stale "

@@ -1472,6 +1472,7 @@
     "src/frob/tickets/_store.py::archive_path": "b43c31381608f17460946fe847701fe090597c5cdf4b9a2168c425c1dfedcd3f",
     "src/frob/tickets/_store.py::atomic_write": "e3383dd5e644221e31346fb42f32fbc2ce60a0b9192c3fab154f067812e1866c",
     "src/frob/tickets/_store.py::attachments_dir": "79f6d2cf489151d44c0b8dfbec875118b81fec28188d96e49ba653762f7c70a7",
+    "src/frob/tickets/_store.py::ledger_digest": "6526523ab2cec8ef76de23c1767bb97e2cee27758a903c17fe6bd238a544444e",
     "src/frob/tickets/_store.py::ledger_lock": "df7e6b4abcbfb8d713c9990e537efdad9e3c6e27ddaa903a8efa152eb6e727c7",
     "src/frob/tickets/_store.py::ledger_path": "70ed0bedd3df7a954cef81db2b7c8dca55193959507a7420ee76647e2af1ab9c",
     "src/frob/tickets/_store.py::load_all": "60b754e1e41609e0c068de26256662b99652685944cdddd7622ff486c9e64810",
@@ -1479,8 +1480,8 @@
     "src/frob/tickets/_store.py::migrate_to_ledger": "517558cbb061b836e32623e2897ba5b107ea817acaa36b3ac7f39cc9c3b3a2ce",
     "src/frob/tickets/_store.py::slugify": "00c0694ef1fb4e73827da849c2a289e59efc8e045a3a33e940757ffa46ba1b0e",
     "src/frob/tickets/_store.py::tickets_dir": "426fb321534aff1b39f9c099088bb4b2924ed80151a0ca9bdb7e4b916bfdbd7d",
-    "src/frob/tickets/_store.py::write_all": "e96004b345937e120fd78c7150cb73cd9480fce73d48b01a0a7ba0c4c66a5426",
-    "src/frob/tickets/_store.py::write_archive": "6987ae90a9178e8ae95e5b3caa5c0e1d71b888062bc9990701af9229f76ee1ce",
+    "src/frob/tickets/_store.py::write_all": "6a014d8db35f886254d855c6cab8e9fe72b69d0c843cbb3bad2305ce5d606222",
+    "src/frob/tickets/_store.py::write_archive": "4ea0c13300d6471b46531d45f46aee042a82c63bcb5ce78adf2308f782089767",
     "src/frob/tickets/_store.py::write_ticket": "7a493296c6fa18900d1e71b68e3853de304748ddcdb0a712f57755f6affb5c08",
     "src/frob/tickets/_worktree_guard.py::FROB_AGENT_ENV": "6f6ad16643b577b93fc9ed9bfd21d31424e84cf04d8bfb1c470c9b95d224bce6",
     "src/frob/tickets/_worktree_guard.py::FROB_WORKTREE_ENV": "30d9b7d45443142e51d7e347b5bceb79199f07ce10725d8252b7d8232f754ccc",
@@ -1572,5 +1573,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.156.0"
+  "version": "0.157.0"
 }

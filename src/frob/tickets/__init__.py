@@ -96,6 +96,7 @@ from frob.tickets._store import (
     archive_path,
     atomic_write,
     attachments_dir,
+    ledger_digest,
     ledger_lock,
     ledger_path,
     load_all,
@@ -213,6 +214,7 @@ def migrate(root: Path) -> Result[int, TicketError]:
 # frob:ticket T-0633
 # frob:ticket T-0764
 # frob:ticket T-0843
+# frob:ticket T-0889
 # frob:tests tests/test_tickets_ledger_concurrency.py::TestArchiveRaceWithConcurrentNew.test_concurrent_new_ticket_survives_a_racing_archive  # noqa: E501
 # frob:tests tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork.test_archive_refuses_when_a_live_lease_exists  # noqa: E501
 # frob:tests tests/test_tickets.py::TestArchiveRefusesDuringInFlightWork.test_archive_force_overrides_the_live_lease_refusal  # noqa: E501
@@ -267,6 +269,7 @@ def archive(root: Path, *, force: bool = False) -> Result[int, TicketError]:
     if leased.is_err:
         return Err(leased.danger_err)
     with ledger_lock(root):
+        active_digest = ledger_digest(ledger_path(root))
         active_loaded = load_all(root)
         if active_loaded.is_err:
             return Err(active_loaded.danger_err)
@@ -301,14 +304,26 @@ def archive(root: Path, *, force: bool = False) -> Result[int, TicketError]:
                 )
                 return Err(TicketError.ArchiveLiveLeaseExists)
 
-        return _write_archived_and_active(root, active, to_archive)
+        return _write_archived_and_active(root, active, to_archive, active_digest)
 
 
+# frob:ticket T-0889
 def _write_archived_and_active(
-    root: Path, active: dict[str, Ticket], to_archive: dict[str, Ticket]
+    root: Path,
+    active: dict[str, Ticket],
+    to_archive: dict[str, Ticket],
+    active_digest: str | None,
 ) -> Result[int, TicketError]:
     """Merge `to_archive` into the archive file and drop it from the active
-    ledger, in that order; `Err(DuplicateId)` on an id already archived."""
+    ledger, in that order; `Err(DuplicateId)` on an id already archived.
+
+    `active_digest` (T-0889) is the `ledger_digest` snapshot `archive`'s
+    caller took of the active ledger immediately before its `load_all` --
+    passed through to `write_all` as `expected_digest` so the wholesale
+    active rewrite refuses rather than clobbers if anything touched
+    tickets.md since that load (still inside the one `ledger_lock` span
+    `archive` holds end to end, so this is defense in depth against an
+    external replacement racing the lock, not a substitute for it)."""
     archived_loaded = load_archive(root)
     if archived_loaded.is_err:
         return Err(archived_loaded.danger_err)
@@ -324,7 +339,7 @@ def _write_archived_and_active(
         return Err(archive_write.danger_err)
 
     keep = {tid: t for tid, t in active.items() if tid not in to_archive}
-    active_write = write_all(root, keep)
+    active_write = write_all(root, keep, expected_digest=active_digest)
     if active_write.is_err:
         return Err(active_write.danger_err)
 
@@ -520,6 +535,7 @@ def _apply_renumber(
 
 # frob:doc docs/modules/tickets.md#public-api
 # frob:ticket T-0633
+# frob:ticket T-0889
 # frob:tests tests/test_tickets_ledger_concurrency.py::TestLedgerLockSpansWholesaleOperations.test_concurrent_ledger_lock_acquisition_serializes  # noqa: E501
 # frob:waive TEST005 reason="renumber 69.2% branch cover, debt T-0160"
 def renumber(root: Path) -> Result[int, TicketError]:
@@ -538,6 +554,7 @@ def renumber(root: Path) -> Result[int, TicketError]:
     if leased.is_err:
         return Err(leased.danger_err)
     with ledger_lock(root):
+        digest = ledger_digest(ledger_path(root))
         loaded = load_all(root)
         if loaded.is_err:
             return Err(loaded.danger_err)
@@ -547,7 +564,7 @@ def renumber(root: Path) -> Result[int, TicketError]:
             _log.info("tickets: renumber -- already contiguous, nothing to do")
             return Ok(0)
         new_map, renumbered = _apply_renumber(ordered, mapping)
-        result = write_all(root, new_map)
+        result = write_all(root, new_map, expected_digest=digest)
         if result.is_err:
             return Err(result.danger_err)
     _log.info("tickets: renumbered %d ticket(s)", renumbered)
@@ -646,18 +663,28 @@ def _scan_code_references(
     return changed
 
 
+# frob:ticket T-0889
 def _load_and_validate_renumber_ids(
     root: Path, old_id: str, new_id: str
-) -> Result[tuple[dict[str, Ticket], dict[str, Ticket]], TicketError]:
+) -> Result[
+    tuple[dict[str, Ticket], dict[str, Ticket], str | None, str | None], TicketError
+]:
     """Load the active+archive ledgers and validate `old_id`/`new_id` are
-    renumber-able: not equal, `old_id` present, `new_id` free."""
+    renumber-able: not equal, `old_id` present, `new_id` free.
+
+    Also returns each ledger's `ledger_digest` snapshot at load time
+    (T-0889), so `_persist_renumber`'s eventual wholesale `write_all`/
+    `write_archive` can refuse instead of clobbering if either file changed
+    on disk since this load."""
     if old_id == new_id:
         _log.warning("tickets: renumber_one %s -> %s is a no-op id", old_id, new_id)
         return Err(TicketError.InvalidTransition)
 
+    active_digest = ledger_digest(ledger_path(root))
     active_loaded = load_all(root)
     if active_loaded.is_err:
         return Err(active_loaded.danger_err)
+    archive_digest = ledger_digest(archive_path(root))
     archived_loaded = load_archive(root)
     if archived_loaded.is_err:
         return Err(archived_loaded.danger_err)
@@ -669,9 +696,10 @@ def _load_and_validate_renumber_ids(
     if new_id in active_map or new_id in archive_map:
         _log.error("tickets: renumber_one: target id %s already exists", new_id)
         return Err(TicketError.DuplicateId)
-    return Ok((active_map, archive_map))
+    return Ok((active_map, archive_map, active_digest, archive_digest))
 
 
+# frob:ticket T-0889
 def _persist_renumber(
     root: Path,
     *,
@@ -680,15 +708,25 @@ def _persist_renumber(
     new_archive_map: dict[str, Ticket],
     archive_changed: int,
     code_changes: dict[Path, tuple[str, int]],
+    active_digest: str | None = None,
+    archive_digest: str | None = None,
 ) -> Result[None, TicketError]:
     """Write back the renumbered active/archive ledgers (if changed) and
-    every rewritten code-reference file."""
+    every rewritten code-reference file.
+
+    `active_digest`/`archive_digest` (T-0889) are the `ledger_digest`
+    snapshots `_load_and_validate_renumber_ids` took at load time, threaded
+    through to `write_all`/`write_archive` as `expected_digest` so a
+    wholesale rewrite refuses rather than clobbers if either ledger changed
+    on disk since that load."""
     if active_changed:
-        write_result = write_all(root, new_active_map)
+        write_result = write_all(root, new_active_map, expected_digest=active_digest)
         if write_result.is_err:
             return Err(write_result.danger_err)
     if archive_changed:
-        archive_write = write_archive(root, new_archive_map)
+        archive_write = write_archive(
+            root, new_archive_map, expected_digest=archive_digest
+        )
         if archive_write.is_err:
             return Err(archive_write.danger_err)
     for path, (rewritten, _hits) in code_changes.items():
@@ -762,6 +800,7 @@ def _log_renumber_dry_run(old_id: str, new_id: str, report: RenumberReport) -> N
 # frob:doc docs/modules/tickets.md#public-api
 # frob:ticket T-0162
 # frob:ticket T-0633
+# frob:ticket T-0889
 # frob:tests tests/test_tickets_ledger_concurrency.py::TestRenumberOneRaceWithConcurrentNew.test_concurrent_new_ticket_survives_a_racing_renumber_one  # noqa: E501
 # frob:waive TEST005 reason="renumber_one 68.3% branch cover, debt T-0160"
 def renumber_one(
@@ -789,7 +828,7 @@ def renumber_one(
         loaded = _load_and_validate_renumber_ids(root, old_id, new_id)
         if loaded.is_err:
             return Err(loaded.danger_err)
-        active_map, archive_map = loaded.danger_ok
+        active_map, archive_map, active_digest, archive_digest = loaded.danger_ok
         new_active_map, active_changed, new_archive_map, archive_changed = (
             _apply_renumber_mapping(active_map, archive_map, old_id, new_id)
         )
@@ -808,6 +847,8 @@ def renumber_one(
             new_archive_map=new_archive_map,
             archive_changed=archive_changed,
             code_changes=code_changes,
+            active_digest=active_digest,
+            archive_digest=archive_digest,
         )
         return _finish_renumber(persisted, old_id, new_id, code_changes, report)
 
