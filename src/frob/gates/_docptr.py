@@ -373,10 +373,7 @@ def _file_and_anchor_violations(
         if token.startswith(("http://", "https://", "mailto:")):
             continue
         file_part, _, anchor_part = token.partition("#")
-        if (
-            file_part.startswith((".frob/", ".git/"))
-            or file_part in (".frob", ".git")
-        ):
+        if file_part.startswith((".frob/", ".git/")) or file_part in (".frob", ".git"):
             continue
         if not _looks_like_path(file_part):
             continue
@@ -573,7 +570,7 @@ _DECLARED_BUT_UNSET_CONFIG_SECTIONS = frozenset(
         "perf.sketch",  # src/frob/perf/_sketch_store.py: .get("perf", {}).get("sketch")
         "fuzz",  # src/frob/gates/__init__.py: tomllib.load(fh).get("fuzz", {})
         "clean",  # src/frob/clean/_rules.py: data.get("clean", {})
-        "tool.frob",  # pyproject.toml form; src/frob/app/config.py: data.get("tool", {}).get("frob", {})
+        "tool.frob",  # pyproject.toml form; src/frob/app/config.py
         "repo",  # src/frob/fleet/__init__.py: data.get("repo", [])
     }
 )
@@ -915,14 +912,14 @@ def _tracked_all_files(root: Path) -> frozenset[str]:
 # frob:tests \
 # tests/test_docptr_gate.py::TestDoc006Config.test_all_caps_citation_tag_not_flagged
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006Config.test_declared_but_unset_section_not_flag\
-# ged
+# tests/test_docptr_gate.py::TestDoc006Config.test_declared_but_unset_section_not_flagg\
+# ed
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006Symbol.test_reexported_class_attribute_chain_no\
-# t_flagged
+# tests/test_docptr_gate.py::TestDoc006Symbol.test_reexported_class_attribute_chain_not\
+# _flagged
 # frob:tests \
-# tests/test_docptr_gate.py::TestDoc006Symbol.test_dunder_init_mid_chain_resolves_to_m\
-# odule
+# tests/test_docptr_gate.py::TestDoc006Symbol.test_dunder_init_mid_chain_resolves_to_mo\
+# dule
 def doc006_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DOC006: doc-pointer resolution over a closed set of recognized,
     mechanically resolvable pointer shapes (see this module's docstring)
