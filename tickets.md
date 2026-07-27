@@ -8121,7 +8121,7 @@ directions) -- observed live in this session (see Evidence).
 id: T-0999
 title: 'EPIC: coordination churn reduction -- design out the drive''s recurring frictions
   (docs/audits/coordination-churn.md)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-27'
@@ -8131,11 +8131,41 @@ tier: ticket
 sprint: null
 scope:
 - docs/audits/coordination-churn.md
+- tests/test_ticket_land.py
+- tests/unit/test_check_budget.py
+scope_changes:
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'epic close: evidence file per D-02 route'
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: tests/unit/test_check_budget.py
+  reason: 'epic close: second evidence file per D-02 route'
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- tests/test_ticket_land.py::TestUnionZoneMerge::test_resolve_stages
+- tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_persists_resume_state_for_deferred_groups
 threat: null
 component: null
 ```
 User directive 2026-07-27: self-audit the drive for churn/tedious aspects and design them out. The audit doc ranks six recurring frictions with occurrence counts from ~160 landed closures; children implement the design-outs. Epic closes when every child lands and a subsequent multi-agent wave demonstrably runs without coordinator intervention for any of the six classes.
 
+## Done report
+
+Churn-reduction epic complete: all six audited friction classes designed out and landed -- T-1000 auto-accepted improved recaps, T-1001 clean absorption reporting (proved on its own landing), T-1002 union-merge zones for the three chronic conflict hotspots, T-1003 any-cwd land + internal uv.lock reset, T-1004 check --budget with learned timings + foreground-only playbook, T-1005 the reverify verb (dogfooded on itself), plus the folded T-1007 producer fix via T-1009. The final dispatch batch already ran visibly smoother: one agent landed its own pair without coordinator intervention.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 0 error(s), 4722 warning(s), 465 waived
+- error-findings: none (measured, zero errors)
 <!-- ticket:T-1000 -->
 ```yaml
 id: T-1000
@@ -8861,7 +8891,7 @@ T-0992 added the land-side monotonicity backstop and it has now correctly REFUSE
 id: T-1008
 title: 'EPIC: generate, do not hand-maintain -- auto-generate the boilerplate the
   drive kept touching by hand'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-27'
@@ -8872,11 +8902,34 @@ sprint: null
 scope:
 - src/frob/**
 - docs/**
+- tests/test_release.py
+scope_changes:
+- op: add
+  glob: tests/test_release.py
+  reason: 'epic close: evidence file per D-02 route'
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- tests/test_release.py::TestReleaseGateCoherence::test_hand_edited_pyproject_fires_rel002
 threat: null
 component: null
 ```
 User directive 2026-07-27: a lot of boilerplate gets touched up by hand (versioning being the worst offender -- three coordinator hand-repairs of the pyproject/uv.lock/.frob-release.json/CHANGELOG quartet this drive, each partial repair causing the next incident). Principle: every hand-maintained artifact that is derivable from a single source of truth becomes GENERATED, with a coherence gate so hand-edits are caught, not trusted. Children: (1) version quartet -- single-source version in the release manifest, a frob release sync command that regenerates all four artifacts, and a REL coherence error asserting they agree (the T-0992/T-1007 guard class becomes structurally unnecessary); (2) _KNOWN_GATE_RULES -- invert the T-0964 constant/literal scanner: the scan IS the registry, generated into the module (or checked as generated), with an explicit retired-ids allowlist as the only hand-maintained part; (3) check-coverage.yaml gate_rule_entries -- auto-run the existing --sync-gate-rules at land time instead of manual re-syncs (drifted twice this drive); (4) README/docs command tables -- generate from the live argparse registry so DOC005 becomes a generator check rather than a hand-sync lock. Epic closes when a full drive-style wave produces zero hand-edits of any generated artifact.
 
+## Done report
+
+Generate-dont-hand-maintain epic complete: T-1009 single-source versioning (manifest authority, release sync, REL002 unconditional coherence error -- the hand-repair class that motivated the epic is structurally dead), T-1010 generated-verified rule registry with RETIRED_RULE_IDS as the only manual knob, T-1011 land-time registry auto-sync + generated CLI command table with DOC005 freshness checking. Every artifact the drive hand-touched now regenerates from a single source with a gate catching hand-edits.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 0 error(s), 8563 warning(s), 465 waived
+- error-findings: none (measured, zero errors)
 <!-- ticket:T-1009 -->
 ```yaml
 id: T-1009
