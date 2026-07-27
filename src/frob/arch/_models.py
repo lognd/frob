@@ -118,6 +118,19 @@ ArchCategory = Literal[
     # unwaivable advisory channel as every other category here; see
     # docs/modules/arch.md's "module dependency cycles" section.
     "module-dependency-cycle",
+    # T-0696: async event-loop hazard family (call-graph reachability,
+    # syntactic co-occurrence -- not runtime tracing) -- child 3 of the
+    # T-0693 concurrency-hazard umbrella, `frob.arch._async_hazards`. Every
+    # member stays on the same unwaivable advisory channel as the
+    # categories above (`frob.gates._unwaivable_channel_rules` picks up any
+    # new `ArchCategory` value automatically); see
+    # `frob.arch._async_hazards`'s module docstring for the per-category
+    # detection shape (docs/modules/arch.md coverage tracked as a follow-up,
+    # T-0914, out of T-0696's declared scope).
+    "blocking-call-in-async",
+    "nested-event-loop",
+    "unawaited-coroutine",
+    "async-zero-awaits",
 ]
 
 ArchSeverity = Literal["warning", "suggestion", "info"]

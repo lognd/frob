@@ -3589,6 +3589,154 @@ class TestForkPoolHazards:
         assert hits == []
 
 
+class TestAsyncEventLoopHazards:
+    """`frob.arch._async_hazards` -- blocking-call-in-async,
+    nested-event-loop, unawaited-coroutine, async-zero-awaits (T-0696,
+    child 3 of the T-0693 concurrency-hazard umbrella)."""
+
+    def test_blocking_call_in_async_fires_on_time_sleep(self, tmp_path):
+        """`time.sleep` reachable inside an `async def` body, with no
+        executor dispatch, fires `blocking-call-in-async`."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "blocker.py").write_text(
+            "from __future__ import annotations\n"
+            "import time\n\n"
+            "async def poll():\n"
+            "    time.sleep(1)\n"
+            "    return True\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "blocking-call-in-async"]
+        assert len(hits) == 1
+        assert hits[0].symref == "blocker.py::poll"
+        assert hits[0].severity == "warning"
+
+    def test_blocking_call_in_async_does_not_fire_via_to_thread(self, tmp_path):
+        """The same `time.sleep` call, but dispatched via
+        `asyncio.to_thread`, must not fire -- it is correctly offloaded
+        off the event loop."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "safe_blocker.py").write_text(
+            "from __future__ import annotations\n"
+            "import asyncio\n"
+            "import time\n\n"
+            "async def poll():\n"
+            "    await asyncio.to_thread(time.sleep, 1)\n"
+            "    return True\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "blocking-call-in-async"]
+        assert hits == []
+
+    def test_nested_event_loop_fires_on_asyncio_run_inside_coroutine(self, tmp_path):
+        """`asyncio.run(...)` reachable inside an `async def` body fires
+        `nested-event-loop` -- it raises RuntimeError at runtime since a
+        coroutine already runs on a loop."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "nested.py").write_text(
+            "from __future__ import annotations\n"
+            "import asyncio\n\n"
+            "async def outer():\n"
+            "    asyncio.run(inner())\n\n"
+            "async def inner():\n"
+            "    return 1\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "nested-event-loop"]
+        assert len(hits) == 1
+        assert hits[0].symref == "nested.py::outer"
+
+    def test_nested_event_loop_does_not_fire_at_top_level_sync_code(self, tmp_path):
+        """`asyncio.run(...)` called from ordinary (non-async) top-level
+        code is the standard entry-point shape -- must not fire."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "entrypoint.py").write_text(
+            "from __future__ import annotations\n"
+            "import asyncio\n\n"
+            "async def main():\n"
+            "    return 1\n\n"
+            "def cli():\n"
+            "    asyncio.run(main())\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "nested-event-loop"]
+        assert hits == []
+
+    def test_unawaited_coroutine_fires_on_bare_call_statement(self, tmp_path):
+        """A bare call to a module-defined `async def` function, used as
+        its own statement (neither awaited, gathered, nor stored), fires
+        `unawaited-coroutine`."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "dropped.py").write_text(
+            "from __future__ import annotations\n\n"
+            "async def fetch():\n"
+            "    return 1\n\n"
+            "def trigger():\n"
+            "    fetch()\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "unawaited-coroutine"]
+        assert len(hits) == 1
+        assert hits[0].symref == "dropped.py::trigger"
+
+    def test_unawaited_coroutine_does_not_fire_when_awaited_or_stored(self, tmp_path):
+        """The same call, but awaited in one function and stored (never
+        called bare) in another, must not fire either time."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "kept.py").write_text(
+            "from __future__ import annotations\n\n"
+            "async def fetch():\n"
+            "    return 1\n\n"
+            "async def awaits_it():\n"
+            "    return await fetch()\n\n"
+            "def stores_it():\n"
+            "    coro = fetch()\n"
+            "    return coro\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "unawaited-coroutine"]
+        assert hits == []
+
+    def test_async_zero_awaits_fires_on_no_await_body(self, tmp_path):
+        """An `async def` whose body never awaits anything fires
+        `async-zero-awaits` at suggestion severity."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "noawait.py").write_text(
+            "from __future__ import annotations\n\n"
+            "async def compute():\n"
+            "    x = 1 + 1\n"
+            "    return x\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "async-zero-awaits"]
+        assert len(hits) == 1
+        assert hits[0].symref == "noawait.py::compute"
+        assert hits[0].severity == "suggestion"
+
+    def test_async_zero_awaits_does_not_fire_when_awaiting(self, tmp_path):
+        """An `async def` that awaits something in its own body must not
+        fire `async-zero-awaits`."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "hasawait.py").write_text(
+            "from __future__ import annotations\n"
+            "import asyncio\n\n"
+            "async def compute():\n"
+            "    await asyncio.sleep(0)\n"
+            "    return 1\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "async-zero-awaits"]
+        assert hits == []
+
+
 # ---------------------------------------------------------------------------
 # T-0618: LSP checks -- override contract violations (docs/modules/arch.md#lsp-checks)
 # ---------------------------------------------------------------------------

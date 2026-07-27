@@ -3150,7 +3150,7 @@ Child 1 of T-0693. Track with-statement (and explicit acquire/release) nesting o
 id: T-0696
 title: 'async event-loop hazards: blocking calls in async def, nested run_until_complete,
   un-awaited coroutines'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-22'
@@ -3159,15 +3159,98 @@ parent: T-0693
 scope:
 - src/frob/arch/**
 - tests/unit/test_arch.py
+evidence:
+- tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_blocking_call_in_async_fires_on_time_sleep
+- tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_blocking_call_in_async_does_not_fire_via_to_thread
+- tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_nested_event_loop_fires_on_asyncio_run_inside_coroutine
+- tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_nested_event_loop_does_not_fire_at_top_level_sync_code
+- tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_unawaited_coroutine_fires_on_bare_call_statement
+- tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_unawaited_coroutine_does_not_fire_when_awaited_or_stored
+- tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_async_zero_awaits_fires_on_no_await_body
+- tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_async_zero_awaits_does_not_fire_when_awaiting
 acceptance:
 - text: GIVEN time.sleep inside async def WHEN the check runs THEN a finding suggests
     asyncio.sleep/to_thread; GIVEN an un-awaited coroutine call THEN a finding names
     the site
-  evidence: []
+  evidence:
+  - tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_blocking_call_in_async_fires_on_time_sleep
+  - tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_blocking_call_in_async_does_not_fire_via_to_thread
+  - tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_nested_event_loop_fires_on_asyncio_run_inside_coroutine
+  - tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_nested_event_loop_does_not_fire_at_top_level_sync_code
+  - tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_unawaited_coroutine_fires_on_bare_call_statement
+  - tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_unawaited_coroutine_does_not_fire_when_awaited_or_stored
+  - tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_async_zero_awaits_fires_on_no_await_body
+  - tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_async_zero_awaits_does_not_fire_when_awaiting
 threat: null
 component: null
 ```
 Child 3 of T-0693. Curated blocking-call table (time.sleep, requests.*, urllib, sync open/read on large paths, subprocess.run, .result() on futures) flagged when reachable inside async def without run_in_executor/to_thread dispatch; run_until_complete/asyncio.run reachable inside a running-loop context; coroutine-constructing call whose result is neither awaited nor gathered nor stored (un-awaited coroutine); async def containing zero awaits (feeds the model-mismatch advisory too). Table extensible via frob.toml like other curated tables.
+
+## Done report
+
+Added `frob.arch._async_hazards` (T-0696, child 3 of T-0693): four
+detectors over one parsed python file's functions -- `blocking-call-in-
+async` (curated table: `time.sleep`, `requests.get/post/put/delete/patch/
+head/request`, `urllib`'s `urlopen`, `subprocess.run/call/check_call/
+check_output`, a future's `.result()`, the builtin `open()` -- reachable
+inside an `async def` without a `run_in_executor`/`to_thread` dispatch
+enclosing the call site), `nested-event-loop` (`asyncio.run`/`.run_until_
+complete` reachable inside an `async def` body), `unawaited-coroutine` (a
+call whose immediate parent is a `block` -- a bare top-level statement,
+tree-sitter-python's own shape for an unwrapped statement call -- naming a
+function this module itself declares `async def`), and `async-zero-
+awaits` (an `async def` with no `await` anywhere in its own scope, not
+crossing into a nested function's body; suggestion severity, feeds
+T-0698's IO/CPU-bound advisory per that ticket's own text). Wired into
+`frob.arch.__init__`'s python per-file pass alongside `_concurrency`'s
+fork/pool family (skips test files, same as that family). Four new
+`ArchCategory` values added to `_models.py` -- same unwaivable advisory
+channel as every other `frob.arch` category, no `frob.gates` change
+needed.
+
+Changed:
+- `src/frob/arch/_async_hazards.py` (new)
+- `src/frob/arch/_models.py::ArchCategory` (4 new category values)
+- `src/frob/arch/__init__.py::_run_python_checks` (wiring call + docstring
+  note)
+- `tests/unit/test_arch.py::TestAsyncEventLoopHazards` (new, 8 tests)
+
+Evidence: `uv run pytest tests/unit/test_arch.py -k
+TestAsyncEventLoopHazards -p no:cacheprovider -q` -> 8 passed. Confirmed
+zero false positives: `analyze_project(Path("src/frob"))` against frob's
+own tree returns 0 hits across all four new categories. `uv run frob check
+--ticket T-0696 --only lint` / `--only gates-fast` / `--only gates-native`
+all 0 errors. `uv run frob test --base main` -> `[PASS] python exit=0`,
+10 test outcomes recorded.
+
+Disclosed gap: `uv run frob check --ticket T-0696 --only gates-security`
+shows 2 unwaived `SELFAUDIT001` findings on `src/frob/arch/
+_async_hazards.py` (capability `net`/`exec` "observed" at the lines
+holding `_BLOCKING_CALL_TABLE`'s `requests.*`/`subprocess.*` regex
+strings) -- a false positive of the exact class already fixed for
+`_srp.py` (T-0729) and `_logging_checks.py` (T-0910): the self-audit
+scanner keys on string-literal CONTENT for evasion detection, so a
+curated classifier table that merely *names* these substrings as data
+reads as live capability usage even though this module does no such I/O
+itself. The fix (`src/frob/vet/_capability.py`'s `_SELF_PATTERN_SUFFIXES`)
+is outside T-0696's declared scope (`src/frob/arch/**`, `tests/unit/
+test_arch.py`), so it is filed separately rather than fixed inline.
+
+Filed:
+- T-0914 (docs): add an "async event-loop hazards" section to
+  `docs/modules/arch.md` (out of T-0696's scope, unlike sibling T-0695
+  which had docs in scope) -- a `frob:waive COV001` placeholder is left on
+  `_check_async_event_loop_hazards` until this lands.
+- T-0915 (bug): add `("frob", "arch", "_async_hazards.py")` to
+  `src/frob/vet/_capability.py`'s `_SELF_PATTERN_SUFFIXES` to clear the
+  SELFAUDIT001 false positive disclosed above.
+
+Gates: `frob check --ticket T-0696 --only lint/gates-fast/gates-native`
+clean (0 errors each, re-verified after a `frob ticket sweep T-0696`
+re-run following the last edit). `gates-security`'s 2 SELFAUDIT001
+findings are a disclosed, out-of-scope gap tracked by T-0915
+(not waived in-line since the fix lives in a file outside this ticket's
+scope).
 
 <!-- ticket:T-0697 -->
 ```yaml
@@ -7791,3 +7874,65 @@ disposed `frob:waive` if genuinely benign. Not investigated further here
 
 ## Drop reason
 - 2026-07-26: duplicate of T-0910 (same SELFAUDIT001 finding on _logging_checks.py/graphlang node, third independent filing; T-0910 is in-progress)
+
+<!-- ticket:T-0914 -->
+```yaml
+id: T-0914
+title: 'docs: async event-loop hazards section for docs/modules/arch.md'
+state: queued
+kind: docs
+origin: human
+created: '2026-07-26'
+priority: medium
+parent: null
+scope:
+- docs/modules/arch.md
+- src/frob/arch/_async_hazards.py
+threat: null
+component: null
+```
+T-0696 (async event-loop hazards: blocking calls in async def, nested
+run_until_complete, un-awaited coroutines) implemented four frob.arch
+categories (blocking-call-in-async, nested-event-loop, unawaited-coroutine,
+async-zero-awaits) in frob.arch._async_hazards, but T-0696's declared scope
+(src/frob/arch/**, tests/unit/test_arch.py) does not include
+docs/modules/arch.md, unlike its sibling T-0695 (fork/pool hazards) which
+did. Add a "async event-loop hazards" section to docs/modules/arch.md
+(anchor #async-event-loop-hazards) documenting the four categories, mirroring
+the existing "fork/pool hazards" section's structure, then add the matching
+frob:doc edge on frob.arch._async_hazards._check_async_event_loop_hazards
+and clear the frob:waive COV001 placeholder left on that function.
+
+<!-- ticket:T-0915 -->
+```yaml
+id: T-0915
+title: 'fix: exclude frob.arch._async_hazards from SELFAUDIT001 net/exec self-match'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-26'
+priority: medium
+parent: null
+scope:
+- src/frob/vet/_capability.py
+threat: null
+component: null
+```
+frob check --only gates-security's SELFAUDIT001/SYS100 stage flags
+src/frob/arch/_async_hazards.py (T-0696) as undeclared 'net'/'exec'
+capability usage on the graphlang node: capability 'net' observed at
+line 67, capability 'exec' observed at line 72. Both are false positives
+of the same class already fixed for src/frob/arch/_srp.py (T-0729) and
+src/frob/arch/_logging_checks.py (T-0910): _BLOCKING_CALL_TABLE is a
+curated dotted-name classifier table (time.sleep, requests.get/post/...,
+urlopen, subprocess.run/call/...) this module's _blocking_label compares
+a CALLEE STRING against -- the scanner keys on string-literal CONTENT by
+design (for evasion detection), so naming these substrings as data reads
+as live capability usage even though _async_hazards.py does no such I/O
+itself (a syntactic, tree-sitter-only scan).
+
+Fix: add ("frob", "arch", "_async_hazards.py") to
+src/frob/vet/_capability.py's _SELF_PATTERN_SUFFIXES tuple, mirroring the
+_srp.py/_logging_checks.py entries and their doc comments. Out of T-0696's
+declared scope (src/frob/arch/**, tests/unit/test_arch.py only), which is
+why this is filed separately rather than fixed inline.

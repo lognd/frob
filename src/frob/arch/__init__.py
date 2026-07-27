@@ -23,7 +23,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from frob.arch import _concurrency, _cpp, _ocp, _patterns, _python
+from frob.arch import _async_hazards, _concurrency, _cpp, _ocp, _patterns, _python
 from frob.arch._models import (
     ArchCategory,
     ArchResult,
@@ -310,7 +310,14 @@ def _run_python_checks(
     module docstring: written once, fires identically for every language
     adapter -- python is the only adapter `analyze_project` dispatches
     through today, matching every other normalized-model check already
-    wired here)."""
+    wired here).
+
+    T-0696: `blocking-call-in-async`, `nested-event-loop`,
+    `unawaited-coroutine`, and `async-zero-awaits` (the async event-loop
+    hazard family, child 3 of the T-0693 concurrency-hazard umbrella,
+    `frob.arch._async_hazards`) skip test files for the same reason as the
+    fork/pool hazard family above -- an `async def` test helper/fixture is
+    not production event-loop debt."""
     if not is_test:
         _python._check_long_functions(tree, rel, limits.max_function_lines, suggestions)
         _python._check_god_classes(tree, rel, limits.max_class_methods, suggestions)
@@ -331,6 +338,7 @@ def _run_python_checks(
         _ocp._check_type_dispatch_smell(tree, rel, suggestions)
         _ocp._check_non_exhaustive_enum_match(tree, rel, suggestions)
         _concurrency._check_fork_pool_hazards(tree, rel, suggestions)
+        _async_hazards._check_async_event_loop_hazards(tree, rel, suggestions)
         _run_srp_checks_python(tree, rel, limits, suggestions)
     _python._check_high_coupling(path, rel, root, limits.max_local_imports, suggestions)
     if not is_test:
