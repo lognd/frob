@@ -4151,7 +4151,7 @@ Gates: `frob check --only lint/gates-fast/gates-native/gates-security --ticket T
 ```yaml
 id: T-0777
 title: wire resolve_lease pinning into frob check's --ticket resolution entry point
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-07-22'
@@ -4198,6 +4198,8 @@ available and should be wired in as defense in depth:
 Scope: src/frob/app/check_runner.py, src/frob/gates/__init__.py (the
 `active_ticket`/`_resolve_ticket` region only).
 
+## Drop reason
+- 2026-07-26: already implemented by T-0787: ticket_lease_pin in gates/__init__.py wired via _refuse_ticket_lease_mismatch in check_runner.py run(), with regression coverage in tests/test_tickets_leases.py (verified against main tip c5a13a68) (absorbed by T-0787)
 <!-- ticket:T-0781 -->
 ```yaml
 id: T-0781
