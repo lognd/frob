@@ -110,6 +110,7 @@ from frob.gates._models import (
     WaiverRef,
 )
 from frob.gates._mutation_evidence import mutation_evidence_violations
+from frob.gates._opaque import opaque_gate
 from frob.gates._parse_failures import parse_failure_gate
 from frob.gates._pii_structural import pii_structural_gate
 from frob.gates._prework import load_prework, record_prework, sweep_ticket
@@ -1212,6 +1213,10 @@ _KNOWN_GATE_RULES = frozenset(
         "FMT001",
         "PII010",
         "SEC110",
+        # T-0665: fail-closed runtime-resolved capability-indirection
+        # obligation (frob.gates._opaque.opaque_gate). WARN-tier at first
+        # turn-on -- see that module's own docstring.
+        "OPAQUE001",
         # T-0289: long-function is the one frob-arch category channeled into
         # a real gate Violation (see frob.gates._arch's module docstring for
         # why only this one, not the whole ArchCategory surface).
@@ -10086,6 +10091,9 @@ _ALL_GATES = frozenset(
         "secrets",
         "tickets",
         "archgate",
+        # T-0665: OPAQUE001, fail-closed runtime-resolved capability-
+        # indirection obligation (frob.gates._opaque.opaque_gate).
+        "opaque",
         "pii_structural",
         "refs",
         "registry",
@@ -10446,6 +10454,8 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "decisions",
     "sys",
     "secrets",
+    # T-0665: OPAQUE001.
+    "opaque",
     "tickets",
     "archgate",
     "pii_structural",
@@ -10637,6 +10647,10 @@ def _build_jobs(
         "clones": _ProcessJob(dup_gate, (st.root, st.snapshot, st.diff)),
         "sys": _ProcessJob(sys_gate, (st.root, st.snapshot)),
         "secrets": _ProcessJob(secrets_gate, (st.root,)),
+        # T-0665: OPAQUE001, WARN-tier at first turn-on (see opaque_gate's
+        # own docstring for the T-0688/T-0973 promotion precedent this
+        # follows) -- same repo-wide tracked-file scan shape as secrets.
+        "opaque": _ProcessJob(opaque_gate, (st.root,)),
         "archgate": _ProcessJob(arch_gate, (st.root,)),
         # T-0688: EXHAUST001/EXHAUST002, always against repo_root (never
         # the possibly-scoped st.root) -- same reasoning as `archgate`/

@@ -555,6 +555,7 @@
     "src/frob/gates/_models.py::Violation": "baafec045c2c947f9ee1b8daace5bcee5e5b18ac46932cafd724b7fba76074a5",
     "src/frob/gates/_models.py::WaiverRef": "e87075968df880378a7f2d77ad82d2e88738ead66ad613ca784e3d9b799e4f8d",
     "src/frob/gates/_mutation_evidence.py::mutation_evidence_violations": "c0d2e1ffbc9cf06685fed64352ec95a2903d4725c8145739ab15042d5e1955e2",
+    "src/frob/gates/_opaque.py::opaque_gate": "0eb55c661ccdef04c21ab211bd9581f3f8c1fddd62e86d13639afe915825fc84",
     "src/frob/gates/_parse_failures.py::parse_failure_gate": "cc39260a1ddc8374324edbba4fd8974d4a2ac3b6a7902860ef3c18b71f9850be",
     "src/frob/gates/_pii_structural.py::FIELD_SIGNATURES": "ea6c5408cf3ece1061a60dcff9cdc79500f3f869556d2b764dbeef7494459983",
     "src/frob/gates/_pii_structural.py::pii_structural_gate": "00dac38fde5c562de22c323632abe8b52c4a16463a6afdcb3b2fa0e80b4f76d1",
@@ -1662,6 +1663,7 @@
     "src/frob/tickets/clipboard.py::ClipboardError": "602f37ca34083cfa40057c58f8a9c407e9fff365766cc0092638719b08b998de",
     "src/frob/tickets/clipboard.py::clipboard_has_image": "16dd69d6531a3f4a287d539fc5112ea94ee69be195a8f410bae001955953fd6a",
     "src/frob/tickets/clipboard.py::clipboard_image": "b1a83f11e01d1abc8e365d1c3369c57b882ef747d95e06bd5cfddc25f5ad3000",
+    "src/frob/vet/_capability.py::OpaqueFinding": "6a6b0d29e01746036cef932d59d79f01aae43562cb81c6860d359d52da1b30e7",
     "src/frob/vet/_capability.py::SCANNED_LANGUAGES": "5aebd3fdc82504e34242f2ce9cb677f17c218c78396779690308a52ede0a6e08",
     "src/frob/vet/_capability.py::is_self_pattern_path": "1ea057d4683edc766482d7b467562480082d3ba80cea05970467ce44528102e1",
     "src/frob/vet/_capability.py::language_for": "b4e50c3603e4861cf8713c841dd270a813378269def2c43008711f53bf0bdf81",
@@ -1684,6 +1686,8 @@
     "src/frob/vet/_capability_registry.py::DANGEROUS_OPERATIONS": "a9036db9cde50e3631d046c1bfcfa31e62d1495fa643daaaa51a0826a9dec457",
     "src/frob/vet/_capability_registry.py::LANGUAGES": "bae7f28f4eaab757fde26a3937c7a3ff6b9391f5d6bfbb8200c915096fd72bf8",
     "src/frob/vet/_capability_registry.py::NO_CAPABILITY_MODULES": "b93b45d24b5739b682a3dfc3dbc9a6dc711125180679c498aefc64fd5df28b9f",
+    "src/frob/vet/_capability_registry.py::OPAQUE_SOURCE_INVISIBLE": "878c9b6c083ec73e1f32de0f5b5ca4e2dad7a84d5b1112d4b363532c0232dd15",
+    "src/frob/vet/_capability_registry.py::RUNTIME_OPAQUE_CONSTRUCTS": "3610c864038f33ec33c5e8b93201fa214d73e8cf7af447c3c6853b550b0af6ac",
     "src/frob/vet/_capability_registry.py::capability_matrix": "d0244e8f83ed43ed86ca3aa06f44b035eaab10dfca158e091469eb7eb97224ec",
     "src/frob/vet/_closedworld.py::closed_world_accounting": "4f4e292275fad229c973d8a6ae8ccd3192896959af8b414d491c5f697386e1db",
     "src/frob/vet/_closedworld.py::resolve_import": "60061bcc7bd2e64abf598bcb72f58eb97ebde4891918ce7f0a99ed67647800a3",
@@ -1745,5 +1749,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.193.0"
+  "version": "0.194.0"
 }

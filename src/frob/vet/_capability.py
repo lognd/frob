@@ -138,11 +138,17 @@ from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from pydantic import BaseModel, ConfigDict
+
 from frob.excludes import iter_files
 from frob.lang import COMMENT_TYPES, node_text, parse_file, raw_tree
 from frob.logging import get_logger
 
-from ._capability_registry import DANGEROUS_OPERATIONS, _DangerousOperation
+from ._capability_registry import (
+    DANGEROUS_OPERATIONS,
+    RUNTIME_OPAQUE_CONSTRUCTS,
+    _DangerousOperation,
+)
 
 if TYPE_CHECKING:
     from frob.strata import CveFingerprint
@@ -5349,13 +5355,203 @@ def _aggregate_fingerprints(
     return matched, scanned
 
 
+# frob:doc docs/modules/vet.md#public-api
+# frob:ticket T-0665
+class OpaqueFinding(BaseModel):
+    """One `RUNTIME_OPAQUE_CONSTRUCTS` site (T-0665) found in a file's raw
+    text outside a comment span, with the 1-indexed line number
+    `frob.gates._opaque`'s `opaque_gate` reports the `OPAQUE001` violation
+    at."""
+
+    model_config = ConfigDict(frozen=True)
+
+    construct_name: str
+    taxonomy_row: str
+    rationale: str
+    line: int
+
+
+# frob:waive PERF003 reason="single linear pass over the call's argument bytes; the inner while only skips one quoted-string span before the outer loop resumes at its end -- both loops advance the shared index i monotonically forward, never re-scanning, so this is O(n) total not a nested cross join"  # noqa: E501
+def _split_top_level_args(raw: bytes, start: int) -> list[bytes] | None:
+    """Split the comma-separated argument list beginning right after an
+    already-matched call's opening `(` (T-0665) into top-level (paren/
+    bracket/brace-balanced) argument slices, stopping at the matching
+    close paren. Returns `None` if the call is unterminated (truncated
+    file, or a needle match inside a string this byte-level scan cannot
+    see through) -- `_opaque_indirection_findings` treats `None` the same
+    as "argument unknown", i.e. fail-closed (fires), never a silent pass."""
+    depth = 1
+    arg_start = start
+    args: list[bytes] = []
+    i = start
+    n = len(raw)
+    while i < n:
+        c = raw[i : i + 1]
+        if c in (b'"', b"'", b"`"):
+            quote = c
+            i += 1
+            while i < n and raw[i : i + 1] != quote:
+                if raw[i : i + 1] == b"\\":
+                    i += 1
+                i += 1
+            i += 1
+            continue
+        if c in (b"(", b"[", b"{"):
+            depth += 1
+        elif c in (b")", b"]", b"}"):
+            depth -= 1
+            if depth == 0:
+                args.append(raw[arg_start:i])
+                return args
+        elif c == b"," and depth == 1:
+            args.append(raw[arg_start:i])
+            arg_start = i + 1
+        i += 1
+    return None
+
+
+def _arg_looks_literal(arg: bytes) -> bool:
+    """True if `arg` (one `_split_top_level_args` slice) is a plain
+    string/byte-string literal, allowing python's `r`/`b`/`f`/`rb` string
+    prefixes (T-0665) -- these resolve statically, so the ordinary per-
+    language resolver already handles them; anything else (an identifier,
+    an f-string WITH interpolation, a concatenation, a function call) is
+    treated as non-literal and fires the obligation, fail-closed."""
+    stripped = arg.strip()
+    if not stripped:
+        return False
+    prefix_end = 0
+    while prefix_end < len(stripped) and stripped[prefix_end : prefix_end + 1] in (
+        b"r",
+        b"b",
+        b"f",
+        b"R",
+        b"B",
+        b"F",
+    ):
+        prefix_end += 1
+        if prefix_end > 2:  # noqa: PLR2004 -- longest valid prefix (e.g. "rb") is 2
+            return False
+    if prefix_end >= len(stripped):
+        return False
+    quote = stripped[prefix_end : prefix_end + 1]
+    if quote not in (b'"', b"'"):
+        return False
+    # An f-string prefix with a `{` interpolation is NOT a plain literal.
+    if prefix_end and stripped[:prefix_end].lower().find(b"f") != -1:
+        if b"{" in stripped[prefix_end:]:
+            return False
+    return stripped.endswith(quote) and len(stripped) >= prefix_end + 2
+
+
+def _byte_offset_inside_string_literal(raw: bytes, idx: int) -> bool:
+    """True if `idx` (a needle match start) sits inside a single-line
+    string literal on its own source line (T-0665) -- a same-line unescaped
+    `"`/`'` quote-parity check, NOT a full tokenizer. This is a deliberate,
+    disclosed heuristic: it exists specifically to keep this module's OWN
+    registry files (`RUNTIME_OPAQUE_CONSTRUCTS`'s `needle="getattr("`
+    string constants, prose mentioning `eval(` in a docstring/rationale)
+    from tripping their own obligation, the single largest false-positive
+    class the T-0665 first-turn-on measurement found. It does not attempt
+    multi-line string literals (python triple-quoted, JS template
+    literals spanning lines) -- a real evasion construct written across a
+    line boundary this way is rare and, if missed, still fails closed at
+    worst (a missed WARN, not a missed hard block, since this gate ships
+    at WARN-tier for its first turn-on regardless)."""
+    line_start = raw.rfind(b"\n", 0, idx) + 1
+    prefix = raw[line_start:idx]
+    dq = 0
+    sq = 0
+    i = 0
+    n = len(prefix)
+    while i < n:
+        c = prefix[i : i + 1]
+        if c == b"\\":
+            i += 2
+            continue
+        if c == b'"':
+            dq += 1
+        elif c == b"'":
+            sq += 1
+        i += 1
+    return (dq % 2 == 1) or (sq % 2 == 1)
+
+
+def _opaque_indirection_findings(path: Path) -> tuple[OpaqueFinding, ...]:
+    """`RUNTIME_OPAQUE_CONSTRUCTS` sites in `path` (T-0665, coordinator-
+    signed category 1: "evasion-indicative dynamic lookup") -- the
+    fail-closed sibling of `scan_file_capabilities`'s ordinary resolver
+    path. A construct with `literal_arg_index=None` (eval/exec/reflection)
+    always fires; one with a literal_arg_index fires unless that argument
+    is a plain string literal (`_arg_looks_literal`), matching the
+    coordinator's T-0665 sign-off that a literal-key lookup belongs to the
+    ordinary resolver, not this obligation. The rust `libloading` needle
+    is additionally gated to files that import `libloading` at all, to
+    keep the deliberately-broad bare `.get(` needle from firing on every
+    unrelated `HashMap`/`Vec` `.get(` call in a rust file that never
+    touches dynamic symbol loading."""
+    language = language_for(path)
+    if language is None:
+        return ()
+    try:
+        raw = path.read_bytes()
+    except OSError as exc:
+        _log.warning(
+            "vet: could not read %s for opaque-indirection scan: %s", path, exc
+        )
+        return ()
+
+    comment_spans = _non_executable_byte_spans(path)
+    uses_libloading = language == "rust" and b"libloading" in raw
+    findings: list[OpaqueFinding] = []
+    for construct in RUNTIME_OPAQUE_CONSTRUCTS:
+        if construct.language != language:
+            continue
+        is_libloading_needle = construct.construct_name == "libloading symbol lookup"
+        if is_libloading_needle and not uses_libloading:
+            continue
+        needle = construct.needle.encode("utf-8")
+        start = 0
+        while True:
+            idx = raw.find(needle, start)
+            if idx == -1:
+                break
+            match_end = idx + len(needle)
+            start = match_end
+            if _fully_in_any_span(idx, match_end, comment_spans):
+                continue
+            if _byte_offset_inside_string_literal(raw, idx):
+                continue
+            fires = True
+            if construct.literal_arg_index is not None:
+                args = _split_top_level_args(raw, match_end)
+                if args is not None and construct.literal_arg_index < len(args):
+                    fires = not _arg_looks_literal(args[construct.literal_arg_index])
+            if fires:
+                line = raw.count(b"\n", 0, idx) + 1
+                findings.append(
+                    OpaqueFinding(
+                        construct_name=construct.construct_name,
+                        taxonomy_row=construct.taxonomy_row,
+                        rationale=construct.rationale,
+                        line=line,
+                    )
+                )
+    return tuple(findings)
+
+
 __all__ = [
     "SCANNED_LANGUAGES",
+    "OpaqueFinding",
     "_decode_to_exec_signal",
     "is_self_pattern_path",
     "language_for",
+    "_arg_looks_literal",
+    "_byte_offset_inside_string_literal",
+    "_opaque_indirection_findings",
     "_scan_directory_capabilities",
     "_scan_directory_fingerprints",
+    "_split_top_level_args",
     "scan_file_capabilities",
     "_scan_file_fingerprints",
     "_scan_file_operations",

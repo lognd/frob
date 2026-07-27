@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.194.0] - unreleased
+
+- T-0665: vet/strata: fail-closed opaque-capability-indirection obligation for runtime-resolved dispatch
+
 ## [0.193.0] - unreleased
 
 - T-0862: frob-dup: triage tests/**-only near-dup groups (105 groups, split from T-0597)

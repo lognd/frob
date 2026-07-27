@@ -276,6 +276,7 @@ def _unknown_only_result(root: Path, unknown: frozenset[str]) -> CheckResult:
 #: comfortably under the 90s per-stage target), `gates-fast` takes every
 #: cheap/I/O-bound gate (also well under budget on its own).
 # frob:ticket T-0788
+# frob:ticket T-0665
 _STAGE_GROUPS: dict[str, frozenset[str]] = {
     "lint": frozenset({"ruff", "ty"}),
     "static": frozenset({"cycle", "dup", "arch", "bind", "exports"}),
@@ -322,7 +323,16 @@ _STAGE_GROUPS: dict[str, frozenset[str]] = {
     "gates-native": frozenset({"archgate", "clones", "perf", "exhaustive_handling"}),
     # frob:ticket T-0824
     "gates-security": frozenset(
-        {"sys", "pii_structural", "secrets", "dead_symbols", "protocol_summary"}
+        {
+            "sys",
+            "pii_structural",
+            "secrets",
+            "dead_symbols",
+            "protocol_summary",
+            # T-0665: OPAQUE001's tracked-file scan is the same shape/cost
+            # class as secrets' own, belongs in the same security group.
+            "opaque",
+        }
     ),
 }
 

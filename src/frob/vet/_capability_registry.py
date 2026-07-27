@@ -1942,15 +1942,227 @@ NO_CAPABILITY_MODULES: tuple[str, ...] = (
 )
 
 
+# frob:ticket T-0665
+class _OpaqueConstruct(BaseModel):
+    """One `docs/design/capability-evasion-taxonomy.md` "runtime-opaque"
+    row that IS syntactically visible at the source-text level (T-0665,
+    coordinator-signed category 1: "evasion-indicative dynamic lookup"):
+    a call form whose determining argument is a NON-LITERAL expression --
+    `eval`/`exec` (no literal split possible, always opaque), `getattr`/
+    `setattr`/`__import__`/`importlib.import_module` with a non-literal
+    name argument, `dlsym` with a non-literal symbol argument, JS/TS
+    dynamic `import(expr)` with a non-literal specifier, and every
+    reflection-API entry (`Class.forName`, `Method.invoke`,
+    `KCallable.call`) which is opaque unconditionally -- reflection
+    resolves through runtime metadata even when the class/method NAME
+    literal is visible in source, unlike a plain import/attribute name.
+    `literal_arg_index` is `None` for constructs that are always opaque
+    regardless of any literal argument (`eval`, reflection); otherwise the
+    0-based argument position `frob.vet._capability`'s heuristic checks for
+    a literal (a string/byte-string literal there downgrades the site to
+    the ordinary resolver path, per the coordinator's T-0665 sign-off:
+    "literal-key lookups that resolve statically belong to the ordinary
+    resolver path, not this gate")."""
+
+    model_config = ConfigDict(frozen=True)
+
+    language: str
+    construct_name: str
+    needle: str
+    literal_arg_index: int | None
+    rationale: str
+    taxonomy_row: str
+
+
+# frob:doc docs/modules/vet.md#public-api
+# frob:ticket T-0665
+RUNTIME_OPAQUE_CONSTRUCTS: tuple[_OpaqueConstruct, ...] = (
+    _OpaqueConstruct(
+        language="python",
+        construct_name="eval",
+        needle="eval(",
+        literal_arg_index=None,
+        rationale="arbitrary source text evaluated at runtime; no literal "
+        "argument can make this statically resolvable",
+        taxonomy_row="python:runtime:eval",
+    ),
+    _OpaqueConstruct(
+        language="python",
+        construct_name="exec",
+        needle="exec(",
+        literal_arg_index=None,
+        rationale="arbitrary source text executed at runtime; no literal "
+        "argument can make this statically resolvable",
+        taxonomy_row="python:runtime:exec",
+    ),
+    _OpaqueConstruct(
+        language="python",
+        construct_name="getattr",
+        needle="getattr(",
+        literal_arg_index=1,
+        rationale="a non-literal attribute name is resolved by runtime "
+        'lookup; a literal name (`getattr(subprocess, "run")`) is '
+        "equivalent to the plain attribute access the ordinary resolver "
+        "already handles",
+        taxonomy_row="python:runtime:getattr-dynamic-name",
+    ),
+    _OpaqueConstruct(
+        language="python",
+        construct_name="setattr",
+        needle="setattr(",
+        literal_arg_index=1,
+        rationale="a non-literal attribute name means the mutated site is "
+        "not visible to any static binding table -- mirrors getattr's split",
+        taxonomy_row="python:runtime:setattr-monkeypatch",
+    ),
+    _OpaqueConstruct(
+        language="python",
+        construct_name="__import__",
+        needle="__import__(",
+        literal_arg_index=0,
+        rationale="a non-literal module-name argument is resolved by "
+        "runtime string computation",
+        taxonomy_row="python:runtime:dunder-import-computed-name",
+    ),
+    _OpaqueConstruct(
+        language="python",
+        construct_name="importlib.import_module",
+        needle="importlib.import_module(",
+        literal_arg_index=0,
+        rationale="same computed-module-name opacity as __import__, "
+        "importlib's documented equivalent entry point",
+        taxonomy_row="python:runtime:importlib-import-module",
+    ),
+    _OpaqueConstruct(
+        language="typescript",
+        construct_name="eval",
+        needle="eval(",
+        literal_arg_index=None,
+        rationale="arbitrary source text evaluated at runtime",
+        taxonomy_row="typescript:runtime:eval",
+    ),
+    _OpaqueConstruct(
+        language="typescript",
+        construct_name="Function constructor",
+        needle="new Function(",
+        literal_arg_index=None,
+        rationale="arbitrary source text compiled into a new function at "
+        "runtime, ECMA-262 20.2.1",
+        taxonomy_row="typescript:runtime:function-constructor",
+    ),
+    _OpaqueConstruct(
+        language="typescript",
+        construct_name="dynamic import()",
+        needle="import(",
+        literal_arg_index=0,
+        rationale="a non-literal specifier is resolved by runtime module "
+        'loading; `import("literal/path")` is statically enumerable and '
+        "belongs to the ordinary resolver path",
+        taxonomy_row="typescript:runtime:dynamic-import-call",
+    ),
+    _OpaqueConstruct(
+        language="c-cpp",
+        construct_name="dlsym",
+        needle="dlsym(",
+        literal_arg_index=1,
+        rationale="POSIX dynamic symbol lookup; a non-literal symbol-name "
+        "argument is resolved by runtime string computation. A literal "
+        'symbol name (`dlsym(h, "run_cmd")`) is still resolved by the '
+        "dynamic LINKER at load time (not this scanner), but the source "
+        "text at least names the target for a human/tool to grep -- the "
+        "coordinator's category-1 split treats this as the ordinary-"
+        "resolver boundary the same way it does for getattr/dlopen's "
+        "python-side analog",
+        taxonomy_row="c:runtime:dlopen-dlsym",
+    ),
+    _OpaqueConstruct(
+        language="rust",
+        construct_name="libloading symbol lookup",
+        needle=".get(",
+        literal_arg_index=None,
+        rationale="a `libloading::Library::get` dynamic symbol lookup -- "
+        "unconditionally opaque per the coordinator's T-0665 sign-off (no "
+        "literal/non-literal split given for this row, unlike C's dlsym); "
+        "this needle is deliberately broad (bare `.get(`) since the "
+        "receiver type cannot be confirmed without full type inference -- "
+        "a disclosed over-approximation gated to files that also import "
+        "`libloading` (see `_rust_file_uses_libloading` in "
+        "frob.vet._capability), not a claim of call-site precision",
+        taxonomy_row="rust:runtime:libloading-dlsym",
+    ),
+    _OpaqueConstruct(
+        language="kotlin",
+        construct_name="Class.forName",
+        needle="Class.forName(",
+        literal_arg_index=None,
+        rationale="reflection resolves through JVM runtime metadata even "
+        "when the class-name literal is visible in source -- unlike a "
+        "plain import/attribute name, no literal argument makes the "
+        "SUBSEQUENT .getMethod()/.invoke() chain statically resolvable",
+        taxonomy_row="kotlin:runtime:class-forname-invoke",
+    ),
+    _OpaqueConstruct(
+        language="kotlin",
+        construct_name="KCallable.call",
+        needle=".call(",
+        literal_arg_index=None,
+        rationale="a `KCallable`/`KFunction` obtained dynamically (e.g. via "
+        "`::class.members`) and invoked through `.call` -- the bound "
+        "target is runtime metadata, unconditionally opaque; this needle "
+        "is deliberately broad (`.call(` alone) since the receiver type "
+        "cannot be confirmed without full type inference -- a disclosed "
+        "over-approximation, not a claim of precision",
+        taxonomy_row="kotlin:runtime:kcallable-call",
+    ),
+)
+
+# T-0665: source-invisible taxonomy rows (coordinator sign-off category 3)
+# -- constructs no source-text or per-file AST scan can see because the
+# resolution happens at a layer this scanner never observes (the dynamic
+# linker/loader, a JIT'd vtable, or an out-of-process plugin loader).
+# Each entry is a REG011-compliant "none -- <explanation>" disposition
+# naming why source-level analysis cannot see it and what layer could,
+# cross-registered in docs/design/registry/check-coverage.yaml so the REG
+# gates keep these accountable forever rather than silently forgotten.
+# frob:doc docs/modules/vet.md#public-api
+# frob:ticket T-0665
+OPAQUE_SOURCE_INVISIBLE: tuple[_MatrixExcuse, ...] = (
+    _MatrixExcuse(
+        capability_kind="opaque-capability-indirection",
+        language="c-cpp",
+        reason="none -- weak-symbol interposition (GNU/ELF __attribute__"
+        "((weak))) and LD_PRELOAD-class symbol override are resolved by "
+        "the DYNAMIC LINKER at process-load time, never visible to a "
+        "per-source-file text/AST scan; the source at every call site is "
+        "textually identical whether or not it gets interposed. Only a "
+        "deploy/host-level obligation (frob.strata's host-isolation model, "
+        "docs/strata/host.md) can observe the actual linked artifact set, "
+        "not this file-level scanner.",
+    ),
+    _MatrixExcuse(
+        capability_kind="opaque-capability-indirection",
+        language="rust",
+        reason="none -- a runtime vtable patch (unsafe raw-pointer rewrite "
+        "of a trait object's vtable slot) is process-memory manipulation "
+        "with no distinguishing source-text shape from ordinary unsafe "
+        "pointer arithmetic; only runtime instrumentation (not a static "
+        "source scan) could observe it.",
+    ),
+)
+
+
 __all__ = [
     "CAPABILITY_KINDS",
     "CAPABILITY_MATRIX_EXCUSES",
     "DANGEROUS_OPERATIONS",
     "LANGUAGES",
     "NO_CAPABILITY_MODULES",
+    "OPAQUE_SOURCE_INVISIBLE",
+    "RUNTIME_OPAQUE_CONSTRUCTS",
     "_DangerousOperation",
     "_MatrixCell",
     "_MatrixExcuse",
+    "_OpaqueConstruct",
     "capability_matrix",
     "_unexcused_empty_cells",
     "_validate_registry_kinds",

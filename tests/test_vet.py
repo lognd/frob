@@ -5054,3 +5054,246 @@ class TestClosedWorldAccounting:
         assert r.import_name == "os"
         assert r.resolution == "no-capability"
         assert r.detail == ""
+
+
+class TestOpaqueIndirectionGate:
+    """T-0665: fail-closed runtime-resolved capability-indirection
+    obligation -- `frob.vet._capability._opaque_indirection_findings` and
+    `frob.gates._opaque.opaque_gate`'s literal/non-literal split, the
+    coordinator-signed category-1 boundary."""
+
+    def test_python_getattr_non_literal_name_fires(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("getattr(subprocess, name)(x)\n")
+        findings = _opaque_indirection_findings(pkg)
+        assert any(f.construct_name == "getattr" for f in findings)
+
+    def test_python_getattr_literal_name_does_not_fire(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # Coordinator sign-off: "literal-key lookups that resolve
+        # statically belong to the ordinary resolver path, not this gate."
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text('getattr(subprocess, "run")(x)\n')
+        findings = _opaque_indirection_findings(pkg)
+        assert not any(f.construct_name == "getattr" for f in findings)
+
+    def test_python_eval_always_fires_regardless_of_argument(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # eval/exec have literal_arg_index=None -- always opaque, no
+        # literal split is possible for arbitrary evaluated source text.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text('eval("1 + 1")\n')
+        findings = _opaque_indirection_findings(pkg)
+        assert any(f.construct_name == "eval" for f in findings)
+
+    def test_python_import_module_non_literal_fires(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("importlib.import_module(mod_name).run(x)\n")
+        findings = _opaque_indirection_findings(pkg)
+        assert any(f.construct_name == "importlib.import_module" for f in findings)
+
+    def test_typescript_dynamic_import_non_literal_specifier_fires(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text("import(modName).then(m => m.exec(x));\n")
+        findings = _opaque_indirection_findings(pkg)
+        assert any(f.construct_name == "dynamic import()" for f in findings)
+
+    def test_typescript_dynamic_import_literal_specifier_does_not_fire(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.ts"
+        pkg.write_text('import("./known-module").then(m => m.run());\n')
+        findings = _opaque_indirection_findings(pkg)
+        assert not any(f.construct_name == "dynamic import()" for f in findings)
+
+    def test_c_dlsym_non_literal_symbol_fires(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text(
+            "void g() { void (*f)(const char*) = dlsym(handle, name); f(x); }\n"
+        )
+        findings = _opaque_indirection_findings(pkg)
+        assert any(f.construct_name == "dlsym" for f in findings)
+
+    def test_c_dlsym_literal_symbol_does_not_fire(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text(
+            'void g() { void (*f)(const char*) = dlsym(handle, "run_cmd"); f(x); }\n'
+        )
+        findings = _opaque_indirection_findings(pkg)
+        assert not any(f.construct_name == "dlsym" for f in findings)
+
+    def test_kotlin_class_forname_always_fires(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.kt"
+        pkg.write_text(
+            'fun run(cls: String) { Class.forName(cls).getMethod("m").invoke(t) }\n'
+        )
+        findings = _opaque_indirection_findings(pkg)
+        assert any(f.construct_name == "Class.forName" for f in findings)
+
+    def test_rust_libloading_get_fires_only_when_file_uses_libloading(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        # The bare `.get(` needle is deliberately broad -- gated to files
+        # that actually import libloading, so an ordinary HashMap::get in
+        # an unrelated rust file never trips this.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        with_lib = tmp_path / "with_lib.rs"
+        with_lib.write_text(
+            "use libloading::Library;\n"
+            'fn g(lib: &Library) { let f = lib.get(b"run_cmd").unwrap(); f(x); }\n'
+        )
+        assert any(
+            f.construct_name == "libloading symbol lookup"
+            for f in _opaque_indirection_findings(with_lib)
+        )
+
+        without_lib = tmp_path / "without_lib.rs"
+        without_lib.write_text(
+            'fn g(m: &std::collections::HashMap<String, i32>) { m.get("x"); }\n'
+        )
+        assert not any(
+            f.construct_name == "libloading symbol lookup"
+            for f in _opaque_indirection_findings(without_lib)
+        )
+
+    def test_finding_inside_comment_span_does_not_fire(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::_opaque_indirection_findings kind="unit"  # noqa: E501
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("# eval(x) is just an example in a comment\n")
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_finding_inside_string_literal_does_not_fire(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::_byte_offset_inside_string_literal kind="unit"  # noqa: E501
+        # The single-largest false-positive class the T-0665 first-turn-on
+        # measurement found: this module's OWN registry constants (e.g.
+        # `needle="getattr("`) tripping their own obligation.
+        from frob.vet._capability import _opaque_indirection_findings
+
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text('NEEDLE = "getattr("\n')
+        findings = _opaque_indirection_findings(pkg)
+        assert findings == ()
+
+    def test_arg_looks_literal_rejects_fstring_interpolation(self) -> None:
+        # frob:tests src/frob/vet/_capability.py::_arg_looks_literal kind="unit"
+        # Kills the f-string-interpolation carve-out: an f-string WITH a
+        # `{...}` interpolation is NOT a plain literal even though it
+        # starts with a quote character.
+        from frob.vet._capability import _arg_looks_literal
+
+        assert _arg_looks_literal(b'"run"') is True
+        assert _arg_looks_literal(b'f"{name}"') is False
+        assert _arg_looks_literal(b"name") is False
+
+    def test_split_top_level_args_balances_nested_parens(self) -> None:
+        # frob:tests src/frob/vet/_capability.py::_split_top_level_args kind="unit"  # noqa: E501
+        from frob.vet._capability import _split_top_level_args
+
+        raw = b"getattr(foo(1, 2), name)) trailing"
+        # start right after "getattr("
+        args = _split_top_level_args(raw, len(b"getattr("))
+        assert args == [b"foo(1, 2)", b" name"]
+
+    def test_split_top_level_args_returns_none_when_unterminated(self) -> None:
+        # frob:tests src/frob/vet/_capability.py::_split_top_level_args kind="unit"  # noqa: E501
+        # Fail-closed: an unterminated call (truncated file / match found
+        # inside an unhandled construct) returns None, which the caller
+        # treats as "argument unknown" and fires rather than silently
+        # passing.
+        from frob.vet._capability import _split_top_level_args
+
+        assert _split_top_level_args(b"getattr(foo, name", len(b"getattr(")) is None
+
+    def test_opaque_gate_emits_warn_severity_violation(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_opaque.py::opaque_gate kind="unit"
+        import subprocess as sp
+
+        from frob.gates._models import Severity
+        from frob.gates._opaque import opaque_gate
+
+        sp.run(["git", "init"], cwd=tmp_path, capture_output=True, check=True)
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text("getattr(subprocess, name)(x)\n")
+        sp.run(["git", "add", "pkg.py"], cwd=tmp_path, capture_output=True, check=True)
+
+        violations = opaque_gate(tmp_path)
+        assert len(violations) == 1
+        assert violations[0].rule == "OPAQUE001"
+        assert violations[0].severity == Severity.WARN
+        assert violations[0].file == "pkg.py"
+
+    def test_opaque_gate_no_findings_on_empty_tracked_set(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_opaque.py::opaque_gate kind="unit"
+        from frob.gates._opaque import opaque_gate
+
+        assert opaque_gate(tmp_path) == ()
+
+    def test_waived_finding_is_suppressed_and_reason_recorded(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_opaque.py::opaque_gate kind="unit"
+        # Acceptance criterion [1]: "Given the same construct with a
+        # reasoned waiver, when checked, then it passes and the waiver
+        # reason is recorded" -- the generic frob:waive engine
+        # (frob.gates._apply_waivers) applies to OPAQUE001 the same way
+        # it does to every other rule id, once the gate emits a real
+        # Violation for it (this test proves that end to end).
+        import subprocess as sp
+
+        from frob.gates import _apply_waivers  # noqa: PLC0415 - internal, test-only
+        from frob.gates._opaque import opaque_gate
+        from frob.graph import build_graph
+
+        sp.run(["git", "init"], cwd=tmp_path, capture_output=True, check=True)
+        pkg = tmp_path / "pkg.py"
+        pkg.write_text(
+            '# frob:waive OPAQUE001 reason="name is a trusted enum member, '
+            'not attacker input"\n'
+            "getattr(subprocess, name)(x)\n"
+        )
+        sp.run(["git", "add", "pkg.py"], cwd=tmp_path, capture_output=True, check=True)
+
+        violations = opaque_gate(tmp_path)
+        assert len(violations) == 1
+
+        cache = tmp_path / ".frob" / "cache.db"
+        snap = build_graph(tmp_path, cache).danger_ok
+        kept, waived = _apply_waivers(violations, snap)
+        assert kept == ()
+        assert len(waived) == 1
+        assert waived[0].waived is not None
+        assert "trusted enum member" in waived[0].waived.reason

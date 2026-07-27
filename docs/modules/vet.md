@@ -783,6 +783,19 @@ count to hoist) -- no behavior change.
   scan uses to get the same comment/docstring exclusion this module's own
   raw-text scanners apply, instead of a needle-in-line check with no
   prose awareness at all.
+- `RUNTIME_OPAQUE_CONSTRUCTS` -- T-0665: every coordinator-signed
+  category-1 "evasion-indicative dynamic lookup" construct
+  (`eval`/`exec`, non-literal `getattr`/`setattr`/`__import__`/
+  `importlib.import_module`, non-literal `dlsym`, non-literal JS/TS
+  dynamic `import()`, reflection APIs, `libloading` symbol lookup) that
+  `frob.gates._opaque.opaque_gate`'s `OPAQUE001` fires on when found with
+  no `frob:waive` -- the fail-closed sibling of `DANGEROUS_OPERATIONS`'s
+  ordinary resolver-visible table.
+- `OPAQUE_SOURCE_INVISIBLE` -- T-0665: REG011-compliant "none --
+  &lt;explanation&gt;" dispositions for the taxonomy's runtime-opaque rows
+  no per-file source scan can ever see (linker weak-symbol
+  interposition, runtime vtable patching) -- excused, not silently
+  dropped, cross-registered in `docs/design/registry/check-coverage.yaml`.
 - `scan_file_fingerprints` -- T-0153: `frob.strata.CVE_FINGERPRINTS` entries
   whose needle(s) matched in one source file's raw text (the CVE-fingerprint
   sibling of `scan_file_operations`, docs/strata/threat.md#cve-fingerprints-
