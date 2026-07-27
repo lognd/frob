@@ -272,6 +272,8 @@ def _apply_txn_waivers(model: KernelModel, violations: list[TxnBoundaryViolation
 
 # frob:doc docs/strata/reliability.md#rel30x-transactional-boundary-obligation-t-0650  # noqa: E501
 # frob:ticket T-0650
+# frob:enforces CHK-GATE-REL300
+# frob:enforces CHK-GATE-REL301
 # frob:tests tests/unit/strata/test_txn.py::TestMissingTxnBoundary.test_multi_store_write_op_without_boundary_fires  # noqa: E501
 def check_txn_boundary_obligations(
     model: KernelModel, store_ids: frozenset[str], root: Path

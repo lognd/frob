@@ -307,6 +307,9 @@ def _apply_clock_ordering_waivers(
 # frob:ticket T-0657
 # frob:ticket T-0958
 # frob:enforces SDC-8-ORDERING-GUARANTEES
+# frob:enforces CHK-GATE-REL370
+# frob:enforces CHK-GATE-REL371
+# frob:enforces CHK-GATE-REL372
 # frob:tests tests/unit/strata/test_clock_ordering.py::TestMissingOrderingStrategy.test_clock_dependent_flow_without_ordering_strategy_fires  # noqa: E501
 def check_clock_ordering_obligations(
     model: KernelModel, root: Path

@@ -238,6 +238,7 @@ def _file_violations(path: str, graph: _EffectGraph) -> list[Violation]:
 # frob:tests tests/unit/perf/test_loop_effects.py::TestPerf008LoopInvariantEffect.test_unresolvable_callee_does_not_crash_and_does_not_fire  # noqa: E501
 # frob:ticket T-0775
 # frob:ticket T-0922
+# frob:enforces CHK-GATE-PERF008
 def loop_invariant_effect_violations(
     files: Sequence[ParsedFile],
     graph: _EffectGraph | None = None,

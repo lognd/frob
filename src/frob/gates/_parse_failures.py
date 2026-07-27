@@ -112,6 +112,8 @@ def _partial_parse_violations(root: Path) -> tuple[Violation, ...]:
 # frob:tests tests/test_gates.py::TestParseFailureGate.test_no_parse_failures_is_clean
 # frob:tests tests/test_gates.py::TestParseFailureGate.test_partial_parse_is_an_error_violation  # noqa: E501
 # frob:tests tests/test_gates.py::TestParseFailureGate.test_no_partial_parses_is_clean
+# frob:enforces CHK-GATE-PARSE001
+# frob:enforces CHK-GATE-PARSE002
 def parse_failure_gate(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """PARSE001 + PARSE002: one ERROR per hard parse failure or partial parse.
 

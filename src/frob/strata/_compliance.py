@@ -268,6 +268,8 @@ def _catalog_violation(view: str, reg_id: str) -> ComplianceViolation:
 
 
 # frob:doc docs/strata/threat.md#compliance-regulatory-obligations-stdcompliance
+# frob:enforces CHK-GATE-COMPLIANCE001
+# frob:enforces CHK-GATE-COMPLIANCE004
 def check_regulation_catalog_completeness(
     view: str,
     catalog: tuple[RegulationEntry, ...] = COMPLIANCE_CATALOG,
@@ -758,6 +760,7 @@ def _check_minimization(model: KernelModel) -> tuple[ComplianceViolation, ...]:
 
 # frob:doc docs/strata/threat.md#compliance-regulatory-obligations-stdcompliance
 # frob:waive TEST005 reason="check_regulation_discharge 83.3% branch cover, debt T-0160"
+# frob:enforces CHK-GATE-COMPLIANCE002
 def check_regulation_discharge(
     model: KernelModel,
 ) -> Result[tuple[ComplianceViolation, ...], StrataError]:
@@ -839,6 +842,7 @@ def _privacy_policy_flow_violation(
 
 # frob:doc docs/strata/threat.md#compliance-regulatory-obligations-stdcompliance
 # frob:waive TEST005 reason="check_privacy_policy 81.8% branch cover, debt T-0160"
+# frob:enforces CHK-GATE-COMPLIANCE003
 def check_privacy_policy(
     model: KernelModel, policy: PrivacyPolicy
 ) -> tuple[ComplianceViolation, ...]:

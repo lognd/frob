@@ -260,6 +260,8 @@ def _apply_circuit_breaker_waivers(
 
 # frob:doc docs/strata/reliability.md#rel23x-circuit-breaker--bulkhead-obligation-t-0642
 # frob:ticket T-0642
+# frob:enforces CHK-GATE-REL230
+# frob:enforces CHK-GATE-REL231
 # frob:tests tests/unit/strata/test_circuit_breaker.py::TestMissingCircuitBreaker.test_external_node_without_circuit_breaker_fires  # noqa: E501
 def check_circuit_breaker_obligations(
     model: KernelModel, root: Path

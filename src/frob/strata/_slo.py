@@ -260,6 +260,8 @@ def _apply_slo_waivers(model: KernelModel, violations: list[SloViolation]):  # n
 # frob:ticket T-0648
 # frob:ticket T-0958
 # frob:enforces SDC-7-SLO-BASED-ALERTING
+# frob:enforces CHK-GATE-REL280
+# frob:enforces CHK-GATE-REL281
 # frob:tests tests/unit/strata/test_slo.py::TestMissingSlo.test_service_node_without_slo_fires  # noqa: E501
 def check_slo_obligations(
     model: KernelModel, root: Path

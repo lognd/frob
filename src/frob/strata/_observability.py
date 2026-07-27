@@ -306,6 +306,9 @@ def _apply_observability_waivers(
 # frob:enforces SDC-6-USE-METHOD-UTILIZATION-SATURATION-ERRORS
 # frob:enforces SDC-7-THREE-PILLARS-METRICS-LOGS-TRACES
 # frob:enforces SDC-7-DISTRIBUTED-TRACING-DAPPER
+# frob:enforces CHK-GATE-REL270
+# frob:enforces CHK-GATE-REL271
+# frob:enforces CHK-GATE-REL272
 # frob:tests tests/unit/strata/test_observability.py::TestMissingObservability.test_boundary_flow_without_observability_fires  # noqa: E501
 def check_observability_obligations(
     model: KernelModel, root: Path

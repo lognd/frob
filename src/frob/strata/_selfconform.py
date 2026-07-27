@@ -728,6 +728,9 @@ def _unmodeled_violations(
 
 
 # frob:doc docs/strata/selfconform.md#the-three-rules
+# frob:enforces CHK-GATE-SYS100
+# frob:enforces CHK-GATE-SYS101
+# frob:enforces CHK-GATE-SYS102
 def check_self_conformance(
     model: KernelModel, root: Path
 ) -> Result[SelfConformReport, StrataError]:

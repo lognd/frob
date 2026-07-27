@@ -940,6 +940,7 @@ def _discharge(root: Path, symref: str, resource: str) -> Violation | None:
 # frob:tests tests/test_gates.py::TestCleanupObligationGate.test_deinit_never_called_for_cleanup_always_protocol_is_an_error  # noqa: E501
 # frob:tests tests/test_gates.py::TestCleanupObligationGate.test_deinit_reachable_for_cleanup_always_protocol_is_not_flagged  # noqa: E501
 # frob:ticket T-0972
+# frob:enforces CHK-GATE-PROTO004
 # frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helpers from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def protocol_summary_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """PROTO001: the real `mark_unresolved=True` production entrypoint into

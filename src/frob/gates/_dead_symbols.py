@@ -148,6 +148,7 @@ def _declared_referenced_symrefs(snapshot: GraphSnapshot) -> frozenset[str]:
 # frob:tests tests/test_gates.py::TestDeadSymbolGate.test_dunder_method_is_not_flagged
 # frob:tests tests/test_gates.py::TestDeadSymbolGate.test_test_function_is_not_flagged
 # frob:tests tests/test_gates.py::TestDeadSymbolGate.test_tests_edge_target_is_not_flagged  # noqa: E501
+# frob:enforces CHK-GATE-DEAD001
 # frob:waive ARCH001 reason="the per-package reference-graph cache (called_by_package) is built lazily inside the loop and keyed by the record being examined; splitting the per-record body into a helper would require passing the mutable cache dict and root/package derivation across a new boundary for no reduction in branching, the same shape already accepted for this module's sibling gates"  # noqa: E501
 def dead_symbol_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DEAD001: a private (leading-underscore) function/class/method with

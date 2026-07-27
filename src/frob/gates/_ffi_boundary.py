@@ -192,6 +192,8 @@ def _ffi002_violations(root: Path) -> list[Violation]:
 # frob:tests tests/test_gates.py::TestFfiBoundaryGate.test_pyo3_declared_matches_no_drift  # noqa: E501
 # frob:tests tests/test_gates.py::TestFfiBoundaryGate.test_ctypes_call_without_declaration_fires_ffi002  # noqa: E501
 # frob:tests tests/test_gates.py::TestFfiBoundaryGate.test_ctypes_call_with_empty_declaration_clean  # noqa: E501
+# frob:enforces CHK-GATE-FFI001
+# frob:enforces CHK-GATE-FFI002
 def ffi_boundary_gate(root: Path, repo_root: Path) -> tuple[Violation, ...]:
     """FFI001/FFI002 (T-0690) over the repo rooted at `repo_root`: FFI001
     always runs repo-wide (a pyo3 boundary pair is a repo-wide concern the

@@ -299,6 +299,9 @@ def _apply_retry_waivers(model: KernelModel, violations: list[RetryViolation]): 
 # frob:ticket T-0958
 # frob:enforces SDC-4-IDEMPOTENCY
 # frob:enforces SDC-5-RETRY-BACKOFF-JITTER
+# frob:enforces CHK-GATE-REL220
+# frob:enforces CHK-GATE-REL221
+# frob:enforces CHK-GATE-REL222
 # frob:tests tests/unit/strata/test_retry.py::TestMissingBackoff.test_retry_flow_without_backoff_fires  # noqa: E501
 def check_retry_obligations(
     model: KernelModel, root: Path

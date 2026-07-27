@@ -177,6 +177,7 @@ def _doc006_violation(file: str, line: int, kind: str, detail: str) -> Violation
     )
 
 
+# frob:enforces CHK-GATE-DOC007
 def _doc007_violation(file: str, line: int, detail: str) -> Violation:
     """Build one DOC007 violation (T-0986): a `frob:tests` target using
     pytest's `Class::method` collect-only separator instead of this

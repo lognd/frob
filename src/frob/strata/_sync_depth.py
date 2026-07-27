@@ -233,6 +233,7 @@ def _apply_sync_depth_waivers(model: KernelModel, violations: list[SyncDepthViol
 
 # frob:doc docs/strata/reliability.md#rel34x-sync-call-chain-depth-bound-t-0654  # noqa: E501
 # frob:ticket T-0654
+# frob:enforces CHK-GATE-REL340
 # frob:tests tests/unit/strata/test_sync_depth.py::TestSyncDepth.test_chain_at_bound_fires  # noqa: E501
 def check_sync_chain_depth(model: KernelModel) -> SyncDepthReport:
     """The REL34x SYNC-CALL-CHAIN-DEPTH-bound entrypoint (T-0654): REL340

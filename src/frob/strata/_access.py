@@ -228,6 +228,7 @@ def _resource_accessors(model: KernelModel) -> dict[str, list[tuple[str, AccessM
 
 
 # frob:doc docs/strata/host.md#resource-access-modes-t-0700
+# frob:enforces CHK-GATE-SYS204
 # frob:tests tests/unit/strata/test_access.py::TestResourceContentionViolations.test_two_writers_no_arbiter_fires  # noqa: E501
 def resource_contention_violations(
     model: KernelModel, module: Module

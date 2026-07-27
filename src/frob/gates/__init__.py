@@ -2922,6 +2922,8 @@ def _affect002_violation(
 # frob:tests tests/test_gates_affect_drift.py::TestAffectDriftGate.test_stale_dependent_code_flagged  # noqa: E501
 # frob:tests tests/test_gates_affect_drift.py::TestAffectDriftGate.test_clean_when_closure_also_touched  # noqa: E501
 # frob:tests tests/test_gates_affect_drift.py::TestAffectDriftGate.test_no_closure_is_silent  # noqa: E501
+# frob:enforces CHK-GATE-AFFECT001
+# frob:enforces CHK-GATE-AFFECT002
 def affect_drift_gate(snapshot: GraphSnapshot, diff: Diff) -> tuple[Violation, ...]:
     """AFFECT001/AFFECT002 (T-0628, T-0325 follow-on): for every symbol this
     diff touches, walk its `frob.graph.affects.affects()` closure and FAIL
@@ -4980,6 +4982,7 @@ def _fmt001_violations_for_runs(
 
 
 # frob:doc docs/modules/gates.md#fmt001-t-0851
+# frob:enforces CHK-GATE-FMT001
 # frob:tests tests/test_gates.py::TestFmt001Gate.test_directive_run_over_limit_flagged
 def fmt_gate(root: Path, diff: Diff) -> tuple[Violation, ...]:
     """FMT001 (warn): a diff-touched `frob:` directive comment line over the
@@ -5734,6 +5737,7 @@ def _scope002_violation(message: str) -> Violation:
 # frob:tests tests/test_gates.py::TestScope002ClosureGate.test_warns_on_unscoped_private_helper  # noqa: E501
 # frob:tests tests/test_gates.py::TestScope002ClosureGate.test_warns_on_unscoped_test_target  # noqa: E501
 # frob:tests tests/test_gates.py::TestScope002ClosureGate.test_silent_on_closed_scope  # noqa: E501
+# frob:enforces CHK-GATE-SCOPE002
 def _scope002_violations(
     ticket: Ticket, snapshot: GraphSnapshot, root: Path | None
 ) -> tuple[Violation, ...]:
@@ -7816,6 +7820,8 @@ def _load_test_config(root: Path) -> tuple[TestPolicy, tuple[SystemSpec, ...]]:
 # frob:ticket T-0004
 # frob:ticket T-0894
 # frob:waive TEST005 reason="decisions_gate 88.9% branch cover, debt T-0160"
+# frob:enforces CHK-GATE-DEC000
+# frob:enforces CHK-GATE-DEC003
 # frob:tests tests/test_decisions.py::test_never_adopted_decisions_dir_is_silent  # noqa: E501
 # frob:tests tests/test_decisions.py::test_deleted_after_adoption_fires_dec003  # noqa: E501
 def decisions_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
@@ -8152,6 +8158,7 @@ def _tick005_ledger_at_ref(root: Path, ref: str) -> dict[str, Ticket] | None:
 
 
 # frob:ticket T-0537
+# frob:enforces CHK-GATE-TICK005
 def _tick005_merge_state_regression(
     root: Path, queue: TicketQueue
 ) -> tuple[Violation, ...]:
@@ -8548,6 +8555,28 @@ def _compliance005_violation(cv) -> Violation:  # noqa: ANN001
 # frob:tests tests/test_gates.py::TestComplianceGate.test_compliance005_real_repo_registry_passes  # noqa: E501
 # frob:tests tests/test_gates.py::TestComplianceGate.test_compliance006_fires_on_deleted_registry_after_adoption  # noqa: E501
 # frob:tests tests/test_gates.py::TestComplianceGate.test_compliance006_silent_on_never_adopted_registry  # noqa: E501
+# frob:enforces CHK-GATE-COMPLIANCE005
+# frob:enforces CHK-GATE-COMPLIANCE006
+# T-1020-followup: the 17 CMPL_REGISTRY_UNIT_IDS checkable-control units
+# T-0833 flipped to handled_by:COMPLIANCE005 -- compliance_gate (via
+# check_cmpl_registry) is their real enforcing site.
+# frob:enforces CMPL-SOC2-CATEGORIES
+# frob:enforces CMPL-SOC2-CC-FAMILIES
+# frob:enforces CMPL-PCIDSS-REQUIREMENTS
+# frob:enforces CMPL-HIPAA-TECHNICAL-STANDARDS
+# frob:enforces CMPL-GDPR-ARTICLES
+# frob:enforces CMPL-NIST80053-FAMILIES
+# frob:enforces CMPL-NIST80263-VOLUMES
+# frob:enforces CMPL-SSDF-PRACTICE-GROUPS
+# frob:enforces CMPL-ISO27002-THEMES
+# frob:enforces CMPL-ISO27002-CONTROLS
+# frob:enforces CMPL-CIS-CONTROLS
+# frob:enforces CMPL-CIS-SAFEGUARDS
+# frob:enforces CMPL-ASVS-CHAPTERS
+# frob:enforces CMPL-ASVS-REQUIREMENTS
+# frob:enforces CMPL-FEDRAMP-IMPACT-TIERS
+# frob:enforces CMPL-SLSA-BUILD-LEVELS
+# frob:enforces CMPL-FROB-CATALOG-ENTRIES
 def compliance_gate(
     repo_root: Path, registry_dir: Path | None = None
 ) -> tuple[Violation, ...]:
@@ -9052,6 +9081,7 @@ def sys_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 
 
 # frob:ticket T-0756
+# frob:enforces CHK-GATE-SELFAUDIT001
 def _selfaudit_violation(
     sub_rule: str, node: str, detail: str, design_dir: str
 ) -> Violation:
@@ -9223,6 +9253,7 @@ def _dup_config(root: Path) -> tuple[bool, float, bool, bool]:
 # frob:waive TEST005 reason="dup_gate 52.2% branch cover, debt T-0160"
 # frob:invariant INV-011
 # frob:ticket T-0399
+# frob:enforces CHK-GATE-DUP003
 def dup_gate(root: Path, snapshot: GraphSnapshot, diff) -> tuple[Violation, ...]:  # noqa: ANN001
     """DUP001/DUP002: the diff introduces a clone of an existing symbol.
 
@@ -9607,6 +9638,7 @@ def _uv_lock_version(root: Path) -> str | None:
 
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-1009
+# frob:enforces CHK-GATE-REL002
 def _rel002_coherence_violations(root: Path, manifest) -> list[Violation]:  # noqa: ANN001
     """REL002 (T-1009): `.frob-release.json`'s `version` is the ONE version
     authority; `pyproject.toml`, `uv.lock`, and CHANGELOG.md are derived

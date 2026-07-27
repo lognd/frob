@@ -486,6 +486,10 @@ def _apply_starvation_waivers(
 
 # frob:doc docs/strata/reliability.md#rel38x-starvationthroughput-obligation-t-0703
 # frob:ticket T-0703
+# frob:enforces CHK-GATE-REL380
+# frob:enforces CHK-GATE-REL381
+# frob:enforces CHK-GATE-REL382
+# frob:enforces CHK-GATE-REL383
 # frob:tests tests/unit/strata/test_starvation.py::TestUtilization.test_over_capacity_demand_fires_with_arithmetic  # noqa: E501
 def check_starvation_obligations(
     model: KernelModel, module: Module, facts: FactBase

@@ -194,6 +194,7 @@ def _apply_shared_state_waivers(
 
 # frob:doc docs/strata/reliability.md#rel36x-no-shared-mutable-state-across-service-boundaries-obligation-t-0656  # noqa: E501
 # frob:ticket T-0656
+# frob:enforces CHK-GATE-REL360
 # frob:tests tests/unit/strata/test_shared_state.py::TestSharedState.test_mutable_node_shared_by_two_services_fires  # noqa: E501
 def check_shared_state(model: KernelModel) -> SharedStateReport:
     """The REL36x NO-SHARED-MUTABLE-STATE-ACROSS-SERVICE-BOUNDARIES

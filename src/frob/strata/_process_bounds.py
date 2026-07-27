@@ -369,6 +369,12 @@ def _apply_process_bounds_waivers(
 
 # frob:doc docs/strata/reliability.md#rel39x-kernel-interface--process-bounds-t-0960
 # frob:ticket T-0960
+# frob:enforces SDC-13-EVERY-KERNEL-USERSPACE-INTERFACE-SYSCALL-PROCFS-SYSFS-ENTRY-IOCTL-IS-CLASSIFIED-INT  # noqa: E501
+# frob:enforces SDC-13-EVERY-DEPLOYED-PROCESS-DECLARES-ITS-RESOURCE-BOUNDS-CGROUP-LIMITS-CPU-MEMORY-IO-AND  # noqa: E501
+# frob:enforces CHK-GATE-REL390
+# frob:enforces CHK-GATE-REL391
+# frob:enforces CHK-GATE-REL392
+# frob:enforces CHK-GATE-REL393
 # frob:tests tests/unit/strata/test_process_bounds.py::TestMissingInterfaceClassification.test_kernel_interface_node_without_classification_fires  # noqa: E501
 def check_process_bounds_obligations(
     model: KernelModel, root: Path

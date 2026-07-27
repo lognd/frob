@@ -1288,6 +1288,7 @@ class ThreatReport(BaseModel):
     violations: tuple[ThreatViolation, ...] = ()
 
 
+# frob:enforces CHK-GATE-THREAT001
 def _catalog_violation(view: str, cwe_id: str) -> ThreatViolation:
     """THREAT001 violation helper: deny-by-default unaddressed baseline CWE."""
     _log.warning("threat: THREAT001 %s has no catalog or out-of-scope entry", cwe_id)
@@ -1333,6 +1334,7 @@ def check_catalog_completeness(
     return Ok(tuple(violations))
 
 
+# frob:enforces CHK-GATE-THREAT002
 def _capability_violation(kind: str, node_id: str) -> ThreatViolation:
     """THREAT002 violation helper: deny-by-default unclassified capability
     kind (docs/strata/threat.md#phasing item B)."""
@@ -1459,6 +1461,7 @@ def _caught_by_unresolved_tokens(
     return (rule_ids - known_rule_ids) | (cwe_ids - cataloged_ids)
 
 
+# frob:enforces CHK-GATE-THREAT006
 def _caught_by_violation(
     entry_id: str, caught_by: str, unresolved: frozenset[str]
 ) -> ThreatViolation:
@@ -1550,6 +1553,7 @@ def _discharge_claim_id(cwe_id: str, node_id: str) -> str:
     return f"weakness:{cwe_id}:{node_id}"
 
 
+# frob:enforces CHK-GATE-THREAT003
 def _discharge_violation(
     entry: WeaknessEntry, node_id: str, detail: str
 ) -> ThreatViolation:
@@ -2165,6 +2169,7 @@ def _index_claims_and_results(
     return Ok((claims_by_id, nodes_by_id, results_by_id))
 
 
+# frob:enforces CHK-GATE-THREAT004
 def _undeclared_sink_violation(violation: CapabilityViolation) -> ThreatViolation:
     """THREAT004 violation helper: an observed sink whose owning node declares
     no `may` capability of the matching kind -- the code-level "undeclared
@@ -2189,6 +2194,7 @@ def _undeclared_sink_violation(violation: CapabilityViolation) -> ThreatViolatio
     )
 
 
+# frob:enforces CHK-GATE-THREAT005
 def _unclassified_sink_violation(effect: ObservedEffect, owner: str) -> ThreatViolation:
     """THREAT005 violation helper: an extracted sink whose kind the catalog
     does not recognize and no `BenignCapability` excuses -- the code-level

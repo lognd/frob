@@ -288,6 +288,13 @@ def _declared_waivers(model: KernelModel) -> list[tuple[str, Waiver]]:
 # frob:doc docs/strata/waive.md#implementation
 # frob:tests tests/unit/strata/test_litmus_waive.py::TestWaiveLitmus.test_stale_fails
 # frob:tests tests/unit/strata/test_selfconform.py::TestWaiverChannel.test_stale
+# T-1020-followup: RELWAIVE002 is not literally constructed inside this
+# function -- each of ~20 `check_X_obligations` callers turns this
+# function's own `.stale` output into its own family's
+# `Violation(rule="RELWAIVE002", ...)`. This is the single shared
+# mechanism that DETERMINES staleness for every one of those call sites,
+# so the enforces edge lives here rather than duplicated 20 times.
+# frob:enforces CHK-GATE-RELWAIVE002
 def apply_waivers(
     model: KernelModel,
     findings: Sequence[_F],

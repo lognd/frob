@@ -376,6 +376,12 @@ def _apply_supply_chain_boot_waivers(
 
 # frob:doc docs/strata/reliability.md#rel39y-abi-compat-window--boot-attestation-t-0962
 # frob:ticket T-0962
+# frob:enforces SDC-13-A-DECLARED-ABI-ISA-TARGET-IS-STABLE-ACROSS-A-COMPATIBILITY-WINDOW-A-COMPILED-ARTIFA  # noqa: E501
+# frob:enforces SDC-13-EVERY-BOOT-CHAIN-STAGE-IS-SIGNED-SECURE-BOOT-OR-MEASURED-INTO-AN-ATTESTABLE-LOG-MEA  # noqa: E501
+# frob:enforces CHK-GATE-REL394
+# frob:enforces CHK-GATE-REL395
+# frob:enforces CHK-GATE-REL396
+# frob:enforces CHK-GATE-REL397
 # frob:tests tests/unit/strata/test_supply_chain_boot.py::TestMissingAbiCompatWindow.test_compiled_artifact_node_without_compat_window_fires  # noqa: E501
 def check_supply_chain_boot_obligations(
     model: KernelModel, root: Path

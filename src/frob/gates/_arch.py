@@ -88,12 +88,13 @@ _ERROR_SEVERITY_CATEGORIES = frozenset({"cpp-noexcept-throws"})
 # frob:doc docs/modules/gates.md#rule-catalog
 # frob:enforces ACC-2-1-LONG-FUNCTION
 # frob:enforces CHK-GATE-ARCH001
+# T-1020-followup: T-0728 disclosed CHK-GATE-ARCH101/102/103 as a land
+# obligation left for a later pass -- this closes it, same
+# `_ARCH_CATEGORY_TO_RULE` sites ARCH001 already binds to.
+# frob:enforces CHK-GATE-ARCH101
+# frob:enforces CHK-GATE-ARCH102
+# frob:enforces CHK-GATE-ARCH103
 # frob:enforces CHK-GATE-CPPTHROW001
-# T-0728: ARCH101/102/103 are NOT wired to a `frob:enforces CHK-GATE-*`
-# directive here -- docs/design/registry/check-coverage.yaml is out of this
-# ticket's declared scope (per dispatch instructions); the coordinator adds
-# CHK-GATE-ARCH101/102/103 rows plus the matching directives as a land
-# obligation, same as T-0788's COMPLIANCE005 precedent left it.
 # frob:tests tests/unit/test_arch_srp.py::TestArchGateSrpWiring.test_two_cluster_class_fires_arch101  # noqa: E501
 # frob:tests tests/unit/test_arch_srp.py::TestArchGateSrpWiring.test_cohesive_class_does_not_fire_arch101  # noqa: E501
 # frob:tests tests/unit/test_arch_srp.py::TestArchGateSrpWiring.test_god_module_fires_arch102  # noqa: E501

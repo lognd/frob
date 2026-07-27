@@ -207,6 +207,7 @@ def _apply_spof_waivers(model: KernelModel, violations: list[SpofViolation]):  #
 
 # frob:doc docs/strata/reliability.md#rel25x-spof-detection-t-0645
 # frob:ticket T-0645
+# frob:enforces CHK-GATE-REL250
 # frob:tests tests/unit/strata/test_spof.py::TestSpof.test_singleton_node_with_critical_inbound_fires  # noqa: E501
 def check_spof(model: KernelModel) -> SpofReport:
     """The REL25x SPOF-detection entrypoint (T-0645): REL250 across every

@@ -861,6 +861,7 @@ def path_ever_tracked(repo_root: Path, rel_path: str) -> bool:
 # then deleted it is loud, not silently downgraded to "never adopted".
 # frob:tests tests/test_registry_exhaustiveness.py::TestDeletedRegistry.test_never_adopted_registry_dir_is_silent  # noqa: E501
 # frob:tests tests/test_registry_exhaustiveness.py::TestDeletedRegistry.test_deleted_after_adoption_fires_reg012  # noqa: E501
+# frob:enforces CHK-GATE-REG012
 def registry_gate(
     repo_root: Path,
     queue: TicketQueue,

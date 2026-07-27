@@ -238,6 +238,8 @@ def _apply_interactive_cost_waivers(
 
 # frob:doc docs/strata/reliability.md#rel31x-interactive-cost-bound-obligation-t-0919
 # frob:ticket T-0919
+# frob:enforces CHK-GATE-REL310
+# frob:enforces CHK-GATE-REL311
 # frob:tests tests/unit/strata/test_interactive_cost.py::TestMissingBoundedCost.test_interactive_node_without_bounded_cost_fires  # noqa: E501
 def check_interactive_cost_obligations(
     model: KernelModel, root: Path

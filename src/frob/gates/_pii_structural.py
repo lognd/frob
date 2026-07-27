@@ -2097,6 +2097,8 @@ def _scan_one_python_file(
 # frob:enforces SEC-PII-PII-STD_PII_CATEGORY_RECONCILIATION
 # frob:enforces CHK-GATE-PII010
 # frob:enforces CHK-GATE-SEC110
+# frob:enforces CHK-GATE-PII011
+# frob:enforces CHK-GATE-PII012
 # frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helpers from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def pii_structural_gate(root: Path) -> tuple[Violation, ...]:
     """PII010/SEC110 (docs/modules/gates.md#structural-pii-secrets-

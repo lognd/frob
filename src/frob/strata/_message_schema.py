@@ -240,6 +240,8 @@ def _apply_message_schema_waivers(
 # frob:ticket T-0651
 # frob:ticket T-0958
 # frob:enforces SDC-13-EVERY-SERVICE-TO-SERVICE-API-DECLARES-AN-EXPLICIT-SCHEMA-CONTRACT-WITH-A-VERSIONING  # noqa: E501
+# frob:enforces CHK-GATE-REL320
+# frob:enforces CHK-GATE-REL321
 # frob:tests tests/unit/strata/test_message_schema.py::TestMissingSchemaVersion.test_queue_node_without_schema_version_fires  # noqa: E501
 def check_message_schema_obligations(
     model: KernelModel, root: Path

@@ -137,6 +137,7 @@ def _pii_category(tag: str) -> str | None:
 
 
 # frob:doc docs/strata/threat.md#pii-declarations-stdpii-t-0154
+# frob:enforces CHK-GATE-PII001
 def check_pii_catalog(model: KernelModel) -> tuple[PiiViolation, ...]:
     """PII001: every `carries` tag's category prefix is one of the fixed
     seven (`PII_CATEGORIES`) -- deny-by-default on a malformed or unknown
@@ -193,6 +194,7 @@ def _pii_claim_override(
 
 
 # frob:doc docs/strata/threat.md#pii-declarations-stdpii-t-0154
+# frob:enforces CHK-GATE-PII002
 def check_pii_boundary_protection(model: KernelModel) -> tuple[PiiViolation, ...]:
     """PII002: a flow touching a PII-carrying node (EITHER end -- data
     moving into a PII store from elsewhere, or out of one) that crosses a
@@ -248,6 +250,7 @@ def _pii002_violation(flow: Flow, src: Node, dst: Node, claim_id: str) -> PiiVio
 
 
 # frob:doc docs/strata/threat.md#pii-declarations-stdpii-t-0154
+# frob:enforces CHK-GATE-PII003
 def check_pii_retention_erasure(model: KernelModel) -> tuple[PiiViolation, ...]:
     """PII003: every PII-carrying node declares EITHER a `retention=`
     bound OR a revocation-edge flow (or both) -- REUSING `_compliance.py`'s
@@ -296,6 +299,7 @@ def _pii003_violation(node: Node) -> PiiViolation:
 
 
 # frob:doc docs/strata/threat.md#pii-declarations-stdpii-t-0154
+# frob:enforces CHK-GATE-PII004
 def check_pii_undeclared_flow(model: KernelModel) -> tuple[PiiViolation, ...]:
     """PII004: a flow sourced from a PII-carrying node whose own `label`
     sits BELOW `Pii` in `LABELS` is under-labeled -- the model's `carries`

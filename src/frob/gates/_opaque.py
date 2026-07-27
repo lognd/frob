@@ -83,6 +83,7 @@ def _tracked_files(root: Path) -> tuple[str, ...]:
 # frob:tests tests/test_vet.py::TestOpaqueIndirectionGate.test_opaque_gate_emits_warn_severity_violation  # noqa: E501
 # frob:tests tests/test_vet.py::TestOpaqueIndirectionGate.test_opaque_gate_no_findings_on_empty_tracked_set  # noqa: E501
 # frob:tests tests/test_vet.py::TestOpaqueIndirectionGate.test_waived_finding_is_suppressed_and_reason_recorded  # noqa: E501
+# frob:enforces CHK-GATE-OPAQUE001
 def opaque_gate(root: Path) -> tuple[Violation, ...]:
     """OPAQUE001: every git-tracked, language-recognized source file
     scanned for `RUNTIME_OPAQUE_CONSTRUCTS` sites (T-0665). WARN-tier

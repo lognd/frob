@@ -1067,3 +1067,111 @@ class TestArchChecksReg008BurnDown:
             v for v in violations if v.rule == "REG008" and "arch-checks.yaml" in v.file
         ]
         assert reg008_arch_checks == []
+
+
+# frob:ticket T-1020
+class TestSystemDesignReg008BurnDown:
+    """T-1020 follow-up: REG008 burn-down over `docs/design/registry/
+    system-design.yaml`'s SDC-13 remainder (T-0960/T-0962's REL39x
+    process-bounds/supply-chain-boot obligation entrypoints) -- same real
+    "does the recorded handled_by claim actually verify against live
+    code" smoke test shape as `TestArchChecksReg008BurnDown`."""
+
+    # frob:tests tests/test_registry_exhaustiveness.py::TestSystemDesignReg008BurnDown.test_no_reg008_findings_for_system_design_yaml  # noqa: E501
+    def test_no_reg008_findings_for_system_design_yaml(self) -> None:
+        """Every `docs/design/registry/system-design.yaml` entry
+        dispositioned `handled_by:<RULE>` must carry a real `frob:enforces
+        <ENTRY-ID>` edge somewhere in code."""
+        from frob.gates import _KNOWN_GATE_RULES
+        from frob.graph import build_graph
+
+        root = Path(__file__).resolve().parents[1]
+        snapshot = build_graph(root, root / ".frob" / "cache.db").danger_ok
+
+        violations = registry_gate(
+            root,
+            _queue(),
+            _KNOWN_GATE_RULES,
+            snapshot=snapshot,
+        )
+
+        reg008_system_design = [
+            v
+            for v in violations
+            if v.rule == "REG008" and "system-design.yaml" in v.file
+        ]
+        assert reg008_system_design == []
+
+
+# frob:ticket T-1020
+class TestCheckCoverageReg008BurnDown:
+    """T-1020 follow-up: REG008 burn-down over `docs/design/registry/
+    check-coverage.yaml` -- one `CHK-GATE-<RULE>` entry per known gate
+    rule id (the coverage denominator), each needing a real
+    `frob:enforces CHK-GATE-<RULE>` edge at the site that actually
+    constructs that rule's `Violation`. Same real "does the recorded
+    handled_by claim actually verify against live code" smoke test shape
+    as `TestArchChecksReg008BurnDown`/`TestSystemDesignReg008BurnDown`."""
+
+    # frob:tests tests/test_registry_exhaustiveness.py::TestCheckCoverageReg008BurnDown.test_no_reg008_findings_for_check_coverage_yaml  # noqa: E501
+    def test_no_reg008_findings_for_check_coverage_yaml(self) -> None:
+        """Every `docs/design/registry/check-coverage.yaml` entry
+        dispositioned `handled_by:<RULE>` must carry a real `frob:enforces
+        CHK-GATE-<RULE>` edge somewhere in code."""
+        from frob.gates import _KNOWN_GATE_RULES
+        from frob.graph import build_graph
+
+        root = Path(__file__).resolve().parents[1]
+        snapshot = build_graph(root, root / ".frob" / "cache.db").danger_ok
+
+        violations = registry_gate(
+            root,
+            _queue(),
+            _KNOWN_GATE_RULES,
+            snapshot=snapshot,
+        )
+
+        reg008_check_coverage = [
+            v
+            for v in violations
+            if v.rule == "REG008" and "check-coverage.yaml" in v.file
+        ]
+        assert reg008_check_coverage == []
+
+
+# frob:ticket T-1020
+class TestComplianceReg008BurnDown:
+    """T-1020 follow-up: REG008 burn-down over `docs/design/registry/
+    compliance.yaml`'s 17 `CMPL_REGISTRY_UNIT_IDS` checkable-control units
+    (T-0833 flipped them to `handled_by:COMPLIANCE005`) -- same real "does
+    the recorded handled_by claim actually verify against live code"
+    smoke test shape as `TestArchChecksReg008BurnDown` and siblings.
+    Landed LAST per dispatch coordination: T-1019 concurrently rewrote
+    REG011 disposition reasons in this same file (a different YAML key,
+    `out_of_scope:<reason>` vs this ticket's `handled_by`/`frob:enforces`
+    edges) -- re-merged main immediately before this batch."""
+
+    # frob:tests tests/test_registry_exhaustiveness.py::TestComplianceReg008BurnDown.test_no_reg008_findings_for_compliance_yaml  # noqa: E501
+    def test_no_reg008_findings_for_compliance_yaml(self) -> None:
+        """Every `docs/design/registry/compliance.yaml` entry dispositioned
+        `handled_by:<RULE>` must carry a real `frob:enforces <ENTRY-ID>`
+        edge somewhere in code."""
+        from frob.gates import _KNOWN_GATE_RULES
+        from frob.graph import build_graph
+
+        root = Path(__file__).resolve().parents[1]
+        snapshot = build_graph(root, root / ".frob" / "cache.db").danger_ok
+
+        violations = registry_gate(
+            root,
+            _queue(),
+            _KNOWN_GATE_RULES,
+            snapshot=snapshot,
+        )
+
+        reg008_compliance = [
+            v
+            for v in violations
+            if v.rule == "REG008" and "compliance.yaml" in v.file
+        ]
+        assert reg008_compliance == []

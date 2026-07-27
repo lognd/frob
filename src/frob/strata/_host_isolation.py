@@ -1198,6 +1198,8 @@ def _apply_host_waivers(
 
 
 # frob:doc docs/strata/host.md#movement-impossibility-proofs
+# frob:enforces CHK-GATE-HOST001
+# frob:enforces CHK-GATE-HOST002
 def evaluate_host_isolation_waived(
     model: KernelModel,
 ) -> Result[

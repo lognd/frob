@@ -1167,6 +1167,7 @@ def _doc005_violation(doc_path: str, line: int, message: str) -> Violation:
 # tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.test_no_config_means_no_read\
 # me_checking
 # frob:ticket T-1011
+# frob:enforces CHK-GATE-DOC005
 # frob:tests tests/test_docblocks_gate.py::TestCliCommandTableGenerator.test_doc005_freshness_passes_after_sync  # noqa: E501
 def doc005_gate(root: Path) -> tuple[Violation, ...]:
     """DOC005 (T-0435): bind `README.md`'s command table (and any "N

@@ -234,6 +234,8 @@ def _function_violations(
 # frob:tests tests/test_gates.py::TestExhaustiveHandlingGate.test_catch_all_of_unknown_does_not_fire_exhaust001  # noqa: E501
 # frob:tests tests/test_gates.py::TestExhaustiveHandlingGate.test_declared_frob_raises_directive_discharges_exhaust002  # noqa: E501
 # frob:tests tests/test_gates.py::TestExhaustiveHandlingGate.test_function_with_no_catches_is_not_a_boundary  # noqa: E501
+# frob:enforces CHK-GATE-EXHAUST001
+# frob:enforces CHK-GATE-EXHAUST002
 def exhaustive_handling_gate(root: Path) -> tuple[Violation, ...]:
     """EXHAUST001/EXHAUST002 (T-0688) over every python file under `root`:
     a function/method that has attempted exception handling (at least one

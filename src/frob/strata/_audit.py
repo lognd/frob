@@ -713,6 +713,7 @@ def _blast_radius_gaps_per_user(
 # frob:waive TEST005 reason="Err branches need a deep StrataError; debt T-0160"
 # frob:waive PERF004 reason="sorted() builds iterable once, not a re-sort (T-0283)"
 # frob:ticket T-0601
+# frob:enforces CHK-GATE-HOST-BLAST
 def evaluate_exhaustiveness(
     model: KernelModel,
     *,

@@ -179,6 +179,7 @@ def _sum_flow_rates(flows: list) -> Result[float, StrataError]:
 
 
 # frob:doc docs/strata/threat.md#operational-design-lints-stdlint-t-0155
+# frob:enforces CHK-GATE-LINT001
 def check_lint_rate_limit(
     model: KernelModel,
 ) -> Result[tuple[LintViolation, ...], StrataError]:
@@ -279,6 +280,7 @@ def _lint002_violation(
 
 
 # frob:doc docs/strata/threat.md#operational-design-lints-stdlint-t-0155
+# frob:enforces CHK-GATE-LINT002
 def check_lint_cache_or_capacity(
     model: KernelModel,
 ) -> Result[tuple[LintViolation, ...], StrataError]:
@@ -327,6 +329,7 @@ def _scenario_has_bound_claim(
 
 
 # frob:doc docs/strata/threat.md#operational-design-lints-stdlint-t-0155
+# frob:enforces CHK-GATE-LINT003
 def check_lint_surge_capacity_bound(model: KernelModel) -> tuple[LintViolation, ...]:
     """LINT003: every `Scenario` with a `ScaleRate` rewrite nests a
     `BoundClaim` (RATE or UTILIZATION) targeting the scaled flow or one of
@@ -361,6 +364,7 @@ def check_lint_surge_capacity_bound(model: KernelModel) -> tuple[LintViolation, 
 
 
 # frob:doc docs/strata/threat.md#operational-design-lints-stdlint-t-0155
+# frob:enforces CHK-GATE-LINT004
 def check_lint_kill_switch(model: KernelModel) -> tuple[LintViolation, ...]:
     """LINT004: every node holding a risky (`RISKY_CAPABILITY_KINDS`) `may`
     capability declares a `flag=<id>` kill-switch attr (module
@@ -440,6 +444,7 @@ def _lint005_violation(node: Node, total: float, headroom: float) -> LintViolati
 
 
 # frob:doc docs/strata/threat.md#operational-design-lints-stdlint-t-0155
+# frob:enforces CHK-GATE-LINT005
 def check_lint_fanin_capacity(
     model: KernelModel,
 ) -> Result[tuple[LintViolation, ...], StrataError]:
