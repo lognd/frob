@@ -312,6 +312,13 @@ _STAGE_GROUPS: dict[str, frozenset[str]] = {
             "fmt",
             # T-0628: AFFECT001/AFFECT002, diff-scoped like coverage/fmt above.
             "affect_drift",
+            # frob:ticket T-1044
+            # T-1012: FFI001/FFI002 (ffi_boundary_gate, T-0690)
+            # was registered in frob.gates._ALL_GATES but never added to a
+            # _STAGE_GROUPS member -- it is thread-pool (not in
+            # frob.gates._PROCESS_POOL_GATES), the same shape as the rest of
+            # this group, so it belongs here, not gates-native/-security.
+            "ffi_boundary",
         }
     ),
     # frob:ticket T-0688
