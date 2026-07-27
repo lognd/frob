@@ -8344,9 +8344,12 @@ class TestNativeTestCollectors:
 
         assert ".ts" not in gates_mod._NATIVE_TEST_EXTENSIONS
         assert ".tsx" not in gates_mod._NATIVE_TEST_EXTENSIONS
-        # C/C++ stays -- collect_cpp_tests's node ids anchor to the build
-        # dir, not the source file, so no exact/prefix match is possible
-        # yet (T-0730's Done report, follow-on draft ticket).
+        # C/C++ stays -- T-0886 made collect_cpp_tests source-accurate for
+        # the common single-source-per-target case (see its docstring), but
+        # only when a build was configured with
+        # CMAKE_EXPORT_COMPILE_COMMANDS=ON and the target is unambiguous;
+        # most C/C++ edges still have no such build directory at
+        # gate-check time and still need this structural fallback.
         assert ".cpp" in gates_mod._NATIVE_TEST_EXTENSIONS
 
     # frob:ticket T-0730
@@ -8475,6 +8478,201 @@ class TestNativeTestCollectors:
         assert "TEST001" not in rule_ids
         assert "TEST002" in rule_ids
         assert "TEST013" not in rule_ids
+
+
+# frob:ticket T-0886
+class TestCppSourceAccurateCollection:
+    """T-0886: `collect_cpp_tests` cross-references each ctest test's
+    executable (parsed from `CTestTestfile.cmake`) against
+    `compile_commands.json` and upgrades to a real source-file node id
+    whenever the target compiles from exactly one source file, instead of
+    always anchoring to the build directory. `ctest`/`cmake` subprocesses
+    are mocked (matching `TestCollectCppTests` in tests/test_testing.py,
+    which this scope does not own) -- the underlying real-cmake/ctest
+    behavior each mock encodes was verified empirically against an actual
+    CMake 3.22 configure+ctest run during this ticket's investigation
+    (Done report has the transcripts): `--show-only=json-v1`'s own
+    `backtrace` field anchors to the CMakeLists.txt `add_test()` call
+    site, never the real test source -- confirming route (a) as originally
+    conceived cannot be source-accurate on its own, which is why this
+    collector instead reads the executable path straight out of
+    `CTestTestfile.cmake`."""
+
+    # frob:ticket T-0886
+    def _mock_ctest(self, monkeypatch, tmp_path: Path, names: list[str]) -> None:
+        from typani import Ok
+
+        import frob.testing._collect as collect_mod
+        from frob.gitio import ProcResult
+
+        monkeypatch.setattr(collect_mod.shutil, "which", lambda name: "/usr/bin/ctest")
+
+        def fake_run_argv(argv, *, cwd=None, timeout_s=300.0):
+            payload = json.dumps({"tests": [{"name": n} for n in names]})
+            return Ok(
+                ProcResult(argv=tuple(argv), returncode=0, stdout=payload, stderr="")
+            )
+
+        monkeypatch.setattr(collect_mod, "run_argv", fake_run_argv)
+
+    # frob:ticket T-0886
+    def test_single_source_target_is_source_accurate(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests tests/test_gates.py::TestCppSourceAccurateCollection.test_single_source_target_is_source_accurate  # noqa: E501
+        from frob.testing._collect import collect_cpp_tests
+
+        _write(tmp_path, "CMakeLists.txt", "project(widget)\n")
+        _write(
+            tmp_path,
+            "build/CTestTestfile.cmake",
+            'add_test(widget_adds "'
+            + str(tmp_path / "build" / "widget_test")
+            + '")\n',
+        )
+        _write(
+            tmp_path,
+            "build/compile_commands.json",
+            json.dumps(
+                [
+                    {
+                        "directory": str(tmp_path / "build"),
+                        "command": (
+                            "/usr/bin/c++ -o "
+                            "CMakeFiles/widget_test.dir/src/widget_test.cpp.o "
+                            "-c src/widget_test.cpp"
+                        ),
+                        "file": str(tmp_path / "src" / "widget_test.cpp"),
+                    }
+                ]
+            ),
+        )
+        self._mock_ctest(monkeypatch, tmp_path, ["widget_adds"])
+
+        result = collect_cpp_tests(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.node_ids == frozenset(
+            {"src/widget_test.cpp::widget_adds"}
+        )
+
+    # frob:ticket T-0886
+    def test_multi_source_target_falls_back_loudly(
+        self, tmp_path: Path, monkeypatch, caplog
+    ) -> None:
+        # frob:tests tests/test_gates.py::TestCppSourceAccurateCollection.test_multi_source_target_falls_back_loudly  # noqa: E501
+        """A binary compiled from two source files cannot be attributed to
+        either one without a wrong guess -- collection must fall back to
+        the old build-dir anchor AND log a disclosed `FALLBACK` marker, not
+        silently guess or silently stay quiet about the downgrade."""
+        import logging
+
+        from frob.testing._collect import collect_cpp_tests
+
+        _write(tmp_path, "CMakeLists.txt", "project(widget)\n")
+        _write(
+            tmp_path,
+            "build/CTestTestfile.cmake",
+            'add_test(widget_adds "'
+            + str(tmp_path / "build" / "widget_test")
+            + '")\n',
+        )
+        entries = [
+            {
+                "directory": str(tmp_path / "build"),
+                "command": (
+                    "/usr/bin/c++ -o "
+                    f"CMakeFiles/widget_test.dir/src/{stem}.cpp.o -c src/{stem}.cpp"
+                ),
+                "file": str(tmp_path / "src" / f"{stem}.cpp"),
+            }
+            for stem in ("widget_test", "helper")
+        ]
+        _write(tmp_path, "build/compile_commands.json", json.dumps(entries))
+        self._mock_ctest(monkeypatch, tmp_path, ["widget_adds"])
+
+        with caplog.at_level(logging.WARNING):
+            result = collect_cpp_tests(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.node_ids == frozenset({"build::widget_adds"})
+        assert any("FALLBACK" in rec.message for rec in caplog.records)
+
+    # frob:ticket T-0886
+    def test_no_compile_commands_falls_back_loudly(
+        self, tmp_path: Path, monkeypatch, caplog
+    ) -> None:
+        # frob:tests tests/test_gates.py::TestCppSourceAccurateCollection.test_no_compile_commands_falls_back_loudly  # noqa: E501
+        """No `compile_commands.json` at all (the common case -- most
+        projects never turn `CMAKE_EXPORT_COMPILE_COMMANDS` on) degrades to
+        the old build-dir anchor, loudly, never a crash."""
+        import logging
+
+        from frob.testing._collect import collect_cpp_tests
+
+        _write(tmp_path, "CMakeLists.txt", "project(widget)\n")
+        _write(
+            tmp_path,
+            "build/CTestTestfile.cmake",
+            'add_test(widget_adds "'
+            + str(tmp_path / "build" / "widget_test")
+            + '")\n',
+        )
+        self._mock_ctest(monkeypatch, tmp_path, ["widget_adds"])
+
+        with caplog.at_level(logging.WARNING):
+            result = collect_cpp_tests(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.node_ids == frozenset({"build::widget_adds"})
+        assert any("FALLBACK" in rec.message for rec in caplog.records)
+
+    # frob:ticket T-0886
+    def test_gtest_discover_tests_include_and_dot_names(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests tests/test_gates.py::TestCppSourceAccurateCollection.test_gtest_discover_tests_include_and_dot_names  # noqa: E501
+        """`gtest_discover_tests()` writes its per-case `add_test()` calls
+        into a sibling file `CTestTestfile.cmake` only `include()`s -- one
+        level of `include()` must still be followed to find them -- and a
+        gtest `Suite.Case` name's dot is normalized to `::` (mirroring
+        `frob.gates._symref_to_nodeid`'s own transform on the directive
+        side) so a `frob:tests` directive naming `Suite::Case` can match."""
+        from frob.testing._collect import collect_cpp_tests
+
+        _write(tmp_path, "CMakeLists.txt", "project(widget)\n")
+        _write(
+            tmp_path,
+            "build/CTestTestfile.cmake",
+            'include("widget_test_tests.cmake")\n',
+        )
+        exe = str(tmp_path / "build" / "widget_gtest")
+        _write(
+            tmp_path,
+            "build/widget_test_tests.cmake",
+            f'add_test(WidgetSuite.AddsOne "{exe}" --gtest_filter=WidgetSuite.AddsOne)\n',
+        )
+        _write(
+            tmp_path,
+            "build/compile_commands.json",
+            json.dumps(
+                [
+                    {
+                        "directory": str(tmp_path / "build"),
+                        "command": (
+                            "/usr/bin/c++ -o "
+                            "CMakeFiles/widget_gtest.dir/src/widget_gtest.cpp.o "
+                            "-c src/widget_gtest.cpp"
+                        ),
+                        "file": str(tmp_path / "src" / "widget_gtest.cpp"),
+                    }
+                ]
+            ),
+        )
+        self._mock_ctest(monkeypatch, tmp_path, ["WidgetSuite.AddsOne"])
+
+        result = collect_cpp_tests(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.node_ids == frozenset(
+            {"src/widget_gtest.cpp::WidgetSuite::AddsOne"}
+        )
 
 
 # frob:ticket T-0547

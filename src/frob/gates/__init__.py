@@ -625,15 +625,27 @@ def _unit_test_edges(snapshot: GraphSnapshot, kind: str) -> dict[str, list[Edge]
 # match in `_node_id_collected` just works, same as python/rust).
 #
 # C/C++ stays in this set -- NOT an oversight, a disclosed gap (T-0730's
-# Done report, follow-on T-0886): `collect_cpp_tests` exists
-# (T-0587) but its own docstring discloses a KNOWN APPROXIMATION -- a
-# ctest node id anchors to the BUILD DIRECTORY (`<build_dir>::<test
-# name>`), not the real source file a C/C++ `frob:tests` directive lives
-# above, so a directive's `src` symref can essentially never land in
-# `tests.node_ids` even when the test genuinely exists and ran. Retiring
-# the fallback for C/C++ today would silently drop ALL existing C/C++
-# TEST001-004 credit rather than tighten it -- worse than the structural
-# fallback it would replace.
+# Done report, T-0886). T-0886 investigated both candidate ctest-side
+# routes and found neither `--show-only=json-v1`'s `backtrace` field
+# (anchors to the CMake SCRIPT location of the `add_test()`/
+# `gtest_discover_tests()` call, never the real test source, on every
+# CMake version checked) nor a bare `--gtest_list_tests` (no source info
+# at all) can answer source-accuracy on their own; `collect_cpp_tests`
+# instead cross-references each test's executable (parsed straight out of
+# `CTestTestfile.cmake`) against `compile_commands.json`
+# (`_cpp_target_sources`) and upgrades to a real source-file node id
+# whenever that target compiles from exactly one source file -- which
+# `_edge_has_execution_evidence`'s existing `_node_id_collected` checks
+# (run BEFORE this structural fallback, see `_edge_has_execution_evidence`
+# above) already pick up automatically, no change needed here. C/C++
+# stays in `_NATIVE_TEST_EXTENSIONS` because that upgrade only fires
+# per-edge, when the project was configured with
+# `CMAKE_EXPORT_COMPILE_COMMANDS=ON` and the matched target is
+# unambiguous (a single compiled source file) -- most C/C++ edges still
+# have no configured build directory (or an ambiguous/multi-source one)
+# at gate-check time and still need this fallback; retiring it globally
+# today would silently drop ALL of that TEST001-004 credit rather than
+# tighten it.
 _NATIVE_TEST_EXTENSIONS = frozenset({".c", ".h", ".cpp", ".hpp", ".cc", ".hh"})
 
 
