@@ -48,6 +48,7 @@ from frob.tickets._models import (
     has_substantive_done_report,
     is_cmd_evidence,
     matches_collected,
+    render_claims_block,
     scope_matches,
     unbound_acceptance,
 )
@@ -63,6 +64,7 @@ from frob.tickets._store import (
     load_archive,
     write_all,
     write_archive,
+    write_ticket,
 )
 
 # T-0577: same posix-only degradation as `frob.tickets._store`'s
@@ -1411,13 +1413,31 @@ def _unowned_deletions(
     return Ok(unowned)
 
 
+# frob:ticket T-1003
+# frob:tests tests/test_ticket_land.py::TestUvLockSync.test_worktree_side_lock_flap_auto_restored_before_wip_commit kind="integration"  # noqa: E501
 def _wip_commit(
     worktree: Path, ticket_id: str, *, dry_run: bool
 ) -> Result[bool, LandError]:
     """Commit any uncommitted worktree changes as a WIP snapshot before
     landing -- the manual "wip-commit in the worktree" step folded into
     `land` so nothing an agent forgot to commit is silently dropped by the
-    merge that follows."""
+    merge that follows.
+
+    T-1003: `worktree`'s own `uv.lock` frob-version-only flap (T-0793's
+    shape, from a prior `uv run`/`uv lock` invocation against a pyproject a
+    sibling land already bumped on main) is auto-restored HERE, before the
+    dirty check, exactly mirroring `_refuse_if_main_dirty`'s ROOT-side
+    restore -- without this, the flap would otherwise get silently
+    wip-committed as noise in the worktree and squash-applied into the
+    landing commit, instead of the ritual `git checkout -- uv.lock` on
+    BOTH sides land's own callers used to have to remember."""
+    if _restore_lock_version_only_drift(worktree):
+        _log.info(
+            "land: %s auto-restored a uv.lock frob-version-only drift in "
+            "%s before the wip-commit dirty check (T-1003)",
+            ticket_id,
+            worktree,
+        )
     dirty = _porcelain_dirty(worktree)
     if dirty.is_err:
         return Err(dirty.danger_err)
@@ -1641,6 +1661,34 @@ def land(
     that mutates `root` while holding no lock is not protected by this --
     only concurrent `land()` calls are serialized against each other."""
     root, worktree = root.resolve(), worktree.resolve()
+
+    # T-1003 (churn item 4): `root` defaults to the invoker's cwd
+    # (`ticket_runner.py`'s `_land`) -- running `frob ticket land <id>
+    # --worktree <path>` from a shell sitting INSIDE the worktree (rather
+    # than cd-ing out to the shared root checkout first, the "chained cd"
+    # ritual this ticket retires) makes `root` resolve to the identical
+    # path as `worktree`, for free, no misconfigured `--worktree` involved.
+    # Resolve the TRUE primary checkout from `worktree`'s own git common
+    # dir and use it instead, transparently, whenever that resolves to
+    # something OTHER than `worktree` itself -- a real linked worktree,
+    # which is the common case this retires the ritual for. When the
+    # common-dir resolution ALSO comes back equal to `worktree` (no linked
+    # worktree exists at all -- `--worktree` was pointed at the primary
+    # checkout itself, the genuinely wrong configuration T-0795 introduced
+    # this refusal for), `root` is left as `worktree` unchanged and
+    # `_refuse_if_root_is_worktree` still refuses exactly as before.
+    if root == worktree:
+        resolved_root = _resolve_primary_checkout(worktree)
+        if resolved_root is not None and resolved_root != worktree:
+            _log.info(
+                "land: %s root defaulted to the cwd inside --worktree (%s) "
+                "-- resolved the primary checkout %s from its git common "
+                "dir instead (T-1003), no manual cd required",
+                ticket_id,
+                root,
+                resolved_root,
+            )
+            root = resolved_root
 
     with _land_lock(root):
         return _land_locked(
@@ -1970,7 +2018,7 @@ def _reverify_done_report_claims_post_merge(
         return Ok(None)
 
     test_count_check = _reverify_test_count_claim(
-        ticket, claims, passing_ids, ticket_id
+        worktree, ticket, claims, passing_ids, ticket_id
     )
     if test_count_check.is_err:
         return test_count_check
@@ -1980,35 +2028,136 @@ def _reverify_done_report_claims_post_merge(
 
 
 # frob:ticket T-0976
+# frob:ticket T-1000
+# frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_matching_claims_land_succeeds kind="integration"  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_divergent_test_count_refuses_land kind="integration"  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_strictly_improved_test_count_auto_accepts_and_rewrites_recap kind="integration"  # noqa: E501
+# frob:waive DUP001 reason="T-1000: coincidental structural similarity to frob.app.ticket_runner._reverify_evidence_for_close (non_cmd-evidence extraction + failing-check shape) -- not real duplication, both independently derive 'which of this ticket's non-cmd evidence ids still pass' from their own module's evidence-resolution primitives; frob.tickets cannot import frob.app (docs/rework.md cycle-avoidance), so no shared extraction site exists without a layering violation, and this ticket's scope does not cover ticket_runner.py"  # noqa: E501
 def _reverify_test_count_claim(
+    worktree: Path,
     ticket: Ticket,
     claims,
     passing_ids: frozenset[str],
     ticket_id: str,  # noqa: ANN001
 ) -> Result[None, LandError]:
-    """`_reverify_done_report_claims_post_merge`'s test-count-half check:
-    `Err(ClaimDivergence)` if the fresh non-cmd-evidence passing/total
-    counts no longer match the captured claim, else `Ok(None)`."""
+    """`_reverify_done_report_claims_post_merge`'s test-count-half check
+    (T-1000, churn item 1): compares the fresh non-cmd-evidence passing/
+    total counts against the captured claim. An EXACT match is a no-op
+    (`Ok(None)`). A STRICT IMPROVEMENT -- the fresh counts are both `>=`
+    what was recorded, and (by the caller's own upstream guarantee, see
+    `_reverify_evidence_post_merge`) every non-cmd evidence id present now
+    actually passes -- auto-accepts and rewrites the ticket's Captured
+    claims section in place (`_rewrite_claims_section`) so the landing
+    commit carries the fresh numbers instead of the stale ones, rather
+    than refusing and forcing the identical manual `frob ticket done-
+    report` + re-land cycle every time (~10 occurrences in one drive,
+    docs/audits/coordination-churn.md#1). Only a genuine REGRESSION --
+    either count now LOWER than recorded -- still refuses
+    (`Err(ClaimDivergence)`); a fresh run with any failing evidence never
+    reaches this function at all (`_reverify_evidence_post_merge` already
+    refused it upstream, before this claims check ever runs)."""
     from frob.tickets._models import is_cmd_evidence
 
     non_cmd = [e for e in ticket.evidence if not is_cmd_evidence(e)]
     real_test_count = len(passing_ids)
-    if real_test_count == claims.test_count and len(non_cmd) == claims.evidence_count:
+    real_evidence_count = len(non_cmd)
+    tests_match = real_test_count == claims.test_count
+    evidence_match = real_evidence_count == claims.evidence_count
+    if tests_match and evidence_match:
         return Ok(None)
-    _log.error(
-        "land: %s captured test-count claim no longer holds post-merge "
-        "-- recorded %d/%d passing, re-run shows %d/%d passing; the "
-        "merged tree may have changed the evidence set or a test's "
-        "outcome since the Done report was written; refresh with "
-        "`frob ticket done-report %s` and retry",
+    tests_regressed = real_test_count < claims.test_count
+    evidence_regressed = real_evidence_count < claims.evidence_count
+    if tests_regressed or evidence_regressed:
+        _log.error(
+            "land: %s captured test-count claim regressed post-merge "
+            "-- recorded %d/%d passing, re-run shows %d/%d passing; the "
+            "merged tree may have changed the evidence set or a test's "
+            "outcome since the Done report was written; refresh with "
+            "`frob ticket done-report %s` and retry",
+            ticket_id,
+            claims.test_count,
+            claims.evidence_count,
+            real_test_count,
+            real_evidence_count,
+            ticket_id,
+        )
+        return Err(LandError.ClaimDivergence)
+    # T-1000: strict improvement (both counts >= recorded, at least one
+    # strictly greater) -- auto-accept and rewrite the recap rather than
+    # refuse a land that introduced no regression at all.
+    _log.info(
+        "land: %s captured test-count claim strictly improved post-merge "
+        "-- recorded %d/%d passing, re-run shows %d/%d passing; "
+        "auto-accepting and rewriting the recap (T-1000, no manual "
+        "done-report refresh needed)",
         ticket_id,
         claims.test_count,
         claims.evidence_count,
         real_test_count,
-        len(non_cmd),
-        ticket_id,
+        real_evidence_count,
     )
-    return Err(LandError.ClaimDivergence)
+    _rewrite_claims_section(
+        worktree, ticket, claims, real_test_count, real_evidence_count, ticket_id
+    )
+    return Ok(None)
+
+
+# frob:ticket T-1000
+# frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_strictly_improved_test_count_auto_accepts_and_rewrites_recap kind="integration"  # noqa: E501
+def _rewrite_claims_section(
+    worktree: Path,
+    ticket: Ticket,
+    claims,  # noqa: ANN001
+    real_test_count: int,
+    real_evidence_count: int,
+    ticket_id: str,
+) -> None:
+    """Rewrite `ticket`'s Done-report `### Captured claims` section in the
+    post-merge worktree ledger to carry the fresh, strictly-improved
+    test-count numbers (T-1000) -- the mechanical half of
+    `_reverify_test_count_claim`'s auto-accept path, so the landing commit
+    itself carries the corrected recap instead of the stale one that
+    triggered the (no longer refused) divergence. Reconstructs the OLD
+    rendered claims block via `render_claims_block` (the exact inverse of
+    the `parse_claims_from_done_report` call that produced `claims`, so
+    the text is guaranteed to appear verbatim in `ticket.body`) and
+    replaces it with the NEW block carrying only the two test-count
+    fields updated -- `gate_errors`/`gate_warnings`/`gate_waived`/
+    `error_findings` are left exactly as captured, since only the test-
+    count half was re-verified here.
+
+    Best-effort: a write failure is logged and does not block the land --
+    the underlying claim has already been judged safe to accept above;
+    losing the cosmetic recap-rewrite is not worth refusing a good land
+    over."""
+    old_block = render_claims_block(claims)
+    new_claims = claims.model_copy(
+        update={
+            "test_count": real_test_count,
+            "evidence_count": real_evidence_count,
+        }
+    )
+    new_block = render_claims_block(new_claims)
+    if old_block not in ticket.body:
+        _log.warning(
+            "land: %s could not locate the exact captured-claims block in "
+            "the ticket body to rewrite post-merge -- leaving the stale "
+            "recap in place (cosmetic only, the land itself still "
+            "proceeds)",
+            ticket_id,
+        )
+        return
+    new_body = ticket.body.replace(old_block, new_block, 1)
+    updated = ticket.model_copy(update={"body": new_body})
+    written = write_ticket(worktree, updated)
+    if written.is_err:
+        _log.warning(
+            "land: %s failed to write the rewritten captured-claims recap "
+            "(%s) -- leaving the stale recap in place (cosmetic only, the "
+            "land itself still proceeds)",
+            ticket_id,
+            written.danger_err,
+        )
 
 
 # frob:ticket T-0976
@@ -2227,6 +2376,41 @@ def _refuse_if_main_dirty(
 
 
 # frob:ticket T-0795
+# frob:ticket T-1003
+# frob:tests tests/test_ticket_land.py::TestLandChainedCdRootResolution.test_root_equal_to_a_real_linked_worktree_resolves_and_lands kind="integration"  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestLandChainedCdRootResolution.test_root_equal_to_the_primary_checkout_itself_still_refuses kind="integration"  # noqa: E501
+def _resolve_primary_checkout(worktree: Path) -> Path | None:
+    """The primary checkout for `worktree`'s clone -- the parent directory
+    of `git -C worktree rev-parse --git-common-dir` -- or `None` if that
+    git call fails (an unreadable/non-git path; the caller then leaves
+    `root` unchanged and downstream checks handle it exactly as before
+    this ticket).
+
+    Every git worktree (linked or primary) shares ONE common `.git` dir,
+    owned by the primary checkout; `--git-common-dir` is git's own,
+    authoritative answer to "where is that," regardless of which worktree
+    the command runs from or what the caller's cwd happens to be -- this
+    is what lets `land` (T-1003, churn item 4) resolve the true root from
+    `worktree` alone, without the caller needing to know or pass it. A
+    PRIMARY checkout's own common dir is simply its own `.git`, so calling
+    this on a primary checkout returns that same checkout back unchanged
+    (the genuinely-no-worktree case `_refuse_if_root_is_worktree` still
+    needs to catch)."""
+    common_dir = run_argv(["git", "-C", str(worktree), "rev-parse", "--git-common-dir"])
+    if common_dir.is_err or common_dir.danger_ok.returncode != 0:
+        return None
+    raw = common_dir.danger_ok.stdout.strip()
+    if not raw:
+        return None
+    common_dir_path = Path(raw)
+    resolved = (
+        common_dir_path.resolve()
+        if common_dir_path.is_absolute()
+        else (worktree / common_dir_path).resolve()
+    )
+    return resolved.parent
+
+
 def _refuse_if_root_is_worktree(
     root: Path, worktree: Path, ticket_id: str
 ) -> Result[None, LandError]:
@@ -3647,6 +3831,101 @@ def _land_commit_details(root: Path) -> tuple[str | None, tuple[str, ...]]:
     return sha_str, files
 
 
+# frob:ticket T-1001
+def _absorption_scoped_content_matches(
+    root: Path, worktree: Path, ticket: Ticket
+) -> bool:
+    """Whether every file in `ticket.scope` that a diff between the
+    worktree's finalized HEAD and `root`'s current HEAD touches is empty
+    (T-1001, churn item 2's content-verification half): the two commit
+    tips live in the SAME object store (`worktree` is a git worktree of
+    `root`'s own clone), so a direct cross-checkout `git diff` between
+    them is a real content comparison, not a heuristic. Best-effort:
+    a git failure on either side conservatively returns `False` (never
+    treat an unverifiable comparison as a confirmed match)."""
+    worktree_head = _rev_parse(worktree, "HEAD")
+    if worktree_head.is_err:
+        return False
+    diff = run_argv(
+        ["git", "-C", str(root), "diff", "--name-only", worktree_head.danger_ok, "HEAD"]
+    )
+    if diff.is_err or diff.danger_ok.returncode != 0:
+        return False
+    diverged = [
+        line.strip() for line in diff.danger_ok.stdout.splitlines() if line.strip()
+    ]
+    scoped_diverged = [p for p in diverged if scope_matches(p, ticket.scope)]
+    return not scoped_diverged
+
+
+# frob:ticket T-1001
+# frob:tests tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail.test_retry_after_full_success_reports_absorption_not_commit_failed kind="integration"  # noqa: E501
+def _absorption_verified(
+    root: Path, worktree: Path, ticket: Ticket, final_id: str
+) -> bool:
+    """Whether an empty-stage squash-apply (T-1001, churn item 2) can
+    safely be reported as `absorbed by prior land` rather than the
+    misleading `CommitFailed` an empty `git commit` would otherwise raise:
+    BOTH `final_id` must already be `done` in `root`'s CURRENT ledger
+    (loaded fresh, post-splice -- proving a prior land really did close
+    this exact ticket on main, not merely that this squash happened to
+    stage nothing for some unrelated reason) AND every one of `ticket`'s
+    own scoped files must already match between the worktree and `root`
+    (`_absorption_scoped_content_matches`). Either check failing means
+    this is NOT a genuine absorption -- the caller falls through to the
+    original `_commit_squash_apply` attempt (and its honest error) rather
+    than silently reporting a false success."""
+    from frob.tickets import _load_one
+
+    loaded = _load_one(root, final_id)
+    if loaded.is_err or loaded.danger_ok.state != TicketState.DONE:
+        return False
+    return _absorption_scoped_content_matches(root, worktree, ticket)
+
+
+# frob:ticket T-1001
+# frob:tests tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail.test_retry_after_full_success_reports_absorption_not_commit_failed kind="integration"  # noqa: E501
+def _report_stacked_sibling_absorption(
+    root: Path,
+    ticket_id: str,
+    final_id: str,
+    wip_committed: bool,
+    did_merge: bool,
+) -> LandReport:
+    """Build the clean-success `LandReport` for an absorbed land (T-1001):
+    `ledger_spliced=False` (nothing NEW was spliced -- the prior land's
+    splice already carries this ticket's ledger state) is the honest,
+    reusable signal distinguishing this from a normal land's report
+    without needing a new field on the frozen `LandReport` model;
+    `commit_sha` names the ALREADY-EXISTING commit that absorbed this
+    ticket (root's current `HEAD`, since this call made no new commit),
+    and `files_changed`/`worktree_changeset` are empty since nothing new
+    landed with this call."""
+    sha = _rev_parse(root, "HEAD")
+    sha_str = sha.danger_ok if sha.is_ok else None
+    _log.info(
+        "land: %s (%s) absorbed by prior land -- already done on %s at %s, "
+        "no new commit needed",
+        ticket_id,
+        final_id,
+        root,
+        sha_str,
+    )
+    return LandReport(
+        ticket_id=ticket_id,
+        final_id=final_id,
+        dry_run=False,
+        wip_committed=wip_committed,
+        merged_main_into_worktree=did_merge,
+        ledger_spliced=False,
+        commit_sha=sha_str,
+        files_changed=(),
+        worktree_changeset=(),
+        release_bumped_to=None,
+        natives_rebuilt=False,
+    )
+
+
 def _commit_squash_apply(
     root: Path, ticket: Ticket, final_id: str
 ) -> Result[None, LandError]:
@@ -3903,6 +4182,37 @@ def _maybe_rebuild_natives(
     return rebuilt
 
 
+# frob:ticket T-1001
+def _absorbed_land_report(
+    root: Path,
+    worktree: Path,
+    ticket: Ticket,
+    ticket_id: str,
+    final_id: str,
+    wip_committed: bool,
+    did_merge: bool,
+) -> LandReport | None:
+    """`_land_squash_apply`'s T-1001 (churn item 2) pre-commit check: when
+    a worktree carries several tickets, the first land's squash absorbs
+    every sibling's files and ledger state -- each subsequent land then
+    stages an EMPTY squash, and an unconditional `git commit` would exit 1
+    with no stderr, surfaced as a scary, unexplained `CommitFailed`.
+    Returns a ready-to-return `LandReport` (`Ok`, never committing
+    anything new) when nothing is staged AND that emptiness is VERIFIED
+    genuine absorption (`_absorption_verified`) -- `None` otherwise, telling
+    the caller to fall through to the ordinary `_commit_squash_apply`
+    attempt and its honest error. An empty stage for some OTHER,
+    unexplained reason is never silently reported as success."""
+    staged_now = _staged_files(root)
+    if staged_now.is_err or staged_now.danger_ok:
+        return None
+    if not _absorption_verified(root, worktree, ticket, final_id):
+        return None
+    return _report_stacked_sibling_absorption(
+        root, ticket_id, final_id, wip_committed, did_merge
+    )
+
+
 # frob:ticket T-0907
 def _land_squash_apply(
     root: Path,
@@ -3958,6 +4268,14 @@ def _land_squash_apply(
     natives_rebuilt = _maybe_rebuild_natives(
         root, final_id, worktree_changeset, rebuild_natives
     )
+
+    # T-1001 (churn item 2): stacked-sibling absorption -- see
+    # `_absorbed_land_report`'s own docstring.
+    absorbed = _absorbed_land_report(
+        root, worktree, ticket, ticket_id, final_id, wip_committed, did_merge
+    )
+    if absorbed is not None:
+        return Ok(absorbed)
 
     committed = _commit_squash_apply(root, ticket, final_id)
     if committed.is_err:

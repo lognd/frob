@@ -2758,6 +2758,48 @@ class TestUvLockSync:
         assert 'version = "0.1.0"' in (repo / "uv.lock").read_text()
         assert _status_ignoring_frob(repo) == ""
 
+    def test_worktree_side_lock_flap_auto_restored_before_wip_commit(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestUvLockSync.test_worktree_side_lock_flap_auto_restored_before_wip_commit  # noqa: E501
+        # frob:tests src/frob/tickets/_land.py::_wip_commit kind="unit"
+        """T-1003 (churn item 4): the T-0793 frob-version-only auto-restore
+        applies to the WORKTREE's own `uv.lock` too, before the wip-commit
+        dirty check -- not just `root`'s, as `test_dirty_lock_version_
+        line_only_does_not_refuse` above already locks. Without this, the
+        flap would get silently wip-committed as noise and squash-applied
+        into the landing commit, needing the same manual `git checkout --
+        uv.lock` ritual on the OTHER side of the land."""
+        (repo / "uv.lock").write_text(
+            '[[package]]\nname = "frob"\nversion = "0.1.0"\nsource = { editable = "." }\n'
+        )
+        _commit_all(repo, "add uv.lock")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-wtlockdirty", str(wt)], repo)
+        created = new_ticket(wt, _spec("Tolerate worktree-side lock drift"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        _commit_all(wt, "wip")
+
+        # Simulate the flap IN THE WORKTREE (not root): only the frob
+        # version line changed, uncommitted, nothing else dirty.
+        (wt / "uv.lock").write_text(
+            '[[package]]\nname = "frob"\nversion = "0.2.0"\nsource = { editable = "." }\n'
+        )
+
+        with caplog.at_level("INFO", logger="frob.tickets._land"):
+            result = land(repo, tid, wt, dry_run=False)
+
+        assert result.is_ok, result.err
+        assert "wip-commit dirty check" in caplog.text
+        # Restored back to the committed content in the worktree, never
+        # wip-committed as noise nor squash-applied into the landing
+        # commit -- root's own uv.lock still reads its one committed line.
+        assert 'version = "0.1.0"' in (wt / "uv.lock").read_text()
+        assert (repo / "uv.lock").read_text().count('version = "0.1.0"') == 1
+
     def test_dirty_lock_with_other_change_still_refuses(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_land.py::TestUvLockSync.test_dirty_lock_with_other_change_still_refuses  # noqa: E501
         (repo / "uv.lock").write_text(
@@ -3265,6 +3307,41 @@ class TestLandRetryAfterFinalizeThenFail:
         assert f"land {final_id}" in log
         assert _status_ignoring_frob(repo) == ""
 
+    def test_retry_after_full_success_reports_absorption_not_commit_failed(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail.test_retry_after_full_success_reports_absorption_not_commit_failed  # noqa: E501
+        """T-1001 (churn item 2): retrying a land whose FIRST attempt
+        already fully succeeded (committed onto `root`, ticket `done` on
+        both sides) stages nothing new -- the squash finds no file diff
+        and the ledger splice of an already-matching block is a no-op.
+        This must report a clean `absorbed by prior land` success
+        (`ledger_spliced=False`, `commit_sha` naming the SAME commit the
+        first land made, no new files), never `CommitFailed` from an
+        empty `git commit`."""
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-absorbed", str(wt)], repo)
+        created = new_ticket(wt, _spec("Absorbed by its own prior land"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        _commit_all(wt, "advance ticket absorbed by its own prior land")
+
+        first = land(repo, tid, wt, dry_run=False)
+        assert first.is_ok, first.err
+        final_id = first.danger_ok.final_id
+        first_sha = first.danger_ok.commit_sha
+        assert first_sha is not None
+
+        retry = land(repo, final_id, wt, dry_run=False)
+
+        assert retry.is_ok, retry.err
+        assert retry.danger_ok.ledger_spliced is False
+        assert retry.danger_ok.commit_sha == first_sha
+        assert retry.danger_ok.files_changed == ()
+        # No new commit was made -- root's tip is unchanged by the retry.
+        assert _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == first_sha
+
     def test_retry_when_still_queued_re_runs_the_ordinary_transition(
         self, repo: Path
     ) -> None:
@@ -3361,6 +3438,78 @@ class TestLandRefusesWhenRootIsWorktree:
         log = _run(["git", "log", "--oneline"], repo).stdout
         assert "land " not in log
         assert _status_ignoring_frob(repo) == ""
+
+
+# frob:ticket T-1003
+class TestLandChainedCdRootResolution:
+    """T-1003 (churn item 4): `root` defaulting to the invoker's cwd makes
+    it resolve to the IDENTICAL path as a REAL `--worktree` whenever the
+    shell never `cd`ed out of the worktree first -- the "chained cd"
+    ritual every land used to require. Unlike `TestLandRefusesWhenRootIs
+    Worktree` (where `worktree` genuinely IS the primary checkout, no
+    linked worktree exists at all, and refusing is correct), a REAL
+    linked worktree's `git rev-parse --git-common-dir` resolves to a
+    DIFFERENT primary checkout than `worktree` itself -- `land()` uses
+    that to recover the true `root` and land onto it, transparently, with
+    no manual `cd` required."""
+
+    def test_root_equal_to_a_real_linked_worktree_resolves_and_lands(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandChainedCdRootResolution.test_root_equal_to_a_real_linked_worktree_resolves_and_lands  # noqa: E501
+        # frob:tests src/frob/tickets/_land.py::_resolve_primary_checkout kind="unit"
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-chained-cd", str(wt)], repo)
+
+        created = new_ticket(wt, _spec("Chained-cd ticket"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        _commit_all(wt, "advance chained-cd ticket")
+
+        before_main_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+
+        # Simulate a shell whose cwd never left the worktree: `root` here
+        # is `wt`, identical to `--worktree wt`, exactly what `(cfg.
+        # ticket_path or Path(".")).resolve()` produces from inside `wt`.
+        with caplog.at_level("INFO", logger="frob.tickets._land"):
+            result = land(wt, tid, wt, dry_run=False)
+
+        assert result.is_ok, result.err
+        assert "resolved the primary checkout" in caplog.text
+
+        # It actually landed onto the TRUE primary checkout (`repo`), not
+        # `wt` -- the ticket is done there, and `repo`'s HEAD moved.
+        final_id = result.danger_ok.final_id
+        landed = load_all(repo).danger_ok[final_id]
+        assert landed.state == TicketState.DONE
+        assert (
+            _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() != before_main_sha
+        )
+
+    def test_root_equal_to_the_primary_checkout_itself_still_refuses(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandChainedCdRootResolution.test_root_equal_to_the_primary_checkout_itself_still_refuses  # noqa: E501
+        # frob:tests src/frob/tickets/_land.py::_resolve_primary_checkout kind="unit"
+        """Sanity companion: when `--worktree` genuinely IS the primary
+        checkout (no linked worktree at all, `TestLandRefusesWhenRootIs
+        Worktree`'s scenario), `_resolve_primary_checkout` resolves back
+        to the SAME path, so `root` is left unchanged and the original
+        `_refuse_if_root_is_worktree` refusal still fires -- T-1003 never
+        weakens that guard."""
+        created = new_ticket(
+            repo, _spec("Genuinely no worktree", scope=("src/noworktree.py",))
+        )
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(repo, tid)
+        _commit_all(repo, "close ticket state directly on root")
+
+        result = land(repo, tid, repo, dry_run=False)
+
+        assert result.is_err
+        assert result.danger_err == LandError.IncompleteLand
 
 
 class TestClaimDivergencePostMerge:
@@ -3464,6 +3613,52 @@ class TestClaimDivergencePostMerge:
             _run(["git", "log", "--oneline", "--all"], repo).stdout == main_log_before
         )
         assert _run(["git", "log", "--oneline", "--all"], wt).stdout == wt_log_before
+
+    def test_strictly_improved_test_count_auto_accepts_and_rewrites_recap(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_strictly_improved_test_count_auto_accepts_and_rewrites_recap  # noqa: E501
+        """T-1000 (churn item 1): a captured claim of 0/0 (recorded before
+        the ticket's one real evidence id existed, or a stale recap from a
+        send-back cycle) against a fresh post-merge re-run showing the
+        real 1/1 passing is a STRICT IMPROVEMENT, never a divergence -- the
+        land succeeds (no manual `frob ticket done-report` + re-land
+        cycle) and the landed ticket's recap is rewritten to the fresh
+        1/1 numbers."""
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-claims-improved", str(wt)], repo)
+
+        created = new_ticket(wt, _spec("Ticket with stale 0/0 captured claim"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        loaded = load_all(wt)
+        ticket = loaded.danger_ok[tid]
+        claims_block = (
+            "### Captured claims\n"
+            "- tests: 0 passed (from 0 evidence id(s))\n"
+            "- gates: 0 error(s), 0 warning(s), 0 waived"
+        )
+        ticket = ticket.model_copy(
+            update={"body": ticket.body + "\n" + claims_block + "\n"}
+        )
+        assert write_ticket(wt, ticket).is_ok
+        _commit_all(wt, "advance ticket with stale 0/0 captured claim")
+
+        result = land(
+            repo,
+            tid,
+            wt,
+            dry_run=False,
+            passed=lambda ids: frozenset(ids),
+            check_gates=lambda: (0, 0, 0),
+        )
+
+        assert result.is_ok
+        final_id = result.danger_ok.final_id
+        landed = load_all(repo).danger_ok[final_id]
+        assert "- tests: 1 passed (from 1 evidence id(s))" in landed.body
+        assert "- tests: 0 passed (from 0 evidence id(s))" not in landed.body
 
     def test_divergent_gate_errors_refuses_land(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_land.py::TestClaimDivergencePostMerge.test_divergent_gate_errors_refuses_land  # noqa: E501

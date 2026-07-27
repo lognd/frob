@@ -1026,6 +1026,21 @@ def splice_ledger(ours_text: str, theirs_text: str) -> Result[str, TicketError]
 
 Order of operations, and why it is this order:
 
+0. **Resolve `root` from `worktree` itself when they resolve to the
+   IDENTICAL path** (T-1003, docs/audits/coordination-churn.md#4): `root`
+   defaults to the CLI invoker's cwd (`ticket_runner.py`'s `_land`), so
+   running `frob ticket land <id> --worktree <path>` from a shell that
+   never `cd`ed out of the worktree first makes `root` resolve to
+   `worktree` for free -- the "chained cd" ritual every land used to
+   require. `git -C <worktree> rev-parse --git-common-dir` (git's own,
+   cwd-independent answer to "where is this clone's primary checkout")
+   resolves the true `root` transparently whenever it differs from
+   `worktree` -- a real linked worktree, the common case. When it comes
+   back equal to `worktree` (no linked worktree exists at all --
+   `--worktree` was pointed at the primary checkout itself), `root` is
+   left unchanged and the T-0795 `_refuse_if_root_is_worktree` guard in
+   step 1 still refuses exactly as before; this step never weakens that
+   guard, only retires the manual-cd case it used to also (mis-)catch.
 1. **Refuse on a dirty `root`** (`git status --porcelain` non-empty) --
    `Err(DirtyMain)`, remedy: `git -C <root> status`, commit or stash.
 2. **Validate close preconditions in the worktree FIRST** (evidence
@@ -1038,7 +1053,14 @@ Order of operations, and why it is this order:
    for the T-0398 D-05 POST-merge re-verification.
 3. **wip-commit** any uncommitted worktree changes (`wip: pre-land snapshot
    for <id>`) so nothing an agent forgot to commit is silently dropped by
-   the merge that follows.
+   the merge that follows. T-1003: `worktree`'s own `uv.lock` frob-
+   version-only flap (the same T-0793 shape step 1's `root`-side restore
+   already tolerates -- a prior `uv run`/`uv lock` against a pyproject a
+   sibling land already bumped, with nothing else in the tree touched) is
+   auto-restored HERE first, before the dirty check -- otherwise the flap
+   would get silently wip-committed as noise and squash-applied into the
+   landing commit in step 9, needing the same manual `git checkout --
+   uv.lock` ritual land already killed on the `root` side.
 4. **Merge main into the worktree** (`git merge --no-commit --no-ff`,
    staged, not committed). Any conflict outside `tickets.md` aborts loudly
    (`Err(MergeConflict)`, remedy: resolve manually in the worktree, commit,
@@ -1167,6 +1189,27 @@ Order of operations, and why it is this order:
     never the reverse (docs/rework.md cycle-avoidance), so `_land.py`
     reimplements the same terminal-state-regression semantics against its
     own pre/post ledger texts rather than importing the gate.
+9.8. **Stacked-sibling absorption check** (T-1001, docs/audits/coordination-
+    churn.md#2, immediately before step 10's commit): when one worktree
+    carries several tickets, the first land's squash-apply absorbs every
+    sibling's files and ledger state -- each subsequent land then stages
+    an EMPTY squash in step 9, and an unconditional `git commit` would
+    exit 1 with no stderr, surfacing as an unexplained `CommitFailed`.
+    `_land_squash_apply` checks whether anything is actually staged
+    (`git diff --cached --name-only`) right before attempting the commit;
+    if not, it VERIFIES (never assumes) genuine absorption -- `final_id`
+    must already be `done` in `root`'s current ledger, AND every file in
+    the ticket's own `scope` must already match content-for-content
+    between the worktree's finalized HEAD and `root`'s current HEAD (a
+    direct cross-checkout `git diff`, since a worktree shares its object
+    store with its primary checkout). Both holding returns a clean
+    success naming the ALREADY-EXISTING absorbing commit
+    (`LandReport.commit_sha`, unchanged) with `LandReport.ledger_spliced
+    =False` as the signal nothing new was committed this call (the
+    frozen `LandReport` model has no dedicated field for this). Either
+    check failing falls through to the ordinary step 10 commit attempt
+    and its unmodified, honest `CommitFailed` error -- an empty stage for
+    some OTHER, unexplained reason is never silently reported as success.
 10. **Commit** with a conventional-commit message template
     (`<type>(tickets): land <final-id> <title>`, type derived from
     `ticket.kind`; `feature`->`feat`, `bug`/`security`/`ux`/`incident`->

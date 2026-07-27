@@ -8141,7 +8141,7 @@ User directive 2026-07-27: self-audit the drive for churn/tedious aspects and de
 id: T-1000
 title: 'land: auto-accept strictly-improved test-count claims instead of ClaimDivergence
   refusal'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-27'
@@ -8152,21 +8152,70 @@ sprint: null
 scope:
 - src/frob/tickets/_land.py
 - tests/test_ticket_land.py
+evidence:
+- tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_matching_claims_land_succeeds
+- tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_divergent_test_count_refuses_land
+- tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_strictly_improved_test_count_auto_accepts_and_rewrites_recap
+- tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_divergent_gate_errors_refuses_land
+- tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_lower_gate_error_count_than_claim_still_lands
 acceptance:
 - text: given a done ticket whose recorded claim is 0/0 and whose fresh re-run shows
     N/N passing, when it lands, then the land succeeds with the recap rewritten to
     N/N; given a fresh run with any failing test, the land still refuses
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_strictly_improved_test_count_auto_accepts_and_rewrites_recap
+  - tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_divergent_test_count_refuses_land
 threat: null
 component: null
 ```
 Churn item 1 (~10 occurrences): every post-close touch stales the recap and land refuses with recorded 0/0 vs re-run N/N passing, cured identically each time by a manual done-report refresh + re-land. When the fresh count strictly improves (all passing, count >= recorded), land should auto-accept and rewrite the recap in the landing commit itself; genuine regressions (fewer passing or any failing) still refuse loudly.
 
+## Done report
+
+Churn item 1 (docs/audits/coordination-churn.md#1): every post-close touch
+staled the recap and `land` refused with ClaimDivergence even when the
+fresh count strictly improved, forcing an identical manual
+`frob ticket done-report` + re-land cycle each time (~10 occurrences).
+
+`_reverify_test_count_claim` now compares both the test-count and
+evidence-count halves of the captured claim against the fresh post-merge
+numbers: an exact match is unchanged (no-op); a genuine REGRESSION (either
+count now lower than recorded) still refuses with `ClaimDivergence`
+exactly as before; a STRICT IMPROVEMENT (both counts `>=` recorded, at
+least one strictly greater) now auto-accepts instead of refusing, and
+`_rewrite_claims_section` rewrites the ticket's `### Captured claims`
+Done-report block in the worktree ledger to the fresh numbers before the
+land commit is made, so the landing commit itself carries the corrected
+recap. Any evidence that is genuinely failing post-merge is refused
+earlier, upstream in `_reverify_evidence_post_merge` (D-05), before this
+claims check ever runs -- this ticket's acceptance direction for "any
+failing test still refuses" is exercised there, unchanged.
+
+### Changed
+```
+ src/frob/tickets/_land.py | 126 ++++++++++++++++++++++++++++++++++++++++------
+ tests/test_ticket_land.py |  46 +++++++++++++++++
+ tickets.md                |   3 +-
+ 3 files changed, 159 insertions(+), 16 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_matching_claims_land_succeeds` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_divergent_test_count_refuses_land` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_strictly_improved_test_count_auto_accepts_and_rewrites_recap` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_divergent_gate_errors_refuses_land` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_lower_gate_error_count_than_claim_still_lands` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 1 error(s), 4911 warning(s), 322 waived
+- error-findings: DOC001@docs/audits/coordination-churn.md
+
 <!-- ticket:T-1001 -->
 ```yaml
 id: T-1001
 title: 'land: report stacked-sibling absorption as clean success, not CommitFailed'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-27'
@@ -8177,15 +8226,72 @@ sprint: null
 scope:
 - src/frob/tickets/_land.py
 - tests/test_ticket_land.py
+evidence:
+- tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail::test_retry_after_full_success_reports_absorption_not_commit_failed
+- tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail::test_retry_after_finalize_then_squash_failure_lands_the_diff
+- tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail::test_retry_when_still_queued_re_runs_the_ordinary_transition
 acceptance:
 - text: given a worktree whose earlier land already carried this ticket's files and
     ledger state, when this ticket lands, then land exits success reporting absorption
     and naming the absorbing commit
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail::test_retry_after_full_success_reports_absorption_not_commit_failed
 threat: null
 component: null
 ```
 Churn item 2 (~8 occurrences): a siblings-absorbed land stages an empty squash and the final commit exits 1 with no stderr, surfaced as CommitFailed; the coordinator hand-verifies state+content every time. Detect the empty stage, verify the ticket is done on main with its scoped content present, and report absorbed-by-prior-land success (naming the absorbing commit).
+
+## Done report
+
+Churn item 2 (docs/audits/coordination-churn.md#2): when a worktree carries
+several tickets, the first land's squash absorbs the siblings' files and
+ledger state; each subsequent land stages an EMPTY squash and the final
+commit exits 1 with no stderr, surfaced as a scary, unexplained
+`CommitFailed` -- the coordinator then manually verifies state+content on
+main every time (~8 occurrences).
+
+`_land_squash_apply` now checks, right before attempting the landing
+commit, whether the squash-apply staged nothing at all
+(`_staged_files(root)` empty). If so, it verifies (never assumes) genuine
+absorption via `_absorption_verified`: `final_id` must already be `done`
+in `root`'s CURRENT ledger (loaded fresh, post-splice), AND every file in
+the ticket's own `scope` must already match content-for-content between
+the worktree's finalized HEAD and `root`'s current HEAD
+(`_absorption_scoped_content_matches`, a direct cross-checkout `git diff`
+since a worktree shares its object store with its primary checkout).
+When both hold, `_report_stacked_sibling_absorption` returns a clean `Ok`
+`LandReport` naming the ALREADY-EXISTING absorbing commit
+(`commit_sha` = root's current HEAD, unchanged) with `ledger_spliced=False`
+as the honest, reusable signal that nothing new was committed this call
+(the frozen `LandReport` model could not gain a new field within this
+ticket's scope). Verification failing for any reason falls through to the
+original `_commit_squash_apply` attempt and its unmodified, honest
+`CommitFailed` error -- an empty stage for some OTHER, unexplained reason
+is never silently reported as success.
+
+Exercised via the T-0795 idempotent-retry path (retrying `land()` for a
+ticket whose FIRST attempt already fully succeeded is the same code shape
+as a sibling absorbing a later ticket's squash -- both reach
+`_land_squash_apply` with a worktree branch whose content and ledger
+state are already fully present on `root`).
+
+### Changed
+```
+ src/frob/tickets/_land.py | 131 +++++++++++++++++++++++++++++++++++++++++-----
+ tests/test_ticket_land.py |  46 ++++++++++++++++
+ tickets.md                |  52 +++++++++++++++++-
+ 3 files changed, 213 insertions(+), 16 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail::test_retry_after_full_success_reports_absorption_not_commit_failed` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail::test_retry_after_finalize_then_squash_failure_lands_the_diff` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestLandRetryAfterFinalizeThenFail::test_retry_when_still_queued_re_runs_the_ordinary_transition` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 1 error(s), 4898 warning(s), 322 waived
+- error-findings: DOC001@docs/audits/coordination-churn.md
 
 <!-- ticket:T-1002 -->
 ```yaml
@@ -8219,7 +8325,7 @@ Churn item 3 (~8 occurrences): [gates.severity], _KNOWN_GATE_RULES, and docs/aud
 id: T-1003
 title: 'land ergonomics: resolve root from any cwd + internal uv.lock reset (kill
   the pre-land ritual)'
-state: queued
+state: done
 kind: ux
 origin: human
 created: '2026-07-27'
@@ -8231,15 +8337,101 @@ scope:
 - src/frob/tickets/_land.py
 - src/frob/app/ticket_runner.py
 - tests/test_ticket_land.py
+- docs/modules/tickets.md
+scope_changes:
+- op: add
+  glob: docs/modules/tickets.md
+  reason: 'The root-resolution change to land() itself (not just its CLI wrapper)
+
+    triggers AFFECT001 against its docs/modules/tickets.md#frob-ticket-land
+
+    doc anchor -- documenting the new step 0 (root resolution) and the
+
+    amended steps 3/9.8 (worktree-side uv.lock reset, stacked-sibling
+
+    absorption) requires touching that one doc file to close the drift this
+
+    ticket''s own code change created.
+
+    '
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- tests/test_ticket_land.py::TestLandChainedCdRootResolution::test_root_equal_to_a_real_linked_worktree_resolves_and_lands
+- tests/test_ticket_land.py::TestLandChainedCdRootResolution::test_root_equal_to_the_primary_checkout_itself_still_refuses
+- tests/test_ticket_land.py::TestUvLockSync::test_worktree_side_lock_flap_auto_restored_before_wip_commit
+- tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_version_line_only_does_not_refuse
+- tests/test_ticket_land.py::TestLandRefusesWhenRootIsWorktree::test_refused_before_any_git_mutation_names_the_real_mistake
 acceptance:
 - text: given a shell whose cwd is inside the worktree and flapped uv.lock files on
     both sides, when frob ticket land runs, then it lands correctly with no manual
     checkout or cd
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestLandChainedCdRootResolution::test_root_equal_to_a_real_linked_worktree_resolves_and_lands
 threat: null
 component: null
 ```
 Churn item 4 (~15 occurrences): every land needs git checkout -- uv.lock on both sides plus cd-to-root (the root==worktree guard fires on chained cds). Land should resolve the primary checkout from the worktree git common dir itself regardless of cwd, and perform the uv.lock flap reset internally on both sides before the dirty check, making `frob ticket land T-x --worktree <p>` correct from anywhere with no ritual.
+
+## Done report
+
+Churn item 4 (docs/audits/coordination-churn.md#4): every land required
+the ritual `git checkout -- uv.lock` on both sides, cd to the ROOT
+checkout (the root==worktree guard fired on any chained cd), then the
+land command -- the uv.lock half was reduced by T-0789's Makefile target
+but the cwd half burned a round-trip whenever an agent forgot it (~15
+occurrences).
+
+`land()` (`frob.tickets._land`) now resolves `root` from `worktree`
+itself, transparently, whenever they resolve to the identical path:
+`git -C <worktree> rev-parse --git-common-dir` (git's own, cwd-
+independent answer to "where is this clone's primary checkout") gives
+the true root. When that resolves to something OTHER than `worktree` --
+a real linked worktree, the common "ran land from inside the worktree"
+case -- `root` is redirected there and the land proceeds normally, no
+manual cd required. When it resolves back to `worktree` itself (no
+linked worktree exists at all, `--worktree` genuinely pointed at the
+primary checkout), `root` is left unchanged and the existing T-0795
+`_refuse_if_root_is_worktree` guard still refuses exactly as before --
+this never weakens that guard, only retires the chained-cd case it used
+to also (mis-)catch. `ticket_runner.py`'s `_land` CLI wrapper resolves
+the same way (via the same shared `_resolve_primary_checkout` helper)
+before calling `land()`, so its own post-land reporting/`--push` steps
+stay pointed at the real root too.
+
+`_wip_commit` (the worktree side) now also auto-restores a `uv.lock`
+frob-version-only flap before its own dirty check, mirroring the
+existing `root`-side restore (`_refuse_if_main_dirty`, T-0793) -- the
+same flap shape on the WORKTREE side used to get silently wip-committed
+as noise and squash-applied into the landing commit, needing the
+identical manual `git checkout -- uv.lock` on that other side too.
+
+`docs/modules/tickets.md#frob-ticket-land` (added to scope, T-0731/
+AFFECT001 requires the touch since this ticket directly changed `land`'s
+own body) documents the new root-resolution step 0, the amended
+wip-commit step 3, and (recording T-1001's already-landed change for
+completeness, since it also touches this same section) the stacked-
+sibling absorption step 9.8.
+
+### Changed
+```
+ src/frob/tickets/_land.py | 265 +++++++++++++++++++++++++++++++++++++++++++---
+ tests/test_ticket_land.py |  81 ++++++++++++++
+ tickets.md                | 112 +++++++++++++++++++-
+ 3 files changed, 440 insertions(+), 18 deletions(-)
+```
+
+### Evidence
+- `tests/test_ticket_land.py::TestLandChainedCdRootResolution::test_root_equal_to_a_real_linked_worktree_resolves_and_lands` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestLandChainedCdRootResolution::test_root_equal_to_the_primary_checkout_itself_still_refuses` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestUvLockSync::test_worktree_side_lock_flap_auto_restored_before_wip_commit` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_version_line_only_does_not_refuse` (pytest node id, verified passing when recorded)
+- `tests/test_ticket_land.py::TestLandRefusesWhenRootIsWorktree::test_refused_before_any_git_mutation_names_the_real_mistake` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 1 error(s), 4932 warning(s), 322 waived
+- error-findings: DOC001@docs/audits/coordination-churn.md
 
 <!-- ticket:T-1004 -->
 ```yaml

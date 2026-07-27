@@ -1143,11 +1143,35 @@ def _land(root: Path, cfg: AppConfig) -> None:
     -- no separate `run_tests` parameter at the land layer (review round 2
     fix #3: derive from D-05's own real run instead of a duplicate one)."""
     from frob.tickets import land
+    from frob.tickets._land import _resolve_primary_checkout
 
     _require_land_args(cfg)
     assert cfg.ticket_id is not None  # narrows for the type checker; enforced above
     assert cfg.ticket_worktree is not None
     worktree = cfg.ticket_worktree
+
+    # T-1003 (churn item 4): `root` here is `(cfg.ticket_path or Path("."))
+    # .resolve()` -- the invoker's cwd. `land()` itself now resolves the
+    # SAME "root defaulted to inside --worktree" shape internally (see its
+    # own T-1003 doc), but this CLI wrapper's own `root` local is used
+    # AGAIN after `land()` returns, for `_report_land_result`/
+    # `_push_after_land` -- resolving it here too (same shared helper,
+    # not a re-implementation) keeps those post-land steps pointed at the
+    # real primary checkout instead of silently reporting against/pushing
+    # from the worktree path that was never actually landed onto.
+    if root.resolve() == worktree.resolve():
+        resolved_root = _resolve_primary_checkout(worktree)
+        if resolved_root is not None and resolved_root != worktree.resolve():
+            _log.info(
+                "ticket land: %s root defaulted to the cwd inside "
+                "--worktree (%s) -- resolved the primary checkout %s from "
+                "its git common dir instead (T-1003), no manual cd "
+                "required",
+                cfg.ticket_id,
+                root,
+                resolved_root,
+            )
+            root = resolved_root
 
     if cfg.ticket_skip_mutation_evidence:
         _log.warning(
