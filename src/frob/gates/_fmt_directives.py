@@ -199,6 +199,7 @@ def _canonical_lines(text: str, *, marker: str, indent: str, limit: int) -> list
 # frob:tests \
 # tests/test_gates_fmt_directives.py::TestCanonicalizeText.test_idempotent_on_already_c\
 # anonical_text
+# frob:ticket T-0972
 def canonicalize_text(text: str, *, path: str, limit: int) -> str:
     """Rewrite every `frob:` directive comment run in `text` (source for
     `path`, consulted only to pick the line-comment marker via
@@ -249,6 +250,7 @@ def canonicalize_text(text: str, *, path: str, limit: int) -> str:
     run_idx = 0
     i = 0
     n = len(lines)
+    # frob:waive PERF003 reason="two-pointer merge scan over lines/runs advancing together, O(n) total, not a cross join"  # noqa: E501
     while i < n:
         if run_idx < len(runs) and runs[run_idx][1] == i:
             logical_text, _lineno, _src, count = runs[run_idx]

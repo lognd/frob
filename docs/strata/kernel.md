@@ -135,6 +135,12 @@ cyclic lattices) and records non-fatal deny-by-default findings as
 `FactBase.diagnostics` (at-least-once delivery into a non-idempotent
 consumer; payload label above destination clearance).
 
+T-0972: `FactBase` (and its `aggregate_demand` method, docs/strata/
+kernel.md#demand-declarations-t-0702 below) picked up `frob:ticket
+T-0972` bindings for reasoned `frob:waive PERF003`/`PERF004` markers on
+their own BFS-closure and per-node-set-formatting code -- no behavior
+change.
+
 - `FactBase.nodes_at` -- node ids at an exact trust level (deterministic
   order for reproducible counterexamples).
 - `FactBase.reachable` -- the influence closure with witness paths; flows
@@ -325,6 +331,10 @@ horizon beyond 24 months, leaves the verdict PROVED untouched.
 <!-- frob:ticket T-0702 -->
 <!-- frob:describes src/frob/strata/_facts.py::FactBase.aggregate_demand -->
 <!-- frob:describes src/frob/strata/_facts.py::AggregateDemand -->
+
+T-0972: `aggregate_demand`'s own BFS closure over incoming flows picked
+up a reasoned `frob:waive PERF003` (one pass over incoming edges, not a
+cross join) -- no behavior change.
 
 The capacity-semantics propagation above (`propagated_demand`) sums demand
 along flows whose OWN `rate` is declared -- but nothing in the model says

@@ -93,6 +93,7 @@ def _frame_to_stack(
 
 
 # frob:doc docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709
+# frob:ticket T-0972
 # frob:tests tests/unit/perf/test_hotgraph.py::TestStackSampler
 class StackSampler:
     """Background-thread stack sampler (the py-spy-style fallback backend
@@ -173,6 +174,7 @@ class StackSampler:
         interval is fixed and constant-factor)."""
         self._sampler_ident = threading.get_ident()
         max_depth = self._config.max_depth
+        # frob:waive PERF003 reason="one live-thread snapshot per fixed-interval tick, bounded by thread count, not a scale-sensitive cross join"  # noqa: E501
         while not self._stop_event.wait(self._config.interval_s):
             frames = sys._current_frames()
             for ident, frame in frames.items():

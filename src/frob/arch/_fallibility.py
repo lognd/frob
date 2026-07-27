@@ -309,6 +309,7 @@ def check_recoverable_error_wrong_signature(
 
 
 # frob:doc docs/modules/arch.md#fallibility-checks
+# frob:ticket T-0972
 # frob:tests tests/unit/test_arch.py::TestOverBroadExcept.test_bare_except_flagged  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestOverBroadExcept.test_specific_except_not_flagged  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestOverBroadExcept.test_reraise_with_different_type_loses_context_flagged  # noqa: E501
@@ -349,6 +350,7 @@ def check_over_broad_except(module: NormalizedModule) -> list[ArchSuggestion]:
                         symref=qualname,
                     )
                 )
+            # frob:waive PERF003 reason="func.raises is one function's own small raise-site list, not a scale-sensitive cross join"  # noqa: E501
             for r in func.raises:
                 if abs(r.line - c.line) > _ADJACENCY_WINDOW:
                     continue

@@ -886,6 +886,7 @@ def _discharge(root: Path, symref: str, resource: str) -> Violation | None:
 # frob:tests tests/test_gates.py::TestCleanupObligationGate.test_exceptional_exit_with_no_release_anywhere_is_an_error  # noqa: E501
 # frob:tests tests/test_gates.py::TestCleanupObligationGate.test_deinit_never_called_for_cleanup_always_protocol_is_an_error  # noqa: E501
 # frob:tests tests/test_gates.py::TestCleanupObligationGate.test_deinit_reachable_for_cleanup_always_protocol_is_not_flagged  # noqa: E501
+# frob:ticket T-0972
 def protocol_summary_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """PROTO001: the real `mark_unresolved=True` production entrypoint into
     `frob.graph.summary.compute_protocol_summaries` (T-0813) -- every
@@ -935,6 +936,7 @@ def protocol_summary_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violatio
     violations: list[Violation] = []
     packages_scanned = 0
     for package, symrefs in tagged_by_package.items():
+        # frob:waive PERF004 reason="symrefs is this loop's own per-package distinct list, not a shared re-sort"  # noqa: E501
         entrypoints = sorted(set(symrefs))
         sample_symref = entrypoints[0]
         sample_path = sample_symref.split("::", 1)[0]

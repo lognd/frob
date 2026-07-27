@@ -79,6 +79,7 @@ def test_near_duplicate_cluster_dispatches_to_native_and_matches_reference():
     assert [members[i] for i in expected_idx] == result
 
 
+# frob:ticket T-0972
 def test_native_kernel_matches_difflib_over_this_repos_own_arch_tree():
     # frob:tests frob-core/src/lib.rs::near_duplicate_indices
     # Real-data parity sweep: every same-signature group this repo's own
@@ -109,6 +110,7 @@ def test_native_kernel_matches_difflib_over_this_repos_own_arch_tree():
     assert groups, "expected at least one same-signature group over src/frob/arch"
     for bodies in groups:
         expected = _python_reference_indices(bodies, _BODY_SIMILARITY_THRESHOLD)
+        # frob:waive PERF004 reason="test-file assertion; bodies is this loop's own per-group distinct list, not hot-path re-sort"  # noqa: E501
         actual = sorted(
             frob_core.near_duplicate_indices(bodies, _BODY_SIMILARITY_THRESHOLD)
         )

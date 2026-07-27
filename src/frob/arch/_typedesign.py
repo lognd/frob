@@ -48,6 +48,7 @@ def _bool_field_names(cls: NormalizedClass) -> set[str]:
 
 
 # frob:doc docs/modules/arch.md#type-driven-design-checks
+# frob:ticket T-0972
 # frob:tests tests/unit/test_arch.py::TestIllegalStatesRepresentable.test_bool_field_cross_field_guard_flagged  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestIllegalStatesRepresentable.test_bool_field_alone_not_flagged  # noqa: E501
 def check_illegal_states_representable(
@@ -91,6 +92,7 @@ def check_illegal_states_representable(
                         category="illegal-states-representable",
                         severity="suggestion",
                         message=(
+                            # frob:waive PERF004 reason="mentioned_bool/mentioned_other are this loop's own per-method distinct sets, not a shared re-sort"  # noqa: E501
                             f"`{cls.name}` guards `{sorted(mentioned_bool)}` against"
                             f" `{sorted(mentioned_other)}` at runtime in `{m.name}`"
                         ),

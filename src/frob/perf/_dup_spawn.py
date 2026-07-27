@@ -273,6 +273,7 @@ def _def_violations(path: str, func_def: Node, graph: _EffectGraph) -> list[Viol
     for (kind, arg), lines in by_occurrence.items():
         if kind == UNKNOWN_KIND or len(lines) < 2:
             continue
+        # frob:waive PERF004 reason="lines is this loop's own per-occurrence distinct set, not a shared re-sort"  # noqa: E501
         line_list = ", ".join(str(n) for n in sorted(lines))
         violations.append(
             Violation(

@@ -67,6 +67,7 @@ def _all_sections(index: SectionIndex) -> dict[str, Section]:
 # frob:doc docs/modules/perf.md#slow-operation-advisories-t-0712
 # frob:tests tests/unit/perf/test_advisories.py::TestExternalCallAdvisories.test_dominant_external_edge_fires  # noqa: E501
 # frob:tests tests/unit/perf/test_advisories.py::TestExternalCallAdvisories.test_minor_external_edge_does_not_fire  # noqa: E501
+# frob:ticket T-0972
 def external_call_advisories(stream: HitStream, index: SectionIndex) -> list[Violation]:
     """One `PERF-ADV-EXT` advisory per loop section whose external call
     edge(s) sum to at least `_DOMINANCE_THRESHOLD` of that loop's own
@@ -97,6 +98,7 @@ def external_call_advisories(stream: HitStream, index: SectionIndex) -> list[Vio
         share = external_weight / total
         if share < _DOMINANCE_THRESHOLD:
             continue
+        # frob:waive PERF004 reason="edges is this loop's own per-section distinct set, not a shared re-sort"  # noqa: E501
         callee_names = ", ".join(sorted({callee for callee, _ in edges}))
         violations.append(
             Violation(

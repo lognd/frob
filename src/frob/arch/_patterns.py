@@ -709,6 +709,7 @@ def _collect_file_constructions(
         out.setdefault(name, set()).add(rel)
 
 
+# frob:ticket T-0972
 def _check_scattered_construction(
     constructions: dict[str, set[str]], out: list[ArchSuggestion]
 ) -> None:
@@ -719,6 +720,7 @@ def _check_scattered_construction(
     for name, files in sorted(constructions.items()):
         if len(files) < _MIN_SCATTERED_SITES:
             continue
+        # frob:waive PERF004 reason="files is this loop's own per-name distinct set, not a shared re-sort"  # noqa: E501
         first_file = sorted(files)[0]
         _emit(
             "scattered-construction",
@@ -1106,6 +1108,7 @@ def _calls_var(node: Node, var: str) -> bool:
     return False
 
 
+# frob:ticket T-0972
 # frob:tests tests/unit/test_arch.py::TestPatternRecommender.test_manual_callback_list_recommends_observer  # noqa: E501
 def _check_manual_callback_list(
     tree: object, rel: str, out: list[ArchSuggestion]
@@ -1131,6 +1134,7 @@ def _check_manual_callback_list(
         )
         if init is None:
             continue
+        # frob:waive PERF004 reason="_empty_list_attrs(init) is this loop's own per-class distinct set, not a shared re-sort"  # noqa: E501
         for attr in sorted(_empty_list_attrs(init)):
             appenders = [
                 m for m in methods if m is not init and _method_appends_to(m, attr)
@@ -1304,6 +1308,11 @@ def _check_dataclass_boilerplate(
         stmts = _method_body_stmts(init)
         if len(stmts) != len(param_names):
             continue
+        # frob:ticket T-0972
+        # PERF001: build the membership set once, outside the per-statement
+        # loop below, instead of testing `in` against the `param_names` list
+        # on every iteration.
+        param_name_set = set(param_names)
         assigned: set[str] = set()
         ok = True
         for stmt in stmts:
@@ -1335,7 +1344,7 @@ def _check_dataclass_boilerplate(
             if (
                 attr_name is None
                 or attr_name != value_name
-                or value_name not in param_names
+                or value_name not in param_name_set
             ):
                 ok = False
                 break

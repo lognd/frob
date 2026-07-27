@@ -97,6 +97,7 @@ def _dependents_of(snapshot: GraphSnapshot, ref: str) -> set[str]:
 # frob:tests tests/test_graph_affects.py::TestAffects.test_truncated_at_max_depth
 # frob:tests tests/test_graph_affects.py::TestAffects.test_truncated_at_max_nodes
 # frob:tests tests/test_graph_affects.py::TestAffects.test_no_edges_is_empty_set
+# frob:ticket T-0972
 def affects(
     snapshot: GraphSnapshot,
     ref: str,
@@ -129,6 +130,7 @@ def affects(
             if _dependents_of(snapshot, node) - visited:
                 truncated = True
             continue
+        # frob:waive PERF004 reason="_dependents_of(snapshot, node) is this loop's own per-node distinct set, not a shared re-sort"  # noqa: E501
         for dep in sorted(_dependents_of(snapshot, node)):
             if dep in visited:
                 continue

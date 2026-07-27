@@ -278,6 +278,7 @@ def _raise_or_assert_param_mentions(
 
 
 # frob:doc docs/modules/arch.md#lsp-checks
+# frob:ticket T-0972
 # frob:tests tests/unit/test_arch.py::TestOverrideStrengthenedPrecondition.test_added_guard_raise_on_shared_param_flagged  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestOverrideStrengthenedPrecondition.test_guard_raise_present_in_base_too_not_flagged  # noqa: E501
 def check_override_strengthened_precondition(
@@ -308,6 +309,7 @@ def check_override_strengthened_precondition(
                 category="lsp-strengthened-precondition",
                 severity="warning",
                 message=(
+                    # frob:waive PERF004 reason="new_guards is this loop's own per-override distinct set, not a shared re-sort"  # noqa: E501
                     f"`{cls.name}.{override_m.name}` adds a guard raise on"
                     f" {sorted(new_guards)} the base `{base_m.name}` does not"
                     " have"

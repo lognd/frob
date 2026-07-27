@@ -187,6 +187,7 @@ def _declared_delivery_semantics(attrs: tuple[str, ...]) -> str | None:
     return None
 
 
+# frob:ticket T-0972
 def _missing_or_invalid_delivery_semantics_violations(
     model: KernelModel,
 ) -> list[DeliverySemanticsViolation]:
@@ -195,6 +196,10 @@ def _missing_or_invalid_delivery_semantics_violations(
     the `_pii.py::check_pii_catalog` precedent that malformed counts as
     undeclared)."""
     violations: list[DeliverySemanticsViolation] = []
+    # PERF004: `DELIVERY_SEMANTICS` is a fixed module constant -- sort it
+    # once here instead of re-sorting the same set on every offending
+    # node inside the loop below.
+    sorted_delivery_semantics = sorted(DELIVERY_SEMANTICS)
     for node in model.nodes:
         if not _is_queue(node.attrs):
             continue
@@ -213,7 +218,7 @@ def _missing_or_invalid_delivery_semantics_violations(
             if value is None
             else (
                 f"node {node.id} declares delivery={value!r}, which is not "
-                f"one of {sorted(DELIVERY_SEMANTICS)}"
+                f"one of {sorted_delivery_semantics}"
             )
         )
         violations.append(

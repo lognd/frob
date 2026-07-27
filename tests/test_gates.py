@@ -9275,6 +9275,7 @@ class TestDoc004ConsoleCommandDrift:
 
 
 # frob:ticket T-0499
+# frob:ticket T-0972
 class TestKnownGateRuleIds:
     """`known_gate_rule_ids()` is the public accessor strata's
     `caught_by` verification (THREAT006/COMPLIANCE004) needs to resolve
@@ -9318,6 +9319,7 @@ class TestKnownGateRuleIds:
     # frob:ticket T-0901
     # frob:ticket T-0924
     # frob:ticket T-0964
+    # frob:ticket T-0972
     # frob:tests tests/test_gates.py::TestKnownGateRuleIds.test_every_emitted_rule_literal_is_known
     def test_every_emitted_rule_literal_is_known(self) -> None:
         """Drift-lock: statically enumerate every `rule="..."`/`"rule":
@@ -9355,6 +9357,7 @@ class TestKnownGateRuleIds:
         found: dict[str, str] = {}
         const_values: dict[str, str] = {}
         const_refs: dict[str, str] = {}
+        # frob:waive PERF004 reason="test-file fixture scan; rglob result is this loop's own per-base distinct list, not hot-path re-sort"  # noqa: E501
         for base in ("src/frob/gates", "src/frob/strata"):
             for path in sorted((repo_root / base).rglob("*.py")):
                 for lineno, line in enumerate(path.read_text().splitlines(), start=1):

@@ -164,6 +164,7 @@ def _node_manifests(model: KernelModel) -> dict[str, HostManifest]:
     return manifests
 
 
+# frob:ticket T-0972
 def _duplicate_port_violations(
     manifests: dict[str, HostManifest],
 ) -> list[ResourceContentionViolation]:
@@ -177,6 +178,7 @@ def _duplicate_port_violations(
             by_port[port].append(node_id)
     violations: list[ResourceContentionViolation] = []
     for port, node_ids in sorted(by_port.items()):
+        # frob:waive PERF004 reason="node_ids is this loop's own per-port distinct set, not a shared re-sort"  # noqa: E501
         distinct = sorted(set(node_ids))
         if len(distinct) < 2:
             continue
@@ -313,6 +315,7 @@ def _overlapping_path_violations(
     return violations
 
 
+# frob:ticket T-0972
 def _shared_pipe_violations(
     manifests: dict[str, HostManifest],
 ) -> list[ResourceContentionViolation]:
@@ -325,6 +328,7 @@ def _shared_pipe_violations(
             by_pipe[pipe_name].append(node_id)
     violations: list[ResourceContentionViolation] = []
     for pipe_name, node_ids in sorted(by_pipe.items()):
+        # frob:waive PERF004 reason="node_ids is this loop's own per-pipe distinct set, not a shared re-sort"  # noqa: E501
         distinct = sorted(set(node_ids))
         if len(distinct) < 2:
             continue
@@ -347,6 +351,7 @@ def _shared_pipe_violations(
     return violations
 
 
+# frob:ticket T-0972
 def _shared_store_write_violations(
     model: KernelModel, store_ids: frozenset[str]
 ) -> list[ResourceContentionViolation]:
@@ -363,6 +368,7 @@ def _shared_store_write_violations(
             writers[flow.dst].add(flow.src)
     violations: list[ResourceContentionViolation] = []
     for store_id, node_id_set in sorted(writers.items()):
+        # frob:waive PERF004 reason="node_id_set is this loop's own per-store distinct set, not a shared re-sort"  # noqa: E501
         distinct = sorted(node_id_set)
         if len(distinct) < 2:
             continue

@@ -225,6 +225,7 @@ DATA_CLUMP_MIN_SITES = 3
 
 
 # frob:doc docs/modules/arch.md#misc-design-smells
+# frob:ticket T-0972
 # frob:tests tests/unit/test_arch.py::TestDataClumps.test_same_three_keyword_group_at_three_sites_flagged  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestDataClumps.test_group_at_two_sites_not_flagged  # noqa: E501
 def check_data_clumps(module: NormalizedModule) -> list[ArchSuggestion]:
@@ -267,6 +268,7 @@ def check_data_clumps(module: NormalizedModule) -> list[ArchSuggestion]:
                 category="data-clumps",
                 severity="suggestion",
                 message=(
+                    # frob:waive PERF004 reason="group is this loop's own per-clump distinct set, not a shared re-sort"  # noqa: E501
                     f"keyword args {sorted(group)} passed together at"
                     f" {len(sites)} call sites (first: `{callee}`)"
                 ),
@@ -495,6 +497,7 @@ def _looks_like_temporal_flag(name: str) -> bool:
 
 
 # frob:doc docs/modules/arch.md#misc-design-smells
+# frob:ticket T-0972
 # frob:tests tests/unit/test_arch.py::TestTemporalCoupling.test_guard_clause_on_initialized_flag_flagged  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestTemporalCoupling.test_field_not_guarded_not_flagged  # noqa: E501
 def check_temporal_coupling(module: NormalizedModule) -> list[ArchSuggestion]:
@@ -530,6 +533,7 @@ def check_temporal_coupling(module: NormalizedModule) -> list[ArchSuggestion]:
                         category="temporal-coupling",
                         severity="suggestion",
                         message=(
+                            # frob:waive PERF004 reason="mentioned is this loop's own per-method distinct set, not a shared re-sort"  # noqa: E501
                             f"`{cls.name}.{m.name}` guards call order on runtime"
                             f" flag(s) {sorted(mentioned)}"
                         ),

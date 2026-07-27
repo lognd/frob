@@ -309,6 +309,12 @@ T-0686 may-raise engine this substrate is meant to eventually share with
 CONSTRAINT ("one engine, whichever builds first hosts it") could not be
 coordinated on this pass either, unchanged from T-0745's own disclosure.
 
+T-0972: `affects`'s own `sorted(_dependents_of(snapshot, node))` BFS-walk
+call picked up a reasoned `frob:waive PERF004` (the dependents set
+differs per node, nothing to hoist) -- no behavior change. `acknowledge`
+(`frob.graph.lock`) similarly picked up a reasoned `frob:waive PERF004`
+on its own per-ref `sorted(_facets_for_ref(...))` call.
+
 ## Comment DSL
 
 <!-- frob:describes src/frob/graph/dsl.py::parse_directives -->

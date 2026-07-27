@@ -372,6 +372,7 @@ def _utilization_violations(
     return violations
 
 
+# frob:ticket T-0972
 def _writer_starvation_violations(
     model: KernelModel,
 ) -> list[StarvationViolation]:
@@ -388,6 +389,7 @@ def _writer_starvation_violations(
         has_alpha = any(mode == AccessMode.ALPHA for _node, mode in pairs)
         if not has_reader or has_alpha:
             continue
+        # frob:waive PERF004 reason="pairs is this loop's own per-resource distinct accessor list, not a shared re-sort"  # noqa: E501
         writers = sorted(
             node_id for node_id, mode in pairs if mode in _WRITE_LIKE_MODES
         )
@@ -416,6 +418,7 @@ def _writer_starvation_violations(
     return violations
 
 
+# frob:ticket T-0972
 def _unbounded_wait_violations(
     model: KernelModel,
 ) -> list[StarvationViolation]:
@@ -431,6 +434,7 @@ def _unbounded_wait_violations(
         pairs = accessors[resource_id]
         if len(pairs) < 2:
             continue
+        # frob:waive PERF004 reason="pairs is this loop's own per-resource distinct accessor list, not a shared re-sort"  # noqa: E501
         for node_id, mode in sorted(pairs):
             if mode not in _SERIALIZATION_MODES:
                 continue

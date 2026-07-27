@@ -184,11 +184,7 @@ def _collect_module_locks(root: Node) -> dict[str, str]:
                     continue
                 left = _child(assign, "left")
                 call = _assignment_ctor_callee(assign)
-                if (
-                    left is not None
-                    and left.type == "attribute"
-                    and call is not None
-                ):
+                if left is not None and left.type == "attribute" and call is not None:
                     obj = _child(left, "object")
                     attr = _child(left, "attribute")
                     if (
@@ -521,6 +517,7 @@ def _check_lock_ordering_hazards(
     for info in infos.values():
         if not info.unresolved:
             continue
+        # frob:waive PERF004 reason="info.unresolved is this loop's own per-info distinct set, not a shared re-sort"  # noqa: E501
         sample = sorted(info.unresolved)[0]
         _log.info(
             "lock-identity-unresolved: %s has lock-shaped usage `%s` this "

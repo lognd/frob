@@ -164,6 +164,7 @@ def _lang002_unregistered_files(repo_root: Path) -> tuple[Violation, ...]:
 
 
 # frob:enforces CHK-GATE-LANG003
+# frob:ticket T-0972
 # frob:waive ARCH001 reason="already split out of project_lang_conformance_gate once for a prior ARCH001 finding (docstring); remaining length is two short linear scans (present-language detection, then a per-facet WARN/ERROR classification) each already minimal -- a second extraction would re-fragment the same two phases previously judged as one gate's cohesive body"  # noqa: E501
 def _lang003_unsound_gaps(repo_root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     """LANG003: one violation per `KNOWN_GAP`/`NOT_APPLICABLE` facet cell
@@ -190,6 +191,7 @@ def _lang003_unsound_gaps(repo_root: Path, queue: TicketQueue) -> tuple[Violatio
         support = registry.get(language)
         if support is None:
             continue
+        # frob:waive PERF004 reason="support.facets is this loop's own per-language distinct mapping, not a shared re-sort"  # noqa: E501
         for facet_name, status in sorted(support.facets.items()):
             # NOT_APPLICABLE never needs a ticket -- it means the facet
             # genuinely does not apply (e.g. strata's DSL-vs-source-code

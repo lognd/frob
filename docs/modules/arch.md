@@ -446,6 +446,11 @@ gate-side addition, not a re-instrumentation of these checks.
   unverifiable from this file alone, and the check silently skips it
   rather than risk a false positive.
 
+T-0972: `_check_non_exhaustive_enum_match`'s own `sorted(missing)`
+message-formatting call picked up a reasoned `frob:waive PERF004` (the
+missing-member set differs per match, nothing to hoist) -- no behavior
+change.
+
 ### LSP checks: `lsp-not-implemented-override` / `lsp-signature-variance` / `lsp-strengthened-precondition` / `lsp-weakened-postcondition` / `lsp-noop-override` (T-0618)
 
 <a id="lsp-checks"></a>
@@ -541,6 +546,11 @@ no-op than flag a legitimate short override.
 **`run_lsp_checks(module) -> list[ArchSuggestion]`** runs all five above
 against one `NormalizedModule` and returns the combined findings,
 mirroring `frob.arch._srp.run_srp_checks`'s convention.
+
+T-0972: `check_override_strengthened_precondition`'s own
+`sorted(new_guards)` message-formatting call picked up a reasoned
+`frob:waive PERF004` (the guard set differs per override, nothing to
+hoist) -- no behavior change.
 
 ### ISP checks: `fat-interface` / `narrow-client-usage` (T-0619)
 
@@ -780,6 +790,11 @@ branches mentioning that param.
 all four above against one `NormalizedModule` and returns the combined
 findings, mirroring `run_srp_checks`'s convention.
 
+T-0972: `check_illegal_states_representable`'s own
+`sorted(mentioned_bool)`/`sorted(mentioned_other)` message-formatting
+calls picked up a reasoned `frob:waive PERF004` (both sets differ per
+method, nothing to hoist) -- no behavior change.
+
 ### Logging discipline checks: `unlogged-error-path` / `unlogged-boundary` / `print-as-diagnostic` (T-0622)
 
 <a id="logging-discipline-checks"></a>
@@ -923,6 +938,12 @@ syntactic certainty.
 **`run_fallibility_checks(module) -> list[ArchSuggestion]`** runs all
 four above against one `NormalizedModule` and returns the combined
 findings, mirroring `run_logging_checks`'s convention.
+
+T-0972: `check_over_broad_except`'s own nested `for r in func.raises`
+scan (comparing each raise site's exception type against the current
+catch clause's, a small per-function raise-site list) picked up a
+reasoned `frob:waive PERF003` (not a scale-sensitive cross join) -- no
+behavior change.
 
 ### May-raise resolver: `compute_may_raise` / `FunctionMayRaise` / `UNKNOWN` / `UBIQUITOUS_TIER` (T-0686, extended T-0689)
 
@@ -1107,6 +1128,11 @@ above against one `NormalizedModule` and returns the combined findings,
 mirroring `run_fallibility_checks`'s convention. `check_module_dependency_
 cycles` (T-0625, below) is NOT included -- it is project-wide, not
 per-module, and is called separately.
+
+T-0972: `check_data_clumps`'s own `sorted(group)` and
+`check_temporal_coupling`'s own `sorted(mentioned)` message-formatting
+calls each picked up a reasoned `frob:waive PERF004` (both differ per
+clump/method, nothing to hoist) -- no behavior change.
 
 ### Module dependency cycles: `module-dependency-cycle` (T-0625)
 

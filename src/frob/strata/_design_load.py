@@ -233,6 +233,7 @@ def load_design_ids(root: Path, design_dir: str = DEFAULT_DESIGN_DIR) -> DesignI
 
 # frob:doc docs/strata/surface.md#directives-t-0080
 # frob:ticket T-0084
+# frob:ticket T-0972
 # frob:tests tests/unit/strata/test_design_load.py::TestUnbound.test_unbound_pair
 # frob:tests tests/unit/strata/test_design_load.py::TestUnbound.test_bound_excluded
 def unbound_constructs(
@@ -256,6 +257,7 @@ def unbound_constructs(
     }
     unbound: list[tuple[EdgeKind, str]] = []
     for kind in kinds:
+        # frob:waive PERF004 reason="ids_by_kind.get(kind, ...) is this loop's own per-kind distinct set, not a shared re-sort"  # noqa: E501
         for construct_id in sorted(ids_by_kind.get(kind, frozenset())):
             if construct_id not in bound[kind]:
                 unbound.append((kind, construct_id))

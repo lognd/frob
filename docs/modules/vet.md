@@ -659,6 +659,12 @@ discipline `_capability.py`'s module docstring already documents for
 
 ## Public API
 
+T-0972: `non_executable_line_numbers` (`src/frob/vet/_capability.py`)
+picked up a reasoned `frob:waive PERF002` on its own per-span
+`raw.count(b"\n", ...)` call (each `(start, end)` span needs its own
+byte-count query over a different sub-range; not a repeated identical
+count to hoist) -- no behavior change.
+
 <!-- frob:describes src/frob/vet/_models.py::Dependency -->
 <!-- frob:describes src/frob/vet/_models.py::PackageVerdict -->
 <!-- frob:describes src/frob/vet/_models.py::VetReport -->

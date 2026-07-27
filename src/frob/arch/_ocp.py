@@ -264,6 +264,7 @@ def _iter_pattern_leaves(pattern: Node) -> list[Node]:
     return [pattern]
 
 
+# frob:ticket T-0972
 # frob:tests tests/unit/test_arch_ocp.py::TestNonExhaustiveEnumMatch.test_missing_member_flagged  # noqa: E501
 def _check_non_exhaustive_enum_match(
     tree: object, rel: str, out: list[ArchSuggestion]
@@ -310,6 +311,7 @@ def _check_non_exhaustive_enum_match(
                 category="non-exhaustive-enum-match",
                 severity="warning",
                 message=(
+                    # frob:waive PERF004 reason="missing is this loop's own per-match distinct set, not a shared re-sort"  # noqa: E501
                     f"match on `{enum_class}` is missing "
                     f"{sorted(missing)} and has no wildcard/default arm"
                 ),

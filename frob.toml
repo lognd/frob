@@ -253,6 +253,19 @@ PII012 = "error"
 # (`_py_is_self_attribute`) drops both findings to zero without touching
 # `mutate/__init__.py` itself. Promoted to error at zero live findings.
 ARCH101 = "error"
+# T-0972: gates-quality audit finding 1 -- PERF001-004 (membership-in-list,
+# .index()/.count(), nested-loop equality-join, sorted()-in-loop) were
+# WARN-only, so a repo could carry real O(n^2)/repeated-work perf smells
+# and still exit 0. The 46-finding unwaived baseline measured on main
+# (2026-07-27) is burned down to zero (2 fixed by hoisting/set-membership,
+# the rest reasoned `frob:waive` for per-iteration-distinct-data false
+# positives and algorithm-inherent BFS/DFS/Tarjan/two-pointer traversals
+# PERF's position-free token-stream detector cannot distinguish from a
+# real cross join), so this promotion does not immediately red the build.
+PERF001 = "error"
+PERF002 = "error"
+PERF003 = "error"
+PERF004 = "error"
 
 [testing]
 # min_unit_cases dropped from the 3-case aspirational target to 1 while the

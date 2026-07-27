@@ -420,6 +420,13 @@ this module.
   language-neutral contract, resolver, and a harness-composable python
   producer for them to build on.
 
+T-0972: `build_section_index`'s own per-module `sections.sort(...)` and
+`language_deciles`'s own per-language `sorted(entries, ...)` calls each
+picked up a reasoned `frob:waive PERF004` (both differ per module/
+language, nothing to hoist); `StackSampler`'s per-tick live-thread scan
+picked up a reasoned `frob:waive PERF003` (bounded by thread count, not
+a scale-sensitive cross join) -- no behavior change.
+
 ## Pool-dispatched work attribution (T-0948)
 
 `frob check`'s own gate dispatch (`frob.gates._run_combined_jobs`) fans
@@ -562,6 +569,11 @@ resolved `HitStream`/`SectionIndex`, no new IO:
 - `heavy_tail_advisories`: a stored sketch whose `p90 / p50` ratio
   exceeds 3x -> variance advisory, naming a likely bimodal/outlier-
   driven mode.
+
+T-0972: `external_call_advisories`'s own `sorted({callee for callee, _ in
+edges})` message-formatting call picked up a reasoned `frob:waive
+PERF004` (the callee set differs per section, nothing to hoist) -- no
+behavior change.
 
 ### Regression ratchet (T-0712)
 

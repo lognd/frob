@@ -182,6 +182,7 @@ def _has_owner_or_reconciliation(attrs: tuple[str, ...]) -> bool:
     return _OWNER_ATTR in attrs or _RECONCILIATION_ATTR in attrs
 
 
+# frob:ticket T-0972
 def _missing_owner_violations(
     model: KernelModel, store_ids: frozenset[str]
 ) -> list[SsotViolation]:
@@ -193,6 +194,7 @@ def _missing_owner_violations(
         store_node = nodes_by_id.get(store_id)
         if store_node is None or _has_owner_or_reconciliation(store_node.attrs):
             continue
+        # frob:waive PERF004 reason="writer_ids is this loop's own per-store distinct set, not a shared re-sort"  # noqa: E501
         writers = ", ".join(sorted(writer_ids))
         _log.warning(
             "ssot: REL290 store %s written by %s with no owner/reconciliation",

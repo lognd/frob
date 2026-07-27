@@ -469,7 +469,11 @@ def _doable(root: Path, cfg: AppConfig) -> None:
     # learned about it, T-0716's @worktree case) -- those belong in-flight,
     # not in the "next thing to dispatch" section.
     in_flight = [t for t in tickets if has_live_lease(t, root)]
-    dispatchable = [t for t in tickets if t not in in_flight]
+    # frob:ticket T-0972
+    # PERF001: test membership against a set of ids, not the `in_flight`
+    # list itself, on every iteration of the comprehension below.
+    in_flight_ids = {t.id for t in in_flight}
+    dispatchable = [t for t in tickets if t.id not in in_flight_ids]
 
     alarms = undispatched_stale(dispatchable, root)
     alarmed_ids = {t.id for t, _elapsed, _threshold in alarms}

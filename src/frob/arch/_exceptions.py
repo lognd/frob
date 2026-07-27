@@ -144,6 +144,7 @@ def _caller_visibly_handles(
 
 # frob:doc docs/modules/gates.md#errors-as-values-advisory-t-0688
 # frob:ticket T-0688
+# frob:ticket T-0972
 # frob:tests tests/test_gates.py::TestErrorsAsValuesAdvisory.test_public_raiser_with_no_handling_caller_recommends_result  # noqa: E501
 # frob:tests tests/test_gates.py::TestErrorsAsValuesAdvisory.test_public_raiser_with_handling_caller_not_flagged  # noqa: E501
 # frob:tests tests/test_gates.py::TestErrorsAsValuesAdvisory.test_private_raiser_not_flagged  # noqa: E501
@@ -181,6 +182,7 @@ def check_errors_as_values(module: NormalizedModule) -> list[ArchSuggestion]:
                 category="errors-as-values-recommended",
                 severity="suggestion",
                 message=(
+                    # frob:waive PERF004 reason="recoverable is this loop's own per-function distinct set, not a shared re-sort"  # noqa: E501
                     f"`{qualname}` may raise {sorted(recoverable)} with no "
                     "caller in this module visibly handling it"
                 ),

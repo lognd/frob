@@ -461,6 +461,11 @@ release genuinely performed by a different function on the exact path
 taken, or a cross-file release the same-file-only bare-name resolution
 above cannot follow).
 
+T-0972: `protocol_summary_gate` (the shared PROTO001-005 per-package scan)
+picked up a `frob:ticket T-0972` binding for a `sorted(set(symrefs))`
+call whose set differs every package iteration -- reasoned
+`frob:waive PERF004`, no behavior change.
+
 ### Self-audit at land (SELFAUDIT001, T-0756)
 
 Root-cause analysis 2026-07-22 (tickets.md T-0756): frob's own self-
@@ -1157,6 +1162,11 @@ typani `Result[T, E]` signature instead, with the raising function as the
 sketch site. `UNKNOWN` and non-recoverable (programmer-bug-class)
 exception types never trigger this advisory -- exceptions remain
 sanctioned for those, per T-0623's own house doctrine.
+
+T-0972: the message-formatting `sorted(recoverable)` call inside this
+function's per-function loop now carries a reasoned `frob:waive PERF004`
+(the set differs every iteration, so there is nothing to hoist) -- no
+behavior change.
 
 Like `frob.arch._fallibility.run_fallibility_checks` before it,
 `check_errors_as_values` stays on the unwaivable advisory channel every
@@ -2406,6 +2416,11 @@ operation is two-directional and idempotent in both directions:
 - `fmt(wrapped-but-now-fits)` -> joined back to one physical line (the
   reason got shorter, or the limit got raised, or it was split
   unnecessarily to begin with).
+
+T-0972: `canonicalize_text`'s own two-pointer merge scan over lines/runs
+picked up a reasoned `frob:waive PERF003` (position-free token detector
+false-positive: it is one O(n) pass, not a cross join) -- no behavior
+change.
 - `fmt(already-canonical)` -> no-op.
 
 Public API (`src/frob/gates/_fmt_directives.py`):

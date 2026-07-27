@@ -142,6 +142,7 @@ class AggregateDemand:
 
 
 # frob:doc docs/strata/kernel.md#fact-base
+# frob:ticket T-0972
 @dataclass(frozen=True)
 class FactBase:
     """The validated, indexed form of one `KernelModel`; derived, never edited."""
@@ -293,6 +294,7 @@ class FactBase:
         return value, tuple(witness)
 
     # frob:doc docs/strata/kernel.md#demand-declarations-t-0702
+    # frob:ticket T-0972
     # frob:tests tests/unit/strata/test_demand.py::TestAggregateDemand.test_two_entry_nodes_sum_at_fan_in  # noqa: E501
     def aggregate_demand(self, node_id: str) -> AggregateDemand:
         """Aggregate inbound demand at `node_id`, seeded by every node's
@@ -356,6 +358,7 @@ class FactBase:
         reached_declarer = node_id in declaring_ids
         seen = {node_id}
         frontier = [node_id]
+        # frob:waive PERF003 reason="BFS closure over the flow graph, one pass over incoming edges, not a cross join"  # noqa: E501
         while frontier and not reached_declarer:
             cur = frontier.pop()
             for src in incoming.get(cur, ()):

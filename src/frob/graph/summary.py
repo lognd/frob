@@ -212,6 +212,7 @@ def _universe(
     return nodes
 
 
+# frob:ticket T-0972
 def _reachable(
     callgraph: CallGraph, entrypoints: Sequence[str], universe: set[str]
 ) -> set[str]:
@@ -221,6 +222,7 @@ def _reachable(
     seen: set[str] = set()
     stack = [n for n in entrypoints if n in universe]
     seen.update(stack)
+    # frob:waive PERF003 reason="DFS forward-closure over the call graph, one pass over edges O(V+E), not a cross join"  # noqa: E501
     while stack:
         node = stack.pop()
         for callee in callgraph.calls.get(node, ()):
@@ -232,6 +234,7 @@ def _reachable(
 
 
 # frob:waive ARCH001 reason="a textbook Tarjan's SCC (iterative, to avoid recursion-depth limits on large call graphs): index/lowlink/on-stack bookkeeping plus the explicit work-stack unwind loop are one indivisible algorithm, not independently meaningful phases -- splitting the unwind step into a helper would require passing the index/lowlink/stack triple across a new boundary for every visited node, adding indirection without separating a real sub-concern"  # noqa: E501
+# frob:ticket T-0972
 def _tarjan_sccs(nodes: Sequence[str], callgraph: CallGraph) -> list[list[str]]:
     """Tarjan's SCC decomposition over `nodes`, restricted to edges landing
     back inside `nodes` -- returns EVERY component (including singleton,
@@ -259,6 +262,7 @@ def _tarjan_sccs(nodes: Sequence[str], callgraph: CallGraph) -> list[list[str]]:
         if start in index:
             continue
         work: list[tuple[str, int]] = [(start, 0)]
+        # frob:waive PERF003 reason="inherent to Tarjan SCC (iterative work-stack), one pass over edges, not a cross join"  # noqa: E501
         while work:
             v, pos = work[-1]
             if pos == 0:
@@ -295,6 +299,7 @@ def _tarjan_sccs(nodes: Sequence[str], callgraph: CallGraph) -> list[list[str]]:
                     scc.append(w)
                     if w == v:
                         break
+                # frob:waive PERF004 reason="inherent to Tarjan SCC: scc is this component's own distinct node list, not a shared re-sort"  # noqa: E501
                 sccs.append(sorted(scc))
     return sccs
 

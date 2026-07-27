@@ -133,6 +133,7 @@ def _sorted_entries(entries: Sequence[LockEntry]) -> tuple[LockEntry, ...]:
 # frob:tests tests/test_graph_lock.py::TestAckDrift.test_acknowledge_records_every_describes_facet  # noqa: E501
 # frob:tests tests/test_graph_lock.py::TestAckDrift.test_acknowledge_skips_meaningless_body_facet_on_class  # noqa: E501
 # frob:tests tests/test_graph_lock.py::TestAckDrift.test_acknowledge_endpoint_that_does_not_resolve_is_err  # noqa: E501
+# frob:ticket T-0972
 def acknowledge(
     lock: LockFile, snapshot: GraphSnapshot, refs: Sequence[str]
 ) -> Result[LockFile, LockError]:
@@ -150,6 +151,7 @@ def acknowledge(
             _log.warning("acknowledge: %r does not resolve to a symbol", ref)
             return Err(LockError.UnknownRef)
         record = record_result.danger_ok
+        # frob:waive PERF004 reason="_facets_for_ref(ref, snapshot) is this loop's own per-ref distinct set, not a shared re-sort"  # noqa: E501
         for facet in sorted(_facets_for_ref(ref, snapshot)):
             if facet == "body" and record.kind in _BODY_FACET_MEANINGLESS_KINDS:
                 _log.warning(

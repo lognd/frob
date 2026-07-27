@@ -2934,6 +2934,7 @@ def language_for(path: Path) -> str | None:
 
 
 # frob:ticket T-0769
+# frob:ticket T-0972
 # frob:doc docs/modules/vet.md#public-api
 def non_executable_line_numbers(path: Path) -> frozenset[int]:
     """Every 1-indexed line number in `path` that a comment or python
@@ -2959,6 +2960,7 @@ def non_executable_line_numbers(path: Path) -> frozenset[int]:
     except OSError:
         return frozenset()
     lines: set[int] = set()
+    # frob:waive PERF002 reason="each (start, end) span needs its own byte-count query over a different sub-range; not a repeated identical count to hoist"  # noqa: E501
     for start, end in spans:
         first_line = raw.count(b"\n", 0, start) + 1
         last_line = raw.count(b"\n", 0, max(end - 1, 0)) + 1

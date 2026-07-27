@@ -498,6 +498,10 @@ code symbol to a design construct id, the same shape as `frob:ticket`/
   a node whose elaborated `clearance == "Secret"` is the standing proxy
   for "this id names a secret" until `std.secrets` lands.
 
+T-0972: `unbound_constructs`'s own per-kind `sorted(ids_by_kind.get(kind,
+...))` call picked up a reasoned `frob:waive PERF004` (the id set
+differs per kind, nothing to hoist) -- no behavior change.
+
 `frob.gates.sys_gate` (opt-in: runs only when a `design/`, or
 `[strata].design_dir`, directory of `.strata` files exists, same posture
 as `decisions_gate`) loads every non-excluded file under that directory

@@ -3805,9 +3805,7 @@ class TestLockOrderingHazards:
         assert "deadlock.py::g" in hits[0].message
         assert hits[0].severity == "warning"
 
-    def test_two_lock_ab_ba_cycle_fires_across_call_paths_via_callees(
-        self, tmp_path
-    ):
+    def test_two_lock_ab_ba_cycle_fires_across_call_paths_via_callees(self, tmp_path):
         """The SAME cycle, but each function's second lock is acquired
         inside a CALLEE, not its own body -- the interprocedural
         requirement: `f` acquires `lock_a` then calls `helper_b` (which
@@ -3896,9 +3894,7 @@ class TestLockOrderingHazards:
             "        pass\n"
         )
         (src_dir / "plain_open.py").write_text(
-            "def f():\n"
-            "    with open('x') as fh:\n"
-            "        pass\n"
+            "def f():\n    with open('x') as fh:\n        pass\n"
         )
         result = analyze_project(src_dir)
         unresolved_hits = [

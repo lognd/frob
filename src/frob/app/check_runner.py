@@ -634,6 +634,7 @@ def _resolve_baseline_only_chunk(only: list[str]) -> frozenset[str] | None:
 
 
 # frob:ticket T-0970
+# frob:ticket T-0972
 # frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_stamp_baseline_mode_calls_stamp_and_returns  # noqa: E501
 # frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_stamp_baseline_gate_error_exits_1  # noqa: E501
 # frob:waive ARCH103 reason="T-0977: chunk-loop orchestrator -- runs each \
@@ -666,6 +667,7 @@ def _run_baseline_chunks(
                 _log.error("stamp-baseline failed: %s", err.value)
             sys.exit(1)
         report = result.danger_ok
+        # frob:waive PERF004 reason="chunk is this loop's own distinct member, not a shared re-sort"  # noqa: E501
         accumulated[",".join(sorted(chunk))] = [
             v.model_dump_json() for v in report.violations
         ]

@@ -335,6 +335,7 @@ def _class_sections(file: str, cls: NormalizedClass) -> list[Section]:
 
 # frob:doc docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709
 # frob:tests tests/unit/perf/test_hotgraph.py::TestResolveStream.test_leaf_in_loop_body_attributes_to_loop_section  # noqa: E501
+# frob:ticket T-0972
 def build_section_index(modules: list[NormalizedModule]) -> SectionIndex:
     """Build a `SectionIndex` (file -> sorted `Section`s) from one or more
     `NormalizedModule`s -- the language-agnostic prerequisite `resolve_
@@ -349,6 +350,7 @@ def build_section_index(modules: list[NormalizedModule]) -> SectionIndex:
             sections += _function_sections(module.path, "", func)
         for cls in module.classes:
             sections += _class_sections(module.path, cls)
+        # frob:waive PERF004 reason="sections is this loop's own per-module distinct list, not a shared re-sort"  # noqa: E501
         sections.sort(key=lambda s: s.start_line)
         index[module.path] = sections
         _log.debug(
@@ -459,6 +461,7 @@ def _decile_language(section_id: str, file_by_section: dict[str, str]) -> str:
 
 # frob:doc docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709
 # frob:tests tests/unit/perf/test_collectors.py::TestLanguageDeciles.test_resolve_stream_output_feeds_language_deciles_end_to_end  # noqa: E501
+# frob:ticket T-0972
 def language_deciles(stream: HitStream, index: SectionIndex) -> list[LanguageDecileRow]:
     """Bucket `stream`'s per-section hit weight into 10 rank-ordered
     deciles PER LANGUAGE (decile 1 = a language's hottest-ranked 10
@@ -485,6 +488,7 @@ def language_deciles(stream: HitStream, index: SectionIndex) -> list[LanguageDec
 
     rows: list[LanguageDecileRow] = []
     for language, entries in sorted(by_language.items()):
+        # frob:waive PERF004 reason="entries is this loop's own per-language distinct list, not a shared re-sort"  # noqa: E501
         ranked = sorted(entries, key=lambda pair: pair[1], reverse=True)
         n = len(ranked)
         bucket_size = max(1, -(-n // 10))  # ceil(n / 10), at least 1
