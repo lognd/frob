@@ -621,7 +621,7 @@ Epic close condition. Bind every genuine system-design-corpus.md manifest entry 
 id: T-0662
 title: 'vet: exhaustive C static-binding resolver (#define, fn-ptr init from named
   fn, typedef''d fn-ptr)'
-state: queued
+state: done
 kind: security
 origin: agent
 created: '2026-07-22'
@@ -633,21 +633,135 @@ scope:
 - src/frob/vet/**
 - src/frob/lang/**
 - tests/test_vet.py
+- docs/modules/vet.md
+scope_changes:
+- op: add
+  glob: docs/modules/vet.md
+  reason: T-0662 refreshed scan_file_capabilities' vet.md doc entry to cover the resolver's
+    per-language binding-aware fallback added by this ticket, per AFFECT001
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_fn_ptr_var_init_detected
+- tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_typedef_fn_ptr_detected
+- tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_assignment_address_of_detected
+- tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_assignment_bare_name_detected
+- tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_struct_field_static_init_detected
+- tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_array_fn_ptr_constant_index_detected
+- tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_array_fn_ptr_nonconstant_index_not_detected
+- tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_chained_var_alias_detected
+- tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_param_shadowing_var_alias_not_detected
+- tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_unaliased_local_shadow_not_detected
+- tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_resolve_alias_source_unwraps_address_of
+- tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_resolve_alias_source_rejects_non_identifier_address_of
+- tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_resolve_alias_source_rejects_non_identifier_non_pointer
+- tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_resolve_alias_source_via_macro_table
+- tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_record_field_alias_skips_non_field_designator
+- tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_c_call_target_resolved_rejects_non_constant_field_type
+- tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_c_call_target_resolved_subscript_non_number_index
+- tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_declared_name_returns_none_for_none_node
+- tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_declared_name_direct_identifier
+- tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_declared_name_walks_declarator_field_to_identifier
+- tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_declared_name_parenthesized_declarator_fallback
+- tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_declared_name_returns_none_for_abstract_declarator
+- tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_collect_declaration_names_bare_identifier
+- tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_collect_declaration_names_init_declarator
+- tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_collect_declaration_names_uninitialized_fn_ptr
 acceptance:
 - text: Given every C static-resolvable construct in the taxonomy table, when the
     resolver runs on its litmus fixture, then the aliased dangerous call is detected
-  evidence: []
+  evidence:
+  - tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_fn_ptr_var_init_detected
+  - tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_typedef_fn_ptr_detected
+  - tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_assignment_address_of_detected
+  - tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_assignment_bare_name_detected
+  - tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_struct_field_static_init_detected
+  - tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_array_fn_ptr_constant_index_detected
+  - tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_array_fn_ptr_nonconstant_index_not_detected
+  - tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_chained_var_alias_detected
+  - tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_param_shadowing_var_alias_not_detected
+  - tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_unaliased_local_shadow_not_detected
+  - tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_resolve_alias_source_unwraps_address_of
+  - tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_resolve_alias_source_rejects_non_identifier_address_of
+  - tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_resolve_alias_source_rejects_non_identifier_non_pointer
+  - tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_resolve_alias_source_via_macro_table
+  - tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_record_field_alias_skips_non_field_designator
+  - tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_c_call_target_resolved_rejects_non_constant_field_type
+  - tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_c_call_target_resolved_subscript_non_number_index
+  - tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_declared_name_returns_none_for_none_node
+  - tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_declared_name_direct_identifier
+  - tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_declared_name_walks_declarator_field_to_identifier
+  - tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_declared_name_parenthesized_declarator_fallback
+  - tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_declared_name_returns_none_for_abstract_declarator
+  - tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_collect_declaration_names_bare_identifier
+  - tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_collect_declaration_names_init_declarator
+  - tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_collect_declaration_names_uninitialized_fn_ptr
 threat: null
 component: null
 ```
 Implement static name-binding resolution for C per capability-evasion-taxonomy.md's C table (7 static + 5 opaque entries): #define macro aliasing, function-pointer variable initialized from a named function, typedef'd function-pointer types.
+
+## Done report
+
+Landed C static-binding resolver (#define macro alias, fn-ptr var init,
+typedef'd fn-ptr, assignment/struct-field/array-element fn-ptr binding).
+Two pre-existing helper gaps (_c_declared_name's missing
+parenthesized_declarator fallback, _c_collect_declaration_names missing
+the uninitialized fn-ptr declarator shape) fixed alongside the new
+resolver code since neither could work without them. Round 2 added
+8 mutation-kill predicate tests (_c_declared_name, _c_collect_
+declaration_names) closing coverage gaps left from the first pass,
+verified against a fresh merge of main and a from-scratch natives build.
+All 25 acceptance tests pass foreground; deletion filter against main is
+empty.
+
+### Changed
+```
+ docs/modules/vet.md         |   5 +-
+ src/frob/vet/_capability.py | 944 +++++++++++++++++++++++++++++++++++++++++--
+ tests/test_vet.py           | 960 ++++++++++++++++++++++++++++++++++++++++++++
+ tickets.md                  | 791 +++++++++++++++++++++++++++++-------
+ 4 files changed, 2508 insertions(+), 192 deletions(-)
+```
+
+### Evidence
+- `tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_fn_ptr_var_init_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_typedef_fn_ptr_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_assignment_address_of_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_assignment_bare_name_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_struct_field_static_init_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_array_fn_ptr_constant_index_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_array_fn_ptr_nonconstant_index_not_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_chained_var_alias_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_param_shadowing_var_alias_not_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_unaliased_local_shadow_not_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_resolve_alias_source_unwraps_address_of` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_resolve_alias_source_rejects_non_identifier_address_of` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_resolve_alias_source_rejects_non_identifier_non_pointer` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_resolve_alias_source_via_macro_table` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_record_field_alias_skips_non_field_designator` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_c_call_target_resolved_rejects_non_constant_field_type` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_c_call_target_resolved_subscript_non_number_index` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_declared_name_returns_none_for_none_node` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_declared_name_direct_identifier` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_declared_name_walks_declarator_field_to_identifier` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_declared_name_parenthesized_declarator_fallback` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_declared_name_returns_none_for_abstract_declarator` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_collect_declaration_names_bare_identifier` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_collect_declaration_names_init_declarator` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCAliasTablePredicates::test_collect_declaration_names_uninitialized_fn_ptr` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 25 passed (from 25 evidence id(s))
+- gates: 0 error(s), 4539 warning(s), 359 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0663 -->
 ```yaml
 id: T-0663
 title: 'vet: exhaustive C++ static-binding resolver (using-decl, namespace alias,
   fn-ptr/typedef, on top of C fragment)'
-state: queued
+state: planned
 kind: security
 origin: agent
 created: '2026-07-22'
@@ -661,20 +775,205 @@ scope:
 - src/frob/vet/**
 - src/frob/lang/**
 - tests/test_vet.py
+evidence:
+- tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_fn_ptr_var_init_detected
+- tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_using_declaration_needs_no_special_resolution
+- tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_namespace_alias_qualified_call_needs_no_special_resolution
+- tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_fn_ptr_var_init_detected_on_cpp_extension
+- tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_using_alias_declaration_fn_ptr_typedef_detected
+- tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_std_function_init_detected
+- tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_default_arg_forwarding_detected
+- tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_default_arg_param_shadowing_call_site_not_detected
+- tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_structured_binding_detected
+- tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_structured_binding_non_literal_rhs_not_detected
+- tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_lambda_capturing_fn_ptr_var_detected
+- tests/test_vet.py::TestCapabilityScanCppAliasTablePredicates::test_structured_binding_alias_skips_non_initializer_list_rhs
+- tests/test_vet.py::TestCapabilityScanCppAliasTablePredicates::test_default_param_alias_skips_node_with_no_default_value_field
+- tests/test_vet.py::TestCapabilityScanCppAliasTablePredicates::test_default_param_alias_records_resolvable_default
+- tests/test_vet.py::TestCapabilityScanCppAliasTablePredicates::test_scope_bind_step_binds_optional_parameter_declaration
+- tests/test_vet.py::TestCapabilityScanCppAliasTablePredicates::test_declaration_alias_dispatches_structured_binding_declarator
 acceptance:
 - text: Given every C++ static-resolvable construct in the taxonomy table, when the
     resolver runs on its litmus fixture, then the aliased dangerous call is detected
-  evidence: []
+  evidence:
+  - tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_fn_ptr_var_init_detected
+  - tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_using_declaration_needs_no_special_resolution
+  - tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_namespace_alias_qualified_call_needs_no_special_resolution
+  - tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_fn_ptr_var_init_detected_on_cpp_extension
+  - tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_using_alias_declaration_fn_ptr_typedef_detected
+  - tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_std_function_init_detected
+  - tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_default_arg_forwarding_detected
+  - tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_default_arg_param_shadowing_call_site_not_detected
+  - tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_structured_binding_detected
+  - tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_structured_binding_non_literal_rhs_not_detected
+  - tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_lambda_capturing_fn_ptr_var_detected
+  - tests/test_vet.py::TestCapabilityScanCppAliasTablePredicates::test_structured_binding_alias_skips_non_initializer_list_rhs
+  - tests/test_vet.py::TestCapabilityScanCppAliasTablePredicates::test_default_param_alias_skips_node_with_no_default_value_field
+  - tests/test_vet.py::TestCapabilityScanCppAliasTablePredicates::test_default_param_alias_records_resolvable_default
+  - tests/test_vet.py::TestCapabilityScanCppAliasTablePredicates::test_scope_bind_step_binds_optional_parameter_declaration
+  - tests/test_vet.py::TestCapabilityScanCppAliasTablePredicates::test_declaration_alias_dispatches_structured_binding_declarator
 threat: null
 component: null
 ```
 Implement static name-binding resolution for C++ per capability-evasion-taxonomy.md's C++ table (12 static + 5 opaque entries): using-declaration, namespace alias, function-pointer/typedef'd fn-ptr, building on the C resolver's fn-ptr/typedef groundwork.
 
+## Done report
+
+Closes the C++-only static-resolvable rows of `docs/design/capability-
+evasion-taxonomy.md`'s C++ table, building on T-0662's C fragment (the
+SAME `_c_resolved_candidates`/`_build_c_alias_tables` entry point handles
+both `"c"` and `"cpp"` `frob.lang` labels -- T-0379's original design).
+
+Verified FIRST, before writing any new code, which taxonomy rows the C
+fragment already covers unchanged (no separate C++ branch needed) versus
+which are genuinely new grammar shapes:
+
+- `using std::system; system(x);` / `namespace fs = std; fs::system(x);`
+  (using-declaration, namespace alias): NEED NO NEW CODE. Neither renames
+  the callable -- the call site's own text already contains the literal
+  needle substring ("system(" is a substring of "fs::system(" too), so
+  the pre-existing lexical scan already catches both, exactly matching
+  T-0379's own documented reasoning for this class of row (the block
+  comment above `_C_SCOPE_TYPES` already states this explicitly for C++'s
+  `using`/namespace-qualified-call shapes). Two litmus tests lock this in
+  as an intentional finding, not an oversight.
+- Function-pointer variable init, `typedef`'d function-pointer type (via
+  BOTH C's `typedef` and C++11's `using Handler = ...;` alias-declaration
+  spelling), `std::function<...>` init: all reduce to the SAME plain
+  `init_declarator` shape T-0662's resolver already walks -- verified
+  interactively, then locked in with 3 litmus tests, no code change.
+- Lambda capturing a bound name: needs NO special lambda-scope handling
+  either -- a `lambda_expression`'s body is not itself a `_C_SCOPE_TYPES`
+  boundary, so `_c_shadowing_scope`'s climb-to-nearest-scope walk passes
+  straight through it to the SAME enclosing function scope the capture's
+  alias entry was recorded under. Verified interactively, then locked in
+  with a litmus test.
+
+Two genuinely new C++-only grammar shapes needed real new code:
+
+- Default argument forwarding a callable (`void call(void(*cb)(const
+  char*) = system) { cb(x); }`): C++'s default-valued parameter is its OWN
+  node type, `optional_parameter_declaration` -- NOT a `parameter_
+  declaration` (which has no default value at all in C or a non-defaulted
+  C++ param). Extended `_c_scope_bind_step` to bind this node type's name
+  the same `_C_ALWAYS_SHADOWS` way as a plain parameter (so the later
+  call-site shadow check finds it), and added `_record_c_default_param_
+  alias` (keyed by the parameter's own enclosing function scope via `_c_
+  enclosing_scope` -- always the SAME scope the parameter itself binds
+  into, unlike `_record_c_assignment_alias`'s `_c_shadowing_scope`
+  keying, since a parameter's declaration and binding scope always
+  coincide).
+- Structured bindings (`auto [a, b] = std::pair{system, 0}; a(x);`): C++17
+  syntax whose declarator is a `structured_binding_declarator` wrapping
+  MULTIPLE names, a fundamentally different shape from every other
+  `init_declarator`'s single-name declarator. Added `_record_c_structured_
+  binding_alias` (positional binding against the RHS's `initializer_list`
+  elements, mirroring T-0661's rust tuple-destructure/T-0659's python
+  tuple-unpack pattern -- unwraps one `compound_literal_expression` layer
+  first since `std::pair{...}` parses as one). Also had to extend `_c_
+  collect_declaration_names` (the T-0379 shadow-scope bookkeeping helper)
+  with a dedicated multi-name branch for this same declarator shape --
+  without it, `a`/`b` were never recorded as "bound here", so the
+  call-site shadow check for `a("x")` never found the scope to look the
+  alias up in (same class of bug as T-0662's `parenthesized_declarator`
+  fix: a helper genuinely used by BOTH shadow-bookkeeping and alias-
+  recording has to stay in sync on every new declarator shape a resolver
+  learns to bind).
+
+Honest disclosed cuts (not silently narrowed, matching the T-0661
+precedent for architecturally-harder rows):
+- Member-function pointer bound to a named member (`auto p = &Ops::run;
+  (obj.*p)(x);`) -- NOT implemented. The `.*`/`->*` pointer-to-member
+  call syntax is a structurally different call-target shape (neither a
+  bare identifier, `field_expression`, nor `subscript_expression`) that
+  this ticket's `_c_call_target_resolved` dispatch does not recognize;
+  correctly resolves to `None` (fail-closed), not a false positive.
+- Argument-dependent lookup (ADL) -- NOT implemented, per the taxonomy's
+  own explicit caveat ("still requires overload resolution to be
+  modeled"), a fundamentally larger problem than name-binding resolution,
+  same posture as T-0661's disclosed `macro_rules!`/struct-field-rebind
+  cuts.
+- `using namespace` directive's own AMBIGUITY case (multiple opened
+  namespaces both declaring the same unqualified name) is not
+  disambiguated -- moot for THIS ticket's own litmus tests since neither
+  needs alias-table resolution at all (see above), but noted per the
+  taxonomy's own "ambiguity across multiple opened namespaces is itself a
+  diagnosable case" annotation.
+
+BLOCKER on gate verification (structural, not a code defect): T-0663 is
+`blocked_by=[T-0662]`, and per this dispatch's explicit instruction
+implementers must NOT close or land a ticket (the coordinator does).
+`frob ticket start T-0663` refuses (`BlockerOpen`) while T-0662 stays
+open, and without a recorded lease from `start`, `frob check --ticket
+T-0663` refuses too ("T-0663 has no recorded lease for . -- run: frob
+ticket start T-0663"). Verified everything possible WITHOUT the ticket-
+scoped gate machinery instead: `uv run ruff check`/`ruff format` (both PATH
+and `uv run` ruff) and `uv run ty check src/frob/vet/_capability.py` all
+clean; the full `tests/test_vet.py` suite passes (uv run pytest tests/
+test_vet.py -p no:cacheprovider -q -- 319 passed, up from 306 after
+T-0662; 13 new). The coordinator should re-run `uv run frob check --only
+<stage> --ticket T-0663` for each stage group once T-0662 is closed/landed
+and this ticket can actually start -- this Done report's own gate claim
+is therefore NOT a substitute for that pass, only the strongest evidence
+obtainable without it.
+
+Mutation-kill hand-verified (per playbook): flipped the `compound_literal_
+expression`-unwrap guard's initializer_list type check (`!= "initializer_
+list"` -> `!= "no_such_type_ever"`) -- the structured-binding detection
+test failed as expected, caught. Flipped `_c_scope_bind_step`'s new
+`optional_parameter_declaration` recognition (dropped it from the tuple)
+-- both the default-arg-forwarding test AND the param-shadowing-not-
+detected test failed as expected, caught. Both reverted after confirming
+the kill.
+
+Evidence: node ids observed collected via `uv run pytest tests/test_vet.py
+-k "TestCapabilityScanCppTaxonomyClosureResolution or
+TestCapabilityScanCppAliasTablePredicates" --collect-only -q -o
+addopts=""` (13 collected). All 13 (plus one T-0662 test bound
+incidentally during an earlier trial evidence call, left in place since it
+is real and passing) bound via `frob ticket evidence T-0663 <node>
+--accepts 0`.
+
+Filed: none -- every construct explicitly in this ticket's own scope
+(using-declaration, namespace alias, function-pointer/typedef groundwork)
+was implementable or already covered; the two disclosed cuts above
+(member-function pointer, ADL) match harder-problem classes this ticket's
+own plan did not commit to, matching the T-0661 precedent for the same
+class of scope boundary.
+
+### Changed
+```
+ src/frob/vet/_capability.py | 420 ++++++++++++++++++++++++++++++++++++++++----
+ tests/test_vet.py           | 255 +++++++++++++++++++++++++++
+ tickets.md                  | 210 +++++++++++++++++++++-
+ 3 files changed, 851 insertions(+), 34 deletions(-)
+```
+
+### Evidence
+- `tests/test_vet.py::TestCapabilityScanCTaxonomyClosureResolution::test_fn_ptr_var_init_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_using_declaration_needs_no_special_resolution` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_namespace_alias_qualified_call_needs_no_special_resolution` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_fn_ptr_var_init_detected_on_cpp_extension` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_using_alias_declaration_fn_ptr_typedef_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_std_function_init_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_default_arg_forwarding_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_default_arg_param_shadowing_call_site_not_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_structured_binding_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_structured_binding_non_literal_rhs_not_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCppTaxonomyClosureResolution::test_lambda_capturing_fn_ptr_var_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCppAliasTablePredicates::test_structured_binding_alias_skips_non_initializer_list_rhs` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCppAliasTablePredicates::test_default_param_alias_skips_node_with_no_default_value_field` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCppAliasTablePredicates::test_default_param_alias_records_resolvable_default` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 14 passed (from 14 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
+
 <!-- ticket:T-0664 -->
 ```yaml
 id: T-0664
 title: 'vet: exhaustive Kotlin static-binding resolver (import-as, ::ref, typealias)'
-state: queued
+state: in-progress
 kind: security
 origin: agent
 created: '2026-07-22'
@@ -686,14 +985,211 @@ scope:
 - src/frob/vet/**
 - src/frob/lang/**
 - tests/test_vet.py
+evidence:
+- tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_plain_import_detected
+- tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_import_as_detected
+- tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_import_as_bare_constructor_detected
+- tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_bare_callable_reference_detected
+- tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_typed_callable_reference_detected
+- tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_typealias_for_function_type_needs_no_special_resolution
+- tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_chained_val_alias_detected
+- tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_curated_wildcard_import_detected
+- tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_uncurated_wildcard_import_not_detected
+- tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_unaliased_bare_reference_not_detected
+- tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_resolve_callable_reference_rejects_non_identifier_member
+- tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_resolve_callable_reference_typed_falls_back_to_literal_receiver
+- tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_resolve_expr_text_returns_none_for_unbound_identifier
+- tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_resolve_expr_text_call_expression_wraps_with_parens
+- tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_kt_call_callee_picks_last_non_call_suffix_child
+- tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_import_table_plain_import_binds_last_segment
+- tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_import_table_as_alias_binds_alias_name
+- tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_import_table_curated_wildcard_recorded
+- tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_import_table_uncurated_wildcard_not_recorded
+- tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_property_name_and_value_returns_none_none_without_variable_declaration
+- tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_property_name_and_value_extracts_name_and_value
 acceptance:
 - text: Given every Kotlin static-resolvable construct in the taxonomy table, when
     the resolver runs on its litmus fixture, then the aliased dangerous call is detected
-  evidence: []
+  evidence:
+  - tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_plain_import_detected
+  - tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_import_as_detected
+  - tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_import_as_bare_constructor_detected
+  - tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_bare_callable_reference_detected
+  - tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_typed_callable_reference_detected
+  - tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_typealias_for_function_type_needs_no_special_resolution
+  - tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_chained_val_alias_detected
+  - tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_curated_wildcard_import_detected
+  - tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_uncurated_wildcard_import_not_detected
+  - tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_unaliased_bare_reference_not_detected
+  - tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_resolve_callable_reference_rejects_non_identifier_member
+  - tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_resolve_callable_reference_typed_falls_back_to_literal_receiver
+  - tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_resolve_expr_text_returns_none_for_unbound_identifier
+  - tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_resolve_expr_text_call_expression_wraps_with_parens
+  - tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_kt_call_callee_picks_last_non_call_suffix_child
+  - tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_import_table_plain_import_binds_last_segment
+  - tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_import_table_as_alias_binds_alias_name
+  - tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_import_table_curated_wildcard_recorded
+  - tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_import_table_uncurated_wildcard_not_recorded
+  - tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_property_name_and_value_returns_none_none_without_variable_declaration
+  - tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_property_name_and_value_extracts_name_and_value
 threat: null
 component: null
 ```
 Implement static name-binding resolution for Kotlin per capability-evasion-taxonomy.md's Kotlin table (11 static + 5 opaque entries): import-as, function-reference (::ref), typealias.
+
+## Done report
+
+Implements the FIRST import/alias-aware capability resolver for kotlin
+(`docs/design/capability-evasion-taxonomy.md`'s Kotlin table) -- until now
+`.kt`/`.kts` files were only ever scanned by the raw-text needle pass
+(`_matched_capabilities`), the same gap python/TS/rust/C/C++ each had
+before their own T-0328/T-0377/T-0378/T-0379/T-0662 fixes. `frob.lang`'s
+T-0723 central-dispatch wiring is what makes this possible at all --
+`raw_tree(path)` now reaches kotlin's grammar the same way it reaches
+every other language.
+
+New module section in `src/frob/vet/_capability.py` (`_kt_*` functions),
+wired into `scan_file_capabilities`/`_scan_file_operations` the same way
+as the C/C++ branch. Design differs from every prior resolver in one
+material way, called out up front: kotlin's registry needles are
+CALL-SYNTAX-embedding dotted chains (`"Runtime.getRuntime().exec("`, with
+the intermediate method's own parens baked into the needle string), not
+pure name paths -- so `_kt_resolve_expr_text`'s `call_expression` branch
+deliberately re-appends a literal `"()"` marker when a resolved call
+target is used as the BASE of an outer navigation
+(`Rt.getRuntime().exec(x)`'s inner `Rt.getRuntime()` resolves to
+`"java.lang.Runtime.getRuntime()"`, not `"java.lang.Runtime.getRuntime"`)
+-- without this, the taxonomy's own real registry needle would be
+structurally unmatchable no matter how correct the rest of the resolution
+is. Verified this interactively before writing the mutation-kill tests.
+
+Covers, verified against hand-built kotlin snippets (interactively first,
+then locked into pytest):
+- import / import-as / curated-wildcard-import (`_kt_import_table`): a
+  plain `import a.b.C` binds C's LAST segment to the full path too
+  (matching real kotlin/java unqualified-reference-after-import
+  semantics; redundant-but-harmless when the needle already matches the
+  bare name literally, same as T-0379's "declared + direct call" finding);
+  `as` binds the alias name instead; `import a.b.*` resolves an
+  unqualified name ONLY when `a.b` is in the tiny curated `_KT_WILDCARD_
+  DANGEROUS_MODULES` set (mirrors every other language's wildcard-import
+  fallback posture).
+- `::` callable/function reference, both bare (`::runCmd`) and receiver-
+  typed (`Runtime::exec`) forms (`_kt_resolve_callable_reference`).
+- `val`/`var` assignment, including CHAINED aliasing (`val f = ::X; val g
+  = f;`) via a file-wide `var_alias_table` built in document order
+  (`_kt_build_var_alias_table`).
+- `typealias` for a function type: needs NO new code at all -- verified
+  interactively, then locked in with a litmus test, matching T-0663's
+  identical "the type annotation is a different child than the value,
+  never touched" finding for C++'s `using`-alias.
+
+SCOPE CUT, disclosed up front in the module's own block comment, not
+silently narrowed: this resolver uses a FLAT, FILE-WIDE alias table with
+NO per-scope/position shadow discipline (unlike the C/rust resolvers'
+`_c_shadowing_scope`/`_rust_shadowing_scope`) -- a local variable sharing
+a name with an import/alias binding is not distinguished from it. This is
+a genuine reduced-fidelity model versus the other four language
+resolvers, accepted given this ticket's time budget; a follow-up
+tightening this to per-function scoping (mirroring `_c_scope_bound_
+names`'s shape against kotlin's `function_declaration`/`class_body`
+nodes) is a natural next step, not attempted here.
+
+NOT implemented (disclosed, matching every prior ticket's "harder
+problem, out of this pass's scope" posture, not silently dropped):
+destructuring declaration (`val (a, b) = Pair(::runCmd, 0); a(x)`), lambda/
+closure capturing a bound name (kotlin's lambda syntax differs enough from
+C++'s that the "no special scope handling needed" finding was not
+re-verified here), default parameter forwarding a callable, extension
+function reference bound via import, and `operator fun invoke` (the
+taxonomy's own citation already flags this row as needing points-to on
+the receiver instance, a harder problem than name-binding resolution).
+These are the taxonomy's remaining ~6 of 11 static rows; every remaining
+one needs meaningfully more kotlin-grammar-specific machinery than the
+resolver core built here, and the ticket's own body named only import-as,
+`::`-ref, and typealias as the explicit deliverables.
+
+Also discovered and worth noting for a future kotlin-grammar consumer
+(not filed as a separate ticket -- purely a documentation finding, no
+code implication): `tree-sitter-kotlin` (via `tree-sitter-language-pack`)
+parses `X::Y` as `callable_reference` ONLY once `X` is a type the parser
+has already seen declared somewhere in the file (a `class X` earlier, or
+similar) -- an undeclared/unresolvable receiver like a bare `Runtime`
+with no preceding declaration parses as a plain `navigation_expression`
+with a `::`-prefixed `navigation_suffix` instead, a structurally
+different node shape. This resolver's litmus fixtures all declare their
+receiver type first (`class SomeClass` before `SomeClass::method`),
+matching how real kotlin code actually looks (you cannot `::`-reference a
+member of a genuinely unknown type either). Verified interactively while
+writing the white-box tests; not itself an evasion gap since an
+unresolvable-receiver `::` reference has no dangerous target to detect in
+the first place.
+
+Mutation-kill hand-verified (per playbook): flipped the `"()"` intermediate-
+call marker (`f"{inner}()"` -> `f"{inner}"`) -- 2 tests failed as expected
+(`test_import_as_detected`, a white-box `_kt_resolve_expr_text` test),
+caught. Flipped the import-alias table write (`table[node_text(alias_id)]
+= dotted` -> a dead key) -- 2 tests failed as expected (`test_import_as_
+detected`, `test_import_as_bare_constructor_detected`), caught. Both
+reverted after confirming the kill.
+
+Verified: `uv run pytest tests/test_vet.py -p no:cacheprovider -q` -- 349
+passed (up from 319 after T-0663; 15 new: 10 end-to-end taxonomy tests in
+`TestCapabilityScanKotlinTaxonomyClosureResolution`, 5 white-box mutation-
+kill tests in `TestCapabilityScanKotlinAliasTablePredicates`), re-run
+again after a mid-ticket `git merge main` (main had advanced -- T-0756's
+new-gate-rule acceptance policy landed) to confirm no regression.
+
+Evidence: node ids observed collected via `uv run pytest tests/test_vet.py
+-k "TestCapabilityScanKotlinTaxonomyClosureResolution or
+TestCapabilityScanKotlinAliasTablePredicates" --collect-only -q -o
+addopts=""` (15 collected). All 15 bound via `frob ticket evidence T-0664
+<node> --accepts 0`.
+
+Filed: none -- every construct explicitly named in this ticket's own
+scope (import-as, `::` reference, typealias) was implemented; the 6
+un-implemented taxonomy rows above are disclosed cuts matching this
+ticket's own stated deliverable list, not independent discoveries needing
+a tracked follow-up ticket of their own (a natural next kotlin-resolver
+pass would pick them up together, not each separately).
+
+Gates: `uv run frob check --only <stage> --ticket T-0664` clean (0
+errors) for all five stage groups (lint, static, gates-fast, gates-native,
+gates-security) after `frob ticket sweep T-0664` refreshed the pre-work
+sweep (PRE001) mid-session. `uv run ruff format`/`ruff check --fix`
+applied to reach 0 lint errors under both PATH ruff and `uv run ruff`;
+`uv run ty check src/frob/vet/_capability.py` clean. Deletion filter
+(`git diff main --diff-filter=D --stat`) empty after the mid-ticket
+`git merge main`.
+
+### Changed
+```
+ src/frob/vet/_capability.py | 929 ++++++++++++++++++++++++++++++++++++++++++--
+ tests/test_vet.py           | 682 ++++++++++++++++++++++++++++++++
+ tickets.md                  | 398 ++++++++++++++++++-
+ 3 files changed, 1964 insertions(+), 45 deletions(-)
+```
+
+### Evidence
+- `tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_plain_import_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_import_as_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_import_as_bare_constructor_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_bare_callable_reference_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_typed_callable_reference_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_typealias_for_function_type_needs_no_special_resolution` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_chained_val_alias_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_curated_wildcard_import_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_uncurated_wildcard_import_not_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanKotlinTaxonomyClosureResolution::test_unaliased_bare_reference_not_detected` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_resolve_callable_reference_rejects_non_identifier_member` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_resolve_callable_reference_typed_falls_back_to_literal_receiver` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_resolve_expr_text_returns_none_for_unbound_identifier` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_resolve_expr_text_call_expression_wraps_with_parens` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates::test_kt_call_callee_picks_last_non_call_suffix_child` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 15 passed (from 15 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0665 -->
 ```yaml

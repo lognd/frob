@@ -773,7 +773,10 @@ count to hoist) -- no behavior change.
 - `language_for` -- maps a source file's extension to its capability
   pattern-table bucket (or `None` for unsupported languages).
 - `scan_file_capabilities` -- capability tokens observed in one source
-  file's raw text, via the per-language substring table.
+  file's raw text, via the per-language substring table, plus (for python,
+  typescript, rust, C/C++, and kotlin) import/alias-aware binding
+  resolution that catches evasions the raw-text needle scan alone misses
+  (T-0328/T-0377/T-0378/T-0379/T-0662/T-0663/T-0664).
 - `non_executable_line_numbers` -- T-0769: 1-indexed line numbers in a
   file that a comment or python docstring span touches -- the shared
   primitive `frob.strata._effects`'s line-level THREAT004 observation

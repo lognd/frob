@@ -3012,10 +3012,18 @@ def scan_file_capabilities(path: Path) -> frozenset[str]:
         # cannot.
         found |= _rust_binding_capabilities(path, table, comment_spans)
     elif language == "c-cpp":
-        # T-0379: C/C++ sibling of the T-0328/T-0377/T-0378 binding passes
-        # above -- catches a macro-renamed dangerous call (`#define SYS
-        # system; SYS(x)`) the raw-text needle scan structurally cannot.
+        # T-0379/T-0662/T-0663: C/C++ sibling of the T-0328/T-0377/T-0378
+        # binding passes above -- catches a macro-renamed dangerous call
+        # (`#define SYS system; SYS(x)`) and (T-0662/T-0663) a function-
+        # pointer variable/assignment/struct-field/array/default-arg/
+        # structured-binding alias the raw-text needle scan structurally
+        # cannot.
         found |= _c_binding_capabilities(path, table, comment_spans)
+    elif language == "kotlin":
+        # T-0664: kotlin sibling of the binding passes above -- catches an
+        # `import ... as`-aliased or `::`-referenced dangerous call the
+        # raw-text needle scan structurally cannot.
+        found |= _kt_binding_capabilities(path, table, comment_spans)
     if found:
         _log.info("vet: %s: capabilities observed: %s", path, sorted(found))
     return frozenset(found)
@@ -3053,7 +3061,7 @@ def _matched_capabilities(
 
 # frob:ticket T-0158
 # frob:ticket T-0565
-# frob:waive ARCH001 reason="a linear read/match/extend orchestration pipeline over already-extracted helpers (raw-text match, T-0328 binding match, T-0244 embedded match); each step is a single named call, splitting further would multiply indirection without shrinking real complexity" ceiling="50"  # noqa: E501
+# frob:waive ARCH001 reason="a linear read/match/extend orchestration pipeline over already-extracted helpers (raw-text match, T-0328 binding match, T-0244 embedded match, T-0662/T-0663/T-0664 per-language binding branches); each step is a single named call, splitting further would multiply indirection without shrinking real complexity" ceiling="70"  # noqa: E501
 # frob:tests tests/test_vet.py::TestCapabilityScan.test_scan_file_operations_names_registry_entry  # noqa: E501
 def _scan_file_operations(path: Path) -> tuple[_DangerousOperation, ...]:
     """The specific `DANGEROUS_OPERATIONS` registry entries whose needle(s)
@@ -3110,11 +3118,18 @@ def _scan_file_operations(path: Path) -> tuple[_DangerousOperation, ...]:
         # for an aliased `use` call the raw-text needle scan misses.
         matched.extend(_extra_rust_binding_operations(path, comment_spans, matched))
     elif language == "c-cpp":
-        # T-0379: same macro-alias-aware resolution as `scan_file_
-        # capabilities`'s c-cpp branch, named-entry-granular so an audit
-        # finding can still cite library/rationale/safer_alternative for a
-        # macro-renamed call the raw-text needle scan misses.
+        # T-0379/T-0662/T-0663: same macro/alias-aware resolution as
+        # `scan_file_capabilities`'s c-cpp branch, named-entry-granular so
+        # an audit finding can still cite library/rationale/safer_
+        # alternative for a macro-renamed or aliased call the raw-text
+        # needle scan misses.
         matched.extend(_extra_c_binding_operations(path, comment_spans, matched))
+    elif language == "kotlin":
+        # T-0664: same import/alias-aware resolution as `scan_file_
+        # capabilities`'s kotlin branch, named-entry-granular so an audit
+        # finding can still cite library/rationale/safer_alternative for an
+        # aliased/`::`-referenced call the raw-text needle scan misses.
+        matched.extend(_extra_kt_binding_operations(path, comment_spans, matched))
     return tuple(matched)
 
 
@@ -3940,7 +3955,15 @@ def _c_declared_name(node) -> str | None:  # noqa: ANN001
     plain `identifier` leaf -- e.g. `int *system3 = 0` (`init_declarator` ->
     `pointer_declarator` -> `identifier`) resolves to `"system3"`. `None`
     for a declarator shape with no reachable identifier (e.g. an abstract
-    declarator)."""
+    declarator).
+
+    T-0662: also descends through a `parenthesized_declarator` (the `(*f)`
+    wrapper every function-pointer declarator carries, e.g. `void (*f)
+    (const char*)`) -- this node has NO `declarator` FIELD at all (its
+    inner content is a single unlabeled named child), so the plain
+    field-walk loop below would otherwise stop here and return `None` for
+    every function-pointer variable/parameter/struct-field name, silently
+    breaking function-pointer alias resolution."""
     # PERF006: rewritten from tail recursion to an explicit loop -- Python
     # has no TCO, and the walk depth tracks a declarator chain's nesting
     # (pointer/array/init/reference wrappers), which is not statically
@@ -3949,19 +3972,62 @@ def _c_declared_name(node) -> str | None:  # noqa: ANN001
     while node is not None:
         if node.type == "identifier":
             return node_text(node)
-        node = node.child_by_field_name("declarator")
+        next_node = node.child_by_field_name("declarator")
+        if next_node is None and node.type == "parenthesized_declarator":
+            named = [c for c in node.children if c.is_named]
+            next_node = named[0] if named else None
+        node = next_node
     return None
+
+
+#: `declaration` node direct-child types `_c_collect_declaration_names`
+#: treats as a declarator worth resolving through `_c_declared_name` (T-
+#: 0662 extends T-0379's original `identifier`/`init_declarator`-only pair
+#: with the bare, uninitialized declarator shapes an ordinary variable
+#: declaration wraps its name in when there is no `= value` at all --
+#: `void (*f)(const char*);` parses its declared name directly under a
+#: `function_declarator` -> `parenthesized_declarator` -> `pointer_
+#: declarator` chain, never an `init_declarator`, since tree-sitter-c only
+#: wraps a declarator in `init_declarator` when an initializer is present).
+#: Without this, a forward-declared function-pointer variable's later
+#: `f = &do_exec;` assignment could never resolve: `_c_shadowing_scope`
+#: would never find `f` bound anywhere, so `_record_c_assignment_alias`'s
+#: scope lookup (keyed off THAT SAME shadow check) always misses.
+_C_DECLARATOR_CHILD_TYPES = (
+    "identifier",
+    "init_declarator",
+    "function_declarator",
+    "pointer_declarator",
+    "array_declarator",
+    "parenthesized_declarator",
+)
 
 
 def _c_collect_declaration_names(node, position: int, bound: dict[str, int]) -> None:  # noqa: ANN001
     """Add every name a `declaration` node binds to `bound` at `position`
     (T-0379, mirrors `_collect_rust_let_target`'s job at C's coarser
-    grammar grain) -- a plain `declaration` node's direct children are
-    either bare `identifier`s (`int x, y;`) or `init_declarator`s (`int x =
-    5;`), so both shapes are scanned at the top level without needing to
-    recurse past them."""
+    grammar grain) -- a plain `declaration` node's direct children are a
+    bare `identifier` (`int x, y;`), an `init_declarator` (`int x = 5;`),
+    or (T-0662) an uninitialized declarator wrapper chain (`void (*f)
+    (const char*);` -- see `_C_DECLARATOR_CHILD_TYPES`), so all three
+    shapes are scanned at the top level without needing to recurse past
+    them.
+
+    T-0663: a C++ structured-binding `init_declarator` (`auto [a, b] =
+    ...;`) is a FOURTH shape -- its `declarator` field is a `structured_
+    binding_declarator` wrapping MULTIPLE names, not the single name every
+    other declarator chain resolves to via `_c_declared_name`, so it needs
+    its own multi-name branch here rather than fitting the single-name
+    loop below."""
     for child in node.children:
-        if child.type in ("identifier", "init_declarator"):
+        if child.type == "init_declarator":
+            inner = child.child_by_field_name("declarator")
+            if inner is not None and inner.type == "structured_binding_declarator":
+                for name_node in inner.children:
+                    if name_node.type == "identifier":
+                        _record_rust_binding(bound, node_text(name_node), position)
+                continue
+        if child.type in _C_DECLARATOR_CHILD_TYPES:
             name = _c_declared_name(child)
             if name:
                 _record_rust_binding(bound, name, position)
@@ -3978,7 +4044,11 @@ def _c_scope_bind_step(node, is_top: bool, bound: dict[str, int]) -> bool:  # no
     node_type = node.type
     if not is_top and node_type == "function_definition":
         return False
-    if node_type == "parameter_declaration":
+    if node_type in ("parameter_declaration", "optional_parameter_declaration"):
+        # T-0663: `optional_parameter_declaration` (C++'s default-valued
+        # parameter, e.g. `void call(void(*cb)(const char*) = system)`) is
+        # a DIFFERENT node type from plain `parameter_declaration` -- both
+        # bind their name for the whole function body the same way.
         name = _c_declared_name(node.child_by_field_name("declarator"))
         if name:
             _record_rust_binding(bound, name, _C_ALWAYS_SHADOWS)
@@ -4033,23 +4103,409 @@ def _c_shadowing_scope(name: str, site, scope_cache: dict[int, dict[str, int]]):
     return None
 
 
-def _c_is_shadowed(name: str, site, scope_cache: dict[int, dict[str, int]]) -> bool:  # noqa: ANN001
-    """True if `name` is bound by a local scope enclosing `site` at or
-    before `site`'s position (T-0379) -- thin bool wrapper over `_c_
-    shadowing_scope`, mirrors `_rust_is_shadowed`."""
-    return _c_shadowing_scope(name, site, scope_cache) is not None
-
-
+# frob:ticket T-0662
+# frob:waive DUP001 reason="mirrors _resolve_ts_identifier's shadowed/unshadowed dispatch shape at C's own grammar (macro table vs var_alias_table) -- same design pattern as every other per-language resolver in this module, not accidental duplication"  # noqa: E501
 def _resolve_c_identifier(
-    node, alias_table: dict[str, str], scope_cache: dict[int, dict[str, int]]
+    node,
+    alias_table: dict[str, str],
+    scope_cache: dict[int, dict[str, int]],
+    var_alias_table: dict[int, dict[str, str]] | None = None,
 ) -> str | None:  # noqa: ANN001
     """Resolve a bare `identifier` call-target node to its macro-aliased
-    target, or `None` if it is locally shadowed at this position (T-0379)
-    or not macro-bound at all."""
+    target (T-0379), or (T-0662) a scope-local `var_alias_table` entry when
+    it IS locally shadowed AT THIS POSITION -- mirrors `_resolve_rust_
+    identifier`'s shadowed/unshadowed split exactly: a name bound by an
+    enclosing scope (a local function-pointer variable) can ONLY resolve
+    through the alias table (never the file-wide macro table, which would
+    wrongly let a same-named macro leak through a local variable); an
+    unshadowed name resolves through the macro table as before."""
     name = node_text(node)
-    if _c_is_shadowed(name, node, scope_cache):
-        return None
+    scope = _c_shadowing_scope(name, node, scope_cache)
+    if scope is not None:
+        if var_alias_table is None:
+            return None
+        return var_alias_table.get(scope.id, {}).get(name)
     return alias_table.get(name)
+
+
+def _c_enclosing_scope(node):  # noqa: ANN001, ANN201
+    """The nearest `_C_SCOPE_TYPES` ancestor of `node` (T-0662), mirroring
+    `_enclosing_rust_scope` -- used by `_record_c_declaration_alias`/
+    `_record_c_assignment_alias` to find which scope a function-pointer
+    variable's name binds into."""
+    cur = node.parent
+    while cur is not None:
+        if cur.type in _C_SCOPE_TYPES:
+            return cur
+        cur = cur.parent
+    return None
+
+
+def _resolve_c_alias_source(
+    node,
+    macro_alias_table: dict[str, str],
+    scope_cache: dict[int, dict[str, int]],
+    var_alias_table: dict[int, dict[str, str]],
+):  # noqa: ANN001, ANN201
+    """Resolve the RHS of a C function-pointer BINDING (an `init_declarator`
+    value, an `assignment_expression`'s `right`, or a struct/array
+    initializer element) to the ultimate target name (T-0662): unwraps a
+    single `&identifier` address-of expression (the `f = &do_exec;`
+    assignment-of-a-function-pointer taxonomy row), then, if the identifier
+    is itself locally shadowed, chases through `var_alias_table` (so `Handler
+    h = f;` where `f` already aliases `do_exec` resolves transitively, same
+    document-order soundness argument as `_build_rust_alias_table`); if NOT
+    locally shadowed, the identifier names a global/library function
+    DIRECTLY (`f = system;`) -- resolved through the macro table if aliased,
+    else the bare identifier text itself is the target (unlike `_resolve_c_
+    identifier`'s call-site contract, an unaliased, unshadowed RHS name IS
+    the answer here, not `None`: it is what `f` now points to). Returns
+    `None` for any other RHS shape (not a bare-identifier-or-&identifier
+    binding), the "not itself a static-resolvable function reference"
+    fail-closed default (T-0339)."""
+    if node.type == "pointer_expression":
+        inner = node.child_by_field_name("argument")
+        if inner is None or inner.type != "identifier":
+            return None
+        node = inner
+    if node.type != "identifier":
+        return None
+    name = node_text(node)
+    scope = _c_shadowing_scope(name, node, scope_cache)
+    if scope is not None:
+        return var_alias_table.get(scope.id, {}).get(name)
+    return macro_alias_table.get(name, name)
+
+
+def _record_c_field_alias(
+    initializer_list,  # noqa: ANN001 -- tree_sitter.Node
+    macro_alias_table: dict[str, str],
+    scope_cache: dict[int, dict[str, int]],
+    var_alias_table: dict[int, dict[str, str]],
+    field_alias_table: dict[str, str],
+) -> None:
+    """Bind every `.field = target` designated initializer inside
+    `initializer_list` to `field_alias_table` (T-0662, taxonomy "struct
+    field holding a function pointer, statically initialized" row:
+    `struct Ops ops = { .run = system }; ops.run(x);`) -- keyed by FIELD
+    NAME only (best-effort, object-identity-BY-NAME, matching T-0659's
+    disclosed attribute-rebind posture: two different struct variables with
+    a same-named function-pointer field are not distinguished).
+
+    `field_designator`'s own `field_identifier` child carries NO tree-
+    sitter FIELD NAME at all (verified interactively -- `.field_designator.
+    child_by_field_name("field")` returns `None` unconditionally, unlike
+    `initializer_pair`'s own `designator`/`value` fields, which ARE
+    labeled), so it is plucked positionally (its one named child) rather
+    than via `child_by_field_name`, mirroring `frob.arch._kotlin`'s
+    documented "this grammar exposes almost no named fields" posture for
+    the specific nodes that lack one."""
+    for element in initializer_list.children:
+        if element.type != "initializer_pair":
+            continue
+        designator = element.child_by_field_name("designator")
+        value = element.child_by_field_name("value")
+        if designator is None or value is None or designator.type != "field_designator":
+            continue
+        named = [c for c in designator.children if c.is_named]
+        if not named or named[0].type != "field_identifier":
+            continue
+        field_id = named[0]
+        resolved = _resolve_c_alias_source(
+            value, macro_alias_table, scope_cache, var_alias_table
+        )
+        if resolved is not None:
+            field_alias_table.setdefault(node_text(field_id), resolved)
+
+
+def _record_c_array_alias(
+    initializer_list,  # noqa: ANN001 -- tree_sitter.Node
+    array_name: str,
+    macro_alias_table: dict[str, str],
+    scope_cache: dict[int, dict[str, int]],
+    var_alias_table: dict[int, dict[str, str]],
+    array_alias_table: dict[tuple[str, int], str],
+) -> None:
+    """Bind every positional element of `initializer_list` to `array_alias_
+    table` keyed by `(array_name, 0-based index)` (T-0662, taxonomy "array
+    of function pointers, constant index" row: `void (*tbl[])(const char*)
+    = { system }; tbl[0](x);`)."""
+    index = 0
+    for element in initializer_list.children:
+        if not element.is_named:
+            continue
+        resolved = _resolve_c_alias_source(
+            element, macro_alias_table, scope_cache, var_alias_table
+        )
+        if resolved is not None:
+            array_alias_table.setdefault((array_name, index), resolved)
+        index += 1
+
+
+def _record_c_structured_binding_alias(
+    declarator,  # noqa: ANN001 -- tree_sitter.Node (structured_binding_declarator)
+    value,  # noqa: ANN001 -- tree_sitter.Node
+    macro_alias_table: dict[str, str],
+    scope_cache: dict[int, dict[str, int]],
+    var_alias_table: dict[int, dict[str, str]],
+) -> None:
+    """Bind each plain-identifier element of a C++17 structured-binding
+    declarator (T-0663, taxonomy "structured bindings" row: `auto [a, b] =
+    std::pair{system, 0}; a(x);`) to its POSITIONALLY corresponding element
+    of `value`'s own initializer-list elements -- mirrors T-0661's rust
+    tuple-destructure/T-0659's python tuple-unpack pattern. `value` is
+    typically a `compound_literal_expression` (`std::pair{...}`) wrapping
+    an `initializer_list`; any other RHS shape (a plain variable, a
+    function call) has no positional element list to walk and is skipped,
+    same fail-closed posture as the array/field alias tables."""
+    source = value
+    if source.type == "compound_literal_expression":
+        source = source.child_by_field_name("value") or source
+    if source.type != "initializer_list":
+        return
+    scope = _c_enclosing_scope(declarator)
+    if scope is None:
+        return
+    left_elements = [c for c in declarator.children if c.is_named]
+    right_elements = [c for c in source.children if c.is_named]
+    scope_aliases = var_alias_table.setdefault(scope.id, {})
+    for left_el, right_el in zip(left_elements, right_elements, strict=False):
+        if left_el.type != "identifier":
+            continue
+        resolved = _resolve_c_alias_source(
+            right_el, macro_alias_table, scope_cache, var_alias_table
+        )
+        if resolved is not None:
+            scope_aliases.setdefault(node_text(left_el), resolved)
+
+
+def _record_c_default_param_alias(
+    node,  # noqa: ANN001 -- tree_sitter.Node (optional_parameter_declaration)
+    macro_alias_table: dict[str, str],
+    scope_cache: dict[int, dict[str, int]],
+    var_alias_table: dict[int, dict[str, str]],
+) -> None:
+    """If `node` (a C++ `optional_parameter_declaration`, a default-valued
+    function parameter) has a resolvable default value, record it into
+    `var_alias_table` keyed by the parameter's OWN enclosing function scope
+    (T-0663, taxonomy "default argument forwarding a callable" row: `void
+    call(void(*cb)(const char*) = system) { cb(x); }`) -- `_c_scope_bind_
+    step` (T-0663) already binds this parameter's name for the WHOLE
+    function body via `_C_ALWAYS_SHADOWS`, so keying the alias entry at the
+    SAME enclosing-function scope (via `_c_enclosing_scope`, not `_c_
+    shadowing_scope` -- unlike `_record_c_assignment_alias`, a parameter's
+    binding scope and its declaration's immediately-enclosing scope are
+    ALWAYS the same node) guarantees the later call-site lookup agrees."""
+    declarator = node.child_by_field_name("declarator")
+    default_value = node.child_by_field_name("default_value")
+    if declarator is None or default_value is None:
+        return
+    name = _c_declared_name(declarator)
+    if name is None:
+        return
+    scope = _c_enclosing_scope(node)
+    if scope is None:
+        return
+    resolved = _resolve_c_alias_source(
+        default_value, macro_alias_table, scope_cache, var_alias_table
+    )
+    if resolved is not None:
+        var_alias_table.setdefault(scope.id, {}).setdefault(name, resolved)
+
+
+def _record_c_declaration_alias(
+    node,  # noqa: ANN001 -- tree_sitter.Node (init_declarator)
+    macro_alias_table: dict[str, str],
+    scope_cache: dict[int, dict[str, int]],
+    var_alias_table: dict[int, dict[str, str]],
+    field_alias_table: dict[str, str],
+    array_alias_table: dict[tuple[str, int], str],
+) -> None:
+    """If `node` (an `init_declarator`) binds a function-pointer variable
+    (T-0662, taxonomy "function-pointer variable init from named function"
+    and "`typedef`'d function-pointer type" rows -- both reduce to this
+    SAME declaration shape; a `typedef` only renames the declared TYPE, not
+    the binding grammar, so no separate typedef-specific branch is needed,
+    mirroring T-0661's identical finding for rust's `type`/`let` overlap),
+    a struct designated initializer (delegates to `_record_c_field_alias`),
+    an array-of-function-pointers initializer (delegates to `_record_c_
+    array_alias`), or (T-0663) a C++ structured-binding declaration
+    (delegates to `_record_c_structured_binding_alias`) -- record it into
+    the matching table."""
+    value = node.child_by_field_name("value")
+    declarator = node.child_by_field_name("declarator")
+    if value is None or declarator is None:
+        return
+    if declarator.type == "structured_binding_declarator":
+        _record_c_structured_binding_alias(
+            declarator, value, macro_alias_table, scope_cache, var_alias_table
+        )
+        return
+    name = _c_declared_name(declarator)
+    if name is None:
+        return
+    if value.type == "initializer_list":
+        elements = [c for c in value.children if c.is_named]
+        if elements and elements[0].type == "initializer_pair":
+            _record_c_field_alias(
+                value,
+                macro_alias_table,
+                scope_cache,
+                var_alias_table,
+                field_alias_table,
+            )
+        else:
+            _record_c_array_alias(
+                value,
+                name,
+                macro_alias_table,
+                scope_cache,
+                var_alias_table,
+                array_alias_table,
+            )
+        return
+    scope = _c_enclosing_scope(node)
+    if scope is None:
+        return
+    resolved = _resolve_c_alias_source(
+        value, macro_alias_table, scope_cache, var_alias_table
+    )
+    if resolved is not None:
+        var_alias_table.setdefault(scope.id, {}).setdefault(name, resolved)
+
+
+def _record_c_assignment_alias(
+    node,  # noqa: ANN001 -- tree_sitter.Node (assignment_expression)
+    macro_alias_table: dict[str, str],
+    scope_cache: dict[int, dict[str, int]],
+    var_alias_table: dict[int, dict[str, str]],
+) -> None:
+    """If `node` (an `assignment_expression`) rebinds a plain identifier to
+    a resolvable function reference, record it into `var_alias_table` (T-
+    0662, taxonomy "assignment of a function pointer" row: `f = &do_exec;
+    f(x);` -- distinct from `_record_c_declaration_alias`'s `init_
+    declarator` shape since a bare assignment has no `declarator` field at
+    all, just `left`/`right`).
+
+    KEYED BY `_c_shadowing_scope`, NOT `_c_enclosing_scope`: an assignment
+    can rebind a variable declared in an OUTER scope (the common shape --
+    `void (*f)(const char*);` at file scope, `f = &do_exec;` inside some
+    function body). Recording under the assignment's own immediately-
+    enclosing scope (as `_record_c_declaration_alias` does for a fresh
+    declaration) would key the alias under the WRONG scope id here --
+    `_resolve_c_identifier`'s later call-site lookup walks `_c_shadowing_
+    scope` to find where `f`'s NAME is actually bound (the file-scope
+    declaration), not where this particular assignment happens to sit.
+    Using the SAME `_c_shadowing_scope` call here guarantees the recording
+    and lookup scopes always agree; an identifier with no reachable
+    declaration at all is not recorded, fail-closed."""
+    left = node.child_by_field_name("left")
+    right = node.child_by_field_name("right")
+    if left is None or right is None or left.type != "identifier":
+        return
+    name = node_text(left)
+    scope = _c_shadowing_scope(name, left, scope_cache)
+    if scope is None:
+        return
+    resolved = _resolve_c_alias_source(
+        right, macro_alias_table, scope_cache, var_alias_table
+    )
+    if resolved is not None:
+        var_alias_table.setdefault(scope.id, {}).setdefault(name, resolved)
+
+
+def _build_c_alias_tables(
+    root_node,  # noqa: ANN001 -- tree_sitter.Node
+    macro_alias_table: dict[str, str],
+    scope_cache: dict[int, dict[str, int]],
+) -> tuple[dict[int, dict[str, str]], dict[str, str], dict[tuple[str, int], str]]:
+    """(var_alias_table, field_alias_table, array_alias_table) -- T-0662,
+    the C sibling of `_build_rust_alias_table`/`_build_py_alias_table`/
+    `_build_ts_alias_table`, covering the taxonomy's remaining static-
+    resolvable C rows beyond T-0379's macro table: function-pointer
+    variable init (`init_declarator`), typedef'd function-pointer type
+    (same shape, no separate branch), assignment of a function pointer
+    (`assignment_expression`), struct field static init, and array-of-
+    function-pointers constant-index init. Extended (T-0663) with two
+    C++-only `init_declarator`-ADJACENT node types that need their own
+    dispatch branch: `optional_parameter_declaration` (a default-valued
+    function parameter, which has no `init_declarator` wrapper at all --
+    `declarator`/`default_value` are fields directly on the parameter node
+    itself) and structured bindings (delegated from `_record_c_declaration_
+    alias`'s own `init_declarator` branch once it sees a `structured_
+    binding_declarator`, since that shape IS still an `init_declarator`,
+    just with a different declarator kind). `std::function<...>`-typed and
+    C++11 `using X = ...;` type-aliased function-pointer variables need NO
+    separate branch either -- both still reduce to a plain `init_
+    declarator` (verified interactively: the TYPE annotation differs, the
+    binding grammar does not), same "the T-0609 typedef finding also holds
+    for C++'s two extra spellings" logic as `_record_c_declaration_alias`'s
+    own typedef case. The walk visits declarations/assignments/parameters
+    in source (document) order, so a chained alias (`f = system; g = f;`)
+    resolves transitively the same way the rust/py/TS tables do."""
+    var_alias_table: dict[int, dict[str, str]] = {}
+    field_alias_table: dict[str, str] = {}
+    array_alias_table: dict[tuple[str, int], str] = {}
+
+    def visit(node) -> None:  # noqa: ANN001
+        if node.type == "init_declarator":
+            _record_c_declaration_alias(
+                node,
+                macro_alias_table,
+                scope_cache,
+                var_alias_table,
+                field_alias_table,
+                array_alias_table,
+            )
+        elif node.type == "assignment_expression":
+            _record_c_assignment_alias(
+                node, macro_alias_table, scope_cache, var_alias_table
+            )
+        elif node.type == "optional_parameter_declaration":
+            _record_c_default_param_alias(
+                node, macro_alias_table, scope_cache, var_alias_table
+            )
+        for child in node.children:
+            visit(child)
+
+    visit(root_node)
+    return var_alias_table, field_alias_table, array_alias_table
+
+
+def _c_call_target_resolved(
+    func,  # noqa: ANN001 -- tree_sitter.Node
+    alias_table: dict[str, str],
+    scope_cache: dict[int, dict[str, int]],
+    var_alias_table: dict[int, dict[str, str]],
+    field_alias_table: dict[str, str],
+    array_alias_table: dict[tuple[str, int], str],
+) -> str | None:
+    """Resolve one `call_expression`'s `function` node through whichever
+    C/C++ shape it is (T-0662): a bare identifier (macro/variable alias,
+    T-0379/T-0662), a `field_expression` (`ops.run(x)`, struct field alias),
+    or a `subscript_expression` with a CONSTANT integer index
+    (`tbl[0](x)`, array alias) -- a non-constant index is the taxonomy's
+    own documented `runtime-opaque` row and is correctly left unresolved."""
+    if func.type == "identifier":
+        return _resolve_c_identifier(func, alias_table, scope_cache, var_alias_table)
+    if func.type == "field_expression":
+        field = func.child_by_field_name("field")
+        if field is not None and field.type == "field_identifier":
+            return field_alias_table.get(node_text(field))
+        return None
+    if func.type == "subscript_expression":
+        base = func.child_by_field_name("argument")
+        index = func.child_by_field_name("index")
+        if base is None or base.type != "identifier":
+            return None
+        if index is None or index.type != "number_literal":
+            return None
+        try:
+            index_value = int(node_text(index))
+        except ValueError:
+            return None
+        return array_alias_table.get((node_text(base), index_value))
+    return None
 
 
 def _collect_c_candidates(
@@ -4057,29 +4513,48 @@ def _collect_c_candidates(
     alias_table: dict[str, str],
     scope_cache: dict[int, dict[str, int]],
     candidates: list[tuple[str, int, int]],
+    var_alias_table: dict[int, dict[str, str]] | None = None,
+    field_alias_table: dict[str, str] | None = None,
+    array_alias_table: dict[tuple[str, int], str] | None = None,
 ) -> None:  # noqa: ANN001
     """Recursively walk `node`, appending `(resolved, start_byte, end_byte)`
-    to `candidates` for every `call_expression` whose `function` is a bare
-    `identifier` that resolves through `alias_table` (T-0379) -- mirrors
-    `_collect_rust_candidates`'s job. A qualified/namespaced or field-
-    expression call target is not a resolvable macro alias by construction
-    (a macro name is always a single bare identifier) and is skipped."""
+    to `candidates` for every `call_expression` whose `function` resolves
+    through `alias_table` (T-0379 macro aliasing), `var_alias_table` (T-0662
+    function-pointer variable/assignment aliasing), `field_alias_table`
+    (T-0662 struct field), or `array_alias_table` (T-0662 constant-index
+    array element) -- mirrors `_collect_rust_candidates`'s job."""
     if node.type == "call_expression":
         func = node.child_by_field_name("function")
-        if func is not None and func.type == "identifier":
-            resolved = _resolve_c_identifier(func, alias_table, scope_cache)
+        if func is not None:
+            resolved = _c_call_target_resolved(
+                func,
+                alias_table,
+                scope_cache,
+                var_alias_table or {},
+                field_alias_table or {},
+                array_alias_table or {},
+            )
             if resolved is not None:
                 candidates.append((resolved, node.start_byte, node.end_byte))
     for child in node.children:
-        _collect_c_candidates(child, alias_table, scope_cache, candidates)
+        _collect_c_candidates(
+            child,
+            alias_table,
+            scope_cache,
+            candidates,
+            var_alias_table,
+            field_alias_table,
+            array_alias_table,
+        )
 
 
 def _c_resolved_candidates(path: Path) -> tuple[tuple[str, int, int], ...]:
     """Every `(resolved_name, start_byte, end_byte)` this C/C++ file's call
-    sites resolve to through its macro alias table and POSITION-aware
-    enclosing-scope shadow check (T-0379). Empty for a non-c/cpp file, an
-    unparseable file, or one `frob.lang` has no grammar for -- degrades to
-    the pre-existing lexical-only scan, never raises."""
+    sites resolve to through its macro alias table (T-0379), POSITION-aware
+    enclosing-scope shadow check, and (T-0662) function-pointer variable/
+    assignment/struct-field/array alias tables. Empty for a non-c/cpp file,
+    an unparseable file, or one `frob.lang` has no grammar for -- degrades
+    to the pre-existing lexical-only scan, never raises."""
     parsed = raw_tree(path)
     if parsed.is_err:
         return ()
@@ -4089,9 +4564,396 @@ def _c_resolved_candidates(path: Path) -> tuple[tuple[str, int, int], ...]:
 
     alias_table = _c_macro_alias_table(tree.root_node)
     scope_cache: dict[int, dict[str, int]] = {}
+    var_alias_table, field_alias_table, array_alias_table = _build_c_alias_tables(
+        tree.root_node, alias_table, scope_cache
+    )
     candidates: list[tuple[str, int, int]] = []
-    _collect_c_candidates(tree.root_node, alias_table, scope_cache, candidates)
+    _collect_c_candidates(
+        tree.root_node,
+        alias_table,
+        scope_cache,
+        candidates,
+        var_alias_table,
+        field_alias_table,
+        array_alias_table,
+    )
     return tuple(candidates)
+
+
+# --------------------------------------------------------------- kotlin (T-0664)
+#
+# Kotlin static-binding resolution (docs/design/capability-evasion-
+# taxonomy.md's Kotlin table, T-0664 -- the fourth per-language resolver
+# after T-0328/T-0377/T-0378/T-0379/T-0662/T-0663's python/TS/rust/C/C++
+# ones). `frob.lang.raw_tree`'s `"kotlin"` label reaches `frob.lang._walk_
+# kotlin`'s grammar via T-0723's central-dispatch wiring.
+#
+# SCOPE, disclosed up front rather than silently narrowed: this resolver
+# uses a FLAT, FILE-WIDE alias table (no per-scope/position shadow
+# discipline the way `_c_shadowing_scope`/`_rust_shadowing_scope` give the
+# C/rust resolvers) -- a local variable that happens to share a name with
+# an imported/aliased binding is NOT distinguished from the import here.
+# This is a REDUCED-FIDELITY model versus the other four resolvers (a
+# genuine over-approximation risk, not a silent gap: a shadowing local
+# could theoretically cause a spurious "detected" on a name that is
+# locally rebound to something harmless), accepted for this pass given
+# kotlin's own grammar has no separate compilation-unit-vs-function-body
+# scope split as clean as C's `_C_SCOPE_TYPES`/rust's `_RUST_SCOPE_TYPES`
+# to hang position-aware bookkeeping off of without materially more
+# machinery than this ticket's own time budget allows. A future pass
+# tightening this to per-function scoping (mirroring `_c_scope_bound_
+# names`'s shape against kotlin's `function_declaration`/`class_body`
+# nodes) is a natural follow-up, not attempted here.
+_KT_WILDCARD_DANGEROUS_MODULES = frozenset({"java.lang"})
+
+
+def _kt_cap_child_of_type(node, type_name: str):  # noqa: ANN001, ANN201
+    """The first DIRECT child of `node` with tree-sitter type `type_name`
+    -- kotlin's grammar exposes almost no named fields (T-0614/T-0723's own
+    finding for this same grammar), so every lookup here is positional.
+    Kept as its own copy rather than importing `frob.lang._walk_kotlin`'s
+    private `_kt_child_of_type` -- `frob.vet` and `frob.lang` are
+    deliberately independent walk layers over the same grammar, matching
+    how `_c_declared_name`/`frob.arch._kotlin`'s own node-walk code is each
+    kept local to its own module."""
+    for c in node.children:
+        if c.type == type_name:
+            return c
+    return None
+
+
+def _kt_import_table(root) -> tuple[dict[str, str], frozenset[str]]:  # noqa: ANN001
+    """(name -> fully-dotted-path import table, wildcard-import module
+    prefixes) built from every `import_header` (T-0664, taxonomy "import"/
+    "import ... as"/"wildcard import" rows): a plain `import a.b.C` binds
+    its LAST dotted segment (`"C"`) to the full path (so an unqualified
+    `C(...)` call site also resolves, matching real kotlin/java import
+    semantics -- redundant with the raw lexical scan when `C` is already
+    the needle's own literal text, harmless, matching T-0379's "declared +
+    direct call needs no special resolution" precedent for the identical
+    case); `import a.b.C as D` binds `D` instead; `import a.b.*` records
+    `a.b` as a wildcard prefix ONLY when it is in the tiny, curated `_KT_
+    WILDCARD_DANGEROUS_MODULES` set (mirrors `_RUST_WILDCARD_DANGEROUS_
+    MODULES`'s same fail-closed-by-curation posture -- a wildcard import of
+    an untracked package resolves nothing)."""
+    table: dict[str, str] = {}
+    wildcard: set[str] = set()
+
+    def visit(node) -> None:  # noqa: ANN001
+        if node.type == "import_header":
+            ident = _kt_cap_child_of_type(node, "identifier")
+            alias_node = _kt_cap_child_of_type(node, "import_alias")
+            is_wildcard = _kt_cap_child_of_type(node, "wildcard_import") is not None
+            if ident is not None:
+                dotted = node_text(ident)
+                if is_wildcard:
+                    if dotted in _KT_WILDCARD_DANGEROUS_MODULES:
+                        wildcard.add(dotted)
+                elif alias_node is not None:
+                    alias_id = _kt_cap_child_of_type(alias_node, "type_identifier")
+                    if alias_id is not None:
+                        table[node_text(alias_id)] = dotted
+                else:
+                    table.setdefault(dotted.rsplit(".", 1)[-1], dotted)
+        for child in node.children:
+            visit(child)
+
+    visit(root)
+    return table, frozenset(wildcard)
+
+
+# frob:ticket T-0664
+# frob:waive DUP001 reason="a short guard-then-lookup dispatch, structurally similar to unrelated small helpers elsewhere in this file purely by coincidence of size; genuinely different domain (kotlin callable_reference resolution) from every reported match"  # noqa: E501
+def _kt_resolve_callable_reference(node, import_table: dict[str, str]) -> str | None:  # noqa: ANN001
+    """Resolve a `callable_reference` node (T-0664, taxonomy "::
+    callable/function reference" row) -- a bare `::runCmd` resolves its one
+    named child through `import_table` (falling back to the bare name
+    itself, a plain top-level function reference); a receiver-typed
+    `Runtime::exec` resolves its receiver through `import_table` (falling
+    back to the receiver's own literal text) and appends `.exec`."""
+    named = [c for c in node.children if c.type != "::"]
+    if len(named) == 1:
+        member = named[0]
+        if member.type != "simple_identifier":
+            return None
+        name = node_text(member)
+        return import_table.get(name, name)
+    if len(named) == 2:
+        receiver, member = named
+        if member.type != "simple_identifier":
+            return None
+        receiver_text = node_text(receiver)
+        resolved_receiver = import_table.get(receiver_text, receiver_text)
+        return f"{resolved_receiver}.{node_text(member)}"
+    return None
+
+
+def _kt_property_name_and_value(node):  # noqa: ANN001, ANN201
+    """(name node, value node) for a `property_declaration` (`val`/`var`),
+    or `(None, None)` if either is absent -- kotlin's grammar has no
+    labeled `name`/`value` fields on this node (T-0664), so both are
+    plucked positionally: the name is `variable_declaration`'s own
+    `simple_identifier`; the value is whatever child directly follows the
+    `=` token."""
+    var_decl = _kt_cap_child_of_type(node, "variable_declaration")
+    name_node = (
+        _kt_cap_child_of_type(var_decl, "simple_identifier")
+        if var_decl is not None
+        else None
+    )
+    if name_node is None:
+        return None, None
+    seen_eq = False
+    value = None
+    for c in node.children:
+        if c.type == "=":
+            seen_eq = True
+            continue
+        if seen_eq:
+            value = c
+            break
+    return name_node, value
+
+
+# frob:ticket T-0664
+# frob:waive ARCH001 reason="one recursive dispatch over kotlin's three resolvable expression shapes (simple_identifier/navigation_expression/call_expression); each branch is a single named case, splitting further would multiply indirection without shrinking real complexity" ceiling="65"  # noqa: E501
+# frob:tests tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates.test_resolve_expr_text_returns_none_for_unbound_identifier  # noqa: E501
+def _kt_resolve_expr_text(
+    node,  # noqa: ANN001
+    import_table: dict[str, str],
+    var_alias_table: dict[str, str],
+    wildcard_prefixes: frozenset[str] = frozenset(),
+) -> str | None:
+    """Resolve one kotlin expression node to a fully-dotted target text
+    (T-0664) -- a `simple_identifier` through `var_alias_table` then
+    `import_table` then (last resort) the curated wildcard-import fallback;
+    a `navigation_expression` (`Rt.getRuntime`) by resolving its base
+    (recursively -- the base MAY itself be a nested `call_expression`, see
+    below) and appending `.member`; a `call_expression` (`Rt.getRuntime()`,
+    itself acting as the BASE of an outer `.exec` navigation) by resolving
+    its own callee and appending a literal `"()"` marker -- this last step
+    is why `docs/design/capability-evasion-taxonomy.md`'s own kotlin exec
+    needle (`"Runtime.getRuntime().exec("`) can match a resolved chain
+    text at all: the registry needle itself embeds the intermediate call's
+    parens, so dropping them here would make that specific needle
+    structurally unmatchable no matter how correct the rest of the
+    resolution is. Returns `None` when nothing resolves (never falls back
+    to a bare, un-aliased name -- the pre-existing lexical scan already
+    covers that case, matching every other language resolver's identical
+    contract)."""
+    if node.type == "simple_identifier":
+        name = node_text(node)
+        if name in var_alias_table:
+            return var_alias_table[name]
+        direct = import_table.get(name)
+        if direct is not None:
+            return direct
+        if wildcard_prefixes:
+            module = sorted(wildcard_prefixes)[0]
+            return f"{module}.{name}"
+        return None
+    if node.type == "navigation_expression":
+        base = node.children[0] if node.children else None
+        if base is None:
+            return None
+        if base.type in ("simple_identifier", "type_identifier"):
+            base_name = node_text(base)
+            base_resolved = import_table.get(base_name) or var_alias_table.get(
+                base_name
+            )
+        else:
+            base_resolved = _kt_resolve_expr_text(
+                base, import_table, var_alias_table, wildcard_prefixes
+            )
+        if base_resolved is None:
+            return None
+        suffix = _kt_cap_child_of_type(node, "navigation_suffix")
+        if suffix is None:
+            return base_resolved
+        member = None
+        for c in suffix.children:
+            if c.type in ("simple_identifier", "type_identifier"):
+                member = c
+        if member is None:
+            return base_resolved
+        return f"{base_resolved}.{node_text(member)}"
+    if node.type == "call_expression":
+        callee = _kt_call_callee(node)
+        if callee is None:
+            return None
+        inner = _kt_resolve_expr_text(
+            callee, import_table, var_alias_table, wildcard_prefixes
+        )
+        return f"{inner}()" if inner is not None else None
+    return None
+
+
+def _kt_call_callee(node):  # noqa: ANN001, ANN201
+    """The callee expression of a `call_expression` (T-0664) -- kotlin's
+    grammar has no labeled `function` field (unlike TS/rust); the callee
+    is simply the LAST non-`call_suffix` direct child (a bare `f(x)` has
+    exactly one such child, `f`; a chained `Rt.getRuntime().exec(x)`'s
+    OUTER call's callee is the `navigation_expression` covering `Rt.
+    getRuntime().exec`)."""
+    callee = None
+    for c in node.children:
+        if c.type != "call_suffix":
+            callee = c
+    return callee
+
+
+def _kt_build_var_alias_table(root, import_table: dict[str, str]) -> dict[str, str]:  # noqa: ANN001
+    """File-wide `name -> resolved_target` table (T-0664, taxonomy "val/var
+    assignment"/"typealias for a function type"/":: callable reference"
+    rows) built from every `property_declaration` whose value is a
+    `callable_reference` or a chained `simple_identifier` -- visited in
+    source (document) order, so `val f = ::runCmd; val g = f;` resolves
+    `g` transitively the same way the C/rust/TS/python alias tables do. A
+    `typealias` on the DECLARED TYPE (`val f: Handler = ::runCmd`) needs no
+    separate handling: the type annotation is a different child entirely,
+    never touched here -- the value is still a plain `callable_reference`,
+    matching T-0663's identical "typedef/using-alias only renames the
+    TYPE, not the binding grammar" finding for C++."""
+    var_alias_table: dict[str, str] = {}
+
+    def visit(node) -> None:  # noqa: ANN001
+        if node.type == "property_declaration":
+            name_node, value = _kt_property_name_and_value(node)
+            if name_node is not None and value is not None:
+                resolved = None
+                if value.type == "callable_reference":
+                    resolved = _kt_resolve_callable_reference(value, import_table)
+                elif value.type == "simple_identifier":
+                    resolved = _kt_resolve_expr_text(
+                        value, import_table, var_alias_table
+                    )
+                if resolved is not None:
+                    var_alias_table.setdefault(node_text(name_node), resolved)
+        for child in node.children:
+            visit(child)
+
+    visit(root)
+    return var_alias_table
+
+
+def _kt_collect_candidates(
+    node,  # noqa: ANN001
+    import_table: dict[str, str],
+    var_alias_table: dict[str, str],
+    wildcard_prefixes: frozenset[str],
+    candidates: list[tuple[str, int, int]],
+) -> None:
+    """Recursively walk `node`, appending `(resolved, start_byte, end_byte)`
+    to `candidates` for every `call_expression` whose callee resolves
+    through `_kt_resolve_expr_text` (T-0664) -- mirrors `_collect_c_
+    candidates`/`_collect_rust_candidates`'s job."""
+    if node.type == "call_expression":
+        callee = _kt_call_callee(node)
+        if callee is not None and callee.type in (
+            "simple_identifier",
+            "navigation_expression",
+        ):
+            resolved = _kt_resolve_expr_text(
+                callee, import_table, var_alias_table, wildcard_prefixes
+            )
+            if resolved is not None:
+                candidates.append((resolved, node.start_byte, node.end_byte))
+    for child in node.children:
+        _kt_collect_candidates(
+            child, import_table, var_alias_table, wildcard_prefixes, candidates
+        )
+
+
+def _kt_resolved_candidates(path: Path) -> tuple[tuple[str, int, int], ...]:
+    """Every `(resolved_name, start_byte, end_byte)` this kotlin file's call
+    sites resolve to through its import table (plain/`as`-aliased/curated-
+    wildcard) and file-wide `val`/`var`/`::`-reference alias table (T-0664).
+    Empty for a non-kotlin file, an unparseable file, or one `frob.lang`
+    has no grammar for -- degrades to the pre-existing lexical-only scan,
+    never raises."""
+    parsed = raw_tree(path)
+    if parsed.is_err:
+        return ()
+    tree, _source, language_label = parsed.danger_ok
+    if language_label != "kotlin":
+        return ()
+
+    import_table, wildcard_prefixes = _kt_import_table(tree.root_node)
+    var_alias_table = _kt_build_var_alias_table(tree.root_node, import_table)
+    candidates: list[tuple[str, int, int]] = []
+    _kt_collect_candidates(
+        tree.root_node, import_table, var_alias_table, wildcard_prefixes, candidates
+    )
+    return tuple(candidates)
+
+
+# frob:ticket T-0664
+# frob:waive DUP001 reason="mirrors _c_binding_capabilities/_rust_binding_capabilities/_ts_binding_capabilities's identical resolved-candidate-to-registry-needle loop shape -- the intentional per-language resolver pattern this module already establishes, not accidental duplication"  # noqa: E501
+def _kt_binding_capabilities(
+    path: Path,
+    table: dict[str, tuple[str, ...]],
+    comment_spans: tuple[ByteSpan, ...],
+) -> set[str]:
+    """Capability kinds observed via kotlin import/alias-aware resolution
+    only (T-0664) -- the union of every registry needle that matches a
+    resolved call target, for sites outside a comment span. Merged into
+    `scan_file_capabilities`'s lexical result. Mirrors `_c_binding_
+    capabilities`."""
+    found: set[str] = set()
+    for resolved, start, end in _kt_resolved_candidates(path):
+        if _fully_in_any_span(start, end, comment_spans):
+            continue
+        for capability, needles in table.items():
+            if capability in found:
+                continue
+            if any(_needle_matches_resolved(needle, resolved) for needle in needles):
+                found.add(capability)
+    return found
+
+
+# frob:ticket T-0664
+# frob:waive DUP001 reason="mirrors _c_binding_operations/_rust_binding_operations/_ts_binding_operations/_python_binding_operations's identical resolved-candidate-to-DANGEROUS_OPERATIONS loop shape -- the intentional per-language resolver pattern this module already establishes, not accidental duplication"  # noqa: E501
+def _kt_binding_operations(
+    path: Path, comment_spans: tuple[ByteSpan, ...]
+) -> tuple[_DangerousOperation, ...]:
+    """`DANGEROUS_OPERATIONS` kotlin entries observed via import/alias-aware
+    resolution only (T-0664) -- `_scan_file_operations`'s resolver-backed
+    sibling to `_kt_binding_capabilities`. Mirrors `_c_binding_operations`."""
+    candidates = _kt_resolved_candidates(path)
+    if not candidates:
+        return ()
+    matched: list[_DangerousOperation] = []
+    for entry in DANGEROUS_OPERATIONS:
+        if entry.language != "kotlin" or not entry.needles:
+            continue
+        for resolved, start, end in candidates:
+            if _fully_in_any_span(start, end, comment_spans):
+                continue
+            if any(
+                _needle_matches_resolved(needle, resolved) for needle in entry.needles
+            ):
+                matched.append(entry)
+                break
+    return tuple(matched)
+
+
+# frob:ticket T-0664
+# frob:waive DUP001 reason="mirrors _extra_c_binding_operations/_extra_ts_binding_operations/_extra_rust_binding_operations's identical binding-resolved-minus-already-matched dedupe shape -- the intentional per-language resolver pattern this module already establishes, not accidental duplication"  # noqa: E501
+def _extra_kt_binding_operations(
+    path: Path,
+    comment_spans: tuple[ByteSpan, ...],
+    already_matched: list[_DangerousOperation],
+) -> list[_DangerousOperation]:
+    """`_kt_binding_operations` entries not already present in
+    `already_matched` (T-0664) -- kotlin sibling of `_extra_c_binding_
+    operations`, same set-based dedupe."""
+    seen = set(already_matched)
+    extra: list[_DangerousOperation] = []
+    for entry in _kt_binding_operations(path, comment_spans):
+        if entry not in seen:
+            extra.append(entry)
+            seen.add(entry)
+    return extra
 
 
 def _c_binding_capabilities(

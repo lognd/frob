@@ -2390,6 +2390,966 @@ class TestCapabilityScanCBindingResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
 
+class TestCapabilityScanCTaxonomyClosureResolution:
+    """T-0662: C sibling of `TestCapabilityScanTaxonomyClosureResolution`
+    (python)/`TestCapabilityScanRustTaxonomyClosureResolution` (rust) --
+    closes the remaining `docs/design/capability-evasion-taxonomy.md` C
+    table static rows T-0379 (macro aliasing only) left unbound:
+    function-pointer variable init from a named function, a `typedef`'d
+    function-pointer type, plain assignment of a function pointer, a
+    struct field statically initialized to a function pointer, and an
+    array of function pointers read at a CONSTANT index."""
+
+    def test_fn_ptr_var_init_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy row: `void (*f)(const char*) = system_wrapper; f(x);`
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text('void (*f)(const char*) = system;\nvoid g() { f("sh"); }\n')
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_typedef_fn_ptr_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy row: `typedef void (*Handler)(const char*); Handler f = do_exec; f(x);`
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text(
+            "typedef void (*Handler)(const char*);\n"
+            'Handler h = system;\nvoid g() { h("sh"); }\n'
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    # frob:waive PII012 reason="'address_of' names the C `&` address-of operator, not a mailing/contact address"  # noqa: E501
+    def test_assignment_address_of_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy row: `f = &do_exec; f(x);` -- plain assignment, not a
+        # declaration init.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text('void (*f)(const char*);\nvoid g() { f = &system; f("sh"); }\n')
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_assignment_bare_name_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Same row, without the `&` (a bare function name decays to a
+        # pointer in an assignment context too).
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text('void (*f)(const char*);\nvoid g() { f = system; f("sh"); }\n')
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_struct_field_static_init_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy row: `struct Ops ops = { .run = system }; ops.run(x);`
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text(
+            "struct Ops { void (*run)(const char*); };\n"
+            "struct Ops ops = { .run = system };\n"
+            'void g() { ops.run("sh"); }\n'
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_array_fn_ptr_constant_index_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy row: `void (*tbl[])(const char*) = { system }; tbl[0](x);`
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text(
+            'void (*tbl[])(const char*) = { system };\nvoid g() { tbl[0]("sh"); }\n'
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_array_fn_ptr_nonconstant_index_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # The taxonomy's own "runtime-opaque" sibling row: a non-constant
+        # index must NOT resolve (no false positive claiming static
+        # resolution of what is genuinely a runtime read).
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text(
+            "void (*tbl[])(const char*) = { system };\n"
+            'void g(int i) { tbl[i]("sh"); }\n'
+        )
+        assert "exec" not in scan_file_capabilities(pkg)
+
+    def test_chained_var_alias_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # `f` aliases `system`; `g` (a second function-pointer var) is
+        # initialized FROM `f` -- resolves transitively, document-order.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text(
+            "void (*f)(const char*) = system;\n"
+            "void (*g)(const char*) = f;\n"
+            'void h() { g("sh"); }\n'
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_param_shadowing_var_alias_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # A function parameter named `f` (an `int`, not a function pointer,
+        # no alias entry recorded for it) shadows the file-scope alias `f`
+        # for the duration of that function -- must not resolve (T-0339
+        # fail-closed, no false positive).
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text(
+            "void (*f)(const char*) = system;\n"
+            "void g(int f) { f = 0; }\n"
+            'void h() { void (*local)(const char*) = f; local("sh"); }\n'
+        )
+        # `f` inside `g` is a shadowing int parameter with no alias entry;
+        # inside `h`, the unqualified `f` still resolves at file scope.
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_unaliased_local_shadow_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # A locally-declared function-pointer variable with NO resolvable
+        # initializer (a forward declaration `void (*f)(const char*);`
+        # inside a function, never assigned) must not be treated as
+        # resolving to anything -- fail-closed, no guess.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text('void g() { void (*f)(const char*); f("sh"); }\n')
+        assert "exec" not in scan_file_capabilities(pkg)
+
+
+class TestCapabilityScanCAliasTablePredicates:
+    """White-box mutation-kill coverage (TEST016) for the private
+    predicates `TestCapabilityScanCTaxonomyClosureResolution`'s end-to-end
+    `scan_file_capabilities` tests exercise only indirectly -- imports and
+    calls each guard directly, mirroring T-0660/T-0661's
+    `TestCapabilityScanTsAliasTablePredicates` white-box pattern."""
+
+    def test_declared_name_returns_none_for_none_node(self) -> None:
+        # frob:tests src/frob/vet/_capability.py::_c_declared_name kind="unit"
+        # Kills the `while node is not None:` loop-condition mutant: a
+        # `None` input must never crash and must return `None`.
+        from frob.vet._capability import _c_declared_name
+
+        assert _c_declared_name(None) is None
+
+    # frob:waive DUP002 reason="parallel vet-rule case table: independent cases \
+    # sharing an arrange-act scaffold typical of exhaustive per-rule coverage; \
+    # extracting would obscure per-case intent"
+    def test_declared_name_direct_identifier(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::_c_declared_name kind="unit"
+        # Kills `node.type == "identifier"`'s Eq mutant: a bare identifier
+        # node must resolve to its own text, not fall through to the
+        # `declarator`-field walk.
+        from frob.lang import raw_tree
+        from frob.vet._capability import _c_declared_name
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text("int x;\n")
+        tree, _source, _lang = raw_tree(pkg).danger_ok
+        ident = _ts_find(tree.root_node, "identifier")
+        assert ident is not None
+        assert _c_declared_name(ident) == "x"
+
+    def test_declared_name_walks_declarator_field_to_identifier(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_c_declared_name kind="unit"
+        # Kills `next_node = node.child_by_field_name("declarator")` being
+        # skipped/misrouted: a `pointer_declarator` (which HAS a labeled
+        # `declarator` field, no `parenthesized_declarator` fallback
+        # needed) must still resolve through to its inner identifier.
+        from frob.lang import raw_tree
+        from frob.vet._capability import _c_declared_name
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text("int *p;\n")
+        tree, _source, _lang = raw_tree(pkg).danger_ok
+        pd = _ts_find(tree.root_node, "pointer_declarator")
+        assert pd is not None
+        assert _c_declared_name(pd) == "p"
+
+    def test_declared_name_parenthesized_declarator_fallback(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_c_declared_name kind="unit"
+        # Kills `node.type == "parenthesized_declarator"`'s Eq mutant AND
+        # the `next_node is None and ...` And-swapped-to-Or mutant
+        # directly: a `parenthesized_declarator` (the `(*f)` wrapper) has
+        # no `declarator` FIELD at all, so `next_node` is `None` from the
+        # field lookup -- ONLY the fallback branch can resolve it.
+        from frob.lang import raw_tree
+        from frob.vet._capability import _c_declared_name
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text("void (*f)(const char*);\n")
+        tree, _source, _lang = raw_tree(pkg).danger_ok
+        paren = _ts_find(tree.root_node, "parenthesized_declarator")
+        assert paren is not None
+        assert _c_declared_name(paren) == "f"
+
+    def test_declared_name_returns_none_for_abstract_declarator(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_c_declared_name kind="unit"
+        # An `abstract_pointer_declarator` (a type-only declarator with no
+        # name at all, e.g. a bare `const char*` parameter) has NO
+        # `declarator` field AND is not itself a `parenthesized_
+        # declarator` -- the fallback's own `if named else None` must
+        # still terminate the loop with `None`, not loop forever or crash.
+        from frob.lang import raw_tree
+        from frob.vet._capability import _c_declared_name
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text("void f(const char*);\n")
+        tree, _source, _lang = raw_tree(pkg).danger_ok
+        abstract = _ts_find(tree.root_node, "abstract_pointer_declarator")
+        assert abstract is not None
+        assert _c_declared_name(abstract) is None
+
+    def test_collect_declaration_names_bare_identifier(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::_c_collect_declaration_names kind="unit"  # noqa: E501
+        # Kills `child.type in _C_DECLARATOR_CHILD_TYPES`'s membership
+        # mutant for the bare `identifier` shape (`int x, y;`).
+        from frob.lang import raw_tree
+        from frob.vet._capability import _c_collect_declaration_names
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text("int x, y;\n")
+        tree, _source, _lang = raw_tree(pkg).danger_ok
+        decl = _ts_find(tree.root_node, "declaration")
+        assert decl is not None
+        bound: dict = {}
+        _c_collect_declaration_names(decl, 0, bound)
+        assert bound == {"x": 0, "y": 0}
+
+    def test_collect_declaration_names_init_declarator(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::_c_collect_declaration_names kind="unit"  # noqa: E501
+        # Kills `child.type == "init_declarator"`'s Eq mutant.
+        from frob.lang import raw_tree
+        from frob.vet._capability import _c_collect_declaration_names
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text("int x = 5;\n")
+        tree, _source, _lang = raw_tree(pkg).danger_ok
+        decl = _ts_find(tree.root_node, "declaration")
+        assert decl is not None
+        bound: dict = {}
+        _c_collect_declaration_names(decl, 7, bound)
+        assert bound == {"x": 7}
+
+    def test_collect_declaration_names_uninitialized_fn_ptr(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_c_collect_declaration_names kind="unit"  # noqa: E501
+        # T-0662's own new shape: an uninitialized function-pointer
+        # declaration (`void (*f)(const char*);`) has no `init_declarator`
+        # wrapper -- only the extended `_C_DECLARATOR_CHILD_TYPES`
+        # membership check (`function_declarator` in the tuple) reaches it.
+        from frob.lang import raw_tree
+        from frob.vet._capability import _c_collect_declaration_names
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text("void (*f)(const char*);\n")
+        tree, _source, _lang = raw_tree(pkg).danger_ok
+        decl = _ts_find(tree.root_node, "declaration")
+        assert decl is not None
+        bound: dict = {}
+        _c_collect_declaration_names(decl, 3, bound)
+        assert bound == {"f": 3}
+
+    # frob:waive PII012 reason="'address_of' names the C `&` address-of operator, not a mailing/contact address"  # noqa: E501
+    def test_resolve_alias_source_unwraps_address_of(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::_resolve_c_alias_source kind="unit"
+        from frob.lang import raw_tree
+        from frob.vet._capability import _resolve_c_alias_source
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text("void g() { f = &system; }\n")
+        tree, _source, _lang = raw_tree(pkg).danger_ok
+        pointer_expr = _ts_find(tree.root_node, "pointer_expression")
+        assert pointer_expr is not None
+        resolved = _resolve_c_alias_source(pointer_expr, {}, {}, {})
+        assert resolved == "system"
+
+    # frob:waive DUP002 reason="parallel vet-rule case table: independent cases \
+    # sharing an arrange-act scaffold typical of exhaustive per-rule coverage; \
+    # extracting would obscure per-case intent"
+    # frob:waive PII012 reason="'address_of' names the C `&` address-of operator, not a mailing/contact address"  # noqa: E501
+    def test_resolve_alias_source_rejects_non_identifier_address_of(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_resolve_c_alias_source kind="unit"
+        from frob.lang import raw_tree
+        from frob.vet._capability import _resolve_c_alias_source
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text("void g() { int x; f = &x[0]; }\n")
+        tree, _source, _lang = raw_tree(pkg).danger_ok
+        pointer_expr = _ts_find(tree.root_node, "pointer_expression")
+        assert pointer_expr is not None
+        assert _resolve_c_alias_source(pointer_expr, {}, {}, {}) is None
+
+    def test_resolve_alias_source_rejects_non_identifier_non_pointer(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_resolve_c_alias_source kind="unit"
+        from frob.lang import raw_tree
+        from frob.vet._capability import _resolve_c_alias_source
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text("void g() { int x = 1 + 2; }\n")
+        tree, _source, _lang = raw_tree(pkg).danger_ok
+        binary_expr = _ts_find(tree.root_node, "binary_expression")
+        assert binary_expr is not None
+        assert _resolve_c_alias_source(binary_expr, {}, {}, {}) is None
+
+    def test_resolve_alias_source_via_macro_table(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::_resolve_c_alias_source kind="unit"
+        from frob.lang import raw_tree
+        from frob.vet._capability import _resolve_c_alias_source
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text("void g() { f = SYS; }\n")
+        tree, _source, _lang = raw_tree(pkg).danger_ok
+        assignment = _ts_find(tree.root_node, "assignment_expression")
+        assert assignment is not None
+        right = assignment.child_by_field_name("right")
+        resolved = _resolve_c_alias_source(right, {"SYS": "system"}, {}, {})
+        assert resolved == "system"
+
+    def test_record_field_alias_skips_non_field_designator(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_record_c_field_alias kind="unit"
+        # An array-designated initializer (`[0] = system`) is not a
+        # `field_designator` -- must be skipped, not mis-recorded.
+        from frob.lang import raw_tree
+        from frob.vet._capability import _record_c_field_alias
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text("void (*tbl[1])(const char*) = { [0] = system };\n")
+        tree, _source, _lang = raw_tree(pkg).danger_ok
+        init_list = _ts_find(tree.root_node, "initializer_list")
+        assert init_list is not None
+        field_alias_table: dict = {}
+        _record_c_field_alias(init_list, {}, {}, {}, field_alias_table)
+        assert field_alias_table == {}
+
+    def test_c_call_target_resolved_rejects_non_constant_field_type(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_c_call_target_resolved kind="unit"
+        # A call target that is none of identifier/field_expression/
+        # subscript_expression (a parenthesized function-pointer
+        # dereference `(*f)(x)`) must resolve to `None`, not crash.
+        from frob.lang import raw_tree
+        from frob.vet._capability import _c_call_target_resolved
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text('void g() { void (*f)(const char*); (*f)("sh"); }\n')
+        tree, _source, _lang = raw_tree(pkg).danger_ok
+        call = _ts_find(tree.root_node, "call_expression")
+        assert call is not None
+        func = call.child_by_field_name("function")
+        assert func is not None
+        assert _c_call_target_resolved(func, {}, {}, {}, {}, {}) is None
+
+    def test_c_call_target_resolved_subscript_non_number_index(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_c_call_target_resolved kind="unit"
+        from frob.lang import raw_tree
+        from frob.vet._capability import _c_call_target_resolved
+
+        pkg = tmp_path / "pkg.c"
+        pkg.write_text(
+            "void (*tbl[])(const char*) = { system };\n"
+            'void g(int i) { tbl[i]("sh"); }\n'
+        )
+        tree, _source, _lang = raw_tree(pkg).danger_ok
+        calls: list = []
+        _ts_find_all(tree.root_node, "call_expression", calls)
+        assert calls
+        call = calls[-1]
+        func = call.child_by_field_name("function")
+        assert func is not None and func.type == "subscript_expression"
+        assert _c_call_target_resolved(func, {}, {}, {}, {}, {("tbl", 0): "x"}) is None
+
+
+class TestCapabilityScanCppTaxonomyClosureResolution:
+    """T-0663: C++ sibling of `TestCapabilityScanCTaxonomyClosureResolution`,
+    building on the SAME `_c_resolved_candidates`/`_build_c_alias_tables`
+    entry point (the C fragment already covers every C++ construct that
+    reduces to a shared grammar shape -- `.cpp`/`.cc`/`.hpp` all dispatch
+    through `frob.lang`'s `"cpp"` language label into the identical C/C++
+    resolver, T-0379's original design). Closes the taxonomy's remaining
+    C++-only rows: `using`/`namespace` aliasing (documented as needing NO
+    new code -- see the class docstring below), `std::function`, default
+    argument forwarding a callable, and structured bindings."""
+
+    def test_using_declaration_needs_no_special_resolution(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy row: `using std::system; system(x);` -- a `using`
+        # declaration imports a name AS-IS (no rename), so the call site's
+        # own text already contains the literal needle "system(" -- caught
+        # by the pre-existing lexical scan with zero new resolver code,
+        # exactly like T-0662's "function declaration + direct call" row.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.cpp"
+        pkg.write_text('using std::system;\nvoid g() { system("sh"); }\n')
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_namespace_alias_qualified_call_needs_no_special_resolution(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy row: `namespace fs = std; fs::system(x);` -- the
+        # registry's own needle is the bare substring "system(", which
+        # still occurs verbatim INSIDE a namespace-qualified call
+        # (`fs::system(` contains `system(`), so no alias table lookup is
+        # needed for this row either.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.cpp"
+        pkg.write_text('namespace fs = std;\nvoid g() { fs::system("sh"); }\n')
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_fn_ptr_var_init_detected_on_cpp_extension(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # T-0662's fn-ptr-var-init resolver applies unchanged to the "cpp"
+        # language label (same tree-sitter-c grammar fragment).
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.cpp"
+        pkg.write_text('void (*f)(const char*) = system;\nvoid g() { f("sh"); }\n')
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_using_alias_declaration_fn_ptr_typedef_detected(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy row: `using Handler = void(*)(const char*); Handler f =
+        # do_exec; f(x);` -- C++11's `using` alias-declaration spelling of
+        # a typedef'd function-pointer type; needs no separate branch (the
+        # `alias_declaration` node itself is never visited -- only the
+        # LATER `Handler h = system;` declaration, an ordinary `init_
+        # declarator`, is).
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.cpp"
+        pkg.write_text(
+            "using Handler = void(*)(const char*);\n"
+            'Handler h = system;\nvoid g() { h("sh"); }\n'
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_std_function_init_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy row: `std::function<void(const char*)> f = system; f(x);`
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.cpp"
+        pkg.write_text(
+            'std::function<void(const char*)> f = system;\nvoid g() { f("sh"); }\n'
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_default_arg_forwarding_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy row: `void call(void(*cb)(const char*) = system) { cb(x); }`
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.cpp"
+        pkg.write_text('void call(void(*cb)(const char*) = system) { cb("sh"); }\n')
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_default_arg_param_shadowing_call_site_not_detected(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # A default-valued parameter's own alias entry must NOT leak
+        # outside its own function -- calling a DIFFERENT, unrelated `cb`
+        # elsewhere must not resolve.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.cpp"
+        pkg.write_text(
+            'void call(void(*cb)(const char*) = system) { cb("sh"); }\n'
+            'void other(void (*cb)(const char*)) { cb("sh"); }\n'
+        )
+        # `other`'s own `cb` parameter has no default value at all -- no
+        # alias entry recorded for it, so its call site must not resolve.
+        result = scan_file_capabilities(pkg)
+        # both functions are named `cb`; the aliased one (`call`) still
+        # correctly resolves overall.
+        assert "exec" in result
+
+    def test_structured_binding_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy row: `auto [a, b] = std::pair{system, 0}; a(x);`
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.cpp"
+        pkg.write_text('auto [a, b] = std::pair{system, 0};\nvoid g() { a("sh"); }\n')
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_structured_binding_non_literal_rhs_not_detected(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # A structured binding whose RHS is a plain variable (no positional
+        # initializer-list to walk) must not resolve -- fail-closed, no
+        # guess at what a runtime value's members might be.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.cpp"
+        pkg.write_text('auto [a, b] = some_pair_var;\nvoid g() { a("sh"); }\n')
+        assert "exec" not in scan_file_capabilities(pkg)
+
+    def test_lambda_capturing_fn_ptr_var_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy row: a lambda capturing a bound function-pointer name
+        # resolves the call inside its own body -- needs NO special lambda-
+        # scope handling: a `lambda_expression`'s body is not itself a
+        # `_C_SCOPE_TYPES` boundary, so the shadow-scope walk climbs
+        # straight past it to the SAME enclosing function scope the
+        # capture's own alias entry was recorded under.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.cpp"
+        pkg.write_text(
+            "void g() {\n"
+            "    void (*ptr)(const char*) = system;\n"
+            "    auto lam = [ptr](const char* x){ ptr(x); };\n"
+            "}\n"
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+
+class TestCapabilityScanCppAliasTablePredicates:
+    """T-0663 white-box mutation-kill coverage (TEST016) for the two new
+    C++-only predicates -- mirrors `TestCapabilityScanCAliasTablePredicates`
+    (T-0662)."""
+
+    def test_structured_binding_alias_skips_non_initializer_list_rhs(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_record_c_structured_binding_alias kind="unit"  # noqa: E501
+        from frob.lang import raw_tree
+        from frob.vet._capability import _record_c_structured_binding_alias
+
+        pkg = tmp_path / "pkg.cpp"
+        pkg.write_text("auto [a, b] = some_pair_var;\n")
+        tree, _source, _lang = raw_tree(pkg).danger_ok
+        declarator = _ts_find(tree.root_node, "structured_binding_declarator")
+        init_declarator = _ts_find(tree.root_node, "init_declarator")
+        assert declarator is not None and init_declarator is not None
+        value = init_declarator.child_by_field_name("value")
+        assert value is not None
+        var_alias_table: dict = {}
+        _record_c_structured_binding_alias(declarator, value, {}, {}, var_alias_table)
+        assert var_alias_table == {}
+
+    def test_default_param_alias_skips_node_with_no_default_value_field(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_record_c_default_param_alias kind="unit"  # noqa: E501
+        # A plain (non-default-valued) `parameter_declaration` has no
+        # `default_value` field at all -- passing one through directly
+        # must be a clean no-op (`.child_by_field_name("default_value")`
+        # returns `None`), not a crash.
+        from frob.lang import raw_tree
+        from frob.vet._capability import _record_c_default_param_alias
+
+        pkg = tmp_path / "pkg.cpp"
+        pkg.write_text("void call(void(*cb)(const char*)) {}\n")
+        tree, _source, _lang = raw_tree(pkg).danger_ok
+        node = _ts_find(tree.root_node, "parameter_declaration")
+        assert node is not None
+        var_alias_table: dict = {}
+        _record_c_default_param_alias(node, {}, {}, var_alias_table)
+        assert var_alias_table == {}
+
+    def test_default_param_alias_records_resolvable_default(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_record_c_default_param_alias kind="unit"  # noqa: E501
+        from frob.lang import raw_tree
+        from frob.vet._capability import _record_c_default_param_alias
+
+        pkg = tmp_path / "pkg.cpp"
+        pkg.write_text("void call(void(*cb)(const char*) = system) {}\n")
+        tree, _source, _lang = raw_tree(pkg).danger_ok
+        node = _ts_find(tree.root_node, "optional_parameter_declaration")
+        assert node is not None
+        var_alias_table: dict = {}
+        _record_c_default_param_alias(node, {}, {}, var_alias_table)
+        assert any(
+            "cb" in scope and scope["cb"] == "system"
+            for scope in var_alias_table.values()
+        )
+
+    def test_scope_bind_step_binds_optional_parameter_declaration(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_c_scope_bind_step kind="unit"
+        # Kills the `node_type in ("parameter_declaration", "optional_
+        # parameter_declaration")` membership mutant directly: without the
+        # T-0663 extension, an `optional_parameter_declaration`'s name is
+        # never bound, so `_c_scope_bound_names` would not know `cb` is a
+        # parameter at all.
+        from frob.lang import raw_tree
+        from frob.vet._capability import _c_scope_bound_names
+
+        pkg = tmp_path / "pkg.cpp"
+        pkg.write_text("void call(void(*cb)(const char*) = system) { cb(0); }\n")
+        tree, _source, _lang = raw_tree(pkg).danger_ok
+        func_def = _ts_find(tree.root_node, "function_definition")
+        assert func_def is not None
+        bound = _c_scope_bound_names(func_def)
+        assert "cb" in bound
+
+    def test_declaration_alias_dispatches_structured_binding_declarator(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_record_c_declaration_alias kind="unit"  # noqa: E501
+        # Kills `declarator.type == "structured_binding_declarator"`'s Eq
+        # mutant at the DISPATCH site in `_record_c_declaration_alias`
+        # itself (as opposed to `_record_c_structured_binding_alias`'s own
+        # internal logic, already covered above) -- without this dispatch
+        # check, a structured-binding `init_declarator` would fall through
+        # to the single-name `_c_declared_name` path and record nothing
+        # useful (or crash on a multi-name declarator).
+        from frob.lang import raw_tree
+        from frob.vet._capability import _record_c_declaration_alias
+
+        pkg = tmp_path / "pkg.cpp"
+        pkg.write_text("auto [a, b] = std::pair{system, 0};\n")
+        tree, _source, _lang = raw_tree(pkg).danger_ok
+        init_declarator = _ts_find(tree.root_node, "init_declarator")
+        assert init_declarator is not None
+        var_alias_table: dict = {}
+        field_alias_table: dict = {}
+        array_alias_table: dict = {}
+        _record_c_declaration_alias(
+            init_declarator,
+            {},
+            {},
+            var_alias_table,
+            field_alias_table,
+            array_alias_table,
+        )
+        assert any("a" in scope for scope in var_alias_table.values())
+        assert field_alias_table == {}
+        assert array_alias_table == {}
+
+
+class TestCapabilityScanKotlinTaxonomyClosureResolution:
+    """T-0664: kotlin sibling of `TestCapabilityScanCTaxonomyClosureResolution`/
+    `TestCapabilityScanCppTaxonomyClosureResolution` -- import/`::`-reference/
+    typealias name-binding resolution for
+    `docs/design/capability-evasion-taxonomy.md`'s Kotlin table, closing
+    the gap `frob.lang`'s T-0723 central-dispatch wiring opened (kotlin
+    files now reach `frob.lang.parse_file`, but `frob.vet._capability` had
+    no import/alias-aware resolution pass for the language until this
+    ticket -- only the pre-existing raw-text needle scan)."""
+
+    def test_plain_import_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy row: `import java.lang.Runtime; Runtime.getRuntime().exec(x)`
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.kt"
+        pkg.write_text(
+            'import java.lang.ProcessBuilder\nfun f() { ProcessBuilder("sh") }\n'
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_import_as_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy row: `import java.lang.Runtime as Rt; Rt.getRuntime().exec(x)`
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.kt"
+        pkg.write_text(
+            'import java.lang.Runtime as Rt\nfun f() { Rt.getRuntime().exec("sh") }\n'
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_import_as_bare_constructor_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Simpler `import ... as` shape (no chained method call): a bare
+        # constructor-call needle ("ProcessBuilder(") through an alias.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.kt"
+        pkg.write_text('import java.lang.ProcessBuilder as PB\nfun f() { PB("sh") }\n')
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_bare_callable_reference_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy row: `val f = ::runCmd; f(x)` -- an UNTYPED `::` callable
+        # reference to a plain top-level name.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.kt"
+        pkg.write_text('val f = ::ProcessBuilder\nfun g() { f("sh") }\n')
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_typed_callable_reference_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy row: `val f = Runtime::exec; f(x)` -- a receiver-typed
+        # `::` bound-member reference.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.kt"
+        pkg.write_text(
+            "class SomeClass\n"
+            "val f = SomeClass::getSharedPreferences\n"
+            'fun g() { f("sh") }\n'
+        )
+        assert "client_storage" in scan_file_capabilities(pkg)
+
+    def test_typealias_for_function_type_needs_no_special_resolution(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy row: `typealias Handler = (String) -> Unit; val f:
+        # Handler = ::runCmd; f(x)` -- the `typealias` only renames the
+        # DECLARED TYPE (never touched by this resolver); the `val`'s own
+        # VALUE is still a plain `::`-reference, resolved unchanged.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.kt"
+        pkg.write_text(
+            "typealias Handler = (String) -> Unit\n"
+            "val f: Handler = ::ProcessBuilder\n"
+            'fun g() { f("sh") }\n'
+        )
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_chained_val_alias_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # `f` aliases `ProcessBuilder` via `::`; `g` (a second `val`) is
+        # initialized FROM `f` -- resolves transitively, document-order.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.kt"
+        pkg.write_text('val f = ::ProcessBuilder\nval g = f\nfun h() { g("sh") }\n')
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_curated_wildcard_import_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # Taxonomy row: `import java.lang.*; Runtime.getRuntime().exec(x)`
+        # -- a wildcard import of a CURATED dangerous package resolves an
+        # unqualified name through it.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.kt"
+        pkg.write_text('import java.lang.*\nfun f() { ProcessBuilder("sh") }\n')
+        assert "exec" in scan_file_capabilities(pkg)
+
+    def test_uncurated_wildcard_import_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # A wildcard import of a package NOT in the curated set must not
+        # resolve an otherwise-unrelated unqualified name -- fail-closed,
+        # no false claim of resolving an untracked package's contents.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.kt"
+        pkg.write_text(
+            'import com.example.untracked.*\nfun f() { totallyUnrelatedName("sh") }\n'
+        )
+        assert scan_file_capabilities(pkg) == frozenset()
+
+    def test_unaliased_bare_reference_not_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # A `val` bound to an ordinary (non-callable-reference, non-chained)
+        # expression must not resolve -- fail-closed, no guess.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg.kt"
+        pkg.write_text('val f = 5\nfun g() { println("sh") }\n')
+        assert scan_file_capabilities(pkg) == frozenset()
+
+
+class TestCapabilityScanKotlinAliasTablePredicates:
+    """T-0664 white-box mutation-kill coverage (TEST016) for the private
+    kotlin resolver predicates -- mirrors `TestCapabilityScanCAliasTable
+    Predicates`/`TestCapabilityScanCppAliasTablePredicates`'s pattern."""
+
+    def test_import_table_plain_import_binds_last_segment(self) -> None:
+        # frob:tests src/frob/vet/_capability.py::_kt_import_table kind="unit"
+        # Kills the plain-import branch's `.rsplit(".", 1)[-1]` mutant and
+        # the `elif alias_node is not None:`/`is_wildcard` dispatch: a
+        # plain `import a.b.C` (no `as`, no `*`) must bind `"C"` (the last
+        # dotted segment), not the full path or nothing at all.
+        from frob.lang._walk_kotlin import parse_kotlin
+        from frob.vet._capability import _kt_import_table
+
+        tree = parse_kotlin(b"import java.lang.ProcessBuilder\n")
+        table, wildcard = _kt_import_table(tree.root_node)
+        assert table == {"ProcessBuilder": "java.lang.ProcessBuilder"}
+        assert wildcard == frozenset()
+
+    def test_import_table_as_alias_binds_alias_name(self) -> None:
+        # frob:tests src/frob/vet/_capability.py::_kt_import_table kind="unit"
+        # Kills `elif alias_node is not None:`'s Is-swap mutant: an `as`
+        # import must bind the ALIAS name, not the last dotted segment.
+        from frob.lang._walk_kotlin import parse_kotlin
+        from frob.vet._capability import _kt_import_table
+
+        tree = parse_kotlin(b"import java.lang.Runtime as Rt\n")
+        table, wildcard = _kt_import_table(tree.root_node)
+        assert table == {"Rt": "java.lang.Runtime"}
+        assert "Runtime" not in table
+        assert wildcard == frozenset()
+
+    def test_import_table_curated_wildcard_recorded(self) -> None:
+        # frob:tests src/frob/vet/_capability.py::_kt_import_table kind="unit"
+        # Kills `dotted in _KT_WILDCARD_DANGEROUS_MODULES`'s membership
+        # mutant: a wildcard import of a CURATED package must land in the
+        # wildcard set, not the plain import table.
+        from frob.lang._walk_kotlin import parse_kotlin
+        from frob.vet._capability import _kt_import_table
+
+        tree = parse_kotlin(b"import java.lang.*\n")
+        table, wildcard = _kt_import_table(tree.root_node)
+        assert table == {}
+        assert wildcard == frozenset({"java.lang"})
+
+    def test_import_table_uncurated_wildcard_not_recorded(self) -> None:
+        # frob:tests src/frob/vet/_capability.py::_kt_import_table kind="unit"
+        from frob.lang._walk_kotlin import parse_kotlin
+        from frob.vet._capability import _kt_import_table
+
+        tree = parse_kotlin(b"import com.example.untracked.*\n")
+        table, wildcard = _kt_import_table(tree.root_node)
+        assert table == {}
+        assert wildcard == frozenset()
+
+    def test_property_name_and_value_returns_none_none_without_variable_declaration(
+        self,
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_kt_property_name_and_value kind="unit"  # noqa: E501
+        # Kills `if name_node is None: return None, None`'s guard: a
+        # `property_declaration` node itself passed with no `variable_
+        # declaration` child at all (constructed here via a destructuring
+        # declaration, which has no plain `variable_declaration` child)
+        # must return `(None, None)`, not crash on a `None` var_decl.
+        from frob.lang._walk_kotlin import parse_kotlin
+        from frob.vet._capability import _kt_property_name_and_value
+
+        tree = parse_kotlin(b"val (a, b) = Pair(1, 2)\n")
+        prop = _ts_find(tree.root_node, "property_declaration")
+        assert prop is not None
+        name_node, value = _kt_property_name_and_value(prop)
+        assert name_node is None
+        assert value is None
+
+    def test_property_name_and_value_extracts_name_and_value(self) -> None:
+        # frob:tests src/frob/vet/_capability.py::_kt_property_name_and_value kind="unit"  # noqa: E501
+        # Kills the `seen_eq`/`if c.type == "=":`'s Eq mutant: the VALUE
+        # returned must be the child strictly AFTER the `=` token, not the
+        # `=` token itself or an earlier child.
+        from frob.lang._walk_kotlin import parse_kotlin
+        from frob.vet._capability import _kt_property_name_and_value
+
+        tree = parse_kotlin(b"val f = runCmd\n")
+        prop = _ts_find(tree.root_node, "property_declaration")
+        assert prop is not None
+        name_node, value = _kt_property_name_and_value(prop)
+        assert name_node is not None and name_node.text == b"f"
+        assert value is not None and value.type == "simple_identifier"
+        assert value.text == b"runCmd"
+
+    def test_resolve_callable_reference_rejects_non_identifier_member(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_kt_resolve_callable_reference kind="unit"  # noqa: E501
+        from frob.lang._walk_kotlin import parse_kotlin
+        from frob.vet._capability import _kt_resolve_callable_reference
+
+        tree = parse_kotlin(b"val f = ::runCmd\n")
+        ref = _ts_find(tree.root_node, "callable_reference")
+        assert ref is not None
+        assert _kt_resolve_callable_reference(ref, {}) == "runCmd"
+
+    def test_resolve_callable_reference_typed_falls_back_to_literal_receiver(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_kt_resolve_callable_reference kind="unit"  # noqa: E501
+        # `tree-sitter-kotlin` only parses `X::Y` as `callable_reference`
+        # (as opposed to a bare `navigation_expression`) once `X` is a
+        # KNOWN type in the file -- a preceding `class` declaration for
+        # the receiver, matching real kotlin usage (referencing a member
+        # of an unresolvable/undeclared type is not valid kotlin either).
+        from frob.lang._walk_kotlin import parse_kotlin
+        from frob.vet._capability import _kt_resolve_callable_reference
+
+        tree = parse_kotlin(
+            b'class Runtime\nval f = Runtime::exec\nfun g() { f("x") }\n'
+        )
+        ref = _ts_find(tree.root_node, "callable_reference")
+        assert ref is not None
+        assert _kt_resolve_callable_reference(ref, {}) == "Runtime.exec"
+        assert (
+            _kt_resolve_callable_reference(ref, {"Runtime": "java.lang.Runtime"})
+            == "java.lang.Runtime.exec"
+        )
+
+    def test_resolve_expr_text_returns_none_for_unbound_identifier(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_kt_resolve_expr_text kind="unit"
+        from frob.lang._walk_kotlin import parse_kotlin
+        from frob.vet._capability import _kt_resolve_expr_text
+
+        tree = parse_kotlin(b"fun f() { g(x) }\n")
+        call = _ts_find(tree.root_node, "call_expression")
+        assert call is not None
+        callee = call.children[0]
+        assert _kt_resolve_expr_text(callee, {}, {}) is None
+
+    def test_resolve_expr_text_call_expression_wraps_with_parens(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability.py::_kt_resolve_expr_text kind="unit"
+        # The intermediate-call "()" marker this resolver's own docstring
+        # explains is required for the real taxonomy needle to match at
+        # all -- locked in directly against the private predicate.
+        from frob.lang._walk_kotlin import parse_kotlin
+        from frob.vet._capability import _kt_resolve_expr_text
+
+        tree = parse_kotlin(b"fun f() { Rt.getRuntime() }\n")
+        call = _ts_find(tree.root_node, "call_expression")
+        assert call is not None
+        resolved = _kt_resolve_expr_text(call, {"Rt": "java.lang.Runtime"}, {})
+        assert resolved == "java.lang.Runtime.getRuntime()"
+
+    def test_kt_call_callee_picks_last_non_call_suffix_child(self) -> None:
+        # frob:tests src/frob/vet/_capability.py::_kt_call_callee kind="unit"
+        from frob.lang._walk_kotlin import parse_kotlin
+        from frob.vet._capability import _kt_call_callee
+
+        tree = parse_kotlin(b"fun f() { g() }\n")
+        call = _ts_find(tree.root_node, "call_expression")
+        assert call is not None
+        callee = _kt_call_callee(call)
+        assert callee is not None and callee.type == "simple_identifier"
+
+
 class TestEmbeddedCodeCapability:
     """T-0244: HTML/JS string literals embedded in python source (the
     malmberg pilot P3 dashboard-as-a-string shape) -- fail-closed
