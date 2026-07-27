@@ -1783,7 +1783,7 @@ User mandate 2026-07-22: contention semantics are worthless unless ENFORCED -- a
 ```yaml
 id: T-0709
 title: 'runtime hot-graph: section-level timing sketches across the repo (parent)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-22'
@@ -1795,14 +1795,70 @@ scope:
 - src/frob/perf/**
 - src/frob/stats/**
 - docs/design/**
+- tests/unit/perf/test_hot_query.py
+scope_changes:
+- op: add
+  glob: tests/unit/perf/test_hot_query.py
+  reason: 'D-02: scope-add the evidence test file used to verify the epic''s acceptance
+    criterion (query surface read-back) at close time'
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- tests/unit/perf/test_hot_query.py::TestListSketches::test_lists_every_stored_row_with_its_label
+- tests/unit/perf/test_hot_query.py::TestListSketches::test_empty_store_is_empty
 acceptance:
 - text: GIVEN the children closed WHEN the perf harness runs THEN a queryable hot-graph
     exists under .frob at sub-100KB with per-section decile readouts
-  evidence: []
+  evidence:
+  - tests/unit/perf/test_hot_query.py::TestListSketches::test_lists_every_stored_row_with_its_label
+  - tests/unit/perf/test_hot_query.py::TestListSketches::test_empty_store_is_empty
 threat: null
 component: null
 ```
 User mandate 2026-07-22: auditing/advisories for slow operations. Build a repo-wide hot-graph: per-section timing (major loop/branch bodies, external call edges, internal functions) collected at harness/test time, stored compactly, queryable, with advisories and regression ratcheting. STORAGE DECISION (user-driven): NOT normal distributions (heavy-tailed/multi-modal latency destroys mean/sigma) and NOT raw traces (megabytes) -- mergeable log-bucket quantile sketches (DDSketch-style, tunable relative-error alpha, ~hundreds of bytes/section), decayed merge = prior->update semantics, deciles read off at query time. Attribution WITHOUT sys.settrace: sampling collector + the normalized model's known line spans (T-0609..) map each stack sample to its enclosing section statically. Children: collector+attribution, sketch store, query surface, advisories+ratchet. Builds on src/frob/perf (existing harness/profile artifact, T-0582) and src/frob/stats -- extend, do not fork.
+
+## Done report
+
+Epic close verification (T-0709): enumerated every child ticket referencing
+`parent: T-0709` across tickets.md and tickets-archive.md --
+T-0710 (collector + attribution), T-0711 (sketch store), T-0712 (query
+surface + advisories + ratchet), T-0748 (cross-language collectors), and
+T-0917 (MCP frontend, the T-0712 follow-up the coordinator named) -- all
+five are `state: done`. No open/queued/in-progress child exists anywhere
+in the ledger.
+
+Verified the parent's own acceptance criterion against reality rather than
+trusting the children's own claims: ran `frob perf collect --sampler --
+tests/unit/perf/test_hotgraph.py -q` to actually populate
+`.frob/hotgraph_sketches.db` in this worktree (a fresh worktree starts
+with no store -- `frob perf collect` is documented as the store's only
+current producer, per docs/modules/perf.md's "Hot-graph query surface"
+section). Result: `.frob/hotgraph_sketches.db` is 12288 bytes (12KB),
+comfortably under the 100KB acceptance bound and the configured
+`store_cap_bytes` default. `frob perf hot --top 10` then read the store
+back with real per-section p50/p90 (decile) readouts (Popen2IO.read,
+Condition.wait, _read_pyc, _get_default_tempdir, and two branch sections
+all returned distinct p50/p90 numbers from real sampled weight) --
+confirming the FULL pipeline (collector -> attribution -> sketch store ->
+decayed merge -> query surface) works end to end in a clean checkout, not
+merely that each child's own unit tests pass in isolation.
+
+No code changes were needed -- this ticket closes purely on verification
+that the epic's children delivered what T-0709's acceptance criterion
+asked for. `.frob/` is gitignored local state (the store artifact
+generated during this verification is not committed).
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/perf/test_hot_query.py::TestListSketches::test_lists_every_stored_row_with_its_label` (pytest node id, verified passing when recorded)
+- `tests/unit/perf/test_hot_query.py::TestListSketches::test_empty_store_is_empty` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 0 error(s), 2866 warning(s), 339 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0713 -->
 ```yaml
