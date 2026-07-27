@@ -23,7 +23,8 @@ from frob.strata._threat import check_catalog_completeness
 
 
 class TestKrb001:
-    # frob:tests src/frob/strata/_krb_movement.py::evaluate_unconstrained_delegation kind="unit"
+    # frob:tests src/frob/strata/_krb_movement.py::evaluate_unconstrained_delegation \
+    # kind="unit"
     def test_fires(self):
         node = Node(
             id="app",
@@ -37,7 +38,8 @@ class TestKrb001:
         assert violations[0].sub_target == "unconstrained-delegation"
         assert violations[0].node == "app"
 
-    # frob:tests src/frob/strata/_krb_movement.py::evaluate_unconstrained_delegation kind="unit"
+    # frob:tests src/frob/strata/_krb_movement.py::evaluate_unconstrained_delegation \
+    # kind="unit"
     def test_skips_constrained(self):
         node = Node(
             id="app",
@@ -78,7 +80,8 @@ class TestKrb002:
         model = KernelModel(nodes=(node,))
         assert evaluate_roastable_spn(model).danger_ok == ()
 
-    # frob:tests src/frob/strata/_krb_movement.py::evaluate_krb_movement_waived kind="unit"
+    # frob:tests src/frob/strata/_krb_movement.py::evaluate_krb_movement_waived \
+    # kind="unit"
     def test_waivable_with_gmsa_reason(self):
         node = Node(
             id="app",
@@ -100,7 +103,9 @@ class TestKrb002:
 
 
 class TestKrb003:
-    # frob:tests src/frob/strata/_krb_movement.py::evaluate_constrained_delegation_blast_radius kind="unit"
+    # frob:tests \
+    # src/frob/strata/_krb_movement.py::evaluate_constrained_delegation_blast_radius \
+    # kind="unit"
     def test_chains(self):
         # svc (authenticated) constrained-delegates to mid (authenticated),
         # which itself constrained-delegates to vault (trusted) -- a
@@ -139,7 +144,9 @@ class TestKrb003:
         assert "mid" in by_node["svc"].detail
         assert by_node["mid"].peer == "vault"
 
-    # frob:tests src/frob/strata/_krb_movement.py::evaluate_constrained_delegation_blast_radius kind="unit"
+    # frob:tests \
+    # src/frob/strata/_krb_movement.py::evaluate_constrained_delegation_blast_radius \
+    # kind="unit"
     def test_non_chaining_same_trust_discharges(self):
         svc = Node(
             id="svc",
@@ -158,7 +165,8 @@ class TestKrb003:
 
 
 class TestKrb004:
-    # frob:tests src/frob/strata/_krb_movement.py::evaluate_cross_realm_containment kind="unit"
+    # frob:tests src/frob/strata/_krb_movement.py::evaluate_cross_realm_containment \
+    # kind="unit"
     def test_fires(self):
         low = Node(
             id="low_kdc",
@@ -180,7 +188,8 @@ class TestKrb004:
         assert violations[0].node == "low_kdc"
         assert violations[0].peer == "high_kdc"
 
-    # frob:tests src/frob/strata/_krb_movement.py::evaluate_cross_realm_containment kind="unit"
+    # frob:tests src/frob/strata/_krb_movement.py::evaluate_cross_realm_containment \
+    # kind="unit"
     def test_same_trust_realms_discharge(self):
         a = Node(
             id="a_kdc",
@@ -194,7 +203,8 @@ class TestKrb004:
 
 
 class TestKrbScen:
-    # frob:tests src/frob/strata/_krb_movement.py::evaluate_krb_movement_waived kind="unit"
+    # frob:tests src/frob/strata/_krb_movement.py::evaluate_krb_movement_waived \
+    # kind="unit"
     def test_all(self):
         """A compromised node with unconstrained delegation can reach ANY
         other node -- the true worst-case blast radius KRB001 names.
@@ -218,7 +228,8 @@ class TestKrbScen:
         assert len(scenario_result.results) == 1
         assert scenario_result.results[0].verdict.value == "refuted"
 
-    # frob:tests src/frob/strata/_krb_movement.py::evaluate_krb_movement_waived kind="unit"
+    # frob:tests src/frob/strata/_krb_movement.py::evaluate_krb_movement_waived \
+    # kind="unit"
     def test_constrained_bounded_to_targets(self):
         """A compromised node with constrained delegation can only reach
         its resolved `target` SPN's owning node -- an UNRELATED third node
@@ -248,7 +259,8 @@ class TestKrbScen:
         assert by_claim["krb-blast-radius:app:backend"] == "refuted"
         assert by_claim["krb-blast-radius:app:unrelated"] == "proved"
 
-    # frob:tests src/frob/strata/_krb_movement.py::evaluate_krb_movement_waived kind="unit"
+    # frob:tests src/frob/strata/_krb_movement.py::evaluate_krb_movement_waived \
+    # kind="unit"
     def test_unknown_node_fails_closed(self):
         model = KernelModel(nodes=(Node(id="app", trust="trusted", attrs=()),))
         scenario = build_compromised_krb_scenario(model, "does-not-exist", "compromise")

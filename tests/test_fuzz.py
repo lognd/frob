@@ -379,9 +379,9 @@ class TestResolveParamTypes:
         types = resolve_param_types(tmp_path, "src/pkg/mod.py::double")
         assert types == (int,)
 
-    # frob:waive DUP001 reason="parallel test methods within test_fuzz.py \
-    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_fuzz.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_unresolvable_qualname_returns_none(self, tmp_path: Path) -> None:
         """A qualname that does not resolve to any attribute on the
         imported module is `None`, not a crash -- proves `_resolve_attr`'s
@@ -396,9 +396,9 @@ class TestResolveParamTypes:
             is None
         )
 
-    # frob:waive DUP001 reason="parallel test methods within test_fuzz.py \
-    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_fuzz.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_non_callable_attribute_returns_none(self, tmp_path: Path) -> None:
         """A qualname resolving to a non-callable module attribute is
         `None` -- proves `_resolve_callable`'s not-callable branch."""

@@ -31,10 +31,9 @@ _CPP_EXTS = {".c", ".cc", ".cpp", ".cxx", ".c++", ".h", ".hpp", ".hxx", ".h++"}
 # frob:doc docs/modules/app.md#runners
 # frob:ticket T-0588
 # frob:tests tests/unit/test_app_runners_batch5.py::TestCycleRunner.test_cycle_found_with_suggest  # noqa: E501
-# frob:waive ARCH103 reason="T-0977: `frob cycle` CLI entrypoint -- builds \
-# the graph, logs per-edge errors, reports cycles found/absent, sets the \
-# exit code; this IS the runner's whole job, matching the existing \
-# `frob.app.*_runner` module convention"
+# frob:waive ARCH103 reason="T-0977: `frob cycle` CLI entrypoint -- builds the graph, \
+# logs per-edge errors, reports cycles found/absent, sets the exit code; this IS the \
+# runner's whole job, matching the existing `frob.app.*_runner` module convention"
 def run(cfg: AppConfig) -> None:
     if cfg.cycle_path is None:
         _log.error("frob cycle requires <path>")

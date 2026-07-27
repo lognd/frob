@@ -26,9 +26,9 @@ from frob.strata._scenarios import build_compromised_user_scenario, evaluate_sce
 from frob.strata._threat import check_catalog_completeness
 
 
-# frob:waive DUP001 reason="parallel test fixtures across 2 sibling test \
-# file(s) (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-# per-case/per-scenario coverage; extracting would obscure per-case intent"
+# frob:waive DUP001 reason="parallel test fixtures across 2 sibling test file(s) (2 \
+# sites) sharing an arrange-act scaffold typical of exhaustive per-case/per-scenario \
+# coverage; extracting would obscure per-case intent"
 def _shared_user_model() -> KernelModel:
     """Two service users sharing a writable path, a listening port, and
     (T-0272) an OS group, with no declared Flow between them -- the
@@ -59,9 +59,9 @@ def _shared_user_model() -> KernelModel:
     return KernelModel(nodes=(api, worker))
 
 
-# frob:waive DUP001 reason="parallel test fixtures across 2 sibling test \
-# file(s) (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-# per-case/per-scenario coverage; extracting would obscure per-case intent"
+# frob:waive DUP001 reason="parallel test fixtures across 2 sibling test file(s) (2 \
+# sites) sharing an arrange-act scaffold typical of exhaustive per-case/per-scenario \
+# coverage; extracting would obscure per-case intent"
 def _isolated_hardened_model() -> KernelModel:
     """Two service users with disjoint owns/listens/group and no declared
     sudoers grant -- the HOST001/HOST002 HARDENED shape that discharges
@@ -94,14 +94,16 @@ def _isolated_hardened_model() -> KernelModel:
 
 
 class TestLateralIsolation:
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation kind="unit"
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation \
+    # kind="unit"
     def test_skips_below_two_users(self):
         node = Node(id="solo", trust="trusted", attrs=("runs_as=svc-a", "unit"))
         model = KernelModel(nodes=(node,))
         violations = evaluate_lateral_isolation(model).danger_ok
         assert violations == ()
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation kind="unit"
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation \
+    # kind="unit"
     def test_shared_writable_path_and_socket_fire(self):
         violations = evaluate_lateral_isolation(_shared_user_model()).danger_ok
         sub_targets = {v.sub_target for v in violations}
@@ -109,7 +111,8 @@ class TestLateralIsolation:
         assert "cross-user-socket" in sub_targets
         assert "shared-group" in sub_targets  # T-0272: derived from shared group=ops
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation kind="unit"
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation \
+    # kind="unit"
     def test_declared_flow_discharges_cross_user_socket(self):
         api = Node(
             id="api",
@@ -127,12 +130,14 @@ class TestLateralIsolation:
         violations = evaluate_lateral_isolation(model).danger_ok
         assert "cross-user-socket" not in {v.sub_target for v in violations}
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation kind="unit"
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation \
+    # kind="unit"
     def test_isolated_paths_do_not_fire_shared_writable_path(self):
         violations = evaluate_lateral_isolation(_isolated_hardened_model()).danger_ok
         assert "shared-writable-path" not in {v.sub_target for v in violations}
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation kind="unit"
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation \
+    # kind="unit"
     def test_disjoint_groups_do_not_fire_shared_group(self):
         """T-0272: two users declaring DIFFERENT groups must not fire
         shared-group -- it is now a real intersection, not an always-fire
@@ -142,12 +147,14 @@ class TestLateralIsolation:
 
 
 class TestVerticalIsolation:
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_vertical_isolation kind="unit"
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_vertical_isolation \
+    # kind="unit"
     def test_skips_with_no_users(self):
         model = KernelModel(nodes=(Node(id="n", trust="trusted"),))
         assert evaluate_vertical_isolation(model).danger_ok == ()
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_vertical_isolation kind="unit"
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_vertical_isolation \
+    # kind="unit"
     def test_setuid_owned_path_fires(self):
         node = Node(
             id="api",
@@ -158,7 +165,8 @@ class TestVerticalIsolation:
         violations = evaluate_vertical_isolation(model).danger_ok
         assert any(v.sub_target == "setuid" for v in violations)
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_vertical_isolation kind="unit"
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_vertical_isolation \
+    # kind="unit"
     # T-0272: renamed from `test_sudoers_always_fires_as_honest_gap` would
     # break T-0256's archived Done-report evidence (tickets-archive.md is
     # outside this ticket's declared scope) -- kept as the historical
@@ -177,7 +185,8 @@ class TestVerticalIsolation:
         violations = evaluate_vertical_isolation(model).danger_ok
         assert any(v.sub_target == "sudoers" for v in violations)
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_vertical_isolation kind="unit"
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_vertical_isolation \
+    # kind="unit"
     def test_sudoers_does_not_fire_when_undeclared(self):
         """T-0272: a user with no `sudoers` clause at all produces no
         sudoers finding -- absence is now structurally provable."""
@@ -186,7 +195,8 @@ class TestVerticalIsolation:
         violations = evaluate_vertical_isolation(model).danger_ok
         assert not any(v.sub_target == "sudoers" for v in violations)
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_vertical_isolation kind="unit"
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_vertical_isolation \
+    # kind="unit"
     def test_root_unit_path_writable_by_user_fires(self):
         root_unit = Node(
             id="rootd",
@@ -202,7 +212,8 @@ class TestVerticalIsolation:
         violations = evaluate_vertical_isolation(model).danger_ok
         assert any(v.sub_target == "root-unit-writable-by-user" for v in violations)
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_vertical_isolation kind="unit"
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_vertical_isolation \
+    # kind="unit"
     def test_write_to_higher_trust_path_fires(self):
         model = KernelModel(
             nodes=(
@@ -223,13 +234,15 @@ class TestVerticalIsolation:
 
 
 class TestHostIsolationWaivers:
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_host_isolation_waived kind="unit"
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_host_isolation_waived \
+    # kind="unit"
     def test_vuln_model_fires_unwaived(self):
         h1, h2 = evaluate_host_isolation_waived(_shared_user_model()).danger_ok
         assert h1.kept != ()
         assert h2.kept != ()
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_host_isolation_waived kind="unit"
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_host_isolation_waived \
+    # kind="unit"
     def test_hardened_model_discharges_with_waivers(self):
         h1, h2 = evaluate_host_isolation_waived(_isolated_hardened_model()).danger_ok
         assert h1.kept == ()
@@ -237,11 +250,11 @@ class TestHostIsolationWaivers:
         assert h1.stale == ()
         assert h2.stale == ()
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_host_isolation_waived kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within \
-    # test_host_isolation.py (2 sites) sharing an arrange-act scaffold \
-    # typical of exhaustive per-case coverage; extracting would obscure \
-    # per-case intent"
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_host_isolation_waived \
+    # kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_host_isolation.py (2 \
+    # sites) sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_propagates_lateral_isolation_error(self, monkeypatch):
         """HOST001's delegate failing must short-circuit before HOST002
         ever runs -- deny by default, never a silent partial result."""
@@ -254,11 +267,11 @@ class TestHostIsolationWaivers:
         assert result.is_err
         assert result.danger_err == StrataError.UnknownReference
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_host_isolation_waived kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within \
-    # test_host_isolation.py (2 sites) sharing an arrange-act scaffold \
-    # typical of exhaustive per-case coverage; extracting would obscure \
-    # per-case intent"
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_host_isolation_waived \
+    # kind="unit"
+    # frob:waive DUP001 reason="parallel test methods within test_host_isolation.py (2 \
+    # sites) sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_propagates_vertical_isolation_error(self, monkeypatch):
         """HOST002's delegate failing must propagate even when HOST001
         succeeded -- the second fallible step is not silently ignored."""
@@ -273,7 +286,8 @@ class TestHostIsolationWaivers:
 
 
 class TestCompromisedOwnerCatalog:
-    # frob:tests src/frob/strata/_host_isolation.py::COMPROMISED_OWNER_CATALOG kind="unit"
+    # frob:tests src/frob/strata/_host_isolation.py::COMPROMISED_OWNER_CATALOG \
+    # kind="unit"
     def test_catalog_completeness_over_own_view(self):
         result = check_catalog_completeness(
             "compromised-owner-baseline",
@@ -283,7 +297,8 @@ class TestCompromisedOwnerCatalog:
         assert result.is_ok
         assert result.danger_ok == ()
 
-    # frob:tests src/frob/strata/_host_isolation.py::COMPROMISED_OWNER_CATALOG kind="unit"
+    # frob:tests src/frob/strata/_host_isolation.py::COMPROMISED_OWNER_CATALOG \
+    # kind="unit"
     def test_default_owasp_view_unaffected(self):
         """The compromised-owner class lives in its OWN view -- checking
         the default `owasp-top-10` view never implicates CWE-284/269/522
@@ -293,7 +308,8 @@ class TestCompromisedOwnerCatalog:
 
 
 class TestCompromisedUserScenario:
-    # frob:tests src/frob/strata/_scenarios.py::build_compromised_user_scenario kind="unit"
+    # frob:tests src/frob/strata/_scenarios.py::build_compromised_user_scenario \
+    # kind="unit"
     def test_unknown_user_fails_closed(self):
         model = _shared_user_model()
         result = build_compromised_user_scenario(model, "svc-nope", "scn-1")
@@ -344,7 +360,8 @@ class TestWindowsHostIsolation:
     strength to the linux `runs_as`/`owns`/`listens` path (docs/strata/
     host.md#windows-wiring-t-0606)."""
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation kind="unit"
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation \
+    # kind="unit"
     def test_shared_writable_acl_path_and_pipe_fire(self):
         """Two windows-only nodes (`service_account`/`acl`/`pipe`, no
         `runs_as`/`owns`/`listens` at all) sharing a write-capable ACL
@@ -378,7 +395,8 @@ class TestWindowsHostIsolation:
         assert "shared-writable-path" in sub_targets
         assert "cross-user-socket" in sub_targets
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation kind="unit"
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation \
+    # kind="unit"
     def test_deny_acl_does_not_fire_shared_writable_path(self):
         """A shared ACL path where neither side's RULE grants write (both
         `:deny`'d, or a read-only RIGHTS) must not fire
@@ -408,7 +426,8 @@ class TestWindowsHostIsolation:
         violations = evaluate_lateral_isolation(model).danger_ok
         assert "shared-writable-path" not in {v.sub_target for v in violations}
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation kind="unit"
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation \
+    # kind="unit"
     def test_explicit_deny_acl_flag_does_not_fire_shared_writable_path(self):
         """T-0791: exercise the `:deny` flag directly (not just a
         non-write RIGHTS value) -- Everyone:Modify:deny on a write-capable
@@ -438,7 +457,8 @@ class TestWindowsHostIsolation:
         violations = evaluate_lateral_isolation(model).danger_ok
         assert "shared-writable-path" not in {v.sub_target for v in violations}
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation kind="unit"
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation \
+    # kind="unit"
     def test_explicit_deny_acl_flag_fires_when_write_rights_present_elsewhere(self):
         """T-0791's fire counterpart: a `:deny`'d ACE for one principal
         alongside a plain write-capable ACE for a DIFFERENT principal on
@@ -471,7 +491,8 @@ class TestWindowsHostIsolation:
         violations = evaluate_lateral_isolation(model).danger_ok
         assert "shared-writable-path" in {v.sub_target for v in violations}
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_vertical_isolation kind="unit"
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_vertical_isolation \
+    # kind="unit"
     def test_service_with_no_account_is_root_run(self):
         """A windows `service` with no `service_account` (SCM's own
         LocalSystem default) is the root-run-equivalent identity HOST002's
@@ -500,7 +521,8 @@ class TestWindowsHostIsolation:
         violations = evaluate_vertical_isolation(model).danger_ok
         assert any(v.sub_target == "root-unit-writable-by-user" for v in violations)
 
-    # frob:tests src/frob/strata/_scenarios.py::build_compromised_user_scenario kind="unit"
+    # frob:tests src/frob/strata/_scenarios.py::build_compromised_user_scenario \
+    # kind="unit"
     def test_compromised_windows_service_account_scenario(self):
         """`build_compromised_user_scenario` resolves a windows
         `service_account` identity exactly like a linux `runs_as` one."""

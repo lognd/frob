@@ -90,11 +90,10 @@ every such boundary, cross-checking it against a visible Rust/C side) is
 T-0690's job, not duplicated here."""
 # frob:waive INV006 reason="this module's 'only' occurrences are source-level \
 # design-rationale prose (the module docstring's model-limit disclosures and \
-# per-function docstrings describing already-implemented resolution/matching \
-# logic), verifiable by reading the function it annotates, not a separate \
-# cross-module contract needing its own tracked invariant -- the same INV006 \
-# first-turn-on-pool disposition frob.arch._fallibility's own module \
-# docstring already carries"
+# per-function docstrings describing already-implemented resolution/matching logic), \
+# verifiable by reading the function it annotates, not a separate cross-module \
+# contract needing its own tracked invariant -- the same INV006 first-turn-on-pool \
+# disposition frob.arch._fallibility's own module docstring already carries"
 
 from __future__ import annotations
 

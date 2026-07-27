@@ -23,7 +23,9 @@ def _write(root: Path, rel: str, source: str) -> None:
 
 
 class TestMissingBoundedIntake:
-    # frob:tests tests/unit/strata/test_backpressure.py::TestMissingBoundedIntake.test_queue_node_without_bounded_intake_fires
+    # frob:tests \
+    # tests/unit/strata/test_backpressure.py::TestMissingBoundedIntake.test_queue_node_\
+    # without_bounded_intake_fires
     def test_queue_node_without_bounded_intake_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(Node(id="ingest_queue", trust="trusted", attrs=("queue",)),),
@@ -37,7 +39,9 @@ class TestMissingBoundedIntake:
         ]
         assert {v.node for v in missing} == {"ingest_queue"}
 
-    # frob:tests tests/unit/strata/test_backpressure.py::TestMissingBoundedIntake.test_consumer_node_without_bounded_intake_fires
+    # frob:tests \
+    # tests/unit/strata/test_backpressure.py::TestMissingBoundedIntake.test_consumer_no\
+    # de_without_bounded_intake_fires
     def test_consumer_node_without_bounded_intake_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(Node(id="worker", trust="trusted", attrs=("consumer",)),),
@@ -51,7 +55,9 @@ class TestMissingBoundedIntake:
         ]
         assert {v.node for v in missing} == {"worker"}
 
-    # frob:tests tests/unit/strata/test_backpressure.py::TestMissingBoundedIntake.test_discharged_and_non_queue_nodes_clean
+    # frob:tests \
+    # tests/unit/strata/test_backpressure.py::TestMissingBoundedIntake.test_discharged_\
+    # and_non_queue_nodes_clean
     def test_discharged_and_non_queue_nodes_clean(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -71,7 +77,9 @@ class TestMissingBoundedIntake:
             if v.rule == REL_MISSING_BOUNDED_INTAKE
         ]
 
-    # frob:tests tests/unit/strata/test_backpressure.py::TestMissingBoundedIntake.test_waiver_discharges_finding
+    # frob:tests \
+    # tests/unit/strata/test_backpressure.py::TestMissingBoundedIntake.test_waiver_disc\
+    # harges_finding
     def test_waiver_discharges_finding(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -100,7 +108,9 @@ class TestMissingBoundedIntake:
 
 
 class TestUnprovenBoundedIntake:
-    # frob:tests tests/unit/strata/test_backpressure.py::TestUnprovenBoundedIntake.test_declared_with_no_code_evidence_fires
+    # frob:tests \
+    # tests/unit/strata/test_backpressure.py::TestUnprovenBoundedIntake.test_declared_w\
+    # ith_no_code_evidence_fires
     def test_declared_with_no_code_evidence_fires(self, tmp_path: Path):
         _write(tmp_path, "src/widget/_io.py", "def consume():\n    return drain()\n")
         model = KernelModel(
@@ -121,7 +131,9 @@ class TestUnprovenBoundedIntake:
         ]
         assert {v.node for v in violations} == {"ingest_queue"}
 
-    # frob:tests tests/unit/strata/test_backpressure.py::TestUnprovenBoundedIntake.test_declared_with_real_code_evidence_discharges
+    # frob:tests \
+    # tests/unit/strata/test_backpressure.py::TestUnprovenBoundedIntake.test_declared_w\
+    # ith_real_code_evidence_discharges
     def test_declared_with_real_code_evidence_discharges(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -145,7 +157,9 @@ class TestUnprovenBoundedIntake:
             if v.rule == REL_UNPROVEN_BOUNDED_INTAKE
         ]
 
-    # frob:tests tests/unit/strata/test_backpressure.py::TestUnprovenBoundedIntake.test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+    # frob:tests \
+    # tests/unit/strata/test_backpressure.py::TestUnprovenBoundedIntake.test_declared_w\
+    # ith_no_bound_code_is_uncheckable_not_a_violation
     def test_declared_with_no_bound_code_is_uncheckable_not_a_violation(
         self, tmp_path: Path
     ):

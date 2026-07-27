@@ -6,12 +6,11 @@ tree -- safe to delete at any time. Rows are keyed per source/doc file so
 changed, and `load_graph` can read the whole snapshot back without
 re-parsing anything.
 """
-# frob:waive ARCH102 reason="19 of 21 exports form one connected sqlite \
-# cache-store cluster around connect/_apply_schema/load_all/store_file_data; \
-# the 2 outliers (set_root, touch_file_stat) are small accessors over the \
-# exact same on-disk cache/connection this module owns, not a second \
-# concern -- there is only one cache seam here, and these two functions \
-# have nowhere else to live"
+# frob:waive ARCH102 reason="19 of 21 exports form one connected sqlite cache-store \
+# cluster around connect/_apply_schema/load_all/store_file_data; the 2 outliers \
+# (set_root, touch_file_stat) are small accessors over the exact same on-disk \
+# cache/connection this module owns, not a second concern -- there is only one cache \
+# seam here, and these two functions have nowhere else to live"
 
 from __future__ import annotations
 

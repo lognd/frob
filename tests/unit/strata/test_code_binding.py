@@ -2,12 +2,11 @@
 (docs/strata/surface.md#code-binding-tier-2-v0-implementation, T-0078).
 """
 
-# frob:waive SCOPE001 reason="T-0416 scope is src/frob/strata/_code_binding.py \
-# only; this file's ticket-scope --add was blocked by ScopeLeaseConflict with \
-# T-0263 (tests/unit/strata/) holding the overlapping lease, so a scope-only \
-# addition was not possible -- the sole change here is one new regression \
-# test pinning T-0416's chosen semantics, per the ticket's own acceptance \
-# criteria"
+# frob:waive SCOPE001 reason="T-0416 scope is src/frob/strata/_code_binding.py only; \
+# this file's ticket-scope --add was blocked by ScopeLeaseConflict with T-0263 \
+# (tests/unit/strata/) holding the overlapping lease, so a scope-only addition was not \
+# possible -- the sole change here is one new regression test pinning T-0416's chosen \
+# semantics, per the ticket's own acceptance criteria"
 
 from __future__ import annotations
 
@@ -117,10 +116,9 @@ class TestBindCode:
 
 class TestCheckImportConformance:
     # frob:tests src/frob/strata/_code_binding.py::check_import_conformance kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within \
-    # test_code_binding.py (2 sites) sharing an arrange-act scaffold \
-    # typical of exhaustive per-case coverage; extracting would obscure \
-    # per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_code_binding.py (2 \
+    # sites) sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_same_component_import_is_fine(self, tmp_path: Path):
         _write(tmp_path, "api/handler.py", "import api.util\n")
         _write(tmp_path, "api/util.py", "x = 1\n")
@@ -132,10 +130,9 @@ class TestCheckImportConformance:
         assert report.violations == ()
 
     # frob:tests src/frob/strata/_code_binding.py::check_import_conformance kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within \
-    # test_code_binding.py (2 sites) sharing an arrange-act scaffold \
-    # typical of exhaustive per-case coverage; extracting would obscure \
-    # per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_code_binding.py (2 \
+    # sites) sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_cross_component_import_with_declared_flow_is_fine(self, tmp_path: Path):
         _write(tmp_path, "api/handler.py", "import db.store\n")
         _write(tmp_path, "db/store.py", "x = 1\n")
@@ -197,10 +194,9 @@ class TestCheckImportConformance:
         assert v.dst_component == "Db"
 
     # frob:tests src/frob/strata/_code_binding.py::check_import_conformance kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within \
-    # test_code_binding.py (2 sites) sharing an arrange-act scaffold \
-    # typical of exhaustive per-case coverage; extracting would obscure \
-    # per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_code_binding.py (2 \
+    # sites) sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_declared_flow_in_exact_direction_satisfies_conformance(
         self, tmp_path: Path
     ):
@@ -255,10 +251,9 @@ class TestCheckImportConformance:
         assert report.violations[0].dst_component == "Db"
 
     # frob:tests src/frob/strata/_code_binding.py::check_import_conformance kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within \
-    # test_code_binding.py (2 sites) sharing an arrange-act scaffold \
-    # typical of exhaustive per-case coverage; extracting would obscure \
-    # per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_code_binding.py (2 \
+    # sites) sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_level1_relative_import_same_package_is_fine(self, tmp_path: Path):
         _write(tmp_path, "api/handler.py", "from . import util\n")
         _write(tmp_path, "api/util.py", "x = 1\n")

@@ -30,9 +30,9 @@ class ReserveError(ErrorSet):
 
 
 class TestEvaluateSagaContractsNoSaga:
-    # frob:waive DUP001 reason="parallel test methods within test_atomic.py \
-    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_atomic.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_empty_diagnostics_when_no_coordinator_declared(self):
         # frob:tests src/frob/strata/_atomic.py::evaluate_saga_contracts kind="unit"
         text = """
@@ -74,9 +74,9 @@ class TestEvaluateSagaContractsJoin:
         assert "Coord" in diagnostic
         assert "idempotent" in diagnostic
 
-    # frob:waive DUP001 reason="parallel test methods within test_atomic.py \
-    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_atomic.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_flow_into_idempotent_coordinator_produces_no_diagnostic(self):
         # frob:tests src/frob/strata/_atomic.py::evaluate_saga_contracts kind="unit"
         text = """
@@ -123,7 +123,8 @@ class TestEvaluateSagaContractsJoin:
 
 class TestGenerateFaultInjectionCases:
     def test_strong_guarantee_operation_generates_one_case_per_variant(self):
-        # frob:tests src/frob/strata/_atomic.py::generate_fault_injection_cases kind="unit"
+        # frob:tests src/frob/strata/_atomic.py::generate_fault_injection_cases \
+        # kind="unit"
         text = """
         module m
         node StoreA : trusted
@@ -144,7 +145,8 @@ class TestGenerateFaultInjectionCases:
         assert conflict_case.operation_id == "Reserve"
 
     def test_nonempty_err_frame_operation_is_not_eligible(self):
-        # frob:tests src/frob/strata/_atomic.py::generate_fault_injection_cases kind="unit"
+        # frob:tests src/frob/strata/_atomic.py::generate_fault_injection_cases \
+        # kind="unit"
         text = """
         module m
         node StoreA : trusted
@@ -160,7 +162,8 @@ class TestGenerateFaultInjectionCases:
         assert cases == ()
 
     def test_operation_missing_from_error_sets_generates_nothing(self):
-        # frob:tests src/frob/strata/_atomic.py::generate_fault_injection_cases kind="unit"
+        # frob:tests src/frob/strata/_atomic.py::generate_fault_injection_cases \
+        # kind="unit"
         text = """
         module m
         node StoreA : trusted

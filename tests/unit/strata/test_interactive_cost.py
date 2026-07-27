@@ -23,7 +23,9 @@ def _write(root: Path, rel: str, source: str) -> None:
 
 
 class TestMissingBoundedCost:
-    # frob:tests tests/unit/strata/test_interactive_cost.py::TestMissingBoundedCost.test_interactive_node_without_bounded_cost_fires
+    # frob:tests \
+    # tests/unit/strata/test_interactive_cost.py::TestMissingBoundedCost.test_interacti\
+    # ve_node_without_bounded_cost_fires
     def test_interactive_node_without_bounded_cost_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -37,7 +39,9 @@ class TestMissingBoundedCost:
         ]
         assert {v.node for v in missing} == {"ticket_done_report"}
 
-    # frob:tests tests/unit/strata/test_interactive_cost.py::TestMissingBoundedCost.test_discharged_and_non_interactive_nodes_clean
+    # frob:tests \
+    # tests/unit/strata/test_interactive_cost.py::TestMissingBoundedCost.test_discharge\
+    # d_and_non_interactive_nodes_clean
     def test_discharged_and_non_interactive_nodes_clean(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -55,7 +59,9 @@ class TestMissingBoundedCost:
             v for v in result.danger_ok.violations if v.rule == REL_MISSING_BOUNDED_COST
         ]
 
-    # frob:tests tests/unit/strata/test_interactive_cost.py::TestMissingBoundedCost.test_waiver_discharges_finding
+    # frob:tests \
+    # tests/unit/strata/test_interactive_cost.py::TestMissingBoundedCost.test_waiver_di\
+    # scharges_finding
     def test_waiver_discharges_finding(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -82,7 +88,9 @@ class TestMissingBoundedCost:
 
 
 class TestUnprovenBoundedCost:
-    # frob:tests tests/unit/strata/test_interactive_cost.py::TestUnprovenBoundedCost.test_declared_with_no_code_evidence_fires
+    # frob:tests \
+    # tests/unit/strata/test_interactive_cost.py::TestUnprovenBoundedCost.test_declared\
+    # _with_no_code_evidence_fires
     def test_declared_with_no_code_evidence_fires(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -108,7 +116,9 @@ class TestUnprovenBoundedCost:
         ]
         assert {v.node for v in violations} == {"ticket_done_report"}
 
-    # frob:tests tests/unit/strata/test_interactive_cost.py::TestUnprovenBoundedCost.test_declared_with_real_code_evidence_discharges
+    # frob:tests \
+    # tests/unit/strata/test_interactive_cost.py::TestUnprovenBoundedCost.test_declared\
+    # _with_real_code_evidence_discharges
     def test_declared_with_real_code_evidence_discharges(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -133,7 +143,9 @@ class TestUnprovenBoundedCost:
             if v.rule == REL_UNPROVEN_BOUNDED_COST
         ]
 
-    # frob:tests tests/unit/strata/test_interactive_cost.py::TestUnprovenBoundedCost.test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+    # frob:tests \
+    # tests/unit/strata/test_interactive_cost.py::TestUnprovenBoundedCost.test_declared\
+    # _with_no_bound_code_is_uncheckable_not_a_violation
     def test_declared_with_no_bound_code_is_uncheckable_not_a_violation(
         self, tmp_path: Path
     ):

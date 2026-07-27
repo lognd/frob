@@ -108,10 +108,9 @@ class TestElaborateAbstract:
 class TestElaborateCodeAndMay:
     # T-0132: `code GLOB+` / `may "CAPABILITY"` surface grammar wiring.
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within \
-    # test_elaborate.py (2 sites) sharing an arrange-act scaffold typical \
-    # of exhaustive per-case coverage; extracting would obscure per-case \
-    # intent"
+    # frob:waive DUP001 reason="parallel test methods within test_elaborate.py (2 \
+    # sites) sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_code_globs_become_code_attrs(self):
         text = """
         module m
@@ -137,10 +136,9 @@ class TestElaborateCodeAndMay:
         assert model.nodes[0].may == ("net.out:stripe.com", "fs.read:/etc/tls")
 
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within \
-    # test_elaborate.py (2 sites) sharing an arrange-act scaffold typical \
-    # of exhaustive per-case coverage; extracting would obscure per-case \
-    # intent"
+    # frob:waive DUP001 reason="parallel test methods within test_elaborate.py (2 \
+    # sites) sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_code_and_abstract_attrs_compose(self):
         # code=<glob> attrs must not clobber other attr-derived markers
         # (abstract/errors_total/panics) already appended by elaboration.
@@ -206,10 +204,9 @@ class TestElaborateSecretAndDeploy:
         assert result.danger_err is StrataError.MissingRevocation
 
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
-    # frob:waive DUP001 reason="parallel test fixtures across 2 sibling \
-    # test file(s) (3 sites) sharing an arrange-act scaffold typical of \
-    # exhaustive per-case/per-scenario coverage; extracting would obscure \
-    # per-case intent"
+    # frob:waive DUP001 reason="parallel test fixtures across 2 sibling test file(s) \
+    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case/per-scenario coverage; extracting would obscure per-case intent"
     def test_secret_unknown_issuer_fails_closed(self):
         text = """
         module m
@@ -225,10 +222,9 @@ class TestElaborateSecretAndDeploy:
         assert result.danger_err is StrataError.UnknownReference
 
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within \
-    # test_elaborate.py (2 sites) sharing an arrange-act scaffold typical \
-    # of exhaustive per-case coverage; extracting would obscure per-case \
-    # intent"
+    # frob:waive DUP001 reason="parallel test methods within test_elaborate.py (2 \
+    # sites) sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_duplicate_secret_id_fails_closed(self):
         text = """
         module m
@@ -296,10 +292,9 @@ class TestElaborateSecretAndDeploy:
 
 class TestElaborateValidation:
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within \
-    # test_elaborate.py (2 sites) sharing an arrange-act scaffold typical \
-    # of exhaustive per-case coverage; extracting would obscure per-case \
-    # intent"
+    # frob:waive DUP001 reason="parallel test methods within test_elaborate.py (2 \
+    # sites) sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_duplicate_node_id_fails_closed(self):
         text = """
         module m
@@ -312,10 +307,9 @@ class TestElaborateValidation:
         assert result.danger_err is StrataError.DuplicateId
 
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
-    # frob:waive DUP001 reason="parallel test fixtures across 2 sibling \
-    # test file(s) (3 sites) sharing an arrange-act scaffold typical of \
-    # exhaustive per-case/per-scenario coverage; extracting would obscure \
-    # per-case intent"
+    # frob:waive DUP001 reason="parallel test fixtures across 2 sibling test file(s) \
+    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case/per-scenario coverage; extracting would obscure per-case intent"
     def test_boundary_referencing_unknown_flow_fails_closed(self):
         text = """
         module m
@@ -335,10 +329,9 @@ class TestElaborateWaivers:
     multi-instance-per-node rule family with no sub-target."""
 
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
-    # frob:waive DUP001 reason="parallel test fixtures across 2 sibling \
-    # test file(s) (4 sites) sharing an arrange-act scaffold typical of \
-    # exhaustive per-case/per-scenario coverage; extracting would obscure \
-    # per-case intent"
+    # frob:waive DUP001 reason="parallel test fixtures across 2 sibling test file(s) \
+    # (4 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case/per-scenario coverage; extracting would obscure per-case intent"
     def test_empty_reason_fails_closed(self):
         text = """
         module m
@@ -353,10 +346,9 @@ class TestElaborateWaivers:
         assert result.danger_err is StrataError.MalformedWaiver
 
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
-    # frob:waive DUP001 reason="parallel test fixtures across 2 sibling \
-    # test file(s) (4 sites) sharing an arrange-act scaffold typical of \
-    # exhaustive per-case/per-scenario coverage; extracting would obscure \
-    # per-case intent"
+    # frob:waive DUP001 reason="parallel test fixtures across 2 sibling test file(s) \
+    # (4 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case/per-scenario coverage; extracting would obscure per-case intent"
     def test_whitespace_only_reason_fails_closed(self):
         text = """
         module m
@@ -371,10 +363,9 @@ class TestElaborateWaivers:
         assert result.danger_err is StrataError.MalformedWaiver
 
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
-    # frob:waive DUP001 reason="parallel test fixtures across 2 sibling \
-    # test file(s) (2 sites) sharing an arrange-act scaffold typical of \
-    # exhaustive per-case/per-scenario coverage; extracting would obscure \
-    # per-case intent"
+    # frob:waive DUP001 reason="parallel test fixtures across 2 sibling test file(s) \
+    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case/per-scenario coverage; extracting would obscure per-case intent"
     def test_multi_instance_family_without_sub_target_fails_closed(self):
         """A bare `waive "SYS100"` would blanket-suppress every current
         and future SYS100 finding on the node -- rejected, not silently

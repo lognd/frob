@@ -3,10 +3,9 @@
 Honest absence: no binary on PATH -> skipped-with-note, never silent."""
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: src/frob/vet/_osv.py's \
 # exclusivity-vocabulary hit is source-level design-rationale/scope-cut prose (a \
-# docstring or comment describing already-implemented internal behavior, verifiable \
-# by reading the code it annotates) rather than a separate cross-module contract \
-# needing its own tracked invariant; disposed as a calibration batch, not \
-# claim-by-claim"
+# docstring or comment describing already-implemented internal behavior, verifiable by \
+# reading the code it annotates) rather than a separate cross-module contract needing \
+# its own tracked invariant; disposed as a calibration batch, not claim-by-claim"
 
 # frob:waive TEST005 reason="module line coverage 47.9%, debt T-0160"
 
@@ -68,18 +67,18 @@ def cve_ids(advisory: OsvAdvisory) -> tuple[str, ...]:
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive COV007 reason="docs/modules/vet.md's Public API section \
-# individually frob:describes this private helper by name (T-0529) -- a \
-# deliberate architecture doc, not accidental drift onto a private helper"
+# frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
+# frob:describes this private helper by name (T-0529) -- a deliberate architecture \
+# doc, not accidental drift onto a private helper"
 def _is_available() -> bool:
     """Whether `osv-scanner` is resolvable on PATH."""
     return shutil.which(_BINARY) is not None
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive COV007 reason="docs/modules/vet.md's Public API section \
-# individually frob:describes this private helper by name (T-0529) -- a \
-# deliberate architecture doc, not accidental drift onto a private helper"
+# frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
+# frob:describes this private helper by name (T-0529) -- a deliberate architecture \
+# doc, not accidental drift onto a private helper"
 # frob:waive TEST005 reason="_run_osv_scan 19.0% branch cover, debt T-0160"
 def _run_osv_scan(lockfile: Path) -> tuple[OsvAdvisory, ...] | None:
     """Advisories for `lockfile`, or `None` if osv-scanner is absent/failed

@@ -207,9 +207,9 @@ class TestPiiRetentionErasure:
 
 class TestPiiUndeclaredFlow:
     # frob:tests src/frob/strata/_pii.py::check_pii_undeclared_flow kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_pii.py (2 \
-    # sites) sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_pii.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_matching_label_is_clean(self):
         model = KernelModel(
             nodes=(
@@ -235,9 +235,9 @@ class TestPiiUndeclaredFlow:
         assert violations[0].target == "f_leak"
 
     # frob:tests src/frob/strata/_pii.py::check_pii_undeclared_flow kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_pii.py (2 \
-    # sites) sharing an arrange-act scaffold typical of exhaustive per-case \
-    # coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_pii.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_secret_label_is_at_or_above_pii_and_is_clean(self):
         model = KernelModel(
             nodes=(

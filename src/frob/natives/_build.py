@@ -179,13 +179,12 @@ def _resolve_buildable_crate(root: Path, spec) -> Path | None:  # noqa: ANN001
 
 
 # frob:ticket T-0979
-# frob:waive ARCH103 reason="T-0979: _resolve_buildable_crate (above) \
-# already extracted the separable skip-check concern; what remains here \
-# is a single guarded-subprocess run-and-report job (spawn maturin, \
-# classify its outcome, log each transition) -- the same cohesive shape \
-# T-0977 already waived for this module's sibling wrappers (_cargo_env, \
-# _run_ctest_list) and frob.exec's _run_npx. Splitting the log/branch \
-# pairs further would add indirection, not cohesion."
+# frob:waive ARCH103 reason="T-0979: _resolve_buildable_crate (above) already \
+# extracted the separable skip-check concern; what remains here is a single \
+# guarded-subprocess run-and-report job (spawn maturin, classify its outcome, log each \
+# transition) -- the same cohesive shape T-0977 already waived for this module's \
+# sibling wrappers (_cargo_env, _run_ctest_list) and frob.exec's _run_npx. Splitting \
+# the log/branch pairs further would add indirection, not cohesion."
 def _build_one_crate(
     root: Path,
     spec,

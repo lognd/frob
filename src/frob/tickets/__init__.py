@@ -6,17 +6,16 @@ a state machine, blockers, evidence, failure memory, and image attachments --
 the shared work surface for the human and every agent. No dependency on
 frob.graph or frob.lang by design (see docs/rework.md cycle-avoidance).
 """
-# frob:waive ARCH102 reason="108 of 116 exports form one connected cluster \
-# around the ticket state machine this docstring names (transition/ \
+# frob:waive ARCH102 reason="108 of 116 exports form one connected cluster around the \
+# ticket state machine this docstring names (transition/ \
 # doable/new_ticket/add_evidence/mutate_scope/... all threading the same \
-# TicketQueue/Ticket model); the remaining 6 (migrate, sprint_view, \
-# board_view, epic_rollup, closed_ticket_ids, and the small display_state/ \
+# TicketQueue/Ticket model); the remaining 6 (migrate, sprint_view, board_view, \
+# epic_rollup, closed_ticket_ids, and the small display_state/ \
 # has_approved_review_for_commit/has_live_lease trio) are small read-only \
-# views/reports over that exact same queue, coupled to it by the shared \
-# data model rather than by direct calls into the state-machine functions \
-# -- this is the single ticket-queue module the docstring deliberately \
-# centralizes (no frob.graph/frob.lang dependency by design), not several \
-# concerns bolted together"
+# views/reports over that exact same queue, coupled to it by the shared data model \
+# rather than by direct calls into the state-machine functions -- this is the single \
+# ticket-queue module the docstring deliberately centralizes (no frob.graph/frob.lang \
+# dependency by design), not several concerns bolted together"
 
 from __future__ import annotations
 
@@ -376,11 +375,11 @@ def _write_archived_and_active(
 
 # frob:ticket T-0162
 # frob:doc docs/modules/tickets.md#decision-record-t-0162
-# frob:waive COV007 reason="the decision-record anchor documents THIS \
-# private function's own allocation algorithm/design rationale (why \
-# provisional ids vs branch-tip scanning vs content-nonce were compared, \
-# T-0162), not the public API surface -- the private symbol genuinely is \
-# the documented contract here, not a caller-side summary"
+# frob:waive COV007 reason="the decision-record anchor documents THIS private \
+# function's own allocation algorithm/design rationale (why provisional ids vs \
+# branch-tip scanning vs content-nonce were compared, T-0162), not the public API \
+# surface -- the private symbol genuinely is the documented contract here, not a \
+# caller-side summary"
 def _allocate_ticket_id(
     root: Path, existing: dict[str, Ticket], merged: dict[str, Ticket]
 ) -> str:

@@ -22,7 +22,9 @@ def _write(root: Path, rel: str, source: str) -> None:
 
 
 class TestMissingSaga:
-    # frob:tests tests/unit/strata/test_distributed_txn.py::TestMissingSaga.test_multi_service_write_op_without_saga_fires
+    # frob:tests \
+    # tests/unit/strata/test_distributed_txn.py::TestMissingSaga.test_multi_service_wri\
+    # te_op_without_saga_fires
     def test_multi_service_write_op_without_saga_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -40,7 +42,9 @@ class TestMissingSaga:
         missing = [v for v in result.danger_ok.violations if v.rule == REL_MISSING_SAGA]
         assert {v.node for v in missing} == {"checkout"}
 
-    # frob:tests tests/unit/strata/test_distributed_txn.py::TestMissingSaga.test_transaction_attr_alone_does_not_discharge
+    # frob:tests \
+    # tests/unit/strata/test_distributed_txn.py::TestMissingSaga.test_transaction_attr_\
+    # alone_does_not_discharge
     def test_transaction_attr_alone_does_not_discharge(self, tmp_path: Path):
         # Unlike REL300, a bare `transaction` attr does NOT discharge
         # REL350 -- only `saga` does (module docstring).
@@ -60,7 +64,9 @@ class TestMissingSaga:
         missing = [v for v in result.danger_ok.violations if v.rule == REL_MISSING_SAGA]
         assert {v.node for v in missing} == {"checkout"}
 
-    # frob:tests tests/unit/strata/test_distributed_txn.py::TestMissingSaga.test_single_write_and_discharged_clean
+    # frob:tests \
+    # tests/unit/strata/test_distributed_txn.py::TestMissingSaga.test_single_write_and_\
+    # discharged_clean
     def test_single_write_and_discharged_clean(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -82,7 +88,9 @@ class TestMissingSaga:
             v for v in result.danger_ok.violations if v.rule == REL_MISSING_SAGA
         ]
 
-    # frob:tests tests/unit/strata/test_distributed_txn.py::TestMissingSaga.test_waiver_discharges_finding
+    # frob:tests \
+    # tests/unit/strata/test_distributed_txn.py::TestMissingSaga.test_waiver_discharges\
+    # _finding
     def test_waiver_discharges_finding(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -114,7 +122,9 @@ class TestMissingSaga:
 
 
 class TestUnprovenSaga:
-    # frob:tests tests/unit/strata/test_distributed_txn.py::TestUnprovenSaga.test_declared_with_no_code_evidence_fires
+    # frob:tests \
+    # tests/unit/strata/test_distributed_txn.py::TestUnprovenSaga.test_declared_with_no\
+    # _code_evidence_fires
     def test_declared_with_no_code_evidence_fires(self, tmp_path: Path):
         _write(tmp_path, "src/widget/_io.py", "def checkout():\n    return commit()\n")
         model = KernelModel(
@@ -139,7 +149,9 @@ class TestUnprovenSaga:
         ]
         assert {v.node for v in violations} == {"checkout"}
 
-    # frob:tests tests/unit/strata/test_distributed_txn.py::TestUnprovenSaga.test_declared_with_real_code_evidence_discharges
+    # frob:tests \
+    # tests/unit/strata/test_distributed_txn.py::TestUnprovenSaga.test_declared_with_re\
+    # al_code_evidence_discharges
     def test_declared_with_real_code_evidence_discharges(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -171,7 +183,9 @@ class TestUnprovenSaga:
             v for v in result.danger_ok.violations if v.rule == REL_UNPROVEN_SAGA
         ]
 
-    # frob:tests tests/unit/strata/test_distributed_txn.py::TestUnprovenSaga.test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+    # frob:tests \
+    # tests/unit/strata/test_distributed_txn.py::TestUnprovenSaga.test_declared_with_no\
+    # _bound_code_is_uncheckable_not_a_violation
     def test_declared_with_no_bound_code_is_uncheckable_not_a_violation(
         self, tmp_path: Path
     ):

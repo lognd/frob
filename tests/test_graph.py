@@ -162,8 +162,8 @@ class TestDsl:
         assert edges[0].target == "T-0042"
         assert edges[0].src.endswith("::foo")
 
-    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
-    # arrange-act scaffold; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an arrange-act \
+    # scaffold; extracting would obscure per-case intent"
     def test_slash_slash_directive(self, tmp_path: Path) -> None:
         src = """function foo(): void {
     // frob:invariant INV-007
@@ -188,8 +188,8 @@ class TestDsl:
         assert edges[0].target == "RULE-1"
         assert edges[0].attrs["reason"] == "known issue"
 
-    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
-    # arrange-act scaffold; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an arrange-act \
+    # scaffold; extracting would obscure per-case intent"
     def test_binds_to_enclosing_symbol(self, tmp_path: Path) -> None:
         src = """def foo() -> None:
     # frob:ticket T-0001
@@ -199,8 +199,8 @@ class TestDsl:
         edges, _ = parse_directives(pf)
         assert edges[0].src == f"{pf.path}::foo"
 
-    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
-    # arrange-act scaffold; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an arrange-act \
+    # scaffold; extracting would obscure per-case intent"
     def test_binds_to_following_symbol(self, tmp_path: Path) -> None:
         src = """# frob:ticket T-0002
 def foo() -> None:
@@ -210,8 +210,8 @@ def foo() -> None:
         edges, _ = parse_directives(pf)
         assert edges[0].src == f"{pf.path}::foo"
 
-    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
-    # arrange-act scaffold; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an arrange-act \
+    # scaffold; extracting would obscure per-case intent"
     def test_binds_to_nested_method_not_enclosing_class(self, tmp_path: Path) -> None:
         # frob:ticket T-0044
         src = """class Foo:
@@ -223,8 +223,8 @@ def foo() -> None:
         edges, _ = parse_directives(pf)
         assert edges[0].src == f"{pf.path}::Foo.bar"
 
-    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
-    # arrange-act scaffold; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an arrange-act \
+    # scaffold; extracting would obscure per-case intent"
     def test_binds_three_stacked_directives_to_def(self, tmp_path: Path) -> None:
         # frob:ticket T-0100
         src = """# frob:ticket T-0100
@@ -240,8 +240,8 @@ def foo() -> None:
         for edge in edges:
             assert edge.src == f"{pf.path}::foo"
 
-    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
-    # arrange-act scaffold; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an arrange-act \
+    # scaffold; extracting would obscure per-case intent"
     def test_binds_five_stacked_directives_to_def(self, tmp_path: Path) -> None:
         # frob:ticket T-0100
         src = """# frob:ticket T-0100
@@ -259,8 +259,8 @@ def foo() -> None:
         for edge in edges:
             assert edge.src == f"{pf.path}::foo"
 
-    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
-    # arrange-act scaffold; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an arrange-act \
+    # scaffold; extracting would obscure per-case intent"
     def test_directive_binds_past_trailing_comment_on_def_line(
         self, tmp_path: Path
     ) -> None:
@@ -281,8 +281,8 @@ def foo():  # noqa: N802 - rule-id naming convention
         assert len(edges) == 1
         assert edges[0].src == f"{pf.path}::foo"
 
-    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
-    # arrange-act scaffold; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an arrange-act \
+    # scaffold; extracting would obscure per-case intent"
     def test_stacked_directives_bind_past_trailing_comment_on_def_line(
         self, tmp_path: Path
     ) -> None:
@@ -300,8 +300,8 @@ def foo():  # noqa: N802 - rule-id naming convention
         for edge in edges:
             assert edge.src == f"{pf.path}::foo"
 
-    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
-    # arrange-act scaffold; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an arrange-act \
+    # scaffold; extracting would obscure per-case intent"
     def test_directive_does_not_chain_upward_through_prior_trailing_comment(
         self, tmp_path: Path
     ) -> None:
@@ -322,8 +322,8 @@ def foo() -> None:
         assert len(edges) == 1
         assert edges[0].src == f"{pf.path}::foo"
 
-    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
-    # arrange-act scaffold; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an arrange-act \
+    # scaffold; extracting would obscure per-case intent"
     def test_directive_separated_from_def_by_non_directive_comment(
         self, tmp_path: Path
     ) -> None:
@@ -343,8 +343,8 @@ def foo() -> None:
         assert len(edges) == 1
         assert edges[0].src == f"{pf.path}::foo"
 
-    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
-    # arrange-act scaffold; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an arrange-act \
+    # scaffold; extracting would obscure per-case intent"
     def test_directive_separated_from_def_by_blank_line(self, tmp_path: Path) -> None:
         # frob:ticket T-0100
         #
@@ -367,7 +367,8 @@ def foo() -> None:
         edges, _ = parse_directives(pf)
         assert edges[0].src == pf.path
 
-    # frob:tests tests/test_graph.py::TestDsl.test_module_docstring_directive_binds_to_bare_file
+    # frob:tests \
+    # tests/test_graph.py::TestDsl.test_module_docstring_directive_binds_to_bare_file
     # frob:ticket T-0342
     def test_module_docstring_directive_binds_to_bare_file(
         self, tmp_path: Path
@@ -386,7 +387,8 @@ def foo() -> None:
         assert edges[0].target == "T-0342"
         assert edges[0].src == pf.path
 
-    # frob:tests tests/test_graph.py::TestDsl.test_function_docstring_directive_binds_to_function
+    # frob:tests \
+    # tests/test_graph.py::TestDsl.test_function_docstring_directive_binds_to_function
     # frob:ticket T-0342
     def test_function_docstring_directive_binds_to_function(
         self, tmp_path: Path
@@ -410,7 +412,9 @@ def foo() -> None:
         assert edges[0].target == "tests/a.py::test_foo"
         assert edges[0].src == f"{pf.path}::foo"
 
-    # frob:tests tests/test_graph.py::TestDsl.test_invalid_kind_in_module_docstring_is_surfaced_not_silent
+    # frob:tests \
+    # tests/test_graph.py::TestDsl.test_invalid_kind_in_module_docstring_is_surfaced_no\
+    # t_silent
     # frob:ticket T-0269
     def test_invalid_kind_in_module_docstring_is_surfaced_not_silent(
         self, tmp_path: Path
@@ -487,8 +491,8 @@ def foo() -> None:
         assert len(malformed) == 1
         assert malformed[0].file == pf.path
 
-    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
-    # arrange-act scaffold; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an arrange-act \
+    # scaffold; extracting would obscure per-case intent"
     def test_missing_target_is_malformed(self, tmp_path: Path) -> None:
         src = """def foo() -> None:
     # frob:ticket
@@ -498,8 +502,8 @@ def foo() -> None:
         _edges, malformed = parse_directives(pf)
         assert len(malformed) == 1
 
-    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
-    # arrange-act scaffold; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an arrange-act \
+    # scaffold; extracting would obscure per-case intent"
     def test_waive_without_reason_is_malformed(self, tmp_path: Path) -> None:
         src = """def foo() -> None:
     # frob:waive RULE-1
@@ -509,8 +513,8 @@ def foo() -> None:
         _edges, malformed = parse_directives(pf)
         assert len(malformed) == 1
 
-    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an \
-    # arrange-act scaffold; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel graph/dsl test cases sharing an arrange-act \
+    # scaffold; extracting would obscure per-case intent"
     def test_bad_attr_syntax_is_malformed(self, tmp_path: Path) -> None:
         src = """def foo() -> None:
     # frob:ticket T-1 not-an-attr
@@ -789,17 +793,16 @@ class TestBuildIncremental:
 
     def test_fingerprint_packages_derived_from_lang_registry(self) -> None:
         # frob:tests src/frob/graph/cache.py::_compute_fingerprint
-        # frob:waive COV006 reason="T-0536: _FINGERPRINT_PACKAGES is a \
-        # module-level tuple computed once at import time (cache.py's top- \
-        # level *_NON_LANGUAGE_FINGERPRINT_PACKAGES, \
-        # *sorted(GRAMMAR_FINGERPRINT_PACKAGES) expression), not a \
-        # function call this test's body could ever name -- the same \
-        # module-constant-drift-lock shape as T-0516's tests/test_gates.py \
-        # waiver. Retargeting frob:tests directly at the constant instead \
-        # was tried and rejected: DRIFT002 then reports it as an \
-        # unresolvable edge (module-level assignments are not graph \
-        # nodes), trading one false positive for another -- this waiver on \
-        # the pre-existing _compute_fingerprint binding is the honest fix."
+        # frob:waive COV006 reason="T-0536: _FINGERPRINT_PACKAGES is a module-level \
+        # tuple computed once at import time (cache.py's top- level \
+        # *_NON_LANGUAGE_FINGERPRINT_PACKAGES, *sorted(GRAMMAR_FINGERPRINT_PACKAGES) \
+        # expression), not a function call this test's body could ever name -- the \
+        # same module-constant-drift-lock shape as T-0516's tests/test_gates.py \
+        # waiver. Retargeting frob:tests directly at the constant instead was tried \
+        # and rejected: DRIFT002 then reports it as an unresolvable edge (module-level \
+        # assignments are not graph nodes), trading one false positive for another -- \
+        # this waiver on the pre-existing _compute_fingerprint binding is the honest \
+        # fix."
         """T-0433 (G6 full fix): `_FINGERPRINT_PACKAGES` must contain every
         package `frob.lang.GRAMMAR_FINGERPRINT_PACKAGES` declares -- derived,
         not a second hand-copied tuple that can silently drift from it (the

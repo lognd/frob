@@ -395,9 +395,9 @@ class TestHardenedLitmus:
         assert report.gaps == ()
 
 
-# frob:waive DUP001 reason="parallel test fixtures across 2 sibling test \
-# file(s) (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-# per-case/per-scenario coverage; extracting would obscure per-case intent"
+# frob:waive DUP001 reason="parallel test fixtures across 2 sibling test file(s) (2 \
+# sites) sharing an arrange-act scaffold typical of exhaustive per-case/per-scenario \
+# coverage; extracting would obscure per-case intent"
 def _shared_two_user_model() -> KernelModel:
     """Two service users sharing a writable path and a listening port, no
     declared `Flow` between them -- the HOST001/HOST002/blast-radius VULN
@@ -431,9 +431,9 @@ def _shared_two_user_model() -> KernelModel:
     return KernelModel(nodes=(api, worker))
 
 
-# frob:waive DUP001 reason="parallel test fixtures across 2 sibling test \
-# file(s) (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-# per-case/per-scenario coverage; extracting would obscure per-case intent"
+# frob:waive DUP001 reason="parallel test fixtures across 2 sibling test file(s) (2 \
+# sites) sharing an arrange-act scaffold typical of exhaustive per-case/per-scenario \
+# coverage; extracting would obscure per-case intent"
 def _isolated_hardened_two_user_model() -> KernelModel:
     """Two service users with disjoint owns/listens/groups and no
     declared sudoers grant (`test_host_isolation.py::
@@ -475,7 +475,8 @@ class TestGroupGaps:
     fires under `owasp-top-10`) stays its own single-view group -- and the
     underlying `report.gaps` count (the verdict) must stay untouched."""
 
-    # frob:tests tests/unit/strata/test_audit.py::TestGroupGaps.test_group_gaps_by_view kind="unit"
+    # frob:tests \
+    # tests/unit/strata/test_audit.py::TestGroupGaps.test_group_gaps_by_view kind="unit"
     def test_group_gaps_by_view(self):
         model = _vulnerable_model()
         result = evaluate_exhaustiveness(model, known_rule_ids=_KNOWN_RULE_IDS)

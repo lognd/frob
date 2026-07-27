@@ -70,9 +70,9 @@ flow f1 : evil -> web
         assert str(repo) in out
         assert "is a file" in out
 
-    # frob:waive DUP001 reason="parallel CLI system-test scaffolding: \
-    # independent commands sharing the subprocess-dispatch arrange-act \
-    # shape; extracting would obscure per-command intent"
+    # frob:waive DUP001 reason="parallel CLI system-test scaffolding: independent \
+    # commands sharing the subprocess-dispatch arrange-act shape; extracting would \
+    # obscure per-command intent"
     def test_no_design_dir_is_a_noop(self, tmp_path: Path) -> None:
         repo = tmp_path / "repo"
         repo.mkdir()

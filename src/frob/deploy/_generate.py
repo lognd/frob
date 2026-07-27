@@ -292,10 +292,10 @@ def _distinct_runs_as(entries: tuple[ManifestEntry, ...]) -> tuple[str, ...]:
     return tuple(seen)
 
 
-# frob:waive DUP001 reason="mirror-image of _uninstall_user_block below \
-# by design (install creates, uninstall removes the same service user); \
-# parallel install/uninstall pairs read clearer kept separate than forced \
-# into one parameterized helper for a 5-line body"
+# frob:waive DUP001 reason="mirror-image of _uninstall_user_block below by design \
+# (install creates, uninstall removes the same service user); parallel \
+# install/uninstall pairs read clearer kept separate than forced into one \
+# parameterized helper for a 5-line body"
 def _install_user_block(name: str) -> str:
     """Check-then-apply service-user creation for one distinct `runs_as`
     identity: `id -u` gates the `useradd`, so a re-run performs zero
@@ -373,9 +373,8 @@ def _install_unit_block(entry: ManifestEntry) -> str:
 
 
 # frob:waive DUP001 reason="dup grouped this shell-heredoc builder with \
-# _waive.py::_stale_detail and dup/_rules.py::_dup001_message purely on \
-# generic f-string shape -- unrelated domain (systemd unit install \
-# script), false positive"
+# _waive.py::_stale_detail and dup/_rules.py::_dup001_message purely on generic \
+# f-string shape -- unrelated domain (systemd unit install script), false positive"
 def _unit_write_block(
     unit_path: str, unit_name: str, body_digest: str, body: str
 ) -> str:
@@ -399,9 +398,9 @@ def _unit_write_block(
     )
 
 
-# frob:waive DUP001 reason="same false-positive grouping as \
-# _unit_write_block above (dup/_rules.py::_dup001_message, _waive.py:: \
-# _stale_detail); generic f-string shape, unrelated domain"
+# frob:waive DUP001 reason="same false-positive grouping as _unit_write_block above \
+# (dup/_rules.py::_dup001_message, _waive.py:: _stale_detail); generic f-string shape, \
+# unrelated domain"
 def _unit_enable_start_block(unit_name: str) -> str:
     """Check-then-apply `systemctl enable`/`start` block for `unit_name`."""
     return (
@@ -565,8 +564,8 @@ def _uninstall_owns_block(manifest: HostManifest) -> str:
     return "".join(lines)
 
 
-# frob:waive DUP001 reason="mirror-image of _install_user_block above by \
-# design; see that function's waiver"
+# frob:waive DUP001 reason="mirror-image of _install_user_block above by design; see \
+# that function's waiver"
 def _uninstall_user_block(name: str) -> str:
     """Remove exactly one distinct `runs_as` identity's service user --
     check-then-apply via `id -u` first, matching `_install_user_block`'s

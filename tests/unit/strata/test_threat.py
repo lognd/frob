@@ -150,9 +150,9 @@ class TestQualityFamilies:
     from."""
 
     # frob:tests src/frob/strata/_threat.py::check_catalog_completeness kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_threat.py \
-    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_threat.py (3 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_web_performance_baseline_is_satisfied(self):
         result = check_catalog_completeness(
             "web-performance-baseline",
@@ -164,9 +164,9 @@ class TestQualityFamilies:
         assert result.danger_ok == ()
 
     # frob:tests src/frob/strata/_threat.py::check_catalog_completeness kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_threat.py \
-    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_threat.py (3 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_reliability_baseline_is_satisfied(self):
         result = check_catalog_completeness(
             "reliability-baseline",
@@ -178,9 +178,9 @@ class TestQualityFamilies:
         assert result.danger_ok == ()
 
     # frob:tests src/frob/strata/_threat.py::check_catalog_completeness kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_threat.py \
-    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_threat.py (3 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_web_quality_security_baseline_is_satisfied(self):
         result = check_catalog_completeness(
             "web-quality-security-baseline",
@@ -532,9 +532,9 @@ class TestDischargeCompleteness:
         assert "no owner/review date" in violations[0].detail
 
     # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_threat.py \
-    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_threat.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_assumed_claim_with_owner_and_review_is_discharged(self):
         node = Node(id="Web", trust="trusted", may=("html_render",))
         claim_id = _discharge_claim_id("CWE-79", "Web")
@@ -625,9 +625,9 @@ class TestDischargeChokepointShape:
         assert "does not prove a mitigation chokepoint" in violations[0].detail
 
     # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_threat.py \
-    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_threat.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_noflow_claim_with_wrong_dst_does_not_discharge(self):
         node = Node(id="Web", trust="trusted", may=("html_render",))
         other = Node(id="Other", trust="trusted")
@@ -691,9 +691,9 @@ class TestDischargeChokepointShape:
         assert result.danger_ok == ()
 
     # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_threat.py \
-    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_threat.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_noflow_from_a_non_foreign_node_does_not_discharge(self):
         node = Node(id="Web", trust="trusted", may=("html_render",))
         internal = Node(id="Internal", trust="trusted")
@@ -946,9 +946,9 @@ class TestMitigationKindChokepoint:
         assert "not of the required mitigation kind" in violations[0].detail
 
     # frob:tests src/frob/strata/_threat.py::check_discharge_completeness kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_threat.py \
-    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_threat.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_assumed_claim_bypasses_the_mitigation_kind_check(self):
         # An assumed claim never reaches the closure at all
         # (`evaluate_claims` short-circuits it to ASSUMED), so there is no
@@ -1353,9 +1353,9 @@ class TestLoadRepoBenignCapabilities:
         )
 
     # frob:tests src/frob/strata/_threat.py::load_repo_benign_capabilities kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_threat.py \
-    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_threat.py (3 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_missing_reason_is_malformed(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -1368,9 +1368,9 @@ class TestLoadRepoBenignCapabilities:
         assert result.danger_err == StrataError.MalformedBenignConfig
 
     # frob:tests src/frob/strata/_threat.py::load_repo_benign_capabilities kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_threat.py \
-    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_threat.py (3 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_blank_reason_is_malformed(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -1383,9 +1383,9 @@ class TestLoadRepoBenignCapabilities:
         assert result.danger_err == StrataError.MalformedBenignConfig
 
     # frob:tests src/frob/strata/_threat.py::load_repo_benign_capabilities kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_threat.py \
-    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_threat.py (3 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_missing_caught_by_is_malformed(self, tmp_path: Path):
         _write(
             tmp_path,

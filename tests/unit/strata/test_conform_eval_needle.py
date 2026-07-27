@@ -24,7 +24,9 @@ def _write(root: Path, rel: str, source: str) -> None:
 
 
 class TestEvalNeedleSelfMatch:
-    # frob:tests tests/unit/strata/test_conform_eval_needle.py::TestEvalNeedleSelfMatch.test_identifier_suffix_does_not_fire_eval
+    # frob:tests \
+    # tests/unit/strata/test_conform_eval_needle.py::TestEvalNeedleSelfMatch.test_ident\
+    # ifier_suffix_does_not_fire_eval
     def test_identifier_suffix_does_not_fire_eval(self, tmp_path: Path) -> None:
         """A function named `_mutation_for_eval` (no real eval/exec call
         anywhere in the file) must not be observed as the `eval` capability
@@ -40,7 +42,9 @@ class TestEvalNeedleSelfMatch:
         )
         assert "eval" not in capabilities
 
-    # frob:tests tests/unit/strata/test_conform_eval_needle.py::TestEvalNeedleSelfMatch.test_identifier_suffix_does_not_fire_sys100
+    # frob:tests \
+    # tests/unit/strata/test_conform_eval_needle.py::TestEvalNeedleSelfMatch.test_ident\
+    # ifier_suffix_does_not_fire_sys100
     def test_identifier_suffix_does_not_fire_sys100(self, tmp_path: Path) -> None:
         """The same fixture through the full SYS100-extended self-conform
         path (`check_self_conformance`): no `eval` finding for a node whose
@@ -64,7 +68,9 @@ class TestEvalNeedleSelfMatch:
         ]
         assert eval_hits == []
 
-    # frob:tests tests/unit/strata/test_conform_eval_needle.py::TestEvalNeedleSelfMatch.test_genuine_bare_eval_call_still_fires
+    # frob:tests \
+    # tests/unit/strata/test_conform_eval_needle.py::TestEvalNeedleSelfMatch.test_genui\
+    # ne_bare_eval_call_still_fires
     def test_genuine_bare_eval_call_still_fires(self, tmp_path: Path) -> None:
         """A real bare `eval(` builtin call must still be observed -- the
         fix must not weaken detection of an actual dynamic-code-execution
@@ -79,7 +85,9 @@ class TestEvalNeedleSelfMatch:
         )
         assert "eval" in capabilities
 
-    # frob:tests tests/unit/strata/test_conform_eval_needle.py::TestEvalNeedleSelfMatch.test_genuine_bare_exec_call_still_fires
+    # frob:tests \
+    # tests/unit/strata/test_conform_eval_needle.py::TestEvalNeedleSelfMatch.test_genui\
+    # ne_bare_exec_call_still_fires
     def test_genuine_bare_exec_call_still_fires(self, tmp_path: Path) -> None:
         """Sibling of the eval( case above for the bare `exec(` builtin."""
         _write(
@@ -92,7 +100,9 @@ class TestEvalNeedleSelfMatch:
         )
         assert "eval" in capabilities
 
-    # frob:tests tests/unit/strata/test_conform_eval_needle.py::TestEvalNeedleSelfMatch.test_identifier_suffix_for_exec_does_not_fire
+    # frob:tests \
+    # tests/unit/strata/test_conform_eval_needle.py::TestEvalNeedleSelfMatch.test_ident\
+    # ifier_suffix_for_exec_does_not_fire
     def test_identifier_suffix_for_exec_does_not_fire(self, tmp_path: Path) -> None:
         """Sibling of the `eval(` identifier-suffix case for `exec(` --
         e.g. a function named `_plan_for_exec` must not self-match."""
@@ -106,7 +116,9 @@ class TestEvalNeedleSelfMatch:
         )
         assert "eval" not in capabilities
 
-    # frob:tests tests/unit/strata/test_conform_eval_needle.py::TestEvalNeedleSelfMatch.test_real_repo_design_selfconform_has_no_eval_gap
+    # frob:tests \
+    # tests/unit/strata/test_conform_eval_needle.py::TestEvalNeedleSelfMatch.test_real_\
+    # repo_design_selfconform_has_no_eval_gap
     def test_real_repo_design_selfconform_has_no_eval_gap(self) -> None:
         """T-0882 acceptance [2]: with the T-0860 `waive "SYS100:eval"`
         clause deleted from `design/frob.strata`'s `deploy` node, the real

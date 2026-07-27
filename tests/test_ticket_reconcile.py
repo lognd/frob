@@ -88,7 +88,9 @@ def repo(tmp_path: Path) -> Path:
 
 class TestReconcileStaleHold:
     def test_dry_run_reports_but_does_not_requeue(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_reconcile.py::TestReconcileStaleHold.test_dry_run_reports_but_does_not_requeue
+        # frob:tests \
+        # tests/test_ticket_reconcile.py::TestReconcileStaleHold.test_dry_run_reports_b\
+        # ut_does_not_requeue
         created = new_ticket(repo, _spec("Stale", scope=("src/feature.py",)))
         assert created.is_ok
         tid = created.danger_ok.id
@@ -118,7 +120,9 @@ class TestReconcileStaleHold:
         assert loaded.danger_ok[tid].state == TicketState.IN_PROGRESS
 
     def test_apply_requeues_stale_hold_and_releases_lease(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_reconcile.py::TestReconcileStaleHold.test_apply_requeues_stale_hold_and_releases_lease
+        # frob:tests \
+        # tests/test_ticket_reconcile.py::TestReconcileStaleHold.test_apply_requeues_st\
+        # ale_hold_and_releases_lease
         created = new_ticket(repo, _spec("Stale2", scope=("src/feature.py",)))
         assert created.is_ok
         tid = created.danger_ok.id
@@ -146,7 +150,9 @@ class TestReconcileStaleHold:
         """A ticket that IS in-progress with a real, live lease must never
         be reported as a stale hold -- reconcile only judges absence of a
         live lease, not the mere fact of being in-progress."""
-        # frob:tests tests/test_ticket_reconcile.py::TestReconcileStaleHold.test_live_in_progress_ticket_with_lease_is_untouched
+        # frob:tests \
+        # tests/test_ticket_reconcile.py::TestReconcileStaleHold.test_live_in_progress_\
+        # ticket_with_lease_is_untouched
         created = new_ticket(repo, _spec("Alive", scope=("src/feature.py",)))
         assert created.is_ok
         tid = created.danger_ok.id
@@ -174,7 +180,9 @@ class TestReconcileOrphanWorktree:
     def test_live_worktree_with_no_lease_is_flagged_not_removed(
         self, repo: Path
     ) -> None:
-        # frob:tests tests/test_ticket_reconcile.py::TestReconcileOrphanWorktree.test_live_worktree_with_no_lease_is_flagged_not_removed
+        # frob:tests \
+        # tests/test_ticket_reconcile.py::TestReconcileOrphanWorktree.test_live_worktre\
+        # e_with_no_lease_is_flagged_not_removed
         wt = repo.parent / "orphan-wt"
         _run(["git", "worktree", "add", "-b", "feature-orphan", str(wt)], repo)
 
@@ -189,7 +197,9 @@ class TestReconcileOrphanWorktree:
         _run(["git", "worktree", "remove", "--force", str(wt)], repo)
 
     def test_apply_and_remove_orphans_actually_removes_it(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_reconcile.py::TestReconcileOrphanWorktree.test_apply_and_remove_orphans_actually_removes_it
+        # frob:tests \
+        # tests/test_ticket_reconcile.py::TestReconcileOrphanWorktree.test_apply_and_re\
+        # move_orphans_actually_removes_it
         wt = repo.parent / "orphan-wt2"
         _run(["git", "worktree", "add", "-b", "feature-orphan2", str(wt)], repo)
 
@@ -201,7 +211,9 @@ class TestReconcileOrphanWorktree:
         assert not wt.exists()
 
     def test_worktree_holding_a_live_lease_is_not_orphan(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_reconcile.py::TestReconcileOrphanWorktree.test_worktree_holding_a_live_lease_is_not_orphan
+        # frob:tests \
+        # tests/test_ticket_reconcile.py::TestReconcileOrphanWorktree.test_worktree_hol\
+        # ding_a_live_lease_is_not_orphan
         created = new_ticket(repo, _spec("Held", scope=("src/feature.py",)))
         assert created.is_ok
         tid = created.danger_ok.id
@@ -227,7 +239,9 @@ class TestReconcileOrphanedLandIntent:
     its own `_clear_intent` cleanup (crash/interrupt mid-land)."""
 
     def test_dry_run_reports_but_does_not_clear(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_reconcile.py::TestReconcileOrphanedLandIntent.test_dry_run_reports_but_does_not_clear
+        # frob:tests \
+        # tests/test_ticket_reconcile.py::TestReconcileOrphanedLandIntent.test_dry_run_\
+        # reports_but_does_not_clear
         _write_intent(repo, "T-crashed", repo)
 
         result = reconcile(repo)
@@ -238,7 +252,9 @@ class TestReconcileOrphanedLandIntent:
         assert len(_read_all_intents(repo)) == 1
 
     def test_apply_clears_the_orphaned_intent(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_reconcile.py::TestReconcileOrphanedLandIntent.test_apply_clears_the_orphaned_intent
+        # frob:tests \
+        # tests/test_ticket_reconcile.py::TestReconcileOrphanedLandIntent.test_apply_cl\
+        # ears_the_orphaned_intent
         _write_intent(repo, "T-crashed", repo)
 
         result = reconcile(repo, apply=True)
@@ -249,7 +265,9 @@ class TestReconcileOrphanedLandIntent:
         assert _read_all_intents(repo) == ()
 
     def test_no_intents_reports_empty(self, repo: Path) -> None:
-        # frob:tests tests/test_ticket_reconcile.py::TestReconcileOrphanedLandIntent.test_no_intents_reports_empty
+        # frob:tests \
+        # tests/test_ticket_reconcile.py::TestReconcileOrphanedLandIntent.test_no_inten\
+        # ts_reports_empty
         result = reconcile(repo)
         assert result.is_ok
         assert result.danger_ok.orphaned_land_intents == ()

@@ -17,12 +17,12 @@ copies still work; T-0640 already shipped and re-deriving its internals
 mid-family is out of scope for T-0641) -- new REL2xx modules import from
 here instead of re-copying the pattern a third/fourth/fifth time.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: this file's \
-# 'only' hits are source-level design-rationale/scope-cut prose (docstrings \
-# describing already-implemented internal behavior, verifiable by reading \
-# the code they annotate) rather than a separate cross-module contract \
-# needing its own tracked invariant, the same disposition _reliability.py's \
-# own identical waiver already uses for the identical reason"
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: this file's 'only' hits \
+# are source-level design-rationale/scope-cut prose (docstrings describing \
+# already-implemented internal behavior, verifiable by reading the code they annotate) \
+# rather than a separate cross-module contract needing its own tracked invariant, the \
+# same disposition _reliability.py's own identical waiver already uses for the \
+# identical reason"
 
 from __future__ import annotations
 

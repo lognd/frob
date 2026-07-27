@@ -32,7 +32,9 @@ def _load(filename: str) -> tuple[Module, KernelModel]:
 
 
 class TestDuplicatePort:
-    # frob:tests tests/unit/strata/test_contention.py::TestDuplicatePort.test_two_nodes_same_port_fires
+    # frob:tests \
+    # tests/unit/strata/test_contention.py::TestDuplicatePort.test_two_nodes_same_port_\
+    # fires
     def test_two_nodes_same_port_fires(self):
         _module, model = _load("contention_port_vuln.strata")
         report = check_resource_contention(model)
@@ -43,13 +45,16 @@ class TestDuplicatePort:
         # api_a's distinct port 9000 must not spuriously fire.
         assert all("9000" not in v.detail for v in port_findings)
 
-    # frob:tests tests/unit/strata/test_contention.py::TestDuplicatePort.test_distinct_ports_clean
+    # frob:tests \
+    # tests/unit/strata/test_contention.py::TestDuplicatePort.test_distinct_ports_clean
     def test_distinct_ports_clean(self):
         _module, model = _load("contention_port_clean.strata")
         report = check_resource_contention(model)
         assert not [v for v in report.violations if v.rule == SYS_DUPLICATE_PORT]
 
-    # frob:tests tests/unit/strata/test_contention.py::TestDuplicatePort.test_one_sided_waiver_keeps_the_other_nodes_finding
+    # frob:tests \
+    # tests/unit/strata/test_contention.py::TestDuplicatePort.test_one_sided_waiver_kee\
+    # ps_the_other_nodes_finding
     def test_one_sided_waiver_keeps_the_other_nodes_finding(self):
         _module, model = _load("contention_port_waived.strata")
         report = check_resource_contention(model)
@@ -60,7 +65,9 @@ class TestDuplicatePort:
 
 
 class TestOverlappingPath:
-    # frob:tests tests/unit/strata/test_contention.py::TestOverlappingPath.test_owns_subtree_overlap_fires_write_capable
+    # frob:tests \
+    # tests/unit/strata/test_contention.py::TestOverlappingPath.test_owns_subtree_overl\
+    # ap_fires_write_capable
     def test_owns_subtree_overlap_fires_write_capable(self):
         _module, model = _load("contention_path_vuln.strata")
         report = check_resource_contention(model)
@@ -71,13 +78,17 @@ class TestOverlappingPath:
         # api_b's disjoint /etc/other-service claim must not fire.
         assert all("/etc/other-service" not in v.detail for v in findings)
 
-    # frob:tests tests/unit/strata/test_contention.py::TestOverlappingPath.test_disjoint_paths_clean
+    # frob:tests \
+    # tests/unit/strata/test_contention.py::TestOverlappingPath.test_disjoint_paths_cle\
+    # an
     def test_disjoint_paths_clean(self):
         _module, model = _load("contention_path_clean.strata")
         report = check_resource_contention(model)
         assert not [v for v in report.violations if v.rule == SYS_OVERLAPPING_PATH]
 
-    # frob:tests tests/unit/strata/test_contention.py::TestOverlappingPath.test_readonly_acl_overlap_fires_but_not_write_capable
+    # frob:tests \
+    # tests/unit/strata/test_contention.py::TestOverlappingPath.test_readonly_acl_overl\
+    # ap_fires_but_not_write_capable
     def test_readonly_acl_overlap_fires_but_not_write_capable(self):
         _module, model = _load("contention_acl_readonly_vuln.strata")
         report = check_resource_contention(model)
@@ -87,14 +98,17 @@ class TestOverlappingPath:
 
 
 class TestSharedPipe:
-    # frob:tests tests/unit/strata/test_contention.py::TestSharedPipe.test_same_pipe_name_fires
+    # frob:tests \
+    # tests/unit/strata/test_contention.py::TestSharedPipe.test_same_pipe_name_fires
     def test_same_pipe_name_fires(self):
         _module, model = _load("contention_pipe_vuln.strata")
         report = check_resource_contention(model)
         findings = [v for v in report.violations if v.rule == SYS_SHARED_PIPE]
         assert {v.node for v in findings} == {"svc_a", "svc_b"}
 
-    # frob:tests tests/unit/strata/test_contention.py::TestSharedPipe.test_distinct_pipe_names_clean
+    # frob:tests \
+    # tests/unit/strata/test_contention.py::TestSharedPipe.test_distinct_pipe_names_cle\
+    # an
     def test_distinct_pipe_names_clean(self):
         _module, model = _load("contention_pipe_clean.strata")
         report = check_resource_contention(model)
@@ -102,7 +116,9 @@ class TestSharedPipe:
 
 
 class TestSharedStoreWrite:
-    # frob:tests tests/unit/strata/test_contention.py::TestSharedStoreWrite.test_two_writers_fires_mode_blind
+    # frob:tests \
+    # tests/unit/strata/test_contention.py::TestSharedStoreWrite.test_two_writers_fires\
+    # _mode_blind
     def test_two_writers_fires_mode_blind(self):
         module, model = _load("contention_store_vuln.strata")
         store_ids = frozenset(s.id for s in module.stores)
@@ -113,14 +129,18 @@ class TestSharedStoreWrite:
         assert all(v.sub_target == "shared_store" for v in findings)
         assert all("other_store" not in v.detail for v in findings)
 
-    # frob:tests tests/unit/strata/test_contention.py::TestSharedStoreWrite.test_single_writer_clean
+    # frob:tests \
+    # tests/unit/strata/test_contention.py::TestSharedStoreWrite.test_single_writer_cle\
+    # an
     def test_single_writer_clean(self):
         module, model = _load("contention_store_clean.strata")
         store_ids = frozenset(s.id for s in module.stores)
         report = check_resource_contention(model, store_ids=store_ids)
         assert not [v for v in report.violations if v.rule == SYS_SHARED_STORE_WRITE]
 
-    # frob:tests tests/unit/strata/test_contention.py::TestSharedStoreWrite.test_empty_store_ids_is_silent
+    # frob:tests \
+    # tests/unit/strata/test_contention.py::TestSharedStoreWrite.test_empty_store_ids_i\
+    # s_silent
     def test_empty_store_ids_is_silent(self):
         """`store_ids` empty (the default): SYS203 must emit nothing at
         all, even though the SAME fixture fires with `store_ids` supplied

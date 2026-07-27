@@ -39,7 +39,9 @@ def _write(root: Path, rel: str, source: str) -> None:
 
 
 class TestMissingTimeout:
-    # frob:tests tests/unit/strata/test_reliability.py::TestMissingTimeout.test_flow_without_timeout_fires
+    # frob:tests \
+    # tests/unit/strata/test_reliability.py::TestMissingTimeout.test_flow_without_timeo\
+    # ut_fires
     def test_flow_without_timeout_fires(self, tmp_path: Path):
         _module, model = _load("reliability_timeout_missing_vuln.strata")
         result = check_reliability_timeouts(model, tmp_path)
@@ -52,7 +54,9 @@ class TestMissingTimeout:
         # f_ok (declares `attr timeout;`) must not spuriously fire.
         assert "f_ok" not in sub_targets
 
-    # frob:tests tests/unit/strata/test_reliability.py::TestMissingTimeout.test_discharged_and_exempt_flows_clean
+    # frob:tests \
+    # tests/unit/strata/test_reliability.py::TestMissingTimeout.test_discharged_and_exe\
+    # mpt_flows_clean
     def test_discharged_and_exempt_flows_clean(self, tmp_path: Path):
         _module, model = _load("reliability_timeout_clean.strata")
         result = check_reliability_timeouts(model, tmp_path)
@@ -60,7 +64,9 @@ class TestMissingTimeout:
         report = result.danger_ok
         assert not [v for v in report.violations if v.rule == REL_MISSING_TIMEOUT]
 
-    # frob:tests tests/unit/strata/test_reliability.py::TestMissingTimeout.test_cache_fill_and_invalidation_flows_are_local_exempt
+    # frob:tests \
+    # tests/unit/strata/test_reliability.py::TestMissingTimeout.test_cache_fill_and_inv\
+    # alidation_flows_are_local_exempt
     def test_cache_fill_and_invalidation_flows_are_local_exempt(self, tmp_path: Path):
         """T-0845: a `cache X of Y` construct's elaborator-synthesized
         fill/invalidation flows now carry `_infra.py::_CACHE_LOCAL_ATTR`
@@ -92,7 +98,9 @@ class TestMissingTimeout:
         # No waiver was declared -- this is a real exemption, not a hidden one.
         assert not report.waived
 
-    # frob:tests tests/unit/strata/test_reliability.py::TestMissingTimeout.test_waiver_on_one_flow_keeps_sibling_flow_finding
+    # frob:tests \
+    # tests/unit/strata/test_reliability.py::TestMissingTimeout.test_waiver_on_one_flow\
+    # _keeps_sibling_flow_finding
     def test_waiver_on_one_flow_keeps_sibling_flow_finding(self, tmp_path: Path):
         _module, model = _load("reliability_timeout_waived.strata")
         result = check_reliability_timeouts(model, tmp_path)
@@ -112,7 +120,9 @@ class TestUnprovenTimeout:
     these build a `KernelModel` directly (the `test_selfconform.py`/
     `test_crash.py` precedent) against `tmp_path`."""
 
-    # frob:tests tests/unit/strata/test_reliability.py::TestUnprovenTimeout.test_declared_timeout_with_no_code_evidence_fires
+    # frob:tests \
+    # tests/unit/strata/test_reliability.py::TestUnprovenTimeout.test_declared_timeout_\
+    # with_no_code_evidence_fires
     def test_declared_timeout_with_no_code_evidence_fires(self, tmp_path: Path):
         _write(tmp_path, "src/widget/_io.py", "def call():\n    return remote()\n")
         model = KernelModel(
@@ -130,7 +140,9 @@ class TestUnprovenTimeout:
         assert {v.sub_target for v in violations} == {"f1"}
         assert violations[0].node == "caller"
 
-    # frob:tests tests/unit/strata/test_reliability.py::TestUnprovenTimeout.test_declared_timeout_with_real_code_evidence_discharges
+    # frob:tests \
+    # tests/unit/strata/test_reliability.py::TestUnprovenTimeout.test_declared_timeout_\
+    # with_real_code_evidence_discharges
     def test_declared_timeout_with_real_code_evidence_discharges(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -150,7 +162,9 @@ class TestUnprovenTimeout:
             v for v in result.danger_ok.violations if v.rule == REL_UNPROVEN_TIMEOUT
         ]
 
-    # frob:tests tests/unit/strata/test_reliability.py::TestUnprovenTimeout.test_declared_timeout_with_no_bound_code_is_uncheckable_not_a_violation
+    # frob:tests \
+    # tests/unit/strata/test_reliability.py::TestUnprovenTimeout.test_declared_timeout_\
+    # with_no_bound_code_is_uncheckable_not_a_violation
     def test_declared_timeout_with_no_bound_code_is_uncheckable_not_a_violation(
         self, tmp_path: Path
     ):
@@ -169,7 +183,9 @@ class TestUnprovenTimeout:
             v for v in result.danger_ok.violations if v.rule == REL_UNPROVEN_TIMEOUT
         ]
 
-    # frob:tests tests/unit/strata/test_reliability.py::TestUnprovenTimeout.test_codeless_src_with_coded_dst_proves_against_dst
+    # frob:tests \
+    # tests/unit/strata/test_reliability.py::TestUnprovenTimeout.test_codeless_src_with\
+    # _coded_dst_proves_against_dst
     def test_codeless_src_with_coded_dst_proves_against_dst(self, tmp_path: Path):
         # T-0758: this is the f_registry_fetch shape -- the flow's SRC
         # (a foreign external registry) has no bound code at all, but its
@@ -202,7 +218,9 @@ class TestUnprovenTimeout:
             v for v in result.danger_ok.violations if v.rule == REL_UNPROVEN_TIMEOUT
         ]
 
-    # frob:tests tests/unit/strata/test_reliability.py::TestUnprovenTimeout.test_codeless_src_with_coded_dst_lacking_evidence_fires_against_dst
+    # frob:tests \
+    # tests/unit/strata/test_reliability.py::TestUnprovenTimeout.test_codeless_src_with\
+    # _coded_dst_lacking_evidence_fires_against_dst
     def test_codeless_src_with_coded_dst_lacking_evidence_fires_against_dst(
         self, tmp_path: Path
     ):
@@ -234,7 +252,9 @@ class TestUnprovenTimeout:
 
 
 class TestMissingHealth:
-    # frob:tests tests/unit/strata/test_reliability.py::TestMissingHealth.test_daemon_without_health_fires
+    # frob:tests \
+    # tests/unit/strata/test_reliability.py::TestMissingHealth.test_daemon_without_heal\
+    # th_fires
     def test_daemon_without_health_fires(self, tmp_path: Path):
         _module, model = _load("reliability_health_missing_vuln.strata")
         result = check_reliability_health(model, tmp_path)
@@ -248,7 +268,9 @@ class TestMissingHealth:
         assert "api_ok" not in nodes
         assert "plain_store" not in nodes
 
-    # frob:tests tests/unit/strata/test_reliability.py::TestMissingHealth.test_discharged_daemon_nodes_clean
+    # frob:tests \
+    # tests/unit/strata/test_reliability.py::TestMissingHealth.test_discharged_daemon_n\
+    # odes_clean
     def test_discharged_daemon_nodes_clean(self, tmp_path: Path):
         _module, model = _load("reliability_health_clean.strata")
         result = check_reliability_health(model, tmp_path)
@@ -256,7 +278,9 @@ class TestMissingHealth:
         report = result.danger_ok
         assert not [v for v in report.violations if v.rule == REL_MISSING_HEALTH]
 
-    # frob:tests tests/unit/strata/test_reliability.py::TestMissingHealth.test_waiver_on_one_node_keeps_sibling_node_finding
+    # frob:tests \
+    # tests/unit/strata/test_reliability.py::TestMissingHealth.test_waiver_on_one_node_\
+    # keeps_sibling_node_finding
     def test_waiver_on_one_node_keeps_sibling_node_finding(self, tmp_path: Path):
         _module, model = _load("reliability_health_waived.strata")
         result = check_reliability_health(model, tmp_path)
@@ -274,7 +298,9 @@ class TestUnprovenHealth:
     these build a `KernelModel` directly (the `TestUnprovenTimeout`
     precedent above) against `tmp_path`."""
 
-    # frob:tests tests/unit/strata/test_reliability.py::TestUnprovenHealth.test_declared_health_with_no_code_evidence_fires
+    # frob:tests \
+    # tests/unit/strata/test_reliability.py::TestUnprovenHealth.test_declared_health_wi\
+    # th_no_code_evidence_fires
     def test_declared_health_with_no_code_evidence_fires(self, tmp_path: Path):
         _write(tmp_path, "src/widget/_app.py", "def handler():\n    return 'ok'\n")
         model = KernelModel(
@@ -293,7 +319,9 @@ class TestUnprovenHealth:
         ]
         assert {v.node for v in violations} == {"api"}
 
-    # frob:tests tests/unit/strata/test_reliability.py::TestUnprovenHealth.test_declared_health_with_real_code_evidence_discharges
+    # frob:tests \
+    # tests/unit/strata/test_reliability.py::TestUnprovenHealth.test_declared_health_wi\
+    # th_real_code_evidence_discharges
     def test_declared_health_with_real_code_evidence_discharges(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -315,7 +343,9 @@ class TestUnprovenHealth:
             v for v in result.danger_ok.violations if v.rule == REL_UNPROVEN_HEALTH
         ]
 
-    # frob:tests tests/unit/strata/test_reliability.py::TestUnprovenHealth.test_declared_health_with_no_bound_code_is_uncheckable_not_a_violation
+    # frob:tests \
+    # tests/unit/strata/test_reliability.py::TestUnprovenHealth.test_declared_health_wi\
+    # th_no_bound_code_is_uncheckable_not_a_violation
     def test_declared_health_with_no_bound_code_is_uncheckable_not_a_violation(
         self, tmp_path: Path
     ):
@@ -348,7 +378,9 @@ class TestCrossFamilyWaiverScoping:
     through BOTH entrypoints, neither may report the OTHER family's
     waiver stale."""
 
-    # frob:tests tests/unit/strata/test_reliability.py::TestCrossFamilyWaiverScoping.test_timeout_entrypoint_ignores_health_family_and_health_entrypoint_ignores_timeout_family
+    # frob:tests \
+    # tests/unit/strata/test_reliability.py::TestCrossFamilyWaiverScoping.test_timeout_\
+    # entrypoint_ignores_health_family_and_health_entrypoint_ignores_timeout_family
     def test_timeout_entrypoint_ignores_health_family_and_health_entrypoint_ignores_timeout_family(  # noqa: E501
         self, tmp_path: Path
     ):

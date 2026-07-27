@@ -48,10 +48,9 @@ def run(cfg: AppConfig) -> None:
 
 # frob:ticket T-0021
 # frob:ticket T-0562
-# frob:waive ARCH103 reason="T-0977: `frob perf profile` CLI entrypoint -- \
-# resolves the profile root/argv and dispatches to `profile_command`; \
-# runner-shape orchestration, same as this module's other `_run_*`/`_*` \
-# CLI handlers"
+# frob:waive ARCH103 reason="T-0977: `frob perf profile` CLI entrypoint -- resolves \
+# the profile root/argv and dispatches to `profile_command`; runner-shape \
+# orchestration, same as this module's other `_run_*`/`_*` CLI handlers"
 def _profile(cfg: AppConfig) -> None:
     """`frob perf profile -- <argv>` / `frob perf profile --tests`."""
     from frob.perf import profile_command

@@ -51,11 +51,14 @@ def _queue(*tickets: Ticket) -> TicketQueue:
 
 class TestGlobsIntersect:
     def test_wildcard_prefix_overlaps_literal(self) -> None:
-        # frob:tests tests/test_tickets_lease.py::TestGlobsIntersect.test_wildcard_prefix_overlaps_literal
+        # frob:tests \
+        # tests/test_tickets_lease.py::TestGlobsIntersect.test_wildcard_prefix_overlaps\
+        # _literal
         assert _globs_intersect("tests/**", "tests/test_gates.py") is True
 
     def test_disjoint_literal_siblings(self) -> None:
-        # frob:tests tests/test_tickets_lease.py::TestGlobsIntersect.test_disjoint_literal_siblings
+        # frob:tests \
+        # tests/test_tickets_lease.py::TestGlobsIntersect.test_disjoint_literal_siblings
         assert _globs_intersect("tests/test_gates.py", "tests/test_vet.py") is False
 
     def test_disjoint_directory_siblings(self) -> None:
@@ -67,14 +70,16 @@ class TestGlobsIntersect:
 
 class TestScopeOverlap:
     def test_precise_scopes_disjoint(self) -> None:
-        # frob:tests tests/test_tickets_lease.py::TestScopeOverlap.test_precise_scopes_disjoint
+        # frob:tests \
+        # tests/test_tickets_lease.py::TestScopeOverlap.test_precise_scopes_disjoint
         scope_a = ("src/frob/gates/", "tests/test_gates.py")
         scope_b = ("src/frob/vet/", "tests/test_vet.py")
         assert scope_overlap(scope_a, scope_b) is False
         assert scope_overlap_globs(scope_a, scope_b) is None
 
     def test_real_collision_detected(self) -> None:
-        # frob:tests tests/test_tickets_lease.py::TestScopeOverlap.test_real_collision_detected
+        # frob:tests \
+        # tests/test_tickets_lease.py::TestScopeOverlap.test_real_collision_detected
         scope_a = ("src/frob/gates/", "tests/test_gates.py")
         scope_b = ("src/frob/gates/_arch.py", "tests/test_arch.py")
         assert scope_overlap(scope_a, scope_b) is True
@@ -88,7 +93,9 @@ class TestScopeOverlap:
 
 class TestLeasedBy:
     def test_precise_in_progress_does_not_hide_disjoint(self) -> None:
-        # frob:tests tests/test_tickets_lease.py::TestLeasedBy.test_precise_in_progress_does_not_hide_disjoint
+        # frob:tests \
+        # tests/test_tickets_lease.py::TestLeasedBy.test_precise_in_progress_does_not_h\
+        # ide_disjoint
         holder_a = _ticket(
             ticket_id="T-1000",
             state=TicketState.IN_PROGRESS,
@@ -107,7 +114,9 @@ class TestLeasedBy:
         assert leased_by(queue, candidate) == ()
 
     def test_real_source_scope_collision_is_hidden(self) -> None:
-        # frob:tests tests/test_tickets_lease.py::TestLeasedBy.test_real_source_scope_collision_is_hidden
+        # frob:tests \
+        # tests/test_tickets_lease.py::TestLeasedBy.test_real_source_scope_collision_is\
+        # _hidden
         holder = _ticket(
             ticket_id="T-1000",
             state=TicketState.IN_PROGRESS,
@@ -123,7 +132,9 @@ class TestLeasedBy:
         assert hits[0][0] == "T-1000"
 
     def test_over_broad_lease_demotes_to_warn_only(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_tickets_lease.py::TestLeasedBy.test_over_broad_lease_demotes_to_warn_only
+        # frob:tests \
+        # tests/test_tickets_lease.py::TestLeasedBy.test_over_broad_lease_demotes_to_wa\
+        # rn_only
         holder = _ticket(
             ticket_id="T-1000",
             state=TicketState.IN_PROGRESS,
@@ -209,7 +220,8 @@ class TestDoable:
         assert [t.id for t in doable(queue)] == ["T-1001"]
 
     def test_ignore_lease_returns_raw_list(self) -> None:
-        # frob:tests tests/test_tickets_lease.py::TestDoable.test_ignore_lease_returns_raw_list
+        # frob:tests \
+        # tests/test_tickets_lease.py::TestDoable.test_ignore_lease_returns_raw_list
         holder = _ticket(
             ticket_id="T-1000",
             state=TicketState.IN_PROGRESS,
@@ -226,7 +238,8 @@ class TestDoable:
 
 class TestShowBlocked:
     def test_show_blocked_lists_reasons(self) -> None:
-        # frob:tests tests/test_tickets_lease.py::TestShowBlocked.test_show_blocked_lists_reasons
+        # frob:tests \
+        # tests/test_tickets_lease.py::TestShowBlocked.test_show_blocked_lists_reasons
         holder = _ticket(
             ticket_id="T-1000",
             state=TicketState.IN_PROGRESS,
@@ -249,14 +262,18 @@ class TestShowBlocked:
 
 class TestLargeGlobWarnings:
     def test_fires_on_broad_tests_glob(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_tickets_lease.py::TestLargeGlobWarnings.test_fires_on_broad_tests_glob
+        # frob:tests \
+        # tests/test_tickets_lease.py::TestLargeGlobWarnings.test_fires_on_broad_tests_\
+        # glob
         ticket = _ticket(ticket_id="T-2000", scope=("tests/**",))
         warnings = large_glob_warnings(ticket, tmp_path)
         assert warnings
         assert "T-2000" in warnings[0]
 
     def test_silent_on_precise_test_file(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_tickets_lease.py::TestLargeGlobWarnings.test_silent_on_precise_test_file
+        # frob:tests \
+        # tests/test_tickets_lease.py::TestLargeGlobWarnings.test_silent_on_precise_tes\
+        # t_file
         ticket = _ticket(ticket_id="T-2001", scope=("tests/test_x.py",))
         assert large_glob_warnings(ticket, tmp_path) == ()
 
@@ -302,7 +319,9 @@ class TestBreadthPerf:
     pair)."""
 
     def test_computed_once_per_doable_call(self, tmp_path: Path, monkeypatch) -> None:
-        # frob:tests tests/test_tickets_lease.py::TestBreadthPerf.test_computed_once_per_doable_call
+        # frob:tests \
+        # tests/test_tickets_lease.py::TestBreadthPerf.test_computed_once_per_doable_ca\
+        # ll
         (tmp_path / "pkg").mkdir()
         for i in range(3):
             (tmp_path / "pkg" / f"mod_{i}.py").write_text("x = 1\n")
@@ -371,7 +390,9 @@ class TestBreadthPerf:
     def test_breadth_context_uses_git_ls_files_when_available(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests tests/test_tickets_lease.py::TestBreadthPerf.test_breadth_context_uses_git_ls_files_when_available
+        # frob:tests \
+        # tests/test_tickets_lease.py::TestBreadthPerf.test_breadth_context_uses_git_ls\
+        # _files_when_available
         import subprocess
 
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
@@ -386,7 +407,9 @@ class TestBreadthPerf:
     def test_repo_files_git_kill_switch_refuses_without_spawning(
         self, tmp_path: Path, monkeypatch
     ) -> None:
-        # frob:tests tests/test_tickets_lease.py::TestBreadthPerf.test_repo_files_git_kill_switch_refuses_without_spawning
+        # frob:tests \
+        # tests/test_tickets_lease.py::TestBreadthPerf.test_repo_files_git_kill_switch_\
+        # refuses_without_spawning
         # T-0803: FROB_DISABLE_EXEC=1 must make `_repo_files_git`'s `git
         # ls-files` spawn refuse (via `frob.gitio.run_argv` ->
         # `guarded_subprocess_run`) instead of bypassing the T-0200/T-0778

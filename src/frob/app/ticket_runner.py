@@ -1127,10 +1127,10 @@ def _land(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-0631
-# frob:waive ARCH103 reason="T-0977: push-after-successful-land helper -- \
-# runs `git push`, logs the outcome, and decides whether a push failure \
-# should be fatal (see docstring's dry-run/Err-path guard); the log+decide \
-# pair is the SAME single concern (report the push result), not two"
+# frob:waive ARCH103 reason="T-0977: push-after-successful-land helper -- runs `git \
+# push`, logs the outcome, and decides whether a push failure should be fatal (see \
+# docstring's dry-run/Err-path guard); the log+decide pair is the SAME single concern \
+# (report the push result), not two"
 def _push_after_land(root: Path, report) -> None:  # noqa: ANN001
     """`frob ticket land --push`: push `root`'s current branch to its
     upstream remote, but ONLY after a real (non-dry-run) land already
@@ -1956,10 +1956,10 @@ def _reverify_evidence_for_close(root: Path, ticket) -> bool | None:  # noqa: AN
 
 
 # frob:ticket T-0571
-# frob:waive ARCH103 reason="T-0977: best-effort git-rev-parse wrapper -- \
-# runs the subprocess, formats the debug log line on failure, returns \
-# None; the format-on-failure step is the SAME best-effort-git concern \
-# the docstring names, not a distinct one worth splitting out"
+# frob:waive ARCH103 reason="T-0977: best-effort git-rev-parse wrapper -- runs the \
+# subprocess, formats the debug log line on failure, returns None; the \
+# format-on-failure step is the SAME best-effort-git concern the docstring names, not \
+# a distinct one worth splitting out"
 def _current_commit(root: Path) -> str | None:
     """Best-effort `git rev-parse HEAD` under `root` (`None` on any git
     failure) -- shared by `_review`'s default `--commit` and `_close`'s

@@ -40,9 +40,15 @@ def _real_queue() -> TicketQueue:
 
 
 # frob:ticket T-0386
-# frob:tests tests/test_registry_reconciliation_secrets.py::TestSecretsRegistryFile.test_is_in_registry_files
-# frob:tests tests/test_registry_reconciliation_secrets.py::TestSecretsRegistryFile.test_loads_without_error
-# frob:tests tests/test_registry_reconciliation_secrets.py::TestSecretsRegistryFile.test_no_malformed_entries
+# frob:tests \
+# tests/test_registry_reconciliation_secrets.py::TestSecretsRegistryFile.test_is_in_reg\
+# istry_files
+# frob:tests \
+# tests/test_registry_reconciliation_secrets.py::TestSecretsRegistryFile.test_loads_wit\
+# hout_error
+# frob:tests \
+# tests/test_registry_reconciliation_secrets.py::TestSecretsRegistryFile.test_no_malfor\
+# med_entries
 class TestSecretsRegistryFile:
     """`secrets.yaml` loads and is a real `RegistryFile` instance."""
 
@@ -73,9 +79,15 @@ class TestSecretsRegistryFile:
 
 
 # frob:ticket T-0386
-# frob:tests tests/test_registry_reconciliation_secrets.py::TestSecretsExhaustiveness.test_declared_total_is_3
-# frob:tests tests/test_registry_reconciliation_secrets.py::TestSecretsExhaustiveness.test_audit_reports_exhausted
-# frob:tests tests/test_registry_reconciliation_secrets.py::TestSecretsExhaustiveness.test_every_deferred_entry_targets_an_open_ticket
+# frob:tests \
+# tests/test_registry_reconciliation_secrets.py::TestSecretsExhaustiveness.test_declare\
+# d_total_is_3
+# frob:tests \
+# tests/test_registry_reconciliation_secrets.py::TestSecretsExhaustiveness.test_audit_r\
+# eports_exhausted
+# frob:tests \
+# tests/test_registry_reconciliation_secrets.py::TestSecretsExhaustiveness.test_every_d\
+# eferred_entry_targets_an_open_ticket
 class TestSecretsExhaustiveness:
     """The T-0386 acceptance criterion: catalogued count == enforced +
     excused + deferred, pinned against the file's own declared 3-entry
@@ -138,7 +150,9 @@ class TestSecretsExhaustiveness:
 
 
 # frob:ticket T-0386
-# frob:tests tests/test_registry_reconciliation_secrets.py::TestExhaustivenessGateOverRealSecrets.test_no_secrets_violations
+# frob:tests \
+# tests/test_registry_reconciliation_secrets.py::TestExhaustivenessGateOverRealSecrets.\
+# test_no_secrets_violations
 class TestExhaustivenessGateOverRealSecrets:
     """`registry_gate` over the real registry dir raises zero violations
     for `secrets.yaml` specifically -- wired into `frob check` (the

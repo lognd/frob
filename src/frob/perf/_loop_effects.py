@@ -65,13 +65,12 @@ occurrences; see that module's own docstring.
 # python-first tiering -- track any follow-up need as its own ticket
 # rather than silently expanding this one.
 """
-# frob:waive INV006 reason="T-0775 first-turn-on: this module's \
-# 'deliberately NOT'/'only ever' exclusivity language (module docstring, \
-# _EffectGraph docstring) is source-level design-rationale prose \
-# describing already-implemented internal behavior, verifiable by reading \
-# the code it annotates, rather than a separate cross-module contract \
-# needing its own tracked invariant -- same disposition as the identical \
-# T-0585 calibration-batch waiver already carried by _redundancy.py and \
+# frob:waive INV006 reason="T-0775 first-turn-on: this module's 'deliberately \
+# NOT'/'only ever' exclusivity language (module docstring, _EffectGraph docstring) is \
+# source-level design-rationale prose describing already-implemented internal \
+# behavior, verifiable by reading the code it annotates, rather than a separate \
+# cross-module contract needing its own tracked invariant -- same disposition as the \
+# identical T-0585 calibration-batch waiver already carried by _redundancy.py and \
 # _rules.py in this same package"
 
 from __future__ import annotations

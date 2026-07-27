@@ -29,10 +29,9 @@ _AD_ID_RE = re.compile(r"^AD-\d{3}$")
 
 
 # frob:doc docs/modules/decisions.md#data-models
-# frob:waive COV007 reason="docs/modules/decisions.md's Data models \
-# section individually frob:describes this private enum by name \
-# (T-0529) -- a deliberate architecture doc, not accidental drift onto a \
-# private helper"
+# frob:waive COV007 reason="docs/modules/decisions.md's Data models section \
+# individually frob:describes this private enum by name (T-0529) -- a deliberate \
+# architecture doc, not accidental drift onto a private helper"
 class _DecisionStatus(StrEnum):
     """The lifecycle state of an ADR."""
 

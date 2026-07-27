@@ -36,12 +36,11 @@ resolvable within the SAME file's own class definitions), not the true
 project-wide versions -- a genuine cross-file integration is a follow-up,
 not silently narrowed here."""
 # frob:waive INV006 reason="this module's 'only' occurrences are source-level \
-# design-rationale prose (the module docstring's per-module-scoping \
-# disclosure and the per-check docstrings describing what already- \
-# implemented text matching does), verifiable by reading the function it \
-# annotates, not a separate cross-module contract needing its own tracked \
-# invariant -- the same INV006 first-turn-on-pool disposition \
-# frob.arch._solid/_typedesign/_logging_checks/_fallibility's own module \
+# design-rationale prose (the module docstring's per-module-scoping disclosure and the \
+# per-check docstrings describing what already- implemented text matching does), \
+# verifiable by reading the function it annotates, not a separate cross-module \
+# contract needing its own tracked invariant -- the same INV006 first-turn-on-pool \
+# disposition frob.arch._solid/_typedesign/_logging_checks/_fallibility's own module \
 # docstrings already carry"
 
 from __future__ import annotations

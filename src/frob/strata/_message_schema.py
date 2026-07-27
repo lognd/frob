@@ -47,10 +47,10 @@ subject to REL260/REL261's bounded-intake obligation AND this module's
 REL320/REL321 schema-version obligation; the two families are
 orthogonal, not exclusive).
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: this file's \
-# 'only' hits are source-level design-rationale/scope-cut prose mirroring \
-# _backpressure.py's own identical waiver for the identical reason (module \
-# docstring precedent, T-0651), not a separate cross-module contract"
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: this file's 'only' hits \
+# are source-level design-rationale/scope-cut prose mirroring _backpressure.py's own \
+# identical waiver for the identical reason (module docstring precedent, T-0651), not \
+# a separate cross-module contract"
 
 from __future__ import annotations
 

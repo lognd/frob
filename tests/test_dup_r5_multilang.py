@@ -58,10 +58,9 @@ class TestRealDataflowGraphPerGrammar:
         assert "def" in labels and "use" in labels
         assert adjacency
 
-    # frob:waive DUP001 reason="parallel test methods within \
-    # test_dup_r5_multilang.py (4 sites) sharing an arrange-act scaffold \
-    # typical of exhaustive per-case coverage; extracting would obscure \
-    # per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_dup_r5_multilang.py \
+    # (4 sites) sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_rust_block_matches_and_labels_def_use(self, tmp_path):
         # frob:tests src/frob/dup/_pipeline.py::_real_dataflow_graph kind="unit"
         path = _write(
@@ -78,10 +77,9 @@ class TestRealDataflowGraphPerGrammar:
         assert "def" in labels and "use" in labels
         assert adjacency
 
-    # frob:waive DUP001 reason="parallel test methods within \
-    # test_dup_r5_multilang.py (4 sites) sharing an arrange-act scaffold \
-    # typical of exhaustive per-case coverage; extracting would obscure \
-    # per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_dup_r5_multilang.py \
+    # (4 sites) sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_typescript_statement_block_matches_and_labels_def_use(self, tmp_path):
         # frob:tests src/frob/dup/_pipeline.py::_real_dataflow_graph kind="unit"
         path = _write(
@@ -101,10 +99,9 @@ class TestRealDataflowGraphPerGrammar:
         assert "def" in labels and "use" in labels
         assert adjacency
 
-    # frob:waive DUP001 reason="parallel test methods within \
-    # test_dup_r5_multilang.py (4 sites) sharing an arrange-act scaffold \
-    # typical of exhaustive per-case coverage; extracting would obscure \
-    # per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_dup_r5_multilang.py \
+    # (4 sites) sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_c_compound_statement_matches_and_labels_def_use(self, tmp_path):
         # frob:tests src/frob/dup/_pipeline.py::_real_dataflow_graph kind="unit"
         path = _write(
@@ -121,10 +118,9 @@ class TestRealDataflowGraphPerGrammar:
         assert "def" in labels and "use" in labels
         assert adjacency
 
-    # frob:waive DUP001 reason="parallel test methods within \
-    # test_dup_r5_multilang.py (4 sites) sharing an arrange-act scaffold \
-    # typical of exhaustive per-case coverage; extracting would obscure \
-    # per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_dup_r5_multilang.py \
+    # (4 sites) sharing an arrange-act scaffold typical of exhaustive per-case \
+    # coverage; extracting would obscure per-case intent"
     def test_cpp_compound_statement_matches_and_labels_def_use(self, tmp_path):
         # frob:tests src/frob/dup/_pipeline.py::_real_dataflow_graph kind="unit"
         path = _write(

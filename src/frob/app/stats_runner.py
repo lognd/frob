@@ -108,10 +108,9 @@ def _run_agentic(cfg: AppConfig) -> None:
 # frob:doc docs/modules/app.md#runners
 # frob:ticket T-0588
 # frob:tests tests/unit/test_app_style.py::test_stats_plain_stdout_has_no_ansi
-# frob:waive ARCH103 reason="T-0977: `frob stats` CLI entrypoint -- routes \
-# between the agentic and gated report modes and renders each; the \
-# mode-branch-then-render shape IS the runner's job, same as this \
-# module's sibling `frob.app.*_runner`s"
+# frob:waive ARCH103 reason="T-0977: `frob stats` CLI entrypoint -- routes between the \
+# agentic and gated report modes and renders each; the mode-branch-then-render shape \
+# IS the runner's job, same as this module's sibling `frob.app.*_runner`s"
 def run(cfg: AppConfig) -> None:
     """Render the delivery snapshot (queue health + commit cadence), or
     the non-gated agentic time/token breakdown when `FROB_STATS_AGENTIC`

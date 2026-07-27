@@ -137,10 +137,10 @@ def _resolve_hints(target: Callable[..., object], ref: str) -> dict[str, type] |
         return None
 
 
-# frob:waive ARCH103 reason="T-0977: best-effort dynamic-import helper -- \
-# derives the module name, logs why on any derivation/import failure, \
-# returns None; the log-on-failure step is the SAME best-effort-import \
-# concern the docstring names, not a separate responsibility"
+# frob:waive ARCH103 reason="T-0977: best-effort dynamic-import helper -- derives the \
+# module name, logs why on any derivation/import failure, returns None; the \
+# log-on-failure step is the SAME best-effort-import concern the docstring names, not \
+# a separate responsibility"
 def _import_ref_module(root: Path, path_str: str) -> object | None:
     """Import the module backing source file `path_str`, temporarily adding
     `root/src` to `sys.path` if needed; `None` on any derivation/import failure."""

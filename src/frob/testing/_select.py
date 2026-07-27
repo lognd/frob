@@ -302,8 +302,8 @@ def _apply_unknown_language_fallback(
             return
         for language in known_languages:
             selected.setdefault(language, set()).add(ALL_SENTINEL)
-        # frob:waive PERF004 reason="lazy log-format arg, evaluated once per \
-        # fallback at INFO only, not a hot loop; indentation-blind FP (T-0367)"
+        # frob:waive PERF004 reason="lazy log-format arg, evaluated once per fallback \
+        # at INFO only, not a hot loop; indentation-blind FP (T-0367)"
         _log.info(
             "select_tests: fallback=%s for unknown-language file %s -> "
             "suite-wide across %s",

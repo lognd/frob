@@ -302,9 +302,9 @@ class TestParseTsRustCppC:
         pf = parse_file(_write(tmp_path, "novec.rs", source)).danger_ok
         assert not any(s.qualname.endswith("!") for s in pf.symbols)
 
-    # frob:waive DUP001 reason="exhaustive per-language case table: \
-    # independent language fixtures sharing an arrange-act scaffold; \
-    # extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="exhaustive per-language case table: independent \
+    # language fixtures sharing an arrange-act scaffold; extracting would obscure \
+    # per-case intent"
     def test_rust_directive_binds_above_stacked_attributes(
         self, tmp_path: Path
     ) -> None:
@@ -328,9 +328,9 @@ class TestParseTsRustCppC:
         directive_comment = next(c for c in pf.comments if "frob:doc" in c.text)
         assert directive_comment.following == "TwoAttrs"
 
-    # frob:waive DUP001 reason="exhaustive per-language case table: \
-    # independent language fixtures sharing an arrange-act scaffold; \
-    # extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="exhaustive per-language case table: independent \
+    # language fixtures sharing an arrange-act scaffold; extracting would obscure \
+    # per-case intent"
     def test_rust_directive_binds_above_single_attribute(self, tmp_path: Path) -> None:
         """The 1-attribute case (already worked, kept as a guard against
         regressing it while fixing the 2+-attribute case)."""
@@ -345,9 +345,9 @@ class TestParseTsRustCppC:
         directive_comment = next(c for c in pf.comments if "frob:doc" in c.text)
         assert directive_comment.following == "OneAttr"
 
-    # frob:waive DUP001 reason="exhaustive per-language case table: \
-    # independent language fixtures sharing an arrange-act scaffold; \
-    # extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="exhaustive per-language case table: independent \
+    # language fixtures sharing an arrange-act scaffold; extracting would obscure \
+    # per-case intent"
     def test_rust_directive_binds_directly_above_keyword_no_attrs(
         self, tmp_path: Path
     ) -> None:
@@ -359,9 +359,9 @@ class TestParseTsRustCppC:
         directive_comment = next(c for c in pf.comments if "frob:doc" in c.text)
         assert directive_comment.following == "NoAttrs"
 
-    # frob:waive DUP001 reason="exhaustive per-language case table: \
-    # independent language fixtures sharing an arrange-act scaffold; \
-    # extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="exhaustive per-language case table: independent \
+    # language fixtures sharing an arrange-act scaffold; extracting would obscure \
+    # per-case intent"
     def test_rust_directive_binds_below_attributes_workaround_placement(
         self, tmp_path: Path
     ) -> None:
@@ -380,9 +380,9 @@ class TestParseTsRustCppC:
         directive_comment = next(c for c in pf.comments if "frob:doc" in c.text)
         assert directive_comment.following == "BelowAttrs"
 
-    # frob:waive DUP001 reason="exhaustive per-language case table: \
-    # independent language fixtures sharing an arrange-act scaffold; \
-    # extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="exhaustive per-language case table: independent \
+    # language fixtures sharing an arrange-act scaffold; extracting would obscure \
+    # per-case intent"
     def test_rust_directive_binds_above_one_line_rustdoc(self, tmp_path: Path) -> None:
         """T-0301 (feldspar/lithos escalation): a single-line `///` rustdoc
         comment between a `// frob:doc` directive and the item was already
@@ -395,9 +395,9 @@ class TestParseTsRustCppC:
         directive_comment = next(c for c in pf.comments if "frob:doc" in c.text)
         assert directive_comment.following == "one_line"
 
-    # frob:waive DUP001 reason="exhaustive per-language case table: \
-    # independent language fixtures sharing an arrange-act scaffold; \
-    # extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="exhaustive per-language case table: independent \
+    # language fixtures sharing an arrange-act scaffold; extracting would obscure \
+    # per-case intent"
     def test_rust_directive_binds_above_multiline_rustdoc(self, tmp_path: Path) -> None:
         """T-0301: a `// frob:doc` directive placed above a MULTI-line `///`
         rustdoc block must still bind to the item below (feldspar/lithos
@@ -430,9 +430,9 @@ class TestParseTsRustCppC:
         directive_comment = next(c for c in pf.comments if "frob:doc" in c.text)
         assert directive_comment.following == "zero_lines"
 
-    # frob:waive DUP001 reason="exhaustive per-language case table: \
-    # independent language fixtures sharing an arrange-act scaffold; \
-    # extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="exhaustive per-language case table: independent \
+    # language fixtures sharing an arrange-act scaffold; extracting would obscure \
+    # per-case intent"
     def test_rust_directive_binds_regardless_of_indentation_mismatch(
         self, tmp_path: Path
     ) -> None:

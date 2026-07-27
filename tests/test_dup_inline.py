@@ -46,7 +46,9 @@ def _pair_refs(report):
 
 class TestHelperInliningLitmus:
     def test_split_helpers_detected_with_inlining(self, snapshot):
-        # frob:tests tests/test_dup_inline.py::TestHelperInliningLitmus.test_split_helpers_detected_with_inlining
+        # frob:tests \
+        # tests/test_dup_inline.py::TestHelperInliningLitmus.test_split_helpers_detecte\
+        # d_with_inlining
         result = find_clones(
             snapshot, DupConfig(min_tokens=12, threshold=0.7, inline_calls=True)
         )
@@ -63,7 +65,9 @@ class TestHelperInliningLitmus:
         )
 
     def test_split_helpers_missed_without_inlining(self, snapshot):
-        # frob:tests tests/test_dup_inline.py::TestHelperInliningLitmus.test_split_helpers_missed_without_inlining
+        # frob:tests \
+        # tests/test_dup_inline.py::TestHelperInliningLitmus.test_split_helpers_missed_\
+        # without_inlining
         result = find_clones(
             snapshot, DupConfig(min_tokens=12, threshold=0.7, inline_calls=False)
         )
@@ -92,7 +96,9 @@ class TestSharedHelperNotDuplication:
     duplication."""
 
     def test_shared_helper_not_flagged_at_default_threshold(self, snapshot):
-        # frob:tests tests/test_dup_inline.py::TestSharedHelperNotDuplication.test_shared_helper_not_flagged_at_default_threshold
+        # frob:tests \
+        # tests/test_dup_inline.py::TestSharedHelperNotDuplication.test_shared_helper_n\
+        # ot_flagged_at_default_threshold
         result = find_clones(snapshot, DupConfig(inline_calls=True))
         assert result.is_ok, result.err
         refs = _pair_refs(result.danger_ok)
@@ -108,7 +114,9 @@ class TestSharedHelperNotDuplication:
         )
 
     def test_shared_helper_not_flagged_at_threshold_0_7(self, snapshot):
-        # frob:tests tests/test_dup_inline.py::TestSharedHelperNotDuplication.test_shared_helper_not_flagged_at_threshold_0_7
+        # frob:tests \
+        # tests/test_dup_inline.py::TestSharedHelperNotDuplication.test_shared_helper_n\
+        # ot_flagged_at_threshold_0_7
         result = find_clones(snapshot, DupConfig(threshold=0.7, inline_calls=True))
         assert result.is_ok, result.err
         refs = _pair_refs(result.danger_ok)
@@ -134,7 +142,9 @@ class TestHelperPop:
         assert matched, f"expected a _clamp_* clone pair, got {refs}"
 
     def test_helper_pass_excludes_public_symbols(self, snapshot):
-        # frob:tests tests/test_dup_inline.py::TestHelperPop.test_helper_pass_excludes_public_symbols
+        # frob:tests \
+        # tests/test_dup_inline.py::TestHelperPop.test_helper_pass_excludes_public_symb\
+        # ols
         result = find_helper_clones(snapshot, DupConfig(threshold=0.7))
         assert result.is_ok, result.err
         refs = _pair_refs(result.danger_ok)
@@ -152,7 +162,8 @@ class TestCallGraphBounds:
         assert "src/mod_a.py::_finalize_a" in callees
 
     def test_closure_is_cycle_guarded(self):
-        # frob:tests tests/test_dup_inline.py::TestCallGraphBounds.test_closure_is_cycle_guarded
+        # frob:tests \
+        # tests/test_dup_inline.py::TestCallGraphBounds.test_closure_is_cycle_guarded
         graph = CallGraph(
             calls={
                 "a.py::_x": ("a.py::_y",),
@@ -163,14 +174,16 @@ class TestCallGraphBounds:
         assert result == ("a.py::_y",)
 
     def test_closure_respects_node_cap(self):
-        # frob:tests tests/test_dup_inline.py::TestCallGraphBounds.test_closure_respects_node_cap
+        # frob:tests \
+        # tests/test_dup_inline.py::TestCallGraphBounds.test_closure_respects_node_cap
         calls = {"a.py::_root": tuple(f"a.py::_h{i}" for i in range(10))}
         graph = CallGraph(calls=calls)
         result = closure(graph, "a.py::_root", max_depth=5, max_nodes=3)
         assert len(result) == 3
 
     def test_closure_respects_depth_cap(self):
-        # frob:tests tests/test_dup_inline.py::TestCallGraphBounds.test_closure_respects_depth_cap
+        # frob:tests \
+        # tests/test_dup_inline.py::TestCallGraphBounds.test_closure_respects_depth_cap
         graph = CallGraph(
             calls={
                 "a.py::_a": ("a.py::_b",),
@@ -182,7 +195,9 @@ class TestCallGraphBounds:
         assert result == ("a.py::_b",)
 
     def test_public_callee_never_becomes_an_edge(self):
-        # frob:tests tests/test_dup_inline.py::TestCallGraphBounds.test_public_callee_never_becomes_an_edge
+        # frob:tests \
+        # tests/test_dup_inline.py::TestCallGraphBounds.test_public_callee_never_become\
+        # s_an_edge
         graph = build_call_graph(FIXTURE_ROOT, ["src/mod_b.py"])
         callees = graph.calls.get("src/mod_b.py::public_entry", ())
         assert "src/mod_b.py::normalize" not in callees

@@ -30,7 +30,8 @@ from frob.vet._capability_registry import (
 
 
 class TestMatrixExhaustiveness:
-    # frob:tests src/frob/vet/_capability_registry.py::_unexcused_empty_cells kind="unit"
+    # frob:tests src/frob/vet/_capability_registry.py::_unexcused_empty_cells \
+    # kind="unit"
     def test_no_unexcused_empty_cells(self) -> None:
         """T-0158's core exhaustiveness claim: every (kind, language) cell is
         either patterned or excused. Any unexcused empty cell fails loudly
@@ -42,7 +43,8 @@ class TestMatrixExhaustiveness:
         cells = capability_matrix()
         assert len(cells) == len(CAPABILITY_KINDS) * len(LANGUAGES)
         seen = {(c.capability_kind, c.language) for c in cells}
-        # frob:waive PERF003 reason="13x4 fixed small cross product asserting matrix completeness, not a data-scale join"
+        # frob:waive PERF003 reason="13x4 fixed small cross product asserting matrix \
+        # completeness, not a data-scale join"
         for kind in CAPABILITY_KINDS:
             for language in LANGUAGES:
                 assert (kind, language) in seen
@@ -56,7 +58,8 @@ class TestMatrixExhaustiveness:
             assert entry.capability_kind in CAPABILITY_KINDS
             assert entry.language in LANGUAGES
 
-    # frob:tests src/frob/vet/_capability_registry.py::CAPABILITY_MATRIX_EXCUSES kind="unit"
+    # frob:tests src/frob/vet/_capability_registry.py::CAPABILITY_MATRIX_EXCUSES \
+    # kind="unit"
     def test_every_excuse_kind_and_language_registered(self) -> None:
         for excuse in CAPABILITY_MATRIX_EXCUSES:
             assert excuse.capability_kind in CAPABILITY_KINDS
@@ -72,16 +75,19 @@ class TestMatrixExhaustiveness:
 
 
 class TestValidateRegistryKinds:
-    # frob:tests src/frob/vet/_capability_registry.py::_validate_registry_kinds kind="unit"
+    # frob:tests src/frob/vet/_capability_registry.py::_validate_registry_kinds \
+    # kind="unit"
     def test_known_kinds_pass(self) -> None:
         assert _validate_registry_kinds(frozenset({"exec", "eval"})) == ()
 
-    # frob:tests src/frob/vet/_capability_registry.py::_validate_registry_kinds kind="unit"
+    # frob:tests src/frob/vet/_capability_registry.py::_validate_registry_kinds \
+    # kind="unit"
     def test_unknown_kind_reported(self) -> None:
         offenders = _validate_registry_kinds(frozenset({"exec", "bogus-kind"}))
         assert offenders == ("bogus-kind",)
 
-    # frob:tests src/frob/vet/_capability_registry.py::_validate_registry_kinds kind="unit"
+    # frob:tests src/frob/vet/_capability_registry.py::_validate_registry_kinds \
+    # kind="unit"
     def test_every_threat_catalog_kind_is_registered(self) -> None:
         """Cross-check (T-0158 deliverable 4): every `capability_kind`
         `CWE_CATALOG`/`CWE_TOP_25_CATALOG`/`DEFAULT_BENIGN_CAPABILITIES`

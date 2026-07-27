@@ -68,7 +68,9 @@ class TestCliEvidenceEnforcementEndToEnd:
     """T-0398: `frob ticket close`, the real CLI subprocess, must enforce
     D-01 (pass), D-02 (scope-binding), D-03 (substantive Done report)."""
 
-    # frob:tests tests/system/test_cli_evidence_enforcement.py::TestCliEvidenceEnforcementEndToEnd.test_close_fails_on_red_evidence
+    # frob:tests \
+    # tests/system/test_cli_evidence_enforcement.py::TestCliEvidenceEnforcementEndToEnd\
+    # .test_close_fails_on_red_evidence
     def test_close_fails_on_red_evidence(self, tmp_path: Path) -> None:
         """D-01: a RED (failing) evidence test must FAIL `frob ticket
         close`, not silently satisfy it."""
@@ -103,7 +105,9 @@ class TestCliEvidenceEnforcementEndToEnd:
         show = run("ticket", "show", "T-0001", "--path", str(root))
         assert "[in-progress]" in (show.stdout + show.stderr)
 
-    # frob:tests tests/system/test_cli_evidence_enforcement.py::TestCliEvidenceEnforcementEndToEnd.test_close_fails_on_unrelated_evidence
+    # frob:tests \
+    # tests/system/test_cli_evidence_enforcement.py::TestCliEvidenceEnforcementEndToEnd\
+    # .test_close_fails_on_unrelated_evidence
     def test_close_fails_on_unrelated_evidence(self, tmp_path: Path) -> None:
         """D-02: a PASSING but UNRELATED (non-scope-covering) evidence
         test must FAIL `frob ticket close`, not silently satisfy it."""
@@ -146,7 +150,9 @@ class TestCliEvidenceEnforcementEndToEnd:
         show = run("ticket", "show", "T-0001", "--path", str(root))
         assert "[in-progress]" in (show.stdout + show.stderr)
 
-    # frob:tests tests/system/test_cli_evidence_enforcement.py::TestCliEvidenceEnforcementEndToEnd.test_close_fails_on_empty_done_report
+    # frob:tests \
+    # tests/system/test_cli_evidence_enforcement.py::TestCliEvidenceEnforcementEndToEnd\
+    # .test_close_fails_on_empty_done_report
     def test_close_fails_on_empty_done_report(self, tmp_path: Path) -> None:
         """D-03: a bare '## Done report' heading with nothing under it
         must FAIL `frob ticket close`, not silently satisfy it."""
@@ -182,7 +188,9 @@ class TestCliEvidenceEnforcementEndToEnd:
         show = run("ticket", "show", "T-0001", "--path", str(root))
         assert "[in-progress]" in (show.stdout + show.stderr)
 
-    # frob:tests tests/system/test_cli_evidence_enforcement.py::TestCliEvidenceEnforcementEndToEnd.test_close_succeeds_with_covering_passing_evidence_and_substantive_report
+    # frob:tests \
+    # tests/system/test_cli_evidence_enforcement.py::TestCliEvidenceEnforcementEndToEnd\
+    # .test_close_succeeds_with_covering_passing_evidence_and_substantive_report
     def test_close_succeeds_with_covering_passing_evidence_and_substantive_report(
         self, tmp_path: Path
     ) -> None:
@@ -226,7 +234,9 @@ class TestCliEvidenceEnforcementEndToEnd:
         show = run("ticket", "show", "T-0001", "--path", str(root))
         assert "[done]" in (show.stdout + show.stderr)
 
-    # frob:tests tests/system/test_cli_evidence_enforcement.py::TestCliEvidenceEnforcementEndToEnd.test_docs_kind_cmd_evidence_path_still_works
+    # frob:tests \
+    # tests/system/test_cli_evidence_enforcement.py::TestCliEvidenceEnforcementEndToEnd\
+    # .test_docs_kind_cmd_evidence_path_still_works
     def test_docs_kind_cmd_evidence_path_still_works(self, tmp_path: Path) -> None:
         """False-positive guard: a docs-kind ticket closed purely via
         `--evidence-cmd` (no pytest node ids at all) must still close --

@@ -76,11 +76,10 @@ Test files are excluded (`frob.excludes.is_test_file`) -- a test's own
 this gate should be scoring."""
 # frob:waive INV006 reason="this module's 'only' occurrences are source-level \
 # design-rationale prose (the module docstring's model-limit disclosures and \
-# per-function docstrings describing already-implemented resolution/matching \
-# logic), verifiable by reading the function it annotates, not a separate \
-# cross-module contract needing its own tracked invariant -- the same INV006 \
-# first-turn-on-pool disposition frob.arch._fallibility/_mayraise's own module \
-# docstrings already carry"
+# per-function docstrings describing already-implemented resolution/matching logic), \
+# verifiable by reading the function it annotates, not a separate cross-module \
+# contract needing its own tracked invariant -- the same INV006 first-turn-on-pool \
+# disposition frob.arch._fallibility/_mayraise's own module docstrings already carry"
 
 from __future__ import annotations
 

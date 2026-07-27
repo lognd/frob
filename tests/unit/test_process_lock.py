@@ -282,9 +282,9 @@ class TestCrossProcessPoolInheritance:
             # the marker.
             held_keys = held_registry_keys()
             assert held_keys, "parent SHARED hold not visible in registry"
-            # frob:waive SEC110 reason="lock-registry-key marker (resolved \
-            # filesystem paths), carries no confidential data -- mirrors \
-            # the production stamp _open_process_pool performs"
+            # frob:waive SEC110 reason="lock-registry-key marker (resolved filesystem \
+            # paths), carries no confidential data -- mirrors the production stamp \
+            # _open_process_pool performs"
             os.environ[_INHERITED_LOCK_KEYS_ENV] = _INHERITED_LOCK_KEYS_SEP.join(
                 held_keys
             )

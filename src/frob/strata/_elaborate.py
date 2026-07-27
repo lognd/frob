@@ -92,9 +92,9 @@ _OBSERVE_LOG_CLASSES = frozenset(
 )
 
 
-# frob:waive DUP001 reason="_infra.py::_elaborate_store_deploy duplicates \
-# this field-for-field mapping locally for the same import-cycle reason \
-# documented in that module (T-0247); already reasoned, not a new gap"
+# frob:waive DUP001 reason="_infra.py::_elaborate_store_deploy duplicates this \
+# field-for-field mapping locally for the same import-cycle reason documented in that \
+# module (T-0247); already reasoned, not a new gap"
 def _elaborate_deploy(decl: _DeployDecl) -> DeployContract:
     """One `_DeployDecl` -> one `DeployContract` (T-0136); a direct field-for-field
     mapping onto T-0083's landed kernel construct -- `max_error_rate` is always

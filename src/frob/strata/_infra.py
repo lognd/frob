@@ -101,9 +101,9 @@ _ERRORS_TOTAL_ATTR = "errors_total"
 _CACHE_LOCAL_ATTR = "local"
 
 
-# frob:waive DUP001 reason="documented deliberate duplication: same \
-# field-for-field mapping as _elaborate.py::_elaborate_deploy, kept local \
-# for the same import-cycle reason as _MANAGED_ATTR above (own docstring)"
+# frob:waive DUP001 reason="documented deliberate duplication: same field-for-field \
+# mapping as _elaborate.py::_elaborate_deploy, kept local for the same import-cycle \
+# reason as _MANAGED_ATTR above (own docstring)"
 def _elaborate_store_deploy(decl: _DeployDecl) -> DeployContract:
     """One store's `_DeployDecl` -> `DeployContract` (T-0247), the SAME
     field-for-field mapping `_elaborate.py::_elaborate_deploy` uses for

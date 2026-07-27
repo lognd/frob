@@ -22,9 +22,9 @@ from frob.gitio import (
 )
 
 
-# frob:waive DUP001 reason="parallel test fixtures across 3 sibling test \
-# file(s) (3 sites) sharing an arrange-act scaffold typical of exhaustive \
-# per-case/per-scenario coverage; extracting would obscure per-case intent"
+# frob:waive DUP001 reason="parallel test fixtures across 3 sibling test file(s) (3 \
+# sites) sharing an arrange-act scaffold typical of exhaustive per-case/per-scenario \
+# coverage; extracting would obscure per-case intent"
 def _git(root: Path, *args: str) -> None:
     subprocess.run(
         ["git", "-C", str(root), *args],
@@ -134,7 +134,8 @@ class TestWorkingDiff:
         diff = result.danger_ok
 
         files = {hunk.file for hunk in diff.hunks}
-        # frob:waive PERF003 reason="single set comprehension over hunks compared by == to a fixed 4-item literal set, not a nested join"
+        # frob:waive PERF003 reason="single set comprehension over hunks compared by \
+        # == to a fixed 4-item literal set, not a nested join"
         assert files == {"committed.py", "staged.py", "base.py", "untracked.py"}
 
     def test_untracked_directory_is_skipped_not_read_as_file(
@@ -218,9 +219,9 @@ class TestWorkingDiff:
         assert result.is_err
         assert result.danger_err == GitError.GitFailed
 
-    # frob:waive DUP001 reason="parallel test methods within test_gitio.py \
-    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_gitio.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_diff_command_failure_propagates(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -245,9 +246,9 @@ class TestWorkingDiff:
         assert result.is_err
         assert result.danger_err == GitError.GitFailed
 
-    # frob:waive DUP001 reason="parallel test methods within test_gitio.py \
-    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_gitio.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_untracked_listing_failure_propagates(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

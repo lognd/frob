@@ -60,9 +60,9 @@ def test_py_outline_classes(py_file):
     assert "Other" in names
 
 
-# frob:waive DUP001 reason="parallel test methods within test_outline.py (3 \
-# sites) sharing an arrange-act scaffold typical of exhaustive per-case \
-# coverage; extracting would obscure per-case intent"
+# frob:waive DUP001 reason="parallel test methods within test_outline.py (3 sites) \
+# sharing an arrange-act scaffold typical of exhaustive per-case coverage; extracting \
+# would obscure per-case intent"
 def test_py_outline_methods(py_file):
     outline = outline_file(py_file).danger_ok
     classes_by_name = {c.name: c for c in outline.classes}
@@ -131,9 +131,9 @@ def test_cpp_outline_classes(cpp_file):
     assert "Engine" in names
 
 
-# frob:waive DUP001 reason="parallel test methods within test_outline.py (3 \
-# sites) sharing an arrange-act scaffold typical of exhaustive per-case \
-# coverage; extracting would obscure per-case intent"
+# frob:waive DUP001 reason="parallel test methods within test_outline.py (3 sites) \
+# sharing an arrange-act scaffold typical of exhaustive per-case coverage; extracting \
+# would obscure per-case intent"
 def test_cpp_outline_methods(cpp_file):
     outline = outline_file(cpp_file).danger_ok
     classes_by_name = {c.name: c for c in outline.classes}
@@ -166,9 +166,9 @@ def test_rust_outline_classes(rust_file):
     assert "Engine" in names
 
 
-# frob:waive DUP001 reason="parallel test methods within test_outline.py (3 \
-# sites) sharing an arrange-act scaffold typical of exhaustive per-case \
-# coverage; extracting would obscure per-case intent"
+# frob:waive DUP001 reason="parallel test methods within test_outline.py (3 sites) \
+# sharing an arrange-act scaffold typical of exhaustive per-case coverage; extracting \
+# would obscure per-case intent"
 def test_rust_outline_methods(rust_file):
     outline = outline_file(rust_file).danger_ok
     classes_by_name = {c.name: c for c in outline.classes}

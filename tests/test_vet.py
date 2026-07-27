@@ -471,9 +471,9 @@ class TestCapabilityScan:
         capabilities = scan_file_capabilities(build_rs)
         assert "exec" in capabilities
 
-    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
-    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
-    # coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent cases \
+    # sharing an arrange-act scaffold typical of exhaustive per-rule coverage; \
+    # extracting would obscure per-case intent"
     def test_kotlin_net_okhttp_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
         # T-0170: OkHttp is the dominant Android HTTP client -- one of the
@@ -494,9 +494,9 @@ class TestCapabilityScan:
         kt.write_text("fun run(cmd: String) {\n    Runtime.getRuntime().exec(cmd)\n}\n")
         assert "exec" in scan_file_capabilities(kt)
 
-    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
-    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
-    # coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent cases \
+    # sharing an arrange-act scaffold typical of exhaustive per-rule coverage; \
+    # extracting would obscure per-case intent"
     def test_kotlin_client_storage_shared_preferences_detected(
         self, tmp_path: Path
     ) -> None:
@@ -634,7 +634,8 @@ class TestCapabilityScan:
     def test_scan_directory_capabilities_aggregates_across_files(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_scan_directory_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability.py::_scan_directory_capabilities \
+        # kind="unit"
         from frob.vet._capability import _scan_directory_capabilities
 
         (tmp_path / "a.py").write_text("import subprocess\nsubprocess.run(['ls'])\n")
@@ -644,9 +645,9 @@ class TestCapabilityScan:
         assert "net" in capabilities
         assert decode_to_exec_hit is False
 
-    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
-    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
-    # coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent cases \
+    # sharing an arrange-act scaffold typical of exhaustive per-rule coverage; \
+    # extracting would obscure per-case intent"
     def test_re_compile_alone_does_not_report_eval(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
         # T-0151: bare `compile(` used to match `re.compile(`/`ast.compile(`
@@ -679,9 +680,9 @@ class TestCapabilityScan:
         pkg.write_text("eval(user_input)\n")
         assert "eval" in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
-    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
-    # coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent cases \
+    # sharing an arrange-act scaffold typical of exhaustive per-rule coverage; \
+    # extracting would obscure per-case intent"
     def test_comment_only_needle_does_not_fire(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
         # T-0209: pilot P2 -- a needle appearing only inside a `#` comment
@@ -698,9 +699,9 @@ class TestCapabilityScan:
         )
         assert "net" not in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
-    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
-    # coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent cases \
+    # sharing an arrange-act scaffold typical of exhaustive per-rule coverage; \
+    # extracting would obscure per-case intent"
     def test_real_code_needle_still_fires_alongside_comment(
         self, tmp_path: Path
     ) -> None:
@@ -768,7 +769,8 @@ class TestCapabilityScan:
     def test_scan_directory_capabilities_excludes_own_module(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_scan_directory_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability.py::_scan_directory_capabilities \
+        # kind="unit"
         # T-0151: directory aggregation over vet's REAL package path must not
         # self-inflate "eval"/"exec" from _capability.py's own pattern-table
         # literals (its needle tuples contain "eval(", "subprocess.", etc as
@@ -902,9 +904,9 @@ class TestCapabilityScanBindingResolution:
         pkg.write_text("from os import system\n\n\ndef g(system):\n    system('ls')\n")
         assert "exec" not in scan_file_capabilities(pkg)
 
-    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
-    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
-    # coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent cases \
+    # sharing an arrange-act scaffold typical of exhaustive per-rule coverage; \
+    # extracting would obscure per-case intent"
     def test_local_variable_shadowing_import_not_detected(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
         # Shadow case: a local variable named `run` (assigned a harmless
@@ -2185,7 +2187,8 @@ class TestCapabilityScanTsAliasTablePredicates:
     def test_default_param_alias_recorded_for_identifier_pattern(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_record_ts_default_param_aliases kind="unit"
+        # frob:tests src/frob/vet/_capability.py::_record_ts_default_param_aliases \
+        # kind="unit"
         # Kills the `_capability.py:2472` compare-NotEq-swap mutant
         # (`pattern.type != "identifier"` -> `==`): a real identifier
         # default-parameter pattern with a resolvable default value must
@@ -2206,7 +2209,8 @@ class TestCapabilityScanTsAliasTablePredicates:
     def test_default_param_alias_skips_missing_default_value(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_record_ts_default_param_aliases kind="unit"
+        # frob:tests src/frob/vet/_capability.py::_record_ts_default_param_aliases \
+        # kind="unit"
         # Kills the `_capability.py:2472` boolop-Or-swap mutant (`or` ->
         # `and`): a plain parameter with NO default (`value is None`, the
         # other two clauses false) must be skipped by the real `or`. The
@@ -2225,7 +2229,8 @@ class TestCapabilityScanTsAliasTablePredicates:
         assert alias_table.get(func.id, {}) == {}
 
     def test_destructure_alias_tolerates_length_mismatch(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::_record_ts_destructure_alias kind="unit"
+        # frob:tests src/frob/vet/_capability.py::_record_ts_destructure_alias \
+        # kind="unit"
         # Kills the `_capability.py:2499` bool-False-negated mutant
         # (`strict=False` -> `strict=True`): the array pattern binds FEWER
         # names than the array literal has elements (a real, benign
@@ -2251,7 +2256,8 @@ class TestCapabilityScanTsAliasTablePredicates:
     def test_destructure_alias_binds_only_identifier_elements(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_record_ts_destructure_alias kind="unit"
+        # frob:tests src/frob/vet/_capability.py::_record_ts_destructure_alias \
+        # kind="unit"
         # Kills the `_capability.py:2500` compare-NotEq-swap mutant
         # (`left_el.type != "identifier"` -> `==`): a real identifier
         # destructuring element paired with a resolvable RHS element must
@@ -2478,9 +2484,9 @@ class TestFingerprintScan:
     """T-0153: `_scan_file_fingerprints` -- the CVE-fingerprint sibling of
     `_scan_file_operations`, joined to `frob.strata.CVE_FINGERPRINTS`."""
 
-    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
-    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
-    # coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent cases \
+    # sharing an arrange-act scaffold typical of exhaustive per-rule coverage; \
+    # extracting would obscure per-case intent"
     def test_matches_a_known_fingerprint(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
         from frob.vet._capability import _scan_file_fingerprints
@@ -2523,9 +2529,9 @@ class TestFingerprintScan:
         matches = _scan_file_fingerprints(pkg)
         assert not any(m.id == "FP-EXEC-SHELL-001" for m in matches)
 
-    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
-    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
-    # coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent cases \
+    # sharing an arrange-act scaffold typical of exhaustive per-rule coverage; \
+    # extracting would obscure per-case intent"
     def test_matches_the_xxe_fingerprint_positive(self, tmp_path: Path) -> None:
         # T-0189 litmus positive: an lxml parser explicitly left resolving
         # external entities matches FP-XXE-PARSE-001.
@@ -2540,9 +2546,9 @@ class TestFingerprintScan:
         matches = _scan_file_fingerprints(pkg)
         assert any(m.id == "FP-XXE-PARSE-001" for m in matches)
 
-    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
-    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
-    # coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent cases \
+    # sharing an arrange-act scaffold typical of exhaustive per-rule coverage; \
+    # extracting would obscure per-case intent"
     def test_does_not_match_the_xxe_fingerprint_negative(self, tmp_path: Path) -> None:
         # T-0189 litmus negative: the hardened lxml configuration (entity
         # resolution explicitly disabled) must not fire.
@@ -2571,9 +2577,9 @@ class TestFingerprintScan:
         missing = tmp_path / "gone.py"
         assert _scan_file_fingerprints(missing) == ()
 
-    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
-    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
-    # coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent cases \
+    # sharing an arrange-act scaffold typical of exhaustive per-rule coverage; \
+    # extracting would obscure per-case intent"
     def test_language_mismatch_does_not_match(self, tmp_path: Path) -> None:
         # a typescript-only fingerprint's needle appearing in a .py file
         # must never match -- the language gate is enforced independently
@@ -2586,9 +2592,9 @@ class TestFingerprintScan:
         matches = _scan_file_fingerprints(pkg)
         assert not any(m.id == "FP-CODEEVAL-TEMPLATE-001" for m in matches)
 
-    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
-    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
-    # coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent cases \
+    # sharing an arrange-act scaffold typical of exhaustive per-rule coverage; \
+    # extracting would obscure per-case intent"
     def test_matches_tls_verify_false_python(self, tmp_path: Path) -> None:
         # T-0188: FP-TLS-VERIFY-001 -- requests/httpx/aiohttp verify=False.
         # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
@@ -2599,9 +2605,9 @@ class TestFingerprintScan:
         matches = _scan_file_fingerprints(pkg)
         assert any(m.id == "FP-TLS-VERIFY-001" for m in matches)
 
-    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
-    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
-    # coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent cases \
+    # sharing an arrange-act scaffold typical of exhaustive per-rule coverage; \
+    # extracting would obscure per-case intent"
     def test_no_match_on_verified_tls_python(self, tmp_path: Path) -> None:
         # negative sibling: verify=True never fires FP-TLS-VERIFY-001.
         # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
@@ -2612,9 +2618,9 @@ class TestFingerprintScan:
         matches = _scan_file_fingerprints(pkg)
         assert not any(m.id == "FP-TLS-VERIFY-001" for m in matches)
 
-    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
-    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
-    # coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent cases \
+    # sharing an arrange-act scaffold typical of exhaustive per-rule coverage; \
+    # extracting would obscure per-case intent"
     def test_matches_tls_reject_unauthorized_false_node(self, tmp_path: Path) -> None:
         # T-0188: FP-TLS-VERIFY-002 -- Node https/tls rejectUnauthorized: false.
         # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
@@ -2625,9 +2631,9 @@ class TestFingerprintScan:
         matches = _scan_file_fingerprints(pkg)
         assert any(m.id == "FP-TLS-VERIFY-002" for m in matches)
 
-    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
-    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
-    # coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent cases \
+    # sharing an arrange-act scaffold typical of exhaustive per-rule coverage; \
+    # extracting would obscure per-case intent"
     def test_no_match_on_reject_unauthorized_true_node(self, tmp_path: Path) -> None:
         # negative sibling: rejectUnauthorized: true never fires
         # FP-TLS-VERIFY-002.
@@ -2639,9 +2645,9 @@ class TestFingerprintScan:
         matches = _scan_file_fingerprints(pkg)
         assert not any(m.id == "FP-TLS-VERIFY-002" for m in matches)
 
-    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
-    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
-    # coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent cases \
+    # sharing an arrange-act scaffold typical of exhaustive per-rule coverage; \
+    # extracting would obscure per-case intent"
     def test_matches_tls_danger_accept_invalid_certs_rust(self, tmp_path: Path) -> None:
         # T-0188: FP-TLS-VERIFY-003 -- Rust reqwest danger_accept_invalid_certs.
         # frob:tests src/frob/vet/_capability.py::_scan_file_fingerprints kind="unit"
@@ -2655,9 +2661,9 @@ class TestFingerprintScan:
         matches = _scan_file_fingerprints(pkg)
         assert any(m.id == "FP-TLS-VERIFY-003" for m in matches)
 
-    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
-    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
-    # coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent cases \
+    # sharing an arrange-act scaffold typical of exhaustive per-rule coverage; \
+    # extracting would obscure per-case intent"
     def test_no_match_on_default_reqwest_builder_rust(self, tmp_path: Path) -> None:
         # negative sibling: a builder with no danger_accept_invalid_certs
         # call never fires FP-TLS-VERIFY-003.
@@ -2922,7 +2928,8 @@ class TestFingerprintScan:
     def test_scan_directory_fingerprints_aggregates_across_files(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::_scan_directory_fingerprints kind="unit"
+        # frob:tests src/frob/vet/_capability.py::_scan_directory_fingerprints \
+        # kind="unit"
         from frob.vet._capability import _scan_directory_fingerprints
 
         (tmp_path / "a.py").write_text("data = yaml.load(raw_bytes)\n")
@@ -2940,7 +2947,8 @@ class TestFingerprintScan:
         # identifies as frob's own repo (see the sibling capability-scan
         # test above for why); scan from a fake repo root instead of the
         # bare `src/frob/strata` subdirectory.
-        # frob:tests src/frob/vet/_capability.py::_scan_directory_fingerprints kind="unit"
+        # frob:tests src/frob/vet/_capability.py::_scan_directory_fingerprints \
+        # kind="unit"
         from frob.vet._capability import _scan_directory_fingerprints
 
         fake_repo = _make_fake_frob_repo_root(tmp_path / "self-scan")
@@ -2975,7 +2983,8 @@ class TestObfuscationEnsemble:
         assert _invisible_text_signal("x = 1\ny = 2\n") is False
 
     def test_hex_identifier_ratio_flagged(self) -> None:
-        # frob:tests src/frob/vet/_obfuscation.py::_hex_identifier_ratio_signal kind="unit"
+        # frob:tests src/frob/vet/_obfuscation.py::_hex_identifier_ratio_signal \
+        # kind="unit"
         from frob.vet._obfuscation import _hex_identifier_ratio_signal
 
         idents = " ".join(f"_0x{i:04x}" for i in range(30))
@@ -3005,7 +3014,8 @@ class TestObfuscationEnsemble:
     def test_scan_directory_obfuscation_finds_signal_in_one_file(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_obfuscation.py::_scan_directory_obfuscation kind="unit"
+        # frob:tests src/frob/vet/_obfuscation.py::_scan_directory_obfuscation \
+        # kind="unit"
         from frob.vet._obfuscation import _scan_directory_obfuscation
 
         (tmp_path / "clean.py").write_text("x = 1\n")
@@ -3020,7 +3030,8 @@ class TestObfuscationEnsemble:
         # `_SCANNABLE_SUFFIXES`, so the deterministic Trojan-Source bidi
         # scan (CVE-2021-42574, demonstrated in C/C++) never ran on a
         # dependency's .c files at all.
-        # frob:tests src/frob/vet/_obfuscation.py::_scan_directory_obfuscation kind="unit"
+        # frob:tests src/frob/vet/_obfuscation.py::_scan_directory_obfuscation \
+        # kind="unit"
         from frob.vet._obfuscation import _scan_directory_obfuscation
 
         rlo = chr(0x202E)
@@ -3029,7 +3040,8 @@ class TestObfuscationEnsemble:
         assert "invisible-text" in signals
 
     def test_bidi_override_detected_in_kotlin_file(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_obfuscation.py::_scan_directory_obfuscation kind="unit"
+        # frob:tests src/frob/vet/_obfuscation.py::_scan_directory_obfuscation \
+        # kind="unit"
         from frob.vet._obfuscation import _scan_directory_obfuscation
 
         rlo = chr(0x202E)
@@ -3045,7 +3057,8 @@ class TestObfuscationEnsemble:
         # no single literal is ever long enough to be scored. Closing this
         # needs a real string-concatenation-aware rewrite, out of scope
         # for this pass.
-        # frob:tests src/frob/vet/_obfuscation.py::_scan_directory_obfuscation kind="unit"
+        # frob:tests src/frob/vet/_obfuscation.py::_scan_directory_obfuscation \
+        # kind="unit"
         from frob.vet._obfuscation import _scan_directory_obfuscation
 
         pieces = [
@@ -3725,9 +3738,9 @@ class TestClosedWorldAccounting:
         (pkg_dir / "bad.py").write_text("def f(:\n  this is not python\n")
         assert walk_python_imports(pkg_dir) == frozenset({"sys"})
 
-    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
-    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
-    # coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent cases \
+    # sharing an arrange-act scaffold typical of exhaustive per-rule coverage; \
+    # extracting would obscure per-case intent"
     def test_resolve_import_registry_match(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_closedworld.py::resolve_import kind="unit"
         from frob.vet._closedworld import resolve_import
@@ -3737,9 +3750,9 @@ class TestClosedWorldAccounting:
         )
         assert result.resolution == "registry"
 
-    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
-    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
-    # coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent cases \
+    # sharing an arrange-act scaffold typical of exhaustive per-rule coverage; \
+    # extracting would obscure per-case intent"
     def test_resolve_import_registry_match_via_pypi_name_override(
         self, tmp_path: Path
     ) -> None:
@@ -3753,9 +3766,9 @@ class TestClosedWorldAccounting:
         )
         assert result.resolution == "registry"
 
-    # frob:waive DUP001 reason="parallel vet-rule case table: independent \
-    # cases sharing an arrange-act scaffold typical of exhaustive per-rule \
-    # coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel vet-rule case table: independent cases \
+    # sharing an arrange-act scaffold typical of exhaustive per-rule coverage; \
+    # extracting would obscure per-case intent"
     def test_resolve_import_no_capability_match(self, tmp_path: Path) -> None:
         from frob.vet._closedworld import resolve_import
 
@@ -3811,11 +3824,15 @@ class TestClosedWorldAccounting:
         assert acc.closed is False
         assert "source unavailable" in acc.accounting_line()
 
-    # frob:tests src/frob/vet/_models.py::ClosedWorldAccounting.registry_count kind="unit"
-    # frob:tests src/frob/vet/_models.py::ClosedWorldAccounting.no_capability_count kind="unit"
+    # frob:tests src/frob/vet/_models.py::ClosedWorldAccounting.registry_count \
+    # kind="unit"
+    # frob:tests src/frob/vet/_models.py::ClosedWorldAccounting.no_capability_count \
+    # kind="unit"
     # frob:tests src/frob/vet/_models.py::ClosedWorldAccounting.vetted_count kind="unit"
-    # frob:tests src/frob/vet/_models.py::ClosedWorldAccounting.unknown_count kind="unit"
-    # frob:tests src/frob/vet/_models.py::ClosedWorldAccounting.accounting_line kind="unit"
+    # frob:tests src/frob/vet/_models.py::ClosedWorldAccounting.unknown_count \
+    # kind="unit"
+    # frob:tests src/frob/vet/_models.py::ClosedWorldAccounting.accounting_line \
+    # kind="unit"
     def test_closed_world_accounting_full_pass(self, tmp_path: Path) -> None:
         site_packages = self._site_packages(tmp_path)
         pkg_dir = site_packages / "top_pkg"

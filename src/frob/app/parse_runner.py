@@ -57,10 +57,10 @@ _PARSERS = {
 # frob:tests tests/unit/test_parse_runner_direct.py::TestParseRunnerRun.test_reads_from_stdin_and_logs_json  # noqa: E501
 # frob:tests tests/unit/test_parse_runner_direct.py::TestParseRunnerRun.test_passthrough_propagates_failing_exit_code  # noqa: E501
 # frob:tests tests/unit/test_parse_runner_direct.py::TestParseRunnerRun.test_no_passthrough_does_not_exit_on_failure  # noqa: E501
-# frob:waive ARCH103 reason="T-0977: `frob parse` CLI entrypoint -- \
-# validates the tool arg, dispatches stdin/file input, logs text or json, \
-# propagates the passthrough exit code; this dispatch/format/exit triad IS \
-# the runner's job, matching every other `frob.app.*_runner`"
+# frob:waive ARCH103 reason="T-0977: `frob parse` CLI entrypoint -- validates the tool \
+# arg, dispatches stdin/file input, logs text or json, propagates the passthrough exit \
+# code; this dispatch/format/exit triad IS the runner's job, matching every other \
+# `frob.app.*_runner`"
 def run(cfg: AppConfig) -> None:
     tool = cfg.parse_tool
     if tool is None:

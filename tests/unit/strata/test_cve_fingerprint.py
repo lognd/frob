@@ -59,13 +59,15 @@ class TestCatalogDrift:
     """CVEFP001: every fingerprint's `cwe_id` must join a real `WeaknessEntry`
     in the joined std.cwe catalog."""
 
-    # frob:tests src/frob/strata/_cve_fingerprint.py::check_fingerprint_catalog_drift kind="unit"
+    # frob:tests src/frob/strata/_cve_fingerprint.py::check_fingerprint_catalog_drift \
+    # kind="unit"
     def test_default_catalog_is_drift_clean(self):
         result = check_fingerprint_catalog_drift()
         assert result.is_ok
         assert result.danger_ok == ()
 
-    # frob:tests src/frob/strata/_cve_fingerprint.py::check_fingerprint_catalog_drift kind="unit"
+    # frob:tests src/frob/strata/_cve_fingerprint.py::check_fingerprint_catalog_drift \
+    # kind="unit"
     def test_every_fingerprint_cwe_id_resolves_against_the_joined_catalog(self):
         joined_ids = {
             e.id for e in (*CWE_CATALOG, *CWE_TOP_25_CATALOG, *QUALITY_CATALOG)
@@ -73,7 +75,8 @@ class TestCatalogDrift:
         for entry in CVE_FINGERPRINTS:
             assert entry.cwe_id in joined_ids
 
-    # frob:tests src/frob/strata/_cve_fingerprint.py::check_fingerprint_catalog_drift kind="unit"
+    # frob:tests src/frob/strata/_cve_fingerprint.py::check_fingerprint_catalog_drift \
+    # kind="unit"
     def test_unknown_cwe_id_fails_loudly(self):
         bogus = CveFingerprint(
             id="FP-BOGUS-001",
@@ -92,7 +95,8 @@ class TestCatalogDrift:
         assert violations[0].fingerprint_id == "FP-BOGUS-001"
         assert violations[0].cwe_id == "CWE-99999"
 
-    # frob:tests src/frob/strata/_cve_fingerprint.py::check_fingerprint_catalog_drift kind="unit"
+    # frob:tests src/frob/strata/_cve_fingerprint.py::check_fingerprint_catalog_drift \
+    # kind="unit"
     def test_a_removed_cwe_entry_is_detected_against_a_narrowed_catalog(self):
         # simulate a catalog that no longer carries CWE-78 (the id
         # FP-EXEC-SHELL-001 joins) -- the drift-lock must catch it even
@@ -121,7 +125,8 @@ class TestXxeFingerprint:
         assert entry.language == "python"
         assert entry.cve == ("CVE-2013-1665",)
 
-    # frob:tests src/frob/strata/_cve_fingerprint.py::check_fingerprint_catalog_drift kind="unit"
+    # frob:tests src/frob/strata/_cve_fingerprint.py::check_fingerprint_catalog_drift \
+    # kind="unit"
     def test_fp_xxe_parse_001_resolves_against_the_default_joined_catalog(self):
         result = check_fingerprint_catalog_drift()
         assert result.is_ok
@@ -155,47 +160,54 @@ class TestT0510Fingerprints:
         assert entry.language == expected_language
         assert entry.cve == (expected_cve,)
 
-    # frob:tests src/frob/strata/_cve_fingerprint.py::check_fingerprint_catalog_drift kind="unit"
+    # frob:tests src/frob/strata/_cve_fingerprint.py::check_fingerprint_catalog_drift \
+    # kind="unit"
     def test_all_five_resolve_against_the_default_joined_catalog(self):
         result = check_fingerprint_catalog_drift()
         assert result.is_ok
         flagged = {v.fingerprint_id for v in result.danger_ok}
         assert flagged.isdisjoint(self._EXPECTED)
 
-    # frob:tests src/frob/strata/_cve_fingerprint.py::scan_text_for_fingerprints kind="unit"
+    # frob:tests src/frob/strata/_cve_fingerprint.py::scan_text_for_fingerprints \
+    # kind="unit"
     def test_weakhash_needle_fires_on_smelly_python(self):
         hits = scan_text_for_fingerprints(
             "digest = hashlib.md5(password.encode()).hexdigest()", "python"
         )
         assert any(h.fingerprint_id == "FP-WEAKHASH-PASSWORD-001" for h in hits)
 
-    # frob:tests src/frob/strata/_cve_fingerprint.py::scan_text_for_fingerprints kind="unit"
+    # frob:tests src/frob/strata/_cve_fingerprint.py::scan_text_for_fingerprints \
+    # kind="unit"
     def test_weakhash_needle_does_not_fire_on_clean_python(self):
         hits = scan_text_for_fingerprints("digest = argon2.hash(password)", "python")
         assert not any(h.fingerprint_id == "FP-WEAKHASH-PASSWORD-001" for h in hits)
 
-    # frob:tests src/frob/strata/_cve_fingerprint.py::scan_text_for_fingerprints kind="unit"
+    # frob:tests src/frob/strata/_cve_fingerprint.py::scan_text_for_fingerprints \
+    # kind="unit"
     def test_proto_pollution_needle_fires_on_smelly_typescript(self):
         hits = scan_text_for_fingerprints(
             'merged[key] = obj["__proto__"];', "typescript"
         )
         assert any(h.fingerprint_id == "FP-PROTO-POLLUTION-001" for h in hits)
 
-    # frob:tests src/frob/strata/_cve_fingerprint.py::scan_text_for_fingerprints kind="unit"
+    # frob:tests src/frob/strata/_cve_fingerprint.py::scan_text_for_fingerprints \
+    # kind="unit"
     def test_redos_needle_fires_on_smelly_typescript(self):
         hits = scan_text_for_fingerprints(
             "const re = new RegExp(userInput);", "typescript"
         )
         assert any(h.fingerprint_id == "FP-REDOS-REGEX-001" for h in hits)
 
-    # frob:tests src/frob/strata/_cve_fingerprint.py::scan_text_for_fingerprints kind="unit"
+    # frob:tests src/frob/strata/_cve_fingerprint.py::scan_text_for_fingerprints \
+    # kind="unit"
     def test_open_redirect_needle_fires_on_smelly_python(self):
         hits = scan_text_for_fingerprints(
             "return redirect(request.GET.get('next'))", "python"
         )
         assert any(h.fingerprint_id == "FP-OPEN-REDIRECT-001" for h in hits)
 
-    # frob:tests src/frob/strata/_cve_fingerprint.py::scan_text_for_fingerprints kind="unit"
+    # frob:tests src/frob/strata/_cve_fingerprint.py::scan_text_for_fingerprints \
+    # kind="unit"
     def test_ssti_needle_fires_on_smelly_python(self):
         hits = scan_text_for_fingerprints(
             "return render_template_string(user_supplied)", "python"

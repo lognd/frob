@@ -703,10 +703,10 @@ def migrate_to_ledger(root: Path) -> Result[int, TicketError]:
 # frob:tests \
 # tests/unit/test_ticket_store.py::TestAtomicWrite.test_fsync_failure_is_write_failed_n\
 # ot_a_partial_file  # noqa: E501
-# frob:waive ARCH103 reason="T-0977: crash-safe write primitive -- temp \
-# file + fsync + os.replace with a str/bytes branch for the write call \
-# itself; the encoding branch is the SAME single 'write content safely' \
-# concern the docstring names (T-0456), not a separate one to extract"
+# frob:waive ARCH103 reason="T-0977: crash-safe write primitive -- temp file + fsync + \
+# os.replace with a str/bytes branch for the write call itself; the encoding branch is \
+# the SAME single 'write content safely' concern the docstring names (T-0456), not a \
+# separate one to extract"
 def atomic_write(path: Path, content: str | bytes) -> Result[None, TicketError]:
     """Write content via temp file + fsync + os.replace in the same directory
     (T-0456: crash-safe -- `os.replace` alone is atomic AT THE FILESYSTEM

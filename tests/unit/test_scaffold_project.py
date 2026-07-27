@@ -23,7 +23,8 @@ from frob.scaffold.project import (
 )
 
 
-# frob:tests tests/unit/test_scaffold_project.py::test_list_project_types_includes_known_types
+# frob:tests \
+# tests/unit/test_scaffold_project.py::test_list_project_types_includes_known_types
 def test_list_project_types_includes_known_types() -> None:
     """`list_project_types` surfaces every registered manifest key."""
     types = list_project_types()
@@ -33,7 +34,8 @@ def test_list_project_types_includes_known_types() -> None:
     assert "web-app" in types
 
 
-# frob:tests tests/unit/test_scaffold_project.py::test_render_project_unknown_type_is_err
+# frob:tests \
+# tests/unit/test_scaffold_project.py::test_render_project_unknown_type_is_err
 def test_render_project_unknown_type_is_err() -> None:
     """An unregistered project type returns `UnknownType`, never raises."""
     result = render_project("not-a-real-type", "demo", Path("/tmp/does-not-matter"))
@@ -41,7 +43,8 @@ def test_render_project_unknown_type_is_err() -> None:
     assert result.danger_err is ScaffoldError.UnknownType
 
 
-# frob:tests tests/unit/test_scaffold_project.py::test_render_project_writes_expected_files
+# frob:tests \
+# tests/unit/test_scaffold_project.py::test_render_project_writes_expected_files
 def test_render_project_writes_expected_files(tmp_path: Path) -> None:
     """A successful render writes every manifest entry for the given type."""
     result = render_project("python-tool", "demo", tmp_path)
@@ -54,7 +57,9 @@ def test_render_project_writes_expected_files(tmp_path: Path) -> None:
     assert (tmp_path / "src" / "demo" / "__init__.py").exists()
 
 
-# frob:tests tests/unit/test_scaffold_project.py::test_render_project_existing_output_without_force_is_err
+# frob:tests \
+# tests/unit/test_scaffold_project.py::test_render_project_existing_output_without_forc\
+# e_is_err
 def test_render_project_existing_output_without_force_is_err(tmp_path: Path) -> None:
     """Re-rendering without force=True refuses to clobber existing output."""
     first = render_project("python-tool", "demo", tmp_path)
@@ -65,7 +70,9 @@ def test_render_project_existing_output_without_force_is_err(tmp_path: Path) -> 
     assert second.danger_err is ScaffoldError.OutputExists
 
 
-# frob:tests tests/unit/test_scaffold_project.py::test_render_project_force_overwrites_existing_output
+# frob:tests \
+# tests/unit/test_scaffold_project.py::test_render_project_force_overwrites_existing_ou\
+# tput
 def test_render_project_force_overwrites_existing_output(tmp_path: Path) -> None:
     """force=True re-renders even when the output files already exist."""
     first = render_project("python-tool", "demo", tmp_path)
@@ -76,7 +83,8 @@ def test_render_project_force_overwrites_existing_output(tmp_path: Path) -> None
     assert len(second.danger_ok) == len(first.danger_ok)
 
 
-# frob:tests tests/unit/test_scaffold_project.py::test_render_project_all_registered_types_succeed
+# frob:tests \
+# tests/unit/test_scaffold_project.py::test_render_project_all_registered_types_succeed
 def test_render_project_all_registered_types_succeed(tmp_path: Path) -> None:
     """Every registered manifest type renders cleanly for a fresh output dir."""
     for project_type in list_project_types():
@@ -85,7 +93,9 @@ def test_render_project_all_registered_types_succeed(tmp_path: Path) -> None:
         assert result.is_ok, f"{project_type} failed to render: {result.err}"
 
 
-# frob:tests tests/unit/test_scaffold_project.py::test_resolve_manifest_paths_bad_output_expression_is_render_failed
+# frob:tests \
+# tests/unit/test_scaffold_project.py::test_resolve_manifest_paths_bad_output_expressio\
+# n_is_render_failed
 def test_resolve_manifest_paths_bad_output_expression_is_render_failed(
     tmp_path: Path,
 ) -> None:
@@ -101,7 +111,9 @@ def test_resolve_manifest_paths_bad_output_expression_is_render_failed(
     assert result.danger_err is ScaffoldError.RenderFailed
 
 
-# frob:tests tests/unit/test_scaffold_project.py::test_write_manifest_entries_missing_template_is_template_not_found
+# frob:tests \
+# tests/unit/test_scaffold_project.py::test_write_manifest_entries_missing_template_is_\
+# template_not_found
 def test_write_manifest_entries_missing_template_is_template_not_found(
     tmp_path: Path,
 ) -> None:
@@ -118,7 +130,8 @@ def test_write_manifest_entries_missing_template_is_template_not_found(
     assert result.danger_err is ScaffoldError.TemplateNotFound
 
 
-# frob:tests tests/unit/test_scaffold_project.py::test_render_project_propagates_resolve_failure
+# frob:tests \
+# tests/unit/test_scaffold_project.py::test_render_project_propagates_resolve_failure
 def test_render_project_propagates_resolve_failure(tmp_path: Path, monkeypatch) -> None:
     """When output-path resolution fails, `render_project` returns that
     error directly rather than proceeding to write anything."""
@@ -135,7 +148,9 @@ def test_render_project_propagates_resolve_failure(tmp_path: Path, monkeypatch) 
     assert result.danger_err is ScaffoldError.RenderFailed
 
 
-# frob:tests tests/unit/test_scaffold_project.py::test_hooks_dir_kill_switch_refuses_without_spawning
+# frob:tests \
+# tests/unit/test_scaffold_project.py::test_hooks_dir_kill_switch_refuses_without_spawn\
+# ing
 # frob:ticket T-0803
 def test_hooks_dir_kill_switch_refuses_without_spawning(
     tmp_path: Path, monkeypatch

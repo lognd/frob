@@ -28,7 +28,8 @@ def _raise_file_not_found(*args, **kwargs):  # noqa: ANN001, ANN002, ANN003
 # frob:ticket T-0142
 class TestToolUnavailableResult:
     def test_shape_is_a_failing_diagnostic(self) -> None:
-        # frob:tests src/frob/process/parsers/common.py::tool_unavailable_result kind="unit"
+        # frob:tests src/frob/process/parsers/common.py::tool_unavailable_result \
+        # kind="unit"
         from frob.process.parsers.common import tool_unavailable_result
 
         r = tool_unavailable_result("ruff-check", "ruff")

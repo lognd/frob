@@ -35,10 +35,10 @@ _MAX_EXPORT_NODES = 4000
 
 
 # frob:doc docs/modules/lang.md#primitives
-# frob:waive COV007 reason="docs/modules/lang.md's Primitives section is a \
-# deliberate, per-function architecture doc of this module's internal \
-# tree-sitter helpers (T-0524) -- each private primitive gets its own \
-# named bullet there by design, not a caller-side public-API summary"
+# frob:waive COV007 reason="docs/modules/lang.md's Primitives section is a deliberate, \
+# per-function architecture doc of this module's internal tree-sitter helpers (T-0524) \
+# -- each private primitive gets its own named bullet there by design, not a \
+# caller-side public-API summary"
 def _collapse_ws(text: str) -> str:
     """Whitespace-collapse doc text so reflow never changes ``doc_text``."""
     return " ".join(text.split())
@@ -60,10 +60,10 @@ def _in_skip_range(node: Node, skip_ranges: tuple[ByteRange, ...]) -> bool:
 
 
 # frob:doc docs/modules/lang.md#primitives
-# frob:waive COV007 reason="docs/modules/lang.md's Primitives section is a \
-# deliberate, per-function architecture doc of this module's internal \
-# tree-sitter helpers (T-0524) -- each private primitive gets its own \
-# named bullet there by design, not a caller-side public-API summary"
+# frob:waive COV007 reason="docs/modules/lang.md's Primitives section is a deliberate, \
+# per-function architecture doc of this module's internal tree-sitter helpers (T-0524) \
+# -- each private primitive gets its own named bullet there by design, not a \
+# caller-side public-API summary"
 def _leaf_tokens(
     node: Node,
     comment_types: frozenset[str],
@@ -303,10 +303,10 @@ def _canonical_tokens(
 
 
 # frob:doc docs/modules/lang.md#primitives
-# frob:waive COV007 reason="docs/modules/lang.md's Primitives section is a \
-# deliberate, per-function architecture doc of this module's internal \
-# tree-sitter helpers (T-0524) -- each private primitive gets its own \
-# named bullet there by design, not a caller-side public-API summary"
+# frob:waive COV007 reason="docs/modules/lang.md's Primitives section is a deliberate, \
+# per-function architecture doc of this module's internal tree-sitter helpers (T-0524) \
+# -- each private primitive gets its own named bullet there by design, not a \
+# caller-side public-API summary"
 def _strip_comment_delims(raw: str) -> str:
     """Strip `//`, `///`, `/* */`, `/** */`, and leading `*` from one comment."""
     text = raw.strip()
@@ -334,10 +334,10 @@ def _strip_comment_delims(raw: str) -> str:
 
 
 # frob:doc docs/modules/lang.md#primitives
-# frob:waive COV007 reason="docs/modules/lang.md's Primitives section is a \
-# deliberate, per-function architecture doc of this module's internal \
-# tree-sitter helpers (T-0524) -- each private primitive gets its own \
-# named bullet there by design, not a caller-side public-API summary"
+# frob:waive COV007 reason="docs/modules/lang.md's Primitives section is a deliberate, \
+# per-function architecture doc of this module's internal tree-sitter helpers (T-0524) \
+# -- each private primitive gets its own named bullet there by design, not a \
+# caller-side public-API summary"
 def _leading_doc_comment(
     node: Node,
     comment_types: frozenset[str],
@@ -370,10 +370,10 @@ def _leading_doc_comment(
 
 
 # frob:doc docs/modules/lang.md#primitives
-# frob:waive COV007 reason="docs/modules/lang.md's Primitives section is a \
-# deliberate, per-function architecture doc of this module's internal \
-# tree-sitter helpers (T-0524) -- each private primitive gets its own \
-# named bullet there by design, not a caller-side public-API summary"
+# frob:waive COV007 reason="docs/modules/lang.md's Primitives section is a deliberate, \
+# per-function architecture doc of this module's internal tree-sitter helpers (T-0524) \
+# -- each private primitive gets its own named bullet there by design, not a \
+# caller-side public-API summary"
 def _span_of(node: Node) -> tuple[int, int]:
     """1-based inclusive (start_line, end_line) span for `node`.
 
@@ -459,10 +459,10 @@ def _leaf_tree_node(n: Node, field: str | None = None) -> TreeNode:
 
 
 # frob:doc docs/modules/lang.md#primitives
-# frob:waive COV007 reason="docs/modules/lang.md's Primitives section is a \
-# deliberate, per-function architecture doc of this module's internal \
-# tree-sitter helpers (T-0524) -- each private primitive gets its own \
-# named bullet there by design, not a caller-side public-API summary"
+# frob:waive COV007 reason="docs/modules/lang.md's Primitives section is a deliberate, \
+# per-function architecture doc of this module's internal tree-sitter helpers (T-0524) \
+# -- each private primitive gets its own named bullet there by design, not a \
+# caller-side public-API summary"
 def _find_enclosing_symbol(
     span: tuple[int, int], symbols: tuple[RawSymbol, ...]
 ) -> str | None:
@@ -501,10 +501,10 @@ _FOLLOWING_SYMBOL_WINDOW = 3
 
 # frob:doc docs/modules/lang.md#primitives
 # frob:ticket T-0434
-# frob:waive COV007 reason="docs/modules/lang.md's Primitives section is a \
-# deliberate, per-function architecture doc of this module's internal \
-# tree-sitter helpers (T-0524) -- each private primitive gets its own \
-# named bullet there by design, not a caller-side public-API summary"
+# frob:waive COV007 reason="docs/modules/lang.md's Primitives section is a deliberate, \
+# per-function architecture doc of this module's internal tree-sitter helpers (T-0524) \
+# -- each private primitive gets its own named bullet there by design, not a \
+# caller-side public-API summary"
 def _find_following_symbol(
     span: tuple[int, int], symbols: tuple[RawSymbol, ...]
 ) -> str | None:

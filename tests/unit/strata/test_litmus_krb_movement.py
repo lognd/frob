@@ -29,7 +29,8 @@ def _load_model(filename: str) -> KernelModel:
 
 
 class TestKrbMovementVulnLitmus:
-    # frob:tests src/frob/strata/_krb_movement.py::evaluate_krb_movement_waived kind="unit"
+    # frob:tests src/frob/strata/_krb_movement.py::evaluate_krb_movement_waived \
+    # kind="unit"
     def test_vuln_model_fires_all_four_rules(self):
         model = _load_model("krb_movement_vuln.strata")
         krb001, krb002, krb003, krb004 = evaluate_krb_movement_waived(model).danger_ok
@@ -52,7 +53,8 @@ class TestKrbMovementVulnLitmus:
 
 
 class TestKrbMovementHardenedLitmus:
-    # frob:tests src/frob/strata/_krb_movement.py::evaluate_krb_movement_waived kind="unit"
+    # frob:tests src/frob/strata/_krb_movement.py::evaluate_krb_movement_waived \
+    # kind="unit"
     def test_hardened_model_discharges(self):
         model = _load_model("krb_movement_hardened.strata")
         krb001, krb002, krb003, krb004 = evaluate_krb_movement_waived(model).danger_ok

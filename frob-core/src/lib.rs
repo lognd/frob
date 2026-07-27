@@ -516,7 +516,11 @@ struct Template {
 /// `$hole_N` at this position, bind it to `(a, b)`, and do not recurse --
 /// everything under a hole is exactly what differs per-instance, so it
 /// belongs to the binding, not the template.
-// frob:invariant terminates reason="each recursive call descends strictly into a child of a and b in the input parse trees, which are finite; recursion stops at leaves (empty child lists) or on any label/arity mismatch" measure="min(remaining-depth-in-a, remaining-depth-in-b) from the current (a, b) pair to a leaf"
+// frob:invariant terminates reason="each recursive call descends strictly into a \
+// child of a and b in the input parse trees, which are finite; recursion stops at \
+// leaves (empty child lists) or on any label/arity mismatch" \
+// measure="min(remaining-depth-in-a, remaining-depth-in-b) from the current (a, b) \
+// pair to a leaf"
 #[allow(clippy::too_many_arguments)]
 fn anti_unify_walk(
     a: usize,

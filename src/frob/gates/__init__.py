@@ -3680,10 +3680,10 @@ def _cov005_file(
     return violations
 
 
-# frob:waive ARCH103 reason="T-0977: `git show`-and-parse helper -- reads \
-# the base revision's blob, parses its frob: directives, degrades to empty \
-# on any not-found/parse failure; the parse-degrade branching IS the \
-# single 'old directive bindings, or none' concern the docstring names"
+# frob:waive ARCH103 reason="T-0977: `git show`-and-parse helper -- reads the base \
+# revision's blob, parses its frob: directives, degrades to empty on any \
+# not-found/parse failure; the parse-degrade branching IS the single 'old directive \
+# bindings, or none' concern the docstring names"
 def _old_directive_bindings(
     root: Path, base: str, file: str
 ) -> tuple[tuple[EdgeKind, str, str, bool], ...]:
@@ -4792,8 +4792,7 @@ def _fmt001_touched_lines(diff: Diff, file: str) -> set[int]:
 
 # frob:doc docs/modules/gates.md#fmt001-t-0851
 # frob:tests tests/test_gates.py::TestFmt001Gate.test_directive_run_over_limit_flagged
-# frob:tests \
-# tests/test_gates.py::TestFmt001Gate.test_ordinary_long_comment_not_flagged
+# frob:tests tests/test_gates.py::TestFmt001Gate.test_ordinary_long_comment_not_flagged
 # frob:tests tests/test_gates.py::TestFmt001Gate.test_long_code_line_not_flagged
 # frob:tests tests/test_gates.py::TestFmt001Gate.test_untouched_line_not_flagged
 # frob:tests tests/test_gates.py::TestFmt001Gate.test_short_directive_not_flagged
@@ -5813,9 +5812,9 @@ def _invariant_evidence_proves_anchor(
     return evidence.split("::", 1)[0] in anchor_files
 
 
-# frob:waive DUP001 reason="Violation-builder boilerplate shared shape \
-# with _inv002 below; distinct rule ids and distinct remediation messages \
-# (missing evidence vs missing anchor) -- structural coincidence"
+# frob:waive DUP001 reason="Violation-builder boilerplate shared shape with _inv002 \
+# below; distinct rule ids and distinct remediation messages (missing evidence vs \
+# missing anchor) -- structural coincidence"
 # frob:enforces CHK-GATE-INV001
 def _inv001(inv: Invariant) -> Violation:
     """INV001: an invariant with no standing evidence."""
@@ -5832,9 +5831,8 @@ def _inv001(inv: Invariant) -> Violation:
     )
 
 
-# frob:waive DUP001 reason="Violation-builder boilerplate shared shape \
-# with _inv001 above; distinct rule id and message -- structural \
-# coincidence"
+# frob:waive DUP001 reason="Violation-builder boilerplate shared shape with _inv001 \
+# above; distinct rule id and message -- structural coincidence"
 # frob:enforces CHK-GATE-INV002
 def _inv002(inv: Invariant) -> Violation:
     """INV002: an invariant with no code anchor."""
@@ -5949,10 +5947,9 @@ INV003_SPEC_DIRS: tuple[str, ...] = ("docs/modules", "docs/strata")
 
 
 # frob:doc docs/modules/gates.md#invariants
-# frob:waive COV007 reason="docs/modules/gates.md's Invariants section \
-# (INV003/INV004 subsections) is a deliberate architecture doc walking \
-# through this exact helper's design (T-0524), not a caller-side \
-# public-API summary"
+# frob:waive COV007 reason="docs/modules/gates.md's Invariants section (INV003/INV004 \
+# subsections) is a deliberate architecture doc walking through this exact helper's \
+# design (T-0524), not a caller-side public-API summary"
 # frob:ticket T-0509
 def _file_has_reasoned_doc_waiver(path: Path, rule: str) -> bool:
     """True if `path` carries a `<!-- frob:waive <rule> reason="..." -->`
@@ -5989,10 +5986,9 @@ def _file_has_reasoned_doc_waiver(path: Path, rule: str) -> bool:
 
 
 # frob:doc docs/modules/gates.md#invariants
-# frob:waive COV007 reason="docs/modules/gates.md's Invariants section \
-# (INV003 subsection) is a deliberate architecture doc walking through \
-# this exact helper's design (T-0524), not a caller-side public-API \
-# summary"
+# frob:waive COV007 reason="docs/modules/gates.md's Invariants section (INV003 \
+# subsection) is a deliberate architecture doc walking through this exact helper's \
+# design (T-0524), not a caller-side public-API summary"
 # frob:ticket T-0462
 # frob:enforces CHK-GATE-INV003
 def _inv003_doc_violations(
@@ -6081,10 +6077,9 @@ _MD_HEADING_RE = re.compile(r"^#{1,6}\s", re.MULTILINE)
 
 
 # frob:doc docs/modules/gates.md#invariants
-# frob:waive COV007 reason="docs/modules/gates.md's Invariants section \
-# (INV004 subsection) is a deliberate architecture doc walking through \
-# this exact helper's design (T-0524), not a caller-side public-API \
-# summary"
+# frob:waive COV007 reason="docs/modules/gates.md's Invariants section (INV004 \
+# subsection) is a deliberate architecture doc walking through this exact helper's \
+# design (T-0524), not a caller-side public-API summary"
 # frob:ticket T-0452
 def _markdown_sections(text: str) -> tuple[str, ...]:
     """Split `text` into ATX-heading-delimited sections (each section runs
@@ -6105,10 +6100,9 @@ def _markdown_sections(text: str) -> tuple[str, ...]:
 # frob:doc docs/modules/gates.md#invariants
 # frob:ticket T-0515
 # frob:waive COV005 reason="removing the three now-dead T-0509 section-waiver helpers above (_inv004_waived_headings, _INV004_MESSAGE_HEADING_RE, _inv004_message_heading) shifted this file's Nth same-target 'docs/modules/gates.md#invariants' directive; COV005's rebind check matches old/new bindings by (kind, target) alone and reads the shift as a rebind onto a new private symbol -- this directive has bound _inv004_doc_violations (private) all along, see _file_has_reasoned_doc_waiver's docstring for the same false-positive class"  # noqa: E501
-# frob:waive COV007 reason="docs/modules/gates.md's Invariants section \
-# (INV004 subsection) is a deliberate architecture doc walking through \
-# this exact helper's design (T-0524), not a caller-side public-API \
-# summary"
+# frob:waive COV007 reason="docs/modules/gates.md's Invariants section (INV004 \
+# subsection) is a deliberate architecture doc walking through this exact helper's \
+# design (T-0524), not a caller-side public-API summary"
 # frob:enforces CHK-GATE-INV004
 def _inv004_doc_violations(root: Path, path: Path) -> tuple[Violation, ...]:
     """INV004 findings for one doc file: at least one section uses
@@ -9541,9 +9535,9 @@ def doclink_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     return violations
 
 
-# frob:waive DUP001 reason="dup grouped this with frob.vet._scan's \
-# _vet004_violation purely on generic Violation(...)-builder shape; \
-# different gate family (doc-graph vs dependency-vet), unrelated rules"
+# frob:waive DUP001 reason="dup grouped this with frob.vet._scan's _vet004_violation \
+# purely on generic Violation(...)-builder shape; different gate family (doc-graph vs \
+# dependency-vet), unrelated rules"
 # frob:enforces CHK-GATE-DOC001
 def _doc001_orphan(orphan: str, link_hint: str) -> Violation:
     """DOC001: `orphan` is a doc file linked from nowhere."""
@@ -10759,8 +10753,8 @@ def _stamp_worker_lock_keys_env() -> None:
 
     held_keys = held_registry_keys()
     if held_keys:
-        # frob:waive SEC110 reason="lock-registry-key marker (a resolved \
-        # filesystem path), not a secret"
+        # frob:waive SEC110 reason="lock-registry-key marker (a resolved filesystem \
+        # path), not a secret"
         os.environ[_LOCK_KEYS_ENV] = _LOCK_KEYS_SEP.join(held_keys)
 
 

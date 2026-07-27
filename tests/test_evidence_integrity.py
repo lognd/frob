@@ -97,7 +97,9 @@ def _write(root: Path, ticket: Ticket, slug: str = "sample") -> Path:
 # ---------------------------------------------------------------------------
 class TestD01PassVerification:
     def test_red_evidence_rejected_when_passed_supplied(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD01PassVerification.test_red_evidence_rejected_when_passed_supplied
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD01PassVerification.test_red_evidence_r\
+        # ejected_when_passed_supplied
         ticket = _ticket(state=TicketState.IN_PROGRESS)
         _write(tmp_path, ticket)
         node = "tests/test_x.py::test_it"
@@ -113,7 +115,9 @@ class TestD01PassVerification:
         assert result.danger_err == TicketError.EvidenceNotPassing
 
     def test_green_evidence_recorded_when_passed_supplied(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD01PassVerification.test_green_evidence_recorded_when_passed_supplied
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD01PassVerification.test_green_evidence\
+        # _recorded_when_passed_supplied
         ticket = _ticket(state=TicketState.IN_PROGRESS)
         _write(tmp_path, ticket)
         node = "tests/test_x.py::test_it"
@@ -130,7 +134,9 @@ class TestD01PassVerification:
     def test_passed_none_preserves_old_permissive_behavior(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD01PassVerification.test_passed_none_preserves_old_permissive_behavior
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD01PassVerification.test_passed_none_pr\
+        # eserves_old_permissive_behavior
         ticket = _ticket(state=TicketState.IN_PROGRESS)
         _write(tmp_path, ticket)
         node = "tests/test_x.py::test_it"
@@ -143,7 +149,9 @@ class TestD01PassVerification:
 # ---------------------------------------------------------------------------
 class TestD02ScopeBinding:
     def test_transition_rejects_when_covers_scope_false(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD02ScopeBinding.test_transition_rejects_when_covers_scope_false
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_transition_rejects\
+        # _when_covers_scope_false
         ticket = _ticket(
             state=TicketState.IN_PROGRESS,
             evidence=("tests/test_unrelated.py::test_x",),
@@ -154,8 +162,15 @@ class TestD02ScopeBinding:
         assert result.is_err
         assert result.danger_err == TicketError.EvidenceScopeUnbound
 
+    # frob:waive DUP001 reason="pre-existing duplication with \
+    # TestT0417ReverifyEvidenceOnClose.test_transition_allows_when_evidence_reverified_true \
+    # in this same file, surfaced (not introduced) by T-0988's mechanical fmt \
+    # sweep touching this file's directive comments; dedup tracked separately \
+    # in T-0995, not fixed opportunistically here"  # noqa: E501
     def test_transition_allows_when_covers_scope_true(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD02ScopeBinding.test_transition_allows_when_covers_scope_true
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_transition_allows_\
+        # when_covers_scope_true
         ticket = _ticket(
             state=TicketState.IN_PROGRESS,
             evidence=("tests/test_thing.py::test_x",),
@@ -166,7 +181,9 @@ class TestD02ScopeBinding:
         assert result.is_ok
 
     def test_evidence_covers_scope_true_for_bound_test(self) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_scope_true_for_bound_test
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_sc\
+        # ope_true_for_bound_test
         ticket = _ticket(
             scope=("src/pkg/",),
             evidence=("tests/test_thing.py::test_it",),
@@ -186,7 +203,9 @@ class TestD02ScopeBinding:
         assert evidence_covers_scope(ticket, snapshot) is True
 
     def test_evidence_covers_scope_false_for_unrelated_test(self) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_scope_false_for_unrelated_test
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_sc\
+        # ope_false_for_unrelated_test
         ticket = _ticket(
             scope=("src/pkg/",),
             evidence=("tests/test_logging.py::test_levels",),
@@ -208,7 +227,9 @@ class TestD02ScopeBinding:
     def test_evidence_covers_scope_true_for_docs_kind_with_cmd_evidence(
         self,
     ) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_scope_true_for_docs_kind_with_cmd_evidence
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_sc\
+        # ope_true_for_docs_kind_with_cmd_evidence
         # frob:ticket T-0444
         # A docs-kind ticket scoped to doc files has no coverable code
         # symbol; T-0215 sanctions it closing on a --evidence-cmd exit
@@ -225,7 +246,9 @@ class TestD02ScopeBinding:
     def test_evidence_covers_scope_false_for_code_kind_with_cmd_shaped_evidence(
         self,
     ) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_scope_false_for_code_kind_with_cmd_shaped_evidence
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD02ScopeBinding.test_evidence_covers_sc\
+        # ope_false_for_code_kind_with_cmd_shaped_evidence
         # frob:ticket T-0444
         # The docs exemption must NOT loophole a code-kind ticket: even a
         # cmd-shaped evidence entry on a bug ticket does not satisfy
@@ -350,24 +373,32 @@ class TestT0417ReverifyEvidenceOnClose:
 
 class TestD03SubstantiveDoneReport:
     def test_empty_section_rejected(self) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport.test_empty_section_rejected
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport.test_empty_sec\
+        # tion_rejected
         assert (
             has_substantive_done_report("## Description\nx\n\n## Done report\n")
             is False
         )
 
     def test_blank_lines_only_rejected(self) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport.test_blank_lines_only_rejected
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport.test_blank_lin\
+        # es_only_rejected
         body = "## Description\nx\n\n## Done report\n\n   \n\n"
         assert has_substantive_done_report(body) is False
 
     def test_real_content_accepted(self) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport.test_real_content_accepted
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport.test_real_cont\
+        # ent_accepted
         body = "## Description\nx\n\n## Done report\nAll good.\n"
         assert has_substantive_done_report(body) is True
 
     def test_close_rejects_empty_done_report(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport.test_close_rejects_empty_done_report
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport.test_close_rej\
+        # ects_empty_done_report
         ticket = _ticket(
             state=TicketState.IN_PROGRESS,
             evidence=("tests/test_thing.py::test_it",),
@@ -493,7 +524,9 @@ class TestDoneReportHeadingImpersonation:
 # ---------------------------------------------------------------------------
 class TestD04UnknownLanguageFallback:
     def test_config_file_change_selects_something(self) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD04UnknownLanguageFallback.test_config_file_change_selects_something
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD04UnknownLanguageFallback.test_config_\
+        # file_change_selects_something
         snapshot = GraphSnapshot(
             root=".",
             symbols={
@@ -516,7 +549,9 @@ class TestD04UnknownLanguageFallback:
 # ---------------------------------------------------------------------------
 class TestD06ModuleLevelEdits:
     def test_module_level_edit_forces_selection_under_warn(self) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD06ModuleLevelEdits.test_module_level_edit_forces_selection_under_warn
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD06ModuleLevelEdits.test_module_level_e\
+        # dit_forces_selection_under_warn
         snapshot = GraphSnapshot(
             root=".",
             symbols={
@@ -536,7 +571,9 @@ class TestD06ModuleLevelEdits:
         assert report.selected["python"] == ("src/pkg",)
 
     def test_symbol_touched_still_respects_warn(self) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD06ModuleLevelEdits.test_symbol_touched_still_respects_warn
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD06ModuleLevelEdits.test_symbol_touched\
+        # _still_respects_warn
         snapshot = GraphSnapshot(
             root=".",
             symbols={
@@ -558,7 +595,9 @@ class TestD06ModuleLevelEdits:
 # ---------------------------------------------------------------------------
 class TestD07RippleHorizon:
     def test_two_hop_dependent_is_selected(self) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD07RippleHorizon.test_two_hop_dependent_is_selected
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD07RippleHorizon.test_two_hop_dependent\
+        # _is_selected
         # C is touched; B uses-contract C; A uses-contract B; a test covers A.
         snapshot = GraphSnapshot(
             root=".",
@@ -599,7 +638,9 @@ class TestD07RippleHorizon:
 # ---------------------------------------------------------------------------
 class TestD08UnresolvedMarking:
     def test_new_ticket_resolves_when_collected_supplied(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD08UnresolvedMarking.test_new_ticket_resolves_when_collected_supplied
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD08UnresolvedMarking.test_new_ticket_re\
+        # solves_when_collected_supplied
         spec = TicketSpec(
             title="t",
             kind=TicketKind.FEATURE,
@@ -613,7 +654,9 @@ class TestD08UnresolvedMarking:
         assert result.danger_err == TicketError.UnknownEvidence
 
     def test_new_ticket_accepts_resolving_evidence(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD08UnresolvedMarking.test_new_ticket_accepts_resolving_evidence
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD08UnresolvedMarking.test_new_ticket_ac\
+        # cepts_resolving_evidence
         spec = TicketSpec(
             title="t",
             kind=TicketKind.FEATURE,
@@ -628,7 +671,9 @@ class TestD08UnresolvedMarking:
     def test_new_ticket_collected_none_still_stores_schema_valid_evidence(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD08UnresolvedMarking.test_new_ticket_collected_none_still_stores_schema_valid_evidence
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD08UnresolvedMarking.test_new_ticket_co\
+        # llected_none_still_stores_schema_valid_evidence
         spec = TicketSpec(
             title="t",
             kind=TicketKind.FEATURE,
@@ -645,7 +690,9 @@ class TestD08UnresolvedMarking:
 # ---------------------------------------------------------------------------
 class TestD09EvidenceUnionOnSplice:
     def test_newer_unions_disjoint_evidence_on_tie(self) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD09EvidenceUnionOnSplice.test_newer_unions_disjoint_evidence_on_tie
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD09EvidenceUnionOnSplice.test_newer_uni\
+        # ons_disjoint_evidence_on_tie
         common_body = "## Description\nx\n\n## Done report\nDone.\n"
         a = _ticket(
             state=TicketState.DONE,
@@ -662,7 +709,9 @@ class TestD09EvidenceUnionOnSplice:
         assert "tests/b.py::test_b" in winner.evidence
 
     def test_splice_ledger_preserves_both_sides_evidence(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD09EvidenceUnionOnSplice.test_splice_ledger_preserves_both_sides_evidence
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD09EvidenceUnionOnSplice.test_splice_le\
+        # dger_preserves_both_sides_evidence
         common_body = "## Description\nx\n\n## Done report\nDone.\n"
         ours = _ticket(
             state=TicketState.DONE,
@@ -691,7 +740,9 @@ class TestD09EvidenceUnionOnSplice:
 # ---------------------------------------------------------------------------
 class TestD10CmdEvidenceReverify:
     def test_reverify_true_when_command_still_reproduces(self) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD10CmdEvidenceReverify.test_reverify_true_when_command_still_reproduces
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD10CmdEvidenceReverify.test_reverify_tr\
+        # ue_when_command_still_reproduces
         recorded = run_cmd_evidence("echo hello")
         assert recorded.is_ok
         result = reverify_cmd_evidence(recorded.danger_ok)
@@ -699,7 +750,9 @@ class TestD10CmdEvidenceReverify:
         assert result.danger_ok is True
 
     def test_reverify_false_when_output_changed(self) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD10CmdEvidenceReverify.test_reverify_false_when_output_changed
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD10CmdEvidenceReverify.test_reverify_fa\
+        # lse_when_output_changed
         # Fabricate an entry claiming a digest the command will never produce.
         entry = "cmd:echo hello exit=0 sha256=000000000000"
         result = reverify_cmd_evidence(entry)
@@ -707,14 +760,18 @@ class TestD10CmdEvidenceReverify:
         assert result.danger_ok is False
 
     def test_reverify_false_when_command_now_fails(self) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD10CmdEvidenceReverify.test_reverify_false_when_command_now_fails
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD10CmdEvidenceReverify.test_reverify_fa\
+        # lse_when_command_now_fails
         entry = "cmd:exit 1 exit=0 sha256=aaaaaaaaaaaa"
         result = reverify_cmd_evidence(entry)
         assert result.is_ok
         assert result.danger_ok is False
 
     def test_reverify_rejects_malformed_entry(self) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD10CmdEvidenceReverify.test_reverify_rejects_malformed_entry
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD10CmdEvidenceReverify.test_reverify_re\
+        # jects_malformed_entry
         result = reverify_cmd_evidence("not-a-cmd-entry")
         assert result.is_err
         assert result.danger_err == TicketError.MalformedEvidence
@@ -725,7 +782,9 @@ class TestD10CmdEvidenceReverify:
 # ---------------------------------------------------------------------------
 class TestD11DedupedMatchRule:
     def test_tickets_and_gates_share_matches_collected(self) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD11DedupedMatchRule.test_tickets_and_gates_share_matches_collected
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD11DedupedMatchRule.test_tickets_and_ga\
+        # tes_share_matches_collected
         import frob.gates as gates_mod
         import frob.tickets._models as tickets_models
 
@@ -737,13 +796,17 @@ class TestD11DedupedMatchRule:
 # ---------------------------------------------------------------------------
 class TestD12DeletionFilterBroadScope:
     def test_deletion_owned_rejects_bare_top_level_scope(self) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD12DeletionFilterBroadScope.test_deletion_owned_rejects_bare_top_level_scope
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD12DeletionFilterBroadScope.test_deleti\
+        # on_owned_rejects_bare_top_level_scope
         from frob.tickets._land import _deletion_owned
 
         assert _deletion_owned("src/frob/other/mod.py", ("src/",)) is False
 
     def test_deletion_owned_accepts_narrow_scope(self) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD12DeletionFilterBroadScope.test_deletion_owned_accepts_narrow_scope
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD12DeletionFilterBroadScope.test_deleti\
+        # on_owned_accepts_narrow_scope
         from frob.tickets._land import _deletion_owned
 
         assert (
@@ -751,7 +814,9 @@ class TestD12DeletionFilterBroadScope:
         )
 
     def test_deletion_owned_rejects_whole_tree_scope(self) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD12DeletionFilterBroadScope.test_deletion_owned_rejects_whole_tree_scope
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD12DeletionFilterBroadScope.test_deleti\
+        # on_owned_rejects_whole_tree_scope
         from frob.tickets._land import _deletion_owned
 
         assert _deletion_owned("anything/at/all.py", (".",)) is False
@@ -764,7 +829,9 @@ class TestD05LandReverification:
     def test_land_rejects_evidence_that_no_longer_resolves_post_merge(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests tests/test_evidence_integrity.py::TestD05LandReverification.test_land_rejects_evidence_that_no_longer_resolves_post_merge
+        # frob:tests \
+        # tests/test_evidence_integrity.py::TestD05LandReverification.test_land_rejects\
+        # _evidence_that_no_longer_resolves_post_merge
         import subprocess
 
         def git(root: Path, *args: str) -> None:

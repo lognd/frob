@@ -37,12 +37,12 @@ decides final severity) -- a false discharge (idiom matched textually but
 not actually protecting the resource in question) is possible, same
 caveat every other name-based heuristic in this repo already carries.
 """
-# frob:waive INV006 reason="T-0746: this module docstring's 'ONLY'/'NEVER' \
-# occurrences are source-level design-rationale prose describing this \
-# module's own already-implemented scope/doctrine (verifiable by reading \
-# the functions it annotates), the same INV006 first-turn-on-pool \
-# disposition frob.graph.dsl's own module docstring already carries -- not \
-# a separate cross-module contract needing its own tracked invariant"
+# frob:waive INV006 reason="T-0746: this module docstring's 'ONLY'/'NEVER' occurrences \
+# are source-level design-rationale prose describing this module's own \
+# already-implemented scope/doctrine (verifiable by reading the functions it \
+# annotates), the same INV006 first-turn-on-pool disposition frob.graph.dsl's own \
+# module docstring already carries -- not a separate cross-module contract needing its \
+# own tracked invariant"
 
 from __future__ import annotations
 

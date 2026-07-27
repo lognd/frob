@@ -30,10 +30,9 @@ class TestStoreObservabilityGrammar:
     # frob:tests strata-core/src/lib.rs::parse_source kind="unit"
     # frob:tests src/frob/strata/_infra.py::_elaborate_store kind="unit"
     # frob:ticket T-0247
-    # frob:waive DUP001 reason="parallel test fixtures across 3 sibling \
-    # test file(s) (3 sites) sharing an arrange-act scaffold typical of \
-    # exhaustive per-case/per-scenario coverage; extracting would obscure \
-    # per-case intent"
+    # frob:waive DUP001 reason="parallel test fixtures across 3 sibling test file(s) \
+    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case/per-scenario coverage; extracting would obscure per-case intent"
     def test_store_errors_total_and_panics_become_node_attrs(self):
         text = """
         module m
@@ -52,10 +51,9 @@ class TestStoreObservabilityGrammar:
 
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
     # frob:ticket T-0247
-    # frob:waive DUP001 reason="parallel test fixtures across 2 sibling \
-    # test file(s) (2 sites) sharing an arrange-act scaffold typical of \
-    # exhaustive per-case/per-scenario coverage; extracting would obscure \
-    # per-case intent"
+    # frob:waive DUP001 reason="parallel test fixtures across 2 sibling test file(s) \
+    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case/per-scenario coverage; extracting would obscure per-case intent"
     def test_store_observe_generates_internal_flow_to_target(self):
         text = """
         module m
@@ -72,10 +70,9 @@ class TestStoreObservabilityGrammar:
 
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
     # frob:ticket T-0247
-    # frob:waive DUP001 reason="parallel test fixtures across 2 sibling \
-    # test file(s) (2 sites) sharing an arrange-act scaffold typical of \
-    # exhaustive per-case/per-scenario coverage; extracting would obscure \
-    # per-case intent"
+    # frob:waive DUP001 reason="parallel test fixtures across 2 sibling test file(s) \
+    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case/per-scenario coverage; extracting would obscure per-case intent"
     def test_store_errors_total_without_observe_is_non_fatal(self, caplog):
         text = """
         module m
@@ -90,10 +87,9 @@ class TestStoreObservabilityGrammar:
 class TestStoreObservabilityFailClosed:
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
     # frob:ticket T-0247
-    # frob:waive DUP001 reason="parallel test fixtures across 3 sibling \
-    # test file(s) (7 sites) sharing an arrange-act scaffold typical of \
-    # exhaustive per-case/per-scenario coverage; extracting would obscure \
-    # per-case intent"
+    # frob:waive DUP001 reason="parallel test fixtures across 3 sibling test file(s) \
+    # (7 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case/per-scenario coverage; extracting would obscure per-case intent"
     def test_store_panics_supervisor_must_be_declared(self):
         text = """
         module m
@@ -105,10 +101,9 @@ class TestStoreObservabilityFailClosed:
 
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
     # frob:ticket T-0247
-    # frob:waive DUP001 reason="parallel test fixtures across 3 sibling \
-    # test file(s) (7 sites) sharing an arrange-act scaffold typical of \
-    # exhaustive per-case/per-scenario coverage; extracting would obscure \
-    # per-case intent"
+    # frob:waive DUP001 reason="parallel test fixtures across 3 sibling test file(s) \
+    # (7 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case/per-scenario coverage; extracting would obscure per-case intent"
     def test_store_observe_target_must_be_declared(self):
         text = """
         module m
@@ -120,10 +115,9 @@ class TestStoreObservabilityFailClosed:
 
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
     # frob:ticket T-0247
-    # frob:waive DUP001 reason="parallel test fixtures across 2 sibling \
-    # test file(s) (2 sites) sharing an arrange-act scaffold typical of \
-    # exhaustive per-case/per-scenario coverage; extracting would obscure \
-    # per-case intent"
+    # frob:waive DUP001 reason="parallel test fixtures across 2 sibling test file(s) \
+    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case/per-scenario coverage; extracting would obscure per-case intent"
     def test_store_unknown_log_class_is_rejected(self):
         text = """
         module m

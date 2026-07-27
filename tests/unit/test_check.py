@@ -228,7 +228,9 @@ class TestDispatchCheckThreadsGateSelectors:
     `run_check_*` calls entirely) and pass once threaded through.
     """
 
-    # frob:tests tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_cpp_dispatch_threads_selectors kind="unit"
+    # frob:tests \
+    # tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_cpp_dispatch\
+    # _threads_selectors kind="unit"
     def test_cpp_dispatch_threads_selectors(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -256,7 +258,9 @@ class TestDispatchCheckThreadsGateSelectors:
         assert captured["delta"] is True
         assert captured["skip_gates"] is True
 
-    # frob:tests tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_cpp_dispatch_default_selectors_unchanged kind="unit"
+    # frob:tests \
+    # tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_cpp_dispatch\
+    # _default_selectors_unchanged kind="unit"
     def test_cpp_dispatch_default_selectors_unchanged(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -277,7 +281,9 @@ class TestDispatchCheckThreadsGateSelectors:
         assert captured["delta"] is False
         assert captured["skip_gates"] is False
 
-    # frob:tests tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_rust_dispatch_threads_selectors kind="unit"
+    # frob:tests \
+    # tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_rust_dispatc\
+    # h_threads_selectors kind="unit"
     def test_rust_dispatch_threads_selectors(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -305,7 +311,9 @@ class TestDispatchCheckThreadsGateSelectors:
         assert captured["delta"] is True
         assert captured["skip_gates"] is True
 
-    # frob:tests tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_rust_dispatch_default_selectors_unchanged kind="unit"
+    # frob:tests \
+    # tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_rust_dispatc\
+    # h_default_selectors_unchanged kind="unit"
     def test_rust_dispatch_default_selectors_unchanged(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -326,7 +334,9 @@ class TestDispatchCheckThreadsGateSelectors:
         assert captured["delta"] is False
         assert captured["skip_gates"] is False
 
-    # frob:tests tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_ts_dispatch_threads_selectors kind="unit"
+    # frob:tests \
+    # tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_ts_dispatch_\
+    # threads_selectors kind="unit"
     def test_ts_dispatch_threads_selectors(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -354,7 +364,9 @@ class TestDispatchCheckThreadsGateSelectors:
         assert captured["delta"] is True
         assert captured["skip_gates"] is True
 
-    # frob:tests tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_ts_dispatch_default_selectors_unchanged kind="unit"
+    # frob:tests \
+    # tests/unit/test_check.py::TestDispatchCheckThreadsGateSelectors.test_ts_dispatch_\
+    # default_selectors_unchanged kind="unit"
     def test_ts_dispatch_default_selectors_unchanged(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -490,7 +502,8 @@ class TestDerivedStateIntegrityGate:
         assert "cache.db" in result.summary
 
     def test_absent_artifact_is_not_a_violation(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/check/__init__.py::_derived_state_integrity_result kind="unit"
+        # frob:tests src/frob/check/__init__.py::_derived_state_integrity_result \
+        # kind="unit"
         from frob.check import _derived_state_integrity_result
 
         # A completely fresh tree: no .frob/ directory at all, nothing to

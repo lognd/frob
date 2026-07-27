@@ -32,9 +32,9 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 _MODEL_PATH = _REPO_ROOT / "design" / "frob.strata"
 
 
-# frob:waive DUP001 reason="parallel CLI system-test scaffolding: \
-# independent commands sharing the subprocess-dispatch arrange-act shape; \
-# extracting would obscure per-command intent"
+# frob:waive DUP001 reason="parallel CLI system-test scaffolding: independent commands \
+# sharing the subprocess-dispatch arrange-act shape; extracting would obscure \
+# per-command intent"
 @pytest.fixture(scope="module")
 def _model():
     """Parse + elaborate `design/frob.strata` once for every test in this module."""
@@ -48,7 +48,9 @@ def _model():
 
 class TestFrobSelfModel:
     # frob:tests design kind="integration"
-    # frob:tests tests/system/test_frob_self_model.py::TestFrobSelfModel.test_model_file_exists kind="e2e"
+    # frob:tests \
+    # tests/system/test_frob_self_model.py::TestFrobSelfModel.test_model_file_exists \
+    # kind="e2e"
     def test_model_file_exists(self) -> None:
         """`design/frob.strata` exists -- the phase-4 self-hosting exit artifact."""
         assert _MODEL_PATH.is_file()
@@ -173,7 +175,9 @@ class TestFrobSelfModel:
         # in its own `weakness:CWE-78:natives` discharge = 27.
         assert len(_model.claims) == 27
 
-    # frob:tests tests/system/test_frob_self_model.py::TestFrobSelfModel.test_every_claim_proves kind="e2e"
+    # frob:tests \
+    # tests/system/test_frob_self_model.py::TestFrobSelfModel.test_every_claim_proves \
+    # kind="e2e"
     def test_every_claim_proves(self, _model) -> None:
         """Every architecture claim this model draws holds today, and every
         T-0150 capability-discharge claim is a deliberately human-owned
@@ -279,7 +283,9 @@ class TestFrobSelfModel:
                 )
         assert seen_ids == proved_ids | assumed_ids
 
-    # frob:tests tests/system/test_frob_self_model.py::TestFrobSelfModel.test_sys_gate_zero_violations kind="e2e"
+    # frob:tests \
+    # tests/system/test_frob_self_model.py::TestFrobSelfModel.test_sys_gate_zero_violat\
+    # ions kind="e2e"
     # T-0365: TEST009 owes design/frob.strata itself an e2e binding, not
     # just a binding on the test method's own symbol (the directive above
     # marks the test as self-covering per the repo-wide idiom, but that

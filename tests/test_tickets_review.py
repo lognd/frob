@@ -94,7 +94,8 @@ def _seed_in_progress_ticket(tmp_path: Path) -> Ticket:
 
 class TestRecordReview:
     def test_appends_approve_entry(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_tickets_review.py::TestRecordReview.test_appends_approve_entry
+        # frob:tests \
+        # tests/test_tickets_review.py::TestRecordReview.test_appends_approve_entry
         full_sha = _init_git_repo(tmp_path)
         ticket = _seed_in_progress_ticket(tmp_path)
         result = record_review(
@@ -116,7 +117,8 @@ class TestRecordReview:
         assert entry.at == date.today()
 
     def test_blank_findings_rejected(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_tickets_review.py::TestRecordReview.test_blank_findings_rejected
+        # frob:tests \
+        # tests/test_tickets_review.py::TestRecordReview.test_blank_findings_rejected
         full_sha = _init_git_repo(tmp_path)
         ticket = _seed_in_progress_ticket(tmp_path)
         result = record_review(
@@ -248,7 +250,8 @@ class TestLoadRequireReviewForClose:
 
 class TestReviewCli:
     def test_cli_writes_review_record(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_tickets_review.py::TestReviewCli.test_cli_writes_review_record
+        # frob:tests \
+        # tests/test_tickets_review.py::TestReviewCli.test_cli_writes_review_record
         full_sha = _init_git_repo(tmp_path)
         short_sha = _short_sha(tmp_path, full_sha)
         ticket = _seed_in_progress_ticket(tmp_path)
@@ -274,7 +277,8 @@ class TestReviewCli:
         assert reload.reviews[0].findings == "verified the counterexample probe"
 
     def test_cli_requires_all_flags(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_tickets_review.py::TestReviewCli.test_cli_requires_all_flags
+        # frob:tests \
+        # tests/test_tickets_review.py::TestReviewCli.test_cli_requires_all_flags
         ticket = _seed_in_progress_ticket(tmp_path)
         cfg = AppConfig(
             ticket_command="review",

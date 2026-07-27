@@ -138,7 +138,8 @@ def test_cwe_linkage_catalog_out_of_scope_and_unmapped() -> None:
 
 
 def test_log4shell_end_to_end_cwe_linkage_via_mirror() -> None:
-    # frob:tests src/frob/vet/_cve.py::match_dependencies_against_mirror kind="integration"
+    # frob:tests src/frob/vet/_cve.py::match_dependencies_against_mirror \
+    # kind="integration"
     """End to end over the real mirror: Log4Shell's match carries all
     three CWE dispositions on the `CveMatch.cwe_links` it produces."""
     deps = (Dependency(ecosystem="maven", name="Apache Log4j2", version="2.14.1"),)

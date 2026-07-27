@@ -1,5 +1,6 @@
 """Tests for frob.gates: drift, coverage, scope, pre-work, invariant, test gates."""
-# frob:waive SCOPE001 reason="T-0541 scope is src/frob/gates/ only; tests/** lease is held by in-progress T-0160's multi-pass backlog, so scope-add is blocked here"
+# frob:waive SCOPE001 reason="T-0541 scope is src/frob/gates/ only; tests/** lease is \
+# held by in-progress T-0160's multi-pass backlog, so scope-add is blocked here"
 
 from __future__ import annotations
 
@@ -2266,7 +2267,8 @@ class TestProtocolSummaryGate:
     def test_unresolved_callee_poisons_a_protocol_tagged_symbol(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
+        # kind="unit"
         from frob.gates._protocol_summary import protocol_summary_gate
 
         _write(
@@ -2287,7 +2289,8 @@ class TestProtocolSummaryGate:
         assert v.severity == Severity.WARN
 
     def test_clean_protocol_tagged_symbol_is_not_flagged(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
+        # kind="unit"
         from frob.gates._protocol_summary import protocol_summary_gate
 
         _write(
@@ -2307,7 +2310,8 @@ class TestProtocolSummaryGate:
     def test_untagged_symbol_with_unresolved_call_is_not_flagged(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
+        # kind="unit"
         from frob.gates._protocol_summary import protocol_summary_gate
 
         _write(
@@ -2325,7 +2329,8 @@ class TestProtocolSummaryGate:
         assert not any(v.rule == "PROTO001" for v in violations)
 
     def test_real_repo_scan_runs_end_to_end_without_crashing(self) -> None:
-        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="integration"
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
+        # kind="integration"
         # T-0813: the honest "real repo scan" smoke test -- runs the actual
         # production entrypoint (build_call_graph(mark_unresolved=True) +
         # compute_protocol_summaries) over this repo's OWN real graph
@@ -2356,7 +2361,8 @@ class TestProtocolVerificationGate:
     TypeScript real-repo-scan cases."""
 
     def test_state_never_established_is_an_error(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
+        # kind="unit"
         from frob.gates._protocol_summary import protocol_summary_gate
 
         _write(
@@ -2377,7 +2383,8 @@ class TestProtocolVerificationGate:
     def test_state_established_by_a_reachable_transition_is_not_flagged(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
+        # kind="unit"
         from frob.gates._protocol_summary import protocol_summary_gate
 
         _write(
@@ -2396,7 +2403,8 @@ class TestProtocolVerificationGate:
         assert not any(v.rule == "PROTO002" for v in violations)
 
     def test_state_equal_to_initial_is_not_flagged(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
+        # kind="unit"
         from frob.gates._protocol_summary import protocol_summary_gate
 
         _write(
@@ -2414,7 +2422,8 @@ class TestProtocolVerificationGate:
     def test_poisoned_summary_at_a_requires_symbol_is_an_error(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
+        # kind="unit"
         from frob.gates._protocol_summary import protocol_summary_gate
 
         _write(
@@ -2437,7 +2446,8 @@ class TestProtocolVerificationGate:
     def test_invalid_transition_precondition_never_established_is_an_error(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
+        # kind="unit"
         from frob.gates._protocol_summary import protocol_summary_gate
 
         _write(
@@ -2456,7 +2466,8 @@ class TestProtocolVerificationGate:
         assert "active" in v.message
 
     def test_valid_transition_chain_is_not_flagged(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
+        # kind="unit"
         from frob.gates._protocol_summary import protocol_summary_gate
 
         _write(
@@ -2476,7 +2487,8 @@ class TestProtocolVerificationGate:
         assert not any(v.rule == "PROTO003" for v in violations)
 
     def test_python_with_block_discharges_the_requirement(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
+        # kind="unit"
         from frob.gates._protocol_summary import protocol_summary_gate
 
         _write(
@@ -2507,7 +2519,8 @@ class TestProtocolVerificationGate:
     def test_rust_file_state_never_established_is_an_error(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
+        # kind="unit"
         # T-0841: PROTO002 now real-repo-scans Rust files too, not just
         # Python -- proves the gate's own `.py`-only filter is lifted.
         from frob.gates._protocol_summary import protocol_summary_gate
@@ -2526,7 +2539,8 @@ class TestProtocolVerificationGate:
 
     # frob:ticket T-0841
     def test_rust_drop_impl_discharges_the_requirement(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
+        # kind="unit"
         # T-0841: `_discharge` dispatches to `rust_drop_discharge` for a
         # `.rs` file -- the real cross-language discharge wiring this
         # ticket adds (T-0746 built the predicate, only Python was wired).
@@ -2560,7 +2574,8 @@ class TestProtocolVerificationGate:
 
     # frob:ticket T-0841
     def test_typescript_using_discharges_the_requirement(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
+        # kind="unit"
         from frob.gates._protocol_summary import protocol_summary_gate
 
         _write(
@@ -2599,7 +2614,8 @@ class TestProtocolOrderingGate:
     def test_call_before_establishing_transition_is_an_ordering_error(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
+        # kind="unit"
         # The crisp T-0840 case: `caller` calls `_consume` (requires
         # Net:active) BEFORE `_establish` (transitions Net idle->active)
         # -- a real ordering bug. PROTO002's existential check alone
@@ -2638,7 +2654,8 @@ class TestProtocolOrderingGate:
     def test_call_after_establishing_transition_is_not_flagged(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
+        # kind="unit"
         # Same functions, correct order: no PROTO004.
         from frob.gates._protocol_summary import protocol_summary_gate
 
@@ -2665,7 +2682,8 @@ class TestProtocolOrderingGate:
     def test_python_with_block_discharges_the_ordering_violation(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
+        # kind="unit"
         # The same language-excuse discharge PROTO002/PROTO003 get,
         # checked against the CALLER's own file.
         from frob.gates._protocol_summary import protocol_summary_gate
@@ -2713,7 +2731,9 @@ class TestProtocolLanguageExcuseDischarge:
     docs/modules/gates.md#proto002-proto003-t-0746)."""
 
     def test_rust_drop_impl_discharges(self) -> None:
-        # frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_rust_drop_impl_discharges
+        # frob:tests \
+        # tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_rust_drop_impl_\
+        # discharges
         from frob.arch._protocol_excuse import rust_drop_discharge
 
         source = "struct Net;\nimpl Drop for Net {\n    fn drop(&mut self) {}\n}\n"
@@ -2722,7 +2742,9 @@ class TestProtocolLanguageExcuseDischarge:
         assert result.mechanism == "rust-drop"
 
     def test_rust_mem_forget_revokes_the_drop_discharge(self) -> None:
-        # frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_rust_mem_forget_revokes_the_drop_discharge
+        # frob:tests \
+        # tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_rust_mem_forget\
+        # _revokes_the_drop_discharge
         from frob.arch._protocol_excuse import rust_drop_discharge
 
         source = (
@@ -2735,7 +2757,9 @@ class TestProtocolLanguageExcuseDischarge:
         assert "forget" in result.reason
 
     def test_rust_manually_drop_revokes_the_discharge(self) -> None:
-        # frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_rust_manually_drop_revokes_the_discharge
+        # frob:tests \
+        # tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_rust_manually_d\
+        # rop_revokes_the_discharge
         from frob.arch._protocol_excuse import rust_drop_discharge
 
         source = (
@@ -2748,14 +2772,18 @@ class TestProtocolLanguageExcuseDischarge:
         assert "ManuallyDrop" in result.reason
 
     def test_rust_no_drop_impl_is_not_discharged(self) -> None:
-        # frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_rust_no_drop_impl_is_not_discharged
+        # frob:tests \
+        # tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_rust_no_drop_im\
+        # pl_is_not_discharged
         from frob.arch._protocol_excuse import rust_drop_discharge
 
         result = rust_drop_discharge("struct Net;\n", "Net")
         assert not result.discharged
 
     def test_cpp_raii_destructor_discharges(self) -> None:
-        # frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_cpp_raii_destructor_discharges
+        # frob:tests \
+        # tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_cpp_raii_destru\
+        # ctor_discharges
         from frob.arch._protocol_excuse import cpp_raii_discharge
 
         source = "class Net {\npublic:\n    ~Net() {}\n};\n"
@@ -2764,14 +2792,18 @@ class TestProtocolLanguageExcuseDischarge:
         assert result.mechanism == "cpp-raii"
 
     def test_cpp_no_destructor_is_not_discharged(self) -> None:
-        # frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_cpp_no_destructor_is_not_discharged
+        # frob:tests \
+        # tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_cpp_no_destruct\
+        # or_is_not_discharged
         from frob.arch._protocol_excuse import cpp_raii_discharge
 
         result = cpp_raii_discharge("class Net {\n};\n", "Net")
         assert not result.discharged
 
     def test_python_with_block_discharges(self) -> None:
-        # frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_python_with_block_discharges
+        # frob:tests \
+        # tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_python_with_blo\
+        # ck_discharges
         from frob.arch._protocol_excuse import python_with_discharge
 
         result = python_with_discharge("with Net() as n:\n    pass\n", "Net")
@@ -2779,14 +2811,18 @@ class TestProtocolLanguageExcuseDischarge:
         assert result.mechanism == "python-with"
 
     def test_python_no_with_block_is_not_discharged(self) -> None:
-        # frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_python_no_with_block_is_not_discharged
+        # frob:tests \
+        # tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_python_no_with_\
+        # block_is_not_discharged
         from frob.arch._protocol_excuse import python_with_discharge
 
         result = python_with_discharge("Net().connect()\n", "Net")
         assert not result.discharged
 
     def test_typescript_using_discharges(self) -> None:
-        # frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_typescript_using_discharges
+        # frob:tests \
+        # tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_typescript_usin\
+        # g_discharges
         from frob.arch._protocol_excuse import typescript_using_discharge
 
         result = typescript_using_discharge("using n = Net();\n", "Net")
@@ -2794,7 +2830,9 @@ class TestProtocolLanguageExcuseDischarge:
         assert result.mechanism == "typescript-using"
 
     def test_typescript_try_finally_discharges(self) -> None:
-        # frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_typescript_try_finally_discharges
+        # frob:tests \
+        # tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_typescript_try_\
+        # finally_discharges
         from frob.arch._protocol_excuse import typescript_using_discharge
 
         source = "try {\n  n.use();\n} finally {\n  n.close();\n}\n"
@@ -2803,14 +2841,18 @@ class TestProtocolLanguageExcuseDischarge:
         assert result.mechanism == "typescript-try-finally"
 
     def test_typescript_bare_call_is_not_discharged(self) -> None:
-        # frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_typescript_bare_call_is_not_discharged
+        # frob:tests \
+        # tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_typescript_bare\
+        # _call_is_not_discharged
         from frob.arch._protocol_excuse import typescript_using_discharge
 
         result = typescript_using_discharge("net.connect();\n", "net")
         assert not result.discharged
 
     def test_gc_finalizer_never_discharges(self) -> None:
-        # frob:tests tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_gc_finalizer_never_discharges
+        # frob:tests \
+        # tests/test_gates.py::TestProtocolLanguageExcuseDischarge.test_gc_finalizer_ne\
+        # ver_discharges
         from frob.arch._protocol_excuse import gc_finalizer_discharge
 
         result = gc_finalizer_discharge("Net")
@@ -2826,7 +2868,8 @@ class TestCleanupObligationGate:
     deinit-never-called."""
 
     def test_early_return_before_release_call_is_an_error(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
+        # kind="unit"
         from frob.gates._protocol_summary import protocol_summary_gate
 
         _write(
@@ -2853,7 +2896,8 @@ class TestCleanupObligationGate:
         assert "conn" in v.message
 
     def test_release_before_return_is_not_flagged(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
+        # kind="unit"
         from frob.gates._protocol_summary import protocol_summary_gate
 
         _write(
@@ -2874,7 +2918,8 @@ class TestCleanupObligationGate:
         assert not any(v.rule == "PROTO005" for v in violations)
 
     def test_escape_transfer_discharges_the_obligation(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
+        # kind="unit"
         from frob.gates._protocol_summary import protocol_summary_gate
 
         _write(
@@ -2894,7 +2939,8 @@ class TestCleanupObligationGate:
     def test_self_contained_acquire_and_release_is_trusted(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
+        # kind="unit"
         from frob.gates._protocol_summary import protocol_summary_gate
 
         _write(
@@ -2912,7 +2958,8 @@ class TestCleanupObligationGate:
         assert not any(v.rule == "PROTO005" for v in violations)
 
     def test_python_with_block_discharges_the_acquisition(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
+        # kind="unit"
         from frob.gates._protocol_summary import protocol_summary_gate
 
         _write(
@@ -2944,7 +2991,8 @@ class TestCleanupObligationGate:
     def test_process_exit_ok_policy_discharges_a_terminator_guarded_return(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
+        # kind="unit"
         # Same "early return before release" shape as the crisp true-
         # positive test above, but this acquisition's own frob:protocol
         # declares cleanup="process-exit-ok" and the early return is
@@ -2978,7 +3026,8 @@ class TestCleanupObligationGate:
     def test_exceptional_exit_with_no_release_anywhere_is_an_error(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
+        # kind="unit"
         # Reuses T-0686's compute_may_raise: open_conn calls a same-module
         # function that unconditionally raises, and NOTHING in open_conn's
         # own body ever releases "conn" -- an exceptional exit skips
@@ -3013,7 +3062,8 @@ class TestCleanupObligationGate:
     def test_deinit_never_called_for_cleanup_always_protocol_is_an_error(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
+        # kind="unit"
         from frob.gates._protocol_summary import protocol_summary_gate
 
         _write(
@@ -3042,7 +3092,8 @@ class TestCleanupObligationGate:
     def test_deinit_reachable_for_cleanup_always_protocol_is_not_flagged(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate kind="unit"
+        # frob:tests src/frob/gates/_protocol_summary.py::protocol_summary_gate \
+        # kind="unit"
         from frob.gates._protocol_summary import protocol_summary_gate
 
         _write(
@@ -3075,7 +3126,8 @@ class TestDebtGate:
     def test_debt002_closed_ticket_is_reported(self, tmp_path: Path) -> None:
         """T-0412: a frob:debt bound to a closed ticket is DEBT002 -- a debt
         must point at real, OPEN, owed work."""
-        # frob:tests tests/test_gates.py::TestDebtGate.test_debt002_closed_ticket_is_reported
+        # frob:tests \
+        # tests/test_gates.py::TestDebtGate.test_debt002_closed_ticket_is_reported
         source = (
             "def helper(x):\n"
             '    # frob:debt TEST005 reason="coverage gap" ticket="T-0001"\n'
@@ -3092,7 +3144,8 @@ class TestDebtGate:
         assert v.severity == Severity.ERROR
 
     def test_debt002_open_ticket_is_silent(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_gates.py::TestDebtGate.test_debt002_open_ticket_is_silent
+        # frob:tests \
+        # tests/test_gates.py::TestDebtGate.test_debt002_open_ticket_is_silent
         source = (
             "def helper(x):\n"
             '    # frob:debt TEST005 reason="coverage gap" ticket="T-0001"\n'
@@ -3107,7 +3160,8 @@ class TestDebtGate:
         assert not any(v.rule == "DEBT002" for v in violations)
 
     def test_debt003_expired_by_date_is_reported(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_gates.py::TestDebtGate.test_debt003_expired_by_date_is_reported
+        # frob:tests \
+        # tests/test_gates.py::TestDebtGate.test_debt003_expired_by_date_is_reported
         source = (
             "def helper(x):\n"
             '    # frob:debt TEST005 reason="coverage gap" ticket="T-0001" '
@@ -3125,7 +3179,8 @@ class TestDebtGate:
         assert v.severity == Severity.ERROR
 
     def test_debt003_not_yet_expired_is_silent(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_gates.py::TestDebtGate.test_debt003_not_yet_expired_is_silent
+        # frob:tests \
+        # tests/test_gates.py::TestDebtGate.test_debt003_not_yet_expired_is_silent
         source = (
             "def helper(x):\n"
             '    # frob:debt TEST005 reason="coverage gap" ticket="T-0001" '
@@ -3141,7 +3196,8 @@ class TestDebtGate:
         assert not any(v.rule == "DEBT003" for v in violations)
 
     def test_debt003_expired_by_version_is_reported(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_gates.py::TestDebtGate.test_debt003_expired_by_version_is_reported
+        # frob:tests \
+        # tests/test_gates.py::TestDebtGate.test_debt003_expired_by_version_is_reported
         source = (
             "def helper(x):\n"
             '    # frob:debt TEST005 reason="coverage gap" ticket="T-0001" '
@@ -3160,7 +3216,8 @@ class TestDebtGate:
     def test_debt001_malformed_directive_is_reported(self, tmp_path: Path) -> None:
         """T-0412: frob:debt requires BOTH reason= and ticket= -- missing
         either is DEBT001, mirroring WAIVE001's shape for frob:waive."""
-        # frob:tests tests/test_gates.py::TestDebtGate.test_debt001_malformed_directive_is_reported
+        # frob:tests \
+        # tests/test_gates.py::TestDebtGate.test_debt001_malformed_directive_is_reported
         source = 'def helper(x):\n    # frob:debt TEST005 reason="coverage gap"\n    return x\n'
         _write(tmp_path, "src/a.py", source)
         snap = _snapshot(tmp_path)
@@ -3174,7 +3231,8 @@ class TestDebtGate:
         assert "ticket" in v.message
 
     def test_clean_debt_produces_no_violations(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_gates.py::TestDebtGate.test_clean_debt_produces_no_violations
+        # frob:tests \
+        # tests/test_gates.py::TestDebtGate.test_clean_debt_produces_no_violations
         source = (
             "def helper(x):\n"
             '    # frob:debt TEST005 reason="coverage gap" ticket="T-0001" '
@@ -3210,7 +3268,8 @@ class TestDebtGate:
     def test_release_gate_fails_while_debt_is_open(self, tmp_path: Path) -> None:
         """T-0412's central requirement: a release must never ship with ANY
         open frob:debt, expired or not."""
-        # frob:tests tests/test_gates.py::TestDebtGate.test_release_gate_fails_while_debt_is_open
+        # frob:tests \
+        # tests/test_gates.py::TestDebtGate.test_release_gate_fails_while_debt_is_open
         from frob.gates import release_gate
         from frob.release import stamp
 
@@ -3519,7 +3578,8 @@ class TestDeprecatedGate:
     def test_depr003_in_window_warns(self, tmp_path: Path) -> None:
         """T-0576: an open, not-yet-sunset frob:deprecated is a WARNING --
         visible, but does not fail `frob check`."""
-        # frob:tests tests/test_gates.py::TestDeprecatedGate.test_depr003_in_window_warns
+        # frob:tests \
+        # tests/test_gates.py::TestDeprecatedGate.test_depr003_in_window_warns
         source = (
             "def helper(x):\n"
             '    # frob:deprecated 0.1.0 sunset="2099-01-01" ticket="T-0001"\n'
@@ -4931,9 +4991,9 @@ class TestInvariantLoad:
         assert result.is_err
         assert result.danger_err == InvariantError.Malformed
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py \
-    # (6 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_gates.py (6 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_no_frontmatter_block_is_malformed(self, tmp_path: Path) -> None:
         """A file with no `---`-delimited frontmatter block at all is
         `Err(Malformed)` -- proves the no-match regex branch."""
@@ -4943,9 +5003,9 @@ class TestInvariantLoad:
         assert result.is_err
         assert result.danger_err == InvariantError.Malformed
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py \
-    # (6 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_gates.py (6 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_bad_yaml_frontmatter_is_malformed(self, tmp_path: Path) -> None:
         """Unparseable YAML inside the frontmatter block is `Err(Malformed)`
         -- proves the `yaml.YAMLError` branch."""
@@ -4957,9 +5017,9 @@ class TestInvariantLoad:
         assert result.is_err
         assert result.danger_err == InvariantError.Malformed
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py \
-    # (6 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_gates.py (6 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_non_mapping_frontmatter_is_malformed(self, tmp_path: Path) -> None:
         """A frontmatter block that parses to a YAML scalar/list, not a
         mapping, is `Err(Malformed)` -- proves the not-a-dict branch."""
@@ -4971,9 +5031,9 @@ class TestInvariantLoad:
         assert result.is_err
         assert result.danger_err == InvariantError.Malformed
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py \
-    # (6 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_gates.py (6 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_empty_statement_is_malformed(self, tmp_path: Path) -> None:
         """An empty `statement` field fails `_validate_invariant_shape`'s
         non-empty check."""
@@ -4985,9 +5045,9 @@ class TestInvariantLoad:
         assert result.is_err
         assert result.danger_err == InvariantError.Malformed
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py \
-    # (6 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_gates.py (6 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_evidence_not_a_list_is_malformed(self, tmp_path: Path) -> None:
         """A non-list `evidence` field is `Err(Malformed)` -- proves
         `_build_invariant`'s evidence-shape branch."""
@@ -4999,9 +5059,9 @@ class TestInvariantLoad:
         assert result.is_err
         assert result.danger_err == InvariantError.Malformed
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py \
-    # (6 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_gates.py (6 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_bad_criticality_is_malformed(self, tmp_path: Path) -> None:
         """A `criticality` value outside the `_Criticality` enum is
         `Err(Malformed)` -- proves the criticality-membership branch."""
@@ -5015,15 +5075,15 @@ class TestInvariantLoad:
 
 
 # frob:ticket T-0549
-# frob:waive COV002 reason="T-0549 is closed and committed on this stacked, \
-# unmerged branch; T-draft-f5d48e02 files the underlying gap (the T-0214/ \
-# T-0320 closed-ticket grace window only checks the exact marker LINE, \
-# which does not fall inside this diff's narrow unified=0 hunks even \
-# though T-0549's own state transition plainly is in the diff)"
+# frob:waive COV002 reason="T-0549 is closed and committed on this stacked, unmerged \
+# branch; T-draft-f5d48e02 files the underlying gap (the T-0214/ T-0320 closed-ticket \
+# grace window only checks the exact marker LINE, which does not fall inside this \
+# diff's narrow unified=0 hunks even though T-0549's own state transition plainly is \
+# in the diff)"
 class TestTestGate:
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py \
-    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_test001_public_symbol_no_unit_edge(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/__init__.py::test_gate
         from typani.option import Nothing
@@ -5270,9 +5330,9 @@ class TestTestGate:
         assert "TEST001" not in rule_ids
         assert "TEST002" not in rule_ids
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py \
-    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_test003_interface_without_integration(self, tmp_path: Path) -> None:
         from typani.option import Nothing
 
@@ -5282,7 +5342,9 @@ class TestTestGate:
         violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
         assert any(v.rule == "TEST003" for v in violations)
 
-    # frob:tests tests/test_gates.py::TestTestGate.test_test003_exempts_strata_design_files kind="unit"
+    # frob:tests \
+    # tests/test_gates.py::TestTestGate.test_test003_exempts_strata_design_files \
+    # kind="unit"
     def test_test003_exempts_strata_design_files(self, tmp_path: Path) -> None:
         """T-0225: `design/*.strata` must not be counted as a TEST003
         "interface package" -- it owns no pytest surface, so
@@ -6337,9 +6399,9 @@ class TestCoverageLoad:
         result = load_coverage(tmp_path)
         assert result.is_err
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py \
-    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_gates.py (3 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_parses_line_to_symbol_span(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_coverage.py::load_coverage
         _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
@@ -6462,9 +6524,9 @@ class TestCoverageLoad:
         assert result.is_ok
         assert result.danger_ok.module_join_fraction == 1.0
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py \
-    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_gates.py (3 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_joins_via_repo_relative_source(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_coverage.py::load_coverage
         # A non-frob layout: package lives at the repo root, no `src/`
@@ -6500,9 +6562,9 @@ class TestCoverageLoad:
         assert record.symref in data.symbol_branch
         assert data.root_join_ok
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py \
-    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_gates.py (3 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_multi_source_picks_the_root_that_joins(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_coverage.py::load_coverage
         # Multiple <source> entries (a monorepo-style coverage run) --
@@ -6857,27 +6919,24 @@ class TestProcessPoolGates:
     def test_process_job_runs_in_a_separate_process(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/__init__.py::_run_combined_jobs
         # frob:tests src/frob/gates/__init__.py::_run_process_gate
-        # frob:waive COV006 reason="two sound-but-invisible-to-the-name-\
-        # based-call-graph shapes in this file (T-0516): (1) this test \
-        # submits _run_process_gate to a ProcessPoolExecutor by function \
-        # reference (ppool.submit(_run_process_gate, ...)), not a \
+        # frob:waive COV006 reason="two \
+        # sound-but-invisible-to-the-name-based-call-graph shapes in this file \
+        # (T-0516): (1) this test submits _run_process_gate to a ProcessPoolExecutor \
+        # by function reference (ppool.submit(_run_process_gate, ...)), not a \
         # name-call token in the test's own body; (2) \
         # test_canonical_gate_order_matches_all_gates and its siblings in \
-        # TestGateOrderSetEquality below check _CANONICAL_GATE_ORDER/\
-        # _ALL_GATES set-equality directly and never call \
-        # _merge_canonical_order, the consumer whose correctness that \
-        # invariant protects -- module-level constants have no symref for \
-        # the graph to track. T-0525 gave COV006 a per-edge symref, so \
-        # this waiver now only covers THIS edge (test's own frob:tests -> \
-        # _merge_canonical_order binding); \
-        # test_all_gates_is_subset_of_canonical_order below carries its \
-        # own matching frob:waive COV006 (same reasoning, not a blanket \
-        # reach); test_canonical_order_names_no_nonexistent_gate needs \
-        # none -- its frob:tests directive lives inside its docstring, \
-        # not a `#` comment, so it never creates a real TESTS edge for \
-        # COV006 to flag in the first place (verified: a waiver placed \
-        # there fired WAIVE004, 0 matching findings) \
-        # (the T-0516 calibration ticket this comment used to point at)"
+        # TestGateOrderSetEquality below check _CANONICAL_GATE_ORDER/_ALL_GATES \
+        # set-equality directly and never call _merge_canonical_order, the consumer \
+        # whose correctness that invariant protects -- module-level constants have no \
+        # symref for the graph to track. T-0525 gave COV006 a per-edge symref, so this \
+        # waiver now only covers THIS edge (test's own frob:tests -> \
+        # _merge_canonical_order binding); test_all_gates_is_subset_of_canonical_order \
+        # below carries its own matching frob:waive COV006 (same reasoning, not a \
+        # blanket reach); test_canonical_order_names_no_nonexistent_gate needs none -- \
+        # its frob:tests directive lives inside its docstring, not a `#` comment, so \
+        # it never creates a real TESTS edge for COV006 to flag in the first place \
+        # (verified: a waiver placed there fired WAIVE004, 0 matching findings) (the \
+        # T-0516 calibration ticket this comment used to point at)"
         import os
 
         from frob.gates import _ProcessJob, _run_combined_jobs
@@ -7446,7 +7505,9 @@ class TestCov002StrataModuleCoverage:
         subprocess.run(["git", "config", "user.email", "t@t"], cwd=tmp_path, check=True)
         subprocess.run(["git", "config", "user.name", "t"], cwd=tmp_path, check=True)
 
-    # frob:tests tests/test_gates.py::TestCov002StrataModuleCoverage.test_module_level_ticket_edge_covers_nested_declaration
+    # frob:tests \
+    # tests/test_gates.py::TestCov002StrataModuleCoverage.test_module_level_ticket_edge\
+    # _covers_nested_declaration
     def test_module_level_ticket_edge_covers_nested_declaration(
         self, tmp_path: Path
     ) -> None:
@@ -7502,7 +7563,9 @@ class TestCov002StrataModuleCoverage:
         ).danger_ok
         assert not [v for v in report.violations if v.rule == "COV002"]
 
-    # frob:tests tests/test_gates.py::TestCov002StrataModuleCoverage.test_declaration_without_module_edge_still_fires
+    # frob:tests \
+    # tests/test_gates.py::TestCov002StrataModuleCoverage.test_declaration_without_modu\
+    # le_edge_still_fires
     def test_declaration_without_module_edge_still_fires(self, tmp_path: Path) -> None:
         """No `frob:ticket` anywhere in the `.strata` file -> COV002 still
         fires on the changed nested declaration (the escape hatch is not a
@@ -7690,7 +7753,9 @@ class TestConventionUnitBinding:
         )
         assert any(v.rule == "TEST001" and "::of" in v.message for v in violations)
 
-    # frob:tests tests/test_gates.py::TestConventionUnitBinding.test_test001_exempts_strata_flow_declarations kind="unit"
+    # frob:tests \
+    # tests/test_gates.py::TestConventionUnitBinding.test_test001_exempts_strata_flow_d\
+    # eclarations kind="unit"
     def test_test001_exempts_strata_flow_declarations(self, tmp_path):
         """T-0168: a `flow` (or other) `.strata` declaration has no defined
         "unit test" meaning -- design conformance is proven by the sys
@@ -7713,7 +7778,9 @@ class TestConventionUnitBinding:
             for v in violations
         )
 
-    # frob:tests tests/test_gates.py::TestConventionUnitBinding.test_test009_fires_on_unbound_design_file kind="unit"
+    # frob:tests \
+    # tests/test_gates.py::TestConventionUnitBinding.test_test009_fires_on_unbound_desi\
+    # gn_file kind="unit"
     def test_test009_fires_on_unbound_design_file(self, tmp_path):
         """T-0225: a `.strata` design file with no `frob:tests kind="e2e"`
         edge owes TEST009 -- the e2e-binding obligation that replaces the
@@ -7731,7 +7798,9 @@ class TestConventionUnitBinding:
             v.rule == "TEST009" and v.file == "design/m.strata" for v in violations
         )
 
-    # frob:tests tests/test_gates.py::TestConventionUnitBinding.test_test009_exempts_test_fixture_strata kind="unit"
+    # frob:tests \
+    # tests/test_gates.py::TestConventionUnitBinding.test_test009_exempts_test_fixture_\
+    # strata kind="unit"
     def test_test009_exempts_test_fixture_strata(self, tmp_path):
         """T-0225 follow-up: a `.strata` file under a tests dir (a litmus /
         parser fixture) is test DATA, not a deployable design model, so it
@@ -7748,7 +7817,9 @@ class TestConventionUnitBinding:
         violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
         assert not any(v.rule == "TEST009" for v in violations)
 
-    # frob:tests tests/test_gates.py::TestConventionUnitBinding.test_test009_satisfied_by_e2e_edge kind="unit"
+    # frob:tests \
+    # tests/test_gates.py::TestConventionUnitBinding.test_test009_satisfied_by_e2e_edg\
+    # e kind="unit"
     def test_test009_satisfied_by_e2e_edge(self, tmp_path):
         """T-0225: a `frob:tests ... kind="e2e"` edge bound to the design
         file's module (or one of its declared ids) and backed by a
@@ -7783,7 +7854,9 @@ class TestTest010KindValidation:
     defaulted), but nothing surfaced that as a reported violation until
     TEST010."""
 
-    # frob:tests tests/test_gates.py::TestTest010KindValidation.test_invalid_kind_reported kind="unit"
+    # frob:tests \
+    # tests/test_gates.py::TestTest010KindValidation.test_invalid_kind_reported \
+    # kind="unit"
     def test_invalid_kind_reported(self, tmp_path: Path) -> None:
         from typani.option import Nothing
 
@@ -7804,7 +7877,9 @@ class TestTest010KindValidation:
         assert v.file == "tests/test_a.py"
         assert "drift" in v.message
 
-    # frob:tests tests/test_gates.py::TestTest010KindValidation.test_valid_kind_not_reported kind="unit"
+    # frob:tests \
+    # tests/test_gates.py::TestTest010KindValidation.test_valid_kind_not_reported \
+    # kind="unit"
     def test_valid_kind_not_reported(self, tmp_path: Path) -> None:
         from typani.option import Nothing
 
@@ -7821,7 +7896,9 @@ class TestTest010KindValidation:
         violations = run_test_gate(snap, (), Nothing(), tests, TestPolicy())
         assert "TEST010" not in _rules(violations)
 
-    # frob:tests tests/test_gates.py::TestTest010KindValidation.test_dangling_tests_endpoint_still_caught_by_drift002 kind="unit"
+    # frob:tests \
+    # tests/test_gates.py::TestTest010KindValidation.test_dangling_tests_endpoint_still\
+    # _caught_by_drift002 kind="unit"
     def test_dangling_tests_endpoint_still_caught_by_drift002(
         self, tmp_path: Path
     ) -> None:
@@ -8810,9 +8887,9 @@ class TestSysGate:
         assert len(doc003) == 1
         assert "unknown baseline view" in doc003[0].message
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py \
-    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_doc003_marker_in_fenced_block_ignored(self, tmp_path: Path) -> None:
         """T-0085 round 2 (reviewer REJECT): a `frob:claims` marker inside a
         ```-fenced block documents the directive, it does not claim
@@ -8826,9 +8903,9 @@ class TestSysGate:
         )
         assert gates_mod._claims_markers(tmp_path) == []
 
-    # frob:waive DUP001 reason="parallel test methods within test_gates.py \
-    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_gates.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_doc003_marker_in_inline_code_ignored(self, tmp_path: Path) -> None:
         """T-0085 round 2: a `frob:claims` marker inside inline `backticks`
         on a prose line is a quotation, not a live claim."""
@@ -9073,12 +9150,11 @@ class TestGateOrderSetEquality:
         # (the consumer of _CANONICAL_GATE_ORDER whose correctness this
         # set-equality invariant protects; the two constants are module-level
         # data the graph does not track as symbols, so bind to the function)
-        # frob:waive COV006 reason="T-0525: module-level constant \
-        # set-equality, never a call to _merge_canonical_order -- same \
+        # frob:waive COV006 reason="T-0525: module-level constant set-equality, never \
+        # a call to _merge_canonical_order -- same \
         # sound-but-invisible-to-the-call-graph shape as \
-        # TestProcessPoolGates.test_process_job_runs_in_a_separate_process \
-        # above; symbol-exact now (T-0525), so this waiver covers only \
-        # this test's own edge"
+        # TestProcessPoolGates.test_process_job_runs_in_a_separate_process above; \
+        # symbol-exact now (T-0525), so this waiver covers only this test's own edge"
         from frob.gates import _ALL_GATES, _CANONICAL_GATE_ORDER
 
         assert set(_CANONICAL_GATE_ORDER) == _ALL_GATES, (
@@ -9093,10 +9169,10 @@ class TestGateOrderSetEquality:
 
     def test_all_gates_is_subset_of_canonical_order(self) -> None:
         # frob:tests src/frob/gates/__init__.py::_merge_canonical_order
-        # frob:waive COV006 reason="T-0525: module-level constant \
-        # set-difference, never a call to _merge_canonical_order -- same \
-        # shape as test_canonical_gate_order_matches_all_gates above, \
-        # symbol-exact so this waiver covers only this test's own edge"
+        # frob:waive COV006 reason="T-0525: module-level constant set-difference, \
+        # never a call to _merge_canonical_order -- same shape as \
+        # test_canonical_gate_order_matches_all_gates above, symbol-exact so this \
+        # waiver covers only this test's own edge"
         """T-0839 drift direction 1: every gate in `_ALL_GATES` (selectable,
         can produce real violations) must appear in `_CANONICAL_GATE_ORDER`
         -- this is exactly the T-0788 "compliance" incident: a gate added to
@@ -9320,7 +9396,8 @@ class TestKnownGateRuleIds:
     # frob:ticket T-0924
     # frob:ticket T-0964
     # frob:ticket T-0972
-    # frob:tests tests/test_gates.py::TestKnownGateRuleIds.test_every_emitted_rule_literal_is_known
+    # frob:tests \
+    # tests/test_gates.py::TestKnownGateRuleIds.test_every_emitted_rule_literal_is_known
     def test_every_emitted_rule_literal_is_known(self) -> None:
         """Drift-lock: statically enumerate every `rule="..."`/`"rule":
         "..."` string literal AND every `rule=CONST_NAME` reference (where
@@ -10409,7 +10486,9 @@ class TestExhaustiveHandlingGate:
     Unknown with no catch-all fires EXHAUST001, a boundary that leaks a
     named type not declared via `# frob:raises <Type>` fires EXHAUST002."""
 
-    # frob:tests tests/test_gates.py::TestExhaustiveHandlingGate.test_partial_catch_of_named_type_fires_exhaust002
+    # frob:tests \
+    # tests/test_gates.py::TestExhaustiveHandlingGate.test_partial_catch_of_named_type_\
+    # fires_exhaust002
     def test_partial_catch_of_named_type_fires_exhaust002(self, tmp_path: Path) -> None:
         """`boundary` catches only ValueError but `risky` (which it calls)
         raises TypeError -- the leaked TypeError is named in EXHAUST002."""
@@ -10435,7 +10514,9 @@ class TestExhaustiveHandlingGate:
         assert any(v.symref == "mod.py::boundary" for v in found)
         assert any("TypeError" in v.message for v in found)
 
-    # frob:tests tests/test_gates.py::TestExhaustiveHandlingGate.test_unknown_without_catch_all_fires_exhaust001
+    # frob:tests \
+    # tests/test_gates.py::TestExhaustiveHandlingGate.test_unknown_without_catch_all_fi\
+    # res_exhaust001
     def test_unknown_without_catch_all_fires_exhaust001(self, tmp_path: Path) -> None:
         """`boundary` calls an unresolvable function (contributes Unknown)
         and only catches ValueError -- no catch-all discharges Unknown, so
@@ -10458,7 +10539,9 @@ class TestExhaustiveHandlingGate:
         assert found
         assert any(v.symref == "mod.py::boundary" for v in found)
 
-    # frob:tests tests/test_gates.py::TestExhaustiveHandlingGate.test_catch_all_of_unknown_does_not_fire_exhaust001
+    # frob:tests \
+    # tests/test_gates.py::TestExhaustiveHandlingGate.test_catch_all_of_unknown_does_no\
+    # t_fire_exhaust001
     def test_catch_all_of_unknown_does_not_fire_exhaust001(
         self, tmp_path: Path
     ) -> None:
@@ -10481,7 +10564,9 @@ class TestExhaustiveHandlingGate:
         violations = exhaustive_handling_gate(tmp_path)
         assert not _by_rule(violations, "EXHAUST001")
 
-    # frob:tests tests/test_gates.py::TestExhaustiveHandlingGate.test_declared_frob_raises_directive_discharges_exhaust002
+    # frob:tests \
+    # tests/test_gates.py::TestExhaustiveHandlingGate.test_declared_frob_raises_directi\
+    # ve_discharges_exhaust002
     def test_declared_frob_raises_directive_discharges_exhaust002(
         self, tmp_path: Path
     ) -> None:
@@ -10508,7 +10593,9 @@ class TestExhaustiveHandlingGate:
         violations = exhaustive_handling_gate(tmp_path)
         assert not _by_rule(violations, "EXHAUST002")
 
-    # frob:tests tests/test_gates.py::TestExhaustiveHandlingGate.test_function_with_no_catches_is_not_a_boundary
+    # frob:tests \
+    # tests/test_gates.py::TestExhaustiveHandlingGate.test_function_with_no_catches_is_\
+    # not_a_boundary
     def test_function_with_no_catches_is_not_a_boundary(self, tmp_path: Path) -> None:
         """`caller` calls `risky` (which raises TypeError) but has no
         `except` clause of its own -- it is plain propagation, not a
@@ -10539,7 +10626,9 @@ class TestErrorsAsValuesAdvisory:
     visibly handling it recommends a typani Result[T, E], the raise sites
     named as the sketch."""
 
-    # frob:tests tests/test_gates.py::TestErrorsAsValuesAdvisory.test_public_raiser_with_no_handling_caller_recommends_result
+    # frob:tests \
+    # tests/test_gates.py::TestErrorsAsValuesAdvisory.test_public_raiser_with_no_handli\
+    # ng_caller_recommends_result
     def test_public_raiser_with_no_handling_caller_recommends_result(
         self,
     ) -> None:
@@ -10573,7 +10662,9 @@ class TestErrorsAsValuesAdvisory:
         assert matches
         assert any(s.symref == "mod.py::risky" for s in matches)
 
-    # frob:tests tests/test_gates.py::TestErrorsAsValuesAdvisory.test_public_raiser_with_handling_caller_not_flagged
+    # frob:tests \
+    # tests/test_gates.py::TestErrorsAsValuesAdvisory.test_public_raiser_with_handling_\
+    # caller_not_flagged
     def test_public_raiser_with_handling_caller_not_flagged(self) -> None:
         from frob.arch._exceptions import check_errors_as_values
         from frob.arch._normalized import (
@@ -10605,7 +10696,8 @@ class TestErrorsAsValuesAdvisory:
             s.category == "errors-as-values-recommended" for s in suggestions
         )
 
-    # frob:tests tests/test_gates.py::TestErrorsAsValuesAdvisory.test_private_raiser_not_flagged
+    # frob:tests \
+    # tests/test_gates.py::TestErrorsAsValuesAdvisory.test_private_raiser_not_flagged
     def test_private_raiser_not_flagged(self) -> None:
         from frob.arch._exceptions import check_errors_as_values
         from frob.arch._normalized import (
@@ -10626,7 +10718,9 @@ class TestErrorsAsValuesAdvisory:
             s.category == "errors-as-values-recommended" for s in suggestions
         )
 
-    # frob:tests tests/test_gates.py::TestErrorsAsValuesAdvisory.test_only_ubiquitous_or_unknown_raises_not_flagged
+    # frob:tests \
+    # tests/test_gates.py::TestErrorsAsValuesAdvisory.test_only_ubiquitous_or_unknown_r\
+    # aises_not_flagged
     def test_only_ubiquitous_or_unknown_raises_not_flagged(self) -> None:
         """`risky` calls an unresolvable function only (contributes solely
         `UNKNOWN`, no `_RECOVERABLE_EXCEPTION_TYPES` member) -- never

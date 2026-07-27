@@ -44,7 +44,8 @@ def _entry(
     )
 
 
-# frob:tests tests/unit/test_gitlog_rendering.py::test_groups_puts_breaking_commit_under_both_keys
+# frob:tests \
+# tests/unit/test_gitlog_rendering.py::test_groups_puts_breaking_commit_under_both_keys
 def test_groups_puts_breaking_commit_under_both_keys() -> None:
     """A breaking commit lands under both its own type AND `"breaking"`."""
     result = GitLogResult(
@@ -86,7 +87,8 @@ def test_as_text_no_commits_short_circuit() -> None:
     assert result.as_text() == "no commits found"
 
 
-# frob:tests tests/unit/test_gitlog_rendering.py::test_as_text_renders_breaking_section_and_labels
+# frob:tests \
+# tests/unit/test_gitlog_rendering.py::test_as_text_renders_breaking_section_and_labels
 def test_as_text_renders_breaking_section_and_labels() -> None:
     """`as_text` renders a BREAKING CHANGES section plus type-labeled
     sections (canonical order first, then unrecognized leftover types),
@@ -157,7 +159,8 @@ def test_granularity_keep_changelog() -> None:
     assert granularity_keep(_entry(type="chore", breaking=True), "changelog") is True
 
 
-# frob:tests tests/unit/test_gitlog_rendering.py::test_granularity_keep_full_keeps_everything
+# frob:tests \
+# tests/unit/test_gitlog_rendering.py::test_granularity_keep_full_keeps_everything
 def test_granularity_keep_full_keeps_everything() -> None:
     """`full` granularity is the identity filter -- everything survives."""
     assert granularity_keep(_entry(type="style"), "full") is True
@@ -181,7 +184,8 @@ def test_tag_from_refs() -> None:
     assert tag_from_refs("") is None
 
 
-# frob:tests tests/unit/test_gitlog_rendering.py::test_commit_entry_from_block_too_short_is_none
+# frob:tests \
+# tests/unit/test_gitlog_rendering.py::test_commit_entry_from_block_too_short_is_none
 def test_commit_entry_from_block_too_short_is_none() -> None:
     """A malformed block with fewer than 3 lines (sha/short_sha/subject
     minimum) is rejected rather than raising an IndexError."""
@@ -189,7 +193,8 @@ def test_commit_entry_from_block_too_short_is_none() -> None:
     assert commit_entry_from_block("line1\nline2") is None
 
 
-# frob:tests tests/unit/test_gitlog_rendering.py::test_commit_entry_from_block_with_refs_and_body
+# frob:tests \
+# tests/unit/test_gitlog_rendering.py::test_commit_entry_from_block_with_refs_and_body
 def test_commit_entry_from_block_with_refs_and_body() -> None:
     """A well-formed block with a tag ref and a multi-line body parses into
     a full `CommitEntry`."""
@@ -203,7 +208,9 @@ def test_commit_entry_from_block_with_refs_and_body() -> None:
     assert entry.body == "body line 1\nbody line 2"
 
 
-# frob:tests tests/unit/test_gitlog_rendering.py::test_commit_entry_from_block_non_conventional_is_unknown_type
+# frob:tests \
+# tests/unit/test_gitlog_rendering.py::test_commit_entry_from_block_non_conventional_is\
+# _unknown_type
 def test_commit_entry_from_block_non_conventional_is_unknown_type() -> None:
     """A subject that doesn't match the conventional-commit pattern still
     produces a `CommitEntry`, typed `"unknown"`."""
@@ -214,7 +221,8 @@ def test_commit_entry_from_block_non_conventional_is_unknown_type() -> None:
     assert entry.description == "just a plain commit message"
 
 
-# frob:tests tests/unit/test_gitlog_rendering.py::test_parse_commits_skips_malformed_blocks
+# frob:tests \
+# tests/unit/test_gitlog_rendering.py::test_parse_commits_skips_malformed_blocks
 def test_parse_commits_skips_malformed_blocks() -> None:
     """`_parse_commits` skips blocks with no `---END---` marker and blank
     blocks, keeping only well-formed ones."""

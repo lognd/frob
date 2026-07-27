@@ -43,9 +43,9 @@ def test_three_node_cycle():
     assert set(cycles[0]) == {"a", "b", "c"}
 
 
-# frob:waive DUP001 reason="parallel test methods within test_cycle.py (2 \
-# sites) sharing an arrange-act scaffold typical of exhaustive per-case \
-# coverage; extracting would obscure per-case intent"
+# frob:waive DUP001 reason="parallel test methods within test_cycle.py (2 sites) \
+# sharing an arrange-act scaffold typical of exhaustive per-case coverage; extracting \
+# would obscure per-case intent"
 def test_two_independent_cycles():
     g = DependencyGraph()
     g.add_edge("a", "b")
@@ -64,9 +64,9 @@ def test_self_loop():
     assert cycles[0] == ["a"]
 
 
-# frob:waive DUP001 reason="parallel test methods within test_cycle.py (2 \
-# sites) sharing an arrange-act scaffold typical of exhaustive per-case \
-# coverage; extracting would obscure per-case intent"
+# frob:waive DUP001 reason="parallel test methods within test_cycle.py (2 sites) \
+# sharing an arrange-act scaffold typical of exhaustive per-case coverage; extracting \
+# would obscure per-case intent"
 def test_cycle_not_duplicated():
     g = DependencyGraph()
     g.add_edge("a", "b")

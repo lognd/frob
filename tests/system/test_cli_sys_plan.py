@@ -164,7 +164,9 @@ class TestSysAuditContentionCli:
     `check_resource_contention` call `tests/unit/strata/test_contention.py`
     already covers."""
 
-    # frob:tests tests/system/test_cli_sys_plan.py::TestSysAuditContentionCli.test_duplicate_port_fires_sys200_through_cli
+    # frob:tests \
+    # tests/system/test_cli_sys_plan.py::TestSysAuditContentionCli.test_duplicate_port_\
+    # fires_sys200_through_cli
     def test_duplicate_port_fires_sys200_through_cli(self, tmp_path: Path) -> None:
         repo = init_repo(tmp_path, _DUPLICATE_PORT_MODEL)
         r = run("sys", "audit", cwd=repo)

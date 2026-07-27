@@ -23,7 +23,9 @@ def _write(root: Path, rel: str, source: str) -> None:
 
 
 class TestMissingOrderingStrategy:
-    # frob:tests tests/unit/strata/test_clock_ordering.py::TestMissingOrderingStrategy.test_clock_dependent_flow_without_ordering_strategy_fires
+    # frob:tests \
+    # tests/unit/strata/test_clock_ordering.py::TestMissingOrderingStrategy.test_clock_\
+    # dependent_flow_without_ordering_strategy_fires
     def test_clock_dependent_flow_without_ordering_strategy_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -48,7 +50,9 @@ class TestMissingOrderingStrategy:
         ]
         assert {v.sub_target for v in missing} == {"f1"}
 
-    # frob:tests tests/unit/strata/test_clock_ordering.py::TestMissingOrderingStrategy.test_discharged_and_non_clock_dependent_flows_clean
+    # frob:tests \
+    # tests/unit/strata/test_clock_ordering.py::TestMissingOrderingStrategy.test_discha\
+    # rged_and_non_clock_dependent_flows_clean
     def test_discharged_and_non_clock_dependent_flows_clean(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -74,7 +78,9 @@ class TestMissingOrderingStrategy:
             if v.rule == REL_MISSING_ORDERING_STRATEGY
         ]
 
-    # frob:tests tests/unit/strata/test_clock_ordering.py::TestMissingOrderingStrategy.test_waiver_discharges_finding
+    # frob:tests \
+    # tests/unit/strata/test_clock_ordering.py::TestMissingOrderingStrategy.test_waiver\
+    # _discharges_finding
     def test_waiver_discharges_finding(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -113,7 +119,9 @@ class TestMissingOrderingStrategy:
 
 
 class TestUnprovenOrderingStrategy:
-    # frob:tests tests/unit/strata/test_clock_ordering.py::TestUnprovenOrderingStrategy.test_declared_with_no_code_evidence_fires
+    # frob:tests \
+    # tests/unit/strata/test_clock_ordering.py::TestUnprovenOrderingStrategy.test_decla\
+    # red_with_no_code_evidence_fires
     def test_declared_with_no_code_evidence_fires(self, tmp_path: Path):
         _write(tmp_path, "src/widget/_io.py", "def sync():\n    return push()\n")
         model = KernelModel(
@@ -143,7 +151,9 @@ class TestUnprovenOrderingStrategy:
         ]
         assert {v.sub_target for v in violations} == {"f1"}
 
-    # frob:tests tests/unit/strata/test_clock_ordering.py::TestUnprovenOrderingStrategy.test_declared_with_real_code_evidence_discharges
+    # frob:tests \
+    # tests/unit/strata/test_clock_ordering.py::TestUnprovenOrderingStrategy.test_decla\
+    # red_with_real_code_evidence_discharges
     def test_declared_with_real_code_evidence_discharges(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -178,7 +188,9 @@ class TestUnprovenOrderingStrategy:
             if v.rule in {REL_UNPROVEN_ORDERING_STRATEGY, REL_WALL_CLOCK_ONLY}
         ]
 
-    # frob:tests tests/unit/strata/test_clock_ordering.py::TestUnprovenOrderingStrategy.test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+    # frob:tests \
+    # tests/unit/strata/test_clock_ordering.py::TestUnprovenOrderingStrategy.test_decla\
+    # red_with_no_bound_code_is_uncheckable_not_a_violation
     def test_declared_with_no_bound_code_is_uncheckable_not_a_violation(
         self, tmp_path: Path
     ):
@@ -206,7 +218,9 @@ class TestUnprovenOrderingStrategy:
 
 
 class TestWallClockOnly:
-    # frob:tests tests/unit/strata/test_clock_ordering.py::TestWallClockOnly.test_bare_wall_clock_read_fires_rel372
+    # frob:tests \
+    # tests/unit/strata/test_clock_ordering.py::TestWallClockOnly.test_bare_wall_clock_\
+    # read_fires_rel372
     def test_bare_wall_clock_read_fires_rel372(self, tmp_path: Path):
         _write(
             tmp_path,

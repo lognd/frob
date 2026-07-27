@@ -304,8 +304,8 @@ def test_pytest_session_start_restores_leftover_journal(tmp_path, monkeypatch):
 def test_pytest_session_start_skips_restore_on_xdist_worker(tmp_path, monkeypatch):
     # frob:ticket T-0885
     # frob:tests \
-    # tests/test_mutate_journal.py::test_pytest_session_start_skips_restore_on_xdist_wor\
-    # ker
+    # tests/test_mutate_journal.py::test_pytest_session_start_skips_restore_on_xdist_wo\
+    # rker
     # Restoring from every xdist WORKER process (not just the controller)
     # would be redundant at best and a `write_journal`-style race at
     # worst -- the hook must no-op there and leave the journal untouched

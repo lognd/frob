@@ -1,9 +1,8 @@
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/app/config.py's exclusivity-vocabulary hit is source-level \
-# design-rationale/scope-cut prose (a docstring or comment describing \
-# already-implemented internal behavior, verifiable by reading the code it annotates) \
-# rather than a separate cross-module contract needing its own tracked invariant; \
-# disposed as a calibration batch, not claim-by-claim"
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: src/frob/app/config.py's \
+# exclusivity-vocabulary hit is source-level design-rationale/scope-cut prose (a \
+# docstring or comment describing already-implemented internal behavior, verifiable by \
+# reading the code it annotates) rather than a separate cross-module contract needing \
+# its own tracked invariant; disposed as a calibration batch, not claim-by-claim"
 # frob:waive SCOPE001 reason="T-0319 scope comma-joined, matches nothing (T-0241 bug)"
 # frob:waive SCOPE001 reason="T-0458 needs new AppConfig dest fields for done-report's CLI flags; T-0455's formal scope protocol is queued, not built -- ad-hoc waive per existing T-0176/T-0220 precedent"  # noqa: E501
 # frob:waive SCOPE001 reason="T-0455 itself needs new AppConfig fields (ticket_scope_add/remove/reason) for its own `frob ticket scope` CLI wiring -- T-0455's declared scope is tickets/**+ticket_runner.py+__main__.py, not config.py; bootstrap precedent, same as the T-0458 waive above"  # noqa: E501

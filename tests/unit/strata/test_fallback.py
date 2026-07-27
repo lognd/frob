@@ -22,7 +22,9 @@ def _write(root: Path, rel: str, source: str) -> None:
 
 
 class TestMissingFallback:
-    # frob:tests tests/unit/strata/test_fallback.py::TestMissingFallback.test_critical_node_without_fallback_fires
+    # frob:tests \
+    # tests/unit/strata/test_fallback.py::TestMissingFallback.test_critical_node_withou\
+    # t_fallback_fires
     def test_critical_node_without_fallback_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(Node(id="payments", trust="untrusted", attrs=("critical",)),),
@@ -34,7 +36,9 @@ class TestMissingFallback:
         ]
         assert {v.node for v in missing} == {"payments"}
 
-    # frob:tests tests/unit/strata/test_fallback.py::TestMissingFallback.test_discharged_and_non_critical_nodes_clean
+    # frob:tests \
+    # tests/unit/strata/test_fallback.py::TestMissingFallback.test_discharged_and_non_c\
+    # ritical_nodes_clean
     def test_discharged_and_non_critical_nodes_clean(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -52,7 +56,9 @@ class TestMissingFallback:
             v for v in result.danger_ok.violations if v.rule == REL_MISSING_FALLBACK
         ]
 
-    # frob:tests tests/unit/strata/test_fallback.py::TestMissingFallback.test_waiver_on_one_node_keeps_sibling_node_finding
+    # frob:tests \
+    # tests/unit/strata/test_fallback.py::TestMissingFallback.test_waiver_on_one_node_k\
+    # eeps_sibling_node_finding
     def test_waiver_on_one_node_keeps_sibling_node_finding(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -80,7 +86,9 @@ class TestMissingFallback:
 
 
 class TestUnprovenFallback:
-    # frob:tests tests/unit/strata/test_fallback.py::TestUnprovenFallback.test_declared_with_no_code_evidence_fires
+    # frob:tests \
+    # tests/unit/strata/test_fallback.py::TestUnprovenFallback.test_declared_with_no_co\
+    # de_evidence_fires
     def test_declared_with_no_code_evidence_fires(self, tmp_path: Path):
         _write(tmp_path, "src/pay/_client.py", "def call():\n    return remote()\n")
         model = KernelModel(
@@ -99,7 +107,9 @@ class TestUnprovenFallback:
         ]
         assert {v.node for v in violations} == {"payments"}
 
-    # frob:tests tests/unit/strata/test_fallback.py::TestUnprovenFallback.test_declared_with_real_code_evidence_discharges
+    # frob:tests \
+    # tests/unit/strata/test_fallback.py::TestUnprovenFallback.test_declared_with_real_\
+    # code_evidence_discharges
     def test_declared_with_real_code_evidence_discharges(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -122,7 +132,9 @@ class TestUnprovenFallback:
             v for v in result.danger_ok.violations if v.rule == REL_UNPROVEN_FALLBACK
         ]
 
-    # frob:tests tests/unit/strata/test_fallback.py::TestUnprovenFallback.test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+    # frob:tests \
+    # tests/unit/strata/test_fallback.py::TestUnprovenFallback.test_declared_with_no_bo\
+    # und_code_is_uncheckable_not_a_violation
     def test_declared_with_no_bound_code_is_uncheckable_not_a_violation(
         self, tmp_path: Path
     ):

@@ -100,9 +100,9 @@ def _pickle_violation(
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive COV007 reason="docs/modules/vet.md's Public API section \
-# individually frob:describes this private helper by name (T-0529) -- a \
-# deliberate architecture doc, not accidental drift onto a private helper"
+# frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
+# frob:describes this private helper by name (T-0529) -- a deliberate architecture \
+# doc, not accidental drift onto a private helper"
 def _python_rules(
     dep: Dependency, source_dir: Path, lockfile_name: str
 ) -> list[Violation]:
@@ -168,9 +168,9 @@ def _proc_macro_violation(
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive COV007 reason="docs/modules/vet.md's Public API section \
-# individually frob:describes this private helper by name (T-0529) -- a \
-# deliberate architecture doc, not accidental drift onto a private helper"
+# frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
+# frob:describes this private helper by name (T-0529) -- a deliberate architecture \
+# doc, not accidental drift onto a private helper"
 def _rust_rules(
     dep: Dependency, source_dir: Path, lockfile_name: str
 ) -> list[Violation]:
@@ -189,9 +189,9 @@ def _rust_rules(
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive COV007 reason="docs/modules/vet.md's Public API section \
-# individually frob:describes this private helper by name (T-0529) -- a \
-# deliberate architecture doc, not accidental drift onto a private helper"
+# frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
+# frob:describes this private helper by name (T-0529) -- a deliberate architecture \
+# doc, not accidental drift onto a private helper"
 def _npm_non_registry_rule(dep: Dependency, lockfile_name: str) -> Violation | None:
     """VET-JS004: git/http/file dependency sources are declarable-only."""
     if not dep.resolved:

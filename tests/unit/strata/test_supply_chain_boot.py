@@ -26,7 +26,9 @@ def _write(root: Path, rel: str, source: str) -> None:
 
 
 class TestMissingAbiCompatWindow:
-    # frob:tests tests/unit/strata/test_supply_chain_boot.py::TestMissingAbiCompatWindow.test_compiled_artifact_node_without_compat_window_fires
+    # frob:tests \
+    # tests/unit/strata/test_supply_chain_boot.py::TestMissingAbiCompatWindow.test_comp\
+    # iled_artifact_node_without_compat_window_fires
     def test_compiled_artifact_node_without_compat_window_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -46,7 +48,9 @@ class TestMissingAbiCompatWindow:
         ]
         assert {v.node for v in missing} == {"auth_library"}
 
-    # frob:tests tests/unit/strata/test_supply_chain_boot.py::TestMissingAbiCompatWindow.test_discharged_and_non_compiled_artifact_nodes_clean
+    # frob:tests \
+    # tests/unit/strata/test_supply_chain_boot.py::TestMissingAbiCompatWindow.test_disc\
+    # harged_and_non_compiled_artifact_nodes_clean
     def test_discharged_and_non_compiled_artifact_nodes_clean(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -66,7 +70,9 @@ class TestMissingAbiCompatWindow:
             if v.rule == REL_MISSING_ABI_COMPAT_WINDOW
         ]
 
-    # frob:tests tests/unit/strata/test_supply_chain_boot.py::TestMissingAbiCompatWindow.test_waiver_discharges_finding
+    # frob:tests \
+    # tests/unit/strata/test_supply_chain_boot.py::TestMissingAbiCompatWindow.test_waiv\
+    # er_discharges_finding
     def test_waiver_discharges_finding(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -95,7 +101,9 @@ class TestMissingAbiCompatWindow:
 
 
 class TestUnprovenAbiCompatWindow:
-    # frob:tests tests/unit/strata/test_supply_chain_boot.py::TestUnprovenAbiCompatWindow.test_declared_with_no_code_evidence_fires
+    # frob:tests \
+    # tests/unit/strata/test_supply_chain_boot.py::TestUnprovenAbiCompatWindow.test_dec\
+    # lared_with_no_code_evidence_fires
     def test_declared_with_no_code_evidence_fires(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -124,7 +132,9 @@ class TestUnprovenAbiCompatWindow:
         ]
         assert {v.node for v in violations} == {"auth_library"}
 
-    # frob:tests tests/unit/strata/test_supply_chain_boot.py::TestUnprovenAbiCompatWindow.test_declared_with_real_code_evidence_discharges
+    # frob:tests \
+    # tests/unit/strata/test_supply_chain_boot.py::TestUnprovenAbiCompatWindow.test_dec\
+    # lared_with_real_code_evidence_discharges
     def test_declared_with_real_code_evidence_discharges(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -154,7 +164,9 @@ class TestUnprovenAbiCompatWindow:
             if v.rule == REL_UNPROVEN_ABI_COMPAT_WINDOW
         ]
 
-    # frob:tests tests/unit/strata/test_supply_chain_boot.py::TestUnprovenAbiCompatWindow.test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+    # frob:tests \
+    # tests/unit/strata/test_supply_chain_boot.py::TestUnprovenAbiCompatWindow.test_dec\
+    # lared_with_no_bound_code_is_uncheckable_not_a_violation
     def test_declared_with_no_bound_code_is_uncheckable_not_a_violation(
         self, tmp_path: Path
     ):
@@ -177,7 +189,9 @@ class TestUnprovenAbiCompatWindow:
 
 
 class TestMissingBootAttestation:
-    # frob:tests tests/unit/strata/test_supply_chain_boot.py::TestMissingBootAttestation.test_boot_chain_stage_node_without_attestation_fires
+    # frob:tests \
+    # tests/unit/strata/test_supply_chain_boot.py::TestMissingBootAttestation.test_boot\
+    # _chain_stage_node_without_attestation_fires
     def test_boot_chain_stage_node_without_attestation_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -197,7 +211,9 @@ class TestMissingBootAttestation:
         ]
         assert {v.node for v in missing} == {"bootloader_stage"}
 
-    # frob:tests tests/unit/strata/test_supply_chain_boot.py::TestMissingBootAttestation.test_discharged_and_non_boot_chain_stage_nodes_clean
+    # frob:tests \
+    # tests/unit/strata/test_supply_chain_boot.py::TestMissingBootAttestation.test_disc\
+    # harged_and_non_boot_chain_stage_nodes_clean
     def test_discharged_and_non_boot_chain_stage_nodes_clean(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -217,7 +233,9 @@ class TestMissingBootAttestation:
             if v.rule == REL_MISSING_BOOT_ATTESTATION
         ]
 
-    # frob:tests tests/unit/strata/test_supply_chain_boot.py::TestMissingBootAttestation.test_waiver_discharges_finding
+    # frob:tests \
+    # tests/unit/strata/test_supply_chain_boot.py::TestMissingBootAttestation.test_waiv\
+    # er_discharges_finding
     def test_waiver_discharges_finding(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -246,7 +264,9 @@ class TestMissingBootAttestation:
 
 
 class TestUnprovenBootAttestation:
-    # frob:tests tests/unit/strata/test_supply_chain_boot.py::TestUnprovenBootAttestation.test_declared_with_no_code_evidence_fires
+    # frob:tests \
+    # tests/unit/strata/test_supply_chain_boot.py::TestUnprovenBootAttestation.test_dec\
+    # lared_with_no_code_evidence_fires
     def test_declared_with_no_code_evidence_fires(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -271,7 +291,9 @@ class TestUnprovenBootAttestation:
         ]
         assert {v.node for v in violations} == {"bootloader_stage"}
 
-    # frob:tests tests/unit/strata/test_supply_chain_boot.py::TestUnprovenBootAttestation.test_declared_with_real_code_evidence_discharges
+    # frob:tests \
+    # tests/unit/strata/test_supply_chain_boot.py::TestUnprovenBootAttestation.test_dec\
+    # lared_with_real_code_evidence_discharges
     def test_declared_with_real_code_evidence_discharges(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -297,7 +319,9 @@ class TestUnprovenBootAttestation:
             if v.rule == REL_UNPROVEN_BOOT_ATTESTATION
         ]
 
-    # frob:tests tests/unit/strata/test_supply_chain_boot.py::TestUnprovenBootAttestation.test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+    # frob:tests \
+    # tests/unit/strata/test_supply_chain_boot.py::TestUnprovenBootAttestation.test_dec\
+    # lared_with_no_bound_code_is_uncheckable_not_a_violation
     def test_declared_with_no_bound_code_is_uncheckable_not_a_violation(
         self, tmp_path: Path
     ):

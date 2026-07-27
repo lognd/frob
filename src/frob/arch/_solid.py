@@ -37,12 +37,11 @@ ticket's scope (`_solid.py`, `_models.py`, docs, tests only); `symref`/
 addition later, not a re-instrumentation of these checks.
 """
 # frob:waive INV006 reason="this module's 'only' occurrences are source-level \
-# design-rationale/scope-cut prose describing already-implemented behavior \
-# (the same-file-only override resolution, this ticket's own declared scope \
-# cut) verifiable by reading the functions/docstrings they annotate, not a \
-# separate cross-module contract needing its own tracked invariant -- the \
-# same INV006 first-turn-on-pool disposition frob.arch._protocol_excuse's \
-# own module docstring already carries"
+# design-rationale/scope-cut prose describing already-implemented behavior (the \
+# same-file-only override resolution, this ticket's own declared scope cut) verifiable \
+# by reading the functions/docstrings they annotate, not a separate cross-module \
+# contract needing its own tracked invariant -- the same INV006 first-turn-on-pool \
+# disposition frob.arch._protocol_excuse's own module docstring already carries"
 
 from __future__ import annotations
 

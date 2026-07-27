@@ -112,7 +112,8 @@ def test_dup_detects_duplicate_files(tmp_path):
 # ---------------------------------------------------------------------------
 
 
-# frob:waive PERF001 reason="membership check runs once after the fixture-building loop above has finished, not inside it"
+# frob:waive PERF001 reason="membership check runs once after the fixture-building \
+# loop above has finished, not inside it"
 def test_arch_detects_deep_nesting_in_large_file(tmp_path):
     lines = ["def deep_func(data):"]
     indent = "    "

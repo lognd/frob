@@ -29,10 +29,10 @@ from frob.strata import (
 _TODAY = dt.date(2026, 7, 17)
 
 
-# frob:waive DUP001 reason="parallel litmus scenario fixtures: 7 sites \
-# across 7 file(s) sharing the exhaustiveness-fixture arrange-act shape by \
-# design (store-backed vs non-store-backed, or per-CWE scenario variants); \
-# extracting would obscure per-scenario intent"
+# frob:waive DUP001 reason="parallel litmus scenario fixtures: 7 sites across 7 \
+# file(s) sharing the exhaustiveness-fixture arrange-act shape by design (store-backed \
+# vs non-store-backed, or per-CWE scenario variants); extracting would obscure \
+# per-scenario intent"
 def _repo_root() -> Path:
     """Walk up from this file until a directory containing `frob.toml` is found."""
     here = Path(__file__).resolve()
@@ -63,10 +63,10 @@ class TestChirpGoldens:
 
     # frob:tests src/frob/strata/_parse.py::parse_module kind="unit"
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
-    # frob:waive DUP001 reason="parallel litmus scenario fixtures: 2 sites \
-    # across 1 file(s) sharing the exhaustiveness-fixture arrange-act shape \
-    # by design (store-backed vs non-store-backed, or per-CWE scenario \
-    # variants); extracting would obscure per-scenario intent"
+    # frob:waive DUP001 reason="parallel litmus scenario fixtures: 2 sites across 1 \
+    # file(s) sharing the exhaustiveness-fixture arrange-act shape by design \
+    # (store-backed vs non-store-backed, or per-CWE scenario variants); extracting \
+    # would obscure per-scenario intent"
     def test_hottest_shard_utilization_refutes_under_zipf_skew(self):
         result = _results(_load_model())["c_hot_shard_utilization"]
         assert result.verdict is Verdict.REFUTED
@@ -90,10 +90,10 @@ class TestChirpGoldens:
         assert "37.5%" in result.detail
 
     # frob:tests src/frob/strata/_claims.py::evaluate_claims kind="unit"
-    # frob:waive DUP001 reason="parallel litmus scenario fixtures: 2 sites \
-    # across 1 file(s) sharing the exhaustiveness-fixture arrange-act shape \
-    # by design (store-backed vs non-store-backed, or per-CWE scenario \
-    # variants); extracting would obscure per-scenario intent"
+    # frob:waive DUP001 reason="parallel litmus scenario fixtures: 2 sites across 1 \
+    # file(s) sharing the exhaustiveness-fixture arrange-act shape by design \
+    # (store-backed vs non-store-backed, or per-CWE scenario variants); extracting \
+    # would obscure per-scenario intent"
     def test_growth_horizon_flips_a_passing_utilization_to_refuted(self):
         result = _results(_load_model())["c_growth_shard_utilization"]
         assert result.verdict is Verdict.REFUTED

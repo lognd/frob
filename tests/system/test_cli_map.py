@@ -122,9 +122,9 @@ def test_json_has_files_key(project):
     assert "files" in data
 
 
-# frob:waive DUP001 reason="parallel CLI system-test scaffolding: \
-# independent commands sharing the subprocess-dispatch arrange-act shape; \
-# extracting would obscure per-command intent"
+# frob:waive DUP001 reason="parallel CLI system-test scaffolding: independent commands \
+# sharing the subprocess-dispatch arrange-act shape; extracting would obscure \
+# per-command intent"
 def test_json_files_have_required_fields(project):
     r = run("map", str(project), "--json")
     data = json.loads(r.stdout)

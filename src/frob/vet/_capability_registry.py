@@ -1866,10 +1866,9 @@ def _unexcused_empty_cells() -> tuple[_MatrixCell, ...]:
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive COV007 reason="a standalone drift-lock helper with no public \
-# wrapper -- called directly by its own tests (T-0524), not through any \
-# other public entrypoint in this module, so the private symbol genuinely \
-# is the documented contract here"
+# frob:waive COV007 reason="a standalone drift-lock helper with no public wrapper -- \
+# called directly by its own tests (T-0524), not through any other public entrypoint \
+# in this module, so the private symbol genuinely is the documented contract here"
 # frob:ticket T-0158
 # frob:ticket T-0565
 # frob:tests tests/test_capability_registry.py::TestValidateRegistryKinds.test_known_kinds_pass  # noqa: E501

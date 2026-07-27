@@ -50,8 +50,8 @@ class TestUndeclaredInterfaceCore:
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
     # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
-    # per-rule/per-case coverage sharing an arrange-act shape typical of \
-    # thorough boundary testing; extracting would obscure per-case intent"
+    # per-rule/per-case coverage sharing an arrange-act shape typical of thorough \
+    # boundary testing; extracting would obscure per-case intent"
     def test_core_undeclared_interface_fires(self, tmp_path: Path):
         _write(
             tmp_path, "src/frob/widget/_io.py", "import requests\nrequests.get('x')\n"
@@ -70,8 +70,8 @@ class TestUndeclaredInterfaceCore:
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
     # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
-    # per-rule/per-case coverage sharing an arrange-act shape typical of \
-    # thorough boundary testing; extracting would obscure per-case intent"
+    # per-rule/per-case coverage sharing an arrange-act shape typical of thorough \
+    # boundary testing; extracting would obscure per-case intent"
     def test_core_undeclared_interface_discharges_once_declared(self, tmp_path: Path):
         _write(
             tmp_path, "src/frob/widget/_io.py", "import requests\nrequests.get('x')\n"
@@ -99,8 +99,8 @@ class TestUndeclaredInterfaceExtended:
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
     # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
-    # per-rule/per-case coverage sharing an arrange-act shape typical of \
-    # thorough boundary testing; extracting would obscure per-case intent"
+    # per-rule/per-case coverage sharing an arrange-act shape typical of thorough \
+    # boundary testing; extracting would obscure per-case intent"
     def test_extended_undeclared_interface_fires(self, tmp_path: Path):
         _write(tmp_path, "src/frob/widget/_io.py", "x = compile('1', '<s>', 'eval')\n")
         model = KernelModel(
@@ -117,8 +117,8 @@ class TestUndeclaredInterfaceExtended:
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
     # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
-    # per-rule/per-case coverage sharing an arrange-act shape typical of \
-    # thorough boundary testing; extracting would obscure per-case intent"
+    # per-rule/per-case coverage sharing an arrange-act shape typical of thorough \
+    # boundary testing; extracting would obscure per-case intent"
     def test_extended_undeclared_interface_discharges_once_declared(
         self, tmp_path: Path
     ):
@@ -246,8 +246,8 @@ class TestUndeclaredInterfaceFsReadAlias:
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
     # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
-    # per-rule/per-case coverage sharing an arrange-act shape typical of \
-    # thorough boundary testing; extracting would obscure per-case intent"
+    # per-rule/per-case coverage sharing an arrange-act shape typical of thorough \
+    # boundary testing; extracting would obscure per-case intent"
     def test_broad_fs_declaration_discharges_read_only_observation(
         self, tmp_path: Path
     ):
@@ -281,8 +281,8 @@ class TestUndeclaredInterfaceFsReadAlias:
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
     # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
-    # per-rule/per-case coverage sharing an arrange-act shape typical of \
-    # thorough boundary testing; extracting would obscure per-case intent"
+    # per-rule/per-case coverage sharing an arrange-act shape typical of thorough \
+    # boundary testing; extracting would obscure per-case intent"
     def test_narrow_fs_read_declaration_does_not_cover_fs_read(self, tmp_path: Path):
         """A node that already declares `may "fs-read"` directly is
         unaffected by the alias (it never needed it): a read-only
@@ -347,8 +347,8 @@ class TestUndeclaredInterfaceFsReadAlias:
 class TestStaleDesign:
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
     # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
-    # per-rule/per-case coverage sharing an arrange-act shape typical of \
-    # thorough boundary testing; extracting would obscure per-case intent"
+    # per-rule/per-case coverage sharing an arrange-act shape typical of thorough \
+    # boundary testing; extracting would obscure per-case intent"
     def test_stale_design_fires(self, tmp_path: Path):
         """A `may` capability declared for a node never observed in its
         `code=`-bound files is SYS101."""
@@ -389,8 +389,8 @@ class TestStaleDesign:
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
     # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
-    # per-rule/per-case coverage sharing an arrange-act shape typical of \
-    # thorough boundary testing; extracting would obscure per-case intent"
+    # per-rule/per-case coverage sharing an arrange-act shape typical of thorough \
+    # boundary testing; extracting would obscure per-case intent"
     def test_legacy_fs_declaration_discharges_on_read_only_observation(
         self, tmp_path: Path
     ):
@@ -422,8 +422,8 @@ class TestStaleDesign:
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
     # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
-    # per-rule/per-case coverage sharing an arrange-act shape typical of \
-    # thorough boundary testing; extracting would obscure per-case intent"
+    # per-rule/per-case coverage sharing an arrange-act shape typical of thorough \
+    # boundary testing; extracting would obscure per-case intent"
     def test_fs_read_declaration_discharges_on_read_only_observation(
         self, tmp_path: Path
     ):
@@ -735,8 +735,8 @@ class TestNonPythonLanguageWiring:
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
     # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
-    # per-rule/per-case coverage sharing an arrange-act shape typical of \
-    # thorough boundary testing; extracting would obscure per-case intent"
+    # per-rule/per-case coverage sharing an arrange-act shape typical of thorough \
+    # boundary testing; extracting would obscure per-case intent"
     def test_typescript_stale_design_fires(self, tmp_path: Path):
         """`may=("fetch_url",)` declared on a node whose `code=`-bound `.ts`
         file never calls `fetch`/etc. is SYS101 for a non-Python language,
@@ -799,8 +799,8 @@ class TestCoreUndeclaredInterfaceNonPython:
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
     # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
-    # per-rule/per-case coverage sharing an arrange-act shape typical of \
-    # thorough boundary testing; extracting would obscure per-case intent"
+    # per-rule/per-case coverage sharing an arrange-act shape typical of thorough \
+    # boundary testing; extracting would obscure per-case intent"
     def test_typescript_core_net_undeclared_fires(self, tmp_path: Path):
         """A `.ts` file calling `axios.get(...)` (raw `net`, THREAT004's
         core delegated kind) with no `may` declaration is SYS100, and NOT
@@ -828,8 +828,8 @@ class TestCoreUndeclaredInterfaceNonPython:
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
     # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
-    # per-rule/per-case coverage sharing an arrange-act shape typical of \
-    # thorough boundary testing; extracting would obscure per-case intent"
+    # per-rule/per-case coverage sharing an arrange-act shape typical of thorough \
+    # boundary testing; extracting would obscure per-case intent"
     def test_typescript_core_net_discharges_once_declared(self, tmp_path: Path):
         """The same `axios.get(...)` fixture with `may=("net",)` declared
         produces no SYS100 for `net` -- proves the TS core-kind scan
@@ -859,8 +859,8 @@ class TestCoreUndeclaredInterfaceNonPython:
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
     # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
-    # per-rule/per-case coverage sharing an arrange-act shape typical of \
-    # thorough boundary testing; extracting would obscure per-case intent"
+    # per-rule/per-case coverage sharing an arrange-act shape typical of thorough \
+    # boundary testing; extracting would obscure per-case intent"
     def test_rust_core_exec_undeclared_fires(self, tmp_path: Path):
         """A `.rs` file calling `Command::new(...).spawn()` (raw `exec`)
         with no `may` declaration is SYS100, and NOT also a spurious
@@ -888,8 +888,8 @@ class TestCoreUndeclaredInterfaceNonPython:
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
     # frob:waive DUP001 reason="parallel selfconform test arms: exhaustive \
-    # per-rule/per-case coverage sharing an arrange-act shape typical of \
-    # thorough boundary testing; extracting would obscure per-case intent"
+    # per-rule/per-case coverage sharing an arrange-act shape typical of thorough \
+    # boundary testing; extracting would obscure per-case intent"
     def test_rust_core_exec_discharges_once_declared(self, tmp_path: Path):
         """The same `Command::new(...).spawn()` fixture with
         `may=("exec",)` declared produces no SYS100 for `exec`."""
@@ -918,16 +918,14 @@ class TestCoreUndeclaredInterfaceNonPython:
 
 class TestLanguageCoverageDriftLock:
     # frob:tests src/frob/strata/_selfconform.py::_sorted_capability_files kind="unit"
-    # frob:waive COV006 reason="T-0536: SCANNED_LANGUAGES (frob.vet._capability) \
-    # and LANGUAGES (frob.vet._capability_registry) are both module-level \
-    # constants asserted for set equality here -- neither is ever CALLED \
-    # by this test's body, so there is no call-graph edge for the graph \
-    # to find regardless of which symbol frob:tests names. Retargeting \
-    # the directive straight at SCANNED_LANGUAGES was tried and rejected: \
-    # DRIFT002 then reports the ref as unresolvable (module-level \
-    # assignments are not graph nodes), trading one false positive for \
-    # another. Same module-constant-drift-lock shape as T-0516's \
-    # tests/test_gates.py waiver."
+    # frob:waive COV006 reason="T-0536: SCANNED_LANGUAGES (frob.vet._capability) and \
+    # LANGUAGES (frob.vet._capability_registry) are both module-level constants \
+    # asserted for set equality here -- neither is ever CALLED by this test's body, so \
+    # there is no call-graph edge for the graph to find regardless of which symbol \
+    # frob:tests names. Retargeting the directive straight at SCANNED_LANGUAGES was \
+    # tried and rejected: DRIFT002 then reports the ref as unresolvable (module-level \
+    # assignments are not graph nodes), trading one false positive for another. Same \
+    # module-constant-drift-lock shape as T-0516's tests/test_gates.py waiver."
     def test_scanned_languages_equals_registry_languages(self):
         """T-0169 drift lock: the set of languages self-conformance (and
         `vet`) actually reach via `language_for`/`_EXT_LANGUAGE` must equal
@@ -965,14 +963,14 @@ class TestLanguageCoverageDriftLock:
 
 
 class TestExtendedKindsDriftLock:
-    # frob:tests src/frob/strata/_selfconform.py::_observed_extended_kinds_by_node kind="unit"
-    # frob:waive COV006 reason="T-0536: _EXTENDED_KINDS/_KIND_MAP/_PATTERNS \
-    # are module-level constants this test asserts set operations over -- \
-    # never CALLED, so there is no call-graph edge regardless of binding. \
-    # Retargeting straight at _EXTENDED_KINDS was tried and rejected: \
-    # DRIFT002 then reports the ref as unresolvable (module-level \
-    # assignments are not graph nodes), trading one false positive for \
-    # another. Same module-constant-drift-lock shape as T-0516's \
+    # frob:tests src/frob/strata/_selfconform.py::_observed_extended_kinds_by_node \
+    # kind="unit"
+    # frob:waive COV006 reason="T-0536: _EXTENDED_KINDS/_KIND_MAP/_PATTERNS are \
+    # module-level constants this test asserts set operations over -- never CALLED, so \
+    # there is no call-graph edge regardless of binding. Retargeting straight at \
+    # _EXTENDED_KINDS was tried and rejected: DRIFT002 then reports the ref as \
+    # unresolvable (module-level assignments are not graph nodes), trading one false \
+    # positive for another. Same module-constant-drift-lock shape as T-0516's \
     # tests/test_gates.py waiver."
     def test_extended_kinds_is_disjoint_from_kind_map(self):
         """`_EXTENDED_KINDS` (SYS100's new-code slice) and `_KIND_MAP`'s keys
@@ -1014,7 +1012,8 @@ class TestWaiverChannel:
     is reported as a new SYSWAIVE002 violation (drift-lock)."""
 
     # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
-    # frob:waive PERF001 reason="an any()-generator plus a two-clause list comprehension over one tiny fixture result, not a hot loop"
+    # frob:waive PERF001 reason="an any()-generator plus a two-clause list \
+    # comprehension over one tiny fixture result, not a hot loop"
     def test_matching_waiver_moves_violation_to_waived(self, tmp_path: Path):
         """SYS100 is multi-instance-per-node (T-0174 REJECT round), so the
         waiver must name the exact capability kind (`net`, matching
@@ -1124,7 +1123,8 @@ class TestWaiverChannel:
 
 
 class TestRealGateGreen:
-    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="integration"
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance \
+    # kind="integration"
     def test_repo_design_and_declarations_are_self_conformant(self):
         """`design/frob.strata`'s real `code`/`may` declarations, run
         against the REAL `src/frob/` tree, produce zero SYS100/SYS101/

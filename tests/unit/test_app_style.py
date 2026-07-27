@@ -115,7 +115,9 @@ def _info_text(caplog) -> str:  # noqa: ANN001
 
 
 def test_ticket_list_plain_stdout_has_no_ansi(tmp_path, monkeypatch, caplog):
-    # frob:tests tests/unit/test_app_style.py::test_ticket_list_plain_stdout_has_no_ansi kind="unit"
+    # frob:tests \
+    # tests/unit/test_app_style.py::test_ticket_list_plain_stdout_has_no_ansi \
+    # kind="unit"
     monkeypatch.delenv("NO_COLOR", raising=False)
     monkeypatch.delenv("FORCE_COLOR", raising=False)
     _seed_ticket(tmp_path)
@@ -128,11 +130,12 @@ def test_ticket_list_plain_stdout_has_no_ansi(tmp_path, monkeypatch, caplog):
     assert "queued" in out
 
 
-# frob:waive DUP001 reason="parallel test methods within test_app_style.py \
-# (2 sites) sharing an arrange-act scaffold typical of exhaustive per-case \
-# coverage; extracting would obscure per-case intent"
+# frob:waive DUP001 reason="parallel test methods within test_app_style.py (2 sites) \
+# sharing an arrange-act scaffold typical of exhaustive per-case coverage; extracting \
+# would obscure per-case intent"
 def test_ticket_list_force_color_has_ansi(tmp_path, monkeypatch, caplog):
-    # frob:tests tests/unit/test_app_style.py::test_ticket_list_force_color_has_ansi kind="unit"
+    # frob:tests tests/unit/test_app_style.py::test_ticket_list_force_color_has_ansi \
+    # kind="unit"
     monkeypatch.delenv("NO_COLOR", raising=False)
     monkeypatch.setenv("FORCE_COLOR", "1")
     _seed_ticket(tmp_path)
@@ -145,7 +148,9 @@ def test_ticket_list_force_color_has_ansi(tmp_path, monkeypatch, caplog):
 
 
 def test_ticket_list_no_color_env_disables_ansi(tmp_path, monkeypatch, caplog):
-    # frob:tests tests/unit/test_app_style.py::test_ticket_list_no_color_env_disables_ansi kind="unit"
+    # frob:tests \
+    # tests/unit/test_app_style.py::test_ticket_list_no_color_env_disables_ansi \
+    # kind="unit"
     monkeypatch.setenv("NO_COLOR", "1")
     monkeypatch.setenv("FORCE_COLOR", "1")  # NO_COLOR wins regardless
     _seed_ticket(tmp_path)
@@ -159,7 +164,9 @@ def test_ticket_list_no_color_env_disables_ansi(tmp_path, monkeypatch, caplog):
 def test_ticket_list_json_never_has_ansi_even_with_force_color(
     tmp_path, monkeypatch, caplog
 ):
-    # frob:tests tests/unit/test_app_style.py::test_ticket_list_json_never_has_ansi_even_with_force_color kind="unit"
+    # frob:tests \
+    # tests/unit/test_app_style.py::test_ticket_list_json_never_has_ansi_even_with_forc\
+    # e_color kind="unit"
     monkeypatch.delenv("NO_COLOR", raising=False)
     monkeypatch.setenv("FORCE_COLOR", "1")
     _seed_ticket(tmp_path)
@@ -172,7 +179,9 @@ def test_ticket_list_json_never_has_ansi_even_with_force_color(
 
 
 def test_ticket_show_plain_vs_force_color_same_content(tmp_path, monkeypatch, caplog):
-    # frob:tests tests/unit/test_app_style.py::test_ticket_show_plain_vs_force_color_same_content kind="unit"
+    # frob:tests \
+    # tests/unit/test_app_style.py::test_ticket_show_plain_vs_force_color_same_content \
+    # kind="unit"
     _seed_ticket(tmp_path)
     cfg = AppConfig(ticket_command="show", ticket_path=tmp_path, ticket_id="T-0001")
 
@@ -198,7 +207,9 @@ def test_ticket_show_plain_vs_force_color_same_content(tmp_path, monkeypatch, ca
 
 
 def test_ticket_doable_plain_stdout_has_no_ansi(tmp_path, monkeypatch, caplog):
-    # frob:tests tests/unit/test_app_style.py::test_ticket_doable_plain_stdout_has_no_ansi kind="unit"
+    # frob:tests \
+    # tests/unit/test_app_style.py::test_ticket_doable_plain_stdout_has_no_ansi \
+    # kind="unit"
     monkeypatch.delenv("NO_COLOR", raising=False)
     monkeypatch.delenv("FORCE_COLOR", raising=False)
     _seed_ticket(tmp_path)
@@ -210,11 +221,12 @@ def test_ticket_doable_plain_stdout_has_no_ansi(tmp_path, monkeypatch, caplog):
     assert "T-0001" in out
 
 
-# frob:waive DUP001 reason="parallel test methods within test_app_style.py \
-# (2 sites) sharing an arrange-act scaffold typical of exhaustive per-case \
-# coverage; extracting would obscure per-case intent"
+# frob:waive DUP001 reason="parallel test methods within test_app_style.py (2 sites) \
+# sharing an arrange-act scaffold typical of exhaustive per-case coverage; extracting \
+# would obscure per-case intent"
 def test_ticket_doable_force_color_has_ansi(tmp_path, monkeypatch, caplog):
-    # frob:tests tests/unit/test_app_style.py::test_ticket_doable_force_color_has_ansi kind="unit"
+    # frob:tests tests/unit/test_app_style.py::test_ticket_doable_force_color_has_ansi \
+    # kind="unit"
     monkeypatch.delenv("NO_COLOR", raising=False)
     monkeypatch.setenv("FORCE_COLOR", "1")
     _seed_ticket(tmp_path)
@@ -246,7 +258,8 @@ def _init_frob_repo(root: Path) -> None:
 
 
 def test_stats_plain_stdout_has_no_ansi(tmp_path, monkeypatch, capfd):
-    # frob:tests tests/unit/test_app_style.py::test_stats_plain_stdout_has_no_ansi kind="unit"
+    # frob:tests tests/unit/test_app_style.py::test_stats_plain_stdout_has_no_ansi \
+    # kind="unit"
     monkeypatch.delenv("NO_COLOR", raising=False)
     monkeypatch.delenv("FORCE_COLOR", raising=False)
     _init_frob_repo(tmp_path)
@@ -258,7 +271,8 @@ def test_stats_plain_stdout_has_no_ansi(tmp_path, monkeypatch, capfd):
 
 
 def test_stats_force_color_has_ansi(tmp_path, monkeypatch, capfd):
-    # frob:tests tests/unit/test_app_style.py::test_stats_force_color_has_ansi kind="unit"
+    # frob:tests tests/unit/test_app_style.py::test_stats_force_color_has_ansi \
+    # kind="unit"
     monkeypatch.delenv("NO_COLOR", raising=False)
     monkeypatch.setenv("FORCE_COLOR", "1")
     _init_frob_repo(tmp_path)
@@ -270,7 +284,8 @@ def test_stats_force_color_has_ansi(tmp_path, monkeypatch, capfd):
 
 
 def test_stats_json_never_has_ansi(tmp_path, monkeypatch, capfd):
-    # frob:tests tests/unit/test_app_style.py::test_stats_json_never_has_ansi kind="unit"
+    # frob:tests tests/unit/test_app_style.py::test_stats_json_never_has_ansi \
+    # kind="unit"
     monkeypatch.delenv("NO_COLOR", raising=False)
     monkeypatch.setenv("FORCE_COLOR", "1")
     _init_frob_repo(tmp_path)
@@ -301,7 +316,8 @@ def _vet_report_with_violation():  # noqa: ANN201
 
 
 def test_vet_print_table_plain_has_no_ansi(monkeypatch, capsys):
-    # frob:tests tests/unit/test_app_style.py::test_vet_print_table_plain_has_no_ansi kind="unit"
+    # frob:tests tests/unit/test_app_style.py::test_vet_print_table_plain_has_no_ansi \
+    # kind="unit"
     from frob.app.vet_runner import _print_table
 
     monkeypatch.delenv("NO_COLOR", raising=False)
@@ -315,7 +331,9 @@ def test_vet_print_table_plain_has_no_ansi(monkeypatch, capsys):
 
 
 def test_vet_print_table_force_color_has_ansi_same_content(monkeypatch, capsys):
-    # frob:tests tests/unit/test_app_style.py::test_vet_print_table_force_color_has_ansi_same_content kind="unit"
+    # frob:tests \
+    # tests/unit/test_app_style.py::test_vet_print_table_force_color_has_ansi_same_cont\
+    # ent kind="unit"
     from frob.app.vet_runner import _print_table
 
     monkeypatch.delenv("NO_COLOR", raising=False)

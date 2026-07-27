@@ -30,10 +30,10 @@ from frob.strata import (
 _TODAY = dt.date(2026, 7, 18)
 
 
-# frob:waive DUP001 reason="parallel litmus scenario fixtures: 7 sites \
-# across 7 file(s) sharing the exhaustiveness-fixture arrange-act shape by \
-# design (store-backed vs non-store-backed, or per-CWE scenario variants); \
-# extracting would obscure per-scenario intent"
+# frob:waive DUP001 reason="parallel litmus scenario fixtures: 7 sites across 7 \
+# file(s) sharing the exhaustiveness-fixture arrange-act shape by design (store-backed \
+# vs non-store-backed, or per-CWE scenario variants); extracting would obscure \
+# per-scenario intent"
 def _repo_root() -> Path:
     """Walk up from this file until a directory containing `frob.toml` is found."""
     here = Path(__file__).resolve()

@@ -136,7 +136,9 @@ class TestLinkedGroupsResolveAndAreNavigable:
     reachable `cross_refs` mesh -- the graph-navigability property this
     ticket's cross-file dedup pass exists to establish."""
 
-    # frob:tests tests/unit/strata/test_registry_cross_refs.py::TestLinkedGroupsResolveAndAreNavigable.test_every_group_id_exists
+    # frob:tests \
+    # tests/unit/strata/test_registry_cross_refs.py::TestLinkedGroupsResolveAndAreNavig\
+    # able.test_every_group_id_exists
     def test_every_group_id_exists(self):
         entries = _load_all_entries()
         for group in LINKED_GROUPS:
@@ -144,7 +146,9 @@ class TestLinkedGroupsResolveAndAreNavigable:
                 assert entry_id in entries, f"{entry_id} not found in any registry file"
 
     # frob:ticket T-0972
-    # frob:tests tests/unit/strata/test_registry_cross_refs.py::TestLinkedGroupsResolveAndAreNavigable.test_every_member_cross_refs_every_other_member
+    # frob:tests \
+    # tests/unit/strata/test_registry_cross_refs.py::TestLinkedGroupsResolveAndAreNavig\
+    # able.test_every_member_cross_refs_every_other_member
     def test_every_member_cross_refs_every_other_member(self):
         entries = _load_all_entries()
         for group in LINKED_GROUPS:
@@ -165,7 +169,9 @@ class TestRejectedPairsStayUnlinked:
     that would reintroduce the exact failure mode finding (h) rejected
     them for."""
 
-    # frob:tests tests/unit/strata/test_registry_cross_refs.py::TestRejectedPairsStayUnlinked.test_rejected_pairs_not_cross_linked
+    # frob:tests \
+    # tests/unit/strata/test_registry_cross_refs.py::TestRejectedPairsStayUnlinked.test\
+    # _rejected_pairs_not_cross_linked
     def test_rejected_pairs_not_cross_linked(self):
         entries = _load_all_entries()
         for left, right in REJECTED_PAIRS:
@@ -187,7 +193,9 @@ class TestReconciliationSplitSectionFullyLinked:
     (`src/frob/gates/_registry_exhaustiveness.py`) enforces, checked here
     independently of gate internals."""
 
-    # frob:tests tests/unit/strata/test_registry_cross_refs.py::TestReconciliationSplitSectionFullyLinked.test_finding_b_ids_all_linked
+    # frob:tests \
+    # tests/unit/strata/test_registry_cross_refs.py::TestReconciliationSplitSectionFull\
+    # yLinked.test_finding_b_ids_all_linked
     def test_finding_b_ids_all_linked(self):
         text = (REGISTRY_DIR / "RECONCILIATION.md").read_text(encoding="utf-8")
         start = text.find("### (b) SPLIT entries")

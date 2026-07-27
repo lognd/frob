@@ -49,7 +49,8 @@ def _all_pairs(report):
     out = set()
     for group in report.groups:
         for p in group.pairs:
-            # frob:waive PERF004 reason="sorts each pair's own 2-tuple; data differs per iteration, O(1), cannot be hoisted"
+            # frob:waive PERF004 reason="sorts each pair's own 2-tuple; data differs \
+            # per iteration, O(1), cannot be hoisted"
             refs = tuple(sorted((p.left.ref, p.right.ref)))
             out.add((p.rung, refs[0], refs[1], round(p.similarity, 6)))
     return out
@@ -180,7 +181,8 @@ class TestPrefilterPreservesRecall:
     def test_prefilter_never_exceeds_unfiltered_verification_count(
         self, fixture_dir, tmp_path
     ):
-        # frob:tests tests/test_dup_prefilter.py::TestPrefilterPreservesRecall kind="unit"
+        # frob:tests tests/test_dup_prefilter.py::TestPrefilterPreservesRecall \
+        # kind="unit"
         root = FIXTURES_ROOT / fixture_dir
         cache = tmp_path / "graph-cache"
         snapshot_result = build_graph(root, cache)

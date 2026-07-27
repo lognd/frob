@@ -73,12 +73,12 @@ pure, fully-tested function any caller can wire in; the CLI/waiver
 integration is filed as a follow-up ticket (Done report) rather than
 touched here.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: this file's \
-# 'only' hits are source-level design-rationale/scope-cut prose (docstrings \
-# describing the compatibility matrix and disclosed cuts) rather than a \
-# separate cross-module contract needing its own tracked invariant, the \
-# same disposition _ssot.py/_contention.py's own identical waiver already \
-# uses for this module family (module docstring precedent)"
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: this file's 'only' hits \
+# are source-level design-rationale/scope-cut prose (docstrings describing the \
+# compatibility matrix and disclosed cuts) rather than a separate cross-module \
+# contract needing its own tracked invariant, the same disposition \
+# _ssot.py/_contention.py's own identical waiver already uses for this module family \
+# (module docstring precedent)"
 
 from __future__ import annotations
 

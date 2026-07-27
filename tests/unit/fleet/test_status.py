@@ -108,7 +108,9 @@ class TestCollectStatus:
     def test_git_branch_and_dirty_kill_switch_refuses_without_spawning(
         self, tmp_path: Path, monkeypatch
     ) -> None:
-        # frob:tests tests/unit/fleet/test_status.py::TestCollectStatus.test_git_branch_and_dirty_kill_switch_refuses_without_spawning
+        # frob:tests \
+        # tests/unit/fleet/test_status.py::TestCollectStatus.test_git_branch_and_dirty_\
+        # kill_switch_refuses_without_spawning
         # T-0803: FROB_DISABLE_EXEC=1 must make `_git_branch_and_dirty`'s
         # `git status` spawn refuse (via `guarded_subprocess_run`) instead
         # of bypassing the T-0200/T-0778 exec guard -- proven with a spy on
@@ -131,7 +133,9 @@ class TestCollectStatus:
     def test_gate_summary_probe_kill_switch_refuses_without_spawning(
         self, tmp_path: Path, monkeypatch
     ) -> None:
-        # frob:tests tests/unit/fleet/test_status.py::TestCollectStatus.test_gate_summary_probe_kill_switch_refuses_without_spawning
+        # frob:tests \
+        # tests/unit/fleet/test_status.py::TestCollectStatus.test_gate_summary_probe_ki\
+        # ll_switch_refuses_without_spawning
         # T-0803: FROB_DISABLE_EXEC=1 must make `_gate_summary_probe`'s
         # `frob check --json` spawn refuse (via `guarded_subprocess_run`)
         # too -- proven with the same spy pattern.

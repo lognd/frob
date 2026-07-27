@@ -65,7 +65,9 @@ class TestDisplayState:
     def test_queued_with_live_lease_decorated(
         self, tmp_path: Path, monkeypatch
     ) -> None:
-        # frob:tests tests/test_tickets_lease_overlay.py::TestDisplayState.test_queued_with_live_lease_decorated
+        # frob:tests \
+        # tests/test_tickets_lease_overlay.py::TestDisplayState.test_queued_with_live_l\
+        # ease_decorated
         worktree = tmp_path / "worktrees" / "agent-xyz"
         worktree.mkdir(parents=True)
         ticket = _ticket(ticket_id="T-9001", state=TicketState.QUEUED)
@@ -80,7 +82,9 @@ class TestDisplayState:
     def test_queued_with_stale_lease_undecorated(
         self, tmp_path: Path, monkeypatch
     ) -> None:
-        # frob:tests tests/test_tickets_lease_overlay.py::TestDisplayState.test_queued_with_stale_lease_undecorated
+        # frob:tests \
+        # tests/test_tickets_lease_overlay.py::TestDisplayState.test_queued_with_stale_\
+        # lease_undecorated
         # `read_all_leases` itself already drops leases whose worktree
         # path is gone (T-0473/T-0476) -- a stale lease is simply never
         # returned, so `display_state` sees an empty tuple and falls back
@@ -91,7 +95,9 @@ class TestDisplayState:
 
     # frob:ticket T-0716
     def test_ledger_in_progress_undecorated(self, tmp_path: Path, monkeypatch) -> None:
-        # frob:tests tests/test_tickets_lease_overlay.py::TestDisplayState.test_ledger_in_progress_undecorated
+        # frob:tests \
+        # tests/test_tickets_lease_overlay.py::TestDisplayState.test_ledger_in_progress\
+        # _undecorated
         worktree = tmp_path / "worktrees" / "agent-xyz"
         worktree.mkdir(parents=True)
         ticket = _ticket(ticket_id="T-9003", state=TicketState.IN_PROGRESS)
@@ -104,7 +110,9 @@ class TestDisplayState:
 
     # frob:ticket T-0716
     def test_no_root_never_decorates(self, tmp_path: Path, monkeypatch) -> None:
-        # frob:tests tests/test_tickets_lease_overlay.py::TestDisplayState.test_no_root_never_decorates
+        # frob:tests \
+        # tests/test_tickets_lease_overlay.py::TestDisplayState.test_no_root_never_deco\
+        # rates
         worktree = tmp_path / "worktrees" / "agent-xyz"
         worktree.mkdir(parents=True)
         ticket = _ticket(ticket_id="T-9004", state=TicketState.QUEUED)

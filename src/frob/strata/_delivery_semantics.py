@@ -65,11 +65,10 @@ configuration or dedup-window size. No `strata-core` change needed (this
 ticket's scope is `src/frob/strata/**`/`docs/strata/**`/
 `tests/unit/strata/**` only, same as T-0640/.../T-0651's).
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: this file's \
-# 'only' hits are source-level design-rationale/scope-cut prose mirroring \
-# _message_schema.py's own identical waiver for the identical reason \
-# (module docstring precedent, T-0652), not a separate cross-module \
-# contract"
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: this file's 'only' hits \
+# are source-level design-rationale/scope-cut prose mirroring _message_schema.py's own \
+# identical waiver for the identical reason (module docstring precedent, T-0652), not \
+# a separate cross-module contract"
 
 from __future__ import annotations
 

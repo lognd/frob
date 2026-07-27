@@ -43,7 +43,8 @@ def _write(root: Path, name: str, src: str) -> Path:
     return path
 
 
-# frob:tests tests/test_perf_rules_internals.py::test_method_call_in_loop_fires_at_depth_zero
+# frob:tests \
+# tests/test_perf_rules_internals.py::test_method_call_in_loop_fires_at_depth_zero
 def test_method_call_in_loop_fires_at_depth_zero():
     """`_method_call_in_loop` fires for `.<method>(` at a statement-level
     loop depth, and not for the same call outside any loop."""
@@ -56,7 +57,8 @@ def test_method_call_in_loop_fires_at_depth_zero():
     assert _method_call_in_loop(no_loop, depths2, "includes") is False
 
 
-# frob:tests tests/test_perf_rules_internals.py::test_perf001_best_effort_dispatches_by_language
+# frob:tests \
+# tests/test_perf_rules_internals.py::test_perf001_best_effort_dispatches_by_language
 def test_perf001_best_effort_dispatches_by_language():
     """PERF001 best-effort: `.includes(` for typescript, `.contains(` for
     rust, and no rule at all for any other language string."""
@@ -83,7 +85,8 @@ def test_perf001_best_effort_dispatches_by_language():
     assert _perf001_best_effort(ts_tokens, depths, "python") is False
 
 
-# frob:tests tests/test_perf_rules_internals.py::test_perf002_best_effort_typescript_only
+# frob:tests \
+# tests/test_perf_rules_internals.py::test_perf002_best_effort_typescript_only
 def test_perf002_best_effort_typescript_only():
     """PERF002 best-effort only fires for TypeScript's `.indexOf(`; every
     other language (including Rust, which has no PERF002 rule at all)
@@ -94,11 +97,12 @@ def test_perf002_best_effort_typescript_only():
     assert _perf002_best_effort(ts_tokens, depths, "rust") is False
 
 
-# frob:tests tests/test_perf_rules_internals.py::test_typescript_end_to_end_best_effort_via_perf_rules
-# frob:waive DUP001 reason="parallel perf-rule case table: independent \
-# PERF-rule fire/no-fire cases sharing an arrange-act scaffold by design \
-# (one src snippet + one assertion per case); extracting would obscure \
-# per-case intent"
+# frob:tests \
+# tests/test_perf_rules_internals.py::test_typescript_end_to_end_best_effort_via_perf_r\
+# ules
+# frob:waive DUP001 reason="parallel perf-rule case table: independent PERF-rule \
+# fire/no-fire cases sharing an arrange-act scaffold by design (one src snippet + one \
+# assertion per case); extracting would obscure per-case intent"
 def test_typescript_end_to_end_best_effort_via_perf_rules(tmp_path):
     """End-to-end sanity: a real TypeScript function's own enclosing braces
     push every statement-level loop to bracket depth 1, so the best-effort
@@ -134,7 +138,8 @@ def test_typescript_no_hit_outside_loop(tmp_path):
     assert not any(v.rule in ("PERF001", "PERF002") for v in violations)
 
 
-# frob:tests tests/test_perf_rules_internals.py::test_non_function_symbol_yields_no_violations
+# frob:tests \
+# tests/test_perf_rules_internals.py::test_non_function_symbol_yields_no_violations
 def test_non_function_symbol_yields_no_violations(tmp_path):
     """A class symbol (not FUNCTION/METHOD) short-circuits with no findings --
     `_symbol_violations` only inspects function/method bodies."""
@@ -146,7 +151,8 @@ def test_non_function_symbol_yields_no_violations(tmp_path):
     assert violations == ()
 
 
-# frob:tests tests/test_perf_rules_internals.py::test_source_lines_missing_file_returns_empty
+# frob:tests \
+# tests/test_perf_rules_internals.py::test_source_lines_missing_file_returns_empty
 def test_source_lines_missing_file_returns_empty(tmp_path):
     """`_source_lines` returns `()` (not raise) when `path` cannot be
     opened -- the source moved/was deleted since parse."""
@@ -154,7 +160,9 @@ def test_source_lines_missing_file_returns_empty(tmp_path):
     assert _source_lines(str(missing), (1, 3)) == ()
 
 
-# frob:tests tests/test_perf_rules_internals.py::test_perf_rules_falls_back_to_span_start_when_source_vanishes
+# frob:tests \
+# tests/test_perf_rules_internals.py::test_perf_rules_falls_back_to_span_start_when_sou\
+# rce_vanishes
 def test_perf_rules_falls_back_to_span_start_when_source_vanishes(tmp_path):
     """When the source file is deleted between parse and rule evaluation,
     every line-anchoring helper falls back to the enclosing symbol's
@@ -181,7 +189,9 @@ def test_perf_rules_falls_back_to_span_start_when_source_vanishes(tmp_path):
         assert v.line == fn.span[0]
 
 
-# frob:tests tests/test_perf_rules_internals.py::test_header_colon_index_returns_none_when_unterminated
+# frob:tests \
+# tests/test_perf_rules_internals.py::test_header_colon_index_returns_none_when_untermi\
+# nated
 def test_header_colon_index_returns_none_when_unterminated():
     """A malformed/truncated loop header with no closing `:` at depth 0
     reports `None` rather than raising or wrapping around."""
@@ -190,7 +200,8 @@ def test_header_colon_index_returns_none_when_unterminated():
     assert _header_colon_index(tokens, depths, 0) is None
 
 
-# frob:tests tests/test_perf_rules_internals.py::test_next_statement_loop_returns_none_when_absent
+# frob:tests \
+# tests/test_perf_rules_internals.py::test_next_statement_loop_returns_none_when_absent
 def test_next_statement_loop_returns_none_when_absent():
     """No statement-level loop keyword after `start` reports `None`."""
     tokens = ("x", "=", "1")
@@ -198,7 +209,8 @@ def test_next_statement_loop_returns_none_when_absent():
     assert _next_statement_loop(tokens, depths, 0) is None
 
 
-# frob:tests tests/test_perf_rules_internals.py::test_operand_names_out_of_range_is_empty
+# frob:tests \
+# tests/test_perf_rules_internals.py::test_operand_names_out_of_range_is_empty
 def test_operand_names_out_of_range_is_empty():
     """An out-of-range `start` index (negative, or past the end) is treated
     as no operand rather than indexing an error."""
@@ -207,14 +219,16 @@ def test_operand_names_out_of_range_is_empty():
     assert _operand_names(tokens, 3, 1) == frozenset()
 
 
-# frob:tests tests/test_perf_rules_internals.py::test_operand_names_non_identifier_token_is_empty
+# frob:tests \
+# tests/test_perf_rules_internals.py::test_operand_names_non_identifier_token_is_empty
 def test_operand_names_non_identifier_token_is_empty():
     """A literal (non-identifier, non-bracket) operand token yields no names."""
     tokens = ("1", "==", "2")
     assert _operand_names(tokens, 0, -1) == frozenset()
 
 
-# frob:tests tests/test_perf_rules_internals.py::test_operand_names_call_and_subscript_unwind
+# frob:tests \
+# tests/test_perf_rules_internals.py::test_operand_names_call_and_subscript_unwind
 def test_operand_names_call_and_subscript_unwind():
     """Call-paren and subscript-bracket operands unwind one level to their
     inner identifier (T-0246), symmetric in both directions."""
@@ -227,7 +241,9 @@ def test_operand_names_call_and_subscript_unwind():
     assert _operand_names(subscript_tokens, 6, 1) == frozenset({"j"})
 
 
-# frob:tests tests/test_perf_rules_internals.py::test_bracket_identifiers_runs_off_the_end_without_closing
+# frob:tests \
+# tests/test_perf_rules_internals.py::test_bracket_identifiers_runs_off_the_end_without\
+# _closing
 def test_bracket_identifiers_runs_off_the_end_without_closing():
     """An unclosed bracket pair stops at the end of the token stream instead
     of indexing past it."""
@@ -235,7 +251,9 @@ def test_bracket_identifiers_runs_off_the_end_without_closing():
     assert _bracket_identifiers(tokens, 2, 1) == frozenset({"i"})
 
 
-# frob:tests tests/test_perf_rules_internals.py::test_container_kinds_ignores_non_identifier_assignment_target
+# frob:tests \
+# tests/test_perf_rules_internals.py::test_container_kinds_ignores_non_identifier_assig\
+# nment_target
 def test_container_kinds_ignores_non_identifier_assignment_target():
     """A non-identifier "name" slot (can't happen from real source, but the
     scan is purely lexical) is skipped rather than recorded."""

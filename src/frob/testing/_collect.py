@@ -979,9 +979,9 @@ def _parse_ctest_json(stdout: str, build_dir: Path) -> Result[list[str], Testing
 
 
 # frob:ticket T-0587
-# frob:waive ARCH103 reason="T-0977: ctest-availability-guarded subprocess \
-# wrapper -- the missing-tool degrade-with-warning IS the honest-vacuous- \
-# pass behavior T-0587 documents this function for, not a separate concern"
+# frob:waive ARCH103 reason="T-0977: ctest-availability-guarded subprocess wrapper -- \
+# the missing-tool degrade-with-warning IS the honest-vacuous- pass behavior T-0587 \
+# documents this function for, not a separate concern"
 def _run_ctest_list(build_dir: Path) -> Result[list[str], TestingError]:
     """Spawn `ctest --test-dir <build_dir> --show-only=json-v1`. Degrades to
     an empty, `Ok` result (with a warning, not a hard failure) when `ctest`

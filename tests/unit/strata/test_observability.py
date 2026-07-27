@@ -34,7 +34,9 @@ def _boundary(flow_id: str) -> Boundary:
 
 
 class TestMissingObservability:
-    # frob:tests tests/unit/strata/test_observability.py::TestMissingObservability.test_boundary_flow_without_observability_fires
+    # frob:tests \
+    # tests/unit/strata/test_observability.py::TestMissingObservability.test_boundary_f\
+    # low_without_observability_fires
     def test_boundary_flow_without_observability_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -54,7 +56,9 @@ class TestMissingObservability:
         assert {v.sub_target for v in missing} == {"f1"}
         assert missing[0].node == "edge"
 
-    # frob:tests tests/unit/strata/test_observability.py::TestMissingObservability.test_discharged_and_non_boundary_flows_clean
+    # frob:tests \
+    # tests/unit/strata/test_observability.py::TestMissingObservability.test_discharged\
+    # _and_non_boundary_flows_clean
     def test_discharged_and_non_boundary_flows_clean(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -75,7 +79,9 @@ class TestMissingObservability:
             if v.rule == REL_MISSING_OBSERVABILITY
         ]
 
-    # frob:tests tests/unit/strata/test_observability.py::TestMissingObservability.test_waiver_on_one_flow_keeps_sibling_flow_finding
+    # frob:tests \
+    # tests/unit/strata/test_observability.py::TestMissingObservability.test_waiver_on_\
+    # one_flow_keeps_sibling_flow_finding
     def test_waiver_on_one_flow_keeps_sibling_flow_finding(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -113,7 +119,9 @@ class TestMissingObservability:
 
 
 class TestUnprovenObservability:
-    # frob:tests tests/unit/strata/test_observability.py::TestUnprovenObservability.test_declared_with_no_code_evidence_fires
+    # frob:tests \
+    # tests/unit/strata/test_observability.py::TestUnprovenObservability.test_declared_\
+    # with_no_code_evidence_fires
     def test_declared_with_no_code_evidence_fires(self, tmp_path: Path):
         _write(tmp_path, "src/widget/_io.py", "def call():\n    return remote()\n")
         model = KernelModel(
@@ -133,7 +141,9 @@ class TestUnprovenObservability:
         ]
         assert {v.sub_target for v in violations} == {"f1"}
 
-    # frob:tests tests/unit/strata/test_observability.py::TestUnprovenObservability.test_declared_with_real_code_evidence_discharges
+    # frob:tests \
+    # tests/unit/strata/test_observability.py::TestUnprovenObservability.test_declared_\
+    # with_real_code_evidence_discharges
     def test_declared_with_real_code_evidence_discharges(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -157,7 +167,9 @@ class TestUnprovenObservability:
             if v.rule == REL_UNPROVEN_OBSERVABILITY
         ]
 
-    # frob:tests tests/unit/strata/test_observability.py::TestUnprovenObservability.test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+    # frob:tests \
+    # tests/unit/strata/test_observability.py::TestUnprovenObservability.test_declared_\
+    # with_no_bound_code_is_uncheckable_not_a_violation
     def test_declared_with_no_bound_code_is_uncheckable_not_a_violation(
         self, tmp_path: Path
     ):
@@ -179,7 +191,9 @@ class TestUnprovenObservability:
 
 
 class TestMissingCorrelation:
-    # frob:tests tests/unit/strata/test_observability.py::TestMissingCorrelation.test_second_hop_without_correlation_fires
+    # frob:tests \
+    # tests/unit/strata/test_observability.py::TestMissingCorrelation.test_second_hop_w\
+    # ithout_correlation_fires
     def test_second_hop_without_correlation_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -200,7 +214,9 @@ class TestMissingCorrelation:
         assert {v.sub_target for v in violations} == {"f_second"}
         assert violations[0].node == "api"
 
-    # frob:tests tests/unit/strata/test_observability.py::TestMissingCorrelation.test_first_hop_and_discharged_hop_clean
+    # frob:tests \
+    # tests/unit/strata/test_observability.py::TestMissingCorrelation.test_first_hop_an\
+    # d_discharged_hop_clean
     def test_first_hop_and_discharged_hop_clean(self, tmp_path: Path):
         model = KernelModel(
             nodes=(

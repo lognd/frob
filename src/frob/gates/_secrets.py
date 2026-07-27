@@ -176,10 +176,12 @@ _KNOWN_TEMPLATE_SHAPE_RE = re.compile(
 
 @dataclass(frozen=True)
 # frob:doc docs/guides/extending/secrets-scan-providers.md#secrets-scan-providers
-# frob:waive COV007 reason="docs/guides/extending/secrets-scan-providers.md \
-# is a whole guide dedicated to this private dataclass, frob:describes-\
-# anchored at its own top heading (T-0529) -- a deliberate architecture \
-# doc, not accidental drift onto a private helper"
+# frob:waive COV007 reason="docs/guides/extending/secrets-scan-providers.md is a whole \
+# guide dedicated to this private dataclass, frob:describes-anchored at its own top \
+# heading (T-0529) -- a deliberate architecture doc, not accidental drift onto a \
+# private helper"
+# frob:waive AFFECT001 reason="T-0988 pure mechanical frob:-directive comment rewrap; \
+# no behavior/contract change, doc anchor remains accurate as-is"
 class _SecretPattern:
     """One provider's detection rule: what to match, how bad it is, and how
     much of the match is safe to print back in a violation message."""
@@ -578,9 +580,9 @@ ALL_PROVIDERS: frozenset[str] = frozenset(p.provider for p in _PATTERNS)
 
 
 # frob:doc docs/modules/gates.md#public-api
-# frob:waive COV007 reason="docs/modules/gates.md's Public API section \
-# individually frob:describes this private helper by name (T-0529) -- a \
-# deliberate architecture doc, not accidental drift onto a private helper"
+# frob:waive COV007 reason="docs/modules/gates.md's Public API section individually \
+# frob:describes this private helper by name (T-0529) -- a deliberate architecture \
+# doc, not accidental drift onto a private helper"
 # frob:tests tests/test_secrets_gate.py::TestRedact.test_never_returns_the_token
 # frob:invariant INV-039
 def _redact(token: str, display_prefix: str) -> str:

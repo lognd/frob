@@ -64,7 +64,8 @@ def _clean_daemon_status():
 
 class TestPollPostLand:
     def test_head_unchanged_is_noop(self, repo: Path) -> None:
-        # frob:tests tests/test_serve_daemon.py::TestPollPostLand.test_head_unchanged_is_noop
+        # frob:tests \
+        # tests/test_serve_daemon.py::TestPollPostLand.test_head_unchanged_is_noop
         _warm.invalidate(repo)
         first = _daemon.poll_post_land(repo, run_tests=False)
         assert first is not None
@@ -74,7 +75,8 @@ class TestPollPostLand:
         assert second.head == first.head
 
     def test_head_moved_refreshes_verdict(self, repo: Path) -> None:
-        # frob:tests tests/test_serve_daemon.py::TestPollPostLand.test_head_moved_refreshes_verdict
+        # frob:tests \
+        # tests/test_serve_daemon.py::TestPollPostLand.test_head_moved_refreshes_verdict
         _warm.invalidate(repo)
         first = _daemon.poll_post_land(repo, run_tests=False)
         assert first is not None
@@ -90,12 +92,14 @@ class TestPollPostLand:
 # frob:ticket T-0782
 class TestPollRebaseBot:
     def test_no_leases_is_no_warnings(self, repo: Path) -> None:
-        # frob:tests tests/test_serve_daemon.py::TestPollRebaseBot.test_no_leases_is_no_warnings
+        # frob:tests \
+        # tests/test_serve_daemon.py::TestPollRebaseBot.test_no_leases_is_no_warnings
         warnings = _daemon.poll_rebase_bot(repo)
         assert warnings == ()
 
     def test_conflicting_branch_warns(self, repo: Path) -> None:
-        # frob:tests tests/test_serve_daemon.py::TestPollRebaseBot.test_conflicting_branch_warns
+        # frob:tests \
+        # tests/test_serve_daemon.py::TestPollRebaseBot.test_conflicting_branch_warns
         wt = repo.parent / "wt-conflict"
         _run(["git", "worktree", "add", "-b", "feature-conflict", str(wt)], repo)
         record_lease(wt, "T-0900", scope=("src/pkg/a.py",))
@@ -115,7 +119,8 @@ class TestPollRebaseBot:
         assert status.rebase_warnings == warnings
 
     def test_clean_branch_no_warning(self, repo: Path) -> None:
-        # frob:tests tests/test_serve_daemon.py::TestPollRebaseBot.test_clean_branch_no_warning
+        # frob:tests \
+        # tests/test_serve_daemon.py::TestPollRebaseBot.test_clean_branch_no_warning
         wt = repo.parent / "wt-clean"
         _run(["git", "worktree", "add", "-b", "feature-clean", str(wt)], repo)
         record_lease(wt, "T-0901", scope=("src/pkg/b.py",))
@@ -139,7 +144,9 @@ class TestPollRebaseBot:
         deferred T-0476 dead-agent-with-a-live-worktree case. The daemon
         must skip re-simulating it (never conflict-warn for it) and log
         the skip exactly once across repeated poll cycles."""
-        # frob:tests tests/test_serve_daemon.py::TestPollRebaseBot.test_ttl_expired_lease_skipped_and_logged_once
+        # frob:tests \
+        # tests/test_serve_daemon.py::TestPollRebaseBot.test_ttl_expired_lease_skipped_\
+        # and_logged_once
         import logging
 
         from frob.tickets._leases import _LeaseRecord, leases_dir
@@ -196,7 +203,9 @@ class TestPollRebaseBotLeaseInjectionGuard:
     def test_evil_lease_branch_never_reaches_git_argv(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
-        # frob:tests tests/test_serve_daemon.py::TestPollRebaseBotLeaseInjectionGuard.test_evil_lease_branch_never_reaches_git_argv
+        # frob:tests \
+        # tests/test_serve_daemon.py::TestPollRebaseBotLeaseInjectionGuard.test_evil_le\
+        # ase_branch_never_reaches_git_argv
         import logging
 
         from frob.tickets._leases import _LeaseRecord, leases_dir
@@ -240,7 +249,9 @@ class TestPollRebaseBotLeaseInjectionGuard:
 
 class TestRunDaemonCycle:
     def test_runs_both_jobs_and_returns_status(self, repo: Path) -> None:
-        # frob:tests tests/test_serve_daemon.py::TestRunDaemonCycle.test_runs_both_jobs_and_returns_status
+        # frob:tests \
+        # tests/test_serve_daemon.py::TestRunDaemonCycle.test_runs_both_jobs_and_return\
+        # s_status
         _warm.invalidate(repo)
         status = _daemon.run_daemon_cycle(repo, run_tests=False)
         assert status.post_land is not None
@@ -252,7 +263,9 @@ class TestStartDaemon:
     def test_background_loop_runs_a_cycle_then_stops(
         self, repo: Path, monkeypatch
     ) -> None:
-        # frob:tests tests/test_serve_daemon.py::TestStartDaemon.test_background_loop_runs_a_cycle_then_stops
+        # frob:tests \
+        # tests/test_serve_daemon.py::TestStartDaemon.test_background_loop_runs_a_cycle\
+        # _then_stops
         import threading
 
         _warm.invalidate(repo)
@@ -281,7 +294,8 @@ class TestStartDaemon:
 
 class TestFrobDaemonStatus:
     def test_reads_current_status(self, repo: Path) -> None:
-        # frob:tests tests/test_serve_daemon.py::TestFrobDaemonStatus.test_reads_current_status
+        # frob:tests \
+        # tests/test_serve_daemon.py::TestFrobDaemonStatus.test_reads_current_status
         _warm.invalidate(repo)
         _daemon.poll_post_land(repo, run_tests=False)
 

@@ -29,12 +29,12 @@ to true "value assigned to `_`/discarded" detection -- see that check's
 own docstring for the exact proxy and its known false-positive shape
 (a call assigned to a local variable looks identical to this model)."""
 # frob:waive INV006 reason="this module's 'only' occurrences are source-level \
-# design-rationale prose (the module docstring's model-limit disclosure and \
-# the per-check docstrings describing what already-implemented text matching \
-# does), verifiable by reading the function it annotates, not a separate \
-# cross-module contract needing its own tracked invariant -- the same INV006 \
-# first-turn-on-pool disposition frob.arch._solid/_typedesign/_logging_checks' \
-# own module docstrings already carry"
+# design-rationale prose (the module docstring's model-limit disclosure and the \
+# per-check docstrings describing what already-implemented text matching does), \
+# verifiable by reading the function it annotates, not a separate cross-module \
+# contract needing its own tracked invariant -- the same INV006 first-turn-on-pool \
+# disposition frob.arch._solid/_typedesign/_logging_checks' own module docstrings \
+# already carry"
 
 from __future__ import annotations
 

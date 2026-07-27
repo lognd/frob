@@ -305,9 +305,9 @@ class TestDispatchFamilySuppression:
         categories = {s.category for s in result.suggestions}
         assert "abstraction-opportunity" not in categories
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py \
-    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_arch.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_accidental_same_signature_still_flagged(self, tmp_path):
         # frob:tests src/frob/arch/_python.py::_is_dispatch_family
         # frob:tests src/frob/arch/_python.py::_near_duplicate_cluster
@@ -360,9 +360,9 @@ class TestDispatchFamilySuppression:
         assert "normalize_beta" in msg
         assert "normalize_gamma" in msg
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py \
-    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_arch.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_init_reexport_does_not_suppress(self, tmp_path):
         # frob:tests src/frob/arch/__init__.py::_is_init_file
         # Reviewer-demonstrated false-suppression path: three near-
@@ -512,9 +512,9 @@ class TestLargeFile:
         categories = {s.category for s in result.suggestions}
         assert "large-file" not in categories
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py \
-    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_arch.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_large_src_file_still_flagged(self, tmp_path):
         # frob:tests src/frob/arch/__init__.py::analyze_project
         src_dir = tmp_path / "src"
@@ -560,9 +560,9 @@ class TestLargeFile:
         categories = {s.category for s in result.suggestions}
         assert "large-file" not in categories
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py \
-    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_arch.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_large_py_src_still_flagged(self, tmp_path):
         # T-0372: real source (has a tree-sitter grammar) must never be
         # exempted by this data-file skip.
@@ -675,9 +675,9 @@ class TestAbstractionOpportunityDiscriminators:
         categories = {s.category for s in result.suggestions}
         assert "abstraction-opportunity" not in categories
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py \
-    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_arch.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_generic_signature_near_duplicate_bodies_still_flagged(self, tmp_path):
         # frob:tests src/frob/arch/_python.py::_check_abstraction_opportunities
         # frob:tests src/frob/arch/_python.py::_near_duplicate_cluster
@@ -737,9 +737,9 @@ class TestAbstractionOpportunityDiscriminators:
         assert "run_stamp" in msg
         assert "run_sweep" in msg
 
-    # frob:waive DUP001 reason="parallel test methods within test_arch.py \
-    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_arch.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_specific_signature_genuine_family_still_flagged(self, tmp_path):
         # frob:tests src/frob/arch/_python.py::_signature_is_specific
         # frob:tests src/frob/arch/_python.py::_check_abstraction_opportunities

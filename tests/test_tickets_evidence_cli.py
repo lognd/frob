@@ -30,9 +30,9 @@ from frob.testing._models import CollectedTests
 from frob.tickets import TicketState, load_queue
 
 
-# frob:waive DUP001 reason="parallel test fixtures across 2 sibling test \
-# file(s) (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-# per-case/per-scenario coverage; extracting would obscure per-case intent"
+# frob:waive DUP001 reason="parallel test fixtures across 2 sibling test file(s) (2 \
+# sites) sharing an arrange-act scaffold typical of exhaustive per-case/per-scenario \
+# coverage; extracting would obscure per-case intent"
 def _patch_collect(monkeypatch: pytest.MonkeyPatch, node_ids: frozenset[str]) -> None:
     """Make `frob.testing.collect_python_tests` return `node_ids` without
     spawning pytest, so CLI evidence-routing tests stay hermetic."""

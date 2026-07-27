@@ -15,27 +15,24 @@ comment conventions) lives in `_extract.py`'s per-language walkers or
 `_walk_strata.py`; everything else (models, dispatch, hashing, the Result
 boundary) lives here.
 """
-# frob:waive ARCH102 reason="post-T-0989 split, the remaining cluster \
-# count is a real blind spot in the naming/usage heuristic, not real \
-# fragmentation: this module's exports fall into two groups, each \
-# cohesive around a shared resource the clustering pass cannot see \
-# because it only tracks name prefixes and direct calls. (1) \
+# frob:waive ARCH102 reason="post-T-0989 split, the remaining cluster count is a real \
+# blind spot in the naming/usage heuristic, not real fragmentation: this module's \
+# exports fall into two groups, each cohesive around a shared resource the clustering \
+# pass cannot see because it only tracks name prefixes and direct calls. (1) \
 # supported_languages/supported_extensions/language_for_extension/ \
 # tree_sitter_extensions all read the same module-level \
-# _EXTENSION_TABLE/_SUPPORTED_LANGUAGES constants by subscript, never by \
-# calling each other. (2) reset_parse_cache/parse_cache_stats/ \
-# partial_parse_files/parse_file/_parse all read or mutate the same \
-# module-level _parse_cache dict and _parse_cache_hits/ \
-# _parse_cache_misses counters directly, again by shared state rather \
-# than calls -- this is the exact same call-graph blind spot T-0977 \
-# fixed for data-only classes, generalized to shared-mutable-state \
-# modules; splitting the cache-memo functions away from the cache dict \
-# they close over would force the cache into its own tiny module with \
-# no callers but this one. The third group named in the prior waiver \
-# reason (cpp_function_nodes/child_by_field/node_text/ \
-# resolve_local_import) has been extracted to `frob.lang._nodes` and \
-# re-exported here (T-0989); re-measure after this change decided \
-# whether this waiver remains needed at the new, lower cluster count"
+# _EXTENSION_TABLE/_SUPPORTED_LANGUAGES constants by subscript, never by calling each \
+# other. (2) reset_parse_cache/parse_cache_stats/ \
+# partial_parse_files/parse_file/_parse all read or mutate the same module-level \
+# _parse_cache dict and _parse_cache_hits/ _parse_cache_misses counters directly, \
+# again by shared state rather than calls -- this is the exact same call-graph blind \
+# spot T-0977 fixed for data-only classes, generalized to shared-mutable-state \
+# modules; splitting the cache-memo functions away from the cache dict they close over \
+# would force the cache into its own tiny module with no callers but this one. The \
+# third group named in the prior waiver reason \
+# (cpp_function_nodes/child_by_field/node_text/ resolve_local_import) has been \
+# extracted to `frob.lang._nodes` and re-exported here (T-0989); re-measure after this \
+# change decided whether this waiver remains needed at the new, lower cluster count"
 
 from __future__ import annotations
 

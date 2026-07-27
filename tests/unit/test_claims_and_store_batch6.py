@@ -61,7 +61,9 @@ def _one(model: KernelModel, today: dt.date = dt.date(2026, 7, 17)):
 class TestClaimsMalformedAttrs:
     """Malformed `skew=`/`growth=` node/flow attrs (T-0160)."""
 
-    # frob:tests tests/unit/test_claims_and_store_batch6.py::TestClaimsMalformedAttrs.test_malformed_skew_attr_is_ignored
+    # frob:tests \
+    # tests/unit/test_claims_and_store_batch6.py::TestClaimsMalformedAttrs.test_malform\
+    # ed_skew_attr_is_ignored
     def test_malformed_skew_attr_is_ignored(self, caplog) -> None:
         capacity = Capacity(
             service_rate=Quantity(value=10, unit="req/s"), replicas_max=2
@@ -89,7 +91,9 @@ class TestClaimsMalformedAttrs:
         # falls back to unskewed ceiling math (proved: 5/(10*2) = 25%)
         assert result.verdict is Verdict.PROVED
 
-    # frob:tests tests/unit/test_claims_and_store_batch6.py::TestClaimsMalformedAttrs.test_malformed_growth_attr_is_ignored
+    # frob:tests \
+    # tests/unit/test_claims_and_store_batch6.py::TestClaimsMalformedAttrs.test_malform\
+    # ed_growth_attr_is_ignored
     def test_malformed_growth_attr_is_ignored(self, caplog) -> None:
         capacity = Capacity(
             service_rate=Quantity(value=10, unit="req/s"), replicas_max=1
@@ -125,7 +129,9 @@ class TestClaimsMalformedAttrs:
 class TestAssumeReviewDates:
     """`assume` claims' review-date detail branches (malformed/overdue)."""
 
-    # frob:tests tests/unit/test_claims_and_store_batch6.py::TestAssumeReviewDates.test_malformed_review_date_logs_and_notes
+    # frob:tests \
+    # tests/unit/test_claims_and_store_batch6.py::TestAssumeReviewDates.test_malformed_\
+    # review_date_logs_and_notes
     def test_malformed_review_date_logs_and_notes(self, caplog) -> None:
         model = KernelModel(
             nodes=(_node("api"),),
@@ -149,7 +155,9 @@ class TestAssumeReviewDates:
         assert "review date malformed" in result.detail
         assert "malformed review date" in caplog.text
 
-    # frob:tests tests/unit/test_claims_and_store_batch6.py::TestAssumeReviewDates.test_overdue_review_date_is_flagged
+    # frob:tests \
+    # tests/unit/test_claims_and_store_batch6.py::TestAssumeReviewDates.test_overdue_re\
+    # view_date_is_flagged
     def test_overdue_review_date_is_flagged(self, caplog) -> None:
         model = KernelModel(
             nodes=(_node("api"),),
@@ -178,7 +186,9 @@ class TestBoundClaimEdgeCases:
     """AGE/RATE/UTILIZATION unknown-target, unit-mismatch, and zero-ceiling
     refutation branches."""
 
-    # frob:tests tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_age_unknown_target_fails_closed
+    # frob:tests \
+    # tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_age_unkn\
+    # own_target_fails_closed
     def test_age_unknown_target_fails_closed(self) -> None:
         model = KernelModel(
             nodes=(_node("api"),),
@@ -197,7 +207,9 @@ class TestBoundClaimEdgeCases:
         assert outcome.is_err
         assert outcome.danger_err is StrataError.UnknownReference
 
-    # frob:tests tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_rate_unknown_target_fails_closed
+    # frob:tests \
+    # tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_rate_unk\
+    # nown_target_fails_closed
     def test_rate_unknown_target_fails_closed(self) -> None:
         model = KernelModel(
             nodes=(_node("api"),),
@@ -216,7 +228,9 @@ class TestBoundClaimEdgeCases:
         assert outcome.is_err
         assert outcome.danger_err is StrataError.UnknownReference
 
-    # frob:tests tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_utilization_wrong_dimension_limit_errors
+    # frob:tests \
+    # tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_utilizat\
+    # ion_wrong_dimension_limit_errors
     def test_utilization_wrong_dimension_limit_errors(self) -> None:
         capacity = Capacity(
             service_rate=Quantity(value=10, unit="req/s"), replicas_max=1
@@ -238,7 +252,9 @@ class TestBoundClaimEdgeCases:
         assert outcome.is_err
         assert outcome.danger_err is StrataError.UnitMismatch
 
-    # frob:tests tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_utilization_zero_ceiling_refutes
+    # frob:tests \
+    # tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_utilizat\
+    # ion_zero_ceiling_refutes
     def test_utilization_zero_ceiling_refutes(self) -> None:
         capacity = Capacity(
             service_rate=Quantity(value=0, unit="req/s"), replicas_max=1
@@ -261,7 +277,9 @@ class TestBoundClaimEdgeCases:
         assert result.verdict is Verdict.REFUTED
         assert "zero service ceiling" in result.detail
 
-    # frob:tests tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_utilization_skewed_zero_ceiling_refutes
+    # frob:tests \
+    # tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_utilizat\
+    # ion_skewed_zero_ceiling_refutes
     def test_utilization_skewed_zero_ceiling_refutes(self) -> None:
         capacity = Capacity(
             service_rate=Quantity(value=0, unit="req/s"), replicas_max=2
@@ -287,7 +305,9 @@ class TestBoundClaimEdgeCases:
         assert result.verdict is Verdict.REFUTED
         assert "zero service ceiling" in result.detail
 
-    # frob:tests tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_latency_unknown_flow_fails_closed
+    # frob:tests \
+    # tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_latency_\
+    # unknown_flow_fails_closed
     def test_latency_unknown_flow_fails_closed(self) -> None:
         model = KernelModel(
             nodes=(_node("api"),),
@@ -332,7 +352,9 @@ class TestBoundClaimEdgeCases:
         assert outcome.is_err
         assert outcome.danger_err is StrataError.UnsupportedMetric
 
-    # frob:tests tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_size_no_declared_size_refutes
+    # frob:tests \
+    # tests/unit/test_claims_and_store_batch6.py::TestBoundClaimEdgeCases.test_size_no_\
+    # declared_size_refutes
     def test_size_no_declared_size_refutes(self) -> None:
         model = KernelModel(
             nodes=(_node("a"), _node("b")),
@@ -367,7 +389,9 @@ class TestTicketStoreParsing:
             body="body text",
         )
 
-    # frob:tests tests/unit/test_claims_and_store_batch6.py::TestTicketStoreParsing.test_parse_ticket_file_no_frontmatter_block
+    # frob:tests \
+    # tests/unit/test_claims_and_store_batch6.py::TestTicketStoreParsing.test_parse_tic\
+    # ket_file_no_frontmatter_block
     def test_parse_ticket_file_no_frontmatter_block(self, tmp_path: Path) -> None:
         path = tmp_path / "T-0001-x.md"
         path.write_text("no frontmatter here at all\n", encoding="utf-8")
@@ -375,7 +399,9 @@ class TestTicketStoreParsing:
         assert result.is_err
         assert result.danger_err is TicketError.MalformedFrontmatter
 
-    # frob:tests tests/unit/test_claims_and_store_batch6.py::TestTicketStoreParsing.test_parse_ticket_file_bad_yaml
+    # frob:tests \
+    # tests/unit/test_claims_and_store_batch6.py::TestTicketStoreParsing.test_parse_tic\
+    # ket_file_bad_yaml
     def test_parse_ticket_file_bad_yaml(self, tmp_path: Path) -> None:
         path = tmp_path / "T-0001-x.md"
         path.write_text("---\n[unterminated: [flow\n---\nbody\n", encoding="utf-8")
@@ -383,7 +409,9 @@ class TestTicketStoreParsing:
         assert result.is_err
         assert result.danger_err is TicketError.MalformedFrontmatter
 
-    # frob:tests tests/unit/test_claims_and_store_batch6.py::TestTicketStoreParsing.test_parse_ticket_file_roundtrips_valid
+    # frob:tests \
+    # tests/unit/test_claims_and_store_batch6.py::TestTicketStoreParsing.test_parse_tic\
+    # ket_file_roundtrips_valid
     def test_parse_ticket_file_roundtrips_valid(self, tmp_path: Path) -> None:
         ticket = self._base_ticket()
         path = tmp_path / "T-0001-x.md"
@@ -408,7 +436,9 @@ class TestTicketStoreWriteAndMigrate:
             body="body text",
         )
 
-    # frob:tests tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate.test_write_ticket_single_mode_existing_load_error_propagates
+    # frob:tests \
+    # tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate.test_w\
+    # rite_ticket_single_mode_existing_load_error_propagates
     def test_write_ticket_single_mode_existing_load_error_propagates(
         self, tmp_path: Path
     ) -> None:
@@ -421,7 +451,9 @@ class TestTicketStoreWriteAndMigrate:
         assert result.is_err
         assert result.danger_err is TicketError.MalformedFrontmatter
 
-    # frob:tests tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate.test_write_all_dir_mode_prunes_stale_files
+    # frob:tests \
+    # tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate.test_w\
+    # rite_all_dir_mode_prunes_stale_files
     def test_write_all_dir_mode_prunes_stale_files(self, tmp_path: Path) -> None:
         # Dir-mode is selected by the absence of a single-file tickets.md
         # plus at least one tickets/*.md file already present.
@@ -437,13 +469,17 @@ class TestTicketStoreWriteAndMigrate:
         assert not stale.exists()
         assert any(tickets_dir.glob("T-0001-*.md"))
 
-    # frob:tests tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate.test_migrate_to_ledger_empty_is_noop
+    # frob:tests \
+    # tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate.test_m\
+    # igrate_to_ledger_empty_is_noop
     def test_migrate_to_ledger_empty_is_noop(self, tmp_path: Path) -> None:
         result = migrate_to_ledger(tmp_path)
         assert result.is_ok
         assert result.danger_ok == 0
 
-    # frob:tests tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate.test_migrate_to_ledger_malformed_file_fails_closed
+    # frob:tests \
+    # tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate.test_m\
+    # igrate_to_ledger_malformed_file_fails_closed
     def test_migrate_to_ledger_malformed_file_fails_closed(
         self, tmp_path: Path
     ) -> None:
@@ -454,7 +490,9 @@ class TestTicketStoreWriteAndMigrate:
         assert result.is_err
         assert result.danger_err is TicketError.MalformedFrontmatter
 
-    # frob:tests tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate.test_migrate_to_ledger_moves_dir_files_into_ledger
+    # frob:tests \
+    # tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate.test_m\
+    # igrate_to_ledger_moves_dir_files_into_ledger
     def test_migrate_to_ledger_moves_dir_files_into_ledger(
         self, tmp_path: Path
     ) -> None:
@@ -469,7 +507,9 @@ class TestTicketStoreWriteAndMigrate:
         assert not (tickets_dir / "T-0001-a.md").exists()
         assert (tmp_path / "tickets.md").exists()
 
-    # frob:tests tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate.test_atomic_write_oserror_returns_write_failed
+    # frob:tests \
+    # tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate.test_a\
+    # tomic_write_oserror_returns_write_failed
     def test_atomic_write_oserror_returns_write_failed(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

@@ -23,7 +23,8 @@ def _write(root: Path, rel: str, source: str) -> None:
 
 
 class TestMissingSlo:
-    # frob:tests tests/unit/strata/test_slo.py::TestMissingSlo.test_service_node_without_slo_fires
+    # frob:tests \
+    # tests/unit/strata/test_slo.py::TestMissingSlo.test_service_node_without_slo_fires
     def test_service_node_without_slo_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(Node(id="checkout_svc", trust="trusted", attrs=("service",)),),
@@ -33,7 +34,9 @@ class TestMissingSlo:
         missing = [v for v in result.danger_ok.violations if v.rule == REL_MISSING_SLO]
         assert {v.node for v in missing} == {"checkout_svc"}
 
-    # frob:tests tests/unit/strata/test_slo.py::TestMissingSlo.test_only_slo_or_only_error_budget_still_fires
+    # frob:tests \
+    # tests/unit/strata/test_slo.py::TestMissingSlo.test_only_slo_or_only_error_budget_\
+    # still_fires
     def test_only_slo_or_only_error_budget_still_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -48,7 +51,9 @@ class TestMissingSlo:
         }
         assert missing == {"half_a", "half_b"}
 
-    # frob:tests tests/unit/strata/test_slo.py::TestMissingSlo.test_discharged_and_non_service_nodes_clean
+    # frob:tests \
+    # tests/unit/strata/test_slo.py::TestMissingSlo.test_discharged_and_non_service_nod\
+    # es_clean
     def test_discharged_and_non_service_nodes_clean(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -64,7 +69,8 @@ class TestMissingSlo:
         assert result.is_ok
         assert not [v for v in result.danger_ok.violations if v.rule == REL_MISSING_SLO]
 
-    # frob:tests tests/unit/strata/test_slo.py::TestMissingSlo.test_waiver_discharges_finding
+    # frob:tests \
+    # tests/unit/strata/test_slo.py::TestMissingSlo.test_waiver_discharges_finding
     def test_waiver_discharges_finding(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -91,7 +97,9 @@ class TestMissingSlo:
 
 
 class TestUnprovenSlo:
-    # frob:tests tests/unit/strata/test_slo.py::TestUnprovenSlo.test_declared_with_no_code_evidence_fires
+    # frob:tests \
+    # tests/unit/strata/test_slo.py::TestUnprovenSlo.test_declared_with_no_code_evidenc\
+    # e_fires
     def test_declared_with_no_code_evidence_fires(self, tmp_path: Path):
         _write(tmp_path, "src/widget/_io.py", "def handle():\n    return ok()\n")
         model = KernelModel(
@@ -110,7 +118,9 @@ class TestUnprovenSlo:
         ]
         assert {v.node for v in violations} == {"checkout_svc"}
 
-    # frob:tests tests/unit/strata/test_slo.py::TestUnprovenSlo.test_declared_with_real_code_evidence_discharges
+    # frob:tests \
+    # tests/unit/strata/test_slo.py::TestUnprovenSlo.test_declared_with_real_code_evide\
+    # nce_discharges
     def test_declared_with_real_code_evidence_discharges(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -132,7 +142,9 @@ class TestUnprovenSlo:
             v for v in result.danger_ok.violations if v.rule == REL_UNPROVEN_SLO
         ]
 
-    # frob:tests tests/unit/strata/test_slo.py::TestUnprovenSlo.test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+    # frob:tests \
+    # tests/unit/strata/test_slo.py::TestUnprovenSlo.test_declared_with_no_bound_code_i\
+    # s_uncheckable_not_a_violation
     def test_declared_with_no_bound_code_is_uncheckable_not_a_violation(
         self, tmp_path: Path
     ):

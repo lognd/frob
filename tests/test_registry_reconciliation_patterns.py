@@ -39,9 +39,15 @@ def _real_queue() -> TicketQueue:
 
 
 # frob:ticket T-0385
-# frob:tests tests/test_registry_reconciliation_patterns.py::TestPatternsRegistryFile.test_is_in_registry_files
-# frob:tests tests/test_registry_reconciliation_patterns.py::TestPatternsRegistryFile.test_loads_without_error
-# frob:tests tests/test_registry_reconciliation_patterns.py::TestPatternsRegistryFile.test_no_malformed_entries
+# frob:tests \
+# tests/test_registry_reconciliation_patterns.py::TestPatternsRegistryFile.test_is_in_r\
+# egistry_files
+# frob:tests \
+# tests/test_registry_reconciliation_patterns.py::TestPatternsRegistryFile.test_loads_w\
+# ithout_error
+# frob:tests \
+# tests/test_registry_reconciliation_patterns.py::TestPatternsRegistryFile.test_no_malf\
+# ormed_entries
 class TestPatternsRegistryFile:
     """`patterns.yaml` loads and is a real `RegistryFile` instance."""
 
@@ -72,9 +78,15 @@ class TestPatternsRegistryFile:
 
 
 # frob:ticket T-0385
-# frob:tests tests/test_registry_reconciliation_patterns.py::TestPatternsExhaustiveness.test_declared_total_is_346
-# frob:tests tests/test_registry_reconciliation_patterns.py::TestPatternsExhaustiveness.test_audit_reports_exhausted
-# frob:tests tests/test_registry_reconciliation_patterns.py::TestPatternsExhaustiveness.test_every_deferred_entry_targets_an_open_ticket
+# frob:tests \
+# tests/test_registry_reconciliation_patterns.py::TestPatternsExhaustiveness.test_decla\
+# red_total_is_346
+# frob:tests \
+# tests/test_registry_reconciliation_patterns.py::TestPatternsExhaustiveness.test_audit\
+# _reports_exhausted
+# frob:tests \
+# tests/test_registry_reconciliation_patterns.py::TestPatternsExhaustiveness.test_every\
+# _deferred_entry_targets_an_open_ticket
 class TestPatternsExhaustiveness:
     """The T-0385 acceptance criterion: catalogued count == enforced +
     excused + deferred, pinned against the file's own declared 346-entry
@@ -142,7 +154,9 @@ class TestPatternsExhaustiveness:
 
 
 # frob:ticket T-0385
-# frob:tests tests/test_registry_reconciliation_patterns.py::TestExhaustivenessGateOverRealPatterns.test_no_patterns_violations
+# frob:tests \
+# tests/test_registry_reconciliation_patterns.py::TestExhaustivenessGateOverRealPattern\
+# s.test_no_patterns_violations
 class TestExhaustivenessGateOverRealPatterns:
     """`registry_gate` over the real registry dir raises zero violations
     for `patterns.yaml` specifically -- wired into `frob check` (the

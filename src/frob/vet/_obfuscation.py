@@ -203,9 +203,9 @@ def _shannon_entropy(s: str) -> float:
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive COV007 reason="docs/modules/vet.md's Public API section \
-# individually frob:describes this private helper by name (T-0529) -- a \
-# deliberate architecture doc, not accidental drift onto a private helper"
+# frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
+# frob:describes this private helper by name (T-0529) -- a deliberate architecture \
+# doc, not accidental drift onto a private helper"
 def _high_entropy_strings(text: str) -> tuple[str, ...]:
     """String literals whose Shannon entropy exceeds the baseline -- likely
     base64/hex/packed payloads rather than legitimate code strings. O(len(text))
@@ -224,9 +224,9 @@ def _high_entropy_strings(text: str) -> tuple[str, ...]:
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive COV007 reason="docs/modules/vet.md's Public API section \
-# individually frob:describes this private helper by name (T-0529) -- a \
-# deliberate architecture doc, not accidental drift onto a private helper"
+# frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
+# frob:describes this private helper by name (T-0529) -- a deliberate architecture \
+# doc, not accidental drift onto a private helper"
 # frob:waive TEST005 reason="_invisible_text_signal 85.7% branch cover, debt T-0160"
 def _invisible_text_signal(text: str) -> bool:
     """True if `text` contains a Unicode bidi override, zero-width character,
@@ -243,9 +243,9 @@ def _invisible_text_signal(text: str) -> bool:
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive COV007 reason="docs/modules/vet.md's Public API section \
-# individually frob:describes this private helper by name (T-0529) -- a \
-# deliberate architecture doc, not accidental drift onto a private helper"
+# frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
+# frob:describes this private helper by name (T-0529) -- a deliberate architecture \
+# doc, not accidental drift onto a private helper"
 def _hex_identifier_ratio_signal(text: str) -> bool:
     """True if `_0x...`-style identifiers (obfuscator.io's default rename
     scheme) dominate the identifier population."""
@@ -261,9 +261,9 @@ def _hex_identifier_ratio_signal(text: str) -> bool:
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive COV007 reason="docs/modules/vet.md's Public API section \
-# individually frob:describes this private helper by name (T-0529) -- a \
-# deliberate architecture doc, not accidental drift onto a private helper"
+# frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
+# frob:describes this private helper by name (T-0529) -- a deliberate architecture \
+# doc, not accidental drift onto a private helper"
 # frob:waive TEST005 reason="_scan_text_obfuscation 85.7% branch cover, debt T-0160"
 def _scan_text_obfuscation(text: str) -> tuple[str, ...]:
     """All obfuscation signal names present in `text` (empty = clean)."""
@@ -278,9 +278,9 @@ def _scan_text_obfuscation(text: str) -> tuple[str, ...]:
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive COV007 reason="docs/modules/vet.md's Public API section \
-# individually frob:describes this private helper by name (T-0529) -- a \
-# deliberate architecture doc, not accidental drift onto a private helper"
+# frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
+# frob:describes this private helper by name (T-0529) -- a deliberate architecture \
+# doc, not accidental drift onto a private helper"
 def _scan_directory_obfuscation(
     source_dir: Path, *, max_files: int = 500
 ) -> tuple[str, ...]:

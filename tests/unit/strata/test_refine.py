@@ -113,9 +113,8 @@ class TestRefineHappyPath:
 
 class TestRefineViolations:
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
-    # frob:waive DUP001 reason="exhaustive per-refinement-kind case table \
-    # sharing an arrange-act scaffold; extracting would obscure per-case \
-    # intent"
+    # frob:waive DUP001 reason="exhaustive per-refinement-kind case table sharing an \
+    # arrange-act scaffold; extracting would obscure per-case intent"
     def test_refine_of_non_abstract_node_fails(self):
         text = """
         module m
@@ -130,9 +129,8 @@ class TestRefineViolations:
         assert result.danger_err is StrataError.RefinementViolation
 
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
-    # frob:waive DUP001 reason="exhaustive per-refinement-kind case table \
-    # sharing an arrange-act scaffold; extracting would obscure per-case \
-    # intent"
+    # frob:waive DUP001 reason="exhaustive per-refinement-kind case table sharing an \
+    # arrange-act scaffold; extracting would obscure per-case intent"
     def test_refine_of_unknown_target_fails(self):
         text = """
         module m
@@ -147,9 +145,8 @@ class TestRefineViolations:
         assert result.danger_err is StrataError.RefinementViolation
 
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
-    # frob:waive DUP001 reason="exhaustive per-refinement-kind case table \
-    # sharing an arrange-act scaffold; extracting would obscure per-case \
-    # intent"
+    # frob:waive DUP001 reason="exhaustive per-refinement-kind case table sharing an \
+    # arrange-act scaffold; extracting would obscure per-case intent"
     def test_inner_flow_touching_outer_id_fails_new_external_surface(self):
         text = """
         module m
@@ -166,9 +163,8 @@ class TestRefineViolations:
         assert result.danger_err is StrataError.RefinementViolation
 
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
-    # frob:waive DUP001 reason="exhaustive per-refinement-kind case table \
-    # sharing an arrange-act scaffold; extracting would obscure per-case \
-    # intent"
+    # frob:waive DUP001 reason="exhaustive per-refinement-kind case table sharing an \
+    # arrange-act scaffold; extracting would obscure per-case intent"
     def test_foreign_inner_node_under_trusted_abstract_fails_trust_laundering(self):
         text = """
         module m
@@ -183,9 +179,8 @@ class TestRefineViolations:
         assert result.danger_err is StrataError.RefinementViolation
 
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
-    # frob:waive DUP001 reason="exhaustive per-refinement-kind case table \
-    # sharing an arrange-act scaffold; extracting would obscure per-case \
-    # intent"
+    # frob:waive DUP001 reason="exhaustive per-refinement-kind case table sharing an \
+    # arrange-act scaffold; extracting would obscure per-case intent"
     def test_bind_to_not_an_inner_node_fails(self):
         text = """
         module m
@@ -202,9 +197,8 @@ class TestRefineViolations:
 
 class TestUnrefinedFrontier:
     # frob:tests src/frob/strata/_elaborate.py::elaborate kind="unit"
-    # frob:waive DUP001 reason="exhaustive per-refinement-kind case table \
-    # sharing an arrange-act scaffold; extracting would obscure per-case \
-    # intent"
+    # frob:waive DUP001 reason="exhaustive per-refinement-kind case table sharing an \
+    # arrange-act scaffold; extracting would obscure per-case intent"
     def test_unrefined_abstract_node_keeps_marker(self):
         text = """
         module m

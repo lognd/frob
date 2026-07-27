@@ -71,10 +71,9 @@ class TestExtractEffects:
 
 class TestCheckCapabilityConformance:
     # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within \
-    # test_effects.py (2 sites) sharing an arrange-act scaffold typical of \
-    # exhaustive per-case coverage; extracting would obscure per-case \
-    # intent"
+    # frob:waive DUP001 reason="parallel test methods within test_effects.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_declared_may_capability_silences_matching_effect(self, tmp_path: Path):
         _write(tmp_path, "api/handler.py", "requests.get('https://stripe.com')\n")
         model = KernelModel(
@@ -134,10 +133,9 @@ class TestCheckCapabilityConformance:
         assert report.violations == ()
 
     # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within \
-    # test_effects.py (2 sites) sharing an arrange-act scaffold typical of \
-    # exhaustive per-case coverage; extracting would obscure per-case \
-    # intent"
+    # frob:waive DUP001 reason="parallel test methods within test_effects.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_fs_write_effect_needs_fs_kind_declaration(self, tmp_path: Path):
         _write(tmp_path, "api/handler.py", "open('f').write('x')\n")
         model = KernelModel(
@@ -209,7 +207,8 @@ class TestLegacyCapabilityAliases:
     aliases of `fs.write`/`fs.read` -- they keep working (WARN) inside
     their sunset window and become gate errors past it."""
 
-    # frob:tests src/frob/strata/_effects.py::check_legacy_capability_aliases kind="unit"
+    # frob:tests src/frob/strata/_effects.py::check_legacy_capability_aliases \
+    # kind="unit"
     def test_legacy_alias_in_window_is_a_warning_not_an_error(self):
         model = KernelModel(
             nodes=(Node(id="widget", trust="trusted", may=("fs-write",)),)
@@ -219,7 +218,8 @@ class TestLegacyCapabilityAliases:
         assert finding.target == "fs.write"
         assert finding.is_error is False
 
-    # frob:tests src/frob/strata/_effects.py::check_legacy_capability_aliases kind="unit"
+    # frob:tests src/frob/strata/_effects.py::check_legacy_capability_aliases \
+    # kind="unit"
     def test_legacy_alias_past_sunset_is_an_error(self):
         model = KernelModel(
             nodes=(Node(id="widget", trust="trusted", may=("fs-read",)),)
@@ -228,7 +228,8 @@ class TestLegacyCapabilityAliases:
         assert finding.target == "fs.read"
         assert finding.is_error is True
 
-    # frob:tests src/frob/strata/_effects.py::check_legacy_capability_aliases kind="unit"
+    # frob:tests src/frob/strata/_effects.py::check_legacy_capability_aliases \
+    # kind="unit"
     def test_non_legacy_declaration_is_not_flagged(self):
         model = KernelModel(
             nodes=(Node(id="widget", trust="trusted", may=("fs.read", "net")),)

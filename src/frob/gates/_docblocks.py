@@ -1001,34 +1001,43 @@ def _tracked_md_files(root: Path) -> tuple[str, ...]:
 
 
 # frob:doc docs/modules/gates.md#doc004-unbound-stale-doc-code-blocks-t-0436
-# frob:tests tests/test_docblocks_gate.py::TestPythonNamespace.\
-# test_python_import_of_nonexistent_symbol_is_stale
-# frob:tests tests/test_docblocks_gate.py::TestPythonNamespace.\
-# test_anchored_block_passes
-# frob:tests tests/test_docblocks_gate.py::TestPythonNamespace.\
-# test_unanchored_but_valid_import_warns_unbound
-# frob:tests tests/test_docblocks_gate.py::TestPythonNamespace.\
-# test_waive_doc004_suppresses
-# frob:tests tests/test_docblocks_gate.py::TestPythonNamespace.\
-# test_generic_external_shell_block_not_flagged
-# frob:tests tests/test_docblocks_gate.py::TestPythonNamespace.\
-# test_package_name_differs_from_directory_name
-# frob:tests tests/test_docblocks_gate.py::TestRustNamespace.\
-# test_rust_use_of_missing_item_is_stale
-# frob:tests tests/test_docblocks_gate.py::TestRustNamespace.\
-# test_rust_use_of_real_item_passes_or_warns_never_stale
-# frob:tests tests/test_docblocks_gate.py::TestRustNamespace.\
-# test_external_crate_use_not_flagged
-# frob:tests tests/test_gates.py::TestDoc004ConsoleCommandDrift.\
-# test_nonexistent_subcommand_is_stale
-# frob:tests tests/test_gates.py::TestDoc004ConsoleCommandDrift.\
-# test_real_subcommand_anchored_passes
-# frob:tests tests/test_gates.py::TestDoc004ConsoleCommandDrift.\
-# test_real_subcommand_unanchored_warns_unbound
-# frob:tests tests/test_gates.py::TestDoc004ConsoleCommandDrift.\
-# test_waive_suppresses_console_stale
-# frob:tests tests/test_gates.py::TestDoc004ConsoleCommandDrift.\
-# test_no_config_means_no_console_checking
+# frob:tests \
+# tests/test_docblocks_gate.py::TestPythonNamespace.test_python_import_of_nonexistent_s\
+# ymbol_is_stale
+# frob:tests \
+# tests/test_docblocks_gate.py::TestPythonNamespace.test_anchored_block_passes
+# frob:tests \
+# tests/test_docblocks_gate.py::TestPythonNamespace.test_unanchored_but_valid_import_wa\
+# rns_unbound
+# frob:tests \
+# tests/test_docblocks_gate.py::TestPythonNamespace.test_waive_doc004_suppresses
+# frob:tests \
+# tests/test_docblocks_gate.py::TestPythonNamespace.test_generic_external_shell_block_n\
+# ot_flagged
+# frob:tests \
+# tests/test_docblocks_gate.py::TestPythonNamespace.test_package_name_differs_from_dire\
+# ctory_name
+# frob:tests \
+# tests/test_docblocks_gate.py::TestRustNamespace.test_rust_use_of_missing_item_is_stale
+# frob:tests \
+# tests/test_docblocks_gate.py::TestRustNamespace.test_rust_use_of_real_item_passes_or_\
+# warns_never_stale
+# frob:tests \
+# tests/test_docblocks_gate.py::TestRustNamespace.test_external_crate_use_not_flagged
+# frob:tests \
+# tests/test_gates.py::TestDoc004ConsoleCommandDrift.test_nonexistent_subcommand_is_sta\
+# le
+# frob:tests \
+# tests/test_gates.py::TestDoc004ConsoleCommandDrift.test_real_subcommand_anchored_pass\
+# es
+# frob:tests \
+# tests/test_gates.py::TestDoc004ConsoleCommandDrift.test_real_subcommand_unanchored_wa\
+# rns_unbound
+# frob:tests \
+# tests/test_gates.py::TestDoc004ConsoleCommandDrift.test_waive_suppresses_console_stale
+# frob:tests \
+# tests/test_gates.py::TestDoc004ConsoleCommandDrift.test_no_config_means_no_console_ch\
+# ecking
 def doc004_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DOC004: scan every tracked `.md` doc's fenced code blocks for
     references to THIS PROJECT's own code surface (manifest-derived
@@ -1139,18 +1148,24 @@ def _doc005_violation(doc_path: str, line: int, message: str) -> Violation:
 
 
 # frob:doc docs/modules/gates.md#doc005-readme-command-table-drift-lock-t-0435
-# frob:tests tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.\
-# test_missing_row_for_real_command_fails
-# frob:tests tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.\
-# test_stale_row_for_removed_command_fails
-# frob:tests tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.\
-# test_fully_covered_table_passes
-# frob:tests tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.\
-# test_count_claim_mismatch_fails
-# frob:tests tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.\
-# test_count_claim_matching_passes
-# frob:tests tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.\
-# test_no_config_means_no_readme_checking
+# frob:tests \
+# tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.test_missing_row_for_real_co\
+# mmand_fails
+# frob:tests \
+# tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.test_stale_row_for_removed_c\
+# ommand_fails
+# frob:tests \
+# tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.test_fully_covered_table_pas\
+# ses
+# frob:tests \
+# tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.test_count_claim_mismatch_fa\
+# ils
+# frob:tests \
+# tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.test_count_claim_matching_pa\
+# sses
+# frob:tests \
+# tests/test_docblocks_gate.py::TestDoc005ReadmeTableDrift.test_no_config_means_no_read\
+# me_checking
 def doc005_gate(root: Path) -> tuple[Violation, ...]:
     """DOC005 (T-0435): bind `README.md`'s command table (and any "N
     commands" count claim) to the LIVE top-level subcommand registry --

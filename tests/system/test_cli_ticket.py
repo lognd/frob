@@ -228,7 +228,9 @@ class TestTicketNewNonInteractive:
 
 class TestTicketAttachNonInteractive:
     def test_attach_without_path_fails_fast_off_tty(self, tmp_path):
-        # frob:tests tests/system/test_cli_ticket.py::TestTicketAttachNonInteractive.test_attach_without_path_fails_fast_off_tty
+        # frob:tests \
+        # tests/system/test_cli_ticket.py::TestTicketAttachNonInteractive.test_attach_w\
+        # ithout_path_fails_fast_off_tty
         _init_repo(tmp_path)
         new = run(
             "ticket",

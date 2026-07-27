@@ -165,9 +165,9 @@ def _resolve_design_root(cfg: AppConfig, command: str) -> Path:
     return root
 
 
-# frob:waive DUP001 reason="documented precedent duplication (own \
-# docstring): a two-line frob.toml read, deliberately not worth a \
-# cross-module import; frob.app.deploy_runner carries the same waiver"
+# frob:waive DUP001 reason="documented precedent duplication (own docstring): a \
+# two-line frob.toml read, deliberately not worth a cross-module import; \
+# frob.app.deploy_runner carries the same waiver"
 def _design_dir(root: Path) -> str:
     """`[strata].design_dir` from frob.toml, defaulting to `DEFAULT_DESIGN_DIR`
     (duplicated from `frob.gates`'s identical helper -- T-0084 scope excludes

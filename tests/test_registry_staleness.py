@@ -33,7 +33,9 @@ def _write_fixture(tmp_path: Path) -> Path:
 
 # frob:ticket T-0560
 class TestMissingGateRuleIds:
-    # frob:tests tests/test_registry_staleness.py::TestMissingGateRuleIds.test_finds_rules_with_no_entry
+    # frob:tests \
+    # tests/test_registry_staleness.py::TestMissingGateRuleIds.test_finds_rules_with_no\
+    # _entry
     # frob:ticket T-0560
     def test_finds_rules_with_no_entry(self, tmp_path: Path) -> None:
         path = _write_fixture(tmp_path)
@@ -54,7 +56,9 @@ class TestMissingGateRuleIds:
 
 # frob:ticket T-0560
 class TestSyncGateRuleEntries:
-    # frob:tests tests/test_registry_staleness.py::TestSyncGateRuleEntries.test_appends_every_missing_rule
+    # frob:tests \
+    # tests/test_registry_staleness.py::TestSyncGateRuleEntries.test_appends_every_miss\
+    # ing_rule
     # frob:ticket T-0560
     def test_appends_every_missing_rule(self, tmp_path: Path) -> None:
         path = _write_fixture(tmp_path)
@@ -88,7 +92,9 @@ class TestSyncGateRuleEntries:
 
 # frob:ticket T-0560
 class TestReg010Gate:
-    # frob:tests tests/test_registry_staleness.py::TestReg010Gate.test_missing_gate_rule_entry_warns
+    # frob:tests \
+    # tests/test_registry_staleness.py::TestReg010Gate.test_missing_gate_rule_entry_war\
+    # ns
     # frob:ticket T-0560
     def test_missing_gate_rule_entry_warns(self, tmp_path: Path) -> None:
         registry_dir = tmp_path / "docs" / "design" / "registry"

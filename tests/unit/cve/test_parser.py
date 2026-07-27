@@ -28,7 +28,8 @@ def test_fixtures_are_ascii_and_escaped_unicode_round_trips() -> None:
         )
 
     record = parse_record(_FIXTURES / "CVE-2024-4681.json").danger_ok
-    # frob:waive PERF003 reason="one next() lookup over one record's small descriptions[] list, not a nested join"
+    # frob:waive PERF003 reason="one next() lookup over one record's small \
+    # descriptions[] list, not a nested join"
     german = next(d.value for d in record.containers.cna.descriptions if d.lang == "de")
     assert german.startswith(
         "Es wurde eine Schwachstelle in Campcodes Legal Case Management System"
@@ -50,7 +51,8 @@ def test_parse_log4shell_multi_adp_and_cwe() -> None:
     assert record.cveMetadata.state == CveState.PUBLISHED
     assert len(record.containers.adp) == 2
 
-    # frob:waive PERF003 reason="two flat set/list comprehensions over one record's small nested lists, not a join"
+    # frob:waive PERF003 reason="two flat set/list comprehensions over one record's \
+    # small nested lists, not a join"
     cwe_ids = {
         desc.cweId
         for pt in record.containers.cna.problemTypes
@@ -83,7 +85,8 @@ def test_parse_version_ranges_with_less_than() -> None:
     assert len(affected) == 1
     assert affected[0].vendor == "curl"
     versions = affected[0].versions
-    # frob:waive PERF003 reason="two separate any() assertions over one small versions[] list, not a nested join"
+    # frob:waive PERF003 reason="two separate any() assertions over one small \
+    # versions[] list, not a nested join"
     assert any(
         v.status == "affected" and v.lessThan == "8.4.0" and v.versionType == "semver"
         for v in versions
@@ -167,7 +170,8 @@ def test_iter_mirror_yields_records_and_errors() -> None:
     results = list(iter_mirror(root))
     assert len(results) == 7
 
-    # frob:waive PERF003 reason="one set comprehension plus one dict comprehension over 7 fixture results, not a join"
+    # frob:waive PERF003 reason="one set comprehension plus one dict comprehension \
+    # over 7 fixture results, not a join"
     ok_ids = {r.danger_ok.cveMetadata.cveId for _, r in results if r.is_ok}
     assert ok_ids == {
         "CVE-2021-44228",
@@ -210,7 +214,8 @@ def test_cve_module_end_to_end_over_mirror() -> None:
     records = [r.danger_ok for _, r in iter_mirror(root) if r.is_ok]
     assert len(records) == 5
 
-    # frob:waive PERF003 reason="a walk over 5 fixture records' small nested model graph, not a join"
+    # frob:waive PERF003 reason="a walk over 5 fixture records' small nested model \
+    # graph, not a join"
     for record in records:
         assert record.cveMetadata.cveId.startswith("CVE-")
         assert record.cveMetadata.state in (CveState.PUBLISHED, CveState.REJECTED)

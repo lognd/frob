@@ -99,7 +99,8 @@ class TestGate:
     a direct `scan_text_for_fingerprints` call), against the REAL shipped
     `CVE_FINGERPRINTS` catalog."""
 
-    # frob:tests tests/unit/strata/test_cve_fingerprint_scan.py::TestGate.test_smelly_file_fires
+    # frob:tests \
+    # tests/unit/strata/test_cve_fingerprint_scan.py::TestGate.test_smelly_file_fires
     def test_smelly_file_fires(self, tmp_path: Path):
         repo = _init_git_repo(tmp_path)
         (repo / "smelly.py").write_text(_SMELLY_PYTHON, encoding="utf-8")

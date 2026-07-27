@@ -67,11 +67,11 @@ def _cache_key(cve_id: str) -> str:
 
 
 # frob:waive DUP001 reason="documented deliberate split: same shape as \
-# _registry.py::_cache_get, kept separate since the two caches key \
-# different id spaces and expire on different TTLs (see module docstring)"
-# frob:waive ARCH103 reason="T-0977: sqlite cache-read helper -- open, \
-# query, expiry-check, return-or-None; the expiry decision IS the cache- \
-# read concern this function exists for, not a separate one"
+# _registry.py::_cache_get, kept separate since the two caches key different id spaces \
+# and expire on different TTLs (see module docstring)"
+# frob:waive ARCH103 reason="T-0977: sqlite cache-read helper -- open, query, \
+# expiry-check, return-or-None; the expiry decision IS the cache- read concern this \
+# function exists for, not a separate one"
 def _cache_get(db_path: Path, key: str) -> str | None:
     """Cached JSON body for `key`, or `None` on miss/expiry/unreadable db
     (same shape as `_registry.py::_cache_get`, kept separate since the two
@@ -99,10 +99,9 @@ def _cache_get(db_path: Path, key: str) -> str | None:
     return value
 
 
-# frob:waive DUP001 reason="mirrors _registry.py::_cache_set (same \
-# check-then-apply sqlite write shape as _cache_get above); the two \
-# caches are independent artifacts with different TTLs, not worth \
-# forcing into one abstraction"
+# frob:waive DUP001 reason="mirrors _registry.py::_cache_set (same check-then-apply \
+# sqlite write shape as _cache_get above); the two caches are independent artifacts \
+# with different TTLs, not worth forcing into one abstraction"
 def _cache_set(db_path: Path, key: str, value: str) -> None:
     """Best-effort cache write; failures are logged, never raised."""
     try:

@@ -41,9 +41,15 @@ def _real_queue() -> TicketQueue:
 
 
 # frob:ticket T-0387
-# frob:tests tests/test_registry_reconciliation_pii.py::TestPiiRegistryFile.test_is_in_registry_files
-# frob:tests tests/test_registry_reconciliation_pii.py::TestPiiRegistryFile.test_loads_without_error
-# frob:tests tests/test_registry_reconciliation_pii.py::TestPiiRegistryFile.test_no_malformed_entries
+# frob:tests \
+# tests/test_registry_reconciliation_pii.py::TestPiiRegistryFile.test_is_in_registry_fi\
+# les
+# frob:tests \
+# tests/test_registry_reconciliation_pii.py::TestPiiRegistryFile.test_loads_without_err\
+# or
+# frob:tests \
+# tests/test_registry_reconciliation_pii.py::TestPiiRegistryFile.test_no_malformed_entr\
+# ies
 class TestPiiRegistryFile:
     """`pii.yaml` loads and is a real `RegistryFile` instance."""
 
@@ -74,9 +80,15 @@ class TestPiiRegistryFile:
 
 
 # frob:ticket T-0387
-# frob:tests tests/test_registry_reconciliation_pii.py::TestPiiExhaustiveness.test_declared_total_is_7
-# frob:tests tests/test_registry_reconciliation_pii.py::TestPiiExhaustiveness.test_audit_reports_exhausted
-# frob:tests tests/test_registry_reconciliation_pii.py::TestPiiExhaustiveness.test_every_deferred_entry_targets_an_open_ticket
+# frob:tests \
+# tests/test_registry_reconciliation_pii.py::TestPiiExhaustiveness.test_declared_total_\
+# is_7
+# frob:tests \
+# tests/test_registry_reconciliation_pii.py::TestPiiExhaustiveness.test_audit_reports_e\
+# xhausted
+# frob:tests \
+# tests/test_registry_reconciliation_pii.py::TestPiiExhaustiveness.test_every_deferred_\
+# entry_targets_an_open_ticket
 class TestPiiExhaustiveness:
     """The T-0387 acceptance criterion: catalogued count == enforced +
     excused + deferred, pinned against the file's own declared 7-entry
@@ -140,7 +152,9 @@ class TestPiiExhaustiveness:
 
 
 # frob:ticket T-0387
-# frob:tests tests/test_registry_reconciliation_pii.py::TestExhaustivenessGateOverRealPii.test_no_pii_violations
+# frob:tests \
+# tests/test_registry_reconciliation_pii.py::TestExhaustivenessGateOverRealPii.test_no_\
+# pii_violations
 class TestExhaustivenessGateOverRealPii:
     """`registry_gate` over the real registry dir raises zero violations
     for `pii.yaml` specifically -- wired into `frob check` (the default

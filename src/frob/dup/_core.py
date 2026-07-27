@@ -7,10 +7,9 @@ becomes `Err(DupError.CoreUnavailable)`, never a silent downgrade.
 """
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: src/frob/dup/_core.py's \
 # exclusivity-vocabulary hit is source-level design-rationale/scope-cut prose (a \
-# docstring or comment describing already-implemented internal behavior, verifiable \
-# by reading the code it annotates) rather than a separate cross-module contract \
-# needing its own tracked invariant; disposed as a calibration batch, not \
-# claim-by-claim"
+# docstring or comment describing already-implemented internal behavior, verifiable by \
+# reading the code it annotates) rather than a separate cross-module contract needing \
+# its own tracked invariant; disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 
@@ -46,10 +45,9 @@ def core_available() -> bool:
 
 
 # frob:doc docs/modules/dup.md#rust-core
-# frob:waive COV007 reason="docs/modules/dup.md's Rust-core section \
-# individually frob:describes each private frob_core shim by name \
-# (T-0524) -- a deliberate per-function architecture doc, not accidental \
-# doc-anchor drift onto a private helper"
+# frob:waive COV007 reason="docs/modules/dup.md's Rust-core section individually \
+# frob:describes each private frob_core shim by name (T-0524) -- a deliberate \
+# per-function architecture doc, not accidental doc-anchor drift onto a private helper"
 def _r3_canonical_hash(tokens: tuple[str, ...]) -> Result[str, DupError]:
     """R3: canonicalized-AST subtree hash of a normalized token sequence."""
     if not core_available():
@@ -60,10 +58,9 @@ def _r3_canonical_hash(tokens: tuple[str, ...]) -> Result[str, DupError]:
 
 
 # frob:doc docs/modules/dup.md#rust-core
-# frob:waive COV007 reason="docs/modules/dup.md's Rust-core section \
-# individually frob:describes each private frob_core shim by name \
-# (T-0524) -- a deliberate per-function architecture doc, not accidental \
-# doc-anchor drift onto a private helper"
+# frob:waive COV007 reason="docs/modules/dup.md's Rust-core section individually \
+# frob:describes each private frob_core shim by name (T-0524) -- a deliberate \
+# per-function architecture doc, not accidental doc-anchor drift onto a private helper"
 def _winnow_fingerprints(
     tokens: tuple[str, ...], k: int, w: int
 ) -> Result[tuple[int, ...], DupError]:
@@ -76,10 +73,9 @@ def _winnow_fingerprints(
 
 
 # frob:doc docs/modules/dup.md#rust-core
-# frob:waive COV007 reason="docs/modules/dup.md's Rust-core section \
-# individually frob:describes each private frob_core shim by name \
-# (T-0524) -- a deliberate per-function architecture doc, not accidental \
-# doc-anchor drift onto a private helper"
+# frob:waive COV007 reason="docs/modules/dup.md's Rust-core section individually \
+# frob:describes each private frob_core shim by name (T-0524) -- a deliberate \
+# per-function architecture doc, not accidental doc-anchor drift onto a private helper"
 def _candidate_pairs(
     fingerprint_sets: tuple[tuple[int, ...], ...], min_shared: int
 ) -> Result[tuple[tuple[int, int], ...], DupError]:
@@ -93,10 +89,9 @@ def _candidate_pairs(
 
 
 # frob:doc docs/modules/dup.md#rust-core
-# frob:waive COV007 reason="docs/modules/dup.md's Rust-core section \
-# individually frob:describes each private frob_core shim by name \
-# (T-0524) -- a deliberate per-function architecture doc, not accidental \
-# doc-anchor drift onto a private helper"
+# frob:waive COV007 reason="docs/modules/dup.md's Rust-core section individually \
+# frob:describes each private frob_core shim by name (T-0524) -- a deliberate \
+# per-function architecture doc, not accidental doc-anchor drift onto a private helper"
 def _tree_edit_similarity(
     a: tuple[int, ...], b: tuple[int, ...]
 ) -> Result[tuple[float, tuple[tuple[int, int], ...]], DupError]:
@@ -110,10 +105,9 @@ def _tree_edit_similarity(
 
 
 # frob:doc docs/modules/dup.md#rung-r4
-# frob:waive COV007 reason="docs/modules/dup.md's rung-r4 anchor \
-# individually frob:describes this private frob_core shim by name \
-# (T-0524) -- a deliberate per-function architecture doc, not accidental \
-# doc-anchor drift onto a private helper"
+# frob:waive COV007 reason="docs/modules/dup.md's rung-r4 anchor individually \
+# frob:describes this private frob_core shim by name (T-0524) -- a deliberate \
+# per-function architecture doc, not accidental doc-anchor drift onto a private helper"
 def _apted_similarity(
     labels_a: tuple[str, ...],
     parents_a: tuple[int, ...],
@@ -174,10 +168,9 @@ def anti_unify(
 
 
 # frob:doc docs/modules/dup.md#rung-r1-5
-# frob:waive COV007 reason="docs/modules/dup.md's R1.5 section documents \
-# this private frob_core shim's algorithm directly (T-0524) -- a \
-# deliberate architecture doc, not accidental doc-anchor drift onto a \
-# private helper"
+# frob:waive COV007 reason="docs/modules/dup.md's R1.5 section documents this private \
+# frob_core shim's algorithm directly (T-0524) -- a deliberate architecture doc, not \
+# accidental doc-anchor drift onto a private helper"
 def _exact_regions(
     documents: tuple[tuple[str, ...], ...], min_len: int, max_run_size: int = 200
 ) -> Result[tuple[tuple[tuple[int, int, int, int, int], ...], bool], DupError]:
@@ -208,10 +201,9 @@ def _exact_regions(
 
 
 # frob:doc docs/modules/dup.md#rung-r5
-# frob:waive COV007 reason="docs/modules/dup.md's rung-r5 anchor \
-# individually frob:describes this private frob_core shim by name \
-# (T-0524) -- a deliberate per-function architecture doc, not accidental \
-# doc-anchor drift onto a private helper"
+# frob:waive COV007 reason="docs/modules/dup.md's rung-r5 anchor individually \
+# frob:describes this private frob_core shim by name (T-0524) -- a deliberate \
+# per-function architecture doc, not accidental doc-anchor drift onto a private helper"
 def _wl_hash(
     adjacency: tuple[tuple[int, int], ...], labels: tuple[str, ...], iterations: int
 ) -> Result[int, DupError]:

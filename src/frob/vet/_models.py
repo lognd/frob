@@ -123,9 +123,9 @@ class VetConfig(BaseModel):
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive COV007 reason="docs/modules/vet.md's Public API section \
-# individually frob:describes this private enum by name (T-0529) -- a \
-# deliberate architecture doc, not accidental drift onto a private helper"
+# frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
+# frob:describes this private enum by name (T-0529) -- a deliberate architecture doc, \
+# not accidental drift onto a private helper"
 class _HookAction(StrEnum):
     """A parsed --hook command's disposition before any network check."""
 

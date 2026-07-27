@@ -12,9 +12,9 @@ _MAX_DISTANCE = 1
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive COV007 reason="docs/modules/vet.md's Public API section \
-# individually frob:describes this private helper by name (T-0529) -- a \
-# deliberate architecture doc, not accidental drift onto a private helper"
+# frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
+# frob:describes this private helper by name (T-0529) -- a deliberate architecture \
+# doc, not accidental drift onto a private helper"
 def _damerau_levenshtein(a: str, b: str) -> int:
     """Edit distance allowing insert/delete/substitute/transpose (OSA variant)."""
     # frob:waive PERF003 reason="algorithm-inherent edit-distance DP nested scan"
@@ -38,9 +38,9 @@ def _damerau_levenshtein(a: str, b: str) -> int:
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive COV007 reason="docs/modules/vet.md's Public API section \
-# individually frob:describes this private helper by name (T-0529) -- a \
-# deliberate architecture doc, not accidental drift onto a private helper"
+# frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
+# frob:describes this private helper by name (T-0529) -- a deliberate architecture \
+# doc, not accidental drift onto a private helper"
 # frob:waive TEST005 reason="_find_typosquat 85.7% branch cover, debt T-0160"
 def _find_typosquat(ecosystem: str, name: str) -> str | None:
     """The popular-list name `name` is a likely typosquat of, or `None`."""

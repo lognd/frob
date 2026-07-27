@@ -29,9 +29,9 @@ from frob.gates._pii_structural import (
 )
 
 
-# frob:waive DUP001 reason="parallel test fixtures across 3 sibling test \
-# file(s) (3 sites) sharing an arrange-act scaffold typical of exhaustive \
-# per-case/per-scenario coverage; extracting would obscure per-case intent"
+# frob:waive DUP001 reason="parallel test fixtures across 3 sibling test file(s) (3 \
+# sites) sharing an arrange-act scaffold typical of exhaustive per-case/per-scenario \
+# coverage; extracting would obscure per-case intent"
 def _git(root: Path, *args: str) -> None:
     subprocess.run(
         ["git", "-C", str(root), *args],
@@ -59,9 +59,8 @@ class TestFieldNames:
     """PII010: field-name/type detection over Python data structures."""
 
     # frob:waive DUP001 reason="parallel test methods within \
-    # test_pii_structural_gate.py (2 sites) sharing an arrange-act scaffold \
-    # typical of exhaustive per-case coverage; extracting would obscure \
-    # per-case intent"
+    # test_pii_structural_gate.py (2 sites) sharing an arrange-act scaffold typical of \
+    # exhaustive per-case coverage; extracting would obscure per-case intent"
     def test_password_field_fires(self) -> None:
         # frob:tests src/frob/gates/_pii_structural.py::_scan_python_fields
         src = (
@@ -75,9 +74,8 @@ class TestFieldNames:
         assert any(v.rule == "PII010" for v in violations)
 
     # frob:waive DUP001 reason="parallel test methods within \
-    # test_pii_structural_gate.py (2 sites) sharing an arrange-act scaffold \
-    # typical of exhaustive per-case coverage; extracting would obscure \
-    # per-case intent"
+    # test_pii_structural_gate.py (2 sites) sharing an arrange-act scaffold typical of \
+    # exhaustive per-case coverage; extracting would obscure per-case intent"
     def test_pydantic_email_type_fires(self) -> None:
         src = (
             "from pydantic import BaseModel, EmailStr\n\n"
@@ -95,9 +93,8 @@ class TestFieldNames:
         assert any(v.rule == "PII010" for v in violations)
 
     # frob:waive DUP001 reason="parallel test methods within \
-    # test_pii_structural_gate.py (2 sites) sharing an arrange-act scaffold \
-    # typical of exhaustive per-case coverage; extracting would obscure \
-    # per-case intent"
+    # test_pii_structural_gate.py (2 sites) sharing an arrange-act scaffold typical of \
+    # exhaustive per-case coverage; extracting would obscure per-case intent"
     # frob:ticket T-0971
     def test_camelcase_password_hash_field_fires(self) -> None:
         # frob:tests src/frob/gates/_pii_structural.py::_field_name_hit
@@ -229,9 +226,8 @@ class TestDdlSchema:
     and raw-SQL `CREATE TABLE` string literals."""
 
     # frob:waive DUP001 reason="parallel test methods within \
-    # test_pii_structural_gate.py (2 sites) sharing an arrange-act scaffold \
-    # typical of exhaustive per-case coverage; extracting would obscure \
-    # per-case intent"
+    # test_pii_structural_gate.py (2 sites) sharing an arrange-act scaffold typical of \
+    # exhaustive per-case coverage; extracting would obscure per-case intent"
     def test_orm_column_password_fires(self) -> None:
         # frob:tests src/frob/gates/_pii_structural.py::_scan_python_ddl
         src = (

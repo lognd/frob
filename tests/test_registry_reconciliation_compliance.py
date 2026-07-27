@@ -55,9 +55,15 @@ def _real_queue() -> TicketQueue:
 
 
 # frob:ticket T-0388
-# frob:tests tests/test_registry_reconciliation_compliance.py::TestComplianceRegistryFile.test_is_in_registry_files
-# frob:tests tests/test_registry_reconciliation_compliance.py::TestComplianceRegistryFile.test_loads_without_error
-# frob:tests tests/test_registry_reconciliation_compliance.py::TestComplianceRegistryFile.test_no_malformed_entries
+# frob:tests \
+# tests/test_registry_reconciliation_compliance.py::TestComplianceRegistryFile.test_is_\
+# in_registry_files
+# frob:tests \
+# tests/test_registry_reconciliation_compliance.py::TestComplianceRegistryFile.test_loa\
+# ds_without_error
+# frob:tests \
+# tests/test_registry_reconciliation_compliance.py::TestComplianceRegistryFile.test_no_\
+# malformed_entries
 class TestComplianceRegistryFile:
     """`compliance.yaml` loads and is a real `RegistryFile` instance."""
 
@@ -88,11 +94,21 @@ class TestComplianceRegistryFile:
 
 
 # frob:ticket T-0388
-# frob:tests tests/test_registry_reconciliation_compliance.py::TestComplianceExhaustiveness.test_declared_total_is_27
-# frob:tests tests/test_registry_reconciliation_compliance.py::TestComplianceExhaustiveness.test_audit_reports_exhausted
-# frob:tests tests/test_registry_reconciliation_compliance.py::TestComplianceExhaustiveness.test_every_deferred_entry_targets_an_open_ticket
-# frob:tests tests/test_registry_reconciliation_compliance.py::TestComplianceExhaustiveness.test_no_entry_defers_to_this_reconciliation_ticket
-# frob:tests tests/test_registry_reconciliation_compliance.py::TestComplianceExhaustiveness.test_cmpl_registry_units_carry_handled_by_or_out_of_scope
+# frob:tests \
+# tests/test_registry_reconciliation_compliance.py::TestComplianceExhaustiveness.test_d\
+# eclared_total_is_27
+# frob:tests \
+# tests/test_registry_reconciliation_compliance.py::TestComplianceExhaustiveness.test_a\
+# udit_reports_exhausted
+# frob:tests \
+# tests/test_registry_reconciliation_compliance.py::TestComplianceExhaustiveness.test_e\
+# very_deferred_entry_targets_an_open_ticket
+# frob:tests \
+# tests/test_registry_reconciliation_compliance.py::TestComplianceExhaustiveness.test_n\
+# o_entry_defers_to_this_reconciliation_ticket
+# frob:tests \
+# tests/test_registry_reconciliation_compliance.py::TestComplianceExhaustiveness.test_c\
+# mpl_registry_units_carry_handled_by_or_out_of_scope
 class TestComplianceExhaustiveness:
     """The T-0388 acceptance criterion: catalogued count == enforced +
     excused + deferred, pinned against the file's own declared 27-entry
@@ -216,7 +232,9 @@ class TestComplianceExhaustiveness:
 
 
 # frob:ticket T-0388
-# frob:tests tests/test_registry_reconciliation_compliance.py::TestExhaustivenessGateOverRealCompliance.test_no_compliance_violations
+# frob:tests \
+# tests/test_registry_reconciliation_compliance.py::TestExhaustivenessGateOverRealCompl\
+# iance.test_no_compliance_violations
 class TestExhaustivenessGateOverRealCompliance:
     """`registry_gate` over the real registry dir raises zero violations
     for `compliance.yaml` specifically -- wired into `frob check` (the

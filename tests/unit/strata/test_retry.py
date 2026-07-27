@@ -24,7 +24,9 @@ def _write(root: Path, rel: str, source: str) -> None:
 
 
 class TestMissingBackoff:
-    # frob:tests tests/unit/strata/test_retry.py::TestMissingBackoff.test_retry_flow_without_backoff_fires
+    # frob:tests \
+    # tests/unit/strata/test_retry.py::TestMissingBackoff.test_retry_flow_without_backo\
+    # ff_fires
     def test_retry_flow_without_backoff_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -41,7 +43,9 @@ class TestMissingBackoff:
         assert {v.sub_target for v in missing} == {"f_missing"}
         assert missing[0].node == "caller"
 
-    # frob:tests tests/unit/strata/test_retry.py::TestMissingBackoff.test_discharged_and_non_retry_flows_clean
+    # frob:tests \
+    # tests/unit/strata/test_retry.py::TestMissingBackoff.test_discharged_and_non_retry\
+    # _flows_clean
     def test_discharged_and_non_retry_flows_clean(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -64,7 +68,9 @@ class TestMissingBackoff:
             v for v in result.danger_ok.violations if v.rule == REL_MISSING_BACKOFF
         ]
 
-    # frob:tests tests/unit/strata/test_retry.py::TestMissingBackoff.test_waiver_on_one_flow_keeps_sibling_flow_finding
+    # frob:tests \
+    # tests/unit/strata/test_retry.py::TestMissingBackoff.test_waiver_on_one_flow_keeps\
+    # _sibling_flow_finding
     def test_waiver_on_one_flow_keeps_sibling_flow_finding(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -97,7 +103,9 @@ class TestMissingBackoff:
 
 
 class TestNonIdempotentRetry:
-    # frob:tests tests/unit/strata/test_retry.py::TestNonIdempotentRetry.test_retry_into_unguarded_dst_fires
+    # frob:tests \
+    # tests/unit/strata/test_retry.py::TestNonIdempotentRetry.test_retry_into_unguarded\
+    # _dst_fires
     def test_retry_into_unguarded_dst_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -121,7 +129,9 @@ class TestNonIdempotentRetry:
         assert {v.sub_target for v in violations} == {"f1"}
         assert violations[0].node == "caller"
 
-    # frob:tests tests/unit/strata/test_retry.py::TestNonIdempotentRetry.test_idempotent_dst_discharges
+    # frob:tests \
+    # tests/unit/strata/test_retry.py::TestNonIdempotentRetry.test_idempotent_dst_disch\
+    # arges
     def test_idempotent_dst_discharges(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -143,7 +153,9 @@ class TestNonIdempotentRetry:
             v for v in result.danger_ok.violations if v.rule == REL_NONIDEMPOTENT_RETRY
         ]
 
-    # frob:tests tests/unit/strata/test_retry.py::TestNonIdempotentRetry.test_idempotency_key_dst_discharges
+    # frob:tests \
+    # tests/unit/strata/test_retry.py::TestNonIdempotentRetry.test_idempotency_key_dst_\
+    # discharges
     def test_idempotency_key_dst_discharges(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -167,7 +179,9 @@ class TestNonIdempotentRetry:
 
 
 class TestUnprovenBackoff:
-    # frob:tests tests/unit/strata/test_retry.py::TestUnprovenBackoff.test_declared_backoff_with_no_code_evidence_fires
+    # frob:tests \
+    # tests/unit/strata/test_retry.py::TestUnprovenBackoff.test_declared_backoff_with_n\
+    # o_code_evidence_fires
     def test_declared_backoff_with_no_code_evidence_fires(self, tmp_path: Path):
         _write(tmp_path, "src/widget/_io.py", "def call():\n    return remote()\n")
         model = KernelModel(
@@ -192,7 +206,9 @@ class TestUnprovenBackoff:
         assert {v.sub_target for v in violations} == {"f1"}
         assert violations[0].node == "caller"
 
-    # frob:tests tests/unit/strata/test_retry.py::TestUnprovenBackoff.test_declared_backoff_with_real_code_evidence_discharges
+    # frob:tests \
+    # tests/unit/strata/test_retry.py::TestUnprovenBackoff.test_declared_backoff_with_r\
+    # eal_code_evidence_discharges
     def test_declared_backoff_with_real_code_evidence_discharges(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -219,7 +235,9 @@ class TestUnprovenBackoff:
             v for v in result.danger_ok.violations if v.rule == REL_UNPROVEN_BACKOFF
         ]
 
-    # frob:tests tests/unit/strata/test_retry.py::TestUnprovenBackoff.test_declared_backoff_with_no_bound_code_is_uncheckable_not_a_violation
+    # frob:tests \
+    # tests/unit/strata/test_retry.py::TestUnprovenBackoff.test_declared_backoff_with_n\
+    # o_bound_code_is_uncheckable_not_a_violation
     def test_declared_backoff_with_no_bound_code_is_uncheckable_not_a_violation(
         self, tmp_path: Path
     ):

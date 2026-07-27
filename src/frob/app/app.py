@@ -122,16 +122,18 @@ def _dispatch_table() -> dict[Subcommand, Callable[[AppConfig], None]]:
 
 
 # frob:doc docs/modules/app.md#entry-point
+# frob:waive AFFECT001 reason="T-0988 pure mechanical frob:-directive comment rewrap \
+# in an inner method's body; no behavior/contract change, doc anchor remains accurate \
+# as-is"
 class App:
     # frob:ticket T-0021
     def __init__(self, cfg: AppConfig) -> None:
         self._cfg = cfg
 
-    # frob:waive ARCH103 reason="T-0977: the CLI dispatch entrypoint's one \
-    # job IS orchestration -- resolve subcommand, format the usage error, \
-    # exit; splitting the usage message out would add indirection with no \
-    # cohesion gain, and the dispatch table itself already lives in \
-    # _dispatch_table()"
+    # frob:waive ARCH103 reason="T-0977: the CLI dispatch entrypoint's one job IS \
+    # orchestration -- resolve subcommand, format the usage error, exit; splitting the \
+    # usage message out would add indirection with no cohesion gain, and the dispatch \
+    # table itself already lives in _dispatch_table()"
     def __call__(self) -> None:
         # frob:ticket T-0021
         subcommand = self._cfg.subcommand

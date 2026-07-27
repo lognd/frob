@@ -8,10 +8,9 @@ never silently dropped -- `frob.gates` reports it.
 """
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: src/frob/graph/dsl.py's \
 # exclusivity-vocabulary hit is source-level design-rationale/scope-cut prose (a \
-# docstring or comment describing already-implemented internal behavior, verifiable \
-# by reading the code it annotates) rather than a separate cross-module contract \
-# needing its own tracked invariant; disposed as a calibration batch, not \
-# claim-by-claim"
+# docstring or comment describing already-implemented internal behavior, verifiable by \
+# reading the code it annotates) rather than a separate cross-module contract needing \
+# its own tracked invariant; disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 
@@ -130,11 +129,10 @@ _SLUG_STRIP_RE = re.compile(r"[^\w\- ]", re.UNICODE)
 
 
 # frob:doc docs/modules/graph.md#comment-dsl
-# frob:waive DUP001 reason="tests/unit/test_research_assets.py::_slugify \
-# deliberately mirrors this exactly (own docstring: checks the same \
-# anchor resolution the doclink/docanchor gates perform, without \
-# importing gate internals into a unit test) -- intentional test \
-# isolation, not an unaccounted duplicate"
+# frob:waive DUP001 reason="tests/unit/test_research_assets.py::_slugify deliberately \
+# mirrors this exactly (own docstring: checks the same anchor resolution the \
+# doclink/docanchor gates perform, without importing gate internals into a unit test) \
+# -- intentional test isolation, not an unaccounted duplicate"
 def slugify(heading: str) -> str:
     """GitHub heading-anchor slug: lowercase, strip disallowed punctuation
     (keeping word chars/hyphens/spaces), spaces become hyphens one-for-one
@@ -485,10 +483,11 @@ def _parse_line(
 
 
 # frob:ticket T-0286
-# frob:tests tests/unit/graph/test_dsl.py::TestContinuation.\
-# test_long_reason_continues_across_lines
-# frob:tests tests/unit/graph/test_dsl.py::TestContinuation.\
-# test_unrelated_directives_on_consecutive_lines_do_not_fold
+# frob:tests \
+# tests/unit/graph/test_dsl.py::TestContinuation.test_long_reason_continues_across_lines
+# frob:tests \
+# tests/unit/graph/test_dsl.py::TestContinuation.test_unrelated_directives_on_consecuti\
+# ve_lines_do_not_fold
 def _fold_continuations(
     lines: list[tuple[int, str, str, int]],
 ) -> list[tuple[str, int, str]]:
@@ -600,8 +599,9 @@ def _is_genuine_directive_start(line: str) -> bool:
 
 # frob:ticket T-0441
 # frob:doc docs/modules/gates.md#frob-fmt-directive-canonicalization-t-0441
-# frob:tests tests/unit/graph/test_dsl.py::TestFoldCommentRuns.\
-# test_run_length_matches_consumed_physical_lines
+# frob:tests \
+# tests/unit/graph/test_dsl.py::TestFoldCommentRuns.test_run_length_matches_consumed_ph\
+# ysical_lines
 def fold_comment_runs(
     lines: list[tuple[int, str, str, int]],
 ) -> list[tuple[str, int, str, int]]:

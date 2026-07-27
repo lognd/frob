@@ -162,9 +162,9 @@ def find_normative_claims(text: str) -> tuple[str, ...]:
 
 
 # frob:doc docs/modules/gates.md#invariants
-# frob:waive COV007 reason="docs/modules/gates.md's Invariants section \
-# individually frob:describes this private enum by name (T-0529) -- a \
-# deliberate architecture doc, not accidental drift onto a private helper"
+# frob:waive COV007 reason="docs/modules/gates.md's Invariants section individually \
+# frob:describes this private enum by name (T-0529) -- a deliberate architecture doc, \
+# not accidental drift onto a private helper"
 class _Criticality(StrEnum):
     """How severe a broken invariant would be."""
 

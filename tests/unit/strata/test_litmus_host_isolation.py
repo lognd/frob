@@ -26,7 +26,8 @@ def _load_model(filename: str) -> KernelModel:
 
 
 class TestHostIsolationVulnLitmus:
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_host_isolation_waived kind="unit"
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_host_isolation_waived \
+    # kind="unit"
     def test_shared_user_model_fires_host001_and_host002(self):
         model = _load_model("host_isolation_vuln.strata")
         host001, host002 = evaluate_host_isolation_waived(model).danger_ok
@@ -41,7 +42,8 @@ class TestHostIsolationVulnLitmus:
 
 
 class TestHostIsolationHardenedLitmus:
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_host_isolation_waived kind="unit"
+    # frob:tests src/frob/strata/_host_isolation.py::evaluate_host_isolation_waived \
+    # kind="unit"
     def test_isolated_model_discharges(self):
         model = _load_model("host_isolation_hardened.strata")
         host001, host002 = evaluate_host_isolation_waived(model).danger_ok

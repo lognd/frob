@@ -34,7 +34,9 @@ def _write_fixture(tmp_path: Path) -> Path:
 
 # frob:ticket T-0429
 class TestFormatEntryBlock:
-    # frob:tests tests/test_registry_corpus.py::TestFormatEntryBlock.test_pending_disposition_always
+    # frob:tests \
+    # tests/test_registry_corpus.py::TestFormatEntryBlock.test_pending_disposition_alwa\
+    # ys
     # frob:ticket T-0429
     def test_pending_disposition_always(self) -> None:
         block = format_entry_block("EX-THREE", "Example Three")
@@ -55,7 +57,9 @@ class TestFormatEntryBlock:
 
 # frob:ticket T-0429
 class TestAppendEntry:
-    # frob:tests tests/test_registry_corpus.py::TestAppendEntry.test_append_adds_entry_and_bumps_total
+    # frob:tests \
+    # tests/test_registry_corpus.py::TestAppendEntry.test_append_adds_entry_and_bumps_t\
+    # otal
     # frob:ticket T-0429
     def test_append_adds_entry_and_bumps_total(self, tmp_path: Path) -> None:
         path = _write_fixture(tmp_path)

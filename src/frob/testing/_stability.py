@@ -14,10 +14,10 @@ closes while the test is still flaky.
 # frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
 # src/frob/testing/_stability.py's exclusivity-vocabulary hit is source-level \
 # design-rationale/scope-cut prose (a docstring describing already-implemented \
-# internal behavior, verifiable by reading the code it annotates -- 'never a \
-# silent skip-list' describes quarantine's ticket-required design, already \
-# enforced by quarantine()'s own TicketUnresolvable/auto-file logic) rather \
-# than a separate cross-module contract needing its own tracked invariant"
+# internal behavior, verifiable by reading the code it annotates -- 'never a silent \
+# skip-list' describes quarantine's ticket-required design, already enforced by \
+# quarantine()'s own TicketUnresolvable/auto-file logic) rather than a separate \
+# cross-module contract needing its own tracked invariant"
 
 from __future__ import annotations
 
@@ -386,6 +386,8 @@ def lift_quarantine(root: Path, node_id: str) -> Result[Unit, FlakeError]:
 # frob:tests tests/unit/testing/test_stability.py::TestAlarms.test_no_alarm_open
 # frob:tests tests/unit/testing/test_stability.py::TestAlarms.test_no_alarm_stable
 # frob:doc docs/modules/testing.md#public-api
+# frob:waive AFFECT001 reason="T-0988 pure mechanical frob:-directive comment rewrap; \
+# no behavior/contract change, doc anchor remains accurate as-is"
 def quarantine_alarms(
     root: Path, entries: Mapping[str, StabilityEntry]
 ) -> tuple[str, ...]:
@@ -411,8 +413,8 @@ def quarantine_alarms(
         is_open = _ticket_is_open(root, entry.quarantine_ticket)
         if is_open is not True:
             alarmed.append(node_id)
-    # frob:waive PERF004 reason="one sort of the final alarmed list for \
-    # deterministic output, not resorted per loop iteration"
+    # frob:waive PERF004 reason="one sort of the final alarmed list for deterministic \
+    # output, not resorted per loop iteration"
     return tuple(sorted(alarmed))
 
 
@@ -420,6 +422,8 @@ def quarantine_alarms(
 # frob:tests tests/unit/testing/test_stability.py::TestAlarms.test_hard_no_alarm_flaky
 # frob:tests tests/unit/testing/test_stability.py::TestAlarms.test_hard_alarm_tail
 # frob:doc docs/modules/testing.md#flake-quarantine-t-0575
+# frob:waive AFFECT001 reason="T-0988 pure mechanical frob:-directive comment rewrap; \
+# no behavior/contract change, doc anchor remains accurate as-is"
 def hard_regression_alarms(
     entries: Mapping[str, StabilityEntry], *, tail_k: int = DEFAULT_REGRESSION_TAIL_K
 ) -> tuple[str, ...]:
@@ -439,8 +443,8 @@ def hard_regression_alarms(
         if entry.quarantine_ticket is not None
         and is_hard_regression(entry, tail_k=tail_k)
     ]
-    # frob:waive PERF004 reason="one sort of the final alarmed list for \
-    # deterministic output, not resorted per loop iteration"
+    # frob:waive PERF004 reason="one sort of the final alarmed list for deterministic \
+    # output, not resorted per loop iteration"
     return tuple(sorted(alarmed))
 
 

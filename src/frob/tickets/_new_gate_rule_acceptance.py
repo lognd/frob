@@ -33,11 +33,10 @@ SELFAUDIT001 rule (`frob.gates.sys_gate`) folds exactly those families INTO
 ticket's own scope covers; a rule family added some OTHER way in the future
 is a known residual gap, not silently assumed covered."""
 # frob:waive INV006 reason="module-docstring exclusivity-vocabulary hit is \
-# source-level design-rationale prose describing already-implemented \
-# entry-point behavior, verifiable by reading the code it annotates and \
-# the T-0756 close/land wiring in frob.tickets.__init__'s \
-# _done_transition_guard -- not a separate cross-module contract needing \
-# its own tracked invariant, same calibration posture as \
+# source-level design-rationale prose describing already-implemented entry-point \
+# behavior, verifiable by reading the code it annotates and the T-0756 close/land \
+# wiring in frob.tickets.__init__'s _done_transition_guard -- not a separate \
+# cross-module contract needing its own tracked invariant, same calibration posture as \
 # frob.tickets._live_tracker's own T-0854 INV006 waiver"
 
 from __future__ import annotations

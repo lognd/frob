@@ -96,7 +96,8 @@ class TestCheckStagesHonorExecKillSwitch:
 
     def test_run_ruff_disabled(self, monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
         # frob:tests src/frob/check/_python.py::_run_ruff kind="unit"
-        # frob:tests src/frob/process/parsers/common.py::tool_disabled_result kind="unit"
+        # frob:tests src/frob/process/parsers/common.py::tool_disabled_result \
+        # kind="unit"
         from frob.check._python import _run_ruff
 
         monkeypatch.setenv(EXEC_KILL_SWITCH_ENV, "1")

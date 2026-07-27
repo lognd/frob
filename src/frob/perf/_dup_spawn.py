@@ -90,14 +90,13 @@ tracked as its own todo rather than silently expanded here.
 # EffectGraph, but choosing the right needle set is its own research
 # task, not bundled into this ticket.
 """
-# frob:waive INV006 reason="T-0919 first-turn-on: this module's design- \
-# rationale prose ('this module does NOT re-implement...', 'the SAME \
-# shared EFFECT-SUMMARY substrate...') is source-level commentary \
-# describing already-implemented internal behavior, verifiable by \
-# reading the code it annotates, rather than a separate cross-module \
-# contract needing its own tracked invariant -- same disposition as the \
-# identical T-0585/T-0775 calibration-batch waivers already carried by \
-# other first-turn-on modules in this package"
+# frob:waive INV006 reason="T-0919 first-turn-on: this module's design- rationale \
+# prose ('this module does NOT re-implement...', 'the SAME shared EFFECT-SUMMARY \
+# substrate...') is source-level commentary describing already-implemented internal \
+# behavior, verifiable by reading the code it annotates, rather than a separate \
+# cross-module contract needing its own tracked invariant -- same disposition as the \
+# identical T-0585/T-0775 calibration-batch waivers already carried by other \
+# first-turn-on modules in this package"
 
 from __future__ import annotations
 

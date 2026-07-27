@@ -70,7 +70,8 @@ def _funcs(tmp_path: Path) -> dict[str, Node]:
     return dict((sym, node) for node, sym in _iter_functions_py(root))
 
 
-# frob:tests tests/unit/test_dup_legacy_py.py::test_iter_functions_py_yields_qualified_names
+# frob:tests \
+# tests/unit/test_dup_legacy_py.py::test_iter_functions_py_yields_qualified_names
 def test_iter_functions_py_yields_qualified_names(tmp_path: Path) -> None:
     """Top-level, method, and nested-function symbols are all yielded, with
     the method qualified by its enclosing class."""
@@ -82,14 +83,16 @@ def test_iter_functions_py_yields_qualified_names(tmp_path: Path) -> None:
     assert "C.nested" in funcs
 
 
-# frob:tests tests/unit/test_dup_legacy_py.py::test_enclosing_class_py_none_for_top_level_function
+# frob:tests \
+# tests/unit/test_dup_legacy_py.py::test_enclosing_class_py_none_for_top_level_function
 def test_enclosing_class_py_none_for_top_level_function(tmp_path: Path) -> None:
     """A top-level function (not inside any class) has no enclosing class."""
     funcs = _funcs(tmp_path)
     assert _enclosing_class_py(funcs["f"]) is None
 
 
-# frob:tests tests/unit/test_dup_legacy_py.py::test_enclosing_class_py_finds_class_for_method
+# frob:tests \
+# tests/unit/test_dup_legacy_py.py::test_enclosing_class_py_finds_class_for_method
 def test_enclosing_class_py_finds_class_for_method(tmp_path: Path) -> None:
     """A method's enclosing class name is recovered by walking up through
     the `block` node to the `class_definition`."""
@@ -97,7 +100,8 @@ def test_enclosing_class_py_finds_class_for_method(tmp_path: Path) -> None:
     assert _enclosing_class_py(funcs["C.method"]) == "C"
 
 
-# frob:tests tests/unit/test_dup_legacy_py.py::test_collect_locals_py_covers_every_binding_shape
+# frob:tests \
+# tests/unit/test_dup_legacy_py.py::test_collect_locals_py_covers_every_binding_shape
 def test_collect_locals_py_covers_every_binding_shape(tmp_path: Path) -> None:
     """`_collect_locals_py` harvests plain/default/splat params, tuple-unpack
     `for`, multi-item `with ... as`, and assignments nested inside
@@ -141,7 +145,9 @@ def test_collect_locals_py_with_tuple_target(tmp_path: Path) -> None:
     assert _collect_locals_py(funcs["g"]) >= {"p", "q"}
 
 
-# frob:tests tests/unit/test_dup_legacy_py.py::test_collect_locals_py_method_includes_typed_default_param
+# frob:tests \
+# tests/unit/test_dup_legacy_py.py::test_collect_locals_py_method_includes_typed_defaul\
+# t_param
 def test_collect_locals_py_method_includes_typed_default_param(tmp_path: Path) -> None:
     """Typed and typed-default parameters (`a: int`, `b: int = 2`) are
     still recognized as local bindings via their `name` field."""
@@ -150,7 +156,9 @@ def test_collect_locals_py_method_includes_typed_default_param(tmp_path: Path) -
     assert locals_ == {"self", "a", "b"}
 
 
-# frob:tests tests/unit/test_dup_legacy_py.py::test_collect_locals_py_empty_for_body_with_no_bindings
+# frob:tests \
+# tests/unit/test_dup_legacy_py.py::test_collect_locals_py_empty_for_body_with_no_bindi\
+# ngs
 def test_collect_locals_py_empty_for_body_with_no_bindings(tmp_path: Path) -> None:
     """A function whose body only defines a nested function has no locals
     of its own (the nested def is not itself an assignment binding)."""
@@ -158,7 +166,9 @@ def test_collect_locals_py_empty_for_body_with_no_bindings(tmp_path: Path) -> No
     assert _collect_locals_py(funcs["C.nested"]) == set()
 
 
-# frob:tests tests/unit/test_dup_legacy_py.py::test_serialize_py_body_renames_locals_and_normalizes_literals
+# frob:tests \
+# tests/unit/test_dup_legacy_py.py::test_serialize_py_body_renames_locals_and_normalize\
+# s_literals
 def test_serialize_py_body_renames_locals_and_normalizes_literals(
     tmp_path: Path,
 ) -> None:

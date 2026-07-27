@@ -319,10 +319,9 @@ class TestRunners:
         assert result.is_err
         assert result.danger_err == TestingError.NoRunner
 
-    # frob:waive DUP001 reason="parallel test methods within \
-    # test_testing.py (2 sites) sharing an arrange-act scaffold typical of \
-    # exhaustive per-case coverage; extracting would obscure per-case \
-    # intent"
+    # frob:waive DUP001 reason="parallel test methods within test_testing.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_bad_runner_spec_zero_placeholders(self, tmp_path: Path) -> None:
         toml_text = """
         [[test.runner]]
@@ -335,10 +334,9 @@ class TestRunners:
         assert result.is_err
         assert result.danger_err == TestingError.BadRunnerSpec
 
-    # frob:waive DUP001 reason="parallel test methods within \
-    # test_testing.py (2 sites) sharing an arrange-act scaffold typical of \
-    # exhaustive per-case coverage; extracting would obscure per-case \
-    # intent"
+    # frob:waive DUP001 reason="parallel test methods within test_testing.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_bad_runner_spec_two_placeholders(self, tmp_path: Path) -> None:
         toml_text = """
         [[test.runner]]
@@ -549,7 +547,8 @@ boundary b_login endorse f_login : foreign -> authenticated when "jwt_verified"
             fallback="package",
         )
 
-    # frob:tests tests/test_testing.py::TestNativeStrataAudit.test_no_runner_config_needed
+    # frob:tests \
+    # tests/test_testing.py::TestNativeStrataAudit.test_no_runner_config_needed
     def test_no_runner_config_needed(self, tmp_path: Path) -> None:
         """A `strata` selection with ZERO `[[test.runner]]` entries never
         hits `TestingError.NoRunner` -- `run_selected`'s empty `runners`
@@ -566,7 +565,8 @@ boundary b_login endorse f_login : foreign -> authenticated when "jwt_verified"
         assert outcome.language == "strata"
         assert outcome.argv == ("<native>", "frob", "sys", "audit")
 
-    # frob:tests tests/test_testing.py::TestNativeStrataAudit.test_no_models_is_neutral_pass
+    # frob:tests \
+    # tests/test_testing.py::TestNativeStrataAudit.test_no_models_is_neutral_pass
     def test_no_models_is_neutral_pass(self, tmp_path: Path) -> None:
         """No `.strata` files under the design dir at all -- `frob sys
         audit`'s own vacuous-but-honest "nothing to check yet" posture,
@@ -895,7 +895,8 @@ class TestCargoEnv:
 
         from frob.testing._runners import _env_overlay
 
-        # frob:waive SEC110 reason="synthetic test-only var this test itself sets via monkeypatch"
+        # frob:waive SEC110 reason="synthetic test-only var this test itself sets via \
+        # monkeypatch"
         monkeypatch.setenv("FROB_T0092_PROBE", "before")
         with _env_overlay({"FROB_T0092_PROBE": "during", "FROB_T0092_NEW": "x"}):
             assert os.environ["FROB_T0092_PROBE"] == "during"
@@ -1431,9 +1432,9 @@ class TestIntegrationTestCollection:
         assert found == sorted([crate_dir / "tests/foo.rs", crate_dir / "tests/bar.rs"])
 
 
-# frob:waive DUP001 reason="parallel test fixtures across 2 sibling test \
-# file(s) (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-# per-case/per-scenario coverage; extracting would obscure per-case intent"
+# frob:waive DUP001 reason="parallel test fixtures across 2 sibling test file(s) (2 \
+# sites) sharing an arrange-act scaffold typical of exhaustive per-case/per-scenario \
+# coverage; extracting would obscure per-case intent"
 def _fake_native_package(root: Path, name: str, so_bytes: bytes) -> Path:
     """A maturin-style extension PACKAGE on `root`: `name/__init__.py` plus a
     compiled `name.abi3.so` alongside it (the layout strata_core/frob_core
@@ -1475,10 +1476,9 @@ class TestNativeFingerprint:
         assert result.is_ok
         assert result.danger_ok == ()
 
-    # frob:waive DUP001 reason="parallel test methods within \
-    # test_testing.py (2 sites) sharing an arrange-act scaffold typical of \
-    # exhaustive per-case coverage; extracting would obscure per-case \
-    # intent"
+    # frob:waive DUP001 reason="parallel test methods within test_testing.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_load_natives_missing_field_is_err(self, tmp_path: Path) -> None:
         # frob:tests src/frob/testing/_runners.py::load_natives kind="unit"
         from frob.testing import TestingError, load_natives
@@ -1588,10 +1588,9 @@ class TestNativeFingerprint:
         (cache_dir / "sentinel").write_text("x")  # non-empty -> unlink raises
         assert drop_collection_cache(tmp_path) is False
 
-    # frob:waive DUP001 reason="parallel test methods within \
-    # test_testing.py (2 sites) sharing an arrange-act scaffold typical of \
-    # exhaustive per-case coverage; extracting would obscure per-case \
-    # intent"
+    # frob:waive DUP001 reason="parallel test methods within test_testing.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_load_natives_malformed_toml_is_err(self, tmp_path: Path) -> None:
         # frob:tests src/frob/testing/_runners.py::load_natives kind="unit"
         from frob.testing import TestingError, load_natives

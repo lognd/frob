@@ -5,12 +5,11 @@ MVP note: allow entries are coarse -- `name = true` or `name = ["reason", ...]`;
 full per-capability declarations (`name = ["net", "env"]` meaning literal
 capability tokens) are 0.2.x, once real capability scanning exists.
 """
-# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
-# src/frob/vet/_allow.py's exclusivity-vocabulary hit is source-level \
-# design-rationale/scope-cut prose (a docstring or comment describing \
-# already-implemented internal behavior, verifiable by reading the code it annotates) \
-# rather than a separate cross-module contract needing its own tracked invariant; \
-# disposed as a calibration batch, not claim-by-claim"
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: src/frob/vet/_allow.py's \
+# exclusivity-vocabulary hit is source-level design-rationale/scope-cut prose (a \
+# docstring or comment describing already-implemented internal behavior, verifiable by \
+# reading the code it annotates) rather than a separate cross-module contract needing \
+# its own tracked invariant; disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 
@@ -44,9 +43,9 @@ def _parse_allow(allow_raw: object) -> dict[str, tuple[str, ...] | bool]:
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive COV007 reason="docs/modules/vet.md's Public API section \
-# individually frob:describes this private helper by name (T-0529) -- a \
-# deliberate architecture doc, not accidental drift onto a private helper"
+# frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
+# frob:describes this private helper by name (T-0529) -- a deliberate architecture \
+# doc, not accidental drift onto a private helper"
 # frob:waive TEST005 reason="_load_vet_config 82.4% branch cover, debt T-0160"
 def _load_vet_config(root: Path) -> VetConfig:
     """Read `frob.toml`'s `[vet]` table; absent table -> `present=False`

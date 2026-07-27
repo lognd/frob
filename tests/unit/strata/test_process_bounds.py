@@ -26,7 +26,9 @@ def _write(root: Path, rel: str, source: str) -> None:
 
 
 class TestMissingInterfaceClassification:
-    # frob:tests tests/unit/strata/test_process_bounds.py::TestMissingInterfaceClassification.test_kernel_interface_node_without_classification_fires
+    # frob:tests \
+    # tests/unit/strata/test_process_bounds.py::TestMissingInterfaceClassification.test\
+    # _kernel_interface_node_without_classification_fires
     def test_kernel_interface_node_without_classification_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -46,7 +48,9 @@ class TestMissingInterfaceClassification:
         ]
         assert {v.node for v in missing} == {"open_procfs_entry"}
 
-    # frob:tests tests/unit/strata/test_process_bounds.py::TestMissingInterfaceClassification.test_discharged_and_non_kernel_interface_nodes_clean
+    # frob:tests \
+    # tests/unit/strata/test_process_bounds.py::TestMissingInterfaceClassification.test\
+    # _discharged_and_non_kernel_interface_nodes_clean
     def test_discharged_and_non_kernel_interface_nodes_clean(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -66,7 +70,9 @@ class TestMissingInterfaceClassification:
             if v.rule == REL_MISSING_INTERFACE_CLASSIFICATION
         ]
 
-    # frob:tests tests/unit/strata/test_process_bounds.py::TestMissingInterfaceClassification.test_waiver_discharges_finding
+    # frob:tests \
+    # tests/unit/strata/test_process_bounds.py::TestMissingInterfaceClassification.test\
+    # _waiver_discharges_finding
     def test_waiver_discharges_finding(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -99,7 +105,9 @@ class TestMissingInterfaceClassification:
 
 
 class TestUnprovenInterfaceClassification:
-    # frob:tests tests/unit/strata/test_process_bounds.py::TestUnprovenInterfaceClassification.test_declared_with_no_code_evidence_fires
+    # frob:tests \
+    # tests/unit/strata/test_process_bounds.py::TestUnprovenInterfaceClassification.tes\
+    # t_declared_with_no_code_evidence_fires
     def test_declared_with_no_code_evidence_fires(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -128,7 +136,9 @@ class TestUnprovenInterfaceClassification:
         ]
         assert {v.node for v in violations} == {"open_procfs_entry"}
 
-    # frob:tests tests/unit/strata/test_process_bounds.py::TestUnprovenInterfaceClassification.test_declared_with_real_code_evidence_discharges
+    # frob:tests \
+    # tests/unit/strata/test_process_bounds.py::TestUnprovenInterfaceClassification.tes\
+    # t_declared_with_real_code_evidence_discharges
     def test_declared_with_real_code_evidence_discharges(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -158,7 +168,9 @@ class TestUnprovenInterfaceClassification:
             if v.rule == REL_UNPROVEN_INTERFACE_CLASSIFICATION
         ]
 
-    # frob:tests tests/unit/strata/test_process_bounds.py::TestUnprovenInterfaceClassification.test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+    # frob:tests \
+    # tests/unit/strata/test_process_bounds.py::TestUnprovenInterfaceClassification.tes\
+    # t_declared_with_no_bound_code_is_uncheckable_not_a_violation
     def test_declared_with_no_bound_code_is_uncheckable_not_a_violation(
         self, tmp_path: Path
     ):
@@ -181,7 +193,9 @@ class TestUnprovenInterfaceClassification:
 
 
 class TestMissingProcessBounds:
-    # frob:tests tests/unit/strata/test_process_bounds.py::TestMissingProcessBounds.test_deployed_process_node_without_bounds_fires
+    # frob:tests \
+    # tests/unit/strata/test_process_bounds.py::TestMissingProcessBounds.test_deployed_\
+    # process_node_without_bounds_fires
     def test_deployed_process_node_without_bounds_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -201,7 +215,9 @@ class TestMissingProcessBounds:
         ]
         assert {v.node for v in missing} == {"worker_service"}
 
-    # frob:tests tests/unit/strata/test_process_bounds.py::TestMissingProcessBounds.test_discharged_and_non_deployed_process_nodes_clean
+    # frob:tests \
+    # tests/unit/strata/test_process_bounds.py::TestMissingProcessBounds.test_discharge\
+    # d_and_non_deployed_process_nodes_clean
     def test_discharged_and_non_deployed_process_nodes_clean(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -221,7 +237,9 @@ class TestMissingProcessBounds:
             if v.rule == REL_MISSING_PROCESS_BOUNDS
         ]
 
-    # frob:tests tests/unit/strata/test_process_bounds.py::TestMissingProcessBounds.test_waiver_discharges_finding
+    # frob:tests \
+    # tests/unit/strata/test_process_bounds.py::TestMissingProcessBounds.test_waiver_di\
+    # scharges_finding
     def test_waiver_discharges_finding(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -250,7 +268,9 @@ class TestMissingProcessBounds:
 
 
 class TestUnprovenProcessBounds:
-    # frob:tests tests/unit/strata/test_process_bounds.py::TestUnprovenProcessBounds.test_declared_with_no_code_evidence_fires
+    # frob:tests \
+    # tests/unit/strata/test_process_bounds.py::TestUnprovenProcessBounds.test_declared\
+    # _with_no_code_evidence_fires
     def test_declared_with_no_code_evidence_fires(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -275,7 +295,9 @@ class TestUnprovenProcessBounds:
         ]
         assert {v.node for v in violations} == {"worker_service"}
 
-    # frob:tests tests/unit/strata/test_process_bounds.py::TestUnprovenProcessBounds.test_declared_with_real_code_evidence_discharges
+    # frob:tests \
+    # tests/unit/strata/test_process_bounds.py::TestUnprovenProcessBounds.test_declared\
+    # _with_real_code_evidence_discharges
     def test_declared_with_real_code_evidence_discharges(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -301,7 +323,9 @@ class TestUnprovenProcessBounds:
             if v.rule == REL_UNPROVEN_PROCESS_BOUNDS
         ]
 
-    # frob:tests tests/unit/strata/test_process_bounds.py::TestUnprovenProcessBounds.test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+    # frob:tests \
+    # tests/unit/strata/test_process_bounds.py::TestUnprovenProcessBounds.test_declared\
+    # _with_no_bound_code_is_uncheckable_not_a_violation
     def test_declared_with_no_bound_code_is_uncheckable_not_a_violation(
         self, tmp_path: Path
     ):

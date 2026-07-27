@@ -70,6 +70,23 @@ _ANCHOR_RE = re.compile(r"frob:doc\s+(docs/guides/extending/\S+?\.md)#(\S+)")
 _H1_RE = re.compile(r"^#\s+(.+)$", re.MULTILINE)
 _A_ID_RE = re.compile(r'<a id="([^"]+)"></a>')
 
+#: A `frob:doc <path>#<fragment>` anchor's value is always one unbreakable
+#: run of non-space characters, so `frob fmt`'s canonicalizer only ever
+#: wraps it right after the `frob:doc` keyword itself -- a real word
+#: boundary that had a space before the continuation backslash (T-0991's
+#: fixed round trip preserves it). Folding that one join shape back to a
+#: single space before `_ANCHOR_RE` runs keeps this scan working across
+#: both the pre- and post-recompaction single-line/wrapped forms (T-0988).
+_CONTINUATION_FOLD_RE = re.compile(r"\\\n#[ \t]?")
+
+
+def _fold_directive_continuations(text: str) -> str:
+    """`text` with any `frob:` directive's wrapped continuation lines
+    (a trailing `\\` then a `#`-prefixed physical line) rejoined with a
+    single space, so a regex written against the unwrapped single-line
+    form still matches the wrapped form."""
+    return _CONTINUATION_FOLD_RE.sub(" ", text)
+
 
 def _load_inventory() -> list[dict[str, str]]:
     """The parsed registry rows, failing loudly on a malformed file."""
@@ -107,14 +124,20 @@ class TestExtendingGuidesComplete:
                 f"{row['anchor_symbol']} -- update the inventory row"
             )
 
-    # frob:waive PERF004 reason="sorted() only formats tiny sets for assert messages, not hot-path work"
+    # frob:waive PERF004 reason="sorted() only formats tiny sets for assert messages, \
+    # not hot-path work"
     def test_every_anchor_fragment_resolves_to_guide_h1(self) -> None:
         for row in _load_inventory():
             anchor_file = REPO_ROOT / row["anchor_file"]
             text = anchor_file.read_text(encoding="utf-8")
-            # frob:waive PERF003 reason="fixed-size scan of one file's anchors per row; indexing would obscure the check"
+            # frob:waive PERF003 reason="fixed-size scan of one file's anchors per \
+            # row; indexing would obscure the check"
             fragments = [
-                frag for path, frag in _ANCHOR_RE.findall(text) if path == row["guide"]
+                frag
+                for path, frag in _ANCHOR_RE.findall(
+                    _fold_directive_continuations(text)
+                )
+                if path == row["guide"]
             ]
             assert fragments, (
                 f"{row['anchor_file']} anchor for {row['guide']} carries no #fragment"
@@ -131,7 +154,8 @@ class TestExtendingGuidesComplete:
                     f"heading slug or <a id> in {row['guide']} (have: {have})"
                 )
 
-    # frob:waive PERF004 reason="sorted() only formats tiny sets for assert messages, not hot-path work"
+    # frob:waive PERF004 reason="sorted() only formats tiny sets for assert messages, \
+    # not hot-path work"
     def test_no_orphan_guides(self) -> None:
         known = {Path(row["guide"]).name for row in _load_inventory()}
         on_disk = {p.name for p in EXTENDING.glob("*.md") if p.name != "README.md"}
@@ -141,7 +165,8 @@ class TestExtendingGuidesComplete:
             "rows to registry_of_registries.json"
         )
 
-    # frob:waive PERF004 reason="sorted() only formats tiny sets for assert messages, not hot-path work"
+    # frob:waive PERF004 reason="sorted() only formats tiny sets for assert messages, \
+    # not hot-path work"
     def test_probe_table_and_inventory_agree(self) -> None:
         inventory_ids = {row["id"] for row in _load_inventory()}
         probe_ids = set(_REGISTRY_PROBES)

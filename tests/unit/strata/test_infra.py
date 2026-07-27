@@ -40,10 +40,9 @@ class TestStoreDesugar:
         assert "append_only" in node.attrs
 
     # frob:tests src/frob/strata/_infra.py::elaborate_infra kind="unit"
-    # frob:waive DUP001 reason="parallel test fixtures across 2 sibling \
-    # test file(s) (2 sites) sharing an arrange-act scaffold typical of \
-    # exhaustive per-case/per-scenario coverage; extracting would obscure \
-    # per-case intent"
+    # frob:waive DUP001 reason="parallel test fixtures across 2 sibling test file(s) \
+    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case/per-scenario coverage; extracting would obscure per-case intent"
     def test_store_rpo_becomes_seconds_attr(self):
         text = """
         module m
@@ -110,9 +109,9 @@ class TestCacheDesugar:
         assert "local" in inval.attrs
 
     # frob:tests src/frob/strata/_infra.py::elaborate_infra kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_infra.py \
-    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_infra.py (3 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_ttl_and_staleness_must_agree(self):
         text = """
         module m
@@ -135,9 +134,9 @@ class TestCacheDesugar:
         assert fill.age.value == 30.0
 
     # frob:tests src/frob/strata/_infra.py::elaborate_infra kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_infra.py \
-    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_infra.py (3 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_cache_with_no_bound_is_err(self):
         text = """
         module m
@@ -149,9 +148,9 @@ class TestCacheDesugar:
         assert result.danger_err is StrataError.MissingBound
 
     # frob:tests src/frob/strata/_infra.py::elaborate_infra kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_infra.py \
-    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_infra.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_cache_without_invalidation_is_err(self):
         text = """
         module m
@@ -175,9 +174,9 @@ class TestCacheDesugar:
         assert any(n.id == "c" for n in model.nodes)
 
     # frob:tests src/frob/strata/_infra.py::elaborate_infra kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_infra.py \
-    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_infra.py (2 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_invalidate_on_wrong_dst_is_err(self):
         text = """
         module m
@@ -194,10 +193,9 @@ class TestCacheDesugar:
 
 class TestQueueDesugar:
     # frob:tests src/frob/strata/_infra.py::elaborate_infra kind="unit"
-    # frob:waive DUP001 reason="parallel test fixtures across 3 sibling \
-    # test file(s) (3 sites) sharing an arrange-act scaffold typical of \
-    # exhaustive per-case/per-scenario coverage; extracting would obscure \
-    # per-case intent"
+    # frob:waive DUP001 reason="parallel test fixtures across 3 sibling test file(s) \
+    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case/per-scenario coverage; extracting would obscure per-case intent"
     def test_queue_node_attrs(self):
         text = """
         module m
@@ -209,9 +207,9 @@ class TestQueueDesugar:
         assert "ordering=fifo" in node.attrs
 
     # frob:tests src/frob/strata/_infra.py::elaborate_infra kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_infra.py \
-    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_infra.py (3 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_queue_no_trust_clause_defaults_to_trusted(self):
         text = """
         module m
@@ -222,9 +220,9 @@ class TestQueueDesugar:
         assert node.trust == "trusted"
 
     # frob:tests src/frob/strata/_infra.py::elaborate_infra kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_infra.py \
-    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_infra.py (3 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_queue_explicit_trust_clause_wins_over_default(self):
         # T-0093: queue may declare TRUST explicitly instead of the
         # "trusted" default (docs/strata/surface.md#std-infra).
@@ -304,9 +302,9 @@ class TestCdnDesugar:
         assert fill.age is None
 
     # frob:tests src/frob/strata/_infra.py::elaborate_infra kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_infra.py \
-    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_infra.py (3 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_cdn_missing_provider_is_err(self):
         text = """
         module m
@@ -351,9 +349,9 @@ class TestBalancerDesugar:
         assert node.trust == "trusted"
 
     # frob:tests src/frob/strata/_infra.py::elaborate_infra kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_infra.py \
-    # (3 sites) sharing an arrange-act scaffold typical of exhaustive \
-    # per-case coverage; extracting would obscure per-case intent"
+    # frob:waive DUP001 reason="parallel test methods within test_infra.py (3 sites) \
+    # sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # extracting would obscure per-case intent"
     def test_balancer_explicit_trust_clause_wins_over_default(self):
         # T-0093: balancer may declare TRUST explicitly instead of the
         # "trusted" default (docs/strata/surface.md#std-infra).
@@ -442,10 +440,9 @@ class TestStoreWaivers:
     separately, after node validation, by `elaborate_infra`)."""
 
     # frob:tests src/frob/strata/_infra.py::_elaborate_store kind="unit"
-    # frob:waive DUP001 reason="parallel test fixtures across 2 sibling \
-    # test file(s) (4 sites) sharing an arrange-act scaffold typical of \
-    # exhaustive per-case/per-scenario coverage; extracting would obscure \
-    # per-case intent"
+    # frob:waive DUP001 reason="parallel test fixtures across 2 sibling test file(s) \
+    # (4 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case/per-scenario coverage; extracting would obscure per-case intent"
     def test_empty_reason_fails_closed(self):
         text = """
         module m
@@ -461,10 +458,9 @@ class TestStoreWaivers:
         assert result.danger_err is StrataError.MalformedWaiver
 
     # frob:tests src/frob/strata/_infra.py::_elaborate_store kind="unit"
-    # frob:waive DUP001 reason="parallel test fixtures across 2 sibling \
-    # test file(s) (4 sites) sharing an arrange-act scaffold typical of \
-    # exhaustive per-case/per-scenario coverage; extracting would obscure \
-    # per-case intent"
+    # frob:waive DUP001 reason="parallel test fixtures across 2 sibling test file(s) \
+    # (4 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case/per-scenario coverage; extracting would obscure per-case intent"
     def test_whitespace_only_reason_fails_closed(self):
         text = """
         module m
@@ -480,10 +476,9 @@ class TestStoreWaivers:
         assert result.danger_err is StrataError.MalformedWaiver
 
     # frob:tests src/frob/strata/_infra.py::_elaborate_store kind="unit"
-    # frob:waive DUP001 reason="parallel test fixtures across 2 sibling \
-    # test file(s) (2 sites) sharing an arrange-act scaffold typical of \
-    # exhaustive per-case/per-scenario coverage; extracting would obscure \
-    # per-case intent"
+    # frob:waive DUP001 reason="parallel test fixtures across 2 sibling test file(s) \
+    # (2 sites) sharing an arrange-act scaffold typical of exhaustive \
+    # per-case/per-scenario coverage; extracting would obscure per-case intent"
     def test_multi_instance_family_without_sub_target_fails_closed(self):
         """A bare `waive "SYS100"` on a store would blanket-suppress every
         current and future SYS100 finding on it -- rejected, not silently

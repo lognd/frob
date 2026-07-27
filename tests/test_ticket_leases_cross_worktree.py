@@ -84,7 +84,9 @@ class TestGitCommonDir:
     def test_shared_across_linked_worktrees(
         self, repo: Path, second_worktree: Path
     ) -> None:
-        # frob:tests tests/test_ticket_leases_cross_worktree.py::TestGitCommonDir.test_shared_across_linked_worktrees
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestGitCommonDir.test_shared_acro\
+        # ss_linked_worktrees
         main_common = _git_common_dir(repo)
         wt_common = _git_common_dir(second_worktree)
         assert main_common.is_ok
@@ -99,7 +101,9 @@ class TestCrossWorktreeLeaseVisibility:
     def test_lease_written_in_one_worktree_seen_in_another(
         self, repo: Path, second_worktree: Path
     ) -> None:
-        # frob:tests tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.test_lease_written_in_one_worktree_seen_in_another
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.\
+        # test_lease_written_in_one_worktree_seen_in_another
         created = new_ticket(repo, _spec("Feature A", scope=("src/feature.py",)))
         assert created.is_ok
         tid = created.danger_ok.id
@@ -115,7 +119,9 @@ class TestCrossWorktreeLeaseVisibility:
     def test_doable_in_second_worktree_hides_colliding_ticket(
         self, repo: Path, second_worktree: Path
     ) -> None:
-        # frob:tests tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.test_doable_in_second_worktree_hides_colliding_ticket
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.\
+        # test_doable_in_second_worktree_hides_colliding_ticket
         created = new_ticket(repo, _spec("Feature A", scope=("src/feature.py",)))
         assert created.is_ok
         tid_a = created.danger_ok.id
@@ -146,7 +152,9 @@ class TestCrossWorktreeLeaseVisibility:
     def test_release_on_close_removes_the_lease(
         self, repo: Path, second_worktree: Path
     ) -> None:
-        # frob:tests tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.test_release_on_close_removes_the_lease
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.\
+        # test_release_on_close_removes_the_lease
         created = new_ticket(repo, _spec("Feature A", scope=("src/feature.py",)))
         assert created.is_ok
         tid = created.danger_ok.id
@@ -166,7 +174,9 @@ class TestCrossWorktreeLeaseVisibility:
         (the dead-agent case T-0476 will reconcile more fully) must not
         wedge `doable` for every other worktree forever -- `read_all_leases`
         treats it as stale and skips it."""
-        # frob:tests tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.test_stale_lease_for_a_removed_worktree_is_skipped
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.\
+        # test_stale_lease_for_a_removed_worktree_is_skipped
         doomed_wt = repo.parent / "doomed"
         _run(["git", "worktree", "add", "-b", "feature-doomed", str(doomed_wt)], repo)
         created = new_ticket(doomed_wt, _spec("Doomed", scope=("src/feature.py",)))
@@ -188,7 +198,9 @@ class TestCrossWorktreeLeaseVisibility:
     def test_scope_mutation_refreshes_the_lease(
         self, repo: Path, second_worktree: Path
     ) -> None:
-        # frob:tests tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.test_scope_mutation_refreshes_the_lease
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.\
+        # test_scope_mutation_refreshes_the_lease
         (repo / "src" / "other.py").write_text("# other\n")
         created = new_ticket(repo, _spec("Feature A", scope=("src/feature.py",)))
         assert created.is_ok

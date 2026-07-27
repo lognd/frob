@@ -21,9 +21,9 @@ from frob.strata._native_staleness import (
 )
 
 
-# frob:waive DUP001 reason="parallel test fixtures across 2 sibling test \
-# file(s) (2 sites) sharing an arrange-act scaffold typical of exhaustive \
-# per-case/per-scenario coverage; extracting would obscure per-case intent"
+# frob:waive DUP001 reason="parallel test fixtures across 2 sibling test file(s) (2 \
+# sites) sharing an arrange-act scaffold typical of exhaustive per-case/per-scenario \
+# coverage; extracting would obscure per-case intent"
 def _fake_native_package(root: Path, name: str, so_bytes: bytes) -> Path:
     """A maturin-style extension PACKAGE on `root`: `name/__init__.py` plus a
     compiled `name.abi3.so` alongside it -- mirrors
@@ -60,7 +60,9 @@ class TestStaleNatives:
     def test_reports_native_grammar_ahead_of_native(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_reports_native_grammar_ahead_of_native kind="unit"
+        # frob:tests \
+        # tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_reports_nat\
+        # ive_grammar_ahead_of_native kind="unit"
         # Fixture simulating T-0166's real incident: strata-core/** source
         # newer than the built strata_core.abi3.so.
         name = "fake_native_src"
@@ -94,7 +96,9 @@ class TestStaleNatives:
     def test_fresh_native_reports_nothing(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_fresh_native_reports_nothing kind="unit"
+        # frob:tests \
+        # tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_fresh_nativ\
+        # e_reports_nothing kind="unit"
         name = "fake_native_src_fresh"
         source_dir = "fake-native-src-fresh"
         monkeypatch.setattr(
@@ -122,7 +126,9 @@ class TestStaleNatives:
         see as "clean"), then (2) `stale_natives` still reports it via
         `reason="content-digest"` because the fix compares content, not
         just timestamps."""
-        # frob:tests tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_touch_without_rebuild_is_caught_by_content_digest kind="unit"
+        # frob:tests \
+        # tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_touch_witho\
+        # ut_rebuild_is_caught_by_content_digest kind="unit"
         name = "fake_native_src_touch_attack"
         source_dir = "fake-native-src-touch-attack"
         monkeypatch.setattr(
@@ -179,7 +185,9 @@ class TestStaleNatives:
         bytes actually change) after a source edit must NOT be
         misreported as stale via content-digest -- only an unrebuilt edit
         (artifact bytes unchanged) is the touch-attack signature."""
-        # frob:tests tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_real_rebuild_after_edit_is_not_a_false_positive kind="unit"
+        # frob:tests \
+        # tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_real_rebuil\
+        # d_after_edit_is_not_a_false_positive kind="unit"
         name = "fake_native_src_real_rebuild"
         source_dir = "fake-native-src-real-rebuild"
         monkeypatch.setattr(
@@ -214,7 +222,9 @@ class TestStaleNatives:
     def test_unbuilt_native_is_not_reported_as_stale(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_unbuilt_native_is_not_reported_as_stale kind="unit"
+        # frob:tests \
+        # tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_unbuilt_nat\
+        # ive_is_not_reported_as_stale kind="unit"
         # An unbuilt native is T-0333's `missing_natives` diagnostic -- a
         # different remedy ("build it") from "stale" ("rebuild it").
         name = "fake_native_src_unbuilt"
@@ -231,7 +241,9 @@ class TestStaleNatives:
     def test_no_matching_source_dir_is_not_reported(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_no_matching_source_dir_is_not_reported kind="unit"
+        # frob:tests \
+        # tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_no_matching\
+        # _source_dir_is_not_reported kind="unit"
         name = "fakenat_no_source_dir"
         _write_frob_toml(tmp_path, name)
         _fake_native_package(tmp_path, name, b"\x00compiled")
@@ -242,7 +254,9 @@ class TestStaleNatives:
         assert stale_natives(tmp_path) == ()
 
     def test_default_native_source_dirs_match_repo_convention(self) -> None:
-        # frob:tests tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_default_native_source_dirs_match_repo_convention kind="unit"
+        # frob:tests \
+        # tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_default_nat\
+        # ive_source_dirs_match_repo_convention kind="unit"
         assert NATIVE_SOURCE_DIRS == ("strata-core", "frob-core")
 
 
@@ -255,7 +269,9 @@ class TestCheckNativeStalenessOrExit:
         monkeypatch: pytest.MonkeyPatch,
         capsys: pytest.CaptureFixture[str],
     ) -> None:
-        # frob:tests tests/unit/strata/test_native_staleness.py::TestCheckNativeStalenessOrExit.test_exits_nonzero_and_prints_when_stale kind="unit"
+        # frob:tests \
+        # tests/unit/strata/test_native_staleness.py::TestCheckNativeStalenessOrExit.te\
+        # st_exits_nonzero_and_prints_when_stale kind="unit"
         monkeypatch.setattr(
             "frob.strata._native_staleness.stale_native_warning",
             lambda root: "STALE NATIVE: fake",
@@ -268,7 +284,9 @@ class TestCheckNativeStalenessOrExit:
     def test_returns_none_when_not_stale(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/unit/strata/test_native_staleness.py::TestCheckNativeStalenessOrExit.test_returns_none_when_not_stale kind="unit"
+        # frob:tests \
+        # tests/unit/strata/test_native_staleness.py::TestCheckNativeStalenessOrExit.te\
+        # st_returns_none_when_not_stale kind="unit"
         monkeypatch.setattr(
             "frob.strata._native_staleness.stale_native_warning", lambda root: None
         )

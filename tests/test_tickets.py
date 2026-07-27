@@ -263,7 +263,8 @@ class TestEvidenceValidation:
     def test_validate_evidence_normalizes_dot_separator_to_double_colon(
         self,
     ) -> None:
-        # frob:tests src/frob/tickets/__init__.py::normalize_evidence_separator kind="unit"
+        # frob:tests src/frob/tickets/__init__.py::normalize_evidence_separator \
+        # kind="unit"
         # T-0293: a hand-recorded `Class.method` (dot) evidence id never
         # resolves against real pytest node ids (`Class::method`); it must
         # be canonicalized at write time, not silently stored.
@@ -274,19 +275,25 @@ class TestEvidenceValidation:
     def test_validate_evidence_leaves_correct_double_colon_form_unchanged(
         self,
     ) -> None:
-        # frob:tests tests/test_tickets.py::TestEvidenceValidation.test_validate_evidence_leaves_correct_double_colon_form_unchanged kind="unit"
+        # frob:tests \
+        # tests/test_tickets.py::TestEvidenceValidation.test_validate_evidence_leaves_c\
+        # orrect_double_colon_form_unchanged kind="unit"
         result = validate_evidence("tests/test_foo.py::TestFoo::test_a")
         assert result.is_ok
         assert result.danger_ok == "tests/test_foo.py::TestFoo::test_a"
 
     def test_validate_evidence_normalizes_dot_with_parametrized_suffix(self) -> None:
-        # frob:tests tests/test_tickets.py::TestEvidenceValidation.test_validate_evidence_normalizes_dot_with_parametrized_suffix kind="unit"
+        # frob:tests \
+        # tests/test_tickets.py::TestEvidenceValidation.test_validate_evidence_normaliz\
+        # es_dot_with_parametrized_suffix kind="unit"
         result = validate_evidence("tests/test_foo.py::TestFoo.test_a[x]")
         assert result.is_ok
         assert result.danger_ok == "tests/test_foo.py::TestFoo::test_a[x]"
 
     def test_validate_evidence_ignores_plain_ids_without_double_colon(self) -> None:
-        # frob:tests tests/test_tickets.py::TestEvidenceValidation.test_validate_evidence_ignores_plain_ids_without_double_colon kind="unit"
+        # frob:tests \
+        # tests/test_tickets.py::TestEvidenceValidation.test_validate_evidence_ignores_\
+        # plain_ids_without_double_colon kind="unit"
         # No `::` prefix at all (cmd: evidence, bare strings) -- nothing to
         # normalize, must pass through untouched.
         result = validate_evidence("cmd:sha256=deadbeefcafefeed")

@@ -47,14 +47,12 @@ give up?"), never spuriously CREATE a false-positive duplicate pairing.
 Each rule module documents its own Unknown policy where it consumes this
 substrate (see `_loop_effects.py`'s and `_dup_spawn.py`'s module
 docstrings)."""
-# frob:waive INV006 reason="T-0922 first-turn-on: this module's design- \
-# rationale prose ('this module answers...', 'EXPLICIT UNKNOWN...') is \
-# source-level commentary describing already-implemented internal \
-# behavior, verifiable by reading the code it annotates, rather than a \
-# separate cross-module contract needing its own tracked invariant -- \
-# same disposition as the identical T-0585/T-0775/T-0919 calibration- \
-# batch waivers already carried by other first-turn-on modules in this \
-# package"
+# frob:waive INV006 reason="T-0922 first-turn-on: this module's design- rationale \
+# prose ('this module answers...', 'EXPLICIT UNKNOWN...') is source-level commentary \
+# describing already-implemented internal behavior, verifiable by reading the code it \
+# annotates, rather than a separate cross-module contract needing its own tracked \
+# invariant -- same disposition as the identical T-0585/T-0775/T-0919 calibration- \
+# batch waivers already carried by other first-turn-on modules in this package"
 
 from __future__ import annotations
 

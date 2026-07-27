@@ -23,7 +23,9 @@ def _write(root: Path, rel: str, source: str) -> None:
 
 
 class TestMissingOwner:
-    # frob:tests tests/unit/strata/test_ssot.py::TestMissingOwner.test_multi_writer_store_without_owner_fires
+    # frob:tests \
+    # tests/unit/strata/test_ssot.py::TestMissingOwner.test_multi_writer_store_without_\
+    # owner_fires
     def test_multi_writer_store_without_owner_fires(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -43,7 +45,8 @@ class TestMissingOwner:
         ]
         assert {v.node for v in missing} == {"orders_db"}
 
-    # frob:tests tests/unit/strata/test_ssot.py::TestMissingOwner.test_single_writer_store_clean
+    # frob:tests \
+    # tests/unit/strata/test_ssot.py::TestMissingOwner.test_single_writer_store_clean
     def test_single_writer_store_clean(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -58,7 +61,8 @@ class TestMissingOwner:
             v for v in result.danger_ok.violations if v.rule == REL_MISSING_OWNER
         ]
 
-    # frob:tests tests/unit/strata/test_ssot.py::TestMissingOwner.test_owner_attr_discharges
+    # frob:tests \
+    # tests/unit/strata/test_ssot.py::TestMissingOwner.test_owner_attr_discharges
     def test_owner_attr_discharges(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -77,7 +81,9 @@ class TestMissingOwner:
             v for v in result.danger_ok.violations if v.rule == REL_MISSING_OWNER
         ]
 
-    # frob:tests tests/unit/strata/test_ssot.py::TestMissingOwner.test_reconciliation_attr_discharges
+    # frob:tests \
+    # tests/unit/strata/test_ssot.py::TestMissingOwner.test_reconciliation_attr_dischar\
+    # ges
     def test_reconciliation_attr_discharges(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -96,7 +102,9 @@ class TestMissingOwner:
             v for v in result.danger_ok.violations if v.rule == REL_MISSING_OWNER
         ]
 
-    # frob:tests tests/unit/strata/test_ssot.py::TestMissingOwner.test_empty_store_ids_emits_nothing
+    # frob:tests \
+    # tests/unit/strata/test_ssot.py::TestMissingOwner.test_empty_store_ids_emits_nothi\
+    # ng
     def test_empty_store_ids_emits_nothing(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -113,7 +121,8 @@ class TestMissingOwner:
         assert result.is_ok
         assert result.danger_ok.violations == ()
 
-    # frob:tests tests/unit/strata/test_ssot.py::TestMissingOwner.test_waiver_discharges_finding
+    # frob:tests \
+    # tests/unit/strata/test_ssot.py::TestMissingOwner.test_waiver_discharges_finding
     def test_waiver_discharges_finding(self, tmp_path: Path):
         model = KernelModel(
             nodes=(
@@ -145,7 +154,9 @@ class TestMissingOwner:
 
 
 class TestUnprovenOwner:
-    # frob:tests tests/unit/strata/test_ssot.py::TestUnprovenOwner.test_declared_with_no_code_evidence_fires
+    # frob:tests \
+    # tests/unit/strata/test_ssot.py::TestUnprovenOwner.test_declared_with_no_code_evid\
+    # ence_fires
     def test_declared_with_no_code_evidence_fires(self, tmp_path: Path):
         _write(tmp_path, "src/widget/_io.py", "def handle():\n    return ok()\n")
         model = KernelModel(
@@ -170,7 +181,9 @@ class TestUnprovenOwner:
         ]
         assert {v.node for v in violations} == {"orders_db"}
 
-    # frob:tests tests/unit/strata/test_ssot.py::TestUnprovenOwner.test_declared_with_real_code_evidence_discharges
+    # frob:tests \
+    # tests/unit/strata/test_ssot.py::TestUnprovenOwner.test_declared_with_real_code_ev\
+    # idence_discharges
     def test_declared_with_real_code_evidence_discharges(self, tmp_path: Path):
         _write(
             tmp_path,
@@ -198,7 +211,9 @@ class TestUnprovenOwner:
             v for v in result.danger_ok.violations if v.rule == REL_UNPROVEN_OWNER
         ]
 
-    # frob:tests tests/unit/strata/test_ssot.py::TestUnprovenOwner.test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+    # frob:tests \
+    # tests/unit/strata/test_ssot.py::TestUnprovenOwner.test_declared_with_no_bound_cod\
+    # e_is_uncheckable_not_a_violation
     def test_declared_with_no_bound_code_is_uncheckable_not_a_violation(
         self, tmp_path: Path
     ):

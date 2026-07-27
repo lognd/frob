@@ -125,10 +125,10 @@ def _frob_raises_declaration(
     return frozenset(name.strip() for name in rest.split(",") if name.strip())
 
 
-# frob:invariant terminates reason="recurses only into a body node one \
-# tree-sitter edge below the current node; a lexical prover cannot see \
-# that the child accessor is structurally smaller without dataflow" \
-# measure="tree-sitter AST depth under node, finite per parse"
+# frob:invariant terminates reason="recurses only into a body node one tree-sitter \
+# edge below the current node; a lexical prover cannot see that the child accessor is \
+# structurally smaller without dataflow" measure="tree-sitter AST depth under node, \
+# finite per parse"
 def _iter_py_functions(
     node: Node, class_prefix: str = ""
 ) -> Iterator[tuple[Node, str, str]]:

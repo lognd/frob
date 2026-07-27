@@ -52,7 +52,9 @@ def _make_ticket(
 
 class TestMutateScope:
     def test_add_free_path_granted(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_tickets_scope_mutation.py::TestMutateScope.test_add_free_path_granted
+        # frob:tests \
+        # tests/test_tickets_scope_mutation.py::TestMutateScope.test_add_free_path_gran\
+        # ted
         ticket = _make_ticket(tmp_path, scope=("src/frob/other/**",))
         result = mutate_scope(
             tmp_path,
@@ -149,7 +151,9 @@ class TestMutateScope:
         assert other.id in {t.id for t in freed}
 
     def test_remove_not_declared_rejected(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_tickets_scope_mutation.py::TestMutateScope.test_remove_not_declared_rejected
+        # frob:tests \
+        # tests/test_tickets_scope_mutation.py::TestMutateScope.test_remove_not_declare\
+        # d_rejected
         ticket = _make_ticket(tmp_path, scope=("src/frob/other/**",))
         result = mutate_scope(
             tmp_path, ticket.id, remove=("src/frob/nope/**",), reason="x"
@@ -180,13 +184,17 @@ class TestMutateScope:
         )
 
     def test_empty_change_rejected(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_tickets_scope_mutation.py::TestMutateScope.test_empty_change_rejected
+        # frob:tests \
+        # tests/test_tickets_scope_mutation.py::TestMutateScope.test_empty_change_rejec\
+        # ted
         ticket = _make_ticket(tmp_path, scope=("src/frob/other/**",))
         result = mutate_scope(tmp_path, ticket.id, reason="nothing to do")
         assert result.is_err and result.danger_err == TicketError.ScopeChangeEmpty
 
     def test_missing_reason_rejected(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_tickets_scope_mutation.py::TestMutateScope.test_missing_reason_rejected
+        # frob:tests \
+        # tests/test_tickets_scope_mutation.py::TestMutateScope.test_missing_reason_rej\
+        # ected
         ticket = _make_ticket(tmp_path, scope=("src/frob/other/**",))
         result = mutate_scope(
             tmp_path, ticket.id, add=("src/frob/__main__.py",), reason="   "
@@ -196,7 +204,9 @@ class TestMutateScope:
         )
 
     def test_audit_trail_is_append_only(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_tickets_scope_mutation.py::TestMutateScope.test_audit_trail_is_append_only
+        # frob:tests \
+        # tests/test_tickets_scope_mutation.py::TestMutateScope.test_audit_trail_is_app\
+        # end_only
         ticket = _make_ticket(tmp_path, scope=("src/frob/other/**",))
         first = mutate_scope(
             tmp_path, ticket.id, add=("docs/modules/tickets.md",), reason="doc edge"
@@ -334,7 +344,8 @@ class TestGlobIsSubset:
 
 class TestScopeCli:
     def test_cli_add_free_path(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_tickets_scope_mutation.py::TestScopeCli.test_cli_add_free_path
+        # frob:tests \
+        # tests/test_tickets_scope_mutation.py::TestScopeCli.test_cli_add_free_path
         ticket = _make_ticket(tmp_path, scope=("src/frob/other/**",))
         cfg = AppConfig(
             ticket_command="scope",
@@ -364,8 +375,14 @@ class TestScopeCli:
             _scope(tmp_path, cfg)
         assert exc_info.value.code == 1
 
+    # frob:waive DUP001 reason="pre-existing duplication with \
+    # tests/unit/test_ticket_file_flags.py::TestScopeReasonFile.test_neither_reason_nor_reason_file_errors_cleanly, \
+    # surfaced (not introduced) by T-0988's mechanical fmt sweep touching this \
+    # file's directive comments; dedup tracked separately in T-0995, \
+    # not fixed opportunistically here"  # noqa: E501
     def test_cli_requires_reason(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_tickets_scope_mutation.py::TestScopeCli.test_cli_requires_reason
+        # frob:tests \
+        # tests/test_tickets_scope_mutation.py::TestScopeCli.test_cli_requires_reason
         ticket = _make_ticket(tmp_path, scope=("src/frob/other/**",))
         cfg = AppConfig(
             ticket_command="scope",
@@ -378,7 +395,9 @@ class TestScopeCli:
         assert exc_info.value.code == 1
 
     def test_cli_requires_add_or_remove(self, tmp_path: Path) -> None:
-        # frob:tests tests/test_tickets_scope_mutation.py::TestScopeCli.test_cli_requires_add_or_remove
+        # frob:tests \
+        # tests/test_tickets_scope_mutation.py::TestScopeCli.test_cli_requires_add_or_r\
+        # emove
         ticket = _make_ticket(tmp_path, scope=("src/frob/other/**",))
         cfg = AppConfig(
             ticket_command="scope",

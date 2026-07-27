@@ -360,10 +360,10 @@ def _find_pyo3_python() -> str | None:
     return None
 
 
-# frob:waive ARCH103 reason="T-0977: PyO3-toolchain-probe helper -- finds a \
-# usable python, builds the env overlay, or returns a real Err (never a \
-# fabricated pass) per T-0092; the probe-then-Err-or-overlay shape IS the \
-# single 'discover PyO3 env, honestly' concern the docstring names"
+# frob:waive ARCH103 reason="T-0977: PyO3-toolchain-probe helper -- finds a usable \
+# python, builds the env overlay, or returns a real Err (never a fabricated pass) per \
+# T-0092; the probe-then-Err-or-overlay shape IS the single 'discover PyO3 env, \
+# honestly' concern the docstring names"
 def _cargo_env() -> Result[dict[str, str], TestingError]:
     """The `PYO3_PYTHON` + `LD_LIBRARY_PATH` overlay a `cargo test` subprocess
     needs to link/run a PyO3 crate. `Err` -- never a fabricated pass -- when no

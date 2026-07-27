@@ -4195,9 +4195,9 @@ def _operation_entry_matches(
 # here would be a genuine import cycle -- deferred until call time, when
 # both packages have finished initializing.
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive COV007 reason="docs/modules/vet.md's Public API section \
-# individually frob:describes this private helper by name (T-0529) -- a \
-# deliberate architecture doc, not accidental drift onto a private helper"
+# frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
+# frob:describes this private helper by name (T-0529) -- a deliberate architecture \
+# doc, not accidental drift onto a private helper"
 # frob:ticket T-0153
 def _scan_file_fingerprints(path: Path) -> tuple[CveFingerprint, ...]:
     """The `frob.strata.CVE_FINGERPRINTS` entries whose needle(s) matched in
@@ -4233,9 +4233,9 @@ def _scan_file_fingerprints(path: Path) -> tuple[CveFingerprint, ...]:
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive COV007 reason="docs/modules/vet.md's Public API section \
-# individually frob:describes this private helper by name (T-0529) -- a \
-# deliberate architecture doc, not accidental drift onto a private helper"
+# frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
+# frob:describes this private helper by name (T-0529) -- a deliberate architecture \
+# doc, not accidental drift onto a private helper"
 def _decode_to_exec_signal(path: Path) -> bool:
     """True if one function's body reaches both a decode-ish and an exec-ish
     token (docs/modules/vet.md "eval-reachability": the highest-precision detector).
@@ -4290,9 +4290,9 @@ def _body_reaches_decode_and_exec(body: str) -> bool:
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive COV007 reason="docs/modules/vet.md's Public API section \
-# individually frob:describes this private helper by name (T-0529) -- a \
-# deliberate architecture doc, not accidental drift onto a private helper"
+# frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
+# frob:describes this private helper by name (T-0529) -- a deliberate architecture \
+# doc, not accidental drift onto a private helper"
 def _scan_directory_capabilities(
     source_dir: Path, *, max_files: int = 500
 ) -> tuple[frozenset[str], bool]:
@@ -4433,9 +4433,9 @@ def _aggregate_capabilities(
 
 
 # frob:doc docs/modules/vet.md#public-api
-# frob:waive COV007 reason="docs/modules/vet.md's Public API section \
-# individually frob:describes this private helper by name (T-0529) -- a \
-# deliberate architecture doc, not accidental drift onto a private helper"
+# frob:waive COV007 reason="docs/modules/vet.md's Public API section individually \
+# frob:describes this private helper by name (T-0529) -- a deliberate architecture \
+# doc, not accidental drift onto a private helper"
 # frob:ticket T-0153
 def _scan_directory_fingerprints(
     source_dir: Path, *, max_files: int = 500

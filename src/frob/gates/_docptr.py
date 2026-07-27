@@ -60,13 +60,12 @@ edges, not doc prose, so it goes through the normal edge-waiver path
 gate, not DOC006's own `.md`-only nearby-line scan).
 """
 # frob:ticket T-0437
-# frob:waive INV006 reason="T-0437 INV006 first-turn-on pool: this module's \
-# 'only' usages are source-level design-rationale prose (a docstring/comment \
-# describing already-implemented scan-scope behavior, verifiable by reading \
-# the code it annotates -- e.g. 'only fires when...', 'checked ... only the \
-# top-level one') rather than a separate cross-module contract needing its \
-# own tracked invariant; disposed as a calibration batch, same posture as \
-# frob.gates._docblocks's own T-0585 INV006 waiver"
+# frob:waive INV006 reason="T-0437 INV006 first-turn-on pool: this module's 'only' \
+# usages are source-level design-rationale prose (a docstring/comment describing \
+# already-implemented scan-scope behavior, verifiable by reading the code it annotates \
+# -- e.g. 'only fires when...', 'checked ... only the top-level one') rather than a \
+# separate cross-module contract needing its own tracked invariant; disposed as a \
+# calibration batch, same posture as frob.gates._docblocks's own T-0585 INV006 waiver"
 
 from __future__ import annotations
 
@@ -632,29 +631,31 @@ def _tracked_all_files(root: Path) -> frozenset[str]:
 # frob:doc docs/modules/gates.md#doc006-doc-pointer-resolution-gate-t-0437
 # frob:tests tests/test_docptr_gate.py::TestDoc006FilePath.test_missing_path_flagged
 # frob:tests tests/test_docptr_gate.py::TestDoc006FilePath.test_real_path_passes
-# frob:tests tests/test_docptr_gate.py::TestDoc006FilePath.\
-# test_unrecognized_prose_not_flagged
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006FilePath.test_unrecognized_prose_not_flagged
 # frob:tests tests/test_docptr_gate.py::TestDoc006DocAnchor.test_missing_anchor_flagged
 # frob:tests tests/test_docptr_gate.py::TestDoc006DocAnchor.test_real_anchor_passes
-# frob:tests tests/test_docptr_gate.py::TestDoc006Cli.\
-# test_nonexistent_subcommand_flagged
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006Cli.test_nonexistent_subcommand_flagged
 # frob:tests tests/test_docptr_gate.py::TestDoc006Cli.test_nonexistent_flag_flagged
 # frob:tests tests/test_docptr_gate.py::TestDoc006Cli.test_real_command_passes
 # frob:tests tests/test_docptr_gate.py::TestDoc006Config.test_bogus_section_flagged
 # frob:tests tests/test_docptr_gate.py::TestDoc006Config.test_real_section_passes
 # frob:tests tests/test_docptr_gate.py::TestDoc006Symbol.test_nonexistent_symbol_flagged
 # frob:tests tests/test_docptr_gate.py::TestDoc006Symbol.test_real_symbol_passes
-# frob:tests tests/test_docptr_gate.py::TestDoc006Symbol.\
-# test_module_dunder_init_and_all_pass
-# frob:tests tests/test_docptr_gate.py::TestDoc006Symbol.\
-# test_class_attribute_chain_not_flagged
-# frob:tests tests/test_docptr_gate.py::TestDoc006FilePath.\
-# test_dot_frob_runtime_path_not_flagged
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006Symbol.test_module_dunder_init_and_all_pass
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006Symbol.test_class_attribute_chain_not_flagged
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006FilePath.test_dot_frob_runtime_path_not_flagged
 # frob:tests tests/test_docptr_gate.py::TestDoc006Waive.test_waive_suppresses
-# frob:tests tests/test_docptr_gate.py::TestDoc006TestsTargetShape.\
-# test_double_separator_target_flagged
-# frob:tests tests/test_docptr_gate.py::TestDoc006TestsTargetShape.\
-# test_single_separator_target_not_flagged
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006TestsTargetShape.test_double_separator_target_fl\
+# agged
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006TestsTargetShape.test_single_separator_target_no\
+# t_flagged
 def doc006_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DOC006: doc-pointer resolution over a closed set of recognized,
     mechanically resolvable pointer shapes (see this module's docstring)

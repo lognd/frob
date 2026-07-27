@@ -106,7 +106,8 @@ def test_tmlanguage_is_valid_json():
     assert grammar["scopeName"] == "source.strata"
 
 
-# frob:doc docs/guides/extending/strata-surface-grammar.md#strata-surface-grammar-keywords
+# frob:doc \
+# docs/guides/extending/strata-surface-grammar.md#strata-surface-grammar-keywords
 def test_construct_keywords_match_parser_bidirectionally():
     """Every parser construct keyword is in the grammar, and vice versa."""
     source = _parse_rs_text()

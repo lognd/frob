@@ -13,7 +13,9 @@ def _rate(value: float = 1.0) -> Quantity:
 
 
 class TestSpof:
-    # frob:tests tests/unit/strata/test_spof.py::TestSpof.test_singleton_node_with_critical_inbound_fires
+    # frob:tests \
+    # tests/unit/strata/test_spof.py::TestSpof.test_singleton_node_with_critical_inboun\
+    # d_fires
     def test_singleton_node_with_critical_inbound_fires(self):
         model = KernelModel(
             nodes=(
@@ -26,7 +28,8 @@ class TestSpof:
         violations = [v for v in report.violations if v.rule == REL_SPOF]
         assert {v.node for v in violations} == {"inventory"}
 
-    # frob:tests tests/unit/strata/test_spof.py::TestSpof.test_declared_singleton_capacity_fires
+    # frob:tests \
+    # tests/unit/strata/test_spof.py::TestSpof.test_declared_singleton_capacity_fires
     def test_declared_singleton_capacity_fires(self):
         model = KernelModel(
             nodes=(
@@ -85,7 +88,9 @@ class TestSpof:
         report = check_spof(model)
         assert not [v for v in report.violations if v.rule == REL_SPOF]
 
-    # frob:tests tests/unit/strata/test_spof.py::TestSpof.test_waiver_on_one_node_keeps_sibling_node_finding
+    # frob:tests \
+    # tests/unit/strata/test_spof.py::TestSpof.test_waiver_on_one_node_keeps_sibling_no\
+    # de_finding
     def test_waiver_on_one_node_keeps_sibling_node_finding(self):
         model = KernelModel(
             nodes=(

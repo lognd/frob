@@ -59,7 +59,9 @@ class TestFindDuplicates:
         all_symbols = {f.symbol for g in result.groups for f in g.fragments}
         assert "format_report" not in all_symbols
 
-    # frob:tests tests/unit/test_dup.py::TestFindDuplicates.test_with_target_alpha_rename_matches_at_renamed_rung
+    # frob:tests \
+    # tests/unit/test_dup.py::TestFindDuplicates.test_with_target_alpha_rename_matches_\
+    # at_renamed_rung
     # frob:ticket T-0486
     def test_with_target_alpha_rename_matches_at_renamed_rung(self, tmp_path):
         """T-0486 regression: two clones differing only in a `with ... as

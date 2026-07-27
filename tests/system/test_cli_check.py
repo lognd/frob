@@ -113,9 +113,9 @@ class TestCheckVerbosity:
 
 
 class TestCheckBadCode:
-    # frob:waive DUP001 reason="parallel CLI system-test scaffolding: \
-    # independent commands sharing the subprocess-dispatch arrange-act \
-    # shape; extracting would obscure per-command intent"
+    # frob:waive DUP001 reason="parallel CLI system-test scaffolding: independent \
+    # commands sharing the subprocess-dispatch arrange-act shape; extracting would \
+    # obscure per-command intent"
     def test_unused_import_fails(self, tmp_path):
         src = "import os\n\ndef foo() -> None:\n    pass\n"
         _make_project(tmp_path, src)
@@ -153,9 +153,9 @@ class TestCheckBadCode:
 
 
 class TestCheckFixtures:
-    # frob:waive DUP001 reason="parallel CLI system-test scaffolding: \
-    # independent commands sharing the subprocess-dispatch arrange-act \
-    # shape; extracting would obscure per-command intent"
+    # frob:waive DUP001 reason="parallel CLI system-test scaffolding: independent \
+    # commands sharing the subprocess-dispatch arrange-act shape; extracting would \
+    # obscure per-command intent"
     def test_bad_python_code_fails(self, tmp_path):
         # bad_python fixture has noqa/type:ignore markers; use a raw bad file instead
         src = "import os\nimport sys\n\ndef foo() -> None:\n    pass\n"
@@ -378,7 +378,9 @@ class TestCheckGatesStage:
 
 
 class TestCheckDocAnchorScopedVsUnscoped:
-    # frob:tests tests/system/test_cli_check.py::TestCheckDocAnchorScopedVsUnscoped.test_scoped_docanchor_matches_unscoped kind="e2e"
+    # frob:tests \
+    # tests/system/test_cli_check.py::TestCheckDocAnchorScopedVsUnscoped.test_scoped_do\
+    # canchor_matches_unscoped kind="e2e"
     def test_scoped_docanchor_matches_unscoped(self, tmp_path):
         """T-0314 litmus: a `frob:doc docs/x.md#anchor` directive whose target
         lives at the repo root must resolve identically whether `frob check`
@@ -436,7 +438,9 @@ class TestCheckStampBaselineAndDelta:
     """`frob check --stamp-baseline`/`--delta` CLI round trip (T-0107)."""
 
     def test_stamp_baseline_writes_stamp(self, tmp_path):
-        # frob:tests tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta.test_stamp_baseline_writes_stamp
+        # frob:tests \
+        # tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta.test_stamp_bas\
+        # eline_writes_stamp
         git_init_and_config(tmp_path)
         (tmp_path / "pkg.py").write_text(
             "def add(x: int, y: int) -> int:\n    return x + y\n"
@@ -451,7 +455,9 @@ class TestCheckStampBaselineAndDelta:
         assert stamp.exists()
 
     def test_delta_reports_only_new_violation(self, tmp_path):
-        # frob:tests tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta.test_delta_reports_only_new_violation
+        # frob:tests \
+        # tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta.test_delta_rep\
+        # orts_only_new_violation
         git_init_and_config(tmp_path)
         _write_pyproject(tmp_path)
         (tmp_path / "pkg.py").write_text(
@@ -485,7 +491,9 @@ class TestCheckStampBaselineAndDelta:
         assert not any("pkg.py:" in line for line in reported)
 
     def test_delta_falls_back_to_full_set_when_no_baseline(self, tmp_path):
-        # frob:tests tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta.test_delta_falls_back_to_full_set_when_no_baseline
+        # frob:tests \
+        # tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta.test_delta_fal\
+        # ls_back_to_full_set_when_no_baseline
         git_init_and_config(tmp_path)
         _write_pyproject(tmp_path)
         (tmp_path / "pkg.py").write_text(
@@ -508,7 +516,9 @@ class TestCheckStageGroups:
 
     # frob:ticket T-0627
     def test_only_list_prints_stage_names(self, tmp_path):
-        # frob:tests tests/system/test_cli_check.py::TestCheckStageGroups.test_only_list_prints_stage_names
+        # frob:tests \
+        # tests/system/test_cli_check.py::TestCheckStageGroups.test_only_list_prints_st\
+        # age_names
         _make_project(tmp_path, "def add(x: int, y: int) -> int:\n    return x + y\n")
         r = run("check", str(tmp_path), "--only", "list")
         assert r.returncode == 0, r.stdout + r.stderr
@@ -522,7 +532,9 @@ class TestCheckStageGroups:
 
     # frob:ticket T-0627
     def test_only_list_json_wraps_stages(self, tmp_path):
-        # frob:tests tests/system/test_cli_check.py::TestCheckStageGroups.test_only_list_json_wraps_stages
+        # frob:tests \
+        # tests/system/test_cli_check.py::TestCheckStageGroups.test_only_list_json_wrap\
+        # s_stages
         import json
 
         _make_project(tmp_path, "def add(x: int, y: int) -> int:\n    return x + y\n")
@@ -533,7 +545,9 @@ class TestCheckStageGroups:
 
     # frob:ticket T-0627
     def test_available_stages_cover_every_gate_and_tool(self):
-        # frob:tests tests/system/test_cli_check.py::TestCheckStageGroups.test_available_stages_cover_every_gate_and_tool
+        # frob:tests \
+        # tests/system/test_cli_check.py::TestCheckStageGroups.test_available_stages_co\
+        # ver_every_gate_and_tool
         from frob.check import _STAGE_GROUPS, available_stages
         from frob.check import _TOOL_STAGES as tool_stages
         from frob.gates import _ALL_GATES
@@ -550,7 +564,9 @@ class TestCheckStageGroups:
 
     # frob:ticket T-0627
     def test_stage_group_expands_like_hand_listed_only(self, tmp_path):
-        # frob:tests tests/system/test_cli_check.py::TestCheckStageGroups.test_stage_group_expands_like_hand_listed_only
+        # frob:tests \
+        # tests/system/test_cli_check.py::TestCheckStageGroups.test_stage_group_expands\
+        # _like_hand_listed_only
         _make_project(tmp_path, "import os\n\ndef foo() -> None:\n    pass\n")
         grouped = run(
             "check", str(tmp_path), "--skip-tests", "--only", "lint", "--json"
@@ -577,7 +593,9 @@ class TestCheckAgentRefusal:
 
     # frob:ticket T-0627
     def test_bare_check_refuses_under_frob_agent(self, tmp_path):
-        # frob:tests tests/system/test_cli_check.py::TestCheckAgentRefusal.test_bare_check_refuses_under_frob_agent
+        # frob:tests \
+        # tests/system/test_cli_check.py::TestCheckAgentRefusal.test_bare_check_refuses\
+        # _under_frob_agent
         _make_project(tmp_path, "def add(x: int, y: int) -> int:\n    return x + y\n")
         r = run(
             "check",
@@ -592,7 +610,9 @@ class TestCheckAgentRefusal:
 
     # frob:ticket T-0627
     def test_stage_selected_check_runs_under_frob_agent(self, tmp_path):
-        # frob:tests tests/system/test_cli_check.py::TestCheckAgentRefusal.test_stage_selected_check_runs_under_frob_agent
+        # frob:tests \
+        # tests/system/test_cli_check.py::TestCheckAgentRefusal.test_stage_selected_che\
+        # ck_runs_under_frob_agent
         _make_project(tmp_path, "def add(x: int, y: int) -> int:\n    return x + y\n")
         r = run(
             "check",
@@ -607,7 +627,9 @@ class TestCheckAgentRefusal:
 
     # frob:ticket T-0627
     def test_allow_full_check_override_bypasses_refusal(self, tmp_path):
-        # frob:tests tests/system/test_cli_check.py::TestCheckAgentRefusal.test_allow_full_check_override_bypasses_refusal
+        # frob:tests \
+        # tests/system/test_cli_check.py::TestCheckAgentRefusal.test_allow_full_check_o\
+        # verride_bypasses_refusal
         _make_project(tmp_path, "def add(x: int, y: int) -> int:\n    return x + y\n")
         r = run(
             "check",
@@ -622,7 +644,9 @@ class TestCheckAgentRefusal:
 
     # frob:ticket T-0627
     def test_bare_check_unaffected_without_frob_agent(self, tmp_path):
-        # frob:tests tests/system/test_cli_check.py::TestCheckAgentRefusal.test_bare_check_unaffected_without_frob_agent
+        # frob:tests \
+        # tests/system/test_cli_check.py::TestCheckAgentRefusal.test_bare_check_unaffec\
+        # ted_without_frob_agent
         # Scoped to the fast "lint" stage group -- this only needs to prove
         # the refusal never fires without FROB_AGENT set, not re-run the
         # full check/gates pass another system test already covers.

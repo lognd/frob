@@ -32,10 +32,9 @@ def _write(root: Path, name: str, src: str) -> Path:
     return path
 
 
-# frob:waive DUP001 reason="parallel perf-rule case table: independent \
-# PERF-rule fire/no-fire cases sharing an arrange-act scaffold by design \
-# (one src snippet + one assertion per case); extracting would obscure \
-# per-case intent"
+# frob:waive DUP001 reason="parallel perf-rule case table: independent PERF-rule \
+# fire/no-fire cases sharing an arrange-act scaffold by design (one src snippet + one \
+# assertion per case); extracting would obscure per-case intent"
 def test_perf001_fires_on_list_membership_in_loop(tmp_path):
     """PERF001 fires: `x in data` inside a loop where `data` is a list."""
     # frob:ticket T-0021
@@ -56,10 +55,9 @@ def test_perf001_fires_on_list_membership_in_loop(tmp_path):
     assert any(v.rule == "PERF001" for v in violations)
 
 
-# frob:waive DUP001 reason="parallel perf-rule case table: independent \
-# PERF-rule fire/no-fire cases sharing an arrange-act scaffold by design \
-# (one src snippet + one assertion per case); extracting would obscure \
-# per-case intent"
+# frob:waive DUP001 reason="parallel perf-rule case table: independent PERF-rule \
+# fire/no-fire cases sharing an arrange-act scaffold by design (one src snippet + one \
+# assertion per case); extracting would obscure per-case intent"
 def test_perf001_does_not_fire_on_set_membership_in_loop(tmp_path):
     """PERF001 does not fire when the container is already a set -- the
     false-positive guard docs/modules/perf.md and the ticket both name as
@@ -81,10 +79,9 @@ def test_perf001_does_not_fire_on_set_membership_in_loop(tmp_path):
     assert not any(v.rule == "PERF001" for v in violations)
 
 
-# frob:waive DUP001 reason="parallel perf-rule case table: independent \
-# PERF-rule fire/no-fire cases sharing an arrange-act scaffold by design \
-# (one src snippet + one assertion per case); extracting would obscure \
-# per-case intent"
+# frob:waive DUP001 reason="parallel perf-rule case table: independent PERF-rule \
+# fire/no-fire cases sharing an arrange-act scaffold by design (one src snippet + one \
+# assertion per case); extracting would obscure per-case intent"
 def test_perf001_does_not_fire_outside_a_loop(tmp_path):
     """PERF001 does not fire when the membership test is not inside a
     for/while body, even against a plain list."""
@@ -97,10 +94,9 @@ def test_perf001_does_not_fire_outside_a_loop(tmp_path):
     assert not any(v.rule == "PERF001" for v in violations)
 
 
-# frob:waive DUP001 reason="parallel perf-rule case table: independent \
-# PERF-rule fire/no-fire cases sharing an arrange-act scaffold by design \
-# (one src snippet + one assertion per case); extracting would obscure \
-# per-case intent"
+# frob:waive DUP001 reason="parallel perf-rule case table: independent PERF-rule \
+# fire/no-fire cases sharing an arrange-act scaffold by design (one src snippet + one \
+# assertion per case); extracting would obscure per-case intent"
 def test_perf002_fires_on_index_call_in_loop(tmp_path):
     """PERF002 fires: `.index()` call inside a loop."""
     # frob:ticket T-0021
@@ -118,10 +114,9 @@ def test_perf002_fires_on_index_call_in_loop(tmp_path):
     assert any(v.rule == "PERF002" for v in violations)
 
 
-# frob:waive DUP001 reason="parallel perf-rule case table: independent \
-# PERF-rule fire/no-fire cases sharing an arrange-act scaffold by design \
-# (one src snippet + one assertion per case); extracting would obscure \
-# per-case intent"
+# frob:waive DUP001 reason="parallel perf-rule case table: independent PERF-rule \
+# fire/no-fire cases sharing an arrange-act scaffold by design (one src snippet + one \
+# assertion per case); extracting would obscure per-case intent"
 def test_perf002_does_not_fire_outside_a_loop(tmp_path):
     """PERF002 does not fire on a single `.index()` call with no loop."""
     # frob:ticket T-0021
@@ -133,10 +128,9 @@ def test_perf002_does_not_fire_outside_a_loop(tmp_path):
     assert not any(v.rule == "PERF002" for v in violations)
 
 
-# frob:waive DUP001 reason="parallel perf-rule case table: independent \
-# PERF-rule fire/no-fire cases sharing an arrange-act scaffold by design \
-# (one src snippet + one assertion per case); extracting would obscure \
-# per-case intent"
+# frob:waive DUP001 reason="parallel perf-rule case table: independent PERF-rule \
+# fire/no-fire cases sharing an arrange-act scaffold by design (one src snippet + one \
+# assertion per case); extracting would obscure per-case intent"
 def test_perf003_fires_on_nested_loop_equality_join(tmp_path):
     """PERF003 fires: nested loops comparing items with `==`."""
     # frob:ticket T-0021
@@ -156,10 +150,9 @@ def test_perf003_fires_on_nested_loop_equality_join(tmp_path):
     assert any(v.rule == "PERF003" for v in violations)
 
 
-# frob:waive DUP001 reason="parallel perf-rule case table: independent \
-# PERF-rule fire/no-fire cases sharing an arrange-act scaffold by design \
-# (one src snippet + one assertion per case); extracting would obscure \
-# per-case intent"
+# frob:waive DUP001 reason="parallel perf-rule case table: independent PERF-rule \
+# fire/no-fire cases sharing an arrange-act scaffold by design (one src snippet + one \
+# assertion per case); extracting would obscure per-case intent"
 def test_perf003_does_not_fire_on_single_loop(tmp_path):
     """PERF003 does not fire when there is only one loop."""
     # frob:ticket T-0021
@@ -171,10 +164,9 @@ def test_perf003_does_not_fire_on_single_loop(tmp_path):
     assert not any(v.rule == "PERF003" for v in violations)
 
 
-# frob:waive DUP001 reason="parallel perf-rule case table: independent \
-# PERF-rule fire/no-fire cases sharing an arrange-act scaffold by design \
-# (one src snippet + one assertion per case); extracting would obscure \
-# per-case intent"
+# frob:waive DUP001 reason="parallel perf-rule case table: independent PERF-rule \
+# fire/no-fire cases sharing an arrange-act scaffold by design (one src snippet + one \
+# assertion per case); extracting would obscure per-case intent"
 def test_perf004_fires_on_sort_in_loop(tmp_path):
     """PERF004 fires: `sorted()` call inside a loop over unchanged data."""
     # frob:ticket T-0021
@@ -192,10 +184,9 @@ def test_perf004_fires_on_sort_in_loop(tmp_path):
     assert any(v.rule == "PERF004" for v in violations)
 
 
-# frob:waive DUP001 reason="parallel perf-rule case table: independent \
-# PERF-rule fire/no-fire cases sharing an arrange-act scaffold by design \
-# (one src snippet + one assertion per case); extracting would obscure \
-# per-case intent"
+# frob:waive DUP001 reason="parallel perf-rule case table: independent PERF-rule \
+# fire/no-fire cases sharing an arrange-act scaffold by design (one src snippet + one \
+# assertion per case); extracting would obscure per-case intent"
 def test_perf004_does_not_fire_on_sort_outside_a_loop(tmp_path):
     """PERF004 does not fire on a single top-level `sorted()` call."""
     # frob:ticket T-0021
@@ -207,10 +198,9 @@ def test_perf004_does_not_fire_on_sort_outside_a_loop(tmp_path):
     assert not any(v.rule == "PERF004" for v in violations)
 
 
-# frob:waive DUP001 reason="parallel perf-rule case table: independent \
-# PERF-rule fire/no-fire cases sharing an arrange-act scaffold by design \
-# (one src snippet + one assertion per case); extracting would obscure \
-# per-case intent"
+# frob:waive DUP001 reason="parallel perf-rule case table: independent PERF-rule \
+# fire/no-fire cases sharing an arrange-act scaffold by design (one src snippet + one \
+# assertion per case); extracting would obscure per-case intent"
 def test_perf003_does_not_fire_on_sibling_comprehensions(tmp_path):
     """PERF003 does not fire on two sibling comprehensions/generator
     expressions plus an unrelated `==` -- T-0161's headline false-positive
@@ -231,10 +221,9 @@ def test_perf003_does_not_fire_on_sibling_comprehensions(tmp_path):
     assert not any(v.rule == "PERF003" for v in violations)
 
 
-# frob:waive DUP001 reason="parallel perf-rule case table: independent \
-# PERF-rule fire/no-fire cases sharing an arrange-act scaffold by design \
-# (one src snippet + one assertion per case); extracting would obscure \
-# per-case intent"
+# frob:waive DUP001 reason="parallel perf-rule case table: independent PERF-rule \
+# fire/no-fire cases sharing an arrange-act scaffold by design (one src snippet + one \
+# assertion per case); extracting would obscure per-case intent"
 def test_perf003_does_not_fire_on_sibling_statement_loops(tmp_path):
     """PERF003 does not fire on two sibling (not nested) statement-level
     `for` loops, even with an unrelated `==` elsewhere in the function."""
@@ -257,10 +246,9 @@ def test_perf003_does_not_fire_on_sibling_statement_loops(tmp_path):
     assert not any(v.rule == "PERF003" for v in violations)
 
 
-# frob:waive DUP001 reason="parallel perf-rule case table: independent \
-# PERF-rule fire/no-fire cases sharing an arrange-act scaffold by design \
-# (one src snippet + one assertion per case); extracting would obscure \
-# per-case intent"
+# frob:waive DUP001 reason="parallel perf-rule case table: independent PERF-rule \
+# fire/no-fire cases sharing an arrange-act scaffold by design (one src snippet + one \
+# assertion per case); extracting would obscure per-case intent"
 def test_perf003_fires_on_nested_join_with_intervening_statement(tmp_path):
     """PERF003 fires on a real nested equality join even when a setup
     statement (an accumulator init, a guard, ...) sits between the outer
@@ -286,10 +274,9 @@ def test_perf003_fires_on_nested_join_with_intervening_statement(tmp_path):
     assert any(v.rule == "PERF003" for v in violations)
 
 
-# frob:waive DUP001 reason="parallel perf-rule case table: independent \
-# PERF-rule fire/no-fire cases sharing an arrange-act scaffold by design \
-# (one src snippet + one assertion per case); extracting would obscure \
-# per-case intent"
+# frob:waive DUP001 reason="parallel perf-rule case table: independent PERF-rule \
+# fire/no-fire cases sharing an arrange-act scaffold by design (one src snippet + one \
+# assertion per case); extracting would obscure per-case intent"
 def test_perf004_does_not_fire_when_sorted_is_the_loop_iterable(tmp_path):
     """PERF004 does not fire on `for x in sorted(data):` -- `sorted()` there
     is the loop's own iterable, evaluated once, not resorted per
@@ -310,10 +297,9 @@ def test_perf004_does_not_fire_when_sorted_is_the_loop_iterable(tmp_path):
     assert not any(v.rule == "PERF004" for v in violations)
 
 
-# frob:waive DUP001 reason="parallel perf-rule case table: independent \
-# PERF-rule fire/no-fire cases sharing an arrange-act scaffold by design \
-# (one src snippet + one assertion per case); extracting would obscure \
-# per-case intent"
+# frob:waive DUP001 reason="parallel perf-rule case table: independent PERF-rule \
+# fire/no-fire cases sharing an arrange-act scaffold by design (one src snippet + one \
+# assertion per case); extracting would obscure per-case intent"
 def test_perf004_does_not_fire_on_sort_after_loop_same_indent(tmp_path):
     """T-0367: PERF004 does not fire on a `sorted()`/`.sort()` call that
     occurs textually AFTER a `for` loop at the same (or an outer) indent --
@@ -339,10 +325,9 @@ def test_perf004_does_not_fire_on_sort_after_loop_same_indent(tmp_path):
     assert not any(v.rule == "PERF004" for v in violations)
 
 
-# frob:waive DUP001 reason="parallel perf-rule case table: independent \
-# PERF-rule fire/no-fire cases sharing an arrange-act scaffold by design \
-# (one src snippet + one assertion per case); extracting would obscure \
-# per-case intent"
+# frob:waive DUP001 reason="parallel perf-rule case table: independent PERF-rule \
+# fire/no-fire cases sharing an arrange-act scaffold by design (one src snippet + one \
+# assertion per case); extracting would obscure per-case intent"
 def test_perf004_does_not_fire_on_sorted_call_after_loop_same_indent(tmp_path):
     """T-0367: same false-positive shape as the `.sort()` sibling above, but
     for the `sorted()` free-function call form -- both call shapes
@@ -363,10 +348,9 @@ def test_perf004_does_not_fire_on_sorted_call_after_loop_same_indent(tmp_path):
     assert not any(v.rule == "PERF004" for v in violations)
 
 
-# frob:waive DUP001 reason="parallel perf-rule case table: independent \
-# PERF-rule fire/no-fire cases sharing an arrange-act scaffold by design \
-# (one src snippet + one assertion per case); extracting would obscure \
-# per-case intent"
+# frob:waive DUP001 reason="parallel perf-rule case table: independent PERF-rule \
+# fire/no-fire cases sharing an arrange-act scaffold by design (one src snippet + one \
+# assertion per case); extracting would obscure per-case intent"
 def test_perf004_still_fires_on_sort_nested_deeper_inside_loop_body(tmp_path):
     """T-0367: a genuine in-loop sort still fires even when nested a further
     level deep inside the loop body (an `if` inside the `for`) -- the
@@ -389,10 +373,9 @@ def test_perf004_still_fires_on_sort_nested_deeper_inside_loop_body(tmp_path):
     assert any(v.rule == "PERF004" for v in violations)
 
 
-# frob:waive DUP001 reason="parallel perf-rule case table: independent \
-# PERF-rule fire/no-fire cases sharing an arrange-act scaffold by design \
-# (one src snippet + one assertion per case); extracting would obscure \
-# per-case intent"
+# frob:waive DUP001 reason="parallel perf-rule case table: independent PERF-rule \
+# fire/no-fire cases sharing an arrange-act scaffold by design (one src snippet + one \
+# assertion per case); extracting would obscure per-case intent"
 def test_perf004_does_not_fire_on_sorted_generator_no_preceding_loop(tmp_path):
     """PERF004 does not fire on `sorted(x for x in y)` with no preceding
     statement-level loop -- the generator's own `for` is bracket-depth
@@ -408,10 +391,9 @@ def test_perf004_does_not_fire_on_sorted_generator_no_preceding_loop(tmp_path):
     assert not any(v.rule == "PERF004" for v in violations)
 
 
-# frob:waive DUP001 reason="parallel perf-rule case table: independent \
-# PERF-rule fire/no-fire cases sharing an arrange-act scaffold by design \
-# (one src snippet + one assertion per case); extracting would obscure \
-# per-case intent"
+# frob:waive DUP001 reason="parallel perf-rule case table: independent PERF-rule \
+# fire/no-fire cases sharing an arrange-act scaffold by design (one src snippet + one \
+# assertion per case); extracting would obscure per-case intent"
 def test_perf002_anchors_to_index_call_line_not_def_line(tmp_path):
     """T-0230: a PERF002 finding anchors to the actual `.index()` call
     site's line, not the enclosing `def` line -- the sibling-repo pilot
@@ -434,10 +416,9 @@ def test_perf002_anchors_to_index_call_line_not_def_line(tmp_path):
     assert hit.line == 4
 
 
-# frob:waive DUP001 reason="parallel perf-rule case table: independent \
-# PERF-rule fire/no-fire cases sharing an arrange-act scaffold by design \
-# (one src snippet + one assertion per case); extracting would obscure \
-# per-case intent"
+# frob:waive DUP001 reason="parallel perf-rule case table: independent PERF-rule \
+# fire/no-fire cases sharing an arrange-act scaffold by design (one src snippet + one \
+# assertion per case); extracting would obscure per-case intent"
 def test_perf004_anchors_to_sort_call_line_not_def_line(tmp_path):
     """T-0230: a PERF004 sorted-in-loop finding anchors to the `sorted()`
     call line, not the enclosing `def` line."""
@@ -458,10 +439,9 @@ def test_perf004_anchors_to_sort_call_line_not_def_line(tmp_path):
     assert hit.line == 4
 
 
-# frob:waive DUP001 reason="parallel perf-rule case table: independent \
-# PERF-rule fire/no-fire cases sharing an arrange-act scaffold by design \
-# (one src snippet + one assertion per case); extracting would obscure \
-# per-case intent"
+# frob:waive DUP001 reason="parallel perf-rule case table: independent PERF-rule \
+# fire/no-fire cases sharing an arrange-act scaffold by design (one src snippet + one \
+# assertion per case); extracting would obscure per-case intent"
 def test_perf003_anchors_to_equality_line_not_def_line(tmp_path):
     """T-0230: a PERF003 finding anchors to the `==` comparison's line, not
     the enclosing `def` line (the rust conformance.rs:31-pointing-at-the-
@@ -485,10 +465,9 @@ def test_perf003_anchors_to_equality_line_not_def_line(tmp_path):
     assert hit.line == 5
 
 
-# frob:waive DUP001 reason="parallel perf-rule case table: independent \
-# PERF-rule fire/no-fire cases sharing an arrange-act scaffold by design \
-# (one src snippet + one assertion per case); extracting would obscure \
-# per-case intent"
+# frob:waive DUP001 reason="parallel perf-rule case table: independent PERF-rule \
+# fire/no-fire cases sharing an arrange-act scaffold by design (one src snippet + one \
+# assertion per case); extracting would obscure per-case intent"
 def test_perf003_fires_on_call_operand_join(tmp_path):
     """T-0246: a real nested join comparing DERIVED values -- `f(x) ==
     g(y)` with `x`/`y` the loop variables inside call parens -- is now
@@ -512,10 +491,9 @@ def test_perf003_fires_on_call_operand_join(tmp_path):
     assert any(v.rule == "PERF003" for v in violations)
 
 
-# frob:waive DUP001 reason="parallel perf-rule case table: independent \
-# PERF-rule fire/no-fire cases sharing an arrange-act scaffold by design \
-# (one src snippet + one assertion per case); extracting would obscure \
-# per-case intent"
+# frob:waive DUP001 reason="parallel perf-rule case table: independent PERF-rule \
+# fire/no-fire cases sharing an arrange-act scaffold by design (one src snippet + one \
+# assertion per case); extracting would obscure per-case intent"
 def test_perf003_call_operand_join_stays_narrow_no_recursive_unwind(tmp_path):
     """T-0246: the call-paren unwind stops at one level -- an unrelated
     trailing `==` after two sibling (non-nested) loops, where the outer

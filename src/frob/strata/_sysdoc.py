@@ -29,16 +29,14 @@ kind-extraction helper anywhere in `frob.strata` today.
 # already-implemented internal behavior, verifiable by reading the code it annotates) \
 # rather than a separate cross-module contract needing its own tracked invariant; \
 # disposed as a calibration batch, not claim-by-claim"
-# frob:waive ARCH102 reason="11 of 13 exports form one connected matrix- \
-# rendering cluster around render_audit_matrix (the module's first \
-# documented responsibility); the 2 outliers (merge_models, audit_claim) \
-# are the module's own documented SECOND responsibility (audit_claim, the \
-# DOC003 half) plus a small WeaknessEntry-merge helper the first \
-# responsibility's matrix consumes -- this module's docstring already \
-# discloses it deliberately holds exactly two related pure responsibilities \
-# in one file (mirroring the _report.py precedent it names), so the \
-# 3-cluster count matches a documented, deliberate design rather than an \
-# accidental one"
+# frob:waive ARCH102 reason="11 of 13 exports form one connected matrix- rendering \
+# cluster around render_audit_matrix (the module's first documented responsibility); \
+# the 2 outliers (merge_models, audit_claim) are the module's own documented SECOND \
+# responsibility (audit_claim, the DOC003 half) plus a small WeaknessEntry-merge \
+# helper the first responsibility's matrix consumes -- this module's docstring already \
+# discloses it deliberately holds exactly two related pure responsibilities in one \
+# file (mirroring the _report.py precedent it names), so the 3-cluster count matches a \
+# documented, deliberate design rather than an accidental one"
 
 from __future__ import annotations
 
