@@ -8554,3 +8554,157 @@ component: null
 ```
 ## Drop reason
 - 2026-07-27: smoke test throwaway
+
+<!-- ticket:T-1015 -->
+```yaml
+id: T-1015
+title: 'DOC006 doc-pointer burn-down: resolve or disposition all findings, then decide
+  promotion'
+state: done
+kind: bug
+origin: agent
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- docs/**
+- src/frob/gates/_docptr.py
+- tests/test_docptr_gate.py
+evidence:
+- tests/test_docptr_gate.py::TestDoc006FilePath::test_missing_path_flagged
+- tests/test_docptr_gate.py::TestDoc006FilePath::test_real_path_passes
+- tests/test_docptr_gate.py::TestDoc006FilePath::test_unrecognized_prose_not_flagged
+- tests/test_docptr_gate.py::TestDoc006FilePath::test_dot_frob_runtime_path_not_flagged
+- tests/test_docptr_gate.py::TestDoc006DocAnchor::test_missing_anchor_flagged
+- tests/test_docptr_gate.py::TestDoc006DocAnchor::test_real_anchor_passes
+- tests/test_docptr_gate.py::TestDoc006Cli::test_nonexistent_subcommand_flagged
+- tests/test_docptr_gate.py::TestDoc006Cli::test_nonexistent_flag_flagged
+- tests/test_docptr_gate.py::TestDoc006Cli::test_real_command_passes
+- tests/test_docptr_gate.py::TestDoc006Config::test_bogus_section_flagged
+- tests/test_docptr_gate.py::TestDoc006Config::test_real_section_passes
+- tests/test_docptr_gate.py::TestDoc006Symbol::test_nonexistent_symbol_flagged
+- tests/test_docptr_gate.py::TestDoc006Symbol::test_real_symbol_passes
+- tests/test_docptr_gate.py::TestDoc006Symbol::test_module_dunder_init_and_all_pass
+- tests/test_docptr_gate.py::TestDoc006Symbol::test_class_attribute_chain_not_flagged
+- tests/test_docptr_gate.py::TestDoc006Waive::test_waive_suppresses
+- tests/test_docptr_gate.py::TestDoc006TestsTargetShape::test_double_separator_target_flagged
+- tests/test_docptr_gate.py::TestDoc006TestsTargetShape::test_single_separator_target_not_flagged
+threat: null
+component: null
+```
+DOC006 (docblocks gate, WARN) is turned on repo-wide with roughly 700
+findings at turn-on per T-0437. This ticket burns the bucket down:
+
+1. Measure current DOC006 findings (chunked frob check --json, per
+   agent-playbook.md section 3b -- never a bare frob check).
+2. Cluster findings by pointer-kind (file/path, cli invocation, config
+   reference, code symbol, doc-anchor link, frob:tests shape) crossed
+   with doc file, to find the dominant clusters.
+3. Expect two kinds of cluster:
+   - genuinely-stale doc pointers (paths/symbols renamed by prior
+     refactors) -- fixable mechanically by updating the doc prose to the
+     current path/symbol.
+   - matcher false-positive classes -- fix the MATCHER in
+     src/frob/gates/_docptr.py, not hundreds of individual waivers,
+     following the T-0882/T-0910/T-0915 precedents for fixing detection
+     logic instead of mass-waiving.
+4. Execute the biggest clusters directly in this ticket's scope. File
+   precise child tickets only for remainders that are genuinely large
+   and out of this ticket's immediate reach.
+5. With the resulting count evidence, decide and record in
+   docs/audits/gates-quality.md whether DOC006 should promote from WARN
+   to ERROR, or stay at WARN with a stated reason.
+
+Scope: docs/**, src/frob/gates/_docptr.py, tests/test_docptr_gate.py.
+Origin: agent (frob-drive DOC006 burn-down dispatch).
+
+## Done report
+
+DOC006 burn-down, decompose-then-execute: 771 findings clustered by shape; five matcher false-positive classes fixed at the matcher (enumeration lists, unit ratios, hostname/DOI rejection, directory-prefix and module-relative resolution, multi-manifest config refs), the tickets-archive verbatim-history exclusion killed the single largest cluster, and 26 genuinely illustrative citation sites got reasoned waivers -- 771 to 133, remainder fragmented across ~30 files and filed as a precise round-2 child. DOC006 stays WARN with the count evidence recorded; promotion revisits after round 2.
+
+### Changed
+```
+ docs/audits/gates-quality.md               |  65 ++++++++
+ docs/design/capability-evasion-taxonomy.md |  38 ++---
+ docs/modules/gates.md                      |  12 +-
+ src/frob/gates/_docptr.py                  | 232 ++++++++++++++++++++++++++---
+ tickets.md                                 | 219 +++++++++++++++++++++++++++
+ 5 files changed, 521 insertions(+), 45 deletions(-)
+```
+
+### Evidence
+- `tests/test_docptr_gate.py::TestDoc006FilePath::test_missing_path_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_docptr_gate.py::TestDoc006FilePath::test_real_path_passes` (pytest node id, verified passing when recorded)
+- `tests/test_docptr_gate.py::TestDoc006FilePath::test_unrecognized_prose_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_docptr_gate.py::TestDoc006FilePath::test_dot_frob_runtime_path_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_docptr_gate.py::TestDoc006DocAnchor::test_missing_anchor_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_docptr_gate.py::TestDoc006DocAnchor::test_real_anchor_passes` (pytest node id, verified passing when recorded)
+- `tests/test_docptr_gate.py::TestDoc006Cli::test_nonexistent_subcommand_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_docptr_gate.py::TestDoc006Cli::test_nonexistent_flag_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_docptr_gate.py::TestDoc006Cli::test_real_command_passes` (pytest node id, verified passing when recorded)
+- `tests/test_docptr_gate.py::TestDoc006Config::test_bogus_section_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_docptr_gate.py::TestDoc006Config::test_real_section_passes` (pytest node id, verified passing when recorded)
+- `tests/test_docptr_gate.py::TestDoc006Symbol::test_nonexistent_symbol_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_docptr_gate.py::TestDoc006Symbol::test_real_symbol_passes` (pytest node id, verified passing when recorded)
+- `tests/test_docptr_gate.py::TestDoc006Symbol::test_module_dunder_init_and_all_pass` (pytest node id, verified passing when recorded)
+- `tests/test_docptr_gate.py::TestDoc006Symbol::test_class_attribute_chain_not_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_docptr_gate.py::TestDoc006Waive::test_waive_suppresses` (pytest node id, verified passing when recorded)
+- `tests/test_docptr_gate.py::TestDoc006TestsTargetShape::test_double_separator_target_flagged` (pytest node id, verified passing when recorded)
+- `tests/test_docptr_gate.py::TestDoc006TestsTargetShape::test_single_separator_target_not_flagged` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 18 passed (from 18 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
+
+<!-- ticket:T-1016 -->
+```yaml
+id: T-1016
+title: 'DOC006 doc-pointer burn-down round 2: remainder (~131 findings, fragmented)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-27'
+priority: low
+parent: null
+tier: ticket
+sprint: null
+scope:
+- docs/**
+- src/frob/gates/_docptr.py
+- tests/test_docptr_gate.py
+threat: null
+component: null
+```
+Follow-up to T-1015 (DOC006 doc-pointer burn-down, round 1): after
+matcher hardening (directory-prefix + suffix FILE/PATH resolution,
+enumeration-list/domain-citation shape rejection, multi-manifest CONFIG
+REFERENCE resolution against pyproject.toml/Cargo.toml, `.git/`-path
+exemption, and a tickets-archive.md verbatim-ledger exclusion) plus a
+handful of targeted illustrative-example waivers, DOC006 findings measured
+771 -> 131 (see T-1015's Done report for the full before/after
+cluster table).
+
+The remaining 131 findings are fragmented across ~30 doc files with no
+single dominant cluster left (round-1's own measurement, `--only docblocks
+--json`, 62 config reference / 30 file/path / 20 code symbol / 13
+doc-anchor link / 9 cli invocation). Largest remaining single files:
+docs/modules/vet.md (16), docs/modules/gates.md (12), docs/modules/perf.md
+(8), CHANGELOG.md (7), docs/strata/threat.md (6). Work this ticket by:
+
+1. Re-measure with a fresh chunked `frob check --only docblocks --json`
+   (counts may have drifted since round 1).
+2. For each remaining finding, determine per-file/per-line whether it is:
+   - a genuinely stale doc pointer (fix the doc prose to the current
+     path/symbol/config key), or
+   - a further matcher false-positive class worth generalizing (check for
+     new clusters before assuming everything left is genuine drift), or
+   - a genuinely external/illustrative pointer (a nearby `frob:waive
+     DOC006 reason="..."`).
+3. Re-check promotion (WARN -> ERROR) once the live count is near zero;
+   record the decision with count evidence in docs/audits/gates-quality.md
+   under the DOC006 section T-1015 added.
+
+Scope: docs/**, src/frob/gates/_docptr.py, tests/test_docptr_gate.py.
+Origin: agent (T-1015 round-1 remainder).

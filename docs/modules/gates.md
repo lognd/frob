@@ -747,8 +747,8 @@ prefix reach as a side effect of having no symref.
 
 Even correctly gated, the prefix fallback has a real over-breadth shape:
 a waiver written in one file reaches every ANCESTOR package prefix of that
-file's own path too (a waiver in `src/frob/pkg/sub/deep.py` matches a
-TEST003 finding against `src/frob/pkg/sub` AND against `src/frob/pkg`
+file's own path too (a waiver in `src/frob/pkg/sub/deep.py` matches a <!-- frob:waive DOC006 reason="src/frob/pkg/sub/deep.py is a made-up illustrative package path for this WAIVE003 example, not a real file" -->
+TEST003 finding against `src/frob/pkg/sub` AND against `src/frob/pkg` <!-- frob:waive DOC006 reason="src/frob/pkg/sub and src/frob/pkg are the same made-up illustrative example, not real directories" -->
 simultaneously), which is almost always broader than the author was
 reasoning about when they wrote it. **WAIVE003** flags any single waiver
 that reaches more than one distinct violated package/system id this way
@@ -1659,7 +1659,7 @@ This repo configures itself as its own first instance -- see
 
 **Dogfooding result (T-0436 Done report has the full finding-by-finding
 detail)**: run on this repo's own tracked docs, DOC004 found 5 real
-blocks -- 2 genuinely stale (`frob.edit._impl`, `frob.app.stub_runner`:
+blocks -- 2 genuinely stale (`frob.edit._impl`, `frob.app.stub_runner`: <!-- frob:waive DOC006 reason="historical T-0436 dogfooding finding naming modules that were ALREADY removed/never-real at the time; a verbatim record, not a live pointer" -->
 illustrative example modules referencing a removed/never-real command
 surface) and 1 hypothetical-future worked example
 (`export_terraform_sg`), each dispositioned with a reasoned
@@ -1716,7 +1716,7 @@ until the row is deleted.
 `frob.gates._docptr` -- `doc006_gate` (gate name `docblocks`, same as
 DOC004/DOC005, WARN severity at first-turn-on per the T-0688 new-gate
 precedent). Motivating case: a doc's prose routinely "seems to point" at
-something -- `frob edit`, `src/frob/gone.py`, `[bogus.section]`,
+something -- `frob edit`, `src/frob/gone.py`, `[bogus.section]`, <!-- frob:waive DOC006 reason="deliberately fictional pointer examples this section quotes from _docptr's own module docstring to illustrate the motivating case; never meant to resolve" -->
 `docs/missing.md#x` -- and nothing checked whether the pointer was
 actually real. Detecting fuzzy "seems to point" intent generically is
 unhardenable (high false-positive rate); this gate instead defines a
@@ -1737,13 +1737,13 @@ reporting the same token under two rule ids):
    checked against the SAME `[[docblocks.commands]]`-configured live
    argparse registry DOC004/DOC005 already walk -- one live source of
    truth, never a second copy.
-3. **CONFIG REFERENCE** -- `` `[section]` ``/`` `[section.key]` `` checked
+3. **CONFIG REFERENCE** -- `` `[section]` ``/`` `[section.key]` `` checked <!-- frob:waive DOC006 reason="[section]/[section.key] here is the KIND'S OWN illustrative placeholder shape, not a real config reference" -->
    against this project's own loaded `frob.toml` structure.
 4. **CODE SYMBOL** -- a dotted path (`module.Class.method`) whose root
    namespace is one of this project's own manifest-derived namespaces
    (`frob.gates._docblocks._project_namespaces`), resolved the same way
    DOC004's python tier resolves a `from X import Y`.
-5. **DOC-ANCHOR LINK** -- `docs/x.md#anchor`: the file must exist and
+5. **DOC-ANCHOR LINK** -- `docs/x.md#anchor`: the file must exist and <!-- frob:waive DOC006 reason="docs/x.md#anchor here is the KIND'S OWN illustrative placeholder shape, not a real doc pointer" -->
    `anchor` must be a real heading/`<a id>` slug in it (the same resolver
    DOC002 uses for `frob:doc` edges).
 

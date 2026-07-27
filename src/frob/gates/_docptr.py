@@ -217,12 +217,134 @@ _WELL_KNOWN_MANIFESTS = frozenset(
 # hardening: an unrecognized bare token, e.g. a prose word that happens to
 # contain a dot, is simply not a recognized FILE/PATH shape).
 _PATH_SHAPE_RE = re.compile(r"^[\w.\-]+(?:/[\w.\-]+)+$")
+# this repo's own top-level tracked directories a genuine DIRECTORY-only
+# reference (no file extension on its last segment, e.g. `src/frob/strata`)
+# is plausibly rooted at -- kept as an explicit, small, project-local list
+# rather than walking `git ls-files` for a first-segment set on every call.
+_KNOWN_TOP_LEVEL_DIRS = frozenset(
+    {
+        "src",
+        "tests",
+        "docs",
+        "scripts",
+        "agents",
+        "skills",
+        "editors",
+        "invariants",
+        "design",
+        "frob-core",
+        "strata-core",
+        ".frob",
+        ".git",
+        ".github",
+        ".claude",
+    }
+)
 
 
 def _looks_like_path(token: str) -> bool:
     """Whether `token` (anchor already stripped by the caller) matches the
-    recognized FILE/PATH shape -- see `_PATH_SHAPE_RE`."""
-    return token in _WELL_KNOWN_MANIFESTS or bool(_PATH_SHAPE_RE.match(token))
+    recognized FILE/PATH shape -- see `_PATH_SHAPE_RE`.
+
+    T-1015 matcher hardening: `_PATH_SHAPE_RE` alone (any
+    `/`-joined run of word/dot/hyphen characters) also matches prose that
+    is NOT a path at all -- a units ratio (`req/s`), a test-permutation
+    suffix (`sum_twice_a/b`), or an enumeration/alternatives list written
+    with `/` as an "or" separator (`.ts/.tsx/.c/.cpp`, `for/while`,
+    `fake/changeme/example/placeholder`, `your-/insert-/-here`). None of
+    those are FILE/PATH pointers, so flagging them as unresolved paths is a
+    pure false positive, not real doc drift. Three additional shape checks
+    narrow the recognized set to what a real repo-relative reference
+    actually looks like, without touching the underlying resolution logic
+    for anything that still passes:
+
+    - a non-leading segment starting with `.` (an enumerated dotfile/
+      extension list, e.g. `.ts/.tsx/.c`) is never a real path segment;
+    - a segment that is bare punctuation glued to a hyphen at either edge
+      (`your-`, `-here`) is a sentence fragment, never a path component;
+    - the LAST segment must either carry a file extension (contain `.`) or
+      the token must be rooted at one of this repo's own known top-level
+      directories (`_KNOWN_TOP_LEVEL_DIRS`) -- the two genuine FILE/PATH
+      shapes this gate resolves (a filename, or a directory-only mention)
+      -- a token that is neither (`fake/changeme/example/placeholder`) is
+      simply not a recognized pointer shape.
+    """
+    if token in _WELL_KNOWN_MANIFESTS:
+        return True
+    if not _PATH_SHAPE_RE.match(token):
+        return False
+    segments = token.split("/")
+    first = segments[0]
+    if "." in first and first not in _KNOWN_TOP_LEVEL_DIRS:
+        # a first segment with an embedded dot that isn't one of this
+        # repo's own directories reads as a bare (protocol-less) HOSTNAME
+        # (`martinfowler.com/bliki/...`, `dl.acm.org/doi/...`) or a
+        # citation identifier (a DOI like `10.1145/358198.358210`) -- a
+        # doc's reference corpus routinely cites external literature this
+        # way; that is never a repo-relative FILE/PATH, so it is not a
+        # recognized shape at all (T-1015).
+        return False
+    for i, seg in enumerate(segments):
+        if seg.startswith("."):
+            if i == 0 and seg in _KNOWN_TOP_LEVEL_DIRS:
+                continue
+            return False
+        if seg.startswith("-") or seg.endswith("-"):
+            return False
+    last = segments[-1]
+    return "." in last or segments[0] in _KNOWN_TOP_LEVEL_DIRS
+
+
+def _is_tracked_dir_prefix(candidate: str, tracked: frozenset[str]) -> bool:
+    """Whether `candidate` is itself a real repo-relative DIRECTORY -- some
+    tracked file's path starts with `candidate + "/"`. A doc that mentions
+    `src/frob/strata` (a real package directory, no single file by that
+    exact name) is pointing at something genuinely real; without this, the
+    FILE/PATH check could only ever match an exact FILE, false-flagging
+    every directory-only mention as unresolved."""
+    prefix = candidate + "/"
+    return any(t.startswith(prefix) for t in tracked)
+
+
+def _is_tracked_path_suffix(candidate: str, tracked: frozenset[str]) -> bool:
+    """Whether `candidate` is a trailing-component match of some real
+    tracked file's path (`t == candidate` or `t.endswith("/" + candidate)`)
+    -- doc prose routinely refers to a file by its shorter, module-relative
+    tail (`gates/__init__.py` for `src/frob/gates/__init__.py`,
+    `_docptr.py` for `src/frob/gates/_docptr.py`) rather than the full
+    repo-relative path; that shorthand is a real, resolvable reference,
+    not stale drift."""
+    suffix = "/" + candidate
+    return any(t == candidate or t.endswith(suffix) for t in tracked)
+
+
+def _path_candidates(doc_path: str, file_part: str) -> set[str]:
+    """Every repo-relative spelling `file_part` (a token's FILE/PATH half,
+    anchor already stripped) plausibly resolves to: itself, a `./`-stripped
+    form, a doc-relative join for `../`/`./`-prefixed tokens, and a `root/`-
+    stripped form for `root/frob.toml`-style doc phrasing -- split out of
+    `_file_and_anchor_violations` (T-1015 ARCH001 long-function
+    fix) so that function's own body stays under the line-count budget."""
+    candidates = {file_part, file_part.lstrip("./")}
+    if file_part.startswith("../") or file_part.startswith("./"):
+        base = PurePosixPath(doc_path).parent
+        candidates.add(str(PurePosixPath(*(base / file_part).parts)))
+    if file_part.startswith("root/"):
+        candidates.add(file_part[len("root/") :])
+    return candidates
+
+
+def _path_candidate_resolves(candidates: set[str], tracked: frozenset[str]) -> bool:
+    """Whether any spelling in `candidates` resolves as a real FILE/PATH --
+    an exact tracked file, a tracked directory prefix, or a tracked path
+    suffix (see `_is_tracked_dir_prefix`/`_is_tracked_path_suffix`) -- split
+    out of `_file_and_anchor_violations` alongside `_path_candidates` for
+    the same ARCH001 line-count reason."""
+    return (
+        any(c in tracked for c in candidates)
+        or any(_is_tracked_dir_prefix(c, tracked) for c in candidates)
+        or any(_is_tracked_path_suffix(c, tracked) for c in candidates)
+    )
 
 
 def _file_and_anchor_violations(
@@ -240,23 +362,28 @@ def _file_and_anchor_violations(
     files, the coverage/baseline stamps) -- it is real and expected to
     exist when frob has actually run, but is NEVER a git-tracked file by
     design, so checking it against `tracked` would be a systematic false
-    positive on every doc that (correctly) mentions one as an example."""
+    positive on every doc that (correctly) mentions one as an example. A
+    path rooted at `.git/` (T-1015: `.git/info/exclude`, `.git/
+    MERGE_HEAD`) is the identical situation one level up -- git's own
+    internal state directory is never itself a git-tracked file, no matter
+    how many docs correctly cite a path inside it as a real, existing
+    example."""
     violations: list[Violation] = []
     for line_no, token in tokens:
         if token.startswith(("http://", "https://", "mailto:")):
             continue
         file_part, _, anchor_part = token.partition("#")
-        if file_part.startswith(".frob/") or file_part == ".frob":
+        if (
+            file_part.startswith((".frob/", ".git/"))
+            or file_part in (".frob", ".git")
+        ):
             continue
         if not _looks_like_path(file_part):
             continue
         if _nearby_waived(doc_lines, line_no):
             continue
-        candidates = {file_part, file_part.lstrip("./")}
-        if file_part.startswith("../") or file_part.startswith("./"):
-            base = PurePosixPath(doc_path).parent
-            candidates.add(str(PurePosixPath(*(base / file_part).parts)))
-        if not any(c in tracked for c in candidates):
+        candidates = _path_candidates(doc_path, file_part)
+        if not _path_candidate_resolves(candidates, tracked):
             violations.append(
                 _doc006_violation(
                     doc_path,
@@ -421,6 +548,42 @@ def _load_frob_toml(root: Path) -> dict | None:
         return None
 
 
+def _load_toml_manifests(root: Path) -> list[dict]:
+    """Every OTHER TOML manifest a `` `[section]` ``/`` `[section.key]` ``
+    doc pointer plausibly names, beyond `frob.toml` itself -- T-draft-
+    6219ad68 matcher hardening: this repo's own docs routinely cite a
+    `pyproject.toml`/`Cargo.toml` section (`[project.optional-
+    dependencies]`, `[build-system]`, `[package]`) in the SAME `[section]`
+    bracket shape the CONFIG REFERENCE kind recognizes; checking that shape
+    ONLY against `frob.toml` was a false-positive class of its own (a real,
+    resolvable reference into a sibling manifest, flagged as if it were a
+    bogus `frob.toml` key). Loaded once per gate run: the root `pyproject.
+    toml` plus every git-tracked `Cargo.toml` (workspace root or any
+    per-crate manifest) -- fail-open per manifest, same posture as `_load_
+    frob_toml`."""
+    manifests: list[dict] = []
+    root_pyproject = root / "pyproject.toml"
+    if root_pyproject.exists():
+        try:
+            with root_pyproject.open("rb") as handle:
+                manifests.append(tomllib.load(handle))
+        except (OSError, tomllib.TOMLDecodeError):
+            pass
+    spawned = run_argv(("git", "-C", str(root), "ls-files", "*Cargo.toml"))
+    cargo_paths = (
+        spawned.danger_ok.stdout.splitlines()
+        if spawned.is_ok and spawned.danger_ok.returncode == 0
+        else []
+    )
+    for rel in cargo_paths:
+        try:
+            with (root / rel).open("rb") as handle:
+                manifests.append(tomllib.load(handle))
+        except (OSError, tomllib.TOMLDecodeError):
+            continue
+    return manifests
+
+
 def _config_path_exists(data: dict, dotted: str) -> bool:
     """Whether `dotted` (`section.key`) resolves as a real path through
     `data` -- descends through nested dicts, and through the first element
@@ -440,11 +603,16 @@ def _config_violations(
     doc_lines: list[str],
     tokens: list[tuple[int, str]],
     frob_toml: dict | None,
+    other_manifests: list[dict],
 ) -> list[Violation]:
     """Kind 3 (CONFIG REFERENCE): `` `[section]` ``/`` `[section.key]` ``
-    checked against this project's own loaded `frob.toml` structure."""
+    checked against this project's own loaded `frob.toml` structure, OR --
+    T-1015 -- any sibling TOML manifest this repo actually ships
+    (`pyproject.toml`, any tracked `Cargo.toml`): a doc legitimately citing
+    `[project.optional-dependencies]` or `[package]` is pointing at one of
+    THOSE manifests, not `frob.toml`, and resolves there instead."""
     violations: list[Violation] = []
-    if frob_toml is None:
+    if frob_toml is None and not other_manifests:
         return violations
     for line_no, token in tokens:
         match = _CONFIG_REF_RE.match(token)
@@ -453,15 +621,19 @@ def _config_violations(
         dotted = match.group(1)
         if _nearby_waived(doc_lines, line_no):
             continue
-        if not _config_path_exists(frob_toml, dotted):
-            violations.append(
-                _doc006_violation(
-                    doc_path,
-                    line_no,
-                    "config reference",
-                    f"[{dotted}] is not a real frob.toml section/key",
-                )
+        if (frob_toml is not None and _config_path_exists(frob_toml, dotted)) or any(
+            _config_path_exists(m, dotted) for m in other_manifests
+        ):
+            continue
+        violations.append(
+            _doc006_violation(
+                doc_path,
+                line_no,
+                "config reference",
+                f"[{dotted}] is not a real frob.toml/pyproject.toml/"
+                f"Cargo.toml section/key",
             )
+        )
     return violations
 
 
@@ -619,6 +791,21 @@ def _tests_target_shape_violations(snapshot: GraphSnapshot) -> list[Violation]:
 # ---------------------------------------------------------------------------
 
 
+# `tickets-archive.md` is a verbatim historical ledger: `frob ticket
+# archive` (docs/modules/tickets.md) moves a closed/dropped ticket's
+# section -- including its Done report, written at close time -- into this
+# file UNCHANGED, forever. A Done report legitimately mentions the config
+# keys, file paths, and code symbols that existed AT THE TIME the ticket
+# closed; checking that historical prose against the CURRENT tree is not
+# this gate's motivating case (a doc that is wrong RIGHT NOW) and would
+# incentivize rewriting a supposedly-immutable historical record just to
+# quiet a gate -- exactly the failure mode `frob ticket archive`'s
+# verbatim-copy contract exists to prevent. T-1015 measured this
+# as the single largest DOC006 cluster (154 of 349 findings post-matcher-
+# fix, ~44%) before adding this exclusion.
+_ARCHIVAL_LEDGER_FILES = frozenset({"tickets-archive.md"})
+
+
 def _tracked_all_files(root: Path) -> frozenset[str]:
     """Every git-tracked file in `root`, repo-relative POSIX paths."""
     spawned = run_argv(("git", "-C", str(root), "ls-files"))
@@ -670,10 +857,13 @@ def doc006_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     console_trees = _console_trees(root, console_sources)
     console_parsers = _console_parsers(console_sources)
     frob_toml = _load_frob_toml(root)
+    other_manifests = _load_toml_manifests(root)
     anchor_cache: dict[str, set[str] | None] = {}
 
     violations: list[Violation] = list(_tests_target_shape_violations(snapshot))
     for doc_path in _tracked_md_files(root):
+        if doc_path in _ARCHIVAL_LEDGER_FILES:
+            continue
         text = _read_md(root, doc_path)
         if text is None:
             continue
@@ -695,7 +885,9 @@ def doc006_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
                 console_parsers,
             )
         )
-        violations.extend(_config_violations(doc_path, doc_lines, tokens, frob_toml))
+        violations.extend(
+            _config_violations(doc_path, doc_lines, tokens, frob_toml, other_manifests)
+        )
         violations.extend(
             _symbol_violations(
                 doc_path,

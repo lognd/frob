@@ -137,7 +137,7 @@ runtime call, so they are excluded rather than double counted.)
 
 Denominator source: The Rust Reference (doc.rust-lang.org/reference),
 live-fetched 2026-07-19. The Reference does not use numbered sections (only
-per-page chapter titles and stable rule-name anchors like `[items.use]`),
+per-page chapter titles and stable rule-name anchors like `[items.use]`), <!-- frob:waive DOC006 reason="ISO C++/Rust standard grammar clause tag, not a frob.toml/pyproject.toml/Cargo.toml config key" -->
 so citations here are by chapter/page title, confirmed live rather than a
 numeral. Chapters used: Use declarations (Items > `use` declarations),
 Visibility and Privacy (`pub use` re-exports, confirmed live under
@@ -217,28 +217,28 @@ document previously cited -- clause numbers have shifted (e.g. namespace
 aliasing moved from old 9.7.3 to current 9.9.3) because clauses were
 inserted/renumbered by intervening papers. The numbers below are the
 live-draft numbers as fetched, with the stable clause tag (e.g.
-`[namespace.udecl]`) given alongside so the citation survives future
+`[namespace.udecl]`) given alongside so the citation survives future <!-- frob:waive DOC006 reason="ISO C++/Rust standard grammar clause tag, not a frob.toml/pyproject.toml/Cargo.toml config key" -->
 renumbering.
 
 | Category | Construct | Example | Spec citation | Tag |
 |---|---|---|---|---|
-| static | `using` declaration | `using std::system; system(x);` | eel.is/c++draft 9.10 The using declaration `[namespace.udecl]` | static-resolvable |
-| static | `using namespace` directive | `using namespace std; system(x);` | eel.is/c++draft 9.9.4 Using namespace directive `[namespace.udir]` | static-resolvable (best-effort; ambiguity across multiple opened namespaces is itself a diagnosable case) |
-| static | namespace alias | `namespace fs = std::filesystem;` (aliasing pattern; analogous alias for a function-bearing namespace) | eel.is/c++draft 9.9.3 Namespace alias `[namespace.alias]` | static-resolvable |
-| static | `#define` macro aliasing | `#define RUN system` then `RUN(x);` | eel.is/c++draft 15.7 Macro replacement `[cpp.replace]` (inherited from the C preprocessor, cross-referenced via cppreference Preprocessor) | static-resolvable |
-| static | function-pointer variable init from named function | `void (*f)(const char*) = system; f(x);` | eel.is/c++draft 9.3.4.2 Pointers `[dcl.ptr]`, 9.3.4.6 Functions `[dcl.fct]`; cppreference "Function declaration" | static-resolvable |
-| static | `typedef`/`using` alias for function-pointer type | `using Handler = void(*)(const char*); Handler f = do_exec; f(x);` | eel.is/c++draft 9.2.4 The `typedef` specifier `[dcl.typedef]` (covers both `typedef` and alias-declaration grammar); cppreference "Type alias" | static-resolvable |
-| static | `std::function` initialized from a named callable | `std::function<void(const char*)> f = system; f(x);` | eel.is/c++draft 22.10 Function objects `[function.objects]` (library, not core-language grammar); cppreference `std::function` | static-resolvable |
-| static | member-function pointer bound to a named member | `auto p = &Ops::run; (obj.*p)(x);` | eel.is/c++draft 9.3.4.4 Pointers to members `[dcl.mptr]`; cppreference "Pointer-to-member" | static-resolvable |
-| static | lambda capturing a bound name | `auto f = system_ptr; auto g = [f](const char* x){ f(x); }; g(x);` | eel.is/c++draft 7.5.6 Lambda expressions `[expr.prim.lambda]` | static-resolvable |
-| static | structured bindings | `auto [a, b] = std::pair{system, 0}; a(x);` | eel.is/c++draft 9.7 Structured binding declarations `[dcl.struct.bind]` | static-resolvable |
-| static | default argument forwarding a callable | `void call(void(*cb)(const char*) = system) { cb(x); }` | eel.is/c++draft 9.3.4.7 Default arguments `[dcl.fct.default]` | static-resolvable |
+| static | `using` declaration | `using std::system; system(x);` | eel.is/c++draft 9.10 The using declaration `[namespace.udecl]` | static-resolvable <!-- frob:waive DOC006 reason="ISO C++/Rust standard grammar clause tag, not a frob.toml/pyproject.toml/Cargo.toml config key" --> |
+| static | `using namespace` directive | `using namespace std; system(x);` | eel.is/c++draft 9.9.4 Using namespace directive `[namespace.udir]` | static-resolvable (best-effort; ambiguity across multiple opened namespaces is itself a diagnosable case) <!-- frob:waive DOC006 reason="ISO C++/Rust standard grammar clause tag, not a frob.toml/pyproject.toml/Cargo.toml config key" --> |
+| static | namespace alias | `namespace fs = std::filesystem;` (aliasing pattern; analogous alias for a function-bearing namespace) | eel.is/c++draft 9.9.3 Namespace alias `[namespace.alias]` | static-resolvable <!-- frob:waive DOC006 reason="ISO C++/Rust standard grammar clause tag, not a frob.toml/pyproject.toml/Cargo.toml config key" --> |
+| static | `#define` macro aliasing | `#define RUN system` then `RUN(x);` | eel.is/c++draft 15.7 Macro replacement `[cpp.replace]` (inherited from the C preprocessor, cross-referenced via cppreference Preprocessor) | static-resolvable <!-- frob:waive DOC006 reason="ISO C++/Rust standard grammar clause tag, not a frob.toml/pyproject.toml/Cargo.toml config key" --> |
+| static | function-pointer variable init from named function | `void (*f)(const char*) = system; f(x);` | eel.is/c++draft 9.3.4.2 Pointers `[dcl.ptr]`, 9.3.4.6 Functions `[dcl.fct]`; cppreference "Function declaration" | static-resolvable <!-- frob:waive DOC006 reason="ISO C++/Rust standard grammar clause tag, not a frob.toml/pyproject.toml/Cargo.toml config key" --> |
+| static | `typedef`/`using` alias for function-pointer type | `using Handler = void(*)(const char*); Handler f = do_exec; f(x);` | eel.is/c++draft 9.2.4 The `typedef` specifier `[dcl.typedef]` (covers both `typedef` and alias-declaration grammar); cppreference "Type alias" | static-resolvable <!-- frob:waive DOC006 reason="ISO C++/Rust standard grammar clause tag, not a frob.toml/pyproject.toml/Cargo.toml config key" --> |
+| static | `std::function` initialized from a named callable | `std::function<void(const char*)> f = system; f(x);` | eel.is/c++draft 22.10 Function objects `[function.objects]` (library, not core-language grammar); cppreference `std::function` | static-resolvable <!-- frob:waive DOC006 reason="ISO C++/Rust standard grammar clause tag, not a frob.toml/pyproject.toml/Cargo.toml config key" --> |
+| static | member-function pointer bound to a named member | `auto p = &Ops::run; (obj.*p)(x);` | eel.is/c++draft 9.3.4.4 Pointers to members `[dcl.mptr]`; cppreference "Pointer-to-member" | static-resolvable <!-- frob:waive DOC006 reason="ISO C++/Rust standard grammar clause tag, not a frob.toml/pyproject.toml/Cargo.toml config key" --> |
+| static | lambda capturing a bound name | `auto f = system_ptr; auto g = [f](const char* x){ f(x); }; g(x);` | eel.is/c++draft 7.5.6 Lambda expressions `[expr.prim.lambda]` | static-resolvable <!-- frob:waive DOC006 reason="ISO C++/Rust standard grammar clause tag, not a frob.toml/pyproject.toml/Cargo.toml config key" --> |
+| static | structured bindings | `auto [a, b] = std::pair{system, 0}; a(x);` | eel.is/c++draft 9.7 Structured binding declarations `[dcl.struct.bind]` | static-resolvable <!-- frob:waive DOC006 reason="ISO C++/Rust standard grammar clause tag, not a frob.toml/pyproject.toml/Cargo.toml config key" --> |
+| static | default argument forwarding a callable | `void call(void(*cb)(const char*) = system) { cb(x); }` | eel.is/c++draft 9.3.4.7 Default arguments `[dcl.fct.default]` | static-resolvable <!-- frob:waive DOC006 reason="ISO C++/Rust standard grammar clause tag, not a frob.toml/pyproject.toml/Cargo.toml config key" --> |
 | static | argument-dependent lookup (ADL) resolving an unqualified call to a function found only via an argument's associated namespace | `run(x);` resolves to `ns::run` purely because `x`'s type lives in `ns`, with no `using` in scope | eel.is/c++draft, unqualified name lookup / argument-dependent lookup `[basic.lookup.argdep]` | static-resolvable (the candidate set is determined by argument types, which are known statically; still requires overload resolution to be modeled) |
-| runtime | function pointer through array/vector with runtime index | `handlers[user_idx](x);` where `handlers` holds `system` | eel.is/c++draft 7.6.1.2 Subscripting `[expr.sub]` (runtime index) | runtime-opaque |
-| runtime | virtual dispatch through a base pointer | `base->run(x);` where the concrete derived override is chosen at runtime construction | eel.is/c++draft 11.7.3 Virtual functions `[class.virtual]` | runtime-opaque |
+| runtime | function pointer through array/vector with runtime index | `handlers[user_idx](x);` where `handlers` holds `system` | eel.is/c++draft 7.6.1.2 Subscripting `[expr.sub]` (runtime index) | runtime-opaque <!-- frob:waive DOC006 reason="ISO C++/Rust standard grammar clause tag, not a frob.toml/pyproject.toml/Cargo.toml config key" --> |
+| runtime | virtual dispatch through a base pointer | `base->run(x);` where the concrete derived override is chosen at runtime construction | eel.is/c++draft 11.7.3 Virtual functions `[class.virtual]` | runtime-opaque <!-- frob:waive DOC006 reason="ISO C++/Rust standard grammar clause tag, not a frob.toml/pyproject.toml/Cargo.toml config key" --> |
 | runtime | `dlopen`/`dlsym` (POSIX) or `LoadLibrary`/`GetProcAddress` (Win32) | `auto f = (void(*)(const char*))dlsym(h, name); f(x);` | POSIX.1-2018 dlsym(); not ISO C++ | runtime-opaque |
-| runtime | `reinterpret_cast` from an integer/opaque handle to a function pointer | `reinterpret_cast<Handler>(addr)(x);` | eel.is/c++draft 7.6.1.10 Reinterpret cast `[expr.reinterpret.cast]`, implementation-defined | runtime-opaque |
-| runtime | RTTI-driven dispatch (`typeid`/`dynamic_cast` selecting a handler at runtime) | selecting `system` vs. a safe stub based on `typeid(*obj)` computed at runtime | eel.is/c++draft 7.6.1.7 Dynamic cast `[expr.dynamic.cast]`; 7.6.1.8 Type identification `[expr.typeid]` | runtime-opaque |
+| runtime | `reinterpret_cast` from an integer/opaque handle to a function pointer | `reinterpret_cast<Handler>(addr)(x);` | eel.is/c++draft 7.6.1.10 Reinterpret cast `[expr.reinterpret.cast]`, implementation-defined | runtime-opaque <!-- frob:waive DOC006 reason="ISO C++/Rust standard grammar clause tag, not a frob.toml/pyproject.toml/Cargo.toml config key" --> |
+| runtime | RTTI-driven dispatch (`typeid`/`dynamic_cast` selecting a handler at runtime) | selecting `system` vs. a safe stub based on `typeid(*obj)` computed at runtime | eel.is/c++draft 7.6.1.7 Dynamic cast `[expr.dynamic.cast]`; 7.6.1.8 Type identification `[expr.typeid]` | runtime-opaque <!-- frob:waive DOC006 reason="ISO C++/Rust standard grammar clause tag, not a frob.toml/pyproject.toml/Cargo.toml config key" --> |
 
 C++ coverage: 12 static-resolvable, 5 runtime-opaque, 17 total.
 
@@ -350,7 +350,7 @@ Per-language sourcing detail, all fetched 2026-07-19:
 - **Rust**: doc.rust-lang.org/reference (Use declarations, Visibility and
   privacy, Patterns, Type coercions, Macros by example, Trait objects
   pages). The Reference confirmed live that it uses stable chapter/rule-tag
-  anchors (e.g. `[items.use]`) rather than numerals, so citation-by-title
+  anchors (e.g. `[items.use]`) rather than numerals, so citation-by-title <!-- frob:waive DOC006 reason="ISO C++/Rust standard grammar clause tag, not a frob.toml/pyproject.toml/Cargo.toml config key" -->
   is the correct live-verified form, not a fallback. `libloading` is
   correctly noted as a third-party crate, not part of std or the Reference.
 - **C**: N2176 (the free public C17 working draft) cross-checked via the
@@ -361,7 +361,7 @@ Per-language sourcing detail, all fetched 2026-07-19:
   linker-ABI extensions, not ISO C.
 - **C++**: eel.is/c++draft, the current (post-C++23) live working draft,
   replacing the frozen N4861 (C++20) text used in the prior revision.
-  Stable clause tags (e.g. `[namespace.udecl]`) are cited alongside the
+  Stable clause tags (e.g. `[namespace.udecl]`) are cited alongside the <!-- frob:waive DOC006 reason="ISO C++/Rust standard grammar clause tag, not a frob.toml/pyproject.toml/Cargo.toml config key" -->
   live numeral specifically because this draft's numbering will keep
   moving; a future re-check should match on the tag, not the numeral.
   cppreference.com remains labeled as a secondary/community reference

@@ -489,3 +489,68 @@ round** (2 live findings would red `main`); promotion tracked in the same follow
   findings, module list above).
 - Draft id at write time (renumbered at land), `blocked_by` the real id `T-0976`
   resolves to -- ARCH103's last 2 sites + promotion.
+
+### DOC006 (doc-pointer resolution) -- 771 -> 131 live, NOT promoted this round
+
+T-1015 measured DOC006 (`frob.gates._docptr`, WARN since T-0437) at 771
+live findings via a chunked `frob check --only docblocks --json`, clustered by
+recognized-shape kind: 539 file/path, 144 config reference, 45 code symbol, 23 cli
+invocation, 20 doc-anchor link. Most of the volume was matcher false positives, not
+real doc drift -- fixed the matcher (`_docptr.py`), not by mass-waiving:
+
+- **FILE/PATH shape hardening** (`_looks_like_path`): the old shape check
+  (`^[\w.\-]+(?:/[\w.\-]+)+$`) matched prose that was never a path at all -- units
+  ratios (`req/s`), test-permutation suffixes (`sum_twice_a/b`), enumeration/
+  alternatives lists using `/` as "or" (`.ts/.tsx/.c/.cpp`, `for/while`,
+  `fake/changeme/example/placeholder`), and bare protocol-less hostnames/DOIs cited in
+  reference corpora (`martinfowler.com/bliki/...`, `10.1145/358198.358210`). Narrowed
+  to require: no non-leading dot-segment, no hyphen-glued sentence fragments
+  (`your-`/`-here`), a first segment that isn't itself a bare hostname, and either a
+  file extension on the last segment or a first segment rooted at one of this repo's
+  own known top-level directories (`_KNOWN_TOP_LEVEL_DIRS`).
+- **FILE/PATH resolution broadening**: added directory-prefix resolution (`src/frob/
+  strata` resolves if any tracked file starts with that prefix -- a real directory-only
+  mention, not a bogus exact-file check) and trailing-suffix resolution (`gates/
+  __init__.py` resolves against `src/frob/gates/__init__.py` -- doc prose routinely
+  uses a shorter module-relative tail). Also extended the existing `.frob/` runtime-
+  artifact exemption to `.git/` (git's own internal state dir, `.git/info/exclude` /
+  `.git/MERGE_HEAD`, is never itself git-tracked either) and added a `root/` prefix
+  alias for `root/frob.toml`-style doc phrasing.
+- **CONFIG REFERENCE multi-manifest resolution**: `[section]`/`[section.key]` was <!-- frob:waive DOC006 reason="[section]/[section.key] here quotes _docptr's own illustrative placeholder shape, not a real config reference" -->
+  checked ONLY against `frob.toml`, so any doc legitimately citing a `pyproject.toml`
+  section (`[project.optional-dependencies]`, `[build-system]`, `[tool.pytest.
+  ini_options]`) or a `Cargo.toml` section (`[package]`) was flagged as a bogus
+  `frob.toml` key. Now resolves against `frob.toml` OR the root `pyproject.toml` OR any
+  tracked `Cargo.toml`.
+- **Scope exclusion**: `tickets-archive.md` is a verbatim historical ledger (`frob
+  ticket archive` copies a closed ticket's Done report there UNCHANGED forever, per
+  docs/modules/tickets.md) -- checking its historical prose against the CURRENT tree
+  was the single largest cluster (154 of 349 post-matcher-fix findings, ~44%) and
+  would have incentivized rewriting supposedly-immutable history to quiet a gate.
+  Excluded from DOC006's doc-prose scan entirely.
+- A handful of targeted `frob:waive DOC006 reason="..."` sites for the DOC006 section
+  of docs/modules/gates.md's own illustrative examples (`frob edit`, `src/frob/gone.py`,
+  `[bogus.section]`, `src/frob/pkg/sub/deep.py`, etc. -- deliberately fictional tokens
+  quoting `_docptr`'s own module docstring) and one C++/Rust standard-grammar-clause
+  citation table in docs/design/capability-evasion-taxonomy.md (19 sites: `[dcl.ptr]`, <!-- frob:waive DOC006 reason="[dcl.ptr]/[namespace.udecl] quoted here are the same ISO standard clause tags cited above, not real frob.toml keys" -->
+  `[namespace.udecl]`, etc. are ISO standard clause tags, not frob.toml keys -- a
+  narrow, single-doc citation convention, not a generalizable matcher shape).
+
+Measured reduction (each step re-verified via `tests/test_docptr_gate.py` staying
+green and a fresh chunked `--only docblocks --json` count): 771 -> 349 (FILE/PATH shape
+hardening) -> 195 (tickets-archive.md exclusion) -> 189 (multi-manifest CONFIG
+REFERENCE) -> 168 (capability-evasion-taxonomy.md waivers) -> 143 (`.git/` exemption +
+domain/DOI shape rejection + `root/` alias) -> 131 (gates.md illustrative-example
+waivers). **83% reduction, 771 -> 131.**
+
+**Decision: DOC006 stays WARN, NOT promoted this round.** 131 live findings would red
+`main` immediately if promoted to ERROR; the remainder is fragmented across ~30 doc
+files (docs/modules/vet.md 16, docs/modules/gates.md 12, docs/modules/perf.md 8,
+CHANGELOG.md 7, docs/strata/threat.md 6, plus ~25 files with 1-4 each) with no single
+dominant cluster left to fix mechanically in this pass -- each remaining finding needs
+its own genuine-drift-vs-illustrative disposition. Promotion tracked in the same
+follow-up.
+
+**Children filed:**
+- T-1016 -- DOC006 burn-down round 2, the 131-finding remainder + eventual
+  promotion decision.
