@@ -164,6 +164,7 @@ from frob.tickets import Ticket, TicketQueue, TicketState, closed_ticket_ids, lo
 from frob.tickets._models import (
     CMD_EVIDENCE_ALLOWED_KINDS,
     Priority,
+    TicketError,
     _scope_globs,
     _split_scope_entries,
     is_cmd_evidence,
@@ -7274,8 +7275,13 @@ def decisions_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]
 
 
 # frob:ticket T-0162
+# frob:ticket T-0929
+# frob:tests tests/test_tickets_collision.py::TestRealLedgerIntegrity.test_no_duplicate_ids_within_or_across_ledgers  # noqa: E501
 # frob:enforces CHK-GATE-TICK001
-def _tick001_duplicate_ids(root: Path) -> tuple[Violation, ...]:
+def _tick001_duplicate_ids(
+    active: Result[dict[str, Ticket], TicketError],
+    archived: Result[dict[str, Ticket], TicketError],
+) -> tuple[Violation, ...]:
     """TICK001: an id present in BOTH the active and archive ledgers.
 
     Defense in depth, not the primary mechanism: `_load_merged` (frob.tickets)
@@ -7285,9 +7291,16 @@ def _tick001_duplicate_ids(root: Path) -> tuple[Violation, ...]:
     exists so that stays true even if a future change makes ledger loading
     more permissive; see the decision record for why duplicate-id detection
     is split this way instead of only living in one place.
+
+    T-0929 (docs/audits/check-performance.md row 10, `tickets` gate,
+    2.09s): `active`/`archived` are now loaded ONCE by `tickets_gate` and
+    shared with `_tick003_stale_archive`/`_tick006_phantom_filing`, rather
+    than each of the three re-reading and re-parsing the full
+    `tickets.md`/`tickets-archive.md` ledger text independently -- the
+    same "same expensive input recomputed N times with no shared cache"
+    shape the audit's meta-gap finding (E) describes, at the level of
+    `tickets_gate`'s own three sibling rules instead of cross-stage.
     """
-    active = _tickets_load_all(root)
-    archived = _tickets_load_archive(root)
     if active.is_err or archived.is_err:
         return ()
     overlap = sorted(set(active.danger_ok) & set(archived.danger_ok))
@@ -7385,7 +7398,11 @@ def _tick003_violation(count: int, severity: Severity, threshold: int) -> Violat
     )
 
 
-def _tick003_stale_archive(root: Path) -> tuple[Violation, ...]:
+# frob:ticket T-0929
+# frob:tests tests/test_gates_tickets_hygiene.py::TestTick003StaleArchive.test_above_default_error_threshold_errors  # noqa: E501
+def _tick003_stale_archive(
+    root: Path, active: Result[dict[str, Ticket], TicketError]
+) -> tuple[Violation, ...]:
     """TICK003 (T-0409): WARN (escalating to ERROR past a hard cap) when
     the ACTIVE ledger (never the archive -- an already-archived closed
     ticket is not a hygiene problem) holds more than a configurable
@@ -7399,8 +7416,12 @@ def _tick003_stale_archive(root: Path) -> tuple[Violation, ...]:
     performs. `frob ticket archive` itself should still only be run in a
     quiet window (no active worktrees), per the same known hazard; this
     gate's message says so but cannot enforce it.
+
+    T-0929: `active` is now the SAME `load_all` result `tickets_gate`
+    already loaded once for `_tick001_duplicate_ids`, not a second
+    independent re-parse of `tickets.md` (docs/audits/check-performance.md
+    row 10).
     """
-    active = _tickets_load_all(root)
     if active.is_err:
         return ()
     count = len(closed_ticket_ids(TicketQueue(tickets=active.danger_ok)))
@@ -7660,8 +7681,12 @@ def _tick006_phantom_ids(done_report_text: str) -> tuple[str, ...]:
     return tuple(seen)
 
 
+# frob:ticket T-0929
+# frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_phantom_filed_colon_fires  # noqa: E501
 # frob:enforces CHK-GATE-TICK006
-def _tick006_phantom_filing(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
+def _tick006_phantom_filing(
+    queue: TicketQueue, archived: Result[dict[str, Ticket], TicketError]
+) -> tuple[Violation, ...]:
     """TICK006 (T-0726): ERROR on a Done report's affirmative filing claim
     (`Filed: ...`, `filed as ...`, a bare `T-draft-<hex>`/`T-#### id`
     following "filed") whose referenced id resolves to NO block in either
@@ -7675,8 +7700,12 @@ def _tick006_phantom_filing(root: Path, queue: TicketQueue) -> tuple[Violation, 
     resolves to nothing, right now, in the ledger a reader actually has),
     and is expected to be waived per-instance with an honest reason
     (docs/modules/gates.md#tick006-t-0726) rather than treated as a false
-    positive to suppress structurally."""
-    archived = _tickets_load_archive(root)
+    positive to suppress structurally.
+
+    T-0929: `archived` is the SAME `load_archive` result `tickets_gate`
+    already loaded once for `_tick001_duplicate_ids`, not a second
+    independent re-parse of `tickets-archive.md` (docs/audits/
+    check-performance.md row 10)."""
     known_ids = set(queue.tickets) | (
         set(archived.danger_ok) if archived.is_ok else set()
     )
@@ -7846,14 +7875,25 @@ def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     hygiene check, the T-0411 priority-rot check, the T-0537 post-merge
     terminal-state-regression lint, the T-0726 phantom-filing-claim check,
     the T-0820/T-0752 undispatched-stale-CRITICAL/HIGH alarm, and the
-    T-0842 unknown-ledger-field check."""
+    T-0842 unknown-ledger-field check.
+
+    T-0929 (docs/audits/check-performance.md row 10, `tickets` gate): the
+    full `tickets.md`/`tickets-archive.md` ledger text is now loaded ONCE
+    here and shared by `_tick001_duplicate_ids`/`_tick003_stale_archive`/
+    `_tick006_phantom_filing`, instead of each of those three rules
+    independently re-reading and re-parsing the same ledger files (a
+    same-shape duplicate as the cross-stage redundant-parse class the
+    audit's meta-gap finding (E) describes, one level down inside a
+    single gate)."""
+    active = _tickets_load_all(root)
+    archived = _tickets_load_archive(root)
     return (
-        _tick001_duplicate_ids(root)
+        _tick001_duplicate_ids(active, archived)
         + _tick002_draft_on_default(root, queue)
-        + _tick003_stale_archive(root)
+        + _tick003_stale_archive(root, active)
         + _tick004_queue_rot(root, queue)
         + _tick005_merge_state_regression(root, queue)
-        + _tick006_phantom_filing(root, queue)
+        + _tick006_phantom_filing(queue, archived)
         + _tick007_undispatched_stale(root, queue)
         + _tick008_unknown_ledger_fields(queue)
     )

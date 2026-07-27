@@ -1,6 +1,16 @@
 {
   "entries": [
     {
+      "digest": "9c8f41451d02128728d2ade8438340e19af482f78fc645476f5d1045332302be",
+      "facet": "body",
+      "ref": "src/frob/gates/__init__.py::_tick001_duplicate_ids"
+    },
+    {
+      "digest": "8da8d77d7f5b4bcc97e0cc6286617e72d794248483ce5e9dff67f7a4b090932e",
+      "facet": "sig",
+      "ref": "src/frob/gates/__init__.py::_tick001_duplicate_ids"
+    },
+    {
       "digest": "a3ec91100e15e9216e6c754b0ba623ee6e8c45468ee86805045ad43623853c7b",
       "facet": "sig",
       "ref": "src/frob/gates/__init__.py::active_ticket"

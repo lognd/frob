@@ -852,6 +852,15 @@ waivable (not in `_UNWAIVABLE_RULES`): unlike TICK001/TICK002, a genuine
 draft-loss disclosure is a legitimate, honestly-dispositioned case, not a
 silent invariant break.
 
+**T-0929 (perf, no behavior change).** `_tick006_phantom_filing` no
+longer loads `tickets-archive.md` itself -- `tickets_gate` now loads it
+ONCE and passes the `archived` `Result` down to `_tick001_duplicate_ids`/
+`_tick003_stale_archive`/`_tick006_phantom_filing` alike, closing a
+same-shape redundant-parse gap the T-0928 check-performance audit found
+inside a single gate (docs/audits/check-performance.md row 10). Purely
+an internal signature change; TICK006's own detection contract above is
+unaffected.
+
 ### TICK007 (T-0820)
 
 <!-- frob:describes src/frob/gates/__init__.py::_tick007_undispatched_stale -->

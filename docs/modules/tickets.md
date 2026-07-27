@@ -935,6 +935,20 @@ and archive) is mostly moot in practice -- `_load_merged`/`_parse_ledger`
 already hard-Err the whole `frob check` run before a gate violation could
 even be produced -- but is kept as an unwaivable gate rule as defense in
 depth against a future change that makes ledger loading more permissive.
+
+**T-0929 (perf, no behavior change).** `frob.gates.tickets_gate` used to
+have `_tick001_duplicate_ids`/`_tick003_stale_archive`/
+`_tick006_phantom_filing` each independently re-read and re-parse the
+full `tickets.md`/`tickets-archive.md` ledger text via `load_all`/
+`load_archive` (no cache) -- 3 redundant `load_all` calls and 2
+redundant `load_archive` calls per `tickets_gate` invocation. The
+T-0928 check-performance audit's meta-gap finding (docs/audits/
+check-performance.md Finding E, row 10) flagged this class of
+same-input-recomputed-N-times cost; `tickets_gate` now loads `active`/
+`archived` once and passes the `Result` values to all three rules
+instead. Measured `tickets` stage wall time: 2.09s (audit baseline) ->
+1.10-1.13s after. TICK001/TICK002's own invariant contract above is
+unaffected -- only how many times the ledger text is parsed to answer it.
 TICK002 (a `T-draft-*` id surviving onto the default branch) is the rule
 that actually matters: it means the finalize step was skipped, failed, or
 forgotten, which is precisely the "collision-proofing silently did not

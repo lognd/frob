@@ -200,3 +200,70 @@ missing warm cache the real run's `_load_inputs` call benefits from that
 a fresh interpreter's `_load_inputs` does not. Reported as OPEN, not
 closed -- row 2 of the ranked table and remedy #2 both carry this
 forward rather than presenting a number that could not be reproduced.
+
+## Remediation log (T-0929, quick wins from this audit)
+
+**Row 10 (`tickets` gate, 2.09s, python-optimizable) -- FIXED.**
+`tickets_gate` (`src/frob/gates/__init__.py`) dispatches eight TICK00x
+rules; three of them (`_tick001_duplicate_ids`, `_tick003_stale_archive`,
+`_tick006_phantom_filing`) each independently called
+`frob.tickets._store.load_all`/`load_archive`, which re-reads and
+re-parses the FULL `tickets.md`/`tickets-archive.md` ledger text from
+disk on every call (no cache) -- 3 redundant `load_all` calls and 2
+redundant `load_archive` calls per `tickets_gate` invocation, on top of
+the `queue` `_load_inputs` had already built upstream. This is the same
+"same expensive input recomputed N times, no shared cache" shape the
+audit's meta-gap finding (E) describes, one level down inside a single
+gate rather than cross-stage. Fix: `tickets_gate` now loads `active`/
+`archived` ONCE and passes the `Result` values down to all three rules;
+`_tick001_duplicate_ids`, `_tick003_stale_archive`, and
+`_tick006_phantom_filing` no longer call `load_all`/`load_archive`
+themselves.
+
+Measured (`uv run frob check --only tickets`, same checkout, natives
+built, warm cache, 2 back-to-back runs):
+
+```
+before (this audit's baseline): tickets=2.09s
+after:                          tickets=1.10s / 1.13s
+```
+
+~46-47% reduction, consistent across both post-fix runs. Full
+`tests/test_gates.py` (543 tests) passes unchanged.
+
+**Row 4 (`perf` gate, 9.50s, python-optimizable) -- ALREADY RESOLVED,
+verified not re-broken.** `perf_rules` (`src/frob/perf/_rules.py`)
+already builds exactly ONE shared `_EffectGraph` for both PERF008 and
+PERF012 (`shared_effect_graph = _EffectGraph(files)`, T-0919, landed
+before this audit) -- the remedy this row asks to "investigate" is
+already in place, and `EffectGraph.summary`/`reachable_effect`
+(`src/frob/perf/_effect_summaries.py`) memoize per-symref (`self._memo`)
+and per-file (`self._occurrence_cache`), so no per-loop rebuild exists to
+fix. No code change made for this row; verified by reading
+`perf_rules`/`EffectGraph` directly rather than assumed. Left as a
+no-op, not silently skipped.
+
+**Row 6 (`coverage` gate, 5.04s, python-optimizable) -- VERIFIED
+ALREADY RESOLVED via the T-0414 parse memo, no code change.** Isolated
+`coverage_gate(...)` call (bypassing the thread pool, mirroring Finding
+5's method) with `frob.lang.reset_parse_cache()`/`parse_cache_stats()`
+bracketing it showed 1978-1979 cache HITS against only 646-648 real
+parses for the run -- i.e. `_cov006`'s ~2000-call `parse_file` pattern
+T-0410 originally flagged is real in call COUNT, but T-0414's
+content-hash memo (already landed) already absorbs nearly all of it into
+cache hits, matching the audit's own "0s if already memo'd" estimate for
+this row. Same isolated-call-slower-than-in-context anomaly as Finding 5
+was also observed here (isolated wall time ~56-60s vs the 5.04s
+`gate-summary` bracket for the same gate in a real `--only gates-fast`
+run) -- not root-caused, out of this ticket's scope (T-0949 owns
+root-causing that isolated-vs-in-context discrepancy class), noted here
+only so a future pass does not re-discover it as new.
+
+**Row 2 (`test` gate, 13.68s) and Finding 4 (sys/secrets/pii_structural
+shared walk) -- explicitly NOT attempted here.** `test` gate's isolated
+profile is T-0949's scope (this audit's own Finding 5 root-cause);
+Finding 4's cross-gate shared walk touches `pii_structural`, a
+rust-candidate row this ticket (T-0929) was scoped to stay off of
+(T-0930 owns rust-candidate rows), and is separately ticketed as T-0946.
+`archgate`/`static`/`dead_symbols` (rust-candidate rows) were not
+touched, per the same scoping instruction.
