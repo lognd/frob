@@ -2847,6 +2847,41 @@ class TestFingerprintScan:
         logging_checks_path = repo_root / "src" / "frob" / "arch" / "_logging_checks.py"
         assert _line_effects(logging_checks_path, repo_root) == []
 
+    # frob:ticket T-0915
+    def test_self_pattern_exclusion_covers_async_hazards_needle_tuples(
+        self,
+    ) -> None:
+        # T-0915: `frob.arch._async_hazards`'s curated blocking-call-name
+        # tables (`subprocess.`, `requests.`, `socket.`, ...) are the same
+        # bare-text needle-literal class as `_srp.py` (T-0729) and
+        # `_logging_checks.py` (T-0910) -- classifier data compared against
+        # parsed callee strings, not live I/O. Without the exclusion the
+        # SYS100 scanner misreports them as net/exec capability USE on the
+        # `graphlang` node (SELFAUDIT001). Regression for the third
+        # recurrence of this false-positive class.
+        # frob:tests src/frob/vet/_capability.py::is_self_pattern_path kind="unit"
+        from frob.vet._capability import is_self_pattern_path
+
+        repo_root = Path(__file__).resolve().parents[1]
+        async_hazards_path = repo_root / "src" / "frob" / "arch" / "_async_hazards.py"
+        assert async_hazards_path.is_file()
+        assert is_self_pattern_path(async_hazards_path, repo_root)
+
+    # frob:ticket T-0915
+    def test_line_effects_reports_no_capability_on_async_hazards_module(
+        self,
+    ) -> None:
+        # T-0915: end-to-end companion -- the SYS100/SELFAUDIT001 tier-2
+        # effect scanner must observe ZERO net/fs/exec effects on
+        # `_async_hazards.py` now that it is excluded, not just that
+        # `is_self_pattern_path` returns True in isolation.
+        # frob:tests src/frob/strata/_effects.py::_line_effects kind="unit"
+        from frob.strata._effects import _line_effects
+
+        repo_root = Path(__file__).resolve().parents[1]
+        async_hazards_path = repo_root / "src" / "frob" / "arch" / "_async_hazards.py"
+        assert _line_effects(async_hazards_path, repo_root) == []
+
     def test_self_pattern_exclusion_does_not_fire_when_vetting_a_dependency(
         self, tmp_path: Path
     ) -> None:

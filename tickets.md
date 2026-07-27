@@ -7907,7 +7907,7 @@ and clear the frob:waive COV001 placeholder left on that function.
 ```yaml
 id: T-0915
 title: 'fix: exclude frob.arch._async_hazards from SELFAUDIT001 net/exec self-match'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-26'
@@ -7915,6 +7915,16 @@ priority: medium
 parent: null
 scope:
 - src/frob/vet/_capability.py
+- tests/test_vet.py
+scope_changes:
+- op: add
+  glob: tests/test_vet.py
+  reason: regression tests for the exclusion live here per T-0910 precedent
+  actor: logan
+  at: '2026-07-26'
+evidence:
+- tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_covers_async_hazards_needle_tuples
+- tests/test_vet.py::TestFingerprintScan::test_line_effects_reports_no_capability_on_async_hazards_module
 threat: null
 component: null
 ```
@@ -7936,3 +7946,19 @@ src/frob/vet/_capability.py's _SELF_PATTERN_SUFFIXES tuple, mirroring the
 _srp.py/_logging_checks.py entries and their doc comments. Out of T-0696's
 declared scope (src/frob/arch/**, tests/unit/test_arch.py only), which is
 why this is filed separately rather than fixed inline.
+
+## Done report
+
+Third recurrence of the SYS100 needle-literal self-match class (T-0729 _srp.py, T-0910 _logging_checks.py): T-0696's new _async_hazards.py stores curated blocking-call-name tables as bare-text needles, which the capability scanner misread as live net/exec use on graphlang, putting 2 SELFAUDIT001 errors on main. Added the file to _SELF_PATTERN_SUFFIXES with the same honesty rationale (the module does no I/O; declaring fake capabilities would be the dishonest fix) plus the standard pair of regression tests.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_covers_async_hazards_needle_tuples` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestFingerprintScan::test_line_effects_reports_no_capability_on_async_hazards_module` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: 1 error(s), 2656 warning(s), 351 waived
+- error-findings: PRE001@tickets/T-0915

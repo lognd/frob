@@ -2855,6 +2855,15 @@ _SELF_PATTERN_SUFFIXES: tuple[tuple[str, ...], ...] = (
     # this file is excluded from self-conformance's capability scan the
     # same way `_srp.py` is, not given a capability it does not have.
     ("frob", "arch", "_logging_checks.py"),
+    # T-0915: `frob.arch._async_hazards`'s blocking-call classifier stores
+    # the same class of I/O-classifier signal as `_srp.py`/`_logging_checks
+    # .py` above -- its curated blocking-call-name tables (`subprocess.`,
+    # `requests.`, `socket.`, ...) are bare-text needles compared against
+    # parsed callee strings, not live I/O; the module itself only reads
+    # `NormalizedModule` facts. Excluded from the capability scan for the
+    # same reason as its two siblings rather than given `may net`/`may
+    # exec` capabilities it does not have.
+    ("frob", "arch", "_async_hazards.py"),
 )
 
 #: `[project]`-table `name = "frob"` line, tomllib-free (matches this
