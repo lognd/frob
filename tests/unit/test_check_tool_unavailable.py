@@ -79,6 +79,64 @@ class TestTyUnavailable:
         assert "tool unavailable: ty" in r.summary
 
 
+# frob:ticket T-0996
+class TestTyHermeticRootResolution:
+    """T-0996: `_run_ty` must pin `ty`'s module/venv resolution to the
+    checked `root` itself via explicit CLI flags, never `ty`'s own
+    ambient upward directory walk (docs/modules/check.md's
+    `_run_ty`) -- exercised directly against the constructed argv, not
+    just via a real subprocess, so a regression here fails fast without
+    needing a polluted ancestor directory to reproduce."""
+
+    def test_extra_search_path_and_python_pin_to_root(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_run_ty kind="unit"
+        (tmp_path / "src").mkdir()
+        (tmp_path / ".venv").mkdir()
+        captured: list[list[str]] = []
+
+        def _fake_run(args, **kwargs):  # noqa: ANN001, ANN002, ANN003
+            captured.append(list(args))
+            return subprocess.CompletedProcess(
+                args=args, returncode=0, stdout="All checks passed!\n", stderr=""
+            )
+
+        monkeypatch.setattr(subprocess, "run", _fake_run)
+        r = _run_ty(tmp_path)
+        assert isinstance(r, ToolResult)
+        assert r.passed
+
+        assert len(captured) == 1
+        argv = captured[0]
+        expected_src = str((tmp_path / "src").resolve())
+        expected_venv = str((tmp_path / ".venv").resolve())
+        assert "--extra-search-path" in argv
+        assert argv[argv.index("--extra-search-path") + 1] == expected_src
+        assert "--python" in argv
+        assert argv[argv.index("--python") + 1] == expected_venv
+
+    def test_no_src_or_venv_omits_the_pinning_flags(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_run_ty kind="unit"
+        captured: list[list[str]] = []
+
+        def _fake_run(args, **kwargs):  # noqa: ANN001, ANN002, ANN003
+            captured.append(list(args))
+            return subprocess.CompletedProcess(
+                args=args, returncode=0, stdout="All checks passed!\n", stderr=""
+            )
+
+        monkeypatch.setattr(subprocess, "run", _fake_run)
+        _run_ty(tmp_path)
+
+        assert len(captured) == 1
+        argv = captured[0]
+        assert "--extra-search-path" not in argv
+        assert "--python" not in argv
+
+
 # frob:ticket T-0142
 class TestCargoUnavailable:
     def test_run_cargo_missing_binary_returns_failing_result(

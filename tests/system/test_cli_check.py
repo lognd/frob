@@ -914,15 +914,27 @@ class TestGitlessTargetGateSeverity:
         streams for THIS test, the handlers stay bound to the pre-capsys
         stderr object forever and `capsys.readouterr()` observes nothing,
         regardless of test body correctness (an order-dependent flake, not a
-        logic bug). Force `_init()` to rebind AFTER `capsys` (an argument
-        above, so already installed by the time this line runs) is active,
-        by clearing the one-shot guard -- deterministic regardless of what
-        ran before this test in the same session/worker, not a reordering
-        or flaky-marking workaround."""
+        logic bug).
+
+        T-0996: clearing the one-shot guard is not enough by itself --
+        `_render_lint`'s own `_log = get_logger(__name__)` is a MODULE-
+        LEVEL statement, so it only re-runs `_init()` on that module's
+        FIRST ever import in this process; once some earlier test/import
+        chain (e.g. `frob.check`, pulled in by an in-process gate test
+        elsewhere in this same file/worker) has already imported
+        `frob.gates._render_lint`, the `from frob.gates._render_lint
+        import ...` line below is a no-op cache hit that never touches
+        `get_logger` again, no matter what the guard is set to. Call
+        `get_logger` directly, right here, AFTER clearing the guard and
+        AFTER `capsys` (an argument above) has already swapped the
+        streams -- that is the one call guaranteed to re-run `dictConfig`
+        against the CURRENT `sys.stderr`, independent of whichever module
+        happened to import `_render_lint` first."""
         import frob.logging.logger as _logger_module
-        from frob.gates._render_lint import _tracked_python_files
 
         _logger_module._initialized = False
+        _logger_module.get_logger(__name__)
+        from frob.gates._render_lint import _tracked_python_files
 
         result = _tracked_python_files(tmp_path)
         assert result == ()

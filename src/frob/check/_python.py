@@ -107,14 +107,40 @@ def _reformat_diagnostics(reformat_lines: list[str]) -> list[Diagnostic]:
 
 
 # frob:ticket T-0142
+# frob:ticket T-0996
 def _run_ty(root: Path) -> ToolResult:
     """ty type-check, honouring a local ty.toml's extra-paths. A missing
     `ty` binary (T-0142) is a typed failing ToolResult, never a silent
-    skip -- the previous `None` return vanished the stage entirely."""
+    skip -- the previous `None` return vanished the stage entirely.
+
+    T-0996: `ty` resolves first-party imports and its Python environment
+    by walking UP the directory tree from `root` looking for the nearest
+    `pyproject.toml`/`.venv` -- there is no ty flag that pins that search
+    to `root` and disables the upward walk (`--project` only changes the
+    walk's starting point, per `ty check --help`). A `root` nested under
+    ANY ancestor directory that happens to contain an unrelated
+    `pyproject.toml`/`.venv` (a stray scratch file from another process, a
+    monorepo parent, ...) silently mis-resolves every first-party import
+    and every third-party dependency to that ancestor instead of `root`
+    (reproduced against a stray `/tmp/pyproject.toml` + `/tmp/.venv`
+    during T-0996's investigation -- a fresh scaffold nested three levels
+    under a polluted `/tmp` failed `ty check` with `unresolved-import` on
+    its OWN package, while the identical scaffold one level under `$HOME`
+    passed cleanly). Passing `--extra-search-path <root>/src` (when a
+    src-layout exists) and `--python <root>/.venv` (when a project-local
+    venv exists) makes first-party and third-party resolution hermetic to
+    `root` regardless of what ancestor directories contain, independent
+    of a `ty.toml`."""
     from frob.process.parsers import parse_ty
 
     scan = root if root.is_dir() else root.parent
     cmd = ["ty", "check", str(root)]
+    src_dir = scan / "src"
+    if src_dir.is_dir():
+        cmd += ["--extra-search-path", str(src_dir.resolve())]
+    venv_dir = scan / ".venv"
+    if venv_dir.is_dir():
+        cmd += ["--python", str(venv_dir.resolve())]
     ty_cfg = scan / "ty.toml"
     if ty_cfg.exists():
         try:

@@ -158,6 +158,41 @@ def test_python_tool_scaffold_passes_check_immediately(tmp_path: Path) -> None:
     )
     assert stamp.returncode == 0, stamp.stdout + stamp.stderr
 
+    # T-0996: `--stamp-coverage` and `uv sync` both leave real, meant-to-
+    # be-committed artifacts sitting uncommitted in the working tree
+    # (`frob-coverage.lock.json` -- a deliberately committed lockfile per
+    # T-0545, not `.frob/` scratch state; `uv.lock`, the dependency lock
+    # `uv sync` writes on first run). B9 (T-0541, `PRE001`/`SCOPE001`)
+    # treats ANY non-`.frob`/non-ledger file touched by the working diff
+    # with no derivable active ticket as a loud blocking violation instead
+    # of a silent skip -- correctly so for frob's own dogfooding
+    # discipline, and correctly so here too: this is exactly the "commit
+    # your lockfiles" step a real user's `main`-branch workflow needs
+    # between generating them and running `check`, not a scaffold defect
+    # or a gate the fixture should route around.
+    lock_commit = subprocess.run(
+        ["git", "add", "-A"], cwd=project_dir, capture_output=True, text=True
+    )
+    assert lock_commit.returncode == 0, lock_commit.stdout + lock_commit.stderr
+    lock_commit = subprocess.run(
+        [
+            "git",
+            "-c",
+            "user.email=t@t.com",
+            "-c",
+            "user.name=t",
+            "commit",
+            "-q",
+            "-m",
+            "lockfiles",
+            "--allow-empty",
+        ],
+        cwd=project_dir,
+        capture_output=True,
+        text=True,
+    )
+    assert lock_commit.returncode == 0, lock_commit.stdout + lock_commit.stderr
+
     check = subprocess.run(
         [frob_bin, "check"],
         cwd=project_dir,
