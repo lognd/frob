@@ -548,3 +548,94 @@ dependent, not node-count dependent). Filed as a bug ticket (scope
 iterative form; not fixed here since T-0950's scope was the rust-port
 sizing decision, not this pre-existing correctness bug. Filed as
 T-0952 (gets a permanent T-#### id at land).
+## Remediation log (T-0946, Finding 4 -- sys/secrets/pii_structural shared walk)
+
+**Disposition: NOT a real win. NO code change made.** Finding 4's own
+hypothesis ("io-bound rows may be page-cache-warm already") is exactly
+what measurement confirmed -- the walk+read io these three gates share
+is a rounding error next to their real (scan-logic) cost, so a shared
+walk/content cache would shave a few tens of milliseconds off a
+combined ~13.7s, not the "up to ~6-7s" the audit's remedy table
+estimated assuming ~50% io share.
+
+**Before (isolated, direct calls, this checkout, natives built, warm
+cache -- reproducing each gate standalone rather than through the
+process-pool, per Finding 0's isolated-call method):**
+
+```
+secrets_gate(root):          2.974s  (0 violations)   -- 1101 tracked files
+pii_structural_gate(root):   4.593s  (140 violations) -- 689 tracked .py/.ts/.tsx/.rs files
+sys_gate(root, snapshot):    6.317s  (0 violations)   -- 334 design-bound files (+ build_graph 6.620s, not part of sys_gate's own bracket)
+```
+
+All three land within run-to-run noise of the audit's original
+6.22s/2.87s/4.60s baseline -- consistent, not a fresh anomaly.
+
+**The walk+read io floor, measured directly** (same checkout, `git
+ls-files` + `Path.read_text` over the exact file populations each gate
+scans, two passes to separate cold-vs-warm):
+
+```
+git ls-files (all, 1101 files):        0.0020s
+git ls-files (*.py, 693 files):        0.0020s
+git ls-files (ts/tsx/rs, 8 files):      0.0048s
+read+decode all 1101 tracked files:    0.0423s (pass 1), 0.0373s (pass 2, warm)
+read+decode 693 .py files:             0.0166s (pass 1), 0.0162s (pass 2, warm)
+```
+
+Reading and decoding EVERY tracked file in this repo, from cold, costs
+~42ms -- already page-cache-warm on the very first pass (this repo's
+own `.git` working tree lives on a filesystem that has been touched
+repeatedly this session; a genuinely cold-cache checkout would pay more,
+but even a pessimistic 10x on this number is still under half a second
+against a combined ~13.7s of gate time). `git ls-files` itself is a
+single `fork`+`exec` at ~2ms, called three times total across the three
+gates (once per distinct file population: all-tracked for secrets,
+`*.py` for pii_structural's Python half, plus three more small-pattern
+calls for its ts/tsx/rs half) -- merging these into one shared listing
+call would save single-digit milliseconds, not seconds.
+
+**Where the real time goes instead** (confirmed by reading each gate,
+not assumed): `secrets_gate` runs a multi-provider regex sweep
+(`_scan_text`, `ALL_PROVIDERS`) over every line of every tracked file's
+raw text -- no AST, no shared parse tree, just line-oriented regex
+matching, and that regex work IS the 2.97s. `pii_structural_gate`
+`ast.parse`s every `.py` file (plus a separate tree-sitter dispatch for
+`.ts`/`.tsx`/`.rs` via `frob.lang.raw_tree`) and walks the resulting
+tree for PII-shaped field names/env-access sites -- the parse-and-walk
+IS the 4.59s. `sys_gate` (via `_selfaudit_violations` ->
+`check_self_conformance` -> `_observed_raw_kinds_by_node`) calls
+`scan_file_capabilities` per design-bound file, a substring/needle sweep
+over each file's own parse (T-0829's already-filed, unfixed cost) -- that
+sweep IS the 6.3s. None of these three gates share a parser (regex vs
+`ast.parse` vs tree-sitter-plus-needle-sweep), and none of them share a
+file-selection mechanism either: `secrets_gate` walks ALL git-tracked
+files, `pii_structural_gate` walks only `.py`/`.ts`/`.tsx`/`.rs` tracked
+files (a strict subset), and `sys_gate`'s walk is not `git ls-files` at
+all -- it is `check_self_conformance`'s design-node `code=` glob binding
+(`_capability_binding`/`_sorted_owned_files`, `frob.strata._selfconform`),
+a 334-file subset determined by this repo's own `.strata` design files,
+not by git tracking. The three "walks" are not even walking the same
+SET most of the time, let alone paying an io cost worth sharing.
+
+**Why a shared walk/cache was not built**: building one would require
+either (a) forcing all three gates onto the broadest file set (all
+git-tracked files) and having each gate re-filter down to its own
+population in-memory -- which does not reduce io below what `git
+ls-files` already returns in ~2ms, and adds a filtering pass three gates
+did not need before -- or (b) forcing all three onto ONE parse
+representation (say, always `ast.parse` first) that `secrets_gate`
+(regex-over-raw-text, no AST needed) and `sys_gate`
+(`scan_file_capabilities`'s own bespoke per-language dispatch, not a
+plain `ast.parse`) would then have to adapt around for zero scan-logic
+benefit. Either shape adds real complexity (a new shared cache module,
+three call sites rewritten, parity risk across three ERROR-tier
+security-relevant gates) to reclaim less than 50ms of an aggregate
+13.7s -- not worth the risk for gates whose false-negative cost is a
+missed secret/PII/capability finding.
+
+**No gate output changed.** No code in `src/frob/gates/**` was touched
+by this ticket; `secrets_gate`/`pii_structural_gate`/`sys_gate` are
+verified byte-identical to their pre-ticket behavior (nothing to diff --
+no edit was made). Measurement scripts used for this disposition were
+scratch-only, not committed.
