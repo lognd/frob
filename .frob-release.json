@@ -763,6 +763,12 @@
     "src/frob/perf/_collectors.py::parse_perf_script": "df6a95e83e2a7014d4918cc2e6ec296d54c1705ce8f3f8cb2b859388b073d246",
     "src/frob/perf/_collectors.py::parse_v8_cpuprofile": "649455a2f0d9b6ee1aa045170c369579f5e37503722b81ddc648ced337947899",
     "src/frob/perf/_dup_spawn.py::duplicate_spawn_violations": "51353672ef6286328f93af7bdf787bf7e5bb4894db4c15e1319a5bfa9ecc51c3",
+    "src/frob/perf/_effect_summaries.py::EffectGraph": "41d96c81b35d32673ba46bcede4c0a3293fbd5327644edd551c2cfb2845ab4e6",
+    "src/frob/perf/_effect_summaries.py::EffectGraph.reachable_effect": "31c827c80cad8d338be38127f98ab2ee20d4597dc164b4224de4f8e772f7e5d1",
+    "src/frob/perf/_effect_summaries.py::EffectGraph.resolve_scoped": "684ddbf174ba6f73c06ce1bd01f93f6a3cd0da91613f981f5a29c454e814045f",
+    "src/frob/perf/_effect_summaries.py::EffectGraph.summary": "d8f7af1e433c323ff6262bd2304a477456355d633855e0107afd11e3a8a9b45f",
+    "src/frob/perf/_effect_summaries.py::UNKNOWN_KIND": "a44d09f1eb6459e8a17a6780c0dcf8aaf25d4edf21811cf3a8304cba51f1f309",
+    "src/frob/perf/_effect_summaries.py::Unknown": "b0c5ead85576b4a3b01de64c5b647589af98a5c8b34b044eb304b3521303f9ea",
     "src/frob/perf/_harness.py::main": "945bb53a03a3ea009d89db43a17643dd0ce349e0469531105b307e5242b12654",
     "src/frob/perf/_heat.py::heat": "064f939761e4bcd9cb77ba82ff95770db491dd50cf707ec85ffad35a8d36519d",
     "src/frob/perf/_heat.py::join_smells": "635a8e9430675162520429e3bd0c6ca70498e080db545ebd84c8e7dc52b4b02b",
@@ -779,7 +785,6 @@
     "src/frob/perf/_hotgraph.py::build_section_index": "3ea14833f21638d944a5ba3261fcf9d07c9f169e05193b21d1f5f7ef4ca3d93c",
     "src/frob/perf/_hotgraph.py::language_deciles": "4bee78e1be2b434d6137435c30c05ba4271b8827f8ed84ac81377cd50191d0b2",
     "src/frob/perf/_hotgraph.py::resolve_stream": "ed689c5806bd9b2c2b46cd4d269e54a3cabf1c2eddfd2eb807261cef01d7a90c",
-    "src/frob/perf/_loop_effects.py::_EffectGraph.summary": "77caa80b592951b38f13260acc4e8ee3d1792255a0cf32916a595dc197ac7e4d",
     "src/frob/perf/_loop_effects.py::loop_invariant_effect_violations": "1a6c28d329c3795a9457d7204f77c5896573263656cce426b02a2815bf535d9f",
     "src/frob/perf/_models.py::HeatEntry": "ccd9d4320749cb10f5b9fa7f271f1117c2a88e9ba19ca2a5a1f9b1d9d2ebcc79",
     "src/frob/perf/_models.py::HeatReport": "60d746977c9eb6cfb26262d9e50bdd4ee310298f8c11ef5c42e329318df00176",
@@ -1612,5 +1617,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.167.0"
+  "version": "0.168.0"
 }

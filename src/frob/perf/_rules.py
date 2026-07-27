@@ -45,7 +45,8 @@ from frob.lang import raw_tree as _raw_tree
 from frob.lang._models import ParsedFile, RawSymbol, SymbolKind
 from frob.logging import get_logger
 from frob.perf._dup_spawn import duplicate_spawn_violations
-from frob.perf._loop_effects import _EffectGraph, loop_invariant_effect_violations
+from frob.perf._effect_summaries import EffectGraph as _EffectGraph
+from frob.perf._loop_effects import loop_invariant_effect_violations
 from frob.perf._recursion import recursion_rules
 from frob.perf._redundancy import redundant_computation_violations
 

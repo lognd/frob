@@ -14,20 +14,20 @@ reachable from two DISTINCT call sites in ONE function body (however many
 hops deep each one is), with no loop involved at all.
 
 INTERPROCEDURAL BY CONSTRUCTION: this module does NOT re-implement its own
-one-off call graph. It reuses/extends `frob.perf._loop_effects._EffectGraph`
--- the SAME shared EFFECT-SUMMARY substrate PERF008 already builds (see
-that module's own docstring, "T-0919's addition") -- via `EffectGraph.
+one-off call graph. It reuses `frob.perf._effect_summaries.EffectGraph`
+(T-0922: promoted out of `_loop_effects.py` into its own shared substrate
+module -- see that module's own docstring) -- the SAME shared EFFECT-
+SUMMARY substrate PERF008 already builds -- via `EffectGraph.
 summary(symref)`, which returns the FULL transitively-reachable `(kind,
-normalized_arg_text)` multiset for any function, however many calls deep,
-propagated through sibling callees, cousins, and diamonds alike (cycle-
-safe, budget-bounded, fails OPEN on any unresolvable edge -- never a
-guessed occurrence). This is what makes the detector genuinely
-interprocedural rather than same-function-only: `f()` calling `g()`
-calling `h()` which spawns, where `f()` ALSO calls `i()` calling `j()`
-which spawns the SAME argv, is caught exactly the same way as two direct
-sibling calls in `f()` are -- the duplicate can be split arbitrarily deep
-and across arbitrarily different callees, as long as both paths originate
-from call sites inside the SAME function body.
+arg)` multiset for any function, however many calls deep, propagated
+through sibling callees, cousins, and diamonds alike (cycle-safe, budget-
+bounded). This is what makes the detector genuinely interprocedural rather
+than same-function-only: `f()` calling `g()` calling `h()` which spawns,
+where `f()` ALSO calls `i()` calling `j()` which spawns the SAME argv, is
+caught exactly the same way as two direct sibling calls in `f()` are --
+the duplicate can be split arbitrarily deep and across arbitrarily
+different callees, as long as both paths originate from call sites inside
+the SAME function body.
 
 DETECTION (python only, matching this package's existing per-rule
 python-first/best-effort-elsewhere tiering -- see PERF001-004's own
@@ -35,40 +35,59 @@ docstring in `frob.perf._rules`): for each function/method symbol `F`,
 walk `F`'s own direct call sites (only the calls textually IN `F`'s body,
 not nested arbitrarily deep -- the STARTING points of the interprocedural
 walk). For each call site, if it is ITSELF a spawn call, its own
-occurrence is `(kind, arg_text)` directly; otherwise resolve the callee by
-short name (every ambiguous candidate tried, matching `_EffectGraph`'s own
+occurrence is `(kind, arg)` directly; otherwise resolve the callee by
+short name (every ambiguous candidate tried, matching `EffectGraph`'s own
 best-effort posture) and union each candidate's full `summary(...)` --
 however deep that callee's own call graph goes. Attribute the resulting
 occurrence set to THIS call site (its own source line -- two separate
 calls to the SAME helper still count as two separate costs paid, matching
 the real T-0919 shape where two DIFFERENT named closures happened to share
 one leaf spawn). If two or more of `F`'s own call sites (by line) end up
-sharing the SAME `(kind, arg_text)` occurrence, `F` is paying for the same
+sharing the SAME `(kind, arg)` occurrence, `F` is paying for the same
 expensive effect more than once on one call path -- PERF012 fires once per
 `F`, naming the duplicate call sites/lines and the shared argument shape.
 WARN-tier, waivable (`frob:waive PERF012 reason="..."`) for a genuinely
 deliberate independent re-run (e.g. intentionally re-measuring fresh state
 between the two calls).
 
-GENERALITY: `_EffectGraph`'s own needle tables (`_SPAWN_DOTTED`/
-`_FS_WALK_DOTTED`/`_FS_WALK_ATTRS`/`_SPAWN_BARE` in `_loop_effects.py`)
+UNKNOWN POLICY (T-0922 acceptance criterion (c)): `EffectGraph.summary`
+now surfaces `Unknown` explicitly instead of silently contributing
+nothing for an unresolvable call site/argument/budget cutoff (see
+`_effect_summaries.Unknown`'s own docstring for why it deliberately never
+compares equal to another `Unknown`). PERF012's grouping key is `(kind,
+arg)` equality (`by_occurrence` in `_def_violations`): because an
+`Unknown` instance is never equal to any other value (not even another
+`Unknown`), it can NEVER be grouped with anything and therefore can NEVER
+by itself cause a duplicate finding. `Unknown` occurrences still flow all
+the way into each call site's own occurrence set (`_entry_occurrences`
+now emits one for every call this rule cannot bind, rather than an empty
+set) so the set genuinely represents "everything this call path reaches,
+including the parts we could not resolve" -- but PERF012's actual
+FIRING policy is unaffected: it degrades toward MISSING a duplicate that
+happens to route through an unresolved edge, never toward manufacturing
+one. This is the same fail-open posture the rest of this substrate takes,
+made explicit and inspectable rather than an implicit consequence of
+`None` being filtered out silently.
+
+GENERALITY: `EffectGraph`'s own needle tables (`_SPAWN_DOTTED`/
+`_FS_WALK_DOTTED`/`_FS_WALK_ATTRS`/`_SPAWN_BARE` in `_effect_summaries.py`)
 already cover process-spawn AND directory-walk effects, not just
 `subprocess.run` -- this rule inherits BOTH kinds for free by reusing that
 same substrate, matching the user directive that "subprocess.run is ONE
 EXAMPLE" of the expensive-operation class this must generalize over.
 Extending the needle tables to cover network calls/heavy parses is a
-follow-up widening of `_loop_effects.py`'s own tables (both PERF008 and
-PERF012 gain it simultaneously, by construction, once added there) --
+follow-up widening of `_effect_summaries.py`'s own tables (both PERF008
+and PERF012 gain it simultaneously, by construction, once added there) --
 tracked as its own todo rather than silently expanded here.
 
 # frob:todo T-0919 non-python (typescript/rust/cpp) coverage for PERF012
 # is out of this ticket's scope, same posture as PERF001-004/PERF008's
 # existing python-first tiering -- track any follow-up need as its own
 # ticket rather than silently expanding this one.
-# frob:todo T-0919 widen _loop_effects.py's needle tables (network calls,
-# heavy parses) beyond process-spawn/directory-walk -- PERF008 and PERF012
-# both inherit any such widening automatically since they share
-# _EffectGraph, but choosing the right needle set is its own research
+# frob:todo T-0919 widen _effect_summaries.py's needle tables (network
+# calls, heavy parses) beyond process-spawn/directory-walk -- PERF008 and
+# PERF012 both inherit any such widening automatically since they share
+# EffectGraph, but choosing the right needle set is its own research
 # task, not bundled into this ticket.
 """
 # frob:waive INV006 reason="T-0919 first-turn-on: this module's design- \
@@ -93,12 +112,15 @@ from frob.lang import node_text as _node_text
 from frob.lang import raw_tree as _raw_tree
 from frob.lang._models import ParsedFile
 from frob.logging import get_logger
-from frob.perf._loop_effects import (
+from frob.perf._effect_summaries import (
+    UNKNOWN_KIND,
+    EffectOccurrence,
+    Unknown,
     _callee_short_name,
     _direct_effect,
-    _EffectGraph,
     _normalize_arg_text,
 )
+from frob.perf._effect_summaries import EffectGraph as _EffectGraph
 
 _log = get_logger(__name__)
 
@@ -163,39 +185,84 @@ def _iter_top_level_calls(body: Node) -> list[Node]:
 
 def _entry_occurrences(
     call: Node, graph: _EffectGraph, from_path: str
-) -> frozenset[tuple[str, str]]:
-    """T-0919: the occurrence set attributed to one call site `call` --
-    itself directly, if `call` is a spawn/fs-walk call, else every
-    occurrence transitively reachable from its callee name, resolved via
-    `_EffectGraph._resolve_scoped` (same-file-preferred, NOT an unfiltered
-    by-name union -- see that method's own docstring for why: a common
-    short name like `run` resolving to dozens of unrelated project-wide
-    symbols and unioning ALL of their summaries would cross-contaminate
-    completely unrelated call paths, a real over-firing bug this scoping
-    fixes rather than a hypothetical one)."""
+) -> frozenset[EffectOccurrence]:
+    """T-0919/T-0922: the occurrence set attributed to one call site
+    `call` -- itself directly, if `call` is a spawn/fs-walk call, else
+    every occurrence transitively reachable from its callee name, resolved
+    via `EffectGraph.resolve_scoped` (same-file-preferred, NOT an
+    unfiltered by-name union -- see that method's own docstring for why: a
+    common short name like `run` resolving to dozens of unrelated
+    project-wide symbols and unioning ALL of their summaries would
+    cross-contaminate completely unrelated call paths, a real over-firing
+    bug this scoping fixes rather than a hypothetical one).
+
+    T-0922: a call this function cannot bind at all -- its own argument
+    list is unrecoverable, its callee is not a simple bare/dotted name, or
+    `resolve_scoped` returns no candidate -- now yields an explicit
+    `(UNKNOWN_KIND, Unknown(reason))` singleton instead of `frozenset()`
+    (silently empty). See this module's own Unknown-policy note: an
+    `Unknown` can never itself pair up with another occurrence under
+    `_def_violations`'s equality-keyed grouping, so this can only ever
+    ADD visibility, never a false duplicate."""
     effect = _direct_effect(call)
     if effect is not None:
         args = _child_by_field(call, "arguments")
         if args is None:
-            return frozenset()
+            return frozenset(
+                {
+                    (
+                        UNKNOWN_KIND,
+                        Unknown(
+                            f"unresolvable argument text for a {effect} call "
+                            f"at {from_path}:{call.start_point[0] + 1}"
+                        ),
+                    )
+                }
+            )
         return frozenset({(effect, _normalize_arg_text(_node_text(args)))})
     short = _callee_short_name(call)
     if short is None:
-        return frozenset()
-    acc: set[tuple[str, str]] = set()
-    for candidate in graph._resolve_scoped(short, from_path):
+        return frozenset(
+            {
+                (
+                    UNKNOWN_KIND,
+                    Unknown(
+                        f"call at {from_path}:{call.start_point[0] + 1} has no "
+                        f"simple bare/dotted callee name to resolve"
+                    ),
+                )
+            }
+        )
+    candidates = graph.resolve_scoped(short, from_path)
+    if not candidates:
+        return frozenset(
+            {
+                (
+                    UNKNOWN_KIND,
+                    Unknown(
+                        f"unresolvable/ambiguous callee {short!r} at "
+                        f"{from_path}:{call.start_point[0] + 1}"
+                    ),
+                )
+            }
+        )
+    acc: set[EffectOccurrence] = set()
+    for candidate in candidates:
         acc |= graph.summary(candidate)
     return frozenset(acc)
 
 
 def _def_violations(path: str, func_def: Node, graph: _EffectGraph) -> list[Violation]:
     """PERF012 hits for one `def` node: every direct call site's own
-    occurrence set (`_entry_occurrences`), grouped by `(kind, arg_text)`;
-    any occurrence shared by 2+ DISTINCT call-site LINES is a duplicate."""
+    occurrence set (`_entry_occurrences`), grouped by `(kind, arg)`; any
+    occurrence shared by 2+ DISTINCT call-site LINES is a duplicate.
+    `Unknown` members (T-0922) never group with anything (see
+    `Unknown`'s own docstring -- identity-only equality), so they can
+    never by themselves manufacture a duplicate finding here."""
     body = _child_by_field(func_def, "body")
     if body is None:
         return []
-    by_occurrence: dict[tuple[str, str], set[int]] = {}
+    by_occurrence: dict[EffectOccurrence, set[int]] = {}
     for call in _iter_top_level_calls(body):
         for occurrence in _entry_occurrences(call, graph, path):
             by_occurrence.setdefault(occurrence, set()).add(call.start_point[0] + 1)
@@ -203,8 +270,8 @@ def _def_violations(path: str, func_def: Node, graph: _EffectGraph) -> list[Viol
     line = func_def.start_point[0] + 1
     name_node = _child_by_field(func_def, "name")
     func_name = _node_text(name_node) if name_node is not None else "?"
-    for (kind, arg_text), lines in by_occurrence.items():
-        if len(lines) < 2:
+    for (kind, arg), lines in by_occurrence.items():
+        if kind == UNKNOWN_KIND or len(lines) < 2:
             continue
         line_list = ", ".join(str(n) for n in sorted(lines))
         violations.append(
@@ -251,12 +318,15 @@ def _file_violations(path: str, graph: _EffectGraph) -> list[Violation]:
 # frob:tests tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn.test_single_helper_call_is_not_flagged  # noqa: E501
 # frob:tests tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn.test_multi_hop_duplicate_via_different_intermediate_callees_is_flagged  # noqa: E501
 # frob:tests tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn.test_call_site_varying_argument_is_not_flagged  # noqa: E501
+# frob:tests tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn.test_three_hop_duplicate_split_across_sibling_callees_is_flagged  # noqa: E501
+# frob:tests tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn.test_unresolvable_dynamic_dispatch_callee_never_manufactures_a_duplicate  # noqa: E501
 # frob:ticket T-0919
+# frob:ticket T-0922
 def duplicate_spawn_violations(
     files: Sequence[ParsedFile], graph: _EffectGraph | None = None
 ) -> tuple[Violation, ...]:
     """PERF012: a function/method whose body has two or more call sites
-    that each (directly, or transitively via `_EffectGraph.summary`'s
+    that each (directly, or transitively via `EffectGraph.summary`'s
     interprocedural walk -- however many hops deep, however split across
     sibling/cousin callees) reach a process-spawn/directory-walk effect
     with the textually-identical (whitespace-normalized) argument shape --
@@ -264,9 +334,11 @@ def duplicate_spawn_violations(
     `_check_gate_findings_fn` each independently spawning `frob check
     --ticket <id>`), generalized to any call-graph depth/shape. WARN-tier
     (waivable with a reasoned `frob:waive PERF012 reason="..."`), never a
-    silent error.
+    silent error. See this module's docstring for its Unknown policy
+    (T-0922 criterion (c)): an unresolvable binding degrades to a
+    non-grouping `Unknown` occurrence, never a manufactured duplicate.
 
-    `graph`: an optional pre-built `_EffectGraph` to SHARE with a sibling
+    `graph`: an optional pre-built `EffectGraph` to SHARE with a sibling
     PERF008 run in the same `perf_rules` pass (T-0919: avoids re-indexing
     the same project's call graph twice in one `frob check`); builds its
     own if not given."""

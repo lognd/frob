@@ -147,6 +147,97 @@ an uncached configured target is flagged; a fixture where only one
 function calls it (or the target is `@memoize_per_run`-decorated) is not
 -- see `tests/test_perf.py::TestPerf007RedundantComputation`.
 
+## Shared interprocedural effect-summary substrate (`EffectGraph`, T-0922)
+
+T-0775 (PERF008) and T-0919 (PERF012) each needed to answer "does calling
+this function, however many hops deep, reach an expensive effect" --
+T-0919 built that as `_EffectGraph.summary(symref)` inside PERF008's own
+`_loop_effects.py` module, since PERF008's reachability graph was already
+the right shape to extend. T-0922 promotes that graph OUT into its own
+module, `frob.perf._effect_summaries`, with `EffectGraph` as a
+first-class, documented public surface -- every PERF rule that keys on a
+sub-call effect (PERF008, PERF012, and any future rule) is meant to
+consume ONE `EffectGraph` instance rather than hand-roll its own
+call-graph walk.
+
+**What it answers**, for any function/method symbol in a set of parsed
+files:
+
+- `EffectGraph.reachable_effect(name)` -- the cheap yes/no/first-hit
+  question PERF008 asks: does calling something named `name`
+  transitively reach ANY directly-effectful call (a process spawn or
+  directory walk, today's two effect classes)?
+- `EffectGraph.summary(symref)` -- the FULL per-function EFFECT-SUMMARY:
+  every `(kind, arg)` pair transitively reachable by calling `symref`,
+  however many hops deep, propagated through sibling/cousin callees and
+  diamonds alike.
+
+**Direct effect detection**: a call is directly effectful if its own
+dotted callee matches a small, hand-picked process-spawn table
+(`subprocess.run/Popen/call/check_call/check_output`, `os.system/
+popen/spawn*`, a bare imported `Popen(`) or directory-walk table
+(`os.walk`, `os.scandir`, `glob.glob/iglob`, any receiver's `.rglob`/
+`.iterdir`) -- narrower than `frob.vet._capability_registry`'s full
+"exec"/"fs" capability kinds, since this ticket only ever asks about
+spawn/fs-walk, not bare file read/write.
+
+**Transitive call-graph reachability**: a SECOND, local, whole-project,
+name-based call graph, deliberately not `frob.graph.callgraph.
+build_call_graph` -- that graph only ever resolves PRIVATE callees, by
+design, to stop its BFS at the public-API boundary. The real T-0773
+incident crosses exactly that boundary (the spawn lives behind a PUBLIC
+`run_argv`), so this graph resolves every candidate, public or private,
+bounded to 8 hops / 200 nodes, matching `frob.perf._recursion`'s own
+precedent for building a second graph rather than widening `callgraph`'s
+contract for a use case it was not designed for. Multi-hop depth is
+opaque to a consuming rule by construction: a spawn 2, 3, or more hops
+below the analyzed function fires identically to a direct occurrence --
+see `tests/unit/perf/test_loop_effects.py::TestPerf008LoopInvariantEffect
+.test_loop_invariant_spawn_call_three_hops_deep_is_flagged` and
+`tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn.
+test_three_hop_duplicate_split_across_sibling_callees_is_flagged`.
+
+**Argv-equivalence facts propagate across sibling callees**: `summary`'s
+`(kind, arg)` occurrence set is unioned across every resolved candidate
+callee at every hop, so a duplicate split across two entirely different
+sibling/cousin call chains (not just two direct calls in the same
+function) is still caught as the SAME occurrence -- the comparison key is
+whitespace-normalized argument TEXT, not source-position, so
+independently-formatted-but-identical argv is recognized as equivalent.
+
+**Explicit Unknown, not silent empty (T-0922 criterion (c))**: a call
+this substrate cannot bind -- dynamic dispatch, an external/stdlib
+boundary with no local definition, an ambiguous short name with no
+same-file or unambiguous cross-file candidate, an unrecoverable argument
+list, or a summary walk that gives up on its recursion/budget limit --
+now appends an explicit `(UNKNOWN_KIND, Unknown(reason))` member to the
+occurrence set instead of silently contributing nothing. `Unknown`
+compares equal to nothing but itself (plain identity, deliberately not
+overridden), so it can only ever WIDEN what a rule can see (a caller can
+ask "did any part of this give up?"), never manufacture a false-positive
+match under a duplicate-detection consumer's equality-keyed grouping.
+Each consuming rule documents its OWN Unknown policy (below).
+
+See `tests/unit/perf/test_effect_summaries.py` for the substrate's own
+unit-level guarantees (`Unknown`'s identity-only equality, an ambiguous
+cross-file callee degrading to an explicit `Unknown`, a fully-resolvable
+path carrying no spurious `Unknown`).
+
+**Structural twin**: the `.strata` REL310/REL311 interactive-cost-bound
+obligation (`frob.strata._interactive_cost`, T-0919's sibling family)
+asks a related but NOT directly-wireable question -- whether a
+human-facing node's cost is bounded/deduplicated -- over strata's own
+declarative node/attr graph, not python call-graph facts. It cannot
+consume `EffectGraph` directly (different domain: presence-of-a-declared-
+attr over a `.strata` node graph, vs. a python AST call graph), but the
+INCIDENT both families generalize from is the same one (T-0919's doubled
+`frob check` subprocess spawn), and REL311's own `_BOUNDED_COST_TOKEN_RE`
+proof-of-discharge scan is a plainer-grained analogue of what this
+substrate does with real precision -- a future `.strata` conformance rule
+wanting real cross-python-call-graph evidence (rather than a token-regex
+proxy) is the natural place to wire the two together; noted here rather
+than wired, since `src/frob/strata/**` is out of this ticket's scope.
+
 ## Loop-invariant effectful call detector (PERF008, T-0775)
 
 Motivated by the 2026-07-22 rev-parse incident (T-0773): `frob ticket
@@ -156,44 +247,32 @@ spawn, three calls deep through `frob.gitio.run_argv`) live in different
 modules -- no per-function syntactic PERF heuristic (PERF001-004, each
 scoped to one function body) can see this shape.
 
-Two pieces:
-
-- **Direct effect detection**: a call is directly effectful if its own
-  dotted callee matches a small, hand-picked process-spawn table
-  (`subprocess.run/Popen/call/check_call/check_output`, `os.system/
-  popen/spawn*`, a bare imported `Popen(`) or directory-walk table
-  (`os.walk`, `os.scandir`, `glob.glob/iglob`, any receiver's `.rglob`/
-  `.iterdir`) -- narrower than `frob.vet._capability_registry`'s full
-  "exec"/"fs" capability kinds, since this ticket only ever asks about
-  spawn/fs-walk, not bare file read/write.
-- **Transitive call-graph reachability**: a SECOND, local, whole-project,
-  name-based call graph (`frob.perf._loop_effects._EffectGraph`),
-  deliberately not `frob.graph.callgraph.build_call_graph` -- that graph
-  only ever resolves PRIVATE callees, by design, to stop its BFS at the
-  public-API boundary. The real T-0773 incident crosses exactly that
-  boundary (the spawn lives behind a PUBLIC `run_argv`), so this graph
-  resolves every candidate, public or private, bounded to 8 hops / 200
-  nodes, matching `frob.perf._recursion`'s own precedent for building a
-  second graph rather than widening `callgraph`'s contract for a use case
-  it was not designed for.
-
 Detection (Python only for now -- an accepted scope cut matching
 PERF001-004's existing python-first tiering, tracked as `frob:todo
 T-0775` in `frob.perf._loop_effects`'s module docstring): for each `for`/
 `while` loop, for each call site lexically inside it (attributed to its
 innermost enclosing loop when loops nest), if the call is directly or
-transitively effectful AND its argument list's identifiers never include
-the loop's own bound variable(s) or a name assigned anywhere in the loop
-body, PERF008 fires naming the call site, the effectful callee, and the
-loop-invariance reasoning. WARN-tier by default, not ERROR: undecidable
-invariance leans toward firing (recall over precision, same repo
-philosophy as PERF007), so a `frob:waive PERF008 reason="..."` is always
-available for a deliberate re-read (freshness under concurrency is a
-real, legitimate reason to re-run an effect every iteration).
+transitively effectful (via `EffectGraph`, above) AND its argument list's
+identifiers never include the loop's own bound variable(s) or a name
+assigned anywhere in the loop body, PERF008 fires naming the call site,
+the effectful callee, and the loop-invariance reasoning. WARN-tier by
+default, not ERROR: undecidable invariance leans toward firing (recall
+over precision, same repo philosophy as PERF007), so a `frob:waive
+PERF008 reason="..."` is always available for a deliberate re-read
+(freshness under concurrency is a real, legitimate reason to re-run an
+effect every iteration).
+
+**Unknown policy**: PERF008 only ever asks `EffectGraph.
+reachable_effect(name)`, the cheap yes/no/first-hit question -- an
+unresolvable or ambiguous callee name simply yields "no effect found via
+this name", so an unresolvable binding can only ever produce a MISSED
+finding here, never a false one and never a crash. PERF008 does not
+consume `summary`'s richer, argument-carrying `Unknown` members at all.
 
 See `tests/unit/perf/test_loop_effects.py::TestPerf008LoopInvariantEffect`
-for the true-positive (transitive spawn, direct fs-walk, the real T-0773
-ticket-row shape) and false-positive (loop-varying argument) cases.
+for the true-positive (transitive spawn 2 and 3 hops deep, direct
+fs-walk, the real T-0773 ticket-row shape) and false-positive
+(loop-varying argument, unresolvable/external callee) cases.
 
 ## Duplicate-identical-subprocess-spawn detector (PERF012, T-0919)
 
@@ -208,13 +287,11 @@ loop-invariant effectful call INSIDE a loop; this is a duplicated effect
 reachable from two call sites in ONE function body, no loop involved.
 
 **Interprocedural by construction**: PERF012 does not hand-roll its own
-call graph. It reuses/extends `frob.perf._loop_effects._EffectGraph` --
-the SAME shared substrate PERF008 builds -- via its `summary(symref)`
-method (T-0919's addition to that class): the FULL transitively-reachable
-`(effect_kind, normalized_arg_text)` multiset for any function, however
-many calls deep, propagated through sibling callees, cousins, and diamonds
-alike (cycle-safe, budget-bounded, fails OPEN on any unresolvable edge --
-never a guessed occurrence). `f()` calling `g()` calling `h()` which
+call graph. It reuses `EffectGraph.summary(symref)` (above) -- the SAME
+shared substrate PERF008 builds -- for the FULL transitively-reachable
+`(effect_kind, arg)` multiset for any function, however many calls deep,
+propagated through sibling callees, cousins, and diamonds alike
+(cycle-safe, budget-bounded). `f()` calling `g()` calling `h()` which
 spawns, where `f()` ALSO calls `i()` calling `j()` which spawns the SAME
 argv, is caught exactly like two direct sibling calls in `f()` would be.
 
@@ -226,7 +303,7 @@ way; a `try`/`except` fallback is by definition mutually exclusive with
 the path it falls back FROM, never a genuine duplicate) is resolved to its
 occurrence set (itself directly, if it IS a spawn/fs-walk call, else the
 `summary(...)` of its resolved callee). Callee name resolution is SCOPED
-to same-file candidates first (`_EffectGraph._resolve_scoped`), falling
+to same-file candidates first (`EffectGraph.resolve_scoped`), falling
 back to a project-wide match only when unambiguous -- an early version of
 this rule unioned every same-named candidate project-wide unconditionally,
 which cross-contaminated unrelated call paths through common short names
@@ -236,15 +313,27 @@ the SAME occurrence, PERF012 fires once per `F`, naming the duplicate
 lines and the shared argument shape. WARN-tier, waivable (`frob:waive
 PERF012 reason="..."`) for a genuinely deliberate independent re-run.
 
-PERF012 inherits BOTH the spawn AND directory-walk needle tables PERF008
-already defines in `_loop_effects.py` -- widening those tables (network
-calls, heavy parses) is a shared follow-up both rules gain simultaneously
-(`frob:todo T-0919` in `frob.perf._dup_spawn`'s module docstring).
+**Unknown policy**: an unresolvable call site now yields an explicit
+`(UNKNOWN_KIND, Unknown(reason))` occurrence (T-0922) instead of silently
+contributing nothing. Because PERF012's grouping key is `(kind, arg)`
+equality and `Unknown` never equality-matches ANYTHING (not even another
+`Unknown`), an `Unknown` occurrence can never itself pair up with
+anything else and can never manufacture a duplicate finding -- it can
+only ever ADD visibility ("this call path has an unresolved edge"),
+never a false positive. `_def_violations` additionally skips `UNKNOWN_
+KIND` outright when grouping, as a belt-and-suspenders guard against a
+future accidental equality collision.
+
+PERF012 inherits BOTH the spawn AND directory-walk needle tables
+`EffectGraph` already defines in `_effect_summaries.py` -- widening those
+tables (network calls, heavy parses) is a shared follow-up both rules
+gain simultaneously (`frob:todo T-0919` in `frob.perf._dup_spawn`'s
+module docstring).
 
 See `tests/unit/perf/test_dup_spawn.py::TestPerf012DuplicateSpawn` for the
-true-positive (two sibling helpers, and the multi-hop/different-callees
-case) and false-positive (call-site-varying arguments, single call site)
-cases.
+true-positive (two sibling helpers, the two/three-hop multi-hop-via-
+different-callees cases) and false-positive (call-site-varying
+arguments, single call site, unresolvable dynamic-dispatch callee) cases.
 
 ## The killer join: hot AND quadratic
 

@@ -164,3 +164,70 @@ class TestPerf008LoopInvariantEffect:
 
         violations = loop_invariant_effect_violations([parsed])
         assert violations == ()
+
+    def test_loop_invariant_spawn_call_three_hops_deep_is_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0922 acceptance (a): the substrate must fire IDENTICALLY
+        regardless of how many hops separate the loop call site from the
+        directly-effectful callee -- one hop deeper than the T-0775
+        two-hop precedent above, through THREE distinct helper functions
+        across THREE distinct modules."""
+        _write(
+            tmp_path,
+            "gitio.py",
+            "import subprocess\n\n\n"
+            "def run_argv(argv):\n"
+            "    return subprocess.run(argv, capture_output=True)\n",
+        )
+        _write(
+            tmp_path,
+            "inner_helper.py",
+            "from gitio import run_argv\n\n\n"
+            "def common_dir(root):\n"
+            "    return run_argv(['git', '-C', root, 'rev-parse', "
+            "'--git-common-dir'])\n",
+        )
+        _write(
+            tmp_path,
+            "outer_helper.py",
+            "from inner_helper import common_dir\n\n\n"
+            "def resolve_root(root):\n"
+            "    return common_dir(root)\n",
+        )
+        src = (
+            "from outer_helper import resolve_root\n\n\n"
+            "def read_all_leases(tickets, root):\n"
+            "    for _ticket in tickets:\n"
+            "        resolve_root(root)\n"
+        )
+        path = _write(tmp_path, "leases.py", src)
+        files = [
+            parse_file(tmp_path / "gitio.py").danger_ok,
+            parse_file(tmp_path / "inner_helper.py").danger_ok,
+            parse_file(tmp_path / "outer_helper.py").danger_ok,
+            parse_file(path).danger_ok,
+        ]
+
+        violations = loop_invariant_effect_violations(files)
+        assert any(v.rule == "PERF008" for v in violations)
+
+    def test_unresolvable_callee_does_not_crash_and_does_not_fire(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0922 acceptance (c), PERF008's Unknown policy: a loop calling a
+        name this substrate cannot bind to any local definition (an
+        external/stdlib-style boundary with no matching symbol anywhere in
+        the parsed set) degrades to "no effect found via this name" --
+        never a crash, never a finding manufactured from the unresolved
+        edge."""
+        src = (
+            "def run(items, fixed):\n"
+            "    for _item in items:\n"
+            "        totally_unbound_external_call(fixed)\n"
+        )
+        path = _write(tmp_path, "mod.py", src)
+        parsed = parse_file(path).danger_ok
+
+        violations = loop_invariant_effect_violations([parsed])
+        assert violations == ()

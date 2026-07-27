@@ -180,3 +180,68 @@ class TestPerf012DuplicateSpawn:
         assert not any(
             v.rule == "PERF012" and "caller" in v.message for v in violations
         )
+
+    def test_three_hop_duplicate_split_across_sibling_callees_is_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0922 acceptance (a)/(b): one hop deeper than the two-hop
+        precedent above -- `caller` calls `path_a`/`path_b`; each calls its
+        own middle helper, which calls its own leaf helper, which spawns
+        the SAME argv (whitespace-formatted differently -- proving the
+        argv-EQUIVALENCE fact, not literal text equality, is what
+        propagates through both three-hop sibling chains). Must still
+        fire identically to the direct/two-hop cases."""
+        src = (
+            "import subprocess\n\n\n"
+            "def leaf_a(root, ticket_id):\n"
+            "    return subprocess.run(\n"
+            '        ["frob", "check", "--ticket", ticket_id],\n'
+            "        cwd=root,\n"
+            "    )\n\n\n"
+            "def leaf_b(root, ticket_id):\n"
+            "    return subprocess.run(\n"
+            '        ["frob",   "check",  "--ticket",   ticket_id],\n'
+            "        cwd=root,\n"
+            "    )\n\n\n"
+            "def mid_a(root, ticket_id):\n"
+            "    return leaf_a(root, ticket_id)\n\n\n"
+            "def mid_b(root, ticket_id):\n"
+            "    return leaf_b(root, ticket_id)\n\n\n"
+            "def path_a(root, ticket_id):\n"
+            "    return mid_a(root, ticket_id)\n\n\n"
+            "def path_b(root, ticket_id):\n"
+            "    return mid_b(root, ticket_id)\n\n\n"
+            "def caller(root, ticket_id):\n"
+            "    a = path_a(root, ticket_id)\n"
+            "    b = path_b(root, ticket_id)\n"
+            "    return a, b\n"
+        )
+        path = _write(tmp_path, "mod.py", src)
+        parsed = parse_file(path).danger_ok
+
+        violations = duplicate_spawn_violations([parsed])
+        assert any(v.rule == "PERF012" and "caller" in v.message for v in violations)
+
+    def test_unresolvable_dynamic_dispatch_callee_never_manufactures_a_duplicate(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0922 acceptance (c), PERF012's Unknown policy: `caller` has two
+        call sites, both resolving to a name with NO local definition
+        anywhere in the parsed set (the external/dynamic-dispatch
+        boundary this substrate cannot bind). Each degrades to its own
+        distinct `Unknown` occurrence (never silently empty) -- but since
+        an `Unknown` never equality-matches another `Unknown`, the two
+        never group together and PERF012 never fires from them alone."""
+        src = (
+            "def caller(root, ticket_id):\n"
+            "    a = totally_unbound_external_call(root, ticket_id)\n"
+            "    b = totally_unbound_external_call(root, ticket_id)\n"
+            "    return a, b\n"
+        )
+        path = _write(tmp_path, "mod.py", src)
+        parsed = parse_file(path).danger_ok
+
+        violations = duplicate_spawn_violations([parsed])
+        assert not any(
+            v.rule == "PERF012" and "caller" in v.message for v in violations
+        )

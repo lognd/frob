@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.168.0] - unreleased
+
+- T-0922: perf: shared interprocedural effect-summary substrate for all PERF rules (sub-call tracking)
+
 ## [0.167.0] - unreleased
 
 - T-0651: strata: MESSAGE SCHEMA VERSION obligation on events/queues
