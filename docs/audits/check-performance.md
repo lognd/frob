@@ -466,3 +466,85 @@ determine whether a compute-only kernel boundary can be cut out of
 their tree-sitter-shaped analysis, or whether they are fundamentally
 not shaped for `frob_core`'s data-in/data-out convention without a
 parser-equivalence investment this audit did not size).
+
+## T-0950 remediation log: `frob.cycle`'s Tarjan SCC sized, NOT ported
+
+**Bar, stated before measuring** (per T-0930's precedent: FFI marshaling
+is a fixed per-call tax that does not shrink with the loop's own
+algorithmic simplicity): a rust-candidate must spend enough real
+wall-clock time in the pure-Python loop, at this repo's actual data
+scale, to plausibly clear T-0930's own measured PyO3 floor -- a single
+batched native call over a sizeable payload (whole `by_name` index,
+hundreds of entries) still cost ~0.8ms of fixed marshaling tax over its
+Python equivalent (`_resolve_edges` native 0.164s vs python 0.127s
+across 46 calls => ~0.0008s/call fixed delta). Anything measuring at or
+below that per-call floor fails before any Rust-side speed is even
+relevant. Set here as: the isolated `find_cycles` share must be at least
+low-hundreds-of-milliseconds per real check run (2+ orders of magnitude
+above the ~1ms FFI floor, for genuine headroom) to be worth a port.
+
+**Sizing methodology**: same isolation technique T-0930 used for
+`dead_symbols` -- call `find_cycles` directly (bypassing the thread-pool
+`static` bucket dispatch), `time.thread_time()` bracketing only the
+`find_cycles` call itself (graph already built), median of 9 runs (first
+dropped as warmup), over this repo's OWN real dependency graph as built
+by `frob.check._python._build_import_graph` (the same graph `frob-cycle`
+and `check_module_dependency_cycles` (arch) both traverse -- one graph
+builder per T-0625's own design note, no forked second graph).
+
+**Result: this repo's real import graph is far too small for `find_cycles`
+to register as a meaningful cost at all.**
+
+```
+This repo's real dependency graph (frob.check._python._build_import_graph
+over the whole repo, 1101 files):
+  nodes: 693   edges: 26
+
+find_cycles isolated thread_time (median of 8 runs, 1 warmup dropped):
+  0.0004s   (0.4ms)
+
+Synthetic stress graph, 1000 nodes / 3000 random edges (~1.4x this
+repo's node count, ~115x its edge count):
+  0.0011s   (1.1ms) wall time -- and this size ALREADY hits
+  RecursionError: maximum recursion depth exceeded partway through a
+  second stress run (native Python recursion, one frame per DFS edge;
+  filed separately, see below), so the algorithm's own recursive
+  Python implementation caps out before reaching a scale where the
+  loop cost would matter anyway.
+```
+
+**Why this fails the bar decisively, not marginally**: 0.4ms measured at
+real scale is roughly 2000x below the low-hundreds-of-ms bar, and
+roughly HALF of T-0930's own measured ~0.8ms fixed FFI marshaling tax
+for a single batched call. A native port would not just fail to win --
+the marshaling round-trip alone would cost more than `find_cycles`'
+entire current Python runtime, guaranteeing a net loss before the Rust
+loop executes a single instruction. This is a strictly worse case than
+T-0930's `dead_symbols` finding (which at least had a real payload size
+to lose against); `cycle`'s real graph is simply too small, for any
+plausible import-graph shape a Python project this size would produce,
+for the "clean data-in/data-out shape" argument to overcome the fixed
+FFI tax. `find_cycles`' true share of the `static` bucket's 22.9s is
+therefore negligible (<0.5%, most of the bucket's cost is `frob-arch`'s
+and `frob-dup`'s tree-sitter-shaped walks, not this Tarjan pass) and not
+worth re-measuring more precisely -- it is not close to the bar at any
+plausible precision.
+
+**Disposition: NOT ported.** `frob.cycle.graph.find_cycles` stays pure
+Python, unchanged. No `frob_core` kernel added; no parity tests needed
+since nothing shipped a second implementation. This finding closes out
+the `cycle` portion of the `static` bucket's row 1 deferral above --
+`arch`/`bind`/`exports`' own shares remain unsized (not this ticket's
+scope).
+
+**Filed out-of-scope discovery**: sizing this via a synthetic stress
+graph surfaced a real, reproducible correctness gap unrelated to the
+port decision -- `_TarjanState._strongconnect`'s native Python recursion
+(one stack frame per DFS edge) raises `RecursionError` on a graph shaped
+like a long chain well below any dramatic node count (hit at ~1000 nodes
+in a random-edge synthetic graph, recursion depth is edge-chain-length
+dependent, not node-count dependent). Filed as a bug ticket (scope
+`src/frob/cycle/**`) to convert `_strongconnect` to an explicit-stack
+iterative form; not fixed here since T-0950's scope was the rust-port
+sizing decision, not this pre-existing correctness bug. Filed as
+T-0952 (gets a permanent T-#### id at land).

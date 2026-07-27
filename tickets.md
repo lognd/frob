@@ -7563,7 +7563,7 @@ ticket: src/frob/arch/_lock_ordering.py, tests/unit/test_arch.py).
 id: T-0950
 title: investigate frob.cycle's Tarjan SCC as a rust-candidate, sized against real
   repo-scale graphs
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-27'
@@ -7573,6 +7573,35 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/cycle/**
+- docs/audits/check-performance.md
+- tests/unit/test_cycle.py
+scope_changes:
+- op: add
+  glob: docs/audits/check-performance.md
+  reason: 'sizing finding for this ticket must be recorded in the audit doc that filed
+    it (docs/audits/check-performance.md), per T-0930''s own precedent scope addition
+    for the same doc.
+
+    '
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: tests/unit/test_cycle.py
+  reason: 'binding this ticket''s evidence to the existing cycle test suite (tests/unit/test_cycle.py),
+    confirming find_cycles behavior is unchanged after the sizing investigation (no
+    code shipped, but evidence must resolve against real tests).
+
+    '
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- tests/unit/test_cycle.py::test_no_cycle
+- tests/unit/test_cycle.py::test_add_node_and_nodes_and_neighbors
+- tests/unit/test_cycle.py::test_simple_cycle
+- tests/unit/test_cycle.py::test_three_node_cycle
+- tests/unit/test_cycle.py::test_two_independent_cycles
+- tests/unit/test_cycle.py::test_self_loop
+- tests/unit/test_cycle.py::test_cycle_not_duplicated
 threat: null
 component: null
 ```
@@ -7600,6 +7629,64 @@ plausibly amortize (T-0930's dead_symbols finding suggests this
 threshold is higher than "one call per gate run" -- confirm before
 porting, do not assume the algorithm-simplicity argument alone justifies
 a port).
+
+## Done report
+
+Bar stated before measuring: T-0930 measured PyO3's fixed per-call
+marshaling tax at ~0.8ms even for a single batched call over a sizeable
+payload (whole `by_name` index). A rust-candidate must therefore cost at
+least low-hundreds-of-ms of real Python compute at real-repo scale (2+
+orders of magnitude above that ~1ms floor) to plausibly clear it.
+
+Sizing (same isolation technique T-0930 used for dead_symbols --
+time.thread_time() bracketing only find_cycles, graph pre-built, median
+of 8 runs with 1 warmup dropped):
+
+- This repo's real import graph (frob.check._python._build_import_graph,
+  1101 files): 693 nodes, 26 edges.
+- find_cycles isolated thread_time at that real scale: 0.0004s (0.4ms).
+- Synthetic stress at 1000 nodes/3000 edges (~1.4x node count, ~115x
+  edge count vs this repo): 0.0011s (1.1ms) -- and a second run at this
+  scale hit RecursionError (native Python recursion depth), so the
+  current implementation caps out before reaching a scale where the
+  loop cost would matter.
+
+0.4ms is ~2000x below the stated bar and roughly HALF of T-0930's own
+measured fixed FFI tax for one batched call -- a native port would lose
+the marshaling round-trip alone before the Rust loop runs, a strictly
+worse case than T-0930's own dead_symbols finding.
+
+Verdict: DISPOSE, do not port. `frob.cycle.graph.find_cycles` stays
+pure Python, unchanged. No frob_core kernel added; no parity tests
+needed since nothing shipped a second implementation.
+
+Changed:
+- docs/audits/check-performance.md (new "T-0950 remediation log"
+  section: bar, methodology, measured numbers, disposition, filed
+  out-of-scope discovery)
+
+Evidence: tests/unit/test_cycle.py's 7 existing tests (all passing,
+bound as ticket evidence) -- confirms find_cycles' behavior is
+unaffected since no code changed; `uv run pytest -q tests/unit/
+test_cycle.py` (7 passed).
+
+Filed: T-0952 ("cycle: Tarjan find_cycles recurses natively,
+RecursionError on long chains", bug, scope src/frob/cycle/**) -- the
+RecursionError surfaced while sizing the synthetic stress graph above
+is a real, reproducible correctness gap, out of scope for this ticket
+(which is about the port-or-dispose decision, not correctness).
+
+Gates: `uv run frob check --ticket T-0950` run chunked per-stage
+(gates-fast, static, gates-security, lint) per agent-playbook section
+3b. gates-fast, static, gates-security all pass clean (baseline
+warnings/waivers only, no new violations). `lint` shows 2 pre-existing
+ty errors and 3 pre-existing ruff-format findings, all in files this
+ticket never touched (tests/test_gates.py, src/frob/arch/
+_lock_ordering.py, tests/unit/test_arch.py) -- unrelated baseline noise,
+not introduced here. `frob ticket done-report T-0950` itself hung
+(T-0887-class done-report hang per this dispatch's process rules);
+this section was hand-written directly into tickets.md instead, per
+that same instruction.
 
 <!-- ticket:T-0951 -->
 ```yaml
@@ -7646,3 +7733,35 @@ than pure-Python at this repo's real per-package/per-symbol data scale
 due to PyO3 marshaling overhead) is directly relevant context: any
 proposed kernel boundary here should be sized against real data volumes
 BEFORE porting, not assumed to win from algorithmic argument alone.
+
+<!-- ticket:T-0952 -->
+```yaml
+id: T-0952
+title: 'cycle: Tarjan find_cycles recurses natively, RecursionError on long chains'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/cycle/**
+threat: null
+component: null
+```
+Found while working T-0950 (sizing frob.cycle's Tarjan SCC as a
+rust-candidate). `_TarjanState._strongconnect` (src/frob/cycle/graph.py)
+is implemented as native Python recursion, one stack frame per DFS edge
+traversed. A synthetic stress graph of 1000 nodes / 3000 random edges
+raised `RecursionError: maximum recursion depth exceeded` (default
+sys.getrecursionlimit()=1000) partway through `find_cycles`, well below
+any dramatic scale -- a real long import chain (or a pathological
+generated-code project) could hit this in production. Convert
+`_strongconnect` to an explicit-stack (iterative) Tarjan formulation, or
+raise/manage the recursion limit deliberately with a documented ceiling,
+so `find_cycles` cannot crash on a graph shaped like a long chain rather
+than a wide fan-out. Not fixed under T-0950 itself -- that ticket's scope
+was sizing a rust-candidate decision, not correctness -- but the crash is
+real and reproducible with a small synthetic script, not a hypothetical.
