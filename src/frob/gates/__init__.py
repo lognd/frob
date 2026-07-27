@@ -1027,6 +1027,8 @@ _KNOWN_GATE_RULES = frozenset(
         "PERF005",
         "PERF006",
         "PERF007",
+        "PERF008",
+        "PERF009",
         "SYS001",
         "SYS002",
         "SYS003",
@@ -9128,22 +9130,27 @@ def _perf_gate_candidate_paths(snapshot: GraphSnapshot) -> list[str]:
 # frob:ticket T-0203
 # frob:waive TEST005 reason="perf_gate 85.7% branch cover, debt T-0160"
 def perf_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
-    """PERF001..PERF004, run at the policy/gates stage per docs/modules/perf.md's
-    Integration points. Parses every scannable source file (see
-    `_perf_gate_candidate_paths`) and hands the parsed set to
-    `frob.perf.perf_rules` (same posture as `frob.policy`'s
-    `_pattern_violations`: gates does the IO, `perf_rules` stays pure). A
-    file whose extension SHOULD parse but fails still gets a visible skip
-    message."""
+    """PERF001..PERF008 (`frob.perf.perf_rules`) plus PERF009 (T-0712's
+    regression ratchet, `frob.perf._ratchet.ratchet_violations`), run at
+    the policy/gates stage per docs/modules/perf.md's Integration points.
+    Parses every scannable source file (see `_perf_gate_candidate_paths`)
+    and hands the parsed set to `frob.perf.perf_rules` (same posture as
+    `frob.policy`'s `_pattern_violations`: gates does the IO, `perf_rules`
+    stays pure). A file whose extension SHOULD parse but fails still gets
+    a visible skip message. PERF009 is read straight from
+    `.frob/perf/ratchet_findings.json` (a `frob perf collect` artifact,
+    never a live re-collection at gate time)."""
     from frob.perf import perf_rules
+    from frob.perf._ratchet import ratchet_violations
 
     candidate_paths = _perf_gate_candidate_paths(snapshot)
     parsed = _perf_gate_parse_files(root, candidate_paths)
-    violations = perf_rules(snapshot, parsed)
+    violations = list(perf_rules(snapshot, parsed))
+    violations.extend(ratchet_violations(root))
     _log.info(
         "perf_gate: %d file(s) scanned, %d violation(s)", len(parsed), len(violations)
     )
-    return violations
+    return tuple(violations)
 
 
 def _perf_gate_parse_files(root: Path, candidate_paths: list[str]) -> list[ParsedFile]:

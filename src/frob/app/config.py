@@ -481,6 +481,8 @@ class AppConfig(BaseModel):
     perf_sampler: bool = False
     perf_interval_s: float | None = None
     perf_max_depth: int | None = None
+    # frob:ticket T-0712
+    perf_by: str | None = None
 
     # serve
     serve_path: Path | None = None
@@ -628,6 +630,7 @@ class AppConfig(BaseModel):
             "perf_command",
             "perf_ref",
             "perf_format",
+            "perf_by",
             "sys_command",
             "sys_view",
             "sys_export_format",

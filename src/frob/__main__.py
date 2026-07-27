@@ -1875,8 +1875,29 @@ def _add_perf_collect_parser(perf_sub) -> None:
     )
 
 
+# frob:ticket T-0712
+def _add_perf_hot_parser(perf_sub) -> None:
+    """Register `frob perf hot`, which renders T-0711's persisted
+    sketch store, ranked by `--by`."""
+    perf_hot_p = perf_sub.add_parser(
+        "hot",
+        help="query the hot-graph sketch store (T-0711) for the hottest sections",
+    )
+    perf_hot_p.add_argument("--path", dest="perf_path", metavar="DIR", default=".")
+    perf_hot_p.add_argument("--top", dest="perf_top", type=int, metavar="N")
+    perf_hot_p.add_argument(
+        "--by",
+        dest="perf_by",
+        choices=("p90", "p50xcount"),
+        default="p50xcount",
+        help="ranking key (default: p50xcount)",
+    )
+    perf_hot_p.add_argument("--json", dest="perf_json", action="store_true")
+
+
 # frob:ticket T-0030
 # frob:ticket T-0765
+# frob:ticket T-0712
 def _add_perf_parser(sub) -> None:
     """Register the `frob perf` subcommand and its arguments."""
     # -- perf ------------------------------------------------------------------
@@ -1887,6 +1908,7 @@ def _add_perf_parser(sub) -> None:
     _add_perf_profile_parser(perf_sub)
     _add_perf_heat_parser(perf_sub)
     _add_perf_collect_parser(perf_sub)
+    _add_perf_hot_parser(perf_sub)
 
 
 # frob:ticket T-0030

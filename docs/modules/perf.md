@@ -35,6 +35,7 @@ across 28k files whose fix was literally a hashset.)
 | PERF006 | tail-recursive function with no proven depth bound (Python has no TCO -- unbounded input depth is a stack-overflow/DoS bug) | rewrite as an explicit loop, or prove a static depth bound |
 | PERF007 | a `frob.toml`-configured expensive call (`[[perf.heavy]]`) invoked from 2+ distinct top-level symbols with no shared-cache decorator on its own definition (T-0413, the PERF META-GAP) | wrap the call target in `memoize_per_run`/`lru_cache`/`cache`, or route every call site through one shared call |
 | PERF008 | a loop body's call site is directly, or transitively (via a local call-graph BFS), a process-spawn/directory-walk effect, and every argument at the call site is loop-invariant (T-0775) | hoist the call out of the loop, memoize its result, or add a reasoned `frob:waive PERF008 reason="..."` (e.g. freshness under concurrency) |
+| PERF009 | a hot-graph section's current-run sketch (`frob perf collect`) shifts beyond `[perf.sketch].ratchet_tolerance` (default 50% relative) at p50 or p90 versus its stored prior (T-0712) | investigate the regression named in the finding (both decile sets are printed); the ratchet is WARN-tier, waivable per the persisted finding's `.frob/perf/ratchet_findings.json` entry |
 
 Severity: PERF001-004 are `warn` by default (static size-blindness is real
 -- a 3-element list is fine as a list); promotable per-repo via
@@ -43,7 +44,12 @@ default -- unlike the lexical smells, unreasoned unbounded recursion is a
 control-flow hazard (T-0290), not a size-blind heuristic. PERF007 is
 `error` by default and opt-in via config (see below) -- an unconfigured
 project gets zero PERF007 checking, never a false positive from a guess
-at what "expensive" means for it. Broader
+at what "expensive" means for it. PERF008/PERF009 are `warn` by default
+(undecidable loop-invariance and a regression ratchet both lean toward
+firing over missing a real issue -- recall over precision, same posture
+as PERF007's own opt-in-only calibration but without an opt-in gate,
+since both structurally cannot false-positive on a project with no
+`.frob/perf/` artifacts yet: zero findings, not zero checking). Broader
 conceptual and mechanical-sympathy background these lexical rules draw
 from -- including which smells are `STATIC` (linter-shaped like the table
 above), `PROFILE`-only, or `ADVISORY` -- lives in
@@ -329,6 +335,75 @@ run) is T-0712's job, mirroring T-0710/T-0748's own split between
 "contract + resolver" and "live invocation". This ticket ships the
 sketch algebra and the persisted, decayed, size-bounded store T-0712
 calls into.
+
+## Hot-graph consumers: query, advisories, ratchet (T-0712)
+
+The consumer side of T-0710/T-0711's collector-and-store pair, wired
+into `frob perf collect` (its only current producer) and `frob check`
+(its only current gate consumer). `frob perf collect`
+(`frob.app.perf_runner._persist_run`) now, for every `Section` its
+resolved `HitStream` actually hit, builds a one-observation
+`QuantileSketch` from that section's total run weight, writes it into
+T-0711's store via `put_sketch` (keyed by `stable_section_key`, labeled
+by `Section.qualname` for display), and reads the section's PRE-merge
+prior via `get_sketch` first so the regression check below compares
+old-vs-new, never a value the same call already overwrote.
+
+### Hot-graph query surface (T-0712)
+
+`frob perf hot [--path DIR] [--top N] [--by p90|p50xcount] [--json]`
+(`frob.app.perf_runner._hot`, `frob.perf.list_sketches`) renders every
+currently-stored section ranked by p90 or by p50 times total observation
+weight (the default -- "moderately slow but frequent" outranks "rare
+outlier"). A pure read of the store; running `frob perf collect` is what
+populates it.
+
+### Slow-operation advisories (T-0712)
+
+`frob.perf._advisories`, suggestion tier, T-0332 discipline -- WARN,
+never gated to error, always waivable -- computed straight off a
+resolved `HitStream`/`SectionIndex`, no new IO:
+
+- `external_call_advisories`: a loop section whose external call
+  edge(s) sum to >= 50% of the loop's own total resolved weight ->
+  batch/cache/hoist-out-of-loop, naming the dominating callee(s).
+- `nested_loop_fanin_advisories`: a loop section reached from 2+
+  distinct caller sections (a fan-in) that is also hot (>= 50% of its
+  file's total resolved weight) -> complexity-suspect, naming the
+  fan-in count.
+- `heavy_tail_advisories`: a stored sketch whose `p90 / p50` ratio
+  exceeds 3x -> variance advisory, naming a likely bimodal/outlier-
+  driven mode.
+
+### Regression ratchet (T-0712)
+
+`frob.perf._ratchet` (PERF009): `check_ratchet` compares a section's
+fresh current-run sketch against its stored prior at p50 and p90; a
+relative shift beyond `[perf.sketch].ratchet_tolerance` (default 50%) at
+either quantile produces a `RatchetFinding` naming the section and BOTH
+decile sets (prior and current). `frob perf collect` persists every
+run's findings to `.frob/perf/ratchet_findings.json`
+(`save_ratchet_findings`, always overwritten whole, never appended);
+`frob.gates.__init__.perf_gate` reads them back (`ratchet_violations`)
+and surfaces each as a WARN-tier `PERF009` `Violation` -- gate-time is a
+pure read of an already-recorded artifact, never a live re-collection,
+matching every other PERF rule's static posture.
+
+**What this ticket did not wire.** The MCP tool mirror the plan calls for
+("QUERY: ... MCP tool mirror for agents") is NOT built here --
+`src/frob/serve/_tools.py` is outside this ticket's declared scope
+(`src/frob/perf/**`, `src/frob/app/**`, `src/frob/gates/**`,
+`docs/modules/perf.md`); filed as a follow-up ticket rather than silently
+expanding scope. A section's "current run" observation is presently a
+SINGLE scalar (the run's total resolved weight for that section) rather
+than a genuine within-run distribution over many individual call/loop-
+iteration durations -- `HitStream.section_hits` carries one weight per
+resolved SAMPLE, and per-sample weight is the sampler's fixed interval
+for the python collector (T-0710), which would make a per-sample sketch
+degenerate (all one value) rather than a real duration distribution; a
+collector adapter whose samples carry genuinely varying weights (e.g. a
+JFR-print duration-per-event import, T-0748) would make a richer
+within-run sketch possible without changing this module's schema.
 
 ## Cross-language collector adapters (T-0748)
 

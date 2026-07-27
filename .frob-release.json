@@ -752,6 +752,9 @@
     "src/frob/outline/__init__.py::ModuleOutline.as_text": "3e2efabc1bcf2a2f8e44d497f4024639cb2f7d3f4782fe89d9a6244b7f513ae2",
     "src/frob/outline/__init__.py::OutlineError": "b30cea757b6006fb2bd2d7b594a2da3469908d4a5251ee9622bc750ba8ce08b5",
     "src/frob/outline/__init__.py::outline_file": "4f3c31a84433f6059448734c6bf27a062b87f9328045a7d55c2a3cb2f26b0892",
+    "src/frob/perf/_advisories.py::external_call_advisories": "347a7e2e8239e69da41fd4b72693500c17ba8b9b0463ed1b37c1a9a370bd502a",
+    "src/frob/perf/_advisories.py::heavy_tail_advisories": "11c64a9a864bb82c88c0eac06d02470355ee710bb9b3b2afc40003d7c164f555",
+    "src/frob/perf/_advisories.py::nested_loop_fanin_advisories": "bdad55491bd87ec8243eed5062966c6b2b6747fea7d1402fa8390c4e8bda0ebd",
     "src/frob/perf/_collectors.py::CollectorError": "ef836b8ae8aa5085f229cb5b0bc376b68fa2bd22b598a2c8cb9e6510a4ea676f",
     "src/frob/perf/_collectors.py::build_class_to_file": "e24b4d151e60fcfecad29c128c869b7d7159e92f2c9eacb1538c570bee49d926",
     "src/frob/perf/_collectors.py::build_index_for_files": "2cd7937aa051f7de875376c5dfaeea2e55d9402e8c06e61d30c80283063d2189",
@@ -785,6 +788,12 @@
     "src/frob/perf/_models.py::ProfileArtifact.pstats_name": "972f223acefc7dd3f1bdc109fdf0842f159656aff40feb3f0a5ae3d47ac8c8d9",
     "src/frob/perf/_profile.py::load_artifact": "fef91c9f74250ecee972a270767794564e9291c923bc44109b33b2a0f91ace19",
     "src/frob/perf/_profile.py::profile_command": "f871ae5e1e6e0e7416517d4f9307498a72e786826dc2db45af45741d416fb2ba",
+    "src/frob/perf/_ratchet.py::RATCHET_FINDINGS_REL": "53c96228afeb73b63ab8cd54f0f3386414075a9d76c73a7417f1f5e7c394fbd1",
+    "src/frob/perf/_ratchet.py::RatchetFinding": "9b25fa56a9602738b80618addcbb7b448f5577a904b3a3ea7701f2482094e1a7",
+    "src/frob/perf/_ratchet.py::check_ratchet": "9a94f4ac3c5c98d15f8b0c7e8a40860a560cf7f0b07125f33a7d4960a4e51ea7",
+    "src/frob/perf/_ratchet.py::load_ratchet_findings": "ac635d32f7b1a29dafb48bdb41ad4de8cb9d64970396756c9d324615ea2ed667",
+    "src/frob/perf/_ratchet.py::ratchet_violations": "f1e599e8fd16e6f759a8622a00d0242d9d7b1eeedef4bd3eb018289b8f1eb023",
+    "src/frob/perf/_ratchet.py::save_ratchet_findings": "b8eaa77491cac074293f88b5aaf238c7660591626d66ea4d631b151a641ba388",
     "src/frob/perf/_recursion.py::recursion_rules": "23047c2fd1916207aff51ca49a373399399b0360c4b7f40b87526347c907063d",
     "src/frob/perf/_redundancy.py::redundant_computation_violations": "08be2b9707aaa83f88510b834e94e0916f95d59dc07efaee42c365a524fdf213",
     "src/frob/perf/_rules.py::perf_rules": "214d9b451fb0b69a1be18ae33a97fa60725329387c5d8314518bc1727049baae",
@@ -794,10 +803,12 @@
     "src/frob/perf/_sampler.py::StackSampler.stop": "ddf52bb639d1262750f64d61e840b84bdb50b821279df66f452d73d149fbe974",
     "src/frob/perf/_sampler.py::run_sampled": "0aede666ae8c145d06379f02f59e11e0c7145d50c6fe51bfac8f5d34e0a5f6f8",
     "src/frob/perf/_sketch_store.py::SketchStoreConfig": "20e0c67e7432d8de10ae7a7d47591648cb8848af6a1a4befbbdd8510d1ecb811",
+    "src/frob/perf/_sketch_store.py::StoredSketch": "df18871c74504a5a17ea437d3af7db934ec7ea5aad65e8807aebed7fb595909e",
     "src/frob/perf/_sketch_store.py::get_sketch": "d70659758bfb64b9c28ba4341f88bc68d2c741b421b9002d327d120b57ac4a47",
+    "src/frob/perf/_sketch_store.py::list_sketches": "9e9d37b379dc191dc2894d359021a7512b434cfbb0923b049d1439cfa6d0bcd1",
     "src/frob/perf/_sketch_store.py::load_sketch_config": "8f2413b14b048efb9f8061358db0eb26c7d88e32f83a247eb8b4a216ebdc9a56",
     "src/frob/perf/_sketch_store.py::new_run_sketch": "0bc7145899fce49df09a018ea140dd73cb05fae4d994d26ec0fc57e43a5543e3",
-    "src/frob/perf/_sketch_store.py::put_sketch": "3ebc1bb835d3916315418232d151708d45db9f3527428163c08a5ee2d490b757",
+    "src/frob/perf/_sketch_store.py::put_sketch": "3bc6366bf5afdfa35eb05e5f213963c86144893da8a8f68f540f283ad768d2fb",
     "src/frob/perf/_sketch_store.py::stable_section_key": "d1a28fce33519e2095e47dc5e241e9f091549246e94306516398b21e40ab9612",
     "src/frob/perf/_sketch_store.py::store_size_bytes": "1c77e7f29366960813c6d993924fe0f5140059b8f5f270850eda841324b02412",
     "src/frob/policy/__init__.py::load_policy": "40dfe05a156e5ad5a98e060ec876fc66f66980582f5402ee423a65359cd41cb3",
@@ -1585,5 +1596,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.160.0"
+  "version": "0.161.0"
 }

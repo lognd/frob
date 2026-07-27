@@ -28,10 +28,24 @@ contract, a resolver mapping `(file, line)` samples onto normalized-model
 sections (function/loop/branch bodies), and a python `StackSampler` --
 the first of what T-0748 makes a multi-language family of producers into
 the same contract. See docs/modules/perf.md#hot-graph-collector.
+
+`frob.perf._advisories`/`frob.perf._ratchet` (T-0712) add the consumer
+side: `frob perf hot` queries T-0711's persisted sketch store; the three
+advisory functions (external-call-dominates-loop, nested-loop fan-in,
+heavy-tail variance) flag slow-operation shapes straight off a resolved
+`HitStream`; PERF009 (`ratchet_violations`, wired into `frob check` via
+`frob.gates.__init__.perf_gate`) fires when a section's current-run
+sketch regresses beyond `[perf.sketch].ratchet_tolerance` relative to its
+stored prior. See docs/modules/perf.md#hot-graph-query-surface-t-0712.
 """
 
 from __future__ import annotations
 
+from frob.perf._advisories import (
+    external_call_advisories,
+    heavy_tail_advisories,
+    nested_loop_fanin_advisories,
+)
 from frob.perf._collectors import (
     CollectorError,
     build_class_to_file,
@@ -60,13 +74,22 @@ from frob.perf._hotgraph import (
 from frob.perf._loop_effects import loop_invariant_effect_violations
 from frob.perf._models import HeatEntry, HeatReport, PerfError, ProfileArtifact
 from frob.perf._profile import load_artifact, profile_command
+from frob.perf._ratchet import (
+    RatchetFinding,
+    check_ratchet,
+    load_ratchet_findings,
+    ratchet_violations,
+    save_ratchet_findings,
+)
 from frob.perf._recursion import recursion_rules
 from frob.perf._redundancy import redundant_computation_violations
 from frob.perf._rules import perf_rules
 from frob.perf._sampler import SamplerConfig, StackSampler, run_sampled
 from frob.perf._sketch_store import (
     SketchStoreConfig,
+    StoredSketch,
     get_sketch,
+    list_sketches,
     load_sketch_config,
     new_run_sketch,
     put_sketch,
@@ -91,6 +114,7 @@ __all__ = [
     "LanguageDecileRow",
     "PerfError",
     "ProfileArtifact",
+    "RatchetFinding",
     "SampledFrame",
     "SampledStack",
     "SamplerConfig",
@@ -99,17 +123,24 @@ __all__ = [
     "SectionIndex",
     "SketchStoreConfig",
     "StackSampler",
+    "StoredSketch",
     "build_class_to_file",
     "build_index_for_files",
     "build_section_index",
+    "check_ratchet",
     "detect_collector_format",
+    "external_call_advisories",
     "get_sketch",
     "heat",
+    "heavy_tail_advisories",
     "join_smells",
     "language_deciles",
+    "list_sketches",
     "load_artifact",
+    "load_ratchet_findings",
     "load_sketch_config",
     "loop_invariant_effect_violations",
+    "nested_loop_fanin_advisories",
     "new_run_sketch",
     "parse_collector_format",
     "parse_jfr_print",
@@ -118,11 +149,13 @@ __all__ = [
     "perf_rules",
     "profile_command",
     "put_sketch",
+    "ratchet_violations",
     "recursion_rules",
     "redundant_computation_violations",
     "render_bar",
     "resolve_stream",
     "run_sampled",
+    "save_ratchet_findings",
     "stable_section_key",
     "store_size_bytes",
 ]

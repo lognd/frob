@@ -61,7 +61,9 @@ _log = get_logger(__name__)
 
 __all__ = [
     "SketchStoreConfig",
+    "StoredSketch",
     "get_sketch",
+    "list_sketches",
     "load_sketch_config",
     "new_run_sketch",
     "put_sketch",
@@ -81,13 +83,18 @@ CREATE TABLE IF NOT EXISTS sketches (
     section_key TEXT PRIMARY KEY,
     kind TEXT NOT NULL,
     last_used REAL NOT NULL,
-    payload TEXT NOT NULL
+    payload TEXT NOT NULL,
+    label TEXT NOT NULL DEFAULT ''
 );
 """
 
 _DEFAULT_ALPHA = 0.02
 _DEFAULT_HALF_LIFE_RUNS = 5.0
 _DEFAULT_STORE_CAP_BYTES = 100_000
+# T-0712: relative p90 shift (new vs stored prior) beyond which the
+# regression ratchet fires a PERF finding naming the section -- see
+# `frob.perf._ratchet.check_ratchet`.
+_DEFAULT_RATCHET_TOLERANCE = 0.5
 
 
 # frob:doc docs/modules/perf.md#hot-graph-sketch-store-t-0711-epic-t-0709
@@ -108,6 +115,9 @@ class SketchStoreConfig(BaseModel):
     alpha: float = _DEFAULT_ALPHA
     half_life_runs: float = _DEFAULT_HALF_LIFE_RUNS
     store_cap_bytes: int = _DEFAULT_STORE_CAP_BYTES
+    #: T-0712: relative p90 shift (new run vs stored prior) beyond which
+    #: `frob.perf._ratchet.check_ratchet` fires a regression finding.
+    ratchet_tolerance: float = _DEFAULT_RATCHET_TOLERANCE
 
 
 def _read_toml(path: Path) -> dict | None:
@@ -176,11 +186,27 @@ def _connect(root: Path) -> Result[sqlite3.Connection, PerfError]:
             path.parent.mkdir(parents=True, exist_ok=True)
             conn = sqlite3.connect(path, check_same_thread=False)
             conn.executescript(_SCHEMA)
+            _ensure_label_column(conn)
         except sqlite3.DatabaseError as exc:
             _log.error("sketch store at %s unreadable: %s", path, exc)
             return Err(PerfError.SketchStoreCorrupt)
         _conn_cache[path] = conn
         return Ok(conn)
+
+
+def _ensure_label_column(conn: sqlite3.Connection) -> None:
+    """T-0712: a store created before the `label` column existed still has
+    `CREATE TABLE IF NOT EXISTS`'s original schema (sqlite does not
+    retroactively add columns to an existing table) -- add it here,
+    tolerating the "duplicate column" error on a store that already has
+    it, so every store this process ever opens ends up with the column
+    `list_sketches`/`put_sketch` both need, regardless of when it was
+    created."""
+    try:
+        conn.execute("ALTER TABLE sketches ADD COLUMN label TEXT NOT NULL DEFAULT ''")
+    except sqlite3.OperationalError as exc:
+        if "duplicate column" not in str(exc).lower():
+            raise
 
 
 # frob:tests \
@@ -258,6 +284,7 @@ def put_sketch(
     kind: str,
     run_sketch: QuantileSketch,
     config: SketchStoreConfig,
+    label: str = "",
 ) -> Result[QuantileSketch, PerfError]:
     """Merge `run_sketch` onto the decayed stored prior for `section_key`
     (`prior' = merge(run_sketch, decay(stored_prior, config.
@@ -266,7 +293,13 @@ def put_sketch(
     wall-clock time), persists the merged result, evicts coldest rows
     beyond `config.store_cap_bytes`, and returns the sketch actually
     stored. A first write for a never-seen `section_key` has no prior to
-    decay -- `run_sketch` alone becomes the stored value."""
+    decay -- `run_sketch` alone becomes the stored value. `label`
+    (T-0712, e.g. a `Section.qualname`) is stored alongside the sketch
+    purely for display -- `frob perf hot`'s query surface needs a
+    human-readable name since `section_key` is an opaque digest; an empty
+    `label` on an existing row is left untouched by a caller that never
+    passes one (`INSERT OR REPLACE` always supplies a value, so this only
+    matters for a caller choosing not to name it)."""
     conn_r = _connect(root)
     if conn_r.is_err:
         return Err(conn_r.danger_err)
@@ -278,13 +311,57 @@ def put_sketch(
         decay_factor = 0.5 ** (1.0 / config.half_life_runs)
         merged = merge_sketches(run_sketch, decay_sketch(prior, decay_factor))
     conn.execute(
-        "INSERT OR REPLACE INTO sketches (section_key, kind, last_used, payload) "
-        "VALUES (?, ?, ?, ?)",
-        (section_key, kind, time.time(), merged.model_dump_json()),
+        "INSERT OR REPLACE INTO sketches "
+        "(section_key, kind, last_used, payload, label) VALUES (?, ?, ?, ?, ?)",
+        (section_key, kind, time.time(), merged.model_dump_json(), label),
     )
     _evict_coldest(conn, config.store_cap_bytes)
     conn.commit()
     return Ok(merged)
+
+
+# frob:doc docs/modules/perf.md#hot-graph-query-surface-t-0712
+class StoredSketch(BaseModel):
+    """One row of `frob.perf._sketch_store`'s persisted store, as read by
+    `list_sketches` -- the shape `frob perf hot` renders and the MCP
+    mirror serializes."""
+
+    model_config = ConfigDict(frozen=True)
+
+    section_key: str
+    kind: str
+    label: str
+    last_used: float
+    sketch: QuantileSketch
+
+
+# frob:doc docs/modules/perf.md#hot-graph-query-surface-t-0712
+# frob:tests tests/unit/perf/test_hot_query.py::TestListSketches.test_empty_store_is_empty  # noqa: E501
+# frob:tests tests/unit/perf/test_hot_query.py::TestListSketches.test_lists_every_stored_row_with_its_label  # noqa: E501
+# frob:tests tests/unit/perf/test_hot_query.py::TestListSketches.test_pre_label_store_still_reads_via_column_migration  # noqa: E501
+def list_sketches(root: Path) -> list[StoredSketch]:
+    """Every currently-stored sketch at `root`'s hot-graph store, in no
+    particular order -- `frob perf hot`'s query surface sorts/ranks this
+    itself (`--by p90|p50xcount`) so the store stays a dumb read, not a
+    second place ranking logic lives. `[]` on an unreadable/never-created
+    store (fail-open, matching `get_sketch`'s "no prior" posture)."""
+    conn_r = _connect(root)
+    if conn_r.is_err:
+        return []
+    conn = conn_r.danger_ok
+    rows = conn.execute(
+        "SELECT section_key, kind, label, last_used, payload FROM sketches"
+    ).fetchall()
+    return [
+        StoredSketch(
+            section_key=section_key,
+            kind=kind,
+            label=label,
+            last_used=last_used,
+            sketch=QuantileSketch.model_validate_json(payload),
+        )
+        for section_key, kind, label, last_used, payload in rows
+    ]
 
 
 # frob:doc docs/modules/perf.md#hot-graph-sketch-store-t-0711-epic-t-0709

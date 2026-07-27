@@ -30,8 +30,8 @@ __all__ = ["run"]
 # frob:ticket T-0765
 # frob:doc docs/modules/app.md#runners
 def run(cfg: AppConfig) -> None:
-    """Dispatch to `frob perf profile`, `frob perf heat`, or `frob perf
-    collect`."""
+    """Dispatch to `frob perf profile`, `frob perf heat`, `frob perf
+    collect`, or `frob perf hot` (T-0712)."""
     match cfg.perf_command:
         case "profile":
             _profile(cfg)
@@ -39,8 +39,10 @@ def run(cfg: AppConfig) -> None:
             _heat(cfg)
         case "collect":
             _collect(cfg)
+        case "hot":
+            _hot(cfg)
         case _:
-            _log.error("usage: frob perf <profile|heat|collect> ...")
+            _log.error("usage: frob perf <profile|heat|collect|hot> ...")
             sys.exit(1)
 
 
@@ -320,12 +322,14 @@ def _collect(cfg: AppConfig) -> None:
 
 
 # frob:ticket T-0765
+# frob:ticket T-0712
 def _collect_body(cfg: AppConfig) -> None:
     """The actual `frob perf collect` body: resolve a hot-graph
     collector's stacks through `resolve_stream` (the T-0748 collector
-    adapters, or the T-0710 python sampler) and print per-language
-    deciles -- the end-to-end CLI wiring T-0765 adds ahead of T-0711's
-    persisted sketch store."""
+    adapters, or the T-0710 python sampler), print per-language deciles,
+    persist every resolved section's run sketch into T-0711's store
+    (T-0712), and print any regression-ratchet/advisory findings this
+    run produced."""
     from frob.perf import build_index_for_files, language_deciles, resolve_stream
 
     stacks = _collect_stacks(cfg)
@@ -334,6 +338,9 @@ def _collect_body(cfg: AppConfig) -> None:
     index = build_index_for_files(files)
     stream = resolve_stream(index, stacks)
     rows = language_deciles(stream, index)
+
+    findings, advisories = _persist_run(cfg, index, stream)
+
     if cfg.perf_top is not None:
         rows = rows[: cfg.perf_top]
 
@@ -344,6 +351,11 @@ def _collect_body(cfg: AppConfig) -> None:
             "rows": [r.model_dump() for r in rows],
             "unattributed_weight": stream.unattributed_weight,
             "sample_count": len(stacks),
+            "ratchet_findings": [f.model_dump() for f in findings],
+            "advisories": [
+                {"rule": v.rule, "file": v.file, "line": v.line, "message": v.message}
+                for v in advisories
+            ],
         }
         Renderer.for_stream(sys.stdout).line(json.dumps(payload, indent=2))
         return
@@ -353,6 +365,101 @@ def _collect_body(cfg: AppConfig) -> None:
         f"samples={len(stacks)} unattributed_weight={stream.unattributed_weight:.3f}"
     )
     Renderer.for_stream(sys.stdout).line(paint(summary, DIM, should_color(sys.stdout)))
+    _print_findings(findings, advisories)
+
+
+# frob:ticket T-0712
+def _persist_run(cfg: AppConfig, index, stream):  # noqa: ANN001, ANN201
+    """Persist this run's per-section weight into T-0711's sketch store
+    (one observation per resolved sample, per `Section`), check each
+    section's regression ratchet against its stored prior, and compute
+    the T-0712 advisories over the SAME `stream`/`index` this run already
+    resolved -- returns `(ratchet_findings, advisory_violations)`. Every
+    section update happens BEFORE the ratchet check reads `get_sketch`'s
+    "prior" so the comparison is genuinely old-vs-new, never a value the
+    same call already wrote."""
+    from frob.perf._advisories import (
+        external_call_advisories,
+        heavy_tail_advisories,
+        nested_loop_fanin_advisories,
+    )
+    from frob.perf._hotgraph import UNATTRIBUTED_SECTION_ID
+    from frob.perf._ratchet import RatchetFinding, check_ratchet, save_ratchet_findings
+    from frob.perf._sketch_store import (
+        get_sketch,
+        load_sketch_config,
+        new_run_sketch,
+        put_sketch,
+        stable_section_key,
+    )
+    from frob.stats._sketch import QuantileSketch
+
+    root = (cfg.perf_path or Path(".")).resolve()
+    config = load_sketch_config(root)
+    sections = {s.id: s for sections in index.values() for s in sections}
+
+    run_weight: dict[str, float] = {}
+    for hit in stream.section_hits:
+        if hit.section_id == UNATTRIBUTED_SECTION_ID:
+            continue
+        run_weight[hit.section_id] = run_weight.get(hit.section_id, 0.0) + hit.weight
+
+    from frob.stats._sketch import add_value
+
+    findings: list[RatchetFinding] = []
+    heavy_tail_input: dict[str, tuple[str, str, int, QuantileSketch]] = {}
+    for section_id, weight in run_weight.items():
+        section = sections.get(section_id)
+        if section is None:
+            continue
+        key = stable_section_key(section)
+        prior = get_sketch(root, key)
+        run_sketch = add_value(new_run_sketch(config.alpha), weight)
+        finding = check_ratchet(
+            key, section.qualname, prior, run_sketch, config.ratchet_tolerance
+        )
+        if finding is not None:
+            findings.append(finding)
+        merged_r = put_sketch(
+            root, key, section.kind, run_sketch, config, label=section.qualname
+        )
+        if merged_r.is_ok:
+            heavy_tail_input[key] = (
+                section.qualname,
+                section.file,
+                section.start_line,
+                merged_r.danger_ok,
+            )
+
+    save_ratchet_findings(root, findings)
+
+    advisories = (
+        external_call_advisories(stream, index)
+        + nested_loop_fanin_advisories(stream, index)
+        + heavy_tail_advisories(heavy_tail_input)
+    )
+    return findings, advisories
+
+
+# frob:ticket T-0712
+def _print_findings(findings, advisories) -> None:  # noqa: ANN001
+    """Print T-0712's ratchet findings and advisories after a `frob perf
+    collect` run -- silent (no extra lines) when there are none, matching
+    every other frob subcommand's "quiet on the happy path" posture."""
+    renderer = Renderer.for_stream(sys.stdout)
+    color = should_color(sys.stdout)
+    for finding in findings:
+        renderer.line(
+            paint(
+                f"PERF009: {finding.label or finding.section_key} regressed "
+                f"{finding.worst_relative_shift * 100:.0f}%: "
+                f"prior={finding.prior_deciles} current={finding.current_deciles}",
+                BOLD,
+                color,
+            )
+        )
+    for violation in advisories:
+        renderer.line(f"{violation.rule}: {violation.message}")
 
 
 def _annotate_gutters(rel: str, report, snapshot) -> dict[int, str]:  # noqa: ANN001
@@ -398,3 +505,69 @@ def _annotate(root: Path, file: Path, report, snapshot) -> None:  # noqa: ANN001
         tag = by_line.get(lineno, "")
         gutter = paint(f"{lineno:>5} {tag:>14} |", CYAN, color)
         renderer.line(f"{gutter} {source_line}")
+
+
+# frob:ticket T-0712
+def _hot_sort_key(row, by: str):  # noqa: ANN001, ANN202
+    """Sort key for `frob perf hot --by p90|p50xcount`: `p90` ranks by the
+    stored sketch's p90 read; `p50xcount` (the default) ranks by p50 times
+    total observation weight -- a cheap proxy for "typical cost times how
+    often it happens", so a moderately-slow-but-frequent section can
+    outrank a rare outlier."""
+    from frob.stats._sketch import quantile, total_weight
+
+    p50 = quantile(row.sketch, 0.5)
+    p90 = quantile(row.sketch, 0.9)
+    if by == "p90":
+        return p90
+    return p50 * total_weight(row.sketch)
+
+
+# frob:ticket T-0712
+def _hot(cfg: AppConfig) -> None:
+    """`frob perf hot [--path DIR] [--top N] [--by p90|p50xcount] [--json]`:
+    render T-0711's persisted sketch store, ranked by `--by` (default
+    `p50xcount`) -- the query surface T-0712's plan calls for, reading
+    the store directly with no live re-collection (a `frob perf collect`
+    run is what populates it)."""
+    from frob.perf._sketch_store import list_sketches
+    from frob.stats._sketch import quantile, total_weight
+
+    root = (cfg.perf_path or Path(".")).resolve()
+    by = cfg.perf_by or "p50xcount"
+    rows = list_sketches(root)
+    rows.sort(key=lambda row: _hot_sort_key(row, by), reverse=True)
+    if cfg.perf_top is not None:
+        rows = rows[: cfg.perf_top]
+
+    if cfg.perf_json:
+        import json
+
+        payload = [
+            {
+                "section_key": row.section_key,
+                "kind": row.kind,
+                "label": row.label,
+                "p50": quantile(row.sketch, 0.5),
+                "p90": quantile(row.sketch, 0.9),
+                "sample_count": total_weight(row.sketch),
+            }
+            for row in rows
+        ]
+        Renderer.for_stream(sys.stdout).line(json.dumps(payload, indent=2))
+        return
+
+    renderer = Renderer.for_stream(sys.stdout)
+    color = should_color(sys.stdout)
+    header = paint(
+        f"{'label':<40} {'kind':<8} {'p50':>10} {'p90':>10} {'samples':>10}",
+        BOLD,
+        color,
+    )
+    renderer.line(header)
+    for row in rows:
+        renderer.line(
+            f"{row.label or row.section_key:<40.40} {row.kind:<8} "
+            f"{quantile(row.sketch, 0.5):>10.4f} {quantile(row.sketch, 0.9):>10.4f} "
+            f"{total_weight(row.sketch):>10.1f}"
+        )

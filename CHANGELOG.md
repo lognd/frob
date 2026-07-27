@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.161.0] - unreleased
+
+- T-0712: hot-graph query surface + slow-operation advisories + perf regression ratchet
+
 ## [0.160.0] - unreleased
 
 - T-0650: strata: transactional-boundary obligation on multi-write ops

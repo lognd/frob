@@ -3881,7 +3881,7 @@ User mandate 2026-07-22: auditing/advisories for slow operations. Build a repo-w
 ```yaml
 id: T-0712
 title: hot-graph query surface + slow-operation advisories + perf regression ratchet
-state: done
+state: queued
 kind: feature
 origin: human
 created: '2026-07-22'
@@ -3895,130 +3895,16 @@ scope:
 - src/frob/app/**
 - src/frob/gates/**
 - docs/modules/perf.md
-- tests/unit/perf/**
-scope_changes:
-- op: add
-  glob: tests/unit/perf/**
-  reason: new tests for T-0712's query surface/advisories/ratchet; T-0710/T-0711's
-    own scope precedent included tests/unit/perf/
-  actor: logan
-  at: '2026-07-26'
-evidence:
-- tests/unit/perf/test_hot_query.py::TestListSketches::test_lists_every_stored_row_with_its_label
-- tests/unit/perf/test_ratchet.py::TestCheckRatchet::test_regression_beyond_tolerance_fires
-- tests/unit/perf/test_gate_wiring.py::TestPerf008ProductionInvocation::test_before_no_effect_fails_to_find_perf008
-- tests/unit/perf/test_gate_wiring.py::TestPerf008ProductionInvocation::test_after_loop_invariant_fs_walk_passes_perf008
-- tests/unit/perf/test_gate_wiring.py::TestPerf009ProductionInvocation::test_before_no_findings_file_fails_to_find_perf009
-- tests/unit/perf/test_gate_wiring.py::TestPerf009ProductionInvocation::test_after_regression_finding_passes_perf009
-- tests/unit/perf/test_persist_run_cli.py::TestPersistRunDefaultPath::test_missing_perf_path_resolves_to_cwd
-- tests/unit/perf/test_persist_run_cli.py::TestPersistRunUnattributedExclusionAndWeightSum::test_only_attributed_section_persists_with_summed_weight
-- tests/unit/perf/test_persist_run_cli.py::TestHotSortKeyMetricSelection::test_by_p90_and_by_p50xcount_disagree_on_order
-- tests/unit/perf/test_persist_run_cli.py::TestRatchetFindingRendering::test_regression_prints_label_and_exact_percentage
 acceptance:
 - text: GIVEN a section whose p90 regresses beyond tolerance vs the stored prior WHEN
     frob check runs with the ratchet enabled THEN a PERF finding names the section
     and both decile sets; GIVEN a loop dominated by an external call THEN an advisory
     fires with the edge's deciles
-  evidence:
-  - tests/unit/perf/test_hot_query.py::TestListSketches::test_lists_every_stored_row_with_its_label
-  - tests/unit/perf/test_ratchet.py::TestCheckRatchet::test_regression_beyond_tolerance_fires
-- text: T-0756 new-gate-rule fixture proof for PERF008/PERF009 (registered in _KNOWN_GATE_RULES
-    this change) -- a fixture with no loop-invariant effect / no ratchet-findings
-    artifact FAILS to find PERF008/PERF009 through frob.gates.perf_gate (the production
-    function frob check invokes) BEFORE the triggering fixture is introduced, and
-    PASSES (finds the rule) AFTER the fixture is added -- proven through the real
-    gate invocation, not a pure-function unit test alone
-  evidence:
-  - tests/unit/perf/test_gate_wiring.py::TestPerf008ProductionInvocation::test_before_no_effect_fails_to_find_perf008
-  - tests/unit/perf/test_gate_wiring.py::TestPerf008ProductionInvocation::test_after_loop_invariant_fs_walk_passes_perf008
-  - tests/unit/perf/test_gate_wiring.py::TestPerf009ProductionInvocation::test_before_no_findings_file_fails_to_find_perf009
-  - tests/unit/perf/test_gate_wiring.py::TestPerf009ProductionInvocation::test_after_regression_finding_passes_perf009
-  - tests/unit/perf/test_persist_run_cli.py::TestPersistRunDefaultPath::test_missing_perf_path_resolves_to_cwd
-  - tests/unit/perf/test_persist_run_cli.py::TestPersistRunUnattributedExclusionAndWeightSum::test_only_attributed_section_persists_with_summed_weight
-  - tests/unit/perf/test_persist_run_cli.py::TestHotSortKeyMetricSelection::test_by_p90_and_by_p50xcount_disagree_on_order
-  - tests/unit/perf/test_persist_run_cli.py::TestRatchetFindingRendering::test_regression_prints_label_and_exact_percentage
+  evidence: []
 threat: null
 component: null
 ```
 Child 3: consumers. (1) QUERY: frob perf hot [--top N --by p90|p50xcount] renders the hot-graph (section, callee edge, decile readout, sample count) from the sketch store; MCP tool mirror for agents. (2) ADVISORIES (suggestion tier, T-0332 noise discipline): external call edge dominating a loop body's time -> batch/cache/move-out-of-loop suggestion naming the edge and its deciles; nested-loop section hot AND upstream of a fan-in -> complexity suspect; section p90 >> p50 (heavy tail) -> variance advisory naming likely modes. (3) REGRESSION RATCHET: current run sketch vs stored prior -- quantile shift beyond alpha + configured tolerance = PERF finding naming the section and both deciles (ratchet-pool style per T-0569/T-0594 precedent, baseline-old error-new).
-
-## Done report
-
-Land review refused T-0712: TEST016 found the original bound evidence
-killed 0/8 mutants in src/frob/app/perf_runner.py's changed lines
-(_persist_run/_hot_sort_key/_print_findings) -- confirmatory-only, not
-adversarial. Added tests/unit/perf/test_persist_run_cli.py: four
-behavioral tests invoking `frob.app.perf_runner.run` directly (the same
-production function `frob perf collect`/`frob perf hot` dispatch through)
-and asserting on precise rendered stdout/JSON values.
-
-Manually verified each targeted mutant is killed by applying it, running
-the new tests, confirming failure, then reverting:
-- line 397 `cfg.perf_path or Path(".")` -> `and`: AttributeError on
-  None.resolve(), test_missing_perf_path_resolves_to_cwd fails.
-- line 403 `== UNATTRIBUTED_SECTION_ID` -> `!=`: store stays empty,
-  test_only_attributed_section_persists_with_summed_weight fails
-  (len(rows) != 1).
-- line 405 `+= hit.weight` -> `-=`: negative total dropped by
-  add_value's non-negative guard, same test fails (p50 reads 0 not ~2.0).
-- line 437/438/439 advisories list `+` -> `-` (both operators): TypeError
-  crashes every collect-invoking test immediately.
-- line 454 `finding.label or finding.section_key` -> `and`: renders the
-  opaque hash key instead of the label, test_regression_prints_label_and_
-  exact_percentage fails ("hot_loop" not in output).
-- line 455 `worst_relative_shift * 100` -> `/`: percentage collapses from
-  ~918% to ~0%, same test fails.
-- line 521 `if by == "p90"` -> `!=`: `--by p90` and `--by p50xcount`
-  return the SAME (wrong) order, test_by_p90_and_by_p50xcount_disagree_
-  on_order fails.
-
-All 4 new tests pass against the unmutated tree; `uv run pytest -q -n0
-tests/unit/perf/` (97 tests) and `uv run frob test --base main` both
-exit 0. Bound as ticket acceptance[1]'s evidence (the T-0756 fixture
-criterion, already covering PERF008/PERF009's production-invocation
-proof) alongside the existing PERF008/PERF009 fixture tests.
-
-Also fixed a `_perf_script` helper type annotation (`tuple[str, str]` ->
-`tuple[float, str]`, since it takes numeric weights) caught by `ty` after
-adding the new test file; `uv run frob check --only lint`/`--only
-static` both clean (only the pre-existing strata_core/frob_core
-unresolved-import ty diagnostics, a worktree native-build artifact per
-the agent playbook, remain).
-
-### Changed
-```
- docs/modules/perf.md                |  77 ++++++++++++-
- src/frob/__main__.py                |  22 ++++
- src/frob/app/config.py              |   3 +
- src/frob/app/perf_runner.py         | 185 ++++++++++++++++++++++++++++-
- src/frob/gates/__init__.py          |  25 ++--
- src/frob/perf/__init__.py           |  33 ++++++
- src/frob/perf/_advisories.py        | 224 ++++++++++++++++++++++++++++++++++++
- src/frob/perf/_ratchet.py           | 199 ++++++++++++++++++++++++++++++++
- src/frob/perf/_sketch_store.py      |  87 +++++++++++++-
- tests/unit/perf/test_advisories.py  | 134 +++++++++++++++++++++
- tests/unit/perf/test_gate_wiring.py | 116 +++++++++++++++++++
- tests/unit/perf/test_hot_query.py   |  76 ++++++++++++
- tests/unit/perf/test_ratchet.py     |  90 +++++++++++++++
- tickets.md                          | 158 ++++++++++++++++++++++++-
- 14 files changed, 1406 insertions(+), 23 deletions(-)
-```
-
-### Evidence
-- `tests/unit/perf/test_hot_query.py::TestListSketches::test_lists_every_stored_row_with_its_label` (pytest node id, verified passing when recorded)
-- `tests/unit/perf/test_ratchet.py::TestCheckRatchet::test_regression_beyond_tolerance_fires` (pytest node id, verified passing when recorded)
-- `tests/unit/perf/test_gate_wiring.py::TestPerf008ProductionInvocation::test_before_no_effect_fails_to_find_perf008` (pytest node id, verified passing when recorded)
-- `tests/unit/perf/test_gate_wiring.py::TestPerf008ProductionInvocation::test_after_loop_invariant_fs_walk_passes_perf008` (pytest node id, verified passing when recorded)
-- `tests/unit/perf/test_gate_wiring.py::TestPerf009ProductionInvocation::test_before_no_findings_file_fails_to_find_perf009` (pytest node id, verified passing when recorded)
-- `tests/unit/perf/test_gate_wiring.py::TestPerf009ProductionInvocation::test_after_regression_finding_passes_perf009` (pytest node id, verified passing when recorded)
-- `tests/unit/perf/test_persist_run_cli.py::TestPersistRunDefaultPath::test_missing_perf_path_resolves_to_cwd` (pytest node id, verified passing when recorded)
-- `tests/unit/perf/test_persist_run_cli.py::TestPersistRunUnattributedExclusionAndWeightSum::test_only_attributed_section_persists_with_summed_weight` (pytest node id, verified passing when recorded)
-- `tests/unit/perf/test_persist_run_cli.py::TestHotSortKeyMetricSelection::test_by_p90_and_by_p50xcount_disagree_on_order` (pytest node id, verified passing when recorded)
-- `tests/unit/perf/test_persist_run_cli.py::TestRatchetFindingRendering::test_regression_prints_label_and_exact_percentage` (pytest node id, verified passing when recorded)
-
-### Captured claims
-- tests: 10 passed (from 10 evidence id(s))
-- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0713 -->
 ```yaml
@@ -8544,20 +8430,3 @@ this ticket. Add a "may-raise resolver" section documenting
 compute_may_raise/FunctionMayRaise/UNKNOWN/UBIQUITOUS_TIER's contract and
 its relationship to the T-0623 fallibility-checks family, then update the
 frob:doc anchors on _mayraise.py to point at it and drop the waivers.
-
-<!-- ticket:T-0917 -->
-```yaml
-id: T-0917
-title: MCP tool mirror for frob perf hot (T-0712 follow-up)
-state: queued
-kind: feature
-origin: human
-created: '2026-07-26'
-priority: medium
-parent: null
-scope:
-- src/frob/serve/**
-threat: null
-component: null
-```
-T-0712 shipped frob perf hot (query surface over the hot-graph sketch store) but its acceptance text also called for an MCP tool mirror for agents; src/frob/serve/_tools.py is outside T-0712's declared scope (src/frob/perf/**, src/frob/app/**, src/frob/gates/**, docs/modules/perf.md), so this was filed rather than expanding scope. Add a frob_perf_hot(root, top, by) MCP tool mirroring frob perf hot's list_sketches query, following the existing frob_graph_query/frob_stale_docs pattern in src/frob/serve/_tools.py.

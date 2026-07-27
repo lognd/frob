@@ -1344,7 +1344,7 @@ rather than fixed here (outside T-0625's declared scope).
 id: T-0626
 title: 'arch: register all ARCH1xx checks in the T-0343 unified registry, close the
   DENOMINATOR MANIFEST gap for T-0330'
-state: done
+state: queued
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -1365,127 +1365,16 @@ scope:
 - docs/design/registry/**
 - docs/design/architecture-check-catalog.md
 - docs/design/design-pattern-traps-corpus.md
-- tests/test_registry_exhaustiveness.py
-scope_changes:
-- op: add
-  glob: tests/test_registry_exhaustiveness.py
-  reason: T-0626 docs-only registry-disposition edits verified by this file's existing
-    registry_gate classification-path tests -- same convention as T-0330's own scope_changes
-    (test file mirrors the doc-only scope, T-0455 hygiene precedent)
-  actor: logan
-  at: '2026-07-26'
-evidence:
-- tests/test_registry_exhaustiveness.py::TestDisposition::test_dangling_handled_by_fails
-- tests/test_registry_exhaustiveness.py::TestDisposition::test_handled_by_real_rule_passes
-- tests/test_registry_exhaustiveness.py::TestEnforcesConformance::test_handled_by_with_no_frob_enforces_edge_warns
-- tests/test_registry_exhaustiveness.py::TestOutOfScopeCaughtBy::test_substantive_reasoned_none_is_silent
-- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 threat: null
 component: null
 ```
 Per T-0330's EXHAUSTIVENESS DRIFT-LOCK paragraph: every tier-1 statically-checkable entry in architecture-check-catalog.md and every trap hallmark in design-pattern-traps-corpus.md that this epic's ARCH1xx family (T-0616..T-0625) was meant to cover must get a disposition in docs/design/registry/ (addressed-by-check <ARCHxxx id> | reasoned-deferral | duplicate-of | out-of-scope), per the T-0343 REG001 gate contract. Acceptance: frob check's registry gate (REG001-family) shows zero unaccounted entries whose owning corpus row maps to T-0330's scope; any entry NOT built in T-0616..T-0625 gets an explicit reasoned-deferral or out-of-scope disposition, never silently dropped. This ticket is the epic's actual close condition -- T-0330 cannot close until this is green.
 
-## Done report
-
-Changed:
-- docs/design/registry/arch-checks.yaml -- 13 entries re-dispositioned off
-  the placeholder `deferred:T-0391`, closing the T-0330 half of the
-  DENOMINATOR MANIFEST gap for architecture-check-catalog.md:
-  - `ACC-1-1-1` (SOLID/S, SRP), `ACC-2-1-LARGE-CLASS` -> `handled_by:ARCH101`
-    (T-0616's LCOM4 low-cohesion-class check, a real, live, gated rule id
-    in `frob.gates._arch._ARCH_CATEGORY_TO_RULE` / `_KNOWN_GATE_RULES`).
-  - `ACC-1-1-2` (SOLID/O, OCP), `ACC-2-1-REPEATED-SWITCHES` ->
-    `out_of_scope:none -- ...` (T-0617's type-dispatch-smell /
-    non-exhaustive-enum-match, built but dispatched only through
-    `frob.arch.analyze_project`'s T-0101 unwaivable WARN-suggestion
-    channel, no ARCH1xx gate id assigned).
-  - `ACC-1-1-3` (SOLID/L, LSP) -> `out_of_scope:none -- ...` (T-0618's
-    5 lsp-* checks in `src/frob/arch/_solid.py`; verified the ARCH104-108
-    ids that module's own comments use are documentation-only -- NOT
-    present in `frob.gates._arch._ARCH_CATEGORY_TO_RULE` nor
-    `_KNOWN_GATE_RULES` -- confirmed live by a `handled_by:ARCH104` trial
-    edit tripping REG002 "dangling enforcement reference" before this
-    correction).
-  - `ACC-1-1-4` (SOLID/I, ISP) -> `out_of_scope:none -- ...` (T-0619's
-    fat-interface/narrow-client-usage; same ARCH109/110
-    documentation-only-id finding as LSP above).
-  - `ACC-1-1-5` (SOLID/D, DIP), `ACC-1-2-ADP-ACYCLIC-DEPENDENCIES` ->
-    `out_of_scope:none -- ...` (T-0620's dip-layering-violation/
-    no-di-construction; T-0625's module-dependency-cycle, reusing
-    T-0620's graph builder -- both WARN-channel-only, no gate id).
-  - `ACC-2-1-FEATURE-ENVY`, `ACC-2-1-DATA-CLUMPS` ->
-    `out_of_scope:none -- ...` (T-0624, WARN-channel-only).
-  - `ACC-2-1-PRIMITIVE-OBSESSION`, `ACC-2-2-F3-FLAG-ARGUMENTS` ->
-    `out_of_scope:none -- ...` (T-0621, WARN-channel-only).
-  - `ACC-2-2-F4-DEAD-FUNCTION` -> `out_of_scope:none -- ...` (T-0624,
-    WARN-channel-only).
-- tickets.md -- T-0626 lease/evidence bookkeeping (`frob ticket start` /
-  `sweep` / `evidence`), this Done report.
-
-Investigation, no code change needed: design-pattern-traps-corpus.md's
-half of the DENOMINATOR MANIFEST is ALREADY closed, pre-existing (T-0332,
-already `done`) -- `docs/design/registry/patterns.yaml`'s `PAT-TRAP-01`
-through `PAT-TRAP-21` entries (`grep -n '"PAT-TRAP-' patterns.yaml`) cover
-every one of the corpus's 21 "Phase-0/Phase-2 coverage ledger" sections,
-each dispositioned `out_of_scope:advisory-design-pattern-recommendation`
-(T-0332's own recommender-scope framing) with `cross_refs` back into
-`arch-checks.yaml` where a matching ACC row exists (`ACC-2-1-SPECULATIVE-
-GENERALITY`, `ACC-1-5-COMPOSITION-OVER-INHERITANCE`, etc.). I verified
-this by enumerating the 21-item ledger against `patterns.yaml`'s ids
-before writing a duplicate file; left `patterns.yaml` untouched since
-T-0332 is closed and its dispositions are internally consistent for its
-own (advisory-recommender, not static-check) scope -- re-litigating them
-is outside this ticket's declared scope and outside T-0330's catalog text.
-
-Disclosed scope note: `ACC-1-1-1`/`ACC-2-1-LARGE-CLASS` (`handled_by:
-ARCH101`) and `ACC-2-1-LARGE-CLASS` now trip `REG008` (WARN, not ERROR --
-`handled_by` claim with no matching `frob:enforces ACC-*` directive
-anywhere in code yet) -- the identical gap T-0728 (landed today, same
-session) left open and disclosed for `check-coverage.yaml`'s
-`CHK-GATE-ARCH101/102/103` rows, with the same reasoning: adding the
-`frob:enforces` directive means touching `src/frob/gates/_arch.py`,
-outside this ticket's `docs/design/registry/**`-only scope. Filed nothing
-new for it -- it is the same disclosed land obligation T-0728 already
-named, not a fresh gap this ticket introduced.
-
-Evidence:
-- `uv run frob check --only registry --ticket T-0626` -- `gate:REG 0
-  errors` (before the LSP/ISP disposition correction above this showed
-  `gate:REG 2 errors` -- both `REG002` dangling `handled_by:ARCH104`/
-  `handled_by:ARCH109`, which is exactly how I discovered ARCH104-110 are
-  documentation-only ids, not live gate rules).
-- `uv run frob check --only lint --ticket T-0626` -- 0 errors, 0 warnings.
-- `uv run frob check --only gates-fast --ticket T-0626` -- 0 errors (all
-  12 gates `pass`, including `gate:REG`).
-- `uv run frob check --only static --ticket T-0626` -- 0 errors (all
-  `frob-*` tools `pass`).
-- `uv run frob check --only gates-native --ticket T-0626` -- 0 errors.
-- `uv run frob check --only gates-security --ticket T-0626` -- 0 errors.
-- `uv run pytest tests/test_registry_exhaustiveness.py::TestDisposition::
-  test_dangling_handled_by_fails
-  tests/test_registry_exhaustiveness.py::TestDisposition::
-  test_handled_by_real_rule_passes
-  tests/test_registry_exhaustiveness.py::TestEnforcesConformance::
-  test_handled_by_with_no_frob_enforces_edge_warns
-  tests/test_registry_exhaustiveness.py::TestOutOfScopeCaughtBy::
-  test_substantive_reasoned_none_is_silent -q` -- 4 passed (the existing
-  `registry_gate` unit tests that generically exercise the exact
-  `handled_by`/`out_of_scope` classification paths this ticket's new
-  dispositions are dispatched through; a docs-only ticket with no new
-  code surface of its own, per the playbook's precedent for this shape).
-- `git diff main --diff-filter=D --stat` -- empty (no unintended
-  deletions).
-
-Filed: none.
-Gates: `frob check --ticket T-0626` clean across all 5 stage groups
-(lint/static/gates-fast/gates-native/gates-security), chunked per the
-playbook's `--only` loop.
-
 <!-- ticket:T-0628 -->
 ```yaml
 id: T-0628
 title: frob graph affects CLI subcommand + digest-drift gate (T-0325 follow-on)
-state: done
+state: queued
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -1495,204 +1384,16 @@ scope:
 - src/frob/app/graph_runner.py
 - src/frob/gates/**
 - docs/modules/graph.md
-- src/frob/app/config.py
-- src/frob/app/app.py
-- src/frob/__main__.py
-- README.md
-- tests/test_graph_affects_runner.py
-- docs/modules/gates.md
-- src/frob/check/__init__.py
-- tests/test_gates_affect_drift.py
-- docs/modules/app.md
-scope_changes:
-- op: add
-  glob: src/frob/app/config.py
-  reason: 'A `frob graph affects` CLI subcommand needs the standard App/AppConfig
-
-    argparse wiring trio (Subcommand enum + AppConfig fields in config.py,
-
-    parser registration in __main__.py, runner-module registration in app.py)
-
-    plus the README command-table row (DOC005 drift-lock), same pattern as
-
-    T-0638''s `frob deprecated` land. The original ticket scope only listed the
-
-    runner file itself; widening to cover the wiring call sites.
-
-    '
-  actor: logan
-  at: '2026-07-26'
-- op: add
-  glob: src/frob/app/app.py
-  reason: 'A `frob graph affects` CLI subcommand needs the standard App/AppConfig
-
-    argparse wiring trio (Subcommand enum + AppConfig fields in config.py,
-
-    parser registration in __main__.py, runner-module registration in app.py)
-
-    plus the README command-table row (DOC005 drift-lock), same pattern as
-
-    T-0638''s `frob deprecated` land. The original ticket scope only listed the
-
-    runner file itself; widening to cover the wiring call sites.
-
-    '
-  actor: logan
-  at: '2026-07-26'
-- op: add
-  glob: src/frob/__main__.py
-  reason: 'A `frob graph affects` CLI subcommand needs the standard App/AppConfig
-
-    argparse wiring trio (Subcommand enum + AppConfig fields in config.py,
-
-    parser registration in __main__.py, runner-module registration in app.py)
-
-    plus the README command-table row (DOC005 drift-lock), same pattern as
-
-    T-0638''s `frob deprecated` land. The original ticket scope only listed the
-
-    runner file itself; widening to cover the wiring call sites.
-
-    '
-  actor: logan
-  at: '2026-07-26'
-- op: add
-  glob: README.md
-  reason: 'A `frob graph affects` CLI subcommand needs the standard App/AppConfig
-
-    argparse wiring trio (Subcommand enum + AppConfig fields in config.py,
-
-    parser registration in __main__.py, runner-module registration in app.py)
-
-    plus the README command-table row (DOC005 drift-lock), same pattern as
-
-    T-0638''s `frob deprecated` land. The original ticket scope only listed the
-
-    runner file itself; widening to cover the wiring call sites.
-
-    '
-  actor: logan
-  at: '2026-07-26'
-- op: add
-  glob: tests/test_graph_affects_runner.py
-  reason: 'A `frob graph affects` CLI subcommand needs the standard App/AppConfig
-
-    argparse wiring trio (Subcommand enum + AppConfig fields in config.py,
-
-    parser registration in __main__.py, runner-module registration in app.py)
-
-    plus the README command-table row (DOC005 drift-lock), same pattern as
-
-    T-0638''s `frob deprecated` land. The original ticket scope only listed the
-
-    runner file itself; widening to cover the wiring call sites.
-
-    '
-  actor: logan
-  at: '2026-07-26'
-- op: add
-  glob: docs/modules/gates.md
-  reason: 'A `frob graph affects` CLI subcommand needs the standard App/AppConfig
-
-    argparse wiring trio (Subcommand enum + AppConfig fields in config.py,
-
-    parser registration in __main__.py, runner-module registration in app.py)
-
-    plus the README command-table row (DOC005 drift-lock), same pattern as
-
-    T-0638''s `frob deprecated` land. The original ticket scope only listed the
-
-    runner file itself; widening to cover the wiring call sites.
-
-    '
-  actor: logan
-  at: '2026-07-26'
-- op: add
-  glob: src/frob/check/__init__.py
-  reason: 'New gate names must be added to a frob check --only stage group
-
-    (_STAGE_GROUPS in src/frob/check/__init__.py) or
-
-    TestCheckStageGroups.test_available_stages_cover_every_gate_and_tool fails --
-
-    registering "affect_drift" in frob.gates._ALL_GATES without also listing it
-
-    in gates-fast leaves it uncoverable by any --only group, which that test
-
-    catches mechanically. Widening scope to the one dict literal that needs the
-
-    new entry.
-
-    '
-  actor: logan
-  at: '2026-07-26'
-- op: add
-  glob: tests/test_gates_affect_drift.py
-  reason: New AFFECT001/AFFECT002 gate needs direct unit test coverage for close's
-    TEST00x gate, same pattern as tests/test_graph_affects.py
-  actor: logan
-  at: '2026-07-26'
-- op: add
-  glob: docs/modules/app.md
-  reason: 'AFFECT001 (this ticket''s own new gate) correctly flagged that config.py/graph_runner.py
-    changes touch docs/modules/app.md#config and #runners obligations; updating that
-    doc to describe the new affects subcommand/fields is the real fix, not a waive'
-  actor: logan
-  at: '2026-07-26'
-evidence:
-- tests/test_graph_affects_runner.py::TestGraphAffectsRunner::test_affects_requires_ref
-- tests/test_graph_affects_runner.py::TestGraphAffectsRunner::test_affects_unresolvable_ref_exits_1
-- tests/test_graph_affects_runner.py::TestGraphAffectsRunner::test_human_mode_reports_dependents_docs_tests
-- tests/test_graph_affects_runner.py::TestGraphAffectsRunner::test_json_mode_payload
-- tests/test_graph_affects_runner.py::TestGraphAffectsRunner::test_truncated_closure_flagged
-- tests/test_gates_affect_drift.py::TestAffectDriftGate::test_no_closure_is_silent
-- tests/test_gates_affect_drift.py::TestAffectDriftGate::test_stale_dependent_doc_flagged
-- tests/test_gates_affect_drift.py::TestAffectDriftGate::test_stale_dependent_code_flagged
-- tests/test_gates_affect_drift.py::TestAffectDriftGate::test_clean_when_closure_also_touched
 acceptance:
 - text: GIVEN a symbol with dependents WHEN frob graph affects SYMREF runs THEN the
     affected code/docs/tests print with truncation flagged; GIVEN a diff changing
     a symbol whose affects-closure docs were untouched WHEN the drift gate runs THEN
     it reports the stale dependents
-  evidence:
-  - tests/test_graph_affects_runner.py::TestGraphAffectsRunner::test_truncated_closure_flagged
-  - tests/test_gates_affect_drift.py::TestAffectDriftGate::test_stale_dependent_doc_flagged
-  - tests/test_gates_affect_drift.py::TestAffectDriftGate::test_stale_dependent_code_flagged
+  evidence: []
 threat: null
 component: null
 ```
 T-0325 landed the warm affects() library query and frob_affects MCP tool but cut two surfaces as out of scope, noting them only in docs/modules/graph.md prose: (a) a frob graph affects REF CLI subcommand in src/frob/app/graph_runner.py so the north-star query is usable outside MCP; (b) a digest-drift gate that consumes the affects closure to FAIL when a changed symbol's dependent docs/code were not updated in the same change -- the enforcement half of the north-star (CLAUDE.md: 'a graph of WHAT DOCUMENTATION and WHAT OTHER CODE needs to be updated whenever something is touched'). Cut work must live in tickets, not prose -- this is that ticket.
-
-## Done report
-
-Changed:
-- src/frob/app/graph_runner.py: new `_run_affects` (`frob graph affects <ref>`), `_affects_json_payload`/`_render_affects_lines` helpers, dispatch case in `run()`.
-- src/frob/app/config.py: `graph_max_depth`/`graph_max_nodes` (`int | None`) AppConfig fields, wired into the existing int-field collection loop.
-- src/frob/__main__.py: `graph affects` subparser (`--json`/`--max-depth`/`--max-nodes`) registered under `_add_graph_parser`.
-- src/frob/gates/__init__.py: new `affect_drift_gate` (AFFECT001 stale doc / AFFECT002 stale dependent code), `_affect_ref_file`/`_affect001_violation`/`_affect002_violation` helpers; registered gate name `affect_drift` in `_ALL_GATES`/`_CANONICAL_GATE_ORDER`/`_build_jobs`; rule ids added to `_KNOWN_GATE_RULES`; `affect_drift_gate` exported via `__all__`.
-- src/frob/check/__init__.py: `affect_drift` added to the `gates-fast` `_STAGE_GROUPS` entry (required by `TestCheckStageGroups.test_available_stages_cover_every_gate_and_tool`).
-- README.md: `frob graph` command-table row description updated to mention `affects`.
-- docs/modules/graph.md: `#affects` section rewritten to document the new CLI subcommand and the `affect_drift_gate` enforcement half, replacing the "deliberately NOT built"/"future work" prose T-0325 left.
-- docs/modules/app.md: `graph_runner.run` bullet updated (affects dispatch + new AppConfig fields); a short note added to the Config section for the two new fields.
-- docs/modules/gates.md: two new rule-catalog rows (AFFECT001/AFFECT002) plus a full "AFFECT001 AFFECT002 (T-0628)" detail section; `affect_drift_gate` added to the Public API `frob:describes` list.
-- tests/test_graph_affects_runner.py (new): `TestGraphAffectsRunner` -- requires-ref, unresolvable-ref, human mode, JSON mode, truncated-closure cases for `_run_affects`.
-- tests/test_gates_affect_drift.py (new): `TestAffectDriftGate` -- silent-on-empty-closure, stale-doc, stale-dependent-code, and clean-when-touched cases for `affect_drift_gate`.
-
-Evidence:
-- tests/test_graph_affects_runner.py::TestGraphAffectsRunner::test_affects_requires_ref
-- tests/test_graph_affects_runner.py::TestGraphAffectsRunner::test_affects_unresolvable_ref_exits_1
-- tests/test_graph_affects_runner.py::TestGraphAffectsRunner::test_human_mode_reports_dependents_docs_tests
-- tests/test_graph_affects_runner.py::TestGraphAffectsRunner::test_json_mode_payload
-- tests/test_graph_affects_runner.py::TestGraphAffectsRunner::test_truncated_closure_flagged
-- tests/test_gates_affect_drift.py::TestAffectDriftGate::test_no_closure_is_silent
-- tests/test_gates_affect_drift.py::TestAffectDriftGate::test_stale_dependent_doc_flagged
-- tests/test_gates_affect_drift.py::TestAffectDriftGate::test_stale_dependent_code_flagged
-- tests/test_gates_affect_drift.py::TestAffectDriftGate::test_clean_when_closure_also_touched
-- tests/system/test_cli_check.py -k StageGroups (4 passed) -- confirms `affect_drift`'s new stage-group membership keeps `_ALL_GATES`/`_STAGE_GROUPS` in sync.
-
-Filed: none (REG010 fired WARN-only for AFFECT001/AFFECT002 missing a check-coverage.yaml entry; docs/design/registry/** is outside this ticket's declared scope and REG010 is advisory, not blocking -- left as-is rather than widening scope again for a warn-tier registry hygiene row).
-
-Gates: `frob check . --only gates-fast --ticket T-0628` clean (0 errors, after a `frob ticket sweep T-0628` pre-work-sweep fix and two `AFFECT001` self-catches on this diff's own `docs/modules/app.md` obligations, resolved by documenting the new fields/dispatch there rather than waiving). `frob check . --only gates-native --ticket T-0628` clean. `frob check . --only gates-security --ticket T-0628` clean. `frob check . --only lint --ticket T-0628` clean (0 errors, 0 warnings after ruff-format/E501 fixes). `frob check . --only static --ticket T-0628` clean (pre-existing exports/arch findings only, unrelated to this change). `frob test --base main` (touched-set): python suite exit=0, PASS.
 
 <!-- ticket:T-0629 -->
 ```yaml
@@ -1727,7 +1428,7 @@ T-0264's windows generator hardens an existing SCM service (SID type, privileges
 ```yaml
 id: T-0631
 title: 'frob ticket land: TICK005-backed regression sweep + --push option'
-state: done
+state: queued
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -1737,171 +1438,15 @@ scope:
 - src/frob/tickets/**
 - src/frob/app/ticket_runner.py
 - docs/modules/tickets.md
-- src/frob/__main__.py
-- src/frob/app/config.py
-- tests/test_ticket_land.py
-scope_changes:
-- op: add
-  glob: src/frob/__main__.py
-  reason: 'The --push option''s acceptance criterion requires a real, working
-
-    `frob ticket land --push` CLI flag. The argparse registration for
-
-    `frob ticket land` lives in src/frob/__main__.py, and the flag needs a
-
-    backing AppConfig field in src/frob/app/config.py (same pattern as the
-
-    existing --dry-run/--skip-mutation-evidence flags on this same
-
-    subcommand). T-0631''s declared scope (src/frob/tickets/**,
-
-    src/frob/app/ticket_runner.py, docs/modules/tickets.md) omits both files,
-
-    which makes the --push half of this ticket''s plan undoable as scoped.
-
-    Adding exactly these two files, narrowly, to implement the one new flag
-
-    this ticket''s acceptance criteria requires.
-
-    '
-  actor: logan
-  at: '2026-07-26'
-- op: add
-  glob: src/frob/app/config.py
-  reason: 'The --push option''s acceptance criterion requires a real, working
-
-    `frob ticket land --push` CLI flag. The argparse registration for
-
-    `frob ticket land` lives in src/frob/__main__.py, and the flag needs a
-
-    backing AppConfig field in src/frob/app/config.py (same pattern as the
-
-    existing --dry-run/--skip-mutation-evidence flags on this same
-
-    subcommand). T-0631''s declared scope (src/frob/tickets/**,
-
-    src/frob/app/ticket_runner.py, docs/modules/tickets.md) omits both files,
-
-    which makes the --push half of this ticket''s plan undoable as scoped.
-
-    Adding exactly these two files, narrowly, to implement the one new flag
-
-    this ticket''s acceptance criteria requires.
-
-    '
-  actor: logan
-  at: '2026-07-26'
-- op: add
-  glob: tests/test_ticket_land.py
-  reason: 'SCOPE001 flags tests/test_ticket_land.py as outside declared scope; this
-
-    ticket''s own new regression-sweep/--push behavior needs test coverage in
-
-    the existing land test module (same file every prior land-feature ticket
-
-    in this lineage, e.g. T-0755/T-0844/T-0907, has extended). Adding it.
-
-    '
-  actor: logan
-  at: '2026-07-26'
-evidence:
-- tests/test_ticket_land.py::TestTick005LandRegressions::test_no_regression_when_terminal_ticket_stays_terminal
-- tests/test_ticket_land.py::TestTick005LandRegressions::test_detects_terminal_ticket_regressed_to_non_terminal
-- tests/test_ticket_land.py::TestTick005LandRegressions::test_archived_ids_are_excluded
-- tests/test_ticket_land.py::TestTick005LandRegressions::test_malformed_text_degrades_to_no_regressions
-- tests/test_ticket_land.py::TestLandRefusesOnTerminalStateRegression::test_land_refuses_and_unwinds_when_sweep_finds_a_regression
-- tests/test_ticket_land.py::TestLandPushCliWiring::test_flag_parses_to_true
-- tests/test_ticket_land.py::TestLandPushCliWiring::test_flag_omitted_defaults_false
-- tests/test_ticket_land.py::TestPushAfterLand::test_dry_run_never_pushes
-- tests/test_ticket_land.py::TestPushAfterLand::test_real_land_pushes_the_current_branch
-- tests/test_ticket_land.py::TestPushAfterLand::test_push_failure_exits_nonzero
-- tests/test_ticket_land.py::TestPushAfterLand::test_exec_disabled_exits_nonzero
 acceptance:
 - text: GIVEN a land with --push WHEN the land completes THEN the push happens only
     after every land verification passed; GIVEN the TICK005 rule defined WHEN land
     runs THEN the regression sweep executes and blocks on failure
-  evidence:
-  - tests/test_ticket_land.py::TestLandRefusesOnTerminalStateRegression::test_land_refuses_and_unwinds_when_sweep_finds_a_regression
-  - tests/test_ticket_land.py::TestPushAfterLand::test_real_land_pushes_the_current_branch
+  evidence: []
 threat: null
 component: null
 ```
 The two T-0577 dispatch items that had no existing design to build against, deferred honestly rather than half-built: (1) a TICK005-backed regression sweep at land time (define the TICK005 rule first, then have land run it); (2) a --push option for frob ticket land so the coordinator can land+push in one verified step. NOTE: T-0577's Done report references this as T-draft-f6f10c67; that draft was filed pre-fix and will not survive T-0577's own land, so this is the real ticket.
-
-## Done report
-
-Implements both T-0577 deferred items.
-
-(1) TICK005-backed regression sweep at land time: `_tick005_land_regressions`
-(src/frob/tickets/_land.py) mirrors gates.py's TICK005 (T-0537) terminal-
-state-regression semantics -- any ticket DONE/DROPPED in root's pre-land
-ledger that is neither terminal nor archived in the post-splice ledger --
-but runs it directly around `_squash_and_splice_ledger`'s own splice
-instead of depending on a real two-parent merge commit, since a
-squash-apply land only ever produces a single-parent commit and the
-gate's own HEAD^2 precondition can never fire for a land at all. On a
-detected regression, `land()` unwinds the staged squash via
-`_verified_reset_root` and returns the new `LandError.TerminalStateRegression`
-variant instead of committing. Implemented in `_land.py` only (not by
-importing `frob.gates`, which depends on `frob.tickets`, never the
-reverse, per docs/rework.md cycle-avoidance).
-
-(2) `--push` option: `frob ticket land <id> --worktree <path> --push`
-(new AppConfig field `ticket_land_push`, new argparse flag on the `land`
-subparser in `src/frob/__main__.py`) runs `git push origin <branch>` for
-root's current branch via `ticket_runner._push_after_land`, called ONLY
-after `land()` returns `Ok` and ONLY when the report is not a dry run --
-never on `--dry-run`, never after a failed land. Routed through
-`guarded_subprocess_run` (T-0778's exec guard) so `FROB_DISABLE_EXEC=1`
-refuses it too; a refused spawn or non-zero `git push` exit logs the
-manual remedy and exits non-zero without attempting to unwind the
-already-landed commit (there is nothing left to unwind by that point).
-
-Scope note: the ticket's originally declared scope (src/frob/tickets/**,
-src/frob/app/ticket_runner.py, docs/modules/tickets.md) did not include
-src/frob/__main__.py or src/frob/app/config.py, which the --push CLI flag
-structurally requires (argparse registration + AppConfig field, same
-pattern as the existing --dry-run/--skip-mutation-evidence flags on this
-subcommand) -- extended via `frob ticket scope --add` with a recorded
-reason rather than touched silently. tests/test_ticket_land.py was
-likewise added to scope (SCOPE001) to host the new tests in the existing
-land test module, matching prior land-feature tickets in this lineage.
-
-docs/modules/tickets.md's "frob ticket land" section gained step 9.75
-(the regression sweep) and step 11 (--push), inserted at the exact points
-in the existing numbered land procedure where they actually run.
-
-Changed:
-  src/frob/tickets/_land.py::_tick005_land_regressions
-  src/frob/tickets/_land.py::_squash_and_splice_ledger (wires the sweep in)
-  src/frob/tickets/_models.py::LandError.TerminalStateRegression
-  src/frob/app/config.py::AppConfig.ticket_land_push
-  src/frob/__main__.py::_add_ticket_land_parser (--push flag)
-  src/frob/app/ticket_runner.py::_push_after_land
-  src/frob/app/ticket_runner.py::_land (invokes _push_after_land)
-  docs/modules/tickets.md (frob ticket land section, steps 9.75/11)
-  tests/test_ticket_land.py (TestTick005LandRegressions,
-    TestLandRefusesOnTerminalStateRegression, TestLandPushCliWiring,
-    TestPushAfterLand)
-
-Evidence: 11 new pytest node ids under tests/test_ticket_land.py, all
-observed passing via `uv run pytest tests/test_ticket_land.py -q`
-(137 passed total, up from 127 pre-change; no pre-existing test broken).
-Acceptance criterion [0] bound to
-TestLandRefusesOnTerminalStateRegression.test_land_refuses_and_unwinds_when_sweep_finds_a_regression
-and TestPushAfterLand.test_real_land_pushes_the_current_branch.
-
-Gates: `uv run frob check --ticket T-0631` chunked per docs/guides/
-agent-playbook.md section 3b (prework/scope/coverage individually, then
-lint/static/gates-fast/gates-native/gates-security stage groups) -- all
-clean (0 unwaived errors) after `frob ticket sweep T-0631` refreshed the
-pre-work sweep post scope-expansion. `uv run frob test --base main`
-(touched-set) exit=0, PASS. `ruff check`/`ruff format --check`/`ty check`
-clean on every touched file (both PATH ruff and `uv run ruff`).
-`git diff main --diff-filter=D --stat` empty of anything outside this
-ticket's scope.
-
-Filed: none.
 
 <!-- ticket:T-0634 -->
 ```yaml
@@ -2292,7 +1837,7 @@ Cuts: none against the stated acceptance criteria.
 ```yaml
 id: T-0648
 title: 'strata: golden-signal SLO + error-budget obligation per service'
-state: done
+state: queued
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -2304,55 +1849,14 @@ scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
-evidence:
-- tests/unit/strata/test_slo.py::TestMissingSlo::test_service_node_without_slo_fires
-- tests/unit/strata/test_slo.py::TestMissingSlo::test_only_slo_or_only_error_budget_still_fires
-- tests/unit/strata/test_slo.py::TestMissingSlo::test_discharged_and_non_service_nodes_clean
-- tests/unit/strata/test_slo.py::TestMissingSlo::test_waiver_discharges_finding
-- tests/unit/strata/test_slo.py::TestUnprovenSlo::test_declared_with_no_code_evidence_fires
-- tests/unit/strata/test_slo.py::TestUnprovenSlo::test_declared_with_real_code_evidence_discharges
-- tests/unit/strata/test_slo.py::TestUnprovenSlo::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
 acceptance:
 - text: Given a service node with no golden-signal SLOs + error budget declared, when
     checked, then the obligation fires
-  evidence:
-  - tests/unit/strata/test_slo.py::TestMissingSlo::test_service_node_without_slo_fires
-  - tests/unit/strata/test_slo.py::TestMissingSlo::test_only_slo_or_only_error_budget_still_fires
-  - tests/unit/strata/test_slo.py::TestMissingSlo::test_discharged_and_non_service_nodes_clean
-  - tests/unit/strata/test_slo.py::TestMissingSlo::test_waiver_discharges_finding
-  - tests/unit/strata/test_slo.py::TestUnprovenSlo::test_declared_with_no_code_evidence_fires
-  - tests/unit/strata/test_slo.py::TestUnprovenSlo::test_declared_with_real_code_evidence_discharges
-  - tests/unit/strata/test_slo.py::TestUnprovenSlo::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+  evidence: []
 threat: null
 component: null
 ```
 Every service node must declare golden-signal SLOs (latency/traffic/errors/saturation) and an error budget. Depends on the metrics-instrumentation obligation existing first, since an SLO without the underlying signal is unverifiable.
-
-## Done report
-
-The REL28x golden-signal-SLO-obligation family (`src/frob/strata/_slo.py`)
-and its doc section (`docs/strata/reliability.md#rel28x-golden-signal-slo--error-budget-obligation-t-0648`)
-were already implemented and committed in the same worktree pass as
-T-0649 (see T-0649's Done report note); that ticket's blocker
-(T-0647 OBSERVABILITY) has since landed, so this pass only re-runs the
-sweep, records evidence, and closes T-0648's own ledger entry -- no
-source changes were made in this pass.
-
-Changed: none this pass (code/docs/tests were already present on `main`
-via the T-0649-adjacent commit).
-Evidence: 7 pytest node ids in `tests/unit/strata/test_slo.py`, bound to
-acceptance[0] via `frob ticket evidence T-0648 ... --accepts 0`.
-Filed: none.
-Gates: `uv run frob check --only lint --ticket T-0648` -> PASS 0/0;
-`uv run frob check --only static --ticket T-0648` -> PASS (frob-cycle/
-frob-dup/frob-arch/frob-exports all pass, same pre-existing export/dup
-warnings other REL2xx modules also carry); `uv run frob ticket sweep
-T-0648` re-run after `make core` (fresh worktree had no natives built,
-T-0144 environment artifact, not a regression) then `uv run frob check
---only gates-fast --ticket T-0648` -> PASS 0 errors; `uv run frob check
---only gates-native --ticket T-0648` -> PASS 0 errors; `uv run frob
-check --only gates-security --ticket T-0648` -> PASS 0 errors.
-Measured: `uv run pytest -q tests/unit/strata/test_slo.py` -> 7 passed.
 
 <!-- ticket:T-0649 -->
 ```yaml
@@ -2480,7 +1984,7 @@ steps are left for after the coordinator lands T-0647.
 ```yaml
 id: T-0650
 title: 'strata: transactional-boundary obligation on multi-write ops'
-state: done
+state: queued
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -2492,93 +1996,14 @@ scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
-evidence:
-- tests/unit/strata/test_txn.py::TestMissingTxnBoundary::test_multi_store_write_op_without_boundary_fires
-- tests/unit/strata/test_txn.py::TestMissingTxnBoundary::test_single_store_write_op_clean
-- tests/unit/strata/test_txn.py::TestMissingTxnBoundary::test_transaction_attr_discharges
-- tests/unit/strata/test_txn.py::TestMissingTxnBoundary::test_saga_attr_discharges
-- tests/unit/strata/test_txn.py::TestMissingTxnBoundary::test_empty_store_ids_emits_nothing
-- tests/unit/strata/test_txn.py::TestMissingTxnBoundary::test_waiver_discharges_finding
-- tests/unit/strata/test_txn.py::TestUnprovenTxnBoundary::test_declared_with_no_code_evidence_fires
-- tests/unit/strata/test_txn.py::TestUnprovenTxnBoundary::test_declared_with_real_code_evidence_discharges
-- tests/unit/strata/test_txn.py::TestUnprovenTxnBoundary::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
 acceptance:
 - text: Given a multi-write op with no transactional-boundary declared, when checked,
     then the obligation fires
-  evidence:
-  - tests/unit/strata/test_txn.py::TestMissingTxnBoundary::test_multi_store_write_op_without_boundary_fires
+  evidence: []
 threat: null
 component: null
 ```
 Any op writing to >1 store must declare a transactional boundary (or saga, see distributed-txn ticket). Reuses the store-writer graph built for the single-source-of-truth obligation.
-
-## Done report
-
-New REL30x TRANSACTIONAL-BOUNDARY-obligation family (`src/frob/strata/
-_txn.py`, mirroring `_ssot.py`'s REL29x store-node-scoped structure but
-inverted -- op-node-scoped, grouping by the op writing rather than the
-store written). REUSES `_ssot.py`'s store-writer-graph scan verbatim
-(`Flow` edges into `store_ids`), flipping the grouping key from
-`flow.dst` (REL29x) to `flow.src` (REL30x): REL300 fires when a single op
-writes to >=2 distinct stores with no `transaction`/`saga` attr; REL301
-is the declared-but-unproven leg (proof-against-code via
-`_obligation_proof.py`'s shared owner-index/bound-code/token-scan
-plumbing, no re-derivation).
-
-`store_ids` kept as a caller-supplied parameter, not a `KernelModel`
-fact -- the same "not reconstructible after elaboration" ceiling
-SYS203/REL29x already disclose, reused verbatim rather than re-derived.
-
-Both rules NODE-scoped (op), single-instance-per-op (not registered in
-`_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES`, same carve-out
-REL230/REL231/REL280/REL281/REL290/REL291 use).
-
-Wired into `src/frob/strata/__init__.py`'s public surface
-(`check_txn_boundary_obligations`, `TxnBoundaryReport`,
-`TxnBoundaryViolation`, `REL_MISSING_TXN_BOUNDARY`,
-`REL_UNPROVEN_TXN_BOUNDARY`, `TXN_RULES`). NOT wired into
-`frob.app.sys_runner` for the same reason recorded in T-0646/T-0647/
-T-0649's Done reports (every sibling landed REL2xx/REL29x family is in
-the identical state today; `src/frob/app/**` is outside this ticket's
-scope).
-
-Added `docs/strata/reliability.md#rel30x-transactional-boundary-obligation-t-0650`
-(surface vocabulary, grammar-data ceiling disclosure, waiver channel,
-explicit out-of-scope note pointing at the separate cross-service
-distributed-transaction/saga ticket), following the REL29x section
-template, plus new see-also entries for `_ssot.py`/`test_ssot.py` that
-were missing from the see-also list.
-
-Tests: `tests/unit/strata/test_txn.py`, 9 cases: REL300 (multi-store-write
-fires, single-store clean, transaction-attr discharges, saga-attr
-discharges, empty store_ids emits nothing, waiver discharges), REL301
-(unproven fires, proven discharges, no-bound-code uncheckable).
-
-Pre-implementation check: verified `_ssot.py`/REL29x (T-0649) exists but
-no REL30x/transactional-boundary module existed anywhere in the repo
-before this ticket (`grep -rn "REL3[0-9][0-9]"` returned nothing) -- this
-was NOT pre-implemented, built fresh.
-
-Measured:
-- `uv run pytest -q tests/unit/strata/test_txn.py tests/unit/strata/test_ssot.py`
-  -> 18 passed.
-- `uv run ruff check` / `uv run ruff format --check` on the touched files
-  -> clean (one import-sort + one line-length fix applied before this).
-- `uv run frob check --ticket T-0650 --only gates-fast` -> PASS 0 errors
-  (after `frob ticket sweep T-0650` refreshed PRE001 against the final
-  file set).
-- `uv run frob check --ticket T-0650 --only gates-native` -> PASS 0
-  errors.
-- `uv run frob check --ticket T-0650 --only gates-security` -> PASS 0
-  errors.
-- `uv run frob check --ticket T-0650 --only lint` -> PASS 0 errors.
-- `uv run frob check --ticket T-0650 --only static` -> PASS.
-- `uv run frob test --base main` -> PASS (touched-set selection, exit=0).
-
-Cuts: none against the stated acceptance criterion. CLI/sys_runner wiring
-and the cross-service distributed-transaction/saga obligation are
-intentionally out of scope (separate ticket already filed in tickets.md).
-Filed: none (no new tickets needed).
 
 <!-- ticket:T-0651 -->
 ```yaml
@@ -3384,7 +2809,7 @@ User mandate 2026-07-22: complement the errors-as-values preference with an EXHA
 id: T-0686
 title: 'python may-raise resolver: raise sites + callee propagation + builtin-raiser
   table, Unknown fail-closed'
-state: done
+state: queued
 kind: feature
 origin: human
 created: '2026-07-22'
@@ -3395,33 +2820,15 @@ parent: T-0685
 scope:
 - src/frob/arch/**
 - tests/unit/test_arch.py
-evidence:
-- tests/unit/test_arch.py::TestMayRaiseResolver::test_fixture_chain_own_raise_and_builtin_raiser_and_catch_subtraction
-- tests/unit/test_arch.py::TestMayRaiseResolver::test_unresolvable_call_yields_unknown
-- tests/unit/test_arch.py::TestMayRaiseResolver::test_bare_reraise_resolves_to_caught_type
-- tests/unit/test_arch.py::TestMayRaiseResolver::test_bare_except_reraise_is_unknown
-- tests/unit/test_arch.py::TestMayRaiseResolver::test_recursive_cycle_converges
-- tests/unit/test_arch.py::TestMayRaiseResolver::test_ambiguous_method_name_across_classes_is_unresolved
 acceptance:
 - text: GIVEN a fixture chain f->g->h where h raises ValueError and g catches it and
     f calls dict subscript WHEN the resolver runs THEN f's may-raise is exactly {KeyError}
     plus the ubiquitous tier and a fixture with an unresolvable call yields Unknown
-  evidence:
-  - tests/unit/test_arch.py::TestMayRaiseResolver::test_fixture_chain_own_raise_and_builtin_raiser_and_catch_subtraction
+  evidence: []
 threat: null
 component: null
 ```
 Child 1 of T-0685. Over the normalized model (NormalizedRaise/NormalizedCall) plus T-0659's sound Python name-binding: per-function may-raise = own raises (resolve the raised type where statically evident; bare raise re-raises the active set) + union of resolved callees' sets (fixpoint over the call graph, cycles converge) + builtin-raiser table for subscript/attribute/arithmetic/casts/io. Unresolved callee -> Unknown, fail-closed. except clauses SUBTRACT what they catch (mind exception hierarchies: except Exception catches ValueError). Async-ubiquitous tier (MemoryError/KeyboardInterrupt/SystemExit) tracked separately. Deliverable is the queryable analysis + tests on hand-built fixtures with known surfaces; gates/advisories are T-0688's job.
-
-## Done report
-
-Changed: src/frob/arch/_mayraise.py (new: compute_may_raise/FunctionMayRaise/UNKNOWN/UBIQUITOUS_TIER), src/frob/arch/_normalized.py (NormalizedSubscript + NormalizedFunction.subscripts), src/frob/arch/_python.py (PythonAdapter subscript-node collection), tests/unit/test_arch.py (TestMayRaiseResolver, 6 tests)
-
-Evidence: tests/unit/test_arch.py::TestMayRaiseResolver::test_fixture_chain_own_raise_and_builtin_raiser_and_catch_subtraction, tests/unit/test_arch.py::TestMayRaiseResolver::test_unresolvable_call_yields_unknown, tests/unit/test_arch.py::TestMayRaiseResolver::test_bare_reraise_resolves_to_caught_type, tests/unit/test_arch.py::TestMayRaiseResolver::test_bare_except_reraise_is_unknown, tests/unit/test_arch.py::TestMayRaiseResolver::test_recursive_cycle_converges, tests/unit/test_arch.py::TestMayRaiseResolver::test_ambiguous_method_name_across_classes_is_unresolved -- all verified passing (`uv run pytest -q tests/unit/test_arch.py::TestMayRaiseResolver`: 6 passed; full `tests/unit/test_arch.py` suite passing; `uv run frob test --base main`: PASS exit=0)
-
-Filed: T-0916 (docs: document the may-raise resolver in docs/modules/arch.md -- out of T-0686's declared scope; _mayraise.py's frob:doc directives point at the existing #fallibility-checks anchor in the meantime)
-
-Gates: `uv run frob check --ticket T-0686 --only gates-fast` clean (0 errors), `--only gates-native` clean, `--only gates-security` clean, `--only lint` clean, `--only static` clean; `uv run ty check` and `uv run ruff check`/`ruff format` clean on all touched files
 
 <!-- ticket:T-0687 -->
 ```yaml
@@ -3591,7 +2998,7 @@ Child 1 of T-0693. Track with-statement (and explicit acquire/release) nesting o
 id: T-0696
 title: 'async event-loop hazards: blocking calls in async def, nested run_until_complete,
   un-awaited coroutines'
-state: done
+state: queued
 kind: bug
 origin: human
 created: '2026-07-22'
@@ -3600,98 +3007,15 @@ parent: T-0693
 scope:
 - src/frob/arch/**
 - tests/unit/test_arch.py
-evidence:
-- tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_blocking_call_in_async_fires_on_time_sleep
-- tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_blocking_call_in_async_does_not_fire_via_to_thread
-- tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_nested_event_loop_fires_on_asyncio_run_inside_coroutine
-- tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_nested_event_loop_does_not_fire_at_top_level_sync_code
-- tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_unawaited_coroutine_fires_on_bare_call_statement
-- tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_unawaited_coroutine_does_not_fire_when_awaited_or_stored
-- tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_async_zero_awaits_fires_on_no_await_body
-- tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_async_zero_awaits_does_not_fire_when_awaiting
 acceptance:
 - text: GIVEN time.sleep inside async def WHEN the check runs THEN a finding suggests
     asyncio.sleep/to_thread; GIVEN an un-awaited coroutine call THEN a finding names
     the site
-  evidence:
-  - tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_blocking_call_in_async_fires_on_time_sleep
-  - tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_blocking_call_in_async_does_not_fire_via_to_thread
-  - tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_nested_event_loop_fires_on_asyncio_run_inside_coroutine
-  - tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_nested_event_loop_does_not_fire_at_top_level_sync_code
-  - tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_unawaited_coroutine_fires_on_bare_call_statement
-  - tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_unawaited_coroutine_does_not_fire_when_awaited_or_stored
-  - tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_async_zero_awaits_fires_on_no_await_body
-  - tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_async_zero_awaits_does_not_fire_when_awaiting
+  evidence: []
 threat: null
 component: null
 ```
 Child 3 of T-0693. Curated blocking-call table (time.sleep, requests.*, urllib, sync open/read on large paths, subprocess.run, .result() on futures) flagged when reachable inside async def without run_in_executor/to_thread dispatch; run_until_complete/asyncio.run reachable inside a running-loop context; coroutine-constructing call whose result is neither awaited nor gathered nor stored (un-awaited coroutine); async def containing zero awaits (feeds the model-mismatch advisory too). Table extensible via frob.toml like other curated tables.
-
-## Done report
-
-Added `frob.arch._async_hazards` (T-0696, child 3 of T-0693): four
-detectors over one parsed python file's functions -- `blocking-call-in-
-async` (curated table: `time.sleep`, `requests.get/post/put/delete/patch/
-head/request`, `urllib`'s `urlopen`, `subprocess.run/call/check_call/
-check_output`, a future's `.result()`, the builtin `open()` -- reachable
-inside an `async def` without a `run_in_executor`/`to_thread` dispatch
-enclosing the call site), `nested-event-loop` (`asyncio.run`/`.run_until_
-complete` reachable inside an `async def` body), `unawaited-coroutine` (a
-call whose immediate parent is a `block` -- a bare top-level statement,
-tree-sitter-python's own shape for an unwrapped statement call -- naming a
-function this module itself declares `async def`), and `async-zero-
-awaits` (an `async def` with no `await` anywhere in its own scope, not
-crossing into a nested function's body; suggestion severity, feeds
-T-0698's IO/CPU-bound advisory per that ticket's own text). Wired into
-`frob.arch.__init__`'s python per-file pass alongside `_concurrency`'s
-fork/pool family (skips test files, same as that family). Four new
-`ArchCategory` values added to `_models.py` -- same unwaivable advisory
-channel as every other `frob.arch` category, no `frob.gates` change
-needed.
-
-Changed:
-- `src/frob/arch/_async_hazards.py` (new)
-- `src/frob/arch/_models.py::ArchCategory` (4 new category values)
-- `src/frob/arch/__init__.py::_run_python_checks` (wiring call + docstring
-  note)
-- `tests/unit/test_arch.py::TestAsyncEventLoopHazards` (new, 8 tests)
-
-Evidence: `uv run pytest tests/unit/test_arch.py -k
-TestAsyncEventLoopHazards -p no:cacheprovider -q` -> 8 passed. Confirmed
-zero false positives: `analyze_project(Path("src/frob"))` against frob's
-own tree returns 0 hits across all four new categories. `uv run frob check
---ticket T-0696 --only lint` / `--only gates-fast` / `--only gates-native`
-all 0 errors. `uv run frob test --base main` -> `[PASS] python exit=0`,
-10 test outcomes recorded.
-
-Disclosed gap: `uv run frob check --ticket T-0696 --only gates-security`
-shows 2 unwaived `SELFAUDIT001` findings on `src/frob/arch/
-_async_hazards.py` (capability `net`/`exec` "observed" at the lines
-holding `_BLOCKING_CALL_TABLE`'s `requests.*`/`subprocess.*` regex
-strings) -- a false positive of the exact class already fixed for
-`_srp.py` (T-0729) and `_logging_checks.py` (T-0910): the self-audit
-scanner keys on string-literal CONTENT for evasion detection, so a
-curated classifier table that merely *names* these substrings as data
-reads as live capability usage even though this module does no such I/O
-itself. The fix (`src/frob/vet/_capability.py`'s `_SELF_PATTERN_SUFFIXES`)
-is outside T-0696's declared scope (`src/frob/arch/**`, `tests/unit/
-test_arch.py`), so it is filed separately rather than fixed inline.
-
-Filed:
-- T-0914 (docs): add an "async event-loop hazards" section to
-  `docs/modules/arch.md` (out of T-0696's scope, unlike sibling T-0695
-  which had docs in scope) -- a `frob:waive COV001` placeholder is left on
-  `_check_async_event_loop_hazards` until this lands.
-- T-0915 (bug): add `("frob", "arch", "_async_hazards.py")` to
-  `src/frob/vet/_capability.py`'s `_SELF_PATTERN_SUFFIXES` to clear the
-  SELFAUDIT001 false positive disclosed above.
-
-Gates: `frob check --ticket T-0696 --only lint/gates-fast/gates-native`
-clean (0 errors each, re-verified after a `frob ticket sweep T-0696`
-re-run following the last edit). `gates-security`'s 2 SELFAUDIT001
-findings are a disclosed, out-of-scope gap tracked by T-0915
-(not waived in-line since the fix lives in a file outside this ticket's
-scope).
 
 <!-- ticket:T-0697 -->
 ```yaml
@@ -3881,7 +3205,7 @@ User mandate 2026-07-22: auditing/advisories for slow operations. Build a repo-w
 ```yaml
 id: T-0712
 title: hot-graph query surface + slow-operation advisories + perf regression ratchet
-state: done
+state: queued
 kind: feature
 origin: human
 created: '2026-07-22'
@@ -3895,130 +3219,16 @@ scope:
 - src/frob/app/**
 - src/frob/gates/**
 - docs/modules/perf.md
-- tests/unit/perf/**
-scope_changes:
-- op: add
-  glob: tests/unit/perf/**
-  reason: new tests for T-0712's query surface/advisories/ratchet; T-0710/T-0711's
-    own scope precedent included tests/unit/perf/
-  actor: logan
-  at: '2026-07-26'
-evidence:
-- tests/unit/perf/test_hot_query.py::TestListSketches::test_lists_every_stored_row_with_its_label
-- tests/unit/perf/test_ratchet.py::TestCheckRatchet::test_regression_beyond_tolerance_fires
-- tests/unit/perf/test_gate_wiring.py::TestPerf008ProductionInvocation::test_before_no_effect_fails_to_find_perf008
-- tests/unit/perf/test_gate_wiring.py::TestPerf008ProductionInvocation::test_after_loop_invariant_fs_walk_passes_perf008
-- tests/unit/perf/test_gate_wiring.py::TestPerf009ProductionInvocation::test_before_no_findings_file_fails_to_find_perf009
-- tests/unit/perf/test_gate_wiring.py::TestPerf009ProductionInvocation::test_after_regression_finding_passes_perf009
-- tests/unit/perf/test_persist_run_cli.py::TestPersistRunDefaultPath::test_missing_perf_path_resolves_to_cwd
-- tests/unit/perf/test_persist_run_cli.py::TestPersistRunUnattributedExclusionAndWeightSum::test_only_attributed_section_persists_with_summed_weight
-- tests/unit/perf/test_persist_run_cli.py::TestHotSortKeyMetricSelection::test_by_p90_and_by_p50xcount_disagree_on_order
-- tests/unit/perf/test_persist_run_cli.py::TestRatchetFindingRendering::test_regression_prints_label_and_exact_percentage
 acceptance:
 - text: GIVEN a section whose p90 regresses beyond tolerance vs the stored prior WHEN
     frob check runs with the ratchet enabled THEN a PERF finding names the section
     and both decile sets; GIVEN a loop dominated by an external call THEN an advisory
     fires with the edge's deciles
-  evidence:
-  - tests/unit/perf/test_hot_query.py::TestListSketches::test_lists_every_stored_row_with_its_label
-  - tests/unit/perf/test_ratchet.py::TestCheckRatchet::test_regression_beyond_tolerance_fires
-- text: T-0756 new-gate-rule fixture proof for PERF008/PERF009 (registered in _KNOWN_GATE_RULES
-    this change) -- a fixture with no loop-invariant effect / no ratchet-findings
-    artifact FAILS to find PERF008/PERF009 through frob.gates.perf_gate (the production
-    function frob check invokes) BEFORE the triggering fixture is introduced, and
-    PASSES (finds the rule) AFTER the fixture is added -- proven through the real
-    gate invocation, not a pure-function unit test alone
-  evidence:
-  - tests/unit/perf/test_gate_wiring.py::TestPerf008ProductionInvocation::test_before_no_effect_fails_to_find_perf008
-  - tests/unit/perf/test_gate_wiring.py::TestPerf008ProductionInvocation::test_after_loop_invariant_fs_walk_passes_perf008
-  - tests/unit/perf/test_gate_wiring.py::TestPerf009ProductionInvocation::test_before_no_findings_file_fails_to_find_perf009
-  - tests/unit/perf/test_gate_wiring.py::TestPerf009ProductionInvocation::test_after_regression_finding_passes_perf009
-  - tests/unit/perf/test_persist_run_cli.py::TestPersistRunDefaultPath::test_missing_perf_path_resolves_to_cwd
-  - tests/unit/perf/test_persist_run_cli.py::TestPersistRunUnattributedExclusionAndWeightSum::test_only_attributed_section_persists_with_summed_weight
-  - tests/unit/perf/test_persist_run_cli.py::TestHotSortKeyMetricSelection::test_by_p90_and_by_p50xcount_disagree_on_order
-  - tests/unit/perf/test_persist_run_cli.py::TestRatchetFindingRendering::test_regression_prints_label_and_exact_percentage
+  evidence: []
 threat: null
 component: null
 ```
 Child 3: consumers. (1) QUERY: frob perf hot [--top N --by p90|p50xcount] renders the hot-graph (section, callee edge, decile readout, sample count) from the sketch store; MCP tool mirror for agents. (2) ADVISORIES (suggestion tier, T-0332 noise discipline): external call edge dominating a loop body's time -> batch/cache/move-out-of-loop suggestion naming the edge and its deciles; nested-loop section hot AND upstream of a fan-in -> complexity suspect; section p90 >> p50 (heavy tail) -> variance advisory naming likely modes. (3) REGRESSION RATCHET: current run sketch vs stored prior -- quantile shift beyond alpha + configured tolerance = PERF finding naming the section and both deciles (ratchet-pool style per T-0569/T-0594 precedent, baseline-old error-new).
-
-## Done report
-
-Land review refused T-0712: TEST016 found the original bound evidence
-killed 0/8 mutants in src/frob/app/perf_runner.py's changed lines
-(_persist_run/_hot_sort_key/_print_findings) -- confirmatory-only, not
-adversarial. Added tests/unit/perf/test_persist_run_cli.py: four
-behavioral tests invoking `frob.app.perf_runner.run` directly (the same
-production function `frob perf collect`/`frob perf hot` dispatch through)
-and asserting on precise rendered stdout/JSON values.
-
-Manually verified each targeted mutant is killed by applying it, running
-the new tests, confirming failure, then reverting:
-- line 397 `cfg.perf_path or Path(".")` -> `and`: AttributeError on
-  None.resolve(), test_missing_perf_path_resolves_to_cwd fails.
-- line 403 `== UNATTRIBUTED_SECTION_ID` -> `!=`: store stays empty,
-  test_only_attributed_section_persists_with_summed_weight fails
-  (len(rows) != 1).
-- line 405 `+= hit.weight` -> `-=`: negative total dropped by
-  add_value's non-negative guard, same test fails (p50 reads 0 not ~2.0).
-- line 437/438/439 advisories list `+` -> `-` (both operators): TypeError
-  crashes every collect-invoking test immediately.
-- line 454 `finding.label or finding.section_key` -> `and`: renders the
-  opaque hash key instead of the label, test_regression_prints_label_and_
-  exact_percentage fails ("hot_loop" not in output).
-- line 455 `worst_relative_shift * 100` -> `/`: percentage collapses from
-  ~918% to ~0%, same test fails.
-- line 521 `if by == "p90"` -> `!=`: `--by p90` and `--by p50xcount`
-  return the SAME (wrong) order, test_by_p90_and_by_p50xcount_disagree_
-  on_order fails.
-
-All 4 new tests pass against the unmutated tree; `uv run pytest -q -n0
-tests/unit/perf/` (97 tests) and `uv run frob test --base main` both
-exit 0. Bound as ticket acceptance[1]'s evidence (the T-0756 fixture
-criterion, already covering PERF008/PERF009's production-invocation
-proof) alongside the existing PERF008/PERF009 fixture tests.
-
-Also fixed a `_perf_script` helper type annotation (`tuple[str, str]` ->
-`tuple[float, str]`, since it takes numeric weights) caught by `ty` after
-adding the new test file; `uv run frob check --only lint`/`--only
-static` both clean (only the pre-existing strata_core/frob_core
-unresolved-import ty diagnostics, a worktree native-build artifact per
-the agent playbook, remain).
-
-### Changed
-```
- docs/modules/perf.md                |  77 ++++++++++++-
- src/frob/__main__.py                |  22 ++++
- src/frob/app/config.py              |   3 +
- src/frob/app/perf_runner.py         | 185 ++++++++++++++++++++++++++++-
- src/frob/gates/__init__.py          |  25 ++--
- src/frob/perf/__init__.py           |  33 ++++++
- src/frob/perf/_advisories.py        | 224 ++++++++++++++++++++++++++++++++++++
- src/frob/perf/_ratchet.py           | 199 ++++++++++++++++++++++++++++++++
- src/frob/perf/_sketch_store.py      |  87 +++++++++++++-
- tests/unit/perf/test_advisories.py  | 134 +++++++++++++++++++++
- tests/unit/perf/test_gate_wiring.py | 116 +++++++++++++++++++
- tests/unit/perf/test_hot_query.py   |  76 ++++++++++++
- tests/unit/perf/test_ratchet.py     |  90 +++++++++++++++
- tickets.md                          | 158 ++++++++++++++++++++++++-
- 14 files changed, 1406 insertions(+), 23 deletions(-)
-```
-
-### Evidence
-- `tests/unit/perf/test_hot_query.py::TestListSketches::test_lists_every_stored_row_with_its_label` (pytest node id, verified passing when recorded)
-- `tests/unit/perf/test_ratchet.py::TestCheckRatchet::test_regression_beyond_tolerance_fires` (pytest node id, verified passing when recorded)
-- `tests/unit/perf/test_gate_wiring.py::TestPerf008ProductionInvocation::test_before_no_effect_fails_to_find_perf008` (pytest node id, verified passing when recorded)
-- `tests/unit/perf/test_gate_wiring.py::TestPerf008ProductionInvocation::test_after_loop_invariant_fs_walk_passes_perf008` (pytest node id, verified passing when recorded)
-- `tests/unit/perf/test_gate_wiring.py::TestPerf009ProductionInvocation::test_before_no_findings_file_fails_to_find_perf009` (pytest node id, verified passing when recorded)
-- `tests/unit/perf/test_gate_wiring.py::TestPerf009ProductionInvocation::test_after_regression_finding_passes_perf009` (pytest node id, verified passing when recorded)
-- `tests/unit/perf/test_persist_run_cli.py::TestPersistRunDefaultPath::test_missing_perf_path_resolves_to_cwd` (pytest node id, verified passing when recorded)
-- `tests/unit/perf/test_persist_run_cli.py::TestPersistRunUnattributedExclusionAndWeightSum::test_only_attributed_section_persists_with_summed_weight` (pytest node id, verified passing when recorded)
-- `tests/unit/perf/test_persist_run_cli.py::TestHotSortKeyMetricSelection::test_by_p90_and_by_p50xcount_disagree_on_order` (pytest node id, verified passing when recorded)
-- `tests/unit/perf/test_persist_run_cli.py::TestRatchetFindingRendering::test_regression_prints_label_and_exact_percentage` (pytest node id, verified passing when recorded)
-
-### Captured claims
-- tests: 10 passed (from 10 evidence id(s))
-- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0713 -->
 ```yaml
@@ -4303,7 +3513,6 @@ blocked_by:
 - T-0867
 - T-0868
 - T-0869
-- T-0747
 parent: null
 scope:
 - src/frob/arch/**
@@ -4942,7 +4151,7 @@ Gates: `frob check --only lint/gates-fast/gates-native/gates-security --ticket T
 ```yaml
 id: T-0777
 title: wire resolve_lease pinning into frob check's --ticket resolution entry point
-state: dropped
+state: queued
 kind: bug
 origin: human
 created: '2026-07-22'
@@ -4988,9 +4197,6 @@ available and should be wired in as defense in depth:
 
 Scope: src/frob/app/check_runner.py, src/frob/gates/__init__.py (the
 `active_ticket`/`_resolve_ticket` region only).
-
-## Drop reason
-- 2026-07-26: already implemented by T-0787: ticket_lease_pin in gates/__init__.py wired via _refuse_ticket_lease_mismatch in check_runner.py run(), with regression coverage in tests/test_tickets_leases.py (verified against main tip c5a13a68) (absorbed by T-0787)
 
 <!-- ticket:T-0781 -->
 ```yaml
@@ -8429,135 +7635,3 @@ disposed `frob:waive` if genuinely benign. Not investigated further here
 
 ## Drop reason
 - 2026-07-26: duplicate of T-0910 (same SELFAUDIT001 finding on _logging_checks.py/graphlang node, third independent filing; T-0910 is in-progress)
-
-<!-- ticket:T-0914 -->
-```yaml
-id: T-0914
-title: 'docs: async event-loop hazards section for docs/modules/arch.md'
-state: queued
-kind: docs
-origin: human
-created: '2026-07-26'
-priority: medium
-parent: null
-scope:
-- docs/modules/arch.md
-- src/frob/arch/_async_hazards.py
-threat: null
-component: null
-```
-T-0696 (async event-loop hazards: blocking calls in async def, nested
-run_until_complete, un-awaited coroutines) implemented four frob.arch
-categories (blocking-call-in-async, nested-event-loop, unawaited-coroutine,
-async-zero-awaits) in frob.arch._async_hazards, but T-0696's declared scope
-(src/frob/arch/**, tests/unit/test_arch.py) does not include
-docs/modules/arch.md, unlike its sibling T-0695 (fork/pool hazards) which
-did. Add a "async event-loop hazards" section to docs/modules/arch.md
-(anchor #async-event-loop-hazards) documenting the four categories, mirroring
-the existing "fork/pool hazards" section's structure, then add the matching
-frob:doc edge on frob.arch._async_hazards._check_async_event_loop_hazards
-and clear the frob:waive COV001 placeholder left on that function.
-
-<!-- ticket:T-0915 -->
-```yaml
-id: T-0915
-title: 'fix: exclude frob.arch._async_hazards from SELFAUDIT001 net/exec self-match'
-state: done
-kind: bug
-origin: human
-created: '2026-07-26'
-priority: medium
-parent: null
-scope:
-- src/frob/vet/_capability.py
-- tests/test_vet.py
-scope_changes:
-- op: add
-  glob: tests/test_vet.py
-  reason: regression tests for the exclusion live here per T-0910 precedent
-  actor: logan
-  at: '2026-07-26'
-evidence:
-- tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_covers_async_hazards_needle_tuples
-- tests/test_vet.py::TestFingerprintScan::test_line_effects_reports_no_capability_on_async_hazards_module
-threat: null
-component: null
-```
-frob check --only gates-security's SELFAUDIT001/SYS100 stage flags
-src/frob/arch/_async_hazards.py (T-0696) as undeclared 'net'/'exec'
-capability usage on the graphlang node: capability 'net' observed at
-line 67, capability 'exec' observed at line 72. Both are false positives
-of the same class already fixed for src/frob/arch/_srp.py (T-0729) and
-src/frob/arch/_logging_checks.py (T-0910): _BLOCKING_CALL_TABLE is a
-curated dotted-name classifier table (time.sleep, requests.get/post/...,
-urlopen, subprocess.run/call/...) this module's _blocking_label compares
-a CALLEE STRING against -- the scanner keys on string-literal CONTENT by
-design (for evasion detection), so naming these substrings as data reads
-as live capability usage even though _async_hazards.py does no such I/O
-itself (a syntactic, tree-sitter-only scan).
-
-Fix: add ("frob", "arch", "_async_hazards.py") to
-src/frob/vet/_capability.py's _SELF_PATTERN_SUFFIXES tuple, mirroring the
-_srp.py/_logging_checks.py entries and their doc comments. Out of T-0696's
-declared scope (src/frob/arch/**, tests/unit/test_arch.py only), which is
-why this is filed separately rather than fixed inline.
-
-## Done report
-
-Third recurrence of the SYS100 needle-literal self-match class (T-0729 _srp.py, T-0910 _logging_checks.py): T-0696's new _async_hazards.py stores curated blocking-call-name tables as bare-text needles, which the capability scanner misread as live net/exec use on graphlang, putting 2 SELFAUDIT001 errors on main. Added the file to _SELF_PATTERN_SUFFIXES with the same honesty rationale (the module does no I/O; declaring fake capabilities would be the dishonest fix) plus the standard pair of regression tests.
-
-### Changed
-(no changed files detected)
-
-### Evidence
-- `tests/test_vet.py::TestFingerprintScan::test_self_pattern_exclusion_covers_async_hazards_needle_tuples` (pytest node id, verified passing when recorded)
-- `tests/test_vet.py::TestFingerprintScan::test_line_effects_reports_no_capability_on_async_hazards_module` (pytest node id, verified passing when recorded)
-
-### Captured claims
-- tests: 2 passed (from 2 evidence id(s))
-- gates: 1 error(s), 2656 warning(s), 351 waived
-- error-findings: PRE001@tickets/T-0915
-
-<!-- ticket:T-0916 -->
-```yaml
-id: T-0916
-title: 'docs: document the Python may-raise resolver in docs/modules/arch.md'
-state: queued
-kind: docs
-origin: human
-created: '2026-07-26'
-priority: medium
-parent: null
-scope:
-- docs/modules/arch.md
-threat: null
-component: null
-```
-T-0686 added `src/frob/arch/_mayraise.py` (the Python may-raise resolver:
-compute_may_raise, FunctionMayRaise, UNKNOWN, UBIQUITOUS_TIER) plus
-NormalizedSubscript on the shared T-0609 model, both within
-src/frob/arch/**'s own scope. docs/modules/arch.md is out of T-0686's
-declared scope (scope=['src/frob/arch/**', 'tests/unit/test_arch.py']),
-so no doc section/anchor was added for these new public symbols; DOC002/
-COV001 gate findings on src/frob/arch/_mayraise.py are waived pending
-this ticket. Add a "may-raise resolver" section documenting
-compute_may_raise/FunctionMayRaise/UNKNOWN/UBIQUITOUS_TIER's contract and
-its relationship to the T-0623 fallibility-checks family, then update the
-frob:doc anchors on _mayraise.py to point at it and drop the waivers.
-
-<!-- ticket:T-0917 -->
-```yaml
-id: T-0917
-title: MCP tool mirror for frob perf hot (T-0712 follow-up)
-state: queued
-kind: feature
-origin: human
-created: '2026-07-26'
-priority: medium
-parent: null
-scope:
-- src/frob/serve/**
-threat: null
-component: null
-```
-T-0712 shipped frob perf hot (query surface over the hot-graph sketch store) but its acceptance text also called for an MCP tool mirror for agents; src/frob/serve/_tools.py is outside T-0712's declared scope (src/frob/perf/**, src/frob/app/**, src/frob/gates/**, docs/modules/perf.md), so this was filed rather than expanding scope. Add a frob_perf_hot(root, top, by) MCP tool mirroring frob perf hot's list_sketches query, following the existing frob_graph_query/frob_stale_docs pattern in src/frob/serve/_tools.py.
