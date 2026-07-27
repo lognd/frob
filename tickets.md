@@ -5147,3 +5147,29 @@ threat: null
 component: null
 ```
 T-0687 landed frob.arch._cpp_mayraise.check_cpp_noexcept_violations, wired into analyze_project's live cpp dispatch branch, producing ArchSuggestion(category=cpp-noexcept-throws, severity=error). Promoting this into an enforced, unwaivable src/frob/gates/** gate finding (the way frob.gates._unwaivable_channel_rules already does for every other ArchCategory) was out of T-0687's declared scope (arch/**, lang/**, tests/unit/test_arch.py only). Wire it the same way EXHAUST001/002 (T-0688) and errors-as-values-recommended eventually will be.
+
+<!-- ticket:T-1036 -->
+```yaml
+id: T-1036
+title: frob ticket sweep/done-report can rewrite unrelated ticket blocks when main
+  advances mid-write
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-27'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/
+- tests/unit/test_ticket_runner_gate_findings.py
+acceptance:
+- text: GIVEN the ledger changes on disk between a ticket verb's read and write THEN
+    the verb refuses and retries from fresh state instead of writing a stale full-file
+    image
+  evidence: []
+threat: null
+component: null
+```
+Observed repeatedly by the T-0690 agent under high ledger churn (many concurrent lands): frob ticket sweep and done-report intermittently rewrote OTHER tickets' sections in tickets.md, caught only by a git diff main -- tickets.md check after each CLI call and repaired by splicing the agent's own block onto a fresh main copy. Root-cause the read-modify-write path: it likely reads the whole ledger, mutates one block, and writes the whole file back without checking the on-disk file changed since read (the T-0889 ledger_digest optimistic-concurrency guard may not cover these two verbs, or the worktree copy diverges from the merged state). Fix = extend the optimistic-concurrency digest guard to every ledger-writing verb and add a churn regression test that interleaves a concurrent block edit between read and write.
