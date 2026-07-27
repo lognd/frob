@@ -3160,9 +3160,32 @@ def render_changed_block(lines: Sequence[str]) -> str:
     return "```\n" + "\n".join(lines) + "\n```"
 
 
+_LEADING_DONE_REPORT_HEADING_RE = re.compile(
+    r"\A(?:[ \t]*\n)*[ \t]*#{1,6}[ \t]+done report[ \t]*\n?", re.IGNORECASE
+)
+
+
+# frob:ticket T-0826
+# frob:tests tests/unit/test_ticket_store.py::TestComposeDoneReport.test_strips_duplicate_leading_heading_from_why  # noqa: E501
+def _strip_leading_done_report_heading(why: str) -> str:
+    """Strip a leading '## Done report' (any `#` level, any case, optional
+    leading blank lines) heading line from `why` (T-0826): `compose_done_
+    report` always prepends its own canonical `DONE_REPORT_HEADING`, so a
+    caller-supplied `why` (typically `--why-file` content an agent already
+    wrote with its own heading) that starts with one too would otherwise
+    render TWO headings back to back -- a recurring cosmetic ledger-noise
+    finding reviewers kept re-flagging. Only a LEADING heading is
+    stripped -- one appearing later in the narrative body is left alone,
+    since it is not a duplicate of the one this function's caller is about
+    to prepend."""
+    return _LEADING_DONE_REPORT_HEADING_RE.sub("", why, count=1)
+
+
 # frob:ticket T-0458
+# frob:ticket T-0826
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/unit/test_ticket_store.py::TestComposeDoneReport.test_composes_all_three_sections  # noqa: E501
+# frob:tests tests/unit/test_ticket_store.py::TestComposeDoneReport.test_strips_duplicate_leading_heading_from_why  # noqa: E501
 def compose_done_report(
     why: str,
     changed_lines: Sequence[str],
@@ -3176,8 +3199,17 @@ def compose_done_report(
     always generated, never hand-typed, so they can never drift from what
     frob, git, and a real test/gate run actually observed. `claims=None`
     (the default) omits the Captured claims section entirely, matching
-    every caller before T-0754."""
-    why_text = why.strip() or "(no narrative supplied)"
+    every caller before T-0754.
+
+    T-0826: if `why` itself already begins with a '## Done report' heading
+    (case-insensitive, possibly preceded by blank lines -- e.g. an agent's
+    `--why-file` content that already carries its own heading, a recurring
+    cosmetic ledger noise reviewers kept flagging), that leading heading
+    line is stripped BEFORE composing so the rendered block always has
+    exactly one heading, never two."""
+    why_text = _strip_leading_done_report_heading(why).strip() or (
+        "(no narrative supplied)"
+    )
     changed_block = render_changed_block(changed_lines)
     evidence_block = render_evidence_block(evidence)
     claims_section = f"\n\n{render_claims_block(claims)}" if claims is not None else ""

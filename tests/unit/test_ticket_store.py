@@ -522,6 +522,26 @@ class TestComposeDoneReport:
         report = compose_done_report("   ", (), ())
         assert "(no narrative supplied)" in report
 
+    def test_strips_duplicate_leading_heading_from_why(self) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestComposeDoneReport.test_strips_duplicate_leading_heading_from_why  # noqa: E501
+        from frob.tickets import compose_done_report
+
+        report = compose_done_report(
+            "## Done report\n\nnarrative here", ("src/x.py | 1 +",), ()
+        )
+        assert report.count("Done report") == 1
+        assert report.startswith("## Done report")
+        assert "narrative here" in report
+
+    def test_leaves_non_leading_heading_in_narrative_alone(self) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestComposeDoneReport.test_leaves_non_leading_heading_in_narrative_alone  # noqa: E501
+        from frob.tickets import compose_done_report
+
+        report = compose_done_report(
+            "narrative mentions ## Done report mid-text", (), ()
+        )
+        assert report.count("Done report") == 2
+
 
 # frob:ticket T-0458
 class TestSetDoneReport:

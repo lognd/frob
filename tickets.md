@@ -3064,7 +3064,7 @@ deliberate.
 id: T-0826
 title: 'tickets CLI: done-report --why-file duplicates the ''## Done report'' heading
   (recurring cosmetic ledger noise)'
-state: queued
+state: done
 kind: ux
 origin: agent
 created: '2026-07-23'
@@ -3073,15 +3073,59 @@ parent: null
 scope:
 - src/frob/app/ticket_runner.py
 - src/frob/tickets/**
+evidence:
+- tests/unit/test_ticket_store.py::TestComposeDoneReport::test_strips_duplicate_leading_heading_from_why
+- tests/unit/test_ticket_store.py::TestComposeDoneReport::test_composes_all_three_sections
 acceptance:
 - text: GIVEN a why-file that already begins with a Done report heading WHEN frob
     ticket done-report renders it THEN exactly one heading appears in the ledger block;
     existing double-heading blocks are tolerated by parsers
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_store.py::TestComposeDoneReport::test_strips_duplicate_leading_heading_from_why
+  - tests/unit/test_ticket_store.py::TestComposeDoneReport::test_composes_all_three_sections
 threat: null
 component: null
 ```
 Recurred 5+ times this drive (reviewers keep flagging it cosmetically): done-report prepends its own heading on top of one already present in --why-file content. Deduplicate at render time.
+
+## Done report
+
+Added `frob.tickets._strip_leading_done_report_heading` and wired it into
+`compose_done_report`: before prepending the canonical `DONE_REPORT_HEADING`,
+any leading `## Done report` (any `#` level, case-insensitive, optionally
+preceded by blank lines) already present at the start of the caller-supplied
+`why` text is stripped via a compiled regex
+(`_LEADING_DONE_REPORT_HEADING_RE`). This is the single write path
+`set_done_report` always goes through, so both the plain `--why`/`-` stdin
+callers and `--why-file` callers get the same dedupe for free -- no CLI-side
+special-casing in `ticket_runner.py` was needed. A heading appearing
+mid-narrative (not at the very start) is left untouched, since it is not a
+duplicate of the one about to be prepended.
+
+### Changed
+```
+src/frob/tickets/__init__.py    | 36 ++++++++++++++++++++++++++++++++++--
+tests/unit/test_ticket_store.py | 20 ++++++++++++++++++++
+```
+
+### Evidence
+- tests/unit/test_ticket_store.py::TestComposeDoneReport::test_strips_duplicate_leading_heading_from_why
+- tests/unit/test_ticket_store.py::TestComposeDoneReport::test_composes_all_three_sections
+
+Full local verification (`frob check --ticket T-0826` / `--only scope`,
+foreground and backgrounded, multiple attempts up to 590s) hung
+indefinitely under this machine's concurrent multi-agent load (12-core box,
+10+ other worktrees running `frob check` simultaneously); one hung process
+was observed with a thread parked in `locks_lock_inode_wait` against its
+own worktree-local `.frob/derived.lock` with no external holder
+(`lslocks` showed only that same pid on that file) -- looks like a
+self-contention/self-deadlock in the derived-cache lock path under load,
+not something in this ticket's scope (`src/frob/app/ticket_runner.py`,
+`src/frob/tickets/**`) to fix. Filed as a new ticket per the playbook's
+hang guidance rather than debugged further here. Verification instead used
+the fast, foreground, in-scope path: `uv run pytest
+tests/unit/test_ticket_store.py tests/test_tickets.py -q` (all 88 passed)
+and `frob ticket evidence` (fast, in-process, no hang).
 
 <!-- ticket:T-0861 -->
 ```yaml
@@ -5080,3 +5124,20 @@ Filed while re-verifying T-0924 after merging main; T-0924 itself could
 not get a clean `--only scope`/`--only prework` post-merge run because of
 this and used pre-merge evidence plus pytest test evidence instead (see
 its Done report).
+
+<!-- ticket:T-0934 -->
+```yaml
+id: T-0934
+title: 'frob check: derived.lock self-deadlock under concurrent multi-worktree load'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: null
+scope:
+- src/frob/gates/**
+threat: null
+component: null
+```
+Observed while working T-0826: 'frob check --ticket T-0826' / '--only scope' hung indefinitely (traced past 590s) on a 12-core box under load from 10+ other agent worktrees each running frob check concurrently. lslocks showed the hung pid holding both a READ and a pending WRITE* lock on its OWN worktree's .frob/derived.lock with no other pid contending for that same file -- looks like an intra-process lock-upgrade self-deadlock (one thread holds LOCK_SH via one fd while another thread requests LOCK_EX via a second fd on the same inode) rather than genuine cross-worktree contention. Repro: run frob check --only scope in a fresh worktree while many sibling worktrees are also running frob check; capture /proc/<pid>/task/*/wchan for confirmation (locks_lock_inode_wait + futex_wait_queue observed). Reduced-load runs of the same command (frob ticket evidence, pytest) completed fine, so this is check-path-specific, likely in the derived-cache build/lock acquisition.
