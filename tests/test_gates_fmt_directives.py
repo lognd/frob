@@ -11,10 +11,12 @@ math that a correct implementation must catch (TEST016).
 from __future__ import annotations
 
 import string
+from pathlib import Path
 
 from hypothesis import given
 from hypothesis import strategies as st
 
+from frob.excludes import iter_files
 from frob.gates._fmt_directives import (
     _canonical_lines,
     canonicalize_text,
@@ -46,15 +48,19 @@ class TestMarkerFor:
     """Language-suffix to line-comment-marker lookup."""
 
     def test_python_uses_hash(self) -> None:
-        # frob:tests tests/test_gates_fmt_directives.py::TestMarkerFor.test_python_uses_hash
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestMarkerFor.test_python_uses_hash
         assert marker_for("src/frob/foo.py") == "#"
 
     def test_rust_uses_slash_slash(self) -> None:
-        # frob:tests tests/test_gates_fmt_directives.py::TestMarkerFor.test_rust_uses_slash_slash
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestMarkerFor.test_rust_uses_slash_slash
         assert marker_for("src/lib.rs") == "//"
 
     def test_unsupported_suffix_is_none(self) -> None:
-        # frob:tests tests/test_gates_fmt_directives.py::TestMarkerFor.test_unsupported_suffix_is_none
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestMarkerFor.test_unsupported_suffix_is_\
+        # none
         assert marker_for("README.md") is None
 
 
@@ -62,16 +68,22 @@ class TestReadLineLength:
     """Reads `[tool.ruff] line-length` from `pyproject.toml`, else 88."""
 
     def test_reads_configured_limit(self, tmp_path) -> None:  # noqa: ANN001
-        # frob:tests tests/test_gates_fmt_directives.py::TestReadLineLength.test_reads_configured_limit
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestReadLineLength.test_reads_configured_\
+        # limit
         (tmp_path / "pyproject.toml").write_text("[tool.ruff]\nline-length = 100\n")
         assert read_line_length(tmp_path) == 100
 
     def test_missing_file_defaults_to_88(self, tmp_path) -> None:  # noqa: ANN001
-        # frob:tests tests/test_gates_fmt_directives.py::TestReadLineLength.test_missing_file_defaults_to_88
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestReadLineLength.test_missing_file_defa\
+        # ults_to_88
         assert read_line_length(tmp_path) == 88
 
     def test_missing_ruff_section_defaults_to_88(self, tmp_path) -> None:  # noqa: ANN001
-        # frob:tests tests/test_gates_fmt_directives.py::TestReadLineLength.test_missing_ruff_section_defaults_to_88
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestReadLineLength.test_missing_ruff_sect\
+        # ion_defaults_to_88
         (tmp_path / "pyproject.toml").write_text("[tool.other]\nx = 1\n")
         assert read_line_length(tmp_path) == 88
 
@@ -81,12 +93,16 @@ class TestCanonicalLinesRoundTrip:
     identity -- the core round-trip property T-0441's design demands."""
 
     def test_short_text_stays_one_line(self) -> None:
-        # frob:tests tests/test_gates_fmt_directives.py::TestCanonicalLinesRoundTrip.test_short_text_stays_one_line
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestCanonicalLinesRoundTrip.test_short_te\
+        # xt_stays_one_line
         lines = _canonical_lines("frob:ticket T-0441", marker="#", indent="", limit=88)
         assert lines == ["# frob:ticket T-0441"]
 
     def test_long_text_wraps_and_folds_back_identical(self) -> None:
-        # frob:tests tests/test_gates_fmt_directives.py::TestCanonicalLinesRoundTrip.test_long_text_wraps_and_folds_back_identical
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestCanonicalLinesRoundTrip.test_long_tex\
+        # t_wraps_and_folds_back_identical
         text = (
             'frob:waive RULE-1 reason="this reason is intentionally long so '
             'it would overflow the ruff line-length limit and needs wrapping"'
@@ -119,13 +135,17 @@ class TestCanonicalLinesRoundTrip:
         st.integers(min_value=20, max_value=120),
     )
     def test_wrap_then_fold_is_identity(self, body: str, limit: int) -> None:
-        # frob:tests tests/test_gates_fmt_directives.py::TestCanonicalLinesRoundTrip.test_wrap_then_fold_is_identity
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestCanonicalLinesRoundTrip.test_wrap_the\
+        # n_fold_is_identity
         text = f"frob:ticket {body}"
         lines = _canonical_lines(text, marker="#", indent="", limit=limit)
         assert _fold_lines(lines, "#") == text
 
     def test_backslash_at_exact_wrap_boundary_round_trips(self) -> None:
-        # frob:tests tests/test_gates_fmt_directives.py::TestCanonicalLinesRoundTrip.test_backslash_at_exact_wrap_boundary_round_trips
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestCanonicalLinesRoundTrip.test_backslas\
+        # h_at_exact_wrap_boundary_round_trips
         # A body backslash landing exactly where `_canonical_lines` would
         # cut -- so the emitted physical line ends in TWO backslashes (the
         # body's own, plus the appended continuation marker) -- must still
@@ -138,13 +158,17 @@ class TestCanonicalLinesRoundTrip:
         assert _fold_lines(lines, "#") == text
 
     def test_double_backslash_in_body_round_trips(self) -> None:
-        # frob:tests tests/test_gates_fmt_directives.py::TestCanonicalLinesRoundTrip.test_double_backslash_in_body_round_trips
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestCanonicalLinesRoundTrip.test_double_b\
+        # ackslash_in_body_round_trips
         text = 'frob:waive R reason="path\\\\\\\\to\\\\\\\\file ' + ("z" * 40) + '"'
         lines = _canonical_lines(text, marker="#", indent="", limit=30)
         assert _fold_lines(lines, "#") == text
 
     def test_indent_is_preserved_on_every_physical_line(self) -> None:
-        # frob:tests tests/test_gates_fmt_directives.py::TestCanonicalLinesRoundTrip.test_indent_is_preserved_on_every_physical_line
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestCanonicalLinesRoundTrip.test_indent_i\
+        # s_preserved_on_every_physical_line
         text = 'frob:waive R reason="' + ("x" * 100) + '"'
         lines = _canonical_lines(text, marker="#", indent="    ", limit=40)
         for line in lines:
@@ -155,7 +179,9 @@ class TestCanonicalizeText:
     """`canonicalize_text`: file-level wrap/un-wrap of every `frob:` run."""
 
     def test_wraps_over_long_single_line_directive(self) -> None:
-        # frob:tests tests/test_gates_fmt_directives.py::TestCanonicalizeText.test_wraps_over_long_single_line_directive
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestCanonicalizeText.test_wraps_over_long\
+        # _single_line_directive
         src = (
             "def f():\n"
             '    # frob:waive RULE-1 reason="this reason is intentionally long '
@@ -182,7 +208,9 @@ class TestCanonicalizeText:
         )
 
     def test_joins_over_split_directive_that_now_fits(self) -> None:
-        # frob:tests tests/test_gates_fmt_directives.py::TestCanonicalizeText.test_joins_over_split_directive_that_now_fits
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestCanonicalizeText.test_joins_over_spli\
+        # t_directive_that_now_fits
         src = (
             'def f():\n    # frob:waive RULE-1 reason="short \\\n    # now"\n    pass\n'
         )
@@ -192,13 +220,17 @@ class TestCanonicalizeText:
         )
 
     def test_three_line_continuation_that_fits_collapses_to_one(self) -> None:
-        # frob:tests tests/test_gates_fmt_directives.py::TestCanonicalizeText.test_three_line_continuation_that_fits_collapses_to_one
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestCanonicalizeText.test_three_line_cont\
+        # inuation_that_fits_collapses_to_one
         src = '# frob:waive R reason="a \\\n# b \\\n# c"\n'
         out = canonicalize_text(src, path="a.py", limit=88)
         assert out == '# frob:waive R reason="a b c"\n'
 
     def test_re_wraps_to_minimal_split_when_only_first_line_over_long(self) -> None:
-        # frob:tests tests/test_gates_fmt_directives.py::TestCanonicalizeText.test_re_wraps_to_minimal_split_when_only_first_line_over_long
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestCanonicalizeText.test_re_wraps_to_min\
+        # imal_split_when_only_first_line_over_long
         long_reason = "x" * 60
         src = f'# frob:waive R reason="{long_reason} short \\\n# tail"\n'
         out = canonicalize_text(src, path="a.py", limit=88)
@@ -212,7 +244,9 @@ class TestCanonicalizeText:
         assert folded[0][0] == f'frob:waive R reason="{long_reason} short tail"'
 
     def test_idempotent_on_already_canonical_text(self) -> None:
-        # frob:tests tests/test_gates_fmt_directives.py::TestCanonicalizeText.test_idempotent_on_already_canonical_text
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestCanonicalizeText.test_idempotent_on_a\
+        # lready_canonical_text
         src = (
             "def f():\n"
             '    # frob:waive RULE-1 reason="this reason is intentionally long '
@@ -224,18 +258,24 @@ class TestCanonicalizeText:
         assert once == twice
 
     def test_non_directive_comments_are_untouched(self) -> None:
-        # frob:tests tests/test_gates_fmt_directives.py::TestCanonicalizeText.test_non_directive_comments_are_untouched
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestCanonicalizeText.test_non_directive_c\
+        # omments_are_untouched
         src = "# just a very ordinary long comment that has nothing to do with frob at all, really\n"
         out = canonicalize_text(src, path="a.py", limit=40)
         assert out == src
 
     def test_unsupported_language_returns_text_unchanged(self) -> None:
-        # frob:tests tests/test_gates_fmt_directives.py::TestCanonicalizeText.test_unsupported_language_returns_text_unchanged
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestCanonicalizeText.test_unsupported_lan\
+        # guage_returns_text_unchanged
         src = "-- frob:ticket T-0441\n"
         assert canonicalize_text(src, path="a.sql", limit=88) == src
 
     def test_rust_double_slash_marker_round_trips(self) -> None:
-        # frob:tests tests/test_gates_fmt_directives.py::TestCanonicalizeText.test_rust_double_slash_marker_round_trips
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestCanonicalizeText.test_rust_double_sla\
+        # sh_marker_round_trips
         src = (
             '// frob:waive RULE-1 reason="this reason is intentionally long so '
             'it overflows the line-length limit and must be wrapped"\n'
@@ -263,7 +303,9 @@ class TestCrlfPreservation:
     only the over-long directive run's own physical lines may change."""
 
     def test_canonicalize_text_preserves_crlf_on_untouched_lines(self) -> None:
-        # frob:tests tests/test_gates_fmt_directives.py::TestCrlfPreservation.test_canonicalize_text_preserves_crlf_on_untouched_lines
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestCrlfPreservation.test_canonicalize_te\
+        # xt_preserves_crlf_on_untouched_lines
         src = (
             "fn f() {\r\n"
             '    // frob:waive RULE-1 reason="this reason is intentionally long '
@@ -296,7 +338,9 @@ class TestCrlfPreservation:
         )
 
     def test_canonicalize_text_is_a_no_op_on_second_pass(self) -> None:
-        # frob:tests tests/test_gates_fmt_directives.py::TestCrlfPreservation.test_canonicalize_text_is_a_no_op_on_second_pass
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestCrlfPreservation.test_canonicalize_te\
+        # xt_is_a_no_op_on_second_pass
         src = (
             "fn f() {\r\n"
             '    // frob:waive RULE-1 reason="this reason is intentionally long '
@@ -309,7 +353,9 @@ class TestCrlfPreservation:
         assert once == twice
 
     def test_format_paths_preserves_crlf_end_to_end(self, tmp_path) -> None:  # noqa: ANN001
-        # frob:tests tests/test_gates_fmt_directives.py::TestCrlfPreservation.test_format_paths_preserves_crlf_end_to_end
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestCrlfPreservation.test_format_paths_pr\
+        # eserves_crlf_end_to_end
         target = tmp_path / "a.rs"
         original = (
             "fn f() {\r\n"
@@ -347,7 +393,9 @@ class TestFormatPaths:
     """`format_paths`: file-tree wrapper, check-only vs. write mode."""
 
     def test_check_mode_reports_without_writing(self, tmp_path) -> None:  # noqa: ANN001
-        # frob:tests tests/test_gates_fmt_directives.py::TestFormatPaths.test_check_mode_reports_without_writing
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestFormatPaths.test_check_mode_reports_w\
+        # ithout_writing
         target = tmp_path / "a.py"
         original = (
             '# frob:waive R reason="this reason is intentionally long so '
@@ -359,7 +407,9 @@ class TestFormatPaths:
         assert target.read_text() == original
 
     def test_write_mode_rewrites_file(self, tmp_path) -> None:  # noqa: ANN001
-        # frob:tests tests/test_gates_fmt_directives.py::TestFormatPaths.test_write_mode_rewrites_file
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestFormatPaths.test_write_mode_rewrites_\
+        # file
         target = tmp_path / "a.py"
         original = (
             '# frob:waive R reason="this reason is intentionally long so '
@@ -374,7 +424,9 @@ class TestFormatPaths:
             assert len(line) <= 88
 
     def test_already_canonical_file_reports_no_changes(self, tmp_path) -> None:  # noqa: ANN001
-        # frob:tests tests/test_gates_fmt_directives.py::TestFormatPaths.test_already_canonical_file_reports_no_changes
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestFormatPaths.test_already_canonical_fi\
+        # le_reports_no_changes
         target = tmp_path / "a.py"
         target.write_text("# frob:ticket T-0441\n")
         report = format_paths(tmp_path, check_only=True, limit=88)
@@ -388,7 +440,9 @@ class TestCanonicalLinesMutantKiller:
     implementation (TEST016)."""
 
     def test_every_physical_line_is_strictly_within_limit(self) -> None:
-        # frob:tests tests/test_gates_fmt_directives.py::TestCanonicalLinesMutantKiller.test_every_physical_line_is_strictly_within_limit
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestCanonicalLinesMutantKiller.test_every\
+        # _physical_line_is_strictly_within_limit
         text = 'frob:waive R reason="' + ("word " * 40).strip() + '"'
         limit = 50
         lines = _canonical_lines(text, marker="#", indent="", limit=limit)
@@ -401,7 +455,9 @@ class TestCanonicalLinesMutantKiller:
         assert _fold_lines(lines, "#") == text
 
     def test_no_breakable_space_still_stays_within_limit(self) -> None:
-        # frob:tests tests/test_gates_fmt_directives.py::TestCanonicalLinesMutantKiller.test_no_breakable_space_still_stays_within_limit
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestCanonicalLinesMutantKiller.test_no_br\
+        # eakable_space_still_stays_within_limit
         # A single unbroken run (no spaces) forces the fallback "cut at the
         # budget boundary verbatim" branch -- this is the branch a
         # room-vs-room-minus-1 off-by-one mutant overflows by exactly one
@@ -429,7 +485,9 @@ class TestBoundaryOffByOneT0984:
     shape that triggered the overflow."""
 
     def test_space_exactly_at_budget_boundary_does_not_overflow(self) -> None:
-        # frob:tests tests/test_gates_fmt_directives.py::TestBoundaryOffByOneT0984.test_space_exactly_at_budget_boundary_does_not_overflow
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestBoundaryOffByOneT0984.test_space_exac\
+        # tly_at_budget_boundary_does_not_overflow
         # prefix = "# " (len 2), limit=88 -> room=86, budget=85. A space at
         # index 85 (0-indexed) of `remaining` is the exact boundary the
         # buggy `rfind(" ", 0, budget + 1)` would match and misplace.
@@ -441,7 +499,9 @@ class TestBoundaryOffByOneT0984:
         assert _fold_lines(lines, "#") == text
 
     def test_directive_line_at_exact_limit_is_byte_identical(self) -> None:
-        # frob:tests tests/test_gates_fmt_directives.py::TestBoundaryOffByOneT0984.test_directive_line_at_exact_limit_is_byte_identical
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestBoundaryOffByOneT0984.test_directive_\
+        # line_at_exact_limit_is_byte_identical
         # A single-line directive whose total physical width is EXACTLY the
         # configured limit must round-trip through `canonicalize_text`
         # completely untouched -- this is the "at-limit" fixture in the
@@ -455,7 +515,9 @@ class TestBoundaryOffByOneT0984:
         assert out == src
 
     def test_directive_line_one_under_limit_is_byte_identical(self) -> None:
-        # frob:tests tests/test_gates_fmt_directives.py::TestBoundaryOffByOneT0984.test_directive_line_one_under_limit_is_byte_identical
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestBoundaryOffByOneT0984.test_directive_\
+        # line_one_under_limit_is_byte_identical
         limit = 88
         prefix_len = len("# ")
         text = "frob:ticket " + ("x" * (limit - prefix_len - len("frob:ticket ") - 1))
@@ -465,7 +527,9 @@ class TestBoundaryOffByOneT0984:
         assert out == src
 
     def test_directive_line_one_over_limit_wraps_and_stays_in_bounds(self) -> None:
-        # frob:tests tests/test_gates_fmt_directives.py::TestBoundaryOffByOneT0984.test_directive_line_one_over_limit_wraps_and_stays_in_bounds
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestBoundaryOffByOneT0984.test_directive_\
+        # line_one_over_limit_wraps_and_stays_in_bounds
         limit = 88
         prefix_len = len("# ")
         text = "frob:ticket " + ("x" * (limit - prefix_len - len("frob:ticket ") + 1))
@@ -481,3 +545,78 @@ class TestBoundaryOffByOneT0984:
         entries = [(i, line, "", 0) for i, line in enumerate(comment_lines)]
         folded = fold_comment_runs(entries)
         assert folded[0][0] == text
+
+
+class TestNoqaSuffixPragmaT0985:
+    """T-0985: a `frob:` directive line ending in `# noqa`/`# noqa: CODE`
+    is a deliberate escape hatch for an unwrappable single token (e.g. a
+    long dotted pytest node id) -- `canonicalize_text` must leave it byte-
+    identical rather than force-wrapping it."""
+
+    def test_over_long_single_line_with_noqa_e501_is_byte_identical(self) -> None:
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestNoqaSuffixPragmaT0985.test_over_long_\
+        # single_line_with_noqa_e501_is_byte_identical
+        src = (
+            "def f():\n"
+            "    # frob:tests tests/some/very/long/dotted/module/path/test_thing.py"
+            "::TestClassName.test_a_very_long_method_name_that_cannot_be_wrapped"
+            "  # noqa: E501\n"
+            "    pass\n"
+        )
+        assert len(src.splitlines()[1]) > 88
+        out = canonicalize_text(src, path="a.py", limit=88)
+        assert out == src
+
+    def test_over_long_single_line_with_bare_noqa_is_byte_identical(self) -> None:
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestNoqaSuffixPragmaT0985.test_over_long_\
+        # single_line_with_bare_noqa_is_byte_identical
+        src = '    # frob:waive RULE-1 reason="' + ("x" * 80) + '"  # noqa\n'
+        assert len(src.splitlines()[0]) > 88
+        out = canonicalize_text(src, path="a.py", limit=88)
+        assert out == src
+
+    def test_over_long_line_without_noqa_still_wraps(self) -> None:
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestNoqaSuffixPragmaT0985.test_over_long_\
+        # line_without_noqa_still_wraps
+        # Control case: the same over-long content WITHOUT the trailing
+        # noqa pragma is still wrapped as usual -- the pragma, not mere
+        # length, is what suppresses the rewrap.
+        src = '    # frob:waive RULE-1 reason="' + ("x" * 80) + '"\n'
+        out = canonicalize_text(src, path="a.py", limit=88)
+        assert out != src
+        for line in out.splitlines():
+            assert len(line) <= 88
+
+
+class TestRepoWideIdempotenceT0985:
+    """T-0985 acceptance bar: running the canonicalizer twice over every
+    real source file this repo's `frob fmt` covers must be a no-op on the
+    second pass -- `frob fmt` is idempotent-at-zero after the T-0985
+    repo-wide recompaction, not just on the small hand-built fixtures
+    above."""
+
+    def test_canonicalizing_twice_over_real_repo_files_is_a_no_op(self) -> None:
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestRepoWideIdempotenceT0985.test_canonic\
+        # alizing_twice_over_real_repo_files_is_a_no_op
+        root = Path(__file__).resolve().parent.parent
+        limit = read_line_length(root)
+        checked = 0
+        for path in iter_files(root):
+            if marker_for(str(path)) is None:
+                continue
+            try:
+                with open(path, encoding="utf-8", newline="") as fh:
+                    original = fh.read()
+            except (OSError, UnicodeDecodeError):
+                continue
+            once = canonicalize_text(original, path=str(path), limit=limit)
+            twice = canonicalize_text(once, path=str(path), limit=limit)
+            assert twice == once, f"{path} is not idempotent under a second fmt pass"
+            checked += 1
+        # Sanity: this must actually exercise a non-trivial slice of the
+        # repo's own source, not silently iterate zero files.
+        assert checked > 100

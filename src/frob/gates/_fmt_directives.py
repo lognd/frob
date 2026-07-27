@@ -27,6 +27,7 @@ line -- this module's only new logic is CHOOSING the physical-line layout
 
 from __future__ import annotations
 
+import re
 import tomllib
 from pathlib import Path
 
@@ -62,6 +63,16 @@ class FmtReport(BaseModel):
 
 _DEFAULT_LIMIT = 88
 """Ruff's own default line length, used when `pyproject.toml` has none."""
+
+_NOQA_SUFFIX_RE = re.compile(r"#\s*noqa(:\s*[A-Z0-9]+(\s*,\s*[A-Z0-9]+)*)?\s*$")
+"""Matches a trailing `# noqa` / `# noqa: E501[,CODE...]` pragma at the end
+of a logical directive line. T-0985: a single-physical-line `frob:` run
+ending in this pragma is a deliberate escape hatch (used where the
+directive's own content is one unbreakable token, e.g. a long dotted
+pytest node id with no space to wrap at) -- treating it as ordinary
+directive text and force-wrapping it defeats the whole point of the
+pragma. `canonicalize_text` checks single-line runs against this pattern
+and leaves a match byte-identical rather than re-wrapping it."""
 
 # frob:doc docs/modules/gates.md#frob-fmt-directive-canonicalization-t-0441
 _MARKERS: dict[str, str] = {
@@ -224,6 +235,7 @@ def _fmt_marker_entries_with_indents(
 
 
 # frob:ticket T-0976
+# frob:ticket T-0985
 def _rewrite_lines_via_runs(
     lines: list[str],
     runs: list,
@@ -236,7 +248,12 @@ def _rewrite_lines_via_runs(
     its T-0441 canonical form (`_canonical_lines`, preserving the run's
     own CR convention), and every other run/line passed through verbatim
     -- the run-rewrite half of `canonicalize_text`, split from the
-    marker-scan half that built `runs`/`indents`."""
+    marker-scan half that built `runs`/`indents`.
+
+    T-0985: a run ending in a `# noqa`/`# noqa: CODE` pragma
+    (`_NOQA_SUFFIX_RE`) is a deliberate escape hatch for an unwrappable
+    single token and is passed through verbatim like a non-`frob:` run,
+    rather than being canonicalized."""
     out: list[str] = []
     run_idx = 0
     i = 0
@@ -247,7 +264,9 @@ def _rewrite_lines_via_runs(
         if run_idx < len(runs) and runs[run_idx][1] == i:
             logical_text, _lineno, _src, count = runs[run_idx]
             run_idx += 1
-            if logical_text.strip().startswith("frob:"):
+            if logical_text.strip().startswith("frob:") and not _NOQA_SUFFIX_RE.search(
+                logical_text
+            ):
                 # `fold_comment_runs` already rstrips "\r" off every
                 # constituent line while folding (T-0286's own fold rule),
                 # so `logical_text` is always "\r"-free regardless of the
@@ -279,7 +298,20 @@ def _rewrite_lines_via_runs(
 # frob:tests \
 # tests/test_gates_fmt_directives.py::TestCanonicalizeText.test_idempotent_on_already_c\
 # anonical_text
+# frob:tests \
+# tests/test_gates_fmt_directives.py::TestNoqaSuffixPragmaT0985.test_over_long_single_l\
+# ine_with_noqa_e501_is_byte_identical
+# frob:tests \
+# tests/test_gates_fmt_directives.py::TestNoqaSuffixPragmaT0985.test_over_long_single_l\
+# ine_with_bare_noqa_is_byte_identical
+# frob:tests \
+# tests/test_gates_fmt_directives.py::TestNoqaSuffixPragmaT0985.test_over_long_line_wit\
+# hout_noqa_still_wraps
+# frob:tests \
+# tests/test_gates_fmt_directives.py::TestRepoWideIdempotenceT0985.test_canonicalizing_\
+# twice_over_real_repo_files_is_a_no_op
 # frob:ticket T-0972
+# frob:ticket T-0985
 # frob:waive AFFECT001 reason="T-0976 pure internal refactor: extraction of cohesive helpers from this already-documented function, no external contract/behavior change, doc anchor(s) remain accurate as-is"  # noqa: E501
 def canonicalize_text(text: str, *, path: str, limit: int) -> str:
     """Rewrite every `frob:` directive comment run in `text` (source for
@@ -293,6 +325,12 @@ def canonicalize_text(text: str, *, path: str, limit: int) -> str:
     (`marker_for` returns `None`). Idempotent: canonicalizing already-
     canonical text returns it unchanged, in both the wrap and un-wrap
     direction.
+
+    T-0985: a directive run whose logical text ends in a `# noqa`/`# noqa:
+    CODE` pragma (`_NOQA_SUFFIX_RE`) is a deliberate escape hatch for
+    content that cannot be wrapped without breaking a single unbreakable
+    token (e.g. a long dotted pytest node id) -- such a run is left
+    byte-identical rather than force-wrapped.
     """
     marker = marker_for(path)
     if marker is None:

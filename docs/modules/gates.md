@@ -2467,12 +2467,34 @@ Public API (`src/frob/gates/_fmt_directives.py`):
   up -- every supported language wraps against this single limit today.
 - `canonicalize_text(text, *, path, limit) -> str` -- rewrites every
   `frob:` directive run in `text` to canonical form; non-directive
-  comments and all code are untouched byte-for-byte.
+  comments and all code are untouched byte-for-byte. T-0985: a run whose
+  logical text ends in a `# noqa`/`# noqa: CODE` pragma is a deliberate
+  escape hatch (content is one unbreakable token, e.g. a long dotted
+  pytest node id with no space to wrap at) and is left byte-identical
+  rather than force-wrapped -- previously the pragma comment was treated
+  as ordinary directive text and force-wrapped anyway, defeating its
+  purpose.
 - `format_paths(root, *, check_only, limit=None) -> FmtReport` -- walks
   `root` (via `frob.excludes.iter_files`, so the usual excluded/pruned dirs
   are skipped) and canonicalizes every supported file; `check_only=True`
   reports without writing (`frob fmt --check`, CI-friendly, exits 1 if
   anything is non-canonical).
+
+**T-0985: repo-wide recompaction deliberately deferred.** A large slice of
+this repo's own `frob:` directive comments predate T-0441's "fewest
+physical lines" canonical form (hand-wrapped, or wrapped by an older/
+looser tool version) -- a fresh `frob fmt .` still reports ~260 files as
+non-canonical purely from this legacy layout, even after the noqa fix
+above. Actually performing that one-time repo-wide recompaction was
+investigated and found UNSAFE today: rewrapping shifts word-wrap
+boundaries, and in some files this places a `frob:`-shaped prose token
+(inside a `reason="..."` string, referring to `frob:describes` by name
+rather than invoking it) at the start of a continuation line, which
+`frob.graph.dsl.parse_directives` misparses as a bogus new directive --
+see the filed follow-up tickets (DSL continuation-parsing fix, then the
+deferred recompaction itself) for the full repro. `frob fmt`'s own
+idempotence (running it twice is a no-op) holds regardless of whether
+the legacy files have been recompacted yet.
 
 Folding an existing continuation run back into one logical string reuses
 `frob.graph.dsl.fold_comment_runs` -- T-0286's own continuation fold,
