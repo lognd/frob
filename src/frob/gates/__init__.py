@@ -10862,10 +10862,11 @@ def _build_jobs(
         "lang_conformance": lambda: lang_conformance_gate(),
         # T-0406: always against repo_root (never the possibly-scoped
         # st.root) -- a repo's real language mix is a repo-wide concern,
-        # same reasoning as refs/secrets/walk_lint above.
-        "lang_project_conformance": lambda: project_lang_conformance_gate(
-            st.repo_root, st.queue
-        ),
+        # same reasoning as refs/secrets/walk_lint above. T-0823: no
+        # longer takes st.queue -- LANG003 verifies known-gap tickets
+        # against frob's own shipped registry, not the checked repo's
+        # queue.
+        "lang_project_conformance": lambda: project_lang_conformance_gate(st.repo_root),
         # T-0851: FMT001, diff-scoped like TODO001/coverage above -- always
         # against repo_root so a `frob check <subdir>` run resolves the same
         # repo-relative diff hunk paths coverage_gate's TODO001 half does.

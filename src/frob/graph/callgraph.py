@@ -667,11 +667,20 @@ def _file_of(symref: str) -> str:
     return symref.split("::", 1)[0]
 
 
+def _short_name_of_symref(symref: str) -> str:
+    """The bare short name half of a `path::qualname` symref (T-1012) --
+    `_short_name` applied to the qualname side, shared by
+    `scope_private_helper_gaps`'s same-name-collision check below."""
+    return _short_name(symref.split("::", 1)[-1])
+
+
 # frob:doc docs/modules/graph.md#scope-closure-t-0998
 # frob:ticket T-0998
 # frob:tests tests/test_graph.py::TestScopePrivateHelperGaps.test_flags_scoped_caller_of_unscoped_private_helper  # noqa: E501
 # frob:tests tests/test_graph.py::TestScopePrivateHelperGaps.test_only_used_by_scope_true_when_no_external_caller  # noqa: E501
 # frob:tests tests/test_graph.py::TestScopePrivateHelperGaps.test_clean_when_callee_also_in_scope  # noqa: E501
+# frob:tests tests/test_graph.py::TestScopePrivateHelperGaps.test_flat_dir_same_name_self_match_is_silent  # noqa: E501
+# frob:tests tests/test_graph.py::TestScopePrivateHelperGaps.test_flat_dir_genuine_cross_file_helper_still_fires  # noqa: E501
 def scope_private_helper_gaps(
     root: Path, scope: tuple[str, ...] | list[str], files: Sequence[str]
 ) -> tuple[PrivateHelperGap, ...]:
@@ -685,7 +694,27 @@ def scope_private_helper_gaps(
     walk needed); restricting `build_call_graph`'s own `paths` argument to
     scope-adjacent directories (rather than the whole repo) keeps this
     bounded the way `build_call_graph`'s own docstring assumes (a
-    per-package scan, not a whole-tree one)."""
+    per-package scan, not a whole-tree one).
+
+    T-1012: over a FLAT top-level directory with hundreds of sibling
+    files (`tests/`), "same parent directory as a scoped file" widens
+    `candidate_paths` to the whole directory, and `build_call_graph`'s
+    bare-short-name matching (by design -- see `_resolve_edges_python`)
+    resolves a caller's own local helper call (e.g. `test_perf.py`
+    calling ITS OWN `_snapshot`) against EVERY same-named private symbol
+    across every sibling file, not just its own -- `test_perf.py::
+    test_x -> test_docptr_gate.py::_snapshot` fires purely from name
+    collision, not an actual cross-file dependency. Suppressed here by a
+    same-short-name same-file check: if `caller`'s own file ALSO defines
+    a private symbol under a callee's exact short name, that local
+    definition is overwhelmingly the real target in a flat, single-
+    directory scan -- every OTHER same-named file's candidate is dropped
+    for that name, for this caller, without touching `build_call_graph`'s
+    own general (multi-match) resolution semantics other consumers rely
+    on. A genuine cross-file private helper (no same-name candidate in
+    the caller's own file at all, e.g. `tests/test_B.py` calling a
+    helper ONLY `tests/test_A.py` defines) is unaffected and still
+    flagged."""
     from frob.tickets._models import scope_matches
 
     all_files = tuple(files)
@@ -711,8 +740,21 @@ def scope_private_helper_gaps(
     for caller in sorted(graph.calls):
         if _file_of(caller) not in scope_files:
             continue
-        for callee in graph.calls[caller]:
+        caller_file = _file_of(caller)
+        callees = graph.calls[caller]
+        # T-1012: short names this caller ALSO resolves to a private
+        # symbol in its OWN file -- these are same-file self-matches, so
+        # any OTHER file's same-named candidate is noise, not a real
+        # cross-file dependency, in a flat-directory scan.
+        self_resolved_names = {
+            _short_name_of_symref(c)
+            for c in callees
+            if c != UNRESOLVED_CALLEE and _file_of(c) == caller_file
+        }
+        for callee in callees:
             if callee == UNRESOLVED_CALLEE:
+                continue
+            if _short_name_of_symref(callee) in self_resolved_names:
                 continue
             callee_file = _file_of(callee)
             if callee_file in scope_files:

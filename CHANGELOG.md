@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.197.0] - unreleased
+
+- T-0823: lang: LANG003 known-gap ticket refs unresolvable in adopter repos (escalates to ERROR outside frob itself)
+
 ## [0.196.0] - unreleased
 
 - T-0639: design: detect a deprecated symbol gaining NEW callers (public-symbol caller graph)

@@ -58,6 +58,7 @@ __all__ = [
     "FACET_DOCBLOCK",
     "FACET_DUP",
     "FACET_GRAMMAR",
+    "KNOWN_GAP_TRACKING_TICKETS",
     "FacetState",
     "FacetStatus",
     "LanguageSupport",
@@ -186,6 +187,31 @@ def _not_applicable(detail: str) -> FacetStatus:
 def _known_gap(detail: str) -> FacetStatus:
     """`FacetStatus(KNOWN_GAP, detail)` -- see `_implemented`."""
     return FacetStatus(state=FacetState.KNOWN_GAP, detail=detail)
+
+
+# frob:doc docs/modules/lang.md#language-support-contract
+# frob:ticket T-0823
+#: Every ticket id ever cited by a `_known_gap` `detail` string in this
+#: module, mapped to whether FROB'S OWN tracking still considers it open
+#: (T-0823). These ids are frob-internal (e.g. `T-0329`, frob's own
+#: multi-language-arch epic) -- they name work tracked in FROB's project,
+#: not in whatever repo `frob check` happens to be running against. Prior
+#: to T-0823, LANG003 verified a cited id against the CHECKED repo's own
+#: `TicketQueue`, which only ever coincidentally works for frob's own
+#: repo; a downstream adopter's queue never defines a frob-internal id at
+#: all, so every known-gap facet escalated to ERROR there unconditionally
+#: (T-0818's finding). This dict is frob's own shipped, hand-maintained
+#: source of truth instead -- a maintainer flips an entry to `False` (or
+#: removes the id from the corresponding `detail` string) the same
+#: release a cited ticket actually closes; `_lang_conformance._lang003_
+#: unsound_gaps` reads ONLY this, never any repo's `TicketQueue`, for
+#: known-gap verification.
+KNOWN_GAP_TRACKING_TICKETS: dict[str, bool] = {
+    # T-0329: EPIC arch multi-language: normalized code model -- cited by
+    # `_arch_status`'s known-gap detail for every language frob.arch has
+    # no per-language dispatch branch for yet (c/rust/typescript today).
+    "T-0329": True,
+}
 
 
 # T-0405: `frob.arch.__init__._run_language_checks` dispatches on

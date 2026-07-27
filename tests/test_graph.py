@@ -2387,3 +2387,57 @@ class TestScopePrivateHelperGaps:
             tmp_path, ("pkg/a.py", "pkg/b.py"), ("pkg/a.py", "pkg/b.py")
         )
         assert gaps == ()
+
+    # frob:ticket T-1012
+    def test_flat_dir_same_name_self_match_is_silent(self, tmp_path: Path) -> None:
+        """T-1012: the recurring false positive -- a scoped caller in a
+        flat directory (many sibling files, e.g. `tests/`) calling ITS OWN
+        local private helper (`_snapshot`) must not also be reported as
+        depending on an unrelated SIBLING file's same-named private
+        helper, purely from bare-name collision widened by the shared-
+        parent-directory candidate scan (the live `tests/test_perf.py ->
+        test_docptr_gate.py::_snapshot` case: both files define their own
+        unrelated `_snapshot`)."""
+        # frob:tests src/frob/graph/callgraph.py::scope_private_helper_gaps
+        from frob.graph.callgraph import scope_private_helper_gaps
+
+        _write(
+            tmp_path,
+            "flat/test_a.py",
+            "def _snapshot():\n    pass\n\ndef test_x():\n    _snapshot()\n",
+        )
+        _write(
+            tmp_path,
+            "flat/test_b.py",
+            "def _snapshot():\n    pass\n\ndef test_y():\n    _snapshot()\n",
+        )
+        gaps = scope_private_helper_gaps(
+            tmp_path, ("flat/test_a.py",), ("flat/test_a.py", "flat/test_b.py")
+        )
+        assert gaps == ()
+
+    # frob:ticket T-1012
+    def test_flat_dir_genuine_cross_file_helper_still_fires(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1012's true-positive pin: in that SAME flat directory, a
+        caller depending on a private helper that ONLY a sibling file
+        defines (no same-name candidate in the caller's own file) is a
+        real cross-file dependency and must still be flagged -- the fix
+        suppresses same-NAME self-matches, not cross-file calls in
+        general."""
+        # frob:tests src/frob/graph/callgraph.py::scope_private_helper_gaps
+        from frob.graph.callgraph import scope_private_helper_gaps
+
+        _write(
+            tmp_path,
+            "flat/test_a.py",
+            "def _snapshot():\n    pass\n\ndef test_x():\n    _snapshot()\n    _git()\n",
+        )
+        _write(tmp_path, "flat/test_b.py", "def _git():\n    pass\n")
+        gaps = scope_private_helper_gaps(
+            tmp_path, ("flat/test_a.py",), ("flat/test_a.py", "flat/test_b.py")
+        )
+        assert len(gaps) == 1
+        assert gaps[0].caller == "flat/test_a.py::test_x"
+        assert gaps[0].callee == "flat/test_b.py::_git"

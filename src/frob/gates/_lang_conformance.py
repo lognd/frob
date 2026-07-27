@@ -43,12 +43,12 @@ from frob.excludes import iter_files
 from frob.gates._models import Severity, Violation
 from frob.lang import language_for_extension, supported_extensions
 from frob.lang._support import (
+    KNOWN_GAP_TRACKING_TICKETS,
     FacetState,
     conformance_violations,
     derive_language_registry,
 )
 from frob.logging import get_logger
-from frob.tickets._models import TicketQueue, TicketState
 
 _log = get_logger(__name__)
 
@@ -80,22 +80,36 @@ _UNREGISTERED_CANDIDATE_LANGUAGES: dict[str, str] = {
 _TICKET_REF_RE = re.compile(r"\bT-(?:draft-)?[0-9a-fA-F]+\b")
 
 
-def _verify_known_gap_ticket(detail: str, queue: TicketQueue) -> str | None:
-    """`None` if `detail` names a real, currently-open ticket; else an
-    explanation of why the claim does not verify (missing ticket
-    reference, unknown id, or a closed/dropped ticket) -- the anti-lie
-    check `_classify_deferred` (`frob.gates._registry_exhaustiveness`)
-    performs for `deferred:<ticket>`, reused here for `KNOWN_GAP` details.
+def _verify_known_gap_ticket(detail: str) -> str | None:
+    """`None` if `detail` names a ticket FROB's own shipped `KNOWN_GAP_
+    TRACKING_TICKETS` registry (`frob.lang._support`) still considers
+    open; else an explanation of why the claim does not verify (missing
+    ticket reference, an id the registry does not recognize, or one the
+    registry marks resolved).
+
+    T-0823: deliberately verified against frob's OWN shipped registry,
+    never against the repo `frob check` happens to be running against --
+    every id a `_known_gap` detail in `frob.lang._support` cites is
+    frob-internal tracking (e.g. `T-0329`), meaningless to look up in a
+    downstream adopter repo's `TicketQueue` (T-0818's finding: every
+    known-gap facet escalated to ERROR on every adopter repo, since a
+    frob-internal id never resolves there). Same anti-lie posture
+    `_classify_deferred` (`frob.gates._registry_exhaustiveness`) takes for
+    `deferred:<ticket>`, just against a hand-maintained constant instead
+    of a live queue.
     """
     match = _TICKET_REF_RE.search(detail)
     if match is None:
         return "detail names no tracking ticket at all"
     ticket_id = match.group(0)
-    ticket = queue.tickets.get(ticket_id)
-    if ticket is None:
-        return f"detail names {ticket_id}, which does not exist in the loaded queue"
-    if ticket.state in (TicketState.DONE, TicketState.DROPPED):
-        return f"detail names {ticket_id}, which is already {ticket.state.value}"
+    is_open = KNOWN_GAP_TRACKING_TICKETS.get(ticket_id)
+    if is_open is None:
+        return (
+            f"detail names {ticket_id}, which frob's own "
+            f"KNOWN_GAP_TRACKING_TICKETS registry does not recognize"
+        )
+    if not is_open:
+        return f"detail names {ticket_id}, which frob's own tracking already resolved"
     return None
 
 
@@ -166,14 +180,16 @@ def _lang002_unregistered_files(repo_root: Path) -> tuple[Violation, ...]:
 # frob:enforces CHK-GATE-LANG003
 # frob:ticket T-0972
 # frob:waive ARCH001 reason="already split out of project_lang_conformance_gate once for a prior ARCH001 finding (docstring); remaining length is two short linear scans (present-language detection, then a per-facet WARN/ERROR classification) each already minimal -- a second extraction would re-fragment the same two phases previously judged as one gate's cohesive body"  # noqa: E501
-def _lang003_unsound_gaps(repo_root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
+def _lang003_unsound_gaps(repo_root: Path) -> tuple[Violation, ...]:
     """LANG003: one violation per `KNOWN_GAP`/`NOT_APPLICABLE` facet cell
     whose language is actually present in `repo_root`'s tree -- WARN if
-    the cell's `detail` names a real, open tracking ticket (an honestly
-    tracked gap); ERROR if it does not verify (the anti-lie case: a
-    claimed gap that does not actually check out is fake coverage, not
-    tracked coverage). Split out of `project_lang_conformance_gate` for
-    ARCH001."""
+    the cell's `detail` names a ticket frob's own `KNOWN_GAP_TRACKING_
+    TICKETS` registry still considers open (an honestly tracked gap);
+    ERROR if it does not verify (the anti-lie case: a claimed gap that
+    does not actually check out is fake coverage, not tracked coverage).
+    T-0823: verified against frob's own shipped registry, never `repo_
+    root`'s own ticket queue -- see `_verify_known_gap_ticket`'s
+    docstring. Split out of `project_lang_conformance_gate` for ARCH001."""
     registry = derive_language_registry()
     present_languages: set[str] = set()
 
@@ -196,10 +212,10 @@ def _lang003_unsound_gaps(repo_root: Path, queue: TicketQueue) -> tuple[Violatio
             # NOT_APPLICABLE never needs a ticket -- it means the facet
             # genuinely does not apply (e.g. strata's DSL-vs-source-code
             # exemptions), not a deferred gap. Only KNOWN_GAP is checked
-            # against the live ticket queue.
+            # against frob's own known-gap ticket registry.
             if status.state is not FacetState.KNOWN_GAP:
                 continue
-            problem = _verify_known_gap_ticket(status.detail, queue)
+            problem = _verify_known_gap_ticket(status.detail)
             if problem is None:
                 violations.append(
                     Violation(
@@ -242,9 +258,8 @@ def _lang003_unsound_gaps(repo_root: Path, queue: TicketQueue) -> tuple[Violatio
 # frob:tests tests/test_lang_conformance_gate.py::TestProjectLangConformanceGate.test_all_conformant_project_passes  # noqa: E501
 # frob:tests tests/test_lang_conformance_gate.py::TestProjectLangConformanceGate.test_present_known_gap_with_open_ticket_warns  # noqa: E501
 # frob:tests tests/test_lang_conformance_gate.py::TestProjectLangConformanceGate.test_present_known_gap_with_bad_ticket_ref_errors  # noqa: E501
-def project_lang_conformance_gate(
-    repo_root: Path, queue: TicketQueue
-) -> tuple[Violation, ...]:
+# frob:tests tests/test_lang_conformance_gate.py::TestProjectLangConformanceGate.test_adopter_repo_with_no_frob_internal_tickets_does_not_error  # noqa: E501
+def project_lang_conformance_gate(repo_root: Path) -> tuple[Violation, ...]:
     """LANG002 (unregistered-language file present) + LANG003 (a
     registered-but-`KNOWN_GAP` facet whose language is actually present)
     over `repo_root`'s tracked file tree (T-0406).
@@ -256,9 +271,15 @@ def project_lang_conformance_gate(
     fires -- a repo using only fully-conformant languages passes cleanly
     even though frob's global registry still carries `KNOWN_GAP` cells for
     languages that repo never uses.
+
+    T-0823: no longer takes a `TicketQueue` -- LANG003's known-gap
+    verification reads frob's own shipped `KNOWN_GAP_TRACKING_TICKETS`
+    registry (`frob.lang._support`) instead of `repo_root`'s ticket queue,
+    so this gate now behaves identically whether `repo_root` is frob
+    itself or an adopter repo with no frob-internal ticket ids at all.
     """
     violations = _lang002_unregistered_files(repo_root)
-    violations += _lang003_unsound_gaps(repo_root, queue)
+    violations += _lang003_unsound_gaps(repo_root)
     _log.info(
         "project_lang_conformance_gate: %d violation(s) (LANG002=%d, LANG003=%d)",
         len(violations),
