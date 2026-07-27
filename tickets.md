@@ -761,7 +761,7 @@ empty.
 id: T-0663
 title: 'vet: exhaustive C++ static-binding resolver (using-decl, namespace alias,
   fn-ptr/typedef, on top of C fragment)'
-state: planned
+state: done
 kind: security
 origin: agent
 created: '2026-07-22'
@@ -819,134 +819,25 @@ Implement static name-binding resolution for C++ per capability-evasion-taxonomy
 
 ## Done report
 
-Closes the C++-only static-resolvable rows of `docs/design/capability-
-evasion-taxonomy.md`'s C++ table, building on T-0662's C fragment (the
-SAME `_c_resolved_candidates`/`_build_c_alias_tables` entry point handles
-both `"c"` and `"cpp"` `frob.lang` labels -- T-0379's original design).
-
-Verified FIRST, before writing any new code, which taxonomy rows the C
-fragment already covers unchanged (no separate C++ branch needed) versus
-which are genuinely new grammar shapes:
-
-- `using std::system; system(x);` / `namespace fs = std; fs::system(x);`
-  (using-declaration, namespace alias): NEED NO NEW CODE. Neither renames
-  the callable -- the call site's own text already contains the literal
-  needle substring ("system(" is a substring of "fs::system(" too), so
-  the pre-existing lexical scan already catches both, exactly matching
-  T-0379's own documented reasoning for this class of row (the block
-  comment above `_C_SCOPE_TYPES` already states this explicitly for C++'s
-  `using`/namespace-qualified-call shapes). Two litmus tests lock this in
-  as an intentional finding, not an oversight.
-- Function-pointer variable init, `typedef`'d function-pointer type (via
-  BOTH C's `typedef` and C++11's `using Handler = ...;` alias-declaration
-  spelling), `std::function<...>` init: all reduce to the SAME plain
-  `init_declarator` shape T-0662's resolver already walks -- verified
-  interactively, then locked in with 3 litmus tests, no code change.
-- Lambda capturing a bound name: needs NO special lambda-scope handling
-  either -- a `lambda_expression`'s body is not itself a `_C_SCOPE_TYPES`
-  boundary, so `_c_shadowing_scope`'s climb-to-nearest-scope walk passes
-  straight through it to the SAME enclosing function scope the capture's
-  alias entry was recorded under. Verified interactively, then locked in
-  with a litmus test.
-
-Two genuinely new C++-only grammar shapes needed real new code:
-
-- Default argument forwarding a callable (`void call(void(*cb)(const
-  char*) = system) { cb(x); }`): C++'s default-valued parameter is its OWN
-  node type, `optional_parameter_declaration` -- NOT a `parameter_
-  declaration` (which has no default value at all in C or a non-defaulted
-  C++ param). Extended `_c_scope_bind_step` to bind this node type's name
-  the same `_C_ALWAYS_SHADOWS` way as a plain parameter (so the later
-  call-site shadow check finds it), and added `_record_c_default_param_
-  alias` (keyed by the parameter's own enclosing function scope via `_c_
-  enclosing_scope` -- always the SAME scope the parameter itself binds
-  into, unlike `_record_c_assignment_alias`'s `_c_shadowing_scope`
-  keying, since a parameter's declaration and binding scope always
-  coincide).
-- Structured bindings (`auto [a, b] = std::pair{system, 0}; a(x);`): C++17
-  syntax whose declarator is a `structured_binding_declarator` wrapping
-  MULTIPLE names, a fundamentally different shape from every other
-  `init_declarator`'s single-name declarator. Added `_record_c_structured_
-  binding_alias` (positional binding against the RHS's `initializer_list`
-  elements, mirroring T-0661's rust tuple-destructure/T-0659's python
-  tuple-unpack pattern -- unwraps one `compound_literal_expression` layer
-  first since `std::pair{...}` parses as one). Also had to extend `_c_
-  collect_declaration_names` (the T-0379 shadow-scope bookkeeping helper)
-  with a dedicated multi-name branch for this same declarator shape --
-  without it, `a`/`b` were never recorded as "bound here", so the
-  call-site shadow check for `a("x")` never found the scope to look the
-  alias up in (same class of bug as T-0662's `parenthesized_declarator`
-  fix: a helper genuinely used by BOTH shadow-bookkeeping and alias-
-  recording has to stay in sync on every new declarator shape a resolver
-  learns to bind).
-
-Honest disclosed cuts (not silently narrowed, matching the T-0661
-precedent for architecturally-harder rows):
-- Member-function pointer bound to a named member (`auto p = &Ops::run;
-  (obj.*p)(x);`) -- NOT implemented. The `.*`/`->*` pointer-to-member
-  call syntax is a structurally different call-target shape (neither a
-  bare identifier, `field_expression`, nor `subscript_expression`) that
-  this ticket's `_c_call_target_resolved` dispatch does not recognize;
-  correctly resolves to `None` (fail-closed), not a false positive.
-- Argument-dependent lookup (ADL) -- NOT implemented, per the taxonomy's
-  own explicit caveat ("still requires overload resolution to be
-  modeled"), a fundamentally larger problem than name-binding resolution,
-  same posture as T-0661's disclosed `macro_rules!`/struct-field-rebind
-  cuts.
-- `using namespace` directive's own AMBIGUITY case (multiple opened
-  namespaces both declaring the same unqualified name) is not
-  disambiguated -- moot for THIS ticket's own litmus tests since neither
-  needs alias-table resolution at all (see above), but noted per the
-  taxonomy's own "ambiguity across multiple opened namespaces is itself a
-  diagnosable case" annotation.
-
-BLOCKER on gate verification (structural, not a code defect): T-0663 is
-`blocked_by=[T-0662]`, and per this dispatch's explicit instruction
-implementers must NOT close or land a ticket (the coordinator does).
-`frob ticket start T-0663` refuses (`BlockerOpen`) while T-0662 stays
-open, and without a recorded lease from `start`, `frob check --ticket
-T-0663` refuses too ("T-0663 has no recorded lease for . -- run: frob
-ticket start T-0663"). Verified everything possible WITHOUT the ticket-
-scoped gate machinery instead: `uv run ruff check`/`ruff format` (both PATH
-and `uv run` ruff) and `uv run ty check src/frob/vet/_capability.py` all
-clean; the full `tests/test_vet.py` suite passes (uv run pytest tests/
-test_vet.py -p no:cacheprovider -q -- 319 passed, up from 306 after
-T-0662; 13 new). The coordinator should re-run `uv run frob check --only
-<stage> --ticket T-0663` for each stage group once T-0662 is closed/landed
-and this ticket can actually start -- this Done report's own gate claim
-is therefore NOT a substitute for that pass, only the strongest evidence
-obtainable without it.
-
-Mutation-kill hand-verified (per playbook): flipped the `compound_literal_
-expression`-unwrap guard's initializer_list type check (`!= "initializer_
-list"` -> `!= "no_such_type_ever"`) -- the structured-binding detection
-test failed as expected, caught. Flipped `_c_scope_bind_step`'s new
-`optional_parameter_declaration` recognition (dropped it from the tuple)
--- both the default-arg-forwarding test AND the param-shadowing-not-
-detected test failed as expected, caught. Both reverted after confirming
-the kill.
-
-Evidence: node ids observed collected via `uv run pytest tests/test_vet.py
--k "TestCapabilityScanCppTaxonomyClosureResolution or
-TestCapabilityScanCppAliasTablePredicates" --collect-only -q -o
-addopts=""` (13 collected). All 13 (plus one T-0662 test bound
-incidentally during an earlier trial evidence call, left in place since it
-is real and passing) bound via `frob ticket evidence T-0663 <node>
---accepts 0`.
-
-Filed: none -- every construct explicitly in this ticket's own scope
-(using-declaration, namespace alias, function-pointer/typedef groundwork)
-was implementable or already covered; the two disclosed cuts above
-(member-function pointer, ADL) match harder-problem classes this ticket's
-own plan did not commit to, matching the T-0661 precedent for the same
-class of scope boundary.
+Lands the C++-only static-resolvable rows of capability-evasion-
+taxonomy.md's C++ table, on top of T-0662's C fragment (same
+_c_resolved_candidates entry point handles "c" and "cpp" frob.lang
+labels). Verified which rows needed no new code (using-declaration,
+namespace alias, function-pointer/typedef/std::function init, lambda
+capture -- all reduce to shapes T-0662's resolver already walks) before
+writing anything new. Two genuinely new C++ grammar shapes needed real
+code: default-argument forwarding a callable
+(optional_parameter_declaration) and structured bindings
+(structured_binding_declarator). Round 2 added 2 mutation-kill predicate
+tests closing coverage gaps from the first pass. All 16 acceptance tests
+pass foreground; gates-native/security/fast/lint/static all clean
+against a fresh merge of main and from-scratch natives build; deletion
+filter against main is empty.
 
 ### Changed
 ```
- src/frob/vet/_capability.py | 420 ++++++++++++++++++++++++++++++++++++++++----
- tests/test_vet.py           | 255 +++++++++++++++++++++++++++
- tickets.md                  | 210 +++++++++++++++++++++-
- 3 files changed, 851 insertions(+), 34 deletions(-)
+ tickets.md | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 ```
 
 ### Evidence
@@ -964,10 +855,13 @@ class of scope boundary.
 - `tests/test_vet.py::TestCapabilityScanCppAliasTablePredicates::test_structured_binding_alias_skips_non_initializer_list_rhs` (pytest node id, verified passing when recorded)
 - `tests/test_vet.py::TestCapabilityScanCppAliasTablePredicates::test_default_param_alias_skips_node_with_no_default_value_field` (pytest node id, verified passing when recorded)
 - `tests/test_vet.py::TestCapabilityScanCppAliasTablePredicates::test_default_param_alias_records_resolvable_default` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCppAliasTablePredicates::test_scope_bind_step_binds_optional_parameter_declaration` (pytest node id, verified passing when recorded)
+- `tests/test_vet.py::TestCapabilityScanCppAliasTablePredicates::test_declaration_alias_dispatches_structured_binding_declarator` (pytest node id, verified passing when recorded)
 
 ### Captured claims
-- tests: 14 passed (from 14 evidence id(s))
-- gates: unmeasured (no parsable gate-summary from a fresh check)
+- tests: 16 passed (from 16 evidence id(s))
+- gates: 0 error(s), 4644 warning(s), 339 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0664 -->
 ```yaml
