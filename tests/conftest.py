@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 
+from frob.lang import reset_parse_cache
 from frob.mutate import restore_stale_journals
 
 # frob:ticket T-0885
@@ -33,6 +34,47 @@ def pytest_configure(config: pytest.Config) -> None:
     if hasattr(config, "workerinput"):
         return
     restore_stale_journals(_REPO_ROOT)
+
+
+# frob:ticket T-0926
+# frob:tests tests/unit/test_conftest_parse_reset.py::TestConftestParseReset::test_reset_before_each_test_isolates_partial_parse_state  # noqa: E501
+@pytest.fixture(autouse=True)
+def _reset_parse_cache_before_test() -> None:
+    """Clear `frob.lang`'s process-lifetime parse memo/`partial_parse_files`
+    set before EVERY test (T-0926), not just before a real `frob check`
+    invocation.
+
+    `frob.lang._partial_parse_files` (and the `_parse` memo it rides
+    alongside) is a process-lifetime module-global, correctly reset once
+    per real `frob check` run by `frob.check._run_check_with_skips`. That
+    reset is never reached by a test that calls `frob.graph.build_graph`
+    (or `frob.lang.parse_file`) directly -- so a test earlier in the same
+    pytest-xdist worker process that parses a file with a syntax error
+    leaves its display path in `_partial_parse_files` until some LATER
+    test happens to call `reset_parse_cache()` itself, producing PARSE002-
+    shaped assertion flakiness purely from pytest-xdist's file/test
+    ordering (T-0926, filed during T-0905). An autouse fixture resetting
+    before every test is the single, ordering-independent choke point:
+    no test-collection order, xdist worker assignment, or file split can
+    leak state across a test boundary again, without hand-adding a
+    `reset_parse_cache()` call to every test that happens to touch
+    parsing (the brittle, easy-to-forget pattern this replaces -- see
+    `tests/test_lang.py`/`tests/test_gates.py`'s existing manual calls,
+    now redundant but harmless).
+
+    Deliberately NOT done inside `frob.graph.build_graph` itself: that
+    function is `@memoize_per_run`-wrapped and called from many gate
+    stages with distinct `(root, cache)` pairs inside one active `frob
+    check` run (`ThreadPoolExecutor`-concurrent, per `frob.check._memo`).
+    Resetting there on every real invocation would race against sibling
+    stages that call `frob.lang.parse_file` directly in the same run and
+    could silently drop an earlier stage's recorded partial-parse entry
+    before `PARSE002` reads it -- trading test flakiness for production
+    gate flakiness. The test suite's own state (this fixture) is the
+    correct place to own test isolation; production's reset stays owned
+    by `frob.check` alone.
+    """
+    reset_parse_cache()
 
 
 PY_SAMPLE = b"""\
