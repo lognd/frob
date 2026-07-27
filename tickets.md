@@ -816,7 +816,7 @@ Deferred remainder of T-0177 deliverable 2. The warm daemon caches graph snapsho
 id: T-0622
 title: 'arch: logging discipline checks (ARCH1xx) -- unlogged error path, unlogged
   boundary, print-as-diagnostic'
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -828,6 +828,14 @@ scope:
 - src/frob/arch/_logging_checks.py
 - docs/modules/arch.md
 - tests/unit/test_arch.py
+- src/frob/arch/_models.py
+scope_changes:
+- op: add
+  glob: src/frob/arch/_models.py
+  reason: extend shared ArchCategory for logging-discipline categories (already committed
+    on main via f2fa96f3)
+  actor: logan
+  at: '2026-07-26'
 evidence:
 - tests/unit/test_arch.py::TestUnloggedErrorPath::test_catch_with_no_nearby_log_call_flagged
 - tests/unit/test_arch.py::TestUnloggedErrorPath::test_catch_with_nearby_log_call_not_flagged
@@ -844,77 +852,49 @@ unlogged error path: except/raise/return-Err block with no log call inside it. u
 
 ## Done report
 
-EPIC T-0330's observability family (T-0622): logging-discipline checks
-written once against the T-0609 normalized model, mirroring the sibling
-SOLID/typedesign modules landed just before this dispatch
-(`src/frob/arch/_solid.py`/`_layering.py`/`_typedesign.py`).
+Re-verification round (T-0622), following the T-0625 land squash that
+carried this dead-session batch's code onto main while T-0622/T-0623/
+T-0624 stayed in-progress with unverified evidence.
 
-`src/frob/arch/_logging_checks.py` adds three ARCH1xx categories:
-`unlogged-error-path` (an except/catch or `return Err(...)` with no log
-call within a 3-line adjacency window -- the same line-adjacency textual
-proxy `frob.arch._solid`'s guard-clause detectors already use, since the
-T-0609 model has no block-scoping finer than a whole function body),
-`unlogged-boundary` (a public function/method with no log call anywhere
-in its own body, or a subprocess/network/filesystem call site with no
-nearby log call), and `print-as-diagnostic` (a bare `print()` call
-outside a CLI-output module, identified by `cli`/`__main__`/`console` in
-the module's repo-relative path).
+### Acceptance criteria verdicts
+- unlogged-error-path: SATISFIED. `check_unlogged_error_path` flags an
+  except/catch or `return Err(...)` with no log call in a 3-line
+  adjacency window (`src/frob/arch/_logging_checks.py`).
+- unlogged-boundary: SATISFIED. `check_unlogged_boundary` flags a public
+  function/method with no log call anywhere in its body, and any
+  subprocess/network/filesystem call site with no nearby log call.
+- print-as-diagnostic: SATISFIED. `check_print_as_diagnostic` flags a
+  bare `print(...)` outside a CLI-output module (path containing
+  `cli`/`__main__`/`console`).
+- docs updated including the strata/arch boundary note: SATISFIED --
+  docs/modules/arch.md's "Logging discipline checks" section (anchor
+  `logging-discipline-checks`) carries the STRATA BOUNDARY NOTE
+  disclosing this is logging-IN-CODE only, no runtime/flow correlation.
+- fixture per sub-check: SATISFIED -- TestUnloggedErrorPath (2),
+  TestUnloggedBoundary (3), TestPrintAsDiagnostic (2),
+  TestRunLoggingChecks (1).
 
-Unlike T-0621 (whose `_models.py` scope lease was held by a sibling
-in-progress ticket at implementation time, forcing a local
-`TypeDesignCategory` literal), this ticket's `_models.py` lease was free
--- `frob ticket scope T-0622 --add src/frob/arch/_models.py` succeeded,
-so the three new categories extend the shared `ArchCategory`/
-`ArchSuggestion` directly. No local literal, no fold-in follow-up ticket
-needed.
-
-Per CLAUDE.md's logging/strata-boundary note: these checks are
-logging-IN-CODE only (does a log call exist textually near this error
-path/boundary), with explicitly no runtime/flow correlation -- that is
-`frob.strata`'s observability-of-flow concern
-(`_circuit_breaker`/`_retry`/`_fallback`), disclosed in both the module
-docstring and docs/modules/arch.md rather than silently conflated.
-
-Per this dispatch's own instruction, none of the three new checks are
-wired into `analyze_project`/the check pipeline yet -- `run_srp_checks`
-is the only sibling actually wired so far; `run_logging_checks` joins
-`run_solid_checks`/`run_layering_checks`/`run_typedesign_checks` as
-defined-but-not-yet-registered, matching T-0626's job (last in this
-dispatch's own queue) of doing the unified ARCH1xx registration.
+### Scope fix
+Added `src/frob/arch/_models.py` to declared scope (the committed diff,
+f2fa96f3, extends the shared `ArchCategory` with the three new
+categories; the ticket's original scope list omitted it).
 
 ### Verification
-- `uv run pytest tests/unit/test_arch.py -p no:cacheprovider -q` -- full
-  file, 193 passed (8 new: TestUnloggedErrorPath x2,
-  TestUnloggedBoundary x3, TestPrintAsDiagnostic x2,
-  TestRunLoggingChecks x1).
-- `uv run frob check --only lint --ticket T-0622` -- 0 errors, 0 warnings.
-- `uv run frob check --only gates-fast --ticket T-0622` -- 0 errors
-  (fixed one real INV006 hit on the module docstring's "only" prose via
-  the same disclosed `frob:waive INV006` pattern `_solid.py`/
-  `_typedesign.py` already carry, and one PRE001 staleness hit via
-  `frob ticket sweep T-0622` after adding `_models.py` to scope).
-- `uv run frob check --only gates-native --ticket T-0622` -- 0 errors.
-- `uv run frob check --only gates-security --ticket T-0622` -- 0 errors.
-- `git diff main --diff-filter=D --stat` -- empty.
+- `uv run pytest tests/unit/test_arch.py -k "UnloggedErrorPath or
+  UnloggedBoundary or PrintAsDiagnostic or RunLoggingChecks"
+  -p no:cacheprovider -n0 --timeout=300` -- 8 passed, 212 deselected.
+- Evidence re-recorded via `frob ticket evidence T-0622 <id>` for all 8
+  node ids (idempotent, CLI-bound).
+- `git diff main --diff-filter=D --stat` -- empty (code already on main;
+  this pass only touches tickets.md).
 
 ### Cuts disclosed
-- No wiring into `analyze_project`/the check pipeline (see above -- by
-  design, per this dispatch's own T-0626-does-registration-last
+- No wiring into `analyze_project`/the check pipeline -- by design, per
+  T-0626's own job (not worked here per this dispatch's explicit
   instruction).
-- `unlogged-error-path`'s `return Err(...)` detection is a `value_text`
-  substring match (typani's Result-error-value convention), not a
-  resolved-type check -- consistent with `NormalizedReturn.value_text`
-  being kept as unparsed text on the T-0609 model itself.
 
 ### Changed
-```
- docs/modules/arch.md             |  71 +++++++++
- src/frob/arch/_logging_checks.py | 335 +++++++++++++++++++++++++++++++++++++++
- src/frob/arch/_models.py         |  10 ++
- tests/unit/test_arch.py          | 189 ++++++++++++++++++++++
- tickets.md                       |  18 ++-
- 5 files changed, 618 insertions(+), 5 deletions(-)
-```
+(no changed files detected)
 
 ### Evidence
 - `tests/unit/test_arch.py::TestUnloggedErrorPath::test_catch_with_no_nearby_log_call_flagged` (pytest node id, verified passing when recorded)
