@@ -241,12 +241,11 @@
     "src/frob/arch/_srp.py::check_mixed_concern_function": "0f0e9395554443a559d96e320047a0d9a783fb7a68d076efa103dc7a16aa8322",
     "src/frob/arch/_srp.py::run_srp_checks": "4f646e8f18cf7a92735759c18998c198c56e8d6b446e2268362b3754b1e6d2b2",
     "src/frob/arch/_typedesign.py::PRIMITIVE_OBSESSION_MIN_PARAMS": "bca393cb2717fa9638c120dfeb822e9312063a1b5f32f396d5d10b496becfdd1",
-    "src/frob/arch/_typedesign.py::TypeDesignSuggestion": "a22397c8599c3ac7738aad1252fda1e873535283cb27449c08d2e00e398188cf",
-    "src/frob/arch/_typedesign.py::check_boolean_flag_param": "120f4c5c6031bd7e768cbc99a5c23bdc172b08448bfeb327ecfee31dc54c4055",
-    "src/frob/arch/_typedesign.py::check_illegal_states_representable": "5dc2da48ca04c78ee008e96c2dadfee2e0701152eab9d4585c7374bcb66d351c",
-    "src/frob/arch/_typedesign.py::check_parse_dont_validate": "543121fa3940baf36a48fa5337cc8f804b9cf48c46de0f309fe28019ac303c4d",
-    "src/frob/arch/_typedesign.py::check_primitive_obsession": "c9669175e067c3ea71b4ef04e32d84df32083cc46bb08dd2c813466ff510127c",
-    "src/frob/arch/_typedesign.py::run_typedesign_checks": "fdf2046a94be26a4f7877b1278262c6a7a6d1d2837284b32293958b6b48ea1c1",
+    "src/frob/arch/_typedesign.py::check_boolean_flag_param": "31daf6f9a77c90993ae0d76312a13ef35c27c05aa7c8d17184d4ba210cc7599c",
+    "src/frob/arch/_typedesign.py::check_illegal_states_representable": "40dfd238bba1defcd5c9dbe02ec3393041e948a3d422181326a846aef5257ee0",
+    "src/frob/arch/_typedesign.py::check_parse_dont_validate": "6c24e0ce7376512c42a05e1b586b05df29e0830456d7eb8cf8f99ad760750e36",
+    "src/frob/arch/_typedesign.py::check_primitive_obsession": "28d7fb32d9d744e6686b8bb22f92d5469d9456b99b986685d40b78ed4a3d951b",
+    "src/frob/arch/_typedesign.py::run_typedesign_checks": "7cba0efd2780709a117b2771afb0ffff55c03f043bb62d1f98204203860c695d",
     "src/frob/arch/_typescript.py::TypeScriptAdapter": "8f3f72ee37ac933b1c7a1a1ac77869c92eba3a1061c1faaa9e57fd3f59cae779",
     "src/frob/arch/_typescript.py::TypeScriptAdapter.adapt": "0c57832dc79ce96209c1a1ae671bbb1808b6b61baffc12c19d893376a6afe64e",
     "src/frob/bind/__init__.py::BindingDecl": "3b5e35c94b2b01286b132d77890cd1fd9ff79d0b3d76db3fe67233d6383a0d08",
@@ -1606,5 +1605,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.164.0"
+  "version": "0.165.0"
 }

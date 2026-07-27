@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.165.0] - unreleased
+
+- T-0892: arch: fold TypeDesignCategory into ArchCategory once _models.py lease is free (T-0621 follow-up)
+
 ## [0.164.0] - unreleased
 
 - T-0919: done-report's internal check_gates/check_gate_findings spawns are too slow for CLI foreground use (T-0887 follow-up)

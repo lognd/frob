@@ -11,69 +11,18 @@ further. Every check here is written once against `frob.arch._normalized.
 NormalizedModule` (T-0609), same convention as `_solid.py`'s checks --
 nothing here parses a `tree_sitter.Tree` directly.
 
-SCOPE-LEASE NOTE (disclosed, not routed around): this ticket's declared
-scope does not include `src/frob/arch/_models.py`, and at implementation
-time T-0620 (a sibling in the SAME cluster) held an active scope lease on
-that file (still `in-progress`, not yet closed/landed, per this
-dispatch's own "do not close or land" instruction) -- `frob ticket scope
-T-0621 --add src/frob/arch/_models.py` was attempted first and refused
-with `ScopeLeaseConflict`, not silently skipped. Rather than block this
-entire ticket on another ticket's land timing, the four categories below
-use a LOCAL `TypeDesignCategory`/`TypeDesignSuggestion` pair (this
-module's own scope) that mirrors `ArchCategory`/`ArchSuggestion`'s shape
-exactly instead of extending the shared `Literal`. T-0892
-("arch: fold TypeDesignCategory into ArchCategory once _models.py lease
-is free") is the filed, tracked follow-up for the mechanical fold-in.
+T-0892 FOLD-IN NOTE: this module originally built findings against a LOCAL
+`TypeDesignCategory`/`TypeDesignSuggestion` pair because at T-0621's
+implementation time a sibling ticket (T-0620) held an active scope lease
+on `src/frob/arch/_models.py`. That lease is now free (T-0620 closed) --
+this module builds `frob.arch._models.ArchSuggestion`/`ArchCategory`
+directly, the four check functions' logic unchanged.
 """
-# frob:waive INV006 reason="this module's 'only' occurrences are source-level \
-# design-rationale/scope-cut prose (the TypeDesignSuggestion model docstring's \
-# 'kept as a separate model only because...') describing already-implemented \
-# behavior, verifiable by reading the model it annotates, not a separate \
-# cross-module contract needing its own tracked invariant -- the same INV006 \
-# first-turn-on-pool disposition frob.arch._solid's own module docstring already \
-# carries"
 
 from __future__ import annotations
 
-from typing import Literal
-
-from pydantic import BaseModel
-
+from frob.arch._models import ArchSuggestion
 from frob.arch._normalized import NormalizedClass, NormalizedFunction, NormalizedModule
-
-#: The four type-driven-design categories this module detects (T-0621) --
-#: kept as a LOCAL literal (not `frob.arch._models.ArchCategory`) per this
-#: module's own scope-lease note above; a filed follow-up folds these into
-#: the shared type once `_models.py`'s lease is free.
-TypeDesignCategory = Literal[
-    "illegal-states-representable",
-    "primitive-obsession",
-    "parse-dont-validate",
-    "boolean-flag-param",
-]
-
-TypeDesignSeverity = Literal["warning", "suggestion", "info"]
-
-
-# frob:doc docs/modules/arch.md#type-driven-design-checks
-class TypeDesignSuggestion(BaseModel):
-    """One type-driven-design finding (T-0621) -- field-for-field the same
-    shape as `frob.arch._models.ArchSuggestion` (file/line/category/
-    severity/message/detail/symref/metric), kept as a separate model only
-    because `category` is `TypeDesignCategory` (this module's own local
-    literal) rather than the shared `ArchCategory` -- see this module's
-    scope-lease docstring note for why."""
-
-    model_config = {}
-
-    file: str
-    line: int | None = None
-    category: TypeDesignCategory
-    severity: TypeDesignSeverity
-    message: str
-    detail: str | None = None
-    symref: str | None = None
-    metric: int | None = None
 
 
 def _qualname(
@@ -103,7 +52,7 @@ def _bool_field_names(cls: NormalizedClass) -> set[str]:
 # frob:tests tests/unit/test_arch.py::TestIllegalStatesRepresentable.test_bool_field_alone_not_flagged  # noqa: E501
 def check_illegal_states_representable(
     module: NormalizedModule,
-) -> list[TypeDesignSuggestion]:
+) -> list[ArchSuggestion]:
     """Make-illegal-states-unrepresentable (T-0621): flag a class with a
     `bool`-typed field (`_bool_field_names`) that some method's OWN body
     guards at runtime via a branch mentioning BOTH that bool field's name
@@ -116,7 +65,7 @@ def check_illegal_states_representable(
     the invalid combination impossible to construct at all, instead of
     merely checked. Written once against `NormalizedModule`, so it fires
     for every `LanguageAdapter`."""
-    out: list[TypeDesignSuggestion] = []
+    out: list[ArchSuggestion] = []
     for cls in module.classes:
         bool_fields = _bool_field_names(cls)
         if not bool_fields:
@@ -136,7 +85,7 @@ def check_illegal_states_representable(
                 if not mentioned_bool or not mentioned_other:
                     continue
                 out.append(
-                    TypeDesignSuggestion(
+                    ArchSuggestion(
                         file=module.path,
                         line=b.line,
                         category="illegal-states-representable",
@@ -187,7 +136,7 @@ def _primitive_param_names(func: NormalizedFunction) -> list[str]:
 # frob:doc docs/modules/arch.md#type-driven-design-checks
 # frob:tests tests/unit/test_arch.py::TestPrimitiveObsession.test_three_plus_raw_params_flagged  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestPrimitiveObsession.test_two_raw_params_not_flagged  # noqa: E501
-def check_primitive_obsession(module: NormalizedModule) -> list[TypeDesignSuggestion]:
+def check_primitive_obsession(module: NormalizedModule) -> list[ArchSuggestion]:
     """Primitive obsession (T-0621): flag a function/method whose
     signature carries at least `PRIMITIVE_OBSESSION_MIN_PARAMS` (3) raw
     `str`/`int`/`float`-typed parameters (`_primitive_param_names`) --
@@ -197,14 +146,14 @@ def check_primitive_obsession(module: NormalizedModule) -> list[TypeDesignSugges
     a project-wide call-site scan; this check stays a per-signature proxy,
     disclosed here rather than silently narrowed). Written once against
     `NormalizedModule`, so it fires for every `LanguageAdapter`."""
-    out: list[TypeDesignSuggestion] = []
+    out: list[ArchSuggestion] = []
 
     def _scan(func: NormalizedFunction, qualname: str) -> None:
         names = _primitive_param_names(func)
         if len(names) < PRIMITIVE_OBSESSION_MIN_PARAMS:
             return
         out.append(
-            TypeDesignSuggestion(
+            ArchSuggestion(
                 file=module.path,
                 line=func.line,
                 category="primitive-obsession",
@@ -239,7 +188,7 @@ def check_primitive_obsession(module: NormalizedModule) -> list[TypeDesignSugges
 # frob:doc docs/modules/arch.md#type-driven-design-checks
 # frob:tests tests/unit/test_arch.py::TestParseDontValidate.test_validates_then_returns_same_type_flagged  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestParseDontValidate.test_validates_then_returns_refined_type_not_flagged  # noqa: E501
-def check_parse_dont_validate(module: NormalizedModule) -> list[TypeDesignSuggestion]:
+def check_parse_dont_validate(module: NormalizedModule) -> list[ArchSuggestion]:
     """Parse-dont-validate (T-0621): flag a function/method with EXACTLY
     one non-receiver parameter whose body guards it (a branch mentioning
     the param's name immediately followed by a raise -- the same
@@ -253,7 +202,7 @@ def check_parse_dont_validate(module: NormalizedModule) -> list[TypeDesignSugges
     refined-type shape this check is pointing callers toward. Written
     once against `NormalizedModule`, so it fires for every
     `LanguageAdapter`."""
-    out: list[TypeDesignSuggestion] = []
+    out: list[ArchSuggestion] = []
 
     def _scan(func: NormalizedFunction, qualname: str) -> None:
         params = [p for p in func.params if p.name not in ("self", "this", "cls")]
@@ -271,7 +220,7 @@ def check_parse_dont_validate(module: NormalizedModule) -> list[TypeDesignSugges
         if not guarded:
             return
         out.append(
-            TypeDesignSuggestion(
+            ArchSuggestion(
                 file=module.path,
                 line=func.line,
                 category="parse-dont-validate",
@@ -306,7 +255,7 @@ def check_parse_dont_validate(module: NormalizedModule) -> list[TypeDesignSugges
 # frob:doc docs/modules/arch.md#type-driven-design-checks
 # frob:tests tests/unit/test_arch.py::TestBooleanFlagParam.test_public_function_branching_on_bool_param_flagged  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestBooleanFlagParam.test_private_function_not_flagged  # noqa: E501
-def check_boolean_flag_param(module: NormalizedModule) -> list[TypeDesignSuggestion]:
+def check_boolean_flag_param(module: NormalizedModule) -> list[ArchSuggestion]:
     """Boolean/flag parameter (T-0621): flag a PUBLIC (name not starting
     with `_`) function/method with a `bool`-typed parameter that its OWN
     body branches on (a `NormalizedBranch.condition_text` mentioning the
@@ -315,7 +264,7 @@ def check_boolean_flag_param(module: NormalizedModule) -> list[TypeDesignSuggest
     `False` almost never want the "same function", they want two
     different functions the flag is faking. Written once against
     `NormalizedModule`, so it fires for every `LanguageAdapter`."""
-    out: list[TypeDesignSuggestion] = []
+    out: list[ArchSuggestion] = []
 
     def _scan(func: NormalizedFunction, qualname: str, bare_name: str) -> None:
         if bare_name.startswith("_"):
@@ -330,7 +279,7 @@ def check_boolean_flag_param(module: NormalizedModule) -> list[TypeDesignSuggest
         for pname in bool_params:
             if any(pname in b.condition_text for b in func.branches):
                 out.append(
-                    TypeDesignSuggestion(
+                    ArchSuggestion(
                         file=module.path,
                         line=func.line,
                         category="boolean-flag-param",
@@ -362,13 +311,13 @@ def check_boolean_flag_param(module: NormalizedModule) -> list[TypeDesignSuggest
 
 # frob:doc docs/modules/arch.md#type-driven-design-checks
 # frob:tests tests/unit/test_arch.py::TestRunTypeDesignChecks.test_combines_all_four_checks  # noqa: E501
-def run_typedesign_checks(module: NormalizedModule) -> list[TypeDesignSuggestion]:
+def run_typedesign_checks(module: NormalizedModule) -> list[ArchSuggestion]:
     """Run every ARCH1xx type-driven-design check (T-0621:
     `check_illegal_states_representable`, `check_primitive_obsession`,
     `check_parse_dont_validate`, `check_boolean_flag_param`) against one
     `NormalizedModule` and return the combined suggestions, mirroring
     `frob.arch._srp.run_srp_checks`'s convention."""
-    out: list[TypeDesignSuggestion] = []
+    out: list[ArchSuggestion] = []
     out.extend(check_illegal_states_representable(module))
     out.extend(check_primitive_obsession(module))
     out.extend(check_parse_dont_validate(module))

@@ -131,6 +131,18 @@ ArchCategory = Literal[
     "nested-event-loop",
     "unawaited-coroutine",
     "async-zero-awaits",
+    # T-0621/T-0892: type-driven-design checks (ARCH1xx family, T-0330's
+    # fifth "Logan Smith" family alongside SRP/OCP/LSP/ISP/DIP) --
+    # `frob.arch._typedesign`, written once against the T-0609 normalized
+    # model so each fires identically across every `LanguageAdapter`.
+    # Folded in from a local `TypeDesignCategory` literal (T-0892) once
+    # `_models.py`'s scope lease freed up; see docs/modules/arch.md's
+    # "type-driven design checks" section for the per-category detection
+    # shape. Same unwaivable advisory channel as every other category here.
+    "illegal-states-representable",
+    "primitive-obsession",
+    "parse-dont-validate",
+    "boolean-flag-param",
 ]
 
 ArchSeverity = Literal["warning", "suggestion", "info"]

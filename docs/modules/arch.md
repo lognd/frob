@@ -717,7 +717,6 @@ elsewhere is not, and is skipped, fail-toward-silence.
 ### Type-driven design checks: `illegal-states-representable` / `primitive-obsession` / `parse-dont-validate` / `boolean-flag-param` (T-0621)
 
 <a id="type-driven-design-checks"></a>
-<!-- frob:describes src/frob/arch/_typedesign.py::TypeDesignSuggestion -->
 <!-- frob:describes src/frob/arch/_typedesign.py::check_illegal_states_representable -->
 <!-- frob:describes src/frob/arch/_typedesign.py::check_primitive_obsession -->
 <!-- frob:describes src/frob/arch/_typedesign.py::check_parse_dont_validate -->
@@ -728,20 +727,14 @@ elsewhere is not, and is skipped, fail-toward-silence.
 family, T-0621) is written once against the T-0609 normalized model, same
 convention as `_solid.py`'s checks.
 
-**SCOPE-LEASE NOTE (disclosed, not routed around).** This ticket's
-declared scope does not include `src/frob/arch/_models.py`, and at
-implementation time T-0620 (a sibling in the same cluster) held an active
-scope lease on that file (still `in-progress`, per this dispatch's own
-"do not close or land" instruction) -- `frob ticket scope T-0621 --add
-src/frob/arch/_models.py` was attempted first and refused with
-`ScopeLeaseConflict`. Rather than block the whole ticket on another
-ticket's land timing, the four categories below use a LOCAL
-`TypeDesignCategory`/`TypeDesignSuggestion` pair (`_typedesign.py`'s own
-scope) that mirrors `ArchCategory`/`ArchSuggestion`'s shape field-for-
-field instead of extending the shared `Literal`. T-0892 ("arch:
-fold TypeDesignCategory into ArchCategory once _models.py lease is free")
-is the filed, tracked follow-up for the mechanical fold-in -- purely
-mechanical, the four check functions' logic does not change.
+**T-0892 fold-in note.** At T-0621's implementation time, a sibling ticket
+(T-0620) held an active scope lease on `src/frob/arch/_models.py`, so the
+four categories below were built against a LOCAL `TypeDesignCategory`/
+`TypeDesignSuggestion` pair mirroring `ArchCategory`/`ArchSuggestion`'s
+shape field-for-field. T-0892 folded the four categories into the shared
+`frob.arch._models.ArchCategory` and migrated all four check functions to
+build `ArchSuggestion` directly once the lease freed up; the local pair no
+longer exists.
 
 | Category | Signal | Severity |
 |---|---|---|
