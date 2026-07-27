@@ -84,7 +84,9 @@ class TestMissingTimeout:
         result = check_reliability_timeouts(model, tmp_path)
         assert result.is_ok
         report = result.danger_ok
-        missing = {v.sub_target for v in report.violations if v.rule == REL_MISSING_TIMEOUT}
+        missing = {
+            v.sub_target for v in report.violations if v.rule == REL_MISSING_TIMEOUT
+        }
         assert "c__fill" not in missing
         assert "c__inval_w1" not in missing
         # No waiver was declared -- this is a real exemption, not a hidden one.
