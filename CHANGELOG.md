@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.195.0] - unreleased
+
+- T-0757: design-invariant encoding: import-forbidding frob:invariant + establish-property obligation (T-0611/T-0682 class as gates)
+
 ## [0.194.0] - unreleased
 
 - T-0665: vet/strata: fail-closed opaque-capability-indirection obligation for runtime-resolved dispatch

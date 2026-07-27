@@ -67,7 +67,13 @@ _VERB_TABLE: dict[str, EdgeKind] = {
 
 _LINE_RE = re.compile(r"^frob:(?P<verb>\S+)(?:\s+(?P<rest>.*))?$")
 _ATTR_RE = re.compile(r'(\w+)\s*=\s*"([^"]*)"')
-_TESTS_KINDS = frozenset({"unit", "integration", "e2e"})
+# T-0757: "property" joins the existing three kinds -- a `frob:tests`
+# edge declared `kind="property"` asserts it exercises a PROPERTY SPACE
+# (a comparator's ordering, a round-trip, a monotonicity claim) rather
+# than one fixed input, the distinction INV008's establish-property
+# obligation (`frob.gates._design_invariants.inv008_violations`) checks
+# for.
+_TESTS_KINDS = frozenset({"unit", "integration", "e2e", "property"})
 #: `frob:deprecated`'s `sunset="..."` attribute shape (T-0576) -- a plain
 #: calendar date, never a semver: DEBT's `until` already supports a version
 #: boundary for a lint exception, but a public symbol's sunset is a
@@ -86,6 +92,13 @@ _CLEANUP_KINDS = frozenset({"always", "on-error", "process-exit-ok"})
 #: other verb's target works -- `_parse_line` special-cases them so the
 #: edge's `target` becomes the parsed `proto` attribute.
 _ATTR_ONLY_VERBS = frozenset({"transition", "requires"})
+
+#: `frob:invariant`'s optional `no_import="pkg[,pkg2,...]"` obligation
+#: attr (T-0757): each comma-separated entry must be a dotted module path
+#: (matches a bare python identifier chain -- no wildcards, no leading/
+#: trailing dots), the same shape a raw `frob.lang.extract_imports`
+#: specifier or `resolve_local_import` module name takes.
+_IMPORT_MODULE_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$")
 
 #: Default zero-declaration init/deinit name-pair patterns (T-0744): a
 #: function named `<prefix>_<init_word>` with a sibling `<prefix>_
@@ -392,6 +405,45 @@ def _attrs_verb_error_tests(
     )
 
 
+# frob:ticket T-0757
+def _attrs_verb_error_invariant(
+    attrs: dict[str, str], *, path: str, lineno: int
+) -> MalformedDirective | None:
+    """`frob:invariant`'s two OPTIONAL obligation attrs (T-0757, the
+    T-0611/T-0682 design-invariant class as gates): `no_import=
+    "pkg[,pkg2,...]"` (import-forbidding -- each entry a dotted module
+    path, `_IMPORT_MODULE_RE`) and `establishes="<property text>"`
+    (establish-property -- non-empty text). A bare `frob:invariant
+    INV-###` with neither attr is unaffected and still valid; the two
+    attrs may also coexist on one anchor (no exclusivity rule between
+    them -- an anchor can carry both obligations at once). Enforcement
+    (INV007/INV008) lives in `frob.gates._design_invariants`, joined
+    against the graph's import specifiers and TESTS edges respectively --
+    this validator only shapes the attribute syntax."""
+    no_import = attrs.get("no_import")
+    if no_import is not None:
+        modules = [m.strip() for m in no_import.split(",")]
+        if not modules or any(
+            not m or _IMPORT_MODULE_RE.match(m) is None for m in modules
+        ):
+            return MalformedDirective(
+                file=path,
+                line=lineno,
+                reason=(
+                    f"frob:invariant no_import={no_import!r} must be a "
+                    "comma-separated list of dotted module paths"
+                ),
+            )
+    establishes = attrs.get("establishes")
+    if establishes is not None and not establishes.strip():
+        return MalformedDirective(
+            file=path,
+            line=lineno,
+            reason='frob:invariant establishes="..." must not be empty',
+        )
+    return None
+
+
 _VERB_ATTRS_VALIDATORS = {
     "waive": _attrs_verb_error_waive,
     "debt": _attrs_verb_error_debt,
@@ -400,6 +452,7 @@ _VERB_ATTRS_VALIDATORS = {
     "transition": _attrs_verb_error_transition,
     "requires": _attrs_verb_error_requires,
     "tests": _attrs_verb_error_tests,
+    "invariant": _attrs_verb_error_invariant,
 }
 
 

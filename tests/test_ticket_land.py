@@ -22,6 +22,8 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 from typani.result import Err, Ok, Result
 
 import frob.tickets._land as _land_mod
@@ -137,11 +139,10 @@ def _make_closeable(root: Path, ticket_id: str) -> None:
     assert write_ticket(root, ticket).is_ok
 
 
-# frob:waive DUP001 reason="parallel per-domain test scaffolding across test_ticket_land.py, \
-# test_ticket_leases_cross_worktree.py (2 sites) -- each file \
-# exercises a structurally similar check for a distinct \
-# domain/module with the same arrange-act shape; extracting would \
-# blur which domain owns which check"
+# frob:waive DUP001 reason="parallel per-domain test scaffolding across \
+# test_ticket_land.py, test_ticket_leases_cross_worktree.py (2 sites) -- each file \
+# exercises a structurally similar check for a distinct domain/module with the same \
+# arrange-act shape; extracting would blur which domain owns which check"
 @pytest.fixture
 def repo(tmp_path: Path) -> Path:
     """A main checkout with an initialized ledger and one committed file."""
@@ -211,8 +212,8 @@ class TestSpliceLedger:
         assert spliced.is_err
 
     # frob:tests src/frob/tickets/_land.py::splice_ledger kind="unit"
-    # frob:waive DUP001 reason="parallel test methods within test_ticket_land.py (2 sites) sharing \
-    # an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_ticket_land.py (2 \
+    # sites) sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_malformed_theirs_propagates_as_err(self, tmp_path: Path) -> None:
         """A malformed `theirs_text` must ALSO surface as `Err` -- the
@@ -748,8 +749,8 @@ class TestSpliceLedgerIdDropGuard:
 
     # frob:ticket T-0764
     # frob:tests tests/test_ticket_land.py::TestSpliceLedgerIdDropGuard.test_malformed_side_is_refused_not_silently_treated_as_empty  # noqa: E501
-    # frob:waive DUP001 reason="parallel test methods within test_ticket_land.py (2 sites) sharing \
-    # an arrange-act scaffold typical of exhaustive per-case coverage; \
+    # frob:waive DUP001 reason="parallel test methods within test_ticket_land.py (2 \
+    # sites) sharing an arrange-act scaffold typical of exhaustive per-case coverage; \
     # extracting would obscure per-case intent"
     def test_malformed_side_is_refused_not_silently_treated_as_empty(
         self, tmp_path: Path
@@ -5404,3 +5405,153 @@ class TestSyncGateRulesCallback:
         assert result.danger_err == _land_mod.LandError.GitFailed
         # the (no-op) unwind reset still leaves HEAD at pre_land_tip.
         assert _land_mod._rev_parse(repo, "HEAD").danger_ok == pre_land_tip
+
+
+# frob:ticket T-0757
+_RANKS = (0, 1, 2, 2, 3, 3)  # queued, planned, in-progress, blocked, dropped, done
+_STATE_BY_RANK: dict[int, tuple[TicketState, ...]] = {
+    0: (TicketState.QUEUED,),
+    1: (TicketState.PLANNED,),
+    2: (TicketState.IN_PROGRESS, TicketState.BLOCKED),
+    3: (TicketState.DROPPED, TicketState.DONE),
+}
+
+
+def _synthetic_ticket(
+    tid: str, state: TicketState, *, has_report: bool, evidence_count: int
+) -> "_land_mod.Ticket":
+    """A minimal, directly-constructed `Ticket` (no filesystem/git
+    round-trip) carrying exactly the richness signal `_richness`
+    (`frob.tickets._land`) reads: Done-report presence and evidence count
+    -- `TestNewerWinnerQualifiedPreferenceProperty` needs many synthetic
+    combinations, cheap to build, not the full `new_ticket`/`transition`
+    lifecycle `TestSpliceLedgerRicherStatePreference` above already covers
+    with hand-picked real-repo cases."""
+    body = "## Done report\n\nChanged: x\nEvidence: y\n" if has_report else ""
+    return _land_mod.Ticket(
+        id=tid,
+        title="synthetic",
+        state=state,
+        kind=TicketKind.FEATURE,
+        origin=Origin.HUMAN,
+        created=date(2026, 1, 1),
+        evidence=tuple(f"e{i}" for i in range(evidence_count)),
+        body=body,
+    )
+
+
+class TestNewerWinnerQualifiedPreferenceProperty:
+    """T-0757: an establish-property obligation (INV008, `frob:invariant
+    INV-043 establishes="..."` anchored on `_land._newer`) for T-0682's
+    own qualified-preference rule -- exhaustively over the small state
+    space `_newer_winner` actually discriminates on (rank in {0,1,2,3},
+    Done-report presence, evidence count), rather than the hand-picked
+    field-incident cases `TestSpliceLedgerRicherStatePreference` covers.
+    Two properties, both restated from `_newer`'s own docstring tiers:
+
+    1. TERMINAL SUPREMACY: a terminal side (rank 3) always beats a
+       non-terminal side, regardless of richness.
+    2. QUALIFIED RICHNESS: among two non-terminal sides, the richer side
+       (by `_richness`'s tuple order) wins UNLESS the poorer side
+       strictly outranks it -- a strictly-higher-rank poorer side always
+       wins over a richer-but-lower-or-equal-rank side.
+    """
+
+    # frob:tests tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty.test_terminal_side_always_wins_over_non_terminal  # noqa: E501
+    @given(
+        st.sampled_from([0, 1, 2]),
+        st.booleans(),
+        st.integers(min_value=0, max_value=3),
+        st.sampled_from([TicketState.DONE, TicketState.DROPPED]),
+        st.booleans(),
+        st.integers(min_value=0, max_value=3),
+    )
+    def test_terminal_side_always_wins_over_non_terminal(
+        self,
+        non_terminal_rank: int,
+        a_report: bool,
+        a_evidence: int,
+        terminal_state: TicketState,
+        b_report: bool,
+        b_evidence: int,
+    ) -> None:
+        a = _synthetic_ticket(
+            "T-X",
+            _STATE_BY_RANK[non_terminal_rank][0],
+            has_report=a_report,
+            evidence_count=a_evidence,
+        )
+        b = _synthetic_ticket(
+            "T-X", terminal_state, has_report=b_report, evidence_count=b_evidence
+        )
+        assert _land_mod._newer_winner(a, b) is b
+        assert _land_mod._newer_winner(b, a) is b
+
+    # frob:tests tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty.test_strictly_higher_rank_poorer_side_always_wins  # noqa: E501
+    @given(
+        st.sampled_from([0, 1, 2]),
+        st.sampled_from([0, 1, 2]),
+        st.integers(min_value=0, max_value=3),
+        st.integers(min_value=0, max_value=3),
+    )
+    def test_strictly_higher_rank_poorer_side_always_wins(
+        self,
+        richer_rank: int,
+        poorer_rank: int,
+        richer_evidence: int,
+        poorer_evidence: int,
+    ) -> None:
+        """A reportless-but-strictly-higher-rank side beats a
+        reported-but-lower-rank side (the reviewer-caught inverse T-0682
+        direction) -- richer here always carries the Done report, poorer
+        never does, at a strictly lower rank."""
+        if poorer_rank <= richer_rank:
+            return
+        richer = _synthetic_ticket(
+            "T-X",
+            _STATE_BY_RANK[richer_rank][0],
+            has_report=True,
+            evidence_count=richer_evidence,
+        )
+        poorer = _synthetic_ticket(
+            "T-X",
+            _STATE_BY_RANK[poorer_rank][0],
+            has_report=False,
+            evidence_count=poorer_evidence,
+        )
+        assert _land_mod._newer_winner(richer, poorer) is poorer
+        assert _land_mod._newer_winner(poorer, richer) is poorer
+
+    # frob:tests tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty.test_richer_side_wins_at_equal_or_lower_rank  # noqa: E501
+    @given(
+        st.sampled_from([0, 1, 2]),
+        st.sampled_from([0, 1, 2]),
+        st.integers(min_value=0, max_value=3),
+        st.integers(min_value=0, max_value=3),
+    )
+    def test_richer_side_wins_at_equal_or_lower_rank(
+        self,
+        richer_rank: int,
+        poorer_rank: int,
+        richer_evidence: int,
+        poorer_evidence: int,
+    ) -> None:
+        """The original T-0682 incident shape: the richer (Done-reported)
+        side wins whenever the poorer side does NOT strictly outrank it
+        (equal rank, or the richer side is itself the higher-rank one)."""
+        if poorer_rank > richer_rank:
+            return
+        richer = _synthetic_ticket(
+            "T-X",
+            _STATE_BY_RANK[richer_rank][0],
+            has_report=True,
+            evidence_count=richer_evidence,
+        )
+        poorer = _synthetic_ticket(
+            "T-X",
+            _STATE_BY_RANK[poorer_rank][0],
+            has_report=False,
+            evidence_count=poorer_evidence,
+        )
+        assert _land_mod._newer_winner(richer, poorer) is richer
+        assert _land_mod._newer_winner(poorer, richer) is richer

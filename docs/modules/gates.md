@@ -37,6 +37,8 @@ declaration).
 | INV004 | invariant | (warn, advisory) a `docs/**.md` section uses claim-shaped normative language (`must`, `must not`, `never`, `always`, `shall`, `guarantees`, `ensures`, `requires`, plus INV003's exclusivity vocabulary) but anchors ZERO `frob:invariant` markers and carries no reasoned `<!-- frob:waive INV004 reason="..." -->` marker -- see "INV004 (T-0452)" below |
 | INV005 | invariant | (warn, T-0543/B12) an invariant's evidence collects (satisfies INV001) but is never shown, via a `frob:tests` edge or same-file trust to the anchor, to actually reach its `frob:invariant`-anchored symbol -- a name-match-only existence check proves nothing about which invariant a test covers; see "INV005 (T-0543)" below |
 | INV006 | invariant | (warn, T-0408) a SOURCE file under `INV006_SRC_DIRS` (`src`, `strata-core/src`, `frob-core/src`) makes a claim-shaped exclusivity assertion (same vocabulary as INV003) with no `frob:invariant` edge anchored anywhere in the file, and no `frob:waive INV006 reason="..."` edge -- see "INV006 (T-0408)" below |
+| INV007 | invariant | (T-0757) a `frob:invariant ... no_import="pkg[,pkg2,...]"` anchor whose own file actually imports the forbidden module or one of its submodules -- see "INV007 and INV008 (T-0757)" below |
+| INV008 | invariant | (T-0757) a `frob:invariant ... establishes="..."` anchor with no `frob:tests ... kind="property"` edge bound to it -- see "INV007 and INV008 (T-0757)" below |
 | TICK006 | tickets | a Done report's affirmative "filed" claim (`Filed: T-####`, `filed as T-####`, `Filed T-draft-<hex>`, ...) whose id resolves to no block in `tickets.md` or `tickets-archive.md` -- see "TICK006 (T-0726)" below |
 | TICK007 | tickets | (warn) a dispatchable (unblocked, unleased) CRITICAL/HIGH ticket has sat past its `frob.tickets.undispatched_stale` threshold -- see "TICK007 (T-0820)" below |
 | TICK008 | tickets | (warn) a ticket in the checked ledger carries unknown/extra frontmatter field(s) (`Ticket`'s `extra="allow"` captured them into `__pydantic_extra__` instead of hard-failing) -- often a typoed known field, whose value is silently lost to the schema default; see "TICK008 (T-0842)" below |
@@ -2281,6 +2283,67 @@ across `src/`, `strata-core/src/`, and `frob-core/src/`; driving that
 down to 0 (bind each to a real invariant, waive with a specific reason,
 or reword) is tracked as a follow-up burndown, same as INV003/INV004's
 own residual, not hand-closed in this pass.
+
+### INV007 and INV008 (T-0757)
+
+INV001-INV006 (above) are all about whether a DECLARED invariant has
+evidence, an anchor, or a bound doc claim -- none of them can express a
+design invariant of the shape "module X must never import Y" or "this
+property must be established by a real test, not an example". Both
+shapes existed only as PROSE two known incidents ever caught: T-0611 (a
+`TypeScriptAdapter` landed inside the deliberately tree_sitter-free
+`src/frob/arch/_normalized.py`, caught by a human reviewer reading the
+diff) and T-0682 (`frob.tickets._land._newer`'s qualified richness
+ordering got fixed wrong in the opposite direction from the bug it was
+fixing, twice, because the property lived only in a reviewer's head).
+T-0757 extends the SAME `frob:invariant` directive with two OPTIONAL
+obligation attrs (`frob.graph.dsl`'s `_attrs_verb_error_invariant`) so
+both incident classes become static gate findings instead of review
+catches -- a bare `frob:invariant INV-###` with neither attr is
+unaffected.
+
+**INV007 (import-forbidding).** `frob:invariant INV-### no_import=
+"pkg[,pkg2,...]"`, anchored anywhere in a file (or on a symbol inside
+it -- INV007's scan is always file-level, so only the enclosing file
+matters), declares that file must never import `pkg` or any of `pkg`'s
+submodules. `frob.gates._design_invariants.inv007_violations` reads the
+file's own RAW import specifiers via `frob.lang.extract_imports` (the
+same primitive `frob.arch._smells`/`frob.arch._layering` already use for
+project-wide import graphs, T-0625/T-0620) and reports an ERROR the
+instant any specifier equals the forbidden module or starts with
+`"{forbidden}."` -- a prefix match on `.` boundaries, so a lookalike name
+like `tree_sitter_python` does not false-positive against `no_import=
+"tree_sitter"`. `src/frob/arch/_normalized.py` carries `frob:invariant
+INV-042 no_import="tree_sitter"` as the seeded T-0611 case
+(`invariants/INV-042.md`).
+
+**INV008 (establish-property).** `frob:invariant INV-### establishes=
+"<property text>"`, anchored on the symbol whose property must hold,
+requires a `frob:tests ... kind="property"` edge (T-0757 widens
+`frob.graph.dsl._TESTS_KINDS` to include `"property"`, joining `"unit"`/
+`"integration"`/`"e2e"`) reaching that same anchor, from either
+direction -- mirroring INV005's own either-side `TESTS`-edge walk
+(`frob.gates._evidence_binds_to_symrefs`). A bound test declared at any
+OTHER kind (or no bound test at all) does not satisfy it: the point is
+that the evidence must be declared as exercising the property SPACE (a
+comparator's ordering, a round-trip, a monotonicity claim), not one
+fixed input. `frob.gates._design_invariants.inv008_violations` reports
+an ERROR per unbound `establishes=` anchor. `src/frob/tickets/_land.py`'s
+`_newer` carries `frob:invariant INV-043 establishes="..."` as the
+seeded T-0682 case (`invariants/INV-043.md`), bound to a Hypothesis
+property test (`TestNewerWinnerQualifiedPreferenceProperty`, `tests/
+test_ticket_land.py`) proving the qualified richness rule exhaustively
+over the small state space `_newer_winner` discriminates on, rather than
+the hand-picked field-incident cases `TestSpliceLedgerRicherStatePreference`
+already covers.
+
+Both rules ship at `Severity.ERROR` directly, unlike INV003/INV004/
+INV006's advisory WARN posture: an obligation only exists once someone
+EXPLICITLY writes `no_import=`/`establishes=` on a `frob:invariant`
+directive (never a bare-vocabulary heuristic scanning every file), so
+there is no first-turn-on debt corpus to phase in against -- the first
+two anchors this repo carries (INV-042/INV-043) are the two ERROR-clean
+seeded cases above.
 
 ## Policy rules (`frob.toml`, `[policy]`)
 

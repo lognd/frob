@@ -76,6 +76,7 @@ from frob.gates._coverage import (
 )
 from frob.gates._cve_fingerprint_scan import cve_fingerprint_scan_gate
 from frob.gates._dead_symbols import dead_symbol_gate
+from frob.gates._design_invariants import inv007_violations, inv008_violations
 from frob.gates._docblocks import doc004_gate, doc005_gate
 from frob.gates._docptr import doc006_gate
 from frob.gates._exclude_hazard import exclude_hazard_gate
@@ -1063,6 +1064,10 @@ _KNOWN_GATE_RULES = frozenset(
         "INV004",
         "INV005",
         "INV006",
+        # T-0757: `frob:invariant no_import=`/`establishes=` obligation
+        # forms -- see `frob.gates._design_invariants`.
+        "INV007",
+        "INV008",
         "TEST001",
         "TEST002",
         "TEST003",
@@ -10606,6 +10611,12 @@ def _build_jobs(
             *inv003_gate(st.repo_root, st.invariants),
             *inv004_gate(st.repo_root),
             *inv006_gate(st.repo_root, st.snapshot),
+            # T-0757: import-forbidding (INV007) and establish-property
+            # (INV008) obligations declared via `frob:invariant`'s
+            # `no_import=`/`establishes=` attrs -- see
+            # `frob.gates._design_invariants`.
+            *inv007_violations(st.repo_root, st.snapshot),
+            *inv008_violations(st.snapshot),
         ),
         "test": lambda: test_gate(
             st.snapshot, st.systems, st.coverage, st.tests, st.test_policy
@@ -11441,6 +11452,8 @@ __all__ = [
     "inv003_gate",
     "inv004_gate",
     "inv006_gate",
+    "inv007_violations",
+    "inv008_violations",
     "invariant_gate",
     "coverage_lock_diff",
     "is_baseline_stale",

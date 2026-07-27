@@ -26,6 +26,16 @@ T-0610, the epic's next child). `frob.arch._python`/`_cpp` keep parsing
 and checking exactly as before; nothing here is wired into
 `analyze_project` yet.
 """
+# frob:invariant INV-042 no_import="tree_sitter"
+# T-0757 (the T-0611 incident as a gate, not just this comment): this
+# module is DELIBERATELY tree_sitter-free -- every language adapter
+# (`_python.py`, `_typescript.py`, `_cpp.py`, ...) lives outside it
+# precisely so this shared model never needs a parser import. T-0611
+# landed a `TypeScriptAdapter` inside this file and a human reviewer had
+# to catch it by reading the diff; `frob.gates._design_invariants.
+# inv007_violations` now fails the instant this file's own import
+# specifiers contain `tree_sitter` or any `tree_sitter.*` submodule, so
+# the same class of regression is a gate finding, not a review catch.
 
 from __future__ import annotations
 

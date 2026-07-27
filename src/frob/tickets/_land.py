@@ -450,11 +450,15 @@ _TERMINAL_RANK = 3  # rank shared by TicketState.DONE and TicketState.DROPPED
 
 
 # frob:ticket T-0682
+# frob:invariant INV-043 establishes="_newer's qualified richness preference: among two non-terminal same-id ticket sides, the richer (Done-report/evidence/acceptance) side wins UNLESS the poorer side strictly outranks it by state -- a strictly-higher-rank poorer side always wins regardless of richness"  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestSpliceLedgerRicherStatePreference.test_report_side_still_wins_when_it_also_outranks_the_reportless_side  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestSpliceLedgerRicherStatePreference.test_stale_report_on_lower_rank_still_loses_to_a_strictly_outranking_reportless_side  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestSpliceLedgerRicherStatePreference.test_stale_report_on_lower_rank_still_loses_regardless_of_which_side_it_is_on  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestSpliceLedgerRicherStatePreference.test_neither_side_reporting_still_falls_back_to_state_rank  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestMergeMainIntoWorktreeRicherState.test_landing_tickets_in_progress_report_survives_the_merge_stage  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty.test_terminal_side_always_wins_over_non_terminal kind="property"  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty.test_strictly_higher_rank_poorer_side_always_wins kind="property"  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestNewerWinnerQualifiedPreferenceProperty.test_richer_side_wins_at_equal_or_lower_rank kind="property"  # noqa: E501
 def _newer(a: Ticket, b: Ticket) -> Ticket:
     """Which of two same-id ticket versions is "newer" (T-0682: Done-report
     presence now qualifies state-rank whenever NEITHER side has already
