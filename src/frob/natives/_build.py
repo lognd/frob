@@ -161,7 +161,31 @@ def build_natives(root: Path) -> Result[BuildReport, NativesError]:
     return Ok(BuildReport(cargo_target_dir=cargo_target_dir, results=results))
 
 
-# frob:ticket T-0976
+# frob:ticket T-0979
+def _resolve_buildable_crate(root: Path, spec) -> Path | None:  # noqa: ANN001
+    """`_build_one_crate`'s skip-check half: a non-rust native, or a rust
+    native with no matching crate directory on disk, is silently skipped
+    (logged at DEBUG) -- matching `build_natives`'s documented best-effort
+    posture for entries this checkout does not fully vendor. Returns the
+    resolved crate directory for anything else."""
+    if spec.language != "rust":
+        _log.debug(
+            "build_natives: skipping non-rust native %s (language=%r)",
+            spec.name,
+            spec.language,
+        )
+        return None
+    return _crate_dir_for(root, spec)
+
+
+# frob:ticket T-0979
+# frob:waive ARCH103 reason="T-0979: _resolve_buildable_crate (above) \
+# already extracted the separable skip-check concern; what remains here \
+# is a single guarded-subprocess run-and-report job (spawn maturin, \
+# classify its outcome, log each transition) -- the same cohesive shape \
+# T-0977 already waived for this module's sibling wrappers (_cargo_env, \
+# _run_ctest_list) and frob.exec's _run_npx. Splitting the log/branch \
+# pairs further would add indirection, not cohesion."
 def _build_one_crate(
     root: Path,
     spec,
@@ -174,14 +198,7 @@ def _build_one_crate(
     `Ok(CrateBuildResult)` for an attempted build regardless of its own
     pass/fail exit code (that per-crate failure is NOT an `Err`, per
     `build_natives`'s own disclosed contract)."""
-    if spec.language != "rust":
-        _log.debug(
-            "build_natives: skipping non-rust native %s (language=%r)",
-            spec.name,
-            spec.language,
-        )
-        return Ok(None)
-    crate_dir = _crate_dir_for(root, spec)
+    crate_dir = _resolve_buildable_crate(root, spec)
     if crate_dir is None:
         return Ok(None)
 

@@ -361,15 +361,13 @@ def canonicalize_text(text: str, *, path: str, limit: int) -> str:
     return result
 
 
-# frob:ticket T-0976
-def _format_one_path(
-    path: Path, root: Path, *, limit: int, check_only: bool
-) -> "FmtChange | None":
-    """`format_paths`'s per-file half: canonicalize `path` (skipping an
-    unsupported language or an unreadable file), returning its
-    `FmtChange` if it is not already canonical, and -- unless `check_only`
-    -- rewriting it in place. See `format_paths`'s own docstring for the
-    CRLF-preserving `newline=""` rationale this shares."""
+# frob:ticket T-0979
+def _read_source_for_format(path: Path) -> str | None:
+    """`_format_one_path`'s read half: returns `path`'s raw text with
+    CRLF-preserving `newline=""` semantics, or `None` for an unsupported
+    language (no directive marker) or an unreadable file -- either case
+    is a silent skip, logged at DEBUG, matching `format_paths`'s
+    documented best-effort posture."""
     if marker_for(str(path)) is None:
         return None
     try:
@@ -379,18 +377,50 @@ def _format_one_path(
         # plain `open()` builtin instead (same effect: "\r\n"/"\r"
         # survive verbatim rather than being translated to "\n").
         with open(path, encoding="utf-8", newline="") as fh:
-            original = fh.read()
+            return fh.read()
     except (OSError, UnicodeDecodeError) as exc:
         _log.debug("format_paths: skipping unreadable %s (%s)", path, exc)
+        return None
+
+
+# frob:ticket T-0979
+def _write_formatted(path: Path, rewritten: str) -> None:
+    """`_format_one_path`'s write half: rewrite `path` in place with
+    `rewritten`'s content, `newline=""` preserving whatever CRLF/LF
+    convention the caller already decided on (see `format_paths`'s
+    docstring for the full rationale)."""
+    with open(path, "w", encoding="utf-8", newline="") as fh:
+        fh.write(rewritten)
+
+
+# frob:ticket T-0979
+def _relpath_for_change(path: Path, root: Path) -> str:
+    """`_format_one_path`'s reported-path half: `path` relative to `root`
+    when possible, else `path` unchanged -- the display string an
+    `FmtChange` carries."""
+    if path.is_relative_to(root):
+        return str(path.relative_to(root))
+    return str(path)
+
+
+# frob:ticket T-0979
+def _format_one_path(
+    path: Path, root: Path, *, limit: int, check_only: bool
+) -> "FmtChange | None":
+    """`format_paths`'s per-file half: canonicalize `path` (skipping an
+    unsupported language or an unreadable file), returning its
+    `FmtChange` if it is not already canonical, and -- unless `check_only`
+    -- rewriting it in place. See `format_paths`'s own docstring for the
+    CRLF-preserving `newline=""` rationale this shares."""
+    original = _read_source_for_format(path)
+    if original is None:
         return None
     rewritten = canonicalize_text(original, path=str(path), limit=limit)
     if rewritten == original:
         return None
-    rel = str(path.relative_to(root)) if path.is_relative_to(root) else str(path)
     if not check_only:
-        with open(path, "w", encoding="utf-8", newline="") as fh:
-            fh.write(rewritten)
-    return FmtChange(path=rel)
+        _write_formatted(path, rewritten)
+    return FmtChange(path=_relpath_for_change(path, root))
 
 
 # frob:doc docs/modules/gates.md#frob-fmt-directive-canonicalization-t-0441

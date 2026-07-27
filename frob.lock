@@ -106,7 +106,7 @@
       "ref": "src/frob/gates/_coverage.py::stamp_coverage"
     },
     {
-      "digest": "7124b4ef291f363d5dbdcae0d841309eb950feb3f09508c333f9c2921fb2d9fe",
+      "digest": "47fbe7956fc14401374c1f5eb8ad37e685b207eeac1863964138c3832c2843b2",
       "facet": "body",
       "ref": "src/frob/gates/_fmt_directives.py::_format_one_path"
     },
