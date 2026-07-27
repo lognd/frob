@@ -8890,47 +8890,21 @@ class TestKnownGateRuleIds:
         caller could accidentally mutate shared state through."""
         assert isinstance(known_gate_rule_ids(), frozenset)
 
-    # frob:ticket T-0901
-    # T-0924 tracks paying down _KNOWN_ISSUE_ALLOWLIST to empty.
-    _KNOWN_ISSUE_ALLOWLIST = frozenset(
-        {
-            # Pre-existing gap surfaced by this test's own first run,
-            # deliberately NOT fixed here (out of T-0901's declared file
-            # scope) -- filed as T-0924 instead of silently
-            # widening this ticket. None of these currently appear in any
-            # `caught_by`/`handled_by` reference in the tree (unlike the
-            # T-0903/T-0923 batch this test exists to keep from recurring),
-            # so they are debt, not an active WAIVE002/unresolved symptom.
-            "COMPLIANCE001",
-            "COMPLIANCE002",
-            "COMPLIANCE003",
-            "COMPLIANCE004",
-            "HOST-BLAST",
-            "HOST001",
-            "HOST002",
-            "KRB001",
-            "KRB002",
-            "KRB003",
-            "KRB004",
-            "LINT001",
-            "LINT002",
-            "LINT003",
-            "LINT004",
-            "LINT005",
-            "PII001",
-            "PII002",
-            "PII003",
-            "PII004",
-            "RELWAIVE002",
-            "THREAT001",
-            "THREAT002",
-            "THREAT003",
-            "THREAT004",
-            "THREAT005",
-        }
-    )
+    # frob:ticket T-0924
+    # T-0924: paid the allowlist down to empty -- every id T-0901 carried
+    # here (COMPLIANCE001-004/HOST001/HOST002/HOST-BLAST/KRB001-004/
+    # LINT001-005/PII001-004/RELWAIVE002/THREAT001-005) is now registered
+    # in `_KNOWN_GATE_RULES` instead, so the drift-lock below actually
+    # guards this batch rather than exempting it. Kept as an empty
+    # frozenset (not deleted) so a future gap has an obvious place to
+    # land pending its own fix, exactly as this one did. PARSE002
+    # (landed on main concurrently with this pass) was folded straight
+    # into `_KNOWN_GATE_RULES` instead of parked here, since it is
+    # exactly this ticket's own defect class.
+    _KNOWN_ISSUE_ALLOWLIST: frozenset[str] = frozenset()
 
     # frob:ticket T-0901
+    # frob:ticket T-0924
     # frob:tests tests/test_gates.py::TestKnownGateRuleIds.test_every_emitted_rule_literal_is_known
     def test_every_emitted_rule_literal_is_known(self) -> None:
         """Drift-lock: statically enumerate every `rule="..."`/`"rule":

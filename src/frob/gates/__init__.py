@@ -1208,6 +1208,56 @@ _KNOWN_GATE_RULES = frozenset(
         # sets.
         "EXHAUST001",
         "EXHAUST002",
+        # frob:ticket T-0924
+        # T-0924: the larger pre-existing batch T-0901's drift-lock test
+        # surfaced beyond T-0903/T-0923's ids, carried in that test's
+        # `_KNOWN_ISSUE_ALLOWLIST` until paid down here -- same listing-
+        # omission class, no observed caught_by/handled_by symptom yet.
+        # COMPLIANCE001-004 (frob.strata._compliance.check_cmpl_registry
+        # and related checks, T-0607/T-0788).
+        "COMPLIANCE001",
+        "COMPLIANCE002",
+        "COMPLIANCE003",
+        "COMPLIANCE004",
+        # HOST001/HOST002 (frob.strata._host_isolation).
+        "HOST001",
+        "HOST002",
+        # HOST-BLAST (frob.strata._audit's blast-radius check).
+        "HOST-BLAST",
+        # KRB001-004 (frob.strata._krb_movement).
+        "KRB001",
+        "KRB002",
+        "KRB003",
+        "KRB004",
+        # LINT001-005 (frob.strata._lint).
+        "LINT001",
+        "LINT002",
+        "LINT003",
+        "LINT004",
+        "LINT005",
+        # PII001-004 (frob.strata._pii).
+        "PII001",
+        "PII002",
+        "PII003",
+        "PII004",
+        # RELWAIVE002 (frob.strata's reliability-family modules --
+        # _circuit_breaker/_slo/_spof/_interactive_cost/_fallback/_txn/
+        # _observability/_reliability/_ssot/_retry/_backpressure -- all
+        # share this one rule id for an unresolved reliability waiver).
+        "RELWAIVE002",
+        # THREAT001-005 (frob.strata._threat; THREAT006 already registered
+        # above by T-0903).
+        "THREAT001",
+        "THREAT002",
+        "THREAT003",
+        "THREAT004",
+        "THREAT005",
+        # PARSE002 (frob.gates._parse_failures) -- landed on main
+        # concurrently with this ticket's own fix pass; same listing-
+        # omission class as PARSE001 above, folded into T-0924 since it
+        # is exactly this ticket's defect class and this file is already
+        # in scope.
+        "PARSE002",
     }
 )
 

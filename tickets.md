@@ -4652,7 +4652,7 @@ Gates: frob check --ticket T-0923 clean (0 errors)
 ```yaml
 id: T-0924
 title: '_KNOWN_GATE_RULES missing batch: COMPLIANCE00x/HOST00x/HOST-BLAST/KRB00x/LINT00x/PII00x/RELWAIVE002/THREAT001-005'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-26'
@@ -4666,6 +4666,10 @@ scope:
 - src/frob/strata/_lint.py
 - src/frob/strata/_pii.py
 - src/frob/strata/_threat.py
+evidence:
+- tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+- tests/test_gates.py::TestKnownGateRuleIds::test_returns_known_rule_id
+- tests/test_gates.py::TestKnownGateRuleIds::test_is_frozenset
 threat: null
 component: null
 ```
@@ -4694,6 +4698,78 @@ each id to `_KNOWN_GATE_RULES` with a citing comment, or determine (and
 document) that a specific id is intentionally a strata-internal-only
 finding rule never meant to be caught_by-resolvable, and drop it from the
 drift-lock test's allowlist with that reasoning recorded instead.
+
+## Done report
+
+Changed:
+- src/frob/gates/__init__.py::_KNOWN_GATE_RULES (added COMPLIANCE001-004,
+  HOST001, HOST002, HOST-BLAST, KRB001-004, LINT001-005, PII001-004,
+  RELWAIVE002, THREAT001-005, and PARSE002 -- 22 ids -- each with a
+  citing comment naming the strata/gates module that constructs it.
+  PARSE002 landed on `main` concurrently with this ticket's own fix pass
+  via a different, unrelated ticket, but was folded straight in here
+  rather than parked separately -- it is exactly this ticket's own
+  defect class (an emitted-but-unregistered rule id), the file was
+  already in scope, and the ticket title covers "missing batch")
+- tests/test_gates.py::TestKnownGateRuleIds._KNOWN_ISSUE_ALLOWLIST (drained
+  to an empty frozenset -- all 22 ids, including PARSE002, moved to
+  `_KNOWN_GATE_RULES` instead of being exempted)
+- tests/test_gates.py::TestKnownGateRuleIds.test_every_emitted_rule_literal_is_known
+  (added a frob:ticket T-0924 edge alongside the existing T-0901 one, since
+  its body/allowlist reference changed)
+
+Evidence:
+- tests/test_gates.py::TestKnownGateRuleIds (pytest, all 3 tests pass,
+  including test_every_emitted_rule_literal_is_known against an EMPTY
+  allowlist, re-verified after the PARSE002 fold and again after merging
+  main)
+- Pre-merge (natives freshly built, this ticket's diff was already
+  complete for the T-0903/T-0923/T-0901-batch ids): `uv run frob check
+  --only lint/static/gates-fast/gates-native/gates-security/scope/
+  prework --ticket T-0924` all clean, 0 errors each, chunked foreground.
+- Post-merge (after `git merge main`, which brought in T-0918's
+  `derived_state_write_lock` wiring and the unrelated PARSE002 rule):
+  `--only lint --ticket T-0924` clean (`ruff format --check
+  src/frob/gates/__init__.py tests/test_gates.py` confirms both of THIS
+  ticket's touched files are formatted; the 2 files ruff-format flagged
+  repo-wide are `src/frob/arch/_lock_ordering.py` /
+  `tests/unit/test_arch.py`, brought in by the merge from an unrelated
+  ticket, not touched here).
+- Post-merge `--only static`, `--only scope`, and `--only prework` could
+  NOT be re-run to completion: all three reproducibly hang forever, in
+  this worktree and independently confirmed via `lslocks` in several
+  OTHER concurrently-running worktrees at the same moment -- a same-
+  process self-deadlock in the newly-merged `derived_state_write_lock`
+  (T-0918) whenever a gate reaches a `find_clones`/`build_graph`
+  rebuild while the outer `frob check` run holds its SHARED
+  `derived_state_lock` (confirmed via `lslocks` showing one pid holding
+  both READ and blocked WRITE* on its own `.frob/derived.lock`
+  simultaneously, and `/proc/<pid>/wchan` = `futex_wait_queue` making
+  zero progress over a 500s wait with otherwise-low system load). This
+  is a pre-existing environmental regression from a DIFFERENT, already-
+  landed ticket (T-0918), entirely outside T-0924's own diff (which only
+  touches `_KNOWN_GATE_RULES`'s data and a test file) -- filed as
+  CRITICAL bug T-0933 rather than worked around here. Trusting
+  the pre-merge clean run for these three gates plus the post-merge
+  clean `pytest`/`lint` evidence, since nothing in this ticket's own diff
+  touches locking, dup, or graph code.
+
+Filed:
+- T-0933 (CRITICAL): `frob check --only scope`/`--only
+  prework`/`--only static` self-deadlock on `derived_state_lock`, a
+  T-0918 regression -- blocks full gate verification repo-wide until
+  fixed.
+- T-0932 (PARSE002, filed mid-ticket as a separate gap) was
+  dropped with reason "folded into T-0924" once PARSE002 was brought
+  into this ticket's own fix instead of being parked separately.
+
+Gates: frob check (chunked --only loop: lint, static, gates-fast,
+gates-native, gates-security, scope, prework) clean for T-0924 PRE-MERGE,
+0 errors in each group; POST-MERGE, lint and the pytest evidence above
+are clean and static/scope/prework are blocked by the newly-filed,
+out-of-scope T-0933 deadlock (not a regression from this
+ticket's own diff). No waivers added; the allowlist residue is empty (0
+ids remain in `_KNOWN_ISSUE_ALLOWLIST`).
 
 <!-- ticket:T-0925 -->
 ```yaml
@@ -4891,3 +4967,116 @@ threat: null
 component: null
 ```
 T-0688 (this worktree) introduces a '# frob:raises <ExceptionType>' comment directive placed directly ABOVE a function's def, declaring function-wide intentional exception propagation (consumed by frob.gates._exhaustive_handling's EXHAUST002 check). T-0689, landed concurrently on main while this ticket was in flight, introduces a same-named '# frob:raises A, B' directive but SAME-LINE on a call site, parsed into NormalizedCall.declared_raises (a per-call-site declaration, different grammar/scope/consumer). Both use the literal verb text 'frob:raises' with different placement rules and different semantics -- this will collide/confuse at land time (a human or tool reading '# frob:raises X' cannot tell which convention applies without checking placement). Needs reconciling before both land together: rename one convention (e.g. T-0688's function-level directive to something like '# frob:propagates <Type>') or unify the grammar. Filed instead of silently deciding unilaterally, since T-0689 owns src/frob/arch/_mayraise.py and its own call-site convention outside this ticket's declared scope.
+
+<!-- ticket:T-0932 -->
+```yaml
+id: T-0932
+title: _KNOWN_GATE_RULES missing PARSE002 (src/frob/gates/_parse_failures.py)
+state: dropped
+kind: bug
+origin: human
+created: '2026-07-26'
+priority: medium
+parent: null
+scope:
+- src/frob/gates/__init__.py
+threat: null
+component: null
+```
+Found while re-verifying T-0924 after merging main: a concurrently-landed
+ticket added `PARSE002` (src/frob/gates/_parse_failures.py:68) as a real,
+currently-constructed rule literal, but it was never added to
+`_KNOWN_GATE_RULES` (src/frob/gates/__init__.py) -- the same listing-
+omission class T-0903/T-0923/T-0901/T-0924 already fixed for other ids.
+
+T-0924's own scope is the specific COMPLIANCE/HOST/KRB/LINT/PII/
+RELWAIVE002/THREAT batch; PARSE002 is a new, unrelated gap from a
+different landing, so it is filed separately rather than folded into
+T-0924's fix. T-0924 records PARSE002 in
+`tests/test_gates.py::TestKnownGateRuleIds._KNOWN_ISSUE_ALLOWLIST`
+(citing this ticket) so its own drift-lock test can stay green without
+silently expanding scope; this ticket is that allowlist entry's paydown
+target.
+
+Fix direction: add `"PARSE002"` to `_KNOWN_GATE_RULES` with a citing
+comment (same pattern as PARSE001), then remove it from the allowlist.
+
+## Drop reason
+- 2026-07-26: folded into T-0924
+
+<!-- ticket:T-0933 -->
+```yaml
+id: T-0933
+title: frob check --only scope/prework self-deadlocks on derived_state_lock (T-0918
+  regression)
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: critical
+parent: null
+scope:
+- src/frob/process/_lock.py
+- src/frob/check/__init__.py
+- src/frob/dup/_pipeline.py
+- src/frob/graph/__init__.py
+threat: null
+component: null
+```
+CRITICAL: `frob check --only scope` (and `--only prework`, which also
+triggers `frob.graph.build_graph`) reproducibly self-deadlocks in EVERY
+worktree since T-0918's `derived_state_write_lock` landed on `main`
+(commit d0af2382, "Wire derived_state_lock exclusive side into dup/graph
+cache rebuilders").
+
+Reproduction (T-0924's own worktree, and confirmed via `lslocks` showing
+the identical signature in several OTHER concurrently-running worktrees
+at the same moment -- this is not one worktree's local corruption):
+
+```
+cd <any worktree>
+timeout 30 uv run frob check --only scope --ticket <any> &
+# a few seconds later:
+lslocks | grep derived.lock
+```
+
+Observed: the SAME pid holds both a READ (shared) and a WRITE* (blocked
+exclusive) lock on its own `.frob/derived.lock` simultaneously -- a
+same-process self-deadlock, not cross-process contention (confirmed via
+`/proc/<pid>/wchan` = `futex_wait_queue` and the process making zero
+progress across a 500s wait with system load otherwise low).
+
+`derived_state_write_lock` (src/frob/process/_lock.py) is designed to
+no-op when `_process_already_holds(root)` is True (i.e. some thread in
+this process already holds `derived_state_lock` for the same `root`),
+specifically to avoid this exact self-deadlock when a gate worker thread
+calls `frob.graph.build_graph`/`frob.dup.find_clones` while `frob.check`'s
+main thread holds a run-wide SHARED lock (T-0859). Both call sites do
+route through `derived_state_write_lock` (verified: `frob/graph/
+__init__.py:517`, `frob/dup/_pipeline.py:1916`), so the no-op guard is
+being bypassed rather than absent -- most likely `_process_already_holds`
+is keying on a `root` value (via `_derived_lock_path`/`str(path)`) that
+does not string-match the `root` `frob.check.run_check`'s outer
+`derived_state_lock(root, exclusive=False)` call used (e.g. resolved vs
+unresolved path, or a differently-constructed `Path` for the same
+directory) -- same physical inode, different dict key, so the process-
+wide reentrancy signal reads False and a real second EXCLUSIVE `flock()`
+is attempted against the process's own SHARED hold on a different open
+file description. That is a hypothesis, not a confirmed root cause --
+needs a real fix in `src/frob/process/_lock.py` /
+`src/frob/check/__init__.py` (whichever passes the mismatched root) plus
+a regression test that actually runs `frob check --only scope`/`prework`
+end-to-end (existing `tests/unit/test_process_lock.py` tests appear to
+exercise the lock primitives directly/synthetically, not through the real
+`frob.check` dispatch path, so they did not catch this).
+
+Impact: blocks `frob check --only scope` and `--only prework` (and
+likely any `--only` selection that reaches a dup/graph rebuild) in EVERY
+worktree of this repo until fixed -- a hard stop for any agent trying to
+gate-verify a ticket via the sanctioned chunked `--only` loop
+(docs/guides/agent-playbook.md section 3b).
+
+Filed while re-verifying T-0924 after merging main; T-0924 itself could
+not get a clean `--only scope`/`--only prework` post-merge run because of
+this and used pre-merge evidence plus pytest test evidence instead (see
+its Done report).
