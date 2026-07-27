@@ -21,11 +21,11 @@ has zero pending nodes," never a judgment call.
 
 ## Where it lives
 
-- `agents/exhaustive-researcher` -- the agent definition. Wires serena (code
+- `.claude/agents/exhaustive-researcher.md` -- the agent definition. Wires serena (code
   digestion), the `frob` MCP (ticket graph as the code frontier), and the
   `fetch`/`arxiv` MCP servers (prose/paper retrieval) behind the frontier
   loop.
-- `skills/exhaustive-research` -- the reusable skill (`SKILL.md`) any agent
+- `.claude/skills/exhaustive-research` -- the reusable skill (`SKILL.md`) any agent
   can load to run the loop: enumerate, drain, prove. This is the operating
   manual; the agent definition just points at it.
 

@@ -200,7 +200,7 @@ inside `ticket.scope` as owned. `scope_matches` expands a bare `dir/` to
 `dir/**`, so a ticket scoped `src/` silently authorizes deleting anything under
 `src/`. An over-broad scope (`.` or a top-level dir) defeats the stale-base
 deletion guard entirely. Repro: ticket scope `src/frob/`, worktree stale-base
-drops an unrelated `src/frob/other/mod.py`; land does not flag it. Bounded by
+drops an unrelated <!-- frob:waive DOC006 reason="illustrative hypothetical repro filename, not a real path in this repo" -->`src/frob/other/mod.py`; land does not flag it. Bounded by
 requiring an over-broad scope, hence LOW.
 
 ---

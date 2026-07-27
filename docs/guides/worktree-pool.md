@@ -79,7 +79,7 @@ ordinary dispatched-agent worktree.
 
 ## Safety notes for testing this module
 
-Never point a test at the real clone's own `.claude/worktrees` tree or
+Never point a test at the real clone's own <!-- frob:waive DOC006 reason="a runtime-varying directory of ephemeral session worktrees, never a single tracked path" -->`.claude/worktrees` tree or
 its real git common dir -- `warm_pool`/`lease_worktree` really do run
 `git worktree add`/`git merge`, and a test asserting against a throwaway
 `tmp_path` fixture repository (a small git-inited repo with one commit)

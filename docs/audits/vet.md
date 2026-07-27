@@ -151,7 +151,7 @@ actually changed -- see #6/#7). Fix: document that `true` is a blanket waiver;
 consider requiring an explicit capability tuple for effectful packages.
 
 ### 10. [MEDIUM] build-time Rust code beyond literal `build.rs` unscanned
-`_ecosystem.py:115-136` checks only `source_dir/build.rs`. Cargo.toml can set
+`_ecosystem.py:115-136` checks only <!-- frob:waive DOC006 reason="source_dir is a variable placeholder, not a literal repo path" -->`source_dir/build.rs`. Cargo.toml can set
 `build = "other.rs"` (custom build-script path); that script executes at build
 time and is never capability-scanned. Fix: read Cargo.toml `build =` and scan
 the named path.

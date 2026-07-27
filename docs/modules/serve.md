@@ -221,8 +221,8 @@ harness), not run interactively.
 
 ## Packaging
 
-The `mcp` SDK is `frob`'s own `[serve]` extra in `pyproject.toml` (mirroring
-`[smt]`'s `z3-solver`): `uv pip install "frob[serve]"` or
+The `mcp` SDK is `frob`'s own `[project.optional-dependencies].serve` extra in `pyproject.toml` (mirroring
+`.smt`'s `z3-solver`): `uv pip install "frob[serve]"` or
 `uv sync --extra serve`. `make install-tool` passes `--extra serve` to `uv
 tool install` so the globally-installed `frob` binary gets it too, instead
 of independently pinning a second `mcp` version via a bare `--with` (T-0177

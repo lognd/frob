@@ -25,7 +25,7 @@ A type becomes generatable exactly one of three ways (checked in order):
    strategy -- the escape hatch for invariants that rejection sampling
    can't hit efficiently (construct-then-repair generators).
 3. **Registered**: `frob.fuzz.register(Type, strategy)` in the project's
-   `tests/strategies.py` -- for third-party types you cannot modify.
+   <!-- frob:waive DOC006 reason="illustrative downstream-project filename convention, not a path this repo ships" -->`tests/strategies.py` -- for third-party types you cannot modify.
 
 Anything else is `Err(NoGenerator)` -- and, for obligated signatures, a
 FUZZ002 violation naming the type and the three ways to fix it.
@@ -33,7 +33,7 @@ FUZZ002 violation naming the type and the three ways to fix it.
 Cross-language posture (honest): the registry, gates, and directives are
 language-generic; 0.x ships Python execution via hypothesis. Rust maps to
 `proptest::Arbitrary`, TypeScript to fast-check arbitraries in
-`tests/strategies.ts` -- their runners plug into the same `[[test.runner]]`
+<!-- frob:waive DOC006 reason="illustrative downstream-project filename convention, not a path this repo ships" -->`tests/strategies.ts` -- their runners plug into the same `[[test.runner]]`
 registry with a `fuzz_command`, but wiring them is recorded work, not
 alpha scope.
 

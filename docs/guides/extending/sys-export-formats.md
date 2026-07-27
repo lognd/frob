@@ -26,7 +26,7 @@ command handler.
    `sys_runner`'s module-level import graph unchanged for formats not in
    use).
 4. Add a `frob:doc` edge on the new function into
-   `docs/commands/sys.md#export`.
+   `docs/commands/sys.md#frob-sys-export`.
 5. Add a CLI-level test asserting `frob sys export --format <fmt>`
    produces the expected artifact shape for a small fixture model.
 

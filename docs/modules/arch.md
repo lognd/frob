@@ -742,7 +742,7 @@ convention as `_solid.py`'s checks.
 four categories below were built against a LOCAL `TypeDesignCategory`/
 `TypeDesignSuggestion` pair mirroring `ArchCategory`/`ArchSuggestion`'s
 shape field-for-field. T-0892 folded the four categories into the shared
-`frob.arch._models.ArchCategory` and migrated all four check functions to
+<!-- frob:waive DOC006 reason="ArchCategory is a module-level `Literal[...]` type-alias assignment in frob/arch/_models.py, real but not graph-indexed as a symbol (the python walker only indexes def/class); known DOC006 matcher gap, not stale doc drift" -->`frob.arch._models.ArchCategory` and migrated all four check functions to
 build `ArchSuggestion` directly once the lease freed up; the local pair no
 longer exists.
 

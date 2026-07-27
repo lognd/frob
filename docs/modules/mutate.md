@@ -155,7 +155,7 @@ journals.
 
 `frob doctor` reports the same stale-journal state read-only via
 `list_stale_journals` (`DoctorReport.mutate_journals`) -- see
-`docs/guides/install.md#mutate-backup-journal-needs-restore-t-0857` for
+`docs/guides/install.md#frob-mutate-backup-journal-needs-restore-state-t-0857` for
 the doctor-side detail. Doctor never restores anything itself; only
 `run_mutations`' own startup check (`restore_stale_journals`) performs
 the actual restore.

@@ -105,7 +105,7 @@ def test_multiply() -> None:
     assert multiply(2, 3) == 6
 ```
 
-Also add `tests/test_calc.py` and the ticket file itself to T-0001's `scope`
+Also add <!-- frob:waive DOC006 reason="illustrative tutorial filename introduced earlier in this same quickstart walkthrough, not a path this repo ships" -->`tests/test_calc.py` and the ticket file itself to T-0001's `scope`
 in the frontmatter -- the scope gate enforces the declared blast radius
 against every changed file, including the ticket file's own state change.
 

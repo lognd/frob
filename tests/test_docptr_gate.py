@@ -189,6 +189,31 @@ class TestDoc006Config:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "docs/guide.md")
 
+    def test_all_caps_citation_tag_not_flagged(self, tmp_path: Path) -> None:
+        """T-1016: `[IN-REPO]`-shaped tokens are prose citation TAGS, not
+        `[section]` TOML pointers -- every real config table this repo's
+        own loaders read is lowercase (optionally dotted), so an ALL-CAPS
+        bracketed root is structurally never a config reference."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", "[gates]\nseverity = {}\n")
+        _write(tmp_path, "docs/guide.md", "Rows already covered are `[IN-REPO]`.\n")
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "docs/guide.md")
+
+    def test_declared_but_unset_section_not_flagged(self, tmp_path: Path) -> None:
+        """T-1016: `[vet.allow]` is a real section `frob.vet._allow` reads
+        from `frob.toml` -- but this SYNTHETIC test repo's own `frob.toml`
+        never populates it, mirroring the false-positive class the
+        curated `_DECLARED_BUT_UNSET_CONFIG_SECTIONS` allowlist exists
+        for (this repo's own `frob.toml` has the identical gap)."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", "[gates]\nseverity = {}\n")
+        _write(tmp_path, "docs/guide.md", "Configure detectors via `[vet.allow]`.\n")
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "docs/guide.md")
+
 
 class TestDoc006Symbol:
     """Kind 4: CODE SYMBOL -- a dotted `module.Class.method`-shaped token
@@ -248,6 +273,39 @@ class TestDoc006Symbol:
         _write(tmp_path, "src/pkg/__init__.py", "")
         _write(tmp_path, "src/pkg/mod.py", "class Real:\n    SOME_ATTR = 1\n")
         _write(tmp_path, "docs/guide.md", "See `pkg.mod.Real.SOME_ATTR` for it.\n")
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "docs/guide.md")
+
+    def test_reexported_class_attribute_chain_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        """T-1016: `pkg.Real.SOME_ATTR` where `Real` is defined in `pkg.mod`
+        and RE-EXPORTED (not locally defined) through `pkg/__init__.py`'s
+        own `from .mod import Real` line -- the same one-level-deeper
+        conservatism as `test_class_attribute_chain_not_flagged`, but
+        through a re-export rather than a same-file definition
+        (`frob.lang.TreeNode.span` is exactly this shape upstream)."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "pyproject.toml", '[project]\nname = "pkg"\n')
+        _write(tmp_path, "src/pkg/mod.py", "class Real:\n    SOME_ATTR = 1\n")
+        _write(tmp_path, "src/pkg/__init__.py", "from pkg.mod import Real\n")
+        _write(tmp_path, "docs/guide.md", "See `pkg.Real.SOME_ATTR` for it.\n")
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "docs/guide.md")
+
+    def test_dunder_init_mid_chain_resolves_to_module(self, tmp_path: Path) -> None:
+        """T-1016: `pkg.mod.__init__.real` -- a doc author spelling out a
+        package's own `__init__.py` explicitly inside a longer chain
+        (`frob.gates.__init__.perf_gate` naming a symbol defined directly
+        in `frob/gates/__init__.py`) -- `X.__init__` and bare `X` name the
+        SAME module, so this resolves exactly as `pkg.mod.real` would."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "pyproject.toml", '[project]\nname = "pkg"\n')
+        _write(tmp_path, "src/pkg/__init__.py", "")
+        _write(tmp_path, "src/pkg/mod.py", "def real(): pass\n")
+        _write(tmp_path, "docs/guide.md", "See `pkg.mod.__init__.real` for it.\n")
         _add_all(tmp_path)
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "docs/guide.md")

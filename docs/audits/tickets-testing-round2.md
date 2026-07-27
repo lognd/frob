@@ -112,7 +112,7 @@ not just the library. Fixes that are genuinely present:
   then later `frob ticket close`. Between those two commands the working tree
   can change arbitrarily. Close trusts the record-time pass observation.
 - **Failure scenario**: `frob ticket evidence T-X tests/test_foo.py::test_bar`
-  while green (recorded, passes) -> edit `src/foo.py` to break `test_bar` (or
+  while green (recorded, passes) -> edit <!-- frob:waive DOC006 reason="illustrative hypothetical repro filename in a failure-scenario walkthrough" -->`src/foo.py` to break `test_bar` (or
   edit the test) -> `frob ticket close T-X`. Close does not re-run; the ticket
   closes DONE with a now-RED evidence test. `frob check`/COV003 only checks the
   id still COLLECTS, never that it passes, so main carries a green DONE ticket
@@ -137,7 +137,7 @@ not just the library. Fixes that are genuinely present:
   repeatedly catches. The T-0398 fix closed "the test failed" but not "the test
   proves nothing."
 - **Failure scenario**: write `def test_foo(): import frob.foo` (imports the
-  changed module, asserts nothing) in `tests/test_foo.py`, add a `frob:tests`
+  changed module, asserts nothing) in <!-- frob:waive DOC006 reason="illustrative hypothetical repro filename in a failure-scenario walkthrough" -->`tests/test_foo.py`, add a `frob:tests`
   edge or put the file in scope (N-04), `frob ticket evidence T-X
   tests/test_foo.py::test_foo` -> passes vacuously, records, closes. The ticket
   is "tested" and "covering" and "passed" by every gate while proving nothing.

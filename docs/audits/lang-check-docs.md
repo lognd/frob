@@ -121,7 +121,7 @@ config error, not a silent Python fallback.
 `detect_project_type` only globs `root.glob("*.cpp"|"*.cc"|"*.c")` at the top level
 (check/__init__.py:569) and `_detected_types` requires `CMakeLists.txt`/`Cargo.toml` at root. A C/C++
 project whose sources live only in `src/` with no CMakeLists at root returns `unknown` -> Python
-pipeline (#6), so clang/cmake never run. Repro: `src/foo.c` only, no CMakeLists -> no native checks.
+pipeline (#6), so clang/cmake never run. Repro: <!-- frob:waive DOC006 reason="illustrative hypothetical repro filename, not a real path in this repo" -->`src/foo.c` only, no CMakeLists -> no native checks.
 Fix: detect native sources recursively, or fail loudly on unknown.
 
 **8. [MEDIUM] `_walk_doc_files` only scans `docs/**/*.md`; `frob:describes` anchors elsewhere are invisible.**

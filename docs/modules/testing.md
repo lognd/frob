@@ -35,8 +35,9 @@ the gates prove the bindings exist; `frob test` runs the bound tests.
    edge to a touched symbol, or transitively to another ripple symbol, are
    treated as touched -- their tests run too.
 5. Touched test files always run themselves.
-6. Fallback for touched files with zero bindings, per `[testing.select]`
-   `fallback`: `package` (default -- run the owning package's suite for
+6. Fallback for touched files with zero bindings, per `SelectConfig.
+   fallback` (`--fallback` CLI knob, not a `frob.toml` table):
+   `package` (default -- run the owning package's suite for
    that language), `suite` (whole language suite), or `warn` (skip and
    emit a warning; the TEST001 gate is what makes this safe to choose).
    Two refinements (T-0398):
@@ -125,7 +126,7 @@ language = "rust"       # optional, informational
   (Rust) and setuptools/pybind11/scikit-build (C/C++), on Linux, macOS, and
   Windows, x86 or arm. Going unbuilt -> built (absent -> hashed) OR a
   recompile (bytes change) flips the key and forces re-collection
-  automatically. A maturin PACKAGE (`name/__init__.py` + `name.abi3.so`) is
+  automatically. A maturin PACKAGE (<!-- frob:waive DOC006 reason="name is a placeholder for the package's actual name, not a literal path" -->`name/__init__.py` + `name.abi3.so`) is
   handled by fingerprinting the `.so` alongside the `__init__.py`, not the
   unchanged `__init__.py`.
 - **Honest diagnostics.** When a declared native is unbuilt, COV003 names the
@@ -685,7 +686,7 @@ first-class target, not an afterthought:
 ## Design decisions
 
 - **One git seam (`frob.gitio`)**, shared by gates and testing. The gates
-  design's `gates/diff.py` is superseded by this module -- two diff
+  design's <!-- frob:waive DOC006 reason="historical reference to a proposed/superseded module path that never landed under this name" -->`gates/diff.py` is superseded by this module -- two diff
   implementations would desync (docs/modules/gates.md updated accordingly).
 - **Selection is graph-driven, not coverage-driven.** Coverage maps tell
   you what code a test ran last time; the graph tells you what a test is

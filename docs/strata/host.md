@@ -660,7 +660,7 @@ function; wiring it into the CLI/waiver channel is a follow-up ticket.
   `ResourceContentionViolation`, `ResourceContentionReport`, SYS200-203.
 - `tests/unit/strata/test_contention.py` -- the SYS200-203 firing/clean
   litmus pairs (T-0699).
-- `docs/strata/surface.md#node-grammar` -- the node/store grammar this
+- `docs/strata/surface.md#node-grammar-implemented-t-0132-closes-the-codemay-gap` -- the node/store grammar this
   vocabulary extends.
 - `docs/strata/surface.md#key-construct-semantics` -- "a store is a node
   too", the precedent every store-side clause here follows.

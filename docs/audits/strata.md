@@ -124,7 +124,7 @@ FOREIGN -> invisible to capability observation (no SYS100/THREAT004/005) AND
 does not trip SYS102 (its directory is already prefix_owned). SYS102 also only
 iterates *directories* (`_top_level_dirs`), so a FOREIGN file placed directly
 under `src/frob/` (not in a subdir) also escapes.
-Repro: add `src/frob/vet/backdoor.py` doing `subprocess.run(user_input)` where
+Repro: add <!-- frob:waive DOC006 reason="illustrative hypothetical repro filename, not a real path added to this repo" -->`src/frob/vet/backdoor.py` doing `subprocess.run(user_input)` where
 no node's `code=` glob matches `backdoor.py` -> `frob sys audit` stays clean.
 Fix direction: SYS102 must fire per-FOREIGN-file (or per unowned file within an
 owned dir), not per fully-FOREIGN top-level dir; effect extraction should raise

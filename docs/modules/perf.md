@@ -456,7 +456,7 @@ this module.
   `stop()` around the call -- so it drops into the same run-a-callable
   shape the existing harness (`frob.perf._harness.main`) and `frob test`'s
   python runner both already use, without a second execution model. No CLI
-  subcommand (`frob perf profile --sampled`) or `frob test` flag exists
+  subcommand (<!-- frob:waive DOC006 reason="proposal syntax for a not-yet-built flag, the same sentence discloses it does not exist yet" -->`frob perf profile --sampled`) or `frob test` flag exists
   yet -- that surface, and feeding `resolve_stream`'s `HitStream` into a
   persisted store, are T-0711/T-0712's job; this ticket ships the
   language-neutral contract, resolver, and a harness-composable python
@@ -896,7 +896,7 @@ def new_run_sketch(alpha: float) -> QuantileSketch
 
 - **Loop-context detection is lexical, one level deep -- and, as
   implemented, function-granularity.** `frob.lang`'s leaf-token stream
-  (`RawSymbol.body_tokens`, `frob.lang._common.leaf_tokens`) is
+  (`RawSymbol.body_tokens`, `frob.lang._common._leaf_tokens`) is
   whitespace-insensitive by design (docs/modules/graph.md's digest contract
   depends on it), which means it also carries no line numbers and no
   block-nesting structure -- there is no INDENT/DEDENT leaf in tree-

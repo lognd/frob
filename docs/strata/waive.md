@@ -1,7 +1,7 @@
 # Waiving `frob sys audit` findings (T-0174)
 
 `frob check` gate violations have had `frob:waive REASON="..."` since
-early on (`docs/modules/gates.md#waive-boundary-t-0101`): a repo can
+early on (`docs/modules/gates.md#waive-boundary-t-0101-revised-t-0289`): a repo can
 record honest debt instead of either fixing a finding immediately or
 faking it green. `frob sys audit` findings (SYS100-102, THREAT002/003,
 LINT004, ...) had no equivalent channel -- a piloting repo had to fix
@@ -157,7 +157,7 @@ discharged -- the waiver has nothing left to waive and is itself reported
 as a NEW finding, `SYSWAIVE002` (`_waive.py::STALE_WAIVER_RULE`), under
 the `waiver` family (`AuditReport`) or as a `SelfConformViolation`
 (`SelfConformReport`). This mirrors the gate system's WAIVE002
-(`docs/modules/gates.md#waive-boundary-t-0101`: a waiver that can never
+(`docs/modules/gates.md#waive-boundary-t-0101-revised-t-0289`: a waiver that can never
 match is loud, not a silent no-op) -- except here it is drift in the
 OTHER direction: the waiver used to be effective and stopped being
 needed, which is good news, but a `waive` clause left behind after the

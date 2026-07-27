@@ -858,7 +858,7 @@ delegates to `frob.tickets._brief.compose_brief`, which assembles:
 - **Scope + leases** -- the declared scope globs, plus any active lease
   collision (`leased_by`) so the agent sees immediately if another
   in-progress ticket already holds an overlapping path.
-- **Playbook hard rules** -- `frob.tickets._brief.parse_playbook_sections`
+- **Playbook hard rules** -- `frob.tickets._brief._parse_playbook_sections`
   parses every numbered `## N[letter]. Title` heading out of `docs/guides/
   agent-playbook.md` (a real markdown parse, not a hand-copied section
   list that drifts the moment the playbook is renumbered or a section is

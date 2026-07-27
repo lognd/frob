@@ -162,7 +162,7 @@ dependency tree is still the overwhelming majority of the original
 cold-build cost and is captured by this change with no such risk.
 
 Not built (disclosed, filed as a follow-up rather than attempted here):
-part (2) of T-0732 -- a `frob scaffold pool N` pre-warmed worktree pool
+part (2) of T-0732 -- a <!-- frob:waive DOC006 reason="proposal syntax for a not-yet-built pool-size flag, the next sentence discloses it was never implemented" -->`frob scaffold pool N` pre-warmed worktree pool
 (pool of worktrees with natives already built and `main` already merged,
 leased out to agents, refreshed in the background after lands). This
 mechanism reduces make-core cost to near zero by never running it live at
@@ -336,7 +336,7 @@ corrupt entry alongside the native-extension check above, naming the exact
 `rm -f <path>` for each offender.
 
 T-0570 originally scoped this to `src/frob/doctor.py` reporting only,
-noting that wiring an actual BLOCK into `frob check`/`frob gates` (so a
+noting that wiring an actual BLOCK into `frob check`'s gates (so a
 corrupt cache cannot even be consulted, not just flagged) was out of
 scope. **That follow-up has since landed as T-0603**: `frob check`'s
 `run_check`/`run_check_cpp`/`run_check_rust`/`run_check_ts` entry points

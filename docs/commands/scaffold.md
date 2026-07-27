@@ -42,7 +42,7 @@ would otherwise install nothing or something stale, and a naive
 frob 0.1.0 ships, this starts enforcing automatically with no workflow
 edit required.
 
-`python-tool` and `pyo3-library` additionally get `.github/workflows/release.yml`:
+`python-tool` and `pyo3-library` additionally get <!-- frob:waive DOC006 reason="a scaffold-generated file this command writes into the TARGET repo, not a path in this repo" -->`.github/workflows/release.yml`:
 triggered on `v*` tags, builds via `uv build` / `maturin build --release`,
 and publishes to PyPI through `pypa/gh-action-pypi-publish` using OIDC
 trusted publishing (no stored API token). The workflow's header comment

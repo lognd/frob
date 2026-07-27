@@ -328,7 +328,7 @@ rule is a natural follow-up, not yet built).
   posture is off locally, on (or offline-mirror) in CI.
 - **Containment (CVE->CWE join, phase D)**: `_containment.py::
   build_containment_report` joins each VET005 advisory's CVE id(s)
-  against `frob.strata`'s CWE obligation model via NVD's `cves/2.0` API,
+  against `frob.strata`'s CWE obligation model via NVD's <!-- frob:waive DOC006 reason="NVD's own external REST API path segment, not a path in this repo" -->`cves/2.0` API,
   cached 7d in the same `.frob/vet.db` (`_nvd.py::fetch_cwe_for_cve`,
   offline-first -- `fetch=False` restricts to cache, degrading loudly to
   `"unverified"` on a miss/failure rather than a silent pass). `state`
@@ -342,7 +342,7 @@ rule is a natural follow-up, not yet built).
   `render_containment_report` produces the text form, LIVE-then-
   UNVERIFIED-then-CONTAINED-then-UNMODELED ordered so a data-source
   outage is never scrolled past as if it were a routine no-coverage
-  result; wiring a `frob vet --containment` CLI flag through `app/
+  result; wiring a <!-- frob:waive DOC006 reason="proposal syntax for a flag that does not exist yet, the same sentence discloses it as a follow-up" -->`frob vet --containment` CLI flag through `app/
   vet_runner.py`/`__main__.py` is a follow-up (out of T-0110's declared
   scope, which is `src/frob/vet/**` only).
 
@@ -506,8 +506,8 @@ for the methodology and full numbers this paragraph summarizes):
    site-packages` (1475 files) with the old (pathological) implementation
    bounded by a 3s-per-file SIGALRM budget so a handful of genuinely
    intractable files (7 of 1475 -- real files, e.g.
-   `cryptography/hazmat/primitives/keywrap.py`,
-   `pygments/lexers/c_like.py` -- where the OLD regex itself does not
+   <!-- frob:waive DOC006 reason="path inside a third-party site-packages install (cryptography), not this repo" -->`cryptography/hazmat/primitives/keywrap.py`,
+   <!-- frob:waive DOC006 reason="path inside a third-party site-packages install (pygments), not this repo" -->`pygments/lexers/c_like.py` -- where the OLD regex itself does not
    finish in 3s; this IS the pathology T-0208 exists to fix, not a gap in
    the comparison) don't block comparing the other 1468. Of 1468 compared:
    1 file diverges, and it is the disclosed `_MAX_CANDIDATES_PER_FILE`

@@ -534,6 +534,50 @@ def _cli_violations(
 
 _CONFIG_REF_RE = re.compile(r"^\[{1,2}([\w.-]+)\]{1,2}$")
 
+#: T-1016 matcher hardening: a bracketed token whose section root is ALL
+#: CAPS (`[IN-REPO]`, `[TRUNCATED]`) is a prose citation/label TAG, not a
+#: `[section]`/`[section.key]` TOML pointer -- every real frob.toml/
+#: pyproject.toml/Cargo.toml table this repo's own loaders read uses a
+#: lowercase (optionally dotted) Python-identifier-shaped name, never an
+#: all-caps tag. Rejecting this shape before the manifest-lookup path
+#: avoids a structurally-impossible DOC006 false positive on citation
+#: markup that merely happens to share the `[...]` bracket shape.
+_ALL_CAPS_TAG_RE = re.compile(r"^[A-Z][A-Z0-9_-]*$")
+
+#: T-1016 matcher hardening: `[section]`/`[section.key]` names this
+#: codebase's own config loaders genuinely read (`data.get("<section>", ...)`
+#: chains in `src/frob/**`, verified per-key against the reading module at
+#: the time this set was built) but that happen not to appear in THIS
+#: project's own `frob.toml`/`pyproject.toml` -- frob does not need to
+#: configure `vet`/`policy`/`strata`/etc. on itself for its own operation,
+#: so a doc page correctly describing the schema for downstream repos that
+#: DO populate these tables was flagged as if the pointer were bogus. Kept
+#: as an explicit, individually-verified allowlist (not a source-scanning
+#: heuristic) so a genuinely renamed/removed key still fails closed here
+#: until re-verified and re-added.
+_DECLARED_BUT_UNSET_CONFIG_SECTIONS = frozenset(
+    {
+        "vet",  # src/frob/vet/_allow.py: data.get("vet")
+        "vet.allow",  # same table, `.allow` sub-key
+        "vet.detectors",  # src/frob/vet/_capability.py detector-toggle sub-key
+        "policy",  # src/frob/policy/__init__.py: doc.get("policy", {})
+        "policy.forbidden-import",  # a `[policy]` rule kind, not a nested table
+        "policy.pattern",  # a `[policy]` rule kind, not a nested table
+        "policy.norm",  # a `[policy]` rule kind, not a nested table
+        "strata",  # src/frob/app/deploy_runner.py: data.get("strata", {})
+        "strata.benign_capabilities",  # src/frob/strata config sub-key
+        "tickets",  # src/frob/gates/__init__.py: tomllib.load(fh).get("tickets", {})
+        "check",  # src/frob/app/check_runner.py: data.get("check", {})
+        "system",  # `[[system]]` array-of-tables (TEST003/004/009/SystemSpec)
+        "perf.heavy",  # src/frob/perf/_redundancy.py: data.get("perf", {}).get("heavy")
+        "perf.sketch",  # src/frob/perf/_sketch_store.py: .get("perf", {}).get("sketch")
+        "fuzz",  # src/frob/gates/__init__.py: tomllib.load(fh).get("fuzz", {})
+        "clean",  # src/frob/clean/_rules.py: data.get("clean", {})
+        "tool.frob",  # pyproject.toml form; src/frob/app/config.py: data.get("tool", {}).get("frob", {})
+        "repo",  # src/frob/fleet/__init__.py: data.get("repo", [])
+    }
+)
+
 
 def _load_frob_toml(root: Path) -> dict | None:
     """This project's own `frob.toml`, or `None` if absent/unreadable --
@@ -610,7 +654,12 @@ def _config_violations(
     T-1015 -- any sibling TOML manifest this repo actually ships
     (`pyproject.toml`, any tracked `Cargo.toml`): a doc legitimately citing
     `[project.optional-dependencies]` or `[package]` is pointing at one of
-    THOSE manifests, not `frob.toml`, and resolves there instead."""
+    THOSE manifests, not `frob.toml`, and resolves there instead. T-1016
+    adds two more shape/allowlist escapes: an ALL-CAPS section root
+    (`_ALL_CAPS_TAG_RE`) is a citation tag, not a TOML pointer, and a
+    dotted name in `_DECLARED_BUT_UNSET_CONFIG_SECTIONS` is a section this
+    codebase's own loaders genuinely read even though it happens not to
+    appear in this project's own manifests."""
     violations: list[Violation] = []
     if frob_toml is None and not other_manifests:
         return violations
@@ -619,10 +668,14 @@ def _config_violations(
         if match is None:
             continue
         dotted = match.group(1)
+        if _ALL_CAPS_TAG_RE.match(dotted.split(".", 1)[0]):
+            continue
         if _nearby_waived(doc_lines, line_no):
             continue
-        if (frob_toml is not None and _config_path_exists(frob_toml, dotted)) or any(
-            _config_path_exists(m, dotted) for m in other_manifests
+        if (
+            (frob_toml is not None and _config_path_exists(frob_toml, dotted))
+            or any(_config_path_exists(m, dotted) for m in other_manifests)
+            or dotted in _DECLARED_BUT_UNSET_CONFIG_SECTIONS
         ):
             continue
         violations.append(
@@ -705,6 +758,14 @@ def _symbol_violation_for_token(
     module, _, name = token.rpartition(".")
     if token in module_map:
         return None  # the whole dotted token is itself a real module
+    if module.endswith(".__init__"):
+        # T-1016: a doc author spelling out a package's own `__init__.py`
+        # explicitly inside a longer chain (`frob.gates.__init__.perf_gate`
+        # naming the `perf_gate` symbol defined directly in `frob/gates/
+        # __init__.py`) -- `X.__init__` and bare `X` name the SAME module,
+        # so re-resolve against the stripped form rather than treating
+        # `X.__init__` as its own (non-existent) submodule.
+        module = module[: -len(".__init__")]
     file_path = module_map.get(module)
     if file_path is None:
         # the immediate module prefix does not resolve -- before claiming
@@ -715,8 +776,16 @@ def _symbol_violation_for_token(
         # legitimate class-attribute reference.
         outer_module, _, maybe_class = module.rpartition(".")
         outer_file = module_map.get(outer_module)
-        if outer_file is not None and maybe_class in symbol_names_by_path.get(
-            outer_file, set()
+        if outer_file is not None and (
+            maybe_class in symbol_names_by_path.get(outer_file, set())
+            # T-1016: `maybe_class` can also be a name RE-EXPORTED (not
+            # locally defined) by `outer_file`'s own `__init__.py` --
+            # `frob.lang.TreeNode.span` is exactly this shape (`TreeNode`
+            # is defined in `frob.lang._models` and re-exported through
+            # `frob.lang.__init__`'s own `from ... import` line), the same
+            # re-export case the same-level branch below already handles
+            # via `_module_reexports` for a plain `module.name` token.
+            or _module_reexports(root, outer_file, maybe_class)
         ):
             return None
         return _doc006_violation(
@@ -843,6 +912,17 @@ def _tracked_all_files(root: Path) -> frozenset[str]:
 # frob:tests \
 # tests/test_docptr_gate.py::TestDoc006TestsTargetShape.test_single_separator_target_no\
 # t_flagged
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006Config.test_all_caps_citation_tag_not_flagged
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006Config.test_declared_but_unset_section_not_flag\
+# ged
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006Symbol.test_reexported_class_attribute_chain_no\
+# t_flagged
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006Symbol.test_dunder_init_mid_chain_resolves_to_m\
+# odule
 def doc006_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DOC006: doc-pointer resolution over a closed set of recognized,
     mechanically resolvable pointer shapes (see this module's docstring)

@@ -528,7 +528,7 @@ Distinct from the section above: that join is dependency-VERSION-shaped
 ("this pinned version has advisory CVE-XXXX"), useless for first-party
 code or a dependency with no filed advisory yet. `frob.strata.
 _cve_fingerprint.CveFingerprint` is a source-code NEEDLE for a canonical
-vulnerable-usage class -- `frob.vet._capability.scan_file_fingerprints`
+vulnerable-usage class -- `frob.vet._capability._scan_file_fingerprints`
 flags the SHAPE of the vulnerability directly in a file's text, following
 `scan_file_capabilities`'s recall-over-precision substring philosophy
 (module docstring, `src/frob/vet/_capability.py`) plus the T-0151 dot-

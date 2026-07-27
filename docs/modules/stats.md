@@ -42,7 +42,7 @@ for the aggregation this renders:
   this is intentionally additive, not a frontmatter schema change)
 - estimated output tokens per harness tool, from PostToolUse hook events
 
-Trigger note: this is an env var, not a `frob stats --agentic` argparse
+Trigger note: this is an env var, not a <!-- frob:waive DOC006 reason="proposal syntax for a flag that does not exist, the same sentence explains it is not real" -->`frob stats --agentic` argparse
 flag, because T-0178's declared scope excluded `src/frob/__main__.py`
 (where every subcommand's flags are registered) -- wiring the real CLI
 flag is a small follow-up (see the ticket's Done report for the filed id).

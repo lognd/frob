@@ -508,7 +508,7 @@ environment; (b) the Linux kernel primitives that make containers
 possible -- namespaces (isolating a process's view of PIDs, mounts,
 network) and cgroups (bounding a process group's resource consumption) --
 are the OS-level mechanism the 12-factor process contract is built on.
-Canonical kernel documentation: `Documentation/admin-guide/cgroup-v2.rst`
+Canonical kernel documentation: <!-- frob:waive DOC006 reason="path inside the Linux kernel source tree, not this repo" -->`Documentation/admin-guide/cgroup-v2.rst`
 and the `namespaces(7)` man page (Linux man-pages project) -- reconstructed
 from established knowledge, not independently re-fetched live this pass.
 

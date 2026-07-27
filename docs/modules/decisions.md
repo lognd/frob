@@ -9,7 +9,7 @@ accepted decision must be anchored, and a decision reference must resolve.
 
 ## The record
 
-`decisions/AD-001.md`:
+<!-- frob:waive DOC006 reason="illustrative example decision-record filename showing the naming convention, not a real file this repo ships" -->`decisions/AD-001.md`:
 
 ```markdown
 ---

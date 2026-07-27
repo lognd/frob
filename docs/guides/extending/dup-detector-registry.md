@@ -49,7 +49,7 @@ deliberately thin, pointing there rather than duplicating it.
   (an untested public function), but nothing detects "computes a
   fingerprint no caller ever buckets" specifically.
 - `DUP001`/`DUP002` are ordinary `frob.gates` rule functions -- they get
-  the SAME waiver boundary (`docs/modules/gates.md#waive-boundary`) and
+  the SAME waiver boundary (`docs/modules/gates.md#waive-boundary-t-0101-revised-t-0289`) and
   severity-override treatment (`[gates.severity]`) as every other gate
   rule id, opt-in via `[dup].enforce`.
 - `CoreUnavailable` is a loud typed error, not a silent skip -- this is

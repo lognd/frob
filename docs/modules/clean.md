@@ -82,7 +82,7 @@ renders the report through `frob.render.Renderer` (or a bare JSON dump for
 
 ## Relates
 
-- T-0456 (`frob reconcile`): removes abandoned WORKTREES specifically; a
+- T-0456 (`frob ticket reconcile`): removes abandoned WORKTREES specifically; a
   future integration lets reconcile call `frob clean` for the artifact half
   of its own cleanup, kept as a distinct command here.
 - T-0464 (coverage combine setup): the `.coverage.<host>.<pid>.*` fragment

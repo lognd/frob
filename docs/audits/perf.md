@@ -240,7 +240,7 @@ each other.** That is the whole audit in one line.
 #### M7. Every rglob stage descends the entire 745k-entry tree before filtering excludes
 - **Where**: `arch/__init__.py:59` `for p in root.rglob("*")`; `strata/_selfconform.py:230` & `:421` (`root.rglob("*")` twice within one sys-audit run); `check/_python.py:679` `_has_bind_markers` (`rglob("*.py")`); `check/_python.py:131` `_build_import_graph`; `check/_python.py:770` `_run_exports` (`rglob("__init__.py")`).
 - **What's wrong**: exclude globs (`.claude/worktrees/**`, which holds **45,091** of the repo's py files) are applied *after* `rglob` has already walked into and stat'd every excluded path. Measured: 6.1s per bare `rglob("*")`; `_collect_files` 9.1s. This walk is repeated independently by each stage (~6-8 walks/run = 40-70s of pure directory traversal).
-- **Failure scenario**: this repo carries 45k worktree py files under `.claude/worktrees`; every stage walks all of them only to discard them.
+- **Failure scenario**: this repo carries 45k worktree py files under <!-- frob:waive DOC006 reason="a runtime-varying directory of ephemeral session worktrees, never a single tracked path" -->`.claude/worktrees`; every stage walks all of them only to discard them.
 - **Fix direction**: prune excluded/skip directories *during* traversal (os.walk with in-place `dirs[:]` filtering, or `os.scandir` recursion that does not descend a dir whose name is in `BUILTIN_SKIP_DIRS` or matches a directory-level exclude glob). Compute the file list once per run and share it across stages (tie to the snapshot from H4). Bounded win: turns ~7 full 745k walks into one pruned walk.
 
 #### M8. `_has_bind_markers` reads bytes of every `*.py` in the tree (worktrees included) to decide whether to skip bind

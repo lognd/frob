@@ -50,7 +50,7 @@ the tree-sitter root node into a `tuple[RawSymbol, ...]`.
 - Adding a language to `_WALKERS` without adding it to `frob.dup`'s
   per-language detector coverage or `frob.vet`'s capability matrix leaves
   those registries' own "every language has coverage or an excuse"
-  discipline (see `docs/modules/vet.md#coverage-matrix`,
+  discipline (see `docs/modules/vet.md#closed-world-import-accounting-t-0180`,
   `docs/guides/extending/capability-registry.md`) unsatisfied for the new
   language -- those ARE gated (capability matrix cells must be patterned
   or excused), so a new language surfaces there even though `_WALKERS`

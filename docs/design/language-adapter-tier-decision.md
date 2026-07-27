@@ -4,8 +4,9 @@
 
 ## Question
 
-Should frob's language-adapter surface (`frob.arch.LanguageAdapter`,
-T-0609) expand beyond the current Python/TypeScript-JS/Rust/C/C++ set
+Should frob's language-adapter surface (the per-language `*Adapter` family,
+e.g. `frob.arch._python.PythonAdapter`, T-0609) expand beyond the current
+Python/TypeScript-JS/Rust/C/C++ set
 (plus Kotlin grammar wired but its adapter still pending, T-0614) toward
 Go, Java, or C#, per the github.com Innovation Graph global metrics and
 the TIOBE index? Both indexes rank Java, Go, C# as the largest

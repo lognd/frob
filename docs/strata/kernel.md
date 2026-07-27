@@ -464,7 +464,7 @@ scenario never silently drops a claim any more than the base model does.
 <!-- frob:describes src/frob/strata/_report.py::render_report -->
 <!-- frob:describes src/frob/strata/_report.py::summarize -->
 
-The human-facing report `frob sys check` prints (later phases) and the
+The human-facing report `frob sys audit` prints (later phases) and the
 machine-facing count summary, both over the flat `evaluate_claims` output.
 Pure formatting only -- no new evaluation happens here.
 

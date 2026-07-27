@@ -311,7 +311,7 @@ review-round REJECT fix.
 
 - `docs/strata/host.md` -- `std.host`'s `HostManifest`/`runs_as`, the
   foundation this vocabulary's SPN binding builds on.
-- `docs/strata/surface.md#node-grammar` -- the node grammar this
+- `docs/strata/surface.md#node-grammar-implemented-t-0132-closes-the-codemay-gap` -- the node grammar this
   vocabulary extends.
 - `docs/strata/kernel.md#data-models` -- `Node`/`Flow`, the two kernel
   primitives every std.krb clause desugars into.

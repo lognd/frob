@@ -680,7 +680,7 @@ Candidates (b) and (c) landed here as COV006/COV007:
   diff-scoped) or documentation that belongs on the public caller instead.
   Warn, not error: a private helper can legitimately warrant its own doc
   anchor (a genuinely complex internal algorithm), and this repo's own
-  code has real examples of that (`frob.logging._FrobFormatter`,
+  code has real examples of that (`frob.logging.formatter._FrobFormatter`,
   `frob.gates._pii_structural._FieldSignature`) -- COV007 flags the
   pattern for a human decision, it does not forbid it.
 
@@ -1017,7 +1017,7 @@ across a short review window) can be dispositioned with a reasoned
 <!-- frob:describes src/frob/gates/__init__.py::compliance_gate -->
 
 T-0607 built the pure check
-(`frob.strata._compliance.check_cmpl_registry_unit_dispositions`, the
+(`frob.strata._compliance._check_cmpl_registry_unit_dispositions`, the
 `CMPL_REGISTRY_UNIT_IDS` constant, and `check_cmpl_registry`) but did not
 wire it into `frob check` -- `_KNOWN_GATE_RULES` and a stage callback both
 lived outside T-0607's declared scope, so a `deferred`/undispositioned
@@ -2810,9 +2810,9 @@ dependency's real API did not match the sketch:
   derived, not declared" note anticipates. Pair-level (consumer x
   provider) strictness is deferred.
 - **TEST001/TEST002/TEST005 skip symbols in test files themselves**
-  (`gates._is_test_file`, a documented duplicate of
-  `frob.testing._select._is_test_file`'s heuristic) -- a public `test_*`
-  function does not owe itself a unit test.
+  (`frob.excludes.is_test_file`, imported by both `frob.gates` and
+  `frob.testing._select`) -- a public `test_*` function does not owe
+  itself a unit test.
 - **TEST005 system floor** is approximated as the mean of `module_line`
   percentages for files matching any of `[[system]].paths`, since
   `CoverageData` (per the doc's own model) has no separate per-system

@@ -29,7 +29,7 @@ claim variant and delegates to a `FactBase` closure query
    `docs/guides/extending/litmus-fixtures.md`, even though claim-kind unit
    tests are not litmus fixtures themselves).
 5. Document the new claim kind's semantics in
-   `docs/strata/kernel.md#claim-forms-and-decision-procedures`.
+   `docs/strata/kernel.md#claim-forms-and-their-decision-procedures`.
 
 ## Drift-locks that fire
 
@@ -54,7 +54,7 @@ evaluate_claims` gained an `isinstance(claim, SetEquality)` arm computing
 both sides' node sets from the `FactBase` and comparing; `_secrets.py::
 elaborate_secret` was updated to auto-generate a `SetEquality` claim (the
 "auto-instantiated obligation" pattern `_compliance.py` and `_pii.py` both
-reuse); `docs/strata/kernel.md#claim-forms-and-decision-procedures` gained
+reuse); `docs/strata/kernel.md#claim-forms-and-their-decision-procedures` gained
 a subsection.
 
 ## Common mistakes
@@ -73,7 +73,7 @@ a subsection.
 
 ## See also
 
-- `docs/strata/kernel.md#claim-forms-and-decision-procedures` -- claim
+- `docs/strata/kernel.md#claim-forms-and-their-decision-procedures` -- claim
   semantics and the verdict lattice.
 - `docs/guides/extending/scenario-kinds.md` -- scenarios re-check the same
   claims under a rewritten model; a new claim kind is automatically

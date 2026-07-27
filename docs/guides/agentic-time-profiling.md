@@ -30,7 +30,7 @@ entry, never committed, never networked):
 
 ## Wiring the Claude Code hook
 
-Add to the project's `.claude/settings.json` (or `settings.local.json` for
+Add to the project's <!-- frob:waive DOC006 reason="a user-local settings file that is not itself tracked in this repo" -->`.claude/settings.json` (or `settings.local.json` for
 a personal-only setup):
 
 ```json
@@ -76,7 +76,7 @@ FROB_STATS_AGENTIC=1 frob stats            # human-readable
 FROB_STATS_AGENTIC=1 frob stats --json     # machine-readable
 ```
 
-See `docs/modules/stats.md#agentic-time-token-profiling---agentic-t-0178`
+See `docs/modules/stats.md#agentic-timetoken-profiling---agentic-t-0178`
 for what each section of the report means. In short: command time by
 category, the slowest individual invocations, retread candidates
 (identical command + unchanged tree, i.e. what a result cache would have

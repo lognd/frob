@@ -1,7 +1,7 @@
 # frob check end-to-end PERFORMANCE audit (T-0928)
 
 MEASURE-FIRST, per T-0927's charter. All numbers below are measured on this
-checkout's own worktree (`.claude/worktrees/agent-a7115e7e477d3fe43`, a
+checkout's own worktree (<!-- frob:waive DOC006 reason="ephemeral per-session agent worktree path, never a tracked file" -->`.claude/worktrees/agent-a7115e7e477d3fe43`, a
 fresh merge of `main` at `a7834342`), natives built (`make core`), warm
 `.frob/cache.db` (839 files, 0 parse misses on the runs below), via
 `uv run frob` -- never a stale global install. Machine was idle for the

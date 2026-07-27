@@ -547,7 +547,7 @@ operations registry): a structured registry file plus one litmus fixture
 pair per populated cell, and a suite that fails loudly on any claim
 without a fixture.
 
-**Registry shape** (`frob/dup/_matrix.py` or a TOML table, matching how
+**Registry shape** (<!-- frob:waive DOC006 reason="hypothetical proposed module name for a not-yet-built registry, the sentence itself says 'is likely stored'" -->`frob/dup/_matrix.py` or a TOML table, matching how
 T-0158's registry is likely stored -- same convention, not re-derived):
 rows = clone type (1: exact, 2: renamed, 3: near-miss/gapped, 4: semantic-
 equivalent-different-structure); columns = `frob.lang`-supported

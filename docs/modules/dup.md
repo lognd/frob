@@ -43,7 +43,7 @@ over the WHOLE corpus's concatenated, R2-normalized token stream (one
 "document" per fingerprinted symbol, a unique per-document sentinel
 between documents so no match crosses a symbol boundary) --
 `frob_core.exact_regions` (`frob-core/src/lib.rs`), wired through
-`frob.dup._core.exact_regions` and `frob.dup._pipeline._region_groups`.
+`frob.dup._core._exact_regions` and `frob.dup._pipeline._region_groups`.
 This finds every MAXIMAL exact-token-match region of length
 `>= [dup].region_min_tokens` in one pass -- a strict superset of R1/R2's
 exact-match recall, extended to sub-symbol regions, without waiting for
@@ -842,7 +842,7 @@ walks) is deleted. Both modules now route through `frob.lang`:
 - `frob.lang.cpp_function_nodes(tree)` -- the shared C/C++
   function-declaration walk (`frob.lang._common.iter_cpp_functions`) that
   used to be duplicated, with slightly different depth handling, in both
-  `frob.ast.cpp` and `frob.dup._legacy`.
+  <!-- frob:waive DOC006 reason="frob.ast.cpp is a historical reference to a module removed before this doc pass; the sentence is describing PAST duplication, not current code" -->`frob.ast.cpp` and `frob.dup._legacy`.
 - `frob.lang.symbol_tree(path, span)` / `frob.lang._common.flatten_tree` --
   new this pass, feeding `frob-core`'s `apted_similarity` (see R4 above)
   and R5's real dataflow graph.

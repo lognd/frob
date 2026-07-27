@@ -116,7 +116,7 @@ A brand-new source/doc file on disk has no cache row, so nothing is compared,
 file's symbols, edges, malformed directives and doc obligations entirely.**
 Docstring claims "`Err(CacheStale)` if any on-disk hash moved" -- true, but
 "added" is drift too and is silently accepted.
-- Repro: build once. `git add` a new module `src/frob/new.py` containing a
+- Repro: build once. `git add` a new module <!-- frob:waive DOC006 reason="illustrative hypothetical repro filename, not a real path added to this repo" -->`src/frob/new.py` containing a
   malformed directive (`# frob:bogus x`) and an undocumented public function.
   Any command that reads via `load_graph` without forcing a rebuild
   (`dup_runner`, `sys_runner`, `release_runner`, `ack_runner`, `_prework` when

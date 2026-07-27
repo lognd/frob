@@ -66,7 +66,7 @@ check`).
 
 `frob.deploy.deploy_conformance_violations` (wired into `frob check` as
 an extra `deploy-conformance` stage, same non-`frob.gates` shape
-DEPLOY001 uses) parses each committed `deploy/install.sh`/`uninstall.sh`
+DEPLOY001 uses) parses each committed <!-- frob:waive DOC006 reason="deploy/install.sh is the illustrative name of a downstream repo's own deploy script this checker parses, not a path in this repo" -->`deploy/install.sh`/`uninstall.sh`
 into its actual MUTATION SURFACE (structured `useradd`/`groupadd`/
 `userdel`/`groupdel`/`mkdir`/`install`/`cp`/`chown`/`chmod`/`rm -f`/
 `rm -rf`/`systemctl enable|disable|start|stop`/unit-heredoc extraction,

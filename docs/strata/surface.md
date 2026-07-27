@@ -509,7 +509,7 @@ via `frob.strata.load_design_ids` -- parse (`parse_module`) + elaborate
 (`elaborate`) each file, then merge every `Flow.id`, `Boundary.id`, and
 Secret-clearance `Node.id` into one id surface -- and checks four rules.
 `load_design_ids` walks through `frob.excludes.load_exclude_globs`/
-`is_excluded` exactly as `frob.graph._walk_source_files` does (T-0080
+`is_excluded` exactly as `frob.graph._walk_repo_files` does (T-0080
 REJECT round 1: an earlier version rglobbed `design_dir` directly, so a
 repo's own `[graph].exclude`-d example models -- e.g. `design/litmus/**`,
 excluded by T-0130 precisely so they carry no obligations -- re-acquired
@@ -553,7 +553,7 @@ SYS002 obligations anyway; a file-walking surface that does not consult
   misdirect whoever reads the message.
 
 `frob:waive` can suppress any of these per the usual waiver-boundary rules
-(`docs/modules/gates.md#waive-boundary`); all four rule ids are registered
+(`docs/modules/gates.md#waive-boundary-t-0101-revised-t-0289`); all four rule ids are registered
 in `frob.gates`' known-rule set so a waiver targeting them is never
 flagged WAIVE002.
 
