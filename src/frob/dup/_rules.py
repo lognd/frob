@@ -72,6 +72,13 @@ def _dup001_message(
 # frob:doc docs/modules/dup.md#gate-integration
 # frob:doc docs/guides/extending/dup-detector-registry.md#dup-detector-registry
 # frob:enforces ACC-2-1-DUPLICATED-CODE
+# T-1020: DUP001's clone-pair detection is the direct static proxy the
+# catalog itself names for both DRY ("structural/text-fragment clone
+# detection above similarity threshold") and Copy-Paste Programming
+# ("dup of clone detection (DRY)") -- docs/design/architecture-check-
+# catalog.md secs 1.5/4.
+# frob:enforces ACC-1-5-DRY-DON-T-REPEAT-YOURSELF
+# frob:enforces ACC-4-COPY-PASTE-PROGRAMMING
 # frob:enforces CHK-GATE-DUP001
 def DUP001(
     report: CloneReport, touched: frozenset[str], threshold: float

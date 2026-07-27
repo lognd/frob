@@ -98,6 +98,17 @@ def _lcom4_components(
 
 
 # frob:doc docs/modules/arch.md#srp-cohesion-checks
+# T-1020: the catalog's own static proxy for "Large Class" is literally
+# "field/method count or LOC threshold, or low cohesion (LCOM) at large
+# size" (docs/design/architecture-check-catalog.md sec 2.1) -- this is
+# that LCOM check. "Single Responsibility" (sec 1.1) names a different
+# proxy (churn-reason count / fan-out outlier, not yet built), but LCOM4
+# disjoint-component detection is a standard, direct SRP-violation signal
+# in its own right (a class whose methods partition into unrelated field-
+# usage clusters IS doing more than one job) -- the disposition is kept,
+# not downgraded, on that basis.
+# frob:enforces ACC-1-1-1
+# frob:enforces ACC-2-1-LARGE-CLASS
 # frob:tests tests/unit/test_arch_srp.py::TestLcom4.test_disjoint_field_groups_trigger_lcom4  # noqa: E501
 # frob:tests tests/unit/test_arch_srp.py::TestLcom4.test_shared_fields_do_not_trigger_lcom4  # noqa: E501
 def check_lcom4(

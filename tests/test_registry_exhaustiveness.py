@@ -968,3 +968,37 @@ entries:
         assert "REG012" in rules
         reg012 = next(v for v in violations if v.rule == "REG012")
         assert reg012.severity == Severity.ERROR
+
+
+# frob:ticket T-1020
+class TestArchChecksReg008BurnDown:
+    """T-1020: REG008 burn-down over `docs/design/registry/arch-checks.yaml`
+    -- the real "does the recorded handled_by claim actually verify against
+    live code" smoke test (T-0813/T-0820 precedent), same shape as
+    `TestComplianceGate.test_compliance005_real_repo_registry_passes` --
+    runs `registry_gate` over this repo's OWN live registry + graph, not a
+    synthetic fixture."""
+
+    # frob:tests tests/test_registry_exhaustiveness.py::TestArchChecksReg008BurnDown.test_no_reg008_findings_for_arch_checks_yaml  # noqa: E501
+    def test_no_reg008_findings_for_arch_checks_yaml(self) -> None:
+        """Every `docs/design/registry/arch-checks.yaml` entry dispositioned
+        `handled_by:<RULE>` must carry a real `frob:enforces <ENTRY-ID>`
+        edge somewhere in code -- the acceptance criterion this ticket's
+        Done report claims."""
+        from frob.gates import _KNOWN_GATE_RULES
+        from frob.graph import build_graph
+
+        root = Path(__file__).resolve().parents[1]
+        snapshot = build_graph(root, root / ".frob" / "cache.db").danger_ok
+
+        violations = registry_gate(
+            root,
+            _queue(),
+            _KNOWN_GATE_RULES,
+            snapshot=snapshot,
+        )
+
+        reg008_arch_checks = [
+            v for v in violations if v.rule == "REG008" and "arch-checks.yaml" in v.file
+        ]
+        assert reg008_arch_checks == []
