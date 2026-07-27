@@ -1313,6 +1313,12 @@
     "src/frob/strata/_threat.py::check_effect_completeness": "3ce5ec2473e15c7544796284e377a0a5b3a04c9802d2fd9dad4f8a13d0e2a3d3",
     "src/frob/strata/_threat.py::evaluate_threats": "401a0fe24dca165e7994364cddca92ff81f7eebbef0abe4a0090305b32c47fb1",
     "src/frob/strata/_threat.py::load_repo_benign_capabilities": "cee9e3f37de442eef03b83b26403d37492033358655803037d32dd3d4f3f5990",
+    "src/frob/strata/_txn.py::REL_MISSING_TXN_BOUNDARY": "7893ce0601caeb113b13bb50aa5a379ee37e9088a122cf97bac29b493de4158d",
+    "src/frob/strata/_txn.py::REL_UNPROVEN_TXN_BOUNDARY": "42e2236de5ff0c4b5a6280b25f15689bf83425a84f9c12c98f818ce845e28db3",
+    "src/frob/strata/_txn.py::TXN_RULES": "e566d11f8c7d205eb29ddee1a741c8d4e1d833d8fc487b0c819bc7928b29acb8",
+    "src/frob/strata/_txn.py::TxnBoundaryReport": "2474069f4fc19e92cc432c4984eb23ee726fd5a4d07739216a1f4dc09d377493",
+    "src/frob/strata/_txn.py::TxnBoundaryViolation": "800958df576872b395a2a164ea01853fbdca3bbd872d04cf9bbf7ac3b25959d8",
+    "src/frob/strata/_txn.py::check_txn_boundary_obligations": "521716c3949717b6651f660c80f0cc9b96ae7f8d23961504e242ffd14d2e9c78",
     "src/frob/strata/_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES": "f323d433df44dc4b0c080232130cdc80bac4463c8609ee2cdeca8002e9bd3f24",
     "src/frob/strata/_waive.py::STALE_WAIVER_RULE": "8eb5c11b20d9bd7912b8cddab61e5dff7c5dfd9cbae725dbae6c8bac1c2178bf",
     "src/frob/strata/_waive.py::WaivedFinding": "777a9214370415e42e0d0174af52291dd0606d11d46313472536f74f57326ac6",
@@ -1579,5 +1585,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.159.0"
+  "version": "0.160.0"
 }

@@ -710,6 +710,80 @@ node legacy_shared_store : trusted {
 }
 ```
 
+## REL30x: TRANSACTIONAL BOUNDARY obligation (T-0650)
+
+`_txn.py::check_txn_boundary_obligations` reads `KernelModel.flows`/
+`KernelModel.nodes` plus the SAME caller-supplied `store_ids` set REL29x
+uses (no new kernel field, charter law 1) to find every op (non-store
+node) writing to two or more distinct stores with an undischarged or
+unproven transactional-boundary obligation. REUSES `_ssot.py`'s store-
+writer graph, inverted: REL29x groups multi-writer findings by the STORE
+written; REL30x groups them by the OP writing, looking for >=2 distinct
+stores per op instead of >=2 distinct writers per store.
+
+- **REL300 missing transactional boundary** -- an op writing (mode-blind:
+  ANY outbound `Flow` landing on a distinct store id, the same detection
+  style SYS203/REL290 already establish) to >=2 distinct stores with no
+  `transaction` attr and no `saga` attr. Deny-by-default: an op spanning
+  two or more stores with no declared transactional boundary or saga/
+  compensation strategy is a hard consistency hazard -- a partial failure
+  between the writes can leave the stores permanently inconsistent with
+  no defined recovery.
+- **REL301 unproven transactional boundary** -- a multi-store-write op
+  DOES declare `transaction` or `saga`, but the T-0331 PROVABILITY
+  CONSTRAINT forbids discharging it by bare declaration alone: the op
+  node must have at least one file bound to it containing a real
+  transaction/saga-shaped token. An op with no bound code at all is
+  UNCHECKABLE, not unproven -- the same ceiling REL201/REL222/REL231/
+  REL261/REL271/REL281/REL291 draw.
+
+### Surface vocabulary
+
+Two Node `attr` markers, either one sufficient to discharge REL300:
+
+```
+node svc_orders : trusted {
+    transaction;      // OR saga; discharges REL300
+                       // REL301 then checks bound code
+}
+```
+
+`store_ids` is NOT a `KernelModel` fact (module docstring, SYS203/REL29x's
+same disclosure): callers pass the design file's `Module.stores` ids
+explicitly; an empty `store_ids` emits nothing.
+
+### GRAMMAR-DATA CEILING, HONESTLY
+
+`transaction`/`saga` are both presence-only bare Node attrs (no numeric
+magnitude, no actual coordinator name or compensation strategy round-trips
+through the grammar -- the same digit-led-literal ceiling every other
+REL2xx/REL29x marker in this family discloses), so REL300/REL301 prove
+PRESENCE of a declared transactional-boundary obligation and its code-
+level evidence, not a specific coordinator or algorithm. REL301's proof-
+against-code is a syntactic token scan (`transaction`, `two_phase_commit`/
+`2pc`, `saga`/`Saga(`, `compensat`) over the op's bound source, not a
+semantic call-argument binding -- the same "ship what current tooling
+supports" honesty line REL201/REL222/REL231/REL261/REL271/REL281/REL291
+already establish.
+
+OUT OF SCOPE, DELIBERATELY: the cross-SERVICE distributed-transaction
+saga/compensation obligation (a transaction spanning multiple SERVICES,
+not just multiple stores written by one op) is a separate, later ticket
+that builds on this module's multi-write detection.
+
+### Waiver channel
+
+REL300/REL301 do NOT join `_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES`,
+same as REL210/REL211/REL230/REL231/REL240/REL241/REL250/REL260/REL261/
+REL280/REL281/REL290/REL291: an op fires at most one REL300 and one
+REL301 finding, so a bare-rule `waive` clause names exactly one thing:
+
+```
+node legacy_multi_write_op : trusted {
+    waive "REL300" reason "legacy multi-write op, txn tracked in T-9914-followup" ticket "T-9914";
+}
+```
+
 ## See also
 
 - `docs/strata/host.md#resource-contention-sys2xx-t-0699` -- the SYS2xx
@@ -728,6 +802,10 @@ node legacy_shared_store : trusted {
   `FallbackViolation`, `FallbackReport`, REL240/REL241.
 - `src/frob/strata/_spof.py` -- `check_spof`, `SpofViolation`,
   `SpofReport`, REL250.
+- `src/frob/strata/_ssot.py` -- `check_ssot_obligations`, `SsotViolation`,
+  `SsotReport`, REL290/REL291.
+- `src/frob/strata/_txn.py` -- `check_txn_boundary_obligations`,
+  `TxnBoundaryViolation`, `TxnBoundaryReport`, REL300/REL301.
 - `src/frob/strata/_obligation_proof.py` -- the shared proof-against-code
   plumbing REL22x/REL23x/REL24x reuse (not used by REL25x, module
   docstring: no proof-against-code needed for a structural fact).
@@ -741,3 +819,7 @@ node legacy_shared_store : trusted {
   firing/clean/waived/uncheckable unit coverage.
 - `tests/unit/strata/test_spof.py` -- the REL250 firing/clean/waived
   unit coverage.
+- `tests/unit/strata/test_ssot.py` -- the REL290/REL291
+  firing/clean/waived/uncheckable unit coverage.
+- `tests/unit/strata/test_txn.py` -- the REL300/REL301
+  firing/clean/waived/uncheckable unit coverage.

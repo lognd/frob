@@ -377,6 +377,14 @@ from frob.strata._threat import (
     evaluate_threats,
     load_repo_benign_capabilities,
 )
+from frob.strata._txn import (
+    REL_MISSING_TXN_BOUNDARY,
+    REL_UNPROVEN_TXN_BOUNDARY,
+    TXN_RULES,
+    TxnBoundaryReport,
+    TxnBoundaryViolation,
+    check_txn_boundary_obligations,
+)
 from frob.strata._waive import (
     STALE_WAIVER_RULE,
     WaivedFinding,
@@ -573,6 +581,11 @@ __all__ = [
     "SSOT_RULES",
     "SsotReport",
     "SsotViolation",
+    "REL_MISSING_TXN_BOUNDARY",
+    "REL_UNPROVEN_TXN_BOUNDARY",
+    "TXN_RULES",
+    "TxnBoundaryReport",
+    "TxnBoundaryViolation",
     "RESOURCE_CONTENTION_RULES",
     "ResourceContentionReport",
     "ResourceContentionViolation",
@@ -629,6 +642,7 @@ __all__ = [
     "check_spof",
     "check_slo_obligations",
     "check_ssot_obligations",
+    "check_txn_boundary_obligations",
     "is_critical_dependency",
     "is_external_dependency",
     "check_resource_contention",

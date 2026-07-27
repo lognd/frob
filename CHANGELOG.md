@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.160.0] - unreleased
+
+- T-0650: strata: transactional-boundary obligation on multi-write ops
+
 ## [0.159.0] - unreleased
 
 - T-0686: python may-raise resolver: raise sites + callee propagation + builtin-raiser table, Unknown fail-closed
