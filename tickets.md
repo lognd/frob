@@ -2017,6 +2017,7 @@ existing "Fork/pool hazards" (T-0695) and "Async event-loop hazards"
 (src/frob/arch/**, tests/unit/test_arch.py) does not include docs/, so no
 frob:doc anchor was added on the check function in that ticket -- add the
 section and the frob:doc directive together here.
+
 <!-- ticket:T-0935 -->
 ```yaml
 id: T-0935
@@ -2131,7 +2132,7 @@ tickets.
 ```yaml
 id: T-0955
 title: 'strata export golden: frob_export_seccomp/iam/k8s drifted re: natives node'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-27'
@@ -2156,10 +2157,42 @@ scope_changes:
   reason: already added
   actor: logan
   at: '2026-07-27'
+evidence:
+- tests/unit/strata/test_export_golden.py::TestExportGolden::test_k8s
+- tests/unit/strata/test_export_golden.py::TestExportGolden::test_seccomp
+- tests/unit/strata/test_export_golden.py::TestExportGolden::test_iam
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_every_claim_proves
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations
 threat: null
 component: null
 ```
 Found while working T-0700 (unrelated to grammar/access-mode changes -- confirmed via `git status`, no golden/export files touched by that ticket). `tests/unit/strata/test_export_golden.py::TestExportGolden` (test_k8s, test_seccomp, test_iam) fails on a fresh worktree built from current main: the frob self-modeled design's exported seccomp/IAM/netpol JSON now includes a "natives" node's syscalls/statements that the checked-in golden fixtures under the golden dir do not yet reflect. Likely a golden-fixture regen missed after a recent "natives" node/capability addition to frob's own strata design. Regenerate the golden fixtures (or fix the export drift if the new output is wrong) and re-verify test_export_golden passes clean.
+
+## Done report
+
+Verified on current main (post T-0860 land, which already fixed the strata
+self-conformance + export-golden drift for undeclared mutate/deploy
+capabilities on the natives node): tests/unit/strata/test_export_golden.py
+(test_k8s, test_seccomp, test_iam) and tests/system/test_frob_self_model.py
+all pass clean on this worktree with no code/golden changes needed. No
+drift remains between the checked-in golden fixtures and the exported
+seccomp/IAM/k8s JSON. No regeneration was required -- T-0860 already
+regenerated the goldens for the natives-node addition before this ticket
+was actioned. frob check --ticket T-0955 (gates-native, gates-fast) is
+clean (0 errors both groups). Closing with no code change; evidence is the
+already-passing golden/self-model suite.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: 0 error(s), 4924 warning(s), 333 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0956 -->
 ```yaml
