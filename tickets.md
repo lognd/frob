@@ -7037,7 +7037,7 @@ the bare token is intentionally kept as a distinct "artifact" marker.
 id: T-0913
 title: 'strata: graphlang node missing exec/net/fetch_url may declarations (SELFAUDIT001
   SYS100, from T-0625''s _logging_checks.py)'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-07-26'
@@ -7077,3 +7077,6 @@ scanner's match there is a false-positive needing the same T-0882-style
 substring/self-match investigation applied to eval/exec elsewhere, or a
 disposed `frob:waive` if genuinely benign. Not investigated further here
 -- out of scope for T-0845's own REL200 attr-forwarding-surface work.
+
+## Drop reason
+- 2026-07-26: duplicate of T-0910 (same SELFAUDIT001 finding on _logging_checks.py/graphlang node, third independent filing; T-0910 is in-progress)
