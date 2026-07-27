@@ -7925,3 +7925,181 @@ threat: null
 component: null
 ```
 User directive 2026-07-27: when generating or validating a ticket scope, run the doc-edge and code-edge closures over the declared files so scope encapsulation provably grabs BOTH sides -- a scope containing code files whose frob:doc/affects-closure doc targets are absent is under-captured (and vice versa: docs scoped without their code counterparts). This moves the AFFECT001 idea from diff-time to scope-declaration time: frob ticket new/scope should compute the closure and either auto-suggest the missing counterpart files or refuse/warn, so agents stop discovering AFFECT001/COV002 mid-ticket and scope-adding reactively (a dozen occurrences this drive). The same closure math discourages over-broad scopes: a scope whose closure balloons is visibly over-broad at declaration time, complementing the existing over-broad-glob heuristics. Additionally check private-helper usage: if scoped code calls underscore-private helpers defined OUTSIDE the scope, flag probable under-capture (you will likely touch them); private helpers used ONLY by scoped code get auto-suggested into scope. Deliverables: a scope-closure computation on the obligation graph (reuse the affects()/doc-edge machinery, do not build a second traversal), wiring into frob ticket new/scope (suggest-or-warn mode first; a SCOPE-family gate rule for enforcement second, WARN at turn-on per the promotion playbook), tests for all three directions (code-missing-docs, docs-missing-code, private-helper leakage), and docs.
+
+<!-- ticket:T-0999 -->
+```yaml
+id: T-0999
+title: 'EPIC: coordination churn reduction -- design out the drive''s recurring frictions
+  (docs/audits/coordination-churn.md)'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-27'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- docs/audits/coordination-churn.md
+threat: null
+component: null
+```
+User directive 2026-07-27: self-audit the drive for churn/tedious aspects and design them out. The audit doc ranks six recurring frictions with occurrence counts from ~160 landed closures; children implement the design-outs. Epic closes when every child lands and a subsequent multi-agent wave demonstrably runs without coordinator intervention for any of the six classes.
+
+<!-- ticket:T-1000 -->
+```yaml
+id: T-1000
+title: 'land: auto-accept strictly-improved test-count claims instead of ClaimDivergence
+  refusal'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: high
+parent: T-0999
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land.py
+- tests/test_ticket_land.py
+acceptance:
+- text: given a done ticket whose recorded claim is 0/0 and whose fresh re-run shows
+    N/N passing, when it lands, then the land succeeds with the recap rewritten to
+    N/N; given a fresh run with any failing test, the land still refuses
+  evidence: []
+threat: null
+component: null
+```
+Churn item 1 (~10 occurrences): every post-close touch stales the recap and land refuses with recorded 0/0 vs re-run N/N passing, cured identically each time by a manual done-report refresh + re-land. When the fresh count strictly improves (all passing, count >= recorded), land should auto-accept and rewrite the recap in the landing commit itself; genuine regressions (fewer passing or any failing) still refuse loudly.
+
+<!-- ticket:T-1001 -->
+```yaml
+id: T-1001
+title: 'land: report stacked-sibling absorption as clean success, not CommitFailed'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: high
+parent: T-0999
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land.py
+- tests/test_ticket_land.py
+acceptance:
+- text: given a worktree whose earlier land already carried this ticket's files and
+    ledger state, when this ticket lands, then land exits success reporting absorption
+    and naming the absorbing commit
+  evidence: []
+threat: null
+component: null
+```
+Churn item 2 (~8 occurrences): a siblings-absorbed land stages an empty squash and the final commit exits 1 with no stderr, surfaced as CommitFailed; the coordinator hand-verifies state+content every time. Detect the empty stage, verify the ticket is done on main with its scoped content present, and report absorbed-by-prior-land success (naming the absorbing commit).
+
+<!-- ticket:T-1002 -->
+```yaml
+id: T-1002
+title: 'append-only merge zones: severity block, rule registry, remediation logs never
+  conflict'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-27'
+priority: high
+parent: T-0999
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land.py
+- src/frob/gates/**
+- frob.toml
+acceptance:
+- text: given two worktrees each appending a distinct severity line and rule id, when
+    both land sequentially, then the second land succeeds without manual conflict
+    resolution and both entries are present
+  evidence: []
+threat: null
+component: null
+```
+Churn item 3 (~8 occurrences): [gates.severity], _KNOWN_GATE_RULES, and docs/audits remediation logs conflict on nearly every concurrent land and are always resolved keep-both-chronological. Register these as append-only union zones (delimiting marker comments) with land-side union merge, so concurrent appends compose without conflict; refuse only true same-key contradictions (e.g. two different severities for one rule).
+
+<!-- ticket:T-1003 -->
+```yaml
+id: T-1003
+title: 'land ergonomics: resolve root from any cwd + internal uv.lock reset (kill
+  the pre-land ritual)'
+state: queued
+kind: ux
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: T-0999
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/_land.py
+- src/frob/app/ticket_runner.py
+- tests/test_ticket_land.py
+acceptance:
+- text: given a shell whose cwd is inside the worktree and flapped uv.lock files on
+    both sides, when frob ticket land runs, then it lands correctly with no manual
+    checkout or cd
+  evidence: []
+threat: null
+component: null
+```
+Churn item 4 (~15 occurrences): every land needs git checkout -- uv.lock on both sides plus cd-to-root (the root==worktree guard fires on chained cds). Land should resolve the primary checkout from the worktree git common dir itself regardless of cwd, and perform the uv.lock flap reset internally on both sides before the dirty check, making `frob ticket land T-x --worktree <p>` correct from anywhere with no ritual.
+
+<!-- ticket:T-1004 -->
+```yaml
+id: T-1004
+title: 'playbook + check --budget: eliminate the auto-background stall class'
+state: queued
+kind: ux
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: T-0999
+tier: ticket
+sprint: null
+scope:
+- docs/guides/agent-playbook.md
+- src/frob/app/check_runner.py
+- src/frob/check/**
+acceptance:
+- text: given frob check --budget 120 on this repo, when it runs, then it completes
+    under the budget having executed a coherent chunk subset and persists resume state
+    for the remainder
+  evidence: []
+threat: null
+component: null
+```
+Churn item 5 (~10 occurrences): agents run long commands, the harness auto-backgrounds at ~120s, and they wait for notifications that never come until nudged. Two-part fix: (a) rewrite the playbook sections that present backgrounding as normal -- foreground + explicit timeout wrappers is the only sanctioned pattern, with the T-0751 chunked recipes inline; (b) add frob check --budget <seconds>, which self-selects and orders stage chunks to fit the budget (reusing the T-0751 chunk state), removing the main reason agents run over.
+
+<!-- ticket:T-1005 -->
+```yaml
+id: T-1005
+title: 'frob ticket reverify: re-run close verification on a done ticket without state
+  transition'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: T-0999
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/**
+- src/frob/app/ticket_runner.py
+- tests/**
+acceptance:
+- text: given a done ticket with newly-bound evidence, when frob ticket reverify runs,
+    then the full close verification executes and the refreshed recap reflects the
+    new evidence, with ticket state unchanged
+  evidence: []
+threat: null
+component: null
+```
+Churn item 6 (~5 occurrences): after a post-close send-back (TEST016 strengthening), scope/evidence/done-report apply to a done ticket but nothing can re-run close verification (close refuses done->done; start/sweep refuse on done), so lands proceed on recap trust. Add frob ticket reverify <id>: runs the full close-time verification suite (evidence re-run, mutation evidence, covers-scope, claims capture) against a done ticket, updating the recap, with no state transition.
