@@ -2475,7 +2475,7 @@ tickets.
 id: T-0939
 title: 'check --only scope hangs: derived.lock self-deadlock (same pid holds READ+WRITE*
   simultaneously)'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-07-27'
@@ -2515,12 +2515,14 @@ check-stage wiring (src/frob/gates/__init__.py around scope_gate/PRE001 prework-
 loading, or app/check_runner.py's --only dispatch) acquires it twice without releasing
 the first handle.
 
+## Drop reason
+- 2026-07-27: same-pid READ+WRITE derived.lock deadlock: root-caused and fixed by T-0933 (canonical registry key), landed 91180266 (absorbed by T-0933)
 <!-- ticket:T-0944 -->
 ```yaml
 id: T-0944
 title: 'frob check self-deadlocks: derived.lock opened twice, READ+pending WRITE same
   pid'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-07-27'
@@ -2591,6 +2593,8 @@ process/_lock.py` is outside T-0931's declared scope
 (`src/frob/arch/**`, `src/frob/gates/**`, plus the doc/test files
 scope-added for the rename itself).
 
+## Drop reason
+- 2026-07-27: duplicate of the T-0933 same-pid deadlock, fixed and landed (absorbed by T-0933)
 <!-- ticket:T-0955 -->
 ```yaml
 id: T-0955
@@ -4620,6 +4624,7 @@ created: '2026-07-27'
 priority: medium
 blocked_by:
 - T-0981
+- T-0982
 parent: T-0969
 tier: ticket
 sprint: null
@@ -4808,7 +4813,6 @@ is defer + file the blocking prerequisite, not force a close.
 - tests: 7 passed (from 7 evidence id(s))
 - gates: 0 error(s), 4901 warning(s), 239 waived
 - error-findings: none (measured, zero errors)
-
 <!-- ticket:T-0975 -->
 ```yaml
 id: T-0975
@@ -5351,3 +5355,30 @@ Scope for the ticket that picks this up: `src/frob/process/_lock.py`,
 `src/frob/gates/__init__.py` (`_PROCESS_POOL_GATES`, `dup_gate`
 dispatch), plus `docs/modules/process.md`/`docs/modules/gates.md` for the
 corrected reentrancy-contract writeup once fixed.
+
+<!-- ticket:T-0982 -->
+```yaml
+id: T-0982
+title: 'derived_state_write_lock reentrancy registry is process-local: ProcessPoolExecutor
+  worker deadlocks against main''s SHARED holder'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-27'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/process/_lock.py
+- src/frob/gates/__init__.py
+- tests/unit/test_process_lock.py
+acceptance:
+- text: given frob check's main process holding SHARED derived_state_lock, when a
+    pool worker runs a gate that takes derived_state_write_lock, then the check completes
+    without deadlock (join-timeout regression test)
+  evidence: []
+threat: null
+component: null
+```
+Found by T-0974 while enabling dup enforcement: dup_gate runs in a ProcessPoolExecutor worker while frob check's MAIN process holds the SHARED derived_state_lock for the run; find_clones' derived_state_write_lock consults _process_held_counts, which is process-local, so the forked worker cannot see the parent's holding and issues a real flock(LOCK_EX) that blocks forever against the parent's LOCK_SH (lslocks-confirmed: READ main pid, WRITE* worker pid, same .frob/derived.lock, 200+s zero CPU). This is the cross-process sibling of T-0933's path-spelling bug. Fix directions: pass a held-lock signal into pool workers explicitly (initializer arg or env marker set by the pool owner), or have workers request the write lock in non-blocking mode with a documented fallback, or move exclusive acquisition to the pool OWNER before dispatch. The T-0918 test suite plus a new pool-worker regression (spawn a real worker under a parent SHARED holder with a join timeout) must pass. T-0974 (dup enforce default) is blocked on this.
