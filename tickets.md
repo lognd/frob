@@ -5608,7 +5608,7 @@ directly reproduces and disproves the leak.
 ```yaml
 id: T-0927
 title: 'EPIC: frob check performance -- audit, quick wins, Rust hot-path migration'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-26'
@@ -5618,6 +5618,19 @@ tier: ticket
 sprint: null
 scope:
 - docs/audits/check-performance.md
+- tests/unit/perf/test_serial_pools.py
+- tests/test_gates.py
+scope_changes:
+- op: add
+  glob: tests/unit/perf/test_serial_pools.py
+  reason: 'docs-scoped epic: evidence test file per D-02 route'
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: tests/test_gates.py
+  reason: 'docs-scoped epic: second evidence test file per D-02 route'
+  actor: logan
+  at: '2026-07-27'
 evidence:
 - tests/unit/perf/test_serial_pools.py::TestInstallSerialPools::test_with_serial_pools_worker_is_majority_attributed
 - tests/test_gates.py::TestProcessPoolGates::test_open_process_pool_preloads_forkserver_when_available
