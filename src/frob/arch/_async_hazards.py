@@ -36,8 +36,8 @@ possible, not a proof that it fires at runtime. Four detectors:
 Every finding stays on the same unwaivable advisory channel every other
 `frob.arch` category is on (`frob.gates._unwaivable_channel_rules` auto-
 adopts any new `ArchCategory` value, so no `frob.gates` change is needed
-here) -- docs/modules/arch.md coverage is out of this ticket's declared
-scope; the follow-up is T-0914.
+here) -- see docs/modules/arch.md#async-event-loop-hazards (T-0914) for
+the documented section.
 """
 
 from __future__ import annotations
@@ -336,9 +336,7 @@ def _check_unawaited_coroutines(
 # frob:tests tests/unit/test_arch.py::TestAsyncEventLoopHazards.test_unawaited_coroutine_does_not_fire_when_awaited_or_stored  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestAsyncEventLoopHazards.test_async_zero_awaits_fires_on_no_await_body  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestAsyncEventLoopHazards.test_async_zero_awaits_does_not_fire_when_awaiting  # noqa: E501
-# frob:waive COV001 reason="docs/modules/arch.md is out of T-0696's declared \
-# scope (src/frob/arch/**, tests/unit/test_arch.py alone); docs follow-up \
-# filed as T-0914, this waiver clears once that lands"
+# frob:doc docs/modules/arch.md#async-event-loop-hazards
 def _check_async_event_loop_hazards(
     tree: object, rel: str, out: list[ArchSuggestion]
 ) -> None:

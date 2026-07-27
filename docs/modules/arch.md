@@ -931,6 +931,63 @@ syntactic certainty.
 four above against one `NormalizedModule` and returns the combined
 findings, mirroring `run_logging_checks`'s convention.
 
+### May-raise resolver: `compute_may_raise` / `FunctionMayRaise` / `UNKNOWN` / `UBIQUITOUS_TIER` (T-0686)
+
+<a id="may-raise-resolver"></a>
+<!-- frob:describes src/frob/arch/_mayraise.py::compute_may_raise -->
+<!-- frob:describes src/frob/arch/_mayraise.py::FunctionMayRaise -->
+<!-- frob:describes src/frob/arch/_mayraise.py::UNKNOWN -->
+<!-- frob:describes src/frob/arch/_mayraise.py::UBIQUITOUS_TIER -->
+
+`frob.arch._mayraise` (T-0686, child 1 of T-0685's exception may-raise
+umbrella) computes per-function may-raise sets over the shared
+`frob.arch._normalized.NormalizedModule` (T-0609) -- own `raise` sites
+plus a curated builtin-raiser table (`int`/`float` casts -> `ValueError`/
+`TypeError`, `open` -> `OSError`, `getattr` -> `AttributeError`, `next` ->
+`StopIteration`, a bare subscript -> `KeyError`) plus callee propagation
+(a monotonic chaotic-iteration fixpoint over the same-module call graph,
+so cycles converge) minus `except`-clause subtraction
+(exception-hierarchy aware -- `except Exception` discharges a raised
+`ValueError`). This is a RESOLVER, not a check on its own: it exposes a
+per-function `raises` set for downstream `frob.arch` categories (T-0688's
+exhaustiveness/boundary-catch-all family) to consume, not a
+warning/suggestion of its own.
+
+It is closely related to, but distinct from, the [Fallibility
+checks](#fallibility-checks) family above: `_fallibility.py` flags
+individual call-site SHAPES (an unhandled Result, a swallowed exception)
+within one function's own body, while `_mayraise.py` computes each
+function's full TRANSITIVE may-raise set across the module's call graph
+-- the input the T-0688 exhaustiveness family needs and `_fallibility.py`
+does not compute.
+
+- **`compute_may_raise(module) -> dict[str, FunctionMayRaise]`.** Runs the
+  fixpoint over every top-level function and method in `module`, keyed by
+  `qualname` (`path::Class.method`/`path::function`). Same-module bare-
+  name callee resolution only (`_build_name_to_func`) -- cross-module
+  calls, aliased imports, and attribute-chain receivers are out of scope,
+  matching `_fallibility.py`'s own disclosed model limit; a name bound to
+  more than one function/method in the module is AMBIGUOUS and excluded,
+  so a call to it resolves fail-closed to `UNKNOWN` rather than guessing.
+  A bare `raise` (re-raise) resolves to the NEAREST PRECEDING `catch`'s
+  caught type on that function (line-adjacency proxy, same style
+  `_fallibility.py` uses elsewhere); with no preceding catch, or a bare
+  `except:` preceding catch, it resolves to `UNKNOWN` too.
+- **`FunctionMayRaise`.** One function/method's computed result: its
+  `qualname` and the `frozenset[str]` of exception type names it may
+  raise, `UNKNOWN` included whenever any contributing raise/call could
+  not be statically resolved. Never includes `UBIQUITOUS_TIER` members.
+- **`UNKNOWN`.** The sentinel raised-type name meaning "this function may
+  raise something this resolver could not statically determine" -- the
+  fail-closed contribution of any unresolved callee or unresolvable bare
+  `raise`.
+- **`UBIQUITOUS_TIER`.** `MemoryError`/`KeyboardInterrupt`/`SystemExit`,
+  tracked SEPARATELY from a function's own computed `raises` set --
+  asynchronous-delivery exceptions no static analysis of a function's own
+  body can rule out. Exhaustiveness never demands these be enumerated
+  per-function; only a boundary catch-all (bare `except:`) discharges
+  them, which is a caller's concern (T-0688), not this resolver's.
+
 ### Misc design smells: `mutable-default-arg` / `feature-envy` / `data-clumps` / `magic-literal` / `dead-private-code` / `deep-inheritance` / `temporal-coupling` (T-0624)
 
 <a id="misc-design-smells"></a>
@@ -1099,6 +1156,46 @@ synthetic fixtures keep proving each detector fires.
   this is a name-based heuristic, not full data-flow, so it can over-
   fire on an unrelated `.join()` inside a dispatched function -- treat a
   finding as "investigate", not "definitely this exact pool".
+
+### Async event-loop hazards: `blocking-call-in-async` / `nested-event-loop` / `unawaited-coroutine` / `async-zero-awaits` (T-0696)
+
+<a id="async-event-loop-hazards"></a>
+<!-- frob:describes src/frob/arch/_async_hazards.py::_check_async_event_loop_hazards -->
+
+`frob.arch._async_hazards` is child 3 of the T-0693 concurrency-hazard
+umbrella (the fork/pool family above is child 1/2). Same posture as that
+family: every finding is a FAIL-CLOSED syntactic co-occurrence heuristic
+over one parsed python file's function bodies, on the same unwaivable
+advisory channel every other `frob.arch` category is on
+(`frob.gates._unwaivable_channel_rules`) -- a structural shape that makes
+an event-loop hazard possible, never a runtime proof that it fires.
+
+- **`blocking-call-in-async`.** A curated blocking call (`time.sleep`,
+  `requests.get/post/put/delete/patch/head/request`, `urllib`'s
+  `urlopen`, `subprocess.run/call/check_call/check_output`, a bare
+  `.result()` future/Future wait, or the builtin `open(...)`) reachable
+  inside an `async def` body, UNLESS the call site is itself the callable
+  argument to a `run_in_executor`/`to_thread` dispatch (which correctly
+  offloads it off the event loop). MODEL LIMIT: `open`/`.result()` are
+  curated by name alone -- this scan cannot distinguish a large blocking
+  read from a trivial one, or a `concurrent.futures.Future.result()` from
+  an unrelated `.result()` accessor; both stay advisory-tier for exactly
+  that reason.
+- **`nested-event-loop`.** `asyncio.run(...)`/`.run_until_complete(...)`
+  reachable inside an `async def` body -- a coroutine is by construction
+  already running on a loop when it executes, so either call raises
+  `RuntimeError: ... cannot be called from a running event loop`.
+- **`unawaited-coroutine`.** A call to a function this module itself
+  defines as `async def`, used as a bare expression statement -- neither
+  awaited, gathered (`asyncio.gather`/`asyncio.ensure_future`/
+  `asyncio.create_task` wrap it as an ARGUMENT, so the bare top-level
+  statement is a different call shape), nor stored/returned -- the call
+  constructs a coroutine object whose body silently never runs.
+- **`async-zero-awaits`.** An `async def` whose body contains no `await`
+  expression anywhere in its OWN scope (not crossing into a nested
+  function's body -- that nested function is visited separately) -- it
+  never actually suspends back to the loop, so it should probably be a
+  plain `def` (feeds T-0698's IO/CPU-bound model-mismatch advisory too).
 
 ### SRP/cohesion checks: `low-cohesion-class` / `god-module` / `mixed-concern-function` (T-0616)
 

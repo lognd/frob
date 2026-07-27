@@ -8539,7 +8539,7 @@ disposed `frob:waive` if genuinely benign. Not investigated further here
 ```yaml
 id: T-0914
 title: 'docs: async event-loop hazards section for docs/modules/arch.md'
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-07-26'
@@ -8548,6 +8548,22 @@ parent: null
 scope:
 - docs/modules/arch.md
 - src/frob/arch/_async_hazards.py
+- tests/unit/test_arch.py
+scope_changes:
+- op: add
+  glob: tests/unit/test_arch.py
+  reason: evidence file for T-0696's already-existing async-hazard tests
+  actor: logan
+  at: '2026-07-26'
+evidence:
+- tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_blocking_call_in_async_fires_on_time_sleep
+- tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_blocking_call_in_async_does_not_fire_via_to_thread
+- tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_nested_event_loop_fires_on_asyncio_run_inside_coroutine
+- tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_nested_event_loop_does_not_fire_at_top_level_sync_code
+- tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_unawaited_coroutine_fires_on_bare_call_statement
+- tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_unawaited_coroutine_does_not_fire_when_awaited_or_stored
+- tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_async_zero_awaits_fires_on_no_await_body
+- tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_async_zero_awaits_does_not_fire_when_awaiting
 threat: null
 component: null
 ```
@@ -8562,6 +8578,36 @@ did. Add a "async event-loop hazards" section to docs/modules/arch.md
 the existing "fork/pool hazards" section's structure, then add the matching
 frob:doc edge on frob.arch._async_hazards._check_async_event_loop_hazards
 and clear the frob:waive COV001 placeholder left on that function.
+
+## Done report
+
+Added the "Async event-loop hazards" section to docs/modules/arch.md
+(anchor #async-event-loop-hazards) documenting the four
+frob.arch._async_hazards categories (blocking-call-in-async,
+nested-event-loop, unawaited-coroutine, async-zero-awaits), mirroring the
+existing fork/pool hazards section's structure and content sourced from
+_async_hazards.py's own module docstring. Replaced the frob:waive COV001
+placeholder on _check_async_event_loop_hazards with a frob:doc directive
+pointing at the new anchor, and updated the module docstring's forward
+reference from "the follow-up is T-0914" to the resolved anchor link.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_blocking_call_in_async_fires_on_time_sleep` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_blocking_call_in_async_does_not_fire_via_to_thread` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_nested_event_loop_fires_on_asyncio_run_inside_coroutine` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_nested_event_loop_does_not_fire_at_top_level_sync_code` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_unawaited_coroutine_fires_on_bare_call_statement` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_unawaited_coroutine_does_not_fire_when_awaited_or_stored` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_async_zero_awaits_fires_on_no_await_body` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestAsyncEventLoopHazards::test_async_zero_awaits_does_not_fire_when_awaiting` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 8 passed (from 8 evidence id(s))
+- gates: 0 error(s), 2303 warning(s), 219 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0915 -->
 ```yaml
@@ -8627,7 +8673,7 @@ Third recurrence of the SYS100 needle-literal self-match class (T-0729 _srp.py, 
 ```yaml
 id: T-0916
 title: 'docs: document the Python may-raise resolver in docs/modules/arch.md'
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-07-26'
@@ -8635,6 +8681,26 @@ priority: medium
 parent: null
 scope:
 - docs/modules/arch.md
+- src/frob/arch/_mayraise.py
+- tests/unit/test_arch.py
+scope_changes:
+- op: add
+  glob: src/frob/arch/_mayraise.py
+  reason: repointing frob:doc directives requires editing this file per ticket body
+  actor: logan
+  at: '2026-07-26'
+- op: add
+  glob: tests/unit/test_arch.py
+  reason: evidence file for T-0686's already-existing may-raise resolver tests
+  actor: logan
+  at: '2026-07-26'
+evidence:
+- tests/unit/test_arch.py::TestMayRaiseResolver::test_fixture_chain_own_raise_and_builtin_raiser_and_catch_subtraction
+- tests/unit/test_arch.py::TestMayRaiseResolver::test_unresolvable_call_yields_unknown
+- tests/unit/test_arch.py::TestMayRaiseResolver::test_bare_reraise_resolves_to_caught_type
+- tests/unit/test_arch.py::TestMayRaiseResolver::test_bare_except_reraise_is_unknown
+- tests/unit/test_arch.py::TestMayRaiseResolver::test_recursive_cycle_converges
+- tests/unit/test_arch.py::TestMayRaiseResolver::test_ambiguous_method_name_across_classes_is_unresolved
 threat: null
 component: null
 ```
@@ -8649,6 +8715,43 @@ this ticket. Add a "may-raise resolver" section documenting
 compute_may_raise/FunctionMayRaise/UNKNOWN/UBIQUITOUS_TIER's contract and
 its relationship to the T-0623 fallibility-checks family, then update the
 frob:doc anchors on _mayraise.py to point at it and drop the waivers.
+
+## Done report
+
+Added a "May-raise resolver" section to docs/modules/arch.md (anchor
+#may-raise-resolver) documenting compute_may_raise, FunctionMayRaise,
+UNKNOWN, and UBIQUITOUS_TIER's contracts and this resolver's
+relationship to the T-0623 fallibility-checks family (a resolver
+computing transitive may-raise sets vs. that family's per-call-site
+shape checks). Repointed all four frob:doc directives in
+src/frob/arch/_mayraise.py (on UNKNOWN, UBIQUITOUS_TIER,
+FunctionMayRaise, and compute_may_raise) from the shared
+#fallibility-checks anchor to the new #may-raise-resolver anchor, and
+dropped the module-docstring comment referencing T-0916 as a pending
+follow-up now that it has landed. No pre-existing frob:waive COV001/
+DOC002 was found on _mayraise.py to clear (the ticket's own body notes
+these findings were waived pending this ticket, but the file as found
+carried no such waiver comment -- verified by grep before starting).
+
+### Changed
+- `src/frob/arch/_mayraise.py::UNKNOWN`
+- `src/frob/arch/_mayraise.py::UBIQUITOUS_TIER`
+- `src/frob/arch/_mayraise.py::FunctionMayRaise`
+- `src/frob/arch/_mayraise.py::compute_may_raise`
+- `docs/modules/arch.md` (new "May-raise resolver" section, anchor #may-raise-resolver)
+
+### Evidence
+- `tests/unit/test_arch.py::TestMayRaiseResolver::test_fixture_chain_own_raise_and_builtin_raiser_and_catch_subtraction` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestMayRaiseResolver::test_unresolvable_call_yields_unknown` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestMayRaiseResolver::test_bare_reraise_resolves_to_caught_type` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestMayRaiseResolver::test_bare_except_reraise_is_unknown` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestMayRaiseResolver::test_recursive_cycle_converges` (pytest node id, verified passing when recorded)
+- `tests/unit/test_arch.py::TestMayRaiseResolver::test_ambiguous_method_name_across_classes_is_unresolved` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s)), verified via `uv run pytest tests/unit/test_arch.py::TestMayRaiseResolver -q`
+- gates: `uv run frob check --ticket T-0916` -- 0 errors, 2303 warnings, 219 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0917 -->
 ```yaml

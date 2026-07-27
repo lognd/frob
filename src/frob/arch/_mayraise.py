@@ -76,12 +76,8 @@ from frob.arch._normalized import NormalizedCatch, NormalizedFunction, Normalize
 #: `raise`. Kept as a plain string (not a distinct type) since every other
 #: raised-type name in this module is already a bare exception-name string
 #: and `FunctionMayRaise.raises` is one homogeneous `frozenset[str]`.
-#: `frob:doc` points at the existing `#fallibility-checks` family anchor
-#: (docs/modules/arch.md is out of T-0686's declared scope --
-#: scope=['src/frob/arch/**', 'tests/unit/test_arch.py'] -- so no new
-#: resolver-specific section was added; T-0916 tracks adding
-#: one and re-pointing this anchor).
-# frob:doc docs/modules/arch.md#fallibility-checks
+#: `frob:doc` points at the dedicated may-raise-resolver anchor (T-0916).
+# frob:doc docs/modules/arch.md#may-raise-resolver
 # frob:ticket T-0686
 UNKNOWN = "Unknown"
 
@@ -91,7 +87,7 @@ UNKNOWN = "Unknown"
 #: rule out. Exhaustiveness never demands these be enumerated per
 #: function; only a boundary catch-all (bare `except:`) discharges them
 #: (see this module's docstring).
-# frob:doc docs/modules/arch.md#fallibility-checks
+# frob:doc docs/modules/arch.md#may-raise-resolver
 # frob:ticket T-0686
 UBIQUITOUS_TIER: frozenset[str] = frozenset(
     {"MemoryError", "KeyboardInterrupt", "SystemExit"}
@@ -161,7 +157,7 @@ _BUILTIN_RAISERS: dict[str, frozenset[str]] = {
 _SUBSCRIPT_RAISE = "KeyError"
 
 
-# frob:doc docs/modules/arch.md#fallibility-checks
+# frob:doc docs/modules/arch.md#may-raise-resolver
 # frob:ticket T-0686
 class FunctionMayRaise(BaseModel):
     """One function/method's computed may-raise set (T-0686): its
@@ -321,7 +317,7 @@ def _build_name_to_func(module: NormalizedModule) -> dict[str, NormalizedFunctio
     return table
 
 
-# frob:doc docs/modules/arch.md#fallibility-checks
+# frob:doc docs/modules/arch.md#may-raise-resolver
 # frob:ticket T-0686
 # frob:tests tests/unit/test_arch.py::TestMayRaiseResolver.test_fixture_chain_own_raise_and_builtin_raiser_and_catch_subtraction  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestMayRaiseResolver.test_unresolvable_call_yields_unknown  # noqa: E501
