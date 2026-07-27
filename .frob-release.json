@@ -1320,6 +1320,14 @@
     "src/frob/strata/_policy.py::CompiledPolicies.enabling": "7eee91db96234c0e7d76e0452bff1cbebe0d1ebb3af91805f14fe47df719647f",
     "src/frob/strata/_policy.py::CompiledPolicy": "92c429f7833c897c736c47aad61a70aeda0eb9594e2a46415cd980f6bd80f4a7",
     "src/frob/strata/_policy.py::compile_policies": "136c3f4c1638a64b8630edd1775a4435619f9beafa57f5b5e12da9b7f81d454a",
+    "src/frob/strata/_process_bounds.py::PROCESS_BOUNDS_RULES": "b75109f563b3b1a2c111ec4501440a07c36a18d43491489f0c5b216481b30b37",
+    "src/frob/strata/_process_bounds.py::ProcessBoundsReport": "a1640c8cba23fa5b5ba6dd6feb855af3d965eef484c154e8e276131940d49c11",
+    "src/frob/strata/_process_bounds.py::ProcessBoundsViolation": "3f512c64027cc59e545f9d51d439554cd3ff6aa8db12f97ecc25203534a37557",
+    "src/frob/strata/_process_bounds.py::REL_MISSING_INTERFACE_CLASSIFICATION": "602c4d84e2d9949c03d52f1c40ed1f9b081a3f690e6f8091d2607f7de2b43085",
+    "src/frob/strata/_process_bounds.py::REL_MISSING_PROCESS_BOUNDS": "41f4b7ef64136ea2bd3e74264c829566133eb2334a8b6ac8f900c6ff820ef8cb",
+    "src/frob/strata/_process_bounds.py::REL_UNPROVEN_INTERFACE_CLASSIFICATION": "198759484ce68cb2dc2cecdd05c69a303ab7f9372832ae6a1a2c56935fbe12e1",
+    "src/frob/strata/_process_bounds.py::REL_UNPROVEN_PROCESS_BOUNDS": "4e0c1382c0d3e79315b3475401138d59814843695465735629d4184261043fa0",
+    "src/frob/strata/_process_bounds.py::check_process_bounds_obligations": "fef3b2bb958f380ea2a885d904e8ab0fbf52482a69a87e01e11d4b33f0661e7c",
     "src/frob/strata/_reliability.py::RELIABILITY_RULES": "da4ef0225f8f5d588436cd4b18593c1d3315cb272bed8e9a0ba4f81a6756636c",
     "src/frob/strata/_reliability.py::REL_MISSING_HEALTH": "fa4769be80539554ccc9dd9642add63c0bddfd946e7f9a3e03fa60ba511d5464",
     "src/frob/strata/_reliability.py::REL_MISSING_TIMEOUT": "dc42b79399908aebccc2c6a9d8e91104386672d9a651b37e014f0d9792d45d94",
@@ -1382,6 +1390,14 @@
     "src/frob/strata/_starvation.py::StarvationReport": "32ac286469d08ccd44d616ca935d03ce3885bdcaabb7efe6b0b7612e9f9c91fe",
     "src/frob/strata/_starvation.py::StarvationViolation": "27eedde27d6019369cccea3c604ffb3dff4c99ed35a6a54343ff479842dd19cd",
     "src/frob/strata/_starvation.py::check_starvation_obligations": "fb6a8ace6ca9440b6d45750fd6a26aa31b133a2093fd3736ba8992e1b3daa840",
+    "src/frob/strata/_supply_chain_boot.py::REL_MISSING_ABI_COMPAT_WINDOW": "c7aa1f662b3a7a87fcd6727497f01e89cf240fdde7800e82c1acb932dc293371",
+    "src/frob/strata/_supply_chain_boot.py::REL_MISSING_BOOT_ATTESTATION": "b0bcc141e330197ff3c94d5a2f34b10fbdd3c658e97dbfb3b953b426ef40f2f9",
+    "src/frob/strata/_supply_chain_boot.py::REL_UNPROVEN_ABI_COMPAT_WINDOW": "8a2eb6c7d2afcc7d60df6d7af3921b3a5e28219b8c8d51aeb519396120c5c1fb",
+    "src/frob/strata/_supply_chain_boot.py::REL_UNPROVEN_BOOT_ATTESTATION": "9ac92c1a2e0f884ee786f1644531f7953cd8a75d57258baf08c61fe1dcec1d54",
+    "src/frob/strata/_supply_chain_boot.py::SUPPLY_CHAIN_BOOT_RULES": "4f352adf0b50176cc6c966ff7d214bb3f044abd64ef01c3ff943be2eb40f994e",
+    "src/frob/strata/_supply_chain_boot.py::SupplyChainBootReport": "bf9c5a79231825a006603364716277db59fc179b21611bb641956b9a7685d32e",
+    "src/frob/strata/_supply_chain_boot.py::SupplyChainBootViolation": "9a933811c5cde718708373b1b5bb9a32b85388c8465428a6a6927333dc7a01db",
+    "src/frob/strata/_supply_chain_boot.py::check_supply_chain_boot_obligations": "cd85e4e7fe45c8e85be803196a29762dc19e811359dfdece45d019cb1eb17b40",
     "src/frob/strata/_sync_depth.py::REL_SYNC_CHAIN_TOO_DEEP": "5853081491a07444bf78482c5db5b3ceaf1d435ddf9fbf8d7d966230e34b5974",
     "src/frob/strata/_sync_depth.py::SYNC_CHAIN_MAX_DEPTH": "092a8d9c60f420d00a499c88b5a92fba481e7f5087c7a10197cd5b36116d4703",
     "src/frob/strata/_sync_depth.py::SYNC_DEPTH_RULES": "b7cafddf9b2062a5f8a2bdc5bccd29b9f295c0923aea4bcc5022bac9325bbc3d",
@@ -1691,5 +1707,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.179.0"
+  "version": "0.180.0"
 }

@@ -348,6 +348,16 @@ from frob.strata._pii import (
 )
 from frob.strata._plan import MARKER_PREFIX, PlannedTicket, PlanResult, plan_obligations
 from frob.strata._policy import CompiledPolicies, CompiledPolicy, compile_policies
+from frob.strata._process_bounds import (
+    PROCESS_BOUNDS_RULES,
+    REL_MISSING_INTERFACE_CLASSIFICATION,
+    REL_MISSING_PROCESS_BOUNDS,
+    REL_UNPROVEN_INTERFACE_CLASSIFICATION,
+    REL_UNPROVEN_PROCESS_BOUNDS,
+    ProcessBoundsReport,
+    ProcessBoundsViolation,
+    check_process_bounds_obligations,
+)
 from frob.strata._reliability import (
     REL_MISSING_HEALTH,
     REL_MISSING_TIMEOUT,
@@ -428,6 +438,16 @@ from frob.strata._starvation import (
     StarvationReport,
     StarvationViolation,
     check_starvation_obligations,
+)
+from frob.strata._supply_chain_boot import (
+    REL_MISSING_ABI_COMPAT_WINDOW,
+    REL_MISSING_BOOT_ATTESTATION,
+    REL_UNPROVEN_ABI_COMPAT_WINDOW,
+    REL_UNPROVEN_BOOT_ATTESTATION,
+    SUPPLY_CHAIN_BOOT_RULES,
+    SupplyChainBootReport,
+    SupplyChainBootViolation,
+    check_supply_chain_boot_obligations,
 )
 from frob.strata._sync_depth import (
     REL_SYNC_CHAIN_TOO_DEEP,
@@ -524,6 +544,16 @@ __all__ = [
     "DELIVERY_SEMANTICS_RULES",
     "INTERACTIVE_COST_RULES",
     "MESSAGE_SCHEMA_RULES",
+    "PROCESS_BOUNDS_RULES",
+    "SUPPLY_CHAIN_BOOT_RULES",
+    "REL_MISSING_INTERFACE_CLASSIFICATION",
+    "REL_UNPROVEN_INTERFACE_CLASSIFICATION",
+    "REL_MISSING_PROCESS_BOUNDS",
+    "REL_UNPROVEN_PROCESS_BOUNDS",
+    "REL_MISSING_ABI_COMPAT_WINDOW",
+    "REL_UNPROVEN_ABI_COMPAT_WINDOW",
+    "REL_MISSING_BOOT_ATTESTATION",
+    "REL_UNPROVEN_BOOT_ATTESTATION",
     "REL_MISSING_BOUNDED_INTAKE",
     "REL_UNPROVEN_BOUNDED_INTAKE",
     "REL_MISSING_BOUNDED_COST",
@@ -540,6 +570,10 @@ __all__ = [
     "InteractiveCostViolation",
     "MessageSchemaReport",
     "MessageSchemaViolation",
+    "ProcessBoundsReport",
+    "ProcessBoundsViolation",
+    "SupplyChainBootReport",
+    "SupplyChainBootViolation",
     "BalancerDecl",
     "BenignCapability",
     "BlastRadius",
@@ -755,6 +789,8 @@ __all__ = [
     "check_delivery_semantics_obligations",
     "check_interactive_cost_obligations",
     "check_message_schema_obligations",
+    "check_process_bounds_obligations",
+    "check_supply_chain_boot_obligations",
     "check_observability_obligations",
     "check_capability_completeness",
     "check_capability_conformance",

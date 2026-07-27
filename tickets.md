@@ -2896,7 +2896,7 @@ scratch.
 id: T-0960
 title: 'static checks: kernel/userspace-interface classification + per-process cgroup
   resource-bound declaration obligations'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-27'
@@ -2907,10 +2907,215 @@ sprint: null
 scope:
 - src/frob/strata/_process_bounds.py
 - docs/strata/reliability.md
+- src/frob/strata/__init__.py
+- tests/unit/strata/test_process_bounds.py
+- src/frob/gates/__init__.py
+- docs/design/registry/system-design.yaml
+scope_changes:
+- op: add
+  glob: src/frob/strata/__init__.py
+  reason: 'Ticket scope only listed src/frob/strata/_process_bounds.py and
+
+    docs/strata/reliability.md, but the obligation-family pattern this ticket
+
+    was explicitly dispatched to follow (mirroring T-0646/T-0919) requires:
+
+    tests under tests/unit/strata/ for the new REL39x checks, wiring the new
+
+    module''s exports into src/frob/strata/__init__.py (the same re-export
+
+    list every sibling obligation-family module joins), and registering the
+
+    new REL390-REL393 rule ids in src/frob/gates/__init__.py''s
+
+    _KNOWN_GATE_RULES (so REG002/registry re-disposition can resolve
+
+    handled_by:REL39x references). Widening to match T-0646/T-0919''s own
+
+    declared scope shape.
+
+    '
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: tests/unit/strata/test_process_bounds.py
+  reason: 'Ticket scope only listed src/frob/strata/_process_bounds.py and
+
+    docs/strata/reliability.md, but the obligation-family pattern this ticket
+
+    was explicitly dispatched to follow (mirroring T-0646/T-0919) requires:
+
+    tests under tests/unit/strata/ for the new REL39x checks, wiring the new
+
+    module''s exports into src/frob/strata/__init__.py (the same re-export
+
+    list every sibling obligation-family module joins), and registering the
+
+    new REL390-REL393 rule ids in src/frob/gates/__init__.py''s
+
+    _KNOWN_GATE_RULES (so REG002/registry re-disposition can resolve
+
+    handled_by:REL39x references). Widening to match T-0646/T-0919''s own
+
+    declared scope shape.
+
+    '
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'Ticket scope only listed src/frob/strata/_process_bounds.py and
+
+    docs/strata/reliability.md, but the obligation-family pattern this ticket
+
+    was explicitly dispatched to follow (mirroring T-0646/T-0919) requires:
+
+    tests under tests/unit/strata/ for the new REL39x checks, wiring the new
+
+    module''s exports into src/frob/strata/__init__.py (the same re-export
+
+    list every sibling obligation-family module joins), and registering the
+
+    new REL390-REL393 rule ids in src/frob/gates/__init__.py''s
+
+    _KNOWN_GATE_RULES (so REG002/registry re-disposition can resolve
+
+    handled_by:REL39x references). Widening to match T-0646/T-0919''s own
+
+    declared scope shape.
+
+    '
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: docs/design/registry/system-design.yaml
+  reason: 'Ticket scope only listed src/frob/strata/_process_bounds.py and
+
+    docs/strata/reliability.md, but the obligation-family pattern this ticket
+
+    was explicitly dispatched to follow (mirroring T-0646/T-0919) requires:
+
+    tests under tests/unit/strata/ for the new REL39x checks, wiring the new
+
+    module''s exports into src/frob/strata/__init__.py (the same re-export
+
+    list every sibling obligation-family module joins), and registering the
+
+    new REL390-REL393 rule ids in src/frob/gates/__init__.py''s
+
+    _KNOWN_GATE_RULES (so REG002/registry re-disposition can resolve
+
+    handled_by:REL39x references). Widening to match T-0646/T-0919''s own
+
+    declared scope shape.
+
+    '
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- tests/unit/strata/test_process_bounds.py::TestMissingInterfaceClassification::test_kernel_interface_node_without_classification_fires
+- tests/unit/strata/test_process_bounds.py::TestMissingInterfaceClassification::test_discharged_and_non_kernel_interface_nodes_clean
+- tests/unit/strata/test_process_bounds.py::TestMissingInterfaceClassification::test_waiver_discharges_finding
+- tests/unit/strata/test_process_bounds.py::TestUnprovenInterfaceClassification::test_declared_with_no_code_evidence_fires
+- tests/unit/strata/test_process_bounds.py::TestUnprovenInterfaceClassification::test_declared_with_real_code_evidence_discharges
+- tests/unit/strata/test_process_bounds.py::TestUnprovenInterfaceClassification::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+- tests/unit/strata/test_process_bounds.py::TestMissingProcessBounds::test_deployed_process_node_without_bounds_fires
+- tests/unit/strata/test_process_bounds.py::TestMissingProcessBounds::test_discharged_and_non_deployed_process_nodes_clean
+- tests/unit/strata/test_process_bounds.py::TestMissingProcessBounds::test_waiver_discharges_finding
+- tests/unit/strata/test_process_bounds.py::TestUnprovenProcessBounds::test_declared_with_no_code_evidence_fires
+- tests/unit/strata/test_process_bounds.py::TestUnprovenProcessBounds::test_declared_with_real_code_evidence_discharges
+- tests/unit/strata/test_process_bounds.py::TestUnprovenProcessBounds::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
 threat: null
 component: null
 ```
 Filed while reconciling T-0958's system-design.yaml deferred rows. SDC-13-EVERY-KERNEL-USERSPACE-INTERFACE-SYSCALL-PROCFS-SYSFS-ENTRY-IOCTL-IS-CLASSIFIED-INT and SDC-13-EVERY-DEPLOYED-PROCESS-DECLARES-ITS-RESOURCE-BOUNDS-CGROUP-LIMITS-CPU-MEMORY-IO-AND name two genuinely checkable, currently-unbuilt obligations: (1) every kernel/userspace interface (syscall, procfs/sysfs entry, ioctl) a node touches being classified (trusted/untrusted, read/write, etc.) into the same kind of deny-by-default declared-attr obligation REL2xx/REL3xx already use, and (2) every deployed process node declaring its resource bounds (cgroup cpu/memory/io limits) -- structurally the same "declared bound + provability" shape _backpressure.py's REL260/261 and _interactive_cost.py's REL310/311 already establish for other resource dimensions, just not yet built for process-level cgroup bounds or kernel-interface classification. No landed REL/SYS family covers either concept today. Scope: a new strata rule module (e.g. src/frob/strata/_process_bounds.py) plus docs/strata/reliability.md plus the corresponding registry re-disposition once built.
+
+## Done report
+
+Changed:
+- src/frob/strata/_process_bounds.py (new module: REL390/REL391 kernel-
+  interface-classification pair, REL392/REL393 process-resource-bounds
+  pair, ProcessBoundsReport/ProcessBoundsViolation,
+  check_process_bounds_obligations)
+- src/frob/strata/__init__.py (re-export the new module's public symbols)
+- src/frob/gates/__init__.py (_KNOWN_GATE_RULES: added REL390/REL391/
+  REL392/REL393 only -- T-0961 is concurrently registering the separate
+  REL26x-38x backlog batch in the same frozenset)
+- docs/strata/reliability.md (new "REL39x: KERNEL-INTERFACE +
+  PROCESS-BOUNDS (T-0960)" section: obligation description, surface
+  vocabulary, grammar-data-ceiling honesty note, waiver channel, See-also
+  entries for the module and its test file)
+- tests/unit/strata/test_process_bounds.py (new, 12 tests: missing/
+  clean/waived per obligation pair, plus unproven/discharged/uncheckable
+  per obligation pair)
+- docs/design/registry/system-design.yaml (re-pointed both T-0960 rows'
+  disposition from deferred:T-0960 to handled_by:REL390 and
+  handled_by:REL392 respectively)
+
+Scope was widened from the ticket's original two-path declaration
+(src/frob/strata/_process_bounds.py, docs/strata/reliability.md) via
+`frob ticket scope --add` to also cover src/frob/strata/__init__.py,
+tests/unit/strata/test_process_bounds.py, src/frob/gates/__init__.py, and
+docs/design/registry/system-design.yaml -- the obligation-family pattern
+this ticket was dispatched to follow (mirroring T-0646/T-0919) requires
+wiring, tests, and known-rule-id registration beyond the two files
+originally listed; reason recorded in the ticket's scope_changes audit
+trail.
+
+Design note: both obligation pairs are declaration-and-proof checks over
+strata's own host/deploy vocabulary (KernelModel.nodes / bound source
+text), not runtime kernel introspection -- this cannot observe an actual
+running process's cgroup file or an actual syscall's real classification,
+only whether a Node attr declaration and its bound-code evidence exist.
+This mirrors the same honesty ceiling REL201/REL222/REL231/REL261/REL301/
+REL311 already establish for their own dimensions; disclosed directly in
+the module and doc-section GRAMMAR-DATA CEILING notes rather than silently
+overclaiming runtime enforcement.
+
+Evidence:
+- tests/unit/strata/test_process_bounds.py::TestMissingInterfaceClassification::test_kernel_interface_node_without_classification_fires
+- tests/unit/strata/test_process_bounds.py::TestMissingInterfaceClassification::test_discharged_and_non_kernel_interface_nodes_clean
+- tests/unit/strata/test_process_bounds.py::TestMissingInterfaceClassification::test_waiver_discharges_finding
+- tests/unit/strata/test_process_bounds.py::TestUnprovenInterfaceClassification::test_declared_with_no_code_evidence_fires
+- tests/unit/strata/test_process_bounds.py::TestUnprovenInterfaceClassification::test_declared_with_real_code_evidence_discharges
+- tests/unit/strata/test_process_bounds.py::TestUnprovenInterfaceClassification::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+- tests/unit/strata/test_process_bounds.py::TestMissingProcessBounds::test_deployed_process_node_without_bounds_fires
+- tests/unit/strata/test_process_bounds.py::TestMissingProcessBounds::test_discharged_and_non_deployed_process_nodes_clean
+- tests/unit/strata/test_process_bounds.py::TestMissingProcessBounds::test_waiver_discharges_finding
+- tests/unit/strata/test_process_bounds.py::TestUnprovenProcessBounds::test_declared_with_no_code_evidence_fires
+- tests/unit/strata/test_process_bounds.py::TestUnprovenProcessBounds::test_declared_with_real_code_evidence_discharges
+- tests/unit/strata/test_process_bounds.py::TestUnprovenProcessBounds::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+All 12 observed passing: `uv run pytest tests/unit/strata/test_process_bounds.py -p no:cacheprovider -q` -> "............ [100%]".
+
+Filed: none.
+
+Gates: `uv run frob check --ticket T-0960` chunked loop (lint/static/
+gates-fast/gates-native/gates-security) all pass with 0 errors after
+re-running `frob ticket sweep T-0960` post scope-widen (PRE001 cleared).
+Remaining warnings across all stages are pre-existing repo-wide debt, not
+introduced by this ticket.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/strata/test_process_bounds.py::TestMissingInterfaceClassification::test_kernel_interface_node_without_classification_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_process_bounds.py::TestMissingInterfaceClassification::test_discharged_and_non_kernel_interface_nodes_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_process_bounds.py::TestMissingInterfaceClassification::test_waiver_discharges_finding` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_process_bounds.py::TestUnprovenInterfaceClassification::test_declared_with_no_code_evidence_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_process_bounds.py::TestUnprovenInterfaceClassification::test_declared_with_real_code_evidence_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_process_bounds.py::TestUnprovenInterfaceClassification::test_declared_with_no_bound_code_is_uncheckable_not_a_violation` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_process_bounds.py::TestMissingProcessBounds::test_deployed_process_node_without_bounds_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_process_bounds.py::TestMissingProcessBounds::test_discharged_and_non_deployed_process_nodes_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_process_bounds.py::TestMissingProcessBounds::test_waiver_discharges_finding` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_process_bounds.py::TestUnprovenProcessBounds::test_declared_with_no_code_evidence_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_process_bounds.py::TestUnprovenProcessBounds::test_declared_with_real_code_evidence_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_process_bounds.py::TestUnprovenProcessBounds::test_declared_with_no_bound_code_is_uncheckable_not_a_violation` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 12 passed (from 12 evidence id(s))
+- gates: 0 error(s), 4999 warning(s), 220 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0961 -->
 ```yaml
@@ -2974,7 +3179,7 @@ The REL2xx-REL38x and SYS204 obligation families emitted rule ids built from mod
 id: T-0962
 title: 'static checks: ABI/ISA compat-window stability + boot-chain signed/measured
   attestation obligations'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-27'
@@ -2985,10 +3190,216 @@ sprint: null
 scope:
 - src/frob/strata/_supply_chain_boot.py
 - docs/strata/reliability.md
+- src/frob/strata/__init__.py
+- tests/unit/strata/test_supply_chain_boot.py
+- src/frob/gates/__init__.py
+- docs/design/registry/system-design.yaml
+scope_changes:
+- op: add
+  glob: src/frob/strata/__init__.py
+  reason: 'Ticket scope only listed src/frob/strata/_supply_chain_boot.py and
+
+    docs/strata/reliability.md, but the obligation-family pattern this ticket
+
+    was dispatched to follow (mirroring T-0646/T-0919/T-0960) requires:
+
+    tests under tests/unit/strata/ for the new REL39x checks, wiring the new
+
+    module''s exports into src/frob/strata/__init__.py, and registering the
+
+    new rule ids in src/frob/gates/__init__.py''s _KNOWN_GATE_RULES (so
+
+    REG002 can resolve handled_by:REL39x references). Widening to match
+
+    T-0646/T-0919/T-0960''s own declared scope shape.
+
+    '
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: tests/unit/strata/test_supply_chain_boot.py
+  reason: 'Ticket scope only listed src/frob/strata/_supply_chain_boot.py and
+
+    docs/strata/reliability.md, but the obligation-family pattern this ticket
+
+    was dispatched to follow (mirroring T-0646/T-0919/T-0960) requires:
+
+    tests under tests/unit/strata/ for the new REL39x checks, wiring the new
+
+    module''s exports into src/frob/strata/__init__.py, and registering the
+
+    new rule ids in src/frob/gates/__init__.py''s _KNOWN_GATE_RULES (so
+
+    REG002 can resolve handled_by:REL39x references). Widening to match
+
+    T-0646/T-0919/T-0960''s own declared scope shape.
+
+    '
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'Ticket scope only listed src/frob/strata/_supply_chain_boot.py and
+
+    docs/strata/reliability.md, but the obligation-family pattern this ticket
+
+    was dispatched to follow (mirroring T-0646/T-0919/T-0960) requires:
+
+    tests under tests/unit/strata/ for the new REL39x checks, wiring the new
+
+    module''s exports into src/frob/strata/__init__.py, and registering the
+
+    new rule ids in src/frob/gates/__init__.py''s _KNOWN_GATE_RULES (so
+
+    REG002 can resolve handled_by:REL39x references). Widening to match
+
+    T-0646/T-0919/T-0960''s own declared scope shape.
+
+    '
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: docs/design/registry/system-design.yaml
+  reason: 'Ticket scope only listed src/frob/strata/_supply_chain_boot.py and
+
+    docs/strata/reliability.md, but the obligation-family pattern this ticket
+
+    was dispatched to follow (mirroring T-0646/T-0919/T-0960) requires:
+
+    tests under tests/unit/strata/ for the new REL39x checks, wiring the new
+
+    module''s exports into src/frob/strata/__init__.py, and registering the
+
+    new rule ids in src/frob/gates/__init__.py''s _KNOWN_GATE_RULES (so
+
+    REG002 can resolve handled_by:REL39x references). Widening to match
+
+    T-0646/T-0919/T-0960''s own declared scope shape.
+
+    '
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- tests/unit/strata/test_supply_chain_boot.py::TestMissingAbiCompatWindow::test_compiled_artifact_node_without_compat_window_fires
+- tests/unit/strata/test_supply_chain_boot.py::TestMissingAbiCompatWindow::test_discharged_and_non_compiled_artifact_nodes_clean
+- tests/unit/strata/test_supply_chain_boot.py::TestMissingAbiCompatWindow::test_waiver_discharges_finding
+- tests/unit/strata/test_supply_chain_boot.py::TestUnprovenAbiCompatWindow::test_declared_with_no_code_evidence_fires
+- tests/unit/strata/test_supply_chain_boot.py::TestUnprovenAbiCompatWindow::test_declared_with_real_code_evidence_discharges
+- tests/unit/strata/test_supply_chain_boot.py::TestUnprovenAbiCompatWindow::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+- tests/unit/strata/test_supply_chain_boot.py::TestMissingBootAttestation::test_boot_chain_stage_node_without_attestation_fires
+- tests/unit/strata/test_supply_chain_boot.py::TestMissingBootAttestation::test_discharged_and_non_boot_chain_stage_nodes_clean
+- tests/unit/strata/test_supply_chain_boot.py::TestMissingBootAttestation::test_waiver_discharges_finding
+- tests/unit/strata/test_supply_chain_boot.py::TestUnprovenBootAttestation::test_declared_with_no_code_evidence_fires
+- tests/unit/strata/test_supply_chain_boot.py::TestUnprovenBootAttestation::test_declared_with_real_code_evidence_discharges
+- tests/unit/strata/test_supply_chain_boot.py::TestUnprovenBootAttestation::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
 threat: null
 component: null
 ```
 Filed while reconciling T-0958's system-design.yaml deferred rows. SDC-13-A-DECLARED-ABI-ISA-TARGET-IS-STABLE-ACROSS-A-COMPATIBILITY-WINDOW-A-COMPILED-ARTIFA and SDC-13-EVERY-BOOT-CHAIN-STAGE-IS-SIGNED-SECURE-BOOT-OR-MEASURED-INTO-AN-ATTESTABLE-LOG-MEA name two genuinely checkable, currently-unbuilt supply-chain/OS obligations: (1) a declared ABI/ISA compatibility-window claim on a compiled artifact that a static check could verify stays honored across the window, and (2) each boot-chain stage being signed (secure boot) or measured into an attestable log, again a presence/provenance claim a static grammar attr + proof check could enforce, mirroring the REL2xx/REL3xx PROVABILITY CONSTRAINT pattern (_obligation_proof.py::node_has_bound_code) already established for other obligation families. No landed REL/SYS family covers either concept today. Scope: a new strata rule module (e.g. src/frob/strata/_supply_chain_boot.py) plus docs/strata/reliability.md (or a new supply-chain doc section) plus the corresponding registry re-disposition once built.
+
+## Done report
+
+Changed:
+- src/frob/strata/_supply_chain_boot.py (new module: REL394/REL395 ABI/
+  ISA compat-window pair, REL396/REL397 boot-chain-attestation pair,
+  SupplyChainBootReport/SupplyChainBootViolation,
+  check_supply_chain_boot_obligations -- rule ids continue the REL39x
+  block T-0960 started rather than opening REL4xx)
+- src/frob/strata/__init__.py (re-export the new module's public symbols)
+- src/frob/gates/__init__.py (_KNOWN_GATE_RULES: added REL394/REL395/
+  REL396/REL397 only)
+- docs/strata/reliability.md (new "REL39y: ABI-COMPAT-WINDOW +
+  BOOT-ATTESTATION (T-0962)" section: obligation description, surface
+  vocabulary, grammar-data-ceiling honesty note, waiver channel, See-also
+  entries for the module and its test file)
+- tests/unit/strata/test_supply_chain_boot.py (new, 12 tests: missing/
+  clean/waived per obligation pair, plus unproven/discharged/uncheckable
+  per obligation pair)
+- docs/design/registry/system-design.yaml (re-pointed both T-0962 rows'
+  disposition from deferred:T-0962 to handled_by:REL394 and
+  handled_by:REL396 respectively)
+
+Scope was widened from the ticket's original two-path declaration
+(src/frob/strata/_supply_chain_boot.py, docs/strata/reliability.md) via
+`frob ticket scope --add`, same shape as T-0960's own widen, to also
+cover src/frob/strata/__init__.py, tests/unit/strata/
+test_supply_chain_boot.py, src/frob/gates/__init__.py, and
+docs/design/registry/system-design.yaml.
+
+Design note: both obligation pairs are declaration-and-proof checks over
+strata's own host/deploy vocabulary (KernelModel.nodes / bound source
+text), not runtime kernel/firmware introspection -- this cannot observe
+an actual compiled artifact's real ABI surface or an actual boot chain's
+real measurement log, only whether a Node attr declaration and its
+bound-code evidence exist. Disclosed directly in the module and
+doc-section GRAMMAR-DATA CEILING notes.
+
+Evidence:
+- tests/unit/strata/test_supply_chain_boot.py::TestMissingAbiCompatWindow::test_compiled_artifact_node_without_compat_window_fires
+- tests/unit/strata/test_supply_chain_boot.py::TestMissingAbiCompatWindow::test_discharged_and_non_compiled_artifact_nodes_clean
+- tests/unit/strata/test_supply_chain_boot.py::TestMissingAbiCompatWindow::test_waiver_discharges_finding
+- tests/unit/strata/test_supply_chain_boot.py::TestUnprovenAbiCompatWindow::test_declared_with_no_code_evidence_fires
+- tests/unit/strata/test_supply_chain_boot.py::TestUnprovenAbiCompatWindow::test_declared_with_real_code_evidence_discharges
+- tests/unit/strata/test_supply_chain_boot.py::TestUnprovenAbiCompatWindow::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+- tests/unit/strata/test_supply_chain_boot.py::TestMissingBootAttestation::test_boot_chain_stage_node_without_attestation_fires
+- tests/unit/strata/test_supply_chain_boot.py::TestMissingBootAttestation::test_discharged_and_non_boot_chain_stage_nodes_clean
+- tests/unit/strata/test_supply_chain_boot.py::TestMissingBootAttestation::test_waiver_discharges_finding
+- tests/unit/strata/test_supply_chain_boot.py::TestUnprovenBootAttestation::test_declared_with_no_code_evidence_fires
+- tests/unit/strata/test_supply_chain_boot.py::TestUnprovenBootAttestation::test_declared_with_real_code_evidence_discharges
+- tests/unit/strata/test_supply_chain_boot.py::TestUnprovenBootAttestation::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+All 12 observed passing: `uv run pytest tests/unit/strata/test_supply_chain_boot.py -p no:cacheprovider -q` -> "............ [100%]".
+
+Filed: T-0965 "COV002 scope-coverage grace window missing for
+same-diff closed ticket" (bug) -- disclosed below.
+
+Gates: `uv run frob check --ticket T-0962` chunked loop (lint/static/
+gates-native/gates-security) all pass with 0 errors. gates-fast reports
+30 COV002 errors, but ALL 30 are against T-0960's already-closed files
+(src/frob/strata/_process_bounds.py, tests/unit/strata/
+test_process_bounds.py) -- NONE against this ticket's own
+_supply_chain_boot.py/test_supply_chain_boot.py, confirmed by filtering
+the `--json` gates-fast output. Root cause: T-0960 covered those symbols
+by ticket SCOPE (one `frob:ticket T-0960` directive on the module's main
+entrypoint, matching this repo's established one-directive-per-module
+convention), and `_bound_to_open_ticket`'s T-0214/T-0320/T-0590 same-diff
+grace window only covers a DIRECT `frob:ticket` edge closing in-diff --
+there is no equivalent grace for SCOPE-based coverage
+(`_open_scopes`/`_scope_covers`) when its covering ticket closes to DONE
+within the same unlanded branch diff. This is a real gap in frob's own
+COV002 gate, not something T-0962's own diff introduced or something in
+T-0962's declared scope to fix -- filed as T-0965 rather than
+silently worked around or fixed out-of-scope.
+
+### Changed
+```
+ docs/design/registry/system-design.yaml  |   4 +-
+ docs/strata/reliability.md               |  99 +++++++
+ src/frob/gates/__init__.py               |  12 +
+ src/frob/strata/__init__.py              |  18 ++
+ src/frob/strata/_process_bounds.py       | 432 +++++++++++++++++++++++++++++++
+ tests/unit/strata/test_process_bounds.py | 323 +++++++++++++++++++++++
+ tickets.md                               | 206 ++++++++++++++-
+ 7 files changed, 1091 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_supply_chain_boot.py::TestMissingAbiCompatWindow::test_compiled_artifact_node_without_compat_window_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_supply_chain_boot.py::TestMissingAbiCompatWindow::test_discharged_and_non_compiled_artifact_nodes_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_supply_chain_boot.py::TestMissingAbiCompatWindow::test_waiver_discharges_finding` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_supply_chain_boot.py::TestUnprovenAbiCompatWindow::test_declared_with_no_code_evidence_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_supply_chain_boot.py::TestUnprovenAbiCompatWindow::test_declared_with_real_code_evidence_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_supply_chain_boot.py::TestUnprovenAbiCompatWindow::test_declared_with_no_bound_code_is_uncheckable_not_a_violation` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_supply_chain_boot.py::TestMissingBootAttestation::test_boot_chain_stage_node_without_attestation_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_supply_chain_boot.py::TestMissingBootAttestation::test_discharged_and_non_boot_chain_stage_nodes_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_supply_chain_boot.py::TestMissingBootAttestation::test_waiver_discharges_finding` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_supply_chain_boot.py::TestUnprovenBootAttestation::test_declared_with_no_code_evidence_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_supply_chain_boot.py::TestUnprovenBootAttestation::test_declared_with_real_code_evidence_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_supply_chain_boot.py::TestUnprovenBootAttestation::test_declared_with_no_bound_code_is_uncheckable_not_a_violation` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 12 passed (from 12 evidence id(s))
+- gates: 0 error(s), 5002 warning(s), 220 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0963 -->
 ```yaml
@@ -3049,3 +3460,67 @@ threat: null
 component: null
 ```
 Found during T-0961: the drift-lock test test_every_emitted_rule_literal_is_known scans only inline rule=string literals, so 30 real firing rule ids referenced as rule=<MODULE_CONSTANT> were invisible to it -- it passed while _KNOWN_GATE_RULES was missing them all. Extend the scan to also resolve module-level constant assignments (REL_*/SYS_*/any name whose value is a rule-id-shaped string that flows into a rule= kwarg), so constant-referenced ids are checked identically to literals. Prove with a before-fails case: temporarily removing a constant-referenced id from _KNOWN_GATE_RULES must fail the test.
+
+<!-- ticket:T-0965 -->
+```yaml
+id: T-0965
+title: COV002 scope-coverage grace window missing for same-diff closed ticket
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/gates/__init__.py
+- tests/test_gates.py
+threat: null
+component: null
+```
+Found while working T-0962 in a worktree that had already closed a prior
+ticket (T-0960) earlier in the same session/branch.
+
+`_bound_to_open_ticket` (src/frob/gates/__init__.py) has a same-diff grace
+window (T-0214/T-0320/T-0590) for a symbol covered by a DIRECT
+`frob:ticket` edge to a ticket that closes to DONE within the same
+uncommitted/unlanded diff. But `_cov002_check_symref`'s OTHER coverage
+path -- scope-based coverage via `_scope_covers(record.id.path,
+open_scopes, active_ticket)` -- has NO equivalent grace: `open_scopes` is
+built only from tickets currently in `_OPEN_STATES`
+(`_open_scopes(queue)`), so the instant a ticket that covered a whole
+file/module by SCOPE (not a per-symbol `frob:ticket` edge) closes to
+DONE, every symbol in that scope that lacks its own direct `frob:ticket`
+edge starts failing COV002 -- even though the closing ticket's own commit
+is still sitting, unlanded, in the very same branch diff against main
+that COV002 evaluates.
+
+Concretely: T-0960 added `src/frob/strata/_process_bounds.py` with one
+`frob:ticket T-0960` directive on its main entrypoint function only
+(the established convention every sibling obligation-family module in
+this repo uses -- see `_backpressure.py`/`_interactive_cost.py`, neither
+of which annotates every private helper/constant individually). While
+T-0960 was open, `_scope_covers` accounted for every other symbol in the
+file via T-0960's declared `scope` glob. The moment T-0960 closed (in the
+same worktree, before landing to main), `frob check --ticket T-0962`
+(a sibling ticket touching unrelated files) started reporting ~20 fresh
+COV002 errors against `_process_bounds.py`'s and its test file's symbols
+-- a false positive: nothing about those symbols changed, and the
+covering ticket's DONE transition is still part of the exact same
+unlanded diff COV002 is evaluating, the precise shape T-0214's edge-based
+grace window already exists to accept.
+
+Suggested fix: extend `_base_state_permits_grace`/`_ticket_marker_in_diff_
+hunk`'s reasoning to the scope-coverage path too -- when computing
+`open_scopes` for COV002 purposes, also include a ticket's scope if that
+ticket is DONE, its own close transition is inside this diff's `tickets.
+md` hunk(s) (`_ticket_marker_in_diff_hunk`), and its base-commit state
+permits grace (`_base_state_permits_grace`) -- mirroring
+`_bound_to_open_ticket`'s existing edge-based grace exactly, just applied
+to `_open_scopes`'s ticket set instead of a single edge target.
+
+Scope: src/frob/gates/__init__.py (`_open_scopes`, `_cov002_check_symref`,
+`_scope_covers` call site), tests/test_gates.py (a
+TestCoverageGate case mirroring test_cov002_grace_covers_ticket_created_
+and_closed_in_same_diff but for scope coverage instead of a direct edge).

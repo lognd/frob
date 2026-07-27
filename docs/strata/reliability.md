@@ -1402,6 +1402,198 @@ node db : trusted {
 }
 ```
 
+## REL39x: KERNEL-INTERFACE + PROCESS-BOUNDS (T-0960)
+
+`_process_bounds.py::check_process_bounds_obligations` reads
+`KernelModel.nodes` (no new kernel field, charter law 1) to find every
+node marked `kernel_interface` (this node touches a syscall, procfs/sysfs
+entry, or ioctl -- a kernel/userspace boundary) with an undischarged or
+unproven interface-classification obligation, AND every node marked
+`deployed_process` (this node models a process actually deployed to a
+host) with an undischarged or unproven cgroup resource-bound obligation.
+Filed while reconciling T-0958's `system-design.yaml` deferred rows
+(SDC-13-EVERY-KERNEL-USERSPACE-INTERFACE-SYSCALL-PROCFS-SYSFS-ENTRY-IOCTL-
+IS-CLASSIFIED-INT, SDC-13-EVERY-DEPLOYED-PROCESS-DECLARES-ITS-RESOURCE-
+BOUNDS-CGROUP-LIMITS-CPU-MEMORY-IO-AND): two genuinely checkable,
+previously-unbuilt obligations structurally identical in shape to
+REL26x's queue-intake pair and REL31x's interactive-cost pair, just for a
+different resource/trust dimension.
+
+TWO independent obligation pairs, both NODE-scoped (a node has at most
+one marker attr per pair and fires at most one missing/unproven finding
+each -- single-instance-per-node, the same carve-out REL260/261 and
+REL310/311 establish, NEITHER pair registered in `_waive.py::
+MULTI_INSTANCE_WAIVER_FAMILIES`):
+
+- **REL390 missing interface classification** -- a `kernel_interface`
+  node with no `interface_classified` attr. Deny-by-default: an
+  unclassified kernel/userspace interface has no declared trust boundary
+  at all, so a syscall/procfs/ioctl surface can silently widen with
+  nothing statically flagging that it was never triaged.
+- **REL391 unproven interface classification** -- a node DOES declare
+  `interface_classified`, but the T-0331 PROVABILITY CONSTRAINT forbids
+  discharging it by bare declaration alone: the node must have at least
+  one file bound to it (`_code_binding.py::bind_code`) containing a real
+  classification-shaped token (a trust/access-mode marker, a kernel
+  filter/allowlist construct). A node with no bound code at all is
+  UNCHECKABLE, not unproven -- the same ceiling REL201/REL222/REL231/
+  REL261/REL301/REL311 draw.
+- **REL392 missing process resource bounds** -- a `deployed_process`
+  node with no `cgroup_bounds` attr. Deny-by-default: a deployed process
+  with no declared resource bound can consume unbounded host cpu/memory/
+  io -- the same "no ceiling declared, no ceiling enforced" risk REL26x's
+  queue population and REL31x's interactive-flow population already
+  cover for their own resource dimensions.
+- **REL393 unproven process resource bounds** -- a node DOES declare
+  `cgroup_bounds`, but the T-0331 PROVABILITY CONSTRAINT forbids
+  discharging it by bare declaration alone: the node must have at least
+  one file bound to it containing a real cgroup/resource-limit-shaped
+  token. Same UNCHECKABLE-not-unproven ceiling as REL391.
+
+### Surface vocabulary
+
+```
+node open_procfs_entry : trusted {
+    kernel_interface;         // touches a procfs/sysfs/syscall/ioctl surface
+    interface_classified;     // discharges REL390; REL391 then checks bound code
+}
+
+node worker_service : trusted {
+    deployed_process;         // this node is a deployed, long-running process
+    cgroup_bounds;             // discharges REL392; REL393 then checks bound code
+}
+```
+
+### GRAMMAR-DATA CEILING, HONESTLY
+
+`kernel_interface`/`interface_classified`/`deployed_process`/
+`cgroup_bounds` are all presence-only bare Node attrs (no numeric
+magnitude -- the same digit-led-literal ceiling every other REL2xx/REL3xx
+marker in this family discloses), so REL390-REL393 prove PRESENCE of a
+declared obligation and its code-level evidence, not a specific
+classification value or a specific numeric cgroup limit. This is a
+STATIC declaration-and-proof check over strata's own host/deploy
+vocabulary, not runtime kernel introspection -- it cannot observe an
+actual running process's actual cgroup file or an actual syscall's
+actual classification, only whether the declaration and its bound-code
+evidence exist. REL391's and REL393's proof-against-code are syntactic
+token scans over the node's bound source, not a semantic call-argument
+binding -- the same "ship what current tooling supports" honesty line
+REL201/REL222/REL231/REL261/REL301/REL311 already establish.
+
+### Waiver channel
+
+REL390/REL391/REL392/REL393 do NOT join `_waive.py::
+MULTI_INSTANCE_WAIVER_FAMILIES`, same as REL260/REL261/REL310/REL311: a
+node carries at most one `kernel_interface`/`deployed_process` marker
+pairing and fires at most one finding per rule, so a bare-rule `waive`
+clause names exactly one thing:
+
+```
+node legacy_ioctl_shim : trusted {
+    kernel_interface;
+    waive "REL390" reason "legacy shim, classification tracked in T-9910-followup" ticket "T-9910";
+}
+```
+
+## REL39y: ABI-COMPAT-WINDOW + BOOT-ATTESTATION (T-0962)
+
+`_supply_chain_boot.py::check_supply_chain_boot_obligations` reads
+`KernelModel.nodes` (no new kernel field, charter law 1) to find every
+node marked `compiled_artifact` (this node is a compiled binary/library
+targeting a declared ABI/ISA) with an undischarged or unproven ABI/ISA
+compat-window obligation, AND every node marked `boot_chain_stage` (this
+node models a stage in a boot chain -- firmware, bootloader, kernel,
+initrd) with an undischarged or unproven boot-chain-attestation
+obligation. Filed while reconciling T-0958's `system-design.yaml`
+deferred rows (SDC-13-A-DECLARED-ABI-ISA-TARGET-IS-STABLE-ACROSS-A-
+COMPATIBILITY-WINDOW-A-COMPILED-ARTIFA,
+SDC-13-EVERY-BOOT-CHAIN-STAGE-IS-SIGNED-SECURE-BOOT-OR-MEASURED-INTO-AN-
+ATTESTABLE-LOG-MEA): two genuinely checkable, previously-unbuilt
+supply-chain/OS obligations, structurally identical in shape to the
+REL39x KERNEL-INTERFACE + PROCESS-BOUNDS family `_process_bounds.py`
+(T-0960) just established -- rule ids continue that same REL39x block
+(REL394-REL397) rather than opening a new REL4xx numbering.
+
+TWO independent obligation pairs, both NODE-scoped (a node has at most
+one marker attr per pair and fires at most one missing/unproven finding
+each -- single-instance-per-node, the same carve-out REL260/261,
+REL310/311, and REL390-REL393 establish, NEITHER pair registered in
+`_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES`):
+
+- **REL394 missing ABI/ISA compat-window declaration** -- a
+  `compiled_artifact` node with no `abi_compat_window` attr.
+  Deny-by-default: a compiled artifact with no declared compat window
+  has no tracked boundary for when a caller's assumption about its
+  ABI/ISA stops holding.
+- **REL395 unproven ABI/ISA compat-window** -- a node DOES declare
+  `abi_compat_window`, but the T-0331 PROVABILITY CONSTRAINT forbids
+  discharging it by bare declaration alone: the node must have at least
+  one file bound to it (`_code_binding.py::bind_code`) containing a real
+  compat-window-shaped token (a semver/version-range guard, a
+  symbol-versioning construct). A node with no bound code at all is
+  UNCHECKABLE, not unproven -- the same ceiling REL201/REL222/REL231/
+  REL261/REL301/REL311/REL391/REL393 draw.
+- **REL396 missing boot-chain attestation** -- a `boot_chain_stage` node
+  with no `boot_attested` attr. Deny-by-default: an unattested
+  boot-chain stage has no cryptographic or measured record that it ran
+  as expected, so a compromised stage inserted ahead of it is
+  undetectable by design.
+- **REL397 unproven boot-chain attestation** -- a node DOES declare
+  `boot_attested`, but the T-0331 PROVABILITY CONSTRAINT forbids
+  discharging it by bare declaration alone: the node must have at least
+  one file bound to it containing a real signing/measurement-shaped
+  token (a secure-boot/signature-verification construct, a measured-boot/
+  TPM/PCR construct). Same UNCHECKABLE-not-unproven ceiling as REL395.
+
+### Surface vocabulary
+
+```
+node auth_library : trusted {
+    compiled_artifact;    // a compiled binary/library targeting a
+                           // declared ABI/ISA
+    abi_compat_window;     // discharges REL394; REL395 then checks bound code
+}
+
+node bootloader_stage : trusted {
+    boot_chain_stage;      // this node is a boot-chain stage
+    boot_attested;          // discharges REL396; REL397 then checks bound code
+}
+```
+
+### GRAMMAR-DATA CEILING, HONESTLY
+
+`compiled_artifact`/`abi_compat_window`/`boot_chain_stage`/
+`boot_attested` are all presence-only bare Node attrs (no numeric
+magnitude -- the same digit-led-literal ceiling every other REL2xx/REL3xx
+marker in this family discloses), so REL394-REL397 prove PRESENCE of a
+declared obligation and its code-level evidence, not a specific ABI
+version string or a specific signature/measurement algorithm. This is a
+STATIC declaration-and-proof check over strata's own host/deploy
+vocabulary, not runtime kernel or firmware introspection -- it cannot
+observe an actual compiled artifact's actual ABI surface or an actual
+boot chain's actual measurement log, only whether the declaration and
+its bound-code evidence exist. REL395's and REL397's proof-against-code
+are syntactic token scans over the node's bound source, not a semantic
+call-argument binding -- the same "ship what current tooling supports"
+honesty line REL201/REL222/REL231/REL261/REL301/REL311/REL391/REL393
+already establish.
+
+### Waiver channel
+
+REL394/REL395/REL396/REL397 do NOT join `_waive.py::
+MULTI_INSTANCE_WAIVER_FAMILIES`, same as REL260/REL261/REL310/REL311/
+REL390-REL393: a node carries at most one `compiled_artifact`/
+`boot_chain_stage` marker pairing and fires at most one finding per
+rule, so a bare-rule `waive` clause names exactly one thing:
+
+```
+node legacy_bootloader_stage : trusted {
+    boot_chain_stage;
+    waive "REL396" reason "legacy stage, attestation tracked in T-9910-followup" ticket "T-9910";
+}
+```
+
 ## See also
 
 - `docs/strata/host.md#resource-contention-sys2xx-t-0699` -- the SYS2xx
@@ -1424,6 +1616,12 @@ node db : trusted {
   `SsotReport`, REL290/REL291.
 - `src/frob/strata/_txn.py` -- `check_txn_boundary_obligations`,
   `TxnBoundaryViolation`, `TxnBoundaryReport`, REL300/REL301.
+- `src/frob/strata/_process_bounds.py` -- `check_process_bounds_obligations`,
+  `ProcessBoundsViolation`, `ProcessBoundsReport`, REL390/REL391/REL392/
+  REL393.
+- `src/frob/strata/_supply_chain_boot.py` --
+  `check_supply_chain_boot_obligations`, `SupplyChainBootViolation`,
+  `SupplyChainBootReport`, REL394/REL395/REL396/REL397.
 - `src/frob/strata/_obligation_proof.py` -- the shared proof-against-code
   plumbing REL22x/REL23x/REL24x reuse (not used by REL25x, module
   docstring: no proof-against-code needed for a structural fact).
@@ -1441,3 +1639,7 @@ node db : trusted {
   firing/clean/waived/uncheckable unit coverage.
 - `tests/unit/strata/test_txn.py` -- the REL300/REL301
   firing/clean/waived/uncheckable unit coverage.
+- `tests/unit/strata/test_process_bounds.py` -- the REL390/REL391/
+  REL392/REL393 firing/clean/waived/uncheckable unit coverage.
+- `tests/unit/strata/test_supply_chain_boot.py` -- the REL394/REL395/
+  REL396/REL397 firing/clean/waived/uncheckable unit coverage.

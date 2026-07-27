@@ -1428,6 +1428,26 @@ _KNOWN_GATE_RULES = frozenset(
         "REL382",
         "REL383",
         "SYS204",
+        # frob:ticket T-0960
+        # T-0960: the REL39x KERNEL-INTERFACE-CLASSIFICATION +
+        # PROCESS-RESOURCE-BOUND obligation family (frob.strata.
+        # _process_bounds) -- registered at the point this ticket's own
+        # system-design.yaml re-disposition needs REG002 to resolve
+        # handled_by:REL39x references (T-0961 is concurrently
+        # registering the separate REL26x-38x backlog batch here; this
+        # adds only T-0960's own new ids).
+        "REL390",
+        "REL391",
+        "REL392",
+        "REL393",
+        # frob:ticket T-0962
+        # T-0962: the REL39y ABI-COMPAT-WINDOW + BOOT-ATTESTATION
+        # obligation family (frob.strata._supply_chain_boot), continuing
+        # T-0960's REL39x block rather than opening a new REL4xx range.
+        "REL394",
+        "REL395",
+        "REL396",
+        "REL397",
     }
 )
 
