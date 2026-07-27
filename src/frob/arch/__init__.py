@@ -31,6 +31,7 @@ from frob.arch import (
     _ocp,
     _patterns,
     _python,
+    _shared_state_race,
 )
 from frob.arch._models import (
     ArchCategory,
@@ -332,7 +333,13 @@ def _run_python_checks(
     concurrency-hazard umbrella, `frob.arch._lock_ordering`) skip test
     files for the same reason as the other concurrency-hazard families
     above -- a test fixture's own lock usage is not production deadlock
-    debt."""
+    debt.
+
+    T-0697: `unguarded-shared-write` (the shared-mutable-state race
+    approximation, child 4 of the T-0693 concurrency-hazard umbrella,
+    `frob.arch._shared_state_race`) skips test files for the same reason
+    as the other concurrency-hazard families above -- a test fixture's own
+    shared-state usage is not production race debt."""
     if not is_test:
         _python._check_long_functions(tree, rel, limits.max_function_lines, suggestions)
         _python._check_god_classes(tree, rel, limits.max_class_methods, suggestions)
@@ -355,6 +362,7 @@ def _run_python_checks(
         _concurrency._check_fork_pool_hazards(tree, rel, suggestions)
         _async_hazards._check_async_event_loop_hazards(tree, rel, suggestions)
         _lock_ordering._check_lock_ordering_hazards(tree, rel, suggestions)
+        _shared_state_race._check_shared_state_race_hazards(tree, rel, suggestions)
         _run_srp_checks_python(tree, rel, limits, suggestions)
     _python._check_high_coupling(path, rel, root, limits.max_local_imports, suggestions)
     if not is_test:

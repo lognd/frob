@@ -153,6 +153,16 @@ ArchCategory = Literal[
     # detection shape.
     "lock-order-cycle",
     "lock-identity-unresolved",
+    # T-0697: shared-mutable-state race approximation (interprocedural
+    # thread/task-dispatch reachability over statically-identifiable
+    # module/class-level mutable state -- not runtime tracing), child 4 of
+    # the T-0693 concurrency-hazard umbrella, `frob.arch._shared_state_
+    # race`. Same unwaivable advisory channel as every other category above
+    # (`frob.gates._unwaivable_channel_rules` picks up any new
+    # `ArchCategory` value automatically); see
+    # `frob.arch._shared_state_race`'s module docstring for the detection
+    # shape.
+    "unguarded-shared-write",
     # T-0688: errors-as-values advisory (child 3 of T-0685's exception
     # may-raise umbrella, wires into T-0623's fallibility family) --
     # `frob.arch._exceptions.check_errors_as_values`, over

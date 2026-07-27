@@ -6777,3 +6777,116 @@ class TestProtocolSummaryEngine:
         assert result.summaries["f.py::a"].acquired == expected
         assert result.summaries["f.py::b"].acquired == expected
         assert not result.summaries["f.py::a"].poisoned
+
+
+class TestSharedStateRaceHazards:
+    """`frob.arch._shared_state_race` -- unguarded-shared-write (T-0697,
+    child 4 of the T-0693 concurrency-hazard umbrella)."""
+
+    def test_unguarded_write_from_thread_submitted_function_fires(self, tmp_path):
+        """A module-level dict written from a thread-submitted function
+        with no enclosing lock fires `unguarded-shared-write`, naming the
+        write site and the writing function."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "race.py").write_text(
+            "from __future__ import annotations\n"
+            "from concurrent.futures import ThreadPoolExecutor\n\n"
+            "cache = {}\n\n\n"
+            "def worker():\n"
+            "    cache['x'] = 1\n\n\n"
+            "def dispatch():\n"
+            "    with ThreadPoolExecutor() as ex:\n"
+            "        ex.submit(worker)\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "unguarded-shared-write"]
+        assert len(hits) == 1
+        assert "cache" in hits[0].message
+        assert "race.py::worker" in hits[0].message
+        assert hits[0].severity == "warning"
+
+    def test_same_write_under_with_lock_does_not_fire(self, tmp_path):
+        """The same shape, but the write is enclosed by `with lock:` --
+        must stay silent."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "race_guarded.py").write_text(
+            "from __future__ import annotations\n"
+            "import threading\n"
+            "from concurrent.futures import ThreadPoolExecutor\n\n"
+            "cache = {}\n"
+            "lock = threading.Lock()\n\n\n"
+            "def worker():\n"
+            "    with lock:\n"
+            "        cache['x'] = 1\n\n\n"
+            "def dispatch():\n"
+            "    with ThreadPoolExecutor() as ex:\n"
+            "        ex.submit(worker)\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "unguarded-shared-write"]
+        assert hits == []
+
+    def test_write_reachable_via_callee_of_dispatched_function_fires(self, tmp_path):
+        """The dispatched function itself does nothing but call a helper
+        that performs the unguarded write -- still fires, since the write
+        is reachable from the dispatch point through the call graph."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "race_via_callee.py").write_text(
+            "from __future__ import annotations\n"
+            "from concurrent.futures import ThreadPoolExecutor\n\n"
+            "totals = []\n\n\n"
+            "def helper():\n"
+            "    totals.append(1)\n\n\n"
+            "def worker():\n"
+            "    helper()\n\n\n"
+            "def dispatch():\n"
+            "    with ThreadPoolExecutor() as ex:\n"
+            "        ex.submit(worker)\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "unguarded-shared-write"]
+        assert len(hits) == 1
+        assert "race_via_callee.py::helper" in hits[0].message
+        assert "totals" in hits[0].message
+
+    def test_write_not_reachable_from_any_dispatch_does_not_fire(self, tmp_path):
+        """A module-level list written by a function that is never
+        dispatched to a thread/task anywhere in the module -- must stay
+        silent (plain sequential code is not this check's target)."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "sequential.py").write_text(
+            "from __future__ import annotations\n\n"
+            "totals = []\n\n\n"
+            "def only_caller():\n"
+            "    totals.append(1)\n\n\n"
+            "def main():\n"
+            "    only_caller()\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "unguarded-shared-write"]
+        assert hits == []
+
+    def test_async_create_task_dispatch_fires_same_as_thread_submit(self, tmp_path):
+        """A coroutine dispatched via `asyncio.create_task` that writes an
+        unguarded module-level dict fires identically to the thread-submit
+        shape."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "race_async.py").write_text(
+            "from __future__ import annotations\n"
+            "import asyncio\n\n"
+            "state = {}\n\n\n"
+            "async def worker():\n"
+            "    state['x'] = 1\n\n\n"
+            "async def dispatch():\n"
+            "    asyncio.create_task(worker())\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "unguarded-shared-write"]
+        assert len(hits) == 1
+        assert "state" in hits[0].message
+        assert "race_async.py::worker" in hits[0].message
