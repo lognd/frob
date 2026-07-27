@@ -1995,7 +1995,7 @@ drop the guard the paired fix ticket adds.
 ```yaml
 id: T-0925
 title: 'docs: add lock-ordering hazards section to docs/modules/arch.md'
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-07-26'
@@ -2017,7 +2017,6 @@ existing "Fork/pool hazards" (T-0695) and "Async event-loop hazards"
 (src/frob/arch/**, tests/unit/test_arch.py) does not include docs/, so no
 frob:doc anchor was added on the check function in that ticket -- add the
 section and the frob:doc directive together here.
-
 <!-- ticket:T-0935 -->
 ```yaml
 id: T-0935
@@ -2483,3 +2482,187 @@ docs/modules/vet.md (16), docs/modules/gates.md (12), docs/modules/perf.md
 
 Scope: docs/**, src/frob/gates/_docptr.py, tests/test_docptr_gate.py.
 Origin: agent (T-1015 round-1 remainder).
+
+<!-- ticket:T-1018 -->
+```yaml
+id: T-1018
+title: 'PERF012 dup-spawn advisory calibration: 20 -> 1777 findings after T-0922 substrate
+  expansion'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: high
+parent: T-0204
+tier: ticket
+sprint: null
+scope:
+- src/frob/perf/_dup_spawn.py
+- src/frob/perf/_effect_summaries.py
+- src/frob/perf/_rules.py
+- tests/test_perf.py
+acceptance:
+- text: GIVEN a full frob check run WHEN PERF012 fires THEN every remaining finding
+    is a true independently-reachable duplicate spawn (spot-check 10) and the total
+    is accounted (fixed, waived-with-grounds, or ticketed)
+  evidence: []
+threat: null
+component: null
+```
+Full-run PERF012 count is 1777 warnings; at T-0919 land it reported 20 repo findings. The T-0922 EffectGraph substrate (explicit Unknown) most likely broadened reach into massive over-fire. Triage the findings into clusters, identify false-positive classes (e.g. Unknown-summary conflation, same-shape-but-different-target spawns), fix the detector for each FP class with before/after counts, then burn down or grounds-waive the honest remainder. Both-layers rule applies to any rule-shape change.
+
+<!-- ticket:T-1019 -->
+```yaml
+id: T-1019
+title: 'REG011 burn-down: 1157 out_of_scope disposition reasons fail the accountable-excuse
+  form (weaknesses 798, patterns 346)'
+state: queued
+kind: docs
+origin: human
+created: '2026-07-27'
+priority: high
+parent: T-0204
+tier: ticket
+sprint: null
+scope:
+- docs/design/registry/weaknesses.yaml
+- docs/design/registry/patterns.yaml
+- docs/design/registry/compliance.yaml
+- docs/design/registry/supply-chain.yaml
+- docs/design/registry/secrets.yaml
+- src/frob/gates/_registry_exhaustiveness.py
+- tests/test_registry_exhaustiveness.py
+acceptance:
+- text: GIVEN a full frob check run THEN REG011 warnings are zero and no disposition
+    was silently weakened (spot-check 10 rewrites read as substantive)
+  evidence: []
+threat: null
+component: null
+```
+REG011 demands each out_of_scope disposition name a catching control (rule-id/CWE token) or be a substantive 'none -- <explanation>' reasoned-none disclosure. 1157 entries fail. First make a design decision: entries whose own checkability tag is process/advisory are definitionally not statically checkable -- either the rule accepts that class with the tag as grounds, or every reason is rewritten to the compliant reasoned-none form. Prefer honest per-class rewrites over blanket rule loosening; if the rule changes, it must still reject genuinely unaccountable excuses (keep a before-fails test).
+
+<!-- ticket:T-1020 -->
+```yaml
+id: T-1020
+title: 'REG008 burn-down: 132 handled_by dispositions lack the frob:enforces edge
+  in code'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: T-0204
+tier: ticket
+sprint: null
+scope:
+- docs/design/registry/arch-checks.yaml
+- src/frob/arch/
+acceptance:
+- text: GIVEN a full frob check run THEN REG008 warnings are zero
+  evidence: []
+threat: null
+component: null
+```
+REG008: registry entries dispositioned handled_by:<RULE> need a matching frob:enforces <ENTRY-ID> directive on the enforcing rule implementation. Add the 132 missing edges at the real enforcing sites (no bulk misattribution: verify each rule actually covers the entry before adding the edge; downgrade the disposition honestly where it does not).
+
+<!-- ticket:T-1021 -->
+```yaml
+id: T-1021
+title: 'WAIVE004 stale-waiver sweep: remove ~655 waivers matching 0 findings (full-run
+  verified)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: T-0204
+tier: ticket
+sprint: null
+scope:
+- src/frob/
+- tests/
+acceptance:
+- text: GIVEN a full unscoped frob check THEN WAIVE004 warnings are zero and gate
+    errors remain zero
+  evidence: []
+threat: null
+component: null
+```
+WAIVE004 flags waivers that match 0 findings. Its own message warns the signal is only trustworthy from a FULL unscoped run -- verify against a full run, never --only. For each stale waiver: remove it, unless git history shows it guards a known-flaky/diff-scoped rule (leave those with a comment upgrading them to deliberate). Re-run full check after removal batches to confirm no gate flips to error (a waiver whose removal surfaces a live finding was NOT stale -- restore it and ticket the finding instead).
+
+<!-- ticket:T-1022 -->
+```yaml
+id: T-1022
+title: 'EXHAUST001/002 turn-on debt burn-down: 190 escape-hatch sites (135 unknown-escape,
+  55 named-escape)'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: T-0204
+tier: ticket
+sprint: null
+scope:
+- src/frob/
+- src/frob/gates/_exhaustive_handling.py
+acceptance:
+- text: GIVEN a full frob check THEN EXHAUST001+EXHAUST002 warnings are zero or reduced
+    to a ticketed, justified residue
+  evidence: []
+threat: null
+component: null
+```
+T-0688 landed EXHAUST001/002 at WARN posture. Burn down the 190 sites: EXHAUST001 (unresolvable call/raise escapes a partial handler -- add catch-all or narrow the Unknown via frob:callee-raises), EXHAUST002 (named exceptions escape uncaught/undeclared -- catch or declare frob:raises). Errors-as-values discipline: prefer typani Result returns at real fallible boundaries over blanket except Exception. If a systematic FP class emerges in the resolver, fix the resolver first and report before/after counts.
+
+<!-- ticket:T-1023 -->
+```yaml
+id: T-1023
+title: 'INV burn-down: 50 invariant-anchor gaps (INV006 24 code claims, INV005 17
+  unbound evidence, INV004/INV003 9 docs claims)'
+state: queued
+kind: invariant
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: T-0204
+tier: ticket
+sprint: null
+scope:
+- docs/modules/
+- invariants/
+- src/frob/
+acceptance:
+- text: GIVEN a full frob check THEN INV003-INV006 warnings are zero
+  evidence: []
+threat: null
+component: null
+```
+Bind every normative claim to a checked invariant: INV006 code files with exclusivity claims need frob:invariant anchors; INV005 evidence must gain frob:tests edges to its anchor (dotted Class.method form only); INV003/INV004 docs claims need invariant markers. Write real property tests where an anchor has no evidence; do not water down claims to dodge the detector.
+
+<!-- ticket:T-1024 -->
+```yaml
+id: T-1024
+title: 'REF/COV/DEAD/PLACE small-bucket sweep: REF001 36 orphan invariant docs, COV007
+  38 private-symbol doc anchors, DEAD001 13, REF002 6, COV006 3, PLACE001 2'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: T-0204
+tier: ticket
+sprint: null
+scope:
+- invariants/
+- docs/
+- src/frob/
+- tests/
+acceptance:
+- text: GIVEN a full frob check THEN REF001/REF002/COV006/COV007/DEAD001/PLACE001
+    warnings are zero
+  evidence: []
+threat: null
+component: null
+```
+Sweep the small warning buckets: REF001 orphan invariants/*.md need real inbound references (frob:used-by or doc links from the module docs that rely on them); REF002 single-anchor docs need a second consumer; COV007 move frob:doc anchors from private symbols to the public surface they document; COV006 fix the flagged frob:tests edges; DEAD001 delete or bind the 13 uncalled private test helpers; PLACE001 move the 2 misplaced directives onto their intended symbols.
