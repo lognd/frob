@@ -1,6 +1,13 @@
 # frob:used-by src/frob/gates/_registry_exhaustiveness.py
 # arch-checks.yaml -- code-structure/systems-design check catalog + adversarial-hardening rules
 # source docs: architecture-check-catalog.md, structural-linter-adversarial-hardening.md
+# T-0626: the disposition grammar (handled_by/out_of_scope/deferred/duplicate_of)
+# every entry below is written in is verified by registry_gate -- these are its
+# generic classification-path tests, not one test per entry (an entry's own
+# "truth" is checked live by frob check --only registry, not by a fixed test).
+# frob:tests tests/test_registry_exhaustiveness.py::TestDisposition.test_handled_by_real_rule_passes  # noqa: E501
+# frob:tests tests/test_registry_exhaustiveness.py::TestDisposition.test_dangling_handled_by_fails  # noqa: E501
+# frob:tests tests/test_registry_exhaustiveness.py::TestOutOfScopeCaughtBy.test_substantive_reasoned_none_is_silent  # noqa: E501
 schema_version: 1
 entries:
   - id: "ACC-1-1-1"
@@ -8,35 +15,35 @@ entries:
     source_doc: "docs/design/architecture-check-catalog.md"
     source_ref: "architecture-check-catalog-sec-1.1"
     checkability: "tier2-advisory"
-    disposition: deferred:T-0391
+    disposition: handled_by:ARCH101
     cross_refs: []
   - id: "ACC-1-1-2"
     name: "1 1 2"
     source_doc: "docs/design/architecture-check-catalog.md"
     source_ref: "architecture-check-catalog-sec-1.1"
     checkability: "tier2-advisory"
-    disposition: deferred:T-0391
+    disposition: out_of_scope:none -- OCP (type-dispatch-smell/non-exhaustive-enum-match) is built by T-0617 (src/frob/arch/_ocp.py) but dispatched only through frob.arch analyze_project's T-0101 unwaivable WARN-suggestion channel, not a waivable Violation with its own ARCH1xx gate id (see src/frob/gates/_arch.py module docstring); no gate/policy rule id exists to bind handled_by to
     cross_refs: []
   - id: "ACC-1-1-3"
     name: "1 1 3"
     source_doc: "docs/design/architecture-check-catalog.md"
     source_ref: "architecture-check-catalog-sec-1.1"
     checkability: "tier1-static"
-    disposition: deferred:T-0391
+    disposition: "out_of_scope:none -- LSP checks (lsp-not-implemented-override/lsp-signature-variance/lsp-strengthened-precondition/lsp-weakened-postcondition/lsp-noop-override) are built by T-0618 (src/frob/arch/_solid.py) but stay on the T-0101 unwaivable WARN-suggestion channel; the ARCH104-108 ids in that module's own comments are documentation-only, never wired into frob.gates._arch._ARCH_CATEGORY_TO_RULE nor _KNOWN_GATE_RULES, so no live rule id exists to bind handled_by to"
     cross_refs: []
   - id: "ACC-1-1-4"
     name: "1 1 4"
     source_doc: "docs/design/architecture-check-catalog.md"
     source_ref: "architecture-check-catalog-sec-1.1"
     checkability: "tier2-advisory"
-    disposition: deferred:T-0391
+    disposition: "out_of_scope:none -- ISP checks (fat-interface/narrow-client-usage) are built by T-0619 (src/frob/arch/_solid.py) but stay on the T-0101 unwaivable WARN-suggestion channel; the ARCH109-110 ids in that module's own comments are documentation-only, never wired into frob.gates._arch._ARCH_CATEGORY_TO_RULE nor _KNOWN_GATE_RULES, so no live rule id exists to bind handled_by to"
     cross_refs: []
   - id: "ACC-1-1-5"
     name: "1 1 5"
     source_doc: "docs/design/architecture-check-catalog.md"
     source_ref: "architecture-check-catalog-sec-1.1"
     checkability: "tier1-static"
-    disposition: deferred:T-0391
+    disposition: out_of_scope:none -- DIP (dip-layering-violation/no-di-construction) is built by T-0620 (src/frob/arch/_layering.py) but stays on the same T-0101 unwaivable WARN-suggestion channel as OCP above, not a gated ARCH1xx rule id
     cross_refs: []
   - id: "ACC-1-2-REP-REUSE-RELEASE-EQUIVALENCE"
     name: "1 2 Rep Reuse Release Equivalence"
@@ -64,7 +71,7 @@ entries:
     source_doc: "docs/design/architecture-check-catalog.md"
     source_ref: "architecture-check-catalog-sec-1.2"
     checkability: "tier1-static"
-    disposition: deferred:T-0391
+    disposition: out_of_scope:none -- module-dependency-cycle detection is built by T-0625 (src/frob/arch/_smells.py, reusing T-0620's graph builder) but stays on the T-0101 unwaivable WARN-suggestion channel, no gate/policy rule id assigned
     cross_refs: []
   - id: "ACC-1-2-SDP-STABLE-DEPENDENCIES"
     name: "1 2 Sdp Stable Dependencies"
@@ -445,28 +452,28 @@ entries:
     source_doc: "docs/design/architecture-check-catalog.md"
     source_ref: "architecture-check-catalog-sec-2.1"
     checkability: "tier2-advisory"
-    disposition: deferred:T-0391
+    disposition: out_of_scope:none -- built by T-0624 (src/frob/arch/_smells.py) on the T-0101 unwaivable WARN-suggestion channel, no ARCH1xx gate id assigned
     cross_refs: []
   - id: "ACC-2-1-DATA-CLUMPS"
     name: "2 1 Data Clumps"
     source_doc: "docs/design/architecture-check-catalog.md"
     source_ref: "architecture-check-catalog-sec-2.1"
     checkability: "tier1-static"
-    disposition: deferred:T-0391
+    disposition: out_of_scope:none -- built by T-0624 (src/frob/arch/_smells.py) on the T-0101 unwaivable WARN-suggestion channel, no ARCH1xx gate id assigned
     cross_refs: []
   - id: "ACC-2-1-PRIMITIVE-OBSESSION"
     name: "2 1 Primitive Obsession"
     source_doc: "docs/design/architecture-check-catalog.md"
     source_ref: "architecture-check-catalog-sec-2.1"
     checkability: "tier2-advisory"
-    disposition: deferred:T-0391
+    disposition: out_of_scope:none -- built by T-0621 (src/frob/arch/_typedesign.py) on the T-0101 unwaivable WARN-suggestion channel, no ARCH1xx gate id assigned
     cross_refs: []
   - id: "ACC-2-1-REPEATED-SWITCHES"
     name: "2 1 Repeated Switches"
     source_doc: "docs/design/architecture-check-catalog.md"
     source_ref: "architecture-check-catalog-sec-2.1"
     checkability: "tier1-static"
-    disposition: deferred:T-0391
+    disposition: out_of_scope:none -- type-dispatch-smell built by T-0617 (src/frob/arch/_ocp.py) on the T-0101 unwaivable WARN-suggestion channel, no ARCH1xx gate id assigned
     cross_refs: []
   - id: "ACC-2-1-LOOPS-IMPERATIVE-LOOP-WHERE-A-PIPELINE-COLLECTION-OP-READS-BETTER"
     name: "2 1 Loops Imperative Loop Where A Pipeline Collection Op Reads Better"
@@ -523,7 +530,7 @@ entries:
     source_doc: "docs/design/architecture-check-catalog.md"
     source_ref: "architecture-check-catalog-sec-2.1"
     checkability: "tier1-static"
-    disposition: deferred:T-0391
+    disposition: handled_by:ARCH101
     cross_refs: []
   - id: "ACC-2-1-ALTERNATIVE-CLASSES-WITH-DIFFERENT-INTERFACES"
     name: "2 1 Alternative Classes With Different Interfaces"
@@ -629,14 +636,14 @@ entries:
     source_doc: "docs/design/architecture-check-catalog.md"
     source_ref: "architecture-check-catalog-sec-2.2"
     checkability: "tier1-static"
-    disposition: deferred:T-0391
+    disposition: out_of_scope:none -- boolean-flag-param built by T-0621 (src/frob/arch/_typedesign.py) on the T-0101 unwaivable WARN-suggestion channel, no ARCH1xx gate id assigned
     cross_refs: []
   - id: "ACC-2-2-F4-DEAD-FUNCTION"
     name: "2 2 F4 Dead Function"
     source_doc: "docs/design/architecture-check-catalog.md"
     source_ref: "architecture-check-catalog-sec-2.2"
     checkability: "tier1-static"
-    disposition: deferred:T-0391
+    disposition: out_of_scope:none -- dead-private-code built by T-0624 (src/frob/arch/_smells.py) on the T-0101 unwaivable WARN-suggestion channel, no ARCH1xx gate id assigned
     cross_refs: []
   - id: "ACC-2-2-"
     name: "2 2 "
