@@ -175,7 +175,18 @@ def _canonical_lines(text: str, *, marker: str, indent: str, limit: int) -> list
             # under `limit` in this unwrappable corner case.
             lines.append(f"{prefix}{remaining}\\")
             return lines
-        cut = remaining.rfind(" ", 0, budget + 1)
+        # frob:ticket T-0984
+        # Off-by-one (T-0972 incident): searching for a space up to and
+        # INCLUDING index `budget` (`rfind`'s end bound is exclusive, so
+        # `budget + 1` lets index `budget` itself match), then keeping that
+        # space attached to `head` (`remaining[: cut + 1]` below), yields a
+        # `head` of length `budget + 1` -- one column over `budget`, which
+        # becomes one column over `limit` once `prefix` and the trailing
+        # "\" continuation marker are added. The search span must exclude
+        # index `budget` itself (`[0, budget)`, not `[0, budget]`) so the
+        # latest possible cut still leaves `head` at length `budget`, never
+        # `budget + 1`.
+        cut = remaining.rfind(" ", 0, budget)
         if cut <= 0:
             # No breakable space within budget -- break at the budget
             # boundary verbatim (still round-trips, just not word-aligned).
@@ -250,7 +261,8 @@ def canonicalize_text(text: str, *, path: str, limit: int) -> str:
     run_idx = 0
     i = 0
     n = len(lines)
-    # frob:waive PERF003 reason="two-pointer merge scan over lines/runs advancing together, O(n) total, not a cross join"  # noqa: E501
+    # frob:waive PERF003 reason="two-pointer merge scan over lines/runs advancing \
+    # together, O(n) total, not a cross join"  # noqa: E501
     while i < n:
         if run_idx < len(runs) and runs[run_idx][1] == i:
             logical_text, _lineno, _src, count = runs[run_idx]

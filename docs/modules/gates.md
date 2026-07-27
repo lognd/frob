@@ -2423,6 +2423,17 @@ false-positive: it is one O(n) pass, not a cross join) -- no behavior
 change.
 - `fmt(already-canonical)` -> no-op.
 
+T-0984: fixed an off-by-one in `_canonical_lines`' word-boundary cut
+search (`rfind(" ", 0, budget + 1)` let a space AT index `budget` itself
+match, and keeping that space on the earlier line produced a physical
+line one column over `limit`) -- this is the bug T-0972 found wrapping to
+89 columns against an 88-char limit and touching ~180 out-of-scope files
+on a repo-wide run. Fixed by excluding index `budget` from the search span
+(`rfind(" ", 0, budget)`); regression coverage in
+`tests/test_gates_fmt_directives.py::TestBoundaryOffByOneT0984` pins the
+at-limit/one-under/one-over boundary plus the specific space-at-budget
+shape that triggered the overflow.
+
 Public API (`src/frob/gates/_fmt_directives.py`):
 
 - `marker_for(path) -> str | None` -- the line-comment marker (`#`, `//`)

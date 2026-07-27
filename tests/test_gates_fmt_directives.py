@@ -414,3 +414,70 @@ class TestCanonicalLinesMutantKiller:
         for line in lines:
             assert len(line) <= limit, f"{line!r} exceeds limit={limit}"
         assert _fold_lines(lines, "#") == text
+
+
+# frob:ticket T-0984
+class TestBoundaryOffByOneT0984:
+    """T-0984 regression: T-0972 found `_canonical_lines` wrapping to 89
+    columns (one over an 88-char limit) when a repo-wide `frob fmt` run
+    touched ~180 out-of-scope files. Root cause: `rfind(" ", 0, budget +
+    1)` let a space AT index `budget` itself match, and keeping that space
+    on the earlier line (`remaining[: cut + 1]`) produced a `head` of
+    length `budget + 1` -- one column over budget, hence one over `limit`.
+    These fixtures pin the exact at-limit / one-under / one-over boundary
+    the incident was found at, plus the specific space-at-budget-boundary
+    shape that triggered the overflow."""
+
+    def test_space_exactly_at_budget_boundary_does_not_overflow(self) -> None:
+        # frob:tests tests/test_gates_fmt_directives.py::TestBoundaryOffByOneT0984.test_space_exactly_at_budget_boundary_does_not_overflow
+        # prefix = "# " (len 2), limit=88 -> room=86, budget=85. A space at
+        # index 85 (0-indexed) of `remaining` is the exact boundary the
+        # buggy `rfind(" ", 0, budget + 1)` would match and misplace.
+        text = ("x" * 85) + " " + ("y" * 50)
+        lines = _canonical_lines(text, marker="#", indent="", limit=88)
+        assert len(lines) > 1
+        for line in lines:
+            assert len(line) <= 88, f"{line!r} exceeds limit=88"
+        assert _fold_lines(lines, "#") == text
+
+    def test_directive_line_at_exact_limit_is_byte_identical(self) -> None:
+        # frob:tests tests/test_gates_fmt_directives.py::TestBoundaryOffByOneT0984.test_directive_line_at_exact_limit_is_byte_identical
+        # A single-line directive whose total physical width is EXACTLY the
+        # configured limit must round-trip through `canonicalize_text`
+        # completely untouched -- this is the "at-limit" fixture in the
+        # ticket's at-limit/one-under/one-over trio.
+        limit = 88
+        prefix_len = len("# ")
+        text = "frob:ticket " + ("x" * (limit - prefix_len - len("frob:ticket ")))
+        src = f"# {text}\n"
+        assert len(src.splitlines()[0]) == limit
+        out = canonicalize_text(src, path="a.py", limit=limit)
+        assert out == src
+
+    def test_directive_line_one_under_limit_is_byte_identical(self) -> None:
+        # frob:tests tests/test_gates_fmt_directives.py::TestBoundaryOffByOneT0984.test_directive_line_one_under_limit_is_byte_identical
+        limit = 88
+        prefix_len = len("# ")
+        text = "frob:ticket " + ("x" * (limit - prefix_len - len("frob:ticket ") - 1))
+        src = f"# {text}\n"
+        assert len(src.splitlines()[0]) == limit - 1
+        out = canonicalize_text(src, path="a.py", limit=limit)
+        assert out == src
+
+    def test_directive_line_one_over_limit_wraps_and_stays_in_bounds(self) -> None:
+        # frob:tests tests/test_gates_fmt_directives.py::TestBoundaryOffByOneT0984.test_directive_line_one_over_limit_wraps_and_stays_in_bounds
+        limit = 88
+        prefix_len = len("# ")
+        text = "frob:ticket " + ("x" * (limit - prefix_len - len("frob:ticket ") + 1))
+        src = f"# {text}\n"
+        assert len(src.splitlines()[0]) == limit + 1
+        out = canonicalize_text(src, path="a.py", limit=limit)
+        assert out != src
+        for line in out.splitlines():
+            assert len(line) <= limit, f"{line!r} exceeds limit={limit}"
+        comment_lines = [
+            line[1:].lstrip(" ") for line in out.splitlines() if line.startswith("#")
+        ]
+        entries = [(i, line, "", 0) for i, line in enumerate(comment_lines)]
+        folded = fold_comment_runs(entries)
+        assert folded[0][0] == text
