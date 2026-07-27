@@ -163,6 +163,10 @@
     "src/frob/arch/_logging_checks.py::check_unlogged_boundary": "c55d00fe2c494cf838d4ce69ed49052ae4a1ee78c025803bf93a414f8c446415",
     "src/frob/arch/_logging_checks.py::check_unlogged_error_path": "1e4b2e710917eddc1d4b87378c01d9250a975d679165e4a931d31bcd80905a57",
     "src/frob/arch/_logging_checks.py::run_logging_checks": "c53fff156e20f405c48333184a70074a62fdee3a1d39477b5ece96a4af18f302",
+    "src/frob/arch/_mayraise.py::FunctionMayRaise": "83cba61b5a987baec9281637bde91ee9ee8aaaad7b2bda4816b7804beba418ba",
+    "src/frob/arch/_mayraise.py::UBIQUITOUS_TIER": "c4514f553a7a56aca97ffbf2b10356bb400cd2214e27d6bffcbd3539189f4bd7",
+    "src/frob/arch/_mayraise.py::UNKNOWN": "5e1419b54787c00464c3c5dd248237e15b650db564f916179f49efa9aa02d78a",
+    "src/frob/arch/_mayraise.py::compute_may_raise": "1f278e21843f62455f569b82cbe764acf79b53bc2d70d199b6664a4b65f8cf50",
     "src/frob/arch/_models.py::ArchResult": "bb142d78c52b04dc8ce918d87d3be9ff04153b944668c3836d9f0c241930a74d",
     "src/frob/arch/_models.py::ArchResult.as_json": "48b9248523b087dc9e7b32cb2edf9190690bf1624ca640ac8c00b6a7182c4266",
     "src/frob/arch/_models.py::ArchResult.as_text": "172dd4d365ee80aaeb22db8a426cfe5fe2ad5b39de7e8b75834a087a19975f51",
@@ -183,6 +187,7 @@
     "src/frob/arch/_normalized.py::NormalizedParam": "c08f1ba0928c24ee67d5afe49e66b67c98b966f4783f8a095c2459b8aa633160",
     "src/frob/arch/_normalized.py::NormalizedRaise": "15237e2a55a5689a520f3debf29a38dd873eab2ecda48fcff2256a9ad7c3cc1c",
     "src/frob/arch/_normalized.py::NormalizedReturn": "33f1d3860bbf60ff992304d4b6b44d86a896f661ce56f0e74032f54251c6ccca",
+    "src/frob/arch/_normalized.py::NormalizedSubscript": "16bda992ddfda4ea275726dfce63cbcc1ebdbe3ba82d6aad6c7b1a1d6317420e",
     "src/frob/arch/_normalized.py::NormalizedTypeAlias": "cefb8570e7247f490b0461c1b016466bf1f7998bc7890812df4c12c37c41cb8c",
     "src/frob/arch/_normalized.py::NormalizedVariant": "681b02b4c4514206be00bfc787b16b38a44a59c905ecf7108a531ae7223a9a4a",
     "src/frob/arch/_normalized.py::NormalizedVariantPayload": "7edd34cd131a28d19feb34353e4de5f5dee1c733040077b1d3bdae1fc556697f",
@@ -1574,5 +1579,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.158.0"
+  "version": "0.159.0"
 }

@@ -5535,6 +5535,215 @@ class TestRunFallibilityChecks:
         assert "over-broad-except" in categories
 
 
+# frob:ticket T-0686
+class TestMayRaiseResolver:
+    """`frob.arch._mayraise.compute_may_raise` (T-0686, child 1 of T-0685):
+    per-function may-raise sets over `NormalizedModule` -- own raise sites
+    + builtin-raiser table + same-module callee-graph fixpoint, except
+    clauses subtracting what they discharge, unresolved callees/raises
+    fail-closed to `UNKNOWN`."""
+
+    # frob:ticket T-0686
+    def test_fixture_chain_own_raise_and_builtin_raiser_and_catch_subtraction(
+        self,
+    ) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        # Ticket acceptance fixture: f -> g -> h where h raises ValueError,
+        # g catches it (so g's own visible raises is empty), and f itself
+        # subscripts a dict (KeyError, the curated builtin-raiser default)
+        # and separately calls g (whose raise is fully discharged) -- f's
+        # own may-raise set must be exactly {KeyError}.
+        from frob.arch._mayraise import compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedCatch,
+            NormalizedFunction,
+            NormalizedModule,
+            NormalizedRaise,
+            NormalizedSubscript,
+        )
+
+        h = NormalizedFunction(
+            name="h",
+            line=1,
+            body_line_count=2,
+            raises=[NormalizedRaise(line=2, exception_type="ValueError")],
+        )
+        g = NormalizedFunction(
+            name="g",
+            line=5,
+            body_line_count=4,
+            calls=[NormalizedCall(callee="h", line=7)],
+            catches=[NormalizedCatch(line=8, exception_type="ValueError")],
+        )
+        f = NormalizedFunction(
+            name="f",
+            line=12,
+            body_line_count=3,
+            calls=[NormalizedCall(callee="g", line=13)],
+            subscripts=[NormalizedSubscript(line=14)],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[h, g, f]
+        )
+
+        result = compute_may_raise(module)
+
+        assert result["pkg/mod.py::h"].raises == frozenset({"ValueError"})
+        assert result["pkg/mod.py::g"].raises == frozenset()
+        assert result["pkg/mod.py::f"].raises == frozenset({"KeyError"})
+
+    # frob:ticket T-0686
+    def test_unresolvable_call_yields_unknown(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        from frob.arch._mayraise import UNKNOWN, compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        caller = NormalizedFunction(
+            name="dispatch",
+            line=1,
+            body_line_count=2,
+            calls=[NormalizedCall(callee="plugin_hook", line=2)],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[caller]
+        )
+
+        result = compute_may_raise(module)
+
+        assert result["pkg/mod.py::dispatch"].raises == frozenset({UNKNOWN})
+
+    # frob:ticket T-0686
+    def test_bare_reraise_resolves_to_caught_type(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        from frob.arch._mayraise import compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedCatch,
+            NormalizedFunction,
+            NormalizedModule,
+            NormalizedRaise,
+        )
+
+        func = NormalizedFunction(
+            name="reraiser",
+            line=1,
+            body_line_count=5,
+            catches=[NormalizedCatch(line=2, exception_type="KeyError")],
+            raises=[NormalizedRaise(line=3, exception_type=None)],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[func]
+        )
+
+        result = compute_may_raise(module)
+
+        assert result["pkg/mod.py::reraiser"].raises == frozenset({"KeyError"})
+
+    # frob:ticket T-0686
+    def test_bare_except_reraise_is_unknown(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        from frob.arch._mayraise import UNKNOWN, compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedCatch,
+            NormalizedFunction,
+            NormalizedModule,
+            NormalizedRaise,
+        )
+
+        func = NormalizedFunction(
+            name="reraiser",
+            line=1,
+            body_line_count=5,
+            catches=[NormalizedCatch(line=2, exception_type=None)],
+            raises=[NormalizedRaise(line=3, exception_type=None)],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[func]
+        )
+
+        result = compute_may_raise(module)
+
+        assert result["pkg/mod.py::reraiser"].raises == frozenset({UNKNOWN})
+
+    # frob:ticket T-0686
+    def test_recursive_cycle_converges(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        # a <-> b mutual recursion: a raises ValueError, b calls a and a
+        # calls b -- the fixpoint must terminate and both must see
+        # ValueError in their visible set (no catch discharges it).
+        from frob.arch._mayraise import compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedFunction,
+            NormalizedModule,
+            NormalizedRaise,
+        )
+
+        a = NormalizedFunction(
+            name="a",
+            line=1,
+            body_line_count=3,
+            raises=[NormalizedRaise(line=2, exception_type="ValueError")],
+            calls=[NormalizedCall(callee="b", line=3)],
+        )
+        b = NormalizedFunction(
+            name="b",
+            line=6,
+            body_line_count=2,
+            calls=[NormalizedCall(callee="a", line=7)],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[a, b]
+        )
+
+        result = compute_may_raise(module)
+
+        assert "ValueError" in result["pkg/mod.py::a"].raises
+        assert "ValueError" in result["pkg/mod.py::b"].raises
+
+    # frob:ticket T-0686
+    def test_ambiguous_method_name_across_classes_is_unresolved(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        from frob.arch._mayraise import UNKNOWN, compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedClass,
+            NormalizedFunction,
+            NormalizedModule,
+            NormalizedRaise,
+        )
+
+        run_a = NormalizedFunction(name="run", line=2, body_line_count=1, raises=[])
+        run_b = NormalizedFunction(
+            name="run",
+            line=12,
+            body_line_count=1,
+            raises=[NormalizedRaise(line=13, exception_type="ValueError")],
+        )
+        caller = NormalizedFunction(
+            name="dispatch",
+            line=20,
+            body_line_count=2,
+            calls=[NormalizedCall(callee="run", line=21)],
+        )
+        cls_a = NormalizedClass(name="A", line=1, methods=[run_a])
+        cls_b = NormalizedClass(name="B", line=11, methods=[run_b])
+        module = NormalizedModule(
+            path="pkg/mod.py",
+            language="python",
+            classes=[cls_a, cls_b],
+            functions=[caller],
+        )
+
+        result = compute_may_raise(module)
+
+        assert result["pkg/mod.py::dispatch"].raises == frozenset({UNKNOWN})
+
+
 # ---------------------------------------------------------------------------
 # T-0624: misc design smells -- mutable default arg, feature envy, data
 # clumps, magic literals, dead private code, deep inheritance, temporal

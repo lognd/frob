@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.159.0] - unreleased
+
+- T-0686: python may-raise resolver: raise sites + callee propagation + builtin-raiser table, Unknown fail-closed
+
 ## [0.158.0] - unreleased
 
 - T-0628: frob graph affects CLI subcommand + digest-drift gate (T-0325 follow-on)

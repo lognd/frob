@@ -174,6 +174,22 @@ class NormalizedCatch(BaseModel):
 
 
 # frob:doc docs/modules/arch.md#normalized-code-model
+# frob:ticket T-0686
+class NormalizedSubscript(BaseModel):
+    """A subscript expression (`d[k]`, `xs[i]`) inside a function/method
+    body, at the source line it occurs (T-0686) -- the shared unit the
+    may-raise resolver's builtin-raiser table keys off (a subscript is a
+    curated builtin-raiser: it may raise `KeyError`/`IndexError` depending
+    on the subscripted value's runtime type, which this model cannot
+    resolve; see `frob.arch._mayraise`'s own docstring for the disclosed
+    dict-shaped default this ambiguity resolves to)."""
+
+    model_config = {}
+
+    line: int
+
+
+# frob:doc docs/modules/arch.md#normalized-code-model
 class NormalizedFunction(BaseModel):
     """One function or method: its name, parameters, return-type text,
     starting line, body length in lines, and the flattened structural
@@ -215,6 +231,7 @@ class NormalizedFunction(BaseModel):
     returns: list[NormalizedReturn] = []
     raises: list[NormalizedRaise] = []
     catches: list[NormalizedCatch] = []
+    subscripts: list[NormalizedSubscript] = []
     nested_functions: list["NormalizedFunction"] = []
 
 

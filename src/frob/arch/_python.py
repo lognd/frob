@@ -34,6 +34,7 @@ from frob.arch._normalized import (
     NormalizedParam,
     NormalizedRaise,
     NormalizedReturn,
+    NormalizedSubscript,
 )
 from frob.dup._legacy_py import _collect_locals_py, _serialize_py_body
 from frob.lang import child_by_field as _child
@@ -381,6 +382,7 @@ def _py_except_exception_type(node: Node) -> str | None:
 
 
 # frob:ticket T-0632
+# frob:ticket T-0686
 def _py_collect_body_events(
     node: Node,
     branches: list[NormalizedBranch],
@@ -390,12 +392,14 @@ def _py_collect_body_events(
     returns: list[NormalizedReturn],
     raises: list[NormalizedRaise],
     catches: list[NormalizedCatch],
+    subscripts: list[NormalizedSubscript],
 ) -> None:
     """Flatten every structural event (T-0609 shape) inside `node`'s
     subtree, stopping at a nested `function_definition`/`class_definition`
     boundary -- those become their own `NormalizedFunction`/`NormalizedClass`
     (`_py_build_function`/`_py_build_class`), not events folded into the
-    parent."""
+    parent. `subscripts` (T-0686) collects `d[k]`-shaped expressions the
+    may-raise resolver's builtin-raiser table keys off."""
     for c in node.children:
         if c.type in ("function_definition", "class_definition"):
             continue
@@ -450,8 +454,18 @@ def _py_collect_body_events(
                     exception_type=_py_except_exception_type(c),
                 )
             )
+        if c.type == "subscript":
+            subscripts.append(NormalizedSubscript(line=c.start_point[0] + 1))
         _py_collect_body_events(
-            c, branches, loops, calls, field_accesses, returns, raises, catches
+            c,
+            branches,
+            loops,
+            calls,
+            field_accesses,
+            returns,
+            raises,
+            catches,
+            subscripts,
         )
 
 
@@ -507,10 +521,19 @@ def _py_build_function(func_node: Node, is_method: bool) -> NormalizedFunction:
     returns: list[NormalizedReturn] = []
     raises: list[NormalizedRaise] = []
     catches: list[NormalizedCatch] = []
+    subscripts: list[NormalizedSubscript] = []
     nested: list[NormalizedFunction] = []
     if body is not None:
         _py_collect_body_events(
-            body, branches, loops, calls, field_accesses, returns, raises, catches
+            body,
+            branches,
+            loops,
+            calls,
+            field_accesses,
+            returns,
+            raises,
+            catches,
+            subscripts,
         )
         for c in body.named_children:
             if c.type == "function_definition":
@@ -531,6 +554,7 @@ def _py_build_function(func_node: Node, is_method: bool) -> NormalizedFunction:
         returns=returns,
         raises=raises,
         catches=catches,
+        subscripts=subscripts,
         nested_functions=nested,
     )
 

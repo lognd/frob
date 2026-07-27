@@ -3305,7 +3305,7 @@ User mandate 2026-07-22: complement the errors-as-values preference with an EXHA
 id: T-0686
 title: 'python may-raise resolver: raise sites + callee propagation + builtin-raiser
   table, Unknown fail-closed'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-22'
@@ -3316,15 +3316,33 @@ parent: T-0685
 scope:
 - src/frob/arch/**
 - tests/unit/test_arch.py
+evidence:
+- tests/unit/test_arch.py::TestMayRaiseResolver::test_fixture_chain_own_raise_and_builtin_raiser_and_catch_subtraction
+- tests/unit/test_arch.py::TestMayRaiseResolver::test_unresolvable_call_yields_unknown
+- tests/unit/test_arch.py::TestMayRaiseResolver::test_bare_reraise_resolves_to_caught_type
+- tests/unit/test_arch.py::TestMayRaiseResolver::test_bare_except_reraise_is_unknown
+- tests/unit/test_arch.py::TestMayRaiseResolver::test_recursive_cycle_converges
+- tests/unit/test_arch.py::TestMayRaiseResolver::test_ambiguous_method_name_across_classes_is_unresolved
 acceptance:
 - text: GIVEN a fixture chain f->g->h where h raises ValueError and g catches it and
     f calls dict subscript WHEN the resolver runs THEN f's may-raise is exactly {KeyError}
     plus the ubiquitous tier and a fixture with an unresolvable call yields Unknown
-  evidence: []
+  evidence:
+  - tests/unit/test_arch.py::TestMayRaiseResolver::test_fixture_chain_own_raise_and_builtin_raiser_and_catch_subtraction
 threat: null
 component: null
 ```
 Child 1 of T-0685. Over the normalized model (NormalizedRaise/NormalizedCall) plus T-0659's sound Python name-binding: per-function may-raise = own raises (resolve the raised type where statically evident; bare raise re-raises the active set) + union of resolved callees' sets (fixpoint over the call graph, cycles converge) + builtin-raiser table for subscript/attribute/arithmetic/casts/io. Unresolved callee -> Unknown, fail-closed. except clauses SUBTRACT what they catch (mind exception hierarchies: except Exception catches ValueError). Async-ubiquitous tier (MemoryError/KeyboardInterrupt/SystemExit) tracked separately. Deliverable is the queryable analysis + tests on hand-built fixtures with known surfaces; gates/advisories are T-0688's job.
+
+## Done report
+
+Changed: src/frob/arch/_mayraise.py (new: compute_may_raise/FunctionMayRaise/UNKNOWN/UBIQUITOUS_TIER), src/frob/arch/_normalized.py (NormalizedSubscript + NormalizedFunction.subscripts), src/frob/arch/_python.py (PythonAdapter subscript-node collection), tests/unit/test_arch.py (TestMayRaiseResolver, 6 tests)
+
+Evidence: tests/unit/test_arch.py::TestMayRaiseResolver::test_fixture_chain_own_raise_and_builtin_raiser_and_catch_subtraction, tests/unit/test_arch.py::TestMayRaiseResolver::test_unresolvable_call_yields_unknown, tests/unit/test_arch.py::TestMayRaiseResolver::test_bare_reraise_resolves_to_caught_type, tests/unit/test_arch.py::TestMayRaiseResolver::test_bare_except_reraise_is_unknown, tests/unit/test_arch.py::TestMayRaiseResolver::test_recursive_cycle_converges, tests/unit/test_arch.py::TestMayRaiseResolver::test_ambiguous_method_name_across_classes_is_unresolved -- all verified passing (`uv run pytest -q tests/unit/test_arch.py::TestMayRaiseResolver`: 6 passed; full `tests/unit/test_arch.py` suite passing; `uv run frob test --base main`: PASS exit=0)
+
+Filed: T-0916 (docs: document the may-raise resolver in docs/modules/arch.md -- out of T-0686's declared scope; _mayraise.py's frob:doc directives point at the existing #fallibility-checks anchor in the meantime)
+
+Gates: `uv run frob check --ticket T-0686 --only gates-fast` clean (0 errors), `--only gates-native` clean, `--only gates-security` clean, `--only lint` clean, `--only static` clean; `uv run ty check` and `uv run ruff check`/`ruff format` clean on all touched files
 
 <!-- ticket:T-0687 -->
 ```yaml
@@ -8306,3 +8324,30 @@ Third recurrence of the SYS100 needle-literal self-match class (T-0729 _srp.py, 
 - tests: 2 passed (from 2 evidence id(s))
 - gates: 1 error(s), 2656 warning(s), 351 waived
 - error-findings: PRE001@tickets/T-0915
+
+<!-- ticket:T-0916 -->
+```yaml
+id: T-0916
+title: 'docs: document the Python may-raise resolver in docs/modules/arch.md'
+state: queued
+kind: docs
+origin: human
+created: '2026-07-26'
+priority: medium
+parent: null
+scope:
+- docs/modules/arch.md
+threat: null
+component: null
+```
+T-0686 added `src/frob/arch/_mayraise.py` (the Python may-raise resolver:
+compute_may_raise, FunctionMayRaise, UNKNOWN, UBIQUITOUS_TIER) plus
+NormalizedSubscript on the shared T-0609 model, both within
+src/frob/arch/**'s own scope. docs/modules/arch.md is out of T-0686's
+declared scope (scope=['src/frob/arch/**', 'tests/unit/test_arch.py']),
+so no doc section/anchor was added for these new public symbols; DOC002/
+COV001 gate findings on src/frob/arch/_mayraise.py are waived pending
+this ticket. Add a "may-raise resolver" section documenting
+compute_may_raise/FunctionMayRaise/UNKNOWN/UBIQUITOUS_TIER's contract and
+its relationship to the T-0623 fallibility-checks family, then update the
+frob:doc anchors on _mayraise.py to point at it and drop the waivers.
