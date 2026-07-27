@@ -277,6 +277,7 @@ Epic close: the arch SOLID + senior-designer static-proxy surface is complete. L
 - tests: 0 passed (from 0 evidence id(s))
 - gates: 0 error(s), 5354 warning(s), 352 waived
 - error-findings: none (measured, zero errors)
+
 <!-- ticket:T-0339 -->
 ```yaml
 id: T-0339
@@ -2916,7 +2917,7 @@ Filed while reconciling T-0958's system-design.yaml deferred rows. SDC-13-EVERY-
 id: T-0961
 title: gates/__init__.py _KNOWN_GATE_RULES missing the bulk of the REL26x-REL38x +
   SYS204 obligation-family rule ids
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-27'
@@ -2926,10 +2927,47 @@ tier: ticket
 sprint: null
 scope:
 - src/frob/gates/__init__.py
+evidence:
+- tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+- tests/test_gates.py::TestKnownGateRuleIds::test_returns_known_rule_id
+acceptance:
+- text: 'FAIL before this ticket''s fix: tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
+    would newly flag REL201/REL210/REL211/REL222/REL230/REL231/REL240/REL241/REL250/REL261/REL271/REL281/REL290/REL291/REL300/REL301/REL310/REL311/REL321/REL331/REL340/REL351/REL360/REL371/REL372/REL380/REL381/REL382/REL383/SYS204
+    as unknown the moment any one of them were exercised through a `rule="..."` literal
+    (they were reachable only via named `REL_*`/`SYS_*` constants, so the drift-lock
+    could not see them at all -- itself the bug), and separately `known_gate_rule_ids()`
+    (the production surface `frob check`/`frob sys audit` actually consult to accept
+    or reject a rule id) did not contain them. PASS after this ticket''s fix: all
+    30 ids are members of `known_gate_rule_ids()` (frob.gates._KNOWN_GATE_RULES),
+    and the same drift-lock test (tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known)
+    passes with `_KNOWN_ISSUE_ALLOWLIST` empty, proving the fix through the production
+    `known_gate_rule_ids()` invocation the real gate pipeline uses, not a bare unit
+    test of the frozenset literal alone.'
+  evidence:
+  - tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known
 threat: null
 component: null
 ```
 Filed while working T-0958 (system-design.yaml reconciliation). T-0958 added exactly the 11 REL2xx/REL3xx rule ids it needed for its own handled_by dispositions (REL200/220/221/260/270/272/280/320/330/350/370) to gates/__init__.py's _KNOWN_GATE_RULES frozenset, but the REL26x-REL38x epic (T-0331's landed obligation families) shipped roughly two dozen more rule ids that were never added there either -- the same listing-omission class T-0903/T-0923/T-0924 already fixed for other batches. Known gap at filing time (non-exhaustive): REL201, REL210, REL211, REL222, REL230, REL231, REL261, REL271, REL281, REL290, REL291, REL300, REL301, REL310, REL311, REL321, REL331, REL340, REL351, REL360, REL371, REL372, REL380, REL381, REL382, REL383, and SYS204. Fix: audit every REL_MISSING_*/REL_UNPROVEN_*-shaped constant across src/frob/strata/*.py plus SYS204 (frob.strata._contention) against _KNOWN_GATE_RULES and add every one actually missing, mirroring T-0903/T-0923/T-0924's own precedent comments.
+
+## Done report
+
+The REL2xx-REL38x and SYS204 obligation families emitted rule ids built from module-level constants, which T-0901's regex drift-lock never saw (it scans inline rule= string literals only) -- so 30 real, firing rule ids were absent from _KNOWN_GATE_RULES. All 30 registered with citing comments mapping each to its source module; the drift-lock's constant-blindness is a separate follow-up. Verified by direct enumeration of REL_*/SYS_* module constants cross-checked against the registry.
+
+### Changed
+```
+ src/frob/gates/__init__.py |  63 +++++++++++++++++++++++++++-
+ tickets.md                 | 102 ++++++++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 163 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/test_gates.py::TestKnownGateRuleIds::test_every_emitted_rule_literal_is_known` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestKnownGateRuleIds::test_returns_known_rule_id` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)
 
 <!-- ticket:T-0962 -->
 ```yaml
@@ -2951,3 +2989,39 @@ threat: null
 component: null
 ```
 Filed while reconciling T-0958's system-design.yaml deferred rows. SDC-13-A-DECLARED-ABI-ISA-TARGET-IS-STABLE-ACROSS-A-COMPATIBILITY-WINDOW-A-COMPILED-ARTIFA and SDC-13-EVERY-BOOT-CHAIN-STAGE-IS-SIGNED-SECURE-BOOT-OR-MEASURED-INTO-AN-ATTESTABLE-LOG-MEA name two genuinely checkable, currently-unbuilt supply-chain/OS obligations: (1) a declared ABI/ISA compatibility-window claim on a compiled artifact that a static check could verify stays honored across the window, and (2) each boot-chain stage being signed (secure boot) or measured into an attestable log, again a presence/provenance claim a static grammar attr + proof check could enforce, mirroring the REL2xx/REL3xx PROVABILITY CONSTRAINT pattern (_obligation_proof.py::node_has_bound_code) already established for other obligation families. No landed REL/SYS family covers either concept today. Scope: a new strata rule module (e.g. src/frob/strata/_supply_chain_boot.py) plus docs/strata/reliability.md (or a new supply-chain doc section) plus the corresponding registry re-disposition once built.
+
+<!-- ticket:T-0963 -->
+```yaml
+id: T-0963
+title: check-coverage.yaml gate_rule_entries count drifted from known_gate_rule_ids()
+  (119 vs 204+)
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- docs/design/registry/check-coverage.yaml
+threat: null
+component: null
+```
+Found while working T-0961 (gates/__init__.py _KNOWN_GATE_RULES REL2xx/REL38x + SYS204 listing-omission fix).
+
+tests/test_check_coverage_registry.py::TestCheckCoverageRegistryFile::test_gate_rule_entries_match_live_known_rules
+asserts docs/design/registry/check-coverage.yaml's gate_rule_entries count equals len(known_gate_rule_ids()).
+This was ALREADY failing before T-0961 touched anything (119 registry entries vs 174 known rule ids at
+T-0961's starting tip, before T-0961 added its own 29 ids on top, now 204) -- confirmed by reverting
+T-0961's own diff and re-running the test in isolation; it fails identically either way. Pre-existing gap,
+same registry-catalogued-vs-enforced-code-drifted-apart class as T-0343/T-0903/T-0923/T-0924's own
+precedent. Also tests/system/test_frob_self_model.py::TestFrobSelfModel::test_every_claim_proves fails
+independently of T-0961's change (same failure with or without it) -- likely a separate, unrelated
+pre-existing regression, not investigated further here since it is out of T-0961's scope
+(src/frob/gates/__init__.py only).
+
+Fix: add the missing gate_rule_entries rows to docs/design/registry/check-coverage.yaml for every rule id
+in known_gate_rule_ids() that check-coverage.yaml does not yet cite (mirrors T-0961's own_KNOWN_GATE_RULES
+gap-fill, just in the registry file instead of the frozenset), and separately triage
+test_frob_self_model.py::test_every_claim_proves's failure.

@@ -1355,7 +1355,7 @@ _KNOWN_GATE_RULES = frozenset(
         # only the ids this ticket's system-design.yaml reconciliation
         # actually cites via `handled_by:<rule>` (REG002 needs them in
         # known_rules to resolve); the full REL2xx-REL38x family beyond
-        # these is a separate, larger listing-omission still open.
+        # these was completed by T-0961 below.
         "REL200",
         "REL220",
         "REL221",
@@ -1367,6 +1367,67 @@ _KNOWN_GATE_RULES = frozenset(
         "REL330",
         "REL350",
         "REL370",
+        # frob:ticket T-0961
+        # T-0961: the rest of the T-0331 epic's REL2xx-REL38x
+        # obligation-family rule ids, plus SYS204 -- these are built from
+        # module-level `REL_*`/`SYS_*` string constants (e.g.
+        # `frob.strata._retry.REL_MISSING_BACKOFF = "REL220"`) rather than
+        # inline `rule="..."` literals, so T-0901's regex-based drift-lock
+        # test cannot see them at all (a false-negative gap in the lock
+        # itself, not a passing check) -- T-0958 only registered the 11
+        # ids its own handled_by rows cited and left the rest unlisted.
+        # Enumerated by grepping every `REL_* = "REL..."`/`SYS_* = "SYS..."`
+        # assignment across src/frob/strata/*.py and cross-checking each
+        # against its `rule=<CONSTANT>` use site:
+        #   _reliability.py:   REL200/REL201/REL210/REL211
+        #   _retry.py:         REL220/REL221/REL222
+        #   _circuit_breaker.py: REL230/REL231
+        #   _fallback.py:      REL240/REL241
+        #   _spof.py:          REL250
+        #   _backpressure.py:  REL260/REL261
+        #   _observability.py: REL270/REL271/REL272
+        #   _slo.py:           REL280/REL281
+        #   _ssot.py:          REL290/REL291
+        #   _txn.py:           REL300/REL301
+        #   _interactive_cost.py: REL310/REL311
+        #   _message_schema.py: REL320/REL321
+        #   _delivery_semantics.py: REL330/REL331
+        #   _sync_depth.py:    REL340
+        #   _distributed_txn.py: REL350/REL351
+        #   _shared_state.py:  REL360
+        #   _clock_ordering.py: REL370/REL371/REL372
+        #   _starvation.py:    REL380/REL381/REL382/REL383
+        #   _access.py (SYS204 contention-proof entrypoint): SYS204
+        "REL201",
+        "REL210",
+        "REL211",
+        "REL222",
+        "REL230",
+        "REL231",
+        "REL240",
+        "REL241",
+        "REL250",
+        "REL261",
+        "REL271",
+        "REL281",
+        "REL290",
+        "REL291",
+        "REL300",
+        "REL301",
+        "REL310",
+        "REL311",
+        "REL321",
+        "REL331",
+        "REL340",
+        "REL351",
+        "REL360",
+        "REL371",
+        "REL372",
+        "REL380",
+        "REL381",
+        "REL382",
+        "REL383",
+        "SYS204",
     }
 )
 
