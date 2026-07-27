@@ -219,9 +219,9 @@ def _heat_body(cfg: AppConfig) -> None:
 
 # frob:ticket T-0765
 # frob:ticket T-0976
-# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCollectStacksViaSamplerArgvStripping::test_non_marker_first_arg_is_not_stripped  # noqa: E501
-# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCollectStacksViaSamplerArgvStripping::test_marker_first_arg_is_stripped  # noqa: E501
-# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCollectStacksViaSamplerArgvStripping::test_empty_argv_falls_back_to_dash_q  # noqa: E501
+# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCollectStacksViaSamplerArgvStripping.test_non_marker_first_arg_is_not_stripped  # noqa: E501
+# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCollectStacksViaSamplerArgvStripping.test_marker_first_arg_is_stripped  # noqa: E501
+# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCollectStacksViaSamplerArgvStripping.test_empty_argv_falls_back_to_dash_q  # noqa: E501
 def _collect_stacks_via_sampler(cfg: AppConfig):  # noqa: ANN201
     """Run the T-0710 in-process python sampler over `pytest.main` under
     `-- <argv>` (argv defaulting to `-q`, the whole suite) and return the

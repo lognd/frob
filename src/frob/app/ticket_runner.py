@@ -516,8 +516,8 @@ def _doable_row(t: "Ticket", alarm_by_id: dict, color: bool) -> str:
 
 
 # frob:ticket T-0976
-# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestRenderDoableDispatchableByParentGrouping::test_parent_id_not_in_queue_falls_back_to_no_parent_bucket  # noqa: E501
-# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestRenderDoableDispatchableByParentGrouping::test_parent_id_present_in_queue_uses_its_title  # noqa: E501
+# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestRenderDoableDispatchableByParentGrouping.test_parent_id_not_in_queue_falls_back_to_no_parent_bucket  # noqa: E501
+# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestRenderDoableDispatchableByParentGrouping.test_parent_id_present_in_queue_uses_its_title  # noqa: E501
 def _render_doable_dispatchable(
     ordered: list, alarm_by_id: dict, queue: "TicketQueue", cfg: AppConfig
 ) -> None:
@@ -2103,9 +2103,9 @@ def _apply_close_time_evidence(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-0976
-# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCloseGuardsMutationEvidenceDowngrade::test_true_mutation_evidence_with_skip_flag_is_never_downgraded  # noqa: E501
-# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCloseGuardsMutationEvidenceDowngrade::test_false_mutation_evidence_with_skip_flag_is_downgraded_to_none  # noqa: E501
-# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCloseGuardsMutationEvidenceDowngrade::test_false_mutation_evidence_without_skip_flag_stays_false  # noqa: E501
+# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCloseGuardsMutationEvidenceDowngrade.test_true_mutation_evidence_with_skip_flag_is_never_downgraded  # noqa: E501
+# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCloseGuardsMutationEvidenceDowngrade.test_false_mutation_evidence_with_skip_flag_is_downgraded_to_none  # noqa: E501
+# frob:tests tests/unit/test_app_runners_t0976_mutation_evidence.py::TestCloseGuardsMutationEvidenceDowngrade.test_false_mutation_evidence_without_skip_flag_stays_false  # noqa: E501
 def _close_guards_for_ticket(root: Path, cfg: AppConfig, fresh_ticket) -> tuple:  # noqa: ANN001
     """Compute the four independent close-time guard values `transition`
     needs for `frob ticket close`'s strict default (T-0398 covers_scope,
