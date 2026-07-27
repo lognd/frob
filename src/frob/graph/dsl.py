@@ -513,23 +513,28 @@ def _fold_continuations(
 
     Folding requires the next entry's `lineno` to be exactly one more than
     the current line's, AND the next entry's own text must NOT itself begin
-    a fresh `frob:<verb> ...` directive -- a gap (blank line, unrelated code
-    between comments) breaks the run, and so does landing on a line that is
-    plainly the start of an independent directive rather than free-text
-    continuation content. This is what a genuine continuation line always
-    satisfies (its text is prose/attribute fragments, e.g. `long so it
-    would overflow...` or `kind="integration"`, never `frob:<verb>`) and
-    what the reviewer's T-0286 corruption repro violates: `# frob:ticket
-    T-0002` on the physical line right after `# frob:ticket T-0001\` is
-    itself a complete, independently-parseable directive, so it must be
-    treated as its own comment run rather than swallowed into the previous
-    line. (Line-number adjacency and `_enclosing_src` binding are NOT
-    reliable discriminators here -- `frob.lang`'s following/enclosing
-    heuristic can legitimately resolve two textually-unrelated comments to
-    the same symbol, as the repro does when a trailing inline comment's
-    "following" lookup reaches past its own statement into the next
-    symbol -- so the fold guard must inspect the candidate line's own
-    shape, not just its position or binding.)
+    a fresh, genuinely-valid directive (`_is_genuine_directive_start`) -- a
+    gap (blank line, unrelated code between comments) breaks the run, and
+    so does landing on a line that is plainly the start of an independent
+    directive rather than free-text continuation content. This is what a
+    genuine continuation line always satisfies (its text is prose/
+    attribute fragments -- e.g. `long so it would overflow...` or
+    `kind="integration"` -- that either don't look `frob:`-shaped at all,
+    or do but fail to structurally parse as a real directive, like
+    `frob:describes` mid-prose, T-0987) and what the reviewer's T-0286
+    corruption repro violates: `# frob:ticket T-0002` on the physical line
+    right after `# frob:ticket T-0001\` is itself a complete,
+    independently-parseable directive, so it must be treated as its own
+    comment run rather than swallowed into the previous line. (Line-number
+    adjacency and `_enclosing_src` binding are NOT reliable discriminators
+    here -- `frob.lang`'s following/enclosing heuristic can legitimately
+    resolve two textually-unrelated comments to the same symbol, as the
+    repro does when a trailing inline comment's "following" lookup reaches
+    past its own statement into the next symbol -- so the fold guard must
+    inspect the candidate line's own STRUCTURAL VALIDITY, not just its
+    shape, position, or binding: a bare `frob:`-shaped prefix is not
+    enough, since a directive's own prose can coincidentally contain one,
+    T-0987.)
 
     Detection is on the RIGHT-stripped line (trailing whitespace ignored, so
     both a trailing backslash with and without preceding whitespace
@@ -553,6 +558,44 @@ def _fold_continuations(
     return [
         (text, lineno, src) for text, lineno, src, _count in fold_comment_runs(lines)
     ]
+
+
+# frob:ticket T-0987
+def _is_genuine_directive_start(line: str) -> bool:
+    """Whether a physical comment line, on its own, is the START of a real
+    directive rather than wrap-continuation prose that merely happens to
+    open with a `frob:`-shaped token (T-0987).
+
+    A bare `_LINE_RE` shape match (`frob:<token> ...`) is NOT enough: a
+    directive's own free-text `reason="..."` prose can legitimately contain
+    a substring like `frob:describes` (T-0985's repro, `src/frob/vet/
+    _allow.py`/`src/frob/dup/_core.py`), and a canonical re-wrap can land
+    that substring as the first token of its own physical line -- at which
+    point a shape-only check misreads it as a fresh directive. The real
+    discriminator is whether the line STRUCTURALLY PARSES: attempting
+    `_parse_line` on it and getting back an `Edge` (a real directive) or
+    `None` (a recognized `_RESERVED_MARKER_VERBS` marker another subsystem
+    owns) means it is a genuine, independent directive start; getting back
+    a `MalformedDirective` (unknown verb, missing target, bad attribute
+    syntax -- exactly what `frob:describes` produces, since `describes` is
+    not a registered verb) means the shape match was coincidental content,
+    and the line must fold as a continuation instead. This generalizes
+    past the one verified `frob:describes` token: ANY `frob:`-shaped
+    substring that is not itself a real, complete directive is folded the
+    same way, regardless of what its first token happens to spell.
+
+    Genuinely adjacent, independently-valid directives (this repo's
+    widespread stacked `frob:ticket`/`frob:tests` convention, and T-0286's
+    own `test_unrelated_directives_on_consecutive_lines_do_not_fold`
+    corruption repro) still parse to real `Edge`s here, so they still stop
+    the fold exactly as before -- this only widens the exception for
+    shape-matches that do not stand up as complete directives.
+    """
+    stripped = line.strip()
+    if _LINE_RE.match(stripped) is None:
+        return False
+    result = _parse_line(stripped, path="", lineno=0, src="")
+    return not isinstance(result, MalformedDirective)
 
 
 # frob:ticket T-0441
@@ -586,7 +629,7 @@ def fold_comment_runs(
             head.rstrip().endswith("\\")
             and i + 1 < n
             and lines[i + 1][0] == lines[i][0] + 1
-            and _LINE_RE.match(lines[i + 1][1].strip()) is None
+            and not _is_genuine_directive_start(lines[i + 1][1])
         ):
             head = head.rstrip()[:-1]
             i += 1

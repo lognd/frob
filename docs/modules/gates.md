@@ -2480,21 +2480,28 @@ Public API (`src/frob/gates/_fmt_directives.py`):
   reports without writing (`frob fmt --check`, CI-friendly, exits 1 if
   anything is non-canonical).
 
-**T-0985: repo-wide recompaction deliberately deferred.** A large slice of
-this repo's own `frob:` directive comments predate T-0441's "fewest
-physical lines" canonical form (hand-wrapped, or wrapped by an older/
-looser tool version) -- a fresh `frob fmt .` still reports ~260 files as
-non-canonical purely from this legacy layout, even after the noqa fix
-above. Actually performing that one-time repo-wide recompaction was
-investigated and found UNSAFE today: rewrapping shifts word-wrap
-boundaries, and in some files this places a `frob:`-shaped prose token
-(inside a `reason="..."` string, referring to `frob:describes` by name
-rather than invoking it) at the start of a continuation line, which
-`frob.graph.dsl.parse_directives` misparses as a bogus new directive --
-see the filed follow-up tickets (DSL continuation-parsing fix, then the
-deferred recompaction itself) for the full repro. `frob fmt`'s own
-idempotence (running it twice is a no-op) holds regardless of whether
-the legacy files have been recompacted yet.
+**T-0985: repo-wide recompaction was deliberately deferred, then unblocked
+by T-0987.** A large slice of this repo's own `frob:` directive comments
+predate T-0441's "fewest physical lines" canonical form (hand-wrapped, or
+wrapped by an older/looser tool version) -- a fresh `frob fmt .` still
+reports ~260 files as non-canonical purely from this legacy layout, even
+after the noqa fix above. Actually performing that one-time repo-wide
+recompaction was investigated and found UNSAFE at the time: rewrapping
+shifts word-wrap boundaries, and in some files this placed a `frob:`-
+shaped prose token (inside a `reason="..."` string, referring to
+`frob:describes` by name rather than invoking it) at the start of a
+continuation line, which `frob.graph.dsl.parse_directives` misparsed as a
+bogus new directive. **T-0987 fixed the underlying DSL bug**: the fold
+guard in `frob.graph.dsl.fold_comment_runs` no longer stops a fold merely
+because the next physical line's text starts with SOMETHING shaped like
+`frob:<token>` -- it now attempts a full structural parse of that line
+(`frob.graph.dsl._is_genuine_directive_start`) and only treats it as a
+fresh, independent directive if it actually parses as one (a real `Edge`,
+or a recognized `_RESERVED_MARKER_VERBS` skip-marker). A shape match that
+fails to parse (unknown verb, e.g. `describes`) is folded as continuation
+prose instead, regardless of what its first token happens to spell. This
+unblocks (but does not itself perform) the deferred repo-wide
+recompaction; see T-0987's Done report.
 
 Folding an existing continuation run back into one logical string reuses
 `frob.graph.dsl.fold_comment_runs` -- T-0286's own continuation fold,

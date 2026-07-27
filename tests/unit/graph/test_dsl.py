@@ -731,3 +731,133 @@ class TestFoldCommentRuns:
         folded_runs = fold_comment_runs(lines)
         folded_plain = _fold_continuations(lines)
         assert [(t, ln, s) for t, ln, s, _c in folded_runs] == folded_plain
+
+
+class TestVerbShapedContinuationProse:
+    """T-0987: a continuation line whose prose happens to start with a
+    `frob:`-shaped token that is not a registered verb (e.g. the literal
+    substring `frob:describes` inside a `reason="..."`) must fold as
+    continuation content, never misparse as a bogus new directive."""
+
+    def test_frob_describes_prose_at_continuation_line_start_folds(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/dsl.py::parse_directives
+        # Minimal repro shape verified against src/frob/vet/_allow.py after
+        # T-0985's recompaction shifted the wrap boundary so
+        # "frob:describes" became the first word of its own physical line.
+        src = (
+            "def foo() -> None:\n"
+            '    # frob:waive COV007 reason="docs section individually \\\n'
+            "    # frob:describes this private helper by name (T-0529) -- \\\n"
+            '    # a deliberate architecture doc"\n'
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 1
+        assert edges[0].attrs["reason"] == (
+            "docs section individually frob:describes this private helper "
+            "by name (T-0529) -- a deliberate architecture doc"
+        )
+
+    def test_frob_describes_prose_repro_shape_from_dup_core(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/dsl.py::parse_directives
+        # Minimal repro shape verified against src/frob/dup/_core.py's own
+        # T-0985-recompaction cascade.
+        src = (
+            "def bar() -> None:\n"
+            '    # frob:waive COV007 reason="rust-core section \\\n'
+            "    # frob:describes each private frob_core shim by name \\\n"
+            '    # (T-0524) -- deliberate"\n'
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 1
+        assert edges[0].attrs["reason"] == (
+            "rust-core section frob:describes each private frob_core shim "
+            "by name (T-0524) -- deliberate"
+        )
+
+    def test_stacked_directives_still_parse_independently(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/dsl.py::parse_directives
+        # Genuine adjacent directives in one comment block (this repo's
+        # widespread frob:ticket/frob:tests stacking convention) must still
+        # parse as separate edges, not get swallowed by the widened
+        # continuation exception.
+        src = (
+            "def baz() -> None:\n"
+            "    # frob:ticket T-0286\n"
+            "    # frob:tests tests/unit/graph/test_dsl.py::TestContinuation.\\\n"
+            "    # test_long_reason_continues_across_lines\n"
+            "    pass\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 2
+        kinds = {e.kind for e in edges}
+        assert kinds == {EdgeKind.TICKET, EdgeKind.TESTS}
+        tests_edge = next(e for e in edges if e.kind == EdgeKind.TESTS)
+        assert tests_edge.target == (
+            "tests/unit/graph/test_dsl.py::TestContinuation."
+            "test_long_reason_continues_across_lines"
+        )
+
+    def test_unrelated_directives_corruption_repro_still_rejects_fold(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/dsl.py::parse_directives
+        # T-0286's own corruption repro must still refuse to fold two
+        # independently-valid directives on physically adjacent lines.
+        src = (
+            "class A:\n"
+            "    x = 1  # frob:ticket T-0001\\\n"
+            "class B:  # frob:ticket T-0002\n"
+            "    y = 2\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not malformed
+        assert len(edges) == 2
+        targets = {edge.target for edge in edges}
+        assert targets == {"T-0001\\", "T-0002"}
+
+    def test_property_wrap_at_every_width_preserves_reason(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/dsl.py::parse_directives
+        # Property-style: re-wrap a real directive whose reason prose
+        # contains a `frob:describes`-shaped substring at every width from
+        # the tightest that can still hold one word per line up to a wide
+        # single-line fit, and assert parsing is stable (zero malformed,
+        # same recovered reason) at every width -- not just the one
+        # verified repro shape.
+        from frob.gates._fmt_directives import canonicalize_text
+
+        logical = (
+            'frob:waive COV007 reason="docs section individually '
+            "frob:describes this private helper by name (T-0529) -- a "
+            'deliberate architecture doc, not accidental drift"'
+        )
+        src_template = "def foo() -> None:\n    # {}\n    pass\n"
+        original = src_template.format(logical)
+        path = tmp_path / "a.py"
+        expected_reason = (
+            "docs section individually frob:describes this private helper "
+            "by name (T-0529) -- a deliberate architecture doc, not "
+            "accidental drift"
+        )
+        for limit in range(20, 120, 4):
+            rewritten = canonicalize_text(original, path=str(path), limit=limit)
+            path.write_text(rewritten)
+            pf = parse_file(path).danger_ok
+            edges, malformed = parse_directives(pf)
+            assert not malformed, f"limit={limit} produced malformed: {malformed}"
+            assert len(edges) == 1
+            assert edges[0].attrs["reason"] == expected_reason
