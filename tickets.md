@@ -6550,3 +6550,30 @@ ask).
 ### Captured claims
 - tests: 3 passed (from 3 evidence id(s))
 - gates: unmeasured (no parsable gate-summary from a fresh check)
+
+<!-- ticket:T-1043 -->
+```yaml
+id: T-1043
+title: 'PERF008 resolver FP classes: bare-method-name coincidence, receiver conflation,
+  lru_cache blindness'
+state: queued
+kind: bug
+origin: agent
+created: '2026-07-27'
+priority: medium
+parent: T-0204
+tier: ticket
+sprint: null
+scope:
+- src/frob/perf/_effect_summaries.py
+- src/frob/perf/_loop_effects.py
+- tests/test_perf.py
+acceptance:
+- text: GIVEN the three FP fixture shapes WHEN the perf gate runs THEN no PERF008
+    fires on them AND a true duplicate-call-in-loop still fires AND the T-1041 waivers
+    are removed without findings returning
+  evidence: []
+threat: null
+component: null
+```
+REFILE: original block (briefly T-1042, commit c00a8c1a) was clobbered by the concurrent T-1042 REG008 land's draft renumbering -- the T-1036 ledger-churn class, now observed at coordinator level; cite this incident in T-1036's fix. Content: T-1041 investigated all 11 live PERF008 findings and found every one a resolver false positive, in three classes: (1) bare-method-name coincidence -- a stdlib method like .search/.rglob on a non-repo object resolves to an unrelated same-named repo function; (2) receiver conflation -- calls on DIFFERENT receiver objects mistaken for a repeated identical call; (3) @functools.lru_cache blindness -- an already-cached callee counted as repeated expensive work. Fix each class in effect-summary resolution (receiver-aware method binding, receiver identity in the loop-invariant key, cache-decorator awareness), add a regression test per class plus a true-positive guard, then remove T-1041's 11 frob:waive PERF008 directives and assess src/frob/arch/_ffi.py:299. Same calibration pattern as T-1018 PERF012.
