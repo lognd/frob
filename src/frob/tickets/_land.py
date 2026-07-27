@@ -1119,15 +1119,109 @@ def _read_ledger_text_or_empty(checkout: Path) -> str:
     return path.read_text(encoding="utf-8") if path.exists() else ""
 
 
+# frob:ticket T-0959
+def _read_archive_text_or_empty(checkout: Path) -> str:
+    """`tickets-archive.md`'s text under `checkout`, or `""` if it does not
+    exist -- the archive-file twin of `_read_ledger_text_or_empty` (T-0959)."""
+    path = archive_path(checkout)
+    return path.read_text(encoding="utf-8") if path.exists() else ""
+
+
+# frob:ticket T-0959
+# frob:tests tests/test_ticket_land.py::TestArchiveSpliceDiscipline.test_splice_and_stage_archive_merges_by_id_never_overwrites  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestArchiveSpliceDiscipline.test_splice_and_stage_archive_refuses_when_authoritative_id_would_vanish  # noqa: E501
+def _splice_and_stage_archive(
+    checkout: Path, authoritative_text: str, other_text: str
+) -> Result[str, LandError]:
+    """Ledger-level splice of `tickets-archive.md` (T-0959), mirroring
+    `_splice_and_stage`'s tickets.md discipline instead of trusting git's raw
+    text merge/checkout to resolve it: parses both sides as ledgers, unions
+    them by id keeping the newest per id (`_merge_ledger_tickets`/`_newer`,
+    the same primitives `splice_ledger` uses), then refuses loudly
+    (`Err(GitFailed)`) if any id present in `authoritative_text` would
+    vanish from the merged result, before ever writing anything.
+
+    `authoritative_text` is always root/main's CURRENT tickets-archive.md at
+    the call site -- the freshest copy, since only main ever runs a TICK003
+    archive sweep; a worktree's copy can only ever be equal or stale.
+    `other_text` is the other side (the worktree's copy at whichever stage
+    this runs). This is the direct fix for the T-0703 incident: a prior
+    land staged tickets-archive.md WHOLESALE from a stale worktree copy at
+    both the merge-main-into-worktree and squash-onto-root stages, silently
+    wiping 62 already-archived blocks a sweep on main had added after the
+    worktree's own warmup merge -- git's merge/checkout machinery for this
+    file had no per-id awareness at all, unlike tickets.md's `_splice_and_
+    stage`. Writes the merged text to `checkout`'s tickets-archive.md and
+    `git add`s it; never a bare copy of either side."""
+    authoritative_parsed = _parse_ledger(authoritative_text)
+    if authoritative_parsed.is_err:
+        _log.error(
+            "land: tickets-archive.md splice refused -- authoritative copy "
+            "unparseable (%s), resolve manually in %s",
+            authoritative_parsed.danger_err,
+            checkout,
+        )
+        return Err(LandError.GitFailed)
+    other_parsed = _parse_ledger(other_text)
+    if other_parsed.is_err:
+        _log.error(
+            "land: tickets-archive.md splice refused -- worktree copy "
+            "unparseable (%s), resolve manually in %s",
+            other_parsed.danger_err,
+            checkout,
+        )
+        return Err(LandError.GitFailed)
+    authoritative, other = authoritative_parsed.danger_ok, other_parsed.danger_ok
+    merged = _merge_ledger_tickets(authoritative, other)
+
+    # T-0959: the id-integrity assertion the ticket calls for, extending the
+    # T-0740 `_check_ledger_id_integrity` pattern to this file -- every id
+    # present in the AUTHORITATIVE (root/main pre-land) archive must survive
+    # into the staged post-land result, refusing loudly rather than silently
+    # dropping anything if it somehow does not.
+    missing = set(authoritative) - set(merged)
+    if missing:
+        _log.error(
+            "land: tickets-archive.md splice refused -- id(s) %s present in "
+            "the archive's pre-land authoritative state vanished from the "
+            "merged result (T-0959 archive id-integrity guard); this must "
+            "never happen by construction of a union merge -- inspect %s "
+            "by hand before retrying",
+            sorted(missing),
+            checkout,
+        )
+        return Err(LandError.GitFailed)
+
+    rendered = _render_ledger(merged)
+    integrity = _check_ledger_id_integrity(merged, rendered)
+    if integrity.is_err:
+        _log.error(
+            "land: tickets-archive.md splice failed its id-integrity "
+            "round-trip check (%s) -- resolve manually in %s",
+            integrity.danger_err,
+            checkout,
+        )
+        return Err(LandError.GitFailed)
+    archive_path(checkout).write_text(rendered, encoding="utf-8")
+    add = run_argv(["git", "-C", str(checkout), "add", "tickets-archive.md"])
+    if add.is_err or add.danger_ok.returncode != 0:
+        return Err(LandError.GitFailed)
+    return Ok(rendered)
+
+
 def _merge_main_into_worktree(
     root: Path, worktree: Path, ticket: Ticket, main_branch: str
 ) -> Result[bool, LandError]:
     """Stage (`--no-commit`) main into the worktree, resolving any tickets.md
-    conflict via `splice_ledger`; any OTHER conflicted file aborts loudly.
-    Returns whether a merge actually happened (False = worktree was already
-    up to date with main, a no-op)."""
+    conflict via `splice_ledger` and any tickets-archive.md conflict via the
+    T-0959 archive splice (`_splice_and_stage_archive`); any OTHER
+    conflicted file aborts loudly. Returns whether a merge actually happened
+    (False = worktree was already up to date with main, a no-op)."""
     pre_text = _read_ledger_text_or_empty(worktree)
     main_text = _read_ledger_text_or_empty(root)
+    # frob:ticket T-0959
+    pre_archive_text = _read_archive_text_or_empty(worktree)
+    main_archive_text = _read_archive_text_or_empty(root)
 
     merged = run_argv(
         ["git", "-C", str(worktree), "merge", "--no-commit", "--no-ff", main_branch]
@@ -1165,6 +1259,18 @@ def _merge_main_into_worktree(
     if spliced.is_err:
         _abort_merge(worktree)
         return Err(spliced.danger_err)
+
+    # frob:ticket T-0959
+    # T-0959: tickets-archive.md used to ride along on whatever git's raw
+    # merge produced for it here, unguarded -- splice it the same way, with
+    # root/main's copy (freshest, since only main ever archives) as the
+    # authoritative side.
+    archive_spliced = _splice_and_stage_archive(
+        worktree, main_archive_text, pre_archive_text
+    )
+    if archive_spliced.is_err:
+        _abort_merge(worktree)
+        return Err(archive_spliced.danger_err)
     return Ok(True)
 
 
@@ -1184,9 +1290,11 @@ def _auto_resolve_out_of_scope_conflicts(
     outside it -- a conflict there is definitionally noise from an
     unrelated concurrent main change, not an editorial decision belonging
     to this ticket, so taking `keep`'s side is always correct rather than a
-    guess. `tickets.md` is excluded unconditionally; it is always resolved
-    via a ledger splice (`_splice_and_stage`), never via `git checkout`."""
-    conflicted = _conflicted_files(cwd) - {"tickets.md"}
+    guess. `tickets.md` and `tickets-archive.md` are excluded unconditionally
+    (T-0959 extended this exclusion to the archive file); both are always
+    resolved via a ledger splice (`_splice_and_stage`/`_splice_and_stage_
+    archive`), never via `git checkout`."""
+    conflicted = _conflicted_files(cwd) - {"tickets.md", "tickets-archive.md"}
     if not conflicted:
         return Ok(frozenset())
     still_conflicted = {f for f in conflicted if scope_matches(f, ticket.scope)}
@@ -1228,8 +1336,9 @@ def _check_only_tickets_conflicted(
     worktree: Path, ticket: Ticket, main_branch: str
 ) -> Result[None, LandError]:
     """`Err(MergeConflict)` (aborting the merge) if any IN-SCOPE file besides
-    tickets.md is still conflicted after `_merge_main_into_worktree`'s
-    merge; any OUT-OF-SCOPE conflict is auto-resolved by taking main's side
+    tickets.md/tickets-archive.md is still conflicted after
+    `_merge_main_into_worktree`'s merge; any OUT-OF-SCOPE conflict is
+    auto-resolved by taking main's side
     first (T-0479), since main is `theirs` in this merge direction (main
     merged into the worktree)."""
     resolved = _auto_resolve_out_of_scope_conflicts(worktree, ticket, keep="theirs")
@@ -2986,8 +3095,9 @@ def _check_squash_conflicted(
     root: Path, worktree: Path, ticket: Ticket, branch_name: str, pre_land_tip: str
 ) -> Result[None, LandError]:
     """`Err(SquashConflict)` (unwinding the squash) if any IN-SCOPE file
-    besides tickets.md is still conflicted after the squash merge; any
-    OUT-OF-SCOPE conflict is auto-resolved by taking main's side first
+    besides tickets.md/tickets-archive.md is still conflicted after the
+    squash merge; any OUT-OF-SCOPE conflict is auto-resolved by taking
+    main's side first
     (T-0479) -- main is `ours` here (root's checked-out branch, with the
     worktree's finalized branch squash-merged in as `theirs`). `pre_land_tip`
     (T-0907) is this run's verified pre-mutation root tip, threaded through
@@ -3026,12 +3136,14 @@ def _squash_and_splice_ledger(
     pre_land_tip: str,
 ) -> Result[None, LandError]:
     """`git merge --squash --no-commit` the worktree's finalized `branch_name`
-    onto `root`, then splice tickets.md; unwinds the squash on any
-    conflict outside `ticket.scope` (or a true in-scope conflict), or a
-    splice failure. `pre_land_tip` (T-0907) is this run's verified
-    pre-mutation root tip, threaded through to `_check_squash_conflicted`
-    and this function's own unwind."""
+    onto `root`, then splice tickets.md and tickets-archive.md (T-0959);
+    unwinds the squash on any conflict outside `ticket.scope` (or a true
+    in-scope conflict), or a splice failure. `pre_land_tip` (T-0907) is this
+    run's verified pre-mutation root tip, threaded through to
+    `_check_squash_conflicted` and this function's own unwind."""
     root_pre_text = _read_ledger_text_or_empty(root)
+    # frob:ticket T-0959
+    root_pre_archive_text = _read_archive_text_or_empty(root)
 
     squash = run_argv(
         ["git", "-C", str(root), "merge", "--squash", "--no-commit", branch_name]
@@ -3063,6 +3175,22 @@ def _squash_and_splice_ledger(
     if spliced.is_err:
         unwound = _verified_reset_root(root, pre_land_tip, final_id)
         return Err(unwound.danger_err if unwound.is_err else spliced.danger_err)
+
+    # frob:ticket T-0959
+    # T-0959: tickets-archive.md's final splice, mirroring the tickets.md
+    # splice just above -- this is the LAST line of defense against the
+    # T-0703 incident (a stale worktree archive wholesale-overwriting main's
+    # newer one), since this is the squash-apply commit that actually lands
+    # on main. `root_pre_archive_text` (captured before the squash ran, i.e.
+    # root's CURRENT tip) is authoritative; the worktree's finalized archive
+    # copy is the other side.
+    worktree_final_archive_text = _read_archive_text_or_empty(worktree)
+    archive_spliced = _splice_and_stage_archive(
+        root, root_pre_archive_text, worktree_final_archive_text
+    )
+    if archive_spliced.is_err:
+        unwound = _verified_reset_root(root, pre_land_tip, final_id)
+        return Err(unwound.danger_err if unwound.is_err else archive_spliced.danger_err)
 
     # T-0631: TICK005-backed regression sweep -- block THIS land if its own
     # splice would regress any terminal (DONE/DROPPED) ticket back to a

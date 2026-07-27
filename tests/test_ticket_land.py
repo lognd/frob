@@ -36,7 +36,7 @@ from frob.tickets import (
     set_done_report,
     transition,
 )
-from frob.tickets._land import land, splice_ledger
+from frob.tickets._land import _splice_and_stage_archive, land, splice_ledger
 from frob.tickets._models import (
     AcceptanceCriterion,
     DoneReportClaims,
@@ -44,6 +44,7 @@ from frob.tickets._models import (
     render_claims_block,
 )
 from frob.tickets._store import (
+    archive_path,
     atomic_write,
     ledger_path,
     load_all,
@@ -1257,6 +1258,158 @@ class TestArchiveResurrection:
         assert stale_id in archived.danger_ok
         # Exactly once -- not duplicated across active+archive.
         assert list(load_all(repo).danger_ok).count(stale_id) == 0
+
+
+# frob:ticket T-0959
+class TestArchiveSpliceDiscipline:
+    """T-0959: `tickets-archive.md` used to ride along on whatever git's raw
+    merge/checkout produced at land time, with no per-id splice discipline
+    at all (unlike tickets.md's `_splice_and_stage`) -- a real incident
+    (T-0703's land) staged a worktree's STALE tickets-archive.md wholesale,
+    wiping 62 blocks a TICK003 sweep had added to main's archive after the
+    worktree's own warmup merge. This regression-locks the acceptance
+    criterion directly: a worktree whose archive predates a later archive
+    sweep on main must never cause `land` to lose main's newly-archived
+    blocks."""
+
+    def test_splice_and_stage_archive_merges_by_id_never_overwrites(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_splice_and_stage_archive kind="unit"
+        # `authoritative_text` carries one id, `other_text` carries a
+        # DISJOINT second id -- a wholesale overwrite (the pre-T-0959 bug)
+        # would keep only one side; the splice must keep both.
+        checkout = tmp_path / "checkout"
+        _git_init(checkout)
+        atomic_write(ledger_path(checkout), "# Tickets\n\n")
+
+        created = new_ticket(checkout, _spec("Authoritative side"))
+        assert created.is_ok
+        authoritative_text = ledger_path(checkout).read_text()
+        authoritative_id = created.danger_ok.id
+
+        other_ticket = created.danger_ok.model_copy(
+            update={"id": "T-0002", "title": "Other side"}
+        )
+        other_dir = tmp_path / "other"
+        other_dir.mkdir()
+        atomic_write(ledger_path(other_dir), "# Tickets\n\n")
+        assert write_ticket(other_dir, other_ticket).is_ok
+        other_text = ledger_path(other_dir).read_text()
+
+        result = _splice_and_stage_archive(checkout, authoritative_text, other_text)
+        assert result.is_ok, result.err
+        merged = archive_path(checkout).read_text()
+        assert authoritative_id in merged
+        assert "T-0002" in merged
+        assert "Authoritative side" in merged
+        assert "Other side" in merged
+
+    def test_splice_and_stage_archive_refuses_when_authoritative_id_would_vanish(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_splice_and_stage_archive kind="unit"
+        # The T-0959 id-integrity backstop: if the merge somehow produced a
+        # result missing an id `authoritative_text` carried, refuse loudly
+        # rather than silently staging a lossy result. Forced by making
+        # `_merge_ledger_tickets` itself drop the authoritative id, since a
+        # real union merge structurally never does this on its own -- this
+        # pins the GUARD, not a naturally-reachable input.
+        checkout = tmp_path / "checkout"
+        _git_init(checkout)
+        atomic_write(ledger_path(checkout), "# Tickets\n\n")
+
+        created = new_ticket(checkout, _spec("Must survive"))
+        assert created.is_ok
+        authoritative_text = ledger_path(checkout).read_text()
+        other_text = "# Tickets\n\n"
+
+        def _drop_everything(
+            ours: dict[str, Any], theirs: dict[str, Any]
+        ) -> dict[str, Any]:
+            return {}
+
+        monkeypatch.setattr(_land_mod, "_merge_ledger_tickets", _drop_everything)
+
+        result = _splice_and_stage_archive(checkout, authoritative_text, other_text)
+        assert result.is_err
+        assert result.danger_err == LandError.GitFailed
+
+    def test_land_preserves_mains_newly_archived_blocks_over_a_stale_worktree_archive(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_splice_and_stage_archive kind="unit"
+        # Two tickets that will be archived on MAIN, AFTER the worktree
+        # branches off -- the exact T-0703 incident shape: the worktree's
+        # warmup merge happens before the archive sweep, so its own
+        # tickets-archive.md never sees it.
+        first = new_ticket(repo, _spec("First to archive"))
+        second = new_ticket(repo, _spec("Second to archive"))
+        assert first.is_ok and second.is_ok
+        first_id, second_id = first.danger_ok.id, second.danger_ok.id
+        _commit_all(repo, "file two tickets that will later be archived")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-archive-splice", str(wt)], repo)
+
+        # The worktree ALSO independently archives its own sibling ticket
+        # (a genuine two-sided divergence on tickets-archive.md, the shape
+        # that actually exercises a real merge/splice decision rather than
+        # a one-sided fast-forward git can resolve on its own).
+        from frob.tickets import archive
+
+        sibling = new_ticket(wt, _spec("Sibling archived in worktree", scope=("src/sib.py",)))
+        assert sibling.is_ok
+        sibling_id = sibling.danger_ok.id
+        _make_closeable(wt, sibling_id)
+        assert transition(wt, sibling_id, TicketState.DONE).is_ok
+        wt_archived_count = archive(wt)
+        assert wt_archived_count.is_ok and wt_archived_count.danger_ok == 1
+        _commit_all(wt, "worktree archives its own sibling ticket")
+
+        # Main independently closes and archives BOTH tickets AFTER the
+        # worktree branched.
+        for ticket_id in (first_id, second_id):
+            _make_closeable(repo, ticket_id)
+            assert transition(repo, ticket_id, TicketState.DONE).is_ok
+        archived_count = archive(repo)
+        assert archived_count.is_ok and archived_count.danger_ok == 2
+        _commit_all(repo, "archive two tickets (sweep happens after worktree branch)")
+
+        # Confirm the worktree's own archive really is stale at this point
+        # -- the precondition the incident needs.
+        wt_archive_before = load_archive(wt)
+        assert wt_archive_before.is_ok
+        assert first_id not in wt_archive_before.danger_ok
+        assert second_id not in wt_archive_before.danger_ok
+
+        # Land unrelated worktree work.
+        created = new_ticket(
+            wt, _spec("Unrelated archive-splice land", scope=("src/unrelated3.py",))
+        )
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "unrelated3.py").write_text("# unrelated\n")
+        _commit_all(wt, "unrelated worktree work")
+
+        result = land(repo, tid, wt, dry_run=False)
+        assert result.is_ok, result.err
+
+        archived = load_archive(repo)
+        assert archived.is_ok
+        assert first_id in archived.danger_ok, (
+            f"{first_id} wiped from tickets-archive.md by land (T-0959)"
+        )
+        assert second_id in archived.danger_ok, (
+            f"{second_id} wiped from tickets-archive.md by land (T-0959)"
+        )
+        # The worktree's own genuinely new archive addition must not be
+        # silently dropped either -- a raw git merge/checkout with no
+        # per-id splice discarded this side entirely before the fix.
+        assert sibling_id in archived.danger_ok, (
+            f"worktree's own archived sibling {sibling_id} was dropped by land (T-0959)"
+        )
 
 
 class TestWipCommit:
