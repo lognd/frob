@@ -2580,6 +2580,100 @@ class TestReleaseBump:
         assert result.is_ok, result.err
         assert result.danger_ok.release_bumped_to is None
 
+    # frob:ticket T-0992
+    def test_stale_worktree_version_bump_yields_main_plus_one(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestReleaseBump.test_stale_worktree_version_bump_yields_main_plus_one  # noqa: E501
+        """T-0992 acceptance criterion: a worktree whose own pyproject.toml
+        carries an OLDER version than main (it forked before some other
+        land already bumped main) must still land at main-plus-one, never
+        at a version recomputed from the worktree's stale carried value --
+        the T-0976/T-0989 incident class. The `bump_version` callback here
+        deliberately reads `root`'s (main's) CURRENT on-disk version, not
+        the worktree's, modeling the fixed input-selection contract."""
+        (repo / "pyproject.toml").write_text(
+            '[project]\nname = "frob"\nversion = "0.183.0"\n'
+        )
+        _commit_all(repo, "main is ahead at 0.183.0")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-stale-version", str(wt)], repo)
+        # The worktree's own pyproject still carries the OLDER version it
+        # forked from main with -- never touched as part of this ticket's
+        # scope, so it rides through the squash unchanged.
+        (wt / "pyproject.toml").write_text(
+            '[project]\nname = "frob"\nversion = "0.181.0"\n'
+        )
+        _commit_all(wt, "worktree still carries stale 0.181.0")
+
+        created = new_ticket(wt, _spec("Stale worktree version", scope=("src/sv.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "sv.py").write_text("# stale version test\n")
+        _commit_all(wt, "add sv.py")
+
+        def bump_version(root: Path, ticket: Any, final_id: str) -> Any:
+            # A correctly-implemented callback computes main+1 (0.184.0)
+            # regardless of what the squash-apply did to the working
+            # tree's pyproject.toml in between -- the T-0992 guard verifies
+            # this independently against main's true pre-land committed
+            # version, not the worktree's carried value.
+            next_version = "0.184.0"
+            (root / "pyproject.toml").write_text(
+                f'[project]\nname = "frob"\nversion = "{next_version}"\n'
+            )
+            _run(["git", "add", "pyproject.toml"], root)
+            return Ok(next_version)
+
+        result = land(repo, tid, wt, dry_run=False, bump_version=bump_version)
+        assert result.is_ok, result.err
+        assert result.danger_ok.release_bumped_to == "0.184.0"
+        assert (repo / "pyproject.toml").read_text().count('version = "0.184.0"') == 1
+
+    # frob:ticket T-0992
+    def test_downgrade_bump_is_refused(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestReleaseBump.test_downgrade_bump_is_refused  # noqa: E501
+        """T-0992 hard monotonicity refusal: a `bump_version` callback that
+        computes a version no greater than main's CURRENT pre-land version
+        (the T-0976/T-0989 failure mode -- a stale worktree-carried input
+        winning over main's real version) must be refused loudly, and the
+        staged squash unwound, rather than silently clobbering main."""
+        (repo / "pyproject.toml").write_text(
+            '[project]\nname = "frob"\nversion = "0.183.0"\n'
+        )
+        _commit_all(repo, "main is ahead at 0.183.0")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-downgrade", str(wt)], repo)
+        created = new_ticket(wt, _spec("Downgrade bump", scope=("src/dg.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "dg.py").write_text("# downgrade test\n")
+        _commit_all(wt, "add dg.py")
+
+        before_main_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+
+        def bump_version(root: Path, ticket: Any, final_id: str) -> Any:
+            # Simulates the incident: recomputed from a stale (worktree-
+            # carried) input, landing on a version <= main's current one.
+            (root / "pyproject.toml").write_text(
+                '[project]\nname = "frob"\nversion = "0.182.0"\n'
+            )
+            _run(["git", "add", "pyproject.toml"], root)
+            return Ok("0.182.0")
+
+        result = land(repo, tid, wt, dry_run=False, bump_version=bump_version)
+        assert result.is_err
+        assert result.danger_err == LandError.ReleaseBumpFailed
+        assert (
+            _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == before_main_sha
+        )
+        assert _run(["git", "status", "--porcelain"], repo).stdout.strip() == ""
+        # Main's pyproject.toml must still read its pre-land version, not
+        # the callback's would-be downgrade -- the unwind must be complete.
+        assert (repo / "pyproject.toml").read_text().count('version = "0.183.0"') == 1
+
 
 # frob:ticket T-0793
 class TestUvLockSync:

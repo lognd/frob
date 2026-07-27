@@ -1124,6 +1124,21 @@ Order of operations, and why it is this order:
     reset --hard && git clean -fd`) exactly like any other land failure --
     a silently-skipped bump would let a landed API change slip past
     REL001 undetected. Reported back as `LandReport.release_bumped_to`.
+
+    **T-0992 monotonicity assertion**: `_apply_release_bump` independently
+    reads main's own pre-land `pyproject.toml` version via `git show
+    <pre_land_tip>:pyproject.toml` (a git-object read, immune to whatever
+    the squash-apply's working-tree mutation did to the on-disk file --
+    `pyproject.toml` is not scope-protected, so a ticket's own worktree can
+    carry it through the squash) BEFORE invoking `bump_version`, and
+    hard-refuses (same unwind-and-`Err(ReleaseBumpFailed)` path) unless the
+    callback's returned version is strictly greater than that captured
+    baseline. This is a caller-independent backstop: twice in one day a
+    `bump_version` implementation computed its "next version" from a
+    stale, worktree-carried input and clobbered a higher version already
+    on main (T-0976, T-0989) -- this assertion makes that class of bug a
+    loud land failure instead of a silent regression, sibling to T-0959's
+    archive-splice integrity check and T-0740's ledger integrity check.
 9.7. **Native rebuild trigger** (T-0338, only when `rebuild_natives` was
     supplied AND the landed changeset touches a native source tree --
     `frob-core/` or `strata-core/`): `rebuild_natives(root)` runs `make

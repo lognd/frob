@@ -3712,7 +3712,59 @@ def _touches_native_source(changeset: frozenset[str]) -> bool:
 
 
 # frob:ticket T-0338
+# frob:ticket T-0992
+_LAND_PYPROJECT_VERSION_RE = re.compile(r'(?m)^version\s*=\s*"([^"]*)"')
+
+
+# frob:ticket T-0992
+def _read_root_pyproject_version(root: Path, pre_land_tip: str) -> str | None:
+    """Read `pyproject.toml`'s `version = "..."` value as it stood at
+    `pre_land_tip` -- MAIN's own last-committed state BEFORE this land's
+    squash-apply touched the working tree -- via `git show`, or `None` if
+    the file did not exist there / is unparsable. This is the T-0992
+    monotonicity check's ground truth for "what MAIN already has".
+
+    Deliberately reads the git OBJECT at `pre_land_tip`, never the
+    working-tree file on disk: `pyproject.toml` is not protected from a
+    ticket's own scope, so `git merge --squash` can (and, per the T-0976
+    incident, did) carry a worktree's stale `pyproject.toml` straight into
+    `root`'s working tree as part of the squash-apply itself, before
+    `bump_version` ever runs -- reading the on-disk file at that point
+    would just re-read the very corruption this check exists to catch.
+    `pre_land_tip` (captured once, before any mutation, by `land`'s own
+    `_rev_parse(root, "HEAD")`) is the one value in this whole flow that is
+    guaranteed to still name MAIN's true pre-land commit."""
+    shown = run_argv(["git", "-C", str(root), "show", f"{pre_land_tip}:pyproject.toml"])
+    if shown.is_err or shown.danger_ok.returncode != 0:
+        return None
+    match = _LAND_PYPROJECT_VERSION_RE.search(shown.danger_ok.stdout)
+    return match.group(1) if match else None
+
+
+# frob:ticket T-0992
+def _release_bump_is_monotonic(pre_bump_version: str | None, new_version: str) -> bool:
+    """Whether `new_version` is strictly greater than `pre_bump_version`
+    (T-0992's hard monotonicity refusal, sibling of T-0959's archive
+    assertion and T-0740's ledger integrity check). No prior version on
+    disk (`pre_bump_version=None`, e.g. a `pyproject.toml`-less test root)
+    is vacuously monotonic -- there is nothing to regress against. Falls
+    back to a plain string inequality if either side fails PEP 440 parsing
+    (e.g. a synthetic non-numeric version in a unit-test fixture) rather
+    than raising -- this is a refusal gate, not a place to crash the whole
+    land on a malformed version string."""
+    if pre_bump_version is None:
+        return True
+    try:
+        from packaging.version import Version
+
+        return Version(new_version) > Version(pre_bump_version)
+    except Exception:
+        return new_version != pre_bump_version and new_version > pre_bump_version
+
+
+# frob:ticket T-0338
 # frob:ticket T-0907
+# frob:ticket T-0992
 def _apply_release_bump(
     root: Path,
     ticket: Ticket,
@@ -3725,9 +3777,21 @@ def _apply_release_bump(
     explicit `pre_land_tip`, not a bare `HEAD`) on failure (T-0338).
     `bump_version=None` (the library default) is a no-op returning
     `Ok(None)` -- see `land`'s docstring for why this is a caller-supplied
-    callback rather than computed here."""
+    callback rather than computed here.
+
+    T-0992: captures MAIN's own `pyproject.toml` version as it stood at
+    `pre_land_tip` (git object read, immune to the squash-apply's own
+    working-tree mutation) and, if the callback reports a bump, hard-
+    refuses (unwinding the squash, same as any other bump failure) unless
+    the new version is strictly greater than that captured value. This
+    guards against a `bump_version` implementation that (accidentally, via
+    a stale manifest or any other worktree-carried input) computes its
+    "next version" from something other than main's actual current state
+    -- twice observed clobbering a higher version already on main (T-0976,
+    T-0989)."""
     if bump_version is None:
         return Ok(None)
+    pre_bump_version = _read_root_pyproject_version(root, pre_land_tip)
     bumped = bump_version(root, ticket, final_id)
     if bumped.is_err:
         _log.error(
@@ -3740,6 +3804,22 @@ def _apply_release_bump(
         unwound = _verified_reset_root(root, pre_land_tip, final_id)
         return Err(unwound.danger_err if unwound.is_err else bumped.danger_err)
     if bumped.danger_ok is not None:
+        new_version = bumped.danger_ok
+        if not _release_bump_is_monotonic(pre_bump_version, new_version):
+            _log.error(
+                "land: %s REL001 version-bump callback computed %s, which is "
+                "not strictly greater than main's pre-land version %s -- "
+                "refusing (T-0992 monotonicity assertion) and unwinding the "
+                "staged squash; the bump input must be derived from root's "
+                "current state, never a stale worktree-carried value",
+                final_id,
+                new_version,
+                pre_bump_version,
+            )
+            unwound = _verified_reset_root(root, pre_land_tip, final_id)
+            return Err(
+                unwound.danger_err if unwound.is_err else LandError.ReleaseBumpFailed
+            )
         _log.info(
             "land: %s REL001 version bump applied and staged: -> %s",
             final_id,
