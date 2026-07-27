@@ -218,6 +218,7 @@ path = "tests/unit/cve/fixtures/vet_mirror/cves/2024/1xxx/CVE-2024-1001.json"
 reason = "CVE vet-mirror fixture consumed by a single dedicated test module by design"
 
 [gates.severity]
+# frob-zone-start gates.severity T-1002
 # COV001 (public symbol has an explicit frob:doc edge) and TEST001 (public
 # symbol has a unit test) are now hard errors: the whole surface -- Python,
 # Rust (incl. PyO3 exports), and the rest -- is annotated, so any new
@@ -304,6 +305,7 @@ PERF001 = "error"
 PERF002 = "error"
 PERF003 = "error"
 PERF004 = "error"
+# frob-zone-end gates.severity T-1002
 
 [testing]
 # min_unit_cases dropped from the 3-case aspirational target to 1 while the

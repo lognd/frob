@@ -1025,6 +1025,7 @@ def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # `_rule_id_scan`'s module docstring) and stay purely hand-maintained here
 # as before this ticket.
 # frob:tests tests/test_gates.py::TestKnownGateRuleIds.test_every_emitted_rule_literal_is_known  # noqa: E501
+# frob-zone-start known-gate-rules T-1002
 _KNOWN_GATE_RULES = frozenset(
     {
         "COV001",
@@ -1518,6 +1519,7 @@ _KNOWN_GATE_RULES = frozenset(
         "SYS203",
     }
 )
+# frob-zone-end known-gate-rules T-1002
 
 
 # frob:ticket T-0499

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import multiprocessing
 import os
+import re
 import signal
 import subprocess
 import time
@@ -5285,3 +5286,60 @@ class TestPushAfterLand:
         with pytest.raises(SystemExit) as exc_info:
             ticket_runner._push_after_land(repo, self._report(dry_run=False))
         assert exc_info.value.code == 1
+
+
+# frob:ticket T-1002
+class TestUnionZoneMerge:
+    """T-1002: append-only union-merge for the three chronic conflict
+    hotspots (`[gates.severity]`, `_KNOWN_GATE_RULES`, `docs/audits/*.md`
+    remediation logs) -- concurrent distinct appends compose with zero
+    manual resolution; a true same-key contradiction still refuses."""
+
+    def test_keyed_lines_union_composes(self) -> None:
+        # frob:tests tests/test_ticket_land.py::TestUnionZoneMerge.test_keyed_lines_union_composes  # noqa: E501
+        ours = '# comment for A\nRULEA = "error"\n'
+        theirs = '# comment for B\nRULEB = "warn"\n'
+        merged = _land_mod._union_keyed_chunks(
+            ours, theirs, re.compile(r"^(?P<key>[A-Za-z0-9]+)\s*=")
+        )
+        assert merged is not None
+        assert 'RULEA = "error"' in merged
+        assert 'RULEB = "warn"' in merged
+
+    def test_keyed_lines_union_refuses(self) -> None:
+        # frob:tests tests/test_ticket_land.py::TestUnionZoneMerge.test_keyed_lines_union_refuses  # noqa: E501
+        ours = 'RULEA = "error"\n'
+        theirs = 'RULEA = "warn"\n'
+        merged = _land_mod._union_keyed_chunks(
+            ours, theirs, re.compile(r"^(?P<key>[A-Za-z0-9]+)\s*=")
+        )
+        assert merged is None
+
+    def test_resolve_stages(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestUnionZoneMerge.test_resolve_stages  # noqa: E501
+        target = repo / "frob.toml"
+        target.write_text(
+            "[gates.severity]\n"
+            "# frob-zone-start gates.severity T-1002\n"
+            "<<<<<<< HEAD\n"
+            'RULEA = "error"\n'
+            "=======\n"
+            'RULEB = "warn"\n'
+            ">>>>>>> main\n"
+            "# frob-zone-end gates.severity T-1002\n"
+        )
+        _commit_all(repo, "conflict marker fixture")
+        resolved = _land_mod._resolve_union_zone_conflicts(repo, {"frob.toml"})
+        assert resolved.is_ok
+        assert resolved.danger_ok == frozenset()
+        content = target.read_text()
+        assert 'RULEA = "error"' in content
+        assert 'RULEB = "warn"' in content
+        assert "<<<<<<<" not in content
+
+    def test_append_only_union_concatenates(self) -> None:
+        # frob:tests tests/test_ticket_land.py::TestUnionZoneMerge.test_append_only_union_concatenates  # noqa: E501
+        ours = "## Remediation log (T-A)\nfixed thing A\n"
+        theirs = "## Remediation log (T-B)\nfixed thing B\n"
+        merged = _land_mod._union_append_only(ours, theirs)
+        assert "T-A" in merged and "T-B" in merged
