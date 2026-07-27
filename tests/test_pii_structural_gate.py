@@ -54,6 +54,7 @@ def _commit(root: Path, message: str = "commit") -> None:
     _git(root, "commit", "-q", "-m", message)
 
 
+# frob:ticket T-0971
 class TestFieldNames:
     """PII010: field-name/type detection over Python data structures."""
 
@@ -89,6 +90,64 @@ class TestFieldNames:
 
     def test_typeddict_ssn_field_fires(self) -> None:
         src = "from typing import TypedDict\n\nclass Record(TypedDict):\n    ssn: str\n"
+        tree = ast.parse(src)
+        violations = _scan_python_fields(tree, "example.py")
+        assert any(v.rule == "PII010" for v in violations)
+
+    # frob:waive DUP001 reason="parallel test methods within \
+    # test_pii_structural_gate.py (2 sites) sharing an arrange-act scaffold \
+    # typical of exhaustive per-case coverage; extracting would obscure \
+    # per-case intent"
+    # frob:ticket T-0971
+    def test_camelcase_password_hash_field_fires(self) -> None:
+        # frob:tests src/frob/gates/_pii_structural.py::_field_name_hit
+        """T-0971 (gates-quality audit finding 5): a camelCase field name
+        must still match its snake_case keyword equivalent."""
+        src = (
+            "from dataclasses import dataclass\n\n"
+            "@dataclass\n"
+            "class User:\n"
+            "    passwordHash: str\n"
+        )
+        tree = ast.parse(src)
+        violations = _scan_python_fields(tree, "example.py")
+        assert any(v.rule == "PII010" for v in violations)
+
+    # frob:ticket T-0971
+    def test_camelcase_date_of_birth_field_fires(self) -> None:
+        """T-0971 finding 5: a multi-word camelCase field name must still
+        match its underscored multi-word keyword."""
+        src = (
+            "from dataclasses import dataclass\n\n"
+            "@dataclass\n"
+            "class Person:\n"
+            "    dateOfBirth: str\n"
+        )
+        tree = ast.parse(src)
+        violations = _scan_python_fields(tree, "example.py")
+        assert any(v.rule == "PII010" for v in violations)
+
+    # frob:ticket T-0971
+    def test_orm_declarative_base_field_fires(self) -> None:
+        """T-0971 (gates-quality audit finding 14): a SQLAlchemy 2.0
+        `DeclarativeBase` subclass is a data structure PII010 must scan --
+        the most common real ORM-row PII carrier."""
+        src = (
+            "from sqlalchemy.orm import DeclarativeBase\n\n"
+            "class User(DeclarativeBase):\n"
+            "    ssn: str\n"
+        )
+        tree = ast.parse(src)
+        violations = _scan_python_fields(tree, "example.py")
+        assert any(v.rule == "PII010" for v in violations)
+
+    # frob:ticket T-0971
+    def test_django_model_field_fires(self) -> None:
+        """T-0971 finding 14: a Django `models.Model` subclass is a data
+        structure PII010 must scan."""
+        src = (
+            "from django.db import models\n\nclass User(models.Model):\n    ssn: str\n"
+        )
         tree = ast.parse(src)
         violations = _scan_python_fields(tree, "example.py")
         assert any(v.rule == "PII010" for v in violations)

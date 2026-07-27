@@ -223,6 +223,16 @@ TEST006 = "warn"
 # (16 unwaived findings burned down to 0) -- promote the rule from its
 # long-standing WARN-only posture to a real gate.
 SEC110 = "error"
+# T-0971: gates-quality audit finding 4/5 -- PII010 (undeclared PII-shaped
+# data-structure field) and PII012 (PII-shaped identifier/comment keyword
+# sweep) were WARN-only, so a repo could carry undeclared PII field
+# surfaces and still exit 0. The 167-finding unwaived baseline measured on
+# main (2026-07-27) is burned down to zero (reviewed-non-PII homonym
+# extension in `_pii_structural.py`'s `_PII012_REVIEWED_NON_PII`, plus the
+# 3 pre-existing `frob:waive PII010` sites), so this promotion does not
+# immediately red the build.
+PII010 = "error"
+PII012 = "error"
 
 [testing]
 # min_unit_cases dropped from the 3-case aspirational target to 1 while the

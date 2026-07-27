@@ -508,11 +508,42 @@ _CROSS_LANG_TYPE_SIGNATURES: tuple[_FieldSignature, ...] = (
 )
 
 
+#: T-0971 (gates-quality audit finding 5): a camelCase/concatenated field
+#: name (`passwordHash`, `apiKey`, `ssnValue`, `dateOfBirth`) never produced
+#: a `_`-split token under the old lowercase-then-split-on-`_` scheme, so
+#: `_field_name_hit` silently missed the single most common non-snake_case
+#: naming convention (TypeScript/JS-flavored pydantic models, camelCase
+#: JSON aliases). Inserted before the existing lower+split logic runs, so
+#: BOTH the single-word token match and the multi-word underscored-
+#: substring match benefit from one normalization instead of two: a
+#: boundary is a lowercase/digit run followed by an uppercase letter
+#: (`passwordHash` -> `password_Hash`), or a multi-capital acronym run
+#: followed by a lowercase letter (`APIKey` -> `API_Key`, so `Key` is its
+#: own token, not glued to the acronym).
+# frob:ticket T-0971
+_CAMEL_BOUNDARY_RE = re.compile(r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])")
+
+
+# frob:ticket T-0971
+# frob:tests tests/test_pii_structural_gate.py::TestFieldNames.test_camelcase_password_hash_field_fires  # noqa: E501
+def _camel_to_snake(name: str) -> str:
+    """Insert `_` at every camelCase/acronym boundary in `name` (T-0971,
+    `_CAMEL_BOUNDARY_RE`'s docstring) -- a no-op on an already-snake_case
+    or single-word name, since neither contains a lower-to-upper or
+    acronym-to-word boundary."""
+    return _CAMEL_BOUNDARY_RE.sub("_", name)
+
+
+# frob:ticket T-0971
+# frob:tests tests/test_pii_structural_gate.py::TestFieldNames.test_camelcase_password_hash_field_fires  # noqa: E501
 def _field_name_hit(field_name: str) -> _FieldSignature | None:
     """The first `FIELD_SIGNATURES` name-kind entry `field_name` matches, or
     `None`. Single-word keywords match a whole `_`-split token; multi-word
-    (underscored) keywords match as a substring of the full lowered name."""
-    lowered = field_name.lower()
+    (underscored) keywords match as a substring of the full lowered name.
+    `field_name` is first camelCase-normalized (`_camel_to_snake`, T-0971)
+    so `passwordHash`/`apiKey`-shaped names match exactly like their
+    snake_case equivalents would."""
+    lowered = _camel_to_snake(field_name).lower()
     tokens = set(lowered.split("_"))
     for sig in _NAME_SIGNATURES:
         if "_" in sig.keyword:
@@ -566,8 +597,26 @@ def _field_type_hit(annotation: ast.expr | None) -> _FieldSignature | None:
 
 #: Base-class / decorator name fragments that mark a `ClassDef` as a data
 #: structure worth scanning (pydantic `BaseModel`, `TypedDict`,
-#: `NamedTuple`, `dataclasses.dataclass`, `attrs`/`attr.s` `define`).
-_STRUCTURE_BASE_NAMES = frozenset({"BaseModel", "TypedDict", "NamedTuple"})
+#: `NamedTuple`, `dataclasses.dataclass`, `attrs`/`attr.s` `define`). T-0971
+#: (gates-quality audit finding 14): a `class User(OrmBase)` subclassing a
+#: PROJECT-LOCAL intermediate base (not `BaseModel` itself) was invisible
+#: -- the exact shape SQLAlchemy's declarative pattern and Django's ORM
+#: both use, arguably the most common real PII carrier (an ORM row).
+#: `DeclarativeBase` (SQLAlchemy 2.0's own base, `class Base(DeclarativeBase)`
+#: is the documented idiom so a project's `Base` is one hop from this name,
+#: not zero) and `Model` (Django's `models.Model`, matched on the bare
+#: `Attribute.attr` suffix the same way `BaseModel`/`TypedDict` already
+#: are) are added directly since they are fixed, well-known library names.
+#: A THIRD-hop project-local base (`class User(OrmBase)` where `OrmBase`
+#: itself subclasses `DeclarativeBase`) is NOT resolved -- that needs
+#: cross-file base-class transitive resolution this AST-local, single-file
+#: gate does not have; disclosed as a real remaining gap, not silently
+#: dropped (T-0971 Done report).
+# frob:ticket T-0971
+# frob:tests tests/test_pii_structural_gate.py::TestFieldNames.test_orm_declarative_base_field_fires  # noqa: E501
+_STRUCTURE_BASE_NAMES = frozenset(
+    {"BaseModel", "TypedDict", "NamedTuple", "DeclarativeBase", "Model"}
+)
 _STRUCTURE_DECORATOR_NAMES = frozenset({"dataclass", "define", "attrs", "frozen"})
 
 
@@ -1042,6 +1091,7 @@ def _is_data_structure_field_target(node: ast.AST) -> bool:
 #: refactor that only shifts line numbers does not silently widen the
 #: exemption -- a brand-new identifier introduced at the same site still
 #: fires and gets its own review.
+# frob:ticket T-0971
 _PII012_REVIEWED_NON_PII: frozenset[tuple[str, str]] = frozenset(
     {
         # "token" homonym.
@@ -1143,6 +1193,139 @@ _PII012_REVIEWED_NON_PII: frozenset[tuple[str, str]] = frozenset(
         ("src/frob/strata/_pii.py", "email"),
         ("src/frob/gates/__init__.py", "_cve_fingerprint_scan"),
         ("src/frob/strata/_threat.py", "password"),
+        # T-0971: PII010/PII012 burn-down -- the remaining 89 (file,
+        # identifier) sites in the 167-finding unwaived measured baseline,
+        # each individually read at its call site before being added here
+        # (same T-0540 discipline, not a blanket mute). All are the same
+        # already-documented "token" LEXER/parser/regex-name/CLI-token/
+        # random-nonce homonym (a compiled `_*_TOKEN_RE` provability
+        # pattern, a tree-sitter/markdown/CLI-invocation parse token, a
+        # `ContextVar` reset token, or a `uuid4().hex` random directory
+        # suffix -- never an auth token) or the "diagnosis"/"email"/
+        # "password"/"secret"/"ssn"/"address" homonyms already established
+        # above (this repo's own `frob doctor` diagnostic feature name,
+        # PII010's own cross-language gate test names literally testing
+        # the detector, and a plain-English comment word) -- confirmed by
+        # reading each site, not inferred from the identifier text alone.
+        ("src/frob/arch/_rust.py", "token"),
+        ("src/frob/arch/_srp.py", "token"),
+        ("src/frob/deploy/_generate_windows.py", "token"),
+        ("src/frob/doctor.py", "test_run_diagnosis_unhealthy"),
+        ("src/frob/gates/_docptr.py", "Token"),
+        ("src/frob/gates/_docptr.py", "_CLI_TOKEN_RE"),
+        ("src/frob/gates/_docptr.py", "token"),
+        ("src/frob/gates/_protocol_summary.py", "_parse_transition_token"),
+        ("src/frob/gates/_protocol_summary.py", "token"),
+        ("src/frob/gitio.py", "token"),
+        ("src/frob/graph/_core.py", "token"),
+        ("src/frob/graph/callgraph.py", "token"),
+        ("src/frob/scaffold/_pool.py", "token"),
+        ("src/frob/strata/_backpressure.py", "_BOUNDED_INTAKE_TOKEN_RE"),
+        ("src/frob/strata/_backpressure.py", "_TIMEOUT_TOKEN_RE"),
+        ("src/frob/strata/_backpressure.py", "token"),
+        ("src/frob/strata/_backpressure.py", "token_bucket"),
+        ("src/frob/strata/_circuit_breaker.py", "_CIRCUIT_BREAKER_TOKEN_RE"),
+        ("src/frob/strata/_circuit_breaker.py", "_TIMEOUT_TOKEN_RE"),
+        ("src/frob/strata/_circuit_breaker.py", "token"),
+        ("src/frob/strata/_clock_ordering.py", "_ORDERING_TOKEN_RE"),
+        ("src/frob/strata/_clock_ordering.py", "_WALL_CLOCK_TOKEN_RE"),
+        ("src/frob/strata/_clock_ordering.py", "has_real_token"),
+        ("src/frob/strata/_clock_ordering.py", "token"),
+        ("src/frob/strata/_delivery_semantics.py", "_DELIVERY_SEMANTICS_TOKEN_RE"),
+        ("src/frob/strata/_delivery_semantics.py", "_SCHEMA_VERSION_TOKEN_RE"),
+        ("src/frob/strata/_delivery_semantics.py", "token"),
+        ("src/frob/strata/_distributed_txn.py", "_SAGA_TOKEN_RE"),
+        ("src/frob/strata/_distributed_txn.py", "_TXN_TOKEN_RE"),
+        ("src/frob/strata/_distributed_txn.py", "token"),
+        ("src/frob/strata/_fallback.py", "_FALLBACK_TOKEN_RE"),
+        ("src/frob/strata/_fallback.py", "_TIMEOUT_TOKEN_RE"),
+        ("src/frob/strata/_fallback.py", "token"),
+        ("src/frob/strata/_host_isolation.py", "Token"),
+        ("src/frob/strata/_interactive_cost.py", "_BOUNDED_COST_TOKEN_RE"),
+        ("src/frob/strata/_interactive_cost.py", "_BOUNDED_INTAKE_TOKEN_"),
+        ("src/frob/strata/_interactive_cost.py", "token"),
+        ("src/frob/strata/_message_schema.py", "_BOUNDED_INTAKE_TOKEN_RE"),
+        ("src/frob/strata/_message_schema.py", "_SCHEMA_VERSION_TOKEN_RE"),
+        ("src/frob/strata/_message_schema.py", "token"),
+        ("src/frob/strata/_obligation_proof.py", "files_evidence_token"),
+        ("src/frob/strata/_observability.py", "_OBSERVABILITY_TOKEN_RE"),
+        ("src/frob/strata/_observability.py", "_TIMEOUT_TOKEN_RE"),
+        ("src/frob/strata/_observability.py", "token"),
+        ("src/frob/strata/_process_bounds.py", "_BOUNDED_INTAKE_TOKEN_RE"),
+        (
+            "src/frob/strata/_process_bounds.py",
+            "_INTERFACE_CLASSIFICATION_TOKEN_RE",
+        ),
+        ("src/frob/strata/_process_bounds.py", "_PROCESS_BOUNDS_TOKEN_RE"),
+        ("src/frob/strata/_process_bounds.py", "token"),
+        ("src/frob/strata/_reliability.py", "_HEALTH_TOKEN_RE"),
+        ("src/frob/strata/_reliability.py", "_TIMEOUT_TOKEN_RE"),
+        ("src/frob/strata/_reliability.py", "token"),
+        ("src/frob/strata/_retry.py", "_BACKOFF_TOKEN_RE"),
+        ("src/frob/strata/_retry.py", "_TIMEOUT_TOKEN_RE"),
+        ("src/frob/strata/_retry.py", "token"),
+        ("src/frob/strata/_slo.py", "_SLO_TOKEN_RE"),
+        ("src/frob/strata/_slo.py", "_TIMEOUT_TOKEN_RE"),
+        ("src/frob/strata/_slo.py", "token"),
+        ("src/frob/strata/_ssot.py", "_OWNER_TOKEN_RE"),
+        ("src/frob/strata/_ssot.py", "_TIMEOUT_TOKEN_RE"),
+        ("src/frob/strata/_ssot.py", "token"),
+        ("src/frob/strata/_supply_chain_boot.py", "_ABI_COMPAT_WINDOW_TOKEN_RE"),
+        ("src/frob/strata/_supply_chain_boot.py", "_BOOT_ATTESTATION_TOKEN_RE"),
+        ("src/frob/strata/_supply_chain_boot.py", "_BOUNDED_INTAKE_TOKEN_RE"),
+        ("src/frob/strata/_supply_chain_boot.py", "token"),
+        ("src/frob/strata/_txn.py", "_OWNER_TOKEN_RE"),
+        ("src/frob/strata/_txn.py", "_TXN_TOKEN_RE"),
+        ("src/frob/strata/_txn.py", "token"),
+        ("src/frob/tickets/_models.py", "token"),
+        (
+            "tests/system/test_cli_doctor.py",
+            "test_run_diagnosis_healthy_after_scaffold_apply",
+        ),
+        (
+            "tests/system/test_cli_doctor.py",
+            "test_run_diagnosis_healthy_with_no_derived_state",
+        ),
+        (
+            "tests/system/test_cli_doctor.py",
+            "test_run_diagnosis_healthy_with_no_mutate_journals",
+        ),
+        (
+            "tests/system/test_cli_doctor.py",
+            "test_run_diagnosis_ignores_journal_owned_by_live_pid",
+        ),
+        (
+            "tests/system/test_cli_doctor.py",
+            "test_run_diagnosis_ignores_non_frob_directory",
+        ),
+        (
+            "tests/system/test_cli_doctor.py",
+            "test_run_diagnosis_unhealthy_when_derived_state_corrupt",
+        ),
+        (
+            "tests/system/test_cli_doctor.py",
+            "test_run_diagnosis_unhealthy_when_scaffold_blocks_missing",
+        ),
+        (
+            "tests/system/test_cli_doctor.py",
+            "test_run_diagnosis_unhealthy_with_stale_mutate_journal",
+        ),
+        (
+            "tests/test_doctor.py",
+            "test_run_diagnosis_holds_exclusive_lock_blocking_a_shared_reader",
+        ),
+        ("tests/test_gates.py", "test_rust_secret_newtype_type_field_fires"),
+        ("tests/test_gates.py", "test_rust_struct_ssn_field_fires"),
+        ("tests/test_gates.py", "test_ts_branded_email_type_field_fires"),
+        ("tests/test_gates.py", "test_ts_class_field_token_fires"),
+        ("tests/test_gates.py", "test_ts_interface_email_field_fires"),
+        ("tests/test_gates.py", "test_ts_secret_wrapper_type_field_fires"),
+        ("tests/test_gates.py", "test_ts_type_alias_password_field_fires"),
+        ("tests/test_ticket_land.py", "address"),
+        ("tests/test_ticket_land.py", "token"),
+        ("tests/unit/strata/test_obligation_proof.py", "test_matches_a_real_token"),
+        ("tests/unit/strata/test_registry_cross_refs.py", "token"),
+        ("tests/unit/strata/test_reliability.py", "token"),
     }
 )
 
