@@ -190,7 +190,6 @@ def check_layering_violations(
         iter_files,
         load_exclude_globs,
     )
-    from frob.lang import extract_imports, resolve_local_import
 
     exclude_globs = load_exclude_globs(root)
     out: list[ArchSuggestion] = []
@@ -208,69 +207,84 @@ def check_layering_violations(
         source_layer = config.layer_for(rel)
         if source_layer is None:
             continue
-
-        if _has_dynamic_import(path):
-            out.append(
-                ArchSuggestion(
-                    file=rel,
-                    line=None,
-                    category="dip-layering-violation",
-                    severity="warning",
-                    message=(
-                        f"`{rel}` (layer `{source_layer}`) uses dynamic import"
-                        " indirection this scan cannot statically resolve"
-                    ),
-                    detail=(
-                        "importlib.import_module()/__import__() can reach any"
-                        " module at runtime, defeating a static layering"
-                        " check -- replace with a static import, or move the"
-                        " dynamic dispatch behind a declared registration"
-                        " point this check can see"
-                    ),
-                    symref=rel,
-                )
-            )
-
-        result = extract_imports(path)
-        if result.is_err:
-            continue
-        targets: set[str] = set()
-        for spec in result.danger_ok:
-            resolved = resolve_local_import(
-                spec, "python", file_dir=path.parent, root=root
-            )
-            if resolved is None:
-                continue
-            targets.add(resolved)
-            targets.update(_resolve_reexports(resolved, "python", root=root))
-
-        for target in sorted(targets):
-            target_layer = config.layer_for(target)
-            if target_layer is None or target_layer == source_layer:
-                continue
-            if target_layer in config.allow.get(source_layer, []):
-                continue
-            out.append(
-                ArchSuggestion(
-                    file=rel,
-                    line=None,
-                    category="dip-layering-violation",
-                    severity="warning",
-                    message=(
-                        f"`{rel}` (layer `{source_layer}`) imports `{target}`"
-                        f" (layer `{target_layer}`) -- not a declared allowed"
-                        " dependency"
-                    ),
-                    detail=(
-                        f"add `{target_layer}` to `[arch.layering.allow]"
-                        f".{source_layer}` in frob.toml if this dependency is"
-                        " intentional, or remove the import and depend on an"
-                        " abstraction instead"
-                    ),
-                    symref=rel,
-                )
-            )
+        _layering_violations_for_file(path, rel, root, source_layer, config, out)
     return out
+
+
+# frob:ticket T-0970
+def _layering_violations_for_file(
+    path: Path,
+    rel: str,
+    root: Path,
+    source_layer: str,
+    config: LayeringConfig,
+    out: list[ArchSuggestion],
+) -> None:
+    """One layered file's contribution to `check_layering_violations`:
+    the dynamic-import fail-closed flag, then every resolved cross-layer
+    import edge not present in `config.allow[source_layer]`; appends
+    findings onto `out` in place."""
+    from frob.lang import extract_imports, resolve_local_import
+
+    if _has_dynamic_import(path):
+        out.append(
+            ArchSuggestion(
+                file=rel,
+                line=None,
+                category="dip-layering-violation",
+                severity="warning",
+                message=(
+                    f"`{rel}` (layer `{source_layer}`) uses dynamic import"
+                    " indirection this scan cannot statically resolve"
+                ),
+                detail=(
+                    "importlib.import_module()/__import__() can reach any"
+                    " module at runtime, defeating a static layering"
+                    " check -- replace with a static import, or move the"
+                    " dynamic dispatch behind a declared registration"
+                    " point this check can see"
+                ),
+                symref=rel,
+            )
+        )
+
+    result = extract_imports(path)
+    if result.is_err:
+        return
+    targets: set[str] = set()
+    for spec in result.danger_ok:
+        resolved = resolve_local_import(spec, "python", file_dir=path.parent, root=root)
+        if resolved is None:
+            continue
+        targets.add(resolved)
+        targets.update(_resolve_reexports(resolved, "python", root=root))
+
+    for target in sorted(targets):
+        target_layer = config.layer_for(target)
+        if target_layer is None or target_layer == source_layer:
+            continue
+        if target_layer in config.allow.get(source_layer, []):
+            continue
+        out.append(
+            ArchSuggestion(
+                file=rel,
+                line=None,
+                category="dip-layering-violation",
+                severity="warning",
+                message=(
+                    f"`{rel}` (layer `{source_layer}`) imports `{target}`"
+                    f" (layer `{target_layer}`) -- not a declared allowed"
+                    " dependency"
+                ),
+                detail=(
+                    f"add `{target_layer}` to `[arch.layering.allow]"
+                    f".{source_layer}` in frob.toml if this dependency is"
+                    " intentional, or remove the import and depend on an"
+                    " abstraction instead"
+                ),
+                symref=rel,
+            )
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -324,57 +338,77 @@ def check_no_di_construction(module: NormalizedModule) -> list[ArchSuggestion]:
                 continue
             if m.name.startswith(_FACTORY_NAME_PREFIXES):
                 continue
-            constructed: set[str] = set()
-            for call in m.calls:
-                name = _is_constructor_call(call.callee, class_names)
-                if name is not None and name != cls.name:
-                    constructed.add(name)
-            for name in sorted(constructed):
-                out.append(
-                    ArchSuggestion(
-                        file=module.path,
-                        line=m.line,
-                        category="no-di-construction",
-                        severity="suggestion",
-                        message=(
-                            f"`{cls.name}.{m.name}` directly constructs"
-                            f" `{name}` instead of receiving it via"
-                            " injection"
-                        ),
-                        detail=(
-                            "a concrete collaborator built mid-method hides"
-                            " the dependency from the class's construction"
-                            " boundary -- accept it as a constructor/param"
-                            " instead"
-                        ),
-                        symref=f"{module.path}::{cls.name}.{m.name}",
-                    )
-                )
+            _append_no_di_findings(
+                module,
+                out,
+                calls=m.calls,
+                class_names=class_names,
+                line=m.line,
+                symref=f"{module.path}::{cls.name}.{m.name}",
+                display_name=f"{cls.name}.{m.name}",
+                self_name=cls.name,
+                site_kind="method",
+            )
     for f in module.functions:
         if f.name.startswith(_FACTORY_NAME_PREFIXES):
             continue
-        constructed = set()
-        for call in f.calls:
-            name = _is_constructor_call(call.callee, class_names)
-            if name is not None:
-                constructed.add(name)
-        for name in sorted(constructed):
-            out.append(
-                ArchSuggestion(
-                    file=module.path,
-                    line=f.line,
-                    category="no-di-construction",
-                    severity="suggestion",
-                    message=(
-                        f"`{f.name}` directly constructs `{name}` instead of"
-                        " receiving it via injection"
-                    ),
-                    detail=(
-                        "a concrete collaborator built mid-function hides"
-                        " the dependency from the caller -- accept it as a"
-                        " parameter instead"
-                    ),
-                    symref=f"{module.path}::{f.name}",
-                )
-            )
+        _append_no_di_findings(
+            module,
+            out,
+            calls=f.calls,
+            class_names=class_names,
+            line=f.line,
+            symref=f"{module.path}::{f.name}",
+            display_name=f.name,
+            self_name=None,
+            site_kind="function",
+        )
     return out
+
+
+# frob:ticket T-0970
+def _append_no_di_findings(
+    module: NormalizedModule,
+    out: list[ArchSuggestion],
+    *,
+    calls: list,
+    class_names: frozenset[str],
+    line: int,
+    symref: str,
+    display_name: str,
+    self_name: str | None,
+    site_kind: str,
+) -> None:
+    """Shared body for `check_no_di_construction`'s method and bare-function
+    loops: find every same-file class `calls` constructs inline (excluding
+    the enclosing class itself for a method site) and append one
+    `no-di-construction` suggestion per constructed name, in place onto
+    `out`."""
+    constructed: set[str] = set()
+    for call in calls:
+        name = _is_constructor_call(call.callee, class_names)
+        if name is not None and name != self_name:
+            constructed.add(name)
+    boundary = "constructor/param" if site_kind == "method" else "parameter"
+    hidden_from = (
+        "the class's construction boundary" if site_kind == "method" else "the caller"
+    )
+    for name in sorted(constructed):
+        out.append(
+            ArchSuggestion(
+                file=module.path,
+                line=line,
+                category="no-di-construction",
+                severity="suggestion",
+                message=(
+                    f"`{display_name}` directly constructs `{name}` instead"
+                    " of receiving it via injection"
+                ),
+                detail=(
+                    f"a concrete collaborator built mid-{site_kind} hides"
+                    f" the dependency from {hidden_from} -- accept it as a"
+                    f" {boundary} instead"
+                ),
+                symref=symref,
+            )
+        )

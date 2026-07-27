@@ -231,6 +231,7 @@ def _reachable(
     return seen
 
 
+# frob:waive ARCH001 reason="a textbook Tarjan's SCC (iterative, to avoid recursion-depth limits on large call graphs): index/lowlink/on-stack bookkeeping plus the explicit work-stack unwind loop are one indivisible algorithm, not independently meaningful phases -- splitting the unwind step into a helper would require passing the index/lowlink/stack triple across a new boundary for every visited node, adding indirection without separating a real sub-concern"  # noqa: E501
 def _tarjan_sccs(nodes: Sequence[str], callgraph: CallGraph) -> list[list[str]]:
     """Tarjan's SCC decomposition over `nodes`, restricted to edges landing
     back inside `nodes` -- returns EVERY component (including singleton,

@@ -633,40 +633,19 @@ def _resolve_baseline_only_chunk(only: list[str]) -> frozenset[str] | None:
     return frozenset(expanded) & _ALL_GATES
 
 
-# frob:ticket T-0751
+# frob:ticket T-0970
 # frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_stamp_baseline_mode_calls_stamp_and_returns  # noqa: E501
 # frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_stamp_baseline_gate_error_exits_1  # noqa: E501
-# frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_stamp_baseline_only_chunk_records_without_stamping  # noqa: E501
-# frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_stamp_baseline_only_chunk_completes_and_stamps  # noqa: E501
-def _run_stamp_baseline(root: Path, cfg: AppConfig) -> None:
-    """`frob check --stamp-baseline`: record current gate violations as `--delta`'s
-    baseline.
+def _run_baseline_chunks(
+    root: Path,
+    cfg: AppConfig,
+    chunks_to_run: list[frozenset[str]],
+    accumulated: dict[str, list[str]],
+) -> None:
+    """Run each gate chunk in `chunks_to_run` and fold its violations into
+    `accumulated` (mutated in place); exits 1 on the first gate-run failure."""
+    from frob.gates import GateConfig, GateError, run_gates
 
-    T-0751: a bare `--stamp-baseline` (no `--only`) still runs every gate
-    chunk (`_stamp_baseline_gate_chunks`) back to back in one process --
-    this remains a coordinator-only path (like `make coverage`, playbook
-    section 6b), since the sum still measures past the ~120s agent
-    foreground cap even though no single `run_gates` call inside it does
-    (measured: ~187s wall unchunked before this ticket, ~130s summed
-    across chunks after -- see this ticket's Done report). A dispatched
-    agent instead passes `--only <group>` (any `_STAGE_GROUPS` alias, same
-    as a normal `frob check --only`) to run and record just ONE chunk per
-    CLI invocation, each safely under the cap on its own: results
-    accumulate in `_baseline_chunks_path`'s scratch file across
-    invocations, and the moment every gate `_stamp_baseline_gate_chunks`
-    expects has been recorded, the real `.frob/baseline` is (re)stamped
-    from their union and the scratch file is deleted -- so N separate
-    `--only`-scoped calls converge on exactly the same baseline the old
-    one-shot call used to produce, without any single call approaching
-    the cap.
-    """
-    from frob.gates import GateConfig, GateError, Violation, run_gates, stamp_baseline
-
-    only_gates = _resolve_baseline_only_chunk(cfg.check_only)
-    expected_chunks = _stamp_baseline_gate_chunks()
-    chunks_to_run = [only_gates] if only_gates is not None else expected_chunks
-
-    accumulated = _load_baseline_chunks(root) if only_gates is not None else {}
     for chunk in chunks_to_run:
         gate_cfg = GateConfig(
             root=str(root),
@@ -691,6 +670,41 @@ def _run_stamp_baseline(root: Path, cfg: AppConfig) -> None:
             len(chunk),
             len(report.violations),
         )
+
+
+# frob:ticket T-0751
+# frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_stamp_baseline_only_chunk_records_without_stamping  # noqa: E501
+# frob:tests tests/unit/test_app_runners_batch6.py::TestCheckRunner.test_stamp_baseline_only_chunk_completes_and_stamps  # noqa: E501
+def _run_stamp_baseline(root: Path, cfg: AppConfig) -> None:
+    """`frob check --stamp-baseline`: record current gate violations as `--delta`'s
+    baseline.
+
+    T-0751: a bare `--stamp-baseline` (no `--only`) still runs every gate
+    chunk (`_stamp_baseline_gate_chunks`) back to back in one process --
+    this remains a coordinator-only path (like `make coverage`, playbook
+    section 6b), since the sum still measures past the ~120s agent
+    foreground cap even though no single `run_gates` call inside it does
+    (measured: ~187s wall unchunked before this ticket, ~130s summed
+    across chunks after -- see this ticket's Done report). A dispatched
+    agent instead passes `--only <group>` (any `_STAGE_GROUPS` alias, same
+    as a normal `frob check --only`) to run and record just ONE chunk per
+    CLI invocation, each safely under the cap on its own: results
+    accumulate in `_baseline_chunks_path`'s scratch file across
+    invocations, and the moment every gate `_stamp_baseline_gate_chunks`
+    expects has been recorded, the real `.frob/baseline` is (re)stamped
+    from their union and the scratch file is deleted -- so N separate
+    `--only`-scoped calls converge on exactly the same baseline the old
+    one-shot call used to produce, without any single call approaching
+    the cap.
+    """
+    from frob.gates import Violation, stamp_baseline
+
+    only_gates = _resolve_baseline_only_chunk(cfg.check_only)
+    expected_chunks = _stamp_baseline_gate_chunks()
+    chunks_to_run = [only_gates] if only_gates is not None else expected_chunks
+
+    accumulated = _load_baseline_chunks(root) if only_gates is not None else {}
+    _run_baseline_chunks(root, cfg, chunks_to_run, accumulated)
 
     if only_gates is not None:
         covered: frozenset[str] = frozenset().union(

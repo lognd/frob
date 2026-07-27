@@ -303,3 +303,66 @@ rule out. The children below are scoped precisely to the files that would need t
 Draft ids above are renumbered to real `T-####` ids at land time per this repo's normal
 ticket-drafting convention; re-resolve via `frob ticket show` / the ledger at pickup time
 rather than trusting the draft id past this session.
+
+---
+
+## T-0970: ARCH001 burn-down (partial) + the fresh design decision on the other ARCH categories
+
+Measured live via chunked `frob check --only gates-native --json` (2026-07-27,
+post-`main`-merge). The original "101 findings" figure in T-0399's table above is the
+**sum across all four gated ARCH codes**, not ARCH001 alone: `52 (ARCH001) + 2 (ARCH101)
++ 23 (ARCH102) + 24 (ARCH103) = 101`, 13 already waived. Splitting it out this way
+matters for the decision below -- T-0399's own finding 4 predates T-0728, which already
+wired the "computed then discarded" categories (god-class/deep-nesting/high-coupling/
+large-file/abstraction-opportunity) into three real gated-WARN codes:
+`low-cohesion-class`/ARCH101, `god-module`/ARCH102, `mixed-concern-function`/ARCH103
+(`src/frob/gates/_arch.py`). They are no longer silently discarded -- they show up in
+`frob check` output today -- but none of the three has ever been promoted to `ERROR`.
+
+### ARCH001 (long-function) -- burn-down status: partial, child filed
+
+This ticket landed 5 of 52 unwaived ARCH001 findings:
+- 3 genuine extractions that dropped the function below threshold entirely (no waiver
+  needed): `_run_stamp_baseline` -> `_run_baseline_chunks`
+  (`src/frob/app/check_runner.py`), `check_layering_violations` ->
+  `_layering_violations_for_file` (`src/frob/arch/_layering.py`), and
+  `check_no_di_construction`'s duplicated method/function loops merged into one shared
+  `_append_no_di_findings` helper (same file -- also removes a real duplication, not
+  just an ARCH001 fix).
+- 2 honest `frob:waive ARCH001` additions, each with a specific structural argument (not
+  a blanket waiver): `_check_pool_inside_pool` (`src/frob/arch/_concurrency.py`, two
+  related checks sharing one pass's classified call lists) and `_tarjan_sccs`
+  (`src/frob/graph/summary.py`, an indivisible iterative Tarjan implementation).
+- 1 more waiver: `check_over_broad_except` (`src/frob/arch/_fallibility.py`, one closure
+  emitting two related per-catch findings off the same loop variable).
+
+47 unwaived ARCH001 findings remain (measured post-fix). `[gates.severity] ARCH001` stays
+`"warning"` in `frob.toml` -- flipping it to `"error"` with 47 live findings would red
+`main` immediately, which this ticket's own instructions rule out. **Decision: promote
+once the remainder child below drives ARCH001 to zero/near-zero unwaived.** Remainder
+child: `T-0976` (carries the exact 47-item list at hand-off).
+
+### ARCH101/ARCH102/ARCH103 -- the fresh design decision (finding 4)
+
+Per-category promote-or-advisory decision, each with its live unwaived count:
+
+- **ARCH101 (low-cohesion-class, LCOM4) -- 2 live, 0 waived. Decision: promotable-
+  after-burn-down, near-term.** The count is small (both findings are in
+  `src/frob/mutate/__init__.py`) and the LCOM4 field-usage-group computation is a real
+  structural signal, not the trivially-gameable top-level-only god-class scan finding 4
+  originally complained about (T-0728 rewrote it) -- burn the 2 down and flip to error.
+- **ARCH102 (god-module / export-cohesion clustering) -- 23 live, 0 waived. Decision:
+  stays advisory (WARN) for now, NOT promoted.** The naming/usage clustering heuristic
+  that groups a module's top-level exports has not itself been audited for the same
+  class of blind spot finding 4 found in the old god-class scan (a heuristic gameable by
+  restructuring exports without changing real cohesion) -- promoting an unaudited
+  heuristic to a blocking gate risks the same "green != good" failure this whole audit
+  exists to catch. Burn-down + heuristic-soundness check tracked in
+  `T-0977`.
+- **ARCH103 (mixed-concern-function / SRP-ish I/O+branch mixing) -- 24 live, 0 waived.
+  Decision: promotable-after-burn-down**, same treatment as ARCH001 -- burn the 24 down
+  (extract or waive with a real argument) via `T-0977`, then flip to error.
+
+Draft ids (`T-0976`, `T-0977`) are renumbered to real `T-####` ids at
+land time per this repo's normal convention; re-resolve via `frob ticket show` at pickup
+time rather than trusting the draft id past this session.

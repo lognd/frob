@@ -137,6 +137,7 @@ def _dispatched_callee_names(root: Node) -> set[str]:
     return names
 
 
+# frob:waive ARCH001 reason="two related checks (pool-inside-pool, fork-after-threads) sharing one pass's classified call lists (process_pool/thread_pool/thread_ctor/thread_start/fork); splitting either check into a helper would require threading all five derived lists across a new boundary without reducing the shared classification they both read"  # noqa: E501
 def _check_pool_inside_pool(
     rel: str, fqname: str, calls: list[tuple[str, str, int]], out: list[ArchSuggestion]
 ) -> None:

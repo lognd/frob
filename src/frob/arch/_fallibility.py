@@ -312,6 +312,7 @@ def check_recoverable_error_wrong_signature(
 # frob:tests tests/unit/test_arch.py::TestOverBroadExcept.test_bare_except_flagged  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestOverBroadExcept.test_specific_except_not_flagged  # noqa: E501
 # frob:tests tests/unit/test_arch.py::TestOverBroadExcept.test_reraise_with_different_type_loses_context_flagged  # noqa: E501
+# frob:waive ARCH001 reason="one closure (_scan) walking every catch clause and, per catch, emitting both the bare-except finding and the adjacent-lost-context finding off the same c/qualname locals; splitting the two emits into separate helpers would require passing c, qualname, module, and out across a new boundary for two three-line append blocks that already share the same loop variable"  # noqa: E501
 def check_over_broad_except(module: NormalizedModule) -> list[ArchSuggestion]:
     """Over-broad except / re-raise-losing-context (T-0623, one category
     per this ticket's own body text presenting both as a single bullet):
