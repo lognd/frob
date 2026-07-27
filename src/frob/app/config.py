@@ -465,6 +465,12 @@ class AppConfig(BaseModel):
     perf_top: int | None = None
     perf_annotate: Path | None = None
     perf_ref: str | None = None
+    # frob:ticket T-0765
+    perf_file: Path | None = None
+    perf_format: str | None = None
+    perf_sampler: bool = False
+    perf_interval_s: float | None = None
+    perf_max_depth: int | None = None
 
     # serve
     serve_path: Path | None = None
@@ -607,6 +613,7 @@ class AppConfig(BaseModel):
             "release_command",
             "perf_command",
             "perf_ref",
+            "perf_format",
             "sys_command",
             "sys_view",
             "sys_export_format",
@@ -664,6 +671,7 @@ class AppConfig(BaseModel):
             "release_path",
             "stats_path",
             "perf_annotate",
+            "perf_file",
             "mutate_file",
             "mutate_path",
             "serve_path",
@@ -689,6 +697,7 @@ class AppConfig(BaseModel):
             "arch_max_class_methods",
             "gitlog_limit",
             "perf_top",
+            "perf_max_depth",
             "stats_days",
             "check_verbose",
             "ticket_verbose",
@@ -706,7 +715,7 @@ class AppConfig(BaseModel):
             d["parse_exit_code"] = int(parse_ec)
 
         # Float fields
-        for float_field in ("vet_timeout",):
+        for float_field in ("vet_timeout", "perf_interval_s"):
             val = getattr(args, float_field, None)
             if val is not None:
                 d[float_field] = val
@@ -816,6 +825,7 @@ class AppConfig(BaseModel):
             "perf_tests",
             "perf_json",
             "perf_smells",
+            "perf_sampler",
             "sys_apply",
             "ticket_dry_run",
             "ticket_skip_mutation_evidence",

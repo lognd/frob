@@ -3598,7 +3598,7 @@ Root-cause analysis 2026-07-22: two rejects (T-0611 tree_sitter imported into th
 id: T-0765
 title: 'frob perf CLI: live collector wiring (perf/V8/JFR + python sampler) end-to-end
   subcommand'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -3608,16 +3608,84 @@ scope:
 - src/frob/app/**
 - src/frob/perf/**
 - docs/modules/perf.md
+- tests/system/test_cli_perf.py
+- tests/unit/perf/test_collectors.py
+scope_changes:
+- op: add
+  glob: tests/system/test_cli_perf.py
+  reason: T-0765 test evidence lives here; scope extended to cover the CLI + unit
+    test files this ticket's implementation needs
+  actor: logan
+  at: '2026-07-26'
+- op: add
+  glob: tests/unit/perf/test_collectors.py
+  reason: T-0765 test evidence lives here; scope extended to cover the CLI + unit
+    test files this ticket's implementation needs
+  actor: logan
+  at: '2026-07-26'
+evidence:
+- tests/unit/perf/test_collectors.py::TestDetectCollectorFormat::test_cpuprofile_extension_is_v8
+- tests/unit/perf/test_collectors.py::TestDetectCollectorFormat::test_jdk_execution_sample_marker_is_jfr
+- tests/unit/perf/test_collectors.py::TestDetectCollectorFormat::test_anything_else_defaults_to_perf_script
+- tests/unit/perf/test_collectors.py::TestParseCollectorFormat::test_dispatches_to_the_matching_adapter[perf-script-sample.perf.script]
+- tests/unit/perf/test_collectors.py::TestBuildIndexForFiles::test_resolves_a_real_python_file_in_the_repo
+- tests/unit/perf/test_collectors.py::TestBuildIndexForFiles::test_missing_or_unmapped_file_is_absent_from_the_index
+- tests/unit/perf/test_collectors.py::TestLanguageDeciles::test_buckets_are_grouped_per_language_never_mixed
+- tests/unit/perf/test_collectors.py::TestLanguageDeciles::test_unattributed_weight_gets_its_own_visible_bucket
+- tests/unit/perf/test_collectors.py::TestLanguageDeciles::test_resolve_stream_output_feeds_language_deciles_end_to_end
+- tests/system/test_cli_perf.py::TestPerfCollect::test_collect_resolves_a_real_python_hot_frame
+- tests/system/test_cli_perf.py::TestPerfCollect::test_collect_json_output_is_valid_json
+- tests/system/test_cli_perf.py::TestPerfCollect::test_collect_without_file_or_sampler_fails_cleanly
+- tests/system/test_cli_perf.py::TestPerfCollect::test_collect_autodetects_cpuprofile_format
 acceptance:
 - text: GIVEN a repo and a recorded profile artifact (perf script output, .cpuprofile,
     or JFR print output) WHEN the user runs the frob perf collect subcommand THEN
     the hit stream is resolved through resolve_stream and per-language deciles are
     readable from the CLI output
-  evidence: []
+  evidence:
+  - tests/system/test_cli_perf.py::TestPerfCollect::test_collect_resolves_a_real_python_hot_frame
 threat: null
 component: null
 ```
 T-0748 delivered the collector parser adapters (parse_perf_script, parse_v8_cpuprofile, parse_jfr_print + build_class_to_file) proven through resolve_stream/HitStream, but no frob perf CLI entrypoint exists for any collector including the T-0710 python sampler. Wire a subcommand that accepts a profile artifact path (or invokes the sampler), runs the matching collector, and renders the resolved hot-graph deciles. Filed per T-0748 reviewer recommendation (disclosed deviation, real unscoped work).
+
+## Done report
+
+Changed:
+- src/frob/app/perf_runner.py::run (dispatch to collect)
+- src/frob/app/perf_runner.py::_collect
+- src/frob/app/perf_runner.py::_collect_body
+- src/frob/app/perf_runner.py::_collect_stacks
+- src/frob/app/perf_runner.py::_print_decile_rows
+- src/frob/app/config.py::AppConfig (perf_file/perf_format/perf_sampler/perf_interval_s/perf_max_depth fields)
+- src/frob/__main__.py::_add_perf_collect_parser
+- src/frob/__main__.py::_add_perf_parser (wires collect subparser)
+- src/frob/perf/_collectors.py::detect_collector_format
+- src/frob/perf/_collectors.py::parse_collector_format
+- src/frob/perf/_collectors.py::build_index_for_files
+- src/frob/perf/_hotgraph.py::LanguageDecileRow
+- src/frob/perf/_hotgraph.py::language_deciles
+- src/frob/perf/_harness.py (refactored to reuse build_index_for_files, dropping the duplicate private `_sampled_section_index`)
+- src/frob/perf/__init__.py (new exports)
+
+Evidence:
+- tests/unit/perf/test_collectors.py::TestDetectCollectorFormat (3 cases)
+- tests/unit/perf/test_collectors.py::TestParseCollectorFormat::test_dispatches_to_the_matching_adapter (parametrized, 3 cases)
+- tests/unit/perf/test_collectors.py::TestBuildIndexForFiles (2 cases)
+- tests/unit/perf/test_collectors.py::TestLanguageDeciles (3 cases)
+- tests/system/test_cli_perf.py::TestPerfCollect (4 cases, real CLI subprocess dispatch, covering perf-script/v8-cpuprofile autodetect/no-input-error/json-output)
+- Measured: `uv run pytest tests/unit/perf/test_collectors.py tests/system/test_cli_perf.py::TestPerfCollect -q` -> 33 passed
+- Measured: `uv run pytest tests/system/test_cli_perf.py::TestPerfProfileAndHeat -q` -> unaffected, still green (regression check on the sibling perf profile/heat CLI commands after the _harness.py refactor)
+
+Filed: none
+
+Gates: `uv run frob check --ticket T-0765 --only lint`, `--only gates-fast`, `--only gates-native`, and `--only gates-security` all clean within T-0765's scope (src/frob/app/**, src/frob/perf/**, docs/modules/perf.md, plus tests/system/test_cli_perf.py and tests/unit/perf/test_collectors.py, added via `frob ticket scope --add` since the ticket's declared scope had no tests/ globs). gates-security's one FAIL (gate:SELFAUDIT, src/frob/arch/_logging_checks.py, from T-0625) is pre-existing debt entirely outside this ticket's scope -- confirmed via `git log --oneline -1 -- src/frob/arch/_logging_checks.py` (last touched by T-0625, unrelated to perf).
+
+Also fixed, all within declared scope, while driving the ticket-scoped gate check clean:
+- added missing frob:ticket edges (COV002) on `__main__.py`'s `_add_perf_parser`
+- fixed two DRIFT002 findings: `language_deciles`'s frob:tests directive pointed at the wrong test file (test_hotgraph.py instead of test_collectors.py, where its test class actually lives); `_collect_body` had a redundant source-side frob:tests directive that a subprocess-spawned system test can never satisfy via call-graph reachability -- removed it, since this repo's established convention for CLI system tests is the test-side `# frob:tests <source>::run` comment already present in the test method (matching the existing `TestPerfProfileAndHeat` precedent), not a source-side one
+- added `kind="unit"` tags to TEST002-flagged class-level frob:tests directives in `_collectors.py` (both the pre-existing T-0748 ones and this ticket's new ones)
+- waived INV006's exclusivity-vocabulary false positive on the perf module docstrings using this repo's established T-0585 disposal pattern (5 files: `_harness.py`, `_sampler.py`, `_collectors.py`, `_hotgraph.py`, `perf_runner.py`)
 
 <!-- ticket:T-0771 -->
 ```yaml

@@ -78,6 +78,86 @@ class TestPerfProfileAndHeat:
         assert "Traceback" not in (heated.stdout + heated.stderr)
 
 
+class TestPerfCollect:
+    """`frob perf collect --file ...` (T-0765): end-to-end CLI wiring for
+    the T-0748 collector adapters."""
+
+    def test_collect_resolves_a_real_python_hot_frame(self, tmp_path):
+        """A hand-built `perf script` fixture naming a real function in
+        this repo resolves through `resolve_stream` to a `python`-labeled
+        decile row, readable in the CLI's plain-text output."""
+        # frob:tests src/frob/app/perf_runner.py::run
+        # frob:ticket T-0765
+        repo_root = Path(__file__).resolve().parents[2]
+        target = repo_root / "src" / "frob" / "perf" / "_hotgraph.py"
+        text = target.read_text(encoding="utf-8")
+        line = (
+            next(
+                i
+                for i, line_text in enumerate(text.splitlines(), start=1)
+                if line_text.startswith("def build_section_index(")
+            )
+            + 2
+        )
+        profile = tmp_path / "profile.perf.script"
+        profile.write_text(
+            "myprog  1 1 1.0: 1 cycles:\n"
+            f"\t401234 build_section_index+0x10 "
+            f"(src/frob/perf/_hotgraph.py:{line})\n"
+        )
+        result = run(
+            "perf",
+            "collect",
+            "--path",
+            str(repo_root),
+            "--file",
+            str(profile),
+        )
+        out = result.stdout + result.stderr
+        assert result.returncode == 0, out
+        assert "python" in out
+        assert "decile" in out
+
+    def test_collect_json_output_is_valid_json(self, tmp_path):
+        """`frob perf collect --json` emits a machine-readable payload with
+        `rows`/`unattributed_weight`/`sample_count`."""
+        # frob:ticket T-0765
+        import json
+
+        profile = tmp_path / "profile.perf.script"
+        profile.write_text(
+            "myprog  1 1 1.0: 1 cycles:\n\t7fffaa unknown_native (no debuginfo)\n"
+        )
+        result = run("perf", "collect", "--file", str(profile), "--json")
+        assert result.returncode == 0, result.stdout + result.stderr
+        payload = json.loads(result.stdout)
+        assert "rows" in payload and "unattributed_weight" in payload
+        assert payload["sample_count"] == 1
+
+    def test_collect_without_file_or_sampler_fails_cleanly(self, tmp_path):
+        """`frob perf collect` with neither `--file` nor `--sampler` exits
+        non-zero, not a traceback."""
+        # frob:ticket T-0765
+        result = run("perf", "collect", "--path", str(tmp_path))
+        out = result.stdout + result.stderr
+        assert result.returncode != 0
+        assert "Traceback" not in out
+
+    def test_collect_autodetects_cpuprofile_format(self, tmp_path):
+        """`--format` omitted still resolves a `.cpuprofile` correctly via
+        `detect_collector_format`'s extension check."""
+        # frob:ticket T-0765
+        fixture = (
+            Path(__file__).resolve().parents[1]
+            / "unit"
+            / "perf"
+            / "fixtures"
+            / "sample.cpuprofile"
+        )
+        result = run("perf", "collect", "--file", str(fixture), "--json")
+        assert result.returncode == 0, result.stdout + result.stderr
+
+
 class TestCheckOnlyPerf:
     # frob:ticket T-0021
 

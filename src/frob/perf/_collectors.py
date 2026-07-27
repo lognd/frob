@@ -31,11 +31,19 @@ of a silently wrong section -- the same DEGRADE-TO-CORRECT discipline
 `frob.perf._hotgraph._block_sections` documents.
 """
 
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/perf/_collectors.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
+
 from __future__ import annotations
 
 import json
 import re
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
+from pathlib import Path
 
 from typani import Err, Ok
 from typani.error_set import ErrorSet
@@ -43,13 +51,16 @@ from typani.result import Result
 
 from frob.arch._normalized import NormalizedModule
 from frob.logging import get_logger
-from frob.perf._hotgraph import SampledFrame, SampledStack
+from frob.perf._hotgraph import SampledFrame, SampledStack, SectionIndex
 
 _log = get_logger(__name__)
 
 __all__ = [
     "CollectorError",
     "build_class_to_file",
+    "build_index_for_files",
+    "detect_collector_format",
+    "parse_collector_format",
     "parse_jfr_print",
     "parse_perf_script",
     "parse_v8_cpuprofile",
@@ -138,7 +149,7 @@ def _perf_weight(header: str) -> float:
 
 
 # frob:doc docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709
-# frob:tests tests/unit/perf/test_collectors.py::TestParsePerfScript
+# frob:tests tests/unit/perf/test_collectors.py::TestParsePerfScript kind="unit"
 def parse_perf_script(
     text: str, source: str
 ) -> Result[list[SampledStack], CollectorError]:
@@ -225,7 +236,7 @@ def _v8_stack(
 
 
 # frob:doc docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709
-# frob:tests tests/unit/perf/test_collectors.py::TestParseV8CpuProfile
+# frob:tests tests/unit/perf/test_collectors.py::TestParseV8CpuProfile kind="unit"
 def parse_v8_cpuprofile(
     text: str, source: str
 ) -> Result[list[SampledStack], CollectorError]:
@@ -285,7 +296,7 @@ _JFR_FRAME_RE = re.compile(
 
 
 # frob:doc docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709
-# frob:tests tests/unit/perf/test_collectors.py::TestBuildClassToFile
+# frob:tests tests/unit/perf/test_collectors.py::TestBuildClassToFile kind="unit"
 def build_class_to_file(modules: list[NormalizedModule]) -> dict[str, str]:
     """Map a JVM-style dotted class name to its source file, derived from
     the same `NormalizedModule`s `build_section_index` indexes -- the
@@ -356,7 +367,7 @@ def _parse_jfr_frames(
 
 
 # frob:doc docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709
-# frob:tests tests/unit/perf/test_collectors.py::TestParseJfrPrint
+# frob:tests tests/unit/perf/test_collectors.py::TestParseJfrPrint kind="unit"
 def parse_jfr_print(
     text: str, source: str, class_to_file: Mapping[str, str] | None = None
 ) -> Result[list[SampledStack], CollectorError]:
@@ -386,3 +397,131 @@ def parse_jfr_print(
         stacks.append(SampledStack(frames=tuple(frames), weight=1.0))
     _log.info("parse_jfr_print: %s -> %d stack(s)", source, len(stacks))
     return Ok(stacks)
+
+
+# ---------------------------------------------------------------------------
+# (d) CLI-facing dispatch: format autodetection + multi-language section
+# index, both added for T-0765's `frob perf collect` end-to-end wiring.
+# ---------------------------------------------------------------------------
+
+#: Extension -> `frob.lang` language label, mirrored here (not imported)
+#: because `build_index_for_files` only needs the label to pick an ADAPTER
+#: class, never a parse; keeping this table local avoids a needless import
+#: cycle through `frob.lang`'s own dispatch table for one lookup.
+_LANGUAGE_ADAPTER_EXTENSIONS: dict[str, str] = {
+    ".py": "python",
+    ".ts": "typescript",
+    ".tsx": "typescript",
+    ".rs": "rust",
+    ".kt": "kotlin",
+    ".kts": "kotlin",
+}
+
+
+# frob:doc docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709
+# frob:tests tests/unit/perf/test_collectors.py::TestDetectCollectorFormat kind="unit"
+def detect_collector_format(path: Path, text: str) -> str:
+    """Best-effort collector format name (`"perf-script"` |
+    `"v8-cpuprofile"` | `"jfr-print"`) for a profile artifact, so `frob
+    perf collect` need not be told `--format` explicitly. `.cpuprofile` is
+    decided by extension alone (V8's own convention); a JFR print
+    transcript is decided by its unmistakable `jdk.ExecutionSample` event
+    marker; anything else defaults to `perf-script`, this repo's other
+    text-based collector -- never raises, since a wrong guess still just
+    routes to a parser that then returns its own `CollectorError` on truly
+    unparseable input."""
+    if path.suffix == ".cpuprofile":
+        return "v8-cpuprofile"
+    if "jdk.ExecutionSample" in text:
+        return "jfr-print"
+    return "perf-script"
+
+
+# frob:doc docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709
+# frob:tests tests/unit/perf/test_collectors.py::TestParseCollectorFormat kind="unit"
+def parse_collector_format(
+    fmt: str,
+    text: str,
+    source: str,
+    class_to_file: Mapping[str, str] | None = None,
+) -> Result[list[SampledStack], CollectorError]:
+    """Dispatch to the collector adapter named by `fmt` (one of
+    `detect_collector_format`'s three return values) -- the single call
+    site `frob perf collect` uses regardless of whether `fmt` came from
+    `--format` or autodetection, so the CLI never duplicates the
+    if/elif adapter selection."""
+    if fmt == "v8-cpuprofile":
+        return parse_v8_cpuprofile(text, source)
+    if fmt == "jfr-print":
+        return parse_jfr_print(text, source, class_to_file)
+    return parse_perf_script(text, source)
+
+
+def _adapt_module(
+    language: str, tree: object, source: bytes, rel: str
+) -> NormalizedModule | None:
+    """`NormalizedModule` for `rel` via the adapter matching `language`, or
+    `None` for a language `build_index_for_files` has no adapter for (c/
+    cpp native frames included) -- those files simply contribute no
+    sections, so their samples resolve to `UNATTRIBUTED_SECTION_ID`
+    rather than erroring."""
+    if language == "python":
+        from frob.arch._python import PythonAdapter
+
+        return PythonAdapter().adapt(tree, source, rel)
+    if language == "typescript":
+        from frob.arch._typescript import TypeScriptAdapter
+
+        return TypeScriptAdapter().adapt(tree, source, rel)
+    if language == "rust":
+        from frob.arch._rust import RustAdapter
+
+        return RustAdapter().adapt(tree, source, rel)
+    if language == "kotlin":
+        from frob.arch._kotlin import KotlinAdapter
+
+        return KotlinAdapter().adapt(tree, source, rel)
+    return None
+
+
+# frob:doc docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709
+# frob:tests tests/unit/perf/test_collectors.py::TestBuildIndexForFiles kind="unit"
+def build_index_for_files(files: Iterable[str]) -> SectionIndex:
+    """Best-effort `SectionIndex` covering only the distinct files named
+    (any collector's stacks' frame files, not a whole-repo walk -- parsing
+    every file the repo has would defeat the point of resolving one
+    profiling run). Generalizes `frob.perf._harness._sampled_section_index`
+    (T-0710, python-only) across every language `frob.arch` has a
+    `NormalizedModule` adapter for (python/typescript/rust/kotlin, T-0748's
+    collector languages) so `frob perf collect` resolves a native/V8/JFR
+    profile's sections the same way the harness already resolves a python
+    sampler's. A file that fails to parse, does not exist, or has no known
+    adapter (c/cpp perf-script frames, an unmapped extension) is simply
+    absent from the index -- `resolve_stream` already treats an unmatched
+    frame as `UNATTRIBUTED_SECTION_ID`, never an error, so this degrades
+    the same NO-FAIL-SILENT way `_harness`'s original does."""
+    from frob.lang import raw_tree
+
+    modules: list[NormalizedModule] = []
+    for file in sorted(set(files)):
+        if not file:
+            continue
+        language = _LANGUAGE_ADAPTER_EXTENSIONS.get(Path(file).suffix)
+        if language is None:
+            continue
+        path = Path(file)
+        if not path.is_file():
+            continue
+        parsed = raw_tree(path)
+        if parsed.is_err:
+            continue
+        tree, source, parsed_language = parsed.danger_ok
+        if parsed_language != language:
+            continue
+        module = _adapt_module(language, tree, source, file)
+        if module is not None:
+            modules.append(module)
+
+    from frob.perf._hotgraph import build_section_index
+
+    return build_section_index(modules)

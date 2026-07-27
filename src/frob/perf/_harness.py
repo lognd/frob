@@ -19,6 +19,12 @@ workload before T-0711 gives it a place to land.
 """
 
 # frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/perf/_harness.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 
@@ -27,10 +33,10 @@ import os
 import runpy
 import sys
 from collections import Counter
-from pathlib import Path
 
 from frob.logging import get_logger
-from frob.perf._hotgraph import SectionIndex, build_section_index, resolve_stream
+from frob.perf._collectors import build_index_for_files
+from frob.perf._hotgraph import resolve_stream
 from frob.perf._sampler import SampledStack, StackSampler
 
 _log = get_logger(__name__)
@@ -42,33 +48,6 @@ _log = get_logger(__name__)
 _SAMPLE_ENV_VAR = "FROB_PERF_SAMPLE"
 
 
-def _sampled_section_index(stacks: list[SampledStack]) -> SectionIndex:
-    """Best-effort `SectionIndex` covering only the distinct python files
-    referenced by `stacks`' frames -- parsing the whole repo at harness
-    runtime would defeat the point of a low-overhead sampler. A file that
-    fails to parse (not python, not on disk, a syntax error) is simply
-    absent from the index -- `resolve_stream` already treats a frame that
-    matches no section as `UNATTRIBUTED_SECTION_ID`, never an error, so
-    this degrades the same NO-FAIL-SILENT way."""
-    from frob.arch._python import PythonAdapter
-    from frob.lang import raw_tree
-
-    files = {frame.file for stack in stacks for frame in stack.frames}
-    modules = []
-    for file in sorted(files):
-        path = Path(file)
-        if not path.is_file():
-            continue
-        parsed = raw_tree(path)
-        if parsed.is_err:
-            continue
-        tree, source, language = parsed.danger_ok
-        if language != "python":
-            continue
-        modules.append(PythonAdapter().adapt(tree, source, file))
-    return build_section_index(modules)
-
-
 def _log_hotgraph_summary(stacks: list[SampledStack]) -> None:
     """Resolve `stacks` against a best-effort section index and log the
     top sections by weight plus the unattributed total -- the harness's
@@ -77,7 +56,8 @@ def _log_hotgraph_summary(stacks: list[SampledStack]) -> None:
     if not stacks:
         _log.info("hotgraph: FROB_PERF_SAMPLE set but 0 samples collected")
         return
-    index = _sampled_section_index(stacks)
+    files = {frame.file for stack in stacks for frame in stack.frames}
+    index = build_index_for_files(files)
     stream = resolve_stream(index, stacks)
     totals: Counter[str] = Counter()
     for hit in stream.section_hits:

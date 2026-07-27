@@ -736,6 +736,9 @@
     "src/frob/outline/__init__.py::outline_file": "4f3c31a84433f6059448734c6bf27a062b87f9328045a7d55c2a3cb2f26b0892",
     "src/frob/perf/_collectors.py::CollectorError": "ef836b8ae8aa5085f229cb5b0bc376b68fa2bd22b598a2c8cb9e6510a4ea676f",
     "src/frob/perf/_collectors.py::build_class_to_file": "e24b4d151e60fcfecad29c128c869b7d7159e92f2c9eacb1538c570bee49d926",
+    "src/frob/perf/_collectors.py::build_index_for_files": "2cd7937aa051f7de875376c5dfaeea2e55d9402e8c06e61d30c80283063d2189",
+    "src/frob/perf/_collectors.py::detect_collector_format": "7ce2f68f17f968b39d236d2ae0ede68b9df4e829b214211d8f11e65685bb1ed1",
+    "src/frob/perf/_collectors.py::parse_collector_format": "44106e9edd09369ebe39d165c541ddd627e6d61b75d6db9d2e97c718887b3759",
     "src/frob/perf/_collectors.py::parse_jfr_print": "61f1cac72ae7a4d492eee797a29fab53b16db8fa976eb7a26e2375bad12a82ec",
     "src/frob/perf/_collectors.py::parse_perf_script": "df6a95e83e2a7014d4918cc2e6ec296d54c1705ce8f3f8cb2b859388b073d246",
     "src/frob/perf/_collectors.py::parse_v8_cpuprofile": "649455a2f0d9b6ee1aa045170c369579f5e37503722b81ddc648ced337947899",
@@ -746,12 +749,14 @@
     "src/frob/perf/_hotgraph.py::EdgeHit": "9b4a34ae3d87e691ac951105174ecd63801bc94f56dd1aaab2f5fafbb5cea291",
     "src/frob/perf/_hotgraph.py::HitStream": "04191c1e6103346b41e807d6e5b369fdcabb31806a1fc6bd7021e995015cbfd2",
     "src/frob/perf/_hotgraph.py::HitStream.unattributed_weight": "81479b7601659a654f7dc94216b841932d2c6b30ec3bdbd519fb13dc2f42522b",
+    "src/frob/perf/_hotgraph.py::LanguageDecileRow": "90ada3a0c189b8b0b69c74024d4d60899cb2866a27c4d78652a65ac8cd2bfe1a",
     "src/frob/perf/_hotgraph.py::SampledFrame": "fcaf1ebb9e68b328cfe2aa0496a14f267553c449275beb57c8f917efb7c119a1",
     "src/frob/perf/_hotgraph.py::SampledStack": "b26786f91576caecfaa8c7702a11c45d4de97ce0b8010d9fec31491ec92683d2",
     "src/frob/perf/_hotgraph.py::Section": "dfd09708c438191c16576f72d5a2fd104983b830208a87496237a166fbb2d72f",
     "src/frob/perf/_hotgraph.py::SectionHit": "017109d8a14d1787ca09865201b798de48381def6707894e02d373068817484f",
     "src/frob/perf/_hotgraph.py::UNATTRIBUTED_SECTION_ID": "d06a30af6933df9a4d6b2517b8febb5971e49374321965c22db21c646f7e1798",
     "src/frob/perf/_hotgraph.py::build_section_index": "3ea14833f21638d944a5ba3261fcf9d07c9f169e05193b21d1f5f7ef4ca3d93c",
+    "src/frob/perf/_hotgraph.py::language_deciles": "4bee78e1be2b434d6137435c30c05ba4271b8827f8ed84ac81377cd50191d0b2",
     "src/frob/perf/_hotgraph.py::resolve_stream": "ed689c5806bd9b2c2b46cd4d269e54a3cabf1c2eddfd2eb807261cef01d7a90c",
     "src/frob/perf/_models.py::HeatEntry": "ccd9d4320749cb10f5b9fa7f271f1117c2a88e9ba19ca2a5a1f9b1d9d2ebcc79",
     "src/frob/perf/_models.py::HeatReport": "60d746977c9eb6cfb26262d9e50bdd4ee310298f8c11ef5c42e329318df00176",
@@ -1554,5 +1559,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.152.0"
+  "version": "0.153.0"
 }

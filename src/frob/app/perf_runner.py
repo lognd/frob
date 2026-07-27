@@ -1,7 +1,15 @@
-"""CLI wiring for `frob perf profile|heat` (docs/modules/perf.md).
+"""CLI wiring for `frob perf profile|heat|collect` (docs/modules/perf.md).
 
 # frob:ticket T-0021
+# frob:ticket T-0765
 """
+
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/app/perf_runner.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
 
 from __future__ import annotations
 
@@ -19,16 +27,20 @@ __all__ = ["run"]
 
 
 # frob:ticket T-0021
+# frob:ticket T-0765
 # frob:doc docs/modules/app.md#runners
 def run(cfg: AppConfig) -> None:
-    """Dispatch to `frob perf profile` or `frob perf heat`."""
+    """Dispatch to `frob perf profile`, `frob perf heat`, or `frob perf
+    collect`."""
     match cfg.perf_command:
         case "profile":
             _profile(cfg)
         case "heat":
             _heat(cfg)
+        case "collect":
+            _collect(cfg)
         case _:
-            _log.error("usage: frob perf <profile|heat> ...")
+            _log.error("usage: frob perf <profile|heat|collect> ...")
             sys.exit(1)
 
 
@@ -197,6 +209,150 @@ def _heat_body(cfg: AppConfig) -> None:
         return
 
     _print_heat_result(cfg, entries, report)
+
+
+# frob:ticket T-0765
+def _collect_stacks(cfg: AppConfig):  # noqa: ANN201
+    """Get this invocation's `SampledStack`s: either the T-0710 python
+    sampler running `pytest.main` in-process under `-- <argv>` (`--sampler`,
+    argv defaulting to `-q`, the whole suite -- pass a narrow argv, e.g. `--
+    tests/unit/perf/`, for anything short of a full-suite run), or
+    `--file`'s recorded profile parsed via `parse_collector_format`
+    (autodetecting the format when `--format` was not given). `sys.exit`s
+    on any failure, matching every other `perf_runner` command's error
+    style."""
+    from frob.perf import SamplerConfig, detect_collector_format, run_sampled
+    from frob.perf._collectors import parse_collector_format
+
+    if cfg.perf_sampler:
+        import pytest
+
+        default_cfg = SamplerConfig()
+        sampler_cfg = SamplerConfig(
+            interval_s=(
+                cfg.perf_interval_s
+                if cfg.perf_interval_s is not None
+                else default_cfg.interval_s
+            ),
+            max_depth=(
+                cfg.perf_max_depth
+                if cfg.perf_max_depth is not None
+                else default_cfg.max_depth
+            ),
+        )
+
+        argv = list(cfg.perf_argv)
+        if argv and argv[0] == "--":
+            argv = argv[1:]
+        if not argv:
+            argv = ["-q"]
+
+        def _run_pytest() -> None:
+            """Run pytest's own `main` for its stack-sampling side effect
+            only -- `run_sampled` wants a no-return workload, `pytest.
+            main`'s exit code is deliberately discarded here since
+            `frob perf collect --sampler` reports SAMPLES, not a test
+            verdict (a failed/errored test run still yields a real,
+            usable stack sample)."""
+            pytest.main(argv)
+
+        stacks, elapsed = run_sampled(_run_pytest, sampler_cfg)
+        _log.info(
+            "collect: sampler ran the test suite in %.3fs, %d sample(s)",
+            elapsed,
+            len(stacks),
+        )
+        return stacks
+
+    if cfg.perf_file is None:
+        _log.error("frob perf collect requires --file PATH or --sampler")
+        sys.exit(1)
+    file = cfg.perf_file
+    try:
+        text = file.read_text(encoding="utf-8")
+    except OSError as exc:
+        _log.error("collect: could not read %s: %s", file, exc)
+        sys.exit(1)
+
+    fmt = cfg.perf_format or detect_collector_format(file, text)
+    result = parse_collector_format(fmt, text, str(file))
+    if result.is_err:
+        _log.error("collect: %s: %s", file, result.danger_err)
+        sys.exit(1)
+    _log.info("collect: %s parsed as %s", file, fmt)
+    return result.danger_ok
+
+
+# frob:ticket T-0765
+def _print_decile_rows(rows) -> None:  # noqa: ANN001
+    """Print `language_deciles`' rows as one table, grouped by language."""
+    renderer = Renderer.for_stream(sys.stdout)
+    color = should_color(sys.stdout)
+    header = paint(
+        f"{'language':<14} {'decile':>6} {'sections':>9} {'weight':>10}", BOLD, color
+    )
+    renderer.line(header)
+    for row in rows:
+        renderer.line(
+            f"{row.language:<14} {row.decile:>6} {row.section_count:>9} "
+            f"{row.weight:>10.3f}"
+        )
+
+
+# frob:ticket T-0765
+def _collect(cfg: AppConfig) -> None:
+    """`frob perf collect --file PATH [--format ...] | --sampler [-- argv]
+    [--top N] [--json]`: dispatch to `_collect_body`, under the same
+    `--json`-implies-quiet-stdout-logs discipline `_heat` uses, so
+    `--json`'s own log lines (parse/resolve progress) never pollute the
+    payload the CLI's stdout must stay pure JSON for."""
+    import contextlib
+
+    if cfg.perf_json:
+        from frob.logging import quiet_stdout_logs
+
+        ctx = quiet_stdout_logs()
+    else:
+        ctx = contextlib.nullcontext()
+
+    with ctx:
+        _collect_body(cfg)
+
+
+# frob:ticket T-0765
+def _collect_body(cfg: AppConfig) -> None:
+    """The actual `frob perf collect` body: resolve a hot-graph
+    collector's stacks through `resolve_stream` (the T-0748 collector
+    adapters, or the T-0710 python sampler) and print per-language
+    deciles -- the end-to-end CLI wiring T-0765 adds ahead of T-0711's
+    persisted sketch store."""
+    from frob.perf import build_index_for_files, language_deciles, resolve_stream
+
+    stacks = _collect_stacks(cfg)
+
+    files = {frame.file for stack in stacks for frame in stack.frames}
+    index = build_index_for_files(files)
+    stream = resolve_stream(index, stacks)
+    rows = language_deciles(stream, index)
+    if cfg.perf_top is not None:
+        rows = rows[: cfg.perf_top]
+
+    if cfg.perf_json:
+        import json
+
+        payload = {
+            "rows": [r.model_dump() for r in rows],
+            "unattributed_weight": stream.unattributed_weight,
+            "sample_count": len(stacks),
+        }
+        Renderer.for_stream(sys.stdout).line(json.dumps(payload, indent=2))
+        return
+
+    _print_decile_rows(rows)
+    summary = (
+        f"samples={len(stacks)} unattributed_weight={stream.unattributed_weight:.3f}"
+    )
+    Renderer.for_stream(sys.stdout).line(paint(summary, DIM, should_color(sys.stdout)))
 
 
 def _annotate_gutters(rel: str, report, snapshot) -> dict[int, str]:  # noqa: ANN001

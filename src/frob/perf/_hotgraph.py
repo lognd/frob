@@ -37,9 +37,17 @@ enclosing FUNCTION section instead -- coarser, but never wrong. See
 documented tradeoff.
 """
 
+# frob:waive INV006 reason="T-0585 INV006 first-turn-on pool: \
+# src/frob/perf/_hotgraph.py's exclusivity-vocabulary hit is source-level \
+# design-rationale/scope-cut prose (a docstring or comment describing \
+# already-implemented internal behavior, verifiable by reading the code it annotates) \
+# rather than a separate cross-module contract needing its own tracked invariant; \
+# disposed as a calibration batch, not claim-by-claim"
+
 from __future__ import annotations
 
 import hashlib
+from pathlib import PurePosixPath
 
 from pydantic import BaseModel
 
@@ -58,14 +66,35 @@ __all__ = [
     "UNATTRIBUTED_SECTION_ID",
     "EdgeHit",
     "HitStream",
+    "LanguageDecileRow",
     "SampledFrame",
     "SampledStack",
     "Section",
     "SectionHit",
     "SectionIndex",
     "build_section_index",
+    "language_deciles",
     "resolve_stream",
 ]
+
+#: File-extension -> a human-readable language label for `language_deciles`'
+#: per-language grouping -- deliberately just a display label (never a
+#: parse decision, unlike `frob.perf._collectors`' adapter-selection
+#: table), so an extension `frob.arch` has no adapter for still gets a
+#: readable bucket name instead of vanishing from the CLI's output.
+_DECILE_LANGUAGE_LABELS: dict[str, str] = {
+    ".py": "python",
+    ".ts": "typescript",
+    ".tsx": "typescript",
+    ".rs": "rust",
+    ".kt": "kotlin",
+    ".kts": "kotlin",
+}
+
+#: Label for a section hit whose file carries no known extension mapping,
+#: or `UNATTRIBUTED_SECTION_ID` itself -- always a visible bucket, never a
+#: silently dropped fraction of the stream's total weight.
+_OTHER_LANGUAGE_LABEL = "other"
 
 #: Sentinel section id a sample attributes to when its `(file, line)` matches
 #: no known section span -- NEVER dropped (see module docstring's NO-FAIL-
@@ -394,3 +423,84 @@ def resolve_stream(index: SectionIndex, stacks: list[SampledStack]) -> HitStream
                     )
                 )
     return HitStream(section_hits=tuple(section_hits), edge_hits=tuple(edge_hits))
+
+
+# frob:doc docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709
+class LanguageDecileRow(BaseModel):
+    """One decile bucket (`decile` 1..10, 1 = the hottest 10 percent by
+    weight) of one language's resolved section hits -- `frob perf
+    collect`'s rendering unit (T-0765). `section_count` is how many
+    distinct sections fall in this bucket, `weight` their summed hit
+    weight; `language` is `UNATTRIBUTED_SECTION_ID`'s own bucket
+    (`"unattributed"`) for samples that matched no section, or
+    `"other"` for a resolved section whose file carries an extension
+    `language_deciles` has no display label for -- both real, visible
+    buckets, never merged away or dropped (NO-FAIL-SILENT)."""
+
+    model_config = {}
+
+    language: str
+    decile: int
+    weight: float
+    section_count: int
+
+
+def _decile_language(section_id: str, file_by_section: dict[str, str]) -> str:
+    """Display language for `section_id`: `"unattributed"` for the
+    sentinel, `language_deciles`' extension label for a real section, or
+    `_OTHER_LANGUAGE_LABEL` when the section's file has no known
+    extension mapping."""
+    if section_id == UNATTRIBUTED_SECTION_ID:
+        return UNATTRIBUTED_SECTION_ID
+    file = file_by_section.get(section_id, "")
+    suffix = PurePosixPath(file).suffix
+    return _DECILE_LANGUAGE_LABELS.get(suffix, _OTHER_LANGUAGE_LABEL)
+
+
+# frob:doc docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709
+# frob:tests tests/unit/perf/test_collectors.py::TestLanguageDeciles.test_resolve_stream_output_feeds_language_deciles_end_to_end  # noqa: E501
+def language_deciles(stream: HitStream, index: SectionIndex) -> list[LanguageDecileRow]:
+    """Bucket `stream`'s per-section hit weight into 10 rank-ordered
+    deciles PER LANGUAGE (decile 1 = a language's hottest-ranked 10
+    percent of its OWN sections, never mixed across languages) -- the
+    `frob perf collect` rendering `resolve_stream`'s language-neutral
+    output feeds directly (T-0765). A language with fewer than 10
+    distinct sections still gets up to 10 rows (one row per section,
+    unpadded) rather than a divide-by-zero or a fabricated empty row.
+    `UNATTRIBUTED_SECTION_ID`'s own weight is exposed as a single-row
+    `"unattributed"` bucket (decile 1), matching this module's NO-FAIL-
+    SILENT accounting -- never silently folded into another language's
+    total."""
+    file_by_section = {
+        section.id: section.file for sections in index.values() for section in sections
+    }
+    totals: dict[str, float] = {}
+    for hit in stream.section_hits:
+        totals[hit.section_id] = totals.get(hit.section_id, 0.0) + hit.weight
+
+    by_language: dict[str, list[tuple[str, float]]] = {}
+    for section_id, weight in totals.items():
+        language = _decile_language(section_id, file_by_section)
+        by_language.setdefault(language, []).append((section_id, weight))
+
+    rows: list[LanguageDecileRow] = []
+    for language, entries in sorted(by_language.items()):
+        ranked = sorted(entries, key=lambda pair: pair[1], reverse=True)
+        n = len(ranked)
+        bucket_size = max(1, -(-n // 10))  # ceil(n / 10), at least 1
+        for decile in range(1, 11):
+            start = (decile - 1) * bucket_size
+            if start >= n:
+                break
+            bucket = ranked[start : start + bucket_size]
+            if not bucket:
+                continue
+            rows.append(
+                LanguageDecileRow(
+                    language=language,
+                    decile=decile,
+                    weight=sum(w for _, w in bucket),
+                    section_count=len(bucket),
+                )
+            )
+    return rows

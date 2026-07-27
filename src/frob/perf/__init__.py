@@ -28,17 +28,29 @@ the same contract. See docs/modules/perf.md#hot-graph-collector.
 
 from __future__ import annotations
 
+from frob.perf._collectors import (
+    CollectorError,
+    build_class_to_file,
+    build_index_for_files,
+    detect_collector_format,
+    parse_collector_format,
+    parse_jfr_print,
+    parse_perf_script,
+    parse_v8_cpuprofile,
+)
 from frob.perf._heat import heat, join_smells, render_bar
 from frob.perf._hotgraph import (
     UNATTRIBUTED_SECTION_ID,
     EdgeHit,
     HitStream,
+    LanguageDecileRow,
     SampledFrame,
     SampledStack,
     Section,
     SectionHit,
     SectionIndex,
     build_section_index,
+    language_deciles,
     resolve_stream,
 )
 from frob.perf._models import HeatEntry, HeatReport, PerfError, ProfileArtifact
@@ -66,10 +78,12 @@ from frob.perf._sketch_store import (
 
 __all__ = [
     "UNATTRIBUTED_SECTION_ID",
+    "CollectorError",
     "EdgeHit",
     "HeatEntry",
     "HeatReport",
     "HitStream",
+    "LanguageDecileRow",
     "PerfError",
     "ProfileArtifact",
     "SampledFrame",
@@ -80,13 +94,21 @@ __all__ = [
     "SectionIndex",
     "SketchStoreConfig",
     "StackSampler",
+    "build_class_to_file",
+    "build_index_for_files",
     "build_section_index",
+    "detect_collector_format",
     "get_sketch",
     "heat",
     "join_smells",
+    "language_deciles",
     "load_artifact",
     "load_sketch_config",
     "new_run_sketch",
+    "parse_collector_format",
+    "parse_jfr_print",
+    "parse_perf_script",
+    "parse_v8_cpuprofile",
     "perf_rules",
     "profile_command",
     "put_sketch",

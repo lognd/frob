@@ -18,12 +18,17 @@ from frob.arch._normalized import NormalizedClass, NormalizedFunction, Normalize
 from frob.perf._collectors import (
     CollectorError,
     build_class_to_file,
+    build_index_for_files,
+    detect_collector_format,
+    parse_collector_format,
     parse_jfr_print,
     parse_perf_script,
     parse_v8_cpuprofile,
 )
 from frob.perf._hotgraph import (
     UNATTRIBUTED_SECTION_ID,
+    SampledFrame,
+    SampledStack,
     build_section_index,
     resolve_stream,
 )
@@ -222,6 +227,136 @@ class TestParseJfrPrint:
         ]
         assert resolved
         assert stream.unattributed_weight >= 1.0
+
+
+class TestDetectCollectorFormat:
+    """`detect_collector_format` autodetection (T-0765)."""
+
+    def test_cpuprofile_extension_is_v8(self) -> None:
+        """`.cpuprofile` is decided by extension alone."""
+        assert detect_collector_format(Path("out.cpuprofile"), "{}") == "v8-cpuprofile"
+
+    def test_jdk_execution_sample_marker_is_jfr(self) -> None:
+        """A JFR print transcript is decided by its event marker, whatever
+        extension the file happens to carry."""
+        text = (_FIXTURES / "sample.jfr.txt").read_text()
+        assert detect_collector_format(Path("out.txt"), text) == "jfr-print"
+
+    def test_anything_else_defaults_to_perf_script(self) -> None:
+        """Neither marker present: falls back to `perf-script`, this
+        repo's other text-based collector."""
+        text = (_FIXTURES / "sample.perf.script").read_text()
+        assert detect_collector_format(Path("out.txt"), text) == "perf-script"
+
+
+class TestParseCollectorFormat:
+    """`parse_collector_format`'s single dispatch call site (T-0765)."""
+
+    @pytest.mark.parametrize(
+        ("fmt", "fixture_name"),
+        [
+            ("perf-script", "sample.perf.script"),
+            ("v8-cpuprofile", "sample.cpuprofile"),
+            ("jfr-print", "sample.jfr.txt"),
+        ],
+    )
+    def test_dispatches_to_the_matching_adapter(
+        self, fmt: str, fixture_name: str
+    ) -> None:
+        """Each format name routes to the adapter that actually parses its
+        own fixture (never falls through to a mismatched adapter)."""
+        text = (_FIXTURES / fixture_name).read_text()
+        result = parse_collector_format(fmt, text, source=fixture_name)
+        assert result.is_ok
+        assert result.danger_ok
+
+
+class TestBuildIndexForFiles:
+    """`build_index_for_files`'s multi-language, best-effort index (T-0765)."""
+
+    def test_resolves_a_real_python_file_in_the_repo(self) -> None:
+        """A stack landing on a real, on-disk python function resolves to
+        that function's section -- proving the shared helper `_harness`
+        and `frob perf collect` both use actually attributes real code,
+        not just fixture text."""
+        this_file = str(Path(__file__))
+        index = build_index_for_files([this_file])
+        assert this_file in index
+        assert index[this_file]
+
+    def test_missing_or_unmapped_file_is_absent_from_the_index(self) -> None:
+        """A nonexistent path and an unmapped extension both degrade to
+        simply not appearing in the index (NO-FAIL-SILENT: the caller's
+        `resolve_stream` then attributes those frames as unattributed,
+        never an error here)."""
+        index = build_index_for_files(["/does/not/exist.py", "note.md", ""])
+        assert index == {}
+
+
+class TestLanguageDeciles:
+    """`language_deciles`' per-language, rank-ordered bucketing (T-0765)."""
+
+    def test_buckets_are_grouped_per_language_never_mixed(self) -> None:
+        """Two languages' sections never share a decile row -- each
+        language's ranking is independent of every other's."""
+        from frob.perf._hotgraph import HitStream, Section, SectionHit, language_deciles
+
+        py_section = Section(
+            id="py1",
+            kind="function",
+            qualname="f",
+            file="a.py",
+            start_line=1,
+            end_line=2,
+        )
+        ts_section = Section(
+            id="ts1",
+            kind="function",
+            qualname="g",
+            file="b.ts",
+            start_line=1,
+            end_line=2,
+        )
+        index = {"a.py": [py_section], "b.ts": [ts_section]}
+        stream = HitStream(
+            section_hits=(
+                SectionHit(section_id="py1", weight=5.0),
+                SectionHit(section_id="ts1", weight=3.0),
+            )
+        )
+        rows = language_deciles(stream, index)
+        languages = {row.language for row in rows}
+        assert languages == {"python", "typescript"}
+        assert all(row.decile == 1 for row in rows)
+
+    def test_unattributed_weight_gets_its_own_visible_bucket(self) -> None:
+        """`UNATTRIBUTED_SECTION_ID`'s weight is exposed as a real
+        `"unattributed"` row, never silently folded into another
+        language's total (NO-FAIL-SILENT)."""
+        from frob.perf._hotgraph import HitStream, SectionHit, language_deciles
+
+        stream = HitStream(
+            section_hits=(SectionHit(section_id=UNATTRIBUTED_SECTION_ID, weight=4.0),)
+        )
+        rows = language_deciles(stream, {})
+        assert len(rows) == 1
+        assert rows[0].language == UNATTRIBUTED_SECTION_ID
+        assert rows[0].weight == 4.0
+
+    def test_resolve_stream_output_feeds_language_deciles_end_to_end(self) -> None:
+        """A real `SampledStack` -> `resolve_stream` -> `language_deciles`
+        round trip, proving the pieces `frob perf collect` wires together
+        actually compose."""
+        from frob.perf._hotgraph import language_deciles
+
+        func = NormalizedFunction(name="run", line=1, body_line_count=3)
+        module = NormalizedModule(path="a.py", language="python", functions=[func])
+        index = build_section_index([module])
+        stacks = [SampledStack(frames=(SampledFrame(file="a.py", line=2),))]
+        stream = resolve_stream(index, stacks)
+        rows = language_deciles(stream, index)
+        assert rows
+        assert rows[0].language == "python"
 
 
 @pytest.mark.parametrize(

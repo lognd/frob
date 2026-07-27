@@ -1800,7 +1800,56 @@ def _add_perf_heat_parser(perf_sub) -> None:
     )
 
 
+# frob:ticket T-0765
+def _add_perf_collect_parser(perf_sub) -> None:
+    """Register `frob perf collect`, which resolves a hot-graph collector
+    profile (perf script / V8 .cpuprofile / JFR print, or the T-0710
+    python sampler) through `resolve_stream` and prints per-language
+    deciles."""
+    perf_collect_p = perf_sub.add_parser(
+        "collect",
+        help="resolve a perf/V8/JFR profile (or the python sampler) into "
+        "per-language hot-graph deciles",
+    )
+    perf_collect_p.add_argument("--path", dest="perf_path", metavar="DIR", default=".")
+    perf_collect_p.add_argument(
+        "--file",
+        dest="perf_file",
+        metavar="PATH",
+        help="recorded profile artifact (perf script text, .cpuprofile, "
+        "or a jfr print transcript)",
+    )
+    perf_collect_p.add_argument(
+        "--format",
+        dest="perf_format",
+        choices=("perf-script", "v8-cpuprofile", "jfr-print"),
+        help="collector format for --file (default: autodetected)",
+    )
+    perf_collect_p.add_argument(
+        "--sampler",
+        dest="perf_sampler",
+        action="store_true",
+        help="run the in-process python StackSampler over the test suite "
+        "instead of reading --file",
+    )
+    perf_collect_p.add_argument(
+        "--interval-s", dest="perf_interval_s", type=float, metavar="SECONDS"
+    )
+    perf_collect_p.add_argument(
+        "--max-depth", dest="perf_max_depth", type=int, metavar="N"
+    )
+    perf_collect_p.add_argument("--top", dest="perf_top", type=int, metavar="N")
+    perf_collect_p.add_argument("--json", dest="perf_json", action="store_true")
+    perf_collect_p.add_argument(
+        "perf_argv",
+        metavar="argv",
+        nargs=argparse.REMAINDER,
+        help="pytest args for --sampler, after -- (default: -q, the whole suite)",
+    )
+
+
 # frob:ticket T-0030
+# frob:ticket T-0765
 def _add_perf_parser(sub) -> None:
     """Register the `frob perf` subcommand and its arguments."""
     # -- perf ------------------------------------------------------------------
@@ -1810,6 +1859,7 @@ def _add_perf_parser(sub) -> None:
     perf_sub = perf_p.add_subparsers(dest="perf_command")
     _add_perf_profile_parser(perf_sub)
     _add_perf_heat_parser(perf_sub)
+    _add_perf_collect_parser(perf_sub)
 
 
 # frob:ticket T-0030
