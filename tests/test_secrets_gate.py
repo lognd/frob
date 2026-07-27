@@ -18,7 +18,13 @@ from pathlib import Path
 import pytest
 
 from frob.gates._models import Severity
-from frob.gates._secrets import _PATTERNS, ALL_PROVIDERS, _redact, secrets_gate
+from frob.gates._secrets import (
+    _PATTERNS,
+    ALL_PROVIDERS,
+    _redact,
+    fake_marker_staleness_gate,
+    secrets_gate,
+)
 
 
 # frob:waive DUP001 reason="parallel secrets-gate case table: independent \
@@ -529,6 +535,121 @@ class TestFakeMarking:
         violations = secrets_gate(repo)
         matches = [v for v in violations if v.rule == "SEC001"]
         assert len(matches) == 1
+
+
+class TestFakeMarkerStaleness:
+    """T-0978: `fake_marker_staleness_gate` -- WAIVE004 zero-findings
+    staleness for the reserved `frob:secret-fake` marker family, wired in
+    at the gate level (T-0157's reserved-verb constraint stands: this
+    marker never becomes a real `frob:waive` graph `Edge`)."""
+
+    # frob:waive DUP001 reason="parallel gate-level fire/no-fire cases \
+    # sharing an arrange-act scaffold; extracting would obscure per-case \
+    # intent, same shape as TestFakeMarking above"
+    def test_stale_marker_fires_waive004(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_secrets.py::fake_marker_staleness_gate
+        """A marker discharging a site with no real secret-shaped token
+        left behind (the underlying token was fixed/removed but the marker
+        comment was never cleaned up) is stale."""
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        (repo / "notes.py").write_text(
+            'KEY = "not-a-secret-anymore"'
+            '  # frob:secret-fake reason="fabricated fixture token"\n'
+        )
+        _commit(repo)
+
+        violations = fake_marker_staleness_gate(repo)
+        assert any(v.rule == "WAIVE004" for v in violations)
+        hit = next(v for v in violations if v.rule == "WAIVE004")
+        assert hit.file == "notes.py"
+        assert hit.line == 1
+
+    def test_stale_marker_on_line_above_fires_waive004(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_secrets.py::fake_marker_staleness_gate
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        (repo / "notes.py").write_text(
+            '# frob:secret-fake reason="fabricated fixture token"\n'
+            'KEY = "not-a-secret-anymore"\n'
+        )
+        _commit(repo)
+
+        violations = fake_marker_staleness_gate(repo)
+        assert any(v.rule == "WAIVE004" for v in violations)
+
+    def test_live_marker_does_not_fire(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_secrets.py::fake_marker_staleness_gate
+        """A marker still discharging a genuinely real-looking token is not
+        stale -- the mirror-image case of the fire tests above."""
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        (repo / "notes.py").write_text(
+            'KEY = "sk-ant-'
+            + "e" * 30
+            + '"  # frob:secret-fake reason="fabricated fixture token"\n'
+        )
+        _commit(repo)
+
+        violations = fake_marker_staleness_gate(repo)
+        assert violations == ()
+
+    def test_marker_discharging_email_shaped_pii_does_not_fire(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_secrets.py::fake_marker_staleness_gate
+        """T-0968: this marker family is shared with PII011 (email-shaped
+        literals) -- a marker whose site is email-shaped, not SEC00x-
+        shaped, must not be misread as stale just because no SEC00x
+        pattern matches there (`_plausibly_still_needed`)."""
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        (repo / "notes.py").write_text(
+            '# frob:secret-fake reason="fabricated fixture email"\n'
+            'EMAIL = "ci@fake.example.com"\n'
+        )
+        _commit(repo)
+
+        violations = fake_marker_staleness_gate(repo)
+        assert violations == ()
+
+    def test_bare_marker_without_reason_is_not_a_staleness_site(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_secrets.py::fake_marker_staleness_gate
+        """A bare marker (no `reason=`) is SEC004's territory, not
+        WAIVE004's -- `fake_marker_staleness_gate` only ever enumerates
+        reason-bearing sites."""
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        # T-0190 discipline: split so this test file's own raw source
+        # never contains the contiguous, un-reasoned marker text.
+        (repo / "notes.py").write_text(
+            "# frob:secret" + "-fake\n" + 'KEY = "not-a-secret-anymore"\n'
+        )
+        _commit(repo)
+
+        violations = fake_marker_staleness_gate(repo)
+        assert violations == ()
+
+    def test_docstring_style_mention_is_not_a_staleness_site(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_secrets.py::fake_marker_staleness_gate
+        """A prose/docstring MENTION of the marker (backtick-quoted, or
+        embedded inside a Python string literal) is never mistaken for a
+        real directive -- mirrors `_BARE_FAKE_DIRECTIVE_RE`'s own backtick
+        exclusion, extended here to the quote-adjacent case a
+        multi-line-literal test-authoring pattern produces."""
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        (repo / "notes.py").write_text(
+            'DOC = "see the `frob:secret-fake reason=\\"...\\"` marker"\n'
+        )
+        _commit(repo)
+
+        violations = fake_marker_staleness_gate(repo)
+        assert violations == ()
 
 
 class TestTrackedEnvFile:

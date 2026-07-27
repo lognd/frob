@@ -1215,6 +1215,7 @@ silently folds in.
 <!-- frob:describes src/frob/gates/_baseline.py::violation_fingerprint -->
 <!-- frob:describes src/frob/gates/_secrets.py::secrets_gate -->
 <!-- frob:describes src/frob/gates/_secrets.py::_redact -->
+<!-- frob:describes src/frob/gates/_secrets.py::fake_marker_staleness_gate -->
 <!-- frob:describes src/frob/gates/_pii_structural.py::pii_structural_gate -->
 <!-- frob:describes src/frob/gates/_pii_structural.py::_FieldSignature -->
 <!-- frob:describes src/frob/gates/_pii_structural.py::_scan_python_fields -->
@@ -1271,6 +1272,24 @@ silently folds in.
   reasoning. `SEC003` (live Stripe secret keys, PEM private-key headers) is
   in `_UNWAIVABLE_RULES` alongside `TEST008`; `SEC001`/`SEC002` stay
   waivable with a written reason like every other rule.
+- `fake_marker_staleness_gate` -- WAIVE004 (T-0978): zero-findings
+  staleness for the `frob:secret-fake reason="..."` marker family, at the
+  GATE level rather than the graph-edge level -- `frob:secret-fake` stays
+  a reserved, DSL-invisible marker verb (T-0157,
+  `frob.graph.dsl._RESERVED_MARKER_VERBS`) that never becomes a real
+  `frob:waive` `Edge`, so `frob.gates._waive004_violations`'s graph-edge
+  detector cannot see it. This gate re-scans every tracked file's REAL,
+  reason-bearing marker sites (excluding prose mentions and a documented
+  set of test files that construct marker text as a multi-line Python
+  string literal, defeating this check's physical-line site mapping --
+  see `_STALENESS_MULTILINE_LITERAL_EXCLUDED_FILES`'s comment) and emits a
+  `WAIVE004`-rule `Violation` for any whose site trips zero real SEC00x
+  patterns AND does not look email-shaped (`_plausibly_still_needed`, a
+  conservative substring stand-in for PII011's real structural check,
+  since this marker family is shared between `secrets_gate` and
+  `pii_structural_gate`'s PII011). `run_gates` folds its output into the
+  same `all_violations` set the graph-edge WAIVE004 pass feeds, so both
+  sources present as one `WAIVE004` rule to a caller.
 - `run_gates` -- the single entry point: loads all state once, then runs
   the selected gates in parallel and merges/severity-overrides the result.
 - `known_gate_rule_ids` -- every rule id a gate can emit (T-0499), the

@@ -115,7 +115,7 @@ from frob.gates._ratchet import (
 from frob.gates._refs import ref_gate
 from frob.gates._registry_exhaustiveness import registry_gate
 from frob.gates._render_lint import render_lint_gate
-from frob.gates._secrets import secrets_gate
+from frob.gates._secrets import fake_marker_staleness_gate, secrets_gate
 from frob.gates._walk_lint import walk_lint_gate
 from frob.gates.decisions import DecisionError
 from frob.gates.invariants import (
@@ -10841,6 +10841,18 @@ def _assemble_gate_report(
     all_violations.extend(
         _waive004_violations(tuple(all_violations), st.snapshot, st.rule_ids)
     )
+    # T-0978: `frob:secret-fake` stays a reserved, graph-invisible marker
+    # verb (T-0157 -- `frob.graph.dsl._RESERVED_MARKER_VERBS`), so it never
+    # becomes a real `frob:waive` `Edge` the graph-edge `_waive004_
+    # violations` above can iterate. `fake_marker_staleness_gate` is the
+    # same zero-findings staleness check reimplemented at the GATE level
+    # (it re-scans tracked files for the marker's own reason-bearing sites
+    # and checks each one still trips a real secret-pattern hit) -- folded
+    # in here, right after the graph-edge WAIVE004 pass, so both sources
+    # present as one `WAIVE004` rule to a caller. Independent of
+    # job_violations (it does its own tracked-file scan), so it does not
+    # need to run before/after any particular job like WAIVE003/004 above.
+    all_violations.extend(fake_marker_staleness_gate(st.root))
 
     kept, waived = _apply_waivers(tuple(all_violations), st.snapshot)
     kept = _apply_severity_overrides(kept, cfg.root)
@@ -10885,6 +10897,7 @@ __all__ = [
     "delta_violations",
     "drift_gate",
     "exclude_hazard_gate",
+    "fake_marker_staleness_gate",
     "fmt_gate",
     "format_paths",
     "inv003_gate",

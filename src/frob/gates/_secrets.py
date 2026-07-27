@@ -25,17 +25,25 @@ contract (a bare marker gets its own SEC004 violation instead of silently
 discharging for free -- see `_bare_fake_marker_violations`). It still is
 NOT a graph `WAIVE` edge (the T-0157 decision above stands -- `secret-fake`
 stays a reserved, DSL-invisible marker verb, `frob.graph.dsl.
-_RESERVED_MARKER_VERBS`), so it is not literally watched by the graph-edge
-`WAIVE004` zero-findings staleness gate (`frob.gates._waive004_violations`
-iterates real `frob:waive` edges only); it is now auditable the same WAY
-`frob:waive` is (a mandatory, logged, per-site reason), not literally the
-same mechanism. Wiring an actual zero-findings staleness check for this
-marker family would mean either promoting it into a real graph edge (undoing
-the T-0157 decision above) or teaching `_apply_waivers`/`_waive004_
-violations` a second waiver source outside `frob.graph.dsl` -- both are
-changes to `frob.graph.dsl`/`frob.gates.__init__`, outside this module's
-declared scope; filed as a follow-up (T-0978) rather than forced
-here.
+_RESERVED_MARKER_VERBS`), so it is not watched by the graph-edge `WAIVE004`
+zero-findings staleness gate (`frob.gates._waive004_violations` iterates
+real `frob:waive` edges only); it is auditable the same WAY `frob:waive` is
+(a mandatory, logged, per-site reason), not literally the same mechanism.
+
+T-0978: zero-findings staleness for this marker family IS now wired in --
+at the GATE level, not the graph-edge level, per T-0157's constraint above
+(promoting `secret-fake` into a real graph edge stays out of scope; this
+module remains the sole owner of its detection logic).
+`fake_marker_staleness_gate` re-scans every tracked file's REAL
+(non-prose, non-bare) `frob:secret-fake reason="..."` marker sites and
+emits a `WAIVE004`-rule `Violation` for any whose site trips zero real
+secret-pattern hits this run (`_stale_fake_marker_violations`,
+`_would_trip_without_marker`) -- the same "zero live findings behind a
+still-standing suppression" shape `frob.gates._waive004_violations` checks
+for `frob:waive` edges, computed independently since there is no edge to
+iterate. `frob.gates.__init__` folds this gate's output into the same
+`all_violations` set the graph-edge WAIVE004 detector feeds, so both
+sources present as one `WAIVE004` rule to a caller.
 
 Redaction discipline: `_redact` NEVER returns the matched token itself, only
 `<provider> <fixed-prefix>... (<N> chars)`. Every violation message and log
@@ -732,18 +740,207 @@ def _bare_fake_marker_violations(rel_path: str, text: str) -> list[Violation]:
     return violations
 
 
-def _scan_line(lines: list[str], index: int) -> list[tuple[_SecretPattern, str]]:
+#: A REAL, reason-bearing `frob:secret-fake` marker (as opposed to a prose
+#: MENTION of the marker inside this module's own docstrings/messages, which
+#: use the identical `frob:secret-fake reason="..."` substring constantly --
+#: see `_BARE_FAKE_DIRECTIVE_RE`'s comment for the same hazard on the bare
+#: form). T-0978: this is the enumeration regex for the staleness check
+#: only (`_stale_fake_marker_violations`); the loose, comment-leader-free
+#: `_FAKE_MARKER_REASON_RE` above stays exactly as-is for the actual
+#: discharge decision inside `_scan_line`/`_fake_marker_reason` -- changing
+#: that regex's matching behavior is outside this ticket's scope.
+#:
+#: T-0978 second false-positive class (found while writing this ticket's
+#: own tests, not theoretical): a *test* file that constructs a fixture's
+#: marker text as a Python string literal argument -- e.g. this module's own
+#: test suite writes `'# frob:secret-fake reason="..."\n'` as one argument
+#: to `write_text` -- contains that exact substring in ITS OWN tracked
+#: source, with a real `#`/`//` immediately before it, so the backtick-only
+#: exclusion above is not enough; the whole line IS that string literal, so
+#: there is no unrelated real secret token nearby in that SOURCE line for
+#: `_would_trip_without_marker` to find, and every such literal would
+#: misread as a stale marker. The additional `['"]`-preceded exclusion below
+#: closes this: a `#`/`//` immediately preceded by a quote character is
+#: inside a string literal being constructed, not a real standalone/inline
+#: comment directive, and is excluded the same way the backtick case is.
+_REAL_FAKE_MARKER_REASON_RE = re.compile(
+    '(?<![\'"`])(?:#|//)\\s*frob:secret-fake\\s+reason="([^"]*)"'
+)
+
+
+#: T-0968's own docstring notes this marker family is SHARED between
+#: `secrets_gate` (SEC00x) and `frob.gates._pii_structural`'s PII011
+#: (email-shaped literal) detector -- confirmed empirically while building
+#: this staleness check: every real, single-physical-line
+#: `frob:secret-fake reason="..."` marker actually present in this repo's
+#: own tracked test suite today (a dozen-plus sites) protects a fabricated
+#: git identity EMAIL, not a SEC00x-shaped token, so checking SEC00x
+#: patterns alone (`_would_trip_without_marker`) misreads every one of
+#: them as stale. Replicating PII011's real AST-based `_is_email_shaped`
+#: check here would require importing `frob.gates._pii_structural`
+#: internals, outside this ticket's declared scope
+#: (src/frob/graph/dsl.py, src/frob/gates/__init__.py,
+#: src/frob/gates/_secrets.py, tests/**) -- a plain email-shape substring
+#: heuristic is used instead, deliberately erring toward "plausibly still
+#: needed" (never flagging staleness) on any uncertain match, the same
+#: safe-direction posture `_looks_low_entropy` documents for the opposite
+#: (never-suppress) case. A real PII011-aware staleness check is a natural
+#: follow-up once frob.gates._pii_structural exposes a public seam for it.
+_PLAUSIBLE_EMAIL_RE = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
+
+
+def _would_trip_without_marker(lines: list[str], index: int) -> bool:
+    """True if `lines[index]` still contains at least one real-looking
+    (non-placeholder) secret token, disregarding any `frob:secret-fake`
+    marker that would otherwise discharge it (T-0978: the staleness
+    predicate -- "does this site still need the marker it carries").
+    Delegates to `_scan_line(..., ignore_marker=True)` rather than
+    re-implementing the pattern-matching loop."""
+    return bool(_scan_line(lines, index, ignore_marker=True))
+
+
+def _plausibly_still_needed(lines: list[str], index: int) -> bool:
+    """True if `lines[index]` either still trips a real SEC00x pattern
+    (`_would_trip_without_marker`) or looks email-shaped
+    (`_PLAUSIBLE_EMAIL_RE`, a conservative stand-in for PII011's real
+    structural check -- see that constant's comment for why). Either one
+    means the marker's site is not stale."""
+    return (
+        _would_trip_without_marker(lines, index)
+        or _PLAUSIBLE_EMAIL_RE.search(lines[index]) is not None
+    )
+
+
+#: T-0978: files where a `frob:secret-fake reason="..."` marker sighting is
+#: source-level test DATA -- built as a Python string-literal fragment that
+#: itself, in this file's OWN tracked source, spans multiple physical
+#: lines (concatenated/`+`-joined or embedded inside one multi-line `src =
+#: (...)` literal) -- rather than a real, single-physical-line directive
+#: comment sitting next to the content it discharges. This staleness check
+#: is inherently physical-line-based (mirrors `_fake_marker_reason`'s own
+#: same-line-or-line-below convention, which the real, non-staleness
+#: discharge path also uses), so it cannot tell "this IS the real marker
+#: line for a real fixture" from "this is one fragment of test-authored
+#: string data that merely CONTAINS marker-shaped text, whose actual
+#: 'content' fragment lives on a different physical source line entirely".
+#: Confirmed empirically (not theoretical) while building this feature:
+#: every site below produced a false "stale" WAIVE004 finding against a
+#: perfectly live, intentional test fixture. Excluded by file, the same
+#: precedent `TestGateIsGreenOnItself._LEDGER_NARRATIVE_FILES` and
+#: `frob.gates._pii_structural._SELF_EXCLUDED_FILES` already set for this
+#: exact class of scanner/test-fixture self-collision.
+_STALENESS_MULTILINE_LITERAL_EXCLUDED_FILES = frozenset(
+    {
+        "tests/test_secrets_gate.py",
+        "tests/test_pii_structural_gate.py",
+        "tests/unit/graph/test_dsl.py",
+    }
+)
+
+
+def _stale_fake_marker_violations(rel_path: str, text: str) -> list[Violation]:
+    """WAIVE004 (T-0978): a REAL, reason-bearing `frob:secret-fake` marker
+    whose discharged site(s) -- the marker's own line, and/or the line
+    directly below it (mirrors `_fake_marker_reason`'s same-line-or-line-
+    below discharge convention, read from the marker's own position rather
+    than the content line's) -- trip ZERO real secret-pattern hits (SEC00x)
+    or plausible PII011-shaped content (`_plausibly_still_needed`) this run.
+
+    This is `frob.gates._waive004_violations`'s zero-findings staleness
+    check, reimplemented for this marker family specifically because
+    `frob:secret-fake` is a reserved, graph-invisible verb
+    (`frob.graph.dsl._RESERVED_MARKER_VERBS`, T-0157) that never becomes a
+    real `frob:waive` `Edge` -- so the graph-edge detector
+    (`frob.gates._waive004_violations`) cannot see it at all. Emits the same
+    `WAIVE004` rule id/severity so both staleness sources read as one gate
+    to a caller, per this ticket's "wire into WAIVE004" mandate; the
+    finding text names the marker family so it is not mistaken for a real
+    `frob:waive` edge when read.
+
+    Skips `_STALENESS_MULTILINE_LITERAL_EXCLUDED_FILES` -- see that
+    constant's comment."""
+    if rel_path in _STALENESS_MULTILINE_LITERAL_EXCLUDED_FILES:
+        return []
+    lines = text.splitlines()
+    violations: list[Violation] = []
+    for index, line in enumerate(lines):
+        match = _REAL_FAKE_MARKER_REASON_RE.search(line)
+        if match is None:
+            continue
+        reason = match.group(1)
+        targets = [index]
+        if index + 1 < len(lines):
+            targets.append(index + 1)
+        if any(_plausibly_still_needed(lines, target) for target in targets):
+            continue
+        lineno = index + 1
+        _log.warning(
+            "WAIVE004: %s:%d frob:secret-fake reason=%r matches 0 findings this run",
+            rel_path,
+            lineno,
+            reason,
+        )
+        violations.append(
+            Violation(
+                rule="WAIVE004",
+                severity=Severity.WARN,
+                file=rel_path,
+                line=lineno,
+                message=(
+                    f"WAIVE004: {rel_path}:{lineno} frob:secret-fake "
+                    f"reason={reason!r} matches 0 secret findings in this "
+                    f"run -- the marker may be pre-forgiving a future "
+                    f"regression with no live secret-shaped token behind "
+                    f"it; confirm the site still needs it, or remove the "
+                    f"marker (known-flaky for a scoped/`--only`-excluded "
+                    f"run; trust this only from a full, unscoped `secrets` "
+                    f"gate run)"
+                ),
+            )
+        )
+    return violations
+
+
+# frob:doc docs/modules/gates.md#public-api
+def fake_marker_staleness_gate(root: Path) -> tuple[Violation, ...]:
+    """WAIVE004 (T-0978): every git-tracked file's `frob:secret-fake
+    reason="..."` marker sites that currently discharge zero real secret
+    findings -- the gate-level staleness check for this marker family (see
+    `_stale_fake_marker_violations` for the "why gate-level, not graph-edge"
+    rationale). Mirrors `secrets_gate`'s own tracked-file/read-text posture
+    exactly (git-tracked files only, unreadable/binary files skipped)."""
+    root = Path(root)
+    violations: list[Violation] = []
+    for rel_path in _tracked_files(root):
+        try:
+            text = (root / rel_path).read_text(encoding="utf-8", errors="strict")
+        except (OSError, UnicodeDecodeError):
+            _log.debug("secrets_gate: skipping unreadable/binary %s", rel_path)
+            continue
+        violations.extend(_stale_fake_marker_violations(rel_path, text))
+    return tuple(violations)
+
+
+def _scan_line(
+    lines: list[str], index: int, *, ignore_marker: bool = False
+) -> list[tuple[_SecretPattern, str]]:
     """Every `(pattern, token)` hit on `lines[index]` not already claimed by
     an earlier (more specific) pattern's span, and not fake-marked.
 
     T-0968: a fake-marked line only discharges via a REASON-bearing
     `frob:secret-fake reason="..."` (`_fake_marker_reason`) -- a bare marker
     is surfaced separately as SEC004 (`_bare_fake_marker_violations`) and no
-    longer suppresses anything here."""
+    longer suppresses anything here.
+
+    T-0978: `ignore_marker=True` disregards any `frob:secret-fake` reason on
+    this line entirely (as if the marker were absent) while still applying
+    every other filter (`_looks_fake`, claimed-span dedup) -- used only by
+    `_would_trip_without_marker` to test whether a marker's site would still
+    produce a real hit, never to decide whether to emit a live finding."""
     line = lines[index]
     claimed: list[tuple[int, int]] = []
     hits: list[tuple[_SecretPattern, str]] = []
-    reason = _fake_marker_reason(lines, index)
+    reason = None if ignore_marker else _fake_marker_reason(lines, index)
     for pattern in _PATTERNS:
         for match in pattern.regex.finditer(line):
             span = match.span()
@@ -897,5 +1094,6 @@ __all__ = [
     "ALL_PROVIDERS",
     "CRITICAL_PROVIDERS",
     "_redact",
+    "fake_marker_staleness_gate",
     "secrets_gate",
 ]
