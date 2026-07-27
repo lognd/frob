@@ -2008,6 +2008,18 @@ def _add_release_parser(sub) -> None:
     release_check_p.add_argument(
         "--path", dest="release_path", metavar="DIR", default="."
     )
+    # frob:ticket T-1009
+    release_sync_p = release_sub.add_parser(
+        "sync",
+        help=(
+            ".frob-release.json is the single version authority; regenerate "
+            "pyproject.toml's version, uv.lock, and the CHANGELOG.md skeleton "
+            "entry from it (REL002)"
+        ),
+    )
+    release_sync_p.add_argument(
+        "--path", dest="release_path", metavar="DIR", default="."
+    )
 
 
 # frob:ticket T-0030

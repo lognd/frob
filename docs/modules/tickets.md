@@ -984,6 +984,7 @@ concurrent automation.
 <!-- frob:describes src/frob/tickets/_land.py::_maybe_rebuild_natives -->
 <!-- frob:describes src/frob/app/ticket_runner.py::_apply_release_bump_for_land -->
 <!-- frob:describes src/frob/app/ticket_runner.py::_write_release_bump -->
+<!-- frob:describes src/frob/app/ticket_runner.py::_root_release_manifest -->
 <!-- frob:describes src/frob/app/ticket_runner.py::_land_rebuild_natives_fn -->
 
 The landing procedure used to be manual coordinator surgery repeated per
@@ -1161,6 +1162,22 @@ Order of operations, and why it is this order:
     on main (T-0976, T-0989) -- this assertion makes that class of bug a
     loud land failure instead of a silent regression, sibling to T-0959's
     archive-splice integrity check and T-0740's ledger integrity check.
+
+    **T-1007 producer fix**: `ticket_runner._apply_release_bump_for_land`
+    (the library's own `bump_version` callback, wired via
+    `_land_bump_version_fn`) used to derive its bump BASELINE from
+    `frob.release.load_manifest(root)` -- an on-disk read of `.frob-
+    release.json` AFTER the squash-apply, exactly the working-tree
+    mutation the T-0992 assertion above exists to be immune to. A stale,
+    out-of-scope worktree copy of `.frob-release.json` riding the squash
+    silently under-computed the required bump every time, tripping the
+    T-0992 refusal on the FIRST land attempt and forcing a manual merge +
+    reland round trip (the recurring churn item T-1007 was filed
+    against). `_root_release_manifest` (T-1007) now reads `.frob-
+    release.json` via `git show HEAD:.frob-release.json` -- root's own
+    committed pre-land state, never the worktree-carried working-tree
+    copy -- making the T-0992 guard a never-fires invariant for this
+    callback instead of a per-land speed bump.
 9.7. **Native rebuild trigger** (T-0338, only when `rebuild_natives` was
     supplied AND the landed changeset touches a native source tree --
     `frob-core/` or `strata-core/`): `rebuild_natives(root)` runs `make

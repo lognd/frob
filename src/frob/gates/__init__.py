@@ -1116,6 +1116,8 @@ _KNOWN_GATE_RULES = frozenset(
         "DEC001",
         "DEC002",
         "REL001",
+        # T-1009: .frob-release.json vs pyproject.toml/uv.lock coherence.
+        "REL002",
         "DOC001",
         "DOC002",
         "DOC003",
@@ -9386,8 +9388,94 @@ def release_gate(
             snapshot, current_date=date.today().isoformat()
         )
     )
+    # T-1009: REL002 -- .frob-release.json is the ONE version authority;
+    # every derived artifact (pyproject.toml/uv.lock/CHANGELOG.md) must
+    # agree with it at all times, independent of REL001's land-owned/
+    # FROB_AGENT bump suppression above -- a hand-edit that desyncs an
+    # artifact is a bug the instant it happens, not just at land time.
+    violations.extend(_rel002_coherence_violations(root, manifest_result.danger_ok))
     _log.info("release_gate: bump=%s, %d violation(s)", bump.name, len(violations))
     return tuple(violations)
+
+
+# frob:doc docs/modules/gates.md#public-api
+# frob:ticket T-1009
+def _current_project_name(root: Path) -> str | None:
+    """The project name from `pyproject.toml`'s `[project].name`, or
+    `None` if undetectable (T-1009 -- `_uv_lock_version`'s key into
+    `uv.lock`'s `[[package]]` table)."""
+    toml_path = root / "pyproject.toml"
+    if not toml_path.exists():
+        return None
+    try:
+        with toml_path.open("rb") as fh:
+            data = tomllib.load(fh)
+    except (OSError, tomllib.TOMLDecodeError):
+        return None
+    name = data.get("project", {}).get("name")
+    return name if isinstance(name, str) else None
+
+
+# frob:doc docs/modules/gates.md#public-api
+# frob:ticket T-1009
+def _uv_lock_version(root: Path) -> str | None:
+    """The project's own package `version` as recorded in `root/uv.lock`'s
+    `[[package]]` table (matched by `pyproject.toml`'s `[project].name`),
+    or `None` if the file is absent/unparsable/has no matching entry
+    (T-1009)."""
+    name = _current_project_name(root)
+    if name is None:
+        return None
+    path = root / "uv.lock"
+    if not path.exists():
+        return None
+    try:
+        with path.open("rb") as fh:
+            data = tomllib.load(fh)
+    except (OSError, tomllib.TOMLDecodeError):
+        return None
+    for package in data.get("package", []):
+        if package.get("name") == name:
+            version = package.get("version")
+            return version if isinstance(version, str) else None
+    return None
+
+
+# frob:doc docs/modules/gates.md#public-api
+# frob:ticket T-1009
+def _rel002_coherence_violations(root: Path, manifest) -> list[Violation]:  # noqa: ANN001
+    """REL002 (T-1009): `.frob-release.json`'s `version` is the ONE version
+    authority; `pyproject.toml`, `uv.lock`, and CHANGELOG.md are derived
+    artifacts regenerated from it by `frob release sync`. Any artifact that
+    disagrees is named in a single ERROR-severity finding -- born ERROR
+    (DOC007 precedent, T-0986): a repo that has actually run `sync` has
+    zero disagreements, so this never fires on a clean tree."""
+    authoritative = manifest.version
+    disagreements: list[str] = []
+
+    pyproject_version = _current_version(root)
+    if pyproject_version is not None and pyproject_version != authoritative:
+        disagreements.append(f"pyproject.toml (version={pyproject_version})")
+
+    lock_version = _uv_lock_version(root)
+    if lock_version is not None and lock_version != authoritative:
+        disagreements.append(f"uv.lock (version={lock_version})")
+
+    if not disagreements:
+        return []
+    return [
+        Violation(
+            rule="REL002",
+            severity=Severity.ERROR,
+            file=".frob-release.json",
+            line=0,
+            message=(
+                f"REL002: .frob-release.json is the version authority "
+                f"({authoritative}), but disagrees with: "
+                f"{', '.join(disagreements)} -- run `frob release sync`"
+            ),
+        )
+    ]
 
 
 # frob:doc docs/modules/gates.md#public-api

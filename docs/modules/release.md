@@ -5,6 +5,14 @@ digest, so `frob release` computes the correct version-bump class instead
 of leaving it to judgment, and the REL001 gate fails a release whose
 declared version does not cover the observed public-API change.
 
+**`.frob-release.json` is the ONE version authority (T-1009).**
+`pyproject.toml`'s `[project].version`, `uv.lock`'s own `version` line, and
+CHANGELOG.md's heading entries are all DERIVED artifacts -- `frob release
+sync` regenerates all three from the manifest's `version` field. Never edit
+a derived artifact's version by hand; edit `.frob-release.json` (or let
+`frob ticket land`'s REL001 bump write it) and run `sync`. The REL002 gate
+(below) catches a hand-edit the moment it happens.
+
 ## The bump classes
 
 | Change | Class | Example |
@@ -23,12 +31,20 @@ declared version does not cover the observed public-API change.
 frob release stamp     # at release time: record the public API + version
                        # into the tracked .frob-release.json manifest
 frob release check     # verify the current version bump covers the change
+frob release sync      # T-1009: regenerate pyproject.toml/uv.lock/CHANGELOG.md
+                       # from .frob-release.json's authoritative version
 ```
 
 `stamp` writes `.frob-release.json` (tracked source of truth: `{version,
 api}` where `api` maps each public symref to its signature digest). `check`
 rebuilds the graph, diffs the current public API against the manifest,
-classifies the change, and reports the minimum acceptable version.
+classifies the change, and reports the minimum acceptable version. `sync`
+(T-1009) reads the manifest's `version` and rewrites `pyproject.toml`'s
+`version = "..."` line, re-runs `uv lock`, and inserts a `## [version] -
+unreleased` CHANGELOG.md skeleton entry if one does not already exist --
+the same three artifacts `frob ticket land`'s REL001 bump callback keeps in
+sync at land time, now available as a standalone command (also what `make
+upload` runs after `frob release stamp`).
 
 ## REL001 gate
 
@@ -47,6 +63,21 @@ fails when:
 
 After a legitimate release, re-run `frob release stamp` to move the
 baseline forward.
+
+## REL002 gate (T-1009)
+
+<!-- frob:describes src/frob/gates/__init__.py::_rel002_coherence_violations -->
+
+REL002 runs alongside REL001 inside the same `release` check stage (`frob
+check --only release`), unconditionally -- unlike REL001's bump/changelog
+half, it is NOT suppressed under `FROB_AGENT` or land-ownership, since a
+coherence mismatch is a bug the instant it exists, not a land-time step.
+It compares `.frob-release.json`'s `version` (the ONE authority) against
+`pyproject.toml`'s `[project].version` and `uv.lock`'s own package-version
+entry, and reports a single `ERROR`-severity finding naming every
+disagreeing artifact when any differs -- `frob release sync` is the fix.
+Born `ERROR` from a clean baseline (no config graduation needed, DOC007
+precedent): a repo that has actually run `sync` has zero disagreements.
 
 ## Public API
 

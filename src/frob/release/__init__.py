@@ -19,6 +19,14 @@ running `frob release stamp` once.
 # already-implemented internal behavior, verifiable by reading the code it annotates) \
 # rather than a separate cross-module contract needing its own tracked invariant; \
 # disposed as a calibration batch, not claim-by-claim"
+# frob:waive ARCH102 reason="T-1009: authoritative_version/rewrite_pyproject_version/ \
+# changelog_skeleton_entry are the sync half of the SAME single-version-authority \
+# concern this module's docstring already scopes it to (stamp/diff_class/ \
+# required_version being the stamp/diff half); the naming/usage clustering heuristic \
+# groups by call-graph edges, and sync's helpers are new leaf functions with no \
+# existing caller in this module yet (frob.app.release_runner._sync/frob.tickets._land \
+# call them from outside) -- not a second concern to split out, the module still has \
+# exactly one job: mechanical semver, now including its derived-artifact regeneration"
 
 from __future__ import annotations
 
@@ -134,6 +142,73 @@ def stamp(
     return Ok(version)
 
 
+# frob:ticket T-1009
+_PYPROJECT_VERSION_RE = re.compile(r'(?m)^version\s*=\s*"[^"]*"')
+
+
+# frob:doc docs/modules/release.md#public-api
+# frob:ticket T-1009
+def authoritative_version(root: Path) -> Result[str, ReleaseError]:
+    """The ONE version authority (T-1009): `.frob-release.json`'s `version`
+    field. `pyproject.toml`, `uv.lock`, and CHANGELOG.md are all derived
+    artifacts regenerated FROM this by `sync`/`frob release sync` -- never
+    the other way around. `Err(NoManifest)`/`Err(Malformed)` propagate from
+    `load_manifest` unchanged."""
+    loaded = load_manifest(root)
+    if loaded.is_err:
+        return Err(loaded.danger_err)
+    return Ok(loaded.danger_ok.version)
+
+
+# frob:doc docs/modules/release.md#public-api
+# frob:ticket T-1009
+def rewrite_pyproject_version(root: Path, version: str) -> Result[bool, ReleaseError]:
+    """Rewrite `root/pyproject.toml`'s `version = "..."` line to `version`
+    (T-1009). Returns `Ok(True)` if the file changed, `Ok(False)` if it
+    already matched, `Err(BadVersion)` if no `version = "..."` line was
+    found to rewrite."""
+    path = root / "pyproject.toml"
+    if not path.exists():
+        return Err(ReleaseError.BadVersion)
+    text = path.read_text(encoding="utf-8")
+    new_text, count = _PYPROJECT_VERSION_RE.subn(
+        f'version = "{version}"', text, count=1
+    )
+    if count != 1:
+        return Err(ReleaseError.BadVersion)
+    if new_text == text:
+        return Ok(False)
+    path.write_text(new_text, encoding="utf-8")
+    return Ok(True)
+
+
+# frob:doc docs/modules/release.md#public-api
+# frob:ticket T-1009
+def changelog_skeleton_entry(root: Path, version: str, note: str | None = None) -> bool:
+    """Insert a `## [version] - unreleased` skeleton entry at the top of
+    `root/CHANGELOG.md` (T-1009) unless a heading entry for `version`
+    already exists (mirrors `_changelog_mentions`'s heading-anchored match
+    in `frob.gates`, kept independent to avoid a gates<->release import
+    cycle). Returns `True` if it wrote a new entry, `False` if one already
+    existed or CHANGELOG.md is absent (nothing to skeleton into)."""
+    path = root / "CHANGELOG.md"
+    if not path.exists():
+        return False
+    pattern = re.compile(r"(?<![0-9.])" + re.escape(version) + r"(?![0-9.])")
+    text = path.read_text(encoding="utf-8")
+    lines = text.splitlines(keepends=True)
+    if any(line.lstrip().startswith("#") and pattern.search(line) for line in lines):
+        return False
+    body = f"- {note}\n\n" if note else "\n"
+    entry = f"## [{version}] - unreleased\n\n{body}"
+    insert_at = next(
+        (i for i, line in enumerate(lines) if line.startswith("## ")), len(lines)
+    )
+    lines[insert_at:insert_at] = [entry]
+    path.write_text("".join(lines), encoding="utf-8")
+    return True
+
+
 # frob:doc docs/modules/release.md#public-api
 def diff_class(manifest: ReleaseManifest, snapshot: GraphSnapshot) -> BumpClass:
     """The semver bump class implied by the current API vs the manifest."""
@@ -196,10 +271,13 @@ __all__ = [
     "BumpClass",
     "ReleaseError",
     "ReleaseManifest",
+    "authoritative_version",
+    "changelog_skeleton_entry",
     "diff_class",
     "load_manifest",
     "manifest_path",
     "required_version",
+    "rewrite_pyproject_version",
     "satisfies",
     "stamp",
 ]

@@ -342,8 +342,9 @@ clean: $(STAMP)
 upload: clean
 	@set -a && . ./.env && set +a; \
 	NEW=$$(uv run python scripts/bump_version.py); \
-	uv lock; \
-	git add pyproject.toml uv.lock; \
+	uv run frob release stamp; \
+	uv run frob release sync; \
+	git add pyproject.toml uv.lock CHANGELOG.md .frob-release.json; \
 	git commit -m "chore: bump version to $$NEW"; \
 	git push; \
 	uv build && uv publish

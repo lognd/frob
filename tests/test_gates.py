@@ -4191,8 +4191,7 @@ class TestScope002ClosureGate:
         ticket = _ticket(scope=("src/a.py",))
         violations = _scope002_violations(ticket, snap, tmp_path)
         assert any(
-            v.rule == "SCOPE002" and "tests/test_a.py" in v.message
-            for v in violations
+            v.rule == "SCOPE002" and "tests/test_a.py" in v.message for v in violations
         )
 
     def test_silent_on_closed_scope(self, tmp_path: Path) -> None:

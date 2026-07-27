@@ -59,6 +59,7 @@ declaration).
 | FUZZ001-003 | fuzz | fuzz obligations under `[fuzz]` (opt-in) |
 | PERF001-004 | perf | lexical performance smells (build-a-set-once, etc.) |
 | REL001 | release | release-readiness check |
+| REL002 | release | (T-1009) `.frob-release.json`'s version disagrees with `pyproject.toml`/`uv.lock` -- always ERROR, never suppressed by land-ownership/`FROB_AGENT`; `frob release sync` is the fix (docs/modules/release.md#rel002-gate-t-1009) |
 | SYS001 | sys | a `frob:channel/boundary/secret` directive names a construct id absent from the loaded `.strata` design model (opt-in: a `design/`, or `[strata].design_dir`, directory of `.strata` files must exist); suppressed for the whole run while any design file fails to load (SYS004 reports that instead) |
 | SYS002 | sys | a `Boundary` or Secret-clearance `Node` in the design model has no `frob:boundary`/`frob:secret` code binding anywhere |
 | SYS003 | sys | (warn) tier-2 code binding (`frob.strata.bind_code`/`check_import_conformance`) finds an undeclared cross-component import between two design-bound files; warn-first on landing, intended to flip to error via `[gates.severity]` once proven |

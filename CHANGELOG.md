@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.187.0] - unreleased
+
+- T-1009: single-source version: frob release sync regenerates the quartet + REL coherence error
+
 ## [0.186.0] - unreleased
 
 - T-0998: scope generation: doc-edge + code-edge closure validation (no code without its docs in scope and vice versa) + private-helper capture

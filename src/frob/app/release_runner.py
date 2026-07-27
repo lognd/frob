@@ -27,8 +27,10 @@ def run(cfg: AppConfig) -> None:
             _stamp(root)
         case "check":
             _check(root)
+        case "sync":
+            _sync(root)
         case _:
-            _log.error("usage: frob release <stamp|check>")
+            _log.error("usage: frob release <stamp|check|sync>")
             sys.exit(1)
 
 
@@ -95,3 +97,48 @@ def _check(root: Path) -> None:
     )
     if not ok:
         sys.exit(1)
+
+
+# frob:ticket T-1009
+def _sync(root: Path) -> None:
+    """`frob release sync`: `.frob-release.json` is the ONE version
+    authority (T-1009) -- regenerate `pyproject.toml`'s `version`, `uv.lock`
+    (`uv lock`), and a CHANGELOG.md skeleton entry from it, so a hand-edit
+    to any derived artifact is corrected rather than left to silently
+    disagree until REL002 catches it at the next `frob check`."""
+    from frob.gitio import run_argv
+    from frob.release import (
+        authoritative_version,
+        changelog_skeleton_entry,
+        rewrite_pyproject_version,
+    )
+
+    version_result = authoritative_version(root)
+    if version_result.is_err:
+        _log.error("release sync: %s", version_result.danger_err)
+        sys.exit(1)
+    version = version_result.danger_ok
+
+    rewritten = rewrite_pyproject_version(root, version)
+    if rewritten.is_err:
+        _log.error("release sync: %s", rewritten.danger_err)
+        sys.exit(1)
+    if rewritten.danger_ok:
+        Renderer.for_stream(sys.stdout).line(f"pyproject.toml: version -> {version}")
+
+    if (root / "pyproject.toml").exists():
+        locked = run_argv(["uv", "lock"], cwd=root, timeout_s=120.0)
+        if locked.is_err or locked.danger_ok.returncode != 0:
+            _log.error(
+                "release sync: uv lock failed -- %s",
+                locked.danger_err if locked.is_err else locked.danger_ok.stderr,
+            )
+            sys.exit(1)
+        Renderer.for_stream(sys.stdout).line("uv.lock: synced")
+
+    if changelog_skeleton_entry(root, version):
+        Renderer.for_stream(sys.stdout).line(
+            f"CHANGELOG.md: added skeleton entry for {version}"
+        )
+
+    Renderer.for_stream(sys.stdout).line(f"release sync complete at {version}")

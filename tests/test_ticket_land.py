@@ -2675,6 +2675,73 @@ class TestReleaseBump:
         assert (repo / "pyproject.toml").read_text().count('version = "0.183.0"') == 1
 
 
+# frob:ticket T-1007
+class TestRealCallbackStaleWorktreeManifest:
+    """T-1007: the SAME T-0992 acceptance criterion (a stale worktree-
+    carried value must never win over root's own state), now proven
+    through the REAL `ticket_runner._apply_release_bump_for_land` callback
+    instead of a fake `bump_version` closure that hardcodes the correct
+    answer. Before T-1007's fix, this callback derived its baseline from
+    whatever `.frob-release.json` ended up on root's WORKING TREE after
+    the squash-apply -- which a stale, out-of-scope worktree copy can
+    silently corrupt -- so this scenario tripped the T-0992 monotonicity
+    guard's REFUSAL on the first land attempt every time (guard fires,
+    but never prevents the retry churn). After the fix, the callback reads
+    `.frob-release.json` from root's own git HEAD (never the working-tree
+    copy the squash just wrote), computes main-plus-one correctly, and
+    lands clean on the FIRST attempt -- the guard becomes a never-fires
+    invariant for this callback, exactly as T-1007 required."""
+
+    def test_stale_worktree_manifest_still_lands_main_plus_one(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestRealCallbackStaleWorktreeManifest.test_stale_worktree_manifest_still_lands_main_plus_one  # noqa: E501
+        from frob.app import ticket_runner
+
+        (repo / "pyproject.toml").write_text(
+            '[project]\nname = "frob"\nversion = "0.183.0"\n'
+        )
+        (repo / "CHANGELOG.md").write_text("# Changelog\n\n## [0.183.0] - unreleased\n")
+        (repo / ".frob-release.json").write_text('{"version": "0.183.0", "api": {}}\n')
+        _commit_all(repo, "main is ahead at 0.183.0, manifest stamped to match")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-stale-manifest", str(wt)], repo)
+        # Simulates the T-1007 incident directly: the worktree's OWN copy
+        # of the manifest is stale (out of ticket scope, untouched by the
+        # ticket itself, but present as a real diff against the fork
+        # point) -- exactly the class of file that rides straight through
+        # `git merge --squash` into root's working tree.
+        (wt / ".frob-release.json").write_text('{"version": "0.181.0", "api": {}}\n')
+        _commit_all(wt, "worktree still carries a stale manifest")
+
+        created = new_ticket(wt, _spec("Stale worktree manifest", scope=("src/sm.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        # A new PUBLIC function -- a real MINOR-class API addition, so the
+        # real `diff_class`/`required_version` machinery has something
+        # genuine to compute against.
+        (wt / "src" / "sm.py").write_text("def added():\n    pass\n")
+        _commit_all(wt, "add sm.py (new public function)")
+
+        result = land(
+            repo,
+            tid,
+            wt,
+            dry_run=False,
+            bump_version=ticket_runner._land_bump_version_fn(),
+        )
+        assert result.is_ok, result.err
+        # main-plus-one (0.184.0), computed from ROOT's committed manifest
+        # (0.183.0) -- never the worktree's stale 0.181.0 copy, which would
+        # have under-computed 0.182.0 and tripped the T-0992 guard instead.
+        assert result.danger_ok.release_bumped_to == "0.184.0"
+        assert (repo / "pyproject.toml").read_text().count('version = "0.184.0"') == 1
+        manifest_text = (repo / ".frob-release.json").read_text()
+        assert '"version": "0.184.0"' in manifest_text
+
+
 # frob:ticket T-0793
 class TestUvLockSync:
     """T-0793: land's release-bump step re-syncs `uv.lock` in the SAME

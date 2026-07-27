@@ -8,10 +8,13 @@ from frob.graph import build_graph
 from frob.release import (
     BumpClass,
     ReleaseError,
+    authoritative_version,
+    changelog_skeleton_entry,
     diff_class,
     load_manifest,
     manifest_path,
     required_version,
+    rewrite_pyproject_version,
     satisfies,
     stamp,
 )
@@ -120,3 +123,146 @@ def test_release_gate_skips_without_manifest(tmp_path):
 
     _write(tmp_path, "def a(x: int) -> int:\n    return x\n")
     assert release_gate(tmp_path, _snap(tmp_path)) == ()
+
+
+# frob:ticket T-1009
+class TestAuthoritativeVersion:
+    """T-1009: `.frob-release.json` is the ONE version authority."""
+
+    def test_reads_manifest_version(self, tmp_path):
+        # frob:tests src/frob/release/__init__.py::authoritative_version
+        _write(tmp_path, "def a(x: int) -> int:\n    return x\n")
+        stamp(tmp_path, _snap(tmp_path), "3.4.5")
+        assert authoritative_version(tmp_path).danger_ok == "3.4.5"
+
+    def test_no_manifest_is_err(self, tmp_path):
+        # frob:tests src/frob/release/__init__.py::authoritative_version
+        result = authoritative_version(tmp_path)
+        assert result.is_err
+        assert result.danger_err == ReleaseError.NoManifest
+
+
+# frob:ticket T-1009
+class TestRewritePyprojectVersion:
+    """T-1009: `pyproject.toml` is a DERIVED artifact -- `sync` rewrites
+    it from the manifest's version, never the reverse."""
+
+    def test_rewrites_when_different(self, tmp_path):
+        # frob:tests src/frob/release/__init__.py::rewrite_pyproject_version
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "p"\nversion = "1.0.0"\n'
+        )
+        result = rewrite_pyproject_version(tmp_path, "2.0.0")
+        assert result.danger_ok is True
+        assert 'version = "2.0.0"' in (tmp_path / "pyproject.toml").read_text()
+
+    def test_noop_when_already_matches(self, tmp_path):
+        # frob:tests src/frob/release/__init__.py::rewrite_pyproject_version
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "p"\nversion = "2.0.0"\n'
+        )
+        result = rewrite_pyproject_version(tmp_path, "2.0.0")
+        assert result.danger_ok is False
+
+    def test_no_version_line_is_err(self, tmp_path):
+        # frob:tests src/frob/release/__init__.py::rewrite_pyproject_version
+        (tmp_path / "pyproject.toml").write_text('[project]\nname = "p"\n')
+        result = rewrite_pyproject_version(tmp_path, "2.0.0")
+        assert result.is_err
+        assert result.danger_err == ReleaseError.BadVersion
+
+    def test_missing_file_is_err(self, tmp_path):
+        # frob:tests src/frob/release/__init__.py::rewrite_pyproject_version
+        result = rewrite_pyproject_version(tmp_path, "2.0.0")
+        assert result.is_err
+
+
+# frob:ticket T-1009
+class TestChangelogSkeletonEntry:
+    """T-1009: CHANGELOG.md is a DERIVED artifact -- `sync` adds a
+    skeleton heading entry for the authoritative version if none exists."""
+
+    def test_inserts_new_entry(self, tmp_path):
+        # frob:tests src/frob/release/__init__.py::changelog_skeleton_entry
+        (tmp_path / "CHANGELOG.md").write_text(
+            "# Changelog\n\n## [1.0.0] - unreleased\n"
+        )
+        wrote = changelog_skeleton_entry(tmp_path, "2.0.0", note="T-0001: thing")
+        assert wrote is True
+        text = (tmp_path / "CHANGELOG.md").read_text()
+        assert "## [2.0.0] - unreleased" in text
+        assert "T-0001: thing" in text
+        assert "## [1.0.0] - unreleased" in text  # old entry survives
+
+    def test_existing_entry_is_noop(self, tmp_path):
+        # frob:tests src/frob/release/__init__.py::changelog_skeleton_entry
+        (tmp_path / "CHANGELOG.md").write_text(
+            "# Changelog\n\n## [2.0.0] - unreleased\n\nalready here\n"
+        )
+        wrote = changelog_skeleton_entry(tmp_path, "2.0.0")
+        assert wrote is False
+        assert (tmp_path / "CHANGELOG.md").read_text().count("## [2.0.0]") == 1
+
+    def test_missing_changelog_is_noop(self, tmp_path):
+        # frob:tests src/frob/release/__init__.py::changelog_skeleton_entry
+        assert changelog_skeleton_entry(tmp_path, "2.0.0") is False
+
+
+# frob:ticket T-1009
+class TestReleaseGateCoherence:
+    """T-1009: REL002 -- `.frob-release.json`'s version is authoritative;
+    any derived artifact that disagrees is a hard ERROR, born from a
+    clean baseline (DOC007 precedent, T-0986)."""
+
+    def test_clean_repo_has_no_rel002(self, tmp_path):
+        # frob:tests src/frob/gates/__init__.py::_rel002_coherence_violations
+        from frob.gates import release_gate
+
+        _write(tmp_path, "def a(x: int) -> int:\n    return x\n")
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "p"\nversion = "1.0.0"\n', encoding="utf-8"
+        )
+        stamp(tmp_path, _snap(tmp_path), "1.0.0")
+        (tmp_path / ".frob" / "cache.db").unlink()
+        violations = release_gate(tmp_path, _snap(tmp_path))
+        assert not any(v.rule == "REL002" for v in violations)
+
+    def test_hand_edited_pyproject_fires_rel002(self, tmp_path):
+        # frob:tests src/frob/gates/__init__.py::_rel002_coherence_violations
+        from frob.gates import release_gate
+
+        _write(tmp_path, "def a(x: int) -> int:\n    return x\n")
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "p"\nversion = "1.0.0"\n', encoding="utf-8"
+        )
+        stamp(tmp_path, _snap(tmp_path), "1.0.0")
+        (tmp_path / ".frob" / "cache.db").unlink()
+        # Hand-edit pyproject.toml's version out from under the manifest --
+        # the exact hazard REL002 exists to catch.
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "p"\nversion = "1.0.1"\n', encoding="utf-8"
+        )
+        violations = release_gate(tmp_path, _snap(tmp_path))
+        rel002 = [v for v in violations if v.rule == "REL002"]
+        assert len(rel002) == 1
+        assert rel002[0].severity.name == "ERROR"
+        assert "pyproject.toml" in rel002[0].message
+
+    def test_hand_edited_uv_lock_fires_rel002(self, tmp_path):
+        # frob:tests src/frob/gates/__init__.py::_rel002_coherence_violations
+        from frob.gates import release_gate
+
+        _write(tmp_path, "def a(x: int) -> int:\n    return x\n")
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "p"\nversion = "1.0.0"\n', encoding="utf-8"
+        )
+        stamp(tmp_path, _snap(tmp_path), "1.0.0")
+        (tmp_path / ".frob" / "cache.db").unlink()
+        (tmp_path / "uv.lock").write_text(
+            '[[package]]\nname = "p"\nversion = "0.9.0"\nsource = { editable = "." }\n',
+            encoding="utf-8",
+        )
+        violations = release_gate(tmp_path, _snap(tmp_path))
+        rel002 = [v for v in violations if v.rule == "REL002"]
+        assert len(rel002) == 1
+        assert "uv.lock" in rel002[0].message

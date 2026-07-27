@@ -628,6 +628,143 @@ class TestReleaseRunner:
         assert exc.value.code == 1
 
 
+# frob:ticket T-1009
+class TestReleaseSyncRunner:
+    """`frob release sync`: `.frob-release.json` is the ONE version
+    authority (T-1009) -- this regenerates pyproject.toml's version,
+    uv.lock, and a CHANGELOG.md skeleton entry from it in one shot."""
+
+    def _fake_uv_lock(self, monkeypatch):
+        """Stub `uv lock`'s spawn (no real uv/network needed) via the same
+        guarded seam land's own uv.lock re-sync uses."""
+        import frob.gitio as gitio_mod
+
+        calls: list[list[str]] = []
+
+        class _FakeProc:
+            returncode = 0
+            stdout = ""
+            stderr = ""
+
+        def _fake_run_argv(argv, **kwargs):  # noqa: ANN001, ANN202
+            calls.append(list(argv))
+            from typani import Ok
+
+            return Ok(_FakeProc())
+
+        monkeypatch.setattr(gitio_mod, "run_argv", _fake_run_argv)
+        return calls
+
+    def test_sync_no_manifest_exits_1(self, tmp_path, caplog):
+        """`sync` with no `.frob-release.json` yet errors and exits 1."""
+        _make_py_project(tmp_path)
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "demo"\nversion = "0.1.0"\n'
+        )
+        cfg = AppConfig(release_command="sync", release_path=tmp_path)
+        with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
+            release_run(cfg)
+        assert exc.value.code == 1
+
+    def test_sync_regenerates_all_artifacts(self, tmp_path, monkeypatch, capsys):
+        """A hand-edited pyproject.toml/CHANGELOG.md are both rewritten to
+        agree with the manifest's authoritative version, and `uv lock` is
+        invoked to re-derive `uv.lock`."""
+        _make_py_project(tmp_path)
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "demo"\nversion = "0.1.0"\n'
+        )
+        release_run(AppConfig(release_command="stamp", release_path=tmp_path))
+        capsys.readouterr()
+
+        # Manifest is now authoritative at 0.1.0; hand-edit pyproject.toml
+        # and CHANGELOG.md out of agreement with it, exactly the T-1009
+        # scenario `sync` exists to correct.
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "demo"\nversion = "9.9.9"\n'
+        )
+        (tmp_path / "CHANGELOG.md").write_text("# Changelog\n")
+
+        calls = self._fake_uv_lock(monkeypatch)
+
+        cfg = AppConfig(release_command="sync", release_path=tmp_path)
+        release_run(cfg)
+        out = capsys.readouterr().out
+
+        assert 'version = "0.1.0"' in (tmp_path / "pyproject.toml").read_text()
+        assert "## [0.1.0] - unreleased" in (tmp_path / "CHANGELOG.md").read_text()
+        assert ["uv", "lock"] in calls
+        assert "release sync complete at 0.1.0" in out
+
+    def test_sync_already_in_agreement_is_quiet_but_still_locks(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        """A repo already in agreement reports no rewrite lines, but `uv
+        lock` still runs (idempotent) and the completion line always
+        prints."""
+        _make_py_project(tmp_path)
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "demo"\nversion = "0.1.0"\n'
+        )
+        (tmp_path / "CHANGELOG.md").write_text(
+            "# Changelog\n\n## [0.1.0] - unreleased\n"
+        )
+        release_run(AppConfig(release_command="stamp", release_path=tmp_path))
+        capsys.readouterr()
+
+        calls = self._fake_uv_lock(monkeypatch)
+        release_run(AppConfig(release_command="sync", release_path=tmp_path))
+        out = capsys.readouterr().out
+
+        assert "pyproject.toml: version ->" not in out
+        assert "CHANGELOG.md: added skeleton" not in out
+        assert ["uv", "lock"] in calls
+        assert "release sync complete at 0.1.0" in out
+
+    def test_sync_uv_lock_failure_exits_1(self, tmp_path, monkeypatch, caplog):
+        """A failing `uv lock` spawn is logged and exits 1."""
+        _make_py_project(tmp_path)
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "demo"\nversion = "0.1.0"\n'
+        )
+        release_run(AppConfig(release_command="stamp", release_path=tmp_path))
+        caplog.clear()
+
+        import frob.gitio as gitio_mod
+
+        class _FakeFailProc:
+            returncode = 1
+            stdout = ""
+            stderr = "boom"
+
+        def _fake_fail_run_argv(argv, **kwargs):  # noqa: ANN001, ANN202
+            from typani import Ok
+
+            return Ok(_FakeFailProc())
+
+        monkeypatch.setattr(gitio_mod, "run_argv", _fake_fail_run_argv)
+        cfg = AppConfig(release_command="sync", release_path=tmp_path)
+        with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
+            release_run(cfg)
+        assert exc.value.code == 1
+
+    def test_sync_bad_pyproject_version_line_exits_1(self, tmp_path, caplog):
+        """A `pyproject.toml` with no `version = "..."` line to rewrite
+        errors and exits 1 rather than silently skipping the mismatch."""
+        _make_py_project(tmp_path)
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "demo"\nversion = "0.1.0"\n'
+        )
+        release_run(AppConfig(release_command="stamp", release_path=tmp_path))
+        caplog.clear()
+        (tmp_path / "pyproject.toml").write_text('[project]\nname = "demo"\n')
+
+        cfg = AppConfig(release_command="sync", release_path=tmp_path)
+        with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
+            release_run(cfg)
+        assert exc.value.code == 1
+
+
 _UV_LOCK = """\
 version = 1
 requires-python = ">=3.11"

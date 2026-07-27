@@ -16,6 +16,7 @@ review|sprint` (docs/modules/tickets.md)."""
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
@@ -931,20 +932,53 @@ def _land_bump_version_fn():  # noqa: ANN201
 
 
 # frob:ticket T-0338
+# frob:ticket T-1007
+# frob:doc docs/modules/tickets.md#frob-ticket-land
+def _root_release_manifest(root: Path):  # noqa: ANN201
+    """Read `.frob-release.json` as it stood at `root`'s CURRENT git HEAD
+    (T-1007/T-1009) -- never the worktree-carried on-disk copy, which can
+    ride a `git merge --squash` straight into `root`'s working tree before
+    this callback ever runs (the exact corruption class T-0992's
+    `_read_root_pyproject_version` fixed for `pyproject.toml`; same git-show
+    technique, applied here to the manifest that is now the version
+    authority). `land()` invokes the bump callback AFTER the squash-apply
+    is staged but BEFORE any commit, so `root`'s `HEAD` here still names
+    main's true pre-land tip -- reading through git makes the monotonicity
+    guard in `frob.tickets._land._apply_release_bump` a never-fires
+    invariant instead of a per-land speed bump, since this callback can no
+    longer compute a bump baseline from anything but root's own state.
+    Returns `None` when no manifest exists at `HEAD` (repo never adopted
+    `frob release stamp`) or it fails to parse."""
+    from frob.gitio import run_argv
+    from frob.release import ReleaseManifest
+
+    shown = run_argv(["git", "-C", str(root), "show", "HEAD:.frob-release.json"])
+    if shown.is_err or shown.danger_ok.returncode != 0:
+        return None
+    try:
+        data = json.loads(shown.danger_ok.stdout)
+        return ReleaseManifest.model_validate(data)
+    except (ValueError, TypeError) as exc:
+        _log.error("land: HEAD:.frob-release.json at %s unparsable: %s", root, exc)
+        return None
+
+
+# frob:ticket T-0338
+# frob:ticket T-1007
 def _required_release_bump(root: Path, final_id: str):  # noqa: ANN201
     """The REL001-required version string for `root`'s current public API
-    against its tracked release manifest, or `Ok(None)` if no bump is
-    needed (no manifest yet, or `BumpClass.NONE`) -- split out of
+    against its tracked release manifest AS RECORDED AT ROOT'S OWN GIT HEAD
+    (T-1007 -- never the worktree-carried on-disk copy), or `Ok(None)` if
+    no bump is needed (no manifest yet, or `BumpClass.NONE`) -- split out of
     `_apply_release_bump_for_land` to keep each half under the ARCH001
     line-count threshold (T-0338)."""
-    from frob.release import BumpClass, diff_class, load_manifest, required_version
+    from frob.release import BumpClass, diff_class, required_version
     from frob.tickets._land import LandError
 
-    manifest_result = load_manifest(root)
-    if manifest_result.is_err:
-        _log.debug("land: no release manifest at %s, skipping REL001 bump", root)
+    manifest = _root_release_manifest(root)
+    if manifest is None:
+        _log.debug("land: no release manifest at %s HEAD, skipping REL001 bump", root)
         return Ok(None)
-    manifest = manifest_result.danger_ok
 
     snapshot = _graph_snapshot(root)
     if snapshot.is_err:
@@ -971,14 +1005,19 @@ def _required_release_bump(root: Path, final_id: str):  # noqa: ANN201
 
 
 # frob:ticket T-0338
+# frob:ticket T-1007
 def _apply_release_bump_for_land(root: Path, ticket, final_id: str):  # noqa: ANN001, ANN201
     """Compute the REL001 bump class for `root`'s just-squashed public API
-    against its release manifest and, if the declared version does not
-    already cover it, bump `pyproject.toml`'s `version`, append a minimal
-    CHANGELOG.md entry (satisfies `_changelog_mentions`'s "the version
-    string appears somewhere" contract), and `frob release stamp` the new
-    manifest -- staging all three files in `root`'s index so they land in
-    the same commit as the squash-apply (T-0338).
+    against its release manifest -- read from ROOT's OWN git HEAD via
+    `_root_release_manifest` (T-1007: never the worktree-carried on-disk
+    copy that rides the squash-apply, the root cause of the repeat
+    monotonicity-guard refusals T-0992 could only catch, not prevent) --
+    and, if the declared version does not already cover it, bump
+    `pyproject.toml`'s `version`, append a minimal CHANGELOG.md entry
+    (satisfies `_changelog_mentions`'s "the version string appears
+    somewhere" contract), and `frob release stamp` the new manifest --
+    staging all three files in `root`'s index so they land in the same
+    commit as the squash-apply (T-0338).
 
     Returns `Ok(None)` (no write at all) when no manifest exists yet (the
     repo has never opted into `frob release stamp`) or when the diff class
@@ -1030,44 +1069,34 @@ def _apply_release_bump_for_land(root: Path, ticket, final_id: str):  # noqa: AN
 
 
 # frob:ticket T-0338
-_PYPROJECT_VERSION_RE = re.compile(r'(?m)^version\s*=\s*"[^"]*"')
-
-
+# frob:ticket T-1009
 def _write_release_bump(root: Path, ticket, final_id: str, new_version: str):  # noqa: ANN001, ANN201
     """Rewrite `root/pyproject.toml`'s `version = "..."` line to
-    `new_version` and append a minimal `## [new_version] - unreleased`
-    CHANGELOG.md entry naming `final_id`/`ticket.title` (T-0338)."""
+    `new_version` and add a `## [new_version] - unreleased` CHANGELOG.md
+    entry naming `final_id`/`ticket.title` (T-0338), via the shared
+    `frob.release` helpers (T-1009 -- the same regex/insertion logic
+    `frob release sync` uses, kept in one home rather than duplicated
+    here)."""
+    from frob.release import changelog_skeleton_entry, rewrite_pyproject_version
     from frob.tickets._land import LandError
 
     pyproject_path = root / "pyproject.toml"
-    text = pyproject_path.read_text(encoding="utf-8")
-    new_text, count = _PYPROJECT_VERSION_RE.subn(
-        f'version = "{new_version}"', text, count=1
-    )
-    if count != 1:
+    rewritten = rewrite_pyproject_version(root, new_version)
+    if rewritten.is_err:
         _log.error(
-            'land: %s could not find a `version = "..."` line in %s',
+            'land: %s could not find a `version = "..."` line in %s (%s)',
             final_id,
             pyproject_path,
+            rewritten.danger_err,
         )
         return Err(LandError.ReleaseBumpFailed)
-    pyproject_path.write_text(new_text, encoding="utf-8")
 
-    changelog_path = root / "CHANGELOG.md"
-    changelog_text = changelog_path.read_text(encoding="utf-8")
-    entry = f"## [{new_version}] - unreleased\n\n- {final_id}: {ticket.title}\n\n"
-    lines = changelog_text.splitlines(keepends=True)
-    insert_at = next(
-        (i for i, line in enumerate(lines) if line.startswith("## ")), len(lines)
-    )
-    lines[insert_at:insert_at] = [entry]
-    changelog_path.write_text("".join(lines), encoding="utf-8")
+    changelog_skeleton_entry(root, new_version, note=f"{final_id}: {ticket.title}")
     _log.info(
-        "land: %s wrote REL001 bump -> %s in %s and %s",
+        "land: %s wrote REL001 bump -> %s in %s and CHANGELOG.md",
         final_id,
         new_version,
         pyproject_path,
-        changelog_path,
     )
     return Ok(None)
 

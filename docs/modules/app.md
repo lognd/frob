@@ -142,7 +142,8 @@ semantics live in `AppConfig` and in each subcommand's own docs page.
 - `docs_runner.run` -- runs `frob.docs` overview/search/extract over
   `cfg.docs_path`.
 - `release_runner.run` -- dispatches to the release subcommand named by
-  `cfg.release_command` (mechanical semver stamping/checking).
+  `cfg.release_command` (mechanical semver stamping/checking/`sync` --
+  T-1009's single-source-of-truth regeneration, docs/modules/release.md).
 - `graph_runner.run` -- dispatches build/query/why/affects based on
   `cfg.graph_command` (docs/modules/graph.md); `affects` (T-0628) reads
   `cfg.graph_max_depth`/`cfg.graph_max_nodes` (both optional, default to

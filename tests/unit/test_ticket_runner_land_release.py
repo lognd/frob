@@ -64,9 +64,18 @@ class TestWriteReleaseBump:
 
 
 class TestApplyReleaseBumpForLand:
-    def test_no_manifest_is_noop(self, tmp_path: Path) -> None:
+    """T-1007: the bump baseline now comes from `_root_release_manifest`
+    (a `git show HEAD:.frob-release.json` read), never
+    `frob.release.load_manifest`'s on-disk read -- these tests monkeypatch
+    `ticket_runner._root_release_manifest` directly rather than
+    `frob.release.load_manifest`, matching that new seam."""
+
+    def test_no_manifest_is_noop(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         # frob:tests tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand.test_no_manifest_is_noop  # noqa: E501
         _write_repo_files(tmp_path)
+        monkeypatch.setattr(ticket_runner, "_root_release_manifest", lambda root: None)
         result = ticket_runner._apply_release_bump_for_land(
             tmp_path, _FakeTicket(), "T-0001"
         )
@@ -79,7 +88,9 @@ class TestApplyReleaseBumpForLand:
         # frob:tests tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand.test_bump_class_none_is_noop  # noqa: E501
         _write_repo_files(tmp_path)
         manifest = ReleaseManifest(version="0.1.0", api={})
-        monkeypatch.setattr("frob.release.load_manifest", lambda root: Ok(manifest))
+        monkeypatch.setattr(
+            ticket_runner, "_root_release_manifest", lambda root: manifest
+        )
         monkeypatch.setattr(
             "frob.release.diff_class", lambda manifest, snapshot: BumpClass.NONE
         )
@@ -98,7 +109,9 @@ class TestApplyReleaseBumpForLand:
         _write_repo_files(tmp_path)
         manifest = ReleaseManifest(version="0.1.0", api={})
         stamp_calls: list[str] = []
-        monkeypatch.setattr("frob.release.load_manifest", lambda root: Ok(manifest))
+        monkeypatch.setattr(
+            ticket_runner, "_root_release_manifest", lambda root: manifest
+        )
         monkeypatch.setattr(
             "frob.release.diff_class", lambda manifest, snapshot: BumpClass.MINOR
         )
@@ -133,7 +146,9 @@ class TestApplyReleaseBumpForLand:
         # frob:tests tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand.test_unreadable_graph_fails  # noqa: E501
         _write_repo_files(tmp_path)
         manifest = ReleaseManifest(version="0.1.0", api={})
-        monkeypatch.setattr("frob.release.load_manifest", lambda root: Ok(manifest))
+        monkeypatch.setattr(
+            ticket_runner, "_root_release_manifest", lambda root: manifest
+        )
         monkeypatch.setattr(ticket_runner, "_graph_snapshot", lambda root: Err("boom"))
 
         result = ticket_runner._apply_release_bump_for_land(
@@ -141,6 +156,52 @@ class TestApplyReleaseBumpForLand:
         )
         assert result.is_err
         assert result.danger_err == LandError.ReleaseBumpFailed
+
+
+# frob:ticket T-1007
+class TestRootReleaseManifestReadsRootHead:
+    """T-1007: `_root_release_manifest` must read `.frob-release.json` as
+    committed at `root`'s git HEAD, never the worktree-carried on-disk
+    copy that a `git merge --squash` can leave stale in the working tree
+    before this callback ever runs -- the exact class of bug T-1007 was
+    filed against."""
+
+    def test_reads_head_manifest_not_worktree_disk_copy(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_ticket_runner_land_release.py::TestRootReleaseManifestReadsRootHead.test_reads_head_manifest_not_worktree_disk_copy  # noqa: E501
+        from frob.gitio import run_argv
+
+        root = tmp_path / "root"
+        root.mkdir()
+        run_argv(["git", "init"], cwd=root)
+        run_argv(["git", "config", "user.email", "t@example.com"], cwd=root)
+        run_argv(["git", "config", "user.name", "T"], cwd=root)
+        (root / ".frob-release.json").write_text('{"version": "0.184.0", "api": {}}\n')
+        run_argv(["git", "add", ".frob-release.json"], cwd=root)
+        run_argv(["git", "commit", "-m", "init"], cwd=root)
+
+        # Simulate a stale squash-apply having overwritten the WORKING TREE
+        # copy on disk with an older, worktree-carried value -- HEAD (the
+        # committed object) still names main's true pre-land state.
+        (root / ".frob-release.json").write_text('{"version": "0.181.0", "api": {}}\n')
+
+        manifest = ticket_runner._root_release_manifest(root)
+        assert manifest is not None
+        assert manifest.version == "0.184.0"
+
+    def test_no_manifest_at_head_returns_none(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_ticket_runner_land_release.py::TestRootReleaseManifestReadsRootHead.test_no_manifest_at_head_returns_none  # noqa: E501
+        from frob.gitio import run_argv
+
+        root = tmp_path / "root"
+        root.mkdir()
+        run_argv(["git", "init"], cwd=root)
+        run_argv(["git", "config", "user.email", "t@example.com"], cwd=root)
+        run_argv(["git", "config", "user.name", "T"], cwd=root)
+        (root / "README.md").write_text("hi\n")
+        run_argv(["git", "add", "README.md"], cwd=root)
+        run_argv(["git", "commit", "-m", "init"], cwd=root)
+
+        assert ticket_runner._root_release_manifest(root) is None
 
 
 class _FakeProc:
