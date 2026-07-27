@@ -7736,3 +7736,35 @@ threat: null
 component: null
 ```
 The first coordinator coverage stamp (269 modules, 3520 symbols) reported join_fraction=0.34 and TEST011 flags it as deflated: most frob system tests exercise frob via subprocess (uv run frob ...; the T-0884/T-0880-era env-sanitized spawns), and that coverage is never captured or merged, so two-thirds of modules read as uncovered and TEST005 findings are untrustworthy. Fix: wire subprocess coverage capture (COVERAGE_PROCESS_START + coverage sitecustomize hook in the spawned env, or coverage run --parallel-mode + coverage combine in make coverage) so child-process execution lands in coverage.xml; ALSO stop mapping scaffold .j2 template files as coverable modules (TEST012 divergence lists 22 of them -- they are templates, not Python modules; exclude in the coverage config or the load_coverage module map). Acceptance: a fresh make coverage reports join_fraction well above 0.34 with subprocess-heavy system tests contributing, and TEST012 reports no .j2 divergence after a clean re-stamp.
+
+<!-- ticket:T-0998 -->
+```yaml
+id: T-0998
+title: 'scope generation: doc-edge + code-edge closure validation (no code without
+  its docs in scope and vice versa) + private-helper capture'
+state: queued
+kind: feature
+origin: human
+created: '2026-07-27'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/tickets/**
+- src/frob/gates/**
+- src/frob/graph/**
+- tests/**
+acceptance:
+- text: given a ticket scoped to a code file with a frob:doc edge to an unscoped doc,
+    when the scope is declared or validated, then the missing doc counterpart is surfaced
+    (suggestion or warning) naming the exact file
+  evidence: []
+- text: given scoped code calling a private helper defined outside the scope, when
+    scope validation runs, then the helper is flagged as probable under-capture with
+    its definition site
+  evidence: []
+threat: null
+component: null
+```
+User directive 2026-07-27: when generating or validating a ticket scope, run the doc-edge and code-edge closures over the declared files so scope encapsulation provably grabs BOTH sides -- a scope containing code files whose frob:doc/affects-closure doc targets are absent is under-captured (and vice versa: docs scoped without their code counterparts). This moves the AFFECT001 idea from diff-time to scope-declaration time: frob ticket new/scope should compute the closure and either auto-suggest the missing counterpart files or refuse/warn, so agents stop discovering AFFECT001/COV002 mid-ticket and scope-adding reactively (a dozen occurrences this drive). The same closure math discourages over-broad scopes: a scope whose closure balloons is visibly over-broad at declaration time, complementing the existing over-broad-glob heuristics. Additionally check private-helper usage: if scoped code calls underscore-private helpers defined OUTSIDE the scope, flag probable under-capture (you will likely touch them); private helpers used ONLY by scoped code get auto-suggested into scope. Deliverables: a scope-closure computation on the obligation graph (reuse the affects()/doc-edge machinery, do not build a second traversal), wiring into frob ticket new/scope (suggest-or-warn mode first; a SCOPE-family gate rule for enforcement second, WARN at turn-on per the promotion playbook), tests for all three directions (code-missing-docs, docs-missing-code, private-helper leakage), and docs.
