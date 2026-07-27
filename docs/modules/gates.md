@@ -1192,6 +1192,7 @@ silently folds in.
 <!-- frob:describes src/frob/gates/__init__.py::test_gate -->
 <!-- frob:describes src/frob/gates/_coverage.py::stamp_coverage -->
 <!-- frob:describes src/frob/gates/_coverage.py::load_coverage -->
+<!-- frob:describes src/frob/gates/_coverage.py::exclude_filtered_coverage -->
 <!-- frob:describes src/frob/gates/__init__.py::active_ticket -->
 <!-- frob:describes src/frob/gates/_prework.py::record_prework -->
 <!-- frob:describes src/frob/gates/_prework.py::sweep_ticket -->
@@ -1222,6 +1223,11 @@ silently folds in.
 <!-- frob:describes src/frob/gates/_pii_structural.py::_scan_python_env_access -->
 <!-- frob:describes src/frob/gates/__init__.py::known_gate_rule_ids -->
 
+- `exclude_filtered_coverage` -- re-filters a `CoverageData` against
+  `[graph] exclude` (T-0997); `stamp_coverage` calls it before writing
+  `frob-coverage.lock.json` so the committed lock and the TEST012 gate's
+  live comparison agree about what counts as a module (e.g. scaffold
+  `.j2` templates), instead of the lock permanently drifting.
 - `load_stamp` -- the raw `.frob/coverage-stamp` document, or `None` if
   never stamped/unreadable; TEST006 compares it against live file hashes.
 - `load_prework` -- the recorded pre-work sweep for a ticket, or `None` if

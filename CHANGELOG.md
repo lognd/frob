@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.185.0] - unreleased
+
+- T-0997: coverage pipeline: merge subprocess coverage and exclude .j2 templates from the module map (34% join fraction)
+
 ## [0.184.0] - unreleased
 - coordinator repair: versions 0.183.0/0.184.0 were hand-bumped after two
   land REL001 recompute collisions (T-0976/T-0989 incidents; producer fix

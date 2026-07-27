@@ -71,6 +71,9 @@ from frob.gates._coverage import (
     stamp_coverage,
     write_coverage_lock,
 )
+from frob.gates._coverage import (
+    exclude_filtered_coverage as _coverage_exclude_filtered_coverage,
+)
 from frob.gates._cve_fingerprint_scan import cve_fingerprint_scan_gate
 from frob.gates._dead_symbols import dead_symbol_gate
 from frob.gates._docblocks import doc004_gate, doc005_gate
@@ -7328,41 +7331,13 @@ def _test012_lock(snapshot: GraphSnapshot, data: CoverageData) -> tuple[Violatio
     )
 
 
-def _exclude_filtered_coverage(
-    data: CoverageData, snapshot: GraphSnapshot
-) -> CoverageData:
-    """Re-filter `data` against `[graph] exclude`.
-
-    `coverage.xml` is produced straight from whatever `pytest --cov`
-    walked, so it does not honor `[graph] exclude` (T-0148) the way
-    `frob.graph`'s own walk does -- e.g. `src/frob/scaffold/data/**`
-    (jinja templates rendered into OTHER repos, never imported/executed
-    here) shows up as near-random "line coverage" of template source
-    text. Re-filtering `data.module_line`/`.symbol_branch` here, against
-    the same excludes every other file-walking surface already respects
-    (`frob.excludes`), keeps TEST005 measuring only this package's own
-    maintained modules.
-    """
-    exclude_globs = load_exclude_globs(Path(snapshot.root))
-    if not exclude_globs:
-        return data
-    return CoverageData(
-        source_sha=data.source_sha,
-        symbol_branch={
-            symref: pct
-            for symref, pct in data.symbol_branch.items()
-            if not is_excluded(symref.split("::", 1)[0], exclude_globs)
-        },
-        module_line={
-            path: pct
-            for path, pct in data.module_line.items()
-            if not is_excluded(path, exclude_globs)
-        },
-        root_join_ok=data.root_join_ok,
-        attempted_roots=data.attempted_roots,
-        stale_by_mtime=data.stale_by_mtime,
-        module_join_fraction=data.module_join_fraction,
-    )
+# T-0997: moved to `frob.gates._coverage` so `stamp_coverage` can call it
+# too (the lock-write path needs the SAME filtering this gate-read path
+# applies, or TEST012 flags every excluded path as permanent drift -- see
+# `_exclude_filtered_coverage`'s docstring there). Re-exported here so this
+# module's existing call site and any external importer keep working
+# unchanged.
+_exclude_filtered_coverage = _coverage_exclude_filtered_coverage
 
 
 # frob:enforces CHK-GATE-TEST006

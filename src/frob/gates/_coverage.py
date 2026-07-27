@@ -42,6 +42,7 @@ from typani import Err, Ok
 from typani.result import Result
 from typani.unit import Unit
 
+from frob.excludes import is_excluded, load_exclude_globs
 from frob.gates._filehash import _collect_file_hashes, _sha_of
 from frob.gates._models import CoverageData, CoverageError, GateError
 from frob.graph import GraphSnapshot
@@ -425,6 +426,54 @@ def _known_repo_paths(root: Path, snapshot: GraphSnapshot | None) -> frozenset[s
     return frozenset(_collect_file_hashes(root))
 
 
+# frob:ticket T-0997
+# frob:doc docs/modules/gates.md#public-api
+# frob:tests tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_lock_excludes_graph_excluded_modules  # noqa: E501
+def exclude_filtered_coverage(
+    data: CoverageData, snapshot: GraphSnapshot
+) -> CoverageData:
+    """Re-filter `data` against `[graph] exclude`.
+
+    `coverage.xml` is produced straight from whatever `pytest --cov`
+    walked, so it does not honor `[graph] exclude` (T-0148) the way
+    `frob.graph`'s own walk does -- e.g. `src/frob/scaffold/data/**`
+    (jinja templates rendered into OTHER repos, never imported/executed
+    here) shows up as near-random "line coverage" of template source
+    text. Re-filtering `data.module_line`/`.symbol_branch` here, against
+    the same excludes every other file-walking surface already respects
+    (`frob.excludes`), keeps TEST005 measuring only this package's own
+    maintained modules.
+
+    T-0997: lives here (not `frob.gates`) so `stamp_coverage` below can call
+    the SAME filter the TEST012 gate check applies before writing the
+    committed lock -- previously the lock was written from unfiltered data
+    while the gate compared against filtered data, so every excluded path
+    (e.g. 22 scaffold `.j2` templates) read as permanent, unfixable drift.
+    `frob.gates` re-exports this under its old private name for the one
+    external call site that still imports it from there.
+    """
+    exclude_globs = load_exclude_globs(Path(snapshot.root))
+    if not exclude_globs:
+        return data
+    return CoverageData(
+        source_sha=data.source_sha,
+        symbol_branch={
+            symref: pct
+            for symref, pct in data.symbol_branch.items()
+            if not is_excluded(symref.split("::", 1)[0], exclude_globs)
+        },
+        module_line={
+            path: pct
+            for path, pct in data.module_line.items()
+            if not is_excluded(path, exclude_globs)
+        },
+        root_join_ok=data.root_join_ok,
+        attempted_roots=data.attempted_roots,
+        stale_by_mtime=data.stale_by_mtime,
+        module_join_fraction=data.module_join_fraction,
+    )
+
+
 # frob:doc docs/modules/gates.md#public-api
 # frob:waive TEST005 reason="stamp_coverage 68.8% branch cover, debt T-0160"
 def stamp_coverage(
@@ -466,7 +515,15 @@ def stamp_coverage(
     if snapshot is not None:
         loaded = load_coverage(root, snapshot)
         if loaded.is_ok:
-            write_coverage_lock(root, loaded.danger_ok)
+            # T-0997: filter through `[graph] exclude` (the same filter
+            # `frob.gates`' TEST012 gate applies to the LIVE CoverageData it
+            # diffs against) before writing the lock -- otherwise this write
+            # path and the gate-time read path disagree about what counts
+            # as a "module", and TEST012 permanently flags every excluded
+            # path (e.g. `src/frob/scaffold/data/**`'s .j2 templates,
+            # 22 of them observed) as drift no re-stamp can ever clear.
+            filtered = exclude_filtered_coverage(loaded.danger_ok, snapshot)
+            write_coverage_lock(root, filtered)
         else:
             _log.warning(
                 "stamp_coverage: could not refresh %s (%s); stamp still written",
@@ -561,6 +618,7 @@ def load_stamp(root: Path) -> dict | None:
 
 __all__ = [
     "coverage_lock_diff",
+    "exclude_filtered_coverage",
     "load_coverage",
     "load_coverage_lock",
     "load_stamp",

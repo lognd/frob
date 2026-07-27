@@ -6732,6 +6732,52 @@ class TestCoverageLoad:
             tmp_path / ".frob"
         )
 
+    # frob:ticket T-0997
+    def test_stamp_coverage_lock_excludes_graph_excluded_modules(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_coverage.py::stamp_coverage
+        # frob:tests src/frob/gates/_coverage.py::exclude_filtered_coverage
+        # T-0997: `stamp_coverage`'s lock write must apply the SAME
+        # `[graph] exclude` filter the TEST012 gate check applies to the
+        # live coverage.xml it diffs against -- previously the lock kept
+        # every `<class>` entry unfiltered (including scaffold `.j2`
+        # templates coverage.xml happened to list), so TEST012 flagged
+        # those paths as permanent, unfixable drift no re-stamp could clear.
+        _write(tmp_path, "src/frob/pkg/a.py", "def helper(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "frob.toml",
+            '[graph]\nexclude = ["src/frob/scaffold/data/**"]\n',
+        )
+        xml = """<?xml version="1.0"?>
+<coverage>
+  <packages>
+    <package>
+      <classes>
+        <class filename="src/frob/pkg/a.py" line-rate="0.9">
+          <lines><line number="2" hits="1" branch="false"/></lines>
+        </class>
+        <class filename="src/frob/scaffold/data/tmpl.py.j2" line-rate="0.5">
+          <lines><line number="1" hits="1" branch="false"/></lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>
+"""
+        (tmp_path / "coverage.xml").write_text(xml)
+        snap = _snapshot(tmp_path)
+        result = stamp_coverage(tmp_path, snap)
+        assert result.is_ok
+
+        from frob.gates._coverage import load_coverage_lock
+
+        lock = load_coverage_lock(tmp_path)
+        assert lock is not None
+        assert "src/frob/pkg/a.py" in lock["module_line"]
+        assert "src/frob/scaffold/data/tmpl.py.j2" not in lock["module_line"]
+
     # frob:ticket T-0545
     def test_coverage_lock_diff_flags_drift_and_missing_module(
         self, tmp_path: Path
