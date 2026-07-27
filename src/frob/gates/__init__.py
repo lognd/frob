@@ -3286,6 +3286,13 @@ def _bound_to_open_ticket(
             continue
         if ticket.state in _OPEN_STATES:
             return True
+        # frob:waive PERF008 reason="_ledger_states_at_base is decorated with \
+        # @functools.lru_cache(maxsize=32) (its own docstring: 'Cached per (root, \
+        # base)') -- every repeated call across this loop's iterations with the same \
+        # (snapshot.root, diff.base) pair after the first hits the cache and spawns \
+        # no subprocess. PERF008's resolver does not see through the lru_cache \
+        # decorator to know this. Tracked as a resolver precision follow-up \
+        # (T-1041's Done report)"  # noqa: E501
         if (
             diff is not None
             and ticket.state == TicketState.DONE
@@ -6736,6 +6743,13 @@ def _test014_group_by_leaf(
         # T-0949: same `_leaf_snake_index` memo as `_inferred_unit_cases`/
         # `_test015_record_violation` -- avoid a fresh `_snake()` per node
         # id for every symbol (this loop's own outer iteration).
+        # frob:waive PERF008 reason="token is a compiled re.Pattern built once just \
+        # above (per outer leaf); .search(node_leaf) is a plain regex match with no \
+        # I/O. PERF008 resolves the bare method name 'search' by name-only \
+        # coincidence to an unrelated same-named function that genuinely reaches \
+        # walk_pruned elsewhere in the repo -- a resolver ambiguity, not a real \
+        # fs-walk on this call. Tracked as a resolver precision follow-up \
+        # (T-1041's Done report)"  # noqa: E501
         matched = frozenset(
             node
             for node, node_leaf in _leaf_snake_index(tests)
@@ -9328,6 +9342,13 @@ def _changelog_mentions(root: Path, version: str) -> bool:
                 text = path.read_text(encoding="utf-8", errors="replace")
             except OSError:
                 return True
+            # frob:waive PERF008 reason="pattern is a compiled re.Pattern built once \
+            # just above this loop; .search(line) is a plain regex match with no I/O. \
+            # PERF008 resolves the bare method name 'search' by name-only coincidence \
+            # to an unrelated same-named function that genuinely reaches walk_pruned \
+            # elsewhere in the repo -- a resolver ambiguity, not a real fs-walk on \
+            # this call. Tracked as a resolver precision follow-up \
+            # (T-1041's Done report)"  # noqa: E501
             return any(
                 line.lstrip().startswith("#") and pattern.search(line)
                 for line in text.splitlines()

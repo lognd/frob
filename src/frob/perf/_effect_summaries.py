@@ -454,6 +454,14 @@ class EffectGraph:
         self._budget = _MAX_NODES
         return self._summary(symref, frozenset())
 
+    # frob:invariant terminates reason="self._budget is decremented before every \
+    # recursive descent (via _called_callee_effects) and checked non-positive at \
+    # entry, so the mutual recursion with _called_callee_effects can only run a \
+    # bounded number of steps regardless of call-graph shape; the stack frozenset \
+    # additionally short-circuits any symref already on the current path, so a call \
+    # cycle in the graph itself cannot recurse forever either" measure="self._budget, \
+    # a non-negative int strictly decreasing by 1 per _summary call, floored by the \
+    # eager return at budget<=0; bounded above by _MAX_NODES"
     def _summary(
         self, symref: str, stack: frozenset[str]
     ) -> frozenset[EffectOccurrence]:
@@ -506,6 +514,12 @@ class EffectGraph:
         return acc, direct_names
 
     # frob:ticket T-0976
+    # frob:invariant terminates reason="every call into _summary from here shares the \
+    # same self._budget counter _summary itself decrements before recursing again, \
+    # and the same stack frozenset guard against call-graph cycles -- see _summary's \
+    # own frob:invariant for the shared measure this mutual recursion relies on" \
+    # measure="self._budget, a non-negative int strictly decreasing by 1 per mutual \
+    # _summary call, floored by _summary's own eager return at budget<=0"
     def _called_callee_effects(
         self, symref: str, direct_names: set[str], next_stack: frozenset[str]
     ) -> set[EffectOccurrence]:

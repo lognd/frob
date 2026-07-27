@@ -155,6 +155,14 @@ def _blocking_label(callee: str) -> str | None:
     if _OPEN_BUILTIN_RE.match(callee):
         return "the builtin open()"
     for pattern, label in _BLOCKING_CALL_TABLE:
+        # frob:waive PERF008 reason="pattern is a compiled re.Pattern from the curated \
+        # _BLOCKING_CALL_TABLE; .search(callee) is a plain regex match against callee \
+        # text with no I/O of any kind. The PERF008 finding here resolves the bare \
+        # method name 'search' by pure name coincidence to an unrelated same-named \
+        # function that genuinely reaches walk_pruned elsewhere in the repo -- a \
+        # resolver ambiguity, not a real fs-walk on this call. Tracked as a resolver \
+        # precision follow-up (T-1041's Done report), not fixable by \
+        # hoisting a call that performs no such effect"  # noqa: E501
         if pattern.search(callee):
             return label
     return None

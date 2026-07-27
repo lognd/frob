@@ -873,6 +873,13 @@ def _stale_fake_marker_violations(rel_path: str, text: str) -> list[Violation]:
         targets = [index]
         if index + 1 < len(lines):
             targets.append(index + 1)
+        # frob:waive PERF008 reason="_plausibly_still_needed only reads lines[index] \
+        # (an in-memory list already held by this call) and runs a regex match; it \
+        # performs no I/O of any kind. PERF008's resolver claims a transitive \
+        # walk_pruned/fs-walk effect here by name-only coincidence through an \
+        # unrelated call elsewhere in the repo -- a resolver ambiguity, not a real \
+        # fs-walk. Tracked as a resolver precision follow-up \
+        # (T-1041's Done report)"  # noqa: E501
         if any(_plausibly_still_needed(lines, target) for target in targets):
             continue
         lineno = index + 1

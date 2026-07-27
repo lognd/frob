@@ -573,6 +573,10 @@ def _py_normalize_params(func_node: Node) -> list[NormalizedParam]:
     return out
 
 
+# frob:invariant terminates reason="recurses only into a nested function_definition \
+# one tree-sitter edge below the current node's own body; a lexical prover cannot see \
+# that the nested node's subtree is structurally smaller without dataflow" \
+# measure="tree-sitter AST depth under func_node, finite per parse"
 def _py_build_function(
     func_node: Node, is_method: bool, source_lines: tuple[str, ...] = ()
 ) -> NormalizedFunction:

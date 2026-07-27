@@ -295,6 +295,13 @@ def _rewrite_lines_via_runs(
         if run_idx < len(runs) and runs[run_idx][1] == i:
             logical_text, _lineno, _src, count = runs[run_idx]
             run_idx += 1
+            # frob:waive PERF008 reason="_NOQA_SUFFIX_RE is a compiled re.Pattern \
+            # constant; .search(logical_text) is a plain regex match with no I/O. \
+            # PERF008 resolves the bare method name 'search' by name-only \
+            # coincidence to an unrelated same-named function that genuinely reaches \
+            # walk_pruned elsewhere in the repo -- a resolver ambiguity, not a real \
+            # fs-walk on this call. Tracked as a resolver precision follow-up \
+            # (T-1041's Done report)"  # noqa: E501
             if logical_text.strip().startswith("frob:") and not _NOQA_SUFFIX_RE.search(
                 logical_text
             ):

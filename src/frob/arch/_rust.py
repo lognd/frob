@@ -709,6 +709,10 @@ def _rust_attach_impl(node: Node, classes: dict[str, NormalizedClass]) -> None:
         )
 
 
+# frob:invariant terminates reason="recurses only into a scoped_use_list's own inner \
+# use_list, one tree-sitter edge below the current node; a lexical prover cannot see \
+# that the nested list is structurally smaller without dataflow" measure="tree-sitter \
+# AST depth under list_node, finite per parse"
 def _rust_flatten_use_list(list_node: Node) -> list[str]:
     """The bound names inside a `use_list` (`{a, b, c::d}`), one level of
     nested `scoped_use_list` grouping flattened to its own dotted path

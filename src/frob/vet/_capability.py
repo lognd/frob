@@ -1482,6 +1482,14 @@ def _python_binding_capabilities(
         for capability, pattern in patterns:
             if capability in found:
                 continue
+            # frob:waive PERF008 reason="pattern is one of the pre-compiled \
+            # re.Pattern objects from _compiled_capability_patterns(table), built \
+            # once above this whole walk; .search(haystack) is a plain regex match \
+            # with no I/O. PERF008 resolves the bare method name 'search' by \
+            # name-only coincidence to an unrelated same-named function that \
+            # genuinely reaches walk_pruned elsewhere in the repo -- a resolver \
+            # ambiguity, not a real fs-walk on this call. Tracked as a resolver \
+            # precision follow-up (T-1041's Done report)"  # noqa: E501
             if pattern.search(haystack):
                 found.add(capability)
         if len(found) == len(patterns):
@@ -3060,6 +3068,14 @@ def _matched_capabilities(
                 found.add(capability)
                 break
     for capability, checks in _SPECIAL_CHECKS.get(language, {}).items():
+        # frob:waive PERF008 reason="check is the loop-bound variable itself (a \
+        # DIFFERENT callable from _SPECIAL_CHECKS on every iteration of the inner \
+        # for check in checks) -- this is dynamic dispatch to distinct functions \
+        # sharing the same (text, comment_spans) args, not a repeated call to one \
+        # fixed callable. PERF008's resolver treats the bare name 'check' as if it \
+        # named one specific function; a resolver ambiguity, not a real redundant \
+        # call to hoist. Tracked as a resolver precision follow-up \
+        # (T-1041's Done report)"  # noqa: E501
         if any(check(text, comment_spans) for check in checks):
             found.add(capability)
     return found
@@ -3300,6 +3316,10 @@ def _rust_join_prefix(prefix: str | None, segment: str) -> str:
     return f"{prefix}::{segment}" if prefix else segment
 
 
+# frob:invariant terminates reason="recurses only into a scoped_use_list's own inner \
+# use_list, one tree-sitter edge below the current node; a lexical prover cannot see \
+# that the nested list is structurally smaller without dataflow" measure="tree-sitter \
+# AST depth under list_node, finite per parse"
 def _bind_rust_use_list(
     list_node,  # noqa: ANN001 -- tree_sitter.Node (use_list)
     prefix: str | None,
@@ -4724,6 +4744,12 @@ def _kt_property_name_and_value(node):  # noqa: ANN001, ANN201
 # frob:ticket T-0664
 # frob:waive ARCH001 reason="one recursive dispatch over kotlin's three resolvable expression shapes (simple_identifier/navigation_expression/call_expression); each branch is a single named case, splitting further would multiply indirection without shrinking real complexity" ceiling="65"  # noqa: E501
 # frob:tests tests/test_vet.py::TestCapabilityScanKotlinAliasTablePredicates.test_resolve_expr_text_returns_none_for_unbound_identifier  # noqa: E501
+# frob:invariant terminates reason="the navigation_expression branch recurses only \
+# into node.children[0] (its own base), and the call_expression branch recurses \
+# only into _kt_call_callee(node)'s result -- both a proper descendant of node one \
+# or more tree-sitter edges below it, in the finite parse tree; a lexical prover \
+# cannot see either descent is structurally smaller without dataflow" \
+# measure="tree-sitter AST depth under node, finite per parse"
 def _kt_resolve_expr_text(
     node,  # noqa: ANN001
     import_table: dict[str, str],

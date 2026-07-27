@@ -147,6 +147,12 @@ def _compiled_artifacts(found: importlib.machinery.ModuleSpec) -> list[Path]:
     for location in found.submodule_search_locations or ():
         pkg_dir = Path(location)
         # frob:waive WALK001 reason="bounded to a single already-resolved package dir's own compiled-artifact siblings, not a repo-wide walk"  # noqa: E501
+        # frob:waive PERF008 reason="the PERF008 finding treats the literal '*' \
+        # argument as loop-invariant, but pkg_dir is freshly rebound from location \
+        # on every iteration of the enclosing for-loop -- each rglob('*') walks a \
+        # DIFFERENT package directory, not a repeated identical walk. A resolver \
+        # limit (argument-text equality does not account for a differing receiver \
+        # object), not a real redundant walk to hoist"  # noqa: E501
         artifacts.extend(p for p in pkg_dir.rglob("*") if _is_compiled_artifact(p))
     return sorted(set(artifacts))
 

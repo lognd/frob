@@ -175,6 +175,10 @@ def _clause_pattern(clause: Node) -> Node | None:
     return None
 
 
+# frob:invariant terminates reason="recurses only into a union_pattern's own \
+# named_children, each one tree-sitter edge below the current node; a lexical prover \
+# cannot see that a child's own subtree is structurally smaller without dataflow" \
+# measure="tree-sitter AST depth under pattern, finite per parse"
 def _flatten_value_pattern_members(pattern: Node, enum_class: str) -> set[str] | None:
     """Flatten one `case_pattern` (a plain `EnumClass.MEMBER` value pattern,
     or a `|`-union of same) into the set of `enum_class` member names it

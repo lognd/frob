@@ -544,6 +544,11 @@ def test_warm_state_rebuilds_iff_tree_changed(
             if edited:
                 _write(root, "src/pkg/a.py", _SAMPLE_PY + f"\n# {build_count}\n")
                 expected_builds += 1
+            # frob:waive PERF008 reason="this test's entire point is calling \
+            # warm_state(root) repeatedly across a sequence of edits to verify its \
+            # incremental cache/invalidation behavior (asserting build_count only \
+            # increments on an actual edit) -- hoisting the call out of the loop \
+            # would defeat the test"  # noqa: E501
             result = _warm.warm_state(root)
             assert result.is_ok
             assert build_count == expected_builds
