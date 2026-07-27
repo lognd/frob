@@ -75,6 +75,8 @@ def _ticket_dispatch_table() -> dict:
         "attach": _attach,
         "block": _block,
         "close": _close,
+        # frob:ticket T-1005
+        "reverify": _reverify,
         "fail": _fail,
         "drop": _drop,
         "evidence": _evidence,
@@ -1884,10 +1886,18 @@ def _block(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-0215
-def _close_failure_hint(ticket_id: str, state, err) -> str:  # noqa: ANN001
+# frob:ticket T-1005
+def _close_failure_hint(ticket_id: str, state, err, *, verb: str = "close") -> str:  # noqa: ANN001
     """The log message for a failed close: names a concrete remedy instead of
     just echoing the raw error (T-0215 -- both close-on-queued's
-    InvalidTransition and MissingEvidence used to log with no next step)."""
+    InvalidTransition and MissingEvidence used to log with no next step).
+
+    T-1005: `verb` (default `"close"`) lets `frob ticket reverify` share
+    this exact remedy text under its own name (`"reverify"`) instead of
+    forking a second copy that could drift -- the remedies themselves
+    (start first, add evidence, bind acceptance, get an approved review,
+    strengthen mutation-killing tests) are identical for both commands,
+    only the failing verb differs."""
     from frob.tickets import TicketError, TicketState
 
     if err == TicketError.InvalidTransition and state in (
@@ -1895,12 +1905,12 @@ def _close_failure_hint(ticket_id: str, state, err) -> str:  # noqa: ANN001
         TicketState.PLANNED,
     ):
         return (
-            f"close failed: {err} -- {ticket_id} is {state.value}, not "
+            f"{verb} failed: {err} -- {ticket_id} is {state.value}, not "
             f"in-progress -- run `frob ticket start {ticket_id}` first"
         )
     if err == TicketError.MissingEvidence:
         return (
-            f"close failed: {err} -- {ticket_id} is missing evidence or a "
+            f"{verb} failed: {err} -- {ticket_id} is missing evidence or a "
             f"Done report -- add evidence (`frob ticket evidence {ticket_id} "
             f"<node-id>...`, or for a docs-kind ticket `--evidence-cmd "
             f"'<command>'`) and write a '## Done report' heading under "
@@ -1908,7 +1918,7 @@ def _close_failure_hint(ticket_id: str, state, err) -> str:  # noqa: ANN001
         )
     if err == TicketError.AcceptanceUnbound:
         return (
-            f"close failed: {err} -- see the WARNING line above naming "
+            f"{verb} failed: {err} -- see the WARNING line above naming "
             f"which acceptance criterion/criteria still have no resolving "
             f"evidence id; bind one with `frob ticket evidence {ticket_id} "
             f"<node-id> --accepts <index>` (0-based, per "
@@ -1916,22 +1926,22 @@ def _close_failure_hint(ticket_id: str, state, err) -> str:  # noqa: ANN001
         )
     if err == TicketError.MissingApprovedReview:
         return (
-            f"close failed: {err} -- {ticket_id} needs an approve-verdict "
+            f"{verb} failed: {err} -- {ticket_id} needs an approve-verdict "
             f"review naming the current commit (`frob ticket review "
             f"{ticket_id} --verdict approve --reviewer NAME --findings-file "
-            f"PATH`) before `close --strict` will succeed"
+            f"PATH`) before `--strict` will succeed"
         )
     if err == TicketError.EvidenceConfirmatoryOnly:
         return (
-            f"close failed: {err} -- see the WARNING TEST016 line(s) above "
+            f"{verb} failed: {err} -- see the WARNING TEST016 line(s) above "
             f"naming the exact file:line + mutation the bound evidence "
             f"never killed; strengthen those tests, then retry `frob "
-            f"ticket close {ticket_id}`, or if this is a genuine false "
-            f"positive retry with `frob ticket close {ticket_id} "
+            f"ticket {verb} {ticket_id}`, or if this is a genuine false "
+            f"positive retry with `frob ticket {verb} {ticket_id} "
             f"--skip-mutation-evidence` (logs a loud, justification-"
             f"required override, does not suppress the finding)"
         )
-    return f"close failed: {err}"
+    return f"{verb} failed: {err}"
 
 
 # frob:ticket T-0398
@@ -2311,6 +2321,137 @@ def _close(root: Path, cfg: AppConfig) -> None:
     from frob.app.telemetry import record_ticket_event
 
     record_ticket_event(root, ticket_id=cfg.ticket_id, event="done")
+
+
+# frob:ticket T-1005
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_ticket_reverify.py::TestReverifyCli.test_reruns_verification_and_refreshes_recap_state_unchanged  # noqa: E501
+# frob:tests tests/test_ticket_reverify.py::TestReverifyCli.test_surfaces_now_failing_evidence_loudly  # noqa: E501
+# frob:tests tests/test_ticket_reverify.py::TestReverifyCli.test_refuses_non_done_ticket
+def _reverify(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket reverify <id>`: the missing verb for a post-close
+    send-back (churn item 6, docs/audits/coordination-churn.md -- ~5
+    observed occurrences). After a done ticket gets a TEST016-driven
+    evidence strengthening (or any other scope/evidence/done-report edit
+    applied post-close), nothing could previously re-run close's own
+    verification suite against it: `close` itself refuses a done->done
+    transition, and `start`/`sweep` both refuse a done ticket outright --
+    so a land had to proceed on trust in the ORIGINAL close-time recap
+    alone, even though the ticket's evidence/scope may have changed since.
+
+    Re-runs the exact same four close-time guards `_close` computes
+    (`_close_guards_for_ticket` -- D-02 covers_scope, T-0571 reviewed,
+    T-0844 mutation_evidence, T-0417 evidence_reverified, all shared, no
+    duplicated computation) and the exact same state-machine verification
+    `transition(..., TicketState.DONE, ...)` runs at close time
+    (`frob.tickets.reverify_close_guard`, which wraps the SAME
+    `_done_transition_guard` -- structural + T-0854 live-tracker-citation
+    + T-0756 new-gate-rule-acceptance too), against the ALREADY-done
+    ticket -- but NEVER calls `transition`, so no write, no state change,
+    either way. `--evidence`/`--evidence-cmd`/`--accepts`/`--strict`/
+    `--skip-mutation-evidence` behave identically to `close`'s own flags
+    (`_apply_close_time_evidence`, shared).
+
+    A failing guard exits 1 loudly via the SAME `_close_failure_hint`
+    remedy text `close` itself would show (now under the `"reverify"`
+    verb) and leaves the recap untouched -- this is the "surfaces a
+    now-failing evidence id loudly" half of the contract. A fully passing
+    reverify refreshes the recap: `frob.tickets.recover_done_report_why`
+    recovers the ticket's existing Done-report narrative verbatim (the
+    mechanical inverse of `compose_done_report`'s own narrative half, so
+    the operator never retypes it), and a fresh `set_done_report` call
+    (same T-0754 claims-capture callables `_done_report` already supplies)
+    rewrites Changed/Evidence/Captured-claims against the CURRENT tree --
+    the "refreshes the recap" half."""
+    from frob.tickets import TicketState, recover_done_report_why, reverify_close_guard
+    from frob.tickets import set_done_report as _set_done_report
+
+    if cfg.ticket_id is None:
+        _log.error("frob ticket reverify requires <id>")
+        sys.exit(1)
+
+    ticket = _load_ticket_or_exit(root, cfg.ticket_id, verb="reverify")
+    if ticket.state is not TicketState.DONE:
+        _log.error(
+            "reverify failed: %s is %s, not done -- reverify re-checks an "
+            "already-closed ticket, it does not close one (use `frob "
+            "ticket close %s` instead)",
+            cfg.ticket_id,
+            ticket.state.value,
+            cfg.ticket_id,
+        )
+        sys.exit(1)
+
+    _apply_close_time_evidence(root, cfg)
+
+    # Re-load: --evidence/--evidence-cmd may have just changed the ticket's
+    # recorded evidence, and every guard below must see the CURRENT
+    # evidence, not the state loaded before those flags applied (mirrors
+    # `_close`'s own re-load-after-apply sequencing exactly).
+    fresh_ticket = _load_ticket_or_exit(root, cfg.ticket_id, verb="reverify")
+    covers_scope, reviewed, mutation_evidence, evidence_reverified = (
+        _close_guards_for_ticket(root, cfg, fresh_ticket)
+    )
+
+    guard_result = reverify_close_guard(
+        root,
+        cfg.ticket_id,
+        covers_scope=covers_scope,
+        reviewed=reviewed,
+        mutation_evidence=mutation_evidence,
+        evidence_reverified=evidence_reverified,
+    )
+    if guard_result.is_err:
+        _log.error(
+            _close_failure_hint(
+                cfg.ticket_id,
+                fresh_ticket.state,
+                guard_result.danger_err,
+                verb="reverify",
+            )
+        )
+        sys.exit(1)
+
+    why = recover_done_report_why(fresh_ticket.body)
+    if why is None:
+        _log.error(
+            "reverify failed: %s verification passed but no recoverable "
+            "Done-report narrative was found to replay -- recap NOT "
+            "refreshed (state remains done, unchanged); this can only "
+            "happen for a Done report predating T-0458's auto-fill "
+            "sections -- run `frob ticket done-report %s --why TEXT` once "
+            "to give it one, then retry `frob ticket reverify %s`",
+            cfg.ticket_id,
+            cfg.ticket_id,
+            cfg.ticket_id,
+        )
+        sys.exit(1)
+
+    _shared_spawn = _shared_check_spawn_fn(root, cfg.ticket_id)
+    report_result = _set_done_report(
+        root,
+        cfg.ticket_id,
+        why=why,
+        base_ref=cfg.ticket_base_ref,
+        run_tests=_run_tests_count_fn(root),
+        check_gates=_check_gates_summary_fn(root, cfg.ticket_id, spawn=_shared_spawn),
+        check_gate_findings=_check_gate_findings_fn(
+            root, cfg.ticket_id, spawn=_shared_spawn
+        ),
+    )
+    if report_result.is_err:
+        _log.error(
+            "reverify: %s verification passed but the recap refresh "
+            "failed (%s) -- state remains done, unchanged",
+            cfg.ticket_id,
+            report_result.danger_err,
+        )
+        sys.exit(1)
+    _log.info(
+        "%s reverified: full close-time verification suite passed, recap "
+        "refreshed, state unchanged (done)",
+        cfg.ticket_id,
+    )
 
 
 def _fail(root: Path, cfg: AppConfig) -> None:

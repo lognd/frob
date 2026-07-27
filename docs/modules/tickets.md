@@ -97,6 +97,8 @@ attachments:
 <!-- frob:describes src/frob/tickets/_models.py::scope_overlap -->
 <!-- frob:describes src/frob/tickets/_models.py::scope_overlap_globs -->
 <!-- frob:describes src/frob/tickets/__init__.py::set_done_report -->
+<!-- frob:describes src/frob/tickets/__init__.py::reverify_close_guard -->
+<!-- frob:describes src/frob/tickets/_models.py::recover_done_report_why -->
 <!-- frob:describes src/frob/tickets/__init__.py::compose_done_report -->
 <!-- frob:describes src/frob/tickets/__init__.py::render_evidence_block -->
 <!-- frob:describes src/frob/tickets/__init__.py::replay_evidence_from_done_report -->
@@ -431,6 +433,56 @@ require_review_for_close = true
 toggle -- for the CLI to compute a non-`None` `reviewed` predicate and
 enforce it; this keeps the gate strictly opt-in per repo instead of
 surprising a project that has never turned it on.
+
+### `frob ticket reverify <id>` (T-1005)
+
+The missing verb for a post-close send-back: after a `done` ticket
+receives new scope/evidence/done-report edits (most commonly a TEST016
+mutation-evidence strengthening requested during review), nothing could
+previously re-run `close`'s own verification suite against it --
+`close` itself refuses a `done -> done` transition (not a legal edge in
+`_TRANSITIONS`), and `start`/`sweep` both refuse a `done` ticket outright.
+Lands used to proceed on trust in the ORIGINAL close-time recap alone,
+even when the ticket's evidence had since changed.
+
+```bash
+frob ticket evidence T-0042 tests/test_foo.py::test_stronger  # bind new/strengthened evidence
+frob ticket reverify T-0042                                   # re-run close verification, refresh recap
+```
+
+`reverify` re-runs the EXACT SAME checks `close` runs at close time, with
+**no state transition either way** on success or failure:
+
+- the four injected guards `_close_guards_for_ticket` computes for
+  `close` (D-02 `covers_scope`, T-0571 `reviewed` when `--strict` +
+  `require_review_for_close` are both set, T-0844 `mutation_evidence`,
+  T-0417 `evidence_reverified` -- a fresh re-run of the ticket's own
+  recorded evidence against the CURRENT tree), and
+- `reverify_close_guard`, which wraps the identical `_done_transition_guard`
+  `transition(..., TicketState.DONE, ...)` calls at close time: structural
+  checks (evidence + Done report present, no open descendants, no
+  disallowed `cmd:` evidence, T-0572 acceptance binding) plus the two
+  ALWAYS-run diff-derived checks (T-0854 live-tracker citation, T-0756
+  new-gate-rule acceptance).
+
+`--evidence`/`--evidence-cmd`/`--accepts`/`--strict`/
+`--skip-mutation-evidence` behave identically to `close`'s own flags of the
+same name (shared dest names, shared `_apply_close_time_evidence`).
+
+**On a failing guard**: exits 1 with the same remedy text `close` itself
+would show (`_close_failure_hint`, now under the `"reverify"` verb) --
+e.g. a TEST016 finding that still does not kill a mutant, or an evidence
+id that no longer passes. The ticket's state AND recap are left
+untouched; nothing is silently downgraded.
+
+**On a fully passing reverify**: the recap is refreshed. `recover_done_
+report_why` recovers the ticket's existing Done-report narrative verbatim
+from the ledger (the mechanical inverse of `compose_done_report`'s own
+narrative half -- the operator never retypes it), and a fresh
+`set_done_report` call (the same T-0754 claims-capture callables `frob
+ticket done-report` already supplies) rewrites the Changed/Evidence/
+Captured-claims sections against the CURRENT tree. `reverify` never calls
+`transition` -- the ticket's `state:` field is untouched either way.
 
 ### `ReviewEntry` evidence shape
 

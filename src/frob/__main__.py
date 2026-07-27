@@ -1407,6 +1407,74 @@ def _add_ticket_close_parser(ticket_sub):
     return ticket_close_p
 
 
+# frob:ticket T-1005
+def _add_ticket_reverify_parser(ticket_sub):
+    """Register `frob ticket reverify <id>` -- re-run the full close-time
+    verification suite (evidence re-run, mutation evidence, covers-scope,
+    acceptance binding, live-tracker citation) against an already-DONE
+    ticket and refresh its recap, with NO state transition (T-1005, the
+    post-close send-back verb `close`/`start`/`sweep` all refuse to be).
+    Shares `close`'s own `--evidence`/`--evidence-cmd`/`--accepts`/
+    `--strict`/`--skip-mutation-evidence` flags verbatim (same dest names,
+    so `frob.app.ticket_runner._close_guards_for_ticket` works unmodified
+    for either command) plus `done-report`'s `--base-ref` (the recap
+    refresh re-derives the Changed section against it)."""
+    ticket_reverify_p = ticket_sub.add_parser(
+        "reverify",
+        help="re-run close verification on a done ticket, refresh its "
+        "recap, no state transition",
+    )
+    ticket_reverify_p.add_argument("ticket_id", metavar="id")
+    ticket_reverify_p.add_argument(
+        "--evidence",
+        dest="ticket_evidence_ids",
+        action="append",
+        default=[],
+        metavar="NODE-ID",
+        help="pytest node id to record as evidence before reverifying (repeatable)",
+    )
+    ticket_reverify_p.add_argument(
+        "--evidence-cmd",
+        dest="ticket_evidence_cmd",
+        metavar="COMMAND",
+        help="non-pytest evidence channel (T-0215), same semantics as "
+        "`close --evidence-cmd`",
+    )
+    ticket_reverify_p.add_argument(
+        "--accepts",
+        dest="ticket_accepts",
+        action="append",
+        type=int,
+        default=[],
+        metavar="INDEX",
+        help="T-0572: 0-based ticket.acceptance index --evidence/"
+        "--evidence-cmd's id(s) also bind to (repeatable)",
+    )
+    ticket_reverify_p.add_argument(
+        "--strict",
+        dest="ticket_close_strict",
+        action="store_true",
+        help="require an approve-verdict `frob ticket review` record "
+        "naming the current commit (T-0571), same semantics as "
+        "`close --strict`",
+    )
+    ticket_reverify_p.add_argument(
+        "--skip-mutation-evidence",
+        dest="ticket_close_skip_mutation_evidence",
+        action="store_true",
+        help="T-0844 escape hatch, same semantics as `close --skip-mutation-evidence`",
+    )
+    ticket_reverify_p.add_argument(
+        "--base-ref",
+        dest="ticket_base_ref",
+        default="main",
+        metavar="REF",
+        help="base ref the refreshed recap's Changed section diffs "
+        "against (default: main)",
+    )
+    return ticket_reverify_p
+
+
 # frob:ticket T-0571
 def _add_ticket_review_parser(ticket_sub):
     """Register `frob ticket review <id> --verdict approve|reject
@@ -1721,13 +1789,15 @@ def _add_ticket_sprint_parser(ticket_sub):
 
 
 def _add_ticket_closeout_parsers(ticket_sub) -> list:
-    """Register the ticket closeout subcommands: attach/block/close/fail/
-    evidence/done-report/scope/priority/kind/component/label/review/
-    sprint."""
+    """Register the ticket closeout subcommands: attach/block/close/
+    reverify/fail/evidence/done-report/scope/priority/kind/component/
+    label/review/sprint."""
     return (
         _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub)
         + _add_ticket_fail_evidence_archive_parsers(ticket_sub)
         + [
+            # frob:ticket T-1005
+            _add_ticket_reverify_parser(ticket_sub),
             _add_ticket_done_report_parser(ticket_sub),
             _add_ticket_scope_parser(ticket_sub),
             _add_ticket_priority_parser(ticket_sub),

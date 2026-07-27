@@ -86,6 +86,7 @@ from frob.tickets._models import (
     is_cmd_evidence,
     matches_collected,
     parse_claims_from_done_report,
+    recover_done_report_why,
     render_claims_block,
     replace_done_report_section,
     scope_matches,
@@ -2737,6 +2738,84 @@ def transition(
     return Ok(updated)
 
 
+# frob:ticket T-1005
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests \
+# tests/test_ticket_reverify.py::TestReverifyCloseGuard.test_passes_on_strengthened_don\
+# e_ticket
+# frob:tests \
+# tests/test_ticket_reverify.py::TestReverifyCloseGuard.test_fails_loudly_on_now_failin\
+# g_evidence
+# frob:tests \
+# tests/test_ticket_reverify.py::TestReverifyCloseGuard.test_refuses_non_done_ticket
+def reverify_close_guard(
+    root: Path,
+    ticket_id: str,
+    *,
+    covers_scope: bool | None = None,
+    reviewed: bool | None = None,
+    mutation_evidence: bool | None = None,
+    evidence_reverified: bool | None = None,
+) -> Result[Ticket, TicketError]:
+    """`frob ticket reverify`'s (T-1005) state-machine half: re-run the
+    EXACT SAME `_done_transition_guard` check `transition(..., TicketState.
+    DONE, ...)` runs at close time -- structural (evidence + Done report
+    present, no open descendants, no disallowed cmd: evidence, D-02
+    covers_scope, T-0572 acceptance binding), T-0571 reviewed (when
+    injected), T-0844 mutation_evidence (when injected), T-0417
+    evidence_reverified (when injected), and the two ALWAYS-run diff-
+    derived checks (T-0854 live-tracker citation, T-0756 new-gate-rule
+    acceptance) -- against a ticket that is ALREADY `done`, with NO write
+    and NO state transition attempted either way. This closes churn item 6
+    (docs/audits/coordination-churn.md): after a post-close send-back
+    (e.g. a TEST016 strengthening) lands new scope/evidence/done-report
+    edits on a done ticket, nothing could previously re-run close's own
+    verification suite (`close` itself refuses done->done via the state
+    machine; `start`/`sweep` both refuse a done ticket outright) -- lands
+    proceeded on trust in the stale recap alone.
+
+    Refuses immediately (`TicketError.InvalidTransition`, matching the
+    state machine's own vocabulary for "wrong state to do this in") unless
+    `ticket.state is TicketState.DONE` -- reverify is specifically the
+    post-close re-check, not a substitute for `close` on an in-progress
+    ticket. `covers_scope`/`reviewed`/`mutation_evidence`/
+    `evidence_reverified` are injected exactly like `transition`'s own
+    parameters of the same names (the caller, `frob.app.ticket_runner.
+    _reverify`, computes them via the identical `_close_guards_for_ticket`
+    helper `_close` itself calls -- no duplicated guard-computation
+    logic, only the write/transition step is skipped here)."""
+    loaded = _load_ticket_and_queue(root, ticket_id)
+    if loaded.is_err:
+        return Err(loaded.danger_err)
+    ticket, queue = loaded.danger_ok
+    if ticket.state is not TicketState.DONE:
+        _log.warning(
+            "tickets: %s reverify requires state=done (current: %s) -- "
+            "reverify re-checks an already-closed ticket, it does not "
+            "close one",
+            ticket_id,
+            ticket.state,
+        )
+        return Err(TicketError.InvalidTransition)
+    guard = _done_transition_guard(
+        root,
+        ticket,
+        queue,
+        covers_scope=covers_scope,
+        reviewed=reviewed,
+        mutation_evidence=mutation_evidence,
+        evidence_reverified=evidence_reverified,
+    )
+    if guard.is_err:
+        return Err(guard.danger_err)
+    _log.info(
+        "tickets: %s reverify: full close-time verification suite passed, "
+        "state unchanged (done)",
+        ticket_id,
+    )
+    return Ok(ticket)
+
+
 # frob:ticket T-0473
 def _sync_cross_worktree_lease(
     root: Path,
@@ -3968,9 +4047,11 @@ __all__ = [
     "reconcile",
     "ReconcileReport",
     "parse_claims_from_done_report",
+    "recover_done_report_why",
     "render_changed_block",
     "render_claims_block",
     "render_evidence_block",
+    "reverify_close_guard",
     "reverify_cmd_evidence",
     "run_cmd_evidence",
     "scope_breadth_context",

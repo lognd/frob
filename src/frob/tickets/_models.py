@@ -562,6 +562,55 @@ def _done_report_section_lines(body: str) -> list[str] | None:
     return lines[heading_idx + 1 : end_idx]
 
 
+# frob:ticket T-1005
+# The literal marker `compose_done_report` always writes right after the
+# narrative (`f"{why_text}\n\n### Changed\n..."`) -- the SAME fixed string
+# `_capture_done_report_claims`/`_CLAIMS_HEADING`'s neighbors already rely
+# on as a structural anchor, reused here as `recover_done_report_why`'s own
+# anchor rather than inventing a second convention.
+_CHANGED_HEADING = "### Changed"
+
+
+# frob:ticket T-1005
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests \
+# tests/test_ticket_reverify.py::TestRecoverDoneReportWhy.test_recovers_narrative_befor\
+# e_changed_marker
+# frob:tests \
+# tests/test_ticket_reverify.py::TestRecoverDoneReportWhy.test_none_when_no_done_report\
+# _section
+# frob:tests \
+# tests/test_ticket_reverify.py::TestRecoverDoneReportWhy.test_none_when_no_changed_mar\
+# ker_to_anchor_against
+def recover_done_report_why(body: str) -> str | None:
+    """Recover the free-narrative WHY prose a caller once passed to
+    `set_done_report`/`compose_done_report`, given only the ticket `body`
+    that resulted -- the mechanical inverse of `compose_done_report`'s own
+    `why_text` half. `frob ticket reverify` (T-1005) uses this to refresh a
+    DONE ticket's recap (a fresh `set_done_report` call) without asking the
+    operator to retype a narrative that already exists verbatim in the
+    ledger.
+
+    Returns `None` (never an empty string) if there is no Done report
+    section at all, or if the section has no auto-filled `### Changed`
+    marker to anchor against (an old/terse Done report predating T-0458's
+    auto-fill sections -- this repo's own `## Done report\\nDone.`-shaped
+    test fixtures) -- callers must treat `None` as "no narrative to
+    replay," never silently fall back to composing a fresh
+    `(no narrative supplied)` report over a real one."""
+    section = _done_report_section_lines(body)
+    if section is None:
+        return None
+    changed_idx = next(
+        (i for i, line in enumerate(section) if line.strip() == _CHANGED_HEADING),
+        None,
+    )
+    if changed_idx is None:
+        return None
+    why_text = "\n".join(section[:changed_idx]).strip()
+    return why_text or None
+
+
 # frob:ticket T-0398
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_evidence_integrity.py::TestD03SubstantiveDoneReport.test_empty_section_rejected  # noqa: E501

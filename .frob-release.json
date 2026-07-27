@@ -1534,6 +1534,7 @@
     "src/frob/tickets/__init__.py::renumber": "eb2063fb2de369d8fcffed391628f793f69702ff7d25265102d09a0aa14bc113",
     "src/frob/tickets/__init__.py::renumber_one": "d67ae5ee6db0b02afea17c18b7793342d8b99a197bef31c4c1ce739a8277c3c4",
     "src/frob/tickets/__init__.py::replay_evidence_from_done_report": "4ec1a9ca8731a688f3c9b1dfdfcfaa09518d49a9cb3e5fcd512d2fd6cdb8320e",
+    "src/frob/tickets/__init__.py::reverify_close_guard": "9696be888346dbd776fd07df96e00fd638f1c4d94567f34ca3f0bb2b51d64996",
     "src/frob/tickets/__init__.py::reverify_cmd_evidence": "006e65793070dae2f923fd9c6576e81fe0d16bbfa76568d0a094ee2f0c875955",
     "src/frob/tickets/__init__.py::run_cmd_evidence": "7540fe0d267ed2143caab5f18f360d7a02a07a1a641d9ecca7180d0d46c7efaf",
     "src/frob/tickets/__init__.py::scope_breadth_context": "4f57f3dab41cf1340fabe26b4694bb04d7dc3d5d1cf9200cb34277c9c7f84264",
@@ -1601,6 +1602,7 @@
     "src/frob/tickets/_models.py::is_cmd_evidence": "e8b1ed06b21a176bd633ea5746afb179e7eb34eadf7e8a0299d022643ddedb52",
     "src/frob/tickets/_models.py::matches_collected": "90ca48e9c7f61d7e4a6b52d47160455e69e38ec0520b21c2dc5acab712eaee04",
     "src/frob/tickets/_models.py::parse_claims_from_done_report": "ef50a5dc033e56abd39915e033f5702bf2045064e1742467a77c81702b71e165",
+    "src/frob/tickets/_models.py::recover_done_report_why": "4b298a1206af5636fe6e09aa0a83687b861ad0c00e995e0e97aef90eda496fdd",
     "src/frob/tickets/_models.py::render_claims_block": "498c30a905383ce2caf6f05be68d0fcace455afe5aacf4223e94a2969b59e882",
     "src/frob/tickets/_models.py::replace_done_report_section": "cc46d70298699ef49716b87c7df038afb774b050331b0fc63faa5a2cb8c00081",
     "src/frob/tickets/_models.py::scope_matches": "5eef8e395b850fdcd75ee4bb7d0bacdba99fcf6b8e1a4fe3d21a92d37092ad9e",
@@ -1722,5 +1724,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.188.0"
+  "version": "0.189.0"
 }
