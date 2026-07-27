@@ -239,6 +239,29 @@ def _symref_to_nodeid(symref: str) -> str:
     return f"{path}::{head.replace('.', '::')}{bracket}{tail}"
 
 
+# frob:ticket T-0949
+@functools.lru_cache(maxsize=8)
+def _case_ids_by_base(node_ids: frozenset[str]) -> dict[str, tuple[str, ...]]:
+    """Every collected `base[case-id]` node id grouped by its pre-bracket
+    `base`, computed ONCE per distinct `node_ids` value and memoized
+    (T-0949 root cause, second dominator): `_node_id_collected` and
+    `_case_count` each used to independently re-scan the FULL `node_ids`
+    set (thousands of ids) with a linear `startswith()` loop, once per
+    edge/symbol looked up -- `test_gate`'s own isolated-call cProfile
+    showed this exact shape (`str.startswith`, ~50M calls) as the single
+    largest remaining cost after the sibling `_leaf_snake_index` fix. This
+    precomputes the base->cases grouping once so both callers do an O(1)
+    dict lookup instead. `node_ids` (a `frozenset`) is a valid `lru_cache`
+    key on its own; unlike `_leaf_snake_index` this needs no wrapping
+    `CollectedTests` model."""
+    index: dict[str, list[str]] = {}
+    for node_id in node_ids:
+        base, bracket, _ = node_id.partition("[")
+        if bracket:
+            index.setdefault(base, []).append(node_id)
+    return {base: tuple(cases) for base, cases in index.items()}
+
+
 # frob:ticket T-0275
 def _node_id_collected(base_node_id: str, node_ids: frozenset[str]) -> bool:
     """True if `base_node_id` was collected, either verbatim or as a
@@ -257,11 +280,13 @@ def _node_id_collected(base_node_id: str, node_ids: frozenset[str]) -> bool:
     (feldspar FROBLEMS.md 2026-07-18, `test_library_thermo.py`) until
     traced to the actual mismatch: parametrize-suffix expansion, not
     comment-to-symbol binding (`frob.lang._extract` already resolves the
-    binding correctly in both cases -- proven directly, not assumed)."""
+    binding correctly in both cases -- proven directly, not assumed).
+
+    T-0949: the prefix half of this check now consults `_case_ids_by_base`'s
+    memoized grouping instead of scanning `node_ids` itself."""
     if base_node_id in node_ids:
         return True
-    prefix = f"{base_node_id}["
-    return any(node_id.startswith(prefix) for node_id in node_ids)
+    return base_node_id in _case_ids_by_base(node_ids)
 
 
 # frob:ticket T-0318
@@ -333,6 +358,26 @@ def _snake(name: str) -> str:
     """`CamelCase`/`getHTTP` -> `camel_case`/`get_http` for convention matching."""
     s1 = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", name)
     return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
+
+
+# frob:ticket T-0949
+@functools.lru_cache(maxsize=8)
+def _leaf_snake_index(tests: CollectedTests) -> tuple[tuple[str, str], ...]:
+    """`(node_id, snake_cased_leaf)` for every node id in `tests`, computed
+    ONCE per distinct `CollectedTests` value and memoized (T-0949 root
+    cause): `_inferred_unit_cases`/`_test015_record_violation` each used to
+    call `_snake()` on every collected node id's leaf FROM SCRATCH for
+    every public symbol they were asked about -- an O(symbols x node_ids)
+    re-`_snake()` cost that `test_gate`'s own isolated-call cProfile
+    (T-0949) showed dominating its wall time (`_snake`/`re.sub` alone: over
+    30s of a ~106s isolated run). Hoisting the per-node-id `_snake()` call
+    to run once here, keyed on `tests` (a frozen, hashable pydantic model,
+    so a valid `lru_cache` key), turns the remaining per-symbol work into a
+    plain regex `.search()` over an already-computed leaf string instead of
+    recomputing that string on every call."""
+    return tuple(
+        (node_id, _snake(node_id.rsplit("::", 1)[-1])) for node_id in tests.node_ids
+    )
 
 
 # frob:ticket T-0298
@@ -704,6 +749,32 @@ def _function_asserts(node: ast.AST) -> bool:
     return False
 
 
+# frob:ticket T-0949
+@functools.lru_cache(maxsize=4096)
+def _parsed_test_module(
+    root_str: str, file_path: str, mtime_ns: int, size: int
+) -> ast.Module | None:
+    """`ast.parse()` of `root_str/file_path`, memoized on `(file_path,
+    mtime_ns, size)` so re-reading/re-parsing the SAME test file (common:
+    many test functions per file, each independently checked by
+    `_has_assertion_evidence`) costs one real parse, not one per call
+    (T-0949 -- `test_gate`'s isolated-call cProfile showed `ast.parse`/
+    `compile` as the single largest remaining cost after the two
+    `_snake()`/node-id-scan fixes landed alongside this one). Keying on
+    `mtime_ns`/`size` rather than just the path means a file edited
+    mid-process (a long-lived `frob serve` sesssion, or a test suite that
+    rewrites its own fixture between gate runs) transparently misses the
+    cache and reparses, instead of serving stale content silently -- no
+    explicit invalidation call needed, unlike a plain path-keyed cache
+    would require. Returns `None` on any read/parse failure, exactly the
+    conditions `_has_assertion_evidence` already treated as fail-open."""
+    try:
+        source = Path(root_str, file_path).read_text(encoding="utf-8")
+        return ast.parse(source)
+    except (OSError, SyntaxError, ValueError, UnicodeDecodeError):
+        return None
+
+
 # frob:ticket T-0549
 def _has_assertion_evidence(root: Path, base_node_id: str) -> bool:
     """True if the python test function named by `base_node_id` (a
@@ -717,15 +788,21 @@ def _has_assertion_evidence(root: Path, base_node_id: str) -> bool:
     case-count credit from a python test whose body was actually inspected
     and found empty of assertions, never penalize a case this check could
     not evaluate (native/non-python tests, synthetic test fixtures in unit
-    tests that reference files never written to disk, and so on)."""
+    tests that reference files never written to disk, and so on).
+
+    T-0949: the read+parse itself is delegated to `_parsed_test_module`,
+    memoized per file so N functions checked in the same file cost one
+    parse total instead of N."""
     parts = base_node_id.split("::")
     if len(parts) < 2 or not parts[0].endswith(".py"):
         return True
     file_path, func_name = parts[0], parts[-1]
     try:
-        source = (root / file_path).read_text(encoding="utf-8")
-        tree = ast.parse(source)
-    except (OSError, SyntaxError, ValueError, UnicodeDecodeError):
+        stat = (root / file_path).stat()
+    except OSError:
+        return True
+    tree = _parsed_test_module(str(root), file_path, stat.st_mtime_ns, stat.st_size)
+    if tree is None:
         return True
     found = False
     for node in ast.walk(tree):
@@ -791,11 +868,11 @@ def _case_count(
             )
             continue
         base = _symref_to_nodeid(edge.src)
-        prefix = f"{base}["
-        matches = sum(
-            1
-            for node_id in tests.node_ids
-            if node_id == base or node_id.startswith(prefix)
+        # T-0949: `_case_ids_by_base` memoizes the base->case-ids grouping
+        # once per `tests.node_ids` value instead of this re-scanning the
+        # full node-id set with `startswith()` for every edge.
+        matches = (1 if base in tests.node_ids else 0) + len(
+            _case_ids_by_base(tests.node_ids).get(base, ())
         )
         if root is not None and matches > 1 and not _has_assertion_evidence(root, base):
             matches = 1
@@ -821,8 +898,11 @@ def _inferred_unit_cases(symref: str, tests: CollectedTests) -> int:
     if len(leaf) < 3:  # too-short names (a, id, of) match everything
         return 0
     token = re.compile(rf"(^|[^a-z0-9]){re.escape(leaf)}([^a-z0-9]|$)")
+    # T-0949: `_leaf_snake_index` memoizes each node id's `_snake()`'d leaf
+    # ONCE per `tests` value instead of recomputing it on every call to
+    # this function (which happens once per unbound public symbol).
     return sum(
-        1 for node in tests.node_ids if token.search(_snake(node.rsplit("::", 1)[-1]))
+        1 for _, node_leaf in _leaf_snake_index(tests) if token.search(node_leaf)
     )
 
 
@@ -6153,10 +6233,13 @@ def _test014_group_by_leaf(
         if len(leaf) < 3:
             continue
         token = re.compile(rf"(^|[^a-z0-9]){re.escape(leaf)}([^a-z0-9]|$)")
+        # T-0949: same `_leaf_snake_index` memo as `_inferred_unit_cases`/
+        # `_test015_record_violation` -- avoid a fresh `_snake()` per node
+        # id for every symbol (this loop's own outer iteration).
         matched = frozenset(
             node
-            for node in tests.node_ids
-            if token.search(_snake(node.rsplit("::", 1)[-1]))
+            for node, node_leaf in _leaf_snake_index(tests)
+            if token.search(node_leaf)
         )
         if matched:
             by_leaf.setdefault(leaf, []).append(
@@ -6289,19 +6372,23 @@ def _test015_record_violation(
     edges = unit_edges.get(record.symref, [])
     node_ids: set[str] = set()
     if edges:
+        # T-0949: same `_case_ids_by_base` memo `_node_id_collected`/
+        # `_case_count` use, instead of a fresh full-`node_ids` scan per edge.
         for edge in _valid_edges(edges, tests, snapshot):
             base = _symref_to_nodeid(edge.src)
-            node_ids.update(
-                n for n in tests.node_ids if n == base or n.startswith(f"{base}[")
-            )
+            if base in tests.node_ids:
+                node_ids.add(base)
+            node_ids.update(_case_ids_by_base(tests.node_ids).get(base, ()))
     else:
         _, _, qualname = record.symref.partition("::")
         leaf = _snake(qualname.rsplit(".", 1)[-1])
         if len(leaf) < 3:
             return None
         token = re.compile(rf"(^|[^a-z0-9]){re.escape(leaf)}([^a-z0-9]|$)")
+        # T-0949: same `_leaf_snake_index` memo `_inferred_unit_cases` uses,
+        # avoiding a fresh `_snake()` per node id for every symbol here too.
         node_ids = {
-            n for n in tests.node_ids if token.search(_snake(n.rsplit("::", 1)[-1]))
+            n for n, node_leaf in _leaf_snake_index(tests) if token.search(node_leaf)
         }
     if not node_ids:
         return None

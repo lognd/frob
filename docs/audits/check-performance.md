@@ -267,3 +267,83 @@ rust-candidate row this ticket (T-0929) was scoped to stay off of
 (T-0930 owns rust-candidate rows), and is separately ticketed as T-0946.
 `archgate`/`static`/`dead_symbols` (rust-candidate rows) were not
 touched, per the same scoping instruction.
+
+**Row 2 (`test` gate) / Finding 5 -- ROOT-CAUSED AND FIXED (T-0949).** The
+isolated-call-slower-than-in-context discrepancy Finding 5 flagged was NOT
+a `GateConfig(root='.')`/ticket-resolution divergence (the leading
+hypothesis) -- `_load_inputs` and the real `--only test` run resolve
+config identically; the discrepancy was entirely inside `test_gate` itself.
+A completed isolated cProfile (bypassing the thread pool exactly as
+Finding 5 describes) found THREE independent O(symbols x collected-node-
+ids) hot loops, none of which had been isolated before because the
+profiler is blind to in-thread-pool gate work (Finding 0):
+
+1. `_inferred_unit_cases` and `_test015_record_violation`/
+   `_test014_group_by_leaf`'s naming-convention fallback each called
+   `_snake()` (two `re.sub` passes) on every one of ~6.4k collected pytest/
+   cargo node ids FROM SCRATCH, once per public symbol checked (~14.3k
+   symbols) -- an O(14.3k x 6.4k) re-`_snake()` cost. Fixed by
+   `_leaf_snake_index` (`functools.lru_cache`, keyed on the `CollectedTests`
+   value itself, which is frozen/hashable): every node id's snake-cased
+   leaf is computed once and reused by all three call sites.
+2. `_node_id_collected` and `_case_count` each independently re-scanned the
+   FULL collected-node-id set with a linear `startswith()` loop (~50M calls
+   in the isolated profile) to answer "does a `base[case-id]` expansion of
+   this base id exist", once per edge/symbol. Fixed by `_case_ids_by_base`
+   (`lru_cache`, keyed on the `node_ids` frozenset directly): every
+   collected id is grouped by its pre-bracket base once, turning both
+   call sites into O(1) dict lookups.
+3. `_has_assertion_evidence` (T-0549) `read_text()`+`ast.parse()`'d its
+   target test FILE from scratch on every call, even though a file with
+   several checked test functions was parsed once per function. Fixed by
+   `_parsed_test_module` (`lru_cache`, keyed on `(file_path, mtime_ns,
+   size)` so a file edited mid-process transparently reparses instead of
+   serving stale content): the read+parse now happens once per distinct
+   file per run.
+
+None of these three were the coverage-gate-style "same input recomputed
+via a separate code path" shape the audit's meta-gap finding (E) or the
+`tickets`-gate quick win (this same remediation log, above) describe --
+these are all "same expensive per-item computation recomputed once per
+OUTER loop iteration instead of once, period," a distinct but adjacent
+python-optimizable shape. All three fixes are pure memoization: identical
+inputs produce identical outputs (`CollectedTests`/`frozenset`/
+`(path, mtime, size)` are all stable, hashable cache keys for the run's
+duration), so `test_gate`'s return value is unchanged.
+
+Measured (isolated `test_gate(...)` call, `_load_inputs(GateConfig(root=
+'.'))` bypassing the thread pool exactly per Finding 5's method, same
+checkout, natives built, warm cache):
+
+```
+before (this audit's Finding 5): did not complete within a 100s budget
+before, re-measured this pass:   105.7s (low contention) / 166.5s (measured
+                                  under concurrent-agent host contention,
+                                  see below) -- both fully reproduced
+after fix 1 only (_leaf_snake_index):                        90.97s
+after fixes 1+2 (_case_ids_by_base added):                   17.82s
+after fixes 1+2+3 (_parsed_test_module added):                6.52s
+```
+
+15 violations reported both before and after every fix (verified
+identical). The host this pass ran on showed load average 11.5 on 12
+cores from other concurrent worktree agents partway through measurement
+(a real, observed instance of the wall-clock-vs-contention noise this same
+audit's `gates-native` Finding 3 already flagged) -- the 105.7s/166.5s
+before-fix pair above is that contention's effect on an otherwise-
+identical isolated call, not a second regression; `time.process_time()`
+(CPU time, contention-insensitive) was added to the isolated-call harness
+for every post-fix measurement to keep the comparison honest, and wall
+time tracked CPU time closely (contention-free) for all four post-fix
+numbers above.
+
+Re-measured in real context afterward: `uv run frob check --only
+gates-fast` now reports `test=2.22s` (previously 12.36-13.68s per this
+audit's original ranked table) -- the isolated call (6.52s) still runs
+somewhat slower than the in-context bracket (2.22s), consistent with the
+isolated call paying its own full `_load_inputs` cold-cache cost with
+nothing else warming shared caches first; this residual gap was not
+chased further as it is far below row 2's original 13.68s/15% share and no
+longer this audit's largest unresolved row. Full `tests/test_gates.py`
+(463 collected, all passing before and after) verifies the three memo
+functions preserve every existing gate's output.
