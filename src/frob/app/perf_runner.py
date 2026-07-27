@@ -48,6 +48,10 @@ def run(cfg: AppConfig) -> None:
 
 # frob:ticket T-0021
 # frob:ticket T-0562
+# frob:waive ARCH103 reason="T-0977: `frob perf profile` CLI entrypoint -- \
+# resolves the profile root/argv and dispatches to `profile_command`; \
+# runner-shape orchestration, same as this module's other `_run_*`/`_*` \
+# CLI handlers"
 def _profile(cfg: AppConfig) -> None:
     """`frob perf profile -- <argv>` / `frob perf profile --tests`."""
     from frob.perf import profile_command
@@ -214,6 +218,11 @@ def _heat_body(cfg: AppConfig) -> None:
 
 
 # frob:ticket T-0765
+# frob:waive ARCH103 reason="T-0977: one dispatch point choosing between \
+# the in-process pytest sampler and the --file parsed-collector path, \
+# logging progress either way -- both branches converge on the same \
+# `SampledStack` return, so splitting the branch out would just relocate \
+# the same single decision, not remove a real second concern"
 def _collect_stacks(cfg: AppConfig):  # noqa: ANN201
     """Get this invocation's `SampledStack`s: either the T-0710 python
     sampler running `pytest.main` in-process under `-- <argv>` (`--sampler`,

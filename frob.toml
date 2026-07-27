@@ -233,6 +233,15 @@ SEC110 = "error"
 # immediately red the build.
 PII010 = "error"
 PII012 = "error"
+# T-0977: ARCH101 (low-cohesion-class / LCOM4) -- the 2 live findings in
+# `src/frob/mutate/__init__.py` were both false positives from a
+# `frob.arch._python` field-access extraction bug (any `X.attr` expression,
+# including local-variable attributes and `self.method(...)` call
+# callees, was recorded as a `self.<field>` read/write); fixing the
+# extractor to require a genuine `self.<name>` read/write
+# (`_py_is_self_attribute`) drops both findings to zero without touching
+# `mutate/__init__.py` itself. Promoted to error at zero live findings.
+ARCH101 = "error"
 
 [testing]
 # min_unit_cases dropped from the 3-case aspirational target to 1 while the

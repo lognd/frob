@@ -69,6 +69,9 @@ def _cache_key(cve_id: str) -> str:
 # frob:waive DUP001 reason="documented deliberate split: same shape as \
 # _registry.py::_cache_get, kept separate since the two caches key \
 # different id spaces and expire on different TTLs (see module docstring)"
+# frob:waive ARCH103 reason="T-0977: sqlite cache-read helper -- open, \
+# query, expiry-check, return-or-None; the expiry decision IS the cache- \
+# read concern this function exists for, not a separate one"
 def _cache_get(db_path: Path, key: str) -> str | None:
     """Cached JSON body for `key`, or `None` on miss/expiry/unreadable db
     (same shape as `_registry.py::_cache_get`, kept separate since the two

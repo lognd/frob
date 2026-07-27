@@ -61,6 +61,9 @@ def _cache_key(ecosystem: str, name: str, version: str) -> str:
 # frob:waive DUP001 reason="documented deliberate split: same shape as \
 # _nvd.py::_cache_get, kept separate since the two caches key different \
 # id spaces and expire on different TTLs (see _nvd.py's docstring)"
+# frob:waive ARCH103 reason="T-0977: sqlite cache-read helper -- open, \
+# query, expiry-check, return-or-None; same shape and same reasoning as \
+# _nvd.py::_cache_get's ARCH103 waiver"
 def _cache_get(db_path: Path, key: str) -> str | None:
     """Cached JSON body for `key`, or `None` on miss/expiry/unreadable db."""
     if not db_path.exists():

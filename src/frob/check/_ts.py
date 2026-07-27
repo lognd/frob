@@ -38,6 +38,10 @@ def _missing_tool_result(tool: str, cmd: str) -> ToolResult:
     return tool_unavailable_result(tool, cmd)
 
 
+# frob:waive ARCH103 reason="T-0977: guarded-subprocess wrapper -- checks \
+# the kill switch/tool availability, runs the process, returns a typed \
+# result; the availability checks ARE the guard this wrapper exists for \
+# (see docstring's T-0142/T-0200 references), not a separable concern"
 def _run_npx(root: Path, args: list[str], tool: str):  # noqa: ANN201
     """Run an `npx ...` command in root via the exec kill switch (T-0200).
     Returns `None` if npx is missing/times out, `_NPX_DISABLED` if the

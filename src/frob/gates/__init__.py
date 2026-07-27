@@ -3667,6 +3667,10 @@ def _cov005_file(
     return violations
 
 
+# frob:waive ARCH103 reason="T-0977: `git show`-and-parse helper -- reads \
+# the base revision's blob, parses its frob: directives, degrades to empty \
+# on any not-found/parse failure; the parse-degrade branching IS the \
+# single 'old directive bindings, or none' concern the docstring names"
 def _old_directive_bindings(
     root: Path, base: str, file: str
 ) -> tuple[tuple[EdgeKind, str, str, bool], ...]:

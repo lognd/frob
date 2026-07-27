@@ -15,6 +15,10 @@ _log = get_logger(__name__)
 # frob:doc docs/guides/worktree-pool.md#cli-frob-scaffold-pool-t-0877
 # frob:ticket T-0877
 # frob:tests tests/system/test_scaffold_pool_cli.py::TestScaffoldPoolCli.test_warm_lease_status_roundtrip  # noqa: E501
+# frob:waive ARCH103 reason="T-0977: thin CLI wrapper dispatching to \
+# warm_pool/lease_worktree/pool_status by subcommand and rendering the \
+# result text-or-json -- the dispatch+render IS this wrapper's whole \
+# documented job (see docstring)"
 def _run_pool(cfg: AppConfig) -> None:
     """`frob scaffold pool warm/lease/status` (T-0877): thin CLI wrapper
     over `frob.scaffold._pool`'s `warm_pool`/`lease_worktree`/

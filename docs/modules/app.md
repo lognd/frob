@@ -36,6 +36,11 @@ class App
     # usage and exits 1.
 ```
 
+`App.__call__` carries a `frob:waive ARCH103` (T-0977, docs/audits/
+gates-quality.md's T-0977 section): the resolve-dispatch-or-usage-error
+shape IS the dispatcher's one documented job above, not a separable
+concern.
+
 ## Config
 
 <!-- frob:describes src/frob/app/config.py::Subcommand -->

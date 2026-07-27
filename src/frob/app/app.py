@@ -127,6 +127,11 @@ class App:
     def __init__(self, cfg: AppConfig) -> None:
         self._cfg = cfg
 
+    # frob:waive ARCH103 reason="T-0977: the CLI dispatch entrypoint's one \
+    # job IS orchestration -- resolve subcommand, format the usage error, \
+    # exit; splitting the usage message out would add indirection with no \
+    # cohesion gain, and the dispatch table itself already lives in \
+    # _dispatch_table()"
     def __call__(self) -> None:
         # frob:ticket T-0021
         subcommand = self._cfg.subcommand

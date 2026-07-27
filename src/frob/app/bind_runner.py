@@ -40,6 +40,10 @@ def _print_items(items, as_json: bool) -> None:
 
 
 # frob:ticket T-0562
+# frob:waive ARCH103 reason="T-0977: report-and-exit CLI helper -- its one \
+# job is rendering `mismatches` in the caller's chosen format (text vs \
+# json) and setting the exit code; the json/text branch IS the reporting \
+# concern, not a separate one to extract"
 def _report_mismatches(mismatches, as_json: bool, root: Path) -> None:
     """Print binding/source mismatches; exit non-zero on any text-mode mismatch."""
     renderer = Renderer.for_stream(sys.stdout)

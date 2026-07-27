@@ -374,6 +374,38 @@ def _py_call_args(node: Node) -> list[NormalizedCallArg]:
     return out
 
 
+def _py_is_self_attribute(node: Node) -> bool:
+    """Whether an `attribute` node is a genuine `self.<field>` READ or
+    WRITE (T-0977, audit finding 4 / ARCH101 false-positive root cause) --
+    both of: (1) its OBJECT half is the bare identifier `self`, and (2) it
+    is NOT itself the callee position of a `call` (`self.method(...)`,
+    which is a method invocation, not a field access -- the callee already
+    lands in `calls` via `NormalizedCall`, separately). The field-access
+    extractor previously recorded EVERY `X.attr` expression as a
+    `field_access` regardless of either check -- `node.ops` (a local AST-
+    node parameter, not `self`), `self.generic_visit(...)` and
+    `self._hit(...)` (method calls, not field reads/writes), and any other
+    object's attribute all counted. That silently fed
+    `frob.arch._srp.check_lcom4` (ARCH101) a field-usage graph padded with
+    unrelated identifiers shared only by call-graph coincidence (e.g. two
+    unrelated methods both calling `self._hit` looked like they shared a
+    field named `_hit`), producing exactly the kind of gameable,
+    structure-blind false signal this repo's arch audit already flagged
+    for other checks (docs/audits/gates-quality.md finding 4). Restricting
+    to genuine `self.<name>` reads/writes (the only shape
+    `NormalizedFieldAccess`'s own docstring -- "`self.x`, `this->x`,
+    `obj.attr`" -- and every LCOM4 consumer already assumes) is the fix."""
+    obj = _child(node, "object")
+    if obj is None or obj.type != "identifier" or _node_text(obj) != "self":
+        return False
+    parent = node.parent
+    if parent is not None and parent.type == "call":
+        func = _child(parent, "function")
+        if func is not None and func.id == node.id:
+            return False
+    return True
+
+
 def _py_is_field_write(node: Node) -> bool:
     """Whether an `attribute` node (`self.x`) is the assignment-target of an
     `assignment` (a write) rather than being read."""
@@ -460,7 +492,7 @@ def _py_collect_body_events(
                     declared_raises=_frob_raises_declaration(source_lines, call_line),
                 )
             )
-        if c.type == "attribute":
+        if c.type == "attribute" and _py_is_self_attribute(c):
             field_name_node = _child(c, "attribute")
             if field_name_node is not None:
                 field_accesses.append(

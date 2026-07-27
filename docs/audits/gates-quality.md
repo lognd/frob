@@ -373,3 +373,119 @@ Per-category promote-or-advisory decision, each with its live unwaived count:
 Draft ids (`T-0976`, `T-0977`) are renumbered to real `T-####` ids at
 land time per this repo's normal convention; re-resolve via `frob ticket show` at pickup
 time rather than trusting the draft id past this session.
+
+---
+
+## T-0977: ARCH101/102/103 burn-down + fresh design decision on ARCH102's heuristic
+
+Measured live via chunked `frob check --only gates-native --json` (2026-07-27,
+post-`main`-merge, natives rebuilt). Baseline at pickup: ARCH101 2 live/0 waived,
+ARCH102 23 live/0 waived, ARCH103 24 live/0 waived (matching T-0970's hand-off).
+
+### Root-cause bug found and fixed: `frob.arch._python`'s field-access extractor
+
+Both ARCH101 findings (`_Mutator`, `_PointCollector` in `src/frob/mutate/__init__.py`)
+turned out to be false positives from a bug in `_py_collect_body_events`
+(`src/frob/arch/_python.py`): every `attribute` tree-sitter node was recorded as a
+`self.<field>` read/write regardless of (a) whether the object half was actually `self`
+(`node.ops`, a local AST-node parameter, was being counted as a "field" access), or (b)
+whether the attribute was the callee of a method call (`self._hit(...)`, a call, not a
+field read/write -- already captured separately via `NormalizedCall`). This inflated
+`_Mutator`'s/`_PointCollector`'s apparent field-usage graph with coincidental shared
+"fields" that were really just shared helper-method names, producing exactly the kind of
+gameable, structure-blind false signal finding 4 already flagged for other `frob.arch`
+checks. Fixed via a new `_py_is_self_attribute` guard (object must be the bare identifier
+`self`, and the attribute must not be a call's own callee); both ARCH101 findings drop to
+zero without touching `mutate/__init__.py` itself. Covered by the existing
+`tests/unit/test_arch_srp.py` / `tests/unit/test_arch.py` suites (symref format changed --
+tests updated to the now-path-qualified `path::qualname` shape below).
+
+### Second bug found and fixed: ARCH1xx symrefs were never waivable
+
+Independently of the above, `frob.arch._srp.check_lcom4`/`check_mixed_concern_function`
+set `symref` to a BARE qualname (`"BigService"`, `"run"`) while `frob.gates._match_waiver`'s
+symref-exact matching path (used whenever a violation carries a `symref`) requires the
+`path::qualname` shape `frob.graph.dsl._enclosing_src` produces for every
+`frob:waive`-bearing symbol (the same shape `ARCH001`'s `frob.arch._python` symref already
+used). This meant NO `frob:waive ARCH101`/`ARCH103` placed above a class/function could
+ever match -- an invisible-until-tested gap, since neither rule had ever needed a real
+waiver before this ticket. Fixed by qualifying both symrefs with `module.path::` in
+`frob.arch._srp` (ARCH102 has no per-symbol `symref` at all -- module-level only -- so it
+was unaffected). Verified working by exercising the 22 waivers below (see ARCH103 section).
+
+### ARCH101 (low-cohesion-class) -- 0 live, promoted to error
+
+Both findings were the false positives above; fixed at the root cause (extractor, not the
+2 sites). `[gates.severity] ARCH101 = "error"` in `frob.toml`. Verified: a full
+`frob check --only gates-native` run after the flip shows `pass gate:ARCH 0 errors, 82
+warnings, 16 waived` -- the flip does not red `main`.
+
+### ARCH102 (god-module) -- 23 -> 11 live, heuristic fixed, STAYS advisory
+
+Audited the clustering heuristic (`frob.arch._srp._god_module_clusters`) for finding 4's
+named blind spot ("gameable by restructuring exports without changing real cohesion").
+Found it: a module whose top-level exports are predominantly pure DATA classes (zero
+methods -- a pydantic `BaseModel`, a `dataclass`, a `StrEnum`, an `ErrorSet`) has, BY
+CONSTRUCTION, no possible "usage" edge (a data class calls nothing) and its naming-prefix
+signal is just its own unique class name -- so a conventional, deliberate `_models.py`
+catalogue of N unrelated DTOs inevitably clusters into N singleton groups, the maximum
+possible fragmentation, regardless of how well-organized the file actually is. Confirmed
+against this repo's own findings: `cve/_models.py` (15 classes, 0 methods),
+`dup/_models.py` (11/0), `gates/_models.py` (14/0), `strata/_ast.py` (39 classes/1 method)
+were exactly this shape. Fixed by excluding zero-method classes from the export/cluster
+count entirely in `_export_name_and_prefix` (`frob.arch._srp`); new tests
+`test_data_only_classes_are_excluded_from_god_module` /
+`test_method_bearing_classes_still_count_toward_god_module` in
+`tests/unit/test_arch_srp.py` pin both the fix and that method-bearing classes still
+count. Live findings dropped 23 -> 11 (measured, see the table below).
+
+**Decision: ARCH102 stays advisory (WARN), NOT promoted.** The heuristic's most severe,
+audit-named unsoundness is fixed, but 11 real findings remain, all requiring an actual
+module split (or an honest per-file waiver) to clear -- out of this ticket's time budget
+and, for 2 of the 11 (`gates/__init__.py`, which is also `T-0976`'s ARCH001 scope),
+overlapping a sibling agent's concurrent work. Promoting with 11 live findings would red
+`main` immediately, which this ticket's own dispatch instructions rule out. Burn-down +
+promotion tracked in a filed follow-up (draft id at write time, renumbered at land per
+this doc's normal convention -- resolve via `frob ticket show` at pickup).
+
+Remaining 11 (module, exports/clusters): `gates/__init__.py` 302/3, `gitio.py` 15/3,
+`graph/__init__.py` 21/3, `graph/cache.py` 21/3, `lang/__init__.py` 22/11,
+`perf/_sketch_store.py` 13/3, `render/_elements.py` 10/9, `stats/_sketch.py` 10/5,
+`strata/_sysdoc.py` 13/3, `tickets/__init__.py` 111/7, `tickets/_models.py` 21/5.
+
+### ARCH103 (mixed-concern-function) -- 24 -> 2 live, promotion blocked on 2 sites
+
+Burned down 22 of 24 via a reasoned `frob:waive ARCH103` at each site (CLI
+`frob.app.*_runner` entrypoints and best-effort I/O helpers whose whole documented job IS
+the orchestration/degrade-and-log shape the check flags -- see each waiver's `reason=` in
+the source for the specific argument per site). The remaining 2
+(`src/frob/gates/_fmt_directives.py:288 format_paths`,
+`src/frob/natives/_build.py:122 build_natives`) are BOTH in `T-0976`'s concurrent ARCH001
+finding list for the same files/functions -- left untouched per this ticket's own
+coordination instruction (do not refactor, and by extension do not permanently waive
+either, functions a sibling agent's ticket is actively deciding extract-vs-waive on for a
+different rule). **Decision: ARCH103 stays "warning" in `frob.toml`, NOT promoted this
+round** (2 live findings would red `main`); promotion tracked in the same follow-up as the
+2 sites, blocked on `T-0976`.
+
+**Executed this ticket:**
+- `frob.arch._python._py_is_self_attribute` (new): restricts `NormalizedFieldAccess`
+  extraction to genuine `self.<field>` reads/writes, fixing the ARCH101 false-positive
+  root cause. `tests/unit/test_arch.py`/`test_arch_srp.py` cover the existing suite
+  (updated for the now-qualified symref shape) plus the fixed extraction.
+- `frob.arch._srp._is_data_only_class` (new) + `_export_name_and_prefix` filtering: the
+  ARCH102 heuristic-soundness fix, with 2 new tests in `test_arch_srp.py`.
+- `frob.arch._srp.check_lcom4`/`check_mixed_concern_function`: `symref` now
+  `f"{module.path}::{name}"`, matching `frob.graph.dsl._enclosing_src`'s waiver-binding
+  shape -- fixes ARCH101/103 waivability (previously silently broken).
+- `[gates.severity] ARCH101 = "error"` in `frob.toml` (0 live findings).
+- 22 `frob:waive ARCH103 reason="..."` sites across `src/frob/app/*_runner.py`,
+  `src/frob/check/_ts.py`, `src/frob/fuzz/_signatures.py`, `src/frob/gates/__init__.py`,
+  `src/frob/testing/_collect.py`, `src/frob/testing/_runners.py`,
+  `src/frob/tickets/_store.py`, `src/frob/vet/_nvd.py`, `src/frob/vet/_registry.py`.
+
+**Children filed:**
+- Draft id at write time (renumbered at land) -- ARCH102 burn-down + promotion (11
+  findings, module list above).
+- Draft id at write time (renumbered at land), `blocked_by` the real id `T-0976`
+  resolves to -- ARCH103's last 2 sites + promotion.

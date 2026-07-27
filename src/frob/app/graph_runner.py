@@ -92,6 +92,9 @@ def _render_query_lines(ref: str, record, outgoing, incoming) -> list[str]:  # n
     return lines
 
 
+# frob:waive ARCH103 reason="T-0977: `frob graph query` CLI entrypoint -- \
+# resolves the ref against the loaded snapshot and renders it text-or-json; \
+# same runner shape as every other `_run_*` in this module"
 def _run_query(root: Path, cache: Path, cfg: AppConfig) -> None:
     from frob.graph import edges_from, edges_to, resolve
 
@@ -202,6 +205,9 @@ def _why_drift_facts(root: Path, snapshot, ref: str):  # noqa: ANN201
     )
 
 
+# frob:waive ARCH103 reason="T-0977: `frob graph why` CLI entrypoint -- \
+# same runner shape as `_run_query`/`_run_affects` in this module: resolve, \
+# render text-or-json, exit"
 def _run_why(root: Path, cache: Path, cfg: AppConfig) -> None:
     from frob.graph import resolve
 
@@ -267,6 +273,9 @@ def _render_affects_lines(aff) -> list[str]:  # noqa: ANN001
 # frob:tests tests/test_graph_affects_runner.py::TestGraphAffectsRunner.test_human_mode_reports_dependents_docs_tests  # noqa: E501
 # frob:tests tests/test_graph_affects_runner.py::TestGraphAffectsRunner.test_json_mode_payload  # noqa: E501
 # frob:tests tests/test_graph_affects_runner.py::TestGraphAffectsRunner.test_truncated_closure_flagged  # noqa: E501
+# frob:waive ARCH103 reason="T-0977: `frob graph affects` CLI entrypoint -- \
+# same runner shape as `_run_query`/`_run_why` in this module: resolve, \
+# render text-or-json, exit"
 def _run_affects(root: Path, cache: Path, cfg: AppConfig) -> None:
     """`frob graph affects <ref>`: the CLI counterpart T-0325 deliberately
     cut (docs/modules/graph.md#affects) -- prints the same `AffectedSet`

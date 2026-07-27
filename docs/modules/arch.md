@@ -1284,8 +1284,16 @@ SRP question. The graph itself: one node per field-using method, an edge
 between two methods that share at least one field name, connected
 components via union-find. 2+ components means the class bundles
 independent responsibilities under one name; `metric` carries the
-component count, `symref` the class name (so a `ceiling=N` waiver can
-re-fire once the class's cluster count grows further).
+component count, `symref` is now `f"{module.path}::{class_name}"` (T-0977
+-- previously the bare class name, which could never match
+`frob.graph.dsl._enclosing_src`'s `path::qualname` waiver-binding shape,
+so a `frob:waive ARCH101` placed above the class silently never matched
+anything; fixed alongside `mixed-concern-function`'s `symref` below).
+T-0977 also promoted `ARCH101` to `[gates.severity] ARCH101 = "error"` in
+`frob.toml` once its 2 live findings (both false positives from a
+`frob.arch._python` field-access extraction bug -- see that module's
+`_py_is_self_attribute`) were fixed at the root cause; see
+docs/audits/gates-quality.md's T-0977 section for the measured evidence.
 
 **`god-module` (ARCH102, `check_god_module`).** Skips modules with fewer
 than `GOD_MODULE_MIN_EXPORTS` (10) top-level exports. Clustering combines
@@ -1298,6 +1306,18 @@ clusters regardless of naming, and two exports sharing a naming family
 are never split regardless of whether they call each other. `GOD_MODULE_
 MIN_CLUSTERS` (3) disjoint clusters after both unions is the "does
 everything" shape this check targets; `metric` carries the cluster count.
+T-0977 excludes a zero-method class (`_is_data_only_class`) from the
+export/cluster count entirely before either union runs: a pure data
+container (a pydantic `BaseModel`, `dataclass`, `StrEnum`, `ErrorSet`
+variant bundle) calls nothing, so it can never form a usage edge, and its
+only naming signal is its own unique class name -- a conventional flat
+`_models.py` catalogue of N such classes inevitably clustered into N
+singleton groups pre-fix regardless of real cohesion (docs/audits/
+gates-quality.md finding 4's named blind spot for this heuristic,
+confirmed against this repo's own `cve/_models.py`/`dup/_models.py`/
+`gates/_models.py`/`strata/_ast.py`). This check stays advisory (not
+promoted) -- see docs/audits/gates-quality.md's T-0977 section for the
+11 real findings still open and the promotion criterion.
 
 **`mixed-concern-function` (ARCH103, `check_mixed_concern_function`).**
 Requires ALL THREE of: an I/O-capability call (`_is_io_call` -- the
@@ -1312,6 +1332,14 @@ or two of the three alone is ordinary code (a function that prints a
 formatted string is not a smell); only all three together is the
 "one body, three unrelated concerns" shape this check targets -- the
 same STRONG-HALLMARK-ONLY posture `frob.arch._patterns` already uses.
+`symref` is now `f"{module.path}::{qualname}"` (T-0977, same
+waiver-binding fix as `low-cohesion-class` above). T-0977 burned 22 of
+this rule's 24 live findings down via a reasoned per-site
+`frob:waive ARCH103`; the last 2 (`_fmt_directives.py::format_paths`,
+`natives/_build.py::build_natives`) are deliberately left live pending a
+concurrent sibling ticket's ARCH001 work on the same functions -- see
+docs/audits/gates-quality.md's T-0977 section. `[gates.severity] ARCH103`
+stays `"warning"` until those 2 clear.
 
 **`run_srp_checks(module) -> list[ArchSuggestion]`** runs all three above
 against one `NormalizedModule` and returns the combined findings. T-0728's

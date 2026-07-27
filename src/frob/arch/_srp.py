@@ -29,7 +29,7 @@ orchestration and `frob.app.config` are untouched here).
 from __future__ import annotations
 
 from frob.arch._models import ArchSuggestion
-from frob.arch._normalized import NormalizedFunction, NormalizedModule
+from frob.arch._normalized import NormalizedClass, NormalizedFunction, NormalizedModule
 
 # ---------------------------------------------------------------------------
 # ARCH101: LCOM4 low-cohesion class
@@ -142,7 +142,7 @@ def check_lcom4(
                     " responsibilities -- consider splitting the class along"
                     " those groups"
                 ),
-                symref=c.name,
+                symref=f"{module.path}::{c.name}",
                 metric=n_components,
             )
         )
@@ -167,12 +167,34 @@ GOD_MODULE_MIN_EXPORTS = 10
 GOD_MODULE_MIN_CLUSTERS = 3
 
 
+def _is_data_only_class(c: NormalizedClass) -> bool:
+    """Whether `c` is a pure data container (T-0977, audit finding 4 on
+    T-0970/T-0399): a class with zero methods -- a pydantic `BaseModel`, a
+    `dataclass`, a `StrEnum`, an `ErrorSet` variant bundle, or any other
+    fields-only declaration. Such a class cannot participate in a "usage"
+    edge (it calls nothing) and its only naming signal is its own name, so
+    a file that is a deliberate flat catalogue of many unrelated DTOs
+    (a conventional `_models.py`) inevitably clusters into
+    `len(classes)`-many singleton groups -- maximal fragmentation by
+    construction, not evidence of god-module sprawl. Excluding data-only
+    classes from the export/cluster count entirely (rather than just
+    de-weighting them) is the fix: measured against this repo's own
+    `_models.py`-shaped files, it removes exactly the false-positive class
+    (`cve/_models.py`, `dup/_models.py`, `gates/_models.py`,
+    `strata/_ast.py` all drop out at zero non-data-only exports) while
+    leaving files that mix real behavior across many classes/functions
+    (`gates/__init__.py`, `tickets/_models.py`) untouched."""
+    return len(c.methods) == 0
+
+
 def _export_name_and_prefix(module: NormalizedModule) -> list[tuple[str, str]]:
     """`(name, naming_prefix)` for every top-level export (free function or
-    class) in `module` -- `naming_prefix` is the first `_`-delimited token
-    of a `snake_case` name lowercased (a `CamelCase` class name is split on
-    its first internal capital run instead), the cheap naming-cluster
-    signal T-0616 calls for ("clustered by naming ... disjointness")."""
+    method-bearing class) in `module` -- `naming_prefix` is the first
+    `_`-delimited token of a `snake_case` name lowercased (a `CamelCase`
+    class name is split on its first internal capital run instead), the
+    cheap naming-cluster signal T-0616 calls for ("clustered by naming ...
+    disjointness"). T-0977 excludes data-only classes (`_is_data_only_class`)
+    from this list entirely -- see that helper's docstring for why."""
 
     def _prefix(name: str) -> str:
         if "_" in name:
@@ -188,6 +210,8 @@ def _export_name_and_prefix(module: NormalizedModule) -> list[tuple[str, str]]:
     for f in module.functions:
         out.append((f.name, _prefix(f.name)))
     for c in module.classes:
+        if _is_data_only_class(c):
+            continue
         out.append((c.name, _prefix(c.name)))
     return out
 
@@ -401,7 +425,7 @@ def check_mixed_concern_function(
                         " logic into separate functions so each has one"
                         " reason to change"
                     ),
-                    symref=qualname,
+                    symref=f"{module.path}::{qualname}",
                     metric=_decision_points(func),
                 )
             )

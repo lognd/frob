@@ -69,7 +69,7 @@ class TestLcom4:
         s = out[0]
         assert s.category == "low-cohesion-class"
         assert s.severity == "warning"
-        assert s.symref == "BigService"
+        assert s.symref == "big_service.py::BigService"
         assert s.metric == 2
         assert "BigService" in s.message
 
@@ -172,6 +172,51 @@ class TestGodModule:
         check_god_module(module, out, min_exports=5, min_clusters=3)
         assert out == []
 
+    def test_data_only_classes_are_excluded_from_god_module(self) -> None:
+        # T-0977 (audit finding 4): a flat catalogue of unrelated pydantic-
+        # style data classes (zero methods each) is a conventional
+        # `_models.py` shape, not a god-module -- every class here has a
+        # distinct naming prefix and zero methods, so pre-fix this would
+        # cluster into 10 singleton groups and fire; post-fix, data-only
+        # classes are excluded from the export count entirely and the
+        # module drops below `min_exports`.
+        classes = [
+            NormalizedClass(name=f"Model{i}", line=1, fields=[]) for i in range(10)
+        ]
+        module = NormalizedModule(path="models.py", language="python", classes=classes)
+        out: list = []
+        check_god_module(module, out)
+        assert out == []
+
+    def test_method_bearing_classes_still_count_toward_god_module(self) -> None:
+        # A class with at least one method is real behavior, not a pure
+        # data container -- it must still be counted (T-0977 excludes only
+        # zero-method classes, not classes in general).
+        classes = (
+            [
+                NormalizedClass(name=f"user_{i}", line=1, methods=[_method("run", [])])
+                for i in range(4)
+            ]
+            + [
+                NormalizedClass(
+                    name=f"billing_{i}", line=1, methods=[_method("run", [])]
+                )
+                for i in range(4)
+            ]
+            + [
+                NormalizedClass(
+                    name=f"report_{i}", line=1, methods=[_method("run", [])]
+                )
+                for i in range(4)
+            ]
+        )
+        module = NormalizedModule(
+            path="services.py", language="python", classes=classes
+        )
+        out: list = []
+        check_god_module(module, out)
+        assert len(out) == 1
+
 
 class TestMixedConcernFunction:
     """ARCH103."""
@@ -199,7 +244,7 @@ class TestMixedConcernFunction:
         s = out[0]
         assert s.category == "mixed-concern-function"
         assert s.severity == "suggestion"
-        assert s.symref == "build_report"
+        assert s.symref == "report.py::build_report"
 
     def test_single_concern_does_not_trigger(self) -> None:
         from frob.arch._normalized import NormalizedBranch, NormalizedCall
@@ -423,7 +468,7 @@ class TestAnalyzeProjectWiring:
             s for s in result.suggestions if s.category == "low-cohesion-class"
         ]
         assert len(low_cohesion) == 1
-        assert low_cohesion[0].symref == "BigService"
+        assert low_cohesion[0].symref == "mod.py::BigService"
 
     def test_cohesive_class_does_not_fire_arch101(self, tmp_path: Path) -> None:
         """The negative fixture (`_LCOM4_COHESIVE_SOURCE`) produces no
@@ -464,7 +509,7 @@ class TestArchGateSrpWiring:
         (tmp_path / "mod.py").write_text(_LCOM4_TWO_CLUSTER_SOURCE)
         violations = [v for v in arch_gate(tmp_path) if v.rule == "ARCH101"]
         assert len(violations) == 1
-        assert violations[0].symref == "BigService"
+        assert violations[0].symref == "mod.py::BigService"
 
     def test_cohesive_class_does_not_fire_arch101(self, tmp_path: Path) -> None:
         from frob.gates._arch import arch_gate
