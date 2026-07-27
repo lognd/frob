@@ -84,13 +84,17 @@ node payments : trusted {
 ```
 
 `MULTI_INSTANCE_WAIVER_FAMILIES` (`_waive.py`) names the families that
-REQUIRE a sub-target: `SYS100`, `SYS101`, `THREAT002`, `THREAT003`. A
-`waive` clause on one of these with no `:SUBTARGET` is an ELABORATE-TIME
-error (`StrataError.MalformedWaiver`) -- the grammar accepts the bare
-string (it does not know which rules are multi-instance; that is a
-Python-side vocabulary fact), but `_elaborate.py::_validate_waivers`
-rejects it before a `KernelModel` can exist. There is no silent "assume
-it means every instance" fallback.
+REQUIRE a sub-target: `SYS100`, `SYS101`, `THREAT002`, `THREAT003`, and
+(the same per-flow reasoning, one node can originate several flows)
+`REL200`/`REL201`, `REL220`/`REL221`/`REL222`, `REL270`/`REL271`/
+`REL272`, and `REL370`/`REL371`/`REL372` (T-0657's CLOCK/ORDERING-
+ASSUMPTIONS family, `_clock_ordering.py`). A `waive` clause on one of
+these with no `:SUBTARGET` is an ELABORATE-TIME error
+(`StrataError.MalformedWaiver`) -- the grammar accepts the bare string
+(it does not know which rules are multi-instance; that is a Python-side
+vocabulary fact), but `_elaborate.py::_validate_waivers` rejects it
+before a `KernelModel` can exist. There is no silent "assume it means
+every instance" fallback.
 
 Single-instance-per-node families keep the bare-rule form -- `LINT001-005`
 (one finding per node per rule; `_lint.py::check_lint_kill_switch` folds

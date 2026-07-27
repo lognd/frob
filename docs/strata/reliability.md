@@ -916,6 +916,364 @@ node legacy_event : trusted {
 }
 ```
 
+## REL33x: DELIVERY-SEMANTICS obligation (T-0652)
+
+`_delivery_semantics.py::check_delivery_semantics_obligations` reads
+`KernelModel.nodes` (no new kernel field, charter law 1) to find every
+`queue` node (`_backpressure.py`/`_message_schema.py`'s existing
+population, module docstring: a THIRD orthogonal obligation on the same
+`queue` marker, alongside REL26x's bounded-intake and REL32x's
+schema-version) with an undischarged or unproven delivery-semantics
+obligation. A queue with no declared delivery semantics leaves a consumer
+unable to reason about duplicate/loss risk: a consumer written assuming
+exactly_once processing silently double-applies side effects against an
+at_least_once queue, with no declared contract to catch the mismatch.
+
+- **REL330 missing/invalid delivery semantics** -- a `queue` node with no
+  `delivery=<value>` attr, or one whose value is not one of the fixed two
+  (`exactly_once`, `at_least_once`). Deny-by-default, folded into one
+  rule (the `_pii.py::check_pii_catalog` precedent that a malformed
+  declaration is itself a form of "not declared" -- neither gives a
+  consumer a real contract to code against).
+- **REL331 unproven delivery semantics** -- a queue node DOES declare a
+  valid `delivery=<value>`, but the T-0331 PROVABILITY CONSTRAINT forbids
+  discharging it by bare declaration alone: the node must have at least
+  one file bound to it containing a real delivery-semantics-shaped
+  token. A node with no bound code at all is UNCHECKABLE, not unproven --
+  the same ceiling REL201/REL222/REL231/REL261/REL271/REL281/REL291/
+  REL301/REL311/REL321 draw.
+
+### Surface vocabulary
+
+```
+node ingest_queue : trusted {
+    queue;
+    attr delivery=exactly_once;   // OR at_least_once; discharges REL330
+                                    // REL331 then checks bound code
+}
+```
+
+`delivery=<value>` is an IDENT-valued attr (the same
+`retention=<value><unit>` convention `_compliance.py` establishes), not a
+bare presence-only marker -- this family genuinely needs a two-way
+distinction. The grammar's generic `attr KEY=IDENT` clause
+(`strata-core/src/parse.rs::Parser::parse_attrval`, already exercised by
+its own `attr delivery=at_least_once;` parser fixture) forces the
+underscore-joined spelling, not the hyphenated prose form.
+
+### GRAMMAR-DATA CEILING, HONESTLY
+
+`delivery=<value>` proves PRESENCE of one of exactly two catalogued
+values and its code-level evidence, not a specific broker configuration
+or dedup-window size. REL331's proof-against-code is a syntactic token
+scan (`idempotenc*`/`dedup*`/`idempotency_key` for exactly_once,
+`ack(`/`nack(`/`redeliver*`/`retry` for at_least_once) over the node's
+bound source, not a semantic call-argument binding -- the same "ship
+what current tooling supports" honesty line REL201/REL222/REL231/REL261/
+REL271/REL281/REL291/REL301/REL311/REL321 already establish.
+
+### Waiver channel
+
+REL330/REL331 do NOT join `_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES`,
+same as REL210/REL211/REL230/REL231/REL240/REL241/REL250/REL260/REL261/
+REL280/REL281/REL290/REL291/REL300/REL301/REL310/REL311/REL320/REL321: a
+node carries at most one `queue` marker and fires at most one REL330 and
+one REL331 finding, so a bare-rule `waive` clause names exactly one
+thing:
+
+```
+node legacy_queue : trusted {
+    queue;
+    waive "REL330" reason "legacy queue, delivery semantics tracked in T-9910-followup" ticket "T-9910";
+}
+```
+
+## REL34x: SYNC CALL-CHAIN DEPTH bound (T-0654)
+
+`_sync_depth.py::check_sync_chain_depth` reads `KernelModel.flows` (no
+new kernel field, charter law 1) to find every node reached only via a
+too-deep chain of synchronous flow hops. Unlike every sibling REL3xx
+family in this ticket cluster, REL34x is ONE RULE, not a missing/unproven
+pair (the same `_spof.py`/REL25x shape): call-chain depth is a
+STRUCTURAL fact computed straight from the model's flows, not an
+operator-declared obligation needing separate proof-against-code.
+
+A synchronous call chain that grows too deep is a cascading-latency/
+failure risk: each hop adds its own latency to the critical path, and a
+failure at the bottom of a deep chain propagates back through every
+synchronous caller above it. A flow marked `async` (`_crash.py::
+_ASYNC_ATTR`, reused directly -- the same "this hop does not block its
+caller" fact, at the same grammar site) breaks the chain: the depth
+measured here does not continue past an async hop.
+
+- **REL340 sync call-chain depth exceeded** -- some node is reached only
+  via `SYNC_CHAIN_MAX_DEPTH` (default 4) or more consecutive synchronous
+  (non-`async`) flow hops, and does not carry the `deep_chain_ok`
+  exemption attr. A synchronous CYCLE feeding a node is treated as an
+  unbounded chain (`math.inf`, the same cycle-to-inf discipline
+  `_facts.py::FactBase.worst_age` already establishes) -- always fires,
+  never silently clamped.
+
+### Surface vocabulary
+
+```
+node n0 : trusted {}
+node n1 : trusted {}
+node n2 : trusted {}
+node n3 : trusted {}
+node n4 : trusted { deep_chain_ok; }   // exempts n4 from REL340
+
+flow f0 : n0 -> n1 {}
+flow f1 : n1 -> n2 {}
+flow f2 : n2 -> n3 {}
+flow f3 : n3 -> n4 { attr async; }      // breaks the chain past n3
+```
+
+### GRAMMAR-DATA CEILING, HONESTLY
+
+`deep_chain_ok` is a presence-only bare Node attr (no numeric magnitude --
+the same digit-led-literal ceiling every other REL2xx/REL3xx marker in
+this family discloses), so a model cannot declare its own depth bound:
+`SYNC_CHAIN_MAX_DEPTH` is a fixed Python-side default, not a per-model
+override. This module deliberately does NOT reuse `_facts.py::
+FactBase.reachable`'s (T-0282) non-transitive-edge machinery directly --
+that machinery's terminal-attr sets are shared, `_facts.py`-owned
+constants encoding trust-boundary/KRB/utility semantics for every other
+closure consumer (PII, compliance, breach, krb-movement); folding
+`async` into that shared set would change taint-closure semantics for
+every one of those unrelated callers. REL340 instead computes its own,
+narrower longest-path-ending-at-node walk directly over `model.flows`,
+applying the SAME underlying "a marked edge is terminal" idea T-0282
+introduced, without touching the shared primitive. No `strata-core`
+change needed (this ticket's scope is `src/frob/strata/**`/`docs/strata/
+**`/`tests/unit/strata/**` only, same as T-0640/.../T-0653's).
+
+### Waiver channel
+
+REL340 does NOT join `_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES`, same
+as every other REL2xx/REL3xx rule in this cluster: a node either is or is
+not too deep this run, so a bare-rule `waive` clause names exactly one
+thing:
+
+```
+node n4 : trusted {
+    waive "REL340" reason "reviewed, independent slow paths that do not compound" ticket "T-9910";
+}
+```
+
+## REL35x: DISTRIBUTED-TRANSACTION-ACROSS-SERVICES obligation (T-0655)
+
+`_distributed_txn.py::check_distributed_txn_obligations` reads
+`KernelModel.flows`/`KernelModel.nodes` (no new kernel field, charter
+law 1) to find every op writing to two or more distinct downstream nodes
+with an undischarged or unproven saga/compensation obligation. BUILDS ON
+`_txn.py`'s REL30x multi-write detection (T-0650's own scope-cut note
+names this exact ticket), EXTENDED ACROSS SERVICE BOUNDARIES: REL2xx's
+own module docstring already discloses that every `Flow` in this grammar
+crosses a real process/service boundary by construction -- there is no
+in-process/self-flow construct -- so every node already IS its own
+service boundary. REL30x needed a caller-supplied `store_ids` set only
+to answer the NARROWER "writes to >=2 STORES" question; REL35x asks the
+BROADER "writes to >=2 SERVICES" question the ticket names, which is a
+plain `KernelModel.flows` fact needing no external input.
+
+- **REL350 missing saga/compensation** -- an op writing (mode-blind: ANY
+  outbound `Flow`) to >=2 distinct downstream nodes with no `saga` attr.
+  Unlike REL300 (which accepts EITHER `transaction` or `saga`), REL350
+  accepts `saga` ONLY: a bare `transaction` attr asserts a single
+  coordinated commit, not a meaningful claim once the write fans out
+  across independent service processes with no shared commit log.
+  Deny-by-default: a distributed write with no declared saga/
+  compensation strategy can leave services permanently inconsistent
+  after a partial failure, with no defined recovery.
+- **REL351 unproven saga** -- a multi-service-write op DOES declare
+  `saga`, but the T-0331 PROVABILITY CONSTRAINT forbids discharging it
+  by bare declaration alone: the op node must have at least one file
+  bound to it containing a real saga/compensation-shaped token. An op
+  with no bound code at all is UNCHECKABLE, not unproven -- the same
+  ceiling REL201/REL222/REL231/REL261/REL271/REL281/REL291/REL301/
+  REL311/REL321/REL331 draw.
+
+### Surface vocabulary
+
+```
+node checkout : trusted {
+    saga;      // REQUIRED here (unlike REL300, `transaction` alone does
+                // not discharge REL350); REL351 then checks bound code
+}
+
+flow f1 : checkout -> inventory_svc {}
+flow f2 : checkout -> billing_svc {}
+```
+
+### GRAMMAR-DATA CEILING, HONESTLY
+
+`saga` is a presence-only bare Node attr (no numeric magnitude -- the
+same digit-led-literal ceiling every other REL2xx/REL3xx marker in this
+family discloses), so REL350/REL351 prove PRESENCE of a declared saga/
+compensation obligation and its code-level evidence, not a specific saga
+coordinator or compensation algorithm. REL351's proof-against-code is a
+syntactic token scan (`saga`/`Saga(`, `compensat`, `two_phase_commit`/
+`2pc`) over the op's bound source, not a semantic call-argument binding
+-- the same "ship what current tooling supports" honesty line every
+sibling REL2xx/REL3xx rule already establishes.
+
+### Waiver channel
+
+REL350/REL351 do NOT join `_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES`,
+same as every other REL2xx/REL3xx rule in this cluster: an op fires at
+most one REL350 and one REL351 finding, so a bare-rule `waive` clause
+names exactly one thing:
+
+```
+node legacy_multi_write_op : trusted {
+    waive "REL350" reason "legacy multi-write op, saga tracked in T-9910-followup" ticket "T-9910";
+}
+```
+
+## REL36x: NO-SHARED-MUTABLE-STATE-ACROSS-SERVICE-BOUNDARIES obligation (T-0656)
+
+`_shared_state.py::check_shared_state` reads `KernelModel.flows` (no new
+kernel field, charter law 1) to find every MUTABLE node (one that is the
+`dst` of at least one `Flow` at all -- something writes into it) that is
+ACCESSED (touched as either `src` or `dst` of a `Flow`, read OR write) by
+`Flow`s connecting it to >=2 distinct other nodes. Unlike every sibling
+REL3xx family in this ticket cluster, REL36x is ONE RULE, not a missing/
+unproven pair -- the same `_spof.py`/REL25x shape: shared mutable state
+is a STRUCTURAL fact readable straight off the kernel model.
+
+RELATIONSHIP TO REL29x (SSOT), DISTINGUISHED: `_ssot.py`'s REL290/REL291
+already flag a store written by >=2 distinct nodes with no `owner`/
+`reconciliation` declared -- but that obligation is DISCHARGEABLE by
+naming who owns write authority; two services may still share the SAME
+mutable store as long as conflicts are reconciled. REL36x is a STRICTER,
+INDEPENDENT principle: services should not share mutable state directly
+at all (communicate via APIs/messages instead), regardless of whether
+the sharing is reconciled, so `owner`/`reconciliation` do NOT discharge
+REL360 -- only a dedicated `shared_state_ok` exemption does. REL36x's
+population is also BROADER: it counts every ACCESSOR (read or write),
+not just writers -- a read-only consumer of a store two independent
+services write into is still coupled to that store's shape and
+lifecycle, the same hazard class.
+
+- **REL360 shared mutable state across service boundaries** -- a mutable
+  node accessed by >=2 distinct other nodes, with no `shared_state_ok`
+  exemption attr. Every `Flow` in this grammar already crosses a real
+  process/service boundary by construction (REL2xx's own module
+  docstring), so >=2 distinct accessing nodes IS >=2 distinct services.
+  Deny-by-default with a reasoned waive channel (T-0174), same
+  discipline every REL2xx/REL3xx obligation in this cluster uses.
+
+### Surface vocabulary
+
+```
+node svc_a : trusted {}
+node svc_b : trusted {}
+node shared_db : trusted {
+    shared_state_ok;   // exempts shared_db from REL360
+}
+
+flow f1 : svc_a -> shared_db {}
+flow f2 : svc_b -> shared_db {}
+```
+
+### GRAMMAR-DATA CEILING, HONESTLY
+
+`shared_state_ok` is a presence-only bare Node attr -- the same digit-
+led-literal ceiling every other REL2xx/REL3xx marker in this family
+discloses. No `strata-core` change needed (this ticket's scope is
+`src/frob/strata/**`/`docs/strata/**`/`tests/unit/strata/**` only, same
+as T-0640/.../T-0655's).
+
+### Waiver channel
+
+REL360 does NOT join `_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES`, same
+as every other REL2xx/REL3xx rule in this cluster: a node either is or
+is not shared mutable state this run, so a bare-rule `waive` clause
+names exactly one thing:
+
+```
+node legacy_shared_db : trusted {
+    waive "REL360" reason "legacy shared db, migration tracked in T-9910-followup" ticket "T-9910";
+}
+```
+
+## REL37x: CLOCK/ORDERING-ASSUMPTIONS obligation (T-0657)
+
+`_clock_ordering.py::check_clock_ordering_obligations` reads
+`KernelModel.flows` (no new kernel field, charter law 1) to find every
+flow marked `clock_dependent` (this hop's correctness depends on
+comparing timestamps/wall-clock ordering across the two endpoints) with
+an undischarged or unproven ordering-strategy obligation, mirroring
+`_retry.py`'s REL22x flow-scoped structure. Every `Flow` in this grammar
+already crosses a real process/service boundary by construction (REL2xx's
+own module docstring), so a `clock_dependent` flow is, by definition, a
+distributed clock comparison.
+
+- **REL370 missing ordering strategy** -- a `clock_dependent` flow with
+  no `ordering_strategy` attr. Deny-by-default: a clock-dependent flow
+  with no declared ordering strategy silently trusts wall-clock
+  comparison across independent nodes, which drifts (NTP skew, VM
+  migration pauses, leap seconds).
+- **REL371 unproven ordering strategy** -- a `clock_dependent` flow DOES
+  declare `ordering_strategy`, but the T-0331 PROVABILITY CONSTRAINT
+  forbids discharging it by bare declaration alone: at least one of the
+  flow's endpoints must have bound code containing a real ordering-
+  strategy-shaped token. A flow with NEITHER endpoint bound to any code
+  at all is UNCHECKABLE, not unproven -- the same ceiling REL201/REL222/
+  REL231/REL261/REL271/REL281/REL291/REL301/REL311/REL321/REL331/REL351
+  draw.
+- **REL372 wall-clock-only discharge** -- a `clock_dependent` flow
+  declares `ordering_strategy`, has bound code, and that code DOES carry
+  an ordering-shaped token, but the ONLY such token is a bare wall-clock
+  read (`time.time()`/`datetime.now()`-shaped, no vector/logical-clock or
+  sequence-number construct alongside it). Flagged distinctly from
+  REL371's honest "no evidence at all" silence: this is a modeler who
+  declared the obligation and then re-implemented the exact hazard it
+  exists to catch.
+
+### Surface vocabulary
+
+```
+node replica_a : trusted {}
+node replica_b : trusted {}
+
+flow f1 : replica_a -> replica_b {
+    attr clock_dependent;
+    attr ordering_strategy;   // discharges REL370; REL371/REL372 then
+                                // check bound code
+}
+```
+
+### GRAMMAR-DATA CEILING, HONESTLY
+
+`clock_dependent`/`ordering_strategy` are both presence-only bare Flow
+attrs (no numeric magnitude, no actual clock algorithm name round-trips
+through the grammar -- the same digit-led-literal ceiling every other
+REL2xx/REL3xx marker in this family discloses), so REL370/REL371/REL372
+prove PRESENCE of a declared ordering obligation and its code-level
+evidence, not a specific clock algorithm. REL371/REL372's proof-against-
+code is a syntactic token scan (`vector_clock`/`logical_clock`/
+`lamport`/`sequence_number`/`happens_before`/`hlc` for a real ordering
+construct; `time.time(`/`datetime.now(`/`System.currentTimeMillis` for
+the wall-clock-only anti-pattern) over the bound endpoint(s)' source, not
+a semantic call-argument binding -- the same "ship what current tooling
+supports" honesty line every sibling REL2xx/REL3xx rule already
+establishes.
+
+### Waiver channel
+
+REL370/REL371/REL372 DO join `_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES`
+(same as REL200/REL201/REL220/REL221/REL222/REL270/REL271/REL272): a node
+can originate several `clock_dependent` flows, so a waive clause must
+name the specific flow via the `RULE:FLOW_ID` sub-target convention:
+
+```
+node replica_a : trusted {
+    waive "REL370:f1" reason "legacy flow, ordering tracked in T-9910-followup" ticket "T-9910";
+}
+```
+
 ## See also
 
 - `docs/strata/host.md#resource-contention-sys2xx-t-0699` -- the SYS2xx

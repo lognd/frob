@@ -1084,7 +1084,7 @@ after adding the new files)
 ```yaml
 id: T-0652
 title: 'strata: exactly-once vs at-least-once delivery-semantics declaration on queues'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -1098,20 +1098,92 @@ scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
+evidence:
+- tests/unit/strata/test_delivery_semantics.py::TestMissingDeliverySemantics::test_queue_node_without_delivery_semantics_fires
+- tests/unit/strata/test_delivery_semantics.py::TestMissingDeliverySemantics::test_invalid_delivery_value_fires
+- tests/unit/strata/test_delivery_semantics.py::TestMissingDeliverySemantics::test_discharged_and_non_queue_nodes_clean
+- tests/unit/strata/test_delivery_semantics.py::TestMissingDeliverySemantics::test_waiver_discharges_finding
+- tests/unit/strata/test_delivery_semantics.py::TestUnprovenDeliverySemantics::test_declared_with_no_code_evidence_fires
+- tests/unit/strata/test_delivery_semantics.py::TestUnprovenDeliverySemantics::test_declared_with_real_code_evidence_discharges
+- tests/unit/strata/test_delivery_semantics.py::TestUnprovenDeliverySemantics::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
 acceptance:
 - text: Given a queue node with no delivery-semantics declared, when checked, then
     the obligation fires
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_delivery_semantics.py::TestMissingDeliverySemantics::test_queue_node_without_delivery_semantics_fires
+  - tests/unit/strata/test_delivery_semantics.py::TestMissingDeliverySemantics::test_invalid_delivery_value_fires
+  - tests/unit/strata/test_delivery_semantics.py::TestMissingDeliverySemantics::test_discharged_and_non_queue_nodes_clean
+  - tests/unit/strata/test_delivery_semantics.py::TestMissingDeliverySemantics::test_waiver_discharges_finding
+  - tests/unit/strata/test_delivery_semantics.py::TestUnprovenDeliverySemantics::test_declared_with_no_code_evidence_fires
+  - tests/unit/strata/test_delivery_semantics.py::TestUnprovenDeliverySemantics::test_declared_with_real_code_evidence_discharges
+  - tests/unit/strata/test_delivery_semantics.py::TestUnprovenDeliverySemantics::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
 threat: null
 component: null
 ```
 Every queue node must declare its delivery semantics (exactly-once/at-least-once). Shares the queue-node surface work with the message-schema-version obligation.
 
+## Done report
+
+REL33x DELIVERY-SEMANTICS-obligation family (T-0652), mirroring the
+established REL3xx module pattern (_message_schema.py/_txn.py):
+
+- New module src/frob/strata/_delivery_semantics.py with REL330 (missing
+  or invalid delivery=<value> attr on a queue node -- catalog folded into
+  the missing rule per _pii.py::check_pii_catalog precedent) and REL331
+  (declared-but-unproven delivery semantics, proof-against-code,
+  T-0331 PROVABILITY CONSTRAINT).
+- Reuses the existing `queue` node population from _backpressure.py/
+  _message_schema.py -- a third orthogonal obligation on the same
+  population, no new kernel primitive.
+- GRAMMAR NOTE: the ticket body's prose spelling ("exactly-once"/
+  "at-least-once", hyphenated) is not writable through the existing
+  grammar -- strata-core/src/parse.rs's ATTRVAL production
+  (`IDENT ['=' IDENT]`) only accepts IDENT tokens, which cannot contain a
+  hyphen. The grammar already has a precedent parser fixture for exactly
+  this attr (`attr delivery=at_least_once;`, strata-core/src/parse.rs's
+  own `parses_flow_with_all_properties` test), using the underscore
+  spelling -- so DELIVERY_SEMANTICS uses `exactly_once`/`at_least_once`
+  to match what the parser actually accepts, not the ticket prose's
+  hyphenation. No grammar change was needed or made.
+- Wired __init__.py exports (DELIVERY_SEMANTICS, DELIVERY_SEMANTICS_RULES,
+  REL_MISSING_DELIVERY_SEMANTICS, REL_UNPROVEN_DELIVERY_SEMANTICS,
+  DeliverySemanticsReport, DeliverySemanticsViolation,
+  check_delivery_semantics_obligations).
+- New docs/strata/reliability.md REL33x section (surface vocabulary,
+  grammar-data ceiling, waiver channel), mirroring REL32x's shape.
+- New tests/unit/strata/test_delivery_semantics.py, 7 tests, all pass.
+
+Filed: none (no out-of-scope findings; ticket was not pre-implemented).
+
+Gates: frob check --ticket T-0652 clean across lint/static/gates-fast/
+gates-native/gates-security (chunked --only loop, agent-playbook section
+3b); the only errors seen (ty diagnostics in tests/test_gates.py, ruff-
+format on src/frob/arch/_lock_ordering.py etc.) are pre-existing and
+untouched by this ticket's scope. gate:PRE was refreshed clean via
+`frob ticket sweep T-0652` after adding the new files.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/strata/test_delivery_semantics.py::TestMissingDeliverySemantics::test_queue_node_without_delivery_semantics_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_delivery_semantics.py::TestMissingDeliverySemantics::test_invalid_delivery_value_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_delivery_semantics.py::TestMissingDeliverySemantics::test_discharged_and_non_queue_nodes_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_delivery_semantics.py::TestMissingDeliverySemantics::test_waiver_discharges_finding` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_delivery_semantics.py::TestUnprovenDeliverySemantics::test_declared_with_no_code_evidence_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_delivery_semantics.py::TestUnprovenDeliverySemantics::test_declared_with_real_code_evidence_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_delivery_semantics.py::TestUnprovenDeliverySemantics::test_declared_with_no_bound_code_is_uncheckable_not_a_violation` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 7 passed (from 7 evidence id(s))
+- gates: 0 error(s), 4181 warning(s), 219 waived
+- error-findings: none (measured, zero errors)
+
 <!-- ticket:T-0653 -->
 ```yaml
 id: T-0653
 title: 'strata: retention/TTL obligation on PII stores'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -1123,20 +1195,84 @@ scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
+evidence:
+- tests/unit/strata/test_pii.py::TestPiiRetentionErasure::test_pii_with_no_retention_or_erasure_fires_pii003
+- tests/unit/strata/test_pii.py::TestPiiRetentionErasure::test_declared_retention_discharges
+- tests/unit/strata/test_pii.py::TestPiiRetentionErasure::test_revocation_edge_discharges
+- tests/unit/strata/test_pii.py::TestPiiRetentionErasure::test_no_pii_no_finding
 acceptance:
 - text: Given a PII-tagged store with no retention/TTL declared, when checked, then
     the obligation fires
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_pii.py::TestPiiRetentionErasure::test_pii_with_no_retention_or_erasure_fires_pii003
+  - tests/unit/strata/test_pii.py::TestPiiRetentionErasure::test_declared_retention_discharges
+  - tests/unit/strata/test_pii.py::TestPiiRetentionErasure::test_revocation_edge_discharges
+  - tests/unit/strata/test_pii.py::TestPiiRetentionErasure::test_no_pii_no_finding
 threat: null
 component: null
 ```
 Every store holding PII must declare a retention/TTL policy (ties T-0207).
 
+## Done report
+
+T-0653 ("strata: retention/TTL obligation on PII stores") was already
+fully satisfied by PII003 (_pii.py::check_pii_retention_erasure, shipped
+under T-0154, before T-0653 was filed): a PII-carrying node with no
+retention= bound and no revocation-edge flow fires PII003 -- exactly
+this ticket's acceptance criterion ("given a PII-tagged store with no
+retention/TTL declared, when checked, then the obligation fires").
+
+No new code/rule module was added: the T-0331 systems-checks epic's
+REL3xx pattern says "one module per obligation, no duplication" --
+adding a second detector over the same carries/retention= population
+would duplicate PII003, not extend it. Verified this by reading
+_pii.py's module docstring, check_pii_retention_erasure's implementation,
+and tests/unit/strata/test_pii.py::TestPiiRetentionErasure's 4 existing
+tests (all pass, all bound as this ticket's evidence).
+
+Changed:
+docs/strata/threat.md -- added a cross-reference paragraph under the
+PII003 section explicitly naming T-0653 and explaining why no parallel
+REL3xx module was added (traceability only, no functional change).
+
+Evidence (pre-existing, bound to acceptance[0]):
+tests/unit/strata/test_pii.py::TestPiiRetentionErasure::test_pii_with_no_retention_or_erasure_fires_pii003
+tests/unit/strata/test_pii.py::TestPiiRetentionErasure::test_declared_retention_discharges
+tests/unit/strata/test_pii.py::TestPiiRetentionErasure::test_revocation_edge_discharges
+tests/unit/strata/test_pii.py::TestPiiRetentionErasure::test_no_pii_no_finding
+
+Filed: none.
+
+Gates: frob check --ticket T-0653 clean across lint/static/gates-fast/
+gates-native/gates-security (chunked --only loop); gate:PRE refreshed via
+`frob ticket sweep T-0653`.
+
+### Changed
+```
+ docs/strata/reliability.md                   |  72 ++++++
+ src/frob/strata/__init__.py                  |  16 ++
+ src/frob/strata/_delivery_semantics.py       | 343 +++++++++++++++++++++++++++
+ tests/unit/strata/test_delivery_semantics.py | 175 ++++++++++++++
+ tickets.md                                   |  75 +++++-
+ 5 files changed, 679 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_pii.py::TestPiiRetentionErasure::test_pii_with_no_retention_or_erasure_fires_pii003` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_pii.py::TestPiiRetentionErasure::test_declared_retention_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_pii.py::TestPiiRetentionErasure::test_revocation_edge_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_pii.py::TestPiiRetentionErasure::test_no_pii_no_finding` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 0 error(s), 4180 warning(s), 219 waived
+- error-findings: none (measured, zero errors)
+
 <!-- ticket:T-0654 -->
 ```yaml
 id: T-0654
 title: 'strata: SYNC CALL-CHAIN DEPTH bound obligation'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -1148,20 +1284,107 @@ scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
+evidence:
+- tests/unit/strata/test_sync_depth.py::TestSyncDepth::test_chain_below_bound_clean
+- tests/unit/strata/test_sync_depth.py::TestSyncDepth::test_chain_at_bound_fires
+- tests/unit/strata/test_sync_depth.py::TestSyncDepth::test_async_hop_breaks_the_chain
+- tests/unit/strata/test_sync_depth.py::TestSyncDepth::test_deep_chain_ok_exemption_discharges
+- tests/unit/strata/test_sync_depth.py::TestSyncDepth::test_sync_cycle_is_unbounded_and_fires
+- tests/unit/strata/test_sync_depth.py::TestSyncDepth::test_waiver_discharges_finding
 acceptance:
 - text: Given a sync call chain exceeding the declared/default depth bound, when checked,
     then the obligation fires
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_sync_depth.py::TestSyncDepth::test_chain_below_bound_clean
+  - tests/unit/strata/test_sync_depth.py::TestSyncDepth::test_chain_at_bound_fires
+  - tests/unit/strata/test_sync_depth.py::TestSyncDepth::test_async_hop_breaks_the_chain
+  - tests/unit/strata/test_sync_depth.py::TestSyncDepth::test_deep_chain_ok_exemption_discharges
+  - tests/unit/strata/test_sync_depth.py::TestSyncDepth::test_sync_cycle_is_unbounded_and_fires
+  - tests/unit/strata/test_sync_depth.py::TestSyncDepth::test_waiver_discharges_finding
 threat: null
 component: null
 ```
 Bound the depth of synchronous call chains (cascading latency/failure risk), using reachability including non-transitive edges (T-0282).
 
+## Done report
+
+REL34x SYNC-CALL-CHAIN-DEPTH-bound (T-0654), a single-rule family
+mirroring _spof.py/REL25x's shape (a structural fact readable straight
+off the kernel model, not a declared/proven obligation):
+
+- New module src/frob/strata/_sync_depth.py: REL340 fires when a node is
+  reached only via SYNC_CHAIN_MAX_DEPTH (default 4) or more consecutive
+  synchronous (non-`async`) flow hops and carries no `deep_chain_ok`
+  exemption. A synchronous cycle is treated as an unbounded chain
+  (math.inf, mirroring _facts.py::FactBase.worst_age's cycle-to-inf
+  discipline) -- always fires, never silently clamped.
+- Reuses `_crash.py::_ASYNC_ATTR` directly (same fact, same grammar
+  site, unlike _spof.py's deliberate non-import of a coincidentally-
+  reused word).
+- DESIGN NOTE (why this does not reuse _facts.py::FactBase.reachable,
+  even though the ticket points at T-0282's reachability/non-transitive-
+  edge work): `reachable`'s non-transitive attr sets are shared,
+  `_facts.py`-owned constants encoding trust-boundary/KRB/utility
+  terminal semantics for every other closure consumer (PII, compliance,
+  breach, krb-movement). Folding `async` into that shared set would
+  change taint-closure semantics for all of those unrelated callers, a
+  cross-cutting change outside this ticket's own rule-module scope. This
+  module instead applies the SAME underlying idea T-0282 introduced (a
+  marked edge is terminal in an otherwise-transitive walk) to its own,
+  narrower graph: a memoized longest-path-ending-at-node DFS directly
+  over `model.flows`, independent of `_facts.py`.
+- GRAMMAR NOTE: `deep_chain_ok` is a presence-only bare attr (the same
+  digit-led-literal ceiling every REL2xx/REL3xx marker discloses) -- a
+  model cannot declare its own numeric depth bound today; the ticket's
+  "declared/default depth bound" language is satisfied by the DEFAULT
+  half only (SYNC_CHAIN_MAX_DEPTH = 4, fixed Python-side constant). A
+  per-model declared override would need a new kernel-level numeric
+  field, out of this rule-module ticket's scope -- not built, not faked.
+- Wired __init__.py exports (REL_SYNC_CHAIN_TOO_DEEP, SYNC_CHAIN_MAX_DEPTH,
+  SYNC_DEPTH_RULES, SyncDepthReport, SyncDepthViolation,
+  check_sync_chain_depth).
+- New docs/strata/reliability.md REL34x section.
+- New tests/unit/strata/test_sync_depth.py, 6 tests, all pass (below
+  bound clean, at-bound fires, async hop breaks the chain, deep_chain_ok
+  exemption discharges, sync cycle is unbounded and fires, waiver
+  discharges).
+
+Filed: none (no out-of-scope findings; ticket was not pre-implemented).
+
+Gates: frob check --ticket T-0654 clean across lint/static/gates-fast/
+gates-native/gates-security (chunked --only loop); gate:PRE refreshed via
+`frob ticket sweep T-0654` (twice, after a ruff-format pass changed the
+test file post-sweep).
+
+### Changed
+```
+ docs/strata/reliability.md                   |  72 ++++++
+ docs/strata/threat.md                        |  11 +
+ src/frob/strata/__init__.py                  |  16 ++
+ src/frob/strata/_delivery_semantics.py       | 343 +++++++++++++++++++++++++++
+ tests/unit/strata/test_delivery_semantics.py | 175 ++++++++++++++
+ tickets.md                                   | 142 ++++++++++-
+ 6 files changed, 755 insertions(+), 4 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_sync_depth.py::TestSyncDepth::test_chain_below_bound_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_sync_depth.py::TestSyncDepth::test_chain_at_bound_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_sync_depth.py::TestSyncDepth::test_async_hop_breaks_the_chain` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_sync_depth.py::TestSyncDepth::test_deep_chain_ok_exemption_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_sync_depth.py::TestSyncDepth::test_sync_cycle_is_unbounded_and_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_sync_depth.py::TestSyncDepth::test_waiver_discharges_finding` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: 0 error(s), 4177 warning(s), 219 waived
+- error-findings: none (measured, zero errors)
+
 <!-- ticket:T-0655 -->
 ```yaml
 id: T-0655
 title: 'strata: distributed-transaction-across-services requires saga/compensation'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -1175,20 +1398,101 @@ scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
+evidence:
+- tests/unit/strata/test_distributed_txn.py::TestMissingSaga::test_multi_service_write_op_without_saga_fires
+- tests/unit/strata/test_distributed_txn.py::TestMissingSaga::test_transaction_attr_alone_does_not_discharge
+- tests/unit/strata/test_distributed_txn.py::TestMissingSaga::test_single_write_and_discharged_clean
+- tests/unit/strata/test_distributed_txn.py::TestMissingSaga::test_waiver_discharges_finding
+- tests/unit/strata/test_distributed_txn.py::TestUnprovenSaga::test_declared_with_no_code_evidence_fires
+- tests/unit/strata/test_distributed_txn.py::TestUnprovenSaga::test_declared_with_real_code_evidence_discharges
+- tests/unit/strata/test_distributed_txn.py::TestUnprovenSaga::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
 acceptance:
 - text: Given a cross-service transaction with no saga/compensation declared, when
     checked, then the obligation fires
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_distributed_txn.py::TestMissingSaga::test_multi_service_write_op_without_saga_fires
+  - tests/unit/strata/test_distributed_txn.py::TestMissingSaga::test_transaction_attr_alone_does_not_discharge
+  - tests/unit/strata/test_distributed_txn.py::TestMissingSaga::test_single_write_and_discharged_clean
+  - tests/unit/strata/test_distributed_txn.py::TestMissingSaga::test_waiver_discharges_finding
+  - tests/unit/strata/test_distributed_txn.py::TestUnprovenSaga::test_declared_with_no_code_evidence_fires
+  - tests/unit/strata/test_distributed_txn.py::TestUnprovenSaga::test_declared_with_real_code_evidence_discharges
+  - tests/unit/strata/test_distributed_txn.py::TestUnprovenSaga::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
 threat: null
 component: null
 ```
 A transaction spanning multiple services must declare a saga/compensation strategy; builds on the transactional-boundary obligation's multi-write detection extended across service boundaries.
 
+## Done report
+
+REL35x DISTRIBUTED-TRANSACTION-ACROSS-SERVICES saga/compensation
+obligation (T-0655), mirroring the REL30x/_txn.py two-rule pattern but
+extended across service boundaries per the ticket body.
+
+- New module src/frob/strata/_distributed_txn.py: REL350 (missing
+  saga/compensation) and REL351 (declared-but-unproven saga, proof-
+  against-code, T-0331 PROVABILITY CONSTRAINT).
+- KEY DESIGN DECISION: REL30x (_txn.py) needed a caller-supplied
+  `store_ids` set because it asked the narrower "writes to >=2 STORES"
+  question, which KernelModel alone cannot answer (a store desugars away
+  at elaborate time). REL35x asks the BROADER "writes to >=2 SERVICES"
+  question the ticket names -- and REL2xx's own module docstring already
+  discloses that every Flow in this grammar crosses a real process/
+  service boundary by construction (no in-process/self-flow construct
+  exists), meaning every node already IS its own service boundary. So
+  REL35x's population is "every op writing to >=2 distinct downstream
+  nodes `model.flows` names" -- a plain KernelModel fact needing NO
+  external store_ids input, unlike REL30x. This is the "multi-write
+  detection extended across service boundaries" the ticket asks for.
+- Unlike REL300 (which discharges on EITHER `transaction` or `saga`),
+  REL350 requires `saga` specifically -- a bare `transaction` attr
+  asserts a single coordinated commit, not meaningful once the write
+  fans out across independent service processes with no shared commit
+  log (verified by a dedicated test:
+  test_transaction_attr_alone_does_not_discharge).
+- Wired __init__.py exports (REL_MISSING_SAGA, REL_UNPROVEN_SAGA,
+  DISTRIBUTED_TXN_RULES, DistributedTxnReport, DistributedTxnViolation,
+  check_distributed_txn_obligations).
+- New docs/strata/reliability.md REL35x section.
+- New tests/unit/strata/test_distributed_txn.py, 7 tests, all pass.
+
+Filed: none (no out-of-scope findings; ticket was not pre-implemented).
+
+Gates: frob check --ticket T-0655 clean across lint/static/gates-fast/
+gates-native/gates-security (chunked --only loop); gate:PRE refreshed via
+`frob ticket sweep T-0655`.
+
+### Changed
+```
+ docs/strata/reliability.md                   | 145 +++++++++++
+ docs/strata/threat.md                        |  11 +
+ src/frob/strata/__init__.py                  |  30 +++
+ src/frob/strata/_delivery_semantics.py       | 343 +++++++++++++++++++++++++++
+ src/frob/strata/_sync_depth.py               | 277 +++++++++++++++++++++
+ tests/unit/strata/test_delivery_semantics.py | 175 ++++++++++++++
+ tests/unit/strata/test_sync_depth.py         | 110 +++++++++
+ tickets.md                                   | 232 +++++++++++++++++-
+ 8 files changed, 1317 insertions(+), 6 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_distributed_txn.py::TestMissingSaga::test_multi_service_write_op_without_saga_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_distributed_txn.py::TestMissingSaga::test_transaction_attr_alone_does_not_discharge` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_distributed_txn.py::TestMissingSaga::test_single_write_and_discharged_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_distributed_txn.py::TestMissingSaga::test_waiver_discharges_finding` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_distributed_txn.py::TestUnprovenSaga::test_declared_with_no_code_evidence_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_distributed_txn.py::TestUnprovenSaga::test_declared_with_real_code_evidence_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_distributed_txn.py::TestUnprovenSaga::test_declared_with_no_bound_code_is_uncheckable_not_a_violation` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 7 passed (from 7 evidence id(s))
+- gates: 0 error(s), 4219 warning(s), 219 waived
+- error-findings: none (measured, zero errors)
+
 <!-- ticket:T-0656 -->
 ```yaml
 id: T-0656
 title: 'strata: no-shared-mutable-state-across-service-boundaries obligation'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -1200,20 +1504,119 @@ scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
+evidence:
+- tests/unit/strata/test_shared_state.py::TestSharedState::test_mutable_node_shared_by_two_services_fires
+- tests/unit/strata/test_shared_state.py::TestSharedState::test_read_only_accessor_still_fires
+- tests/unit/strata/test_shared_state.py::TestSharedState::test_single_writer_clean
+- tests/unit/strata/test_shared_state.py::TestSharedState::test_immutable_node_touched_by_many_is_clean
+- tests/unit/strata/test_shared_state.py::TestSharedState::test_shared_state_ok_exemption_discharges
+- tests/unit/strata/test_shared_state.py::TestSharedState::test_owner_attr_alone_does_not_discharge
+- tests/unit/strata/test_shared_state.py::TestSharedState::test_waiver_discharges_finding
 acceptance:
 - text: Given two services sharing a mutable store/memory region across their boundary
     with no declared exception, when checked, then the obligation fires
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_shared_state.py::TestSharedState::test_mutable_node_shared_by_two_services_fires
+  - tests/unit/strata/test_shared_state.py::TestSharedState::test_read_only_accessor_still_fires
+  - tests/unit/strata/test_shared_state.py::TestSharedState::test_single_writer_clean
+  - tests/unit/strata/test_shared_state.py::TestSharedState::test_immutable_node_touched_by_many_is_clean
+  - tests/unit/strata/test_shared_state.py::TestSharedState::test_shared_state_ok_exemption_discharges
+  - tests/unit/strata/test_shared_state.py::TestSharedState::test_owner_attr_alone_does_not_discharge
+  - tests/unit/strata/test_shared_state.py::TestSharedState::test_waiver_discharges_finding
 threat: null
 component: null
 ```
 Detect and flag shared mutable state reachable across a declared service boundary.
 
+## Done report
+
+REL36x NO-SHARED-MUTABLE-STATE-ACROSS-SERVICE-BOUNDARIES obligation
+(T-0656), a single-rule family mirroring _spof.py/REL25x's shape (a
+structural fact readable straight off the kernel model):
+
+- New module src/frob/strata/_shared_state.py: REL360 fires on a mutable
+  node (the dst of >=1 flow at all) accessed -- as either flow endpoint,
+  read OR write -- by >=2 distinct other nodes, with no
+  `shared_state_ok` exemption.
+- DISTINGUISHED FROM REL29x (SSOT): REL290/REL291 already flag a store
+  written by >=2 distinct nodes, but that obligation is dischargeable by
+  declaring `owner`/`reconciliation` -- sharing is still allowed as long
+  as conflicts are reconciled. REL360 is a stricter, independent
+  principle (services should not share mutable state directly at all),
+  so `owner`/`reconciliation` do NOT discharge it -- verified by a
+  dedicated test (test_owner_attr_alone_does_not_discharge). REL360's
+  population is also broader: it counts every accessor (read or write),
+  not just writers (verified by test_read_only_accessor_still_fires).
+- Wired __init__.py exports (REL_SHARED_MUTABLE_STATE,
+  SHARED_STATE_RULES, SharedStateReport, SharedStateViolation,
+  check_shared_state).
+- New docs/strata/reliability.md REL36x section.
+- New tests/unit/strata/test_shared_state.py, 7 tests, all pass.
+
+Filed: none (no out-of-scope findings; ticket was not pre-implemented).
+
+Gates: frob check --ticket T-0656 clean across lint/static/gates-fast/
+gates-native/gates-security (chunked --only loop); gate:PRE refreshed via
+`frob ticket sweep T-0656`.
+
+DELETION-FILTER NOTE (section 9): `git diff main --diff-filter=D --stat`
+showed one file (tests/test_arch_near_duplicate_native.py) because main
+advanced past my worktree's base mid-session (a sibling ticket, T-0953,
+landed a new test file after I started this batch) -- not anything this
+ticket touched or removed. Attempted `git merge main` to resolve it per
+section 9's literal instruction; the merge succeeded content-wise
+(tickets.md auto-spliced correctly via the registered merge driver, T-
+0652..T-0655 all verified still `state: done` in the merged result) but
+the commit was refused by the scaffolded land-owned-files pre-commit
+guard (T-0731: CHANGELOG.md/pyproject.toml/uv.lock are land-exclusive),
+because main's T-0953 commit itself carried a legitimate land version
+bump through those files. Completing this merge would require either
+the land-internal escape hatch (never a worktree agent's to set) or
+hand-editing land-owned files (explicitly forbidden). Per section 10b's
+own warning that a late `git merge main` mid-session is a timing trap,
+and since nothing in this ticket's own diff deletes or reverts any
+already-landed work (confirmed: T-0652/T-0653/T-0654/T-0655 all read
+`state: done` both before and inside the aborted merge), I aborted the
+merge (`git merge --abort`, clean, no partial state left) rather than
+force it through. Flagging this honestly rather than silently
+resolving it: the coordinator's own land/merge of this worktree onto a
+current main will pick up T-0953 via a normal 3-way merge with no
+special handling needed.
+
+### Changed
+```
+ docs/strata/reliability.md                   | 215 ++++++++++++++
+ docs/strata/threat.md                        |  11 +
+ src/frob/strata/__init__.py                  |  44 +++
+ src/frob/strata/_delivery_semantics.py       | 343 ++++++++++++++++++++++
+ src/frob/strata/_distributed_txn.py          | 320 +++++++++++++++++++++
+ src/frob/strata/_sync_depth.py               | 277 ++++++++++++++++++
+ tests/unit/strata/test_delivery_semantics.py | 175 ++++++++++++
+ tests/unit/strata/test_distributed_txn.py    | 193 +++++++++++++
+ tests/unit/strata/test_sync_depth.py         | 110 +++++++
+ tickets.md                                   | 412 ++++++++++++++++++++++++++-
+ 10 files changed, 2090 insertions(+), 10 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_shared_state.py::TestSharedState::test_mutable_node_shared_by_two_services_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_shared_state.py::TestSharedState::test_read_only_accessor_still_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_shared_state.py::TestSharedState::test_single_writer_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_shared_state.py::TestSharedState::test_immutable_node_touched_by_many_is_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_shared_state.py::TestSharedState::test_shared_state_ok_exemption_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_shared_state.py::TestSharedState::test_owner_attr_alone_does_not_discharge` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_shared_state.py::TestSharedState::test_waiver_discharges_finding` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 7 passed (from 7 evidence id(s))
+- gates: 0 error(s), 4241 warning(s), 219 waived
+- error-findings: none (measured, zero errors)
+
 <!-- ticket:T-0657 -->
 ```yaml
 id: T-0657
 title: 'strata: clock/ordering-assumptions obligation across distributed flows'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -1225,14 +1628,116 @@ scope:
 - src/frob/strata/**
 - docs/strata/**
 - tests/unit/strata/**
+evidence:
+- tests/unit/strata/test_clock_ordering.py::TestMissingOrderingStrategy::test_clock_dependent_flow_without_ordering_strategy_fires
+- tests/unit/strata/test_clock_ordering.py::TestMissingOrderingStrategy::test_discharged_and_non_clock_dependent_flows_clean
+- tests/unit/strata/test_clock_ordering.py::TestMissingOrderingStrategy::test_waiver_discharges_finding
+- tests/unit/strata/test_clock_ordering.py::TestUnprovenOrderingStrategy::test_declared_with_no_code_evidence_fires
+- tests/unit/strata/test_clock_ordering.py::TestUnprovenOrderingStrategy::test_declared_with_real_code_evidence_discharges
+- tests/unit/strata/test_clock_ordering.py::TestUnprovenOrderingStrategy::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+- tests/unit/strata/test_clock_ordering.py::TestWallClockOnly::test_bare_wall_clock_read_fires_rel372
 acceptance:
 - text: Given a cross-node flow with an implicit clock/ordering assumption and no
     declared strategy, when checked, then the obligation fires
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_clock_ordering.py::TestMissingOrderingStrategy::test_clock_dependent_flow_without_ordering_strategy_fires
+  - tests/unit/strata/test_clock_ordering.py::TestMissingOrderingStrategy::test_discharged_and_non_clock_dependent_flows_clean
+  - tests/unit/strata/test_clock_ordering.py::TestMissingOrderingStrategy::test_waiver_discharges_finding
+  - tests/unit/strata/test_clock_ordering.py::TestUnprovenOrderingStrategy::test_declared_with_no_code_evidence_fires
+  - tests/unit/strata/test_clock_ordering.py::TestUnprovenOrderingStrategy::test_declared_with_real_code_evidence_discharges
+  - tests/unit/strata/test_clock_ordering.py::TestUnprovenOrderingStrategy::test_declared_with_no_bound_code_is_uncheckable_not_a_violation
+  - tests/unit/strata/test_clock_ordering.py::TestWallClockOnly::test_bare_wall_clock_read_fires_rel372
 threat: null
 component: null
 ```
 Flag flows relying on wall-clock ordering/synchronization assumptions across distributed nodes without a declared clock/ordering strategy (T-0282 reachability).
+
+## Done report
+
+REL37x CLOCK/ORDERING-ASSUMPTIONS obligation across distributed flows
+(T-0657), mirroring _retry.py/REL22x's flow-scoped three-rule shape
+(registered in _waive.py::MULTI_INSTANCE_WAIVER_FAMILIES, since a node
+can originate several clock_dependent flows).
+
+- New module src/frob/strata/_clock_ordering.py:
+  - REL370 missing ordering strategy: a `clock_dependent` flow with no
+    `ordering_strategy` attr.
+  - REL371 unproven ordering strategy: declared but no bound endpoint's
+    code has any real ordering-shaped token at all (proof-against-code,
+    T-0331 PROVABILITY CONSTRAINT, T-0758 either-endpoint anchoring via
+    `bound_endpoints`, same as REL222).
+  - REL372 wall-clock-only discharge: declared, bound code exists, but
+    the ONLY evidence is a bare wall-clock read (time.time()/
+    datetime.now()-shaped) with no vector/logical-clock or sequence-
+    number construct -- flagged distinctly from REL371's honest silence,
+    since this is a modeler who declared the obligation and then
+    re-implemented the exact clock-drift hazard it exists to catch.
+- Registered REL370/REL371/REL372 in src/frob/strata/_waive.py::
+  MULTI_INSTANCE_WAIVER_FAMILIES (in scope: src/frob/strata/**).
+- Updated docs/strata/waive.md's sub-targets section to list the new
+  REL370/371/372 multi-instance family (satisfies gate:AFFECT's
+  AFFECT001 doc-drift requirement on MULTI_INSTANCE_WAIVER_FAMILIES).
+- Wired __init__.py exports (CLOCK_ORDERING_RULES,
+  REL_MISSING_ORDERING_STRATEGY, REL_UNPROVEN_ORDERING_STRATEGY,
+  REL_WALL_CLOCK_ONLY, ClockOrderingReport, ClockOrderingViolation,
+  check_clock_ordering_obligations).
+- New docs/strata/reliability.md REL37x section.
+- New tests/unit/strata/test_clock_ordering.py, 7 tests, all pass.
+
+Filed: none (no out-of-scope findings; ticket was not pre-implemented).
+
+Gates: frob check --ticket T-0657 clean across lint/static/gates-fast/
+gates-native/gates-security (chunked --only loop). gate:AFFECT (AFFECT001)
+fired once for the MULTI_INSTANCE_WAIVER_FAMILIES change with no matching
+docs/strata/waive.md touch -- fixed by updating that doc section, then
+re-swept clean. gate:PRE refreshed via `frob ticket sweep T-0657`.
+
+DELETION-FILTER NOTE (section 9, same as T-0656's): `git diff main
+--diff-filter=D --stat` shows tests/test_arch_near_duplicate_native.py
+because main advanced past this worktree's base mid-session (T-0953
+landed a new file after this batch started) -- not anything this ticket
+touched or removed. Learned from the T-0656 round: attempting `git merge
+main` mid-session here would risk losing uncommitted ticket state again
+(a real incident this session: T-0655's close and T-0656's first
+evidence/done-report pass were both silently reverted by a `git merge
+--abort` after the land-owned-files pre-commit guard refused the merge
+commit, T-0731) -- recovered by re-running `frob ticket close T-0655`/
+`frob ticket evidence T-0656`/`done-report T-0656` and committing
+immediately each time. For this ticket I did NOT attempt the merge at
+all: nothing in this ticket's own diff deletes or reverts already-landed
+work, and the coordinator's own land/merge onto current main will pick
+up T-0953 via a normal 3-way merge with no special handling needed.
+
+### Changed
+```
+ docs/strata/reliability.md                   | 282 ++++++++++++++++++
+ docs/strata/threat.md                        |  11 +
+ src/frob/strata/__init__.py                  |  56 ++++
+ src/frob/strata/_delivery_semantics.py       | 343 ++++++++++++++++++++++
+ src/frob/strata/_distributed_txn.py          | 320 ++++++++++++++++++++
+ src/frob/strata/_shared_state.py             | 235 +++++++++++++++
+ src/frob/strata/_sync_depth.py               | 277 ++++++++++++++++++
+ tests/unit/strata/test_delivery_semantics.py | 175 +++++++++++
+ tests/unit/strata/test_distributed_txn.py    | 193 +++++++++++++
+ tests/unit/strata/test_shared_state.py       | 150 ++++++++++
+ tests/unit/strata/test_sync_depth.py         | 110 +++++++
+ tickets.md                                   | 418 ++++++++++++++++++++++++++-
+ 12 files changed, 2560 insertions(+), 10 deletions(-)
+```
+
+### Evidence
+- `tests/unit/strata/test_clock_ordering.py::TestMissingOrderingStrategy::test_clock_dependent_flow_without_ordering_strategy_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_clock_ordering.py::TestMissingOrderingStrategy::test_discharged_and_non_clock_dependent_flows_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_clock_ordering.py::TestMissingOrderingStrategy::test_waiver_discharges_finding` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_clock_ordering.py::TestUnprovenOrderingStrategy::test_declared_with_no_code_evidence_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_clock_ordering.py::TestUnprovenOrderingStrategy::test_declared_with_real_code_evidence_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_clock_ordering.py::TestUnprovenOrderingStrategy::test_declared_with_no_bound_code_is_uncheckable_not_a_violation` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_clock_ordering.py::TestWallClockOnly::test_bare_wall_clock_read_fires_rel372` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 7 passed (from 7 evidence id(s))
+- gates: 0 error(s), 4235 warning(s), 219 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0658 -->
 ```yaml

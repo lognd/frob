@@ -108,6 +108,10 @@ _log = get_logger(__name__)
 #: CORRELATION-obligation family) join this set for the identical reason
 #: -- a node can originate several boundary or chained flows, so each
 #: fires per-flow.
+#: T-0657: REL370/REL371/REL372 (`_clock_ordering.py`'s CLOCK/ORDERING-
+#: ASSUMPTIONS-obligation family) join this set for the identical reason
+#: -- a node can originate several clock-dependent flows, so each fires
+#: per-flow.
 MULTI_INSTANCE_WAIVER_FAMILIES: frozenset[str] = frozenset(
     {
         "SYS100",
@@ -126,6 +130,9 @@ MULTI_INSTANCE_WAIVER_FAMILIES: frozenset[str] = frozenset(
         "REL270",
         "REL271",
         "REL272",
+        "REL370",
+        "REL371",
+        "REL372",
     }
 )
 

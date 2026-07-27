@@ -413,6 +413,17 @@ GDPR-RETENTION/GDPR-ERASURE checks are the EU-specific tightening layered
 on top of the SAME two helpers, not a second implementation of the same
 rule.
 
+PII003 IS the "strata: retention/TTL obligation on PII stores" ticket
+(T-0653, part of the T-0331 systems-checks epic's REL3xx batch): its
+acceptance criterion ("given a PII-tagged store with no retention/TTL
+declared, when checked, then the obligation fires") is exactly what
+`check_pii_retention_erasure` already proves, shipped under T-0154 before
+T-0653 was filed. No new rule module was added for T-0653 -- adding a
+second REL3xx-family detector over the same `carries`/`retention=`
+population would duplicate this one (the charter's own "no duplication"
+discipline), so T-0653 closes by cross-referencing this section rather
+than shipping parallel code.
+
 **Litmus pair**: `tests/unit/strata/litmus/pii_vuln.strata` fires
 PII002/PII003/PII004 undischarged (a collection flow into a `carries
 "identifier.email"` store, no protection claim, no retention/erasure, and

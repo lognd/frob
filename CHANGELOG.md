@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.174.0] - unreleased
+
+- T-0652: strata: exactly-once vs at-least-once delivery-semantics declaration on queues
+
 ## [0.173.0] - unreleased
 
 - T-0953: port archgate's near-duplicate body-similarity clustering to frob_core (measured rust-candidate sub-boundary)
