@@ -770,6 +770,7 @@
     "src/frob/perf/_hotgraph.py::build_section_index": "3ea14833f21638d944a5ba3261fcf9d07c9f169e05193b21d1f5f7ef4ca3d93c",
     "src/frob/perf/_hotgraph.py::language_deciles": "4bee78e1be2b434d6137435c30c05ba4271b8827f8ed84ac81377cd50191d0b2",
     "src/frob/perf/_hotgraph.py::resolve_stream": "ed689c5806bd9b2c2b46cd4d269e54a3cabf1c2eddfd2eb807261cef01d7a90c",
+    "src/frob/perf/_loop_effects.py::loop_invariant_effect_violations": "9bb710cb512f18f52ccee59b05e9c356c4b9f0dbda013bf0d54f9bb901d6ea75",
     "src/frob/perf/_models.py::HeatEntry": "ccd9d4320749cb10f5b9fa7f271f1117c2a88e9ba19ca2a5a1f9b1d9d2ebcc79",
     "src/frob/perf/_models.py::HeatReport": "60d746977c9eb6cfb26262d9e50bdd4ee310298f8c11ef5c42e329318df00176",
     "src/frob/perf/_models.py::PerfError": "3e936a942247741ad3547f21cbe47da915f897fc4a229745187da326aabd39fa",
@@ -1571,5 +1572,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.155.0"
+  "version": "0.156.0"
 }

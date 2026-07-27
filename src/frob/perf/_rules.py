@@ -44,6 +44,7 @@ from frob.lang import node_text as _node_text
 from frob.lang import raw_tree as _raw_tree
 from frob.lang._models import ParsedFile, RawSymbol, SymbolKind
 from frob.logging import get_logger
+from frob.perf._loop_effects import loop_invariant_effect_violations
 from frob.perf._recursion import recursion_rules
 from frob.perf._redundancy import redundant_computation_violations
 
@@ -753,6 +754,7 @@ def _symbol_violations(file: ParsedFile, symbol: RawSymbol) -> tuple[Violation, 
 # frob:enforces CHK-GATE-PERF005
 # frob:enforces CHK-GATE-PERF006
 # frob:enforces CHK-GATE-PERF007
+# frob:ticket T-0775
 def perf_rules(
     snapshot: GraphSnapshot, files: Sequence[ParsedFile]
 ) -> tuple[Violation, ...]:
@@ -766,13 +768,18 @@ def perf_rules(
     the PERF META-GAP) is the one cross-FILE check here: a
     `frob.toml`-configured expensive call target invoked from 2+ distinct
     top-level symbols with no shared cache -- see
-    `frob.perf._redundancy.redundant_computation_violations`."""
+    `frob.perf._redundancy.redundant_computation_violations`. PERF008
+    (T-0775) is the cross-FUNCTION/cross-MODULE counterpart: a loop whose
+    body calls (directly, or transitively via a local call-graph BFS) a
+    process-spawn/directory-walk effect with loop-invariant arguments --
+    see `frob.perf._loop_effects.loop_invariant_effect_violations`."""
     violations: list[Violation] = []
     for file in files:
         for symbol in file.symbols:
             violations.extend(_symbol_violations(file, symbol))
     violations.extend(recursion_rules(snapshot, files))
     violations.extend(redundant_computation_violations(Path(snapshot.root), files))
+    violations.extend(loop_invariant_effect_violations(files))
     _log.info(
         "perf_rules: scanned %d file(s), %d violation(s)", len(files), len(violations)
     )

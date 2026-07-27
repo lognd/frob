@@ -34,6 +34,7 @@ across 28k files whose fix was literally a hashset.)
 | PERF005 | recursive function (self- or same-file mutual recursion) with no provable termination measure | add `frob:invariant terminates reason="..." measure="..."`, or restructure so termination is provable |
 | PERF006 | tail-recursive function with no proven depth bound (Python has no TCO -- unbounded input depth is a stack-overflow/DoS bug) | rewrite as an explicit loop, or prove a static depth bound |
 | PERF007 | a `frob.toml`-configured expensive call (`[[perf.heavy]]`) invoked from 2+ distinct top-level symbols with no shared-cache decorator on its own definition (T-0413, the PERF META-GAP) | wrap the call target in `memoize_per_run`/`lru_cache`/`cache`, or route every call site through one shared call |
+| PERF008 | a loop body's call site is directly, or transitively (via a local call-graph BFS), a process-spawn/directory-walk effect, and every argument at the call site is loop-invariant (T-0775) | hoist the call out of the loop, memoize its result, or add a reasoned `frob:waive PERF008 reason="..."` (e.g. freshness under concurrency) |
 
 Severity: PERF001-004 are `warn` by default (static size-blindness is real
 -- a 3-element list is fine as a list); promotable per-repo via
@@ -136,6 +137,54 @@ Acceptance (T-0413's own wording): a fixture where two functions both call
 an uncached configured target is flagged; a fixture where only one
 function calls it (or the target is `@memoize_per_run`-decorated) is not
 -- see `tests/test_perf.py::TestPerf007RedundantComputation`.
+
+## Loop-invariant effectful call detector (PERF008, T-0775)
+
+Motivated by the 2026-07-22 rev-parse incident (T-0773): `frob ticket
+list` spawned `git rev-parse --git-common-dir` dozens of times because
+the LOOP (one iteration per ticket row) and the EFFECT (a subprocess
+spawn, three calls deep through `frob.gitio.run_argv`) live in different
+modules -- no per-function syntactic PERF heuristic (PERF001-004, each
+scoped to one function body) can see this shape.
+
+Two pieces:
+
+- **Direct effect detection**: a call is directly effectful if its own
+  dotted callee matches a small, hand-picked process-spawn table
+  (`subprocess.run/Popen/call/check_call/check_output`, `os.system/
+  popen/spawn*`, a bare imported `Popen(`) or directory-walk table
+  (`os.walk`, `os.scandir`, `glob.glob/iglob`, any receiver's `.rglob`/
+  `.iterdir`) -- narrower than `frob.vet._capability_registry`'s full
+  "exec"/"fs" capability kinds, since this ticket only ever asks about
+  spawn/fs-walk, not bare file read/write.
+- **Transitive call-graph reachability**: a SECOND, local, whole-project,
+  name-based call graph (`frob.perf._loop_effects._EffectGraph`),
+  deliberately not `frob.graph.callgraph.build_call_graph` -- that graph
+  only ever resolves PRIVATE callees, by design, to stop its BFS at the
+  public-API boundary. The real T-0773 incident crosses exactly that
+  boundary (the spawn lives behind a PUBLIC `run_argv`), so this graph
+  resolves every candidate, public or private, bounded to 8 hops / 200
+  nodes, matching `frob.perf._recursion`'s own precedent for building a
+  second graph rather than widening `callgraph`'s contract for a use case
+  it was not designed for.
+
+Detection (Python only for now -- an accepted scope cut matching
+PERF001-004's existing python-first tiering, tracked as `frob:todo
+T-0775` in `frob.perf._loop_effects`'s module docstring): for each `for`/
+`while` loop, for each call site lexically inside it (attributed to its
+innermost enclosing loop when loops nest), if the call is directly or
+transitively effectful AND its argument list's identifiers never include
+the loop's own bound variable(s) or a name assigned anywhere in the loop
+body, PERF008 fires naming the call site, the effectful callee, and the
+loop-invariance reasoning. WARN-tier by default, not ERROR: undecidable
+invariance leans toward firing (recall over precision, same repo
+philosophy as PERF007), so a `frob:waive PERF008 reason="..."` is always
+available for a deliberate re-read (freshness under concurrency is a
+real, legitimate reason to re-run an effect every iteration).
+
+See `tests/unit/perf/test_loop_effects.py::TestPerf008LoopInvariantEffect`
+for the true-positive (transitive spawn, direct fs-walk, the real T-0773
+ticket-row shape) and false-positive (loop-varying argument) cases.
 
 ## The killer join: hot AND quadratic
 

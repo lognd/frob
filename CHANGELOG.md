@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.156.0] - unreleased
+
+- T-0775: perf: loop-invariant effectful call detector (spawn/fs-walk callee in a loop with loop-invariant args)
+
 ## [0.155.0] - unreleased
 
 - T-0681: arch TS adapter phase 2: interface/type-alias/enum declarations + TSX

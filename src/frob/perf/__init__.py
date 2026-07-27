@@ -7,14 +7,18 @@
 Three interlocking pieces, per the doc: `profile_command` runs a workload
 under cProfile and stores a content-addressed artifact; `heat` joins the
 artifact's pstats rows onto the obligation graph's symbol spans, ranked by
-cumulative time; `perf_rules` runs PERF001..PERF007 over `frob.lang`'s token
+cumulative time; `perf_rules` runs PERF001..PERF008 over `frob.lang`'s token
 stream -- PERF001-004 are lexical linear-scan smells, PERF005/PERF006
 (T-0290) are the prove-terminating-or-error / tail-call depth-bound
-recursion checks (`frob.perf._recursion.recursion_rules`), and PERF007
+recursion checks (`frob.perf._recursion.recursion_rules`), PERF007
 (T-0413, the PERF META-GAP) is the cross-call-site redundant-recomputation
 check (`frob.perf._redundancy.redundant_computation_violations`) -- a
 `frob.toml`-configured expensive call invoked from 2+ distinct top-level
-symbols with no shared cache. `frob perf heat
+symbols with no shared cache -- and PERF008 (T-0775) is the loop-invariant
+effectful-call detector (`frob.perf._loop_effects.
+loop_invariant_effect_violations`): a loop whose body calls (directly, or
+transitively through a local call-graph BFS) a process-spawn/directory-
+walk effect with arguments that never vary across iterations. `frob perf heat
 --smells` intersects the smell/hot-path signals: hot AND quadratic, the
 malmberg-incident fix generator the doc names as the point of this package.
 
@@ -53,6 +57,7 @@ from frob.perf._hotgraph import (
     language_deciles,
     resolve_stream,
 )
+from frob.perf._loop_effects import loop_invariant_effect_violations
 from frob.perf._models import HeatEntry, HeatReport, PerfError, ProfileArtifact
 from frob.perf._profile import load_artifact, profile_command
 from frob.perf._recursion import recursion_rules
@@ -104,6 +109,7 @@ __all__ = [
     "language_deciles",
     "load_artifact",
     "load_sketch_config",
+    "loop_invariant_effect_violations",
     "new_run_sketch",
     "parse_collector_format",
     "parse_jfr_print",

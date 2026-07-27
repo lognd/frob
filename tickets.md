@@ -3968,7 +3968,7 @@ Follow-up work, explicitly not done in T-0717:
 id: T-0775
 title: 'perf: loop-invariant effectful call detector (spawn/fs-walk callee in a loop
   with loop-invariant args)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-22'
@@ -3980,6 +3980,53 @@ scope:
 - src/frob/perf/**
 - src/frob/arch/**
 - tests/unit/perf/
+- docs/modules/perf.md
+- tests/test_perf_loop_invariant_effect_lock.py
+scope_changes:
+- op: add
+  glob: docs/modules/perf.md
+  reason: 'New public symbol (loop_invariant_effect_violations, PERF008) requires
+    a
+
+    frob:doc anchor per COV001; docs/modules/perf.md is the existing home for
+
+    every other PERF rule (PERF001-007) and this ticket''s own acceptance
+
+    criteria describe user-facing detector behavior that belongs in the same
+
+    rule table, not a separate doc page.
+
+    '
+  actor: logan
+  at: '2026-07-26'
+- op: add
+  glob: tests/test_perf_loop_invariant_effect_lock.py
+  reason: 'tests/test_perf_loop_invariant_effect_lock.py is a pre-existing, strict
+
+    xfail lock this ticket''s own landing is designed to trip: its docstring
+
+    says "When T-0775 lands ... the unexpected pass hard-errors (strict),
+
+    forcing the marker''s removal -- at which point ALSO tighten the assertion
+
+    to the new rule id". PERF008 now fires on this exact fixture, so the
+
+    xfail marker must be removed and the assertion pinned to PERF008 or the
+
+    suite hard-fails; this is required landing work for T-0775, not a
+
+    different ticket''s scope.
+
+    '
+  actor: logan
+  at: '2026-07-26'
+evidence:
+- tests/unit/perf/test_loop_effects.py::TestPerf008LoopInvariantEffect::test_fs_walk_direct_call_in_loop_is_flagged
+- tests/unit/perf/test_loop_effects.py::TestPerf008LoopInvariantEffect::test_loop_invariant_spawn_call_two_hops_deep_is_flagged
+- tests/unit/perf/test_loop_effects.py::TestPerf008LoopInvariantEffect::test_ticket_row_rev_parse_shape_fires_on_real_repo_history_fixture
+- tests/unit/perf/test_loop_effects.py::TestPerf008LoopInvariantEffect::test_loop_varying_argument_is_not_flagged
+- tests/unit/perf/test_loop_effects.py::TestPerf008LoopInvariantEffect::test_no_effectful_call_in_loop_is_not_flagged
+- tests/test_perf_loop_invariant_effect_lock.py::test_loop_invariant_spawning_callee_in_loop_is_flagged
 acceptance:
 - text: GIVEN a fixture where a loop body calls a function that transitively spawns
     a process with arguments invariant across iterations WHEN frob check runs THEN
@@ -3987,11 +4034,58 @@ acceptance:
     the invariant args; GIVEN the same call with a loop-varying argument THEN no finding;
     GIVEN the pre-T-0773 read_all_leases-per-ticket-row shape THEN the finding fires
     on the real repo history fixture
-  evidence: []
+  evidence:
+  - tests/unit/perf/test_loop_effects.py::TestPerf008LoopInvariantEffect::test_ticket_row_rev_parse_shape_fires_on_real_repo_history_fixture
 threat: null
 component: null
 ```
 Motivated by the 2026-07-22 rev-parse incident (T-0773): frob ticket list spawned git rev-parse --git-common-dir dozens of times because the loop (ticket rows) and the effect (subprocess spawn 3 calls deep) live in different modules -- no per-function syntactic PERF heuristic can see it. The ingredients already exist: vet capability observation knows which functions transitively proc.spawn/fs-walk; the obligation graph has the call graph; T-0632 adds per-argument call detail needed for the loop-invariance test. Detector: for each loop (incl. comprehensions and per-item pipeline stages), for each reachable effectful callee whose observed effect is spawn/fs-walk, if every argument at the call site is loop-invariant, fire a prove-or-justify finding (hoist, memoize, or frob:waive with a freshness justification -- re-reading mutable state can be deliberate under concurrency, so this is warn-tier with an unwaivable-style justification requirement, not a silent error). Keep recall honest: undecidable invariance leans toward firing per the repo philosophy.
+
+## Done report
+
+Changed:
+src/frob/perf/_loop_effects.py (new: PERF008 detector, `loop_invariant_effect_violations`, `_EffectGraph`)
+src/frob/perf/_rules.py (wire PERF008 into `perf_rules`)
+src/frob/perf/__init__.py (export `loop_invariant_effect_violations`, docstring update)
+docs/modules/perf.md (PERF008 rule-table row + new section)
+tests/unit/perf/test_loop_effects.py (new: 5 true/false-positive cases)
+tests/test_perf_loop_invariant_effect_lock.py (strict xfail lock removed per its own docstring's instruction now that PERF008 lands; assertion pinned to `v.rule == "PERF008"`)
+
+Implemented PERF008 (`frob.perf._loop_effects.loop_invariant_effect_violations`):
+a loop-invariant effectful-call detector wired into `perf_rules`, per T-0775's
+acceptance. Detection walks each python file's raw tree-sitter AST for
+for/while loops, attributes each call site to its innermost enclosing loop,
+and checks two things: (1) is the call directly, or transitively (via a
+second local, whole-project, name-based call graph -- `_EffectGraph`,
+deliberately NOT `frob.graph.callgraph.build_call_graph`, which only resolves
+PRIVATE callees by design and would miss the real T-0773 incident's public
+`frob.gitio.run_argv` boundary), a process-spawn/directory-walk effect; (2)
+does the call's own argument text avoid the loop's bound variable(s) and any
+name assigned in the loop body. Both true fires PERF008 (WARN, waivable with
+a reasoned `frob:waive PERF008`).
+
+Verified against the real repo: `frob check --only gates-native` on frob's
+own tree fires PERF008 (as warnings; gate still passes) on real hits
+including `src/frob/tickets/_land.py`'s `_rev_parse` transitively reaching
+`guarded_subprocess_run` -- the live analogue of the T-0773 incident.
+
+Scope was widened twice via `frob ticket scope --add` (both recorded above
+in `scope_changes`): `docs/modules/perf.md` (COV001 needs a `frob:doc`
+anchor for the new public symbol) and
+`tests/test_perf_loop_invariant_effect_lock.py` (a pre-existing strict
+xfail lock whose own docstring instructs removing the marker and pinning
+the assertion to the new rule id once the detector lands -- done).
+
+Cuts: PERF008 is Python-only (matching PERF001-004's existing
+python-first/other-language-best-effort tiering), tracked as a
+`frob:todo T-0775` in `_loop_effects.py`'s module docstring rather than
+silently expanding this ticket to cover typescript/rust/cpp too.
+
+Evidence: `tests/unit/perf/test_loop_effects.py::TestPerf008LoopInvariantEffect` (5 node ids, all passing: `test_fs_walk_direct_call_in_loop_is_flagged`, `test_loop_invariant_spawn_call_two_hops_deep_is_flagged`, `test_ticket_row_rev_parse_shape_fires_on_real_repo_history_fixture`, `test_loop_varying_argument_is_not_flagged`, `test_no_effectful_call_in_loop_is_not_flagged`) plus `tests/test_perf_loop_invariant_effect_lock.py::test_loop_invariant_spawning_callee_in_loop_is_flagged` -- all 6 observed passing via `pytest --collect-only` + a foreground run; also `frob test --base main` selected and passed 21 python test(s) (touched-set, includes pre-existing `tests/test_perf.py` PERF001-004/007 suite unaffected).
+
+Filed: none.
+
+Gates: `frob check --only lint/gates-fast/gates-native/gates-security --ticket T-0775` all `pass`/0 errors (gates-native shows PERF008 firing as WARN on real pre-existing repo call sites, which is the detector working as designed, not a regression -- gate:PERF stays `pass`). Pre-existing `gate:SELFAUDIT` (5 errors, `src/frob/arch/_logging_checks.py`) and `gate:SYS`/`gate:TEST`/etc. warnings are untouched debt outside this ticket's scope (confirmed via `git diff main -- src/frob/arch/_logging_checks.py` showing no change from this worktree). `git diff main --diff-filter=D --stat` is empty (deletion-filter land rule, section 9).
 
 <!-- ticket:T-0777 -->
 ```yaml
