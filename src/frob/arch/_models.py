@@ -143,6 +143,16 @@ ArchCategory = Literal[
     "primitive-obsession",
     "parse-dont-validate",
     "boolean-flag-param",
+    # T-0694: lock-ordering hazard family (interprocedural call-graph
+    # reachability over statically-identifiable lock objects -- not runtime
+    # tracing), child 2 of the T-0693 concurrency-hazard umbrella,
+    # `frob.arch._lock_ordering`. Same unwaivable advisory channel as every
+    # other category above (`frob.gates._unwaivable_channel_rules` picks up
+    # any new `ArchCategory` value automatically); see
+    # `frob.arch._lock_ordering`'s module docstring for the per-category
+    # detection shape.
+    "lock-order-cycle",
+    "lock-identity-unresolved",
 ]
 
 ArchSeverity = Literal["warning", "suggestion", "info"]

@@ -23,7 +23,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from frob.arch import _async_hazards, _concurrency, _cpp, _ocp, _patterns, _python
+from frob.arch import (
+    _async_hazards,
+    _concurrency,
+    _cpp,
+    _lock_ordering,
+    _ocp,
+    _patterns,
+    _python,
+)
 from frob.arch._models import (
     ArchCategory,
     ArchResult,
@@ -317,7 +325,14 @@ def _run_python_checks(
     hazard family, child 3 of the T-0693 concurrency-hazard umbrella,
     `frob.arch._async_hazards`) skip test files for the same reason as the
     fork/pool hazard family above -- an `async def` test helper/fixture is
-    not production event-loop debt."""
+    not production event-loop debt.
+
+    T-0694: `lock-order-cycle` and `lock-identity-unresolved` (the
+    interprocedural lock-ordering hazard family, child 2 of the T-0693
+    concurrency-hazard umbrella, `frob.arch._lock_ordering`) skip test
+    files for the same reason as the other concurrency-hazard families
+    above -- a test fixture's own lock usage is not production deadlock
+    debt."""
     if not is_test:
         _python._check_long_functions(tree, rel, limits.max_function_lines, suggestions)
         _python._check_god_classes(tree, rel, limits.max_class_methods, suggestions)
@@ -339,6 +354,7 @@ def _run_python_checks(
         _ocp._check_non_exhaustive_enum_match(tree, rel, suggestions)
         _concurrency._check_fork_pool_hazards(tree, rel, suggestions)
         _async_hazards._check_async_event_loop_hazards(tree, rel, suggestions)
+        _lock_ordering._check_lock_ordering_hazards(tree, rel, suggestions)
         _run_srp_checks_python(tree, rel, limits, suggestions)
     _python._check_high_coupling(path, rel, root, limits.max_local_imports, suggestions)
     if not is_test:

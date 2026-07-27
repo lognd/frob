@@ -3737,6 +3737,151 @@ class TestAsyncEventLoopHazards:
         assert hits == []
 
 
+class TestLockOrderingHazards:
+    """`frob.arch._lock_ordering` -- interprocedural lock-order-cycle and
+    lock-identity-unresolved (T-0694, child 2 of the T-0693 concurrency-
+    hazard umbrella)."""
+
+    def test_two_lock_ab_ba_cycle_fires_within_one_function(self, tmp_path):
+        """`f` acquires `lock_a` then `lock_b`; `g` acquires `lock_b` then
+        `lock_a` -- the classic AB/BA two-lock deadlock, entirely within
+        each function's own body, fires `lock-order-cycle`."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "deadlock.py").write_text(
+            "from __future__ import annotations\n"
+            "import threading\n\n"
+            "lock_a = threading.Lock()\n"
+            "lock_b = threading.Lock()\n\n\n"
+            "def f():\n"
+            "    with lock_a:\n"
+            "        with lock_b:\n"
+            "            pass\n\n\n"
+            "def g():\n"
+            "    with lock_b:\n"
+            "        with lock_a:\n"
+            "            pass\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "lock-order-cycle"]
+        assert len(hits) == 1
+        assert "lock_a" in hits[0].message
+        assert "lock_b" in hits[0].message
+        assert "deadlock.py::f" in hits[0].message
+        assert "deadlock.py::g" in hits[0].message
+        assert hits[0].severity == "warning"
+
+    def test_two_lock_ab_ba_cycle_fires_across_call_paths_via_callees(
+        self, tmp_path
+    ):
+        """The SAME cycle, but each function's second lock is acquired
+        inside a CALLEE, not its own body -- the interprocedural
+        requirement: `f` acquires `lock_a` then calls `helper_b` (which
+        acquires `lock_b`); `g` acquires `lock_b` then calls `helper_a`
+        (which acquires `lock_a`). Must still fire `lock-order-cycle`."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "via_callee.py").write_text(
+            "from __future__ import annotations\n"
+            "import threading\n\n"
+            "lock_a = threading.Lock()\n"
+            "lock_b = threading.Lock()\n\n\n"
+            "def helper_b():\n"
+            "    with lock_b:\n"
+            "        pass\n\n\n"
+            "def helper_a():\n"
+            "    with lock_a:\n"
+            "        pass\n\n\n"
+            "def f():\n"
+            "    with lock_a:\n"
+            "        helper_b()\n\n\n"
+            "def g():\n"
+            "    with lock_b:\n"
+            "        helper_a()\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "lock-order-cycle"]
+        assert len(hits) == 1
+        assert "lock_a" in hits[0].message
+        assert "lock_b" in hits[0].message
+
+    def test_consistent_global_order_does_not_fire(self, tmp_path):
+        """Every function acquires `lock_a` before `lock_b`, never the
+        reverse -- a consistent global order must stay silent."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "consistent.py").write_text(
+            "from __future__ import annotations\n"
+            "import threading\n\n"
+            "lock_a = threading.Lock()\n"
+            "lock_b = threading.Lock()\n\n\n"
+            "def f():\n"
+            "    with lock_a:\n"
+            "        with lock_b:\n"
+            "            pass\n\n\n"
+            "def g():\n"
+            "    with lock_a:\n"
+            "        with lock_b:\n"
+            "            pass\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "lock-order-cycle"]
+        assert hits == []
+
+    def test_reentrant_same_lock_does_not_fire(self, tmp_path):
+        """A function acquiring the SAME `RLock` twice (nested `with`) must
+        not fire `lock-order-cycle` -- reentrant use of one lock is never
+        an ordering hazard."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "reentrant.py").write_text(
+            "from __future__ import annotations\n"
+            "import threading\n\n"
+            "lock_a = threading.RLock()\n\n\n"
+            "def f():\n"
+            "    with lock_a:\n"
+            "        with lock_a:\n"
+            "            pass\n"
+        )
+        result = analyze_project(src_dir)
+        hits = [s for s in result.suggestions if s.category == "lock-order-cycle"]
+        assert hits == []
+
+    def test_unresolvable_lock_identity_is_advisory(self, tmp_path):
+        """A `with` statement over a lock-shaped PARAMETER (no module/class-
+        level construction site this resolver can identify) fires
+        `lock-identity-unresolved` at suggestion severity, fail-closed,
+        instead of being silently dropped -- and a plain `with open(...)`
+        (no lock-shaped name) must not fire anything at all."""
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "unresolved.py").write_text(
+            "from __future__ import annotations\n\n\n"
+            "def f(some_lock):\n"
+            "    with some_lock:\n"
+            "        pass\n"
+        )
+        (src_dir / "plain_open.py").write_text(
+            "def f():\n"
+            "    with open('x') as fh:\n"
+            "        pass\n"
+        )
+        result = analyze_project(src_dir)
+        unresolved_hits = [
+            s for s in result.suggestions if s.category == "lock-identity-unresolved"
+        ]
+        assert len(unresolved_hits) == 1
+        assert unresolved_hits[0].symref == "unresolved.py::f"
+        assert unresolved_hits[0].severity == "suggestion"
+        open_hits = [
+            s
+            for s in result.suggestions
+            if s.file == "plain_open.py"
+            and s.category in ("lock-identity-unresolved", "lock-order-cycle")
+        ]
+        assert open_hits == []
+
+
 # ---------------------------------------------------------------------------
 # T-0618: LSP checks -- override contract violations (docs/modules/arch.md#lsp-checks)
 # ---------------------------------------------------------------------------
