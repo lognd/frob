@@ -3025,3 +3025,27 @@ Fix: add the missing gate_rule_entries rows to docs/design/registry/check-covera
 in known_gate_rule_ids() that check-coverage.yaml does not yet cite (mirrors T-0961's own_KNOWN_GATE_RULES
 gap-fill, just in the registry file instead of the frozenset), and separately triage
 test_frob_self_model.py::test_every_claim_proves's failure.
+
+<!-- ticket:T-0964 -->
+```yaml
+id: T-0964
+title: T-0901 drift-lock is blind to rule ids referenced via module-level constants
+  (REL_*/SYS_* false-negative)
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+scope:
+- tests/test_gates.py
+acceptance:
+- text: given a rule id referenced only via a module-level constant and absent from
+    _KNOWN_GATE_RULES, when the drift-lock test runs, then it fails naming that id
+  evidence: []
+threat: null
+component: null
+```
+Found during T-0961: the drift-lock test test_every_emitted_rule_literal_is_known scans only inline rule=string literals, so 30 real firing rule ids referenced as rule=<MODULE_CONSTANT> were invisible to it -- it passed while _KNOWN_GATE_RULES was missing them all. Extend the scan to also resolve module-level constant assignments (REL_*/SYS_*/any name whose value is a rule-id-shaped string that flows into a rule= kwarg), so constant-referenced ids are checked identically to literals. Prove with a before-fails case: temporarily removing a constant-referenced id from _KNOWN_GATE_RULES must fail the test.
