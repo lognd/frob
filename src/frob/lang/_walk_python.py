@@ -1,8 +1,9 @@
 """Python symbol walker (docs/modules/lang.md extraction table).
 
 Python's declaration vocabulary (docstring-as-first-statement,
-`decorated_definition` wrappers, SCREAMING_CASE module constants) is kept
-here; the shared token/span/doc mechanism lives in `_common.py`.
+`decorated_definition` wrappers, SCREAMING_CASE module constants,
+`SymbolKind.TYPE` module-level type aliases -- T-1028) is kept here; the
+shared token/span/doc mechanism lives in `_common.py`.
 """
 
 # frob:waive REF002 reason="private per-language walker imported only by its sibling aggregator frob.lang._extract; a single inbound anchor is intentional for a language-dispatch leaf module, T-0450"  # noqa: E501
@@ -133,6 +134,106 @@ def _const_symbol(node: Node) -> RawSymbol | None:
     )
 
 
+# frob:ticket T-1028
+def _type_alias_symbol(node: Node) -> RawSymbol | None:
+    """A module-level python TYPE-alias `RawSymbol` (T-1028), or `None` if
+    `node` doesn't match one of the three recognized shapes:
+
+    - `type X = ...` (py>=3.12, `type_alias_statement`) -- unambiguous,
+      matched by node type alone.
+    - `X: TypeAlias = ...` (PEP 613 explicit annotation, bare `TypeAlias`
+      or dotted `typing.TypeAlias`) -- unambiguous, matched by the
+      assignment's own `type` (annotation) field.
+    - bare `X = Literal[...]` (this repo's own idiom, e.g.
+      `frob.arch._models.ArchCategory`) -- narrower: only fires when the
+      right-hand side is textually a `Literal[...]`/`typing.Literal[...]`
+      subscript, the one construct T-1028 was filed against. A bare
+      `X = SomeOtherCall(...)` assignment is deliberately NOT swept in
+      here (that would silently re-scope `_const_symbol`'s existing
+      SCREAMING_CASE constant population); widening to `Union[...]`/
+      `Optional[...]`/`TypeVar(...)` RHS shapes is a separate, deliberate
+      follow-up (T-1033), not bundled into this fix.
+
+    Mirrors `_const_symbol`'s own idiom (module-level only, `node` may be
+    either a bare `assignment` or an `expression_statement` wrapping one,
+    per that function's own docstring) so TYPE and CONST stay recognizably
+    siblings rather than diverging conventions."""
+    if node.type == "type_alias_statement":
+        name = _type_alias_statement_name(node)
+        return None if name is None else _make_type_symbol(node, name)
+    assign = (
+        node
+        if node.type == "assignment"
+        else (node.named_children[0] if node.named_child_count else None)
+    )
+    if assign is None or assign.type != "assignment":
+        return None
+    left = assign.child_by_field_name("left")
+    if left is None or left.type != "identifier":
+        return None
+    name = child_text(left)
+    if not name:
+        return None
+    annotation = assign.child_by_field_name("type")
+    if annotation is not None and _is_type_alias_annotation(annotation):
+        return _make_type_symbol(node, name)
+    right = assign.child_by_field_name("right")
+    if right is not None and _is_literal_alias_rhs(right):
+        return _make_type_symbol(node, name)
+    return None
+
+
+# frob:ticket T-1028
+def _type_alias_statement_name(node: Node) -> str | None:
+    """The alias name for a `type_alias_statement` node (py>=3.12's `type
+    X = ...`) -- its `left` field is itself a `type` node wrapping the
+    bare `identifier`, not the identifier directly."""
+    left = node.child_by_field_name("left")
+    if left is None:
+        return None
+    ident = next((c for c in left.children if c.type == "identifier"), None)
+    return child_text(ident) if ident is not None else None
+
+
+# frob:ticket T-1028
+def _is_type_alias_annotation(annotation: Node) -> bool:
+    """True if an assignment's `type` (annotation) field is `TypeAlias` or
+    `typing.TypeAlias` -- PEP 613's explicit alias marker."""
+    text = child_text(annotation)
+    return text == "TypeAlias" or text.endswith(".TypeAlias")
+
+
+# frob:ticket T-1028
+def _is_literal_alias_rhs(right: Node) -> bool:
+    """True if an assignment's right-hand side is a `Literal[...]`/
+    `typing.Literal[...]` subscript -- see `_type_alias_symbol`'s own
+    docstring for why this stays narrow to `Literal` rather than sweeping
+    in every typing-construct RHS."""
+    if right.type != "subscript":
+        return False
+    value = right.child_by_field_name("value")
+    if value is None:
+        return False
+    text = child_text(value)
+    return text == "Literal" or text.endswith(".Literal")
+
+
+# frob:ticket T-1028
+def _make_type_symbol(node: Node, name: str) -> RawSymbol:
+    """A `SymbolKind.TYPE` `RawSymbol` for `name`, matching `_const_symbol`'s
+    own no-body-tokens/no-doc shape (a module-level alias statement has no
+    def/class body of its own to tokenize)."""
+    return RawSymbol(
+        qualname=name,
+        kind=SymbolKind.TYPE,
+        public=not name.startswith("_"),
+        span=_span_of(node),
+        sig_tokens=_leaf_tokens(node, _COMMENT_TYPES),
+        body_tokens=(),
+        doc_text="",
+    )
+
+
 # frob:ticket T-0565
 def _const_assignment_name(node: Node) -> str | None:
     """The SCREAMING_CASE target name of a module-level constant assignment
@@ -170,6 +271,7 @@ def _const_assignment_name(node: Node) -> str | None:
     return name
 
 
+# frob:ticket T-1028
 def _visit(container: Node, stack: tuple[str, ...], symbols: list[RawSymbol]) -> None:
     """Recursive descent appending python symbols under `container`."""
     for child in container.children:
@@ -189,14 +291,32 @@ def _visit(container: Node, stack: tuple[str, ...], symbols: list[RawSymbol]) ->
             symbols.append(_class_symbol(node, sig_node, stack, name, body))
             # frob:invariant terminates reason="body is node's own 'body' field child, and node is a child of container, so body is a proper descendant of container in the finite tree-sitter parse tree" measure="container's subtree depth strictly decreases"  # noqa: E501
             _visit(body, (*stack, name), symbols)
+        elif node.type == "type_alias_statement" and not stack:
+            alias = _type_alias_symbol(node)
+            if alias is not None:
+                symbols.append(alias)
         elif node.type in ("expression_statement", "assignment") and not stack:
-            const = _const_symbol(node)
-            if const is not None:
-                symbols.append(const)
+            # T-1028: a TYPE-alias shape (`X: TypeAlias = ...`, bare
+            # `X = Literal[...]`) is tried FIRST -- `_const_symbol`'s own
+            # SCREAMING_CASE name check would just reject a CapWords alias
+            # name silently, so trying both unconditionally and taking
+            # whichever matches (never both: `_const_assignment_name`
+            # requires all-caps, `_type_alias_symbol`'s Literal/TypeAlias
+            # checks are independent of case) cannot double-count a
+            # module-level assignment as two different symbols.
+            alias = _type_alias_symbol(node)
+            if alias is not None:
+                symbols.append(alias)
+            else:
+                const = _const_symbol(node)
+                if const is not None:
+                    symbols.append(const)
 
 
+# frob:ticket T-1028
 def _walk_python(root: Node) -> tuple[RawSymbol, ...]:
-    """Every python symbol (functions, methods, classes, module constants)."""
+    """Every python symbol (functions, methods, classes, module constants,
+    module-level type aliases)."""
     symbols: list[RawSymbol] = []
     _visit(root, (), symbols)
     return tuple(symbols)

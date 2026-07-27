@@ -29,6 +29,7 @@ def _symbol(pf, qualname: str):
     return next(s for s in pf.symbols if s.qualname == qualname)
 
 
+# frob:ticket T-1028
 class TestParsePython:
     def test_symbols_and_nesting(self) -> None:
         # frob:tests src/frob/lang/__init__.py::parse_file
@@ -107,6 +108,101 @@ class TestParsePython:
         const = _symbol(pf, "TRUST")
         assert const.kind == SymbolKind.CONST
         assert const.public is True
+
+    # frob:ticket T-1028
+    def test_bare_literal_assignment_extracted_as_type_symbol(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_lang.py::TestParsePython.test_bare_literal_assignment_extracted_as_type_symbol  # noqa: E501
+        """T-1028: a bare module-level `X = Literal[...]` assignment (the
+        real repro, `frob.arch._models.ArchCategory`) is now a
+        `SymbolKind.TYPE` symbol, not silently absent from the graph the
+        way it used to be (only def/class were indexed)."""
+        source = (
+            '"""mod docstring."""\n'
+            "from typing import Literal\n\n"
+            "ArchCategory = Literal['a', 'b']\n"
+        )
+        pf = parse_file(_write(tmp_path, "alias.py", source)).danger_ok
+        alias = _symbol(pf, "ArchCategory")
+        assert alias.kind == SymbolKind.TYPE
+        assert alias.public is True
+
+    # frob:ticket T-1028
+    def test_annotated_type_alias_extracted_as_type_symbol(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_lang.py::TestParsePython.test_annotated_type_alias_extracted_as_type_symbol  # noqa: E501
+        """T-1028: an explicit PEP 613 `X: TypeAlias = ...` annotation is
+        recognized regardless of the right-hand-side shape (unlike the
+        bare-assignment case, which stays narrowly scoped to
+        `Literal[...]`)."""
+        source = (
+            '"""mod docstring."""\n'
+            "from typing import TypeAlias\n\n"
+            "Mode: TypeAlias = str | int\n"
+        )
+        pf = parse_file(_write(tmp_path, "alias.py", source)).danger_ok
+        alias = _symbol(pf, "Mode")
+        assert alias.kind == SymbolKind.TYPE
+        assert alias.public is True
+
+    # frob:ticket T-1028
+    def test_py312_type_statement_extracted_as_type_symbol(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_lang.py::TestParsePython.test_py312_type_statement_extracted_as_type_symbol  # noqa: E501
+        """T-1028: the py>=3.12 `type X = ...` statement (a distinct grammar
+        node, `type_alias_statement`, not an `assignment`) is recognized."""
+        source = '"""mod docstring."""\ntype Alias3 = int | str\n'
+        pf = parse_file(_write(tmp_path, "alias.py", source)).danger_ok
+        alias = _symbol(pf, "Alias3")
+        assert alias.kind == SymbolKind.TYPE
+        assert alias.public is True
+
+    # frob:ticket T-1028
+    def test_private_type_alias_is_not_public(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_lang.py::TestParsePython.test_private_type_alias_is_not_public  # noqa: E501
+        """A leading-underscore type alias is still extracted, but marked
+        non-public -- matches `_const_symbol`'s own public/private rule."""
+        source = (
+            '"""mod docstring."""\n'
+            "from typing import Literal\n\n"
+            "_Mode = Literal['a', 'b']\n"
+        )
+        pf = parse_file(_write(tmp_path, "alias.py", source)).danger_ok
+        alias = _symbol(pf, "_Mode")
+        assert alias.kind == SymbolKind.TYPE
+        assert alias.public is False
+
+    # frob:ticket T-1028
+    def test_ordinary_assignments_are_unaffected_by_type_alias_detection(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_lang.py::TestParsePython.test_ordinary_assignments_are_unaffected_by_type_alias_detection  # noqa: E501
+        """T-1028's guard test: a plain SCREAMING_CASE constant, a bare
+        lowercase assignment to a non-Literal call, and a tuple-unpacking
+        assignment must all keep their PRE-T-1028 behavior -- CONST stays
+        CONST, an ordinary non-type-alias-shaped bare assignment stays
+        unindexed, and tuple targets stay excluded entirely."""
+        source = (
+            '"""mod docstring."""\n'
+            "def some_call():\n    return 1\n\n\n"
+            "CONST_NAME = 5\n"
+            "regular = some_call()\n"
+            "x, y = 1, 2\n"
+        )
+        pf = parse_file(_write(tmp_path, "alias.py", source)).danger_ok
+        names = {s.qualname for s in pf.symbols}
+        assert "CONST_NAME" in names
+        const = _symbol(pf, "CONST_NAME")
+        assert const.kind == SymbolKind.CONST
+        # `regular = some_call()` is neither SCREAMING_CASE (not CONST) nor
+        # a Literal/TypeAlias shape (not TYPE) -- stays unindexed, same as
+        # before T-1028.
+        assert "regular" not in names
+        assert "x" not in names
+        assert "y" not in names
 
     def test_docstring_in_doc_text_and_excluded_from_body(self) -> None:
         pf = parse_file(_FIXTURES / "sample.py").danger_ok
