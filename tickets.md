@@ -1995,7 +1995,7 @@ drop the guard the paired fix ticket adds.
 ```yaml
 id: T-0925
 title: 'docs: add lock-ordering hazards section to docs/modules/arch.md'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-07-26'
@@ -2006,6 +2006,16 @@ sprint: null
 scope:
 - docs/modules/arch.md
 - src/frob/arch/_lock_ordering.py
+- tests/unit/test_arch.py
+scope_changes:
+- op: add
+  glob: tests/unit/test_arch.py
+  reason: docs-only ticket still needs evidence test file scope-add per playbook section
+    4
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- tests/unit/test_arch.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function
 threat: null
 component: null
 ```
@@ -2017,6 +2027,31 @@ existing "Fork/pool hazards" (T-0695) and "Async event-loop hazards"
 (src/frob/arch/**, tests/unit/test_arch.py) does not include docs/, so no
 frob:doc anchor was added on the check function in that ticket -- add the
 section and the frob:doc directive together here.
+
+## Done report
+
+Added the "Lock-ordering hazards" section to docs/modules/arch.md (matching
+the Fork/pool hazards and Async event-loop hazards sections' structure and
+detail level), documenting lock-order-cycle and lock-identity-unresolved
+(frob.arch._lock_ordering, T-0694, child 2 of the T-0693 umbrella): the
+5-step model, both finding categories, the model-limit disclosure, and
+that this channel is unwaivable by design (no frob:waive escape hatch) --
+resolution is structural (consistent global lock-acquisition order, or
+declaring the lock via a curated ctor). Added a frob:doc directive on
+_check_lock_ordering_hazards pointing at the new anchor, and scope-added
+tests/unit/test_arch.py (docs-only ticket, existing test file is the
+evidence surface) per the playbook's recurring gotcha.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/test_arch.py::TestLockOrderingHazards::test_two_lock_ab_ba_cycle_fires_within_one_function` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 4676 warning(s), 333 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0935 -->
 ```yaml

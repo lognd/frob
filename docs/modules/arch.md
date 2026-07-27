@@ -1256,6 +1256,94 @@ an event-loop hazard possible, never a runtime proof that it fires.
   never actually suspends back to the loop, so it should probably be a
   plain `def` (feeds T-0698's IO/CPU-bound model-mismatch advisory too).
 
+### Lock-ordering hazards: `lock-order-cycle` / `lock-identity-unresolved` (T-0694)
+
+<a id="lock-ordering-hazards"></a>
+<!-- frob:describes src/frob/arch/_lock_ordering.py::_check_lock_ordering_hazards -->
+
+`frob.arch._lock_ordering` is child 2 of the T-0693 concurrency-hazard
+umbrella (fork/pool is child 1, async event-loop is child 3 -- both
+above). Same posture as those two families: a structural, INTERPROCEDURAL
+scan for the classic AB/BA two-lock deadlock shape, generalized to fire
+even when the second acquisition happens inside a callee rather than the
+same function body. It never traces at runtime -- every finding is a
+FAIL-CLOSED heuristic on the same unwaivable advisory channel every other
+`frob.arch` category is on (`frob.gates._unwaivable_channel_rules`): a
+shape that makes a deadlock POSSIBLE, not a proof it fires.
+
+The model, in order:
+
+1. **Lock identity.** A lock is statically identifiable only when its
+   construction site is a curated ctor (`threading`/`multiprocessing`'s
+   `Lock`/`RLock`/`Semaphore`/`BoundedSemaphore`, or `anyio`/`asyncio`'s
+   `Lock`), assigned either at module level (`lock = threading.Lock()`)
+   or as a `self.<attr>` assignment inside a class's own method body. A
+   module-level name's canonical id is its bare name; a class-attribute
+   lock's canonical id is `ClassName.attr`, resolved at a use site only
+   when that use site's own enclosing class matches -- a `self.attr` read
+   outside the class that assigned it, or naming a different attr, does
+   not alias.
+2. **Per-function lock events.** Every `with <expr>:` item and every
+   explicit `<expr>.acquire()` call in a function's OWN body (program
+   order, crossing `if`/`for`/`try`/`with` but not descending into a
+   nested function/class) resolves against the module's lock-identity
+   table. A use site that merely LOOKS lock-shaped (a name containing
+   "lock"/"mutex"/"semaphore", case-insensitive) but does not resolve is
+   recorded as an unresolved advisory instead of silently dropped; a
+   plain `with open(...) as f:` matches neither and is ignored.
+3. **Interprocedural propagation.** A call to a resolvable same-module
+   function is treated, at its call-site position, as acquiring every
+   lock that function's own transitively-expanded reachable-lock set
+   reaches -- a monotonic chaotic-iteration fixpoint over the same-module
+   call graph, mirroring `frob.arch._mayraise.compute_may_raise`'s
+   cycle-safe fixpoint but propagating a lock SET instead of a may-raise
+   set. This deliberately over-approximates: any lock reachable anywhere
+   inside a callee counts as reachable at the call site, not ordered
+   against the callee's own internal sequence.
+4. **Order-pair extraction.** A function's event sequence becomes
+   totally-ordered "slots" (an own lock event is a one-lock slot; a call
+   event's slot is the callee's reachable-lock set). Every `(lockA,
+   lockB)` pair where `lockA` occupies an earlier slot than `lockB`
+   (excluding same-lock pairs -- reentrant use via the same `RLock` never
+   counts) becomes a directed edge `lockA -> lockB`, tagged with the
+   contributing function's symref and `lockA`'s line.
+5. **Cycle detection.** Every function's edges feed one global directed
+   graph over lock canonical ids (whole-module resolution boundary,
+   matching `_mayraise`/`_fallibility`'s own disclosed limit). Any cycle
+   (`lockA -> lockB -> ... -> lockA`) is a potential deadlock: two call
+   paths that acquire the same locks in opposite orders can deadlock if
+   they ever run concurrently. A consistent global order across every
+   call path produces no back-edge and stays silent.
+
+- **`lock-order-cycle`.** Fires on the first reciprocal pair found (some
+  `A -> B` edge and some `B -> A` edge, from the same or different
+  functions) -- the classic AB/BA shape. The finding message names both
+  contributing symrefs and the acquisition-site line for each direction.
+- **`lock-identity-unresolved`.** One advisory-tier finding per function
+  (deduplicated, not per site) when that function has lock-shaped usage
+  the resolver could not statically identify -- declare the lock as a
+  module-level or `self.<attr>` assignment of a curated ctor so
+  lock-order-cycle detection can account for it.
+
+MODEL-LIMIT DISCLOSURE (same house convention as the sibling families
+above): same-module only, no cross-file call resolution; a lock passed as
+a function PARAMETER or returned from a factory is not identity-tracked;
+release ordering is not modeled at all -- only acquisition order, since a
+deadlock is caused by acquisition order, not release order.
+
+Resolving (or waiving) a finding: this channel is unwaivable by design
+(`frob.gates._unwaivable_channel_rules` auto-adopts any new
+`ArchCategory`, so no separate `frob.gates` change was needed to give
+this category the same posture as its siblings) -- there is no `frob:waive`
+escape hatch for `lock-order-cycle` or `lock-identity-unresolved`. The
+sanctioned remediation is structural, mirroring the fork/pool family's own
+T-0767 precedent: establish one consistent global acquisition order for
+every call path that needs both locks (restructure so the same two locks
+are always acquired in the same order), or, for
+`lock-identity-unresolved`, declare the lock via one of the curated ctors
+at module or `self.<attr>` scope so the resolver can track it instead of
+guessing from a name-shaped heuristic.
+
 ### SRP/cohesion checks: `low-cohesion-class` / `god-module` / `mixed-concern-function` (T-0616)
 
 <a id="srp-cohesion-checks"></a>
