@@ -1343,8 +1343,10 @@ def _top_level_command_help(parser) -> dict[str, str]:  # noqa: ANN001
 
 # frob:doc docs/modules/cli.md#generated-command-reference-t-1011
 # frob:ticket T-1011
+# frob:invariant INV-045
 # frob:tests tests/test_docblocks_gate.py::TestCliCommandTableGenerator.test_generate_sorts_rows_across_sources  # noqa: E501
 # frob:tests tests/test_docblocks_gate.py::TestCliCommandTableGenerator.test_generate_no_config_is_none  # noqa: E501
+# frob:tests tests/test_docblocks_gate.py::TestCliCommandTableGenerator.test_doc005_freshness_flags_stale_generated_block  # noqa: E501
 def generate_cli_command_table(root: Path) -> str | None:
     """The exact text `docs/modules/cli.md`'s generated block (between
     `CLI_COMMAND_TABLE_START`/`CLI_COMMAND_TABLE_END`) must hold (T-1011):

@@ -9,6 +9,8 @@ wiring.
 
 ## REL2xx: TIMEOUT obligation (T-0640)
 
+<!-- frob:invariant INV-047 -->
+
 `_reliability.py::check_reliability_timeouts` reads `KernelModel.flows`
 (no new kernel field, charter law 1) to find two kinds of unbounded-hang
 risk:

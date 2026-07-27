@@ -246,6 +246,7 @@ def _has_guard(tokens: tuple[str, ...]) -> bool:
 
 
 # frob:invariant INV-018
+# frob:tests tests/test_perf.py::test_perf005_fires_on_unproven_self_recursion
 def _termination_reasoned(
     snapshot: GraphSnapshot, symref: str
 ) -> tuple[str, str] | None:

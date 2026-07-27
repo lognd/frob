@@ -529,6 +529,7 @@ def _apply_reliability_waivers(
 # frob:doc docs/strata/reliability.md#rel2xx-timeout-obligation-t-0640
 # frob:ticket T-0640
 # frob:ticket T-0958
+# frob:invariant INV-047
 # frob:enforces SDC-5-TIMEOUT
 # frob:enforces CHK-GATE-REL200
 # frob:enforces CHK-GATE-REL201

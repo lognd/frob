@@ -138,6 +138,8 @@ def load_manifest(path: Path) -> Result[FleetManifest, FleetError]:
     return Ok(manifest)
 
 
+# frob:invariant INV-046
+# frob:tests tests/unit/fleet/test_manifest.py::TestLoadManifest.test_relative_path_resolves_against_manifest_dir_not_cwd  # noqa: E501
 def _rebase_relative_paths(
     manifest: FleetManifest, manifest_dir: Path
 ) -> FleetManifest:

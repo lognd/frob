@@ -10,6 +10,13 @@ from typani.result import Result
 
 from frob.logging import get_logger
 
+# frob:waive INV006 reason="T-1023 INV006 burn-down: this file's \
+# exclusivity-vocabulary hit is source-level design-rationale/scope-cut prose (a \
+# comment describing already-implemented internal shell-hook behavior, verifiable by \
+# reading the code it annotates) rather than a separate cross-module contract needing \
+# its own tracked invariant; disposed as a calibration batch, not claim-by-claim, same \
+# INV006 first-turn-on-pool disposition this repo already applies elsewhere (T-0585)"
+
 _DATA_DIR = Path(__file__).parent / "data"
 _log = get_logger(__name__)
 

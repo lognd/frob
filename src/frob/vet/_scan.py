@@ -141,6 +141,7 @@ def _vet001_violation(
 # on generic Violation(...)-builder shape; different gate family (dependency-vet vs \
 # doc-graph), unrelated rules"
 # frob:invariant INV-025
+# frob:tests tests/test_vet.py::TestObfuscationEnsemble.test_high_entropy_string_flagged
 def _vet004_violation(
     dep: Dependency, lockfile_name: str, signals: list[str]
 ) -> Violation:

@@ -66,6 +66,7 @@ baseline forward.
 
 ## REL002 gate (T-1009)
 
+<!-- frob:invariant INV-044 -->
 <!-- frob:describes src/frob/gates/__init__.py::_rel002_coherence_violations -->
 
 REL002 runs alongside REL001 inside the same `release` check stage (`frob

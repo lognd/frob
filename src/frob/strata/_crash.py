@@ -101,6 +101,7 @@ def _validate_recovery_sources(
 
 
 # frob:invariant INV-027
+# frob:tests tests/unit/strata/test_crash.py::TestNoHangCheck.test_missing_timeout_into_crashable_node_fails_closed  # noqa: E501
 def _validate_no_hang_flow(flow: Flow, node: Node) -> Result[None, StrataError]:
     """No-hang check body for one flow into one crashable `node`."""
     assert node.crash is not None

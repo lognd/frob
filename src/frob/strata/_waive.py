@@ -330,6 +330,7 @@ def _index_declared_waivers(
 
 
 # frob:invariant INV-036
+# frob:tests tests/unit/strata/test_litmus_waive.py::TestWaiveLitmus.test_sub_target_waiver_does_not_suppress_a_different_sub_target  # noqa: E501
 def _split_kept_and_waived(
     findings: Sequence[_F],
     by_key: dict[tuple[str, str, str | None], Waiver],

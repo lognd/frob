@@ -141,6 +141,8 @@ no-shell contexts even though it goes unused when an agent has a shell.
 
 ## Generated command reference (T-1011)
 
+<!-- frob:invariant INV-045 -->
+
 Everything between the two marker comments below is written by `frob docs
 --sync-commands` from the live top-level argparse registry (the same
 `[[docblocks.commands]]`-configured factory DOC004/DOC005 already walk) --

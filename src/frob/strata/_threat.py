@@ -1906,6 +1906,7 @@ def _mitigation_is_chokepoint(
 
 
 # frob:invariant INV-029
+# frob:tests tests/unit/strata/test_threat.py::TestDischargeCompleteness.test_discharge_claim_below_required_rung_is_a_violation  # noqa: E501
 def _check_discharge_shape_and_rung(
     entry: WeaknessEntry,
     node_id: str,

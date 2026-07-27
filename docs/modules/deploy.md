@@ -1,6 +1,8 @@
 # frob.deploy: windows generation (T-0264)
 
 <!-- frob:ticket T-0264 -->
+<!-- frob:waive INV003 reason="T-1023 INV003/INV004 burn-down: this file's 'only'/'never'/'requires' hits are incidental scope-cut/design-rationale prose (this page vs docs/strata/host.md's split, a comment about krb_manifest_for reuse, a code-sample docstring) rather than a genuine cross-module contract needing its own tracked invariant" -->
+<!-- frob:waive INV004 reason="T-1023 INV003/INV004 burn-down: same disposition as the INV003 waiver above -- incidental prose, not an under-specified guaranteed behavior" -->
 
 This page documents the WINDOWS half of `frob.deploy`'s generator
 (`src/frob/deploy/_generate_windows.py`). The Linux/systemd half

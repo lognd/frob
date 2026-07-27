@@ -515,6 +515,7 @@ def _raw_declared_kinds(node) -> frozenset[str]:  # noqa: ANN001
 
 
 # frob:invariant INV-026
+# frob:tests tests/unit/strata/test_selfconform.py::TestStaleDesign.test_stale_design_skips_node_fully_within_graph_exclude  # noqa: E501
 def _stale_design_violations(
     model: KernelModel, root: Path, observed_by_node: dict[str, frozenset[str]]
 ) -> list[SelfConformViolation]:

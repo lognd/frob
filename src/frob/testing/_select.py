@@ -126,6 +126,7 @@ def _looks_like_test_symbol(symref: str) -> bool:
 
 
 # frob:invariant INV-023
+# frob:tests tests/test_testing.py::TestSelect.test_reversed_directive_never_selects_the_source_symbol  # noqa: E501
 def _edge_test_and_source(edge) -> tuple[str, str] | None:
     """Which endpoint of a `TESTS` edge is the test and which is the tested
     source symbol, or `None` if that can't be determined.

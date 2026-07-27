@@ -23,6 +23,12 @@ fresh, compare byte-identical" posture `deploy_drift_violations` uses:
 staleness is always measured against what `frob` would install *right
 now*, not against a frozen snapshot that can itself go stale.
 """
+# frob:waive INV006 reason="T-1023 INV006 burn-down: this file's \
+# exclusivity-vocabulary hit is source-level design-rationale/scope-cut prose (a \
+# docstring or comment describing already-implemented internal behavior, verifiable by \
+# reading the code it annotates) rather than a separate cross-module contract needing \
+# its own tracked invariant; disposed as a calibration batch, not claim-by-claim, same \
+# INV006 first-turn-on-pool disposition this repo already applies elsewhere (T-0585)"
 
 from __future__ import annotations
 

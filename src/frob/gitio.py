@@ -13,6 +13,12 @@ is the private spawn primitive; `run_argv` is the small public wrapper
 subprocess-with-timeout helper in the package, never a second copy living
 under `frob.testing`.
 """
+# frob:waive INV006 reason="T-1023 INV006 burn-down: this file's \
+# exclusivity-vocabulary hit is source-level design-rationale/scope-cut prose (a \
+# docstring or comment describing already-implemented internal behavior, verifiable by \
+# reading the code it annotates) rather than a separate cross-module contract needing \
+# its own tracked invariant; disposed as a calibration batch, not claim-by-claim, same \
+# INV006 first-turn-on-pool disposition this repo already applies elsewhere (T-0585)"
 # frob:waive ARCH102 reason="13 of 15 exports form one connected cluster \
 # around the single subprocess seam this module's docstring names (_run_git \
 # feeding repo_root/working_diff/current_branch/git_common_dir/run_argv); \

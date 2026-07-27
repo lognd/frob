@@ -201,6 +201,7 @@ def _load_merged(root: Path) -> Result[dict[str, Ticket], TicketError]:
 
 
 # frob:invariant INV-004
+# frob:tests tests/test_tickets.py::TestQueue.test_malformed_frontmatter_is_err
 # invariant spec: [INV-004](invariants/INV-004.md)
 # frob:doc docs/modules/tickets.md#public-api
 def load_queue(root: Path) -> Result[TicketQueue, TicketError]:
@@ -948,6 +949,7 @@ def finalize_draft(root: Path, draft_id: str) -> Result[str, TicketError]:
 
 
 # frob:invariant INV-032
+# frob:tests tests/test_tickets.py::TestDoable.test_blocked_excluded
 # frob:ticket T-0715
 def _doable_candidates(queue: TicketQueue) -> list[Ticket]:
     """Queued/planned LEAF tickets (tier=TICKET) that currently have no open

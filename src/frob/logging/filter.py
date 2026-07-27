@@ -6,6 +6,7 @@ import logging
 # frob:describes this private filter and its .filter method by name (T-0529) -- a \
 # deliberate architecture doc, not accidental drift onto a private helper"
 # frob:invariant INV-016
+# frob:tests tests/unit/test_logging_module.py::test_below_level_filter
 class _BelowLevelFilter(logging.Filter):
     """Pass records strictly below `below` level (used to keep stdout clean)."""
 

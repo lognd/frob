@@ -27,6 +27,10 @@ and checking exactly as before; nothing here is wired into
 `analyze_project` yet.
 """
 # frob:invariant INV-042 no_import="tree_sitter"
+# frob:tests tests/unit/test_design_invariants.py::TestInv007.test_forbidden_import_fires  # noqa: E501
+# T-1023: the frob:tests edge above is what INV005 needs to see this
+# evidence actually REACH this file's own anchor (same-file trust does
+# not apply here since the evidence test lives in a different file) --
 # T-0757 (the T-0611 incident as a gate, not just this comment): this
 # module is DELIBERATELY tree_sitter-free -- every language adapter
 # (`_python.py`, `_typescript.py`, `_cpp.py`, ...) lives outside it

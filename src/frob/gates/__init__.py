@@ -409,6 +409,7 @@ def _is_path_level_evidence(evidence: str) -> bool:
 
 # frob:ticket T-0298
 # frob:invariant INV-013
+# frob:tests tests/test_gates.py::TestCoverageGate.test_cov003_rejects_empty_directory_level_evidence  # noqa: E501
 def _path_level_evidence_collected(evidence: str, tests: CollectedTests) -> bool:
     """COV003 file-/directory-level evidence resolution: `evidence` (a bare
     path with no `::`) resolves iff at least one collected node id lives
@@ -2606,6 +2607,7 @@ _PACKAGE_SCOPED_RULES = frozenset({"TEST003", "TEST004", "TEST007"})
 
 
 # frob:invariant INV-006
+# frob:tests tests/test_arch_gate.py::TestArchGateWaivers.test_ceiling_refires_when_grown_past_it  # noqa: E501
 def _ceiling_ok(waiver: Edge, violation: Violation) -> bool:
     """Whether `waiver` still covers `violation` given its optional
     `ceiling=` attribute: always true when no ceiling is set (or the
@@ -9787,6 +9789,8 @@ def _uv_lock_version(root: Path) -> str | None:
 
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-1009
+# frob:invariant INV-044
+# frob:tests tests/test_release.py::TestReleaseGateCoherence.test_hand_edited_pyproject_fires_rel002  # noqa: E501
 # frob:enforces CHK-GATE-REL002
 def _rel002_coherence_violations(root: Path, manifest) -> list[Violation]:  # noqa: ANN001
     """REL002 (T-1009): `.frob-release.json`'s `version` is the ONE version

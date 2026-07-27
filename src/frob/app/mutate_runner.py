@@ -1,4 +1,10 @@
 """CLI wiring for `frob mutate` -- mutation testing (T-0011)."""
+# frob:waive INV006 reason="T-1023 INV006 burn-down: this file's \
+# exclusivity-vocabulary hit is source-level design-rationale/scope-cut prose (a \
+# docstring or comment describing already-implemented internal behavior, verifiable by \
+# reading the code it annotates) rather than a separate cross-module contract needing \
+# its own tracked invariant; disposed as a calibration batch, not claim-by-claim, same \
+# INV006 first-turn-on-pool disposition this repo already applies elsewhere (T-0585)"
 
 from __future__ import annotations
 

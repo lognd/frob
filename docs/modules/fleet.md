@@ -18,6 +18,8 @@ both of those one command with a typed, testable answer.
 
 ## Manifest (`fleet.toml`)
 
+<!-- frob:invariant INV-046 -->
+
 ```toml
 [[repo]]
 name = "frob"
