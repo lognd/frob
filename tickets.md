@@ -6947,7 +6947,7 @@ gates-security's SELFAUDIT001 stage flags src/frob/arch/_logging_checks.py:67,70
 id: T-0911
 title: 'SELFAUDIT001: src/frob/arch/_logging_checks.py capabilities undeclared on
   graphlang node'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-07-26'
@@ -6971,6 +6971,8 @@ added to design/*.strata for `graphlang`, or a `frob:waive SELFAUDIT001
 reason="..."` if these are false positives, so `frob check
 --only gates-security` is clean again.
 
+## Drop reason
+- 2026-07-26: duplicate of T-0910 (same SELFAUDIT001 finding on _logging_checks.py, filed independently by two concurrent agents)
 <!-- ticket:T-0912 -->
 ```yaml
 id: T-0912
