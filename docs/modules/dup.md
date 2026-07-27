@@ -69,6 +69,34 @@ exact by construction), and a narrowed `CloneRegion` span covering just
 the matched token window -- not the whole symbol, same posture as R4's
 region-narrowing.
 
+## `[dup].native_rungs`: gating R3/R4/R5 independently of `enforce` (T-0974)
+
+R3/R4/R5 (`DupConfig.native_rungs_enabled`, default `False`) run one
+`frob-core` native call per fingerprinted symbol each (canonical hash,
+winnowed k-gram set, WL-hash respectively). At this repo's own whole-
+snapshot scale that native-call-per-symbol cost is the dominant driver of
+`find_clones`'s COLD wall time (no `.frob/dup.db` fingerprint cache yet --
+the common case in a fresh worktree, docs/guides/worktree-natives-
+artifact): T-0399 first measured `[dup].enforce=true` alone blowing past
+the ~150s single-stage foreground budget, and T-0974 reproduced the same
+blowout and pinned it to these three rungs specifically. R1/R2 (exact/
+alpha-renamed token hash) are pure-Python and stay cheap even cold, so
+`[dup].enforce=true` now ships ON by default in this repo's own
+`frob.toml` with `native_rungs` left off -- R1/R2 clone detection is live
+by default; R3-R5's deeper semantic ladder stays opt-in until a follow-up
+makes its cold cost affordable too (an incremental per-file re-index or a
+narrower default snapshot scope -- not attempted this pass, see T-0974's
+Done report). `dup_gate` still fails closed with DUP003 (ERROR) if
+`frob-core` is missing while `[dup].enforce=true`, regardless of
+`native_rungs` -- that check gates the whole rung ladder's availability,
+not just the native subset.
+
+```toml
+[dup]
+enforce = true          # R1/R2 on by default (T-0974); cheap even cold
+native_rungs = false    # opt-in: R3/R4/R5 (native-call-per-symbol cost)
+```
+
 **Run-size guard (`[dup].region_run_cap`, T-0273).** Emitting every
 occurrence pair within one equal-token run is O(k^2) in the run size `k`
 (`emit_run_pairs` in `frob-core/src/lib.rs`) -- a reviewer demonstrated
@@ -252,6 +280,7 @@ class DupError(ErrorSet):
 threshold = 0.85          # DUP001 similarity floor
 min_tokens = 40           # ignore trivial bodies
 cache_entries = 200000    # LRU cap on pairwise verdicts
+native_rungs = false      # R3/R4/R5 opt-in (native-call-per-symbol cost, T-0974)
 region_kernel = false     # R1.5 exact-region kernel opt-in (needs enforce=true too)
 region_min_tokens = 15    # R1.5 floor below which a region match is not reported
 region_run_cap = 200      # R1.5 per-run pair-emission guard (T-0273)

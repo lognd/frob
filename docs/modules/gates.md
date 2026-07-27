@@ -1224,7 +1224,15 @@ silently folds in.
   existing symbol; opt-in via `[dup].enforce` in `frob.toml`. T-0399: if
   `enforce` is true but the `frob-core` native extension is unavailable,
   emits DUP003 (ERROR) instead of silently skipping -- a requested-but-
-  unavailable control fails closed, not open.
+  unavailable control fails closed, not open. T-0974: also reads
+  `[dup].native_rungs` (default false) and threads it into the
+  `DupConfig` it builds, independently of `enforce` -- when false, the
+  gate's `find_clones` call only runs R1/R2 (cheap, pure-Python); R3/R4/R5
+  (native-call-per-symbol, the cost driver a whole-snapshot cold run pays)
+  stay off until a repo opts in. See `docs/modules/dup.md`'s
+  "[dup].native_rungs" section for the measured cost and
+  `frob.dup.DupConfig.native_rungs_enabled`'s docstring for why the class
+  default differs from the gate's toml default.
 - `release_gate` -- REL001: the public-API change since the last release
   stamp demands a version bump the declared version does not cover.
 - `fuzz_gate` -- FUZZ001..003 over the `[fuzz]` policy; opt-in via

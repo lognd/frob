@@ -230,6 +230,26 @@ class DupConfig(BaseModel):
     existing dup fixture suite is unchanged (see
     `tests/test_dup_prefilter.py`) -- only the number of pairs that reach
     expensive verification drops.
+
+    `native_rungs_enabled` (T-0974) gates the R3/R4/R5 native fingerprint
+    rungs (canonical-hash, winnowed k-gram, and WL-hash respectively)
+    independently of `enforce`: measured cold (no `.frob/dup.db` fingerprint
+    cache yet -- the common case for a fresh worktree) on this repo's own
+    ~5000-symbol snapshot, running the full R1-R5 ladder over every symbol
+    blew well past the ~120s single-stage foreground budget
+    (docs/guides/agent-playbook.md section 3b), matching T-0399's original
+    ~150s measurement. R1 (exact token hash) and R2 (alpha-renamed token
+    hash) are pure-Python and cheap at this repo's scale; R3-R5 are the
+    native-call-per-symbol cost driver. Defaults `True` -- unlike
+    `region_kernel_enabled` (a rung that never existed without an opt-in),
+    R3-R5 already ran unconditionally for every direct `find_clones`
+    caller before this field existed, so flipping this class-level default
+    to `False` would silently change behavior for every existing caller,
+    not just the gate path. The GATE path (`frob.gates.dup_gate` /
+    `frob.gates._dup_config`) is what actually threads this `False` by
+    default via `[dup].native_rungs` in frob.toml (default absent/false) --
+    that is where the cost tradeoff belongs, not in the general-purpose API
+    default.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -237,6 +257,7 @@ class DupConfig(BaseModel):
     threshold: float = 0.85
     min_tokens: int = 40
     cache_entries: int = 200_000
+    native_rungs_enabled: bool = True
     region_kernel_enabled: bool = False
     region_min_tokens: int = 15
     region_run_cap: int = 200

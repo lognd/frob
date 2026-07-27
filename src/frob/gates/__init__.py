@@ -8837,19 +8837,23 @@ def _log_sys_gate_summary(design_ids, violations: tuple[Violation, ...]) -> None
     )
 
 
-def _dup_config(root: Path) -> tuple[bool, float, bool]:
-    """`([dup].enforce, [dup].threshold, [dup].region_kernel)` from frob.toml,
-    defaulting to off/0.85/off.
+def _dup_config(root: Path) -> tuple[bool, float, bool, bool]:
+    """`([dup].enforce, [dup].threshold, [dup].region_kernel,
+    [dup].native_rungs)` from frob.toml, defaulting to off/0.85/off/off.
 
     `region_kernel` gates the R1.5 exact-region kernel (`frob.dup.
     DupConfig.region_kernel_enabled`) independently of `enforce` -- turning
     on the whole-symbol rung ladder does not by itself pay for the extra
     suffix-array pass; both knobs must be true for R1.5 to run in the gate
-    path.
+    path. `native_rungs` (T-0974) gates the R3/R4/R5 native fingerprint
+    rungs (`frob.dup.DupConfig.native_rungs_enabled`) the same way --
+    measured cold-cache cost of those rungs at whole-snapshot scale is
+    what kept `[dup].enforce` off by default (T-0399/T-0974); R1/R2 alone
+    are cheap enough to enforce by default.
     """
     toml_path = root / "frob.toml"
     if not toml_path.exists():
-        return False, 0.85, False
+        return False, 0.85, False, False
     try:
         with toml_path.open("rb") as fh:
             dup_cfg = tomllib.load(fh).get("dup", {})
@@ -8857,10 +8861,11 @@ def _dup_config(root: Path) -> tuple[bool, float, bool]:
             bool(dup_cfg.get("enforce", False)),
             float(dup_cfg.get("threshold", 0.85)),
             bool(dup_cfg.get("region_kernel", False)),
+            bool(dup_cfg.get("native_rungs", False)),
         )
     except (OSError, tomllib.TOMLDecodeError, ValueError) as exc:
         _log.warning("dup_gate: frob.toml unreadable: %s", exc)
-        return False, 0.85, False
+        return False, 0.85, False, False
 
 
 # frob:doc docs/modules/gates.md#public-api
@@ -8884,7 +8889,7 @@ def dup_gate(root: Path, snapshot: GraphSnapshot, diff) -> tuple[Violation, ...]
     from frob.dup import core_available
 
     root = Path(root)
-    enforce, threshold, region_kernel = _dup_config(root)
+    enforce, threshold, region_kernel, native_rungs = _dup_config(root)
     if not enforce:
         _log.debug("dup_gate: [dup].enforce off, skipping")
         return ()
@@ -8910,7 +8915,9 @@ def dup_gate(root: Path, snapshot: GraphSnapshot, diff) -> tuple[Violation, ...]
             ),
         )
 
-    violations = _dup_gate_violations(snapshot, diff, threshold, region_kernel)
+    violations = _dup_gate_violations(
+        snapshot, diff, threshold, region_kernel, native_rungs
+    )
     _log.info("dup_gate: %d clone violation(s)", len(violations))
     return violations
 
@@ -8920,6 +8927,7 @@ def _dup_gate_violations(
     diff,
     threshold: float,
     region_kernel: bool,  # noqa: ANN001
+    native_rungs: bool = False,  # noqa: ANN001
 ) -> tuple[Violation, ...]:
     """Run `find_clones` and return the DUP001/DUP002 violations against
     the diff's touched refs, or empty (already logged) if clone-finding
@@ -8929,7 +8937,11 @@ def _dup_gate_violations(
 
     report_result = find_clones(
         snapshot,
-        DupConfig(threshold=threshold, region_kernel_enabled=region_kernel),
+        DupConfig(
+            threshold=threshold,
+            region_kernel_enabled=region_kernel,
+            native_rungs_enabled=native_rungs,
+        ),
         diff=diff,
     )
     if report_result.is_err:

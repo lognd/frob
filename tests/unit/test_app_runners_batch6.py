@@ -672,8 +672,15 @@ class TestCheckRunner:
         with caplog.at_level("INFO"):
             check_run(cfg)
 
+        # frob:ticket T-0975
+        # Derive the expected set from the live stage-group registry rather
+        # than a hardcoded literal, so a future gate addition to
+        # `gates-native` (e.g. T-0688's exhaustive_handling) cannot desync
+        # this assertion again -- the registry is the single source of truth.
+        from frob.check import _STAGE_GROUPS
+
         assert len(received_gates) == 1
-        assert received_gates[0] == frozenset({"archgate", "clones", "perf"})
+        assert received_gates[0] == _STAGE_GROUPS["gates-native"]
         assert "chunk recorded" in caplog.text
         assert "baseline stamp written" not in caplog.text
         chunks_path = tmp_path / ".frob" / "baseline-chunks.json"

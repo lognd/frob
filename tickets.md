@@ -4613,11 +4613,13 @@ Plan already claimed that work as part of T-0973).
 id: T-0974
 title: 'Enable [dup].enforce=true by default: profile/cache find_clones to fit the
   check budget'
-state: queued
+state: planned
 kind: bug
 origin: auditor
 created: '2026-07-27'
 priority: medium
+blocked_by:
+- T-0981
 parent: T-0969
 tier: ticket
 sprint: null
@@ -4625,6 +4627,35 @@ scope:
 - src/frob/dup/**
 - src/frob/gates/__init__.py
 - frob.toml
+- docs/modules/dup.md
+- tests/test_dup_native_rungs.py
+- docs/modules/gates.md
+scope_changes:
+- op: add
+  glob: docs/modules/dup.md
+  reason: documenting new DupConfig.native_rungs_enabled / [dup].native_rungs config
+    knob added to fit the check budget
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: tests/test_dup_native_rungs.py
+  reason: new regression test for DupConfig.native_rungs_enabled added by this ticket
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'AFFECT001: dup_gate''s affects()-closure doc must be touched alongside
+    its native_rungs signature change'
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- tests/test_dup_native_rungs.py::TestNativeRungsDefaultsOnForDirectCallers::test_default_config_still_reports_native_rungs
+- tests/test_dup_native_rungs.py::TestNativeRungsOffWhenDisabled::test_explicit_false_reports_no_native_rungs
+- tests/test_dup_native_rungs.py::TestNativeRungsEnabled::test_enabled_finds_the_r4_gapped_clone
+- tests/test_dup_native_rungs.py::TestNativeRungsEnabled::test_enabled_finds_the_r5_dataflow_clone
+- tests/test_gates.py::TestOptInGates::test_dup_gate_off_by_default
+- tests/test_gates.py::TestOptInGates::test_dup_gate_fires_on_planted_clone_when_enabled
+- tests/test_gates.py::TestOptInGates::test_dup_gate_fails_closed_when_enforced_but_core_missing
 threat: null
 component: null
 ```
@@ -4652,12 +4683,138 @@ foreground budget; (c) once affordable, set [dup].enforce = true in this
 repo's own frob.toml and re-verify a full chunked `frob check` stays
 inside budget before closing.
 
+## Done report
+
+Changed:
+- src/frob/dup/_models.py::DupConfig.native_rungs_enabled (new field, default True for direct API callers)
+- src/frob/dup/_pipeline.py::_fingerprint_symbol (gates R3/R4/R5 behind native_rungs_enabled)
+- src/frob/gates/__init__.py::_dup_config (now returns (enforce, threshold, region_kernel, native_rungs), reads [dup].native_rungs from frob.toml, default false)
+- src/frob/gates/__init__.py::dup_gate / _dup_gate_violations (thread native_rungs through to DupConfig)
+- frob.toml (documented decision; [dup].enforce NOT flipped on -- see below)
+- docs/modules/dup.md (new "[dup].native_rungs" section + config block)
+- docs/modules/gates.md (dup_gate docstring update, satisfies AFFECT001)
+- tests/test_dup_native_rungs.py (new)
+
+Approach: T-0399 measured `[dup].enforce=true` blowing past the ~150s
+foreground budget. This ticket's plan was to profile find_clones, cache/
+narrow it, and flip the default if it now fits. I profiled the cold path
+(no `.frob/dup.db`) and found the wall-time cost is dominated by R3/R4/R5
+(one native call per symbol at whole-snapshot scale); R1/R2 are pure-
+Python and cheap. I added `DupConfig.native_rungs_enabled` (threaded from
+a new `[dup].native_rungs` toml key, default false) so the gate can run
+R1/R2 only without the native cost.
+
+That alone was NOT enough to safely flip `[dup].enforce=true` on: while
+re-measuring the R1/R2-only path, I found a genuine DEADLOCK (not just
+slowness). `frob check`'s main process holds `derived_state_lock(root,
+exclusive=False)` (SHARED) for its whole run
+(src/frob/check/__init__.py). `dup_gate` (the "clones" job) runs in a
+`ProcessPoolExecutor` worker (`_PROCESS_POOL_GATES`, T-0415,
+src/frob/gates/__init__.py). `find_clones` unconditionally wraps its
+whole body in `derived_state_write_lock` (src/frob/dup/_pipeline.py),
+whose reentrancy check (`_process_already_holds`,
+src/frob/process/_lock.py) is a same-process in-memory registry that
+cannot see across the process-pool fork boundary -- so the worker's
+EXCLUSIVE lock request blocks forever against the main process's SHARED
+hold. Confirmed live via `lslocks` on `.frob/derived.lock`: the main
+check process held READ while the clones worker was blocked on WRITE*,
+for 200+s with near-zero CPU (pure lock wait, not compute). This
+plausibly explains T-0399's original "~150s" figure too.
+
+Before/after numbers:
+- Before (T-0399, `[dup].enforce=true`, no native_rungs split): single
+  `gates-native` chunk run measured blowing past ~150s.
+- After profiling (this ticket, `native_rungs=false`, cold cache): still
+  did not complete within a 120s foreground window -- root-caused to the
+  cross-process lock deadlock above (mechanism confirmed via `lslocks`),
+  not remaining rung compute cost. Two runs (native_rungs on and off)
+  both hit this same deadlock once the write-lock path is reached; it
+  does not depend on which rungs are enabled.
+- With `[dup].enforce` left FALSE (this ticket's actual frob.toml state):
+  `gates-native` chunk measures 18s wall / clones=0.00s (unchanged from
+  before this ticket) -- confirmed via `uv run frob check --ticket
+  T-0974 --only gates-native`.
+
+Default flipped: NO, deliberately deferred. Flipping `[dup].enforce=true`
+now would make `frob check`'s clones stage hang (not just run slow) on
+any cold-cache run, which is strictly worse than the current off-by-
+default state. Filed a new blocking bug (T-0974 is now `blocked_by` it;
+resolve its final id via `frob ticket show T-0974`) scoped to
+`src/frob/process/_lock.py` / `src/frob/gates/__init__.py`'s
+`_PROCESS_POOL_GATES` topology, with the full repro/mechanism/candidate-
+fix writeup in its body. The `[dup].native_rungs` split still lands as a
+genuine, independently useful improvement (once the deadlock is fixed, it
+lets the gate default to the cheap R1/R2 rungs without immediately paying
+R3-R5's cost) and is fully tested; it does not itself change any current
+default (both `enforce` and, for direct API callers, `native_rungs_enabled`
+keep their pre-ticket effective behavior).
+
+Test evidence (pytest --collect-only confirmed, then run green):
+- tests/test_dup_native_rungs.py::TestNativeRungsDefaultsOnForDirectCallers::test_default_config_still_reports_native_rungs
+- tests/test_dup_native_rungs.py::TestNativeRungsOffWhenDisabled::test_explicit_false_reports_no_native_rungs
+- tests/test_dup_native_rungs.py::TestNativeRungsEnabled::test_enabled_finds_the_r4_gapped_clone
+- tests/test_dup_native_rungs.py::TestNativeRungsEnabled::test_enabled_finds_the_r5_dataflow_clone
+- tests/test_gates.py::TestOptInGates::test_dup_gate_off_by_default
+- tests/test_gates.py::TestOptInGates::test_dup_gate_fires_on_planted_clone_when_enabled
+- tests/test_gates.py::TestOptInGates::test_dup_gate_fails_closed_when_enforced_but_core_missing
+
+Also re-ran the full existing dup suite (tests/test_dup.py,
+test_dup_rungs.py, test_dup_region.py, test_dup_smart.py,
+test_dup_cross_lang.py, test_dup_inline.py, test_dup_prefilter.py,
+test_dup_exhaustiveness.py, test_dup_r5_multilang.py) green after the
+DupConfig default fix (native_rungs_enabled=True at the class level, not
+False, to preserve pre-existing direct-API-caller behavior -- an earlier
+attempt at False broke ~17 pre-existing tests that relied on R3-R5 firing
+by default; caught and fixed before finalizing).
+
+Filed: one new bug ticket (draft id T-0981 at authoring time,
+renumbered at land; see T-0974's `blocked_by`) -- "dup_gate deadlocks
+under frob check: derived_state_write_lock reentrancy blind to
+ProcessPoolExecutor workers", scoped to src/frob/process/_lock.py,
+src/frob/gates/__init__.py, docs/modules/process.md, docs/modules/gates.md.
+
+Gates: `frob check --ticket T-0974 --only lint/static/gates-fast/
+gates-native/gates-security` all clean except: (a) 2 pre-existing
+ruff-format findings outside scope (src/frob/arch/_lock_ordering.py,
+tests/unit/test_arch.py -- untouched by this ticket); (b) one COV002 on
+tests/unit/test_app_runners_batch6.py, which is T-0975's already-closed
+change sitting in this worktree's stacked diff (not touched by T-0974,
+not in its scope) -- expected multi-ticket-worktree noise per
+docs/guides/agent-playbook.md section 10b, not a T-0974 regression.
+PRE001 refreshed via `frob ticket sweep T-0974` before closing/blocking.
+
+State: T-0974 is BLOCKED (not closed) by the new deadlock ticket -- per
+the ticket's own instruction to "only flip the default if the measured
+budget fits", it demonstrably does not (it hangs), so the honest outcome
+is defer + file the blocking prerequisite, not force a close.
+
+### Changed
+```
+ tests/unit/test_app_runners_batch6.py |  9 ++++++++-
+ tickets.md                            | 35 ++++++++++++++++++++++++++++++++++-
+ 2 files changed, 42 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/test_dup_native_rungs.py::TestNativeRungsDefaultsOnForDirectCallers::test_default_config_still_reports_native_rungs` (pytest node id, verified passing when recorded)
+- `tests/test_dup_native_rungs.py::TestNativeRungsOffWhenDisabled::test_explicit_false_reports_no_native_rungs` (pytest node id, verified passing when recorded)
+- `tests/test_dup_native_rungs.py::TestNativeRungsEnabled::test_enabled_finds_the_r4_gapped_clone` (pytest node id, verified passing when recorded)
+- `tests/test_dup_native_rungs.py::TestNativeRungsEnabled::test_enabled_finds_the_r5_dataflow_clone` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestOptInGates::test_dup_gate_off_by_default` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestOptInGates::test_dup_gate_fires_on_planted_clone_when_enabled` (pytest node id, verified passing when recorded)
+- `tests/test_gates.py::TestOptInGates::test_dup_gate_fails_closed_when_enforced_but_core_missing` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 7 passed (from 7 evidence id(s))
+- gates: 0 error(s), 4901 warning(s), 239 waived
+- error-findings: none (measured, zero errors)
+
 <!-- ticket:T-0975 -->
 ```yaml
 id: T-0975
 title: test_stamp_baseline_only_chunk_records_without_stamping expects stale gate
   set (missing exhaustive_handling)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-07-27'
@@ -4667,10 +4824,44 @@ tier: ticket
 sprint: null
 scope:
 - tests/unit/test_app_runners_batch6.py
+evidence:
+- tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_baseline_only_chunk_records_without_stamping
 threat: null
 component: null
 ```
 Found while working T-0970: tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_baseline_only_chunk_records_without_stamping asserts received_gates[0] == frozenset({archgate, clones, perf}) but the gates-native chunk now also includes exhaustive_handling (a gate added to _STAGE_GROUPS/_ALL_GATES since this test was last updated). Update the expected frozenset to match current gate registration.
+
+## Done report
+
+Changed: tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_baseline_only_chunk_records_without_stamping
+
+The test hardcoded frozenset({"archgate", "clones", "perf"}) as the expected
+gates-native stage-group membership. T-0688 added exhaustive_handling to
+_STAGE_GROUPS["gates-native"] in src/frob/check/__init__.py, desyncing the
+literal. Fixed by importing _STAGE_GROUPS from frob.check and asserting
+against the live registry value directly, so any future gate addition to
+gates-native cannot desync this assertion again.
+
+Evidence: tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_baseline_only_chunk_records_without_stamping (pytest run, 58 tests passed in file)
+
+Filed: none
+
+Gates: frob check --ticket T-0975 -- scope is a single test file, drift/coverage
+not applicable to test-only change.
+
+### Changed
+```
+ tests/unit/test_app_runners_batch6.py | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+```
+
+### Evidence
+- `tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_baseline_only_chunk_records_without_stamping` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 4871 warning(s), 239 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0976 -->
 ```yaml
@@ -5061,3 +5252,102 @@ per-module frob:waive ARCH102 (bind the waiver to the bare file path,
 since ARCH102 findings carry no symref -- module-level only). Promote
 [gates.severity] ARCH102 to error once at zero live unwaived findings,
 mirroring ARCH001/ARCH101/ARCH103's precedent.
+
+<!-- ticket:T-0981 -->
+```yaml
+id: T-0981
+title: 'dup_gate deadlocks under frob check: derived_state_write_lock reentrancy blind
+  to ProcessPoolExecutor workers'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- src/frob/process/_lock.py
+- src/frob/gates/__init__.py
+- docs/modules/process.md
+- docs/modules/gates.md
+threat: null
+component: null
+```
+Found while working T-0974 ("enable [dup].enforce=true by default").
+
+`frob check`'s main run wraps its whole duration in
+`derived_state_lock(root, exclusive=False)` (SHARED,
+src/frob/check/__init__.py:582 and 3 other call sites). `dup_gate` (the
+"clones" job) is dispatched into a `ProcessPoolExecutor`
+(`_PROCESS_POOL_GATES`, src/frob/gates/__init__.py ~line 9994) for real
+CPU parallelism (T-0415). `find_clones` (src/frob/dup/_pipeline.py)
+unconditionally wraps its ENTIRE body in
+`derived_state_write_lock(root)` (EXCLUSIVE-or-noop,
+src/frob/process/_lock.py).
+
+`derived_state_write_lock`'s reentrancy check (`_process_already_holds`,
+src/frob/process/_lock.py) is a PROCESS-WIDE in-memory registry -- it only
+sees state set by threads in the SAME OS process. Because "clones" runs in
+a genuinely separate forked/spawned process (ProcessPoolExecutor, not
+ThreadPoolExecutor), that worker's `_process_already_holds(root)` reads
+False even though `frob check`'s main process already holds SHARED. The
+worker then takes the real cross-process path and calls
+`flock(LOCK_EX)`, which blocks forever against the main process's SHARED
+hold -- and that SHARED hold cannot release until the worker (which is
+itself the thing it's waiting on) returns. This is a genuine, reproducible
+DEADLOCK, not merely slowness, for any `frob check` run where `[dup].
+enforce=true` and the clones job actually reaches this lock (i.e. every
+run, since `find_clones` takes the lock unconditionally, not just on
+cache-miss).
+
+Live repro (this ticket, 2026-07-27): set `[dup].enforce=true` (no
+`native_rungs`), delete `.frob/dup.db`, run `uv run frob check --only
+clones`. The run exceeded 120s/200s+ with near-zero CPU (I/O-wait, not
+compute). `lslocks` showed:
+
+```
+python  <pid-worker>  FLOCK  WRITE*  ...  .frob/derived.lock   # blocked
+frob    <pid-main>     FLOCK  READ    ...  .frob/derived.lock   # held
+```
+
+confirming the exact mechanism above. This likely explains T-0399's
+original "~150s blowout" measurement too -- it was plausibly this
+deadlock (or very close to it) rather than genuine fingerprinting compute
+cost, since `derived_state_write_lock`'s own module docstring already
+documents (T-0918) that its reentrancy signal only works for a
+`ThreadPoolExecutor` worker THREAD nested in the main process, and
+explicitly disclaims the process-pool case as a "documented latent gap,
+not an observed regression" with "no current production call site" doing
+this -- but `_PROCESS_POOL_GATES` including `"clones"` (T-0415, landed
+separately) IS exactly that call site; the two tickets' assumptions never
+got cross-checked against each other.
+
+T-0974 could not safely flip `[dup].enforce=true` on by default given
+this: doing so would make `frob check`'s clones stage hang (not just run
+slow) for any cold-cache run, which is strictly worse than the status quo
+(off by default, gate never runs).
+
+Fix needs design, not a quick patch, and touches files outside T-0974's
+declared scope (`src/frob/process/_lock.py` for the locking primitive
+itself, and/or `src/frob/gates/__init__.py`'s `_PROCESS_POOL_GATES`
+executor-topology decision, which T-0415 deliberately set for "clones").
+Candidate directions (not evaluated in depth): (a) move "clones"
+specifically out of `_PROCESS_POOL_GATES` back onto the thread pool --
+the native Rust calls inside `find_clones` likely release the GIL enough
+for real parallelism even on a thread, but this partially undoes T-0415's
+reasoning for this one gate and needs re-measurement; (b) give
+`derived_state_write_lock` a real cross-process-but-same-run reentrancy
+signal (e.g. a marker file/env var the parent `frob check` process sets
+before spawning its ProcessPoolExecutor workers, checked by
+`_process_already_holds` in addition to the in-memory registry); (c) have
+`frob check`'s main process release its SHARED hold (or downgrade some
+other way) before submitting process-pool jobs that might need the
+EXCLUSIVE path, and reacquire after -- correctness-sensitive, needs care
+against the exact race T-0918's docstring already warns about for the
+thread case.
+
+Scope for the ticket that picks this up: `src/frob/process/_lock.py`,
+`src/frob/gates/__init__.py` (`_PROCESS_POOL_GATES`, `dup_gate`
+dispatch), plus `docs/modules/process.md`/`docs/modules/gates.md` for the
+corrected reentrancy-contract writeup once fixed.

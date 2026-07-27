@@ -1392,6 +1392,15 @@ def _fingerprint_symbol(state: _FpState, symref: str, record: Any) -> None:
     state.r1_buckets[_r1_hash(body_tokens)].append(symref)
     state.r2_buckets[_r2_hash(body_tokens)].append(symref)
 
+    # frob:ticket T-0974
+    # R3-R5 are native-call-per-symbol and dominate cold-cache cost at
+    # whole-snapshot scale (see DupConfig.native_rungs_enabled's docstring
+    # for the measured budget-blowout this guards). R1/R2 above stay
+    # unconditional -- cheap, pure-Python, and the reason `[dup].enforce`
+    # can default on at all.
+    if not state.cfg.native_rungs_enabled:
+        return
+
     r3_hash = _r3_fingerprint(state, digest, normalized)
     if r3_hash is None:
         return
