@@ -8,6 +8,20 @@ learn a surface vocabulary word (charter law 1).
 
 from __future__ import annotations
 
+from frob.strata._access import (
+    SYS_UNARBITRATED_MODE_CONFLICT,
+    AccessMode,
+    NodeAccess,
+    mode_conflict,
+    node_access_declarations,
+    resource_contention_violations,
+)
+from frob.strata._access import (
+    ResourceContentionReport as AccessResourceContentionReport,
+)
+from frob.strata._access import (
+    ResourceContentionViolation as AccessResourceContentionViolation,
+)
 from frob.strata._ast import (
     AdmitPhase,
     AtCallRequire,
@@ -37,6 +51,7 @@ from frob.strata._ast import (
     RefineDecl,
     RefusePhase,
     RemoveDecl,
+    ResourceDecl,
     RewriteDecl,
     ScaleDecl,
     ScenarioDecl,
@@ -187,7 +202,7 @@ from frob.strata._export import (
     export_seccomp,
     node_allowed_syscalls,
 )
-from frob.strata._facts import FactBase, build_facts
+from frob.strata._facts import AggregateDemand, FactBase, build_facts
 from frob.strata._fallback import (
     FALLBACK_RULES,
     REL_MISSING_FALLBACK,
@@ -478,11 +493,16 @@ __all__ = [
     "SYS_STALE_DESIGN",
     "SYS_UNDECLARED_INTERFACE",
     "SYS_UNMODELED_CODE",
+    "SYS_UNARBITRATED_MODE_CONFLICT",
     "LABELS",
     "REGULATION_VIEWS",
     "SECRET_LABEL",
     "TRUST",
     "VIEWS",
+    "AccessMode",
+    "AccessResourceContentionReport",
+    "AccessResourceContentionViolation",
+    "NodeAccess",
     "AdmitPhase",
     "AuditReport",
     "GroupedGap",
@@ -542,6 +562,7 @@ __all__ = [
     "DesignIds",
     "DesignLoadError",
     "EffectPhase",
+    "AggregateDemand",
     "EffectReport",
     "FOREIGN",
     "FactBase",
@@ -607,6 +628,7 @@ __all__ = [
     "RegulationEntry",
     "RemoveDecl",
     "RemoveNode",
+    "ResourceDecl",
     "Rewrite",
     "RewriteDecl",
     "Rung",
@@ -778,6 +800,9 @@ __all__ = [
     "build_compromised_user_scenario",
     "generate_fault_injection_cases",
     "host_manifest_for",
+    "mode_conflict",
+    "node_access_declarations",
+    "resource_contention_violations",
     "host_movement_flows",
     "flow_authenticates_via",
     "krb_manifest_for",

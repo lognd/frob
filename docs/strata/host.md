@@ -536,17 +536,80 @@ MODE-BLIND, HONESTLY: `Flow` carries no read/write direction today, so
 SYS203 counts ANY inbound flow to a store as a "write" -- deliberately
 coarser than a real read/write distinction. This is the grammar-data
 ceiling this ticket ships against; a flow-level read/write mode (and a
-MODE-aware SYS201 severity) is T-0700/T-0701's sibling grammar-extension
-ticket, not duplicated here. `store_ids` (which node ids are STORES) is
-not reconstructible from `KernelModel` alone -- a store desugars into a
-plain `Node` at elaborate time with no surviving marker -- so a caller
-must pass in `Module.stores`' ids explicitly; an empty `store_ids` (the
-default) makes SYS203 silent rather than guessing.
+MODE-aware SYS201 severity) is T-0700's sibling grammar-extension ticket
+(below), not duplicated here -- T-0700 upgrades the model with a mode-
+AWARE proof (SYS204) alongside SYS200-203 rather than renaming or
+replacing them. `store_ids` (which node ids are STORES) is not
+reconstructible from `KernelModel` alone -- a store desugars into a plain
+`Node` at elaborate time with no surviving marker -- so a caller must pass
+in `Module.stores`' ids explicitly; an empty `store_ids` (the default)
+makes SYS203 silent rather than guessing.
 
 All four rules join the SAME T-0174 waiver channel SYS100-102 use
 (`_waive.py::MULTI_INSTANCE_WAIVER_FAMILIES`, `RULE:SUBTARGET` required
 -- the sub-target is the port number, the overlapping path, the pipe
 name, or the store id).
+
+## Resource access modes (T-0700)
+
+`_access.py` adds a MODE-aware contention proof (SYS204) alongside
+SYS200-203 above, using a NEW grammar surface rather than retrofitting
+`owns`/`acl`/`listens`/`pipe`'s existing shapes:
+
+- **`access "RESOURCE" mode MODE`** -- a node/store clause (repeatable,
+  T-0261 node/store symmetry) naming a shared resource by an opaque
+  STRING id and its declared access mode: `read`, `append`, `alpha`,
+  `write`, or `exclusive`. Desugars straight to an `access=<resource>:
+  <mode>` attr (`strata-core/src/parse.rs::parse_access_attr`, the
+  `bin_path` T-0629 direct-attr-push shape -- no new `NodeDecl`/
+  `StoreDecl` field), read back by `_access.py::node_access_declarations`.
+- **`resource ID { arbitrated_by NODE | lock "NAME" }`** -- a top-level
+  statement naming a shared resource and, optionally, its single arbiter
+  (a node id) or lease/lock name. At most one of the two may be given (a
+  parse error otherwise). A resource has no accessor of its own, so
+  unlike `access` it cannot desugar into an attr -- it lands on
+  `Module.resources` (`_ast.py::ResourceDecl`) instead.
+
+**Compatibility matrix** (`_access.py::mode_conflict`, user-specified
+2026-07-22 semantics): `alpha` declares INTEREST in a future writer lock
+-- many writes need a read just before, so `alpha` sits between `read`
+and `write`. Only two pairings are safe:
+
+| | read | alpha | write/append/exclusive |
+|---|---|---|---|
+| **read** | OK | OK | CONFLICT |
+| **alpha** | OK | CONFLICT | CONFLICT |
+| **write/append/exclusive** | CONFLICT | CONFLICT | CONFLICT |
+
+`alpha+alpha` conflicts (exactly one writer-intender per resource --
+this is what prevents the two-readers-both-upgrading deadlock); an alpha
+holder upgrades to write only once readers drain. `append`/`exclusive`
+are folded in as write-like (a documented judgment call, module
+docstring) -- `exclusive` is, if anything, stricter than plain `write`
+(conflicts even with another `exclusive`, or a lone `read`).
+
+**SYS204 unarbitrated mode conflict** (`_access.py::
+resource_contention_violations`): for every resource id at least one
+`access` clause references, every conflicting PAIR of accessors fires
+fail-closed UNLESS the resource declares an arbiter (`arbitrated_by` or
+`lock`) -- a declared arbiter is trusted to make the pair provably safe at
+the MODEL level; whether the arbiter is actually RESPECTED by the node's
+code is T-0701's separate, code-level conformance proof, not this
+check's job. A resource with only ever ONE declared accessor, or whose
+accessors are all `read`/`read`+`alpha`, never fires -- no pairwise
+conflict exists to find.
+
+Field motivation: frob's own ledger-lock/refs-stash/`.git/info/exclude`
+incidents (docs/guides/agent-playbook.md sections 1b/1c) -- repo-global
+resources with multiple writers and only convention, not a declared
+arbiter, keeping them safe.
+
+DELIBERATELY NOT WIRED IN THIS PASS (disclosed cut, `_access.py` module
+docstring): CLI dispatch (`frob sys audit`, `src/frob/app/sys_runner.py`)
+and the T-0174 `MULTI_INSTANCE_WAIVER_FAMILIES` waiver channel are both
+shared surfaces a concurrent sibling ticket's obligation batch may be
+touching -- `resource_contention_violations` is a pure, fully-tested
+function; wiring it into the CLI/waiver channel is a follow-up ticket.
 
 ## See also
 

@@ -300,6 +300,14 @@ class Node(BaseModel):
     may: tuple[str, ...] = ()  # capability atoms, e.g. "net.out:stripe.com"
     attrs: tuple[str, ...] = ()  # opaque node attributes, e.g. "idempotent"
     capacity: Capacity | None = None
+    # `users NUMBER` / `rate NUMBER UNIT`, T-0702 (docs/strata/kernel.md
+    # #demand-t-0702): a steady population and/or arrival-rate entry
+    # demand declared on this node -- the SOURCE side of the demand-
+    # propagation mandate, distinct from `capacity` (this node's own
+    # service ability). `FactBase.aggregate_demand` seeds propagation
+    # from these values.
+    users: float | None = None
+    rate: Quantity | None = None
     residence: str | None = None  # host/zone/region atom for scenario rewrites
     crash: CrashContract | None = None  # `on crash { ... }` contract, T-0074
     breach: BreachContract | None = None  # `on breach { ... }` contract, T-0076

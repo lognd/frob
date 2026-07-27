@@ -217,7 +217,7 @@ class TestLiveTrackerCitations:
         )
         _commit_all(tmp_path, "add self-citing waiver")
         (tmp_path / "mod.py").write_text(
-            '# frob:waive SOME001 reason="re-pointed" ticket=T-0700\n',
+            '# frob:waive SOME001 reason="re-pointed" ticket=T-0601\n',
             encoding="utf-8",
         )
         citations = live_tracker_citations(tmp_path, "T-0605", base_ref="main")

@@ -1015,6 +1015,14 @@
     "src/frob/stats/_sketch.py::quantile": "299ea71a05c51cb913cc7c04220418556e7760d5d671bede053bf97816ca9a99",
     "src/frob/stats/_sketch.py::sketch_size_bytes": "9893442a8719e51177828866e7b568daed88931c75681b441b993d9cf8a1ca2f",
     "src/frob/stats/_sketch.py::total_weight": "00b5b466b3d86f728d092c3e14e6258e8e25c9486065528c39e6b646a8460206",
+    "src/frob/strata/_access.py::AccessMode": "282eee9be521e4635fae19dcb008485b38cee47b12149ed0aec0bca9dddc0fa3",
+    "src/frob/strata/_access.py::NodeAccess": "985659208b0102fb05e94566748ee7b51d46097b877e48050639b9512361e89e",
+    "src/frob/strata/_access.py::ResourceContentionReport": "e785b3f1968e60fab6ce83720f3084f2148c908898cb8c47409a2e5c1b3d29a4",
+    "src/frob/strata/_access.py::ResourceContentionViolation": "557f7be14d97e859652063134d0830f106a18a0048fdcf7460795ddce7598739",
+    "src/frob/strata/_access.py::SYS_UNARBITRATED_MODE_CONFLICT": "c858fa96c3cba9d613949ce2ea1f9d070cc1dd5f607f2cf54d7876402461823d",
+    "src/frob/strata/_access.py::mode_conflict": "1c617494c3c15c5f9b281370606d099e141252c3edc42e1d93aa504967b3c35a",
+    "src/frob/strata/_access.py::node_access_declarations": "291a570ee544b054248d514d5f3d7f7dc0e1a0c37f5c57ba1bc1814c65806db5",
+    "src/frob/strata/_access.py::resource_contention_violations": "5787d477ef4e70518d30e7c6590c36b960ec26fb4998d542c19f4933b62cdd12",
     "src/frob/strata/_ast.py::AdmitPhase": "b3829d383cb1dd802421d7e83dbb17bbf83f3fa8913b7f7ba6ea69d2dbadda2f",
     "src/frob/strata/_ast.py::AtCallRequire": "f22de5fa6cf03ff2fde653f4800a7c40728cd758d63889554d2dfe26b222bf39",
     "src/frob/strata/_ast.py::BalancerDecl": "0019d196cd079dcfbed2f9bc5770e3c9c65da90cd047eebc16ccf05f959afe0e",
@@ -1043,6 +1051,7 @@
     "src/frob/strata/_ast.py::RefineDecl": "baa616693aab314834fc72a9a6625e808413ddbb23b44bc4e4e55927c1a565ea",
     "src/frob/strata/_ast.py::RefusePhase": "6469faffff8c737f805dc82498a148a48f494ee3c53d1b88beb61b5a19c1e89f",
     "src/frob/strata/_ast.py::RemoveDecl": "789b9b12f4baa10f2880e110db3703af30635c9ba26ff294a965d20aaa18a9bb",
+    "src/frob/strata/_ast.py::ResourceDecl": "fbac5c2af2b3573a4e1dd07a538adb1553bc93a848e8e44838ecef6900dab6c0",
     "src/frob/strata/_ast.py::ScaleDecl": "328c8fb4a7a67e1ca0d5ebdeb8f1c1638a467f7ad6d963f9227bff05cfa78f2a",
     "src/frob/strata/_ast.py::ScenarioDecl": "9b4dade95c4d01e7e7809ef015653c27582ee0d614e90f8b90bea3c62685856c",
     "src/frob/strata/_ast.py::ScopeSpec": "fb033e569efd972b30a3a5057733382f8fd4b7b70b9f261fa479b32edbe8d3b2",
@@ -1162,7 +1171,9 @@
     "src/frob/strata/_export.py::export_k8s_netpol": "f8f56f9dcd31d2070c37bb62953c2453287d1c90c144f928c86e10e58e338f8d",
     "src/frob/strata/_export.py::export_seccomp": "bff153ce1dcad2d4f71e2ba4f6219165d3689bc7693a8619e1d9c88fa8208911",
     "src/frob/strata/_export.py::node_allowed_syscalls": "2d865bcda86c4f85cef59708dfe276877db7dacf0cc564369966557b4d47e0f0",
+    "src/frob/strata/_facts.py::AggregateDemand": "757d2564ab4434d43dbd42ef95321bca43f58b5a838fe4b6eaa876f08d751087",
     "src/frob/strata/_facts.py::FactBase": "abf38953e44390b696709f8865a12b3d172b8dec63e279972bc3febea2d15844",
+    "src/frob/strata/_facts.py::FactBase.aggregate_demand": "b4c7e9acb412c33b4ad2ec50e8658b85dd7a4f4f7207e91aa5a15ef9d9599ca1",
     "src/frob/strata/_facts.py::FactBase.demand": "85b0b593cdd722b573db5d49c583c3c55694ad7f4afaedf4fd44e00cc193d1a2",
     "src/frob/strata/_facts.py::FactBase.nodes_at": "b706e8c03f5093b47450f88c3793305c1b12f80de147c915e33e4723218c8959",
     "src/frob/strata/_facts.py::FactBase.propagated_demand": "034a071aecd4556b6646fde00eb193ccc1f0b7356513c50b071d9146dde6e8f1",
@@ -1670,5 +1681,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.174.0"
+  "version": "0.175.0"
 }

@@ -123,6 +123,24 @@ def _lattice_is_acyclic(lattice: Lattice) -> bool:
     return all(visit(level) for level in lattice.elements())
 
 
+# frob:doc docs/strata/kernel.md#demand-declarations-t-0702
+@dataclass(frozen=True)
+class AggregateDemand:
+    """T-0702: the aggregate inbound demand `FactBase.aggregate_demand`
+    computes reaching one node, distinguishing UNDECLARED (`declared=
+    False`, `value=0.0`) -- no `users`/`rate`-declaring node's demand
+    reaches this node at all -- from a genuine, computed zero or
+    positive sum (`declared=True`). This is the exact "missing demand is
+    distinguishable from zero demand" acceptance criterion (T-0702 ticket
+    body): a node with no upstream demand declaration MUST NOT be
+    silently treated the same as one whose declared demand happens to sum
+    to zero."""
+
+    declared: bool
+    value: float = 0.0
+    witness: tuple[str, ...] = field(default_factory=tuple)
+
+
 # frob:doc docs/strata/kernel.md#fact-base
 @dataclass(frozen=True)
 class FactBase:
@@ -273,6 +291,95 @@ class FactBase:
         else:
             _log.debug("propagated_demand(%s) = %s", node_id, value)
         return value, tuple(witness)
+
+    # frob:doc docs/strata/kernel.md#demand-declarations-t-0702
+    # frob:tests tests/unit/strata/test_demand.py::TestAggregateDemand.test_two_entry_nodes_sum_at_fan_in  # noqa: E501
+    def aggregate_demand(self, node_id: str) -> AggregateDemand:
+        """Aggregate inbound demand at `node_id`, seeded by every node's
+        declared `users`/`rate` entry demand and SUMMED at fan-in exactly
+        like `propagated_demand` (T-0702): a `users`/`rate`-declaring node
+        is treated as if fed by a synthetic external source flow whose
+        declared rate equals `users + rate.base_value()` (both, if both
+        are declared -- they compose additively, not exclusively), reusing
+        `strata_core.propagated_demand`'s existing fanout-aware summation
+        engine unchanged (no `strata-core/src/lib.rs` change needed or
+        made -- out of this ticket's declared scope, module docstring).
+
+        Returns `AggregateDemand(declared=False)` when NO declaring node's
+        demand reaches `node_id` at all (including `node_id` itself
+        declaring nothing) -- the exact "missing demand is distinguishable
+        from zero demand" acceptance criterion, computed via a plain
+        reverse-BFS ancestor check over the same edge set fed to
+        `propagated_demand`, not by comparing the computed value to 0.0
+        (a real declared demand of exactly 0 would otherwise be
+        indistinguishable from "nothing declared" -- see `AggregateDemand`
+        docstring)."""
+        # frob:doc docs/strata/kernel.md#demand-declarations-t-0702
+        assert strata_core is not None
+        edges: list[tuple[str, str, str, float | None, float]] = []
+        for flow in self.flows.values():
+            rate: float | None = None
+            if flow.rate is not None:
+                base = flow.rate.base_value()
+                if base.is_ok:
+                    rate = base.danger_ok
+            edges.append((flow.id, flow.src, flow.dst, rate, _flow_fanout(flow)))
+        declaring_ids: set[str] = set()
+        for node in self.nodes.values():
+            seed = 0.0
+            declares = False
+            if node.rate is not None:
+                base = node.rate.base_value()
+                if base.is_ok:
+                    seed += base.danger_ok
+                    declares = True
+            if node.users is not None:
+                seed += node.users
+                declares = True
+            if declares:
+                declaring_ids.add(node.id)
+                edges.append(
+                    (
+                        f"__demand_seed__{node.id}",
+                        f"__demand_source__{node.id}",
+                        node.id,
+                        seed,
+                        1.0,
+                    )
+                )
+        if not declaring_ids:
+            _log.debug("aggregate_demand(%s): no node declares users/rate", node_id)
+            return AggregateDemand(declared=False)
+        incoming: dict[str, list[str]] = {}
+        for _flow_id, src, dst, _rate, _fanout in edges:
+            incoming.setdefault(dst, []).append(src)
+        reached_declarer = node_id in declaring_ids
+        seen = {node_id}
+        frontier = [node_id]
+        while frontier and not reached_declarer:
+            cur = frontier.pop()
+            for src in incoming.get(cur, ()):
+                if src in declaring_ids:
+                    reached_declarer = True
+                    break
+                if src not in seen:
+                    seen.add(src)
+                    frontier.append(src)
+        if not reached_declarer:
+            _log.debug(
+                "aggregate_demand(%s): no declaring node's demand reaches it", node_id
+            )
+            return AggregateDemand(declared=False)
+        value, witness = strata_core.propagated_demand(edges, node_id)
+        if value == float("inf"):
+            _log.warning(
+                "aggregate_demand(%s) unbounded: positive-rate cycle %s",
+                node_id,
+                witness,
+            )
+        else:
+            _log.debug("aggregate_demand(%s) = %s", node_id, value)
+        return AggregateDemand(declared=True, value=value, witness=tuple(witness))
 
 
 # frob:ticket T-0148

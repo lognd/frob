@@ -155,6 +155,13 @@ class NodeDecl(BaseModel):
     clearance: str = "Secret"
     attrs: tuple[str, ...] = ()
     capacity: Capacity | None = None
+    # `users NUMBER` / `rate NUMBER UNIT`, T-0702 (docs/strata/kernel.md
+    # #demand-t-0702): entry-node demand declarations -- a steady
+    # population and/or an arrival rate, the SOURCE side of the demand-
+    # propagation mandate. Independent of `capacity` (that's the node's
+    # own service ability, this is inbound load reaching it).
+    users: float | None = None
+    rate: Quantity | None = None
     residence: str | None = None
     errors_total: bool = False
     panics_contained_by: str | None = None
@@ -459,6 +466,11 @@ class StoreDecl(BaseModel):
     clearance: str = "Secret"
     attrs: tuple[str, ...] = ()
     capacity: Capacity | None = None
+    # `users NUMBER` / `rate NUMBER UNIT`, T-0702; same shape as `node`'s
+    # (a store is a node too, docs/strata/surface.md#key-construct-
+    # semantics) -- a store can be a demand-declaring entry point too.
+    users: float | None = None
+    rate: Quantity | None = None
     residence: str | None = None
     engine: str | None = None
     immutable: bool = False
@@ -726,6 +738,30 @@ class _SecretDecl(BaseModel):
     revoke: Quantity | None = None
 
 
+# frob:doc docs/strata/host.md#resource-access-modes-t-0700
+class ResourceDecl(BaseModel):
+    """A parsed top-level `resource ID { arbitrated_by NODE | lock "NAME" }`
+    statement (T-0700, docs/strata/host.md#resource-access-modes-t-0700):
+    names a shared resource `access "RESOURCE" mode MODE` clauses
+    (`_access.py::node_access_declarations`) reference by matching string
+    id, with an optional single arbiter node or lease/lock name.
+
+    Unlike `owns`/`acl`/`bin_path`, a resource has no accessor of its own
+    -- it is pure arbiter metadata, not a node/store -- so it gets its own
+    top-level `Module.resources` field rather than desugaring into an
+    attr the way `access` itself does (`strata-core/src/parse.rs::
+    parse_access_attr`'s direct-attr-push, T-0629 precedent). At most one
+    of `arbitrated_by`/`lock` is ever populated: the parser rejects both
+    being given together (fail-closed, not "last one wins").
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    arbitrated_by: str | None = None
+    lock: str | None = None
+
+
 # frob:doc docs/strata/surface.md#parser
 class Module(BaseModel):
     """A whole parsed source file: exactly the shape the Rust parser emits."""
@@ -747,3 +783,7 @@ class Module(BaseModel):
     operations: tuple[OperationDecl, ...] = ()
     scenarios: tuple[ScenarioDecl, ...] = ()
     secrets: tuple[_SecretDecl, ...] = ()
+    # `resource ID { arbitrated_by NODE | lock "NAME" }`+, T-0700; the
+    # contention-proof obligation's arbiter registry (`_access.py::
+    # resource_contention_violations`).
+    resources: tuple[ResourceDecl, ...] = ()

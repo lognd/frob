@@ -114,6 +114,15 @@ search-shaped model (batch index pipelines with freshness lag).
     this ticket's Done report.
 - Phase 5: `frob sys plan` files strata's own remaining work as tickets --
   the language plans its own completion.
+- T-0700 shipped access-modes + `resource`/`arbitrated_by` grammar
+  (docs/strata/host.md#resource-access-modes-t-0700); `cli`/`gates`/
+  `fleet`/`core`/`serve`'s five `SYS203:tickets_ledger` waivers (written
+  "re-evaluate at T-0700") were re-pointed to the tracked follow-up
+  (`frob:ticket T-0956` on each node) that will re-express the
+  ledger's real single-writer-lock arbitration with the new grammar and
+  drop the waivers once discharged -- not done in the same pass as the
+  grammar ticket itself (design/frob.strata was out of that ticket's
+  declared scope beyond the close-time live-tracker re-point).
 
 ## Ticket map
 

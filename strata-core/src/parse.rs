@@ -238,6 +238,14 @@ struct ModuleAst {
     operations: Vec<serde_json::Value>,
     scenarios: Vec<serde_json::Value>,
     secrets: Vec<serde_json::Value>,
+    // T-0700: `resource ID { arbitrated_by NODE | lock "NAME" }` -- named
+    // shared resources with an optional single arbiter/lease, joined
+    // against `access` attrs (`parse_access_attr`) by the Python
+    // contention-proof obligation (`src/frob/strata/_access.py`). Unlike
+    // `owns`/`acl`/`bin_path`, a resource has no accessor of its own (it
+    // is pure arbiter metadata, not a node), so it gets its own top-level
+    // `Module.resources` field rather than desugaring into an attr.
+    resources: Vec<serde_json::Value>,
 }
 
 impl Parser {
@@ -421,6 +429,41 @@ impl Parser {
         }
     }
 
+    /// T-0700: `access "RESOURCE" mode MODE` -- one node/store's declared
+    /// access mode against a named shared resource (docs/strata/
+    /// host.md#resource-access-modes-t-0700), the grammar half of the
+    /// contention-proof mandate. MODE is a closed vocabulary (`read`,
+    /// `append`, `alpha`, `write`, `exclusive` -- the compatibility-matrix
+    /// atoms `src/frob/strata/_access.py::AccessMode` mirrors), rejected
+    /// at parse time rather than deferred to the elaborator (unlike
+    /// `owns` MODE/`acl` RULE's opaque-atom precedent -- this vocabulary
+    /// is closed and small enough to validate right here, same discipline
+    /// `parse_operation`'s Ok/Err outcome check uses). Desugars STRAIGHT
+    /// to an `access=<resource>:<mode>` attr (the `bin_path` T-0629
+    /// direct-attr-push shape -- no new `NodeDecl`/`StoreDecl` field, kept
+    /// out of `_ast.py`/`_elaborate.py`/`_infra.py` on purpose), so
+    /// `_access.py::node_access_declarations` reads it back off the SAME
+    /// elaborated `Node.attrs` regardless of which caller (node or store)
+    /// produced it. Repeatable: a node/store may access more than one
+    /// resource, or the same resource more than once (not de-duplicated
+    /// here -- the obligation layer's job).
+    fn parse_access_attr(&mut self, attrs: &mut Vec<String>) -> Result<(), ParseError> {
+        self.advance(); // 'access'
+        let resource = self.expect_string("access resource id")?;
+        self.expect_keyword("mode")?;
+        let mode = self.expect_ident("access mode (read|append|alpha|write|exclusive)")?;
+        match mode.as_str() {
+            "read" | "append" | "alpha" | "write" | "exclusive" => {}
+            _ => {
+                return self.err(
+                    "access mode must be one of read|append|alpha|write|exclusive",
+                )
+            }
+        }
+        attrs.push(format!("access={}:{}", resource, mode));
+        Ok(())
+    }
+
     fn parse_module(
         &mut self,
         ast: &mut ModuleAst,
@@ -450,6 +493,14 @@ impl Parser {
         let mut attrs: Vec<String> = Vec::new();
         let mut residence: Option<String> = None;
         let mut capacity: Option<serde_json::Value> = None;
+        // T-0702: `users NUMBER` (steady population) / `rate NUMBER UNIT`
+        // (arrival rate) -- entry-node demand declarations, the source
+        // side of the demand-propagation mandate (docs/strata/kernel.md
+        // #demand-t-0702). Both optional and independent (a node may
+        // declare either, both, or neither); a repeated clause overwrites
+        // (mirrors `platform`/`residence`), not accumulates.
+        let mut users: Option<f64> = None;
+        let mut demand_rate: Option<serde_json::Value> = None;
         let mut errors_total = false;
         let mut panics_contained_by: Option<String> = None;
         let mut observe: Option<serde_json::Value> = None;
@@ -727,6 +778,8 @@ impl Parser {
                         let args = self.expect_string("bin_path args")?;
                         attrs.push(format!("bin_path_args={}", args));
                     }
+                } else if self.at_keyword("access") {
+                    self.parse_access_attr(&mut attrs)?;
                 } else if self.at_keyword("residence") {
                     self.advance();
                     residence = Some(self.expect_ident("residence atom")?);
@@ -738,6 +791,19 @@ impl Parser {
                     self.expect_dotdot()?;
                     let hi = self.expect_int("replicas_max")?;
                     capacity = Some(json!({"rate": rate, "replicas_min": lo, "replicas_max": hi}));
+                } else if self.at_keyword("users") {
+                    // T-0702: `users NUMBER` -- a steady population entry
+                    // demand (docs/strata/kernel.md#demand-t-0702).
+                    self.advance();
+                    users = Some(self.expect_number("users population")?);
+                } else if self.at_keyword("rate") {
+                    // T-0702: `rate NUMBER UNIT` -- an arrival-rate entry
+                    // demand, same QUANTITY shape `flow`'s `rate` clause
+                    // and `capacity`'s rate use (docs/strata/kernel.md
+                    // #demand-t-0702). Top-level on node/store, distinct
+                    // from `capacity`'s own nested rate quantity.
+                    self.advance();
+                    demand_rate = Some(self.parse_quantity("rate")?);
                 } else if self.at_keyword("skew") {
                     // skew := "skew" "zipf" NUMBER; desugars straight to a
                     // node attr "skew=<alpha>" (docs/strata/kernel.md
@@ -897,6 +963,8 @@ impl Parser {
             "clearance": clearance,
             "attrs": attrs,
             "capacity": capacity,
+            "users": users,
+            "rate": demand_rate,
             "residence": residence,
             "errors_total": errors_total,
             "panics_contained_by": panics_contained_by,
@@ -1608,6 +1676,11 @@ impl Parser {
         let mut attrs: Vec<String> = Vec::new();
         let mut residence: Option<String> = None;
         let mut capacity: Option<serde_json::Value> = None;
+        // T-0702: same `users`/`rate` entry-demand shape as `node`'s --
+        // a store is a node too (docs/strata/surface.md#key-construct-
+        // semantics), so it can be the demand-declaring endpoint too.
+        let mut users: Option<f64> = None;
+        let mut demand_rate: Option<serde_json::Value> = None;
         let mut engine: Option<String> = None;
         let mut immutable = false;
         let mut append_only = false;
@@ -1731,6 +1804,8 @@ impl Parser {
                         let args = self.expect_string("bin_path args")?;
                         attrs.push(format!("bin_path_args={}", args));
                     }
+                } else if self.at_keyword("access") {
+                    self.parse_access_attr(&mut attrs)?;
                 } else if self.at_keyword("code") {
                     // T-0166: `code GLOB+` -- same STRING+ shape T-0132 gave
                     // `node` (parse_node); a store is a node too
@@ -1793,6 +1868,16 @@ impl Parser {
                     self.expect_dotdot()?;
                     let hi = self.expect_int("replicas_max")?;
                     capacity = Some(json!({"rate": rate, "replicas_min": lo, "replicas_max": hi}));
+                } else if self.at_keyword("users") {
+                    // T-0702: same `users NUMBER` shape as `node`'s clause.
+                    self.advance();
+                    users = Some(self.expect_number("users population")?);
+                } else if self.at_keyword("rate") {
+                    // T-0702: same `rate NUMBER UNIT` shape as `node`'s
+                    // clause, top-level and distinct from `capacity`'s own
+                    // nested rate quantity.
+                    self.advance();
+                    demand_rate = Some(self.parse_quantity("rate")?);
                 } else if self.at_keyword("engine") {
                     self.advance();
                     engine = Some(self.expect_ident("engine name")?);
@@ -1892,6 +1977,8 @@ impl Parser {
             "clearance": clearance,
             "attrs": attrs,
             "capacity": capacity,
+            "users": users,
+            "rate": demand_rate,
             "residence": residence,
             "engine": engine,
             "immutable": immutable,
@@ -1999,6 +2086,68 @@ impl Parser {
     /// optional (not mandatory) so every existing `.strata` source without it
     /// keeps parsing identically; the elaborator still defaults to
     /// `"trusted"` when omitted.
+    /// resource := "resource" ID ("{" resource_prop (";" resource_prop)* "}")?
+    /// resource_prop := "arbitrated_by" ID | "lock" STRING
+    ///
+    /// WHY: T-0700's shared-resource declaration -- names a resource
+    /// `access` clauses (`parse_access_attr`) reference by matching
+    /// STRING id, and optionally binds a single arbiter (a node id that
+    /// mediates access) or a lease/lock NAME. At most one of
+    /// `arbitrated_by`/`lock` may be given -- a resource with both would
+    /// leave the contention-proof obligation unable to tell which
+    /// mechanism actually discharges it, so this is a parse error rather
+    /// than a silent "last one wins" (same discipline `parse_resource`'s
+    /// sibling clauses use for at-most-one fields elsewhere in this
+    /// file). A bare `resource ID;` (no body) declares the resource
+    /// exists with no arbiter -- the contention proof then requires every
+    /// accessor to be read/alpha-only (module docstring compatibility
+    /// matrix, `src/frob/strata/_access.py`).
+    fn parse_resource(&mut self, ast: &mut ModuleAst) -> Result<(), ParseError> {
+        self.advance(); // 'resource'
+        let id = self.expect_ident("resource id")?;
+        let mut arbitrated_by: Option<String> = None;
+        let mut lock: Option<String> = None;
+        if self.at_symbol('{') {
+            self.advance();
+            loop {
+                if self.at_symbol('}') {
+                    break;
+                }
+                if self.at_keyword("arbitrated_by") {
+                    if arbitrated_by.is_some() || lock.is_some() {
+                        return self.err(
+                            "resource may declare at most one of arbitrated_by/lock",
+                        );
+                    }
+                    self.advance();
+                    arbitrated_by = Some(self.expect_ident("arbiter node id")?);
+                } else if self.at_keyword("lock") {
+                    if arbitrated_by.is_some() || lock.is_some() {
+                        return self.err(
+                            "resource may declare at most one of arbitrated_by/lock",
+                        );
+                    }
+                    self.advance();
+                    lock = Some(self.expect_string("lock name")?);
+                } else {
+                    return self.err("unknown resource property");
+                }
+                if self.at_symbol(';') {
+                    self.advance();
+                } else {
+                    break;
+                }
+            }
+            self.expect_symbol('}')?;
+        }
+        ast.resources.push(json!({
+            "id": id,
+            "arbitrated_by": arbitrated_by,
+            "lock": lock,
+        }));
+        Ok(())
+    }
+
     fn parse_queue(&mut self, ast: &mut ModuleAst) -> Result<(), ParseError> {
         self.advance(); // 'queue'
         let id = self.expect_ident("queue id")?;
@@ -2473,7 +2622,7 @@ impl Parser {
                 "module" => self.parse_module(&mut ast, &mut seen_module)?,
                 "node" | "flow" | "boundary" | "assert" | "assume" | "refine" | "store"
                 | "cache" | "queue" | "cdn" | "balancer" | "policy" | "operation"
-                | "scenario" | "secret" => {
+                | "scenario" | "secret" | "resource" => {
                     if !seen_module {
                         return self.err("statement before module declaration");
                     }
@@ -2493,6 +2642,9 @@ impl Parser {
                         "operation" => self.parse_operation(&mut ast)?,
                         "scenario" => self.parse_scenario(&mut ast)?,
                         "secret" => self.parse_secret(&mut ast)?,
+                        // T-0700: shared-resource declaration -- named
+                        // arbiter metadata, no accessor of its own.
+                        "resource" => self.parse_resource(&mut ast)?,
                         _ => unreachable!(),
                     }
                 }
@@ -3984,5 +4136,211 @@ mod tests {
         // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
         let e = err("module m\nscenario s { trust n1 = foreign; }");
         assert_eq!(e["message"], "expected :=");
+    }
+
+    // T-0700: `access "RESOURCE" mode MODE` node/store clause + `resource
+    // ID { arbitrated_by NODE | lock "NAME" }` top-level construct.
+
+    #[test]
+    fn parses_node_access_clause() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(r#"module m
+            node writer : trusted {
+                access "ledger_db" mode write;
+                access "cache_db" mode read;
+            }"#);
+        let n = &v["nodes"][0];
+        let attrs: Vec<&str> = n["attrs"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|a| a.as_str().unwrap())
+            .collect();
+        assert!(attrs.contains(&"access=ledger_db:write"));
+        assert!(attrs.contains(&"access=cache_db:read"));
+    }
+
+    #[test]
+    fn parses_store_access_clause() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0261 node/store symmetry: same `access` shape on `store`.
+        let v = ok(r#"module m
+            store ledger_db : trusted {
+                access "ledger_db" mode exclusive;
+            }"#);
+        let s = &v["stores"][0];
+        let attrs: Vec<&str> = s["attrs"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|a| a.as_str().unwrap())
+            .collect();
+        assert!(attrs.contains(&"access=ledger_db:exclusive"));
+    }
+
+    #[test]
+    fn parses_all_access_modes() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(r#"module m
+            node n : trusted {
+                access "r" mode read;
+                access "a" mode append;
+                access "al" mode alpha;
+                access "w" mode write;
+                access "e" mode exclusive;
+            }"#);
+        let attrs: Vec<&str> = v["nodes"][0]["attrs"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|a| a.as_str().unwrap())
+            .collect();
+        for expect in [
+            "access=r:read",
+            "access=a:append",
+            "access=al:alpha",
+            "access=w:write",
+            "access=e:exclusive",
+        ] {
+            assert!(attrs.contains(&expect), "missing {expect:?} in {attrs:?}");
+        }
+    }
+
+    #[test]
+    fn error_access_rejects_unknown_mode() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err(r#"module m
+            node n : trusted {
+                access "r" mode bogus;
+            }"#);
+        assert_eq!(
+            e["message"],
+            "access mode must be one of read|append|alpha|write|exclusive"
+        );
+    }
+
+    #[test]
+    fn error_access_requires_mode_keyword() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err(r#"module m
+            node n : trusted {
+                access "r" write;
+            }"#);
+        assert_eq!(e["message"], "expected keyword \"mode\"");
+    }
+
+    #[test]
+    fn parses_resource_with_arbitrated_by() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(r#"module m
+            node writer : trusted { }
+            resource ledger_db {
+                arbitrated_by writer;
+            }"#);
+        let r = &v["resources"][0];
+        assert_eq!(r["id"], "ledger_db");
+        assert_eq!(r["arbitrated_by"], "writer");
+        assert_eq!(r["lock"], serde_json::Value::Null);
+    }
+
+    #[test]
+    fn parses_resource_with_lock() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(r#"module m
+            resource ledger_db {
+                lock "ledger-lease";
+            }"#);
+        let r = &v["resources"][0];
+        assert_eq!(r["id"], "ledger_db");
+        assert_eq!(r["arbitrated_by"], serde_json::Value::Null);
+        assert_eq!(r["lock"], "ledger-lease");
+    }
+
+    #[test]
+    fn parses_bare_resource_with_no_arbiter() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok("module m\nresource ledger_db");
+        let r = &v["resources"][0];
+        assert_eq!(r["id"], "ledger_db");
+        assert_eq!(r["arbitrated_by"], serde_json::Value::Null);
+        assert_eq!(r["lock"], serde_json::Value::Null);
+    }
+
+    #[test]
+    fn error_resource_rejects_both_arbitrated_by_and_lock() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let e = err(r#"module m
+            resource ledger_db {
+                arbitrated_by writer;
+                lock "ledger-lease";
+            }"#);
+        assert_eq!(
+            e["message"],
+            "resource may declare at most one of arbitrated_by/lock"
+        );
+    }
+
+    // T-0702: `users NUMBER` / `rate NUMBER UNIT` entry-demand clauses.
+
+    #[test]
+    fn parses_node_users_and_rate() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok(r#"module m
+            node entry_a : trusted {
+                users 300000;
+                rate 500 req/s;
+            }"#);
+        let n = &v["nodes"][0];
+        assert_eq!(n["users"], 300000.0);
+        assert_eq!(n["rate"]["value"], 500.0);
+        assert_eq!(n["rate"]["unit"], "req/s");
+    }
+
+    #[test]
+    fn parses_node_without_users_or_rate_defaults_null() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok("module m\nnode plain : trusted { }");
+        let n = &v["nodes"][0];
+        assert_eq!(n["users"], serde_json::Value::Null);
+        assert_eq!(n["rate"], serde_json::Value::Null);
+    }
+
+    #[test]
+    fn parses_node_users_only_no_rate() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        let v = ok("module m\nnode entry_a : trusted { users 200000; }");
+        let n = &v["nodes"][0];
+        assert_eq!(n["users"], 200000.0);
+        assert_eq!(n["rate"], serde_json::Value::Null);
+    }
+
+    #[test]
+    fn parses_store_users_and_rate() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // T-0261 node/store symmetry: same `users`/`rate` shape on `store`.
+        let v = ok(r#"module m
+            store db : trusted {
+                users 500000;
+                rate 1000 req/s;
+            }"#);
+        let s = &v["stores"][0];
+        assert_eq!(s["users"], 500000.0);
+        assert_eq!(s["rate"]["value"], 1000.0);
+        assert_eq!(s["rate"]["unit"], "req/s");
+    }
+
+    #[test]
+    fn parses_node_rate_does_not_collide_with_capacity_rate() {
+        // frob:tests strata-core/src/lib.rs::parse_source kind="unit"
+        // The top-level `rate` (T-0702 demand) and `capacity`'s own
+        // nested rate quantity are independent fields.
+        let v = ok(r#"module m
+            node svc : trusted {
+                rate 300 req/s;
+                capacity 100 req/s replicas 1..3;
+            }"#);
+        let n = &v["nodes"][0];
+        assert_eq!(n["rate"]["value"], 300.0);
+        assert_eq!(n["capacity"]["rate"]["value"], 100.0);
     }
 }

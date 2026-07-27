@@ -73,6 +73,7 @@ node registry : foreign { clearance Public; }
 // Done report, not fixed here) and `fs` (config/log file writes) across
 // every file `code` binds.
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+// frob:ticket T-0956
 node cli : trusted {
     clearance Internal;
     // T-0500 (docs/audits/strata.md G4): src/frob/__init__.py (package
@@ -113,7 +114,7 @@ node cli : trusted {
     // T-0633's locked wholesale ops) -- SYS203 just cannot express that
     // arbitration until T-0700's access-modes+arbitrated_by grammar
     // lands. Re-evaluate at T-0700.
-    waive "SYS203:tickets_ledger" reason "all ledger writers serialize through .frob/tickets.lock (T-0458/T-0633); mode-blind until T-0700 arbitrated_by can express this -- re-evaluate at T-0700" ticket "T-0700";
+    waive "SYS203:tickets_ledger" reason "all ledger writers serialize through .frob/tickets.lock (T-0458/T-0633); T-0700 shipped access-modes+arbitrated_by grammar -- re-express with resource/access and drop this waiver, tracked by T-0956" ticket "T-0956";
 }
 
 // graph+lang: src/frob/graph/**, src/frob/lang/**, src/frob/arch/**. Owns
@@ -156,6 +157,7 @@ node graphlang : trusted {
 // longer observes "eval" and the declaration would otherwise be a stale,
 // unfalsifiable claim -- exactly what SYS101 exists to catch.
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+// frob:ticket T-0956
 node gates : trusted {
     clearance Internal;
     code "src/frob/gates/**";
@@ -178,7 +180,7 @@ node gates : trusted {
     // T-0724: same SYS203/tickets_ledger disposition as `cli` above --
     // the `.frob/tickets.lock` flock (T-0458/T-0633) is the real,
     // untracked-by-the-grammar arbiter; re-evaluate at T-0700.
-    waive "SYS203:tickets_ledger" reason "all ledger writers serialize through .frob/tickets.lock (T-0458/T-0633); mode-blind until T-0700 arbitrated_by can express this -- re-evaluate at T-0700" ticket "T-0700";
+    waive "SYS203:tickets_ledger" reason "all ledger writers serialize through .frob/tickets.lock (T-0458/T-0633); T-0700 shipped access-modes+arbitrated_by grammar -- re-express with resource/access and drop this waiver, tracked by T-0956" ticket "T-0956";
 }
 
 // check orchestration: src/frob/check/**. Runs the gate suite plus the
@@ -294,6 +296,7 @@ node registry_model : trusted {
 // subprocess's own stdout is not a `deserialize`-kind sink under this
 // model's vocabulary (no untrusted-network byte stream reaches it).
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+// frob:ticket T-0956
 node fleet : trusted {
     clearance Internal;
     code "src/frob/fleet/**";
@@ -308,7 +311,7 @@ node fleet : trusted {
     // T-0724: same SYS203/tickets_ledger disposition as `cli` above --
     // the `.frob/tickets.lock` flock (T-0458/T-0633) is the real,
     // untracked-by-the-grammar arbiter; re-evaluate at T-0700.
-    waive "SYS203:tickets_ledger" reason "all ledger writers serialize through .frob/tickets.lock (T-0458/T-0633); mode-blind until T-0700 arbitrated_by can express this -- re-evaluate at T-0700" ticket "T-0700";
+    waive "SYS203:tickets_ledger" reason "all ledger writers serialize through .frob/tickets.lock (T-0458/T-0633); T-0700 shipped access-modes+arbitrated_by grammar -- re-express with resource/access and drop this waiver, tracked by T-0956" ticket "T-0956";
 }
 
 // dup+frob-core: everything that is real infrastructure but not one of
@@ -352,6 +355,7 @@ node fleet : trusted {
 // declared below); `render` measures as `env` only (`_color.py`'s
 // `os.environ`/`NO_COLOR`/`CLICOLOR_FORCE` reads, also already declared).
 // No new `may` needed for either.
+// frob:ticket T-0956
 node core : trusted {
     clearance Internal;
     code "src/frob/dup/**" "src/frob/logging/**" "src/frob/process/**"
@@ -385,7 +389,7 @@ node core : trusted {
     // T-0724: same SYS203/tickets_ledger disposition as `cli` above --
     // the `.frob/tickets.lock` flock (T-0458/T-0633) is the real,
     // untracked-by-the-grammar arbiter; re-evaluate at T-0700.
-    waive "SYS203:tickets_ledger" reason "all ledger writers serialize through .frob/tickets.lock (T-0458/T-0633); mode-blind until T-0700 arbitrated_by can express this -- re-evaluate at T-0700" ticket "T-0700";
+    waive "SYS203:tickets_ledger" reason "all ledger writers serialize through .frob/tickets.lock (T-0458/T-0633); T-0700 shipped access-modes+arbitrated_by grammar -- re-express with resource/access and drop this waiver, tracked by T-0956" ticket "T-0956";
 }
 
 // T-0440: `frob mutate` -- mutation testing, the honest test-quality
@@ -491,6 +495,7 @@ node natives : trusted {
 // (minus the `foreign` clearance -- `serve` is trusted, internal code,
 // just with no risky effect of its own to declare).
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+// frob:ticket T-0956
 node serve : trusted {
     clearance Internal;
     code "src/frob/serve/**";
@@ -505,7 +510,7 @@ node serve : trusted {
     // differs -- discovered when T-0756 folded SYS203 into `frob check`'s
     // own gate pipeline (SELFAUDIT001) for the first time and this exact
     // gap surfaced as a real, previously-undisclosed red `frob sys audit`.
-    waive "SYS203:tickets_ledger" reason "all ledger writers serialize through .frob/tickets.lock (T-0458/T-0633); mode-blind until T-0700 arbitrated_by can express this -- re-evaluate at T-0700" ticket "T-0700";
+    waive "SYS203:tickets_ledger" reason "all ledger writers serialize through .frob/tickets.lock (T-0458/T-0633); T-0700 shipped access-modes+arbitrated_by grammar -- re-express with resource/access and drop this waiver, tracked by T-0956" ticket "T-0956";
 }
 
 // T-0440: `frob deploy` -- compiles `std.host` manifests into idempotent

@@ -52,6 +52,21 @@ to pick up the change, and `docs/strata/surface.md`'s node-decl grammar
 table gained the row. `test_strata_tmlanguage.py` would have failed
 (parser-only keyword) had the grammar-file half been skipped.
 
+## Worked example: a new top-level construct plus a node/store clause (T-0700)
+
+`resource ID { arbitrated_by NODE | lock "NAME" }` (a brand-new top-level
+declaration keyword, `Parser::parse_resource`) and `access "RESOURCE" mode
+MODE` (a new node/store clause, `Parser::parse_access_attr`, T-0261
+node/store symmetry) both landed together: `resource` was added to
+`parse_program`'s dispatch AND `strata.tmLanguage.json`'s
+`declaration-keywords` pattern; `access`/`arbitrated_by`/`lock`/`mode`
+were added to the SAME file's `clause-keywords` pattern (a separate
+pattern from `declaration-keywords` -- see the recipe above, step 2, and
+do not conflate the two when hand-editing the grammar file, module
+docstring's "Common mistakes" below). `docs/strata/host.md
+#resource-access-modes-t-0700` documents the new surface; `docs/strata/
+surface.md`'s `Module` AST bullet gained `resources`.
+
 ## Common mistakes
 
 - **Editing `parse.rs` and forgetting `make core`.** The Python-side

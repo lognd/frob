@@ -580,9 +580,13 @@ Python AST models (`src/frob/strata/_ast.py`), one frozen pydantic model
 per grammar production:
 
 - `Module` <!-- frob:describes src/frob/strata/_ast.py::Module -->
-  -- name, nodes, flows, boundaries, claims.
+  -- name, nodes, flows, boundaries, claims, resources (T-0700: named
+  shared-resource/arbiter declarations, docs/strata/host.md
+  #resource-access-modes-t-0700).
 - `NodeDecl` <!-- frob:describes src/frob/strata/_ast.py::NodeDecl -->
-  -- id, trust, is_abstract, clearance, attrs, capacity, residence.
+  -- id, trust, is_abstract, clearance, attrs, capacity, residence, users,
+  rate (T-0702: entry-demand declarations, docs/strata/kernel.md
+  #demand-t-0702).
 - `Capacity` <!-- frob:describes src/frob/strata/_ast.py::Capacity -->
   -- the parsed `capacity RATE UNIT replicas MIN..MAX` node property.
 - `FlowDecl` <!-- frob:describes src/frob/strata/_ast.py::FlowDecl -->

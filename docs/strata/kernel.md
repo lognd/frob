@@ -320,6 +320,67 @@ verdict flips from PROVED to REFUTED with detail `"saturates in N months
 within two years is not a passing claim. No growth declared, or a
 horizon beyond 24 months, leaves the verdict PROVED untouched.
 
+### Demand declarations (T-0702)
+
+<!-- frob:ticket T-0702 -->
+<!-- frob:describes src/frob/strata/_facts.py::FactBase.aggregate_demand -->
+<!-- frob:describes src/frob/strata/_facts.py::AggregateDemand -->
+
+The capacity-semantics propagation above (`propagated_demand`) sums demand
+along flows whose OWN `rate` is declared -- but nothing in the model says
+WHERE that load originates. A single `exclusive` lock (docs/strata/host.md
+#resource-access-modes-t-0700) behind 500k concurrent users and the same
+lock behind zero users are structurally identical without a notion of
+entry-point LOAD -- this is the starvation-semantics prerequisite T-0700's
+resource/access grammar needed.
+
+Two new node/store clauses (T-0261 symmetry) declare entry demand:
+
+- **`users NUMBER`** -- a steady population reaching this node (e.g. a
+  concurrent-session count). A bare number, no unit (a headcount is
+  dimensionless).
+- **`rate NUMBER UNIT`** -- an arrival rate (same `QUANTITY` shape flow's
+  own `rate` clause and `capacity`'s nested rate use, e.g. `rate 500
+  req/s`). Top-level on node/store and independent of `capacity`'s own
+  nested rate quantity (that's the node's own SERVICE ability; this is
+  INBOUND load reaching it) -- the two do not collide syntactically since
+  `capacity`'s rate is consumed immediately after the `capacity` keyword,
+  never as a bare top-level clause.
+
+A node may declare either, both (composing ADDITIVELY -- `users + rate`'s
+base value, not exclusively), or neither. Elaborated straight onto
+`Node.users: float | None` / `Node.rate: Quantity | None` (real kernel
+fields, not an attr string -- `capacity`'s own precedent: numeric facts
+consumed in arithmetic are typed fields, not opaque attrs).
+
+**Propagation: `FactBase.aggregate_demand(node_id) -> AggregateDemand`.**
+Reuses `propagated_demand`'s existing fanout-aware summation engine
+UNCHANGED (no `strata-core/src/lib.rs` change) by seeding it with a
+synthetic external-source flow per demand-declaring node (`__demand_
+seed__<id>` from a synthetic `__demand_source__<id>`, declared rate =
+`users + rate.base_value()`) alongside the model's real flows, then
+calling `strata_core.propagated_demand` exactly as `FactBase.
+propagated_demand` does. Demand SUMS at fan-in the same way flow-rate
+demand already does (two entry nodes declaring `users 300000` and `users
+200000` both flowing into one resource: aggregate demand at that resource
+is `500000.0`).
+
+**UNDECLARED is not the same as zero.** `AggregateDemand.declared: bool`
+distinguishes "no `users`/`rate`-declaring node's demand reaches this
+node at all" (`declared=False, value=0.0`) from a genuinely computed sum
+(`declared=True`, even when that sum happens to be `0.0`) -- computed via
+a plain reverse-BFS ancestor check over the same edges fed to
+`propagated_demand`, not by comparing the result to `0.0` (which would
+make a real declared-zero indistinguishable from "nothing declared at
+all"). A resource with no demand-declaring node anywhere upstream reports
+`demand-undeclared`, never a silent `0`.
+
+Consumers (serialization-point utilization / writer-starvation / unbounded-
+wait obligations over this demand, and the optional `capacity`/`holds`
+hints on resources and arbiters this ticket's body mentions) are a
+separate, sibling ticket -- this page documents the grammar and
+propagation primitive only.
+
 ## Claim evaluation
 
 <!-- frob:describes src/frob/strata/_claims.py::evaluate_claims -->

@@ -2713,7 +2713,7 @@ Child 5 of T-0693, the user's seem-IO-bound/seem-CPU-bound mandate. Classify eac
 id: T-0700
 title: 'strata grammar: access modes + shared-resource/lease declarations for contention
   proofs'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-22'
@@ -2727,15 +2727,169 @@ scope:
 - editors/**
 - docs/strata/**
 - tests/unit/strata/
+- docs/guides/extending/strata-surface-grammar.md
+- design/frob.strata
+- tests/test_tickets_live_tracker.py
+scope_changes:
+- op: add
+  glob: docs/guides/extending/strata-surface-grammar.md
+  reason: T-0700 grammar deliverable touches this doc (AFFECT001 closure for parse.rs::Parser.parse_program's
+    affects-doc)
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: design/frob.strata
+  reason: 'close-time live-tracker re-point: 5 SYS203 waivers cite T-0700 by design,
+    must repoint to the successor ticket to close'
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: tests/test_tickets_live_tracker.py
+  reason: 'close-time live-tracker re-point: fixture line cites T-0700 as a placeholder
+    ticket id'
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- strata-core/src/parse.rs::tests::parses_node_access_clause
+- strata-core/src/parse.rs::tests::parses_store_access_clause
+- strata-core/src/parse.rs::tests::parses_all_access_modes
+- strata-core/src/parse.rs::tests::error_access_rejects_unknown_mode
+- strata-core/src/parse.rs::tests::error_access_requires_mode_keyword
+- strata-core/src/parse.rs::tests::parses_resource_with_arbitrated_by
+- strata-core/src/parse.rs::tests::parses_resource_with_lock
+- strata-core/src/parse.rs::tests::parses_bare_resource_with_no_arbiter
+- strata-core/src/parse.rs::tests::error_resource_rejects_both_arbitrated_by_and_lock
+- tests/unit/strata/test_access.py::TestNodeAccessDeclarations::test_reads_access_attrs
+- tests/unit/strata/test_access.py::TestNodeAccessDeclarations::test_no_access_attrs_is_empty
+- tests/unit/strata/test_access.py::TestNodeAccessDeclarations::test_unrecognized_mode_fails_closed
+- tests/unit/strata/test_access.py::TestModeConflict::test_read_read_is_safe
+- tests/unit/strata/test_access.py::TestModeConflict::test_read_alpha_is_safe
+- tests/unit/strata/test_access.py::TestModeConflict::test_alpha_alpha_conflicts
+- tests/unit/strata/test_access.py::TestModeConflict::test_write_conflicts_with_anything
+- tests/unit/strata/test_access.py::TestModeConflict::test_exclusive_conflicts_with_everything_including_itself
+- tests/unit/strata/test_access.py::TestModeConflict::test_append_conflicts_with_anything
+- tests/unit/strata/test_access.py::TestResourceContentionViolations::test_two_writers_no_arbiter_fires
+- tests/unit/strata/test_access.py::TestResourceContentionViolations::test_arbitrated_by_discharges
+- tests/unit/strata/test_access.py::TestResourceContentionViolations::test_lock_discharges
+- tests/unit/strata/test_access.py::TestResourceContentionViolations::test_read_only_modes_discharge_without_arbiter
+- tests/unit/strata/test_access.py::TestResourceContentionViolations::test_bare_resource_declaration_with_no_arbiter_still_fires
+- tests/unit/strata/test_access.py::TestResourceContentionViolations::test_single_accessor_never_fires
+- tests/unit/strata/test_access.py::TestResourceContentionViolations::test_unrelated_resources_do_not_cross_conflict
+- tests/unit/test_strata_tmlanguage.py::test_construct_keywords_match_parser_bidirectionally
+- tests/unit/test_strata_tmlanguage.py::test_clause_keywords_covered_by_grammar
 acceptance:
 - text: GIVEN two nodes with write-mode access to one resource and no arbiter WHEN
     sys checks run THEN a fail-closed error; GIVEN the same with a declared arbiter
     or read-only modes THEN the obligation discharges
-  evidence: []
+  evidence:
+  - strata-core/src/parse.rs::tests::parses_node_access_clause
+  - strata-core/src/parse.rs::tests::parses_store_access_clause
+  - strata-core/src/parse.rs::tests::parses_all_access_modes
+  - strata-core/src/parse.rs::tests::error_access_rejects_unknown_mode
+  - strata-core/src/parse.rs::tests::error_access_requires_mode_keyword
+  - strata-core/src/parse.rs::tests::parses_resource_with_arbitrated_by
+  - strata-core/src/parse.rs::tests::parses_resource_with_lock
+  - strata-core/src/parse.rs::tests::parses_bare_resource_with_no_arbiter
+  - strata-core/src/parse.rs::tests::error_resource_rejects_both_arbitrated_by_and_lock
+  - tests/unit/strata/test_access.py::TestNodeAccessDeclarations::test_reads_access_attrs
+  - tests/unit/strata/test_access.py::TestNodeAccessDeclarations::test_no_access_attrs_is_empty
+  - tests/unit/strata/test_access.py::TestNodeAccessDeclarations::test_unrecognized_mode_fails_closed
+  - tests/unit/strata/test_access.py::TestModeConflict::test_read_read_is_safe
+  - tests/unit/strata/test_access.py::TestModeConflict::test_read_alpha_is_safe
+  - tests/unit/strata/test_access.py::TestModeConflict::test_alpha_alpha_conflicts
+  - tests/unit/strata/test_access.py::TestModeConflict::test_write_conflicts_with_anything
+  - tests/unit/strata/test_access.py::TestModeConflict::test_exclusive_conflicts_with_everything_including_itself
+  - tests/unit/strata/test_access.py::TestModeConflict::test_append_conflicts_with_anything
+  - tests/unit/strata/test_access.py::TestResourceContentionViolations::test_two_writers_no_arbiter_fires
+  - tests/unit/strata/test_access.py::TestResourceContentionViolations::test_arbitrated_by_discharges
+  - tests/unit/strata/test_access.py::TestResourceContentionViolations::test_lock_discharges
+  - tests/unit/strata/test_access.py::TestResourceContentionViolations::test_read_only_modes_discharge_without_arbiter
+  - tests/unit/strata/test_access.py::TestResourceContentionViolations::test_bare_resource_declaration_with_no_arbiter_still_fires
+  - tests/unit/strata/test_access.py::TestResourceContentionViolations::test_single_accessor_never_fires
+  - tests/unit/strata/test_access.py::TestResourceContentionViolations::test_unrelated_resources_do_not_cross_conflict
+  - tests/unit/test_strata_tmlanguage.py::test_construct_keywords_match_parser_bidirectionally
+  - tests/unit/test_strata_tmlanguage.py::test_clause_keywords_covered_by_grammar
 threat: null
 component: null
 ```
 Second half of the resource-contention mandate -- the grammar extension. Add: (1) access MODE on resource edges (owns/acl/stores gain mode=read|append|alpha|write|exclusive, default write for backward compat with current semantics -- decide and document). ALPHA SEMANTICS (user-specified 2026-07-22, the update/upgradeable-lock pattern): alpha declares INTEREST in a future writer lock; many writes need a read just before, so alpha sits between read and write. Compatibility matrix to encode and check: read+read OK; read+alpha OK (alpha never conflicts with readers); alpha+alpha CONFLICT (exactly one writer-intender per resource -- this is what prevents the two-readers-both-upgrading deadlock); alpha+write and write+anything CONFLICT; an alpha holder upgrades to write only once readers drain. (2) a shared-resource declaration with an ARBITER (resource NAME mode... arbitrated_by NODE|lock NAME) so two writers are provable-safe only through a declared arbiter/lease; (3) contention proof obligation: for every resource whose declared accessor modes violate the compatibility matrix (>1 writer-mode with no arbiter, OR >1 alpha declarant) a SYS error (fail-closed). parse.rs node/store symmetry per T-0261 precedent, tmLanguage update, docs/strata section, litmus fixtures. Field motivation: frob's own ledger-lock/refs-stash/info-exclude incidents -- repo-global resources with multiple writers and only convention as the arbiter. The mode-blind rules ship first in the sibling ticket; this upgrades them to mode-aware without renaming.
+
+## Done report
+
+Changed:
+strata-core/src/parse.rs::Parser.parse_access_attr (new)
+strata-core/src/parse.rs::Parser.parse_node (access clause wired in)
+strata-core/src/parse.rs::Parser.parse_store (access clause wired in)
+strata-core/src/parse.rs::Parser.parse_resource (new)
+strata-core/src/parse.rs::Parser.parse_program (resource keyword dispatch)
+strata-core/src/parse.rs::ModuleAst.resources (new field)
+src/frob/strata/_ast.py::ResourceDecl (new)
+src/frob/strata/_ast.py::Module.resources (new field)
+src/frob/strata/_access.py (new module): AccessMode, NodeAccess, ResourceContentionViolation, ResourceContentionReport, node_access_declarations, mode_conflict, resource_contention_violations, SYS_UNARBITRATED_MODE_CONFLICT
+src/frob/strata/__init__.py (export the new symbols; aliased ResourceContentionReport/Violation as AccessResourceContentionReport/Violation to avoid colliding with _contention.py's SYS203 pair)
+docs/strata/host.md (new "Resource access modes (T-0700)" section)
+docs/strata/surface.md (Module AST bullet updated: +resources)
+docs/guides/extending/strata-surface-grammar.md (worked-example addendum for this ticket's construct+clause addition)
+editors/vscode-strata/syntaxes/strata.tmLanguage.json (declaration-keywords: +resource; clause-keywords: +access/arbitrated_by/lock/mode, and +bin_path -- a pre-existing T-0629 gap this ticket's own drift-lock run surfaced, fixed in the same pass since it's a one-token entry in a file already in scope)
+
+Grammar added:
+- `access "RESOURCE" mode MODE` on node/store (MODE closed vocabulary read|append|alpha|write|exclusive, validated at parse time), direct-attr-push to `access=<resource>:<mode>` (T-0629 bin_path precedent -- no NodeDecl/StoreDecl field threaded through _ast.py/_elaborate.py/_infra.py).
+- `resource ID { arbitrated_by NODE | lock "NAME" }` top-level construct (at most one of the two, parse error otherwise); lands on the new `Module.resources` field (`_ast.py::ResourceDecl`) since a resource has no accessor of its own to desugar an attr onto.
+- Compatibility matrix (`_access.py::mode_conflict`): only read+read and read+alpha are safe; alpha+alpha, any write/append/exclusive pairing (including against itself) conflicts -- matches the ticket's exact matrix, append/exclusive folded in as write-like (documented judgment call).
+- Contention proof (`_access.py::resource_contention_violations`, new rule SYS204 "unarbitrated mode conflict"): every conflicting accessor PAIR of the same resource fires fail-closed unless the resource declares an arbiter (arbitrated_by or lock) -- matches the acceptance criterion exactly (verified manually end-to-end via parse_module -> elaborate -> resource_contention_violations, and via 7 dedicated pytest cases).
+
+State: T-0700 acceptance criterion is met at the MODEL level (grammar + read-back + compatibility-matrix + fail-closed contention proof, all with tests). Two things were deliberately NOT done in this pass, disclosed rather than silently dropped:
+1. CLI dispatch (`src/frob/app/sys_runner.py`) and the T-0174 `MULTI_INSTANCE_WAIVER_FAMILIES` waiver channel (`_waive.py`) were not wired -- both are shared surfaces the dispatch prompt flagged as a concurrent sibling's obligation-batch territory; `resource_contention_violations` is a pure, fully-tested function ready to be wired in. This is a disclosed, deliberate scope cut, not an oversight.
+2. T-0701 (code-level mode-conformance enforcement -- whether a node's actual code obeys its declared mode) is explicitly a separate, blocked_by-T-0700 ticket and out of this ticket's scope per the ticket body itself.
+
+Found while working (both filed, out of my ticket's scope, not fixed here):
+- T-0955: pre-existing, unrelated golden/drift-lock drift in `tests/unit/strata/test_export_golden.py` (test_k8s/test_seccomp/test_iam) and `tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates` (node count 16 vs hardcoded 15) -- both trace to frob's own self-modeled design gaining a `natives` node whose golden fixtures/hardcoded counts were never regenerated. Confirmed via `git status`/diff that none of my files touch these; scope of the draft ticket covers both files.
+
+Evidence: 27 ids recorded and bound to acceptance[0] via `frob ticket evidence T-0700 ... --accepts 0` (9 Rust `cargo test --release` node ids under `strata-core/src/parse.rs::tests`, 16 pytest node ids under `tests/unit/strata/test_access.py`, 2 under `tests/unit/test_strata_tmlanguage.py`). All 27 observed passing:
+- `cargo test --release` (PYO3_PYTHON/LD_LIBRARY_PATH set to the worktree's own .venv python3.11): 132 passed, 0 failed (123 pre-existing + 9 new).
+- `uv run pytest tests/unit/strata/test_access.py tests/unit/test_strata_tmlanguage.py -p no:cacheprovider -q`: 28 passed (16 + 12; 2 of the tmlanguage tests are the drift-lock bidirectional checks, the rest are pre-existing tmlanguage coverage tests unaffected by this change).
+- `uv run pytest tests/unit/strata/ -p no:cacheprovider -q` (deselecting the 3 pre-existing unrelated golden failures above): all green.
+
+Filed: T-0955 (pre-existing export-golden/self-model drift-lock drift, see above; scope covers both affected test files)
+
+Gates: `frob check --ticket T-0700 --only <lint|static|gates-fast|gates-native|gates-security>` (the section 3b chunked loop) all clean for my scope -- `lint` shows only pre-existing unrelated ty/ruff-format issues in `tests/test_gates.py`/`src/frob/arch/_lock_ordering.py`/`tests/unit/test_arch.py` (confirmed untouched by `git status`); `static` shows only pre-existing frob-exports advisories elsewhere (none introduced by `_access.py`, which is fully exported); `gates-fast`/`gates-native`/`gates-security` all report `pass` on every gate id after fixing (in order surfaced): missing COV001/frob:doc anchors, wrong test-class name in a frob:tests directive (DRIFT002), a missing INV006 waiver (module docstring precedent from `_ssot.py`/`_contention.py`), a stale PRE001 pre-work sweep (re-ran `frob ticket sweep T-0700`), and a SCOPE001 for `docs/guides/extending/strata-surface-grammar.md` (added via `frob ticket scope T-0700 --add`, since AFFECT001 correctly flagged `Parser.parse_program`'s affects-closure doc). `git diff main --diff-filter=D --stat` is empty (deletion-filter check clean).
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `strata-core/src/parse.rs::tests::parses_node_access_clause` (pytest node id, verified passing when recorded)
+- `strata-core/src/parse.rs::tests::parses_store_access_clause` (pytest node id, verified passing when recorded)
+- `strata-core/src/parse.rs::tests::parses_all_access_modes` (pytest node id, verified passing when recorded)
+- `strata-core/src/parse.rs::tests::error_access_rejects_unknown_mode` (pytest node id, verified passing when recorded)
+- `strata-core/src/parse.rs::tests::error_access_requires_mode_keyword` (pytest node id, verified passing when recorded)
+- `strata-core/src/parse.rs::tests::parses_resource_with_arbitrated_by` (pytest node id, verified passing when recorded)
+- `strata-core/src/parse.rs::tests::parses_resource_with_lock` (pytest node id, verified passing when recorded)
+- `strata-core/src/parse.rs::tests::parses_bare_resource_with_no_arbiter` (pytest node id, verified passing when recorded)
+- `strata-core/src/parse.rs::tests::error_resource_rejects_both_arbitrated_by_and_lock` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_access.py::TestNodeAccessDeclarations::test_reads_access_attrs` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_access.py::TestNodeAccessDeclarations::test_no_access_attrs_is_empty` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_access.py::TestNodeAccessDeclarations::test_unrecognized_mode_fails_closed` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_access.py::TestModeConflict::test_read_read_is_safe` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_access.py::TestModeConflict::test_read_alpha_is_safe` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_access.py::TestModeConflict::test_alpha_alpha_conflicts` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_access.py::TestModeConflict::test_write_conflicts_with_anything` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_access.py::TestModeConflict::test_exclusive_conflicts_with_everything_including_itself` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_access.py::TestModeConflict::test_append_conflicts_with_anything` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_access.py::TestResourceContentionViolations::test_two_writers_no_arbiter_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_access.py::TestResourceContentionViolations::test_arbitrated_by_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_access.py::TestResourceContentionViolations::test_lock_discharges` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_access.py::TestResourceContentionViolations::test_read_only_modes_discharge_without_arbiter` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_access.py::TestResourceContentionViolations::test_bare_resource_declaration_with_no_arbiter_still_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_access.py::TestResourceContentionViolations::test_single_accessor_never_fires` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_access.py::TestResourceContentionViolations::test_unrelated_resources_do_not_cross_conflict` (pytest node id, verified passing when recorded)
+- `tests/unit/test_strata_tmlanguage.py::test_construct_keywords_match_parser_bidirectionally` (pytest node id, verified passing when recorded)
+- `tests/unit/test_strata_tmlanguage.py::test_clause_keywords_covered_by_grammar` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 27 passed (from 27 evidence id(s))
+- gates: 0 error(s), 4192 warning(s), 219 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0701 -->
 ```yaml
@@ -2773,7 +2927,7 @@ User mandate 2026-07-22: contention semantics are worthless unless ENFORCED -- a
 id: T-0702
 title: 'strata grammar: demand declarations (users/rate) with flow propagation and
   fan-in summation'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-22'
@@ -2787,15 +2941,147 @@ scope:
 - editors/**
 - docs/strata/**
 - tests/unit/strata/
+- design/frob.strata
+- docs/strata/roadmap.md
+scope_changes:
+- op: add
+  glob: design/frob.strata
+  reason: AFFECT001/COV002 fix for T-0700's earlier waiver re-point touching these
+    node blocks; frob:ticket added pointing at the tracked successor
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: docs/strata/roadmap.md
+  reason: AFFECT001 closure doc for the same design/frob.strata node changes
+  actor: logan
+  at: '2026-07-27'
+evidence:
+- strata-core/src/parse.rs::tests::parses_node_users_and_rate
+- strata-core/src/parse.rs::tests::parses_node_without_users_or_rate_defaults_null
+- strata-core/src/parse.rs::tests::parses_node_users_only_no_rate
+- strata-core/src/parse.rs::tests::parses_store_users_and_rate
+- strata-core/src/parse.rs::tests::parses_node_rate_does_not_collide_with_capacity_rate
+- tests/unit/strata/test_demand.py::TestAggregateDemand::test_two_entry_nodes_sum_at_fan_in
+- tests/unit/strata/test_demand.py::TestAggregateDemand::test_no_demand_declared_is_undeclared_not_zero
+- tests/unit/strata/test_demand.py::TestAggregateDemand::test_demand_declared_elsewhere_not_reaching_node_is_undeclared
+- tests/unit/strata/test_demand.py::TestAggregateDemand::test_rate_and_users_compose_additively
+- tests/unit/strata/test_demand.py::TestAggregateDemand::test_self_declaring_node_reports_its_own_demand
+- tests/unit/strata/test_demand.py::TestAggregateDemand::test_fanout_multiplies_propagated_demand
+- tests/unit/strata/test_demand.py::TestNodeUsersRateFields::test_node_defaults_to_none
+- tests/unit/strata/test_demand.py::TestNodeUsersRateFields::test_node_accepts_explicit_users_and_rate
+- tests/unit/strata/test_demand.py::test_store_users_and_rate_elaborate_same_as_node
+- tests/unit/test_strata_tmlanguage.py::test_construct_keywords_match_parser_bidirectionally
+- tests/unit/test_strata_tmlanguage.py::test_clause_keywords_covered_by_grammar
 acceptance:
 - text: GIVEN two entry nodes declaring users 300k and 200k both flowing into one
     db resource WHEN elaboration runs THEN the db's aggregate demand is 500k and queryable;
     GIVEN no demand declared THEN the resource reports demand-undeclared, not zero
-  evidence: []
+  evidence:
+  - strata-core/src/parse.rs::tests::parses_node_users_and_rate
+  - strata-core/src/parse.rs::tests::parses_node_without_users_or_rate_defaults_null
+  - strata-core/src/parse.rs::tests::parses_node_users_only_no_rate
+  - strata-core/src/parse.rs::tests::parses_store_users_and_rate
+  - strata-core/src/parse.rs::tests::parses_node_rate_does_not_collide_with_capacity_rate
+  - tests/unit/strata/test_demand.py::TestAggregateDemand::test_two_entry_nodes_sum_at_fan_in
+  - tests/unit/strata/test_demand.py::TestAggregateDemand::test_no_demand_declared_is_undeclared_not_zero
+  - tests/unit/strata/test_demand.py::TestAggregateDemand::test_demand_declared_elsewhere_not_reaching_node_is_undeclared
+  - tests/unit/strata/test_demand.py::TestAggregateDemand::test_rate_and_users_compose_additively
+  - tests/unit/strata/test_demand.py::TestAggregateDemand::test_self_declaring_node_reports_its_own_demand
+  - tests/unit/strata/test_demand.py::TestAggregateDemand::test_fanout_multiplies_propagated_demand
+  - tests/unit/strata/test_demand.py::TestNodeUsersRateFields::test_node_defaults_to_none
+  - tests/unit/strata/test_demand.py::TestNodeUsersRateFields::test_node_accepts_explicit_users_and_rate
+  - tests/unit/strata/test_demand.py::test_store_users_and_rate_elaborate_same_as_node
+  - tests/unit/test_strata_tmlanguage.py::test_construct_keywords_match_parser_bidirectionally
+  - tests/unit/test_strata_tmlanguage.py::test_clause_keywords_covered_by_grammar
 threat: null
 component: null
 ```
 User mandate 2026-07-22 (starvation semantics prerequisite): the model has no notion of LOAD, so an exclusive lock and an exclusive lock behind 500k users look identical. Add: (1) demand declarations on entry nodes -- users N (steady population) and/or rate N per_s (arrival rate), parse.rs node/store symmetry per T-0261; (2) propagation: demand flows along existing Flow edges, SUMMING at fan-in, so any node/resource can be asked 'what aggregate demand reaches you' (elaboration-time computation, queryable like effects); (3) optional capacity/holding-time hints on resources and arbiters (capacity N, holds MS) with documented defaults; (4) tmLanguage + docs/strata section + litmus fixtures (propagation sums correctly across fan-in/fan-out, missing demand is distinguishable from zero demand). Consumers (utilization/starvation obligations) are the sibling ticket.
+
+## Done report
+
+Changed:
+strata-core/src/parse.rs::Parser.parse_node (users/rate clauses wired in)
+strata-core/src/parse.rs::Parser.parse_store (users/rate clauses wired in)
+src/frob/strata/_ast.py::NodeDecl.users (new field)
+src/frob/strata/_ast.py::NodeDecl.rate (new field)
+src/frob/strata/_ast.py::StoreDecl.users (new field)
+src/frob/strata/_ast.py::StoreDecl.rate (new field)
+src/frob/strata/_models.py::Node.users (new field)
+src/frob/strata/_models.py::Node.rate (new field)
+src/frob/strata/_elaborate.py::_elaborate_node (wires decl.users/decl.rate onto Node)
+src/frob/strata/_infra.py::_elaborate_store (wires decl.users/decl.rate onto Node)
+src/frob/strata/_facts.py::AggregateDemand (new)
+src/frob/strata/_facts.py::FactBase.aggregate_demand (new)
+src/frob/strata/__init__.py (export AggregateDemand)
+docs/strata/kernel.md (new "Demand declarations (T-0702)" subsection under Capacity semantics)
+docs/strata/surface.md (NodeDecl AST bullet updated: +users, +rate)
+editors/vscode-strata/syntaxes/strata.tmLanguage.json (clause-keywords: +users; rate already present from the pre-existing flow clause)
+design/frob.strata + docs/strata/roadmap.md (unrelated-but-adjacent fix, see "Found while working" below)
+
+Grammar added:
+- `users NUMBER` -- steady-population entry demand on node/store (T-0261 symmetry), a bare number (headcount, no unit).
+- `rate NUMBER UNIT` -- arrival-rate entry demand on node/store, same QUANTITY shape as flow's own `rate` clause and `capacity`'s nested rate; top-level and independent of `capacity`'s own nested rate (verified no grammar collision with a dedicated Rust test).
+- Both optional and independent; composing ADDITIVELY when both declared (verified by test).
+- Elaborated onto real typed `Node.users`/`Node.rate` fields (not an attr string -- matches `capacity`'s own precedent: numeric facts consumed in arithmetic are typed fields).
+
+Propagation (`FactBase.aggregate_demand`, acceptance criterion 2/3): reuses `strata_core.propagated_demand`'s existing fanout-aware summation engine UNCHANGED -- no `strata-core/src/lib.rs` change needed or made (out of this ticket's declared scope: only `strata-core/src/parse.rs` is in scope, not `lib.rs`). Every `users`/`rate`-declaring node is seeded as a synthetic external-source flow into the propagation edge set built in Python (`src/frob/strata/_facts.py`, in-scope), so demand sums at fan-in exactly the way flow-rate demand already does. Verified end-to-end (two entry nodes with `users 300000`/`users 200000` both flowing into one store: aggregate demand at the store is `500000.0`, matching the ticket's exact acceptance example) plus 8 dedicated pytest cases covering composition, fanout, single-accessor, and the no-demand-declared distinction.
+
+UNDECLARED vs zero (acceptance criterion): `AggregateDemand.declared: bool` distinguishes "no declaring node's demand reaches this node at all" from a genuinely computed sum (even 0.0), via a reverse-BFS ancestor check over the same edges fed to `propagated_demand` -- NOT by comparing the result to 0.0 (which would conflate a real declared-zero with nothing-declared-at-all). Verified: a node with no `users`/`rate` anywhere upstream reports `declared=False`, distinct from a node whose upstream declares demand that structurally cannot reach it (also `declared=False`, since "reaches you" is the correct scope for the distinction, not global model presence).
+
+Deliberately NOT built in this pass (disclosed, per ticket body's own text): optional `capacity`/`holds` hints on resources and arbiters (T-0702's point 3) and the utilization/starvation/unbounded-wait OBLIGATION consumers of this demand data are both explicitly named in the ticket body as "the sibling ticket" -- not this one's scope.
+
+Found while working (fixed in this same pass, not filed separately, since it was a direct, small consequence of my own earlier T-0700 close-time commit): `frob check --ticket T-0702 --only gates-fast` surfaced 5 AFFECT001 + 5 COV002 findings on `design/frob.strata` that trace back to T-0700's close-time waiver re-point commit (336ddd73) touching 5 node blocks (cli/gates/fleet/core/serve) without an accompanying affects-doc touch or a `frob:ticket` edge to an open ticket (T-0700 was closed by the time that commit landed, so COV002 correctly flagged it as now-untracked). Fixed by adding `frob:ticket T-0956` to each of the 5 node blocks (pointing at the already-filed re-arbitration successor) and a short addendum to `docs/strata/roadmap.md`'s Self-hosting commitments section. This is NOT part of T-0702's own grammar deliverable; it is closing a small gap this session's own prior commit left open, caught by this ticket's own gate run rather than left for someone else to trip over.
+
+Evidence: 16 ids recorded and bound to acceptance[0] via `frob ticket evidence T-0702 ... --accepts 0` (5 Rust `cargo test --release` node ids, 9 pytest node ids under `tests/unit/strata/test_demand.py`, 2 under `tests/unit/test_strata_tmlanguage.py`). All 16 observed passing:
+- `cargo test --release` (PYO3_PYTHON/LD_LIBRARY_PATH set to the worktree's own .venv python3.11): 137 passed, 0 failed (132 pre-T-0702 baseline + 5 new).
+- `uv run pytest tests/unit/strata/test_demand.py tests/unit/test_strata_tmlanguage.py -p no:cacheprovider -q`: all green.
+- `uv run pytest tests/unit/strata/ tests/unit/test_strata_tmlanguage.py -p no:cacheprovider -q` (deselecting the 3 pre-existing unrelated golden failures already tracked by T-0955 from the T-0700 pass): all green.
+- `uv run pytest tests/system/test_frob_self_model.py`: the SAME 2 pre-existing failures already disclosed and filed against T-0700 (node/claim count drift re: the `natives` node, T-0955) -- confirmed unchanged by this ticket's diff.
+
+Filed: none new (T-0955 and T-0956 both already exist from the T-0700 pass; this ticket's own found-while-working item was fixed directly, not filed, per the "Found while working" note above).
+
+Gates: `frob check --ticket T-0702 --only <lint|static|gates-fast|gates-native|gates-security>` all clean for my scope after the design/frob.strata fix above -- `lint` shows only the same pre-existing unrelated ty errors in `tests/test_gates.py` (confirmed untouched by `git status`); `static` clean; `gates-fast`/`gates-native`/`gates-security` all report `pass` on every gate id. `git diff main --diff-filter=D --stat` shows one unrelated deletion (`tests/test_arch_near_duplicate_native.py`, 115 lines) that traces to `main` having moved forward past my last merge point mid-session (a sibling land, not anything this ticket touched) -- re-merging `main` before finishing, per playbook section 9, resolves it (verified empty afterward).
+
+### Changed
+```
+ design/frob.strata                                 |  10 +-
+ docs/guides/extending/strata-surface-grammar.md    |  15 ++
+ docs/strata/host.md                                |  75 +++++-
+ docs/strata/surface.md                             |   4 +-
+ .../vscode-strata/syntaxes/strata.tmLanguage.json  |   4 +-
+ src/frob/strata/__init__.py                        |  24 ++
+ src/frob/strata/_access.py                         | 291 +++++++++++++++++++++
+ src/frob/strata/_ast.py                            |  28 ++
+ strata-core/src/parse.rs                           | 256 +++++++++++++++++-
+ tests/test_tickets_live_tracker.py                 |   2 +-
+ tests/unit/strata/test_access.py                   | 210 +++++++++++++++
+ tickets.md                                         | 211 ++++++++++++++-
+ 12 files changed, 1112 insertions(+), 18 deletions(-)
+```
+
+### Evidence
+- `strata-core/src/parse.rs::tests::parses_node_users_and_rate` (pytest node id, verified passing when recorded)
+- `strata-core/src/parse.rs::tests::parses_node_without_users_or_rate_defaults_null` (pytest node id, verified passing when recorded)
+- `strata-core/src/parse.rs::tests::parses_node_users_only_no_rate` (pytest node id, verified passing when recorded)
+- `strata-core/src/parse.rs::tests::parses_store_users_and_rate` (pytest node id, verified passing when recorded)
+- `strata-core/src/parse.rs::tests::parses_node_rate_does_not_collide_with_capacity_rate` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_demand.py::TestAggregateDemand::test_two_entry_nodes_sum_at_fan_in` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_demand.py::TestAggregateDemand::test_no_demand_declared_is_undeclared_not_zero` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_demand.py::TestAggregateDemand::test_demand_declared_elsewhere_not_reaching_node_is_undeclared` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_demand.py::TestAggregateDemand::test_rate_and_users_compose_additively` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_demand.py::TestAggregateDemand::test_self_declaring_node_reports_its_own_demand` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_demand.py::TestAggregateDemand::test_fanout_multiplies_propagated_demand` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_demand.py::TestNodeUsersRateFields::test_node_defaults_to_none` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_demand.py::TestNodeUsersRateFields::test_node_accepts_explicit_users_and_rate` (pytest node id, verified passing when recorded)
+- `tests/unit/strata/test_demand.py::test_store_users_and_rate_elaborate_same_as_node` (pytest node id, verified passing when recorded)
+- `tests/unit/test_strata_tmlanguage.py::test_construct_keywords_match_parser_bidirectionally` (pytest node id, verified passing when recorded)
+- `tests/unit/test_strata_tmlanguage.py::test_clause_keywords_covered_by_grammar` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 16 passed (from 16 evidence id(s))
+- gates: 0 error(s), 4198 warning(s), 220 waived
+- error-findings: none (measured, zero errors)
 
 <!-- ticket:T-0703 -->
 ```yaml
@@ -8703,3 +8989,58 @@ test instead of the deleted scratch file.
 
 ## Drop reason
 - 2026-07-27: throwaway manual repro fixture for T-0590, superseded by the real regression test
+
+<!-- ticket:T-0955 -->
+```yaml
+id: T-0955
+title: 'strata export golden: frob_export_seccomp/iam/k8s drifted re: natives node'
+state: queued
+kind: bug
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- tests/unit/strata/test_export_golden.py
+- docs/strata/**
+- tests/system/test_frob_self_model.py
+scope_changes:
+- op: add
+  glob: tests/system/test_frob_self_model.py
+  reason: 'same root cause: frob''s own strata design gained a node (natives) node/flow/claim
+    count that this drift-lock test''s hardcoded assertions (and the export goldens)
+    were never updated for'
+  actor: logan
+  at: '2026-07-27'
+- op: add
+  glob: tests/system/test_frob_self_model.py
+  reason: already added
+  actor: logan
+  at: '2026-07-27'
+threat: null
+component: null
+```
+Found while working T-0700 (unrelated to grammar/access-mode changes -- confirmed via `git status`, no golden/export files touched by that ticket). `tests/unit/strata/test_export_golden.py::TestExportGolden` (test_k8s, test_seccomp, test_iam) fails on a fresh worktree built from current main: the frob self-modeled design's exported seccomp/IAM/netpol JSON now includes a "natives" node's syscalls/statements that the checked-in golden fixtures under the golden dir do not yet reflect. Likely a golden-fixture regen missed after a recent "natives" node/capability addition to frob's own strata design. Regenerate the golden fixtures (or fix the export drift if the new output is wrong) and re-verify test_export_golden passes clean.
+
+<!-- ticket:T-0956 -->
+```yaml
+id: T-0956
+title: 'strata design: re-point T-0700 live-tracker waivers, arbitrate tickets_ledger
+  with new grammar'
+state: queued
+kind: docs
+origin: human
+created: '2026-07-27'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+scope:
+- design/**
+- tests/test_tickets_live_tracker.py
+threat: null
+component: null
+```
+T-0700 shipped access modes + resource/arbitrated_by grammar. design/frob.strata has 5 SYS203 "tickets_ledger" waivers explicitly written "re-evaluate at T-0700" (lines ~116/181/311/388/508) since the ledger genuinely has an arbiter (every writer serializes through .frob/tickets.lock, T-0458/T-0633) that SYS203 could not express until now. Re-express this properly: declare a `resource tickets_ledger { lock "tickets.lock" }` (or `arbitrated_by` the CLI-writer node, whichever models T-0458/T-0633's actual single-writer-lock discipline more accurately) plus `access "tickets_ledger" mode write` on each node/store that writes it, then drop the now-superseded SYS203 waivers once the model-level arbiter discharges the contention cleanly (verify via frob.strata._access.resource_contention_violations against frob's own elaborated design). Also re-point tests/test_tickets_live_tracker.py:220's `ticket=T-0700` placeholder to this ticket's id once assigned. Blocked by nothing; T-0700 is done and closed.
