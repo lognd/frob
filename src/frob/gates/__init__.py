@@ -988,11 +988,14 @@ def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 
 
 # frob:ticket T-0101
+# frob:ticket T-0399
 # Every rule id any Violation-producing gate can emit. `frob:waive` only
 # ever suppresses entries in the GateReport's `violations` tuple (see
 # `_apply_waivers` below) -- a waiver targeting anything outside this set
 # can never match, so WAIVE002 treats that as the definition of
 # "unwaivable channel" rather than hardcoding a channel allowlist.
+# T-0399 added DUP003 (dup_gate fail-closed when [dup].enforce=true but
+# frob-core is unavailable).
 # frob:tests tests/test_gates.py::TestKnownGateRuleIds.test_every_emitted_rule_literal_is_known  # noqa: E501
 _KNOWN_GATE_RULES = frozenset(
     {
@@ -1101,6 +1104,7 @@ _KNOWN_GATE_RULES = frozenset(
         "DOC003",
         "DUP001",
         "DUP002",
+        "DUP003",
         "FUZZ001",
         "FUZZ002",
         "FUZZ003",
@@ -8855,13 +8859,19 @@ def _dup_config(root: Path) -> tuple[bool, float, bool]:
 # frob:ticket T-0001
 # frob:waive TEST005 reason="dup_gate 52.2% branch cover, debt T-0160"
 # frob:invariant INV-011
+# frob:ticket T-0399
 def dup_gate(root: Path, snapshot: GraphSnapshot, diff) -> tuple[Violation, ...]:  # noqa: ANN001
     """DUP001/DUP002: the diff introduces a clone of an existing symbol.
 
     Opt-in via `[dup].enforce = true` in frob.toml (default off): smart
     clone detection needs the frob-core native extension, so it stays
-    silent until a repo turns it on. If enforce is on but frob-core is
-    absent, emits one advisory note rather than failing.
+    silent until a repo turns it on. T-0399 (gates-quality audit finding 2):
+    a requested-but-unavailable control must fail CLOSED, not open -- when
+    `enforce` is true and frob-core is missing, this now emits a blocking
+    DUP003 ERROR ("clone detection requested but unavailable") instead of
+    silently skipping with only a log line, so a repo that opted in cannot
+    silently lose clone coverage the moment a worktree's native build goes
+    stale.
     """
     from frob.dup import core_available
 
@@ -8871,8 +8881,26 @@ def dup_gate(root: Path, snapshot: GraphSnapshot, diff) -> tuple[Violation, ...]
         _log.debug("dup_gate: [dup].enforce off, skipping")
         return ()
     if not core_available():
-        _log.warning("dup_gate: frob-core not installed; DUP rules skipped")
-        return ()
+        _log.warning(
+            "dup_gate: [dup].enforce=true but frob-core is not installed; "
+            "failing closed (DUP003)"
+        )
+        return (
+            Violation(
+                rule="DUP003",
+                severity=Severity.ERROR,
+                file="frob.toml",
+                line=1,
+                message=(
+                    "DUP003: [dup].enforce=true requests clone detection but "
+                    "the frob-core native extension is not installed/built in "
+                    "this environment -- run `make core` (or the repo's "
+                    "native-build target) so DUP001/DUP002 actually run, or "
+                    "set [dup].enforce=false if this environment deliberately "
+                    "does not ship natives"
+                ),
+            ),
+        )
 
     violations = _dup_gate_violations(snapshot, diff, threshold, region_kernel)
     _log.info("dup_gate: %d clone violation(s)", len(violations))

@@ -8225,6 +8225,7 @@ class TestPairLevelIntegration:
         assert not any(v.rule == "TEST007" for v in violations)
 
 
+# frob:ticket T-0399
 class TestOptInGates:
     """dup_gate/fuzz_gate/perf_gate are opt-in (default off in frob.toml);
     each gate must genuinely no-op when its config key is absent, and this
@@ -8350,6 +8351,28 @@ class TestOptInGates:
         waived_dup001 = _first_rule(waived, "DUP001")
         assert waived_dup001 is not None
         assert waived_dup001.waived is not None
+
+    # frob:ticket T-0399
+    def test_dup_gate_fails_closed_when_enforced_but_core_missing(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-0399 (gates-quality audit finding 2): [dup].enforce=true with
+        frob-core unavailable must emit a blocking DUP003 ERROR, not
+        silently return no violations -- a requested-but-unavailable
+        control fails CLOSED."""
+        # frob:tests src/frob/gates/__init__.py::dup_gate
+        import frob.dup as dup_module
+        from frob.gates import dup_gate
+
+        monkeypatch.setattr(dup_module, "core_available", lambda: False)
+        _write(tmp_path, "src/a.py", "def foo():\n    return 1\n")
+        _write(tmp_path, "frob.toml", "[dup]\nenforce = true\n")
+        snap = _snapshot(tmp_path)
+        diff = Diff(base="main", hunks=())
+        violations = dup_gate(tmp_path, snap, diff)
+        assert len(violations) == 1
+        assert violations[0].rule == "DUP003"
+        assert violations[0].severity == Severity.ERROR
 
     def test_fuzz_gate_off_by_default(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/__init__.py::fuzz_gate

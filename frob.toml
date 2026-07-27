@@ -1,5 +1,23 @@
 check_base = "main"
 
+# T-0399 (gates-quality audit finding 2): investigated turning [dup] on by
+# default in THIS repo's own gate path (it currently has no [dup] block at
+# all, so DUP001/DUP002 never run here). Held back for now, deliberately:
+# a live trial of `enforce = true` made a single `gates-native` chunk run
+# past this repo's own ~150s foreground budget (docs/guides/
+# agent-playbook.md section 3b) even though DUP001/DUP002 themselves only
+# ever REPORT on diff-touched refs -- `find_clones` builds its clone index
+# over the whole snapshot first, and that whole-snapshot cost is not
+# diff-scoped the way the reported violations are. Flipping this on by
+# default belongs to the burn-down child this ticket files (measure the
+# real wall-clock cost, decide whether a cached/incremental index or a
+# narrower default threshold makes it affordable) rather than being forced
+# through here and leaving every future `frob check` at risk of silently
+# timing out. `dup_gate` itself DOES already fail closed (DUP003, ERROR)
+# the moment a repo that HAS opted in loses its frob-core native build --
+# see `dup_gate` in src/frob/gates/__init__.py -- so the fail-open half of
+# finding 2 is fixed regardless of when/whether this repo turns enforce on.
+
 # T-0443: DOC004's console/bash command-drift tier (frob.gates._docblocks.
 # doc004_gate) -- `prog` is the console word introducing an invocation in a
 # ```console```/```bash```/```sh```/```shell``` fenced doc block; `parser`

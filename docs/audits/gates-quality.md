@@ -247,3 +247,59 @@ already-disclosed TS/Rust field-shape follow-up as a real ticket.
   applies, C++ has even fewer categories).
 - Did not run the detectors against adversarial fixtures live; repros above are derived
   from reading the algorithms, each tied to a concrete input.
+
+---
+
+## T-0399: executed promotion plan (2026-07-27)
+
+Measured live warning counts on `main` via chunked `frob check --only <stage>`
+(docs/guides/agent-playbook.md section 3b's sanctioned loop; a single unchunked run
+exceeds the foreground budget on this repo). Counts below are "unwaived" (the
+`gate:<X>` summary line's `warnings` figure) -- the separate `waived` figure is
+findings already discharged by a reasoned `frob:waive`.
+
+| Family | Rule(s) | Unwaived | Waived | Classification | Disposition |
+| --- | --- | --- | --- | --- | --- |
+| Perf | PERF001-004 | 1730 | 30 | promotable-after-burn-down | child filed, count named |
+| PII structural | PII010/PII012 | 167 | 3 | promotable-after-burn-down | child filed, count named |
+| Env-secret reads | SEC110 | 16 | 10 | promotable-after-burn-down (small, near-term) | child filed, sites named |
+| Arch | ARCH001 (only gated category) | 101 | 13 | promotable-after-burn-down + fresh design decision on the other 5 categories | child filed |
+| Clones | DUP001/DUP002 (fail-open half) | n/a (off by default) | n/a | promotable-now | **executed**: `dup_gate` now fails CLOSED (DUP003, ERROR) when `[dup].enforce=true` but frob-core is unavailable |
+| Clones | DUP (default-off half) | n/a | n/a | promotable-after-burn-down | child filed: live-tried `enforce=true` here and it blew the ~150s chunk budget (`find_clones` indexes the whole snapshot, not just the diff) -- needs profiling/caching before it can default on |
+| Secrets suppression accountability | `frob:secret-fake` marker (finding 3) | n/a (marker, not a rule count) | n/a | promotable-after-burn-down | child filed: every existing bare marker in the tree needs a `reason=` added in the same change that tightens the parser, and none of those call sites are in T-0399's scope |
+| Stale-waiver watchdog | WAIVE004 | 796-926 per chunk (chunk-dependent, see caveat) | -- | advisory-by-design | not part of this audit's named families; WAIVE004 is explicitly documented (its own message text) as "known-flaky for diff-scoped rules and any `--only`-excluded gate; trust this only from a full, unscoped run" -- promoting a partial-run-unreliable gate to blocking would red every chunked check by construction, not just this repo's real debt |
+
+Why nothing else promoted straight to ERROR this round: T-0399's own declared scope is
+`src/frob/gates/`, `src/frob/app/config.py`, `frob.toml` (plus `docs/modules/gates.md`
+and this file, added via `frob ticket scope --add` for the required doc updates). Every
+family above except DUP's fail-open half has its live findings sitting in files OUTSIDE
+that scope (`src/frob/deploy/`, `src/frob/arch/`, `src/frob/strata/`, `tests/**`, ...) --
+promoting the rule to ERROR without first waiving/fixing those findings would
+immediately red `main`, which the dispatching instructions for this ticket explicitly
+rule out. The children below are scoped precisely to the files that would need touching.
+
+**Executed this ticket:**
+- `dup_gate` (`src/frob/gates/__init__.py`) fails closed with a new `DUP003` ERROR
+  violation when `[dup].enforce=true` but `frob-core` is not installed/built, instead of
+  silently returning `()`. `DUP003` added to `_KNOWN_GATE_RULES` and documented in
+  `docs/modules/gates.md`. Covered by
+  `tests/test_gates.py::TestOptInGates::test_dup_gate_fails_closed_when_enforced_but_core_missing`.
+- frob.toml gained a documented, deliberate decision NOT to flip `[dup].enforce=true` on
+  yet, with the measured reason (chunk-budget blowout) recorded inline so a future reader
+  does not have to re-derive it.
+
+**Children filed (parented under the new epic below):**
+- Epic: `T-0969` -- "burn WARN-tier quality gates to zero, then promote to ERROR"
+- `T-0972` -- PERF001-004 burn-down (1730 findings)
+- `T-0971` -- PII010/PII012 burn-down (167 findings)
+- `T-0973` -- SEC110 burn-down (16 findings, sites named in the ticket body)
+- `T-0970` -- ARCH001 burn-down + fresh design decision on the other 5 arch
+  categories (101 findings)
+- `T-0974` -- profile/cache `find_clones` so `[dup].enforce=true` fits the check
+  budget, then default it on
+- `T-0968` -- `frob:secret-fake` requires `reason=` and routes through the
+  waiver ledger (audit finding 3)
+
+Draft ids above are renumbered to real `T-####` ids at land time per this repo's normal
+ticket-drafting convention; re-resolve via `frob ticket show` / the ledger at pickup time
+rather than trusting the draft id past this session.

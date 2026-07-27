@@ -54,6 +54,7 @@ declaration).
 | DOC002 | docanchor | a `frob:doc <file>#<slug>` edge whose target doesn't resolve: missing `#anchor`, missing file, or `<slug>` matches neither a heading slug (`frob.graph.dsl.slugify`) nor an explicit `<a id="...">` in `<file>` |
 | POL* | policy | user-defined rules from `frob.toml` (see below) |
 | DUP001/DUP002 | clones | the diff introduces a clone of an existing symbol (opt-in, `[dup].enforce`) |
+| DUP003 | clones | (T-0399) `[dup].enforce=true` but frob-core is not installed/built -- clone detection was requested but is unavailable; fails CLOSED (ERROR) instead of silently skipping |
 | FUZZ001-003 | fuzz | fuzz obligations under `[fuzz]` (opt-in) |
 | PERF001-004 | perf | lexical performance smells (build-a-set-once, etc.) |
 | REL001 | release | release-readiness check |
@@ -1220,7 +1221,10 @@ silently folds in.
 - `decisions_gate` -- DEC001/DEC002 over `decisions/` records and their
   code anchors; a no-op when no `decisions/` directory exists.
 - `dup_gate` -- DUP001/DUP002: flags a diff that introduces a clone of an
-  existing symbol; opt-in via `[dup].enforce` in `frob.toml`.
+  existing symbol; opt-in via `[dup].enforce` in `frob.toml`. T-0399: if
+  `enforce` is true but the `frob-core` native extension is unavailable,
+  emits DUP003 (ERROR) instead of silently skipping -- a requested-but-
+  unavailable control fails closed, not open.
 - `release_gate` -- REL001: the public-API change since the last release
   stamp demands a version bump the declared version does not cover.
 - `fuzz_gate` -- FUZZ001..003 over the `[fuzz]` policy; opt-in via
