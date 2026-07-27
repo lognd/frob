@@ -3037,17 +3037,90 @@ def _squash_and_splice_ledger(
     # comment in `_merge_main_into_worktree`. This is the final splice that
     # actually lands on main, so it is the last line of defense against
     # sibling-ticket resurrection even if something upstream missed it.
+    archived_ids = _archived_ids(root)
     spliced = _splice_and_stage(
         root,
         root_pre_text,
         worktree_final_text,
-        archived_ids=_archived_ids(root),
+        archived_ids=archived_ids,
         ticket_id=final_id,
     )
     if spliced.is_err:
         unwound = _verified_reset_root(root, pre_land_tip, final_id)
         return Err(unwound.danger_err if unwound.is_err else spliced.danger_err)
+
+    # T-0631: TICK005-backed regression sweep -- block THIS land if its own
+    # splice would regress any terminal (DONE/DROPPED) ticket back to a
+    # non-terminal state, before the squash-apply is ever committed.
+    regressions = _tick005_land_regressions(
+        root_pre_text, spliced.danger_ok, archived_ids
+    )
+    if regressions:
+        _log.error(
+            "land: %s refused -- ticket(s) %s would regress from a "
+            "terminal state to non-terminal via this land's ledger splice "
+            "(TICK005 regression sweep, T-0631); resolve the splice by "
+            "hand (`git -C %s show HEAD:tickets.md` for the pre-land "
+            "state) before retrying",
+            final_id,
+            ", ".join(regressions),
+            root,
+        )
+        unwound = _verified_reset_root(root, pre_land_tip, final_id)
+        if unwound.is_err:
+            return Err(unwound.danger_err)
+        return Err(LandError.TerminalStateRegression)
     return Ok(None)
+
+
+# frob:ticket T-0631
+#: Terminal ticket states -- mirrors `frob.gates._TERMINAL_STATES` (T-0537).
+#: Duplicated rather than imported: `frob.gates` depends on `frob.tickets`,
+#: never the reverse (docs/rework.md cycle-avoidance), so this land-time
+#: sweep cannot reach into `frob.gates` for the constant it mirrors.
+_LAND_TERMINAL_STATES = (TicketState.DONE, TicketState.DROPPED)
+
+
+# frob:ticket T-0631
+def _tick005_land_regressions(
+    pre_text: str, post_text: str, archived_ids: frozenset[str]
+) -> tuple[str, ...]:
+    """TICK005-backed regression sweep (T-0631): ticket ids that were
+    terminal (DONE/DROPPED) in `pre_text` (root's ledger before this
+    land's splice) but are neither terminal nor archived in `post_text`
+    (root's ledger staged after the splice) -- the same regression class
+    `frob.gates._tick005_merge_state_regression` (T-0537) detects after a
+    genuine two-parent merge commit, run here instead directly around
+    THIS land's own squash-splice: `_squash_and_splice_ledger` always
+    produces a single-parent squash-apply commit, so the gate's own
+    `HEAD^2` precondition can never fire for a `frob ticket land` run at
+    all (T-0631's motivating gap -- a hand-resolved-conflict-style
+    regression introduced by a land would otherwise only surface on some
+    LATER unrelated merge commit, or never). A parse failure on either
+    side degrades to "no regressions found" (fail-open on this specific
+    detector only) rather than blocking every land on a ledger the rest
+    of `land()` already tolerates parsing failures around elsewhere."""
+    pre_parsed = _parse_ledger(pre_text)
+    if pre_parsed.is_err:
+        return ()
+    post_parsed = _parse_ledger(post_text)
+    if post_parsed.is_err:
+        return ()
+    pre_map = pre_parsed.danger_ok
+    post_map = post_parsed.danger_ok
+    regressed: list[str] = []
+    for ticket_id, pre_ticket in sorted(pre_map.items()):
+        if pre_ticket.state not in _LAND_TERMINAL_STATES:
+            continue
+        if ticket_id in archived_ids:
+            continue
+        post_ticket = post_map.get(ticket_id)
+        if post_ticket is None:
+            continue
+        if post_ticket.state in _LAND_TERMINAL_STATES:
+            continue
+        regressed.append(ticket_id)
+    return tuple(regressed)
 
 
 # frob:ticket T-0761

@@ -1021,7 +1021,89 @@ def _land(root: Path, cfg: AppConfig) -> None:
         _log.error("ticket land failed: %s", result.danger_err)
         sys.exit(1)
 
-    _report_land_result(root, result.danger_ok)
+    report = result.danger_ok
+    _report_land_result(root, report)
+
+    if cfg.ticket_land_push:
+        _push_after_land(root, report)
+
+
+# frob:ticket T-0631
+def _push_after_land(root: Path, report) -> None:  # noqa: ANN001
+    """`frob ticket land --push`: push `root`'s current branch to its
+    upstream remote, but ONLY after a real (non-dry-run) land already
+    fully succeeded -- `_land` calls this AFTER `land()` returned `Ok`,
+    never on the `Err` exit path above, and never for `report.dry_run`
+    (a dry run performs no durable commit to push, by design; pushing
+    here would either push nothing new or push a stale prior state,
+    neither of which honors "the push happens only after every land
+    verification passed" for THIS run). Routed through
+    `guarded_subprocess_run` (T-0778's exec guard, same as
+    `_land_rebuild_natives_fn`'s `make core` spawn) so
+    `FROB_DISABLE_EXEC=1` refuses this push too; a refusal or a non-zero
+    `git push` exit is logged at ERROR and exits the process non-zero --
+    the land itself already committed and closed the ticket by this
+    point, so this failure is reported as a separate, later step rather
+    than unwinding the land (there is nothing left to unwind: the
+    landing commit already exists)."""
+    if report.dry_run:
+        _log.info(
+            "ticket land --push: %s was a dry run -- nothing to push",
+            report.ticket_id,
+        )
+        return
+
+    from frob.gitio import current_branch
+
+    branch = current_branch(root)
+    if branch.is_err:
+        _log.error(
+            "ticket land --push: %s landed but could not determine "
+            "root's current branch to push (%s)",
+            report.ticket_id,
+            branch.danger_err,
+        )
+        sys.exit(1)
+    branch_name = branch.danger_ok
+
+    guarded = guarded_subprocess_run(
+        ["git", "-C", str(root), "push", "origin", branch_name],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
+    )
+    if guarded.is_err:
+        _log.error(
+            "ticket land --push: %s landed (%s) but `git push` refused to "
+            "spawn (%s) -- push it by hand: `git -C %s push origin %s`",
+            report.ticket_id,
+            report.commit_sha,
+            ProcessGuardError.ExecDisabled,
+            root,
+            branch_name,
+        )
+        sys.exit(1)
+    pushed = guarded.danger_ok
+    if pushed.returncode != 0:
+        _log.error(
+            "ticket land --push: %s landed (%s) but `git push origin %s` "
+            "exited %d -- stdout=%r stderr=%r -- push it by hand",
+            report.ticket_id,
+            report.commit_sha,
+            branch_name,
+            pushed.returncode,
+            pushed.stdout[-2000:],
+            pushed.stderr[-2000:],
+        )
+        sys.exit(1)
+    _log.info(
+        "ticket land --push: %s pushed %s to origin/%s",
+        report.ticket_id,
+        report.commit_sha,
+        branch_name,
+    )
 
 
 # frob:ticket T-0323

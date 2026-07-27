@@ -1257,6 +1257,19 @@ def _add_ticket_land_parser(ticket_sub):
             "through real confirmatory evidence."
         ),
     )
+    ticket_land_p.add_argument(
+        "--push",
+        dest="ticket_land_push",
+        action="store_true",
+        help=(
+            "T-0631: after landing succeeds (every land verification -- "
+            "precheck, D-05 re-verification, TICK005 regression sweep, "
+            "completeness assertion -- passed and the final commit is "
+            "made), push root's current branch to its upstream remote. "
+            "Never pushes on a dry run, and never pushes if landing "
+            "itself failed."
+        ),
+    )
     return ticket_land_p
 
 

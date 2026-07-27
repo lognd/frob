@@ -1417,6 +1417,13 @@ class LandError(ErrorSet):
     LiveTrackerCited = (
         "registry dispositions or waivers still cite this ticket as their live tracker"
     )
+    # T-0631: mirrors gates.TICK005's regression semantics, run directly
+    # around this land's own squash-splice (a squash-apply never produces
+    # the two-parent merge commit TICK005-the-gate requires to fire).
+    TerminalStateRegression = (
+        "a terminal (DONE/DROPPED) ticket would regress to a non-terminal "
+        "state via this land's ledger splice (TICK005 regression sweep)"
+    )
 
 
 # frob:ticket T-0176

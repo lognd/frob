@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from typani.result import Err, Ok
+from typani.result import Err, Ok, Result
 
 import frob.tickets._land as _land_mod
 from frob.gates import PreworkSweep, load_prework, record_prework, scope_digest
@@ -4299,7 +4299,6 @@ def _t0907_child_land(
     sleeps well past however long the parent needs to `SIGKILL` this
     process -- reproducing "killed mid-staging" deterministically instead
     of relying on timing luck against a real 580s coordinator timeout."""
-    from typani.result import Result
 
     import frob.tickets._land as land_mod
 
@@ -4382,3 +4381,256 @@ class TestSigkillMidStaging:
         after_retry_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
         assert after_retry_sha != before_main_sha
         assert _status_ignoring_frob(repo) == ""
+
+
+class TestTick005LandRegressions:
+    """T-0631: `_tick005_land_regressions` -- the TICK005-backed regression
+    sweep run directly around a land's own squash-splice (mirrors
+    `frob.gates._tick005_merge_state_regression`'s semantics without a
+    two-parent merge commit, since a squash-apply never produces one)."""
+
+    def test_no_regression_when_terminal_ticket_stays_terminal(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestTick005LandRegressions.test_no_regression_when_terminal_ticket_stays_terminal  # noqa: E501
+        created = new_ticket(tmp_path, _spec("Widget"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(tmp_path, tid)
+        pre_text = ledger_path(tmp_path).read_text()
+
+        regressions = _land_mod._tick005_land_regressions(
+            pre_text, pre_text, frozenset()
+        )
+        assert regressions == ()
+
+    def test_detects_terminal_ticket_regressed_to_non_terminal(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestTick005LandRegressions.test_detects_terminal_ticket_regressed_to_non_terminal  # noqa: E501
+        created = new_ticket(tmp_path, _spec("Widget"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(tmp_path, tid)
+        assert transition(tmp_path, tid, TicketState.DONE, covers_scope=True).is_ok
+        pre_text = ledger_path(tmp_path).read_text()
+
+        # Simulate the hand-resolved-conflict incident class: the "post"
+        # ledger keeps the same id but reverts it to a non-terminal state.
+        regressed = new_ticket(tmp_path, _spec("Widget2")).danger_ok
+        assert write_ticket(
+            tmp_path,
+            regressed.model_copy(update={"id": tid, "state": TicketState.IN_PROGRESS}),
+        ).is_ok
+        post_text = ledger_path(tmp_path).read_text()
+
+        regressions = _land_mod._tick005_land_regressions(
+            pre_text, post_text, frozenset()
+        )
+        assert regressions == (tid,)
+
+    def test_archived_ids_are_excluded(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestTick005LandRegressions.test_archived_ids_are_excluded  # noqa: E501
+        created = new_ticket(tmp_path, _spec("Widget"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(tmp_path, tid)
+        assert transition(tmp_path, tid, TicketState.DONE, covers_scope=True).is_ok
+        pre_text = ledger_path(tmp_path).read_text()
+
+        regressed = new_ticket(tmp_path, _spec("Widget2")).danger_ok
+        assert write_ticket(
+            tmp_path,
+            regressed.model_copy(update={"id": tid, "state": TicketState.IN_PROGRESS}),
+        ).is_ok
+        post_text = ledger_path(tmp_path).read_text()
+
+        # An archived id is exempt -- it is expected to be absent/stale in
+        # the active ledger, not a regression.
+        regressions = _land_mod._tick005_land_regressions(
+            pre_text, post_text, frozenset({tid})
+        )
+        assert regressions == ()
+
+    def test_malformed_text_degrades_to_no_regressions(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestTick005LandRegressions.test_malformed_text_degrades_to_no_regressions  # noqa: E501
+        malformed = "# Tickets\n\n<!-- ticket:T-0001 -->\nno frontmatter here\n"
+        created = new_ticket(tmp_path, _spec("Widget"))
+        assert created.is_ok
+        valid_text = ledger_path(tmp_path).read_text()
+
+        assert (
+            _land_mod._tick005_land_regressions(malformed, valid_text, frozenset())
+            == ()
+        )
+        assert (
+            _land_mod._tick005_land_regressions(valid_text, malformed, frozenset())
+            == ()
+        )
+
+
+class TestLandRefusesOnTerminalStateRegression:
+    """T-0631: `land()` itself refuses (and unwinds root back to its
+    pre-land tip) when the TICK005-backed regression sweep finds a
+    regression in its own squash-splice."""
+
+    def test_land_refuses_and_unwinds_when_sweep_finds_a_regression(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandRefusesOnTerminalStateRegression.test_land_refuses_and_unwinds_when_sweep_finds_a_regression  # noqa: E501
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-tick005", str(wt)], repo)
+        created = new_ticket(wt, _spec("Add sprocket", scope=("src/sprocket.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "sprocket.py").write_text("# new sprocket\n")
+        _commit_all(wt, "add sprocket")
+
+        pre_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+
+        monkeypatch.setattr(
+            _land_mod, "_tick005_land_regressions", lambda *a, **k: ("T-9999",)
+        )
+
+        result = land(repo, tid, wt, dry_run=False)
+        assert result.is_err
+        assert result.danger_err == LandError.TerminalStateRegression
+
+        # root must be unwound back to exactly its pre-land tip -- nothing
+        # from the refused land's squash-apply may remain staged/committed.
+        assert _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == pre_sha
+        assert _status_ignoring_frob(repo) == ""
+
+
+class TestLandPushCliWiring:
+    """T-0631: `frob ticket land --push` must actually parse and reach
+    `AppConfig`, and default to `False` when omitted -- the same untested-
+    boolean-default shape `TestSkipMutationEvidenceCliWiring` guards for
+    the sibling `--skip-mutation-evidence` flag."""
+
+    def test_flag_parses_to_true(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandPushCliWiring.test_flag_parses_to_true  # noqa: E501
+        from frob.__main__ import _build_parser
+        from frob.app.config import AppConfig
+
+        parser = _build_parser()
+        args = parser.parse_args(
+            [
+                "ticket",
+                "land",
+                "T-0001",
+                "--worktree",
+                str(tmp_path),
+                "--push",
+                "--path",
+                str(tmp_path),
+            ]
+        )
+        cfg = AppConfig.from_external(args, tmp_path / "pyproject.toml")
+        assert cfg.ticket_land_push is True
+
+    def test_flag_omitted_defaults_false(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestLandPushCliWiring.test_flag_omitted_defaults_false  # noqa: E501
+        from frob.__main__ import _build_parser
+        from frob.app.config import AppConfig
+
+        parser = _build_parser()
+        args = parser.parse_args(
+            [
+                "ticket",
+                "land",
+                "T-0001",
+                "--worktree",
+                str(tmp_path),
+                "--path",
+                str(tmp_path),
+            ]
+        )
+        cfg = AppConfig.from_external(args, tmp_path / "pyproject.toml")
+        assert cfg.ticket_land_push is False
+
+
+# frob:ticket T-0631
+class TestPushAfterLand:
+    """`_push_after_land` -- pushes root's current branch after a real
+    land succeeds, never on a dry run, and exits non-zero (without
+    unwinding the already-landed commit -- there is nothing left to
+    unwind) on a push failure."""
+
+    def _report(self, *, dry_run: bool, commit_sha: str | None = "deadbeef") -> Any:
+        from frob.tickets._models import LandReport
+
+        return LandReport(
+            ticket_id="T-0001",
+            final_id="T-0001",
+            dry_run=dry_run,
+            wip_committed=False,
+            merged_main_into_worktree=False,
+            ledger_spliced=not dry_run,
+            commit_sha=commit_sha,
+        )
+
+    def test_dry_run_never_pushes(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestPushAfterLand.test_dry_run_never_pushes  # noqa: E501
+        from frob.app import ticket_runner
+
+        def _fail_if_called(*a: Any, **k: Any) -> Any:
+            raise AssertionError("git push must not be spawned on a dry run")
+
+        monkeypatch.setattr(ticket_runner, "guarded_subprocess_run", _fail_if_called)
+        ticket_runner._push_after_land(tmp_path, self._report(dry_run=True))
+
+    def test_real_land_pushes_the_current_branch(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestPushAfterLand.test_real_land_pushes_the_current_branch  # noqa: E501
+        from frob.app import ticket_runner
+
+        calls: list[list[str]] = []
+
+        def _fake(argv: list[str], **k: Any) -> Result[ProcResult, Any]:
+            calls.append(argv)
+            return Ok(ProcResult(argv=tuple(argv), returncode=0, stdout="", stderr=""))
+
+        monkeypatch.setattr(ticket_runner, "guarded_subprocess_run", _fake)
+        ticket_runner._push_after_land(repo, self._report(dry_run=False))
+
+        assert len(calls) == 1
+        assert calls[0][:3] == ["git", "-C", str(repo)]
+        assert calls[0][3:] == ["push", "origin", "main"]
+
+    def test_push_failure_exits_nonzero(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestPushAfterLand.test_push_failure_exits_nonzero  # noqa: E501
+        from frob.app import ticket_runner
+
+        def _fake(argv: list[str], **k: Any) -> Result[ProcResult, Any]:
+            return Ok(
+                ProcResult(
+                    argv=tuple(argv), returncode=1, stdout="", stderr="no such remote"
+                )
+            )
+
+        monkeypatch.setattr(ticket_runner, "guarded_subprocess_run", _fake)
+        with pytest.raises(SystemExit) as exc_info:
+            ticket_runner._push_after_land(repo, self._report(dry_run=False))
+        assert exc_info.value.code == 1
+
+    def test_exec_disabled_exits_nonzero(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestPushAfterLand.test_exec_disabled_exits_nonzero  # noqa: E501
+        from frob.app import ticket_runner
+        from frob.process._guard import ProcessGuardError
+
+        def _fake(argv: list[str], **k: Any) -> Result[ProcResult, Any]:
+            return Err(ProcessGuardError.ExecDisabled)
+
+        monkeypatch.setattr(ticket_runner, "guarded_subprocess_run", _fake)
+        with pytest.raises(SystemExit) as exc_info:
+            ticket_runner._push_after_land(repo, self._report(dry_run=False))
+        assert exc_info.value.code == 1

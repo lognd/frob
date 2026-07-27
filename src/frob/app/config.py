@@ -357,6 +357,10 @@ class AppConfig(BaseModel):
     # only-evidence finding is logged but does not refuse the direct close.
     # For genuine false positives only.
     ticket_close_skip_mutation_evidence: bool = False
+    # frob:ticket T-0631
+    # `frob ticket land <id> --push`: after a real (non-dry-run) land
+    # succeeds, push root's current branch to its upstream remote.
+    ticket_land_push: bool = False
     ticket_worktree: Path | None = None
     # frob:ticket T-0474
     # `frob ticket start <id> --foreground` -- run the pre-work sweep
@@ -841,6 +845,7 @@ class AppConfig(BaseModel):
             "ticket_dry_run",
             "ticket_skip_mutation_evidence",
             "ticket_close_skip_mutation_evidence",
+            "ticket_land_push",
             "ticket_close_strict",
             "ticket_foreground",
             "ticket_steal",

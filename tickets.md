@@ -1539,7 +1539,7 @@ T-0264's windows generator hardens an existing SCM service (SID type, privileges
 ```yaml
 id: T-0631
 title: 'frob ticket land: TICK005-backed regression sweep + --push option'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-22'
@@ -1549,15 +1549,171 @@ scope:
 - src/frob/tickets/**
 - src/frob/app/ticket_runner.py
 - docs/modules/tickets.md
+- src/frob/__main__.py
+- src/frob/app/config.py
+- tests/test_ticket_land.py
+scope_changes:
+- op: add
+  glob: src/frob/__main__.py
+  reason: 'The --push option''s acceptance criterion requires a real, working
+
+    `frob ticket land --push` CLI flag. The argparse registration for
+
+    `frob ticket land` lives in src/frob/__main__.py, and the flag needs a
+
+    backing AppConfig field in src/frob/app/config.py (same pattern as the
+
+    existing --dry-run/--skip-mutation-evidence flags on this same
+
+    subcommand). T-0631''s declared scope (src/frob/tickets/**,
+
+    src/frob/app/ticket_runner.py, docs/modules/tickets.md) omits both files,
+
+    which makes the --push half of this ticket''s plan undoable as scoped.
+
+    Adding exactly these two files, narrowly, to implement the one new flag
+
+    this ticket''s acceptance criteria requires.
+
+    '
+  actor: logan
+  at: '2026-07-26'
+- op: add
+  glob: src/frob/app/config.py
+  reason: 'The --push option''s acceptance criterion requires a real, working
+
+    `frob ticket land --push` CLI flag. The argparse registration for
+
+    `frob ticket land` lives in src/frob/__main__.py, and the flag needs a
+
+    backing AppConfig field in src/frob/app/config.py (same pattern as the
+
+    existing --dry-run/--skip-mutation-evidence flags on this same
+
+    subcommand). T-0631''s declared scope (src/frob/tickets/**,
+
+    src/frob/app/ticket_runner.py, docs/modules/tickets.md) omits both files,
+
+    which makes the --push half of this ticket''s plan undoable as scoped.
+
+    Adding exactly these two files, narrowly, to implement the one new flag
+
+    this ticket''s acceptance criteria requires.
+
+    '
+  actor: logan
+  at: '2026-07-26'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'SCOPE001 flags tests/test_ticket_land.py as outside declared scope; this
+
+    ticket''s own new regression-sweep/--push behavior needs test coverage in
+
+    the existing land test module (same file every prior land-feature ticket
+
+    in this lineage, e.g. T-0755/T-0844/T-0907, has extended). Adding it.
+
+    '
+  actor: logan
+  at: '2026-07-26'
+evidence:
+- tests/test_ticket_land.py::TestTick005LandRegressions::test_no_regression_when_terminal_ticket_stays_terminal
+- tests/test_ticket_land.py::TestTick005LandRegressions::test_detects_terminal_ticket_regressed_to_non_terminal
+- tests/test_ticket_land.py::TestTick005LandRegressions::test_archived_ids_are_excluded
+- tests/test_ticket_land.py::TestTick005LandRegressions::test_malformed_text_degrades_to_no_regressions
+- tests/test_ticket_land.py::TestLandRefusesOnTerminalStateRegression::test_land_refuses_and_unwinds_when_sweep_finds_a_regression
+- tests/test_ticket_land.py::TestLandPushCliWiring::test_flag_parses_to_true
+- tests/test_ticket_land.py::TestLandPushCliWiring::test_flag_omitted_defaults_false
+- tests/test_ticket_land.py::TestPushAfterLand::test_dry_run_never_pushes
+- tests/test_ticket_land.py::TestPushAfterLand::test_real_land_pushes_the_current_branch
+- tests/test_ticket_land.py::TestPushAfterLand::test_push_failure_exits_nonzero
+- tests/test_ticket_land.py::TestPushAfterLand::test_exec_disabled_exits_nonzero
 acceptance:
 - text: GIVEN a land with --push WHEN the land completes THEN the push happens only
     after every land verification passed; GIVEN the TICK005 rule defined WHEN land
     runs THEN the regression sweep executes and blocks on failure
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestLandRefusesOnTerminalStateRegression::test_land_refuses_and_unwinds_when_sweep_finds_a_regression
+  - tests/test_ticket_land.py::TestPushAfterLand::test_real_land_pushes_the_current_branch
 threat: null
 component: null
 ```
 The two T-0577 dispatch items that had no existing design to build against, deferred honestly rather than half-built: (1) a TICK005-backed regression sweep at land time (define the TICK005 rule first, then have land run it); (2) a --push option for frob ticket land so the coordinator can land+push in one verified step. NOTE: T-0577's Done report references this as T-draft-f6f10c67; that draft was filed pre-fix and will not survive T-0577's own land, so this is the real ticket.
+
+## Done report
+
+Implements both T-0577 deferred items.
+
+(1) TICK005-backed regression sweep at land time: `_tick005_land_regressions`
+(src/frob/tickets/_land.py) mirrors gates.py's TICK005 (T-0537) terminal-
+state-regression semantics -- any ticket DONE/DROPPED in root's pre-land
+ledger that is neither terminal nor archived in the post-splice ledger --
+but runs it directly around `_squash_and_splice_ledger`'s own splice
+instead of depending on a real two-parent merge commit, since a
+squash-apply land only ever produces a single-parent commit and the
+gate's own HEAD^2 precondition can never fire for a land at all. On a
+detected regression, `land()` unwinds the staged squash via
+`_verified_reset_root` and returns the new `LandError.TerminalStateRegression`
+variant instead of committing. Implemented in `_land.py` only (not by
+importing `frob.gates`, which depends on `frob.tickets`, never the
+reverse, per docs/rework.md cycle-avoidance).
+
+(2) `--push` option: `frob ticket land <id> --worktree <path> --push`
+(new AppConfig field `ticket_land_push`, new argparse flag on the `land`
+subparser in `src/frob/__main__.py`) runs `git push origin <branch>` for
+root's current branch via `ticket_runner._push_after_land`, called ONLY
+after `land()` returns `Ok` and ONLY when the report is not a dry run --
+never on `--dry-run`, never after a failed land. Routed through
+`guarded_subprocess_run` (T-0778's exec guard) so `FROB_DISABLE_EXEC=1`
+refuses it too; a refused spawn or non-zero `git push` exit logs the
+manual remedy and exits non-zero without attempting to unwind the
+already-landed commit (there is nothing left to unwind by that point).
+
+Scope note: the ticket's originally declared scope (src/frob/tickets/**,
+src/frob/app/ticket_runner.py, docs/modules/tickets.md) did not include
+src/frob/__main__.py or src/frob/app/config.py, which the --push CLI flag
+structurally requires (argparse registration + AppConfig field, same
+pattern as the existing --dry-run/--skip-mutation-evidence flags on this
+subcommand) -- extended via `frob ticket scope --add` with a recorded
+reason rather than touched silently. tests/test_ticket_land.py was
+likewise added to scope (SCOPE001) to host the new tests in the existing
+land test module, matching prior land-feature tickets in this lineage.
+
+docs/modules/tickets.md's "frob ticket land" section gained step 9.75
+(the regression sweep) and step 11 (--push), inserted at the exact points
+in the existing numbered land procedure where they actually run.
+
+Changed:
+  src/frob/tickets/_land.py::_tick005_land_regressions
+  src/frob/tickets/_land.py::_squash_and_splice_ledger (wires the sweep in)
+  src/frob/tickets/_models.py::LandError.TerminalStateRegression
+  src/frob/app/config.py::AppConfig.ticket_land_push
+  src/frob/__main__.py::_add_ticket_land_parser (--push flag)
+  src/frob/app/ticket_runner.py::_push_after_land
+  src/frob/app/ticket_runner.py::_land (invokes _push_after_land)
+  docs/modules/tickets.md (frob ticket land section, steps 9.75/11)
+  tests/test_ticket_land.py (TestTick005LandRegressions,
+    TestLandRefusesOnTerminalStateRegression, TestLandPushCliWiring,
+    TestPushAfterLand)
+
+Evidence: 11 new pytest node ids under tests/test_ticket_land.py, all
+observed passing via `uv run pytest tests/test_ticket_land.py -q`
+(137 passed total, up from 127 pre-change; no pre-existing test broken).
+Acceptance criterion [0] bound to
+TestLandRefusesOnTerminalStateRegression.test_land_refuses_and_unwinds_when_sweep_finds_a_regression
+and TestPushAfterLand.test_real_land_pushes_the_current_branch.
+
+Gates: `uv run frob check --ticket T-0631` chunked per docs/guides/
+agent-playbook.md section 3b (prework/scope/coverage individually, then
+lint/static/gates-fast/gates-native/gates-security stage groups) -- all
+clean (0 unwaived errors) after `frob ticket sweep T-0631` refreshed the
+pre-work sweep post scope-expansion. `uv run frob test --base main`
+(touched-set) exit=0, PASS. `ruff check`/`ruff format --check`/`ty check`
+clean on every touched file (both PATH ruff and `uv run ruff`).
+`git diff main --diff-filter=D --stat` empty of anything outside this
+ticket's scope.
+
+Filed: none.
 
 <!-- ticket:T-0634 -->
 ```yaml

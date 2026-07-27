@@ -1093,11 +1093,43 @@ Order of operations, and why it is this order:
     still fires unconditionally) but never unwinds or blocks the land --
     a native rebuild is cheap to re-run by hand. Reported back as
     `LandReport.natives_rebuilt`.
+9.75. **TICK005-backed regression sweep** (T-0631, immediately after step
+    9's splice, BEFORE the completeness assertion): `land()`'s own
+    `_tick005_land_regressions(root_pre_text, spliced_text, archived_ids)`
+    (`_land.py`) compares `root`'s ledger text from just before this
+    land's splice against the text just staged by it, and refuses
+    (`Err(LandError.TerminalStateRegression)`, unwinding the squash via
+    `_verified_reset_root` exactly like a `SquashConflict`) if any ticket
+    that was terminal (DONE/DROPPED) pre-splice is neither terminal nor
+    archived post-splice. This mirrors `frob check`'s `TICK005` gate
+    (`_tick005_merge_state_regression`, T-0537's hand-resolved-conflict
+    resurrection incident) but runs it directly around THIS land's own
+    squash-splice instead of relying on a later `frob check` catching it
+    on some unrelated future merge commit -- `_land_squash_apply`'s own
+    squash-apply is always a single-parent commit, so the gate's `HEAD^2`
+    precondition (a genuine two-parent merge) can never fire for a land
+    at all, the exact gap this closes. The two implementations are
+    deliberately NOT shared code: `frob.gates` depends on `frob.tickets`,
+    never the reverse (docs/rework.md cycle-avoidance), so `_land.py`
+    reimplements the same terminal-state-regression semantics against its
+    own pre/post ledger texts rather than importing the gate.
 10. **Commit** with a conventional-commit message template
     (`<type>(tickets): land <final-id> <title>`, type derived from
     `ticket.kind`; `feature`->`feat`, `bug`/`security`/`ux`/`incident`->
     `fix`, `docs`->`docs`, `invariant`->`test`). ASCII only, no
     `Co-Authored-By` line, matching repo convention.
+11. **`--push`** (T-0631, CLI-only, opt-in): once `frob ticket land`'s
+    entire chain above has actually succeeded -- step 10's commit exists
+    and every check before it passed, never on a `--dry-run` (nothing
+    durable was committed to push) and never after a failed land (there is
+    nothing new to push) -- `frob ticket land <id> --worktree <path>
+    --push` runs `git -C <root> push origin <branch>` for `root`'s current
+    branch (`ticket_runner._push_after_land`). A push failure (a refused
+    spawn under `FROB_DISABLE_EXEC=1`, or a non-zero `git push` exit) logs
+    the exact remedy (`git -C <root> push origin <branch>` by hand) and
+    exits the process non-zero, but does NOT unwind the already-landed
+    commit -- by this point the land itself is done and there is nothing
+    left to undo, only a later, separate step (the push) that failed.
 
 If close (step 8) fails or the final commit (step 10) fails, the merge
 commit already landed in the WORKTREE's own branch history (never in
