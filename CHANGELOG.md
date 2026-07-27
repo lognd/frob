@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.181.0] - unreleased
+
+- T-0982: derived_state_write_lock reentrancy registry is process-local: ProcessPoolExecutor worker deadlocks against main's SHARED holder
+
 ## [0.180.0] - unreleased
 
 - T-0960: static checks: kernel/userspace-interface classification + per-process cgroup resource-bound declaration obligations

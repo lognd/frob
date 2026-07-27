@@ -10644,8 +10644,25 @@ def _open_process_pool(process_jobs: dict[str, _ProcessJob]) -> ProcessPoolExecu
     stdout log handler level BEFORE constructing the pool (workers start
     as soon as the pool exists, not on first `submit`) so every worker
     `_run_process_gate` runs in clamps its own default-DEBUG logging to
-    match -- see `_WORKER_STDOUT_LOG_LEVEL_ENV`'s docstring."""
+    match -- see `_WORKER_STDOUT_LOG_LEVEL_ENV`'s docstring.
+
+    T-0982: also stamps `frob.process._lock._INHERITED_LOCK_KEYS_ENV` with
+    this (the pool OWNER's) own `held_registry_keys()` snapshot, BEFORE
+    constructing the pool, for the same env-inheritance reason. This is
+    what lets a gate that runs `derived_state_write_lock` inside a pool
+    worker (e.g. `dup_gate` via `find_clones`) see that the process which
+    spawned it already holds `derived_state_lock` for that root -- without
+    this, a worker forked/spawned while `run_gates`'s own caller (`frob
+    check`'s main process, see `frob.check`) holds the run-wide SHARED lock
+    would issue a real, blocking `flock(LOCK_EX)` against that SHARED hold
+    and deadlock forever (T-0982, lslocks-confirmed; the cross-process
+    sibling of T-0918's same-process case). See
+    `frob.process._lock._worker_inherits_hold`'s docstring for the reader
+    side of this marker."""
     from frob.logging.quiet import _stdout_stream_handlers
+    from frob.process._lock import _INHERITED_LOCK_KEYS_ENV as _LOCK_KEYS_ENV
+    from frob.process._lock import _INHERITED_LOCK_KEYS_SEP as _LOCK_KEYS_SEP
+    from frob.process._lock import held_registry_keys
 
     handlers = _stdout_stream_handlers()
     if handlers:
@@ -10653,6 +10670,11 @@ def _open_process_pool(process_jobs: dict[str, _ProcessJob]) -> ProcessPoolExecu
         os.environ[_WORKER_STDOUT_LOG_LEVEL_ENV] = logging.getLevelName(
             handlers[0].level
         )
+    held_keys = held_registry_keys()
+    if held_keys:
+        # frob:waive SEC110 reason="lock-registry-key marker (a resolved \
+        # filesystem path), not a secret"
+        os.environ[_LOCK_KEYS_ENV] = _LOCK_KEYS_SEP.join(held_keys)
     # Bounded worker count (constraint 4): never more workers than
     # jobs, never more than the machine's CPU count.
     proc_workers = max(1, min(len(process_jobs), os.cpu_count() or 4))

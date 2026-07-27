@@ -13,15 +13,21 @@ from __future__ import annotations
 
 import multiprocessing
 import multiprocessing.synchronize
+import os
 import threading
 import time
+from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import TimeoutError as FutureTimeoutError
 from pathlib import Path
 
 from frob.process._lock import (
+    _INHERITED_LOCK_KEYS_ENV,
+    _INHERITED_LOCK_KEYS_SEP,
     _derived_lock_path,
     _process_already_holds,
     derived_state_lock,
     derived_state_write_lock,
+    held_registry_keys,
 )
 
 
@@ -226,6 +232,112 @@ class TestDerivedStateWriteLock:
             t.join(timeout=10)
             assert not t.is_alive()
             assert acquired_at and acquired_at[0] > start
+        finally:
+            release.set()
+            proc.join(timeout=10)
+
+
+# frob:ticket T-0982
+def _pool_worker_takes_write_lock(root_str: str) -> bool:
+    """Top-level (picklable) `ProcessPoolExecutor` worker body for T-0982's
+    regression test: takes `derived_state_write_lock` for `root_str` in
+    THIS worker process and returns `True` on success -- a real deadlock
+    (the bug this ticket fixes) would hang here forever instead of
+    returning, which is why the test drives this through a join-timeout-
+    guarded `Future.result(timeout=...)` rather than an unbounded call."""
+    from frob.process._lock import derived_state_write_lock as _write_lock
+
+    with _write_lock(Path(root_str)):
+        return True
+
+
+# frob:ticket T-0982
+class TestCrossProcessPoolInheritance:
+    """Regression coverage for T-0982: the cross-process sibling of
+    T-0918's same-process case. A REAL `ProcessPoolExecutor` worker
+    (separate OS process, not just a thread) must complete
+    `derived_state_write_lock` without deadlocking when the process that
+    OWNS the pool already holds `derived_state_lock(root, exclusive=False)`
+    -- mirroring `frob.gates._open_process_pool`'s T-0982 fix of stamping
+    `_INHERITED_LOCK_KEYS_ENV` with `held_registry_keys()` before
+    constructing the pool."""
+
+    # frob:tests tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance.test_real_pool_worker_under_parent_shared_holder_completes  # noqa: E501
+    def test_real_pool_worker_under_parent_shared_holder_completes(
+        self, tmp_path: Path
+    ) -> None:
+        """The exact T-0982 incident shape: main process holds SHARED
+        `derived_state_lock` (as `frob check`'s main process does for its
+        whole run) while a REAL `ProcessPoolExecutor` worker (as `dup_gate`
+        runs in) calls `derived_state_write_lock` for the SAME root. Without
+        the T-0982 fix, the worker's real `flock(LOCK_EX)` blocks forever
+        against the parent's `LOCK_SH` on a different open file
+        description -- `future.result(timeout=...)` turns that hang into a
+        loud `TimeoutError` instead of a silently-stuck test process."""
+        ctx = multiprocessing.get_context("spawn")
+        with derived_state_lock(tmp_path, exclusive=False):
+            # Mirrors `frob.gates._open_process_pool`'s T-0982 stamp: the
+            # pool OWNER snapshots its own held registry keys into the env
+            # BEFORE constructing the pool, so the spawned worker inherits
+            # the marker.
+            held_keys = held_registry_keys()
+            assert held_keys, "parent SHARED hold not visible in registry"
+            # frob:waive SEC110 reason="lock-registry-key marker (resolved \
+            # filesystem paths), carries no confidential data -- mirrors \
+            # the production stamp _open_process_pool performs"
+            os.environ[_INHERITED_LOCK_KEYS_ENV] = _INHERITED_LOCK_KEYS_SEP.join(
+                held_keys
+            )
+            try:
+                with ProcessPoolExecutor(max_workers=1, mp_context=ctx) as pool:
+                    future = pool.submit(_pool_worker_takes_write_lock, str(tmp_path))
+                    try:
+                        result = future.result(timeout=15)
+                    except FutureTimeoutError:
+                        raise AssertionError(
+                            "ProcessPoolExecutor worker deadlocked taking "
+                            "derived_state_write_lock against the parent's "
+                            "own SHARED hold (T-0982 regression)"
+                        ) from None
+            finally:
+                os.environ.pop(_INHERITED_LOCK_KEYS_ENV, None)
+        assert result is True
+
+    # frob:tests tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance.test_independent_process_without_marker_still_blocks  # noqa: E501
+    def test_independent_process_without_marker_still_blocks(
+        self, tmp_path: Path
+    ) -> None:
+        """Sanity check on the other side of the fix: an INDEPENDENT
+        process (no `_INHERITED_LOCK_KEYS_ENV` marker for this root at all)
+        must still be genuinely blocked by another process's real EXCLUSIVE
+        hold -- the T-0982 bypass only fires for a worker whose OWN pool
+        owner told it about an inherited hold, never unconditionally."""
+        os.environ.pop(_INHERITED_LOCK_KEYS_ENV, None)
+        ctx = multiprocessing.get_context("spawn")
+        ready = ctx.Event()
+        release = ctx.Event()
+        proc = ctx.Process(
+            target=_hold_exclusive_then_signal,
+            args=(str(tmp_path), ready, release),
+        )
+        proc.start()
+        try:
+            assert ready.wait(timeout=10), (
+                "helper process never signaled it acquired the exclusive lock"
+            )
+            with ProcessPoolExecutor(max_workers=1, mp_context=ctx) as pool:
+                future = pool.submit(_pool_worker_takes_write_lock, str(tmp_path))
+                try:
+                    future.result(timeout=0.3)
+                except FutureTimeoutError:
+                    pass
+                else:
+                    raise AssertionError(
+                        "independent pool worker acquired the write lock "
+                        "while a DIFFERENT process still held it exclusively"
+                    )
+                release.set()
+                assert future.result(timeout=10) is True
         finally:
             release.set()
             proc.join(timeout=10)

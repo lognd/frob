@@ -192,6 +192,33 @@ is inode-scoped, so different spellings of the same file already
 serialized correctly at the OS level; only the in-process dict lookup was
 spelling-sensitive.
 
+`_process_held_counts` (and therefore `_process_already_holds`,
+T-0918/T-0933's no-op guard) is PROCESS-LOCAL: a `ProcessPoolExecutor`
+worker forked/spawned from a parent that already holds `derived_state_lock`
+starts with an empty registry of its own and cannot see the parent's hold
+-- so a worker running `derived_state_write_lock` for the same root used to
+issue a real, blocking `flock(LOCK_EX)` against the parent's own `LOCK_SH`
+on a different open file description and deadlock forever (T-0982,
+lslocks-confirmed: `dup_gate` in a pool worker vs. `frob check`'s main
+process holding the run-wide SHARED lock -- the cross-process sibling of
+T-0918's same-process case). T-0982 fixes this with an explicit,
+pool-owner-supplied signal rather than trying to infer cross-process state:
+`frob.gates._open_process_pool` snapshots its own
+`held_registry_keys()` (every canonical key this process currently holds,
+in any mode) into the env var `frob.process._lock._INHERITED_LOCK_KEYS_ENV`
+BEFORE constructing the `ProcessPoolExecutor` -- env vars set before pool
+construction are inherited by every worker it spawns (forkserver helper or
+spawn). A worker's own `derived_state_write_lock` call checks
+`_worker_inherits_hold(root)`, which reads that marker back: if the
+worker's root matches a key the parent stamped, the worker trusts the
+parent's guarantee and takes NO real OS lock of its own -- the same bypass
+rule `_process_already_holds` already applies for a same-process nested
+call, just carried across the fork/spawn boundary by an explicit signal
+instead of shared memory. An INDEPENDENT process's pool worker (whose
+parent never held `derived_state_lock` for that root) never sees its key in
+the marker, so it falls through to a real, fully cross-process-exclusive
+`flock(LOCK_EX)` exactly as before this fix.
+
 ## Dependencies
 
 Pure stdlib + `pydantic` for the shared models; no dependency on `frob.check`

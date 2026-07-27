@@ -40,12 +40,11 @@ from frob.logging import get_logger
 
 # frob:waive INV006 reason="T-0859: this module's several \\bonly\\b/\\bthe\\b \
 # exclusivity-vocabulary hits are source-level design-rationale prose \
-# (docstrings/comments describing already-implemented internal behavior, \
-# verifiable by reading the code they annotate -- e.g. which platform \
-# fcntl requires, which re-entrant mode a thread already holds) rather \
-# than a separate cross-module contract needing its own tracked \
-# invariant, mirroring frob.check's INV006 T-0585 calibration-batch \
-# waiver in src/frob/check/__init__.py"
+# (docstrings/comments describing already-implemented internal behavior, verifiable by \
+# reading the code they annotate -- e.g. which platform fcntl requires, which \
+# re-entrant mode a thread already holds) rather than a separate cross-module contract \
+# needing its own tracked invariant, mirroring frob.check's INV006 T-0585 \
+# calibration-batch waiver in src/frob/check/__init__.py"
 
 # T-0859: `fcntl` is posix-only; `derived_state_lock` degrades to a
 # documented no-op (see its docstring) on a platform without it, mirroring
@@ -95,8 +94,91 @@ _process_registry_lock = threading.Lock()
 _process_held_counts: dict[str, int] = {}
 
 
+#: T-0982: env var name a `ProcessPoolExecutor` OWNER stamps, before pool
+#: construction, with the canonical registry keys (`_canonical_registry_key`
+#: form, `os.pathsep`-joined) it currently holds `derived_state_lock` for in
+#: THIS process. Mirrors `frob.gates._WORKER_STDOUT_LOG_LEVEL_ENV`'s (T-0806)
+#: established pattern: env vars set on the parent's `os.environ` right
+#: before constructing a `ProcessPoolExecutor` are inherited by every worker
+#: it spawns (forkserver helper or spawn), so a worker's own
+#: `derived_state_write_lock` call can see this marker even though
+#: `_process_held_counts` itself is process-local and therefore invisible
+#: across the fork/spawn boundary (the cross-process sibling of T-0918's
+#: same-process registry).
+# frob:ticket T-0982
+_INHERITED_LOCK_KEYS_ENV = "FROB_DERIVED_LOCK_HELD_KEYS"
+
+#: Separator `_INHERITED_LOCK_KEYS_ENV` joins multiple held keys with
+#: (T-0982). `os.pathsep` (`:` on POSIX) rather than a comma: registry keys
+#: are resolved filesystem paths, which never contain `os.pathsep` on a
+#: POSIX host, whereas a path COULD legitimately contain a comma.
+_INHERITED_LOCK_KEYS_SEP = os.pathsep
+
+
 # frob:doc docs/modules/process.md#derived-state-lock-t-0859
-# frob:ticket T-0918
+# frob:tests \
+# tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance.test_real_pool_worke\
+# r_under_parent_shared_holder_completes  # noqa: E501
+# frob:ticket T-0982
+def held_registry_keys() -> tuple[str, ...]:
+    """Snapshot of every canonical registry key (`_canonical_registry_key`
+    form) THIS process currently holds `derived_state_lock` for, in any
+    mode (T-0982).
+
+    A `ProcessPoolExecutor` OWNER (`frob.gates._open_process_pool`) calls
+    this right before constructing its pool to build the
+    `_INHERITED_LOCK_KEYS_ENV` marker a worker consults via
+    `_worker_inherits_hold` -- see that constant's and that function's
+    docstrings. Read-only; does not itself acquire or release anything."""
+    with _process_registry_lock:
+        return tuple(_process_held_counts)
+
+
+# frob:tests \
+# tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance.test_real_pool_worke\
+# r_under_parent_shared_holder_completes  # noqa: E501
+# frob:tests \
+# tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance.test_independent_pro\
+# cess_without_marker_still_blocks  # noqa: E501
+# frob:ticket T-0982
+def _worker_inherits_hold(root: Path) -> bool:
+    """Whether THIS process was told (via `_INHERITED_LOCK_KEYS_ENV`) that
+    the process which SPAWNED it already holds `derived_state_lock` for
+    `root` (T-0982) -- the cross-process sibling of `_process_already_holds`.
+
+    A `ProcessPoolExecutor` worker forked/spawned from a parent that holds
+    `derived_state_lock(root, exclusive=False)` (e.g. `frob check`'s own
+    SHARED hold for its whole run) starts with an EMPTY
+    `_process_held_counts` of its own -- T-0918's registry is process-local,
+    rebuilt fresh by each worker interpreter -- even though the PARENT's
+    hold already fully serializes this whole process tree against every
+    OTHER process for `root`. A naive worker-side `flock(LOCK_EX)` in that
+    situation genuinely blocks against the parent's `LOCK_SH` on a
+    *different* open file description, forever (T-0982, lslocks-confirmed:
+    READ held by the parent pid, WRITE* blocked on the worker pid, same
+    `.frob/derived.lock`). The pool OWNER closes this by stamping
+    `_INHERITED_LOCK_KEYS_ENV` with its own `held_registry_keys()` right
+    before constructing the pool (`frob.gates._open_process_pool`); this
+    reads that marker back and treats a match for `root`'s canonical key
+    exactly like `_process_already_holds` treats a same-process hold: the
+    worker trusts the parent's guarantee and takes no real OS lock of its
+    own here, rather than inventing a second bypass rule.
+
+    Says nothing about an INDEPENDENT process's pool worker -- one whose
+    parent does NOT hold `derived_state_lock` for `root` never sees its key
+    in this marker (the env var is either absent or names a different
+    root), so it falls through to a real, fully cross-process-exclusive
+    `flock(LOCK_EX)` exactly as before this ticket.
+    """
+    # frob:waive SEC110 reason="lock-registry-key marker (resolved filesystem paths \
+    # this same process's pool owner stamped), carries no confidential data"
+    raw = os.environ.get(_INHERITED_LOCK_KEYS_ENV, "")
+    if not raw:
+        return False
+    held_keys = raw.split(_INHERITED_LOCK_KEYS_SEP)
+    return _canonical_registry_key(root) in held_keys
+
+
 def _process_already_holds(root: Path) -> bool:
     """Whether ANY thread in THIS process currently holds `derived_state_lock`
     for `root`, in any mode (shared or exclusive).
@@ -150,10 +232,18 @@ def _canonical_registry_key(root: Path) -> str:
 
 
 # frob:doc docs/modules/process.md#derived-state-lock-t-0859
-# frob:tests tests/unit/test_process_lock.py::TestDerivedStateLock.test_two_threads_serialize_exclusive  # noqa: E501
-# frob:tests tests/unit/test_process_lock.py::TestDerivedStateLock.test_shared_locks_do_not_block_each_other  # noqa: E501
-# frob:tests tests/unit/test_process_lock.py::TestDerivedStateLock.test_reentrant_same_mode_in_same_thread  # noqa: E501
-# frob:tests tests/unit/test_process_lock.py::TestDerivedStateLock.test_reentrant_opposite_mode_raises  # noqa: E501
+# frob:tests \
+# tests/unit/test_process_lock.py::TestDerivedStateLock.test_two_threads_serialize_excl\
+# usive  # noqa: E501
+# frob:tests \
+# tests/unit/test_process_lock.py::TestDerivedStateLock.test_shared_locks_do_not_block_\
+# each_other  # noqa: E501
+# frob:tests \
+# tests/unit/test_process_lock.py::TestDerivedStateLock.test_reentrant_same_mode_in_sam\
+# e_thread  # noqa: E501
+# frob:tests \
+# tests/unit/test_process_lock.py::TestDerivedStateLock.test_reentrant_opposite_mode_ra\
+# ises  # noqa: E501
 # frob:ticket T-0859
 @contextmanager
 def derived_state_lock(root: Path, *, exclusive: bool) -> Iterator[None]:
@@ -265,10 +355,23 @@ def derived_state_lock(root: Path, *, exclusive: bool) -> Iterator[None]:
 
 
 # frob:doc docs/modules/process.md#derived-state-lock-t-0859
-# frob:tests tests/unit/test_process_lock.py::TestDerivedStateWriteLock.test_standalone_rebuild_takes_exclusive  # noqa: E501
-# frob:tests tests/unit/test_process_lock.py::TestDerivedStateWriteLock.test_nested_inside_shared_holder_does_not_deadlock  # noqa: E501
-# frob:tests tests/unit/test_process_lock.py::TestDerivedStateWriteLock.test_concurrent_separate_process_writer_still_blocked  # noqa: E501
+# frob:tests \
+# tests/unit/test_process_lock.py::TestDerivedStateWriteLock.test_standalone_rebuild_ta\
+# kes_exclusive  # noqa: E501
+# frob:tests \
+# tests/unit/test_process_lock.py::TestDerivedStateWriteLock.test_nested_inside_shared_\
+# holder_does_not_deadlock  # noqa: E501
+# frob:tests \
+# tests/unit/test_process_lock.py::TestDerivedStateWriteLock.test_concurrent_separate_p\
+# rocess_writer_still_blocked  # noqa: E501
+# frob:tests \
+# tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance.test_real_pool_worke\
+# r_under_parent_shared_holder_completes  # noqa: E501
+# frob:tests \
+# tests/unit/test_process_lock.py::TestCrossProcessPoolInheritance.test_independent_pro\
+# cess_without_marker_still_blocks  # noqa: E501
 # frob:ticket T-0918
+# frob:ticket T-0982
 @contextmanager
 def derived_state_write_lock(root: Path) -> Iterator[None]:
     """Writer lock for a cache rebuilder that may run standalone OR nested
@@ -346,8 +449,21 @@ def derived_state_write_lock(root: Path) -> Iterator[None]:
         )
         yield
         return
+    if _worker_inherits_hold(root):
+        _log.debug(
+            "process: derived_state_write_lock: %s held by the process "
+            "that spawned this one (%s), inherited no-op (T-0982)",
+            root,
+            _INHERITED_LOCK_KEYS_ENV,
+        )
+        yield
+        return
     with derived_state_lock(root, exclusive=True):
         yield
 
 
-__all__ = ["derived_state_lock", "derived_state_write_lock"]
+__all__ = [
+    "derived_state_lock",
+    "derived_state_write_lock",
+    "held_registry_keys",
+]
