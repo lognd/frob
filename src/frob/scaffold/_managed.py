@@ -48,7 +48,9 @@ from frob.scaffold.project import (
 
 _log = get_logger(__name__)
 
-# frob:doc docs/guides/agent-playbook.md#1b-never-git-stash-in-a-worktree-it-is-repo-global-not-worktree-local  # noqa: E501
+# frob:doc \
+# docs/guides/agent-playbook.md#1b-never-git-stash-in-a-worktree-it-is-repo-global-not-\
+# worktree-local  # noqa: E501
 #: T-0574: git has NO native pre-stash hook, and this was checked
 #: empirically rather than assumed -- two candidates were tried and one
 #: was disproven before landing on this one:
@@ -206,33 +208,42 @@ class ManagedTextBlock:
     content: str
 
 
-#: T-0732's core-build shim, verbatim from this repo's own Makefile --
-#: this IS the canonical definition; T-0732's landed `core:` target is
-#: read here as source of truth, not duplicated by hand. T-0735's planned
-#: `frob-natives-build` subcommand will replace this literal recipe with a
-#: call into that subcommand in one place, once it exists (it does not
-#: yet -- see this ticket's Done report).
+#: T-0864's `frob natives build` shim, verbatim from this repo's own
+#: Makefile -- this IS the canonical definition; the landed `core:` target
+#: is read here as source of truth, not duplicated by hand. T-0865: this
+#: replaced T-0732's old literal per-repo maturin/CARGO_TARGET_DIR recipe
+#: (kept as `_LEGACY_CARGO_CACHE_MARKERS` below purely as the drift
+#: signature to detect, never re-emitted) now that `frob natives build`
+#: owns the shared-cache mechanism itself -- no cache logic belongs in an
+#: adopter repo's Makefile anymore.
 _MAKEFILE_CORE_SHIM = """\
-# Build and install the frob-core/strata-core native extensions into the
-# venv (T-0732). Smart-dup R3+ and strata design-model parsing need them;
-# everything else works without them, so this is a best-effort step that
-# warns rather than fails when the Rust toolchain is absent. Requires a
-# STAMP variable (venv install stamp) to already be defined -- see the
-# Makefile shim installed by `frob scaffold apply`.
-# T-0732: CARGO_TARGET_DIR shared per CLONE (not per worktree) via the
-# common .git dir, so a fresh worktree reuses another worktree's already-
-# compiled dependency crates instead of a from-scratch cargo build.
-CARGO_TARGET_DIR := $(shell git rev-parse --git-common-dir \
-2>/dev/null)/frob-cargo-target-cache
+# Build and install every declared [[native]] extension into the venv
+# (T-0732/T-0864). Smart-dup R3+ and strata design-model parsing need
+# them; everything else works without them. `frob natives build` (frob's
+# own subcommand) reads frob.toml's [[native]] entries, is best-effort
+# when the Rust toolchain is absent, and owns the git-common-dir-keyed
+# shared CARGO_TARGET_DIR mechanism itself -- no cache logic lives in this
+# Makefile anymore. Requires a STAMP variable (venv install stamp) to
+# already be defined -- see the Makefile shim installed by `frob scaffold
+# apply`.
 core: $(STAMP)
-\t@command -v cargo >/dev/null 2>&1 || { \\
-\t\techo "cargo not found; skipping frob-core (smart-dup R3+ disabled)"; \\
-\t\texit 0; }
-\tVIRTUAL_ENV=$(CURDIR)/.venv CARGO_TARGET_DIR=$(CARGO_TARGET_DIR) uvx \
-maturin develop --uv --release -m frob-core/Cargo.toml
-\tVIRTUAL_ENV=$(CURDIR)/.venv CARGO_TARGET_DIR=$(CARGO_TARGET_DIR) uvx \
-maturin develop --uv --release -m strata-core/Cargo.toml
+\tuv run frob natives build
 """
+
+# frob:ticket T-0865
+#: A repo's OWN `core:` recipe still carrying the pre-T-0864 per-repo
+#: native-build/cache logic (the exact drift that motivated T-0735's
+#: parent) rather than the one-line shim above -- these are the literal
+#: variable-assignment / recipe-invocation shapes only the OLD hand-
+#: maintained recipe used (never the current shim's own prose, which
+#: mentions "CARGO_TARGET_DIR" and "maturin develop" only descriptively,
+#: never as an actual assignment or invocation), so their presence in a
+#: Makefile's `core:` recipe outside the managed-block markers is an
+#: unambiguous drift signature.
+_LEGACY_CARGO_CACHE_MARKERS: tuple[str, ...] = (
+    "CARGO_TARGET_DIR :=",
+    "maturin develop --uv --release",
+)
 
 #: The standard cross-language `.gitignore` entries every frob-managed
 #: repo should carry (build artifacts, Python caches, frob local state,
@@ -328,10 +339,32 @@ def _extract_region(text: str, block_id: str) -> str | None:
     return text[inner_start:end_idx].strip("\n")
 
 
+# frob:ticket T-0865
+# frob:tests \
+# tests/unit/test_scaffold_natives_shim.py::TestLegacyCoreCacheDrift.test_legacy_unmana\
+# ged_core_target_reports_stale  # noqa: E501
+def _has_legacy_core_cache_logic(text: str) -> bool:
+    """True if `text` (a Makefile's full contents, markers not yet
+    stripped) still carries the pre-T-0864 per-repo native-build cache
+    recipe (`_LEGACY_CARGO_CACHE_MARKERS`) instead of the current one-line
+    `frob natives build` shim -- the estate-conformance drift T-0865
+    exists to catch (T-0735's parent motivation: per-repo cache hacks at
+    the wrong layer)."""
+    return any(marker in text for marker in _LEGACY_CARGO_CACHE_MARKERS)
+
+
 def _text_block_status(root: Path, block: ManagedTextBlock) -> ManagedBlockStatus:
     """`ManagedBlockStatus` for one `ManagedTextBlock` under `root`: absent
     file or absent marker pair is `present=False`; a present region whose
-    digest differs from the canonical content's is `stale=True`."""
+    digest differs from the canonical content's is `stale=True`.
+
+    T-0865: for the `makefile-core-shim` block specifically, a Makefile
+    with NO managed-block markers but that still carries the legacy
+    per-repo cache recipe (`_has_legacy_core_cache_logic`) is reported as
+    `present=True, stale=True` rather than plain `present=False` --
+    distinguishing "never adopted the shim" (a real drift naming the shim
+    as remedy) from "genuinely has nothing here yet" (a clean `apply`
+    append)."""
     expected_digest = _digest(block.content.rstrip("\n"))
     path = root / block.target
     if not path.exists():
@@ -343,8 +376,20 @@ def _text_block_status(root: Path, block: ManagedTextBlock) -> ManagedBlockStatu
             stale=False,
             expected_digest=expected_digest,
         )
-    region = _extract_region(path.read_text(encoding="utf-8"), block.block_id)
+    text = path.read_text(encoding="utf-8")
+    region = _extract_region(text, block.block_id)
     if region is None:
+        if block.block_id == "makefile-core-shim" and _has_legacy_core_cache_logic(
+            text
+        ):
+            return ManagedBlockStatus(
+                block_id=block.block_id,
+                target=block.target,
+                kind="text",
+                present=True,
+                stale=True,
+                expected_digest=expected_digest,
+            )
         return ManagedBlockStatus(
             block_id=block.block_id,
             target=block.target,
@@ -422,8 +467,12 @@ def _hook_status(root: Path, hook_name: str) -> ManagedBlockStatus:
 
 
 # frob:doc docs/commands/scaffold.md#managed-blocks-t-0736
-# frob:tests tests/unit/test_scaffold_managed.py::TestScaffoldConformanceStatus.test_non_frob_repo_reports_nothing  # noqa: E501
-# frob:tests tests/unit/test_scaffold_managed.py::TestScaffoldConformanceStatus.test_clean_after_apply  # noqa: E501
+# frob:tests \
+# tests/unit/test_scaffold_managed.py::TestScaffoldConformanceStatus.test_non_frob_repo\
+# _reports_nothing  # noqa: E501
+# frob:tests \
+# tests/unit/test_scaffold_managed.py::TestScaffoldConformanceStatus.test_clean_after_a\
+# pply  # noqa: E501
 def scaffold_conformance_status(root: Path) -> tuple[ManagedBlockStatus, ...]:
     """Every managed text block's and hook's conformance under `root` --
     the one pass `frob doctor` folds into `DoctorReport.scaffold_blocks`
@@ -454,8 +503,12 @@ def scaffold_conformance_status(root: Path) -> tuple[ManagedBlockStatus, ...]:
     return statuses
 
 
-# frob:tests tests/unit/test_scaffold_managed.py::TestStashGuardBlock.test_refuses_to_clobber_foreign_reference_transaction_hook  # noqa: E501
-# frob:tests tests/unit/test_scaffold_managed.py::TestStashGuardBlock.test_stale_ours_stash_guard_hook_is_updated  # noqa: E501
+# frob:tests \
+# tests/unit/test_scaffold_managed.py::TestStashGuardBlock.test_refuses_to_clobber_fore\
+# ign_reference_transaction_hook  # noqa: E501
+# frob:tests \
+# tests/unit/test_scaffold_managed.py::TestStashGuardBlock.test_stale_ours_stash_guard_\
+# hook_is_updated  # noqa: E501
 def _stash_guard_status(root: Path) -> ManagedBlockStatus:
     """`ManagedBlockStatus` for the T-0574 `reference-transaction` stash
     guard hook: `present` reflects whether the hooks-dir file exists
@@ -499,8 +552,12 @@ def _stash_guard_status(root: Path) -> ManagedBlockStatus:
     )
 
 
-# frob:tests tests/unit/test_scaffold_managed.py::TestStashGuardBlock.test_refuses_to_clobber_foreign_reference_transaction_hook  # noqa: E501
-# frob:tests tests/unit/test_scaffold_managed.py::TestStashGuardBlock.test_stale_ours_stash_guard_hook_is_updated  # noqa: E501
+# frob:tests \
+# tests/unit/test_scaffold_managed.py::TestStashGuardBlock.test_refuses_to_clobber_fore\
+# ign_reference_transaction_hook  # noqa: E501
+# frob:tests \
+# tests/unit/test_scaffold_managed.py::TestStashGuardBlock.test_stale_ours_stash_guard_\
+# hook_is_updated  # noqa: E501
 def _apply_stash_guard(root: Path) -> str:
     """Idempotently install/update the T-0574 `reference-transaction`
     stash-guard hook under `root`: no-op if already current, force-
@@ -608,9 +665,15 @@ def _apply_hooks(root: Path) -> list[str]:
 
 
 # frob:doc docs/commands/scaffold.md#managed-blocks-t-0736
-# frob:tests tests/unit/test_scaffold_managed.py::TestApplyManagedBlocks.test_idempotent_second_run_is_noop  # noqa: E501
-# frob:tests tests/unit/test_scaffold_managed.py::TestApplyManagedBlocks.test_creates_missing_and_updates_stale  # noqa: E501
-# frob:tests tests/unit/test_scaffold_managed.py::TestApplyManagedBlocks.test_refuses_to_clobber_foreign_hook  # noqa: E501
+# frob:tests \
+# tests/unit/test_scaffold_managed.py::TestApplyManagedBlocks.test_idempotent_second_ru\
+# n_is_noop  # noqa: E501
+# frob:tests \
+# tests/unit/test_scaffold_managed.py::TestApplyManagedBlocks.test_creates_missing_and_\
+# updates_stale  # noqa: E501
+# frob:tests \
+# tests/unit/test_scaffold_managed.py::TestApplyManagedBlocks.test_refuses_to_clobber_f\
+# oreign_hook  # noqa: E501
 def apply_managed_blocks(root: Path) -> Result[tuple[str, ...], ScaffoldError]:
     """Idempotently install/update every managed text block and the
     worktree-lease hooks under `root` (T-0736). Never fails on a foreign
