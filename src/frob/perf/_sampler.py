@@ -110,22 +110,41 @@ class StackSampler:
         self._thread: threading.Thread | None = None
         self._stop_event = threading.Event()
         self._target_ident: int | None = None
+        self._sampler_ident: int | None = None
         self.stacks: list[SampledStack] = []
 
     # frob:doc docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709
+    # frob:tests tests/unit/perf/test_serial_pools.py::TestStackSamplerAllThreads.test_samples_a_threadpool_worker_thread  # noqa: E501
     def start(self) -> None:
-        """Begin sampling the CALLING thread's frame stack in a daemon
-        background thread. A no-op if already running (idempotent, so a
-        caller does not need its own guard)."""
+        """Begin sampling every LIVE thread's frame stack in this process,
+        once per `config.interval_s`, in a daemon background thread. A
+        no-op if already running (idempotent, so a caller does not need
+        its own guard).
+
+        T-0948: `sys._current_frames()` (the snapshot `_run` samples from)
+        already returns every OS thread's frame in this process -- not
+        just the calling one -- which is why work dispatched onto a
+        `ThreadPoolExecutor` (frob's own gate dispatch spawns one from the
+        SAME interpreter the profiled workload runs in) was always
+        visible to this data source; the collector was simply discarding
+        every thread but the one that called `start()`. Sampling every
+        live thread (minus the sampler's own bookkeeping thread) fixes
+        that without touching anything outside this collector.
+        `ProcessPoolExecutor` work runs in a SEPARATE interpreter and
+        remains out of reach for this in-process mechanism -- see
+        `frob.perf._serial_pools` for how the profiling harness
+        addresses that half."""
         if self._thread is not None:
             _log.warning("StackSampler.start: already running, ignoring")
             return
         self._target_ident = threading.get_ident()
         self._stop_event.clear()
         self._thread = threading.Thread(target=self._run, daemon=True)
+        self._sampler_ident = None
         self._thread.start()
         _log.info(
-            "StackSampler.start: sampling thread ident=%s at interval_s=%.4f",
+            "StackSampler.start: sampling ALL live threads (caller ident=%s) "
+            "at interval_s=%.4f",
             self._target_ident,
             self._config.interval_s,
         )
@@ -143,23 +162,25 @@ class StackSampler:
         return self.stacks
 
     def _run(self) -> None:
-        """The sampling thread's loop: every `interval_s`, snapshot the
-        target thread's current frame via `sys._current_frames()` and
-        record one `SampledStack` (weight 1.0 per sample -- a caller
-        wanting time-weighted samples scales by `interval_s` downstream,
-        kept out of the sample itself since the interval is fixed and
-        constant-factor)."""
-        target_ident = self._target_ident
-        assert target_ident is not None
+        """The sampling thread's loop: every `interval_s`, snapshot EVERY
+        live thread's current frame via `sys._current_frames()` (T-0948:
+        this already includes any `ThreadPoolExecutor` worker thread
+        spawned from this same interpreter, not just the thread that
+        called `start()`) and record one `SampledStack` per thread other
+        than this sampling thread itself (weight 1.0 per sample-per-
+        thread -- a caller wanting time-weighted samples scales by
+        `interval_s` downstream, kept out of the sample itself since the
+        interval is fixed and constant-factor)."""
+        self._sampler_ident = threading.get_ident()
         max_depth = self._config.max_depth
         while not self._stop_event.wait(self._config.interval_s):
             frames = sys._current_frames()
-            frame = frames.get(target_ident)
-            if frame is None:
-                continue
-            stack_frames = _frame_to_stack(frame, max_depth)
-            if stack_frames:
-                self.stacks.append(SampledStack(frames=stack_frames, weight=1.0))
+            for ident, frame in frames.items():
+                if ident == self._sampler_ident:
+                    continue
+                stack_frames = _frame_to_stack(frame, max_depth)
+                if stack_frames:
+                    self.stacks.append(SampledStack(frames=stack_frames, weight=1.0))
 
 
 # frob:doc docs/modules/perf.md#hot-graph-collector-t-0710-epic-t-0709

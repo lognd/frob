@@ -85,6 +85,11 @@ from frob.perf._recursion import recursion_rules
 from frob.perf._redundancy import redundant_computation_violations
 from frob.perf._rules import perf_rules
 from frob.perf._sampler import SamplerConfig, StackSampler, run_sampled
+from frob.perf._serial_pools import (
+    SERIAL_POOLS_ENV_VAR,
+    SerialExecutor,
+    install_serial_pools,
+)
 from frob.perf._sketch_store import (
     SketchStoreConfig,
     StoredSketch,
@@ -105,6 +110,7 @@ from frob.perf._sketch_store import (
 # fix.
 
 __all__ = [
+    "SERIAL_POOLS_ENV_VAR",
     "UNATTRIBUTED_SECTION_ID",
     "CollectorError",
     "EdgeHit",
@@ -121,6 +127,7 @@ __all__ = [
     "Section",
     "SectionHit",
     "SectionIndex",
+    "SerialExecutor",
     "SketchStoreConfig",
     "StackSampler",
     "StoredSketch",
@@ -133,6 +140,7 @@ __all__ = [
     "get_sketch",
     "heat",
     "heavy_tail_advisories",
+    "install_serial_pools",
     "join_smells",
     "language_deciles",
     "list_sketches",

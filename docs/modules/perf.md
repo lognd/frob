@@ -386,10 +386,15 @@ this module.
   the caller resolves to a section but the leaf callee does not (a stdlib/
   third-party callee this repo's normalized model never modeled).
 - **The python sampler.** `StackSampler` (in `frob.perf._sampler`) runs a
-  background daemon thread that snapshots the calling thread's frame via
+  background daemon thread that snapshots EVERY LIVE THREAD's frame via
   `sys._current_frames()` every `SamplerConfig.interval_s` (10ms default),
-  converting each snapshot straight into a `SampledStack` -- the py-spy-
-  style fallback backend. On python 3.12+, `sys.monitoring` (PEP 669)
+  converting each snapshot into one `SampledStack` per thread -- the py-spy-
+  style fallback backend. T-0948: this already covers any `ThreadPoolExecutor`
+  worker thread spawned from the same interpreter (`sys._current_frames()`
+  is process-wide, not caller-thread-scoped) -- see "Pool-dispatched work
+  attribution" below for the half of this it does NOT cover
+  (`ProcessPoolExecutor`, a separate interpreter) and how the profiling
+  harness addresses that. On python 3.12+, `sys.monitoring` (PEP 669)
   is the lower-overhead backend of choice (checked via `hasattr(sys,
   "monitoring")`, `_HAS_SYS_MONITORING` in `_sampler.py`); this repo's
   pinned minimum interpreter is 3.11 (`requires-python = ">=3.11"`), so
@@ -414,6 +419,46 @@ this module.
   persisted store, are T-0711/T-0712's job; this ticket ships the
   language-neutral contract, resolver, and a harness-composable python
   producer for them to build on.
+
+## Pool-dispatched work attribution (T-0948)
+
+`frob check`'s own gate dispatch (`frob.gates._run_combined_jobs`) fans
+CPU-heavy gates onto a `ProcessPoolExecutor` and the rest onto a
+`ThreadPoolExecutor`. Neither of the three collectors above used to see
+that work: a `cProfile.Profile` enabled in the profiling harness's own
+process/thread has no visibility into a separate spawned interpreter, and
+`StackSampler` used to record only the thread that called `start()`. The
+T-0928 audit measured this directly: profiling a real `frob check` run
+resolved roughly HALF its wall time to `frob perf heat`'s "unattributed"
+bucket (237 symbols attributed, 30.349s unattributed of a ~60s artifact).
+
+Two independent fixes, one per collector family:
+
+- **`StackSampler` now samples every live thread** (this process only),
+  not just the calling one -- see the sampler bullet above. This alone
+  makes `ThreadPoolExecutor`-dispatched work visible with zero changes to
+  `frob.check`/`frob.gates`' own dispatch code, since a worker thread it
+  spawns is still a thread of the SAME interpreter `sys._current_frames()`
+  already enumerates.
+- **`frob.perf._serial_pools.install_serial_pools()`**, called by default
+  from the profiling harness (`frob.perf._harness.main`, opt out via
+  `FROB_PERF_SERIAL_POOLS=0`), replaces both `ThreadPoolExecutor` and
+  `ProcessPoolExecutor` with `SerialExecutor` -- a same-thread, same-
+  process drop-in that runs every submitted job immediately, inline, on
+  the calling thread -- for the duration of the profiled subprocess only.
+  This turns EVERY pool-dispatched job (including the `ProcessPoolExecutor`
+  half a same-process sampler still cannot see) into ordinary, fully
+  visible call stack under whatever `cProfile`/`StackSampler` instrument
+  is already running. It is the documented "serial diagnostic mode" fix
+  direction the T-0948 ticket named: a profiling pass trades real
+  wall-clock parallelism for complete CPU-time attribution, which is
+  exactly the trade a profiling pass wants. Implemented entirely inside
+  `frob.perf` (monkeypatching `concurrent.futures`'s pool-executor names,
+  both the `concurrent.futures.ThreadPoolExecutor(...)` attribute-access
+  call shape `frob.check` uses and the `from concurrent.futures import
+  ThreadPoolExecutor, ProcessPoolExecutor` bound-name shape `frob.gates`
+  uses) -- no change to `frob.gates`/`frob.check`'s own dispatch code, so
+  production `frob check` runs keep their real parallelism unconditionally.
 
 ## Hot-graph sketch store (T-0711, EPIC T-0709)
 

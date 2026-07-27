@@ -41,6 +41,14 @@ def _run_harness(tmp_path: Path, monkeypatch, sampled: bool) -> tuple[int, Path]
         monkeypatch.setenv("FROB_PERF_SAMPLE", "1")
     else:
         monkeypatch.delenv("FROB_PERF_SAMPLE", raising=False)
+    # T-0948: `main()` now installs `SerialExecutor` over `concurrent.
+    # futures`'s pool executors by default -- that patch is a deliberate
+    # global mutation meant for a real (subprocess) profiling run, and this
+    # test calls `main()` in-process, in the SAME interpreter the rest of
+    # the test session runs in. Disable it here so this test keeps
+    # exercising only the sampling wiring it is named for, and so the
+    # patch cannot leak into any test that runs afterward in this session.
+    monkeypatch.setenv("FROB_PERF_SERIAL_POOLS", "0")
     monkeypatch.setattr(sys, "argv", ["_harness.py", str(pstats_path), str(script)])
     code = _harness.main()
     return code, pstats_path
@@ -93,3 +101,54 @@ class TestHarnessSampling:
         # "hotgraph: N sample(s), M section(s) hit, ..."
         n_samples = int(message.split(" sample(s)")[0].split(": ")[1])
         assert n_samples >= 1
+
+
+class TestHarnessSerialPoolsDecision:
+    """T-0948/TEST016: `main()`'s exact `os.environ.get(SERIAL_POOLS_ENV_VAR,
+    "1") != "0"` comparison, exercised both ways via a spy on `install_
+    serial_pools` -- a `!=` -> `==` mutation at that line would flip BOTH
+    assertions below, so this kills that mutant directly rather than only
+    observing a downstream side effect."""
+
+    def _run_with_spy(self, tmp_path: Path, monkeypatch, env_value: str | None):
+        """Run `_harness.main()` with `FROB_PERF_SERIAL_POOLS` set to
+        `env_value` (or unset when `None`), spying on `install_serial_pools`
+        instead of letting it run for real (this test calls `main()`
+        in-process and must not leak the real monkeypatch into the rest of
+        the session)."""
+        calls: list[bool] = []
+        monkeypatch.setattr(
+            _harness, "install_serial_pools", lambda: calls.append(True)
+        )
+        if env_value is None:
+            monkeypatch.delenv("FROB_PERF_SERIAL_POOLS", raising=False)
+        else:
+            monkeypatch.setenv("FROB_PERF_SERIAL_POOLS", env_value)
+        monkeypatch.delenv("FROB_PERF_SAMPLE", raising=False)
+        script = tmp_path / "hot_loop.py"
+        script.write_text(_FIXTURE_SCRIPT, encoding="utf-8")
+        pstats_path = tmp_path / "out.pstats"
+        monkeypatch.setattr(sys, "argv", ["_harness.py", str(pstats_path), str(script)])
+        code = _harness.main()
+        assert code == 0
+        return calls
+
+    def test_env_unset_installs_serial_pools(self, tmp_path, monkeypatch) -> None:
+        """Unset `FROB_PERF_SERIAL_POOLS` falls through to the "1" default,
+        which is `!= "0"` -- `install_serial_pools()` IS called."""
+        calls = self._run_with_spy(tmp_path, monkeypatch, None)
+        assert calls == [True]
+
+    def test_env_one_installs_serial_pools(self, tmp_path, monkeypatch) -> None:
+        """`FROB_PERF_SERIAL_POOLS=1` explicitly is `!= "0"` -- `install_
+        serial_pools()` IS called."""
+        calls = self._run_with_spy(tmp_path, monkeypatch, "1")
+        assert calls == [True]
+
+    def test_env_zero_skips_serial_pools(self, tmp_path, monkeypatch) -> None:
+        """`FROB_PERF_SERIAL_POOLS=0` is NOT `!= "0"` -- `install_serial_
+        pools()` is NEVER called. A `!=` -> `==` mutation at the guard
+        would flip this to calling it, so this is the assertion that kills
+        that mutant."""
+        calls = self._run_with_spy(tmp_path, monkeypatch, "0")
+        assert calls == []

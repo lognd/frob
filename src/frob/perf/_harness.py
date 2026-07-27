@@ -16,6 +16,14 @@ exist yet, so this is deliberately a LOGGED summary, not a persisted
 artifact -- the first real caller of `frob.perf._hotgraph.resolve_stream`
 outside its own test suite, proving the contract composes with a real
 workload before T-0711 gives it a place to land.
+
+T-0948: unless `FROB_PERF_SERIAL_POOLS=0` is explicitly set, this harness
+also calls `frob.perf._serial_pools.install_serial_pools()` before running
+the target, so that any `ThreadPoolExecutor`/`ProcessPoolExecutor` the
+target dispatches onto (frob's own gate dispatch, most notably) executes
+inline on the already-instrumented thread instead of on invisible worker
+threads/processes -- see that module's docstring for why cProfile/
+StackSampler cannot see pool-dispatched work otherwise.
 """
 
 # frob:waive TEST005 reason="module line coverage 0.0%, debt T-0160"
@@ -38,6 +46,7 @@ from frob.logging import get_logger
 from frob.perf._collectors import build_index_for_files
 from frob.perf._hotgraph import resolve_stream
 from frob.perf._sampler import SampledStack, StackSampler
+from frob.perf._serial_pools import SERIAL_POOLS_ENV_VAR, install_serial_pools
 
 _log = get_logger(__name__)
 
@@ -76,16 +85,30 @@ def _log_hotgraph_summary(stacks: list[SampledStack]) -> None:
 
 # frob:doc docs/modules/perf.md#integration-points
 # frob:waive TEST005 reason="main 0.0% branch cover, debt T-0160"
+# frob:tests tests/unit/perf/test_harness_sampling.py::TestHarnessSerialPoolsDecision.test_env_unset_installs_serial_pools  # noqa: E501
+# frob:tests tests/unit/perf/test_harness_sampling.py::TestHarnessSerialPoolsDecision.test_env_one_installs_serial_pools  # noqa: E501
+# frob:tests tests/unit/perf/test_harness_sampling.py::TestHarnessSerialPoolsDecision.test_env_zero_skips_serial_pools  # noqa: E501
 def main() -> int:
     """Profile the target argv, dump stats, and return the workload's code.
 
     When `FROB_PERF_SAMPLE=1` is set, also runs a `StackSampler` alongside
     cProfile and logs a resolved hot-graph section-hit summary (T-0710
-    review round 2's harness wiring)."""
+    review round 2's harness wiring).
+
+    Unless `FROB_PERF_SERIAL_POOLS=0` is set, also calls `install_serial_
+    pools()` (T-0948) before running the target so pool-dispatched work
+    (`ThreadPoolExecutor`/`ProcessPoolExecutor`, frob's own gate dispatch
+    most notably) executes inline where cProfile/StackSampler can see it,
+    rather than on invisible worker threads/processes -- see the
+    TestHarnessSerialPoolsDecision tests bound above for the TEST016
+    mutant (T-0948) this exact `!= "0"` comparison used to survive."""
     if len(sys.argv) < 3:
         return 2
     out = sys.argv[1]
     target = sys.argv[2:]
+
+    if os.environ.get(SERIAL_POOLS_ENV_VAR, "1") != "0":
+        install_serial_pools()
 
     profiler = cProfile.Profile()
     sampled = os.environ.get(_SAMPLE_ENV_VAR) == "1"

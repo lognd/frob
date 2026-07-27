@@ -810,6 +810,13 @@
     "src/frob/perf/_sampler.py::StackSampler.start": "4af1b69f4ec04021dcea13aa69b436fcba4ac1b1f4a2e319632d2b52ade0ab31",
     "src/frob/perf/_sampler.py::StackSampler.stop": "ddf52bb639d1262750f64d61e840b84bdb50b821279df66f452d73d149fbe974",
     "src/frob/perf/_sampler.py::run_sampled": "0aede666ae8c145d06379f02f59e11e0c7145d50c6fe51bfac8f5d34e0a5f6f8",
+    "src/frob/perf/_serial_pools.py::SERIAL_POOLS_ENV_VAR": "07514e997c0c960afe45caed42b6d4bdfefaff53842816e4a4deb60c5d99a754",
+    "src/frob/perf/_serial_pools.py::SerialExecutor": "4437ae90912141da114c4b41dbc868d52c4aed6ac5cca4f2bbb4235afd9ef7e5",
+    "src/frob/perf/_serial_pools.py::SerialExecutor.map": "af4731f04b682bb53b3995faa0456c1e884936286e2deac8fdbc3587adc8e25c",
+    "src/frob/perf/_serial_pools.py::SerialExecutor.shutdown": "9534b26768d81f04f8723c67546e6b3db6bc820919a2875ffd97abe2de5dc0c1",
+    "src/frob/perf/_serial_pools.py::SerialExecutor.submit": "dab4ae5013ff2bd470dd24be0500b9993c5f86b5ab2abd2280954c4edf1ee503",
+    "src/frob/perf/_serial_pools.py::T": "2b415e305d0d8f7446395542a91c55ae592ab9d0cdde6f37f3c940a6d55b02c4",
+    "src/frob/perf/_serial_pools.py::install_serial_pools": "a5df769d68c5560f0147228a0346f72c81a478b00e57974875db70d1a5450e5c",
     "src/frob/perf/_sketch_store.py::SketchStoreConfig": "20e0c67e7432d8de10ae7a7d47591648cb8848af6a1a4befbbdd8510d1ecb811",
     "src/frob/perf/_sketch_store.py::StoredSketch": "df18871c74504a5a17ea437d3af7db934ec7ea5aad65e8807aebed7fb595909e",
     "src/frob/perf/_sketch_store.py::get_sketch": "d70659758bfb64b9c28ba4341f88bc68d2c741b421b9002d327d120b57ac4a47",
@@ -1623,5 +1630,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.170.0"
+  "version": "0.171.0"
 }
