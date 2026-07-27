@@ -302,7 +302,9 @@ class TestCheckTicketMutationEvidence:
         from frob.mutate import MUTATION_RUN_ENV
         from frob.tickets import load_all
 
-        if os.environ.get(MUTATION_RUN_ENV):
+        if os.environ.get(
+            MUTATION_RUN_ENV
+        ):  # frob:waive SEC110 reason="mutation-harness run-mode flag, not a secret"
             # This test is itself T-0755 evidence, so the harness re-runs it
             # against every mutant; without this skip each mutant run
             # re-enters the real-repo self-check and the suite forks

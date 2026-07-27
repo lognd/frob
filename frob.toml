@@ -218,6 +218,11 @@ TEST002 = "warn"
 TEST003 = "warn"
 TEST005 = "warn"
 TEST006 = "warn"
+# T-0973: every named SEC110 (env-secret-read) site in the repo now
+# carries either a real std.secrets mapping or a reasoned frob:waive
+# (16 unwaived findings burned down to 0) -- promote the rule from its
+# long-standing WARN-only posture to a real gate.
+SEC110 = "error"
 
 [testing]
 # min_unit_cases dropped from the 3-case aspirational target to 1 while the

@@ -1810,6 +1810,10 @@ The guard's whole job is catching an AGENT shell that wandered outside
 its assigned worktree, not restricting the coordinator's own legitimate
 cross-checkout work.
 
+T-0973: `enforce_worktree_lease`'s `FROB_WORKTREE_ENV` read carries a
+`frob:waive SEC110 reason="..."` -- it is a worktree-lease path marker,
+not a secret.
+
 **Git hook (defense in depth).**
 `frob.scaffold.install_worktree_lease_hook(root, *, force=False)`
 (docs/commands/scaffold.md) installs `pre-commit` and `pre-merge-commit`

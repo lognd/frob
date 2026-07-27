@@ -107,10 +107,12 @@ def main() -> int:
     out = sys.argv[1]
     target = sys.argv[2:]
 
+    # frob:waive SEC110 reason="pool-serialization behavior toggle, not a secret"
     if os.environ.get(SERIAL_POOLS_ENV_VAR, "1") != "0":
         install_serial_pools()
 
     profiler = cProfile.Profile()
+    # frob:waive SEC110 reason="stack-sampling opt-in flag, not a secret"
     sampled = os.environ.get(_SAMPLE_ENV_VAR) == "1"
     sampler = StackSampler() if sampled else None
     code = 0

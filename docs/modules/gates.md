@@ -1280,6 +1280,17 @@ structures and env-var access sites, drawn from
 - **SEC110**: an `os.environ[...]`/`os.environ.get(...)`/`os.getenv(...)`
   call/subscript site fires -- an unmapped secret-source observation,
   waivable via `frob:waive SEC110 reason="..."`.
+- **T-0973**: SEC110 was promoted from WARN to ERROR in `[gates.severity]`
+  (`frob.toml`) after every one of the 16 unwaived findings named in
+  T-0399's gates-quality audit was disposed of -- 13 got a reasoned
+  `frob:waive SEC110 reason="..."` (behavior flags, internal reentrancy/
+  worker-log markers, cache paths, and test-only synthetic vars, none of
+  them a real secret), and 3 more (`src/frob/gates/__init__.py`'s
+  `_rel001_bump_suppressed_under_agent` and its worker log-level markers)
+  were folded into the same fix once T-0973's scope was extended to that
+  file. `tests/test_gates.py::TestSeverityOverrides.
+  test_sec110_promoted_to_error_gates_a_real_repo_toml` is the before-
+  fails/after-passes fixture proving the promotion actually gates.
 - Both rules are file-scoped (same waiver-matching mode as SEC001-003:
   `violation.symref` is `None`, so a waiver anywhere in the file suppresses
   every hit in it).

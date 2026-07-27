@@ -1358,7 +1358,9 @@ class TestArchiveSpliceDiscipline:
         # a one-sided fast-forward git can resolve on its own).
         from frob.tickets import archive
 
-        sibling = new_ticket(wt, _spec("Sibling archived in worktree", scope=("src/sib.py",)))
+        sibling = new_ticket(
+            wt, _spec("Sibling archived in worktree", scope=("src/sib.py",))
+        )
         assert sibling.is_ok
         sibling_id = sibling.danger_ok.id
         _make_closeable(wt, sibling_id)
@@ -3822,14 +3824,22 @@ class TestLandInternalEnvThroughHook:
         # frob:tests src/frob/tickets/_land.py::_land_internal_git_env kind="unit"
         os.environ.pop("FROB_LAND_INTERNAL", None)
         with _land_mod._land_internal_git_env():
-            assert os.environ.get("FROB_LAND_INTERNAL") == "1"
+            assert (
+                os.environ.get("FROB_LAND_INTERNAL") == "1"
+            )  # frob:waive SEC110 reason="synthetic test-only var this test itself sets"
         assert "FROB_LAND_INTERNAL" not in os.environ
 
-        os.environ["FROB_LAND_INTERNAL"] = "prior-value"
+        os.environ["FROB_LAND_INTERNAL"] = (
+            "prior-value"  # frob:waive SEC110 reason="synthetic test-only var this test itself sets"
+        )
         try:
             with _land_mod._land_internal_git_env():
-                assert os.environ.get("FROB_LAND_INTERNAL") == "1"
-            assert os.environ.get("FROB_LAND_INTERNAL") == "prior-value"
+                assert (
+                    os.environ.get("FROB_LAND_INTERNAL") == "1"
+                )  # frob:waive SEC110 reason="synthetic test-only var this test itself sets"
+            assert (
+                os.environ.get("FROB_LAND_INTERNAL") == "prior-value"
+            )  # frob:waive SEC110 reason="synthetic test-only var this test itself sets"
         finally:
             os.environ.pop("FROB_LAND_INTERNAL", None)
 

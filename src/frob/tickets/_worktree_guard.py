@@ -65,6 +65,7 @@ def enforce_worktree_lease(root: Path) -> Result[None, TicketError]:
     resolution, it never invents a new failure mode for an already-broken
     `root`.
     """
+    # frob:waive SEC110 reason="worktree-lease path marker, not a secret"
     leased = os.environ.get(FROB_WORKTREE_ENV, "").strip()
     if not leased:
         return Ok(None)

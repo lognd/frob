@@ -868,8 +868,10 @@ def _refuse_full_check_for_agent(cfg: AppConfig) -> bool:
     specific invocation back into the full run, for the rare case a
     human/coordinator genuinely wants it from a `FROB_AGENT`-flagged shell.
     """
+    # frob:waive SEC110 reason="worktree-agent detection flag, not a secret"
     if not os.environ.get(_FROB_AGENT_ENV):
         return False
+    # frob:waive SEC110 reason="opt-in escape-hatch flag, not a secret"
     if os.environ.get(_FROB_ALLOW_FULL_CHECK_ENV) == "1":
         return False
     if cfg.check_only:

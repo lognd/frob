@@ -930,3 +930,6 @@ def main() -> int
 - Agents: implementer runs `frob perf heat --smells` when a ticket is
   perf-flavored; reviewer treats an introduced PERF001-at-error as a
   close blocker.
+- T-0973: `main`'s `SERIAL_POOLS_ENV_VAR`/`_SAMPLE_ENV_VAR` env-var reads
+  each carry a `frob:waive SEC110 reason="..."` -- both are behavior
+  toggles (pool-serialization mode, stack-sampling opt-in), not secrets.

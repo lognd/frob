@@ -7091,6 +7091,39 @@ class TestSeverityOverrides:
         )
         assert _apply_severity_overrides(violations, tmp_path) == violations
 
+    def test_sec110_promoted_to_error_gates_a_real_repo_toml(self, tmp_path):
+        # frob:tests src/frob/gates/__init__.py::_apply_severity_overrides kind="unit"
+        # T-0973 before-fails/after-passes fixture: proves the SEC110
+        # WARN -> ERROR promotion in this repo's own frob.toml actually
+        # changes gate outcome, not merely that the override table parses.
+        # FAIL: with no [gates.severity] entry for SEC110 (the pre-T-0973
+        # posture), an unwaived SEC110 finding stays WARN and never blocks
+        # `frob check`.
+        from frob.gates import Severity, Violation, _apply_severity_overrides
+
+        (tmp_path / "frob.toml").write_text("", encoding="utf-8")
+        finding = (
+            Violation(
+                rule="SEC110",
+                severity=Severity.WARN,
+                file="src/frob/example.py",
+                line=1,
+                message="reads os.environ.get(...)",
+            ),
+        )
+        before = _apply_severity_overrides(finding, tmp_path)
+        assert before[0].severity == Severity.WARN, (
+            "FAIL case: no override leaves SEC110 at WARN"
+        )
+
+        # PASS: this repo's real frob.toml (with T-0973's SEC110 = "error"
+        # line in place) promotes the same finding to ERROR.
+        repo_root = Path(__file__).resolve().parents[1]
+        after = _apply_severity_overrides(finding, repo_root)
+        assert after[0].severity == Severity.ERROR, (
+            "PASS case: repo frob.toml now gates SEC110 at ERROR"
+        )
+
 
 class TestDoclinkGate:
     def test_orphan_doc_is_error_and_linked_docs_pass(self, tmp_path):

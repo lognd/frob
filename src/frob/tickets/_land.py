@@ -104,7 +104,9 @@ def _land_internal_git_env() -> Iterator[None]:
     deadlocks land against itself. Restores the prior value (or absence)
     of the variable on exit rather than leaking it into unrelated spawns
     this process makes afterward."""
+    # frob:waive SEC110 reason="internal reentrancy marker, not a secret"
     prior = os.environ.get("FROB_LAND_INTERNAL")
+    # frob:waive SEC110 reason="internal reentrancy marker, not a secret"
     os.environ["FROB_LAND_INTERNAL"] = "1"
     try:
         yield
@@ -112,6 +114,7 @@ def _land_internal_git_env() -> Iterator[None]:
         if prior is None:
             os.environ.pop("FROB_LAND_INTERNAL", None)
         else:
+            # frob:waive SEC110 reason="restoring reentrancy marker, not a secret"
             os.environ["FROB_LAND_INTERNAL"] = prior
 
 

@@ -9020,6 +9020,7 @@ def _rel001_bump_suppressed_under_agent() -> bool:
     below -- a shell that sets `FROB_AGENT` by hand still gets the same
     suppression it always has, with no worktree/lease evidence required.
     """
+    # frob:waive SEC110 reason="worktree-agent detection flag, not a secret"
     return bool(os.environ.get("FROB_AGENT"))
 
 
@@ -10464,6 +10465,7 @@ def _run_process_gate(
     that constant's docstring for why a worker process needs this at all
     (it never inherits the parent's in-memory logging clamp, only its
     environment)."""
+    # frob:waive SEC110 reason="worker log-level marker, not a secret"
     level_name = os.environ.get(_WORKER_STDOUT_LOG_LEVEL_ENV)
     if level_name:
         from frob.logging.quiet import _stdout_stream_handlers
@@ -10627,6 +10629,7 @@ def _open_process_pool(process_jobs: dict[str, _ProcessJob]) -> ProcessPoolExecu
 
     handlers = _stdout_stream_handlers()
     if handlers:
+        # frob:waive SEC110 reason="worker log-level marker, not a secret"
         os.environ[_WORKER_STDOUT_LOG_LEVEL_ENV] = logging.getLevelName(
             handlers[0].level
         )
