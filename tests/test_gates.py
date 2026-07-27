@@ -6588,13 +6588,19 @@ class TestRunJobsTimingAttribution:
             )
 
 
+# frob:ticket T-0947
 class TestProcessPoolGates:
     """T-0415: CPU-bound gates (archgate, sys, clones, perf, pii_structural,
     secrets -- docs/audits/perf.md H3) run in a `ProcessPoolExecutor`
     instead of the shared thread pool, so the GIL no longer serializes
     them. `_run_combined_jobs` must (a) actually dispatch process jobs to a
     worker process, and (b) merge results back in `_CANONICAL_GATE_ORDER`
-    regardless of pool/completion order, so output stays deterministic."""
+    regardless of pool/completion order, so output stays deterministic.
+
+    T-0947 added `test_open_process_pool_preloads_forkserver_when_available`
+    to this class -- covering `_open_process_pool`'s `forkserver`+preload
+    cold-start fix -- without otherwise changing this class's pre-existing
+    T-0415 tests."""
 
     def test_process_job_runs_in_a_separate_process(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/__init__.py::_run_combined_jobs
@@ -6740,6 +6746,56 @@ class TestProcessPoolGates:
         serial_sorted = sorted(serial_violations, key=key)
         assert parallel_sorted == serial_sorted
         assert len(parallel_violations) == len(serial_violations)
+
+    def test_open_process_pool_preloads_forkserver_when_available(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:ticket T-0947
+        # frob:tests src/frob/gates/__init__.py::_open_process_pool
+        # frob:tests src/frob/gates/__init__.py::_process_pool_start_method
+        """T-0947: `_open_process_pool` must pick `forkserver` (with
+        `_FORKSERVER_PRELOAD` set on the context) whenever this platform's
+        `multiprocessing.get_all_start_methods()` offers it, and must
+        actually call `set_forkserver_preload` on THAT context object
+        (asserted via the context's own `_preload` attribute, not just
+        absence of an exception) -- a `==` -> `!=` mutation on the
+        start-method check would silently skip the preload call on every
+        platform that supports `forkserver` (this repo's own CI/dev
+        platform included) while still passing every OTHER test in this
+        class, since none of them inspect the constructed pool's own
+        `mp_context`."""
+        import multiprocessing
+        import multiprocessing.forkserver as mp_forkserver
+
+        from frob.gates import (
+            _FORKSERVER_PRELOAD,
+            _ProcessJob,
+            _open_process_pool,
+            _process_pool_start_method,
+        )
+
+        process_jobs = {
+            "clones": _ProcessJob(_module_level_process_violation, (tmp_path, "x")),
+        }
+        ppool = _open_process_pool(process_jobs)
+        try:
+            ctx = ppool._mp_context
+            expected_method = _process_pool_start_method()
+            assert ctx.get_start_method() == expected_method
+            if expected_method == "forkserver":
+                # `set_forkserver_preload` stores its argument on the
+                # process-wide `multiprocessing.forkserver._forkserver`
+                # singleton's own `_preload_modules` list, not on the
+                # context object itself -- reading it back proves the
+                # preload call actually ran rather than merely that no
+                # exception was raised.
+                assert (
+                    list(mp_forkserver._forkserver._preload_modules)
+                    == list(_FORKSERVER_PRELOAD)
+                )
+        finally:
+            ppool.shutdown(wait=True)
+        assert "forkserver" in multiprocessing.get_all_start_methods()
 
 
 class TestSeverityOverrides:

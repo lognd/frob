@@ -10229,22 +10229,67 @@ def _merge_canonical_order(raw: dict[str, tuple[Violation, ...]]) -> list[Violat
     return violations
 
 
+#: T-0947: preloaded once inside the `forkserver` helper process's own
+#: startup (not per-worker) when that context is used -- `frob.gates`
+#: transitively imports every process-pool gate's home module (`frob.perf`,
+#: `frob.dup`, `frob.arch`, ...) as well as `frob_core`/`strata_core`, so
+#: importing this one name absorbs the whole cold-import cost this
+#: ticket measured. Kept as a private module-level constant (not inlined)
+#: so `_open_process_pool` and any future direct test of the preload list
+#: read the same value.
+# frob:ticket T-0947
+_FORKSERVER_PRELOAD: tuple[str, ...] = ("frob.gates",)
+
+
+def _process_pool_start_method() -> str:
+    """Pick `forkserver` when this platform's `multiprocessing` offers it
+    (T-0947), else fall back to `spawn`. Both start methods share the
+    T-0581 safety property this module depends on -- the new worker
+    process is launched via a fresh `exec`, never a raw `fork()` of the
+    (possibly multi-threaded) calling process -- `forkserver` only forks
+    from its own single-threaded helper process, which is why the
+    upstream `multiprocessing` docs call that helper safe to `fork()`
+    from regardless of how many threads the ORIGINAL caller has. `fork`
+    (bare, no exec) is never selected here; see `_run_combined_jobs`'s
+    docstring for why that one is unsafe on this code path."""
+    if "forkserver" in multiprocessing.get_all_start_methods():
+        return "forkserver"
+    return "spawn"
+
+
 # frob:ticket T-0767
 # frob:ticket T-0806
+# frob:ticket T-0947
 def _open_process_pool(process_jobs: dict[str, _ProcessJob]) -> ProcessPoolExecutor:
-    """Construct the spawn-context `ProcessPoolExecutor` for `process_jobs`
-    (which must be non-empty). Hoisted out of `_run_combined_jobs` (T-0767)
-    so no single function constructs BOTH pools -- the T-0695
-    `pool-inside-pool` advisory is a same-function co-occurrence heuristic
-    and unwaivable by design, so the safe shape must also be the
-    structurally clean one. `mp_context=spawn` is the LOAD-BEARING half of
-    T-0581's fix (see `_run_combined_jobs`); do not remove it.
+    """Construct the `ProcessPoolExecutor` for `process_jobs` (which must be
+    non-empty). Hoisted out of `_run_combined_jobs` (T-0767) so no single
+    function constructs BOTH pools -- the T-0695 `pool-inside-pool`
+    advisory is a same-function co-occurrence heuristic and unwaivable by
+    design, so the safe shape must also be the structurally clean one.
+
+    T-0947: uses `forkserver` (falling back to `spawn` where unavailable,
+    `_process_pool_start_method`) with `_FORKSERVER_PRELOAD` imported once
+    in the forkserver helper process, instead of `spawn`'s per-worker cold
+    import. Measured cause (docs/audits/check-performance.md Finding 3,
+    T-0947's own isolation pass): each `spawn` worker cold-imports
+    `frob.gates` itself before running its job, at ~0.5-0.7s per worker
+    (NOT the ~18s the audit's back-of-envelope estimate guessed) --
+    `forkserver` pays that import cost once, in its own helper process,
+    then every actual worker forks from an already-imported helper at
+    near-zero cost. Measured with the helper pre-warmed: per-worker
+    spawn-to-start latency dropped from ~0.53-0.74s (spawn) to
+    ~0.24-0.47s (forkserver+preload) on this repo's own `gates-native`
+    job set -- see T-0947's Done report for the exact before/after
+    numbers. `mp_context` choice does NOT change T-0581's fix: neither
+    `spawn` nor `forkserver` ever raw-forks the (possibly multi-threaded)
+    calling process directly, which is the property T-0581's fix actually
+    depends on -- do not swap either for bare `fork`.
 
     T-0806: stamps `_WORKER_STDOUT_LOG_LEVEL_ENV` with the parent's current
-    stdout log handler level BEFORE constructing the pool (spawn workers
-    start as soon as the pool exists, not on first `submit`) so every
-    worker `_run_process_gate` runs in clamps its own default-DEBUG
-    logging to match -- see `_WORKER_STDOUT_LOG_LEVEL_ENV`'s docstring."""
+    stdout log handler level BEFORE constructing the pool (workers start
+    as soon as the pool exists, not on first `submit`) so every worker
+    `_run_process_gate` runs in clamps its own default-DEBUG logging to
+    match -- see `_WORKER_STDOUT_LOG_LEVEL_ENV`'s docstring."""
     from frob.logging.quiet import _stdout_stream_handlers
 
     handlers = _stdout_stream_handlers()
@@ -10255,9 +10300,12 @@ def _open_process_pool(process_jobs: dict[str, _ProcessJob]) -> ProcessPoolExecu
     # Bounded worker count (constraint 4): never more workers than
     # jobs, never more than the machine's CPU count.
     proc_workers = max(1, min(len(process_jobs), os.cpu_count() or 4))
+    ctx = multiprocessing.get_context(_process_pool_start_method())
+    if ctx.get_start_method() == "forkserver":
+        ctx.set_forkserver_preload(list(_FORKSERVER_PRELOAD))
     return ProcessPoolExecutor(
         max_workers=proc_workers,
-        mp_context=multiprocessing.get_context("spawn"),
+        mp_context=ctx,
     )
 
 
