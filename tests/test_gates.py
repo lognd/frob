@@ -6826,7 +6826,7 @@ class TestProcessPoolGates:
         try:
             ctx = ppool._mp_context
             expected_method = _process_pool_start_method()
-            assert ctx.get_start_method() == expected_method
+            assert ctx.get_start_method() == expected_method  # ty: ignore[unresolved-attribute]
             if expected_method == "forkserver":
                 # `set_forkserver_preload` stores its argument on the
                 # process-wide `multiprocessing.forkserver._forkserver`
@@ -6834,9 +6834,9 @@ class TestProcessPoolGates:
                 # context object itself -- reading it back proves the
                 # preload call actually ran rather than merely that no
                 # exception was raised.
-                assert list(mp_forkserver._forkserver._preload_modules) == list(
-                    _FORKSERVER_PRELOAD
-                )
+                assert list(
+                    mp_forkserver._forkserver._preload_modules  # ty: ignore[unresolved-attribute]
+                ) == list(_FORKSERVER_PRELOAD)
         finally:
             ppool.shutdown(wait=True)
         assert "forkserver" in multiprocessing.get_all_start_methods()
