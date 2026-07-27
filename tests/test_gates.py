@@ -666,6 +666,105 @@ class TestCoverageGate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV002" for v in violations)
 
+    # frob:ticket T-0965
+    def test_cov002_scope_grace_covers_ticket_created_and_closed_in_same_diff(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0965: the T-0590 same-diff grace window extends to SCOPE-based
+        coverage too, not just a direct `frob:ticket` edge. A ticket that
+        covered a whole file by declared `scope` (no per-symbol directive on
+        `helper`) and was created AND closed entirely within the current
+        uncommitted diff must still cover its scoped symbols -- otherwise
+        the instant such a ticket closes to `DONE`, every symbol it covered
+        only by scope starts failing COV002 even though the closing
+        ticket's own commit is still part of the exact same unlanded diff
+        COV002 evaluates (the false positive T-0965 investigates)."""
+        source = "def helper(x):\n    return x\n"
+        _write(tmp_path, "src/a.py", source)
+        _git_init(tmp_path)
+        done_ticket = _ticket(state=TicketState.DONE, scope=("src/a.py",))
+        _write_ticket(tmp_path, done_ticket)
+        marker_line = _marker_line(tmp_path, "T-0001")
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/a.py::helper"]
+        base_sha = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        diff = Diff(
+            base=base_sha,
+            hunks=(
+                Hunk(file="src/a.py", span=record.span),
+                Hunk(file="tickets.md", span=(marker_line, marker_line)),
+            ),
+        )
+        queue = TicketQueue(tickets={"T-0001": done_ticket})
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV002" for v in violations)
+
+    # frob:ticket T-0965
+    def test_cov002_scope_grace_without_same_diff_close_still_fires(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0965 regression guard: a ticket that covers `src/a.py` by scope
+        but is ALREADY `DONE` before this diff (not a same-diff close) must
+        NOT extend grace -- otherwise every symbol in a file a long-closed
+        ticket happened to scope would be permanently uncovered."""
+        source = "def helper(x):\n    return x\n"
+        _write(tmp_path, "src/a.py", source)
+        done_ticket = _ticket(state=TicketState.DONE, scope=("src/a.py",))
+        _write_ticket(tmp_path, done_ticket)
+        _git_init(tmp_path)
+        # Touch the ticket's own section again (still DONE) -- simulates an
+        # unrelated later edit to tickets.md that happens to touch this
+        # ticket's marker hunk, not a genuine open -> DONE transition.
+        _write_ticket(tmp_path, done_ticket)
+        marker_line = _marker_line(tmp_path, "T-0001")
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/a.py::helper"]
+        base_sha = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        diff = Diff(
+            base=base_sha,
+            hunks=(
+                Hunk(file="src/a.py", span=record.span),
+                Hunk(file="tickets.md", span=(marker_line, marker_line)),
+            ),
+        )
+        queue = TicketQueue(tickets={"T-0001": done_ticket})
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert any(v.rule == "COV002" for v in violations)
+
+    # frob:ticket T-0965
+    def test_open_scopes_grace_requires_both_root_and_diff(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0965 mutant-pin: `_open_scopes`'s grace extension must require
+        BOTH `root` and `diff` (an And, not an Or) -- passing only one must
+        quietly skip the extension, never attempt it. Under an Or mutant,
+        supplying only `root` (diff=None) would still enter the extension
+        branch and crash on `diff.base`, and supplying only `diff`
+        (root=None) would crash resolving the base ledger with a `None`
+        root -- both distinguish the mutant from the real And semantics
+        without needing a git repo at all."""
+        from frob.gates import _open_scopes
+
+        done_ticket = _ticket(state=TicketState.DONE, scope=("src/a.py",))
+        queue = TicketQueue(tickets={"T-0001": done_ticket})
+        diff = Diff(base="deadbeef", hunks=())
+        assert _open_scopes(queue, root=str(tmp_path), diff=None) == []
+        assert _open_scopes(queue, root=None, diff=diff) == []
+
     # frob:ticket T-0564
     def test_cov002_grace_matches_hunk_anywhere_in_ticket_block(
         self, tmp_path: Path
@@ -9148,27 +9247,17 @@ class TestKnownGateRuleIds:
     # exactly this ticket's own defect class.
     #
     # frob:ticket T-0964
+    # frob:ticket T-0966
     # T-0964 extended the drift-lock below to also resolve `rule=
     # CONST_NAME` references (not just inline `rule="..."` literals),
-    # which surfaced a real, pre-existing gap: SYS100-102/SYS200-203 are
+    # which surfaced a real, pre-existing gap: SYS100-102/SYS200-203 were
     # genuinely emitted via module-level constants in _selfconform.py/
-    # _contention.py but were never added to `_KNOWN_GATE_RULES`. T-0964's
-    # own scope is tests/test_gates.py only, so the fix (adding these
-    # seven ids to `_KNOWN_GATE_RULES` in src/frob/gates/__init__.py) is
-    # filed separately as T-0966 rather than folded in here;
-    # parked in this allowlist until that lands, exactly as T-0901's own
-    # batch was parked before T-0924 paid it down.
-    _KNOWN_ISSUE_ALLOWLIST: frozenset[str] = frozenset(
-        {
-            "SYS100",
-            "SYS101",
-            "SYS102",
-            "SYS200",
-            "SYS201",
-            "SYS202",
-            "SYS203",
-        }
-    )
+    # _contention.py but were not yet added to `_KNOWN_GATE_RULES`. T-0966
+    # added all seven entries there, so nothing needs parking here anymore.
+    # Kept as an empty frozenset (not deleted) so a future gap has an
+    # obvious place to land pending its own fix, exactly as the T-0901/
+    # T-0924 batch precedent above.
+    _KNOWN_ISSUE_ALLOWLIST: frozenset[str] = frozenset()
 
     # frob:ticket T-0901
     # frob:ticket T-0924

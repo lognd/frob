@@ -993,6 +993,7 @@ def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # `_apply_waivers` below) -- a waiver targeting anything outside this set
 # can never match, so WAIVE002 treats that as the definition of
 # "unwaivable channel" rather than hardcoding a channel allowlist.
+# frob:tests tests/test_gates.py::TestKnownGateRuleIds.test_every_emitted_rule_literal_is_known  # noqa: E501
 _KNOWN_GATE_RULES = frozenset(
     {
         "COV001",
@@ -1448,6 +1449,26 @@ _KNOWN_GATE_RULES = frozenset(
         "REL395",
         "REL396",
         "REL397",
+        # frob:ticket T-0966
+        # T-0964's constant-scan extension to
+        # test_every_emitted_rule_literal_is_known resolves `rule=CONST_NAME`
+        # references (not just inline `rule="..."` literals) and surfaced
+        # a real, pre-existing gap: these seven ids are genuinely emitted
+        # via module-level constants but were never added here.
+        #   _selfconform.py:213  SYS_UNDECLARED_INTERFACE = "SYS100"
+        #   _selfconform.py:559  SYS_STALE_DESIGN         = "SYS101"
+        #   _selfconform.py:630  SYS_UNMODELED_CODE       = "SYS102"
+        #   _contention.py:193   SYS_DUPLICATE_PORT       = "SYS200"
+        #   _contention.py:291   SYS_OVERLAPPING_PATH     = "SYS201"
+        #   _contention.py:341   SYS_SHARED_PIPE          = "SYS202"
+        #   _contention.py:379   SYS_SHARED_STORE_WRITE   = "SYS203"
+        "SYS100",
+        "SYS101",
+        "SYS102",
+        "SYS200",
+        "SYS201",
+        "SYS202",
+        "SYS203",
     }
 )
 
@@ -3011,13 +3032,42 @@ def _cov001(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     return tuple(violations)
 
 
-def _open_scopes(queue: TicketQueue) -> list[tuple[str, tuple[str, ...]]]:
-    """`(ticket_id, scope)` for every open ticket that declares a scope."""
-    return [
+# frob:ticket T-0965
+# frob:tests tests/test_gates.py::TestCoverageGate.test_cov002_scope_grace_covers_ticket_created_and_closed_in_same_diff  # noqa: E501
+def _open_scopes(
+    queue: TicketQueue, root: str | None = None, diff: Diff | None = None
+) -> list[tuple[str, tuple[str, ...]]]:
+    """`(ticket_id, scope)` for every open ticket that declares a scope,
+    PLUS (T-0965 grace, mirroring `_bound_to_open_ticket`'s T-0214/T-0320/
+    T-0590 edge-based grace window) a `DONE` ticket whose declared scope
+    is otherwise unaccounted for, when its own close transition is landing
+    within this same uncommitted `diff`'s `tickets.md` hunk(s) AND its
+    state at `diff.base` permits grace (open, or nonexistent -- see
+    `_base_state_permits_grace`).
+
+    Without this, a ticket that covered a whole file/module by SCOPE
+    (rather than a per-symbol `frob:ticket` edge) stops covering any of its
+    symbols the instant it closes to `DONE` -- even though its own closing
+    commit is still sitting, unlanded, in the very same diff COV002
+    evaluates. `root`/`diff` are optional (default `None`, no grace
+    extension) so existing callers that only care about open-ticket scope
+    (e.g. tests exercising `_scope_covers` directly) are unaffected."""
+    result = [
         (t.id, t.scope)
         for t in queue.tickets.values()
         if t.state in _OPEN_STATES and t.scope
     ]
+    if root is not None and diff is not None:
+        base_states = _ledger_states_at_base(root, diff.base)
+        result.extend(
+            (t.id, t.scope)
+            for t in queue.tickets.values()
+            if t.scope
+            and t.state == TicketState.DONE
+            and _ticket_marker_in_diff_hunk(root, diff, t.id)
+            and _base_state_permits_grace(base_states.get(t.id))
+        )
+    return result
 
 
 # frob:ticket T-0542
@@ -3312,7 +3362,7 @@ def _cov002(
     covers its own closing diff (T-0214): see `_bound_to_open_ticket`'s
     grace-window docstring for why that is not a genuine gap.
     """
-    open_scopes = _open_scopes(queue)
+    open_scopes = _open_scopes(queue, snapshot.root, diff)
     touched = sorted(_touched_symrefs(diff, snapshot))
     violations = [
         v
