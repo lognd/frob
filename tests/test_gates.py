@@ -621,6 +621,51 @@ class TestCoverageGate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV002" for v in violations)
 
+    # frob:ticket T-0590
+    def test_cov002_grace_covers_ticket_created_and_closed_in_same_diff(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0590: a ticket that was CREATED (via `frob ticket new`) and then
+        CLOSED entirely within the current uncommitted diff -- e.g. a
+        worktree agent's own `frob ticket new` + work + `frob ticket close`
+        cycle that has not yet landed to `main` -- has NO entry for that
+        ticket id in `tickets.md` at the diff's base commit at all (not
+        merely a non-open state); `_ledger_states_at_base` correctly returns
+        `None` for it. The pre-fix check (`state_at_base in _OPEN_STATES`)
+        treated `None` the same as "already closed before this diff" and
+        denied grace, reproducing the sequential-same-worktree-close COV002
+        regression this ticket investigates: closing tickets that were
+        themselves only ever created inside the current (not-yet-landed)
+        branch lost their own closing-diff coverage. Base here has no
+        `tickets.md` at all (mirrors a fresh worktree diverged from a `main`
+        that predates this ticket's own creation)."""
+        source = "def helper(x):\n    # frob:ticket T-0001\n    return x\n"
+        _write(tmp_path, "src/a.py", source)
+        _git_init(tmp_path)
+        done_ticket = _ticket(state=TicketState.DONE)
+        _write_ticket(tmp_path, done_ticket)
+        marker_line = _marker_line(tmp_path, "T-0001")
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/a.py::helper"]
+        base_sha = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        diff = Diff(
+            base=base_sha,
+            hunks=(
+                Hunk(file="src/a.py", span=record.span),
+                Hunk(file="tickets.md", span=(marker_line, marker_line)),
+            ),
+        )
+        queue = TicketQueue(tickets={"T-0001": done_ticket})
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV002" for v in violations)
+
     # frob:ticket T-0564
     def test_cov002_grace_matches_hunk_anywhere_in_ticket_block(
         self, tmp_path: Path
@@ -6769,9 +6814,9 @@ class TestProcessPoolGates:
 
         from frob.gates import (
             _FORKSERVER_PRELOAD,
-            _ProcessJob,
             _open_process_pool,
             _process_pool_start_method,
+            _ProcessJob,
         )
 
         process_jobs = {
@@ -6789,9 +6834,8 @@ class TestProcessPoolGates:
                 # context object itself -- reading it back proves the
                 # preload call actually ran rather than merely that no
                 # exception was raised.
-                assert (
-                    list(mp_forkserver._forkserver._preload_modules)
-                    == list(_FORKSERVER_PRELOAD)
+                assert list(mp_forkserver._forkserver._preload_modules) == list(
+                    _FORKSERVER_PRELOAD
                 )
         finally:
             ppool.shutdown(wait=True)

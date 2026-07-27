@@ -2979,17 +2979,20 @@ def _ticket_edges(snapshot: GraphSnapshot, symref: str) -> list[Edge]:
 
 # frob:ticket T-0214
 # frob:ticket T-0320
+# frob:ticket T-0590
 # frob:tests tests/test_gates.py::TestCoverageGate.test_cov002_done_ticket_covers_own_closing_diff  # noqa: E501
 # frob:tests tests/test_gates.py::TestCoverageGate.test_cov002_done_ticket_without_grace_still_fires  # noqa: E501
 # frob:tests tests/test_gates.py::TestCoverageGate.test_cov002_stale_done_ticket_unrelated_tickets_md_touch_still_fires  # noqa: E501
 # frob:tests tests/test_gates.py::TestCoverageGate.test_cov002_marker_touch_without_state_transition_still_fires  # noqa: E501
+# frob:tests tests/test_gates.py::TestCoverageGate.test_cov002_grace_covers_ticket_created_and_closed_in_same_diff  # noqa: E501
 def _bound_to_open_ticket(
     snapshot: GraphSnapshot, queue: TicketQueue, symref: str, diff: Diff | None = None
 ) -> bool:
     """True if `symref` has a `frob:ticket` edge to an open ticket, OR (T-0214
-    grace window, T-0320 tightened) to a ticket whose OWN close is landing to
-    `DONE` within this same uncommitted `diff`'s `tickets.md` hunk(s) AND
-    whose state at the diff's base commit was actually open.
+    grace window, T-0320 tightened, T-0590 widened) to a ticket whose OWN
+    close is landing to `DONE` within this same uncommitted `diff`'s
+    `tickets.md` hunk(s) AND whose state at the diff's base commit was
+    either open or nonexistent (see `_base_state_permits_grace`).
 
     Closing the covering ticket and landing the symbol edit it covers is one
     logical change; if THIS ticket's `<!-- ticket:T-#### -->` marker falls
@@ -3003,12 +3006,19 @@ def _bound_to_open_ticket(
     PROXY for "closing" (T-0320): a typo fix, evidence append, or reformat
     inside an already-`DONE` ticket's section also touches its marker line
     without ever transitioning it, so grace additionally requires the
-    ticket's state at `diff.base` (before this diff) to have been open --
-    see `_ledger_states_at_base`. Once the close lands as its own commit
-    (tickets.md drops out of the diff, the hunk no longer spans this
-    ticket's marker, or the ticket was already `DONE` at `diff.base`), a
-    `DONE` ticket's edge stops counting here, same as before, so a truly
-    unrelated later touch to the symbol is still caught.
+    ticket's state at `diff.base` (before this diff) to have been open OR
+    the ticket to not have existed at `diff.base` at all -- see
+    `_ledger_states_at_base` and `_base_state_permits_grace`. The latter
+    (T-0590) matters for a ticket created AND closed entirely within the
+    current uncommitted work (a `frob ticket new` + close cycle that has
+    not yet landed to `main`): it has no `tickets.md` entry at base, so
+    without this widening its own close would be wrongly treated as a
+    stale pre-existing `DONE` edge instead of the genuine same-diff
+    transition it is. Once the close lands as its own commit (tickets.md
+    drops out of the diff, the hunk no longer spans this ticket's marker,
+    or the ticket was already `DONE` at `diff.base`), a `DONE` ticket's
+    edge stops counting here, same as before, so a truly unrelated later
+    touch to the symbol is still caught.
     """
     for edge in _ticket_edges(snapshot, symref):
         ticket = queue.tickets.get(edge.target)
@@ -3020,11 +3030,37 @@ def _bound_to_open_ticket(
             diff is not None
             and ticket.state == TicketState.DONE
             and _ticket_marker_in_diff_hunk(snapshot.root, diff, ticket.id)
-            and _ledger_states_at_base(snapshot.root, diff.base).get(ticket.id)
-            in _OPEN_STATES
+            and _base_state_permits_grace(
+                _ledger_states_at_base(snapshot.root, diff.base).get(ticket.id)
+            )
         ):
             return True
     return False
+
+
+# frob:ticket T-0590
+# frob:tests tests/test_gates.py::TestCoverageGate.test_cov002_grace_covers_ticket_created_and_closed_in_same_diff  # noqa: E501
+def _base_state_permits_grace(state_at_base: TicketState | None) -> bool:
+    """True if a ticket's state at the diff's base commit is consistent with
+    a genuine open -> DONE transition happening WITHIN this diff, including
+    the ticket not existing at base at all.
+
+    T-0590: a ticket entirely created AND closed since diverging from the
+    diff's base (e.g. `frob ticket new` + work + `frob ticket close`, all
+    uncommitted relative to `main`, or landed as separate commits on a
+    worktree branch that has not itself landed to `main` yet) has NO entry
+    in `tickets.md` at base -- `_ledger_states_at_base` correctly returns
+    `None` for it, since the ticket did not exist there. The pre-T-0590
+    check required `state_at_base in _OPEN_STATES`, which `None` fails,
+    wrongly treating "never existed at base" the same as "already closed
+    before this diff" -- both denied grace, even though a nonexistent
+    ticket obviously cannot be a stale, already-landed DONE edge (T-0320's
+    actual concern). Any ticket count `!= DONE` at base (open, or absent)
+    proves the transition to DONE genuinely happened in this diff;
+    `DROPPED` is excluded because a DROPPED -> DONE transition is not a
+    real closing-diff shape this grace window is meant to cover.
+    """
+    return state_at_base != TicketState.DONE and state_at_base != TicketState.DROPPED
 
 
 @functools.lru_cache(maxsize=32)
