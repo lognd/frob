@@ -1974,6 +1974,43 @@ class TestParseFailureGate:
         assert hits[0].severity == Severity.ERROR
         assert "broken.py" in hits[0].file
 
+    # frob:ticket T-0942
+    def test_partial_parse_in_graph_excluded_path_is_silent(
+        self, tmp_path: Path
+    ) -> None:
+        """T-0942: a graph-excluded path (frob.toml [graph].exclude, e.g. a
+        deliberately-broken parser fixture) contributes no symbols to the
+        obligation graph, so PARSE002's missing-symbols claim is vacuous
+        there -- and in-file waivers cannot bind on excluded paths. The
+        gate must stay silent for it while still firing on a non-excluded
+        partial parse in the same run."""
+        # frob:tests src/frob/gates/_parse_failures.py::parse_failure_gate kind="unit"
+        from frob.gates._parse_failures import parse_failure_gate
+        from frob.lang import reset_parse_cache
+
+        reset_parse_cache()
+        _write(
+            tmp_path,
+            "frob.toml",
+            '[graph]\nexclude = ["fixtures/**"]\n',
+        )
+        _write(
+            tmp_path,
+            "fixtures/broken_fixture.py",
+            "def good_one():\n    pass\n\ndef broken(:\n    pass\n",
+        )
+        _write(
+            tmp_path,
+            "src/broken.py",
+            "def good_one():\n    pass\n\ndef broken(:\n    pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = parse_failure_gate(snap)
+        reset_parse_cache()
+        hits = [v for v in violations if v.rule == "PARSE002"]
+        assert len(hits) == 1
+        assert "src/broken.py" in hits[0].file
+
     # frob:ticket T-0902
     def test_no_partial_parses_is_clean(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_parse_failures.py::parse_failure_gate kind="unit"

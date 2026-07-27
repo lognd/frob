@@ -42,6 +42,9 @@ blocking `frob check` violation can wire a gate against this list").
 
 from __future__ import annotations
 
+from pathlib import Path
+
+from frob.excludes import is_excluded, load_exclude_globs
 from frob.gates._models import Severity, Violation
 from frob.graph import GraphSnapshot
 from frob.lang import partial_parse_files
@@ -50,7 +53,8 @@ from frob.logging import get_logger
 _log = get_logger(__name__)
 
 
-def _partial_parse_violations() -> tuple[Violation, ...]:
+# frob:ticket T-0942
+def _partial_parse_violations(root: Path) -> tuple[Violation, ...]:
     """PARSE002: one ERROR violation per `frob.lang.partial_parse_files()` entry.
 
     Read directly off `frob.lang`'s process-lifetime accessor (T-0905) --
@@ -63,25 +67,40 @@ def _partial_parse_violations() -> tuple[Violation, ...]:
     `parse_failure_gate` caller) guarantees that population has already
     happened by the time this reads it.
     """
-    violations = tuple(
-        Violation(
-            rule="PARSE002",
-            severity=Severity.ERROR,
-            file=path,
-            line=0,
-            message=(
-                f"PARSE002: {path} was only PARTIALLY parsed (tree-sitter "
-                "salvaged a tree around a syntax error) -- every symbol "
-                "after the error region is silently missing from this "
-                "build's obligation graph; fix the syntax error or "
-                'frob:waive PARSE002 reason="..." if this is a known, '
-                "intentionally-malformed fixture"
-            ),
+    # T-0942: graph-excluded paths (frob.toml [graph].exclude, e.g.
+    # tests/fixtures/**'s deliberately-broken parser fixtures) contribute
+    # no symbols to the obligation graph, so "symbols silently missing" is
+    # vacuous there -- and in-file waivers cannot bind on excluded paths
+    # (waivers attach through graph-ingested edges; same class T-0897
+    # fixed for PII010/RENDER001/SEC-CVE). Skip them instead of firing an
+    # unwaivable ERROR.
+    exclude_globs = load_exclude_globs(root)
+    violations: list[Violation] = []
+    for path in partial_parse_files():
+        if is_excluded(path, exclude_globs):
+            _log.debug(
+                "_partial_parse_violations: %s is graph-excluded, skipping",
+                path,
+            )
+            continue
+        violations.append(
+            Violation(
+                rule="PARSE002",
+                severity=Severity.ERROR,
+                file=path,
+                line=0,
+                message=(
+                    f"PARSE002: {path} was only PARTIALLY parsed (tree-sitter "
+                    "salvaged a tree around a syntax error) -- every symbol "
+                    "after the error region is silently missing from this "
+                    "build's obligation graph; fix the syntax error or "
+                    'frob:waive PARSE002 reason="..." if this is a known, '
+                    "intentionally-malformed fixture"
+                ),
+            )
         )
-        for path in partial_parse_files()
-    )
     _log.info("_partial_parse_violations: %d violation(s)", len(violations))
-    return violations
+    return tuple(violations)
 
 
 # frob:doc docs/modules/gates.md#rule-catalog
@@ -119,6 +138,6 @@ def parse_failure_gate(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
         )
         for failure in snapshot.parse_failures
     )
-    violations = violations + _partial_parse_violations()
+    violations = violations + _partial_parse_violations(Path(snapshot.root))
     _log.info("parse_failure_gate: %d violation(s)", len(violations))
     return violations
