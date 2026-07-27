@@ -567,24 +567,78 @@ class TestMultiAceDenyOverridesAllow:
 
     # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
     def test_narrow_deny_then_broad_allow_same_principal_denies(self):
-        """Same principal, deny declared first, broad allow declared
-        second: the deny is honored regardless of declaration order --
-        NTFS deny-overrides-allow, not last-wins."""
+        """T-0825 WRITE_DAC-indirection corner (the T-0792 reviewer
+        finding this ticket closes; SAME test name as the pre-fix T-0791/
+        T-0792 assertion this replaces, so archived evidence citing this
+        node id keeps resolving -- only the assertion's expected result
+        changed): same principal, narrow `Modify` deny declared first,
+        broad `FullControl` allow declared second. Real NTFS: the
+        `Modify` deny removes the plain content-write bit but never
+        reaches WRITE_DAC/WRITE_OWNER (only an explicit `FullControl`-
+        level deny does) -- those bits survive from the `FullControl`
+        allow, letting the principal rewrite the path's own DACL and
+        regain full write. The join must still count this write-capable
+        via that indirection (a PRE-fix build of this module got this
+        backwards, treating it as a clean deny -- this test's OLD name
+        literally said "denies"; that was the bug)."""
         entries = [
             HostAcl(path="/p", rule="Everyone:Modify:deny"),
+            HostAcl(path="/p", rule="Everyone:FullControl"),
+        ]
+        assert _join_acl_entries(entries) is True
+
+    # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
+    def test_broad_allow_then_narrow_deny_same_principal_still_denies(self):
+        """Same corner as above, declaration order reversed: `FullControl`
+        allow first, narrower `Modify` deny second -- still write-capable
+        via WRITE_DAC indirection, order-independence cutting both ways
+        exactly like the rest of this join's ordering guarantees. SAME
+        test name as the pre-fix assertion (archived T-0791/T-0792
+        evidence keeps resolving); only the expected result changed, for
+        the identical T-0825 reason as the previous test."""
+        entries = [
+            HostAcl(path="/p", rule="Everyone:FullControl"),
+            HostAcl(path="/p", rule="Everyone:Modify:deny"),
+        ]
+        assert _join_acl_entries(entries) is True
+
+    # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
+    def test_fullcontrol_deny_denies_fullcontrol_allow_no_indirection(self):
+        """The WRITE_DAC-indirection corner does NOT apply when the deny
+        is ITSELF `FullControl`-level: an explicit `FullControl` deny
+        reaches WRITE_DAC/WRITE_OWNER too, so there is no surviving bit
+        for the principal to rewrite the DACL with -- a genuinely clean
+        deny, same principal, both entries at the SAME (broadest)
+        level."""
+        entries = [
+            HostAcl(path="/p", rule="Everyone:FullControl:deny"),
             HostAcl(path="/p", rule="Everyone:FullControl"),
         ]
         assert _join_acl_entries(entries) is False
 
     # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
-    def test_broad_allow_then_narrow_deny_same_principal_still_denies(self):
-        """Same principal, allow declared first, deny declared second: a
-        later deny for the SAME principal is honored too -- order-
-        independence cuts both ways, it is not merely 'last wins'
-        restated."""
+    def test_narrow_deny_narrow_allow_same_principal_still_denies(self):
+        """The indirection corner is `FullControl`-allow-specific: a
+        `Modify` allow never grants WRITE_DAC/WRITE_OWNER in the first
+        place (only `FullControl` does), so a same-level `Modify` deny
+        still fully cancels it -- unaffected by the T-0825 fix, same
+        result as before."""
         entries = [
-            HostAcl(path="/p", rule="Everyone:FullControl"),
             HostAcl(path="/p", rule="Everyone:Modify:deny"),
+            HostAcl(path="/p", rule="Everyone:Modify"),
+        ]
+        assert _join_acl_entries(entries) is False
+
+    # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
+    def test_write_deny_modify_allow_same_principal_still_denies(self):
+        """A narrower `Write` deny against a `Modify` allow: `Modify`
+        never grants WRITE_DAC either, so there is no indirection bit to
+        survive -- the plain content-write bit `Write` covers is still
+        fully cancelled, same as any deny among `_ACL_WRITE_RIGHTS`
+        removing the shared content-write bit every level carries."""
+        entries = [
+            HostAcl(path="/p", rule="Everyone:Write:deny"),
+            HostAcl(path="/p", rule="Everyone:Modify"),
         ]
         assert _join_acl_entries(entries) is False
 

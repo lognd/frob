@@ -220,6 +220,22 @@ _SUB_HIGHER_TRUST_WRITE = "write-to-higher-trust-path"
 #: `_contention.py`'s "is ANY digit/rule write-capable" contention join.
 _ACL_WRITE_RIGHTS = {"write", "modify", "fullcontrol"}
 
+#: T-0825: coarse bit-coverage ranking over `_ACL_WRITE_RIGHTS`, real NTFS
+#: RIGHTS bit-sets nest (`write` bits subset-of `modify` bits subset-of
+#: `fullcontrol` bits, which ALSO carries WRITE_DAC/WRITE_OWNER -- bits no
+#: `write`/`modify` RIGHTS value grants at all). Used only by `_join_acl_
+#: entries`'s WRITE_DAC-indirection corner below; every other
+#: `_ACL_WRITE_RIGHTS` membership check in this module stays a flat set
+#: test, unaffected by this ranking.
+_RIGHTS_RANK: dict[str, int] = {"write": 0, "modify": 1, "fullcontrol": 2}
+
+#: T-0825: the ONE `_ACL_WRITE_RIGHTS` level that grants WRITE_DAC/
+#: WRITE_OWNER in real NTFS -- `write`/`modify` grant neither. A deny at
+#: any level BELOW this one does not touch those bits at all, so it
+#: cannot cancel a `fullcontrol` allow's WRITE_DAC grant no matter how
+#: "broad" the deny otherwise looks in this coarse vocabulary.
+_DAC_GRANTING_RIGHTS = "fullcontrol"
+
 #: `"port:<n>"` / `"pipe:<name>"` label prefixes `_listening_surface_by_
 #: user` uses to keep a linux PORT number and a same-named windows PIPE
 #: from colliding in the merged listening-surface set (module docstring).
@@ -271,22 +287,48 @@ def _identity_of(manifest: HostManifest) -> str | None:
     )
 
 
-def _acl_ace_of(rule: str) -> tuple[str, bool, bool]:
+# frob:waive DUP001 reason="near-identical parse of _contention.py::_acl_rule_write_capable's SAME PRINCIPAL:RIGHTS[:deny] RULE grammar, deliberately duplicated (not extracted) because the two callers need different return shapes for different questions: _contention.py's SYS201 asks a flat is-this-ACE-write-capable-and-not-denied bool for its own per-ACE contention join, while T-0825 needs the (principal, is_deny, rights LEVEL) triple to reason about the WRITE_DAC-indirection corner across MULTIPLE ACEs for the same principal -- extracting a shared parse helper across strata/_contention.py and strata/_host_isolation.py (out of this ticket's declared scope) is a legitimate follow-up, not done here"
+def _acl_ace_of(rule: str) -> tuple[str, bool, str | None]:
     """Decompose a validated windows `acl` RULE into its (PRINCIPAL,
-    is_deny, is_write_rights) triple -- the one parse `_join_acl_entries`
+    is_deny, rights) triple -- the one parse `_join_acl_entries`
     (T-0792 multi-ACE deny-overrides-allow join, module docstring's
     "Owned paths" section) builds on, so the RULE grammar is only ever
     split in one place (charter: no duplication). `HostAcl.rule` is
     already validated `PRINCIPAL:RIGHTS[:deny][:no_inherit]` shape
     (`_host.py::HostAcl._validate_rule`), so a plain split is safe
-    here."""
+    here. `rights` is the lowercased RIGHTS token when it is one of
+    `_ACL_WRITE_RIGHTS` (T-0825: callers need the LEVEL, not just
+    membership, to reason about the WRITE_DAC-indirection corner), `None`
+    otherwise (a non-write-capable RIGHTS value, e.g. `Read`)."""
     principal, _, rest = rule.partition(":")
     flags = rest.split(":")
     rights = flags[0].strip().lower() if flags else ""
     is_deny = "deny" in flags[1:]
-    return principal, is_deny, rights in _ACL_WRITE_RIGHTS
+    return principal, is_deny, rights if rights in _ACL_WRITE_RIGHTS else None
 
 
+def _net_acl_levels_by_principal(
+    entries: list[HostAcl],
+) -> tuple[dict[str, str], dict[str, str]]:
+    """Split off `_join_acl_entries`'s first pass (ARCH001 line-count
+    split, T-0825): the broadest allow level and broadest deny level each
+    principal declares among `entries`' write-capable ACEs, keyed by
+    principal -- the raw input `_join_acl_entries`'s WRITE_DAC-indirection
+    reasoning nets out."""
+    net_allow: dict[str, str] = {}
+    net_deny: dict[str, str] = {}
+    for entry in entries:
+        principal, is_deny, rights = _acl_ace_of(entry.rule)
+        if rights is None:
+            continue
+        target = net_deny if is_deny else net_allow
+        current = target.get(principal)
+        if current is None or _RIGHTS_RANK[rights] > _RIGHTS_RANK[current]:
+            target[principal] = rights
+    return net_allow, net_deny
+
+
+# frob:doc docs/strata/host.md#multi-ace-deny-overrides-allow-join-and-the-write_dac-indirection-corner-t-0792t-0825
 def _join_acl_entries(entries: list[HostAcl]) -> bool:
     """T-0792: real NTFS deny-overrides-allow join across EVERY ACE
     declared for one path, replacing the last-declaration-wins collapse
@@ -304,20 +346,47 @@ def _join_acl_entries(entries: list[HostAcl]) -> bool:
     This is the fix's soundness direction: the prior collapse could pick
     whichever ACE happened to land last in iteration order and silently
     lose an entirely different principal's real write grant, under-
-    reporting a movement violation the model should have caught."""
-    net_allow_by_principal: dict[str, bool] = {}
-    net_deny_by_principal: set[str] = set()
-    for entry in entries:
-        principal, is_deny, is_write_rights = _acl_ace_of(entry.rule)
-        if not is_write_rights:
-            continue
-        if is_deny:
-            net_deny_by_principal.add(principal)
-        else:
-            net_allow_by_principal.setdefault(principal, True)
-    return any(
-        principal not in net_deny_by_principal for principal in net_allow_by_principal
-    )
+    reporting a movement violation the model should have caught.
+
+    T-0825 WRITE_DAC-indirection corner (T-0792 reviewer finding, the one
+    corner this join used to understate): NTFS RIGHTS bit-sets nest
+    (`write` subset `modify` subset `fullcontrol`), and ONLY `fullcontrol`
+    carries WRITE_DAC/WRITE_OWNER -- bits `write`/`modify` never grant at
+    any level. A same-principal narrow deny (e.g. `Modify`) does cancel a
+    broad `FullControl` allow's plain content-write bit (every
+    `_ACL_WRITE_RIGHTS` level, including `modify`, covers that bit, so any
+    deny among them removes it) -- but it does NOT touch the WRITE_DAC/
+    WRITE_OWNER bits, which only an explicit `fullcontrol`-level deny
+    reaches. Left standing, WRITE_DAC lets the "denied" principal rewrite
+    the path's own DACL and grant themselves full access back -- so the
+    join still counts them as write-capable overall (via that indirection)
+    UNLESS the deny is itself `fullcontrol`-level (a real full deny that
+    reaches WRITE_DAC too). A narrower allow (`write`/`modify`) never
+    grants WRITE_DAC in the first place, so this indirection path never
+    applies to it -- any deny at all still fully cancels it, unchanged
+    from before this fix."""
+    net_allow, net_deny = _net_acl_levels_by_principal(entries)
+    for principal, allow_level in net_allow.items():
+        deny_level = net_deny.get(principal)
+        if deny_level is None:
+            return True  # unopposed allow
+        if allow_level == _DAC_GRANTING_RIGHTS and deny_level != _DAC_GRANTING_RIGHTS:
+            # T-0825: the deny is narrower than fullcontrol, so it never
+            # reaches WRITE_DAC/WRITE_OWNER -- the principal can rewrite
+            # the DACL and regain full write, still counted write-capable.
+            _log.debug(
+                "T-0825 WRITE_DAC indirection: principal=%s allow=fullcontrol "
+                "deny=%s does not reach WRITE_DAC/WRITE_OWNER -- still "
+                "write-capable via DACL rewrite",
+                principal,
+                deny_level,
+            )
+            return True
+        # deny_level covers everything allow_level grants (both nest
+        # within write/modify/fullcontrol's shared "plain content-write"
+        # bit, and here deny reaches whatever DAC bits allow grants too)
+        # -- fully cancelled for this principal.
+    return False
 
 
 def _rule_of(v: HostIsolationViolation) -> str:

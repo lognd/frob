@@ -355,6 +355,47 @@ ever branching the rule logic itself on `HostManifest.platform`:
 ever platform-gated, so a windows node declaring them already derived
 real findings before T-0606.
 
+### Multi-ACE deny-overrides-allow join, and the WRITE_DAC indirection corner (T-0792/T-0825)
+
+`_join_acl_entries` joins EVERY `acl` ACE declared for a path (across all
+of a user's nodes), grouped by PRINCIPAL: an explicit `:deny` ACE always
+wins over an explicit allow ACE for the SAME principal regardless of
+declaration order (real NTFS deny-overrides-allow evaluation), and a deny
+for one principal never reaches across to cancel a DIFFERENT principal's
+allow (T-0792, replacing a last-declaration-wins collapse that could
+silently drop an unrelated principal's real grant).
+
+`_ACL_WRITE_RIGHTS` (`write`/`modify`/`fullcontrol`) is a coarse, single-
+token vocabulary -- real NTFS RIGHTS are bit-sets that nest (`write` bits
+subset `modify` bits subset `fullcontrol` bits), and ONLY `fullcontrol`
+additionally carries WRITE_DAC/WRITE_OWNER, bits neither `write` nor
+`modify` grant at any level. T-0792's reviewer flagged the one corner this
+coarseness understates (T-0825 closes it): a same-principal narrow deny
+(`Modify`) alongside a broad allow (`FullControl`) nets to "not
+write-capable" in the naive per-principal join, but real NTFS still grants
+WRITE_DAC/WRITE_OWNER through the `FullControl` allow -- the `Modify` deny
+never reaches those bits -- so the "denied" principal can rewrite the
+path's own DACL and grant themselves full write back. `_join_acl_entries`
+(T-0825) resolves this by ranking each principal's net allow/deny by
+level (`_RIGHTS_RANK`): when the net allow is `fullcontrol` and the net
+deny is anything NARROWER than `fullcontrol`, the join still returns
+write-capable for that principal (the indirection survives) -- only an
+explicit `fullcontrol`-level deny (which does reach WRITE_DAC/WRITE_OWNER
+too) counts as a genuinely clean deny. A narrower allow (`write`/
+`modify`) never grants WRITE_DAC in the first place, so any same-or-lower
+level deny against it still fully cancels it, unchanged from before this
+fix. `tests/unit/strata/test_host_isolation.py::
+TestMultiAceDenyOverridesAllow` locks both the indirection corner (now
+`True`) and its `fullcontrol`-deny/`fullcontrol`-allow counter-case (still
+`False`).
+
+The privilege-clause gap named alongside this in the T-0792 module
+docstring (SeImpersonate/SeDebug-class windows token privileges needing
+their own `strata-core` grammar clause, distinct from `owns`/`acl`'s
+path-permission vocabulary) remains open -- no such grammar exists yet,
+disclosed here rather than silently dropped; filing that as its own
+grammar-extension ticket is future work, not folded into this fix.
+
 ### Waiver discipline
 
 HOST001/HOST002 are multi-instance-per-node (one finding per pair
